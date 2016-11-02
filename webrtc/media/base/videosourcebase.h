@@ -14,27 +14,28 @@
 #include <vector>
 
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosourceinterface.h"
-#include "webrtc/video_frame.h"
 
 namespace rtc {
 
 // VideoSourceBase is not thread safe.
-class VideoSourceBase : public VideoSourceInterface<webrtc::VideoFrame> {
+class VideoSourceBase : public VideoSourceInterface<cricket::VideoFrame> {
  public:
   VideoSourceBase();
-  void AddOrUpdateSink(VideoSinkInterface<webrtc::VideoFrame>* sink,
+  void AddOrUpdateSink(VideoSinkInterface<cricket::VideoFrame>* sink,
                        const VideoSinkWants& wants) override;
-  void RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+  void RemoveSink(VideoSinkInterface<cricket::VideoFrame>* sink) override;
 
  protected:
   struct SinkPair {
-    SinkPair(VideoSinkInterface<webrtc::VideoFrame>* sink, VideoSinkWants wants)
+    SinkPair(VideoSinkInterface<cricket::VideoFrame>* sink,
+             VideoSinkWants wants)
         : sink(sink), wants(wants) {}
-    VideoSinkInterface<webrtc::VideoFrame>* sink;
+    VideoSinkInterface<cricket::VideoFrame>* sink;
     VideoSinkWants wants;
   };
-  SinkPair* FindSinkPair(const VideoSinkInterface<webrtc::VideoFrame>* sink);
+  SinkPair* FindSinkPair(const VideoSinkInterface<cricket::VideoFrame>* sink);
 
   const std::vector<SinkPair>& sink_pairs() const { return sinks_; }
   ThreadChecker thread_checker_;

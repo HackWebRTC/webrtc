@@ -20,6 +20,9 @@
 
 namespace webrtc {
 
+// TODO(nisse): This class duplicates cricket::VideoFrame. There's
+// ongoing work to merge the classes. See
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=5682.
 class VideoFrame {
  public:
   // TODO(nisse): Deprecated. Using the default constructor violates the

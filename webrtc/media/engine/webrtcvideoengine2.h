@@ -26,10 +26,10 @@
 #include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/call.h"
 #include "webrtc/media/base/mediaengine.h"
+#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/transport.h"
-#include "webrtc/video_frame.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -82,14 +82,14 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
   Action OnUnsignalledSsrc(WebRtcVideoChannel2* channel,
                            uint32_t ssrc) override;
 
-  rtc::VideoSinkInterface<webrtc::VideoFrame>* GetDefaultSink() const;
+  rtc::VideoSinkInterface<VideoFrame>* GetDefaultSink() const;
   void SetDefaultSink(VideoMediaChannel* channel,
-                      rtc::VideoSinkInterface<webrtc::VideoFrame>* sink);
+                      rtc::VideoSinkInterface<VideoFrame>* sink);
   virtual ~DefaultUnsignalledSsrcHandler() = default;
 
  private:
   uint32_t default_recv_ssrc_;
-  rtc::VideoSinkInterface<webrtc::VideoFrame>* default_sink_;
+  rtc::VideoSinkInterface<VideoFrame>* default_sink_;
 };
 
 // WebRtcVideoEngine2 is used for the new native WebRTC Video API (webrtc:1667).
@@ -156,14 +156,14 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
       uint32_t ssrc,
       bool enable,
       const VideoOptions* options,
-      rtc::VideoSourceInterface<webrtc::VideoFrame>* source) override;
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override;
   bool AddSendStream(const StreamParams& sp) override;
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
   bool AddRecvStream(const StreamParams& sp, bool default_stream);
   bool RemoveRecvStream(uint32_t ssrc) override;
   bool SetSink(uint32_t ssrc,
-               rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
+               rtc::VideoSinkInterface<VideoFrame>* sink) override;
   bool GetStats(VideoMediaInfo* info) override;
 
   void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
@@ -237,7 +237,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   // Wrapper for the sender part, this is where the source is connected and
   // frames are then converted from cricket frames to webrtc frames.
   class WebRtcVideoSendStream
-      : public rtc::VideoSinkInterface<webrtc::VideoFrame>,
+      : public rtc::VideoSinkInterface<cricket::VideoFrame>,
         public rtc::VideoSourceInterface<webrtc::VideoFrame> {
    public:
     WebRtcVideoSendStream(
@@ -259,17 +259,18 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     // Implements rtc::VideoSourceInterface<webrtc::VideoFrame>.
     // WebRtcVideoSendStream acts as a source to the webrtc::VideoSendStream
-    // in |stream_|.
+    // in |stream_|. The reason is that WebRtcVideoSendStream receives
+    // cricket::VideoFrames and forwards webrtc::VideoFrames to |source_|.
     // TODO(perkj, nisse): Refactor WebRtcVideoSendStream to directly connect
     // the camera input |source_|
     void AddOrUpdateSink(VideoSinkInterface<webrtc::VideoFrame>* sink,
                          const rtc::VideoSinkWants& wants) override;
     void RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
-    void OnFrame(const webrtc::VideoFrame& frame) override;
+    void OnFrame(const cricket::VideoFrame& frame) override;
     bool SetVideoSend(bool mute,
                       const VideoOptions* options,
-                      rtc::VideoSourceInterface<webrtc::VideoFrame>* source);
+                      rtc::VideoSourceInterface<cricket::VideoFrame>* source);
 
     void SetSend(bool send);
 
@@ -346,7 +347,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     const std::vector<SsrcGroup> ssrc_groups_ ACCESS_ON(&thread_checker_);
     webrtc::Call* const call_;
     const bool enable_cpu_overuse_detection_;
-    rtc::VideoSourceInterface<webrtc::VideoFrame>* source_
+    rtc::VideoSourceInterface<cricket::VideoFrame>* source_
         ACCESS_ON(&thread_checker_);
     WebRtcVideoEncoderFactory* const external_encoder_factory_
         ACCESS_ON(&thread_checker_);
@@ -376,7 +377,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   };
 
   // Wrapper for the receiver part, contains configs etc. that are needed to
-  // reconstruct the underlying VideoReceiveStream.
+  // reconstruct the underlying VideoReceiveStream. Also serves as a wrapper
+  // between rtc::VideoSinkInterface<webrtc::VideoFrame> and
+  // rtc::VideoSinkInterface<cricket::VideoFrame>.
   class WebRtcVideoReceiveStream
       : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
    public:
@@ -404,7 +407,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     void OnFrame(const webrtc::VideoFrame& frame) override;
     bool IsDefaultStream() const;
 
-    void SetSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink);
+    void SetSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink);
 
     VideoReceiverInfo GetVideoReceiverInfo(bool log_stats);
 
@@ -451,7 +454,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     std::vector<AllocatedDecoder> allocated_decoders_;
 
     rtc::CriticalSection sink_lock_;
-    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink_ GUARDED_BY(sink_lock_);
+    rtc::VideoSinkInterface<cricket::VideoFrame>* sink_ GUARDED_BY(sink_lock_);
     // Expands remote RTP timestamps to int64_t to be able to estimate how long
     // the stream has been running.
     rtc::TimestampWrapAroundHandler timestamp_wraparound_handler_

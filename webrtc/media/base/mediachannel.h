@@ -31,6 +31,9 @@
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
+// TODO(nisse): Temporarily; to be replaced with a forward declaration
+// of webrtc::VideoFrame when dependency on cricket::VideoFrame is deleted.
+#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
 // TODO(juberti): re-evaluate this include
@@ -43,7 +46,6 @@ class Timing;
 
 namespace webrtc {
 class AudioSinkInterface;
-class VideoFrame;
 }
 
 namespace cricket {
@@ -1029,11 +1031,11 @@ class VideoMediaChannel : public MediaChannel {
       uint32_t ssrc,
       bool enable,
       const VideoOptions* options,
-      rtc::VideoSourceInterface<webrtc::VideoFrame>* source) = 0;
+      rtc::VideoSourceInterface<cricket::VideoFrame>* source) = 0;
   // Sets the sink object to be used for the specified stream.
   // If SSRC is 0, the renderer is used for the 'default' stream.
   virtual bool SetSink(uint32_t ssrc,
-                       rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) = 0;
+                       rtc::VideoSinkInterface<cricket::VideoFrame>* sink) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VideoMediaInfo* info) = 0;
 };

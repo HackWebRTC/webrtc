@@ -21,7 +21,7 @@
 #include "webrtc/examples/peerconnection/client/peer_connection_client.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
-#include "webrtc/video_frame.h"
+#include "webrtc/media/base/videoframe.h"
 
 class MainWndCallback {
  public:
@@ -102,7 +102,7 @@ class MainWnd : public MainWindow {
 
   HWND handle() const { return wnd_; }
 
-  class VideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
+  class VideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
    public:
     VideoRenderer(HWND wnd, int width, int height,
                   webrtc::VideoTrackInterface* track_to_render);
@@ -117,7 +117,7 @@ class MainWnd : public MainWindow {
     }
 
     // VideoSinkInterface implementation
-    void OnFrame(const webrtc::VideoFrame& frame) override;
+    void OnFrame(const cricket::VideoFrame& frame) override;
 
     const BITMAPINFO& bmi() const { return bmi_; }
     const uint8_t* image() const { return image_.get(); }

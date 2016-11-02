@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
  */
 public class VideoRenderer {
   /**
-   * Java version of webrtc::VideoFrame. Frames are only constructed from native code and test
+   * Java version of cricket::VideoFrame. Frames are only constructed from native code and test
    * code.
    */
   public static class I420Frame {

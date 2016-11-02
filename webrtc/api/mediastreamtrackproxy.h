@@ -42,10 +42,12 @@ BEGIN_PROXY_MAP(VideoTrack)
   PROXY_CONSTMETHOD0(bool, enabled)
   PROXY_METHOD1(bool, set_enabled, bool)
   PROXY_WORKER_METHOD2(void,
-                       AddOrUpdateSink,
-                       rtc::VideoSinkInterface<VideoFrame>*,
-                       const rtc::VideoSinkWants&)
-  PROXY_WORKER_METHOD1(void, RemoveSink, rtc::VideoSinkInterface<VideoFrame>*)
+                AddOrUpdateSink,
+                rtc::VideoSinkInterface<cricket::VideoFrame>*,
+                const rtc::VideoSinkWants&)
+  PROXY_WORKER_METHOD1(void,
+                       RemoveSink,
+                       rtc::VideoSinkInterface<cricket::VideoFrame>*)
   PROXY_CONSTMETHOD0(VideoTrackSourceInterface*, GetSource)
 
   PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)

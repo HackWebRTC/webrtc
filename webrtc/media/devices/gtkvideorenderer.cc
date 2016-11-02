@@ -11,13 +11,13 @@
 // Implementation of GtkVideoRenderer
 
 #include "webrtc/media/devices/gtkvideorenderer.h"
-#include "webrtc/video_frame.h"
 
 #include <gdk/gdk.h>
 #include <glib.h>
 #include <gtk/gtk.h>
 
 #include "libyuv/convert_argb.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 namespace cricket {
 
@@ -80,21 +80,24 @@ bool GtkVideoRenderer::SetSize(int width, int height) {
   return true;
 }
 
-void GtkVideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame) {
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
+void GtkVideoRenderer::OnFrame(const VideoFrame& video_frame) {
+  const cricket::WebRtcVideoFrame frame(
       webrtc::I420Buffer::Rotate(video_frame.video_frame_buffer(),
-                                 video_frame.rotation()));
+                                 video_frame.rotation()),
+      webrtc::kVideoRotation_0, video_frame.timestamp_us());
 
   // Need to set size as the frame might be rotated.
-  if (!SetSize(buffer->width(), buffer->height())) {
+  if (!SetSize(frame.width(), frame.height())) {
     return;
   }
 
   // convert I420 frame to ABGR format, which is accepted by GTK
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
+      frame.video_frame_buffer());
   libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
                      buffer->DataU(), buffer->StrideU(),
                      buffer->DataV(), buffer->StrideV(),
-                     image_.get(), buffer->width() * 4,
+                     image_.get(), frame.width() * 4,
                      buffer->width(), buffer->height());
 
   ScopedGdkLock lock;
@@ -108,11 +111,11 @@ void GtkVideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame) {
                         draw_area_->style->fg_gc[GTK_STATE_NORMAL],
                         0,
                         0,
-                        buffer->width(),
-                        buffer->height(),
+                        frame.width(),
+                        frame.height(),
                         GDK_RGB_DITHER_MAX,
                         image_.get(),
-                        buffer->width() * 4);
+                        frame.width() * 4);
 
   // Run the Gtk main loop to refresh the window.
   Pump();

@@ -18,6 +18,7 @@
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 #include "webrtc/base/win32.h"  // Need this to #include the impl files.
 #include "webrtc/modules/video_capture/video_capture_factory.h"
@@ -352,7 +353,10 @@ void WebRtcVideoCapturer::OnIncomingCapturedFrame(
                  << ". Expected format " << GetCaptureFormat()->ToString();
   }
 
-  OnFrame(sample, sample.width(), sample.height());
+  OnFrame(cricket::WebRtcVideoFrame(
+              sample.video_frame_buffer(), sample.rotation(),
+              sample.render_time_ms() * rtc::kNumMicrosecsPerMillisec),
+          sample.width(), sample.height());
 }
 
 void WebRtcVideoCapturer::OnCaptureDelayChanged(const int32_t id,

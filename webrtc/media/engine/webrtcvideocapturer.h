@@ -21,6 +21,7 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/media/base/device.h"
 #include "webrtc/media/base/videocapturer.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 #include "webrtc/modules/video_capture/video_capture.h"
 
 namespace cricket {

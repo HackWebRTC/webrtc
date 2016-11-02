@@ -19,7 +19,7 @@ VideoSourceBase::VideoSourceBase() {
 }
 
 void VideoSourceBase::AddOrUpdateSink(
-    VideoSinkInterface<webrtc::VideoFrame>* sink,
+    VideoSinkInterface<cricket::VideoFrame>* sink,
     const VideoSinkWants& wants) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(sink != nullptr);
@@ -32,7 +32,8 @@ void VideoSourceBase::AddOrUpdateSink(
   }
 }
 
-void VideoSourceBase::RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) {
+void VideoSourceBase::RemoveSink(
+    VideoSinkInterface<cricket::VideoFrame>* sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(sink != nullptr);
   RTC_DCHECK(FindSinkPair(sink));
@@ -44,7 +45,7 @@ void VideoSourceBase::RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) {
 }
 
 VideoSourceBase::SinkPair* VideoSourceBase::FindSinkPair(
-    const VideoSinkInterface<webrtc::VideoFrame>* sink) {
+    const VideoSinkInterface<cricket::VideoFrame>* sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   auto sink_pair_it = std::find_if(
       sinks_.begin(), sinks_.end(),

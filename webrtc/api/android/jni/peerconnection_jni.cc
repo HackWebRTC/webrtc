@@ -733,7 +733,7 @@ class StatsObserverWrapper : public StatsObserver {
 // Wrapper dispatching rtc::VideoSinkInterface to a Java VideoRenderer
 // instance.
 class JavaVideoRendererWrapper
-    : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
+    : public rtc::VideoSinkInterface<cricket::VideoFrame> {
  public:
   JavaVideoRendererWrapper(JNIEnv* jni, jobject j_callbacks)
       : j_callbacks_(jni, j_callbacks),
@@ -753,7 +753,7 @@ class JavaVideoRendererWrapper
 
   virtual ~JavaVideoRendererWrapper() {}
 
-  void OnFrame(const webrtc::VideoFrame& video_frame) override {
+  void OnFrame(const cricket::VideoFrame& video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
     jobject j_frame =
         (video_frame.video_frame_buffer()->native_handle() != nullptr)
@@ -769,12 +769,13 @@ class JavaVideoRendererWrapper
   // Make a shallow copy of |frame| to be used with Java. The callee has
   // ownership of the frame, and the frame should be released with
   // VideoRenderer.releaseNativeFrame().
-  static jlong javaShallowCopy(const webrtc::VideoFrame* frame) {
-    return jlongFromPointer(new webrtc::VideoFrame(*frame));
+  static jlong javaShallowCopy(const cricket::VideoFrame* frame) {
+    return jlongFromPointer(new cricket::WebRtcVideoFrame(
+        frame->video_frame_buffer(), frame->rotation(), frame->timestamp_us()));
   }
 
   // Return a VideoRenderer.I420Frame referring to the data in |frame|.
-  jobject CricketToJavaI420Frame(const webrtc::VideoFrame* frame) {
+  jobject CricketToJavaI420Frame(const cricket::VideoFrame* frame) {
     jintArray strides = jni()->NewIntArray(3);
     jint* strides_array = jni()->GetIntArrayElements(strides, NULL);
     strides_array[0] = frame->video_frame_buffer()->StrideY();
@@ -805,7 +806,7 @@ class JavaVideoRendererWrapper
   }
 
   // Return a VideoRenderer.I420Frame referring texture object in |frame|.
-  jobject CricketToJavaTextureFrame(const webrtc::VideoFrame* frame) {
+  jobject CricketToJavaTextureFrame(const cricket::VideoFrame* frame) {
     NativeHandleImpl* handle = reinterpret_cast<NativeHandleImpl*>(
         frame->video_frame_buffer()->native_handle());
     jfloatArray sampling_matrix = handle->sampling_matrix.ToJava(jni());
@@ -950,7 +951,7 @@ JOW(void, VideoRenderer_freeWrappedVideoRenderer)(JNIEnv*, jclass, jlong j_p) {
 
 JOW(void, VideoRenderer_releaseNativeFrame)(
     JNIEnv* jni, jclass, jlong j_frame_ptr) {
-  delete reinterpret_cast<const webrtc::VideoFrame*>(j_frame_ptr);
+  delete reinterpret_cast<const cricket::VideoFrame*>(j_frame_ptr);
 }
 
 JOW(void, MediaStreamTrack_free)(JNIEnv*, jclass, jlong j_p) {
@@ -2122,7 +2123,7 @@ JOW(void, VideoTrack_nativeAddRenderer)(
   LOG(LS_INFO) << "VideoTrack::nativeAddRenderer";
   reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)
       ->AddOrUpdateSink(
-          reinterpret_cast<rtc::VideoSinkInterface<webrtc::VideoFrame>*>(
+          reinterpret_cast<rtc::VideoSinkInterface<cricket::VideoFrame>*>(
               j_renderer_pointer),
           rtc::VideoSinkWants());
 }
@@ -2132,7 +2133,7 @@ JOW(void, VideoTrack_nativeRemoveRenderer)(
     jlong j_video_track_pointer, jlong j_renderer_pointer) {
   reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer)
       ->RemoveSink(
-          reinterpret_cast<rtc::VideoSinkInterface<webrtc::VideoFrame>*>(
+          reinterpret_cast<rtc::VideoSinkInterface<cricket::VideoFrame>*>(
               j_renderer_pointer));
 }
 

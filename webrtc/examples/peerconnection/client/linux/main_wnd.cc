@@ -19,6 +19,7 @@
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/media/engine/webrtcvideoframe.h"
 
 using rtc::sprintfn;
 
@@ -482,15 +483,18 @@ void GtkMainWnd::VideoRenderer::SetSize(int width, int height) {
 }
 
 void GtkMainWnd::VideoRenderer::OnFrame(
-    const webrtc::VideoFrame& video_frame) {
+    const cricket::VideoFrame& video_frame) {
   gdk_threads_enter();
 
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
+  const cricket::WebRtcVideoFrame frame(
       webrtc::I420Buffer::Rotate(video_frame.video_frame_buffer(),
-                                 video_frame.rotation()));
+                                 video_frame.rotation()),
+      webrtc::kVideoRotation_0, video_frame.timestamp_us());
 
-  SetSize(buffer->width(), buffer->height());
+  SetSize(frame.width(), frame.height());
 
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
+      frame.video_frame_buffer());
   libyuv::I420ToRGBA(buffer->DataY(), buffer->StrideY(),
                      buffer->DataU(), buffer->StrideU(),
                      buffer->DataV(), buffer->StrideV(),
