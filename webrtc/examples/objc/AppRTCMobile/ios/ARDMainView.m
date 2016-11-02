@@ -12,10 +12,6 @@
 
 #import "UIImage+ARDUtilities.h"
 
-// TODO(tkchin): retrieve status bar height dynamically.
-static CGFloat const kStatusBarHeight = 20;
-
-static CGFloat const kRoomTextButtonSize = 40;
 static CGFloat const kRoomTextFieldHeight = 40;
 static CGFloat const kRoomTextFieldMargin = 8;
 static CGFloat const kCallControlMargin = 8;
@@ -27,7 +23,6 @@ static CGFloat const kCallControlMargin = 8;
 
 @implementation ARDRoomTextField {
   UITextField *_roomText;
-  UIButton *_clearButton;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -38,22 +33,9 @@ static CGFloat const kCallControlMargin = 8;
     _roomText.placeholder = @"Room name";
     _roomText.autocorrectionType = UITextAutocorrectionTypeNo;
     _roomText.autocapitalizationType = UITextAutocapitalizationTypeNone;
+    _roomText.clearButtonMode = UITextFieldViewModeAlways;
     _roomText.delegate = self;
-    [_roomText addTarget:self
-                  action:@selector(textFieldDidChange:)
-        forControlEvents:UIControlEventEditingChanged];
     [self addSubview:_roomText];
-
-    _clearButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    UIImage *image = [UIImage imageForName:@"ic_clear_black_24dp.png"
-                                     color:[UIColor colorWithWhite:0 alpha:.4]];
-
-    [_clearButton setImage:image forState:UIControlStateNormal];
-    [_clearButton addTarget:self
-                      action:@selector(onClear:)
-            forControlEvents:UIControlEventTouchUpInside];
-    _clearButton.hidden = YES;
-    [self addSubview:_clearButton];
 
     // Give rounded corners and a light gray border.
     self.layer.borderWidth = 1;
@@ -64,17 +46,9 @@ static CGFloat const kCallControlMargin = 8;
 }
 
 - (void)layoutSubviews {
-  CGRect bounds = self.bounds;
-  _clearButton.frame = CGRectMake(CGRectGetMaxX(bounds) - kRoomTextButtonSize,
-                                  CGRectGetMinY(bounds),
-                                  kRoomTextButtonSize,
-                                  kRoomTextButtonSize);
-  _roomText.frame = CGRectMake(
-      CGRectGetMinX(bounds) + kRoomTextFieldMargin,
-      CGRectGetMinY(bounds),
-      CGRectGetMinX(_clearButton.frame) - CGRectGetMinX(bounds) -
-          kRoomTextFieldMargin,
-      kRoomTextFieldHeight);
+  _roomText.frame =
+      CGRectMake(kRoomTextFieldMargin, 0, CGRectGetWidth(self.bounds) - kRoomTextFieldMargin,
+                 kRoomTextFieldHeight);
 }
 
 - (CGSize)sizeThatFits:(CGSize)size {
@@ -93,22 +67,6 @@ static CGFloat const kCallControlMargin = 8;
   // when return (Join) is pressed to trigger |textFieldDidEndEditing|.
   [textField resignFirstResponder];
   return YES;
-}
-
-#pragma mark - Private
-
-- (void)textFieldDidChange:(id)sender {
-  [self updateClearButton];
-}
-
-- (void)onClear:(id)sender {
-  _roomText.text = @"";
-  [self updateClearButton];
-  [_roomText resignFirstResponder];
-}
-
-- (void)updateClearButton {
-  _clearButton.hidden = _roomText.text.length == 0;
 }
 
 @end
@@ -205,17 +163,9 @@ static CGFloat const kCallControlMargin = 8;
     [self addSubview:_useManualAudioLabel];
 
     _startCallButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    _startCallButton.backgroundColor = [UIColor blueColor];
-    _startCallButton.layer.cornerRadius = 10;
-    _startCallButton.clipsToBounds = YES;
-    _startCallButton.contentEdgeInsets = UIEdgeInsetsMake(5, 10, 5, 10);
     [_startCallButton setTitle:@"Start call"
                       forState:UIControlStateNormal];
     _startCallButton.titleLabel.font = controlFont;
-    [_startCallButton setTitleColor:[UIColor whiteColor]
-                           forState:UIControlStateNormal];
-    [_startCallButton setTitleColor:[UIColor lightGrayColor]
-                           forState:UIControlStateSelected];
     [_startCallButton sizeToFit];
     [_startCallButton addTarget:self
                          action:@selector(onStartCall:)
@@ -224,14 +174,7 @@ static CGFloat const kCallControlMargin = 8;
 
     // Used to test what happens to sounds when calls are in progress.
     _audioLoopButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    _audioLoopButton.layer.cornerRadius = 10;
-    _audioLoopButton.clipsToBounds = YES;
-    _audioLoopButton.contentEdgeInsets = UIEdgeInsetsMake(5, 10, 5, 10);
     _audioLoopButton.titleLabel.font = controlFont;
-    [_audioLoopButton setTitleColor:[UIColor whiteColor]
-                           forState:UIControlStateNormal];
-    [_audioLoopButton setTitleColor:[UIColor lightGrayColor]
-                           forState:UIControlStateSelected];
     [self updateAudioLoopButton];
     [_audioLoopButton addTarget:self
                          action:@selector(onToggleAudioLoop:)
@@ -346,12 +289,10 @@ static CGFloat const kCallControlMargin = 8;
 
 - (void)updateAudioLoopButton {
   if (_isAudioLoopPlaying) {
-    _audioLoopButton.backgroundColor = [UIColor redColor];
     [_audioLoopButton setTitle:@"Stop sound"
                       forState:UIControlStateNormal];
     [_audioLoopButton sizeToFit];
   } else {
-    _audioLoopButton.backgroundColor = [UIColor greenColor];
     [_audioLoopButton setTitle:@"Play sound"
                       forState:UIControlStateNormal];
     [_audioLoopButton sizeToFit];
