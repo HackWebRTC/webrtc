@@ -8,6 +8,7 @@
 
 import("//build/config/ui.gni")
 import("../../build/webrtc.gni")
+import("desktop_capture.gni")
 
 use_desktop_capture_differ_sse2 =
     !is_ios && (current_cpu == "x86" || current_cpu == "x64")
@@ -31,7 +32,7 @@ rtc_static_library("primitives") {
 }
 
 if (rtc_include_tests) {
-  source_set("desktop_capture_test_tools") {
+  source_set("rgba_color") {
     testonly = true
 
     public_deps = [
@@ -41,11 +42,41 @@ if (rtc_include_tests) {
     sources = [
       "rgba_color.cc",
       "rgba_color.h",
+    ]
+  }
+
+  source_set("screen_drawer") {
+    testonly = true
+
+    public_deps = [
+      ":rgba_color",
+    ]
+
+    sources = [
       "screen_drawer.cc",
       "screen_drawer.h",
       "screen_drawer_linux.cc",
       "screen_drawer_mac.cc",
       "screen_drawer_win.cc",
+    ]
+  }
+
+  source_set("desktop_capture_mock") {
+    testonly = true
+
+    public_deps = [
+      ":desktop_capture",
+      ":rgba_color",
+    ]
+
+    sources = [
+      "desktop_frame_generator.cc",
+      "desktop_frame_generator.h",
+      "fake_desktop_capturer.h",
+      "fake_screen_capturer.cc",
+      "fake_screen_capturer.h",
+      "mock_desktop_capturer_callback.h",
+      "screen_capturer_mock_objects.h",
     ]
   }
 }
@@ -151,6 +182,8 @@ rtc_static_library("desktop_capture") {
 
   if (!is_ios) {
     sources += [
+      "desktop_capturer_differ_wrapper.cc",
+      "desktop_capturer_differ_wrapper.h",
       "differ_block.cc",
       "differ_block.h",
       "screen_capturer_differ_wrapper.cc",
@@ -181,6 +214,10 @@ rtc_static_library("desktop_capture") {
 
   if (use_desktop_capture_differ_sse2) {
     deps += [ ":desktop_capture_differ_sse2" ]
+  }
+
+  if (rtc_desktop_capture_supported) {
+    defines = [ "RTC_DESKTOP_CAPTURE_SUPPORTED" ]
   }
 }
 

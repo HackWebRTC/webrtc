@@ -76,4 +76,10 @@ WindowCapturer* WindowCapturer::Create(const DesktopCaptureOptions& options) {
   return new WindowCapturerNull();
 }
 
+// static
+std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(
+    const DesktopCaptureOptions& options) {
+  return std::unique_ptr<DesktopCapturer>(new WindowCapturerNull());
+}
+
 }  // namespace webrtc

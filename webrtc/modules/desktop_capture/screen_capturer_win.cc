@@ -42,4 +42,22 @@ ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   return capturer.release();
 }
 
+// static
+std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
+    const DesktopCaptureOptions& options) {
+  std::unique_ptr<DesktopCapturer> capturer;
+  if (options.allow_directx_capturer() &&
+      ScreenCapturerWinDirectx::IsSupported()) {
+    capturer.reset(new ScreenCapturerWinDirectx(options));
+  } else {
+    capturer.reset(new ScreenCapturerWinGdi(options));
+  }
+
+  if (options.allow_use_magnification_api()) {
+    capturer.reset(new ScreenCapturerWinMagnifier(std::move(capturer)));
+  }
+
+  return capturer;
+}
+
 }  // namespace webrtc

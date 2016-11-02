@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_generator.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/shared_memory.h"
@@ -37,7 +38,7 @@ namespace webrtc {
 //
 // TODO(zijiehe): Remove template T once we merge ScreenCapturer and
 // WindowCapturer.
-template <typename T>
+template <typename T = DesktopCapturer>
 class FakeDesktopCapturer : public T {
  public:
   FakeDesktopCapturer()
@@ -83,7 +84,20 @@ class FakeDesktopCapturer : public T {
     shared_memory_factory_ = std::move(shared_memory_factory);
   }
 
+  bool GetSourceList(DesktopCapturer::SourceList* sources) override {
+    sources->push_back({kWindowId, "A-Fake-DesktopCapturer-Window"});
+    sources->push_back({kScreenId});
+    return true;
+  }
+
+  bool SelectSource(DesktopCapturer::SourceId id) override {
+    return id == kWindowId || id == kScreenId || id == kFullDesktopScreenId;
+  }
+
  private:
+  static constexpr DesktopCapturer::SourceId kWindowId = 1378277495;
+  static constexpr DesktopCapturer::SourceId kScreenId = 1378277496;
+
   DesktopCapturer::Callback* callback_;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
   DesktopCapturer::Result result_;
