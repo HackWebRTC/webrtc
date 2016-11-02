@@ -74,7 +74,7 @@ def main():
 
   # Delete output video file.
   if videoout:
-    subprocess.Popen(['adb', '-s', devname, 'shell', 'rm',
+    subprocess.check_call(['adb', '-s', devname, 'shell', 'rm',
         videoout])
 
   device = MonkeyRunner.waitForConnection(2, devname)
@@ -116,7 +116,7 @@ def main():
   if videooutsave:
     time.sleep(2)
 
-    subprocess.Popen(['adb', '-s', devname, 'pull',
+    subprocess.check_call(['adb', '-s', devname, 'pull',
         videoout, videooutsave])
 
 if __name__ == '__main__':
