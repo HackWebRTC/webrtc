@@ -1024,8 +1024,8 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
         vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER,
                           &qp_128);
         encoded_images_[encoder_idx].qp_ = qp_128;
-        encoded_complete_callback_->Encoded(encoded_images_[encoder_idx],
-                                            &codec_specific, &frag_info);
+        encoded_complete_callback_->OnEncodedImage(encoded_images_[encoder_idx],
+                                                   &codec_specific, &frag_info);
       } else if (codec_.mode == kScreensharing) {
         result = WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT;
       }

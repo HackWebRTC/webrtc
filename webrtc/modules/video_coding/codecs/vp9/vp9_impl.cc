@@ -705,8 +705,8 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     int qp = -1;
     vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
     encoded_image_.qp_ = qp;
-    encoded_complete_callback_->Encoded(encoded_image_, &codec_specific,
-                                        &frag_info);
+    encoded_complete_callback_->OnEncodedImage(encoded_image_, &codec_specific,
+                                               &frag_info);
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }

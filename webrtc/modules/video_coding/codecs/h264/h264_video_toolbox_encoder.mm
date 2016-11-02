@@ -650,9 +650,10 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
     quality_scaler_.ReportQP(qp);
   }
 
-  int result = callback_->Encoded(frame, &codec_specific_info, header.get());
-  if (result != 0) {
-    LOG(LS_ERROR) << "Encode callback failed: " << result;
+  EncodedImageCallback::Result result =
+      callback_->OnEncodedImage(frame, &codec_specific_info, header.get());
+  if (result.error != EncodedImageCallback::Result::OK) {
+    LOG(LS_ERROR) << "Encode callback failed: " << result.error;
     return;
   }
   bitrate_adjuster_.Update(frame._size);

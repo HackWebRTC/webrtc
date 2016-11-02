@@ -270,8 +270,8 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
     if (qp_parser_.GetQp(*frame, &qp)) {
       encoded_image.qp_ = qp;
     }
-    pre_decode_image_callback_->Encoded(encoded_image, frame->CodecSpecific(),
-                                        nullptr);
+    pre_decode_image_callback_->OnEncodedImage(encoded_image,
+                                               frame->CodecSpecific(), nullptr);
   }
 
   rtc::CritScope cs(&receive_crit_);
