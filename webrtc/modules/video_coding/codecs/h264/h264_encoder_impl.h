@@ -70,17 +70,7 @@ class H264EncoderImpl : public H264Encoder {
   void ReportError();
 
   ISVCEncoder* openh264_encoder_;
-  // Settings that are used by this encoder.
-  int width_;
-  int height_;
-  float max_frame_rate_;
-  unsigned int target_bits_per_second_;
-  unsigned int max_bits_per_second_;
-  VideoCodecMode mode_;
-  // H.264 specifc parameters
-  bool frame_dropping_on_;
-  int key_frame_interval_;
-
+  VideoCodec codec_settings_;
   int32_t number_of_cores_;
 
   EncodedImage encoded_image_;
