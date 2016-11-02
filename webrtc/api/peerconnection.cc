@@ -1643,10 +1643,6 @@ bool PeerConnection::GetOptionsForOffer(
         session_options->HasSendMediaStream(cricket::MEDIA_TYPE_VIDEO) ||
         !remote_video_tracks_.empty();
   }
-  session_options->bundle_enabled =
-      session_options->bundle_enabled &&
-      (session_options->has_audio() || session_options->has_video() ||
-       session_options->has_data());
 
   // Intentionally unset the data channel type for RTP data channel with the
   // second condition. Otherwise the RTP data channels would be successfully
@@ -1656,6 +1652,11 @@ bool PeerConnection::GetOptionsForOffer(
   if (HasDataChannels() && session_->data_channel_type() != cricket::DCT_RTP) {
     session_options->data_channel_type = session_->data_channel_type();
   }
+
+  session_options->bundle_enabled =
+      session_options->bundle_enabled &&
+      (session_options->has_audio() || session_options->has_video() ||
+       session_options->has_data());
 
   session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = factory_->options().crypto_options;
@@ -1682,11 +1683,6 @@ void PeerConnection::FinishOptionsForAnswer(
     }
   }
   AddSendStreams(session_options, senders_, rtp_data_channels_);
-  session_options->bundle_enabled =
-      session_options->bundle_enabled &&
-      (session_options->has_audio() || session_options->has_video() ||
-       session_options->has_data());
-
   // RTP data channel is handled in MediaSessionOptions::AddStream. SCTP streams
   // are not signaled in the SDP so does not go through that path and must be
   // handled here.
@@ -1697,6 +1693,11 @@ void PeerConnection::FinishOptionsForAnswer(
   if (session_->data_channel_type() != cricket::DCT_RTP) {
     session_options->data_channel_type = session_->data_channel_type();
   }
+  session_options->bundle_enabled =
+      session_options->bundle_enabled &&
+      (session_options->has_audio() || session_options->has_video() ||
+       session_options->has_data());
+
   session_options->crypto_options = factory_->options().crypto_options;
 }
 

@@ -1762,6 +1762,17 @@ TEST_F(P2PTestConductor, LocalP2PTestOfferDtlsButNotSdes) {
   VerifyRenderedSize(640, 480);
 }
 
+// This test verifies that the negotiation will succeed with data channel only
+// in max-bundle mode.
+TEST_F(P2PTestConductor, LocalP2PTestOfferDataChannelOnly) {
+  webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.bundle_policy =
+      webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
+  ASSERT_TRUE(CreateTestClients(rtc_config, rtc_config));
+  initializing_client()->CreateDataChannel();
+  initializing_client()->Negotiate();
+}
+
 // This test sets up a Jsep call between two parties, and the callee only
 // accept to receive video.
 TEST_F(P2PTestConductor, LocalP2PTestAnswerVideo) {
