@@ -1487,12 +1487,15 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
     const {
   AudioProcessingStatistics stats;
   EchoCancellation::Metrics metrics;
-  public_submodules_->echo_cancellation->GetMetrics(&metrics);
-  stats.a_nlp.Set(metrics.a_nlp);
-  stats.divergent_filter_fraction = metrics.divergent_filter_fraction;
-  stats.echo_return_loss.Set(metrics.echo_return_loss);
-  stats.echo_return_loss_enhancement.Set(metrics.echo_return_loss_enhancement);
-  stats.residual_echo_return_loss.Set(metrics.residual_echo_return_loss);
+  int success = public_submodules_->echo_cancellation->GetMetrics(&metrics);
+  if (success == Error::kNoError) {
+    stats.a_nlp.Set(metrics.a_nlp);
+    stats.divergent_filter_fraction = metrics.divergent_filter_fraction;
+    stats.echo_return_loss.Set(metrics.echo_return_loss);
+    stats.echo_return_loss_enhancement.Set(
+        metrics.echo_return_loss_enhancement);
+    stats.residual_echo_return_loss.Set(metrics.residual_echo_return_loss);
+  }
   public_submodules_->echo_cancellation->GetDelayMetrics(
       &stats.delay_median, &stats.delay_standard_deviation,
       &stats.fraction_poor_delays);

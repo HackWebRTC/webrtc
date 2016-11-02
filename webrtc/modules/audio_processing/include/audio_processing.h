@@ -508,6 +508,13 @@ class AudioProcessing {
   };
 
   struct AudioProcessingStatistics {
+    AudioProcessingStatistics() {
+      residual_echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
+      echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
+      echo_return_loss_enhancement.Set(-100.0f, -100.0f, -100.0f, -100.0f);
+      a_nlp.Set(-100.0f, -100.0f, -100.0f, -100.0f);
+    }
+
     // AEC Statistics.
     // RERL = ERL + ERLE
     Stat residual_echo_return_loss;
@@ -519,7 +526,7 @@ class AudioProcessing {
     Stat a_nlp;
     // Fraction of time that the AEC linear filter is divergent, in a 1-second
     // non-overlapped aggregation window.
-    float divergent_filter_fraction = 0.0f;
+    float divergent_filter_fraction = -1.0f;
 
     // The delay metrics consists of the delay median and standard deviation. It
     // also consists of the fraction of delay estimates that can make the echo
@@ -528,14 +535,14 @@ class AudioProcessing {
     // second. Note that if there are several clients pulling metrics from
     // |GetStatistics()| during a session the first call from any of them will
     // change to one second aggregation window for all.
-    int delay_median = 0;
-    int delay_standard_deviation = 0;
-    float fraction_poor_delays = 0.0f;
+    int delay_median = -1;
+    int delay_standard_deviation = -1;
+    float fraction_poor_delays = -1.0f;
 
     // Residual echo detector likelihood. This value is not yet calculated and
     // is currently always set to zero.
     // TODO(ivoc): Implement this stat.
-    float residual_echo_likelihood = 0.0f;
+    float residual_echo_likelihood = -1.0f;
   };
 
   // TODO(ivoc): Make this pure virtual when all subclasses have been updated.
