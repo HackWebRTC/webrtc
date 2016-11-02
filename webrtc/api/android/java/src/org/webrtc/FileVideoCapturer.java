@@ -87,8 +87,9 @@ public class FileVideoCapturer implements VideoCapturer {
         }
       }
       Logging.d(TAG, "Color space: " + colorSpace);
-      if (!colorSpace.equals("420")) {
-        throw new IllegalArgumentException("Does not support any other color space than I420");
+      if (!colorSpace.equals("420") && !colorSpace.equals("420mpeg2")) {
+        throw new IllegalArgumentException(
+            "Does not support any other color space than I420 or I420mpeg2");
       }
       if ((w % 2) == 1 || (h % 2) == 1) {
         throw new IllegalArgumentException("Does not support odd width or height");
