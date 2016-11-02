@@ -18,7 +18,6 @@
 
 namespace webrtc {
 
-// TODO(zijiehe): Remove, use DesktopCapturerDifferWrapper.
 // ScreenCapturer wrapper that calculates updated_region() by comparing frames
 // content. This class always expects the underlying ScreenCapturer
 // implementation returns a superset of updated regions in DestkopFrame. If a

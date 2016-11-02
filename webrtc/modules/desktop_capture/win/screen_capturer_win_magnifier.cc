@@ -36,7 +36,7 @@ static LPCTSTR kMagnifierWindowName = L"MagnifierWindow";
 Atomic32 ScreenCapturerWinMagnifier::tls_index_(TLS_OUT_OF_INDEXES);
 
 ScreenCapturerWinMagnifier::ScreenCapturerWinMagnifier(
-    std::unique_ptr<DesktopCapturer> fallback_capturer)
+    std::unique_ptr<ScreenCapturer> fallback_capturer)
     : fallback_capturer_(std::move(fallback_capturer)) {}
 
 ScreenCapturerWinMagnifier::~ScreenCapturerWinMagnifier() {
@@ -139,7 +139,7 @@ bool ScreenCapturerWinMagnifier::SelectScreen(ScreenId id) {
     current_screen_id_ = id;
 
   if (fallback_capturer_started_)
-    fallback_capturer_->SelectSource(id);
+    fallback_capturer_->SelectScreen(id);
 
   return valid;
 }
@@ -382,7 +382,7 @@ void ScreenCapturerWinMagnifier::StartFallbackCapturer() {
     fallback_capturer_started_ = true;
 
     fallback_capturer_->Start(callback_);
-    fallback_capturer_->SelectSource(current_screen_id_);
+    fallback_capturer_->SelectScreen(current_screen_id_);
   }
 }
 

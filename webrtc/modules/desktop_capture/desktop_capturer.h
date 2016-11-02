@@ -110,28 +110,6 @@ class DesktopCapturer {
   // Returns false in case of a failure or no source has been selected or the
   // implementation does not support this functionality.
   virtual bool FocusOnSelectedSource();
-
-  // Creates a DesktopCapturer instance which targets to capture windows.
-  static std::unique_ptr<DesktopCapturer> CreateWindowCapturer(
-      const DesktopCaptureOptions& options);
-
-  // Creates a DesktopCapturer instance which targets to capture screens.
-  static std::unique_ptr<DesktopCapturer> CreateScreenCapturer(
-      const DesktopCaptureOptions& options);
-
- protected:
-  // CroppingWindowCapturer needs to create raw capturers without wrappers, so
-  // the following two functions are protected.
-
-  // Creates a platform specific DesktopCapturer instance which targets to
-  // capture windows.
-  static std::unique_ptr<DesktopCapturer> CreateRawWindowCapturer(
-      const DesktopCaptureOptions& options);
-
-  // Creates a platform specific DesktopCapturer instance which targets to
-  // capture screens.
-  static std::unique_ptr<DesktopCapturer> CreateRawScreenCapturer(
-      const DesktopCaptureOptions& options);
 };
 
 }  // namespace webrtc

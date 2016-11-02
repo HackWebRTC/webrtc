@@ -1037,19 +1037,4 @@ ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
   return capturer.release();
 }
 
-// static
-std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
-    const DesktopCaptureOptions& options) {
-  if (!options.configuration_monitor())
-    return nullptr;
-
-  std::unique_ptr<ScreenCapturer> capturer(
-      new ScreenCapturerMac(options.configuration_monitor()));
-  if (!static_cast<ScreenCapturerMac*>(capturer.get())->Init()) {
-    return nullptr;
-  }
-
-  return capturer;
-}
-
 }  // namespace webrtc

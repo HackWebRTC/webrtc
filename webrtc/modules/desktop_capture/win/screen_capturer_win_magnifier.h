@@ -44,7 +44,7 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   // screen is being captured, or the OS does not support Magnification API, or
   // the magnifier capturer fails (e.g. in Windows8 Metro mode).
   explicit ScreenCapturerWinMagnifier(
-      std::unique_ptr<DesktopCapturer> fallback_capturer);
+      std::unique_ptr<ScreenCapturer> fallback_capturer);
   ~ScreenCapturerWinMagnifier() override;
 
   // Overridden from ScreenCapturer:
@@ -108,7 +108,7 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
 
   static Atomic32 tls_index_;
 
-  std::unique_ptr<DesktopCapturer> fallback_capturer_;
+  std::unique_ptr<ScreenCapturer> fallback_capturer_;
   bool fallback_capturer_started_ = false;
   Callback* callback_ = nullptr;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;

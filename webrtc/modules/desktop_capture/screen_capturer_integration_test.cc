@@ -26,7 +26,7 @@
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h"
+#include "webrtc/modules/desktop_capture/screen_capturer_mock_objects.h"
 #include "webrtc/modules/desktop_capture/screen_drawer.h"
 
 #if defined(WEBRTC_WIN)
@@ -77,16 +77,16 @@ bool ArePixelsColoredBy(const DesktopFrame& frame,
 class ScreenCapturerIntegrationTest : public testing::Test {
  public:
   void SetUp() override {
-    capturer_ = DesktopCapturer::CreateScreenCapturer(
-        DesktopCaptureOptions::CreateDefault());
+    capturer_.reset(
+        ScreenCapturer::Create(DesktopCaptureOptions::CreateDefault()));
   }
 
  protected:
   void TestCaptureUpdatedRegion(
-      std::initializer_list<DesktopCapturer*> capturers) {
+      std::initializer_list<ScreenCapturer*> capturers) {
     RTC_DCHECK(capturers.size() > 0);
-    // A large enough area for the tests, which should be able to be fulfilled
-    // by most systems.
+    // A large enough area for the tests, which should be able to fulfill by
+    // most of systems.
     const int kTestArea = 512;
     const int kRectSize = 32;
     std::unique_ptr<ScreenDrawer> drawer = ScreenDrawer::Create();
@@ -101,7 +101,7 @@ class ScreenCapturerIntegrationTest : public testing::Test {
       return;
     }
 
-    for (DesktopCapturer* capturer : capturers) {
+    for (ScreenCapturer* capturer : capturers) {
       capturer->Start(&callback_);
     }
 
@@ -138,12 +138,11 @@ class ScreenCapturerIntegrationTest : public testing::Test {
 
 #if defined(WEBRTC_WIN)
   // Enable allow_directx_capturer in DesktopCaptureOptions, but let
-  // DesktopCapturer::CreateScreenCapturer() to decide whether a DirectX
-  // capturer should be used.
+  // ScreenCapturer::Create to decide whether a DirectX capturer should be used.
   void MaybeCreateDirectxCapturer() {
     DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
     options.set_allow_directx_capturer(true);
-    capturer_ = DesktopCapturer::CreateScreenCapturer(options);
+    capturer_.reset(ScreenCapturer::Create(options));
   }
 
   bool CreateDirectxCapturer() {
@@ -159,19 +158,19 @@ class ScreenCapturerIntegrationTest : public testing::Test {
   void CreateMagnifierCapturer() {
     DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
     options.set_allow_use_magnification_api(true);
-    capturer_ = DesktopCapturer::CreateScreenCapturer(options);
+    capturer_.reset(ScreenCapturer::Create(options));
   }
 #endif  // defined(WEBRTC_WIN)
 
-  std::unique_ptr<DesktopCapturer> capturer_;
-  MockDesktopCapturerCallback callback_;
+  std::unique_ptr<ScreenCapturer> capturer_;
+  MockScreenCapturerCallback callback_;
 
  private:
   // Repeats capturing the frame by using |capturers| one-by-one for 600 times,
   // typically 30 seconds, until they succeeded captured a |color| rectangle at
   // |rect|. This function uses |drawer|->WaitForPendingDraws() between two
   // attempts to wait for the screen to update.
-  void TestCaptureOneFrame(std::vector<DesktopCapturer*> capturers,
+  void TestCaptureOneFrame(std::vector<ScreenCapturer*> capturers,
                            ScreenDrawer* drawer,
                            DesktopRect rect,
                            RgbaColor color) {
@@ -183,7 +182,7 @@ class ScreenCapturerIntegrationTest : public testing::Test {
       drawer->WaitForPendingDraws();
       for (size_t j = 0; j < capturers.size(); j++) {
         if (capturers[j] == nullptr) {
-          // DesktopCapturer should return an empty updated_region() if no
+          // ScreenCapturer should return an empty updated_region() if no
           // update detected. So we won't test it again if it has captured
           // the rectangle we drew.
           continue;
@@ -211,7 +210,7 @@ class ScreenCapturerIntegrationTest : public testing::Test {
   }
 
   // Expects |capturer| to successfully capture a frame, and returns it.
-  std::unique_ptr<DesktopFrame> CaptureFrame(DesktopCapturer* capturer) {
+  std::unique_ptr<DesktopFrame> CaptureFrame(ScreenCapturer* capturer) {
     std::unique_ptr<DesktopFrame> frame;
     EXPECT_CALL(callback_,
                 OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
@@ -227,7 +226,7 @@ TEST_F(ScreenCapturerIntegrationTest, CaptureUpdatedRegion) {
 }
 
 TEST_F(ScreenCapturerIntegrationTest, TwoCapturers) {
-  std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
+  std::unique_ptr<ScreenCapturer> capturer2 = std::move(capturer_);
   SetUp();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
@@ -247,7 +246,7 @@ TEST_F(ScreenCapturerIntegrationTest, TwoDirectxCapturers) {
     return;
   }
 
-  std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
+  std::unique_ptr<ScreenCapturer> capturer2 = std::move(capturer_);
   RTC_CHECK(CreateDirectxCapturer());
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
@@ -260,7 +259,7 @@ TEST_F(ScreenCapturerIntegrationTest,
 
 TEST_F(ScreenCapturerIntegrationTest, TwoMagnifierCapturers) {
   CreateMagnifierCapturer();
-  std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
+  std::unique_ptr<ScreenCapturer> capturer2 = std::move(capturer_);
   CreateMagnifierCapturer();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }

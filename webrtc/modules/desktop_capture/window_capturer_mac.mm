@@ -241,11 +241,4 @@ WindowCapturer* WindowCapturer::Create(const DesktopCaptureOptions& options) {
   return new WindowCapturerMac(options.full_screen_chrome_window_detector());
 }
 
-// static
-std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(
-    const DesktopCaptureOptions& options) {
-  return std::unique_ptr<DesktopCapturer>(
-      new WindowCapturerMac(options.full_screen_chrome_window_detector()));
-}
-
 }  // namespace webrtc

@@ -141,8 +141,6 @@
         }],
         ['OS!="ios" ', {
           'sources': [
-            'desktop_capturer_differ_wrapper.cc',
-            'desktop_capturer_differ_wrapper.h',
             'differ_block.cc',
             'differ_block.h',
             'screen_capturer_differ_wrapper.cc',
