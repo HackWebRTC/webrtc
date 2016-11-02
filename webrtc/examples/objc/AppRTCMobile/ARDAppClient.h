@@ -23,6 +23,8 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 };
 
 @class ARDAppClient;
+@class RTCMediaConstraints;
+
 // The delegate is informed of pertinent events and will be called on the
 // main queue.
 @protocol ARDAppClientDelegate <NSObject>
@@ -56,10 +58,12 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 @property(nonatomic, assign) BOOL shouldGetStats;
 @property(nonatomic, readonly) ARDAppClientState state;
 @property(nonatomic, weak) id<ARDAppClientDelegate> delegate;
-
 // Convenience constructor since all expected use cases will need a delegate
 // in order to receive remote tracks.
 - (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate;
+
+// Sets camera constraints.
+- (void)setCameraConstraints:(RTCMediaConstraints *)mediaConstraints;
 
 // Establishes a connection with the AppRTC servers for the given room id.
 // If |isLoopback| is true, the call will connect to itself.

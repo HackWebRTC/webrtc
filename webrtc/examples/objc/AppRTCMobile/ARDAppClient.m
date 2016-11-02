@@ -101,6 +101,7 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 @implementation ARDAppClient {
   RTCFileLogger *_fileLogger;
   ARDTimerProxy *_statsTimer;
+  RTCMediaConstraints *_cameraConstraints;
 }
 
 @synthesize shouldGetStats = _shouldGetStats;
@@ -319,6 +320,10 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 #if defined(WEBRTC_IOS)
   RTCStopInternalCapture();
 #endif
+}
+
+- (void)setCameraConstraints:(RTCMediaConstraints *)mediaConstraints {
+  _cameraConstraints = mediaConstraints;
 }
 
 #pragma mark - ARDSignalingChannelDelegate
@@ -695,10 +700,10 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
   // trying to open a local stream.
 #if !TARGET_IPHONE_SIMULATOR
   if (!_isAudioOnly) {
-    RTCMediaConstraints *mediaConstraints =
-        [self defaultMediaStreamConstraints];
+    RTCMediaConstraints *cameraConstraints =
+        [self cameraConstraints];
     RTCAVFoundationVideoSource *source =
-        [_factory avFoundationVideoSourceWithConstraints:mediaConstraints];
+        [_factory avFoundationVideoSourceWithConstraints:cameraConstraints];
     localVideoTrack =
         [_factory videoTrackWithSource:source
                                trackId:kARDVideoTrackId];
@@ -737,18 +742,14 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
    NSString *valueLevelControl = _shouldUseLevelControl ?
        kRTCMediaConstraintsValueTrue : kRTCMediaConstraintsValueFalse;
    NSDictionary *mandatoryConstraints = @{ kRTCMediaConstraintsLevelControl : valueLevelControl };
-   RTCMediaConstraints* constraints =
-       [[RTCMediaConstraints alloc]  initWithMandatoryConstraints:mandatoryConstraints
-                                              optionalConstraints:nil];
+   RTCMediaConstraints *constraints =
+       [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatoryConstraints
+                                             optionalConstraints:nil];
    return constraints;
 }
 
-- (RTCMediaConstraints *)defaultMediaStreamConstraints {
-  RTCMediaConstraints* constraints =
-      [[RTCMediaConstraints alloc]
-          initWithMandatoryConstraints:nil
-                   optionalConstraints:nil];
-  return constraints;
+- (RTCMediaConstraints *)cameraConstraints {
+  return _cameraConstraints;
 }
 
 - (RTCMediaConstraints *)defaultAnswerConstraints {

@@ -19,9 +19,11 @@
 
 #import "ARDAppClient.h"
 #import "ARDMainView.h"
+#import "ARDMediaConstraintsModel.h"
+#import "ARDSettingsViewController.h"
 #import "ARDVideoCallViewController.h"
 
-static NSString *barButtonImageString = @"ic_settings_black_24dp.png";
+static NSString *const barButtonImageString = @"ic_settings_black_24dp.png";
 
 @interface ARDMainViewController () <
     ARDMainViewDelegate,
@@ -169,6 +171,16 @@ static NSString *barButtonImageString = @"ic_settings_black_24dp.png";
 
 #pragma mark - Private
 - (void)showSettings:(id)sender {
+  ARDSettingsViewController *settingsController =
+      [[ARDSettingsViewController alloc] initWithStyle:UITableViewStylePlain
+                                 mediaConstraintsModel:[[ARDMediaConstraintsModel alloc] init]];
+  UINavigationController *navigationController =
+      [[UINavigationController alloc] initWithRootViewController:settingsController];
+  [self presentViewControllerAsModal:navigationController];
+}
+
+- (void)presentViewControllerAsModal:(UIViewController *)viewController {
+  [self presentViewController:viewController animated:YES completion:nil];
 }
 
 - (void)configureAudioSession {
