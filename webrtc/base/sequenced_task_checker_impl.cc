@@ -10,6 +10,10 @@
 
 #include "webrtc/base/sequenced_task_checker_impl.h"
 
+#if defined(WEBRTC_MAC)
+#include <dispatch/dispatch.h>
+#endif
+
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/base/task_queue.h"
@@ -22,7 +26,13 @@ SequencedTaskCheckerImpl::SequencedTaskCheckerImpl()
 SequencedTaskCheckerImpl::~SequencedTaskCheckerImpl() {}
 
 bool SequencedTaskCheckerImpl::CalledSequentially() const {
-  TaskQueue* current_queue = TaskQueue::Current();
+  QueueId current_queue = TaskQueue::Current();
+#if defined(WEBRTC_MAC)
+  // If we're not running on a TaskQueue, use the system dispatch queue
+  // label as an identifier.
+  if (current_queue == nullptr)
+    current_queue = dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL);
+#endif
   CritScope scoped_lock(&lock_);
   if (!attached_) {  // true if previously detached.
     valid_queue_ = current_queue;

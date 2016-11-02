@@ -34,10 +34,11 @@ class SequencedTaskCheckerImpl {
   void Detach();
 
  private:
+  typedef const void* QueueId;
   CriticalSection lock_;
   ThreadChecker thread_checker_;
   mutable bool attached_;
-  mutable TaskQueue* valid_queue_;
+  mutable QueueId valid_queue_;
 };
 
 }  // namespace rtc
