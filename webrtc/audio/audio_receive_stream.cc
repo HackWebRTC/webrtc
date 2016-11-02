@@ -123,6 +123,9 @@ AudioReceiveStream::AudioReceiveStream(
       bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
           kRtpExtensionTransportSequenceNumber, extension.id);
       RTC_DCHECK(registered);
+    } else if (extension.uri == RtpExtension::kAbsSendTimeUri) {
+      LOG(LS_WARNING) << RtpExtension::kAbsSendTimeUri
+                      << " is no longer supported for audio.";
     } else {
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }
