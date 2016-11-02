@@ -87,11 +87,25 @@ TEST(AnnexBBufferReaderTest, TestReadSingleNalu) {
   EXPECT_EQ(0u, nalu_length);
 }
 
+TEST(AnnexBBufferReaderTest, TestReadSingleNalu3ByteHeader) {
+  const uint8_t annex_b_test_data[] = {0x00, 0x00, 0x01, 0xAA};
+  AnnexBBufferReader reader(annex_b_test_data, arraysize(annex_b_test_data));
+  const uint8_t* nalu = nullptr;
+  size_t nalu_length = 0;
+  EXPECT_EQ(arraysize(annex_b_test_data), reader.BytesRemaining());
+  EXPECT_TRUE(reader.ReadNalu(&nalu, &nalu_length));
+  EXPECT_EQ(annex_b_test_data + 3, nalu);
+  EXPECT_EQ(1u, nalu_length);
+  EXPECT_EQ(0u, reader.BytesRemaining());
+  EXPECT_FALSE(reader.ReadNalu(&nalu, &nalu_length));
+  EXPECT_EQ(nullptr, nalu);
+  EXPECT_EQ(0u, nalu_length);
+}
+
 TEST(AnnexBBufferReaderTest, TestReadMissingNalu) {
   // clang-format off
   const uint8_t annex_b_test_data[] = {0x01,
                                        0x00, 0x01,
-                                       0x00, 0x00, 0x01,
                                        0x00, 0x00, 0x00, 0xFF};
   // clang-format on
   AnnexBBufferReader reader(annex_b_test_data, arraysize(annex_b_test_data));
@@ -108,9 +122,8 @@ TEST(AnnexBBufferReaderTest, TestReadMultipleNalus) {
   const uint8_t annex_b_test_data[] = {0x00, 0x00, 0x00, 0x01, 0xFF,
                                        0x01,
                                        0x00, 0x01,
-                                       0x00, 0x00, 0x01,
                                        0x00, 0x00, 0x00, 0xFF,
-                                       0x00, 0x00, 0x00, 0x01, 0xAA, 0xBB};
+                                       0x00, 0x00, 0x01, 0xAA, 0xBB};
   // clang-format on
   AnnexBBufferReader reader(annex_b_test_data, arraysize(annex_b_test_data));
   const uint8_t* nalu = nullptr;
@@ -118,10 +131,10 @@ TEST(AnnexBBufferReaderTest, TestReadMultipleNalus) {
   EXPECT_EQ(arraysize(annex_b_test_data), reader.BytesRemaining());
   EXPECT_TRUE(reader.ReadNalu(&nalu, &nalu_length));
   EXPECT_EQ(annex_b_test_data + 4, nalu);
-  EXPECT_EQ(11u, nalu_length);
+  EXPECT_EQ(8u, nalu_length);
   EXPECT_EQ(6u, reader.BytesRemaining());
   EXPECT_TRUE(reader.ReadNalu(&nalu, &nalu_length));
-  EXPECT_EQ(annex_b_test_data + 19, nalu);
+  EXPECT_EQ(annex_b_test_data + 16, nalu);
   EXPECT_EQ(2u, nalu_length);
   EXPECT_EQ(0u, reader.BytesRemaining());
   EXPECT_FALSE(reader.ReadNalu(&nalu, &nalu_length));

@@ -17,9 +17,13 @@
 #if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
 
 #include <CoreMedia/CoreMedia.h>
+#include <vector>
 
 #include "webrtc/base/buffer.h"
+#include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/modules/include/module_common_types.h"
+
+using webrtc::H264::NaluIndex;
 
 namespace webrtc {
 
@@ -79,8 +83,8 @@ class AnnexBBufferReader final {
                             size_t offset) const;
 
   const uint8_t* const start_;
-  size_t offset_;
-  size_t next_offset_;
+  std::vector<NaluIndex> offsets_;
+  std::vector<NaluIndex>::iterator offset_;
   const size_t length_;
 };
 

@@ -21,8 +21,9 @@ std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
   // given a 3-byte sequence we're looking at, if the 3rd byte isn't 1 or 0,
   // skip ahead to the next 3-byte sequence. 0s and 1s are relatively rare, so
   // this will skip the majority of reads/checks.
-  RTC_CHECK_GE(buffer_size, kNaluShortStartSequenceSize);
   std::vector<NaluIndex> sequences;
+  if (buffer_size < kNaluShortStartSequenceSize)
+    return sequences;
   const size_t end = buffer_size - kNaluShortStartSequenceSize;
   for (size_t i = 0; i < end;) {
     if (buffer[i + 2] > 1) {

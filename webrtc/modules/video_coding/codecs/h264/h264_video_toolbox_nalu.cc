@@ -19,13 +19,13 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/common_video/h264/h264_common.h"
 
 namespace webrtc {
 
-using H264::NaluType;
 using H264::kAud;
 using H264::kSps;
+using H264::NaluIndex;
+using H264::NaluType;
 using H264::ParseNaluType;
 
 const char kAnnexBHeaderBytes[4] = {0, 0, 0, 1};
@@ -57,8 +57,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
     LOG(LS_ERROR) << "Failed to get parameter set.";
     return false;
   }
-  // TODO(tkchin): handle other potential sizes.
-  RTC_DCHECK_EQ(nalu_header_size, 4);
+  RTC_CHECK_EQ(nalu_header_size, kAvccHeaderByteSize);
   RTC_DCHECK_EQ(param_set_count, 2u);
 
   // Truncate any previous data in the buffer without changing its capacity.
@@ -140,7 +139,7 @@ bool H264CMSampleBufferToAnnexBBuffer(
     frag_lengths.push_back(packet_size);
     nalu_offset += sizeof(kAnnexBHeaderBytes) + packet_size;
 
-    size_t bytes_written = packet_size + nalu_header_size;
+    size_t bytes_written = packet_size + sizeof(kAnnexBHeaderBytes);
     bytes_remaining -= bytes_written;
     data_ptr += bytes_written;
   }
@@ -312,11 +311,10 @@ CMVideoFormatDescriptionRef CreateVideoFormatDescription(
 
 AnnexBBufferReader::AnnexBBufferReader(const uint8_t* annexb_buffer,
                                        size_t length)
-    : start_(annexb_buffer), offset_(0), next_offset_(0), length_(length) {
+    : start_(annexb_buffer), length_(length) {
   RTC_DCHECK(annexb_buffer);
-  offset_ = FindNextNaluHeader(start_, length_, 0);
-  next_offset_ =
-      FindNextNaluHeader(start_, length_, offset_ + sizeof(kAnnexBHeaderBytes));
+  offsets_ = H264::FindNaluIndices(annexb_buffer, length);
+  offset_ = offsets_.begin();
 }
 
 bool AnnexBBufferReader::ReadNalu(const uint8_t** out_nalu,
@@ -326,46 +324,20 @@ bool AnnexBBufferReader::ReadNalu(const uint8_t** out_nalu,
   *out_nalu = nullptr;
   *out_length = 0;
 
-  size_t data_offset = offset_ + sizeof(kAnnexBHeaderBytes);
-  if (data_offset > length_) {
+  if (offset_ == offsets_.end()) {
     return false;
   }
-  *out_nalu = start_ + data_offset;
-  *out_length = next_offset_ - data_offset;
-  offset_ = next_offset_;
-  next_offset_ =
-      FindNextNaluHeader(start_, length_, offset_ + sizeof(kAnnexBHeaderBytes));
+  *out_nalu = start_ + offset_->payload_start_offset;
+  *out_length = offset_->payload_size;
+  ++offset_;
   return true;
 }
 
 size_t AnnexBBufferReader::BytesRemaining() const {
-  return length_ - offset_;
-}
-
-size_t AnnexBBufferReader::FindNextNaluHeader(const uint8_t* start,
-                                              size_t length,
-                                              size_t offset) const {
-  RTC_DCHECK(start);
-  if (offset + sizeof(kAnnexBHeaderBytes) > length) {
-    return length;
+  if (offset_ == offsets_.end()) {
+    return 0;
   }
-  // NALUs are separated by an 00 00 00 01 header. Scan the byte stream
-  // starting from the offset for the next such sequence.
-  const uint8_t* current = start + offset;
-  // The loop reads sizeof(kAnnexBHeaderBytes) at a time, so stop when there
-  // aren't enough bytes remaining.
-  const uint8_t* const end = start + length - sizeof(kAnnexBHeaderBytes);
-  while (current < end) {
-    if (current[3] > 1) {
-      current += 4;
-    } else if (current[3] == 1 && current[2] == 0 && current[1] == 0 &&
-               current[0] == 0) {
-      return current - start;
-    } else {
-      ++current;
-    }
-  }
-  return length;
+  return length_ - offset_->start_offset;
 }
 
 AvccBufferWriter::AvccBufferWriter(uint8_t* const avcc_buffer, size_t length)
