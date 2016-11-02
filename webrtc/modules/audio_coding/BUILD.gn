@@ -68,6 +68,10 @@ rtc_source_set("audio_decoder_factory_interface") {
   deps = [
     ":audio_decoder_interface",
     ":audio_format",
+
+    # TODO(charujain): Clean this dependency when downstream projects are
+    # updated to properly depend on audio_format_conversion target.
+    ":audio_format_conversion",
     "../../base:rtc_base_approved",
   ]
 }
