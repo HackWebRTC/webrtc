@@ -203,9 +203,20 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
   // else WELS_LOG_DEFAULT is used by default.
 
   number_of_cores_ = number_of_cores;
-  codec_settings_ = *codec_settings;
-  if (codec_settings_.targetBitrate == 0)
-    codec_settings_.targetBitrate = codec_settings_.startBitrate;
+  // Set internal settings from codec_settings
+  width_ = codec_settings->width;
+  height_ = codec_settings->height;
+  max_frame_rate_ = static_cast<float>(codec_settings->maxFramerate);
+  mode_ = codec_settings->mode;
+  frame_dropping_on_ = codec_settings->H264().frameDroppingOn;
+  key_frame_interval_ = codec_settings->H264().keyFrameInterval;
+
+  // Codec_settings uses kbits/second; encoder uses bits/second.
+  max_bps_ = codec_settings->maxBitrate * 1000;
+  if (codec_settings->targetBitrate == 0)
+    target_bps_ = codec_settings->startBitrate * 1000;
+  else
+    target_bps_ = codec_settings->targetBitrate * 1000;
 
   SEncParamExt encoder_params = CreateEncoderParams();
   // Initialize.
@@ -216,16 +227,16 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   // TODO(pbos): Base init params on these values before submitting.
-  quality_scaler_.Init(codec_settings_.codecType, codec_settings_.startBitrate,
-                       codec_settings_.width, codec_settings_.height,
-                       codec_settings_.maxFramerate);
+  quality_scaler_.Init(codec_settings->codecType, codec_settings->startBitrate,
+                       codec_settings->width, codec_settings->height,
+                       codec_settings->maxFramerate);
   int video_format = EVideoFormatType::videoFormatI420;
   openh264_encoder_->SetOption(ENCODER_OPTION_DATAFORMAT,
                                &video_format);
 
   // Initialize encoded image. Default buffer size: size of unencoded data.
-  encoded_image_._size = CalcBufferSize(
-      kI420, codec_settings_.width, codec_settings_.height);
+  encoded_image_._size =
+      CalcBufferSize(kI420, codec_settings->width, codec_settings->height);
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_buffer_.reset(encoded_image_._buffer);
   encoded_image_._completeFrame = true;
@@ -256,19 +267,17 @@ int32_t H264EncoderImpl::SetRates(uint32_t bitrate, uint32_t framerate) {
   if (bitrate <= 0 || framerate <= 0) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  codec_settings_.targetBitrate = bitrate;
-  codec_settings_.maxFramerate = framerate;
+  target_bps_ = bitrate * 1000;
+  max_frame_rate_ = static_cast<float>(framerate);
   quality_scaler_.ReportFramerate(framerate);
 
   SBitrateInfo target_bitrate;
   memset(&target_bitrate, 0, sizeof(SBitrateInfo));
   target_bitrate.iLayer = SPATIAL_LAYER_ALL,
-  target_bitrate.iBitrate = codec_settings_.targetBitrate * 1000;
+  target_bitrate.iBitrate = target_bps_;
   openh264_encoder_->SetOption(ENCODER_OPTION_BITRATE,
                                &target_bitrate);
-  float max_framerate = static_cast<float>(codec_settings_.maxFramerate);
-  openh264_encoder_->SetOption(ENCODER_OPTION_FRAME_RATE,
-                               &max_framerate);
+  openh264_encoder_->SetOption(ENCODER_OPTION_FRAME_RATE, &max_frame_rate_);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -293,13 +302,12 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   quality_scaler_.OnEncodeFrame(input_frame.width(), input_frame.height());
   rtc::scoped_refptr<const VideoFrameBuffer> frame_buffer =
       quality_scaler_.GetScaledBuffer(input_frame.video_frame_buffer());
-  if (frame_buffer->width() != codec_settings_.width ||
-      frame_buffer->height() != codec_settings_.height) {
-    LOG(LS_INFO) << "Encoder reinitialized from " << codec_settings_.width
-                 << "x" << codec_settings_.height << " to "
-                 << frame_buffer->width() << "x" << frame_buffer->height();
-    codec_settings_.width = frame_buffer->width();
-    codec_settings_.height = frame_buffer->height();
+  if (frame_buffer->width() != width_ || frame_buffer->height() != height_) {
+    LOG(LS_INFO) << "Encoder reinitialized from " << width_ << "x" << height_
+                 << " to " << frame_buffer->width() << "x"
+                 << frame_buffer->height();
+    width_ = frame_buffer->width();
+    height_ = frame_buffer->height();
     SEncParamExt encoder_params = CreateEncoderParams();
     openh264_encoder_->SetOption(ENCODER_OPTION_SVC_ENCODE_PARAM_EXT,
                                  &encoder_params);
@@ -401,31 +409,27 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
   RTC_DCHECK(openh264_encoder_);
   SEncParamExt encoder_params;
   openh264_encoder_->GetDefaultParams(&encoder_params);
-  if (codec_settings_.mode == kRealtimeVideo) {
+  if (mode_ == kRealtimeVideo) {
     encoder_params.iUsageType = CAMERA_VIDEO_REAL_TIME;
-  } else if (codec_settings_.mode == kScreensharing) {
+  } else if (mode_ == kScreensharing) {
     encoder_params.iUsageType = SCREEN_CONTENT_REAL_TIME;
   } else {
     RTC_NOTREACHED();
   }
-  encoder_params.iPicWidth = codec_settings_.width;
-  encoder_params.iPicHeight = codec_settings_.height;
-  // |encoder_params| uses bit/s, |codec_settings_| uses kbit/s.
-  encoder_params.iTargetBitrate = codec_settings_.targetBitrate * 1000;
-  encoder_params.iMaxBitrate = codec_settings_.maxBitrate * 1000;
+  encoder_params.iPicWidth = width_;
+  encoder_params.iPicHeight = height_;
+  encoder_params.iTargetBitrate = target_bps_;
+  encoder_params.iMaxBitrate = max_bps_;
   // Rate Control mode
   encoder_params.iRCMode = RC_BITRATE_MODE;
-  encoder_params.fMaxFrameRate =
-      static_cast<float>(codec_settings_.maxFramerate);
+  encoder_params.fMaxFrameRate = max_frame_rate_;
 
   // The following parameters are extension parameters (they're in SEncParamExt,
   // not in SEncParamBase).
-  encoder_params.bEnableFrameSkip =
-      codec_settings_.codecSpecific.H264.frameDroppingOn;
+  encoder_params.bEnableFrameSkip = frame_dropping_on_;
   // |uiIntraPeriod|    - multiple of GOP size
   // |keyFrameInterval| - number of frames
-  encoder_params.uiIntraPeriod =
-      codec_settings_.codecSpecific.H264.keyFrameInterval;
+  encoder_params.uiIntraPeriod = key_frame_interval_;
   encoder_params.uiMaxNalSize = 0;
   // Threading model: use auto.
   //  0: auto (dynamic imp. internal encoder)
