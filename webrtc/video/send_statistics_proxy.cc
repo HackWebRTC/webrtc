@@ -250,6 +250,13 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
                         << spatial_idx;
       }
     }
+    int qp_h264 = it.second.h264.Avg(kMinRequiredMetricsSamples);
+    if (qp_h264 != -1) {
+      int spatial_idx = it.first;
+      RTC_DCHECK_EQ(-1, spatial_idx);
+      RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "Encoded.Qp.H264",
+                                qp_h264);
+    }
   }
 
   if (first_rtcp_stats_time_ms_ != -1) {
@@ -520,6 +527,9 @@ void SendStatisticsProxy::OnSendEncodedImage(
                 ? -1
                 : codec_info->codecSpecific.VP9.spatial_idx;
         uma_container_->qp_counters_[spatial_idx].vp9.Add(encoded_image.qp_);
+      } else if (codec_info->codecType == kVideoCodecH264) {
+        int spatial_idx = -1;
+        uma_container_->qp_counters_[spatial_idx].h264.Add(encoded_image.qp_);
       }
     }
   }

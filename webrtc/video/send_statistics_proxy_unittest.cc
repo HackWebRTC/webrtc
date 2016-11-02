@@ -467,6 +467,20 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_Vp9OneSpatialLayer) {
   EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.Vp9", kQpIdx0));
 }
 
+TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_H264) {
+  EncodedImage encoded_image;
+  CodecSpecificInfo codec_info;
+  codec_info.codecType = kVideoCodecH264;
+
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
+    encoded_image.qp_ = kQpIdx0;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.H264"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.H264", kQpIdx0));
+}
+
 TEST_F(SendStatisticsProxyTest,
        BandwidthLimitedHistogramsNotUpdatedWhenDisabled) {
   EncodedImage encoded_image;

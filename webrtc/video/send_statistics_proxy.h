@@ -138,8 +138,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     int64_t bitrate_update_ms;
   };
   struct QpCounters {
-    SampleCounter vp8;  // QP range: 0-127
-    SampleCounter vp9;  // QP range: 0-255
+    SampleCounter vp8;   // QP range: 0-127
+    SampleCounter vp9;   // QP range: 0-255
+    SampleCounter h264;  // QP range: 0-51
   };
   void PurgeOldStats() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
