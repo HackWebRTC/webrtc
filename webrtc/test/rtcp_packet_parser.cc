@@ -36,10 +36,10 @@ bool RtcpPacketParser::Parse(const void* data, size_t length) {
         app_.Parse(header);
         break;
       case rtcp::Bye::kPacketType:
-        bye_.Parse(header);
+        bye_.Parse(header, &sender_ssrc_);
         break;
       case rtcp::ExtendedReports::kPacketType:
-        xr_.Parse(header);
+        xr_.Parse(header, &sender_ssrc_);
         break;
       case rtcp::ExtendedJitterReport::kPacketType:
         ij_.Parse(header);
@@ -47,19 +47,19 @@ bool RtcpPacketParser::Parse(const void* data, size_t length) {
       case rtcp::Psfb::kPacketType:
         switch (header.fmt()) {
           case rtcp::Fir::kFeedbackMessageType:
-            fir_.Parse(header);
+            fir_.Parse(header, &sender_ssrc_);
             break;
           case rtcp::Pli::kFeedbackMessageType:
-            pli_.Parse(header);
+            pli_.Parse(header, &sender_ssrc_);
             break;
           case rtcp::Remb::kFeedbackMessageType:
-            remb_.Parse(header);
+            remb_.Parse(header, &sender_ssrc_);
             break;
           case rtcp::Rpsi::kFeedbackMessageType:
-            rpsi_.Parse(header);
+            rpsi_.Parse(header, &sender_ssrc_);
             break;
           case rtcp::Sli::kFeedbackMessageType:
-            sli_.Parse(header);
+            sli_.Parse(header, &sender_ssrc_);
             break;
           default:
             LOG(LS_WARNING) << "Unknown rtcp payload specific feedback type "
@@ -68,24 +68,24 @@ bool RtcpPacketParser::Parse(const void* data, size_t length) {
         }
         break;
       case rtcp::ReceiverReport::kPacketType:
-        receiver_report_.Parse(header);
+        receiver_report_.Parse(header, &sender_ssrc_);
         break;
       case rtcp::Rtpfb::kPacketType:
         switch (header.fmt()) {
           case rtcp::Nack::kFeedbackMessageType:
-            nack_.Parse(header);
+            nack_.Parse(header, &sender_ssrc_);
             break;
           case rtcp::RapidResyncRequest::kFeedbackMessageType:
-            rrr_.Parse(header);
+            rrr_.Parse(header, &sender_ssrc_);
             break;
           case rtcp::Tmmbn::kFeedbackMessageType:
-            tmmbn_.Parse(header);
+            tmmbn_.Parse(header, &sender_ssrc_);
             break;
           case rtcp::Tmmbr::kFeedbackMessageType:
-            tmmbr_.Parse(header);
+            tmmbr_.Parse(header, &sender_ssrc_);
             break;
           case rtcp::TransportFeedback::kFeedbackMessageType:
-            transport_feedback_.Parse(header);
+            transport_feedback_.Parse(header, &sender_ssrc_);
             break;
           default:
             LOG(LS_WARNING) << "Unknown rtcp transport feedback type "
@@ -97,7 +97,7 @@ bool RtcpPacketParser::Parse(const void* data, size_t length) {
         sdes_.Parse(header);
         break;
       case rtcp::SenderReport::kPacketType:
-        sender_report_.Parse(header);
+        sender_report_.Parse(header, &sender_ssrc_);
         break;
       default:
         LOG(LS_WARNING) << "Unknown rtcp packet type " << header.type();

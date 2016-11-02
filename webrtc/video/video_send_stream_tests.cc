@@ -24,7 +24,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/include/sleep.h"
@@ -35,6 +34,7 @@
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/null_transport.h"
+#include "webrtc/test/rtcp_packet_parser.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
 #include "webrtc/video/send_statistics_proxy.h"
@@ -91,17 +91,13 @@ TEST_F(VideoSendStreamTest, SupportsCName) {
 
    private:
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
-      RTCPUtility::RTCPParserV2 parser(packet, length, true);
-      EXPECT_TRUE(parser.IsValid());
+      test::RtcpPacketParser parser;
+      EXPECT_TRUE(parser.Parse(packet, length));
+      if (parser.sdes()->num_packets() > 0) {
+        EXPECT_EQ(1u, parser.sdes()->chunks().size());
+        EXPECT_EQ(kCName, parser.sdes()->chunks()[0].cname);
 
-      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kSdesChunk) {
-          EXPECT_EQ(parser.Packet().CName.CName, kCName);
-          observation_complete_.Set();
-        }
-
-        packet_type = parser.Iterate();
+        observation_complete_.Set();
       }
 
       return SEND_PACKET;
@@ -2125,22 +2121,20 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
 
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
-      RTCPUtility::RTCPParserV2 parser(packet, length, true);
-      EXPECT_TRUE(parser.IsValid());
+      test::RtcpPacketParser parser;
+      EXPECT_TRUE(parser.Parse(packet, length));
 
-      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kSr) {
-          // Only compare sent media bytes if SenderPacketCount matches the
-          // number of sent rtp packets (a new rtp packet could be sent before
-          // the rtcp packet).
-          if (parser.Packet().SR.SenderOctetCount > 0 &&
-              parser.Packet().SR.SenderPacketCount == rtp_packets_sent_) {
-            EXPECT_EQ(media_bytes_sent_, parser.Packet().SR.SenderOctetCount);
-            observation_complete_.Set();
-          }
+      if (parser.sender_report()->num_packets() > 0) {
+        // Only compare sent media bytes if SenderPacketCount matches the
+        // number of sent rtp packets (a new rtp packet could be sent before
+        // the rtcp packet).
+        if (parser.sender_report()->sender_octet_count() > 0 &&
+            parser.sender_report()->sender_packet_count() ==
+                rtp_packets_sent_) {
+          EXPECT_EQ(media_bytes_sent_,
+                    parser.sender_report()->sender_octet_count());
+          observation_complete_.Set();
         }
-        packet_type = parser.Iterate();
       }
 
       return SEND_PACKET;

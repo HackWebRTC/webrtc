@@ -30,7 +30,6 @@
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rapid_resync_request.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
@@ -400,14 +399,9 @@ TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
     SyncRtcpObserver() : EndToEndTest(kDefaultTimeoutMs) {}
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
-      RTCPUtility::RTCPParserV2 parser(packet, length, true);
-      EXPECT_TRUE(parser.IsValid());
-      uint32_t ssrc = 0;
-      ssrc |= static_cast<uint32_t>(packet[4]) << 24;
-      ssrc |= static_cast<uint32_t>(packet[5]) << 16;
-      ssrc |= static_cast<uint32_t>(packet[6]) << 8;
-      ssrc |= static_cast<uint32_t>(packet[7]) << 0;
-      EXPECT_EQ(kReceiverLocalVideoSsrc, ssrc);
+      test::RtcpPacketParser parser;
+      EXPECT_TRUE(parser.Parse(packet, length));
+      EXPECT_EQ(kReceiverLocalVideoSsrc, parser.sender_ssrc());
       observation_complete_.Set();
 
       return SEND_PACKET;
@@ -473,17 +467,9 @@ TEST_F(EndToEndTest, ReceivesAndRetransmitsNack) {
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
-      RTCPUtility::RTCPParserV2 parser(packet, length, true);
-      EXPECT_TRUE(parser.IsValid());
-
-      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kRtpfbNack) {
-          --nacks_left_;
-          break;
-        }
-        packet_type = parser.Iterate();
-      }
+      test::RtcpPacketParser parser;
+      EXPECT_TRUE(parser.Parse(packet, length));
+      nacks_left_ -= parser.nack()->num_packets();
       return SEND_PACKET;
     }
 
@@ -1031,20 +1017,12 @@ void EndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
-      RTCPUtility::RTCPParserV2 parser(packet, length, true);
-      EXPECT_TRUE(parser.IsValid());
-
-      for (RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-           packet_type != RTCPUtility::RTCPPacketTypes::kInvalid;
-           packet_type = parser.Iterate()) {
-        if (!nack_enabled_)
-          EXPECT_NE(packet_type, RTCPUtility::RTCPPacketTypes::kRtpfbNack);
-
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kPsfbPli) {
-          received_pli_ = true;
-          break;
-        }
-      }
+      test::RtcpPacketParser parser;
+      EXPECT_TRUE(parser.Parse(packet, length));
+      if (!nack_enabled_)
+        EXPECT_EQ(0, parser.nack()->num_packets());
+      if (parser.pli()->num_packets() > 0)
+        received_pli_ = true;
       return SEND_PACKET;
     }
 
@@ -1171,23 +1149,14 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
       ++sent_rtcp_;
-      RTCPUtility::RTCPParserV2 parser(packet, length, true);
-      EXPECT_TRUE(parser.IsValid());
+      test::RtcpPacketParser parser;
+      EXPECT_TRUE(parser.Parse(packet, length));
 
-      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      bool has_report_block = false;
-      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-        EXPECT_NE(RTCPUtility::RTCPPacketTypes::kSr, packet_type);
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kRr) {
-          has_report_block = true;
-          break;
-        }
-        packet_type = parser.Iterate();
-      }
+      EXPECT_EQ(0, parser.sender_report()->num_packets());
 
       switch (rtcp_mode_) {
         case RtcpMode::kCompound:
-          if (!has_report_block) {
+          if (parser.receiver_report()->num_packets() == 0) {
             ADD_FAILURE() << "Received RTCP packet without receiver report for "
                              "RtcpMode::kCompound.";
             observation_complete_.Set();
@@ -1198,7 +1167,7 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
 
           break;
         case RtcpMode::kReducedSize:
-          if (!has_report_block)
+          if (parser.receiver_report()->num_packets() == 0)
             observation_complete_.Set();
           break;
         case RtcpMode::kOff:
@@ -1643,17 +1612,9 @@ class TransportFeedbackTester : public test::EndToEndTest {
   }
 
   bool HasTransportFeedback(const uint8_t* data, size_t length) const {
-    RTCPUtility::RTCPParserV2 parser(data, length, true);
-    EXPECT_TRUE(parser.IsValid());
-
-    RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-    while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-      if (packet_type == RTCPUtility::RTCPPacketTypes::kTransportFeedback)
-        return true;
-      packet_type = parser.Iterate();
-    }
-
-    return false;
+    test::RtcpPacketParser parser;
+    EXPECT_TRUE(parser.Parse(data, length));
+    return parser.transport_feedback()->num_packets() > 0;
   }
 
   void PerformTest() override {
@@ -1807,28 +1768,17 @@ TEST_F(EndToEndTest, ReceiveStreamSendsRemb) {
     RembObserver() : EndToEndTest(kDefaultTimeoutMs) {}
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
-      RTCPUtility::RTCPParserV2 parser(packet, length, true);
-      EXPECT_TRUE(parser.IsValid());
+      test::RtcpPacketParser parser;
+      EXPECT_TRUE(parser.Parse(packet, length));
 
-      bool received_psfb = false;
-      bool received_remb = false;
-      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kPsfbRemb) {
-          const RTCPUtility::RTCPPacket& packet = parser.Packet();
-          EXPECT_EQ(packet.PSFBAPP.SenderSSRC, kReceiverLocalVideoSsrc);
-          received_psfb = true;
-        } else if (packet_type == RTCPUtility::RTCPPacketTypes::kPsfbRembItem) {
-          const RTCPUtility::RTCPPacket& packet = parser.Packet();
-          EXPECT_GT(packet.REMBItem.BitRate, 0u);
-          EXPECT_EQ(packet.REMBItem.NumberOfSSRCs, 1u);
-          EXPECT_EQ(packet.REMBItem.SSRCs[0], kVideoSendSsrcs[0]);
-          received_remb = true;
-        }
-        packet_type = parser.Iterate();
-      }
-      if (received_psfb && received_remb)
+      if (parser.remb()->num_packets() > 0) {
+        EXPECT_EQ(kReceiverLocalVideoSsrc, parser.remb()->sender_ssrc());
+        EXPECT_LT(0U, parser.remb()->bitrate_bps());
+        EXPECT_EQ(1U, parser.remb()->ssrcs().size());
+        EXPECT_EQ(kVideoSendSsrcs[0], parser.remb()->ssrcs()[0]);
         observation_complete_.Set();
+      }
+
       return SEND_PACKET;
     }
     void PerformTest() override {
@@ -2391,47 +2341,39 @@ void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
     // Receive stream should send RR packets (and RRTR packets if enabled).
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
-      RTCPUtility::RTCPParserV2 parser(packet, length, true);
-      EXPECT_TRUE(parser.IsValid());
+      test::RtcpPacketParser parser;
+      EXPECT_TRUE(parser.Parse(packet, length));
 
-      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kRr) {
-          ++sent_rtcp_rr_;
-        } else if (packet_type ==
-                   RTCPUtility::RTCPPacketTypes::kXrReceiverReferenceTime) {
+      sent_rtcp_rr_ += parser.receiver_report()->num_packets();
+      EXPECT_EQ(0, parser.sender_report()->num_packets());
+      EXPECT_GE(1, parser.xr()->num_packets());
+      if (parser.xr()->num_packets() > 0) {
+        if (parser.xr()->rrtr())
           ++sent_rtcp_rrtr_;
-        }
-        EXPECT_NE(packet_type, RTCPUtility::RTCPPacketTypes::kSr);
-        EXPECT_NE(packet_type,
-                  RTCPUtility::RTCPPacketTypes::kXrDlrrReportBlockItem);
-        packet_type = parser.Iterate();
+        EXPECT_FALSE(parser.xr()->dlrr());
       }
+
       return SEND_PACKET;
     }
     // Send stream should send SR packets (and DLRR packets if enabled).
     Action OnSendRtcp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
-      RTCPUtility::RTCPParserV2 parser(packet, length, true);
-      EXPECT_TRUE(parser.IsValid());
+      test::RtcpPacketParser parser;
+      EXPECT_TRUE(parser.Parse(packet, length));
 
-      RTCPUtility::RTCPPacketTypes packet_type = parser.Begin();
-      while (packet_type != RTCPUtility::RTCPPacketTypes::kInvalid) {
-        if (packet_type == RTCPUtility::RTCPPacketTypes::kSr) {
-          ++sent_rtcp_sr_;
-        } else if (packet_type ==
-                   RTCPUtility::RTCPPacketTypes::kXrDlrrReportBlockItem) {
+      sent_rtcp_sr_ += parser.sender_report()->num_packets();
+      EXPECT_GE(1, parser.xr()->num_packets());
+      if (parser.xr()->num_packets() > 0) {
+        EXPECT_FALSE(parser.xr()->rrtr());
+        if (parser.xr()->dlrr())
           ++sent_rtcp_dlrr_;
-        }
-        EXPECT_NE(packet_type,
-                  RTCPUtility::RTCPPacketTypes::kXrReceiverReferenceTime);
-        packet_type = parser.Iterate();
       }
+
       if (sent_rtcp_sr_ > kNumRtcpReportPacketsToObserve &&
           sent_rtcp_rr_ > kNumRtcpReportPacketsToObserve) {
         if (enable_rrtr_) {
-          EXPECT_GT(sent_rtcp_rrtr_, 0);
-          EXPECT_GT(sent_rtcp_dlrr_, 0);
+          EXPECT_LT(0, sent_rtcp_rrtr_);
+          EXPECT_LT(0, sent_rtcp_dlrr_);
         } else {
           EXPECT_EQ(0, sent_rtcp_rrtr_);
           EXPECT_EQ(0, sent_rtcp_dlrr_);

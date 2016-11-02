@@ -61,6 +61,13 @@ class RtcpPacketParser {
       if (TypedRtcpPacket::Parse(header))
         ++num_packets_;
     }
+    void Parse(const rtcp::CommonHeader& header, uint32_t* sender_ssrc) {
+      if (TypedRtcpPacket::Parse(header)) {
+        ++num_packets_;
+        if (*sender_ssrc == 0)  // Use first sender ssrc in compound packet.
+          *sender_ssrc = TypedRtcpPacket::sender_ssrc();
+      }
+    }
 
    private:
     int num_packets_ = 0;
@@ -92,6 +99,7 @@ class RtcpPacketParser {
   PacketCounter<rtcp::TransportFeedback>* transport_feedback() {
     return &transport_feedback_;
   }
+  uint32_t sender_ssrc() const { return sender_ssrc_; }
 
  private:
   PacketCounter<rtcp::App> app_;
@@ -111,6 +119,7 @@ class RtcpPacketParser {
   PacketCounter<rtcp::Tmmbn> tmmbn_;
   PacketCounter<rtcp::Tmmbr> tmmbr_;
   PacketCounter<rtcp::TransportFeedback> transport_feedback_;
+  uint32_t sender_ssrc_ = 0;
 };
 
 }  // namespace test
