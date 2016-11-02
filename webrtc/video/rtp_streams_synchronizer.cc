@@ -40,8 +40,8 @@ int UpdateMeasurements(StreamSynchronization::Measurements* stream,
   }
 
   bool new_rtcp_sr = false;
-  if (!UpdateRtcpList(
-      ntp_secs, ntp_frac, rtp_timestamp, &stream->rtcp, &new_rtcp_sr)) {
+  if (!UpdateRtcpList(ntp_secs, ntp_frac, rtp_timestamp, &stream->rtcp,
+                      &new_rtcp_sr)) {
     return -1;
   }
 
@@ -168,7 +168,9 @@ void RtpStreamsSynchronizer::Process() {
 }
 
 bool RtpStreamsSynchronizer::GetStreamSyncOffsetInMs(
-    const VideoFrame& frame, int64_t* stream_offset_ms) const {
+    const VideoFrame& frame,
+    int64_t* stream_offset_ms,
+    double* estimated_freq_khz) const {
   rtc::CritScope lock(&crit_);
   if (voe_channel_id_ == -1)
     return false;
@@ -197,6 +199,7 @@ bool RtpStreamsSynchronizer::GetStreamSyncOffsetInMs(
     latest_video_ntp += time_to_render_ms;
 
   *stream_offset_ms = latest_audio_ntp - latest_video_ntp;
+  *estimated_freq_khz = video_measurement_.rtcp.params.frequency_khz;
   return true;
 }
 

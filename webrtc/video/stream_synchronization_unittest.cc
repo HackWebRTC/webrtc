@@ -98,24 +98,30 @@ class StreamSynchronizationTest : public ::testing::Test {
     int audio_offset = 0;
     int video_frequency = static_cast<int>(kDefaultVideoFrequency *
                                            video_clock_drift_ + 0.5);
+    bool new_sr;
     int video_offset = 0;
     StreamSynchronization::Measurements audio;
     StreamSynchronization::Measurements video;
     // Generate NTP/RTP timestamp pair for both streams corresponding to RTCP.
-    audio.rtcp.push_front(send_time_->GenerateRtcp(audio_frequency,
-                                                   audio_offset));
+    RtcpMeasurement rtcp =
+        send_time_->GenerateRtcp(audio_frequency, audio_offset);
+    EXPECT_TRUE(UpdateRtcpList(rtcp.ntp_secs, rtcp.ntp_frac, rtcp.rtp_timestamp,
+                               &audio.rtcp, &new_sr));
     send_time_->IncreaseTimeMs(100);
     receive_time_->IncreaseTimeMs(100);
-    video.rtcp.push_front(send_time_->GenerateRtcp(video_frequency,
-                                                   video_offset));
+    rtcp = send_time_->GenerateRtcp(video_frequency, video_offset);
+    EXPECT_TRUE(UpdateRtcpList(rtcp.ntp_secs, rtcp.ntp_frac, rtcp.rtp_timestamp,
+                               &video.rtcp, &new_sr));
     send_time_->IncreaseTimeMs(900);
     receive_time_->IncreaseTimeMs(900);
-    audio.rtcp.push_front(send_time_->GenerateRtcp(audio_frequency,
-                                                   audio_offset));
+    rtcp = send_time_->GenerateRtcp(audio_frequency, audio_offset);
+    EXPECT_TRUE(UpdateRtcpList(rtcp.ntp_secs, rtcp.ntp_frac, rtcp.rtp_timestamp,
+                               &audio.rtcp, &new_sr));
     send_time_->IncreaseTimeMs(100);
     receive_time_->IncreaseTimeMs(100);
-    video.rtcp.push_front(send_time_->GenerateRtcp(video_frequency,
-                                                   video_offset));
+    rtcp = send_time_->GenerateRtcp(video_frequency, video_offset);
+    EXPECT_TRUE(UpdateRtcpList(rtcp.ntp_secs, rtcp.ntp_frac, rtcp.rtp_timestamp,
+                               &video.rtcp, &new_sr));
     send_time_->IncreaseTimeMs(900);
     receive_time_->IncreaseTimeMs(900);
 

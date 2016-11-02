@@ -10,27 +10,17 @@
 
 #include "webrtc/system_wrappers/include/rtp_to_ntp.h"
 
+#include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
-#include <assert.h>
-
 namespace webrtc {
-
-RtcpMeasurement::RtcpMeasurement()
-    : ntp_secs(0), ntp_frac(0), rtp_timestamp(0) {}
-
-RtcpMeasurement::RtcpMeasurement(uint32_t ntp_secs, uint32_t ntp_frac,
-                                 uint32_t timestamp)
-    : ntp_secs(ntp_secs), ntp_frac(ntp_frac), rtp_timestamp(timestamp) {}
-
-// Calculates the RTP timestamp frequency from two pairs of NTP and RTP
-// timestamps.
-bool CalculateFrequency(
-    int64_t rtcp_ntp_ms1,
-    uint32_t rtp_timestamp1,
-    int64_t rtcp_ntp_ms2,
-    uint32_t rtp_timestamp2,
-    double* frequency_khz) {
+namespace {
+// Calculates the RTP timestamp frequency from two pairs of NTP/RTP timestamps.
+bool CalculateFrequency(int64_t rtcp_ntp_ms1,
+                        uint32_t rtp_timestamp1,
+                        int64_t rtcp_ntp_ms2,
+                        uint32_t rtp_timestamp2,
+                        double* frequency_khz) {
   if (rtcp_ntp_ms1 <= rtcp_ntp_ms2) {
     return false;
   }
@@ -44,7 +34,6 @@ bool CalculateFrequency(
 bool CompensateForWrapAround(uint32_t new_timestamp,
                              uint32_t old_timestamp,
                              int64_t* compensated_timestamp) {
-  assert(compensated_timestamp);
   int64_t wraps = CheckForWrapArounds(new_timestamp, old_timestamp);
   if (wraps < 0) {
     // Reordering, don't use this packet.
@@ -53,39 +42,111 @@ bool CompensateForWrapAround(uint32_t new_timestamp,
   *compensated_timestamp = new_timestamp + (wraps << 32);
   return true;
 }
+}  // namespace
 
+// Class holding RTP and NTP timestamp from a RTCP SR report.
+RtcpMeasurement::RtcpMeasurement()
+    : ntp_secs(0), ntp_frac(0), rtp_timestamp(0) {}
+
+RtcpMeasurement::RtcpMeasurement(uint32_t ntp_secs,
+                                 uint32_t ntp_frac,
+                                 uint32_t timestamp)
+    : ntp_secs(ntp_secs), ntp_frac(ntp_frac), rtp_timestamp(timestamp) {}
+
+bool RtcpMeasurement::IsEqual(const RtcpMeasurement& other) const {
+  // Use || since two equal timestamps will result in zero frequency and in
+  // RtpToNtpMs, |rtp_timestamp_ms| is estimated by dividing by the frequency.
+  return (ntp_secs == other.ntp_secs && ntp_frac == other.ntp_frac) ||
+         (rtp_timestamp == other.rtp_timestamp);
+}
+
+// Class holding list of RTP and NTP timestamp pairs.
+RtcpMeasurements::RtcpMeasurements() {}
+RtcpMeasurements::~RtcpMeasurements() {}
+
+bool RtcpMeasurements::Contains(const RtcpMeasurement& other) const {
+  for (const auto& it : list) {
+    if (it.IsEqual(other))
+      return true;
+  }
+  return false;
+}
+
+bool RtcpMeasurements::IsValid(const RtcpMeasurement& other) const {
+  if (other.ntp_secs == 0 && other.ntp_frac == 0) {
+    // Invalid or not defined.
+    return false;
+  }
+  int64_t ntp_ms_new = Clock::NtpToMs(other.ntp_secs, other.ntp_frac);
+  for (const auto& it : list) {
+    if (ntp_ms_new <= Clock::NtpToMs(it.ntp_secs, it.ntp_frac)) {
+      // Old report.
+      return false;
+    }
+    int64_t timestamp_new = other.rtp_timestamp;
+    if (!CompensateForWrapAround(timestamp_new, it.rtp_timestamp,
+                                 &timestamp_new)) {
+      return false;
+    }
+    if (timestamp_new <= it.rtp_timestamp) {
+      LOG(LS_WARNING) << "Newer RTCP SR report with older RTP timestamp.";
+      return false;
+    }
+  }
+  return true;
+}
+
+void RtcpMeasurements::UpdateParameters() {
+  if (list.size() != 2)
+    return;
+
+  int64_t timestamp_new = list.front().rtp_timestamp;
+  int64_t timestamp_old = list.back().rtp_timestamp;
+  if (!CompensateForWrapAround(timestamp_new, timestamp_old, &timestamp_new))
+    return;
+
+  int64_t ntp_ms_new =
+      Clock::NtpToMs(list.front().ntp_secs, list.front().ntp_frac);
+  int64_t ntp_ms_old =
+      Clock::NtpToMs(list.back().ntp_secs, list.back().ntp_frac);
+
+  if (!CalculateFrequency(ntp_ms_new, timestamp_new, ntp_ms_old, timestamp_old,
+                          &params.frequency_khz)) {
+    return;
+  }
+  params.offset_ms = timestamp_new - params.frequency_khz * ntp_ms_new;
+  params.calculated = true;
+}
+
+// Updates list holding NTP and RTP timestamp pairs.
 bool UpdateRtcpList(uint32_t ntp_secs,
                     uint32_t ntp_frac,
                     uint32_t rtp_timestamp,
-                    RtcpList* rtcp_list,
+                    RtcpMeasurements* rtcp_measurements,
                     bool* new_rtcp_sr) {
   *new_rtcp_sr = false;
-  if (ntp_secs == 0 && ntp_frac == 0) {
+
+  RtcpMeasurement measurement(ntp_secs, ntp_frac, rtp_timestamp);
+  if (rtcp_measurements->Contains(measurement)) {
+    // RTCP SR report already added.
+    return true;
+  }
+
+  if (!rtcp_measurements->IsValid(measurement)) {
+    // Old report or invalid parameters.
     return false;
   }
 
-  RtcpMeasurement measurement;
-  measurement.ntp_secs = ntp_secs;
-  measurement.ntp_frac = ntp_frac;
-  measurement.rtp_timestamp = rtp_timestamp;
+  // Two RTCP SR reports are needed to map between RTP and NTP.
+  // More than two will not improve the mapping.
+  if (rtcp_measurements->list.size() == 2)
+    rtcp_measurements->list.pop_back();
 
-  for (RtcpList::iterator it = rtcp_list->begin();
-       it != rtcp_list->end(); ++it) {
-    if ((measurement.ntp_secs == (*it).ntp_secs &&
-         measurement.ntp_frac == (*it).ntp_frac) ||
-        (measurement.rtp_timestamp == (*it).rtp_timestamp)) {
-      // This RTCP has already been added to the list.
-      return true;
-    }
-  }
-
-  // We need two RTCP SR reports to map between RTP and NTP. More than two will
-  // not improve the mapping.
-  if (rtcp_list->size() == 2) {
-    rtcp_list->pop_back();
-  }
-  rtcp_list->push_front(measurement);
+  rtcp_measurements->list.push_front(measurement);
   *new_rtcp_sr = true;
+
+  // List updated, calculate new parameters.
+  rtcp_measurements->UpdateParameters();
   return true;
 }
 
@@ -94,45 +155,26 @@ bool UpdateRtcpList(uint32_t ntp_secs,
 // |rtp_timestamp_in_ms|. This function compensates for wrap arounds in RTP
 // timestamps and returns false if it can't do the conversion due to reordering.
 bool RtpToNtpMs(int64_t rtp_timestamp,
-                const RtcpList& rtcp,
+                const RtcpMeasurements& rtcp,
                 int64_t* rtp_timestamp_in_ms) {
-  if (rtcp.size() != 2)
+  if (!rtcp.params.calculated || rtcp.list.empty())
     return false;
 
-  int64_t rtcp_ntp_ms_new = Clock::NtpToMs(rtcp.front().ntp_secs,
-                                           rtcp.front().ntp_frac);
-  int64_t rtcp_ntp_ms_old = Clock::NtpToMs(rtcp.back().ntp_secs,
-                                           rtcp.back().ntp_frac);
-  int64_t rtcp_timestamp_new = rtcp.front().rtp_timestamp;
-  int64_t rtcp_timestamp_old = rtcp.back().rtp_timestamp;
-  if (!CompensateForWrapAround(rtcp_timestamp_new,
-                               rtcp_timestamp_old,
-                               &rtcp_timestamp_new)) {
-    return false;
-  }
-  if (rtcp_timestamp_new < rtcp_timestamp_old)
-    return false;
-
-  double freq_khz;
-  if (!CalculateFrequency(rtcp_ntp_ms_new,
-                          rtcp_timestamp_new,
-                          rtcp_ntp_ms_old,
-                          rtcp_timestamp_old,
-                          &freq_khz)) {
-    return false;
-  }
-  double offset = rtcp_timestamp_new - freq_khz * rtcp_ntp_ms_new;
+  uint32_t rtcp_timestamp_old = rtcp.list.back().rtp_timestamp;
   int64_t rtp_timestamp_unwrapped;
   if (!CompensateForWrapAround(rtp_timestamp, rtcp_timestamp_old,
                                &rtp_timestamp_unwrapped)) {
     return false;
   }
-  double rtp_timestamp_ntp_ms = (static_cast<double>(rtp_timestamp_unwrapped) -
-      offset) / freq_khz + 0.5f;
-  if (rtp_timestamp_ntp_ms < 0) {
+
+  double rtp_timestamp_ms =
+      (static_cast<double>(rtp_timestamp_unwrapped) - rtcp.params.offset_ms) /
+          rtcp.params.frequency_khz +
+      0.5f;
+  if (rtp_timestamp_ms < 0) {
     return false;
   }
-  *rtp_timestamp_in_ms = rtp_timestamp_ntp_ms;
+  *rtp_timestamp_in_ms = rtp_timestamp_ms;
   return true;
 }
 

@@ -18,6 +18,10 @@
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
+namespace {
+// Periodic time interval for processing samples for |freq_offset_counter_|.
+const int64_t kFreqOffsetProcessIntervalMs = 40000;
+}  // namespace
 
 ReceiveStatisticsProxy::ReceiveStatisticsProxy(
     const VideoReceiveStream::Config* config,
@@ -29,7 +33,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       decode_fps_estimator_(1000, 1000),
       renders_fps_estimator_(1000, 1000),
       render_fps_tracker_(100, 10u),
-      render_pixel_tracker_(100, 10u) {
+      render_pixel_tracker_(100, 10u),
+      freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs) {
   stats_.ssrc = config_.rtp.remote_ssrc;
   for (auto it : config_.rtp.rtx)
     rtx_stats_[it.second.ssrc] = StreamDataCounters();
@@ -67,6 +72,11 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   int sync_offset_ms = sync_offset_counter_.Avg(kMinRequiredSamples);
   if (sync_offset_ms != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.AVSyncOffsetInMs", sync_offset_ms);
+  }
+  AggregatedStats freq_offset_stats = freq_offset_counter_.GetStats();
+  if (freq_offset_stats.num_samples > 0) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtpToNtpFreqOffsetInKhz",
+                               freq_offset_stats.average);
   }
 
   int qp = qp_counters_.vp8.Avg(kMinRequiredSamples);
@@ -276,10 +286,19 @@ void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
   }
 }
 
-void ReceiveStatisticsProxy::OnSyncOffsetUpdated(int64_t sync_offset_ms) {
+void ReceiveStatisticsProxy::OnSyncOffsetUpdated(int64_t sync_offset_ms,
+                                                 double estimated_freq_khz) {
   rtc::CritScope lock(&crit_);
   sync_offset_counter_.Add(std::abs(sync_offset_ms));
   stats_.sync_offset_ms = sync_offset_ms;
+
+  const double kMaxFreqKhz = 10000.0;
+  int offset_khz = kMaxFreqKhz;
+  // Should not be zero or negative. If so, report max.
+  if (estimated_freq_khz < kMaxFreqKhz && estimated_freq_khz > 0.0)
+    offset_khz = static_cast<int>(std::fabs(estimated_freq_khz - 90.0) + 0.5);
+
+  freq_offset_counter_.Add(offset_khz);
 }
 
 void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,

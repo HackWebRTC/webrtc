@@ -20,26 +20,47 @@ namespace webrtc {
 struct RtcpMeasurement {
   RtcpMeasurement();
   RtcpMeasurement(uint32_t ntp_secs, uint32_t ntp_frac, uint32_t timestamp);
+  bool IsEqual(const RtcpMeasurement& other) const;
+
   uint32_t ntp_secs;
   uint32_t ntp_frac;
   uint32_t rtp_timestamp;
 };
 
-typedef std::list<RtcpMeasurement> RtcpList;
+struct RtcpMeasurements {
+  RtcpMeasurements();
+  ~RtcpMeasurements();
+  bool Contains(const RtcpMeasurement& other) const;
+  bool IsValid(const RtcpMeasurement& other) const;
+  void UpdateParameters();
 
-// Updates |rtcp_list| with timestamps from the latest RTCP SR.
+  // Estimated parameters from RTP and NTP timestamp pairs in |list|.
+  struct RtpToNtpParameters {
+    double frequency_khz = 0.0;
+    double offset_ms = 0.0;
+    bool calculated = false;
+  };
+
+  std::list<RtcpMeasurement> list;
+  RtpToNtpParameters params;
+};
+
+// Updates |list| in |rtcp_measurements| with timestamps from the RTCP SR.
 // |new_rtcp_sr| will be set to true if these are the timestamps which have
-// never be added to |rtcp_list|.
+// never be added to |list|.
+// |rtcp_measurements.params| are estimated from the RTP and NTP timestamp pairs
+// in the |list| when a new RTCP SR is inserted.
 bool UpdateRtcpList(uint32_t ntp_secs,
                     uint32_t ntp_frac,
                     uint32_t rtp_timestamp,
-                    RtcpList* rtcp_list,
+                    RtcpMeasurements* rtcp_measurements,
                     bool* new_rtcp_sr);
 
-// Converts an RTP timestamp to the NTP domain in milliseconds using two
-// (RTP timestamp, NTP timestamp) pairs.
-bool RtpToNtpMs(int64_t rtp_timestamp, const RtcpList& rtcp,
-                int64_t* timestamp_in_ms);
+// Converts an RTP timestamp to the NTP domain in milliseconds using the
+// estimated |rtcp_measurements.params|.
+bool RtpToNtpMs(int64_t rtp_timestamp,
+                const RtcpMeasurements& rtcp_measurements,
+                int64_t* rtp_timestamp_in_ms);
 
 // Returns 1 there has been a forward wrap around, 0 if there has been no wrap
 // around and -1 if there has been a backwards wrap around (i.e. reordering).

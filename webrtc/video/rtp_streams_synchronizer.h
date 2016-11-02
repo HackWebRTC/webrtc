@@ -46,8 +46,11 @@ class RtpStreamsSynchronizer : public Module {
 
   // Gets the sync offset between the current played out audio frame and the
   // video |frame|. Returns true on success, false otherwise.
+  // The estimated frequency is the frequency used in the RTP to NTP timestamp
+  // conversion.
   bool GetStreamSyncOffsetInMs(const VideoFrame& frame,
-                               int64_t* stream_offset_ms) const;
+                               int64_t* stream_offset_ms,
+                               double* estimated_freq_khz) const;
 
  private:
   Clock* const clock_;

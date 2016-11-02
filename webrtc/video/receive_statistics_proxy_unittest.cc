@@ -12,9 +12,13 @@
 
 #include <memory>
 
+#include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
+namespace {
+const int64_t kFreqOffsetProcessIntervalInMs = 40000;
+}  // namespace
 
 // TODO(sakal): ReceiveStatisticsProxy is lacking unittesting.
 class ReceiveStatisticsProxyTest : public ::testing::Test {
@@ -24,6 +28,7 @@ class ReceiveStatisticsProxyTest : public ::testing::Test {
 
  protected:
   virtual void SetUp() {
+    metrics::Reset();
     statistics_proxy_.reset(new ReceiveStatisticsProxy(&config_, &fake_clock_));
   }
 
@@ -33,8 +38,8 @@ class ReceiveStatisticsProxyTest : public ::testing::Test {
   }
 
   SimulatedClock fake_clock_;
+  const VideoReceiveStream::Config config_;
   std::unique_ptr<ReceiveStatisticsProxy> statistics_proxy_;
-  VideoReceiveStream::Config config_;
 };
 
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesFramesDecoded) {
@@ -43,6 +48,25 @@ TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesFramesDecoded) {
     statistics_proxy_->OnDecodedFrame();
     EXPECT_EQ(i, statistics_proxy_->GetStats().frames_decoded);
   }
+}
+
+TEST_F(ReceiveStatisticsProxyTest, RtpToNtpFrequencyOffsetHistogramIsUpdated) {
+  const int64_t kSyncOffsetMs = 22;
+  const double kFreqKhz = 90.0;
+  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz);
+  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz + 2.2);
+  fake_clock_.AdvanceTimeMilliseconds(kFreqOffsetProcessIntervalInMs);
+  // Process interval passed, max diff: 2.
+  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz + 1.1);
+  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz - 4.2);
+  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz - 0.9);
+  fake_clock_.AdvanceTimeMilliseconds(kFreqOffsetProcessIntervalInMs);
+  // Process interval passed, max diff: 4.
+  statistics_proxy_->OnSyncOffsetUpdated(kSyncOffsetMs, kFreqKhz);
+  statistics_proxy_.reset();
+  // Average reported: (2 + 4) / 2 = 3.
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.RtpToNtpFreqOffsetInKhz"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.RtpToNtpFreqOffsetInKhz", 3));
 }
 
 }  // namespace webrtc

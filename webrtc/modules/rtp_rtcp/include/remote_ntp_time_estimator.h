@@ -43,7 +43,7 @@ class RemoteNtpTimeEstimator {
  private:
   Clock* clock_;
   std::unique_ptr<TimestampExtrapolator> ts_extrapolator_;
-  RtcpList rtcp_list_;
+  RtcpMeasurements rtcp_list_;
   int64_t last_timing_log_ms_;
   RTC_DISALLOW_COPY_AND_ASSIGN(RemoteNtpTimeEstimator);
 };

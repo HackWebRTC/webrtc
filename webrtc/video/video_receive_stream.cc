@@ -346,13 +346,15 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
   stats_proxy_.OnDecodedFrame();
 
   int64_t sync_offset_ms;
+  double estimated_freq_khz;
   // TODO(tommi): GetStreamSyncOffsetInMs grabs three locks.  One inside the
   // function itself, another in GetChannel() and a third in
   // GetPlayoutTimestamp.  Seems excessive.  Anyhow, I'm assuming the function
   // succeeds most of the time, which leads to grabbing a fourth lock.
-  if (rtp_stream_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms)) {
+  if (rtp_stream_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms,
+                                               &estimated_freq_khz)) {
     // TODO(tommi): OnSyncOffsetUpdated grabs a lock.
-    stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms);
+    stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms, estimated_freq_khz);
   }
 
   // config_.renderer must never be null if we're getting this callback.

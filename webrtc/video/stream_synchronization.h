@@ -22,7 +22,7 @@ class StreamSynchronization {
  public:
   struct Measurements {
     Measurements() : rtcp(), latest_receive_time_ms(0), latest_timestamp(0) {}
-    RtcpList rtcp;
+    RtcpMeasurements rtcp;
     int64_t latest_receive_time_ms;
     uint32_t latest_timestamp;
   };
