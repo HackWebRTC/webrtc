@@ -169,8 +169,9 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 
   codec.width = 320;
   codec.height = 180;
+  const int kDefaultStartBitrate = 300;
   codec.startBitrate = codec.minBitrate = codec.maxBitrate =
-      Call::Config::kDefaultStartBitrateBps / 1000;
+      kDefaultStartBitrate;
 
   return codec;
 }
