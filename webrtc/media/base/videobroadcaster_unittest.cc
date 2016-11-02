@@ -11,12 +11,11 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/media/base/videobroadcaster.h"
-#include "webrtc/media/engine/webrtcvideoframe.h"
+#include "webrtc/video_frame.h"
 
 using rtc::VideoBroadcaster;
 using rtc::VideoSinkWants;
 using cricket::FakeVideoRenderer;
-using cricket::WebRtcVideoFrame;
 
 
 TEST(VideoBroadcasterTest, frame_wanted) {
@@ -39,7 +38,7 @@ TEST(VideoBroadcasterTest, OnFrame) {
   broadcaster.AddOrUpdateSink(&sink1, rtc::VideoSinkWants());
   broadcaster.AddOrUpdateSink(&sink2, rtc::VideoSinkWants());
 
-  WebRtcVideoFrame frame;
+  webrtc::VideoFrame frame;
 
   broadcaster.OnFrame(frame);
   EXPECT_EQ(1, sink1.num_rendered_frames());
@@ -139,8 +138,8 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   // Makes it not all black.
   buffer->InitializeData();
 
-  cricket::WebRtcVideoFrame frame1(buffer, webrtc::kVideoRotation_0,
-                                   10 /* timestamp_us */);
+  webrtc::VideoFrame frame1(buffer, webrtc::kVideoRotation_0,
+                            10 /* timestamp_us */);
   broadcaster.OnFrame(frame1);
   EXPECT_TRUE(sink1.black_frame());
   EXPECT_EQ(10, sink1.timestamp_us());
@@ -153,8 +152,8 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   wants2.black_frames = true;
   broadcaster.AddOrUpdateSink(&sink2, wants2);
 
-  cricket::WebRtcVideoFrame frame2(buffer, webrtc::kVideoRotation_0,
-                                   30 /* timestamp_us */);
+  webrtc::VideoFrame frame2(buffer, webrtc::kVideoRotation_0,
+                            30 /* timestamp_us */);
   broadcaster.OnFrame(frame2);
   EXPECT_FALSE(sink1.black_frame());
   EXPECT_EQ(30, sink1.timestamp_us());

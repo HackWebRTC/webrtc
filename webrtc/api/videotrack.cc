@@ -34,9 +34,8 @@ std::string VideoTrack::kind() const {
 
 // AddOrUpdateSink and RemoveSink should be called on the worker
 // thread.
-void VideoTrack::AddOrUpdateSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
-    const rtc::VideoSinkWants& wants) {
+void VideoTrack::AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
+                                 const rtc::VideoSinkWants& wants) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   VideoSourceBase::AddOrUpdateSink(sink, wants);
   rtc::VideoSinkWants modified_wants = wants;
@@ -44,8 +43,7 @@ void VideoTrack::AddOrUpdateSink(
   video_source_->AddOrUpdateSink(sink, modified_wants);
 }
 
-void VideoTrack::RemoveSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+void VideoTrack::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   VideoSourceBase::RemoveSink(sink);
   video_source_->RemoveSink(sink);

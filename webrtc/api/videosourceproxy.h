@@ -28,11 +28,9 @@ BEGIN_PROXY_MAP(VideoTrackSource)
   PROXY_METHOD1(bool, GetStats, Stats*)
   PROXY_WORKER_METHOD2(void,
                        AddOrUpdateSink,
-                       rtc::VideoSinkInterface<cricket::VideoFrame>*,
+                       rtc::VideoSinkInterface<VideoFrame>*,
                        const rtc::VideoSinkWants&)
-  PROXY_WORKER_METHOD1(void,
-                       RemoveSink,
-                       rtc::VideoSinkInterface<cricket::VideoFrame>*)
+  PROXY_WORKER_METHOD1(void, RemoveSink, rtc::VideoSinkInterface<VideoFrame>*)
   PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
   PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
 END_PROXY()

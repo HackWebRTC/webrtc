@@ -520,14 +520,14 @@ UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
   return kDeliverPacket;
 }
 
-rtc::VideoSinkInterface<VideoFrame>*
+rtc::VideoSinkInterface<webrtc::VideoFrame>*
 DefaultUnsignalledSsrcHandler::GetDefaultSink() const {
   return default_sink_;
 }
 
 void DefaultUnsignalledSsrcHandler::SetDefaultSink(
     VideoMediaChannel* channel,
-    rtc::VideoSinkInterface<VideoFrame>* sink) {
+    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
   default_sink_ = sink;
   if (default_recv_ssrc_ != 0) {
     channel->SetSink(default_recv_ssrc_, default_sink_);
@@ -1062,7 +1062,7 @@ bool WebRtcVideoChannel2::SetVideoSend(
     uint32_t ssrc,
     bool enable,
     const VideoOptions* options,
-    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
+    rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
   TRACE_EVENT0("webrtc", "SetVideoSend");
   RTC_DCHECK(ssrc != 0);
   LOG(LS_INFO) << "SetVideoSend (ssrc= " << ssrc << ", enable = " << enable
@@ -1303,8 +1303,9 @@ bool WebRtcVideoChannel2::RemoveRecvStream(uint32_t ssrc) {
   return true;
 }
 
-bool WebRtcVideoChannel2::SetSink(uint32_t ssrc,
-                                  rtc::VideoSinkInterface<VideoFrame>* sink) {
+bool WebRtcVideoChannel2::SetSink(
+    uint32_t ssrc,
+    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
   LOG(LS_INFO) << "SetSink: ssrc:" << ssrc << " "
                << (sink ? "(ptr)" : "nullptr");
   if (ssrc == 0) {
@@ -1588,7 +1589,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
-    const VideoFrame& frame) {
+    const webrtc::VideoFrame& frame) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::OnFrame");
   webrtc::VideoFrame video_frame(frame.video_frame_buffer(),
                                  frame.rotation(),
@@ -1627,7 +1628,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::OnFrame(
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
     bool enable,
     const VideoOptions* options,
-    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
+    rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::SetVideoSend");
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
@@ -2383,7 +2384,7 @@ bool WebRtcVideoChannel2::WebRtcVideoReceiveStream::IsDefaultStream() const {
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
   rtc::CritScope crit(&sink_lock_);
   sink_ = sink;
 }

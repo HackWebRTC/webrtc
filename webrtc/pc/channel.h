@@ -548,7 +548,8 @@ class VideoChannel : public BaseChannel {
     return static_cast<VideoMediaChannel*>(BaseChannel::media_channel());
   }
 
-  bool SetSink(uint32_t ssrc, rtc::VideoSinkInterface<VideoFrame>* sink);
+  bool SetSink(uint32_t ssrc,
+               rtc::VideoSinkInterface<webrtc::VideoFrame>* sink);
   // Get statistics about the current media session.
   bool GetStats(VideoMediaInfo* stats);
 
@@ -564,7 +565,7 @@ class VideoChannel : public BaseChannel {
   bool SetVideoSend(uint32_t ssrc,
                     bool enable,
                     const VideoOptions* options,
-                    rtc::VideoSourceInterface<cricket::VideoFrame>* source);
+                    rtc::VideoSourceInterface<webrtc::VideoFrame>* source);
   webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const;
   bool SetRtpSendParameters(uint32_t ssrc,
                             const webrtc::RtpParameters& parameters);

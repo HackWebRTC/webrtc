@@ -95,9 +95,8 @@ void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
       buffer->MutableDataU(), buffer->StrideU(),
       buffer->width(), buffer->height());
 
-  OnFrame(cricket::WebRtcVideoFrame(
-              buffer, static_cast<webrtc::VideoRotation>(rotation),
-              translated_camera_time_us));
+  OnFrame(VideoFrame(buffer, static_cast<webrtc::VideoRotation>(rotation),
+                     translated_camera_time_us));
 }
 
 void AndroidVideoTrackSource::OnTextureFrameCaptured(
@@ -147,13 +146,13 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
     matrix.Rotate(static_cast<webrtc::VideoRotation>(rotation));
   }
 
-  OnFrame(cricket::WebRtcVideoFrame(
-              surface_texture_helper_->CreateTextureFrame(
-                  adapted_width, adapted_height,
-                  webrtc_jni::NativeHandleImpl(handle.oes_texture_id, matrix)),
-              do_rotate ? webrtc::kVideoRotation_0
-                        : static_cast<webrtc::VideoRotation>(rotation),
-              translated_camera_time_us));
+  OnFrame(VideoFrame(
+      surface_texture_helper_->CreateTextureFrame(
+          adapted_width, adapted_height,
+          webrtc_jni::NativeHandleImpl(handle.oes_texture_id, matrix)),
+      do_rotate ? webrtc::kVideoRotation_0
+                : static_cast<webrtc::VideoRotation>(rotation),
+      translated_camera_time_us));
 }
 
 void AndroidVideoTrackSource::OnOutputFormatRequest(int width,

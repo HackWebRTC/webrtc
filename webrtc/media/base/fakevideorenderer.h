@@ -12,13 +12,13 @@
 #define WEBRTC_MEDIA_BASE_FAKEVIDEORENDERER_H_
 
 #include "webrtc/base/logging.h"
-#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosinkinterface.h"
+#include "webrtc/video_frame.h"
 
 namespace cricket {
 
 // Faked video renderer that has a callback for actions on rendering.
-class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
+class FakeVideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
   FakeVideoRenderer()
       : errors_(0),
@@ -29,7 +29,7 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
         num_rendered_frames_(0),
         black_frame_(false) {}
 
-  virtual void OnFrame(const VideoFrame& frame) {
+  virtual void OnFrame(const webrtc::VideoFrame& frame) {
     rtc::CritScope cs(&crit_);
     // TODO(zhurunz) Check with VP8 team to see if we can remove this
     // tolerance on Y values. Some unit tests produce Y values close
@@ -79,7 +79,7 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
                                  uint8_t u_max,
                                  uint8_t v_min,
                                  uint8_t v_max,
-                                 const cricket::VideoFrame* frame) {
+                                 const webrtc::VideoFrame* frame) {
     if (!frame || !frame->video_frame_buffer()) {
       return false;
     }

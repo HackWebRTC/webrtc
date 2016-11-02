@@ -23,7 +23,7 @@
 #include "webrtc/base/testutils.h"
 #include "webrtc/media/base/rtpdump.h"
 #include "webrtc/media/base/videocapturer.h"
-#include "webrtc/media/base/videoframe.h"
+#include "webrtc/video_frame.h"
 
 namespace cricket {
 
@@ -230,7 +230,7 @@ void VideoCapturerListener::OnStateChange(VideoCapturer* capturer,
   last_capture_state_ = result;
 }
 
-void VideoCapturerListener::OnFrame(const VideoFrame& frame) {
+void VideoCapturerListener::OnFrame(const webrtc::VideoFrame& frame) {
   ++frame_count_;
   if (1 == frame_count_) {
     frame_width_ = frame.width();

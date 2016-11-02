@@ -14,19 +14,17 @@
 
 #include <memory>
 
-#include "webrtc/media/engine/webrtcvideoframe.h"
-
 namespace webrtc {
 
 class VideoRendererAdapter
-    : public rtc::VideoSinkInterface<cricket::VideoFrame> {
+    : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
   VideoRendererAdapter(RTCVideoRendererAdapter* adapter) {
     adapter_ = adapter;
     size_ = CGSizeZero;
   }
 
-  void OnFrame(const cricket::VideoFrame& nativeVideoFrame) override {
+  void OnFrame(const webrtc::VideoFrame& nativeVideoFrame) override {
     RTCVideoFrame* videoFrame = [[RTCVideoFrame alloc]
         initWithVideoBuffer:nativeVideoFrame.video_frame_buffer()
                    rotation:nativeVideoFrame.rotation()
@@ -64,7 +62,7 @@ class VideoRendererAdapter
   return self;
 }
 
-- (rtc::VideoSinkInterface<cricket::VideoFrame> *)nativeVideoRenderer {
+- (rtc::VideoSinkInterface<webrtc::VideoFrame> *)nativeVideoRenderer {
   return _adapter.get();
 }
 

@@ -42,7 +42,7 @@ class VideoAdapterTest : public testing::Test {
 
  protected:
   class VideoCapturerListener
-      : public rtc::VideoSinkInterface<cricket::VideoFrame> {
+      : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
    public:
     struct Stats {
       int captured_frames;
@@ -62,7 +62,7 @@ class VideoAdapterTest : public testing::Test {
           last_adapt_was_no_op_(false) {
     }
 
-    void OnFrame(const cricket::VideoFrame& frame) {
+    void OnFrame(const webrtc::VideoFrame& frame) {
       rtc::CritScope lock(&crit_);
       const int in_width = frame.width();
       const int in_height = frame.height();

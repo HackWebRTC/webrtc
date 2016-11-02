@@ -19,7 +19,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
-#include "webrtc/media/base/videoframe.h"
+#include "webrtc/video_frame.h"
 
 namespace cricket {
 
@@ -97,8 +97,9 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
           webrtc::I420Buffer::Create(adapted_width, adapted_height));
       buffer->InitializeData();
 
-      OnFrame(WebRtcVideoFrame(buffer, rotation_,
-                               next_timestamp_ / rtc::kNumNanosecsPerMicrosec),
+      OnFrame(webrtc::VideoFrame(
+                  buffer, rotation_,
+                  next_timestamp_ / rtc::kNumNanosecsPerMicrosec),
               width, height);
     }
     next_timestamp_ += timestamp_interval;
