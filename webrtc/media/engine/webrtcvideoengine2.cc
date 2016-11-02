@@ -149,6 +149,10 @@ class WebRtcSimulcastEncoderFactory
   }
 
  private:
+  // Disable overloaded virtual function warning. TODO(magjed): Remove once
+  // http://crbug/webrtc/6402 is fixed.
+  using cricket::WebRtcVideoEncoderFactory::CreateVideoEncoder;
+
   cricket::WebRtcVideoEncoderFactory* factory_;
   // A list of encoders that were created without being wrapped in a
   // SimulcastEncoderAdapter.
