@@ -226,6 +226,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   WebRtcVoiceEngine* engine() { return engine_; }
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
   int GetOutputLevel(int channel);
+  void ChangePlayout(bool playout);
   int CreateVoEChannel();
   bool DeleteVoEChannel(int channel);
   bool IsDefaultRecvStream(uint32_t ssrc) {
@@ -243,6 +244,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   int max_send_bitrate_bps_ = 0;
   AudioOptions options_;
   rtc::Optional<int> dtmf_payload_type_;
+  bool desired_playout_ = false;
   bool recv_transport_cc_enabled_ = false;
   bool recv_nack_enabled_ = false;
   bool playout_ = false;
