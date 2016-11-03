@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/modules/video_coding/frame_object.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/video_coding/packet_buffer.h"
 
 namespace webrtc {
@@ -97,11 +96,12 @@ int64_t RtpFrameObject::RenderTime() const {
   return _renderTimeMs;
 }
 
-RTPVideoTypeHeader* RtpFrameObject::GetCodecHeader() const {
+rtc::Optional<RTPVideoTypeHeader> RtpFrameObject::GetCodecHeader() const {
+  rtc::CritScope lock(&packet_buffer_->crit_);
   VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num_);
   if (!packet)
-    return nullptr;
-  return &packet->video_header.codecHeader;
+    return rtc::Optional<RTPVideoTypeHeader>();
+  return rtc::Optional<RTPVideoTypeHeader>(packet->video_header.codecHeader);
 }
 
 }  // namespace video_coding

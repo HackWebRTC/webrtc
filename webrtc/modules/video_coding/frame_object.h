@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 #define WEBRTC_MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 
+#include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
@@ -71,7 +72,7 @@ class RtpFrameObject : public FrameObject {
   uint32_t Timestamp() const override;
   int64_t ReceivedTime() const override;
   int64_t RenderTime() const override;
-  RTPVideoTypeHeader* GetCodecHeader() const;
+  rtc::Optional<RTPVideoTypeHeader> GetCodecHeader() const;
 
  private:
   rtc::scoped_refptr<PacketBuffer> packet_buffer_;

@@ -205,7 +205,7 @@ void RtpFrameReferenceFinder::ManageFrameGeneric(
 
 void RtpFrameReferenceFinder::ManageFrameVp8(
     std::unique_ptr<RtpFrameObject> frame) {
-  RTPVideoTypeHeader* rtp_codec_header = frame->GetCodecHeader();
+  rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
   if (!rtp_codec_header)
     return;
 
@@ -328,7 +328,7 @@ void RtpFrameReferenceFinder::ManageFrameVp8(
 
 void RtpFrameReferenceFinder::CompletedFrameVp8(
     std::unique_ptr<RtpFrameObject> frame) {
-  RTPVideoTypeHeader* rtp_codec_header = frame->GetCodecHeader();
+  rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
   if (!rtp_codec_header)
     return;
 
@@ -364,7 +364,7 @@ void RtpFrameReferenceFinder::CompletedFrameVp8(
 
 void RtpFrameReferenceFinder::ManageFrameVp9(
     std::unique_ptr<RtpFrameObject> frame) {
-  RTPVideoTypeHeader* rtp_codec_header = frame->GetCodecHeader();
+  rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
   if (!rtp_codec_header)
     return;
 
