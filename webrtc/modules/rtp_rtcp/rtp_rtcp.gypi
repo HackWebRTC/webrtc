@@ -19,6 +19,7 @@
       'sources': [
         # Common
         'include/flexfec_receiver.h',
+        'include/flexfec_sender.h',
         'include/receive_statistics.h',
         'include/remote_ntp_time_estimator.h',
         'include/rtp_header_parser.h',
@@ -134,6 +135,7 @@
         'source/fec_private_tables_bursty.h',
         'source/flexfec_header_reader_writer.cc',
         'source/flexfec_header_reader_writer.h',
+        'source/flexfec_sender.cc',
         'source/forward_error_correction.cc',
         'source/forward_error_correction.h',
         'source/forward_error_correction_internal.cc',

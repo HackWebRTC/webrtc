@@ -19,6 +19,8 @@
 
 namespace webrtc {
 
+class FlexfecSenderImpl;
+
 class RedPacket {
  public:
   explicit RedPacket(size_t length);
@@ -40,6 +42,8 @@ class RedPacket {
 };
 
 class UlpfecGenerator {
+  friend class FlexfecSender;
+
  public:
   UlpfecGenerator();
   ~UlpfecGenerator();
@@ -74,6 +78,8 @@ class UlpfecGenerator {
       size_t rtp_header_length);
 
  private:
+  explicit UlpfecGenerator(std::unique_ptr<ForwardErrorCorrection> fec);
+
   // Overhead is defined as relative to the number of media packets, and not
   // relative to total number of packets. This definition is inherited from the
   // protection factor produced by video_coding module and how the FEC

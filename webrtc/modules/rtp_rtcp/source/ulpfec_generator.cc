@@ -94,7 +94,10 @@ size_t RedPacket::length() const {
 }
 
 UlpfecGenerator::UlpfecGenerator()
-    : fec_(ForwardErrorCorrection::CreateUlpfec()),
+    : UlpfecGenerator(ForwardErrorCorrection::CreateUlpfec()) {}
+
+UlpfecGenerator::UlpfecGenerator(std::unique_ptr<ForwardErrorCorrection> fec)
+    : fec_(std::move(fec)),
       num_protected_frames_(0),
       min_num_media_packets_(1) {
   memset(&params_, 0, sizeof(params_));
@@ -140,7 +143,7 @@ int UlpfecGenerator::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
   bool complete_frame = false;
   const bool marker_bit = (data_buffer[1] & kRtpMarkerBitMask) ? true : false;
   if (media_packets_.size() < kUlpfecMaxMediaPackets) {
-    // Generic FEC can only protect up to |kUlpfecMaxMediaPackets| packets.
+    // Our packet masks can only protect up to |kUlpfecMaxMediaPackets| packets.
     std::unique_ptr<ForwardErrorCorrection::Packet> packet(
         new ForwardErrorCorrection::Packet());
     packet->length = payload_length + rtp_header_length;
