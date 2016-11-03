@@ -19,8 +19,8 @@
       'call/call.cc',
       'call/flexfec_receive_stream.cc',
       'call/flexfec_receive_stream.h',
-      '../video/transport_adapter.cc',
-      '../video/transport_adapter.h',
+      'video/transport_adapter.cc',
+      'video/transport_adapter.h',
     ],
   },
 }
