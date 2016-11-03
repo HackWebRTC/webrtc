@@ -54,23 +54,10 @@ class EncodedImageCallback {
   };
 
   // Callback function which is called when an image has been encoded.
-  virtual Result OnEncodedImage(const EncodedImage& encoded_image,
-                                const CodecSpecificInfo* codec_specific_info,
-                                const RTPFragmentationHeader* fragmentation) {
-    return (Encoded(encoded_image, codec_specific_info, fragmentation) == 0)
-               ? Result(Result::OK, 0)
-               : Result(Result::ERROR_SEND_FAILED);
-  }
-
-  // DEPRECATED.
-  // TODO(sergeyu): Remove this method.
-  virtual int32_t Encoded(const EncodedImage& encoded_image,
-                          const CodecSpecificInfo* codec_specific_info,
-                          const RTPFragmentationHeader* fragmentation) {
-    Result result =
-        OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
-    return (result.error != Result::OK) ? -1 : (result.drop_next_frame ? 1 : 0);
-  }
+  virtual Result OnEncodedImage(
+      const EncodedImage& encoded_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const RTPFragmentationHeader* fragmentation) = 0;
 };
 
 class VideoEncoder {

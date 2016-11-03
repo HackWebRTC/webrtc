@@ -52,7 +52,7 @@ int32_t ConfigurableFrameSizeEncoder::Encode(
   RTPFragmentationHeader* fragmentation = NULL;
   CodecSpecificInfo specific;
   memset(&specific, 0, sizeof(specific));
-  callback_->Encoded(encodedImage, &specific, fragmentation);
+  callback_->OnEncodedImage(encodedImage, &specific, fragmentation);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
