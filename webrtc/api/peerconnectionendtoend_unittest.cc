@@ -401,6 +401,7 @@ TEST_F(PeerConnectionEndToEndTest, MessageTransferBetweenQuicDataChannels) {
 // TODO(deadbeef): This is disabled because there's currently a race condition
 // caused by the fact that a data channel signals that it's closed before it
 // really is. Re-enable this test once that's fixed.
+// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=4453
 TEST_F(PeerConnectionEndToEndTest,
        DISABLED_DataChannelFromOpenWorksAfterClose) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
