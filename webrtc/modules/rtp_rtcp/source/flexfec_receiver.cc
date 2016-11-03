@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/rtp_rtcp/source/flexfec_receiver_impl.h"
+#include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 
 #include <utility>
 
@@ -31,20 +31,10 @@ constexpr int kPacketLogIntervalMs = 10000;
 
 }  // namespace
 
-std::unique_ptr<FlexfecReceiver> FlexfecReceiver::Create(
-    uint32_t flexfec_ssrc,
-    uint32_t protected_media_ssrc,
-    RecoveredPacketReceiver* callback) {
-  return std::unique_ptr<FlexfecReceiver>(
-      new FlexfecReceiverImpl(flexfec_ssrc, protected_media_ssrc, callback));
-}
-
-FlexfecReceiver::~FlexfecReceiver() = default;
-
-FlexfecReceiverImpl::FlexfecReceiverImpl(uint32_t flexfec_ssrc,
-                                         uint32_t protected_media_ssrc,
-                                         RecoveredPacketReceiver* callback)
-    : flexfec_ssrc_(flexfec_ssrc),
+FlexfecReceiver::FlexfecReceiver(uint32_t ssrc,
+                                 uint32_t protected_media_ssrc,
+                                 RecoveredPacketReceiver* callback)
+    : ssrc_(ssrc),
       protected_media_ssrc_(protected_media_ssrc),
       erasure_code_(ForwardErrorCorrection::CreateFlexfec()),
       callback_(callback),
@@ -55,10 +45,10 @@ FlexfecReceiverImpl::FlexfecReceiverImpl(uint32_t flexfec_ssrc,
   sequence_checker_.Detach();
 }
 
-FlexfecReceiverImpl::~FlexfecReceiverImpl() = default;
+FlexfecReceiver::~FlexfecReceiver() = default;
 
-bool FlexfecReceiverImpl::AddAndProcessReceivedPacket(const uint8_t* packet,
-                                                      size_t packet_length) {
+bool FlexfecReceiver::AddAndProcessReceivedPacket(const uint8_t* packet,
+                                                  size_t packet_length) {
   RTC_DCHECK(sequence_checker_.CalledSequentially());
 
   if (!AddReceivedPacket(packet, packet_length)) {
@@ -67,13 +57,13 @@ bool FlexfecReceiverImpl::AddAndProcessReceivedPacket(const uint8_t* packet,
   return ProcessReceivedPackets();
 }
 
-FecPacketCounter FlexfecReceiverImpl::GetPacketCounter() const {
+FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
   RTC_DCHECK(sequence_checker_.CalledSequentially());
   return packet_counter_;
 }
 
-bool FlexfecReceiverImpl::AddReceivedPacket(const uint8_t* packet,
-                                            size_t packet_length) {
+bool FlexfecReceiver::AddReceivedPacket(const uint8_t* packet,
+                                        size_t packet_length) {
   RTC_DCHECK(sequence_checker_.CalledSequentially());
 
   // RTP packets with a full base header (12 bytes), but without payload,
@@ -95,7 +85,7 @@ bool FlexfecReceiverImpl::AddReceivedPacket(const uint8_t* packet,
   std::unique_ptr<ReceivedPacket> received_packet(new ReceivedPacket());
   received_packet->seq_num = parsed_packet.SequenceNumber();
   received_packet->ssrc = parsed_packet.Ssrc();
-  if (received_packet->ssrc == flexfec_ssrc_) {
+  if (received_packet->ssrc == ssrc_) {
     // This is a FEC packet belonging to this FlexFEC stream.
     if (parsed_packet.payload_size() < kMinFlexfecHeaderSize) {
       LOG(LS_WARNING) << "Truncated FlexFEC packet, discarding.";
@@ -139,7 +129,7 @@ bool FlexfecReceiverImpl::AddReceivedPacket(const uint8_t* packet,
 // Here, however, the received media pipeline is more decoupled from the
 // FlexFEC decoder, and we therefore do not interfere with the reception
 // of non-recovered media packets.
-bool FlexfecReceiverImpl::ProcessReceivedPackets() {
+bool FlexfecReceiver::ProcessReceivedPackets() {
   RTC_DCHECK(sequence_checker_.CalledSequentially());
 
   // Decode.
@@ -165,10 +155,8 @@ bool FlexfecReceiverImpl::ProcessReceivedPackets() {
     if (now_ms - last_recovered_packet_ms_ > kPacketLogIntervalMs) {
       uint32_t media_ssrc =
           ForwardErrorCorrection::ParseSsrc(recovered_packet->pkt->data);
-      std::stringstream ss;
-      ss << "Recovered media packet with SSRC: " << media_ssrc
-         << " from FlexFEC stream with SSRC: " << flexfec_ssrc_ << ".";
-      LOG(LS_INFO) << ss.str();
+      LOG(LS_INFO) << "Recovered media packet with SSRC: " << media_ssrc
+                   << " from FlexFEC stream with SSRC: " << ssrc_ << ".";
       last_recovered_packet_ms_ = now_ms;
     }
   }

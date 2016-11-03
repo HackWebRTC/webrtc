@@ -42,9 +42,9 @@ std::unique_ptr<FlexfecReceiver> MaybeUpdateConfigAndCreateFlexfecReceiver(
         << config->protected_media_ssrcs[0] << ".";
     config->protected_media_ssrcs.resize(1);
   }
-  return FlexfecReceiver::Create(config->flexfec_ssrc,
-                                 config->protected_media_ssrcs[0],
-                                 recovered_packet_callback);
+  return std::unique_ptr<FlexfecReceiver>(new FlexfecReceiver(
+      config->flexfec_ssrc, config->protected_media_ssrcs[0],
+      recovered_packet_callback));
 }
 
 }  // namespace

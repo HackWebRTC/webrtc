@@ -14,7 +14,12 @@
 #include <memory>
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/call.h"
+#include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
+#include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -30,20 +35,39 @@ class RecoveredPacketReceiver {
 
 class FlexfecReceiver {
  public:
-  static std::unique_ptr<FlexfecReceiver> Create(
-      uint32_t flexfec_ssrc,
-      uint32_t protected_media_ssrc,
-      RecoveredPacketReceiver* callback);
-  virtual ~FlexfecReceiver();
+  FlexfecReceiver(uint32_t ssrc,
+                  uint32_t protected_media_ssrc,
+                  RecoveredPacketReceiver* callback);
+  ~FlexfecReceiver();
 
   // Inserts a received packet (can be either media or FlexFEC) into the
   // internal buffer, and sends the received packets to the erasure code.
   // All newly recovered packets are sent back through the callback.
-  virtual bool AddAndProcessReceivedPacket(const uint8_t* packet,
-                                           size_t packet_length) = 0;
+  bool AddAndProcessReceivedPacket(const uint8_t* packet, size_t packet_length);
 
   // Returns a counter describing the added and recovered packets.
-  virtual FecPacketCounter GetPacketCounter() const = 0;
+  FecPacketCounter GetPacketCounter() const;
+
+ private:
+  bool AddReceivedPacket(const uint8_t* packet, size_t packet_length);
+  bool ProcessReceivedPackets();
+
+  // Config.
+  const uint32_t ssrc_;
+  const uint32_t protected_media_ssrc_;
+
+  // Erasure code interfacing and callback.
+  std::unique_ptr<ForwardErrorCorrection> erasure_code_;
+  ForwardErrorCorrection::ReceivedPacketList received_packets_;
+  ForwardErrorCorrection::RecoveredPacketList recovered_packets_;
+  RecoveredPacketReceiver* const callback_;
+
+  // Logging and stats.
+  Clock* const clock_;
+  int64_t last_recovered_packet_ms_;
+  FecPacketCounter packet_counter_;
+
+  rtc::SequencedTaskChecker sequence_checker_;
 };
 
 }  // namespace webrtc

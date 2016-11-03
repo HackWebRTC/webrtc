@@ -39,8 +39,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   memcpy(&media_seq_num, data + 10, 2);
 
   DummyCallback callback;
-  std::unique_ptr<FlexfecReceiver> receiver =
-      FlexfecReceiver::Create(flexfec_ssrc, media_ssrc, &callback);
+  FlexfecReceiver receiver(flexfec_ssrc, media_ssrc, &callback);
 
   std::unique_ptr<uint8_t[]> packet;
   size_t packet_length;
@@ -62,7 +61,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
       ByteWriter<uint16_t>::WriteBigEndian(packet.get() + 2, media_seq_num++);
       ByteWriter<uint32_t>::WriteBigEndian(packet.get() + 8, media_ssrc);
     }
-    receiver->AddAndProcessReceivedPacket(packet.get(), packet_length);
+    receiver.AddAndProcessReceivedPacket(packet.get(), packet_length);
   }
 }
 
