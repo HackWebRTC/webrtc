@@ -55,6 +55,7 @@ exec_script_whitelist = [
   "//build/config/linux/BUILD.gn",
   "//build/config/linux/pkg_config.gni",
   "//build/config/mac/mac_sdk.gni",
+  "//build/config/mac/rules.gni",
   "//build/config/posix/BUILD.gn",
   "//build/config/sysroot.gni",
   "//build/config/win/BUILD.gn",
