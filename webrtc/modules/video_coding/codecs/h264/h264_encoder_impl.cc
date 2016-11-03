@@ -377,8 +377,8 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     // Deliver encoded image.
     CodecSpecificInfo codec_specific;
     codec_specific.codecType = kVideoCodecH264;
-    encoded_image_callback_->OnEncodedImage(encoded_image_, &codec_specific,
-                                            &frag_header);
+    encoded_image_callback_->Encoded(encoded_image_, &codec_specific,
+                                     &frag_header);
 
     // Parse and report QP.
     h264_bitstream_parser_.ParseBitstream(encoded_image_._buffer,
