@@ -12,7 +12,6 @@ package org.webrtc;
 
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-
 import java.nio.FloatBuffer;
 import java.util.IdentityHashMap;
 import java.util.Map;

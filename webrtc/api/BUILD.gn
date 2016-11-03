@@ -473,6 +473,7 @@ if (rtc_include_tests) {
         "androidtests/src/org/webrtc/Camera1CapturerUsingTextureTest.java",
         "androidtests/src/org/webrtc/Camera2CapturerTest.java",
         "androidtests/src/org/webrtc/CameraVideoCapturerTestFixtures.java",
+        "androidtests/src/org/webrtc/EglRendererTest.java",
         "androidtests/src/org/webrtc/GlRectDrawerTest.java",
         "androidtests/src/org/webrtc/MediaCodecVideoEncoderTest.java",
         "androidtests/src/org/webrtc/NetworkMonitorTest.java",
