@@ -27,7 +27,7 @@ namespace {
 
 constexpr int kMinBitrateBps = 100;
 constexpr int kStartBitrateBps = 300;
-constexpr int kMaxBitrateBps = 1000;
+constexpr int kMaxBitrateBps = 10000;
 
 constexpr int kExponentialProbingTimeoutMs = 5000;
 
@@ -67,6 +67,9 @@ TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
 TEST_F(ProbeControllerTest, TestExponentialProbing) {
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
+
+
+
   EXPECT_CALL(pacer_, CreateProbeCluster(2 * 1800, _));
   probe_controller_->SetEstimatedBitrate(1800);
 }

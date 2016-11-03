@@ -33,8 +33,9 @@ constexpr int64_t kMaxWaitingTimeForProbingResultMs = 1000;
 // further probing is disabled.
 constexpr int kExponentialProbingDisabled = 0;
 
-// A limit to prevent probing at excessive bitrates.
-constexpr int kMaxProbingBitrateBps = 10000000;
+// Default probing bitrate limit. Applied only when the application didn't
+// specify max bitrate.
+constexpr int kDefaultMaxProbingBitrateBps = 100000000;
 
 // This is a limit on how often probing can be done when there is a BW
 // drop detected in ALR region.
@@ -63,18 +64,21 @@ void ProbeController::SetBitrates(int min_bitrate_bps,
                     4 * start_bitrate_bps);
   }
 
+  int old_max_bitrate_bps = max_bitrate_bps_;
+  max_bitrate_bps_ = max_bitrate_bps;
+
   // Only do probing if:
   //   we are mid-call, which we consider to be if
   //     exponential probing is not active and
   //     |estimated_bitrate_bps_| is valid (> 0) and
   //     the current bitrate is lower than the new |max_bitrate_bps|, and
-  //     we actually want to increase the |max_bitrate_bps_|.
+  //     |max_bitrate_bps_| was increased.
   if (state_ != State::kWaitingForProbingResult &&
-      estimated_bitrate_bps_ != 0 && estimated_bitrate_bps_ < max_bitrate_bps &&
-      max_bitrate_bps > max_bitrate_bps_) {
+      estimated_bitrate_bps_ != 0 &&
+      estimated_bitrate_bps_ < old_max_bitrate_bps &&
+      max_bitrate_bps_ > old_max_bitrate_bps) {
     InitiateProbing({max_bitrate_bps}, kExponentialProbingDisabled);
   }
-  max_bitrate_bps_ = max_bitrate_bps;
 }
 
 void ProbeController::SetEstimatedBitrate(int bitrate_bps) {
@@ -131,7 +135,9 @@ void ProbeController::InitiateProbing(
     int min_bitrate_to_probe_further_bps) {
   bool first_cluster = true;
   for (int bitrate : bitrates_to_probe) {
-    bitrate = std::min(bitrate, kMaxProbingBitrateBps);
+    int max_probe_bitrate_bps =
+        max_bitrate_bps_ > 0 ? max_bitrate_bps_ : kDefaultMaxProbingBitrateBps;
+    bitrate = std::min(bitrate, max_probe_bitrate_bps);
     if (first_cluster) {
       pacer_->CreateProbeCluster(bitrate, kProbeDeltasPerCluster + 1);
       first_cluster = false;
