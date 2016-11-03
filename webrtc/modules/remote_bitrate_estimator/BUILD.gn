@@ -103,6 +103,7 @@ if (rtc_include_tests) {
 
     deps = [
       "../../test:test_support",
+      "../congestion_controller",
       "../pacing",
       "//testing/gmock",
       "//testing/gtest",
