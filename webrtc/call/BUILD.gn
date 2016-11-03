@@ -14,8 +14,6 @@ rtc_static_library("call") {
     "call.cc",
     "flexfec_receive_stream.cc",
     "flexfec_receive_stream.h",
-    "transport_adapter.cc",
-    "transport_adapter.h",
   ]
 
   if (!build_with_chromium && is_clang) {

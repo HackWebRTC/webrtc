@@ -14,7 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/call/transport_adapter.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
@@ -23,6 +22,7 @@
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/rtp_stream_receiver.h"
 #include "webrtc/video/rtp_streams_synchronizer.h"
+#include "webrtc/video/transport_adapter.h"
 #include "webrtc/video/video_stream_decoder.h"
 #include "webrtc/video_receive_stream.h"
 
