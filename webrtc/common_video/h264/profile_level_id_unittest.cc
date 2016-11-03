@@ -15,7 +15,7 @@
 namespace webrtc {
 namespace H264 {
 
-TEST(H264ProfileLevelIdParsing, TestInvalid) {
+TEST(H264ProfileLevelId, TestParsingInvalid) {
   // Malformed strings.
   EXPECT_FALSE(ParseProfileLevelId(""));
   EXPECT_FALSE(ParseProfileLevelId(" 42e01f"));
@@ -34,7 +34,7 @@ TEST(H264ProfileLevelIdParsing, TestInvalid) {
   EXPECT_FALSE(ParseProfileLevelId("64e01f"));
 }
 
-TEST(H264ProfileLevelIdParsing, TestLevel) {
+TEST(H264ProfileLevelId, TestParsingLevel) {
   EXPECT_EQ(kLevel3_1, ParseProfileLevelId("42e01f")->level);
   EXPECT_EQ(kLevel1_1, ParseProfileLevelId("42e00b")->level);
   EXPECT_EQ(kLevel1_b, ParseProfileLevelId("42f00b")->level);
@@ -42,7 +42,7 @@ TEST(H264ProfileLevelIdParsing, TestLevel) {
   EXPECT_EQ(kLevel5_2, ParseProfileLevelId("640c34")->level);
 }
 
-TEST(H264ProfileLevelIdParsing, TestConstrainedBaseline) {
+TEST(H264ProfileLevelId, TestParsingConstrainedBaseline) {
   EXPECT_EQ(kProfileConstrainedBaseline,
             ParseProfileLevelId("42e01f")->profile);
   EXPECT_EQ(kProfileConstrainedBaseline,
@@ -53,21 +53,51 @@ TEST(H264ProfileLevelIdParsing, TestConstrainedBaseline) {
             ParseProfileLevelId("58f01f")->profile);
 }
 
-TEST(H264ProfileLevelIdParsing, TestBaseline) {
+TEST(H264ProfileLevelId, TestParsingBaseline) {
   EXPECT_EQ(kProfileBaseline, ParseProfileLevelId("42a01f")->profile);
   EXPECT_EQ(kProfileBaseline, ParseProfileLevelId("58A01F")->profile);
 }
 
-TEST(H264ProfileLevelIdParsing, TestMain) {
+TEST(H264ProfileLevelId, TestParsingMain) {
   EXPECT_EQ(kProfileMain, ParseProfileLevelId("4D401f")->profile);
 }
 
-TEST(H264ProfileLevelIdParsing, TestHigh) {
+TEST(H264ProfileLevelId, TestParsingHigh) {
   EXPECT_EQ(kProfileHigh, ParseProfileLevelId("64001f")->profile);
 }
 
-TEST(H264ProfileLevelIdParsing, TestConstrainedHigh) {
+TEST(H264ProfileLevelId, TestParsingConstrainedHigh) {
   EXPECT_EQ(kProfileConstrainedHigh, ParseProfileLevelId("640c1f")->profile);
+}
+
+TEST(H264ProfileLevelId, TestToString) {
+  EXPECT_EQ("42e01f", *ProfileLevelIdToString(ProfileLevelId(
+                          kProfileConstrainedBaseline, kLevel3_1)));
+  EXPECT_EQ("42000a",
+            *ProfileLevelIdToString(ProfileLevelId(kProfileBaseline, kLevel1)));
+  EXPECT_EQ("4D001f",
+            ProfileLevelIdToString(ProfileLevelId(kProfileMain, kLevel3_1)));
+  EXPECT_EQ("640c2a", *ProfileLevelIdToString(
+                          ProfileLevelId(kProfileConstrainedHigh, kLevel4_2)));
+  EXPECT_EQ("64002a",
+            *ProfileLevelIdToString(ProfileLevelId(kProfileHigh, kLevel4_2)));
+}
+
+TEST(H264ProfileLevelId, TestToStringLevel1b) {
+  EXPECT_EQ("42f00b", *ProfileLevelIdToString(ProfileLevelId(
+                          kProfileConstrainedBaseline, kLevel1_b)));
+  EXPECT_EQ("42100b", *ProfileLevelIdToString(
+                          ProfileLevelId(kProfileBaseline, kLevel1_b)));
+  EXPECT_EQ("4D100b",
+            *ProfileLevelIdToString(ProfileLevelId(kProfileMain, kLevel1_b)));
+}
+
+TEST(H264ProfileLevelId, TestToStringInvalid) {
+  EXPECT_FALSE(ProfileLevelIdToString(ProfileLevelId(kProfileHigh, kLevel1_b)));
+  EXPECT_FALSE(ProfileLevelIdToString(
+      ProfileLevelId(kProfileConstrainedHigh, kLevel1_b)));
+  EXPECT_FALSE(ProfileLevelIdToString(
+      ProfileLevelId(static_cast<Profile>(255), kLevel3_1)));
 }
 
 }  // namespace H264

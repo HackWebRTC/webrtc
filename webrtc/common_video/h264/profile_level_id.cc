@@ -10,6 +10,7 @@
 
 #include "webrtc/common_video/h264/profile_level_id.h"
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
@@ -126,6 +127,50 @@ rtc::Optional<ProfileLevelId> ParseProfileLevelId(const char* str) {
 
   // Unrecognized profile_idc/profile_iop combination.
   return rtc::Optional<ProfileLevelId>();
+}
+
+rtc::Optional<std::string> ProfileLevelIdToString(
+    const ProfileLevelId& profile_level_id) {
+  // Handle special case level == 1b.
+  if (profile_level_id.level == kLevel1_b) {
+    switch (profile_level_id.profile) {
+      case kProfileConstrainedBaseline:
+        return rtc::Optional<std::string>("42f00b");
+      case kProfileBaseline:
+        return rtc::Optional<std::string>("42100b");
+      case kProfileMain:
+        return rtc::Optional<std::string>("4D100b");
+      // Level 1b is not allowed for other profiles.
+      default:
+        return rtc::Optional<std::string>();
+    }
+  }
+
+  const char* profile_idc_iop_string;
+  switch (profile_level_id.profile) {
+    case kProfileConstrainedBaseline:
+      profile_idc_iop_string = "42e0";
+      break;
+    case kProfileBaseline:
+      profile_idc_iop_string = "4200";
+      break;
+    case kProfileMain:
+      profile_idc_iop_string = "4D00";
+      break;
+    case kProfileConstrainedHigh:
+      profile_idc_iop_string = "640c";
+      break;
+    case kProfileHigh:
+      profile_idc_iop_string = "6400";
+      break;
+    // Unrecognized profile.
+    default:
+      return rtc::Optional<std::string>();
+  }
+
+  char str[7];
+  snprintf(str, 7u, "%s%02x", profile_idc_iop_string, profile_level_id.level);
+  return rtc::Optional<std::string>(str);
 }
 
 }  // namespace H264

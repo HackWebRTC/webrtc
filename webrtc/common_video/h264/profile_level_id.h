@@ -11,6 +11,8 @@
 #ifndef WEBRTC_COMMON_VIDEO_H264_PROFILE_LEVEL_ID_H_
 #define WEBRTC_COMMON_VIDEO_H264_PROFILE_LEVEL_ID_H_
 
+#include <string>
+
 #include "webrtc/base/optional.h"
 
 namespace webrtc {
@@ -47,6 +49,8 @@ enum Level {
 };
 
 struct ProfileLevelId {
+  ProfileLevelId(Profile profile, Level level)
+      : profile(profile), level(level) {}
   Profile profile;
   Level level;
 };
@@ -55,6 +59,11 @@ struct ProfileLevelId {
 // Nothing will be returned if the string is not a recognized H264
 // profile level id.
 rtc::Optional<ProfileLevelId> ParseProfileLevelId(const char* str);
+
+// Returns canonical string representation as three hex bytes of the profile
+// level id, or returns nothing for invalid profile level ids.
+rtc::Optional<std::string> ProfileLevelIdToString(
+    const ProfileLevelId& profile_level_id);
 
 }  // namespace H264
 }  // namespace webrtc
