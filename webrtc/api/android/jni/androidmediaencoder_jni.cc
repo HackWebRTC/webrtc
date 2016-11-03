@@ -263,8 +263,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
                                            // |input_frame_infos_|.
   // Frame size in bytes fed to MediaCodec.
   int yuv_size_;
-  // True only when between a callback_->OnEncodedImage() call return a positive
-  // value and the next Encode() call being ignored.
+  // True only when between a callback_->Encoded() call return a positive value
+  // and the next Encode() call being ignored.
   bool drop_next_input_frame_;
   // Global references; must be deleted in Release().
   std::vector<jobject> input_buffers_;
@@ -1063,8 +1063,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     }
 
     // Callback - return encoded frame.
-    webrtc::EncodedImageCallback::Result callback_result(
-        webrtc::EncodedImageCallback::Result::OK);
+    int32_t callback_status = 0;
     if (callback_) {
       std::unique_ptr<webrtc::EncodedImage> image(
           new webrtc::EncodedImage(payload, payload_size, payload_size));
@@ -1175,7 +1174,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         }
       }
 
-      callback_result = callback_->OnEncodedImage(*image, &info, &header);
+      callback_status = callback_->Encoded(*image, &info, &header);
     }
 
     // Return output buffer back to the encoder.
@@ -1209,9 +1208,11 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     current_encoding_time_ms_ += frame_encoding_time_ms;
     LogStatistics(false);
 
-    // Errors in callback_result are currently ignored.
-    if (callback_result.drop_next_frame)
+    if (callback_status > 0) {
       drop_next_input_frame_ = true;
+      // Theoretically could handle callback_status<0 here, but unclear what
+      // that would mean for us.
+    }
   }
   return true;
 }
