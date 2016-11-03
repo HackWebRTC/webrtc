@@ -27,24 +27,29 @@ DecoderDatabase::DecoderDatabase(
 DecoderDatabase::~DecoderDatabase() = default;
 
 DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
-                                          AudioDecoderFactory* factory)
-    : audio_format_(audio_format),
+                                          AudioDecoderFactory* factory,
+                                          const std::string& codec_name)
+    : name_(codec_name),
+      audio_format_(audio_format),
       factory_(factory),
       external_decoder_(nullptr),
       cng_decoder_(CngDecoder::Create(audio_format)),
       subtype_(SubtypeFromFormat(audio_format)) {}
 
+DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
+                                          AudioDecoderFactory* factory)
+    : DecoderInfo(audio_format, factory, audio_format.name) {}
+
 DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
                                           AudioDecoderFactory* factory)
-    : audio_format_(*acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct)),
-      factory_(factory),
-      external_decoder_(nullptr),
-      cng_decoder_(CngDecoder::Create(audio_format_)),
-      subtype_(SubtypeFromFormat(audio_format_)) {}
+    : DecoderInfo(*acm2::RentACodec::NetEqDecoderToSdpAudioFormat(ct),
+                  factory) {}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
-                                          AudioDecoder* ext_dec)
-    : audio_format_(audio_format),
+                                          AudioDecoder* ext_dec,
+                                          const std::string& codec_name)
+    : name_(codec_name),
+      audio_format_(audio_format),
       factory_(nullptr),
       external_decoder_(ext_dec),
       subtype_(Subtype::kNormal) {
@@ -135,8 +140,7 @@ int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
   if (!opt_format) {
     return kCodecNotSupported;
   }
-  DecoderInfo info(*opt_format, decoder_factory_);
-  info.name = name;
+  DecoderInfo info(*opt_format, decoder_factory_, name);
   auto ret =
       decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
   if (ret.second == false) {
@@ -176,8 +180,7 @@ int DecoderDatabase::InsertExternal(uint8_t rtp_payload_type,
   const SdpAudioFormat format = opt_db_format.value_or({"arbitrary", 0, 0});
 
   std::pair<DecoderMap::iterator, bool> ret;
-  DecoderInfo info(format, decoder);
-  info.name = codec_name;
+  DecoderInfo info(format, decoder, codec_name);
   ret = decoders_.insert(std::make_pair(rtp_payload_type, std::move(info)));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.

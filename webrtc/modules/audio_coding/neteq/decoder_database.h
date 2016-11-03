@@ -41,11 +41,16 @@ class DecoderDatabase {
   // Class that stores decoder info in the database.
   class DecoderInfo {
    public:
+    DecoderInfo(const SdpAudioFormat& audio_format,
+                AudioDecoderFactory* factory,
+                const std::string& codec_name);
     explicit DecoderInfo(const SdpAudioFormat& audio_format,
                          AudioDecoderFactory* factory = nullptr);
     explicit DecoderInfo(NetEqDecoder ct,
                          AudioDecoderFactory* factory = nullptr);
-    DecoderInfo(const SdpAudioFormat& audio_format, AudioDecoder* ext_dec);
+    DecoderInfo(const SdpAudioFormat& audio_format,
+                AudioDecoder* ext_dec,
+                const std::string& codec_name);
     DecoderInfo(DecoderInfo&&);
     ~DecoderInfo();
 
@@ -85,12 +90,14 @@ class DecoderDatabase {
     // Returns true if the decoder's format is named |name|.
     bool IsType(const std::string& name) const;
 
-    // TODO(ossu): |name| is kept here while we retain the old external decoder
-    //             interface. Remove this once using an AudioDecoderFactory has
-    //             supplanted the old functionality.
-    std::string name;
+    const std::string& get_name() const { return name_; }
 
    private:
+    // TODO(ossu): |name_| is kept here while we retain the old external
+    //             decoder interface. Remove this once using an
+    //             AudioDecoderFactory has supplanted the old functionality.
+    const std::string name_;
+
     const SdpAudioFormat audio_format_;
     AudioDecoderFactory* const factory_;
     mutable std::unique_ptr<AudioDecoder> decoder_;

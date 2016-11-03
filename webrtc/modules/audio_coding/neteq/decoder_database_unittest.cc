@@ -81,7 +81,7 @@ TEST(DecoderDatabase, GetDecoderInfo) {
   info = db.GetDecoderInfo(kPayloadType);
   ASSERT_TRUE(info != NULL);
   EXPECT_TRUE(info->IsType("pcmu"));
-  EXPECT_EQ(kCodecName, info->name);
+  EXPECT_EQ(kCodecName, info->get_name());
   EXPECT_EQ(decoder, db.GetDecoder(kPayloadType));
   info = db.GetDecoderInfo(kPayloadType + 1);  // Other payload type.
   EXPECT_TRUE(info == NULL);  // Should not be found.
@@ -150,8 +150,8 @@ TEST(DecoderDatabase, ExternalDecoder) {
   info = db.GetDecoderInfo(kPayloadType);
   ASSERT_TRUE(info != NULL);
   EXPECT_TRUE(info->IsType("pcmu"));
-  EXPECT_EQ(info->name, kCodecName);
-  EXPECT_EQ(kCodecName, info->name);
+  EXPECT_EQ(info->get_name(), kCodecName);
+  EXPECT_EQ(kCodecName, info->get_name());
   // Expect not to delete the decoder when removing it from the database, since
   // it was declared externally.
   EXPECT_CALL(decoder, Die()).Times(0);

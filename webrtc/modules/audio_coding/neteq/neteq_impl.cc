@@ -478,7 +478,7 @@ rtc::Optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
   CodecInst ci = {0};
   rtc::MsanMarkUninitialized(rtc::MakeArrayView(&ci, 1));
   ci.pltype = payload_type;
-  std::strncpy(ci.plname, di->name.c_str(), sizeof(ci.plname));
+  std::strncpy(ci.plname, di->get_name().c_str(), sizeof(ci.plname));
   ci.plname[sizeof(ci.plname) - 1] = '\0';
   ci.plfreq = di->IsRed() || di->IsDtmf() ? 8000 : di->SampleRateHz();
   AudioDecoder* const decoder = di->GetDecoder();
