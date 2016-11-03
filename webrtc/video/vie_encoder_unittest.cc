@@ -208,14 +208,15 @@ class ViEEncoderTest : public ::testing::Test {
     }
 
    private:
-    int32_t Encoded(const EncodedImage& encoded_image,
-                    const CodecSpecificInfo* codec_specific_info,
-                    const RTPFragmentationHeader* fragmentation) override {
+    Result OnEncodedImage(
+        const EncodedImage& encoded_image,
+        const CodecSpecificInfo* codec_specific_info,
+        const RTPFragmentationHeader* fragmentation) override {
       rtc::CritScope lock(&crit_);
       EXPECT_TRUE(expect_frames_);
       timestamp_ = encoded_image._timeStamp;
       encoded_frame_event_.Set();
-      return 0;
+      return Result(Result::OK, timestamp_);
     }
 
     void OnEncoderConfigurationChanged(std::vector<VideoStream> streams,

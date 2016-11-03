@@ -152,9 +152,9 @@ class MockVideoEncoder : public VideoEncoder {
     EncodedImage image;
     image._encodedWidth = width;
     image._encodedHeight = height;
-    CodecSpecificInfo codecSpecificInfo;
-    memset(&codecSpecificInfo, 0, sizeof(codecSpecificInfo));
-    callback_->Encoded(image, &codecSpecificInfo, NULL);
+    CodecSpecificInfo codec_specific_info;
+    memset(&codec_specific_info, 0, sizeof(codec_specific_info));
+    callback_->OnEncodedImage(image, &codec_specific_info, NULL);
   }
 
   void set_supports_native_handle(bool enabled) {
