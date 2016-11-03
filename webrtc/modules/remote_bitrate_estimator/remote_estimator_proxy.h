@@ -47,8 +47,11 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   void SetMinBitrate(int min_bitrate_bps) override {}
   int64_t TimeUntilNextProcess() override;
   void Process() override;
+  void OnBitrateChanged(int bitrate);
 
-  static const int kDefaultProcessIntervalMs;
+  static const int kMinSendIntervalMs;
+  static const int kMaxSendIntervalMs;
+  static const int kDefaultSendIntervalMs;
   static const int kBackWindowMs;
 
  private:
@@ -68,6 +71,7 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   int64_t window_start_seq_ GUARDED_BY(&lock_);
   // Map unwrapped seq -> time.
   std::map<int64_t, int64_t> packet_arrival_times_ GUARDED_BY(&lock_);
+  int64_t send_interval_ms_ GUARDED_BY(&lock_);
 };
 
 }  // namespace webrtc
