@@ -139,7 +139,7 @@ rtc::Optional<std::string> ProfileLevelIdToString(
       case kProfileBaseline:
         return rtc::Optional<std::string>("42100b");
       case kProfileMain:
-        return rtc::Optional<std::string>("4D100b");
+        return rtc::Optional<std::string>("4d100b");
       // Level 1b is not allowed for other profiles.
       default:
         return rtc::Optional<std::string>();
@@ -155,7 +155,7 @@ rtc::Optional<std::string> ProfileLevelIdToString(
       profile_idc_iop_string = "4200";
       break;
     case kProfileMain:
-      profile_idc_iop_string = "4D00";
+      profile_idc_iop_string = "4d00";
       break;
     case kProfileConstrainedHigh:
       profile_idc_iop_string = "640c";

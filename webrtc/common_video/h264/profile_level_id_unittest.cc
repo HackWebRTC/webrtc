@@ -75,7 +75,7 @@ TEST(H264ProfileLevelId, TestToString) {
                           kProfileConstrainedBaseline, kLevel3_1)));
   EXPECT_EQ("42000a",
             *ProfileLevelIdToString(ProfileLevelId(kProfileBaseline, kLevel1)));
-  EXPECT_EQ("4D001f",
+  EXPECT_EQ("4d001f",
             ProfileLevelIdToString(ProfileLevelId(kProfileMain, kLevel3_1)));
   EXPECT_EQ("640c2a", *ProfileLevelIdToString(
                           ProfileLevelId(kProfileConstrainedHigh, kLevel4_2)));
@@ -88,8 +88,17 @@ TEST(H264ProfileLevelId, TestToStringLevel1b) {
                           kProfileConstrainedBaseline, kLevel1_b)));
   EXPECT_EQ("42100b", *ProfileLevelIdToString(
                           ProfileLevelId(kProfileBaseline, kLevel1_b)));
-  EXPECT_EQ("4D100b",
+  EXPECT_EQ("4d100b",
             *ProfileLevelIdToString(ProfileLevelId(kProfileMain, kLevel1_b)));
+}
+
+TEST(H264ProfileLevelId, TestToStringRoundTrip) {
+  EXPECT_EQ("42e01f", *ProfileLevelIdToString(*ParseProfileLevelId("42e01f")));
+  EXPECT_EQ("42e01f", *ProfileLevelIdToString(*ParseProfileLevelId("42E01F")));
+  EXPECT_EQ("4d100b", *ProfileLevelIdToString(*ParseProfileLevelId("4d100b")));
+  EXPECT_EQ("4d100b", *ProfileLevelIdToString(*ParseProfileLevelId("4D100B")));
+  EXPECT_EQ("640c2a", *ProfileLevelIdToString(*ParseProfileLevelId("640c2a")));
+  EXPECT_EQ("640c2a", *ProfileLevelIdToString(*ParseProfileLevelId("640C2A")));
 }
 
 TEST(H264ProfileLevelId, TestToStringInvalid) {
