@@ -549,6 +549,11 @@ StatsReport* StatsCollector::PrepareReport(
   return report;
 }
 
+bool StatsCollector::IsValidTrack(const std::string& track_id) {
+  return reports_.Find(StatsReport::NewTypedId(
+             StatsReport::kStatsReportTypeTrack, track_id)) != nullptr;
+}
+
 StatsReport* StatsCollector::AddCertificateReports(
     const rtc::SSLCertificate* cert) {
   RTC_DCHECK(pc_->session()->signaling_thread()->IsCurrent());

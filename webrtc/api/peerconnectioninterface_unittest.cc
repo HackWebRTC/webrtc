@@ -1577,10 +1577,7 @@ TEST_F(PeerConnectionInterfaceTest, GetStatsForVideoTrack) {
 }
 
 // Test that we don't get statistics for an invalid track.
-// TODO(tommi): Fix this test.  DoGetStats will return true
-// for the unknown track (since GetStats is async), but no
-// data is returned for the track.
-TEST_F(PeerConnectionInterfaceTest, DISABLED_GetStatsForInvalidTrack) {
+TEST_F(PeerConnectionInterfaceTest, GetStatsForInvalidTrack) {
   InitiateCall();
   rtc::scoped_refptr<AudioTrackInterface> unknown_audio_track(
       pc_factory_->CreateAudioTrack("unknown track", NULL));

@@ -78,6 +78,9 @@ class StatsCollector {
                              const StatsReport::Id& transport_id,
                              StatsReport::Direction direction);
 
+  // A track is invalid if there is no report data for it.
+  bool IsValidTrack(const std::string& track_id);
+
   // Method used by the unittest to force a update of stats since UpdateStats()
   // that occur less than kMinGatherStatsPeriod number of ms apart will be
   // ignored.

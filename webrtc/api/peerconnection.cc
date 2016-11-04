@@ -886,6 +886,13 @@ bool PeerConnection::GetStats(StatsObserver* observer,
   }
 
   stats_->UpdateStats(level);
+  // The StatsCollector is used to tell if a track is valid because it may
+  // remember tracks that the PeerConnection previously removed.
+  if (track && !stats_->IsValidTrack(track->id())) {
+    LOG(LS_WARNING) << "GetStats is called with an invalid track: "
+                    << track->id();
+    return false;
+  }
   signaling_thread()->Post(RTC_FROM_HERE, this, MSG_GETSTATS,
                            new GetStatsMsg(observer, track));
   return true;
