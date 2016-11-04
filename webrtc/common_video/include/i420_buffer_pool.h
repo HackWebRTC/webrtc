@@ -29,7 +29,7 @@ namespace webrtc {
 class I420BufferPool {
  public:
   I420BufferPool()
-      : I420BufferPool(false, std::numeric_limits<size_t>::max()) {}
+      : I420BufferPool(false) {}
   explicit I420BufferPool(bool zero_initialize)
       : I420BufferPool(zero_initialize, std::numeric_limits<size_t>::max()) {}
   I420BufferPool(bool zero_initialze, size_t max_number_of_buffers);
@@ -54,9 +54,9 @@ class I420BufferPool {
   // FFmpeg according to http://crbug.com/390941, which only requires it for the
   // initial allocation (as shown by FFmpeg's own buffer allocation code). It
   // has to do with "Use-of-uninitialized-value" on "Linux_msan_chrome".
-  bool zero_initialize_;
+  const bool zero_initialize_;
   // Max number of buffers this pool can have pending.
-  size_t max_number_of_buffers_;
+  const size_t max_number_of_buffers_;
 };
 
 }  // namespace webrtc
