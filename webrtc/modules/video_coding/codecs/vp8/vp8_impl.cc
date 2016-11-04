@@ -31,6 +31,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 namespace {
@@ -1055,7 +1056,8 @@ int VP8EncoderImpl::RegisterEncodeCompleteCallback(
 }
 
 VP8DecoderImpl::VP8DecoderImpl()
-    : decode_complete_callback_(NULL),
+    : buffer_pool_(false, 300 /* max_number_of_buffers*/),
+      decode_complete_callback_(NULL),
       inited_(false),
       feedback_mode_(false),
       decoder_(NULL),
@@ -1270,6 +1272,12 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
   // Allocate memory for decoded image.
   rtc::scoped_refptr<I420Buffer> buffer =
       buffer_pool_.CreateBuffer(img->d_w, img->d_h);
+  if (!buffer.get()) {
+    // Pool has too many pending frames.
+    RTC_HISTOGRAM_BOOLEAN("WebRTC.Video.VP8DecoderImpl.TooManyPendingFrames",
+                          1);
+    return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
+  }
 
   libyuv::I420Copy(img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
                    img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],

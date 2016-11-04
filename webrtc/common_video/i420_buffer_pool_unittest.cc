@@ -63,4 +63,11 @@ TEST(TestI420BufferPool, FrameValidAfterPoolDestruction) {
   memset(buffer->MutableDataY(), 0xA5, 16 * buffer->StrideY());
 }
 
+TEST(TestI420BufferPool, MaxNumberOfBuffers) {
+  I420BufferPool pool(false, 1);
+  rtc::scoped_refptr<VideoFrameBuffer> buffer1 = pool.CreateBuffer(16, 16);
+  EXPECT_NE(nullptr, buffer1.get());
+  EXPECT_EQ(nullptr, pool.CreateBuffer(16, 16).get());
+}
+
 }  // namespace webrtc

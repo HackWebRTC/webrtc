@@ -14,10 +14,10 @@
 
 namespace webrtc {
 
-const size_t I420BufferPool::kMaxNumberOfFramesBeforeCrash = 300;
-
-I420BufferPool::I420BufferPool(bool zero_initialize)
-    : zero_initialize_(zero_initialize) {}
+I420BufferPool::I420BufferPool(bool zero_initialize,
+                               size_t max_number_of_buffers)
+    : zero_initialize_(zero_initialize),
+      max_number_of_buffers_(max_number_of_buffers) {}
 
 void I420BufferPool::Release() {
   buffers_.clear();
@@ -26,8 +26,6 @@ void I420BufferPool::Release() {
 rtc::scoped_refptr<I420Buffer> I420BufferPool::CreateBuffer(int width,
                                                             int height) {
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
-  RTC_CHECK_LT(buffers_.size(), kMaxNumberOfFramesBeforeCrash)
-      << "I420BufferPool too big.";
   // Release buffers with wrong resolution.
   for (auto it = buffers_.begin(); it != buffers_.end();) {
     if ((*it)->width() != width || (*it)->height() != height)
@@ -44,6 +42,9 @@ rtc::scoped_refptr<I420Buffer> I420BufferPool::CreateBuffer(int width,
     if (buffer->HasOneRef())
       return buffer;
   }
+
+  if (buffers_.size() >= max_number_of_buffers_)
+    return nullptr;
   // Allocate new buffer.
   rtc::scoped_refptr<PooledI420Buffer> buffer =
       new PooledI420Buffer(width, height);
