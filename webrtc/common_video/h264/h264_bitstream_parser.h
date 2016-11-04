@@ -31,6 +31,12 @@ namespace webrtc {
 // bitstreams.
 class H264BitstreamParser {
  public:
+  enum Result {
+    kOk,
+    kInvalidStream,
+    kUnsupportedStream,
+  };
+
   H264BitstreamParser();
   virtual ~H264BitstreamParser();
 
@@ -42,9 +48,9 @@ class H264BitstreamParser {
 
  protected:
   void ParseSlice(const uint8_t* slice, size_t length);
-  bool ParseNonParameterSetNalu(const uint8_t* source,
-                                size_t source_length,
-                                uint8_t nalu_type);
+  Result ParseNonParameterSetNalu(const uint8_t* source,
+                                  size_t source_length,
+                                  uint8_t nalu_type);
 
   // SPS/PPS state, updated when parsing new SPS/PPS, used to parse slices.
   rtc::Optional<SpsParser::SpsState> sps_;

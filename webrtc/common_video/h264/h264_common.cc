@@ -24,6 +24,7 @@ std::vector<NaluIndex> FindNaluIndices(const uint8_t* buffer,
   std::vector<NaluIndex> sequences;
   if (buffer_size < kNaluShortStartSequenceSize)
     return sequences;
+
   const size_t end = buffer_size - kNaluShortStartSequenceSize;
   for (size_t i = 0; i < end;) {
     if (buffer[i + 2] > 1) {
