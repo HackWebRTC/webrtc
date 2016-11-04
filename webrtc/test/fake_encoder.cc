@@ -112,8 +112,10 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     encoded.rotation_ = input_image.rotation();
     RTC_DCHECK(callback_ != NULL);
     specifics.codec_name = ImplementationName();
-    if (callback_->Encoded(encoded, &specifics, NULL) != 0)
+    if (callback_->OnEncodedImage(encoded, &specifics, NULL).error !=
+        EncodedImageCallback::Result::OK) {
       return -1;
+    }
     bits_available -= std::min(encoded._length * 8, bits_available);
   }
   return 0;

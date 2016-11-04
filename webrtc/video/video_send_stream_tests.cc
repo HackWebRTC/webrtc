@@ -2419,8 +2419,10 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
         encoded._encodedWidth = kEncodedResolution[i].width;
         encoded._encodedHeight = kEncodedResolution[i].height;
         RTC_DCHECK(callback_);
-        if (callback_->Encoded(encoded, &specifics, nullptr) != 0)
+        if (callback_->OnEncodedImage(encoded, &specifics, nullptr).error !=
+            EncodedImageCallback::Result::OK) {
           return -1;
+        }
       }
 
       observation_complete_.Set();
