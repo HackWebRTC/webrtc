@@ -215,8 +215,8 @@ TEST(AudioSendStreamTest, ConfigToString) {
   config.rtp.ssrc = kSsrc;
   config.rtp.c_name = kCName;
   config.voe_channel_id = kChannelId;
-  config.min_bitrate_kbps = 12;
-  config.max_bitrate_kbps = 34;
+  config.min_bitrate_bps = 12000;
+  config.max_bitrate_bps = 34000;
   config.send_codec_spec.nack_enabled = true;
   config.send_codec_spec.transport_cc_enabled = false;
   config.send_codec_spec.enable_codec_fec = true;
@@ -233,7 +233,7 @@ TEST(AudioSendStreamTest, ConfigToString) {
       "{rtp: {ssrc: 1234, extensions: [{uri: "
       "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 2}], nack: "
       "{rtp_history_ms: 0}, c_name: foo_name}, send_transport: nullptr, "
-      "voe_channel_id: 1, min_bitrate_kbps: 12, max_bitrate_kbps: 34, "
+      "voe_channel_id: 1, min_bitrate_bps: 12000, max_bitrate_bps: 34000, "
       "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "
       "enable_codec_fec: true, enable_opus_dtx: false, opus_max_playback_rate: "
       "32000, cng_payload_type: 42, cng_plfreq: 56, min_ptime: 20, max_ptime: "

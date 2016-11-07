@@ -83,16 +83,16 @@ constexpr int kNackRtpHistoryMs = 5000;
 // 64-128 kb/s for FB stereo music.
 // The current implementation applies the following values to mono signals,
 // and multiplies them by 2 for stereo.
-const int kOpusBitrateNb = 12000;
-const int kOpusBitrateWb = 20000;
-const int kOpusBitrateFb = 32000;
+const int kOpusBitrateNbBps = 12000;
+const int kOpusBitrateWbBps = 20000;
+const int kOpusBitrateFbBps = 32000;
 
 // Opus bitrate should be in the range between 6000 and 510000.
-const int kOpusMinBitrate = 6000;
-const int kOpusMaxBitrate = 510000;
+const int kOpusMinBitrateBps = 6000;
+const int kOpusMaxBitrateBps = 510000;
 
 // iSAC bitrate should be <= 56000.
-const int kIsacMaxBitrate = 56000;
+const int kIsacMaxBitrateBps = 56000;
 
 // Default audio dscp value.
 // See http://tools.ietf.org/html/rfc2474 for details.
@@ -222,18 +222,19 @@ int GetOpusBitrate(const AudioCodec& codec, int max_playback_rate) {
   }
   if (bitrate <= 0) {
     if (max_playback_rate <= 8000) {
-      bitrate = kOpusBitrateNb;
+      bitrate = kOpusBitrateNbBps;
     } else if (max_playback_rate <= 16000) {
-      bitrate = kOpusBitrateWb;
+      bitrate = kOpusBitrateWbBps;
     } else {
-      bitrate = kOpusBitrateFb;
+      bitrate = kOpusBitrateFbBps;
     }
 
     if (IsCodecFeatureEnabled(codec, kCodecParamStereo)) {
       bitrate *= 2;
     }
-  } else if (bitrate < kOpusMinBitrate || bitrate > kOpusMaxBitrate) {
-    bitrate = (bitrate < kOpusMinBitrate) ? kOpusMinBitrate : kOpusMaxBitrate;
+  } else if (bitrate < kOpusMinBitrateBps || bitrate > kOpusMaxBitrateBps) {
+    bitrate = (bitrate < kOpusMinBitrateBps) ? kOpusMinBitrateBps
+                                             : kOpusMaxBitrateBps;
     std::string rate_source =
         use_param ? "Codec parameter \"maxaveragebitrate\"" :
             "Supplied Opus bitrate";
@@ -478,9 +479,9 @@ class WebRtcVoiceCodecs final {
 };
 
 const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[11] = {
-    {kOpusCodecName, 48000, 2, 111, true, {10, 20, 40, 60}, kOpusMaxBitrate},
-    {kIsacCodecName, 16000, 1, 103, true, {30, 60}, kIsacMaxBitrate},
-    {kIsacCodecName, 32000, 1, 104, true, {30}, kIsacMaxBitrate},
+    {kOpusCodecName, 48000, 2, 111, true, {10, 20, 40, 60}, kOpusMaxBitrateBps},
+    {kIsacCodecName, 16000, 1, 103, true, {30, 60}, kIsacMaxBitrateBps},
+    {kIsacCodecName, 32000, 1, 104, true, {30}, kIsacMaxBitrateBps},
     // G722 should be advertised as 8000 Hz because of the RFC "bug".
     {kG722CodecName, 8000, 1, 9, false, {10, 20, 30, 40, 50, 60}},
     {kIlbcCodecName, 8000, 1, 102, false, {20, 30, 40, 60}},
@@ -489,8 +490,7 @@ const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[11] = {
     {kCnCodecName, 32000, 1, 106, false, {}},
     {kCnCodecName, 16000, 1, 105, false, {}},
     {kCnCodecName, 8000, 1, 13, false, {}},
-    {kDtmfCodecName, 8000, 1, 126, false, {}}
-};
+    {kDtmfCodecName, 8000, 1, 126, false, {}}};
 
 rtc::Optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
                                       int rtp_max_bitrate_bps,
@@ -1392,8 +1392,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
         "Enabled") {
       // TODO(mflodman): Keep testing this and set proper values.
       // Note: This is an early experiment currently only supported by Opus.
-      config_.min_bitrate_kbps = kOpusMinBitrate;
-      config_.max_bitrate_kbps = kOpusBitrateFb;
+      config_.min_bitrate_bps = kOpusMinBitrateBps;
+      config_.max_bitrate_bps = kOpusBitrateFbBps;
     }
     stream_ = call_->CreateAudioSendStream(config_);
     RTC_CHECK(stream_);

@@ -90,8 +90,8 @@ class AudioSendStream {
     // Bitrate limits used for variable audio bitrate streams. Set both to -1 to
     // disable audio bitrate adaptation.
     // Note: This is still an experimental feature and not ready for real usage.
-    int min_bitrate_kbps = -1;
-    int max_bitrate_kbps = -1;
+    int min_bitrate_bps = -1;
+    int max_bitrate_bps = -1;
 
     // Defines whether to turn on audio network adaptor, and defines its config
     // string.

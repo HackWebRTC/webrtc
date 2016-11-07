@@ -212,8 +212,8 @@ void RampUpTester::ModifyAudioConfigs(
   send_config->rtp.ssrc = audio_ssrcs_[0];
   send_config->rtp.extensions.clear();
 
-  send_config->min_bitrate_kbps = 6;
-  send_config->max_bitrate_kbps = 60;
+  send_config->min_bitrate_bps = 6000;
+  send_config->max_bitrate_bps = 60000;
 
   bool transport_cc = false;
   if (extension_type_ == RtpExtension::kAbsSendTimeUri) {

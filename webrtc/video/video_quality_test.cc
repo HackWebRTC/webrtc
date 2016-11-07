@@ -46,8 +46,8 @@ constexpr int kPayloadTypeVP8 = 123;
 constexpr int kPayloadTypeVP9 = 124;
 constexpr size_t kMaxComparisons = 10;
 constexpr char kSyncGroup[] = "av_sync";
-constexpr int kOpusMinBitrate = 6000;
-constexpr int kOpusBitrateFb = 32000;
+constexpr int kOpusMinBitrateBps = 6000;
+constexpr int kOpusBitrateFbBps = 32000;
 
 struct VoiceEngineState {
   VoiceEngineState()
@@ -1264,8 +1264,8 @@ void VideoQualityTest::SetupAudio(int send_channel_id,
     audio_send_config_.rtp.extensions.push_back(
         webrtc::RtpExtension(webrtc::RtpExtension::kTransportSequenceNumberUri,
                              test::kTransportSequenceNumberExtensionId));
-    audio_send_config_.min_bitrate_kbps = kOpusMinBitrate / 1000;
-    audio_send_config_.max_bitrate_kbps = kOpusBitrateFb / 1000;
+    audio_send_config_.min_bitrate_bps = kOpusMinBitrateBps;
+    audio_send_config_.max_bitrate_bps = kOpusBitrateFbBps;
   }
   audio_send_config_.send_codec_spec.codec_inst =
       CodecInst{120, "OPUS", 48000, 960, 2, 64000};
