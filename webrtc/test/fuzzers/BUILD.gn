@@ -86,6 +86,16 @@ webrtc_fuzzer_test("flexfec_header_reader_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("flexfec_sender_fuzzer") {
+  sources = [
+    "flexfec_sender_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp/",
+  ]
+  libfuzzer_options = [ "max_len=200" ]
+}
+
 webrtc_fuzzer_test("ulpfec_header_reader_fuzzer") {
   sources = [
     "ulpfec_header_reader_fuzzer.cc",
