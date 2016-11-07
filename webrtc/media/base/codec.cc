@@ -77,17 +77,10 @@ Codec::Codec(int id, const std::string& name, int clockrate)
 Codec::Codec() : id(0), clockrate(0) {}
 
 Codec::Codec(const Codec& c) = default;
-
+Codec::Codec(Codec&& c) = default;
 Codec::~Codec() = default;
-
-Codec& Codec::operator=(const Codec& c) {
-  this->id = c.id;  // id is reserved in objective-c
-  name = c.name;
-  clockrate = c.clockrate;
-  params = c.params;
-  feedback_params = c.feedback_params;
-  return *this;
-}
+Codec& Codec::operator=(const Codec& c) = default;
+Codec& Codec::operator=(Codec&& c) = default;
 
 bool Codec::operator==(const Codec& c) const {
   return this->id == c.id &&  // id is reserved in objective-c
@@ -99,8 +92,9 @@ bool Codec::Matches(const Codec& codec) const {
   // Match the codec id/name based on the typical static/dynamic name rules.
   // Matching is case-insensitive.
   const int kMaxStaticPayloadId = 95;
-  return (codec.id <= kMaxStaticPayloadId) ?
-      (id == codec.id) : (_stricmp(name.c_str(), codec.name.c_str()) == 0);
+  return (id <= kMaxStaticPayloadId || codec.id <= kMaxStaticPayloadId)
+             ? (id == codec.id)
+             : (_stricmp(name.c_str(), codec.name.c_str()) == 0);
 }
 
 bool Codec::GetParam(const std::string& name, std::string* out) const {
@@ -161,13 +155,9 @@ AudioCodec::AudioCodec() : Codec(), bitrate(0), channels(0) {
 }
 
 AudioCodec::AudioCodec(const AudioCodec& c) = default;
-
-AudioCodec& AudioCodec::operator=(const AudioCodec& c) {
-  Codec::operator=(c);
-  bitrate = c.bitrate;
-  channels = c.channels;
-  return *this;
-}
+AudioCodec::AudioCodec(AudioCodec&& c) = default;
+AudioCodec& AudioCodec::operator=(const AudioCodec& c) = default;
+AudioCodec& AudioCodec::operator=(AudioCodec&& c) = default;
 
 bool AudioCodec::operator==(const AudioCodec& c) const {
   return bitrate == c.bitrate && channels == c.channels && Codec::operator==(c);
@@ -220,11 +210,9 @@ VideoCodec::VideoCodec() : Codec() {
 }
 
 VideoCodec::VideoCodec(const VideoCodec& c) = default;
-
-VideoCodec& VideoCodec::operator=(const VideoCodec& c) {
-  Codec::operator=(c);
-  return *this;
-}
+VideoCodec::VideoCodec(VideoCodec&& c) = default;
+VideoCodec& VideoCodec::operator=(const VideoCodec& c) = default;
+VideoCodec& VideoCodec::operator=(VideoCodec&& c) = default;
 
 bool VideoCodec::operator==(const VideoCodec& c) const {
   return Codec::operator==(c);
@@ -285,8 +273,9 @@ DataCodec::DataCodec() : Codec() {
 }
 
 DataCodec::DataCodec(const DataCodec& c) = default;
-
+DataCodec::DataCodec(DataCodec&& c) = default;
 DataCodec& DataCodec::operator=(const DataCodec& c) = default;
+DataCodec& DataCodec::operator=(DataCodec&& c) = default;
 
 std::string DataCodec::ToString() const {
   std::ostringstream os;

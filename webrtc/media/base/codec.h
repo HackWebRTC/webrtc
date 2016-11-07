@@ -74,6 +74,7 @@ struct Codec {
   // Creates an empty codec.
   Codec();
   Codec(const Codec& c);
+  Codec(Codec&& c);
   virtual ~Codec();
 
   // Indicates if this codec is compatible with the specified codec.
@@ -100,6 +101,7 @@ struct Codec {
   virtual webrtc::RtpCodecParameters ToCodecParameters() const;
 
   Codec& operator=(const Codec& c);
+  Codec& operator=(Codec&& c);
 
   bool operator==(const Codec& c) const;
 
@@ -121,6 +123,7 @@ struct AudioCodec : public Codec {
   // Creates an empty codec.
   AudioCodec();
   AudioCodec(const AudioCodec& c);
+  AudioCodec(AudioCodec&& c);
   virtual ~AudioCodec() = default;
 
   // Indicates if this codec is compatible with the specified codec.
@@ -131,6 +134,7 @@ struct AudioCodec : public Codec {
   webrtc::RtpCodecParameters ToCodecParameters() const override;
 
   AudioCodec& operator=(const AudioCodec& c);
+  AudioCodec& operator=(AudioCodec&& c);
 
   bool operator==(const AudioCodec& c) const;
 
@@ -147,11 +151,13 @@ struct VideoCodec : public Codec {
   // Creates an empty codec.
   VideoCodec();
   VideoCodec(const VideoCodec& c);
+  VideoCodec(VideoCodec&& c);
   virtual ~VideoCodec() = default;
 
   std::string ToString() const;
 
   VideoCodec& operator=(const VideoCodec& c);
+  VideoCodec& operator=(VideoCodec&& c);
 
   bool operator==(const VideoCodec& c) const;
 
@@ -181,9 +187,11 @@ struct DataCodec : public Codec {
   DataCodec(int id, const std::string& name);
   DataCodec();
   DataCodec(const DataCodec& c);
+  DataCodec(DataCodec&& c);
   virtual ~DataCodec() = default;
 
   DataCodec& operator=(const DataCodec& c);
+  DataCodec& operator=(DataCodec&& c);
 
   std::string ToString() const;
 };
