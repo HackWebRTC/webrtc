@@ -342,6 +342,7 @@ void CongestionController::MaybeTriggerOnNetworkChanged() {
 
   if (HasNetworkParametersToReportChanged(bitrate_bps, fraction_loss, rtt)) {
     observer_->OnNetworkChanged(bitrate_bps, fraction_loss, rtt);
+    remote_estimator_proxy_.OnBitrateChanged(bitrate_bps);
   }
 }
 

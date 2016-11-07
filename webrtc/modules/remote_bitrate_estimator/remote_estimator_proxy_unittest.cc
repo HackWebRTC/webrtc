@@ -42,7 +42,7 @@ class RemoteEstimatorProxyTest : public ::testing::Test {
 
   void Process() {
     clock_.AdvanceTimeMilliseconds(
-        RemoteEstimatorProxy::kDefaultProcessIntervalMs);
+        RemoteEstimatorProxy::kDefaultSendIntervalMs);
     proxy_.Process();
   }
 
@@ -348,6 +348,47 @@ TEST_F(RemoteEstimatorProxyTest, RemovesTimestampsOutOfScope) {
       }));
 
   Process();
+}
+
+TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsZeroBeforeFirstProcess) {
+  EXPECT_EQ(0, proxy_.TimeUntilNextProcess());
+}
+
+TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsDefaultOnUnkownBitrate) {
+  Process();
+  EXPECT_EQ(RemoteEstimatorProxy::kDefaultSendIntervalMs,
+            proxy_.TimeUntilNextProcess());
+}
+
+TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMinIntervalOn300kbps) {
+  Process();
+  proxy_.OnBitrateChanged(300000);
+  EXPECT_EQ(RemoteEstimatorProxy::kMinSendIntervalMs,
+            proxy_.TimeUntilNextProcess());
+}
+
+TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMaxIntervalOn0kbps) {
+  Process();
+  // TimeUntilNextProcess should be limited by |kMaxSendIntervalMs| when
+  // bitrate is small. We choose 0 bps as a special case, which also tests
+  // erroneous behaviors like division-by-zero.
+  proxy_.OnBitrateChanged(0);
+  EXPECT_EQ(RemoteEstimatorProxy::kMaxSendIntervalMs,
+            proxy_.TimeUntilNextProcess());
+}
+
+TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMaxIntervalOn20kbps) {
+  Process();
+  proxy_.OnBitrateChanged(20000);
+  EXPECT_EQ(RemoteEstimatorProxy::kMaxSendIntervalMs,
+            proxy_.TimeUntilNextProcess());
+}
+
+TEST_F(RemoteEstimatorProxyTest, TwccReportsUse5PercentOfAvailableBandwidth) {
+  Process();
+  proxy_.OnBitrateChanged(80000);
+  // 80kbps * 0.05 = TwccReportSize(68B * 8b/B) * 1000ms / SendInterval(136ms)
+  EXPECT_EQ(136, proxy_.TimeUntilNextProcess());
 }
 
 }  // namespace webrtc
