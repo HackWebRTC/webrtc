@@ -318,7 +318,9 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
   _peerConnection = nil;
   self.state = kARDAppClientStateDisconnected;
 #if defined(WEBRTC_IOS)
-  RTCStopInternalCapture();
+  if (kARDAppClientEnableTracing) {
+    RTCStopInternalCapture();
+  }
 #endif
 }
 

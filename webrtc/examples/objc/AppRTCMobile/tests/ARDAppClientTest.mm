@@ -10,6 +10,7 @@
 
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
+#import <QuartzCore/CoreAnimation.h>
 
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/ssladapter.h"
@@ -22,6 +23,9 @@
 #import "ARDJoinResponse+Internal.h"
 #import "ARDMessageResponse+Internal.h"
 #import "ARDSDPUtils.h"
+
+static NSString *kARDAppClientTestsDomain = @"org.webrtc.ARDAppClientTests";
+static NSInteger kARDAppClientTestsExpectationTimeoutError = 100;
 
 // These classes mimic XCTest APIs, to make eventual conversion to XCTest
 // easier. Conversion will happen once XCTest is supported well on build bots.
@@ -81,17 +85,20 @@
 
 - (void)waitForExpectationsWithTimeout:(NSTimeInterval)timeout
                                handler:(void (^)(NSError *error))handler {
-  NSDate *startDate = [NSDate date];
+  CFTimeInterval startTime = CACurrentMediaTime();
+  NSError *error = nil;
   while (![self areExpectationsFulfilled]) {
-    NSTimeInterval duration = [[NSDate date] timeIntervalSinceDate:startDate];
+    CFTimeInterval duration = CACurrentMediaTime() - startTime;
     if (duration > timeout) {
-      NSAssert(NO, @"Expectation timed out.");
+      error = [NSError errorWithDomain:kARDAppClientTestsDomain
+                                  code:kARDAppClientTestsExpectationTimeoutError
+                              userInfo:@{}];
       break;
     }
     [[NSRunLoop currentRunLoop]
         runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
   }
-  handler(nil);
+  handler(error);
 }
 
 - (BOOL)areExpectationsFulfilled {
@@ -137,7 +144,7 @@
   [[[mockRoomServerClient stub] andDo:^(NSInvocation *invocation) {
     __unsafe_unretained void (^completionHandler)(ARDJoinResponse *response,
                                                   NSError *error);
-    [invocation getArgument:&completionHandler atIndex:3];
+    [invocation getArgument:&completionHandler atIndex:4];
     completionHandler(joinResponse, nil);
   }] joinRoomWithRoomId:roomId isLoopback:NO completionHandler:[OCMArg any]];
 
@@ -203,7 +210,8 @@
                                   messages:(NSArray *)messages
                             messageHandler:
     (void (^)(ARDSignalingMessage *message))messageHandler
-                          connectedHandler:(void (^)(void))connectedHandler {
+                          connectedHandler:(void (^)(void))connectedHandler
+                    localVideoTrackHandler:(void (^)(void))localVideoTrackHandler {
   id turnClient = [self mockTURNClient];
   id signalingChannel = [self mockSignalingChannelForRoomId:roomId
                                                    clientId:clientId
@@ -220,6 +228,10 @@
     connectedHandler();
   }] appClient:[OCMArg any]
       didChangeConnectionState:RTCIceConnectionStateConnected];
+  [[[delegate stub] andDo:^(NSInvocation *invocation) {
+    localVideoTrackHandler();
+  }] appClient:[OCMArg any]
+      didReceiveLocalVideoTrack:[OCMArg any]];
 
   return [[ARDAppClient alloc] initWithRoomServerClient:roomServerClient
                                        signalingChannel:signalingChannel
@@ -255,8 +267,9 @@
                            messageHandler:^(ARDSignalingMessage *message) {
     ARDAppClient *strongAnswerer = weakAnswerer;
     [strongAnswerer channel:strongAnswerer.channel didReceiveMessage:message];
-  } connectedHandler:^{
+  }                      connectedHandler:^{
     [callerConnectionExpectation fulfill];
+  }                localVideoTrackHandler:^{
   }];
   // TODO(tkchin): Figure out why DTLS-SRTP constraint causes thread assertion
   // crash in Debug.
@@ -272,8 +285,9 @@
                              messageHandler:^(ARDSignalingMessage *message) {
     ARDAppClient *strongCaller = weakCaller;
     [strongCaller channel:strongCaller.channel didReceiveMessage:message];
-  } connectedHandler:^{
+  }                        connectedHandler:^{
     [answererConnectionExpectation fulfill];
+  }                  localVideoTrackHandler:^{
   }];
   // TODO(tkchin): Figure out why DTLS-SRTP constraint causes thread assertion
   // crash in Debug.
@@ -295,7 +309,44 @@
           shouldUseLevelControl:NO];
   [self waitForExpectationsWithTimeout:20 handler:^(NSError *error) {
     if (error) {
-      NSLog(@"Expectations error: %@", error);
+      EXPECT_TRUE(0);
+    }
+  }];
+}
+
+// Test to see that we get a local video connection
+// Note this will currently pass even when no camera is connected as a local
+// video track is created regardless (Perhaps there should be a test for that...)
+- (void)testSessionShouldGetLocalVideoTrackCallback {
+  ARDAppClient *caller = nil;
+  NSString *roomId = @"testRoom";
+  NSString *callerId = @"testCallerId";
+
+  ARDTestExpectation *localVideoTrackExpectation =
+      [self expectationWithDescription:@"Caller got local video."];
+
+  caller = [self createAppClientForRoomId:roomId
+                                 clientId:callerId
+                              isInitiator:YES
+                                 messages:[NSArray array]
+                           messageHandler:^(ARDSignalingMessage *message) {
+  }                      connectedHandler:^{
+  }                localVideoTrackHandler:^{
+    [localVideoTrackExpectation fulfill];
+  }];
+  caller.defaultPeerConnectionConstraints =
+      [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
+                                          optionalConstraints:nil];
+
+  // Kick off connection.
+  [caller connectToRoomWithId:roomId
+                   isLoopback:NO
+                  isAudioOnly:NO
+            shouldMakeAecDump:NO
+        shouldUseLevelControl:NO];
+  [self waitForExpectationsWithTimeout:20 handler:^(NSError *error) {
+    if (error) {
+      EXPECT_TRUE(0);
     }
   }];
 }
@@ -318,7 +369,7 @@
   RTCSessionDescription *h264Desc =
       [ARDSDPUtils descriptionForDescription:desc
                          preferredVideoCodec:@"H264"];
-  EXPECT_TRUE([h264Desc.description isEqualToString:expectedSdp]);
+  EXPECT_TRUE([h264Desc.description rangeOfString:expectedSdp].location != NSNotFound);
 }
 
 @end
@@ -340,6 +391,16 @@ TEST_F(SignalingTest, SessionTest) {
   }
 }
 
+#if !TARGET_IPHONE_SIMULATOR
+// Expected fail on iOS Simulator due to no camera support
+TEST_F(SignalingTest, SessionLocalVideoCallbackTest) {
+  @autoreleasepool {
+    ARDAppClientTest *test = [[ARDAppClientTest alloc] init];
+    [test testSessionShouldGetLocalVideoTrackCallback];
+  }
+}
+#endif
+
 TEST_F(SignalingTest, SDPTest) {
   @autoreleasepool {
     ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
@@ -347,4 +408,7 @@ TEST_F(SignalingTest, SDPTest) {
   }
 }
 
-
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

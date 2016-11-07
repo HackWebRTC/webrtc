@@ -389,6 +389,33 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "icucore",
     ]
   }
+
+  if (rtc_include_tests) {
+    config("rtc_apprtcmobile_config") {
+      defines = [ "GTEST_RELATIVE_PATH" ]
+    }
+
+    rtc_test("apprtcmobile_tests") {
+      deps = [
+        ":apprtc_signaling",
+        "//testing/gtest",
+        "//third_party/ocmock",
+      ]
+
+      sources = [
+        "objc/AppRTCMobile/tests/ARDAppClientTest.mm",
+      ]
+
+      if (is_ios) {
+        info_plist = "objc/AppRTCMobile/ios/Info.plist"
+      }
+
+      configs += [
+        ":rtc_apprtcmobile_config",
+        "//build/config/compiler:enable_arc",
+      ]
+    }
+  }
 }
 
 if (is_linux || is_win) {
