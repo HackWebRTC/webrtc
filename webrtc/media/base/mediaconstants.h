@@ -29,6 +29,9 @@ extern const float kProcessCpuThreshold;
 extern const char kRtxCodecName[];
 extern const char kRedCodecName[];
 extern const char kUlpfecCodecName[];
+extern const char kFlexfecCodecName[];
+
+extern const char kFlexfecFmtpRepairWindow[];
 
 // Codec parameters
 extern const char kCodecParamAssociatedPayloadType[];
@@ -132,6 +135,7 @@ extern const int kDefaultVp9PlType;
 extern const int kDefaultH264PlType;
 extern const int kDefaultRedPlType;
 extern const int kDefaultUlpfecType;
+extern const int kDefaultFlexfecPlType;
 extern const int kDefaultRtxVp8PlType;
 extern const int kDefaultRtxVp9PlType;
 extern const int kDefaultRtxRedPlType;

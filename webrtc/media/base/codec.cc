@@ -245,6 +245,9 @@ VideoCodec::CodecType VideoCodec::GetCodecType() const {
   if (_stricmp(payload_name, kUlpfecCodecName) == 0) {
     return CODEC_ULPFEC;
   }
+  if (_stricmp(payload_name, kFlexfecCodecName) == 0) {
+    return CODEC_FLEXFEC;
+  }
   if (_stricmp(payload_name, kRtxCodecName) == 0) {
     return CODEC_RTX;
   }

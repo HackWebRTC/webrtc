@@ -26,6 +26,13 @@ const char kRtxCodecName[] = "rtx";
 const char kRedCodecName[] = "red";
 const char kUlpfecCodecName[] = "ulpfec";
 
+// TODO(brandtr): Change this to 'flexfec' when we are confident that the
+// header format is not changing anymore.
+const char kFlexfecCodecName[] = "flexfec-03";
+
+// draft-ietf-payload-flexible-fec-scheme-02.txt
+const char kFlexfecFmtpRepairWindow[] = "repair-window";
+
 const char kCodecParamAssociatedPayloadType[] = "apt";
 
 const char kOpusCodecName[] = "opus";
@@ -106,6 +113,7 @@ const int kDefaultVp9PlType = 101;
 const int kDefaultH264PlType = 107;
 const int kDefaultRedPlType = 116;
 const int kDefaultUlpfecType = 117;
+const int kDefaultFlexfecPlType = 118;
 const int kDefaultRtxVp8PlType = 96;
 const int kDefaultRtxVp9PlType = 97;
 const int kDefaultRtxRedPlType = 98;

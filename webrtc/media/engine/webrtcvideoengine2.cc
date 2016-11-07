@@ -2513,6 +2513,11 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
         continue;
       }
 
+      case VideoCodec::CODEC_FLEXFEC: {
+        // TODO(brandtr): To be implemented.
+        continue;
+      }
+
       case VideoCodec::CODEC_RTX: {
         int associated_payload_type;
         if (!in_codec.GetParam(kCodecParamAssociatedPayloadType,

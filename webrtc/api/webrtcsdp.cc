@@ -1598,7 +1598,8 @@ bool IsFmtpParam(const std::string& name) {
       kCodecParamAssociatedPayloadType,
       cricket::kH264FmtpPacketizationMode,
       cricket::kH264FmtpLevelAsymmetryAllowed,
-      cricket::kH264FmtpProfileLevelId};
+      cricket::kH264FmtpProfileLevelId,
+      cricket::kFlexfecFmtpRepairWindow};
   for (size_t i = 0; i < arraysize(kFmtpParams); ++i) {
     if (name.compare(kFmtpParams[i]) == 0) {
       return true;

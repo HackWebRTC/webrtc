@@ -78,6 +78,7 @@ size_t EncodedImage::GetBufferPaddingBytes(VideoCodecType codec_type) {
     case kVideoCodecI420:
     case kVideoCodecRED:
     case kVideoCodecULPFEC:
+    case kVideoCodecFlexfec:
     case kVideoCodecGeneric:
     case kVideoCodecUnknown:
       return 0;

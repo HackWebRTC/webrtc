@@ -166,6 +166,7 @@ struct VideoCodec : public Codec {
     CODEC_VIDEO,
     CODEC_RED,
     CODEC_ULPFEC,
+    CODEC_FLEXFEC,
     CODEC_RTX,
   };
 

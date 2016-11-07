@@ -40,6 +40,7 @@ void RtpFrameReferenceFinder::ManageFrame(
   }
 
   switch (frame->codec_type()) {
+    case kVideoCodecFlexfec:
     case kVideoCodecULPFEC:
     case kVideoCodecRED:
     case kVideoCodecUnknown:

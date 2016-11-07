@@ -178,6 +178,7 @@ void VCMCodecDataBase::Codec(VideoCodecType codec_type, VideoCodec* settings) {
       return;
     case kVideoCodecRED:
     case kVideoCodecULPFEC:
+    case kVideoCodecFlexfec:
     case kVideoCodecGeneric:
     case kVideoCodecUnknown:
       RTC_NOTREACHED();
@@ -350,6 +351,7 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
     case kVideoCodecI420:
     case kVideoCodecRED:
     case kVideoCodecULPFEC:
+    case kVideoCodecFlexfec:
       break;
     // Unknown codec type, reset just to be sure.
     case kVideoCodecUnknown:

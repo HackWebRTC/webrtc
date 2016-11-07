@@ -70,6 +70,7 @@ TEST_F(PayloadTypeMapperTest, WebRTCPayloadTypes) {
   EXPECT_EQ(kDefaultH264PlType, video_mapping(kH264CodecName));
   EXPECT_EQ(kDefaultRedPlType,  video_mapping(kRedCodecName));
   EXPECT_EQ(kDefaultUlpfecType, video_mapping(kUlpfecCodecName));
+  EXPECT_EQ(kDefaultFlexfecPlType, video_mapping(kFlexfecCodecName));
 
   auto rtx_mapping = [this] (int payload_type) {
     return FindMapping({kRtxCodecName, kVideoCodecClockrate, 0,

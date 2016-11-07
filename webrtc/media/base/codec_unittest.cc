@@ -239,10 +239,12 @@ TEST(CodecTest, TestGetCodecType) {
   const VideoCodec codec(96, "V");
   const VideoCodec rtx_codec(96, "rTx");
   const VideoCodec ulpfec_codec(96, "ulpFeC");
+  const VideoCodec flexfec_codec(96, "FlExFeC-03");
   const VideoCodec red_codec(96, "ReD");
   EXPECT_EQ(VideoCodec::CODEC_VIDEO, codec.GetCodecType());
   EXPECT_EQ(VideoCodec::CODEC_RTX, rtx_codec.GetCodecType());
   EXPECT_EQ(VideoCodec::CODEC_ULPFEC, ulpfec_codec.GetCodecType());
+  EXPECT_EQ(VideoCodec::CODEC_FLEXFEC, flexfec_codec.GetCodecType());
   EXPECT_EQ(VideoCodec::CODEC_RED, red_codec.GetCodecType());
 }
 

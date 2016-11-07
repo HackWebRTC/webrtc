@@ -17,6 +17,7 @@
 const NSString * const kRTCRtxCodecMimeType = @(cricket::kRtxCodecName);
 const NSString * const kRTCRedCodecMimeType = @(cricket::kRedCodecName);
 const NSString * const kRTCUlpfecCodecMimeType = @(cricket::kUlpfecCodecName);
+const NSString * const kRTCFlexfecCodecMimeType = @(cricket::kFlexfecCodecName);
 const NSString * const kRTCOpusCodecMimeType = @(cricket::kOpusCodecName);
 const NSString * const kRTCIsacCodecMimeType = @(cricket::kIsacCodecName);
 const NSString * const kRTCL16CodecMimeType  = @(cricket::kL16CodecName);
