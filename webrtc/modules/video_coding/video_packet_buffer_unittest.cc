@@ -305,7 +305,7 @@ TEST_F(TestPacketBuffer, FramesReordered) {
   CheckFrame(seq_num + 3);
 }
 
-TEST_F(TestPacketBuffer, GetBitstreamFromFrame) {
+TEST_F(TestPacketBuffer, GetBitstream) {
   // "many bitstream, such data" with null termination.
   uint8_t many[] = {0x6d, 0x61, 0x6e, 0x79, 0x20};
   uint8_t bitstream[] = {0x62, 0x69, 0x74, 0x73, 0x74, 0x72,
@@ -329,6 +329,35 @@ TEST_F(TestPacketBuffer, GetBitstreamFromFrame) {
   CheckFrame(seq_num);
   EXPECT_TRUE(frames_from_callback_[seq_num]->GetBitstream(result));
   EXPECT_EQ(memcmp(result, "many bitstream, such data", sizeof(result)), 0);
+}
+
+TEST_F(TestPacketBuffer, GetBitstreamH264BufferPadding) {
+  uint16_t seq_num = Rand();
+  uint8_t data[] = "some plain old data";
+
+  // EncodedImage::kBufferPaddingBytesH264 is unknown at compile time.
+  uint8_t* result =
+      new uint8_t[sizeof(data) + EncodedImage::kBufferPaddingBytesH264];
+
+  VCMPacket packet;
+  packet.seqNum = seq_num;
+  packet.codec = kVideoCodecH264;
+  packet.insertStartCode = true;
+  packet.video_header.codecHeader.H264.packetization_type = kH264SingleNalu;
+  packet.dataPtr = data;
+  packet.sizeBytes = sizeof(data);
+  packet.isFirstPacket = true;
+  packet.markerBit = true;
+  packet_buffer_->InsertPacket(packet);
+
+  ASSERT_EQ(1UL, frames_from_callback_.size());
+  EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage()._length,
+            sizeof(data));
+  EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage()._size,
+            sizeof(data) + EncodedImage::kBufferPaddingBytesH264);
+  EXPECT_TRUE(frames_from_callback_[seq_num]->GetBitstream(result));
+  EXPECT_EQ(memcmp(result, data, sizeof(data)), 0);
+  delete[] result;
 }
 
 TEST_F(TestPacketBuffer, FreeSlotsOnFrameDestruction) {
