@@ -277,9 +277,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   // Send a request for a keyframe.
   int32_t RequestKeyFrame() override;
 
-  void SetUlpfecConfig(bool enabled,
-                       int red_payload_type,
-                       int ulpfec_payload_type) override;
+  void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type) override;
 
   int32_t SetFecParameters(const FecProtectionParams* delta_params,
                            const FecProtectionParams* key_params) override;

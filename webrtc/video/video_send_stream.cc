@@ -934,7 +934,8 @@ void VideoSendStreamImpl::ConfigureProtection() {
   RTC_DCHECK_RUN_ON(worker_queue_);
   // Enable NACK, FEC or both.
   const bool enable_protection_nack = config_->rtp.nack.rtp_history_ms > 0;
-  bool enable_protection_fec = config_->rtp.ulpfec.ulpfec_payload_type != -1;
+  const int red_payload_type = config_->rtp.ulpfec.red_payload_type;
+  int ulpfec_payload_type = config_->rtp.ulpfec.ulpfec_payload_type;
   // Payload types without picture ID cannot determine that a stream is complete
   // without retransmitting FEC, so using FEC + NACK for H.264 (for instance) is
   // a waste of bandwidth since FEC packets still have to be transmitted. Note
@@ -945,7 +946,7 @@ void VideoSendStreamImpl::ConfigureProtection() {
     LOG(LS_WARNING) << "Transmitting payload type without picture ID using"
                        "NACK+FEC is a waste of bandwidth since FEC packets "
                        "also have to be retransmitted. Disabling FEC.";
-    enable_protection_fec = false;
+    ulpfec_payload_type = -1;
   }
 
   // TODO(brandtr): Remove the workaround described below.
@@ -961,13 +962,13 @@ void VideoSendStreamImpl::ConfigureProtection() {
   // using the wrong payload type.
 
   // Verify validity of provided payload types.
-  if (config_->rtp.ulpfec.red_payload_type != -1) {
-    RTC_DCHECK_GE(config_->rtp.ulpfec.red_payload_type, 0);
-    RTC_DCHECK_LE(config_->rtp.ulpfec.red_payload_type, 127);
+  if (red_payload_type != -1) {
+    RTC_DCHECK_GE(red_payload_type, 0);
+    RTC_DCHECK_LE(red_payload_type, 127);
   }
-  if (config_->rtp.ulpfec.ulpfec_payload_type != -1) {
-    RTC_DCHECK_GE(config_->rtp.ulpfec.ulpfec_payload_type, 0);
-    RTC_DCHECK_LE(config_->rtp.ulpfec.ulpfec_payload_type, 127);
+  if (ulpfec_payload_type != -1) {
+    RTC_DCHECK_GE(ulpfec_payload_type, 0);
+    RTC_DCHECK_LE(ulpfec_payload_type, 127);
   }
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
@@ -977,12 +978,11 @@ void VideoSendStreamImpl::ConfigureProtection() {
         kMinSendSidePacketHistorySize);
     // Set FEC.
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-      rtp_rtcp->SetUlpfecConfig(enable_protection_fec,
-                                config_->rtp.ulpfec.red_payload_type,
-                                config_->rtp.ulpfec.ulpfec_payload_type);
+      rtp_rtcp->SetUlpfecConfig(red_payload_type, ulpfec_payload_type);
     }
   }
 
+  const bool enable_protection_fec = (ulpfec_payload_type != -1);
   protection_bitrate_calculator_.SetProtectionMethod(enable_protection_fec,
                                                      enable_protection_nack);
 }

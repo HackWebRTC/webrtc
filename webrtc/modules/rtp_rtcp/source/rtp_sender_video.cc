@@ -50,9 +50,8 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSender* rtp_sender)
       video_type_(kRtpVideoGeneric),
       retransmission_settings_(kRetransmitBaseLayer),
       last_rotation_(kVideoRotation_0),
-      fec_enabled_(false),
       red_payload_type_(-1),
-      fec_payload_type_(-1),
+      ulpfec_payload_type_(-1),
       delta_fec_params_{0, 1, kFecMaskRandom},
       key_fec_params_{0, 1, kFecMaskRandom},
       fec_bitrate_(1000, RateStatistics::kBpsScale),
@@ -139,7 +138,7 @@ void RTPSenderVideo::SendVideoPacketAsRed(
       uint16_t first_fec_sequence_number =
           rtp_sender_->AllocateSequenceNumber(num_fec_packets);
       fec_packets = ulpfec_generator_.GetUlpfecPacketsAsRed(
-          red_payload_type_, fec_payload_type_, first_fec_sequence_number,
+          red_payload_type_, ulpfec_payload_type_, first_fec_sequence_number,
           media_packet->headers_size());
       RTC_DCHECK_EQ(num_fec_packets, fec_packets.size());
       if (retransmission_settings_ & kRetransmitFECPackets)
@@ -179,36 +178,42 @@ void RTPSenderVideo::SendVideoPacketAsRed(
   }
 }
 
-void RTPSenderVideo::SetUlpfecConfig(bool enabled,
-                                     int red_payload_type,
+void RTPSenderVideo::SetUlpfecConfig(int red_payload_type,
                                      int ulpfec_payload_type) {
-  RTC_DCHECK(!enabled || red_payload_type > 0);
+  // Sanity check. Per the definition of UlpfecConfig (see config.h),
+  // a payload type of -1 means that the corresponding feature is
+  // turned off.
+  RTC_DCHECK_GE(red_payload_type, -1);
   RTC_DCHECK_LE(red_payload_type, 127);
+  RTC_DCHECK_GE(ulpfec_payload_type, -1);
   RTC_DCHECK_LE(ulpfec_payload_type, 127);
 
   rtc::CritScope cs(&crit_);
-  fec_enabled_ = enabled;
   red_payload_type_ = red_payload_type;
-  fec_payload_type_ = ulpfec_payload_type;
+  ulpfec_payload_type_ = ulpfec_payload_type;
+
+  // Must not enable ULPFEC without RED.
+  // TODO(brandtr): We currently support enabling RED without ULPFEC. Change
+  // this when we have removed the RED/RTX send-side workaround, so that we
+  // ensure that RED and ULPFEC are only enabled together.
+  RTC_DCHECK(red_enabled() || !ulpfec_enabled());
 
   // Reset FEC rates.
   delta_fec_params_ = FecProtectionParams{0, 1, kFecMaskRandom};
   key_fec_params_ = FecProtectionParams{0, 1, kFecMaskRandom};
 }
 
-void RTPSenderVideo::GetUlpfecConfig(bool* enabled,
-                                     int* red_payload_type,
+void RTPSenderVideo::GetUlpfecConfig(int* red_payload_type,
                                      int* ulpfec_payload_type) const {
   rtc::CritScope cs(&crit_);
-  *enabled = fec_enabled_;
   *red_payload_type = red_payload_type_;
-  *ulpfec_payload_type = fec_payload_type_;
+  *ulpfec_payload_type = ulpfec_payload_type_;
 }
 
 size_t RTPSenderVideo::FecPacketOverhead() const {
   rtc::CritScope cs(&crit_);
   size_t overhead = 0;
-  if (red_payload_type_ != -1) {
+  if (red_enabled()) {
     // Overhead is FEC headers plus RED for FEC header plus anything in RTP
     // header beyond the 12 bytes base header (CSRC list, extensions...)
     // This reason for the header extensions to be included here is that
@@ -217,7 +222,7 @@ size_t RTPSenderVideo::FecPacketOverhead() const {
     return ulpfec_generator_.MaxPacketOverhead() + kRedForFecHeaderLength +
            (rtp_sender_->RtpHeaderLength() - kRtpHeaderSize);
   }
-  if (fec_enabled_)
+  if (ulpfec_enabled())
     overhead += ulpfec_generator_.MaxPacketOverhead();
   return overhead;
 }
@@ -227,7 +232,7 @@ void RTPSenderVideo::SetFecParameters(const FecProtectionParams* delta_params,
   rtc::CritScope cs(&crit_);
   RTC_DCHECK(delta_params);
   RTC_DCHECK(key_params);
-  if (fec_enabled_) {
+  if (ulpfec_enabled()) {
     delta_fec_params_ = *delta_params;
     key_fec_params_ = *key_params;
   }
@@ -283,7 +288,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
       video_header ? &(video_header->codecHeader) : nullptr, frame_type));
 
   StorageType storage;
-  int red_payload_type;
+  bool red_enabled;
   bool first_frame = first_frame_sent_();
   {
     rtc::CritScope cs(&crit_);
@@ -291,7 +296,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
         frame_type == kVideoFrameKey ? &key_fec_params_ : &delta_fec_params_;
     ulpfec_generator_.SetFecParameters(fec_params);
     storage = packetizer->GetStorageType(retransmission_settings_);
-    red_payload_type = red_payload_type_;
+    red_enabled = this->red_enabled();
   }
 
   // TODO(changbin): we currently don't support to configure the codec to
@@ -318,7 +323,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
     if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
 
-    if (red_payload_type != -1) {
+    if (red_enabled) {
       SendVideoPacketAsRed(std::move(packet), storage,
                            packetizer->GetProtectionType() == kProtectedPacket);
     } else {

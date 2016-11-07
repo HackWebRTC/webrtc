@@ -1123,8 +1123,8 @@ TEST_F(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   expected.transmitted.packets = 3;
   callback.Matches(ssrc, expected);
 
-  // Send FEC.
-  rtp_sender_->SetUlpfecConfig(true, kRedPayloadType, kUlpfecPayloadType);
+  // Send ULPFEC.
+  rtp_sender_->SetUlpfecConfig(kRedPayloadType, kUlpfecPayloadType);
   FecProtectionParams fec_params;
   fec_params.fec_mask_type = kFecMaskRandom;
   fec_params.fec_rate = 1;

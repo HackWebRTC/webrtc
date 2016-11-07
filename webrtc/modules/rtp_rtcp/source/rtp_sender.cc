@@ -789,10 +789,10 @@ bool RTPSender::IsFecPacket(const RtpPacketToSend& packet) const {
   if (!video_) {
     return false;
   }
-  bool fec_enabled;
   int pt_red;
   int pt_fec;
-  video_->GetUlpfecConfig(&fec_enabled, &pt_red, &pt_fec);
+  video_->GetUlpfecConfig(&pt_red, &pt_fec);
+  const bool fec_enabled = (pt_fec != -1);
   return fec_enabled && static_cast<int>(packet.PayloadType()) == pt_red &&
          static_cast<int>(packet.payload()[0]) == pt_fec;
 }
@@ -1131,11 +1131,9 @@ RtpVideoCodecTypes RTPSender::VideoCodecType() const {
   return video_->VideoCodecType();
 }
 
-void RTPSender::SetUlpfecConfig(bool enabled,
-                                int red_payload_type,
-                                int ulpfec_payload_type) {
+void RTPSender::SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type) {
   RTC_DCHECK(!audio_configured_);
-  video_->SetUlpfecConfig(enabled, red_payload_type, ulpfec_payload_type);
+  video_->SetUlpfecConfig(red_payload_type, ulpfec_payload_type);
 }
 
 int32_t RTPSender::SetFecParameters(

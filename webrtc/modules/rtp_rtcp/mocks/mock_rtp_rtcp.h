@@ -186,10 +186,8 @@ class MockRtpRtcp : public RtpRtcp {
                int32_t(bool enable, uint8_t id));
   MOCK_METHOD1(SetAudioLevel, int32_t(uint8_t level_dbov));
   MOCK_METHOD1(SetTargetSendBitrate, void(uint32_t bitrate_bps));
-  MOCK_METHOD3(SetUlpfecConfig,
-               void(bool ulpfec_enabled,
-                    int red_payload_type,
-                    int fec_payload_type));
+  MOCK_METHOD2(SetUlpfecConfig,
+               void(int red_payload_type, int fec_payload_type));
   MOCK_METHOD2(SetFecParameters,
                int32_t(const FecProtectionParams* delta_params,
                        const FecProtectionParams* key_params));

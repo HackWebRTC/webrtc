@@ -183,10 +183,8 @@ class RTPSender {
 
   uint32_t MaxConfiguredBitrateVideo() const;
 
-  // FEC.
-  void SetUlpfecConfig(bool enabled,
-                       int red_payload_type,
-                       int ulpfec_payload_type);
+  // ULPFEC.
+  void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
 
   int32_t SetFecParameters(const FecProtectionParams *delta_params,
                            const FecProtectionParams *key_params);

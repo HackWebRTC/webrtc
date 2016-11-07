@@ -178,8 +178,10 @@ RtpStreamReceiver::RtpStreamReceiver(
           config_.rtp.ulpfec.red_rtx_payload_type,
           config_.rtp.ulpfec.red_payload_type);
     }
-
-    rtp_rtcp_->SetUlpfecConfig(true, config_.rtp.ulpfec.red_payload_type,
+    // TODO(brandtr): It doesn't seem that |rtp_rtcp_| is used for sending any
+    // RTP packets. Investigate if this is the case, and if so, remove this
+    // call, since there are no RTP packets to protect with RED+ULPFEC.
+    rtp_rtcp_->SetUlpfecConfig(config_.rtp.ulpfec.red_payload_type,
                                config_.rtp.ulpfec.ulpfec_payload_type);
   }
 

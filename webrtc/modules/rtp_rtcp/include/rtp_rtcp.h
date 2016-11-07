@@ -434,9 +434,16 @@ class RtpRtcp : public Module {
   // Video
   // **************************************************************************
 
-  // Turn on/off ULPFEC.
-  virtual void SetUlpfecConfig(bool enabled,
-                               int red_payload_type,
+  // Set RED and ULPFEC payload types. A payload type of -1 means that the
+  // corresponding feature is turned off. Note that we DO NOT support enabling
+  // ULPFEC without enabling RED. However, we DO support enabling RED without
+  // enabling ULPFEC. This is due to an RED/RTX workaround, where the receiver
+  // assumes that RTX packets carry RED if RED has been configured in the SDP,
+  // regardless of what RTX payload type mapping was negotiated in the SDP.
+  // TODO(brandtr): Update this comment when we have removed the RED/RTX
+  // send-side workaround, i.e., when we do not support enabling RED without
+  // enabling ULPFEC.
+  virtual void SetUlpfecConfig(int red_payload_type,
                                int ulpfec_payload_type) = 0;
 
   virtual int32_t SetFecParameters(const FecProtectionParams* delta_params,

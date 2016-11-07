@@ -59,14 +59,9 @@ class RTPSenderVideo {
 
   void SetVideoCodecType(RtpVideoCodecTypes type);
 
-  // FEC
-  void SetUlpfecConfig(bool enabled,
-                       int red_payload_type,
-                       int ulpfec_payload_type);
-
-  void GetUlpfecConfig(bool* enabled,
-                       int* red_payload_type,
-                       int* ulpfec_payload_type) const;
+  // ULPFEC.
+  void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
+  void GetUlpfecConfig(int* red_payload_type, int* ulpfec_payload_type) const;
 
   void SetFecParameters(const FecProtectionParams* delta_params,
                         const FecProtectionParams* key_params);
@@ -85,6 +80,14 @@ class RTPSenderVideo {
                             StorageType media_packet_storage,
                             bool protect);
 
+  bool red_enabled() const EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+    return red_payload_type_ >= 0;
+  }
+
+  bool ulpfec_enabled() const EXCLUSIVE_LOCKS_REQUIRED(crit_) {
+    return ulpfec_payload_type_ >= 0;
+  }
+
   RTPSender* const rtp_sender_;
   Clock* const clock_;
 
@@ -96,10 +99,9 @@ class RTPSenderVideo {
   int32_t retransmission_settings_ GUARDED_BY(crit_);
   VideoRotation last_rotation_ GUARDED_BY(encoder_checker_);
 
-  // FEC
-  bool fec_enabled_ GUARDED_BY(crit_);
+  // RED/ULPFEC.
   int red_payload_type_ GUARDED_BY(crit_);
-  int fec_payload_type_ GUARDED_BY(crit_);
+  int ulpfec_payload_type_ GUARDED_BY(crit_);
   FecProtectionParams delta_fec_params_ GUARDED_BY(crit_);
   FecProtectionParams key_fec_params_ GUARDED_BY(crit_);
   UlpfecGenerator ulpfec_generator_ GUARDED_BY(crit_);

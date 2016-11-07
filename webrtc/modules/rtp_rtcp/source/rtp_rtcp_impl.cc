@@ -789,10 +789,9 @@ int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
       GetFeedbackState(), kRtcpSli, 0, 0, false, picture_id);
 }
 
-void ModuleRtpRtcpImpl::SetUlpfecConfig(bool enabled,
-                                        int red_payload_type,
+void ModuleRtpRtcpImpl::SetUlpfecConfig(int red_payload_type,
                                         int ulpfec_payload_type) {
-  rtp_sender_.SetUlpfecConfig(enabled, red_payload_type, ulpfec_payload_type);
+  rtp_sender_.SetUlpfecConfig(red_payload_type, ulpfec_payload_type);
 }
 
 int32_t ModuleRtpRtcpImpl::SetFecParameters(
