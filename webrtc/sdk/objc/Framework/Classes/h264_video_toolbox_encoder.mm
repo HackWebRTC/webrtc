@@ -9,9 +9,7 @@
  *
  */
 
-#include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_encoder.h"
-
-#if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_encoder.h"
 
 #include <memory>
 #include <string>
@@ -25,7 +23,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
-#include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace internal {
@@ -660,5 +658,3 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
 }
 
 }  // namespace webrtc
-
-#endif  // defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)

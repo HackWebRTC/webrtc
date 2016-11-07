@@ -9,9 +9,7 @@
  *
  */
 
-#include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_decoder.h"
-
-#if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_decoder.h"
 
 #include <memory>
 
@@ -22,7 +20,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
-#include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
 #include "webrtc/video_frame.h"
 
 namespace internal {
@@ -277,5 +275,3 @@ const char* H264VideoToolboxDecoder::ImplementationName() const {
 }
 
 }  // namespace webrtc
-
-#endif  // defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)

@@ -21,6 +21,8 @@
 #import "RTCVideoTrack+Private.h"
 #import "WebRTC/RTCLogging.h"
 
+#include "videotoolboxvideocodecfactory.h"
+
 @implementation RTCPeerConnectionFactory {
   std::unique_ptr<rtc::Thread> _networkThread;
   std::unique_ptr<rtc::Thread> _workerThread;
@@ -44,9 +46,14 @@
     result = _signalingThread->Start();
     NSAssert(result, @"Failed to start signaling thread.");
 
+    const auto encoder_factory = new webrtc::VideoToolboxVideoEncoderFactory();
+    const auto decoder_factory = new webrtc::VideoToolboxVideoDecoderFactory();
+
+    // Ownership of encoder/decoder factories is passed on to the
+    // peerconnectionfactory, that handles deleting them.
     _nativeFactory = webrtc::CreatePeerConnectionFactory(
         _networkThread.get(), _workerThread.get(), _signalingThread.get(),
-        nullptr, nullptr, nullptr);
+        nullptr, encoder_factory, decoder_factory);
     NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
   }
   return self;

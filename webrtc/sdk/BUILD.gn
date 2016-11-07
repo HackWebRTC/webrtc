@@ -30,6 +30,14 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       "objc/Framework/Headers",
     ]
   }
+  config("webrtc_h264_video_toolbox_warnings_config") {
+    if (is_clang) {
+      # TODO(tkchin): Make webrtc_h264_video_toolbox compile with the standard set
+      # of warnings.
+      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6307
+      cflags = [ "-Wno-thread-safety-analysis" ]
+    }
+  }
 
   rtc_static_library("rtc_sdk_common_objc") {
     deps = [
@@ -143,6 +151,8 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
       "objc/Framework/Classes/RTCVideoTrack.mm",
       "objc/Framework/Classes/avfoundationvideocapturer.h",
       "objc/Framework/Classes/avfoundationvideocapturer.mm",
+      "objc/Framework/Classes/videotoolboxvideocodecfactory.cc",
+      "objc/Framework/Classes/videotoolboxvideocodecfactory.h",
       "objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h",
       "objc/Framework/Headers/WebRTC/RTCAudioSource.h",
       "objc/Framework/Headers/WebRTC/RTCAudioTrack.h",
@@ -182,6 +192,9 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
         "OpenGLES.framework",
         "QuartzCore.framework",
       ]
+      deps = [
+        ":webrtc_h264_video_toolbox",
+      ]
     }
 
     if (is_mac) {
@@ -193,6 +206,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
         "CoreMedia.framework",
         "OpenGL.framework",
       ]
+      deps = []
     }
 
     configs += [
@@ -209,7 +223,7 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
 
     libs += [ "AVFoundation.framework" ]
 
-    deps = [
+    deps += [
       ":rtc_sdk_common_objc",
       "../api:libjingle_peerconnection",
     ]
@@ -351,8 +365,51 @@ if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
     complete_static_lib = true
     deps = [
       ":rtc_sdk_peerconnection_objc",
-      "../system_wrappers:field_trial_default",
-      "../system_wrappers:metrics_default",
+      "//webrtc/system_wrappers:field_trial_default",
+      "//webrtc/system_wrappers:metrics_default",
     ]
+  }
+
+  rtc_static_library("webrtc_h264_video_toolbox") {
+    sources = [
+      "objc/Framework/Classes/h264_video_toolbox_decoder.cc",
+      "objc/Framework/Classes/h264_video_toolbox_decoder.h",
+      "objc/Framework/Classes/h264_video_toolbox_encoder.h",
+      "objc/Framework/Classes/h264_video_toolbox_encoder.mm",
+      "objc/Framework/Classes/h264_video_toolbox_nalu.cc",
+      "objc/Framework/Classes/h264_video_toolbox_nalu.h",
+    ]
+
+    configs += [
+      ":webrtc_h264_video_toolbox_warnings_config",
+      "//webrtc:common_objc",
+      "//build/config/compiler:enable_arc",
+    ]
+
+    deps = [
+      ":rtc_sdk_common_objc",
+    ]
+
+    libs = [
+      "CoreFoundation.framework",
+      "CoreMedia.framework",
+      "CoreVideo.framework",
+      "VideoToolbox.framework",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    if (rtc_build_libyuv) {
+      deps += [ "$rtc_libyuv_dir" ]
+      public_deps = [
+        "$rtc_libyuv_dir",
+      ]
+    } else {
+      # Need to add a directory normally exported by libyuv.
+      include_dirs = [ "$rtc_libyuv_dir/include" ]
+    }
   }
 }
