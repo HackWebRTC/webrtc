@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/deprecation.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
@@ -446,8 +447,15 @@ class RtpRtcp : public Module {
   virtual void SetUlpfecConfig(int red_payload_type,
                                int ulpfec_payload_type) = 0;
 
-  virtual int32_t SetFecParameters(const FecProtectionParams* delta_params,
-                                   const FecProtectionParams* key_params) = 0;
+  // Set FEC rates, max frames before FEC is sent, and type of FEC masks.
+  // Returns false on failure.
+  virtual bool SetFecParameters(const FecProtectionParams& delta_params,
+                                const FecProtectionParams& key_params) = 0;
+
+  // Deprecated version of member function above.
+  RTC_DEPRECATED
+  int32_t SetFecParameters(const FecProtectionParams* delta_params,
+                           const FecProtectionParams* key_params);
 
   // Set method for requestion a new key frame.
   // Returns -1 on failure else 0.

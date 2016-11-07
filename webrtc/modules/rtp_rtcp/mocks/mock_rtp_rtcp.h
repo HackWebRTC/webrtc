@@ -189,8 +189,8 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD2(SetUlpfecConfig,
                void(int red_payload_type, int fec_payload_type));
   MOCK_METHOD2(SetFecParameters,
-               int32_t(const FecProtectionParams* delta_params,
-                       const FecProtectionParams* key_params));
+               bool(const FecProtectionParams& delta_params,
+                    const FecProtectionParams& key_params));
   MOCK_METHOD1(SetKeyFrameRequestMethod, int32_t(KeyFrameRequestMethod method));
   MOCK_METHOD0(RequestKeyFrame, int32_t());
   MOCK_METHOD0(TimeUntilNextProcess, int64_t());

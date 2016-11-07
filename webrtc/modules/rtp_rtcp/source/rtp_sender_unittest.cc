@@ -1129,7 +1129,7 @@ TEST_F(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   fec_params.fec_mask_type = kFecMaskRandom;
   fec_params.fec_rate = 1;
   fec_params.max_fec_frames = 1;
-  rtp_sender_->SetFecParameters(&fec_params, &fec_params);
+  rtp_sender_->SetFecParameters(fec_params, fec_params);
   ASSERT_TRUE(rtp_sender_->SendOutgoingData(
                       kVideoFrameDelta, payload_type, 1234, 4321, payload,
                       sizeof(payload), nullptr, nullptr, nullptr));

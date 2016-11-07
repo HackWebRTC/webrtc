@@ -120,13 +120,13 @@ std::unique_ptr<RedPacket> UlpfecGenerator::BuildRedPacket(
   return red_packet;
 }
 
-void UlpfecGenerator::SetFecParameters(const FecProtectionParams* params) {
-  RTC_DCHECK_GE(params->fec_rate, 0);
-  RTC_DCHECK_LE(params->fec_rate, 255);
+void UlpfecGenerator::SetFecParameters(const FecProtectionParams& params) {
+  RTC_DCHECK_GE(params.fec_rate, 0);
+  RTC_DCHECK_LE(params.fec_rate, 255);
   // Store the new params and apply them for the next set of FEC packets being
   // produced.
-  new_params_ = *params;
-  if (params->fec_rate > kHighProtectionThreshold) {
+  new_params_ = params;
+  if (params.fec_rate > kHighProtectionThreshold) {
     min_num_media_packets_ = kMinMediaPackets;
   } else {
     min_num_media_packets_ = 1;

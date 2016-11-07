@@ -1136,14 +1136,13 @@ void RTPSender::SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type) {
   video_->SetUlpfecConfig(red_payload_type, ulpfec_payload_type);
 }
 
-int32_t RTPSender::SetFecParameters(
-    const FecProtectionParams *delta_params,
-    const FecProtectionParams *key_params) {
+bool RTPSender::SetFecParameters(const FecProtectionParams& delta_params,
+                                 const FecProtectionParams& key_params) {
   if (audio_configured_) {
-    return -1;
+    return false;
   }
   video_->SetFecParameters(delta_params, key_params);
-  return 0;
+  return true;
 }
 
 std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(

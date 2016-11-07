@@ -186,8 +186,8 @@ class RTPSender {
   // ULPFEC.
   void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
 
-  int32_t SetFecParameters(const FecProtectionParams *delta_params,
-                           const FecProtectionParams *key_params);
+  bool SetFecParameters(const FecProtectionParams& delta_params,
+                        const FecProtectionParams& key_params);
 
   RTC_DEPRECATED
   size_t SendPadData(size_t bytes,

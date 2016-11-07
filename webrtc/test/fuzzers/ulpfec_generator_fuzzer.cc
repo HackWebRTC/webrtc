@@ -29,7 +29,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     return;
   FecProtectionParams params = {
       data[i++] % 128, static_cast<int>(data[i++] % 10), kFecMaskBursty};
-  generator.SetFecParameters(&params);
+  generator.SetFecParameters(params);
   uint16_t seq_num = data[i++];
 
   while (i + 3 < size) {

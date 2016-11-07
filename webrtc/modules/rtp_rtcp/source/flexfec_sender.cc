@@ -91,7 +91,7 @@ FlexfecSender::~FlexfecSender() = default;
 // AddRtpPacketAndGenerateFec, and FecAvailable.
 void FlexfecSender::SetFecParameters(const FecProtectionParams& params) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  ulpfec_generator_.SetFecParameters(&params);
+  ulpfec_generator_.SetFecParameters(params);
 }
 
 bool FlexfecSender::AddRtpPacketAndGenerateFec(

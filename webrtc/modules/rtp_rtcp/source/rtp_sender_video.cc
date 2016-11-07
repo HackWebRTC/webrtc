@@ -227,14 +227,12 @@ size_t RTPSenderVideo::FecPacketOverhead() const {
   return overhead;
 }
 
-void RTPSenderVideo::SetFecParameters(const FecProtectionParams* delta_params,
-                                      const FecProtectionParams* key_params) {
+void RTPSenderVideo::SetFecParameters(const FecProtectionParams& delta_params,
+                                      const FecProtectionParams& key_params) {
   rtc::CritScope cs(&crit_);
-  RTC_DCHECK(delta_params);
-  RTC_DCHECK(key_params);
   if (ulpfec_enabled()) {
-    delta_fec_params_ = *delta_params;
-    key_fec_params_ = *key_params;
+    delta_fec_params_ = delta_params;
+    key_fec_params_ = key_params;
   }
 }
 
@@ -292,8 +290,8 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   bool first_frame = first_frame_sent_();
   {
     rtc::CritScope cs(&crit_);
-    FecProtectionParams* fec_params =
-        frame_type == kVideoFrameKey ? &key_fec_params_ : &delta_fec_params_;
+    const FecProtectionParams& fec_params =
+        frame_type == kVideoFrameKey ? key_fec_params_ : delta_fec_params_;
     ulpfec_generator_.SetFecParameters(fec_params);
     storage = packetizer->GetStorageType(retransmission_settings_);
     red_enabled = this->red_enabled();

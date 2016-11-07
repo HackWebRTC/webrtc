@@ -63,8 +63,8 @@ class RTPSenderVideo {
   void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
   void GetUlpfecConfig(int* red_payload_type, int* ulpfec_payload_type) const;
 
-  void SetFecParameters(const FecProtectionParams* delta_params,
-                        const FecProtectionParams* key_params);
+  void SetFecParameters(const FecProtectionParams& delta_params,
+                        const FecProtectionParams& key_params);
 
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;

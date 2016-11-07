@@ -53,7 +53,7 @@ class UlpfecGenerator {
                                                    size_t rtp_header_length,
                                                    int red_payload_type);
 
-  void SetFecParameters(const FecProtectionParams* params);
+  void SetFecParameters(const FecProtectionParams& params);
 
   // Adds a media packet to the internal buffer. When enough media packets
   // have been added, the FEC packets are generated and stored internally.
