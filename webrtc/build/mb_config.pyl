@@ -110,7 +110,7 @@
       'Android32 Tests (L Nexus6)': 'none',
 
       # Windows
-      'Win32 Release (swarming)': 'swarming_gn_release_bot_x86',
+      'Win64 Debug (swarming)': 'gn_debug_bot_x64',
     },
     'tryserver.webrtc': {
       # iOS
@@ -268,9 +268,6 @@
     ],
     'gn_release_bot_x64': [
       'gn', 'openh264_release_bot', 'x64'
-    ],
-    'swarming_gn_release_bot_x86': [
-      'swarming', 'gn', 'openh264_release_bot', 'x86'
     ],
     'swarming_gn_debug_bot_x64': [
       'swarming', 'gn', 'openh264_debug_bot', 'x64'
