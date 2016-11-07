@@ -12,6 +12,12 @@
 #import "ARDMediaConstraintsModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
+
+typedef NS_ENUM(int, ARDSettingsSections) {
+  ARDSettingsSectionMediaConstraints = 0,
+  ARDSettingsSectionBitRate
+};
+
 @interface ARDSettingsViewController () {
   ARDMediaConstraintsModel *_mediaConstraintsModel;
 }
@@ -79,28 +85,47 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Table view data source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-  return 1;
+  return 2;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-  return self.mediaConstraintsArray.count;
+  if ([self sectionIsMediaConstraints:section]) {
+    return self.mediaConstraintsArray.count;
+  }
+
+  return 1;
 }
 
-#pragma mark - Table view delegate
+#pragma mark - Index path helpers
 
 - (BOOL)sectionIsMediaConstraints:(int)section {
-  return section == 0;
+  return section == ARDSettingsSectionMediaConstraints;
+}
+
+- (BOOL)sectionIsBitrate:(int)section {
+  return section == ARDSettingsSectionBitRate;
 }
 
 - (BOOL)indexPathIsMediaConstraints:(NSIndexPath *)indexPath {
   return [self sectionIsMediaConstraints:indexPath.section];
 }
 
+- (BOOL)indexPathIsBitrate:(NSIndexPath *)indexPath {
+  return [self sectionIsBitrate:indexPath.section];
+}
+
+#pragma mark - Table view delegate
+
 - (nullable NSString *)tableView:(UITableView *)tableView
          titleForHeaderInSection:(NSInteger)section {
   if ([self sectionIsMediaConstraints:section]) {
     return @"Media constraints";
   }
+
+  if ([self sectionIsBitrate:section]) {
+    return @"Maximum bitrate";
+  }
+
   return @"";
 }
 
@@ -109,6 +134,11 @@ NS_ASSUME_NONNULL_BEGIN
   if ([self indexPathIsMediaConstraints:indexPath]) {
     return [self mediaConstraintsTableViewCellForTableView:tableView atIndexPath:indexPath];
   }
+
+  if ([self indexPathIsBitrate:indexPath]) {
+    return [self bitrateTableViewCellForTableView:tableView atIndexPath:indexPath];
+  }
+
   return [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
                                 reuseIdentifier:@"identifier"];
 }
@@ -156,6 +186,45 @@ NS_ASSUME_NONNULL_BEGIN
   UITableViewCell *cell = [tableView cellForRowAtIndexPath:oldSelection];
   cell.accessoryType = UITableViewCellAccessoryNone;
   return indexPath;
+}
+
+#pragma mark - Table view delegate(Bitrate)
+
+- (UITableViewCell *)bitrateTableViewCellForTableView:(UITableView *)tableView
+                                          atIndexPath:(NSIndexPath *)indexPath {
+  NSString *dequeueIdentifier = @"ARDSettingsBitrateCellIdentifier";
+  UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:dequeueIdentifier];
+  if (!cell) {
+    cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                  reuseIdentifier:dequeueIdentifier];
+
+    UITextField *textField = [[UITextField alloc]
+        initWithFrame:CGRectMake(10, 0, cell.bounds.size.width - 20, cell.bounds.size.height)];
+    textField.placeholder = @"Enter max bit rate (kbps)";
+    textField.keyboardType = UIKeyboardTypeASCIICapableNumberPad;
+
+    // Numerical keyboards have no return button, we need to add one manually.
+    UIToolbar *numberToolbar =
+        [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 50)];
+    numberToolbar.items = @[
+      [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+                                                    target:nil
+                                                    action:nil],
+      [[UIBarButtonItem alloc] initWithTitle:@"Apply"
+                                       style:UIBarButtonItemStyleDone
+                                      target:self
+                                      action:@selector(numberTextFieldDidEndEditing:)]
+    ];
+    [numberToolbar sizeToFit];
+
+    textField.inputAccessoryView = numberToolbar;
+    [cell addSubview:textField];
+  }
+  return cell;
+}
+
+- (void)numberTextFieldDidEndEditing:(id)sender {
+  [self.view endEditing:YES];
 }
 
 @end
