@@ -433,24 +433,22 @@ RTCPUtility::RTCPParserV2::Validate()
                              _ptrRTCPDataEnd - _ptrRTCPDataBegin, &header))
     return;  // NOT VALID!
 
-    // * if (!reducedSize) : first packet must be RR or SR.
-    //
-    // * The padding bit (P) should be zero for the first packet of a
-    //   compound RTCP packet because padding should only be applied,
-    //   if it is needed, to the last packet. (NOT CHECKED!)
-    //
-    // * The length fields of the individual RTCP packets must add up
-    //   to the overall length of the compound RTCP packet as
-    //   received.  This is a fairly strong check. (NOT CHECKED!)
+  // * if (!reducedSize) : first packet must be RR or SR.
+  //
+  // * The padding bit (P) should be zero for the first packet of a
+  //   compound RTCP packet because padding should only be applied,
+  //   if it is needed, to the last packet. (NOT CHECKED!)
+  //
+  // * The length fields of the individual RTCP packets must add up
+  //   to the overall length of the compound RTCP packet as
+  //   received.  This is a fairly strong check. (NOT CHECKED!)
 
-    if (!_RTCPReducedSizeEnable)
-    {
-      if ((header.packet_type != PT_SR) && (header.packet_type != PT_RR)) {
-            return; // NOT VALID
-        }
-    }
+  if (!_RTCPReducedSizeEnable) {
+    if ((header.packet_type != PT_SR) && (header.packet_type != PT_RR))
+      return;  // NOT VALID
+  }
 
-    _validPacket = true;
+  _validPacket = true;
 }
 
 bool
