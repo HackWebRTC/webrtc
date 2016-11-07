@@ -15,19 +15,14 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/base/socket.h"
-#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/probe_controller.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/send_time_history.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
-#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/video/payload_router.h"
 
 namespace webrtc {
 namespace {

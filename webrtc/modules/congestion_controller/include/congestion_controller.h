@@ -31,7 +31,6 @@ namespace webrtc {
 class BitrateController;
 class Clock;
 class ProbeController;
-class ProcessThread;
 class RateLimiter;
 class RemoteBitrateEstimator;
 class RemoteBitrateObserver;
