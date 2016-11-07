@@ -948,29 +948,26 @@ void VideoSendStreamImpl::ConfigureProtection() {
     enable_protection_fec = false;
   }
 
-  // Set to valid uint8_ts to be castable later without signed overflows.
-  uint8_t payload_type_red = 0;
-  uint8_t payload_type_fec = 0;
+  // TODO(brandtr): Remove the workaround described below.
+  //
+  // In theory, we should enable RED if and only if ULPFEC is also enabled,
+  // and vice versa. (We only support ULPFEC over RED, not multiplexed in any
+  // other way.) However, due to the RED/RTX workaround introduced here:
+  // https://codereview.webrtc.org/1649493004, we need to send media over RED
+  // (even if ULPFEC is disabled), whenever RED has been negotiated in the SDP.
+  // This is due to the associated payload type is hardcoded to be RED in the
+  // receiver, whenever RED appears in the SDP. If we would not send media over
+  // RED in this case, the RTX receiver would recover retransmitted packets
+  // using the wrong payload type.
 
-  // TODO(changbin): Should set RTX for RED mapping in RTP sender in future.
-  // Validate payload types. If either RED or FEC payload types are set then
-  // both should be. If FEC is enabled then they both have to be set.
+  // Verify validity of provided payload types.
   if (config_->rtp.ulpfec.red_payload_type != -1) {
     RTC_DCHECK_GE(config_->rtp.ulpfec.red_payload_type, 0);
     RTC_DCHECK_LE(config_->rtp.ulpfec.red_payload_type, 127);
-    // TODO(holmer): We should only enable red if ulpfec is also enabled, but
-    // but due to an incompatibility issue with previous versions the receiver
-    // assumes rtx packets are containing red if it has been configured to
-    // receive red. Remove this in a few versions once the incompatibility
-    // issue is resolved (M53 timeframe).
-    payload_type_red =
-        static_cast<uint8_t>(config_->rtp.ulpfec.red_payload_type);
   }
   if (config_->rtp.ulpfec.ulpfec_payload_type != -1) {
     RTC_DCHECK_GE(config_->rtp.ulpfec.ulpfec_payload_type, 0);
     RTC_DCHECK_LE(config_->rtp.ulpfec.ulpfec_payload_type, 127);
-    payload_type_fec =
-        static_cast<uint8_t>(config_->rtp.ulpfec.ulpfec_payload_type);
   }
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
@@ -980,8 +977,9 @@ void VideoSendStreamImpl::ConfigureProtection() {
         kMinSendSidePacketHistorySize);
     // Set FEC.
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-      rtp_rtcp->SetGenericFECStatus(enable_protection_fec, payload_type_red,
-                                    payload_type_fec);
+      rtp_rtcp->SetUlpfecConfig(enable_protection_fec,
+                                config_->rtp.ulpfec.red_payload_type,
+                                config_->rtp.ulpfec.ulpfec_payload_type);
     }
   }
 

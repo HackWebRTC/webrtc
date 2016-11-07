@@ -184,13 +184,9 @@ class RTPSender {
   uint32_t MaxConfiguredBitrateVideo() const;
 
   // FEC.
-  void SetGenericFECStatus(bool enable,
-                           uint8_t payload_type_red,
-                           uint8_t payload_type_fec);
-
-  void GenericFECStatus(bool* enable,
-                        uint8_t* payload_type_red,
-                        uint8_t* payload_type_fec) const;
+  void SetUlpfecConfig(bool enabled,
+                       int red_payload_type,
+                       int ulpfec_payload_type);
 
   int32_t SetFecParameters(const FecProtectionParams *delta_params,
                            const FecProtectionParams *key_params);
@@ -271,7 +267,7 @@ class RTPSender {
   int64_t last_capture_time_ms_sent_;
   rtc::CriticalSection send_critsect_;
 
-  Transport *transport_;
+  Transport* transport_;
   bool sending_media_ GUARDED_BY(send_critsect_);
 
   size_t max_payload_length_;

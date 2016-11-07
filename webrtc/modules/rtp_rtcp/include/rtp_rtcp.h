@@ -434,15 +434,10 @@ class RtpRtcp : public Module {
   // Video
   // **************************************************************************
 
-  // Turn on/off generic FEC.
-  virtual void SetGenericFECStatus(bool enable,
-                                   uint8_t payload_type_red,
-                                   uint8_t payload_type_fec) = 0;
-
-  // Get generic FEC setting.
-  virtual void GenericFECStatus(bool* enable,
-                                uint8_t* payload_type_red,
-                                uint8_t* payload_type_fec) = 0;
+  // Turn on/off ULPFEC.
+  virtual void SetUlpfecConfig(bool enabled,
+                               int red_payload_type,
+                               int ulpfec_payload_type) = 0;
 
   virtual int32_t SetFecParameters(const FecProtectionParams* delta_params,
                                    const FecProtectionParams* key_params) = 0;

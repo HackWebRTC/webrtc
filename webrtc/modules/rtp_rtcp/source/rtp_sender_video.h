@@ -60,13 +60,13 @@ class RTPSenderVideo {
   void SetVideoCodecType(RtpVideoCodecTypes type);
 
   // FEC
-  void SetGenericFECStatus(bool enable,
-                           uint8_t payload_type_red,
-                           uint8_t payload_type_fec);
+  void SetUlpfecConfig(bool enabled,
+                       int red_payload_type,
+                       int ulpfec_payload_type);
 
-  void GenericFECStatus(bool* enable,
-                        uint8_t* payload_type_red,
-                        uint8_t* payload_type_fec) const;
+  void GetUlpfecConfig(bool* enabled,
+                       int* red_payload_type,
+                       int* ulpfec_payload_type) const;
 
   void SetFecParameters(const FecProtectionParams* delta_params,
                         const FecProtectionParams* key_params);
@@ -92,18 +92,16 @@ class RTPSenderVideo {
   rtc::CriticalSection crit_;
   rtc::SequencedTaskChecker encoder_checker_;
 
-  RtpVideoCodecTypes video_type_ = kRtpVideoGeneric;
-  int32_t retransmission_settings_ GUARDED_BY(crit_) = kRetransmitBaseLayer;
-  VideoRotation last_rotation_ GUARDED_BY(encoder_checker_) = kVideoRotation_0;
+  RtpVideoCodecTypes video_type_;
+  int32_t retransmission_settings_ GUARDED_BY(crit_);
+  VideoRotation last_rotation_ GUARDED_BY(encoder_checker_);
 
   // FEC
-  bool fec_enabled_ GUARDED_BY(crit_) = false;
-  int8_t red_payload_type_ GUARDED_BY(crit_) = 0;
-  int8_t fec_payload_type_ GUARDED_BY(crit_) = 0;
-  FecProtectionParams delta_fec_params_ GUARDED_BY(crit_) = FecProtectionParams{
-      0, 1, kFecMaskRandom};
-  FecProtectionParams key_fec_params_ GUARDED_BY(crit_) = FecProtectionParams{
-      0, 1, kFecMaskRandom};
+  bool fec_enabled_ GUARDED_BY(crit_);
+  int red_payload_type_ GUARDED_BY(crit_);
+  int fec_payload_type_ GUARDED_BY(crit_);
+  FecProtectionParams delta_fec_params_ GUARDED_BY(crit_);
+  FecProtectionParams key_fec_params_ GUARDED_BY(crit_);
   UlpfecGenerator ulpfec_generator_ GUARDED_BY(crit_);
 
   rtc::CriticalSection stats_crit_;

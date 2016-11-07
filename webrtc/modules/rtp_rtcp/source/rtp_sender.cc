@@ -790,11 +790,11 @@ bool RTPSender::IsFecPacket(const RtpPacketToSend& packet) const {
     return false;
   }
   bool fec_enabled;
-  uint8_t pt_red;
-  uint8_t pt_fec;
-  video_->GenericFECStatus(&fec_enabled, &pt_red, &pt_fec);
-  return fec_enabled && packet.PayloadType() == pt_red &&
-         packet.payload()[0] == pt_fec;
+  int pt_red;
+  int pt_fec;
+  video_->GetUlpfecConfig(&fec_enabled, &pt_red, &pt_fec);
+  return fec_enabled && static_cast<int>(packet.PayloadType()) == pt_red &&
+         static_cast<int>(packet.payload()[0]) == pt_fec;
 }
 
 size_t RTPSender::TimeToSendPadding(size_t bytes, int probe_cluster_id) {
@@ -1131,18 +1131,11 @@ RtpVideoCodecTypes RTPSender::VideoCodecType() const {
   return video_->VideoCodecType();
 }
 
-void RTPSender::SetGenericFECStatus(bool enable,
-                                    uint8_t payload_type_red,
-                                    uint8_t payload_type_fec) {
+void RTPSender::SetUlpfecConfig(bool enabled,
+                                int red_payload_type,
+                                int ulpfec_payload_type) {
   RTC_DCHECK(!audio_configured_);
-  video_->SetGenericFECStatus(enable, payload_type_red, payload_type_fec);
-}
-
-void RTPSender::GenericFECStatus(bool* enable,
-                                 uint8_t* payload_type_red,
-                                 uint8_t* payload_type_fec) const {
-  RTC_DCHECK(!audio_configured_);
-  video_->GenericFECStatus(enable, payload_type_red, payload_type_fec);
+  video_->SetUlpfecConfig(enabled, red_payload_type, ulpfec_payload_type);
 }
 
 int32_t RTPSender::SetFecParameters(

@@ -179,8 +179,8 @@ RtpStreamReceiver::RtpStreamReceiver(
           config_.rtp.ulpfec.red_payload_type);
     }
 
-    rtp_rtcp_->SetGenericFECStatus(true, config_.rtp.ulpfec.red_payload_type,
-                                   config_.rtp.ulpfec.ulpfec_payload_type);
+    rtp_rtcp_->SetUlpfecConfig(true, config_.rtp.ulpfec.red_payload_type,
+                               config_.rtp.ulpfec.ulpfec_payload_type);
   }
 
   if (config_.rtp.rtcp_xr.receiver_reference_time_report)
