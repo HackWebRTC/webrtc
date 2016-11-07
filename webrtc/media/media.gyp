@@ -94,9 +94,6 @@
       'cflags!': [
         '-Wextra',
       ],
-      'cflags_cc!': [
-        '-Woverloaded-virtual',
-      ],
       'msvs_disabled_warnings': [
         4245,  # conversion from 'int' to 'size_t', signed/unsigned mismatch.
         4267,  # conversion from 'size_t' to 'int', possible loss of data.

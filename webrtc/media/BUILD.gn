@@ -28,7 +28,6 @@ config("rtc_media_warnings_config") {
   # cannot be on the target directly.
   if (!is_win) {
     cflags = [ "-Wno-deprecated-declarations" ]
-    cflags_cc = [ "-Wno-overloaded-virtual" ]
   }
 }
 
@@ -247,7 +246,6 @@ if (rtc_include_tests) {
     }
     if (!is_win) {
       cflags = [ "-Wno-sign-compare" ]
-      cflags_cc = [ "-Wno-overloaded-virtual" ]
     }
   }
 
