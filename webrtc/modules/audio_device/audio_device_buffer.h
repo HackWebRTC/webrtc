@@ -12,8 +12,8 @@
 #define WEBRTC_MODULES_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H_
 
 #include "webrtc/base/buffer.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/task_queue.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
@@ -103,29 +103,41 @@ class AudioDeviceBuffer {
   void ResetRecStats();
   void ResetPlayStats();
 
-  // Ensures that methods are called on the same thread as the thread that
-  // creates this object.
-  rtc::ThreadChecker thread_checker_;
+  // This object lives on the main (creating) thread and most methods are
+  // called on that same thread. When audio has started some methods will be
+  // called on either a native audio thread for playout or a native thread for
+  // recording. Some members are not annotated since they are "protected by
+  // design" and adding e.g. a race checker can cause failuries for very few
+  // edge cases and it is IMHO not worth the risk to use them in this class.
+  // TODO(henrika): see if it is possible to refactor and annotate all members.
 
-  // Raw pointer to AudioTransport instance. Supplied to RegisterAudioCallback()
-  // and it must outlive this object.
-  AudioTransport* audio_transport_cb_;
+  // Main thread on which this object is created.
+  rtc::ThreadChecker main_thread_checker_;
 
-  // TODO(henrika): given usage of thread checker, it should be possible to
-  // remove all locks in this class.
-  rtc::CriticalSection lock_;
-  rtc::CriticalSection lock_cb_;
+  // Native (platform specific) audio thread driving the playout side.
+  rtc::ThreadChecker playout_thread_checker_;
+
+  // Native (platform specific) audio thread driving the recording side.
+  rtc::ThreadChecker recording_thread_checker_;
 
   // Task queue used to invoke LogStats() periodically. Tasks are executed on a
   // worker thread but it does not necessarily have to be the same thread for
   // each task.
   rtc::TaskQueue task_queue_;
 
-  // Keeps track of if playout/recording are active or not. A combination
-  // of these states are used to determine when to start and stop the timer.
-  // Only used on the creating thread and not used to control any media flow.
-  bool playing_;
-  bool recording_;
+  // Raw pointer to AudioTransport instance. Supplied to RegisterAudioCallback()
+  // and it must outlive this object. It is not possible to change this member
+  // while any media is active. It is possible to start media without calling
+  // RegisterAudioCallback() but that will lead to ignored audio callbacks in
+  // both directions where native audio will be acive but no audio samples will
+  // be transported.
+  AudioTransport* audio_transport_cb_;
+
+  // The members below that are not annotated are protected by design. They are
+  // all set on the main thread (verified by |main_thread_checker_|) and then
+  // read on either the playout or recording audio thread. But, media will never
+  // be active when the member is set; hence no conflict exists. It is too
+  // complex to ensure and verify that this is actually the case.
 
   // Sample rate in Hertz.
   uint32_t rec_sample_rate_;
@@ -135,93 +147,88 @@ class AudioDeviceBuffer {
   size_t rec_channels_;
   size_t play_channels_;
 
-  // Number of bytes per audio sample (2 or 4).
-  size_t rec_bytes_per_sample_;
-  size_t play_bytes_per_sample_;
-
-  // Byte buffer used for recorded audio samples. Size can be changed
-  // dynamically.
-  rtc::Buffer rec_buffer_;
+  // Keeps track of if playout/recording are active or not. A combination
+  // of these states are used to determine when to start and stop the timer.
+  // Only used on the creating thread and not used to control any media flow.
+  bool playing_ ACCESS_ON(main_thread_checker_);
+  bool recording_ ACCESS_ON(main_thread_checker_);
 
   // Buffer used for audio samples to be played out. Size can be changed
   // dynamically.
-  rtc::Buffer play_buffer_;
+  rtc::Buffer play_buffer_ ACCESS_ON(playout_thread_checker_);
+
+  // Byte buffer used for recorded audio samples. Size can be changed
+  // dynamically.
+  rtc::Buffer rec_buffer_ ACCESS_ON(recording_thread_checker_);
 
   // AGC parameters.
+#if !defined(WEBRTC_WIN)
+  uint32_t current_mic_level_ ACCESS_ON(recording_thread_checker_);
+#else
+  // Windows uses a dedicated thread for volume APIs.
   uint32_t current_mic_level_;
-  uint32_t new_mic_level_;
+#endif
+  uint32_t new_mic_level_ ACCESS_ON(recording_thread_checker_);
 
   // Contains true of a key-press has been detected.
-  bool typing_status_;
+  bool typing_status_ ACCESS_ON(recording_thread_checker_);
 
   // Delay values used by the AEC.
-  int play_delay_ms_;
-  int rec_delay_ms_;
+  int play_delay_ms_ ACCESS_ON(recording_thread_checker_);
+  int rec_delay_ms_ ACCESS_ON(recording_thread_checker_);
 
   // Contains a clock-drift measurement.
-  int clock_drift_;
+  int clock_drift_ ACCESS_ON(recording_thread_checker_);
 
   // Counts number of times LogStats() has been called.
-  size_t num_stat_reports_;
+  size_t num_stat_reports_ ACCESS_ON(task_queue_);
 
   // Total number of recording callbacks where the source provides 10ms audio
   // data each time.
-  uint64_t rec_callbacks_;
+  uint64_t rec_callbacks_ ACCESS_ON(task_queue_);
 
   // Total number of recording callbacks stored at the last timer task.
-  uint64_t last_rec_callbacks_;
+  uint64_t last_rec_callbacks_ ACCESS_ON(task_queue_);
 
   // Total number of playback callbacks where the sink asks for 10ms audio
   // data each time.
-  uint64_t play_callbacks_;
+  uint64_t play_callbacks_ ACCESS_ON(task_queue_);
 
   // Total number of playout callbacks stored at the last timer task.
-  uint64_t last_play_callbacks_;
+  uint64_t last_play_callbacks_ ACCESS_ON(task_queue_);
 
   // Total number of recorded audio samples.
-  uint64_t rec_samples_;
+  uint64_t rec_samples_ ACCESS_ON(task_queue_);
 
   // Total number of recorded samples stored at the previous timer task.
-  uint64_t last_rec_samples_;
+  uint64_t last_rec_samples_ ACCESS_ON(task_queue_);
 
   // Total number of played audio samples.
-  uint64_t play_samples_;
+  uint64_t play_samples_ ACCESS_ON(task_queue_);
 
   // Total number of played samples stored at the previous timer task.
-  uint64_t last_play_samples_;
-
-  // Time stamp of last timer task (drives logging).
-  uint64_t last_timer_task_time_;
-
-  // Time stamp of last playout callback.
-  uint64_t last_playout_time_;
-
-  // An array where the position corresponds to time differences (in
-  // milliseconds) between two successive playout callbacks, and the stored
-  // value is the number of times a given time difference was found.
-  // Writing to the array is done without a lock since it is only read once at
-  // destruction when no audio is running.
-  uint32_t playout_diff_times_[kMaxDeltaTimeInMs + 1] = {0};
+  uint64_t last_play_samples_ ACCESS_ON(task_queue_);
 
   // Contains max level (max(abs(x))) of recorded audio packets over the last
   // 10 seconds where a new measurement is done twice per second. The level
-  // is reset to zero at each call to LogStats(). Only modified on the task
-  // queue thread.
-  int16_t max_rec_level_;
+  // is reset to zero at each call to LogStats().
+  int16_t max_rec_level_ ACCESS_ON(task_queue_);
 
   // Contains max level of recorded audio packets over the last 10 seconds
   // where a new measurement is done twice per second.
-  int16_t max_play_level_;
+  int16_t max_play_level_ ACCESS_ON(task_queue_);
+
+  // Time stamp of last timer task (drives logging).
+  uint64_t last_timer_task_time_ ACCESS_ON(task_queue_);
 
   // Counts number of audio callbacks modulo 50 to create a signal when
   // a new storage of audio stats shall be done.
-  // Only updated on the OS-specific audio thread that drives audio.
-  int16_t rec_stat_count_;
-  int16_t play_stat_count_;
+  int16_t rec_stat_count_ ACCESS_ON(recording_thread_checker_);
+  int16_t play_stat_count_ ACCESS_ON(playout_thread_checker_);
 
   // Time stamps of when playout and recording starts.
-  uint64_t play_start_time_;
-  uint64_t rec_start_time_;
+  uint64_t play_start_time_ ACCESS_ON(main_thread_checker_);
+  uint64_t rec_start_time_ ACCESS_ON(main_thread_checker_);
 
   // Set to true at construction and modified to false as soon as one audio-
   // level estimate larger than zero is detected.

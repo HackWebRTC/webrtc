@@ -1496,9 +1496,7 @@ int32_t AudioDeviceModuleImpl::RegisterAudioCallback(
     AudioTransport* audioCallback) {
   LOG(INFO) << __FUNCTION__;
   CriticalSectionScoped lock(&_critSectAudioCb);
-  _audioDeviceBuffer.RegisterAudioCallback(audioCallback);
-
-  return 0;
+  return _audioDeviceBuffer.RegisterAudioCallback(audioCallback);
 }
 
 // ----------------------------------------------------------------------------
@@ -1756,13 +1754,8 @@ int32_t AudioDeviceModuleImpl::PlayoutSampleRate(
 
 int32_t AudioDeviceModuleImpl::ResetAudioDevice() {
   LOG(INFO) << __FUNCTION__;
-  CHECK_INITIALIZED();
-
-  if (_ptrAudioDevice->ResetAudioDevice() == -1) {
-    return -1;
-  }
-
-  return (0);
+  FATAL() << "Should never be called";
+  return -1;
 }
 
 // ----------------------------------------------------------------------------

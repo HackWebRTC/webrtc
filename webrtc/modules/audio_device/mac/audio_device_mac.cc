@@ -1181,7 +1181,7 @@ int32_t AudioDeviceMac::InitPlayout() {
 
   // Listen for format changes.
   propertyAddress.mSelector = kAudioDevicePropertyStreamFormat;
-  WEBRTC_CA_RETURN_ON_ERR(AudioObjectAddPropertyListener(
+  WEBRTC_CA_LOG_WARN(AudioObjectAddPropertyListener(
       _outputDeviceID, &propertyAddress, &objectListenerProc, this));
 
   // Listen for processor overloads.
@@ -1379,7 +1379,7 @@ int32_t AudioDeviceMac::InitRecording() {
   // Listen for format changes
   // TODO(xians): should we be using kAudioDevicePropertyDeviceHasChanged?
   propertyAddress.mSelector = kAudioDevicePropertyStreamFormat;
-  WEBRTC_CA_RETURN_ON_ERR(AudioObjectAddPropertyListener(
+  WEBRTC_CA_LOG_WARN(AudioObjectAddPropertyListener(
       _inputDeviceID, &propertyAddress, &objectListenerProc, this));
 
   // Listen for processor overloads
