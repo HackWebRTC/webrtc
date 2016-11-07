@@ -16,13 +16,20 @@
 
 namespace webrtc {
 
-bool GetWindowList(WindowCapturer::WindowList* windows) {
+bool GetWindowList(DesktopCapturer::SourceList* windows,
+                   bool ignore_minimized) {
   // Only get on screen, non-desktop windows.
   CFArrayRef window_array = CGWindowListCopyWindowInfo(
       kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements,
       kCGNullWindowID);
   if (!window_array)
     return false;
+
+  MacDesktopConfiguration desktop_config;
+  if (ignore_minimized) {
+    desktop_config = MacDesktopConfiguration::GetCurrent(
+        MacDesktopConfiguration::TopLeftOrigin);
+  }
 
   // Check windows to make sure they have an id, title, and use window layer
   // other than 0.
@@ -45,7 +52,14 @@ bool GetWindowList(WindowCapturer::WindowList* windows) {
 
       int id;
       CFNumberGetValue(window_id, kCFNumberIntType, &id);
-      WindowCapturer::Window window;
+
+      // Skip windows that are minimized and not full screen.
+      if (ignore_minimized && IsWindowMinimized(id) &&
+          !IsWindowFullScreen(desktop_config, window)) {
+        continue;
+      }
+
+      DesktopCapturer::Source window;
       window.id = id;
       if (!rtc::ToUtf8(window_title, &(window.title)) ||
           window.title.empty()) {

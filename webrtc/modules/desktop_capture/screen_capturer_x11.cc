@@ -55,10 +55,8 @@ class ScreenCapturerLinux : public ScreenCapturer,
   // DesktopCapturer interface.
   void Start(Callback* delegate) override;
   void CaptureFrame() override;
-
-  // ScreenCapturer interface.
-  bool GetScreenList(ScreenList* screens) override;
-  bool SelectScreen(ScreenId id) override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
 
  private:
   Display* display() { return options_.x_display()->display(); }
@@ -267,16 +265,14 @@ void ScreenCapturerLinux::CaptureFrame() {
   callback_->OnCaptureResult(Result::SUCCESS, std::move(result));
 }
 
-bool ScreenCapturerLinux::GetScreenList(ScreenList* screens) {
-  RTC_DCHECK(screens->size() == 0);
+bool ScreenCapturerLinux::GetSourceList(SourceList* sources) {
+  RTC_DCHECK(sources->size() == 0);
   // TODO(jiayl): implement screen enumeration.
-  Screen default_screen;
-  default_screen.id = 0;
-  screens->push_back(default_screen);
+  sources->push_back({0});
   return true;
 }
 
-bool ScreenCapturerLinux::SelectScreen(ScreenId id) {
+bool ScreenCapturerLinux::SelectSource(SourceId id) {
   // TODO(jiayl): implement screen selection.
   return true;
 }

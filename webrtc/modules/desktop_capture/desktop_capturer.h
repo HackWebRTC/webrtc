@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
@@ -58,6 +59,9 @@ class DesktopCapturer {
   };
 
   typedef intptr_t SourceId;
+
+  static_assert(std::is_same<SourceId, ScreenId>::value,
+                "SourceId should be a same type as ScreenId.");
 
   struct Source {
     // The unique id to represent a Source of current DesktopCapturer.

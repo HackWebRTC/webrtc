@@ -109,15 +109,15 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
   callback_->OnCaptureResult(Result::SUCCESS, std::move(result));
 }
 
-bool ScreenCapturerWinDirectx::GetScreenList(ScreenList* screens) {
+bool ScreenCapturerWinDirectx::GetSourceList(SourceList* sources) {
   int screen_count = DxgiDuplicatorController::Instance()->ScreenCount();
   for (int i = 0; i < screen_count; i++) {
-    screens->push_back(Screen{i});
+    sources->push_back({i});
   }
   return true;
 }
 
-bool ScreenCapturerWinDirectx::SelectScreen(ScreenId id) {
+bool ScreenCapturerWinDirectx::SelectSource(SourceId id) {
   if (id == current_screen_id_) {
     return true;
   }

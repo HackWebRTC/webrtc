@@ -48,14 +48,12 @@ class WindowCapturerMac : public WindowCapturer {
                                  full_screen_chrome_window_detector);
   ~WindowCapturerMac() override;
 
-  // WindowCapturer interface.
-  bool GetWindowList(WindowList* windows) override;
-  bool SelectWindow(WindowId id) override;
-  bool BringSelectedWindowToFront() override;
-
   // DesktopCapturer interface.
   void Start(Callback* callback) override;
   void CaptureFrame() override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
+  bool FocusOnSelectedSource() override;
 
  private:
   Callback* callback_ = nullptr;
@@ -76,63 +74,18 @@ WindowCapturerMac::WindowCapturerMac(
 
 WindowCapturerMac::~WindowCapturerMac() {}
 
-bool WindowCapturerMac::GetWindowList(WindowList* windows) {
-  // Only get on screen, non-desktop windows.
-  CFArrayRef window_array = CGWindowListCopyWindowInfo(
-      kCGWindowListExcludeDesktopElements,
-      kCGNullWindowID);
-  if (!window_array)
-    return false;
-  MacDesktopConfiguration desktop_config = MacDesktopConfiguration::GetCurrent(
-      MacDesktopConfiguration::TopLeftOrigin);
-  // Check windows to make sure they have an id, title, and use window layer
-  // other than 0.
-  CFIndex count = CFArrayGetCount(window_array);
-  for (CFIndex i = 0; i < count; ++i) {
-    CFDictionaryRef window = reinterpret_cast<CFDictionaryRef>(
-        CFArrayGetValueAtIndex(window_array, i));
-    CFStringRef window_title = reinterpret_cast<CFStringRef>(
-        CFDictionaryGetValue(window, kCGWindowName));
-    CFNumberRef window_id = reinterpret_cast<CFNumberRef>(
-        CFDictionaryGetValue(window, kCGWindowNumber));
-    CFNumberRef window_layer = reinterpret_cast<CFNumberRef>(
-        CFDictionaryGetValue(window, kCGWindowLayer));
-    if (window_title && window_id && window_layer) {
-      // Skip windows with layer=0 (menu, dock).
-      int layer;
-      CFNumberGetValue(window_layer, kCFNumberIntType, &layer);
-      if (layer != 0)
-        continue;
-
-      int id;
-      CFNumberGetValue(window_id, kCFNumberIntType, &id);
-
-      // Skip windows that are minimized and not full screen.
-      if (IsWindowMinimized(id) &&
-          !IsWindowFullScreen(desktop_config, window)) { continue;}
-
-      WindowCapturer::Window window;
-      window.id = id;
-      if (!rtc::ToUtf8(window_title, &(window.title)) ||
-          window.title.empty()) {
-        continue;
-      }
-      windows->push_back(window);
-    }
-  }
-
-  CFRelease(window_array);
-  return true;
+bool WindowCapturerMac::GetSourceList(SourceList* sources) {
+  return webrtc::GetWindowList(sources, true);
 }
 
-bool WindowCapturerMac::SelectWindow(WindowId id) {
+bool WindowCapturerMac::SelectSource(SourceId id) {
   if (!IsWindowValid(id))
     return false;
   window_id_ = id;
   return true;
 }
 
-bool WindowCapturerMac::BringSelectedWindowToFront() {
+bool WindowCapturerMac::FocusOnSelectedSource() {
   if (!window_id_)
     return false;
 

@@ -126,11 +126,11 @@ void ScreenCapturerWinMagnifier::CaptureFrame() {
   callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 }
 
-bool ScreenCapturerWinMagnifier::GetScreenList(ScreenList* screens) {
-  return webrtc::GetScreenList(screens);
+bool ScreenCapturerWinMagnifier::GetSourceList(SourceList* sources) {
+  return webrtc::GetScreenList(sources);
 }
 
-bool ScreenCapturerWinMagnifier::SelectScreen(ScreenId id) {
+bool ScreenCapturerWinMagnifier::SelectSource(SourceId id) {
   bool valid = IsScreenValid(id, &current_device_key_);
 
   // Set current_screen_id_ even if the fallback capturer is being used, so we

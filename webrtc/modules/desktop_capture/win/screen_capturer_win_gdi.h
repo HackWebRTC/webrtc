@@ -40,8 +40,8 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
-  bool GetScreenList(ScreenList* screens) override;
-  bool SelectScreen(ScreenId id) override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
 
  private:
   typedef HRESULT (WINAPI * DwmEnableCompositionFunc)(UINT);
@@ -58,7 +58,7 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
 
   Callback* callback_ = nullptr;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
-  ScreenId current_screen_id_ = kFullDesktopScreenId;
+  SourceId current_screen_id_ = kFullDesktopScreenId;
   std::wstring current_device_key_;
 
   ScopedThreadDesktop desktop_;

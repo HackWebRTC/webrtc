@@ -52,8 +52,8 @@ class ScreenCapturerWinMagnifier : public ScreenCapturer {
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
-  bool GetScreenList(ScreenList* screens) override;
-  bool SelectScreen(ScreenId id) override;
+  bool GetSourceList(SourceList* screens) override;
+  bool SelectSource(SourceId id) override;
   void SetExcludedWindow(WindowId window) override;
 
  private:

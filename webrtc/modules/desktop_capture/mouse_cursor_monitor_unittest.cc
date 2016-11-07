@@ -94,17 +94,17 @@ TEST_F(MouseCursorMonitorTest, MAYBE(FromWindow)) {
   if (!window_capturer.get())
     return;
 
-  WindowCapturer::WindowList windows;
-  EXPECT_TRUE(window_capturer->GetWindowList(&windows));
+  DesktopCapturer::SourceList sources;
+  EXPECT_TRUE(window_capturer->GetSourceList(&sources));
 
   // Iterate over all windows and try capturing mouse cursor for each of them.
-  for (size_t i = 0; i < windows.size(); ++i) {
+  for (size_t i = 0; i < sources.size(); ++i) {
     cursor_image_.reset();
     position_received_ = false;
 
     std::unique_ptr<MouseCursorMonitor> capturer(
         MouseCursorMonitor::CreateForWindow(
-            DesktopCaptureOptions::CreateDefault(), windows[i].id));
+            DesktopCaptureOptions::CreateDefault(), sources[i].id));
     assert(capturer.get());
 
     capturer->Init(this, MouseCursorMonitor::SHAPE_AND_POSITION);

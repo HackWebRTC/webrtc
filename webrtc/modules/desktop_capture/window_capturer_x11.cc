@@ -88,14 +88,12 @@ class WindowCapturerLinux : public WindowCapturer,
   WindowCapturerLinux(const DesktopCaptureOptions& options);
   ~WindowCapturerLinux() override;
 
-  // WindowCapturer interface.
-  bool GetWindowList(WindowList* windows) override;
-  bool SelectWindow(WindowId id) override;
-  bool BringSelectedWindowToFront() override;
-
   // DesktopCapturer interface.
   void Start(Callback* callback) override;
   void CaptureFrame() override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
+  bool FocusOnSelectedSource() override;
 
   // SharedXDisplay::XEventHandler interface.
   bool HandleXEvent(const XEvent& event) override;
@@ -154,8 +152,8 @@ WindowCapturerLinux::~WindowCapturerLinux() {
   x_display_->RemoveEventHandler(ConfigureNotify, this);
 }
 
-bool WindowCapturerLinux::GetWindowList(WindowList* windows) {
-  WindowList result;
+bool WindowCapturerLinux::GetSourceList(SourceList* sources) {
+  SourceList result;
 
   XErrorTrap error_trap(display());
 
@@ -178,7 +176,7 @@ bool WindowCapturerLinux::GetWindowList(WindowList* windows) {
       ::Window app_window =
           GetApplicationWindow(children[num_children - 1 - i]);
       if (app_window && !IsDesktopElement(app_window)) {
-        Window w;
+        Source w;
         w.id = app_window;
         if (GetWindowTitle(app_window, &w.title))
           result.push_back(w);
@@ -189,12 +187,12 @@ bool WindowCapturerLinux::GetWindowList(WindowList* windows) {
       XFree(children);
   }
 
-  windows->swap(result);
+  sources->swap(result);
 
   return true;
 }
 
-bool WindowCapturerLinux::SelectWindow(WindowId id) {
+bool WindowCapturerLinux::SelectSource(SourceId id) {
   if (!x_server_pixel_buffer_.Init(display(), id))
     return false;
 
@@ -215,7 +213,7 @@ bool WindowCapturerLinux::SelectWindow(WindowId id) {
   return true;
 }
 
-bool WindowCapturerLinux::BringSelectedWindowToFront() {
+bool WindowCapturerLinux::FocusOnSelectedSource() {
   if (!selected_window_)
     return false;
 

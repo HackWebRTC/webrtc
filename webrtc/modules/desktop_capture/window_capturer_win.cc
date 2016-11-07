@@ -26,8 +26,8 @@ namespace webrtc {
 namespace {
 
 BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
-  WindowCapturer::WindowList* list =
-      reinterpret_cast<WindowCapturer::WindowList*>(param);
+  DesktopCapturer::SourceList* list =
+      reinterpret_cast<DesktopCapturer::SourceList*>(param);
 
   // Skip windows that are invisible, minimized, have no title, or are owned,
   // unless they have the app window style set.
@@ -62,7 +62,7 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
     return TRUE;
   }
 
-  WindowCapturer::Window window;
+  DesktopCapturer::Source window;
   window.id = reinterpret_cast<WindowId>(hwnd);
 
   const size_t kTitleLength = 500;
@@ -85,14 +85,12 @@ class WindowCapturerWin : public WindowCapturer {
   WindowCapturerWin();
   ~WindowCapturerWin() override;
 
-  // WindowCapturer interface.
-  bool GetWindowList(WindowList* windows) override;
-  bool SelectWindow(WindowId id) override;
-  bool BringSelectedWindowToFront() override;
-
   // DesktopCapturer interface.
   void Start(Callback* callback) override;
   void CaptureFrame() override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
+  bool FocusOnSelectedSource() override;
 
  private:
   Callback* callback_ = nullptr;
@@ -115,15 +113,15 @@ class WindowCapturerWin : public WindowCapturer {
 WindowCapturerWin::WindowCapturerWin() {}
 WindowCapturerWin::~WindowCapturerWin() {}
 
-bool WindowCapturerWin::GetWindowList(WindowList* windows) {
-  WindowList result;
+bool WindowCapturerWin::GetSourceList(SourceList* sources) {
+  SourceList result;
   LPARAM param = reinterpret_cast<LPARAM>(&result);
   if (!EnumWindows(&WindowsEnumerationHandler, param))
     return false;
-  windows->swap(result);
+  sources->swap(result);
 
   std::map<HWND, DesktopSize> new_map;
-  for (const auto& item : *windows) {
+  for (const auto& item : *sources) {
     HWND hwnd = reinterpret_cast<HWND>(item.id);
     new_map[hwnd] = window_size_map_[hwnd];
   }
@@ -132,7 +130,7 @@ bool WindowCapturerWin::GetWindowList(WindowList* windows) {
   return true;
 }
 
-bool WindowCapturerWin::SelectWindow(WindowId id) {
+bool WindowCapturerWin::SelectSource(SourceId id) {
   HWND window = reinterpret_cast<HWND>(id);
   if (!IsWindow(window) || !IsWindowVisible(window) || IsIconic(window))
     return false;
@@ -143,7 +141,7 @@ bool WindowCapturerWin::SelectWindow(WindowId id) {
   return true;
 }
 
-bool WindowCapturerWin::BringSelectedWindowToFront() {
+bool WindowCapturerWin::FocusOnSelectedSource() {
   if (!window_)
     return false;
 

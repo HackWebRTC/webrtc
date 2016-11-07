@@ -24,14 +24,11 @@ class WindowCapturerNull : public WindowCapturer {
   WindowCapturerNull();
   ~WindowCapturerNull() override;
 
-  // WindowCapturer interface.
-  bool GetWindowList(WindowList* windows) override;
-  bool SelectWindow(WindowId id) override;
-  bool BringSelectedWindowToFront() override;
-
   // DesktopCapturer interface.
   void Start(Callback* callback) override;
   void CaptureFrame() override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
 
  private:
   Callback* callback_ = nullptr;
@@ -42,17 +39,12 @@ class WindowCapturerNull : public WindowCapturer {
 WindowCapturerNull::WindowCapturerNull() {}
 WindowCapturerNull::~WindowCapturerNull() {}
 
-bool WindowCapturerNull::GetWindowList(WindowList* windows) {
+bool WindowCapturerNull::GetSourceList(SourceList* sources) {
   // Not implemented yet.
   return false;
 }
 
-bool WindowCapturerNull::SelectWindow(WindowId id) {
-  // Not implemented yet.
-  return false;
-}
-
-bool WindowCapturerNull::BringSelectedWindowToFront() {
+bool WindowCapturerNull::SelectSource(SourceId id) {
   // Not implemented yet.
   return false;
 }

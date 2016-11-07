@@ -43,12 +43,11 @@ class WindowCapturerTest : public testing::Test,
 
 // Verify that we can enumerate windows.
 TEST_F(WindowCapturerTest, Enumerate) {
-  WindowCapturer::WindowList windows;
-  EXPECT_TRUE(capturer_->GetWindowList(&windows));
+  DesktopCapturer::SourceList sources;
+  EXPECT_TRUE(capturer_->GetSourceList(&sources));
 
   // Verify that window titles are set.
-  for (WindowCapturer::WindowList::iterator it = windows.begin();
-       it != windows.end(); ++it) {
+  for (auto it = sources.begin(); it != sources.end(); ++it) {
     EXPECT_FALSE(it->title.empty());
   }
 }
@@ -61,24 +60,23 @@ TEST_F(WindowCapturerTest, Enumerate) {
 // have a python script showing Tk dialog, but launching code will differ
 // between platforms).
 TEST_F(WindowCapturerTest, Capture) {
-  WindowCapturer::WindowList windows;
+  DesktopCapturer::SourceList sources;
   capturer_->Start(this);
-  EXPECT_TRUE(capturer_->GetWindowList(&windows));
+  EXPECT_TRUE(capturer_->GetSourceList(&sources));
 
   // Verify that we can select and capture each window.
-  for (WindowCapturer::WindowList::iterator it = windows.begin();
-       it != windows.end(); ++it) {
+  for (auto it = sources.begin(); it != sources.end(); ++it) {
     frame_.reset();
-    if (capturer_->SelectWindow(it->id)) {
+    if (capturer_->SelectSource(it->id)) {
       capturer_->CaptureFrame();
     }
 
     // If we failed to capture a window make sure it no longer exists.
     if (!frame_.get()) {
-      WindowCapturer::WindowList new_list;
-      EXPECT_TRUE(capturer_->GetWindowList(&new_list));
-      for (WindowCapturer::WindowList::iterator new_list_it = new_list.begin();
-           new_list_it != new_list.end(); ++new_list_it) {
+      DesktopCapturer::SourceList new_list;
+      EXPECT_TRUE(capturer_->GetSourceList(&new_list));
+      for (auto new_list_it = new_list.begin(); new_list_it != new_list.end();
+           ++new_list_it) {
         EXPECT_FALSE(it->id == new_list_it->id);
       }
       continue;

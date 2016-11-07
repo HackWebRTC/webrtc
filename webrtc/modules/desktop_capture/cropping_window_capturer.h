@@ -34,11 +34,9 @@ class CroppingWindowCapturer : public WindowCapturer,
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
   void SetExcludedWindow(WindowId window) override;
-
-  // WindowCapturer implementation.
-  bool GetWindowList(WindowList* windows) override;
-  bool SelectWindow(WindowId id) override;
-  bool BringSelectedWindowToFront() override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
+  bool FocusOnSelectedSource() override;
 
   // DesktopCapturer::Callback implementation, passed to |screen_capturer_| to
   // intercept the capture result.
@@ -67,7 +65,7 @@ class CroppingWindowCapturer : public WindowCapturer,
   DesktopCapturer::Callback* callback_;
   std::unique_ptr<WindowCapturer> window_capturer_;
   std::unique_ptr<ScreenCapturer> screen_capturer_;
-  WindowId selected_window_;
+  SourceId selected_window_;
   WindowId excluded_window_;
 };
 

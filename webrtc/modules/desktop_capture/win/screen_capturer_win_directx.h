@@ -39,8 +39,8 @@ class ScreenCapturerWinDirectx : public ScreenCapturer {
   void SetSharedMemoryFactory(
       std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
   void CaptureFrame() override;
-  bool GetScreenList(ScreenList* screens) override;
-  bool SelectScreen(ScreenId id) override;
+  bool GetSourceList(SourceList* sources) override;
+  bool SelectSource(SourceId id) override;
 
  private:
   // Returns desktop size of selected screen.
@@ -52,7 +52,7 @@ class ScreenCapturerWinDirectx : public ScreenCapturer {
 
   DxgiDuplicatorController::Context context_;
 
-  ScreenId current_screen_id_ = kFullDesktopScreenId;
+  SourceId current_screen_id_ = kFullDesktopScreenId;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerWinDirectx);
 };

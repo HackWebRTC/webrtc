@@ -58,20 +58,20 @@ void CroppingWindowCapturer::SetExcludedWindow(WindowId window) {
   }
 }
 
-bool CroppingWindowCapturer::GetWindowList(WindowList* windows) {
-  return window_capturer_->GetWindowList(windows);
+bool CroppingWindowCapturer::GetSourceList(SourceList* sources) {
+  return window_capturer_->GetSourceList(sources);
 }
 
-bool CroppingWindowCapturer::SelectWindow(WindowId id) {
-  if (window_capturer_->SelectWindow(id)) {
+bool CroppingWindowCapturer::SelectSource(SourceId id) {
+  if (window_capturer_->SelectSource(id)) {
     selected_window_ = id;
     return true;
   }
   return false;
 }
 
-bool CroppingWindowCapturer::BringSelectedWindowToFront() {
-  return window_capturer_->BringSelectedWindowToFront();
+bool CroppingWindowCapturer::FocusOnSelectedSource() {
+  return window_capturer_->FocusOnSelectedSource();
 }
 
 void CroppingWindowCapturer::OnCaptureResult(
