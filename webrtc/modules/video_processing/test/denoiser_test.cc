@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "webrtc/common_video/include/video_frame_buffer.h"
+#include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/modules/video_processing/video_denoiser.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/frame_utils.h"
@@ -135,16 +135,10 @@ TEST(VideoDenoiserTest, Denoiser) {
   ASSERT_TRUE(source_file != nullptr)
       << "Cannot open source file: " << video_file;
 
-  // Used in swap buffer.
-  int denoised_frame_toggle = 0;
   // Create pure C denoiser.
   VideoDenoiser denoiser_c(false);
   // Create SSE or NEON denoiser.
   VideoDenoiser denoiser_sse_neon(true);
-  rtc::scoped_refptr<I420Buffer> denoised_frame_c;
-  rtc::scoped_refptr<I420Buffer> denoised_frame_prev_c;
-  rtc::scoped_refptr<I420Buffer> denoised_frame_sse_neon;
-  rtc::scoped_refptr<I420Buffer> denoised_frame_prev_sse_neon;
 
   for (;;) {
     rtc::scoped_refptr<VideoFrameBuffer> video_frame_buffer(
@@ -152,29 +146,14 @@ TEST(VideoDenoiserTest, Denoiser) {
     if (!video_frame_buffer)
       break;
 
-    rtc::scoped_refptr<I420Buffer>* p_denoised_c = &denoised_frame_c;
-    rtc::scoped_refptr<I420Buffer>* p_denoised_prev_c = &denoised_frame_prev_c;
-    rtc::scoped_refptr<I420Buffer>* p_denoised_sse_neon =
-        &denoised_frame_sse_neon;
-    rtc::scoped_refptr<I420Buffer>* p_denoised_prev_sse_neon =
-        &denoised_frame_prev_sse_neon;
-    // Swap the buffer to save one memcpy in DenoiseFrame.
-    if (denoised_frame_toggle) {
-      p_denoised_c = &denoised_frame_prev_c;
-      p_denoised_prev_c = &denoised_frame_c;
-      p_denoised_sse_neon = &denoised_frame_prev_sse_neon;
-      p_denoised_prev_sse_neon = &denoised_frame_sse_neon;
-    }
-    denoiser_c.DenoiseFrame(video_frame_buffer,
-                            p_denoised_c, p_denoised_prev_c,
-                            false);
-    denoiser_sse_neon.DenoiseFrame(video_frame_buffer,
-                                   p_denoised_sse_neon,
-                                   p_denoised_prev_sse_neon, false);
-    // Invert the flag.
-    denoised_frame_toggle ^= 1;
+    rtc::scoped_refptr<VideoFrameBuffer> denoised_frame_c(
+        denoiser_c.DenoiseFrame(video_frame_buffer, false));
+    rtc::scoped_refptr<VideoFrameBuffer> denoised_frame_sse_neon(
+        denoiser_sse_neon.DenoiseFrame(video_frame_buffer, false));
+
     // Denoising results should be the same for C and SSE/NEON denoiser.
-    ASSERT_TRUE(test::FrameBufsEqual(*p_denoised_c, *p_denoised_sse_neon));
+    ASSERT_TRUE(
+        test::FrameBufsEqual(denoised_frame_c, denoised_frame_sse_neon));
   }
   ASSERT_NE(0, feof(source_file)) << "Error reading source file";
 }

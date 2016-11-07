@@ -119,7 +119,7 @@ uint32_t DenoiserFilterSSE2::Variance16x8(const uint8_t* src,
   return *sse - ((sum * sum) >> 7);
 }
 
-DenoiserDecision DenoiserFilterSSE2::MbDenoise(uint8_t* mc_running_avg_y,
+DenoiserDecision DenoiserFilterSSE2::MbDenoise(const uint8_t* mc_running_avg_y,
                                                int mc_avg_y_stride,
                                                uint8_t* running_avg_y,
                                                int avg_y_stride,
@@ -150,7 +150,7 @@ DenoiserDecision DenoiserFilterSSE2::MbDenoise(uint8_t* mc_running_avg_y,
     const __m128i v_sig =
         _mm_loadu_si128(reinterpret_cast<const __m128i*>(&sig[0]));
     const __m128i v_mc_running_avg_y =
-        _mm_loadu_si128(reinterpret_cast<__m128i*>(&mc_running_avg_y[0]));
+        _mm_loadu_si128(reinterpret_cast<const __m128i*>(&mc_running_avg_y[0]));
     __m128i v_running_avg_y;
     const __m128i pdiff = _mm_subs_epu8(v_mc_running_avg_y, v_sig);
     const __m128i ndiff = _mm_subs_epu8(v_sig, v_mc_running_avg_y);

@@ -87,7 +87,7 @@ uint32_t DenoiserFilterNEON::Variance16x8(const uint8_t* a,
   return *sse - ((sum * sum) >> 7);
 }
 
-DenoiserDecision DenoiserFilterNEON::MbDenoise(uint8_t* mc_running_avg_y,
+DenoiserDecision DenoiserFilterNEON::MbDenoise(const uint8_t* mc_running_avg_y,
                                                int mc_running_avg_y_stride,
                                                uint8_t* running_avg_y,
                                                int running_avg_y_stride,

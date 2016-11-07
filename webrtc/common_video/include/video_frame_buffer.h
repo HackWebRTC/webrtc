@@ -114,10 +114,6 @@ class I420Buffer : public VideoFrameBuffer {
   // Scale all of |src| to the size of |this| buffer, with no cropping.
   void ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src);
 
-  // Create a new buffer with identical strides, and copy the pixel data.
-  static rtc::scoped_refptr<I420Buffer> CopyKeepStride(
-      const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
-
   // Returns a rotated versions of |src|. Native buffers are not
   // supported. The reason this function doesn't return an I420Buffer,
   // is that it returns |src| unchanged in case |rotation| is zero.

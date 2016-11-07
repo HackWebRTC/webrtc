@@ -48,7 +48,7 @@ uint32_t DenoiserFilterC::Variance16x8(const uint8_t* a,
   return *sse - ((static_cast<int64_t>(sum) * sum) >> 7);
 }
 
-DenoiserDecision DenoiserFilterC::MbDenoise(uint8_t* mc_running_avg_y,
+DenoiserDecision DenoiserFilterC::MbDenoise(const uint8_t* mc_running_avg_y,
                                             int mc_avg_y_stride,
                                             uint8_t* running_avg_y,
                                             int avg_y_stride,

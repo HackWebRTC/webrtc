@@ -10,6 +10,7 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_processing/video_denoiser.h"
+#include "libyuv/planar_functions.h"
 
 namespace webrtc {
 
@@ -30,37 +31,35 @@ static void ShowRect(const std::unique_ptr<DenoiserFilter>& filter,
                      const std::unique_ptr<uint8_t[]>& moving_edge_red,
                      const std::unique_ptr<uint8_t[]>& x_density,
                      const std::unique_ptr<uint8_t[]>& y_density,
-                     const uint8_t* u_src,
-                     const uint8_t* v_src,
-                     uint8_t* u_dst,
-                     uint8_t* v_dst,
+                     const uint8_t* u_src, int stride_u_src,
+                     const uint8_t* v_src, int stride_v_src,
+                     uint8_t* u_dst, int stride_u_dst,
+                     uint8_t* v_dst, int stride_v_dst,
                      int mb_rows_,
-                     int mb_cols_,
-                     int stride_u_,
-                     int stride_v_) {
+                     int mb_cols_) {
   for (int mb_row = 0; mb_row < mb_rows_; ++mb_row) {
     for (int mb_col = 0; mb_col < mb_cols_; ++mb_col) {
       int mb_index = mb_row * mb_cols_ + mb_col;
       const uint8_t* mb_src_u =
-          u_src + (mb_row << 3) * stride_u_ + (mb_col << 3);
+          u_src + (mb_row << 3) * stride_u_src + (mb_col << 3);
       const uint8_t* mb_src_v =
-          v_src + (mb_row << 3) * stride_v_ + (mb_col << 3);
-      uint8_t* mb_dst_u = u_dst + (mb_row << 3) * stride_u_ + (mb_col << 3);
-      uint8_t* mb_dst_v = v_dst + (mb_row << 3) * stride_v_ + (mb_col << 3);
+          v_src + (mb_row << 3) * stride_v_src + (mb_col << 3);
+      uint8_t* mb_dst_u = u_dst + (mb_row << 3) * stride_u_dst + (mb_col << 3);
+      uint8_t* mb_dst_v = v_dst + (mb_row << 3) * stride_v_dst + (mb_col << 3);
       uint8_t uv_tmp[8 * 8];
       memset(uv_tmp, 200, 8 * 8);
       if (d_status[mb_index] == 1) {
         // Paint to red.
-        CopyMem8x8(mb_src_u, stride_u_, mb_dst_u, stride_u_);
-        CopyMem8x8(uv_tmp, 8, mb_dst_v, stride_v_);
+        CopyMem8x8(mb_src_u, stride_u_src, mb_dst_u, stride_u_dst);
+        CopyMem8x8(uv_tmp, 8, mb_dst_v, stride_v_dst);
       } else if (moving_edge_red[mb_row * mb_cols_ + mb_col] &&
                  x_density[mb_col] * y_density[mb_row]) {
         // Paint to blue.
-        CopyMem8x8(uv_tmp, 8, mb_dst_u, stride_u_);
-        CopyMem8x8(mb_src_v, stride_v_, mb_dst_v, stride_v_);
+        CopyMem8x8(uv_tmp, 8, mb_dst_u, stride_u_dst);
+        CopyMem8x8(mb_src_v, stride_v_src, mb_dst_v, stride_v_dst);
       } else {
-        CopyMem8x8(mb_src_u, stride_u_, mb_dst_u, stride_u_);
-        CopyMem8x8(mb_src_v, stride_v_, mb_dst_v, stride_v_);
+        CopyMem8x8(mb_src_u, stride_u_src, mb_dst_u, stride_u_dst);
+        CopyMem8x8(mb_src_v, stride_v_src, mb_dst_v, stride_v_dst);
       }
     }
   }
@@ -73,23 +72,11 @@ VideoDenoiser::VideoDenoiser(bool runtime_cpu_detection)
       filter_(DenoiserFilter::Create(runtime_cpu_detection, &cpu_type_)),
       ne_(new NoiseEstimation()) {}
 
-void VideoDenoiser::DenoiserReset(
-    const rtc::scoped_refptr<VideoFrameBuffer>& frame,
-    rtc::scoped_refptr<I420Buffer>* denoised_frame,
-    rtc::scoped_refptr<I420Buffer>* denoised_frame_prev) {
+void VideoDenoiser::DenoiserReset(rtc::scoped_refptr<VideoFrameBuffer> frame) {
   width_ = frame->width();
   height_ = frame->height();
   mb_cols_ = width_ >> 4;
   mb_rows_ = height_ >> 4;
-  stride_y_ = frame->StrideY();
-  stride_u_ = frame->StrideU();
-  stride_v_ = frame->StrideV();
-
-  // Allocate an empty buffer for denoised_frame_prev.
-  *denoised_frame_prev = I420Buffer::Create(
-      width_, height_, stride_y_, stride_u_, stride_v_);
-  // Allocate and initialize denoised_frame with key frame.
-  *denoised_frame = I420Buffer::CopyKeepStride(frame);
 
   // Init noise estimator and allocate buffers.
   ne_->Init(width_, height_, cpu_type_);
@@ -176,14 +163,16 @@ bool VideoDenoiser::IsTrailingBlock(const std::unique_ptr<uint8_t[]>& d_status,
   return ret;
 }
 
-void VideoDenoiser::CopySrcOnMOB(const uint8_t* y_src, uint8_t* y_dst) {
+void VideoDenoiser::CopySrcOnMOB(const uint8_t* y_src,
+                                 int stride_src,
+                                 uint8_t* y_dst,
+                                 int stride_dst) {
   // Loop over to copy src block if the block is marked as moving object block
   // or if the block may cause trailing artifacts.
   for (int mb_row = 0; mb_row < mb_rows_; ++mb_row) {
     const int mb_index_base = mb_row * mb_cols_;
-    const int offset_base = (mb_row << 4) * stride_y_;
-    const uint8_t* mb_src_base = y_src + offset_base;
-    uint8_t* mb_dst_base = y_dst + offset_base;
+    const uint8_t* mb_src_base = y_src + (mb_row << 4) * stride_src;
+    uint8_t* mb_dst_base = y_dst + (mb_row << 4) * stride_dst;
     for (int mb_col = 0; mb_col < mb_cols_; ++mb_col) {
       const int mb_index = mb_index_base + mb_col;
       const uint32_t offset_col = mb_col << 4;
@@ -196,49 +185,55 @@ void VideoDenoiser::CopySrcOnMOB(const uint8_t* y_src, uint8_t* y_dst) {
           (x_density_[mb_col] * y_density_[mb_row] &&
            moving_object_[mb_row * mb_cols_ + mb_col])) {
         // Copy y source.
-        filter_->CopyMem16x16(mb_src, stride_y_, mb_dst, stride_y_);
+        filter_->CopyMem16x16(mb_src, stride_src, mb_dst, stride_dst);
       }
     }
   }
 }
 
-void VideoDenoiser::CopyLumaOnMargin(const uint8_t* y_src, uint8_t* y_dst) {
-  if ((mb_rows_ << 4) != height_) {
-    const uint8_t* margin_y_src = y_src + (mb_rows_ << 4) * stride_y_;
-    uint8_t* margin_y_dst = y_dst + (mb_rows_ << 4) * stride_y_;
-    memcpy(margin_y_dst, margin_y_src, (height_ - (mb_rows_ << 4)) * stride_y_);
+void VideoDenoiser::CopyLumaOnMargin(const uint8_t* y_src,
+                                     int stride_src,
+                                     uint8_t* y_dst,
+                                     int stride_dst) {
+  int height_margin = height_ - (mb_rows_ << 4);
+  if (height_margin > 0) {
+    const uint8_t* margin_y_src = y_src + (mb_rows_ << 4) * stride_src;
+    uint8_t* margin_y_dst = y_dst + (mb_rows_ << 4) * stride_dst;
+    libyuv::CopyPlane(margin_y_src, stride_src, margin_y_dst, stride_dst,
+                      width_, height_margin);
   }
-  if ((mb_cols_ << 4) != width_) {
+  int width_margin = width_ - (mb_cols_ << 4);
+  if (width_margin > 0) {
     const uint8_t* margin_y_src = y_src + (mb_cols_ << 4);
     uint8_t* margin_y_dst = y_dst + (mb_cols_ << 4);
-    for (int i = 0; i < height_; ++i) {
-      for (int j = mb_cols_ << 4; j < width_; ++j) {
-        margin_y_dst[i * stride_y_ + j] = margin_y_src[i * stride_y_ + j];
-      }
-    }
+    libyuv::CopyPlane(margin_y_src, stride_src, margin_y_dst, stride_dst,
+                      width_ - (mb_cols_ << 4), mb_rows_ << 4);
   }
 }
 
-void VideoDenoiser::DenoiseFrame(
-    const rtc::scoped_refptr<VideoFrameBuffer>& frame,
-    rtc::scoped_refptr<I420Buffer>* denoised_frame,
-    rtc::scoped_refptr<I420Buffer>* denoised_frame_prev,
+rtc::scoped_refptr<VideoFrameBuffer> VideoDenoiser::DenoiseFrame(
+    rtc::scoped_refptr<VideoFrameBuffer> frame,
     bool noise_estimation_enabled) {
   // If previous width and height are different from current frame's, need to
   // reallocate the buffers and no denoising for the current frame.
-  if (width_ != frame->width() || height_ != frame->height()) {
-    DenoiserReset(frame, denoised_frame, denoised_frame_prev);
-    return;
+  if (!prev_buffer_ || width_ != frame->width() || height_ != frame->height()) {
+    DenoiserReset(frame);
+    prev_buffer_ = frame;
+    return frame;
   }
 
   // Set buffer pointers.
   const uint8_t* y_src = frame->DataY();
-  const uint8_t* u_src = frame->DataU();
-  const uint8_t* v_src = frame->DataV();
-  uint8_t* y_dst = (*denoised_frame)->MutableDataY();
-  uint8_t* u_dst = (*denoised_frame)->MutableDataU();
-  uint8_t* v_dst = (*denoised_frame)->MutableDataV();
-  uint8_t* y_dst_prev = (*denoised_frame_prev)->MutableDataY();
+  int stride_y_src = frame->StrideY();
+  rtc::scoped_refptr<I420Buffer> dst =
+      buffer_pool_.CreateBuffer(width_, height_);
+
+  uint8_t* y_dst = dst->MutableDataY();
+  int stride_y_dst = dst->StrideY();
+
+  const uint8_t* y_dst_prev = prev_buffer_->DataY();
+  int stride_prev = prev_buffer_->StrideY();
+
   memset(x_density_.get(), 0, mb_cols_);
   memset(y_density_.get(), 0, mb_rows_);
   memset(moving_object_.get(), 1, mb_cols_ * mb_rows_);
@@ -249,10 +244,9 @@ void VideoDenoiser::DenoiseFrame(
   // factors for moving object detection.
   for (int mb_row = 0; mb_row < mb_rows_; ++mb_row) {
     const int mb_index_base = mb_row * mb_cols_;
-    const int offset_base = (mb_row << 4) * stride_y_;
-    const uint8_t* mb_src_base = y_src + offset_base;
-    uint8_t* mb_dst_base = y_dst + offset_base;
-    uint8_t* mb_dst_prev_base = y_dst_prev + offset_base;
+    const uint8_t* mb_src_base = y_src + (mb_row << 4) * stride_y_src;
+    uint8_t* mb_dst_base = y_dst + (mb_row << 4) * stride_y_dst;
+    const uint8_t* mb_dst_prev_base = y_dst_prev + (mb_row << 4) * stride_prev;
     for (int mb_col = 0; mb_col < mb_cols_; ++mb_col) {
       const int mb_index = mb_index_base + mb_col;
       const bool ne_enable = (mb_index % NOISE_SUBSAMPLE_INTERVAL == 0);
@@ -261,22 +255,22 @@ void VideoDenoiser::DenoiseFrame(
       const uint32_t offset_col = mb_col << 4;
       const uint8_t* mb_src = mb_src_base + offset_col;
       uint8_t* mb_dst = mb_dst_base + offset_col;
-      uint8_t* mb_dst_prev = mb_dst_prev_base + offset_col;
+      const uint8_t* mb_dst_prev = mb_dst_prev_base + offset_col;
 
       // TODO(jackychen): Need SSE2/NEON opt.
       int luma = 0;
       if (ne_enable) {
         for (int i = 4; i < 12; ++i) {
           for (int j = 4; j < 12; ++j) {
-            luma += mb_src[i * stride_y_ + j];
+            luma += mb_src[i * stride_y_src + j];
           }
         }
       }
 
       // Get the filtered block and filter_decision.
       mb_filter_decision_[mb_index] =
-          filter_->MbDenoise(mb_dst_prev, stride_y_, mb_dst, stride_y_, mb_src,
-                             stride_y_, 0, noise_level);
+          filter_->MbDenoise(mb_dst_prev, stride_prev, mb_dst, stride_y_dst,
+                             mb_src, stride_y_src, 0, noise_level);
 
       // If filter decision is FILTER_BLOCK, no need to check moving edge.
       // It is unlikely for a moving edge block to be filtered in current
@@ -286,8 +280,8 @@ void VideoDenoiser::DenoiseFrame(
         if (ne_enable) {
           // The variance used in noise estimation is based on the src block in
           // time t (mb_src) and filtered block in time t-1 (mb_dist_prev).
-          uint32_t noise_var = filter_->Variance16x8(mb_dst_prev, stride_y_,
-                                                     mb_src, stride_y_, &sse_t);
+          uint32_t noise_var = filter_->Variance16x8(
+              mb_dst_prev, stride_y_dst, mb_src, stride_y_src, &sse_t);
           ne_->GetNoise(mb_index, noise_var, luma);
         }
         moving_edge_[mb_index] = 0;  // Not a moving edge block.
@@ -295,8 +289,8 @@ void VideoDenoiser::DenoiseFrame(
         uint32_t sse_t = 0;
         // The variance used in MOD is based on the filtered blocks in time
         // T (mb_dst) and T-1 (mb_dst_prev).
-        uint32_t noise_var = filter_->Variance16x8(mb_dst_prev, stride_y_,
-                                                   mb_dst, stride_y_, &sse_t);
+        uint32_t noise_var = filter_->Variance16x8(
+            mb_dst_prev, stride_prev, mb_dst, stride_y_dst, &sse_t);
         if (noise_var > thr_var_adp) {  // Moving edge checking.
           if (ne_enable) {
             ne_->ResetConsecLowVar(mb_index);
@@ -310,7 +304,7 @@ void VideoDenoiser::DenoiseFrame(
             // The variance used in noise estimation is based on the src block
             // in time t (mb_src) and filtered block in time t-1 (mb_dist_prev).
             uint32_t noise_var = filter_->Variance16x8(
-                mb_dst_prev, stride_y_, mb_src, stride_y_, &sse_t);
+                mb_dst_prev, stride_prev, mb_src, stride_y_src, &sse_t);
             ne_->GetNoise(mb_index, noise_var, luma);
           }
         }
@@ -320,23 +314,31 @@ void VideoDenoiser::DenoiseFrame(
 
   ReduceFalseDetection(moving_edge_, &moving_object_, noise_level);
 
-  CopySrcOnMOB(y_src, y_dst);
+  CopySrcOnMOB(y_src, stride_y_src, y_dst, stride_y_dst);
 
   // When frame width/height not divisible by 16, copy the margin to
   // denoised_frame.
   if ((mb_rows_ << 4) != height_ || (mb_cols_ << 4) != width_)
-    CopyLumaOnMargin(y_src, y_dst);
+    CopyLumaOnMargin(y_src, stride_y_src, y_dst, stride_y_dst);
 
-  // TODO(jackychen): Need SSE2/NEON opt.
   // Copy u/v planes.
-  memcpy(u_dst, u_src, (height_ >> 1) * stride_u_);
-  memcpy(v_dst, v_src, (height_ >> 1) * stride_v_);
+  libyuv::CopyPlane(frame->DataU(), frame->StrideU(),
+                    dst->MutableDataU(), dst->StrideU(),
+                    (width_ + 1) >> 1, (height_ + 1) >> 1);
+  libyuv::CopyPlane(frame->DataV(), frame->StrideV(),
+                    dst->MutableDataV(), dst->StrideV(),
+                    (width_ + 1) >> 1, (height_ + 1) >> 1);
 
 #if DISPLAY || DISPLAYNEON
   // Show rectangular region
-  ShowRect(filter_, moving_edge_, moving_object_, x_density_, y_density_, u_src,
-           v_src, u_dst, v_dst, mb_rows_, mb_cols_, stride_u_, stride_v_);
+  ShowRect(filter_, moving_edge_, moving_object_, x_density_, y_density_,
+           frame->DataU(), frame->StrideU(), frame->DataV(), frame->StrideV(),
+           dst->MutableDataU(), dst->StrideU(),
+           dst->MutableDataV(), dst->StrideV(),
+           mb_rows_, mb_cols_);
 #endif
+  prev_buffer_ = dst;
+  return dst;
 }
 
 }  // namespace webrtc

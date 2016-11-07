@@ -205,27 +205,6 @@ void I420Buffer::ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src) {
 }
 
 // static
-rtc::scoped_refptr<I420Buffer> I420Buffer::CopyKeepStride(
-    const rtc::scoped_refptr<VideoFrameBuffer>& source) {
-  int width = source->width();
-  int height = source->height();
-  int stride_y = source->StrideY();
-  int stride_u = source->StrideU();
-  int stride_v = source->StrideV();
-  rtc::scoped_refptr<I420Buffer> target =
-      I420Buffer::Create(width, height, stride_y, stride_u, stride_v);
-  RTC_CHECK(libyuv::I420Copy(source->DataY(), stride_y,
-                             source->DataU(), stride_u,
-                             source->DataV(), stride_v,
-                             target->MutableDataY(), stride_y,
-                             target->MutableDataU(), stride_u,
-                             target->MutableDataV(), stride_v,
-                             width, height) == 0);
-
-  return target;
-}
-
-// static
 rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::Rotate(
     const rtc::scoped_refptr<VideoFrameBuffer>& src,
     VideoRotation rotation) {
