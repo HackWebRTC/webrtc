@@ -25,7 +25,8 @@ namespace {
 const uint8_t start_code_h264[] = {0, 0, 0, 1};
 }  // namespace
 
-bool H264SpsPpsTracker::CopyAndFixBitstream(VCMPacket* packet) {
+H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
+    VCMPacket* packet) {
   RTC_DCHECK(packet->codec == kVideoCodecH264);
 
   const uint8_t* data = packet->dataPtr;
@@ -69,21 +70,21 @@ bool H264SpsPpsTracker::CopyAndFixBitstream(VCMPacket* packet) {
         if (video_header.isFirstPacket) {
           if (nalu.pps_id == -1) {
             LOG(LS_WARNING) << "No PPS id in IDR nalu.";
-            return false;
+            return kRequestKeyframe;
           }
 
           auto pps = pps_data_.find(nalu.pps_id);
           if (pps == pps_data_.end()) {
             LOG(LS_WARNING) << "No PPS with id << " << nalu.pps_id
                             << " received";
-            return false;
+            return kRequestKeyframe;
           }
 
           auto sps = sps_data_.find(pps->second.sps_id);
           if (sps == sps_data_.end()) {
             LOG(LS_WARNING) << "No SPS with id << "
                             << pps_data_[nalu.pps_id].sps_id << " received";
-            return false;
+            return kRequestKeyframe;
           }
 
           pps_id = nalu.pps_id;
@@ -101,7 +102,7 @@ bool H264SpsPpsTracker::CopyAndFixBitstream(VCMPacket* packet) {
   }
 
   if (!insert_packet)
-    return false;
+    return kDrop;
 
   // Calculate how much space we need for the rest of the bitstream.
   if (codec_header.packetization_type == kH264StapA) {
@@ -158,7 +159,7 @@ bool H264SpsPpsTracker::CopyAndFixBitstream(VCMPacket* packet) {
       size_t copy_end = nalu_ptr - data + segment_length;
       if (copy_end > data_size) {
         delete[] buffer;
-        return false;
+        return kDrop;
       }
 
       memcpy(insert_at, nalu_ptr, segment_length);
@@ -175,7 +176,7 @@ bool H264SpsPpsTracker::CopyAndFixBitstream(VCMPacket* packet) {
 
   packet->dataPtr = buffer;
   packet->sizeBytes = required_size;
-  return true;
+  return kInsert;
 }
 
 }  // namespace video_coding

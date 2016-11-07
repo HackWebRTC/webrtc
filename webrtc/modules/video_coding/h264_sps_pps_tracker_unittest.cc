@@ -87,7 +87,7 @@ TEST_F(TestH264SpsPpsTracker, NoNalus) {
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data);
 
-  EXPECT_TRUE(tracker_.CopyAndFixBitstream(&packet));
+  EXPECT_EQ(H264SpsPpsTracker::kInsert, tracker_.CopyAndFixBitstream(&packet));
   EXPECT_EQ(memcmp(packet.dataPtr, data, sizeof(data)), 0);
   delete[] packet.dataPtr;
 }
@@ -100,7 +100,7 @@ TEST_F(TestH264SpsPpsTracker, FuAFirstPacket) {
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data);
 
-  EXPECT_TRUE(tracker_.CopyAndFixBitstream(&packet));
+  EXPECT_EQ(H264SpsPpsTracker::kInsert, tracker_.CopyAndFixBitstream(&packet));
   std::vector<uint8_t> expected;
   expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
   expected.insert(expected.end(), {1, 2, 3});
@@ -116,7 +116,7 @@ TEST_F(TestH264SpsPpsTracker, StapAIncorrectSegmentLength) {
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data);
 
-  EXPECT_FALSE(tracker_.CopyAndFixBitstream(&packet));
+  EXPECT_EQ(H264SpsPpsTracker::kDrop, tracker_.CopyAndFixBitstream(&packet));
 }
 
 TEST_F(TestH264SpsPpsTracker, NoNalusFirstPacket) {
@@ -126,7 +126,7 @@ TEST_F(TestH264SpsPpsTracker, NoNalusFirstPacket) {
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data);
 
-  EXPECT_TRUE(tracker_.CopyAndFixBitstream(&packet));
+  EXPECT_EQ(H264SpsPpsTracker::kInsert, tracker_.CopyAndFixBitstream(&packet));
   std::vector<uint8_t> expected;
   expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
   expected.insert(expected.end(), {1, 2, 3});
@@ -143,7 +143,7 @@ TEST_F(TestH264SpsPpsTracker, IdrNoSpsPpsInserted) {
   packet.dataPtr = data.data();
   packet.sizeBytes = data.size();
 
-  EXPECT_TRUE(tracker_.CopyAndFixBitstream(&packet));
+  EXPECT_EQ(H264SpsPpsTracker::kInsert, tracker_.CopyAndFixBitstream(&packet));
   EXPECT_EQ(memcmp(packet.dataPtr, data.data(), data.size()), 0);
   delete[] packet.dataPtr;
 }
@@ -157,7 +157,8 @@ TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoSpsPpsInserted) {
   packet.dataPtr = data.data();
   packet.sizeBytes = data.size();
 
-  EXPECT_FALSE(tracker_.CopyAndFixBitstream(&packet));
+  EXPECT_EQ(H264SpsPpsTracker::kRequestKeyframe,
+            tracker_.CopyAndFixBitstream(&packet));
 }
 
 TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoPpsInserted) {
@@ -170,7 +171,8 @@ TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoPpsInserted) {
   packet.dataPtr = data.data();
   packet.sizeBytes = data.size();
 
-  EXPECT_FALSE(tracker_.CopyAndFixBitstream(&packet));
+  EXPECT_EQ(H264SpsPpsTracker::kRequestKeyframe,
+            tracker_.CopyAndFixBitstream(&packet));
 }
 
 TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoSpsInserted) {
@@ -183,7 +185,8 @@ TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoSpsInserted) {
   packet.dataPtr = data.data();
   packet.sizeBytes = data.size();
 
-  EXPECT_FALSE(tracker_.CopyAndFixBitstream(&packet));
+  EXPECT_EQ(H264SpsPpsTracker::kRequestKeyframe,
+            tracker_.CopyAndFixBitstream(&packet));
 }
 
 TEST_F(TestH264SpsPpsTracker, SpsPpsPacketThenIdrFirstPacket) {
@@ -195,7 +198,8 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsPacketThenIdrFirstPacket) {
   AddPps(&sps_pps_packet, 0, 1, &data);
   sps_pps_packet.dataPtr = data.data();
   sps_pps_packet.sizeBytes = data.size();
-  EXPECT_FALSE(tracker_.CopyAndFixBitstream(&sps_pps_packet));
+  EXPECT_EQ(H264SpsPpsTracker::kDrop,
+            tracker_.CopyAndFixBitstream(&sps_pps_packet));
   data.clear();
 
   // Insert first packet of the IDR
@@ -205,7 +209,8 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsPacketThenIdrFirstPacket) {
   data.insert(data.end(), {1, 2, 3});
   idr_packet.dataPtr = data.data();
   idr_packet.sizeBytes = data.size();
-  EXPECT_TRUE(tracker_.CopyAndFixBitstream(&idr_packet));
+  EXPECT_EQ(H264SpsPpsTracker::kInsert,
+            tracker_.CopyAndFixBitstream(&idr_packet));
 
   std::vector<uint8_t> expected;
   expected.insert(expected.end(), start_code, start_code + sizeof(start_code));
@@ -235,7 +240,7 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsIdrInStapA) {
 
   packet.dataPtr = data.data();
   packet.sizeBytes = data.size();
-  EXPECT_TRUE(tracker_.CopyAndFixBitstream(&packet));
+  EXPECT_EQ(H264SpsPpsTracker::kInsert, tracker_.CopyAndFixBitstream(&packet));
 
   std::vector<uint8_t> expected;
   // The SPS/PPS is repeated because this packet both contains the SPS/PPS

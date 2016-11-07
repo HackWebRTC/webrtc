@@ -25,7 +25,9 @@ namespace video_coding {
 
 class H264SpsPpsTracker {
  public:
-  bool CopyAndFixBitstream(VCMPacket* packet);
+  enum PacketAction { kInsert, kDrop, kRequestKeyframe };
+
+  PacketAction CopyAndFixBitstream(VCMPacket* packet);
 
  private:
   struct PpsInfo {
