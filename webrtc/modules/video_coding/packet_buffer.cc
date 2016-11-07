@@ -100,16 +100,6 @@ bool PacketBuffer::InsertPacket(const VCMPacket& packet) {
   sequence_buffer_[index].used = true;
   data_buffer_[index] = packet;
 
-  // Since the data pointed to by |packet.dataPtr| is non-persistent the
-  // data has to be copied to its own buffer.
-  // TODO(philipel): Take ownership instead of copying payload when
-  //                 bitstream-fixing has been implemented.
-  if (packet.sizeBytes) {
-    uint8_t* payload = new uint8_t[packet.sizeBytes];
-    memcpy(payload, packet.dataPtr, packet.sizeBytes);
-    data_buffer_[index].dataPtr = payload;
-  }
-
   FindFrames(seq_num);
   return true;
 }

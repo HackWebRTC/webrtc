@@ -165,12 +165,15 @@ TEST_F(TestPacketBuffer, NackCount) {
 
 TEST_F(TestPacketBuffer, FrameSize) {
   const uint16_t seq_num = Rand();
-  uint8_t data[] = {1, 2, 3, 4, 5};
+  uint8_t* data1 = new uint8_t[5]();
+  uint8_t* data2 = new uint8_t[5]();
+  uint8_t* data3 = new uint8_t[5]();
+  uint8_t* data4 = new uint8_t[5]();
 
-  EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast, 5, data));
-  EXPECT_TRUE(Insert(seq_num + 1, kKeyFrame, kNotFirst, kNotLast, 5, data));
-  EXPECT_TRUE(Insert(seq_num + 2, kKeyFrame, kNotFirst, kNotLast, 5, data));
-  EXPECT_TRUE(Insert(seq_num + 3, kKeyFrame, kNotFirst, kLast, 5, data));
+  EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast, 5, data1));
+  EXPECT_TRUE(Insert(seq_num + 1, kKeyFrame, kNotFirst, kNotLast, 5, data2));
+  EXPECT_TRUE(Insert(seq_num + 2, kKeyFrame, kNotFirst, kNotLast, 5, data3));
+  EXPECT_TRUE(Insert(seq_num + 3, kKeyFrame, kNotFirst, kLast, 5, data4));
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
   EXPECT_EQ(20UL, frames_from_callback_.begin()->second->size());
@@ -307,23 +310,35 @@ TEST_F(TestPacketBuffer, FramesReordered) {
 
 TEST_F(TestPacketBuffer, GetBitstream) {
   // "many bitstream, such data" with null termination.
-  uint8_t many[] = {0x6d, 0x61, 0x6e, 0x79, 0x20};
-  uint8_t bitstream[] = {0x62, 0x69, 0x74, 0x73, 0x74, 0x72,
-                         0x65, 0x61, 0x6d, 0x2c, 0x20};
-  uint8_t such[] = {0x73, 0x75, 0x63, 0x68, 0x20};
-  uint8_t data[] = {0x64, 0x61, 0x74, 0x61, 0x0};
-  uint8_t
-      result[sizeof(many) + sizeof(bitstream) + sizeof(such) + sizeof(data)];
+  uint8_t many_data[] = {0x6d, 0x61, 0x6e, 0x79, 0x20};
+  uint8_t bitstream_data[] = {0x62, 0x69, 0x74, 0x73, 0x74, 0x72,
+                              0x65, 0x61, 0x6d, 0x2c, 0x20};
+  uint8_t such_data[] = {0x73, 0x75, 0x63, 0x68, 0x20};
+  uint8_t data_data[] = {0x64, 0x61, 0x74, 0x61, 0x0};
+
+  uint8_t* many = new uint8_t[sizeof(many_data)];
+  uint8_t* bitstream = new uint8_t[sizeof(bitstream_data)];
+  uint8_t* such = new uint8_t[sizeof(such_data)];
+  uint8_t* data = new uint8_t[sizeof(data_data)];
+
+  memcpy(many, many_data, sizeof(many_data));
+  memcpy(bitstream, bitstream_data, sizeof(bitstream_data));
+  memcpy(such, such_data, sizeof(such_data));
+  memcpy(data, data_data, sizeof(data_data));
+
+  uint8_t result[sizeof(many_data) + sizeof(bitstream_data) +
+                 sizeof(such_data) + sizeof(data_data)];
 
   const uint16_t seq_num = Rand();
 
-  EXPECT_TRUE(Insert(seq_num, kKeyFrame, kFirst, kNotLast, sizeof(many), many));
-  EXPECT_TRUE(Insert(seq_num + 1, kDeltaFrame, kNotFirst, kNotLast,
-                     sizeof(bitstream), bitstream));
-  EXPECT_TRUE(Insert(seq_num + 2, kDeltaFrame, kNotFirst, kNotLast,
-                     sizeof(such), such));
   EXPECT_TRUE(
-      Insert(seq_num + 3, kDeltaFrame, kNotFirst, kLast, sizeof(data), data));
+      Insert(seq_num, kKeyFrame, kFirst, kNotLast, sizeof(many_data), many));
+  EXPECT_TRUE(Insert(seq_num + 1, kDeltaFrame, kNotFirst, kNotLast,
+                     sizeof(bitstream_data), bitstream));
+  EXPECT_TRUE(Insert(seq_num + 2, kDeltaFrame, kNotFirst, kNotLast,
+                     sizeof(such_data), such));
+  EXPECT_TRUE(Insert(seq_num + 3, kDeltaFrame, kNotFirst, kLast,
+                     sizeof(data_data), data));
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
   CheckFrame(seq_num);
@@ -333,11 +348,13 @@ TEST_F(TestPacketBuffer, GetBitstream) {
 
 TEST_F(TestPacketBuffer, GetBitstreamH264BufferPadding) {
   uint16_t seq_num = Rand();
-  uint8_t data[] = "some plain old data";
+  uint8_t data_data[] = "some plain old data";
+  uint8_t* data = new uint8_t[sizeof(data_data)];
+  memcpy(data, data_data, sizeof(data_data));
 
   // EncodedImage::kBufferPaddingBytesH264 is unknown at compile time.
-  uint8_t* result =
-      new uint8_t[sizeof(data) + EncodedImage::kBufferPaddingBytesH264];
+  std::unique_ptr<uint8_t[]> result(
+      new uint8_t[sizeof(data_data) + EncodedImage::kBufferPaddingBytesH264]);
 
   VCMPacket packet;
   packet.seqNum = seq_num;
@@ -345,19 +362,18 @@ TEST_F(TestPacketBuffer, GetBitstreamH264BufferPadding) {
   packet.insertStartCode = true;
   packet.video_header.codecHeader.H264.packetization_type = kH264SingleNalu;
   packet.dataPtr = data;
-  packet.sizeBytes = sizeof(data);
+  packet.sizeBytes = sizeof(data_data);
   packet.isFirstPacket = true;
   packet.markerBit = true;
   packet_buffer_->InsertPacket(packet);
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
   EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage()._length,
-            sizeof(data));
+            sizeof(data_data));
   EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage()._size,
-            sizeof(data) + EncodedImage::kBufferPaddingBytesH264);
-  EXPECT_TRUE(frames_from_callback_[seq_num]->GetBitstream(result));
-  EXPECT_EQ(memcmp(result, data, sizeof(data)), 0);
-  delete[] result;
+            sizeof(data_data) + EncodedImage::kBufferPaddingBytesH264);
+  EXPECT_TRUE(frames_from_callback_[seq_num]->GetBitstream(result.get()));
+  EXPECT_EQ(memcmp(result.get(), data, sizeof(data_data)), 0);
 }
 
 TEST_F(TestPacketBuffer, FreeSlotsOnFrameDestruction) {
