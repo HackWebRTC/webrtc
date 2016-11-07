@@ -17,6 +17,7 @@
 #include "webrtc/base/checks.h"
 
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 
@@ -27,8 +28,7 @@ static const double kWithinIncomingBitrateHysteresis = 1.05;
 static const int64_t kMaxFeedbackIntervalMs = 1000;
 
 AimdRateControl::AimdRateControl()
-    : min_configured_bitrate_bps_(
-          RemoteBitrateEstimator::kDefaultMinBitrateBps),
+    : min_configured_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       max_configured_bitrate_bps_(30000000),
       current_bitrate_bps_(max_configured_bitrate_bps_),
       avg_max_bitrate_kbps_(-1.0f),

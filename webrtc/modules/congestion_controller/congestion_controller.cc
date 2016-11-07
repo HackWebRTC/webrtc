@@ -20,6 +20,7 @@
 #include "webrtc/base/socket.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/probe_controller.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -37,9 +38,8 @@ static void ClampBitrates(int* bitrate_bps,
   // TODO(holmer): We should make sure the default bitrates are set to 10 kbps,
   // and that we don't try to set the min bitrate to 0 from any applications.
   // The congestion controller should allow a min bitrate of 0.
-  const int kMinBitrateBps = 10000;
-  if (*min_bitrate_bps < kMinBitrateBps)
-    *min_bitrate_bps = kMinBitrateBps;
+  if (*min_bitrate_bps < congestion_controller::GetMinBitrateBps())
+    *min_bitrate_bps = congestion_controller::GetMinBitrateBps();
   if (*max_bitrate_bps > 0)
     *max_bitrate_bps = std::max(*min_bitrate_bps, *max_bitrate_bps);
   if (*bitrate_bps > 0)
@@ -55,7 +55,7 @@ class WrappingBitrateEstimator : public RemoteBitrateEstimator {
         rbe_(new RemoteBitrateEstimatorSingleStream(observer_, clock_)),
         using_absolute_send_time_(false),
         packets_since_absolute_send_time_(0),
-        min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps) {}
+        min_bitrate_bps_(congestion_controller::GetMinBitrateBps()) {}
 
   virtual ~WrappingBitrateEstimator() {}
 
@@ -166,7 +166,7 @@ CongestionController::CongestionController(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(clock_, bitrate_controller_.get()),
-      min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
+      min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       max_bitrate_bps_(0),
       last_reported_bitrate_bps_(0),
       last_reported_fraction_loss_(0),
@@ -197,7 +197,7 @@ CongestionController::CongestionController(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
       remote_estimator_proxy_(clock_, packet_router_.get()),
       transport_feedback_adapter_(clock_, bitrate_controller_.get()),
-      min_bitrate_bps_(RemoteBitrateEstimator::kDefaultMinBitrateBps),
+      min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       max_bitrate_bps_(0),
       last_reported_bitrate_bps_(0),
       last_reported_fraction_loss_(0),

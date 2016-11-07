@@ -16,6 +16,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
@@ -26,7 +27,6 @@ const int64_t kBweDecreaseIntervalMs = 300;
 const int64_t kStartPhaseMs = 2000;
 const int64_t kBweConverganceTimeMs = 20000;
 const int kLimitNumPackets = 20;
-const int kDefaultMinBitrateBps = 10000;
 const int kDefaultMaxBitrateBps = 1000000000;
 const int64_t kLowBitrateLogPeriodMs = 10000;
 const int64_t kRtcEventLogPeriodMs = 5000;
@@ -53,7 +53,7 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
     : lost_packets_since_last_loss_update_Q8_(0),
       expected_packets_since_last_loss_update_(0),
       bitrate_(0),
-      min_bitrate_configured_(kDefaultMinBitrateBps),
+      min_bitrate_configured_(congestion_controller::GetMinBitrateBps()),
       max_bitrate_configured_(kDefaultMaxBitrateBps),
       last_low_bitrate_log_ms_(-1),
       has_decreased_since_last_fraction_loss_(false),
@@ -100,7 +100,8 @@ void SendSideBandwidthEstimation::SetSendBitrate(int bitrate) {
 void SendSideBandwidthEstimation::SetMinMaxBitrate(int min_bitrate,
                                                    int max_bitrate) {
   RTC_DCHECK_GE(min_bitrate, 0);
-  min_bitrate_configured_ = std::max(min_bitrate, kDefaultMinBitrateBps);
+  min_bitrate_configured_ =
+      std::max(min_bitrate, congestion_controller::GetMinBitrateBps());
   if (max_bitrate > 0) {
     max_bitrate_configured_ =
         std::max<uint32_t>(min_bitrate_configured_, max_bitrate);

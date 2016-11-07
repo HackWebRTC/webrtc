@@ -19,6 +19,10 @@
 
 namespace webrtc {
 
+namespace congestion_controller {
+int GetMinBitrateBps();
+}  // namespace congestion_controller
+
 static const int64_t kBitrateWindowMs = 1000;
 
 extern const char* kBweTypeHistogram;

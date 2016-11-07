@@ -14,7 +14,7 @@
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/gtest.h"
 
@@ -98,7 +98,8 @@ TEST_F(BitrateControllerTest, DefaultMinMaxBitrate) {
   controller_->SetMinMaxBitrate(0, 0);
   EXPECT_EQ(kStartBitrateBps, bitrate_observer_.last_bitrate_);
   bandwidth_observer_->OnReceivedEstimatedBitrate(kDefaultMinBitrateBps / 2);
-  EXPECT_EQ(kDefaultMinBitrateBps, bitrate_observer_.last_bitrate_);
+  EXPECT_EQ(webrtc::congestion_controller::GetMinBitrateBps(),
+            bitrate_observer_.last_bitrate_);
   bandwidth_observer_->OnReceivedEstimatedBitrate(2 * kDefaultMaxBitrateBps);
   clock_.AdvanceTimeMilliseconds(1000);
   controller_->Process();

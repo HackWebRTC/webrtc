@@ -13,6 +13,7 @@
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gmock.h"
@@ -135,10 +136,11 @@ TEST_F(CongestionControllerTest, ResetBweAndBitrates) {
   controller_->ResetBweAndBitrates(new_bitrate, -1, -1);
 
   // If the bitrate is reset to -1, the new starting bitrate will be
-  // the minimum default bitrate 10000bps.
-  int min_default_bitrate = 10000;
-  EXPECT_CALL(observer_, OnNetworkChanged(min_default_bitrate, _, _));
-  EXPECT_CALL(*pacer_, SetEstimatedBitrate(min_default_bitrate));
+  // the minimum default bitrate kMinBitrateBps.
+  EXPECT_CALL(observer_, OnNetworkChanged(
+                             congestion_controller::GetMinBitrateBps(), _, _));
+  EXPECT_CALL(*pacer_,
+              SetEstimatedBitrate(congestion_controller::GetMinBitrateBps()));
   controller_->ResetBweAndBitrates(-1, -1, -1);
 }
 
