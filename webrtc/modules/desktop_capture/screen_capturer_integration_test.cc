@@ -222,7 +222,9 @@ class ScreenCapturerIntegrationTest : public testing::Test {
   }
 };
 
-TEST_F(ScreenCapturerIntegrationTest, CaptureUpdatedRegion) {
+// Disabled because it's flaky.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
+TEST_F(ScreenCapturerIntegrationTest, DISABLED_CaptureUpdatedRegion) {
   TestCaptureUpdatedRegion();
 }
 
