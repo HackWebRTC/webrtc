@@ -6,11 +6,8 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import json
 import os
-import platform
 import re
-import subprocess
 import sys
 
 
@@ -619,28 +616,3 @@ def CheckChangeOnCommit(input_api, output_api):
       input_api, output_api,
       json_url='http://webrtc-status.appspot.com/current?format=json'))
   return results
-
-
-# pylint: disable=W0613
-def GetPreferredTryMasters(project, change):
-  cq_config_path = os.path.join(
-      change.RepositoryRoot(), 'infra', 'config', 'cq.cfg')
-  # commit_queue.py below is a script in depot_tools directory, which has a
-  # 'builders' command to retrieve a list of CQ builders from the CQ config.
-  is_win = platform.system() == 'Windows'
-  masters = json.loads(subprocess.check_output(
-      ['commit_queue', 'builders', cq_config_path], shell=is_win))
-
-  try_config = {}
-  for master in masters:
-    try_config.setdefault(master, {})
-    for builder in masters[master]:
-      if 'presubmit' in builder:
-        # Do not trigger presubmit builders, since they're likely to fail
-        # (e.g. OWNERS checks before finished code review), and we're running
-        # local presubmit anyway.
-        pass
-      else:
-        try_config[master][builder] = ['defaulttests']
-
-  return try_config
