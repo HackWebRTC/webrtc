@@ -267,6 +267,106 @@ const char* RTCRemoteIceCandidateStats::type() const {
   return kType;
 }
 
+WEBRTC_RTCSTATS_IMPL(RTCMediaStreamStats, RTCStats, "stream",
+    &stream_identifier,
+    &track_ids);
+
+RTCMediaStreamStats::RTCMediaStreamStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCMediaStreamStats(std::string(id), timestamp_us) {
+}
+
+RTCMediaStreamStats::RTCMediaStreamStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      stream_identifier("streamIdentifier"),
+      track_ids("trackIds") {
+}
+
+RTCMediaStreamStats::RTCMediaStreamStats(
+    const RTCMediaStreamStats& other)
+    : RTCStats(other.id(), other.timestamp_us()),
+      stream_identifier(other.stream_identifier),
+      track_ids(other.track_ids) {
+}
+
+RTCMediaStreamStats::~RTCMediaStreamStats() {
+}
+
+WEBRTC_RTCSTATS_IMPL(RTCMediaStreamTrackStats, RTCStats, "track",
+    &track_identifier,
+    &remote_source,
+    &ended,
+    &detached,
+    &ssrc_ids,
+    &frame_width,
+    &frame_height,
+    &frames_per_second,
+    &frames_sent,
+    &frames_received,
+    &frames_decoded,
+    &frames_dropped,
+    &frames_corrupted,
+    &partial_frames_lost,
+    &full_frames_lost,
+    &audio_level,
+    &echo_return_loss,
+    &echo_return_loss_enhancement);
+
+RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCMediaStreamTrackStats(std::string(id), timestamp_us) {
+}
+
+RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      track_identifier("trackIdentifier"),
+      remote_source("remoteSource"),
+      ended("ended"),
+      detached("detached"),
+      ssrc_ids("ssrcIds"),
+      frame_width("frameWidth"),
+      frame_height("frameHeight"),
+      frames_per_second("framesPerSecond"),
+      frames_sent("framesSent"),
+      frames_received("framesReceived"),
+      frames_decoded("framesDecoded"),
+      frames_dropped("framesDropped"),
+      frames_corrupted("framesCorrupted"),
+      partial_frames_lost("partialFramesLost"),
+      full_frames_lost("fullFramesLost"),
+      audio_level("audioLevel"),
+      echo_return_loss("echoReturnLoss"),
+      echo_return_loss_enhancement("echoReturnLossEnhancement") {
+}
+
+RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
+    const RTCMediaStreamTrackStats& other)
+    : RTCStats(other.id(), other.timestamp_us()),
+      track_identifier(other.track_identifier),
+      remote_source(other.remote_source),
+      ended(other.ended),
+      detached(other.detached),
+      ssrc_ids(other.ssrc_ids),
+      frame_width(other.frame_width),
+      frame_height(other.frame_height),
+      frames_per_second(other.frames_per_second),
+      frames_sent(other.frames_sent),
+      frames_received(other.frames_received),
+      frames_decoded(other.frames_decoded),
+      frames_dropped(other.frames_dropped),
+      frames_corrupted(other.frames_corrupted),
+      partial_frames_lost(other.partial_frames_lost),
+      full_frames_lost(other.full_frames_lost),
+      audio_level(other.audio_level),
+      echo_return_loss(other.echo_return_loss),
+      echo_return_loss_enhancement(other.echo_return_loss_enhancement) {
+}
+
+RTCMediaStreamTrackStats::~RTCMediaStreamTrackStats() {
+}
+
 WEBRTC_RTCSTATS_IMPL(RTCPeerConnectionStats, RTCStats, "peer-connection",
     &data_channels_opened,
     &data_channels_closed);

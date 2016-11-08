@@ -98,6 +98,9 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   void ProduceIceCandidateAndPairStats_s(
       int64_t timestamp_us, const SessionStats& session_stats,
       RTCStatsReport* report) const;
+  // Produces |RTCMediaStreamStats| and |RTCMediaStreamTrackStats|.
+  void ProduceMediaStreamAndTrackStats_s(
+      int64_t timestamp_us, RTCStatsReport* report) const;
   // Produces |RTCPeerConnectionStats|.
   void ProducePeerConnectionStats_s(
       int64_t timestamp_us, RTCStatsReport* report) const;

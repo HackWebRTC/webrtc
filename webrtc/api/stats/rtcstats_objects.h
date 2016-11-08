@@ -183,6 +183,65 @@ class RTCRemoteIceCandidateStats final : public RTCIceCandidateStats {
   const char* type() const override;
 };
 
+// https://w3c.github.io/webrtc-stats/#msstats-dict*
+// TODO(hbos): Finish implementation. Tracking bug crbug.com/660827
+class RTCMediaStreamStats final : public RTCStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCMediaStreamStats(const std::string& id, int64_t timestamp_us);
+  RTCMediaStreamStats(std::string&& id, int64_t timestamp_us);
+  RTCMediaStreamStats(const RTCMediaStreamStats& other);
+  ~RTCMediaStreamStats() override;
+
+  RTCStatsMember<std::string> stream_identifier;
+  RTCStatsMember<std::vector<std::string>> track_ids;
+};
+
+// https://w3c.github.io/webrtc-stats/#mststats-dict*
+// TODO(hbos): Finish implementation. Tracking bug crbug.com/659137
+class RTCMediaStreamTrackStats final : public RTCStats {
+ public:
+  WEBRTC_RTCSTATS_DECL();
+
+  RTCMediaStreamTrackStats(const std::string& id, int64_t timestamp_us);
+  RTCMediaStreamTrackStats(std::string&& id, int64_t timestamp_us);
+  RTCMediaStreamTrackStats(const RTCMediaStreamTrackStats& other);
+  ~RTCMediaStreamTrackStats() override;
+
+  RTCStatsMember<std::string> track_identifier;
+  RTCStatsMember<bool> remote_source;
+  RTCStatsMember<bool> ended;
+  // TODO(hbos): |RTCStatsCollector| does not return stats for detached tracks.
+  // crbug.com/659137
+  RTCStatsMember<bool> detached;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
+  RTCStatsMember<std::vector<std::string>> ssrc_ids;
+  // Video-only members
+  RTCStatsMember<uint32_t> frame_width;
+  RTCStatsMember<uint32_t> frame_height;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
+  RTCStatsMember<double> frames_per_second;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
+  RTCStatsMember<uint32_t> frames_sent;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
+  RTCStatsMember<uint32_t> frames_received;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
+  RTCStatsMember<uint32_t> frames_decoded;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
+  RTCStatsMember<uint32_t> frames_dropped;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
+  RTCStatsMember<uint32_t> frames_corrupted;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
+  RTCStatsMember<uint32_t> partial_frames_lost;
+  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
+  RTCStatsMember<uint32_t> full_frames_lost;
+  // Audio-only members
+  RTCStatsMember<double> audio_level;
+  RTCStatsMember<double> echo_return_loss;
+  RTCStatsMember<double> echo_return_loss_enhancement;
+};
+
 // https://w3c.github.io/webrtc-stats/#pcstats-dict*
 // TODO(hbos): Finish implementation. Tracking bug crbug.com/636818
 class RTCPeerConnectionStats final : public RTCStats {

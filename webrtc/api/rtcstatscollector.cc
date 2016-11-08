@@ -15,6 +15,8 @@
 #include <vector>
 
 #include "webrtc/api/peerconnection.h"
+#include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/webrtcsession.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/timeutils.h"
@@ -35,6 +37,11 @@ std::string RTCIceCandidatePairStatsIDFromConnectionInfo(
     const cricket::ConnectionInfo& info) {
   return "RTCIceCandidatePair_" + info.local_candidate.id() + "_" +
       info.remote_candidate.id();
+}
+
+std::string RTCMediaStreamTrackStatsIDFromMediaStreamTrackInterface(
+    const MediaStreamTrackInterface& track) {
+  return "RTCMediaStreamTrack_" + track.id();
 }
 
 std::string RTCTransportStatsIDFromTransportChannel(
@@ -91,6 +98,13 @@ const char* DataStateToRTCDataChannelState(
       RTC_NOTREACHED();
       return nullptr;
   }
+}
+
+void SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
+    const MediaStreamTrackInterface& track,
+    RTCMediaStreamTrackStats* track_stats) {
+  track_stats->track_identifier = track.id();
+  track_stats->ended = (track.state() == MediaStreamTrackInterface::kEnded);
 }
 
 void SetInboundRTPStreamStatsFromMediaReceiverInfo(
@@ -214,6 +228,93 @@ const std::string& ProduceIceCandidateStats(
   return stats->id();
 }
 
+void ProduceMediaStreamAndTrackStats(
+    int64_t timestamp_us,
+    rtc::scoped_refptr<StreamCollectionInterface> streams,
+    bool is_local,
+    RTCStatsReport* report) {
+  // TODO(hbos): When "AddTrack" is implemented we should iterate tracks to
+  // find which streams exist, not iterate streams to find tracks.
+  // crbug.com/659137
+  // TODO(hbos): Return stats of detached tracks. We have to perform stats
+  // gathering at the time of detachment to get accurate stats and timestamps.
+  // crbug.com/659137
+  if (!streams)
+    return;
+  for (size_t i = 0; i < streams->count(); ++i) {
+    MediaStreamInterface* stream = streams->at(i);
+
+    std::unique_ptr<RTCMediaStreamStats> stream_stats(
+        new RTCMediaStreamStats("RTCMediaStream_" + stream->label(),
+                                timestamp_us));
+    stream_stats->stream_identifier = stream->label();
+    stream_stats->track_ids = std::vector<std::string>();
+    // Audio Tracks
+    for (rtc::scoped_refptr<AudioTrackInterface> audio_track :
+         stream->GetAudioTracks()) {
+      std::string id = RTCMediaStreamTrackStatsIDFromMediaStreamTrackInterface(
+        *audio_track.get());
+      if (report->Get(id)) {
+        // Skip track, stats already exist for it.
+        continue;
+      }
+      std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats(
+          new RTCMediaStreamTrackStats(id, timestamp_us));
+      stream_stats->track_ids->push_back(audio_track_stats->id());
+      SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
+          *audio_track.get(),
+          audio_track_stats.get());
+      audio_track_stats->remote_source = !is_local;
+      audio_track_stats->detached = false;
+      int signal_level;
+      if (audio_track->GetSignalLevel(&signal_level)) {
+        // Convert signal level from [0,32767] int to [0,1] double.
+        RTC_DCHECK_GE(signal_level, 0);
+        RTC_DCHECK_LE(signal_level, 32767);
+        audio_track_stats->audio_level = signal_level / 32767.0;
+      }
+      if (audio_track->GetAudioProcessor()) {
+        AudioProcessorInterface::AudioProcessorStats audio_processor_stats;
+        audio_track->GetAudioProcessor()->GetStats(&audio_processor_stats);
+        audio_track_stats->echo_return_loss = static_cast<double>(
+            audio_processor_stats.echo_return_loss);
+        audio_track_stats->echo_return_loss_enhancement = static_cast<double>(
+            audio_processor_stats.echo_return_loss_enhancement);
+      }
+      report->AddStats(std::move(audio_track_stats));
+    }
+    // Video Tracks
+    for (rtc::scoped_refptr<VideoTrackInterface> video_track :
+         stream->GetVideoTracks()) {
+      std::string id = RTCMediaStreamTrackStatsIDFromMediaStreamTrackInterface(
+          *video_track.get());
+      if (report->Get(id)) {
+        // Skip track, stats already exist for it.
+        continue;
+      }
+      std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats(
+          new RTCMediaStreamTrackStats(id, timestamp_us));
+      stream_stats->track_ids->push_back(video_track_stats->id());
+      SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
+          *video_track.get(),
+          video_track_stats.get());
+      video_track_stats->remote_source = !is_local;
+      video_track_stats->detached = false;
+      if (video_track->GetSource()) {
+        VideoTrackSourceInterface::Stats video_track_source_stats;
+        if (video_track->GetSource()->GetStats(&video_track_source_stats)) {
+          video_track_stats->frame_width = static_cast<uint32_t>(
+              video_track_source_stats.input_width);
+          video_track_stats->frame_height = static_cast<uint32_t>(
+              video_track_source_stats.input_height);
+        }
+      }
+      report->AddStats(std::move(video_track_stats));
+    }
+    report->AddStats(std::move(stream_stats));
+  }
+}
+
 }  // namespace
 
 rtc::scoped_refptr<RTCStatsCollector> RTCStatsCollector::Create(
@@ -301,6 +402,7 @@ void RTCStatsCollector::ProducePartialResultsOnSignalingThread(
         timestamp_us, session_stats, transport_cert_stats, report.get());
   }
   ProduceDataChannelStats_s(timestamp_us, report.get());
+  ProduceMediaStreamAndTrackStats_s(timestamp_us, report.get());
   ProducePeerConnectionStats_s(timestamp_us, report.get());
 
   AddPartialResults(report);
@@ -465,6 +567,15 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
       }
     }
   }
+}
+
+void RTCStatsCollector::ProduceMediaStreamAndTrackStats_s(
+    int64_t timestamp_us, RTCStatsReport* report) const {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  ProduceMediaStreamAndTrackStats(
+      timestamp_us, pc_->local_streams(), true, report);
+  ProduceMediaStreamAndTrackStats(
+      timestamp_us, pc_->remote_streams(), false, report);
 }
 
 void RTCStatsCollector::ProducePeerConnectionStats_s(
