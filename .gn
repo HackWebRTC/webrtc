@@ -65,6 +65,7 @@ exec_script_whitelist = [
   "//build/toolchain/concurrent_links.gni",
   "//build/toolchain/gcc_toolchain.gni",
   "//build/toolchain/mac/BUILD.gn",
+  "//build/toolchain/toolchain.gni",
   "//build/toolchain/win/BUILD.gn",
   "//third_party/boringssl/BUILD.gn",
   "//third_party/openh264/BUILD.gn",
