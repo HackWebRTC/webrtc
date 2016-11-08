@@ -102,6 +102,7 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
   RTCFileLogger *_fileLogger;
   ARDTimerProxy *_statsTimer;
   RTCMediaConstraints *_cameraConstraints;
+  NSNumber *_maxBitrate;
 }
 
 @synthesize shouldGetStats = _shouldGetStats;
@@ -326,6 +327,10 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
 
 - (void)setCameraConstraints:(RTCMediaConstraints *)mediaConstraints {
   _cameraConstraints = mediaConstraints;
+}
+
+- (void)setMaxBitrate:(NSNumber *)maxBitrate {
+  _maxBitrate = maxBitrate;
 }
 
 #pragma mark - ARDSignalingChannelDelegate
@@ -675,12 +680,21 @@ static int64_t const kARDAppClientRtcEventLogMaxSizeInBytes = 5e6;  // 5 MB.
   RTCRtpSender *sender =
       [_peerConnection senderWithKind:kRTCMediaStreamTrackKindVideo
                              streamId:kARDMediaStreamId];
+
+  [self setMaxBitrate:_maxBitrate forVideoSender:sender];
+
   RTCVideoTrack *track = [self createLocalVideoTrack];
   if (track) {
     sender.track = track;
     [_delegate appClient:self didReceiveLocalVideoTrack:track];
   }
   return sender;
+}
+
+- (void)setMaxBitrate:(NSNumber *)maxBitrate forVideoSender:(RTCRtpSender *)sender {
+  for (RTCRtpEncodingParameters *encoding in sender.parameters.encodings) {
+    encoding.maxBitrateBps = maxBitrate;
+  }
 }
 
 - (RTCRtpSender *)createAudioSender {

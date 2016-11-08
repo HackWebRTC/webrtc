@@ -65,6 +65,9 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 // Sets camera constraints.
 - (void)setCameraConstraints:(RTCMediaConstraints *)mediaConstraints;
 
+// Sets maximum bitrate the rtp sender should use.
+- (void)setMaxBitrate:(NSNumber *)maxBitrate;
+
 // Establishes a connection with the AppRTC servers for the given room id.
 // If |isLoopback| is true, the call will connect to itself.
 // If |isAudioOnly| is true, video will be disabled for the call.
