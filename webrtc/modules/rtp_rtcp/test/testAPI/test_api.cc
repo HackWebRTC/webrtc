@@ -140,6 +140,11 @@ TEST_F(RtpRtcpAPITest, MTU) {
 
   EXPECT_EQ(0, module_->SetTransportOverhead(false, false, 0));
   EXPECT_EQ(1234 - 20 - 8, module_->MaxPayloadLength());
+
+  module_->SetTransportOverhead(28);
+  EXPECT_EQ(1234 - 28, module_->MaxPayloadLength());
+  module_->SetTransportOverhead(44);
+  EXPECT_EQ(1234 - 44, module_->MaxPayloadLength());
 }
 
 TEST_F(RtpRtcpAPITest, SSRC) {

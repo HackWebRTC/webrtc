@@ -2463,6 +2463,13 @@ void WebRtcVoiceMediaChannel::OnReadyToSend(bool ready) {
       ready ? webrtc::kNetworkUp : webrtc::kNetworkDown);
 }
 
+void WebRtcVoiceMediaChannel::OnTransportOverheadChanged(
+    int transport_overhead_per_packet) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  call_->OnTransportOverheadChanged(webrtc::MediaType::AUDIO,
+                                    transport_overhead_per_packet);
+}
+
 bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::GetStats");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());

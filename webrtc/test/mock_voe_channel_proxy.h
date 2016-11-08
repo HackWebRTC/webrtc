@@ -57,6 +57,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
                      const rtc::scoped_refptr<AudioDecoderFactory>&());
   MOCK_METHOD1(SetChannelOutputVolumeScaling, void(float scaling));
   MOCK_METHOD1(SetRtcEventLog, void(RtcEventLog* event_log));
+  MOCK_METHOD1(SetTransportOverhead, void(int transport_overhead_per_packet));
   MOCK_METHOD1(SetBitrate, void(int bitrate_bps));
   MOCK_METHOD1(EnableAudioNetworkAdaptor,
                void(const std::string& config_string));

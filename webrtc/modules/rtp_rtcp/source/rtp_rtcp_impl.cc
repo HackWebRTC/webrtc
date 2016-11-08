@@ -452,6 +452,17 @@ int32_t ModuleRtpRtcpImpl::SetTransportOverhead(
   return 0;
 }
 
+void ModuleRtpRtcpImpl::SetTransportOverhead(
+    int transport_overhead_per_packet) {
+  RTC_DCHECK_GT(transport_overhead_per_packet, 0);
+  int mtu = rtp_sender_.MaxPayloadLength() + packet_overhead_;
+  RTC_DCHECK_LT(transport_overhead_per_packet, mtu);
+  size_t max_payload_length = mtu - transport_overhead_per_packet;
+  packet_overhead_ = transport_overhead_per_packet;
+  rtcp_sender_.SetMaxPayloadLength(max_payload_length);
+  rtp_sender_.SetMaxPayloadLength(max_payload_length);
+}
+
 int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(uint16_t mtu) {
   RTC_DCHECK_LE(mtu, IP_PACKET_SIZE) << "MTU too large: " << mtu;
   RTC_DCHECK_GT(mtu, packet_overhead_) << "MTU too small: " << mtu;

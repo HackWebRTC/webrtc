@@ -111,6 +111,9 @@ class SrtpFilter {
   // Returns rtp auth params from srtp context.
   bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
 
+  // Returns srtp overhead for rtp packets.
+  bool GetSrtpOverhead(int* srtp_overhead) const;
+
   // Update the silent threshold (in ms) for signaling errors.
   void set_signal_silent_time(int signal_silent_time_in_ms);
 
@@ -200,6 +203,8 @@ class SrtpSession {
 
   // Helper method to get authentication params.
   bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
+
+  int GetSrtpOverhead() const;
 
   // Update the silent threshold (in ms) for signaling errors.
   void set_signal_silent_time(int signal_silent_time_in_ms);

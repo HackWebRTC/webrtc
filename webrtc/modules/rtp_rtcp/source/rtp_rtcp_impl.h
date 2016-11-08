@@ -210,9 +210,12 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   int32_t SetMaxTransferUnit(uint16_t size) override;
 
+  // TODO(michaelt): deprecate the function.
   int32_t SetTransportOverhead(bool tcp,
                                bool ipv6,
                                uint8_t authentication_overhead = 0) override;
+
+  void SetTransportOverhead(int transport_overhead_per_packet) override;
 
   // (NACK) Negative acknowledgment part.
 

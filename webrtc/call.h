@@ -147,6 +147,10 @@ class Call {
   virtual void SignalChannelNetworkState(MediaType media,
                                          NetworkState state) = 0;
 
+  virtual void OnTransportOverheadChanged(
+      MediaType media,
+      int transport_overhead_per_packet) = 0;
+
   virtual void OnNetworkRouteChanged(
       const std::string& transport_name,
       const rtc::NetworkRoute& network_route) = 0;

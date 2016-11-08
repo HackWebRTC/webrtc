@@ -172,7 +172,8 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
 
       transport_controller_(transport_controller),
       rtcp_enabled_(rtcp),
-      media_channel_(media_channel) {
+      media_channel_(media_channel),
+      selected_candidate_pair_(nullptr) {
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   if (transport_controller) {
     RTC_DCHECK_EQ(network_thread, transport_controller->network_thread());
@@ -388,6 +389,7 @@ void BaseChannel::ConnectToTransportChannel(TransportChannel* tc) {
 
 void BaseChannel::DisconnectFromTransportChannel(TransportChannel* tc) {
   RTC_DCHECK(network_thread_->IsCurrent());
+  OnSelectedCandidatePairChanged(tc, nullptr, -1, false);
 
   tc->SignalWritableState.disconnect(this);
   tc->SignalReadPacket.disconnect(this);
@@ -581,6 +583,7 @@ void BaseChannel::OnSelectedCandidatePairChanged(
   RTC_DCHECK(channel == transport_channel_ ||
              channel == rtcp_transport_channel_);
   RTC_DCHECK(network_thread_->IsCurrent());
+  selected_candidate_pair_ = selected_candidate_pair;
   std::string transport_name = channel->transport_name();
   rtc::NetworkRoute network_route;
   if (selected_candidate_pair) {
@@ -588,6 +591,8 @@ void BaseChannel::OnSelectedCandidatePairChanged(
         ready_to_send, selected_candidate_pair->local_candidate().network_id(),
         selected_candidate_pair->remote_candidate().network_id(),
         last_sent_packet_id);
+
+    UpdateTransportOverhead();
   }
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_,
@@ -905,16 +910,12 @@ void BaseChannel::ChannelWritable_n() {
   LOG(LS_INFO) << "Channel writable (" << content_name_ << ")"
                << (was_ever_writable_ ? "" : " for the first time");
 
-  std::vector<ConnectionInfo> infos;
-  transport_channel_->GetStats(&infos);
-  for (std::vector<ConnectionInfo>::const_iterator it = infos.begin();
-       it != infos.end(); ++it) {
-    if (it->best_connection) {
-      LOG(LS_INFO) << "Using " << it->local_candidate.ToSensitiveString()
-                   << "->" << it->remote_candidate.ToSensitiveString();
-      break;
-    }
-  }
+  if (selected_candidate_pair_)
+    LOG(LS_INFO)
+        << "Using "
+        << selected_candidate_pair_->local_candidate().ToSensitiveString()
+        << "->"
+        << selected_candidate_pair_->remote_candidate().ToSensitiveString();
 
   was_ever_writable_ = true;
   MaybeSetupDtlsSrtp_n();
@@ -1033,11 +1034,12 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp_channel) {
                                     static_cast<int>(recv_key->size()));
   }
 
-  if (!ret)
+  if (!ret) {
     LOG(LS_WARNING) << "DTLS-SRTP key installation failed";
-  else
+  } else {
     dtls_keyed_ = true;
-
+    UpdateTransportOverhead();
+  }
   return ret;
 }
 
@@ -1663,6 +1665,47 @@ void BaseChannel::UpdateMediaSendRecvState() {
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_,
       Bind(&BaseChannel::UpdateMediaSendRecvState_w, this));
+}
+
+int BaseChannel::GetTransportOverheadPerPacket() const {
+  RTC_DCHECK(network_thread_->IsCurrent());
+
+  if (!selected_candidate_pair_)
+    return 0;
+
+  int transport_overhead_per_packet = 0;
+
+  constexpr int kIpv4Overhaed = 20;
+  constexpr int kIpv6Overhaed = 40;
+  transport_overhead_per_packet +=
+      selected_candidate_pair_->local_candidate().address().family() == AF_INET
+          ? kIpv4Overhaed
+          : kIpv6Overhaed;
+
+  constexpr int kUdpOverhaed = 8;
+  constexpr int kTcpOverhaed = 20;
+  transport_overhead_per_packet +=
+      selected_candidate_pair_->local_candidate().protocol() ==
+              TCP_PROTOCOL_NAME
+          ? kTcpOverhaed
+          : kUdpOverhaed;
+
+  if (secure()) {
+    int srtp_overhead = 0;
+    if (srtp_filter_.GetSrtpOverhead(&srtp_overhead))
+      transport_overhead_per_packet += srtp_overhead;
+  }
+
+  return transport_overhead_per_packet;
+}
+
+void BaseChannel::UpdateTransportOverhead() {
+  int transport_overhead_per_packet = GetTransportOverheadPerPacket();
+  if (transport_overhead_per_packet)
+    invoker_.AsyncInvoke<void>(
+        RTC_FROM_HERE, worker_thread_,
+        Bind(&MediaChannel::OnTransportOverheadChanged, media_channel_,
+             transport_overhead_per_packet));
 }
 
 void VoiceChannel::UpdateMediaSendRecvState_w() {

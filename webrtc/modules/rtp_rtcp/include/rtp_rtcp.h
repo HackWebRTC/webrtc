@@ -116,9 +116,13 @@ class RtpRtcp : public Module {
   // |authentication_overhead| - number of bytes to leave for an authentication
   // header.
   // Returns -1 on failure else 0
+  // TODO(michaelt): deprecate the function.
   virtual int32_t SetTransportOverhead(bool tcp,
                                        bool ipv6,
                                        uint8_t authentication_overhead = 0) = 0;
+
+  // Sets transtport overhead per packet.
+  virtual void SetTransportOverhead(int transport_overhead_per_packet) = 0;
 
   // Returns max payload length, which is a combination of the configuration
   // MaxTransferUnit and TransportOverhead.

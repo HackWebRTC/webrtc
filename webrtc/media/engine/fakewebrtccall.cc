@@ -528,6 +528,22 @@ void FakeCall::SignalChannelNetworkState(webrtc::MediaType media,
   }
 }
 
+void FakeCall::OnTransportOverheadChanged(webrtc::MediaType media,
+                                          int transport_overhead_per_packet) {
+  switch (media) {
+    case webrtc::MediaType::AUDIO:
+      audio_transport_overhead_ = transport_overhead_per_packet;
+      break;
+    case webrtc::MediaType::VIDEO:
+      video_transport_overhead_ = transport_overhead_per_packet;
+      break;
+    case webrtc::MediaType::DATA:
+    case webrtc::MediaType::ANY:
+      ADD_FAILURE()
+          << "SignalChannelNetworkState called with unknown parameter.";
+  }
+}
+
 void FakeCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
   last_sent_packet_ = sent_packet;
   if (sent_packet.packet_id >= 0) {

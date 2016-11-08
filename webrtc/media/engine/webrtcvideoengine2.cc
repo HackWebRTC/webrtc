@@ -1482,6 +1482,12 @@ void WebRtcVideoChannel2::OnNetworkRouteChanged(
   call_->OnNetworkRouteChanged(transport_name, network_route);
 }
 
+void WebRtcVideoChannel2::OnTransportOverheadChanged(
+    int transport_overhead_per_packet) {
+  call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO,
+                                    transport_overhead_per_packet);
+}
+
 void WebRtcVideoChannel2::SetInterface(NetworkInterface* iface) {
   MediaChannel::SetInterface(iface);
   // Set the RTP recv/send buffer to a bigger size

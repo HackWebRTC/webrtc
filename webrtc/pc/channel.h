@@ -366,6 +366,8 @@ class BaseChannel
   void SignalSentPacket_w(const rtc::SentPacket& sent_packet);
   bool IsReadyToSendMedia_n() const;
   void CacheRtpAbsSendTimeHeaderExtension_n(int rtp_abs_sendtime_extn_id);
+  int GetTransportOverheadPerPacket() const;
+  void UpdateTransportOverhead();
 
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
@@ -410,6 +412,7 @@ class BaseChannel
   std::vector<StreamParams> remote_streams_;
   MediaContentDirection local_content_direction_ = MD_INACTIVE;
   MediaContentDirection remote_content_direction_ = MD_INACTIVE;
+  CandidatePairInterface* selected_candidate_pair_;
 };
 
 // VoiceChannel is a specialization that adds support for early media, DTMF,

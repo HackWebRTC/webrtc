@@ -1321,6 +1321,48 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
+  class ChangingTransportOverheadTest : public test::EndToEndTest {
+   public:
+    ChangingTransportOverheadTest()
+        : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
+          call_(nullptr),
+          packets_sent_(0) {}
+
+    void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+      call_ = sender_call;
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      EXPECT_LE(length,
+                IP_PACKET_SIZE - static_cast<size_t>(transport_overhead_));
+      if (++packets_sent_ < 100)
+        return SEND_PACKET;
+      observation_complete_.Set();
+      return SEND_PACKET;
+    }
+
+    void PerformTest() override {
+      transport_overhead_ = 500;
+      call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO,
+                                        transport_overhead_);
+      EXPECT_TRUE(Wait());
+      packets_sent_ = 0;
+      transport_overhead_ = 1000;
+      call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO,
+                                        transport_overhead_);
+      EXPECT_TRUE(Wait());
+    }
+
+   private:
+    Call* call_;
+    int packets_sent_;
+    int transport_overhead_;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 class MaxPaddingSetTest : public test::SendTest {
  public:
   static const uint32_t kMinTransmitBitrateBps = 400000;

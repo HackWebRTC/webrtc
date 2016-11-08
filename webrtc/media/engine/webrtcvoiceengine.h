@@ -192,6 +192,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   void OnNetworkRouteChanged(const std::string& transport_name,
                              const rtc::NetworkRoute& network_route) override;
   void OnReadyToSend(bool ready) override;
+  void OnTransportOverheadChanged(int transport_overhead_per_packet) override;
   bool GetStats(VoiceMediaInfo* info) override;
 
   void SetRawAudioSink(

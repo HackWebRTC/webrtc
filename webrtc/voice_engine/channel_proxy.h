@@ -94,6 +94,8 @@ class ChannelProxy {
 
   virtual int NeededFrequency() const;
 
+  virtual void SetTransportOverhead(int transport_overhead_per_packet);
+
  private:
   Channel* channel() const;
 

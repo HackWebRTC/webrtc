@@ -268,6 +268,11 @@ const webrtc::AudioSendStream::Config& AudioSendStream::config() const {
   return config_;
 }
 
+void AudioSendStream::SetTransportOverhead(int transport_overhead_per_packet) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel_proxy_->SetTransportOverhead(transport_overhead_per_packet);
+}
+
 VoiceEngine* AudioSendStream::voice_engine() const {
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());

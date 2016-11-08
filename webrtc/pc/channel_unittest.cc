@@ -962,6 +962,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_EQ(expected_network_route, media_channel1->last_network_route());
     EXPECT_EQ(kLastPacketId,
               media_channel1->last_network_route().last_sent_packet_id);
+    constexpr int kTransportOverheadPerPacket = 28;  // Ipv4(20) + UDP(8).
+    EXPECT_EQ(kTransportOverheadPerPacket,
+              media_channel1->transport_overhead_per_packet());
   }
 
   // Test setting up a call.

@@ -274,6 +274,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void EnableEncodedFrameRecording(const std::vector<rtc::PlatformFile>& files,
                                    size_t byte_limit);
 
+  void SetTransportOverhead(int transport_overhead_per_packet);
+
  private:
   class CheckEncoderActivityTask;
   class EncoderReconfiguredTask;
@@ -615,6 +617,14 @@ VideoSendStream::RtpStateMap VideoSendStream::StopPermanentlyAndGetRtpStates() {
           &state_map, std::move(send_stream_), &thread_sync_event_)));
   thread_sync_event_.Wait(rtc::Event::kForever);
   return state_map;
+}
+
+void VideoSendStream::SetTransportOverhead(int transport_overhead_per_packet) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  VideoSendStreamImpl* send_stream = send_stream_.get();
+  worker_queue_->PostTask([send_stream, transport_overhead_per_packet] {
+    send_stream->SetTransportOverhead(transport_overhead_per_packet);
+  });
 }
 
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
@@ -1120,6 +1130,12 @@ int VideoSendStreamImpl::ProtectionRequest(
     *sent_fec_rate_bps += module_fec_rate;
   }
   return 0;
+}
+
+void VideoSendStreamImpl::SetTransportOverhead(
+    int transport_overhead_per_packet) {
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
+    rtp_rtcp->SetTransportOverhead(transport_overhead_per_packet);
 }
 
 }  // namespace internal

@@ -215,6 +215,17 @@ bool SrtpFilter::GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len) {
   return send_session_->GetRtpAuthParams(key, key_len, tag_len);
 }
 
+bool SrtpFilter::GetSrtpOverhead(int* srtp_overhead) const {
+  if (!IsActive()) {
+    LOG(LS_WARNING) << "Failed to GetSrtpOverhead: SRTP not active";
+    return false;
+  }
+
+  RTC_CHECK(send_session_);
+  *srtp_overhead = send_session_->GetSrtpOverhead();
+  return true;
+}
+
 void SrtpFilter::set_signal_silent_time(int signal_silent_time_in_ms) {
   signal_silent_time_in_ms_ = signal_silent_time_in_ms;
   if (IsActive()) {
@@ -604,6 +615,10 @@ bool SrtpSession::GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len) {
 #else
   return false;
 #endif
+}
+
+int SrtpSession::GetSrtpOverhead() const {
+  return rtp_auth_tag_len_;
 }
 
 bool SrtpSession::GetSendStreamPacketIndex(void* p,

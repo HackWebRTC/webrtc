@@ -210,6 +210,10 @@ template <class Base> class RtpHelper : public Base {
     return ready_to_send_;
   }
 
+  int transport_overhead_per_packet() const {
+    return transport_overhead_per_packet_;
+  }
+
   rtc::NetworkRoute last_network_route() const { return last_network_route_; }
   int num_network_route_changes() const { return num_network_route_changes_; }
   void set_num_network_route_changes(int changes) {
@@ -252,6 +256,10 @@ template <class Base> class RtpHelper : public Base {
   virtual void OnReadyToSend(bool ready) {
     ready_to_send_ = ready;
   }
+  virtual void OnTransportOverheadChanged(int transport_overhead_per_packet) {
+    transport_overhead_per_packet_ = transport_overhead_per_packet;
+  }
+
   virtual void OnNetworkRouteChanged(const std::string& transport_name,
                                      const rtc::NetworkRoute& network_route) {
     last_network_route_ = network_route;
@@ -277,6 +285,7 @@ template <class Base> class RtpHelper : public Base {
   uint32_t send_ssrc_;
   std::string rtcp_cname_;
   bool ready_to_send_;
+  int transport_overhead_per_packet_;
   rtc::NetworkRoute last_network_route_;
   int num_network_route_changes_ = 0;
 };

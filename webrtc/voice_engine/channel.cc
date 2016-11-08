@@ -2828,6 +2828,10 @@ void Channel::SetRtcEventLog(RtcEventLog* event_log) {
   event_log_proxy_->SetEventLog(event_log);
 }
 
+void Channel::SetTransportOverhead(int transport_overhead_per_packet) {
+  _rtpRtcpModule->SetTransportOverhead(transport_overhead_per_packet);
+}
+
 int Channel::RegisterExternalMediaProcessing(ProcessingTypes type,
                                              VoEMediaProcess& processObject) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),

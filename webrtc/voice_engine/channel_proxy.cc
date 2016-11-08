@@ -231,6 +231,11 @@ int ChannelProxy::NeededFrequency() const {
   return static_cast<int>(channel()->NeededFrequency(-1));
 }
 
+void ChannelProxy::SetTransportOverhead(int transport_overhead_per_packet) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->SetTransportOverhead(transport_overhead_per_packet);
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();

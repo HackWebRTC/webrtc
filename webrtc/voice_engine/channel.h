@@ -417,6 +417,8 @@ class Channel
   // Set a RtcEventLog logging object.
   void SetRtcEventLog(RtcEventLog* event_log);
 
+  void SetTransportOverhead(int transport_overhead_per_packet);
+
  protected:
   void OnIncomingFractionLoss(int fraction_lost);
 

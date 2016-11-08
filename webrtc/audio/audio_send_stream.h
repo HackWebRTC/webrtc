@@ -57,6 +57,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                             int64_t rtt) override;
 
   const webrtc::AudioSendStream::Config& config() const;
+  void SetTransportOverhead(int transport_overhead_per_packet);
 
  private:
   VoiceEngine* voice_engine() const;
