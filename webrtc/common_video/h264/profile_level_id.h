@@ -60,6 +60,12 @@ struct ProfileLevelId {
 // profile level id.
 rtc::Optional<ProfileLevelId> ParseProfileLevelId(const char* str);
 
+// Given that a decoder supports up to a given frame size (in pixels) at up to a
+// given number of frames per second, return the highest H.264 level where it
+// can guarantee that it will be able to support all valid encoded streams that
+// are within that level.
+rtc::Optional<Level> SupportedLevel(int max_frame_pixel_count, float max_fps);
+
 // Returns canonical string representation as three hex bytes of the profile
 // level id, or returns nothing for invalid profile level ids.
 rtc::Optional<std::string> ProfileLevelIdToString(

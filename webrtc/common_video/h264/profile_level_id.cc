@@ -14,6 +14,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "webrtc/base/arraysize.h"
+
 namespace {
 
 // For level_idc=11 and profile_idc=0x42, 0x4D, or 0x58, the constraint set3
@@ -67,6 +69,33 @@ constexpr ProfilePattern kProfilePatterns[] = {
     {0x4D, BitPattern("0x0x0000"), webrtc::H264::kProfileMain},
     {0x64, BitPattern("00000000"), webrtc::H264::kProfileHigh},
     {0x64, BitPattern("00001100"), webrtc::H264::kProfileConstrainedHigh}};
+
+struct LevelConstraint {
+  const int max_macroblocks_per_second;
+  const int max_macroblock_frame_size;
+  const webrtc::H264::Level level;
+};
+
+// This is from ITU-T H.264 (02/2016) Table A-1 – Level limits.
+static constexpr LevelConstraint kLevelConstraints[] = {
+    {1485, 99, webrtc::H264::kLevel1},
+    {1485, 99, webrtc::H264::kLevel1_b},
+    {3000, 396, webrtc::H264::kLevel1_1},
+    {6000, 396, webrtc::H264::kLevel1_2},
+    {11880, 396, webrtc::H264::kLevel1_3},
+    {11880, 396, webrtc::H264::kLevel2},
+    {19800, 792, webrtc::H264::kLevel2_1},
+    {20250, 1620, webrtc::H264::kLevel2_2},
+    {40500, 1620, webrtc::H264::kLevel3},
+    {108000, 3600, webrtc::H264::kLevel3_1},
+    {216000, 5120, webrtc::H264::kLevel3_2},
+    {245760, 8192, webrtc::H264::kLevel4},
+    {245760, 8192, webrtc::H264::kLevel4_1},
+    {522240, 8704, webrtc::H264::kLevel4_2},
+    {589824, 22080, webrtc::H264::kLevel5},
+    {983040, 3684, webrtc::H264::kLevel5_1},
+    {2073600, 3684, webrtc::H264::kLevel5_2},
+};
 
 }  // anonymous namespace
 
@@ -127,6 +156,23 @@ rtc::Optional<ProfileLevelId> ParseProfileLevelId(const char* str) {
 
   // Unrecognized profile_idc/profile_iop combination.
   return rtc::Optional<ProfileLevelId>();
+}
+
+rtc::Optional<Level> SupportedLevel(int max_frame_pixel_count, float max_fps) {
+  static const int kPixelsPerMacroblock = 16 * 16;
+
+  for (int i = arraysize(kLevelConstraints) - 1; i >= 0; --i) {
+    const LevelConstraint& level_constraint = kLevelConstraints[i];
+    if (level_constraint.max_macroblock_frame_size * kPixelsPerMacroblock <=
+            max_frame_pixel_count &&
+        level_constraint.max_macroblocks_per_second <=
+            max_fps * level_constraint.max_macroblock_frame_size) {
+      return rtc::Optional<Level>(level_constraint.level);
+    }
+  }
+
+  // No level supported.
+  return rtc::Optional<Level>();
 }
 
 rtc::Optional<std::string> ProfileLevelIdToString(

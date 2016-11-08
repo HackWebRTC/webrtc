@@ -70,6 +70,21 @@ TEST(H264ProfileLevelId, TestParsingConstrainedHigh) {
   EXPECT_EQ(kProfileConstrainedHigh, ParseProfileLevelId("640c1f")->profile);
 }
 
+TEST(H264ProfileLevelId, TestSupportedLevel) {
+  EXPECT_EQ(kLevel2_1, *SupportedLevel(640 * 480, 25));
+  EXPECT_EQ(kLevel3_1, *SupportedLevel(1280 * 720, 30));
+  EXPECT_EQ(kLevel4_2, *SupportedLevel(1920 * 1280, 60));
+}
+
+// Test supported level below level 1 requirements.
+TEST(H264ProfileLevelId, TestSupportedLevelInvalid) {
+  EXPECT_FALSE(SupportedLevel(0, 0));
+  // All levels support fps > 5.
+  EXPECT_FALSE(SupportedLevel(1280 * 720, 5));
+  // All levels support frame sizes > 183 * 137.
+  EXPECT_FALSE(SupportedLevel(183 * 137, 30));
+}
+
 TEST(H264ProfileLevelId, TestToString) {
   EXPECT_EQ("42e01f", *ProfileLevelIdToString(ProfileLevelId(
                           kProfileConstrainedBaseline, kLevel3_1)));
