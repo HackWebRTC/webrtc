@@ -295,10 +295,10 @@ if (!build_with_chromium) {
         ":video_engine_tests",
         ":webrtc_nonparallel_tests",
         ":webrtc_perf_tests",
-        ":xmllite_xmpp_unittests",
         "api:peerconnection_unittests",
         "common_audio:common_audio_unittests",
         "common_video:common_video_unittests",
+        "libjingle:xmllite_xmpp_unittests",
         "media:rtc_media_unittests",
         "modules:modules_tests",
         "modules:modules_unittests",
@@ -573,46 +573,6 @@ if (rtc_include_tests) {
       # https://developer.apple.com/library/mac/qa/qa1490/_index.html
       ldflags = [ "-ObjC" ]
     }
-  }
-
-  rtc_test("xmllite_xmpp_unittests") {
-    configs += [ ":rtc_unittests_config" ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
-    deps = [
-      "base:rtc_base_tests_utils",
-      "libjingle/xmllite:rtc_xmllite",
-      "libjingle/xmpp:rtc_xmpp",
-      "//testing/gtest",
-    ]
-
-    sources = [
-      "libjingle/xmllite/qname_unittest.cc",
-      "libjingle/xmllite/xmlbuilder_unittest.cc",
-      "libjingle/xmllite/xmlelement_unittest.cc",
-      "libjingle/xmllite/xmlnsstack_unittest.cc",
-      "libjingle/xmllite/xmlparser_unittest.cc",
-      "libjingle/xmllite/xmlprinter_unittest.cc",
-      "libjingle/xmpp/fakexmppclient.h",
-      "libjingle/xmpp/hangoutpubsubclient_unittest.cc",
-      "libjingle/xmpp/jid_unittest.cc",
-      "libjingle/xmpp/mucroomconfigtask_unittest.cc",
-      "libjingle/xmpp/mucroomdiscoverytask_unittest.cc",
-      "libjingle/xmpp/mucroomlookuptask_unittest.cc",
-      "libjingle/xmpp/mucroomuniquehangoutidtask_unittest.cc",
-      "libjingle/xmpp/pingtask_unittest.cc",
-      "libjingle/xmpp/pubsubclient_unittest.cc",
-      "libjingle/xmpp/pubsubtasks_unittest.cc",
-      "libjingle/xmpp/util_unittest.cc",
-      "libjingle/xmpp/util_unittest.h",
-      "libjingle/xmpp/xmppengine_unittest.cc",
-      "libjingle/xmpp/xmpplogintask_unittest.cc",
-      "libjingle/xmpp/xmppstanzaparser_unittest.cc",
-    ]
   }
 
   # TODO(pbos): Rename test suite, this is no longer "just" for video targets.
