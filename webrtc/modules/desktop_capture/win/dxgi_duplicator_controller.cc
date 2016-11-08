@@ -44,6 +44,15 @@ bool DxgiDuplicatorController::IsSupported() {
   return Initialize();
 }
 
+bool DxgiDuplicatorController::RetrieveD3dInfo(D3dInfo* info) {
+  rtc::CritScope lock(&lock_);
+  if (!Initialize()) {
+    return false;
+  }
+  *info = d3d_info_;
+  return true;
+}
+
 DesktopVector DxgiDuplicatorController::dpi() {
   rtc::CritScope lock(&lock_);
   if (Initialize()) {
@@ -121,6 +130,9 @@ bool DxgiDuplicatorController::DoInitialize() {
   RTC_DCHECK(desktop_rect_.is_empty());
   RTC_DCHECK(duplicators_.empty());
 
+  d3d_info_.min_feature_level = static_cast<D3D_FEATURE_LEVEL>(0);
+  d3d_info_.max_feature_level = static_cast<D3D_FEATURE_LEVEL>(0);
+
   std::vector<D3dDevice> devices = D3dDevice::EnumDevices();
   if (devices.empty()) {
     return false;
@@ -131,6 +143,18 @@ bool DxgiDuplicatorController::DoInitialize() {
     if (!duplicators_.back().Initialize()) {
       return false;
     }
+
+    D3D_FEATURE_LEVEL feature_level =
+        devices[i].d3d_device()->GetFeatureLevel();
+    if (d3d_info_.max_feature_level == 0 ||
+        feature_level > d3d_info_.max_feature_level) {
+      d3d_info_.max_feature_level = feature_level;
+    }
+    if (d3d_info_.min_feature_level == 0 ||
+        feature_level < d3d_info_.min_feature_level) {
+      d3d_info_.min_feature_level = feature_level;
+    }
+
     if (desktop_rect_.is_empty()) {
       desktop_rect_ = duplicators_.back().desktop_rect();
     } else {

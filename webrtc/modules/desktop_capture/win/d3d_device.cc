@@ -31,6 +31,7 @@ bool D3dDevice::Initialize(const ComPtr<IDXGIAdapter>& adapter) {
   }
 
   D3D_FEATURE_LEVEL feature_level;
+  // Default feature levels contain D3D 9.1 through D3D 11.0.
   _com_error error = D3D11CreateDevice(
       adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr,
       D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_SINGLETHREADED,
@@ -44,16 +45,18 @@ bool D3dDevice::Initialize(const ComPtr<IDXGIAdapter>& adapter) {
 
   if (feature_level < D3D_FEATURE_LEVEL_11_0) {
     LOG(LS_WARNING) << "D3D11CreateDevice returns an instance without DirectX "
-                       "11 support, level "
-                    << feature_level;
-    return false;
+                       "11 support, level " << feature_level
+                    << ". Following initialization may fail.";
+    // D3D_FEATURE_LEVEL_11_0 is not officially documented on MSDN to be a
+    // requirement of Dxgi duplicator APIs.
   }
 
   error = d3d_device_.As(&dxgi_device_);
   if (error.Error() != S_OK || !dxgi_device_) {
     LOG(LS_WARNING) << "ID3D11Device is not an implementation of IDXGIDevice, "
                        "this usually means the system does not support DirectX "
-                       "11";
+                       "11. Error "
+                    << error.ErrorMessage() << " with code " << error.Error();
     return false;
   }
 

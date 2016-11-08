@@ -13,6 +13,8 @@
 
 #include "webrtc/modules/desktop_capture/screen_capturer.h"
 
+#include <D3DCommon.h>
+
 #include <memory>
 #include <vector>
 
@@ -24,12 +26,23 @@
 
 namespace webrtc {
 
-// ScreenCapturerWinDirectx captures 32bit RGBA using DirectX. This
-// implementation won't work when ScreenCaptureFrameQueue.kQueueLength is not 2.
+// ScreenCapturerWinDirectx captures 32bit RGBA using DirectX.
 class ScreenCapturerWinDirectx : public ScreenCapturer {
  public:
+  using D3dInfo = DxgiDuplicatorController::D3dInfo;
+
   // Whether the system supports DirectX based capturing.
   static bool IsSupported();
+
+  // Returns a most recent D3dInfo composed by
+  // DxgiDuplicatorController::Initialize() function. This function implicitly
+  // calls DxgiDuplicatorController::Initialize() if it has not been
+  // initialized. This function returns false and output parameter is kept
+  // unchanged if DxgiDuplicatorController::Initialize() failed.
+  // The D3dInfo may change based on hardware configuration even without
+  // restarting the hardware and software. Refer to https://goo.gl/OOCppq. So
+  // consumers should not cache the result returned by this function.
+  static bool RetrieveD3dInfo(D3dInfo* info);
 
   explicit ScreenCapturerWinDirectx(const DesktopCaptureOptions& options);
 

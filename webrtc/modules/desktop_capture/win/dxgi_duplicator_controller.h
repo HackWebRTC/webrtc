@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_DUPLICATOR_CONTROLLER_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_DXGI_DUPLICATOR_CONTROLLER_H_
 
+#include <D3DCommon.h>
+
 #include <memory>
 #include <vector>
 
@@ -57,6 +59,21 @@ class DxgiDuplicatorController {
     std::vector<DxgiAdapterDuplicator::Context> contexts_;
   };
 
+  // A collection of D3d information we are interested on, which may impact
+  // capturer performance or reliability.
+  struct D3dInfo {
+    // Each video adapter has its own D3D_FEATURE_LEVEL, so this structure
+    // contains the minimum and maximium D3D_FEATURE_LEVELs current system
+    // supports.
+    // Both fields can be 0, which is the default value to indicate no valid
+    // D3D_FEATURE_LEVEL has been retrieved from underlying OS APIs.
+    D3D_FEATURE_LEVEL min_feature_level;
+    D3D_FEATURE_LEVEL max_feature_level;
+
+    // TODO(zijiehe): Add more fields, such as manufacturer name, mode, driver
+    // version.
+  };
+
   // Returns the singleton instance of DxgiDuplicatorController.
   static DxgiDuplicatorController* Instance();
 
@@ -64,8 +81,14 @@ class DxgiDuplicatorController {
   // containers are destructed in correct order.
   ~DxgiDuplicatorController();
 
+  // All the following functions implicitly call Initialize() function is
+  // current instance has not been initialized.
+
   // Detects whether the system supports DXGI based capturer.
   bool IsSupported();
+
+  // Returns a copy of D3dInfo composed by last Initialize() function call.
+  bool RetrieveD3dInfo(D3dInfo* info);
 
   // Captures current screen and writes into target. Since we are using double
   // buffering, |last_frame|.updated_region() is used to represent the not
@@ -153,6 +176,7 @@ class DxgiDuplicatorController {
   DesktopRect desktop_rect_;
   DesktopVector dpi_;
   std::vector<DxgiAdapterDuplicator> duplicators_;
+  D3dInfo d3d_info_;
 };
 
 }  // namespace webrtc

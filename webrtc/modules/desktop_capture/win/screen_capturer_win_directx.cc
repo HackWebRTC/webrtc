@@ -23,8 +23,15 @@ using Microsoft::WRL::ComPtr;
 
 // static
 bool ScreenCapturerWinDirectx::IsSupported() {
-  // Forward IsSupported function call to DxgiDuplicatorController.
+  // Forwards IsSupported() function call to DxgiDuplicatorController.
   return DxgiDuplicatorController::Instance()->IsSupported();
+}
+
+// static
+bool ScreenCapturerWinDirectx::RetrieveD3dInfo(D3dInfo* info) {
+  // Forwards SupportedFeatureLevels() function call to
+  // DxgiDuplicatorController.
+  return DxgiDuplicatorController::Instance()->RetrieveD3dInfo(info);
 }
 
 ScreenCapturerWinDirectx::ScreenCapturerWinDirectx(
