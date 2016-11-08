@@ -137,6 +137,32 @@ AudioMixerImpl::SourceStatusList::iterator FindSourceInList(
       });
 }
 
+// Rounds the maximal audio source frequency up to an APM-native
+// frequency.
+int CalculateMixingFrequency(
+    const AudioMixerImpl::SourceStatusList& audio_source_list) {
+  if (audio_source_list.empty()) {
+    return AudioMixerImpl::kDefaultFrequency;
+  }
+  using NativeRate = AudioProcessing::NativeRate;
+  int maximal_frequency = 0;
+  for (const auto& source_status : audio_source_list) {
+    const int source_needed_frequency =
+        source_status->audio_source->PreferredSampleRate();
+    RTC_DCHECK_LE(NativeRate::kSampleRate8kHz, source_needed_frequency);
+    RTC_DCHECK_LE(source_needed_frequency, NativeRate::kSampleRate48kHz);
+    maximal_frequency = std::max(maximal_frequency, source_needed_frequency);
+  }
+
+  static constexpr NativeRate native_rates[] = {
+      NativeRate::kSampleRate8kHz, NativeRate::kSampleRate16kHz,
+      NativeRate::kSampleRate32kHz, NativeRate::kSampleRate48kHz};
+  const auto rounded_up_index = std::lower_bound(
+      std::begin(native_rates), std::end(native_rates), maximal_frequency);
+  RTC_DCHECK(rounded_up_index != std::end(native_rates));
+  return *rounded_up_index;
+}
+
 }  // namespace
 
 AudioMixerImpl::AudioMixerImpl(std::unique_ptr<AudioProcessing> limiter)
@@ -186,11 +212,15 @@ rtc::scoped_refptr<AudioMixerImpl> AudioMixerImpl::Create() {
       new rtc::RefCountedObject<AudioMixerImpl>(std::move(limiter)));
 }
 
-void AudioMixerImpl::Mix(int sample_rate,
-                         size_t number_of_channels,
+void AudioMixerImpl::Mix(size_t number_of_channels,
                          AudioFrame* audio_frame_for_mixing) {
   RTC_DCHECK(number_of_channels == 1 || number_of_channels == 2);
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+
+  const int sample_rate = [&]() {
+    rtc::CritScope lock(&crit_);
+    return CalculateMixingFrequency(audio_source_list_);
+  }();
 
   if (OutputFrequency() != sample_rate) {
     SetOutputFrequency(sample_rate);

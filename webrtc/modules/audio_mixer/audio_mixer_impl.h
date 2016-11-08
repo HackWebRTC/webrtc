@@ -55,8 +55,7 @@ class AudioMixerImpl : public AudioMixer {
   bool AddSource(Source* audio_source) override;
   bool RemoveSource(Source* audio_source) override;
 
-  void Mix(int sample_rate_hz,
-           size_t number_of_channels,
+  void Mix(size_t number_of_channels,
            AudioFrame* audio_frame_for_mixing) override LOCKS_EXCLUDED(crit_);
 
   // Returns true if the source was mixed last round. Returns

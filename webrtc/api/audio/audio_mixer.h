@@ -60,11 +60,13 @@ class AudioMixer : public rtc::RefCountInterface {
 
   // Performs mixing by asking registered audio sources for audio. The
   // mixed result is placed in the provided AudioFrame. This method
-  // will only be called from a single thread. The rate and channels
-  // arguments specify the rate and number of channels of the mix
-  // result. All fields in |audio_frame_for_mixing| must be updated.
-  virtual void Mix(int sample_rate_hz,
-                   size_t number_of_channels,
+  // will only be called from a single thread. The channels argument
+  // specifies the number of channels of the mix result. The mixer
+  // should mix at a rate that doesn't cause quality loss of the
+  // sources' audio. The mixing rate is one of the rates listed in
+  // AudioProcessing::NativeRate. All fields in
+  // |audio_frame_for_mixing| must be updated.
+  virtual void Mix(size_t number_of_channels,
                    AudioFrame* audio_frame_for_mixing) = 0;
 
  protected:
