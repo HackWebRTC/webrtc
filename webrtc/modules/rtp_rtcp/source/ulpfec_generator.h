@@ -19,7 +19,7 @@
 
 namespace webrtc {
 
-class FlexfecSenderImpl;
+class FlexfecSender;
 
 class RedPacket {
  public:
