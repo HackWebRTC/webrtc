@@ -228,7 +228,9 @@ TEST_F(ScreenCapturerIntegrationTest, DISABLED_CaptureUpdatedRegion) {
   TestCaptureUpdatedRegion();
 }
 
-TEST_F(ScreenCapturerIntegrationTest, TwoCapturers) {
+// Disabled because it's flaky.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
+TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoCapturers) {
   std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
   SetUp();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
@@ -236,7 +238,10 @@ TEST_F(ScreenCapturerIntegrationTest, TwoCapturers) {
 
 #if defined(WEBRTC_WIN)
 
-TEST_F(ScreenCapturerIntegrationTest, CaptureUpdatedRegionWithDirectxCapturer) {
+// Disabled because it's flaky.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
+TEST_F(ScreenCapturerIntegrationTest,
+       DISABLED_CaptureUpdatedRegionWithDirectxCapturer) {
   if (!CreateDirectxCapturer()) {
     return;
   }
@@ -244,7 +249,9 @@ TEST_F(ScreenCapturerIntegrationTest, CaptureUpdatedRegionWithDirectxCapturer) {
   TestCaptureUpdatedRegion();
 }
 
-TEST_F(ScreenCapturerIntegrationTest, TwoDirectxCapturers) {
+// Disabled because it's flaky.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
+TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoDirectxCapturers) {
   if (!CreateDirectxCapturer()) {
     return;
   }
@@ -254,21 +261,27 @@ TEST_F(ScreenCapturerIntegrationTest, TwoDirectxCapturers) {
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
 
+// Disabled because it's flaky.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
 TEST_F(ScreenCapturerIntegrationTest,
-       CaptureUpdatedRegionWithMagnifierCapturer) {
+       DISABLED_CaptureUpdatedRegionWithMagnifierCapturer) {
   CreateMagnifierCapturer();
   TestCaptureUpdatedRegion();
 }
 
-TEST_F(ScreenCapturerIntegrationTest, TwoMagnifierCapturers) {
+// Disabled because it's flaky.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
+TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoMagnifierCapturers) {
   CreateMagnifierCapturer();
   std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
   CreateMagnifierCapturer();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
 
+// Disabled because it's flaky.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
 TEST_F(ScreenCapturerIntegrationTest,
-       MaybeCaptureUpdatedRegionWithDirectxCapturer) {
+       DISABLED_MaybeCaptureUpdatedRegionWithDirectxCapturer) {
   // Even DirectX capturer is not supported in current system, we should be able
   // to select a usable capturer.
   MaybeCreateDirectxCapturer();
