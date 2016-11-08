@@ -12,8 +12,10 @@
 #include <memory>
 
 #include "webrtc/base/arraysize.h"
-#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
+#include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
 #include "webrtc/test/gtest.h"
+
+#if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
 
 namespace webrtc {
 
@@ -202,3 +204,5 @@ TEST(AvccBufferWriterTest, TestOverflow) {
 }
 
 }  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_TOOLBOX_SUPPORTED
