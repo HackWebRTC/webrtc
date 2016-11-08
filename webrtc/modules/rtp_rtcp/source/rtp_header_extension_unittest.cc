@@ -10,99 +10,87 @@
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
-TEST(RtpHeaderExtensionTest, RegisterByType) {
-  RtpHeaderExtensionMap map;
-  EXPECT_FALSE(map.IsRegistered(TransmissionOffset::kId));
+class RtpHeaderExtensionTest : public ::testing::Test {
+ protected:
+  RtpHeaderExtensionTest() {}
+  ~RtpHeaderExtensionTest() {}
 
-  EXPECT_TRUE(map.RegisterByType(3, TransmissionOffset::kId));
+  RtpHeaderExtensionMap map_;
+  static const uint8_t kId;
+};
 
-  EXPECT_TRUE(map.IsRegistered(TransmissionOffset::kId));
-  EXPECT_EQ(3, map.GetId(TransmissionOffset::kId));
-  EXPECT_EQ(TransmissionOffset::kId, map.GetType(3));
+const uint8_t RtpHeaderExtensionTest::kId = 3;
+
+TEST_F(RtpHeaderExtensionTest, Register) {
+  EXPECT_EQ(0, map_.Size());
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_TRUE(map_.IsRegistered(kRtpExtensionTransmissionTimeOffset));
+  EXPECT_EQ(1, map_.Size());
+  EXPECT_EQ(0, map_.Deregister(kRtpExtensionTransmissionTimeOffset));
+  EXPECT_EQ(0, map_.Size());
 }
 
-TEST(RtpHeaderExtensionTest, RegisterByUri) {
-  RtpHeaderExtensionMap map;
-
-  EXPECT_TRUE(map.RegisterByUri(3, TransmissionOffset::kUri));
-
-  EXPECT_TRUE(map.IsRegistered(TransmissionOffset::kId));
-  EXPECT_EQ(3, map.GetId(TransmissionOffset::kId));
-  EXPECT_EQ(TransmissionOffset::kId, map.GetType(3));
-}
-
-TEST(RtpHeaderExtensionTest, RegisterWithTrait) {
-  RtpHeaderExtensionMap map;
-
-  EXPECT_TRUE(map.Register<TransmissionOffset>(3));
-
-  EXPECT_TRUE(map.IsRegistered(TransmissionOffset::kId));
-  EXPECT_EQ(3, map.GetId(TransmissionOffset::kId));
-  EXPECT_EQ(TransmissionOffset::kId, map.GetType(3));
-}
-
-TEST(RtpHeaderExtensionTest, RegisterDuringContruction) {
-  const RtpHeaderExtensionMap map = {{TransmissionOffset::kUri, 1},
-                                     {AbsoluteSendTime::kUri, 3}};
-
-  EXPECT_EQ(1, map.GetId(TransmissionOffset::kId));
-  EXPECT_EQ(3, map.GetId(AbsoluteSendTime::kId));
-}
-
-TEST(RtpHeaderExtensionTest, RegisterIllegalArg) {
-  RtpHeaderExtensionMap map;
+TEST_F(RtpHeaderExtensionTest, RegisterIllegalArg) {
   // Valid range for id: [1-14].
-  EXPECT_FALSE(map.Register<TransmissionOffset>(0));
-  EXPECT_FALSE(map.Register<TransmissionOffset>(15));
+  EXPECT_EQ(-1, map_.Register(kRtpExtensionTransmissionTimeOffset, 0));
+  EXPECT_EQ(-1, map_.Register(kRtpExtensionTransmissionTimeOffset, 15));
 }
 
-TEST(RtpHeaderExtensionTest, Idempotent) {
-  RtpHeaderExtensionMap map;
-
-  EXPECT_TRUE(map.Register<TransmissionOffset>(3));
-  EXPECT_TRUE(map.Register<TransmissionOffset>(3));
-
-  map.Deregister(TransmissionOffset::kId);
-  map.Deregister(TransmissionOffset::kId);
+TEST_F(RtpHeaderExtensionTest, Idempotent) {
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(0, map_.Deregister(kRtpExtensionTransmissionTimeOffset));
+  EXPECT_EQ(0, map_.Deregister(kRtpExtensionTransmissionTimeOffset));
 }
 
-TEST(RtpHeaderExtensionTest, NonUniqueId) {
-  RtpHeaderExtensionMap map;
-  EXPECT_TRUE(map.Register<TransmissionOffset>(3));
-
-  EXPECT_FALSE(map.Register<AudioLevel>(3));
-  EXPECT_TRUE(map.Register<AudioLevel>(4));
+TEST_F(RtpHeaderExtensionTest, NonUniqueId) {
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(-1, map_.Register(kRtpExtensionAudioLevel, kId));
 }
 
-TEST(RtpHeaderExtensionTest, GetTotalLength) {
-  RtpHeaderExtensionMap map;
-  EXPECT_EQ(0u, map.GetTotalLengthInBytes());
-  EXPECT_TRUE(map.Register<TransmissionOffset>(3));
-  EXPECT_EQ(kRtpOneByteHeaderLength + (TransmissionOffset::kValueSizeBytes + 1),
-            map.GetTotalLengthInBytes());
+TEST_F(RtpHeaderExtensionTest, GetTotalLength) {
+  EXPECT_EQ(0u, map_.GetTotalLengthInBytes());
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(kRtpOneByteHeaderLength + kTransmissionTimeOffsetLength,
+            map_.GetTotalLengthInBytes());
 }
 
-TEST(RtpHeaderExtensionTest, GetType) {
-  RtpHeaderExtensionMap map;
-  EXPECT_EQ(RtpHeaderExtensionMap::kInvalidType, map.GetType(3));
-  EXPECT_TRUE(map.Register<TransmissionOffset>(3));
+TEST_F(RtpHeaderExtensionTest, GetType) {
+  RTPExtensionType typeOut;
+  EXPECT_EQ(-1, map_.GetType(kId, &typeOut));
 
-  EXPECT_EQ(TransmissionOffset::kId, map.GetType(3));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(0, map_.GetType(kId, &typeOut));
+  EXPECT_EQ(kRtpExtensionTransmissionTimeOffset, typeOut);
 }
 
-TEST(RtpHeaderExtensionTest, GetId) {
-  RtpHeaderExtensionMap map;
-  EXPECT_EQ(RtpHeaderExtensionMap::kInvalidId,
-            map.GetId(TransmissionOffset::kId));
-  EXPECT_TRUE(map.Register<TransmissionOffset>(3));
+TEST_F(RtpHeaderExtensionTest, GetId) {
+  uint8_t idOut;
+  EXPECT_EQ(-1, map_.GetId(kRtpExtensionTransmissionTimeOffset, &idOut));
 
-  EXPECT_EQ(3, map.GetId(TransmissionOffset::kId));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(0, map_.GetId(kRtpExtensionTransmissionTimeOffset, &idOut));
+  EXPECT_EQ(kId, idOut);
 }
 
+TEST_F(RtpHeaderExtensionTest, GetCopy) {
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+
+  RtpHeaderExtensionMap mapOut;
+  map_.GetCopy(&mapOut);
+  EXPECT_EQ(1, mapOut.Size());
+  EXPECT_EQ(kId, mapOut.GetId(kRtpExtensionTransmissionTimeOffset));
+}
+
+TEST_F(RtpHeaderExtensionTest, Erase) {
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(1, map_.Size());
+  map_.Erase();
+  EXPECT_EQ(0, map_.Size());
+}
 }  // namespace webrtc

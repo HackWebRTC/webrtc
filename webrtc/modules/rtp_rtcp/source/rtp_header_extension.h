@@ -11,13 +11,10 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_
 
-#include <initializer_list>
-#include <string>
+#include <map>
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/config.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
@@ -38,63 +35,74 @@ const int kPlayoutDelayGranularityMs = 10;
 // Maximum playout delay value in milliseconds.
 const int kPlayoutDelayMaxMs = 40950;
 
+struct HeaderExtension {
+  explicit HeaderExtension(RTPExtensionType extension_type)
+      : type(extension_type), length(0) {
+    Init();
+  }
+
+  void Init() {
+    // TODO(solenberg): Create handler classes for header extensions so we can
+    // get rid of switches like these as well as handling code spread out all
+    // over.
+    switch (type) {
+      case kRtpExtensionTransmissionTimeOffset:
+        length = kTransmissionTimeOffsetLength;
+        break;
+      case kRtpExtensionAudioLevel:
+        length = kAudioLevelLength;
+        break;
+      case kRtpExtensionAbsoluteSendTime:
+        length = kAbsoluteSendTimeLength;
+        break;
+      case kRtpExtensionVideoRotation:
+        length = kVideoRotationLength;
+        break;
+      case kRtpExtensionTransportSequenceNumber:
+        length = kTransportSequenceNumberLength;
+        break;
+      case kRtpExtensionPlayoutDelay:
+        length = kPlayoutDelayLength;
+        break;
+      default:
+        assert(false);
+    }
+  }
+
+  const RTPExtensionType type;
+  uint8_t length;
+};
+
 class RtpHeaderExtensionMap {
  public:
   static constexpr RTPExtensionType kInvalidType = kRtpExtensionNone;
   static constexpr uint8_t kInvalidId = 0;
-
   RtpHeaderExtensionMap();
-  RtpHeaderExtensionMap(std::initializer_list<RtpExtension>);
+  ~RtpHeaderExtensionMap();
 
-  template <typename Extension>
-  bool Register(uint8_t id) {
-    return Register(id, Extension::kId, Extension::kValueSizeBytes,
-                    Extension::kUri);
-  }
-  bool RegisterByType(uint8_t id, RTPExtensionType type);
-  bool RegisterByUri(uint8_t id, const std::string& uri);
+  void Erase();
 
-  bool IsRegistered(RTPExtensionType type) const {
-    return GetId(type) != kInvalidId;
-  }
+  int32_t Register(RTPExtensionType type, uint8_t id);
+
+  int32_t Deregister(RTPExtensionType type);
+
+  bool IsRegistered(RTPExtensionType type) const;
+
+  int32_t GetType(uint8_t id, RTPExtensionType* type) const;
   // Return kInvalidType if not found.
-  RTPExtensionType GetType(uint8_t id) const {
-    RTC_DCHECK_GE(id, kMinId);
-    RTC_DCHECK_LE(id, kMaxId);
-    return types_[id];
-  }
-  // Return kInvalidId if not found.
-  uint8_t GetId(RTPExtensionType type) const {
-    RTC_DCHECK_GT(type, kRtpExtensionNone);
-    RTC_DCHECK_LT(type, kRtpExtensionNumberOfExtensions);
-    return ids_[type];
-  }
+  RTPExtensionType GetType(uint8_t id) const;
 
+  int32_t GetId(const RTPExtensionType type, uint8_t* id) const;
+  // Return kInvalidId if not found.
+  uint8_t GetId(RTPExtensionType type) const;
   size_t GetTotalLengthInBytes() const;
 
-  // TODO(danilchap): Remove use of the functions below.
-  void Erase() { *this = RtpHeaderExtensionMap(); }
-  int32_t Register(RTPExtensionType type, uint8_t id) {
-    return RegisterByType(id, type) ? 0 : -1;
-  }
-  int32_t Deregister(RTPExtensionType type);
-  int32_t GetType(uint8_t id, RTPExtensionType* type) const {
-    *type = GetType(id);
-    return *type == kInvalidType ? -1 : 0;
-  }
-  void GetCopy(RtpHeaderExtensionMap* copy) const { *copy = *this; }
+  void GetCopy(RtpHeaderExtensionMap* map) const;
+
+  int32_t Size() const;
 
  private:
-  static constexpr uint8_t kMinId = 1;
-  static constexpr uint8_t kMaxId = 14;
-  bool Register(uint8_t id,
-                RTPExtensionType type,
-                size_t value_size,
-                const char* uri);
-
-  size_t total_values_size_bytes_ = 0;
-  RTPExtensionType types_[kMaxId + 1];
-  uint8_t ids_[kRtpExtensionNumberOfExtensions];
+  std::map<uint8_t, HeaderExtension*> extensionMap_;
 };
 }  // namespace webrtc
 

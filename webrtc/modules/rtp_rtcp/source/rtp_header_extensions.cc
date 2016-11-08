@@ -33,7 +33,8 @@ namespace webrtc {
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType AbsoluteSendTime::kId;
 constexpr uint8_t AbsoluteSendTime::kValueSizeBytes;
-constexpr const char* AbsoluteSendTime::kUri;
+const char* const AbsoluteSendTime::kUri =
+    "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
 bool AbsoluteSendTime::Parse(const uint8_t* data, uint32_t* time_24bits) {
   *time_24bits = ByteReader<uint32_t, 3>::ReadBigEndian(data);
@@ -59,7 +60,8 @@ bool AbsoluteSendTime::Write(uint8_t* data, int64_t time_ms) {
 //
 constexpr RTPExtensionType AudioLevel::kId;
 constexpr uint8_t AudioLevel::kValueSizeBytes;
-constexpr const char* AudioLevel::kUri;
+const char* const AudioLevel::kUri =
+    "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
 
 bool AudioLevel::Parse(const uint8_t* data,
                        bool* voice_activity,
@@ -95,7 +97,8 @@ bool AudioLevel::Write(uint8_t* data,
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType TransmissionOffset::kId;
 constexpr uint8_t TransmissionOffset::kValueSizeBytes;
-constexpr const char* TransmissionOffset::kUri;
+const char* const TransmissionOffset::kUri =
+    "urn:ietf:params:rtp-hdrext:toffset";
 
 bool TransmissionOffset::Parse(const uint8_t* data, int32_t* rtp_time) {
   *rtp_time = ByteReader<int32_t, 3>::ReadBigEndian(data);
@@ -115,7 +118,8 @@ bool TransmissionOffset::Write(uint8_t* data, int32_t rtp_time) {
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType TransportSequenceNumber::kId;
 constexpr uint8_t TransportSequenceNumber::kValueSizeBytes;
-constexpr const char* TransportSequenceNumber::kUri;
+const char* const TransportSequenceNumber::kUri =
+    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions";
 
 bool TransportSequenceNumber::Parse(const uint8_t* data, uint16_t* value) {
   *value = ByteReader<uint16_t>::ReadBigEndian(data);
@@ -140,7 +144,7 @@ bool TransportSequenceNumber::Write(uint8_t* data, uint16_t value) {
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType VideoOrientation::kId;
 constexpr uint8_t VideoOrientation::kValueSizeBytes;
-constexpr const char* VideoOrientation::kUri;
+const char* const VideoOrientation::kUri = "urn:3gpp:video-orientation";
 
 bool VideoOrientation::Parse(const uint8_t* data, VideoRotation* rotation) {
   *rotation = ConvertCVOByteToVideoRotation(data[0]);
@@ -169,7 +173,8 @@ bool VideoOrientation::Write(uint8_t* data, uint8_t value) {
 //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 constexpr RTPExtensionType PlayoutDelayLimits::kId;
 constexpr uint8_t PlayoutDelayLimits::kValueSizeBytes;
-constexpr const char* PlayoutDelayLimits::kUri;
+const char* const PlayoutDelayLimits::kUri =
+    "http://www.webrtc.org/experiments/rtp-hdrext/playout-delay";
 
 bool PlayoutDelayLimits::Parse(const uint8_t* data,
                                PlayoutDelay* playout_delay) {
