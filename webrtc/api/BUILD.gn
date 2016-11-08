@@ -381,6 +381,7 @@ if (rtc_include_tests) {
       "proxy_unittest.cc",
       "rtcstatscollector_unittest.cc",
       "rtpsenderreceiver_unittest.cc",
+      "sctputils_unittest.cc",
       "statscollector_unittest.cc",
       "test/fakeaudiocapturemodule.cc",
       "test/fakeaudiocapturemodule.h",
