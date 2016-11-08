@@ -124,13 +124,13 @@ void MetricRecorder::PlotAllDynamics() {
 
 void MetricRecorder::PlotDynamics(int metric) {
   if (metric == kTotalAvailable) {
-    BWE_TEST_LOGGING_PLOT_WITH_NAME(
+    BWE_TEST_LOGGING_PLOT_WITH_NAME_AND_SSRC(
         0, plot_information_[kTotalAvailable].prefix, now_ms_,
-        GetTotalAvailableKbps(), "Available");
+        GetTotalAvailableKbps(), flow_id_, "Available");
   } else if (metric == kAvailablePerFlow) {
-    BWE_TEST_LOGGING_PLOT_WITH_NAME(
+    BWE_TEST_LOGGING_PLOT_WITH_NAME_AND_SSRC(
         0, plot_information_[kAvailablePerFlow].prefix, now_ms_,
-        GetAvailablePerFlowKbps(), "Available_per_flow");
+        GetAvailablePerFlowKbps(), flow_id_, "Available_per_flow");
   } else {
     PlotLine(metric, plot_information_[metric].prefix,
              plot_information_[metric].time_ms,
@@ -144,8 +144,9 @@ void MetricRecorder::PlotLine(int windows_id,
                               const std::string& prefix,
                               int64_t time_ms,
                               T y) {
-  BWE_TEST_LOGGING_PLOT_WITH_NAME(windows_id, prefix, time_ms,
-                                  static_cast<double>(y), algorithm_name_);
+  BWE_TEST_LOGGING_PLOT_WITH_NAME_AND_SSRC(windows_id, prefix, time_ms,
+                                           static_cast<double>(y), flow_id_,
+                                           algorithm_name_);
 }
 
 void MetricRecorder::UpdateTimeMs(int64_t time_ms) {
@@ -355,6 +356,8 @@ void MetricRecorder::PlotZero() {
   for (int i = kThroughput; i <= kLoss; ++i) {
     if (plot_information_[i].plot) {
       std::stringstream prefix;
+      // TODO(terelius): Since this does not use the BWE_TEST_LOGGING macros,
+      // it hasn't been kept up to date with the plot format. Remove or fix?
       prefix << "Receiver_" << flow_id_ << "_" + plot_information_[i].prefix;
       PlotLine(i, prefix.str(), now_ms_, 0);
       plot_information_[i].last_plot_ms = now_ms_;

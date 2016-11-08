@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <sstream>
 
+#include "webrtc/base/format_macros.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
@@ -90,19 +91,26 @@ void Logging::Log(const char format[], ...) {
   }
 }
 
-void Logging::Plot(int figure, double value) {
-  Plot(figure, value, 0, "-");
-}
-
-void Logging::Plot(int figure, double value, uint32_t ssrc) {
-  Plot(figure, value, ssrc, "-");
-}
-
-void Logging::Plot(int figure, double value, const std::string& alg_name) {
-  Plot(figure, value, 0, alg_name);
+void Logging::Plot(int figure, const std::string& name, double value) {
+  Plot(figure, name, value, 0, "-");
 }
 
 void Logging::Plot(int figure,
+                   const std::string& name,
+                   double value,
+                   uint32_t ssrc) {
+  Plot(figure, name, value, ssrc, "-");
+}
+
+void Logging::Plot(int figure,
+                   const std::string& name,
+                   double value,
+                   const std::string& alg_name) {
+  Plot(figure, name, value, 0, alg_name);
+}
+
+void Logging::Plot(int figure,
+                   const std::string& name,
                    double value,
                    uint32_t ssrc,
                    const std::string& alg_name) {
@@ -110,20 +118,9 @@ void Logging::Plot(int figure,
   ThreadMap::iterator it = thread_map_.find(rtc::CurrentThreadId());
   assert(it != thread_map_.end());
   const State& state = it->second.stack.top();
-  std::stringstream ss;
-  ss << ssrc;
-  std::string label = state.tag + ':' + ss.str() + '@' + alg_name;
-  std::string prefix("Available");
-  if (alg_name.compare(0, prefix.length(), prefix) == 0) {
-    std::string receiver("Receiver");
-    size_t start_pos = label.find(receiver);
-    if (start_pos != std::string::npos) {
-      label.replace(start_pos, receiver.length(), "Sender");
-    }
-  }
   if (state.enabled) {
-    printf("PLOT\t%d\t%s\t%f\t%f\n", figure, label.c_str(),
-           state.timestamp_ms * 0.001, value);
+    printf("PLOT\t%d\t%s:%" PRIu32 "@%s\t%f\t%f\n", figure, name.c_str(), ssrc,
+           alg_name.c_str(), state.timestamp_ms * 0.001, value);
   }
 }
 

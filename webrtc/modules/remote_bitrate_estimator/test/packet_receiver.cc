@@ -44,15 +44,15 @@ PacketReceiver::PacketReceiver(PacketProcessorListener* listener,
 
     // Metric recorder plots them in separated figures,
     // alignment will take place with the #1 left axis.
-    prefixes.push_back("Throughput_kbps#1");
+    prefixes.push_back("MetricRecorderThroughput_kbps#1");
     prefixes.push_back("Sending_Estimate_kbps#1");
     prefixes.push_back("Delay_ms_#1");
     prefixes.push_back("Packet_Loss_#1");
     prefixes.push_back("Objective_function_#1");
 
     // Plot Total/PerFlow Available capacity together with throughputs.
-    prefixes.push_back("Throughput_kbps#1");  // Total Available.
-    prefixes.push_back("Throughput_kbps#1");  // Available per flow.
+    prefixes.push_back("Capacity_kbps#1");         // Total Available.
+    prefixes.push_back("PerFlowCapacity_kbps#1");  // Available per flow.
 
     bool plot_loss = plot_delay;  // Plot loss if delay is plotted.
     metric_recorder_->SetPlotInformation(prefixes, plot_delay, plot_loss);

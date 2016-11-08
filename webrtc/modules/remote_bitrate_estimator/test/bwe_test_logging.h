@@ -183,26 +183,27 @@
                                                         _4, _5); \
     } while (0)
 
-#define BWE_TEST_LOGGING_PLOT(figure, name, time, value)                  \
-  do {                                                                    \
-    __BWE_TEST_LOGGING_CONTEXT_DECLARE(__bwe_log_, __PLOT__, name,        \
-                                       static_cast<int64_t>(time), true); \
-    webrtc::testing::bwe::Logging::GetInstance()->Plot(figure, value);    \
+#define BWE_TEST_LOGGING_PLOT(figure, name, time, value)                     \
+  do {                                                                       \
+    __BWE_TEST_LOGGING_CONTEXT_DECLARE(__bwe_log_, __PLOT__, name,           \
+                                       static_cast<int64_t>(time), true);    \
+    webrtc::testing::bwe::Logging::GetInstance()->Plot(figure, name, value); \
   } while (0)
 
 #define BWE_TEST_LOGGING_PLOT_WITH_NAME(figure, name, time, value, alg_name) \
   do {                                                                       \
     __BWE_TEST_LOGGING_CONTEXT_DECLARE(__bwe_log_, __PLOT__, name,           \
                                        static_cast<int64_t>(time), true);    \
-    webrtc::testing::bwe::Logging::GetInstance()->Plot(figure, value,        \
+    webrtc::testing::bwe::Logging::GetInstance()->Plot(figure, name, value,  \
                                                        alg_name);            \
   } while (0)
 
-#define BWE_TEST_LOGGING_PLOT_WITH_SSRC(figure, name, time, value, ssrc)     \
-  do {                                                                       \
-    __BWE_TEST_LOGGING_CONTEXT_DECLARE(__bwe_log_, __PLOT__, name,           \
-                                       static_cast<int64_t>(time), true);    \
-    webrtc::testing::bwe::Logging::GetInstance()->Plot(figure, value, ssrc); \
+#define BWE_TEST_LOGGING_PLOT_WITH_SSRC(figure, name, time, value, ssrc)    \
+  do {                                                                      \
+    __BWE_TEST_LOGGING_CONTEXT_DECLARE(__bwe_log_, __PLOT__, name,          \
+                                       static_cast<int64_t>(time), true);   \
+    webrtc::testing::bwe::Logging::GetInstance()->Plot(figure, name, value, \
+                                                       ssrc);               \
   } while (0)
 
 #define BWE_TEST_LOGGING_PLOT_WITH_NAME_AND_SSRC(figure, name, time, value, \
@@ -210,8 +211,8 @@
   do {                                                                      \
     __BWE_TEST_LOGGING_CONTEXT_DECLARE(__bwe_log_, __PLOT__, name,          \
                                        static_cast<int64_t>(time), true);   \
-    webrtc::testing::bwe::Logging::GetInstance()->Plot(figure, value, ssrc, \
-                                                       alg_name);           \
+    webrtc::testing::bwe::Logging::GetInstance()->Plot(figure, name, value, \
+                                                       ssrc, alg_name);     \
   } while (0)
 
 #define BWE_TEST_LOGGING_BAR(figure, name, value, flow_id)                     \
@@ -279,10 +280,14 @@ class Logging {
   void SetGlobalEnable(bool enabled);
 
   void Log(const char format[], ...);
-  void Plot(int figure, double value);
-  void Plot(int figure, double value, const std::string& alg_name);
-  void Plot(int figure, double value, uint32_t ssrc);
+  void Plot(int figure, const std::string& name, double value);
   void Plot(int figure,
+            const std::string& name,
+            double value,
+            const std::string& alg_name);
+  void Plot(int figure, const std::string& name, double value, uint32_t ssrc);
+  void Plot(int figure,
+            const std::string& name,
             double value,
             uint32_t ssrc,
             const std::string& alg_name);
