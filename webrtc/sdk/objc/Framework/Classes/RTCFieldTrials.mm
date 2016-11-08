@@ -23,13 +23,11 @@ static std::unique_ptr<char[]> gFieldTrialInitString;
 
 void RTCInitFieldTrials(RTCFieldTrialOptions options) {
   NSMutableString *fieldTrialInitString = [NSMutableString string];
-  size_t len = fieldTrialInitString.length + 1;
-  gFieldTrialInitString.reset(new char[len]);
-
   if (options & RTCFieldTrialOptionsImprovedBitrateEstimate) {
     [fieldTrialInitString appendString:kRTCEnableImprovedBitrateEstimateString];
   }
-
+  size_t len = fieldTrialInitString.length + 1;
+  gFieldTrialInitString.reset(new char[len]);
   if (![fieldTrialInitString getCString:gFieldTrialInitString.get()
                               maxLength:len
                                encoding:NSUTF8StringEncoding]) {
