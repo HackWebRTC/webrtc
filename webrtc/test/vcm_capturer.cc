@@ -78,7 +78,7 @@ void VcmCapturer::Stop() {
 void VcmCapturer::AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                                   const rtc::VideoSinkWants& wants) {
   rtc::CritScope lock(&crit_);
-  RTC_CHECK(!sink_);
+  RTC_CHECK(!sink_ || sink_ == sink);
   sink_ = sink;
 }
 
