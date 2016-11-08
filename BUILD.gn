@@ -12,12 +12,10 @@ group("default") {
   testonly = true
   deps = [
     "//webrtc",
+    "//webrtc/examples",
+    "//webrtc/tools",
   ]
   if (rtc_include_tests) {
-    deps += [
-      "//webrtc:webrtc_tests",
-      "//webrtc/examples",
-      "//webrtc/tools",
-    ]
+    deps += [ "//webrtc:webrtc_tests" ]
   }
 }
