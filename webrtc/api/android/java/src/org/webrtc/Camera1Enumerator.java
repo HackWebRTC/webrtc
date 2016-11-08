@@ -10,12 +10,10 @@
 
 package org.webrtc;
 
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-
 import android.os.SystemClock;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 @SuppressWarnings("deprecation")
 public class Camera1Enumerator implements CameraEnumerator {
@@ -89,7 +87,7 @@ public class Camera1Enumerator implements CameraEnumerator {
   static synchronized List<CaptureFormat> getSupportedFormats(int cameraId) {
     if (cachedSupportedFormats == null) {
       cachedSupportedFormats = new ArrayList<List<CaptureFormat>>();
-      for (int i = 0; i < CameraEnumerationAndroid.getDeviceCount(); ++i) {
+      for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
         cachedSupportedFormats.add(enumerateFormats(i));
       }
     }
@@ -164,7 +162,7 @@ public class Camera1Enumerator implements CameraEnumerator {
   static int getCameraIndex(String deviceName) {
     Logging.d(TAG, "getCameraIndex: " + deviceName);
     for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
-      if (deviceName.equals(CameraEnumerationAndroid.getDeviceName(i))) {
+      if (deviceName.equals(getDeviceName(i))) {
         return i;
       }
     }

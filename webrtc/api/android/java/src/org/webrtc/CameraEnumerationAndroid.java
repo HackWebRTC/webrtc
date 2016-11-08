@@ -13,7 +13,6 @@ package org.webrtc;
 import static java.lang.Math.abs;
 
 import android.graphics.ImageFormat;
-
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -114,51 +113,6 @@ public class CameraEnumerationAndroid {
     }
   }
 
-  /**
-   * @deprecated
-   * Please use Camera1Enumerator.getDeviceNames() instead.
-   */
-  @Deprecated
-  public static String[] getDeviceNames() {
-    return new Camera1Enumerator().getDeviceNames();
-  }
-
-  /**
-   * @deprecated
-   * Please use Camera1Enumerator.getDeviceNames().length instead.
-   */
-  @Deprecated
-  public static int getDeviceCount() {
-    return new Camera1Enumerator().getDeviceNames().length;
-  }
-
-  /**
-   * @deprecated
-   * Please use Camera1Enumerator.getDeviceNames().get(index) instead.
-   */
-  @Deprecated
-  public static String getDeviceName(int index) {
-    return new Camera1Enumerator().getDeviceName(index);
-  }
-
-  /**
-   * @deprecated
-   * Please use Camera1Enumerator.isFrontFacing(String deviceName) instead.
-   */
-  @Deprecated
-  public static String getNameOfFrontFacingDevice() {
-    return getNameOfDevice(android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT);
-  }
-
-  /**
-   * @deprecated
-   * Please use Camera1Enumerator.isBackFacing(String deviceName) instead.
-   */
-  @Deprecated
-  public static String getNameOfBackFacingDevice() {
-    return getNameOfDevice(android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK);
-  }
-
   // Helper class for finding the closest supported format for the two functions below. It creates a
   // comparator based on the difference to some requested parameters, where the element with the
   // minimum difference is the element that is closest to the requested parameters.
@@ -214,20 +168,5 @@ public class CameraEnumerationAndroid {
         return abs(requestedWidth - size.width) + abs(requestedHeight - size.height);
       }
     });
-  }
-
-  private static String getNameOfDevice(int facing) {
-    final android.hardware.Camera.CameraInfo info = new android.hardware.Camera.CameraInfo();
-    for (int i = 0; i < android.hardware.Camera.getNumberOfCameras(); ++i) {
-      try {
-        android.hardware.Camera.getCameraInfo(i, info);
-        if (info.facing == facing) {
-          return getDeviceName(i);
-        }
-      } catch (Exception e) {
-        Logging.e(TAG, "getCameraInfo() failed on index " + i, e);
-      }
-    }
-    return null;
   }
 }
