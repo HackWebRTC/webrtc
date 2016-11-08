@@ -1827,11 +1827,7 @@ TEST_F(P2PTestConductor, LocalP2PTestWithoutMsid) {
   LocalP2PTest();
 }
 
-// This test sets up a Jsep call between two parties and the initiating peer
-// sends two steams.
-// TODO(perkj): Disabled due to
-// https://code.google.com/p/webrtc/issues/detail?id=1454
-TEST_F(P2PTestConductor, DISABLED_LocalP2PTestTwoStreams) {
+TEST_F(P2PTestConductor, LocalP2PTestTwoStreams) {
   ASSERT_TRUE(CreateTestClients());
   // Set optional video constraint to max 320pixels to decrease CPU usage.
   FakeConstraints constraint;
