@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <semaphore.h>
 #include <string.h>
+#include <X11/Xlib.h>
 
 #include <memory>
 
