@@ -99,6 +99,7 @@
       'type': 'static_library',
       'dependencies': [
         # TODO(kjellander): Add remaining dependencies when webrtc:4243 is done.
+        ':audio_mixer_api',
         '<(webrtc_root)/base/base.gyp:rtc_base_approved',
         '<(webrtc_root)/common.gyp:webrtc_common',
         '<(webrtc_root)/modules/modules.gyp:audio_encoder_interface',

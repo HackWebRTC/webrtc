@@ -36,6 +36,7 @@ rtc_source_set("call_api") {
 
   deps = [
     # TODO(kjellander): Add remaining dependencies when webrtc:4243 is done.
+    ":audio_mixer_api",
     "..:webrtc_common",
     "../base:rtc_base_approved",
     "../modules/audio_coding:audio_encoder_interface",
