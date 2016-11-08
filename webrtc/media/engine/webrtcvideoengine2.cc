@@ -561,7 +561,7 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
     const VideoOptions& options) {
   RTC_DCHECK(initialized_);
   LOG(LS_INFO) << "CreateChannel. Options: " << options.ToString();
-  return new WebRtcVideoChannel2(call, config, options, video_codecs_,
+  return new WebRtcVideoChannel2(call, config, options,
                                  external_encoder_factory_,
                                  external_decoder_factory_);
 }
@@ -668,7 +668,6 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
     webrtc::Call* call,
     const MediaConfig& config,
     const VideoOptions& options,
-    const std::vector<VideoCodec>& recv_codecs,
     WebRtcVideoEncoderFactory* external_encoder_factory,
     WebRtcVideoDecoderFactory* external_decoder_factory)
     : VideoMediaChannel(config),
@@ -684,8 +683,7 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
-  RTC_DCHECK(ValidateCodecFormats(recv_codecs));
-  recv_codecs_ = FilterSupportedCodecs(MapCodecs(recv_codecs));
+  recv_codecs_ = MapCodecs(GetSupportedCodecs(external_encoder_factory));
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
@@ -695,17 +693,18 @@ WebRtcVideoChannel2::~WebRtcVideoChannel2() {
     delete kv.second;
 }
 
-std::vector<WebRtcVideoChannel2::VideoCodecSettings>
-WebRtcVideoChannel2::FilterSupportedCodecs(
-    const std::vector<VideoCodecSettings>& mapped_codecs) const {
-  const std::vector<VideoCodec> supported_codecs =
+rtc::Optional<WebRtcVideoChannel2::VideoCodecSettings>
+WebRtcVideoChannel2::SelectSendVideoCodec(
+    const std::vector<VideoCodecSettings>& remote_mapped_codecs) const {
+  const std::vector<VideoCodec> local_supported_codecs =
       GetSupportedCodecs(external_encoder_factory_);
-  std::vector<VideoCodecSettings> filtered_codecs;
-  for (const VideoCodecSettings& mapped_codec : mapped_codecs) {
-    if (IsCodecSupported(supported_codecs, mapped_codec.codec))
-      filtered_codecs.push_back(mapped_codec);
+  // Select the first remote codec that is supported locally.
+  for (const VideoCodecSettings& remote_mapped_codec : remote_mapped_codecs) {
+    if (IsCodecSupported(local_supported_codecs, remote_mapped_codec.codec))
+      return rtc::Optional<VideoCodecSettings>(remote_mapped_codec);
   }
-  return filtered_codecs;
+  // No remote codec was supported.
+  return rtc::Optional<VideoCodecSettings>();
 }
 
 bool WebRtcVideoChannel2::ReceiveCodecsHaveChanged(
@@ -739,19 +738,17 @@ bool WebRtcVideoChannel2::GetChangedSendParameters(
     return false;
   }
 
-  // Handle send codec.
-  const std::vector<VideoCodecSettings> supported_codecs =
-      FilterSupportedCodecs(MapCodecs(params.codecs));
+  // Select one of the remote codecs that will be used as send codec.
+  const rtc::Optional<VideoCodecSettings> selected_send_codec =
+      SelectSendVideoCodec(MapCodecs(params.codecs));
 
-  if (supported_codecs.empty()) {
+  if (!selected_send_codec) {
     LOG(LS_ERROR) << "No video codecs supported.";
     return false;
   }
 
-  if (!send_codec_ || supported_codecs.front() != *send_codec_) {
-    changed_params->codec =
-        rtc::Optional<VideoCodecSettings>(supported_codecs.front());
-  }
+  if (!send_codec_ || *selected_send_codec != *send_codec_)
+    changed_params->codec = selected_send_codec;
 
   // Handle RTP header extensions.
   std::vector<webrtc::RtpExtension> filtered_extensions = FilterRtpExtensions(
@@ -968,17 +965,20 @@ bool WebRtcVideoChannel2::GetChangedRecvParameters(
     return false;
   }
 
-  std::vector<VideoCodecSettings> supported_codecs =
-      FilterSupportedCodecs(mapped_codecs);
-
-  if (mapped_codecs.size() != supported_codecs.size()) {
-    LOG(LS_ERROR) << "SetRecvParameters called with unsupported video codecs.";
-    return false;
+  // Verify that every mapped codec is supported locally.
+  const std::vector<VideoCodec> local_supported_codecs =
+      GetSupportedCodecs(external_encoder_factory_);
+  for (const VideoCodecSettings& mapped_codec : mapped_codecs) {
+    if (!IsCodecSupported(local_supported_codecs, mapped_codec.codec)) {
+      LOG(LS_ERROR) << "SetRecvParameters called with unsupported video codec: "
+                    << mapped_codec.codec.ToString();
+      return false;
+    }
   }
 
-  if (ReceiveCodecsHaveChanged(recv_codecs_, supported_codecs)) {
+  if (ReceiveCodecsHaveChanged(recv_codecs_, mapped_codecs)) {
     changed_params->codec_settings =
-        rtc::Optional<std::vector<VideoCodecSettings>>(supported_codecs);
+        rtc::Optional<std::vector<VideoCodecSettings>>(mapped_codecs);
   }
 
   // Handle RTP header extensions.

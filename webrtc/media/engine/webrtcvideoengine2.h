@@ -133,7 +133,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   WebRtcVideoChannel2(webrtc::Call* call,
                       const MediaConfig& config,
                       const VideoOptions& options,
-                      const std::vector<VideoCodec>& recv_codecs,
                       WebRtcVideoEncoderFactory* external_encoder_factory,
                       WebRtcVideoDecoderFactory* external_decoder_factory);
   ~WebRtcVideoChannel2() override;
@@ -474,8 +473,12 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
   static std::vector<VideoCodecSettings> MapCodecs(
       const std::vector<VideoCodec>& codecs);
-  std::vector<VideoCodecSettings> FilterSupportedCodecs(
-      const std::vector<VideoCodecSettings>& mapped_codecs) const;
+  // Select what video codec will be used for sending, i.e. what codec is used
+  // for local encoding, based on supported remote codecs. The first remote
+  // codec that is supported locally will be selected.
+  rtc::Optional<VideoCodecSettings> SelectSendVideoCodec(
+      const std::vector<VideoCodecSettings>& remote_mapped_codecs) const;
+
   static bool ReceiveCodecsHaveChanged(std::vector<VideoCodecSettings> before,
                                        std::vector<VideoCodecSettings> after);
 
