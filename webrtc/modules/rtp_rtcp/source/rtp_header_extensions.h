@@ -20,7 +20,8 @@ class AbsoluteSendTime {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionAbsoluteSendTime;
   static constexpr uint8_t kValueSizeBytes = 3;
-  static const char* const kUri;
+  static constexpr const char* kUri =
+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
   static bool Parse(const uint8_t* data, uint32_t* time_24bits);
   static bool Write(uint8_t* data, int64_t time_ms);
@@ -34,7 +35,8 @@ class AudioLevel {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionAudioLevel;
   static constexpr uint8_t kValueSizeBytes = 1;
-  static const char* const kUri;
+  static constexpr const char* kUri =
+      "urn:ietf:params:rtp-hdrext:ssrc-audio-level";
 
   static bool Parse(const uint8_t* data,
                     bool* voice_activity,
@@ -46,7 +48,7 @@ class TransmissionOffset {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionTransmissionTimeOffset;
   static constexpr uint8_t kValueSizeBytes = 3;
-  static const char* const kUri;
+  static constexpr const char* kUri = "urn:ietf:params:rtp-hdrext:toffset";
 
   static bool Parse(const uint8_t* data, int32_t* rtp_time);
   static bool Write(uint8_t* data, int32_t rtp_time);
@@ -56,8 +58,9 @@ class TransportSequenceNumber {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionTransportSequenceNumber;
   static constexpr uint8_t kValueSizeBytes = 2;
-  static const char* const kUri;
-
+  static constexpr const char* kUri =
+      "http://www.ietf.org/id/"
+      "draft-holmer-rmcat-transport-wide-cc-extensions-01";
   static bool Parse(const uint8_t* data, uint16_t* value);
   static bool Write(uint8_t* data, uint16_t value);
 };
@@ -66,7 +69,7 @@ class VideoOrientation {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionVideoRotation;
   static constexpr uint8_t kValueSizeBytes = 1;
-  static const char* const kUri;
+  static constexpr const char* kUri = "urn:3gpp:video-orientation";
 
   static bool Parse(const uint8_t* data, VideoRotation* value);
   static bool Write(uint8_t* data, VideoRotation value);
@@ -78,7 +81,8 @@ class PlayoutDelayLimits {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionPlayoutDelay;
   static constexpr uint8_t kValueSizeBytes = 3;
-  static const char* const kUri;
+  static constexpr const char* kUri =
+      "http://www.webrtc.org/experiments/rtp-hdrext/playout-delay";
 
   // Playout delay in milliseconds. A playout delay limit (min or max)
   // has 12 bits allocated. This allows a range of 0-4095 values which
