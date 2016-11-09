@@ -16,6 +16,7 @@ import android.graphics.Point;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Implements org.webrtc.VideoRenderer.Callbacks by displaying the video stream on a SurfaceView.
@@ -159,7 +160,14 @@ public class SurfaceViewRenderer
   @Override
   public void surfaceDestroyed(SurfaceHolder holder) {
     ThreadUtils.checkIsOnMainThread();
-    eglRenderer.releaseEglSurface();
+    final CountDownLatch completionLatch = new CountDownLatch(1);
+    eglRenderer.releaseEglSurface(new Runnable() {
+      @Override
+      public void run() {
+        completionLatch.countDown();
+      }
+    });
+    ThreadUtils.awaitUninterruptibly(completionLatch);
   }
 
   @Override
