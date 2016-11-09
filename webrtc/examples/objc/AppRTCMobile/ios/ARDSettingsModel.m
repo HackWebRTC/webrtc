@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "ARDMediaConstraintsModel+Private.h"
-#import "ARDMediaConstraintsSettingsStore.h"
+#import "ARDSettingsModel+Private.h"
+#import "ARDSettingsStore.h"
 #import "WebRTC/RTCMediaConstraints.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -17,12 +17,12 @@ static NSArray<NSString *> *videoResolutionsStaticValues() {
   return @[ @"640x480", @"960x540", @"1280x720" ];
 }
 
-@interface ARDMediaConstraintsModel () {
-  ARDMediaConstraintsSettingsStore *_settingsStore;
+@interface ARDSettingsModel () {
+  ARDSettingsStore *_settingsStore;
 }
 @end
 
-@implementation ARDMediaConstraintsModel
+@implementation ARDSettingsModel
 
 - (NSArray<NSString *> *)availableVideoResoultionsMediaConstraints {
   return videoResolutionsStaticValues();
@@ -48,9 +48,9 @@ static NSArray<NSString *> *videoResolutionsStaticValues() {
 
 #pragma mark - Testable
 
-- (ARDMediaConstraintsSettingsStore *)settingsStore {
+- (ARDSettingsStore *)settingsStore {
   if (!_settingsStore) {
-    _settingsStore = [[ARDMediaConstraintsSettingsStore alloc] init];
+    _settingsStore = [[ARDSettingsStore alloc] init];
   }
   return _settingsStore;
 }

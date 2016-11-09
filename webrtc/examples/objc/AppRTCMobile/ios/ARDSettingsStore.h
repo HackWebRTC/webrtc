@@ -13,11 +13,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- * Light-weight persistent store for media constraints user settings.
+ * Light-weight persistent store for user settings.
  *
  * It will persist between application launches and application updates.
  */
-@interface ARDMediaConstraintsSettingsStore : NSObject
+@interface ARDSettingsStore : NSObject
 
 /**
  * Returns current video resolution media constraint string stored in the store.

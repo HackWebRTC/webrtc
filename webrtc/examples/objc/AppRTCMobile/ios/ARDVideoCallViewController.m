@@ -13,7 +13,7 @@
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
 #import "ARDAppClient.h"
-#import "ARDMediaConstraintsModel.h"
+#import "ARDSettingsModel.h"
 #import "ARDVideoCallView.h"
 #import "WebRTC/RTCAVFoundationVideoSource.h"
 #import "WebRTC/RTCDispatcher.h"
@@ -46,10 +46,10 @@
   if (self = [super init]) {
     _delegate = delegate;
     _client = [[ARDAppClient alloc] initWithDelegate:self];
-    ARDMediaConstraintsModel *mediaConstraintsModel = [[ARDMediaConstraintsModel alloc] init];
+    ARDSettingsModel *settingsModel = [[ARDSettingsModel alloc] init];
     RTCMediaConstraints *cameraConstraints = [[RTCMediaConstraints alloc]
         initWithMandatoryConstraints:nil
-                 optionalConstraints:[mediaConstraintsModel
+                 optionalConstraints:[settingsModel
                                          currentMediaConstraintFromStoreAsRTCDictionary]];
     [_client setCameraConstraints:cameraConstraints];
     [_client connectToRoomWithId:room

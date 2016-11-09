@@ -10,7 +10,7 @@
 
 #import <UIKit/UIKit.h>
 
-@class ARDMediaConstraintsModel;
+@class ARDSettingsModel;
 
 NS_ASSUME_NONNULL_BEGIN
 /**
@@ -22,10 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
  * Creates new instance.
  *
  * @param style the table view style that should be used
- * @param mediaConstraintsModel model class for the media constraints settings.
+ * @param settingsModel model class for the user settings.
  */
 - (instancetype)initWithStyle:(UITableViewStyle)style
-        mediaConstraintsModel:(ARDMediaConstraintsModel *)mediaConstraintsModel;
+                settingsModel:(ARDSettingsModel *)settingsModel;
 
 #pragma mark - Unavailable
 

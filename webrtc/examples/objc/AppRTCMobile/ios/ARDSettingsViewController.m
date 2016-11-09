@@ -9,7 +9,7 @@
  */
 
 #import "ARDSettingsViewController.h"
-#import "ARDMediaConstraintsModel.h"
+#import "ARDSettingsModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -19,7 +19,7 @@ typedef NS_ENUM(int, ARDSettingsSections) {
 };
 
 @interface ARDSettingsViewController () {
-  ARDMediaConstraintsModel *_mediaConstraintsModel;
+  ARDSettingsModel *_settingsModel;
 }
 
 @end
@@ -27,10 +27,10 @@ typedef NS_ENUM(int, ARDSettingsSections) {
 @implementation ARDSettingsViewController
 
 - (instancetype)initWithStyle:(UITableViewStyle)style
-        mediaConstraintsModel:(ARDMediaConstraintsModel *)mediaConstraintsModel {
+                settingsModel:(ARDSettingsModel *)settingsModel {
   self = [super initWithStyle:style];
   if (self) {
-    _mediaConstraintsModel = mediaConstraintsModel;
+    _settingsModel = settingsModel;
   }
   return self;
 }
@@ -51,7 +51,7 @@ typedef NS_ENUM(int, ARDSettingsSections) {
 #pragma mark - Data source
 
 - (NSArray<NSString *> *)mediaConstraintsArray {
-  return _mediaConstraintsModel.availableVideoResoultionsMediaConstraints;
+  return _settingsModel.availableVideoResoultionsMediaConstraints;
 }
 
 #pragma mark -
@@ -65,7 +65,7 @@ typedef NS_ENUM(int, ARDSettingsSections) {
 }
 
 - (void)selectCurrentlyStoredOrDefaultMediaConstraints {
-  NSString *currentSelection = [_mediaConstraintsModel currentVideoResoultionConstraintFromStore];
+  NSString *currentSelection = [_settingsModel currentVideoResoultionConstraintFromStore];
 
   NSUInteger indexOfSelection = [[self mediaConstraintsArray] indexOfObject:currentSelection];
   NSIndexPath *pathToBeSelected = [NSIndexPath indexPathForRow:indexOfSelection inSection:0];
@@ -177,7 +177,7 @@ typedef NS_ENUM(int, ARDSettingsSections) {
   cell.accessoryType = UITableViewCellAccessoryCheckmark;
 
   NSString *mediaConstraintsString = self.mediaConstraintsArray[indexPath.row];
-  [_mediaConstraintsModel storeVideoResoultionConstraint:mediaConstraintsString];
+  [_settingsModel storeVideoResoultionConstraint:mediaConstraintsString];
 }
 
 - (NSIndexPath *)tableView:(UITableView *)tableView

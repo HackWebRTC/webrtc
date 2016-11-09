@@ -19,7 +19,7 @@
 
 #import "ARDAppClient.h"
 #import "ARDMainView.h"
-#import "ARDMediaConstraintsModel.h"
+#import "ARDSettingsModel.h"
 #import "ARDSettingsViewController.h"
 #import "ARDVideoCallViewController.h"
 
@@ -173,7 +173,8 @@ static NSString *const barButtonImageString = @"ic_settings_black_24dp.png";
 - (void)showSettings:(id)sender {
   ARDSettingsViewController *settingsController =
       [[ARDSettingsViewController alloc] initWithStyle:UITableViewStyleGrouped
-                                 mediaConstraintsModel:[[ARDMediaConstraintsModel alloc] init]];
+                                         settingsModel:[[ARDSettingsModel alloc] init]];
+
   UINavigationController *navigationController =
       [[UINavigationController alloc] initWithRootViewController:settingsController];
   [self presentViewControllerAsModal:navigationController];

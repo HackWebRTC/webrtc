@@ -10,14 +10,14 @@
 
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
-#import "ARDMediaConstraintsModel+Private.h"
-#import "ARDMediaConstraintsSettingsStore.h"
+#import "ARDSettingsModel+Private.h"
+#import "ARDSettingsStore.h"
 #import "WebRTC/RTCMediaConstraints.h"
 #include "webrtc/base/gunit.h"
 
 
-@interface ARDMediaConstraintsModelTests : NSObject {
-  ARDMediaConstraintsModel *_model;
+@interface ARDSettingsModelTests : NSObject {
+  ARDSettingsModel *_model;
 }
 
 - (void)testStoringInavlidConstraintReturnsNo;
@@ -27,18 +27,18 @@
 
 @end
 
-@implementation ARDMediaConstraintsModelTests
+@implementation ARDSettingsModelTests
 
 - (instancetype)init {
   self = [super init];
   if (self) {
-    _model = [[ARDMediaConstraintsModel alloc] init];
+    _model = [[ARDSettingsModel alloc] init];
   }
   return self;
 }
 
 - (id)setupMockStoreWithMediaConstraintString:(NSString *)constraintString {
-  id storeMock = [OCMockObject mockForClass:[ARDMediaConstraintsSettingsStore class]];
+  id storeMock = [OCMockObject mockForClass:[ARDSettingsStore class]];
   [([[storeMock stub] andReturn:constraintString]) videoResolutionConstraintsSetting];
 
   id partialMock = [OCMockObject partialMockForObject:_model];
@@ -116,43 +116,43 @@
 }
 @end
 
-class ARDMediaConstraintsModelTest : public ::testing::Test {
+class ARDSettingsModelTest : public ::testing::Test {
  protected:
-  ARDMediaConstraintsModelTests *test;
-  ARDMediaConstraintsModelTest() { test = [[ARDMediaConstraintsModelTests alloc] init]; }
+  ARDSettingsModelTests *test;
+  ARDSettingsModelTest() { test = [[ARDSettingsModelTests alloc] init]; }
 };
 
-TEST_F(ARDMediaConstraintsModelTest, DefaultMediaFromStore) {
+TEST_F(ARDSettingsModelTest, DefaultMediaFromStore) {
   @autoreleasepool {
     [test testDefaultMediaFromStore];
   }
 }
 
-TEST_F(ARDMediaConstraintsModelTest, StoringInvalidConstraintsReturnsNo) {
+TEST_F(ARDSettingsModelTest, StoringInvalidConstraintsReturnsNo) {
   @autoreleasepool {
     [test testStoringInavlidConstraintReturnsNo];
   }
 }
 
-TEST_F(ARDMediaConstraintsModelTest, WidthConstraintFromStore) {
+TEST_F(ARDSettingsModelTest, WidthConstraintFromStore) {
   @autoreleasepool {
     [test testWidthConstraintFromStore];
   }
 }
 
-TEST_F(ARDMediaConstraintsModelTest, HeightConstraintFromStore) {
+TEST_F(ARDSettingsModelTest, HeightConstraintFromStore) {
   @autoreleasepool {
     [test testHeightConstraintFromStore];
   }
 }
 
-TEST_F(ARDMediaConstraintsModelTest, ConstratintIsNil) {
+TEST_F(ARDSettingsModelTest, ConstratintIsNil) {
   @autoreleasepool {
     [test testConstraintComponentIsNilWhenInvalidConstraintString];
   }
 }
 
-TEST_F(ARDMediaConstraintsModelTest, DictionaryIsNil) {
+TEST_F(ARDSettingsModelTest, DictionaryIsNil) {
   @autoreleasepool {
     [test testConstraintsDictionaryIsNilWhenInvalidConstraintString];
   }

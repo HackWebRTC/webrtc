@@ -12,16 +12,16 @@
 
 NS_ASSUME_NONNULL_BEGIN
 /**
- * Model class for user defined media constraints.
+ * Model class for user defined settings.
  *
- * Currently used for streaming media constraints only.
+ * Currently used for streaming media constraints and bitrate only.
  * In future audio media constraints support can be added as well.
  * Offers list of avaliable video resolutions that can construct streaming media constraint.
  * Exposes methods for reading and storing media constraints from persistent store.
  * Also translates current user defined media constraint into RTCMediaConstraints
  * dictionary.
  */
-@interface ARDMediaConstraintsModel : NSObject
+@interface ARDSettingsModel : NSObject
 
 /**
  * Returns array of available capture resoultions.
@@ -55,6 +55,5 @@ NS_ASSUME_NONNULL_BEGIN
  * @return NSDictionary with RTC width and height parameters
  */
 - (nullable NSDictionary *)currentMediaConstraintFromStoreAsRTCDictionary;
-
 @end
 NS_ASSUME_NONNULL_END

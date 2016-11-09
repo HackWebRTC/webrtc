@@ -9,13 +9,13 @@
  */
 
 #import <Foundation/Foundation.h>
-#import "ARDMediaConstraintsModel.h"
+#import "ARDSettingsModel.h"
 
-@class ARDMediaConstraintsSettingsStore;
+@class ARDSettingsStore;
 
 NS_ASSUME_NONNULL_BEGIN
-@interface ARDMediaConstraintsModel ()
-- (ARDMediaConstraintsSettingsStore *)settingsStore;
+@interface ARDSettingsModel ()
+- (ARDSettingsStore *)settingsStore;
 - (nullable NSString *)currentVideoResolutionWidthFromStore;
 - (nullable NSString *)currentVideoResolutionHeightFromStore;
 @end
