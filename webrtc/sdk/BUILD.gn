@@ -16,14 +16,14 @@ if (is_ios) {
 }
 
 group("sdk") {
-  if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
+  if (is_ios || is_mac) {
     public_deps = [
       ":rtc_sdk_framework_objc",
     ]
   }
 }
 
-if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
+if (is_ios || is_mac) {
   config("rtc_sdk_common_objc_config") {
     include_dirs = [
       "objc/Framework/Classes",

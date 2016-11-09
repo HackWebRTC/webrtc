@@ -551,7 +551,7 @@ if (rtc_include_tests) {
       shard_timeout = 900
     }
 
-    if (is_ios || (is_mac && mac_deployment_target == "10.7")) {
+    if (is_ios || is_mac) {
       deps += [
         "sdk:rtc_sdk_peerconnection_objc",
         "system_wrappers:system_wrappers_default",
