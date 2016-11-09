@@ -16,7 +16,6 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
-
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.voiceengine.WebRtcAudioUtils;
 
@@ -26,6 +25,7 @@ import org.webrtc.voiceengine.WebRtcAudioUtils;
 public class SettingsActivity extends Activity implements OnSharedPreferenceChangeListener {
   private SettingsFragment settingsFragment;
   private String keyprefVideoCall;
+  private String keyprefScreencapture;
   private String keyprefCamera2;
   private String keyprefResolution;
   private String keyprefFps;
@@ -56,6 +56,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     keyprefVideoCall = getString(R.string.pref_videocall_key);
+    keyprefScreencapture = getString(R.string.pref_screencapture_key);
     keyprefCamera2 = getString(R.string.pref_camera2_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
@@ -98,6 +99,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
         settingsFragment.getPreferenceScreen().getSharedPreferences();
     sharedPreferences.registerOnSharedPreferenceChangeListener(this);
     updateSummaryB(sharedPreferences, keyprefVideoCall);
+    updateSummaryB(sharedPreferences, keyprefScreencapture);
     updateSummaryB(sharedPreferences, keyprefCamera2);
     updateSummary(sharedPreferences, keyprefResolution);
     updateSummary(sharedPreferences, keyprefFps);
@@ -186,6 +188,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
         || key.equals(keyprefStartAudioBitrateValue)) {
       updateSummaryBitrate(sharedPreferences, key);
     } else if (key.equals(keyprefVideoCall)
+        || key.equals(keyprefScreencapture)
         || key.equals(keyprefCamera2)
         || key.equals(keyPrefTracing)
         || key.equals(keyprefCaptureQualitySlider)

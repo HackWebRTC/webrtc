@@ -10,13 +10,23 @@
 
 package org.appspot.apprtc;
 
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-
 import android.content.Context;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
-
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraVideoCapturer;
@@ -41,19 +51,6 @@ import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.voiceengine.WebRtcAudioManager;
 import org.webrtc.voiceengine.WebRtcAudioUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Peer connection client implementation.
@@ -82,9 +79,6 @@ public class PeerConnectionClient {
   private static final String DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT = "DtlsSrtpKeyAgreement";
   private static final int HD_VIDEO_WIDTH = 1280;
   private static final int HD_VIDEO_HEIGHT = 720;
-  private static final int MAX_VIDEO_WIDTH = 1280;
-  private static final int MAX_VIDEO_HEIGHT = 1280;
-  private static final int MAX_VIDEO_FPS = 30;
   private static final int BPS_IN_KBPS = 1000;
 
   private static final PeerConnectionClient instance = new PeerConnectionClient();
@@ -428,10 +422,7 @@ public class PeerConnectionClient {
       if (videoFps == 0) {
         videoFps = 30;
       }
-
-      videoWidth = Math.min(videoWidth, MAX_VIDEO_WIDTH);
-      videoHeight = Math.min(videoHeight, MAX_VIDEO_HEIGHT);
-      videoFps = Math.min(videoFps, MAX_VIDEO_FPS);
+      Logging.d(TAG, "Capturing format: " + videoWidth + "x" + videoHeight + "@" + videoFps);
     }
 
     // Create audio constraints.

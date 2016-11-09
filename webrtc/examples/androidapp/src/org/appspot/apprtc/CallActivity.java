@@ -10,44 +10,47 @@
 
 package org.appspot.apprtc;
 
-import org.appspot.apprtc.AppRTCClient.RoomConnectionParameters;
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
-
 import java.io.IOException;
 import java.lang.RuntimeException;
 import java.util.ArrayList;
 import java.util.List;
-
+import org.appspot.apprtc.AppRTCClient.RoomConnectionParameters;
+import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
-import org.webrtc.VideoFileRenderer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RendererCommon.ScalingType;
+import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
+import org.webrtc.VideoFileRenderer;
 import org.webrtc.VideoRenderer;
 
 /**
@@ -60,6 +63,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_ROOMID = "org.appspot.apprtc.ROOMID";
   public static final String EXTRA_LOOPBACK = "org.appspot.apprtc.LOOPBACK";
   public static final String EXTRA_VIDEO_CALL = "org.appspot.apprtc.VIDEO_CALL";
+  public static final String EXTRA_SCREENCAPTURE = "org.appspot.apprtc.SCREENCAPTURE";
   public static final String EXTRA_CAMERA2 = "org.appspot.apprtc.CAMERA2";
   public static final String EXTRA_VIDEO_WIDTH = "org.appspot.apprtc.VIDEO_WIDTH";
   public static final String EXTRA_VIDEO_HEIGHT = "org.appspot.apprtc.VIDEO_HEIGHT";
@@ -94,6 +98,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_USE_VALUES_FROM_INTENT =
       "org.appspot.apprtc.USE_VALUES_FROM_INTENT";
   private static final String TAG = "CallRTCClient";
+  private static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
   // List of mandatory application permissions.
   private static final String[] MANDATORY_PERMISSIONS = {"android.permission.MODIFY_AUDIO_SETTINGS",
@@ -140,6 +145,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   private boolean callControlFragmentVisible = true;
   private long callStartedTimeMs = 0;
   private boolean micEnabled = true;
+  private boolean screencaptureEnabled = false;
+  private static Intent mediaProjectionPermissionResultData;
+  private static int mediaProjectionPermissionResultCode;
 
   // Controls
   private CallFragment callFragment;
@@ -243,10 +251,23 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     boolean loopback = intent.getBooleanExtra(EXTRA_LOOPBACK, false);
     boolean tracing = intent.getBooleanExtra(EXTRA_TRACING, false);
 
+    int videoWidth = intent.getIntExtra(EXTRA_VIDEO_WIDTH, 0);
+    int videoHeight = intent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0);
+
+    screencaptureEnabled = intent.getBooleanExtra(EXTRA_SCREENCAPTURE, false);
+    // If capturing format is not specified for screencapture, use screen resolution.
+    if (screencaptureEnabled && videoWidth == 0 && videoHeight == 0) {
+      DisplayMetrics displayMetrics = new DisplayMetrics();
+      WindowManager windowManager =
+          (WindowManager) getApplication().getSystemService(Context.WINDOW_SERVICE);
+      windowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
+      videoWidth = displayMetrics.widthPixels;
+      videoHeight = displayMetrics.heightPixels;
+    }
+
     peerConnectionParameters =
         new PeerConnectionParameters(intent.getBooleanExtra(EXTRA_VIDEO_CALL, true), loopback,
-            tracing, intent.getIntExtra(EXTRA_VIDEO_WIDTH, 0),
-            intent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0), intent.getIntExtra(EXTRA_VIDEO_FPS, 0),
+            tracing, videoWidth, videoHeight, intent.getIntExtra(EXTRA_VIDEO_FPS, 0),
             intent.getIntExtra(EXTRA_VIDEO_BITRATE, 0), intent.getStringExtra(EXTRA_VIDEOCODEC),
             intent.getBooleanExtra(EXTRA_HWCODEC_ENABLED, true),
             intent.getIntExtra(EXTRA_AUDIO_BITRATE, 0), intent.getStringExtra(EXTRA_AUDIOCODEC),
@@ -285,7 +306,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     ft.add(R.id.call_fragment_container, callFragment);
     ft.add(R.id.hud_fragment_container, hudFragment);
     ft.commit();
-    startCall();
 
     // For command line execution run connection for <runTimeMs> and exit.
     if (commandLineRun && runTimeMs > 0) {
@@ -305,6 +325,25 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     }
     peerConnectionClient.createPeerConnectionFactory(
         CallActivity.this, peerConnectionParameters, CallActivity.this);
+
+    if (screencaptureEnabled) {
+      MediaProjectionManager mediaProjectionManager =
+          (MediaProjectionManager) getApplication().getSystemService(
+              Context.MEDIA_PROJECTION_SERVICE);
+      startActivityForResult(
+          mediaProjectionManager.createScreenCaptureIntent(), CAPTURE_PERMISSION_REQUEST_CODE);
+    } else {
+      startCall();
+    }
+  }
+
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (requestCode != CAPTURE_PERMISSION_REQUEST_CODE)
+      return;
+    mediaProjectionPermissionResultCode = resultCode;
+    mediaProjectionPermissionResultData = data;
+    startCall();
   }
 
   private boolean useCamera2() {
@@ -352,7 +391,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public void onPause() {
     super.onPause();
     activityRunning = false;
-    if (peerConnectionClient != null) {
+    // Don't stop the video when using screencapture to allow user to show other apps to the remote
+    // end.
+    if (peerConnectionClient != null && !screencaptureEnabled) {
       peerConnectionClient.stopVideoSource();
     }
     cpuMonitor.pause();
@@ -362,7 +403,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public void onResume() {
     super.onResume();
     activityRunning = true;
-    if (peerConnectionClient != null) {
+    // Video is not paused for screencapture. See onPause.
+    if (peerConnectionClient != null && !screencaptureEnabled) {
       peerConnectionClient.startVideoSource();
     }
     cpuMonitor.resume();
@@ -588,6 +630,18 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
         reportError("Failed to open video file for emulated camera");
         return null;
       }
+    } else if (screencaptureEnabled) {
+      if (mediaProjectionPermissionResultCode != Activity.RESULT_OK) {
+        reportError("User didn't give permission to capture the screen.");
+        return null;
+      }
+      return new ScreenCapturerAndroid(
+          mediaProjectionPermissionResultData, new MediaProjection.Callback() {
+            @Override
+            public void onStop() {
+              reportError("User revoked permission to capture the screen.");
+            }
+          });
     } else if (useCamera2()) {
       if (!captureToTexture()) {
         reportError(getString(R.string.camera2_texture_only_error));

@@ -33,12 +33,10 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-
 import java.util.ArrayList;
 import java.util.Random;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 /**
  * Handles the initial setup where the user selects which room to join.
@@ -55,6 +53,7 @@ public class ConnectActivity extends Activity {
   private ListView roomListView;
   private SharedPreferences sharedPref;
   private String keyprefVideoCallEnabled;
+  private String keyprefScreencapture;
   private String keyprefCamera2;
   private String keyprefResolution;
   private String keyprefFps;
@@ -90,6 +89,7 @@ public class ConnectActivity extends Activity {
     PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
     sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
     keyprefVideoCallEnabled = getString(R.string.pref_videocall_key);
+    keyprefScreencapture = getString(R.string.pref_screencapture_key);
     keyprefCamera2 = getString(R.string.pref_camera2_key);
     keyprefResolution = getString(R.string.pref_resolution_key);
     keyprefFps = getString(R.string.pref_fps_key);
@@ -295,6 +295,10 @@ public class ConnectActivity extends Activity {
     boolean videoCallEnabled = sharedPrefGetBoolean(R.string.pref_videocall_key,
         CallActivity.EXTRA_VIDEO_CALL, R.string.pref_videocall_default, useValuesFromIntent);
 
+    // Use screencapture option.
+    boolean useScreencapture = sharedPrefGetBoolean(R.string.pref_screencapture_key,
+        CallActivity.EXTRA_SCREENCAPTURE, R.string.pref_screencapture_default, useValuesFromIntent);
+
     // Use Camera2 option.
     boolean useCamera2 = sharedPrefGetBoolean(R.string.pref_camera2_key, CallActivity.EXTRA_CAMERA2,
         R.string.pref_camera2_default, useValuesFromIntent);
@@ -438,6 +442,7 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_ROOMID, roomId);
       intent.putExtra(CallActivity.EXTRA_LOOPBACK, loopback);
       intent.putExtra(CallActivity.EXTRA_VIDEO_CALL, videoCallEnabled);
+      intent.putExtra(CallActivity.EXTRA_SCREENCAPTURE, useScreencapture);
       intent.putExtra(CallActivity.EXTRA_CAMERA2, useCamera2);
       intent.putExtra(CallActivity.EXTRA_VIDEO_WIDTH, videoWidth);
       intent.putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, videoHeight);

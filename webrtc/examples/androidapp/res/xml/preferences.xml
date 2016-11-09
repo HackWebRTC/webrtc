@@ -11,6 +11,11 @@
             android:defaultValue="@string/pref_videocall_default" />
 
         <CheckBoxPreference
+            android:key="@string/pref_screencapture_key"
+            android:title="@string/pref_screencapture_title"
+            android:defaultValue="@string/pref_screencapture_default" />
+
+        <CheckBoxPreference
             android:key="@string/pref_camera2_key"
             android:title="@string/pref_camera2_title"
             android:defaultValue="@string/pref_camera2_default" />
