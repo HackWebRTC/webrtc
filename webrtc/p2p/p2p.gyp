@@ -70,6 +70,8 @@
         'base/turnport.cc',
         'base/turnport.h',
         'base/udpport.h',
+        'base/udptransportchannel.cc',
+        'base/udptransportchannel.h',
         'client/basicportallocator.cc',
         'client/basicportallocator.h',
         'client/socketmonitor.cc',
