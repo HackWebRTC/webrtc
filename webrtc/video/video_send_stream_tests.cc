@@ -1478,8 +1478,7 @@ TEST_F(VideoSendStreamTest,
           return;
         }
       }
-      EXPECT_TRUE(
-          init_encode_called_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
+      init_encode_called_.Wait(VideoSendStreamTest::kDefaultTimeoutMs);
       {
         rtc::CritScope lock(&crit_);
         EXPECT_EQ(width, last_initialized_frame_width_);
@@ -1495,7 +1494,9 @@ TEST_F(VideoSendStreamTest,
       last_initialized_frame_width_ = config->width;
       last_initialized_frame_height_ = config->height;
       ++number_of_initializations_;
-      init_encode_called_.Set();
+      // First time InitEncode is called, the frame size is unknown.
+      if (number_of_initializations_ > 1)
+        init_encode_called_.Set();
       return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
 
@@ -1625,12 +1626,11 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
       return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
 
-    int32_t SetRateAllocation(const BitrateAllocation& bitrate,
-                              uint32_t framerate) override {
+    int32_t SetRates(uint32_t new_target_bitrate, uint32_t framerate) override {
       rtc::CritScope lock(&crit_);
-      bitrate_kbps_ = bitrate.get_sum_kbps();
+      bitrate_kbps_ = new_target_bitrate;
       bitrate_changed_.Set();
-      return FakeEncoder::SetRateAllocation(bitrate, framerate);
+      return FakeEncoder::SetRates(new_target_bitrate, framerate);
     }
 
     int GetBitrateKbps() const {
@@ -1664,17 +1664,13 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
   CreateVideoStreams();
 
   EXPECT_TRUE(encoder.WaitForEncoderInit());
-  EXPECT_TRUE(encoder.WaitBitrateChanged());
-  EXPECT_EQ(0, encoder.GetBitrateKbps());
-
+  EXPECT_GT(encoder.GetBitrateKbps(), 0);
   video_send_stream_->Start();
   EXPECT_TRUE(encoder.WaitBitrateChanged());
   EXPECT_GT(encoder.GetBitrateKbps(), 0);
-
   video_send_stream_->Stop();
   EXPECT_TRUE(encoder.WaitBitrateChanged());
   EXPECT_EQ(0, encoder.GetBitrateKbps());
-
   video_send_stream_->Start();
   EXPECT_TRUE(encoder.WaitBitrateChanged());
   EXPECT_GT(encoder.GetBitrateKbps(), 0);
@@ -2089,12 +2085,10 @@ void VideoCodecConfigObserver<VideoCodecVP8>::VerifyCodecSpecifics(
   }
 
   // Set expected temporal layers as they should have been set when
-  // reconfiguring the encoder and not match the set config. Also copy the
-  // TemporalLayersFactory pointer that has been injected by ViEEncoder.
+  // reconfiguring the encoder and not match the set config.
   VideoCodecVP8 encoder_settings = encoder_settings_;
   encoder_settings.numberOfTemporalLayers =
       kVideoCodecConfigObserverNumberOfTemporalLayers;
-  encoder_settings.tl_factory = config.VP8().tl_factory;
   EXPECT_EQ(
       0, memcmp(&config.VP8(), &encoder_settings, sizeof(encoder_settings_)));
 }
@@ -2316,17 +2310,16 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
                                      maxPayloadSize);
     }
 
-    int32_t SetRateAllocation(const BitrateAllocation& bitrate,
-                              uint32_t frameRate) override {
+    int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) override {
       {
         rtc::CritScope lock(&crit_);
-        if (target_bitrate_ == bitrate.get_sum_kbps()) {
-          return FakeEncoder::SetRateAllocation(bitrate, frameRate);
+        if (target_bitrate_ == newBitRate) {
+          return FakeEncoder::SetRates(newBitRate, frameRate);
         }
-        target_bitrate_ = bitrate.get_sum_kbps();
+        target_bitrate_ = newBitRate;
       }
       bitrate_changed_event_.Set();
-      return FakeEncoder::SetRateAllocation(bitrate, frameRate);
+      return FakeEncoder::SetRates(newBitRate, frameRate);
     }
 
     void WaitForSetRates(uint32_t expected_bitrate) {

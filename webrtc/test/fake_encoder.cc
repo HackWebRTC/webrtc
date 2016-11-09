@@ -23,6 +23,7 @@ namespace test {
 FakeEncoder::FakeEncoder(Clock* clock)
     : clock_(clock),
       callback_(NULL),
+      target_bitrate_kbps_(0),
       max_target_bitrate_kbps_(-1),
       last_encode_time_ms_(0) {
   // Generate some arbitrary not-all-zero data
@@ -42,7 +43,7 @@ int32_t FakeEncoder::InitEncode(const VideoCodec* config,
                                 int32_t number_of_cores,
                                 size_t max_payload_size) {
   config_ = *config;
-  target_bitrate_.SetBitrate(0, 0, config_.startBitrate * 1000);
+  target_bitrate_kbps_ = config_.startBitrate;
   return 0;
 }
 
@@ -64,8 +65,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     time_since_last_encode_ms = 3 * 1000 / config_.maxFramerate;
   }
 
-  size_t bits_available = static_cast<size_t>(target_bitrate_.get_sum_kbps() *
-                                              time_since_last_encode_ms);
+  size_t bits_available =
+      static_cast<size_t>(target_bitrate_kbps_ * time_since_last_encode_ms);
   size_t min_bits = static_cast<size_t>(
       config_.simulcastStream[0].minBitrate * time_since_last_encode_ms);
   if (bits_available < min_bits)
@@ -132,9 +133,8 @@ int32_t FakeEncoder::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
   return 0;
 }
 
-int32_t FakeEncoder::SetRateAllocation(const BitrateAllocation& rate_allocation,
-                                       uint32_t framerate) {
-  target_bitrate_ = rate_allocation;
+int32_t FakeEncoder::SetRates(uint32_t new_target_bitrate, uint32_t framerate) {
+  target_bitrate_kbps_ = new_target_bitrate;
   return 0;
 }
 

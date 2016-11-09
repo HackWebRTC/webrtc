@@ -14,13 +14,11 @@
 #include <limits>
 #include <utility>
 
-#include "webrtc/modules/video_coding/include/video_codec_initializer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/video/overuse_frame_detector.h"
@@ -32,6 +30,148 @@ namespace webrtc {
 namespace {
 // Time interval for logging frame counts.
 const int64_t kFrameLogIntervalMs = 60000;
+
+VideoCodecType PayloadNameToCodecType(const std::string& payload_name) {
+  if (payload_name == "VP8")
+    return kVideoCodecVP8;
+  if (payload_name == "VP9")
+    return kVideoCodecVP9;
+  if (payload_name == "H264")
+    return kVideoCodecH264;
+  return kVideoCodecGeneric;
+}
+
+VideoCodec VideoEncoderConfigToVideoCodec(
+    const VideoEncoderConfig& config,
+    const std::vector<VideoStream>& streams,
+    const std::string& payload_name,
+    int payload_type) {
+  static const int kEncoderMinBitrateKbps = 30;
+  RTC_DCHECK(!streams.empty());
+  RTC_DCHECK_GE(config.min_transmit_bitrate_bps, 0);
+
+  VideoCodec video_codec;
+  memset(&video_codec, 0, sizeof(video_codec));
+  video_codec.codecType = PayloadNameToCodecType(payload_name);
+
+  switch (config.content_type) {
+    case VideoEncoderConfig::ContentType::kRealtimeVideo:
+      video_codec.mode = kRealtimeVideo;
+      break;
+    case VideoEncoderConfig::ContentType::kScreen:
+      video_codec.mode = kScreensharing;
+      if (streams.size() == 1 &&
+          streams[0].temporal_layer_thresholds_bps.size() == 1) {
+        video_codec.targetBitrate =
+            streams[0].temporal_layer_thresholds_bps[0] / 1000;
+      }
+      break;
+  }
+
+  if (config.encoder_specific_settings)
+    config.encoder_specific_settings->FillEncoderSpecificSettings(&video_codec);
+
+  switch (video_codec.codecType) {
+    case kVideoCodecVP8: {
+      if (!config.encoder_specific_settings)
+        video_codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
+      video_codec.codecSpecific.VP8.numberOfTemporalLayers =
+          static_cast<unsigned char>(
+              streams.back().temporal_layer_thresholds_bps.size() + 1);
+      break;
+    }
+    case kVideoCodecVP9: {
+      if (!config.encoder_specific_settings)
+        video_codec.codecSpecific.VP9 = VideoEncoder::GetDefaultVp9Settings();
+      if (video_codec.mode == kScreensharing &&
+          config.encoder_specific_settings) {
+        video_codec.codecSpecific.VP9.flexibleMode = true;
+        // For now VP9 screensharing use 1 temporal and 2 spatial layers.
+        RTC_DCHECK_EQ(1, video_codec.codecSpecific.VP9.numberOfTemporalLayers);
+        RTC_DCHECK_EQ(2, video_codec.codecSpecific.VP9.numberOfSpatialLayers);
+      }
+      video_codec.codecSpecific.VP9.numberOfTemporalLayers =
+          static_cast<unsigned char>(
+              streams.back().temporal_layer_thresholds_bps.size() + 1);
+      break;
+    }
+    case kVideoCodecH264: {
+      if (!config.encoder_specific_settings)
+        video_codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
+      break;
+    }
+    default:
+      // TODO(pbos): Support encoder_settings codec-agnostically.
+      RTC_DCHECK(!config.encoder_specific_settings)
+          << "Encoder-specific settings for codec type not wired up.";
+      break;
+  }
+
+  strncpy(video_codec.plName, payload_name.c_str(), kPayloadNameSize - 1);
+  video_codec.plName[kPayloadNameSize - 1] = '\0';
+  video_codec.plType = payload_type;
+  video_codec.numberOfSimulcastStreams =
+      static_cast<unsigned char>(streams.size());
+  video_codec.minBitrate = streams[0].min_bitrate_bps / 1000;
+  if (video_codec.minBitrate < kEncoderMinBitrateKbps)
+    video_codec.minBitrate = kEncoderMinBitrateKbps;
+  RTC_DCHECK_LE(streams.size(), static_cast<size_t>(kMaxSimulcastStreams));
+  if (video_codec.codecType == kVideoCodecVP9) {
+    // If the vector is empty, bitrates will be configured automatically.
+    RTC_DCHECK(config.spatial_layers.empty() ||
+               config.spatial_layers.size() ==
+                   video_codec.codecSpecific.VP9.numberOfSpatialLayers);
+    RTC_DCHECK_LE(video_codec.codecSpecific.VP9.numberOfSpatialLayers,
+                  kMaxSimulcastStreams);
+    for (size_t i = 0; i < config.spatial_layers.size(); ++i)
+      video_codec.spatialLayers[i] = config.spatial_layers[i];
+  }
+  for (size_t i = 0; i < streams.size(); ++i) {
+    SimulcastStream* sim_stream = &video_codec.simulcastStream[i];
+    RTC_DCHECK_GT(streams[i].width, 0u);
+    RTC_DCHECK_GT(streams[i].height, 0u);
+    RTC_DCHECK_GT(streams[i].max_framerate, 0);
+    // Different framerates not supported per stream at the moment.
+    RTC_DCHECK_EQ(streams[i].max_framerate, streams[0].max_framerate);
+    RTC_DCHECK_GE(streams[i].min_bitrate_bps, 0);
+    RTC_DCHECK_GE(streams[i].target_bitrate_bps, streams[i].min_bitrate_bps);
+    RTC_DCHECK_GE(streams[i].max_bitrate_bps, streams[i].target_bitrate_bps);
+    RTC_DCHECK_GE(streams[i].max_qp, 0);
+
+    sim_stream->width = static_cast<uint16_t>(streams[i].width);
+    sim_stream->height = static_cast<uint16_t>(streams[i].height);
+    sim_stream->minBitrate = streams[i].min_bitrate_bps / 1000;
+    sim_stream->targetBitrate = streams[i].target_bitrate_bps / 1000;
+    sim_stream->maxBitrate = streams[i].max_bitrate_bps / 1000;
+    sim_stream->qpMax = streams[i].max_qp;
+    sim_stream->numberOfTemporalLayers = static_cast<unsigned char>(
+        streams[i].temporal_layer_thresholds_bps.size() + 1);
+
+    video_codec.width = std::max(video_codec.width,
+                                 static_cast<uint16_t>(streams[i].width));
+    video_codec.height = std::max(
+        video_codec.height, static_cast<uint16_t>(streams[i].height));
+    video_codec.minBitrate =
+        std::min(static_cast<uint16_t>(video_codec.minBitrate),
+                 static_cast<uint16_t>(streams[i].min_bitrate_bps / 1000));
+    video_codec.maxBitrate += streams[i].max_bitrate_bps / 1000;
+    video_codec.qpMax = std::max(video_codec.qpMax,
+                                 static_cast<unsigned int>(streams[i].max_qp));
+  }
+
+  if (video_codec.maxBitrate == 0) {
+    // Unset max bitrate -> cap to one bit per pixel.
+    video_codec.maxBitrate =
+        (video_codec.width * video_codec.height * video_codec.maxFramerate) /
+        1000;
+  }
+  if (video_codec.maxBitrate < kEncoderMinBitrateKbps)
+    video_codec.maxBitrate = kEncoderMinBitrateKbps;
+
+  RTC_DCHECK_GT(streams[0].max_framerate, 0);
+  video_codec.maxFramerate = streams[0].max_framerate;
+  return video_codec;
+}
 
 // TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
 // pipelining encoders better (multiple input frames before something comes
@@ -232,8 +372,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       source_proxy_(new VideoSourceProxy(this)),
       sink_(nullptr),
       settings_(settings),
-      codec_type_(PayloadNameToCodecType(settings.payload_name)
-                      .value_or(VideoCodecType::kVideoCodecUnknown)),
+      codec_type_(PayloadNameToCodecType(settings.payload_name)),
       video_sender_(Clock::GetRealTimeClock(), this, this),
       overuse_detector_(Clock::GetRealTimeClock(),
                         GetCpuOveruseOptions(settings.full_overuse_time),
@@ -285,7 +424,6 @@ void ViEEncoder::Stop() {
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     overuse_detector_.StopCheckForOveruse();
-    rate_allocator_.reset();
     video_sender_.RegisterExternalEncoder(nullptr, settings_.payload_type,
                                           false);
     shutdown_event_.Set();
@@ -380,11 +518,8 @@ void ViEEncoder::ReconfigureEncoder() {
       encoder_config_.video_stream_factory->CreateEncoderStreams(
           last_frame_info_->width, last_frame_info_->height, encoder_config_);
 
-  VideoCodec codec;
-  if (!VideoCodecInitializer::SetupCodec(encoder_config_, settings_, streams,
-                                         &codec, &rate_allocator_)) {
-    LOG(LS_ERROR) << "Failed to create encoder configuration.";
-  }
+  VideoCodec codec = VideoEncoderConfigToVideoCodec(
+      encoder_config_, streams, settings_.payload_name, settings_.payload_type);
 
   codec.startBitrate =
       std::max(encoder_start_bitrate_bps_ / 1000, codec.minBitrate);
@@ -399,18 +534,17 @@ void ViEEncoder::ReconfigureEncoder() {
     RTC_DCHECK(success);
   }
 
-  video_sender_.UpdateChannelParemeters(rate_allocator_.get());
-
+  rate_allocator_.reset(new SimulcastRateAllocator(codec));
   if (stats_proxy_) {
-    int framerate = stats_proxy_->GetSendFrameRate();
-    if (framerate == 0)
-      framerate = codec.maxFramerate;
-    stats_proxy_->OnEncoderReconfigured(
-        encoder_config_, rate_allocator_->GetPreferredBitrateBps(framerate));
+    stats_proxy_->OnEncoderReconfigured(encoder_config_,
+                                        rate_allocator_->GetPreferedBitrate());
   }
 
   pending_encoder_reconfiguration_ = false;
-
+  if (stats_proxy_) {
+    stats_proxy_->OnEncoderReconfigured(encoder_config_,
+                                        rate_allocator_->GetPreferedBitrate());
+  }
   sink_->OnEncoderConfigurationChanged(
       std::move(streams), encoder_config_.min_transmit_bitrate_bps);
 }
@@ -636,12 +770,13 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
                   << " rtt " << round_trip_time_ms;
 
   video_sender_.SetChannelParameters(bitrate_bps, fraction_lost,
-                                     round_trip_time_ms, rate_allocator_.get());
+                                     round_trip_time_ms);
 
   encoder_start_bitrate_bps_ =
       bitrate_bps != 0 ? bitrate_bps : encoder_start_bitrate_bps_;
   bool video_is_suspended = bitrate_bps == 0;
-  bool video_suspension_changed = video_is_suspended != EncoderPaused();
+  bool video_suspension_changed =
+      video_is_suspended != (last_observed_bitrate_bps_ == 0);
   last_observed_bitrate_bps_ = bitrate_bps;
 
   if (stats_proxy_ && video_suspension_changed) {

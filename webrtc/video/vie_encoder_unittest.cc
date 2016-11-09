@@ -93,7 +93,6 @@ class ViEEncoderTest : public ::testing::Test {
 
     VideoEncoderConfig video_encoder_config;
     test::FillEncoderConfiguration(1, &video_encoder_config);
-    video_encoder_config_ = video_encoder_config.Copy();
     vie_encoder_.reset(new ViEEncoderUnderTest(
         stats_proxy_.get(), video_send_config_.encoder_settings));
     vie_encoder_->SetSink(&sink_, false /* rotation_applied */);
@@ -237,7 +236,6 @@ class ViEEncoderTest : public ::testing::Test {
   };
 
   VideoSendStream::Config video_send_config_;
-  VideoEncoderConfig video_encoder_config_;
   int codec_width_;
   int codec_height_;
   TestEncoder fake_encoder_;
@@ -593,20 +591,6 @@ TEST_F(ViEEncoderTest, StatsTracksAdaptationStatsWhenSwitchingSource) {
   stats = stats_proxy_->GetStats();
   EXPECT_FALSE(stats.cpu_limited_resolution);
   EXPECT_EQ(2, stats.number_of_cpu_adapt_changes);
-
-  vie_encoder_->Stop();
-}
-
-TEST_F(ViEEncoderTest, StatsTracksPreferredBitrate) {
-  const int kTargetBitrateBps = 100000;
-  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-
-  video_source_.IncomingCapturedFrame(CreateFrame(1, 1280, 720));
-  sink_.WaitForEncodedFrame(1);
-
-  VideoSendStream::Stats stats = stats_proxy_->GetStats();
-  EXPECT_EQ(video_encoder_config_.max_bitrate_bps,
-            stats.preferred_media_bitrate_bps);
 
   vie_encoder_->Stop();
 }

@@ -23,7 +23,6 @@
       ],
       'sources': [
         # interfaces
-        'include/video_codec_initializer.h',
         'include/video_coding.h',
         'include/video_coding_defines.h',
 
@@ -87,7 +86,6 @@
         'session_info.cc',
         'timestamp_map.cc',
         'timing.cc',
-        'video_codec_initializer.cc',
         'video_coding_impl.cc',
         'video_sender.cc',
         'video_receiver.cc',

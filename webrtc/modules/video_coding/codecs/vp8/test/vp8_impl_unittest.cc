@@ -16,7 +16,6 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -162,8 +161,6 @@ class TestVp8Impl : public ::testing::Test {
     codec_inst_.maxBitrate = 4000;
     codec_inst_.qpMax = 56;
     codec_inst_.VP8()->denoisingOn = true;
-    codec_inst_.VP8()->tl_factory = &tl_factory_;
-    codec_inst_.VP8()->numberOfTemporalLayers = 1;
 
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
               encoder_->InitEncode(&codec_inst_, 1, 1440));
@@ -204,7 +201,6 @@ class TestVp8Impl : public ::testing::Test {
   EncodedImage encoded_frame_;
   VideoFrame decoded_frame_;
   VideoCodec codec_inst_;
-  TemporalLayersFactory tl_factory_;
 };
 
 TEST_F(TestVp8Impl, EncoderParameterTest) {
@@ -219,15 +215,11 @@ TEST_F(TestVp8Impl, EncoderParameterTest) {
   codec_inst_.qpMax = 56;
   codec_inst_.VP8()->complexity = kComplexityNormal;
   codec_inst_.VP8()->numberOfTemporalLayers = 1;
-  codec_inst_.VP8()->tl_factory = &tl_factory_;
   // Calls before InitEncode().
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
   int bit_rate = 300;
-  BitrateAllocation bitrate_allocation;
-  bitrate_allocation.SetBitrate(0, 0, bit_rate * 1000);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_UNINITIALIZED,
-            encoder_->SetRateAllocation(bitrate_allocation,
-                                        codec_inst_.maxFramerate));
+            encoder_->SetRates(bit_rate, codec_inst_.maxFramerate));
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->InitEncode(&codec_inst_, 1, 1440));
 

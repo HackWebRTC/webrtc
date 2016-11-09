@@ -152,14 +152,6 @@ static void RtpFragmentize(EncodedImage* encoded_image,
 
 H264EncoderImpl::H264EncoderImpl()
     : openh264_encoder_(nullptr),
-      width_(0),
-      height_(0),
-      max_frame_rate_(0.0f),
-      target_bps_(0),
-      max_bps_(0),
-      mode_(kRealtimeVideo),
-      frame_dropping_on_(false),
-      key_frame_interval_(0),
       number_of_cores_(0),
       encoded_image_callback_(nullptr),
       has_reported_init_(false),
@@ -271,13 +263,11 @@ int32_t H264EncoderImpl::RegisterEncodeCompleteCallback(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t H264EncoderImpl::SetRateAllocation(
-    const BitrateAllocation& bitrate_allocation,
-    uint32_t framerate) {
-  if (bitrate_allocation.get_sum_bps() <= 0 || framerate <= 0)
+int32_t H264EncoderImpl::SetRates(uint32_t bitrate, uint32_t framerate) {
+  if (bitrate <= 0 || framerate <= 0) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-
-  target_bps_ = bitrate_allocation.get_sum_bps();
+  }
+  target_bps_ = bitrate * 1000;
   max_frame_rate_ = static_cast<float>(framerate);
   quality_scaler_.ReportFramerate(framerate);
 

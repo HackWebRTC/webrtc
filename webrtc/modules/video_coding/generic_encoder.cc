@@ -28,7 +28,7 @@ VCMGenericEncoder::VCMGenericEncoder(
     : encoder_(encoder),
       vcm_encoded_frame_callback_(encoded_frame_callback),
       internal_source_(internal_source),
-      encoder_params_({BitrateAllocation(), 0, 0, 0}),
+      encoder_params_({0, 0, 0, 0}),
       is_screenshare_(false) {}
 
 VCMGenericEncoder::~VCMGenericEncoder() {}
@@ -90,23 +90,11 @@ void VCMGenericEncoder::SetEncoderParameters(const EncoderParameters& params) {
         params.input_frame_rate != encoder_params_.input_frame_rate;
     encoder_params_ = params;
   }
-  if (channel_parameters_have_changed) {
-    int res = encoder_->SetChannelParameters(params.loss_rate, params.rtt);
-    if (res != 0) {
-      LOG(LS_WARNING) << "Error set encoder parameters (loss = "
-                      << params.loss_rate << ", rtt = " << params.rtt
-                      << "): " << res;
-    }
-  }
+  if (channel_parameters_have_changed)
+    encoder_->SetChannelParameters(params.loss_rate, params.rtt);
   if (rates_have_changed) {
-    int res = encoder_->SetRateAllocation(params.target_bitrate,
-                                          params.input_frame_rate);
-    if (res != 0) {
-      LOG(LS_WARNING) << "Error set encoder rate (total bitrate bps = "
-                      << params.target_bitrate.get_sum_bps()
-                      << ", framerate = " << params.input_frame_rate
-                      << "): " << res;
-    }
+    uint32_t target_bitrate_kbps = (params.target_bitrate + 500) / 1000;
+    encoder_->SetRates(target_bitrate_kbps, params.input_frame_rate);
   }
 }
 

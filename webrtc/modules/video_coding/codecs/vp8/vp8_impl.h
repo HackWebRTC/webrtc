@@ -32,6 +32,7 @@
 
 namespace webrtc {
 
+class SimulcastRateAllocator;
 class TemporalLayers;
 
 class VP8EncoderImpl : public VP8Encoder {
@@ -54,8 +55,7 @@ class VP8EncoderImpl : public VP8Encoder {
 
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
 
-  int SetRateAllocation(const BitrateAllocation& bitrate,
-                        uint32_t new_framerate) override;
+  int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) override;
 
   void OnDroppedFrame() override;
 
@@ -94,6 +94,7 @@ class VP8EncoderImpl : public VP8Encoder {
 
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;
+  std::unique_ptr<SimulcastRateAllocator> rate_allocator_;
   bool inited_;
   int64_t timestamp_;
   bool feedback_mode_;

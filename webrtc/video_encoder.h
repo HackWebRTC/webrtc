@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
@@ -149,17 +148,7 @@ class VideoEncoder {
   //          - framerate       : The target frame rate
   //
   // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-  virtual int32_t SetRates(uint32_t bitrate, uint32_t framerate) {
-    RTC_NOTREACHED() << "SetRate(uint32_t, uint32_t) is deprecated.";
-    return -1;
-  }
-
-  // Default fallback: Just use the sum of bitrates as the single target rate.
-  // TODO(sprang): Remove this default implementation when we remove SetRates().
-  virtual int32_t SetRateAllocation(const BitrateAllocation& allocation,
-                                    uint32_t framerate) {
-    return SetRates(allocation.get_sum_kbps(), framerate);
-  }
+  virtual int32_t SetRates(uint32_t bitrate, uint32_t framerate) = 0;
 
   virtual int32_t SetPeriodicKeyFrames(bool enable) { return -1; }
   virtual void OnDroppedFrame() {}
@@ -187,8 +176,8 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
                  const CodecSpecificInfo* codec_specific_info,
                  const std::vector<FrameType>* frame_types) override;
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
-  int32_t SetRateAllocation(const BitrateAllocation& bitrate_allocation,
-                            uint32_t framerate) override;
+
+  int32_t SetRates(uint32_t bitrate, uint32_t framerate) override;
   void OnDroppedFrame() override;
   bool SupportsNativeHandle() const override;
 
@@ -203,7 +192,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
 
   // The last bitrate/framerate set, and a flag for noting they are set.
   bool rates_set_;
-  BitrateAllocation bitrate_allocation_;
+  uint32_t bitrate_;
   uint32_t framerate_;
 
   // The last channel parameters set, and a flag for noting they are set.
