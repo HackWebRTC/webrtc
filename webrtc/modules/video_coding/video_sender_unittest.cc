@@ -19,6 +19,8 @@
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/test/test_util.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
+#include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
+#include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/test/gtest.h"
@@ -196,6 +198,10 @@ class TestVideoSender : public ::testing::Test {
 };
 
 class TestVideoSenderWithMockEncoder : public TestVideoSender {
+ public:
+  TestVideoSenderWithMockEncoder() {}
+  ~TestVideoSenderWithMockEncoder() override {}
+
  protected:
   void SetUp() override {
     TestVideoSender::SetUp();
@@ -212,6 +218,7 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
     generator_.reset(
         new EmptyFrameGenerator(settings_.width, settings_.height));
     EXPECT_EQ(0, sender_->RegisterSendCodec(&settings_, 1, 1200));
+    rate_allocator_.reset(new DefaultVideoBitrateAllocator(settings_));
   }
 
   void TearDown() override { sender_.reset(); }
@@ -261,6 +268,7 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
 
   VideoCodec settings_;
   NiceMock<MockVideoEncoder> encoder_;
+  std::unique_ptr<DefaultVideoBitrateAllocator> rate_allocator_;
 };
 
 TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequests) {
@@ -291,14 +299,19 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequests) {
 }
 
 TEST_F(TestVideoSenderWithMockEncoder, TestSetRate) {
-  const uint32_t new_bitrate = settings_.startBitrate + 300;
-  EXPECT_CALL(encoder_, SetRates(new_bitrate, _)).Times(1).WillOnce(Return(0));
-  sender_->SetChannelParameters(new_bitrate * 1000, 0, 200);
+  const uint32_t new_bitrate_kbps = settings_.startBitrate + 300;
+  BitrateAllocation new_rate_allocation = rate_allocator_->GetAllocation(
+      new_bitrate_kbps * 1000, settings_.maxFramerate);
+  EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, _))
+      .Times(1)
+      .WillOnce(Return(0));
+  sender_->SetChannelParameters(new_bitrate_kbps * 1000, 0, 200,
+                                rate_allocator_.get());
   AddFrame();
 
   // Expect no call to encoder_.SetRates if the new bitrate is zero.
-  EXPECT_CALL(encoder_, SetRates(new_bitrate, _)).Times(0);
-  sender_->SetChannelParameters(0, 0, 200);
+  EXPECT_CALL(encoder_, SetRateAllocation(_, _)).Times(0);
+  sender_->SetChannelParameters(0, 0, 200, rate_allocator_.get());
   AddFrame();
 }
 
@@ -329,13 +342,19 @@ TEST_F(TestVideoSenderWithMockEncoder, TestEncoderParametersForInternalSource) {
   EXPECT_EQ(0, sender_->RegisterSendCodec(&settings_, 1, 1200));
   // Update encoder bitrate parameters. We expect that to immediately call
   // SetRates on the encoder without waiting for AddFrame processing.
-  const uint32_t new_bitrate = settings_.startBitrate + 300;
-  EXPECT_CALL(encoder_, SetRates(new_bitrate, _)).Times(1).WillOnce(Return(0));
-  sender_->SetChannelParameters(new_bitrate * 1000, 0, 200);
+  const uint32_t new_bitrate_kbps = settings_.startBitrate + 300;
+  BitrateAllocation new_rate_allocation = rate_allocator_->GetAllocation(
+      new_bitrate_kbps * 1000, settings_.maxFramerate);
+  EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, _))
+      .Times(1)
+      .WillOnce(Return(0));
+  sender_->SetChannelParameters(new_bitrate_kbps * 1000, 0, 200,
+                                rate_allocator_.get());
 }
 
 TEST_F(TestVideoSenderWithMockEncoder, EncoderFramerateUpdatedViaProcess) {
-  sender_->SetChannelParameters(settings_.startBitrate * 1000, 0, 200);
+  sender_->SetChannelParameters(settings_.startBitrate * 1000, 0, 200,
+                                rate_allocator_.get());
   const int64_t kRateStatsWindowMs = 2000;
   const uint32_t kInputFps = 20;
   int64_t start_time = clock_.TimeInMilliseconds();
@@ -343,7 +362,9 @@ TEST_F(TestVideoSenderWithMockEncoder, EncoderFramerateUpdatedViaProcess) {
     AddFrame();
     clock_.AdvanceTimeMilliseconds(1000 / kInputFps);
   }
-  EXPECT_CALL(encoder_, SetRates(_, kInputFps)).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(encoder_, SetRateAllocation(_, kInputFps))
+      .Times(1)
+      .WillOnce(Return(0));
   sender_->Process();
   AddFrame();
 }
@@ -361,23 +382,29 @@ TEST_F(TestVideoSenderWithMockEncoder,
   EXPECT_CALL(encoder_, SetChannelParameters(kLossRate, kRtt))
       .Times(1)
       .WillOnce(Return(0));
-  sender_->SetChannelParameters(settings_.startBitrate * 1000, kLossRate, kRtt);
+  sender_->SetChannelParameters(settings_.startBitrate * 1000, kLossRate, kRtt,
+                                rate_allocator_.get());
   while (clock_.TimeInMilliseconds() < start_time + kRateStatsWindowMs) {
     AddFrame();
     clock_.AdvanceTimeMilliseconds(1000 / kInputFps);
   }
   // After process, input framerate should be updated but not ChannelParameters
   // as they are the same as before.
-  EXPECT_CALL(encoder_, SetRates(_, kInputFps)).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(encoder_, SetRateAllocation(_, kInputFps))
+      .Times(1)
+      .WillOnce(Return(0));
   sender_->Process();
   AddFrame();
   // Call to SetChannelParameters with changed bitrate should call encoder
   // SetRates but not encoder SetChannelParameters (that are unchanged).
-  EXPECT_CALL(encoder_, SetRates(2 * settings_.startBitrate, kInputFps))
+  uint32_t new_bitrate_bps = 2 * settings_.startBitrate * 1000;
+  BitrateAllocation new_rate_allocation =
+      rate_allocator_->GetAllocation(new_bitrate_bps, kInputFps);
+  EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, kInputFps))
       .Times(1)
       .WillOnce(Return(0));
-  sender_->SetChannelParameters(2 * settings_.startBitrate * 1000, kLossRate,
-                                kRtt);
+  sender_->SetChannelParameters(new_bitrate_bps, kLossRate, kRtt,
+                                rate_allocator_.get());
   AddFrame();
 }
 
@@ -400,6 +427,12 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
     codec_.minBitrate = 10;
     codec_.startBitrate = codec_bitrate_kbps_;
     codec_.maxBitrate = codec_bitrate_kbps_;
+
+    TemporalLayersFactory* tl_factory = new TemporalLayersFactory();
+    rate_allocator_.reset(new SimulcastRateAllocator(
+        codec_, std::unique_ptr<TemporalLayersFactory>(tl_factory)));
+    codec_.codecSpecific.VP8.tl_factory = tl_factory;
+
     encoder_.reset(VP8Encoder::Create());
     sender_->RegisterExternalEncoder(encoder_.get(), codec_.plType, false);
     EXPECT_EQ(0, sender_->RegisterSendCodec(&codec_, 1, 1200));
@@ -425,8 +458,9 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
       // Note: SetChannelParameters fails if less than 2 frames are in the
       // buffer since it will fail to calculate the framerate.
       if (i != 0) {
-        EXPECT_EQ(VCM_OK, sender_->SetChannelParameters(
-                              available_bitrate_kbps_ * 1000, 0, 200));
+        EXPECT_EQ(VCM_OK,
+                  sender_->SetChannelParameters(available_bitrate_kbps_ * 1000,
+                                                0, 200, rate_allocator_.get()));
       }
     }
   }
@@ -447,6 +481,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
   VideoCodec codec_;
   int codec_bitrate_kbps_;
   int available_bitrate_kbps_;
+  std::unique_ptr<SimulcastRateAllocator> rate_allocator_;
 };
 
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
@@ -476,11 +511,15 @@ TEST_F(TestVideoSenderWithVp8, MAYBE_FixedTemporalLayersStrategy) {
 #endif
 TEST_F(TestVideoSenderWithVp8, MAYBE_RealTimeTemporalLayersStrategy) {
   VideoCodec codec = MakeVp8VideoCodec(352, 288, 3);
-  RealTimeTemporalLayersFactory realtime_tl_factory;
-  codec.VP8()->tl_factory = &realtime_tl_factory;
   codec.minBitrate = 10;
   codec.startBitrate = codec_bitrate_kbps_;
   codec.maxBitrate = codec_bitrate_kbps_;
+
+  TemporalLayersFactory* tl_factory = new RealTimeTemporalLayersFactory();
+  rate_allocator_.reset(new SimulcastRateAllocator(
+      codec, std::unique_ptr<TemporalLayersFactory>(tl_factory)));
+  codec.VP8()->tl_factory = tl_factory;
+
   EXPECT_EQ(0, sender_->RegisterSendCodec(&codec, 1, 1200));
 
   const int low_b = codec_bitrate_kbps_ * 0.4;

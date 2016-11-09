@@ -34,6 +34,8 @@
 
 namespace webrtc {
 
+class VideoBitrateAllocator;
+
 namespace vcm {
 
 class VCMProcessTimer {
@@ -75,9 +77,15 @@ class VideoSender : public Module {
   int Bitrate(unsigned int* bitrate) const;
   int FrameRate(unsigned int* framerate) const;
 
-  int32_t SetChannelParameters(uint32_t target_bitrate,  // bits/s.
+  int32_t SetChannelParameters(uint32_t target_bitrate_bps,
                                uint8_t lossRate,
-                               int64_t rtt);
+                               int64_t rtt,
+                               VideoBitrateAllocator* bitrate_allocator);
+  // Calls SetChannelParameters(), with the previous target bitrate, loss rate
+  // and RTT, but reallocates the bitrate allocation based on a presumably
+  // updated codec configuration.
+  int32_t UpdateChannelParemeters(VideoBitrateAllocator* bitrate_allocator);
+
   // Deprecated:
   // TODO(perkj): Remove once no projects use it.
   int32_t RegisterProtectionCallback(VCMProtectionCallback* protection);

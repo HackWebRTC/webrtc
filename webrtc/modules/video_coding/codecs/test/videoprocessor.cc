@@ -10,14 +10,18 @@
 
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
 
-#include <assert.h>
 #include <string.h>
 
 #include <limits>
 #include <memory>
+#include <utility>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/modules/video_coding/include/video_codec_initializer.h"
+#include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
+#include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "webrtc/system_wrappers/include/cpu_info.h"
 
 namespace webrtc {
@@ -35,7 +39,7 @@ TestConfig::TestConfig()
       frame_length_in_bytes(0),
       use_single_core(false),
       keyframe_interval(0),
-      codec_settings(NULL),
+      codec_settings(nullptr),
       verbose(true) {}
 
 TestConfig::~TestConfig() {}
@@ -54,8 +58,9 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
       packet_manipulator_(packet_manipulator),
       config_(config),
       stats_(stats),
-      encode_callback_(NULL),
-      decode_callback_(NULL),
+      encode_callback_(nullptr),
+      decode_callback_(nullptr),
+      last_successful_frame_buffer_(nullptr),
       first_key_frame_has_been_excluded_(false),
       last_frame_missing_(false),
       initialized_(false),
@@ -65,13 +70,23 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
       num_dropped_frames_(0),
       num_spatial_resizes_(0),
       last_encoder_frame_width_(0),
-      last_encoder_frame_height_(0) {
-  assert(encoder);
-  assert(decoder);
-  assert(frame_reader);
-  assert(frame_writer);
-  assert(packet_manipulator);
-  assert(stats);
+      last_encoder_frame_height_(0),
+      bit_rate_factor_(0.0),
+      encode_start_ns_(0),
+      decode_start_ns_(0) {
+  std::unique_ptr<TemporalLayersFactory> tl_factory;
+  if (config_.codec_settings->codecType == VideoCodecType::kVideoCodecVP8) {
+    tl_factory.reset(new TemporalLayersFactory());
+    config.codec_settings->VP8()->tl_factory = tl_factory.get();
+  }
+  bitrate_allocator_ = VideoCodecInitializer::CreateBitrateAllocator(
+      *config.codec_settings, std::move(tl_factory));
+  RTC_DCHECK(encoder);
+  RTC_DCHECK(decoder);
+  RTC_DCHECK(frame_reader);
+  RTC_DCHECK(frame_writer);
+  RTC_DCHECK(packet_manipulator);
+  RTC_DCHECK(stats);
 }
 
 bool VideoProcessorImpl::Init() {
@@ -149,8 +164,10 @@ VideoProcessorImpl::~VideoProcessorImpl() {
 }
 
 void VideoProcessorImpl::SetRates(int bit_rate, int frame_rate) {
-  int set_rates_result = encoder_->SetRates(bit_rate, frame_rate);
-  assert(set_rates_result >= 0);
+  int set_rates_result = encoder_->SetRateAllocation(
+      bitrate_allocator_->GetAllocation(bit_rate * 1000, frame_rate),
+      frame_rate);
+  RTC_CHECK_GE(set_rates_result, 0);
   if (set_rates_result < 0) {
     fprintf(stderr,
             "Failed to update encoder with new rate %d, "
@@ -178,7 +195,7 @@ int VideoProcessorImpl::NumberSpatialResizes() {
 }
 
 bool VideoProcessorImpl::ProcessFrame(int frame_number) {
-  assert(frame_number >= 0);
+  RTC_DCHECK_GE(frame_number, 0);
   if (!initialized_) {
     fprintf(stderr, "Attempting to use uninitialized VideoProcessor!\n");
     return false;
@@ -272,7 +289,7 @@ void VideoProcessorImpl::FrameEncoded(
         exclude_this_frame = true;
         break;
       default:
-        assert(false);
+        RTC_NOTREACHED();
     }
   }
 
@@ -341,11 +358,11 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
         CalcBufferSize(kI420, up_image->width(), up_image->height());
     std::unique_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
     int extracted_length = ExtractBuffer(up_image, length, image_buffer.get());
-    assert(extracted_length > 0);
+    RTC_DCHECK_GT(extracted_length, 0);
     // Update our copy of the last successful frame:
     memcpy(last_successful_frame_buffer_, image_buffer.get(), extracted_length);
     bool write_success = frame_writer_->WriteFrame(image_buffer.get());
-    assert(write_success);
+    RTC_DCHECK(write_success);
     if (!write_success) {
       fprintf(stderr, "Failed to write frame %d to disk!", frame_number);
     }
@@ -355,11 +372,11 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
     size_t length = CalcBufferSize(kI420, image.width(), image.height());
     std::unique_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
     int extracted_length = ExtractBuffer(image, length, image_buffer.get());
-    assert(extracted_length > 0);
+    RTC_DCHECK_GT(extracted_length, 0);
     memcpy(last_successful_frame_buffer_, image_buffer.get(), extracted_length);
 
     bool write_success = frame_writer_->WriteFrame(image_buffer.get());
-    assert(write_success);
+    RTC_DCHECK(write_success);
     if (!write_success) {
       fprintf(stderr, "Failed to write frame %d to disk!", frame_number);
     }
@@ -369,8 +386,8 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
 int VideoProcessorImpl::GetElapsedTimeMicroseconds(int64_t start,
                                                    int64_t stop) {
   uint64_t encode_time = (stop - start) / rtc::kNumNanosecsPerMicrosec;
-  assert(encode_time <
-         static_cast<unsigned int>(std::numeric_limits<int>::max()));
+  RTC_DCHECK_LT(encode_time,
+                static_cast<unsigned int>(std::numeric_limits<int>::max()));
   return static_cast<int>(encode_time);
 }
 
@@ -381,7 +398,7 @@ const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
     case kExcludeAllKeyFrames:
       return "ExcludeAllKeyFrames";
     default:
-      assert(false);
+      RTC_NOTREACHED();
       return "Unknown";
   }
 }
@@ -399,7 +416,7 @@ const char* VideoCodecTypeToStr(webrtc::VideoCodecType e) {
     case kVideoCodecUnknown:
       return "Unknown";
     default:
-      assert(false);
+      RTC_NOTREACHED();
       return "Unknown";
   }
 }

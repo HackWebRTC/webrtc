@@ -39,7 +39,8 @@ class FakeEncoder : public VideoEncoder {
       EncodedImageCallback* callback) override;
   int32_t Release() override;
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
-  int32_t SetRates(uint32_t new_target_bitrate, uint32_t framerate) override;
+  int32_t SetRateAllocation(const BitrateAllocation& rate_allocation,
+                            uint32_t framerate) override;
   const char* ImplementationName() const override;
 
   static const char* kImplementationName;
@@ -48,7 +49,7 @@ class FakeEncoder : public VideoEncoder {
   Clock* const clock_;
   VideoCodec config_;
   EncodedImageCallback* callback_;
-  int target_bitrate_kbps_;
+  BitrateAllocation target_bitrate_;
   int max_target_bitrate_kbps_;
   int64_t last_encode_time_ms_;
   uint8_t encoded_buffer_[100000];

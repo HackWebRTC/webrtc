@@ -113,7 +113,6 @@ VP8Decoder* VP8Decoder::Create() {
 
 VP8EncoderImpl::VP8EncoderImpl()
     : encoded_complete_callback_(nullptr),
-      rate_allocator_(new SimulcastRateAllocator(codec_)),
       inited_(false),
       timestamp_(0),
       feedback_mode_(false),
@@ -175,27 +174,32 @@ int VP8EncoderImpl::Release() {
   return ret_val;
 }
 
-int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
-                             uint32_t new_framerate) {
-  if (!inited_) {
+int VP8EncoderImpl::SetRateAllocation(const BitrateAllocation& bitrate,
+                                      uint32_t new_framerate) {
+  if (!inited_)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  }
-  if (encoders_[0].err) {
+
+  if (encoders_[0].err)
     return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-  if (new_framerate < 1) {
+
+  if (new_framerate < 1)
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+
+  if (bitrate.get_sum_bps() == 0) {
+    // Encoder paused, turn off all encoding.
+    const int num_streams = static_cast<size_t>(encoders_.size());
+    for (int i = 0; i < num_streams; ++i)
+      SetStreamState(false, i);
+    return WEBRTC_VIDEO_CODEC_OK;
   }
-  if (codec_.maxBitrate > 0 && new_bitrate_kbit > codec_.maxBitrate) {
-    new_bitrate_kbit = codec_.maxBitrate;
-  }
-  if (new_bitrate_kbit < codec_.minBitrate) {
-    new_bitrate_kbit = codec_.minBitrate;
-  }
-  if (codec_.numberOfSimulcastStreams > 0 &&
-      new_bitrate_kbit < codec_.simulcastStream[0].minBitrate) {
-    new_bitrate_kbit = codec_.simulcastStream[0].minBitrate;
-  }
+
+  // At this point, bitrate allocation should already match codec settings.
+  if (codec_.maxBitrate > 0)
+    RTC_DCHECK_LE(bitrate.get_sum_kbps(), codec_.maxBitrate);
+  RTC_DCHECK_GE(bitrate.get_sum_kbps(), codec_.minBitrate);
+  if (codec_.numberOfSimulcastStreams > 0)
+    RTC_DCHECK_GE(bitrate.get_sum_kbps(), codec_.simulcastStream[0].minBitrate);
+
   codec_.maxFramerate = new_framerate;
 
   if (encoders_.size() == 1) {
@@ -207,14 +211,14 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
     // Only trigger keyframes if we are allowed to scale down.
     if (configurations_[0].rc_resize_allowed) {
       if (!down_scale_requested_) {
-        if (k_pixels_per_frame > new_bitrate_kbit) {
+        if (k_pixels_per_frame > bitrate.get_sum_kbps()) {
           down_scale_requested_ = true;
-          down_scale_bitrate_ = new_bitrate_kbit;
+          down_scale_bitrate_ = bitrate.get_sum_kbps();
           key_frame_request_[0] = true;
         }
       } else {
-        if (new_bitrate_kbit > (2 * down_scale_bitrate_) ||
-            new_bitrate_kbit < (down_scale_bitrate_ / 2)) {
+        if (bitrate.get_sum_kbps() > (2 * down_scale_bitrate_) ||
+            bitrate.get_sum_kbps() < (down_scale_bitrate_ / 2)) {
           down_scale_requested_ = false;
         }
       }
@@ -233,31 +237,18 @@ int VP8EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
     }
   }
 
-  std::vector<uint32_t> stream_bitrates =
-      rate_allocator_->GetAllocation(new_bitrate_kbit);
   size_t stream_idx = encoders_.size() - 1;
   for (size_t i = 0; i < encoders_.size(); ++i, --stream_idx) {
-    if (encoders_.size() > 1)
-      SetStreamState(stream_bitrates[stream_idx] > 0, stream_idx);
+    unsigned int target_bitrate_kbps =
+        bitrate.GetSpatialLayerSum(stream_idx) / 1000;
 
-    unsigned int target_bitrate = stream_bitrates[stream_idx];
-    unsigned int max_bitrate = codec_.maxBitrate;
-    int framerate = new_framerate;
-    // TODO(holmer): This is a temporary hack for screensharing, where we
-    // interpret the startBitrate as the encoder target bitrate. This is
-    // to allow for a different max bitrate, so if the codec can't meet
-    // the target we still allow it to overshoot up to the max before dropping
-    // frames. This hack should be improved.
-    if (codec_.targetBitrate > 0 &&
-        (codec_.VP8()->numberOfTemporalLayers == 2 ||
-         codec_.simulcastStream[0].numberOfTemporalLayers == 2)) {
-      int tl0_bitrate = std::min(codec_.targetBitrate, target_bitrate);
-      max_bitrate = std::min(codec_.maxBitrate, target_bitrate);
-      target_bitrate = tl0_bitrate;
-    }
-    configurations_[i].rc_target_bitrate = target_bitrate;
-    temporal_layers_[stream_idx]->ConfigureBitrates(
-        target_bitrate, max_bitrate, framerate, &configurations_[i]);
+    bool send_stream = target_bitrate_kbps > 0;
+    if (send_stream || encoders_.size() > 1)
+      SetStreamState(send_stream, stream_idx);
+
+    configurations_[i].rc_target_bitrate = target_bitrate_kbps;
+    temporal_layers_[stream_idx]->UpdateConfiguration(&configurations_[i]);
+
     if (vpx_codec_enc_config_set(&encoders_[i], &configurations_[i])) {
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
@@ -287,26 +278,17 @@ void VP8EncoderImpl::SetStreamState(bool send_stream,
 void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
                                          int num_temporal_layers,
                                          const VideoCodec& codec) {
-  TemporalLayersFactory default_factory;
-  const TemporalLayersFactory* tl_factory = codec.VP8().tl_factory;
-  if (!tl_factory)
-    tl_factory = &default_factory;
+  RTC_DCHECK(codec.codecSpecific.VP8.tl_factory != nullptr);
+  const TemporalLayersFactory* tl_factory = codec.codecSpecific.VP8.tl_factory;
   if (num_streams == 1) {
-    if (codec.mode == kScreensharing) {
-      // Special mode when screensharing on a single stream.
-      temporal_layers_.push_back(new ScreenshareLayers(
-          num_temporal_layers, rand(), webrtc::Clock::GetRealTimeClock()));
-    } else {
-      temporal_layers_.push_back(
-          tl_factory->Create(num_temporal_layers, rand()));
-    }
+    temporal_layers_.push_back(
+        tl_factory->Create(0, num_temporal_layers, rand()));
   } else {
     for (int i = 0; i < num_streams; ++i) {
-      // TODO(andresp): crash if layers is invalid.
-      int layers = codec.simulcastStream[i].numberOfTemporalLayers;
-      if (layers < 1)
-        layers = 1;
-      temporal_layers_.push_back(tl_factory->Create(layers, rand()));
+      RTC_CHECK_GT(num_temporal_layers, 0);
+      int layers = std::max(static_cast<uint8_t>(1),
+                            codec.simulcastStream[i].numberOfTemporalLayers);
+      temporal_layers_.push_back(tl_factory->Create(i, layers, rand()));
     }
   }
 }
@@ -351,10 +333,8 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   int num_temporal_layers =
       doing_simulcast ? inst->simulcastStream[0].numberOfTemporalLayers
                       : inst->VP8().numberOfTemporalLayers;
+  RTC_DCHECK_GT(num_temporal_layers, 0);
 
-  // TODO(andresp): crash if num temporal layers is bananas.
-  if (num_temporal_layers < 1)
-    num_temporal_layers = 1;
   SetupTemporalLayers(number_of_streams, num_temporal_layers, *inst);
 
   feedback_mode_ = inst->VP8().feedbackModeOn;
@@ -362,7 +342,6 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   number_of_cores_ = number_of_cores;
   timestamp_ = 0;
   codec_ = *inst;
-  rate_allocator_.reset(new SimulcastRateAllocator(codec_));
 
   // Code expects simulcastStream resolutions to be correct, make sure they are
   // filled even when there are no simulcast layers.
@@ -514,45 +493,44 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   vpx_img_wrap(&raw_images_[0], VPX_IMG_FMT_I420, inst->width, inst->height, 1,
                NULL);
 
-  if (encoders_.size() == 1) {
-    configurations_[0].rc_target_bitrate = inst->startBitrate;
-    temporal_layers_[0]->ConfigureBitrates(inst->startBitrate, inst->maxBitrate,
-                                           inst->maxFramerate,
-                                           &configurations_[0]);
-  } else {
-    // Note the order we use is different from webm, we have lowest resolution
-    // at position 0 and they have highest resolution at position 0.
-    int stream_idx = encoders_.size() - 1;
-    std::vector<uint32_t> stream_bitrates =
-        rate_allocator_->GetAllocation(inst->startBitrate);
+  // Note the order we use is different from webm, we have lowest resolution
+  // at position 0 and they have highest resolution at position 0.
+  int stream_idx = encoders_.size() - 1;
+  SimulcastRateAllocator init_allocator(codec_, nullptr);
+  BitrateAllocation allocation = init_allocator.GetAllocation(
+      inst->startBitrate * 1000, inst->maxFramerate);
+  std::vector<uint32_t> stream_bitrates;
+  for (int i = 0; i == 0 || i < inst->numberOfSimulcastStreams; ++i) {
+    uint32_t bitrate = allocation.GetSpatialLayerSum(i) / 1000;
+    stream_bitrates.push_back(bitrate);
+  }
+
+  configurations_[0].rc_target_bitrate = stream_bitrates[stream_idx];
+  temporal_layers_[stream_idx]->OnRatesUpdated(
+      stream_bitrates[stream_idx], inst->maxBitrate, inst->maxFramerate);
+  temporal_layers_[stream_idx]->UpdateConfiguration(&configurations_[0]);
+  --stream_idx;
+  for (size_t i = 1; i < encoders_.size(); ++i, --stream_idx) {
+    memcpy(&configurations_[i], &configurations_[0],
+           sizeof(configurations_[0]));
+
+    configurations_[i].g_w = inst->simulcastStream[stream_idx].width;
+    configurations_[i].g_h = inst->simulcastStream[stream_idx].height;
+
+    // Use 1 thread for lower resolutions.
+    configurations_[i].g_threads = 1;
+
+    // Setting alignment to 32 - as that ensures at least 16 for all
+    // planes (32 for Y, 16 for U,V). Libvpx sets the requested stride for
+    // the y plane, but only half of it to the u and v planes.
+    vpx_img_alloc(&raw_images_[i], VPX_IMG_FMT_I420,
+                  inst->simulcastStream[stream_idx].width,
+                  inst->simulcastStream[stream_idx].height, kVp832ByteAlign);
     SetStreamState(stream_bitrates[stream_idx] > 0, stream_idx);
-    configurations_[0].rc_target_bitrate = stream_bitrates[stream_idx];
-    temporal_layers_[stream_idx]->ConfigureBitrates(
-        stream_bitrates[stream_idx], inst->maxBitrate, inst->maxFramerate,
-        &configurations_[0]);
-    --stream_idx;
-    for (size_t i = 1; i < encoders_.size(); ++i, --stream_idx) {
-      memcpy(&configurations_[i], &configurations_[0],
-             sizeof(configurations_[0]));
-
-      configurations_[i].g_w = inst->simulcastStream[stream_idx].width;
-      configurations_[i].g_h = inst->simulcastStream[stream_idx].height;
-
-      // Use 1 thread for lower resolutions.
-      configurations_[i].g_threads = 1;
-
-      // Setting alignment to 32 - as that ensures at least 16 for all
-      // planes (32 for Y, 16 for U,V). Libvpx sets the requested stride for
-      // the y plane, but only half of it to the u and v planes.
-      vpx_img_alloc(&raw_images_[i], VPX_IMG_FMT_I420,
-                    inst->simulcastStream[stream_idx].width,
-                    inst->simulcastStream[stream_idx].height, kVp832ByteAlign);
-      SetStreamState(stream_bitrates[stream_idx] > 0, stream_idx);
-      configurations_[i].rc_target_bitrate = stream_bitrates[stream_idx];
-      temporal_layers_[stream_idx]->ConfigureBitrates(
-          stream_bitrates[stream_idx], inst->maxBitrate, inst->maxFramerate,
-          &configurations_[i]);
-    }
+    configurations_[i].rc_target_bitrate = stream_bitrates[stream_idx];
+    temporal_layers_[stream_idx]->OnRatesUpdated(
+        stream_bitrates[stream_idx], inst->maxBitrate, inst->maxFramerate);
+    temporal_layers_[stream_idx]->UpdateConfiguration(&configurations_[i]);
   }
 
   rps_.Init();
