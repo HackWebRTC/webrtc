@@ -172,7 +172,7 @@ static NSString *const barButtonImageString = @"ic_settings_black_24dp.png";
 #pragma mark - Private
 - (void)showSettings:(id)sender {
   ARDSettingsViewController *settingsController =
-      [[ARDSettingsViewController alloc] initWithStyle:UITableViewStylePlain
+      [[ARDSettingsViewController alloc] initWithStyle:UITableViewStyleGrouped
                                  mediaConstraintsModel:[[ARDMediaConstraintsModel alloc] init]];
   UINavigationController *navigationController =
       [[UINavigationController alloc] initWithRootViewController:settingsController];
