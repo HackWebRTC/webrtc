@@ -16,7 +16,6 @@
 
 namespace webrtc {
 
-class AudioDeviceModule;
 class VoiceEngine;
 
 // WORK IN PROGRESS
