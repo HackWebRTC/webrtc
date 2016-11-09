@@ -172,7 +172,7 @@ webrtc_root = get_path_info("../", "abspath")
 # It sets defines, include paths and compilation warnings accordingly,
 # both for WebRTC stand-alone builds and for the scenario when WebRTC
 # native code is built as part of Chromium.
-rtc_common_config = webrtc_root + ":common_config"
+rtc_common_configs = [ webrtc_root + ":common_config" ]
 
 # Global public configuration that should be applied to all WebRTC targets. You
 # normally shouldn't need to include this in your target as it's automatically
@@ -181,9 +181,13 @@ rtc_common_config = webrtc_root + ":common_config"
 # depending on the target having this config.
 rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
 
+if (is_ios) {
+  rtc_common_configs += [ webrtc_root + "/build/ios:rtc_ios_common_config" ]
+}
+
 # Common configs to remove or add in all rtc targets.
 rtc_remove_configs = []
-rtc_add_configs = [ rtc_common_config ]
+rtc_add_configs = rtc_common_configs
 
 set_defaults("rtc_test") {
   configs = rtc_add_configs
