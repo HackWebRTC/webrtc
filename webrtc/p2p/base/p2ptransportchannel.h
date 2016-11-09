@@ -43,8 +43,8 @@ namespace cricket {
 enum class IceRestartState { CONNECTING, CONNECTED, DISCONNECTED, MAX_VALUE };
 
 extern const int WEAK_PING_INTERVAL;
-extern const int STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL;
-extern const int STABLE_WRITABLE_CONNECTION_PING_INTERVAL;
+extern const int WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL;
+extern const int STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL;
 static const int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
 
 // Adds the port on which the candidate originated.
@@ -261,7 +261,10 @@ class P2PTransportChannel : public TransportChannelImpl,
   void RememberRemoteCandidate(const Candidate& remote_candidate,
                                PortInterface* origin_port);
   bool IsPingable(const Connection* conn, int64_t now) const;
-  bool IsSelectedConnectionPingable(int64_t now);
+  // Whether a writable connection is past its ping interval and needs to be
+  // pinged again.
+  bool WritableConnectionPastPingInterval(const Connection* conn,
+                                          int64_t now) const;
   int CalculateActiveWritablePingInterval(const Connection* conn,
                                           int64_t now) const;
   void PingConnection(Connection* conn);
@@ -317,16 +320,16 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Returns true if the new_connection is selected for transmission.
   bool MaybeSwitchSelectedConnection(Connection* new_connection,
                                      const std::string& reason);
-
+  // Gets the best connection for each network.
+  std::map<rtc::Network*, Connection*> GetBestConnectionByNetwork() const;
+  std::vector<Connection*> GetBestWritableConnectionPerNetwork() const;
   void PruneConnections();
   bool IsBackupConnection(const Connection* conn) const;
 
-  Connection* FindConnectionToPing(int64_t now);
   Connection* FindOldestConnectionNeedingTriggeredCheck(int64_t now);
   // Between |conn1| and |conn2|, this function returns the one which should
   // be pinged first.
-  Connection* SelectMostPingableConnection(Connection* conn1,
-                                           Connection* conn2);
+  Connection* MorePingable(Connection* conn1, Connection* conn2);
   // Select the connection which is Relay/Relay. If both of them are,
   // UDP relay protocol takes precedence.
   Connection* MostLikelyToWork(Connection* conn1, Connection* conn2);

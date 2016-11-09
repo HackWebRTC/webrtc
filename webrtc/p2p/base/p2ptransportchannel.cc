@@ -11,6 +11,7 @@
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 
 #include <algorithm>
+#include <iterator>
 #include <set>
 
 #include "webrtc/api/peerconnectioninterface.h"
@@ -66,6 +67,8 @@ namespace cricket {
 // well on a 28.8K modem, which is the slowest connection on which the voice
 // quality is reasonable at all.
 static const int PING_PACKET_SIZE = 60 * 8;
+
+// The next two ping intervals are at the channel level.
 // STRONG_PING_INTERVAL (480ms) is applied when the selected connection is both
 // writable and receiving.
 static const int STRONG_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 1000;
@@ -73,11 +76,13 @@ static const int STRONG_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 1000;
 // not writable or not receiving.
 const int WEAK_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 10000;
 
-// Writable connections are pinged at a faster rate while stabilizing.
-const int STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL = 900;  // ms
-
-// Writable connections are pinged at a slower rate once stabilized.
-const int STABLE_WRITABLE_CONNECTION_PING_INTERVAL = 2500;  // ms
+// The next two ping intervals are at the connection level.
+// Writable connections are pinged at a faster rate while the connections are
+// stabilizing or the channel is weak.
+const int WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL = 900;  // ms
+// Writable connections are pinged at a slower rate once they are stabilized and
+// the channel is strongly connected.
+const int STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL = 2500;  // ms
 
 static const int MIN_CHECK_RECEIVING_INTERVAL = 50;  // ms
 
@@ -116,7 +121,7 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
               DEFAULT_BACKUP_CONNECTION_PING_INTERVAL,
               GATHER_ONCE /* continual_gathering_policy */,
               false /* prioritize_most_likely_candidate_pairs */,
-              STABLE_WRITABLE_CONNECTION_PING_INTERVAL,
+              STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL,
               true /* presume_writable_when_fully_relayed */,
               DEFAULT_REGATHER_ON_FAILED_NETWORKS_INTERVAL,
               RECEIVING_SWITCHING_DELAY) {
@@ -1243,6 +1248,7 @@ void P2PTransportChannel::SortConnectionsAndUpdateState() {
   // that amongst equal preference, writable connections, this will choose the
   // one whose estimated latency is lowest.  So it is the only one that we
   // need to consider switching to.
+  // TODO(honghaiz): Don't sort;  Just use std::max_element in the right places.
   std::stable_sort(connections_.begin(), connections_.end(),
                    [this](const Connection* a, const Connection* b) {
                      int cmp = CompareConnections(
@@ -1305,6 +1311,37 @@ void P2PTransportChannel::SortConnectionsAndUpdateState() {
   MaybeStartPinging();
 }
 
+std::map<rtc::Network*, Connection*>
+P2PTransportChannel::GetBestConnectionByNetwork() const {
+  // |connections_| has been sorted, so the first one in the list on a given
+  // network is the best connection on the network, except that the selected
+  // connection is always the best connection on the network.
+  std::map<rtc::Network*, Connection*> best_connection_by_network;
+  if (selected_connection_) {
+    best_connection_by_network[selected_connection_->port()->Network()] =
+        selected_connection_;
+  }
+  // TODO(honghaiz): Need to update this if |connections_| are not sorted.
+  for (Connection* conn : connections_) {
+    rtc::Network* network = conn->port()->Network();
+    // This only inserts when the network does not exist in the map.
+    best_connection_by_network.insert(std::make_pair(network, conn));
+  }
+  return best_connection_by_network;
+}
+
+std::vector<Connection*>
+P2PTransportChannel::GetBestWritableConnectionPerNetwork() const {
+  std::vector<Connection*> connections;
+  for (auto kv : GetBestConnectionByNetwork()) {
+    Connection* conn = kv.second;
+    if (conn->writable() && conn->connected()) {
+      connections.push_back(conn);
+    }
+  }
+  return connections;
+}
+
 void P2PTransportChannel::PruneConnections() {
   // We can prune any connection for which there is a connected, writable
   // connection on the same network with better or equal priority.  We leave
@@ -1312,28 +1349,19 @@ void P2PTransportChannel::PruneConnections() {
   // which point, we would prune out the current selected connection).  We leave
   // connections on other networks because they may not be using the same
   // resources and they may represent very distinct paths over which we can
-  // switch. If the |premier| connection is not connected, we may be
-  // reconnecting a TCP connection and temporarily do not prune connections in
-  // this network. See the big comment in CompareConnectionStates.
-
-  // Get a list of the networks that we are using.
-  std::set<rtc::Network*> networks;
-  for (const Connection* conn : connections_) {
-    networks.insert(conn->port()->Network());
-  }
-  for (rtc::Network* network : networks) {
-    Connection* premier = GetBestConnectionOnNetwork(network);
-    // Do not prune connections if the current selected connection is weak on
-    // this network. Otherwise, it may delete connections prematurely.
-    if (!premier || premier->weak()) {
-      continue;
-    }
-
-    for (Connection* conn : connections_) {
-      if ((conn != premier) && (conn->port()->Network() == network) &&
-          (CompareConnectionCandidates(premier, conn) >= 0)) {
-        conn->Prune();
-      }
+  // switch. If |best_conn_on_network| is not connected, we may be reconnecting
+  // a TCP connection and should not prune connections in this network.
+  // See the big comment in CompareConnectionStates.
+  auto best_connection_by_network = GetBestConnectionByNetwork();
+  for (Connection* conn : connections_) {
+    // Do not prune connections if the current best connection on this network
+    // is weak. Otherwise, it may delete connections prematurely.
+    Connection* best_conn_on_network =
+        best_connection_by_network[conn->port()->Network()];
+    if (best_conn_on_network && conn != best_conn_on_network &&
+        !best_conn_on_network->weak() &&
+        CompareConnectionCandidates(best_conn_on_network, conn) >= 0) {
+      conn->Prune();
     }
   }
 }
@@ -1471,26 +1499,6 @@ bool P2PTransportChannel::ReadyToSend(Connection* connection) const {
           PresumedWritable(connection));
 }
 
-// If we have a selected connection, return it, otherwise return top one in the
-// list (later we will mark it best).
-Connection* P2PTransportChannel::GetBestConnectionOnNetwork(
-    rtc::Network* network) const {
-  // If the selected connection is on this network, then it wins.
-  if (selected_connection_ &&
-      (selected_connection_->port()->Network() == network)) {
-    return selected_connection_;
-  }
-
-  // Otherwise, we return the top-most in sorted order.
-  for (size_t i = 0; i < connections_.size(); ++i) {
-    if (connections_[i]->port()->Network() == network) {
-      return connections_[i];
-    }
-  }
-
-  return NULL;
-}
-
 // Handle any queued up requests
 void P2PTransportChannel::OnMessage(rtc::Message *pmsg) {
   switch (pmsg->message_id) {
@@ -1592,18 +1600,14 @@ bool P2PTransportChannel::IsPingable(const Connection* conn,
 
   // Ping writable, active connections if it's been long enough since the last
   // ping.
-  int ping_interval = CalculateActiveWritablePingInterval(conn, now);
-  return (now >= conn->last_ping_sent() + ping_interval);
+  return WritableConnectionPastPingInterval(conn, now);
 }
 
-bool P2PTransportChannel::IsSelectedConnectionPingable(int64_t now) {
-  if (!selected_connection_ || !selected_connection_->connected() ||
-      !selected_connection_->writable()) {
-    return false;
-  }
-
-  int interval = CalculateActiveWritablePingInterval(selected_connection_, now);
-  return selected_connection_->last_ping_sent() + interval <= now;
+bool P2PTransportChannel::WritableConnectionPastPingInterval(
+    const Connection* conn,
+    int64_t now) const {
+  int interval = CalculateActiveWritablePingInterval(conn, now);
+  return conn->last_ping_sent() + interval <= now;
 }
 
 int P2PTransportChannel::CalculateActiveWritablePingInterval(
@@ -1616,28 +1620,92 @@ int P2PTransportChannel::CalculateActiveWritablePingInterval(
   }
 
   int stable_interval = config_.stable_writable_connection_ping_interval;
-  int stablizing_interval =
-      std::min(stable_interval, STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
-
-  return conn->stable(now) ? stable_interval : stablizing_interval;
+  int weak_or_stablizing_interval = std::min(
+      stable_interval, WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
+  // If the channel is weak or the connection is not stable yet, use the
+  // weak_or_stablizing_interval.
+  return (!weak() && conn->stable(now)) ? stable_interval
+                                        : weak_or_stablizing_interval;
 }
 
-// Returns the next pingable connection to ping.  This will be the oldest
-// pingable connection unless we have a connected, writable connection that is
-// past the writable ping interval. When reconnecting a TCP
-// connection, the selected connection is disconnected, although still WRITABLE
-// while reconnecting. The newly created connection should be selected as the
-// ping target to become writable instead. See the big comment in
-// CompareConnectionStates.
+// Returns the next pingable connection to ping.
 Connection* P2PTransportChannel::FindNextPingableConnection() {
   int64_t now = rtc::TimeMillis();
-  Connection* conn_to_ping = nullptr;
-  if (IsSelectedConnectionPingable(now)) {
-    conn_to_ping = selected_connection_;
-  } else {
-    conn_to_ping = FindConnectionToPing(now);
+
+  // Rule 1: Selected connection takes priority over non-selected ones.
+  if (selected_connection_ && selected_connection_->connected() &&
+      selected_connection_->writable() &&
+      WritableConnectionPastPingInterval(selected_connection_, now)) {
+    return selected_connection_;
   }
-  return conn_to_ping;
+
+  // Rule 2: If the channel is weak, we need to find a new writable and
+  // receiving connection, probably on a different network. If there are lots of
+  // connections, it may take several seconds between two pings for every
+  // non-selected connection. This will cause the receiving state of those
+  // connections to be false, and thus they won't be selected. This is
+  // problematic for network fail-over. We want to make sure at least one
+  // connection per network is pinged frequently enough in order for it to be
+  // selectable. So we prioritize one connection per network.
+  // Rule 2.1: Among such connections, pick the one with the earliest
+  // last-ping-sent time.
+  if (weak()) {
+    auto selectable_connections = GetBestWritableConnectionPerNetwork();
+    std::vector<Connection*> pingable_selectable_connections;
+    std::copy_if(selectable_connections.begin(), selectable_connections.end(),
+                 std::back_inserter(pingable_selectable_connections),
+                 [this, now](Connection* conn) {
+                   return WritableConnectionPastPingInterval(conn, now);
+                 });
+    auto iter = std::min_element(pingable_selectable_connections.begin(),
+                                 pingable_selectable_connections.end(),
+                                 [](Connection* conn1, Connection* conn2) {
+                                   return conn1->last_ping_sent() <
+                                          conn2->last_ping_sent();
+                                 });
+    if (iter != pingable_selectable_connections.end()) {
+      return *iter;
+    }
+  }
+
+  // Rule 3: Triggered checks have priority over non-triggered connections.
+  // Rule 3.1: Among triggered checks, oldest takes precedence.
+  Connection* oldest_triggered_check =
+      FindOldestConnectionNeedingTriggeredCheck(now);
+  if (oldest_triggered_check) {
+    return oldest_triggered_check;
+  }
+
+  // Rule 4: Unpinged connections have priority over pinged ones.
+  RTC_CHECK(connections_.size() ==
+            pinged_connections_.size() + unpinged_connections_.size());
+  // If there are unpinged and pingable connections, only ping those.
+  // Otherwise, treat everything as unpinged.
+  // TODO(honghaiz): Instead of adding two separate vectors, we can add a state
+  // "pinged" to filter out unpinged connections.
+  if (std::find_if(unpinged_connections_.begin(), unpinged_connections_.end(),
+                   [this, now](Connection* conn) {
+                     return this->IsPingable(conn, now);
+                   }) == unpinged_connections_.end()) {
+    unpinged_connections_.insert(pinged_connections_.begin(),
+                                 pinged_connections_.end());
+    pinged_connections_.clear();
+  }
+
+  // Among un-pinged pingable connections, "more pingable" takes precedence.
+  std::vector<Connection*> pingable_connections;
+  std::copy_if(unpinged_connections_.begin(), unpinged_connections_.end(),
+               std::back_inserter(pingable_connections),
+               [this, now](Connection* conn) { return IsPingable(conn, now); });
+  auto iter =
+      std::max_element(pingable_connections.begin(), pingable_connections.end(),
+                       [this, now](Connection* conn1, Connection* conn2) {
+                         return MorePingable(conn1, conn2) == conn2;
+                       });
+  if (iter != pingable_connections.end()) {
+    return *iter;
+  }
+  return nullptr;
 }
 
 void P2PTransportChannel::MarkConnectionPinged(Connection* conn) {
@@ -1749,8 +1817,9 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
   unpinged_connections_.erase(*iter);
   connections_.erase(iter);
 
-  LOG_J(LS_INFO, this) << "Removed connection ("
-    << static_cast<int>(connections_.size()) << " remaining)";
+  LOG_J(LS_INFO, this) << "Removed connection " << std::hex << connection
+                       << std::dec << " (" << connections_.size()
+                       << " remaining)";
 
   // If this is currently the selected connection, then we need to pick a new
   // one. The call to SortConnectionsAndUpdateState will pick a new one. It
@@ -1878,7 +1947,7 @@ void P2PTransportChannel::OnReadyToSend(Connection* connection) {
 
 // Find "triggered checks".  We ping first those connections that have
 // received a ping but have not sent a ping since receiving it
-// (last_received_ping > last_sent_ping).  But we shouldn't do
+// (last_ping_received > last_ping_sent).  But we shouldn't do
 // triggered checks if the connection is already writable.
 Connection* P2PTransportChannel::FindOldestConnectionNeedingTriggeredCheck(
     int64_t now) {
@@ -1903,39 +1972,6 @@ Connection* P2PTransportChannel::FindOldestConnectionNeedingTriggeredCheck(
                  << oldest_needing_triggered_check->ToString();
   }
   return oldest_needing_triggered_check;
-}
-
-Connection* P2PTransportChannel::FindConnectionToPing(int64_t now) {
-  RTC_CHECK(connections_.size() ==
-            pinged_connections_.size() + unpinged_connections_.size());
-
-  // If there is nothing pingable in the |unpinged_connections_|, copy
-  // over from |pinged_connections_|. We do this here such that the
-  // new connection will take precedence.
-  if (std::find_if(unpinged_connections_.begin(), unpinged_connections_.end(),
-                   [this, now](Connection* conn) {
-                     return this->IsPingable(conn, now);
-                   }) == unpinged_connections_.end()) {
-    unpinged_connections_.insert(pinged_connections_.begin(),
-                                 pinged_connections_.end());
-    pinged_connections_.clear();
-  }
-
-  Connection* conn_to_ping = FindOldestConnectionNeedingTriggeredCheck(now);
-  if (conn_to_ping) {
-    return conn_to_ping;
-  }
-
-  for (Connection* conn : unpinged_connections_) {
-    if (!IsPingable(conn, now)) {
-      continue;
-    }
-    if (!conn_to_ping ||
-        SelectMostPingableConnection(conn_to_ping, conn) == conn) {
-      conn_to_ping = conn;
-    }
-  }
-  return conn_to_ping;
 }
 
 Connection* P2PTransportChannel::MostLikelyToWork(Connection* conn1,
@@ -1969,9 +2005,8 @@ Connection* P2PTransportChannel::LeastRecentlyPinged(Connection* conn1,
   return nullptr;
 }
 
-Connection* P2PTransportChannel::SelectMostPingableConnection(
-    Connection* conn1,
-    Connection* conn2) {
+Connection* P2PTransportChannel::MorePingable(Connection* conn1,
+                                              Connection* conn2) {
   RTC_DCHECK(conn1 != conn2);
   if (config_.prioritize_most_likely_candidate_pairs) {
     Connection* most_likely_to_work_conn = MostLikelyToWork(conn1, conn2);

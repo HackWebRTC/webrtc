@@ -41,13 +41,13 @@ class FirewallSocket : public AsyncSocketAdapter {
     return SendTo(pv, cb, GetRemoteAddress());
   }
   int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override {
-    if (type_ == SOCK_DGRAM) {
-      if (!server_->Check(FP_UDP, GetLocalAddress(), addr)) {
-        LOG(LS_VERBOSE) << "FirewallSocket outbound UDP packet from "
-                        << GetLocalAddress().ToSensitiveString() << " to "
-                        << addr.ToSensitiveString() << " dropped";
-        return static_cast<int>(cb);
-      }
+    RTC_DCHECK(type_ == SOCK_DGRAM || type_ == SOCK_STREAM);
+    FirewallProtocol protocol = (type_ == SOCK_DGRAM) ? FP_UDP : FP_TCP;
+    if (!server_->Check(protocol, GetLocalAddress(), addr)) {
+      LOG(LS_VERBOSE) << "FirewallSocket outbound packet with type " << type_
+                      << " from " << GetLocalAddress().ToSensitiveString()
+                      << " to " << addr.ToSensitiveString() << " dropped";
+      return static_cast<int>(cb);
     }
     return AsyncSocketAdapter::SendTo(pv, cb, addr);
   }

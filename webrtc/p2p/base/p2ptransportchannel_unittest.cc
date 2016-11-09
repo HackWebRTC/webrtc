@@ -55,11 +55,13 @@ static const SocketAddress kPublicAddrs[2] =
 // IPv6 Addresses on the public internet.
 static const SocketAddress kIPv6PublicAddrs[2] = {
     SocketAddress("2400:4030:1:2c00:be30:abcd:efab:cdef", 0),
-    SocketAddress("2620:0:1000:1b03:2e41:38ff:fea6:f2a4", 0)
-};
+    SocketAddress("2600:0:1000:1b03:2e41:38ff:fea6:f2a4", 0)};
 // For configuring multihomed clients.
 static const SocketAddress kAlternateAddrs[2] = {
     SocketAddress("101.101.101.101", 0), SocketAddress("202.202.202.202", 0)};
+static const SocketAddress kIPv6AlternateAddrs[2] = {
+    SocketAddress("2401:4030:1:2c00:be30:abcd:efab:cdef", 0),
+    SocketAddress("2601:0:1000:1b03:2e41:38ff:fea6:f2a4", 0)};
 // Addresses for HTTP proxy servers.
 static const SocketAddress kHttpsProxyAddrs[2] =
     { SocketAddress("11.11.11.1", 443), SocketAddress("22.22.22.1", 443) };
@@ -429,7 +431,7 @@ class P2PTransportChannelTestBase : public testing::Test,
       return NULL;
     }
   }
-  PortAllocator* GetAllocator(int endpoint) {
+  BasicPortAllocator* GetAllocator(int endpoint) {
     return GetEndpoint(endpoint)->allocator_.get();
   }
   webrtc::FakeMetricsObserver* GetMetricsObserver(int endpoint) {
@@ -2087,10 +2089,10 @@ TEST_F(P2PTransportChannelSameNatTest, TestConesBehindSameCone) {
 // interfaces, so that we can simulate a user with Ethernet and VPN networks.
 class P2PTransportChannelMultihomedTest : public P2PTransportChannelTestBase {
  public:
-  const cricket::Connection* GetConnectionWithRemoteAddress(
-      cricket::P2PTransportChannel* channel,
+  const Connection* GetConnectionWithRemoteAddress(
+      P2PTransportChannel* channel,
       const SocketAddress& address) {
-    for (cricket::Connection* conn : channel->connections()) {
+    for (Connection* conn : channel->connections()) {
       if (conn->remote_candidate().address().EqualIPs(address)) {
         return conn;
       }
@@ -2098,10 +2100,9 @@ class P2PTransportChannelMultihomedTest : public P2PTransportChannelTestBase {
     return nullptr;
   }
 
-  cricket::Connection* GetConnectionWithLocalAddress(
-      cricket::P2PTransportChannel* channel,
-      const SocketAddress& address) {
-    for (cricket::Connection* conn : channel->connections()) {
+  Connection* GetConnectionWithLocalAddress(P2PTransportChannel* channel,
+                                            const SocketAddress& address) {
+    for (Connection* conn : channel->connections()) {
       if (conn->local_candidate().address().EqualIPs(address)) {
         return conn;
       }
@@ -2109,10 +2110,21 @@ class P2PTransportChannelMultihomedTest : public P2PTransportChannelTestBase {
     return nullptr;
   }
 
-  void DestroyAllButBestConnection(cricket::P2PTransportChannel* channel) {
-    const cricket::Connection* selected_connection =
-        channel->selected_connection();
-    for (cricket::Connection* conn : channel->connections()) {
+  Connection* GetConnection(P2PTransportChannel* channel,
+                            const SocketAddress& local,
+                            const SocketAddress& remote) {
+    for (Connection* conn : channel->connections()) {
+      if (conn->local_candidate().address().EqualIPs(local) &&
+          conn->remote_candidate().address().EqualIPs(remote)) {
+        return conn;
+      }
+    }
+    return nullptr;
+  }
+
+  void DestroyAllButBestConnection(P2PTransportChannel* channel) {
+    const Connection* selected_connection = channel->selected_connection();
+    for (Connection* conn : channel->connections()) {
       if (conn != selected_connection) {
         conn->Destroy();
       }
@@ -2230,6 +2242,99 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
   EXPECT_TRUE(
       RemoteCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[0]));
+
+  DestroyChannels();
+}
+
+// Tests that we can quickly switch links if an interface goes down when
+// there are many connections.
+TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
+  rtc::ScopedFakeClock clock;
+  test_turn_server()->AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
+  RelayServerConfig turn_server(RELAY_TURN);
+  turn_server.credentials = kRelayCredentials;
+  turn_server.ports.push_back(
+      ProtocolAddress(kTurnTcpIntAddr, PROTO_TCP, false));
+  GetAllocator(0)->AddTurnServer(turn_server);
+  GetAllocator(1)->AddTurnServer(turn_server);
+  // Enable IPv6
+  SetAllocatorFlags(0, PORTALLOCATOR_ENABLE_IPV6);
+  SetAllocatorFlags(1, PORTALLOCATOR_ENABLE_IPV6);
+  SetAllocationStepDelay(0, kMinimumStepDelay);
+  SetAllocationStepDelay(1, kMinimumStepDelay);
+
+  auto& wifi = kPublicAddrs;
+  auto& cellular = kAlternateAddrs;
+  auto& wifiIpv6 = kIPv6PublicAddrs;
+  auto& cellularIpv6 = kIPv6AlternateAddrs;
+  AddAddress(0, wifi[0], "wifi0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, wifiIpv6[0], "wifi0", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(0, cellular[0], "cellular0", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(0, cellularIpv6[0], "cellular0", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(1, wifi[1], "wifi1", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, wifiIpv6[1], "wifi1", rtc::ADAPTER_TYPE_WIFI);
+  AddAddress(1, cellular[1], "cellular1", rtc::ADAPTER_TYPE_CELLULAR);
+  AddAddress(1, cellularIpv6[1], "cellular1", rtc::ADAPTER_TYPE_CELLULAR);
+
+  // Set smaller delay on the TCP TURN server so that TCP TURN candidates
+  // will be created in time.
+  virtual_socket_server()->SetDelayOnAddress(kTurnTcpIntAddr, 1);
+  virtual_socket_server()->SetDelayOnAddress(kTurnUdpExtAddr, 1);
+  virtual_socket_server()->set_delay_mean(500);
+  virtual_socket_server()->UpdateDelayDistribution();
+
+  // Make the receiving timeout shorter for testing.
+  IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY);
+  // Create channels and let them go writable, as usual.
+  CreateChannels(config, config, true /* ice_renomination */);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             kMediumTimeout, clock);
+  EXPECT_TRUE_SIMULATED_WAIT(
+      ep1_ch1()->selected_connection() && ep2_ch1()->selected_connection() &&
+          LocalCandidate(ep1_ch1())->address().EqualIPs(wifiIpv6[0]) &&
+          RemoteCandidate(ep1_ch1())->address().EqualIPs(wifiIpv6[1]),
+      kMediumTimeout, clock);
+
+  // Blackhole any traffic to or from the wifi on endpoint 1.
+  LOG(LS_INFO) << "Failing over...";
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, wifi[0]);
+  fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, wifiIpv6[0]);
+
+  // The selected connections may switch, so keep references to them.
+  const Connection* selected_connection1 = ep1_ch1()->selected_connection();
+  const Connection* selected_connection2 = ep2_ch1()->selected_connection();
+  EXPECT_TRUE_SIMULATED_WAIT(
+      !selected_connection1->receiving() && !selected_connection2->receiving(),
+      kMediumTimeout, clock);
+
+  // Per-network best connections will be pinged at relatively higher rate when
+  // the selected connection becomes not receiving.
+  Connection* per_network_best_connection1 =
+      GetConnection(ep1_ch1(), cellularIpv6[0], wifiIpv6[1]);
+  ASSERT_NE(nullptr, per_network_best_connection1);
+  int64_t last_ping_sent1 = per_network_best_connection1->last_ping_sent();
+  int num_pings_sent1 = per_network_best_connection1->num_pings_sent();
+  EXPECT_TRUE_SIMULATED_WAIT(
+      num_pings_sent1 < per_network_best_connection1->num_pings_sent(),
+      kMediumTimeout, clock);
+  int64_t ping_interval1 =
+      (per_network_best_connection1->last_ping_sent() - last_ping_sent1) /
+      (per_network_best_connection1->num_pings_sent() - num_pings_sent1);
+  constexpr int SCHEDULING_DELAY = 200;
+  EXPECT_LT(
+      ping_interval1,
+      WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL + SCHEDULING_DELAY);
+
+  // It should switch over to use the cellular IPv6 addr on endpoint 1 before
+  // it timed out on writing.
+  EXPECT_TRUE_SIMULATED_WAIT(
+      ep1_ch1()->selected_connection()->receiving() &&
+          ep2_ch1()->selected_connection()->receiving() &&
+          RemoteCandidate(ep2_ch1())->address().EqualIPs(cellularIpv6[0]) &&
+          LocalCandidate(ep1_ch1())->address().EqualIPs(cellularIpv6[0]),
+      kMediumTimeout, clock);
 
   DestroyChannels();
 }
@@ -2650,7 +2755,7 @@ TEST_F(P2PTransportChannelMultihomedTest,
   // Add a new wifi interface on end point 2. We should expect a new connection
   // to be created and the new one will be the best connection.
   AddAddress(1, wifi[1], "test_wifi1", rtc::ADAPTER_TYPE_WIFI);
-  const cricket::Connection* conn;
+  const Connection* conn;
   EXPECT_TRUE_WAIT((conn = ep1_ch1()->selected_connection()) != nullptr &&
                        conn->remote_candidate().address().EqualIPs(wifi[1]),
                    kDefaultTimeout);
@@ -2662,13 +2767,13 @@ TEST_F(P2PTransportChannelMultihomedTest,
   // backup connection created using this new interface.
   AddAddress(0, cellular[0], "test_cellular0", rtc::ADAPTER_TYPE_CELLULAR);
   EXPECT_TRUE_WAIT(
-      ep1_ch1()->GetState() == cricket::STATE_COMPLETED &&
+      ep1_ch1()->GetState() == STATE_COMPLETED &&
           (conn = GetConnectionWithLocalAddress(ep1_ch1(), cellular[0])) !=
               nullptr &&
           conn != ep1_ch1()->selected_connection() && conn->writable(),
       kDefaultTimeout);
   EXPECT_TRUE_WAIT(
-      ep2_ch1()->GetState() == cricket::STATE_COMPLETED &&
+      ep2_ch1()->GetState() == STATE_COMPLETED &&
           (conn = GetConnectionWithRemoteAddress(ep2_ch1(), cellular[0])) !=
               nullptr &&
           conn != ep2_ch1()->selected_connection() && conn->receiving(),
@@ -2805,7 +2910,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestRestoreBackupConnection) {
   EXPECT_TRUE_SIMULATED_WAIT(
       GetConnectionWithLocalAddress(ep1_ch1(), cellular[0]) == nullptr,
       kDefaultTimeout, clock);
-  const cricket::Connection* conn;
+  const Connection* conn;
   EXPECT_TRUE_SIMULATED_WAIT(
       (conn = GetConnectionWithLocalAddress(ep1_ch1(), cellular[0])) !=
               nullptr &&
@@ -3063,9 +3168,11 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
   SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, kMediumTimeout,
                  clock);
   ping_interval_ms = (clock.TimeNanos() - start) / rtc::kNumNanosecsPerMillisec;
-  EXPECT_GE(ping_interval_ms, STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
-  EXPECT_LE(ping_interval_ms,
-            STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL + SCHEDULING_RANGE);
+  EXPECT_GE(ping_interval_ms,
+            WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
+  EXPECT_LE(
+      ping_interval_ms,
+      WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL + SCHEDULING_RANGE);
 
   // Stabilized.
 
@@ -3079,9 +3186,11 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
   SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, kMediumTimeout,
                  clock);
   ping_interval_ms = (clock.TimeNanos() - start) / rtc::kNumNanosecsPerMillisec;
-  EXPECT_GE(ping_interval_ms, STABLE_WRITABLE_CONNECTION_PING_INTERVAL);
-  EXPECT_LE(ping_interval_ms,
-            STABLE_WRITABLE_CONNECTION_PING_INTERVAL + SCHEDULING_RANGE);
+  EXPECT_GE(ping_interval_ms,
+            STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL);
+  EXPECT_LE(
+      ping_interval_ms,
+      STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL + SCHEDULING_RANGE);
 
   // Destabilized.
 
@@ -3102,15 +3211,17 @@ TEST_F(P2PTransportChannelPingTest, TestStunPingIntervals) {
   SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, kMediumTimeout,
                  clock);
   // The interval is expected to be
-  // STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL.
+  // WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL.
   start = clock.TimeNanos();
   ping_sent_before = conn->num_pings_sent();
   SIMULATED_WAIT(conn->num_pings_sent() == ping_sent_before + 1, kMediumTimeout,
                  clock);
   ping_interval_ms = (clock.TimeNanos() - start) / rtc::kNumNanosecsPerMillisec;
-  EXPECT_GE(ping_interval_ms, STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
-  EXPECT_LE(ping_interval_ms,
-            STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL + SCHEDULING_RANGE);
+  EXPECT_GE(ping_interval_ms,
+            WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
+  EXPECT_LE(
+      ping_interval_ms,
+      WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL + SCHEDULING_RANGE);
 }
 
 // Test that we start pinging as soon as we have a connection and remote ICE
