@@ -9,9 +9,7 @@
  *
  */
 
-#include "webrtc/modules/video_coding/codecs/h264/h264_video_toolbox_nalu.h"
-
-#if defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <memory>
@@ -365,5 +363,3 @@ size_t AvccBufferWriter::BytesRemaining() const {
 }
 
 }  // namespace webrtc
-
-#endif  // defined(WEBRTC_VIDEO_TOOLBOX_SUPPORTED)

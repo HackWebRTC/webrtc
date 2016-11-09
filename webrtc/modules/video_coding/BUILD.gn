@@ -141,11 +141,6 @@ rtc_static_library("webrtc_h264") {
     "../../system_wrappers",
   ]
 
-  if (is_ios) {
-    sources += [ "codecs/h264/h264_objc.mm" ]
-    deps += [ ":webrtc_h264_video_toolbox" ]
-  }
-
   if (rtc_use_h264) {
     defines += [ "WEBRTC_USE_H264" ]
     if (rtc_initialize_ffmpeg) {
@@ -162,60 +157,6 @@ rtc_static_library("webrtc_h264") {
       "//third_party/ffmpeg:ffmpeg",
       "//third_party/openh264:encoder",
     ]
-  }
-}
-
-if (is_ios) {
-  config("webrtc_h264_video_toolbox_warnings_config") {
-    if (is_clang) {
-      # TODO(tkchin): Make webrtc_h264_video_toolbox compile with the standard set
-      # of warnings.
-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6307
-      cflags = [ "-Wno-thread-safety-analysis" ]
-    }
-  }
-
-  rtc_static_library("webrtc_h264_video_toolbox") {
-    sources = [
-      "codecs/h264/h264_video_toolbox_decoder.cc",
-      "codecs/h264/h264_video_toolbox_decoder.h",
-      "codecs/h264/h264_video_toolbox_encoder.h",
-      "codecs/h264/h264_video_toolbox_encoder.mm",
-      "codecs/h264/h264_video_toolbox_nalu.cc",
-      "codecs/h264/h264_video_toolbox_nalu.h",
-    ]
-
-    configs += [
-      ":webrtc_h264_video_toolbox_warnings_config",
-      "../..:common_objc",
-      "//build/config/compiler:enable_arc",
-    ]
-
-    deps = [
-      "../../sdk:rtc_sdk_common_objc",
-    ]
-
-    libs = [
-      "CoreFoundation.framework",
-      "CoreMedia.framework",
-      "CoreVideo.framework",
-      "VideoToolbox.framework",
-    ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
-    if (rtc_build_libyuv) {
-      deps += [ "$rtc_libyuv_dir" ]
-      public_deps = [
-        "$rtc_libyuv_dir",
-      ]
-    } else {
-      # Need to add a directory normally exported by libyuv.
-      include_dirs = [ "$rtc_libyuv_dir/include" ]
-    }
   }
 }
 

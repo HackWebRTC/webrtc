@@ -61,6 +61,9 @@
                 'objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h',
                 'objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h',
               ],
+              'dependencies': [
+                'webrtc_h264_video_toolbox',
+              ],
               'link_settings': {
                 'xcode_settings': {
                   'OTHER_LDFLAGS': [
@@ -338,5 +341,42 @@
         }, # rtc_sdk_framework_objc
       ],  # targets
     }],  # OS=="ios" or (OS=="mac" and mac_deployment_target=="10.7")
+    ['OS=="ios"', {
+      'targets': [
+        {
+          'target_name': 'webrtc_h264_video_toolbox',
+          'type': 'static_library',
+          'includes': [ '../build/objc_common.gypi' ],
+          'dependencies': [
+            'rtc_sdk_common_objc',
+          ],
+          'link_settings': {
+            'xcode_settings': {
+              'OTHER_LDFLAGS': [
+                '-framework CoreFoundation',
+                '-framework CoreMedia',
+                '-framework CoreVideo',
+                '-framework VideoToolbox',
+              ],
+            },
+          },
+          'sources': [
+            'objc/Framework/Classes/h264_video_toolbox_decoder.cc',
+            'objc/Framework/Classes/h264_video_toolbox_decoder.h',
+            'objc/Framework/Classes/h264_video_toolbox_encoder.h',
+            'objc/Framework/Classes/h264_video_toolbox_encoder.mm',
+            'objc/Framework/Classes/h264_video_toolbox_nalu.cc',
+            'objc/Framework/Classes/h264_video_toolbox_nalu.h',
+            'objc/Framework/Classes/videotoolboxvideocodecfactory.cc',
+            'objc/Framework/Classes/videotoolboxvideocodecfactory.h',
+          ],
+          'conditions': [
+            ['build_libyuv==1', {
+              'dependencies': ['<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv'],
+            }],
+          ],
+        }, # webrtc_h264_video_toolbox
+      ], # targets
+    }], # OS=="ios"
   ],
 }
