@@ -404,7 +404,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(
   // TODO(pbos): Extract automaticResizeOn out of VP8 settings.
   scale_ = false;
   if (codecType_ == kVideoCodecVP8) {
-    scale_ = codec_settings->VP8().automaticResizeOn;
+    scale_ = codec_settings->codecSpecific.VP8.automaticResizeOn;
   } else if (codecType_ != kVideoCodecVP9) {
     scale_ = true;
   }

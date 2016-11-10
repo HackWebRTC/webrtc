@@ -59,36 +59,36 @@ VideoCodec::VideoCodec()
       simulcastStream(),
       spatialLayers(),
       mode(kRealtimeVideo),
-      codec_specific_() {}
+      codecSpecific() {}
 
 VideoCodecVP8* VideoCodec::VP8() {
   RTC_DCHECK_EQ(codecType, kVideoCodecVP8);
-  return &codec_specific_.VP8;
+  return &codecSpecific.VP8;
 }
 
 const VideoCodecVP8& VideoCodec::VP8() const {
   RTC_DCHECK_EQ(codecType, kVideoCodecVP8);
-  return codec_specific_.VP8;
+  return codecSpecific.VP8;
 }
 
 VideoCodecVP9* VideoCodec::VP9() {
   RTC_DCHECK_EQ(codecType, kVideoCodecVP9);
-  return &codec_specific_.VP9;
+  return &codecSpecific.VP9;
 }
 
 const VideoCodecVP9& VideoCodec::VP9() const {
   RTC_DCHECK_EQ(codecType, kVideoCodecVP9);
-  return codec_specific_.VP9;
+  return codecSpecific.VP9;
 }
 
 VideoCodecH264* VideoCodec::H264() {
   RTC_DCHECK_EQ(codecType, kVideoCodecH264);
-  return &codec_specific_.H264;
+  return &codecSpecific.H264;
 }
 
 const VideoCodecH264& VideoCodec::H264() const {
   RTC_DCHECK_EQ(codecType, kVideoCodecH264);
-  return codec_specific_.H264;
+  return codecSpecific.H264;
 }
 
 }  // namespace webrtc
