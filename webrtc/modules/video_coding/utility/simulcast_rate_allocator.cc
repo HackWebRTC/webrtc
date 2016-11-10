@@ -11,133 +11,67 @@
 #include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
 
 #include <algorithm>
-#include <memory>
-#include <vector>
-#include <utility>
-
-#include "webrtc/base/checks.h"
 
 namespace webrtc {
 
-SimulcastRateAllocator::SimulcastRateAllocator(
-    const VideoCodec& codec,
-    std::unique_ptr<TemporalLayersFactory> tl_factory)
-    : codec_(codec), tl_factory_(std::move(tl_factory)) {
-  if (tl_factory_.get())
-    tl_factory_->SetListener(this);
-}
+webrtc::SimulcastRateAllocator::SimulcastRateAllocator(const VideoCodec& codec)
+    : codec_(codec) {}
 
-void SimulcastRateAllocator::OnTemporalLayersCreated(int simulcast_id,
-                                                     TemporalLayers* layers) {
-  RTC_DCHECK(temporal_layers_.find(simulcast_id) == temporal_layers_.end());
-  temporal_layers_[simulcast_id] = layers;
-}
+std::vector<uint32_t> webrtc::SimulcastRateAllocator::GetAllocation(
+    uint32_t bitrate_kbps) const {
+  // Always allocate enough bitrate for the minimum bitrate of the first layer.
+  // Suspending below min bitrate is controlled outside the codec implementation
+  // and is not overridden by this.
+  const uint32_t min_bitrate_bps = codec_.numberOfSimulcastStreams == 0
+                                       ? codec_.minBitrate
+                                       : codec_.simulcastStream[0].minBitrate;
+  uint32_t left_to_allocate = std::max(min_bitrate_bps, bitrate_kbps);
+  if (codec_.maxBitrate)
+    left_to_allocate = std::min(left_to_allocate, codec_.maxBitrate);
 
-BitrateAllocation SimulcastRateAllocator::GetAllocation(
-    uint32_t total_bitrate_bps,
-    uint32_t framerate) {
-  uint32_t left_to_allocate = total_bitrate_bps;
-  if (codec_.maxBitrate && codec_.maxBitrate * 1000 < left_to_allocate)
-    left_to_allocate = codec_.maxBitrate * 1000;
-
-  BitrateAllocation allocated_bitrates_bps;
-  if (codec_.numberOfSimulcastStreams == 0) {
+  if (codec_.numberOfSimulcastStreams < 2) {
     // No simulcast, just set the target as this has been capped already.
-    allocated_bitrates_bps.SetBitrate(
-        0, 0, std::max(codec_.minBitrate * 1000, left_to_allocate));
-  } else {
-    // Always allocate enough bitrate for the minimum bitrate of the first
-    // layer. Suspending below min bitrate is controlled outside the codec
-    // implementation and is not overridden by this.
-    left_to_allocate =
-        std::max(codec_.simulcastStream[0].minBitrate * 1000, left_to_allocate);
-
-    // Begin by allocating bitrate to simulcast streams, putting all bitrate in
-    // temporal layer 0. We'll then distribute this bitrate, across potential
-    // temporal layers, when stream allocation is done.
-
-    // Allocate up to the target bitrate for each simulcast layer.
-    size_t layer = 0;
-    for (; layer < codec_.numberOfSimulcastStreams; ++layer) {
-      const SimulcastStream& stream = codec_.simulcastStream[layer];
-      if (left_to_allocate < stream.minBitrate * 1000)
-        break;
-      uint32_t allocation =
-          std::min(left_to_allocate, stream.targetBitrate * 1000);
-      allocated_bitrates_bps.SetBitrate(layer, 0, allocation);
-      RTC_DCHECK_LE(allocation, left_to_allocate);
-      left_to_allocate -= allocation;
-    }
-
-    // Next, try allocate remaining bitrate, up to max bitrate, in top stream.
-    // TODO(sprang): Allocate up to max bitrate for all layers once we have a
-    //               better idea of possible performance implications.
-    if (left_to_allocate > 0) {
-      size_t active_layer = layer - 1;
-      const SimulcastStream& stream = codec_.simulcastStream[active_layer];
-      uint32_t bitrate_bps =
-          allocated_bitrates_bps.GetSpatialLayerSum(active_layer);
-      uint32_t allocation =
-          std::min(left_to_allocate, stream.maxBitrate * 1000 - bitrate_bps);
-      bitrate_bps += allocation;
-      RTC_DCHECK_LE(allocation, left_to_allocate);
-      left_to_allocate -= allocation;
-      allocated_bitrates_bps.SetBitrate(active_layer, 0, bitrate_bps);
-    }
+    return std::vector<uint32_t>(1, left_to_allocate);
   }
 
-  const int num_spatial_streams =
-      std::max(1, static_cast<int>(codec_.numberOfSimulcastStreams));
+  // Initialize bitrates with zeroes.
+  std::vector<uint32_t> allocated_bitrates_bps(codec_.numberOfSimulcastStreams,
+                                               0);
 
-  // Finally, distribute the bitrate for the simulcast streams across the
-  // available temporal layers.
-  for (int simulcast_id = 0; simulcast_id < num_spatial_streams;
-       ++simulcast_id) {
-    auto tl_it = temporal_layers_.find(simulcast_id);
-    if (tl_it == temporal_layers_.end())
-      continue;  // TODO(sprang): If > 1 SS, assume default TL alloc?
+  // First try to allocate up to the target bitrate for each substream.
+  size_t layer = 0;
+  for (; layer < codec_.numberOfSimulcastStreams; ++layer) {
+    const SimulcastStream& stream = codec_.simulcastStream[layer];
+    if (left_to_allocate < stream.minBitrate)
+      break;
+    uint32_t allocation = std::min(left_to_allocate, stream.targetBitrate);
+    allocated_bitrates_bps[layer] = allocation;
+    left_to_allocate -= allocation;
+  }
 
-    uint32_t target_bitrate_kbps =
-        allocated_bitrates_bps.GetBitrate(simulcast_id, 0) / 1000;
-    RTC_DCHECK_EQ(
-        target_bitrate_kbps,
-        allocated_bitrates_bps.GetSpatialLayerSum(simulcast_id) / 1000);
-    uint32_t max_bitrate_kbps;
-    if (codec_.numberOfSimulcastStreams == 0) {
-      max_bitrate_kbps = codec_.maxBitrate;
-
-      // TODO(holmer): This is a temporary hack for screensharing, where we
-      // interpret the startBitrate as the encoder target bitrate. This is
-      // to allow for a different max bitrate, so if the codec can't meet
-      // the target we still allow it to overshoot up to the max before dropping
-      // frames. This hack should be improved.
-      if (codec_.mode == kScreensharing && codec_.targetBitrate > 0 &&
-          (codec_.VP8().numberOfTemporalLayers == 2 ||
-           codec_.simulcastStream[0].numberOfTemporalLayers == 2)) {
-        int tl0_bitrate = std::min(codec_.targetBitrate, target_bitrate_kbps);
-        max_bitrate_kbps = std::min(codec_.maxBitrate, target_bitrate_kbps);
-        target_bitrate_kbps = tl0_bitrate;
-      }
-    } else {
-      max_bitrate_kbps = codec_.simulcastStream[simulcast_id].maxBitrate;
-    }
-
-    std::vector<uint32_t> tl_allocation = tl_it->second->OnRatesUpdated(
-        target_bitrate_kbps, max_bitrate_kbps, framerate);
-
-    for (size_t tl_index = 0; tl_index < tl_allocation.size(); ++tl_index) {
-      allocated_bitrates_bps.SetBitrate(simulcast_id, tl_index,
-                                        tl_allocation[tl_index] * 1000);
-    }
+  // Next, try allocate remaining bitrate, up to max bitrate, in top layer.
+  // TODO(sprang): Allocate up to max bitrate for all layers once we have a
+  //               better idea of possible performance implications.
+  if (left_to_allocate > 0) {
+    size_t active_layer = layer - 1;
+    const SimulcastStream& stream = codec_.simulcastStream[active_layer];
+    uint32_t allocation =
+        std::min(left_to_allocate,
+                 stream.maxBitrate - allocated_bitrates_bps[active_layer]);
+    left_to_allocate -= allocation;
+    allocated_bitrates_bps[active_layer] += allocation;
   }
 
   return allocated_bitrates_bps;
 }
 
-uint32_t SimulcastRateAllocator::GetPreferredBitrateBps(uint32_t framerate) {
-  BitrateAllocation allocation =
-      GetAllocation(codec_.maxBitrate * 1000, framerate);
-  return allocation.get_sum_bps();
+uint32_t SimulcastRateAllocator::GetPreferedBitrate() const {
+  std::vector<uint32_t> rates = GetAllocation(codec_.maxBitrate);
+  uint32_t preferred_bitrate = 0;
+  for (const uint32_t& rate : rates) {
+    preferred_bitrate += rate;
+  }
+  return preferred_bitrate;
 }
 
 const VideoCodec& webrtc::SimulcastRateAllocator::GetCodec() const {

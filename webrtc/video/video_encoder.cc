@@ -67,13 +67,8 @@ VideoEncoder::EncoderType VideoEncoder::CodecToEncoderType(
 VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
     VideoCodecType codec_type,
     webrtc::VideoEncoder* encoder)
-    : number_of_cores_(0),
-      max_payload_size_(0),
-      rates_set_(false),
-      framerate_(0),
+    : rates_set_(false),
       channel_parameters_set_(false),
-      packet_loss_(0),
-      rtt_(0),
       encoder_type_(CodecToEncoderType(codec_type)),
       encoder_(encoder),
       callback_(nullptr) {}
@@ -97,7 +92,7 @@ bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
   if (callback_)
     fallback_encoder_->RegisterEncodeCompleteCallback(callback_);
   if (rates_set_)
-    fallback_encoder_->SetRateAllocation(bitrate_allocation_, framerate_);
+    fallback_encoder_->SetRates(bitrate_, framerate_);
   if (channel_parameters_set_)
     fallback_encoder_->SetChannelParameters(packet_loss_, rtt_);
 
@@ -194,15 +189,14 @@ int32_t VideoEncoderSoftwareFallbackWrapper::SetChannelParameters(
   return ret;
 }
 
-int32_t VideoEncoderSoftwareFallbackWrapper::SetRateAllocation(
-    const BitrateAllocation& bitrate_allocation,
-    uint32_t framerate) {
+int32_t VideoEncoderSoftwareFallbackWrapper::SetRates(uint32_t bitrate,
+                                                      uint32_t framerate) {
   rates_set_ = true;
-  bitrate_allocation_ = bitrate_allocation;
+  bitrate_ = bitrate;
   framerate_ = framerate;
-  int32_t ret = encoder_->SetRateAllocation(bitrate_allocation_, framerate);
+  int32_t ret = encoder_->SetRates(bitrate, framerate);
   if (fallback_encoder_)
-    return fallback_encoder_->SetRateAllocation(bitrate_allocation_, framerate);
+    return fallback_encoder_->SetRates(bitrate, framerate);
   return ret;
 }
 

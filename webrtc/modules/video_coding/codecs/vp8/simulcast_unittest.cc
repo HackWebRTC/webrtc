@@ -86,5 +86,10 @@ TEST_F(TestVp8Impl, TestSpatioTemporalLayers321PatternEncoder) {
 TEST_F(TestVp8Impl, TestStrideEncodeDecode) {
   TestVp8Simulcast::TestStrideEncodeDecode();
 }
+
+TEST_F(TestVp8Impl, TestSkipEncodingUnusedStreams) {
+  TestVp8Simulcast::TestSkipEncodingUnusedStreams();
+}
+
 }  // namespace testing
 }  // namespace webrtc

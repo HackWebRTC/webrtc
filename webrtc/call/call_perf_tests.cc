@@ -640,9 +640,8 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
           FakeEncoder(Clock::GetRealTimeClock()),
           time_to_reconfigure_(false, false),
           encoder_inits_(0),
-          last_set_bitrate_kbps_(0),
-          send_stream_(nullptr),
-          frame_generator_(nullptr) {}
+          last_set_bitrate_(0),
+          send_stream_(nullptr) {}
 
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
@@ -652,9 +651,8 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
         // First time initialization. Frame size is known.
         // |expected_bitrate| is affected by bandwidth estimation before the
         // first frame arrives to the encoder.
-        uint32_t expected_bitrate = last_set_bitrate_kbps_ > 0
-                                        ? last_set_bitrate_kbps_
-                                        : kInitialBitrateKbps;
+        uint32_t expected_bitrate =
+            last_set_bitrate_ > 0 ? last_set_bitrate_ : kInitialBitrateKbps;
         EXPECT_EQ(expected_bitrate, config->startBitrate)
             << "Encoder not initialized at expected bitrate.";
         EXPECT_EQ(kDefaultWidth, config->width);
@@ -662,8 +660,9 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
       } else if (encoder_inits_ == 2) {
         EXPECT_EQ(2 * kDefaultWidth, config->width);
         EXPECT_EQ(2 * kDefaultHeight, config->height);
-        EXPECT_GE(last_set_bitrate_kbps_, kReconfigureThresholdKbps);
-        EXPECT_NEAR(config->startBitrate, last_set_bitrate_kbps_,
+        EXPECT_GE(last_set_bitrate_, kReconfigureThresholdKbps);
+        EXPECT_NEAR(config->startBitrate,
+                    last_set_bitrate_,
                     kPermittedReconfiguredBitrateDiffKbps)
             << "Encoder reconfigured with bitrate too far away from last set.";
         observation_complete_.Set();
@@ -671,14 +670,14 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
       return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
 
-    int32_t SetRateAllocation(const BitrateAllocation& rate_allocation,
-                              uint32_t framerate) override {
-      last_set_bitrate_kbps_ = rate_allocation.get_sum_kbps();
+    int32_t SetRates(uint32_t new_target_bitrate_kbps,
+                     uint32_t framerate) override {
+      last_set_bitrate_ = new_target_bitrate_kbps;
       if (encoder_inits_ == 1 &&
-          rate_allocation.get_sum_kbps() > kReconfigureThresholdKbps) {
+          new_target_bitrate_kbps > kReconfigureThresholdKbps) {
         time_to_reconfigure_.Set();
       }
-      return FakeEncoder::SetRateAllocation(rate_allocation, framerate);
+      return FakeEncoder::SetRates(new_target_bitrate_kbps, framerate);
     }
 
     Call::Config GetSenderCallConfig() override {
@@ -724,7 +723,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
    private:
     rtc::Event time_to_reconfigure_;
     int encoder_inits_;
-    uint32_t last_set_bitrate_kbps_;
+    uint32_t last_set_bitrate_;
     VideoSendStream* send_stream_;
     test::FrameGeneratorCapturer* frame_generator_;
     VideoEncoderConfig encoder_config_;

@@ -77,7 +77,6 @@ VP9EncoderImpl::VP9EncoderImpl()
       frames_since_kf_(0),
       num_temporal_layers_(0),
       num_spatial_layers_(0),
-      is_flexible_mode_(false),
       frames_encoded_(0),
       // Use two spatial when screensharing with flexible mode.
       spatial_layer_(new ScreenshareLayersVP9(2)) {
@@ -194,28 +193,24 @@ bool VP9EncoderImpl::SetSvcRates() {
   return true;
 }
 
-int VP9EncoderImpl::SetRateAllocation(
-    const BitrateAllocation& bitrate_allocation,
-    uint32_t frame_rate) {
+int VP9EncoderImpl::SetRates(uint32_t new_bitrate_kbit,
+                             uint32_t new_framerate) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   if (encoder_->err) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
-  if (frame_rate < 1) {
+  if (new_framerate < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   // Update bit rate
-  if (codec_.maxBitrate > 0 &&
-      bitrate_allocation.get_sum_kbps() > codec_.maxBitrate) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  if (codec_.maxBitrate > 0 && new_bitrate_kbit > codec_.maxBitrate) {
+    new_bitrate_kbit = codec_.maxBitrate;
   }
-
-  // TODO(sprang): Actually use BitrateAllocation layer info.
-  config_->rc_target_bitrate = bitrate_allocation.get_sum_kbps();
-  codec_.maxFramerate = frame_rate;
-  spatial_layer_->ConfigureBitrate(bitrate_allocation.get_sum_kbps(), 0);
+  config_->rc_target_bitrate = new_bitrate_kbit;
+  codec_.maxFramerate = new_framerate;
+  spatial_layer_->ConfigureBitrate(new_bitrate_kbit, 0);
 
   if (!SetSvcRates()) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;

@@ -22,7 +22,6 @@
 #include "webrtc/test/gtest.h"
 
 using ::testing::_;
-using ::testing::ElementsAre;
 using ::testing::NiceMock;
 using ::testing::Return;
 
@@ -62,11 +61,8 @@ class ScreenshareLayerTest : public ::testing::Test {
     memset(&vpx_cfg, 0, sizeof(vpx_codec_enc_cfg_t));
     vpx_cfg.rc_min_quantizer = min_qp_;
     vpx_cfg.rc_max_quantizer = max_qp_;
-    EXPECT_THAT(layers_->OnRatesUpdated(kDefaultTl0BitrateKbps,
-                                        kDefaultTl1BitrateKbps, kFrameRate),
-                ElementsAre(kDefaultTl0BitrateKbps,
-                            kDefaultTl1BitrateKbps - kDefaultTl0BitrateKbps));
-    EXPECT_TRUE(layers_->UpdateConfiguration(&vpx_cfg));
+    EXPECT_TRUE(layers_->ConfigureBitrates(
+        kDefaultTl0BitrateKbps, kDefaultTl1BitrateKbps, kFrameRate, &vpx_cfg));
     frame_size_ = ((vpx_cfg.rc_target_bitrate * 1000) / 8) / kFrameRate;
   }
 
@@ -377,41 +373,27 @@ TEST_F(ScreenshareLayerTest, TooHighBitrate) {
 
 TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL0) {
   vpx_codec_enc_cfg_t cfg = GetConfig();
-  const int kTl0_kbps = 100;
-  const int kTl1_kbps = 1000;
-  layers_->OnRatesUpdated(kTl0_kbps, kTl1_kbps, 5);
-
-  EXPECT_THAT(layers_->OnRatesUpdated(kTl0_kbps, kTl1_kbps, 5),
-              ElementsAre(kTl0_kbps, kTl1_kbps - kTl0_kbps));
-  EXPECT_TRUE(layers_->UpdateConfiguration(&cfg));
+  layers_->ConfigureBitrates(100, 1000, 5, &cfg);
 
   EXPECT_EQ(static_cast<unsigned int>(
-                ScreenshareLayers::kMaxTL0FpsReduction * kTl0_kbps + 0.5),
+                ScreenshareLayers::kMaxTL0FpsReduction * 100 + 0.5),
             cfg.rc_target_bitrate);
 }
 
 TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL1) {
   vpx_codec_enc_cfg_t cfg = GetConfig();
-  const int kTl0_kbps = 100;
-  const int kTl1_kbps = 450;
-  EXPECT_THAT(layers_->OnRatesUpdated(kTl0_kbps, kTl1_kbps, 5),
-              ElementsAre(kTl0_kbps, kTl1_kbps - kTl0_kbps));
-  EXPECT_TRUE(layers_->UpdateConfiguration(&cfg));
+  layers_->ConfigureBitrates(100, 450, 5, &cfg);
 
   EXPECT_EQ(static_cast<unsigned int>(
-                kTl1_kbps / ScreenshareLayers::kAcceptableTargetOvershoot),
+                450 / ScreenshareLayers::kAcceptableTargetOvershoot),
             cfg.rc_target_bitrate);
 }
 
 TEST_F(ScreenshareLayerTest, TargetBitrateBelowTL0) {
   vpx_codec_enc_cfg_t cfg = GetConfig();
-  const int kTl0_kbps = 100;
-  const int kTl1_kbps = 100;
-  EXPECT_THAT(layers_->OnRatesUpdated(kTl0_kbps, kTl1_kbps, 5),
-              ElementsAre(kTl0_kbps));
-  EXPECT_TRUE(layers_->UpdateConfiguration(&cfg));
+  layers_->ConfigureBitrates(100, 100, 5, &cfg);
 
-  EXPECT_EQ(static_cast<uint32_t>(kTl1_kbps), cfg.rc_target_bitrate);
+  EXPECT_EQ(100U, cfg.rc_target_bitrate);
 }
 
 TEST_F(ScreenshareLayerTest, EncoderDrop) {
@@ -471,8 +453,7 @@ TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
   const uint32_t kStartTimestamp = 1234;
 
   vpx_codec_enc_cfg_t cfg = GetConfig();
-  layers_->OnRatesUpdated(kLowBitrateKbps, kLowBitrateKbps, 5);
-  layers_->UpdateConfiguration(&cfg);
+  layers_->ConfigureBitrates(kLowBitrateKbps, kLowBitrateKbps, 5, &cfg);
 
   EXPECT_EQ(ScreenshareLayers::kTl0Flags,
             layers_->EncodeFlags(kStartTimestamp));
@@ -568,11 +549,6 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
   EXPECT_EQ(1,
             metrics::NumEvents("WebRTC.Video.Screenshare.Layer1.TargetBitrate",
                                kDefaultTl1BitrateKbps));
-}
-
-TEST_F(ScreenshareLayerTest, AllowsUpdateConfigBeforeSetRates) {
-  vpx_codec_enc_cfg_t cfg = GetConfig();
-  EXPECT_FALSE(layers_->UpdateConfiguration(&cfg));
 }
 
 }  // namespace webrtc

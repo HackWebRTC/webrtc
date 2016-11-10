@@ -14,12 +14,9 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
-#include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
-#include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -39,7 +36,7 @@ VideoSender::VideoSender(Clock* clock,
       frame_dropper_enabled_(true),
       _sendStatsTimer(1000, clock_),
       current_codec_(),
-      encoder_params_({BitrateAllocation(), 0, 0, 0}),
+      encoder_params_({0, 0, 0, 0}),
       encoder_has_internal_source_(false),
       next_frame_types_(1, kVideoFrameDelta) {
   _mediaOpt.Reset();
@@ -175,7 +172,7 @@ int VideoSender::Bitrate(unsigned int* bitrate) const {
 
   if (!_encoder)
     return VCM_UNINITIALIZED;
-  *bitrate = _encoder->GetEncoderParameters().target_bitrate.get_sum_bps();
+  *bitrate = _encoder->GetEncoderParameters().target_bitrate;
   return 0;
 }
 
@@ -192,38 +189,15 @@ int VideoSender::FrameRate(unsigned int* framerate) const {
   return 0;
 }
 
-int32_t VideoSender::UpdateChannelParemeters(
-    VideoBitrateAllocator* bitrate_allocator) {
-  EncoderParameters encoder_params;
-  {
-    rtc::CritScope cs(&params_crit_);
-    encoder_params = encoder_params_;
-  }
+int32_t VideoSender::SetChannelParameters(uint32_t target_bitrate,
+                                          uint8_t lossRate,
+                                          int64_t rtt) {
+  uint32_t target_rate =
+      _mediaOpt.SetTargetRates(target_bitrate, lossRate, rtt);
 
-  return SetChannelParameters(encoder_params.target_bitrate.get_sum_bps(),
-                              encoder_params.loss_rate, encoder_params.rtt,
-                              bitrate_allocator);
-}
-
-int32_t VideoSender::SetChannelParameters(
-    uint32_t target_bitrate_bps,
-    uint8_t lossRate,
-    int64_t rtt,
-    VideoBitrateAllocator* bitrate_allocator) {
-  uint32_t video_target_rate_bps =
-      _mediaOpt.SetTargetRates(target_bitrate_bps, lossRate, rtt);
   uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
-  BitrateAllocation bitrate_allocation;
-  if (bitrate_allocator) {
-    bitrate_allocation = bitrate_allocator->GetAllocation(video_target_rate_bps,
-                                                          input_frame_rate);
-  } else {
-    DefaultVideoBitrateAllocator default_allocator(current_codec_);
-    bitrate_allocation = default_allocator.GetAllocation(video_target_rate_bps,
-                                                         input_frame_rate);
-  }
 
-  EncoderParameters encoder_params = {bitrate_allocation, lossRate, rtt,
+  EncoderParameters encoder_params = {target_rate, lossRate, rtt,
                                       input_frame_rate};
   bool encoder_has_internal_source;
   {
@@ -254,7 +228,7 @@ void VideoSender::SetEncoderParameters(EncoderParameters params,
   // encoder implementations behave when given a zero target bitrate.
   // TODO(perkj): Make sure all known encoder implementations handle zero
   // target bitrate and remove this check.
-  if (!has_internal_source && params.target_bitrate.get_sum_bps() == 0)
+  if (!has_internal_source && params.target_bitrate == 0)
     return;
 
   if (params.input_frame_rate == 0) {
@@ -294,8 +268,7 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
   SetEncoderParameters(encoder_params, encoder_has_internal_source);
   if (_mediaOpt.DropFrame()) {
     LOG(LS_VERBOSE) << "Drop Frame "
-                    << "target bitrate "
-                    << encoder_params.target_bitrate.get_sum_bps()
+                    << "target bitrate " << encoder_params.target_bitrate
                     << " loss rate " << encoder_params.loss_rate << " rtt "
                     << encoder_params.rtt << " input frame rate "
                     << encoder_params.input_frame_rate;

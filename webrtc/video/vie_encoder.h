@@ -21,10 +21,10 @@
 #include "webrtc/base/task_queue.h"
 #include "webrtc/call.h"
 #include "webrtc/common_types.h"
-#include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
@@ -184,7 +184,10 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   rtc::ThreadChecker thread_checker_;
 
   VideoEncoderConfig encoder_config_ ACCESS_ON(&encoder_queue_);
-  std::unique_ptr<VideoBitrateAllocator> rate_allocator_
+  // TODO(sprang): Change |rate_allocator_| to be a codec type
+  // agnostic interface. It is currently VP8 simulcast specific if more than
+  // one layer is specified.
+  std::unique_ptr<SimulcastRateAllocator> rate_allocator_
       ACCESS_ON(&encoder_queue_);
 
   // Set when ConfigureEncoder has been called in order to lazy reconfigure the

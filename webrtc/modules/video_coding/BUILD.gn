@@ -33,7 +33,6 @@ rtc_static_library("video_coding") {
     "h264_sps_pps_tracker.h",
     "histogram.cc",
     "histogram.h",
-    "include/video_codec_initializer.h",
     "include/video_coding.h",
     "include/video_coding_defines.h",
     "inter_frame_delay.cc",
@@ -71,7 +70,6 @@ rtc_static_library("video_coding") {
     "timestamp_map.h",
     "timing.cc",
     "timing.h",
-    "video_codec_initializer.cc",
     "video_coding_impl.cc",
     "video_coding_impl.h",
     "video_receiver.cc",
@@ -100,8 +98,6 @@ rtc_static_library("video_coding") {
 
 rtc_static_library("video_coding_utility") {
   sources = [
-    "utility/default_video_bitrate_allocator.cc",
-    "utility/default_video_bitrate_allocator.h",
     "utility/frame_dropper.cc",
     "utility/frame_dropper.h",
     "utility/ivf_file_writer.cc",

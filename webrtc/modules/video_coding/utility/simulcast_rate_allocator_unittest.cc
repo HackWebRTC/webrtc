@@ -12,7 +12,6 @@
 
 #include <limits>
 #include <memory>
-#include <vector>
 
 #include "webrtc/test/gtest.h"
 
@@ -42,59 +41,43 @@ class SimulcastRateAllocatorTest : public ::testing::Test {
       EXPECT_EQ(expected[i], actual[i]) << "Mismatch at index " << i;
   }
 
-  template <size_t S>
-  void ExpectEqual(uint32_t (&expected)[S], const BitrateAllocation& actual) {
-    // EXPECT_EQ(S, actual.size());
-    uint32_t sum = 0;
-    for (size_t i = 0; i < S; ++i) {
-      uint32_t layer_bitrate = actual.GetSpatialLayerSum(i);
-      EXPECT_EQ(expected[i] * 1000, layer_bitrate) << "Mismatch at index " << i;
-      sum += layer_bitrate;
-    }
-    EXPECT_EQ(sum, actual.get_sum_bps());
-  }
-
   void CreateAllocator() {
-    allocator_.reset(new SimulcastRateAllocator(codec_, nullptr));
-  }
-
-  BitrateAllocation GetAllocation(uint32_t target_bitrate) {
-    return allocator_->GetAllocation(target_bitrate * 1000, kDefaultFrameRate);
+    allocator_.reset(new SimulcastRateAllocator(codec_));
   }
 
  protected:
-  static const int kDefaultFrameRate = 30;
   VideoCodec codec_;
   std::unique_ptr<SimulcastRateAllocator> allocator_;
 };
 
 TEST_F(SimulcastRateAllocatorTest, NoSimulcastBelowMin) {
   uint32_t expected[] = {codec_.minBitrate};
-  ExpectEqual(expected, GetAllocation(codec_.minBitrate - 1));
-  ExpectEqual(expected, GetAllocation(1));
-  ExpectEqual(expected, GetAllocation(0));
+  ExpectEqual(expected, allocator_->GetAllocation(codec_.minBitrate - 1));
+  ExpectEqual(expected, allocator_->GetAllocation(1));
+  ExpectEqual(expected, allocator_->GetAllocation(0));
 }
 
 TEST_F(SimulcastRateAllocatorTest, NoSimulcastAboveMax) {
   uint32_t expected[] = {codec_.maxBitrate};
-  ExpectEqual(expected, GetAllocation(codec_.maxBitrate + 1));
-  ExpectEqual(expected, GetAllocation(std::numeric_limits<uint32_t>::max()));
+  ExpectEqual(expected, allocator_->GetAllocation(codec_.maxBitrate + 1));
+  ExpectEqual(expected,
+              allocator_->GetAllocation(std::numeric_limits<uint32_t>::max()));
 }
 
 TEST_F(SimulcastRateAllocatorTest, NoSimulcastNoMax) {
-  const uint32_t kMax = BitrateAllocation::kMaxBitrateBps / 1000;
+  constexpr uint32_t kMax = std::numeric_limits<uint32_t>::max();
   codec_.maxBitrate = 0;
   CreateAllocator();
 
   uint32_t expected[] = {kMax};
-  ExpectEqual(expected, GetAllocation(kMax));
+  ExpectEqual(expected, allocator_->GetAllocation(kMax));
 }
 
 TEST_F(SimulcastRateAllocatorTest, NoSimulcastWithinLimits) {
   for (uint32_t bitrate = codec_.minBitrate; bitrate <= codec_.maxBitrate;
        ++bitrate) {
     uint32_t expected[] = {bitrate};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 }
 
@@ -107,9 +90,9 @@ TEST_F(SimulcastRateAllocatorTest, SingleSimulcastBelowMin) {
   CreateAllocator();
 
   uint32_t expected[] = {kMin};
-  ExpectEqual(expected, GetAllocation(kMin - 1));
-  ExpectEqual(expected, GetAllocation(1));
-  ExpectEqual(expected, GetAllocation(0));
+  ExpectEqual(expected, allocator_->GetAllocation(kMin - 1));
+  ExpectEqual(expected, allocator_->GetAllocation(1));
+  ExpectEqual(expected, allocator_->GetAllocation(0));
 }
 
 TEST_F(SimulcastRateAllocatorTest, SingleSimulcastAboveMax) {
@@ -120,9 +103,9 @@ TEST_F(SimulcastRateAllocatorTest, SingleSimulcastAboveMax) {
   CreateAllocator();
 
   uint32_t expected[] = {kMax};
-  ExpectEqual(expected, GetAllocation(kMax));
-  ExpectEqual(expected, GetAllocation(kMax + 1));
-  ExpectEqual(expected, GetAllocation(std::numeric_limits<uint32_t>::max()));
+  ExpectEqual(expected, allocator_->GetAllocation(kMax + 1));
+  ExpectEqual(expected,
+              allocator_->GetAllocation(std::numeric_limits<uint32_t>::max()));
 }
 
 TEST_F(SimulcastRateAllocatorTest, SingleSimulcastWithinLimits) {
@@ -134,7 +117,7 @@ TEST_F(SimulcastRateAllocatorTest, SingleSimulcastWithinLimits) {
 
   for (uint32_t bitrate = kMinBitrate; bitrate <= kMaxBitrate; ++bitrate) {
     uint32_t expected[] = {bitrate};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 }
 
@@ -156,14 +139,14 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
     // Single stream, min bitrate.
     const uint32_t bitrate = codec_.simulcastStream[0].minBitrate;
     uint32_t expected[] = {bitrate, 0, 0};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 
   {
     // Single stream at target bitrate.
     const uint32_t bitrate = codec_.simulcastStream[0].targetBitrate;
     uint32_t expected[] = {bitrate, 0, 0};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 
   {
@@ -171,7 +154,7 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
     const uint32_t bitrate = codec_.simulcastStream[0].targetBitrate +
                              codec_.simulcastStream[1].minBitrate - 1;
     uint32_t expected[] = {bitrate, 0, 0};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 
   {
@@ -180,7 +163,7 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
                              codec_.simulcastStream[1].minBitrate;
     uint32_t expected[] = {codec_.simulcastStream[0].targetBitrate,
                            codec_.simulcastStream[1].minBitrate, 0};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 
   {
@@ -189,7 +172,7 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
                              codec_.simulcastStream[1].maxBitrate;
     uint32_t expected[] = {codec_.simulcastStream[0].targetBitrate,
                            codec_.simulcastStream[1].maxBitrate, 0};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 
   {
@@ -199,7 +182,7 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
                              codec_.simulcastStream[1].maxBitrate + 499;
     uint32_t expected[] = {codec_.simulcastStream[0].targetBitrate,
                            codec_.simulcastStream[1].maxBitrate, 0};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 
   {
@@ -210,7 +193,7 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
     uint32_t expected[] = {codec_.simulcastStream[0].targetBitrate,
                            codec_.simulcastStream[1].targetBitrate,
                            codec_.simulcastStream[2].minBitrate};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 
   {
@@ -221,13 +204,12 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
     uint32_t expected[] = {codec_.simulcastStream[0].targetBitrate,
                            codec_.simulcastStream[1].targetBitrate,
                            codec_.simulcastStream[2].maxBitrate};
-    ExpectEqual(expected, GetAllocation(bitrate));
+    ExpectEqual(expected, allocator_->GetAllocation(bitrate));
   }
 }
 
-TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrateBps) {
-  EXPECT_EQ(codec_.maxBitrate * 1000,
-            allocator_->GetPreferredBitrateBps(codec_.maxFramerate));
+TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrate) {
+  EXPECT_EQ(codec_.maxBitrate, allocator_->GetPreferedBitrate());
 }
 
 TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrateSimulcast) {
@@ -246,13 +228,12 @@ TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrateSimulcast) {
   codec_.simulcastStream[2].maxBitrate = 4000;
   CreateAllocator();
 
-  uint32_t preferred_bitrate_kbps;
-  preferred_bitrate_kbps = codec_.simulcastStream[0].targetBitrate;
-  preferred_bitrate_kbps += codec_.simulcastStream[1].targetBitrate;
-  preferred_bitrate_kbps += codec_.simulcastStream[2].maxBitrate;
+  uint32_t preferred_bitrate;
+  preferred_bitrate = codec_.simulcastStream[0].targetBitrate;
+  preferred_bitrate += codec_.simulcastStream[1].targetBitrate;
+  preferred_bitrate += codec_.simulcastStream[2].maxBitrate;
 
-  EXPECT_EQ(preferred_bitrate_kbps * 1000,
-            allocator_->GetPreferredBitrateBps(codec_.maxFramerate));
+  EXPECT_EQ(preferred_bitrate, allocator_->GetPreferedBitrate());
 }
 
 }  // namespace webrtc

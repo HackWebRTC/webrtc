@@ -73,7 +73,6 @@
         'include/frame_callback.h',
         'include/i420_buffer_pool.h',
         'include/incoming_video_stream.h',
-        'include/video_bitrate_allocator.h',
         'include/video_frame_buffer.h',
         'libyuv/include/webrtc_libyuv.h',
         'libyuv/webrtc_libyuv.cc',
