@@ -58,8 +58,6 @@ class RTPSenderVideo {
                  const RTPFragmentationHeader* fragmentation,
                  const RTPVideoHeader* video_header);
 
-  int32_t SendRTPIntraRequest();
-
   void SetVideoCodecType(RtpVideoCodecTypes type);
 
   // ULPFEC.
@@ -105,11 +103,10 @@ class RTPSenderVideo {
 
   // Should never be held when calling out of this class.
   rtc::CriticalSection crit_;
-  rtc::SequencedTaskChecker encoder_checker_;
 
   RtpVideoCodecTypes video_type_;
   int32_t retransmission_settings_ GUARDED_BY(crit_);
-  VideoRotation last_rotation_ GUARDED_BY(encoder_checker_);
+  VideoRotation last_rotation_ GUARDED_BY(crit_);
 
   // RED/ULPFEC.
   int red_payload_type_ GUARDED_BY(crit_);

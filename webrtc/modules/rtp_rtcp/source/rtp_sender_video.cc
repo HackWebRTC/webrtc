@@ -58,9 +58,7 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
       delta_fec_params_{0, 1, kFecMaskRandom},
       key_fec_params_{0, 1, kFecMaskRandom},
       fec_bitrate_(1000, RateStatistics::kBpsScale),
-      video_bitrate_(1000, RateStatistics::kBpsScale) {
-  encoder_checker_.Detach();
-}
+      video_bitrate_(1000, RateStatistics::kBpsScale) { }
 
 RTPSenderVideo::~RTPSenderVideo() {}
 
@@ -284,7 +282,6 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
                                size_t payload_size,
                                const RTPFragmentationHeader* fragmentation,
                                const RTPVideoHeader* video_header) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_checker_);
   if (payload_size == 0)
     return false;
 
@@ -306,6 +303,8 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   if (video_header) {
     // Set rotation when key frame or when changed (to follow standard).
     // Or when different from 0 (to follow current receiver implementation).
+    // TODO(kthelgason): Merge this crit scope with the one below.
+    rtc::CritScope cs(&crit_);
     VideoRotation current_rotation = video_header->rotation;
     if (frame_type == kVideoFrameKey || current_rotation != last_rotation_ ||
         current_rotation != kVideoRotation_0)
