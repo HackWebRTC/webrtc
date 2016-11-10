@@ -60,13 +60,13 @@ class AudioDeviceBuffer {
   int32_t RecordingChannel(AudioDeviceModule::ChannelType& channel) const;
 
   virtual int32_t SetRecordedBuffer(const void* audio_buffer,
-                                    size_t num_samples);
+                                    size_t samples_per_channel);
   int32_t SetCurrentMicLevel(uint32_t level);
   virtual void SetVQEData(int play_delay_ms, int rec_delay_ms, int clock_drift);
   virtual int32_t DeliverRecordedData();
   uint32_t NewMicLevel() const;
 
-  virtual int32_t RequestPlayoutData(size_t num_samples);
+  virtual int32_t RequestPlayoutData(size_t samples_per_channel);
   virtual int32_t GetPlayoutData(void* audio_buffer);
 
   // TODO(henrika): these methods should not be used and does not contain any
@@ -95,8 +95,8 @@ class AudioDeviceBuffer {
   // Updates counters in each play/record callback but does it on the task
   // queue to ensure that they can be read by LogStats() without any locks since
   // each task is serialized by the task queue.
-  void UpdateRecStats(int16_t max_abs, size_t num_samples);
-  void UpdatePlayStats(int16_t max_abs, size_t num_samples);
+  void UpdateRecStats(int16_t max_abs, size_t samples_per_channel);
+  void UpdatePlayStats(int16_t max_abs, size_t samples_per_channel);
 
   // Clears all members tracking stats for recording and playout.
   // These methods both run on the task queue.
@@ -154,12 +154,13 @@ class AudioDeviceBuffer {
   bool recording_ ACCESS_ON(main_thread_checker_);
 
   // Buffer used for audio samples to be played out. Size can be changed
-  // dynamically.
-  rtc::Buffer play_buffer_ ACCESS_ON(playout_thread_checker_);
+  // dynamically. The 16-bit samples are interleaved, hence the size is
+  // proportional to the number of channels.
+  rtc::BufferT<int16_t> play_buffer_ ACCESS_ON(playout_thread_checker_);
 
   // Byte buffer used for recorded audio samples. Size can be changed
   // dynamically.
-  rtc::Buffer rec_buffer_ ACCESS_ON(recording_thread_checker_);
+  rtc::BufferT<int16_t> rec_buffer_ ACCESS_ON(recording_thread_checker_);
 
   // AGC parameters.
 #if !defined(WEBRTC_WIN)

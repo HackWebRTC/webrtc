@@ -22,8 +22,6 @@
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
-#include "webrtc/base/platform_thread.h"
-
 namespace webrtc {
 
 static const char kTimerQueueName[] = "AudioDeviceBufferTimer";
@@ -301,25 +299,24 @@ int32_t AudioDeviceBuffer::StopOutputFileRecording() {
 }
 
 int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
-                                             size_t num_samples) {
+                                             size_t samples_per_channel) {
   RTC_DCHECK_RUN_ON(&recording_thread_checker_);
   // Copy the complete input buffer to the local buffer.
-  const size_t size_in_bytes = num_samples * rec_channels_ * sizeof(int16_t);
   const size_t old_size = rec_buffer_.size();
-  rec_buffer_.SetData(static_cast<const uint8_t*>(audio_buffer), size_in_bytes);
+  rec_buffer_.SetData(static_cast<const int16_t*>(audio_buffer),
+                      rec_channels_ * samples_per_channel);
   // Keep track of the size of the recording buffer. Only updated when the
   // size changes, which is a rare event.
   if (old_size != rec_buffer_.size()) {
     LOG(LS_INFO) << "Size of recording buffer: " << rec_buffer_.size();
   }
+
   // Derive a new level value twice per second and check if it is non-zero.
   int16_t max_abs = 0;
   RTC_DCHECK_LT(rec_stat_count_, 50);
   if (++rec_stat_count_ >= 50) {
-    const size_t size = num_samples * rec_channels_;
     // Returns the largest absolute value in a signed 16-bit vector.
-    max_abs = WebRtcSpl_MaxAbsValueW16(
-        reinterpret_cast<const int16_t*>(rec_buffer_.data()), size);
+    max_abs = WebRtcSpl_MaxAbsValueW16(rec_buffer_.data(), rec_buffer_.size());
     rec_stat_count_ = 0;
     // Set |only_silence_recorded_| to false as soon as at least one detection
     // of a non-zero audio packet is found. It can only be restored to true
@@ -332,8 +329,9 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
   // are modified and read on the same thread. Note that |max_abs| will be
   // zero in most calls and then have no effect of the stats. It is only updated
   // approximately two times per second and can then change the stats.
-  task_queue_.PostTask(
-      [this, max_abs, num_samples] { UpdateRecStats(max_abs, num_samples); });
+  task_queue_.PostTask([this, max_abs, samples_per_channel] {
+    UpdateRecStats(max_abs, samples_per_channel);
+  });
   return 0;
 }
 
@@ -343,12 +341,12 @@ int32_t AudioDeviceBuffer::DeliverRecordedData() {
     LOG(LS_WARNING) << "Invalid audio transport";
     return 0;
   }
-  const size_t rec_bytes_per_sample = rec_channels_ * sizeof(int16_t);
+  const size_t frames = rec_buffer_.size() / rec_channels_;
+  const size_t bytes_per_frame = rec_channels_ * sizeof(int16_t);
   uint32_t new_mic_level(0);
   uint32_t total_delay_ms = play_delay_ms_ + rec_delay_ms_;
-  size_t num_samples = rec_buffer_.size() / rec_bytes_per_sample;
   int32_t res = audio_transport_cb_->RecordedDataIsAvailable(
-      rec_buffer_.data(), num_samples, rec_bytes_per_sample, rec_channels_,
+      rec_buffer_.data(), frames, bytes_per_frame, rec_channels_,
       rec_sample_rate_, total_delay_ms, clock_drift_, current_mic_level_,
       typing_status_, new_mic_level);
   if (res != -1) {
@@ -359,15 +357,14 @@ int32_t AudioDeviceBuffer::DeliverRecordedData() {
   return 0;
 }
 
-int32_t AudioDeviceBuffer::RequestPlayoutData(size_t num_samples) {
+int32_t AudioDeviceBuffer::RequestPlayoutData(size_t samples_per_channel) {
   RTC_DCHECK_RUN_ON(&playout_thread_checker_);
-  // The consumer can change the request size on the fly and we therefore
+  // The consumer can change the requested size on the fly and we therefore
   // resize the buffer accordingly. Also takes place at the first call to this
   // method.
-  const size_t play_bytes_per_sample = play_channels_ * sizeof(int16_t);
-  const size_t size_in_bytes = num_samples * play_bytes_per_sample;
-  if (play_buffer_.size() != size_in_bytes) {
-    play_buffer_.SetSize(size_in_bytes);
+  const size_t total_samples = play_channels_ * samples_per_channel;
+  if (play_buffer_.size() != total_samples) {
+    play_buffer_.SetSize(total_samples);
     LOG(LS_INFO) << "Size of playout buffer: " << play_buffer_.size();
   }
 
@@ -382,8 +379,9 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t num_samples) {
   // Retrieve new 16-bit PCM audio data using the audio transport instance.
   int64_t elapsed_time_ms = -1;
   int64_t ntp_time_ms = -1;
+  const size_t bytes_per_frame = play_channels_ * sizeof(int16_t);
   uint32_t res = audio_transport_cb_->NeedMorePlayData(
-      num_samples, play_bytes_per_sample, play_channels_, play_sample_rate_,
+      samples_per_channel, bytes_per_frame, play_channels_, play_sample_rate_,
       play_buffer_.data(), num_samples_out, &elapsed_time_ms, &ntp_time_ms);
   if (res != 0) {
     LOG(LS_ERROR) << "NeedMorePlayData() failed";
@@ -393,10 +391,9 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t num_samples) {
   int16_t max_abs = 0;
   RTC_DCHECK_LT(play_stat_count_, 50);
   if (++play_stat_count_ >= 50) {
-    const size_t size = num_samples * play_channels_;
     // Returns the largest absolute value in a signed 16-bit vector.
-    max_abs = WebRtcSpl_MaxAbsValueW16(
-        reinterpret_cast<const int16_t*>(play_buffer_.data()), size);
+    max_abs =
+        WebRtcSpl_MaxAbsValueW16(play_buffer_.data(), play_buffer_.size());
     play_stat_count_ = 0;
   }
   // Update some stats but do it on the task queue to ensure that the members
@@ -412,9 +409,11 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t num_samples) {
 int32_t AudioDeviceBuffer::GetPlayoutData(void* audio_buffer) {
   RTC_DCHECK_RUN_ON(&playout_thread_checker_);
   RTC_DCHECK_GT(play_buffer_.size(), 0u);
-  const size_t play_bytes_per_sample = play_channels_ * sizeof(int16_t);
-  memcpy(audio_buffer, play_buffer_.data(), play_buffer_.size());
-  return static_cast<int32_t>(play_buffer_.size() / play_bytes_per_sample);
+  const size_t bytes_per_sample = sizeof(int16_t);
+  memcpy(audio_buffer, play_buffer_.data(),
+         play_buffer_.size() * bytes_per_sample);
+  // Return samples per channel or number of frames.
+  return static_cast<int32_t>(play_buffer_.size() / play_channels_);
 }
 
 void AudioDeviceBuffer::StartPeriodicLogging() {
@@ -504,19 +503,21 @@ void AudioDeviceBuffer::ResetPlayStats() {
   max_play_level_ = 0;
 }
 
-void AudioDeviceBuffer::UpdateRecStats(int16_t max_abs, size_t num_samples) {
+void AudioDeviceBuffer::UpdateRecStats(int16_t max_abs,
+                                       size_t samples_per_channel) {
   RTC_DCHECK_RUN_ON(&task_queue_);
   ++rec_callbacks_;
-  rec_samples_ += num_samples;
+  rec_samples_ += samples_per_channel;
   if (max_abs > max_rec_level_) {
     max_rec_level_ = max_abs;
   }
 }
 
-void AudioDeviceBuffer::UpdatePlayStats(int16_t max_abs, size_t num_samples) {
+void AudioDeviceBuffer::UpdatePlayStats(int16_t max_abs,
+                                        size_t samples_per_channel) {
   RTC_DCHECK_RUN_ON(&task_queue_);
   ++play_callbacks_;
-  play_samples_ += num_samples;
+  play_samples_ += samples_per_channel;
   if (max_abs > max_play_level_) {
     max_play_level_ = max_abs;
   }
