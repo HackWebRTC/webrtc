@@ -44,7 +44,9 @@ void BuildRedPayload(const RtpPacketToSend& media_packet,
 }
 }  // namespace
 
-RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSender* rtp_sender)
+RTPSenderVideo::RTPSenderVideo(Clock* clock,
+                               RTPSender* rtp_sender,
+                               FlexfecSender* flexfec_sender)
     : rtp_sender_(rtp_sender),
       clock_(clock),
       video_type_(kRtpVideoGeneric),
@@ -52,7 +54,7 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock, RTPSender* rtp_sender)
       last_rotation_(kVideoRotation_0),
       red_payload_type_(-1),
       ulpfec_payload_type_(-1),
-      flexfec_sender_(nullptr),  // TODO(brandtr): Wire up in future CL.
+      flexfec_sender_(flexfec_sender),
       delta_fec_params_{0, 1, kFecMaskRandom},
       key_fec_params_{0, 1, kFecMaskRandom},
       fec_bitrate_(1000, RateStatistics::kBpsScale),

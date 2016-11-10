@@ -35,7 +35,9 @@ class RtpPacketToSend;
 
 class RTPSenderVideo {
  public:
-  RTPSenderVideo(Clock* clock, RTPSender* rtpSender);
+  RTPSenderVideo(Clock* clock,
+                 RTPSender* rtpSender,
+                 FlexfecSender* flexfec_sender);
   virtual ~RTPSenderVideo();
 
   virtual RtpVideoCodecTypes VideoCodecType() const;

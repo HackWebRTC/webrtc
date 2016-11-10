@@ -23,6 +23,7 @@
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
@@ -46,6 +47,9 @@ class RTPSender {
             Clock* clock,
             Transport* transport,
             RtpPacketSender* paced_sender,
+            // TODO(brandtr): Remove |flexfec_sender| when that is hooked up
+            // to PacedSender instead.
+            FlexfecSender* flexfec_sender,
             TransportSequenceNumberAllocator* sequence_number_allocator,
             TransportFeedbackObserver* transport_feedback_callback,
             BitrateStatisticsObserver* bitrate_callback,
