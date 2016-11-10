@@ -42,11 +42,11 @@ class ScreenCapturerMacTest : public testing::Test {
 
  protected:
   void SetUp() override {
-    capturer_.reset(
-        ScreenCapturer::Create(DesktopCaptureOptions::CreateDefault()));
+    capturer_ = DesktopCapturer::CreateScreenCapturer(
+        DesktopCaptureOptions::CreateDefault());
   }
 
-  std::unique_ptr<ScreenCapturer> capturer_;
+  std::unique_ptr<DesktopCapturer> capturer_;
   MockScreenCapturerCallback callback_;
 };
 

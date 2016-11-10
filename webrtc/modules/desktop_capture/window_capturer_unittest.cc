@@ -24,8 +24,8 @@ class WindowCapturerTest : public testing::Test,
                            public DesktopCapturer::Callback {
  public:
   void SetUp() override {
-    capturer_.reset(
-        WindowCapturer::Create(DesktopCaptureOptions::CreateDefault()));
+    capturer_ = DesktopCapturer::CreateWindowCapturer(
+        DesktopCaptureOptions::CreateDefault());
   }
 
   void TearDown() override {}
@@ -37,7 +37,7 @@ class WindowCapturerTest : public testing::Test,
   }
 
  protected:
-  std::unique_ptr<WindowCapturer> capturer_;
+  std::unique_ptr<DesktopCapturer> capturer_;
   std::unique_ptr<DesktopFrame> frame_;
 };
 

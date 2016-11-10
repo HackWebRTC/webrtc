@@ -19,7 +19,7 @@ CroppingWindowCapturer::CroppingWindowCapturer(
     const DesktopCaptureOptions& options)
     : options_(options),
       callback_(NULL),
-      window_capturer_(WindowCapturer::Create(options)),
+      window_capturer_(DesktopCapturer::CreateRawWindowCapturer(options)),
       selected_window_(kNullWindowId),
       excluded_window_(kNullWindowId) {
 }
@@ -39,7 +39,7 @@ void CroppingWindowCapturer::SetSharedMemoryFactory(
 void CroppingWindowCapturer::CaptureFrame() {
   if (ShouldUseScreenCapturer()) {
     if (!screen_capturer_.get()) {
-      screen_capturer_.reset(ScreenCapturer::Create(options_));
+      screen_capturer_ = DesktopCapturer::CreateRawScreenCapturer(options_);
       if (excluded_window_) {
         screen_capturer_->SetExcludedWindow(excluded_window_);
       }

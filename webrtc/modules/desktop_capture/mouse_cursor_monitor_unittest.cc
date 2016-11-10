@@ -87,8 +87,8 @@ TEST_F(MouseCursorMonitorTest, MAYBE(FromWindow)) {
   DesktopCaptureOptions options = DesktopCaptureOptions::CreateDefault();
 
   // First get list of windows.
-  std::unique_ptr<WindowCapturer> window_capturer(
-      WindowCapturer::Create(options));
+  std::unique_ptr<DesktopCapturer> window_capturer(
+      DesktopCapturer::CreateWindowCapturer(options));
 
   // If window capturing is not supported then skip this test.
   if (!window_capturer.get())

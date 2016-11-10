@@ -63,8 +63,8 @@ class CroppingWindowCapturer : public WindowCapturer,
  private:
   DesktopCaptureOptions options_;
   DesktopCapturer::Callback* callback_;
-  std::unique_ptr<WindowCapturer> window_capturer_;
-  std::unique_ptr<ScreenCapturer> screen_capturer_;
+  std::unique_ptr<DesktopCapturer> window_capturer_;
+  std::unique_ptr<DesktopCapturer> screen_capturer_;
   SourceId selected_window_;
   WindowId excluded_window_;
 };

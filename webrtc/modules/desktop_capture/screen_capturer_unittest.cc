@@ -34,18 +34,19 @@ namespace webrtc {
 class ScreenCapturerTest : public testing::Test {
  public:
   void SetUp() override {
-    capturer_.reset(
-        ScreenCapturer::Create(DesktopCaptureOptions::CreateDefault()));
+    capturer_ = DesktopCapturer::CreateScreenCapturer(
+        DesktopCaptureOptions::CreateDefault());
   }
 
  protected:
 #if defined(WEBRTC_WIN)
   // Enable allow_directx_capturer in DesktopCaptureOptions, but let
-  // ScreenCapturer::Create to decide whether a DirectX capturer should be used.
+  // DesktopCapturer::CreateScreenCapturer to decide whether a DirectX capturer
+  // should be used.
   void MaybeCreateDirectxCapturer() {
     DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
     options.set_allow_directx_capturer(true);
-    capturer_.reset(ScreenCapturer::Create(options));
+    capturer_ = DesktopCapturer::CreateScreenCapturer(options);
   }
 
   bool CreateDirectxCapturer() {
@@ -61,11 +62,11 @@ class ScreenCapturerTest : public testing::Test {
   void CreateMagnifierCapturer() {
     DesktopCaptureOptions options(DesktopCaptureOptions::CreateDefault());
     options.set_allow_use_magnification_api(true);
-    capturer_.reset(ScreenCapturer::Create(options));
+    capturer_ = DesktopCapturer::CreateScreenCapturer(options);
   }
 #endif  // defined(WEBRTC_WIN)
 
-  std::unique_ptr<ScreenCapturer> capturer_;
+  std::unique_ptr<DesktopCapturer> capturer_;
   MockScreenCapturerCallback callback_;
 };
 
@@ -102,11 +103,10 @@ ACTION_P(SaveUniquePtrArg, dest) {
 }
 
 TEST_F(ScreenCapturerTest, GetScreenListAndSelectScreen) {
-  webrtc::ScreenCapturer::ScreenList screens;
-  EXPECT_TRUE(capturer_->GetScreenList(&screens));
-  for (webrtc::ScreenCapturer::ScreenList::iterator it = screens.begin();
-      it != screens.end(); ++it) {
-    EXPECT_TRUE(capturer_->SelectScreen(it->id));
+  webrtc::DesktopCapturer::SourceList screens;
+  EXPECT_TRUE(capturer_->GetSourceList(&screens));
+  for (const auto& screen : screens) {
+    EXPECT_TRUE(capturer_->SelectSource(screen.id));
   }
 }
 
