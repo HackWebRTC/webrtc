@@ -2133,7 +2133,7 @@ class P2PTransportChannelMultihomedTest : public P2PTransportChannelTestBase {
 };
 
 // Test that we can establish connectivity when both peers are multihomed.
-TEST_F(P2PTransportChannelMultihomedTest, DISABLED_TestBasic) {
+TEST_F(P2PTransportChannelMultihomedTest, TestBasic) {
   AddAddress(0, kPublicAddrs[0]);
   AddAddress(0, kAlternateAddrs[0]);
   AddAddress(1, kPublicAddrs[1]);
