@@ -540,6 +540,7 @@ public class PeerConnectionClient {
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
+      videoCapturerStopped = true;
       videoCapturer.dispose();
       videoCapturer = null;
     }
