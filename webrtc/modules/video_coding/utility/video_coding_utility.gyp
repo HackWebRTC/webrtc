@@ -19,6 +19,8 @@
         '<(webrtc_root)/system_wrappers/system_wrappers.gyp:system_wrappers',
       ],
       'sources': [
+        'default_video_bitrate_allocator.cc',
+        'default_video_bitrate_allocator.h',
         'frame_dropper.cc',
         'frame_dropper.h',
         'ivf_file_writer.cc',

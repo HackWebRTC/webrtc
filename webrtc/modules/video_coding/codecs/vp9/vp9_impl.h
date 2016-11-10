@@ -46,7 +46,8 @@ class VP9EncoderImpl : public VP9Encoder {
 
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
 
-  int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) override;
+  int SetRateAllocation(const BitrateAllocation& bitrate_allocation,
+                        uint32_t frame_rate) override;
 
   void OnDroppedFrame() override {}
 

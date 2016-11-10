@@ -132,9 +132,9 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
   FakeWebRtcVideoEncoder()
       : init_encode_event_(false, false), num_frames_encoded_(0) {}
 
-  virtual int32_t InitEncode(const webrtc::VideoCodec* codecSettings,
-                             int32_t numberOfCores,
-                             size_t maxPayloadSize) {
+  int32_t InitEncode(const webrtc::VideoCodec* codecSettings,
+                     int32_t numberOfCores,
+                     size_t maxPayloadSize) override {
     rtc::CritScope lock(&crit_);
     codec_settings_ = *codecSettings;
     init_encode_event_.Set();
@@ -148,27 +148,28 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
     return codec_settings_;
   }
 
-  virtual int32_t Encode(const webrtc::VideoFrame& inputImage,
-                         const webrtc::CodecSpecificInfo* codecSpecificInfo,
-                         const std::vector<webrtc::FrameType>* frame_types) {
+  int32_t Encode(const webrtc::VideoFrame& inputImage,
+                 const webrtc::CodecSpecificInfo* codecSpecificInfo,
+                 const std::vector<webrtc::FrameType>* frame_types) override {
     rtc::CritScope lock(&crit_);
     ++num_frames_encoded_;
     init_encode_event_.Set();
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
-  virtual int32_t RegisterEncodeCompleteCallback(
-      webrtc::EncodedImageCallback* callback) {
+  int32_t RegisterEncodeCompleteCallback(
+      webrtc::EncodedImageCallback* callback) override {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
-  virtual int32_t Release() { return WEBRTC_VIDEO_CODEC_OK; }
+  int32_t Release() override { return WEBRTC_VIDEO_CODEC_OK; }
 
-  virtual int32_t SetChannelParameters(uint32_t packetLoss, int64_t rtt) {
+  int32_t SetChannelParameters(uint32_t packetLoss, int64_t rtt) override {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
-  virtual int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) {
+  int32_t SetRateAllocation(const webrtc::BitrateAllocation& allocation,
+                            uint32_t framerate) override {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 

@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/typedefs.h"
 
@@ -64,10 +65,6 @@ class I420Encoder : public VideoEncoder {
   //
   // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
   int Release() override;
-
-  int SetRates(uint32_t /*newBitRate*/, uint32_t /*frameRate*/) override {
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
 
   int SetChannelParameters(uint32_t /*packetLoss*/, int64_t /*rtt*/) override {
     return WEBRTC_VIDEO_CODEC_OK;

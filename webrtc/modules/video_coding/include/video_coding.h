@@ -35,6 +35,7 @@ class EncodedImageCallback;
 // removing the VCM and use VideoSender/VideoReceiver as a public interface
 // directly.
 class VCMQMSettingsCallback;
+class VideoBitrateAllocator;
 class VideoEncoder;
 class VideoDecoder;
 struct CodecSpecificInfo;

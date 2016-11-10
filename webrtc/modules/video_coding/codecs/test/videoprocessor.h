@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 
+#include <memory>
 #include <string>
 
 #include "webrtc/base/checks.h"
@@ -23,6 +24,9 @@
 #include "webrtc/video_frame.h"
 
 namespace webrtc {
+
+class VideoBitrateAllocator;
+
 namespace test {
 
 // Defines which frame types shall be excluded from packet loss and when.
@@ -191,6 +195,7 @@ class VideoProcessorImpl : public VideoProcessor {
 
   webrtc::VideoEncoder* encoder_;
   webrtc::VideoDecoder* decoder_;
+  std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
   FrameReader* frame_reader_;
   FrameWriter* frame_writer_;
   PacketManipulator* packet_manipulator_;
