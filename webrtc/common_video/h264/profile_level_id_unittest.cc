@@ -124,5 +124,73 @@ TEST(H264ProfileLevelId, TestToStringInvalid) {
       ProfileLevelId(static_cast<Profile>(255), kLevel3_1)));
 }
 
+TEST(H264ProfileLevelId, TestParseSdpProfileLevelIdEmpty) {
+  const rtc::Optional<ProfileLevelId> profile_level_id =
+      ParseSdpProfileLevelId(CodecParameterMap());
+  EXPECT_TRUE(profile_level_id);
+  EXPECT_EQ(kProfileConstrainedBaseline, profile_level_id->profile);
+  EXPECT_EQ(kLevel3_1, profile_level_id->level);
+}
+
+TEST(H264ProfileLevelId, TestParseSdpProfileLevelIdConstrainedHigh) {
+  CodecParameterMap params;
+  params["profile-level-id"] = "640c2a";
+  const rtc::Optional<ProfileLevelId> profile_level_id =
+      ParseSdpProfileLevelId(params);
+  EXPECT_TRUE(profile_level_id);
+  EXPECT_EQ(kProfileConstrainedHigh, profile_level_id->profile);
+  EXPECT_EQ(kLevel4_2, profile_level_id->level);
+}
+
+TEST(H264ProfileLevelId, TestParseSdpProfileLevelIdInvalid) {
+  CodecParameterMap params;
+  params["profile-level-id"] = "foobar";
+  EXPECT_FALSE(ParseSdpProfileLevelId(params));
+}
+
+TEST(H264ProfileLevelId, TestGenerateProfileLevelIdForAnswerEmpty) {
+  CodecParameterMap answer_params;
+  GenerateProfileLevelIdForAnswer(CodecParameterMap(), CodecParameterMap(),
+                                  &answer_params);
+  EXPECT_EQ("42e01f", answer_params["profile-level-id"]);
+}
+
+TEST(H264ProfileLevelId,
+     TestGenerateProfileLevelIdForAnswerLevelSymmetryCapped) {
+  CodecParameterMap low_level;
+  low_level["profile-level-id"] = "42e015";
+  CodecParameterMap high_level;
+  high_level["profile-level-id"] = "42e01f";
+
+  // Level asymmetry is not allowed; test that answer level is the lower of the
+  // local and remote levels.
+  CodecParameterMap answer_params;
+  GenerateProfileLevelIdForAnswer(low_level /* local_supported */,
+                                  high_level /* remote_offered */,
+                                  &answer_params);
+  EXPECT_EQ("42e015", answer_params["profile-level-id"]);
+
+  CodecParameterMap answer_params2;
+  GenerateProfileLevelIdForAnswer(high_level /* local_supported */,
+                                  low_level /* remote_offered */,
+                                  &answer_params2);
+  EXPECT_EQ("42e015", answer_params2["profile-level-id"]);
+}
+
+TEST(H264ProfileLevelId,
+     TestGenerateProfileLevelIdForAnswerConstrainedBaselineLevelAsymmetry) {
+  CodecParameterMap local_params;
+  local_params["profile-level-id"] = "42e01f";
+  local_params["level-asymmetry-allowed"] = "1";
+  CodecParameterMap remote_params;
+  remote_params["profile-level-id"] = "42e015";
+  remote_params["level-asymmetry-allowed"] = "1";
+  CodecParameterMap answer_params;
+  GenerateProfileLevelIdForAnswer(local_params, remote_params, &answer_params);
+  // When level asymmetry is allowed, we can answer a higher level than what was
+  // offered.
+  EXPECT_EQ("42e01f", answer_params["profile-level-id"]);
+}
+
 }  // namespace H264
 }  // namespace webrtc

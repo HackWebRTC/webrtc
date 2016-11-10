@@ -16,7 +16,13 @@
 
 #include "webrtc/base/arraysize.h"
 
+namespace webrtc {
+namespace H264 {
+
 namespace {
+
+const char kProfileLevelId[] = "profile-level-id";
+const char kLevelAsymmetryAllowed[] = "level-asymmetry-allowed";
 
 // For level_idc=11 and profile_idc=0x42, 0x4D, or 0x58, the constraint set3
 // flag specifies if level 1b or level 1.1 is used.
@@ -56,19 +62,37 @@ class BitPattern {
 struct ProfilePattern {
   const uint8_t profile_idc;
   const BitPattern profile_iop;
-  const webrtc::H264::Profile profile;
+  const Profile profile;
 };
 
 // This is from https://tools.ietf.org/html/rfc6184#section-8.1.
 constexpr ProfilePattern kProfilePatterns[] = {
-    {0x42, BitPattern("x1xx0000"), webrtc::H264::kProfileConstrainedBaseline},
-    {0x4D, BitPattern("1xxx0000"), webrtc::H264::kProfileConstrainedBaseline},
-    {0x58, BitPattern("11xx0000"), webrtc::H264::kProfileConstrainedBaseline},
-    {0x42, BitPattern("x0xx0000"), webrtc::H264::kProfileBaseline},
-    {0x58, BitPattern("10xx0000"), webrtc::H264::kProfileBaseline},
-    {0x4D, BitPattern("0x0x0000"), webrtc::H264::kProfileMain},
-    {0x64, BitPattern("00000000"), webrtc::H264::kProfileHigh},
-    {0x64, BitPattern("00001100"), webrtc::H264::kProfileConstrainedHigh}};
+    {0x42, BitPattern("x1xx0000"), kProfileConstrainedBaseline},
+    {0x4D, BitPattern("1xxx0000"), kProfileConstrainedBaseline},
+    {0x58, BitPattern("11xx0000"), kProfileConstrainedBaseline},
+    {0x42, BitPattern("x0xx0000"), kProfileBaseline},
+    {0x58, BitPattern("10xx0000"), kProfileBaseline},
+    {0x4D, BitPattern("0x0x0000"), kProfileMain},
+    {0x64, BitPattern("00000000"), kProfileHigh},
+    {0x64, BitPattern("00001100"), kProfileConstrainedHigh}};
+
+// Compare H264 levels and handle the level 1b case.
+bool IsLess(Level a, Level b) {
+  if (a == kLevel1_b)
+    return b != kLevel1 && b != kLevel1_b;
+  if (b == kLevel1_b)
+    return a == kLevel1;
+  return a < b;
+}
+
+Level Min(Level a, Level b) {
+  return IsLess(a, b) ? a : b;
+}
+
+bool IsLevelAsymmetryAllowed(const CodecParameterMap& params) {
+  const auto it = params.find(kLevelAsymmetryAllowed);
+  return it != params.end() && strcmp(it->second.c_str(), "1") == 0;
+}
 
 struct LevelConstraint {
   const int max_macroblocks_per_second;
@@ -98,9 +122,6 @@ static constexpr LevelConstraint kLevelConstraints[] = {
 };
 
 }  // anonymous namespace
-
-namespace webrtc {
-namespace H264 {
 
 rtc::Optional<ProfileLevelId> ParseProfileLevelId(const char* str) {
   // The string should consist of 3 bytes in hexadecimal format.
@@ -175,6 +196,24 @@ rtc::Optional<Level> SupportedLevel(int max_frame_pixel_count, float max_fps) {
   return rtc::Optional<Level>();
 }
 
+rtc::Optional<ProfileLevelId> ParseSdpProfileLevelId(
+    const CodecParameterMap& params) {
+  // TODO(magjed): The default should really be kProfileBaseline and kLevel1
+  // according to the spec: https://tools.ietf.org/html/rfc6184#section-8.1. In
+  // order to not break backwards compatibility with older versions of WebRTC
+  // where external codecs don't have any parameters, use
+  // kProfileConstrainedBaseline kLevel3_1 instead. This workaround will only be
+  // done in an interim period to allow external clients to update their code.
+  // http://crbug/webrtc/6337.
+  static const ProfileLevelId kDefaultProfileLevelId(
+      kProfileConstrainedBaseline, kLevel3_1);
+
+  const auto profile_level_id_it = params.find(kProfileLevelId);
+  return (profile_level_id_it == params.end())
+             ? rtc::Optional<ProfileLevelId>(kDefaultProfileLevelId)
+             : ParseProfileLevelId(profile_level_id_it->second.c_str());
+}
+
 rtc::Optional<std::string> ProfileLevelIdToString(
     const ProfileLevelId& profile_level_id) {
   // Handle special case level == 1b.
@@ -217,6 +256,40 @@ rtc::Optional<std::string> ProfileLevelIdToString(
   char str[7];
   snprintf(str, 7u, "%s%02x", profile_idc_iop_string, profile_level_id.level);
   return rtc::Optional<std::string>(str);
+}
+
+// Set level according to https://tools.ietf.org/html/rfc6184#section-8.2.2.
+void GenerateProfileLevelIdForAnswer(
+    const CodecParameterMap& local_supported_params,
+    const CodecParameterMap& remote_offered_params,
+    CodecParameterMap* answer_params) {
+  // Parse profile-level-ids.
+  const rtc::Optional<ProfileLevelId> local_profile_level_id =
+      ParseSdpProfileLevelId(local_supported_params);
+  const rtc::Optional<ProfileLevelId> remote_profile_level_id =
+      ParseSdpProfileLevelId(remote_offered_params);
+  // The local and remote codec must have valid and equal H264 Profiles.
+  RTC_DCHECK(local_profile_level_id);
+  RTC_DCHECK(remote_profile_level_id);
+  RTC_DCHECK_EQ(local_profile_level_id->profile,
+                remote_profile_level_id->profile);
+
+  // Parse level information.
+  const bool level_asymmetry_allowed =
+      IsLevelAsymmetryAllowed(local_supported_params) &&
+      IsLevelAsymmetryAllowed(remote_offered_params);
+  const Level local_level = local_profile_level_id->level;
+  const Level remote_level = remote_profile_level_id->level;
+  const Level min_level = Min(local_level, remote_level);
+
+  // Determine answer level. When level asymmetry is not allowed, level upgrade
+  // is not allowed, i.e., the level in the answer must be equal to or lower
+  // than the level in the offer.
+  const Level answer_level = level_asymmetry_allowed ? local_level : min_level;
+
+  // Set the resulting profile-level-id in the answer parameters.
+  (*answer_params)[kProfileLevelId] = *ProfileLevelIdToString(
+      ProfileLevelId(local_profile_level_id->profile, answer_level));
 }
 
 }  // namespace H264
