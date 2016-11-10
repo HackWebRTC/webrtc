@@ -126,14 +126,15 @@ rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::NativeToI420Buffer() {
   return nullptr;
 }
 
+// static
 rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
-    const rtc::scoped_refptr<VideoFrameBuffer>& source) {
-  int width = source->width();
-  int height = source->height();
+    const VideoFrameBuffer& source) {
+  int width = source.width();
+  int height = source.height();
   rtc::scoped_refptr<I420Buffer> target = I420Buffer::Create(width, height);
-  RTC_CHECK(libyuv::I420Copy(source->DataY(), source->StrideY(),
-                             source->DataU(), source->StrideU(),
-                             source->DataV(), source->StrideV(),
+  RTC_CHECK(libyuv::I420Copy(source.DataY(), source.StrideY(),
+                             source.DataU(), source.StrideU(),
+                             source.DataV(), source.StrideV(),
                              target->MutableDataY(), target->StrideY(),
                              target->MutableDataU(), target->StrideU(),
                              target->MutableDataV(), target->StrideV(),
@@ -151,15 +152,15 @@ void I420Buffer::SetToBlack() {
 }
 
 void I420Buffer::CropAndScaleFrom(
-    const rtc::scoped_refptr<VideoFrameBuffer>& src,
+    const VideoFrameBuffer& src,
     int offset_x,
     int offset_y,
     int crop_width,
     int crop_height) {
-  RTC_CHECK_LE(crop_width, src->width());
-  RTC_CHECK_LE(crop_height, src->height());
-  RTC_CHECK_LE(crop_width + offset_x, src->width());
-  RTC_CHECK_LE(crop_height + offset_y, src->height());
+  RTC_CHECK_LE(crop_width, src.width());
+  RTC_CHECK_LE(crop_height, src.height());
+  RTC_CHECK_LE(crop_width + offset_x, src.width());
+  RTC_CHECK_LE(crop_height + offset_y, src.height());
   RTC_CHECK_GE(offset_x, 0);
   RTC_CHECK_GE(offset_y, 0);
 
@@ -170,14 +171,14 @@ void I420Buffer::CropAndScaleFrom(
   offset_y = uv_offset_y * 2;
 
   const uint8_t* y_plane =
-      src->DataY() + src->StrideY() * offset_y + offset_x;
+      src.DataY() + src.StrideY() * offset_y + offset_x;
   const uint8_t* u_plane =
-      src->DataU() + src->StrideU() * uv_offset_y + uv_offset_x;
+      src.DataU() + src.StrideU() * uv_offset_y + uv_offset_x;
   const uint8_t* v_plane =
-      src->DataV() + src->StrideV() * uv_offset_y + uv_offset_x;
-  int res = libyuv::I420Scale(y_plane, src->StrideY(),
-                              u_plane, src->StrideU(),
-                              v_plane, src->StrideV(),
+      src.DataV() + src.StrideV() * uv_offset_y + uv_offset_x;
+  int res = libyuv::I420Scale(y_plane, src.StrideY(),
+                              u_plane, src.StrideU(),
+                              v_plane, src.StrideV(),
                               crop_width, crop_height,
                               MutableDataY(), StrideY(),
                               MutableDataU(), StrideU(),
@@ -188,25 +189,25 @@ void I420Buffer::CropAndScaleFrom(
 }
 
 void I420Buffer::CropAndScaleFrom(
-    const rtc::scoped_refptr<VideoFrameBuffer>& src) {
+    const VideoFrameBuffer& src) {
   const int crop_width =
-      std::min(src->width(), width() * src->height() / height());
+      std::min(src.width(), width() * src.height() / height());
   const int crop_height =
-      std::min(src->height(), height() * src->width() / width());
+      std::min(src.height(), height() * src.width() / width());
 
   CropAndScaleFrom(
       src,
-      (src->width() - crop_width) / 2, (src->height() - crop_height) / 2,
+      (src.width() - crop_width) / 2, (src.height() - crop_height) / 2,
       crop_width, crop_height);
 }
 
-void I420Buffer::ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src) {
-  CropAndScaleFrom(src, 0, 0, src->width(), src->height());
+void I420Buffer::ScaleFrom(const VideoFrameBuffer& src) {
+  CropAndScaleFrom(src, 0, 0, src.width(), src.height());
 }
 
 // static
 rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::Rotate(
-    const rtc::scoped_refptr<VideoFrameBuffer>& src,
+    rtc::scoped_refptr<VideoFrameBuffer> src,
     VideoRotation rotation) {
   RTC_DCHECK(src->DataY());
   RTC_DCHECK(src->DataU());

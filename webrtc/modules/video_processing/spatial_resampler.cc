@@ -56,7 +56,7 @@ int32_t VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
   rtc::scoped_refptr<I420Buffer> scaled_buffer(
       buffer_pool_.CreateBuffer(target_width_, target_height_));
 
-  scaled_buffer->CropAndScaleFrom(inFrame.video_frame_buffer());
+  scaled_buffer->CropAndScaleFrom(*inFrame.video_frame_buffer());
 
   *outFrame = VideoFrame(scaled_buffer,
                          inFrame.timestamp(),

@@ -151,13 +151,16 @@ TEST(TestVideoFrame, ShallowCopy) {
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
+  // TODO(nisse): This new + Copy looks quite awkward. Consider adding
+  // an alternative I420Buffer::Create method.
   VideoFrame frame1(
-      I420Buffer::Copy(new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
-          width, height,
-          buffer_y, stride_y,
-          buffer_u, stride_u,
-          buffer_v, stride_v,
-          rtc::Callback0<void>([](){}))),
+      I420Buffer::Copy(*rtc::scoped_refptr<VideoFrameBuffer>(
+          new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
+              width, height,
+              buffer_y, stride_y,
+              buffer_u, stride_u,
+              buffer_v, stride_v,
+              rtc::Callback0<void>([](){})))),
       kRotation, 0);
   frame1.set_timestamp(timestamp);
   frame1.set_ntp_time_ms(ntp_time_ms);
@@ -211,7 +214,7 @@ TEST(TestI420FrameBuffer, Copy) {
   memset(buf1->MutableDataY(), 1, 200);
   memset(buf1->MutableDataU(), 2, 50);
   memset(buf1->MutableDataV(), 3, 50);
-  rtc::scoped_refptr<I420Buffer> buf2 = I420Buffer::Copy(buf1);
+  rtc::scoped_refptr<I420Buffer> buf2 = I420Buffer::Copy(*buf1);
   EXPECT_TRUE(test::FrameBufsEqual(buf1, buf2));
 }
 
@@ -222,7 +225,7 @@ TEST(TestI420FrameBuffer, Scale) {
   rtc::scoped_refptr<I420Buffer> scaled_buffer(
       I420Buffer::Create(150, 75));
 
-  scaled_buffer->ScaleFrom(buf);
+  scaled_buffer->ScaleFrom(*buf);
   CheckCrop(*scaled_buffer, 0.0, 0.0, 1.0, 1.0);
 }
 
@@ -233,7 +236,7 @@ TEST(TestI420FrameBuffer, CropXCenter) {
   rtc::scoped_refptr<I420Buffer> scaled_buffer(
       I420Buffer::Create(100, 100));
 
-  scaled_buffer->CropAndScaleFrom(buf, 50, 0, 100, 100);
+  scaled_buffer->CropAndScaleFrom(*buf, 50, 0, 100, 100);
   CheckCrop(*scaled_buffer, 0.25, 0.0, 0.5, 1.0);
 }
 
@@ -244,7 +247,7 @@ TEST(TestI420FrameBuffer, CropXNotCenter) {
   rtc::scoped_refptr<I420Buffer> scaled_buffer(
       I420Buffer::Create(100, 100));
 
-  scaled_buffer->CropAndScaleFrom(buf, 25, 0, 100, 100);
+  scaled_buffer->CropAndScaleFrom(*buf, 25, 0, 100, 100);
   CheckCrop(*scaled_buffer, 0.125, 0.0, 0.5, 1.0);
 }
 
@@ -255,7 +258,7 @@ TEST(TestI420FrameBuffer, CropYCenter) {
   rtc::scoped_refptr<I420Buffer> scaled_buffer(
       I420Buffer::Create(100, 100));
 
-  scaled_buffer->CropAndScaleFrom(buf, 0, 50, 100, 100);
+  scaled_buffer->CropAndScaleFrom(*buf, 0, 50, 100, 100);
   CheckCrop(*scaled_buffer, 0.0, 0.25, 1.0, 0.5);
 }
 
@@ -266,7 +269,7 @@ TEST(TestI420FrameBuffer, CropYNotCenter) {
   rtc::scoped_refptr<I420Buffer> scaled_buffer(
       I420Buffer::Create(100, 100));
 
-  scaled_buffer->CropAndScaleFrom(buf, 0, 25, 100, 100);
+  scaled_buffer->CropAndScaleFrom(*buf, 0, 25, 100, 100);
   CheckCrop(*scaled_buffer, 0.0, 0.125, 1.0, 0.5);
 }
 
@@ -277,7 +280,7 @@ TEST(TestI420FrameBuffer, CropAndScale16x9) {
   rtc::scoped_refptr<I420Buffer> scaled_buffer(
       I420Buffer::Create(320, 180));
 
-  scaled_buffer->CropAndScaleFrom(buf);
+  scaled_buffer->CropAndScaleFrom(*buf);
   CheckCrop(*scaled_buffer, 0.0, 0.125, 1.0, 0.75);
 }
 

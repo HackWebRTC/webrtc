@@ -96,12 +96,11 @@ class I420Buffer : public VideoFrameBuffer {
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
 
   // Create a new buffer and copy the pixel data.
-  static rtc::scoped_refptr<I420Buffer> Copy(
-      const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
+  static rtc::scoped_refptr<I420Buffer> Copy(const VideoFrameBuffer& buffer);
 
   // Scale the cropped area of |src| to the size of |this| buffer, and
   // write the result into |this|.
-  void CropAndScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src,
+  void CropAndScaleFrom(const VideoFrameBuffer& src,
                         int offset_x,
                         int offset_y,
                         int crop_width,
@@ -109,16 +108,36 @@ class I420Buffer : public VideoFrameBuffer {
 
   // The common case of a center crop, when needed to adjust the
   // aspect ratio without distorting the image.
-  void CropAndScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src);
+  void CropAndScaleFrom(const VideoFrameBuffer& src);
 
   // Scale all of |src| to the size of |this| buffer, with no cropping.
-  void ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src);
+  void ScaleFrom(const VideoFrameBuffer& src);
+
+  // Deprecated methods, using smart pointer references.
+  // TODO(nisse): Delete once downstream applications are updated.
+  static rtc::scoped_refptr<I420Buffer> Copy(
+      const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
+    return Copy(*buffer);
+  }
+  void CropAndScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src,
+                        int offset_x,
+                        int offset_y,
+                        int crop_width,
+                        int crop_height) {
+    CropAndScaleFrom(*src, offset_x, offset_y, crop_width, crop_height);
+  }
+  void CropAndScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src) {
+    CropAndScaleFrom(*src);
+  }
+  void ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src) {
+    ScaleFrom(*src);
+  }
 
   // Returns a rotated versions of |src|. Native buffers are not
   // supported. The reason this function doesn't return an I420Buffer,
   // is that it returns |src| unchanged in case |rotation| is zero.
   static rtc::scoped_refptr<VideoFrameBuffer> Rotate(
-      const rtc::scoped_refptr<VideoFrameBuffer>& src,
+      rtc::scoped_refptr<VideoFrameBuffer> src,
       VideoRotation rotation);
 
  protected:

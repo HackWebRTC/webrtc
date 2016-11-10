@@ -63,8 +63,7 @@ bool VideoFrame::IsZeroSize() const {
   return !video_frame_buffer_;
 }
 
-const rtc::scoped_refptr<VideoFrameBuffer>& VideoFrame::video_frame_buffer()
-    const {
+rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }
 

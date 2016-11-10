@@ -334,7 +334,7 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
                            config_.codec_settings->height));
 
     // Should be the same aspect ratio, no cropping needed.
-    up_image->ScaleFrom(image.video_frame_buffer());
+    up_image->ScaleFrom(*image.video_frame_buffer());
 
     // TODO(mikhal): Extracting the buffer for now - need to update test.
     size_t length =

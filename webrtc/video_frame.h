@@ -120,10 +120,7 @@ class VideoFrame {
 
   // Return the underlying buffer. Never nullptr for a properly
   // initialized VideoFrame.
-  // Creating a new reference breaks the HasOneRef and IsMutable
-  // logic. So return a const ref to our reference.
-  const rtc::scoped_refptr<webrtc::VideoFrameBuffer>& video_frame_buffer()
-      const;
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
 
   // Return true if the frame is stored in a texture.
   bool is_texture() const {

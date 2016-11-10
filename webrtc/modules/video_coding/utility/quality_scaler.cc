@@ -187,7 +187,7 @@ rtc::scoped_refptr<VideoFrameBuffer> QualityScaler::GetScaledBuffer(
   rtc::scoped_refptr<I420Buffer> scaled_buffer =
       pool_.CreateBuffer(res.width, res.height);
 
-  scaled_buffer->ScaleFrom(frame);
+  scaled_buffer->ScaleFrom(*frame);
 
   return scaled_buffer;
 }

@@ -149,7 +149,7 @@ class TestVp8Impl : public ::testing::Test {
         I420Buffer::Create(kWidth, kHeight, stride_y, stride_uv, stride_uv));
 
     // No scaling in our case, just a copy, to add stride to the image.
-    stride_buffer->ScaleFrom(compact_buffer);
+    stride_buffer->ScaleFrom(*compact_buffer);
 
     input_frame_.reset(
         new VideoFrame(stride_buffer, kVideoRotation_0, 0));
