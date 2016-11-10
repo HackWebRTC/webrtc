@@ -75,7 +75,7 @@ class ChannelManager {
   void GetSupportedAudioSendCodecs(std::vector<AudioCodec>* codecs) const;
   void GetSupportedAudioReceiveCodecs(std::vector<AudioCodec>* codecs) const;
   void GetSupportedAudioRtpHeaderExtensions(RtpHeaderExtensions* ext) const;
-  std::vector<VideoCodec> GetSupportedVideoCodecs() const;
+  void GetSupportedVideoCodecs(std::vector<VideoCodec>* codecs) const;
   void GetSupportedVideoRtpHeaderExtensions(RtpHeaderExtensions* ext) const;
   void GetSupportedDataCodecs(std::vector<DataCodec>* codecs) const;
 

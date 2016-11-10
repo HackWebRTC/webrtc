@@ -74,7 +74,7 @@ class MediaEngineInterface {
   virtual const std::vector<AudioCodec>& audio_send_codecs() = 0;
   virtual const std::vector<AudioCodec>& audio_recv_codecs() = 0;
   virtual RtpCapabilities GetAudioCapabilities() = 0;
-  virtual const std::vector<VideoCodec> video_codecs() = 0;
+  virtual const std::vector<VideoCodec>& video_codecs() = 0;
   virtual RtpCapabilities GetVideoCapabilities() = 0;
 
   // Starts AEC dump using existing file, a maximum file size in bytes can be
@@ -147,7 +147,7 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual RtpCapabilities GetAudioCapabilities() {
     return voice_.GetCapabilities();
   }
-  virtual const std::vector<VideoCodec> video_codecs() {
+  virtual const std::vector<VideoCodec>& video_codecs() {
     return video_.codecs();
   }
   virtual RtpCapabilities GetVideoCapabilities() {
