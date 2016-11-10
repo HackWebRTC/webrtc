@@ -250,7 +250,7 @@ void ProduceMediaStreamAndTrackStats(
     stream_stats->stream_identifier = stream->label();
     stream_stats->track_ids = std::vector<std::string>();
     // Audio Tracks
-    for (rtc::scoped_refptr<AudioTrackInterface> audio_track :
+    for (const rtc::scoped_refptr<AudioTrackInterface>& audio_track :
          stream->GetAudioTracks()) {
       std::string id = RTCMediaStreamTrackStatsIDFromMediaStreamTrackInterface(
         *audio_track.get());
@@ -284,7 +284,7 @@ void ProduceMediaStreamAndTrackStats(
       report->AddStats(std::move(audio_track_stats));
     }
     // Video Tracks
-    for (rtc::scoped_refptr<VideoTrackInterface> video_track :
+    for (const rtc::scoped_refptr<VideoTrackInterface>& video_track :
          stream->GetVideoTracks()) {
       std::string id = RTCMediaStreamTrackStatsIDFromMediaStreamTrackInterface(
           *video_track.get());
