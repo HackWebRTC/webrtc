@@ -10,15 +10,11 @@
 
 package org.webrtc;
 
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-import org.webrtc.Metrics.Histogram;
-
 import android.content.Context;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.view.Surface;
 import android.view.WindowManager;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -27,6 +23,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+import org.webrtc.Metrics.Histogram;
 
 // Android specific implementation of VideoCapturer.
 // An instance of this class can be created by an application using
@@ -53,6 +51,9 @@ public class VideoCapturerAndroid
       Histogram.createCounts("WebRTC.Android.VideoCapturerAndroid.StartTimeMs", 1, 10000, 50);
   private static final Histogram videoCapturerAndroidStopTimeMsHistogram =
       Histogram.createCounts("WebRTC.Android.VideoCapturerAndroid.StopTimeMs", 1, 10000, 50);
+  private static final Histogram videoCapturerAndroidResolutionHistogram =
+      Histogram.createEnumeration("WebRTC.Android.VideoCapturerAndroid.Resolution",
+          CameraEnumerationAndroid.COMMON_RESOLUTIONS.size());
 
   private android.hardware.Camera camera; // Only non-null while capturing.
   private final AtomicBoolean isCameraRunning = new AtomicBoolean();
@@ -396,6 +397,8 @@ public class VideoCapturerAndroid
         Camera1Enumerator.convertSizes(parameters.getSupportedPreviewSizes());
     final Size previewSize =
         CameraEnumerationAndroid.getClosestSupportedSize(supportedPreviewSizes, width, height);
+    CameraEnumerationAndroid.reportCameraResolution(
+        videoCapturerAndroidResolutionHistogram, previewSize);
     Logging.d(TAG, "Available preview sizes: " + supportedPreviewSizes);
 
     final CaptureFormat captureFormat =

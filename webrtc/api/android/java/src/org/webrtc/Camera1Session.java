@@ -10,19 +10,17 @@
 
 package org.webrtc;
 
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-import org.webrtc.Metrics.Histogram;
-
 import android.content.Context;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.view.Surface;
 import android.view.WindowManager;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+import org.webrtc.Metrics.Histogram;
 
 @SuppressWarnings("deprecation")
 public class Camera1Session implements CameraSession {
@@ -33,6 +31,8 @@ public class Camera1Session implements CameraSession {
       Histogram.createCounts("WebRTC.Android.Camera1.StartTimeMs", 1, 10000, 50);
   private static final Histogram camera1StopTimeMsHistogram =
       Histogram.createCounts("WebRTC.Android.Camera1.StopTimeMs", 1, 10000, 50);
+  private static final Histogram camera1ResolutionHistogram = Histogram.createEnumeration(
+      "WebRTC.Android.Camera1.Resolution", CameraEnumerationAndroid.COMMON_RESOLUTIONS.size());
 
   private static enum SessionState { RUNNING, STOPPED }
 
@@ -138,6 +138,7 @@ public class Camera1Session implements CameraSession {
 
     final Size previewSize = CameraEnumerationAndroid.getClosestSupportedSize(
         Camera1Enumerator.convertSizes(parameters.getSupportedPreviewSizes()), width, height);
+    CameraEnumerationAndroid.reportCameraResolution(camera1ResolutionHistogram, previewSize);
 
     return new CaptureFormat(previewSize.width, previewSize.height, fpsRange);
   }

@@ -10,9 +10,6 @@
 
 package org.webrtc;
 
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-import org.webrtc.Metrics.Histogram;
-
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
@@ -28,10 +25,11 @@ import android.os.Handler;
 import android.util.Range;
 import android.view.Surface;
 import android.view.WindowManager;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+import org.webrtc.Metrics.Histogram;
 
 @TargetApi(21)
 public class Camera2Session implements CameraSession {
@@ -41,6 +39,8 @@ public class Camera2Session implements CameraSession {
       Histogram.createCounts("WebRTC.Android.Camera2.StartTimeMs", 1, 10000, 50);
   private static final Histogram camera2StopTimeMsHistogram =
       Histogram.createCounts("WebRTC.Android.Camera2.StopTimeMs", 1, 10000, 50);
+  private static final Histogram camera2ResolutionHistogram = Histogram.createEnumeration(
+      "WebRTC.Android.Camera2.Resolution", CameraEnumerationAndroid.COMMON_RESOLUTIONS.size());
 
   private static enum SessionState { RUNNING, STOPPED }
 
@@ -345,6 +345,7 @@ public class Camera2Session implements CameraSession {
         CameraEnumerationAndroid.getClosestSupportedFramerateRange(framerateRanges, framerate);
 
     final Size bestSize = CameraEnumerationAndroid.getClosestSupportedSize(sizes, width, height);
+    CameraEnumerationAndroid.reportCameraResolution(camera2ResolutionHistogram, bestSize);
 
     captureFormat = new CaptureFormat(bestSize.width, bestSize.height, bestFpsRange);
     Logging.d(TAG, "Using capture format: " + captureFormat);

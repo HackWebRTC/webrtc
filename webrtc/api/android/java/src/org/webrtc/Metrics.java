@@ -81,11 +81,16 @@ public class Metrics {
       return new Histogram(nativeCreateCounts(name, min, max, bucketCount), name);
     }
 
+    static public Histogram createEnumeration(String name, int max) {
+      return new Histogram(nativeCreateEnumeration(name, max), name);
+    }
+
     public void addSample(int sample) {
       nativeAddSample(handle, sample);
     }
 
     private static native long nativeCreateCounts(String name, int min, int max, int bucketCount);
+    private static native long nativeCreateEnumeration(String name, int max);
     private static native void nativeAddSample(long handle, int sample);
   }
 

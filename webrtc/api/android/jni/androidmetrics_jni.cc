@@ -66,6 +66,13 @@ JOW(jlong, Metrics_00024Histogram_nativeCreateCounts)
       webrtc::metrics::HistogramFactoryGetCounts(name, min, max, buckets));
 }
 
+JOW(jlong, Metrics_00024Histogram_nativeCreateEnumeration)
+(JNIEnv* jni, jclass, jstring j_name, jint max) {
+  std::string name = JavaToStdString(jni, j_name);
+  return jlongFromPointer(
+      webrtc::metrics::HistogramFactoryGetEnumeration(name, max));
+}
+
 JOW(void, Metrics_00024Histogram_nativeAddSample)
 (JNIEnv* jni, jclass, jlong histogram, jint sample) {
   if (histogram) {
