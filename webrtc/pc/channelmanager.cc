@@ -29,6 +29,9 @@
 
 namespace cricket {
 
+static bool IsRtxCodec(const VideoCodec& codec) {
+  return _stricmp(kRtxCodecName, codec.name.c_str()) == 0;
+}
 
 using rtc::Bind;
 
@@ -137,18 +140,13 @@ void ChannelManager::GetSupportedAudioRtpHeaderExtensions(
   *ext = media_engine_->GetAudioCapabilities().header_extensions;
 }
 
-void ChannelManager::GetSupportedVideoCodecs(
-    std::vector<VideoCodec>* codecs) const {
-  codecs->clear();
-
-  std::vector<VideoCodec>::const_iterator it;
-  for (it = media_engine_->video_codecs().begin();
-      it != media_engine_->video_codecs().end(); ++it) {
-    if (!enable_rtx_ && _stricmp(kRtxCodecName, it->name.c_str()) == 0) {
-      continue;
-    }
-    codecs->push_back(*it);
+std::vector<VideoCodec> ChannelManager::GetSupportedVideoCodecs() const {
+  std::vector<VideoCodec> codecs = media_engine_->video_codecs();
+  if (!enable_rtx_) {
+    codecs.erase(std::remove_if(codecs.begin(), codecs.end(), &IsRtxCodec),
+                 codecs.end());
   }
+  return codecs;
 }
 
 void ChannelManager::GetSupportedVideoRtpHeaderExtensions(

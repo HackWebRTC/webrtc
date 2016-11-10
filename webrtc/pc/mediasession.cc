@@ -1274,7 +1274,7 @@ MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
   channel_manager->GetSupportedAudioReceiveCodecs(&audio_recv_codecs_);
   channel_manager->GetSupportedAudioSendCodecs(&audio_send_codecs_);
   channel_manager->GetSupportedAudioRtpHeaderExtensions(&audio_rtp_extensions_);
-  channel_manager->GetSupportedVideoCodecs(&video_codecs_);
+  video_codecs_ = channel_manager->GetSupportedVideoCodecs();
   channel_manager->GetSupportedVideoRtpHeaderExtensions(&video_rtp_extensions_);
   channel_manager->GetSupportedDataCodecs(&data_codecs_);
   NegotiateCodecs(audio_recv_codecs_, audio_send_codecs_,

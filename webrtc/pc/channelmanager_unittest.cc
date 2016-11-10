@@ -173,17 +173,17 @@ TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
   const VideoCodec rtx_codec(96, "rtx");
 
   // By default RTX is disabled.
-  cm_->GetSupportedVideoCodecs(&codecs);
+  codecs = cm_->GetSupportedVideoCodecs();
   EXPECT_FALSE(ContainsMatchingCodec(codecs, rtx_codec));
 
   // Enable and check.
   EXPECT_TRUE(cm_->SetVideoRtxEnabled(true));
-  cm_->GetSupportedVideoCodecs(&codecs);
+  codecs = cm_->GetSupportedVideoCodecs();
   EXPECT_TRUE(ContainsMatchingCodec(codecs, rtx_codec));
 
   // Disable and check.
   EXPECT_TRUE(cm_->SetVideoRtxEnabled(false));
-  cm_->GetSupportedVideoCodecs(&codecs);
+  codecs = cm_->GetSupportedVideoCodecs();
   EXPECT_FALSE(ContainsMatchingCodec(codecs, rtx_codec));
 
   // Cannot toggle rtx after initialization.
@@ -194,7 +194,7 @@ TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
   // Can set again after terminate.
   cm_->Terminate();
   EXPECT_TRUE(cm_->SetVideoRtxEnabled(true));
-  cm_->GetSupportedVideoCodecs(&codecs);
+  codecs = cm_->GetSupportedVideoCodecs();
   EXPECT_TRUE(ContainsMatchingCodec(codecs, rtx_codec));
 }
 
