@@ -335,6 +335,7 @@ if (rtc_include_tests) {
       ":rtc_unittest_main",
       "../audio",
       "../base:rtc_base_tests_utils",
+      "../modules/audio_device:mock_audio_device",
       "../system_wrappers:metrics_default",
     ]
   }

@@ -23,6 +23,7 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
+#include "webrtc/modules/audio_device/include/mock_audio_transport.h"
 #include "webrtc/modules/audio_device/ios/audio_device_ios.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
@@ -358,55 +359,16 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
 // Mocks the AudioTransport object and proxies actions for the two callbacks
 // (RecordedDataIsAvailable and NeedMorePlayData) to different implementations
 // of AudioStreamInterface.
-class MockAudioTransport : public AudioTransport {
+class MockAudioTransportIOS : public test::MockAudioTransport {
  public:
-  explicit MockAudioTransport(int type)
+  explicit MockAudioTransportIOS(int type)
       : num_callbacks_(0),
         type_(type),
         play_count_(0),
         rec_count_(0),
         audio_stream_(nullptr) {}
 
-  virtual ~MockAudioTransport() {}
-
-  MOCK_METHOD10(RecordedDataIsAvailable,
-                int32_t(const void* audioSamples,
-                        const size_t nSamples,
-                        const size_t nBytesPerSample,
-                        const size_t nChannels,
-                        const uint32_t samplesPerSec,
-                        const uint32_t totalDelayMS,
-                        const int32_t clockDrift,
-                        const uint32_t currentMicLevel,
-                        const bool keyPressed,
-                        uint32_t& newMicLevel));
-
-  MOCK_METHOD8(NeedMorePlayData,
-               int32_t(const size_t nSamples,
-                       const size_t nBytesPerSample,
-                       const size_t nChannels,
-                       const uint32_t samplesPerSec,
-                       void* audioSamples,
-                       size_t& nSamplesOut,
-                       int64_t* elapsed_time_ms,
-                       int64_t* ntp_time_ms));
-
-  MOCK_METHOD6(PushCaptureData,
-               void(int voe_channel,
-                    const void* audio_data,
-                    int bits_per_sample,
-                    int sample_rate,
-                    size_t number_of_channels,
-                    size_t number_of_frames));
-
-  MOCK_METHOD7(PullRenderData,
-               void(int bits_per_sample,
-                    int sample_rate,
-                    size_t number_of_channels,
-                    size_t number_of_frames,
-                    void* audio_data,
-                    int64_t* elapsed_time_ms,
-                    int64_t* ntp_time_ms));
+  virtual ~MockAudioTransportIOS() {}
 
   // Set default actions of the mock object. We are delegating to fake
   // implementations (of AudioStreamInterface) here.
@@ -419,12 +381,12 @@ class MockAudioTransport : public AudioTransport {
     if (play_mode()) {
       ON_CALL(*this, NeedMorePlayData(_, _, _, _, _, _, _, _))
           .WillByDefault(
-              Invoke(this, &MockAudioTransport::RealNeedMorePlayData));
+              Invoke(this, &MockAudioTransportIOS::RealNeedMorePlayData));
     }
     if (rec_mode()) {
       ON_CALL(*this, RecordedDataIsAvailable(_, _, _, _, _, _, _, _, _, _))
-          .WillByDefault(
-              Invoke(this, &MockAudioTransport::RealRecordedDataIsAvailable));
+          .WillByDefault(Invoke(
+              this, &MockAudioTransportIOS::RealRecordedDataIsAvailable));
     }
   }
 
@@ -671,7 +633,7 @@ TEST_F(AudioDeviceTest, StartPlayoutOnTwoInstances) {
   // Start playout for the default ADM but don't wait here. Instead use the
   // upcoming second stream for that. We set the same expectation on number
   // of callbacks as for the second stream.
-  NiceMock<MockAudioTransport> mock(kPlayout);
+  NiceMock<MockAudioTransportIOS> mock(kPlayout);
   mock.HandleCallbacks(nullptr, nullptr, 0);
   EXPECT_CALL(
       mock, NeedMorePlayData(playout_frames_per_10ms_buffer(), kBytesPerSample,
@@ -693,7 +655,7 @@ TEST_F(AudioDeviceTest, StartPlayoutOnTwoInstances) {
   // Passing this test ensures that initialization of the second audio unit
   // has been done successfully and that there is no conflict with the already
   // playing first ADM.
-  MockAudioTransport mock2(kPlayout);
+  MockAudioTransportIOS mock2(kPlayout);
   mock2.HandleCallbacks(test_is_done_.get(), nullptr, kNumCallbacks);
   EXPECT_CALL(
       mock2, NeedMorePlayData(playout_frames_per_10ms_buffer(), kBytesPerSample,
@@ -714,7 +676,7 @@ TEST_F(AudioDeviceTest, StartPlayoutOnTwoInstances) {
 // Start playout and verify that the native audio layer starts asking for real
 // audio samples to play out using the NeedMorePlayData callback.
 TEST_F(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
-  MockAudioTransport mock(kPlayout);
+  MockAudioTransportIOS mock(kPlayout);
   mock.HandleCallbacks(test_is_done_.get(), nullptr, kNumCallbacks);
   EXPECT_CALL(mock, NeedMorePlayData(playout_frames_per_10ms_buffer(),
                                      kBytesPerSample, playout_channels(),
@@ -729,7 +691,7 @@ TEST_F(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
 // Start recording and verify that the native audio layer starts feeding real
 // audio samples via the RecordedDataIsAvailable callback.
 TEST_F(AudioDeviceTest, StartRecordingVerifyCallbacks) {
-  MockAudioTransport mock(kRecording);
+  MockAudioTransportIOS mock(kRecording);
   mock.HandleCallbacks(test_is_done_.get(), nullptr, kNumCallbacks);
   EXPECT_CALL(mock,
               RecordedDataIsAvailable(
@@ -747,7 +709,7 @@ TEST_F(AudioDeviceTest, StartRecordingVerifyCallbacks) {
 // Start playout and recording (full-duplex audio) and verify that audio is
 // active in both directions.
 TEST_F(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
-  MockAudioTransport mock(kPlayout | kRecording);
+  MockAudioTransportIOS mock(kPlayout | kRecording);
   mock.HandleCallbacks(test_is_done_.get(), nullptr, kNumCallbacks);
   EXPECT_CALL(mock, NeedMorePlayData(playout_frames_per_10ms_buffer(),
                                      kBytesPerSample, playout_channels(),
@@ -773,7 +735,7 @@ TEST_F(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
 TEST_F(AudioDeviceTest, RunPlayoutWithFileAsSource) {
   // TODO(henrika): extend test when mono output is supported.
   EXPECT_EQ(1, playout_channels());
-  NiceMock<MockAudioTransport> mock(kPlayout);
+  NiceMock<MockAudioTransportIOS> mock(kPlayout);
   const int num_callbacks = kFilePlayTimeInSec * kNumCallbacksPerSecond;
   std::string file_name = GetFileName(playout_sample_rate());
   std::unique_ptr<FileAudioStream> file_audio_stream(
@@ -809,7 +771,7 @@ TEST_F(AudioDeviceTest, Devices) {
 TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   EXPECT_EQ(record_channels(), playout_channels());
   EXPECT_EQ(record_sample_rate(), playout_sample_rate());
-  NiceMock<MockAudioTransport> mock(kPlayout | kRecording);
+  NiceMock<MockAudioTransportIOS> mock(kPlayout | kRecording);
   std::unique_ptr<FifoAudioStream> fifo_audio_stream(
       new FifoAudioStream(playout_frames_per_10ms_buffer()));
   mock.HandleCallbacks(test_is_done_.get(), fifo_audio_stream.get(),
@@ -838,7 +800,7 @@ TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
 TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   EXPECT_EQ(record_channels(), playout_channels());
   EXPECT_EQ(record_sample_rate(), playout_sample_rate());
-  NiceMock<MockAudioTransport> mock(kPlayout | kRecording);
+  NiceMock<MockAudioTransportIOS> mock(kPlayout | kRecording);
   std::unique_ptr<LatencyMeasuringAudioStream> latency_audio_stream(
       new LatencyMeasuringAudioStream(playout_frames_per_10ms_buffer()));
   mock.HandleCallbacks(test_is_done_.get(), latency_audio_stream.get(),
