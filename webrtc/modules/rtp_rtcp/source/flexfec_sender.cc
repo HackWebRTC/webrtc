@@ -38,6 +38,25 @@ const int kMsToRtpTimestamp = kVideoPayloadTypeFrequency / 1000;
 // How often to log the generated FEC packets to the text log.
 constexpr int64_t kPacketLogIntervalMs = 10000;
 
+RtpHeaderExtensionMap RegisterBweExtensions(
+    const std::vector<RtpExtension>& rtp_header_extensions) {
+  RtpHeaderExtensionMap map;
+  for (const auto& extension : rtp_header_extensions) {
+    if (extension.uri == TransportSequenceNumber::kUri) {
+      map.Register<TransportSequenceNumber>(extension.id);
+    } else if (extension.uri == AbsoluteSendTime::kUri) {
+      map.Register<AbsoluteSendTime>(extension.id);
+    } else if (extension.uri == TransmissionOffset::kUri) {
+      map.Register<TransmissionOffset>(extension.id);
+    } else {
+      LOG(LS_INFO) << "FlexfecSender only supports RTP header extensions for "
+                   << "BWE, so the extension " << extension.ToString()
+                   << " will not be used.";
+    }
+  }
+  return map;
+}
+
 }  // namespace
 
 FlexfecSender::FlexfecSender(
@@ -57,7 +76,7 @@ FlexfecSender::FlexfecSender(
       protected_media_ssrc_(protected_media_ssrc),
       seq_num_(random_.Rand(1, kMaxInitRtpSeqNumber)),
       ulpfec_generator_(ForwardErrorCorrection::CreateFlexfec()),
-      rtp_header_extension_map_() {
+      rtp_header_extension_map_(RegisterBweExtensions(rtp_header_extensions)) {
   // This object should not have been instantiated if FlexFEC is disabled.
   RTC_DCHECK_GE(payload_type, 0);
   RTC_DCHECK_LE(payload_type, 127);
@@ -65,24 +84,6 @@ FlexfecSender::FlexfecSender(
   // It's OK to create this object on a different thread/task queue than
   // the one used during main operation.
   sequence_checker_.Detach();
-
-  // Register RTP header extensions for BWE.
-  for (const auto& extension : rtp_header_extensions) {
-    if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
-      rtp_header_extension_map_.Register(kRtpExtensionTransportSequenceNumber,
-                                         extension.id);
-    } else if (extension.uri == RtpExtension::kAbsSendTimeUri) {
-      rtp_header_extension_map_.Register(kRtpExtensionAbsoluteSendTime,
-                                         extension.id);
-    } else if (extension.uri == RtpExtension::kTimestampOffsetUri) {
-      rtp_header_extension_map_.Register(kRtpExtensionTransmissionTimeOffset,
-                                         extension.id);
-    } else {
-      LOG(LS_WARNING) << "RTP header extension with id: " << extension.id
-                      << ", uri: " << extension.uri
-                      << ", is unsupported by FlexfecSender.";
-    }
-  }
 }
 
 FlexfecSender::~FlexfecSender() = default;
@@ -158,8 +159,10 @@ FlexfecSender::GetFecPackets() {
   return fec_packets_to_send;
 }
 
+// The overhead is BWE RTP header extensions and FlexFEC header.
 size_t FlexfecSender::MaxPacketOverhead() const {
-  return kFlexfecMaxHeaderSize;
+  return rtp_header_extension_map_.GetTotalLengthInBytes() +
+         kFlexfecMaxHeaderSize;
 }
 
 }  // namespace webrtc

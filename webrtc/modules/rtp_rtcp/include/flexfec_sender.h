@@ -74,7 +74,7 @@ class FlexfecSender {
 
   // Implementation.
   UlpfecGenerator ulpfec_generator_ GUARDED_BY(sequence_checker_);
-  RtpHeaderExtensionMap rtp_header_extension_map_ GUARDED_BY(sequence_checker_);
+  const RtpHeaderExtensionMap rtp_header_extension_map_;
 };
 
 }  // namespace webrtc

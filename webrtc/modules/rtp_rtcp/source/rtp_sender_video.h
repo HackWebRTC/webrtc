@@ -13,6 +13,7 @@
 
 #include <list>
 #include <memory>
+#include <vector>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/onetimeevent.h"
@@ -20,8 +21,8 @@
 #include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -76,9 +77,16 @@ class RTPSenderVideo {
   void SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
                        StorageType storage);
 
-  void SendVideoPacketAsRed(std::unique_ptr<RtpPacketToSend> media_packet,
-                            StorageType media_packet_storage,
-                            bool protect);
+  void SendVideoPacketAsRedMaybeWithUlpfec(
+      std::unique_ptr<RtpPacketToSend> media_packet,
+      StorageType media_packet_storage,
+      bool protect_media_packet);
+
+  // TODO(brandtr): Remove the FlexFEC functions when FlexfecSender has been
+  // moved to PacedSender.
+  void SendVideoPacketWithFlexfec(std::unique_ptr<RtpPacketToSend> media_packet,
+                                  StorageType media_packet_storage,
+                                  bool protect_media_packet);
 
   bool red_enabled() const EXCLUSIVE_LOCKS_REQUIRED(crit_) {
     return red_payload_type_ >= 0;
@@ -87,6 +95,8 @@ class RTPSenderVideo {
   bool ulpfec_enabled() const EXCLUSIVE_LOCKS_REQUIRED(crit_) {
     return ulpfec_payload_type_ >= 0;
   }
+
+  bool flexfec_enabled() const { return flexfec_sender_ != nullptr; }
 
   RTPSender* const rtp_sender_;
   Clock* const clock_;
@@ -102,9 +112,14 @@ class RTPSenderVideo {
   // RED/ULPFEC.
   int red_payload_type_ GUARDED_BY(crit_);
   int ulpfec_payload_type_ GUARDED_BY(crit_);
+  UlpfecGenerator ulpfec_generator_ GUARDED_BY(crit_);
+
+  // FlexFEC.
+  FlexfecSender* const flexfec_sender_;
+
+  // FEC parameters, applicable to either ULPFEC or FlexFEC.
   FecProtectionParams delta_fec_params_ GUARDED_BY(crit_);
   FecProtectionParams key_fec_params_ GUARDED_BY(crit_);
-  UlpfecGenerator ulpfec_generator_ GUARDED_BY(crit_);
 
   rtc::CriticalSection stats_crit_;
   // Bitrate used for FEC payload, RED headers, RTP headers for FEC packets
