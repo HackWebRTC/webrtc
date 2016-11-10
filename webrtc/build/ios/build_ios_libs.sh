@@ -37,7 +37,7 @@ function build_webrtc {
 
   OUTPUT_DIR=${SDK_OUTPUT_DIR}/${target_arch}_libs
   GN_ARGS="target_os=\"ios\" ios_enable_code_signing=false \
-use_xcode_clang=true is_component_build=false"
+use_xcode_clang=true is_component_build=false rtc_ios_enable_bitcode=true"
 
   # Add flavor option.
   if [[ ${flavor} = "debug" ]]; then
@@ -106,6 +106,7 @@ SDK_FRAMEWORK_NAME="WebRTC.framework"
 
 BUILD_FLAVOR="release"
 BUILD_TYPE="framework"
+ENABLED_ARCHITECTURES=("arm" "arm64" "x64")
 IOS_DEPLOYMENT_TARGET="8.0"
 LIBVPX_BUILD_VP9="false"
 CUSTOM_GN_OPTS=""
@@ -132,12 +133,10 @@ if [[ ${PERFORM_CLEAN} -ne 0 ]]; then
 fi
 
 # Build all architectures.
-build_webrtc "arm" ${BUILD_FLAVOR} ${BUILD_TYPE} \
-             ${IOS_DEPLOYMENT_TARGET} ${LIBVPX_BUILD_VP9} ${CUSTOM_GN_OPTS}
-build_webrtc "arm64" ${BUILD_FLAVOR} ${BUILD_TYPE} \
-             ${IOS_DEPLOYMENT_TARGET} ${LIBVPX_BUILD_VP9} ${CUSTOM_GN_OPTS}
-build_webrtc "x64" ${BUILD_FLAVOR} ${BUILD_TYPE} \
-             ${IOS_DEPLOYMENT_TARGET} ${LIBVPX_BUILD_VP9} ${CUSTOM_GN_OPTS}
+for arch in ${ENABLED_ARCHITECTURES[*]}; do
+    build_webrtc $arch ${BUILD_FLAVOR} ${BUILD_TYPE} \
+                 ${IOS_DEPLOYMENT_TARGET} ${LIBVPX_BUILD_VP9} ${CUSTOM_GN_OPTS}
+done
 
 # Ignoring x86 except for static libraries for now because of a GN build issue
 # where the generated dynamic framework has the wrong architectures.
