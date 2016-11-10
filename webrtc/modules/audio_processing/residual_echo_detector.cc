@@ -14,6 +14,7 @@
 #include <numeric>
 
 #include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 
 namespace {
 
@@ -99,6 +100,9 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
     echo_likelihood_ = std::max(
         echo_likelihood_, covariances_[delay].normalized_cross_correlation());
   }
+  int echo_percentage = static_cast<int>(echo_likelihood_ * 100);
+  RTC_HISTOGRAM_COUNTS("WebRTC.Audio.ResidualEchoDetector.EchoLikelihood",
+                       echo_percentage, 0, 100, 100 /* number of bins */);
 
   // Update the next insertion index.
   ++next_insertion_index_;
