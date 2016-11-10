@@ -90,7 +90,7 @@
     },
     'client.webrtc.fyi': {
       # Mac
-      'Mac64 Release (swarming)': 'mac_gn_asan_clang_release_bot_x64',
+      'Mac Asan (swarming)': 'mac_gn_asan_clang_release_bot_x64',
 
       # Linux
       'Linux64 GCC': 'gn_gcc_release_bot_x64',
