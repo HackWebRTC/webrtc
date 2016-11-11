@@ -215,4 +215,11 @@ DesktopCapturer* CroppingWindowCapturer::Create(
   return new CroppingWindowCapturerWin(options);
 }
 
+// static
+std::unique_ptr<DesktopCapturer> CroppingWindowCapturer::CreateCapturer(
+    const DesktopCaptureOptions& options) {
+  return std::unique_ptr<DesktopCapturer>(
+      new CroppingWindowCapturerWin(options));
+}
+
 }  // namespace webrtc
