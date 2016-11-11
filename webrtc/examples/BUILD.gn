@@ -355,7 +355,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     cflags = [
       "-Wno-deprecated-declarations",
       "-Wno-nonnull",
-      "-Wno-objc-missing-property-synthesis",
       "-Wno-semicolon-before-method-body",
       "-Wno-unused-variable",
     ]
