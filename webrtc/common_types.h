@@ -641,11 +641,10 @@ class VideoCodec {
   VideoCodecH264* H264();
   const VideoCodecH264& H264() const;
 
-  // This variable will be declared private and renamed to codec_specific_
-  // once Chromium is not accessing it.
+ private:
   // TODO(hta): Consider replacing the union with a pointer type.
   // This will allow removing the VideoCodec* types from this file.
-  VideoCodecUnion codecSpecific;
+  VideoCodecUnion codec_specific_;
 };
 
 // Bandwidth over-use detector options.  These are used to drive
