@@ -58,7 +58,7 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
       delta_fec_params_{0, 1, kFecMaskRandom},
       key_fec_params_{0, 1, kFecMaskRandom},
       fec_bitrate_(1000, RateStatistics::kBpsScale),
-      video_bitrate_(1000, RateStatistics::kBpsScale) { }
+      video_bitrate_(1000, RateStatistics::kBpsScale) {}
 
 RTPSenderVideo::~RTPSenderVideo() {}
 
@@ -243,11 +243,10 @@ void RTPSenderVideo::GetUlpfecConfig(int* red_payload_type,
   *ulpfec_payload_type = ulpfec_payload_type_;
 }
 
-size_t RTPSenderVideo::FecPacketOverhead() const {
+size_t RTPSenderVideo::CalculateFecPacketOverhead() const {
   if (flexfec_enabled())
     return flexfec_sender_->MaxPacketOverhead();
 
-  rtc::CritScope cs(&crit_);
   size_t overhead = 0;
   if (red_enabled()) {
     // The RED overhead is due to a small header.
@@ -290,30 +289,47 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   rtp_header->SetPayloadType(payload_type);
   rtp_header->SetTimestamp(rtp_timestamp);
   rtp_header->set_capture_time_ms(capture_time_ms);
-  // According to
-  // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
-  // ts_126114v120700p.pdf Section 7.4.5:
-  // The MTSI client shall add the payload bytes as defined in this clause
-  // onto the last RTP packet in each group of packets which make up a key
-  // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
-  // (HEVC)). The MTSI client may also add the payload bytes onto the last RTP
-  // packet in each group of packets which make up another type of frame
-  // (e.g. a P-Frame) only if the current value is different from the previous
-  // value sent.
-  if (video_header) {
-    // Set rotation when key frame or when changed (to follow standard).
-    // Or when different from 0 (to follow current receiver implementation).
-    // TODO(kthelgason): Merge this crit scope with the one below.
+
+  size_t fec_packet_overhead;
+  bool red_enabled;
+  int32_t retransmission_settings;
+  {
     rtc::CritScope cs(&crit_);
-    VideoRotation current_rotation = video_header->rotation;
-    if (frame_type == kVideoFrameKey || current_rotation != last_rotation_ ||
-        current_rotation != kVideoRotation_0)
-      rtp_header->SetExtension<VideoOrientation>(current_rotation);
-    last_rotation_ = current_rotation;
+    // According to
+    // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
+    // ts_126114v120700p.pdf Section 7.4.5:
+    // The MTSI client shall add the payload bytes as defined in this clause
+    // onto the last RTP packet in each group of packets which make up a key
+    // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
+    // (HEVC)). The MTSI client may also add the payload bytes onto the last RTP
+    // packet in each group of packets which make up another type of frame
+    // (e.g. a P-Frame) only if the current value is different from the previous
+    // value sent.
+    if (video_header) {
+      // Set rotation when key frame or when changed (to follow standard).
+      // Or when different from 0 (to follow current receiver implementation).
+      VideoRotation current_rotation = video_header->rotation;
+      if (frame_type == kVideoFrameKey || current_rotation != last_rotation_ ||
+          current_rotation != kVideoRotation_0)
+        rtp_header->SetExtension<VideoOrientation>(current_rotation);
+      last_rotation_ = current_rotation;
+    }
+
+    // FEC settings.
+    const FecProtectionParams& fec_params =
+        frame_type == kVideoFrameKey ? key_fec_params_ : delta_fec_params_;
+    if (flexfec_enabled())
+      flexfec_sender_->SetFecParameters(fec_params);
+    if (ulpfec_enabled())
+      ulpfec_generator_.SetFecParameters(fec_params);
+
+    fec_packet_overhead = CalculateFecPacketOverhead();
+    red_enabled = this->red_enabled();
+    retransmission_settings = retransmission_settings_;
   }
 
   size_t packet_capacity = rtp_sender_->MaxPayloadLength() -
-                           FecPacketOverhead() -
+                           fec_packet_overhead -
                            (rtp_sender_->RtxStatus() ? kRtxHeaderSize : 0);
   RTC_DCHECK_LE(packet_capacity, rtp_header->capacity());
   RTC_DCHECK_GT(packet_capacity, rtp_header->headers_size());
@@ -322,34 +338,17 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   std::unique_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
       video_type, max_data_payload_length,
       video_header ? &(video_header->codecHeader) : nullptr, frame_type));
-
-  StorageType storage;
-  bool red_enabled;
-  bool first_frame = first_frame_sent_();
-  {
-    rtc::CritScope cs(&crit_);
-
-    // Media packet storage.
-    storage = packetizer->GetStorageType(retransmission_settings_);
-
-    // FEC settings.
-    const FecProtectionParams& fec_params =
-        frame_type == kVideoFrameKey ? key_fec_params_ : delta_fec_params_;
-    if (flexfec_enabled())
-      flexfec_sender_->SetFecParameters(fec_params);
-    red_enabled = this->red_enabled();
-    if (ulpfec_enabled())
-      ulpfec_generator_.SetFecParameters(fec_params);
-  }
+  // Media packet storage.
+  StorageType storage = packetizer->GetStorageType(retransmission_settings);
 
   // TODO(changbin): we currently don't support to configure the codec to
   // output multiple partitions for VP8. Should remove below check after the
   // issue is fixed.
   const RTPFragmentationHeader* frag =
-      (video_type == kRtpVideoVp8) ? NULL : fragmentation;
-
+      (video_type == kRtpVideoVp8) ? nullptr : fragmentation;
   packetizer->SetPayloadData(payload_data, payload_size, frag);
 
+  bool first_frame = first_frame_sent_();
   bool first = true;
   bool last = false;
   while (!last) {

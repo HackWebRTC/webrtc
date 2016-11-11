@@ -42,7 +42,10 @@ class RTPSenderVideo {
 
   virtual RtpVideoCodecTypes VideoCodecType() const;
 
-  size_t FecPacketOverhead() const;
+  size_t FecPacketOverhead() const {
+    rtc::CritScope cs(&crit_);
+    return CalculateFecPacketOverhead();
+  }
 
   static RtpUtility::Payload* CreateVideoPayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
@@ -74,6 +77,8 @@ class RTPSenderVideo {
   void SetSelectiveRetransmissions(uint8_t settings);
 
  private:
+  size_t CalculateFecPacketOverhead() const EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   void SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
                        StorageType storage);
 
