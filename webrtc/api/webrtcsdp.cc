@@ -2438,10 +2438,12 @@ void AddFeedbackParameters(const cricket::FeedbackParams& feedback_params,
 // with that payload type.
 template <class T>
 T GetCodecWithPayloadType(const std::vector<T>& codecs, int payload_type) {
+  const T* codec = FindCodecById(codecs, payload_type);
+  if (codec)
+    return *codec;
+  // Return empty codec with |payload_type|.
   T ret_val;
-  if (!FindCodecById(codecs, payload_type, &ret_val)) {
-    ret_val.id = payload_type;
-  }
+  ret_val.id = payload_type;
   return ret_val;
 }
 

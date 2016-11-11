@@ -752,20 +752,12 @@ static bool CreateMediaContentOffer(
 
 template <class C>
 static bool ReferencedCodecsMatch(const std::vector<C>& codecs1,
-                                  const std::string& codec1_id_str,
+                                  const int codec1_id,
                                   const std::vector<C>& codecs2,
-                                  const std::string& codec2_id_str) {
-  int codec1_id;
-  int codec2_id;
-  C codec1;
-  C codec2;
-  if (!rtc::FromString(codec1_id_str, &codec1_id) ||
-      !rtc::FromString(codec2_id_str, &codec2_id) ||
-      !FindCodecById(codecs1, codec1_id, &codec1) ||
-      !FindCodecById(codecs2, codec2_id, &codec2)) {
-    return false;
-  }
-  return codec1.Matches(codec2);
+                                  const int codec2_id) {
+  const C* codec1 = FindCodecById(codecs1, codec1_id);
+  const C* codec2 = FindCodecById(codecs2, codec2_id);
+  return codec1 != nullptr && codec2 != nullptr && codec1->Matches(*codec2);
 }
 
 template <class C>
@@ -780,16 +772,15 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
       C negotiated = ours;
       negotiated.IntersectFeedbackParams(theirs);
       if (IsRtxCodec(negotiated)) {
-        std::string offered_apt_value;
-        theirs.GetParam(kCodecParamAssociatedPayloadType, &offered_apt_value);
+        const auto apt_it =
+            theirs.params.find(kCodecParamAssociatedPayloadType);
         // FindMatchingCodec shouldn't return something with no apt value.
-        RTC_DCHECK(!offered_apt_value.empty());
-        negotiated.SetParam(kCodecParamAssociatedPayloadType,
-                            offered_apt_value);
+        RTC_DCHECK(apt_it != theirs.params.end());
+        negotiated.SetParam(kCodecParamAssociatedPayloadType, apt_it->second);
       }
       negotiated.id = theirs.id;
       negotiated.name = theirs.name;
-      negotiated_codecs->push_back(negotiated);
+      negotiated_codecs->push_back(std::move(negotiated));
     }
   }
   // RFC3264: Although the answerer MAY list the formats in their desired
@@ -819,8 +810,8 @@ static bool FindMatchingCodec(const std::vector<C>& codecs1,
   for (const C& potential_match : codecs2) {
     if (potential_match.Matches(codec_to_match)) {
       if (IsRtxCodec(codec_to_match)) {
-        std::string apt_value_1;
-        std::string apt_value_2;
+        int apt_value_1 = 0;
+        int apt_value_2 = 0;
         if (!codec_to_match.GetParam(kCodecParamAssociatedPayloadType,
                                      &apt_value_1) ||
             !potential_match.GetParam(kCodecParamAssociatedPayloadType,
@@ -886,8 +877,9 @@ static void FindCodecsToOffer(
       }
 
       // Find the associated reference codec for the reference RTX codec.
-      C associated_codec;
-      if (!FindCodecById(reference_codecs, associated_pt, &associated_codec)) {
+      const C* associated_codec =
+          FindCodecById(reference_codecs, associated_pt);
+      if (!associated_codec) {
         LOG(LS_WARNING) << "Couldn't find associated codec with payload type "
                         << associated_pt << " for RTX codec " << rtx_codec.name
                         << ".";
@@ -898,8 +890,8 @@ static void FindCodecsToOffer(
       // Its payload type may be different than the reference codec.
       C matching_codec;
       if (!FindMatchingCodec<C>(reference_codecs, *offered_codecs,
-                               associated_codec, &matching_codec)) {
-        LOG(LS_WARNING) << "Couldn't find matching " << associated_codec.name
+                                *associated_codec, &matching_codec)) {
+        LOG(LS_WARNING) << "Couldn't find matching " << associated_codec->name
                         << " codec.";
         continue;
       }

@@ -225,8 +225,7 @@ void RtpDataMediaChannel::OnPacketReceived(
     return;
   }
 
-  DataCodec codec;
-  if (!FindCodecById(recv_codecs_, header.payload_type, &codec)) {
+  if (!FindCodecById(recv_codecs_, header.payload_type)) {
     // For bundling, this will be logged for every message.
     // So disable this logging.
     // LOG(LS_WARNING) << "Not receiving packet "

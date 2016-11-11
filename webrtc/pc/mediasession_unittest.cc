@@ -192,8 +192,7 @@ GetMediaDirection(const ContentInfo* content) {
 
 static void AddRtxCodec(const VideoCodec& rtx_codec,
                         std::vector<VideoCodec>* codecs) {
-  VideoCodec rtx;
-  ASSERT_FALSE(cricket::FindCodecById(*codecs, rtx_codec.id, &rtx));
+  ASSERT_FALSE(cricket::FindCodecById(*codecs, rtx_codec.id));
   codecs->push_back(rtx_codec);
 }
 

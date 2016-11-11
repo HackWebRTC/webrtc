@@ -197,18 +197,14 @@ struct DataCodec : public Codec {
 };
 
 // Get the codec setting associated with |payload_type|. If there
-// is no codec associated with that payload type it returns false.
+// is no codec associated with that payload type it returns nullptr.
 template <class Codec>
-bool FindCodecById(const std::vector<Codec>& codecs,
-                   int payload_type,
-                   Codec* codec_out) {
+const Codec* FindCodecById(const std::vector<Codec>& codecs, int payload_type) {
   for (const auto& codec : codecs) {
-    if (codec.id == payload_type) {
-      *codec_out = codec;
-      return true;
-    }
+    if (codec.id == payload_type)
+      return &codec;
   }
-  return false;
+  return nullptr;
 }
 
 bool CodecNamesEq(const std::string& name1, const std::string& name2);
