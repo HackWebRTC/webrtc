@@ -74,28 +74,30 @@ VideoCodec VideoEncoderConfigToVideoCodec(
   switch (video_codec.codecType) {
     case kVideoCodecVP8: {
       if (!config.encoder_specific_settings)
-        *video_codec.VP8() = VideoEncoder::GetDefaultVp8Settings();
-      video_codec.VP8()->numberOfTemporalLayers = static_cast<unsigned char>(
-          streams.back().temporal_layer_thresholds_bps.size() + 1);
+        video_codec.codecSpecific.VP8 = VideoEncoder::GetDefaultVp8Settings();
+      video_codec.codecSpecific.VP8.numberOfTemporalLayers =
+          static_cast<unsigned char>(
+              streams.back().temporal_layer_thresholds_bps.size() + 1);
       break;
     }
     case kVideoCodecVP9: {
       if (!config.encoder_specific_settings)
-        *video_codec.VP9() = VideoEncoder::GetDefaultVp9Settings();
+        video_codec.codecSpecific.VP9 = VideoEncoder::GetDefaultVp9Settings();
       if (video_codec.mode == kScreensharing &&
           config.encoder_specific_settings) {
-        video_codec.VP9()->flexibleMode = true;
+        video_codec.codecSpecific.VP9.flexibleMode = true;
         // For now VP9 screensharing use 1 temporal and 2 spatial layers.
-        RTC_DCHECK_EQ(1, video_codec.VP9()->numberOfTemporalLayers);
-        RTC_DCHECK_EQ(2, video_codec.VP9()->numberOfSpatialLayers);
+        RTC_DCHECK_EQ(1, video_codec.codecSpecific.VP9.numberOfTemporalLayers);
+        RTC_DCHECK_EQ(2, video_codec.codecSpecific.VP9.numberOfSpatialLayers);
       }
-      video_codec.VP9()->numberOfTemporalLayers = static_cast<unsigned char>(
-          streams.back().temporal_layer_thresholds_bps.size() + 1);
+      video_codec.codecSpecific.VP9.numberOfTemporalLayers =
+          static_cast<unsigned char>(
+              streams.back().temporal_layer_thresholds_bps.size() + 1);
       break;
     }
     case kVideoCodecH264: {
       if (!config.encoder_specific_settings)
-        *video_codec.H264() = VideoEncoder::GetDefaultH264Settings();
+        video_codec.codecSpecific.H264 = VideoEncoder::GetDefaultH264Settings();
       break;
     }
     default:
@@ -118,8 +120,8 @@ VideoCodec VideoEncoderConfigToVideoCodec(
     // If the vector is empty, bitrates will be configured automatically.
     RTC_DCHECK(config.spatial_layers.empty() ||
                config.spatial_layers.size() ==
-                   video_codec.VP9()->numberOfSpatialLayers);
-    RTC_DCHECK_LE(video_codec.VP9()->numberOfSpatialLayers,
+                   video_codec.codecSpecific.VP9.numberOfSpatialLayers);
+    RTC_DCHECK_LE(video_codec.codecSpecific.VP9.numberOfSpatialLayers,
                   kMaxSimulcastStreams);
     for (size_t i = 0; i < config.spatial_layers.size(); ++i)
       video_codec.spatialLayers[i] = config.spatial_layers[i];
@@ -661,15 +663,19 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     webrtc::CodecSpecificInfo codec_specific_info;
     codec_specific_info.codecType = webrtc::kVideoCodecVP8;
 
-    codec_specific_info.codecSpecific.VP8.hasReceivedRPSI = has_received_rpsi_;
-    codec_specific_info.codecSpecific.VP8.hasReceivedSLI = has_received_sli_;
-    codec_specific_info.codecSpecific.VP8.pictureIdRPSI = picture_id_rpsi_;
-    codec_specific_info.codecSpecific.VP8.pictureIdSLI = picture_id_sli_;
-    has_received_sli_ = false;
-    has_received_rpsi_ = false;
+      codec_specific_info.codecSpecific.VP8.hasReceivedRPSI =
+          has_received_rpsi_;
+      codec_specific_info.codecSpecific.VP8.hasReceivedSLI =
+          has_received_sli_;
+      codec_specific_info.codecSpecific.VP8.pictureIdRPSI =
+          picture_id_rpsi_;
+      codec_specific_info.codecSpecific.VP8.pictureIdSLI  =
+          picture_id_sli_;
+      has_received_sli_ = false;
+      has_received_rpsi_ = false;
 
-    video_sender_.AddVideoFrame(video_frame, &codec_specific_info);
-    return;
+      video_sender_.AddVideoFrame(video_frame, &codec_specific_info);
+      return;
   }
   video_sender_.AddVideoFrame(video_frame, nullptr);
 }
