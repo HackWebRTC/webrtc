@@ -111,6 +111,8 @@
 
       # Windows
       'Win64 Debug (swarming)': 'gn_debug_bot_x64',
+      'Win64 Debug (Win8)': 'gn_debug_bot_x64',
+      'Win64 Debug (Win10)': 'gn_debug_bot_x64',
     },
     'tryserver.webrtc': {
       # iOS
@@ -187,6 +189,8 @@
       'win_asan': 'win_gn_syzyasan_release_bot_x86',
       'win_baremetal': 'gn_release_bot_x86',
       'win_swarming': 'swarming_gn_debug_bot_x64',
+      'win_x64_win8': 'gn_debug_bot_x64',
+      'win_x64_win10': 'gn_debug_bot_x64',
       'win_x64_gyp_dbg': 'gyp_debug_bot_x64_exclude_tests',
       'win_x64_gyp_rel': 'gyp_release_bot_x64_exclude_tests',
     }
