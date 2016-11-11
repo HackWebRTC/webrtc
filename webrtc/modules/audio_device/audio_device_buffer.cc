@@ -68,7 +68,8 @@ AudioDeviceBuffer::AudioDeviceBuffer()
       play_stat_count_(0),
       play_start_time_(0),
       rec_start_time_(0),
-      only_silence_recorded_(true) {
+      only_silence_recorded_(true),
+      log_stats_(false) {
   LOG(INFO) << "AudioDeviceBuffer::ctor";
   playout_thread_checker_.DetachFromThread();
   recording_thread_checker_.DetachFromThread();
@@ -429,16 +430,23 @@ void AudioDeviceBuffer::StopPeriodicLogging() {
 void AudioDeviceBuffer::LogStats(LogState state) {
   RTC_DCHECK_RUN_ON(&task_queue_);
   int64_t now_time = rtc::TimeMillis();
+
   if (state == AudioDeviceBuffer::LOG_START) {
     // Reset counters at start. We will not add any logging in this state but
     // the timer will started by posting a new (delayed) task.
     num_stat_reports_ = 0;
     last_timer_task_time_ = now_time;
+    log_stats_ = true;
   } else if (state == AudioDeviceBuffer::LOG_STOP) {
     // Stop logging and posting new tasks.
-    return;
+    log_stats_ = false;
   } else if (state == AudioDeviceBuffer::LOG_ACTIVE) {
-    // Default state. Just keep on logging.
+    // Keep logging unless logging was disabled while task was posted.
+  }
+
+  // Avoid adding more logs since we are in STOP mode.
+  if (!log_stats_) {
+    return;
   }
 
   int64_t next_callback_time = now_time + kTimerIntervalInMilliseconds;

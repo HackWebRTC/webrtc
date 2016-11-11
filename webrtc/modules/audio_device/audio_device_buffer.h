@@ -234,6 +234,12 @@ class AudioDeviceBuffer {
   // Set to true at construction and modified to false as soon as one audio-
   // level estimate larger than zero is detected.
   bool only_silence_recorded_;
+
+  // Set to true when logging of audio stats is enabled for the first time in
+  // StartPeriodicLogging() and set to false by StopPeriodicLogging().
+  // Setting this member to false prevents (possiby invalid) log messages from
+  // being printed in the LogStats() task.
+  bool log_stats_ ACCESS_ON(task_queue_);
 };
 
 }  // namespace webrtc
