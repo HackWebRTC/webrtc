@@ -10,13 +10,12 @@
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/window_capturer.h"
-
-#include "webrtc/test/gtest.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 

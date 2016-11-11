@@ -21,8 +21,7 @@ CroppingWindowCapturer::CroppingWindowCapturer(
       callback_(NULL),
       window_capturer_(DesktopCapturer::CreateRawWindowCapturer(options)),
       selected_window_(kNullWindowId),
-      excluded_window_(kNullWindowId) {
-}
+      excluded_window_(kNullWindowId) {}
 
 CroppingWindowCapturer::~CroppingWindowCapturer() {}
 
@@ -103,9 +102,9 @@ void CroppingWindowCapturer::OnCaptureResult(
 
 #if !defined(WEBRTC_WIN)
 // static
-WindowCapturer*
-CroppingWindowCapturer::Create(const DesktopCaptureOptions& options) {
-  return WindowCapturer::Create(options);
+DesktopCapturer* CroppingWindowCapturer::Create(
+    const DesktopCaptureOptions& options) {
+  return DesktopCapturer::CreateWindowCapturer(options).release();
 }
 #endif
 

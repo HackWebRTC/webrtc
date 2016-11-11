@@ -12,14 +12,14 @@
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_SCREEN_CAPTURER_MOCK_OBJECTS_H_
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/test/gmock.h"
 
 namespace webrtc {
 
 // Deprecated.
 // Use webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h.
-class MockScreenCapturerCallback : public ScreenCapturer::Callback {
+class MockScreenCapturerCallback : public DesktopCapturer::Callback {
  public:
   MockScreenCapturerCallback() {}
   ~MockScreenCapturerCallback() override {}

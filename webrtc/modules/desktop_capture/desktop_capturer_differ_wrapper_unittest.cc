@@ -20,7 +20,7 @@
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/differ_block.h"
-#include "webrtc/modules/desktop_capture/fake_screen_capturer.h"
+#include "webrtc/modules/desktop_capture/fake_desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/test/gtest.h"
@@ -159,7 +159,7 @@ void ExecuteDifferWrapperTest(bool with_hints,
   BlackWhiteDesktopFramePainter frame_painter;
   PainterDesktopFrameGenerator frame_generator;
   frame_generator.set_desktop_frame_painter(&frame_painter);
-  std::unique_ptr<FakeDesktopCapturer<>> fake(new FakeDesktopCapturer<>());
+  std::unique_ptr<FakeDesktopCapturer> fake(new FakeDesktopCapturer());
   fake->set_frame_generator(&frame_generator);
   DesktopCapturerDifferWrapper capturer(std::move(fake));
   MockDesktopCapturerCallback callback;

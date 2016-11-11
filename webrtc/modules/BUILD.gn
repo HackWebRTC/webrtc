@@ -8,11 +8,10 @@
 
 import("../build/webrtc.gni")
 import("audio_coding/audio_coding.gni")
-import("desktop_capture/desktop_capture.gni")
 
 declare_args() {
   # Desktop capturer is supported only on Windows, OSX and Linux.
-  rtc_desktop_capture_supported = rtc_desktop_capture_supported
+  rtc_desktop_capture_supported = is_win || is_mac || is_linux
 }
 
 group("modules") {
@@ -561,7 +560,6 @@ if (rtc_include_tests) {
         "desktop_capture/desktop_capturer_differ_wrapper_unittest.cc",
         "desktop_capture/mouse_cursor_monitor_unittest.cc",
         "desktop_capture/rgba_color_unittest.cc",
-        "desktop_capture/screen_capturer_differ_wrapper_unittest.cc",
         "desktop_capture/screen_capturer_helper_unittest.cc",
         "desktop_capture/screen_capturer_mac_unittest.cc",
         "desktop_capture/screen_capturer_mock_objects.h",

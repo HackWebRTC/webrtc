@@ -13,19 +13,18 @@
 
 #include <memory>
 
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
-#include "webrtc/modules/desktop_capture/window_capturer.h"
 
 namespace webrtc {
 
 // WindowCapturer implementation that uses a screen capturer to capture the
 // whole screen and crops the video frame to the window area when the captured
 // window is on top.
-class CroppingWindowCapturer : public WindowCapturer,
+class CroppingWindowCapturer : public DesktopCapturer,
                                public DesktopCapturer::Callback {
  public:
-  static WindowCapturer* Create(const DesktopCaptureOptions& options);
+  static DesktopCapturer* Create(const DesktopCaptureOptions& options);
   ~CroppingWindowCapturer() override;
 
   // DesktopCapturer implementation.

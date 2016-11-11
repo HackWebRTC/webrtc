@@ -18,8 +18,8 @@
 #include <wincodec.h>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/scoped_thread_desktop.h"
@@ -38,7 +38,7 @@ class DesktopRect;
 // This class does not detect DesktopFrame::updated_region(), the field is
 // always set to the entire frame rectangle. ScreenCapturerDifferWrapper should
 // be used if that functionality is necessary.
-class ScreenCapturerWinMagnifier : public ScreenCapturer {
+class ScreenCapturerWinMagnifier : public DesktopCapturer {
  public:
   // |fallback_capturer| will be used to capture the screen if a non-primary
   // screen is being captured, or the OS does not support Magnification API, or

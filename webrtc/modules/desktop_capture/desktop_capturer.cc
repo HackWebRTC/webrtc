@@ -34,11 +34,6 @@ bool DesktopCapturer::FocusOnSelectedSource() {
   return false;
 }
 
-// Some platforms, such as ChromeOS, have their DesktopCapturer implementations
-// in Chromium. So even we do not have CreateRawWindowCapturer() or
-// CreateRawScreenCapturer() implemented in WebRTC, we still need to build other
-// DesktopCapturer components when RTC_DESKTOP_CAPTURE_SUPPORTED is not defined.
-#if defined(RTC_DESKTOP_CAPTURE_SUPPORTED)
 // static
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateWindowCapturer(
     const DesktopCaptureOptions& options) {
@@ -60,6 +55,5 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateScreenCapturer(
 
   return capturer;
 }
-#endif  // defined(RTC_DESKTOP_CAPTURE_SUPPORTED)
 
 }  // namespace webrtc

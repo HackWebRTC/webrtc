@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/window_capturer.h"
-
 #include <assert.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <Cocoa/Cocoa.h>
@@ -18,6 +16,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/macutils.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
@@ -42,7 +41,7 @@ bool IsWindowValid(CGWindowID id) {
   return valid;
 }
 
-class WindowCapturerMac : public WindowCapturer {
+class WindowCapturerMac : public DesktopCapturer {
  public:
   explicit WindowCapturerMac(rtc::scoped_refptr<FullScreenChromeWindowDetector>
                                  full_screen_chrome_window_detector);
@@ -188,11 +187,6 @@ void WindowCapturerMac::CaptureFrame() {
 }
 
 }  // namespace
-
-// static
-WindowCapturer* WindowCapturer::Create(const DesktopCaptureOptions& options) {
-  return new WindowCapturerMac(options.full_screen_chrome_window_detector());
-}
 
 // static
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(

@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
-
 #include <stddef.h>
 
 #include <memory>
@@ -27,6 +25,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/macutils.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
@@ -35,7 +34,6 @@
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration_monitor.h"
 #include "webrtc/modules/desktop_capture/mac/scoped_pixel_buffer_object.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
-#include "webrtc/modules/desktop_capture/screen_capturer_differ_wrapper.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/system_wrappers/include/logging.h"
@@ -275,7 +273,7 @@ CGImageRef CreateExcludedWindowRegionImage(const DesktopRect& pixel_bounds,
 }
 
 // A class to perform video frame capturing for mac.
-class ScreenCapturerMac : public ScreenCapturer {
+class ScreenCapturerMac : public DesktopCapturer {
  public:
   explicit ScreenCapturerMac(
       rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor);
@@ -283,12 +281,12 @@ class ScreenCapturerMac : public ScreenCapturer {
 
   bool Init();
 
-  // Overridden from ScreenCapturer:
+  // DesktopCapturer interface.
   void Start(Callback* callback) override;
   void CaptureFrame() override;
   void SetExcludedWindow(WindowId window) override;
-  bool GetScreenList(ScreenList* screens) override;
-  bool SelectScreen(ScreenId id) override;
+  bool GetSourceList(SourceList* screens) override;
+  bool SelectSource(SourceId id) override;
 
  private:
   void GlBlitFast(const DesktopFrame& frame,
@@ -499,26 +497,22 @@ void ScreenCapturerMac::SetExcludedWindow(WindowId window) {
   excluded_window_ = window;
 }
 
-bool ScreenCapturerMac::GetScreenList(ScreenList* screens) {
+bool ScreenCapturerMac::GetSourceList(SourceList* screens) {
   assert(screens->size() == 0);
   if (rtc::GetOSVersionName() < rtc::kMacOSLion) {
     // Single monitor cast is not supported on pre OS X 10.7.
-    Screen screen;
-    screen.id = kFullDesktopScreenId;
-    screens->push_back(screen);
+    screens->push_back({kFullDesktopScreenId});
     return true;
   }
 
   for (MacDisplayConfigurations::iterator it = desktop_config_.displays.begin();
        it != desktop_config_.displays.end(); ++it) {
-    Screen screen;
-    screen.id = static_cast<ScreenId>(it->id);
-    screens->push_back(screen);
+    screens->push_back({it->id});
   }
   return true;
 }
 
-bool ScreenCapturerMac::SelectScreen(ScreenId id) {
+bool ScreenCapturerMac::SelectSource(SourceId id) {
   if (rtc::GetOSVersionName() < rtc::kMacOSLion) {
     // Ignore the screen selection on unsupported OS.
     assert(!current_display_);
@@ -1020,32 +1014,14 @@ std::unique_ptr<DesktopFrame> ScreenCapturerMac::CreateFrame() {
 }  // namespace
 
 // static
-ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
-  if (!options.configuration_monitor())
-    return nullptr;
-
-  std::unique_ptr<ScreenCapturer> capturer(
-      new ScreenCapturerMac(options.configuration_monitor()));
-  if (!static_cast<ScreenCapturerMac*>(capturer.get())->Init()) {
-    return nullptr;
-  }
-
-  if (options.detect_updated_region()) {
-    capturer.reset(new ScreenCapturerDifferWrapper(std::move(capturer)));
-  }
-
-  return capturer.release();
-}
-
-// static
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
     const DesktopCaptureOptions& options) {
   if (!options.configuration_monitor())
     return nullptr;
 
-  std::unique_ptr<ScreenCapturer> capturer(
+  std::unique_ptr<ScreenCapturerMac> capturer(
       new ScreenCapturerMac(options.configuration_monitor()));
-  if (!static_cast<ScreenCapturerMac*>(capturer.get())->Init()) {
+  if (!capturer.get()->Init()) {
     return nullptr;
   }
 

@@ -13,11 +13,10 @@
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
-
 #include <windows.h>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/scoped_thread_desktop.h"
@@ -30,7 +29,7 @@ namespace webrtc {
 // This class does not detect DesktopFrame::updated_region(), the field is
 // always set to the entire frame rectangle. ScreenCapturerDifferWrapper should
 // be used if that functionality is necessary.
-class ScreenCapturerWinGdi : public ScreenCapturer {
+class ScreenCapturerWinGdi : public DesktopCapturer {
  public:
   explicit ScreenCapturerWinGdi(const DesktopCaptureOptions& options);
   ~ScreenCapturerWinGdi() override;

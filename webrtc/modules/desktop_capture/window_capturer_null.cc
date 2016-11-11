@@ -8,18 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/window_capturer.h"
-
 #include <assert.h>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 
 namespace webrtc {
 
 namespace {
 
-class WindowCapturerNull : public WindowCapturer {
+class WindowCapturerNull : public DesktopCapturer {
  public:
   WindowCapturerNull();
   ~WindowCapturerNull() override;
@@ -62,11 +61,6 @@ void WindowCapturerNull::CaptureFrame() {
 }
 
 }  // namespace
-
-// static
-WindowCapturer* WindowCapturer::Create(const DesktopCaptureOptions& options) {
-  return new WindowCapturerNull();
-}
 
 // static
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(

@@ -8,7 +8,6 @@
 
 import("//build/config/ui.gni")
 import("../../build/webrtc.gni")
-import("desktop_capture.gni")
 
 use_desktop_capture_differ_sse2 =
     !is_ios && (current_cpu == "x86" || current_cpu == "x64")
@@ -72,9 +71,8 @@ if (rtc_include_tests) {
     sources = [
       "desktop_frame_generator.cc",
       "desktop_frame_generator.h",
+      "fake_desktop_capturer.cc",
       "fake_desktop_capturer.h",
-      "fake_screen_capturer.cc",
-      "fake_screen_capturer.h",
       "mock_desktop_capturer_callback.h",
       "screen_capturer_mock_objects.h",
     ]
@@ -112,8 +110,6 @@ rtc_static_library("desktop_capture") {
     "mouse_cursor_monitor_mac.mm",
     "mouse_cursor_monitor_win.cc",
     "screen_capture_frame_queue.h",
-    "screen_capturer.cc",
-    "screen_capturer.h",
     "screen_capturer_helper.cc",
     "screen_capturer_helper.h",
     "screen_capturer_mac.mm",
@@ -151,8 +147,6 @@ rtc_static_library("desktop_capture") {
     "win/screen_capturer_win_magnifier.h",
     "win/window_capture_utils.cc",
     "win/window_capture_utils.h",
-    "window_capturer.cc",
-    "window_capturer.h",
     "window_capturer_mac.mm",
     "window_capturer_win.cc",
   ]
@@ -186,8 +180,6 @@ rtc_static_library("desktop_capture") {
       "desktop_capturer_differ_wrapper.h",
       "differ_block.cc",
       "differ_block.h",
-      "screen_capturer_differ_wrapper.cc",
-      "screen_capturer_differ_wrapper.h",
     ]
   }
 
@@ -214,10 +206,6 @@ rtc_static_library("desktop_capture") {
 
   if (use_desktop_capture_differ_sse2) {
     deps += [ ":desktop_capture_differ_sse2" ]
-  }
-
-  if (rtc_desktop_capture_supported) {
-    defines = [ "RTC_DESKTOP_CAPTURE_SUPPORTED" ]
   }
 }
 

@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/window_capturer.h"
-
 #include <assert.h>
 #include <string.h>
 #include <X11/Xatom.h>
@@ -21,6 +19,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/x11/shared_x_display.h"
@@ -82,7 +81,7 @@ class XWindowProperty {
   RTC_DISALLOW_COPY_AND_ASSIGN(XWindowProperty);
 };
 
-class WindowCapturerLinux : public WindowCapturer,
+class WindowCapturerLinux : public DesktopCapturer,
                             public SharedXDisplay::XEventHandler {
  public:
   WindowCapturerLinux(const DesktopCaptureOptions& options);
@@ -420,13 +419,6 @@ bool WindowCapturerLinux::GetWindowTitle(::Window window, std::string* title) {
 }
 
 }  // namespace
-
-// static
-WindowCapturer* WindowCapturer::Create(const DesktopCaptureOptions& options) {
-  if (!options.x_display())
-    return nullptr;
-  return new WindowCapturerLinux(options);
-}
 
 // static
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawWindowCapturer(

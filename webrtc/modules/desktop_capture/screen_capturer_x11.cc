@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
-
 #include <string.h>
 
 #include <memory>
@@ -24,10 +22,10 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
-#include "webrtc/modules/desktop_capture/screen_capturer_differ_wrapper.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/x11/x_server_pixel_buffer.h"
@@ -43,7 +41,7 @@ namespace {
 // DesktopFrame::updated_region(), the field is always set to the entire frame
 // rectangle. ScreenCapturerDifferWrapper should be used if that functionality
 // is necessary.
-class ScreenCapturerLinux : public ScreenCapturer,
+class ScreenCapturerLinux : public DesktopCapturer,
                             public SharedXDisplay::XEventHandler {
  public:
   ScreenCapturerLinux();
@@ -404,30 +402,13 @@ void ScreenCapturerLinux::DeinitXlib() {
 }  // namespace
 
 // static
-ScreenCapturer* ScreenCapturer::Create(const DesktopCaptureOptions& options) {
-  if (!options.x_display())
-    return nullptr;
-
-  std::unique_ptr<ScreenCapturer> capturer(new ScreenCapturerLinux());
-  if (!static_cast<ScreenCapturerLinux*>(capturer.get())->Init(options)) {
-    return nullptr;
-  }
-
-  if (options.detect_updated_region()) {
-    capturer.reset(new ScreenCapturerDifferWrapper(std::move(capturer)));
-  }
-
-  return capturer.release();
-}
-
-// static
 std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
     const DesktopCaptureOptions& options) {
   if (!options.x_display())
     return nullptr;
 
-  std::unique_ptr<ScreenCapturer> capturer(new ScreenCapturerLinux());
-  if (!static_cast<ScreenCapturerLinux*>(capturer.get())->Init(options)) {
+  std::unique_ptr<ScreenCapturerLinux> capturer(new ScreenCapturerLinux());
+  if (!capturer.get()->Init(options)) {
     return nullptr;
   }
 

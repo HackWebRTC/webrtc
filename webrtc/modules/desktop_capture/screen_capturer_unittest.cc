@@ -10,16 +10,15 @@
 
 #include <memory>
 
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
-
-#include "webrtc/test/gmock.h"
-#include "webrtc/test/gtest.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_mock_objects.h"
+#include "webrtc/test/gmock.h"
+#include "webrtc/test/gtest.h"
 
 #if defined(WEBRTC_WIN)
 #include "webrtc/modules/desktop_capture/win/screen_capturer_win_directx.h"

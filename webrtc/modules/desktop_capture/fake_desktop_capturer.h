@@ -12,12 +12,10 @@
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_FAKE_DESKTOP_CAPTURER_H_
 
 #include <memory>
-#include <utility>
 
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_types.h"
 #include "webrtc/modules/desktop_capture/desktop_frame_generator.h"
-#include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/shared_memory.h"
 
 namespace webrtc {
@@ -33,66 +31,25 @@ namespace webrtc {
 // Double buffering is guaranteed by the FrameGenerator. FrameGenerator
 // implements in desktop_frame_generator.h guarantee double buffering, they
 // creates a new instance of DesktopFrame each time.
-//
-// T must be DesktopCapturer or its derived interfaces.
-//
-// TODO(zijiehe): Remove template T once we merge ScreenCapturer and
-// WindowCapturer.
-template <typename T = DesktopCapturer>
-class FakeDesktopCapturer : public T {
+class FakeDesktopCapturer : public DesktopCapturer {
  public:
-  FakeDesktopCapturer()
-      : callback_(nullptr),
-        result_(DesktopCapturer::Result::SUCCESS),
-        generator_(nullptr) {}
-
-  ~FakeDesktopCapturer() override {}
+  FakeDesktopCapturer();
+  ~FakeDesktopCapturer() override;
 
   // Decides the result which will be returned in next Capture() callback.
-  void set_result(DesktopCapturer::Result result) { result_ = result; }
+  void set_result(DesktopCapturer::Result result);
 
   // Uses the |generator| provided as DesktopFrameGenerator, FakeDesktopCapturer
-  // does
-  // not take the ownership of |generator|.
-  void set_frame_generator(DesktopFrameGenerator* generator) {
-    generator_ = generator;
-  }
+  // does not take the ownership of |generator|.
+  void set_frame_generator(DesktopFrameGenerator* generator);
 
   // DesktopCapturer interface
-  void Start(DesktopCapturer::Callback* callback) override {
-    callback_ = callback;
-  }
-
-  void CaptureFrame() override {
-    if (generator_) {
-      std::unique_ptr<DesktopFrame> frame(
-          generator_->GetNextFrame(shared_memory_factory_.get()));
-      if (frame) {
-        callback_->OnCaptureResult(result_, std::move(frame));
-      } else {
-        callback_->OnCaptureResult(DesktopCapturer::Result::ERROR_TEMPORARY,
-                                   nullptr);
-      }
-      return;
-    }
-    callback_->OnCaptureResult(DesktopCapturer::Result::ERROR_PERMANENT,
-                               nullptr);
-  }
-
+  void Start(DesktopCapturer::Callback* callback) override;
+  void CaptureFrame() override;
   void SetSharedMemoryFactory(
-      std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override {
-    shared_memory_factory_ = std::move(shared_memory_factory);
-  }
-
-  bool GetSourceList(DesktopCapturer::SourceList* sources) override {
-    sources->push_back({kWindowId, "A-Fake-DesktopCapturer-Window"});
-    sources->push_back({kScreenId});
-    return true;
-  }
-
-  bool SelectSource(DesktopCapturer::SourceId id) override {
-    return id == kWindowId || id == kScreenId || id == kFullDesktopScreenId;
-  }
+      std::unique_ptr<SharedMemoryFactory> shared_memory_factory) override;
+  bool GetSourceList(DesktopCapturer::SourceList* sources) override;
+  bool SelectSource(DesktopCapturer::SourceId id) override;
 
  private:
   static constexpr DesktopCapturer::SourceId kWindowId = 1378277495;

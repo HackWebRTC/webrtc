@@ -11,13 +11,12 @@
 #ifndef WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_DIRECTX_H_
 #define WEBRTC_MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURER_WIN_DIRECTX_H_
 
-#include "webrtc/modules/desktop_capture/screen_capturer.h"
-
 #include <D3DCommon.h>
 
 #include <memory>
 #include <vector>
 
+#include "webrtc/modules/desktop_capture/desktop_capturer.h"
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
@@ -27,7 +26,7 @@
 namespace webrtc {
 
 // ScreenCapturerWinDirectx captures 32bit RGBA using DirectX.
-class ScreenCapturerWinDirectx : public ScreenCapturer {
+class ScreenCapturerWinDirectx : public DesktopCapturer {
  public:
   using D3dInfo = DxgiDuplicatorController::D3dInfo;
 
