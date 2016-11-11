@@ -152,11 +152,6 @@ class VideoReceiveStream {
       typedef std::map<int, Rtx> RtxMap;
       RtxMap rtx;
 
-      // If set to true, the RTX payload type mapping supplied in |rtx| will be
-      // used when restoring RTX packets. Without it, RTX packets will always be
-      // restored to the last non-RTX packet payload type received.
-      bool use_rtx_payload_mapping_on_restore = false;
-
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
     } rtp;

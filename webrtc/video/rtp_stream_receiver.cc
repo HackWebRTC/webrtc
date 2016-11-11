@@ -152,22 +152,15 @@ RtpStreamReceiver::RtpStreamReceiver(
                                             kv.first);
   }
 
-  // If set to true, the RTX payload type mapping supplied in
-  // |SetRtxPayloadType| will be used when restoring RTX packets. Without it,
-  // RTX packets will always be restored to the last non-RTX packet payload type
-  // received.
-  // TODO(holmer): When Chrome no longer depends on this being false by default,
-  // always use the mapping and remove this whole codepath.
-  rtp_payload_registry_.set_use_rtx_payload_mapping_on_restore(
-      config_.rtp.use_rtx_payload_mapping_on_restore);
-
   if (IsFecEnabled()) {
     VideoCodec ulpfec_codec = {};
     ulpfec_codec.codecType = kVideoCodecULPFEC;
     strncpy(ulpfec_codec.plName, "ulpfec", sizeof(ulpfec_codec.plName));
     ulpfec_codec.plType = config_.rtp.ulpfec.ulpfec_payload_type;
     RTC_CHECK(SetReceiveCodec(ulpfec_codec));
+  }
 
+  if (IsRedEnabled()) {
     VideoCodec red_codec = {};
     red_codec.codecType = kVideoCodecRED;
     strncpy(red_codec.plName, "red", sizeof(red_codec.plName));
@@ -178,11 +171,6 @@ RtpStreamReceiver::RtpStreamReceiver(
           config_.rtp.ulpfec.red_rtx_payload_type,
           config_.rtp.ulpfec.red_payload_type);
     }
-    // TODO(brandtr): It doesn't seem that |rtp_rtcp_| is used for sending any
-    // RTP packets. Investigate if this is the case, and if so, remove this
-    // call, since there are no RTP packets to protect with RED+ULPFEC.
-    rtp_rtcp_->SetUlpfecConfig(config_.rtp.ulpfec.red_payload_type,
-                               config_.rtp.ulpfec.ulpfec_payload_type);
   }
 
   if (config_.rtp.rtcp_xr.receiver_reference_time_report)
@@ -339,8 +327,11 @@ int32_t RtpStreamReceiver::SliceLossIndicationRequest(
 }
 
 bool RtpStreamReceiver::IsFecEnabled() const {
-  return config_.rtp.ulpfec.red_payload_type != -1 &&
-         config_.rtp.ulpfec.ulpfec_payload_type != -1;
+  return config_.rtp.ulpfec.ulpfec_payload_type != -1;
+}
+
+bool RtpStreamReceiver::IsRedEnabled() const {
+  return config_.rtp.ulpfec.red_payload_type != -1;
 }
 
 bool RtpStreamReceiver::IsRetransmissionsEnabled() const {

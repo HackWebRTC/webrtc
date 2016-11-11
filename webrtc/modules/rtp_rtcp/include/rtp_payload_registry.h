@@ -13,8 +13,10 @@
 
 #include <map>
 #include <memory>
+#include <set>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/deprecation.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
@@ -87,7 +89,7 @@ class RTPPayloadRegistry {
                              const uint8_t* packet,
                              size_t* packet_length,
                              uint32_t original_ssrc,
-                             const RTPHeader& header) const;
+                             const RTPHeader& header);
 
   bool IsRed(const RTPHeader& header) const;
 
@@ -137,15 +139,7 @@ class RTPPayloadRegistry {
     return last_received_media_payload_type_;
   }
 
-  bool use_rtx_payload_mapping_on_restore() const {
-    rtc::CritScope cs(&crit_sect_);
-    return use_rtx_payload_mapping_on_restore_;
-  }
-
-  void set_use_rtx_payload_mapping_on_restore(bool val) {
-    rtc::CritScope cs(&crit_sect_);
-    use_rtx_payload_mapping_on_restore_ = val;
-  }
+  RTC_DEPRECATED void set_use_rtx_payload_mapping_on_restore(bool val) {}
 
  private:
   // Prunes the payload type map of the specific payload type, if it exists.
@@ -167,15 +161,12 @@ class RTPPayloadRegistry {
   int8_t last_received_payload_type_;
   int8_t last_received_media_payload_type_;
   bool rtx_;
-  // TODO(changbin): Remove rtx_payload_type_ once interop with old clients that
-  // only understand one RTX PT is no longer needed.
-  int rtx_payload_type_;
   // Mapping rtx_payload_type_map_[rtx] = associated.
   std::map<int, int> rtx_payload_type_map_;
-  // When true, use rtx_payload_type_map_ when restoring RTX packets to get the
-  // correct payload type.
-  bool use_rtx_payload_mapping_on_restore_;
   uint32_t ssrc_rtx_;
+  // Only warn once per payload type, if an RTX packet is received but
+  // no associated payload type found in |rtx_payload_type_map_|.
+  std::set<int> payload_types_with_suppressed_warnings_ GUARDED_BY(crit_sect_);
 };
 
 }  // namespace webrtc

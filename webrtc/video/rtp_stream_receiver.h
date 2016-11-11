@@ -126,6 +126,7 @@ class RtpStreamReceiver : public RtpData, public RtpFeedback,
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   void UpdateHistograms();
   void EnableReceiveRtpHeaderExtension(const std::string& extension, int id);
+  bool IsRedEnabled() const;
 
   Clock* const clock_;
   // Ownership of this object lies with VideoReceiveStream, which owns |this|.

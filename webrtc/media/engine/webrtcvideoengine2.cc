@@ -677,7 +677,6 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
       external_encoder_factory_(external_encoder_factory),
       external_decoder_factory_(external_decoder_factory),
       default_send_options_(options),
-      red_disabled_by_remote_side_(false),
       last_stats_log_ms_(-1) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
@@ -846,19 +845,6 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
             HasTransportCc(send_codec_->codec),
             params.rtcp.reduced_size ? webrtc::RtcpMode::kReducedSize
                                      : webrtc::RtcpMode::kCompound);
-      }
-    }
-    if (changed_params.codec) {
-      bool red_was_disabled = red_disabled_by_remote_side_;
-      red_disabled_by_remote_side_ =
-          changed_params.codec->ulpfec.red_payload_type == -1;
-      if (red_was_disabled != red_disabled_by_remote_side_) {
-        for (auto& kv : receive_streams_) {
-          // In practice VideoChannel::SetRemoteContent appears to most of the
-          // time also call UpdateRemoteStreams, which recreates the receive
-          // streams. If that's always true this call isn't needed.
-          kv.second->SetUlpfecDisabledRemotely(red_disabled_by_remote_side_);
-        }
       }
     }
   }
@@ -1240,7 +1226,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_, sp, std::move(config), external_decoder_factory_, default_stream,
-      recv_codecs_, red_disabled_by_remote_side_);
+      recv_codecs_);
 
   return true;
 }
@@ -2134,14 +2120,12 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::VideoReceiveStream::Config config,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
-    const std::vector<VideoCodecSettings>& recv_codecs,
-    bool red_disabled_by_remote_side)
+    const std::vector<VideoCodecSettings>& recv_codecs)
     : call_(call),
       stream_params_(sp),
       stream_(NULL),
       default_stream_(default_stream),
       config_(std::move(config)),
-      red_disabled_by_remote_side_(red_disabled_by_remote_side),
       external_decoder_factory_(external_decoder_factory),
       sink_(NULL),
       first_frame_timestamp_(-1),
@@ -2344,13 +2328,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
   if (stream_ != NULL) {
     call_->DestroyVideoReceiveStream(stream_);
   }
-  webrtc::VideoReceiveStream::Config config = config_.Copy();
-  if (red_disabled_by_remote_side_) {
-    config.rtp.ulpfec.red_payload_type = -1;
-    config.rtp.ulpfec.ulpfec_payload_type = -1;
-    config.rtp.ulpfec.red_rtx_payload_type = -1;
-  }
-  stream_ = call_->CreateVideoReceiveStream(std::move(config));
+  stream_ = call_->CreateVideoReceiveStream(config_.Copy());
   stream_->Start();
 }
 
@@ -2455,12 +2433,6 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
     LOG(LS_INFO) << stats.ToString(rtc::TimeMillis());
 
   return info;
-}
-
-void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetUlpfecDisabledRemotely(
-    bool disable) {
-  red_disabled_by_remote_side_ = disable;
-  RecreateWebRtcStream();
 }
 
 WebRtcVideoChannel2::VideoCodecSettings::VideoCodecSettings()

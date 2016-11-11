@@ -1158,16 +1158,12 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     rtc::CritScope lock(&send_critsect_);
     if (!sending_media_)
       return nullptr;
-    // Replace payload type, if a specific type is set for RTX.
-    auto kv = rtx_payload_type_map_.find(packet.PayloadType());
 
-    // Use rtx mapping associated with media codec if we can't find one,
-    // assume it's red.
-    // TODO(holmer): Remove once old Chrome versions don't rely on this.
+    // Replace payload type.
+    auto kv = rtx_payload_type_map_.find(packet.PayloadType());
     if (kv == rtx_payload_type_map_.end())
-      kv = rtx_payload_type_map_.find(payload_type_);
-    if (kv != rtx_payload_type_map_.end())
-      rtx_packet->SetPayloadType(kv->second);
+      return nullptr;
+    rtx_packet->SetPayloadType(kv->second);
 
     // Replace sequence number.
     rtx_packet->SetSequenceNumber(sequence_number_rtx_++);

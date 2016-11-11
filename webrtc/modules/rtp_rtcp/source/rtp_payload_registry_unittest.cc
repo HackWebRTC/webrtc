@@ -350,26 +350,6 @@ TEST_F(RtpPayloadRegistryTest, InvalidRtxConfiguration) {
   TestRtxPacket(rtp_payload_registry_.get(), 106, 0, false);
 }
 
-TEST_F(RtpPayloadRegistryTest, AssumeRtxWrappingRed) {
-  rtp_payload_registry_->SetRtxSsrc(100);
-  // Succeeds when the mapping is used, but fails for the implicit fallback.
-  rtp_payload_registry_->SetRtxPayloadType(105, 95);
-  // Set the incoming payload type to 96, which we assume is red.
-  RTPHeader header;
-  header.payloadType = 96;
-  header.ssrc = 1;
-  rtp_payload_registry_->SetIncomingPayloadType(header);
-  // Recovers with correct, but unexpected, payload type since we haven't
-  // configured red.
-  TestRtxPacket(rtp_payload_registry_.get(), 105, 95, true);
-  bool created_new_payload;
-  rtp_payload_registry_->RegisterReceivePayload(
-      "RED", header.payloadType, 90000, 1, 0, &created_new_payload);
-  // Now that red is configured we expect to get the red payload type back on
-  // recovery because of the workaround to always recover red when configured.
-  TestRtxPacket(rtp_payload_registry_.get(), 105, header.payloadType, true);
-}
-
 INSTANTIATE_TEST_CASE_P(TestDynamicRange,
                         RtpPayloadRegistryGenericTest,
                         testing::Range(96, 127 + 1));

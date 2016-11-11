@@ -23,7 +23,6 @@ RTPPayloadRegistry::RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy)
       last_received_payload_type_(-1),
       last_received_media_payload_type_(-1),
       rtx_(false),
-      rtx_payload_type_(-1),
       ssrc_rtx_(0) {}
 
 RTPPayloadRegistry::~RTPPayloadRegistry() {
@@ -234,7 +233,7 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
                                                const uint8_t* packet,
                                                size_t* packet_length,
                                                uint32_t original_ssrc,
-                                               const RTPHeader& header) const {
+                                               const RTPHeader& header) {
   if (kRtxHeaderSize + header.headerLength + header.paddingLength >
       *packet_length) {
     return false;
@@ -258,21 +257,22 @@ bool RTPPayloadRegistry::RestoreOriginalPacket(uint8_t* restored_packet,
   if (!rtx_)
     return true;
 
-  int associated_payload_type;
   auto apt_mapping = rtx_payload_type_map_.find(header.payloadType);
-  if (apt_mapping == rtx_payload_type_map_.end())
+  if (apt_mapping == rtx_payload_type_map_.end()) {
+    // No associated payload type found. Warn, unless we have already done so.
+    if (payload_types_with_suppressed_warnings_.find(header.payloadType) ==
+        payload_types_with_suppressed_warnings_.end()) {
+      LOG(LS_WARNING)
+          << "No RTX associated payload type mapping was available; "
+             "not able to restore original packet from RTX packet "
+             "with payload type: "
+          << static_cast<int>(header.payloadType) << ". "
+          << "Suppressing further warnings for this payload type.";
+      payload_types_with_suppressed_warnings_.insert(header.payloadType);
+    }
     return false;
-  associated_payload_type = apt_mapping->second;
-  if (red_payload_type_ != -1) {
-    // Assume red will be used if it's configured.
-    // This is a workaround for a Chrome sdp bug where rtx is associated
-    // with the media codec even though media is sent over red.
-    // TODO(holmer): Remove once the Chrome versions exposing this bug are
-    // old enough, which should be once Chrome Stable reaches M53 as this
-    // work-around went into M50.
-    associated_payload_type = red_payload_type_;
   }
-  restored_packet[1] = static_cast<uint8_t>(associated_payload_type);
+  restored_packet[1] = static_cast<uint8_t>(apt_mapping->second);
   if (header.markerBit) {
     restored_packet[1] |= kRtpMarkerBitMask;  // Marker bit is set.
   }
@@ -301,7 +301,6 @@ void RTPPayloadRegistry::SetRtxPayloadType(int payload_type,
 
   rtx_payload_type_map_[payload_type] = associated_payload_type;
   rtx_ = true;
-  rtx_payload_type_ = payload_type;
 }
 
 bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {

@@ -942,59 +942,65 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
 
 void VideoSendStreamImpl::ConfigureProtection() {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  // Enable NACK, FEC or both.
-  const bool enable_protection_nack = config_->rtp.nack.rtp_history_ms > 0;
-  const int red_payload_type = config_->rtp.ulpfec.red_payload_type;
+
+  const bool nack_enabled = config_->rtp.nack.rtp_history_ms > 0;
+  int red_payload_type = config_->rtp.ulpfec.red_payload_type;
   int ulpfec_payload_type = config_->rtp.ulpfec.ulpfec_payload_type;
+
+  // Shorthands.
+  auto IsRedEnabled = [&]() { return red_payload_type >= 0; };
+  auto IsUlpfecEnabled = [&]() { return ulpfec_payload_type >= 0; };
+  auto DisableUlpfec = [&]() { ulpfec_payload_type = -1; };
+
   // Payload types without picture ID cannot determine that a stream is complete
-  // without retransmitting FEC, so using FEC + NACK for H.264 (for instance) is
-  // a waste of bandwidth since FEC packets still have to be transmitted. Note
-  // that this is not the case with FLEXFEC.
-  if (enable_protection_nack &&
+  // without retransmitting FEC, so using ULPFEC + NACK for H.264 (for instance)
+  // is a waste of bandwidth since FEC packets still have to be transmitted.
+  // Note that this is not the case with FlexFEC.
+  if (nack_enabled && IsUlpfecEnabled() &&
       !PayloadTypeSupportsSkippingFecPackets(
           config_->encoder_settings.payload_name)) {
-    LOG(LS_WARNING) << "Transmitting payload type without picture ID using"
-                       "NACK+FEC is a waste of bandwidth since FEC packets "
-                       "also have to be retransmitted. Disabling FEC.";
-    ulpfec_payload_type = -1;
+    LOG(LS_WARNING)
+        << "Transmitting payload type without picture ID using "
+           "NACK+ULPFEC is a waste of bandwidth since ULPFEC packets "
+           "also have to be retransmitted. Disabling ULPFEC.";
+    DisableUlpfec();
   }
 
-  // TODO(brandtr): Remove the workaround described below.
+  // Verify payload types.
   //
-  // In theory, we should enable RED if and only if ULPFEC is also enabled,
-  // and vice versa. (We only support ULPFEC over RED, not multiplexed in any
-  // other way.) However, due to the RED/RTX workaround introduced here:
-  // https://codereview.webrtc.org/1649493004, we need to send media over RED
-  // (even if ULPFEC is disabled), whenever RED has been negotiated in the SDP.
-  // This is due to the associated payload type is hardcoded to be RED in the
-  // receiver, whenever RED appears in the SDP. If we would not send media over
-  // RED in this case, the RTX receiver would recover retransmitted packets
-  // using the wrong payload type.
-
-  // Verify validity of provided payload types.
-  if (red_payload_type != -1) {
+  // Due to how old receivers work, we need to always send RED if it has been
+  // negotiated. This is a remnant of an old RED/RTX workaround, see
+  // https://codereview.webrtc.org/2469093003.
+  // TODO(brandtr): This change went into M56, so we can remove it in ~M59.
+  // At that time, we can disable RED whenever ULPFEC is disabled, as there is
+  // no point in using RED without ULPFEC.
+  if (IsRedEnabled()) {
     RTC_DCHECK_GE(red_payload_type, 0);
     RTC_DCHECK_LE(red_payload_type, 127);
   }
-  if (ulpfec_payload_type != -1) {
+  if (IsUlpfecEnabled()) {
     RTC_DCHECK_GE(ulpfec_payload_type, 0);
     RTC_DCHECK_LE(ulpfec_payload_type, 127);
+    if (!IsRedEnabled()) {
+      LOG(LS_WARNING)
+          << "ULPFEC is enabled but RED is disabled. Disabling ULPFEC.";
+      DisableUlpfec();
+    }
   }
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     // Set NACK.
     rtp_rtcp->SetStorePacketsStatus(
-        enable_protection_nack || congestion_controller_->pacer(),
+        nack_enabled || congestion_controller_->pacer(),
         kMinSendSidePacketHistorySize);
-    // Set FEC.
+    // Set RED/ULPFEC information.
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
       rtp_rtcp->SetUlpfecConfig(red_payload_type, ulpfec_payload_type);
     }
   }
 
-  const bool enable_protection_fec = (ulpfec_payload_type != -1);
-  protection_bitrate_calculator_.SetProtectionMethod(enable_protection_fec,
-                                                     enable_protection_nack);
+  protection_bitrate_calculator_.SetProtectionMethod(IsUlpfecEnabled(),
+                                                     nack_enabled);
 }
 
 void VideoSendStreamImpl::ConfigureSsrcs() {

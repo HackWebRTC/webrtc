@@ -518,18 +518,18 @@ TEST_F(VideoSendStreamTest, DoesNotUtilizeUlpfecForH264WithNackEnabled) {
 }
 
 // Without retransmissions FEC for H264 is fine.
-TEST_F(VideoSendStreamTest, DoesUtilizeRedForH264WithoutNackEnabled) {
+TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForH264WithoutNackEnabled) {
   UlpfecObserver test(false, false, true, true, "H264");
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, DoesUtilizeRedForVp8WithNackEnabled) {
+TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForVp8WithNackEnabled) {
   UlpfecObserver test(false, true, true, true, "VP8");
   RunBaseTest(&test);
 }
 
 #if !defined(RTC_DISABLE_VP9)
-TEST_F(VideoSendStreamTest, DoesUtilizeRedForVp9WithNackEnabled) {
+TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForVp9WithNackEnabled) {
   UlpfecObserver test(false, true, true, true, "VP9");
   RunBaseTest(&test);
 }
