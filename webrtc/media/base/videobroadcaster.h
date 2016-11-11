@@ -17,10 +17,9 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourcebase.h"
-#include "webrtc/media/engine/webrtcvideoframe.h"
+#include "webrtc/video_frame.h"
 
 namespace rtc {
 
@@ -31,12 +30,12 @@ namespace rtc {
 // Video frames can be broadcasted on any thread. I.e VideoBroadcaster::OnFrame
 // can be called on any thread.
 class VideoBroadcaster : public VideoSourceBase,
-                         public VideoSinkInterface<cricket::VideoFrame> {
+                         public VideoSinkInterface<webrtc::VideoFrame> {
  public:
   VideoBroadcaster();
-  void AddOrUpdateSink(VideoSinkInterface<cricket::VideoFrame>* sink,
+  void AddOrUpdateSink(VideoSinkInterface<webrtc::VideoFrame>* sink,
                        const VideoSinkWants& wants) override;
-  void RemoveSink(VideoSinkInterface<cricket::VideoFrame>* sink) override;
+  void RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
   // Returns true if the next frame will be delivered to at least one sink.
   bool frame_wanted() const;
@@ -49,7 +48,7 @@ class VideoBroadcaster : public VideoSourceBase,
   // it will never receive a frame with pending rotation. Our caller
   // may pass in frames without precise synchronization with changes
   // to the VideoSinkWants.
-  void OnFrame(const cricket::VideoFrame& frame) override;
+  void OnFrame(const webrtc::VideoFrame& frame) override;
 
  protected:
   void UpdateWants() EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);

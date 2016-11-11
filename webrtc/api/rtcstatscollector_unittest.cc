@@ -232,9 +232,9 @@ class FakeVideoTrackSourceForStats
   bool remote() const override { return false; }
   void RegisterObserver(ObserverInterface* observer) override {}
   void UnregisterObserver(ObserverInterface* observer) override {}
-  void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+  void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override {}
-  void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override {
+  void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override {
   }
   bool is_screencast() const override { return false; }
   rtc::Optional<bool> needs_denoising() const override {

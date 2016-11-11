@@ -18,7 +18,6 @@
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/base/fakevideorenderer.h"
-#include "webrtc/media/engine/webrtcvideoframe.h"
 
 using webrtc::FakeConstraints;
 using webrtc::VideoCapturerTrackSource;

@@ -72,14 +72,14 @@ class GtkMainWnd : public MainWindow {
   void OnRedraw();
 
  protected:
-  class VideoRenderer : public rtc::VideoSinkInterface<cricket::VideoFrame> {
+  class VideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
    public:
     VideoRenderer(GtkMainWnd* main_wnd,
                   webrtc::VideoTrackInterface* track_to_render);
     virtual ~VideoRenderer();
 
     // VideoSinkInterface implementation
-    void OnFrame(const cricket::VideoFrame& frame) override;
+    void OnFrame(const webrtc::VideoFrame& frame) override;
 
     const uint8_t* image() const { return image_.get(); }
 

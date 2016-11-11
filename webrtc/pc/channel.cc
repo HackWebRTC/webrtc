@@ -1908,7 +1908,7 @@ VideoChannel::~VideoChannel() {
 }
 
 bool VideoChannel::SetSink(uint32_t ssrc,
-                           rtc::VideoSinkInterface<VideoFrame>* sink) {
+                           rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
   worker_thread()->Invoke<void>(
       RTC_FROM_HERE,
       Bind(&VideoMediaChannel::SetSink, media_channel(), ssrc, sink));
@@ -1919,7 +1919,7 @@ bool VideoChannel::SetVideoSend(
     uint32_t ssrc,
     bool mute,
     const VideoOptions* options,
-    rtc::VideoSourceInterface<cricket::VideoFrame>* source) {
+    rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
   return InvokeOnWorker(RTC_FROM_HERE,
                         Bind(&VideoMediaChannel::SetVideoSend, media_channel(),
                              ssrc, mute, options, source));

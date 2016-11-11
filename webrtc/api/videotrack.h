@@ -29,9 +29,9 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
       const std::string& label,
       VideoTrackSourceInterface* source);
 
-  void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
-  void RemoveSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override;
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
 
   VideoTrackSourceInterface* GetSource() const override {
     return video_source_.get();

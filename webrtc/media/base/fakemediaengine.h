@@ -518,8 +518,8 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   const std::vector<VideoCodec>& codecs() const { return send_codecs(); }
   bool rendering() const { return playout(); }
   const VideoOptions& options() const { return options_; }
-  const std::map<uint32_t, rtc::VideoSinkInterface<VideoFrame>*>& sinks()
-      const {
+  const std::map<uint32_t, rtc::VideoSinkInterface<webrtc::VideoFrame>*>&
+  sinks() const {
     return sinks_;
   }
   int max_bps() const { return max_bps_; }
@@ -547,7 +547,7 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     return true;
   }
   bool SetSink(uint32_t ssrc,
-               rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override {
+               rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override {
     if (ssrc != 0 && sinks_.find(ssrc) == sinks_.end()) {
       return false;
     }
@@ -565,7 +565,7 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
       uint32_t ssrc,
       bool enable,
       const VideoOptions* options,
-      rtc::VideoSourceInterface<cricket::VideoFrame>* source) override {
+      rtc::VideoSourceInterface<webrtc::VideoFrame>* source) override {
     if (!RtpHelper<VideoMediaChannel>::MuteStream(ssrc, !enable)) {
       return false;
     }
@@ -627,8 +627,8 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   FakeVideoEngine* engine_;
   std::vector<VideoCodec> recv_codecs_;
   std::vector<VideoCodec> send_codecs_;
-  std::map<uint32_t, rtc::VideoSinkInterface<VideoFrame>*> sinks_;
-  std::map<uint32_t, rtc::VideoSourceInterface<VideoFrame>*> sources_;
+  std::map<uint32_t, rtc::VideoSinkInterface<webrtc::VideoFrame>*> sinks_;
+  std::map<uint32_t, rtc::VideoSourceInterface<webrtc::VideoFrame>*> sources_;
   VideoOptions options_;
   int max_bps_;
 };

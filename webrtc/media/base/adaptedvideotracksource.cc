@@ -27,7 +27,7 @@ bool AdaptedVideoTrackSource::GetStats(Stats* stats) {
   return true;
 }
 
-void AdaptedVideoTrackSource::OnFrame(const cricket::VideoFrame& frame) {
+void AdaptedVideoTrackSource::OnFrame(const webrtc::VideoFrame& frame) {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
       frame.video_frame_buffer());
   /* Note that this is a "best effort" approach to
@@ -42,7 +42,7 @@ void AdaptedVideoTrackSource::OnFrame(const cricket::VideoFrame& frame) {
       frame.rotation() != webrtc::kVideoRotation_0 &&
       !buffer->native_handle()) {
     /* Apply pending rotation. */
-    broadcaster_.OnFrame(cricket::WebRtcVideoFrame(
+    broadcaster_.OnFrame(webrtc::VideoFrame(
         webrtc::I420Buffer::Rotate(buffer, frame.rotation()),
         webrtc::kVideoRotation_0, frame.timestamp_us()));
   } else {
@@ -51,7 +51,7 @@ void AdaptedVideoTrackSource::OnFrame(const cricket::VideoFrame& frame) {
 }
 
 void AdaptedVideoTrackSource::AddOrUpdateSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
@@ -60,7 +60,7 @@ void AdaptedVideoTrackSource::AddOrUpdateSink(
 }
 
 void AdaptedVideoTrackSource::RemoveSink(
-    rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
+    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
   broadcaster_.RemoveSink(sink);

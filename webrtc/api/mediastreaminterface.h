@@ -25,9 +25,9 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/media/base/mediachannel.h"
-#include "webrtc/media/base/videoframe.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
+#include "webrtc/video_frame.h"
 
 namespace webrtc {
 
@@ -98,7 +98,7 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
 // The same source can be used in multiple VideoTracks.
 class VideoTrackSourceInterface
     : public MediaSourceInterface,
-      public rtc::VideoSourceInterface<cricket::VideoFrame> {
+      public rtc::VideoSourceInterface<VideoFrame> {
  public:
   struct Stats {
     // Original size of captured frame, before video adaptation.
@@ -131,13 +131,12 @@ class VideoTrackSourceInterface
 
 class VideoTrackInterface
     : public MediaStreamTrackInterface,
-      public rtc::VideoSourceInterface<cricket::VideoFrame> {
+      public rtc::VideoSourceInterface<VideoFrame> {
  public:
   // Register a video sink for this track.
-  void AddOrUpdateSink(rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
+  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override{};
-  void RemoveSink(
-      rtc::VideoSinkInterface<cricket::VideoFrame>* sink) override{};
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override{};
 
   virtual VideoTrackSourceInterface* GetSource() const = 0;
 

@@ -17,7 +17,6 @@
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/media/engine/webrtcvideoframe.h"
 
 ATOM MainWnd::wnd_class_ = 0;
 const wchar_t MainWnd::kClassName[] = L"WebRTC_MainWnd";
@@ -601,21 +600,18 @@ void MainWnd::VideoRenderer::SetSize(int width, int height) {
 }
 
 void MainWnd::VideoRenderer::OnFrame(
-    const cricket::VideoFrame& video_frame) {
+    const webrtc::VideoFrame& video_frame) {
 
   {
     AutoLock<VideoRenderer> lock(this);
 
-    const cricket::WebRtcVideoFrame frame(
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
         webrtc::I420Buffer::Rotate(video_frame.video_frame_buffer(),
-                                   video_frame.rotation()),
-        webrtc::kVideoRotation_0, video_frame.timestamp_us());
+                                   video_frame.rotation()));
 
-    SetSize(frame.width(), frame.height());
+    SetSize(buffer->width(), buffer->height());
 
     ASSERT(image_.get() != NULL);
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
-        frame.video_frame_buffer());
     libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
                        buffer->DataU(), buffer->StrideU(),
                        buffer->DataV(), buffer->StrideV(),
