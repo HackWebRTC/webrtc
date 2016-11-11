@@ -39,7 +39,7 @@ class H264EncoderImpl : public H264Encoder {
   // - height
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,
-                     size_t /*max_payload_size*/) override;
+                     size_t max_payload_size) override;
   int32_t Release() override;
 
   int32_t RegisterEncodeCompleteCallback(
@@ -80,7 +80,9 @@ class H264EncoderImpl : public H264Encoder {
   // H.264 specifc parameters
   bool frame_dropping_on_;
   int key_frame_interval_;
+  H264PacketizationMode packetization_mode_;
 
+  size_t max_payload_size_;
   int32_t number_of_cores_;
 
   EncodedImage encoded_image_;

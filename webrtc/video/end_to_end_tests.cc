@@ -130,6 +130,15 @@ class EndToEndTest : public test::CallTest {
       Transport* transport);
 };
 
+void SetPacketizationMode(H264PacketizationMode mode, VideoEncoder* encoder) {
+  VideoCodec codec_settings;
+  codec_settings.codecType = kVideoCodecH264;
+  codec_settings.H264()->packetization_mode = mode;
+  // TODO(hta): Determine appropriate value for max packet size.
+  static const int kMaxPacketSize = 1024;
+  encoder->InitEncode(&codec_settings, 0, kMaxPacketSize);
+}
+
 TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
   CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
 
@@ -375,7 +384,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9VideoRotation90) {
 }
 #endif  // !defined(RTC_DISABLE_VP9)
 
-#if defined(WEBRTC_END_TO_END_H264_TESTS)
+#if defined(WEBRTC_USE_H264)
 
 TEST_F(EndToEndTest, SendsAndReceivesH264) {
   CodecObserver test(500, kVideoRotation_0, "H264",
@@ -391,7 +400,25 @@ TEST_F(EndToEndTest, SendsAndReceivesH264VideoRotation90) {
   RunBaseTest(&test);
 }
 
-#endif  // defined(WEBRTC_END_TO_END_H264_TESTS)
+TEST_F(EndToEndTest, SendsAndReceivesH264PacketizationMode0) {
+  VideoEncoder* encoder = VideoEncoder::Create(VideoEncoder::kH264);
+  SetPacketizationMode(kH264PacketizationMode0, encoder);
+  // The CodecObserver takes ownership of the encoder.
+  CodecObserver test(500, kVideoRotation_0, "H264", encoder,
+                     H264Decoder::Create());
+  RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, SendsAndReceivesH264PacketizationMode1) {
+  VideoEncoder* encoder = VideoEncoder::Create(VideoEncoder::kH264);
+  SetPacketizationMode(kH264PacketizationMode1, encoder);
+  // The CodecObserver takes ownership of the encoder.
+  CodecObserver test(500, kVideoRotation_0, "H264", encoder,
+                     H264Decoder::Create());
+  RunBaseTest(&test);
+}
+
+#endif  // defined(WEBRTC_USE_H264)
 
 TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
   class SyncRtcpObserver : public test::EndToEndTest {

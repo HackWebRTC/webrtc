@@ -1113,6 +1113,9 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           info.codecSpecific.VP9.height[0] = height_;
           info.codecSpecific.VP9.gof.CopyGofInfoVP9(gof_);
         }
+      } else if (codecType_ == kVideoCodecH264) {
+        info.codecSpecific.H264.packetization_mode =
+            webrtc::kH264PacketizationMode1;
       }
       picture_id_ = (picture_id_ + 1) & 0x7FFF;
 

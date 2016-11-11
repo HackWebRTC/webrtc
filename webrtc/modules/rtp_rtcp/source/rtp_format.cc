@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <utility>
+
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_h264.h"
@@ -22,7 +24,9 @@ RtpPacketizer* RtpPacketizer::Create(RtpVideoCodecTypes type,
                                      FrameType frame_type) {
   switch (type) {
     case kRtpVideoH264:
-      return new RtpPacketizerH264(frame_type, max_payload_len);
+      assert(rtp_type_header != NULL);
+      return new RtpPacketizerH264(max_payload_len,
+                                   rtp_type_header->H264.packetization_mode);
     case kRtpVideoVp8:
       assert(rtp_type_header != NULL);
       return new RtpPacketizerVp8(rtp_type_header->VP8, max_payload_len);

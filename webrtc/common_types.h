@@ -540,9 +540,18 @@ struct VideoCodecVP9 {
 };
 
 // H264 specific.
+enum H264PacketizationMode {
+  // Because VideoCodecH264 was initialized in multiple places using memset,
+  // we let 0 have the meaning of "not set".
+  kH264PacketizationModeNotSet = 0,
+  kH264PacketizationMode0,  // Only single NALU allowed
+  kH264PacketizationMode1   // Non-interleaved - STAP-A, FU-A is allowed
+};
+
 struct VideoCodecH264 {
   bool frameDroppingOn;
   int keyFrameInterval;
+  H264PacketizationMode packetization_mode;
   // These are NULL/0 if not externally negotiated.
   const uint8_t* spsData;
   size_t spsLen;

@@ -200,6 +200,7 @@ EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
   CodecSpecificInfo specifics;
   memset(&specifics, 0, sizeof(specifics));
   specifics.codecType = kVideoCodecH264;
+  specifics.codecSpecific.H264.packetization_mode = kH264PacketizationMode1;
   return callback_->OnEncodedImage(encoded_image, &specifics, &fragmentation);
 }
 
