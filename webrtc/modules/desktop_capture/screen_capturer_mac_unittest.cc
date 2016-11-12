@@ -19,7 +19,7 @@
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
 #include "webrtc/modules/desktop_capture/mac/desktop_configuration.h"
-#include "webrtc/modules/desktop_capture/screen_capturer_mock_objects.h"
+#include "webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h"
 #include "webrtc/test/gtest.h"
 
 using ::testing::_;
@@ -46,7 +46,7 @@ class ScreenCapturerMacTest : public testing::Test {
   }
 
   std::unique_ptr<DesktopCapturer> capturer_;
-  MockScreenCapturerCallback callback_;
+  MockDesktopCapturerCallback callback_;
 };
 
 void ScreenCapturerMacTest::CaptureDoneCallback1(

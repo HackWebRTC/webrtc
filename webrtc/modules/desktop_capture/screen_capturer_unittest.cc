@@ -16,7 +16,7 @@
 #include "webrtc/modules/desktop_capture/desktop_capture_options.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
-#include "webrtc/modules/desktop_capture/screen_capturer_mock_objects.h"
+#include "webrtc/modules/desktop_capture/mock_desktop_capturer_callback.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 
@@ -66,7 +66,7 @@ class ScreenCapturerTest : public testing::Test {
 #endif  // defined(WEBRTC_WIN)
 
   std::unique_ptr<DesktopCapturer> capturer_;
-  MockScreenCapturerCallback callback_;
+  MockDesktopCapturerCallback callback_;
 };
 
 class FakeSharedMemory : public SharedMemory {

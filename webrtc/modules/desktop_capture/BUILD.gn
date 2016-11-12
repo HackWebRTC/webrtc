@@ -66,6 +66,7 @@ if (rtc_include_tests) {
     public_deps = [
       ":desktop_capture",
       ":rgba_color",
+      "//testing/gmock",
     ]
 
     sources = [
@@ -73,6 +74,7 @@ if (rtc_include_tests) {
       "desktop_frame_generator.h",
       "fake_desktop_capturer.cc",
       "fake_desktop_capturer.h",
+      "mock_desktop_capturer_callback.cc",
       "mock_desktop_capturer_callback.h",
       "screen_capturer_mock_objects.h",
     ]
