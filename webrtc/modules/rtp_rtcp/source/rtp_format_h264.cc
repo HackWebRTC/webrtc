@@ -77,10 +77,9 @@ bool ParseStapAStartOffsets(const uint8_t* nalu_ptr,
 
 }  // namespace
 
-RtpPacketizerH264::RtpPacketizerH264(size_t max_payload_len,
-                                     H264PacketizationMode packetization_mode)
-    : max_payload_len_(max_payload_len),
-      packetization_mode_(packetization_mode) {}
+RtpPacketizerH264::RtpPacketizerH264(FrameType frame_type,
+                                     size_t max_payload_len)
+    : max_payload_len_(max_payload_len) {}
 
 RtpPacketizerH264::~RtpPacketizerH264() {
 }
@@ -163,17 +162,11 @@ void RtpPacketizerH264::SetPayloadData(
 
 void RtpPacketizerH264::GeneratePackets() {
   for (size_t i = 0; i < input_fragments_.size();) {
-    if (packetization_mode_ == kH264PacketizationMode0) {
-      PacketizeSingleNalu(i);
+    if (input_fragments_[i].length > max_payload_len_) {
+      PacketizeFuA(i);
       ++i;
     } else {
-      RTC_CHECK_EQ(packetization_mode_, kH264PacketizationMode1);
-      if (input_fragments_[i].length > max_payload_len_) {
-        PacketizeFuA(i);
-        ++i;
-      } else {
-        i = PacketizeStapA(i);
-      }
+      i = PacketizeStapA(i);
     }
   }
 }
@@ -236,16 +229,6 @@ size_t RtpPacketizerH264::PacketizeStapA(size_t fragment_index) {
   return fragment_index;
 }
 
-void RtpPacketizerH264::PacketizeSingleNalu(size_t fragment_index) {
-  // Add a single NALU to the queue, no aggregation.
-  size_t payload_size_left = max_payload_len_;
-  const Fragment* fragment = &input_fragments_[fragment_index];
-  RTC_CHECK_GE(payload_size_left, fragment->length);
-  RTC_CHECK_GT(fragment->length, 0u);
-  packets_.push(PacketUnit(*fragment, true /* first */, true /* last */,
-                           false /* aggregated */, fragment->buffer[0]));
-}
-
 bool RtpPacketizerH264::NextPacket(uint8_t* buffer,
                                    size_t* bytes_to_send,
                                    bool* last_packet) {
@@ -266,11 +249,9 @@ bool RtpPacketizerH264::NextPacket(uint8_t* buffer,
     input_fragments_.pop_front();
     RTC_CHECK_LE(*bytes_to_send, max_payload_len_);
   } else if (packet.aggregated) {
-    RTC_CHECK_EQ(packetization_mode_, kH264PacketizationMode1);
     NextAggregatePacket(buffer, bytes_to_send);
     RTC_CHECK_LE(*bytes_to_send, max_payload_len_);
   } else {
-    RTC_CHECK_EQ(packetization_mode_, kH264PacketizationMode1);
     NextFragmentPacket(buffer, bytes_to_send);
     RTC_CHECK_LE(*bytes_to_send, max_payload_len_);
   }

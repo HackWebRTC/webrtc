@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_H264_H_
 
 #include <deque>
-#include <memory>
 #include <queue>
 #include <string>
 
@@ -26,8 +25,7 @@ class RtpPacketizerH264 : public RtpPacketizer {
  public:
   // Initialize with payload from encoder.
   // The payload_data must be exactly one encoded H264 frame.
-  RtpPacketizerH264(size_t max_payload_len,
-                    H264PacketizationMode packetization_mode);
+  RtpPacketizerH264(FrameType frame_type, size_t max_payload_len);
 
   virtual ~RtpPacketizerH264();
 
@@ -91,12 +89,10 @@ class RtpPacketizerH264 : public RtpPacketizer {
   void GeneratePackets();
   void PacketizeFuA(size_t fragment_index);
   size_t PacketizeStapA(size_t fragment_index);
-  void PacketizeSingleNalu(size_t fragment_index);
   void NextAggregatePacket(uint8_t* buffer, size_t* bytes_to_send);
   void NextFragmentPacket(uint8_t* buffer, size_t* bytes_to_send);
 
   const size_t max_payload_len_;
-  const H264PacketizationMode packetization_mode_;
   std::deque<Fragment> input_fragments_;
   std::queue<PacketUnit> packets_;
 

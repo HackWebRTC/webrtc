@@ -75,8 +75,6 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
     }
     case kVideoCodecH264:
       rtp->codec = kRtpVideoH264;
-      rtp->codecHeader.H264.packetization_mode =
-          info->codecSpecific.H264.packetization_mode;
       return;
     case kVideoCodecGeneric:
       rtp->codec = kRtpVideoGeneric;

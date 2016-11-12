@@ -273,19 +273,14 @@ struct NaluInfo {
 const size_t kMaxNalusPerPacket = 10;
 
 struct RTPVideoHeaderH264 {
-  // The NAL unit type. If this is a header for a
-  // fragmented packet, it's the NAL unit type of
-  // the original data. If this is the header for an
-  // aggregated packet, it's the NAL unit type of
-  // the first NAL unit in the packet.
-  uint8_t nalu_type;
-  // The packetization type of this buffer - single, aggregated or fragmented.
+  uint8_t nalu_type;  // The NAL unit type. If this is a header for a
+                      // fragmented packet, it's the NAL unit type of
+                      // the original data. If this is the header for an
+                      // aggregated packet, it's the NAL unit type of
+                      // the first NAL unit in the packet.
   H264PacketizationTypes packetization_type;
   NaluInfo nalus[kMaxNalusPerPacket];
   size_t nalus_length;
-  // The packetization mode of this transport. Packetization mode
-  // determines which packetization types are allowed when packetizing.
-  H264PacketizationMode packetization_mode;
 };
 
 union RTPVideoTypeHeader {

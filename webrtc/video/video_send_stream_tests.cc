@@ -1970,7 +1970,6 @@ class VideoCodecConfigObserver : public test::SendTest,
         num_initializations_(0),
         stream_(nullptr) {
     memset(&encoder_settings_, 0, sizeof(encoder_settings_));
-    InitCodecSpecifics();
   }
 
  private:
@@ -1993,8 +1992,6 @@ class VideoCodecConfigObserver : public test::SendTest,
       return streams;
     }
   };
-
-  void InitCodecSpecifics();
 
   void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,
@@ -2060,20 +2057,11 @@ class VideoCodecConfigObserver : public test::SendTest,
   VideoEncoderConfig encoder_config_;
 };
 
-template <typename T>
-void VideoCodecConfigObserver<T>::InitCodecSpecifics() {}
-
-template <>
-void VideoCodecConfigObserver<VideoCodecH264>::InitCodecSpecifics() {
-  encoder_settings_.packetization_mode = kH264PacketizationMode1;
-}
 template <>
 void VideoCodecConfigObserver<VideoCodecH264>::VerifyCodecSpecifics(
     const VideoCodec& config) const {
   EXPECT_EQ(
       0, memcmp(&config.H264(), &encoder_settings_, sizeof(encoder_settings_)));
-  // Check that packetization mode has propagated.
-  EXPECT_EQ(kH264PacketizationMode1, config.H264().packetization_mode);
 }
 
 template <>
