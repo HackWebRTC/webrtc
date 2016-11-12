@@ -152,7 +152,7 @@ TEST(H264ProfileLevelId, TestGenerateProfileLevelIdForAnswerEmpty) {
   CodecParameterMap answer_params;
   GenerateProfileLevelIdForAnswer(CodecParameterMap(), CodecParameterMap(),
                                   &answer_params);
-  EXPECT_EQ("42e01f", answer_params["profile-level-id"]);
+  EXPECT_TRUE(answer_params.empty());
 }
 
 TEST(H264ProfileLevelId,

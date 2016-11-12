@@ -47,7 +47,7 @@ VideoToolboxVideoEncoderFactory::~VideoToolboxVideoEncoderFactory() {}
 VideoEncoder* VideoToolboxVideoEncoderFactory::CreateVideoEncoder(
     const cricket::VideoCodec& codec) {
 #if defined(WEBRTC_IOS)
-  if (IsCodecSupported(supported_codecs_, codec)) {
+  if (FindMatchingCodec(supported_codecs_, codec)) {
     LOG(LS_INFO) << "Creating HW encoder for " << codec.name;
     return new H264VideoToolboxEncoder();
   }
@@ -83,7 +83,7 @@ VideoDecoder* VideoToolboxVideoDecoderFactory::CreateVideoDecoder(
     VideoCodecType type) {
   const auto codec = cricket::VideoCodec(NameFromCodecType(type));
 #if defined(WEBRTC_IOS)
-  if (IsCodecSupported(supported_codecs_, codec)) {
+  if (FindMatchingCodec(supported_codecs_, codec)) {
     LOG(LS_INFO) << "Creating HW decoder for " << codec.name;
     return new H264VideoToolboxDecoder();
   }

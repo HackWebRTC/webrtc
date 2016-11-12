@@ -24,8 +24,6 @@ namespace cricket {
 
 typedef std::map<std::string, std::string> CodecParameterMap;
 
-extern const int kMaxPayloadId;
-
 class FeedbackParam {
  public:
   FeedbackParam(const std::string& id, const std::string& param)
@@ -154,6 +152,11 @@ struct VideoCodec : public Codec {
   VideoCodec(VideoCodec&& c);
   virtual ~VideoCodec() = default;
 
+  // Indicates if this video codec is the same as the other video codec, e.g. if
+  // they are both VP8 or VP9, or if they are both H264 with the same H264
+  // profile. H264 levels however are not compared.
+  bool Matches(const VideoCodec& codec) const;
+
   std::string ToString() const;
 
   VideoCodec& operator=(const VideoCodec& c);
@@ -213,8 +216,11 @@ webrtc::VideoCodecType CodecTypeFromName(const std::string& name);
 bool HasNack(const Codec& codec);
 bool HasRemb(const Codec& codec);
 bool HasTransportCc(const Codec& codec);
-bool IsCodecSupported(const std::vector<VideoCodec>& supported_codecs,
-                      const VideoCodec& codec);
+// Returns the first codec in |supported_codecs| that matches |codec|, or
+// nullptr if no codec matches.
+const VideoCodec* FindMatchingCodec(
+    const std::vector<VideoCodec>& supported_codecs,
+    const VideoCodec& codec);
 
 }  // namespace cricket
 

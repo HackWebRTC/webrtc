@@ -17,10 +17,20 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/common_video/h264/profile_level_id.h"
 
 namespace cricket {
 
-const int kMaxPayloadId = 127;
+static bool IsSameH264Profile(const CodecParameterMap& params1,
+                              const CodecParameterMap& params2) {
+  const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
+      webrtc::H264::ParseSdpProfileLevelId(params1);
+  const rtc::Optional<webrtc::H264::ProfileLevelId> other_profile_level_id =
+      webrtc::H264::ParseSdpProfileLevelId(params2);
+  // Compare H264 profiles, but not levels.
+  return profile_level_id && other_profile_level_id &&
+         profile_level_id->profile == other_profile_level_id->profile;
+}
 
 bool FeedbackParam::operator==(const FeedbackParam& other) const {
   return _stricmp(other.id().c_str(), id().c_str()) == 0 &&
@@ -218,6 +228,14 @@ bool VideoCodec::operator==(const VideoCodec& c) const {
   return Codec::operator==(c);
 }
 
+bool VideoCodec::Matches(const VideoCodec& other) const {
+  if (!Codec::Matches(other))
+    return false;
+  if (CodecNamesEq(name.c_str(), kH264CodecName))
+    return IsSameH264Profile(params, other.params);
+  return true;
+}
+
 VideoCodec VideoCodec::CreateRtxCodec(int rtx_payload_type,
                                       int associated_payload_type) {
   VideoCodec rtx_codec(rtx_payload_type, kRtxCodecName);
@@ -317,12 +335,19 @@ webrtc::VideoCodecType CodecTypeFromName(const std::string& name) {
   return webrtc::kVideoCodecUnknown;
 }
 
-bool IsCodecSupported(const std::vector<VideoCodec>& supported_codecs,
-                      const VideoCodec& codec) {
-  return std::any_of(supported_codecs.begin(), supported_codecs.end(),
-                     [&codec](const VideoCodec& supported_codec) -> bool {
-                       return CodecNamesEq(codec.name, supported_codec.name);
-                     });
+const VideoCodec* FindMatchingCodec(
+    const std::vector<VideoCodec>& supported_codecs,
+    const VideoCodec& codec) {
+  for (const VideoCodec& supported_codec : supported_codecs) {
+    if (!CodecNamesEq(codec.name, supported_codec.name))
+      continue;
+    if (CodecNamesEq(codec.name.c_str(), kH264CodecName) &&
+        !IsSameH264Profile(codec.params, supported_codec.params)) {
+      continue;
+    }
+    return &supported_codec;
+  }
+  return nullptr;
 }
 
 }  // namespace cricket

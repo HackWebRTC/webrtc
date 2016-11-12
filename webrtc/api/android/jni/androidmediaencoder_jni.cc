@@ -1355,7 +1355,7 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
     ALOGW << "No HW video encoder for codec " << codec.name;
     return nullptr;
   }
-  if (IsCodecSupported(supported_codecs_, codec)) {
+  if (FindMatchingCodec(supported_codecs_, codec)) {
     ALOGD << "Create HW video encoder for " << codec.name;
     const VideoCodecType type = cricket::CodecTypeFromName(codec.name);
     return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), type,

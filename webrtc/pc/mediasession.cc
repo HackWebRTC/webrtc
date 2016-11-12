@@ -22,6 +22,7 @@
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/p2p/base/p2pconstants.h"
@@ -777,6 +778,10 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
         // FindMatchingCodec shouldn't return something with no apt value.
         RTC_DCHECK(apt_it != theirs.params.end());
         negotiated.SetParam(kCodecParamAssociatedPayloadType, apt_it->second);
+      }
+      if (CodecNamesEq(ours.name.c_str(), kH264CodecName)) {
+        webrtc::H264::GenerateProfileLevelIdForAnswer(
+            ours.params, theirs.params, &negotiated.params);
       }
       negotiated.id = theirs.id;
       negotiated.name = theirs.name;

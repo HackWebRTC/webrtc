@@ -638,7 +638,7 @@ static std::vector<VideoCodec> GetSupportedCodecs(
       out << ", ";
     }
     // Don't add internally-supported codecs twice.
-    if (IsCodecSupported(supported_codecs, codec))
+    if (FindMatchingCodec(supported_codecs, codec))
       continue;
 
     // External video encoders are given payloads 120-127. This also means that
@@ -699,7 +699,12 @@ WebRtcVideoChannel2::SelectSendVideoCodec(
       GetSupportedCodecs(external_encoder_factory_);
   // Select the first remote codec that is supported locally.
   for (const VideoCodecSettings& remote_mapped_codec : remote_mapped_codecs) {
-    if (IsCodecSupported(local_supported_codecs, remote_mapped_codec.codec))
+    // For H264, we will limit the encode level to the remote offered level
+    // regardless if level asymmetry is allowed or not. This is strictly not
+    // following the spec in https://tools.ietf.org/html/rfc6184#section-8.2.2
+    // since we should limit the encode level to the lower of local and remote
+    // level when level asymmetry is not allowed.
+    if (FindMatchingCodec(local_supported_codecs, remote_mapped_codec.codec))
       return rtc::Optional<VideoCodecSettings>(remote_mapped_codec);
   }
   // No remote codec was supported.
@@ -955,7 +960,7 @@ bool WebRtcVideoChannel2::GetChangedRecvParameters(
   const std::vector<VideoCodec> local_supported_codecs =
       GetSupportedCodecs(external_encoder_factory_);
   for (const VideoCodecSettings& mapped_codec : mapped_codecs) {
-    if (!IsCodecSupported(local_supported_codecs, mapped_codec.codec)) {
+    if (!FindMatchingCodec(local_supported_codecs, mapped_codec.codec)) {
       LOG(LS_ERROR) << "SetRecvParameters called with unsupported video codec: "
                     << mapped_codec.codec.ToString();
       return false;

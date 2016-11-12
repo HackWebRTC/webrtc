@@ -2519,7 +2519,8 @@ TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectBadPayloadTypes) {
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsAcceptAllValidPayloadTypes) {
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(kVp8Codec);
-  for (int payload_type = 0; payload_type <= 127; ++payload_type) {
+  // Only the dynamic payload types are valid for video codecs.
+  for (int payload_type = 96; payload_type <= 127; ++payload_type) {
     parameters.codecs[0].id = payload_type;
     EXPECT_TRUE(channel_->SetSendParameters(parameters))
         << "Payload type '" << payload_type << "' rejected.";

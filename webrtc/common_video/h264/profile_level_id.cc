@@ -263,6 +263,14 @@ void GenerateProfileLevelIdForAnswer(
     const CodecParameterMap& local_supported_params,
     const CodecParameterMap& remote_offered_params,
     CodecParameterMap* answer_params) {
+  // If both local and remote haven't set profile-level-id, they are both using
+  // the default profile. In this case, don't set profile-level-id in answer
+  // either.
+  if (!local_supported_params.count(kProfileLevelId) &&
+      !remote_offered_params.count(kProfileLevelId)) {
+    return;
+  }
+
   // Parse profile-level-ids.
   const rtc::Optional<ProfileLevelId> local_profile_level_id =
       ParseSdpProfileLevelId(local_supported_params);

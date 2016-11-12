@@ -195,7 +195,7 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
   webrtc::VideoEncoder* CreateVideoEncoder(
       const cricket::VideoCodec& codec) override {
     rtc::CritScope lock(&crit_);
-    if (!IsCodecSupported(codecs_, codec))
+    if (!FindMatchingCodec(codecs_, codec))
       return nullptr;
     FakeWebRtcVideoEncoder* encoder = new FakeWebRtcVideoEncoder();
     encoders_.push_back(encoder);
