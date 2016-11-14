@@ -30,6 +30,7 @@ class ChannelProxy;
 }  // namespace voe
 
 namespace internal {
+class AudioSendStream;
 
 class AudioReceiveStream final : public webrtc::AudioReceiveStream,
                                  public AudioMixer::Source {
@@ -47,6 +48,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   void SetSink(std::unique_ptr<AudioSinkInterface> sink) override;
   void SetGain(float gain) override;
 
+  void AssociateSendStream(AudioSendStream* send_stream);
   void SignalNetworkState(NetworkState state);
   bool DeliverRtcp(const uint8_t* packet, size_t length);
   bool DeliverRtp(const uint8_t* packet,

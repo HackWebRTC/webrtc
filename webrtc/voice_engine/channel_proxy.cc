@@ -236,6 +236,17 @@ void ChannelProxy::SetTransportOverhead(int transport_overhead_per_packet) {
   channel()->SetTransportOverhead(transport_overhead_per_packet);
 }
 
+void ChannelProxy::AssociateSendChannel(
+    const ChannelProxy& send_channel_proxy) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->set_associate_send_channel(send_channel_proxy.channel_owner_);
+}
+
+void ChannelProxy::DisassociateSendChannel() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  channel()->set_associate_send_channel(ChannelOwner(nullptr));
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();

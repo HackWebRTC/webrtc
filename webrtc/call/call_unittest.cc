@@ -32,6 +32,7 @@ struct CallHelper {
   }
 
   webrtc::Call* operator->() { return call_.get(); }
+  webrtc::test::MockVoiceEngine* voice_engine() { return &voice_engine_; }
 
  private:
   testing::NiceMock<webrtc::test::MockVoiceEngine> voice_engine_;
@@ -116,6 +117,102 @@ TEST(CallTest, CreateDestroy_AudioReceiveStreams) {
     }
     streams.clear();
   }
+}
+
+TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_RecvFirst) {
+  rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory(
+      new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>);
+  CallHelper call(decoder_factory);
+
+  constexpr int kRecvChannelId = 101;
+
+  // Set up the mock to create a channel proxy which we know of, so that we can
+  // add our expectations to it.
+  test::MockVoEChannelProxy* recv_channel_proxy = nullptr;
+  EXPECT_CALL(*call.voice_engine(), ChannelProxyFactory(testing::_))
+      .WillRepeatedly(testing::Invoke([&](int channel_id) {
+        test::MockVoEChannelProxy* channel_proxy =
+            new testing::NiceMock<test::MockVoEChannelProxy>();
+        EXPECT_CALL(*channel_proxy, GetAudioDecoderFactory())
+            .WillRepeatedly(testing::ReturnRef(decoder_factory));
+        // If being called for the send channel, save a pointer to the channel
+        // proxy for later.
+        if (channel_id == kRecvChannelId) {
+          EXPECT_FALSE(recv_channel_proxy);
+          recv_channel_proxy = channel_proxy;
+        }
+        return channel_proxy;
+      }));
+
+  AudioReceiveStream::Config recv_config;
+  recv_config.rtp.remote_ssrc = 42;
+  recv_config.rtp.local_ssrc = 777;
+  recv_config.voe_channel_id = kRecvChannelId;
+  recv_config.decoder_factory = decoder_factory;
+  AudioReceiveStream* recv_stream = call->CreateAudioReceiveStream(recv_config);
+  EXPECT_NE(recv_stream, nullptr);
+
+  EXPECT_CALL(*recv_channel_proxy, AssociateSendChannel(testing::_)).Times(1);
+  AudioSendStream::Config send_config(nullptr);
+  send_config.rtp.ssrc = 777;
+  send_config.voe_channel_id = 123;
+  AudioSendStream* send_stream = call->CreateAudioSendStream(send_config);
+  EXPECT_NE(send_stream, nullptr);
+
+  EXPECT_CALL(*recv_channel_proxy, DisassociateSendChannel()).Times(1);
+  call->DestroyAudioSendStream(send_stream);
+
+  EXPECT_CALL(*recv_channel_proxy, DisassociateSendChannel()).Times(1);
+  call->DestroyAudioReceiveStream(recv_stream);
+}
+
+TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_SendFirst) {
+  rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory(
+      new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>);
+  CallHelper call(decoder_factory);
+
+  constexpr int kRecvChannelId = 101;
+
+  // Set up the mock to create a channel proxy which we know of, so that we can
+  // add our expectations to it.
+  test::MockVoEChannelProxy* recv_channel_proxy = nullptr;
+  EXPECT_CALL(*call.voice_engine(), ChannelProxyFactory(testing::_))
+      .WillRepeatedly(testing::Invoke([&](int channel_id) {
+        test::MockVoEChannelProxy* channel_proxy =
+            new testing::NiceMock<test::MockVoEChannelProxy>();
+        EXPECT_CALL(*channel_proxy, GetAudioDecoderFactory())
+            .WillRepeatedly(testing::ReturnRef(decoder_factory));
+        // If being called for the send channel, save a pointer to the channel
+        // proxy for later.
+        if (channel_id == kRecvChannelId) {
+          EXPECT_FALSE(recv_channel_proxy);
+          recv_channel_proxy = channel_proxy;
+          // We need to set this expectation here since the channel proxy is
+          // created as a side effect of CreateAudioReceiveStream().
+          EXPECT_CALL(*recv_channel_proxy,
+                      AssociateSendChannel(testing::_)).Times(1);
+        }
+        return channel_proxy;
+      }));
+
+  AudioSendStream::Config send_config(nullptr);
+  send_config.rtp.ssrc = 777;
+  send_config.voe_channel_id = 123;
+  AudioSendStream* send_stream = call->CreateAudioSendStream(send_config);
+  EXPECT_NE(send_stream, nullptr);
+
+  AudioReceiveStream::Config recv_config;
+  recv_config.rtp.remote_ssrc = 42;
+  recv_config.rtp.local_ssrc = 777;
+  recv_config.voe_channel_id = kRecvChannelId;
+  recv_config.decoder_factory = decoder_factory;
+  AudioReceiveStream* recv_stream = call->CreateAudioReceiveStream(recv_config);
+  EXPECT_NE(recv_stream, nullptr);
+
+  EXPECT_CALL(*recv_channel_proxy, DisassociateSendChannel()).Times(1);
+  call->DestroyAudioReceiveStream(recv_stream);
+
+  call->DestroyAudioSendStream(send_stream);
 }
 
 TEST(CallTest, CreateDestroy_FlexfecReceiveStream) {

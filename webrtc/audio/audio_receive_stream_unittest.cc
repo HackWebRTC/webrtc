@@ -113,6 +113,7 @@ struct ConfigHelper {
           EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::IsNull()))
               .Times(1)
               .After(expect_set);
+          EXPECT_CALL(*channel_proxy_, DisassociateSendChannel()).Times(1);
           return channel_proxy_;
         }));
     EXPECT_CALL(voice_engine_, StopPlayout(kChannelId)).WillOnce(Return(0));

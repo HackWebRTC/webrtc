@@ -44,9 +44,10 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_CONST_METHOD0(GetDelayEstimate, uint32_t());
   MOCK_METHOD1(SetSendTelephoneEventPayloadType, bool(int payload_type));
   MOCK_METHOD2(SendTelephoneEventOutband, bool(int event, int duration_ms));
-  MOCK_METHOD1(SetInputMute, void(bool muted));
+  MOCK_METHOD1(SetBitrate, void(int bitrate_bps));
   // TODO(solenberg): Talk the compiler into accepting this mock method:
   // MOCK_METHOD1(SetSink, void(std::unique_ptr<AudioSinkInterface> sink));
+  MOCK_METHOD1(SetInputMute, void(bool muted));
   MOCK_METHOD1(RegisterExternalTransport, void(Transport* transport));
   MOCK_METHOD0(DeRegisterExternalTransport, void());
   MOCK_METHOD3(ReceivedRTPPacket, bool(const uint8_t* packet,
@@ -57,13 +58,19 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
                      const rtc::scoped_refptr<AudioDecoderFactory>&());
   MOCK_METHOD1(SetChannelOutputVolumeScaling, void(float scaling));
   MOCK_METHOD1(SetRtcEventLog, void(RtcEventLog* event_log));
-  MOCK_METHOD1(SetTransportOverhead, void(int transport_overhead_per_packet));
-  MOCK_METHOD1(SetBitrate, void(int bitrate_bps));
   MOCK_METHOD1(EnableAudioNetworkAdaptor,
                void(const std::string& config_string));
   MOCK_METHOD0(DisableAudioNetworkAdaptor, void());
   MOCK_METHOD2(SetReceiverFrameLengthRange,
                void(int min_frame_length_ms, int max_frame_length_ms));
+  MOCK_METHOD2(GetAudioFrameWithInfo,
+      AudioMixer::Source::AudioFrameInfo(int sample_rate_hz,
+                                         AudioFrame* audio_frame));
+  MOCK_CONST_METHOD0(NeededFrequency, int());
+  MOCK_METHOD1(SetTransportOverhead, void(int transport_overhead_per_packet));
+  MOCK_METHOD1(AssociateSendChannel,
+               void(const ChannelProxy& send_channel_proxy));
+  MOCK_METHOD0(DisassociateSendChannel, void());
 };
 }  // namespace test
 }  // namespace webrtc

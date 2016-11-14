@@ -50,6 +50,7 @@ const cricket::AudioCodec kTelephoneEventCodec(106,
 const uint32_t kSsrc1 = 0x99;
 const uint32_t kSsrc2 = 2;
 const uint32_t kSsrc3 = 3;
+const uint32_t kSsrc4 = 0x42;
 const uint32_t kSsrcs4[] = { 1, 2, 3, 4 };
 
 constexpr int kRtpHistoryMs = 5000;
@@ -3239,42 +3240,29 @@ TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
 
 // All receive channels should be associated with the first send channel,
 // since they do not send RTCP SR.
-TEST_F(WebRtcVoiceEngineTestFake, AssociateFirstSendChannel) {
+TEST_F(WebRtcVoiceEngineTestFake, AssociateFirstSendChannel_SendCreatedFirst) {
   EXPECT_TRUE(SetupSendStream());
-  SetSendParameters(send_parameters_);
-  int default_channel = voe_.GetLastChannel();
-  EXPECT_TRUE(AddRecvStream(1));
-  int recv_ch = voe_.GetLastChannel();
-  EXPECT_NE(recv_ch, default_channel);
-  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), default_channel);
-  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(2)));
-  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), default_channel);
-  EXPECT_TRUE(AddRecvStream(3));
-  recv_ch = voe_.GetLastChannel();
-  EXPECT_NE(recv_ch, default_channel);
-  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), default_channel);
+  EXPECT_TRUE(AddRecvStream(kSsrc2));
+  EXPECT_EQ(kSsrc1, GetRecvStreamConfig(kSsrc2).rtp.local_ssrc);
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc3)));
+  EXPECT_EQ(kSsrc1, GetRecvStreamConfig(kSsrc2).rtp.local_ssrc);
+  EXPECT_TRUE(AddRecvStream(kSsrc4));
+  EXPECT_EQ(kSsrc1, GetRecvStreamConfig(kSsrc4).rtp.local_ssrc);
 }
 
-TEST_F(WebRtcVoiceEngineTestFake, AssociateChannelResetUponDeleteChannnel) {
-  EXPECT_TRUE(SetupSendStream());
-  SetSendParameters(send_parameters_);
-
-  EXPECT_TRUE(AddRecvStream(1));
-  int recv_ch = voe_.GetLastChannel();
-
-  EXPECT_TRUE(channel_->AddSendStream(cricket::StreamParams::CreateLegacy(2)));
-  int send_ch = voe_.GetLastChannel();
-
-  // Manually associate |recv_ch| to |send_ch|. This test is to verify a
-  // deleting logic, i.e., deleting |send_ch| will reset the associate send
-  // channel of |recv_ch|.This is not a common case, since， normally, only the
-  // default channel can be associated. However, the default is not deletable.
-  // So we force the |recv_ch| to associate with a non-default channel.
-  EXPECT_EQ(0, voe_.AssociateSendChannel(recv_ch, send_ch));
-  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), send_ch);
-
-  EXPECT_TRUE(channel_->RemoveSendStream(2));
-  EXPECT_EQ(voe_.GetAssociateSendChannel(recv_ch), -1);
+TEST_F(WebRtcVoiceEngineTestFake, AssociateFirstSendChannel_RecvCreatedFirst) {
+  EXPECT_TRUE(SetupRecvStream());
+  EXPECT_EQ(0xFA17FA17u, GetRecvStreamConfig(kSsrc1).rtp.local_ssrc);
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc2)));
+  EXPECT_EQ(kSsrc2, GetRecvStreamConfig(kSsrc1).rtp.local_ssrc);
+  EXPECT_TRUE(AddRecvStream(kSsrc3));
+  EXPECT_EQ(kSsrc2, GetRecvStreamConfig(kSsrc3).rtp.local_ssrc);
+  EXPECT_TRUE(channel_->AddSendStream(
+      cricket::StreamParams::CreateLegacy(kSsrc4)));
+  EXPECT_EQ(kSsrc2, GetRecvStreamConfig(kSsrc1).rtp.local_ssrc);
+  EXPECT_EQ(kSsrc2, GetRecvStreamConfig(kSsrc3).rtp.local_ssrc);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSink) {

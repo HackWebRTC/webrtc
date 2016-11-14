@@ -2813,6 +2813,13 @@ uint32_t Channel::EncodeAndSend() {
   return 0;
 }
 
+void Channel::set_associate_send_channel(const ChannelOwner& channel) {
+  RTC_DCHECK(!channel.channel() ||
+             channel.channel()->ChannelId() != _channelId);
+  rtc::CritScope lock(&assoc_send_channel_lock_);
+  associate_send_channel_ = channel;
+}
+
 void Channel::DisassociateSendChannel(int channel_id) {
   rtc::CritScope lock(&assoc_send_channel_lock_);
   Channel* channel = associate_send_channel_.channel();

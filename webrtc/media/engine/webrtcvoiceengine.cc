@@ -2085,10 +2085,6 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
       // TODO(solenberg): Allow applications to set the RTCP SSRC of receive
       // streams instead, so we can avoid recreating the streams here.
       kv.second->RecreateAudioReceiveStream(ssrc);
-      int recv_channel = kv.second->channel();
-      engine()->voe()->base()->AssociateSendChannel(recv_channel, channel);
-      LOG(LS_INFO) << "VoiceEngine channel #" << recv_channel
-                   << " is associated with channel #" << channel << ".";
     }
   }
 
@@ -2109,6 +2105,10 @@ bool WebRtcVoiceMediaChannel::RemoveSendStream(uint32_t ssrc) {
   }
 
   it->second->SetSend(false);
+
+  // TODO(solenberg): If we're removing the receiver_reports_ssrc_ stream, find
+  // the first active send stream and use that instead, reassociating receive
+  // streams.
 
   // Clean up and delete the send stream+channel.
   int channel = it->second->channel();
@@ -2180,15 +2180,6 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
         return false;
       }
     }
-  }
-
-  const int send_channel = GetSendChannelId(receiver_reports_ssrc_);
-  if (send_channel != -1) {
-    // Associate receive channel with first send channel (so the receive channel
-    // can obtain RTT from the send channel)
-    engine()->voe()->base()->AssociateSendChannel(channel, send_channel);
-    LOG(LS_INFO) << "VoiceEngine channel #" << channel
-                 << " is associated with channel #" << send_channel << ".";
   }
 
   recv_streams_.insert(std::make_pair(

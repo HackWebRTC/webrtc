@@ -36,7 +36,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
     ++_ref_count;
     // We add this default behavior to make the mock easier to use in tests. It
     // will create a NiceMock of a voe::ChannelProxy.
-    // TODO(ossu): As long as AudioReceiveStream is implmented as a wrapper
+    // TODO(ossu): As long as AudioReceiveStream is implemented as a wrapper
     // around Channel, we need to make sure ChannelProxy returns the same
     // decoder factory as the one passed in when creating an AudioReceiveStream.
     ON_CALL(*this, ChannelProxyFactory(testing::_))
@@ -48,7 +48,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
           return proxy;
         }));
   }
-  ~MockVoiceEngine() /* override */ {
+  virtual ~MockVoiceEngine() /* override */ {
     // Decrease ref count before base class d-tor is called; otherwise it will
     // trigger an assertion.
     --_ref_count;
@@ -57,7 +57,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD1(ChannelProxyFactory, voe::ChannelProxy*(int channel_id));
 
   // VoiceEngineImpl
-  std::unique_ptr<voe::ChannelProxy> GetChannelProxy(
+  virtual std::unique_ptr<voe::ChannelProxy> GetChannelProxy(
       int channel_id) /* override */ {
     return std::unique_ptr<voe::ChannelProxy>(ChannelProxyFactory(channel_id));
   }

@@ -405,12 +405,7 @@ class Channel
 
   // Associate to a send channel.
   // Used for obtaining RTT for a receive-only channel.
-  void set_associate_send_channel(const ChannelOwner& channel) {
-    assert(_channelId != channel.channel()->ChannelId());
-    rtc::CritScope lock(&assoc_send_channel_lock_);
-    associate_send_channel_ = channel;
-  }
-
+  void set_associate_send_channel(const ChannelOwner& channel);
   // Disassociate a send channel if it was associated.
   void DisassociateSendChannel(int channel_id);
 

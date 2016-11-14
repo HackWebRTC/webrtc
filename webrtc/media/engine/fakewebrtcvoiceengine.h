@@ -57,7 +57,6 @@ class FakeWebRtcVoiceEngine
       public webrtc::VoEVolumeControl {
  public:
   struct Channel {
-    int associate_send_channel = -1;
     std::vector<webrtc::CodecInst> recv_codecs;
     size_t neteq_capacity = 0;
     bool neteq_fast_accelerate = false;
@@ -77,10 +76,6 @@ class FakeWebRtcVoiceEngine
   int GetNumChannels() const { return static_cast<int>(channels_.size()); }
   void set_fail_create_channel(bool fail_create_channel) {
     fail_create_channel_ = fail_create_channel;
-  }
-
-  int GetAssociateSendChannel(int channel) {
-    return channels_[channel]->associate_send_channel;
   }
 
   WEBRTC_STUB(Release, ());
@@ -125,11 +120,6 @@ class FakeWebRtcVoiceEngine
   }
   WEBRTC_FUNC(DeleteChannel, (int channel)) {
     WEBRTC_CHECK_CHANNEL(channel);
-    for (const auto& ch : channels_) {
-      if (ch.second->associate_send_channel == channel) {
-        ch.second->associate_send_channel = -1;
-      }
-    }
     delete channels_[channel];
     channels_.erase(channel);
     return 0;
@@ -142,12 +132,8 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(StopSend, (int channel));
   WEBRTC_STUB(GetVersion, (char version[1024]));
   WEBRTC_STUB(LastError, ());
-  WEBRTC_FUNC(AssociateSendChannel, (int channel,
-                                     int accociate_send_channel)) {
-    WEBRTC_CHECK_CHANNEL(channel);
-    channels_[channel]->associate_send_channel = accociate_send_channel;
-    return 0;
-  }
+  WEBRTC_STUB(AssociateSendChannel, (int channel,
+                                     int accociate_send_channel));
 
   // webrtc::VoECodec
   WEBRTC_STUB(NumOfCodecs, ());

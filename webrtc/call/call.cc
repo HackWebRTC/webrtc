@@ -407,6 +407,14 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
                audio_send_ssrcs_.end());
     audio_send_ssrcs_[config.rtp.ssrc] = send_stream;
   }
+  {
+    ReadLockScoped read_lock(*receive_crit_);
+    for (const auto& kv : audio_receive_ssrcs_) {
+      if (kv.second->config().rtp.local_ssrc == config.rtp.ssrc) {
+        kv.second->AssociateSendStream(send_stream);
+      }
+    }
+  }
   send_stream->SignalNetworkState(audio_network_state_);
   UpdateAggregateNetworkState();
   return send_stream;
@@ -421,11 +429,19 @@ void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
 
   webrtc::internal::AudioSendStream* audio_send_stream =
       static_cast<webrtc::internal::AudioSendStream*>(send_stream);
+  uint32_t ssrc = audio_send_stream->config().rtp.ssrc;
   {
     WriteLockScoped write_lock(*send_crit_);
-    size_t num_deleted = audio_send_ssrcs_.erase(
-        audio_send_stream->config().rtp.ssrc);
-    RTC_DCHECK(num_deleted == 1);
+    size_t num_deleted = audio_send_ssrcs_.erase(ssrc);
+    RTC_DCHECK_EQ(1, num_deleted);
+  }
+  {
+    ReadLockScoped read_lock(*receive_crit_);
+    for (const auto& kv : audio_receive_ssrcs_) {
+      if (kv.second->config().rtp.local_ssrc == ssrc) {
+        kv.second->AssociateSendStream(nullptr);
+      }
+    }
   }
   UpdateAggregateNetworkState();
   delete audio_send_stream;
@@ -444,6 +460,13 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
                audio_receive_ssrcs_.end());
     audio_receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
     ConfigureSync(config.sync_group);
+  }
+  {
+    ReadLockScoped read_lock(*send_crit_);
+    auto it = audio_send_ssrcs_.find(config.rtp.local_ssrc);
+    if (it != audio_send_ssrcs_.end()) {
+      receive_stream->AssociateSendStream(it->second);
+    }
   }
   receive_stream->SignalNetworkState(audio_network_state_);
   UpdateAggregateNetworkState();
