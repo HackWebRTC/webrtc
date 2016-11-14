@@ -2102,6 +2102,7 @@ rtc::scoped_refptr<DataChannel> PeerConnection::InternalCreateDataChannel(
                                   &PeerConnection::OnSctpDataChannelClosed);
   }
 
+  SignalDataChannelCreated(channel.get());
   return channel;
 }
 

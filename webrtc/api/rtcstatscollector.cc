@@ -338,6 +338,8 @@ RTCStatsCollector::RTCStatsCollector(PeerConnection* pc,
   RTC_DCHECK(worker_thread_);
   RTC_DCHECK(network_thread_);
   RTC_DCHECK_GE(cache_lifetime_us_, 0);
+  pc_->SignalDataChannelCreated.connect(
+      this, &RTCStatsCollector::OnDataChannelCreated);
 }
 
 void RTCStatsCollector::GetStatsReport(
@@ -581,23 +583,10 @@ void RTCStatsCollector::ProduceMediaStreamAndTrackStats_s(
 void RTCStatsCollector::ProducePeerConnectionStats_s(
     int64_t timestamp_us, RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  // TODO(hbos): If data channels are removed from the peer connection this will
-  // yield incorrect counts. Address before closing crbug.com/636818. See
-  // https://w3c.github.io/webrtc-stats/webrtc-stats.html#pcstats-dict*.
-  uint32_t data_channels_opened = 0;
-  const std::vector<rtc::scoped_refptr<DataChannel>>& data_channels =
-      pc_->sctp_data_channels();
-  for (const rtc::scoped_refptr<DataChannel>& data_channel : data_channels) {
-    if (data_channel->state() == DataChannelInterface::kOpen)
-      ++data_channels_opened;
-  }
-  // There is always just one |RTCPeerConnectionStats| so its |id| can be a
-  // constant.
   std::unique_ptr<RTCPeerConnectionStats> stats(
     new RTCPeerConnectionStats("RTCPeerConnection", timestamp_us));
-  stats->data_channels_opened = data_channels_opened;
-  stats->data_channels_closed = static_cast<uint32_t>(data_channels.size()) -
-                                data_channels_opened;
+  stats->data_channels_opened = internal_record_.data_channels_opened;
+  stats->data_channels_closed = internal_record_.data_channels_closed;
   report->AddStats(std::move(stats));
 }
 
@@ -784,6 +773,30 @@ RTCStatsCollector::PrepareTransportCertificateStats_s(
                        std::move(certificate_stats_pair)));
   }
   return transport_cert_stats;
+}
+
+void RTCStatsCollector::OnDataChannelCreated(DataChannel* channel) {
+  channel->SignalOpened.connect(this, &RTCStatsCollector::OnDataChannelOpened);
+  channel->SignalClosed.connect(this, &RTCStatsCollector::OnDataChannelClosed);
+}
+
+void RTCStatsCollector::OnDataChannelOpened(DataChannel* channel) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  bool result = internal_record_.opened_data_channels.insert(
+      reinterpret_cast<uintptr_t>(channel)).second;
+  ++internal_record_.data_channels_opened;
+  RTC_DCHECK(result);
+}
+
+void RTCStatsCollector::OnDataChannelClosed(DataChannel* channel) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  // Only channels that have been fully opened (and have increased the
+  // |data_channels_opened_| counter) increase the closed counter.
+  if (internal_record_.opened_data_channels.find(
+          reinterpret_cast<uintptr_t>(channel)) !=
+      internal_record_.opened_data_channels.end()) {
+    ++internal_record_.data_channels_closed;
+  }
 }
 
 const char* CandidateTypeToRTCIceCandidateTypeForTesting(

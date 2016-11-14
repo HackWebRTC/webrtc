@@ -13,14 +13,17 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
+#include "webrtc/api/datachannel.h"
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/stats/rtcstats_objects.h"
 #include "webrtc/api/stats/rtcstatsreport.h"
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/timeutils.h"
 
@@ -49,7 +52,8 @@ class RTCStatsCollectorCallback : public virtual rtc::RefCountInterface {
 // Stats are gathered on the signaling, worker and network threads
 // asynchronously. The callback is invoked on the signaling thread. Resulting
 // reports are cached for |cache_lifetime_| ms.
-class RTCStatsCollector : public virtual rtc::RefCountInterface {
+class RTCStatsCollector : public virtual rtc::RefCountInterface,
+                          public sigslot::has_slots<> {
  public:
   static rtc::scoped_refptr<RTCStatsCollector> Create(
       PeerConnection* pc,
@@ -118,6 +122,12 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   std::map<std::string, CertificateStatsPair>
   PrepareTransportCertificateStats_s(const SessionStats& session_stats) const;
 
+  // Slots for signals (sigslot) that are wired up to |pc_|.
+  void OnDataChannelCreated(DataChannel* channel);
+  // Slots for signals (sigslot) that are wired up to |channel|.
+  void OnDataChannelOpened(DataChannel* channel);
+  void OnDataChannelClosed(DataChannel* channel);
+
   PeerConnection* const pc_;
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
@@ -136,6 +146,25 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface {
   int64_t cache_timestamp_us_;
   int64_t cache_lifetime_us_;
   rtc::scoped_refptr<const RTCStatsReport> cached_report_;
+
+  // Data recorded and maintained by the stats collector during its lifetime.
+  // Some stats are produced from this record instead of other components.
+  struct InternalRecord {
+    InternalRecord() : data_channels_opened(0),
+                       data_channels_closed(0) {}
+
+    // The opened count goes up when a channel is fully opened and the closed
+    // count goes up if a previously opened channel has fully closed. The opened
+    // count does not go down when a channel closes, meaning (opened - closed)
+    // is the number of channels currently opened. A channel that is closed
+    // before reaching the open state does not affect these counters.
+    uint32_t data_channels_opened;
+    uint32_t data_channels_closed;
+    // Identifies by address channels that have been opened, which remain in the
+    // set until they have been fully closed.
+    std::set<uintptr_t> opened_data_channels;
+  };
+  InternalRecord internal_record_;
 };
 
 const char* CandidateTypeToRTCIceCandidateTypeForTesting(

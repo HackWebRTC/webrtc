@@ -480,7 +480,9 @@ void DataChannel::SetState(DataState state) {
   if (observer_) {
     observer_->OnStateChange();
   }
-  if (state_ == kClosed) {
+  if (state_ == kOpen) {
+    SignalOpened(this);
+  } else if (state_ == kClosed) {
     SignalClosed(this);
   }
 }

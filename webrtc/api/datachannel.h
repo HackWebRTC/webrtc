@@ -180,6 +180,8 @@ class DataChannel : public DataChannelInterface,
     return data_channel_type_;
   }
 
+  // Emitted when state transitions to kOpen.
+  sigslot::signal1<DataChannel*> SignalOpened;
   // Emitted when state transitions to kClosed.
   // In the case of SCTP channels, this signal can be used to tell when the
   // channel's sid is free.

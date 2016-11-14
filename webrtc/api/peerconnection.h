@@ -143,6 +143,8 @@ class PeerConnection : public PeerConnectionInterface,
 
   void Close() override;
 
+  sigslot::signal1<DataChannel*> SignalDataChannelCreated;
+
   // Virtual for unit tests.
   virtual const std::vector<rtc::scoped_refptr<DataChannel>>&
   sctp_data_channels() const {

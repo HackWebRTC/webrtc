@@ -1070,44 +1070,56 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
-  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  EXPECT_EQ(report->GetStatsOfType<RTCPeerConnectionStats>().size(),
-            static_cast<size_t>(1)) << "Expecting 1 RTCPeerConnectionStats.";
-  const RTCStats* stats = report->Get("RTCPeerConnection");
-  EXPECT_TRUE(stats);
   {
-    // Expected stats with no data channels
-    const RTCPeerConnectionStats& pcstats =
-        stats->cast_to<RTCPeerConnectionStats>();
-    EXPECT_EQ(*pcstats.data_channels_opened, static_cast<uint32_t>(0));
-    EXPECT_EQ(*pcstats.data_channels_closed, static_cast<uint32_t>(0));
+    rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+    RTCPeerConnectionStats expected("RTCPeerConnection",
+                                    report->timestamp_us());
+    expected.data_channels_opened = 0;
+    expected.data_channels_closed = 0;
+    EXPECT_TRUE(report->Get("RTCPeerConnection"));
+    EXPECT_EQ(expected,
+              report->Get("RTCPeerConnection")->cast_to<
+                  RTCPeerConnectionStats>());
   }
 
-  test_->data_channels().push_back(
-      new MockDataChannel(0, DataChannelInterface::kConnecting));
-  test_->data_channels().push_back(
-      new MockDataChannel(1, DataChannelInterface::kOpen));
-  test_->data_channels().push_back(
-      new MockDataChannel(2, DataChannelInterface::kClosing));
-  test_->data_channels().push_back(
-      new MockDataChannel(3, DataChannelInterface::kClosed));
+  rtc::scoped_refptr<DataChannel> dummy_channel_a = DataChannel::Create(
+      nullptr, cricket::DCT_NONE, "DummyChannelA", InternalDataChannelInit());
+  test_->pc().SignalDataChannelCreated(dummy_channel_a.get());
+  rtc::scoped_refptr<DataChannel> dummy_channel_b = DataChannel::Create(
+      nullptr, cricket::DCT_NONE, "DummyChannelB", InternalDataChannelInit());
+  test_->pc().SignalDataChannelCreated(dummy_channel_b.get());
 
-  collector_->ClearCachedStatsReport();
-  report = GetStatsReport();
-  EXPECT_EQ(report->GetStatsOfType<RTCPeerConnectionStats>().size(),
-            static_cast<size_t>(1)) << "Expecting 1 RTCPeerConnectionStats.";
-  stats = report->Get("RTCPeerConnection");
-  ASSERT_TRUE(stats);
+  dummy_channel_a->SignalOpened(dummy_channel_a.get());
+  // Closing a channel that is not opened should not affect the counts.
+  dummy_channel_b->SignalClosed(dummy_channel_b.get());
+
   {
-    // Expected stats with the above four data channels
-    // TODO(hbos): When the |RTCPeerConnectionStats| is the number of data
-    // channels that have been opened and closed, not the numbers currently
-    // open/closed, we would expect opened >= closed and (opened - closed) to be
-    // the number currently open. crbug.com/636818.
-    const RTCPeerConnectionStats& pcstats =
-        stats->cast_to<RTCPeerConnectionStats>();
-    EXPECT_EQ(*pcstats.data_channels_opened, static_cast<uint32_t>(1));
-    EXPECT_EQ(*pcstats.data_channels_closed, static_cast<uint32_t>(3));
+    collector_->ClearCachedStatsReport();
+    rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+    RTCPeerConnectionStats expected("RTCPeerConnection",
+                                    report->timestamp_us());
+    expected.data_channels_opened = 1;
+    expected.data_channels_closed = 0;
+    EXPECT_TRUE(report->Get("RTCPeerConnection"));
+    EXPECT_EQ(expected,
+              report->Get("RTCPeerConnection")->cast_to<
+                  RTCPeerConnectionStats>());
+  }
+
+  dummy_channel_b->SignalOpened(dummy_channel_b.get());
+  dummy_channel_b->SignalClosed(dummy_channel_b.get());
+
+  {
+    collector_->ClearCachedStatsReport();
+    rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+    RTCPeerConnectionStats expected("RTCPeerConnection",
+                                    report->timestamp_us());
+    expected.data_channels_opened = 2;
+    expected.data_channels_closed = 1;
+    EXPECT_TRUE(report->Get("RTCPeerConnection"));
+    EXPECT_EQ(expected,
+              report->Get("RTCPeerConnection")->cast_to<
+                  RTCPeerConnectionStats>());
   }
 }
 
