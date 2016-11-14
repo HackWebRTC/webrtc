@@ -197,34 +197,16 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
     stats.audio_level = static_cast<int32_t>(level);
   }
 
-  bool echo_metrics_on = false;
-  int error = processing->GetEcMetricsStatus(echo_metrics_on);
-  RTC_DCHECK_EQ(0, error);
-  if (echo_metrics_on) {
-    // These can also be negative, but in practice -1 is only used to signal
-    // insufficient data, since the resolution is limited to multiples of 4 ms.
-    int median = -1;
-    int std = -1;
-    float dummy = 0.0f;
-    error = processing->GetEcDelayMetrics(median, std, dummy);
-    RTC_DCHECK_EQ(0, error);
-    stats.echo_delay_median_ms = median;
-    stats.echo_delay_std_ms = std;
-
-    // These can take on valid negative values, so use the lowest possible level
-    // as default rather than -1.
-    int erl = -100;
-    int erle = -100;
-    int dummy1 = 0;
-    int dummy2 = 0;
-    error = processing->GetEchoMetrics(erl, erle, dummy1, dummy2);
-    RTC_DCHECK_EQ(0, error);
-    stats.echo_return_loss = erl;
-    stats.echo_return_loss_enhancement = erle;
-  }
-
-  // TODO(ivoc): Hook this up to the residual echo detector.
-  stats.residual_echo_likelihood = 0.0f;
+  ScopedVoEInterface<VoEBase> base(voice_engine());
+  RTC_DCHECK(base->audio_processing());
+  auto audio_processing_stats = base->audio_processing()->GetStatistics();
+  stats.echo_delay_median_ms = audio_processing_stats.delay_median;
+  stats.echo_delay_std_ms = audio_processing_stats.delay_standard_deviation;
+  stats.echo_return_loss = audio_processing_stats.echo_return_loss.instant();
+  stats.echo_return_loss_enhancement =
+      audio_processing_stats.echo_return_loss_enhancement.instant();
+  stats.residual_echo_likelihood =
+      audio_processing_stats.residual_echo_likelihood;
 
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());

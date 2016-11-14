@@ -16,6 +16,7 @@
 #include "webrtc/audio/conversion.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
@@ -40,7 +41,7 @@ const int kEchoDelayMedian = 254;
 const int kEchoDelayStdDev = -3;
 const int kEchoReturnLoss = -65;
 const int kEchoReturnLossEnhancement = 101;
-const float kResidualEchoLikelihood = 0.0f;
+const float kResidualEchoLikelihood = -1.0f;
 const unsigned int kSpeechInputLevel = 96;
 const CallStatistics kCallStats = {
     1345,  1678,  1901, 1234,  112, 13456, 17890, 1567, -1890, -1123};
@@ -182,15 +183,21 @@ struct ConfigHelper {
         .WillRepeatedly(DoAll(SetArgReferee<1>(kIsacCodec), Return(0)));
     EXPECT_CALL(voice_engine_, GetSpeechInputLevelFullRange(_))
         .WillRepeatedly(DoAll(SetArgReferee<0>(kSpeechInputLevel), Return(0)));
-    EXPECT_CALL(voice_engine_, GetEcMetricsStatus(_))
-        .WillRepeatedly(DoAll(SetArgReferee<0>(true), Return(0)));
-    EXPECT_CALL(voice_engine_, GetEchoMetrics(_, _, _, _))
-        .WillRepeatedly(DoAll(SetArgReferee<0>(kEchoReturnLoss),
-                        SetArgReferee<1>(kEchoReturnLossEnhancement),
-                        Return(0)));
-    EXPECT_CALL(voice_engine_, GetEcDelayMetrics(_, _, _))
-        .WillRepeatedly(DoAll(SetArgReferee<0>(kEchoDelayMedian),
-                        SetArgReferee<1>(kEchoDelayStdDev), Return(0)));
+    EXPECT_CALL(voice_engine_, audio_processing())
+        .WillRepeatedly(Return(&audio_processing_));
+
+    // We have to set the instantaneous value, the average, min and max. We only
+    // care about the instantaneous value, so we set all to the same value.
+    audio_processing_stats_.echo_return_loss.Set(
+        kEchoReturnLoss, kEchoReturnLoss, kEchoReturnLoss, kEchoReturnLoss);
+    audio_processing_stats_.echo_return_loss_enhancement.Set(
+        kEchoReturnLossEnhancement, kEchoReturnLossEnhancement,
+        kEchoReturnLossEnhancement, kEchoReturnLossEnhancement);
+    audio_processing_stats_.delay_median = kEchoDelayMedian;
+    audio_processing_stats_.delay_standard_deviation = kEchoDelayStdDev;
+
+    EXPECT_CALL(audio_processing_, GetStatistics())
+        .WillRepeatedly(Return(audio_processing_stats_));
   }
 
  private:
@@ -201,6 +208,8 @@ struct ConfigHelper {
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
   testing::NiceMock<MockCongestionObserver> bitrate_observer_;
   testing::NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
+  MockAudioProcessing audio_processing_;
+  AudioProcessing::AudioProcessingStatistics audio_processing_stats_;
   CongestionController congestion_controller_;
   MockRtcEventLog event_log_;
   testing::NiceMock<MockLimitObserver> limit_observer_;

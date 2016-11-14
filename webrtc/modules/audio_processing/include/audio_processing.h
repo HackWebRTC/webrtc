@@ -486,10 +486,6 @@ class AudioProcessing {
       Set(other.instant, other.average, other.maximum, other.minimum);
     }
     void Set(float instant, float average, float maximum, float minimum) {
-      RTC_DCHECK_LE(instant, maximum);
-      RTC_DCHECK_GE(instant, minimum);
-      RTC_DCHECK_LE(average, maximum);
-      RTC_DCHECK_GE(average, minimum);
       instant_ = instant;
       average_ = average;
       maximum_ = maximum;
