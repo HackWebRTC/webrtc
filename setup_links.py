@@ -72,7 +72,6 @@ DIRECTORIES = [
   'tools/grit',
   'tools/gyp',
   'tools/luci-go',
-  'tools/mb',
   'tools/memory',
   'tools/protoc_wrapper',
   'tools/python',
