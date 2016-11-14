@@ -292,6 +292,12 @@ bool AudioSendStream::SetupSendCodec() {
   codec->SetVADStatus(channel, false);
   codec->SetFECStatus(channel, false);
 
+  // We disable audio network adaptor here. This will on one hand make sure that
+  // audio network adaptor is disabled by default, and on the other allow audio
+  // network adaptor to be reconfigured, since SetReceiverFrameLengthRange can
+  // be only called when audio network adaptor is disabled.
+  channel_proxy_->DisableAudioNetworkAdaptor();
+
   const auto& send_codec_spec = config_.send_codec_spec;
 
   // We set the codec first, since the below extra configuration is only applied
@@ -345,8 +351,6 @@ bool AudioSendStream::SetupSendCodec() {
           *config_.audio_network_adaptor_config);
       LOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
                    << config_.rtp.ssrc;
-    } else {
-      channel_proxy_->DisableAudioNetworkAdaptor();
     }
   }
 

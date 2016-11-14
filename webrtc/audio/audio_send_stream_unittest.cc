@@ -142,6 +142,7 @@ struct ConfigHelper {
         .WillOnce(Return(0));
     EXPECT_CALL(voice_engine_, SetFECStatus(kChannelId, false))
         .WillOnce(Return(0));
+    EXPECT_CALL(*channel_proxy_, DisableAudioNetworkAdaptor());
     // Let |GetSendCodec| return -1 for the first time to indicate that no send
     // codec has been set.
     EXPECT_CALL(voice_engine_, GetSendCodec(kChannelId, _))
