@@ -43,8 +43,8 @@ constexpr size_t kFlexfecPacketMaskSizes[] = {2, 6, 14};
 constexpr size_t kFlexfecMaxPacketSize = kFlexfecPacketMaskSizes[2];
 
 // Reader tests.
-constexpr uint8_t kNoFBit = 0 << 7;
-constexpr uint8_t kNoRBit = 0 << 6;
+constexpr uint8_t kNoRBit = 0 << 7;
+constexpr uint8_t kNoFBit = 0 << 6;
 constexpr uint8_t kPtRecovery = 123;
 constexpr uint8_t kLengthRecov[] = {0xab, 0xcd};
 constexpr uint8_t kTsRecovery[] = {0x01, 0x23, 0x45, 0x67};
@@ -173,7 +173,7 @@ TEST(FlexfecHeaderReaderTest, ReadsHeaderWithKBit0Set) {
   constexpr uint8_t kUlpfecPacketMask[] =        {0x11, 0x02};
   // clang-format on
   constexpr uint8_t kPacketData[] = {
-      kNoFBit | kNoRBit, kPtRecovery,    kLengthRecov[0],    kLengthRecov[1],
+      kNoRBit | kNoFBit, kPtRecovery,    kLengthRecov[0],    kLengthRecov[1],
       kTsRecovery[0],    kTsRecovery[1], kTsRecovery[2],     kTsRecovery[3],
       kSsrcCount,        kReservedBits,  kReservedBits,      kReservedBits,
       kProtSsrc[0],      kProtSsrc[1],   kProtSsrc[2],       kProtSsrc[3],
@@ -204,7 +204,7 @@ TEST(FlexfecHeaderReaderTest, ReadsHeaderWithKBit1Set) {
                                                 0x08, 0x44, 0x00, 0x84};
   // clang-format on
   constexpr uint8_t kPacketData[] = {
-      kNoFBit | kNoRBit, kPtRecovery,      kLengthRecov[0],  kLengthRecov[1],
+      kNoRBit | kNoFBit, kPtRecovery,      kLengthRecov[0],  kLengthRecov[1],
       kTsRecovery[0],    kTsRecovery[1],   kTsRecovery[2],   kTsRecovery[3],
       kSsrcCount,        kReservedBits,    kReservedBits,    kReservedBits,
       kProtSsrc[0],      kProtSsrc[1],     kProtSsrc[2],     kProtSsrc[3],
@@ -241,7 +241,7 @@ TEST(FlexfecHeaderReaderTest, ReadsHeaderWithKBit2Set) {
                                                0x88, 0x88, 0x88, 0x88};
   // clang-format on
   constexpr uint8_t kPacketData[] = {
-      kNoFBit | kNoRBit, kPtRecovery,      kLengthRecov[0],  kLengthRecov[1],
+      kNoRBit | kNoFBit, kPtRecovery,      kLengthRecov[0],  kLengthRecov[1],
       kTsRecovery[0],    kTsRecovery[1],   kTsRecovery[2],   kTsRecovery[3],
       kSsrcCount,        kReservedBits,    kReservedBits,    kReservedBits,
       kProtSsrc[0],      kProtSsrc[1],     kProtSsrc[2],     kProtSsrc[3],

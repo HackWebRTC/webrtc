@@ -85,16 +85,16 @@ bool FlexfecHeaderReader::ReadFecHeader(
     LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
     return false;
   }
-  bool f_bit = (fec_packet->pkt->data[0] & 0x80) != 0;
-  if (f_bit) {
-    LOG(LS_INFO) << "FlexFEC packet with inflexible generator matrix. We do "
-                    "not yet support this, thus discarding packet.";
-    return false;
-  }
-  bool r_bit = (fec_packet->pkt->data[0] & 0x40) != 0;
+  bool r_bit = (fec_packet->pkt->data[0] & 0x80) != 0;
   if (r_bit) {
     LOG(LS_INFO) << "FlexFEC packet with retransmission bit set. We do not yet "
                     "support this, thus discarding the packet.";
+    return false;
+  }
+  bool f_bit = (fec_packet->pkt->data[0] & 0x40) != 0;
+  if (f_bit) {
+    LOG(LS_INFO) << "FlexFEC packet with inflexible generator matrix. We do "
+                    "not yet support this, thus discarding packet.";
     return false;
   }
   uint8_t ssrc_count =
@@ -247,8 +247,8 @@ void FlexfecHeaderWriter::FinalizeFecHeader(
     const uint8_t* packet_mask,
     size_t packet_mask_size,
     ForwardErrorCorrection::Packet* fec_packet) const {
-  fec_packet->data[0] &= 0x7f;  // Clear F bit.
-  fec_packet->data[0] &= 0xbf;  // Clear R bit.
+  fec_packet->data[0] &= 0x7f;  // Clear R bit.
+  fec_packet->data[0] &= 0xbf;  // Clear F bit.
   ByteWriter<uint8_t>::WriteBigEndian(&fec_packet->data[8], kSsrcCount);
   ByteWriter<uint32_t, 3>::WriteBigEndian(&fec_packet->data[9], kReservedBits);
   ByteWriter<uint32_t>::WriteBigEndian(&fec_packet->data[12], media_ssrc);
