@@ -14,6 +14,7 @@
 
 #include <algorithm>  // min
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/audio_multi_vector.h"
@@ -34,7 +35,7 @@ int Normal::Process(const int16_t* input,
     return static_cast<int>(length);
   }
 
-  assert(output->Empty());
+  RTC_DCHECK(output->Empty());
   // Output should be empty at this point.
   if (length % output->Channels() != 0) {
     // The length does not match the number of channels.
@@ -44,7 +45,7 @@ int Normal::Process(const int16_t* input,
   output->PushBackInterleaved(input, length);
 
   const int fs_mult = fs_hz_ / 8000;
-  assert(fs_mult > 0);
+  RTC_DCHECK_GT(fs_mult, 0);
   // fs_shift = log2(fs_mult), rounded down.
   // Note that |fs_shift| is not "exact" for 48 kHz.
   // TODO(hlundin): Investigate this further.
@@ -115,8 +116,8 @@ int Normal::Process(const int16_t* input,
       int increment = 64 / fs_mult;
       for (size_t i = 0; i < length_per_channel; i++) {
         // Scale with mute factor.
-        assert(channel_ix < output->Channels());
-        assert(i < output->Size());
+        RTC_DCHECK_LT(channel_ix, output->Channels());
+        RTC_DCHECK_LT(i, output->Size());
         int32_t scaled_signal = (*output)[channel_ix][i] *
             external_mute_factor_array[channel_ix];
         // Shift 14 with proper rounding.
@@ -129,14 +130,19 @@ int Normal::Process(const int16_t* input,
 
       // Interpolate the expanded data into the new vector.
       // (NB/WB/SWB32/SWB48 8/16/32/48 samples.)
-      assert(fs_shift < 3);  // Will always be 0, 1, or, 2.
+      RTC_DCHECK_LT(fs_shift, 3);  // Will always be 0, 1, or, 2.
       increment = 4 >> fs_shift;
       int fraction = increment;
-      for (size_t i = 0; i < static_cast<size_t>(8 * fs_mult); i++) {
+      // Don't interpolate over more samples than what is in output. When this
+      // cap strikes, the interpolation will likely sound worse, but this is an
+      // emergency operation in response to unexpected input.
+      const size_t interp_len_samples =
+          std::min(static_cast<size_t>(8 * fs_mult), output->Size());
+      for (size_t i = 0; i < interp_len_samples; ++i) {
         // TODO(hlundin): Add 16 instead of 8 for correct rounding. Keeping 8
         // now for legacy bit-exactness.
-        assert(channel_ix < output->Channels());
-        assert(i < output->Size());
+        RTC_DCHECK_LT(channel_ix, output->Channels());
+        RTC_DCHECK_LT(i, output->Size());
         (*output)[channel_ix][i] =
             static_cast<int16_t>((fraction * (*output)[channel_ix][i] +
                 (32 - fraction) * expanded[channel_ix][i] + 8) >> 5);
@@ -144,7 +150,7 @@ int Normal::Process(const int16_t* input,
       }
     }
   } else if (last_mode == kModeRfc3389Cng) {
-    assert(output->Channels() == 1);  // Not adapted for multi-channel yet.
+    RTC_DCHECK_EQ(output->Channels(), 1);  // Not adapted for multi-channel yet.
     static const size_t kCngLength = 48;
     RTC_DCHECK_LE(static_cast<size_t>(8 * fs_mult), kCngLength);
     int16_t cng_output[kCngLength];
@@ -165,7 +171,7 @@ int Normal::Process(const int16_t* input,
     }
     // Interpolate the CNG into the new vector.
     // (NB/WB/SWB32/SWB48 8/16/32/48 samples.)
-    assert(fs_shift < 3);  // Will always be 0, 1, or, 2.
+    RTC_DCHECK_LT(fs_shift, 3);  // Will always be 0, 1, or, 2.
     int16_t increment = 4 >> fs_shift;
     int16_t fraction = increment;
     for (size_t i = 0; i < static_cast<size_t>(8 * fs_mult); i++) {
@@ -185,8 +191,8 @@ int Normal::Process(const int16_t* input,
       for (size_t channel_ix = 0; channel_ix < output->Channels();
           ++channel_ix) {
         // Scale with mute factor.
-        assert(channel_ix < output->Channels());
-        assert(i < output->Size());
+        RTC_DCHECK_LT(channel_ix, output->Channels());
+        RTC_DCHECK_LT(i, output->Size());
         int32_t scaled_signal = (*output)[channel_ix][i] *
             external_mute_factor_array[channel_ix];
         // Shift 14 with proper rounding.
