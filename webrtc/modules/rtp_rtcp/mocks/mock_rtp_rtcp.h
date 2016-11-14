@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/optional.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -84,6 +85,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD0(RtxSendStatus, int());
   MOCK_METHOD1(SetRtxSsrc, void(uint32_t));
   MOCK_METHOD2(SetRtxSendPayloadType, void(int, int));
+  MOCK_CONST_METHOD0(FlexfecSsrc, rtc::Optional<uint32_t>());
   MOCK_CONST_METHOD0(RtxSendPayloadType, std::pair<int, int>());
   MOCK_METHOD1(SetSendingStatus, int32_t(bool sending));
   MOCK_CONST_METHOD0(Sending, bool());

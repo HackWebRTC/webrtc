@@ -17,6 +17,7 @@
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/onetimeevent.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/base/thread_annotations.h"
@@ -67,8 +68,12 @@ class RTPSenderVideo {
   void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
   void GetUlpfecConfig(int* red_payload_type, int* ulpfec_payload_type) const;
 
+  // FlexFEC/ULPFEC.
   void SetFecParameters(const FecProtectionParams& delta_params,
                         const FecProtectionParams& key_params);
+
+  // FlexFEC.
+  rtc::Optional<uint32_t> FlexfecSsrc() const;
 
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;

@@ -18,6 +18,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/deprecation.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
@@ -201,6 +202,9 @@ class RtpRtcp : public Module {
   // doesn't enable RTX, only the payload type is set.
   virtual void SetRtxSendPayloadType(int payload_type,
                                      int associated_payload_type) = 0;
+
+  // Returns the FlexFEC SSRC, if there is one.
+  virtual rtc::Optional<uint32_t> FlexfecSsrc() const = 0;
 
   // Sets sending status. Sends kRtcpByeCode when going from true to false.
   // Returns -1 on failure else 0.

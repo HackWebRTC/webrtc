@@ -38,6 +38,8 @@ class FlexfecSender {
                 Clock* clock);
   ~FlexfecSender();
 
+  uint32_t ssrc() const { return ssrc_; }
+
   // Sets the FEC rate, max frames sent before FEC packets are sent,
   // and what type of generator matrices are used.
   void SetFecParameters(const FecProtectionParams& params);

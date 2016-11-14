@@ -70,6 +70,14 @@ std::unique_ptr<RtpPacketToSend> GenerateSingleFlexfecPacket(
 
 }  // namespace
 
+TEST(FlexfecSenderTest, Ssrc) {
+  SimulatedClock clock(kInitialSimulatedClockTime);
+  FlexfecSender sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,
+                       kNoRtpHeaderExtensions, &clock);
+
+  EXPECT_EQ(kFlexfecSsrc, sender.ssrc());
+}
+
 TEST(FlexfecSenderTest, NoFecAvailableBeforeMediaAdded) {
   SimulatedClock clock(kInitialSimulatedClockTime);
   FlexfecSender sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,

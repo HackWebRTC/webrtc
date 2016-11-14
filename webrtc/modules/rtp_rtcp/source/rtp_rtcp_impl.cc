@@ -229,6 +229,10 @@ void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type,
   rtp_sender_.SetRtxPayloadType(payload_type, associated_payload_type);
 }
 
+rtc::Optional<uint32_t> ModuleRtpRtcpImpl::FlexfecSsrc() const {
+  return rtp_sender_.FlexfecSsrc();
+}
+
 int32_t ModuleRtpRtcpImpl::IncomingRtcpPacket(
     const uint8_t* rtcp_packet,
     const size_t length) {
@@ -400,12 +404,8 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
                                          int64_t capture_time_ms,
                                          bool retransmission,
                                          int probe_cluster_id) {
-  if (SendingMedia() && ssrc == rtp_sender_.SSRC()) {
-    return rtp_sender_.TimeToSendPacket(sequence_number, capture_time_ms,
-                                        retransmission, probe_cluster_id);
-  }
-  // No RTP sender is interested in sending this packet.
-  return true;
+  return rtp_sender_.TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
+                                      retransmission, probe_cluster_id);
 }
 
 size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes,

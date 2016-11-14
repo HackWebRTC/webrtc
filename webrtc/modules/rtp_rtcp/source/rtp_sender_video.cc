@@ -272,6 +272,13 @@ void RTPSenderVideo::SetFecParameters(const FecProtectionParams& delta_params,
   key_fec_params_ = key_params;
 }
 
+rtc::Optional<uint32_t> RTPSenderVideo::FlexfecSsrc() const {
+  if (flexfec_sender_) {
+    return rtc::Optional<uint32_t>(flexfec_sender_->ssrc());
+  }
+  return rtc::Optional<uint32_t>();
+}
+
 bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
                                FrameType frame_type,
                                int8_t payload_type,

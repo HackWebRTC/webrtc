@@ -19,6 +19,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/deprecation.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_annotations.h"
@@ -122,7 +123,8 @@ class RTPSender {
 
   size_t RtpHeaderExtensionLength() const;
 
-  bool TimeToSendPacket(uint16_t sequence_number,
+  bool TimeToSendPacket(uint32_t ssrc,
+                        uint16_t sequence_number,
                         int64_t capture_time_ms,
                         bool retransmission,
                         int probe_cluster_id);
@@ -165,6 +167,8 @@ class RTPSender {
   size_t MaxPayloadLength() const;
 
   uint32_t SSRC() const;
+
+  rtc::Optional<uint32_t> FlexfecSsrc() const;
 
   bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
                      StorageType storage,
@@ -285,6 +289,9 @@ class RTPSender {
   PlayoutDelayOracle playout_delay_oracle_;
 
   RtpPacketHistory packet_history_;
+  // TODO(brandtr): Remove |flexfec_packet_history_| when the FlexfecSender
+  // is hooked up to the PacedSender.
+  RtpPacketHistory flexfec_packet_history_;
 
   // Statistics
   rtc::CriticalSection statistics_crit_;

@@ -41,6 +41,8 @@ constexpr uint16_t kMaxInitRtpSeqNumber = 32767;  // 2^15 -1.
 constexpr uint32_t kTimestampTicksPerMs = 90;
 constexpr int kBitrateStatisticsWindowMs = 1000;
 
+constexpr size_t kMinFlexfecPacketsToStoreForPacing = 50;
+
 const char* FrameTypeToString(FrameType frame_type) {
   switch (frame_type) {
     case kEmptyFrame:
@@ -94,6 +96,7 @@ RTPSender::RTPSender(
       payload_type_map_(),
       rtp_header_extension_map_(),
       packet_history_(clock),
+      flexfec_packet_history_(clock),
       // Statistics
       rtp_stats_callback_(nullptr),
       total_bitrate_sent_(kBitrateStatisticsWindowMs,
@@ -127,6 +130,13 @@ RTPSender::RTPSender(
   // Random start, 16 bits. Can't be 0.
   sequence_number_rtx_ = random_.Rand(1, kMaxInitRtpSeqNumber);
   sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
+
+  // Store FlexFEC packets in the packet history data structure, so they can
+  // be found when paced.
+  if (flexfec_sender) {
+    flexfec_packet_history_.SetStorePacketsStatus(
+        true, kMinFlexfecPacketsToStoreForPacing);
+  }
 }
 
 RTPSender::~RTPSender() {
@@ -685,15 +695,25 @@ void RTPSender::OnReceivedRtcpReportBlocks(
 }
 
 // Called from pacer when we can send the packet.
-bool RTPSender::TimeToSendPacket(uint16_t sequence_number,
+bool RTPSender::TimeToSendPacket(uint32_t ssrc,
+                                 uint16_t sequence_number,
                                  int64_t capture_time_ms,
                                  bool retransmission,
                                  int probe_cluster_id) {
-  std::unique_ptr<RtpPacketToSend> packet =
-      packet_history_.GetPacketAndSetSendTime(sequence_number, 0,
-                                              retransmission);
+  if (!SendingMedia())
+    return true;
+
+  std::unique_ptr<RtpPacketToSend> packet;
+  if (ssrc == SSRC()) {
+    packet = packet_history_.GetPacketAndSetSendTime(sequence_number, 0,
+                                                     retransmission);
+  } else if (ssrc == FlexfecSsrc()) {
+    packet = flexfec_packet_history_.GetPacketAndSetSendTime(sequence_number, 0,
+                                                             retransmission);
+  }
+
   if (!packet) {
-    // Packet cannot be found. Allow sending to continue.
+    // Packet cannot be found.
     return true;
   }
 
@@ -836,14 +856,21 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
                                     NackOverheadRate() / 1000, packet->Ssrc());
   }
 
+  uint32_t ssrc = packet->Ssrc();
+  rtc::Optional<uint32_t> flexfec_ssrc = FlexfecSsrc();
   if (paced_sender_) {
     uint16_t seq_no = packet->SequenceNumber();
-    uint32_t ssrc = packet->Ssrc();
     // Correct offset between implementations of millisecond time stamps in
     // TickTime and Clock.
     int64_t corrected_time_ms = packet->capture_time_ms() + clock_delta_ms_;
     size_t payload_length = packet->payload_size();
-    packet_history_.PutRtpPacket(std::move(packet), storage, false);
+    if (ssrc == flexfec_ssrc) {
+      // Store FlexFEC packets in the history here, so they can be found
+      // when the pacer calls TimeToSendPacket.
+      flexfec_packet_history_.PutRtpPacket(std::move(packet), storage, false);
+    } else {
+      packet_history_.PutRtpPacket(std::move(packet), storage, false);
+    }
 
     paced_sender_->InsertPacket(priority, ssrc, seq_no, corrected_time_ms,
                                 payload_length, false);
@@ -879,10 +906,12 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
     UpdateRtpStats(*packet, false, false);
   }
 
-  // Mark the packet as sent in the history even if send failed. Dropping a
-  // packet here should be treated as any other packet drop so we should be
-  // ready for a retransmission.
-  packet_history_.PutRtpPacket(std::move(packet), storage, true);
+  // To support retransmissions, we store the media packet as sent in the
+  // packet history (even if send failed).
+  if (storage == kAllowRetransmission) {
+    RTC_DCHECK_EQ(ssrc, SSRC());
+    packet_history_.PutRtpPacket(std::move(packet), storage, true);
+  }
 
   return sent;
 }
@@ -1087,6 +1116,13 @@ void RTPSender::SetSSRC(uint32_t ssrc) {
 uint32_t RTPSender::SSRC() const {
   rtc::CritScope lock(&send_critsect_);
   return ssrc_;
+}
+
+rtc::Optional<uint32_t> RTPSender::FlexfecSsrc() const {
+  if (video_) {
+    return video_->FlexfecSsrc();
+  }
+  return rtc::Optional<uint32_t>();
 }
 
 void RTPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
