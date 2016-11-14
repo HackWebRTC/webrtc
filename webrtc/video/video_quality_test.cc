@@ -1353,10 +1353,13 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     if (params.video.fec) {
       video_send_config_.rtp.ulpfec.red_payload_type = kRedPayloadType;
       video_send_config_.rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
+      video_send_config_.rtp.ulpfec.red_rtx_payload_type = kRtxRedPayloadType;
       video_receive_configs_[stream_id].rtp.ulpfec.red_payload_type =
           kRedPayloadType;
       video_receive_configs_[stream_id].rtp.ulpfec.ulpfec_payload_type =
           kUlpfecPayloadType;
+      video_receive_configs_[stream_id].rtp.ulpfec.red_rtx_payload_type =
+          kRtxRedPayloadType;
     }
 
     if (params_.screenshare.enabled)
