@@ -807,14 +807,18 @@ void RTPSender::UpdateRtpStats(const RtpPacketToSend& packet,
 }
 
 bool RTPSender::IsFecPacket(const RtpPacketToSend& packet) const {
-  if (!video_) {
+  if (!video_)
     return false;
-  }
+
+  // FlexFEC.
+  if (packet.Ssrc() == FlexfecSsrc())
+    return true;
+
+  // RED+ULPFEC.
   int pt_red;
   int pt_fec;
   video_->GetUlpfecConfig(&pt_red, &pt_fec);
-  const bool fec_enabled = (pt_fec != -1);
-  return fec_enabled && static_cast<int>(packet.PayloadType()) == pt_red &&
+  return static_cast<int>(packet.PayloadType()) == pt_red &&
          static_cast<int>(packet.payload()[0]) == pt_fec;
 }
 
