@@ -170,5 +170,8 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
+    if (rtc_use_h264) {
+      defines = [ "WEBRTC_USE_H264" ]
+    }
   }
 }

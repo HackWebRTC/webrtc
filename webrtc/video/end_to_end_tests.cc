@@ -375,8 +375,7 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9VideoRotation90) {
 }
 #endif  // !defined(RTC_DISABLE_VP9)
 
-#if defined(WEBRTC_END_TO_END_H264_TESTS)
-
+#if defined(WEBRTC_USE_H264)
 TEST_F(EndToEndTest, SendsAndReceivesH264) {
   CodecObserver test(500, kVideoRotation_0, "H264",
                      VideoEncoder::Create(VideoEncoder::kH264),
@@ -390,8 +389,7 @@ TEST_F(EndToEndTest, SendsAndReceivesH264VideoRotation90) {
                      H264Decoder::Create());
   RunBaseTest(&test);
 }
-
-#endif  // defined(WEBRTC_END_TO_END_H264_TESTS)
+#endif  // defined(WEBRTC_USE_H264)
 
 TEST_F(EndToEndTest, ReceiverUsesLocalSsrc) {
   class SyncRtcpObserver : public test::EndToEndTest {
