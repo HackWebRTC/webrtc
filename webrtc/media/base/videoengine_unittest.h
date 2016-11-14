@@ -423,6 +423,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_GT(info.senders[0].bytes_sent, 0);
     EXPECT_EQ(NumRtpPackets(), info.senders[0].packets_sent);
     EXPECT_EQ(0.0, info.senders[0].fraction_lost);
+    ASSERT_TRUE(info.senders[0].codec_payload_type);
+    EXPECT_EQ(DefaultCodec().id, *info.senders[0].codec_payload_type);
     EXPECT_EQ(0, info.senders[0].firs_rcvd);
     EXPECT_EQ(0, info.senders[0].plis_rcvd);
     EXPECT_EQ(0, info.senders[0].nacks_rcvd);
@@ -431,10 +433,16 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_GT(info.senders[0].framerate_input, 0);
     EXPECT_GT(info.senders[0].framerate_sent, 0);
 
+    EXPECT_EQ(1U, info.send_codecs.count(DefaultCodec().id));
+    EXPECT_EQ(DefaultCodec().ToCodecParameters(),
+              info.send_codecs[DefaultCodec().id]);
+
     ASSERT_EQ(1U, info.receivers.size());
     EXPECT_EQ(1U, info.senders[0].ssrcs().size());
     EXPECT_EQ(1U, info.receivers[0].ssrcs().size());
     EXPECT_EQ(info.senders[0].ssrcs()[0], info.receivers[0].ssrcs()[0]);
+    ASSERT_TRUE(info.receivers[0].codec_payload_type);
+    EXPECT_EQ(DefaultCodec().id, *info.receivers[0].codec_payload_type);
     EXPECT_EQ(NumRtpBytes(), info.receivers[0].bytes_rcvd);
     EXPECT_EQ(NumRtpPackets(), info.receivers[0].packets_rcvd);
     EXPECT_EQ(0.0, info.receivers[0].fraction_lost);
@@ -449,6 +457,10 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_GT(info.receivers[0].framerate_rcvd, 0);
     EXPECT_GT(info.receivers[0].framerate_decoded, 0);
     EXPECT_GT(info.receivers[0].framerate_output, 0);
+
+    EXPECT_EQ(1U, info.receive_codecs.count(DefaultCodec().id));
+    EXPECT_EQ(DefaultCodec().ToCodecParameters(),
+              info.receive_codecs[DefaultCodec().id]);
   }
 
   cricket::VideoSenderInfo GetSenderStats(size_t i) {

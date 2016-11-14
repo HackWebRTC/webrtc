@@ -692,7 +692,11 @@ struct VideoSenderInfo : public MediaSenderInfo {
         frames_encoded(0) {}
 
   std::vector<SsrcGroup> ssrc_groups;
+  // TODO(hbos): Move this to |VideoMediaInfo::send_codecs|?
   std::string encoder_implementation_name;
+  // TODO(hbos): Move this to |MediaSenderInfo| when supported by
+  // |VoiceSenderInfo| as well (which also extends that class).
+  rtc::Optional<uint32_t> codec_payload_type;
   int packets_cached;
   int firs_rcvd;
   int plis_rcvd;
@@ -736,7 +740,11 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   }
 
   std::vector<SsrcGroup> ssrc_groups;
+  // TODO(hbos): Move this to |VideoMediaInfo::receive_codecs|?
   std::string decoder_implementation_name;
+  // TODO(hbos): Move this to |MediaReceiverInfo| when supported by
+  // |VoiceReceiverInfo| as well (which also extends that class).
+  rtc::Optional<uint32_t> codec_payload_type;
   int packets_concealed;
   int firs_sent;
   int plis_sent;
@@ -812,6 +820,9 @@ struct BandwidthEstimationInfo {
   int64_t bucket_delay;
 };
 
+// Maps from payload type to |RtpCodecParameters|.
+typedef std::map<int, webrtc::RtpCodecParameters> RtpCodecParametersMap;
+
 struct VoiceMediaInfo {
   void Clear() {
     senders.clear();
@@ -826,10 +837,14 @@ struct VideoMediaInfo {
     senders.clear();
     receivers.clear();
     bw_estimations.clear();
+    send_codecs.clear();
+    receive_codecs.clear();
   }
   std::vector<VideoSenderInfo> senders;
   std::vector<VideoReceiverInfo> receivers;
   std::vector<BandwidthEstimationInfo> bw_estimations;
+  RtpCodecParametersMap send_codecs;
+  RtpCodecParametersMap receive_codecs;
 };
 
 struct DataMediaInfo {

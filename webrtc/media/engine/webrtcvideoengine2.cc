@@ -1334,6 +1334,7 @@ bool WebRtcVideoChannel2::GetStats(VideoMediaInfo* info) {
   info->Clear();
   FillSenderStats(info, log_stats);
   FillReceiverStats(info, log_stats);
+  FillSendAndReceiveCodecStats(info);
   webrtc::Call::Stats stats = call_->GetStats();
   FillBandwidthEstimationStats(stats, info);
   if (stats.rtt_ms != -1) {
@@ -1386,6 +1387,20 @@ void WebRtcVideoChannel2::FillBandwidthEstimationStats(
     stream->second->FillBandwidthEstimationInfo(&bwe_info);
   }
   video_media_info->bw_estimations.push_back(bwe_info);
+}
+
+void WebRtcVideoChannel2::FillSendAndReceiveCodecStats(
+    VideoMediaInfo* video_media_info) {
+  for (const VideoCodec& codec : send_params_.codecs) {
+    webrtc::RtpCodecParameters codec_params = codec.ToCodecParameters();
+    video_media_info->send_codecs.insert(
+        std::make_pair(codec_params.payload_type, std::move(codec_params)));
+  }
+  for (const VideoCodec& codec : recv_params_.codecs) {
+    webrtc::RtpCodecParameters codec_params = codec.ToCodecParameters();
+    video_media_info->receive_codecs.insert(
+        std::make_pair(codec_params.payload_type, std::move(codec_params)));
+  }
 }
 
 void WebRtcVideoChannel2::OnPacketReceived(
@@ -1992,8 +2007,11 @@ VideoSenderInfo WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo(
   for (uint32_t ssrc : parameters_.config.rtp.ssrcs)
     info.add_ssrc(ssrc);
 
-  if (parameters_.codec_settings)
+  if (parameters_.codec_settings) {
     info.codec_name = parameters_.codec_settings->codec.name;
+    info.codec_payload_type = rtc::Optional<uint32_t>(
+        static_cast<uint32_t>(parameters_.codec_settings->codec.id));
+  }
 
   if (stream_ == NULL)
     return info;
@@ -2401,6 +2419,10 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   info.add_ssrc(config_.rtp.remote_ssrc);
   webrtc::VideoReceiveStream::Stats stats = stream_->GetStats();
   info.decoder_implementation_name = stats.decoder_implementation_name;
+  if (stats.current_payload_type != -1) {
+    info.codec_payload_type = rtc::Optional<uint32_t>(
+        static_cast<uint32_t>(stats.current_payload_type));
+  }
   info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes +
                     stats.rtp_stats.transmitted.header_bytes +
                     stats.rtp_stats.transmitted.padding_bytes;

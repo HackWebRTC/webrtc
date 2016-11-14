@@ -474,6 +474,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   void FillReceiverStats(VideoMediaInfo* info, bool log_stats);
   void FillBandwidthEstimationStats(const webrtc::Call::Stats& stats,
                                     VideoMediaInfo* info);
+  void FillSendAndReceiveCodecStats(VideoMediaInfo* video_media_info);
 
   rtc::ThreadChecker thread_checker_;
 
