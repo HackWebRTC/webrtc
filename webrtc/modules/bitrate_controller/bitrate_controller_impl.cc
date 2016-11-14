@@ -189,11 +189,10 @@ void BitrateControllerImpl::OnDelayBasedBweResult(
     return;
   {
     rtc::CritScope cs(&critsect_);
+    bandwidth_estimation_.UpdateDelayBasedEstimate(clock_->TimeInMilliseconds(),
+                                                   result.target_bitrate_bps);
     if (result.probe) {
       bandwidth_estimation_.SetSendBitrate(result.target_bitrate_bps);
-    } else {
-      bandwidth_estimation_.UpdateDelayBasedEstimate(
-          clock_->TimeInMilliseconds(), result.target_bitrate_bps);
     }
   }
   MaybeTriggerOnNetworkChanged();
