@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
@@ -42,6 +43,22 @@ std::string GetIndexedOutputWavFilename(const std::string& wav_name,
   return ss.str();
 }
 
+void WriteEchoLikelihoodGraphFileHeader(std::ofstream* output_file) {
+  (*output_file) << "import numpy as np" << std::endl
+                 << "import matplotlib.pyplot as plt" << std::endl
+                 << "y = np.array([";
+}
+
+void WriteEchoLikelihoodGraphFileFooter(std::ofstream* output_file) {
+  (*output_file) << "])" << std::endl
+                 << "x = np.arange(len(y))*.01" << std::endl
+                 << "plt.plot(x, y)" << std::endl
+                 << "plt.ylabel('Echo likelihood')" << std::endl
+                 << "plt.xlabel('Time (s)')" << std::endl
+                 << "plt.ylim([0,1])" << std::endl
+                 << "plt.show()" << std::endl;
+}
+
 }  // namespace
 
 SimulationSettings::SimulationSettings() = default;
@@ -61,9 +78,22 @@ void CopyToAudioFrame(const ChannelBuffer<float>& src, AudioFrame* dest) {
 
 AudioProcessingSimulator::AudioProcessingSimulator(
     const SimulationSettings& settings)
-    : settings_(settings) {}
+    : settings_(settings) {
+  if (settings_.red_graph_output_filename &&
+      settings_.red_graph_output_filename->size() > 0) {
+    residual_echo_likelihood_graph_writer_.open(
+        *settings_.red_graph_output_filename);
+    RTC_CHECK(residual_echo_likelihood_graph_writer_.is_open());
+    WriteEchoLikelihoodGraphFileHeader(&residual_echo_likelihood_graph_writer_);
+  }
+}
 
-AudioProcessingSimulator::~AudioProcessingSimulator() = default;
+AudioProcessingSimulator::~AudioProcessingSimulator() {
+  if (residual_echo_likelihood_graph_writer_.is_open()) {
+    WriteEchoLikelihoodGraphFileFooter(&residual_echo_likelihood_graph_writer_);
+    residual_echo_likelihood_graph_writer_.close();
+  }
+}
 
 AudioProcessingSimulator::ScopedTimer::~ScopedTimer() {
   int64_t interval = rtc::TimeNanos() - start_time_;
@@ -88,6 +118,12 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
 
   if (buffer_writer_) {
     buffer_writer_->Write(*out_buf_);
+  }
+
+  if (residual_echo_likelihood_graph_writer_.is_open()) {
+    auto stats = ap_->GetStatistics();
+    residual_echo_likelihood_graph_writer_ << stats.residual_echo_likelihood
+                                           << ", ";
   }
 
   ++num_process_stream_calls_;
@@ -245,6 +281,9 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
       !settings_.use_extended_filter || *settings_.use_extended_filter));
   config.Set<DelayAgnostic>(new DelayAgnostic(!settings_.use_delay_agnostic ||
                                               *settings_.use_delay_agnostic));
+  if (settings_.use_red) {
+    apm_config.residual_echo_detector.enabled = *settings_.use_red;
+  }
 
   ap_.reset(AudioProcessing::Create(config));
   RTC_CHECK(ap_);

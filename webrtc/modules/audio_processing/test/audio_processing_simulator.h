@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_AUDIO_PROCESSING_SIMULATOR_H_
 
 #include <algorithm>
+#include <fstream>
 #include <limits>
 #include <memory>
 #include <string>
@@ -45,6 +46,8 @@ struct SimulationSettings {
   rtc::Optional<std::string> reverse_input_filename;
   rtc::Optional<bool> use_aec;
   rtc::Optional<bool> use_aecm;
+  rtc::Optional<bool> use_red;  // Residual Echo Detector.
+  rtc::Optional<std::string> red_graph_output_filename;
   rtc::Optional<bool> use_agc;
   rtc::Optional<bool> use_hpf;
   rtc::Optional<bool> use_ns;
@@ -168,6 +171,7 @@ class AudioProcessingSimulator {
   std::unique_ptr<ChannelBufferWavWriter> buffer_writer_;
   std::unique_ptr<ChannelBufferWavWriter> reverse_buffer_writer_;
   TickIntervalStats proc_time_;
+  std::ofstream residual_echo_likelihood_graph_writer_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioProcessingSimulator);
 };

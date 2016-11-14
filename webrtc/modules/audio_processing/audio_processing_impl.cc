@@ -1496,6 +1496,8 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
         metrics.echo_return_loss_enhancement);
     stats.residual_echo_return_loss.Set(metrics.residual_echo_return_loss);
   }
+  stats.residual_echo_likelihood =
+      private_submodules_->residual_echo_detector->echo_likelihood();
   public_submodules_->echo_cancellation->GetDelayMetrics(
       &stats.delay_median, &stats.delay_standard_deviation,
       &stats.fraction_poor_delays);

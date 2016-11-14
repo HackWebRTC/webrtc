@@ -70,6 +70,10 @@ DEFINE_int32(aec,
 DEFINE_int32(aecm,
              kParameterNotSpecifiedValue,
              "Activate (1) or deactivate(0) the mobile echo controller");
+DEFINE_int32(red,
+             kParameterNotSpecifiedValue,
+             "Activate (1) or deactivate (0) the residual echo detector");
+DEFINE_string(red_graph, "", "Output filename for graph of echo likelihood");
 DEFINE_int32(agc,
              kParameterNotSpecifiedValue,
              "Activate (1) or deactivate(0) the AGC");
@@ -196,6 +200,7 @@ SimulationSettings CreateSettings() {
     settings.use_agc = rtc::Optional<bool>(true);
     settings.use_aec = rtc::Optional<bool>(true);
     settings.use_aecm = rtc::Optional<bool>(false);
+    settings.use_red = rtc::Optional<bool>(false);
   }
   SetSettingIfSpecified(FLAGS_dump_input, &settings.aec_dump_input_filename);
   SetSettingIfSpecified(FLAGS_dump_output, &settings.aec_dump_output_filename);
@@ -215,6 +220,8 @@ SimulationSettings CreateSettings() {
   settings.target_angle_degrees = FLAGS_target_angle_degrees;
   SetSettingIfFlagSet(FLAGS_aec, &settings.use_aec);
   SetSettingIfFlagSet(FLAGS_aecm, &settings.use_aecm);
+  SetSettingIfFlagSet(FLAGS_red, &settings.use_red);
+  SetSettingIfSpecified(FLAGS_red_graph, &settings.red_graph_output_filename);
   SetSettingIfFlagSet(FLAGS_agc, &settings.use_agc);
   SetSettingIfFlagSet(FLAGS_hpf, &settings.use_hpf);
   SetSettingIfFlagSet(FLAGS_ns, &settings.use_ns);
