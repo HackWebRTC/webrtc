@@ -20,6 +20,7 @@
 #include "webrtc/base/deprecation.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/modules/include/module.h"
+#include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 
@@ -75,6 +76,10 @@ class RtpRtcp : public Module {
 
     // Spread any bursts of packets into smaller bursts to minimize packet loss.
     RtpPacketSender* paced_sender = nullptr;
+
+    // Generate FlexFEC packets.
+    // TODO(brandtr): Remove when FlexfecSender is wired up to PacedSender.
+    FlexfecSender* flexfec_sender = nullptr;
 
     TransportSequenceNumberAllocator* transport_sequence_number_allocator =
         nullptr;

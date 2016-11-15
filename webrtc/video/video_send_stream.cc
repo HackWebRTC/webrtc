@@ -44,6 +44,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     RtcpRttStats* rtt_stats,
     RtpPacketSender* paced_sender,
     TransportSequenceNumberAllocator* transport_sequence_number_allocator,
+    FlexfecSender* flexfec_sender,
     SendStatisticsProxy* stats_proxy,
     SendDelayStats* send_delay_stats,
     RtcEventLog* event_log,
@@ -54,6 +55,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
   ReceiveStatistics* null_receive_statistics = configuration.receive_statistics;
   configuration.audio = false;
   configuration.receiver_only = false;
+  configuration.flexfec_sender = flexfec_sender;
   configuration.receive_statistics = null_receive_statistics;
   configuration.outgoing_transport = outgoing_transport;
   configuration.intra_frame_callback = intra_frame_callback;
@@ -80,6 +82,48 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     modules.push_back(rtp_rtcp);
   }
   return modules;
+}
+
+// TODO(brandtr): Update this function when we support multistream protection.
+std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
+    const VideoSendStream::Config& config) {
+  if (config.rtp.flexfec.flexfec_payload_type < 0) {
+    return nullptr;
+  }
+  RTC_DCHECK_GE(config.rtp.flexfec.flexfec_payload_type, 0);
+  RTC_DCHECK_LE(config.rtp.flexfec.flexfec_payload_type, 127);
+  if (config.rtp.flexfec.flexfec_ssrc == 0) {
+    LOG(LS_WARNING) << "FlexFEC is enabled, but no FlexFEC SSRC given. "
+                       "Therefore disabling FlexFEC.";
+    return nullptr;
+  }
+  if (config.rtp.flexfec.protected_media_ssrcs.empty()) {
+    LOG(LS_WARNING) << "FlexFEC is enabled, but no protected media SSRC given. "
+                       "Therefore disabling FlexFEC.";
+    return nullptr;
+  }
+
+  if (config.rtp.ssrcs.size() > 1) {
+    LOG(LS_WARNING) << "Both FlexFEC and simulcast are enabled. This "
+                       "combination is however not supported by our current "
+                       "FlexFEC implementation. Therefore disabling FlexFEC.";
+    return nullptr;
+  }
+
+  if (config.rtp.flexfec.protected_media_ssrcs.size() > 1) {
+    LOG(LS_WARNING)
+        << "The supplied FlexfecConfig contained multiple protected "
+           "media streams, but our implementation currently only "
+           "supports protecting a single media stream. "
+           "To avoid confusion, disabling FlexFEC completely.";
+    return nullptr;
+  }
+
+  RTC_DCHECK_EQ(1U, config.rtp.flexfec.protected_media_ssrcs.size());
+  return std::unique_ptr<FlexfecSender>(new FlexfecSender(
+      config.rtp.flexfec.flexfec_payload_type, config.rtp.flexfec.flexfec_ssrc,
+      config.rtp.flexfec.protected_media_ssrcs[0], config.rtp.extensions,
+      Clock::GetRealTimeClock()));
 }
 
 }  // namespace
@@ -133,6 +177,7 @@ std::string VideoSendStream::Config::Rtp::ToString() const {
 
   ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
   ss << ", ulpfec: " << ulpfec.ToString();
+  ss << ", flexfec: " << flexfec.ToString();
   ss << ", rtx: " << rtx.ToString();
   ss << ", c_name: " << c_name;
   ss << '}';
@@ -324,6 +369,9 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   CongestionController* const congestion_controller_;
   BitrateAllocator* const bitrate_allocator_;
   VieRemb* const remb_;
+
+  // TODO(brandtr): Consider moving this to a new FlexfecSendStream class.
+  std::unique_ptr<FlexfecSender> flexfec_sender_;
 
   rtc::CriticalSection ivf_writers_crit_;
   std::unique_ptr<IvfFileWriter> file_writers_[kMaxSimulcastStreams] GUARDED_BY(
@@ -661,6 +709,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       congestion_controller_(congestion_controller),
       bitrate_allocator_(bitrate_allocator),
       remb_(remb),
+      flexfec_sender_(MaybeCreateFlexfecSender(*config_)),
       max_padding_bitrate_(0),
       encoder_min_bitrate_bps_(0),
       encoder_max_bitrate_bps_(initial_encoder_max_bitrate),
@@ -680,6 +729,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           call_stats_->rtcp_rtt_stats(),
           congestion_controller_->pacer(),
           congestion_controller_->packet_router(),
+          flexfec_sender_.get(),
           stats_proxy_,
           send_delay_stats,
           event_log,
@@ -943,14 +993,35 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
 void VideoSendStreamImpl::ConfigureProtection() {
   RTC_DCHECK_RUN_ON(worker_queue_);
 
+  // Consistency of FlexFEC parameters is checked in MaybeCreateFlexfecSender.
+  const bool flexfec_enabled = (flexfec_sender_ != nullptr);
+
+  // Consistency of NACK and RED+ULPFEC parameters is checked in this function.
   const bool nack_enabled = config_->rtp.nack.rtp_history_ms > 0;
   int red_payload_type = config_->rtp.ulpfec.red_payload_type;
   int ulpfec_payload_type = config_->rtp.ulpfec.ulpfec_payload_type;
 
   // Shorthands.
   auto IsRedEnabled = [&]() { return red_payload_type >= 0; };
+  auto DisableRed = [&]() { red_payload_type = -1; };
   auto IsUlpfecEnabled = [&]() { return ulpfec_payload_type >= 0; };
   auto DisableUlpfec = [&]() { ulpfec_payload_type = -1; };
+
+  // If enabled, FlexFEC takes priority over RED+ULPFEC.
+  if (flexfec_enabled) {
+    // We can safely disable RED here, because if the remote supports FlexFEC,
+    // we know that it has a receiver without the RED/RTX workaround.
+    // See http://crbug.com/webrtc/6650 for more information.
+    if (IsRedEnabled()) {
+      LOG(LS_INFO) << "Both FlexFEC and RED are configured. Disabling RED.";
+      DisableRed();
+    }
+    if (IsUlpfecEnabled()) {
+      LOG(LS_INFO)
+          << "Both FlexFEC and ULPFEC are configured. Disabling ULPFEC.";
+      DisableUlpfec();
+    }
+  }
 
   // Payload types without picture ID cannot determine that a stream is complete
   // without retransmitting FEC, so using ULPFEC + NACK for H.264 (for instance)
@@ -999,8 +1070,10 @@ void VideoSendStreamImpl::ConfigureProtection() {
     }
   }
 
-  protection_bitrate_calculator_.SetProtectionMethod(IsUlpfecEnabled(),
-                                                     nack_enabled);
+  // Currently, both ULPFEC and FlexFEC use the same FEC rate calculation logic,
+  // so enable that logic if either of those FEC schemes are enabled.
+  protection_bitrate_calculator_.SetProtectionMethod(
+      flexfec_enabled || IsUlpfecEnabled(), nack_enabled);
 }
 
 void VideoSendStreamImpl::ConfigureSsrcs() {

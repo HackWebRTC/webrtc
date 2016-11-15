@@ -74,7 +74,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.clock,
                   configuration.outgoing_transport,
                   configuration.paced_sender,
-                  nullptr,  // TODO(brandtr): Wire up FlexfecSender here.
+                  configuration.flexfec_sender,
                   configuration.transport_sequence_number_allocator,
                   configuration.transport_feedback_callback,
                   configuration.send_bitrate_observer,

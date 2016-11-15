@@ -137,6 +137,11 @@ class VideoSendStream {
       // See UlpfecConfig for description.
       UlpfecConfig ulpfec;
 
+      // See FlexfecConfig for description.
+      // TODO(brandtr): Move this config to a new class FlexfecSendStream
+      // when we support multistream protection.
+      FlexfecConfig flexfec;
+
       // Settings for RTP retransmission payload format, see RFC 4588 for
       // details.
       struct Rtx {
