@@ -46,10 +46,12 @@ constexpr int kAlrProbingIntervalLimitMs = 5000;
 ProbeController::ProbeController(PacedSender* pacer, Clock* clock)
     : pacer_(pacer),
       clock_(clock),
+      network_state_(kNetworkUp),
       state_(State::kInit),
       min_bitrate_to_probe_further_bps_(kExponentialProbingDisabled),
       time_last_probing_initiated_ms_(0),
       estimated_bitrate_bps_(0),
+      start_bitrate_bps_(0),
       max_bitrate_bps_(0),
       last_alr_probing_time_(clock_->TimeInMilliseconds()) {}
 
@@ -57,28 +59,49 @@ void ProbeController::SetBitrates(int min_bitrate_bps,
                                   int start_bitrate_bps,
                                   int max_bitrate_bps) {
   rtc::CritScope cs(&critsect_);
-  if (state_ == State::kInit) {
-    // When probing at 1.8 Mbps ( 6x 300), this represents a threshold of
-    // 1.2 Mbps to continue probing.
-    InitiateProbing({3 * start_bitrate_bps, 6 * start_bitrate_bps},
-                    4 * start_bitrate_bps);
-  }
+
+  start_bitrate_bps_ =
+      start_bitrate_bps > 0 ? start_bitrate_bps : min_bitrate_bps;
 
   int old_max_bitrate_bps = max_bitrate_bps_;
   max_bitrate_bps_ = max_bitrate_bps;
 
-  // Only do probing if:
-  //   we are mid-call, which we consider to be if
-  //     exponential probing is not active and
-  //     |estimated_bitrate_bps_| is valid (> 0) and
-  //     the current bitrate is lower than the new |max_bitrate_bps|, and
-  //     |max_bitrate_bps_| was increased.
-  if (state_ != State::kWaitingForProbingResult &&
-      estimated_bitrate_bps_ != 0 &&
-      estimated_bitrate_bps_ < old_max_bitrate_bps &&
-      max_bitrate_bps_ > old_max_bitrate_bps) {
-    InitiateProbing({max_bitrate_bps}, kExponentialProbingDisabled);
+  switch (state_) {
+    case State::kInit:
+      if (network_state_ == kNetworkUp)
+        InitiateExponentialProbing();
+      break;
+
+    case State::kWaitingForProbingResult:
+      break;
+
+    case State::kProbingComplete:
+      // Initiate probing when |max_bitrate_| was increased mid-call.
+      if (estimated_bitrate_bps_ != 0 &&
+          estimated_bitrate_bps_ < old_max_bitrate_bps &&
+          max_bitrate_bps_ > old_max_bitrate_bps) {
+        InitiateProbing({max_bitrate_bps}, kExponentialProbingDisabled);
+      }
+      break;
   }
+}
+
+void ProbeController::OnNetworkStateChanged(NetworkState network_state) {
+  rtc::CritScope cs(&critsect_);
+  network_state_ = network_state;
+  if (network_state_ == kNetworkUp && state_ == State::kInit)
+    InitiateExponentialProbing();
+}
+
+void ProbeController::InitiateExponentialProbing() {
+  RTC_DCHECK(network_state_ == kNetworkUp);
+  RTC_DCHECK(state_ == State::kInit);
+  RTC_DCHECK_GT(start_bitrate_bps_, 0);
+
+  // When probing at 1.8 Mbps ( 6x 300), this represents a threshold of
+  // 1.2 Mbps to continue probing.
+  InitiateProbing({3 * start_bitrate_bps_, 6 * start_bitrate_bps_},
+                  4 * start_bitrate_bps_);
 }
 
 void ProbeController::SetEstimatedBitrate(int bitrate_bps) {

@@ -28,6 +28,10 @@ DirectTransport::DirectTransport(const FakeNetworkPipe::Config& config,
       shutting_down_(false),
       fake_network_(clock_, config) {
   thread_.Start();
+  if (send_call_) {
+    send_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
+    send_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+  }
 }
 
 DirectTransport::~DirectTransport() { StopSending(); }

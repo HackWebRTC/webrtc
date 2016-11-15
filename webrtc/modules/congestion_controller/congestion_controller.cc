@@ -297,6 +297,7 @@ void CongestionController::SignalNetworkState(NetworkState state) {
     rtc::CritScope cs(&critsect_);
     network_state_ = state;
   }
+  probe_controller_->OnNetworkStateChanged(state);
   MaybeTriggerOnNetworkChanged();
 }
 
