@@ -42,7 +42,7 @@ class FlexfecReceiveStream : public webrtc::FlexfecReceiveStream {
   rtc::CriticalSection crit_;
   bool started_ GUARDED_BY(crit_);
 
-  Config config_;
+  const Config config_;
   const std::unique_ptr<FlexfecReceiver> receiver_;
 };
 

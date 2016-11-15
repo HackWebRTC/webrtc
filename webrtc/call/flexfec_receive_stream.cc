@@ -25,26 +25,39 @@ std::string FlexfecReceiveStream::Stats::ToString(int64_t time_ms) const {
 namespace {
 
 // TODO(brandtr): Update this function when we support multistream protection.
-std::unique_ptr<FlexfecReceiver> MaybeUpdateConfigAndCreateFlexfecReceiver(
-    FlexfecReceiveStream::Config* config,
+std::unique_ptr<FlexfecReceiver> MaybeCreateFlexfecReceiver(
+    const FlexfecReceiveStream::Config& config,
     RecoveredPacketReceiver* recovered_packet_callback) {
-  if (config->protected_media_ssrcs.empty()) {
-    LOG(LS_ERROR) << "No protected media SSRC supplied. "
-                  << "This FlexfecReceiveStream will therefore be useless.";
+  if (config.flexfec_payload_type < 0) {
+    LOG(LS_WARNING) << "Invalid FlexFEC payload type given. "
+                    << "This FlexfecReceiveStream will therefore be useless.";
     return nullptr;
-  } else if (config->protected_media_ssrcs.size() > 1) {
+  }
+  RTC_DCHECK_GE(config.flexfec_payload_type, 0);
+  RTC_DCHECK_LE(config.flexfec_payload_type, 127);
+  if (config.flexfec_ssrc == 0) {
+    LOG(LS_WARNING) << "Invalid FlexFEC SSRC given. "
+                    << "This FlexfecReceiveStream will therefore be useless.";
+    return nullptr;
+  }
+  if (config.protected_media_ssrcs.empty()) {
+    LOG(LS_WARNING) << "No protected media SSRC supplied. "
+                    << "This FlexfecReceiveStream will therefore be useless.";
+    return nullptr;
+  }
+
+  if (config.protected_media_ssrcs.size() > 1) {
     LOG(LS_WARNING)
         << "The supplied FlexfecConfig contained multiple protected "
            "media streams, but our implementation currently only "
-           "supports protecting a single media stream. This "
-           "FlexfecReceiveStream will therefore only accept media "
-           "packets from the first supplied media stream, with SSRC "
-        << config->protected_media_ssrcs[0] << ".";
-    config->protected_media_ssrcs.resize(1);
+           "supports protecting a single media stream. "
+           "To avoid confusion, disabling FlexFEC completely.";
+    return nullptr;
   }
-  return std::unique_ptr<FlexfecReceiver>(new FlexfecReceiver(
-      config->flexfec_ssrc, config->protected_media_ssrcs[0],
-      recovered_packet_callback));
+  RTC_DCHECK_EQ(1U, config.protected_media_ssrcs.size());
+  return std::unique_ptr<FlexfecReceiver>(
+      new FlexfecReceiver(config.flexfec_ssrc, config.protected_media_ssrcs[0],
+                          recovered_packet_callback));
 }
 
 }  // namespace
@@ -56,9 +69,8 @@ FlexfecReceiveStream::FlexfecReceiveStream(
     RecoveredPacketReceiver* recovered_packet_callback)
     : started_(false),
       config_(configuration),
-      receiver_(MaybeUpdateConfigAndCreateFlexfecReceiver(
-          &config_,
-          recovered_packet_callback)) {
+      receiver_(
+          MaybeCreateFlexfecReceiver(config_, recovered_packet_callback)) {
   LOG(LS_INFO) << "FlexfecReceiveStream: " << config_.ToString();
 }
 

@@ -54,20 +54,6 @@ TEST(FlexfecReceiveStreamTest, DoesNotProcessPacketWhenNoMediaSsrcGiven) {
       receive_stream.AddAndProcessReceivedPacket(packet, packet_length));
 }
 
-// TODO(brandtr): Remove when we support multistream protection.
-TEST(FlexfecReceiveStreamTest, CannotProtectMultipleMediaStreams) {
-  FlexfecReceiveStream::Config config;
-  config.flexfec_payload_type = 118;
-  config.flexfec_ssrc = 424223;
-  config.protected_media_ssrcs = {123, 456};
-  MockRecoveredPacketReceiver callback;
-  internal::FlexfecReceiveStream receive_stream(config, &callback);
-
-  ASSERT_EQ(1U, receive_stream.config().protected_media_ssrcs.size());
-  EXPECT_EQ(config.protected_media_ssrcs[0],
-            receive_stream.config().protected_media_ssrcs[0]);
-}
-
 // Create a FlexFEC packet that protects a single media packet and ensure
 // that the callback is called. Correctness of recovery is checked in the
 // FlexfecReceiver unit tests.
