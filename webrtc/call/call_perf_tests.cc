@@ -213,7 +213,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   test::FakeDecoder fake_decoder;
 
-  CreateSendConfig(1, 0, &video_send_transport);
+  CreateSendConfig(1, 0, 0, &video_send_transport);
   CreateMatchingReceiveConfigs(&receive_transport);
 
   AudioSendStream::Config audio_send_config(&audio_send_transport);

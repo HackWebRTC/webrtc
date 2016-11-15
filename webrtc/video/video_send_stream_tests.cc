@@ -65,7 +65,7 @@ TEST_F(VideoSendStreamTest, CanStartStartedStream) {
   CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
   CreateVideoStreams();
   video_send_stream_->Start();
   video_send_stream_->Start();
@@ -76,7 +76,7 @@ TEST_F(VideoSendStreamTest, CanStopStoppedStream) {
   CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
   CreateVideoStreams();
   video_send_stream_->Stop();
   video_send_stream_->Stop();
@@ -1517,7 +1517,7 @@ TEST_F(VideoSendStreamTest,
 
   CreateSenderCall(Call::Config(&event_log_));
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
   EncoderObserver encoder;
   video_send_config_.encoder_settings.encoder = &encoder;
   CreateVideoStreams();
@@ -1574,7 +1574,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
 
   Call::Config::BitrateConfig bitrate_config;
   bitrate_config.start_bitrate_bps = 2 * video_encoder_config_.max_bitrate_bps;
@@ -1655,7 +1655,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
   CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
 
   StartStopBitrateObserver encoder;
   video_send_config_.encoder_settings.encoder = &encoder;
@@ -1710,7 +1710,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
   FrameObserver observer;
   video_send_config_.pre_encode_callback = &observer;
   CreateVideoStreams();
@@ -2965,7 +2965,7 @@ void VideoSendStreamTest::TestRequestSourceRotateVideo(
   CreateSenderCall(Call::Config(&event_log_));
 
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
   video_send_config_.rtp.extensions.clear();
   if (support_orientation_ext) {
     video_send_config_.rtp.extensions.push_back(

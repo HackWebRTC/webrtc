@@ -1001,7 +1001,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     trace_to_stderr_.reset(new test::TraceToStderr);
 
   size_t num_streams = params_.ss.streams.size();
-  CreateSendConfig(num_streams, 0, send_transport);
+  CreateSendConfig(num_streams, 0, 0, send_transport);
 
   int payload_type;
   if (params_.video.codec == "H264") {

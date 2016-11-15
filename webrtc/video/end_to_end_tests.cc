@@ -134,7 +134,7 @@ TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
   CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
 
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
   CreateMatchingReceiveConfigs(&transport);
 
   CreateVideoStreams();
@@ -149,7 +149,7 @@ TEST_F(EndToEndTest, ReceiverCanBeStoppedTwice) {
   CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
 
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
   CreateMatchingReceiveConfigs(&transport);
 
   CreateVideoStreams();
@@ -164,7 +164,7 @@ TEST_F(EndToEndTest, ReceiverCanBeStoppedAndRestarted) {
   CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
 
   test::NullTransport transport;
-  CreateSendConfig(1, 0, &transport);
+  CreateSendConfig(1, 0, 0, &transport);
   CreateMatchingReceiveConfigs(&transport);
 
   CreateVideoStreams();
@@ -217,7 +217,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, 0, &sender_transport);
+  CreateSendConfig(1, 0, 0, &sender_transport);
   CreateMatchingReceiveConfigs(&receiver_transport);
 
   TestFrameCallback pre_render_callback;
@@ -268,7 +268,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, 0, &sender_transport);
+  CreateSendConfig(1, 0, 0, &sender_transport);
   CreateMatchingReceiveConfigs(&receiver_transport);
   video_receive_configs_[0].renderer = &renderer;
 
@@ -1105,7 +1105,7 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   send_transport.SetReceiver(&input_observer);
   receive_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, 0, &send_transport);
+  CreateSendConfig(1, 0, 0, &send_transport);
   CreateMatchingReceiveConfigs(&receive_transport);
 
   CreateVideoStreams();
@@ -1728,7 +1728,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, 0, &sender_transport);
+  CreateSendConfig(1, 0, 0, &sender_transport);
   CreateMatchingReceiveConfigs(&receiver_transport);
   video_send_config_.post_encode_callback = &post_encode_observer;
   video_receive_configs_[0].pre_decode_callback = &pre_decode_observer;
@@ -3264,7 +3264,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
   send_transport.SetReceiver(receiver_call_->Receiver());
   receive_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(kNumSsrcs, 0, &send_transport);
+  CreateSendConfig(kNumSsrcs, 0, 0, &send_transport);
 
   if (use_rtx) {
     for (size_t i = 0; i < kNumSsrcs; ++i) {
@@ -3558,7 +3558,7 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
-  CreateSendConfig(1, 0, &sender_transport);
+  CreateSendConfig(1, 0, 0, &sender_transport);
   CreateMatchingReceiveConfigs(&receiver_transport);
 
   CreateVideoStreams();
@@ -3593,7 +3593,7 @@ void EndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
   CreateSenderCall(Call::Config(&event_log_));
   sender_call_->SignalChannelNetworkState(network_to_bring_down, kNetworkDown);
 
-  CreateSendConfig(1, 0, transport);
+  CreateSendConfig(1, 0, 0, transport);
   video_send_config_.encoder_settings.encoder = encoder;
   CreateVideoStreams();
   CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
@@ -3616,7 +3616,7 @@ void EndToEndTest::VerifyNewVideoReceiveStreamsRespectNetworkState(
 
   test::DirectTransport sender_transport(sender_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
-  CreateSendConfig(1, 0, &sender_transport);
+  CreateSendConfig(1, 0, 0, &sender_transport);
   CreateMatchingReceiveConfigs(transport);
   CreateVideoStreams();
   CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,

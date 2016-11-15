@@ -42,7 +42,7 @@ void PacketInjectionTest::InjectIncorrectPacket(CodecType codec_type,
   CreateReceiverCall(Call::Config(&event_log_));
 
   test::NullTransport null_transport;
-  CreateSendConfig(1, 0, &null_transport);
+  CreateSendConfig(1, 0, 0, &null_transport);
   CreateMatchingReceiveConfigs(&null_transport);
   video_receive_configs_[0].decoders[0].payload_type = payload_type;
   switch (codec_type) {

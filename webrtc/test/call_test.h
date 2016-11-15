@@ -48,12 +48,15 @@ class CallTest : public ::testing::Test {
   static const uint8_t kRedPayloadType;
   static const uint8_t kRtxRedPayloadType;
   static const uint8_t kUlpfecPayloadType;
+  static const uint8_t kFlexfecPayloadType;
   static const uint8_t kAudioSendPayloadType;
   static const uint32_t kSendRtxSsrcs[kNumSsrcs];
   static const uint32_t kVideoSendSsrcs[kNumSsrcs];
   static const uint32_t kAudioSendSsrc;
+  static const uint32_t kFlexfecSendSsrc;
   static const uint32_t kReceiverLocalVideoSsrc;
   static const uint32_t kReceiverLocalAudioSsrc;
+  static const uint32_t kReceiverLocalFlexfecSsrc;
   static const int kNackRtpHistoryMs;
 
  protected:
@@ -70,6 +73,7 @@ class CallTest : public ::testing::Test {
 
   void CreateSendConfig(size_t num_video_streams,
                         size_t num_audio_streams,
+                        size_t num_flexfec_streams,
                         Transport* send_transport);
   void CreateMatchingReceiveConfigs(Transport* rtcp_send_transport);
 
@@ -83,6 +87,7 @@ class CallTest : public ::testing::Test {
 
   void CreateVideoStreams();
   void CreateAudioStreams();
+  void CreateFlexfecStreams();
   void Start();
   void Stop();
   void DestroyStreams();
@@ -105,12 +110,15 @@ class CallTest : public ::testing::Test {
   std::vector<VideoReceiveStream*> video_receive_streams_;
   std::vector<AudioReceiveStream::Config> audio_receive_configs_;
   std::vector<AudioReceiveStream*> audio_receive_streams_;
+  std::vector<FlexfecReceiveStream::Config> flexfec_receive_configs_;
+  std::vector<FlexfecReceiveStream*> flexfec_receive_streams_;
 
   std::unique_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
   test::FakeEncoder fake_encoder_;
   std::vector<std::unique_ptr<VideoDecoder>> allocated_decoders_;
   size_t num_video_streams_;
   size_t num_audio_streams_;
+  size_t num_flexfec_streams_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
   test::FakeVideoRenderer fake_renderer_;
 
@@ -150,6 +158,7 @@ class BaseTest : public RtpRtcpObserver {
 
   virtual size_t GetNumVideoStreams() const;
   virtual size_t GetNumAudioStreams() const;
+  virtual size_t GetNumFlexfecStreams() const;
 
   virtual Call::Config GetSenderCallConfig();
   virtual Call::Config GetReceiverCallConfig();
@@ -175,6 +184,11 @@ class BaseTest : public RtpRtcpObserver {
   virtual void OnAudioStreamsCreated(
       AudioSendStream* send_stream,
       const std::vector<AudioReceiveStream*>& receive_streams);
+
+  virtual void ModifyFlexfecConfigs(
+      std::vector<FlexfecReceiveStream::Config>* receive_configs);
+  virtual void OnFlexfecStreamsCreated(
+      const std::vector<FlexfecReceiveStream*>& receive_streams);
 
   virtual void OnFrameGeneratorCapturerCreated(
       FrameGeneratorCapturer* frame_generator_capturer);
