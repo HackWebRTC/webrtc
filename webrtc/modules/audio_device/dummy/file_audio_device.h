@@ -16,10 +16,10 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
-#include "webrtc/system_wrappers/include/clock.h"
 
 namespace rtc {
 class PlatformThread;
@@ -188,15 +188,13 @@ class FileAudioDevice : public AudioDeviceGeneric {
 
   bool _playing;
   bool _recording;
-  uint64_t _lastCallPlayoutMillis;
-  uint64_t _lastCallRecordMillis;
+  int64_t _lastCallPlayoutMillis;
+  int64_t _lastCallRecordMillis;
 
   FileWrapper& _outputFile;
   FileWrapper& _inputFile;
   std::string _outputFilename;
   std::string _inputFilename;
-
-  Clock* _clock;
 };
 
 }  // namespace webrtc

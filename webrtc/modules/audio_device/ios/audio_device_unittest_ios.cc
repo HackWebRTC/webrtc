@@ -21,11 +21,11 @@
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_device/include/mock_audio_transport.h"
 #include "webrtc/modules/audio_device/ios/audio_device_ios.h"
-#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/gmock.h"
@@ -247,8 +247,7 @@ class FifoAudioStream : public AudioStreamInterface {
 class LatencyMeasuringAudioStream : public AudioStreamInterface {
  public:
   explicit LatencyMeasuringAudioStream(size_t frames_per_buffer)
-      : clock_(Clock::GetRealTimeClock()),
-        frames_per_buffer_(frames_per_buffer),
+      : frames_per_buffer_(frames_per_buffer),
         bytes_per_buffer_(frames_per_buffer_ * sizeof(int16_t)),
         play_count_(0),
         rec_count_(0),
@@ -264,7 +263,7 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
     memset(destination, 0, bytes_per_buffer_);
     if (play_count_ % (kNumCallbacksPerSecond / kImpulseFrequencyInHz) == 0) {
       if (pulse_time_ == 0) {
-        pulse_time_ = clock_->TimeInMilliseconds();
+        pulse_time_ = rtc::TimeMillis();
       }
       PRINT(".");
       const int16_t impulse = std::numeric_limits<int16_t>::max();
@@ -294,7 +293,7 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
         std::distance(vec.begin(), std::find(vec.begin(), vec.end(), max));
     if (max > kImpulseThreshold) {
       PRINTD("(%d,%d)", max, index_of_max);
-      int64_t now_time = clock_->TimeInMilliseconds();
+      int64_t now_time = rtc::TimeMillis();
       int extra_delay = IndexToMilliseconds(static_cast<double>(index_of_max));
       PRINTD("[%d]", static_cast<int>(now_time - pulse_time_));
       PRINTD("[%d]", extra_delay);
@@ -348,7 +347,6 @@ class LatencyMeasuringAudioStream : public AudioStreamInterface {
   }
 
  private:
-  Clock* clock_;
   const size_t frames_per_buffer_;
   const size_t bytes_per_buffer_;
   size_t play_count_;

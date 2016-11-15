@@ -42,8 +42,7 @@ FileAudioDevice::FileAudioDevice(const int32_t id,
     _outputFile(*FileWrapper::Create()),
     _inputFile(*FileWrapper::Create()),
     _outputFilename(outputFilename),
-    _inputFilename(inputFilename),
-    _clock(Clock::GetRealTimeClock()) {
+    _inputFilename(inputFilename) {
 }
 
 FileAudioDevice::~FileAudioDevice() {
@@ -480,10 +479,10 @@ bool FileAudioDevice::RecThreadFunc(void* pThis)
 
 bool FileAudioDevice::PlayThreadProcess()
 {
-    if(!_playing) {
+    if (!_playing) {
         return false;
     }
-    uint64_t currentTime = _clock->CurrentNtpInMilliseconds();
+    int64_t currentTime = rtc::TimeMillis();
     _critSect.Enter();
 
     if (_lastCallPlayoutMillis == 0 ||
@@ -502,8 +501,8 @@ bool FileAudioDevice::PlayThreadProcess()
     _playoutFramesLeft = 0;
     _critSect.Leave();
 
-    uint64_t deltaTimeMillis = _clock->CurrentNtpInMilliseconds() - currentTime;
-    if(deltaTimeMillis < 10) {
+    int64_t deltaTimeMillis = rtc::TimeMillis() - currentTime;
+    if (deltaTimeMillis < 10) {
       SleepMs(10 - deltaTimeMillis);
     }
 
@@ -516,7 +515,7 @@ bool FileAudioDevice::RecThreadProcess()
         return false;
     }
 
-    uint64_t currentTime = _clock->CurrentNtpInMilliseconds();
+    int64_t currentTime = rtc::TimeMillis();
     _critSect.Enter();
 
     if (_lastCallRecordMillis == 0 ||
@@ -537,8 +536,8 @@ bool FileAudioDevice::RecThreadProcess()
 
     _critSect.Leave();
 
-    uint64_t deltaTimeMillis = _clock->CurrentNtpInMilliseconds() - currentTime;
-    if(deltaTimeMillis < 10) {
+    int64_t deltaTimeMillis = rtc::TimeMillis() - currentTime;
+    if (deltaTimeMillis < 10) {
       SleepMs(10 - deltaTimeMillis);
     }
 
