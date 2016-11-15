@@ -97,7 +97,30 @@ MouseCursorMonitorX11::MouseCursorMonitorX11(
       window_(window),
       have_xfixes_(false),
       xfixes_event_base_(-1),
-      xfixes_error_base_(-1) {}
+      xfixes_error_base_(-1) {
+  // Set a default initial cursor shape in case XFixes is not present.
+  const int kSize = 5;
+  std::unique_ptr<DesktopFrame> default_cursor(
+      new BasicDesktopFrame(DesktopSize(kSize, kSize)));
+  const uint8_t pixels[kSize * kSize] = {
+    0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0xff, 0xff, 0xff, 0x00,
+    0x00, 0xff, 0xff, 0xff, 0x00,
+    0x00, 0xff, 0xff, 0xff, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00
+  };
+  uint8_t* ptr = default_cursor->data();
+  for (int y = 0; y < kSize; ++y) {
+    for (int x = 0; x < kSize; ++x) {
+      *ptr++ = pixels[kSize * y + x];
+      *ptr++ = pixels[kSize * y + x];
+      *ptr++ = pixels[kSize * y + x];
+      *ptr++ = 0xff;
+    }
+  }
+  DesktopVector hotspot(2, 2);
+  cursor_shape_.reset(new MouseCursor(default_cursor.release(), hotspot));
+}
 
 MouseCursorMonitorX11::~MouseCursorMonitorX11() {
   if (have_xfixes_) {
