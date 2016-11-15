@@ -1657,8 +1657,6 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
   test::NullTransport transport;
   CreateSendConfig(1, 0, 0, &transport);
 
-  sender_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
-
   StartStopBitrateObserver encoder;
   video_send_config_.encoder_settings.encoder = &encoder;
   video_send_config_.encoder_settings.internal_source = true;

@@ -341,7 +341,6 @@ TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
 
   std::unique_ptr<VideoMediaChannel> channel(
       SetUpForExternalEncoderFactory(&encoder_factory, parameters.codecs));
-  channel->OnReadyToSend(true);
 
   EXPECT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
@@ -869,7 +868,6 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     engine_.Init();
     channel_.reset(
         engine_.CreateChannel(fake_call_.get(), MediaConfig(), VideoOptions()));
-    channel_->OnReadyToSend(true);
     last_ssrc_ = 123;
     send_parameters_.codecs = engine_.codecs();
     recv_parameters_.codecs = engine_.codecs();
@@ -1685,7 +1683,6 @@ TEST_F(WebRtcVideoChannel2Test, SetMediaConfigSuspendBelowMinBitrate) {
 
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
-  channel_->OnReadyToSend(true);
 
   channel_->SetSendParameters(send_parameters_);
 
@@ -1695,7 +1692,6 @@ TEST_F(WebRtcVideoChannel2Test, SetMediaConfigSuspendBelowMinBitrate) {
   media_config.video.suspend_below_min_bitrate = false;
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
-  channel_->OnReadyToSend(true);
 
   channel_->SetSendParameters(send_parameters_);
 
@@ -1980,7 +1976,6 @@ TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
   MediaConfig media_config = MediaConfig();
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
-  channel_->OnReadyToSend(true);
   ASSERT_TRUE(channel_->SetSendParameters(parameters));
 
   AddSendStream();
@@ -2055,7 +2050,6 @@ TEST_F(WebRtcVideoChannel2Test, PreviousAdaptationDoesNotApplyToScreenshare) {
   MediaConfig media_config = MediaConfig();
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
-  channel_->OnReadyToSend(true);
   ASSERT_TRUE(channel_->SetSendParameters(parameters));
 
   AddSendStream();
@@ -2123,7 +2117,6 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
   }
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
-  channel_->OnReadyToSend(true);
 
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
 
@@ -3620,7 +3613,6 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
     engine_.Init();
     channel_.reset(
         engine_.CreateChannel(&fake_call_, MediaConfig(), VideoOptions()));
-    channel_->OnReadyToSend(true);
     last_ssrc_ = 123;
   }
 

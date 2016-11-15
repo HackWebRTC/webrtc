@@ -252,8 +252,8 @@ Call::Call(const Call::Config& config)
       call_stats_(new CallStats(clock_)),
       bitrate_allocator_(new BitrateAllocator(this)),
       config_(config),
-      audio_network_state_(kNetworkDown),
-      video_network_state_(kNetworkDown),
+      audio_network_state_(kNetworkUp),
+      video_network_state_(kNetworkUp),
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
       event_log_(config.event_log),
@@ -284,7 +284,6 @@ Call::Call(const Call::Config& config)
   Trace::CreateTrace();
   call_stats_->RegisterStatsObserver(congestion_controller_.get());
 
-  congestion_controller_->SignalNetworkState(kNetworkDown);
   congestion_controller_->SetBweBitrates(
       config_.bitrate_config.min_bitrate_bps,
       config_.bitrate_config.start_bitrate_bps,

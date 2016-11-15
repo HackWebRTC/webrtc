@@ -31,12 +31,12 @@ class ProbeController {
   void SetBitrates(int min_bitrate_bps,
                    int start_bitrate_bps,
                    int max_bitrate_bps);
-
-  void OnNetworkStateChanged(NetworkState state);
-
   void SetEstimatedBitrate(int bitrate_bps);
 
  private:
+  void InitiateProbing(std::initializer_list<int> bitrates_to_probe,
+                       int min_bitrate_to_probe_further_bps)
+      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   enum class State {
     // Initial state where no probing has been triggered yet.
     kInit,
@@ -45,21 +45,13 @@ class ProbeController {
     // Probing is complete.
     kProbingComplete,
   };
-
-  void InitiateExponentialProbing() EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void InitiateProbing(std::initializer_list<int> bitrates_to_probe,
-                       int min_bitrate_to_probe_further_bps)
-      EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-
   rtc::CriticalSection critsect_;
   PacedSender* const pacer_;
   Clock* const clock_;
-  NetworkState network_state_ GUARDED_BY(critsect_);
   State state_ GUARDED_BY(critsect_);
   int min_bitrate_to_probe_further_bps_ GUARDED_BY(critsect_);
   int64_t time_last_probing_initiated_ms_ GUARDED_BY(critsect_);
   int estimated_bitrate_bps_ GUARDED_BY(critsect_);
-  int start_bitrate_bps_ GUARDED_BY(critsect_);
   int max_bitrate_bps_ GUARDED_BY(critsect_);
   int64_t last_alr_probing_time_ GUARDED_BY(critsect_);
 

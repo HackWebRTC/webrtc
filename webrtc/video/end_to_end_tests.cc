@@ -122,11 +122,11 @@ class EndToEndTest : public test::CallTest {
   void TestRtpStatePreservation(bool use_rtx, bool provoke_rtcpsr_before_rtp);
   void VerifyHistogramStats(bool use_rtx, bool use_red, bool screenshare);
   void VerifyNewVideoSendStreamsRespectNetworkState(
-      MediaType network_to_bring_up,
+      MediaType network_to_bring_down,
       VideoEncoder* encoder,
       Transport* transport);
   void VerifyNewVideoReceiveStreamsRespectNetworkState(
-      MediaType network_to_bring_up,
+      MediaType network_to_bring_down,
       Transport* transport);
 };
 
@@ -3587,11 +3587,11 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
 }
 
 void EndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
-    MediaType network_to_bring_up,
+    MediaType network_to_bring_down,
     VideoEncoder* encoder,
     Transport* transport) {
   CreateSenderCall(Call::Config(&event_log_));
-  sender_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
+  sender_call_->SignalChannelNetworkState(network_to_bring_down, kNetworkDown);
 
   CreateSendConfig(1, 0, 0, transport);
   video_send_config_.encoder_settings.encoder = encoder;
@@ -3607,11 +3607,12 @@ void EndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
 }
 
 void EndToEndTest::VerifyNewVideoReceiveStreamsRespectNetworkState(
-    MediaType network_to_bring_up,
+    MediaType network_to_bring_down,
     Transport* transport) {
   Call::Config config(&event_log_);
   CreateCalls(config, config);
-  receiver_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
+  receiver_call_->SignalChannelNetworkState(network_to_bring_down,
+                                            kNetworkDown);
 
   test::DirectTransport sender_transport(sender_call_.get());
   sender_transport.SetReceiver(receiver_call_->Receiver());
@@ -3653,7 +3654,7 @@ TEST_F(EndToEndTest, NewVideoSendStreamsRespectVideoNetworkDown) {
   UnusedEncoder unused_encoder;
   UnusedTransport unused_transport;
   VerifyNewVideoSendStreamsRespectNetworkState(
-      MediaType::AUDIO, &unused_encoder, &unused_transport);
+      MediaType::VIDEO, &unused_encoder, &unused_transport);
 }
 
 TEST_F(EndToEndTest, NewVideoSendStreamsIgnoreAudioNetworkDown) {
@@ -3681,17 +3682,17 @@ TEST_F(EndToEndTest, NewVideoSendStreamsIgnoreAudioNetworkDown) {
   RequiredTransport required_transport(true /*rtp*/, false /*rtcp*/);
   RequiredEncoder required_encoder;
   VerifyNewVideoSendStreamsRespectNetworkState(
-      MediaType::VIDEO, &required_encoder, &required_transport);
+      MediaType::AUDIO, &required_encoder, &required_transport);
 }
 
 TEST_F(EndToEndTest, NewVideoReceiveStreamsRespectVideoNetworkDown) {
   UnusedTransport transport;
-  VerifyNewVideoReceiveStreamsRespectNetworkState(MediaType::AUDIO, &transport);
+  VerifyNewVideoReceiveStreamsRespectNetworkState(MediaType::VIDEO, &transport);
 }
 
 TEST_F(EndToEndTest, NewVideoReceiveStreamsIgnoreAudioNetworkDown) {
   RequiredTransport transport(false /*rtp*/, true /*rtcp*/);
-  VerifyNewVideoReceiveStreamsRespectNetworkState(MediaType::VIDEO, &transport);
+  VerifyNewVideoReceiveStreamsRespectNetworkState(MediaType::AUDIO, &transport);
 }
 
 void VerifyEmptyNackConfig(const NackConfig& config) {

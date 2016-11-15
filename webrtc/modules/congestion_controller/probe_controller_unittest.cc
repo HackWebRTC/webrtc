@@ -51,17 +51,6 @@ TEST_F(ProbeControllerTest, InitiatesProbingAtStart) {
                                  kMaxBitrateBps);
 }
 
-TEST_F(ProbeControllerTest, ProbeOnlyWhenNetworkIsUp) {
-  probe_controller_->OnNetworkStateChanged(kNetworkDown);
-  EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(0);
-  probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
-                                 kMaxBitrateBps);
-
-  testing::Mock::VerifyAndClearExpectations(&pacer_);
-  EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(AtLeast(2));
-  probe_controller_->OnNetworkStateChanged(kNetworkUp);
-}
-
 TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(AtLeast(2));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
