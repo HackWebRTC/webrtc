@@ -712,7 +712,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       x2 = (x1 * x1) >> 14;   // Shift 14 to keep result in Q14.
       x3 = (x1 * x2) >> 14;
       static const int kCoefficients[4] = { -5179, 19931, -16422, 5776 };
-      int32_t temp_sum = kCoefficients[0] << 14;
+      int32_t temp_sum = kCoefficients[0] * 16384;
       temp_sum += kCoefficients[1] * x1;
       temp_sum += kCoefficients[2] * x2;
       temp_sum += kCoefficients[3] * x3;
@@ -751,7 +751,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       // Calculate (1 - slope) / distortion_lag.
       // Shift |slope| by 7 to Q20 before the division. The result is in Q20.
       parameters.mute_slope = WebRtcSpl_DivW32W16(
-          (8192 - slope) << 7, static_cast<int16_t>(distortion_lag));
+          (8192 - slope) * 128, static_cast<int16_t>(distortion_lag));
       if (parameters.voice_mix_factor <= 13107) {
         // Make sure the mute factor decreases from 1.0 to 0.9 in no more than
         // 6.25 ms.
