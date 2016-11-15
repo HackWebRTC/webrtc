@@ -69,7 +69,7 @@
   BOOL result = [_model storeVideoResoultionConstraint:@"960x480"];
 
   // then
-  EXPECT_TRUE(result);
+  EXPECT_FALSE(result);
 }
 
 - (void)testWidthConstraintFromStore {

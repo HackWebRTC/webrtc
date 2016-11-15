@@ -234,7 +234,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
   }
 
   if (is_ios) {
-    ios_app_bundle("AppRTCMobile") {
+    rtc_static_library("AppRTCMobile_lib") {
       sources = [
         "objc/AppRTCMobile/ios/ARDAppDelegate.m",
         "objc/AppRTCMobile/ios/ARDMainView.h",
@@ -257,22 +257,31 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objc/AppRTCMobile/ios/AppRTCMobile-Prefix.pch",
         "objc/AppRTCMobile/ios/UIImage+ARDUtilities.h",
         "objc/AppRTCMobile/ios/UIImage+ARDUtilities.m",
+      ]
+      configs += [
+        "//build/config/compiler:enable_arc",
+        ":warnings_config",
+      ]
+
+      deps = [
+        ":apprtc_common",
+        ":apprtc_signaling",
+      ]
+    }
+
+    ios_app_bundle("AppRTCMobile") {
+      sources = [
         "objc/AppRTCMobile/ios/main.m",
       ]
 
       info_plist = "objc/AppRTCMobile/ios/Info.plist"
 
-      configs += [
-        "..:common_config",
-        "//build/config/compiler:enable_arc",
-        ":warnings_config",
-      ]
+      configs += [ "..:common_config" ]
       public_configs = [ "..:common_inherited_config" ]
 
       deps = [
         ":AppRTCMobile_ios_bundle_data",
-        ":apprtc_common",
-        ":apprtc_signaling",
+        ":AppRTCMobile_lib",
       ]
 
       if (target_cpu == "x86") {
@@ -306,7 +315,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
   }
 
   if (is_mac) {
-    rtc_static_library("AppRTCMobile_app") {
+    rtc_static_library("AppRTCMobile_lib") {
       sources = [
         "objc/AppRTCMobile/mac/APPRTCAppDelegate.h",
         "objc/AppRTCMobile/mac/APPRTCAppDelegate.m",
@@ -339,7 +348,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       libs = [ "AppKit.framework" ]
 
       deps = [
-        ":AppRTCMobile_app",
+        ":AppRTCMobile_lib",
       ]
     }
   }
@@ -396,7 +405,9 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     }
 
     rtc_test("apprtcmobile_tests") {
+      include_dirs = [ "objc/AppRTCMobile/ios" ]
       deps = [
+        ":AppRTCMobile_lib",
         ":apprtc_signaling",
         "//testing/gtest",
         "//third_party/ocmock",
@@ -404,6 +415,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
       sources = [
         "objc/AppRTCMobile/tests/ARDAppClientTest.mm",
+        "objc/AppRTCMobile/tests/ARDSettingsModelTests.mm",
       ]
 
       if (is_ios) {
