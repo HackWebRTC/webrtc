@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <vector>
+
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -48,8 +50,9 @@ TEST(RtpHeaderExtensionTest, RegisterWithTrait) {
 }
 
 TEST(RtpHeaderExtensionTest, RegisterDuringContruction) {
-  const RtpHeaderExtensionMap map = {{TransmissionOffset::kUri, 1},
-                                     {AbsoluteSendTime::kUri, 3}};
+  const std::vector<RtpExtension> config = {{TransmissionOffset::kUri, 1},
+                                            {AbsoluteSendTime::kUri, 3}};
+  const RtpHeaderExtensionMap map(config);
 
   EXPECT_EQ(1, map.GetId(TransmissionOffset::kId));
   EXPECT_EQ(3, map.GetId(AbsoluteSendTime::kId));

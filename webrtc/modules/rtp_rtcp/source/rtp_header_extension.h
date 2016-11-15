@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_
 
-#include <initializer_list>
 #include <string>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/config.h"
@@ -44,7 +44,7 @@ class RtpHeaderExtensionMap {
   static constexpr uint8_t kInvalidId = 0;
 
   RtpHeaderExtensionMap();
-  RtpHeaderExtensionMap(std::initializer_list<RtpExtension>);
+  explicit RtpHeaderExtensionMap(rtc::ArrayView<const RtpExtension> extensions);
 
   template <typename Extension>
   bool Register(uint8_t id) {
@@ -73,7 +73,6 @@ class RtpHeaderExtensionMap {
   size_t GetTotalLengthInBytes() const;
 
   // TODO(danilchap): Remove use of the functions below.
-  void Erase() { *this = RtpHeaderExtensionMap(); }
   int32_t Register(RTPExtensionType type, uint8_t id) {
     return RegisterByType(id, type) ? 0 : -1;
   }
@@ -96,6 +95,7 @@ class RtpHeaderExtensionMap {
   RTPExtensionType types_[kMaxId + 1];
   uint8_t ids_[kRtpExtensionNumberOfExtensions];
 };
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_

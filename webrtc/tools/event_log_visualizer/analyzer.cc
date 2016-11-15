@@ -28,6 +28,7 @@
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
@@ -91,16 +92,6 @@ int64_t WrappingDifference(uint32_t later, uint32_t earlier, int64_t modulus) {
   return difference;
 }
 
-void RegisterHeaderExtensions(
-    const std::vector<webrtc::RtpExtension>& extensions,
-    webrtc::RtpHeaderExtensionMap* extension_map) {
-  extension_map->Erase();
-  for (const webrtc::RtpExtension& extension : extensions) {
-    extension_map->Register(webrtc::StringToRtpExtensionType(extension.uri),
-                            extension.id);
-  }
-}
-
 // Return default values for header extensions, to use on streams without stored
 // mapping data. Currently this only applies to audio streams, since the mapping
 // is not stored in the event log.
@@ -108,11 +99,8 @@ void RegisterHeaderExtensions(
 //             audio streams. Tracking bug: webrtc:6399
 webrtc::RtpHeaderExtensionMap GetDefaultHeaderExtensionMap() {
   webrtc::RtpHeaderExtensionMap default_map;
-  default_map.Register(
-      webrtc::StringToRtpExtensionType(webrtc::RtpExtension::kAudioLevelUri),
-      webrtc::RtpExtension::kAudioLevelDefaultId);
-  default_map.Register(
-      webrtc::StringToRtpExtensionType(webrtc::RtpExtension::kAbsSendTimeUri),
+  default_map.Register<AudioLevel>(webrtc::RtpExtension::kAudioLevelDefaultId);
+  default_map.Register<AbsoluteSendTime>(
       webrtc::RtpExtension::kAbsSendTimeDefaultId);
   return default_map;
 }
@@ -321,13 +309,12 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         VideoReceiveStream::Config config(nullptr);
         parsed_log_.GetVideoReceiveConfig(i, &config);
         StreamId stream(config.rtp.remote_ssrc, kIncomingPacket);
-        RegisterHeaderExtensions(config.rtp.extensions,
-                                 &extension_maps[stream]);
+        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp.extensions);
         video_ssrcs_.insert(stream);
         for (auto kv : config.rtp.rtx) {
           StreamId rtx_stream(kv.second.ssrc, kIncomingPacket);
-          RegisterHeaderExtensions(config.rtp.extensions,
-                                   &extension_maps[rtx_stream]);
+          extension_maps[rtx_stream] =
+              RtpHeaderExtensionMap(config.rtp.extensions);
           video_ssrcs_.insert(rtx_stream);
           rtx_ssrcs_.insert(rtx_stream);
         }
@@ -338,14 +325,13 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         parsed_log_.GetVideoSendConfig(i, &config);
         for (auto ssrc : config.rtp.ssrcs) {
           StreamId stream(ssrc, kOutgoingPacket);
-          RegisterHeaderExtensions(config.rtp.extensions,
-                                   &extension_maps[stream]);
+          extension_maps[stream] = RtpHeaderExtensionMap(config.rtp.extensions);
           video_ssrcs_.insert(stream);
         }
         for (auto ssrc : config.rtp.rtx.ssrcs) {
           StreamId rtx_stream(ssrc, kOutgoingPacket);
-          RegisterHeaderExtensions(config.rtp.extensions,
-                                   &extension_maps[rtx_stream]);
+          extension_maps[rtx_stream] =
+              RtpHeaderExtensionMap(config.rtp.extensions);
           video_ssrcs_.insert(rtx_stream);
           rtx_ssrcs_.insert(rtx_stream);
         }
@@ -355,8 +341,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         AudioReceiveStream::Config config;
         parsed_log_.GetAudioReceiveConfig(i, &config);
         StreamId stream(config.rtp.remote_ssrc, kIncomingPacket);
-        RegisterHeaderExtensions(config.rtp.extensions,
-                                 &extension_maps[stream]);
+        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp.extensions);
         audio_ssrcs_.insert(stream);
         break;
       }
@@ -364,8 +349,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         AudioSendStream::Config config(nullptr);
         parsed_log_.GetAudioSendConfig(i, &config);
         StreamId stream(config.rtp.ssrc, kOutgoingPacket);
-        RegisterHeaderExtensions(config.rtp.extensions,
-                                 &extension_maps[stream]);
+        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp.extensions);
         audio_ssrcs_.insert(stream);
         break;
       }
