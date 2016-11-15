@@ -77,6 +77,8 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   if (freq_offset_stats.num_samples > 0) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtpToNtpFreqOffsetInKhz",
                                freq_offset_stats.average);
+    LOG(LS_INFO) << "WebRTC.Video.RtpToNtpFreqOffsetInKhz, "
+                 << freq_offset_stats.ToString();
   }
 
   int qp = qp_counters_.vp8.Avg(kMinRequiredSamples);

@@ -25,6 +25,15 @@ const int64_t kDefaultProcessIntervalMs = 2000;
 const uint32_t kStreamId0 = 0;
 }  // namespace
 
+std::string AggregatedStats::ToString() const {
+  std::stringstream ss;
+  ss << "periodic_samples:" << num_samples << ", {";
+  ss << "min:" << min << ", ";
+  ss << "avg:" << average << ", ";
+  ss << "max:" << max << "}";
+  return ss.str();
+}
+
 // Class holding periodically computed metrics.
 class AggregatedCounter {
  public:

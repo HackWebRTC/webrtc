@@ -12,6 +12,7 @@
 #define WEBRTC_VIDEO_STATS_COUNTER_H_
 
 #include <memory>
+#include <string>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/typedefs.h"
@@ -31,6 +32,8 @@ class StatsCounterObserver {
 };
 
 struct AggregatedStats {
+  std::string ToString() const;
+
   int64_t num_samples = 0;
   int min = -1;
   int max = -1;
