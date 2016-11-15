@@ -12,13 +12,11 @@ package org.appspot.apprtc;
 
 import android.widget.SeekBar;
 import android.widget.TextView;
-
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 /**
  * Control capture format based on a seekbar listener.
@@ -90,7 +88,9 @@ public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener
     width = bestFormat.width;
     height = bestFormat.height;
     framerate = calculateFramerate(targetBandwidth, bestFormat);
-    captureFormatText.setText(width + "x" + height + " @ " + framerate + "fps");
+    captureFormatText.setText(
+        String.format(captureFormatText.getContext().getString(R.string.format_description), width,
+            height, framerate));
   }
 
   @Override

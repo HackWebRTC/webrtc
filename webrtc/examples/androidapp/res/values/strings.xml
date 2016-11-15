@@ -26,6 +26,7 @@
     <string name="action_loopback">Loopback connection</string>
     <string name="connect_description">Connect to the room</string>
     <string name="add_favorite_description">Add favorite</string>
+    <string name="format_description">%1$dx%2$d @ %3$d fps</string>
 
     <!-- Settings strings. -->
     <string name="pref_room_key">room_preference</string>
