@@ -347,37 +347,11 @@ class UnitTest(unittest.TestCase):
 
   def test_gn_gen_swarming(self):
     files = {
-      '/tmp/swarming_targets': 'base_unittests\n',
-      '/fake_src/testing/buildbot/gn_isolate_map.pyl': (
-          "{'base_unittests': {"
-          "  'label': '//base:base_unittests',"
-          "  'type': 'raw',"
-          "  'args': [],"
-          "}}\n"
-      ),
-      '/fake_src/out/Default/base_unittests.runtime_deps': (
-          "base_unittests\n"
-      ),
-    }
-    mbw = self.fake_mbw(files)
-    self.check(['gen',
-                '-c', 'gn_debug_goma',
-                '--swarming-targets-file', '/tmp/swarming_targets',
-                '//out/Default'], mbw=mbw, ret=0)
-    self.assertIn('/fake_src/out/Default/base_unittests.isolate',
-                  mbw.files)
-    self.assertIn('/fake_src/out/Default/base_unittests.isolated.gen.json',
-                  mbw.files)
-
-  def test_gn_gen_swarming_script(self):
-    files = {
       '/tmp/swarming_targets': 'cc_perftests\n',
       '/fake_src/testing/buildbot/gn_isolate_map.pyl': (
           "{'cc_perftests': {"
           "  'label': '//cc:cc_perftests',"
-          "  'type': 'script',"
-          "  'script': '/fake_src/out/Default/test_script.py',"
-          "  'args': [],"
+          "  'type': 'console_test_launcher',"
           "}}\n"
       ),
       'c:\\fake_src\out\Default\cc_perftests.exe.runtime_deps': (
@@ -403,7 +377,7 @@ class UnitTest(unittest.TestCase):
       '/fake_src/testing/buildbot/gn_isolate_map.pyl': (
           "{'base_unittests': {"
           "  'label': '//base:base_unittests',"
-          "  'type': 'raw',"
+          "  'type': 'non_parallel_console_test_launcher',"
           "  'args': [],"
           "}}\n"
       ),
@@ -428,7 +402,7 @@ class UnitTest(unittest.TestCase):
       '/fake_src/testing/buildbot/gn_isolate_map.pyl': (
           "{'base_unittests': {"
           "  'label': '//base:base_unittests',"
-          "  'type': 'raw',"
+          "  'type': 'windowed_test_launcher',"
           "  'args': [],"
           "}}\n"
       ),

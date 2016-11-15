@@ -1077,9 +1077,17 @@ class MetaBuildWrapper(object):
 
     executable = isolate_map[target].get('executable', target)
     executable_suffix = '.exe' if self.platform == 'win32' else ''
+    executable_prefix = '.\\' if self.platform == 'win32' else './'
 
     cmdline = []
     extra_files = []
+    common_cmdline = [
+      executable_prefix + str(executable) + executable_suffix,
+      '--',
+      '--asan=%d' % asan,
+      '--msan=%d' % msan,
+      '--tsan=%d' % tsan,
+    ]
 
     if test_type == 'nontest':
       self.WriteFailureAndRaise('We should not be isolating %s.' % target,
@@ -1108,57 +1116,31 @@ class MetaBuildWrapper(object):
           'xdisplaycheck',
           '../../testing/test_env.py',
           '../../testing/xvfb.py',
+          '../../third_party/gtest-parallel/gtest-parallel',
       ]
       cmdline = [
         '../../testing/xvfb.py',
         '.',
-        './' + str(executable) + executable_suffix,
-        '--brave-new-test-launcher',
-        '--test-launcher-bot-mode',
-        '--asan=%d' % asan,
-        '--msan=%d' % msan,
-        '--tsan=%d' % tsan,
-      ]
+        'python',
+        '../../third_party/gtest-parallel/gtest-parallel',
+      ] + common_cmdline
     elif test_type in ('windowed_test_launcher', 'console_test_launcher'):
       extra_files = [
-          '../../testing/test_env.py'
+          '../../testing/test_env.py',
+          '../../third_party/gtest-parallel/gtest-parallel',
       ]
       cmdline = [
           '../../testing/test_env.py',
-          './' + str(executable) + executable_suffix,
-          '--brave-new-test-launcher',
-          '--test-launcher-bot-mode',
-          '--asan=%d' % asan,
-          '--msan=%d' % msan,
-          '--tsan=%d' % tsan,
-      ]
-    elif test_type == 'gpu_browser_test':
+          'python',
+          '../../third_party/gtest-parallel/gtest-parallel',
+      ] + common_cmdline
+    elif test_type == 'non_parallel_console_test_launcher':
       extra_files = [
-          '../../testing/test_env.py'
-      ]
-      gtest_filter = isolate_map[target]['gtest_filter']
-      cmdline = [
           '../../testing/test_env.py',
-          './browser_tests' + executable_suffix,
-          '--test-launcher-bot-mode',
-          '--enable-gpu',
-          '--test-launcher-jobs=1',
-          '--gtest_filter=%s' % gtest_filter,
-      ]
-    elif test_type == 'script':
-      extra_files = [
-          '../../testing/test_env.py'
       ]
       cmdline = [
           '../../testing/test_env.py',
-          '../../' + self.ToSrcRelPath(isolate_map[target]['script'])
-      ]
-    elif test_type in ('raw'):
-      extra_files = []
-      cmdline = [
-          './' + str(target) + executable_suffix,
-      ]
-
+      ] + common_cmdline
     else:
       self.WriteFailureAndRaise('No command line for %s found (test type %s).'
                                 % (target, test_type), output_path=None)

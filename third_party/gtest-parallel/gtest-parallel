@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright 2013 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -266,6 +266,15 @@ parser.add_option('--format', type='string', default='filter',
                   help='output format (raw,filter)')
 parser.add_option('--print_test_times', action='store_true', default=False,
                   help='When done, list the run time of each test')
+parser.add_option('--shard-count', type='int',
+                  default=int(os.environ.get('GTEST_TOTAL_SHARDS', 1)),
+                  help=('Total number of shards (for sharding test execution '
+                        'between multiple machines). Default: %default'))
+parser.add_option('--shard-index', type='int',
+                  default=int(os.environ.get('GTEST_SHARD_INDEX', 0)),
+                  help=('Zero-indexed number identifying this shard (for '
+                        'sharding test execution between multiple machines). '
+                        'Default: %default'))
 
 (options, binaries) = parser.parse_args()
 
@@ -320,6 +329,8 @@ for test_binary in binaries:
       continue
     tests.append((times.get_test_time(test_binary, test),
                   test_binary, test, command))
+
+tests = tests[options.shard_index::options.shard_count]
 
 if options.failed:
   # The first element of each entry is the runtime of the most recent
