@@ -606,6 +606,13 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     options.experimental_ns = rtc::Optional<bool>(false);
     options.intelligibility_enhancer = rtc::Optional<bool>(false);
     options.level_control = rtc::Optional<bool>(false);
+// TODO(ivoc): Always enable residual echo detector after benchmarking on
+//             mobile.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+    options.residual_echo_detector = rtc::Optional<bool>(false);
+#else
+    options.residual_echo_detector = rtc::Optional<bool>(true);
+#endif
     bool error = ApplyOptions(options);
     RTC_DCHECK(error);
   }
@@ -670,6 +677,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   options.experimental_agc = rtc::Optional<bool>(false);
   options.extended_filter_aec = rtc::Optional<bool>(false);
   options.experimental_ns = rtc::Optional<bool>(false);
+  options.residual_echo_detector = rtc::Optional<bool>(false);
 #endif
 
   // Delay Agnostic AEC automatically turns on EC if not set except on iOS

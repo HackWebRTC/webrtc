@@ -156,6 +156,7 @@ struct AudioOptions {
     SetFrom(&experimental_ns, change.experimental_ns);
     SetFrom(&intelligibility_enhancer, change.intelligibility_enhancer);
     SetFrom(&level_control, change.level_control);
+    SetFrom(&residual_echo_detector, change.residual_echo_detector);
     SetFrom(&tx_agc_target_dbov, change.tx_agc_target_dbov);
     SetFrom(&tx_agc_digital_compression_gain,
             change.tx_agc_digital_compression_gain);
@@ -187,6 +188,7 @@ struct AudioOptions {
            experimental_ns == o.experimental_ns &&
            intelligibility_enhancer == o.intelligibility_enhancer &&
            level_control == o.level_control &&
+           residual_echo_detector == o.residual_echo_detector &&
            adjust_agc_delta == o.adjust_agc_delta &&
            tx_agc_target_dbov == o.tx_agc_target_dbov &&
            tx_agc_digital_compression_gain ==
@@ -225,6 +227,7 @@ struct AudioOptions {
     ost << ToStringIfSet("level_control", level_control);
     ost << ToStringIfSet("level_control_initial_peak_level_dbfs",
                          level_control_initial_peak_level_dbfs);
+    ost << ToStringIfSet("residual_echo_detector", residual_echo_detector);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
         tx_agc_digital_compression_gain);
@@ -269,6 +272,7 @@ struct AudioOptions {
   // Specifies an optional initialization value for the level controller.
   rtc::Optional<float> level_control_initial_peak_level_dbfs;
   // Note that tx_agc_* only applies to non-experimental AGC.
+  rtc::Optional<bool> residual_echo_detector;
   rtc::Optional<uint16_t> tx_agc_target_dbov;
   rtc::Optional<uint16_t> tx_agc_digital_compression_gain;
   rtc::Optional<bool> tx_agc_limiter;
