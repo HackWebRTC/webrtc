@@ -12,6 +12,7 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
+#include "webrtc/test/field_trial.h"
 #include "webrtc/tools/event_log_visualizer/analyzer.h"
 #include "webrtc/tools/event_log_visualizer/plot_base.h"
 #include "webrtc/tools/event_log_visualizer/plot_python.h"
@@ -58,6 +59,13 @@ DEFINE_bool(plot_fraction_loss,
             false,
             "Plot packet loss in percent for outgoing packets (as perceived by "
             "the send-side bandwidth estimator).");
+DEFINE_string(
+    force_fieldtrials,
+    "",
+    "Field trials control experimental feature code which can be forced. "
+    "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enabled/"
+    " will assign the group Enabled to field trial WebRTC-FooFeature. Multiple "
+    "trials are separated by \"/\"");
 
 int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
@@ -74,6 +82,8 @@ int main(int argc, char* argv[]) {
     std::cout << google::ProgramUsage();
     return 0;
   }
+
+  webrtc::test::InitFieldTrialsFromString(FLAGS_force_fieldtrials);
 
   std::string filename = argv[1];
 

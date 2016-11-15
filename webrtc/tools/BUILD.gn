@@ -208,6 +208,7 @@ if (rtc_include_tests) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":event_log_visualizer_utils",
+        "../test:field_trial",
         "//third_party/gflags",
       ]
     }
