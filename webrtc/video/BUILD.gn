@@ -156,7 +156,6 @@ if (rtc_include_tests) {
       "stats_counter_unittest.cc",
       "stream_synchronization_unittest.cc",
       "video_decoder_unittest.cc",
-      "video_encoder_unittest.cc",
       "video_send_stream_tests.cc",
       "vie_encoder_unittest.cc",
       "vie_remb_unittest.cc",

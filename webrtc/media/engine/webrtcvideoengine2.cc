@@ -24,6 +24,7 @@
 #include "webrtc/call.h"
 #include "webrtc/media/engine/constants.h"
 #include "webrtc/media/engine/simulcast.h"
+#include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/media/engine/webrtcvoiceengine.h"

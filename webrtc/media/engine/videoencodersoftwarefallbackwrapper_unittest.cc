@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/video_encoder.h"
+#include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
+
+#include <utility>
 
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
