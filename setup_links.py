@@ -507,9 +507,10 @@ def main():
                       'administrator. Please run with user account privileges.')
 
   if not os.path.exists(CHROMIUM_CHECKOUT):
-    logging.error('Cannot find a Chromium checkout at %s. Did you run "gclient '
-                  'sync" before running this script?', CHROMIUM_CHECKOUT)
-    return 2
+    logging.warning('Cannot find a Chromium checkout at %s. Did you run '
+                    '"gclient sync" before running this script?',
+                    CHROMIUM_CHECKOUT)
+    return 0
 
   links_database = _initialize_database(LINKS_DB)
   try:
