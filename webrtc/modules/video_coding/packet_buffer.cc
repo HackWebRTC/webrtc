@@ -57,50 +57,57 @@ PacketBuffer::~PacketBuffer() {
 }
 
 bool PacketBuffer::InsertPacket(const VCMPacket& packet) {
-  rtc::CritScope lock(&crit_);
-  uint16_t seq_num = packet.seqNum;
-  size_t index = seq_num % size_;
+  std::vector<std::unique_ptr<RtpFrameObject>> found_frames;
+  {
+    rtc::CritScope lock(&crit_);
+    uint16_t seq_num = packet.seqNum;
+    size_t index = seq_num % size_;
 
-  if (!first_packet_received_) {
-    first_seq_num_ = seq_num;
-    last_seq_num_ = seq_num;
-    first_packet_received_ = true;
-  } else if (AheadOf(first_seq_num_, seq_num)) {
-    // If we have explicitly cleared past this packet then it's old,
-    // don't insert it.
-    if (is_cleared_to_first_seq_num_)
-      return false;
+    if (!first_packet_received_) {
+      first_seq_num_ = seq_num;
+      last_seq_num_ = seq_num;
+      first_packet_received_ = true;
+    } else if (AheadOf(first_seq_num_, seq_num)) {
+      // If we have explicitly cleared past this packet then it's old,
+      // don't insert it.
+      if (is_cleared_to_first_seq_num_)
+        return false;
 
-    first_seq_num_ = seq_num;
-  }
-
-  if (sequence_buffer_[index].used) {
-    // Duplicate packet, do nothing.
-    if (data_buffer_[index].seqNum == packet.seqNum)
-      return true;
-
-    // The packet buffer is full, try to expand the buffer.
-    while (ExpandBufferSize() && sequence_buffer_[seq_num % size_].used) {
+      first_seq_num_ = seq_num;
     }
-    index = seq_num % size_;
 
-    // Packet buffer is still full.
-    if (sequence_buffer_[index].used)
-      return false;
+    if (sequence_buffer_[index].used) {
+      // Duplicate packet, do nothing.
+      if (data_buffer_[index].seqNum == packet.seqNum)
+        return true;
+
+      // The packet buffer is full, try to expand the buffer.
+      while (ExpandBufferSize() && sequence_buffer_[seq_num % size_].used) {
+      }
+      index = seq_num % size_;
+
+      // Packet buffer is still full.
+      if (sequence_buffer_[index].used)
+        return false;
+    }
+
+    if (AheadOf(seq_num, last_seq_num_))
+      last_seq_num_ = seq_num;
+
+    sequence_buffer_[index].frame_begin = packet.isFirstPacket;
+    sequence_buffer_[index].frame_end = packet.markerBit;
+    sequence_buffer_[index].seq_num = packet.seqNum;
+    sequence_buffer_[index].continuous = false;
+    sequence_buffer_[index].frame_created = false;
+    sequence_buffer_[index].used = true;
+    data_buffer_[index] = packet;
+
+    found_frames = FindFrames(seq_num);
   }
 
-  if (AheadOf(seq_num, last_seq_num_))
-    last_seq_num_ = seq_num;
+  for (std::unique_ptr<RtpFrameObject>& frame : found_frames)
+    received_frame_callback_->OnReceivedFrame(std::move(frame));
 
-  sequence_buffer_[index].frame_begin = packet.isFirstPacket;
-  sequence_buffer_[index].frame_end = packet.markerBit;
-  sequence_buffer_[index].seq_num = packet.seqNum;
-  sequence_buffer_[index].continuous = false;
-  sequence_buffer_[index].frame_created = false;
-  sequence_buffer_[index].used = true;
-  data_buffer_[index] = packet;
-
-  FindFrames(seq_num);
   return true;
 }
 
@@ -187,7 +194,9 @@ bool PacketBuffer::PotentialNewFrame(uint16_t seq_num) const {
   return false;
 }
 
-void PacketBuffer::FindFrames(uint16_t seq_num) {
+std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
+    uint16_t seq_num) {
+  std::vector<std::unique_ptr<RtpFrameObject>> found_frames;
   while (PotentialNewFrame(seq_num)) {
     size_t index = seq_num % size_;
     sequence_buffer_[index].continuous = true;
@@ -204,8 +213,8 @@ void PacketBuffer::FindFrames(uint16_t seq_num) {
       int start_index = index;
       while (true) {
         frame_size += data_buffer_[start_index].sizeBytes;
-        max_nack_count = std::max(
-            max_nack_count, data_buffer_[start_index].timesNacked);
+        max_nack_count =
+            std::max(max_nack_count, data_buffer_[start_index].timesNacked);
         sequence_buffer_[start_index].frame_created = true;
 
         if (sequence_buffer_[start_index].frame_begin)
@@ -215,15 +224,13 @@ void PacketBuffer::FindFrames(uint16_t seq_num) {
         start_seq_num--;
       }
 
-      std::unique_ptr<RtpFrameObject> frame(
+      found_frames.emplace_back(
           new RtpFrameObject(this, start_seq_num, seq_num, frame_size,
                              max_nack_count, clock_->TimeInMilliseconds()));
-
-      received_frame_callback_->OnReceivedFrame(std::move(frame));
     }
-
     ++seq_num;
   }
+  return found_frames;
 }
 
 void PacketBuffer::ReturnFrame(RtpFrameObject* frame) {
@@ -267,7 +274,6 @@ bool PacketBuffer::GetBitstream(const RtpFrameObject& frame,
 }
 
 VCMPacket* PacketBuffer::GetPacket(uint16_t seq_num) {
-  rtc::CritScope lock(&crit_);
   size_t index = seq_num % size_;
   if (!sequence_buffer_[index].used ||
       seq_num != sequence_buffer_[index].seq_num) {

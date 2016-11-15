@@ -299,7 +299,7 @@ TEST_F(TestFrameBuffer2, DropTemporalLayerSlowDecoder) {
   uint32_t ts = Rand();
 
   InsertFrame(pid, 0, ts, false);
-  InsertFrame(pid + 1, 0, ts + kFps20, false);
+  InsertFrame(pid + 1, 0, ts + kFps20, false, pid);
   for (int i = 2; i < 10; i += 2) {
     uint32_t ts_tl0 = ts + i / 2 * kFps10;
     InsertFrame(pid + i, 0, ts_tl0, false, pid + i - 2);

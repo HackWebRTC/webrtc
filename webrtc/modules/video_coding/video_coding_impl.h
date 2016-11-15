@@ -143,6 +143,8 @@ class VideoReceiver : public Module {
 
   int32_t Decode(uint16_t maxWaitTimeMs);
 
+  int32_t Decode(const webrtc::VCMEncodedFrame* frame);
+
   int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const;
   VideoCodecType ReceiveCodec() const;
 

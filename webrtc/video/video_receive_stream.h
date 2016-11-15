@@ -17,6 +17,7 @@
 #include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
+#include "webrtc/modules/video_coding/frame_buffer2.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video/receive_statistics_proxy.h"
@@ -35,6 +36,8 @@ class ProcessThread;
 class RTPFragmentationHeader;
 class VoiceEngine;
 class VieRemb;
+class VCMTiming;
+class VCMJitterEstimator;
 
 namespace internal {
 
@@ -42,7 +45,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public rtc::VideoSinkInterface<VideoFrame>,
                            public EncodedImageCallback,
                            public NackSender,
-                           public KeyFrameRequestSender {
+                           public KeyFrameRequestSender,
+                           public video_coding::OnCompleteFrameCallback {
  public:
   VideoReceiveStream(int num_cpu_cores,
                      CongestionController* congestion_controller,
@@ -69,6 +73,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   // Overrides rtc::VideoSinkInterface<VideoFrame>.
   void OnFrame(const VideoFrame& video_frame) override;
+
+  // Implements video_coding::OnCompleteFrameCallback.
+  void OnCompleteFrame(
+      std::unique_ptr<video_coding::FrameObject> frame) override;
 
   // Overrides EncodedImageCallback.
   EncodedImageCallback::Result OnEncodedImage(
@@ -112,12 +120,18 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   vcm::VideoReceiver video_receiver_;
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> incoming_video_stream_;
   ReceiveStatisticsProxy stats_proxy_;
+  std::unique_ptr<VCMTiming> timing_;  // Jitter buffer experiment.
   RtpStreamReceiver rtp_stream_receiver_;
   std::unique_ptr<VideoStreamDecoder> video_stream_decoder_;
   RtpStreamsSynchronizer rtp_stream_sync_;
 
   rtc::CriticalSection ivf_writer_lock_;
   std::unique_ptr<IvfFileWriter> ivf_writer_ GUARDED_BY(ivf_writer_lock_);
+
+  // Members for the new jitter buffer experiment.
+  const bool jitter_buffer_experiment_;
+  std::unique_ptr<VCMJitterEstimator> jitter_estimator_;
+  std::unique_ptr<video_coding::FrameBuffer> frame_buffer_;
 };
 }  // namespace internal
 }  // namespace webrtc

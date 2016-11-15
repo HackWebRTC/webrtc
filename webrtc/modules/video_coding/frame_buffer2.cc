@@ -28,7 +28,7 @@ namespace {
 constexpr int kMaxFramesBuffered = 600;
 
 // Max number of decoded frame info that will be saved.
-constexpr int kMaxFramesHistory = 20;
+constexpr int kMaxFramesHistory = 50;
 }  // namespace
 
 FrameBuffer::FrameBuffer(Clock* clock,
@@ -114,7 +114,7 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
   if (next_frame_it != frames_.end()) {
     std::unique_ptr<FrameObject> frame = std::move(next_frame_it->second.frame);
     int64_t received_time = frame->ReceivedTime();
-    uint32_t timestamp = frame->Timestamp();
+    uint32_t timestamp = frame->timestamp;
 
     int64_t frame_delay;
     if (inter_frame_delay_.CalculateDelay(timestamp, &frame_delay,

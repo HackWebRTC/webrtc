@@ -256,6 +256,10 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   }
   if (encoder_ == NULL) {
     encoder_ = new vpx_codec_ctx_t;
+    // Only randomize pid/tl0 the first time the encoder is initialized
+    // in order to not make random jumps mid-stream.
+    picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;  // NOLINT
+    tl0_pic_idx_ = static_cast<uint8_t>(rand());           // NOLINT
   }
   if (config_ == NULL) {
     config_ = new vpx_codec_enc_cfg_t;
@@ -270,8 +274,6 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (num_temporal_layers_ == 0)
     num_temporal_layers_ = 1;
 
-  // Random start 16 bits is enough.
-  picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;  // NOLINT
   // Allocate memory for encoded image
   if (encoded_image_._buffer != NULL) {
     delete[] encoded_image_._buffer;
@@ -365,8 +367,6 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   } else {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-
-  tl0_pic_idx_ = static_cast<uint8_t>(rand());  // NOLINT
 
   return InitAndSetControlSettings(inst);
 }

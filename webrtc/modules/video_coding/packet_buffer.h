@@ -99,8 +99,9 @@ class PacketBuffer {
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Test if all packets of a frame has arrived, and if so, creates a frame.
-  // May create multiple frames per invocation.
-  void FindFrames(uint16_t seq_num) EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  // Returns a vector of received frames.
+  std::vector<std::unique_ptr<RtpFrameObject>> FindFrames(uint16_t seq_num)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Copy the bitstream for |frame| to |destination|.
   // Virtual for testing.
@@ -108,7 +109,8 @@ class PacketBuffer {
 
   // Get the packet with sequence number |seq_num|.
   // Virtual for testing.
-  virtual VCMPacket* GetPacket(uint16_t seq_num);
+  virtual VCMPacket* GetPacket(uint16_t seq_num)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Mark all slots used by |frame| as not used.
   // Virtual for testing.

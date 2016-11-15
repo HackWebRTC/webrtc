@@ -290,6 +290,14 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   return ret;
 }
 
+// Used for the WebRTC-NewVideoJitterBuffer experiment.
+// TODO(philipel): Clean up among the Decode functions as we replace
+//                 VCMEncodedFrame with FrameObject.
+int32_t VideoReceiver::Decode(const webrtc::VCMEncodedFrame* frame) {
+  rtc::CritScope lock(&receive_crit_);
+  return Decode(*frame);
+}
+
 int32_t VideoReceiver::RequestSliceLossIndication(
     const uint64_t pictureID) const {
   TRACE_EVENT1("webrtc", "RequestSLI", "picture_id", pictureID);

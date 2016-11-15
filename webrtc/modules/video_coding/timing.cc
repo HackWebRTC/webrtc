@@ -154,6 +154,7 @@ void VCMTiming::UpdateCurrentDelay(uint32_t frame_timestamp) {
       max_change_ms = kDelayMaxChangeMsPerS *
                       (frame_timestamp - prev_frame_timestamp_) / 90000;
     }
+
     if (max_change_ms <= 0) {
       // Any changes less than 1 ms are truncated and
       // will be postponed. Negative change will be due
