@@ -990,13 +990,9 @@ void ScreenCapturerMac::ScreenRefresh(CGRectCount count,
     ScreenConfigurationChanged();
 
   DesktopRegion region;
-  DesktopVector translate_vector =
-      DesktopVector().subtract(screen_pixel_bounds_.top_left());
   for (CGRectCount i = 0; i < count; ++i) {
     // Convert from Density-Independent Pixel to physical pixel coordinates.
     DesktopRect rect = ScaleAndRoundCGRect(rect_array[i], dip_to_pixel_scale_);
-    // Translate from local desktop to capturer framebuffer coordinates.
-    rect.Translate(translate_vector);
     region.AddRect(rect);
   }
 
