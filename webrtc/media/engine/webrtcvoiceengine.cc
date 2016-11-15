@@ -1396,7 +1396,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       stream_ = nullptr;
     }
     RTC_DCHECK(!stream_);
-    if (webrtc::field_trial::FindFullName("WebRTC-AdaptAudioBitrate") ==
+    if (webrtc::field_trial::FindFullName("WebRTC-Audio-SendSideBwe") ==
         "Enabled") {
       // TODO(mflodman): Keep testing this and set proper values.
       // Note: This is an early experiment currently only supported by Opus.
