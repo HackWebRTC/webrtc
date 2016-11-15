@@ -163,8 +163,8 @@ bool DxgiOutputDuplicator::Duplicate(Context* context,
     const DesktopFrame& source = texture_->AsDesktopFrame();
     for (DesktopRegion::Iterator it(updated_region); !it.IsAtEnd();
          it.Advance()) {
-      target->CopyPixelsFrom(source, SourceRect(it.rect()).top_left(),
-                             TargetRect(it.rect(), offset));
+      target->CopyPixelsFrom(
+          source, SourceRect(it.rect()).top_left(), it.rect());
     }
     last_frame_ = target->Share();
     last_frame_offset_ = offset;
@@ -177,8 +177,7 @@ bool DxgiOutputDuplicator::Duplicate(Context* context,
     // export last frame to the target.
     for (DesktopRegion::Iterator it(updated_region); !it.IsAtEnd();
          it.Advance()) {
-      target->CopyPixelsFrom(*last_frame_, SourceRect(it.rect()).top_left(),
-                             TargetRect(it.rect(), offset));
+      target->CopyPixelsFrom(*last_frame_, it.rect().top_left(), it.rect());
     }
     target->mutable_updated_region()->AddRegion(updated_region);
   }
@@ -299,13 +298,6 @@ void DxgiOutputDuplicator::SpreadContextChange(const Context* const source) {
 DesktopRect DxgiOutputDuplicator::SourceRect(DesktopRect rect) {
   // |texture_|->AsDesktopFrame() starts from (0, 0).
   rect.Translate(-desktop_rect_.left(), -desktop_rect_.top());
-  return rect;
-}
-
-DesktopRect DxgiOutputDuplicator::TargetRect(DesktopRect rect,
-                                             DesktopVector offset) {
-  rect = SourceRect(rect);
-  rect.Translate(offset);
   return rect;
 }
 

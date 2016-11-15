@@ -108,9 +108,6 @@ class DxgiOutputDuplicator {
   // Returns a DesktopRect in the coordinate of |texture_|->AsDesktopFrame().
   DesktopRect SourceRect(DesktopRect rect);
 
-  // Returns a DesktopRect in the coordinate of |offset|.
-  DesktopRect TargetRect(DesktopRect rect, DesktopVector offset);
-
   const D3dDevice device_;
   const Microsoft::WRL::ComPtr<IDXGIOutput1> output_;
   const DesktopRect desktop_rect_;
