@@ -16,6 +16,7 @@
 #include "webrtc/common_video/h264/h264_bitstream_parser.h"
 #include "webrtc/common_video/include/bitrate_adjuster.h"
 #include "webrtc/common_video/rotation.h"
+#include "webrtc/media/base/codec.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
@@ -31,7 +32,7 @@ namespace webrtc {
 
 class H264VideoToolboxEncoder : public H264Encoder {
  public:
-  H264VideoToolboxEncoder();
+  explicit H264VideoToolboxEncoder(const cricket::VideoCodec& codec);
 
   ~H264VideoToolboxEncoder() override;
 
@@ -82,6 +83,7 @@ class H264VideoToolboxEncoder : public H264Encoder {
   uint32_t encoder_bitrate_bps_;
   int32_t width_;
   int32_t height_;
+  const CFStringRef profile_;
 
   rtc::CriticalSection quality_scaler_crit_;
   QualityScaler quality_scaler_ GUARDED_BY(quality_scaler_crit_);

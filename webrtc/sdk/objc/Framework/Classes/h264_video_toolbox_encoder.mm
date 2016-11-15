@@ -22,6 +22,7 @@
 #include "libyuv/convert_from.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -224,6 +225,112 @@ void VTCompressionOutputCallback(void* encoder,
       encode_params->rotation);
 }
 
+// Extract VideoToolbox profile out of the cricket::VideoCodec. If there is no
+// specific VideoToolbox profile for the specified level, AutoLevel will be
+// returned. The user must initialize the encoder with a resolution and
+// framerate conforming to the selected H264 level regardless.
+CFStringRef ExtractProfile(const cricket::VideoCodec& codec) {
+  const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
+      webrtc::H264::ParseSdpProfileLevelId(codec.params);
+  RTC_DCHECK(profile_level_id);
+  switch (profile_level_id->profile) {
+    case webrtc::H264::kProfileConstrainedBaseline:
+    case webrtc::H264::kProfileBaseline:
+      switch (profile_level_id->level) {
+        case webrtc::H264::kLevel3:
+          return kVTProfileLevel_H264_Baseline_3_0;
+        case webrtc::H264::kLevel3_1:
+          return kVTProfileLevel_H264_Baseline_3_1;
+        case webrtc::H264::kLevel3_2:
+          return kVTProfileLevel_H264_Baseline_3_2;
+        case webrtc::H264::kLevel4:
+          return kVTProfileLevel_H264_Baseline_4_0;
+        case webrtc::H264::kLevel4_1:
+          return kVTProfileLevel_H264_Baseline_4_1;
+        case webrtc::H264::kLevel4_2:
+          return kVTProfileLevel_H264_Baseline_4_2;
+        case webrtc::H264::kLevel5:
+          return kVTProfileLevel_H264_Baseline_5_0;
+        case webrtc::H264::kLevel5_1:
+          return kVTProfileLevel_H264_Baseline_5_1;
+        case webrtc::H264::kLevel5_2:
+          return kVTProfileLevel_H264_Baseline_5_2;
+        case webrtc::H264::kLevel1:
+        case webrtc::H264::kLevel1_b:
+        case webrtc::H264::kLevel1_1:
+        case webrtc::H264::kLevel1_2:
+        case webrtc::H264::kLevel1_3:
+        case webrtc::H264::kLevel2:
+        case webrtc::H264::kLevel2_1:
+        case webrtc::H264::kLevel2_2:
+          return kVTProfileLevel_H264_Baseline_AutoLevel;
+      }
+
+    case webrtc::H264::kProfileMain:
+      switch (profile_level_id->level) {
+        case webrtc::H264::kLevel3:
+          return kVTProfileLevel_H264_Main_3_0;
+        case webrtc::H264::kLevel3_1:
+          return kVTProfileLevel_H264_Main_3_1;
+        case webrtc::H264::kLevel3_2:
+          return kVTProfileLevel_H264_Main_3_2;
+        case webrtc::H264::kLevel4:
+          return kVTProfileLevel_H264_Main_4_0;
+        case webrtc::H264::kLevel4_1:
+          return kVTProfileLevel_H264_Main_4_1;
+        case webrtc::H264::kLevel4_2:
+          return kVTProfileLevel_H264_Main_4_2;
+        case webrtc::H264::kLevel5:
+          return kVTProfileLevel_H264_Main_5_0;
+        case webrtc::H264::kLevel5_1:
+          return kVTProfileLevel_H264_Main_5_1;
+        case webrtc::H264::kLevel5_2:
+          return kVTProfileLevel_H264_Main_5_2;
+        case webrtc::H264::kLevel1:
+        case webrtc::H264::kLevel1_b:
+        case webrtc::H264::kLevel1_1:
+        case webrtc::H264::kLevel1_2:
+        case webrtc::H264::kLevel1_3:
+        case webrtc::H264::kLevel2:
+        case webrtc::H264::kLevel2_1:
+        case webrtc::H264::kLevel2_2:
+          return kVTProfileLevel_H264_Main_AutoLevel;
+      }
+
+    case webrtc::H264::kProfileConstrainedHigh:
+    case webrtc::H264::kProfileHigh:
+      switch (profile_level_id->level) {
+        case webrtc::H264::kLevel3:
+          return kVTProfileLevel_H264_High_3_0;
+        case webrtc::H264::kLevel3_1:
+          return kVTProfileLevel_H264_High_3_1;
+        case webrtc::H264::kLevel3_2:
+          return kVTProfileLevel_H264_High_3_2;
+        case webrtc::H264::kLevel4:
+          return kVTProfileLevel_H264_High_4_0;
+        case webrtc::H264::kLevel4_1:
+          return kVTProfileLevel_H264_High_4_1;
+        case webrtc::H264::kLevel4_2:
+          return kVTProfileLevel_H264_High_4_2;
+        case webrtc::H264::kLevel5:
+          return kVTProfileLevel_H264_High_5_0;
+        case webrtc::H264::kLevel5_1:
+          return kVTProfileLevel_H264_High_5_1;
+        case webrtc::H264::kLevel5_2:
+          return kVTProfileLevel_H264_High_5_2;
+        case webrtc::H264::kLevel1:
+        case webrtc::H264::kLevel1_b:
+        case webrtc::H264::kLevel1_1:
+        case webrtc::H264::kLevel1_2:
+        case webrtc::H264::kLevel1_3:
+        case webrtc::H264::kLevel2:
+        case webrtc::H264::kLevel2_1:
+        case webrtc::H264::kLevel2_2:
+          return kVTProfileLevel_H264_High_AutoLevel;
+      }
+  }
+}
+
 }  // namespace internal
 
 namespace webrtc {
@@ -235,10 +342,13 @@ namespace webrtc {
 // drastically reduced bitrate, so we want to avoid that. In steady state
 // conditions, 0.95 seems to give us better overall bitrate over long periods
 // of time.
-H264VideoToolboxEncoder::H264VideoToolboxEncoder()
+H264VideoToolboxEncoder::H264VideoToolboxEncoder(
+    const cricket::VideoCodec& codec)
     : callback_(nullptr),
       compression_session_(nullptr),
-      bitrate_adjuster_(Clock::GetRealTimeClock(), .5, .95) {
+      bitrate_adjuster_(Clock::GetRealTimeClock(), .5, .95),
+      profile_(internal::ExtractProfile(codec)) {
+  LOG(LS_INFO) << "Using profile " << internal::CFStringToString(profile_);
 }
 
 H264VideoToolboxEncoder::~H264VideoToolboxEncoder() {
@@ -496,7 +606,7 @@ void H264VideoToolboxEncoder::ConfigureCompressionSession() {
                                  kVTCompressionPropertyKey_RealTime, true);
   internal::SetVTSessionProperty(compression_session_,
                                  kVTCompressionPropertyKey_ProfileLevel,
-                                 kVTProfileLevel_H264_Baseline_AutoLevel);
+                                 profile_);
   internal::SetVTSessionProperty(compression_session_,
                                  kVTCompressionPropertyKey_AllowFrameReordering,
                                  false);
