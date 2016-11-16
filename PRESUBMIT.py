@@ -227,33 +227,7 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
 
   return result
 
-def _CheckNoRtcBaseDeps(input_api, gyp_files, output_api):
-  pattern = input_api.re.compile(r"base.gyp:rtc_base\s*'")
-  violating_files = []
-  for f in gyp_files:
-    gyp_exceptions = (
-        'audio_device.gypi',
-        'base_tests.gyp',
-        'desktop_capture.gypi',
-        'p2p.gyp',
-        'sdk.gyp',
-        'webrtc_test_common.gyp',
-        'webrtc_tests.gypi',
-    )
-    if f.LocalPath().endswith(gyp_exceptions):
-      continue
-    contents = input_api.ReadFile(f)
-    if pattern.search(contents):
-      violating_files.append(f)
-  if violating_files:
-    return [output_api.PresubmitError(
-        'Depending on rtc_base is not allowed. Change your dependency to '
-        'rtc_base_approved and possibly sanitize and move the desired source '
-        'file(s) to rtc_base_approved.\nChanged GYP files:',
-        items=violating_files)]
-  return []
-
-def _CheckNoRtcBaseDepsGn(input_api, gn_files, output_api):
+def _CheckNoRtcBaseDeps(input_api, gn_files, output_api):
   pattern = input_api.re.compile(r'base:rtc_base\s*"')
   violating_files = []
   for f in gn_files:
@@ -288,39 +262,8 @@ def _CheckNoRtcBaseDepsGn(input_api, gn_files, output_api):
         items=violating_files)]
   return []
 
-def _CheckNoSourcesAboveGyp(input_api, gyp_files, output_api):
-  # Disallow referencing source files with paths above the GYP file location.
-  source_pattern = input_api.re.compile(r'\'sources\'.*?\[(.*?)\]',
-                                        re.MULTILINE | re.DOTALL)
-  file_pattern = input_api.re.compile(r"'((\.\./.*?)|(<\(webrtc_root\).*?))'")
-  violating_gyp_files = set()
-  violating_source_entries = []
-  for gyp_file in gyp_files:
-    if 'supplement.gypi' in gyp_file.LocalPath():
-      # Exclude supplement.gypi from this check, as the LSan and TSan
-      # suppression files are located in a different location.
-      continue
-    contents = input_api.ReadFile(gyp_file)
-    for source_block_match in source_pattern.finditer(contents):
-      # Find all source list entries starting with ../ in the source block
-      # (exclude overrides entries).
-      for file_list_match in file_pattern.finditer(source_block_match.group(1)):
-        source_file = file_list_match.group(1)
-        if 'overrides/' not in source_file:
-          violating_source_entries.append(source_file)
-          violating_gyp_files.add(gyp_file)
-  if violating_gyp_files:
-    return [output_api.PresubmitError(
-        'Referencing source files above the directory of the GYP file is not '
-        'allowed. Please introduce new GYP targets and/or GYP files in the '
-        'proper location instead.\n'
-        'Invalid source entries:\n'
-        '%s\n'
-        'Violating GYP files:' % '\n'.join(violating_source_entries),
-        items=violating_gyp_files)]
-  return []
 
-def _CheckNoSourcesAboveGn(input_api, gn_files, output_api):
+def _CheckNoSourcesAbove(input_api, gn_files, output_api):
   # Disallow referencing source files with paths above the GN file location.
   source_pattern = input_api.re.compile(r' +sources \+?= \[(.*?)\]',
                                         re.MULTILINE | re.DOTALL)
@@ -340,32 +283,13 @@ def _CheckNoSourcesAboveGn(input_api, gn_files, output_api):
   if violating_gn_files:
     return [output_api.PresubmitError(
         'Referencing source files above the directory of the GN file is not '
-        'allowed. Please introduce new GYP targets and/or GN files in the '
-        'proper location instead.\n'
+        'allowed. Please introduce new GN targets in the proper location '
+        'instead.\n'
         'Invalid source entries:\n'
         '%s\n'
         'Violating GN files:' % '\n'.join(violating_source_entries),
         items=violating_gn_files)]
   return []
-
-def _CheckGypChanges(input_api, output_api):
-  source_file_filter = lambda x: input_api.FilterSourceFile(
-      x, white_list=(r'.+\.(gyp|gypi)$',))
-
-  gyp_files = []
-  for f in input_api.AffectedSourceFiles(source_file_filter):
-    if f.LocalPath().startswith('webrtc'):
-      gyp_files.append(f)
-
-  result = []
-  if gyp_files:
-    result.append(output_api.PresubmitNotifyResult(
-        'As you\'re changing GYP files: please make sure corresponding '
-        'BUILD.gn files are also updated.\nChanged GYP files:',
-        items=gyp_files))
-    result.extend(_CheckNoRtcBaseDeps(input_api, gyp_files, output_api))
-    result.extend(_CheckNoSourcesAboveGyp(input_api, gyp_files, output_api))
-  return result
 
 def _CheckGnChanges(input_api, output_api):
   source_file_filter = lambda x: input_api.FilterSourceFile(
@@ -378,12 +302,8 @@ def _CheckGnChanges(input_api, output_api):
 
   result = []
   if gn_files:
-    result.append(output_api.PresubmitNotifyResult(
-        'As you\'re changing GN files: please make sure corresponding GYP'
-        'files are also updated.\nChanged GN files:',
-        items=gn_files))
-    result.extend(_CheckNoRtcBaseDepsGn(input_api, gn_files, output_api))
-    result.extend(_CheckNoSourcesAboveGn(input_api, gn_files, output_api))
+    result.extend(_CheckNoRtcBaseDeps(input_api, gn_files, output_api))
+    result.extend(_CheckNoSourcesAbove(input_api, gn_files, output_api))
   return result
 
 def _CheckUnwantedDependencies(input_api, output_api):
@@ -534,7 +454,6 @@ def _CommonChecks(input_api, output_api):
                   r'^tools[\\\/]generate_library_loader[\\\/].*\.py$',
                   r'^tools[\\\/]generate_stubs[\\\/].*\.py$',
                   r'^tools[\\\/]gn[\\\/].*\.py$',
-                  r'^tools[\\\/]gyp[\\\/].*\.py$',
                   r'^tools[\\\/]isolate_driver.py$',
                   r'^tools[\\\/]mb[\\\/].*\.py$',
                   r'^tools[\\\/]protoc_wrapper[\\\/].*\.py$',
@@ -562,9 +481,8 @@ def _CommonChecks(input_api, output_api):
   # .m and .mm files are ObjC files. For simplicity we will consider .h files in
   # ObjC subdirectories ObjC headers.
   objc_filter_list = (r'.+\.m$', r'.+\.mm$', r'.+objc\/.+\.h$')
-  # Skip long-lines check for DEPS, GN and GYP files.
-  build_file_filter_list = (r'.+\.gyp$', r'.+\.gypi$', r'.+\.gn$', r'.+\.gni$',
-      'DEPS')
+  # Skip long-lines check for DEPS and GN files.
+  build_file_filter_list = (r'.+\.gn$', r'.+\.gni$', 'DEPS')
   eighty_char_sources = lambda x: input_api.FilterSourceFile(x,
       black_list=build_file_filter_list + objc_filter_list)
   hundred_char_sources = lambda x: input_api.FilterSourceFile(x,
@@ -584,7 +502,6 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckNativeApiHeaderChanges(input_api, output_api))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
-  results.extend(_CheckGypChanges(input_api, output_api))
   results.extend(_CheckGnChanges(input_api, output_api))
   results.extend(_CheckUnwantedDependencies(input_api, output_api))
   results.extend(_CheckJSONParseErrors(input_api, output_api))

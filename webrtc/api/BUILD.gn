@@ -318,7 +318,6 @@ if (is_android) {
   }
 }
 
-# GYP version: webrtc/api/api.gyp:rtc_stats_api
 rtc_source_set("rtc_stats_api") {
   cflags = []
   sources = [
@@ -332,7 +331,6 @@ rtc_source_set("rtc_stats_api") {
   ]
 }
 
-# GYP version: webrtc/api/api.gyp:audio_mixer_api
 rtc_source_set("audio_mixer_api") {
   sources = [
     "audio/audio_mixer.h",

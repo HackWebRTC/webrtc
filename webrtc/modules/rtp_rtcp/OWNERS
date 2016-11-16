@@ -8,5 +8,3 @@ danilchap@webrtc.org
 # structural changes, please get a review from a reviewer in this file.
 per-file *.gn=*
 per-file *.gni=*
-per-file *.gyp=*
-per-file *.gypi=*

@@ -104,8 +104,6 @@ def main():
         return 0
     os.unlink(flag_file)
 
-  env = os.environ.copy()
-
   # Workaround to avoid sync failure due move in
   # https://codereview.chromium.org/1155743013
   # TODO(kjellander): Remove this after the summer of 2015.
@@ -115,9 +113,6 @@ def main():
     shutil.rmtree(freetype_src)
 
   # Avoid downloading NaCl toolchain as part of the Chromium hooks.
-  env.setdefault('GYP_DEFINES', '')
-  env['GYP_DEFINES'] += ' disable_nacl=1'
-  env['GYP_CHROMIUM_NO_ACTION'] = '1'
   gclient_cmd = 'gclient.bat' if sys.platform.startswith('win') else 'gclient'
   args = [
       gclient_cmd, 'sync', '--force', '--revision', 'src@'+opts.target_revision
@@ -183,7 +178,7 @@ def main():
   |         If that fails, wipe everything clean and start over again.  |
   +---------------------------------------------------------------------+""")
   print 'Running "%s" in %s' % (' '.join(args), opts.chromium_dir)
-  ret = subprocess.call(args, cwd=opts.chromium_dir, env=env)
+  ret = subprocess.call(args, cwd=opts.chromium_dir)
   if ret == 0:
     with open(flag_file, 'wb') as f:
       f.write(flag_file_content)
