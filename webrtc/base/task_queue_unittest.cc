@@ -101,10 +101,10 @@ TEST(TaskQueueTest, PostDelayed) {
   EXPECT_TRUE(event.Wait(1000));
   uint32_t end = Time();
   // These tests are a little relaxed due to how "powerful" our test bots can
-  // be.  Most recently we've seen windows bots fire the callback after 99ms,
+  // be.  Most recently we've seen windows bots fire the callback after 94-99ms,
   // which is why we have a little bit of leeway backwards as well.
-  EXPECT_GE(end - start, 95u);
-  EXPECT_NEAR(end - start, 195u, 100u);  // Accept 95-295.
+  EXPECT_GE(end - start, 90u);
+  EXPECT_NEAR(end - start, 190u, 100u);  // Accept 90-290.
 }
 
 TEST(TaskQueueTest, PostMultipleDelayed) {
