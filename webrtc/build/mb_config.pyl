@@ -79,20 +79,11 @@
       'Android64 Tests (L Nexus9)': 'none',
     },
     'client.webrtc.fyi': {
-      # Mac
-      'Mac Asan (swarming)': 'mac_gn_asan_clang_release_bot_x64',
-
       # Linux
       'Linux64 GCC': 'gn_gcc_release_bot_x64',
-      'Linux Asan (swarming)': 'gn_asan_lsan_clang_release_bot_x64',
       'Linux Memcheck (swarming)': 'gn_release_bot_x64',
-      'Linux MSan (swarming)': 'gn_msan_clang_release_bot_x64',
-      'Linux Tsan v2 (swarming)': 'gn_tsan_clang_release_bot_x64',
-      'Linux UBSan (swarming)': 'gn_ubsan_clang_release_bot_x64',
-      'Linux UBSan vptr (swarming)': 'gn_ubsan_vptr_clang_release_bot_x64',
 
       # Android
-      'Android32 Release (swarming)': 'swarming_android_gn_release_bot_arm',
       'Android32 ASan (L Nexus6)': 'android_gn_asan_shared_release_bot_arm',
       'Android32 Builder': 'android_gn_release_bot_arm',
       'Android32 Tests (J Nexus4)': 'none',
@@ -120,7 +111,6 @@
       'mac_rel': 'gn_release_bot_x64',
       'mac_asan': 'mac_gn_asan_clang_release_bot_x64',
       'mac_baremetal': 'gn_release_bot_x64',
-      'mac_swarming': 'swarming_gn_debug_bot_x64',
 
       # Linux
       'linux_compile_dbg': 'gn_debug_bot_x64',
@@ -137,7 +127,6 @@
       'linux_ubsan': 'gn_ubsan_clang_release_bot_x64',
       'linux_ubsan_vptr': 'gn_ubsan_vptr_clang_release_bot_x64',
       'linux_baremetal': 'gn_release_bot_x64',
-      'linux_swarming': 'swarming_gn_debug_bot_x64',
 
       # Android
       'android_compile_dbg': 'android_gn_debug_static_bot_arm',
@@ -153,7 +142,6 @@
       'android_clang_dbg': 'android_gn_clang_debug_bot_arm',
       'android_arm64_rel': 'android_gn_release_bot_arm64',
       'android_n6': 'android_gn_debug_static_bot_arm',
-      'android_swarming': 'swarming_android_gn_release_bot_arm',
 
       # Windows
       'win_compile_dbg': 'gn_debug_bot_x86',
@@ -170,7 +158,6 @@
       'win_x64_clang_rel': 'win_gn_clang_release_bot_x64',
       'win_asan': 'win_gn_syzyasan_release_bot_x86',
       'win_baremetal': 'gn_release_bot_x86',
-      'win_swarming': 'swarming_gn_debug_bot_x64',
       'win_x64_win8': 'gn_debug_bot_x64',
       'win_x64_win10': 'gn_debug_bot_x64',
     }
@@ -236,9 +223,6 @@
     'gn_release_bot_x64': [
       'gn', 'openh264_release_bot', 'x64'
     ],
-    'swarming_gn_debug_bot_x64': [
-      'swarming', 'gn', 'openh264_debug_bot', 'x64'
-    ],
 
     # Windows
     'win_gn_clang_debug_bot_x86': [
@@ -292,9 +276,6 @@
     ],
     'android_gn_asan_shared_release_bot_arm': [
       'android', 'gn', 'asan', 'clang', 'shared', 'release_bot', 'arm'
-    ],
-    'swarming_android_gn_release_bot_arm': [
-      'swarming', 'android', 'gn', 'release_bot', 'arm'
     ],
 
     # This is used for tracking purposes; any bot that uses this config
@@ -418,10 +399,6 @@
 
     'static': {
       'gn_args': 'is_component_build=false',
-    },
-
-    'swarming': {
-      'gn_args': '',
     },
 
     'syzyasan': {
