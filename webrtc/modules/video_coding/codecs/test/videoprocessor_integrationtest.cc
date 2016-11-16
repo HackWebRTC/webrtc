@@ -15,6 +15,7 @@
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
+#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
@@ -113,6 +114,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   webrtc::test::TestConfig config_;
   VideoCodec codec_settings_;
   webrtc::test::VideoProcessor* processor_;
+  TemporalLayersFactory tl_factory_;
 
   // Quantities defined/updated for every encoder rate update.
   // Some quantities defined per temporal layer (at most 3 layers in this test).

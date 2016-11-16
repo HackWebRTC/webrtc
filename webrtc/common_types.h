@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/optional.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
 
@@ -522,7 +523,7 @@ struct VideoCodecVP8 {
   bool automaticResizeOn;
   bool frameDroppingOn;
   int keyFrameInterval;
-  const TemporalLayersFactory* tl_factory;
+  TemporalLayersFactory* tl_factory;
 };
 
 // VP9 specific.
@@ -562,6 +563,10 @@ enum VideoCodecType {
   kVideoCodecGeneric,
   kVideoCodecUnknown
 };
+
+// Translates from name of codec to codec type and vice versa.
+rtc::Optional<std::string> CodecTypeToPayloadName(VideoCodecType type);
+rtc::Optional<VideoCodecType> PayloadNameToCodecType(const std::string& name);
 
 union VideoCodecUnion {
   VideoCodecVP8 VP8;
@@ -637,6 +642,35 @@ class VideoCodec {
   // TODO(hta): Consider replacing the union with a pointer type.
   // This will allow removing the VideoCodec* types from this file.
   VideoCodecUnion codecSpecific;
+};
+
+class BitrateAllocation {
+ public:
+  static const uint32_t kMaxBitrateBps;
+  BitrateAllocation();
+
+  bool SetBitrate(size_t spatial_index,
+                  size_t temporal_index,
+                  uint32_t bitrate_bps);
+
+  uint32_t GetBitrate(size_t spatial_index, size_t temporal_index) const;
+
+  // Get the sum of all the temporal layer for a specific spatial layer.
+  uint32_t GetSpatialLayerSum(size_t spatial_index) const;
+
+  uint32_t get_sum_bps() const { return sum_; }  // Sum of all bitrates.
+  uint32_t get_sum_kbps() const { return (sum_ + 500) / 1000; }
+
+  inline bool operator==(const BitrateAllocation& other) const {
+    return memcmp(bitrates_, other.bitrates_, sizeof(bitrates_)) == 0;
+  }
+  inline bool operator!=(const BitrateAllocation& other) const {
+    return !(*this == other);
+  }
+
+ private:
+  uint32_t sum_;
+  uint32_t bitrates_[kMaxSpatialLayers][kMaxTemporalStreams];
 };
 
 // Bandwidth over-use detector options.  These are used to drive

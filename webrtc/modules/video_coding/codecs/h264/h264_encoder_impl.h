@@ -44,7 +44,8 @@ class H264EncoderImpl : public H264Encoder {
 
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override;
-  int32_t SetRates(uint32_t bitrate, uint32_t framerate) override;
+  int32_t SetRateAllocation(const BitrateAllocation& bitrate_allocation,
+                            uint32_t framerate) override;
 
   // The result of encoding - an EncodedImage and RTPFragmentationHeader - are
   // passed to the encode complete callback.
@@ -74,8 +75,8 @@ class H264EncoderImpl : public H264Encoder {
   int width_;
   int height_;
   float max_frame_rate_;
-  unsigned int target_bps_;
-  unsigned int max_bps_;
+  uint32_t target_bps_;
+  uint32_t max_bps_;
   VideoCodecMode mode_;
   // H.264 specifc parameters
   bool frame_dropping_on_;

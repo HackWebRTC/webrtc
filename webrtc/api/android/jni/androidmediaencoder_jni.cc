@@ -112,7 +112,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   int32_t Release() override;
   int32_t SetChannelParameters(uint32_t /* packet_loss */,
                                int64_t /* rtt */) override;
-  int32_t SetRates(uint32_t new_bit_rate, uint32_t frame_rate) override;
+  int32_t SetRateAllocation(const webrtc::BitrateAllocation& rate_allocation,
+                            uint32_t frame_rate) override;
 
   // rtc::MessageHandler implementation.
   void OnMessage(rtc::Message* msg) override;
@@ -465,11 +466,12 @@ int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t MediaCodecVideoEncoder::SetRates(uint32_t new_bit_rate,
-                                         uint32_t frame_rate) {
+int32_t MediaCodecVideoEncoder::SetRateAllocation(
+    const webrtc::BitrateAllocation& rate_allocation,
+    uint32_t frame_rate) {
   return codec_thread_->Invoke<int32_t>(
       RTC_FROM_HERE, Bind(&MediaCodecVideoEncoder::SetRatesOnCodecThread, this,
-                          new_bit_rate, frame_rate));
+                          rate_allocation.get_sum_kbps(), frame_rate));
 }
 
 void MediaCodecVideoEncoder::OnMessage(rtc::Message* msg) {

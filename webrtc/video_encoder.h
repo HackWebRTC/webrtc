@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video_frame.h"
@@ -148,7 +149,17 @@ class VideoEncoder {
   //          - framerate       : The target frame rate
   //
   // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-  virtual int32_t SetRates(uint32_t bitrate, uint32_t framerate) = 0;
+  virtual int32_t SetRates(uint32_t bitrate, uint32_t framerate) {
+    RTC_NOTREACHED() << "SetRate(uint32_t, uint32_t) is deprecated.";
+    return -1;
+  }
+
+  // Default fallback: Just use the sum of bitrates as the single target rate.
+  // TODO(sprang): Remove this default implementation when we remove SetRates().
+  virtual int32_t SetRateAllocation(const BitrateAllocation& allocation,
+                                    uint32_t framerate) {
+    return SetRates(allocation.get_sum_kbps(), framerate);
+  }
 
   virtual int32_t SetPeriodicKeyFrames(bool enable) { return -1; }
   virtual void OnDroppedFrame() {}

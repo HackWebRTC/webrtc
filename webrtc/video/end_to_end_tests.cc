@@ -2548,12 +2548,13 @@ TEST_F(EndToEndTest, ReportsSetEncoderRates) {
       RTC_DCHECK_EQ(1u, encoder_config->number_of_streams);
     }
 
-    int32_t SetRates(uint32_t new_target_bitrate, uint32_t framerate) override {
+    int32_t SetRateAllocation(const BitrateAllocation& rate_allocation,
+                              uint32_t framerate) override {
       // Make sure not to trigger on any default zero bitrates.
-      if (new_target_bitrate == 0)
+      if (rate_allocation.get_sum_bps() == 0)
         return 0;
       rtc::CritScope lock(&crit_);
-      bitrate_kbps_ = new_target_bitrate;
+      bitrate_kbps_ = rate_allocation.get_sum_kbps();
       observation_complete_.Set();
       return 0;
     }

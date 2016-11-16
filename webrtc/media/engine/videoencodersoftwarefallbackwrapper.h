@@ -39,8 +39,8 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
                  const CodecSpecificInfo* codec_specific_info,
                  const std::vector<FrameType>* frame_types) override;
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
-
-  int32_t SetRates(uint32_t bitrate, uint32_t framerate) override;
+  int32_t SetRateAllocation(const BitrateAllocation& bitrate_allocation,
+                            uint32_t framerate) override;
   void OnDroppedFrame() override;
   bool SupportsNativeHandle() const override;
 
@@ -55,7 +55,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
 
   // The last bitrate/framerate set, and a flag for noting they are set.
   bool rates_set_;
-  uint32_t bitrate_;
+  BitrateAllocation bitrate_allocation_;
   uint32_t framerate_;
 
   // The last channel parameters set, and a flag for noting they are set.
