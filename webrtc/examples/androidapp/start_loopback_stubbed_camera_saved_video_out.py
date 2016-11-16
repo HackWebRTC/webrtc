@@ -74,7 +74,7 @@ def main():
 
   # Delete output video file.
   if videoout:
-    subprocess.check_call(['adb', '-s', devname, 'shell', 'rm',
+    subprocess.check_call(['adb', '-s', devname, 'shell', 'rm', '-f',
         videoout])
 
   device = MonkeyRunner.waitForConnection(2, devname)
