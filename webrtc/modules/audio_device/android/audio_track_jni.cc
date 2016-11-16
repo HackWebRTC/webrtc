@@ -227,7 +227,8 @@ void AudioTrackJni::OnCacheDirectBufferAddress(
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
   ALOGD("direct buffer capacity: %lld", capacity);
   direct_buffer_capacity_in_bytes_ = static_cast<size_t>(capacity);
-  frames_per_buffer_ = direct_buffer_capacity_in_bytes_ / kBytesPerFrame;
+  const size_t bytes_per_frame = audio_parameters_.channels() * sizeof(int16_t);
+  frames_per_buffer_ = direct_buffer_capacity_in_bytes_ / bytes_per_frame;
   ALOGD("frames_per_buffer: %" PRIuS, frames_per_buffer_);
 }
 
@@ -242,7 +243,8 @@ void JNICALL AudioTrackJni::GetPlayoutData(
 // the thread is 'AudioRecordTrack'.
 void AudioTrackJni::OnGetPlayoutData(size_t length) {
   RTC_DCHECK(thread_checker_java_.CalledOnValidThread());
-  RTC_DCHECK_EQ(frames_per_buffer_, length / kBytesPerFrame);
+  const size_t bytes_per_frame = audio_parameters_.channels() * sizeof(int16_t);
+  RTC_DCHECK_EQ(frames_per_buffer_, length / bytes_per_frame);
   if (!audio_device_buffer_) {
     ALOGE("AttachAudioBuffer has not been called!");
     return;
@@ -257,7 +259,7 @@ void AudioTrackJni::OnGetPlayoutData(size_t length) {
   // Copy decoded data into common byte buffer to ensure that it can be
   // written to the Java based audio track.
   samples = audio_device_buffer_->GetPlayoutData(direct_buffer_address_);
-  RTC_DCHECK_EQ(length, kBytesPerFrame * samples);
+  RTC_DCHECK_EQ(length, bytes_per_frame * samples);
 }
 
 }  // namespace webrtc

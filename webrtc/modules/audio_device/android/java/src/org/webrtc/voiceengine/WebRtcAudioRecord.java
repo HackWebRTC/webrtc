@@ -170,8 +170,9 @@ public class WebRtcAudioRecord {
     // Get the minimum buffer size required for the successful creation of
     // an AudioRecord object, in byte units.
     // Note that this size doesn't guarantee a smooth recording under load.
-    int minBufferSize = AudioRecord.getMinBufferSize(
-        sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+    final int channelConfig = channelCountToConfiguration(channels);
+    int minBufferSize =
+        AudioRecord.getMinBufferSize(sampleRate, channelConfig, AudioFormat.ENCODING_PCM_16BIT);
     if (minBufferSize == AudioRecord.ERROR || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
       Logging.e(TAG, "AudioRecord.getMinBufferSize failed: " + minBufferSize);
       return -1;
@@ -184,8 +185,8 @@ public class WebRtcAudioRecord {
     int bufferSizeInBytes = Math.max(BUFFER_SIZE_FACTOR * minBufferSize, byteBuffer.capacity());
     Logging.d(TAG, "bufferSizeInBytes: " + bufferSizeInBytes);
     try {
-      audioRecord = new AudioRecord(AudioSource.VOICE_COMMUNICATION, sampleRate,
-          AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
+      audioRecord = new AudioRecord(AudioSource.VOICE_COMMUNICATION, sampleRate, channelConfig,
+          AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
     } catch (IllegalArgumentException e) {
       Logging.e(TAG, e.getMessage());
       return -1;
@@ -246,7 +247,7 @@ public class WebRtcAudioRecord {
   // created instance uses the parameters that we asked for.
   private boolean areParametersValid(int sampleRate, int channels) {
     return (audioRecord.getAudioFormat() == AudioFormat.ENCODING_PCM_16BIT
-        && audioRecord.getChannelConfiguration() == AudioFormat.CHANNEL_IN_MONO
+        && audioRecord.getChannelConfiguration() == channelCountToConfiguration(channels)
         && audioRecord.getAudioSource() == AudioSource.VOICE_COMMUNICATION
         && audioRecord.getSampleRate() == sampleRate && audioRecord.getChannelCount() == channels);
   }
@@ -271,6 +272,10 @@ public class WebRtcAudioRecord {
     if (!condition) {
       throw new AssertionError("Expected condition to be true");
     }
+  }
+
+  private int channelCountToConfiguration(int channels) {
+    return (channels == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
   }
 
   private native void nativeCacheDirectBufferAddress(ByteBuffer byteBuffer, long nativeAudioRecord);

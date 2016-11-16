@@ -38,16 +38,38 @@ public class WebRtcAudioManager {
 
   private static final String TAG = "WebRtcAudioManager";
 
+  // Use mono as default for both audio directions.
+  private static boolean useStereoOutput = false;
+  private static boolean useStereoInput = false;
+
   private static boolean blacklistDeviceForOpenSLESUsage = false;
   private static boolean blacklistDeviceForOpenSLESUsageIsOverridden = false;
 
-  // Call this method to override the deault list of blacklisted devices
+  // Call this method to override the default list of blacklisted devices
   // specified in WebRtcAudioUtils.BLACKLISTED_OPEN_SL_ES_MODELS.
-  // Allows an app to take control over which devices to exlude from using
+  // Allows an app to take control over which devices to exclude from using
   // the OpenSL ES audio output path
   public static synchronized void setBlacklistDeviceForOpenSLESUsage(boolean enable) {
     blacklistDeviceForOpenSLESUsageIsOverridden = true;
     blacklistDeviceForOpenSLESUsage = enable;
+  }
+
+  // Call these methods to override the default mono audio modes for the specified direction(s)
+  // (input and/or output).
+  public static synchronized void setStereoOutput(boolean enable) {
+    Logging.w(TAG, "Overriding default output behavior: setStereoOutput(" + enable + ')');
+    useStereoOutput = enable;
+  }
+  public static synchronized void setStereoInput(boolean enable) {
+    Logging.w(TAG, "Overriding default input behavior: setStereoInput(" + enable + ')');
+    useStereoInput = enable;
+  }
+
+  public static synchronized boolean getStereoOutput() {
+    return useStereoOutput;
+  }
+  public static synchronized boolean getStereoInput() {
+    return useStereoInput;
   }
 
   // Default audio data format is PCM 16 bit per sample.
@@ -55,9 +77,6 @@ public class WebRtcAudioManager {
   private static final int BITS_PER_SAMPLE = 16;
 
   private static final int DEFAULT_FRAME_PER_BUFFER = 256;
-
-  // TODO(henrika): add stereo support for playout.
-  private static final int CHANNELS = 1;
 
   // List of possible audio modes.
   private static final String[] AUDIO_MODES = new String[] {
@@ -132,7 +151,8 @@ public class WebRtcAudioManager {
   private boolean lowLatencyInput;
   private boolean proAudio;
   private int sampleRate;
-  private int channels;
+  private int outputChannels;
+  private int inputChannels;
   private int outputBufferSize;
   private int inputBufferSize;
 
@@ -148,8 +168,8 @@ public class WebRtcAudioManager {
     }
     volumeLogger = new VolumeLogger(audioManager);
     storeAudioParameters();
-    nativeCacheAudioParameters(sampleRate, channels, hardwareAEC, hardwareAGC, hardwareNS,
-        lowLatencyOutput, lowLatencyInput, proAudio, outputBufferSize, inputBufferSize,
+    nativeCacheAudioParameters(sampleRate, outputChannels, inputChannels, hardwareAEC, hardwareAGC,
+        hardwareNS, lowLatencyOutput, lowLatencyInput, proAudio, outputBufferSize, inputBufferSize,
         nativeAudioManager);
   }
 
@@ -187,9 +207,8 @@ public class WebRtcAudioManager {
   }
 
   private void storeAudioParameters() {
-    // Only mono is supported currently (in both directions).
-    // TODO(henrika): add support for stereo playout.
-    channels = CHANNELS;
+    outputChannels = getStereoOutput() ? 2 : 1;
+    inputChannels = getStereoInput() ? 2 : 1;
     sampleRate = getNativeOutputSampleRate();
     hardwareAEC = isAcousticEchoCancelerSupported();
     // TODO(henrika): use of hardware AGC is no longer supported. Currently
@@ -200,9 +219,9 @@ public class WebRtcAudioManager {
     lowLatencyInput = isLowLatencyInputSupported();
     proAudio = isProAudioSupported();
     outputBufferSize = lowLatencyOutput ? getLowLatencyOutputFramesPerBuffer()
-                                        : getMinOutputFrameSize(sampleRate, channels);
+                                        : getMinOutputFrameSize(sampleRate, outputChannels);
     inputBufferSize = lowLatencyInput ? getLowLatencyInputFramesPerBuffer()
-                                      : getMinInputFrameSize(sampleRate, channels);
+                                      : getMinInputFrameSize(sampleRate, inputChannels);
   }
 
   // Gets the current earpiece state.
@@ -298,14 +317,8 @@ public class WebRtcAudioManager {
   // lacks support of low-latency output.
   private static int getMinOutputFrameSize(int sampleRateInHz, int numChannels) {
     final int bytesPerFrame = numChannels * (BITS_PER_SAMPLE / 8);
-    final int channelConfig;
-    if (numChannels == 1) {
-      channelConfig = AudioFormat.CHANNEL_OUT_MONO;
-    } else if (numChannels == 2) {
-      channelConfig = AudioFormat.CHANNEL_OUT_STEREO;
-    } else {
-      return -1;
-    }
+    final int channelConfig =
+        (numChannels == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO);
     return AudioTrack.getMinBufferSize(
                sampleRateInHz, channelConfig, AudioFormat.ENCODING_PCM_16BIT)
         / bytesPerFrame;
@@ -322,9 +335,10 @@ public class WebRtcAudioManager {
   // lacks support of low-latency input.
   private static int getMinInputFrameSize(int sampleRateInHz, int numChannels) {
     final int bytesPerFrame = numChannels * (BITS_PER_SAMPLE / 8);
-    assertTrue(numChannels == CHANNELS);
+    final int channelConfig =
+        (numChannels == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
     return AudioRecord.getMinBufferSize(
-               sampleRateInHz, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+               sampleRateInHz, channelConfig, AudioFormat.ENCODING_PCM_16BIT)
         / bytesPerFrame;
   }
 
@@ -341,7 +355,8 @@ public class WebRtcAudioManager {
     }
   }
 
-  private native void nativeCacheAudioParameters(int sampleRate, int channels, boolean hardwareAEC,
-      boolean hardwareAGC, boolean hardwareNS, boolean lowLatencyOutput, boolean lowLatencyInput,
-      boolean proAudio, int outputBufferSize, int inputBufferSize, long nativeAudioManager);
+  private native void nativeCacheAudioParameters(int sampleRate, int outputChannels,
+      int inputChannels, boolean hardwareAEC, boolean hardwareAGC, boolean hardwareNS,
+      boolean lowLatencyOutput, boolean lowLatencyInput, boolean proAudio, int outputBufferSize,
+      int inputBufferSize, long nativeAudioManager);
 }

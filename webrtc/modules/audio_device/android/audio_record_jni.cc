@@ -132,8 +132,9 @@ int32_t AudioRecordJni::InitRecording() {
   }
   frames_per_buffer_ = static_cast<size_t>(frames_per_buffer);
   ALOGD("frames_per_buffer: %" PRIuS, frames_per_buffer_);
+  const size_t bytes_per_frame = audio_parameters_.channels() * sizeof(int16_t);
   RTC_CHECK_EQ(direct_buffer_capacity_in_bytes_,
-               frames_per_buffer_ * kBytesPerFrame);
+               frames_per_buffer_ * bytes_per_frame);
   RTC_CHECK_EQ(frames_per_buffer_, audio_parameters_.frames_per_10ms_buffer());
   initialized_ = true;
   return 0;

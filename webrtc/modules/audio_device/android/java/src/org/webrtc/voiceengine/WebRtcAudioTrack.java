@@ -174,8 +174,9 @@ public class WebRtcAudioTrack {
     // AudioTrack object to be created in the MODE_STREAM mode.
     // Note that this size doesn't guarantee a smooth playback under load.
     // TODO(henrika): should we extend the buffer size to avoid glitches?
-    final int minBufferSizeInBytes = AudioTrack.getMinBufferSize(
-        sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+    final int channelConfig = channelCountToConfiguration(channels);
+    final int minBufferSizeInBytes =
+        AudioTrack.getMinBufferSize(sampleRate, channelConfig, AudioFormat.ENCODING_PCM_16BIT);
     Logging.d(TAG, "AudioTrack.getMinBufferSize: " + minBufferSizeInBytes);
     // For the streaming mode, data must be written to the audio sink in
     // chunks of size (given by byteBuffer.capacity()) less than or equal
@@ -197,9 +198,8 @@ public class WebRtcAudioTrack {
       // Create an AudioTrack object and initialize its associated audio buffer.
       // The size of this buffer determines how long an AudioTrack can play
       // before running out of data.
-      audioTrack =
-          new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRate, AudioFormat.CHANNEL_OUT_MONO,
-              AudioFormat.ENCODING_PCM_16BIT, minBufferSizeInBytes, AudioTrack.MODE_STREAM);
+      audioTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRate, channelConfig,
+          AudioFormat.ENCODING_PCM_16BIT, minBufferSizeInBytes, AudioTrack.MODE_STREAM);
     } catch (IllegalArgumentException e) {
       Logging.d(TAG, e.getMessage());
       return false;
@@ -285,7 +285,7 @@ public class WebRtcAudioTrack {
   private boolean areParametersValid(int sampleRate, int channels) {
     final int streamType = audioTrack.getStreamType();
     return (audioTrack.getAudioFormat() == AudioFormat.ENCODING_PCM_16BIT
-        && audioTrack.getChannelConfiguration() == AudioFormat.CHANNEL_OUT_MONO
+        && audioTrack.getChannelConfiguration() == channelCountToConfiguration(channels)
         && streamType == AudioManager.STREAM_VOICE_CALL && audioTrack.getSampleRate() == sampleRate
         && sampleRate == audioTrack.getNativeOutputSampleRate(streamType)
         && audioTrack.getChannelCount() == channels);
@@ -330,6 +330,10 @@ public class WebRtcAudioTrack {
     if (!condition) {
       throw new AssertionError("Expected condition to be true");
     }
+  }
+
+  private int channelCountToConfiguration(int channels) {
+    return (channels == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO);
   }
 
   private native void nativeCacheDirectBufferAddress(ByteBuffer byteBuffer, long nativeAudioRecord);
