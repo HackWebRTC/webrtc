@@ -369,7 +369,7 @@ void Call::UpdateReceiveHistograms() {
   if (video_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
     RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.VideoBitrateReceivedInKbps",
                                 video_bytes_per_sec.average * 8 / 1000);
-    LOG(LS_INFO) << "WebRTC.Call.VideoBitrateReceivedInKbps, "
+    LOG(LS_INFO) << "WebRTC.Call.VideoBitrateReceivedInBytesPerSec, "
                  << video_bytes_per_sec.ToString();
   }
   AggregatedStats audio_bytes_per_sec =
@@ -377,7 +377,7 @@ void Call::UpdateReceiveHistograms() {
   if (audio_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
     RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.AudioBitrateReceivedInKbps",
                                 audio_bytes_per_sec.average * 8 / 1000);
-    LOG(LS_INFO) << "WebRTC.Call.AudioBitrateReceivedInKbps, "
+    LOG(LS_INFO) << "WebRTC.Call.AudioBitrateReceivedInBytesPerSec, "
                  << audio_bytes_per_sec.ToString();
   }
   AggregatedStats rtcp_bytes_per_sec =
@@ -385,7 +385,7 @@ void Call::UpdateReceiveHistograms() {
   if (rtcp_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
     RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.RtcpBitrateReceivedInBps",
                                 rtcp_bytes_per_sec.average * 8);
-    LOG(LS_INFO) << "WebRTC.Call.RtcpBitrateReceivedInBps, "
+    LOG(LS_INFO) << "WebRTC.Call.RtcpBitrateReceivedInBytesPerSec, "
                  << rtcp_bytes_per_sec.ToString();
   }
   AggregatedStats recv_bytes_per_sec =
@@ -393,7 +393,7 @@ void Call::UpdateReceiveHistograms() {
   if (recv_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
     RTC_HISTOGRAM_COUNTS_100000("WebRTC.Call.BitrateReceivedInKbps",
                                 recv_bytes_per_sec.average * 8 / 1000);
-    LOG(LS_INFO) << "WebRTC.Call.BitrateReceivedInKbps, "
+    LOG(LS_INFO) << "WebRTC.Call.BitrateReceivedInBytesPerSec, "
                  << recv_bytes_per_sec.ToString();
   }
 }
