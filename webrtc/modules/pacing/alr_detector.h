@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
 #define WEBRTC_MODULES_PACING_ALR_DETECTOR_H_
 
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/typedefs.h"
@@ -28,19 +29,19 @@ class AlrDetector {
  public:
   AlrDetector();
   ~AlrDetector();
-  void OnBytesSent(size_t bytes_sent, int64_t elapsed_time_ms);
+
+  void OnBytesSent(size_t bytes_sent, int64_t now_ms);
+
   // Set current estimated bandwidth.
   void SetEstimatedBitrate(int bitrate_bps);
+
   // Returns true if currently in application-limited region.
-  bool InApplicationLimitedRegion();
+  bool InApplicationLimitedRegion() const;
 
  private:
-  size_t measurement_interval_bytes_sent_;
-  int64_t measurement_interval_elapsed_time_ms_;
-  int estimated_bitrate_bps_;
-  // Number of consecutive periods over which we observe traffic is application
-  // limited.
-  int application_limited_count_;
+  RateStatistics rate_;
+  int estimated_bitrate_bps_ = 0;
+  bool application_limited_ = false;
 };
 
 }  // namespace webrtc

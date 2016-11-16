@@ -451,7 +451,7 @@ void PacedSender::Process() {
   }
   if (is_probing && bytes_sent > 0)
     prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
-  alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
+  alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,
