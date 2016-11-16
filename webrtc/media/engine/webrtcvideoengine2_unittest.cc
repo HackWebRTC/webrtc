@@ -16,6 +16,7 @@
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/base/videoengine_unittest.h"
@@ -59,6 +60,22 @@ void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
       cricket::kRtcpFbParamTransportCc, cricket::kParamValueEmpty)));
   EXPECT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
       cricket::kRtcpFbParamCcm, cricket::kRtcpFbCcmParamFir)));
+}
+
+// Return true if any codec in |codecs| is an RTX codec with associated payload
+// type |payload_type|.
+bool HasRtxCodec(const std::vector<cricket::VideoCodec>& codecs,
+                 int payload_type) {
+  for (const cricket::VideoCodec& codec : codecs) {
+    int associated_payload_type;
+    if (cricket::CodecNamesEq(codec.name.c_str(), "rtx") &&
+        codec.GetParam(cricket::kCodecParamAssociatedPayloadType,
+                       &associated_payload_type) &&
+        associated_payload_type == payload_type) {
+      return true;
+    }
+  }
+  return false;
 }
 
 static rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateBlackFrameBuffer(
@@ -375,26 +392,38 @@ TEST_F(WebRtcVideoEngine2Test, UseExternalFactoryForVp8WhenSupported) {
 // built with no internal H264 support. This test should be updated
 // if/when we start adding RTX codecs for unrecognized codec names.
 TEST_F(WebRtcVideoEngine2Test, RtxCodecAddedForExternalCodec) {
+  using webrtc::H264::ProfileLevelIdToString;
+  using webrtc::H264::ProfileLevelId;
+  using webrtc::H264::kLevel1;
+  cricket::VideoCodec h264_constrained_baseline("H264");
+  h264_constrained_baseline.params[kH264FmtpProfileLevelId] =
+      *ProfileLevelIdToString(
+          ProfileLevelId(webrtc::H264::kProfileConstrainedBaseline, kLevel1));
+  cricket::VideoCodec h264_constrained_high("H264");
+  h264_constrained_high.params[kH264FmtpProfileLevelId] =
+      *ProfileLevelIdToString(
+          ProfileLevelId(webrtc::H264::kProfileConstrainedHigh, kLevel1));
+  cricket::VideoCodec h264_high("H264");
+  h264_high.params[kH264FmtpProfileLevelId] = *ProfileLevelIdToString(
+      ProfileLevelId(webrtc::H264::kProfileHigh, kLevel1));
+
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
-  encoder_factory.AddSupportedVideoCodecType("H264");
+  encoder_factory.AddSupportedVideoCodec(h264_constrained_baseline);
+  encoder_factory.AddSupportedVideoCodec(h264_constrained_high);
+  encoder_factory.AddSupportedVideoCodec(h264_high);
   engine_.SetExternalEncoderFactory(&encoder_factory);
   engine_.Init();
 
-  auto codecs = engine_.codecs();
-  // First figure out what payload type the test codec got assigned.
-  auto test_codec_it =
-      std::find_if(codecs.begin(), codecs.end(),
-                   [](const VideoCodec& c) { return c.name == "H264"; });
-  ASSERT_NE(codecs.end(), test_codec_it);
-  // Now search for an RTX codec for it.
-  EXPECT_TRUE(std::any_of(codecs.begin(), codecs.end(),
-                          [&test_codec_it](const VideoCodec& c) {
-                            int associated_payload_type;
-                            return c.name == "rtx" &&
-                                   c.GetParam(kCodecParamAssociatedPayloadType,
-                                              &associated_payload_type) &&
-                                   associated_payload_type == test_codec_it->id;
-                          }));
+  // First figure out what payload types the test codecs got assigned.
+  const std::vector<cricket::VideoCodec> codecs = engine_.codecs();
+  // Now search for RTX codecs for them. Expect that Constrained Baseline and
+  // Constrained High got an associated RTX codec, but not High.
+  EXPECT_TRUE(HasRtxCodec(
+      codecs, FindMatchingCodec(codecs, h264_constrained_baseline)->id));
+  EXPECT_TRUE(HasRtxCodec(
+      codecs, FindMatchingCodec(codecs, h264_constrained_high)->id));
+  EXPECT_FALSE(HasRtxCodec(
+      codecs, FindMatchingCodec(codecs, h264_high)->id));
 }
 
 void WebRtcVideoEngine2Test::TestExtendedEncoderOveruse(

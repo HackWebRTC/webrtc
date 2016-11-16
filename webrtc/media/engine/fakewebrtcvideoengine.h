@@ -233,6 +233,10 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
     encoders_have_internal_sources_ = internal_source;
   }
 
+  void AddSupportedVideoCodec(const cricket::VideoCodec& codec) {
+    codecs_.push_back(codec);
+  }
+
   void AddSupportedVideoCodecType(const std::string& name) {
     codecs_.push_back(cricket::VideoCodec(name));
   }

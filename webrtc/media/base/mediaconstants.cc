@@ -117,7 +117,8 @@ const int kDefaultFlexfecPlType = 118;
 const int kDefaultRtxVp8PlType = 96;
 const int kDefaultRtxVp9PlType = 97;
 const int kDefaultRtxRedPlType = 98;
-const int kDefaultRtxH264PlType = 99;
+const int kDefaultRtxH264ConstrainedBaselinePlType = 99;
+const int kDefaultRtxH264ConstrainedHighPlType = 102;
 
 const int kDefaultVideoMaxFramerate = 60;
 }  // namespace cricket

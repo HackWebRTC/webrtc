@@ -70,7 +70,7 @@ PayloadTypeMapper::PayloadTypeMapper()
           {{kRtxCodecName,    90000, 0,
               {{kCodecParamAssociatedPayloadType,
                       std::to_string(kDefaultH264PlType)}}},
-                kDefaultRtxH264PlType},
+                kDefaultRtxH264ConstrainedBaselinePlType},
           // Other codecs
           {{kVp8CodecName,    90000, 0}, kDefaultVp8PlType},
           {{kVp9CodecName,    90000, 0}, kDefaultVp9PlType},

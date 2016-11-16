@@ -22,6 +22,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call.h"
+#include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/engine/constants.h"
 #include "webrtc/media/engine/simulcast.h"
 #include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
@@ -404,7 +405,21 @@ void AddCodecAndMaybeRtxCodec(const VideoCodec& codec,
   } else if (CodecNamesEq(codec.name, kVp9CodecName)) {
     rtx_payload_type = kDefaultRtxVp9PlType;
   } else if (CodecNamesEq(codec.name, kH264CodecName)) {
-    rtx_payload_type = kDefaultRtxH264PlType;
+    // Parse H264 profile.
+    const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
+        webrtc::H264::ParseSdpProfileLevelId(codec.params);
+    if (!profile_level_id)
+      return;
+    const webrtc::H264::Profile profile = profile_level_id->profile;
+    // In H.264, we only support rtx for constrained baseline and constrained
+    // high profile.
+    if (profile == webrtc::H264::kProfileConstrainedBaseline) {
+      rtx_payload_type = kDefaultRtxH264ConstrainedBaselinePlType;
+    } else if (profile == webrtc::H264::kProfileConstrainedHigh) {
+      rtx_payload_type = kDefaultRtxH264ConstrainedHighPlType;
+    } else {
+      return;
+    }
   } else if (CodecNamesEq(codec.name, kRedCodecName)) {
     rtx_payload_type = kDefaultRtxRedPlType;
   } else {

@@ -139,7 +139,8 @@ extern const int kDefaultFlexfecPlType;
 extern const int kDefaultRtxVp8PlType;
 extern const int kDefaultRtxVp9PlType;
 extern const int kDefaultRtxRedPlType;
-extern const int kDefaultRtxH264PlType;
+extern const int kDefaultRtxH264ConstrainedBaselinePlType;
+extern const int kDefaultRtxH264ConstrainedHighPlType;
 
 extern const int kDefaultVideoMaxFramerate;
 }  // namespace cricket

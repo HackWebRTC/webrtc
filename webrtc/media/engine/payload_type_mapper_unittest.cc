@@ -78,7 +78,8 @@ TEST_F(PayloadTypeMapperTest, WebRTCPayloadTypes) {
   };
   EXPECT_EQ(kDefaultRtxVp8PlType,  rtx_mapping(kDefaultVp8PlType));
   EXPECT_EQ(kDefaultRtxVp9PlType,  rtx_mapping(kDefaultVp9PlType));
-  EXPECT_EQ(kDefaultRtxH264PlType, rtx_mapping(kDefaultH264PlType));
+  EXPECT_EQ(kDefaultRtxH264ConstrainedBaselinePlType,
+            rtx_mapping(kDefaultH264PlType));
   EXPECT_EQ(kDefaultRtxRedPlType,  rtx_mapping(kDefaultRedPlType));
 
   EXPECT_EQ(102, FindMapping({kIlbcCodecName,  8000, 1}));
