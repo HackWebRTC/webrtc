@@ -1426,20 +1426,29 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
 void PeerConnection::CreateAudioReceiver(MediaStreamInterface* stream,
                                          const std::string& track_id,
                                          uint32_t ssrc) {
-  receivers_.push_back(
-      RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
+  rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
+      receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
           signaling_thread(), new AudioRtpReceiver(stream, track_id, ssrc,
-                                                   session_->voice_channel())));
+                                                   session_->voice_channel()));
+
+  receivers_.push_back(receiver);
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
+  streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));
+  observer_->OnAddTrack(receiver, streams);
 }
 
 void PeerConnection::CreateVideoReceiver(MediaStreamInterface* stream,
                                          const std::string& track_id,
                                          uint32_t ssrc) {
-  receivers_.push_back(
-      RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
+  rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
+      receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
           signaling_thread(),
           new VideoRtpReceiver(stream, track_id, factory_->worker_thread(),
-                               ssrc, session_->video_channel())));
+                               ssrc, session_->video_channel()));
+  receivers_.push_back(receiver);
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
+  streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));
+  observer_->OnAddTrack(receiver, streams);
 }
 
 // TODO(deadbeef): Keep RtpReceivers around even if track goes away in remote

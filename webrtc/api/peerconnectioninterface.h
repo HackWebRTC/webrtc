@@ -598,6 +598,13 @@ class PeerConnectionObserver {
   // Called when the ICE connection receiving status changes.
   virtual void OnIceConnectionReceivingChange(bool receiving) {}
 
+  // Called when a track is added to streams.
+  // TODO(zhihuang) Make this a pure virtual method when all its subclasses
+  // implement it.
+  virtual void OnAddTrack(
+      rtc::scoped_refptr<RtpReceiverInterface> receiver,
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams) {}
+
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
   ~PeerConnectionObserver() {}

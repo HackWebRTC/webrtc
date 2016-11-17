@@ -91,6 +91,25 @@ static const char kSdpStringWithStream1[] =
     "a=ssrc:2 mslabel:stream1\r\n"
     "a=ssrc:2 label:videotrack0\r\n";
 
+// Reference SDP with a MediaStream with label "stream1" and audio track with
+// id "audio_1";
+static const char kSdpStringWithStream1AudioTrackOnly[] =
+    "v=0\r\n"
+    "o=- 0 0 IN IP4 127.0.0.1\r\n"
+    "s=-\r\n"
+    "t=0 0\r\n"
+    "a=ice-ufrag:e5785931\r\n"
+    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
+    "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
+    "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
+    "m=audio 1 RTP/AVPF 103\r\n"
+    "a=mid:audio\r\n"
+    "a=sendrecv\r\n"
+    "a=rtpmap:103 ISAC/16000\r\n"
+    "a=ssrc:1 cname:stream1\r\n"
+    "a=ssrc:1 mslabel:stream1\r\n"
+    "a=ssrc:1 label:audiotrack0\r\n";
+
 // Reference SDP with two MediaStreams with label "stream1" and "stream2. Each
 // MediaStreams have one audio track and one video track.
 // This uses MSID.
@@ -499,13 +518,13 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) override {
     EXPECT_EQ(pc_->ice_connection_state(), new_state);
-    callback_triggered = true;
+    callback_triggered_ = true;
   }
   void OnIceGatheringChange(
       PeerConnectionInterface::IceGatheringState new_state) override {
     EXPECT_EQ(pc_->ice_gathering_state(), new_state);
     ice_complete_ = new_state == PeerConnectionInterface::kIceGatheringComplete;
-    callback_triggered = true;
+    callback_triggered_ = true;
   }
   void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
     EXPECT_NE(PeerConnectionInterface::kIceGatheringNew,
@@ -517,16 +536,24 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     last_candidate_.reset(webrtc::CreateIceCandidate(candidate->sdp_mid(),
         candidate->sdp_mline_index(), sdp, NULL));
     EXPECT_TRUE(last_candidate_.get() != NULL);
-    callback_triggered = true;
+    callback_triggered_ = true;
   }
 
   void OnIceCandidatesRemoved(
       const std::vector<cricket::Candidate>& candidates) override {
-    callback_triggered = true;
+    callback_triggered_ = true;
   }
 
   void OnIceConnectionReceivingChange(bool receiving) override {
-    callback_triggered = true;
+    callback_triggered_ = true;
+  }
+
+  void OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+                  std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>
+                      streams) override {
+    EXPECT_TRUE(receiver != nullptr);
+    num_added_tracks_++;
+    last_added_track_label_ = receiver->id();
   }
 
   // Returns the label of the last added stream.
@@ -549,7 +576,9 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   rtc::scoped_refptr<StreamCollection> remote_streams_;
   bool renegotiation_needed_ = false;
   bool ice_complete_ = false;
-  bool callback_triggered = false;
+  bool callback_triggered_ = false;
+  int num_added_tracks_ = 0;
+  std::string last_added_track_label_;
 
  private:
   rtc::scoped_refptr<MediaStreamInterface> last_added_stream_;
@@ -1070,7 +1099,7 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestCallbackFunctions) {
   pc->Close();
 
   // No callbacks is expected to be called.
-  observer_.callback_triggered = false;
+  observer_.callback_triggered_ = false;
   std::vector<cricket::Candidate> candidates;
   pc_factory_for_test_->transport_controller->SignalGatheringState(
       cricket::IceGatheringState{});
@@ -1081,7 +1110,7 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestCallbackFunctions) {
   pc_factory_for_test_->transport_controller->SignalCandidatesRemoved(
       candidates);
   pc_factory_for_test_->transport_controller->SignalReceiving(false);
-  EXPECT_FALSE(observer_.callback_triggered);
+  EXPECT_FALSE(observer_.callback_triggered_);
 }
 
 // Generate different CNAMEs when PeerConnections are created.
@@ -2664,6 +2693,22 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_EQ(senders, new_senders);
   EXPECT_TRUE(ContainsSender(new_senders, kAudioTracks[0], kStreams[1]));
   EXPECT_TRUE(ContainsSender(new_senders, kVideoTracks[0], kStreams[1]));
+}
+
+// This tests that PeerConnectionObserver::OnAddTrack is correctly called.
+TEST_F(PeerConnectionInterfaceTest, OnAddTrackCallback) {
+  FakeConstraints constraints;
+  constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
+                           true);
+  CreatePeerConnection(&constraints);
+  CreateAndSetRemoteOffer(kSdpStringWithStream1AudioTrackOnly);
+  EXPECT_EQ(observer_.num_added_tracks_, 1);
+  EXPECT_EQ(observer_.last_added_track_label_, kAudioTracks[0]);
+
+  // Create and set the updated remote SDP.
+  CreateAndSetRemoteOffer(kSdpStringWithStream1);
+  EXPECT_EQ(observer_.num_added_tracks_, 2);
+  EXPECT_EQ(observer_.last_added_track_label_, kVideoTracks[0]);
 }
 
 class PeerConnectionMediaConfigTest : public testing::Test {
