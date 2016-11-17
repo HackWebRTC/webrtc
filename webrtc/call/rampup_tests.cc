@@ -57,10 +57,6 @@ RampUpTester::RampUpTester(size_t num_video_streams,
                      this,
                      "BitrateStatsPollingThread") {
   EXPECT_LE(num_audio_streams_, 1u);
-  if (rtx_) {
-    for (size_t i = 0; i < video_ssrcs_.size(); ++i)
-      rtx_ssrc_map_[video_rtx_ssrcs_[i]] = video_ssrcs_[i];
-  }
 }
 
 RampUpTester::~RampUpTester() {
@@ -172,6 +168,10 @@ void RampUpTester::ModifyVideoConfigs(
     send_config->rtp.ulpfec.ulpfec_payload_type =
         test::CallTest::kUlpfecPayloadType;
     send_config->rtp.ulpfec.red_payload_type = test::CallTest::kRedPayloadType;
+    if (rtx_) {
+      send_config->rtp.ulpfec.red_rtx_payload_type =
+          test::CallTest::kRtxRedPayloadType;
+    }
   }
 
   size_t i = 0;
@@ -188,6 +188,10 @@ void RampUpTester::ModifyVideoConfigs(
           send_config->rtp.ulpfec.red_payload_type;
       recv_config.rtp.ulpfec.ulpfec_payload_type =
           send_config->rtp.ulpfec.ulpfec_payload_type;
+      if (rtx_) {
+        recv_config.rtp.ulpfec.red_rtx_payload_type =
+            send_config->rtp.ulpfec.red_rtx_payload_type;
+      }
     }
 
     if (rtx_) {

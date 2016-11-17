@@ -100,7 +100,6 @@ class RampUpTester : public test::EndToEndTest {
   std::vector<uint32_t> video_ssrcs_;
   std::vector<uint32_t> video_rtx_ssrcs_;
   std::vector<uint32_t> audio_ssrcs_;
-  SsrcMap rtx_ssrc_map_;
 
   rtc::PlatformThread poller_thread_;
 };
