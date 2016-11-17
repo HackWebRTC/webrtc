@@ -39,7 +39,7 @@
 
 - (id)setupMockStoreWithMediaConstraintString:(NSString *)constraintString {
   id storeMock = [OCMockObject mockForClass:[ARDSettingsStore class]];
-  [([[storeMock stub] andReturn:constraintString]) videoResolutionConstraintsSetting];
+  [([[storeMock stub] andReturn:constraintString]) videoResolutionConstraints];
 
   id partialMock = [OCMockObject partialMockForObject:_model];
   [[[partialMock stub] andReturn:storeMock] settingsStore];
@@ -51,7 +51,7 @@
   // given
   id storeMock = [self setupMockStoreWithMediaConstraintString:nil];
 
-  [[storeMock expect] setVideoResolutionConstraintsSetting:@"640x480"];
+  [[storeMock expect] setVideoResolutionConstraints:@"640x480"];
 
   // when
   NSString *string = [_model currentVideoResoultionConstraintFromStore];
