@@ -611,7 +611,6 @@ if (rtc_include_tests) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
       shard_timeout = 900
     }
-
     if (is_ios) {
       deps += [ ":video_engine_tests_bundle_data" ]
     }
@@ -688,6 +687,9 @@ if (rtc_include_tests) {
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+    if (rtc_use_h264) {
+      defines += [ "WEBRTC_USE_H264" ]
     }
   }
 

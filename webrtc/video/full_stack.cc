@@ -14,7 +14,7 @@
 
 namespace webrtc {
 
-static const int kFullStackTestDurationSecs = 60;
+static const int kFullStackTestDurationSecs = 45;
 
 class FullStackTest : public VideoQualityTest {
  public:
@@ -32,12 +32,21 @@ class FullStackTest : public VideoQualityTest {
     RunTest(foreman_cif);
   }
 
-  void ForemanCifPlr5(const std::string& video_codec) {
+  void ForemanCifPlr5(const std::string& video_codec,
+                      bool use_ulpfec,
+                      bool use_flexfec) {
     VideoQualityTest::Params foreman_cif;
     foreman_cif.video = {true, 352, 288, 30, 30000, 500000, 2000000, false,
-                         video_codec, 1, 0, 0, false, false, "", "foreman_cif"};
-    foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_" + video_codec, 0.0,
-                            0.0, kFullStackTestDurationSecs};
+                         video_codec, 1, 0, 0, use_ulpfec, use_flexfec, "",
+                         "foreman_cif"};
+    std::string fec_description;
+    if (use_ulpfec)
+      fec_description += "_ulpfec";
+    if (use_flexfec)
+      fec_description += "_flexfec";
+    foreman_cif.analyzer = {
+        "foreman_cif_delay_50_0_plr_5_" + video_codec + fec_description, 0.0,
+        0.0, kFullStackTestDurationSecs};
     foreman_cif.pipe.loss_percent = 5;
     foreman_cif.pipe.queue_delay_ms = 50;
     RunTest(foreman_cif);
@@ -60,7 +69,9 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLossVp9) {
 }
 
 TEST_F(FullStackTest, ForemanCifPlr5Vp9) {
-  ForemanCifPlr5("VP9");
+  const bool kUlpfec = false;
+  const bool kFlexfec = false;
+  ForemanCifPlr5("VP9", kUlpfec, kFlexfec);
 }
 #endif  // !defined(RTC_DISABLE_VP9)
 
@@ -96,6 +107,33 @@ TEST_F(FullStackTest, ForemanCifPlr5) {
   foreman_cif.pipe.queue_delay_ms = 50;
   RunTest(foreman_cif);
 }
+
+#if defined(WEBRTC_USE_H264)
+TEST_F(FullStackTest, ForemanCifWithoutPacketlossH264) {
+  ForemanCifWithoutPacketLoss("H264");
+}
+
+TEST_F(FullStackTest, ForemanCifPlr5H264) {
+  const bool kUlpfec = false;
+  const bool kFlexfec = false;
+  ForemanCifPlr5("H264", kUlpfec, kFlexfec);
+}
+
+// Verify that this is worth the bot time, before enabling.
+TEST_F(FullStackTest, ForemanCifPlr5H264Flexfec) {
+  const bool kUlpfec = false;
+  const bool kFlexfec = true;
+  ForemanCifPlr5("H264", kUlpfec, kFlexfec);
+}
+
+// Ulpfec with H264 is an unsupported combination, so this test is only useful
+// for debugging. It is therefore disabled by default.
+TEST_F(FullStackTest, DISABLED_ForemanCifPlr5H264Ulpfec) {
+  const bool kUlpfec = true;
+  const bool kFlexfec = false;
+  ForemanCifPlr5("H264", kUlpfec, kFlexfec);
+}
+#endif  // defined(WEBRTC_USE_H264)
 
 TEST_F(FullStackTest, ForemanCif500kbps) {
   VideoQualityTest::Params foreman_cif;
