@@ -69,6 +69,9 @@ bool CodecSupported(NetEqDecoder codec_type) {
 #endif
     case NetEqDecoder::kDecoderRED:
     case NetEqDecoder::kDecoderAVT:
+    case NetEqDecoder::kDecoderAVT16kHz:
+    case NetEqDecoder::kDecoderAVT32kHz:
+    case NetEqDecoder::kDecoderAVT48kHz:
     case NetEqDecoder::kDecoderCNGnb:
     case NetEqDecoder::kDecoderCNGwb:
     case NetEqDecoder::kDecoderCNGswb32kHz:

@@ -480,7 +480,7 @@ rtc::Optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
   ci.pltype = payload_type;
   std::strncpy(ci.plname, di->get_name().c_str(), sizeof(ci.plname));
   ci.plname[sizeof(ci.plname) - 1] = '\0';
-  ci.plfreq = di->IsRed() || di->IsDtmf() ? 8000 : di->SampleRateHz();
+  ci.plfreq = di->IsRed() ? 8000 : di->SampleRateHz();
   AudioDecoder* const decoder = di->GetDecoder();
   ci.channels = decoder ? decoder->Channels() : 1;
   return rtc::Optional<CodecInst>(ci);

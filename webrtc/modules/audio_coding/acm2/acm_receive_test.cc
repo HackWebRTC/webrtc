@@ -81,8 +81,14 @@ bool RemapPltypeAndUseThisCodec(const char* plname,
     *pltype = 103;
   } else if (STR_CASE_CMP(plname, "ISAC") == 0 && plfreq == 32000) {
     *pltype = 104;
-  } else if (STR_CASE_CMP(plname, "telephone-event") == 0) {
+  } else if (STR_CASE_CMP(plname, "telephone-event") == 0 && plfreq == 8000) {
     *pltype = 106;
+  } else if (STR_CASE_CMP(plname, "telephone-event") == 0 && plfreq == 16000) {
+    *pltype = 114;
+  } else if (STR_CASE_CMP(plname, "telephone-event") == 0 && plfreq == 32000) {
+    *pltype = 115;
+  } else if (STR_CASE_CMP(plname, "telephone-event") == 0 && plfreq == 48000) {
+    *pltype = 116;
   } else if (STR_CASE_CMP(plname, "red") == 0) {
     *pltype = 117;
   } else if (STR_CASE_CMP(plname, "L16") == 0 && plfreq == 8000) {

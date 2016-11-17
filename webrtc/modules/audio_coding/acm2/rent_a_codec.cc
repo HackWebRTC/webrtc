@@ -99,6 +99,15 @@ rtc::Optional<SdpAudioFormat> RentACodec::NetEqDecoderToSdpAudioFormat(
     case NetEqDecoder::kDecoderAVT:
       return rtc::Optional<SdpAudioFormat>(
           SdpAudioFormat("telephone-event", 8000, 1));
+    case NetEqDecoder::kDecoderAVT16kHz:
+      return rtc::Optional<SdpAudioFormat>(
+          SdpAudioFormat("telephone-event", 16000, 1));
+    case NetEqDecoder::kDecoderAVT32kHz:
+      return rtc::Optional<SdpAudioFormat>(
+          SdpAudioFormat("telephone-event", 32000, 1));
+    case NetEqDecoder::kDecoderAVT48kHz:
+      return rtc::Optional<SdpAudioFormat>(
+          SdpAudioFormat("telephone-event", 48000, 1));
     case NetEqDecoder::kDecoderCNGnb:
       return rtc::Optional<SdpAudioFormat>(SdpAudioFormat("cn", 8000, 1));
     case NetEqDecoder::kDecoderCNGwb:

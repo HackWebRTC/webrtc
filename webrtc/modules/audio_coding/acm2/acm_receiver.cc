@@ -102,7 +102,6 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
       RTC_DCHECK(last_audio_format_);
       last_packet_sample_rate_hz_ = rtc::Optional<int>(ci->plfreq);
     }
-
   }  // |crit_sect_| is released.
 
   if (neteq_->InsertPacket(rtp_header, incoming_payload, receive_timestamp) <

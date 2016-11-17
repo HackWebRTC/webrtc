@@ -424,7 +424,7 @@ class WebRtcVoiceCodecs final {
     // Select the preferred send codec (the first non-telephone-event/CN codec).
     for (const AudioCodec& codec : codecs) {
       if (IsCodec(codec, kDtmfCodecName) || IsCodec(codec, kCnCodecName)) {
-        // Skip telephone-event/CN codec, which will be handled later.
+        // Skip telephone-event/CN codecs - they will be handled later.
         continue;
       }
 
@@ -453,7 +453,7 @@ class WebRtcVoiceCodecs final {
     int max_bitrate_bps;
   };
   // Note: keep the supported packet sizes in ascending order.
-  static const CodecPref kCodecPrefs[11];
+  static const CodecPref kCodecPrefs[14];
 
   static int SelectPacketSize(const CodecPref& codec_pref, int ptime_ms) {
     int selected_packet_size_ms = codec_pref.packet_sizes_ms[0];
@@ -478,7 +478,7 @@ class WebRtcVoiceCodecs final {
   }
 };
 
-const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[11] = {
+const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[14] = {
     {kOpusCodecName, 48000, 2, 111, true, {10, 20, 40, 60}, kOpusMaxBitrateBps},
     {kIsacCodecName, 16000, 1, 103, true, {30, 60}, kIsacMaxBitrateBps},
     {kIsacCodecName, 32000, 1, 104, true, {30}, kIsacMaxBitrateBps},
@@ -490,7 +490,11 @@ const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[11] = {
     {kCnCodecName, 32000, 1, 106, false, {}},
     {kCnCodecName, 16000, 1, 105, false, {}},
     {kCnCodecName, 8000, 1, 13, false, {}},
-    {kDtmfCodecName, 8000, 1, 126, false, {}}};
+    {kDtmfCodecName, 48000, 1, 110, false, {}},
+    {kDtmfCodecName, 32000, 1, 112, false, {}},
+    {kDtmfCodecName, 16000, 1, 113, false, {}},
+    {kDtmfCodecName, 8000, 1, 126, false, {}}
+};
 
 rtc::Optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
                                       int rtp_max_bitrate_bps,
@@ -1124,10 +1128,15 @@ AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
   const std::vector<webrtc::AudioCodecSpec>& specs =
       decoder_factory_->GetSupportedDecoders();
 
-  // Only generate CN payload types for these clockrates
+  // Only generate CN payload types for these clockrates:
   std::map<int, bool, std::greater<int>> generate_cn = {{ 8000,  false },
                                                         { 16000, false },
                                                         { 32000, false }};
+  // Only generate telephone-event payload types for these clockrates:
+  std::map<int, bool, std::greater<int>> generate_dtmf = {{ 8000,  false },
+                                                          { 16000, false },
+                                                          { 32000, false },
+                                                          { 48000, false }};
 
   auto map_format = [&mapper, &out] (const webrtc::SdpAudioFormat& format) {
     rtc::Optional<AudioCodec> opt_codec = mapper.ToAudioCodec(format);
@@ -1148,25 +1157,37 @@ AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
   };
 
   for (const auto& spec : specs) {
-    if (map_format(spec.format) && spec.allow_comfort_noise) {
-      // Generate a CN entry if the decoder allows it and we support the
-      // clockrate.
-      auto cn = generate_cn.find(spec.format.clockrate_hz);
-      if (cn != generate_cn.end()) {
-        cn->second = true;
+    if (map_format(spec.format)) {
+      if (spec.allow_comfort_noise) {
+        // Generate a CN entry if the decoder allows it and we support the
+        // clockrate.
+        auto cn = generate_cn.find(spec.format.clockrate_hz);
+        if (cn != generate_cn.end()) {
+          cn->second = true;
+        }
+      }
+
+      // Generate a telephone-event entry if we support the clockrate.
+      auto dtmf = generate_dtmf.find(spec.format.clockrate_hz);
+      if (dtmf != generate_dtmf.end()) {
+        dtmf->second = true;
       }
     }
   }
 
-  // Add CN codecs after "proper" audio codecs
+  // Add CN codecs after "proper" audio codecs.
   for (const auto& cn : generate_cn) {
     if (cn.second) {
       map_format({kCnCodecName, cn.first, 1});
     }
   }
 
-  // Add telephone-event codec last
-  map_format({kDtmfCodecName, 8000, 1});
+  // Add telephone-event codecs last.
+  for (const auto& dtmf : generate_dtmf) {
+    if (dtmf.second) {
+      map_format({kDtmfCodecName, dtmf.first, 1});
+    }
+  }
 
   return out;
 }
@@ -1794,6 +1815,10 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
   // already be receiving packets with that payload type.
   for (const AudioCodec& codec : codecs) {
     AudioCodec old_codec;
+    // TODO(solenberg): This isn't strictly correct. It should be possible to
+    // add an additional payload type for a codec. That would result in a new
+    // decoder object being allocated. What shouldn't work is to remove a PT
+    // mapping that was previously configured.
     if (FindCodec(recv_codecs_, codec, &old_codec)) {
       if (old_codec.id != codec.id) {
         LOG(LS_ERROR) << codec.name << " payload type changed.";

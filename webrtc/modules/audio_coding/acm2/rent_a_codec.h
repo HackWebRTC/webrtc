@@ -72,6 +72,9 @@ class RentACodec {
     kCNFB,
 #endif
     kAVT,
+    kAVT16kHz,
+    kAVT32kHz,
+    kAVT48kHz,
 #ifdef WEBRTC_CODEC_RED
     kRED,
 #endif
@@ -127,6 +130,9 @@ class RentACodec {
     kDecoderG722_2ch,
     kDecoderRED,
     kDecoderAVT,
+    kDecoderAVT16kHz,
+    kDecoderAVT32kHz,
+    kDecoderAVT48kHz,
     kDecoderCNGnb,
     kDecoderCNGwb,
     kDecoderCNGswb32kHz,

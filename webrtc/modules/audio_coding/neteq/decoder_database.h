@@ -62,6 +62,10 @@ class DecoderDatabase {
     void DropDecoder() const { decoder_.reset(); }
 
     int SampleRateHz() const {
+      if (IsDtmf()) {
+        // DTMF has a 1:1 mapping between clock rate and sample rate.
+        return audio_format_.clockrate_hz;
+      }
       const AudioDecoder* decoder = GetDecoder();
       RTC_DCHECK_EQ(1, !!decoder + !!cng_decoder_);
       return decoder ? decoder->SampleRateHz() : cng_decoder_->sample_rate_hz;

@@ -82,6 +82,12 @@ TEST_F(PayloadTypeMapperTest, WebRTCPayloadTypes) {
             rtx_mapping(kDefaultH264PlType));
   EXPECT_EQ(kDefaultRtxRedPlType,  rtx_mapping(kDefaultRedPlType));
 
+  auto data_mapping = [this] (const char *name) {
+    return FindMapping({name, 0, 0});
+  };
+  EXPECT_EQ(kGoogleRtpDataCodecPlType, data_mapping(kGoogleRtpDataCodecName));
+  EXPECT_EQ(kGoogleSctpDataCodecPlType, data_mapping(kGoogleSctpDataCodecName));
+
   EXPECT_EQ(102, FindMapping({kIlbcCodecName,  8000, 1}));
   EXPECT_EQ(103, FindMapping({kIsacCodecName, 16000, 1}));
   EXPECT_EQ(104, FindMapping({kIsacCodecName, 32000, 1}));
@@ -89,6 +95,11 @@ TEST_F(PayloadTypeMapperTest, WebRTCPayloadTypes) {
   EXPECT_EQ(106, FindMapping({kCnCodecName,   32000, 1}));
   EXPECT_EQ(111, FindMapping({kOpusCodecName, 48000, 2,
         {{"minptime", "10"}, {"useinbandfec", "1"}}}));
+  // TODO(solenberg): Remove 16k, 32k, 48k DTMF checks once these payload types
+  // are dynamically assigned.
+  EXPECT_EQ(110, FindMapping({kDtmfCodecName, 48000, 1}));
+  EXPECT_EQ(112, FindMapping({kDtmfCodecName, 32000, 1}));
+  EXPECT_EQ(113, FindMapping({kDtmfCodecName, 16000, 1}));
   EXPECT_EQ(126, FindMapping({kDtmfCodecName, 8000, 1}));
 }
 

@@ -42,11 +42,11 @@ const cricket::AudioCodec kG722CodecVoE(9, "G722", 16000, 64000, 1);
 const cricket::AudioCodec kG722CodecSdp(9, "G722", 8000, 64000, 1);
 const cricket::AudioCodec kCn8000Codec(13, "CN", 8000, 0, 1);
 const cricket::AudioCodec kCn16000Codec(105, "CN", 16000, 0, 1);
-const cricket::AudioCodec kTelephoneEventCodec(106,
-                                               "telephone-event",
-                                               8000,
-                                               0,
-                                               1);
+const cricket::AudioCodec
+    kTelephoneEventCodec1(106, "telephone-event", 8000, 0, 1);
+const cricket::AudioCodec
+    kTelephoneEventCodec2(107, "telephone-event", 32000, 0, 1);
+
 const uint32_t kSsrc1 = 0x99;
 const uint32_t kSsrc2 = 2;
 const uint32_t kSsrc3 = 3;
@@ -235,7 +235,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     SetSend(true);
     EXPECT_FALSE(channel_->CanInsertDtmf());
     EXPECT_FALSE(channel_->InsertDtmf(ssrc, 1, 111));
-    send_parameters_.codecs.push_back(kTelephoneEventCodec);
+    send_parameters_.codecs.push_back(kTelephoneEventCodec1);
     SetSendParameters(send_parameters_);
     EXPECT_TRUE(channel_->CanInsertDtmf());
 
@@ -255,7 +255,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(-1, telephone_event.payload_type);
     EXPECT_TRUE(channel_->InsertDtmf(ssrc, 2, 123));
     telephone_event = GetSendStream(kSsrc1).GetLatestTelephoneEvent();
-    EXPECT_EQ(kTelephoneEventCodec.id, telephone_event.payload_type);
+    EXPECT_EQ(kTelephoneEventCodec1.id, telephone_event.payload_type);
     EXPECT_EQ(2, telephone_event.event_code);
     EXPECT_EQ(123, telephone_event.duration_ms);
   }
@@ -634,7 +634,10 @@ TEST_F(WebRtcVoiceEngineTestFake, FindCodec) {
   // Find ISAC with explicit clockrate and 0 bitrate.
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(kIsacCodec, &codec_inst));
   // Find telephone-event with explicit clockrate and 0 bitrate.
-  EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(kTelephoneEventCodec,
+  EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(kTelephoneEventCodec1,
+                                                      &codec_inst));
+  // Find telephone-event with explicit clockrate and 0 bitrate.
+  EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(kTelephoneEventCodec2,
                                                       &codec_inst));
   // Find ISAC with a different payload id.
   codec = kIsacCodec;
@@ -667,12 +670,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecs) {
   cricket::AudioRecvParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs.push_back(kTelephoneEventCodec);
-  parameters.codecs[0].id = 106;  // collide with existing telephone-event
+  parameters.codecs.push_back(kTelephoneEventCodec1);
+  parameters.codecs.push_back(kTelephoneEventCodec2);
+  parameters.codecs[0].id = 106;  // collide with existing CN 32k
   parameters.codecs[2].id = 126;
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
   EXPECT_TRUE(AddRecvStream(kSsrc1));
   int channel_num = voe_.GetLastChannel();
+
   webrtc::CodecInst gcodec;
   rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "ISAC");
   gcodec.plfreq = 16000;
@@ -680,10 +685,16 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecs) {
   EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num, gcodec));
   EXPECT_EQ(106, gcodec.pltype);
   EXPECT_STREQ("ISAC", gcodec.plname);
+
   rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "telephone-event");
   gcodec.plfreq = 8000;
   EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num, gcodec));
   EXPECT_EQ(126, gcodec.pltype);
+  EXPECT_STREQ("telephone-event", gcodec.plname);
+
+  gcodec.plfreq = 32000;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num, gcodec));
+  EXPECT_EQ(107, gcodec.pltype);
   EXPECT_STREQ("telephone-event", gcodec.plname);
 }
 
@@ -776,12 +787,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsWithMultipleStreams) {
   cricket::AudioRecvParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kPcmuCodec);
-  parameters.codecs.push_back(kTelephoneEventCodec);
-  parameters.codecs[0].id = 106;  // collide with existing telephone-event
+  parameters.codecs.push_back(kTelephoneEventCodec1);
+  parameters.codecs.push_back(kTelephoneEventCodec2);
+  parameters.codecs[0].id = 106;  // collide with existing CN 32k
   parameters.codecs[2].id = 126;
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
   EXPECT_TRUE(AddRecvStream(kSsrc1));
   int channel_num2 = voe_.GetLastChannel();
+
   webrtc::CodecInst gcodec;
   rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "ISAC");
   gcodec.plfreq = 16000;
@@ -789,11 +802,17 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsWithMultipleStreams) {
   EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
   EXPECT_EQ(106, gcodec.pltype);
   EXPECT_STREQ("ISAC", gcodec.plname);
+
   rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "telephone-event");
   gcodec.plfreq = 8000;
   gcodec.channels = 1;
   EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
   EXPECT_EQ(126, gcodec.pltype);
+  EXPECT_STREQ("telephone-event", gcodec.plname);
+
+  gcodec.plfreq = 32000;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
+  EXPECT_EQ(107, gcodec.pltype);
   EXPECT_STREQ("telephone-event", gcodec.plname);
 }
 
@@ -801,7 +820,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsAfterAddingStreams) {
   EXPECT_TRUE(SetupRecvStream());
   cricket::AudioRecvParameters parameters;
   parameters.codecs.push_back(kIsacCodec);
-  parameters.codecs[0].id = 106;  // collide with existing telephone-event
+  parameters.codecs[0].id = 106;  // collide with existing CN 32k
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 
   int channel_num2 = voe_.GetLastChannel();
@@ -1849,7 +1868,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsNoCodecs) {
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsDTMFOnTop) {
   EXPECT_TRUE(SetupSendStream());
   cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kTelephoneEventCodec);
+  parameters.codecs.push_back(kTelephoneEventCodec1);
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs.push_back(kPcmuCodec);
   parameters.codecs[0].id = 98;  // DTMF
@@ -1865,7 +1884,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsDTMFOnTop) {
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsDTMFPayloadTypeOutOfRange) {
   EXPECT_TRUE(SetupSendStream());
   cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kTelephoneEventCodec);
+  parameters.codecs.push_back(kTelephoneEventCodec1);
   parameters.codecs.push_back(kIsacCodec);
   parameters.codecs[0].id = 0;  // DTMF
   parameters.codecs[1].id = 96;
@@ -1909,7 +1928,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCaller) {
   // TODO(juberti): cn 32000
   parameters.codecs.push_back(kCn16000Codec);
   parameters.codecs.push_back(kCn8000Codec);
-  parameters.codecs.push_back(kTelephoneEventCodec);
+  parameters.codecs.push_back(kTelephoneEventCodec1);
   parameters.codecs[0].id = 96;
   parameters.codecs[2].id = 97;  // wideband CN
   parameters.codecs[4].id = 98;  // DTMF
@@ -1933,7 +1952,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
   // TODO(juberti): cn 32000
   parameters.codecs.push_back(kCn16000Codec);
   parameters.codecs.push_back(kCn8000Codec);
-  parameters.codecs.push_back(kTelephoneEventCodec);
+  parameters.codecs.push_back(kTelephoneEventCodec1);
   parameters.codecs[0].id = 96;
   parameters.codecs[2].id = 97;  // wideband CN
   parameters.codecs[4].id = 98;  // DTMF
@@ -2006,7 +2025,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCaseInsensitive) {
   parameters.codecs.push_back(kPcmuCodec);
   parameters.codecs.push_back(kCn16000Codec);
   parameters.codecs.push_back(kCn8000Codec);
-  parameters.codecs.push_back(kTelephoneEventCodec);
+  parameters.codecs.push_back(kTelephoneEventCodec1);
   parameters.codecs[0].name = "iSaC";
   parameters.codecs[0].id = 96;
   parameters.codecs[2].id = 97;  // wideband CN
@@ -3404,6 +3423,12 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
       cricket::AudioCodec(96, "CN", 16000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "telephone-event", 8000, 0, 1), nullptr));
+  EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
+      cricket::AudioCodec(96, "telephone-event", 16000, 0, 1), nullptr));
+  EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
+      cricket::AudioCodec(96, "telephone-event", 32000, 0, 1), nullptr));
+  EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
+      cricket::AudioCodec(96, "telephone-event", 48000, 0, 1), nullptr));
   // Check codecs with an id by id.
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(0, "", 8000, 0, 1), nullptr));  // PCMU
@@ -3433,27 +3458,34 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   // type assignments checked here? It shouldn't really matter.
   cricket::WebRtcVoiceEngine engine(
       nullptr, webrtc::MockAudioDecoderFactory::CreateUnusedFactory());
-  for (std::vector<cricket::AudioCodec>::const_iterator it =
-           engine.send_codecs().begin();
-       it != engine.send_codecs().end(); ++it) {
-    if (it->name == "CN" && it->clockrate == 16000) {
-      EXPECT_EQ(105, it->id);
-    } else if (it->name == "CN" && it->clockrate == 32000) {
-      EXPECT_EQ(106, it->id);
-    } else if (it->name == "ISAC" && it->clockrate == 16000) {
-      EXPECT_EQ(103, it->id);
-    } else if (it->name == "ISAC" && it->clockrate == 32000) {
-      EXPECT_EQ(104, it->id);
-    } else if (it->name == "G722" && it->clockrate == 8000) {
-      EXPECT_EQ(9, it->id);
-    } else if (it->name == "telephone-event") {
-      EXPECT_EQ(126, it->id);
-    } else if (it->name == "opus") {
-      EXPECT_EQ(111, it->id);
-      ASSERT_TRUE(it->params.find("minptime") != it->params.end());
-      EXPECT_EQ("10", it->params.find("minptime")->second);
-      ASSERT_TRUE(it->params.find("useinbandfec") != it->params.end());
-      EXPECT_EQ("1", it->params.find("useinbandfec")->second);
+  for (const cricket::AudioCodec& codec : engine.send_codecs()) {
+    if (codec.name == "CN" && codec.clockrate == 16000) {
+      EXPECT_EQ(105, codec.id);
+    } else if (codec.name == "CN" && codec.clockrate == 32000) {
+      EXPECT_EQ(106, codec.id);
+    } else if (codec.name == "ISAC" && codec.clockrate == 16000) {
+      EXPECT_EQ(103, codec.id);
+    } else if (codec.name == "ISAC" && codec.clockrate == 32000) {
+      EXPECT_EQ(104, codec.id);
+    } else if (codec.name == "G722" && codec.clockrate == 8000) {
+      EXPECT_EQ(9, codec.id);
+    } else if (codec.name == "telephone-event" && codec.clockrate == 8000) {
+      EXPECT_EQ(126, codec.id);
+    // TODO(solenberg): 16k, 32k, 48k DTMF should be dynamically assigned.
+    // Remove these checks once both send and receive side assigns payload types
+    // dynamically.
+    } else if (codec.name == "telephone-event" && codec.clockrate == 16000) {
+      EXPECT_EQ(113, codec.id);
+    } else if (codec.name == "telephone-event" && codec.clockrate == 32000) {
+      EXPECT_EQ(112, codec.id);
+    } else if (codec.name == "telephone-event" && codec.clockrate == 48000) {
+      EXPECT_EQ(110, codec.id);
+    } else if (codec.name == "opus") {
+      EXPECT_EQ(111, codec.id);
+      ASSERT_TRUE(codec.params.find("minptime") != codec.params.end());
+      EXPECT_EQ("10", codec.params.find("minptime")->second);
+      ASSERT_TRUE(codec.params.find("useinbandfec") != codec.params.end());
+      EXPECT_EQ("1", codec.params.find("useinbandfec")->second);
     }
   }
 }

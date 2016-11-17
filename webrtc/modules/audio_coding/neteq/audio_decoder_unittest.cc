@@ -683,6 +683,9 @@ TEST(AudioDecoder, CodecSupported) {
   EXPECT_EQ(has_g722, CodecSupported(NetEqDecoder::kDecoderG722_2ch));
   EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderRED));
   EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderAVT));
+  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderAVT16kHz));
+  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderAVT32kHz));
+  EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderAVT48kHz));
   EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderCNGnb));
   EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderCNGwb));
   EXPECT_TRUE(CodecSupported(NetEqDecoder::kDecoderCNGswb32kHz));
