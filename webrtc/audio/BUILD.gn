@@ -16,6 +16,8 @@ rtc_static_library("audio") {
     "audio_send_stream.h",
     "audio_state.cc",
     "audio_state.h",
+    "audio_transport_proxy.cc",
+    "audio_transport_proxy.h",
     "conversion.h",
     "scoped_voe_interface.h",
   ]
@@ -29,6 +31,9 @@ rtc_static_library("audio") {
     "..:webrtc_common",
     "../api:audio_mixer_api",
     "../api:call_api",
+    "../base:rtc_base_approved",
+    "../modules/audio_device",
+    "../modules/audio_processing",
     "../system_wrappers",
     "../voice_engine",
   ]
@@ -43,6 +48,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio",
+      "../modules/audio_device:mock_audio_device",
       "//testing/gmock",
       "//testing/gtest",
     ]

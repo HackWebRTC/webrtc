@@ -26,6 +26,9 @@ struct CallHelper {
       : voice_engine_(decoder_factory) {
     webrtc::AudioState::Config audio_state_config;
     audio_state_config.voice_engine = &voice_engine_;
+    EXPECT_CALL(voice_engine_, audio_device_module());
+    EXPECT_CALL(voice_engine_, audio_processing());
+    EXPECT_CALL(voice_engine_, audio_transport());
     webrtc::Call::Config config(&event_log_);
     config.audio_state = webrtc::AudioState::Create(audio_state_config);
     call_.reset(webrtc::Call::Create(config));

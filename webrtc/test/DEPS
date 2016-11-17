@@ -6,6 +6,7 @@ include_rules = [
   "+webrtc/media/base",
   "+webrtc/modules/audio_coding",
   "+webrtc/modules/audio_device",
+  "+webrtc/modules/audio_processing",
   "+webrtc/modules/media_file",
   "+webrtc/modules/rtp_rtcp",
   "+webrtc/modules/video_capture",

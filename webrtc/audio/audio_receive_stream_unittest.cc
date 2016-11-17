@@ -78,6 +78,10 @@ struct ConfigHelper {
         RegisterVoiceEngineObserver(_)).WillOnce(Return(0));
     EXPECT_CALL(voice_engine_,
         DeRegisterVoiceEngineObserver()).WillOnce(Return(0));
+    EXPECT_CALL(voice_engine_, audio_processing());
+    EXPECT_CALL(voice_engine_, audio_device_module());
+    EXPECT_CALL(voice_engine_, audio_transport());
+
     AudioState::Config config;
     config.voice_engine = &voice_engine_;
     audio_state_ = AudioState::Create(config);

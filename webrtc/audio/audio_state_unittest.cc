@@ -24,6 +24,10 @@ struct ConfigHelper {
         RegisterVoiceEngineObserver(testing::_)).WillOnce(testing::Return(0));
     EXPECT_CALL(voice_engine_,
         DeRegisterVoiceEngineObserver()).WillOnce(testing::Return(0));
+    EXPECT_CALL(voice_engine_, audio_device_module());
+    EXPECT_CALL(voice_engine_, audio_processing());
+    EXPECT_CALL(voice_engine_, audio_transport());
+
     config_.voice_engine = &voice_engine_;
   }
   AudioState::Config& config() { return config_; }
@@ -75,6 +79,41 @@ TEST(AudioStateTest, TypingNoiseDetected) {
   EXPECT_FALSE(audio_state->typing_noise_detected());
   voe_observer->CallbackOnError(-1, VE_NOT_INITED);
   EXPECT_FALSE(audio_state->typing_noise_detected());
+}
+
+// Test that RecordedDataIsAvailable calls get to the original transport.
+TEST(AudioStateTest, RecordedAudioArrivesAtOriginalTransport) {
+  using testing::_;
+
+  ConfigHelper helper;
+  auto& voice_engine = helper.voice_engine();
+  auto device =
+      static_cast<MockAudioDeviceModule*>(voice_engine.audio_device_module());
+
+  AudioTransport* audio_transport_proxy = nullptr;
+  ON_CALL(*device, RegisterAudioCallback(_))
+      .WillByDefault(
+          testing::Invoke([&audio_transport_proxy](AudioTransport* transport) {
+            audio_transport_proxy = transport;
+            return 0;
+          }));
+
+  MockAudioTransport original_audio_transport;
+  ON_CALL(voice_engine, audio_transport())
+      .WillByDefault(testing::Return(&original_audio_transport));
+
+  EXPECT_CALL(voice_engine, audio_device_module());
+  std::unique_ptr<internal::AudioState> audio_state(
+      new internal::AudioState(helper.config()));
+
+  // Setup completed. Ensure call of old transport is forwarded to new.
+  uint32_t new_mic_level;
+  EXPECT_CALL(original_audio_transport,
+              RecordedDataIsAvailable(nullptr, 80, 2, 1, 8000, 0, 0, 0, false,
+                                      testing::Ref(new_mic_level)));
+
+  audio_transport_proxy->RecordedDataIsAvailable(nullptr, 80, 2, 1, 8000, 0, 0,
+                                                 0, false, new_mic_level);
 }
 }  // namespace test
 }  // namespace webrtc

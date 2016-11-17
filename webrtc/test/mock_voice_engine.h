@@ -13,6 +13,9 @@
 
 #include <memory>
 
+#include "webrtc/modules/audio_device/include/mock_audio_device.h"
+#include "webrtc/modules/audio_device/include/mock_audio_transport.h"
+#include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
@@ -47,6 +50,13 @@ class MockVoiceEngine : public VoiceEngineImpl {
               .WillRepeatedly(testing::ReturnRef(decoder_factory_));
           return proxy;
         }));
+
+    ON_CALL(*this, audio_device_module())
+        .WillByDefault(testing::Return(&mock_audio_device_));
+    ON_CALL(*this, audio_processing())
+        .WillByDefault(testing::Return(&mock_audio_processing_));
+    ON_CALL(*this, audio_transport())
+        .WillByDefault(testing::Return(&mock_audio_transport_));
   }
   virtual ~MockVoiceEngine() /* override */ {
     // Decrease ref count before base class d-tor is called; otherwise it will
@@ -111,6 +121,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
           AudioProcessing* audioproc,
           const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory));
   MOCK_METHOD0(audio_processing, AudioProcessing*());
+  MOCK_METHOD0(audio_device_module, AudioDeviceModule*());
   MOCK_METHOD0(Terminate, int());
   MOCK_METHOD0(CreateChannel, int());
   MOCK_METHOD1(CreateChannel, int(const ChannelConfig& config));
@@ -330,6 +341,10 @@ class MockVoiceEngine : public VoiceEngineImpl {
   // return a dangling reference. Fortunately, this should go away once
   // voe::Channel does.
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
+
+  MockAudioDeviceModule mock_audio_device_;
+  MockAudioProcessing mock_audio_processing_;
+  MockAudioTransport mock_audio_transport_;
 };
 }  // namespace test
 }  // namespace webrtc
