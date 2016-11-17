@@ -167,11 +167,11 @@ VideoEncoderConfig::VideoEncoderConfig(const VideoEncoderConfig&) = default;
 void VideoEncoderConfig::EncoderSpecificSettings::FillEncoderSpecificSettings(
     VideoCodec* codec) const {
   if (codec->codecType == kVideoCodecH264) {
-    FillVideoCodecH264(&codec->codecSpecific.H264);
+    FillVideoCodecH264(codec->H264());
   } else if (codec->codecType == kVideoCodecVP8) {
-    FillVideoCodecVp8(&codec->codecSpecific.VP8);
+    FillVideoCodecVp8(codec->VP8());
   } else if (codec->codecType == kVideoCodecVP9) {
-    FillVideoCodecVp9(&codec->codecSpecific.VP9);
+    FillVideoCodecVp9(codec->VP9());
   } else {
     RTC_NOTREACHED() << "Encoder specifics set/used for unknown codec type.";
   }

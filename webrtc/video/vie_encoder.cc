@@ -528,19 +528,15 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     webrtc::CodecSpecificInfo codec_specific_info;
     codec_specific_info.codecType = webrtc::kVideoCodecVP8;
 
-      codec_specific_info.codecSpecific.VP8.hasReceivedRPSI =
-          has_received_rpsi_;
-      codec_specific_info.codecSpecific.VP8.hasReceivedSLI =
-          has_received_sli_;
-      codec_specific_info.codecSpecific.VP8.pictureIdRPSI =
-          picture_id_rpsi_;
-      codec_specific_info.codecSpecific.VP8.pictureIdSLI  =
-          picture_id_sli_;
-      has_received_sli_ = false;
-      has_received_rpsi_ = false;
+    codec_specific_info.codecSpecific.VP8.hasReceivedRPSI = has_received_rpsi_;
+    codec_specific_info.codecSpecific.VP8.hasReceivedSLI = has_received_sli_;
+    codec_specific_info.codecSpecific.VP8.pictureIdRPSI = picture_id_rpsi_;
+    codec_specific_info.codecSpecific.VP8.pictureIdSLI = picture_id_sli_;
+    has_received_sli_ = false;
+    has_received_rpsi_ = false;
 
-      video_sender_.AddVideoFrame(video_frame, &codec_specific_info);
-      return;
+    video_sender_.AddVideoFrame(video_frame, &codec_specific_info);
+    return;
   }
   video_sender_.AddVideoFrame(video_frame, nullptr);
 }
