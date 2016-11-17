@@ -450,8 +450,8 @@ void AecDumpBasedSimulator::HandleMessage(
       apm_config.level_controller.enabled = *settings_.use_lc;
     }
 
-    if (settings_.use_red) {
-      apm_config.residual_echo_detector.enabled = *settings_.use_red;
+    if (settings_.use_ed) {
+      apm_config.residual_echo_detector.enabled = *settings_.use_ed;
     }
 
     ap_->ApplyConfig(apm_config);

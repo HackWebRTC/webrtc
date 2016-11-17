@@ -79,10 +79,10 @@ void CopyToAudioFrame(const ChannelBuffer<float>& src, AudioFrame* dest) {
 AudioProcessingSimulator::AudioProcessingSimulator(
     const SimulationSettings& settings)
     : settings_(settings) {
-  if (settings_.red_graph_output_filename &&
-      settings_.red_graph_output_filename->size() > 0) {
+  if (settings_.ed_graph_output_filename &&
+      settings_.ed_graph_output_filename->size() > 0) {
     residual_echo_likelihood_graph_writer_.open(
-        *settings_.red_graph_output_filename);
+        *settings_.ed_graph_output_filename);
     RTC_CHECK(residual_echo_likelihood_graph_writer_.is_open());
     WriteEchoLikelihoodGraphFileHeader(&residual_echo_likelihood_graph_writer_);
   }
@@ -281,8 +281,8 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
       !settings_.use_extended_filter || *settings_.use_extended_filter));
   config.Set<DelayAgnostic>(new DelayAgnostic(!settings_.use_delay_agnostic ||
                                               *settings_.use_delay_agnostic));
-  if (settings_.use_red) {
-    apm_config.residual_echo_detector.enabled = *settings_.use_red;
+  if (settings_.use_ed) {
+    apm_config.residual_echo_detector.enabled = *settings_.use_ed;
   }
 
   ap_.reset(AudioProcessing::Create(config));

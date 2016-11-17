@@ -46,8 +46,8 @@ struct SimulationSettings {
   rtc::Optional<std::string> reverse_input_filename;
   rtc::Optional<bool> use_aec;
   rtc::Optional<bool> use_aecm;
-  rtc::Optional<bool> use_red;  // Residual Echo Detector.
-  rtc::Optional<std::string> red_graph_output_filename;
+  rtc::Optional<bool> use_ed;  // Residual Echo Detector.
+  rtc::Optional<std::string> ed_graph_output_filename;
   rtc::Optional<bool> use_agc;
   rtc::Optional<bool> use_hpf;
   rtc::Optional<bool> use_ns;
