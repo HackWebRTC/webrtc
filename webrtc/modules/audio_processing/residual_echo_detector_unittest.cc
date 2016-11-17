@@ -17,6 +17,7 @@ namespace webrtc {
 
 TEST(ResidualEchoDetectorTests, Echo) {
   ResidualEchoDetector echo_detector;
+  echo_detector.SetReliabilityForTest(1.0f);
   std::vector<float> ones(160, 1.f);
   std::vector<float> zeros(160, 0.f);
 
@@ -41,6 +42,7 @@ TEST(ResidualEchoDetectorTests, Echo) {
 
 TEST(ResidualEchoDetectorTests, NoEcho) {
   ResidualEchoDetector echo_detector;
+  echo_detector.SetReliabilityForTest(1.0f);
   std::vector<float> ones(160, 1.f);
   std::vector<float> zeros(160, 0.f);
 
@@ -60,6 +62,7 @@ TEST(ResidualEchoDetectorTests, NoEcho) {
 
 TEST(ResidualEchoDetectorTests, EchoWithRenderClockDrift) {
   ResidualEchoDetector echo_detector;
+  echo_detector.SetReliabilityForTest(1.0f);
   std::vector<float> ones(160, 1.f);
   std::vector<float> zeros(160, 0.f);
 
@@ -94,6 +97,7 @@ TEST(ResidualEchoDetectorTests, EchoWithRenderClockDrift) {
 
 TEST(ResidualEchoDetectorTests, EchoWithCaptureClockDrift) {
   ResidualEchoDetector echo_detector;
+  echo_detector.SetReliabilityForTest(1.0f);
   std::vector<float> ones(160, 1.f);
   std::vector<float> zeros(160, 0.f);
 

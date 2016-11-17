@@ -25,6 +25,7 @@ float Power(rtc::ArrayView<const float> input) {
 constexpr size_t kLookbackFrames = 650;
 // TODO(ivoc): Verify the size of this buffer.
 constexpr size_t kRenderBufferSize = 30;
+constexpr float kAlpha = 0.001f;
 
 }  // namespace
 
@@ -100,6 +101,8 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
     echo_likelihood_ = std::max(
         echo_likelihood_, covariances_[delay].normalized_cross_correlation());
   }
+  reliability_ = (1.0f - kAlpha) * reliability_ + kAlpha * 1.0f;
+  echo_likelihood_ *= reliability_;
   int echo_percentage = static_cast<int>(echo_likelihood_ * 100);
   RTC_HISTOGRAM_COUNTS("WebRTC.Audio.ResidualEchoDetector.EchoLikelihood",
                        echo_percentage, 0, 100, 100 /* number of bins */);
@@ -121,6 +124,7 @@ void ResidualEchoDetector::Initialize() {
   }
   echo_likelihood_ = 0.f;
   next_insertion_index_ = 0;
+  reliability_ = 0.f;
 }
 
 void ResidualEchoDetector::PackRenderAudioBuffer(

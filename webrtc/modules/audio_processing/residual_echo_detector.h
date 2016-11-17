@@ -37,6 +37,9 @@ class ResidualEchoDetector {
   // This function should be called while holding the capture lock.
   void Initialize();
 
+  // This function is for testing purposes only.
+  void SetReliabilityForTest(float value) { reliability_ = value; }
+
   static void PackRenderAudioBuffer(AudioBuffer* audio,
                                     std::vector<float>* packed_buffer);
 
@@ -71,6 +74,8 @@ class ResidualEchoDetector {
   MeanVarianceEstimator capture_statistics_;
   // Current echo likelihood.
   float echo_likelihood_ = 0.f;
+  // Reliability of the current likelihood.
+  float reliability_ = 0.f;
 };
 
 }  // namespace webrtc
