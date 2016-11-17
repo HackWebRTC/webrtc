@@ -353,23 +353,20 @@ class CodecObserver : public test::EndToEndTest,
 };
 
 TEST_F(EndToEndTest, SendsAndReceivesVP8Rotation90) {
-  CodecObserver test(5, kVideoRotation_90, "VP8",
-                     VideoEncoder::Create(VideoEncoder::kVp8),
+  CodecObserver test(5, kVideoRotation_90, "VP8", VP8Encoder::Create(),
                      VP8Decoder::Create());
   RunBaseTest(&test);
 }
 
 #if !defined(RTC_DISABLE_VP9)
 TEST_F(EndToEndTest, SendsAndReceivesVP9) {
-  CodecObserver test(500, kVideoRotation_0, "VP9",
-                     VideoEncoder::Create(VideoEncoder::kVp9),
+  CodecObserver test(500, kVideoRotation_0, "VP9", VP9Encoder::Create(),
                      VP9Decoder::Create());
   RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, SendsAndReceivesVP9VideoRotation90) {
-  CodecObserver test(5, kVideoRotation_90, "VP9",
-                     VideoEncoder::Create(VideoEncoder::kVp9),
+  CodecObserver test(5, kVideoRotation_90, "VP9", VP9Encoder::Create(),
                      VP9Decoder::Create());
   RunBaseTest(&test);
 }
@@ -377,15 +374,13 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9VideoRotation90) {
 
 #if defined(WEBRTC_USE_H264)
 TEST_F(EndToEndTest, SendsAndReceivesH264) {
-  CodecObserver test(500, kVideoRotation_0, "H264",
-                     VideoEncoder::Create(VideoEncoder::kH264),
+  CodecObserver test(500, kVideoRotation_0, "H264", H264Encoder::Create(),
                      H264Decoder::Create());
   RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, SendsAndReceivesH264VideoRotation90) {
-  CodecObserver test(5, kVideoRotation_90, "H264",
-                     VideoEncoder::Create(VideoEncoder::kH264),
+  CodecObserver test(5, kVideoRotation_90, "H264", H264Encoder::Create(),
                      H264Decoder::Create());
   RunBaseTest(&test);
 }
@@ -765,7 +760,7 @@ TEST_F(EndToEndTest, ReceivedUlpfecPacketsNotNacked) {
           ulpfec_sequence_number_(0),
           has_last_sequence_number_(false),
           last_sequence_number_(0),
-          encoder_(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8)),
+          encoder_(VP8Encoder::Create()),
           decoder_(VP8Decoder::Create()) {}
 
    private:
@@ -933,7 +928,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
           retransmission_ssrc_(enable_rtx ? kSendRtxSsrcs[0]
                                           : kVideoSendSsrcs[0]),
           retransmission_payload_type_(GetPayloadType(enable_rtx, enable_red)),
-          encoder_(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8)),
+          encoder_(VP8Encoder::Create()),
           marker_bits_observed_(0),
           retransmitted_timestamp_(0) {}
 
@@ -1332,7 +1327,7 @@ class MultiStreamTest {
 
     std::unique_ptr<VideoEncoder> encoders[kNumStreams];
     for (size_t i = 0; i < kNumStreams; ++i)
-      encoders[i].reset(VideoEncoder::Create(VideoEncoder::kVp8));
+      encoders[i].reset(VP8Encoder::Create());
 
     VideoSendStream* send_streams[kNumStreams];
     VideoReceiveStream* receive_streams[kNumStreams];
@@ -2182,9 +2177,7 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
           use_red_(use_red),
           screenshare_(screenshare),
           // This test uses NACK, so to send FEC we can't use a fake encoder.
-          vp8_encoder_(
-              use_red ? VideoEncoder::Create(VideoEncoder::EncoderType::kVp8)
-                      : nullptr),
+          vp8_encoder_(use_red ? VP8Encoder::Create() : nullptr),
           sender_call_(nullptr),
           receiver_call_(nullptr),
           start_runtime_ms_(-1),
@@ -3975,7 +3968,7 @@ TEST_F(EndToEndLogTest, LogsEncodedFramesWhenRequested) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      encoder_.reset(VideoEncoder::Create(VideoEncoder::kVp8));
+      encoder_.reset(VP8Encoder::Create());
       decoder_.reset(VP8Decoder::Create());
 
       send_config->post_encode_callback = this;

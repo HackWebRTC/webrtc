@@ -130,18 +130,6 @@ extern const char kH264FmtpLevelAsymmetryAllowed[];
 extern const char kH264FmtpPacketizationMode[];
 extern const char kH264ProfileLevelConstrainedBaseline[];
 
-extern const int kDefaultVp8PlType;
-extern const int kDefaultVp9PlType;
-extern const int kDefaultH264PlType;
-extern const int kDefaultRedPlType;
-extern const int kDefaultUlpfecType;
-extern const int kDefaultFlexfecPlType;
-extern const int kDefaultRtxVp8PlType;
-extern const int kDefaultRtxVp9PlType;
-extern const int kDefaultRtxRedPlType;
-extern const int kDefaultRtxH264ConstrainedBaselinePlType;
-extern const int kDefaultRtxH264ConstrainedHighPlType;
-
 extern const int kDefaultVideoMaxFramerate;
 }  // namespace cricket
 
