@@ -418,8 +418,6 @@ rtc_static_library("rtc_base") {
     "httpcommon-inl.h",
     "httpcommon.cc",
     "httpcommon.h",
-    "httprequest.cc",
-    "httprequest.h",
     "ipaddress.cc",
     "ipaddress.h",
     "linked_ptr.h",
