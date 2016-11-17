@@ -20,6 +20,7 @@
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/congestion_controller/probe_bitrate_estimator.h"
+#include "webrtc/modules/congestion_controller/trendline_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/inter_arrival.h"
@@ -85,7 +86,8 @@ class DelayBasedBwe {
   rtc::ThreadChecker network_thread_;
   Clock* const clock_;
   std::unique_ptr<InterArrival> inter_arrival_;
-  std::unique_ptr<OveruseEstimator> estimator_;
+  std::unique_ptr<OveruseEstimator> kalman_estimator_;
+  std::unique_ptr<TrendlineEstimator> trendline_estimator_;
   OveruseDetector detector_;
   BitrateEstimator receiver_incoming_bitrate_;
   int64_t last_update_ms_;
@@ -93,6 +95,10 @@ class DelayBasedBwe {
   bool uma_recorded_;
   AimdRateControl rate_control_;
   ProbeBitrateEstimator probe_bitrate_estimator_;
+  size_t trendline_window_size_;
+  double trendline_smoothing_coeff_;
+  double trendline_threshold_gain_;
+  const bool in_trendline_experiment_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
 };

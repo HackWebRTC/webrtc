@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
@@ -38,15 +39,52 @@ constexpr uint32_t kFixedSsrc = 0;
 constexpr int kInitialRateWindowMs = 500;
 constexpr int kRateWindowMs = 150;
 
+constexpr size_t kDefaultTrendlineWindowSize = 15;
+constexpr double kDefaultTrendlineSmoothingCoeff = 0.9;
+constexpr double kDefaultTrendlineThresholdGain = 4.0;
+
 const char kBitrateEstimateExperiment[] = "WebRTC-ImprovedBitrateEstimate";
+const char kBweTrendlineFilterExperiment[] = "WebRTC-BweTrendlineFilter";
 
 bool BitrateEstimateExperimentIsEnabled() {
   return webrtc::field_trial::FindFullName(kBitrateEstimateExperiment) ==
          "Enabled";
 }
+
+bool TrendlineFilterExperimentIsEnabled() {
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kBweTrendlineFilterExperiment);
+  // The experiment is enabled iff the field trial string begins with "Enabled".
+  return experiment_string.find("Enabled") == 0;
+}
+
+bool ReadTrendlineFilterExperimentParameters(size_t* window_points,
+                                             double* smoothing_coef,
+                                             double* threshold_gain) {
+  RTC_DCHECK(TrendlineFilterExperimentIsEnabled());
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kBweTrendlineFilterExperiment);
+  int parsed_values = sscanf(experiment_string.c_str(), "Enabled-%zu,%lf,%lf",
+                             window_points, smoothing_coef, threshold_gain);
+  if (parsed_values == 3) {
+    RTC_CHECK_GT(*window_points, 1) << "Need at least 2 points to fit a line.";
+    RTC_CHECK(0 <= *smoothing_coef && *smoothing_coef <= 1)
+        << "Coefficient needs to be between 0 and 1 for weighted average.";
+    RTC_CHECK_GT(*threshold_gain, 0) << "Threshold gain needs to be positive.";
+    return true;
+  }
+  LOG(LS_WARNING) << "Failed to parse parameters for BweTrendlineFilter "
+                     "experiment from field trial string. Using default.";
+  *window_points = kDefaultTrendlineWindowSize;
+  *smoothing_coef = kDefaultTrendlineSmoothingCoeff;
+  *threshold_gain = kDefaultTrendlineThresholdGain;
+  return false;
+}
+
 }  // namespace
 
 namespace webrtc {
+
 DelayBasedBwe::BitrateEstimator::BitrateEstimator()
     : sum_(0),
       current_win_ms_(0),
@@ -132,12 +170,22 @@ rtc::Optional<uint32_t> DelayBasedBwe::BitrateEstimator::bitrate_bps() const {
 DelayBasedBwe::DelayBasedBwe(Clock* clock)
     : clock_(clock),
       inter_arrival_(),
-      estimator_(),
+      kalman_estimator_(),
+      trendline_estimator_(),
       detector_(OverUseDetectorOptions()),
       receiver_incoming_bitrate_(),
       last_update_ms_(-1),
       last_seen_packet_ms_(-1),
-      uma_recorded_(false) {
+      uma_recorded_(false),
+      trendline_window_size_(kDefaultTrendlineWindowSize),
+      trendline_smoothing_coeff_(kDefaultTrendlineSmoothingCoeff),
+      trendline_threshold_gain_(kDefaultTrendlineThresholdGain),
+      in_trendline_experiment_(TrendlineFilterExperimentIsEnabled()) {
+  if (in_trendline_experiment_) {
+    ReadTrendlineFilterExperimentParameters(&trendline_window_size_,
+                                            &trendline_smoothing_coeff_,
+                                            &trendline_threshold_gain_);
+  }
   network_thread_.DetachFromThread();
 }
 
@@ -171,7 +219,10 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
     inter_arrival_.reset(
         new InterArrival((kTimestampGroupLengthMs << kInterArrivalShift) / 1000,
                          kTimestampToMs, true));
-    estimator_.reset(new OveruseEstimator(OverUseDetectorOptions()));
+    kalman_estimator_.reset(new OveruseEstimator(OverUseDetectorOptions()));
+    trendline_estimator_.reset(new TrendlineEstimator(
+        trendline_window_size_, trendline_smoothing_coeff_,
+        trendline_threshold_gain_));
   }
   last_seen_packet_ms_ = now_ms;
 
@@ -192,10 +243,19 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
                                     info.payload_size, &ts_delta, &t_delta,
                                     &size_delta)) {
     double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
-    estimator_->Update(t_delta, ts_delta_ms, size_delta, detector_.State(),
+    if (in_trendline_experiment_) {
+      trendline_estimator_->Update(t_delta, ts_delta_ms, info.arrival_time_ms);
+      detector_.Detect(trendline_estimator_->trendline_slope(), ts_delta_ms,
+                       trendline_estimator_->num_of_deltas(),
                        info.arrival_time_ms);
-    detector_.Detect(estimator_->offset(), ts_delta_ms,
-                     estimator_->num_of_deltas(), info.arrival_time_ms);
+
+    } else {
+      kalman_estimator_->Update(t_delta, ts_delta_ms, size_delta,
+                                detector_.State(), info.arrival_time_ms);
+      detector_.Detect(kalman_estimator_->offset(), ts_delta_ms,
+                       kalman_estimator_->num_of_deltas(),
+                       info.arrival_time_ms);
+    }
   }
 
   int probing_bps = 0;
@@ -237,8 +297,9 @@ bool DelayBasedBwe::UpdateEstimate(int64_t arrival_time_ms,
                                    int64_t now_ms,
                                    rtc::Optional<uint32_t> acked_bitrate_bps,
                                    uint32_t* target_bitrate_bps) {
-  const RateControlInput input(detector_.State(), acked_bitrate_bps,
-                               estimator_->var_noise());
+  // TODO(terelius): RateControlInput::noise_var is deprecated and will be
+  // removed. In the meantime, we set it to zero.
+  const RateControlInput input(detector_.State(), acked_bitrate_bps, 0);
   rate_control_.Update(&input, now_ms);
   *target_bitrate_bps = rate_control_.UpdateBandwidthEstimate(now_ms);
   return rate_control_.ValidEstimate();

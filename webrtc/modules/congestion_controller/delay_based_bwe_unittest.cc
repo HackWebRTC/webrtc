@@ -195,4 +195,38 @@ TEST_F(DelayBasedBweExperimentTest, CapacityDropNegOffsetChange) {
 TEST_F(DelayBasedBweExperimentTest, CapacityDropOneStreamWrap) {
   CapacityDropTestHelper(1, true, 333, 0);
 }
+
+class DelayBasedBweTrendlineExperimentTest : public DelayBasedBweTest {
+ public:
+  DelayBasedBweTrendlineExperimentTest()
+      : override_field_trials_("WebRTC-BweTrendlineFilter/Enabled-15,0.9,4/") {}
+
+ protected:
+  void SetUp() override {
+    bitrate_estimator_.reset(new DelayBasedBwe(&clock_));
+  }
+
+  test::ScopedFieldTrials override_field_trials_;
+};
+
+TEST_F(DelayBasedBweTrendlineExperimentTest, RateIncreaseRtpTimestamps) {
+  RateIncreaseRtpTimestampsTestHelper(1240);
+}
+
+TEST_F(DelayBasedBweTrendlineExperimentTest, CapacityDropOneStream) {
+  CapacityDropTestHelper(1, false, 600, 0);
+}
+
+TEST_F(DelayBasedBweTrendlineExperimentTest, CapacityDropPosOffsetChange) {
+  CapacityDropTestHelper(1, false, 600, 30000);
+}
+
+TEST_F(DelayBasedBweTrendlineExperimentTest, CapacityDropNegOffsetChange) {
+  CapacityDropTestHelper(1, false, 1267, -30000);
+}
+
+TEST_F(DelayBasedBweTrendlineExperimentTest, CapacityDropOneStreamWrap) {
+  CapacityDropTestHelper(1, true, 600, 0);
+}
+
 }  // namespace webrtc

@@ -399,6 +399,7 @@ if (rtc_include_tests) {
       "congestion_controller/probe_controller_unittest.cc",
       "congestion_controller/probing_interval_estimator_unittest.cc",
       "congestion_controller/transport_feedback_adapter_unittest.cc",
+      "congestion_controller/trendline_estimator_unittest.cc",
       "media_file/media_file_unittest.cc",
       "module_common_types_unittest.cc",
       "pacing/alr_detector_unittest.cc",

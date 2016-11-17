@@ -242,6 +242,19 @@ TEST_P(BweSimulation, PacerGoogleWifiTrace3Mbps) {
   RunFor(300 * 1000);
 }
 
+TEST_P(BweSimulation, PacerGoogleWifiTrace3MbpsLowFramerate) {
+  PeriodicKeyFrameSource source(0, 5, 300, 0, 0, 1000);
+  PacedVideoSender sender(&uplink_, &source, GetParam());
+  RateCounterFilter counter1(&uplink_, 0, "sender_output",
+                             bwe_names[GetParam()]);
+  TraceBasedDeliveryFilter filter(&uplink_, 0, "link_capacity");
+  filter.set_max_delay_ms(500);
+  RateCounterFilter counter2(&uplink_, 0, "Receiver", bwe_names[GetParam()]);
+  PacketReceiver receiver(&uplink_, 0, GetParam(), true, true);
+  ASSERT_TRUE(filter.Init(test::ResourcePath("google-wifi-3mbps", "rx")));
+  RunFor(300 * 1000);
+}
+
 TEST_P(BweSimulation, SelfFairnessTest) {
   Random prng(Clock::GetRealTimeClock()->TimeInMicroseconds());
   const int kAllFlowIds[] = {0, 1, 2, 3};
