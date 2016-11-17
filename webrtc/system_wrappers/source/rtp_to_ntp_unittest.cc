@@ -136,8 +136,8 @@ TEST(UpdateRtcpListTests, InjectRtcpSr) {
   EXPECT_TRUE(UpdateRtcpList(kNtpSec, kNtpFrac, kTs, &rtcp, &new_sr));
   EXPECT_TRUE(new_sr);
   EXPECT_EQ(1u, rtcp.list.size());
-  EXPECT_EQ(kNtpSec, rtcp.list.front().ntp_secs);
-  EXPECT_EQ(kNtpFrac, rtcp.list.front().ntp_frac);
+  EXPECT_EQ(kNtpSec, rtcp.list.front().ntp_time.seconds());
+  EXPECT_EQ(kNtpFrac, rtcp.list.front().ntp_time.fractions());
   EXPECT_EQ(kTs, rtcp.list.front().rtp_timestamp);
   // Add second report.
   EXPECT_TRUE(UpdateRtcpList(kNtpSec, kNtpFrac + kOneMsInNtpFrac, kTs + 1,

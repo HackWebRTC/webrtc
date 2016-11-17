@@ -15,6 +15,9 @@
 
 namespace webrtc {
 namespace {
+// Number of RTCP SR reports to use to map between RTP and NTP.
+const size_t kNumRtcpReportsToUse = 2;
+
 // Calculates the RTP timestamp frequency from two pairs of NTP/RTP timestamps.
 bool CalculateFrequency(int64_t rtcp_ntp_ms1,
                         uint32_t rtp_timestamp1,
@@ -45,19 +48,17 @@ bool CompensateForWrapAround(uint32_t new_timestamp,
 }  // namespace
 
 // Class holding RTP and NTP timestamp from a RTCP SR report.
-RtcpMeasurement::RtcpMeasurement()
-    : ntp_secs(0), ntp_frac(0), rtp_timestamp(0) {}
+RtcpMeasurement::RtcpMeasurement() : ntp_time(0, 0), rtp_timestamp(0) {}
 
 RtcpMeasurement::RtcpMeasurement(uint32_t ntp_secs,
                                  uint32_t ntp_frac,
                                  uint32_t timestamp)
-    : ntp_secs(ntp_secs), ntp_frac(ntp_frac), rtp_timestamp(timestamp) {}
+    : ntp_time(ntp_secs, ntp_frac), rtp_timestamp(timestamp) {}
 
 bool RtcpMeasurement::IsEqual(const RtcpMeasurement& other) const {
   // Use || since two equal timestamps will result in zero frequency and in
   // RtpToNtpMs, |rtp_timestamp_ms| is estimated by dividing by the frequency.
-  return (ntp_secs == other.ntp_secs && ntp_frac == other.ntp_frac) ||
-         (rtp_timestamp == other.rtp_timestamp);
+  return (ntp_time == other.ntp_time) || (rtp_timestamp == other.rtp_timestamp);
 }
 
 // Class holding list of RTP and NTP timestamp pairs.
@@ -73,13 +74,12 @@ bool RtcpMeasurements::Contains(const RtcpMeasurement& other) const {
 }
 
 bool RtcpMeasurements::IsValid(const RtcpMeasurement& other) const {
-  if (other.ntp_secs == 0 && other.ntp_frac == 0) {
-    // Invalid or not defined.
+  if (!other.ntp_time.Valid())
     return false;
-  }
-  int64_t ntp_ms_new = Clock::NtpToMs(other.ntp_secs, other.ntp_frac);
+
+  int64_t ntp_ms_new = other.ntp_time.ToMs();
   for (const auto& it : list) {
-    if (ntp_ms_new <= Clock::NtpToMs(it.ntp_secs, it.ntp_frac)) {
+    if (ntp_ms_new <= it.ntp_time.ToMs()) {
       // Old report.
       return false;
     }
@@ -97,7 +97,7 @@ bool RtcpMeasurements::IsValid(const RtcpMeasurement& other) const {
 }
 
 void RtcpMeasurements::UpdateParameters() {
-  if (list.size() != 2)
+  if (list.size() != kNumRtcpReportsToUse)
     return;
 
   int64_t timestamp_new = list.front().rtp_timestamp;
@@ -105,10 +105,8 @@ void RtcpMeasurements::UpdateParameters() {
   if (!CompensateForWrapAround(timestamp_new, timestamp_old, &timestamp_new))
     return;
 
-  int64_t ntp_ms_new =
-      Clock::NtpToMs(list.front().ntp_secs, list.front().ntp_frac);
-  int64_t ntp_ms_old =
-      Clock::NtpToMs(list.back().ntp_secs, list.back().ntp_frac);
+  int64_t ntp_ms_new = list.front().ntp_time.ToMs();
+  int64_t ntp_ms_old = list.back().ntp_time.ToMs();
 
   if (!CalculateFrequency(ntp_ms_new, timestamp_new, ntp_ms_old, timestamp_old,
                           &params.frequency_khz)) {
@@ -137,9 +135,8 @@ bool UpdateRtcpList(uint32_t ntp_secs,
     return false;
   }
 
-  // Two RTCP SR reports are needed to map between RTP and NTP.
-  // More than two will not improve the mapping.
-  if (rtcp_measurements->list.size() == 2)
+  // Insert new RTCP SR report.
+  if (rtcp_measurements->list.size() == kNumRtcpReportsToUse)
     rtcp_measurements->list.pop_back();
 
   rtcp_measurements->list.push_front(measurement);

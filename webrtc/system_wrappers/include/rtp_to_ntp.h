@@ -13,6 +13,7 @@
 
 #include <list>
 
+#include "webrtc/system_wrappers/include/ntp_time.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -22,8 +23,7 @@ struct RtcpMeasurement {
   RtcpMeasurement(uint32_t ntp_secs, uint32_t ntp_frac, uint32_t timestamp);
   bool IsEqual(const RtcpMeasurement& other) const;
 
-  uint32_t ntp_secs;
-  uint32_t ntp_frac;
+  NtpTime ntp_time;
   uint32_t rtp_timestamp;
 };
 
