@@ -17,14 +17,18 @@
 #include "webrtc/system_wrappers/include/field_trial_default.h"
 
 static NSString * const kRTCEnableImprovedBitrateEstimateString =
-   @"WebRTC-ImprovedBitrateEstimate/Enabled/";
-
+    @"WebRTC-ImprovedBitrateEstimate/Enabled/";
+static NSString * const kRTCEnableAudioSendSideBweString =
+    @"WebRTC-Audio-SendSideBwe/Enabled/";
 static std::unique_ptr<char[]> gFieldTrialInitString;
 
 void RTCInitFieldTrials(RTCFieldTrialOptions options) {
   NSMutableString *fieldTrialInitString = [NSMutableString string];
   if (options & RTCFieldTrialOptionsImprovedBitrateEstimate) {
     [fieldTrialInitString appendString:kRTCEnableImprovedBitrateEstimateString];
+  }
+  if (options & RTCFieldTrialOptionsAudioSendSideBwe) {
+    [fieldTrialInitString appendString:kRTCEnableAudioSendSideBweString];
   }
   size_t len = fieldTrialInitString.length + 1;
   gFieldTrialInitString.reset(new char[len]);
