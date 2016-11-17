@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Copyright 2013 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -266,12 +266,12 @@ parser.add_option('--format', type='string', default='filter',
                   help='output format (raw,filter)')
 parser.add_option('--print_test_times', action='store_true', default=False,
                   help='When done, list the run time of each test')
-parser.add_option('--shard-count', type='int',
-                  default=int(os.environ.get('GTEST_TOTAL_SHARDS', 1)),
+parser.add_option('--shard_count', type='int',
+                  default=int(os.environ.pop('GTEST_TOTAL_SHARDS', 1)),
                   help=('Total number of shards (for sharding test execution '
                         'between multiple machines). Default: %default'))
-parser.add_option('--shard-index', type='int',
-                  default=int(os.environ.get('GTEST_SHARD_INDEX', 0)),
+parser.add_option('--shard_index', type='int',
+                  default=int(os.environ.pop('GTEST_SHARD_INDEX', 0)),
                   help=('Zero-indexed number identifying this shard (for '
                         'sharding test execution between multiple machines). '
                         'Default: %default'))
@@ -289,6 +289,14 @@ elif options.format == 'filter':
   logger = FilterFormat()
 else:
   sys.exit("Unknown output format: " + options.format)
+
+if options.shard_count < 1:
+  sys.exit("Invalid number of shards: %d. Must be at least 1." %
+           options.shard_count)
+if options.shard_index < 0 or options.shard_count <= options.shard_index:
+  sys.exit("Invalid shard index: %d. Must be between 0 and %d." %
+           (options.shard_index, options.shard_count - 1))
+
 
 # Find tests.
 save_file = os.path.join(os.path.expanduser("~"), ".gtest-parallel-times")
