@@ -129,6 +129,7 @@ class PeerConnection : public PeerConnectionInterface,
                            SessionDescriptionInterface* desc) override;
   void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                             SessionDescriptionInterface* desc) override;
+  PeerConnectionInterface::RTCConfiguration GetConfiguration() override;
   bool SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& configuration) override;
   bool AddIceCandidate(const IceCandidateInterface* candidate) override;
@@ -389,6 +390,7 @@ class PeerConnection : public PeerConnectionInterface,
   SignalingState signaling_state_;
   IceConnectionState ice_connection_state_;
   IceGatheringState ice_gathering_state_;
+  PeerConnectionInterface::RTCConfiguration configuration_;
 
   std::unique_ptr<cricket::PortAllocator> port_allocator_;
   // The EventLog needs to outlive the media controller.
@@ -419,8 +421,6 @@ class PeerConnection : public PeerConnectionInterface,
   std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels_to_free_;
 
   bool remote_peer_supports_msid_ = false;
-
-  bool enable_ice_renomination_ = false;
 
   std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
       senders_;

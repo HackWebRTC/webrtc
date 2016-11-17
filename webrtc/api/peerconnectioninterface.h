@@ -480,6 +480,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     return false;
   }
   virtual bool UpdateIce(const IceServers& configuration) { return false; }
+  // TODO(deadbeef): Make this pure virtual once all Chrome subclasses of
+  // PeerConnectionInterface implement it.
+  virtual PeerConnectionInterface::RTCConfiguration GetConfiguration() {
+    return PeerConnectionInterface::RTCConfiguration();
+  }
   // Sets the PeerConnection's global configuration to |config|.
   // Any changes to STUN/TURN servers or ICE candidate policy will affect the
   // next gathering phase, and cause the next call to createOffer to generate

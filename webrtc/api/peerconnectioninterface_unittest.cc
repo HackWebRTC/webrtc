@@ -1173,6 +1173,32 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_TRUE(raw_port_allocator->initialized());
 }
 
+// Check that GetConfiguration returns the configuration the PeerConnection was
+// constructed with, before SetConfiguration is called.
+TEST_F(PeerConnectionInterfaceTest, GetConfigurationAfterCreatePeerConnection) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.type = PeerConnectionInterface::kRelay;
+  CreatePeerConnection(config, nullptr);
+
+  PeerConnectionInterface::RTCConfiguration returned_config =
+      pc_->GetConfiguration();
+  EXPECT_EQ(PeerConnectionInterface::kRelay, returned_config.type);
+}
+
+// Check that GetConfiguration returns the last configuration passed into
+// SetConfiguration.
+TEST_F(PeerConnectionInterfaceTest, GetConfigurationAfterSetConfiguration) {
+  CreatePeerConnection();
+
+  PeerConnectionInterface::RTCConfiguration config;
+  config.type = PeerConnectionInterface::kRelay;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+
+  PeerConnectionInterface::RTCConfiguration returned_config =
+      pc_->GetConfiguration();
+  EXPECT_EQ(PeerConnectionInterface::kRelay, returned_config.type);
+}
+
 TEST_F(PeerConnectionInterfaceTest, AddStreams) {
   CreatePeerConnection();
   AddVideoStream(kStreamLabel1);

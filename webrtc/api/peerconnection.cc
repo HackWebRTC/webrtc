@@ -636,8 +636,6 @@ bool PeerConnection::Initialize(
   stats_.reset(new StatsCollector(this));
   stats_collector_ = RTCStatsCollector::Create(this);
 
-  enable_ice_renomination_ = configuration.enable_ice_renomination;
-
   // Initialize the WebRtcSession. It creates transport channels etc.
   if (!session_->Initialize(factory_->options(), std::move(cert_generator),
                             configuration)) {
@@ -662,6 +660,8 @@ bool PeerConnection::Initialize(
       this, &PeerConnection::OnDataChannelDestroyed);
   session_->SignalDataChannelOpenMessage.connect(
       this, &PeerConnection::OnDataChannelOpenMessage);
+
+  configuration_ = configuration;
   return true;
 }
 
@@ -1262,8 +1262,14 @@ void PeerConnection::SetRemoteDescription(
                            MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
 }
 
+PeerConnectionInterface::RTCConfiguration PeerConnection::GetConfiguration() {
+  return configuration_;
+}
+
 bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
+  // TODO(deadbeef): Return false and log an error if there are any unsupported
+  // modifications.
   if (port_allocator_) {
     if (!network_thread()->Invoke<bool>(
             RTC_FROM_HERE,
@@ -1276,7 +1282,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
   // TODO(deadbeef): Shouldn't have to hop to the worker thread twice...
   session_->SetIceConfig(session_->ParseIceConfig(configuration));
 
-  enable_ice_renomination_ = configuration.enable_ice_renomination;
+  configuration_ = configuration;
   return true;
 }
 
@@ -1631,7 +1637,8 @@ bool PeerConnection::GetOptionsForOffer(
           cricket::TransportOptions();
     }
   }
-  session_options->enable_ice_renomination = enable_ice_renomination_;
+  session_options->enable_ice_renomination =
+      configuration_.enable_ice_renomination;
 
   if (!ExtractMediaSessionOptions(rtc_options, true, session_options)) {
     return false;
@@ -1674,7 +1681,8 @@ void PeerConnection::InitializeOptionsForAnswer(
     cricket::MediaSessionOptions* session_options) {
   session_options->recv_audio = false;
   session_options->recv_video = false;
-  session_options->enable_ice_renomination = enable_ice_renomination_;
+  session_options->enable_ice_renomination =
+      configuration_.enable_ice_renomination;
 }
 
 void PeerConnection::FinishOptionsForAnswer(
