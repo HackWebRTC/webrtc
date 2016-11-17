@@ -79,9 +79,6 @@ AudioSendStream::AudioSendStream(
       channel_proxy_->SetSendAudioLevelIndicationStatus(true, extension.id);
     } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       channel_proxy_->EnableSendTransportSequenceNumber(extension.id);
-    } else if (extension.uri == RtpExtension::kAbsSendTimeUri) {
-      LOG(LS_WARNING) << RtpExtension::kAbsSendTimeUri
-                      << " is no longer supported for audio.";
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";
     }

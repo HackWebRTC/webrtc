@@ -86,8 +86,7 @@ const char* RtpExtension::kPlayoutDelayUri =
 const int RtpExtension::kPlayoutDelayDefaultId = 6;
 
 bool RtpExtension::IsSupportedForAudio(const std::string& uri) {
-  return uri == webrtc::RtpExtension::kAbsSendTimeUri ||
-         uri == webrtc::RtpExtension::kAudioLevelUri ||
+  return uri == webrtc::RtpExtension::kAudioLevelUri ||
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri;
 }
 
