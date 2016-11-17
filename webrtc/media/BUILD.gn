@@ -12,7 +12,6 @@ import("../build/webrtc.gni")
 group("media") {
   public_deps = [
     ":rtc_media",
-    ":rtc_media_base",
   ]
 }
 
@@ -42,7 +41,7 @@ if (is_linux && rtc_use_gtk) {
   }
 }
 
-rtc_static_library("rtc_media_base") {
+rtc_static_library("rtc_media") {
   defines = []
   libs = []
   deps = []
@@ -82,38 +81,6 @@ rtc_static_library("rtc_media_base") {
     "base/videoframe.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
-  ]
-
-  configs += [ ":rtc_media_warnings_config" ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  include_dirs = []
-  if (rtc_build_libyuv) {
-    deps += [ "$rtc_libyuv_dir" ]
-    public_deps = [
-      "$rtc_libyuv_dir",
-    ]
-  } else {
-    # Need to add a directory normally exported by libyuv.
-    include_dirs += [ "$rtc_libyuv_dir/include" ]
-  }
-
-  deps += [
-    "..:webrtc_common",
-    "../base:rtc_base_approved",
-    "../p2p",
-  ]
-}
-
-rtc_static_library("rtc_media") {
-  defines = []
-  libs = []
-  deps = []
-  sources = [
     "engine/internalencoderfactory.cc",
     "engine/internalencoderfactory.h",
     "engine/nullwebrtcvideoengine.h",
@@ -199,14 +166,15 @@ rtc_static_library("rtc_media") {
     public_configs += [ ":gtk-lib" ]
   }
   deps += [
-    ":rtc_media_base",
     "..:webrtc_common",
     "../api:call_api",
     "../base:rtc_base_approved",
     "../call",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/video_coding",
+    "../p2p",
     "../system_wrappers",
+    "../video",
     "../voice_engine",
   ]
 }

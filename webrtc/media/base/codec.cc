@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include "webrtc/base/checks.h"
+#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
@@ -54,7 +54,7 @@ void FeedbackParams::Add(const FeedbackParam& param) {
     return;
   }
   params_.push_back(param);
-  RTC_CHECK(!HasDuplicateEntries());
+  ASSERT(!HasDuplicateEntries());
 }
 
 void FeedbackParams::Intersect(const FeedbackParams& from) {
@@ -192,7 +192,7 @@ bool AudioCodec::Matches(const AudioCodec& codec) const {
 
 webrtc::RtpCodecParameters AudioCodec::ToCodecParameters() const {
   webrtc::RtpCodecParameters codec_params = Codec::ToCodecParameters();
-  codec_params.channels = static_cast<int>(channels);
+  codec_params.channels = channels;
   return codec_params;
 }
 
