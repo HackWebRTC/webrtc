@@ -253,6 +253,7 @@ void Loopback() {
                   flags::SelectedTL(),
                   0,  // No min transmit bitrate.
                   flags::FLAGS_use_fec,
+                  false,  // TODO(brandtr): Wire up FlexFEC in future CL.
                   flags::EncodedFramePath(),
                   flags::Clip()};
   params.audio = {flags::FLAGS_audio, flags::FLAGS_audio_video_sync};

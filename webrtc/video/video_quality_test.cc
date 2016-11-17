@@ -817,7 +817,7 @@ VideoQualityTest::VideoQualityTest()
 VideoQualityTest::Params::Params()
     : call({false, Call::Config::BitrateConfig()}),
       video({false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
-             "", ""}),
+             false, "", ""}),
       audio({false, false}),
       screenshare({false, 10, 0}),
       analyzer({"", 0.0, 0.0, 0, "", ""}),
@@ -1038,6 +1038,9 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   video_encoder_config_.min_transmit_bitrate_bps =
       params_.video.min_transmit_bps;
 
+  video_send_config_.suspend_below_min_bitrate =
+      params_.video.suspend_below_min_bitrate;
+
   video_encoder_config_.number_of_streams = params_.ss.streams.size();
   video_encoder_config_.max_bitrate_bps = 0;
   for (size_t i = 0; i < params_.ss.streams.size(); ++i) {
@@ -1057,6 +1060,38 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     video_receive_configs_[i].rtp.rtx[payload_type].payload_type =
         kSendRtxPayloadType;
     video_receive_configs_[i].rtp.transport_cc = params_.call.send_side_bwe;
+  }
+
+  if (params_.video.flexfec) {
+    video_send_config_.rtp.flexfec.flexfec_payload_type = kFlexfecPayloadType;
+    video_send_config_.rtp.flexfec.flexfec_ssrc = kFlexfecSendSsrc;
+    video_send_config_.rtp.flexfec.protected_media_ssrcs = {
+        kVideoSendSsrcs[params_.ss.selected_stream]};
+
+    FlexfecReceiveStream::Config flexfec_receive_config;
+    flexfec_receive_config.flexfec_payload_type =
+        video_send_config_.rtp.flexfec.flexfec_payload_type;
+    flexfec_receive_config.flexfec_ssrc =
+        video_send_config_.rtp.flexfec.flexfec_ssrc;
+    flexfec_receive_config.protected_media_ssrcs =
+        video_send_config_.rtp.flexfec.protected_media_ssrcs;
+    flexfec_receive_configs_.push_back(flexfec_receive_config);
+  }
+
+  if (params_.video.ulpfec) {
+    video_send_config_.rtp.ulpfec.red_payload_type = kRedPayloadType;
+    video_send_config_.rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
+    video_send_config_.rtp.ulpfec.red_rtx_payload_type = kRtxRedPayloadType;
+
+    video_receive_configs_[params_.ss.selected_stream]
+        .rtp.ulpfec.red_payload_type =
+        video_send_config_.rtp.ulpfec.red_payload_type;
+    video_receive_configs_[params_.ss.selected_stream]
+        .rtp.ulpfec.ulpfec_payload_type =
+        video_send_config_.rtp.ulpfec.ulpfec_payload_type;
+    video_receive_configs_[params_.ss.selected_stream]
+        .rtp.ulpfec.red_rtx_payload_type =
+        video_send_config_.rtp.ulpfec.red_rtx_payload_type;
   }
 }
 
@@ -1215,6 +1250,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   if (params_.screenshare.enabled)
     SetupScreenshare();
 
+  CreateFlexfecStreams();
   CreateVideoStreams();
   analyzer.SetSendStream(video_send_stream_);
   video_send_stream_->SetSource(
@@ -1230,6 +1266,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   video_send_stream_->Start();
   for (VideoReceiveStream* receive_stream : video_receive_streams_)
     receive_stream->Start();
+  for (FlexfecReceiveStream* receive_stream : flexfec_receive_streams_)
+    receive_stream->Start();
   video_capturer_->Start();
 
   analyzer.Wait();
@@ -1238,6 +1276,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   recv_transport.StopSending();
 
   video_capturer_->Stop();
+  for (FlexfecReceiveStream* receive_stream : flexfec_receive_streams_)
+    receive_stream->Stop();
   for (VideoReceiveStream* receive_stream : video_receive_streams_)
     receive_stream->Stop();
   video_send_stream_->Stop();
@@ -1317,6 +1357,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   transport.SetReceiver(call->Receiver());
 
   VideoReceiveStream* video_receive_stream = nullptr;
+  FlexfecReceiveStream* flexfec_receive_stream = nullptr;
   std::unique_ptr<test::VideoRenderer> local_preview;
   std::unique_ptr<test::VideoRenderer> loopback_video;
   if (params_.video.enabled) {
@@ -1337,36 +1378,21 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
         params_.ss.streams[stream_id].height));
 
     SetupVideo(&transport, &transport);
-
-    // TODO(minyue): maybe move the following to SetupVideo() to make code
-    // cleaner.  Currently, RunWithRenderers() and RunWithAnalyzer() differ in
-    // the way they treat FEC etc., which makes it complicated to put these
-    // additional video setup into SetupVideo().
     video_send_config_.pre_encode_callback = local_preview.get();
     video_receive_configs_[stream_id].renderer = loopback_video.get();
     if (params_.audio.enabled && params_.audio.sync_video)
       video_receive_configs_[stream_id].sync_group = kSyncGroup;
-
-    video_send_config_.suspend_below_min_bitrate =
-        params_.video.suspend_below_min_bitrate;
-
-    if (params.video.fec) {
-      video_send_config_.rtp.ulpfec.red_payload_type = kRedPayloadType;
-      video_send_config_.rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
-      video_send_config_.rtp.ulpfec.red_rtx_payload_type = kRtxRedPayloadType;
-      video_receive_configs_[stream_id].rtp.ulpfec.red_payload_type =
-          kRedPayloadType;
-      video_receive_configs_[stream_id].rtp.ulpfec.ulpfec_payload_type =
-          kUlpfecPayloadType;
-      video_receive_configs_[stream_id].rtp.ulpfec.red_rtx_payload_type =
-          kRtxRedPayloadType;
-    }
 
     if (params_.screenshare.enabled)
       SetupScreenshare();
 
     video_send_stream_ = call->CreateVideoSendStream(
         video_send_config_.Copy(), video_encoder_config_.Copy());
+    if (params_.video.flexfec) {
+      RTC_DCHECK(!flexfec_receive_configs_.empty());
+      flexfec_receive_stream =
+          call->CreateFlexfecReceiveStream(flexfec_receive_configs_[0]);
+    }
     video_receive_stream = call->CreateVideoReceiveStream(
         video_receive_configs_[stream_id].Copy());
     CreateCapturer();
@@ -1386,6 +1412,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   // Start sending and receiving video.
   if (params_.video.enabled) {
+    if (flexfec_receive_stream)
+      flexfec_receive_stream->Start();
     video_receive_stream->Start();
     video_send_stream_->Start();
     video_capturer_->Start();
@@ -1420,6 +1448,10 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     video_capturer_->Stop();
     video_send_stream_->Stop();
     video_receive_stream->Stop();
+    if (flexfec_receive_stream) {
+      flexfec_receive_stream->Stop();
+      call->DestroyFlexfecReceiveStream(flexfec_receive_stream);
+    }
     call->DestroyVideoReceiveStream(video_receive_stream);
     call->DestroyVideoSendStream(video_send_stream_);
   }
