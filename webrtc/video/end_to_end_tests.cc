@@ -655,7 +655,97 @@ TEST_F(EndToEndTest, CanReceiveUlpfec) {
 
     void PerformTest() override {
       EXPECT_TRUE(Wait())
-          << "Timed out waiting for dropped frames frames to be rendered.";
+          << "Timed out waiting for dropped frames to be rendered.";
+    }
+
+    rtc::CriticalSection crit_;
+    std::set<uint32_t> protected_sequence_numbers_ GUARDED_BY(crit_);
+    std::set<uint32_t> protected_timestamps_ GUARDED_BY(crit_);
+  } test;
+
+  RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, CanReceiveFlexfec) {
+  class FlexfecRenderObserver : public test::EndToEndTest,
+                                public rtc::VideoSinkInterface<VideoFrame> {
+   public:
+    FlexfecRenderObserver()
+        : EndToEndTest(kDefaultTimeoutMs), state_(kFirstPacket) {}
+
+    size_t GetNumFlexfecStreams() const override { return 1; }
+
+   private:
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+
+      uint8_t payload_type = header.payloadType;
+      if (payload_type != kFakeVideoSendPayloadType) {
+        EXPECT_EQ(kFlexfecPayloadType, payload_type);
+      }
+
+      auto seq_num_it = protected_sequence_numbers_.find(header.sequenceNumber);
+      if (seq_num_it != protected_sequence_numbers_.end()) {
+        // Retransmitted packet, should not count.
+        protected_sequence_numbers_.erase(seq_num_it);
+        auto ts_it = protected_timestamps_.find(header.timestamp);
+        EXPECT_NE(ts_it, protected_timestamps_.end());
+        protected_timestamps_.erase(ts_it);
+        return SEND_PACKET;
+      }
+
+      switch (state_) {
+        case kFirstPacket:
+          state_ = kDropEveryOtherPacketUntilFlexfec;
+          break;
+        case kDropEveryOtherPacketUntilFlexfec:
+          if (payload_type == kFlexfecPayloadType) {
+            state_ = kDropNextMediaPacket;
+            return SEND_PACKET;
+          }
+          if (header.sequenceNumber % 2 == 0)
+            return DROP_PACKET;
+          break;
+        case kDropNextMediaPacket:
+          if (payload_type == kFakeVideoSendPayloadType) {
+            protected_sequence_numbers_.insert(header.sequenceNumber);
+            protected_timestamps_.insert(header.timestamp);
+            state_ = kDropEveryOtherPacketUntilFlexfec;
+            return DROP_PACKET;
+          }
+          break;
+      }
+
+      return SEND_PACKET;
+    }
+
+    void OnFrame(const VideoFrame& video_frame) override {
+      rtc::CritScope lock(&crit_);
+      // Rendering frame with timestamp of packet that was dropped -> FEC
+      // protection worked.
+      auto it = protected_timestamps_.find(video_frame.timestamp());
+      if (it != protected_timestamps_.end())
+        observation_complete_.Set();
+    }
+
+    enum {
+      kFirstPacket,
+      kDropEveryOtherPacketUntilFlexfec,
+      kDropNextMediaPacket,
+    } state_;
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      (*receive_configs)[0].renderer = this;
+    }
+
+    void PerformTest() override {
+      EXPECT_TRUE(Wait())
+          << "Timed out waiting for dropped frames to be rendered.";
     }
 
     rtc::CriticalSection crit_;
@@ -3710,6 +3800,13 @@ void VerifyEmptyUlpfecConfig(const UlpfecConfig& config) {
       << "Enabling RTX in ULPFEC requires rtpmap: rtx negotiation.";
 }
 
+void VerifyEmptyFlexfecConfig(const FlexfecConfig& config) {
+  EXPECT_EQ(-1, config.flexfec_payload_type)
+      << "Enabling FlexFEC requires rtpmap: flexfec negotiation.";
+  EXPECT_TRUE(config.protected_media_ssrcs.empty())
+      << "Enabling FlexFEC requires ssrc-group: FEC-FR negotiation.";
+}
+
 TEST_F(EndToEndTest, VerifyDefaultSendConfigParameters) {
   VideoSendStream::Config default_send_config(nullptr);
   EXPECT_EQ(0, default_send_config.rtp.nack.rtp_history_ms)
@@ -3721,9 +3818,10 @@ TEST_F(EndToEndTest, VerifyDefaultSendConfigParameters) {
 
   VerifyEmptyNackConfig(default_send_config.rtp.nack);
   VerifyEmptyUlpfecConfig(default_send_config.rtp.ulpfec);
+  VerifyEmptyFlexfecConfig(default_send_config.rtp.flexfec);
 }
 
-TEST_F(EndToEndTest, VerifyDefaultReceiveConfigParameters) {
+TEST_F(EndToEndTest, VerifyDefaultVideoReceiveConfigParameters) {
   VideoReceiveStream::Config default_receive_config(nullptr);
   EXPECT_EQ(RtcpMode::kCompound, default_receive_config.rtp.rtcp_mode)
       << "Reduced-size RTCP require rtcp-rsize to be negotiated.";
@@ -3739,6 +3837,11 @@ TEST_F(EndToEndTest, VerifyDefaultReceiveConfigParameters) {
 
   VerifyEmptyNackConfig(default_receive_config.rtp.nack);
   VerifyEmptyUlpfecConfig(default_receive_config.rtp.ulpfec);
+}
+
+TEST_F(EndToEndTest, VerifyDefaultFlexfecReceiveConfigParameters) {
+  FlexfecReceiveStream::Config default_receive_config;
+  VerifyEmptyFlexfecConfig(default_receive_config);
 }
 
 TEST_F(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
