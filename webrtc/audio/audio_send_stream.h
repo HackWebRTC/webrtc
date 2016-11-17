@@ -43,7 +43,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   // webrtc::AudioSendStream implementation.
   void Start() override;
   void Stop() override;
-  bool SendTelephoneEvent(int payload_type, int event,
+  bool SendTelephoneEvent(int payload_type, int payload_frequency, int event,
                           int duration_ms) override;
   void SetMuted(bool muted) override;
   webrtc::AudioSendStream::Stats GetStats() const override;

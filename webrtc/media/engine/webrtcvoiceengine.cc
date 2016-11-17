@@ -1283,10 +1283,12 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     return true;
   }
 
-  bool SendTelephoneEvent(int payload_type, int event, int duration_ms) {
+  bool SendTelephoneEvent(int payload_type, int payload_freq, int event,
+                          int duration_ms) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(stream_);
-    return stream_->SendTelephoneEvent(payload_type, event, duration_ms);
+    return stream_->SendTelephoneEvent(payload_type, payload_freq, event,
+                                       duration_ms);
   }
 
   void SetSend(bool send) {
@@ -1876,20 +1878,31 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
 bool WebRtcVoiceMediaChannel::SetSendCodecs(
     const std::vector<AudioCodec>& codecs) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  // TODO(solenberg): Validate input - that payload types don't overlap, are
-  //                  within range, filter out codecs we don't support,
-  //                  redundant codecs etc - the same way it is done for
-  //                  RtpHeaderExtensions.
-
-  // Find the DTMF telephone event "codec" payload type.
   dtmf_payload_type_ = rtc::Optional<int>();
+  dtmf_payload_freq_ = -1;
+
+  // Validate supplied codecs list.
+  for (const AudioCodec& codec : codecs) {
+    // TODO(solenberg): Validate more aspects of input - that payload types
+    //                  don't overlap, remove redundant/unsupported codecs etc -
+    //                  the same way it is done for RtpHeaderExtensions.
+    if (codec.id < kMinPayloadType || codec.id > kMaxPayloadType) {
+      LOG(LS_WARNING) << "Codec payload type out of range: " << ToString(codec);
+      return false;
+    }
+  }
+
+  // Find PT of telephone-event codec with lowest clockrate, as a fallback, in
+  // case we don't have a DTMF codec with a rate matching the send codec's, or
+  // if this function returns early.
+  std::vector<AudioCodec> dtmf_codecs;
   for (const AudioCodec& codec : codecs) {
     if (IsCodec(codec, kDtmfCodecName)) {
-      if (codec.id < kMinPayloadType || codec.id > kMaxPayloadType) {
-        return false;
+      dtmf_codecs.push_back(codec);
+      if (!dtmf_payload_type_ || codec.clockrate < dtmf_payload_freq_) {
+        dtmf_payload_type_ = rtc::Optional<int>(codec.id);
+        dtmf_payload_freq_ = codec.clockrate;
       }
-      dtmf_payload_type_ = rtc::Optional<int>(codec.id);
-      break;
     }
   }
 
@@ -1963,6 +1976,15 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
         }
         send_codec_spec.cng_payload_type = codec.id;
         send_codec_spec.cng_plfreq = cng_plfreq;
+        break;
+      }
+    }
+
+    // Find the telephone-event PT exactly matching the preferred send codec.
+    for (const AudioCodec& dtmf_codec : dtmf_codecs) {
+      if (dtmf_codec.clockrate == codec->clockrate) {
+        dtmf_payload_type_ = rtc::Optional<int>(dtmf_codec.id);
+        dtmf_payload_freq_ = dtmf_codec.clockrate;
         break;
       }
     }
@@ -2373,7 +2395,9 @@ bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc, int event,
     LOG(LS_WARNING) << "DTMF event duration " << duration << " out of range.";
     return false;
   }
-  return it->second->SendTelephoneEvent(*dtmf_payload_type_, event, duration);
+  RTC_DCHECK_NE(-1, dtmf_payload_freq_);
+  return it->second->SendTelephoneEvent(*dtmf_payload_type_, dtmf_payload_freq_,
+                                        event, duration);
 }
 
 void WebRtcVoiceMediaChannel::OnPacketReceived(

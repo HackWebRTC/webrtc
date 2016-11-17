@@ -37,6 +37,7 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
  public:
   struct TelephoneEvent {
     int payload_type = -1;
+    int payload_frequency = -1;
     int event_code = 0;
     int duration_ms = 0;
   };
@@ -54,7 +55,7 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
   void Start() override { sending_ = true; }
   void Stop() override { sending_ = false; }
 
-  bool SendTelephoneEvent(int payload_type, int event,
+  bool SendTelephoneEvent(int payload_type, int payload_frequency, int event,
                           int duration_ms) override;
   void SetMuted(bool muted) override;
   webrtc::AudioSendStream::Stats GetStats() const override;

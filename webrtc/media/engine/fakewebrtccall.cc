@@ -40,9 +40,11 @@ FakeAudioSendStream::TelephoneEvent
   return latest_telephone_event_;
 }
 
-bool FakeAudioSendStream::SendTelephoneEvent(int payload_type, int event,
+bool FakeAudioSendStream::SendTelephoneEvent(int payload_type,
+                                             int payload_frequency, int event,
                                              int duration_ms) {
   latest_telephone_event_.payload_type = payload_type;
+  latest_telephone_event_.payload_frequency = payload_frequency;
   latest_telephone_event_.event_code = event;
   latest_telephone_event_.duration_ms = duration_ms;
   return true;

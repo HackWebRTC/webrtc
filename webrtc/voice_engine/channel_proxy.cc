@@ -136,9 +136,11 @@ uint32_t ChannelProxy::GetDelayEstimate() const {
   return channel()->GetDelayEstimate();
 }
 
-bool ChannelProxy::SetSendTelephoneEventPayloadType(int payload_type) {
+bool ChannelProxy::SetSendTelephoneEventPayloadType(int payload_type,
+                                                    int payload_frequency) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return channel()->SetSendTelephoneEventPayloadType(payload_type) == 0;
+  return channel()->SetSendTelephoneEventPayloadType(payload_type,
+                                                     payload_frequency) == 0;
 }
 
 bool ChannelProxy::SendTelephoneEventOutband(int event, int duration_ms) {

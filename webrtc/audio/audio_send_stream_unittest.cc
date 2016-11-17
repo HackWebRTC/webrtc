@@ -47,6 +47,7 @@ const CallStatistics kCallStats = {
     1345,  1678,  1901, 1234,  112, 13456, 17890, 1567, -1890, -1123};
 const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
 const int kTelephoneEventPayloadType = 123;
+const int kTelephoneEventPayloadFrequency = 65432;
 const int kTelephoneEventCode = 45;
 const int kTelephoneEventDuration = 6789;
 const CodecInst kIsacCodec = {103, "isac", 16000, 320, 1, 32000};
@@ -154,7 +155,8 @@ struct ConfigHelper {
   void SetupMockForSendTelephoneEvent() {
     EXPECT_TRUE(channel_proxy_);
     EXPECT_CALL(*channel_proxy_,
-        SetSendTelephoneEventPayloadType(kTelephoneEventPayloadType))
+        SetSendTelephoneEventPayloadType(kTelephoneEventPayloadType,
+                                         kTelephoneEventPayloadFrequency))
             .WillOnce(Return(true));
     EXPECT_CALL(*channel_proxy_,
         SendTelephoneEventOutband(kTelephoneEventCode, kTelephoneEventDuration))
@@ -268,7 +270,8 @@ TEST(AudioSendStreamTest, SendTelephoneEvent) {
       helper.event_log());
   helper.SetupMockForSendTelephoneEvent();
   EXPECT_TRUE(send_stream.SendTelephoneEvent(kTelephoneEventPayloadType,
-      kTelephoneEventCode, kTelephoneEventDuration));
+      kTelephoneEventPayloadFrequency, kTelephoneEventCode,
+      kTelephoneEventDuration));
 }
 
 TEST(AudioSendStreamTest, SetMuted) {

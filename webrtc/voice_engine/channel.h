@@ -286,7 +286,7 @@ class Channel
 
   // DTMF
   int SendTelephoneEventOutband(int event, int duration_ms);
-  int SetSendTelephoneEventPayloadType(int payload_type);
+  int SetSendTelephoneEventPayloadType(int payload_type, int payload_frequency);
 
   // VoEAudioProcessingImpl
   int VoiceActivityIndicator(int& activity);

@@ -1299,37 +1299,38 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
 // packets of the same telephone event. Since it is specifically for DTMF
 // events, ignoring audio packets and sending kEmptyFrame instead of those.
 TEST_F(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "telephone-event";
-  uint8_t payload_type = 126;
-  ASSERT_EQ(0,
-            rtp_sender_->RegisterPayload(payload_name, payload_type, 0, 0, 0));
+  const char* kDtmfPayloadName = "telephone-event";
+  const uint32_t kPayloadFrequency = 8000;
+  const uint8_t kPayloadType = 126;
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(kDtmfPayloadName, kPayloadType,
+                                            kPayloadFrequency, 0, 0));
   // For Telephone events, payload is not added to the registered payload list,
   // it will register only the payload used for audio stream.
   // Registering the payload again for audio stream with different payload name.
-  const char kPayloadName[] = "payload_name";
-  ASSERT_EQ(
-      0, rtp_sender_->RegisterPayload(kPayloadName, payload_type, 8000, 1, 0));
+  const char* kPayloadName = "payload_name";
+  ASSERT_EQ(0, rtp_sender_->RegisterPayload(kPayloadName, kPayloadType,
+                                            kPayloadFrequency, 1, 0));
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   // DTMF event key=9, duration=500 and attenuationdB=10
   rtp_sender_->SendTelephoneEvent(9, 500, 10);
   // During start, it takes the starting timestamp as last sent timestamp.
   // The duration is calculated as the difference of current and last sent
   // timestamp. So for first call it will skip since the duration is zero.
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(kEmptyFrame, payload_type,
-                                                capture_time_ms, 0, nullptr, 0,
-                                                nullptr, nullptr, nullptr));
+  ASSERT_TRUE(rtp_sender_->SendOutgoingData(kEmptyFrame, kPayloadType,
+                                            capture_time_ms, 0, nullptr, 0,
+                                            nullptr, nullptr, nullptr));
   // DTMF Sample Length is (Frequency/1000) * Duration.
   // So in this case, it is (8000/1000) * 500 = 4000.
   // Sending it as two packets.
   ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-                      kEmptyFrame, payload_type, capture_time_ms + 2000, 0,
+                      kEmptyFrame, kPayloadType, capture_time_ms + 2000, 0,
                       nullptr, 0, nullptr, nullptr, nullptr));
 
   // Marker Bit should be set to 1 for first packet.
   EXPECT_TRUE(transport_.last_sent_packet().Marker());
 
   ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-                      kEmptyFrame, payload_type, capture_time_ms + 4000, 0,
+                      kEmptyFrame, kPayloadType, capture_time_ms + 4000, 0,
                       nullptr, 0, nullptr, nullptr, nullptr));
   // Marker Bit should be set to 0 for rest of the packets.
   EXPECT_FALSE(transport_.last_sent_packet().Marker());

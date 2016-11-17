@@ -135,10 +135,12 @@ void AudioSendStream::Stop() {
   }
 }
 
-bool AudioSendStream::SendTelephoneEvent(int payload_type, int event,
+bool AudioSendStream::SendTelephoneEvent(int payload_type,
+                                         int payload_frequency, int event,
                                          int duration_ms) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return channel_proxy_->SetSendTelephoneEventPayloadType(payload_type) &&
+  return channel_proxy_->SetSendTelephoneEventPayloadType(payload_type,
+                                                          payload_frequency) &&
          channel_proxy_->SendTelephoneEventOutband(event, duration_ms);
 }
 

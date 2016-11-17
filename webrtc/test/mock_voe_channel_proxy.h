@@ -42,7 +42,8 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_CONST_METHOD0(GetDecodingCallStatistics, AudioDecodingCallStats());
   MOCK_CONST_METHOD0(GetSpeechOutputLevelFullRange, int32_t());
   MOCK_CONST_METHOD0(GetDelayEstimate, uint32_t());
-  MOCK_METHOD1(SetSendTelephoneEventPayloadType, bool(int payload_type));
+  MOCK_METHOD2(SetSendTelephoneEventPayloadType, bool(int payload_type,
+                                                      int payload_frequency));
   MOCK_METHOD2(SendTelephoneEventOutband, bool(int event, int duration_ms));
   MOCK_METHOD1(SetBitrate, void(int bitrate_bps));
   // TODO(solenberg): Talk the compiler into accepting this mock method:

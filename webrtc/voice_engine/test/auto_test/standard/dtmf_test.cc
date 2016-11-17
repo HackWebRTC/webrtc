@@ -59,7 +59,8 @@ TEST_F(DtmfTest, ManualCanChangeDtmfPayloadType) {
 
   // Next, we must modify the sending side as well.
   EXPECT_TRUE(
-      channel_proxy_->SetSendTelephoneEventPayloadType(codec_instance.pltype));
+      channel_proxy_->SetSendTelephoneEventPayloadType(codec_instance.pltype,
+                                                       codec_instance.plfreq));
 
   RunSixteenDtmfEvents();
 }

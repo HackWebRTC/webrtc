@@ -69,7 +69,8 @@ class ChannelProxy {
   virtual AudioDecodingCallStats GetDecodingCallStatistics() const;
   virtual int32_t GetSpeechOutputLevelFullRange() const;
   virtual uint32_t GetDelayEstimate() const;
-  virtual bool SetSendTelephoneEventPayloadType(int payload_type);
+  virtual bool SetSendTelephoneEventPayloadType(int payload_type,
+                                                int payload_frequency);
   virtual bool SendTelephoneEventOutband(int event, int duration_ms);
   virtual void SetBitrate(int bitrate_bps);
   virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink);
