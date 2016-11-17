@@ -77,7 +77,8 @@ RTPSender::RTPSender(
     SendSideDelayObserver* send_side_delay_observer,
     RtcEventLog* event_log,
     SendPacketObserver* send_packet_observer,
-    RateLimiter* retransmission_rate_limiter)
+    RateLimiter* retransmission_rate_limiter,
+    OverheadObserver* overhead_observer)
     : clock_(clock),
       // TODO(holmer): Remove this conversion?
       clock_delta_ms_(clock_->TimeInMilliseconds() - rtc::TimeMillis()),
@@ -119,7 +120,10 @@ RTPSender::RTPSender(
       last_packet_marker_bit_(false),
       csrcs_(),
       rtx_(kRtxOff),
-      retransmission_rate_limiter_(retransmission_rate_limiter) {
+      transport_overhead_bytes_per_packet_(0),
+      rtp_overhead_bytes_per_packet_(0),
+      retransmission_rate_limiter_(retransmission_rate_limiter),
+      overhead_observer_(overhead_observer) {
   ssrc_ = ssrc_db_->CreateSSRC();
   RTC_DCHECK(ssrc_ != 0);
   ssrc_rtx_ = ssrc_db_->CreateSSRC();
@@ -571,18 +575,15 @@ size_t RTPSender::DeprecatedSendPadData(size_t bytes,
           kTimestampTicksPerMs * (now_ms - capture_time_ms));
     }
     padding_packet.SetExtension<AbsoluteSendTime>(now_ms);
-
     PacketOptions options;
-    bool has_transport_seq_no =
+    bool has_transport_seq_num =
         UpdateTransportSequenceNumber(&padding_packet, &options.packet_id);
-
     padding_packet.SetPadding(padding_bytes_in_packet, &random_);
 
-    if (has_transport_seq_no && transport_feedback_observer_)
-      transport_feedback_observer_->AddPacket(
-          options.packet_id,
-          padding_packet.payload_size() + padding_packet.padding_size(),
-          probe_cluster_id);
+    if (has_transport_seq_num) {
+      AddPacketToTransportFeedback(options.packet_id, padding_packet,
+                                   probe_cluster_id);
+    }
 
     if (!SendPacketToNetwork(padding_packet, options))
       break;
@@ -640,6 +641,7 @@ bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
                                     const PacketOptions& options) {
   int bytes_sent = -1;
   if (transport_) {
+    UpdateRtpOverhead(packet);
     bytes_sent = transport_->SendRtp(packet.data(), packet.size(), options)
                      ? static_cast<int>(packet.size())
                      : -1;
@@ -755,12 +757,9 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   packet_to_send->SetExtension<AbsoluteSendTime>(now_ms);
 
   PacketOptions options;
-  if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id) &&
-      transport_feedback_observer_) {
-    transport_feedback_observer_->AddPacket(
-        options.packet_id,
-        packet_to_send->payload_size() + packet_to_send->padding_size(),
-        probe_cluster_id);
+  if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id)) {
+    AddPacketToTransportFeedback(options.packet_id, *packet_to_send,
+                                 probe_cluster_id);
   }
 
   if (!is_retransmit && !send_over_rtx) {
@@ -889,11 +888,9 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   }
 
   PacketOptions options;
-  if (UpdateTransportSequenceNumber(packet.get(), &options.packet_id) &&
-      transport_feedback_observer_) {
-    transport_feedback_observer_->AddPacket(
-        options.packet_id, packet->payload_size() + packet->padding_size(),
-        PacketInfo::kNotAProbe);
+  if (UpdateTransportSequenceNumber(packet.get(), &options.packet_id)) {
+    AddPacketToTransportFeedback(options.packet_id, *packet.get(),
+                                 PacketInfo::kNotAProbe);
   }
 
   UpdateDelayStatistics(packet->capture_time_ms(), now_ms);
@@ -1278,6 +1275,49 @@ RtpState RTPSender::GetRtxRtpState() const {
   state.start_timestamp = timestamp_offset_;
 
   return state;
+}
+
+void RTPSender::SetTransportOverhead(int transport_overhead) {
+  if (!overhead_observer_)
+    return;
+  size_t overhead_bytes_per_packet = 0;
+  {
+    rtc::CritScope lock(&send_critsect_);
+    if (transport_overhead_bytes_per_packet_ ==
+        static_cast<size_t>(transport_overhead)) {
+      return;
+    }
+    transport_overhead_bytes_per_packet_ = transport_overhead;
+    overhead_bytes_per_packet =
+        rtp_overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_;
+  }
+  overhead_observer_->OnOverheadChanged(overhead_bytes_per_packet);
+}
+
+void RTPSender::AddPacketToTransportFeedback(uint16_t packet_id,
+                                             const RtpPacketToSend& packet,
+                                             int probe_cluster_id) {
+  if (transport_feedback_observer_) {
+    transport_feedback_observer_->AddPacket(
+        packet_id, packet.payload_size() + packet.padding_size(),
+        probe_cluster_id);
+  }
+}
+
+void RTPSender::UpdateRtpOverhead(const RtpPacketToSend& packet) {
+  if (!overhead_observer_)
+    return;
+  size_t overhead_bytes_per_packet = 0;
+  {
+    rtc::CritScope lock(&send_critsect_);
+    if (rtp_overhead_bytes_per_packet_ == packet.headers_size()) {
+      return;
+    }
+    rtp_overhead_bytes_per_packet_ = packet.headers_size();
+    overhead_bytes_per_packet =
+        rtp_overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_;
+  }
+  overhead_observer_->OnOverheadChanged(overhead_bytes_per_packet);
 }
 
 }  // namespace webrtc

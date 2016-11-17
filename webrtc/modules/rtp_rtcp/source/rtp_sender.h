@@ -36,6 +36,7 @@
 
 namespace webrtc {
 
+class OverheadObserver;
 class RateLimiter;
 class RtcEventLog;
 class RtpPacketToSend;
@@ -58,7 +59,8 @@ class RTPSender {
             SendSideDelayObserver* send_side_delay_observer,
             RtcEventLog* event_log,
             SendPacketObserver* send_packet_observer,
-            RateLimiter* nack_rate_limiter);
+            RateLimiter* nack_rate_limiter,
+            OverheadObserver* overhead_observer);
 
   ~RTPSender();
 
@@ -214,6 +216,8 @@ class RTPSender {
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
 
+  void SetTransportOverhead(int transport_overhead);
+
  protected:
   int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
 
@@ -258,6 +262,12 @@ class RTPSender {
                       bool is_rtx,
                       bool is_retransmit);
   bool IsFecPacket(const RtpPacketToSend& packet) const;
+
+  void AddPacketToTransportFeedback(uint16_t packet_id,
+                                    const RtpPacketToSend& packet,
+                                    int probe_cluster_id);
+
+  void UpdateRtpOverhead(const RtpPacketToSend& packet);
 
   Clock* const clock_;
   const int64_t clock_delta_ms_;
@@ -327,8 +337,11 @@ class RTPSender {
   uint32_t ssrc_rtx_ GUARDED_BY(send_critsect_);
   // Mapping rtx_payload_type_map_[associated] = rtx.
   std::map<int8_t, int8_t> rtx_payload_type_map_ GUARDED_BY(send_critsect_);
+  size_t transport_overhead_bytes_per_packet_ GUARDED_BY(send_critsect_);
+  size_t rtp_overhead_bytes_per_packet_ GUARDED_BY(send_critsect_);
 
   RateLimiter* const retransmission_rate_limiter_;
+  OverheadObserver* overhead_observer_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSender);
 };

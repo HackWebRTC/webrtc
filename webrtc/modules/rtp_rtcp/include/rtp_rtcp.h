@@ -27,6 +27,7 @@
 namespace webrtc {
 
 // Forward declarations.
+class OverheadObserver;
 class RateLimiter;
 class ReceiveStatistics;
 class RemoteBitrateEstimator;
@@ -89,6 +90,7 @@ class RtpRtcp : public Module {
     RtcEventLog* event_log = nullptr;
     SendPacketObserver* send_packet_observer = nullptr;
     RateLimiter* retransmission_rate_limiter = nullptr;
+    OverheadObserver* overhead_observer = nullptr;
 
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);

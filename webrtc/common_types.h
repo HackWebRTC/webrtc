@@ -299,6 +299,14 @@ class SendPacketObserver {
                             uint32_t ssrc) = 0;
 };
 
+// Callback, used to notify an observer when the overhead per packet
+// has changed.
+class OverheadObserver {
+ public:
+  virtual ~OverheadObserver() = default;
+  virtual void OnOverheadChanged(size_t overhead_bytes_per_packet) = 0;
+};
+
 // ==================================================================
 // Voice specific types
 // ==================================================================

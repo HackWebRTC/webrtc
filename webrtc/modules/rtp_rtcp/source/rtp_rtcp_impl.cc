@@ -82,7 +82,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                   configuration.send_side_delay_observer,
                   configuration.event_log,
                   configuration.send_packet_observer,
-                  configuration.retransmission_rate_limiter),
+                  configuration.retransmission_rate_limiter,
+                  configuration.overhead_observer),
       rtcp_sender_(configuration.audio,
                    configuration.clock,
                    configuration.receive_statistics,
@@ -460,6 +461,7 @@ void ModuleRtpRtcpImpl::SetTransportOverhead(
   RTC_DCHECK_LT(transport_overhead_per_packet, mtu);
   size_t max_payload_length = mtu - transport_overhead_per_packet;
   packet_overhead_ = transport_overhead_per_packet;
+  rtp_sender_.SetTransportOverhead(packet_overhead_);
   rtcp_sender_.SetMaxPayloadLength(max_payload_length);
   rtp_sender_.SetMaxPayloadLength(max_payload_length);
 }
