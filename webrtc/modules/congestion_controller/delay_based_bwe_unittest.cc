@@ -129,7 +129,7 @@ TEST_F(DelayBasedBweTest, RateIncreaseRtpTimestamps) {
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropOneStream) {
-  CapacityDropTestHelper(1, false, 633, 0);
+  CapacityDropTestHelper(1, false, 567, 0);
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropPosOffsetChange) {
@@ -141,7 +141,7 @@ TEST_F(DelayBasedBweTest, CapacityDropNegOffsetChange) {
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropOneStreamWrap) {
-  CapacityDropTestHelper(1, true, 633, 0);
+  CapacityDropTestHelper(1, true, 567, 0);
 }
 
 TEST_F(DelayBasedBweTest, TestTimestampGrouping) {

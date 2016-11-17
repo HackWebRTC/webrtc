@@ -18,6 +18,8 @@ rtc_static_library("congestion_controller") {
     "probe_bitrate_estimator.h",
     "probe_controller.cc",
     "probe_controller.h",
+    "probing_interval_estimator.cc",
+    "probing_interval_estimator.h",
     "transport_feedback_adapter.cc",
     "transport_feedback_adapter.h",
   ]
