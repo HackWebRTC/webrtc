@@ -16,6 +16,7 @@
 #include "webrtc/audio/conversion.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
@@ -81,6 +82,7 @@ struct ConfigHelper {
 
     AudioState::Config config;
     config.voice_engine = &voice_engine_;
+    config.audio_mixer = AudioMixerImpl::Create();
     audio_state_ = AudioState::Create(config);
 
     SetupDefaultChannelProxy();

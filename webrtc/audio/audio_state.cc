@@ -26,6 +26,8 @@ AudioState::AudioState(const AudioState::Config& config)
                              voe_base_->audio_processing(),
                              config_.audio_mixer) {
   process_thread_checker_.DetachFromThread();
+  RTC_DCHECK(config_.audio_mixer);
+
   // Only one AudioState should be created per VoiceEngine.
   RTC_CHECK(voe_base_->RegisterVoiceEngineObserver(*this) != -1);
 
@@ -48,6 +50,7 @@ VoiceEngine* AudioState::voice_engine() {
 }
 
 rtc::scoped_refptr<AudioMixer> AudioState::mixer() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return config_.audio_mixer;
 }
 

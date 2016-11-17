@@ -334,6 +334,7 @@ rtc_source_set("test_common") {
     "../base:rtc_base_approved",
     "../call",
     "../modules/audio_device:mock_audio_device",
+    "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing",
     "../modules/media_file",
     "../modules/video_capture:video_capture_module",

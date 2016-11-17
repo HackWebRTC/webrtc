@@ -20,6 +20,7 @@
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
@@ -159,6 +160,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   AudioState::Config send_audio_state_config;
   send_audio_state_config.voice_engine = voice_engine;
+  send_audio_state_config.audio_mixer = AudioMixerImpl::Create();
   Call::Config sender_config(&event_log_);
   sender_config.audio_state = AudioState::Create(send_audio_state_config);
   Call::Config receiver_config(&event_log_);
@@ -264,7 +266,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   Start();
 
   fake_audio_device.Start();
-  EXPECT_EQ(0, voe_base->StartPlayout(recv_channel_id));
+  audio_receive_stream->Start();
   EXPECT_EQ(0, voe_base->StartSend(send_channel_id));
 
   EXPECT_TRUE(observer.Wait())

@@ -168,6 +168,7 @@ rtc_static_library("rtc_media") {
     "../api:call_api",
     "../base:rtc_base_approved",
     "../call",
+    "../modules/audio_mixer:audio_mixer_impl",
     "../modules/video_coding",
     "../p2p",
     "../system_wrappers",

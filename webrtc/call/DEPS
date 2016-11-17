@@ -4,6 +4,7 @@ include_rules = [
   "+webrtc/logging/rtc_event_log",
   "+webrtc/modules/audio_coding",
   "+webrtc/modules/audio_device",
+  "+webrtc/modules/audio_mixer",
   "+webrtc/modules/audio_processing",
   "+webrtc/modules/bitrate_controller",
   "+webrtc/modules/congestion_controller",

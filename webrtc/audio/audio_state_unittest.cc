@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "webrtc/audio/audio_state.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_voice_engine.h"
 
@@ -29,6 +30,7 @@ struct ConfigHelper {
     EXPECT_CALL(voice_engine_, audio_transport());
 
     config_.voice_engine = &voice_engine_;
+    config_.audio_mixer = AudioMixerImpl::Create();
   }
   AudioState::Config& config() { return config_; }
   MockVoiceEngine& voice_engine() { return voice_engine_; }

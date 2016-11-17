@@ -26,6 +26,7 @@
 #include "webrtc/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/include/cpu_info.h"
@@ -1341,6 +1342,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     CreateVoiceEngine(&voe, decoder_factory_);
     AudioState::Config audio_state_config;
     audio_state_config.voice_engine = voe.voice_engine;
+    audio_state_config.audio_mixer = AudioMixerImpl::Create();
     call_config.audio_state = AudioState::Create(audio_state_config);
   }
 

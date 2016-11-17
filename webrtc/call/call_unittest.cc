@@ -14,6 +14,7 @@
 #include "webrtc/api/call/audio_state.h"
 #include "webrtc/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_voice_engine.h"
@@ -26,6 +27,7 @@ struct CallHelper {
       : voice_engine_(decoder_factory) {
     webrtc::AudioState::Config audio_state_config;
     audio_state_config.voice_engine = &voice_engine_;
+    audio_state_config.audio_mixer = webrtc::AudioMixerImpl::Create();
     EXPECT_CALL(voice_engine_, audio_device_module());
     EXPECT_CALL(voice_engine_, audio_processing());
     EXPECT_CALL(voice_engine_, audio_transport());

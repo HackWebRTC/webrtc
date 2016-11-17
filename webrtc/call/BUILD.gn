@@ -49,7 +49,10 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":call",
+      "../base:rtc_base_approved",
       "../modules/audio_device:mock_audio_device",
+      "../modules/audio_mixer",
+      "../test:test_common",
       "//testing/gmock",
       "//testing/gtest",
     ]

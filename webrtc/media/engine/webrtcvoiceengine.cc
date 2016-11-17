@@ -37,6 +37,7 @@
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvoe.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -279,6 +280,7 @@ void GetOpusConfig(const AudioCodec& codec,
 webrtc::AudioState::Config MakeAudioStateConfig(VoEWrapper* voe_wrapper) {
   webrtc::AudioState::Config config;
   config.voice_engine = voe_wrapper->engine();
+  config.audio_mixer = webrtc::AudioMixerImpl::Create();
   return config;
 }
 

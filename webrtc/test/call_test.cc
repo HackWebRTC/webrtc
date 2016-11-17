@@ -15,6 +15,8 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
+#include "webrtc/test/call_test.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
@@ -52,6 +54,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
     CreateVoiceEngines();
     AudioState::Config audio_state_config;
     audio_state_config.voice_engine = voe_send_.voice_engine;
+    audio_state_config.audio_mixer = AudioMixerImpl::Create();
     send_config.audio_state = AudioState::Create(audio_state_config);
   }
   CreateSenderCall(send_config);
@@ -60,6 +63,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
     if (num_audio_streams_ > 0) {
       AudioState::Config audio_state_config;
       audio_state_config.voice_engine = voe_recv_.voice_engine;
+      audio_state_config.audio_mixer = AudioMixerImpl::Create();
       recv_config.audio_state = AudioState::Create(audio_state_config);
     }
     CreateReceiverCall(recv_config);

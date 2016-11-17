@@ -48,7 +48,9 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio",
+      "../base:rtc_base_approved",
       "../modules/audio_device:mock_audio_device",
+      "../test:test_common",
       "//testing/gmock",
       "//testing/gtest",
     ]
