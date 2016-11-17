@@ -91,8 +91,8 @@ TEST(ResidualEchoDetectorTests, EchoWithRenderClockDrift) {
   // render buffer, clock drift can only be discovered after a certain delay.
   // A growing buffer can be caused by jitter or clock drift and it's not
   // possible to make this decision right away. For this reason we only expect
-  // an echo likelihood of 80% in this test.
-  EXPECT_GT(echo_detector.echo_likelihood(), 0.8f);
+  // an echo likelihood of 75% in this test.
+  EXPECT_GT(echo_detector.echo_likelihood(), 0.75f);
 }
 
 TEST(ResidualEchoDetectorTests, EchoWithCaptureClockDrift) {

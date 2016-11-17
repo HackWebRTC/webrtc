@@ -18,7 +18,7 @@ namespace webrtc {
 namespace {
 
 // Parameter controlling the adaptation speed.
-constexpr float kAlpha = 0.01f;
+constexpr float kAlpha = 0.001f;
 
 }  // namespace
 

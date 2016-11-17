@@ -31,7 +31,7 @@ TEST(MeanVarianceEstimatorTests, InsertTwoValues) {
 TEST(MeanVarianceEstimatorTests, InsertZeroes) {
   MeanVarianceEstimator test_estimator;
   // Insert the same value many times.
-  for (size_t i = 0; i < 10000; i++) {
+  for (size_t i = 0; i < 20000; i++) {
     test_estimator.Update(0.f);
   }
   EXPECT_EQ(test_estimator.mean(), 0.f);
@@ -40,7 +40,7 @@ TEST(MeanVarianceEstimatorTests, InsertZeroes) {
 
 TEST(MeanVarianceEstimatorTests, ConstantValueTest) {
   MeanVarianceEstimator test_estimator;
-  for (size_t i = 0; i < 10000; i++) {
+  for (size_t i = 0; i < 20000; i++) {
     test_estimator.Update(3.f);
   }
   // The mean should be close to three, and the standard deviation should be
@@ -51,7 +51,7 @@ TEST(MeanVarianceEstimatorTests, ConstantValueTest) {
 
 TEST(MeanVarianceEstimatorTests, AlternatingValueTest) {
   MeanVarianceEstimator test_estimator;
-  for (size_t i = 0; i < 10000; i++) {
+  for (size_t i = 0; i < 20000; i++) {
     test_estimator.Update(1.f);
     test_estimator.Update(-1.f);
   }
