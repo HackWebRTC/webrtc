@@ -535,6 +535,175 @@ TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForVp9WithNackEnabled) {
 }
 #endif  // !defined(RTC_DISABLE_VP9)
 
+// TODO(brandtr): Move these FlexFEC tests when we have created
+// FlexfecSendStream.
+class FlexfecObserver : public test::EndToEndTest {
+ public:
+  FlexfecObserver(bool header_extensions_enabled,
+                  bool use_nack,
+                  const std::string& codec)
+      : EndToEndTest(VideoSendStreamTest::kDefaultTimeoutMs),
+        payload_name_(codec),
+        use_nack_(use_nack),
+        send_count_(0),
+        sent_media_(false),
+        sent_flexfec_(false),
+        header_extensions_enabled_(header_extensions_enabled) {
+    if (codec == "H264") {
+      encoder_.reset(new test::FakeH264Encoder(Clock::GetRealTimeClock()));
+    } else if (codec == "VP8") {
+      encoder_.reset(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8));
+    } else if (codec == "VP9") {
+      encoder_.reset(VideoEncoder::Create(VideoEncoder::EncoderType::kVp9));
+    } else {
+      RTC_NOTREACHED();
+    }
+  }
+
+  size_t GetNumFlexfecStreams() const override { return 1; }
+
+ private:
+  Action OnSendRtp(const uint8_t* packet, size_t length) override {
+    RTPHeader header;
+    EXPECT_TRUE(parser_->Parse(packet, length, &header));
+
+    ++send_count_;
+    if (header.payloadType == VideoSendStreamTest::kFlexfecPayloadType) {
+      EXPECT_EQ(VideoSendStreamTest::kFlexfecSendSsrc, header.ssrc);
+      sent_flexfec_ = true;
+    } else {
+      EXPECT_EQ(VideoSendStreamTest::kFakeVideoSendPayloadType,
+                header.payloadType);
+      EXPECT_EQ(VideoSendStreamTest::kVideoSendSsrcs[0], header.ssrc);
+      sent_media_ = true;
+    }
+
+    if (header_extensions_enabled_) {
+      EXPECT_TRUE(header.extension.hasAbsoluteSendTime);
+      EXPECT_TRUE(header.extension.hasTransmissionTimeOffset);
+      EXPECT_TRUE(header.extension.hasTransportSequenceNumber);
+    }
+
+    if (send_count_ > 100 && sent_media_ && sent_flexfec_) {
+      observation_complete_.Set();
+    }
+
+    return SEND_PACKET;
+  }
+
+  test::PacketTransport* CreateSendTransport(Call* sender_call) override {
+    // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
+    // Therefore we need some network delay.
+    const int kNetworkDelayMs = 100;
+    FakeNetworkPipe::Config config;
+    config.loss_percent = 50;
+    config.queue_delay_ms = kNetworkDelayMs;
+    return new test::PacketTransport(sender_call, this,
+                                     test::PacketTransport::kSender, config);
+  }
+
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
+    transport_adapter_.reset(
+        new internal::TransportAdapter(send_config->send_transport));
+    transport_adapter_->Enable();
+    if (use_nack_) {
+      send_config->rtp.nack.rtp_history_ms =
+          (*receive_configs)[0].rtp.nack.rtp_history_ms =
+              VideoSendStreamTest::kNackRtpHistoryMs;
+    }
+    send_config->encoder_settings.encoder = encoder_.get();
+    send_config->encoder_settings.payload_name = payload_name_;
+    if (header_extensions_enabled_) {
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kTimestampOffsetUri, test::kTOffsetExtensionId));
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                       test::kTransportSequenceNumberExtensionId));
+    }
+  }
+
+  void PerformTest() override {
+    EXPECT_TRUE(Wait())
+        << "Timed out waiting for FlexFEC and/or media packets.";
+  }
+
+  std::unique_ptr<internal::TransportAdapter> transport_adapter_;
+  std::unique_ptr<VideoEncoder> encoder_;
+  const std::string payload_name_;
+  const bool use_nack_;
+  int send_count_;
+  bool sent_media_;
+  bool sent_flexfec_;
+  bool header_extensions_enabled_;
+};
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsVp8) {
+  FlexfecObserver test(true, false, "VP8");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsVp8) {
+  FlexfecObserver test(false, false, "VP8");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsAndNackVp8) {
+  FlexfecObserver test(true, true, "VP8");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsAndNackVp8) {
+  FlexfecObserver test(false, true, "VP8");
+  RunBaseTest(&test);
+}
+
+#if !defined(RTC_DISABLE_VP9)
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsVp9) {
+  FlexfecObserver test(true, false, "VP9");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsVp9) {
+  FlexfecObserver test(false, false, "VP9");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsAndNackVp9) {
+  FlexfecObserver test(true, true, "VP9");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsAndNackVp9) {
+  FlexfecObserver test(false, true, "VP9");
+  RunBaseTest(&test);
+}
+#endif  // defined(RTC_DISABLE_VP9)
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsH264) {
+  FlexfecObserver test(true, false, "H264");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsH264) {
+  FlexfecObserver test(false, false, "H264");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsAndNackH264) {
+  FlexfecObserver test(true, true, "H264");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsAndNackH264) {
+  FlexfecObserver test(false, true, "H264");
+  RunBaseTest(&test);
+}
+
 void VideoSendStreamTest::TestNackRetransmission(
     uint32_t retransmit_ssrc,
     uint8_t retransmit_payload_type) {
