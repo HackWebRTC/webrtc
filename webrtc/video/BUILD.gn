@@ -37,6 +37,7 @@ rtc_static_library("video") {
     "transport_adapter.cc",
     "transport_adapter.h",
     "video_decoder.cc",
+    "video_encoder.cc",
     "video_receive_stream.cc",
     "video_receive_stream.h",
     "video_send_stream.cc",

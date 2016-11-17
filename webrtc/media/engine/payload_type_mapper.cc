@@ -53,18 +53,41 @@ PayloadTypeMapper::PayloadTypeMapper()
           {{"G729",   8000, 1}, 18},
 
           // Payload type assignments currently used by WebRTC.
-          // Includes data to reduce collisions (and thus reassignments)
+          // Includes video and data to reduce collisions (and thus
+          // reassignments).
           // RTX codecs mapping to specific video payload types
+          {{kRtxCodecName,    90000, 0,
+              {{kCodecParamAssociatedPayloadType,
+                      std::to_string(kDefaultVp8PlType)}}},
+                kDefaultRtxVp8PlType},
+          {{kRtxCodecName,    90000, 0,
+              {{kCodecParamAssociatedPayloadType,
+                      std::to_string(kDefaultVp9PlType)}}},
+                kDefaultRtxVp9PlType},
+          {{kRtxCodecName,    90000, 0,
+              {{kCodecParamAssociatedPayloadType,
+                      std::to_string(kDefaultRedPlType)}}},
+                kDefaultRtxRedPlType},
+          {{kRtxCodecName,    90000, 0,
+              {{kCodecParamAssociatedPayloadType,
+                      std::to_string(kDefaultH264PlType)}}},
+                kDefaultRtxH264ConstrainedBaselinePlType},
           // Other codecs
+          {{kVp8CodecName,    90000, 0}, kDefaultVp8PlType},
+          {{kVp9CodecName,    90000, 0}, kDefaultVp9PlType},
           {{kGoogleRtpDataCodecName, 0, 0}, kGoogleRtpDataCodecPlType},
           {{kIlbcCodecName,    8000, 1}, 102},
           {{kIsacCodecName,   16000, 1}, 103},
           {{kIsacCodecName,   32000, 1}, 104},
           {{kCnCodecName,     16000, 1}, 105},
           {{kCnCodecName,     32000, 1}, 106},
+          {{kH264CodecName,   90000, 0}, kDefaultH264PlType},
           {{kGoogleSctpDataCodecName, 0, 0}, kGoogleSctpDataCodecPlType},
           {{kOpusCodecName,   48000, 2,
               {{"minptime", "10"}, {"useinbandfec", "1"}}}, 111},
+          {{kRedCodecName,    90000, 0}, kDefaultRedPlType},
+          {{kUlpfecCodecName, 90000, 0}, kDefaultUlpfecType},
+          {{kFlexfecCodecName, 90000, 0}, kDefaultFlexfecPlType},
           // TODO(solenberg): Remove the hard coded 16k,32k,48k DTMF once we
           // assign payload types dynamically for send side as well.
           {{kDtmfCodecName,   48000, 1}, 110},

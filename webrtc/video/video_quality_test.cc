@@ -29,9 +29,6 @@
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
-#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
-#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/include/cpu_info.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/layer_filtering_transport.h"
@@ -1009,13 +1006,13 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
 
   int payload_type;
   if (params_.video.codec == "H264") {
-    video_encoder_.reset(H264Encoder::Create());
+    video_encoder_.reset(VideoEncoder::Create(VideoEncoder::kH264));
     payload_type = kPayloadTypeH264;
   } else if (params_.video.codec == "VP8") {
-    video_encoder_.reset(VP8Encoder::Create());
+    video_encoder_.reset(VideoEncoder::Create(VideoEncoder::kVp8));
     payload_type = kPayloadTypeVP8;
   } else if (params_.video.codec == "VP9") {
-    video_encoder_.reset(VP9Encoder::Create());
+    video_encoder_.reset(VideoEncoder::Create(VideoEncoder::kVp9));
     payload_type = kPayloadTypeVP9;
   } else {
     RTC_NOTREACHED() << "Codec not supported!";

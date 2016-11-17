@@ -30,7 +30,6 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/h264_bitstream_parser.h"
-#include "webrtc/media/engine/internalencoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
@@ -97,7 +96,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
  public:
   virtual ~MediaCodecVideoEncoder();
   MediaCodecVideoEncoder(JNIEnv* jni,
-                         const cricket::VideoCodec& codec,
+                         VideoCodecType codecType,
                          jobject egl_context);
 
   // webrtc::VideoEncoder implementation.  Everything trampolines to
@@ -187,7 +186,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   void LogStatistics(bool force_log);
 
   // Type of video codec.
-  const cricket::VideoCodec codec_;
+  VideoCodecType codecType_;
 
   // Valid all the time since RegisterEncodeCompleteCallback() Invoke()s to
   // |codec_thread_| synchronously.
@@ -303,9 +302,9 @@ MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
 }
 
 MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
-                                               const cricket::VideoCodec& codec,
+                                               VideoCodecType codecType,
                                                jobject egl_context)
-    : codec_(codec),
+    : codecType_(codecType),
       callback_(NULL),
       codec_thread_(new Thread()),
       j_media_codec_video_encoder_class_(
@@ -393,10 +392,9 @@ int32_t MediaCodecVideoEncoder::InitEncode(
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   // Factory should guard against other codecs being used with us.
-  const VideoCodecType codec_type = cricket::CodecTypeFromName(codec_.name);
-  RTC_CHECK(codec_settings->codecType == codec_type)
+  RTC_CHECK(codec_settings->codecType == codecType_)
       << "Unsupported codec " << codec_settings->codecType << " for "
-      << codec_type;
+      << codecType_;
   if (sw_fallback_required_) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -406,9 +404,9 @@ int32_t MediaCodecVideoEncoder::InitEncode(
   // Scaling is disabled for VP9, but optionally enabled for VP8.
   // TODO(pbos): Extract automaticResizeOn out of VP8 settings.
   scale_ = false;
-  if (codec_type == kVideoCodecVP8) {
+  if (codecType_ == kVideoCodecVP8) {
     scale_ = codec_settings->VP8().automaticResizeOn;
-  } else if (codec_type != kVideoCodecVP9) {
+  } else if (codecType_ != kVideoCodecVP9) {
     scale_ = true;
   }
 
@@ -416,8 +414,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(
   ALOGD << "Encoder automatic resize " << (scale_ ? "enabled" : "disabled");
 
   if (scale_) {
-    if (codec_type == kVideoCodecVP8 || codec_type == kVideoCodecH264) {
-      quality_scaler_.Init(codec_type, codec_settings->startBitrate,
+    if (codecType_ == kVideoCodecVP8 || codecType_ == kVideoCodecH264) {
+      quality_scaler_.Init(codecType_, codec_settings->startBitrate,
                            codec_settings->width, codec_settings->height,
                            codec_settings->maxFramerate);
     } else {
@@ -524,9 +522,8 @@ bool MediaCodecVideoEncoder::ResetCodecOnCodecThread() {
 bool MediaCodecVideoEncoder::ProcessHWErrorOnCodecThread(
     bool reset_if_fallback_unavailable) {
   ALOGE << "ProcessHWErrorOnCodecThread";
-  if (FindMatchingCodec(
-          cricket::InternalEncoderFactory::GetInstance().supported_codecs(),
-          codec_)) {
+  if (VideoEncoder::IsSupportedSoftware(
+          VideoEncoder::CodecToEncoderType(codecType_))) {
     ALOGE << "Fallback to SW encoder.";
     sw_fallback_required_ = true;
     return false;
@@ -553,9 +550,9 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
-  const VideoCodecType codec_type = cricket::CodecTypeFromName(codec_.name);
-  ALOGD << "InitEncodeOnCodecThread Type: " << (int)codec_type << ", " << width
-        << " x " << height << ". Bitrate: " << kbps << " kbps. Fps: " << fps;
+  ALOGD << "InitEncodeOnCodecThread Type: " <<  (int)codecType_ << ", " <<
+      width << " x " << height << ". Bitrate: " << kbps <<
+      " kbps. Fps: " << fps;
   if (kbps == 0) {
     kbps = last_set_bitrate_kbps_;
   }
@@ -594,7 +591,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
 
   // We enforce no extra stride/padding in the format creation step.
   jobject j_video_codec_enum = JavaEnumFromIndexAndClassName(
-      jni, "MediaCodecVideoEncoder$VideoCodecType", codec_type);
+      jni, "MediaCodecVideoEncoder$VideoCodecType", codecType_);
   const bool encode_status = jni->CallBooleanMethod(
       *j_media_codec_video_encoder_, j_init_encode_method_,
       j_video_codec_enum, width, height, kbps, fps,
@@ -1068,7 +1065,6 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     }
 
     // Callback - return encoded frame.
-    const VideoCodecType codec_type = cricket::CodecTypeFromName(codec_.name);
     webrtc::EncodedImageCallback::Result callback_result(
         webrtc::EncodedImageCallback::Result::OK);
     if (callback_) {
@@ -1087,8 +1083,8 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
 
       webrtc::CodecSpecificInfo info;
       memset(&info, 0, sizeof(info));
-      info.codecType = codec_type;
-      if (codec_type == kVideoCodecVP8) {
+      info.codecType = codecType_;
+      if (codecType_ == kVideoCodecVP8) {
         info.codecSpecific.VP8.pictureId = picture_id_;
         info.codecSpecific.VP8.nonReference = false;
         info.codecSpecific.VP8.simulcastIdx = 0;
@@ -1096,7 +1092,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         info.codecSpecific.VP8.layerSync = false;
         info.codecSpecific.VP8.tl0PicIdx = webrtc::kNoTl0PicIdx;
         info.codecSpecific.VP8.keyIdx = webrtc::kNoKeyIdx;
-      } else if (codec_type == kVideoCodecVP9) {
+      } else if (codecType_ == kVideoCodecVP9) {
         if (key_frame) {
           gof_idx_ = 0;
         }
@@ -1125,13 +1121,13 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       // Generate a header describing a single fragment.
       webrtc::RTPFragmentationHeader header;
       memset(&header, 0, sizeof(header));
-      if (codec_type == kVideoCodecVP8 || codec_type == kVideoCodecVP9) {
+      if (codecType_ == kVideoCodecVP8 || codecType_ == kVideoCodecVP9) {
         header.VerifyAndAllocateFragmentationHeader(1);
         header.fragmentationOffset[0] = 0;
         header.fragmentationLength[0] = image->_length;
         header.fragmentationPlType[0] = 0;
         header.fragmentationTimeDiff[0] = 0;
-        if (codec_type == kVideoCodecVP8 && scale_) {
+        if (codecType_ == kVideoCodecVP8 && scale_) {
           int qp;
           if (webrtc::vp8::GetQp(payload, payload_size, &qp)) {
             current_acc_qp_ += qp;
@@ -1139,7 +1135,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
             image->qp_ = qp;
           }
         }
-      } else if (codec_type == kVideoCodecH264) {
+      } else if (codecType_ == kVideoCodecH264) {
         if (scale_) {
           h264_bitstream_parser_.ParseBitstream(payload, payload_size);
           int qp;
@@ -1363,7 +1359,8 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
   }
   if (FindMatchingCodec(supported_codecs_, codec)) {
     ALOGD << "Create HW video encoder for " << codec.name;
-    return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), codec,
+    const VideoCodecType type = cricket::CodecTypeFromName(codec.name);
+    return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), type,
                                       egl_context_);
   }
   ALOGW << "Can not find HW video encoder for type " << codec.name;

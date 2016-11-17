@@ -81,8 +81,6 @@ rtc_static_library("rtc_media") {
     "base/videoframe.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
-    "engine/internalencoderfactory.cc",
-    "engine/internalencoderfactory.h",
     "engine/nullwebrtcvideoengine.h",
     "engine/payload_type_mapper.cc",
     "engine/payload_type_mapper.h",

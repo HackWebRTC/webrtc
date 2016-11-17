@@ -24,13 +24,14 @@
 #include "webrtc/call.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/engine/constants.h"
-#include "webrtc/media/engine/internalencoderfactory.h"
 #include "webrtc/media/engine/simulcast.h"
 #include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/media/engine/webrtcvoiceengine.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
+#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
@@ -167,6 +168,13 @@ void AddDefaultFeedbackParams(VideoCodec* codec) {
   codec->AddFeedbackParam(FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
   codec->AddFeedbackParam(
       FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
+}
+
+static VideoCodec MakeVideoCodecWithDefaultFeedbackParams(int payload_type,
+                                                          const char* name) {
+  VideoCodec codec(payload_type, name);
+  AddDefaultFeedbackParams(&codec);
+  return codec;
 }
 
 static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
@@ -384,6 +392,73 @@ static const int kDefaultRtcpReceiverReportSsrc = 1;
 // Minimum time interval for logging stats.
 static const int64_t kStatsLogIntervalMs = 10000;
 
+// Adds |codec| to |list|, and also adds an RTX codec if |codec|'s name is
+// recognized.
+// TODO(deadbeef): Should we add RTX codecs for external codecs whose names we
+// don't recognize?
+void AddCodecAndMaybeRtxCodec(const VideoCodec& codec,
+                              std::vector<VideoCodec>* codecs) {
+  codecs->push_back(codec);
+  int rtx_payload_type = 0;
+  if (CodecNamesEq(codec.name, kVp8CodecName)) {
+    rtx_payload_type = kDefaultRtxVp8PlType;
+  } else if (CodecNamesEq(codec.name, kVp9CodecName)) {
+    rtx_payload_type = kDefaultRtxVp9PlType;
+  } else if (CodecNamesEq(codec.name, kH264CodecName)) {
+    // Parse H264 profile.
+    const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
+        webrtc::H264::ParseSdpProfileLevelId(codec.params);
+    if (!profile_level_id)
+      return;
+    const webrtc::H264::Profile profile = profile_level_id->profile;
+    // In H.264, we only support rtx for constrained baseline and constrained
+    // high profile.
+    if (profile == webrtc::H264::kProfileConstrainedBaseline) {
+      rtx_payload_type = kDefaultRtxH264ConstrainedBaselinePlType;
+    } else if (profile == webrtc::H264::kProfileConstrainedHigh) {
+      rtx_payload_type = kDefaultRtxH264ConstrainedHighPlType;
+    } else {
+      return;
+    }
+  } else if (CodecNamesEq(codec.name, kRedCodecName)) {
+    rtx_payload_type = kDefaultRtxRedPlType;
+  } else {
+    return;
+  }
+  codecs->push_back(VideoCodec::CreateRtxCodec(rtx_payload_type, codec.id));
+}
+
+std::vector<VideoCodec> DefaultVideoCodecList() {
+  std::vector<VideoCodec> codecs;
+  AddCodecAndMaybeRtxCodec(
+      MakeVideoCodecWithDefaultFeedbackParams(kDefaultVp8PlType, kVp8CodecName),
+      &codecs);
+  if (webrtc::VP9Encoder::IsSupported() && webrtc::VP9Decoder::IsSupported()) {
+    AddCodecAndMaybeRtxCodec(MakeVideoCodecWithDefaultFeedbackParams(
+                                 kDefaultVp9PlType, kVp9CodecName),
+                             &codecs);
+  }
+  if (webrtc::H264Encoder::IsSupported() &&
+      webrtc::H264Decoder::IsSupported()) {
+    VideoCodec codec = MakeVideoCodecWithDefaultFeedbackParams(
+        kDefaultH264PlType, kH264CodecName);
+    // TODO(hta): Move all parameter generation for SDP into the codec
+    // implementation, for all codecs and parameters.
+    // TODO(hta): Move selection of profile-level-id to H.264 codec
+    // implementation.
+    // TODO(hta): Set FMTP parameters for all codecs of type H264.
+    codec.SetParam(kH264FmtpProfileLevelId,
+                   kH264ProfileLevelConstrainedBaseline);
+    codec.SetParam(kH264FmtpLevelAsymmetryAllowed, "1");
+    codec.SetParam(kH264FmtpPacketizationMode, "1");
+    AddCodecAndMaybeRtxCodec(codec, &codecs);
+  }
+  AddCodecAndMaybeRtxCodec(VideoCodec(kDefaultRedPlType, kRedCodecName),
+                           &codecs);
+  codecs.push_back(VideoCodec(kDefaultUlpfecType, kUlpfecCodecName));
+  return codecs;
+}
+
 static std::vector<VideoCodec> GetSupportedCodecs(
     const WebRtcVideoEncoderFactory* external_encoder_factory);
 
@@ -559,87 +634,50 @@ void WebRtcVideoEngine2::SetExternalEncoderFactory(
   video_codecs_ = GetSupportedCodecs(encoder_factory);
 }
 
-// This is a helper function for AppendVideoCodecs below. It will return the
-// first unused dynamic payload type (in the range [96, 127]), or nothing if no
-// payload type is unused.
-static rtc::Optional<int> NextFreePayloadType(
-    const std::vector<VideoCodec>& codecs) {
-  static const int kFirstDynamicPayloadType = 96;
-  static const int kLastDynamicPayloadType = 127;
-  bool is_payload_used[1 + kLastDynamicPayloadType - kFirstDynamicPayloadType] =
-      {false};
-  for (const VideoCodec& codec : codecs) {
-    if (kFirstDynamicPayloadType <= codec.id &&
-        codec.id <= kLastDynamicPayloadType) {
-      is_payload_used[codec.id - kFirstDynamicPayloadType] = true;
-    }
-  }
-  for (int i = kFirstDynamicPayloadType; i <= kLastDynamicPayloadType; ++i) {
-    if (!is_payload_used[i - kFirstDynamicPayloadType])
-      return rtc::Optional<int>(i);
-  }
-  // No free payload type.
-  return rtc::Optional<int>();
-}
-
-// This is a helper function for GetSupportedCodecs below. It will append new
-// unique codecs from |input_codecs| to |unified_codecs|. It will add default
-// feedback params to the codecs and will also add an associated RTX codec for
-// recognized codecs (VP8, VP9, H264, and Red).
-static void AppendVideoCodecs(const std::vector<VideoCodec>& input_codecs,
-                              std::vector<VideoCodec>* unified_codecs) {
-  for (VideoCodec codec : input_codecs) {
-    const rtc::Optional<int> payload_type =
-        NextFreePayloadType(*unified_codecs);
-    if (!payload_type)
-      return;
-    codec.id = *payload_type;
-    // TODO(magjed): Move the responsibility of setting these parameters to the
-    // encoder factories instead.
-    if (codec.name != kRedCodecName && codec.name != kUlpfecCodecName)
-      AddDefaultFeedbackParams(&codec);
-    // Don't add same codec twice.
-    if (FindMatchingCodec(*unified_codecs, codec))
-      continue;
-
-    unified_codecs->push_back(codec);
-
-    // Add associated RTX codec for recognized codecs.
-    // TODO(deadbeef): Should we add RTX codecs for external codecs whose names
-    // we don't recognize?
-    if (CodecNamesEq(codec.name, kVp8CodecName) ||
-        CodecNamesEq(codec.name, kVp9CodecName) ||
-        CodecNamesEq(codec.name, kH264CodecName) ||
-        CodecNamesEq(codec.name, kRedCodecName)) {
-      const rtc::Optional<int> rtx_payload_type =
-          NextFreePayloadType(*unified_codecs);
-      if (!rtx_payload_type)
-        return;
-      unified_codecs->push_back(
-          VideoCodec::CreateRtxCodec(*rtx_payload_type, codec.id));
-    }
-  }
-}
-
 static std::vector<VideoCodec> GetSupportedCodecs(
     const WebRtcVideoEncoderFactory* external_encoder_factory) {
-  const std::vector<VideoCodec>& internal_codecs =
-      InternalEncoderFactory::GetInstance().supported_codecs();
-  LOG(LS_INFO) << "Internally supported codecs: "
-               << CodecVectorToString(internal_codecs);
+  std::vector<VideoCodec> supported_codecs = DefaultVideoCodecList();
 
-  std::vector<VideoCodec> unified_codecs;
-  AppendVideoCodecs(internal_codecs, &unified_codecs);
-
-  if (external_encoder_factory != nullptr) {
-    const std::vector<VideoCodec>& external_codecs =
-        external_encoder_factory->supported_codecs();
-    AppendVideoCodecs(external_codecs, &unified_codecs);
-    LOG(LS_INFO) << "Codecs supported by the external encoder factory: "
-                 << CodecVectorToString(external_codecs);
+  if (external_encoder_factory == nullptr) {
+    LOG(LS_INFO) << "Supported codecs: "
+                 << CodecVectorToString(supported_codecs);
+    return supported_codecs;
   }
 
-  return unified_codecs;
+  std::stringstream out;
+  const std::vector<VideoCodec>& codecs =
+      external_encoder_factory->supported_codecs();
+  for (size_t i = 0; i < codecs.size(); ++i) {
+    VideoCodec codec = codecs[i];
+    out << codec.name;
+    if (i != codecs.size() - 1) {
+      out << ", ";
+    }
+    // Don't add internally-supported codecs twice.
+    if (FindMatchingCodec(supported_codecs, codec))
+      continue;
+
+    // External video encoders are given payloads 120-127. This also means that
+    // we only support up to 8 external payload types.
+    // TODO(deadbeef): mediasession.cc already has code to dynamically
+    // determine a payload type. We should be able to just leave the payload
+    // type empty and let mediasession determine it. However, currently RTX
+    // codecs are associated to codecs by payload type, meaning we DO need
+    // to allocate unique payload types here. So to make this change we would
+    // need to make RTX codecs associated by name instead.
+    const int kExternalVideoPayloadTypeBase = 120;
+    size_t payload_type = kExternalVideoPayloadTypeBase + i;
+    RTC_DCHECK(payload_type < 128);
+    codec.id = payload_type;
+
+    AddDefaultFeedbackParams(&codec);
+    AddCodecAndMaybeRtxCodec(codec, &supported_codecs);
+  }
+  LOG(LS_INFO) << "Supported codecs (incl. external codecs): "
+               << CodecVectorToString(supported_codecs);
+  LOG(LS_INFO) << "Codecs supported by the external encoder factory: "
+               << out.str();
+  return supported_codecs;
 }
 
 WebRtcVideoChannel2::WebRtcVideoChannel2(
@@ -1517,16 +1555,16 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::VideoSendStreamParameters::
 
 WebRtcVideoChannel2::WebRtcVideoSendStream::AllocatedEncoder::AllocatedEncoder(
     webrtc::VideoEncoder* encoder,
-    const cricket::VideoCodec& codec,
+    webrtc::VideoCodecType type,
     bool external)
     : encoder(encoder),
       external_encoder(nullptr),
-      codec(codec),
+      type(type),
       external(external) {
   if (external) {
     external_encoder = encoder;
     this->encoder =
-        new webrtc::VideoEncoderSoftwareFallbackWrapper(codec, encoder);
+        new webrtc::VideoEncoderSoftwareFallbackWrapper(type, encoder);
   }
 }
 
@@ -1554,7 +1592,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       encoder_sink_(nullptr),
       parameters_(std::move(config), options, max_bitrate_bps, codec_settings),
       rtp_parameters_(CreateRtpParametersWithOneEncoding()),
-      allocated_encoder_(nullptr, cricket::VideoCodec(), false),
+      allocated_encoder_(nullptr, webrtc::kVideoCodecUnknown, false),
       sending_(false),
       last_frame_timestamp_us_(0) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
@@ -1689,33 +1727,36 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::AllocatedEncoder
 WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoder(
     const VideoCodec& codec) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
+  webrtc::VideoCodecType type = CodecTypeFromName(codec.name);
+
   // Do not re-create encoders of the same type.
-  if (codec == allocated_encoder_.codec &&
-      allocated_encoder_.encoder != nullptr) {
+  if (type == allocated_encoder_.type && allocated_encoder_.encoder != NULL) {
     return allocated_encoder_;
   }
 
-  // Try creating external encoder.
-  if (external_encoder_factory_ != nullptr &&
-      FindMatchingCodec(external_encoder_factory_->supported_codecs(), codec)) {
+  if (external_encoder_factory_ != NULL) {
     webrtc::VideoEncoder* encoder =
         external_encoder_factory_->CreateVideoEncoder(codec);
-    if (encoder != nullptr)
-      return AllocatedEncoder(encoder, codec, true /* is_external */);
+    if (encoder != NULL) {
+      return AllocatedEncoder(encoder, type, true);
+    }
   }
 
-  // Try creating internal encoder.
-  WebRtcVideoEncoderFactory& internal_encoder_factory =
-      InternalEncoderFactory::GetInstance();
-  if (FindMatchingCodec(internal_encoder_factory.supported_codecs(), codec)) {
-    return AllocatedEncoder(internal_encoder_factory.CreateVideoEncoder(codec),
-                            codec, false /* is_external */);
+  if (type == webrtc::kVideoCodecVP8) {
+    return AllocatedEncoder(
+        webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kVp8), type, false);
+  } else if (type == webrtc::kVideoCodecVP9) {
+    return AllocatedEncoder(
+        webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kVp9), type, false);
+  } else if (type == webrtc::kVideoCodecH264) {
+    return AllocatedEncoder(
+        webrtc::VideoEncoder::Create(webrtc::VideoEncoder::kH264), type, false);
   }
 
   // This shouldn't happen, we should not be trying to create something we don't
   // support.
   RTC_DCHECK(false);
-  return AllocatedEncoder(NULL, cricket::VideoCodec(), false);
+  return AllocatedEncoder(NULL, webrtc::kVideoCodecUnknown, false);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::DestroyVideoEncoder(

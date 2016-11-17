@@ -61,6 +61,9 @@ class WebRtcVoiceMediaChannel;
 
 struct Device;
 
+// Exposed here for unittests.
+std::vector<VideoCodec> DefaultVideoCodecList();
+
 class UnsignalledSsrcHandler {
  public:
   enum Action {
@@ -298,11 +301,11 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     struct AllocatedEncoder {
       AllocatedEncoder(webrtc::VideoEncoder* encoder,
-                       const cricket::VideoCodec& codec,
+                       webrtc::VideoCodecType type,
                        bool external);
       webrtc::VideoEncoder* encoder;
       webrtc::VideoEncoder* external_encoder;
-      cricket::VideoCodec codec;
+      webrtc::VideoCodecType type;
       bool external;
     };
 
