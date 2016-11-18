@@ -455,9 +455,6 @@ if (rtc_include_tests) {
       "base/timeutils_unittest.cc",
       "base/urlencode_unittest.cc",
       "base/weak_ptr_unittest.cc",
-
-      # TODO(ronghuawu): Reenable this test.
-      # "windowpicker_unittest.cc",
       "p2p/base/asyncstuntcpsocket_unittest.cc",
       "p2p/base/dtlstransportchannel_unittest.cc",
       "p2p/base/fakeportallocator.h",
@@ -501,7 +498,6 @@ if (rtc_include_tests) {
         "base/win32_unittest.cc",
         "base/win32regkey_unittest.cc",
         "base/win32window_unittest.cc",
-        "base/win32windowpicker_unittest.cc",
       ]
     }
 

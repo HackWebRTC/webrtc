@@ -559,8 +559,6 @@ rtc_static_library("rtc_base") {
       "virtualsocketserver.cc",
       "virtualsocketserver.h",
       "window.h",
-      "windowpicker.h",
-      "windowpickerfactory.h",
     ]
 
     if (is_linux) {
@@ -578,13 +576,6 @@ rtc_static_library("rtc_base") {
       sources += [
         "latebindingsymboltable.cc",
         "latebindingsymboltable.h",
-      ]
-    }
-
-    if (is_mac) {
-      sources += [
-        "macwindowpicker.cc",
-        "macwindowpicker.h",
       ]
     }
 
@@ -643,10 +634,6 @@ rtc_static_library("rtc_base") {
   }
 
   if (use_x11) {
-    sources += [
-      "x11windowpicker.cc",
-      "x11windowpicker.h",
-    ]
     libs += [
       "dl",
       "rt",
@@ -684,8 +671,6 @@ rtc_static_library("rtc_base") {
       "win32securityerrors.cc",
       "win32window.cc",
       "win32window.h",
-      "win32windowpicker.cc",
-      "win32windowpicker.h",
       "winping.cc",
       "winping.h",
     ]
