@@ -81,7 +81,7 @@ TEST_F(FileUtilsTest, MAYBE_OutputPathFromUnchangedWorkingDir) {
 
 // Tests with current working directory set to a directory higher up in the
 // directory tree than the project root dir.
-#if defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID) || defined(WIN32)
 #define MAYBE_OutputPathFromRootWorkingDir DISABLED_OutputPathFromRootWorkingDir
 #else
 #define MAYBE_OutputPathFromRootWorkingDir OutputPathFromRootWorkingDir

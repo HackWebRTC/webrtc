@@ -18,6 +18,8 @@
 #include <windows.h>
 #include <algorithm>
 
+#include "Shlwapi.h"
+
 #include "webrtc/system_wrappers/include/utf_util_win.h"
 #define GET_CURRENT_DIR _getcwd
 #else
@@ -127,24 +129,23 @@ std::string ProjectRootPath() {
   if (path == kFallbackPath) {
     return kCannotFindProjectRootDir;
   }
-  if (relative_dir_path_set && strcmp(relative_dir_path, ".") != 0) {
+  if (relative_dir_path_set) {
     path = path + kPathDelimiter + relative_dir_path;
   }
-  // Remove two directory levels from the path, i.e. a path like
-  // /absolute/path/src/out/Debug will become /absolute/path/src/
-  size_t path_delimiter_index = path.find_last_of(kPathDelimiter);
-  if (path_delimiter_index != std::string::npos) {
-    // Move up one directory in the directory tree.
-    path = path.substr(0, path_delimiter_index);
-    path_delimiter_index = path.find_last_of(kPathDelimiter);
-    if (path_delimiter_index != std::string::npos) {
-      // Move up another directory in the directory tree. We should now be at
-      // the project root.
-      return path.substr(0, path_delimiter_index) + kPathDelimiter;
-    }
+  path = path + kPathDelimiter + ".." + kPathDelimiter + "..";
+  char canonical_path[FILENAME_MAX];
+#ifdef WIN32
+  bool succeeded = PathCanonicalizeA(canonical_path, path.c_str());
+#else
+  bool succeeded = realpath(path.c_str(), canonical_path) != NULL;
+#endif
+  if (succeeded) {
+    path = std::string(canonical_path) + kPathDelimiter;
+    return path;
+  } else {
+    fprintf(stderr, "Cannot find project root directory!\n");
+    return kCannotFindProjectRootDir;
   }
-  fprintf(stderr, "Cannot find project root directory!\n");
-  return kCannotFindProjectRootDir;
 #endif
 }
 
