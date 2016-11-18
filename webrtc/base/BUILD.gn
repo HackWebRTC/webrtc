@@ -411,6 +411,8 @@ rtc_static_library("rtc_base") {
     "helpers.h",
     "httpbase.cc",
     "httpbase.h",
+    "httpclient.cc",
+    "httpclient.h",
     "httpcommon-inl.h",
     "httpcommon.cc",
     "httpcommon.h",
