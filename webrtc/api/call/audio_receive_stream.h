@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 #include "webrtc/common_types.h"
@@ -40,6 +41,7 @@ class AudioReceiveStream {
     uint32_t packets_lost = 0;
     float fraction_lost = 0.0f;
     std::string codec_name;
+    rtc::Optional<int> codec_payload_type;
     uint32_t ext_seqnum = 0;
     uint32_t jitter_ms = 0;
     uint32_t jitter_buffer_ms = 0;

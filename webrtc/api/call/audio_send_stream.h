@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/optional.h"
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/transport.h"
@@ -31,6 +32,7 @@ class AudioSendStream {
  public:
   struct Stats {
     Stats();
+    ~Stats();
 
     // TODO(solenberg): Harmonize naming and defaults with receive stream stats.
     uint32_t local_ssrc = 0;
@@ -39,6 +41,7 @@ class AudioSendStream {
     int32_t packets_lost = -1;
     float fraction_lost = -1.0f;
     std::string codec_name;
+    rtc::Optional<int> codec_payload_type;
     int32_t ext_seqnum = -1;
     int32_t jitter_ms = -1;
     int64_t rtt_ms = -1;

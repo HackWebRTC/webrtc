@@ -30,6 +30,7 @@ std::string ToString(const webrtc::CodecInst& codec_inst) {
 namespace webrtc {
 
 AudioSendStream::Stats::Stats() = default;
+AudioSendStream::Stats::~Stats() = default;
 
 AudioSendStream::Config::Config(Transport* send_transport)
     : send_transport(send_transport) {}

@@ -170,6 +170,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   if (codec->GetSendCodec(config_.voe_channel_id, codec_inst) != -1) {
     RTC_DCHECK_NE(codec_inst.pltype, -1);
     stats.codec_name = codec_inst.plname;
+    stats.codec_payload_type = rtc::Optional<int>(codec_inst.pltype);
 
     // Get data from the last remote RTCP report.
     for (const auto& block : channel_proxy_->GetRemoteRTCPReportBlocks()) {

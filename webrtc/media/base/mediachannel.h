@@ -553,6 +553,7 @@ struct MediaSenderInfo {
   float fraction_lost;
   int64_t rtt_ms;
   std::string codec_name;
+  rtc::Optional<int> codec_payload_type;
   std::vector<SsrcSenderInfo> local_stats;
   std::vector<SsrcReceiverInfo> remote_stats;
 };
@@ -598,6 +599,7 @@ struct MediaReceiverInfo {
   int packets_lost;
   float fraction_lost;
   std::string codec_name;
+  rtc::Optional<int> codec_payload_type;
   std::vector<SsrcReceiverInfo> local_stats;
   std::vector<SsrcSenderInfo> remote_stats;
 };
@@ -698,9 +700,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
   std::vector<SsrcGroup> ssrc_groups;
   // TODO(hbos): Move this to |VideoMediaInfo::send_codecs|?
   std::string encoder_implementation_name;
-  // TODO(hbos): Move this to |MediaSenderInfo| when supported by
-  // |VoiceSenderInfo| as well (which also extends that class).
-  rtc::Optional<uint32_t> codec_payload_type;
   int packets_cached;
   int firs_rcvd;
   int plis_rcvd;
@@ -746,9 +745,6 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   std::vector<SsrcGroup> ssrc_groups;
   // TODO(hbos): Move this to |VideoMediaInfo::receive_codecs|?
   std::string decoder_implementation_name;
-  // TODO(hbos): Move this to |MediaReceiverInfo| when supported by
-  // |VoiceReceiverInfo| as well (which also extends that class).
-  rtc::Optional<uint32_t> codec_payload_type;
   int packets_concealed;
   int firs_sent;
   int plis_sent;
@@ -831,9 +827,13 @@ struct VoiceMediaInfo {
   void Clear() {
     senders.clear();
     receivers.clear();
+    send_codecs.clear();
+    receive_codecs.clear();
   }
   std::vector<VoiceSenderInfo> senders;
   std::vector<VoiceReceiverInfo> receivers;
+  RtpCodecParametersMap send_codecs;
+  RtpCodecParametersMap receive_codecs;
 };
 
 struct VideoMediaInfo {

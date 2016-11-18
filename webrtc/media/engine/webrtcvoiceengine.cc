@@ -2526,7 +2526,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   RTC_DCHECK(info);
 
   // Get SSRC and stats for each sender.
-  RTC_DCHECK(info->senders.size() == 0);
+  RTC_DCHECK_EQ(info->senders.size(), 0U);
   for (const auto& stream : send_streams_) {
     webrtc::AudioSendStream::Stats stats = stream.second->GetStats();
     VoiceSenderInfo sinfo;
@@ -2536,6 +2536,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     sinfo.packets_lost = stats.packets_lost;
     sinfo.fraction_lost = stats.fraction_lost;
     sinfo.codec_name = stats.codec_name;
+    sinfo.codec_payload_type = stats.codec_payload_type;
     sinfo.ext_seqnum = stats.ext_seqnum;
     sinfo.jitter_ms = stats.jitter_ms;
     sinfo.rtt_ms = stats.rtt_ms;
@@ -2551,7 +2552,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
   }
 
   // Get SSRC and stats for each receiver.
-  RTC_DCHECK(info->receivers.size() == 0);
+  RTC_DCHECK_EQ(info->receivers.size(), 0U);
   for (const auto& stream : recv_streams_) {
     webrtc::AudioReceiveStream::Stats stats = stream.second->GetStats();
     VoiceReceiverInfo rinfo;
@@ -2561,6 +2562,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.packets_lost = stats.packets_lost;
     rinfo.fraction_lost = stats.fraction_lost;
     rinfo.codec_name = stats.codec_name;
+    rinfo.codec_payload_type = stats.codec_payload_type;
     rinfo.ext_seqnum = stats.ext_seqnum;
     rinfo.jitter_ms = stats.jitter_ms;
     rinfo.jitter_buffer_ms = stats.jitter_buffer_ms;
@@ -2582,6 +2584,18 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.decoding_muted_output = stats.decoding_muted_output;
     rinfo.capture_start_ntp_time_ms = stats.capture_start_ntp_time_ms;
     info->receivers.push_back(rinfo);
+  }
+
+  // Get codec info
+  for (const AudioCodec& codec : send_codecs_) {
+    webrtc::RtpCodecParameters codec_params = codec.ToCodecParameters();
+    info->send_codecs.insert(
+        std::make_pair(codec_params.payload_type, std::move(codec_params)));
+  }
+  for (const AudioCodec& codec : recv_codecs_) {
+    webrtc::RtpCodecParameters codec_params = codec.ToCodecParameters();
+    info->receive_codecs.insert(
+        std::make_pair(codec_params.payload_type, std::move(codec_params)));
   }
 
   return true;

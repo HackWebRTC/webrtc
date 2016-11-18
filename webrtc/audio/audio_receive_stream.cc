@@ -184,6 +184,7 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.capture_start_ntp_time_ms = call_stats.capture_start_ntp_time_ms_;
   if (codec_inst.pltype != -1) {
     stats.codec_name = codec_inst.plname;
+    stats.codec_payload_type = rtc::Optional<int>(codec_inst.pltype);
   }
   stats.ext_seqnum = call_stats.extendedMax;
   if (codec_inst.plfreq / 1000 > 0) {

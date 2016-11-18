@@ -2025,8 +2025,8 @@ VideoSenderInfo WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo(
 
   if (parameters_.codec_settings) {
     info.codec_name = parameters_.codec_settings->codec.name;
-    info.codec_payload_type = rtc::Optional<uint32_t>(
-        static_cast<uint32_t>(parameters_.codec_settings->codec.id));
+    info.codec_payload_type = rtc::Optional<int>(
+        parameters_.codec_settings->codec.id);
   }
 
   if (stream_ == NULL)
@@ -2436,8 +2436,8 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   webrtc::VideoReceiveStream::Stats stats = stream_->GetStats();
   info.decoder_implementation_name = stats.decoder_implementation_name;
   if (stats.current_payload_type != -1) {
-    info.codec_payload_type = rtc::Optional<uint32_t>(
-        static_cast<uint32_t>(stats.current_payload_type));
+    info.codec_payload_type = rtc::Optional<int>(
+        stats.current_payload_type);
   }
   info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes +
                     stats.rtp_stats.transmitted.header_bytes +

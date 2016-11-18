@@ -446,6 +446,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     stats.packets_lost = 9012;
     stats.fraction_lost = 34.56f;
     stats.codec_name = "codec_name_send";
+    stats.codec_payload_type = rtc::Optional<int>(42);
     stats.ext_seqnum = 789;
     stats.jitter_ms = 12;
     stats.rtt_ms = 345;
@@ -473,6 +474,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(info.packets_lost, stats.packets_lost);
     EXPECT_EQ(info.fraction_lost, stats.fraction_lost);
     EXPECT_EQ(info.codec_name, stats.codec_name);
+    EXPECT_EQ(info.codec_payload_type, stats.codec_payload_type);
     EXPECT_EQ(info.ext_seqnum, stats.ext_seqnum);
     EXPECT_EQ(info.jitter_ms, stats.jitter_ms);
     EXPECT_EQ(info.rtt_ms, stats.rtt_ms);
@@ -496,6 +498,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     stats.packets_lost = 101;
     stats.fraction_lost = 23.45f;
     stats.codec_name = "codec_name_recv";
+    stats.codec_payload_type = rtc::Optional<int>(42);
     stats.ext_seqnum = 678;
     stats.jitter_ms = 901;
     stats.jitter_buffer_ms = 234;
@@ -530,6 +533,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(info.packets_lost, stats.packets_lost);
     EXPECT_EQ(info.fraction_lost, stats.fraction_lost);
     EXPECT_EQ(info.codec_name, stats.codec_name);
+    EXPECT_EQ(info.codec_payload_type, stats.codec_payload_type);
     EXPECT_EQ(info.ext_seqnum, stats.ext_seqnum);
     EXPECT_EQ(info.jitter_ms, stats.jitter_ms);
     EXPECT_EQ(info.jitter_buffer_ms, stats.jitter_buffer_ms);
@@ -551,6 +555,20 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(info.decoding_plc_cng, stats.decoding_plc_cng);
     EXPECT_EQ(info.decoding_muted_output, stats.decoding_muted_output);
     EXPECT_EQ(info.capture_start_ntp_time_ms, stats.capture_start_ntp_time_ms);
+  }
+  void VerifyVoiceSendRecvCodecs(const cricket::VoiceMediaInfo& info) const {
+    EXPECT_EQ(send_parameters_.codecs.size(), info.send_codecs.size());
+    for (const cricket::AudioCodec& codec : send_parameters_.codecs) {
+      ASSERT_EQ(info.send_codecs.count(codec.id), 1U);
+      EXPECT_EQ(info.send_codecs.find(codec.id)->second,
+                codec.ToCodecParameters());
+    }
+    EXPECT_EQ(recv_parameters_.codecs.size(), info.receive_codecs.size());
+    for (const cricket::AudioCodec& codec : recv_parameters_.codecs) {
+      ASSERT_EQ(info.receive_codecs.count(codec.id), 1U);
+      EXPECT_EQ(info.receive_codecs.find(codec.id)->second,
+                codec.ToCodecParameters());
+    }
   }
 
  protected:
@@ -2275,6 +2293,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     for (const auto& sender : info.senders) {
       VerifyVoiceSenderInfo(sender, false);
     }
+    VerifyVoiceSendRecvCodecs(info);
 
     // We have added one receive stream. We should see empty stats.
     EXPECT_EQ(info.receivers.size(), 1u);
@@ -2300,6 +2319,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStatsWithMultipleSendStreams) {
     EXPECT_EQ(static_cast<size_t>(arraysize(kSsrcs4)), info.senders.size());
     EXPECT_EQ(1u, info.receivers.size());
     VerifyVoiceReceiverInfo(info.receivers[0]);
+    VerifyVoiceSendRecvCodecs(info);
   }
 }
 
@@ -2483,6 +2503,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStats) {
     SetSend(true);
     EXPECT_EQ(true, channel_->GetStats(&info));
     VerifyVoiceSenderInfo(info.senders[0], true);
+    VerifyVoiceSendRecvCodecs(info);
   }
 
   // Remove the kSsrc2 stream. No receiver stats.
@@ -2504,6 +2525,7 @@ TEST_F(WebRtcVoiceEngineTestFake, GetStats) {
     EXPECT_EQ(1u, info.senders.size());
     EXPECT_EQ(1u, info.receivers.size());
     VerifyVoiceReceiverInfo(info.receivers[0]);
+    VerifyVoiceSendRecvCodecs(info);
   }
 }
 
