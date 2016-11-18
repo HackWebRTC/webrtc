@@ -28,7 +28,7 @@ const size_t kMaxPayloadSize = 800;
 class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
  protected:
   VideoEncoderSoftwareFallbackWrapperTest()
-      : fallback_wrapper_(kVideoCodecVP8, &fake_encoder_) {}
+      : fallback_wrapper_(cricket::VideoCodec("VP8"), &fake_encoder_) {}
 
   class CountingFakeEncoder : public VideoEncoder {
    public:

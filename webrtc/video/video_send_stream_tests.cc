@@ -24,6 +24,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/call_test.h"
@@ -367,9 +368,9 @@ class UlpfecObserver : public test::EndToEndTest {
     if (codec == "H264") {
       encoder_.reset(new test::FakeH264Encoder(Clock::GetRealTimeClock()));
     } else if (codec == "VP8") {
-      encoder_.reset(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8));
+      encoder_.reset(VP8Encoder::Create());
     } else if (codec == "VP9") {
-      encoder_.reset(VideoEncoder::Create(VideoEncoder::EncoderType::kVp9));
+      encoder_.reset(VP9Encoder::Create());
     } else {
       RTC_NOTREACHED();
     }
@@ -552,9 +553,9 @@ class FlexfecObserver : public test::EndToEndTest {
     if (codec == "H264") {
       encoder_.reset(new test::FakeH264Encoder(Clock::GetRealTimeClock()));
     } else if (codec == "VP8") {
-      encoder_.reset(VideoEncoder::Create(VideoEncoder::EncoderType::kVp8));
+      encoder_.reset(VP8Encoder::Create());
     } else if (codec == "VP9") {
-      encoder_.reset(VideoEncoder::Create(VideoEncoder::EncoderType::kVp9));
+      encoder_.reset(VP9Encoder::Create());
     } else {
       RTC_NOTREACHED();
     }

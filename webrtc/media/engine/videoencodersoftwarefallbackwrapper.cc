@@ -11,12 +11,13 @@
 #include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
 
 #include "webrtc/base/logging.h"
+#include "webrtc/media/engine/internalencoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
 
 namespace webrtc {
 
 VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
-    VideoCodecType codec_type,
+    const cricket::VideoCodec& codec,
     webrtc::VideoEncoder* encoder)
     : number_of_cores_(0),
       max_payload_size_(0),
@@ -25,17 +26,18 @@ VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
       channel_parameters_set_(false),
       packet_loss_(0),
       rtt_(0),
-      encoder_type_(CodecToEncoderType(codec_type)),
+      codec_(codec),
       encoder_(encoder),
       callback_(nullptr) {}
 
 bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
-  if (!VideoEncoder::IsSupportedSoftware(encoder_type_)) {
+  cricket::InternalEncoderFactory internal_factory;
+  if (!FindMatchingCodec(internal_factory.supported_codecs(), codec_)) {
     LOG(LS_WARNING)
         << "Encoder requesting fallback to codec not supported in software.";
     return false;
   }
-  fallback_encoder_.reset(VideoEncoder::Create(encoder_type_));
+  fallback_encoder_.reset(internal_factory.CreateVideoEncoder(codec_));
   if (fallback_encoder_->InitEncode(&codec_settings_, number_of_cores_,
                                     max_payload_size_) !=
       WEBRTC_VIDEO_CODEC_OK) {
@@ -77,7 +79,7 @@ int32_t VideoEncoderSoftwareFallbackWrapper::InitEncode(
 
   int32_t ret =
       encoder_->InitEncode(codec_settings, number_of_cores, max_payload_size);
-  if (ret == WEBRTC_VIDEO_CODEC_OK || encoder_type_ == kUnsupportedCodec) {
+  if (ret == WEBRTC_VIDEO_CODEC_OK || codec_.name.empty()) {
     if (fallback_encoder_)
       fallback_encoder_->Release();
     fallback_encoder_.reset();

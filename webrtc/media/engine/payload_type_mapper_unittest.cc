@@ -60,28 +60,8 @@ TEST_F(PayloadTypeMapperTest, StaticPayloadTypes) {
 }
 
 TEST_F(PayloadTypeMapperTest, WebRTCPayloadTypes) {
-  // Tests that the payload mapper knows about the formats we've been using in
-  // WebRTC, with their hard coded values.
-  auto video_mapping = [this] (const char *name) {
-    return FindMapping({name, kVideoCodecClockrate, 0});
-  };
-  EXPECT_EQ(kDefaultVp8PlType,  video_mapping(kVp8CodecName));
-  EXPECT_EQ(kDefaultVp9PlType,  video_mapping(kVp9CodecName));
-  EXPECT_EQ(kDefaultH264PlType, video_mapping(kH264CodecName));
-  EXPECT_EQ(kDefaultRedPlType,  video_mapping(kRedCodecName));
-  EXPECT_EQ(kDefaultUlpfecType, video_mapping(kUlpfecCodecName));
-  EXPECT_EQ(kDefaultFlexfecPlType, video_mapping(kFlexfecCodecName));
-
-  auto rtx_mapping = [this] (int payload_type) {
-    return FindMapping({kRtxCodecName, kVideoCodecClockrate, 0,
-        {{ kCodecParamAssociatedPayloadType, std::to_string(payload_type)}}});
-  };
-  EXPECT_EQ(kDefaultRtxVp8PlType,  rtx_mapping(kDefaultVp8PlType));
-  EXPECT_EQ(kDefaultRtxVp9PlType,  rtx_mapping(kDefaultVp9PlType));
-  EXPECT_EQ(kDefaultRtxH264ConstrainedBaselinePlType,
-            rtx_mapping(kDefaultH264PlType));
-  EXPECT_EQ(kDefaultRtxRedPlType,  rtx_mapping(kDefaultRedPlType));
-
+  // Tests that the payload mapper knows about the audio and data formats we've
+  // been using in WebRTC, with their hard coded values.
   auto data_mapping = [this] (const char *name) {
     return FindMapping({name, 0, 0});
   };

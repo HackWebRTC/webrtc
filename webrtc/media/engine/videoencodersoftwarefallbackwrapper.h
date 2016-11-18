@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/media/base/codec.h"
 #include "webrtc/video_encoder.h"
 
 namespace webrtc {
@@ -24,7 +25,7 @@ namespace webrtc {
 // hardware restrictions, such as max resolution.
 class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
  public:
-  VideoEncoderSoftwareFallbackWrapper(VideoCodecType codec_type,
+  VideoEncoderSoftwareFallbackWrapper(const cricket::VideoCodec& codec,
                                       webrtc::VideoEncoder* encoder);
 
   int32_t InitEncode(const VideoCodec* codec_settings,
@@ -63,7 +64,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   uint32_t packet_loss_;
   int64_t rtt_;
 
-  const EncoderType encoder_type_;
+  const cricket::VideoCodec codec_;
   webrtc::VideoEncoder* const encoder_;
 
   std::unique_ptr<webrtc::VideoEncoder> fallback_encoder_;

@@ -2083,11 +2083,12 @@ TEST_F(WebRtcSdpTest, SerializeTcpCandidates) {
 }
 
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithH264) {
-  if (!webrtc::H264Encoder::IsSupported())
-    return;
-  for (const auto& codec : cricket::DefaultVideoCodecList()) {
-    video_desc_->AddCodec(codec);
-  }
+  cricket::VideoCodec h264_codec("H264");
+  h264_codec.SetParam("profile-level-id", "42e01f");
+  h264_codec.SetParam("level-asymmetry-allowed", "1");
+  h264_codec.SetParam("packetization-mode", "1");
+  video_desc_->AddCodec(h264_codec);
+
   jdesc_.Initialize(desc_.Copy(), kSessionId, kSessionVersion);
 
   std::string message = webrtc::SdpSerialize(jdesc_, false);
