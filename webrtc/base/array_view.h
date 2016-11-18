@@ -120,6 +120,13 @@ class ArrayView final {
   const T* cbegin() const { return data_; }
   const T* cend() const { return data_ + size_; }
 
+  ArrayView subview(size_t offset, size_t size) const {
+    if (offset >= size_)
+      return ArrayView();
+    return ArrayView(data_ + offset, std::min(size, size_ - offset));
+  }
+  ArrayView subview(size_t offset) const { return subview(offset, size_); }
+
   // Comparing two ArrayViews compares their (pointer,size) pairs; it does
   // *not* dereference the pointers.
   friend bool operator==(const ArrayView& a, const ArrayView& b) {
