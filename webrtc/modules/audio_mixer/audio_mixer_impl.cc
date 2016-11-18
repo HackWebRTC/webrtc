@@ -280,13 +280,12 @@ bool AudioMixerImpl::AddSource(Source* audio_source) {
   return true;
 }
 
-bool AudioMixerImpl::RemoveSource(Source* audio_source) {
+void AudioMixerImpl::RemoveSource(Source* audio_source) {
   RTC_DCHECK(audio_source);
   rtc::CritScope lock(&crit_);
   const auto iter = FindSourceInList(audio_source, &audio_source_list_);
   RTC_DCHECK(iter != audio_source_list_.end()) << "Source not present in mixer";
   audio_source_list_.erase(iter);
-  return true;
 }
 
 AudioFrameList AudioMixerImpl::GetAudioFromSources() {
