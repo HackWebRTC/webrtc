@@ -80,6 +80,13 @@ public class ConnectActivity extends Activity {
   private String keyprefRoomList;
   private ArrayList<String> roomList;
   private ArrayAdapter<String> adapter;
+  private String keyprefEnableDataChannel;
+  private String keyprefOrdered;
+  private String keyprefMaxRetransmitTimeMs;
+  private String keyprefMaxRetransmits;
+  private String keyprefDataProtocol;
+  private String keyprefNegotiated;
+  private String keyprefDataId;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -114,6 +121,13 @@ public class ConnectActivity extends Activity {
     keyprefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyprefRoom = getString(R.string.pref_room_key);
     keyprefRoomList = getString(R.string.pref_room_list_key);
+    keyprefEnableDataChannel = getString(R.string.pref_enable_datachannel_key);
+    keyprefOrdered = getString(R.string.pref_ordered_key);
+    keyprefMaxRetransmitTimeMs = getString(R.string.pref_max_retransmit_time_ms_key);
+    keyprefMaxRetransmits = getString(R.string.pref_max_retransmits_key);
+    keyprefDataProtocol = getString(R.string.pref_data_protocol_key);
+    keyprefNegotiated = getString(R.string.pref_negotiated_key);
+    keyprefDataId = getString(R.string.pref_data_id_key);
 
     setContentView(R.layout.activity_connect);
 
@@ -279,6 +293,28 @@ public class ConnectActivity extends Activity {
     }
   }
 
+  /**
+   * Get a value from the shared preference or from the intent, if it does not
+   * exist the default is used.
+   */
+  private int sharedPrefGetInteger(
+      int attributeId, String intentName, int defaultId, boolean useFromIntent) {
+    String defaultString = getString(defaultId);
+    int defaultValue = Integer.parseInt(defaultString);
+    if (useFromIntent) {
+      return getIntent().getIntExtra(intentName, defaultValue);
+    } else {
+      String attributeName = getString(attributeId);
+      String value = sharedPref.getString(attributeName, defaultString);
+      try {
+        return Integer.parseInt(value);
+      } catch (NumberFormatException e) {
+        Log.e(TAG, "Wrong setting for: " + attributeName + ":" + value);
+        return defaultValue;
+      }
+    }
+  }
+
   private void connectToRoom(String roomId, boolean commandLineRun, boolean loopback,
       boolean useValuesFromIntent, int runTimeMs) {
     this.commandLineRun = commandLineRun;
@@ -433,6 +469,25 @@ public class ConnectActivity extends Activity {
     boolean tracing = sharedPrefGetBoolean(R.string.pref_tracing_key, CallActivity.EXTRA_TRACING,
         R.string.pref_tracing_default, useValuesFromIntent);
 
+    // Get datachannel options
+    boolean dataChannelEnabled = sharedPrefGetBoolean(R.string.pref_enable_datachannel_key,
+        CallActivity.EXTRA_DATA_CHANNEL_ENABLED, R.string.pref_enable_datachannel_default,
+        useValuesFromIntent);
+    boolean ordered = sharedPrefGetBoolean(R.string.pref_ordered_key, CallActivity.EXTRA_ORDERED,
+        R.string.pref_ordered_default, useValuesFromIntent);
+    boolean negotiated = sharedPrefGetBoolean(R.string.pref_negotiated_key,
+        CallActivity.EXTRA_NEGOTIATED, R.string.pref_negotiated_default, useValuesFromIntent);
+    int maxRetrMs = sharedPrefGetInteger(R.string.pref_max_retransmit_time_ms_key,
+        CallActivity.EXTRA_MAX_RETRANSMITS_MS, R.string.pref_max_retransmit_time_ms_default,
+        useValuesFromIntent);
+    int maxRetr =
+        sharedPrefGetInteger(R.string.pref_max_retransmits_key, CallActivity.EXTRA_MAX_RETRANSMITS,
+            R.string.pref_max_retransmits_default, useValuesFromIntent);
+    int id = sharedPrefGetInteger(R.string.pref_data_id_key, CallActivity.EXTRA_ID,
+        R.string.pref_data_id_default, useValuesFromIntent);
+    String protocol = sharedPrefGetString(R.string.pref_data_protocol_key,
+        CallActivity.EXTRA_PROTOCOL, R.string.pref_data_protocol_default, useValuesFromIntent);
+
     // Start AppRTCMobile activity.
     Log.d(TAG, "Connecting to room " + roomId + " at URL " + roomUrl);
     if (validateUrl(roomUrl)) {
@@ -465,6 +520,17 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_TRACING, tracing);
       intent.putExtra(CallActivity.EXTRA_CMDLINE, commandLineRun);
       intent.putExtra(CallActivity.EXTRA_RUNTIME, runTimeMs);
+
+      intent.putExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, dataChannelEnabled);
+
+      if (dataChannelEnabled) {
+        intent.putExtra(CallActivity.EXTRA_ORDERED, ordered);
+        intent.putExtra(CallActivity.EXTRA_MAX_RETRANSMITS_MS, maxRetrMs);
+        intent.putExtra(CallActivity.EXTRA_MAX_RETRANSMITS, maxRetr);
+        intent.putExtra(CallActivity.EXTRA_PROTOCOL, protocol);
+        intent.putExtra(CallActivity.EXTRA_NEGOTIATED, negotiated);
+        intent.putExtra(CallActivity.EXTRA_ID, id);
+      }
 
       if (useValuesFromIntent) {
         if (getIntent().hasExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA)) {

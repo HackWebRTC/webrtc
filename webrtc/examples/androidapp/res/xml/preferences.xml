@@ -156,6 +156,54 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        android:key="@string/pref_datasettings_key"
+        android:title="@string/pref_datasettings_title">
+
+        <CheckBoxPreference
+            android:key="@string/pref_enable_datachannel_key"
+            android:title="@string/pref_enable_datachannel_title"
+            android:defaultValue="@string/pref_enable_datachannel_default" />
+
+        <CheckBoxPreference
+            android:key="@string/pref_ordered_key"
+            android:title="@string/pref_ordered_title"
+            android:defaultValue="@string/pref_ordered_default" />
+
+        <EditTextPreference
+            android:key="@string/pref_data_protocol_key"
+            android:title="@string/pref_data_protocol_title"
+            android:inputType="text"
+            android:defaultValue="@string/pref_data_protocol_default"
+            android:dialogTitle="@string/pref_data_protocol_dlg" />
+
+        <CheckBoxPreference
+            android:key="@string/pref_negotiated_key"
+            android:title="@string/pref_negotiated_title"
+            android:defaultValue="@string/pref_negotiated_default" />
+
+        <EditTextPreference
+            android:key="@string/pref_max_retransmit_time_ms_key"
+            android:title="@string/pref_max_retransmit_time_ms_title"
+            android:inputType="number"
+            android:defaultValue="@string/pref_max_retransmit_time_ms_default"
+            android:dialogTitle="@string/pref_max_retransmit_time_ms_dlg" />
+
+        <EditTextPreference
+            android:key="@string/pref_max_retransmits_key"
+            android:title="@string/pref_max_retransmits_title"
+            android:inputType="number"
+            android:defaultValue="@string/pref_max_retransmits_default"
+            android:dialogTitle="@string/pref_max_retransmits_dlg" />
+
+        <EditTextPreference
+            android:key="@string/pref_data_id_key"
+            android:title="@string/pref_data_id_title"
+            android:inputType="number"
+            android:defaultValue="@string/pref_data_id_default"
+            android:dialogTitle="@string/pref_data_id_dlg" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:key="@string/pref_miscsettings_key"
         android:title="@string/pref_miscsettings_title">
 
