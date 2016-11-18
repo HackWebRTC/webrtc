@@ -9,8 +9,8 @@
  */
 #include <memory>
 
+#include "webrtc/modules/audio_coding/audio_network_adaptor/smoothing_filter.h"
 #include "webrtc/modules/remote_bitrate_estimator/aimd_rate_control.h"
-#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

@@ -536,7 +536,6 @@ if (rtc_include_tests) {
     deps = [
       "base:rtc_base",
       "base:rtc_base_tests_utils",
-      "base:rtc_exp_filter",
       "base:rtc_task_queue",
       "p2p:libstunprober",
       "p2p:rtc_p2p",

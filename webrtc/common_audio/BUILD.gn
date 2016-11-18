@@ -86,8 +86,6 @@ rtc_static_library("common_audio") {
     "signal_processing/splitting_filter.c",
     "signal_processing/sqrt_of_one_minus_x_squared.c",
     "signal_processing/vector_scaling_operations.c",
-    "smoothing_filter.cc",
-    "smoothing_filter.h",
     "sparse_fir_filter.cc",
     "sparse_fir_filter.h",
     "vad/include/vad.h",
@@ -111,7 +109,6 @@ rtc_static_library("common_audio") {
   ]
 
   deps = [
-    "../base:rtc_exp_filter",
     "../system_wrappers",
   ]
 
@@ -260,7 +257,6 @@ if (rtc_include_tests) {
       "ring_buffer_unittest.cc",
       "signal_processing/real_fft_unittest.cc",
       "signal_processing/signal_processing_unittest.cc",
-      "smoothing_filter_unittest.cc",
       "sparse_fir_filter_unittest.cc",
       "vad/vad_core_unittest.cc",
       "vad/vad_filterbank_unittest.cc",
