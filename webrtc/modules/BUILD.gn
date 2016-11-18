@@ -138,9 +138,6 @@ if (rtc_include_tests) {
   }
 
   modules_unittests_resources = [
-    "//data/audio_processing/output_data_fixed.pb",
-    "//data/audio_processing/output_data_float.pb",
-    "//data/audio_processing/output_data_mac.pb",
     "//data/voice_engine/audio_tiny48.wav",
     "//resources/att-downlink.rx",
     "//resources/att-uplink.rx",
@@ -161,6 +158,9 @@ if (rtc_include_tests) {
     "//resources/audio_processing/agc/agc_vad.dat",
     "//resources/audio_processing/agc/agc_voicing_prob.dat",
     "//resources/audio_processing/agc/agc_with_circular_buffer.dat",
+    "//resources/audio_processing/output_data_fixed.pb",
+    "//resources/audio_processing/output_data_float.pb",
+    "//resources/audio_processing/output_data_mac.pb",
     "//resources/audio_processing/transient/ajm-macbook-1-spke16m.pcm",
     "//resources/audio_processing/transient/audio16kHz.pcm",
     "//resources/audio_processing/transient/audio32kHz.pcm",

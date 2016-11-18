@@ -57,6 +57,7 @@
 /resources/**/*.frames
 /resources/**/*.gai
 /resources/**/*.jpg
+/resources/**/*.pb
 /resources/**/*.pcap
 /resources/**/*.pcm
 /resources/**/*.rtp
