@@ -57,9 +57,6 @@ declare_args() {
   rtc_build_ssl = true
   rtc_build_usrsctp = true
 
-  # Disable by default.
-  rtc_have_dbus_glib = false
-
   # Enable to use the Mozilla internal settings.
   build_with_mozilla = false
 
