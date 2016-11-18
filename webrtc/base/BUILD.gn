@@ -22,6 +22,7 @@ group("base") {
   public_deps = [
     ":rtc_base",
     ":rtc_base_approved",
+    ":rtc_exp_filter",
     ":rtc_task_queue",
   ]
   if (is_android) {
@@ -124,8 +125,6 @@ rtc_static_library("rtc_base_approved") {
     "event.h",
     "event_tracer.cc",
     "event_tracer.h",
-    "exp_filter.cc",
-    "exp_filter.h",
     "file.cc",
     "file.h",
     "format_macros.h",
@@ -336,6 +335,13 @@ rtc_static_library("rtc_task_queue") {
       }
     }
   }
+}
+
+rtc_static_library("rtc_exp_filter") {
+  sources = [
+    "exp_filter.cc",
+    "exp_filter.h",
+  ]
 }
 
 config("rtc_base_warnings_config") {

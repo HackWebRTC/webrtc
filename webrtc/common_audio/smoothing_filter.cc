@@ -10,7 +10,7 @@
 
 #include <cmath>
 
-#include "webrtc/modules/audio_coding/audio_network_adaptor/smoothing_filter.h"
+#include "webrtc/common_audio/smoothing_filter.h"
 
 namespace webrtc {
 
