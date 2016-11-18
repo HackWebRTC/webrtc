@@ -127,24 +127,21 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
   if (!active_)
     return Result(Result::ERROR_SEND_FAILED);
 
-  int stream_index = 0;
-
   RTPVideoHeader rtp_video_header;
   memset(&rtp_video_header, 0, sizeof(RTPVideoHeader));
   if (codec_specific_info)
     CopyCodecSpecific(codec_specific_info, &rtp_video_header);
   rtp_video_header.rotation = encoded_image.rotation_;
   rtp_video_header.playout_delay = encoded_image.playout_delay_;
-  stream_index = rtp_video_header.simulcastIdx;
 
+  int stream_index = rtp_video_header.simulcastIdx;
+  RTC_DCHECK_LT(stream_index, rtp_modules_.size());
   uint32_t frame_id;
-  int send_result = rtp_modules_[stream_index]->SendOutgoingData(
+  bool send_result = rtp_modules_[stream_index]->SendOutgoingData(
       encoded_image._frameType, payload_type_, encoded_image._timeStamp,
       encoded_image.capture_time_ms_, encoded_image._buffer,
       encoded_image._length, fragmentation, &rtp_video_header, &frame_id);
-
-  RTC_DCHECK_LT(rtp_video_header.simulcastIdx, rtp_modules_.size());
-  if (send_result < 0)
+  if (!send_result)
     return Result(Result::ERROR_SEND_FAILED);
 
   return Result(Result::OK, frame_id);

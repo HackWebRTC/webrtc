@@ -54,7 +54,8 @@ TEST(PayloadRouterTest, SendOnOneModule) {
                                     encoded_image._timeStamp,
                                     encoded_image.capture_time_ms_, &payload,
                                     encoded_image._length, nullptr, _, _))
-      .Times(1);
+      .Times(1)
+      .WillOnce(Return(true));
   EXPECT_EQ(
       EncodedImageCallback::Result::OK,
       payload_router.OnEncodedImage(encoded_image, nullptr, nullptr).error);
@@ -74,7 +75,8 @@ TEST(PayloadRouterTest, SendOnOneModule) {
                                     encoded_image._timeStamp,
                                     encoded_image.capture_time_ms_, &payload,
                                     encoded_image._length, nullptr, _, _))
-      .Times(1);
+      .Times(1)
+      .WillOnce(Return(true));
   EXPECT_EQ(
       EncodedImageCallback::Result::OK,
       payload_router.OnEncodedImage(encoded_image, nullptr, nullptr).error);
@@ -109,7 +111,8 @@ TEST(PayloadRouterTest, SendSimulcast) {
                                       encoded_image._timeStamp,
                                       encoded_image.capture_time_ms_, &payload,
                                       encoded_image._length, nullptr, _, _))
-      .Times(1);
+      .Times(1)
+      .WillOnce(Return(true));
   EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
   EXPECT_EQ(EncodedImageCallback::Result::OK,
             payload_router.OnEncodedImage(encoded_image, &codec_info_1, nullptr)
@@ -124,7 +127,8 @@ TEST(PayloadRouterTest, SendSimulcast) {
                                       encoded_image._timeStamp,
                                       encoded_image.capture_time_ms_, &payload,
                                       encoded_image._length, nullptr, _, _))
-      .Times(1);
+      .Times(1)
+      .WillOnce(Return(true));
   EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _))
       .Times(0);
   EXPECT_EQ(EncodedImageCallback::Result::OK,
