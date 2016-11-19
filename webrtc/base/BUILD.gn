@@ -559,13 +559,6 @@ rtc_static_library("rtc_base") {
       "window.h",
     ]
 
-    if (is_linux) {
-      sources += [
-        "linuxfdwalk.c",
-        "linuxfdwalk.h",
-      ]
-    }
-
     if (is_posix) {
       sources += [
         "latebindingsymboltable.cc",
@@ -697,13 +690,6 @@ rtc_static_library("rtc_base") {
       # because ASSERT and friends trigger off of it.
       defines += [ "_DEBUG" ]
     }
-  }
-
-  if (is_linux || is_android) {
-    sources += [
-      "linux.cc",
-      "linux.h",
-    ]
   }
 
   if (is_nacl) {
