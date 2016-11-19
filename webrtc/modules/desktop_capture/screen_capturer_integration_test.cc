@@ -12,9 +12,12 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <iostream>  // TODO(zijiehe): Remove once flaky has been resolved.
 #include <memory>
 #include <utility>
 
+// TODO(zijiehe): Remove once flaky has been resolved.
+#include "webrtc/base/base64.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
@@ -116,7 +119,9 @@ class ScreenCapturerIntegrationTest : public testing::Test {
         RgbaColor color((c == 0 ? (i & 0xff) : 0x7f),
                         (c == 1 ? (i & 0xff) : 0x7f),
                         (c == 2 ? (i & 0xff) : 0x7f));
-        TestCaptureOneFrame(capturers, drawer.get(), rect, color);
+        // Fail fast.
+        ASSERT_NO_FATAL_FAILURE(
+            TestCaptureOneFrame(capturers, drawer.get(), rect, color));
       }
 
       // A variable-size rectangle.
@@ -126,7 +131,9 @@ class ScreenCapturerIntegrationTest : public testing::Test {
         RgbaColor color((c == 0 ? (i & 0xff) : 0x7f),
                         (c == 1 ? (i & 0xff) : 0x7f),
                         (c == 2 ? (i & 0xff) : 0x7f));
-        TestCaptureOneFrame(capturers, drawer.get(), rect, color);
+        // Fail fast.
+        ASSERT_NO_FATAL_FAILURE(
+            TestCaptureOneFrame(capturers, drawer.get(), rect, color));
       }
     }
   }
@@ -183,14 +190,14 @@ class ScreenCapturerIntegrationTest : public testing::Test {
       for (size_t j = 0; j < capturers.size(); j++) {
         if (capturers[j] == nullptr) {
           // DesktopCapturer should return an empty updated_region() if no
-          // update detected. So we won't test it again if it has captured
-          // the rectangle we drew.
+          // update detected. So we won't test it again if it has captured the
+          // rectangle we drew.
           continue;
         }
         std::unique_ptr<DesktopFrame> frame = CaptureFrame(capturers[j]);
         if (!frame) {
-          // CaptureFrame() has triggered an assertion failure already, we
-          // only need to return here.
+          // CaptureFrame() has triggered an assertion failure already, we only
+          // need to return here.
           return;
         }
 
@@ -198,6 +205,35 @@ class ScreenCapturerIntegrationTest : public testing::Test {
             *frame, rect, color, drawer->MayDrawIncompleteShapes())) {
           capturers[j] = nullptr;
           succeeded_capturers++;
+        }
+        // The following else if statement is for debugging purpose only, which
+        // should be removed after flaky of ScreenCapturerIntegrationTest has
+        // been resolved.
+        else if (i == wait_capture_round - 1) {
+          std::string result;
+          rtc::Base64::EncodeFromArray(frame->data(),
+                                       frame->size().height() * frame->stride(),
+                                       &result);
+          std::cout << frame->size().width() << " x " << frame->size().height()
+                    << std::endl;
+          // Split the entire string (can be over 4M) into several lines to
+          // avoid browser from stucking.
+          static const size_t kLineLength = 32768;
+          const char* result_end = result.c_str() + result.length();
+          for (const char* it = result.c_str();
+               it < result_end;
+               it += kLineLength) {
+            const size_t max_length = result_end - it;
+            std::cout << std::string(it, std::min(kLineLength, max_length))
+                      << std::endl;
+          }
+          ASSERT_TRUE(false) << "ScreenCapturerIntegrationTest may be flaky. "
+                                "Please kindly FYI the broken link to "
+                                "zijiehe@chromium.org for investigation. If I "
+                                "have not responded as quick as expected, "
+                                "disable *all* tests in "
+                                "screen_capturer_integration_test.cc to "
+                                "unblock other developers.";
         }
       }
 
