@@ -1,2 +1,3 @@
+per-file androidhistogram_jni.cc=sakal@webrtc.org
 per-file androidmetrics_jni.cc=sakal@webrtc.org
 per-file androidvideotracksource_jni.cc=sakal@webrtc.org

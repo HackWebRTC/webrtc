@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import org.webrtc.Metrics.Histogram;
 
 @SuppressWarnings("deprecation")
 public class CameraEnumerationAndroid {

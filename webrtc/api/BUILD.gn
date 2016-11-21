@@ -171,12 +171,12 @@ if (is_android && !build_with_chromium) {
 
   rtc_static_library("libjingle_peerconnection_jni") {
     sources = [
+      "android/jni/androidhistogram_jni.cc",
       "android/jni/androidmediacodeccommon.h",
       "android/jni/androidmediadecoder_jni.cc",
       "android/jni/androidmediadecoder_jni.h",
       "android/jni/androidmediaencoder_jni.cc",
       "android/jni/androidmediaencoder_jni.h",
-      "android/jni/androidmetrics_jni.cc",
       "android/jni/androidnetworkmonitor_jni.cc",
       "android/jni/androidnetworkmonitor_jni.h",
       "android/jni/androidvideotracksource_jni.cc",
@@ -215,8 +215,6 @@ if (is_android && !build_with_chromium) {
 
     deps = [
       ":libjingle_peerconnection",
-      "../system_wrappers:field_trial_default",
-      "../system_wrappers:metrics_default",
     ]
 
     if (rtc_build_libyuv) {
@@ -230,6 +228,20 @@ if (is_android && !build_with_chromium) {
     }
   }
 
+  rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
+    sources = [
+      "android/jni/androidmetrics_jni.cc",
+    ]
+
+    configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
+
+    deps = [
+      ":libjingle_peerconnection",
+      "../system_wrappers:field_trial_default",
+      "../system_wrappers:metrics_default",
+    ]
+  }
+
   rtc_shared_library("libjingle_peerconnection_so") {
     sources = [
       "android/jni/jni_onload.cc",
@@ -240,6 +252,7 @@ if (is_android && !build_with_chromium) {
     deps = [
       ":libjingle_peerconnection",
       ":libjingle_peerconnection_jni",
+      ":libjingle_peerconnection_metrics_default_jni",
     ]
     output_extension = "so"
   }
@@ -279,6 +292,7 @@ if (is_android) {
       "android/java/src/org/webrtc/GlShader.java",
       "android/java/src/org/webrtc/GlTextureFrameBuffer.java",
       "android/java/src/org/webrtc/GlUtil.java",
+      "android/java/src/org/webrtc/Histogram.java",
       "android/java/src/org/webrtc/IceCandidate.java",
       "android/java/src/org/webrtc/MediaCodecVideoDecoder.java",
       "android/java/src/org/webrtc/MediaCodecVideoEncoder.java",
@@ -286,7 +300,6 @@ if (is_android) {
       "android/java/src/org/webrtc/MediaSource.java",
       "android/java/src/org/webrtc/MediaStream.java",
       "android/java/src/org/webrtc/MediaStreamTrack.java",
-      "android/java/src/org/webrtc/Metrics.java",
       "android/java/src/org/webrtc/NetworkMonitor.java",
       "android/java/src/org/webrtc/NetworkMonitorAutoDetect.java",
       "android/java/src/org/webrtc/PeerConnection.java",
@@ -314,6 +327,14 @@ if (is_android) {
 
     deps = [
       "../base:base_java",
+    ]
+  }
+
+  android_library("libjingle_peerconnection_metrics_default_java") {
+    java_files = [ "android/java/src/org/webrtc/Metrics.java" ]
+
+    deps = [
+      "//webrtc/base:base_java",
     ]
   }
 }
@@ -485,6 +506,7 @@ if (rtc_include_tests) {
 
       deps = [
         ":libjingle_peerconnection_java",
+        ":libjingle_peerconnection_metrics_default_java",
         "../base:base_java",
         "//base:base_java",
       ]
