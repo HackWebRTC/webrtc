@@ -912,17 +912,16 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   LOG(LS_INFO) << "Level control: "
                << (!!level_control_ ? *level_control_ : -1);
-  webrtc::AudioProcessing::Config apm_config;
   if (level_control_) {
-    apm_config.level_controller.enabled = *level_control_;
+    apm_config_.level_controller.enabled = *level_control_;
     if (options.level_control_initial_peak_level_dbfs) {
-      apm_config.level_controller.initial_peak_level_dbfs =
+      apm_config_.level_controller.initial_peak_level_dbfs =
           *options.level_control_initial_peak_level_dbfs;
     }
   }
 
   apm()->SetExtraOptions(config);
-  apm()->ApplyConfig(apm_config);
+  apm()->ApplyConfig(apm_config_);
 
   if (options.recording_sample_rate) {
     LOG(LS_INFO) << "Recording sample rate is "

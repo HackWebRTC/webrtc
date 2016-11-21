@@ -28,6 +28,7 @@
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/engine/webrtccommon.h"
 #include "webrtc/media/engine/webrtcvoe.h"
+#include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/pc/channel.h"
 
 namespace cricket {
@@ -133,6 +134,8 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   rtc::Optional<bool> experimental_ns_;
   rtc::Optional<bool> intelligibility_enhancer_;
   rtc::Optional<bool> level_control_;
+
+  webrtc::AudioProcessing::Config apm_config_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceEngine);
 };
