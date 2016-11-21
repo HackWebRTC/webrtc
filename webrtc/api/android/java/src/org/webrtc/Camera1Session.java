@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+import org.webrtc.Metrics.Histogram;
 
 @SuppressWarnings("deprecation")
 public class Camera1Session implements CameraSession {

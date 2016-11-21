@@ -93,7 +93,6 @@ if (is_android) {
     deps = [
       ":AppRTCMobile_resources",
       "//webrtc/api:libjingle_peerconnection_java",
-      "//webrtc/api:libjingle_peerconnection_metrics_default_java",
       "//webrtc/base:base_java",
       "//webrtc/examples/androidapp/third_party/autobanh:autobanh_java",
     ]

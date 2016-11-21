@@ -13,6 +13,7 @@
 
 #include "webrtc/api/android/jni/classreferenceholder.h"
 #include "webrtc/api/android/jni/jni_helpers.h"
+#include "webrtc/api/android/jni/native_handle_impl.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 
@@ -25,11 +26,11 @@ JOW(void, Metrics_nativeEnable)(JNIEnv* jni, jclass) {
 
 // Gets and clears native histograms.
 JOW(jobject, Metrics_nativeGetAndReset)(JNIEnv* jni, jclass) {
-  jclass j_metrics_class = jni->FindClass("org/webrtc/Metrics");
+  jclass j_metrics_class = FindClass(jni, "org/webrtc/Metrics");
   jmethodID j_add =
       GetMethodID(jni, j_metrics_class, "add",
                   "(Ljava/lang/String;Lorg/webrtc/Metrics$HistogramInfo;)V");
-  jclass j_info_class = jni->FindClass("org/webrtc/Metrics$HistogramInfo");
+  jclass j_info_class = FindClass(jni, "org/webrtc/Metrics$HistogramInfo");
   jmethodID j_add_sample = GetMethodID(jni, j_info_class, "addSample", "(II)V");
 
   // Create |Metrics|.
@@ -56,6 +57,28 @@ JOW(jobject, Metrics_nativeGetAndReset)(JNIEnv* jni, jclass) {
   }
   CHECK_EXCEPTION(jni);
   return j_metrics;
+}
+
+JOW(jlong, Metrics_00024Histogram_nativeCreateCounts)
+(JNIEnv* jni, jclass, jstring j_name, jint min, jint max, jint buckets) {
+  std::string name = JavaToStdString(jni, j_name);
+  return jlongFromPointer(
+      webrtc::metrics::HistogramFactoryGetCounts(name, min, max, buckets));
+}
+
+JOW(jlong, Metrics_00024Histogram_nativeCreateEnumeration)
+(JNIEnv* jni, jclass, jstring j_name, jint max) {
+  std::string name = JavaToStdString(jni, j_name);
+  return jlongFromPointer(
+      webrtc::metrics::HistogramFactoryGetEnumeration(name, max));
+}
+
+JOW(void, Metrics_00024Histogram_nativeAddSample)
+(JNIEnv* jni, jclass, jlong histogram, jint sample) {
+  if (histogram) {
+    HistogramAdd(reinterpret_cast<webrtc::metrics::Histogram*>(histogram),
+                 sample);
+  }
 }
 
 }  // namespace webrtc_jni
