@@ -34,7 +34,7 @@ RTPPayloadRegistry::~RTPPayloadRegistry() {
 }
 
 int32_t RTPPayloadRegistry::RegisterReceivePayload(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+    const char* const payload_name,
     const int8_t payload_type,
     const uint32_t frequency,
     const size_t channels,
@@ -133,7 +133,7 @@ int32_t RTPPayloadRegistry::DeRegisterReceivePayload(
 // for audio codecs, but there can for video.
 // Always called from within a critical section.
 void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+    const char* const payload_name,
     const size_t payload_name_length,
     const uint32_t frequency,
     const size_t channels,
@@ -165,12 +165,11 @@ void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
   }
 }
 
-int32_t RTPPayloadRegistry::ReceivePayloadType(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const uint32_t frequency,
-    const size_t channels,
-    const uint32_t rate,
-    int8_t* payload_type) const {
+int32_t RTPPayloadRegistry::ReceivePayloadType(const char* const payload_name,
+                                               const uint32_t frequency,
+                                               const size_t channels,
+                                               const uint32_t rate,
+                                               int8_t* payload_type) const {
   assert(payload_type);
   size_t payload_name_length = strlen(payload_name);
 
@@ -388,12 +387,11 @@ class RTPPayloadAudioStrategy : public RTPPayloadStrategy {
     payload->typeSpecific.Audio.rate = rate;
   }
 
-  RtpUtility::Payload* CreatePayloadType(
-      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const int8_t payloadType,
-      const uint32_t frequency,
-      const size_t channels,
-      const uint32_t rate) const override {
+  RtpUtility::Payload* CreatePayloadType(const char* const payloadName,
+                                         const int8_t payloadType,
+                                         const uint32_t frequency,
+                                         const size_t channels,
+                                         const uint32_t rate) const override {
     RtpUtility::Payload* payload = new RtpUtility::Payload;
     payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
     strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
@@ -425,12 +423,11 @@ class RTPPayloadVideoStrategy : public RTPPayloadStrategy {
   void UpdatePayloadRate(RtpUtility::Payload* payload,
                          const uint32_t rate) const override {}
 
-  RtpUtility::Payload* CreatePayloadType(
-      const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-      const int8_t payloadType,
-      const uint32_t frequency,
-      const size_t channels,
-      const uint32_t rate) const override {
+  RtpUtility::Payload* CreatePayloadType(const char* const payloadName,
+                                         const int8_t payloadType,
+                                         const uint32_t frequency,
+                                         const size_t channels,
+                                         const uint32_t rate) const override {
     RtpVideoCodecTypes videoType = kRtpVideoGeneric;
 
     if (RtpUtility::StringCompare(payloadName, "VP8", 3)) {

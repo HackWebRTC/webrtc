@@ -38,12 +38,11 @@ class RTPPayloadStrategy {
   virtual void UpdatePayloadRate(RtpUtility::Payload* payload,
                                  uint32_t rate) const = 0;
 
-  virtual RtpUtility::Payload* CreatePayloadType(
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      int8_t payload_type,
-      uint32_t frequency,
-      size_t channels,
-      uint32_t rate) const = 0;
+  virtual RtpUtility::Payload* CreatePayloadType(const char* payload_name,
+                                                 int8_t payload_type,
+                                                 uint32_t frequency,
+                                                 size_t channels,
+                                                 uint32_t rate) const = 0;
 
   virtual int GetPayloadTypeFrequency(
       const RtpUtility::Payload& payload) const = 0;
@@ -60,7 +59,7 @@ class RTPPayloadRegistry {
   explicit RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy);
   ~RTPPayloadRegistry();
 
-  int32_t RegisterReceivePayload(const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+  int32_t RegisterReceivePayload(const char* payload_name,
                                  int8_t payload_type,
                                  uint32_t frequency,
                                  size_t channels,
@@ -69,7 +68,7 @@ class RTPPayloadRegistry {
 
   int32_t DeRegisterReceivePayload(int8_t payload_type);
 
-  int32_t ReceivePayloadType(const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+  int32_t ReceivePayloadType(const char* payload_name,
                              uint32_t frequency,
                              size_t channels,
                              uint32_t rate,
@@ -144,7 +143,7 @@ class RTPPayloadRegistry {
  private:
   // Prunes the payload type map of the specific payload type, if it exists.
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+      const char* payload_name,
       size_t payload_name_length,
       uint32_t frequency,
       size_t channels,
