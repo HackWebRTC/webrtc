@@ -1,9 +1,13 @@
 URL: https://github.com/google/gtest-parallel
-Version: d0cebaba01c5dbf3af8a1c89b64eed7596c2b56c
+Version: 89b859c1412089468599a3366a72a1e774ce5c2c
 License: Apache 2.0
 License File: LICENSE
 
 Description:
 Parallelization script for gtest binaries.
 
-Local Modifications: None
+Local Modifications:
+Added gtest-parallel-wrapper.py to convert the GTEST_SHARD_INDEX and
+GTEST_TOTAL_SHARDS environment variables to flags, since gtest-parallel takes
+flags as arguments, and delete them afterwards, since letting them set
+introduces a bug where only tests in the first shard are executed.

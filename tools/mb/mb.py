@@ -1117,22 +1117,22 @@ class MetaBuildWrapper(object):
           '../../testing/test_env.py',
           '../../testing/xvfb.py',
           '../../third_party/gtest-parallel/gtest-parallel',
+          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
       ]
       cmdline = [
-        '../../testing/xvfb.py',
-        '.',
-        'python',
-        '../../third_party/gtest-parallel/gtest-parallel',
+          '../../testing/xvfb.py',
+          '.',
+          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
       ] + common_cmdline
     elif test_type in ('windowed_test_launcher', 'console_test_launcher'):
       extra_files = [
           '../../testing/test_env.py',
           '../../third_party/gtest-parallel/gtest-parallel',
+          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
       ]
       cmdline = [
           '../../testing/test_env.py',
-          'python',
-          '../../third_party/gtest-parallel/gtest-parallel',
+          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
       ] + common_cmdline
     elif test_type == 'non_parallel_console_test_launcher':
       extra_files = [
