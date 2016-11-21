@@ -533,6 +533,8 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     // After a surface size change, the EGLSurface might still have a buffer of the old size in the
     // pipeline. Querying the EGLSurface will show if the underlying buffer dimensions haven't yet
     // changed. Such a buffer will be rendered incorrectly, so flush it with a black frame.
+    final int drawnFrameWidth;
+    final int drawnFrameHeight;
     synchronized (layoutLock) {
       int surfaceClearCount = 0;
       while (eglBase.surfaceWidth() != surfaceWidth || eglBase.surfaceHeight() != surfaceHeight) {
@@ -548,11 +550,20 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       }
       final float[] layoutMatrix;
       if (layoutAspectRatio > 0) {
-        layoutMatrix = RendererCommon.getLayoutMatrix(
-            mirror, frame.rotatedWidth() / (float) frame.rotatedHeight(), layoutAspectRatio);
+        final float frameAspectRatio = frame.rotatedWidth() / (float) frame.rotatedHeight();
+        layoutMatrix = RendererCommon.getLayoutMatrix(mirror, frameAspectRatio, layoutAspectRatio);
+        if (frameAspectRatio > layoutAspectRatio) {
+          drawnFrameWidth = (int) (frame.rotatedHeight() * layoutAspectRatio);
+          drawnFrameHeight = frame.rotatedHeight();
+        } else {
+          drawnFrameWidth = frame.rotatedWidth();
+          drawnFrameHeight = (int) (frame.rotatedWidth() / layoutAspectRatio);
+        }
       } else {
         layoutMatrix =
             mirror ? RendererCommon.horizontalFlipMatrix() : RendererCommon.identityMatrix();
+        drawnFrameWidth = frame.rotatedWidth();
+        drawnFrameHeight = frame.rotatedHeight();
       }
       drawMatrix = RendererCommon.multiplyMatrices(texMatrix, layoutMatrix);
     }
@@ -567,12 +578,13 @@ public class EglRenderer implements VideoRenderer.Callbacks {
           yuvTextures[i] = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
         }
       }
+
       yuvUploader.uploadYuvData(
           yuvTextures, frame.width, frame.height, frame.yuvStrides, frame.yuvPlanes);
-      drawer.drawYuv(yuvTextures, drawMatrix, frame.rotatedWidth(), frame.rotatedHeight(), 0, 0,
-          surfaceWidth, surfaceHeight);
+      drawer.drawYuv(yuvTextures, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0, surfaceWidth,
+          surfaceHeight);
     } else {
-      drawer.drawOes(frame.textureId, drawMatrix, frame.rotatedWidth(), frame.rotatedHeight(), 0, 0,
+      drawer.drawOes(frame.textureId, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
           surfaceWidth, surfaceHeight);
     }
 
