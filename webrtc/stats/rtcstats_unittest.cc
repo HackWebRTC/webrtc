@@ -172,6 +172,12 @@ TEST(RTCStatsTest, EqualityOperator) {
   RTCChildStats child("childId", 42);
   RTCGrandChildStats grandchild("grandchildId", 42);
   EXPECT_NE(child, grandchild);
+
+  RTCChildStats stats_with_defined_member("leId", 0);
+  stats_with_defined_member.child_int = 0;
+  RTCChildStats stats_with_undefined_member("leId", 0);
+  EXPECT_NE(stats_with_defined_member, stats_with_undefined_member);
+  EXPECT_NE(stats_with_undefined_member, stats_with_defined_member);
 }
 
 TEST(RTCStatsTest, RTCStatsGrandChild) {

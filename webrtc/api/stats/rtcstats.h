@@ -271,6 +271,8 @@ class RTCStatsMember : public RTCStatsMemberInterface {
         static_cast<const RTCStatsMember<T>&>(other);
     if (!is_defined_)
       return !other_t.is_defined();
+    if (!other.is_defined())
+      return false;
     return value_ == other_t.value_;
   }
   std::string ValueToString() const override;
