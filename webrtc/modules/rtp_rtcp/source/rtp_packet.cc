@@ -172,8 +172,8 @@ size_t Packet::padding_size() const {
   return padding_size_;
 }
 
-const uint8_t* Packet::payload() const {
-  return data() + payload_offset_;
+rtc::ArrayView<const uint8_t> Packet::payload() const {
+  return rtc::MakeArrayView(data() + payload_offset_, payload_size_);
 }
 
 rtc::CopyOnWriteBuffer Packet::Buffer() const {

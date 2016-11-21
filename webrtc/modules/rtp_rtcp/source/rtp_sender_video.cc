@@ -39,8 +39,10 @@ void BuildRedPayload(const RtpPacketToSend& media_packet,
       kRedForFecHeaderLength + media_packet.payload_size());
   RTC_DCHECK(red_payload);
   red_payload[0] = media_packet.PayloadType();
-  memcpy(&red_payload[kRedForFecHeaderLength], media_packet.payload(),
-         media_packet.payload_size());
+
+  auto media_payload = media_packet.payload();
+  memcpy(&red_payload[kRedForFecHeaderLength], media_payload.data(),
+         media_payload.size());
 }
 }  // namespace
 

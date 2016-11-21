@@ -97,9 +97,9 @@ bool FlexfecReceiver::AddReceivedPacket(const uint8_t* packet,
     // TODO(brandtr): Remove this memcpy when the FEC packet classes
     // are using COW buffers internally.
     received_packet->pkt = rtc::scoped_refptr<Packet>(new Packet());
-    memcpy(received_packet->pkt->data, parsed_packet.payload(),
-           parsed_packet.payload_size());
-    received_packet->pkt->length = parsed_packet.payload_size();
+    auto payload = parsed_packet.payload();
+    memcpy(received_packet->pkt->data, payload.data(), payload.size());
+    received_packet->pkt->length = payload.size();
   } else {
     // This is a media packet, or a FlexFEC packet belonging to some
     // other FlexFEC stream.

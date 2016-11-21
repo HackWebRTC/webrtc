@@ -1216,7 +1216,8 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
   ByteWriter<uint16_t>::WriteBigEndian(rtx_payload, packet.SequenceNumber());
 
   // Add original payload data.
-  memcpy(rtx_payload + kRtxHeaderSize, packet.payload(), packet.payload_size());
+  auto payload = packet.payload();
+  memcpy(rtx_payload + kRtxHeaderSize, payload.data(), payload.size());
 
   return rtx_packet;
 }

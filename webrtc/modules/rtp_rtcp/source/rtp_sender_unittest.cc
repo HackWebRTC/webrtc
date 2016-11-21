@@ -878,16 +878,11 @@ TEST_F(RtpSenderTestWithoutPacer, SendGenericVideo) {
                                             4321, payload, sizeof(payload),
                                             nullptr, nullptr, nullptr));
 
-  const uint8_t* payload_data = transport_.last_sent_packet().payload();
-  uint8_t generic_header = *payload_data++;
-
-  ASSERT_EQ(sizeof(payload) + sizeof(generic_header),
-            transport_.last_sent_packet().payload_size());
-
+  auto sent_payload = transport_.last_sent_packet().payload();
+  uint8_t generic_header = sent_payload[0];
   EXPECT_TRUE(generic_header & RtpFormatVideoGeneric::kKeyFrameBit);
   EXPECT_TRUE(generic_header & RtpFormatVideoGeneric::kFirstPacketBit);
-
-  EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
+  EXPECT_THAT(sent_payload.subview(1), ElementsAreArray(payload));
 
   // Send delta frame
   payload[0] = 13;
@@ -898,16 +893,11 @@ TEST_F(RtpSenderTestWithoutPacer, SendGenericVideo) {
       kVideoFrameDelta, payload_type, 1234, 4321, payload, sizeof(payload),
       nullptr, nullptr, nullptr));
 
-  payload_data = transport_.last_sent_packet().payload();
-  generic_header = *payload_data++;
-
+  sent_payload = transport_.last_sent_packet().payload();
+  generic_header = sent_payload[0];
   EXPECT_FALSE(generic_header & RtpFormatVideoGeneric::kKeyFrameBit);
   EXPECT_TRUE(generic_header & RtpFormatVideoGeneric::kFirstPacketBit);
-
-  ASSERT_EQ(sizeof(payload) + sizeof(generic_header),
-            transport_.last_sent_packet().payload_size());
-
-  EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
+  EXPECT_THAT(sent_payload.subview(1), ElementsAreArray(payload));
 }
 
 TEST_F(RtpSenderTest, SendFlexfecPackets) {
@@ -1258,10 +1248,8 @@ TEST_F(RtpSenderAudioTest, SendAudio) {
                       kAudioFrameCN, payload_type, 1234, 4321, payload,
                       sizeof(payload), nullptr, nullptr, nullptr));
 
-  const uint8_t* payload_data = transport_.last_sent_packet().payload();
-
-  ASSERT_EQ(sizeof(payload), transport_.last_sent_packet().payload_size());
-  EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
+  auto sent_payload = transport_.last_sent_packet().payload();
+  EXPECT_THAT(sent_payload, ElementsAreArray(payload));
 }
 
 TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
@@ -1279,10 +1267,8 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
                       kAudioFrameCN, payload_type, 1234, 4321, payload,
                       sizeof(payload), nullptr, nullptr, nullptr));
 
-  const uint8_t* payload_data = transport_.last_sent_packet().payload();
-
-  ASSERT_EQ(sizeof(payload), transport_.last_sent_packet().payload_size());
-  EXPECT_EQ(0, memcmp(payload, payload_data, sizeof(payload)));
+  auto sent_payload = transport_.last_sent_packet().payload();
+  EXPECT_THAT(sent_payload, ElementsAreArray(payload));
   // Verify AudioLevel extension.
   bool voice_activity;
   uint8_t audio_level;

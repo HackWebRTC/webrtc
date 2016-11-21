@@ -12,6 +12,7 @@
 
 #include <vector>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -56,7 +57,7 @@ class Packet {
   // Payload.
   size_t payload_size() const;
   size_t padding_size() const;
-  const uint8_t* payload() const;
+  rtc::ArrayView<const uint8_t> payload() const;
 
   // Buffer.
   rtc::CopyOnWriteBuffer Buffer() const;
