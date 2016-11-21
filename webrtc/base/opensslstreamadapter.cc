@@ -66,7 +66,7 @@ static SrtpCipherMapEntry SrtpCipherMap[] = {
 static void TimeCallback(const SSL* ssl, struct timeval* out_clock) {
   uint64_t time = TimeNanos();
   out_clock->tv_sec = time / kNumNanosecsPerSec;
-  out_clock->tv_usec = time / kNumNanosecsPerMicrosec;
+  out_clock->tv_usec = (time % kNumNanosecsPerSec) / kNumNanosecsPerMicrosec;
 }
 #else  // #ifdef OPENSSL_IS_BORINGSSL
 
