@@ -37,7 +37,7 @@ VideoSender::VideoSender(Clock* clock,
       send_stats_callback_(send_stats_callback),
       _codecDataBase(&_encodedFrameCallback),
       frame_dropper_enabled_(true),
-      _sendStatsTimer(1000, clock_),
+      _sendStatsTimer(VCMProcessTimer::kDefaultProcessIntervalMs, clock_),
       current_codec_(),
       encoder_params_({BitrateAllocation(), 0, 0, 0}),
       encoder_has_internal_source_(false),
@@ -199,6 +199,9 @@ EncoderParameters VideoSender::UpdateEncoderParameters(
   uint32_t video_target_rate_bps = _mediaOpt.SetTargetRates(
       target_bitrate_bps, params.loss_rate, params.rtt);
   uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
+  if (input_frame_rate == 0)
+    input_frame_rate = current_codec_.maxFramerate;
+
   BitrateAllocation bitrate_allocation;
   if (bitrate_allocator) {
     bitrate_allocation = bitrate_allocator->GetAllocation(video_target_rate_bps,

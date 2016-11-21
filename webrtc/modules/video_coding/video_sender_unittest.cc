@@ -129,7 +129,7 @@ class EncodedImageCallbackImpl : public EncodedImageCallback {
 
  private:
   struct FrameData {
-    FrameData() {}
+    FrameData() : payload_size(0) {}
 
     FrameData(size_t payload_size, const CodecSpecificInfo& codec_specific_info)
         : payload_size(payload_size),
@@ -299,14 +299,37 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequests) {
 }
 
 TEST_F(TestVideoSenderWithMockEncoder, TestSetRate) {
+  // Let actual fps be half of max, so it can be distinguished from default.
+  const uint32_t kActualFrameRate = settings_.maxFramerate / 2;
+  const int64_t kFrameIntervalMs = 1000 / kActualFrameRate;
   const uint32_t new_bitrate_kbps = settings_.startBitrate + 300;
+
+  // Initial frame rate is taken from config, as we have no data yet.
   BitrateAllocation new_rate_allocation = rate_allocator_->GetAllocation(
       new_bitrate_kbps * 1000, settings_.maxFramerate);
-  EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, _))
+  EXPECT_CALL(encoder_,
+              SetRateAllocation(new_rate_allocation, settings_.maxFramerate))
       .Times(1)
       .WillOnce(Return(0));
   sender_->SetChannelParameters(new_bitrate_kbps * 1000, 0, 200,
                                 rate_allocator_.get());
+  AddFrame();
+  clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
+
+  // Add enough frames so that input frame rate will be updated.
+  const int kFramesToSend =
+      (VCMProcessTimer::kDefaultProcessIntervalMs / kFrameIntervalMs) + 1;
+  for (int i = 0; i < kFramesToSend; ++i) {
+    AddFrame();
+    clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
+  }
+
+  EXPECT_CALL(encoder_,
+              SetRateAllocation(new_rate_allocation, kActualFrameRate))
+      .Times(1)
+      .WillOnce(Return(0));
+
+  sender_->Process();
   AddFrame();
 
   // Expect no call to encoder_.SetRates if the new bitrate is zero.

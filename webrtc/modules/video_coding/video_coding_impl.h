@@ -40,6 +40,8 @@ namespace vcm {
 
 class VCMProcessTimer {
  public:
+  static const int64_t kDefaultProcessIntervalMs = 1000;
+
   VCMProcessTimer(int64_t periodMs, Clock* clock)
       : _clock(clock),
         _periodMs(periodMs),
