@@ -230,6 +230,9 @@ if (is_android && !build_with_chromium) {
     }
   }
 
+  rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
+  }
+
   rtc_shared_library("libjingle_peerconnection_so") {
     sources = [
       "android/jni/jni_onload.cc",
