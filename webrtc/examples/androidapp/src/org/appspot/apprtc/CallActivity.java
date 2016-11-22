@@ -35,8 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.appspot.apprtc.AppRTCClient.RoomConnectionParameters;
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
 import org.appspot.apprtc.PeerConnectionClient.DataChannelParameters;
+import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
@@ -225,6 +225,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     remoteRenderScreen.init(rootEglBase.getEglBaseContext(), null);
 
     localRender.setZOrderMediaOverlay(true);
+    localRender.setEnableHardwareScaler(true /* enabled */);
+    remoteRenderScreen.setEnableHardwareScaler(true /* enabled */);
     updateVideoView();
 
     // Check for mandatory permissions.

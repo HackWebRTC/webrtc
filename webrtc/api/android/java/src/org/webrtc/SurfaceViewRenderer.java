@@ -46,6 +46,11 @@ public class SurfaceViewRenderer
   private int rotatedFrameHeight;
   private int frameRotation;
 
+  // Accessed only on the main thread.
+  private boolean enableFixedSize;
+  private int surfaceWidth;
+  private int surfaceHeight;
+
   /**
    * Standard View constructor. In order to render something, you must first call init().
    */
@@ -104,6 +109,16 @@ public class SurfaceViewRenderer
   }
 
   /**
+   * Enables fixed size for the surface. This provides better performance but might be buggy on some
+   * devices. By default this is turned off.
+   */
+  public void setEnableHardwareScaler(boolean enabled) {
+    ThreadUtils.checkIsOnMainThread();
+    enableFixedSize = enabled;
+    updateSurfaceSize();
+  }
+
+  /**
    * Set if the video stream should be mirrored or not.
    */
   public void setMirror(final boolean mirror) {
@@ -148,6 +163,41 @@ public class SurfaceViewRenderer
   protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
     ThreadUtils.checkIsOnMainThread();
     eglRenderer.setLayoutAspectRatio((right - left) / (float) (bottom - top));
+    updateSurfaceSize();
+  }
+
+  private void updateSurfaceSize() {
+    ThreadUtils.checkIsOnMainThread();
+    synchronized (layoutLock) {
+      if (enableFixedSize && rotatedFrameWidth != 0 && rotatedFrameHeight != 0 && getWidth() != 0
+          && getHeight() != 0) {
+        final float layoutAspectRatio = getWidth() / (float) getHeight();
+        final float frameAspectRatio = rotatedFrameWidth / (float) rotatedFrameHeight;
+        final int drawnFrameWidth;
+        final int drawnFrameHeight;
+        if (frameAspectRatio > layoutAspectRatio) {
+          drawnFrameWidth = (int) (rotatedFrameHeight * layoutAspectRatio);
+          drawnFrameHeight = rotatedFrameHeight;
+        } else {
+          drawnFrameWidth = rotatedFrameWidth;
+          drawnFrameHeight = (int) (rotatedFrameWidth / layoutAspectRatio);
+        }
+        // Aspect ratio of the drawn frame and the view is the same.
+        final int width = Math.min(getWidth(), drawnFrameWidth);
+        final int height = Math.min(getHeight(), drawnFrameHeight);
+        logD("updateSurfaceSize. Layout size: " + getWidth() + "x" + getHeight() + ", frame size: "
+            + rotatedFrameWidth + "x" + rotatedFrameHeight + ", requested surface size: " + width
+            + "x" + height + ", old surface size: " + surfaceWidth + "x" + surfaceHeight);
+        if (width != surfaceWidth || height != surfaceHeight) {
+          surfaceWidth = width;
+          surfaceHeight = height;
+          getHolder().setFixedSize(width, height);
+        }
+      } else {
+        surfaceWidth = surfaceHeight = 0;
+        getHolder().setSizeFromLayout();
+      }
+    }
   }
 
   // SurfaceHolder.Callback interface.
@@ -155,6 +205,8 @@ public class SurfaceViewRenderer
   public void surfaceCreated(final SurfaceHolder holder) {
     ThreadUtils.checkIsOnMainThread();
     eglRenderer.createEglSurface(holder.getSurface());
+    surfaceWidth = surfaceHeight = 0;
+    updateSurfaceSize();
   }
 
   @Override
@@ -173,6 +225,7 @@ public class SurfaceViewRenderer
   @Override
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
     ThreadUtils.checkIsOnMainThread();
+    logD("surfaceChanged: format: " + format + " size: " + width + "x" + height);
     eglRenderer.surfaceSizeChanged(width, height);
   }
 
@@ -207,6 +260,7 @@ public class SurfaceViewRenderer
         post(new Runnable() {
           @Override
           public void run() {
+            updateSurfaceSize();
             requestLayout();
           }
         });
