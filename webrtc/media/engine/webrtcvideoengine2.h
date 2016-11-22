@@ -194,6 +194,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     VideoCodec codec;
     webrtc::UlpfecConfig ulpfec;
+    webrtc::FlexfecConfig flexfec;
     int rtx_payload_type;
   };
 
@@ -220,6 +221,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   void SetMaxSendBandwidth(int bps);
 
   void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
+                            webrtc::FlexfecConfig* flexfec_config,
                             const StreamParams& sp) const;
   bool ValidateSendSsrcAvailability(const StreamParams& sp) const
       EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
@@ -383,7 +385,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         webrtc::VideoReceiveStream::Config config,
         WebRtcVideoDecoderFactory* external_decoder_factory,
         bool default_stream,
-        const std::vector<VideoCodecSettings>& recv_codecs);
+        const std::vector<VideoCodecSettings>& recv_codecs,
+        const webrtc::FlexfecConfig& flexfec_config);
     ~WebRtcVideoReceiveStream();
 
     const std::vector<uint32_t>& GetSsrcs() const;
@@ -430,9 +433,14 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     webrtc::Call* const call_;
     StreamParams stream_params_;
 
+    // Both |stream_| and |flexfec_stream_| are managed by |this|. They are
+    // destroyed by calling call_->DestroyVideoReceiveStream and
+    // call_->DestroyFlexfecReceiveStream, respectively.
     webrtc::VideoReceiveStream* stream_;
     const bool default_stream_;
     webrtc::VideoReceiveStream::Config config_;
+    webrtc::FlexfecConfig flexfec_config_;
+    webrtc::FlexfecReceiveStream* flexfec_stream_;
 
     WebRtcVideoDecoderFactory* const external_decoder_factory_;
     std::vector<AllocatedDecoder> allocated_decoders_;

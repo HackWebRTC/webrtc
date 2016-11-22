@@ -20,6 +20,7 @@
 #ifndef WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
 #define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
 
+#include <list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -196,6 +197,24 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
   webrtc::VideoReceiveStream::Stats stats_;
 };
 
+class FakeFlexfecReceiveStream final : public webrtc::FlexfecReceiveStream {
+ public:
+  explicit FakeFlexfecReceiveStream(
+      const webrtc::FlexfecReceiveStream::Config& config);
+
+  const webrtc::FlexfecReceiveStream::Config& GetConfig() const;
+
+ private:
+  // webrtc::FlexfecReceiveStream implementation.
+  void Start() override;
+  void Stop() override;
+
+  webrtc::FlexfecReceiveStream::Stats GetStats() const override;
+
+  webrtc::FlexfecReceiveStream::Config config_;
+  bool receiving_;
+};
+
 class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
  public:
   explicit FakeCall(const webrtc::Call::Config& config);
@@ -209,6 +228,8 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   const FakeAudioSendStream* GetAudioSendStream(uint32_t ssrc);
   const std::vector<FakeAudioReceiveStream*>& GetAudioReceiveStreams();
   const FakeAudioReceiveStream* GetAudioReceiveStream(uint32_t ssrc);
+
+  const std::list<FakeFlexfecReceiveStream>& GetFlexfecReceiveStreams();
 
   rtc::SentPacket last_sent_packet() const { return last_sent_packet_; }
 
@@ -277,6 +298,7 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   std::vector<FakeAudioSendStream*> audio_send_streams_;
   std::vector<FakeVideoReceiveStream*> video_receive_streams_;
   std::vector<FakeAudioReceiveStream*> audio_receive_streams_;
+  std::list<FakeFlexfecReceiveStream> flexfec_receive_streams_;
 
   int num_created_send_streams_;
   int num_created_receive_streams_;

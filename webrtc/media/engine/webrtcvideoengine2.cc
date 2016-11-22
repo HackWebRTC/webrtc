@@ -39,6 +39,18 @@
 namespace cricket {
 namespace {
 
+// Three things happen when the FlexFEC field trial is enabled:
+// 1) FlexFEC is exposed in the default codec list, eventually showing up
+//    in the default SDP. (See InternalEncoderFactory ctor.)
+// 2) FlexFEC send parameters are set in the VideoSendStream config.
+// 3) FlexFEC receive parameters are set in the FlexfecReceiveStream config,
+//    and the corresponding object is instantiated.
+const char kFlexfecFieldTrialName[] = "WebRTC-FlexFEC-03";
+
+bool IsFlexfecFieldTrialEnabled() {
+  return webrtc::field_trial::FindFullName(kFlexfecFieldTrialName) == "Enabled";
+}
+
 // Wrap cricket::WebRtcVideoEncoderFactory as a webrtc::VideoEncoderFactory.
 class EncoderFactoryAdapter : public webrtc::VideoEncoderFactory {
  public:
@@ -1197,7 +1209,8 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
     receive_ssrcs_.insert(used_ssrc);
 
   webrtc::VideoReceiveStream::Config config(this);
-  ConfigureReceiverRtp(&config, sp);
+  webrtc::FlexfecConfig flexfec_config;
+  ConfigureReceiverRtp(&config, &flexfec_config, sp);
 
   // Set up A/V sync group based on sync label.
   config.sync_group = sp.sync_label;
@@ -1210,13 +1223,14 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_, sp, std::move(config), external_decoder_factory_, default_stream,
-      recv_codecs_);
+      recv_codecs_, flexfec_config);
 
   return true;
 }
 
 void WebRtcVideoChannel2::ConfigureReceiverRtp(
     webrtc::VideoReceiveStream::Config* config,
+    webrtc::FlexfecConfig* flexfec_config,
     const StreamParams& sp) const {
   uint32_t ssrc = sp.first_ssrc();
 
@@ -1254,6 +1268,14 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
       rtx.ssrc = rtx_ssrc;
       rtx.payload_type = recv_codecs_[i].rtx_payload_type;
     }
+  }
+
+  // TODO(brandtr): This code needs to be generalized when we add support for
+  // multistream protection.
+  uint32_t flexfec_ssrc;
+  if (sp.GetFecFrSsrc(ssrc, &flexfec_ssrc)) {
+    flexfec_config->flexfec_ssrc = flexfec_ssrc;
+    flexfec_config->protected_media_ssrcs = {ssrc};
   }
 }
 
@@ -1412,14 +1434,15 @@ void WebRtcVideoChannel2::OnPacketReceived(
   }
 
   // See if this payload_type is registered as one that usually gets its own
-  // SSRC (RTX) or at least is safe to drop either way (ULPFEC). If it is, and
+  // SSRC (RTX) or at least is safe to drop either way (FEC). If it is, and
   // it wasn't handled above by DeliverPacket, that means we don't know what
   // stream it associates with, and we shouldn't ever create an implicit channel
   // for these.
   for (auto& codec : recv_codecs_) {
     if (payload_type == codec.rtx_payload_type ||
         payload_type == codec.ulpfec.red_rtx_payload_type ||
-        payload_type == codec.ulpfec.ulpfec_payload_type) {
+        payload_type == codec.ulpfec.ulpfec_payload_type ||
+        payload_type == codec.flexfec.flexfec_payload_type) {
       return;
     }
   }
@@ -1562,8 +1585,35 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
   parameters_.conference_mode = send_params.conference_mode;
 
   sp.GetPrimarySsrcs(&parameters_.config.rtp.ssrcs);
+
+  // RTX.
   sp.GetFidSsrcs(parameters_.config.rtp.ssrcs,
                  &parameters_.config.rtp.rtx.ssrcs);
+
+  // FlexFEC.
+  // TODO(brandtr): This code needs to be generalized when we add support for
+  // multistream protection.
+  if (IsFlexfecFieldTrialEnabled()) {
+    uint32_t flexfec_ssrc;
+    bool flexfec_enabled = false;
+    for (uint32_t primary_ssrc : parameters_.config.rtp.ssrcs) {
+      if (sp.GetFecFrSsrc(primary_ssrc, &flexfec_ssrc)) {
+        if (flexfec_enabled) {
+          LOG(LS_INFO) << "Multiple FlexFEC streams proposed by remote, but "
+                          "our implementation only supports a single FlexFEC "
+                          "stream. Will not enable FlexFEC for proposed "
+                          "stream with SSRC: "
+                       << flexfec_ssrc << ".";
+          continue;
+        }
+
+        flexfec_enabled = true;
+        parameters_.config.rtp.flexfec.flexfec_ssrc = flexfec_ssrc;
+        parameters_.config.rtp.flexfec.protected_media_ssrcs = {primary_ssrc};
+      }
+    }
+  }
+
   parameters_.config.rtp.c_name = sp.cname;
   if (rtp_extensions) {
     parameters_.config.rtp.extensions = *rtp_extensions;
@@ -1744,6 +1794,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
         external_encoder_factory_->EncoderTypeHasInternalSource(type);
   }
   parameters_.config.rtp.ulpfec = codec_settings.ulpfec;
+  parameters_.config.rtp.flexfec.flexfec_payload_type =
+      codec_settings.flexfec.flexfec_payload_type;
 
   // Set RTX payload type if RTX is enabled.
   if (!parameters_.config.rtp.rtx.ssrcs.empty()) {
@@ -2119,12 +2171,15 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     webrtc::VideoReceiveStream::Config config,
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
-    const std::vector<VideoCodecSettings>& recv_codecs)
+    const std::vector<VideoCodecSettings>& recv_codecs,
+    const webrtc::FlexfecConfig& flexfec_config)
     : call_(call),
       stream_params_(sp),
       stream_(NULL),
       default_stream_(default_stream),
       config_(std::move(config)),
+      flexfec_config_(flexfec_config),
+      flexfec_stream_(nullptr),
       external_decoder_factory_(external_decoder_factory),
       sink_(NULL),
       first_frame_timestamp_(-1),
@@ -2253,6 +2308,8 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(
 
   // TODO(pbos): Reconfigure RTX based on incoming recv_codecs.
   config_.rtp.ulpfec = recv_codecs.front().ulpfec;
+  flexfec_config_.flexfec_payload_type =
+      recv_codecs.front().flexfec.flexfec_payload_type;
   config_.rtp.nack.rtp_history_ms =
       HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
 }
@@ -2324,11 +2381,19 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvParameters(
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
-  if (stream_ != NULL) {
+  if (flexfec_stream_) {
+    call_->DestroyFlexfecReceiveStream(flexfec_stream_);
+    flexfec_stream_ = nullptr;
+  }
+  if (stream_) {
     call_->DestroyVideoReceiveStream(stream_);
   }
   stream_ = call_->CreateVideoReceiveStream(config_.Copy());
   stream_->Start();
+  if (IsFlexfecFieldTrialEnabled() && flexfec_config_.IsCompleteAndEnabled()) {
+    flexfec_stream_ = call_->CreateFlexfecReceiveStream(flexfec_config_);
+    flexfec_stream_->Start();
+  }
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders(
@@ -2443,11 +2508,8 @@ WebRtcVideoChannel2::VideoCodecSettings::VideoCodecSettings()
 
 bool WebRtcVideoChannel2::VideoCodecSettings::operator==(
     const WebRtcVideoChannel2::VideoCodecSettings& other) const {
-  return codec == other.codec &&
-         ulpfec.ulpfec_payload_type == other.ulpfec.ulpfec_payload_type &&
-         ulpfec.red_payload_type == other.ulpfec.red_payload_type &&
-         ulpfec.red_rtx_payload_type == other.ulpfec.red_rtx_payload_type &&
-         rtx_payload_type == other.rtx_payload_type;
+  return codec == other.codec && ulpfec == other.ulpfec &&
+         flexfec == other.flexfec && rtx_payload_type == other.rtx_payload_type;
 }
 
 bool WebRtcVideoChannel2::VideoCodecSettings::operator!=(
@@ -2466,6 +2528,7 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
   std::map<int, int> rtx_mapping;
 
   webrtc::UlpfecConfig ulpfec_config;
+  int flexfec_payload_type = -1;
 
   for (size_t i = 0; i < codecs.size(); ++i) {
     const VideoCodec& in_codec = codecs[i];
@@ -2482,20 +2545,22 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
     switch (in_codec.GetCodecType()) {
       case VideoCodec::CODEC_RED: {
         // RED payload type, should not have duplicates.
-        RTC_DCHECK(ulpfec_config.red_payload_type == -1);
+        RTC_DCHECK_EQ(-1, ulpfec_config.red_payload_type);
         ulpfec_config.red_payload_type = in_codec.id;
         continue;
       }
 
       case VideoCodec::CODEC_ULPFEC: {
         // ULPFEC payload type, should not have duplicates.
-        RTC_DCHECK(ulpfec_config.ulpfec_payload_type == -1);
+        RTC_DCHECK_EQ(-1, ulpfec_config.ulpfec_payload_type);
         ulpfec_config.ulpfec_payload_type = in_codec.id;
         continue;
       }
 
       case VideoCodec::CODEC_FLEXFEC: {
-        // TODO(brandtr): To be implemented.
+        // FlexFEC payload type, should not have duplicates.
+        RTC_DCHECK_EQ(-1, flexfec_payload_type);
+        flexfec_payload_type = in_codec.id;
         continue;
       }
 
@@ -2545,6 +2610,7 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
 
   for (size_t i = 0; i < video_codecs.size(); ++i) {
     video_codecs[i].ulpfec = ulpfec_config;
+    video_codecs[i].flexfec.flexfec_payload_type = flexfec_payload_type;
     if (rtx_mapping[video_codecs[i].codec.id] != 0 &&
         rtx_mapping[video_codecs[i].codec.id] !=
             ulpfec_config.red_payload_type) {

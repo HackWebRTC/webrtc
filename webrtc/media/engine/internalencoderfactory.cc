@@ -15,8 +15,19 @@
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace cricket {
+
+namespace {
+
+const char kFlexfecFieldTrialName[] = "WebRTC-FlexFEC-03";
+
+bool IsFlexfecFieldTrialEnabled() {
+  return webrtc::field_trial::FindFullName(kFlexfecFieldTrialName) == "Enabled";
+}
+
+}  // namespace
 
 InternalEncoderFactory::InternalEncoderFactory() {
   supported_codecs_.push_back(cricket::VideoCodec(kVp8CodecName));
@@ -36,6 +47,16 @@ InternalEncoderFactory::InternalEncoderFactory() {
 
   supported_codecs_.push_back(cricket::VideoCodec(kRedCodecName));
   supported_codecs_.push_back(cricket::VideoCodec(kUlpfecCodecName));
+
+  if (IsFlexfecFieldTrialEnabled()) {
+    cricket::VideoCodec flexfec_codec(kFlexfecCodecName);
+    // This value is currently arbitrarily set to 10 seconds. (The unit
+    // is microseconds.) This parameter MUST be present in the SDP, but
+    // we never use the actual value anywhere in our code however.
+    // TODO(brandtr): Consider honouring this value in the sender and receiver.
+    flexfec_codec.SetParam(kFlexfecFmtpRepairWindow, "10000000");
+    supported_codecs_.push_back(flexfec_codec);
+  }
 }
 
 InternalEncoderFactory::~InternalEncoderFactory() {}

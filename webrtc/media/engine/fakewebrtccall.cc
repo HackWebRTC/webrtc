@@ -296,6 +296,28 @@ void FakeVideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
   rtc::ClosePlatformFile(file);
 }
 
+FakeFlexfecReceiveStream::FakeFlexfecReceiveStream(
+    const webrtc::FlexfecReceiveStream::Config& config)
+    : config_(config), receiving_(false) {}
+
+const webrtc::FlexfecReceiveStream::Config&
+FakeFlexfecReceiveStream::GetConfig() const {
+  return config_;
+}
+
+void FakeFlexfecReceiveStream::Start() {
+  receiving_ = true;
+}
+
+void FakeFlexfecReceiveStream::Stop() {
+  receiving_ = false;
+}
+
+// TODO(brandtr): Implement when the stats have been designed.
+webrtc::FlexfecReceiveStream::Stats FakeFlexfecReceiveStream::GetStats() const {
+  return webrtc::FlexfecReceiveStream::Stats();
+}
+
 FakeCall::FakeCall(const webrtc::Call::Config& config)
     : config_(config),
       audio_network_state_(webrtc::kNetworkUp),
@@ -346,6 +368,11 @@ const FakeAudioReceiveStream* FakeCall::GetAudioReceiveStream(uint32_t ssrc) {
     }
   }
   return nullptr;
+}
+
+const std::list<FakeFlexfecReceiveStream>&
+FakeCall::GetFlexfecReceiveStreams() {
+  return flexfec_receive_streams_;
 }
 
 webrtc::NetworkState FakeCall::GetNetworkState(webrtc::MediaType media) const {
@@ -451,13 +478,22 @@ void FakeCall::DestroyVideoReceiveStream(
 
 webrtc::FlexfecReceiveStream* FakeCall::CreateFlexfecReceiveStream(
     webrtc::FlexfecReceiveStream::Config config) {
-  // TODO(brandtr): Implement when adding integration with WebRtcVideoEngine2.
-  return nullptr;
+  flexfec_receive_streams_.push_back(
+      FakeFlexfecReceiveStream(std::move(config)));
+  ++num_created_receive_streams_;
+  return &flexfec_receive_streams_.back();
 }
 
 void FakeCall::DestroyFlexfecReceiveStream(
     webrtc::FlexfecReceiveStream* receive_stream) {
-  // TODO(brandtr): Implement when adding integration with WebRtcVideoEngine2.
+  for (auto it = flexfec_receive_streams_.begin();
+       it != flexfec_receive_streams_.end(); ++it) {
+    if (&(*it) == receive_stream) {
+      flexfec_receive_streams_.erase(it);
+      return;
+    }
+  }
+  ADD_FAILURE() << "DestroyFlexfecReceiveStream called with unknown parameter.";
 }
 
 webrtc::PacketReceiver* FakeCall::Receiver() {
