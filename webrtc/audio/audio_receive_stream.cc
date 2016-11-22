@@ -138,9 +138,11 @@ AudioReceiveStream::AudioReceiveStream(
 }
 
 AudioReceiveStream::~AudioReceiveStream() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
-  Stop();
+  if (playing_) {
+    Stop();
+  }
   channel_proxy_->DisassociateSendChannel();
   channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
@@ -151,22 +153,39 @@ AudioReceiveStream::~AudioReceiveStream() {
 }
 
 void AudioReceiveStream::Start() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ScopedVoEInterface<VoEBase> base(voice_engine());
-  int error = base->StartPlayout(config_.voe_channel_id);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  if (playing_) {
+    return;
+  }
+
+  int error = SetVoiceEnginePlayout(true);
   if (error != 0) {
     LOG(LS_ERROR) << "AudioReceiveStream::Start failed with error: " << error;
+    return;
   }
+
+  if (!audio_state()->mixer()->AddSource(this)) {
+    LOG(LS_ERROR) << "Failed to add source to mixer.";
+    SetVoiceEnginePlayout(false);
+    return;
+  }
+
+  playing_ = true;
 }
 
 void AudioReceiveStream::Stop() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ScopedVoEInterface<VoEBase> base(voice_engine());
-  base->StopPlayout(config_.voe_channel_id);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  if (!playing_) {
+    return;
+  }
+  playing_ = false;
+
+  audio_state()->mixer()->RemoveSource(this);
+  SetVoiceEnginePlayout(false);
 }
 
 webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   webrtc::AudioReceiveStream::Stats stats;
   stats.remote_ssrc = config_.rtp.remote_ssrc;
   ScopedVoEInterface<VoECodec> codec(voice_engine());
@@ -216,17 +235,17 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
 }
 
 void AudioReceiveStream::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   channel_proxy_->SetSink(std::move(sink));
 }
 
 void AudioReceiveStream::SetGain(float gain) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   channel_proxy_->SetChannelOutputVolumeScaling(gain);
 }
 
 const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   return config_;
 }
 
@@ -243,7 +262,7 @@ void AudioReceiveStream::AssociateSendStream(AudioSendStream* send_stream) {
 }
 
 void AudioReceiveStream::SignalNetworkState(NetworkState state) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
 }
 
 bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
@@ -296,12 +315,26 @@ int AudioReceiveStream::Ssrc() const {
   return config_.rtp.local_ssrc;
 }
 
+internal::AudioState* AudioReceiveStream::audio_state() const {
+  auto* audio_state = static_cast<internal::AudioState*>(audio_state_.get());
+  RTC_DCHECK(audio_state);
+  return audio_state;
+}
+
 VoiceEngine* AudioReceiveStream::voice_engine() const {
-  internal::AudioState* audio_state =
-      static_cast<internal::AudioState*>(audio_state_.get());
-  VoiceEngine* voice_engine = audio_state->voice_engine();
+  auto* voice_engine = audio_state()->voice_engine();
   RTC_DCHECK(voice_engine);
   return voice_engine;
 }
+
+int AudioReceiveStream::SetVoiceEnginePlayout(bool playout) {
+  ScopedVoEInterface<VoEBase> base(voice_engine());
+  if (playout) {
+    return base->StartPlayout(config_.voe_channel_id);
+  } else {
+    return base->StopPlayout(config_.voe_channel_id);
+  }
+}
+
 }  // namespace internal
 }  // namespace webrtc

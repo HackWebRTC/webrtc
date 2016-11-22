@@ -16,6 +16,7 @@
 #include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/api/call/audio_receive_stream.h"
 #include "webrtc/api/call/audio_state.h"
+#include "webrtc/audio/audio_state.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -64,6 +65,8 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
 
  private:
   VoiceEngine* voice_engine() const;
+  AudioState* audio_state() const;
+  int SetVoiceEnginePlayout(bool playout);
 
   rtc::ThreadChecker thread_checker_;
   RemoteBitrateEstimator* remote_bitrate_estimator_ = nullptr;
@@ -71,6 +74,8 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
+
+  bool playing_ ACCESS_ON(thread_checker_) = false;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioReceiveStream);
 };

@@ -11,11 +11,11 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/test/mock_audio_mixer.h"
 #include "webrtc/audio/audio_receive_stream.h"
 #include "webrtc/audio/conversion.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
-#include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
@@ -72,7 +72,8 @@ struct ConfigHelper {
         congestion_controller_(&simulated_clock_,
                                &bitrate_observer_,
                                &remote_bitrate_observer_,
-                               &event_log_) {
+                               &event_log_),
+        audio_mixer_(new rtc::RefCountedObject<MockAudioMixer>()) {
     using testing::Invoke;
 
     EXPECT_CALL(voice_engine_,
@@ -85,7 +86,7 @@ struct ConfigHelper {
 
     AudioState::Config config;
     config.voice_engine = &voice_engine_;
-    config.audio_mixer = AudioMixerImpl::Create();
+    config.audio_mixer = audio_mixer_;
     audio_state_ = AudioState::Create(config);
 
     EXPECT_CALL(voice_engine_, ChannelProxyFactory(kChannelId))
@@ -122,7 +123,6 @@ struct ConfigHelper {
           EXPECT_CALL(*channel_proxy_, DisassociateSendChannel()).Times(1);
           return channel_proxy_;
         }));
-    EXPECT_CALL(voice_engine_, StopPlayout(kChannelId)).WillOnce(Return(0));
     stream_config_.voe_channel_id = kChannelId;
     stream_config_.rtp.local_ssrc = kLocalSsrc;
     stream_config_.rtp.remote_ssrc = kRemoteSsrc;
@@ -143,6 +143,7 @@ struct ConfigHelper {
   MockRtcEventLog* event_log() { return &event_log_; }
   AudioReceiveStream::Config& config() { return stream_config_; }
   rtc::scoped_refptr<AudioState> audio_state() { return audio_state_; }
+  rtc::scoped_refptr<MockAudioMixer> audio_mixer() { return audio_mixer_; }
   MockVoiceEngine& voice_engine() { return voice_engine_; }
   MockVoEChannelProxy* channel_proxy() { return channel_proxy_; }
 
@@ -185,6 +186,7 @@ struct ConfigHelper {
   MockRtcEventLog event_log_;
   testing::StrictMock<MockVoiceEngine> voice_engine_;
   rtc::scoped_refptr<AudioState> audio_state_;
+  rtc::scoped_refptr<MockAudioMixer> audio_mixer_;
   AudioReceiveStream::Config stream_config_;
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
 };
@@ -367,6 +369,32 @@ TEST(AudioReceiveStreamTest, SetGain) {
   EXPECT_CALL(*helper.channel_proxy(),
       SetChannelOutputVolumeScaling(FloatEq(0.765f)));
   recv_stream.SetGain(0.765f);
+}
+
+TEST(AudioReceiveStreamTest, StreamShouldNotBeAddedToMixerWhenVoEReturnsError) {
+  ConfigHelper helper;
+  internal::AudioReceiveStream recv_stream(
+      helper.congestion_controller(), helper.config(), helper.audio_state(),
+      helper.event_log());
+
+  EXPECT_CALL(helper.voice_engine(), StartPlayout(_)).WillOnce(Return(-1));
+  EXPECT_CALL(*helper.audio_mixer(), AddSource(_)).Times(0);
+
+  recv_stream.Start();
+}
+
+TEST(AudioReceiveStreamTest, StreamShouldBeAddedToMixerOnStart) {
+  ConfigHelper helper;
+  internal::AudioReceiveStream recv_stream(
+      helper.congestion_controller(), helper.config(), helper.audio_state(),
+      helper.event_log());
+
+  EXPECT_CALL(helper.voice_engine(), StartPlayout(_)).WillOnce(Return(0));
+  EXPECT_CALL(helper.voice_engine(), StopPlayout(_));
+  EXPECT_CALL(*helper.audio_mixer(), AddSource(&recv_stream))
+      .WillOnce(Return(true));
+
+  recv_stream.Start();
 }
 }  // namespace test
 }  // namespace webrtc

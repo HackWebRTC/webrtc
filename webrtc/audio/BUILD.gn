@@ -32,6 +32,7 @@ rtc_static_library("audio") {
     "../api:audio_mixer_api",
     "../api:call_api",
     "../base:rtc_base_approved",
+    "../common_audio",
     "../modules/audio_device",
     "../modules/audio_processing",
     "../system_wrappers",
@@ -48,8 +49,10 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio",
+      "../api:mock_audio_mixer",
       "../base:rtc_base_approved",
       "../modules/audio_device:mock_audio_device",
+      "../modules/audio_mixer:audio_mixer_impl",
       "../test:test_common",
       "//testing/gmock",
       "//testing/gtest",

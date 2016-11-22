@@ -13,6 +13,8 @@
 
 #include "webrtc/api/audio/audio_mixer.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/modules/audio_device/include/audio_device_defines.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
@@ -63,7 +65,11 @@ class AudioTransportProxy : public AudioTransport {
 
  private:
   AudioTransport* voe_audio_transport_;
-  AudioFrame frame_for_mixing_;
+  AudioProcessing* apm_;
+  rtc::scoped_refptr<AudioMixer> mixer_;
+  AudioFrame mixed_frame_;
+  // Converts mixed audio to the audio device output rate.
+  PushResampler<int16_t> resampler_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioTransportProxy);
 };
