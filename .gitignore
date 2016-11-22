@@ -93,6 +93,7 @@
 /third_party/colorama
 /third_party/cygwin
 /third_party/directxsdk
+/third_party/espresso
 /third_party/expat
 /third_party/ffmpeg
 /third_party/gaeunit
@@ -106,6 +107,7 @@
 /third_party/instrumented_libraries
 /third_party/intellij
 /third_party/jsoncpp
+/third_party/javax_inject
 /third_party/jsr-305
 /third_party/junit
 /third_party/junit-jar
@@ -148,6 +150,7 @@
 /third_party/zlib
 /tools/android
 /tools/clang
+/tools/clang_format_merge_driver
 /tools/determinism
 /tools/generate_library_loader
 /tools/generate_stubs

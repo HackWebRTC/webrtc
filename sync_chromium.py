@@ -115,7 +115,8 @@ def main():
   # Avoid downloading NaCl toolchain as part of the Chromium hooks.
   gclient_cmd = 'gclient.bat' if sys.platform.startswith('win') else 'gclient'
   args = [
-      gclient_cmd, 'sync', '--force', '--revision', 'src@'+opts.target_revision
+      gclient_cmd, 'sync', '--force', '--nohooks', '--revision',
+      'src@' + opts.target_revision
   ]
 
   if os.environ.get('CHROME_HEADLESS') == '1':
