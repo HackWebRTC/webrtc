@@ -1631,7 +1631,6 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoAnswer) {
   EXPECT_TRUE(data_streams[0] == updated_data_streams[0]);
 }
 
-
 // Create an updated offer after creating an answer to the original offer and
 // verify that the codecs that were part of the original answer are not changed
 // in the updated offer.
@@ -2013,6 +2012,88 @@ TEST_F(MediaSessionDescriptionFactoryTest, SimSsrcsGenerateMultipleRtxSsrcs) {
   std::vector<uint32_t> fid_ssrcs;
   streams[0].GetFidSsrcs(primary_ssrcs, &fid_ssrcs);
   EXPECT_EQ(3u, fid_ssrcs.size());
+}
+
+// Test that, when the FlexFEC codec is added, a FlexFEC ssrc is created
+// together with a FEC-FR grouping.
+TEST_F(MediaSessionDescriptionFactoryTest, GenerateFlexfecSsrc) {
+  MediaSessionOptions opts;
+  opts.recv_video = true;
+  opts.recv_audio = false;
+
+  // Add single stream.
+  opts.AddSendVideoStream("stream1", "stream1label", 1);
+
+  // Use a single real codec, and then add FlexFEC for it.
+  std::vector<VideoCodec> f1_codecs;
+  f1_codecs.push_back(VideoCodec(97, "H264"));
+  f1_codecs.push_back(VideoCodec(118, "flexfec-03"));
+  f1_.set_video_codecs(f1_codecs);
+
+  // Ensure that the offer has a single FlexFEC ssrc and that
+  // there is no FEC-FR ssrc + grouping for each.
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, nullptr));
+  ASSERT_TRUE(offer.get() != nullptr);
+  VideoContentDescription* desc = static_cast<VideoContentDescription*>(
+      offer->GetContentDescriptionByName(cricket::CN_VIDEO));
+  ASSERT_TRUE(desc != nullptr);
+  EXPECT_TRUE(desc->multistream());
+  const StreamParamsVec& streams = desc->streams();
+  // Single stream.
+  ASSERT_EQ(1u, streams.size());
+  // Stream should have 2 ssrcs: 1 for video, 1 for FlexFEC.
+  EXPECT_EQ(2u, streams[0].ssrcs.size());
+  // And should have a FEC-FR group for FlexFEC.
+  EXPECT_TRUE(streams[0].has_ssrc_group("FEC-FR"));
+  std::vector<uint32_t> primary_ssrcs;
+  streams[0].GetPrimarySsrcs(&primary_ssrcs);
+  ASSERT_EQ(1u, primary_ssrcs.size());
+  uint32_t flexfec_ssrc;
+  EXPECT_TRUE(streams[0].GetFecFrSsrc(primary_ssrcs[0], &flexfec_ssrc));
+  EXPECT_NE(flexfec_ssrc, 0u);
+}
+
+// Test that FlexFEC is disabled for simulcast.
+// TODO(brandtr): Remove this test when we support simulcast, either through
+// multiple FlexfecSenders, or through multistream protection.
+TEST_F(MediaSessionDescriptionFactoryTest, SimSsrcsGenerateNoFlexfecSsrcs) {
+  MediaSessionOptions opts;
+  opts.recv_video = true;
+  opts.recv_audio = false;
+
+  // Add simulcast streams.
+  opts.AddSendVideoStream("stream1", "stream1label", 3);
+
+  // Use a single real codec, and then add FlexFEC for it.
+  std::vector<VideoCodec> f1_codecs;
+  f1_codecs.push_back(VideoCodec(97, "H264"));
+  f1_codecs.push_back(VideoCodec(118, "flexfec-03"));
+  f1_.set_video_codecs(f1_codecs);
+
+  // Ensure that the offer has no FlexFEC ssrcs for each regular ssrc, and that
+  // there is no FEC-FR ssrc + grouping for each.
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, nullptr));
+  ASSERT_TRUE(offer.get() != nullptr);
+  VideoContentDescription* desc = static_cast<VideoContentDescription*>(
+      offer->GetContentDescriptionByName(cricket::CN_VIDEO));
+  ASSERT_TRUE(desc != nullptr);
+  EXPECT_FALSE(desc->multistream());
+  const StreamParamsVec& streams = desc->streams();
+  // Single stream.
+  ASSERT_EQ(1u, streams.size());
+  // Stream should have 3 ssrcs: 3 for video, 0 for FlexFEC.
+  EXPECT_EQ(3u, streams[0].ssrcs.size());
+  // And should have a SIM group for the simulcast.
+  EXPECT_TRUE(streams[0].has_ssrc_group("SIM"));
+  // And not a FEC-FR group for FlexFEC.
+  EXPECT_FALSE(streams[0].has_ssrc_group("FEC-FR"));
+  std::vector<uint32_t> primary_ssrcs;
+  streams[0].GetPrimarySsrcs(&primary_ssrcs);
+  EXPECT_EQ(3u, primary_ssrcs.size());
+  for (uint32_t primary_ssrc : primary_ssrcs) {
+    uint32_t flexfec_ssrc;
+    EXPECT_FALSE(streams[0].GetFecFrSsrc(primary_ssrc, &flexfec_ssrc));
+  }
 }
 
 // Create an updated offer after creating an answer to the original offer and
@@ -2862,7 +2943,8 @@ void TestAudioCodecsAnswer(MediaContentDirection offer_direction,
         << "Only inactive offers are allowed to not generate any audio content";
   }
 }
-}
+
+}  // namespace
 
 class AudioCodecsOfferTest
     : public ::testing::TestWithParam<std::tr1::tuple<MediaContentDirection,

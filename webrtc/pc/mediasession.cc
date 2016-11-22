@@ -446,6 +446,9 @@ static bool AddStreamParams(MediaType media_type,
     return true;
   }
 
+  const bool include_flexfec_stream =
+      ContainsFlexfecCodec(content_description->codecs());
+
   MediaSessionOptions::Streams::const_iterator stream_it;
   for (stream_it = streams.begin();
        stream_it != streams.end(); ++stream_it) {
@@ -480,6 +483,21 @@ static bool AddStreamParams(MediaType media_type,
           stream_param.AddFidSsrc(ssrcs[i], rtx_ssrcs[i]);
         }
         content_description->set_multistream(true);
+      }
+      // Generate extra ssrc for include_flexfec_stream case.
+      if (include_flexfec_stream) {
+        // TODO(brandtr): Update when we support multistream protection.
+        if (ssrcs.size() == 1) {
+          std::vector<uint32_t> flexfec_ssrcs;
+          GenerateSsrcs(*current_streams, 1, &flexfec_ssrcs);
+          stream_param.AddFecFrSsrc(ssrcs[0], flexfec_ssrcs[0]);
+          content_description->set_multistream(true);
+        } else if (!ssrcs.empty()) {
+          LOG(LS_WARNING)
+              << "Our FlexFEC implementation only supports protecting "
+              << "a single media streams. This session has multiple "
+              << "media streams however, so no FlexFEC SSRC will be generated.";
+        }
       }
       stream_param.cname = options.rtcp_cname;
       stream_param.sync_label = stream_it->sync_label;
@@ -672,9 +690,8 @@ static bool UpdateCryptoParamsForBundle(const ContentGroup& bundle_group,
 
 template <class C>
 static bool ContainsRtxCodec(const std::vector<C>& codecs) {
-  typename std::vector<C>::const_iterator it;
-  for (it = codecs.begin(); it != codecs.end(); ++it) {
-    if (IsRtxCodec(*it)) {
+  for (const auto& codec : codecs) {
+    if (IsRtxCodec(codec)) {
       return true;
     }
   }
@@ -684,6 +701,21 @@ static bool ContainsRtxCodec(const std::vector<C>& codecs) {
 template <class C>
 static bool IsRtxCodec(const C& codec) {
   return stricmp(codec.name.c_str(), kRtxCodecName) == 0;
+}
+
+template <class C>
+static bool ContainsFlexfecCodec(const std::vector<C>& codecs) {
+  for (const auto& codec : codecs) {
+    if (IsFlexfecCodec(codec)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template <class C>
+static bool IsFlexfecCodec(const C& codec) {
+  return stricmp(codec.name.c_str(), kFlexfecCodecName) == 0;
 }
 
 static TransportOptions GetTransportOptions(const MediaSessionOptions& options,
