@@ -33,11 +33,12 @@ function build_webrtc {
   local build_type=$3
   local ios_deployment_target=$4
   local libvpx_build_vp9=$5
-  local custom_gn_options=$6
+  local use_bitcode=$6
+  local custom_gn_options=$7
 
   OUTPUT_DIR=${SDK_OUTPUT_DIR}/${target_arch}_libs
   GN_ARGS="target_os=\"ios\" ios_enable_code_signing=false \
-use_xcode_clang=true is_component_build=false rtc_ios_enable_bitcode=true"
+use_xcode_clang=true is_component_build=false"
 
   # Add flavor option.
   if [[ ${flavor} = "debug" ]]; then
@@ -58,6 +59,9 @@ use_xcode_clang=true is_component_build=false rtc_ios_enable_bitcode=true"
 
   # Add vp9 option.
   GN_ARGS="${GN_ARGS} rtc_libvpx_build_vp9=${libvpx_build_vp9}"
+
+  # Add bitcode option.
+  GN_ARGS="${GN_ARGS} rtc_ios_enable_bitcode=${use_bitcode}"
 
   # Add custom options.
   if [[ -n "${custom_gn_options}" ]]; then
@@ -97,6 +101,7 @@ function usage {
   echo "  -o Specifies a directory to output build artifacts to."
   echo "     If specified together with -c, deletes the dir."
   echo "  -r Specifies a revision number to embed if building the framework."
+  echo "  -e Compile with bitcode."
   exit 0
 }
 
@@ -109,6 +114,7 @@ BUILD_TYPE="framework"
 ENABLED_ARCHITECTURES=("arm" "arm64" "x64")
 IOS_DEPLOYMENT_TARGET="8.0"
 LIBVPX_BUILD_VP9="false"
+USE_BITCODE="false"
 CUSTOM_GN_OPTS=""
 WEBRTC_REVISION="0"
 
@@ -118,6 +124,7 @@ while getopts "hb:co:r:" opt; do
     h) usage;;
     b) BUILD_TYPE="${OPTARG}";;
     c) PERFORM_CLEAN=1;;
+    e) USE_BITCODE="true";;
     o) SDK_OUTPUT_DIR="${OPTARG}";;
     r) WEBRTC_REVISION="${OPTARG}";;
     *)
@@ -135,7 +142,8 @@ fi
 # Build all architectures.
 for arch in ${ENABLED_ARCHITECTURES[*]}; do
     build_webrtc $arch ${BUILD_FLAVOR} ${BUILD_TYPE} \
-                 ${IOS_DEPLOYMENT_TARGET} ${LIBVPX_BUILD_VP9} ${CUSTOM_GN_OPTS}
+                 ${IOS_DEPLOYMENT_TARGET} ${LIBVPX_BUILD_VP9} ${USE_BITCODE} \
+                 ${CUSTOM_GN_OPTS}
 done
 
 # Ignoring x86 except for static libraries for now because of a GN build issue
@@ -144,7 +152,8 @@ done
 # Create FAT archive.
 if [[ ${BUILD_TYPE} = "static_only" ]]; then
   build_webrtc "x86" ${BUILD_FLAVOR} ${BUILD_TYPE} \
-               ${IOS_DEPLOYMENT_TARGET} ${LIBVPX_BUILD_VP9} ${CUSTOM_GN_OPTS}
+               ${IOS_DEPLOYMENT_TARGET} ${LIBVPX_BUILD_VP9} ${USE_BITCODE} \
+               ${CUSTOM_GN_OPTS}
 
   ARM_LIB_PATH=${SDK_OUTPUT_DIR}/arm_libs/${SDK_LIB_NAME}
   ARM64_LIB_PATH=${SDK_OUTPUT_DIR}/arm64_libs/${SDK_LIB_NAME}
