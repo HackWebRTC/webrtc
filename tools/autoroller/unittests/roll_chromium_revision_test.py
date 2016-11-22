@@ -21,7 +21,6 @@ from roll_chromium_revision import ParseDepsDict, UpdateDeps, \
     GetMatchingDepsEntries
 
 TEST_DATA_VARS = {
-  'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
   'chromium_revision': '1b9c098a08e40114e44b6c1ec33ddf95c40b901d',
 }
@@ -61,7 +60,6 @@ class TestRollChromiumRevision(unittest.TestCase):
 
     def assertVar(variable_name):
       self.assertEquals(vars_dict[variable_name], TEST_DATA_VARS[variable_name])
-    assertVar('extra_gyp_flag')
     assertVar('chromium_git')
     assertVar('chromium_revision')
 

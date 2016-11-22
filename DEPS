@@ -4,7 +4,6 @@
 # instead.
 
 vars = {
-  'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
   'chromium_revision': '5e821a778b85878bafcc8128f64333fd518c79a5',
 }
