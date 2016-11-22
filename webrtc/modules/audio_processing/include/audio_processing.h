@@ -199,9 +199,8 @@ struct Intelligibility {
 //
 // AudioProcessing::Config config;
 // config.level_controller.enabled = true;
+// config.high_pass_filter.enabled = true;
 // apm->ApplyConfig(config)
-//
-// apm->high_pass_filter()->Enable(true);
 //
 // apm->echo_cancellation()->enable_drift_compensation(false);
 // apm->echo_cancellation()->Enable(true);
@@ -265,6 +264,10 @@ class AudioProcessing {
       bool enabled = true;
 #endif
     } residual_echo_detector;
+
+    struct HighPassFilter {
+      bool enabled = false;
+    } high_pass_filter;
   };
 
   // TODO(mgraczyk): Remove once all methods that use ChannelLayout are gone.
@@ -554,6 +557,7 @@ class AudioProcessing {
   virtual EchoCancellation* echo_cancellation() const = 0;
   virtual EchoControlMobile* echo_control_mobile() const = 0;
   virtual GainControl* gain_control() const = 0;
+  // TODO(peah): Deprecate this API call.
   virtual HighPassFilter* high_pass_filter() const = 0;
   virtual LevelEstimator* level_estimator() const = 0;
   virtual NoiseSuppression* noise_suppression() const = 0;
@@ -960,7 +964,7 @@ class GainControl {
  protected:
   virtual ~GainControl() {}
 };
-
+// TODO(peah): Remove this interface.
 // A filtering component which removes DC offset and low-frequency noise.
 // Recommended to be enabled on the client-side.
 class HighPassFilter {
@@ -968,7 +972,6 @@ class HighPassFilter {
   virtual int Enable(bool enable) = 0;
   virtual bool is_enabled() const = 0;
 
- protected:
   virtual ~HighPassFilter() {}
 };
 

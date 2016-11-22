@@ -89,6 +89,10 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
   // Stops AEC dump.
   void StopAecDump();
 
+  const webrtc::AudioProcessing::Config& GetApmConfigForTest() const {
+    return apm_config_;
+  }
+
  private:
   // Every option that is "set" will be applied. Every option not "set" will be
   // ignored. This allows us to selectively turn on and off different options

@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/function_view.h"
 #include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/swap_queue.h"
@@ -126,10 +127,15 @@ class AudioProcessingImpl : public AudioProcessing {
   EchoCancellation* echo_cancellation() const override;
   EchoControlMobile* echo_control_mobile() const override;
   GainControl* gain_control() const override;
+  // TODO(peah): Deprecate this API call.
   HighPassFilter* high_pass_filter() const override;
   LevelEstimator* level_estimator() const override;
   NoiseSuppression* noise_suppression() const override;
   VoiceDetection* voice_detection() const override;
+
+  // TODO(peah): Remove these two methods once the new API allows that.
+  void MutateConfig(rtc::FunctionView<void(AudioProcessing::Config*)> mutator);
+  AudioProcessing::Config GetConfig() const;
 
  protected:
   // Overridden in a mock.
@@ -145,11 +151,14 @@ class AudioProcessingImpl : public AudioProcessing {
   struct ApmPublicSubmodules;
   struct ApmPrivateSubmodules;
 
+  // Submodule interface implementations.
+  std::unique_ptr<HighPassFilter> high_pass_filter_impl_;
+
   class ApmSubmoduleStates {
    public:
     ApmSubmoduleStates();
     // Updates the submodule state and returns true if it has changed.
-    bool Update(bool high_pass_filter_enabled,
+    bool Update(bool low_cut_filter_enabled,
                 bool echo_canceller_enabled,
                 bool mobile_echo_controller_enabled,
                 bool residual_echo_detector_enabled,
@@ -167,7 +176,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool RenderMultiBandProcessingActive() const;
 
    private:
-    bool high_pass_filter_enabled_ = false;
+    bool low_cut_filter_enabled_ = false;
     bool echo_canceller_enabled_ = false;
     bool mobile_echo_controller_enabled_ = false;
     bool residual_echo_detector_enabled_ = false;
@@ -240,6 +249,7 @@ class AudioProcessingImpl : public AudioProcessing {
   void InitializeLevelController() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeResidualEchoDetector()
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
+  void InitializeLowCutFilter() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
 
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()

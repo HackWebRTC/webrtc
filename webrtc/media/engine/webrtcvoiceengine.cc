@@ -825,14 +825,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
 
-  if (options.highpass_filter) {
-    LOG(LS_INFO) << "High pass filter enabled? " << *options.highpass_filter;
-    if (voep->EnableHighPassFilter(*options.highpass_filter) == -1) {
-      LOG_RTCERR1(SetHighpassFilterStatus, *options.highpass_filter);
-      return false;
-    }
-  }
-
   if (options.stereo_swapping) {
     LOG(LS_INFO) << "Stereo swapping enabled? " << *options.stereo_swapping;
     voep->EnableStereoChannelSwapping(*options.stereo_swapping);
@@ -918,6 +910,10 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       apm_config_.level_controller.initial_peak_level_dbfs =
           *options.level_control_initial_peak_level_dbfs;
     }
+  }
+
+  if (options.highpass_filter) {
+    apm_config_.high_pass_filter.enabled = *options.highpass_filter;
   }
 
   apm()->SetExtraOptions(config);

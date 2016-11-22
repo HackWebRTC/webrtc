@@ -403,8 +403,7 @@ void AecDumpBasedSimulator::HandleMessage(
 
     if (msg.has_hpf_enabled() || settings_.use_hpf) {
       bool enable = settings_.use_hpf ? *settings_.use_hpf : msg.hpf_enabled();
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->high_pass_filter()->Enable(enable));
+      apm_config.high_pass_filter.enabled = enable;
       if (settings_.use_verbose_logging) {
         std::cout << " hpf_enabled: " << (enable ? "true" : "false")
                   << std::endl;

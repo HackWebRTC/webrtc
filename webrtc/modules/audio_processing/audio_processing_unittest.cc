@@ -185,7 +185,10 @@ void EnableAllAPComponents(AudioProcessing* ap) {
   EXPECT_NOERR(ap->gain_control()->Enable(true));
 #endif
 
-  EXPECT_NOERR(ap->high_pass_filter()->Enable(true));
+  AudioProcessing::Config apm_config;
+  apm_config.high_pass_filter.enabled = true;
+  ap->ApplyConfig(apm_config);
+
   EXPECT_NOERR(ap->level_estimator()->Enable(true));
   EXPECT_NOERR(ap->noise_suppression()->Enable(true));
 
@@ -1391,10 +1394,11 @@ TEST_F(ApmTest, NoiseSuppression) {
 
 TEST_F(ApmTest, HighPassFilter) {
   // Turn HP filter on/off
-  EXPECT_EQ(apm_->kNoError, apm_->high_pass_filter()->Enable(true));
-  EXPECT_TRUE(apm_->high_pass_filter()->is_enabled());
-  EXPECT_EQ(apm_->kNoError, apm_->high_pass_filter()->Enable(false));
-  EXPECT_FALSE(apm_->high_pass_filter()->is_enabled());
+  AudioProcessing::Config apm_config;
+  apm_config.high_pass_filter.enabled = true;
+  apm_->ApplyConfig(apm_config);
+  apm_config.high_pass_filter.enabled = false;
+  apm_->ApplyConfig(apm_config);
 }
 
 TEST_F(ApmTest, LevelEstimator) {

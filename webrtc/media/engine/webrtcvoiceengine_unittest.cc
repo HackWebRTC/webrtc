@@ -571,6 +571,10 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     }
   }
 
+  bool IsHighPassFilterEnabled() {
+    return engine_->GetApmConfigForTest().high_pass_filter.enabled;
+  }
+
  protected:
   StrictMock<webrtc::test::MockAudioDeviceModule> adm_;
   StrictMock<webrtc::test::MockAudioProcessing> apm_;
@@ -2793,7 +2797,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   webrtc::AgcConfig agc_config;
   bool ns_enabled;
   webrtc::NsModes ns_mode;
-  bool highpass_filter_enabled;
   bool stereo_swapping_enabled;
   bool typing_detection_enabled;
   voe_.GetEcStatus(ec_enabled, ec_mode);
@@ -2801,7 +2804,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   voe_.GetAgcStatus(agc_enabled, agc_mode);
   voe_.GetAgcConfig(agc_config);
   voe_.GetNsStatus(ns_enabled, ns_mode);
-  highpass_filter_enabled = voe_.IsHighPassFilterEnabled();
   stereo_swapping_enabled = voe_.IsStereoChannelSwappingEnabled();
   voe_.GetTypingDetectionStatus(typing_detection_enabled);
   EXPECT_TRUE(ec_enabled);
@@ -2810,7 +2812,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_TRUE(agc_enabled);
   EXPECT_EQ(0, agc_config.targetLeveldBOv);
   EXPECT_TRUE(ns_enabled);
-  EXPECT_TRUE(highpass_filter_enabled);
+  EXPECT_TRUE(IsHighPassFilterEnabled());
   EXPECT_FALSE(stereo_swapping_enabled);
   EXPECT_TRUE(typing_detection_enabled);
   EXPECT_EQ(ec_mode, webrtc::kEcConference);
@@ -2826,7 +2828,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   voe_.GetAgcStatus(agc_enabled, agc_mode);
   voe_.GetAgcConfig(agc_config);
   voe_.GetNsStatus(ns_enabled, ns_mode);
-  highpass_filter_enabled = voe_.IsHighPassFilterEnabled();
   stereo_swapping_enabled = voe_.IsStereoChannelSwappingEnabled();
   voe_.GetTypingDetectionStatus(typing_detection_enabled);
   EXPECT_TRUE(ec_enabled);
@@ -2835,7 +2836,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_TRUE(agc_enabled);
   EXPECT_EQ(0, agc_config.targetLeveldBOv);
   EXPECT_TRUE(ns_enabled);
-  EXPECT_TRUE(highpass_filter_enabled);
+  EXPECT_TRUE(IsHighPassFilterEnabled());
   EXPECT_FALSE(stereo_swapping_enabled);
   EXPECT_TRUE(typing_detection_enabled);
   EXPECT_EQ(ec_mode, webrtc::kEcConference);
@@ -2858,7 +2859,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   voe_.GetAgcStatus(agc_enabled, agc_mode);
   voe_.GetAgcConfig(agc_config);
   voe_.GetNsStatus(ns_enabled, ns_mode);
-  highpass_filter_enabled = voe_.IsHighPassFilterEnabled();
   stereo_swapping_enabled = voe_.IsStereoChannelSwappingEnabled();
   voe_.GetTypingDetectionStatus(typing_detection_enabled);
   EXPECT_TRUE(ec_enabled);
@@ -2866,7 +2866,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_TRUE(agc_enabled);
   EXPECT_EQ(0, agc_config.targetLeveldBOv);
   EXPECT_TRUE(ns_enabled);
-  EXPECT_TRUE(highpass_filter_enabled);
+  EXPECT_TRUE(IsHighPassFilterEnabled());
   EXPECT_FALSE(stereo_swapping_enabled);
   EXPECT_TRUE(typing_detection_enabled);
   EXPECT_EQ(ec_mode, webrtc::kEcConference);
@@ -2919,11 +2919,10 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   send_parameters_.options.stereo_swapping = rtc::Optional<bool>(true);
   SetSendParameters(send_parameters_);
   voe_.GetNsStatus(ns_enabled, ns_mode);
-  highpass_filter_enabled = voe_.IsHighPassFilterEnabled();
   stereo_swapping_enabled = voe_.IsStereoChannelSwappingEnabled();
   voe_.GetTypingDetectionStatus(typing_detection_enabled);
   EXPECT_FALSE(ns_enabled);
-  EXPECT_FALSE(highpass_filter_enabled);
+  EXPECT_FALSE(IsHighPassFilterEnabled());
   EXPECT_FALSE(typing_detection_enabled);
   EXPECT_TRUE(stereo_swapping_enabled);
 
@@ -2946,20 +2945,18 @@ TEST_F(WebRtcVoiceEngineTestFake, DefaultOptions) {
   webrtc::AgcModes agc_mode;
   bool ns_enabled;
   webrtc::NsModes ns_mode;
-  bool highpass_filter_enabled;
   bool stereo_swapping_enabled;
   bool typing_detection_enabled;
 
   voe_.GetEcStatus(ec_enabled, ec_mode);
   voe_.GetAgcStatus(agc_enabled, agc_mode);
   voe_.GetNsStatus(ns_enabled, ns_mode);
-  highpass_filter_enabled = voe_.IsHighPassFilterEnabled();
   stereo_swapping_enabled = voe_.IsStereoChannelSwappingEnabled();
   voe_.GetTypingDetectionStatus(typing_detection_enabled);
   EXPECT_TRUE(ec_enabled);
   EXPECT_TRUE(agc_enabled);
   EXPECT_TRUE(ns_enabled);
-  EXPECT_TRUE(highpass_filter_enabled);
+  EXPECT_TRUE(IsHighPassFilterEnabled());
   EXPECT_TRUE(typing_detection_enabled);
   EXPECT_FALSE(stereo_swapping_enabled);
 }

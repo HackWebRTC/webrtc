@@ -225,8 +225,7 @@ void RunTogetherWithApm(std::string test_description,
     ASSERT_EQ(AudioProcessing::kNoError,
               apm->echo_control_mobile()->Enable(false));
   }
-  ASSERT_EQ(AudioProcessing::kNoError,
-            apm->high_pass_filter()->Enable(include_default_apm_processing));
+  apm_config.high_pass_filter.enabled = include_default_apm_processing;
   ASSERT_EQ(AudioProcessing::kNoError,
             apm->noise_suppression()->Enable(include_default_apm_processing));
   ASSERT_EQ(AudioProcessing::kNoError,

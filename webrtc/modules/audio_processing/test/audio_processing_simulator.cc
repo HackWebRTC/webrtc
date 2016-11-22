@@ -273,6 +273,10 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (settings_.use_lc) {
     apm_config.level_controller.enabled = *settings_.use_lc;
   }
+  if (settings_.use_hpf) {
+    apm_config.high_pass_filter.enabled = *settings_.use_hpf;
+  }
+
   if (settings_.use_refined_adaptive_filter) {
     config.Set<RefinedAdaptiveFilter>(
         new RefinedAdaptiveFilter(*settings_.use_refined_adaptive_filter));
@@ -301,10 +305,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (settings_.use_agc) {
     RTC_CHECK_EQ(AudioProcessing::kNoError,
                  ap_->gain_control()->Enable(*settings_.use_agc));
-  }
-  if (settings_.use_hpf) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->high_pass_filter()->Enable(*settings_.use_hpf));
   }
   if (settings_.use_ns) {
     RTC_CHECK_EQ(AudioProcessing::kNoError,

@@ -11,7 +11,7 @@
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
-#include "webrtc/modules/audio_processing/high_pass_filter_impl.h"
+#include "webrtc/modules/audio_processing/low_cut_filter.h"
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 #include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
 #include "webrtc/test/gtest.h"
@@ -22,14 +22,14 @@ namespace {
 // Process one frame of data and produce the output.
 std::vector<float> ProcessOneFrame(const std::vector<float>& frame_input,
                                    const StreamConfig& stream_config,
-                                   HighPassFilterImpl* high_pass_filter) {
+                                   LowCutFilter* low_cut_filter) {
   AudioBuffer audio_buffer(
       stream_config.num_frames(), stream_config.num_channels(),
       stream_config.num_frames(), stream_config.num_channels(),
       stream_config.num_frames());
 
   test::CopyVectorToAudioBuffer(stream_config, frame_input, &audio_buffer);
-  high_pass_filter->ProcessCaptureAudio(&audio_buffer);
+  low_cut_filter->Process(&audio_buffer);
   std::vector<float> frame_output;
   test::ExtractVectorFromAudioBuffer(stream_config, &audio_buffer,
                                      &frame_output);
@@ -43,11 +43,7 @@ void RunBitexactnessTest(int sample_rate,
                          const std::vector<float>& input,
                          const std::vector<float>& reference) {
   const StreamConfig stream_config(sample_rate, num_channels, false);
-  rtc::CriticalSection crit;
-  HighPassFilterImpl high_pass_filter(&crit);
-
-  high_pass_filter.Initialize(num_channels, sample_rate);
-  high_pass_filter.Enable(true);
+  LowCutFilter low_cut_filter(num_channels, sample_rate);
 
   std::vector<float> output;
   const size_t num_frames_to_process =
@@ -62,7 +58,7 @@ void RunBitexactnessTest(int sample_rate,
             stream_config.num_frames() * stream_config.num_channels() *
                 (frame_no + 1));
 
-    output = ProcessOneFrame(frame_input, stream_config, &high_pass_filter);
+    output = ProcessOneFrame(frame_input, stream_config, &low_cut_filter);
   }
 
   // Form vector to compare the reference to. Only the last frame processed
@@ -98,7 +94,7 @@ std::vector<float> CreateVector(const rtc::ArrayView<const float>& array_view) {
 }
 }  // namespace
 
-TEST(HighPassFilterBitExactnessTest, Mono8kHzInitial) {
+TEST(LowCutFilterBitExactnessTest, Mono8kHzInitial) {
   const float kReferenceInput[] = {
       0.153442f,  -0.436920f, -0.057602f, -0.141767f, 0.108608f,  0.116834f,
       0.114979f,  -0.103151f, -0.169925f, -0.167180f, 0.242024f,  -0.525426f,
@@ -124,7 +120,7 @@ TEST(HighPassFilterBitExactnessTest, Mono8kHzInitial) {
       CreateVector(rtc::ArrayView<const float>(kReference)));
 }
 
-TEST(HighPassFilterBitExactnessTest, Mono8kHzConverged) {
+TEST(LowCutFilterBitExactnessTest, Mono8kHzConverged) {
   const float kReferenceInput[] = {
       0.153442f,  -0.436920f, -0.057602f, -0.141767f, 0.108608f,  0.116834f,
       0.114979f,  -0.103151f, -0.169925f, -0.167180f, 0.242024f,  -0.525426f,
@@ -176,7 +172,7 @@ TEST(HighPassFilterBitExactnessTest, Mono8kHzConverged) {
       CreateVector(rtc::ArrayView<const float>(kReference)));
 }
 
-TEST(HighPassFilterBitExactnessTest, Stereo8kHzInitial) {
+TEST(LowCutFilterBitExactnessTest, Stereo8kHzInitial) {
   const float kReferenceInput[] = {
       0.790847f,  0.165037f,  0.165494f,  0.709852f,  -0.930269f, 0.770840f,
       -0.184538f, -0.927236f, 0.492296f,  -0.690342f, -0.712183f, 0.211918f,
@@ -217,7 +213,7 @@ TEST(HighPassFilterBitExactnessTest, Stereo8kHzInitial) {
       CreateVector(rtc::ArrayView<const float>(kReference)));
 }
 
-TEST(HighPassFilterBitExactnessTest, Stereo8kHzConverged) {
+TEST(LowCutFilterBitExactnessTest, Stereo8kHzConverged) {
   const float kReferenceInput[] = {
       -0.502095f, -0.227154f, -0.137133f, 0.661773f,  0.649294f,  -0.094003f,
       -0.238880f, 0.851737f,  0.481687f,  0.475266f,  0.893832f,  0.020199f,
@@ -311,7 +307,7 @@ TEST(HighPassFilterBitExactnessTest, Stereo8kHzConverged) {
       CreateVector(rtc::ArrayView<const float>(kReference)));
 }
 
-TEST(HighPassFilterBitExactnessTest, Mono16kHzInitial) {
+TEST(LowCutFilterBitExactnessTest, Mono16kHzInitial) {
   const float kReferenceInput[] = {
       0.150254f,  0.512488f,  -0.631245f, 0.240938f,  0.089080f,  -0.365440f,
       -0.121169f, 0.095748f,  1.000000f,  0.773932f,  -0.377232f, 0.848124f,
@@ -350,7 +346,7 @@ TEST(HighPassFilterBitExactnessTest, Mono16kHzInitial) {
       CreateVector(rtc::ArrayView<const float>(kReference)));
 }
 
-TEST(HighPassFilterBitExactnessTest, Mono16kHzConverged) {
+TEST(LowCutFilterBitExactnessTest, Mono16kHzConverged) {
   const float kReferenceInput[] = {
       0.150254f,  0.512488f,  -0.631245f, 0.240938f,  0.089080f,  -0.365440f,
       -0.121169f, 0.095748f,  1.000000f,  0.773932f,  -0.377232f, 0.848124f,
@@ -442,7 +438,7 @@ TEST(HighPassFilterBitExactnessTest, Mono16kHzConverged) {
       CreateVector(rtc::ArrayView<const float>(kReference)));
 }
 
-TEST(HighPassFilterBitExactnessTest, Stereo16kHzInitial) {
+TEST(LowCutFilterBitExactnessTest, Stereo16kHzInitial) {
   const float kReferenceInput[] = {
       0.087390f,  -0.370759f, -0.235918f, 0.583079f,  0.678359f,  0.360473f,
       -0.166156f, 0.285780f,  -0.571837f, 0.234542f,  0.350382f,  0.202047f,
@@ -510,7 +506,7 @@ TEST(HighPassFilterBitExactnessTest, Stereo16kHzInitial) {
       CreateVector(rtc::ArrayView<const float>(kReference)));
 }
 
-TEST(HighPassFilterBitExactnessTest, Stereo16kHzConverged) {
+TEST(LowCutFilterBitExactnessTest, Stereo16kHzConverged) {
   const float kReferenceInput[] = {
       -0.145875f, 0.910744f,  0.448494f,  0.161783f,  0.080516f,  0.410882f,
       -0.989942f, 0.565032f,  0.853719f,  -0.983409f, 0.649257f,  0.534672f,
