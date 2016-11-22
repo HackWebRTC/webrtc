@@ -623,6 +623,7 @@ if (rtc_include_tests) {
       "call/call_perf_tests.cc",
       "call/rampup_tests.cc",
       "call/rampup_tests.h",
+      "modules/audio_coding/codecs/opus/opus_complexity_unittest.cc",
       "modules/audio_coding/neteq/test/neteq_performance_unittest.cc",
       "modules/audio_processing/audio_processing_performance_unittest.cc",
       "modules/audio_processing/level_controller/level_controller_complexity_unittest.cc",

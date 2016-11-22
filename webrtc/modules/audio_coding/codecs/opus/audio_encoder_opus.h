@@ -12,6 +12,8 @@
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_OPUS_AUDIO_ENCODER_OPUS_H_
 
 #include <functional>
+#include <memory>
+#include <string>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
@@ -39,6 +41,11 @@ class AudioEncoderOpus final : public AudioEncoder {
 
     bool IsOk() const;
     int GetBitrateBps() const;
+    // Returns empty if the current bitrate falls within the hysteresis window,
+    // defined by complexity_threshold_bps +/- complexity_threshold_window_bps.
+    // Otherwise, returns the current complexity depending on whether the
+    // current bitrate is above or below complexity_threshold_bps.
+    rtc::Optional<int> GetNewComplexity() const;
 
     int frame_size_ms = 20;
     size_t num_channels = 1;
@@ -48,6 +55,11 @@ class AudioEncoderOpus final : public AudioEncoder {
     bool fec_enabled = false;
     int max_playback_rate_hz = 48000;
     int complexity = kDefaultComplexity;
+    // This value may change in the struct's constructor.
+    int low_rate_complexity = kDefaultComplexity;
+    // low_rate_complexity is used when the bitrate is below this threshold.
+    int complexity_threshold_bps = 12500;
+    int complexity_threshold_window_bps = 1500;
     bool dtx_enabled = false;
     std::vector<int> supported_frame_lengths_ms;
     const Clock* clock = nullptr;
@@ -140,6 +152,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   uint32_t first_timestamp_in_buffer_;
   size_t num_channels_to_encode_;
   int next_frame_length_ms_;
+  int complexity_;
   std::unique_ptr<PacketLossFractionSmoother> packet_loss_fraction_smoother_;
   AudioNetworkAdaptorCreator audio_network_adaptor_creator_;
   std::unique_ptr<AudioNetworkAdaptor> audio_network_adaptor_;

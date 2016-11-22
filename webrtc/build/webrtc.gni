@@ -17,6 +17,9 @@ declare_args() {
   # Disable this to avoid building the Opus audio codec.
   rtc_include_opus = true
 
+  # Enable this to let the Opus audio codec change complexity on the fly.
+  rtc_opus_variable_complexity = false
+
   # Disable to use absolute header paths for some libraries.
   rtc_relative_path = true
 

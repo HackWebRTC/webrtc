@@ -44,6 +44,9 @@ AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
   config.application = config.num_channels == 1 ? AudioEncoderOpus::kVoip
                                                 : AudioEncoderOpus::kAudio;
   config.supported_frame_lengths_ms.push_back(config.frame_size_ms);
+#if WEBRTC_OPUS_VARIABLE_COMPLEXITY
+  config.low_rate_complexity = 9;
+#endif
   return config;
 }
 
@@ -118,7 +121,11 @@ class AudioEncoderOpus::PacketLossFractionSmoother {
   rtc::ExpFilter smoother_;
 };
 
-AudioEncoderOpus::Config::Config() = default;
+AudioEncoderOpus::Config::Config() {
+#if WEBRTC_OPUS_VARIABLE_COMPLEXITY
+  low_rate_complexity = 9;
+#endif
+}
 AudioEncoderOpus::Config::Config(const Config&) = default;
 AudioEncoderOpus::Config::~Config() = default;
 auto AudioEncoderOpus::Config::operator=(const Config&) -> Config& = default;
@@ -133,6 +140,8 @@ bool AudioEncoderOpus::Config::IsOk() const {
     return false;
   if (complexity < 0 || complexity > 10)
     return false;
+  if (low_rate_complexity < 0 || low_rate_complexity > 10)
+    return false;
   return true;
 }
 
@@ -142,6 +151,21 @@ int AudioEncoderOpus::Config::GetBitrateBps() const {
     return *bitrate_bps;  // Explicitly set value.
   else
     return num_channels == 1 ? 32000 : 64000;  // Default value.
+}
+
+rtc::Optional<int> AudioEncoderOpus::Config::GetNewComplexity() const {
+  RTC_DCHECK(IsOk());
+  const int bitrate_bps = GetBitrateBps();
+  if (bitrate_bps >=
+          complexity_threshold_bps - complexity_threshold_window_bps &&
+      bitrate_bps <=
+          complexity_threshold_bps + complexity_threshold_window_bps) {
+    // Within the hysteresis window; make no change.
+    return rtc::Optional<int>();
+  }
+  return bitrate_bps <= complexity_threshold_bps
+             ? rtc::Optional<int>(low_rate_complexity)
+             : rtc::Optional<int>(complexity);
 }
 
 AudioEncoderOpus::AudioEncoderOpus(
@@ -250,6 +274,11 @@ void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
       std::max(std::min(bits_per_second, kMaxBitrateBps), kMinBitrateBps));
   RTC_DCHECK(config_.IsOk());
   RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config_.GetBitrateBps()));
+  const auto new_complexity = config_.GetNewComplexity();
+  if (new_complexity && complexity_ != *new_complexity) {
+    complexity_ = *new_complexity;
+    RTC_CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, complexity_));
+  }
 }
 
 bool AudioEncoderOpus::EnableAudioNetworkAdaptor(
@@ -399,7 +428,10 @@ bool AudioEncoderOpus::RecreateEncoderInstance(const Config& config) {
   }
   RTC_CHECK_EQ(
       0, WebRtcOpus_SetMaxPlaybackRate(inst_, config.max_playback_rate_hz));
-  RTC_CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, config.complexity));
+  // Use the default complexity if the start bitrate is within the hysteresis
+  // window.
+  complexity_ = config.GetNewComplexity().value_or(config.complexity);
+  RTC_CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, complexity_));
   if (config.dtx_enabled) {
     RTC_CHECK_EQ(0, WebRtcOpus_EnableDtx(inst_));
   } else {
