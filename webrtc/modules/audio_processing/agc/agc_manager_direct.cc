@@ -21,6 +21,7 @@
 #include "webrtc/modules/audio_processing/gain_control_impl.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
@@ -218,6 +219,8 @@ void AgcManagerDirect::AnalyzePreProcess(int16_t* audio,
     // Always decrease the maximum level, even if the current level is below
     // threshold.
     SetMaxLevel(std::max(kClippedLevelMin, max_level_ - kClippedLevelStep));
+    RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.AgcClippingAdjustmentAllowed",
+                          level_ - kClippedLevelStep >= kClippedLevelMin);
     if (level_ > kClippedLevelMin) {
       // Don't try to adjust the level if we're already below the limit. As
       // a consequence, if the user has brought the level above the limit, we
