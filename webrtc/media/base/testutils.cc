@@ -268,4 +268,17 @@ cricket::StreamParams CreateSimWithRtxStreamParams(
   return sp;
 }
 
+cricket::StreamParams CreatePrimaryWithFecFrStreamParams(
+    const std::string& cname,
+    uint32_t primary_ssrc,
+    uint32_t flexfec_ssrc) {
+  cricket::StreamParams sp;
+  cricket::SsrcGroup sg(cricket::kFecFrSsrcGroupSemantics,
+                        {primary_ssrc, flexfec_ssrc});
+  sp.ssrcs = {primary_ssrc};
+  sp.ssrc_groups.push_back(sg);
+  sp.cname = cname;
+  return sp;
+}
+
 }  // namespace cricket

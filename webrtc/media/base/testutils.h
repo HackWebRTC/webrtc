@@ -192,6 +192,12 @@ cricket::StreamParams CreateSimWithRtxStreamParams(
     const std::vector<uint32_t>& ssrcs,
     const std::vector<uint32_t>& rtx_ssrcs);
 
+// Create StreamParams with single primary SSRC and corresponding FlexFEC SSRC.
+cricket::StreamParams CreatePrimaryWithFecFrStreamParams(
+    const std::string& cname,
+    uint32_t primary_ssrc,
+    uint32_t flexfec_ssrc);
+
 }  // namespace cricket
 
 #endif  // WEBRTC_MEDIA_BASE_TESTUTILS_H_
