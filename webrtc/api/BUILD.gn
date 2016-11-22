@@ -465,6 +465,21 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_source_set("mock_audio_mixer") {
+    testonly = true
+    sources = [
+      "test/mock_audio_mixer.h",
+    ]
+
+    public_deps = [
+      ":audio_mixer_api",
+    ]
+
+    deps = [
+      "//testing/gmock",
+    ]
+  }
+
   if (is_android) {
     instrumentation_test_apk("libjingle_peerconnection_android_unittest") {
       apk_name = "libjingle_peerconnection_android_unittest"
