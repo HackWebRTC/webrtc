@@ -67,7 +67,7 @@ int64_t RunComplexityTest(const AudioEncoderOpus::Config& config) {
 // mobiles, the regular complexity is 5, and we expect the resulting ratio to
 // be higher, since we have explicitly asked for a higher complexity setting at
 // the lower rate.
-TEST(AudioEncoderOpusComplexityAdaptationTest, AdaptationOn) {
+TEST(MAYBE_AudioEncoderOpusComplexityAdaptationTest, AdaptationOn) {
   // Create config.
   AudioEncoderOpus::Config config;
   config.bitrate_bps = rtc::Optional<int>(12500);
@@ -85,7 +85,7 @@ TEST(AudioEncoderOpusComplexityAdaptationTest, AdaptationOn) {
 // This test is identical to the one above, but without the complexity
 // adaptation enabled (neither on desktop, nor on mobile). The expectation is
 // that the resulting ratio is less than 100% at all times.
-TEST(AudioEncoderOpusComplexityAdaptationTest, AdaptationOff) {
+TEST(MAYBE_AudioEncoderOpusComplexityAdaptationTest, AdaptationOff) {
   // Create config.
   AudioEncoderOpus::Config config;
   config.bitrate_bps = rtc::Optional<int>(12500);
