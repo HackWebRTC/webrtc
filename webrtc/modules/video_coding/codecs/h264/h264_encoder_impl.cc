@@ -384,18 +384,20 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   // Encoder can skip frames to save bandwidth in which case
   // |encoded_image_._length| == 0.
   if (encoded_image_._length > 0) {
+    // Parse and report QP.
+    h264_bitstream_parser_.ParseBitstream(encoded_image_._buffer,
+                                          encoded_image_._length);
+    int qp = -1;
+    if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
+      quality_scaler_.ReportQP(qp);
+      encoded_image_.qp_ = qp;
+    }
+
     // Deliver encoded image.
     CodecSpecificInfo codec_specific;
     codec_specific.codecType = kVideoCodecH264;
     encoded_image_callback_->OnEncodedImage(encoded_image_, &codec_specific,
                                             &frag_header);
-
-    // Parse and report QP.
-    h264_bitstream_parser_.ParseBitstream(encoded_image_._buffer,
-                                          encoded_image_._length);
-    int qp = -1;
-    if (h264_bitstream_parser_.GetLastSliceQp(&qp))
-      quality_scaler_.ReportQP(qp);
   } else {
     quality_scaler_.ReportDroppedFrame();
   }

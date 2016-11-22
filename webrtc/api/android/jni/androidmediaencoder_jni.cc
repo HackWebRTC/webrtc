@@ -1145,6 +1145,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
             current_acc_qp_ += qp;
             quality_scaler_.ReportQP(qp);
+            image->qp_ = qp;
           }
         }
         // For H.264 search for start codes.

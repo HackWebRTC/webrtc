@@ -756,6 +756,7 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
   if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
     rtc::CritScope lock(&quality_scaler_crit_);
     quality_scaler_.ReportQP(qp);
+    frame.qp_ = qp;
   }
 
   EncodedImageCallback::Result result =
