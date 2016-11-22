@@ -20,6 +20,8 @@ static NSString * const kRTCEnableImprovedBitrateEstimateString =
     @"WebRTC-ImprovedBitrateEstimate/Enabled/";
 static NSString * const kRTCEnableAudioSendSideBweString =
     @"WebRTC-Audio-SendSideBwe/Enabled/";
+static NSString * const kRTCEnableFlexFec03String =
+    @"WebRTC-FlexFEC-03/Enabled/";
 static std::unique_ptr<char[]> gFieldTrialInitString;
 
 void RTCInitFieldTrials(RTCFieldTrialOptions options) {
@@ -29,6 +31,9 @@ void RTCInitFieldTrials(RTCFieldTrialOptions options) {
   }
   if (options & RTCFieldTrialOptionsAudioSendSideBwe) {
     [fieldTrialInitString appendString:kRTCEnableAudioSendSideBweString];
+  }
+  if (options & RTCFieldTrialOptionsFlexFec03) {
+    [fieldTrialInitString appendString:kRTCEnableFlexFec03String];
   }
   size_t len = fieldTrialInitString.length + 1;
   gFieldTrialInitString.reset(new char[len]);

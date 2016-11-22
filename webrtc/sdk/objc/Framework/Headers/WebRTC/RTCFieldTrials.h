@@ -16,6 +16,7 @@ typedef NS_OPTIONS(NSUInteger, RTCFieldTrialOptions) {
   RTCFieldTrialOptionsNone = 0,
   RTCFieldTrialOptionsImprovedBitrateEstimate = 1 << 0,
   RTCFieldTrialOptionsAudioSendSideBwe = 1 << 1,
+  RTCFieldTrialOptionsFlexFec03 = 1 << 2,
 };
 
 /** Must be called before any other call into WebRTC. See:
