@@ -354,22 +354,23 @@ static NSInteger kARDAppClientTestsExpectationTimeoutError = 100;
 @end
 
 @interface ARDSDPUtilsTest : ARDTestCase
-- (void)testPreferVideoCodec;
+- (void)testPreferVideoCodec:(NSString *)codec
+                         sdp:(NSString *)sdp
+                 expectedSdp:(NSString *)expectedSdp;
 @end
 
 @implementation ARDSDPUtilsTest
 
-- (void)testPreferVideoCodec {
-  NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120\n"
-                    "a=rtpmap:120 H264/90000\n");
-  NSString *expectedSdp = @("m=video 9 RTP/SAVPF 120 100 116 117 96\n"
-                            "a=rtpmap:120 H264/90000\n");
+- (void)testPreferVideoCodec:(NSString *)codec
+                         sdp:(NSString *)sdp
+                 expectedSdp:(NSString *)expectedSdp {
   RTCSessionDescription* desc =
       [[RTCSessionDescription alloc] initWithType:RTCSdpTypeOffer sdp:sdp];
-  RTCSessionDescription *h264Desc =
+  RTCSessionDescription *outputDesc =
       [ARDSDPUtils descriptionForDescription:desc
-                         preferredVideoCodec:@"H264"];
-  EXPECT_TRUE([h264Desc.description rangeOfString:expectedSdp].location != NSNotFound);
+                         preferredVideoCodec:codec];
+  EXPECT_TRUE([outputDesc.description rangeOfString:expectedSdp].location !=
+              NSNotFound);
 }
 
 @end
@@ -401,10 +402,52 @@ TEST_F(SignalingTest, SessionLocalVideoCallbackTest) {
 }
 #endif
 
-TEST_F(SignalingTest, SDPTest) {
+TEST_F(SignalingTest, SdpH264Test) {
   @autoreleasepool {
     ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
-    [test testPreferVideoCodec];
+    NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\n"
+                      "a=rtpmap:120 H264/90000\n"
+                      "a=rtpmap:97 H264/90000\n");
+    NSString *expectedSdp = @("m=video 9 RTP/SAVPF 120 97 100 116 117 96\n"
+                              "a=rtpmap:120 H264/90000\n"
+                              "a=rtpmap:97 H264/90000\n");
+    [test testPreferVideoCodec:@"H264"
+                           sdp:sdp
+                   expectedSdp:expectedSdp];
+  }
+}
+
+TEST_F(SignalingTest, SdpVp8Test) {
+  @autoreleasepool {
+    ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
+    NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\n"
+                      "a=rtpmap:116 VP8/90000\n");
+    NSString *expectedSdp = @("m=video 9 RTP/SAVPF 116 100 117 96 120 97\n"
+                              "a=rtpmap:116 VP8/90000\n");
+    [test testPreferVideoCodec:@"VP8"
+                           sdp:sdp
+                   expectedSdp:expectedSdp];
+  }
+}
+
+TEST_F(SignalingTest, SdpNoMLineTest) {
+  @autoreleasepool {
+    ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
+    NSString *sdp = @("a=rtpmap:116 VP8/90000\n");
+    [test testPreferVideoCodec:@"VP8"
+                           sdp:sdp
+                   expectedSdp:sdp];
+  }
+}
+
+TEST_F(SignalingTest, SdpMissingCodecTest) {
+  @autoreleasepool {
+    ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
+    NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\n"
+                      "a=rtpmap:116 VP8/90000\n");
+    [test testPreferVideoCodec:@"foo"
+                           sdp:sdp
+                   expectedSdp:sdp];
   }
 }
 
