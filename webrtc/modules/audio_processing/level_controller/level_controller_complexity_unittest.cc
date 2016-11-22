@@ -135,11 +135,11 @@ class SubmodulePerformanceTimer {
     RTC_DCHECK(!timestamps_us_.empty());
     double average_duration = GetDurationAverage();
 
-    int64_t variance =
-        std::accumulate(timestamps_us_.begin(), timestamps_us_.end(), 0,
-                        [average_duration](const int64_t& a, const int64_t& b) {
-                          return a + (b - average_duration);
-                        });
+    double variance = std::accumulate(
+        timestamps_us_.begin(), timestamps_us_.end(), 0.0,
+        [average_duration](const double& a, const int64_t& b) {
+          return a + (b - average_duration) * (b - average_duration);
+        });
 
     return sqrt(variance / timestamps_us_.size());
   }
