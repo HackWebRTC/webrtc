@@ -49,6 +49,14 @@ int64_t RunComplexityTest(const AudioEncoderOpus::Config& config) {
 }
 }  // namespace
 
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_AudioEncoderOpusComplexityAdaptationTest \
+  DISABLED_AudioEncoderOpusComplexityAdaptationTest
+#else
+#define MAYBE_AudioEncoderOpusComplexityAdaptationTest \
+  AudioEncoderOpusComplexityAdaptationTest
+#endif
+
 // This test encodes an audio file using Opus twice with different bitrates
 // (12.5 kbps and 15.5 kbps). The runtime for each is measured, and the ratio
 // between the two is calculated and tracked. This test explicitly sets the
