@@ -1383,6 +1383,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   video_media_info.receivers[0].packets_rcvd = 2;
   video_media_info.receivers[0].bytes_rcvd = 3;
   video_media_info.receivers[0].fraction_lost = 4.5f;
+  video_media_info.receivers[0].firs_sent = 5;
+  video_media_info.receivers[0].plis_sent = 6;
+  video_media_info.receivers[0].nacks_sent = 7;
   EXPECT_CALL(*video_media_channel, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
 
@@ -1404,23 +1407,26 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
 
-  RTCInboundRTPStreamStats expected_audio(
+  RTCInboundRTPStreamStats expected_video(
       "RTCInboundRTPVideoStream_1", report->timestamp_us());
-  expected_audio.ssrc = "1";
-  expected_audio.is_remote = false;
-  expected_audio.media_type = "video";
-  expected_audio.transport_id = "RTCTransport_TransportName_" +
+  expected_video.ssrc = "1";
+  expected_video.is_remote = false;
+  expected_video.media_type = "video";
+  expected_video.transport_id = "RTCTransport_TransportName_" +
       rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
-  expected_audio.packets_received = 2;
-  expected_audio.bytes_received = 3;
-  expected_audio.fraction_lost = 4.5;
+  expected_video.fir_count = 5;
+  expected_video.pli_count = 6;
+  expected_video.nack_count = 7;
+  expected_video.packets_received = 2;
+  expected_video.bytes_received = 3;
+  expected_video.fraction_lost = 4.5;
 
-  ASSERT(report->Get(expected_audio.id()));
-  const RTCInboundRTPStreamStats& audio = report->Get(
-      expected_audio.id())->cast_to<RTCInboundRTPStreamStats>();
-  EXPECT_EQ(audio, expected_audio);
+  ASSERT(report->Get(expected_video.id()));
+  const RTCInboundRTPStreamStats& video = report->Get(
+      expected_video.id())->cast_to<RTCInboundRTPStreamStats>();
+  EXPECT_EQ(video, expected_video);
 
-  EXPECT_TRUE(report->Get(*expected_audio.transport_id));
+  EXPECT_TRUE(report->Get(*expected_video.transport_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {

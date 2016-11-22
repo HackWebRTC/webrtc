@@ -107,6 +107,7 @@ void SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
   track_stats->ended = (track.state() == MediaStreamTrackInterface::kEnded);
 }
 
+// Provides the media independent counters (both audio and video).
 void SetInboundRTPStreamStatsFromMediaReceiverInfo(
     const cricket::MediaReceiverInfo& media_receiver_info,
     RTCInboundRTPStreamStats* inbound_stats) {
@@ -126,23 +127,32 @@ void SetInboundRTPStreamStatsFromMediaReceiverInfo(
 
 void SetInboundRTPStreamStatsFromVoiceReceiverInfo(
     const cricket::VoiceReceiverInfo& voice_receiver_info,
-    RTCInboundRTPStreamStats* inbound_stats) {
+    RTCInboundRTPStreamStats* inbound_audio) {
   SetInboundRTPStreamStatsFromMediaReceiverInfo(
-      voice_receiver_info, inbound_stats);
-  inbound_stats->media_type = "audio";
-  inbound_stats->jitter =
+      voice_receiver_info, inbound_audio);
+  inbound_audio->media_type = "audio";
+  inbound_audio->jitter =
       static_cast<double>(voice_receiver_info.jitter_ms) /
           rtc::kNumMillisecsPerSec;
+  // |fir_count|, |pli_count| and |sli_count| are only valid for video and are
+  // purposefully left undefined for audio.
 }
 
 void SetInboundRTPStreamStatsFromVideoReceiverInfo(
     const cricket::VideoReceiverInfo& video_receiver_info,
-    RTCInboundRTPStreamStats* inbound_stats) {
+    RTCInboundRTPStreamStats* inbound_video) {
   SetInboundRTPStreamStatsFromMediaReceiverInfo(
-      video_receiver_info, inbound_stats);
-  inbound_stats->media_type = "video";
+      video_receiver_info, inbound_video);
+  inbound_video->media_type = "video";
+  inbound_video->fir_count =
+      static_cast<uint32_t>(video_receiver_info.firs_sent);
+  inbound_video->pli_count =
+      static_cast<uint32_t>(video_receiver_info.plis_sent);
+  inbound_video->nack_count =
+      static_cast<uint32_t>(video_receiver_info.nacks_sent);
 }
 
+// Provides the media independent counters (both audio and video).
 void SetOutboundRTPStreamStatsFromMediaSenderInfo(
     const cricket::MediaSenderInfo& media_sender_info,
     RTCOutboundRTPStreamStats* outbound_stats) {
