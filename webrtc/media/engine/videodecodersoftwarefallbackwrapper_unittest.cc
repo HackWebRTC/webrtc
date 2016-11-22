@@ -11,6 +11,7 @@
 #include "webrtc/video_decoder.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/media/engine/videodecodersoftwarefallbackwrapper.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
 #include "webrtc/test/gtest.h"
 
