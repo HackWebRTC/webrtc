@@ -138,7 +138,6 @@ if (rtc_include_tests) {
   }
 
   modules_unittests_resources = [
-    "//data/voice_engine/audio_tiny48.wav",
     "//resources/att-downlink.rx",
     "//resources/att-uplink.rx",
     "//resources/audio_coding/neteq_opus.rtp",
@@ -238,6 +237,7 @@ if (rtc_include_tests) {
     "//resources/verizon3g-uplink.rx",
     "//resources/verizon4g-downlink.rx",
     "//resources/verizon4g-uplink.rx",
+    "//resources/voice_engine/audio_tiny48.wav",
   ]
 
   if (is_ios) {

@@ -15,12 +15,12 @@
 #include <string>
 
 #include "gflags/gflags.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/include/voe_file.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
-#include "webrtc/voice_engine/test/auto_test/resource_manager.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_interface.h"
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
@@ -118,10 +118,8 @@ class VoETestManager {
   int ReleaseInterfaces();
 
   const char* AudioFilename() const {
-    const std::string& result = resource_manager_.long_audio_file_path();
-    if (result.length() == 0) {
-      TEST_LOG("ERROR: Failed to open input file!");
-    }
+    const std::string& result =
+        webrtc::test::ResourcePath("voice_engine/audio_long16", "pcm");
     return result.c_str();
   }
 
@@ -187,8 +185,6 @@ class VoETestManager {
   VoEVideoSync*          voe_vsync_;
   VoEVolumeControl*      voe_volume_control_;
   VoEAudioProcessing*    voe_apm_;
-
-  ResourceManager        resource_manager_;
 };
 
 }  // namespace voetest

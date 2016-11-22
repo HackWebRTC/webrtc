@@ -54,17 +54,10 @@ class FileUtilsTest : public testing::Test {
 
 std::string FileUtilsTest::original_working_dir_ = "";
 
-// Tests that the project root path is returned for the default working
+// Tests that the project output dir path is returned for the default working
 // directory that is automatically set when the test executable is launched.
 // The test is not fully testing the implementation, since we cannot be sure
 // of where the executable was launched from.
-TEST_F(FileUtilsTest, ProjectRootPath) {
-  std::string project_root = webrtc::test::ProjectRootPath();
-  // Not very smart, but at least tests something.
-  ASSERT_GT(project_root.length(), 0u);
-}
-
-// Similar to the above test, but for the output dir
 #if defined(WEBRTC_ANDROID)
 #define MAYBE_OutputPathFromUnchangedWorkingDir \
   DISABLED_OutputPathFromUnchangedWorkingDir
