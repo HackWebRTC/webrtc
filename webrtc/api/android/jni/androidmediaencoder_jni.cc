@@ -393,7 +393,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   // Factory should guard against other codecs being used with us.
-  const VideoCodecType codec_type = cricket::CodecTypeFromName(codec_.name);
+  const VideoCodecType codec_type = webrtc::PayloadNameToCodecType(codec_.name)
+                                        .value_or(webrtc::kVideoCodecUnknown);
   RTC_CHECK(codec_settings->codecType == codec_type)
       << "Unsupported codec " << codec_settings->codecType << " for "
       << codec_type;
@@ -552,7 +553,8 @@ int32_t MediaCodecVideoEncoder::InitEncodeOnCodecThread(
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
-  const VideoCodecType codec_type = cricket::CodecTypeFromName(codec_.name);
+  const VideoCodecType codec_type = webrtc::PayloadNameToCodecType(codec_.name)
+                                        .value_or(webrtc::kVideoCodecUnknown);
   ALOGD << "InitEncodeOnCodecThread Type: " << (int)codec_type << ", " << width
         << " x " << height << ". Bitrate: " << kbps << " kbps. Fps: " << fps;
   if (kbps == 0) {
@@ -1067,7 +1069,9 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     }
 
     // Callback - return encoded frame.
-    const VideoCodecType codec_type = cricket::CodecTypeFromName(codec_.name);
+    const VideoCodecType codec_type =
+        webrtc::PayloadNameToCodecType(codec_.name)
+            .value_or(webrtc::kVideoCodecUnknown);
     webrtc::EncodedImageCallback::Result callback_result(
         webrtc::EncodedImageCallback::Result::OK);
     if (callback_) {

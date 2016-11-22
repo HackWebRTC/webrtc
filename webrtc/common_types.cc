@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 
 #include <limits>
 #include <string.h>
+
+#include "webrtc/base/checks.h"
+#include "webrtc/base/stringutils.h"
 
 namespace webrtc {
 
@@ -101,41 +103,45 @@ static const char* kPayloadNameRED = "RED";
 static const char* kPayloadNameULPFEC = "ULPFEC";
 static const char* kPayloadNameGeneric = "Generic";
 
-rtc::Optional<std::string> CodecTypeToPayloadName(VideoCodecType type) {
+static bool CodecNamesEq(const char* name1, const char* name2) {
+  return _stricmp(name1, name2) == 0;
+}
+
+rtc::Optional<const char*> CodecTypeToPayloadName(VideoCodecType type) {
   switch (type) {
     case kVideoCodecVP8:
-      return rtc::Optional<std::string>(kPayloadNameVp8);
+      return rtc::Optional<const char*>(kPayloadNameVp8);
     case kVideoCodecVP9:
-      return rtc::Optional<std::string>(kPayloadNameVp9);
+      return rtc::Optional<const char*>(kPayloadNameVp9);
     case kVideoCodecH264:
-      return rtc::Optional<std::string>(kPayloadNameH264);
+      return rtc::Optional<const char*>(kPayloadNameH264);
     case kVideoCodecI420:
-      return rtc::Optional<std::string>(kPayloadNameI420);
+      return rtc::Optional<const char*>(kPayloadNameI420);
     case kVideoCodecRED:
-      return rtc::Optional<std::string>(kPayloadNameRED);
+      return rtc::Optional<const char*>(kPayloadNameRED);
     case kVideoCodecULPFEC:
-      return rtc::Optional<std::string>(kPayloadNameULPFEC);
+      return rtc::Optional<const char*>(kPayloadNameULPFEC);
     case kVideoCodecGeneric:
-      return rtc::Optional<std::string>(kPayloadNameGeneric);
+      return rtc::Optional<const char*>(kPayloadNameGeneric);
     default:
-      return rtc::Optional<std::string>();
+      return rtc::Optional<const char*>();
   }
 }
 
 rtc::Optional<VideoCodecType> PayloadNameToCodecType(const std::string& name) {
-  if (name == kPayloadNameVp8)
+  if (CodecNamesEq(name.c_str(), kPayloadNameVp8))
     return rtc::Optional<VideoCodecType>(kVideoCodecVP8);
-  if (name == kPayloadNameVp9)
+  if (CodecNamesEq(name.c_str(), kPayloadNameVp9))
     return rtc::Optional<VideoCodecType>(kVideoCodecVP9);
-  if (name == kPayloadNameH264)
+  if (CodecNamesEq(name.c_str(), kPayloadNameH264))
     return rtc::Optional<VideoCodecType>(kVideoCodecH264);
-  if (name == kPayloadNameI420)
+  if (CodecNamesEq(name.c_str(), kPayloadNameI420))
     return rtc::Optional<VideoCodecType>(kVideoCodecI420);
-  if (name == kPayloadNameRED)
+  if (CodecNamesEq(name.c_str(), kPayloadNameRED))
     return rtc::Optional<VideoCodecType>(kVideoCodecRED);
-  if (name == kPayloadNameULPFEC)
+  if (CodecNamesEq(name.c_str(), kPayloadNameULPFEC))
     return rtc::Optional<VideoCodecType>(kVideoCodecULPFEC);
-  if (name == kPayloadNameGeneric)
+  if (CodecNamesEq(name.c_str(), kPayloadNameGeneric))
     return rtc::Optional<VideoCodecType>(kVideoCodecGeneric);
   return rtc::Optional<VideoCodecType>();
 }

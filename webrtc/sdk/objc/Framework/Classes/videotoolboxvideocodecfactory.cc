@@ -17,21 +17,6 @@
 #include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_decoder.h"
 #endif
 
-// TODO(kthelgason): delete this when CreateVideoDecoder takes
-// a cricket::VideoCodec instead of webrtc::VideoCodecType.
-static const char* NameFromCodecType(webrtc::VideoCodecType type) {
-  switch (type) {
-    case webrtc::kVideoCodecVP8:
-      return cricket::kVp8CodecName;
-    case webrtc::kVideoCodecVP9:
-      return cricket::kVp9CodecName;
-    case webrtc::kVideoCodecH264:
-      return cricket::kH264CodecName;
-    default:
-      return "Unknown codec";
-  }
-}
-
 namespace webrtc {
 
 // VideoToolboxVideoEncoderFactory
@@ -94,7 +79,12 @@ VideoToolboxVideoDecoderFactory::~VideoToolboxVideoDecoderFactory() {}
 
 VideoDecoder* VideoToolboxVideoDecoderFactory::CreateVideoDecoder(
     VideoCodecType type) {
-  const auto codec = cricket::VideoCodec(NameFromCodecType(type));
+  const rtc::Optional<const char*> codec_name = CodecTypeToPayloadName(type);
+  if (!codec_name) {
+    LOG(LS_ERROR) << "Invalid codec type: " << type;
+    return nullptr;
+  }
+  const cricket::VideoCodec codec(*codec_name);
 #if defined(WEBRTC_IOS)
   if (FindMatchingCodec(supported_codecs_, codec)) {
     LOG(LS_INFO) << "Creating HW decoder for " << codec.name;

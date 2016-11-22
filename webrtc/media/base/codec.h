@@ -212,7 +212,6 @@ const Codec* FindCodecById(const std::vector<Codec>& codecs, int payload_type) {
 
 bool CodecNamesEq(const std::string& name1, const std::string& name2);
 bool CodecNamesEq(const char* name1, const char* name2);
-webrtc::VideoCodecType CodecTypeFromName(const std::string& name);
 bool HasNack(const Codec& codec);
 bool HasRemb(const Codec& codec);
 bool HasTransportCc(const Codec& codec);

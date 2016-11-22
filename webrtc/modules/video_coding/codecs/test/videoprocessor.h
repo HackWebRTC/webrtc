@@ -108,9 +108,6 @@ struct TestConfig {
   bool verbose;
 };
 
-// Returns a string representation of the enum value.
-const char* VideoCodecTypeToStr(webrtc::VideoCodecType e);
-
 // Handles encoding/decoding of video using the VideoEncoder/VideoDecoder
 // interfaces. This is done in a sequential manner in order to be able to
 // measure times properly.

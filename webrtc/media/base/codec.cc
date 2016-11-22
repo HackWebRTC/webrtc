@@ -324,17 +324,6 @@ bool CodecNamesEq(const char* name1, const char* name2) {
   return _stricmp(name1, name2) == 0;
 }
 
-webrtc::VideoCodecType CodecTypeFromName(const std::string& name) {
-  if (CodecNamesEq(name.c_str(), kVp8CodecName)) {
-    return webrtc::kVideoCodecVP8;
-  } else if (CodecNamesEq(name.c_str(), kVp9CodecName)) {
-    return webrtc::kVideoCodecVP9;
-  } else if (CodecNamesEq(name.c_str(), kH264CodecName)) {
-    return webrtc::kVideoCodecH264;
-  }
-  return webrtc::kVideoCodecUnknown;
-}
-
 const VideoCodec* FindMatchingCodec(
     const std::vector<VideoCodec>& supported_codecs,
     const VideoCodec& codec) {

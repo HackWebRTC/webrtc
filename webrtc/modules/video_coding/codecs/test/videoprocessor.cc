@@ -403,24 +403,6 @@ const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
   }
 }
 
-const char* VideoCodecTypeToStr(webrtc::VideoCodecType e) {
-  switch (e) {
-    case kVideoCodecVP8:
-      return "VP8";
-    case kVideoCodecI420:
-      return "I420";
-    case kVideoCodecRED:
-      return "RED";
-    case kVideoCodecULPFEC:
-      return "ULPFEC";
-    case kVideoCodecUnknown:
-      return "Unknown";
-    default:
-      RTC_NOTREACHED();
-      return "Unknown";
-  }
-}
-
 // Callbacks
 EncodedImageCallback::Result
 VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::OnEncodedImage(

@@ -64,7 +64,10 @@ InternalEncoderFactory::~InternalEncoderFactory() {}
 // WebRtcVideoEncoderFactory implementation.
 webrtc::VideoEncoder* InternalEncoderFactory::CreateVideoEncoder(
     const cricket::VideoCodec& codec) {
-  switch (CodecTypeFromName(codec.name)) {
+  const webrtc::VideoCodecType codec_type =
+      webrtc::PayloadNameToCodecType(codec.name)
+          .value_or(webrtc::kVideoCodecUnknown);
+  switch (codec_type) {
     case webrtc::kVideoCodecH264:
       return webrtc::H264Encoder::Create();
     case webrtc::kVideoCodecVP8:
