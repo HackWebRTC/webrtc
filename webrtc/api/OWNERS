@@ -7,8 +7,6 @@ tkchin@webrtc.org
 tommi@webrtc.org
 deadbeef@webrtc.org
 
-per-file androidvideotracksource.*=sakal@webrtc.org
-per-file androidvideotracksource.*=magjed@webrtc.org
 per-file rtcstats*=hbos@webrtc.org
 per-file rtcstats*=hta@webrtc.org
 

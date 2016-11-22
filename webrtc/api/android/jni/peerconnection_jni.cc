@@ -45,10 +45,10 @@
 
 #include "third_party/libyuv/include/libyuv/convert_from.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
-#include "webrtc/api/androidvideotracksource.h"
 #include "webrtc/api/android/jni/androidmediadecoder_jni.h"
 #include "webrtc/api/android/jni/androidmediaencoder_jni.h"
 #include "webrtc/api/android/jni/androidnetworkmonitor_jni.h"
+#include "webrtc/api/android/jni/androidvideotracksource.h"
 #include "webrtc/api/android/jni/classreferenceholder.h"
 #include "webrtc/api/android/jni/jni_helpers.h"
 #include "webrtc/api/android/jni/native_handle_impl.h"

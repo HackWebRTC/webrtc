@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/androidvideotracksource.h"
+#include "webrtc/api/android/jni/androidvideotracksource.h"
 
 #include <utility>
 
@@ -63,9 +63,9 @@ void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
   int crop_x;
   int crop_y;
 
-  if (!AdaptFrame(width, height, camera_time_us,
-                  &adapted_width, &adapted_height, &crop_width, &crop_height,
-                  &crop_x, &crop_y)) {
+  if (!AdaptFrame(width, height, camera_time_us, &adapted_width,
+                  &adapted_height, &crop_width, &crop_height, &crop_x,
+                  &crop_y)) {
     return;
   }
 
@@ -86,14 +86,11 @@ void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
       buffer_pool_.CreateBuffer(adapted_width, adapted_height);
 
   nv12toi420_scaler_.NV12ToI420Scale(
-      y_plane, width,
-      uv_plane, uv_width * 2,
-      crop_width, crop_height,
+      y_plane, width, uv_plane, uv_width * 2, crop_width, crop_height,
       buffer->MutableDataY(), buffer->StrideY(),
       // Swap U and V, since we have NV21, not NV12.
-      buffer->MutableDataV(), buffer->StrideV(),
-      buffer->MutableDataU(), buffer->StrideU(),
-      buffer->width(), buffer->height());
+      buffer->MutableDataV(), buffer->StrideV(), buffer->MutableDataU(),
+      buffer->StrideU(), buffer->width(), buffer->height());
 
   OnFrame(VideoFrame(buffer, static_cast<webrtc::VideoRotation>(rotation),
                      translated_camera_time_us));
@@ -120,9 +117,9 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
   int crop_x;
   int crop_y;
 
-  if (!AdaptFrame(width, height, camera_time_us,
-                  &adapted_width, &adapted_height, &crop_width, &crop_height,
-                  &crop_x, &crop_y)) {
+  if (!AdaptFrame(width, height, camera_time_us, &adapted_width,
+                  &adapted_height, &crop_width, &crop_height, &crop_x,
+                  &crop_y)) {
     surface_texture_helper_->ReturnTextureFrame();
     return;
   }

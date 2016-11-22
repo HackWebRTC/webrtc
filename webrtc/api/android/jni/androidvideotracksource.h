@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_ANDROIDVIDEOTRACKSOURCE_H_
-#define WEBRTC_API_ANDROIDVIDEOTRACKSOURCE_H_
+#ifndef WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
+#define WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
 
 #include "webrtc/api/android/jni/native_handle_impl.h"
 #include "webrtc/api/android/jni/surfacetexturehelper_jni.h"
@@ -81,4 +81,4 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_ANDROIDVIDEOTRACKSOURCE_H_
+#endif  // WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_

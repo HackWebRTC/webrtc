@@ -179,6 +179,8 @@ if (is_android && !build_with_chromium) {
       "android/jni/androidmetrics_jni.cc",
       "android/jni/androidnetworkmonitor_jni.cc",
       "android/jni/androidnetworkmonitor_jni.h",
+      "android/jni/androidvideotracksource.cc",
+      "android/jni/androidvideotracksource.h",
       "android/jni/androidvideotracksource_jni.cc",
       "android/jni/classreferenceholder.cc",
       "android/jni/classreferenceholder.h",
@@ -189,8 +191,6 @@ if (is_android && !build_with_chromium) {
       "android/jni/peerconnection_jni.cc",
       "android/jni/surfacetexturehelper_jni.cc",
       "android/jni/surfacetexturehelper_jni.h",
-      "androidvideotracksource.cc",
-      "androidvideotracksource.h",
     ]
 
     configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
