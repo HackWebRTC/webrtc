@@ -288,6 +288,12 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       }
 
       NetworkState networkState = getNetworkState(network);
+      if (networkState.connected && networkState.getNetworkType() == ConnectivityManager.TYPE_VPN) {
+        // If a VPN network is in place, we can find the underlying network type via querying the
+        // active network info thanks to
+        // https://android.googlesource.com/platform/frameworks/base/+/d6a7980d
+        networkState = getNetworkState();
+      }
       ConnectionType connectionType = getConnectionType(networkState);
       if (connectionType == ConnectionType.CONNECTION_NONE) {
         // This may not be an error. The OS may signal a network event with connection type
