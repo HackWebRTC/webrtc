@@ -95,6 +95,8 @@ rtc_static_library("desktop_capture") {
     "desktop_capturer.h",
     "desktop_capturer_differ_wrapper.cc",
     "desktop_capturer_differ_wrapper.h",
+    "desktop_frame_rotation.cc",
+    "desktop_frame_rotation.h",
     "desktop_frame_win.cc",
     "desktop_frame_win.h",
     "differ_block.cc",
@@ -198,6 +200,7 @@ rtc_static_library("desktop_capture") {
     ":primitives",
     "../../base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
     "../../system_wrappers",
+    "//third_party/libyuv",
   ]
 
   if (use_desktop_capture_differ_sse2) {
