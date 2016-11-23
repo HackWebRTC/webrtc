@@ -546,7 +546,6 @@ class FlexfecObserver : public test::EndToEndTest {
       : EndToEndTest(VideoSendStreamTest::kDefaultTimeoutMs),
         payload_name_(codec),
         use_nack_(use_nack),
-        send_count_(0),
         sent_media_(false),
         sent_flexfec_(false),
         header_extensions_enabled_(header_extensions_enabled) {
@@ -568,7 +567,6 @@ class FlexfecObserver : public test::EndToEndTest {
     RTPHeader header;
     EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-    ++send_count_;
     if (header.payloadType == VideoSendStreamTest::kFlexfecPayloadType) {
       EXPECT_EQ(VideoSendStreamTest::kFlexfecSendSsrc, header.ssrc);
       sent_flexfec_ = true;
@@ -585,7 +583,7 @@ class FlexfecObserver : public test::EndToEndTest {
       EXPECT_TRUE(header.extension.hasTransportSequenceNumber);
     }
 
-    if (send_count_ > 100 && sent_media_ && sent_flexfec_) {
+    if (sent_media_ && sent_flexfec_) {
       observation_complete_.Set();
     }
 
@@ -637,7 +635,6 @@ class FlexfecObserver : public test::EndToEndTest {
   std::unique_ptr<VideoEncoder> encoder_;
   const std::string payload_name_;
   const bool use_nack_;
-  int send_count_;
   bool sent_media_;
   bool sent_flexfec_;
   bool header_extensions_enabled_;
