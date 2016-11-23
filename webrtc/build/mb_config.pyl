@@ -84,7 +84,7 @@
     'client.webrtc.fyi': {
       # Linux
       'Linux64 GCC': 'gcc_release_bot_x64',
-      'Linux Memcheck (swarming)': 'release_bot_x64',
+      'Linux Memcheck (swarming)': 'memcheck_release_bot_x64',
 
       # Android
       'Android32 ASan (L Nexus6)': 'android_asan_shared_release_bot_arm',
