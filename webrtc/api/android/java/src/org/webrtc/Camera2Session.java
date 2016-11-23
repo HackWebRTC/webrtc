@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-import org.webrtc.Metrics.Histogram;
 
 @TargetApi(21)
 public class Camera2Session implements CameraSession {

@@ -24,7 +24,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-import org.webrtc.Metrics.Histogram;
 
 // Android specific implementation of VideoCapturer.
 // An instance of this class can be created by an application using
