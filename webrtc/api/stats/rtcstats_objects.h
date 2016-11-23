@@ -267,7 +267,6 @@ class RTCMediaStreamTrackStats final : public RTCStats {
 };
 
 // https://w3c.github.io/webrtc-stats/#pcstats-dict*
-// TODO(hbos): Tracking bug crbug.com/636818
 class RTCPeerConnectionStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -277,11 +276,7 @@ class RTCPeerConnectionStats final : public RTCStats {
   RTCPeerConnectionStats(const RTCPeerConnectionStats& other);
   ~RTCPeerConnectionStats() override;
 
-  // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
-  // crbug.com/636818
   RTCStatsMember<uint32_t> data_channels_opened;
-  // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
-  // crbug.com/636818
   RTCStatsMember<uint32_t> data_channels_closed;
 };
 
