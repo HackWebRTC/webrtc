@@ -75,25 +75,13 @@ public class GlTextureFrameBuffer {
     this.width = width;
     this.height = height;
 
-    // Bind our framebuffer.
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
-    GlUtil.checkNoGLES2Error("glBindFramebuffer");
-
     // Allocate texture.
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId);
     GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, pixelFormat, width, height, 0, pixelFormat,
         GLES20.GL_UNSIGNED_BYTE, null);
-
-    // Check that the framebuffer is in a good state.
-    final int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-    if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-      throw new IllegalStateException("Framebuffer not complete, status: " + status);
-    }
-
-    // Restore normal framebuffer.
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+    GlUtil.checkNoGLES2Error("GlTextureFrameBuffer setSize");
   }
 
   public int getWidth() {
