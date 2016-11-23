@@ -9,8 +9,7 @@
 import("//build/config/ui.gni")
 import("../../build/webrtc.gni")
 
-use_desktop_capture_differ_sse2 =
-    !is_ios && (current_cpu == "x86" || current_cpu == "x64")
+use_desktop_capture_differ_sse2 = current_cpu == "x86" || current_cpu == "x64"
 
 rtc_static_library("primitives") {
   sources = [
@@ -94,8 +93,12 @@ rtc_static_library("desktop_capture") {
     "desktop_capture_options.h",
     "desktop_capturer.cc",
     "desktop_capturer.h",
+    "desktop_capturer_differ_wrapper.cc",
+    "desktop_capturer_differ_wrapper.h",
     "desktop_frame_win.cc",
     "desktop_frame_win.h",
+    "differ_block.cc",
+    "differ_block.h",
     "mac/desktop_configuration.h",
     "mac/desktop_configuration.mm",
     "mac/desktop_configuration_monitor.cc",
@@ -173,15 +176,6 @@ rtc_static_library("desktop_capture") {
       "mouse_cursor_monitor_null.cc",
       "screen_capturer_null.cc",
       "window_capturer_null.cc",
-    ]
-  }
-
-  if (!is_ios) {
-    sources += [
-      "desktop_capturer_differ_wrapper.cc",
-      "desktop_capturer_differ_wrapper.h",
-      "differ_block.cc",
-      "differ_block.h",
     ]
   }
 
