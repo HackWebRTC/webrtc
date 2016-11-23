@@ -89,6 +89,8 @@ if (is_ios || is_mac) {
 
   rtc_static_library("rtc_sdk_peerconnection_objc") {
     sources = [
+      "objc/Framework/Classes/RTCAVFoundationVideoCapturerInternal.h",
+      "objc/Framework/Classes/RTCAVFoundationVideoCapturerInternal.mm",
       "objc/Framework/Classes/RTCAVFoundationVideoSource+Private.h",
       "objc/Framework/Classes/RTCAVFoundationVideoSource.mm",
       "objc/Framework/Classes/RTCAudioSource+Private.h",
@@ -149,6 +151,8 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/RTCVideoSource.mm",
       "objc/Framework/Classes/RTCVideoTrack+Private.h",
       "objc/Framework/Classes/RTCVideoTrack.mm",
+      "objc/Framework/Classes/avfoundationformatmapper.h",
+      "objc/Framework/Classes/avfoundationformatmapper.mm",
       "objc/Framework/Classes/avfoundationvideocapturer.h",
       "objc/Framework/Classes/avfoundationvideocapturer.mm",
       "objc/Framework/Classes/videotoolboxvideocodecfactory.cc",
