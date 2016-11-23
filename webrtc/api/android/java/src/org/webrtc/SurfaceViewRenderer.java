@@ -147,6 +147,24 @@ public class SurfaceViewRenderer
     videoLayoutMeasure.setScalingType(scalingTypeMatchOrientation, scalingTypeMismatchOrientation);
   }
 
+  /**
+   * Limit render framerate.
+   *
+   * @param fps Limit render framerate to this value, or use Float.POSITIVE_INFINITY to disable fps
+   *            reduction.
+   */
+  public void setFpsReduction(float fps) {
+    eglRenderer.setFpsReduction(fps);
+  }
+
+  public void disableFpsReduction() {
+    eglRenderer.disableFpsReduction();
+  }
+
+  public void pauseVideo() {
+    eglRenderer.pauseVideo();
+  }
+
   // VideoRenderer.Callbacks interface.
   @Override
   public void renderFrame(VideoRenderer.I420Frame frame) {
