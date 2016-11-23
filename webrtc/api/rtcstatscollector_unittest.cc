@@ -15,9 +15,10 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/mediastream.h"
 #include "webrtc/api/mediastreamtrack.h"
-#include "webrtc/api/jsepsessiondescription.h"
+#include "webrtc/api/rtpparameters.h"
 #include "webrtc/api/stats/rtcstats_objects.h"
 #include "webrtc/api/stats/rtcstatsreport.h"
 #include "webrtc/api/test/mock_datachannel.h"
@@ -49,6 +50,10 @@ namespace webrtc {
 
 // These are used by gtest code, such as if |EXPECT_EQ| fails.
 void PrintTo(const RTCCertificateStats& stats, ::std::ostream* os) {
+  *os << stats.ToString();
+}
+
+void PrintTo(const RTCCodecStats& stats, ::std::ostream* os) {
   *os << stats.ToString();
 }
 
@@ -806,6 +811,117 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
   ExpectReportContainsCertificateInfo(report, *remote_certinfo.get());
 }
 
+TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
+  MockVoiceMediaChannel* voice_media_channel = new MockVoiceMediaChannel();
+  cricket::VoiceChannel voice_channel(
+      test_->worker_thread(), test_->network_thread(), test_->media_engine(),
+      voice_media_channel, nullptr, "VoiceContentName", false);
+
+  MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
+  cricket::VideoChannel video_channel(
+      test_->worker_thread(), test_->network_thread(), video_media_channel,
+      nullptr, "VideoContentName", false);
+
+  // Audio
+  cricket::VoiceMediaInfo voice_media_info;
+
+  RtpCodecParameters inbound_audio_codec;
+  inbound_audio_codec.payload_type = 1;
+  inbound_audio_codec.mime_type = "opus";
+  inbound_audio_codec.clock_rate = 1337;
+  voice_media_info.receive_codecs.insert(
+      std::make_pair(inbound_audio_codec.payload_type, inbound_audio_codec));
+
+  RtpCodecParameters outbound_audio_codec;
+  outbound_audio_codec.payload_type = 2;
+  outbound_audio_codec.mime_type = "isac";
+  outbound_audio_codec.clock_rate = 1338;
+  voice_media_info.send_codecs.insert(
+      std::make_pair(outbound_audio_codec.payload_type, outbound_audio_codec));
+
+  EXPECT_CALL(*voice_media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(voice_media_info), Return(true)));
+
+  // Video
+  cricket::VideoMediaInfo video_media_info;
+
+  RtpCodecParameters inbound_video_codec;
+  inbound_video_codec.payload_type = 3;
+  inbound_video_codec.mime_type = "H264";
+  inbound_video_codec.clock_rate = 1339;
+  video_media_info.receive_codecs.insert(
+      std::make_pair(inbound_video_codec.payload_type, inbound_video_codec));
+
+  RtpCodecParameters outbound_video_codec;
+  outbound_video_codec.payload_type = 4;
+  outbound_video_codec.mime_type = "VP8";
+  outbound_video_codec.clock_rate = 1340;
+  video_media_info.send_codecs.insert(
+      std::make_pair(outbound_video_codec.payload_type, outbound_video_codec));
+
+  EXPECT_CALL(*video_media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
+
+  SessionStats session_stats;
+  session_stats.proxy_to_transport["VoiceContentName"] = "TransportName";
+  session_stats.proxy_to_transport["VideoContentName"] = "TransportName";
+  session_stats.transport_stats["TransportName"].transport_name =
+      "TransportName";
+
+  EXPECT_CALL(test_->session(), GetTransportStats(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats), Return(true)));
+  EXPECT_CALL(test_->session(), voice_channel())
+      .WillRepeatedly(Return(&voice_channel));
+  EXPECT_CALL(test_->session(), video_channel())
+      .WillRepeatedly(Return(&video_channel));
+
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+
+  RTCCodecStats expected_inbound_audio_codec(
+      "RTCCodec_InboundAudio_1", report->timestamp_us());
+  expected_inbound_audio_codec.payload_type = 1;
+  expected_inbound_audio_codec.codec = "audio/opus";
+  expected_inbound_audio_codec.clock_rate = 1337;
+
+  RTCCodecStats expected_outbound_audio_codec(
+      "RTCCodec_OutboundAudio_2", report->timestamp_us());
+  expected_outbound_audio_codec.payload_type = 2;
+  expected_outbound_audio_codec.codec = "audio/isac";
+  expected_outbound_audio_codec.clock_rate = 1338;
+
+  RTCCodecStats expected_inbound_video_codec(
+      "RTCCodec_InboundVideo_3", report->timestamp_us());
+  expected_inbound_video_codec.payload_type = 3;
+  expected_inbound_video_codec.codec = "video/H264";
+  expected_inbound_video_codec.clock_rate = 1339;
+
+  RTCCodecStats expected_outbound_video_codec(
+      "RTCCodec_OutboundVideo_4", report->timestamp_us());
+  expected_outbound_video_codec.payload_type = 4;
+  expected_outbound_video_codec.codec = "video/VP8";
+  expected_outbound_video_codec.clock_rate = 1340;
+
+  ASSERT(report->Get(expected_inbound_audio_codec.id()));
+  EXPECT_EQ(expected_inbound_audio_codec,
+            report->Get(expected_inbound_audio_codec.id())->cast_to<
+                  RTCCodecStats>());
+
+  ASSERT(report->Get(expected_outbound_audio_codec.id()));
+  EXPECT_EQ(expected_outbound_audio_codec,
+            report->Get(expected_outbound_audio_codec.id())->cast_to<
+                  RTCCodecStats>());
+
+  ASSERT(report->Get(expected_inbound_video_codec.id()));
+  EXPECT_EQ(expected_inbound_video_codec,
+            report->Get(expected_inbound_video_codec.id())->cast_to<
+                  RTCCodecStats>());
+
+  ASSERT(report->Get(expected_outbound_video_codec.id()));
+  EXPECT_EQ(expected_outbound_video_codec,
+            report->Get(expected_outbound_video_codec.id())->cast_to<
+                  RTCCodecStats>());
+}
+
 TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
   std::unique_ptr<CertificateInfo> audio_local_certinfo =
       CreateFakeCertificateAndInfoFromDers(
@@ -1320,14 +1436,24 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
       voice_media_channel, nullptr, "VoiceContentName", false);
 
   cricket::VoiceMediaInfo voice_media_info;
+
   voice_media_info.receivers.push_back(cricket::VoiceReceiverInfo());
   voice_media_info.receivers[0].local_stats.push_back(
       cricket::SsrcReceiverInfo());
   voice_media_info.receivers[0].local_stats[0].ssrc = 1;
   voice_media_info.receivers[0].packets_rcvd = 2;
   voice_media_info.receivers[0].bytes_rcvd = 3;
+  voice_media_info.receivers[0].codec_payload_type = rtc::Optional<int>(42);
   voice_media_info.receivers[0].jitter_ms = 4500;
   voice_media_info.receivers[0].fraction_lost = 5.5f;
+
+  RtpCodecParameters codec_parameters;
+  codec_parameters.payload_type = 42;
+  codec_parameters.mime_type = "dummy";
+  codec_parameters.clock_rate = 0;
+  voice_media_info.receive_codecs.insert(
+      std::make_pair(codec_parameters.payload_type, codec_parameters));
+
   EXPECT_CALL(*voice_media_channel, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(voice_media_info), Return(true)));
 
@@ -1356,6 +1482,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   expected_audio.media_type = "audio";
   expected_audio.transport_id = "RTCTransport_TransportName_" +
       rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  expected_audio.codec_id = "RTCCodec_InboundAudio_42";
   expected_audio.packets_received = 2;
   expected_audio.bytes_received = 3;
   expected_audio.jitter = 4.5;
@@ -1367,6 +1494,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   EXPECT_EQ(audio, expected_audio);
 
   EXPECT_TRUE(report->Get(*expected_audio.transport_id));
+  EXPECT_TRUE(report->Get(*expected_audio.codec_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
@@ -1376,6 +1504,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
       nullptr, "VideoContentName", false);
 
   cricket::VideoMediaInfo video_media_info;
+
   video_media_info.receivers.push_back(cricket::VideoReceiverInfo());
   video_media_info.receivers[0].local_stats.push_back(
       cricket::SsrcReceiverInfo());
@@ -1383,9 +1512,18 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   video_media_info.receivers[0].packets_rcvd = 2;
   video_media_info.receivers[0].bytes_rcvd = 3;
   video_media_info.receivers[0].fraction_lost = 4.5f;
+  video_media_info.receivers[0].codec_payload_type = rtc::Optional<int>(42);
   video_media_info.receivers[0].firs_sent = 5;
   video_media_info.receivers[0].plis_sent = 6;
   video_media_info.receivers[0].nacks_sent = 7;
+
+  RtpCodecParameters codec_parameters;
+  codec_parameters.payload_type = 42;
+  codec_parameters.mime_type = "dummy";
+  codec_parameters.clock_rate = 0;
+  video_media_info.receive_codecs.insert(
+      std::make_pair(codec_parameters.payload_type, codec_parameters));
+
   EXPECT_CALL(*video_media_channel, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
 
@@ -1414,6 +1552,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   expected_video.media_type = "video";
   expected_video.transport_id = "RTCTransport_TransportName_" +
       rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  expected_video.codec_id = "RTCCodec_InboundVideo_42";
   expected_video.fir_count = 5;
   expected_video.pli_count = 6;
   expected_video.nack_count = 7;
@@ -1427,6 +1566,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   EXPECT_EQ(video, expected_video);
 
   EXPECT_TRUE(report->Get(*expected_video.transport_id));
+  EXPECT_TRUE(report->Get(*video.codec_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
@@ -1436,12 +1576,22 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
       voice_media_channel, nullptr, "VoiceContentName", false);
 
   cricket::VoiceMediaInfo voice_media_info;
+
   voice_media_info.senders.push_back(cricket::VoiceSenderInfo());
   voice_media_info.senders[0].local_stats.push_back(cricket::SsrcSenderInfo());
   voice_media_info.senders[0].local_stats[0].ssrc = 1;
   voice_media_info.senders[0].packets_sent = 2;
   voice_media_info.senders[0].bytes_sent = 3;
   voice_media_info.senders[0].rtt_ms = 4500;
+  voice_media_info.senders[0].codec_payload_type = rtc::Optional<int>(42);
+
+  RtpCodecParameters codec_parameters;
+  codec_parameters.payload_type = 42;
+  codec_parameters.mime_type = "dummy";
+  codec_parameters.clock_rate = 0;
+  voice_media_info.send_codecs.insert(
+      std::make_pair(codec_parameters.payload_type, codec_parameters));
+
   EXPECT_CALL(*voice_media_channel, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(voice_media_info), Return(true)));
 
@@ -1470,6 +1620,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   expected_audio.media_type = "audio";
   expected_audio.transport_id = "RTCTransport_TransportName_" +
       rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  expected_audio.codec_id = "RTCCodec_OutboundAudio_42";
   expected_audio.packets_sent = 2;
   expected_audio.bytes_sent = 3;
   expected_audio.round_trip_time = 4.5;
@@ -1480,6 +1631,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   EXPECT_EQ(audio, expected_audio);
 
   EXPECT_TRUE(report->Get(*expected_audio.transport_id));
+  EXPECT_TRUE(report->Get(*expected_audio.codec_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
@@ -1489,6 +1641,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
       nullptr, "VideoContentName", false);
 
   cricket::VideoMediaInfo video_media_info;
+
   video_media_info.senders.push_back(cricket::VideoSenderInfo());
   video_media_info.senders[0].local_stats.push_back(cricket::SsrcSenderInfo());
   video_media_info.senders[0].local_stats[0].ssrc = 1;
@@ -1498,6 +1651,15 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].packets_sent = 5;
   video_media_info.senders[0].bytes_sent = 6;
   video_media_info.senders[0].rtt_ms = 7500;
+  video_media_info.senders[0].codec_payload_type = rtc::Optional<int>(42);
+
+  RtpCodecParameters codec_parameters;
+  codec_parameters.payload_type = 42;
+  codec_parameters.mime_type = "dummy";
+  codec_parameters.clock_rate = 0;
+  video_media_info.send_codecs.insert(
+      std::make_pair(codec_parameters.payload_type, codec_parameters));
+
   EXPECT_CALL(*video_media_channel, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
 
@@ -1526,6 +1688,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.media_type = "video";
   expected_video.transport_id = "RTCTransport_TransportName_" +
       rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  expected_video.codec_id = "RTCCodec_OutboundVideo_42";
   expected_video.fir_count = 2;
   expected_video.pli_count = 3;
   expected_video.nack_count = 4;
@@ -1539,6 +1702,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   EXPECT_EQ(video, expected_video);
 
   EXPECT_TRUE(report->Get(*expected_video.transport_id));
+  EXPECT_TRUE(report->Get(*expected_video.codec_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {

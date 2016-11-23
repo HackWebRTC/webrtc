@@ -62,6 +62,44 @@ RTCCertificateStats::RTCCertificateStats(
 RTCCertificateStats::~RTCCertificateStats() {
 }
 
+WEBRTC_RTCSTATS_IMPL(RTCCodecStats, RTCStats, "codec",
+    &payload_type,
+    &codec,
+    &clock_rate,
+    &channels,
+    &parameters,
+    &implementation);
+
+RTCCodecStats::RTCCodecStats(
+    const std::string& id, int64_t timestamp_us)
+    : RTCCodecStats(std::string(id), timestamp_us) {
+}
+
+RTCCodecStats::RTCCodecStats(
+    std::string&& id, int64_t timestamp_us)
+    : RTCStats(std::move(id), timestamp_us),
+      payload_type("payloadType"),
+      codec("codec"),
+      clock_rate("clockRate"),
+      channels("channels"),
+      parameters("parameters"),
+      implementation("implementation") {
+}
+
+RTCCodecStats::RTCCodecStats(
+    const RTCCodecStats& other)
+    : RTCStats(other.id(), other.timestamp_us()),
+      payload_type(other.payload_type),
+      codec(other.codec),
+      clock_rate(other.clock_rate),
+      channels(other.channels),
+      parameters(other.parameters),
+      implementation(other.implementation) {
+}
+
+RTCCodecStats::~RTCCodecStats() {
+}
+
 WEBRTC_RTCSTATS_IMPL(RTCDataChannelStats, RTCStats, "data-channel",
     &label,
     &protocol,

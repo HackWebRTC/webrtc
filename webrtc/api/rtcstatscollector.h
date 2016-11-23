@@ -21,11 +21,13 @@
 #include "webrtc/api/stats/rtcstats_objects.h"
 #include "webrtc/api/stats/rtcstatsreport.h"
 #include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/media/base/mediachannel.h"
 
 namespace cricket {
 class Candidate;
@@ -86,6 +88,10 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
     std::unique_ptr<rtc::SSLCertificateStats> local;
     std::unique_ptr<rtc::SSLCertificateStats> remote;
   };
+  struct MediaInfo {
+    rtc::Optional<cricket::VoiceMediaInfo> voice;
+    rtc::Optional<cricket::VideoMediaInfo> video;
+  };
 
   void AddPartialResults_s(rtc::scoped_refptr<RTCStatsReport> partial_report);
   void DeliverCachedReport();
@@ -94,6 +100,10 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void ProduceCertificateStats_s(
       int64_t timestamp_us,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
+      RTCStatsReport* report) const;
+  // Produces |RTCCodecStats|.
+  void ProduceCodecStats_s(
+      int64_t timestamp_us, const MediaInfo& media_info,
       RTCStatsReport* report) const;
   // Produces |RTCDataChannelStats|.
   void ProduceDataChannelStats_s(
@@ -111,7 +121,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // Produces |RTCInboundRTPStreamStats| and |RTCOutboundRTPStreamStats|.
   void ProduceRTPStreamStats_s(
       int64_t timestamp_us, const SessionStats& session_stats,
-      RTCStatsReport* report) const;
+      const MediaInfo& media_info, RTCStatsReport* report) const;
   // Produces |RTCTransportStats|.
   void ProduceTransportStats_s(
       int64_t timestamp_us, const SessionStats& session_stats,
@@ -120,7 +130,8 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
 
   // Helper function to stats-producing functions.
   std::map<std::string, CertificateStatsPair>
-  PrepareTransportCertificateStats_s(const SessionStats& session_stats) const;
+  PrepareTransportCertificateStats(const SessionStats& session_stats) const;
+  MediaInfo PrepareMediaInfo(const SessionStats& session_stats) const;
 
   // Slots for signals (sigslot) that are wired up to |pc_|.
   void OnDataChannelCreated(DataChannel* channel);
