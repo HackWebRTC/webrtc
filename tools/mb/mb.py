@@ -1060,40 +1060,25 @@ class MetaBuildWrapper(object):
     return ret
 
   def GetIsolateCommand(self, target, vals):
-    android = 'target_os="android"' in vals['gn_args']
-
-    # This needs to mirror the settings in //build/config/ui.gni:
-    # use_x11 = is_linux && !use_ozone.
-    use_x11 = (self.platform == 'linux2' and
-               not android and
-               not 'use_ozone=true' in vals['gn_args'])
-
-    asan = 'is_asan=true' in vals['gn_args']
-    msan = 'is_msan=true' in vals['gn_args']
-    tsan = 'is_tsan=true' in vals['gn_args']
-
     isolate_map = self.ReadIsolateMap()
     test_type = isolate_map[target]['type']
 
-    executable = isolate_map[target].get('executable', target)
-    executable_suffix = '.exe' if self.platform == 'win32' else ''
-    executable_prefix = '.\\' if self.platform == 'win32' else './'
-
-    cmdline = []
-    extra_files = []
-    common_cmdline = [
-      executable_prefix + str(executable) + executable_suffix,
-      '--',
-      '--asan=%d' % asan,
-      '--msan=%d' % msan,
-      '--tsan=%d' % tsan,
-    ]
+    android = 'target_os="android"' in vals['gn_args']
+    is_linux = self.platform == 'linux2' and not android
 
     if test_type == 'nontest':
       self.WriteFailureAndRaise('We should not be isolating %s.' % target,
                                 output_path=None)
+    if test_type not in ('console_test_launcher', 'windowed_test_launcher',
+                         'non_parallel_console_test_launcher',
+                         'additional_compile_target', 'junit_test'):
+      self.WriteFailureAndRaise('No command line for %s found (test type %s).'
+                                % (target, test_type), output_path=None)
 
-    if android and test_type != "script":
+    cmdline = []
+    extra_files = []
+
+    if android:
       logdog_command = [
           '--logdog-bin-cmd', './../../bin/logdog_butler',
           '--project', 'chromium',
@@ -1107,45 +1092,70 @@ class MetaBuildWrapper(object):
           self.PathJoin('bin', 'run_%s' % target),
           '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
           '--target-devices-file', '${SWARMING_BOT_FILE}',
-          '-v'
+          '-v',
       ]
       cmdline = (['./../../build/android/test_wrapper/logdog_wrapper.py']
                  + logdog_command + test_cmdline)
-    elif use_x11 and test_type == 'windowed_test_launcher':
-      extra_files = [
-          'xdisplaycheck',
-          '../../testing/test_env.py',
-          '../../testing/xvfb.py',
-          '../../third_party/gtest-parallel/gtest-parallel',
-          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
-      ]
-      cmdline = [
-          '../../testing/xvfb.py',
-          '.',
-          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
-      ] + common_cmdline
-    elif test_type in ('windowed_test_launcher', 'console_test_launcher'):
-      extra_files = [
-          '../../testing/test_env.py',
-          '../../third_party/gtest-parallel/gtest-parallel',
-          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
-      ]
-      cmdline = [
-          '../../testing/test_env.py',
-          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
-      ] + common_cmdline
-    elif test_type == 'non_parallel_console_test_launcher':
-      extra_files = [
-          '../../testing/test_env.py',
-      ]
-      cmdline = [
-          '../../testing/test_env.py',
-      ] + common_cmdline
     else:
-      self.WriteFailureAndRaise('No command line for %s found (test type %s).'
-                                % (target, test_type), output_path=None)
+      extra_files = ['../../testing/test_env.py']
 
-    cmdline += isolate_map[target].get('args', [])
+      # This needs to mirror the settings in //build/config/ui.gni:
+      # use_x11 = is_linux && !use_ozone.
+      use_x11 = is_linux and not 'use_ozone=true' in vals['gn_args']
+
+      xvfb = use_x11 and test_type == 'windowed_test_launcher'
+      if xvfb:
+        extra_files += [
+            'xdisplaycheck',
+            '../../testing/xvfb.py',
+        ]
+
+      # Memcheck is only supported for linux. Ignore in other platforms.
+      memcheck = is_linux and 'rtc_use_memcheck=true' in vals['gn_args']
+      memcheck_cmdline = [
+          'bash',
+          '../../tools/valgrind-webrtc/webrtc_tests.sh',
+          '--tool',
+          'memcheck',
+          '--target',
+          'Release',
+          '--build-dir',
+          '..',
+          '--test',
+      ]
+
+      gtest_parallel = (test_type != 'non_parallel_console_test_launcher' and
+                        not memcheck)
+      gtest_parallel_wrapper = [
+          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py'
+      ]
+      if gtest_parallel:
+        extra_files += [
+            '../../third_party/gtest-parallel/gtest-parallel',
+            '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
+        ]
+
+      asan = 'is_asan=true' in vals['gn_args']
+      msan = 'is_msan=true' in vals['gn_args']
+      tsan = 'is_tsan=true' in vals['gn_args']
+
+      executable_prefix = '.\\' if self.platform == 'win32' else './'
+      executable_suffix = '.exe' if self.platform == 'win32' else ''
+      executable = executable_prefix + target + executable_suffix
+
+      cmdline = (['../../testing/xvfb.py', '.'] if xvfb else
+                 ['../../testing/test_env.py'])
+      if memcheck:
+        cmdline += memcheck_cmdline
+      elif gtest_parallel:
+        cmdline += gtest_parallel_wrapper
+      cmdline += [
+          executable,
+          '--',
+          '--asan=%d' % asan,
+          '--msan=%d' % msan,
+          '--tsan=%d' % tsan,
+      ]
 
     return cmdline, extra_files
 
