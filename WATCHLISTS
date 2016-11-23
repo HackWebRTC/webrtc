@@ -32,14 +32,17 @@
     'java_files': {
       'filepath': '\.java$|\.xml$',
     },
+    'api': {
+      'filepath': 'webrtc/api/.*',
+    },
     'audio': {
       'filepath': 'webrtc/audio/.*',
     },
     'call': {
       'filepath': 'webrtc/call/.*',
     },
-    'media': {
-      'filepath': 'webrtc/media/.*',
+    'media_engine': {
+      'filepath': 'webrtc/media/engine/.*',
     },
     'video': {
       'filepath': 'webrtc/video/.*',
@@ -113,10 +116,11 @@
                      'peah@webrtc.org'],
     'audio': ['solenberg@webrtc.org',
               'tina.legrand@webrtc.org'],
+    'api': ['solenberg@webrtc.org'],
     'call': ['mflodman@webrtc.org',
              'solenberg@webrtc.org',
              'stefan@webrtc.org'],
-    'media': ['solenberg@webrtc.org'],
+    'media_engine': ['solenberg@webrtc.org'],
     'video': ['mflodman@webrtc.org',
               'stefan@webrtc.org',
               'video-team@agora.io',
