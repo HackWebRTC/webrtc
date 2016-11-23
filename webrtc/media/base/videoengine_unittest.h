@@ -84,6 +84,7 @@ class VideoMediaChannelTest : public testing::Test,
     engine_.Init();
     channel_.reset(engine_.CreateChannel(call_.get(), cricket::MediaConfig(),
                                          cricket::VideoOptions()));
+    channel_->OnReadyToSend(true);
     EXPECT_TRUE(channel_.get() != NULL);
     network_interface_.SetDestination(channel_.get());
     channel_->SetInterface(&network_interface_);

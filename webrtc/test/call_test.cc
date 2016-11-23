@@ -75,6 +75,10 @@ void CallTest::RunBaseTest(BaseTest* test) {
   if (test->ShouldCreateReceivers()) {
     send_transport_->SetReceiver(receiver_call_->Receiver());
     receive_transport_->SetReceiver(sender_call_->Receiver());
+    if (num_video_streams_ > 0)
+      receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+    if (num_audio_streams_ > 0)
+      receiver_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
   } else {
     // Sender-only call delivers to itself.
     send_transport_->SetReceiver(sender_call_->Receiver());
