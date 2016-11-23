@@ -146,7 +146,7 @@ public class PeerConnection {
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
       bundlePolicy = BundlePolicy.BALANCED;
-      rtcpMuxPolicy = RtcpMuxPolicy.NEGOTIATE;
+      rtcpMuxPolicy = RtcpMuxPolicy.REQUIRE;
       tcpCandidatePolicy = TcpCandidatePolicy.ENABLED;
       candidateNetworkPolicy = candidateNetworkPolicy.ALL;
       this.iceServers = iceServers;

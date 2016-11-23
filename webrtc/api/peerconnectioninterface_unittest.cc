@@ -79,6 +79,7 @@ static const char kSdpStringWithStream1[] =
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "a=ssrc:1 cname:stream1\r\n"
     "a=ssrc:1 mslabel:stream1\r\n"
@@ -86,6 +87,7 @@ static const char kSdpStringWithStream1[] =
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:120 VP8/90000\r\n"
     "a=ssrc:2 cname:stream1\r\n"
     "a=ssrc:2 mslabel:stream1\r\n"
@@ -108,7 +110,8 @@ static const char kSdpStringWithStream1AudioTrackOnly[] =
     "a=rtpmap:103 ISAC/16000\r\n"
     "a=ssrc:1 cname:stream1\r\n"
     "a=ssrc:1 mslabel:stream1\r\n"
-    "a=ssrc:1 label:audiotrack0\r\n";
+    "a=ssrc:1 label:audiotrack0\r\n"
+    "a=rtcp-mux\r\n";
 
 // Reference SDP with two MediaStreams with label "stream1" and "stream2. Each
 // MediaStreams have one audio track and one video track.
@@ -126,6 +129,7 @@ static const char kSdpStringWithStream1And2[] =
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "a=ssrc:1 cname:stream1\r\n"
     "a=ssrc:1 msid:stream1 audiotrack0\r\n"
@@ -134,6 +138,7 @@ static const char kSdpStringWithStream1And2[] =
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:120 VP8/0\r\n"
     "a=ssrc:2 cname:stream1\r\n"
     "a=ssrc:2 msid:stream1 videotrack0\r\n"
@@ -153,10 +158,12 @@ static const char kSdpStringWithoutStreams[] =
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:120 VP8/90000\r\n";
 
 // Reference SDP without MediaStreams. Msid is supported.
@@ -173,10 +180,12 @@ static const char kSdpStringWithMsidWithoutStreams[] =
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:120 VP8/90000\r\n";
 
 // Reference SDP without MediaStreams and audio only.
@@ -192,6 +201,7 @@ static const char kSdpStringWithoutStreamsAudioOnly[] =
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n";
 
 // Reference SENDONLY SDP without MediaStreams. Msid is not supported.
@@ -208,11 +218,13 @@ static const char kSdpStringSendOnlyWithoutStreams[] =
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
     "a=sendonly\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
     "a=sendonly\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:120 VP8/90000\r\n";
 
 static const char kSdpStringInit[] =
@@ -230,12 +242,14 @@ static const char kSdpStringAudio[] =
     "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n";
 
 static const char kSdpStringVideo[] =
     "m=video 1 RTP/AVPF 120\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
     "a=rtpmap:120 VP8/90000\r\n";
 
 static const char kSdpStringMs1Audio0[] =

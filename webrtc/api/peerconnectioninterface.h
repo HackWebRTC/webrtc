@@ -295,7 +295,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // at the same time.
     IceServers servers;
     BundlePolicy bundle_policy = kBundlePolicyBalanced;
-    RtcpMuxPolicy rtcp_mux_policy = kRtcpMuxPolicyNegotiate;
+    RtcpMuxPolicy rtcp_mux_policy = kRtcpMuxPolicyRequire;
     TcpCandidatePolicy tcp_candidate_policy = kTcpCandidatePolicyEnabled;
     CandidateNetworkPolicy candidate_network_policy =
         kCandidateNetworkPolicyAll;

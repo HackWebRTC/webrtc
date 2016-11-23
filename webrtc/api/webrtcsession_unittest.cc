@@ -383,7 +383,8 @@ class WebRtcSessionTest
   // options. When DTLS is enabled a certificate will be used if provided,
   // otherwise one will be generated using the |cert_generator|.
   void Init(
-      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator) {
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
+      PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
     ASSERT_TRUE(session_.get() == NULL);
     session_.reset(new WebRtcSessionForTest(
         media_controller_.get(), rtc::Thread::Current(), rtc::Thread::Current(),
@@ -397,6 +398,7 @@ class WebRtcSessionTest
     session_->GetOnDestroyedSignal()->connect(
         this, &WebRtcSessionTest::OnSessionDestroyed);
 
+    configuration_.rtcp_mux_policy = rtcp_mux_policy;
     EXPECT_EQ(PeerConnectionInterface::kIceConnectionNew,
         observer_.ice_connection_state_);
     EXPECT_EQ(PeerConnectionInterface::kIceGatheringNew,
@@ -415,7 +417,13 @@ class WebRtcSessionTest
 
   void OnSessionDestroyed() { session_destroyed_ = true; }
 
-  void Init() { Init(nullptr); }
+  void Init() {
+    Init(nullptr, PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
+  }
+
+  void Init(PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
+    Init(nullptr, rtcp_mux_policy);
+  }
 
   void InitWithBundlePolicy(
       PeerConnectionInterface::BundlePolicy bundle_policy) {
@@ -426,8 +434,7 @@ class WebRtcSessionTest
   void InitWithRtcpMuxPolicy(
       PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
     PeerConnectionInterface::RTCConfiguration configuration;
-    configuration_.rtcp_mux_policy = rtcp_mux_policy;
-    Init();
+    Init(rtcp_mux_policy);
   }
 
   // Successfully init with DTLS; with a certificate generated and supplied or
@@ -443,7 +450,8 @@ class WebRtcSessionTest
     } else {
       RTC_CHECK(false);
     }
-    Init(std::move(cert_generator));
+    Init(std::move(cert_generator),
+         PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
   }
 
   // Init with DTLS with a store that will fail to generate a certificate.
@@ -451,7 +459,8 @@ class WebRtcSessionTest
     std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
         new FakeRTCCertificateGenerator());
     cert_generator->set_should_fail(true);
-    Init(std::move(cert_generator));
+    Init(std::move(cert_generator),
+         PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
   }
 
   void InitWithDtmfCodec() {
@@ -3347,10 +3356,8 @@ TEST_F(WebRtcSessionTest, TestAddChannelToConnectedBundle) {
   // answer to find out if more transports are needed.
   configuration_.bundle_policy =
       PeerConnectionInterface::kBundlePolicyMaxBundle;
-  configuration_.rtcp_mux_policy =
-      PeerConnectionInterface::kRtcpMuxPolicyRequire;
   options_.disable_encryption = true;
-  Init();
+  Init(PeerConnectionInterface::kRtcpMuxPolicyRequire);
 
   // Negotiate an audio channel with MAX_BUNDLE enabled.
   SendAudioOnlyStream2();
