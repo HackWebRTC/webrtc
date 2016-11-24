@@ -982,8 +982,8 @@ TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   // These thresholds are set rather high to accomodate differences in hardware
   // in several devices, so this test can be used in swarming.
   // See http://bugs.webrtc.org/6464
-  EXPECT_LE(fifo_audio_stream->average_size(), 30u);
-  EXPECT_LE(fifo_audio_stream->largest_size(), 40u);
+  EXPECT_LE(fifo_audio_stream->average_size(), 60u);
+  EXPECT_LE(fifo_audio_stream->largest_size(), 70u);
 }
 
 // Measures loopback latency and reports the min, max and average values for
