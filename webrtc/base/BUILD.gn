@@ -124,8 +124,6 @@ rtc_static_library("rtc_base_approved") {
     "event.h",
     "event_tracer.cc",
     "event_tracer.h",
-    "exp_filter.cc",
-    "exp_filter.h",
     "file.cc",
     "file.h",
     "format_macros.h",
@@ -336,6 +334,13 @@ rtc_static_library("rtc_task_queue") {
       }
     }
   }
+}
+
+rtc_static_library("rtc_analytics") {
+  sources = [
+    "analytics/exp_filter.cc",
+    "analytics/exp_filter.h",
+  ]
 }
 
 config("rtc_base_warnings_config") {

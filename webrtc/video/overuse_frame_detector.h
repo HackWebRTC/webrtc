@@ -14,9 +14,9 @@
 #include <list>
 #include <memory>
 
+#include "webrtc/base/analytics/exp_filter.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/base/exp_filter.h"
 #include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_annotations.h"

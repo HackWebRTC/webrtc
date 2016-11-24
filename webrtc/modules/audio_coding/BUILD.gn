@@ -708,6 +708,7 @@ rtc_static_library("webrtc_opus") {
     ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":audio_network_adaptor",
+    "../../base:rtc_analytics",
     "../../base:rtc_base_approved",
   ]
 
@@ -764,8 +765,6 @@ rtc_static_library("audio_network_adaptor") {
     "audio_network_adaptor/frame_length_controller.cc",
     "audio_network_adaptor/frame_length_controller.h",
     "audio_network_adaptor/include/audio_network_adaptor.h",
-    "audio_network_adaptor/smoothing_filter.cc",
-    "audio_network_adaptor/smoothing_filter.h",
   ]
 
   deps = [
