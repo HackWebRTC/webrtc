@@ -388,6 +388,10 @@ if (rtc_include_tests) {
     sources = [
       "test/audio_buffer_tools.cc",
       "test/audio_buffer_tools.h",
+      "test/performance_timer.cc",
+      "test/performance_timer.h",
+      "test/simulator_buffers.cc",
+      "test/simulator_buffers.h",
       "test/test_utils.cc",
       "test/test_utils.h",
     ]

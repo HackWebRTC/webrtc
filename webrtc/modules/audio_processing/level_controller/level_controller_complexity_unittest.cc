@@ -18,6 +18,8 @@
 #include "webrtc/modules/audio_processing/level_controller/level_controller.h"
 #include "webrtc/modules/audio_processing/test/audio_buffer_tools.h"
 #include "webrtc/modules/audio_processing/test/bitexactness_tools.h"
+#include "webrtc/modules/audio_processing/test/performance_timer.h"
+#include "webrtc/modules/audio_processing/test/simulator_buffers.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/perf_test.h"
@@ -27,131 +29,7 @@ namespace {
 
 const size_t kNumFramesToProcess = 100;
 
-struct SimulatorBuffers {
-  SimulatorBuffers(int render_input_sample_rate_hz,
-                   int capture_input_sample_rate_hz,
-                   int render_output_sample_rate_hz,
-                   int capture_output_sample_rate_hz,
-                   size_t num_render_input_channels,
-                   size_t num_capture_input_channels,
-                   size_t num_render_output_channels,
-                   size_t num_capture_output_channels) {
-    Random rand_gen(42);
-    CreateConfigAndBuffer(render_input_sample_rate_hz,
-                          num_render_input_channels, &rand_gen,
-                          &render_input_buffer, &render_input_config,
-                          &render_input, &render_input_samples);
-
-    CreateConfigAndBuffer(render_output_sample_rate_hz,
-                          num_render_output_channels, &rand_gen,
-                          &render_output_buffer, &render_output_config,
-                          &render_output, &render_output_samples);
-
-    CreateConfigAndBuffer(capture_input_sample_rate_hz,
-                          num_capture_input_channels, &rand_gen,
-                          &capture_input_buffer, &capture_input_config,
-                          &capture_input, &capture_input_samples);
-
-    CreateConfigAndBuffer(capture_output_sample_rate_hz,
-                          num_capture_output_channels, &rand_gen,
-                          &capture_output_buffer, &capture_output_config,
-                          &capture_output, &capture_output_samples);
-
-    UpdateInputBuffers();
-  }
-
-  void CreateConfigAndBuffer(int sample_rate_hz,
-                             size_t num_channels,
-                             Random* rand_gen,
-                             std::unique_ptr<AudioBuffer>* buffer,
-                             StreamConfig* config,
-                             std::vector<float*>* buffer_data,
-                             std::vector<float>* buffer_data_samples) {
-    int samples_per_channel = rtc::CheckedDivExact(sample_rate_hz, 100);
-    *config = StreamConfig(sample_rate_hz, num_channels, false);
-    buffer->reset(new AudioBuffer(config->num_frames(), config->num_channels(),
-                                  config->num_frames(), config->num_channels(),
-                                  config->num_frames()));
-
-    buffer_data_samples->resize(samples_per_channel * num_channels);
-    for (auto& v : *buffer_data_samples) {
-      v = rand_gen->Rand<float>();
-    }
-
-    buffer_data->resize(num_channels);
-    for (size_t ch = 0; ch < num_channels; ++ch) {
-      (*buffer_data)[ch] = &(*buffer_data_samples)[ch * samples_per_channel];
-    }
-  }
-
-  void UpdateInputBuffers() {
-    test::CopyVectorToAudioBuffer(capture_input_config, capture_input_samples,
-                                  capture_input_buffer.get());
-    test::CopyVectorToAudioBuffer(render_input_config, render_input_samples,
-                                  render_input_buffer.get());
-  }
-
-  std::unique_ptr<AudioBuffer> render_input_buffer;
-  std::unique_ptr<AudioBuffer> capture_input_buffer;
-  std::unique_ptr<AudioBuffer> render_output_buffer;
-  std::unique_ptr<AudioBuffer> capture_output_buffer;
-  StreamConfig render_input_config;
-  StreamConfig capture_input_config;
-  StreamConfig render_output_config;
-  StreamConfig capture_output_config;
-  std::vector<float*> render_input;
-  std::vector<float> render_input_samples;
-  std::vector<float*> capture_input;
-  std::vector<float> capture_input_samples;
-  std::vector<float*> render_output;
-  std::vector<float> render_output_samples;
-  std::vector<float*> capture_output;
-  std::vector<float> capture_output_samples;
-};
-
-class SubmodulePerformanceTimer {
- public:
-  SubmodulePerformanceTimer() : clock_(webrtc::Clock::GetRealTimeClock()) {
-    timestamps_us_.reserve(kNumFramesToProcess);
-  }
-
-  void StartTimer() {
-    start_timestamp_us_ = rtc::Optional<int64_t>(clock_->TimeInMicroseconds());
-  }
-  void StopTimer() {
-    RTC_DCHECK(start_timestamp_us_);
-    timestamps_us_.push_back(clock_->TimeInMicroseconds() -
-                             *start_timestamp_us_);
-  }
-
-  double GetDurationAverage() const {
-    RTC_DCHECK(!timestamps_us_.empty());
-    return static_cast<double>(std::accumulate(timestamps_us_.begin(),
-                                               timestamps_us_.end(), 0)) /
-           timestamps_us_.size();
-  }
-
-  double GetDurationStandardDeviation() const {
-    RTC_DCHECK(!timestamps_us_.empty());
-    double average_duration = GetDurationAverage();
-
-    double variance = std::accumulate(
-        timestamps_us_.begin(), timestamps_us_.end(), 0.0,
-        [average_duration](const double& a, const int64_t& b) {
-          return a + (b - average_duration) * (b - average_duration);
-        });
-
-    return sqrt(variance / timestamps_us_.size());
-  }
-
- private:
-  webrtc::Clock* clock_;
-  rtc::Optional<int64_t> start_timestamp_us_;
-  std::vector<int64_t> timestamps_us_;
-};
-
-std::string FormPerformanceMeasureString(
-    const SubmodulePerformanceTimer& timer) {
+std::string FormPerformanceMeasureString(const test::PerformanceTimer& timer) {
   std::string s = std::to_string(timer.GetDurationAverage());
   s += ", ";
   s += std::to_string(timer.GetDurationStandardDeviation());
@@ -159,10 +37,10 @@ std::string FormPerformanceMeasureString(
 }
 
 void RunStandaloneSubmodule(int sample_rate_hz, size_t num_channels) {
-  SimulatorBuffers buffers(sample_rate_hz, sample_rate_hz, sample_rate_hz,
-                           sample_rate_hz, num_channels, num_channels,
-                           num_channels, num_channels);
-  SubmodulePerformanceTimer timer;
+  test::SimulatorBuffers buffers(sample_rate_hz, sample_rate_hz, sample_rate_hz,
+                                 sample_rate_hz, num_channels, num_channels,
+                                 num_channels, num_channels);
+  test::PerformanceTimer timer(kNumFramesToProcess);
 
   LevelController level_controller;
   level_controller.Initialize(sample_rate_hz);
@@ -190,13 +68,13 @@ void RunTogetherWithApm(std::string test_description,
                         size_t num_channels,
                         bool use_mobile_aec,
                         bool include_default_apm_processing) {
-  SimulatorBuffers buffers(
+  test::SimulatorBuffers buffers(
       render_input_sample_rate_hz, capture_input_sample_rate_hz,
       render_output_sample_rate_hz, capture_output_sample_rate_hz, num_channels,
       num_channels, num_channels, num_channels);
-  SubmodulePerformanceTimer render_timer;
-  SubmodulePerformanceTimer capture_timer;
-  SubmodulePerformanceTimer total_timer;
+  test::PerformanceTimer render_timer(kNumFramesToProcess);
+  test::PerformanceTimer capture_timer(kNumFramesToProcess);
+  test::PerformanceTimer total_timer(kNumFramesToProcess);
 
   webrtc::Config config;
   AudioProcessing::Config apm_config;
