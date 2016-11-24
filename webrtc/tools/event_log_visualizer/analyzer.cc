@@ -645,7 +645,7 @@ void EventLogAnalyzer::CreateAudioLevelGraph(Plot* plot) {
   }
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
-  plot->SetYAxis(-127, 0, "Audio playout level (dBov)", kBottomMargin,
+  plot->SetYAxis(-127, 0, "Audio level (dBov)", kBottomMargin,
                  kTopMargin);
   plot->SetTitle("Audio level");
 }
