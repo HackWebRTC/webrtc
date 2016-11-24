@@ -59,9 +59,6 @@ class RtpHeaderParser {
                                    const uint8_t* ptrRTPDataExtensionEnd,
                                    const uint8_t* ptr) const;
 
-  uint8_t ParsePaddingBytes(const uint8_t* ptrRTPDataExtensionEnd,
-                            const uint8_t* ptr) const;
-
   const uint8_t* const _ptrRTPDataBegin;
   const uint8_t* const _ptrRTPDataEnd;
 };

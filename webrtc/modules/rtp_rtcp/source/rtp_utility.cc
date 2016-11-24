@@ -318,8 +318,13 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
     const int len = (*ptr & 0x0f);
     ptr++;
 
+    if (id == 0) {
+      // Padding byte, skip ignoring len.
+      continue;
+    }
+
     if (id == 15) {
-      LOG(LS_WARNING)
+      LOG(LS_VERBOSE)
           << "RTP extension header 15 encountered. Terminate parsing.";
       return;
     }
@@ -446,23 +451,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
       }
     }
     ptr += (len + 1);
-    uint8_t num_bytes = ParsePaddingBytes(ptrRTPDataExtensionEnd, ptr);
-    ptr += num_bytes;
   }
 }
 
-uint8_t RtpHeaderParser::ParsePaddingBytes(
-    const uint8_t* ptrRTPDataExtensionEnd,
-    const uint8_t* ptr) const {
-  uint8_t num_zero_bytes = 0;
-  while (ptrRTPDataExtensionEnd - ptr > 0) {
-    if (*ptr != 0) {
-      return num_zero_bytes;
-    }
-    ptr++;
-    num_zero_bytes++;
-  }
-  return num_zero_bytes;
-}
 }  // namespace RtpUtility
 }  // namespace webrtc
