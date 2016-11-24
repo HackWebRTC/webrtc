@@ -125,13 +125,10 @@ class DataChannelInterface : public rtc::RefCountInterface {
 
   virtual int id() const = 0;
   virtual DataState state() const = 0;
-  // TODO(hbos): Default implementations of [messages/bytes]_[sent/received] as
-  // to not break Chromium. Fix Chromium's implementation as soon as this rolls.
-  // crbug.com/654927
-  virtual uint32_t messages_sent() const { return 0; }
-  virtual uint64_t bytes_sent() const { return 0; }
-  virtual uint32_t messages_received() const { return 0; }
-  virtual uint64_t bytes_received() const { return 0; }
+  virtual uint32_t messages_sent() const = 0;
+  virtual uint64_t bytes_sent() const = 0;
+  virtual uint32_t messages_received() const = 0;
+  virtual uint64_t bytes_received() const = 0;
   // The buffered_amount returns the number of bytes of application data
   // (UTF-8 text and binary data) that have been queued using SendBuffer but
   // have not yet been transmitted to the network.
