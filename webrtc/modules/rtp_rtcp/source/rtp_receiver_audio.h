@@ -64,6 +64,16 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const PayloadUnion& specific_payload) const override;
 
+  // We do not allow codecs to have multiple payload types for audio, so we
+  // need to override the default behavior (which is to do nothing).
+  void PossiblyRemoveExistingPayloadType(
+      RtpUtility::PayloadTypeMap* payload_type_map,
+      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+      size_t payload_name_length,
+      uint32_t frequency,
+      uint8_t channels,
+      uint32_t rate) const;
+
   // We need to look out for special payload types here and sometimes reset
   // statistics. In addition we sometimes need to tweak the frequency.
   void CheckPayloadChanged(int8_t payload_type,
@@ -78,6 +88,8 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
                                   size_t payload_length,
                                   const AudioPayload& audio_specific,
                                   bool is_red);
+
+  uint32_t last_received_frequency_;
 
   bool telephone_event_forward_to_decoder_;
   int8_t telephone_event_payload_type_;

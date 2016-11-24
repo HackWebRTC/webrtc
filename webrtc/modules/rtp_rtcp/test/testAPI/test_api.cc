@@ -101,7 +101,8 @@ class RtpRtcpAPITest : public ::testing::Test {
     configuration.outgoing_transport = &null_transport_;
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
     module_.reset(RtpRtcp::CreateRtpRtcp(configuration));
-    rtp_payload_registry_.reset(new RTPPayloadRegistry());
+    rtp_payload_registry_.reset(new RTPPayloadRegistry(
+            RTPPayloadStrategy::CreateStrategy(true)));
     rtp_receiver_.reset(RtpReceiver::CreateAudioReceiver(
         &fake_clock_, NULL, NULL, rtp_payload_registry_.get()));
   }

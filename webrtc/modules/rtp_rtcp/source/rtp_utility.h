@@ -36,6 +36,8 @@ struct Payload {
   PayloadUnion typeSpecific;
 };
 
+typedef std::map<int8_t, Payload*> PayloadTypeMap;
+
 bool StringCompare(const char* str1, const char* str2, const uint32_t length);
 
 // Round up to the nearest size that is a multiple of 4.

@@ -94,8 +94,10 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     configuration.intra_frame_callback = myRTCPFeedback1;
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
 
-    rtp_payload_registry1_.reset(new RTPPayloadRegistry());
-    rtp_payload_registry2_.reset(new RTPPayloadRegistry());
+    rtp_payload_registry1_.reset(new RTPPayloadRegistry(
+            RTPPayloadStrategy::CreateStrategy(true)));
+    rtp_payload_registry2_.reset(new RTPPayloadRegistry(
+            RTPPayloadStrategy::CreateStrategy(true)));
 
     module1 = RtpRtcp::CreateRtpRtcp(configuration);
 

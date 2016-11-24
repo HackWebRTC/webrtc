@@ -834,7 +834,8 @@ Channel::Channel(int32_t channelId,
       _channelId(channelId),
       event_log_proxy_(new RtcEventLogProxy()),
       rtp_header_parser_(RtpHeaderParser::Create()),
-      rtp_payload_registry_(new RTPPayloadRegistry()),
+      rtp_payload_registry_(
+          new RTPPayloadRegistry(RTPPayloadStrategy::CreateStrategy(true))),
       rtp_receive_statistics_(
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
       rtp_receiver_(

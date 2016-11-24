@@ -101,8 +101,10 @@ class RtpRtcpAudioTest : public ::testing::Test {
     receive_statistics1_.reset(ReceiveStatistics::Create(&fake_clock));
     receive_statistics2_.reset(ReceiveStatistics::Create(&fake_clock));
 
-    rtp_payload_registry1_.reset(new RTPPayloadRegistry());
-    rtp_payload_registry2_.reset(new RTPPayloadRegistry());
+    rtp_payload_registry1_.reset(new RTPPayloadRegistry(
+        RTPPayloadStrategy::CreateStrategy(true)));
+    rtp_payload_registry2_.reset(new RTPPayloadRegistry(
+        RTPPayloadStrategy::CreateStrategy(true)));
 
     RtpRtcp::Configuration configuration;
     configuration.audio = true;

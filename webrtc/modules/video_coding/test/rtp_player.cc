@@ -271,7 +271,8 @@ class SsrcHandlers {
             const PayloadTypes& payload_types,
             LostPackets* lost_packets)
         : rtp_header_parser_(RtpHeaderParser::Create()),
-          rtp_payload_registry_(new RTPPayloadRegistry()),
+          rtp_payload_registry_(new RTPPayloadRegistry(
+              RTPPayloadStrategy::CreateStrategy(false))),
           rtp_module_(),
           payload_sink_(),
           ssrc_(ssrc),
