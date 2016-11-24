@@ -1035,9 +1035,7 @@ int32_t Channel::Init() {
   for (int idx = 0; idx < nSupportedCodecs; idx++) {
     // Open up the RTP/RTCP receiver for all supported codecs
     if ((audio_coding_->Codec(idx, &codec) == -1) ||
-        (rtp_receiver_->RegisterReceivePayload(
-             codec.plname, codec.pltype, codec.plfreq, codec.channels,
-             (codec.rate < 0) ? 0 : codec.rate) == -1)) {
+        (rtp_receiver_->RegisterReceivePayload(codec) == -1)) {
       WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                    "Channel::Init() unable to register %s "
                    "(%d/%d/%" PRIuS "/%d) to RTP/RTCP receiver",
@@ -1362,9 +1360,7 @@ int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
     CodecInst rxCodec = codec;
 
     // Get payload type for the given codec
-    rtp_payload_registry_->ReceivePayloadType(
-        rxCodec.plname, rxCodec.plfreq, rxCodec.channels,
-        (rxCodec.rate < 0) ? 0 : rxCodec.rate, &pltype);
+    rtp_payload_registry_->ReceivePayloadType(rxCodec, &pltype);
     rxCodec.pltype = pltype;
 
     if (rtp_receiver_->DeRegisterReceivePayload(pltype) != 0) {
@@ -1383,16 +1379,12 @@ int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
     return 0;
   }
 
-  if (rtp_receiver_->RegisterReceivePayload(
-          codec.plname, codec.pltype, codec.plfreq, codec.channels,
-          (codec.rate < 0) ? 0 : codec.rate) != 0) {
+  if (rtp_receiver_->RegisterReceivePayload(codec) != 0) {
     // First attempt to register failed => de-register and try again
     // TODO(kwiberg): Retrying is probably not necessary, since
     // AcmReceiver::AddCodec also retries.
     rtp_receiver_->DeRegisterReceivePayload(codec.pltype);
-    if (rtp_receiver_->RegisterReceivePayload(
-            codec.plname, codec.pltype, codec.plfreq, codec.channels,
-            (codec.rate < 0) ? 0 : codec.rate) != 0) {
+    if (rtp_receiver_->RegisterReceivePayload(codec) != 0) {
       _engineStatisticsPtr->SetLastError(
           VE_RTP_RTCP_MODULE_ERROR, kTraceError,
           "SetRecPayloadType() RTP/RTCP-module registration failed");
@@ -1415,9 +1407,7 @@ int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
 
 int32_t Channel::GetRecPayloadType(CodecInst& codec) {
   int8_t payloadType(-1);
-  if (rtp_payload_registry_->ReceivePayloadType(
-          codec.plname, codec.plfreq, codec.channels,
-          (codec.rate < 0) ? 0 : codec.rate, &payloadType) != 0) {
+  if (rtp_payload_registry_->ReceivePayloadType(codec, &payloadType) != 0) {
     _engineStatisticsPtr->SetLastError(
         VE_RTP_RTCP_MODULE_ERROR, kTraceWarning,
         "GetRecPayloadType() failed to retrieve RX payload type");
@@ -3152,9 +3142,7 @@ void Channel::RegisterReceiveCodecsToRTPModule() {
   for (int idx = 0; idx < nSupportedCodecs; idx++) {
     // Open up the RTP/RTCP receiver for all supported codecs
     if ((audio_coding_->Codec(idx, &codec) == -1) ||
-        (rtp_receiver_->RegisterReceivePayload(
-             codec.plname, codec.pltype, codec.plfreq, codec.channels,
-             (codec.rate < 0) ? 0 : codec.rate) == -1)) {
+        (rtp_receiver_->RegisterReceivePayload(codec) == -1)) {
       WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                    "Channel::RegisterReceiveCodecsToRTPModule() unable"
                    " to register %s (%d/%d/%" PRIuS

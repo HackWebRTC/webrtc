@@ -22,6 +22,9 @@
 
 namespace webrtc {
 
+struct CodecInst;
+class VideoCodec;
+
 // This strategy deals with the audio/video-specific aspects
 // of payload handling.
 class RTPPayloadStrategy {
@@ -59,19 +62,18 @@ class RTPPayloadRegistry {
   explicit RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy);
   ~RTPPayloadRegistry();
 
-  int32_t RegisterReceivePayload(const char* payload_name,
-                                 int8_t payload_type,
-                                 uint32_t frequency,
-                                 size_t channels,
-                                 uint32_t rate,
+  // TODO(magjed): Split RTPPayloadRegistry into separate Audio and Video class
+  // and remove RTPPayloadStrategy, RTPPayloadVideoStrategy,
+  // RTPPayloadAudioStrategy, and simplify the code. http://crbug/webrtc/6743.
+  int32_t RegisterReceivePayload(const CodecInst& audio_codec,
                                  bool* created_new_payload_type);
+  int32_t RegisterReceivePayload(const VideoCodec& video_codec);
 
   int32_t DeRegisterReceivePayload(int8_t payload_type);
 
-  int32_t ReceivePayloadType(const char* payload_name,
-                             uint32_t frequency,
-                             size_t channels,
-                             uint32_t rate,
+  int32_t ReceivePayloadType(const CodecInst& audio_codec,
+                             int8_t* payload_type) const;
+  int32_t ReceivePayloadType(const VideoCodec& video_codec,
                              int8_t* payload_type) const;
 
   bool RtxEnabled() const;
@@ -141,6 +143,19 @@ class RTPPayloadRegistry {
   RTC_DEPRECATED void set_use_rtx_payload_mapping_on_restore(bool val) {}
 
  private:
+  int32_t RegisterReceivePayload(const char* payload_name,
+                                 int8_t payload_type,
+                                 uint32_t frequency,
+                                 size_t channels,
+                                 uint32_t rate,
+                                 bool* created_new_payload_type);
+
+  int32_t ReceivePayloadType(const char* payload_name,
+                             uint32_t frequency,
+                             size_t channels,
+                             uint32_t rate,
+                             int8_t* payload_type) const;
+
   // Prunes the payload type map of the specific payload type, if it exists.
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
       const char* payload_name,

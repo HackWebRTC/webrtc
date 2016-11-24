@@ -11,6 +11,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 
 #include "webrtc/base/logging.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 
 namespace webrtc {
@@ -31,6 +32,21 @@ RTPPayloadRegistry::~RTPPayloadRegistry() {
     delete it->second;
     payload_type_map_.erase(it);
   }
+}
+
+int32_t RTPPayloadRegistry::RegisterReceivePayload(const CodecInst& audio_codec,
+                                                   bool* created_new_payload) {
+  return RegisterReceivePayload(
+      audio_codec.plname, audio_codec.pltype, audio_codec.plfreq,
+      audio_codec.channels, std::max(0, audio_codec.rate), created_new_payload);
+}
+
+int32_t RTPPayloadRegistry::RegisterReceivePayload(
+    const VideoCodec& video_codec) {
+  bool dummy_created_new_payload;
+  return RegisterReceivePayload(video_codec.plName, video_codec.plType,
+                                kVideoPayloadTypeFrequency, 0 /* channels */,
+                                0 /* rate */, &dummy_created_new_payload);
 }
 
 int32_t RTPPayloadRegistry::RegisterReceivePayload(
@@ -163,6 +179,19 @@ void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
       }
     }
   }
+}
+
+int32_t RTPPayloadRegistry::ReceivePayloadType(const CodecInst& audio_codec,
+                                               int8_t* payload_type) const {
+  return ReceivePayloadType(audio_codec.plname, audio_codec.plfreq,
+                            audio_codec.channels, std::max(0, audio_codec.rate),
+                            payload_type);
+}
+
+int32_t RTPPayloadRegistry::ReceivePayloadType(const VideoCodec& video_codec,
+                                               int8_t* payload_type) const {
+  return ReceivePayloadType(video_codec.plName, kVideoPayloadTypeFrequency,
+                            0 /* channels */, 0 /* rate */, payload_type);
 }
 
 int32_t RTPPayloadRegistry::ReceivePayloadType(const char* const payload_name,

@@ -226,15 +226,12 @@ RtpStreamReceiver::~RtpStreamReceiver() {
 
 bool RtpStreamReceiver::SetReceiveCodec(const VideoCodec& video_codec) {
   int8_t old_pltype = -1;
-  if (rtp_payload_registry_.ReceivePayloadType(
-          video_codec.plName, kVideoPayloadTypeFrequency, 0,
-          video_codec.maxBitrate, &old_pltype) != -1) {
+  if (rtp_payload_registry_.ReceivePayloadType(video_codec, &old_pltype) !=
+      -1) {
     rtp_payload_registry_.DeRegisterReceivePayload(old_pltype);
   }
 
-  return rtp_receiver_->RegisterReceivePayload(
-             video_codec.plName, video_codec.plType, kVideoPayloadTypeFrequency,
-             0, 0) == 0;
+  return rtp_payload_registry_.RegisterReceivePayload(video_codec) == 0;
 }
 
 uint32_t RtpStreamReceiver::GetRemoteSsrc() const {

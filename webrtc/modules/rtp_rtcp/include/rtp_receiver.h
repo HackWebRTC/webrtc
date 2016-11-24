@@ -16,7 +16,9 @@
 
 namespace webrtc {
 
+struct CodecInst;
 class RTPPayloadRegistry;
+class VideoCodec;
 
 class TelephoneEventHandler {
  public:
@@ -56,6 +58,8 @@ class RtpReceiver {
 
   // Registers a receive payload in the payload registry and notifies the media
   // receiver strategy.
+  virtual int32_t RegisterReceivePayload(const CodecInst& audio_codec) = 0;
+  // TODO(magjed): Remove once external code is updated.
   virtual int32_t RegisterReceivePayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const int8_t payload_type,

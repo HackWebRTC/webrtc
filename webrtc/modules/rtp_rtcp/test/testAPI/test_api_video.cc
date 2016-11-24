@@ -71,11 +71,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
     memcpy(video_codec.plName, "I420", 5);
 
     EXPECT_EQ(0, video_module_->RegisterSendPayload(video_codec));
-    EXPECT_EQ(0, rtp_receiver_->RegisterReceivePayload(video_codec.plName,
-                                                       video_codec.plType,
-                                                       90000,
-                                                       0,
-                                                       video_codec.maxBitrate));
+    EXPECT_EQ(0, rtp_payload_registry_.RegisterReceivePayload(video_codec));
 
     payload_data_length_ = sizeof(video_frame_);
 
@@ -161,11 +157,7 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
   codec.codecType = kVideoCodecVP8;
   codec.plType = kPayloadType;
   strncpy(codec.plName, "VP8", 4);
-  EXPECT_EQ(0, rtp_receiver_->RegisterReceivePayload(codec.plName,
-                                                     codec.plType,
-                                                     90000,
-                                                     0,
-                                                     codec.maxBitrate));
+  EXPECT_EQ(0, rtp_payload_registry_.RegisterReceivePayload(codec));
   for (int frame_idx = 0; frame_idx < 10; ++frame_idx) {
     for (int packet_idx = 0; packet_idx < 5; ++packet_idx) {
       size_t packet_size = PaddingPacket(padding_packet, timestamp, seq_num,

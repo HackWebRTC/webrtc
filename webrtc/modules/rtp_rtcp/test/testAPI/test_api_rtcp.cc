@@ -146,19 +146,9 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     memcpy(voice_codec.plname, "PCMU", 5);
 
     EXPECT_EQ(0, module1->RegisterSendPayload(voice_codec));
-    EXPECT_EQ(0, rtp_receiver1_->RegisterReceivePayload(
-        voice_codec.plname,
-        voice_codec.pltype,
-        voice_codec.plfreq,
-        voice_codec.channels,
-        (voice_codec.rate < 0) ? 0 : voice_codec.rate));
+    EXPECT_EQ(0, rtp_receiver1_->RegisterReceivePayload(voice_codec));
     EXPECT_EQ(0, module2->RegisterSendPayload(voice_codec));
-    EXPECT_EQ(0, rtp_receiver2_->RegisterReceivePayload(
-        voice_codec.plname,
-        voice_codec.pltype,
-        voice_codec.plfreq,
-        voice_codec.channels,
-        (voice_codec.rate < 0) ? 0 : voice_codec.rate));
+    EXPECT_EQ(0, rtp_receiver2_->RegisterReceivePayload(voice_codec));
 
     // We need to send one RTP packet to get the RTCP packet to be accepted by
     // the receiving module.

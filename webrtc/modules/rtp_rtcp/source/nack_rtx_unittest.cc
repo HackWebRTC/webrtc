@@ -210,9 +210,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
 
     EXPECT_EQ(0, rtp_rtcp_module_->RegisterSendPayload(video_codec));
     rtp_rtcp_module_->SetRtxSendPayloadType(kRtxPayloadType, kPayloadType);
-    EXPECT_EQ(0, rtp_receiver_->RegisterReceivePayload(
-                     video_codec.plName, video_codec.plType, 90000, 0,
-                     video_codec.maxBitrate));
+    EXPECT_EQ(0, rtp_payload_registry_.RegisterReceivePayload(video_codec));
     rtp_payload_registry_.SetRtxPayloadType(kRtxPayloadType, kPayloadType);
 
     for (size_t n = 0; n < payload_data_length; n++) {
