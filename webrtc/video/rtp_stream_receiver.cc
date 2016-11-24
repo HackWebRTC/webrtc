@@ -106,7 +106,6 @@ RtpStreamReceiver::RtpStreamReceiver(
       remb_(remb),
       process_thread_(process_thread),
       ntp_estimator_(clock_),
-      rtp_payload_registry_(RTPPayloadStrategy::CreateStrategy(false)),
       rtp_header_parser_(RtpHeaderParser::Create()),
       rtp_receiver_(RtpReceiver::CreateVideoReceiver(clock_,
                                                      this,

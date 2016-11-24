@@ -35,8 +35,7 @@ namespace webrtc {
 class RtpRtcpVideoTest : public ::testing::Test {
  protected:
   RtpRtcpVideoTest()
-      : rtp_payload_registry_(RTPPayloadStrategy::CreateStrategy(false)),
-        test_ssrc_(3456),
+      : test_ssrc_(3456),
         test_timestamp_(4567),
         test_sequence_number_(2345),
         fake_clock(123456),
