@@ -14,8 +14,8 @@
 #include <memory>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/common_audio/smoothing_filter.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/smoothing_filter.h"
 
 namespace webrtc {
 

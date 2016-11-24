@@ -10,8 +10,8 @@
 
 #include <utility>
 
-#include "webrtc/common_audio/mocks/mock_smoothing_filter.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_smoothing_filter.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
@@ -55,6 +55,7 @@ FecControllerStates CreateFecController(bool initial_fec_enabled) {
   std::unique_ptr<MockSmoothingFilter> mock_smoothing_filter(
       new NiceMock<MockSmoothingFilter>());
   states.packet_loss_smoothed = mock_smoothing_filter.get();
+  EXPECT_CALL(*states.packet_loss_smoothed, Die());
   using Threshold = FecController::Config::Threshold;
   states.controller.reset(new FecController(
       FecController::Config(
@@ -261,6 +262,7 @@ TEST(FecControllerTest, CheckBehaviorOnSpecialCurves) {
   std::unique_ptr<MockSmoothingFilter> mock_smoothing_filter(
       new NiceMock<MockSmoothingFilter>());
   states.packet_loss_smoothed = mock_smoothing_filter.get();
+  EXPECT_CALL(*states.packet_loss_smoothed, Die());
   using Threshold = FecController::Config::Threshold;
   states.controller.reset(new FecController(
       FecController::Config(
@@ -291,6 +293,7 @@ TEST(FecControllerDeathTest, InvalidConfig) {
   std::unique_ptr<MockSmoothingFilter> mock_smoothing_filter(
       new NiceMock<MockSmoothingFilter>());
   states.packet_loss_smoothed = mock_smoothing_filter.get();
+  EXPECT_CALL(*states.packet_loss_smoothed, Die());
   using Threshold = FecController::Config::Threshold;
   EXPECT_DEATH(
       states.controller.reset(new FecController(

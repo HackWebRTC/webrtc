@@ -58,7 +58,6 @@ rtc_static_library("video") {
     "..:webrtc_common",
     "../base:rtc_base_approved",
     "../base:rtc_task_queue",
-    "../base/analytics:rtc_analytics",
     "../common_video",
     "../logging:rtc_event_log_api",
     "../modules/bitrate_controller",

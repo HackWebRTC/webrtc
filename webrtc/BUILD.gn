@@ -363,7 +363,6 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "api/fakemetricsobserver.cc",
-      "base/analytics/exp_filter_unittest.cc",
       "base/array_view_unittest.cc",
       "base/atomicops_unittest.cc",
       "base/autodetectproxy_unittest.cc",
@@ -381,6 +380,7 @@ if (rtc_include_tests) {
       "base/criticalsection_unittest.cc",
       "base/event_tracer_unittest.cc",
       "base/event_unittest.cc",
+      "base/exp_filter_unittest.cc",
       "base/file_unittest.cc",
       "base/filerotatingstream_unittest.cc",
       "base/fileutils_unittest.cc",
@@ -511,7 +511,6 @@ if (rtc_include_tests) {
       "base:rtc_base",
       "base:rtc_base_tests_utils",
       "base:rtc_task_queue",
-      "base/analytics:rtc_analytics",
       "p2p:libstunprober",
       "p2p:rtc_p2p",
       "//testing/gmock",
