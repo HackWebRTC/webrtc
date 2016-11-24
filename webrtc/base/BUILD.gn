@@ -124,8 +124,6 @@ rtc_static_library("rtc_base_approved") {
     "event.h",
     "event_tracer.cc",
     "event_tracer.h",
-    "exp_filter.cc",
-    "exp_filter.h",
     "file.cc",
     "file.h",
     "format_macros.h",

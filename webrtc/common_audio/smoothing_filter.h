@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_SMOOTHING_FILTER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_SMOOTHING_FILTER_H_
+#ifndef WEBRTC_COMMON_AUDIO_SMOOTHING_FILTER_H_
+#define WEBRTC_COMMON_AUDIO_SMOOTHING_FILTER_H_
 
+#include "webrtc/base/analytics/exp_filter.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/exp_filter.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -46,9 +46,9 @@ class SmoothingFilterImpl final : public SmoothingFilter {
   int64_t last_sample_time_ms_;
   rtc::ExpFilter filter_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(SmoothingFilterImpl);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SmoothingFilterImpl);
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_SMOOTHING_FILTER_H_
+#endif  // WEBRTC_COMMON_AUDIO_SMOOTHING_FILTER_H_

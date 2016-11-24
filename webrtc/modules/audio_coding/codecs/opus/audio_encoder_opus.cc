@@ -13,8 +13,8 @@
 #include <algorithm>
 #include <iterator>
 
+#include "webrtc/base/analytics/exp_filter.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/exp_filter.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
