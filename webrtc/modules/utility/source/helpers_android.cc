@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_device/android/helpers_android.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/modules/utility/include/helpers_android.h"
 
 #include <android/log.h>
 #include <assert.h>
@@ -44,7 +45,7 @@ jlong PointerTojlong(void* ptr) {
   return ret;
 }
 
-jmethodID GetMethodID(
+jmethodID GetMethodID (
     JNIEnv* jni, jclass c, const char* name, const char* signature) {
   jmethodID m = jni->GetMethodID(c, name, signature);
   CHECK_EXCEPTION(jni) << "Error during GetMethodID: " << name << ", "
@@ -53,7 +54,7 @@ jmethodID GetMethodID(
   return m;
 }
 
-jmethodID GetStaticMethodID(
+jmethodID GetStaticMethodID (
     JNIEnv* jni, jclass c, const char* name, const char* signature) {
   jmethodID m = jni->GetStaticMethodID(c, name, signature);
   CHECK_EXCEPTION(jni) << "Error during GetStaticMethodID: " << name << ", "

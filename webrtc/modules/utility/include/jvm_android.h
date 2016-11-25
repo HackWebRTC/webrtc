@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_JVM_ANDROID_H_
-#define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_JVM_ANDROID_H_
+#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_
+#define WEBRTC_MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_
 
 #include <jni.h>
 
@@ -17,7 +17,7 @@
 #include <string>
 
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/audio_device/android/helpers_android.h"
+#include "webrtc/modules/utility/include/helpers_android.h"
 
 namespace webrtc {
 
@@ -184,4 +184,4 @@ class JVM {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_JVM_ANDROID_H_
+#endif  // WEBRTC_MODULES_UTILITY_INCLUDE_JVM_ANDROID_H_

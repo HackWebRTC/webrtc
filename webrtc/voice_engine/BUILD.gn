@@ -195,6 +195,7 @@ if (rtc_include_tests) {
       "//webrtc/modules/audio_processing",
       "//webrtc/modules/media_file",
       "//webrtc/modules/rtp_rtcp",
+      "//webrtc/modules/utility",
       "//webrtc/system_wrappers",
       "//webrtc/test:test_support_main",
     ]
