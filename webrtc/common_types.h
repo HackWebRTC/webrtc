@@ -548,6 +548,19 @@ struct VideoCodecVP9 {
   bool flexibleMode;
 };
 
+// TODO(magjed): Move this and other H264 related classes out to their own file.
+namespace H264 {
+
+enum Profile {
+  kProfileConstrainedBaseline,
+  kProfileBaseline,
+  kProfileMain,
+  kProfileConstrainedHigh,
+  kProfileHigh,
+};
+
+}  // namespace H264
+
 // H264 specific.
 struct VideoCodecH264 {
   bool frameDroppingOn;
@@ -557,6 +570,7 @@ struct VideoCodecH264 {
   size_t spsLen;
   const uint8_t* ppsData;
   size_t ppsLen;
+  H264::Profile profile;
 };
 
 // Video codec types
