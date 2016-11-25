@@ -467,10 +467,6 @@ if (rtc_include_tests) {
       "p2p/stunprober/stunprober_unittest.cc",
     ]
 
-    if (is_linux) {
-      sources += [ "base/latebindingsymboltable_unittest.cc" ]
-    }
-
     if (is_win) {
       sources += [
         "base/win32_unittest.cc",

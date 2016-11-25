@@ -564,13 +564,6 @@ rtc_static_library("rtc_base") {
       "window.h",
     ]
 
-    if (is_posix) {
-      sources += [
-        "latebindingsymboltable.cc",
-        "latebindingsymboltable.h",
-      ]
-    }
-
     if (is_win) {
       sources += [
         "diskcache_win32.cc",
