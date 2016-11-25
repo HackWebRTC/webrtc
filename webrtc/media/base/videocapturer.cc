@@ -14,7 +14,6 @@
 
 #include <algorithm>
 
-#include "libyuv/scale_argb.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/systeminfo.h"
