@@ -636,8 +636,8 @@ void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {
   // TODO(perkj): Some test cases in VideoSendStreamTest call
   // ReconfigureVideoEncoder from the network thread.
   // RTC_DCHECK_RUN_ON(&thread_checker_);
-  vie_encoder_->ConfigureEncoder(std::move(config),
-                                 config_.rtp.max_packet_size);
+  vie_encoder_->ConfigureEncoder(std::move(config), config_.rtp.max_packet_size,
+                                 config_.rtp.nack.rtp_history_ms > 0);
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() {

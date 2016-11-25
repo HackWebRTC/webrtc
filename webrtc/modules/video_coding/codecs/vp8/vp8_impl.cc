@@ -401,11 +401,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   // Set the error resilience mode according to user settings.
   switch (inst->VP8().resilience) {
     case kResilienceOff:
-      // TODO(marpan): We should set keep error resilience off for this mode,
-      // independent of temporal layer settings, and make sure we set
-      // |codecSpecific.VP8.resilience| = |kResilientStream| at higher level
-      // code if we want to get error resilience on.
-      configurations_[0].g_error_resilient = 1;
+      configurations_[0].g_error_resilient = 0;
       break;
     case kResilientStream:
       configurations_[0].g_error_resilient = 1;  // TODO(holmer): Replace with

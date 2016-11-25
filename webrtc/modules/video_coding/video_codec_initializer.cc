@@ -11,6 +11,7 @@
 #include "webrtc/modules/video_coding/include/video_codec_initializer.h"
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
@@ -25,10 +26,12 @@ bool VideoCodecInitializer::SetupCodec(
     const VideoEncoderConfig& config,
     const VideoSendStream::Config::EncoderSettings settings,
     const std::vector<VideoStream>& streams,
+    bool nack_enabled,
     VideoCodec* codec,
     std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator) {
-  *codec = VideoEncoderConfigToVideoCodec(
-      config, streams, settings.payload_name, settings.payload_type);
+  *codec =
+      VideoEncoderConfigToVideoCodec(config, streams, settings.payload_name,
+                                     settings.payload_type, nack_enabled);
 
   std::unique_ptr<TemporalLayersFactory> tl_factory;
   switch (codec->codecType) {
@@ -82,7 +85,8 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     const VideoEncoderConfig& config,
     const std::vector<VideoStream>& streams,
     const std::string& payload_name,
-    int payload_type) {
+    int payload_type,
+    bool nack_enabled) {
   static const int kEncoderMinBitrateKbps = 30;
   RTC_DCHECK(!streams.empty());
   RTC_DCHECK_GE(config.min_transmit_bitrate_bps, 0);
@@ -115,6 +119,15 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
         *video_codec.VP8() = VideoEncoder::GetDefaultVp8Settings();
       video_codec.VP8()->numberOfTemporalLayers = static_cast<unsigned char>(
           streams.back().temporal_layer_thresholds_bps.size() + 1);
+      bool temporal_layers_configured = false;
+      for (const VideoStream& stream : streams) {
+        if (stream.temporal_layer_thresholds_bps.size() > 0)
+          temporal_layers_configured = true;
+      }
+      if (nack_enabled && !temporal_layers_configured) {
+        LOG(LS_INFO) << "No temporal layers and nack enabled -> resilience off";
+        video_codec.VP8()->resilience = kResilienceOff;
+      }
       break;
     }
     case kVideoCodecVP9: {

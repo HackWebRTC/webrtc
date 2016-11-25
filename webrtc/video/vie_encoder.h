@@ -92,7 +92,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void SetStartBitrate(int start_bitrate_bps);
 
   void ConfigureEncoder(VideoEncoderConfig config,
-                        size_t max_data_payload_length);
+                        size_t max_data_payload_length,
+                        bool nack_enabled);
 
   // Permanently stop encoding. After this method has returned, it is
   // guaranteed that no encoded frames will be delivered to the sink.
@@ -140,7 +141,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   };
 
   void ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
-                                   size_t max_data_payload_length);
+                                   size_t max_data_payload_length,
+                                   bool nack_enabled);
   void ReconfigureEncoder();
 
   // Implements VideoSinkInterface.
@@ -193,6 +195,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   rtc::Optional<VideoFrameInfo> last_frame_info_ ACCESS_ON(&encoder_queue_);
   uint32_t encoder_start_bitrate_bps_ ACCESS_ON(&encoder_queue_);
   size_t max_data_payload_length_ ACCESS_ON(&encoder_queue_);
+  bool nack_enabled_ ACCESS_ON(&encoder_queue_);
   uint32_t last_observed_bitrate_bps_ ACCESS_ON(&encoder_queue_);
   bool encoder_paused_and_dropped_frame_ ACCESS_ON(&encoder_queue_);
   bool has_received_sli_ ACCESS_ON(&encoder_queue_);

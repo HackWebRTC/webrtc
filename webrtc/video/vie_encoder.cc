@@ -52,21 +52,24 @@ class ViEEncoder::ConfigureEncoderTask : public rtc::QueuedTask {
  public:
   ConfigureEncoderTask(ViEEncoder* vie_encoder,
                        VideoEncoderConfig config,
-                       size_t max_data_payload_length)
+                       size_t max_data_payload_length,
+                       bool nack_enabled)
       : vie_encoder_(vie_encoder),
         config_(std::move(config)),
-        max_data_payload_length_(max_data_payload_length) {}
+        max_data_payload_length_(max_data_payload_length),
+        nack_enabled_(nack_enabled) {}
 
  private:
   bool Run() override {
-    vie_encoder_->ConfigureEncoderOnTaskQueue(std::move(config_),
-                                              max_data_payload_length_);
+    vie_encoder_->ConfigureEncoderOnTaskQueue(
+        std::move(config_), max_data_payload_length_, nack_enabled_);
     return true;
   }
 
   ViEEncoder* const vie_encoder_;
   VideoEncoderConfig config_;
   size_t max_data_payload_length_;
+  bool nack_enabled_;
 };
 
 class ViEEncoder::EncodeTask : public rtc::QueuedTask {
@@ -246,6 +249,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       pending_encoder_reconfiguration_(false),
       encoder_start_bitrate_bps_(0),
       max_data_payload_length_(0),
+      nack_enabled_(false),
       last_observed_bitrate_bps_(0),
       encoder_paused_and_dropped_frame_(false),
       has_received_sli_(false),
@@ -344,19 +348,22 @@ void ViEEncoder::SetStartBitrate(int start_bitrate_bps) {
 }
 
 void ViEEncoder::ConfigureEncoder(VideoEncoderConfig config,
-                                  size_t max_data_payload_length) {
+                                  size_t max_data_payload_length,
+                                  bool nack_enabled) {
   encoder_queue_.PostTask(
       std::unique_ptr<rtc::QueuedTask>(new ConfigureEncoderTask(
-          this, std::move(config), max_data_payload_length)));
+          this, std::move(config), max_data_payload_length, nack_enabled)));
 }
 
 void ViEEncoder::ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
-                                             size_t max_data_payload_length) {
+                                             size_t max_data_payload_length,
+                                             bool nack_enabled) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   RTC_DCHECK(sink_);
   LOG(LS_INFO) << "ConfigureEncoder requested.";
 
   max_data_payload_length_ = max_data_payload_length;
+  nack_enabled_ = nack_enabled;
   encoder_config_ = std::move(config);
   pending_encoder_reconfiguration_ = true;
 
@@ -382,7 +389,8 @@ void ViEEncoder::ReconfigureEncoder() {
 
   VideoCodec codec;
   if (!VideoCodecInitializer::SetupCodec(encoder_config_, settings_, streams,
-                                         &codec, &rate_allocator_)) {
+                                         nack_enabled_, &codec,
+                                         &rate_allocator_)) {
     LOG(LS_ERROR) << "Failed to create encoder configuration.";
   }
 

@@ -23,6 +23,9 @@
 namespace webrtc {
 
 namespace {
+const size_t kMaxPayloadLength = 1440;
+const int kTargetBitrateBps = 100000;
+
 class TestBuffer : public webrtc::I420Buffer {
  public:
   TestBuffer(rtc::Event* event, int width, int height)
@@ -67,6 +70,29 @@ class ViEEncoderUnderTest : public ViEEncoder {
   }
 };
 
+class VideoStreamFactory
+    : public VideoEncoderConfig::VideoStreamFactoryInterface {
+ public:
+  explicit VideoStreamFactory(size_t num_temporal_layers)
+      : num_temporal_layers_(num_temporal_layers) {
+    EXPECT_GT(num_temporal_layers, 0u);
+  }
+
+ private:
+  std::vector<VideoStream> CreateEncoderStreams(
+      int width,
+      int height,
+      const VideoEncoderConfig& encoder_config) override {
+    std::vector<VideoStream> streams =
+        test::CreateVideoStreams(width, height, encoder_config);
+    for (VideoStream& stream : streams) {
+      stream.temporal_layer_thresholds_bps.resize(num_temporal_layers_ - 1);
+    }
+    return streams;
+  }
+  const size_t num_temporal_layers_;
+};
+
 }  // namespace
 
 class ViEEncoderTest : public ::testing::Test {
@@ -94,13 +120,35 @@ class ViEEncoderTest : public ::testing::Test {
     VideoEncoderConfig video_encoder_config;
     test::FillEncoderConfiguration(1, &video_encoder_config);
     video_encoder_config_ = video_encoder_config.Copy();
+    ConfigureEncoder(std::move(video_encoder_config), true /* nack_enabled */);
+  }
+
+  void ConfigureEncoder(VideoEncoderConfig video_encoder_config,
+                        bool nack_enabled) {
+    if (vie_encoder_)
+      vie_encoder_->Stop();
     vie_encoder_.reset(new ViEEncoderUnderTest(
         stats_proxy_.get(), video_send_config_.encoder_settings));
     vie_encoder_->SetSink(&sink_, false /* rotation_applied */);
     vie_encoder_->SetSource(&video_source_,
                             VideoSendStream::DegradationPreference::kBalanced);
     vie_encoder_->SetStartBitrate(10000);
-    vie_encoder_->ConfigureEncoder(std::move(video_encoder_config), 1440);
+    vie_encoder_->ConfigureEncoder(std::move(video_encoder_config),
+                                   kMaxPayloadLength, nack_enabled);
+  }
+
+  void ResetEncoder(const std::string& payload_name,
+                    size_t num_streams,
+                    size_t num_temporal_layers,
+                    bool nack_enabled) {
+    video_send_config_.encoder_settings.payload_name = payload_name;
+
+    VideoEncoderConfig video_encoder_config;
+    video_encoder_config.number_of_streams = num_streams;
+    video_encoder_config.max_bitrate_bps = 1000000;
+    video_encoder_config.video_stream_factory =
+        new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers);
+    ConfigureEncoder(std::move(video_encoder_config), nack_enabled);
   }
 
   VideoFrame CreateFrame(int64_t ntp_ts, rtc::Event* destruction_event) const {
@@ -248,7 +296,6 @@ class ViEEncoderTest : public ::testing::Test {
 };
 
 TEST_F(ViEEncoderTest, EncodeOneFrame) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   rtc::Event frame_destroyed_event(false, false);
   video_source_.IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
@@ -263,7 +310,6 @@ TEST_F(ViEEncoderTest, DropsFramesBeforeFirstOnBitrateUpdated) {
   video_source_.IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
   EXPECT_TRUE(frame_destroyed_event.Wait(kDefaultTimeoutMs));
 
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
@@ -272,7 +318,6 @@ TEST_F(ViEEncoderTest, DropsFramesBeforeFirstOnBitrateUpdated) {
 }
 
 TEST_F(ViEEncoderTest, DropsFramesWhenRateSetToZero) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
@@ -288,7 +333,6 @@ TEST_F(ViEEncoderTest, DropsFramesWhenRateSetToZero) {
 }
 
 TEST_F(ViEEncoderTest, DropsFramesWithSameOrOldNtpTimestamp) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   sink_.WaitForEncodedFrame(1);
@@ -302,7 +346,6 @@ TEST_F(ViEEncoderTest, DropsFramesWithSameOrOldNtpTimestamp) {
 }
 
 TEST_F(ViEEncoderTest, DropsFrameAfterStop) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
@@ -316,7 +359,6 @@ TEST_F(ViEEncoderTest, DropsFrameAfterStop) {
 }
 
 TEST_F(ViEEncoderTest, DropsPendingFramesOnSlowEncode) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   fake_encoder_.BlockNextEncode();
@@ -333,7 +375,6 @@ TEST_F(ViEEncoderTest, DropsPendingFramesOnSlowEncode) {
 }
 
 TEST_F(ViEEncoderTest, ConfigureEncoderTriggersOnEncoderConfigurationChanged) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   EXPECT_EQ(0, sink_.number_of_reconfigurations());
 
@@ -347,7 +388,8 @@ TEST_F(ViEEncoderTest, ConfigureEncoderTriggersOnEncoderConfigurationChanged) {
   VideoEncoderConfig video_encoder_config;
   test::FillEncoderConfiguration(1, &video_encoder_config);
   video_encoder_config.min_transmit_bitrate_bps = 9999;
-  vie_encoder_->ConfigureEncoder(std::move(video_encoder_config), 1440);
+  vie_encoder_->ConfigureEncoder(std::move(video_encoder_config),
+                                 kMaxPayloadLength, true /* nack_enabled */);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
@@ -359,7 +401,6 @@ TEST_F(ViEEncoderTest, ConfigureEncoderTriggersOnEncoderConfigurationChanged) {
 }
 
 TEST_F(ViEEncoderTest, FrameResolutionChangeReconfigureEncoder) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
@@ -383,6 +424,86 @@ TEST_F(ViEEncoderTest, FrameResolutionChangeReconfigureEncoder) {
   vie_encoder_->Stop();
 }
 
+TEST_F(ViEEncoderTest, Vp8ResilienceIsOffFor1S1TLWithNackEnabled) {
+  const bool kNackEnabled = true;
+  const size_t kNumStreams = 1;
+  const size_t kNumTl = 1;
+  ResetEncoder("VP8", kNumStreams, kNumTl, kNackEnabled);
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // Capture a frame and wait for it to synchronize with the encoder thread.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  sink_.WaitForEncodedFrame(1);
+  // The encoder have been configured once when the first frame is received.
+  EXPECT_EQ(1, sink_.number_of_reconfigurations());
+  EXPECT_EQ(kVideoCodecVP8, fake_encoder_.codec_config().codecType);
+  EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
+  EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP8()->numberOfTemporalLayers);
+  // Resilience is off for no temporal layers with nack on.
+  EXPECT_EQ(kResilienceOff, fake_encoder_.codec_config().VP8()->resilience);
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, Vp8ResilienceIsOffFor2S1TlWithNackEnabled) {
+  const bool kNackEnabled = true;
+  const size_t kNumStreams = 2;
+  const size_t kNumTl = 1;
+  ResetEncoder("VP8", kNumStreams, kNumTl, kNackEnabled);
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // Capture a frame and wait for it to synchronize with the encoder thread.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  sink_.WaitForEncodedFrame(1);
+  // The encoder have been configured once when the first frame is received.
+  EXPECT_EQ(1, sink_.number_of_reconfigurations());
+  EXPECT_EQ(kVideoCodecVP8, fake_encoder_.codec_config().codecType);
+  EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
+  EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP8()->numberOfTemporalLayers);
+  // Resilience is off for no temporal layers and >1 streams with nack on.
+  EXPECT_EQ(kResilienceOff, fake_encoder_.codec_config().VP8()->resilience);
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, Vp8ResilienceIsOnFor1S1TLWithNackDisabled) {
+  const bool kNackEnabled = false;
+  const size_t kNumStreams = 1;
+  const size_t kNumTl = 1;
+  ResetEncoder("VP8", kNumStreams, kNumTl, kNackEnabled);
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // Capture a frame and wait for it to synchronize with the encoder thread.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  sink_.WaitForEncodedFrame(1);
+  // The encoder have been configured once when the first frame is received.
+  EXPECT_EQ(1, sink_.number_of_reconfigurations());
+  EXPECT_EQ(kVideoCodecVP8, fake_encoder_.codec_config().codecType);
+  EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
+  EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP8()->numberOfTemporalLayers);
+  // Resilience is on for no temporal layers with nack off.
+  EXPECT_EQ(kResilientStream, fake_encoder_.codec_config().VP8()->resilience);
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, Vp8ResilienceIsOnFor1S2TlWithNackEnabled) {
+  const bool kNackEnabled = true;
+  const size_t kNumStreams = 1;
+  const size_t kNumTl = 2;
+  ResetEncoder("VP8", kNumStreams, kNumTl, kNackEnabled);
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // Capture a frame and wait for it to synchronize with the encoder thread.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  sink_.WaitForEncodedFrame(1);
+  // The encoder have been configured once when the first frame is received.
+  EXPECT_EQ(1, sink_.number_of_reconfigurations());
+  EXPECT_EQ(kVideoCodecVP8, fake_encoder_.codec_config().codecType);
+  EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
+  EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP8()->numberOfTemporalLayers);
+  // Resilience is on for temporal layers.
+  EXPECT_EQ(kResilientStream, fake_encoder_.codec_config().VP8()->resilience);
+  vie_encoder_->Stop();
+}
+
 TEST_F(ViEEncoderTest, SwitchSourceDeregisterEncoderAsSink) {
   EXPECT_TRUE(video_source_.has_sinks());
   test::FrameForwarder new_video_source;
@@ -402,7 +523,6 @@ TEST_F(ViEEncoderTest, SinkWantsRotationApplied) {
 }
 
 TEST_F(ViEEncoderTest, SinkWantsFromOveruseDetector) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   EXPECT_FALSE(video_source_.sink_wants().max_pixel_count);
@@ -452,7 +572,6 @@ TEST_F(ViEEncoderTest, SinkWantsFromOveruseDetector) {
 
 TEST_F(ViEEncoderTest,
        ResolutionSinkWantsResetOnSetSourceWithDisabledResolutionScaling) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   EXPECT_FALSE(video_source_.sink_wants().max_pixel_count);
@@ -499,7 +618,6 @@ TEST_F(ViEEncoderTest,
 }
 
 TEST_F(ViEEncoderTest, StatsTracksAdaptationStats) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   int frame_width = 1280;
@@ -536,7 +654,6 @@ TEST_F(ViEEncoderTest, StatsTracksAdaptationStats) {
 }
 
 TEST_F(ViEEncoderTest, StatsTracksAdaptationStatsWhenSwitchingSource) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   // Trigger CPU overuse.
@@ -598,7 +715,6 @@ TEST_F(ViEEncoderTest, StatsTracksAdaptationStatsWhenSwitchingSource) {
 }
 
 TEST_F(ViEEncoderTest, StatsTracksPreferredBitrate) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   video_source_.IncomingCapturedFrame(CreateFrame(1, 1280, 720));
@@ -612,7 +728,6 @@ TEST_F(ViEEncoderTest, StatsTracksPreferredBitrate) {
 }
 
 TEST_F(ViEEncoderTest, UMACpuLimitedResolutionInPercent) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   int frame_width = 640;

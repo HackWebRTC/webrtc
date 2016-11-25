@@ -36,6 +36,7 @@ class VideoCodecInitializer {
       const VideoEncoderConfig& config,
       const VideoSendStream::Config::EncoderSettings settings,
       const std::vector<VideoStream>& streams,
+      bool nack_enabled,
       VideoCodec* codec,
       std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator);
 
@@ -51,7 +52,8 @@ class VideoCodecInitializer {
       const VideoEncoderConfig& config,
       const std::vector<VideoStream>& streams,
       const std::string& payload_name,
-      int payload_type);
+      int payload_type,
+      bool nack_enabled);
 };
 
 }  // namespace webrtc
