@@ -35,12 +35,6 @@ class RtpReceiverImpl : public RtpReceiver {
 
   int32_t RegisterReceivePayload(const CodecInst& audio_codec) override;
   int32_t RegisterReceivePayload(const VideoCodec& video_codec) override;
-  // TODO(magjed): Remove once external code is updated.
-  int32_t RegisterReceivePayload(const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-                                 const int8_t payload_type,
-                                 const uint32_t frequency,
-                                 const size_t channels,
-                                 const uint32_t rate) override;
 
   int32_t DeRegisterReceivePayload(const int8_t payload_type) override;
 

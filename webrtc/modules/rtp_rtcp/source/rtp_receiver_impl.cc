@@ -105,22 +105,6 @@ int32_t RtpReceiverImpl::RegisterReceivePayload(const VideoCodec& video_codec) {
   return rtp_payload_registry_->RegisterReceivePayload(video_codec);
 }
 
-// TODO(magjed): Remove once external code is updated.
-int32_t RtpReceiverImpl::RegisterReceivePayload(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const int8_t payload_type,
-    const uint32_t frequency,
-    const size_t channels,
-    const uint32_t rate) {
-  CodecInst codec;
-  codec.pltype = payload_type;
-  strncpy(codec.plname, payload_name, RTP_PAYLOAD_NAME_SIZE);
-  codec.plfreq = frequency;
-  codec.channels = channels;
-  codec.rate = rate;
-  return RegisterReceivePayload(codec);
-}
-
 int32_t RtpReceiverImpl::DeRegisterReceivePayload(
     const int8_t payload_type) {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
