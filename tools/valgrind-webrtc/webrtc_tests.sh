@@ -13,7 +13,9 @@
 # This script is a copy of the chrome_tests.sh wrapper script with the following
 # changes:
 # - The locate_valgrind.sh of Chromium's Valgrind scripts dir is used to locate
-#   the Valgrind framework install.
+#   the Valgrind framework install. If it fails a fallback path is used instead
+#   (../../chromium/src/third_party/valgrind/linux_x64) and a warning message
+#   is showed by |show_locate_valgrind_failed_warning|.
 # - webrtc_tests.py is invoked instead of chrome_tests.py.
 # - Chromium's Valgrind scripts directory is added to the PYTHONPATH to make it
 #   possible to execute the Python scripts properly.
@@ -56,8 +58,24 @@ then
   CHROME_VALGRIND=`sh $CHROME_VALGRIND_SCRIPTS/locate_valgrind.sh`
   if [ "$CHROME_VALGRIND" = "" ]
   then
-    # locate_valgrind.sh failed
-    exit 1
+    CHROME_VALGRIND=../../chromium/src/third_party/valgrind/linux_x64
+    echo
+    echo "-------------------- WARNING ------------------------"
+    echo "locate_valgrind.sh failed."
+    echo "Using $CHROME_VALGRIND as a fallback location."
+    echo "This might be because:"
+    echo "1) This is a swarming bot"
+    echo "2) You haven't set up the valgrind binaries correctly."
+    echo "In this case, please make sure you have followed the instructions at"
+    echo "http://www.chromium.org/developers/how-tos/using-valgrind/get-valgrind"
+    echo "Notice: In the .gclient file, you need to add this for the 'src'"
+    echo "solution since our directory structure is different from Chromium's:"
+    echo "\"custom_deps\": {"
+    echo "  \"src/chromium/src/third_party/valgrind\":"
+    echo "      \"https://chromium.googlesource.com/chromium/deps/valgrind/binaries\","
+    echo "},"
+    echo "-----------------------------------------------------"
+    echo
   fi
   echo "Using valgrind binaries from ${CHROME_VALGRIND}"
 
