@@ -15,6 +15,7 @@
 #include <list>
 #include <vector>
 
+#include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/typedefs.h"
@@ -44,7 +45,9 @@ struct AudioPayload {
 };
 
 struct VideoPayload {
-    RtpVideoCodecTypes   videoCodecType;
+  RtpVideoCodecTypes videoCodecType;
+  // The H264 profile only matters if videoCodecType == kRtpVideoH264.
+  H264::Profile h264_profile;
 };
 
 union PayloadUnion {

@@ -37,7 +37,14 @@ bool PayloadIsCompatible(const RtpUtility::Payload& payload,
 
 bool PayloadIsCompatible(const RtpUtility::Payload& payload,
                          const VideoCodec& video_codec) {
-  return !payload.audio && _stricmp(payload.name, video_codec.plName) == 0;
+  if (payload.audio || _stricmp(payload.name, video_codec.plName) != 0)
+    return false;
+  // For H264, profiles must match as well.
+  if (video_codec.codecType == kVideoCodecH264) {
+    return video_codec.H264().profile ==
+           payload.typeSpecific.Video.h264_profile;
+  }
+  return true;
 }
 
 RtpUtility::Payload CreatePayloadType(const CodecInst& audio_codec) {
