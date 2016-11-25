@@ -252,6 +252,13 @@ hooks = [
     'pattern': '.',
     'action': ['python', 'src/tools/clang/scripts/update.py', '--if-needed'],
   },
+  {
+    # Update LASTCHANGE.
+    'name': 'lastchange',
+    'pattern': '.',
+    'action': ['python', 'src/build/util/lastchange.py',
+               '-o', 'src/build/util/LASTCHANGE'],
+  },
   # Pull GN binaries.
   {
     'name': 'gn_win',
