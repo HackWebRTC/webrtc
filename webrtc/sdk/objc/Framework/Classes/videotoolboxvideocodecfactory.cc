@@ -24,13 +24,23 @@ namespace webrtc {
 VideoToolboxVideoEncoderFactory::VideoToolboxVideoEncoderFactory() {
 // Hardware H264 encoding only supported on iOS for now.
 #if defined(WEBRTC_IOS)
-  // TODO(magjed): Push Constrained High profile as well when negotiation is
-  // ready, http://crbug/webrtc/6337.
-  cricket::VideoCodec constrained_baseline(cricket::kH264CodecName);
   // TODO(magjed): Enumerate actual level instead of using hardcoded level 3.1.
   // Level 3.1 is 1280x720@30fps which is enough for now.
+  const H264::Level level = H264::kLevel3_1;
+
+  cricket::VideoCodec constrained_high(cricket::kH264CodecName);
+  const H264::ProfileLevelId constrained_high_profile(
+      H264::kProfileConstrainedHigh, level);
+  constrained_high.SetParam(
+      cricket::kH264FmtpProfileLevelId,
+      *H264::ProfileLevelIdToString(constrained_high_profile));
+  constrained_high.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
+  constrained_high.SetParam(cricket::kH264FmtpPacketizationMode, "1");
+  supported_codecs_.push_back(constrained_high);
+
+  cricket::VideoCodec constrained_baseline(cricket::kH264CodecName);
   const H264::ProfileLevelId constrained_baseline_profile(
-      H264::kProfileConstrainedBaseline, H264::kLevel3_1);
+      H264::kProfileConstrainedBaseline, level);
   constrained_baseline.SetParam(
       cricket::kH264FmtpProfileLevelId,
       *H264::ProfileLevelIdToString(constrained_baseline_profile));
