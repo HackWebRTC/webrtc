@@ -432,6 +432,7 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
   // Insert new entry and return ptr.
   VideoSendStream::StreamStats* entry = &stats_.substreams[ssrc];
   entry->is_rtx = is_rtx;
+  entry->is_flexfec = is_flexfec;
 
   return entry;
 }
@@ -616,6 +617,12 @@ void SendStatisticsProxy::DataCountersUpdated(
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
   RTC_DCHECK(stats) << "DataCountersUpdated reported for unknown ssrc: "
                     << ssrc;
+
+  if (stats->is_flexfec) {
+    // The same counters are reported for both the media ssrc and flexfec ssrc.
+    // Bitrate stats are summed for all SSRCs. Use fec stats from media update.
+    return;
+  }
 
   stats->rtp_stats = counters;
   if (uma_container_->first_rtp_stats_time_ms_ == -1)

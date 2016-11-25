@@ -25,6 +25,7 @@ const uint32_t kFirstSsrc = 17;
 const uint32_t kSecondSsrc = 42;
 const uint32_t kFirstRtxSsrc = 18;
 const uint32_t kSecondRtxSsrc = 43;
+const uint32_t kFlexFecSsrc = 55;
 
 const int kQpIdx0 = 21;
 const int kQpIdx1 = 39;
@@ -58,6 +59,25 @@ class SendStatisticsProxyTest : public ::testing::Test {
     config.rtp.rtx.ssrcs.push_back(kSecondRtxSsrc);
     config.rtp.ulpfec.red_payload_type = 17;
     return config;
+  }
+
+  VideoSendStream::Config GetTestConfigWithFlexFec() {
+    VideoSendStream::Config config(nullptr);
+    config.rtp.ssrcs.push_back(kFirstSsrc);
+    config.rtp.ssrcs.push_back(kSecondSsrc);
+    config.rtp.rtx.ssrcs.push_back(kFirstRtxSsrc);
+    config.rtp.rtx.ssrcs.push_back(kSecondRtxSsrc);
+    config.rtp.flexfec.flexfec_payload_type = 50;
+    config.rtp.flexfec.flexfec_ssrc = kFlexFecSsrc;
+    return config;
+  }
+
+  VideoSendStream::StreamStats GetStreamStats(uint32_t ssrc) {
+    VideoSendStream::Stats stats = statistics_proxy_->GetStats();
+    std::map<uint32_t, VideoSendStream::StreamStats>::iterator it =
+        stats.substreams.find(ssrc);
+    EXPECT_NE(it, stats.substreams.end());
+    return it->second;
   }
 
   void ExpectEqual(VideoSendStream::Stats one, VideoSendStream::Stats other) {
@@ -824,6 +844,99 @@ TEST_F(SendStatisticsProxyTest, ResetsRtcpCountersOnContentChange) {
                 4 * 100 / 5));
 }
 
+TEST_F(SendStatisticsProxyTest, GetStatsReportsIsFlexFec) {
+  statistics_proxy_.reset(
+      new SendStatisticsProxy(&fake_clock_, GetTestConfigWithFlexFec(),
+                              VideoEncoderConfig::ContentType::kRealtimeVideo));
+
+  StreamDataCountersCallback* proxy =
+      static_cast<StreamDataCountersCallback*>(statistics_proxy_.get());
+  StreamDataCounters counters;
+  proxy->DataCountersUpdated(counters, kFirstSsrc);
+  proxy->DataCountersUpdated(counters, kFlexFecSsrc);
+
+  EXPECT_FALSE(GetStreamStats(kFirstSsrc).is_flexfec);
+  EXPECT_TRUE(GetStreamStats(kFlexFecSsrc).is_flexfec);
+}
+
+TEST_F(SendStatisticsProxyTest, SendBitratesAreReportedWithFlexFecEnabled) {
+  statistics_proxy_.reset(
+      new SendStatisticsProxy(&fake_clock_, GetTestConfigWithFlexFec(),
+                              VideoEncoderConfig::ContentType::kRealtimeVideo));
+
+  StreamDataCountersCallback* proxy =
+      static_cast<StreamDataCountersCallback*>(statistics_proxy_.get());
+
+  StreamDataCounters counters;
+  StreamDataCounters rtx_counters;
+  proxy->DataCountersUpdated(counters, kFirstSsrc);
+  proxy->DataCountersUpdated(counters, kSecondSsrc);
+  proxy->DataCountersUpdated(rtx_counters, kFirstRtxSsrc);
+  proxy->DataCountersUpdated(rtx_counters, kSecondRtxSsrc);
+  proxy->DataCountersUpdated(counters, kFlexFecSsrc);
+
+  counters.transmitted.header_bytes = 5000;
+  counters.transmitted.packets = 20;
+  counters.transmitted.padding_bytes = 10000;
+  counters.transmitted.payload_bytes = 20000;
+  counters.retransmitted.header_bytes = 400;
+  counters.retransmitted.packets = 2;
+  counters.retransmitted.padding_bytes = 1000;
+  counters.retransmitted.payload_bytes = 2000;
+  counters.fec = counters.retransmitted;
+  rtx_counters.transmitted = counters.transmitted;
+
+  fake_clock_.AdvanceTimeMilliseconds(1000 * metrics::kMinRunTimeInSeconds);
+  proxy->DataCountersUpdated(counters, kFirstSsrc);
+  proxy->DataCountersUpdated(counters, kSecondSsrc);
+  proxy->DataCountersUpdated(rtx_counters, kFirstRtxSsrc);
+  proxy->DataCountersUpdated(rtx_counters, kSecondRtxSsrc);
+  proxy->DataCountersUpdated(counters, kFlexFecSsrc);
+
+  // Reset stats proxy causes histograms to be reported.
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.BitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumEvents(
+                "WebRTC.Video.BitrateSentInKbps",
+                static_cast<int>((counters.transmitted.TotalBytes() * 4 * 8) /
+                                 metrics::kMinRunTimeInSeconds / 1000)));
+
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.MediaBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.MediaBitrateSentInKbps",
+                   static_cast<int>((counters.MediaPayloadBytes() * 2 * 8) /
+                                    metrics::kMinRunTimeInSeconds / 1000)));
+
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.PaddingBitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumEvents(
+                "WebRTC.Video.PaddingBitrateSentInKbps",
+                static_cast<int>((counters.transmitted.padding_bytes * 4 * 8) /
+                                 metrics::kMinRunTimeInSeconds / 1000)));
+
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.RetransmittedBitrateSentInKbps"));
+  EXPECT_EQ(1,
+            metrics::NumEvents(
+                "WebRTC.Video.RetransmittedBitrateSentInKbps",
+                static_cast<int>((counters.retransmitted.TotalBytes() * 2 * 8) /
+                                 metrics::kMinRunTimeInSeconds / 1000)));
+
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.RtxBitrateSentInKbps"));
+  EXPECT_EQ(
+      1, metrics::NumEvents(
+             "WebRTC.Video.RtxBitrateSentInKbps",
+             static_cast<int>((rtx_counters.transmitted.TotalBytes() * 2 * 8) /
+                              metrics::kMinRunTimeInSeconds / 1000)));
+
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.FecBitrateSentInKbps"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.FecBitrateSentInKbps",
+                   static_cast<int>((counters.fec.TotalBytes() * 2 * 8) /
+                                    metrics::kMinRunTimeInSeconds / 1000)));
+}
+
 TEST_F(SendStatisticsProxyTest, ResetsRtpCountersOnContentChange) {
   StreamDataCountersCallback* proxy =
       static_cast<StreamDataCountersCallback*>(statistics_proxy_.get());
@@ -835,15 +948,15 @@ TEST_F(SendStatisticsProxyTest, ResetsRtpCountersOnContentChange) {
   proxy->DataCountersUpdated(rtx_counters, kFirstRtxSsrc);
   proxy->DataCountersUpdated(rtx_counters, kSecondRtxSsrc);
 
-  counters.transmitted.header_bytes = 400;
+  counters.transmitted.header_bytes = 5000;
   counters.transmitted.packets = 20;
-  counters.transmitted.padding_bytes = 1000;
-  counters.transmitted.payload_bytes = 2000;
+  counters.transmitted.padding_bytes = 10000;
+  counters.transmitted.payload_bytes = 20000;
 
-  counters.retransmitted.header_bytes = 40;
+  counters.retransmitted.header_bytes = 400;
   counters.retransmitted.packets = 2;
-  counters.retransmitted.padding_bytes = 100;
-  counters.retransmitted.payload_bytes = 200;
+  counters.retransmitted.padding_bytes = 1000;
+  counters.retransmitted.payload_bytes = 2000;
 
   counters.fec = counters.retransmitted;
 
@@ -898,7 +1011,7 @@ TEST_F(SendStatisticsProxyTest, ResetsRtpCountersOnContentChange) {
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.FecBitrateSentInKbps"));
   EXPECT_EQ(1, metrics::NumEvents(
                    "WebRTC.Video.FecBitrateSentInKbps",
-                   static_cast<int>((rtx_counters.fec.TotalBytes() * 2 * 8) /
+                   static_cast<int>((counters.fec.TotalBytes() * 2 * 8) /
                                     metrics::kMinRunTimeInSeconds / 1000)));
 
   // New start time but same counter values.
@@ -965,7 +1078,7 @@ TEST_F(SendStatisticsProxyTest, ResetsRtpCountersOnContentChange) {
       1, metrics::NumSamples("WebRTC.Video.Screenshare.FecBitrateSentInKbps"));
   EXPECT_EQ(1, metrics::NumEvents(
                    "WebRTC.Video.Screenshare.FecBitrateSentInKbps",
-                   static_cast<int>((rtx_counters.fec.TotalBytes() * 2 * 8) /
+                   static_cast<int>((counters.fec.TotalBytes() * 2 * 8) /
                                     metrics::kMinRunTimeInSeconds / 1000)));
 }
 

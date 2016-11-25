@@ -214,7 +214,7 @@ std::string VideoSendStream::Stats::ToString(int64_t time_ms) const {
   ss << "bw_adapted: " << (bw_limited_resolution ? "true" : "false");
   ss << '}';
   for (const auto& substream : substreams) {
-    if (!substream.second.is_rtx) {
+    if (!substream.second.is_rtx && !substream.second.is_flexfec) {
       ss << " {ssrc: " << substream.first << ", ";
       ss << substream.second.ToString();
       ss << '}';

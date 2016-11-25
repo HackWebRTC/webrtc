@@ -36,6 +36,7 @@ class VideoSendStream {
 
     FrameCounts frame_counts;
     bool is_rtx = false;
+    bool is_flexfec = false;
     int width = 0;
     int height = 0;
     // TODO(holmer): Move bitrate_bps out to the webrtc::Call layer.
