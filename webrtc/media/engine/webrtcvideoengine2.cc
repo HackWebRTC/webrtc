@@ -2276,20 +2276,6 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
       webrtc::kVideoCodecUnknown, false);
 }
 
-void ConfigureDecoderSpecifics(webrtc::VideoReceiveStream::Decoder* decoder,
-                               const cricket::VideoCodec& recv_video_codec) {
-  if (recv_video_codec.name.compare("H264") == 0) {
-    auto it = recv_video_codec.params.find("sprop-parameter-sets");
-    if (it != recv_video_codec.params.end()) {
-      decoder->decoder_specific.h264_extra_settings =
-          rtc::Optional<webrtc::VideoDecoderH264Settings>(
-              webrtc::VideoDecoderH264Settings());
-      decoder->decoder_specific.h264_extra_settings->sprop_parameter_sets =
-          it->second;
-    }
-  }
-}
-
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(
     const std::vector<VideoCodecSettings>& recv_codecs,
     std::vector<AllocatedDecoder>* old_decoders) {
@@ -2305,7 +2291,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(
     decoder.decoder = allocated_decoder.decoder;
     decoder.payload_type = recv_codecs[i].codec.id;
     decoder.payload_name = recv_codecs[i].codec.name;
-    ConfigureDecoderSpecifics(&decoder, recv_codecs[i].codec);
+    decoder.codec_params = recv_codecs[i].codec.params;
     config_.decoders.push_back(decoder);
   }
 

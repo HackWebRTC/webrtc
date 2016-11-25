@@ -243,8 +243,4 @@ void VideoEncoderConfig::Vp9EncoderSpecificSettings::FillVideoCodecVp9(
   *vp9_settings = specifics_;
 }
 
-DecoderSpecificSettings::DecoderSpecificSettings() = default;
-
-DecoderSpecificSettings::~DecoderSpecificSettings() = default;
-
 }  // namespace webrtc

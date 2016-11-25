@@ -19,6 +19,7 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/base/videoengine_unittest.h"
 #include "webrtc/media/engine/fakewebrtccall.h"
@@ -3749,10 +3750,10 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_GetRtpReceiveFmtpSprop) {
 #endif
   cricket::VideoRecvParameters parameters;
   cricket::VideoCodec kH264sprop1(101, "H264");
-  kH264sprop1.SetParam("sprop-parameter-sets", "uvw");
+  kH264sprop1.SetParam(kH264FmtpSpropParameterSets, "uvw");
   parameters.codecs.push_back(kH264sprop1);
   cricket::VideoCodec kH264sprop2(102, "H264");
-  kH264sprop2.SetParam("sprop-parameter-sets", "xyz");
+  kH264sprop2.SetParam(kH264FmtpSpropParameterSets, "xyz");
   parameters.codecs.push_back(kH264sprop2);
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 
@@ -3765,19 +3766,17 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_GetRtpReceiveFmtpSprop) {
   ASSERT_EQ(2u, cfg.decoders.size());
   EXPECT_EQ(101, cfg.decoders[0].payload_type);
   EXPECT_EQ("H264", cfg.decoders[0].payload_name);
-  std::string sprop;
-  const webrtc::DecoderSpecificSettings* decoder_specific;
-  decoder_specific = &cfg.decoders[0].decoder_specific;
-  ASSERT_TRUE(static_cast<bool>(decoder_specific->h264_extra_settings));
-  sprop = decoder_specific->h264_extra_settings->sprop_parameter_sets;
-  EXPECT_EQ("uvw", sprop);
+  const auto it0 =
+      cfg.decoders[0].codec_params.find(kH264FmtpSpropParameterSets);
+  ASSERT_TRUE(it0 != cfg.decoders[0].codec_params.end());
+  EXPECT_EQ("uvw", it0->second);
 
   EXPECT_EQ(102, cfg.decoders[1].payload_type);
   EXPECT_EQ("H264", cfg.decoders[1].payload_name);
-  decoder_specific = &cfg.decoders[1].decoder_specific;
-  ASSERT_TRUE(static_cast<bool>(decoder_specific->h264_extra_settings));
-  sprop = decoder_specific->h264_extra_settings->sprop_parameter_sets;
-  EXPECT_EQ("xyz", sprop);
+  const auto it1 =
+      cfg.decoders[1].codec_params.find(kH264FmtpSpropParameterSets);
+  ASSERT_TRUE(it1 != cfg.decoders[1].codec_params.end());
+  EXPECT_EQ("xyz", it1->second);
 }
 
 // Test that RtpParameters for receive stream has one encoding and it has

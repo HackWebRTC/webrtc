@@ -250,17 +250,6 @@ class VideoEncoderConfig {
   VideoEncoderConfig(const VideoEncoderConfig&);
 };
 
-struct VideoDecoderH264Settings {
-  std::string sprop_parameter_sets;
-};
-
-class DecoderSpecificSettings {
- public:
-  DecoderSpecificSettings();
-  virtual ~DecoderSpecificSettings();
-  rtc::Optional<VideoDecoderH264Settings> h264_extra_settings;
-};
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_CONFIG_H_

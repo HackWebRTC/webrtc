@@ -106,6 +106,7 @@ const char kH264CodecName[] = "H264";
 const char kH264FmtpProfileLevelId[] = "profile-level-id";
 const char kH264FmtpLevelAsymmetryAllowed[] = "level-asymmetry-allowed";
 const char kH264FmtpPacketizationMode[] = "packetization-mode";
+const char kH264FmtpSpropParameterSets[] = "sprop-parameter-sets";
 const char kH264ProfileLevelConstrainedBaseline[] = "42e01f";
 
 const int kDefaultVideoMaxFramerate = 60;

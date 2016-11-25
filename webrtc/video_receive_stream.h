@@ -45,7 +45,10 @@ class VideoReceiveStream {
     // used to unpack incoming packets.
     std::string payload_name;
 
-    DecoderSpecificSettings decoder_specific;
+    // This map contains the codec specific parameters from SDP, i.e. the "fmtp"
+    // parameters. It is the same as cricket::CodecParameterMap used in
+    // cricket::VideoCodec.
+    std::map<std::string, std::string> codec_params;
   };
 
   struct Stats {

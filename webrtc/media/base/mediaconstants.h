@@ -128,6 +128,7 @@ extern const char kH264CodecName[];
 extern const char kH264FmtpProfileLevelId[];
 extern const char kH264FmtpLevelAsymmetryAllowed[];
 extern const char kH264FmtpPacketizationMode[];
+extern const char kH264FmtpSpropParameterSets[];
 extern const char kH264ProfileLevelConstrainedBaseline[];
 
 extern const int kDefaultVideoMaxFramerate;
