@@ -19,7 +19,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/modules/utility/include/helpers_ios.h"
+#include "webrtc/modules/audio_device/ios/helpers_ios.h"
 
 namespace webrtc {
 namespace ios {

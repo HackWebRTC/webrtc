@@ -25,7 +25,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_device/fine_audio_buffer.h"
-#include "webrtc/modules/utility/include/helpers_ios.h"
+#include "webrtc/modules/audio_device/ios/helpers_ios.h"
 
 #import "WebRTC/RTCLogging.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"

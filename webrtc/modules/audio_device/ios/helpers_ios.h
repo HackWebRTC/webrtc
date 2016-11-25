@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_IOS_H_
-#define WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_IOS_H_
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_IOS_HELPERS_IOS_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_IOS_HELPERS_IOS_H_
 
 #if defined(WEBRTC_IOS)
 
@@ -74,4 +74,4 @@ bool GetLowPowerModeEnabled();
 
 #endif  // defined(WEBRTC_IOS)
 
-#endif  // WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_IOS_H_
+#endif  // WEBRTC_MODULES_AUDIO_DEVICE_IOS_HELPERS_IOS_H_
