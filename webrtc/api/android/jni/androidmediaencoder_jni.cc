@@ -30,6 +30,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/h264_bitstream_parser.h"
+#include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/engine/internalencoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
@@ -1334,7 +1335,21 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
   CHECK_EXCEPTION(jni);
   if (is_h264_hw_supported) {
     ALOGD << "H.264 HW Encoder supported.";
-    supported_codecs_.push_back(cricket::VideoCodec("H264"));
+    // TODO(magjed): Push Constrained High profile as well when negotiation is
+    // ready, http://crbug/webrtc/6337. We can negotiate Constrained High
+    // profile as long as we have decode support for it and still send Baseline
+    // since Baseline is a subset of the High profile.
+    cricket::VideoCodec constrained_baseline(cricket::kH264CodecName);
+    // TODO(magjed): Enumerate actual level instead of using hardcoded level
+    // 3.1. Level 3.1 is 1280x720@30fps which is enough for now.
+    const webrtc::H264::ProfileLevelId constrained_baseline_profile(
+        webrtc::H264::kProfileConstrainedBaseline, webrtc::H264::kLevel3_1);
+    constrained_baseline.SetParam(
+        cricket::kH264FmtpProfileLevelId,
+        *webrtc::H264::ProfileLevelIdToString(constrained_baseline_profile));
+    constrained_baseline.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
+    constrained_baseline.SetParam(cricket::kH264FmtpPacketizationMode, "1");
+    supported_codecs_.push_back(constrained_baseline);
   }
 }
 
