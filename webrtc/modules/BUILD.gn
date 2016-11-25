@@ -609,6 +609,7 @@ if (rtc_include_tests) {
         "audio_processing/low_cut_filter_unittest.cc",
         "audio_processing/noise_suppression_unittest.cc",
         "audio_processing/residual_echo_detector_unittest.cc",
+        "audio_processing/rms_level_unittest.cc",
         "audio_processing/test/bitexactness_tools.cc",
         "audio_processing/test/bitexactness_tools.h",
         "audio_processing/test/debug_dump_replayer.cc",
