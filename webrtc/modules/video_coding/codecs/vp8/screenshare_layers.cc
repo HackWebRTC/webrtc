@@ -162,10 +162,13 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
 std::vector<uint32_t> ScreenshareLayers::OnRatesUpdated(int bitrate_kbps,
                                                         int max_bitrate_kbps,
                                                         int framerate) {
+  bitrate_updated_ =
+      bitrate_kbps != static_cast<int>(layers_[0].target_rate_kbps_) ||
+      max_bitrate_kbps != static_cast<int>(layers_[1].target_rate_kbps_) ||
+      framerate != framerate_;
   layers_[0].target_rate_kbps_ = bitrate_kbps;
   layers_[1].target_rate_kbps_ = max_bitrate_kbps;
   framerate_ = framerate;
-  bitrate_updated_ = true;
 
   std::vector<uint32_t> allocation;
   allocation.push_back(bitrate_kbps);
@@ -262,23 +265,27 @@ bool ScreenshareLayers::TimeToSync(int64_t timestamp) const {
   return false;
 }
 
+uint32_t ScreenshareLayers::GetCodecTargetBitrateKbps() const {
+  uint32_t target_bitrate_kbps = layers_[0].target_rate_kbps_;
+
+  if (number_of_temporal_layers_ > 1) {
+    // Calculate a codec target bitrate. This may be higher than TL0, gaining
+    // quality at the expense of frame rate at TL0. Constraints:
+    // - TL0 frame rate no less than framerate / kMaxTL0FpsReduction.
+    // - Target rate * kAcceptableTargetOvershoot should not exceed TL1 rate.
+    target_bitrate_kbps =
+        std::min(layers_[0].target_rate_kbps_ * kMaxTL0FpsReduction,
+                 layers_[1].target_rate_kbps_ / kAcceptableTargetOvershoot);
+  }
+
+  return std::max(layers_[0].target_rate_kbps_, target_bitrate_kbps);
+}
+
 bool ScreenshareLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
   bool cfg_updated = false;
-  if (bitrate_updated_) {
-    uint32_t target_bitrate_kbps = layers_[0].target_rate_kbps_;
-
-    if (number_of_temporal_layers_ > 1) {
-      // Calculate a codec target bitrate. This may be higher than TL0, gaining
-      // quality at the expense of frame rate at TL0. Constraints:
-      // - TL0 frame rate no less than framerate / kMaxTL0FpsReduction.
-      // - Target rate * kAcceptableTargetOvershoot should not exceed TL1 rate.
-      target_bitrate_kbps =
-          std::min(layers_[0].target_rate_kbps_ * kMaxTL0FpsReduction,
-                   layers_[1].target_rate_kbps_ / kAcceptableTargetOvershoot);
-
-      cfg->rc_target_bitrate =
-          std::max(layers_[0].target_rate_kbps_, target_bitrate_kbps);
-    }
+  uint32_t target_bitrate_kbps = GetCodecTargetBitrateKbps();
+  if (bitrate_updated_ || cfg->rc_target_bitrate != target_bitrate_kbps) {
+    cfg->rc_target_bitrate = target_bitrate_kbps;
 
     // Don't reconfigure qp limits during quality boost frames.
     if (active_layer_ == -1 ||
@@ -329,6 +336,7 @@ bool ScreenshareLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
 
   cfg->rc_max_quantizer = adjusted_max_qp;
   cfg_updated = true;
+
   return cfg_updated;
 }
 

@@ -15,14 +15,28 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace {
+using ::testing::_;
+
 constexpr uint32_t kMinBitrateKbps = 50;
 constexpr uint32_t kTargetBitrateKbps = 100;
 constexpr uint32_t kMaxBitrateKbps = 1000;
 constexpr uint32_t kFramerateFps = 5;
+
+class MockTemporalLayers : public TemporalLayers {
+ public:
+  MOCK_METHOD1(EncodeFlags, int(uint32_t));
+  MOCK_METHOD3(OnRatesUpdated, std::vector<uint32_t>(int, int, int));
+  MOCK_METHOD1(UpdateConfiguration, bool(vpx_codec_enc_cfg_t*));
+  MOCK_METHOD3(PopulateCodecSpecific,
+               void(bool, CodecSpecificInfoVP8*, uint32_t));
+  MOCK_METHOD3(FrameEncoded, void(unsigned int, uint32_t, int));
+  MOCK_CONST_METHOD0(CurrentLayerId, int());
+};
 }  // namespace
 
 class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
@@ -251,6 +265,10 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
 }
 
 TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrateBps) {
+  MockTemporalLayers mock_layers;
+  allocator_.reset(new SimulcastRateAllocator(codec_, nullptr));
+  allocator_->OnTemporalLayersCreated(0, &mock_layers);
+  EXPECT_CALL(mock_layers, OnRatesUpdated(_, _, _)).Times(0);
   EXPECT_EQ(codec_.maxBitrate * 1000,
             allocator_->GetPreferredBitrateBps(codec_.maxFramerate));
 }

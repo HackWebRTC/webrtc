@@ -418,6 +418,8 @@ TEST_F(ScreenshareLayerTest, EncoderDrop) {
   ConfigureBitrates();
   CodecSpecificInfoVP8 vp8_info;
   vpx_codec_enc_cfg_t cfg = GetConfig();
+  // Updates cfg with current target bitrate.
+  EXPECT_TRUE(layers_->UpdateConfiguration(&cfg));
 
   uint32_t timestamp = RunGracePeriod();
   timestamp = SkipUntilTl(0, timestamp);

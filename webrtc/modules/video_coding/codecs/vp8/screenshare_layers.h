@@ -59,6 +59,7 @@ class ScreenshareLayers : public TemporalLayers {
 
  private:
   bool TimeToSync(int64_t timestamp) const;
+  uint32_t GetCodecTargetBitrateKbps() const;
 
   Clock* const clock_;
 

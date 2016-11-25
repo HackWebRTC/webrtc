@@ -179,11 +179,11 @@ class RealTimeTemporalLayers : public TemporalLayers {
       uint32_t layer_bitrate = bitrates[i];
       RTC_DCHECK_LE(sum, bitrates[i]);
       bitrates[i] -= sum;
-      sum += layer_bitrate;
+      sum = layer_bitrate;
 
-      if (sum == static_cast<uint32_t>(bitrate_kbps)) {
+      if (sum >= static_cast<uint32_t>(bitrate_kbps)) {
         // Sum adds up; any subsequent layers will be 0.
-        bitrates.resize(i);
+        bitrates.resize(i + 1);
         break;
       }
     }

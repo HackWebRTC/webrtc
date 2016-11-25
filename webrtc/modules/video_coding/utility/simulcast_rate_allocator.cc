@@ -99,16 +99,18 @@ BitrateAllocation SimulcastRateAllocator::GetAllocation(
 
     uint32_t target_bitrate_kbps =
         allocated_bitrates_bps.GetBitrate(simulcast_id, 0) / 1000;
+    const uint32_t expected_allocated_bitrate_kbps = target_bitrate_kbps;
     RTC_DCHECK_EQ(
         target_bitrate_kbps,
         allocated_bitrates_bps.GetSpatialLayerSum(simulcast_id) / 1000);
+    const int num_temporal_streams = std::max<uint8_t>(
+        1, codec_.numberOfSimulcastStreams == 0
+               ? codec_.VP8().numberOfTemporalLayers
+               : codec_.simulcastStream[0].numberOfTemporalLayers);
+
     uint32_t max_bitrate_kbps;
     if (num_spatial_streams == 1) {
       max_bitrate_kbps = codec_.maxBitrate;
-      const int num_temporal_streams =
-          codec_.numberOfSimulcastStreams == 0
-              ? codec_.VP8().numberOfTemporalLayers
-              : codec_.simulcastStream[0].numberOfTemporalLayers;
 
       // TODO(holmer): This is a temporary hack for screensharing, where we
       // interpret the startBitrate as the encoder target bitrate. This is
@@ -127,19 +129,28 @@ BitrateAllocation SimulcastRateAllocator::GetAllocation(
 
     std::vector<uint32_t> tl_allocation = tl_it->second->OnRatesUpdated(
         target_bitrate_kbps, max_bitrate_kbps, framerate);
+    RTC_DCHECK_GT(tl_allocation.size(), 0);
+    RTC_DCHECK_LE(tl_allocation.size(), num_temporal_streams);
 
+    uint64_t tl_allocation_sum_kbps = 0;
     for (size_t tl_index = 0; tl_index < tl_allocation.size(); ++tl_index) {
+      uint32_t layer_rate_kbps = tl_allocation[tl_index];
       allocated_bitrates_bps.SetBitrate(simulcast_id, tl_index,
-                                        tl_allocation[tl_index] * 1000);
+                                        layer_rate_kbps * 1000);
+      tl_allocation_sum_kbps += layer_rate_kbps;
     }
+    RTC_DCHECK_LE(tl_allocation_sum_kbps, expected_allocated_bitrate_kbps);
   }
 
   return allocated_bitrates_bps;
 }
 
 uint32_t SimulcastRateAllocator::GetPreferredBitrateBps(uint32_t framerate) {
+  // Create a temporary instance without temporal layers, as they may be
+  // stateful, and updating the bitrate to max here can cause side effects.
+  SimulcastRateAllocator temp_allocator(codec_, nullptr);
   BitrateAllocation allocation =
-      GetAllocation(codec_.maxBitrate * 1000, framerate);
+      temp_allocator.GetAllocation(codec_.maxBitrate * 1000, framerate);
   return allocation.get_sum_bps();
 }
 
