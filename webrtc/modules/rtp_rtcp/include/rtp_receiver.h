@@ -59,6 +59,8 @@ class RtpReceiver {
   // Registers a receive payload in the payload registry and notifies the media
   // receiver strategy.
   virtual int32_t RegisterReceivePayload(const CodecInst& audio_codec) = 0;
+  // Registers a receive payload in the payload registry.
+  virtual int32_t RegisterReceivePayload(const VideoCodec& video_codec) = 0;
   // TODO(magjed): Remove once external code is updated.
   virtual int32_t RegisterReceivePayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
