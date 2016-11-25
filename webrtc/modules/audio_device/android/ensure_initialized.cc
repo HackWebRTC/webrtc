@@ -23,7 +23,7 @@ RTC_POP_IGNORING_WUNDEF()
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_device/android/audio_record_jni.h"
 #include "webrtc/modules/audio_device/android/audio_track_jni.h"
-#include "webrtc/modules/utility/include/jvm_android.h"
+#include "webrtc/modules/audio_device/android/jvm_android.h"
 
 namespace webrtc {
 namespace audiodevicemodule {

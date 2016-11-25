@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_ANDROID_H_
-#define WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_ANDROID_H_
+#ifndef WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_HELPERS_ANDROID_H_
+#define WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_HELPERS_ANDROID_H_
 
 #include <jni.h>
 #include <string>
+
+#include "webrtc/base/checks.h"
 
 // Abort the process if |jni| has a Java exception pending.
 // TODO(henrika): merge with CHECK_JNI_EXCEPTION() in jni_helpers.h.
@@ -84,4 +86,4 @@ class ScopedGlobalRef {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_UTILITY_INCLUDE_HELPERS_ANDROID_H_
+#endif  // WEBRTC_MODULES_AUDIO_DEVICE_ANDROID_HELPERS_ANDROID_H_
