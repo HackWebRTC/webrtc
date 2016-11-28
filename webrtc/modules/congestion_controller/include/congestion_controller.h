@@ -82,6 +82,7 @@ class CongestionController : public CallStatsObserver, public Module {
   virtual PacketRouter* packet_router() { return packet_router_.get(); }
   virtual TransportFeedbackObserver* GetTransportFeedbackObserver();
   RateLimiter* GetRetransmissionRateLimiter();
+  void EnablePeriodicAlrProbing(bool enable);
 
   // SetAllocatedSendBitrateLimits sets bitrates limits imposed by send codec
   // settings.

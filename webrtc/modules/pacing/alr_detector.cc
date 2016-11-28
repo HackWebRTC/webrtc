@@ -44,10 +44,10 @@ void AlrDetector::OnBytesSent(size_t bytes_sent, int64_t now_ms) {
     return;
 
   int percentage = static_cast<int>(*rate) * 100 / estimated_bitrate_bps_;
-  if (percentage < kAlrStartUsagePercent && !application_limited_) {
-    application_limited_ = true;
-  } else if (percentage > kAlrEndUsagePercent && application_limited_) {
-    application_limited_ = false;
+  if (percentage < kAlrStartUsagePercent && !alr_started_time_ms_) {
+    alr_started_time_ms_ = rtc::Optional<int64_t>(now_ms);
+  } else if (percentage > kAlrEndUsagePercent && alr_started_time_ms_) {
+    alr_started_time_ms_ = rtc::Optional<int64_t>();
   }
 }
 
@@ -56,8 +56,9 @@ void AlrDetector::SetEstimatedBitrate(int bitrate_bps) {
   estimated_bitrate_bps_ = bitrate_bps;
 }
 
-bool AlrDetector::InApplicationLimitedRegion() const {
-  return application_limited_;
+rtc::Optional<int64_t> AlrDetector::GetApplicationLimitedRegionStartTime()
+    const {
+  return alr_started_time_ms_;
 }
 
 }  // namespace webrtc

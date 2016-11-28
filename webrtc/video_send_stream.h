@@ -185,6 +185,9 @@ class VideoSendStream {
     // stream may send at a rate higher than the estimated available bitrate.
     bool suspend_below_min_bitrate = false;
 
+    // Enables periodic bandwidth probing in application-limited region.
+    bool periodic_alr_bandwidth_probing = false;
+
    private:
     // Access to the copy constructor is private to force use of the Copy()
     // method for those exceptional cases where we do use it.

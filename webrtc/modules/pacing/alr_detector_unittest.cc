@@ -51,61 +51,61 @@ class AlrDetectorTest : public testing::Test {
 
 TEST_F(AlrDetectorTest, AlrDetection) {
   // Start in non-ALR state.
-  EXPECT_FALSE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   // Stay in non-ALR state when usage is close to 100%.
   SimulateOutgoingTraffic(500, 90);
-  EXPECT_FALSE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   // Verify that we ALR starts when bitrate drops below 20%.
   SimulateOutgoingTraffic(500, 20);
-  EXPECT_TRUE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   // Verify that we remain in ALR state while usage is still below 50%.
   SimulateOutgoingTraffic(500, 40);
-  EXPECT_TRUE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   // Verify that ALR ends when usage is above 50%.
   SimulateOutgoingTraffic(500, 60);
-  EXPECT_FALSE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 }
 
 TEST_F(AlrDetectorTest, ShortSpike) {
   // Start in non-ALR state.
-  EXPECT_FALSE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   // Verify that we ALR starts when bitrate drops below 20%.
   SimulateOutgoingTraffic(500, 20);
-  EXPECT_TRUE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   // Verify that we stay in ALR region even after a short bitrate spike.
   SimulateOutgoingTraffic(100, 150);
-  EXPECT_TRUE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   SimulateOutgoingTraffic(200, 20);
-  EXPECT_TRUE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   // ALR ends when usage is above 50%.
   SimulateOutgoingTraffic(500, 60);
-  EXPECT_FALSE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 }
 
 TEST_F(AlrDetectorTest, BandwidthEstimateChanges) {
   // Start in non-ALR state.
-  EXPECT_FALSE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   // ALR starts when bitrate drops below 20%.
   SimulateOutgoingTraffic(500, 20);
-  EXPECT_TRUE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
   // When bandwidth estimate drops the detector should stay in ALR mode and quit
   // it shortly afterwards as the sender continues sending the same amount of
   // traffic. This is necessary to ensure that ProbeController can still react
   // to the BWE drop by initiating a new probe.
   alr_detector_.SetEstimatedBitrate(kEstimatedBitrateBps / 5);
-  EXPECT_TRUE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
   SimulateOutgoingTraffic(10, 20);
-  EXPECT_FALSE(alr_detector_.InApplicationLimitedRegion());
+  EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 }
 
 }  // namespace webrtc

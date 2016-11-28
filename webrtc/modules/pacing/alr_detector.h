@@ -35,13 +35,16 @@ class AlrDetector {
   // Set current estimated bandwidth.
   void SetEstimatedBitrate(int bitrate_bps);
 
-  // Returns true if currently in application-limited region.
-  bool InApplicationLimitedRegion() const;
+  // Returns time in milliseconds when the current application-limited region
+  // started or empty result if the sender is currently not application-limited.
+  rtc::Optional<int64_t> GetApplicationLimitedRegionStartTime() const;
 
  private:
   RateStatistics rate_;
   int estimated_bitrate_bps_ = 0;
-  bool application_limited_ = false;
+
+  // Non-empty in ALR state.
+  rtc::Optional<int64_t> alr_started_time_ms_;
 };
 
 }  // namespace webrtc

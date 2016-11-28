@@ -343,9 +343,10 @@ int64_t PacedSender::ExpectedQueueTimeMs() const {
                               pacing_bitrate_kbps_);
 }
 
-bool PacedSender::InApplicationLimitedRegion() const {
+rtc::Optional<int64_t> PacedSender::GetApplicationLimitedRegionStartTime()
+    const {
   CriticalSectionScoped cs(critsect_.get());
-  return alr_detector_->InApplicationLimitedRegion();
+  return alr_detector_->GetApplicationLimitedRegionStartTime();
 }
 
 size_t PacedSender::QueueSizePackets() const {

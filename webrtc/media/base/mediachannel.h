@@ -129,6 +129,9 @@ struct MediaConfig {
     // VideoReceiveStream, where the value is passed on to the
     // IncomingVideoStream constructor.
     bool disable_prerenderer_smoothing = false;
+
+    // Enables periodic bandwidth probing in application-limited region.
+    bool periodic_alr_bandwidth_probing = false;
   } video;
 };
 

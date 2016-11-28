@@ -19,6 +19,7 @@
 using testing::_;
 using testing::AtLeast;
 using testing::NiceMock;
+using testing::Return;
 
 namespace webrtc {
 namespace test {
@@ -31,11 +32,13 @@ constexpr int kMaxBitrateBps = 10000;
 
 constexpr int kExponentialProbingTimeoutMs = 5000;
 
+constexpr int kAlrProbeInterval = 5000;
+
 }  // namespace
 
 class ProbeControllerTest : public ::testing::Test {
  protected:
-  ProbeControllerTest() : clock_(0) {
+  ProbeControllerTest() : clock_(100000000L) {
     probe_controller_.reset(new ProbeController(&pacer_, &clock_));
   }
   ~ProbeControllerTest() override {}
@@ -79,8 +82,6 @@ TEST_F(ProbeControllerTest, TestExponentialProbing) {
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
 
-
-
   EXPECT_CALL(pacer_, CreateProbeCluster(2 * 1800, _));
   probe_controller_->SetEstimatedBitrate(1800);
 }
@@ -93,6 +94,60 @@ TEST_F(ProbeControllerTest, TestExponentialProbingTimeout) {
   clock_.AdvanceTimeMilliseconds(kExponentialProbingTimeoutMs);
   EXPECT_CALL(pacer_, CreateProbeCluster(2 * 1800, _)).Times(0);
   probe_controller_->SetEstimatedBitrate(1800);
+}
+
+TEST_F(ProbeControllerTest, ProbeAfterEstimateDropInAlr) {
+  EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(2);
+  probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
+                                 kMaxBitrateBps);
+  probe_controller_->SetEstimatedBitrate(500);
+  testing::Mock::VerifyAndClearExpectations(&pacer_);
+
+  // When bandwidth estimate drops the controller should send a probe at the
+  // previous bitrate.
+  EXPECT_CALL(pacer_, CreateProbeCluster(500, _)).Times(1);
+  EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
+      .WillRepeatedly(
+          Return(rtc::Optional<int64_t>(clock_.TimeInMilliseconds())));
+  clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
+  probe_controller_->SetEstimatedBitrate(50);
+}
+
+TEST_F(ProbeControllerTest, PeriodicProbing) {
+  EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(2);
+  probe_controller_->EnablePeriodicAlrProbing(true);
+  probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
+                                 kMaxBitrateBps);
+  probe_controller_->SetEstimatedBitrate(500);
+  testing::Mock::VerifyAndClearExpectations(&pacer_);
+
+  int64_t start_time = clock_.TimeInMilliseconds();
+
+  // Expect the controller to send a new probe after 5s has passed.
+  EXPECT_CALL(pacer_, CreateProbeCluster(1000, _)).Times(1);
+  EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
+      .WillRepeatedly(Return(rtc::Optional<int64_t>(start_time)));
+  clock_.AdvanceTimeMilliseconds(5000);
+  probe_controller_->Process();
+  probe_controller_->SetEstimatedBitrate(500);
+  testing::Mock::VerifyAndClearExpectations(&pacer_);
+
+  // The following probe should be sent at 10s into ALR.
+  EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(0);
+  EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
+      .WillRepeatedly(Return(rtc::Optional<int64_t>(start_time)));
+  clock_.AdvanceTimeMilliseconds(4000);
+  probe_controller_->Process();
+  probe_controller_->SetEstimatedBitrate(500);
+  testing::Mock::VerifyAndClearExpectations(&pacer_);
+
+  EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(1);
+  EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
+      .WillRepeatedly(Return(rtc::Optional<int64_t>(start_time)));
+  clock_.AdvanceTimeMilliseconds(1000);
+  probe_controller_->Process();
+  probe_controller_->SetEstimatedBitrate(500);
+  testing::Mock::VerifyAndClearExpectations(&pacer_);
 }
 
 }  // namespace test

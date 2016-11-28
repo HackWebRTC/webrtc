@@ -748,6 +748,9 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(remb_);
 
+  congestion_controller_->EnablePeriodicAlrProbing(
+      config_->periodic_alr_bandwidth_probing);
+
   // RTP/RTCP initialization.
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     congestion_controller_->packet_router()->AddRtpModule(rtp_rtcp);

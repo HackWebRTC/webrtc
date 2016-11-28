@@ -275,6 +275,10 @@ RateLimiter* CongestionController::GetRetransmissionRateLimiter() {
   return retransmission_rate_limiter_.get();
 }
 
+void CongestionController::EnablePeriodicAlrProbing(bool enable) {
+  probe_controller_->EnablePeriodicAlrProbing(enable);
+}
+
 void CongestionController::SetAllocatedSendBitrateLimits(
     int min_send_bitrate_bps,
     int max_padding_bitrate_bps) {
@@ -319,6 +323,7 @@ int64_t CongestionController::TimeUntilNextProcess() {
 void CongestionController::Process() {
   bitrate_controller_->Process();
   remote_bitrate_estimator_->Process();
+  probe_controller_->Process();
   MaybeTriggerOnNetworkChanged();
 }
 

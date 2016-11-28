@@ -36,6 +36,9 @@ class ProbeController {
 
   void SetEstimatedBitrate(int bitrate_bps);
 
+  void EnablePeriodicAlrProbing(bool enable);
+  void Process();
+
  private:
   enum class State {
     // Initial state where no probing has been triggered yet.
@@ -47,7 +50,8 @@ class ProbeController {
   };
 
   void InitiateExponentialProbing() EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void InitiateProbing(std::initializer_list<int> bitrates_to_probe,
+  void InitiateProbing(int64_t now_ms,
+                       std::initializer_list<int> bitrates_to_probe,
                        int min_bitrate_to_probe_further_bps)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
@@ -62,6 +66,7 @@ class ProbeController {
   int start_bitrate_bps_ GUARDED_BY(critsect_);
   int max_bitrate_bps_ GUARDED_BY(critsect_);
   int64_t last_alr_probing_time_ GUARDED_BY(critsect_);
+  bool enable_periodic_alr_probing_ GUARDED_BY(critsect_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ProbeController);
 };
