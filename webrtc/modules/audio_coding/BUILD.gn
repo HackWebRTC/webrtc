@@ -713,16 +713,16 @@ rtc_static_library("webrtc_opus") {
   ]
 
   defines = []
+  if (rtc_opus_variable_complexity) {
+    defines += [ "WEBRTC_OPUS_VARIABLE_COMPLEXITY=1" ]
+  } else {
+    defines += [ "WEBRTC_OPUS_VARIABLE_COMPLEXITY=0" ]
+  }
 
   if (rtc_build_opus) {
     public_deps = [
       rtc_opus_dir,
     ]
-    if (rtc_opus_variable_complexity) {
-      defines += [ "WEBRTC_OPUS_VARIABLE_COMPLEXITY=1" ]
-    } else {
-      defines += [ "WEBRTC_OPUS_VARIABLE_COMPLEXITY=0" ]
-    }
   } else if (build_with_mozilla) {
     include_dirs = [ getenv("DIST") + "/include/opus" ]
   }
