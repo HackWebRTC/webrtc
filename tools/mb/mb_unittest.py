@@ -457,7 +457,6 @@ class UnitTest(unittest.TestCase):
         '--name', 'unified_logcats',
         'bin/run_base_unittests',
         '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
-        '--target-devices-file', '${SWARMING_BOT_FILE}',
         '-v',
     ])
 

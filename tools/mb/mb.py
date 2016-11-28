@@ -1091,11 +1091,11 @@ class MetaBuildWrapper(object):
       test_cmdline = [
           self.PathJoin('bin', 'run_%s' % target),
           '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
-          '--target-devices-file', '${SWARMING_BOT_FILE}',
-          '-v',
       ]
+      if test_type != 'junit_test':
+        test_cmdline += ['--target-devices-file', '${SWARMING_BOT_FILE}',]
       cmdline = (['./../../build/android/test_wrapper/logdog_wrapper.py']
-                 + logdog_command + test_cmdline)
+                 + logdog_command + test_cmdline + ['-v'])
     else:
       extra_files = ['../../testing/test_env.py']
 
