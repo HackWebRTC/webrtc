@@ -59,4 +59,9 @@ rtc::Optional<float> SmoothingFilterImpl::GetAverage() const {
                                                   : rtc::Optional<float>(value);
 }
 
+void SmoothingFilterImpl::SetTimeConstantMs(int time_constant_ms) {
+  time_constant_ms_ = time_constant_ms;
+  filter_.UpdateBase(exp(1.0f / time_constant_ms_));
+}
+
 }  // namespace webrtc

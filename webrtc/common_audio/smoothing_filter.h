@@ -23,6 +23,7 @@ class SmoothingFilter {
   virtual ~SmoothingFilter() = default;
   virtual void AddSample(float sample) = 0;
   virtual rtc::Optional<float> GetAverage() const = 0;
+  virtual void SetTimeConstantMs(int time_constant_ms) = 0;
 };
 
 // SmoothingFilterImpl applies an exponential filter
@@ -35,9 +36,10 @@ class SmoothingFilterImpl final : public SmoothingFilter {
 
   void AddSample(float sample) override;
   rtc::Optional<float> GetAverage() const override;
+  void SetTimeConstantMs(int time_constant_ms) override;
 
  private:
-  const int time_constant_ms_;
+  int time_constant_ms_;
   const Clock* const clock_;
 
   bool first_sample_received_;

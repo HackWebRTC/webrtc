@@ -894,7 +894,10 @@ Channel::Channel(int32_t channelId,
       rtp_packet_sender_proxy_(new RtpPacketSenderProxy()),
       retransmission_rate_limiter_(new RateLimiter(Clock::GetRealTimeClock(),
                                                    kMaxRetransmissionWindowMs)),
-      decoder_factory_(config.acm_config.decoder_factory) {
+      decoder_factory_(config.acm_config.decoder_factory),
+      // Bitrate smoother can be initialized with arbitrary time constant
+      // (0 used here). The actual time constant will be set in SetBitRate.
+      bitrate_smoother_(0, Clock::GetRealTimeClock()) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Channel() - ctor");
   AudioCodingModule::Config acm_config(config.acm_config);
@@ -1306,6 +1309,20 @@ void Channel::SetBitRate(int bitrate_bps) {
       (*encoder)->OnReceivedTargetAudioBitrate(bitrate_bps);
   });
   retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
+
+  // We give smoothed bitrate allocation to audio network adaptor as
+  // the uplink bandwidth.
+  // TODO(michaelt) : Remove kDefaultBitrateSmoothingTimeConstantMs as soon as
+  // we pass the probing interval to this function.
+  constexpr int64_t kDefaultBitrateSmoothingTimeConstantMs = 20000;
+  bitrate_smoother_.SetTimeConstantMs(kDefaultBitrateSmoothingTimeConstantMs);
+  bitrate_smoother_.AddSample(bitrate_bps);
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder) {
+      (*encoder)->OnReceivedUplinkBandwidth(
+          static_cast<int>(*bitrate_smoother_.GetAverage()));
+    }
+  });
 }
 
 void Channel::OnIncomingFractionLoss(int fraction_lost) {
