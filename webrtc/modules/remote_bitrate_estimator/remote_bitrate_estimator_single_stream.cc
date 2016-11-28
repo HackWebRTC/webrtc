@@ -133,7 +133,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
         incoming_bitrate_.Rate(now_ms);
     if (incoming_bitrate_bps &&
         (prior_state != kBwOverusing ||
-         remote_rate_->TimeToReduceFurther(now_ms, *incoming_bitrate_bps))) {
+         GetRemoteRate()->TimeToReduceFurther(now_ms, *incoming_bitrate_bps))) {
       // The first overuse should immediately trigger a new estimate.
       // We also have to update the estimate immediately if we are overusing
       // and the target bitrate is too high compared to what we are receiving.
@@ -189,19 +189,19 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
   }
   // We can't update the estimate if we don't have any active streams.
   if (overuse_detectors_.empty()) {
-    remote_rate_.reset(new AimdRateControl());
     return;
   }
+  AimdRateControl* remote_rate = GetRemoteRate();
 
   double mean_noise_var = sum_var_noise /
       static_cast<double>(overuse_detectors_.size());
   const RateControlInput input(bw_state,
                                incoming_bitrate_.Rate(now_ms),
                                mean_noise_var);
-  remote_rate_->Update(&input, now_ms);
-  uint32_t target_bitrate = remote_rate_->UpdateBandwidthEstimate(now_ms);
-  if (remote_rate_->ValidEstimate()) {
-    process_interval_ms_ = remote_rate_->GetFeedbackInterval();
+  remote_rate->Update(&input, now_ms);
+  uint32_t target_bitrate = remote_rate->UpdateBandwidthEstimate(now_ms);
+  if (remote_rate->ValidEstimate()) {
+    process_interval_ms_ = remote_rate->GetFeedbackInterval();
     std::vector<uint32_t> ssrcs;
     GetSsrcs(&ssrcs);
     observer_->OnReceiveBitrateChanged(ssrcs, target_bitrate);
@@ -211,7 +211,7 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
 void RemoteBitrateEstimatorSingleStream::OnRttUpdate(int64_t avg_rtt_ms,
                                                      int64_t max_rtt_ms) {
   CriticalSectionScoped cs(crit_sect_.get());
-  remote_rate_->SetRtt(avg_rtt_ms);
+  GetRemoteRate()->SetRtt(avg_rtt_ms);
 }
 
 void RemoteBitrateEstimatorSingleStream::RemoveStream(unsigned int ssrc) {
@@ -248,6 +248,12 @@ void RemoteBitrateEstimatorSingleStream::GetSsrcs(
       it != overuse_detectors_.end(); ++it, ++i) {
     (*ssrcs)[i] = it->first;
   }
+}
+
+AimdRateControl* RemoteBitrateEstimatorSingleStream::GetRemoteRate() {
+  if (!remote_rate_)
+    remote_rate_.reset(new AimdRateControl());
+  return remote_rate_.get();
 }
 
 void RemoteBitrateEstimatorSingleStream::SetMinBitrate(int min_bitrate_bps) {
