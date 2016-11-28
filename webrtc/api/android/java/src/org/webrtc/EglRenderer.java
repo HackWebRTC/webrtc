@@ -76,7 +76,6 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   private final Object handlerLock = new Object();
   private Handler renderThreadHandler;
 
-  private final Object frameListenerLock = new Object();
   private final ArrayList<ScaleAndFrameListener> frameListeners = new ArrayList<>();
 
   // Variables for fps reduction.
@@ -364,27 +363,37 @@ public class EglRenderer implements VideoRenderer.Callbacks {
    * @param scale    The scale of the Bitmap passed to the callback, or 0 if no Bitmap is
    *                 required.
    */
-  public void addFrameListener(FrameListener listener, float scale) {
-    synchronized (frameListenerLock) {
-      frameListeners.add(new ScaleAndFrameListener(scale, listener));
-    }
+  public void addFrameListener(final FrameListener listener, final float scale) {
+    postToRenderThread(new Runnable() {
+      @Override
+      public void run() {
+        frameListeners.add(new ScaleAndFrameListener(scale, listener));
+      }
+    });
   }
 
   /**
    * Remove any pending callback that was added with addFrameListener. If the callback is not in
-   * the queue, nothing happens.
+   * the queue, nothing happens. It is ensured that callback won't be called after this method
+   * returns.
    *
    * @param runnable The callback to remove.
    */
-  public void removeFrameListener(FrameListener listener) {
-    synchronized (frameListenerLock) {
-      final Iterator<ScaleAndFrameListener> iter = frameListeners.iterator();
-      while (iter.hasNext()) {
-        if (iter.next().listener == listener) {
-          iter.remove();
+  public void removeFrameListener(final FrameListener listener) {
+    final CountDownLatch latch = new CountDownLatch(1);
+    postToRenderThread(new Runnable() {
+      @Override
+      public void run() {
+        latch.countDown();
+        final Iterator<ScaleAndFrameListener> iter = frameListeners.iterator();
+        while (iter.hasNext()) {
+          if (iter.next().listener == listener) {
+            iter.remove();
+          }
         }
       }
-    }
+    });
+    ThreadUtils.awaitUninterruptibly(latch);
   }
 
   // VideoRenderer.Callbacks interface.
@@ -581,12 +590,10 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     // Make temporary copy of callback list to avoid ConcurrentModificationException, in case
     // callbacks call addFramelistener or removeFrameListener.
     final ArrayList<ScaleAndFrameListener> tmpList;
-    synchronized (frameListenerLock) {
-      if (frameListeners.isEmpty())
-        return;
-      tmpList = new ArrayList<>(frameListeners);
-      frameListeners.clear();
-    }
+    if (frameListeners.isEmpty())
+      return;
+    tmpList = new ArrayList<>(frameListeners);
+    frameListeners.clear();
 
     final float[] bitmapMatrix = RendererCommon.multiplyMatrices(
         RendererCommon.multiplyMatrices(texMatrix,

@@ -29,6 +29,7 @@ public class EglRendererTest extends InstrumentationTestCase {
   final static int SURFACE_WAIT_MS = 1000;
   final static int TEST_FRAME_WIDTH = 4;
   final static int TEST_FRAME_HEIGHT = 4;
+  final static int REMOVE_FRAME_LISTENER_RACY_NUM_TESTS = 10;
   // Some arbitrary frames.
   final static ByteBuffer[][] TEST_FRAMES = {
       {
@@ -262,5 +263,30 @@ public class EglRendererTest extends InstrumentationTestCase {
       assertTrue(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
       checkBitmap(testFrameListener.resetAndGetBitmap(), scale);
     }
+  }
+
+  /**
+   * Checks that the frame listener will not be called with a frame that was delivered before the
+   * frame listener was added.
+   */
+  @SmallTest
+  public void testFrameListenerNotCalledWithOldFrames() throws Exception {
+    feedFrame(0);
+    eglRenderer.addFrameListener(testFrameListener, 0f);
+    // Check the old frame does not trigger frame listener.
+    assertFalse(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
+  }
+
+  /** Checks that the frame listener will not be called after it is removed. */
+  @SmallTest
+  public void testRemoveFrameListenerNotRacy() throws Exception {
+    for (int i = 0; i < REMOVE_FRAME_LISTENER_RACY_NUM_TESTS; i++) {
+      feedFrame(0);
+      eglRenderer.addFrameListener(testFrameListener, 0f);
+      eglRenderer.removeFrameListener(testFrameListener);
+      feedFrame(1);
+    }
+    // Check the frame listener hasn't triggered.
+    assertFalse(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
   }
 }
