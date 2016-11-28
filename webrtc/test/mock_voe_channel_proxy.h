@@ -45,7 +45,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD2(SetSendTelephoneEventPayloadType, bool(int payload_type,
                                                       int payload_frequency));
   MOCK_METHOD2(SendTelephoneEventOutband, bool(int event, int duration_ms));
-  MOCK_METHOD1(SetBitrate, void(int bitrate_bps));
+  MOCK_METHOD2(SetBitrate, void(int bitrate_bps, int64_t probing_interval_ms));
   // TODO(solenberg): Talk the compiler into accepting this mock method:
   // MOCK_METHOD1(SetSink, void(std::unique_ptr<AudioSinkInterface> sink));
   MOCK_METHOD1(SetInputMute, void(bool muted));

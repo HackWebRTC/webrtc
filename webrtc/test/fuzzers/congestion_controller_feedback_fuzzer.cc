@@ -21,7 +21,8 @@ class NullBitrateObserver : public CongestionController::Observer,
   ~NullBitrateObserver() override {}
   void OnNetworkChanged(uint32_t bitrate_bps,
                         uint8_t fraction_loss,
-                        int64_t rtt_ms) override {}
+                        int64_t rtt_ms,
+                        int64_t probing_interval_ms) override {}
   void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                uint32_t bitrate) override {}
 };

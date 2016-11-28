@@ -73,6 +73,11 @@ void TransportFeedbackAdapter::SetMinBitrate(int min_bitrate_bps) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
 }
 
+int64_t TransportFeedbackAdapter::GetProbingIntervalMs() const {
+  rtc::CritScope cs(&bwe_lock_);
+  return delay_based_bwe_->GetProbingIntervalMs();
+}
+
 std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
     const rtcp::TransportFeedback& feedback) {
   int64_t timestamp_us = feedback.GetBaseTimeUs();
