@@ -58,15 +58,30 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
 // Plain I420 buffer in standard memory.
 class I420Buffer : public VideoFrameBuffer {
  public:
-  I420Buffer(int width, int height);
-  I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
-
   static rtc::scoped_refptr<I420Buffer> Create(int width, int height);
   static rtc::scoped_refptr<I420Buffer> Create(int width,
                                                int height,
                                                int stride_y,
                                                int stride_u,
                                                int stride_v);
+
+  // Create a new buffer and copy the pixel data.
+  static rtc::scoped_refptr<I420Buffer> Copy(const VideoFrameBuffer& buffer);
+
+  static rtc::scoped_refptr<I420Buffer> Copy(
+      int width, int height,
+      const uint8_t* data_y, int stride_y,
+      const uint8_t* data_u, int stride_u,
+      const uint8_t* data_v, int stride_v);
+
+  // Returns a rotated versions of |src|. Native buffers are not
+  // supported. The reason this function doesn't return an I420Buffer,
+  // is that it returns |src| unchanged in case |rotation| is zero.
+  // TODO(nisse): Consider dropping the special handling of zero
+  // rotation, and leave any optimizing that case to the caller.
+  static rtc::scoped_refptr<VideoFrameBuffer> Rotate(
+      rtc::scoped_refptr<VideoFrameBuffer> src,
+      VideoRotation rotation);
 
   // Sets all three planes to all zeros. Used to work around for
   // quirks in memory checkers
@@ -94,9 +109,6 @@ class I420Buffer : public VideoFrameBuffer {
 
   void* native_handle() const override;
   rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
-
-  // Create a new buffer and copy the pixel data.
-  static rtc::scoped_refptr<I420Buffer> Copy(const VideoFrameBuffer& buffer);
 
   // Scale the cropped area of |src| to the size of |this| buffer, and
   // write the result into |this|.
@@ -133,14 +145,10 @@ class I420Buffer : public VideoFrameBuffer {
     ScaleFrom(*src);
   }
 
-  // Returns a rotated versions of |src|. Native buffers are not
-  // supported. The reason this function doesn't return an I420Buffer,
-  // is that it returns |src| unchanged in case |rotation| is zero.
-  static rtc::scoped_refptr<VideoFrameBuffer> Rotate(
-      rtc::scoped_refptr<VideoFrameBuffer> src,
-      VideoRotation rotation);
-
  protected:
+  I420Buffer(int width, int height);
+  I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
+
   ~I420Buffer() override;
 
  private:

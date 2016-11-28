@@ -61,10 +61,12 @@ I420Buffer::I420Buffer(int width,
 I420Buffer::~I420Buffer() {
 }
 
+// static
 rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width, int height) {
   return new rtc::RefCountedObject<I420Buffer>(width, height);
 }
 
+// static
 rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width,
                                                   int height,
                                                   int stride_y,
@@ -72,6 +74,67 @@ rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width,
                                                   int stride_v) {
   return new rtc::RefCountedObject<I420Buffer>(
       width, height, stride_y, stride_u, stride_v);
+}
+
+// static
+rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
+    const VideoFrameBuffer& source) {
+  return Copy(source.width(), source.height(),
+              source.DataY(), source.StrideY(),
+              source.DataU(), source.StrideU(),
+              source.DataV(), source.StrideV());
+}
+
+// static
+rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
+      int width, int height,
+      const uint8_t* data_y, int stride_y,
+      const uint8_t* data_u, int stride_u,
+      const uint8_t* data_v, int stride_v) {
+  // Note: May use different strides than the input data.
+  rtc::scoped_refptr<I420Buffer> buffer = Create(width, height);
+  RTC_CHECK_EQ(0, libyuv::I420Copy(data_y, stride_y,
+                                   data_u, stride_u,
+                                   data_v, stride_v,
+                                   buffer->MutableDataY(), buffer->StrideY(),
+                                   buffer->MutableDataU(), buffer->StrideU(),
+                                   buffer->MutableDataV(), buffer->StrideV(),
+                                   width, height));
+  return buffer;
+}
+
+// static
+rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::Rotate(
+    rtc::scoped_refptr<VideoFrameBuffer> src,
+    VideoRotation rotation) {
+  RTC_CHECK(src->DataY());
+  RTC_CHECK(src->DataU());
+  RTC_CHECK(src->DataV());
+
+  if (rotation == webrtc::kVideoRotation_0) {
+    return src;
+  }
+
+  int rotated_width = src->width();
+  int rotated_height = src->height();
+  if (rotation == webrtc::kVideoRotation_90 ||
+      rotation == webrtc::kVideoRotation_270) {
+    std::swap(rotated_width, rotated_height);
+  }
+
+  rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+      I420Buffer::Create(rotated_width, rotated_height);
+
+  RTC_CHECK_EQ(0, libyuv::I420Rotate(
+      src->DataY(), src->StrideY(),
+      src->DataU(), src->StrideU(),
+      src->DataV(), src->StrideV(),
+      buffer->MutableDataY(), buffer->StrideY(), buffer->MutableDataU(),
+      buffer->StrideU(), buffer->MutableDataV(), buffer->StrideV(),
+      src->width(), src->height(),
+      static_cast<libyuv::RotationMode>(rotation)));
+
+  return buffer;
 }
 
 void I420Buffer::InitializeData() {
@@ -124,23 +187,6 @@ void* I420Buffer::native_handle() const {
 rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::NativeToI420Buffer() {
   RTC_NOTREACHED();
   return nullptr;
-}
-
-// static
-rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
-    const VideoFrameBuffer& source) {
-  int width = source.width();
-  int height = source.height();
-  rtc::scoped_refptr<I420Buffer> target = I420Buffer::Create(width, height);
-  RTC_CHECK(libyuv::I420Copy(source.DataY(), source.StrideY(),
-                             source.DataU(), source.StrideU(),
-                             source.DataV(), source.StrideV(),
-                             target->MutableDataY(), target->StrideY(),
-                             target->MutableDataU(), target->StrideU(),
-                             target->MutableDataV(), target->StrideV(),
-                             width, height) == 0);
-
-  return target;
 }
 
 void I420Buffer::SetToBlack() {
@@ -203,41 +249,6 @@ void I420Buffer::CropAndScaleFrom(
 
 void I420Buffer::ScaleFrom(const VideoFrameBuffer& src) {
   CropAndScaleFrom(src, 0, 0, src.width(), src.height());
-}
-
-// static
-rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::Rotate(
-    rtc::scoped_refptr<VideoFrameBuffer> src,
-    VideoRotation rotation) {
-  RTC_DCHECK(src->DataY());
-  RTC_DCHECK(src->DataU());
-  RTC_DCHECK(src->DataV());
-
-  if (rotation == webrtc::kVideoRotation_0) {
-    return src;
-  }
-
-  int rotated_width = src->width();
-  int rotated_height = src->height();
-  if (rotation == webrtc::kVideoRotation_90 ||
-      rotation == webrtc::kVideoRotation_270) {
-    std::swap(rotated_width, rotated_height);
-  }
-
-  rtc::scoped_refptr<webrtc::I420Buffer> buffer =
-      I420Buffer::Create(rotated_width, rotated_height);
-
-  int res = libyuv::I420Rotate(
-      src->DataY(), src->StrideY(),
-      src->DataU(), src->StrideU(),
-      src->DataV(), src->StrideV(),
-      buffer->MutableDataY(), buffer->StrideY(), buffer->MutableDataU(),
-      buffer->StrideU(), buffer->MutableDataV(), buffer->StrideV(),
-      src->width(), src->height(),
-      static_cast<libyuv::RotationMode>(rotation));
-  RTC_DCHECK_EQ(res, 0);
-
-  return buffer;
 }
 
 NativeHandleBuffer::NativeHandleBuffer(void* native_handle,

@@ -151,16 +151,12 @@ TEST(TestVideoFrame, ShallowCopy) {
   memset(buffer_y, 16, kSizeY);
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
-  // TODO(nisse): This new + Copy looks quite awkward. Consider adding
-  // an alternative I420Buffer::Create method.
+
   VideoFrame frame1(
-      I420Buffer::Copy(*rtc::scoped_refptr<VideoFrameBuffer>(
-          new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
-              width, height,
-              buffer_y, stride_y,
-              buffer_u, stride_u,
-              buffer_v, stride_v,
-              rtc::Callback0<void>([](){})))),
+      I420Buffer::Copy(width, height,
+                       buffer_y, stride_y,
+                       buffer_u, stride_u,
+                       buffer_v, stride_v),
       kRotation, 0);
   frame1.set_timestamp(timestamp);
   frame1.set_ntp_time_ms(ntp_time_ms);
