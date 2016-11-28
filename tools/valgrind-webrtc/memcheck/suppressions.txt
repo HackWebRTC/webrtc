@@ -32,6 +32,14 @@
 # webrtc stuff
 
 {
+   bug_6784
+   Memcheck:Leak
+   fun:_Znw*
+   fun:_ZN3rtc10HttpServer16HandleConnectionEPNS_15StreamInterfaceE
+   fun:_ZN3rtc12_GLOBAL__N_122CreateClientConnectionERNS_10HttpServerERNS0_17HttpServerMonitorEb
+   fun:_ZN3rtc47HttpServer_SignalsCloseAfterForcedCloseAll_Test8TestBodyEv
+}
+{
    bug_6773_3
    Memcheck:Uninitialized
    fun:vfprintf
