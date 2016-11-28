@@ -37,6 +37,7 @@ rtc_source_set("call_api") {
   deps = [
     # TODO(kjellander): Add remaining dependencies when webrtc:4243 is done.
     ":audio_mixer_api",
+    ":transport_api",
     "..:webrtc_common",
     "../base:rtc_base_approved",
     "../modules/audio_coding:audio_encoder_interface",
@@ -362,6 +363,11 @@ rtc_source_set("audio_mixer_api") {
   ]
 }
 
+rtc_source_set("transport_api") {
+  sources = [
+    "call/transport.h",
+  ]
+}
 if (rtc_include_tests) {
   config("peerconnection_unittests_config") {
     # The warnings below are enabled by default. Since GN orders compiler flags

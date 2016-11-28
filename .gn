@@ -21,6 +21,7 @@ secondary_source = "//build/secondary/"
 # TODO(kjellander): Keep adding paths to this list as work in webrtc:5589 is done.
 check_targets = [
   "//webrtc/api:audio_mixer_api",
+  "//webrtc/api:transport_api",
   "//webrtc/api:rtc_stats_api",
   "//webrtc/modules/audio_coding:audio_decoder_factory_interface",
   "//webrtc/modules/audio_coding:audio_format",
@@ -37,6 +38,7 @@ check_targets = [
   "//webrtc/modules/audio_device/*",
   "//webrtc/modules/audio_mixer/*",
   "//webrtc/stats:rtc_stats",
+  "//webrtc/voice_engine",
   "//webrtc/voice_engine:level_indicator",
 ]
 

@@ -231,6 +231,11 @@ if (!build_with_chromium) {
       "build/no_op_function.cc",
       "call.h",
       "config.h",
+
+      # TODO(aleloi): remove transport.h and the transport api
+      # dependency once clients have updated to the new transport
+      # location in webrtc/api/call/transport.h See
+      # http://bugs.webrtc.org/6785.
       "transport.h",
     ]
 
@@ -239,6 +244,7 @@ if (!build_with_chromium) {
     deps = [
       ":webrtc_common",
       "api",
+      "api:transport_api",
       "audio",
       "base",
       "call",

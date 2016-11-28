@@ -226,6 +226,7 @@ rtc_static_library("rtc_media") {
     ":rtc_media_base",
     "..:webrtc_common",
     "../api:call_api",
+    "../api:transport_api",
     "../base:rtc_base_approved",
     "../call",
     "../modules/audio_mixer:audio_mixer_impl",

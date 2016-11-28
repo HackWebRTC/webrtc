@@ -641,6 +641,7 @@ if (rtc_include_tests) {
     deps += [
       ":audio_network_adaptor_unittests",
       "..:webrtc_common",
+      "../api:transport_api",
       "../base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
       "../common_audio",
       "../common_video",

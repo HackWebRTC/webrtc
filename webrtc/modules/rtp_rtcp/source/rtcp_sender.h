@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/call/transport.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/random.h"
@@ -31,7 +32,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
-#include "webrtc/transport.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

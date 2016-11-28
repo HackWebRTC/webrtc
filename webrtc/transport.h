@@ -7,35 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
 #ifndef WEBRTC_TRANSPORT_H_
 #define WEBRTC_TRANSPORT_H_
+#include "webrtc/api/call/transport.h"
+// The contents header have moved to webrtc/api/call/transport.h. This
+// file is deprecated. See http://bugs.webrtc.org/6785.
 
-#include <stddef.h>
-
-#include "webrtc/typedefs.h"
-
-namespace webrtc {
-
-// TODO(holmer): Look into unifying this with the PacketOptions in
-// asyncpacketsocket.h.
-struct PacketOptions {
-  // A 16 bits positive id. Negative ids are invalid and should be interpreted
-  // as packet_id not being set.
-  int packet_id = -1;
-};
-
-class Transport {
- public:
-  virtual bool SendRtp(const uint8_t* packet,
-                       size_t length,
-                       const PacketOptions& options) = 0;
-  virtual bool SendRtcp(const uint8_t* packet, size_t length) = 0;
-
- protected:
-  virtual ~Transport() {}
-};
-
-}  // namespace webrtc
+// TODO(aleloi): delete this file when all dependencies are updated.
 
 #endif  // WEBRTC_TRANSPORT_H_

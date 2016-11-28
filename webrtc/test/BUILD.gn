@@ -340,6 +340,7 @@ rtc_source_set("test_common") {
     ":rtp_test_utils",
     ":test_support",
     "..:webrtc_common",
+    "../api:transport_api",
     "../audio",
     "../base:rtc_base_approved",
     "../call",

@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/api/call/transport.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/deprecation.h"
@@ -32,7 +33,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
-#include "webrtc/transport.h"
 
 namespace webrtc {
 

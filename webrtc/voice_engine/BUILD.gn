@@ -89,6 +89,7 @@ rtc_static_library("voice_engine") {
     "..:webrtc_common",
     "../api:audio_mixer_api",
     "../api:call_api",
+    "../api:transport_api",
     "../base:rtc_base_approved",
     "../common_audio",
     "../logging:rtc_event_log_api",
@@ -177,6 +178,7 @@ if (rtc_include_tests) {
 
     deps = [
       "..:webrtc_common",
+      "../api:transport_api",
       "../system_wrappers",
       "//testing/gtest",
     ]
