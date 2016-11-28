@@ -328,8 +328,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   // Implements BitrateAllocatorObserver.
   uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
                             uint8_t fraction_loss,
-                            int64_t rtt,
-                            int64_t probing_interval_ms) override;
+                            int64_t rtt) override;
 
   // Implements webrtc::VCMProtectionCallback.
   int ProtectionRequest(const FecProtectionParams* delta_params,
@@ -1149,8 +1148,7 @@ void VideoSendStreamImpl::SignalNetworkState(NetworkState state) {
 
 uint32_t VideoSendStreamImpl::OnBitrateUpdated(uint32_t bitrate_bps,
                                                uint8_t fraction_loss,
-                                               int64_t rtt,
-                                               int64_t probing_interval_ms) {
+                                               int64_t rtt) {
   RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_DCHECK(payload_router_.active())
       << "VideoSendStream::Start has not been called.";

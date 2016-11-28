@@ -192,7 +192,7 @@ class Channel
   int32_t GetSendCodec(CodecInst& codec);
   int32_t GetRecCodec(CodecInst& codec);
   int32_t SetSendCodec(const CodecInst& codec);
-  void SetBitRate(int bitrate_bps, int64_t probing_interval_ms);
+  void SetBitRate(int bitrate_bps);
   int32_t SetVADStatus(bool enableVAD, ACMVADMode mode, bool disableDTX);
   int32_t GetVADStatus(bool& enabledVAD, ACMVADMode& mode, bool& disabledDTX);
   int32_t SetRecPayloadType(const CodecInst& codec);

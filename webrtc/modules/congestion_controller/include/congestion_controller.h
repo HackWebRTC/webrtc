@@ -48,8 +48,7 @@ class CongestionController : public CallStatsObserver, public Module {
    public:
     virtual void OnNetworkChanged(uint32_t bitrate_bps,
                                   uint8_t fraction_loss,  // 0 - 255.
-                                  int64_t rtt_ms,
-                                  int64_t probing_interval_ms) = 0;
+                                  int64_t rtt_ms) = 0;
 
    protected:
     virtual ~Observer() {}

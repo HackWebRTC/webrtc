@@ -21,11 +21,10 @@ namespace test {
 
 class MockCongestionObserver : public CongestionController::Observer {
  public:
-  MOCK_METHOD4(OnNetworkChanged,
+  MOCK_METHOD3(OnNetworkChanged,
                void(uint32_t bitrate_bps,
                     uint8_t fraction_loss,
-                    int64_t rtt_ms,
-                    int64_t probing_interval_ms));
+                    int64_t rtt_ms));
 };
 
 class MockCongestionController : public CongestionController {

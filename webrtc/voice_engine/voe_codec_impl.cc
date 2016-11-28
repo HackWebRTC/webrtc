@@ -137,9 +137,8 @@ int VoECodecImpl::SetBitRate(int channel, int bitrate_bps) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
   }
-  constexpr int64_t kDefaultProbingIntervalMs = 3000;
   _shared->channel_manager().GetChannel(channel).channel()->SetBitRate(
-      bitrate_bps, kDefaultProbingIntervalMs);
+      bitrate_bps);
   return 0;
 }
 

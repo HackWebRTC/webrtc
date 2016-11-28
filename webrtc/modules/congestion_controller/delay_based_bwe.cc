@@ -180,8 +180,7 @@ DelayBasedBwe::DelayBasedBwe(Clock* clock)
       trendline_window_size_(kDefaultTrendlineWindowSize),
       trendline_smoothing_coeff_(kDefaultTrendlineSmoothingCoeff),
       trendline_threshold_gain_(kDefaultTrendlineThresholdGain),
-      in_trendline_experiment_(TrendlineFilterExperimentIsEnabled()),
-      probing_interval_estimator_(&rate_control_) {
+      in_trendline_experiment_(TrendlineFilterExperimentIsEnabled()) {
   if (in_trendline_experiment_) {
     ReadTrendlineFilterExperimentParameters(&trendline_window_size_,
                                             &trendline_smoothing_coeff_,
@@ -330,9 +329,5 @@ void DelayBasedBwe::SetMinBitrate(int min_bitrate_bps) {
   // Called from both the configuration thread and the network thread. Shouldn't
   // be called from the network thread in the future.
   rate_control_.SetMinBitrate(min_bitrate_bps);
-}
-
-int64_t DelayBasedBwe::GetProbingIntervalMs() const {
-  return probing_interval_estimator_.GetIntervalMs();
 }
 }  // namespace webrtc

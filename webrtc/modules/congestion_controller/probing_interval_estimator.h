@@ -21,16 +21,14 @@ class ProbingIntervalEstimator {
  public:
   explicit ProbingIntervalEstimator(const AimdRateControl* aimd_rate_control);
 
-  ProbingIntervalEstimator(int64_t min_interval_ms,
-                           int64_t max_interval_ms,
-                           int64_t default_interval_ms,
+  ProbingIntervalEstimator(int min_interval_ms,
+                           int max_interval_ms,
                            const AimdRateControl* aimd_rate_control);
-  int64_t GetIntervalMs() const;
+  rtc::Optional<int> GetIntervalMs() const;
 
  private:
-  const int64_t min_interval_ms_;
-  const int64_t max_interval_ms_;
-  const int64_t default_interval_ms_;
+  const int min_interval_ms_;
+  const int max_interval_ms_;
   const AimdRateControl* const aimd_rate_control_;
   RTC_DISALLOW_COPY_AND_ASSIGN(ProbingIntervalEstimator);
 };

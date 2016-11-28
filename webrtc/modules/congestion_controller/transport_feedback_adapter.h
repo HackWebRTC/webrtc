@@ -50,8 +50,6 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
 
   void SetMinBitrate(int min_bitrate_bps);
 
-  int64_t GetProbingIntervalMs() const;
-
  private:
   std::vector<PacketInfo> GetPacketFeedbackVector(
       const rtcp::TransportFeedback& feedback);

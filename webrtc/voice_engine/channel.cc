@@ -1301,7 +1301,7 @@ int32_t Channel::SetSendCodec(const CodecInst& codec) {
   return 0;
 }
 
-void Channel::SetBitRate(int bitrate_bps, int64_t probing_interval_ms) {
+void Channel::SetBitRate(int bitrate_bps) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetBitRate(bitrate_bps=%d)", bitrate_bps);
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
@@ -1312,15 +1312,10 @@ void Channel::SetBitRate(int bitrate_bps, int64_t probing_interval_ms) {
 
   // We give smoothed bitrate allocation to audio network adaptor as
   // the uplink bandwidth.
-  // The probing spikes should not affect the bitrate smoother more than 25%.
-  // To simplify the calculations we use a step response as input signal.
-  // The step response of an exponential filter is
-  // u(t) = 1 - e^(-t / time_constant).
-  // In order to limit the affect of a BWE spike within 25% of its value before
-  // the next probing, we would choose a time constant that fulfills
-  // 1 - e^(-probing_interval_ms / time_constant) < 0.25
-  // Then 4 * probing_interval_ms is a good choice.
-  bitrate_smoother_.SetTimeConstantMs(probing_interval_ms * 4);
+  // TODO(michaelt) : Remove kDefaultBitrateSmoothingTimeConstantMs as soon as
+  // we pass the probing interval to this function.
+  constexpr int64_t kDefaultBitrateSmoothingTimeConstantMs = 20000;
+  bitrate_smoother_.SetTimeConstantMs(kDefaultBitrateSmoothingTimeConstantMs);
   bitrate_smoother_.AddSample(bitrate_bps);
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
     if (*encoder) {
