@@ -101,8 +101,6 @@ public class EglRenderer implements VideoRenderer.Callbacks {
 
   // These variables are synchronized on |layoutLock|.
   private final Object layoutLock = new Object();
-  private int surfaceWidth;
-  private int surfaceHeight;
   private float layoutAspectRatio;
   // If true, mirrors the video stream horizontally.
   private boolean mirror;
@@ -459,17 +457,6 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   }
 
   /**
-   * Notify that the surface size has changed.
-   */
-  public void surfaceSizeChanged(int surfaceWidth, int surfaceHeight) {
-    logD("Surface size changed: " + surfaceWidth + "x" + surfaceHeight);
-    synchronized (layoutLock) {
-      this.surfaceWidth = surfaceWidth;
-      this.surfaceHeight = surfaceHeight;
-    }
-  }
-
-  /**
    * Private helper function to post tasks safely.
    */
   private void postToRenderThread(Runnable runnable) {
@@ -536,18 +523,6 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     final int drawnFrameWidth;
     final int drawnFrameHeight;
     synchronized (layoutLock) {
-      int surfaceClearCount = 0;
-      while (eglBase.surfaceWidth() != surfaceWidth || eglBase.surfaceHeight() != surfaceHeight) {
-        ++surfaceClearCount;
-        if (surfaceClearCount > MAX_SURFACE_CLEAR_COUNT) {
-          logD("Failed to get surface of expected size - dropping frame.");
-          VideoRenderer.renderFrameDone(frame);
-          return;
-        }
-        logD("Surface size mismatch - clearing surface. Size: " + eglBase.surfaceWidth() + "x"
-            + eglBase.surfaceHeight() + " Expected: " + surfaceWidth + "x" + surfaceHeight);
-        clearSurfaceOnRenderThread();
-      }
       final float[] layoutMatrix;
       if (layoutAspectRatio > 0) {
         final float frameAspectRatio = frame.rotatedWidth() / (float) frame.rotatedHeight();
@@ -581,11 +556,11 @@ public class EglRenderer implements VideoRenderer.Callbacks {
 
       yuvUploader.uploadYuvData(
           yuvTextures, frame.width, frame.height, frame.yuvStrides, frame.yuvPlanes);
-      drawer.drawYuv(yuvTextures, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0, surfaceWidth,
-          surfaceHeight);
+      drawer.drawYuv(yuvTextures, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
+          eglBase.surfaceWidth(), eglBase.surfaceHeight());
     } else {
       drawer.drawOes(frame.textureId, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
-          surfaceWidth, surfaceHeight);
+          eglBase.surfaceWidth(), eglBase.surfaceHeight());
     }
 
     final long swapBuffersStartTimeNs = System.nanoTime();

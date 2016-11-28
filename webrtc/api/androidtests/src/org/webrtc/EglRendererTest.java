@@ -97,7 +97,6 @@ public class EglRendererTest extends InstrumentationTestCase {
     surfaceTexture = new SurfaceTexture(oesTextureId);
     surfaceTexture.setDefaultBufferSize(1 /* width */, 1 /* height */);
     eglRenderer.createEglSurface(surfaceTexture);
-    eglRenderer.surfaceSizeChanged(1 /* width */, 1 /* height */);
   }
 
   @Override
