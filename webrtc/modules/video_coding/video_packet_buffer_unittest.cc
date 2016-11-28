@@ -425,5 +425,18 @@ TEST_F(TestPacketBuffer, InvalidateFrameByClearing) {
   EXPECT_FALSE(frames_from_callback_.begin()->second->GetBitstream(nullptr));
 }
 
+TEST_F(TestPacketBuffer, FramesAfterClear) {
+  Insert(9025, kDeltaFrame, kFirst, kLast);
+  Insert(9024, kKeyFrame, kFirst, kLast);
+  packet_buffer_->ClearTo(9025);
+  Insert(9057, kDeltaFrame, kFirst, kLast);
+  Insert(9026, kDeltaFrame, kFirst, kLast);
+
+  CheckFrame(9024);
+  CheckFrame(9025);
+  CheckFrame(9026);
+  CheckFrame(9057);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc

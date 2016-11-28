@@ -172,16 +172,8 @@ bool PacketBuffer::PotentialNewFrame(uint16_t seq_num) const {
     return false;
   if (sequence_buffer_[index].frame_created)
     return false;
-  if (sequence_buffer_[index].frame_begin &&
-      (!sequence_buffer_[prev_index].used ||
-       AheadOf(seq_num, sequence_buffer_[prev_index].seq_num))) {
-    // The reason we only return true if this packet is the first packet of the
-    // frame and the sequence number is newer than the packet with the previous
-    // index is because we want to avoid an inifite loop in the case where
-    // a single frame containing more packets than the current size of the
-    // packet buffer is inserted.
+  if (sequence_buffer_[index].frame_begin)
     return true;
-  }
   if (!sequence_buffer_[prev_index].used)
     return false;
   if (sequence_buffer_[prev_index].seq_num !=
@@ -197,7 +189,8 @@ bool PacketBuffer::PotentialNewFrame(uint16_t seq_num) const {
 std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
     uint16_t seq_num) {
   std::vector<std::unique_ptr<RtpFrameObject>> found_frames;
-  while (PotentialNewFrame(seq_num)) {
+  size_t packets_tested = 0;
+  while (packets_tested < size_ && PotentialNewFrame(seq_num)) {
     size_t index = seq_num % size_;
     sequence_buffer_[index].continuous = true;
 
@@ -229,6 +222,7 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
                              max_nack_count, clock_->TimeInMilliseconds()));
     }
     ++seq_num;
+    ++packets_tested;
   }
   return found_frames;
 }
