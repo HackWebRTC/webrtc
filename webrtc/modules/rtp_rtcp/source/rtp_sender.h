@@ -123,8 +123,6 @@ class RTPSender {
   bool IsRtpHeaderExtensionRegistered(RTPExtensionType type);
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
 
-  size_t RtpHeaderExtensionLength() const;
-
   bool TimeToSendPacket(uint32_t ssrc,
                         uint16_t sequence_number,
                         int64_t capture_time_ms,

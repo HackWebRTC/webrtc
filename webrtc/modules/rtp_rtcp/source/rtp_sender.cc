@@ -222,11 +222,6 @@ int32_t RTPSender::DeregisterRtpHeaderExtension(RTPExtensionType type) {
   return rtp_header_extension_map_.Deregister(type);
 }
 
-size_t RTPSender::RtpHeaderExtensionLength() const {
-  rtc::CritScope lock(&send_critsect_);
-  return rtp_header_extension_map_.GetTotalLengthInBytes();
-}
-
 int32_t RTPSender::RegisterPayload(
     const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     int8_t payload_number,
@@ -978,7 +973,7 @@ size_t RTPSender::RtpHeaderLength() const {
   rtc::CritScope lock(&send_critsect_);
   size_t rtp_header_length = kRtpHeaderLength;
   rtp_header_length += sizeof(uint32_t) * csrcs_.size();
-  rtp_header_length += RtpHeaderExtensionLength();
+  rtp_header_length += rtp_header_extension_map_.GetTotalLengthInBytes();
   return rtp_header_length;
 }
 
