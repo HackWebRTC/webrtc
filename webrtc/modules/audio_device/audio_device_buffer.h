@@ -220,7 +220,7 @@ class AudioDeviceBuffer {
   int16_t max_play_level_ ACCESS_ON(task_queue_);
 
   // Time stamp of last timer task (drives logging).
-  uint64_t last_timer_task_time_ ACCESS_ON(task_queue_);
+  int64_t last_timer_task_time_ ACCESS_ON(task_queue_);
 
   // Counts number of audio callbacks modulo 50 to create a signal when
   // a new storage of audio stats shall be done.
@@ -228,8 +228,8 @@ class AudioDeviceBuffer {
   int16_t play_stat_count_ ACCESS_ON(playout_thread_checker_);
 
   // Time stamps of when playout and recording starts.
-  uint64_t play_start_time_ ACCESS_ON(main_thread_checker_);
-  uint64_t rec_start_time_ ACCESS_ON(main_thread_checker_);
+  int64_t play_start_time_ ACCESS_ON(main_thread_checker_);
+  int64_t rec_start_time_ ACCESS_ON(main_thread_checker_);
 
   // Set to true at construction and modified to false as soon as one audio-
   // level estimate larger than zero is detected.

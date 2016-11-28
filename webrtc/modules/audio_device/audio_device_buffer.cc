@@ -111,7 +111,7 @@ void AudioDeviceBuffer::StartPlayout() {
   if (!recording_) {
     StartPeriodicLogging();
   }
-  const uint64_t now_time = rtc::TimeMillis();
+  const int64_t now_time = rtc::TimeMillis();
   // Clear members that are only touched on the main (creating) thread.
   play_start_time_ = now_time;
   playing_ = true;

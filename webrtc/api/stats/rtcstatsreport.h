@@ -52,12 +52,12 @@ class RTCStatsReport : public rtc::RefCountInterface {
 
   // TODO(hbos): Remove "= 0" once Chromium unittest has been updated to call
   // with a parameter. crbug.com/627816
-  static rtc::scoped_refptr<RTCStatsReport> Create(uint64_t timestamp_us = 0);
+  static rtc::scoped_refptr<RTCStatsReport> Create(int64_t timestamp_us = 0);
 
-  explicit RTCStatsReport(uint64_t timestamp_us);
+  explicit RTCStatsReport(int64_t timestamp_us);
   RTCStatsReport(const RTCStatsReport& other) = delete;
 
-  uint64_t timestamp_us() const { return timestamp_us_; }
+  int64_t timestamp_us() const { return timestamp_us_; }
   bool AddStats(std::unique_ptr<const RTCStats> stats);
   const RTCStats* Get(const std::string& id) const;
   size_t size() const { return stats_.size(); }
@@ -90,7 +90,7 @@ class RTCStatsReport : public rtc::RefCountInterface {
  private:
   ~RTCStatsReport() override;
 
-  uint64_t timestamp_us_;
+  int64_t timestamp_us_;
   StatsMap stats_;
 };
 

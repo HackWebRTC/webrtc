@@ -385,9 +385,9 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
 
 int VideoProcessorImpl::GetElapsedTimeMicroseconds(int64_t start,
                                                    int64_t stop) {
-  uint64_t encode_time = (stop - start) / rtc::kNumNanosecsPerMicrosec;
-  RTC_DCHECK_LT(encode_time,
-                static_cast<unsigned int>(std::numeric_limits<int>::max()));
+  int64_t encode_time = (stop - start) / rtc::kNumNanosecsPerMicrosec;
+  RTC_DCHECK_GE(encode_time, std::numeric_limits<int>::min());
+  RTC_DCHECK_LE(encode_time, std::numeric_limits<int>::max());
   return static_cast<int>(encode_time);
 }
 

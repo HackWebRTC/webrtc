@@ -472,8 +472,8 @@ TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
 #define MAYBE_FrameRate FrameRate
 #endif
 TEST_F(VideoCaptureExternalTest, MAYBE_FrameRate) {
-  uint64_t testTime = 3 * rtc::kNumNanosecsPerSec;
-  uint64_t startTime = rtc::TimeNanos();
+  int64_t testTime = 3 * rtc::kNumNanosecsPerSec;
+  int64_t startTime = rtc::TimeNanos();
 
   while ((rtc::TimeNanos() - startTime) < testTime) {
     size_t length = webrtc::CalcBufferSize(webrtc::kI420,

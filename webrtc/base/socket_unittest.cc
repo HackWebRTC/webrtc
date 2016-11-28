@@ -1038,7 +1038,7 @@ void SocketTest::SocketRecvTimestamp(const IPAddress& loopback) {
   EXPECT_EQ(0, socket->Bind(SocketAddress(loopback, 0)));
   SocketAddress address = socket->GetLocalAddress();
 
-  uint64_t send_time_1 = TimeMicros();
+  int64_t send_time_1 = TimeMicros();
   socket->SendTo("foo", 3, address);
   int64_t recv_timestamp_1;
   char buffer[3];
@@ -1048,7 +1048,7 @@ void SocketTest::SocketRecvTimestamp(const IPAddress& loopback) {
   const int64_t kTimeBetweenPacketsMs = 100;
   Thread::SleepMs(kTimeBetweenPacketsMs);
 
-  uint64_t send_time_2 = TimeMicros();
+  int64_t send_time_2 = TimeMicros();
   socket->SendTo("bar", 3, address);
   int64_t recv_timestamp_2;
   socket->RecvFrom(buffer, 3, nullptr, &recv_timestamp_2);
