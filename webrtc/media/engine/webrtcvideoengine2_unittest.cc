@@ -79,7 +79,7 @@ bool HasRtxCodec(const std::vector<cricket::VideoCodec>& codecs,
   return false;
 }
 
-static rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateBlackFrameBuffer(
+rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateBlackFrameBuffer(
     int width,
     int height) {
   rtc::scoped_refptr<webrtc::I420Buffer> buffer =
@@ -751,6 +751,32 @@ TEST_F(WebRtcVideoEngine2Test, SimulcastDisabledForH264) {
   EXPECT_TRUE(channel->SetVideoSend(ssrcs[0], true, nullptr, nullptr));
 }
 
+// Test that the FlexFEC field trial properly alters the output of
+// WebRtcVideoEngine2::codecs(), for an existing |engine_| object.
+//
+// TODO(brandtr): Remove this test, when the FlexFEC field trial is gone.
+TEST_F(WebRtcVideoEngine2Test,
+       Flexfec03SupportedAsInternalCodecBehindFieldTrial) {
+  auto is_flexfec = [](const VideoCodec& codec) {
+    if (codec.name == "flexfec-03")
+      return true;
+    return false;
+  };
+
+  // FlexFEC is not active without field trial.
+  engine_.Init();
+  const std::vector<VideoCodec> codecs_before = engine_.codecs();
+  EXPECT_EQ(codecs_before.end(), std::find_if(codecs_before.begin(),
+                                              codecs_before.end(), is_flexfec));
+
+  // FlexFEC is active with field trial.
+  webrtc::test::ScopedFieldTrials override_field_trials_(
+      "WebRTC-FlexFEC-03/Enabled/");
+  const std::vector<VideoCodec> codecs_after = engine_.codecs();
+  EXPECT_NE(codecs_after.end(),
+            std::find_if(codecs_after.begin(), codecs_after.end(), is_flexfec));
+}
+
 // Test that external codecs are added to the end of the supported codec list.
 TEST_F(WebRtcVideoEngine2Test, ReportSupportedExternalCodecs) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
@@ -763,9 +789,29 @@ TEST_F(WebRtcVideoEngine2Test, ReportSupportedExternalCodecs) {
   cricket::VideoCodec internal_codec = codecs.front();
   cricket::VideoCodec external_codec = codecs.back();
 
-  // The external codec will appear at last.
+  // The external codec will appear last in the vector.
   EXPECT_EQ("VP8", internal_codec.name);
   EXPECT_EQ("FakeExternalCodec", external_codec.name);
+}
+
+// Test that an external codec that was added after the engine was initialized
+// does show up in the codec list after it was added.
+TEST_F(WebRtcVideoEngine2Test, ReportSupportedExternalCodecsWithAddedCodec) {
+  // Set up external encoder factory with first codec, and initialize engine.
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType("FakeExternalCodec1");
+  engine_.SetExternalEncoderFactory(&encoder_factory);
+  engine_.Init();
+
+  // The first external codec will appear last in the vector.
+  std::vector<cricket::VideoCodec> codecs_before(engine_.codecs());
+  EXPECT_EQ("FakeExternalCodec1", codecs_before.back().name);
+
+  // Add second codec.
+  encoder_factory.AddSupportedVideoCodecType("FakeExternalCodec2");
+  std::vector<cricket::VideoCodec> codecs_after(engine_.codecs());
+  EXPECT_EQ(codecs_before.size() + 1, codecs_after.size());
+  EXPECT_EQ("FakeExternalCodec2", codecs_after.back().name);
 }
 
 TEST_F(WebRtcVideoEngine2Test, RegisterExternalDecodersIfSupported) {

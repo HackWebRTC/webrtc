@@ -141,13 +141,13 @@ void ChannelManager::GetSupportedVideoCodecs(
     std::vector<VideoCodec>* codecs) const {
   codecs->clear();
 
-  std::vector<VideoCodec>::const_iterator it;
-  for (it = media_engine_->video_codecs().begin();
-      it != media_engine_->video_codecs().end(); ++it) {
-    if (!enable_rtx_ && _stricmp(kRtxCodecName, it->name.c_str()) == 0) {
+  std::vector<VideoCodec> video_codecs = media_engine_->video_codecs();
+  for (const auto& video_codec : video_codecs) {
+    if (!enable_rtx_ &&
+        _stricmp(kRtxCodecName, video_codec.name.c_str()) == 0) {
       continue;
     }
-    codecs->push_back(*it);
+    codecs->push_back(video_codec);
   }
 }
 

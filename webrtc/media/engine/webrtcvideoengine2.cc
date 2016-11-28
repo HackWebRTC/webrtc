@@ -497,7 +497,6 @@ WebRtcVideoEngine2::WebRtcVideoEngine2()
       external_decoder_factory_(NULL),
       external_encoder_factory_(NULL) {
   LOG(LS_INFO) << "WebRtcVideoEngine2::WebRtcVideoEngine2()";
-  video_codecs_ = GetSupportedCodecs(external_encoder_factory_);
 }
 
 WebRtcVideoEngine2::~WebRtcVideoEngine2() {
@@ -520,8 +519,8 @@ WebRtcVideoChannel2* WebRtcVideoEngine2::CreateChannel(
                                  external_decoder_factory_);
 }
 
-const std::vector<VideoCodec>& WebRtcVideoEngine2::codecs() const {
-  return video_codecs_;
+std::vector<VideoCodec> WebRtcVideoEngine2::codecs() const {
+  return GetSupportedCodecs(external_encoder_factory_);
 }
 
 RtpCapabilities WebRtcVideoEngine2::GetCapabilities() const {
@@ -568,8 +567,6 @@ void WebRtcVideoEngine2::SetExternalEncoderFactory(
     encoder_factory = simulcast_encoder_factory_.get();
   }
   external_encoder_factory_ = encoder_factory;
-
-  video_codecs_ = GetSupportedCodecs(encoder_factory);
 }
 
 // This is a helper function for AppendVideoCodecs below. It will return the
