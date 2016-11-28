@@ -118,7 +118,7 @@ static bool CreateCryptoParams(int tag, const std::string& cipher,
     return false;
   }
 
-  RTC_CHECK_EQ(static_cast<size_t>(master_key_len), master_key.size());
+  RTC_CHECK_EQ(master_key_len, master_key.size());
   std::string key = rtc::Base64::Encode(master_key);
 
   out->tag = tag;

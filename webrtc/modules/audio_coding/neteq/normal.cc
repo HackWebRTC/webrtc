@@ -152,7 +152,7 @@ int Normal::Process(const int16_t* input,
   } else if (last_mode == kModeRfc3389Cng) {
     RTC_DCHECK_EQ(output->Channels(), 1);  // Not adapted for multi-channel yet.
     static const size_t kCngLength = 48;
-    RTC_DCHECK_LE(static_cast<size_t>(8 * fs_mult), kCngLength);
+    RTC_DCHECK_LE(8 * fs_mult, kCngLength);
     int16_t cng_output[kCngLength];
     // Reset mute factor and start up fresh.
     external_mute_factor_array[0] = 16384;

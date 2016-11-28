@@ -70,7 +70,7 @@ class FakeNetworkPipeTest : public ::testing::Test {
   }
 
   void SendPackets(FakeNetworkPipe* pipe, int number_packets, int packet_size) {
-    RTC_DCHECK_GE(packet_size, static_cast<int>(sizeof(int)));
+    RTC_DCHECK_GE(packet_size, sizeof(int));
     std::unique_ptr<uint8_t[]> packet(new uint8_t[packet_size]);
     for (int i = 0; i < number_packets; ++i) {
       // Set a sequence number for the packets by

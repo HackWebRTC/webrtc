@@ -1744,7 +1744,7 @@ void FormNearendBlock(
     const float nearend_buffer[NUM_HIGH_BANDS_MAX + 1]
                               [PART_LEN - (FRAME_LEN - PART_LEN)],
     float nearend_block[NUM_HIGH_BANDS_MAX + 1][PART_LEN]) {
-  RTC_DCHECK_LE(num_samples_from_nearend_frame, static_cast<size_t>(PART_LEN));
+  RTC_DCHECK_LE(num_samples_from_nearend_frame, PART_LEN);
   const int num_samples_from_buffer = PART_LEN - num_samples_from_nearend_frame;
 
   if (num_samples_from_buffer > 0) {
@@ -1795,15 +1795,14 @@ void FormOutputFrame(size_t output_start_index,
                      size_t* output_buffer_size,
                      float output_buffer[NUM_HIGH_BANDS_MAX + 1][2 * PART_LEN],
                      float* const* output_frame) {
-  RTC_DCHECK_LE(static_cast<size_t>(FRAME_LEN), *output_buffer_size);
+  RTC_DCHECK_LE(FRAME_LEN, *output_buffer_size);
   for (size_t i = 0; i < num_bands; ++i) {
     memcpy(&output_frame[i][output_start_index], &output_buffer[i][0],
            FRAME_LEN * sizeof(float));
   }
   (*output_buffer_size) -= FRAME_LEN;
   if (*output_buffer_size > 0) {
-    RTC_DCHECK_GE(static_cast<size_t>(2 * PART_LEN - FRAME_LEN),
-                  (*output_buffer_size));
+    RTC_DCHECK_GE(2 * PART_LEN - FRAME_LEN, (*output_buffer_size));
     for (size_t i = 0; i < num_bands; ++i) {
       memcpy(&output_buffer[i][0], &output_buffer[i][FRAME_LEN],
              (*output_buffer_size) * sizeof(float));

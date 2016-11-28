@@ -110,14 +110,13 @@ void AudioTransportProxy::PullRenderData(int bits_per_sample,
                                          void* audio_data,
                                          int64_t* elapsed_time_ms,
                                          int64_t* ntp_time_ms) {
-  RTC_DCHECK_EQ(static_cast<size_t>(bits_per_sample), 16);
+  RTC_DCHECK_EQ(bits_per_sample, 16);
   RTC_DCHECK_GE(number_of_channels, 1);
   RTC_DCHECK_LE(number_of_channels, 2);
-  RTC_DCHECK_GE(static_cast<int>(sample_rate),
-                AudioProcessing::NativeRate::kSampleRate8kHz);
+  RTC_DCHECK_GE(sample_rate, AudioProcessing::NativeRate::kSampleRate8kHz);
 
   // 100 = 1 second / data duration (10 ms).
-  RTC_DCHECK_EQ(static_cast<int>(number_of_frames * 100), sample_rate);
+  RTC_DCHECK_EQ(number_of_frames * 100, sample_rate);
 
   // 8 = bits per byte.
   RTC_DCHECK_LE(bits_per_sample / 8 * number_of_frames * number_of_channels,

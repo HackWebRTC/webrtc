@@ -95,7 +95,7 @@ static void RtpFragmentize(EncodedImage* encoded_image,
     for (int nal = 0; nal < layerInfo.iNalCount; ++nal, ++fragments_count) {
       RTC_CHECK_GE(layerInfo.pNalLengthInByte[nal], 0);
       // Ensure |required_size| will not overflow.
-      RTC_CHECK_LE(static_cast<size_t>(layerInfo.pNalLengthInByte[nal]),
+      RTC_CHECK_LE(layerInfo.pNalLengthInByte[nal],
                    std::numeric_limits<size_t>::max() - required_size);
       required_size += layerInfo.pNalLengthInByte[nal];
     }
@@ -326,7 +326,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   bool force_key_frame = false;
   if (frame_types != nullptr) {
     // We only support a single stream.
-    RTC_DCHECK_EQ(frame_types->size(), static_cast<size_t>(1));
+    RTC_DCHECK_EQ(frame_types->size(), 1);
     // Skip frame?
     if ((*frame_types)[0] == kEmptyFrame) {
       return WEBRTC_VIDEO_CODEC_OK;

@@ -154,8 +154,8 @@ BitrateAllocation::BitrateAllocation() : sum_(0), bitrates_{} {}
 bool BitrateAllocation::SetBitrate(size_t spatial_index,
                                    size_t temporal_index,
                                    uint32_t bitrate_bps) {
-  RTC_DCHECK_LT(spatial_index, static_cast<size_t>(kMaxSpatialLayers));
-  RTC_DCHECK_LT(temporal_index, static_cast<size_t>(kMaxTemporalStreams));
+  RTC_DCHECK_LT(spatial_index, kMaxSpatialLayers);
+  RTC_DCHECK_LT(temporal_index, kMaxTemporalStreams);
   RTC_DCHECK_LE(bitrates_[spatial_index][temporal_index], sum_);
   uint64_t new_bitrate_sum_bps = sum_;
   new_bitrate_sum_bps -= bitrates_[spatial_index][temporal_index];
@@ -170,14 +170,14 @@ bool BitrateAllocation::SetBitrate(size_t spatial_index,
 
 uint32_t BitrateAllocation::GetBitrate(size_t spatial_index,
                                        size_t temporal_index) const {
-  RTC_DCHECK_LT(spatial_index, static_cast<size_t>(kMaxSpatialLayers));
-  RTC_DCHECK_LT(temporal_index, static_cast<size_t>(kMaxTemporalStreams));
+  RTC_DCHECK_LT(spatial_index, kMaxSpatialLayers);
+  RTC_DCHECK_LT(temporal_index, kMaxTemporalStreams);
   return bitrates_[spatial_index][temporal_index];
 }
 
 // Get the sum of all the temporal layer for a specific spatial layer.
 uint32_t BitrateAllocation::GetSpatialLayerSum(size_t spatial_index) const {
-  RTC_DCHECK_LT(spatial_index, static_cast<size_t>(kMaxSpatialLayers));
+  RTC_DCHECK_LT(spatial_index, kMaxSpatialLayers);
   uint32_t sum = 0;
   for (int i = 0; i < kMaxTemporalStreams; ++i)
     sum += bitrates_[spatial_index][i];

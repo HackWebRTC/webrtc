@@ -877,7 +877,7 @@ void VideoQualityTest::CheckParams() {
     RTC_CHECK_GE(stream.min_bitrate_bps, 0);
     RTC_CHECK_GE(stream.target_bitrate_bps, stream.min_bitrate_bps);
     RTC_CHECK_GE(stream.max_bitrate_bps, stream.target_bitrate_bps);
-    RTC_CHECK_EQ(static_cast<int>(stream.temporal_layer_thresholds_bps.size()),
+    RTC_CHECK_EQ(stream.temporal_layer_thresholds_bps.size(),
                  params_.video.num_temporal_layers - 1);
   }
   // TODO(ivica): Should we check if the sum of all streams/layers is equal to

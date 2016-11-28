@@ -255,7 +255,7 @@ void AudioTrackJni::OnGetPlayoutData(size_t length) {
     ALOGE("AudioDeviceBuffer::RequestPlayoutData failed!");
     return;
   }
-  RTC_DCHECK_EQ(static_cast<size_t>(samples), frames_per_buffer_);
+  RTC_DCHECK_EQ(samples, frames_per_buffer_);
   // Copy decoded data into common byte buffer to ensure that it can be
   // written to the Java based audio track.
   samples = audio_device_buffer_->GetPlayoutData(direct_buffer_address_);

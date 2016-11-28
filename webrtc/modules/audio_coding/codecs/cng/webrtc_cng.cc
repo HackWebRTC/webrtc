@@ -260,7 +260,7 @@ size_t ComfortNoiseEncoder::Encode(rtc::ArrayView<const int16_t> speech,
   int16_t speechBuf[kCngMaxOutsizeOrder];
 
   const size_t num_samples = speech.size();
-  RTC_CHECK_LE(num_samples, static_cast<size_t>(kCngMaxOutsizeOrder));
+  RTC_CHECK_LE(num_samples, kCngMaxOutsizeOrder);
 
   for (i = 0; i < num_samples; i++) {
     speechBuf[i] = speech[i];

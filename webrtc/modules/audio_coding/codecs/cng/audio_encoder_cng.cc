@@ -98,7 +98,7 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeImpl(
   if (rtp_timestamps_.size() < frames_to_encode) {
     return EncodedInfo();
   }
-  RTC_CHECK_LE(static_cast<int>(frames_to_encode * 10), kMaxFrameSizeMs)
+  RTC_CHECK_LE(frames_to_encode * 10, kMaxFrameSizeMs)
       << "Frame size cannot be larger than " << kMaxFrameSizeMs
       << " ms when using VAD/CNG.";
 

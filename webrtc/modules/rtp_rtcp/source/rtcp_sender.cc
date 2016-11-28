@@ -103,7 +103,7 @@ class PacketContainer : public rtcp::CompoundPacket,
   }
 
   size_t SendPackets(size_t max_payload_length) {
-    RTC_DCHECK_LE(max_payload_length, static_cast<size_t>(IP_PACKET_SIZE));
+    RTC_DCHECK_LE(max_payload_length, IP_PACKET_SIZE);
     uint8_t buffer[IP_PACKET_SIZE];
     BuildExternalBuffer(buffer, max_payload_length, this);
     return bytes_sent_;
@@ -325,7 +325,7 @@ int32_t RTCPSender::SetCNAME(const char* c_name) {
   if (!c_name)
     return -1;
 
-  RTC_DCHECK_LT(strlen(c_name), static_cast<size_t>(RTCP_CNAME_SIZE));
+  RTC_DCHECK_LT(strlen(c_name), RTCP_CNAME_SIZE);
   rtc::CritScope lock(&critical_section_rtcp_sender_);
   cname_ = c_name;
   return 0;
@@ -333,7 +333,7 @@ int32_t RTCPSender::SetCNAME(const char* c_name) {
 
 int32_t RTCPSender::AddMixedCNAME(uint32_t SSRC, const char* c_name) {
   RTC_DCHECK(c_name);
-  RTC_DCHECK_LT(strlen(c_name), static_cast<size_t>(RTCP_CNAME_SIZE));
+  RTC_DCHECK_LT(strlen(c_name), RTCP_CNAME_SIZE);
   rtc::CritScope lock(&critical_section_rtcp_sender_);
   if (csrc_cnames_.size() >= kRtpCsrcSize)
     return -1;
@@ -466,7 +466,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSDES(
     const RtcpContext& ctx) {
   size_t length_cname = cname_.length();
-  RTC_CHECK_LT(length_cname, static_cast<size_t>(RTCP_CNAME_SIZE));
+  RTC_CHECK_LT(length_cname, RTCP_CNAME_SIZE);
 
   rtcp::Sdes* sdes = new rtcp::Sdes();
   sdes->AddCName(ssrc_, cname_);
@@ -933,7 +933,7 @@ bool RTCPSender::AddReportBlock(const FeedbackState& feedback_state,
 }
 
 void RTCPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
-  RTC_DCHECK_LE(csrcs.size(), static_cast<size_t>(kRtpCsrcSize));
+  RTC_DCHECK_LE(csrcs.size(), kRtpCsrcSize);
   rtc::CritScope lock(&critical_section_rtcp_sender_);
   csrcs_ = csrcs;
 }
@@ -1037,7 +1037,7 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
     // but we can't because of an incorrect warning (C4822) in MVS 2013.
   } sender(transport_, event_log_);
 
-  RTC_DCHECK_LE(max_payload_length_, static_cast<size_t>(IP_PACKET_SIZE));
+  RTC_DCHECK_LE(max_payload_length_, IP_PACKET_SIZE);
   uint8_t buffer[IP_PACKET_SIZE];
   return packet.BuildExternalBuffer(buffer, max_payload_length_, &sender) &&
          !sender.send_failure_;

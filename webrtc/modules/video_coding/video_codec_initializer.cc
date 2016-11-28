@@ -164,7 +164,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
   video_codec.minBitrate = streams[0].min_bitrate_bps / 1000;
   if (video_codec.minBitrate < kEncoderMinBitrateKbps)
     video_codec.minBitrate = kEncoderMinBitrateKbps;
-  RTC_DCHECK_LE(streams.size(), static_cast<size_t>(kMaxSimulcastStreams));
+  RTC_DCHECK_LE(streams.size(), kMaxSimulcastStreams);
   if (video_codec.codecType == kVideoCodecVP9) {
     // If the vector is empty, bitrates will be configured automatically.
     RTC_DCHECK(config.spatial_layers.empty() ||

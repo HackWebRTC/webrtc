@@ -129,7 +129,7 @@ void SignalClassifier::Initialize(int sample_rate_hz) {
 
 void SignalClassifier::Analyze(const AudioBuffer& audio,
                                SignalType* signal_type) {
-  RTC_DCHECK_EQ(audio.num_frames(), static_cast<size_t>(sample_rate_hz_ / 100));
+  RTC_DCHECK_EQ(audio.num_frames(), sample_rate_hz_ / 100);
 
   // Compute the signal power spectrum.
   float downsampled_frame[80];
