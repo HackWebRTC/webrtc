@@ -626,8 +626,9 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
 // One key frame (first frame only) in sequence. Setting |key_frame_interval|
 // to -1 below means no periodic key frames in test.
 
-#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER)
-// Fails on TSan and UBSan: https://bugs.webrtc.org/6781.
+#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER) || \
+  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
+// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
 #define MAYBE_Process0PercentPacketLossVP9 DISABLED_Process0PercentPacketLossVP9
 #else
 #define MAYBE_Process0PercentPacketLossVP9 Process0PercentPacketLossVP9
@@ -678,8 +679,9 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
 // low to high to medium. Check that quality and encoder response to the new
 // target rate/per-frame bandwidth (for each rate update) is within limits.
 // One key frame (first frame only) in sequence.
-#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER)
-// Fails on TSan and UBSan: https://bugs.webrtc.org/6781.
+#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER) || \
+  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
+// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
 #define MAYBE_ProcessNoLossChangeBitRateVP9 \
   DISABLED_ProcessNoLossChangeBitRateVP9
 #else
@@ -718,9 +720,10 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP9) {
 // metrics averaged over whole sequence run.
 
 #if defined(WEBRTC_ANDROID) || defined(THREAD_SANITIZER) || \
-  defined(UNDEFINED_SANITIZER)
+  defined(UNDEFINED_SANITIZER) || \
+  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
 // Flaky on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=6057.
-// Fails on TSan and UBSan: https://bugs.webrtc.org/6781.
+// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
 #define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9 \
   DISABLED_ProcessNoLossChangeFrameRateFrameDropVP9
 #else
@@ -754,8 +757,9 @@ TEST_F(VideoProcessorIntegrationTest,
 }
 
 // VP9: Run with no packet loss and denoiser on. One key frame (first frame).
-#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER)
-// Fails on TSan and UBSan: https://bugs.webrtc.org/6781.
+#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER) || \
+  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
+// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
 #define MAYBE_ProcessNoLossDenoiserOnVP9 DISABLED_ProcessNoLossDenoiserOnVP9
 #else
 #define MAYBE_ProcessNoLossDenoiserOnVP9 ProcessNoLossDenoiserOnVP9
@@ -783,8 +787,9 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossDenoiserOnVP9) {
 // Run with no packet loss, at low bitrate.
 // spatial_resize is on, for this low bitrate expect one resize in sequence.
 // Resize happens on delta frame. Expect only one key frame (first frame).
-#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER)
-// Fails on TSan and UBSan: https://bugs.webrtc.org/6781.
+#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER) || \
+  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
+// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
 #define MAYBE_ProcessNoLossSpatialResizeFrameDropVP9 \
   DISABLED_ProcessNoLossSpatialResizeFrameDropVP9
 #else
