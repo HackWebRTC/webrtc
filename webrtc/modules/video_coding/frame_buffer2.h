@@ -41,6 +41,8 @@ class FrameBuffer {
               VCMJitterEstimator* jitter_estimator,
               VCMTiming* timing);
 
+  virtual ~FrameBuffer();
+
   // Insert a frame into the frame buffer. Returns the picture id
   // of the last continuous frame or -1 if there is no continuous frame.
   int InsertFrame(std::unique_ptr<FrameObject> frame);
@@ -137,6 +139,8 @@ class FrameBuffer {
                                         FrameMap::iterator info)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
+  void UpdateHistograms() const;
+
   FrameMap frames_ GUARDED_BY(crit_);
 
   rtc::CriticalSection crit_;
@@ -151,6 +155,8 @@ class FrameBuffer {
   int num_frames_buffered_ GUARDED_BY(crit_);
   bool stopped_ GUARDED_BY(crit_);
   VCMVideoProtection protection_mode_ GUARDED_BY(crit_);
+  int num_total_frames_ GUARDED_BY(crit_);
+  int num_key_frames_ GUARDED_BY(crit_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FrameBuffer);
 };

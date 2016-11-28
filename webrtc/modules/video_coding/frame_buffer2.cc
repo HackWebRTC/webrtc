@@ -19,6 +19,7 @@
 #include "webrtc/modules/video_coding/jitter_estimator.h"
 #include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -44,7 +45,13 @@ FrameBuffer::FrameBuffer(Clock* clock,
       num_frames_history_(0),
       num_frames_buffered_(0),
       stopped_(false),
-      protection_mode_(kProtectionNack) {}
+      protection_mode_(kProtectionNack),
+      num_total_frames_(0),
+      num_key_frames_(0) {}
+
+FrameBuffer::~FrameBuffer() {
+  UpdateHistograms();
+}
 
 FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     int64_t max_wait_time_ms,
@@ -154,6 +161,10 @@ void FrameBuffer::Stop() {
 int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   rtc::CritScope lock(&crit_);
   RTC_DCHECK(frame);
+
+  ++num_total_frames_;
+  if (frame->num_references == 0)
+    ++num_key_frames_;
 
   FrameKey key(frame->picture_id, frame->spatial_layer);
   int last_continuous_picture_id =
@@ -351,6 +362,17 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
                 info->second.num_missing_decodable);
 
   return true;
+}
+
+void FrameBuffer::UpdateHistograms() const {
+  rtc::CritScope lock(&crit_);
+  if (num_total_frames_ > 0) {
+    int key_frames_permille = (static_cast<float>(num_key_frames_) * 1000.0f /
+                                   static_cast<float>(num_total_frames_) +
+                               0.5f);
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesReceivedInPermille",
+                              key_frames_permille);
+  }
 }
 
 }  // namespace video_coding

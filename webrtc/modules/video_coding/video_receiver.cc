@@ -295,6 +295,15 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
 //                 VCMEncodedFrame with FrameObject.
 int32_t VideoReceiver::Decode(const webrtc::VCMEncodedFrame* frame) {
   rtc::CritScope lock(&receive_crit_);
+  if (pre_decode_image_callback_) {
+    EncodedImage encoded_image(frame->EncodedImage());
+    int qp = -1;
+    if (qp_parser_.GetQp(*frame, &qp)) {
+      encoded_image.qp_ = qp;
+    }
+    pre_decode_image_callback_->OnEncodedImage(encoded_image,
+                                               frame->CodecSpecific(), nullptr);
+  }
   return Decode(*frame);
 }
 

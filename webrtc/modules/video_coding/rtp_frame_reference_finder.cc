@@ -43,7 +43,6 @@ void RtpFrameReferenceFinder::ManageFrame(
     case kVideoCodecFlexfec:
     case kVideoCodecULPFEC:
     case kVideoCodecRED:
-    case kVideoCodecUnknown:
       RTC_NOTREACHED();
       break;
     case kVideoCodecVP8:
@@ -52,6 +51,11 @@ void RtpFrameReferenceFinder::ManageFrame(
     case kVideoCodecVP9:
       ManageFrameVp9(std::move(frame));
       break;
+    // Since the EndToEndTests use kVicdeoCodecUnknow we treat it the same as
+    // kVideoCodecGeneric.
+    // TODO(philipel): Take a look at the EndToEndTests and see if maybe they
+    //                 should be changed to use kVideoCodecGeneric instead.
+    case kVideoCodecUnknown:
     case kVideoCodecH264:
     case kVideoCodecI420:
     case kVideoCodecGeneric:
