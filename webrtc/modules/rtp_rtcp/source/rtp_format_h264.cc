@@ -194,7 +194,7 @@ void RtpPacketizerH264::PacketizeFuA(size_t fragment_index) {
     offset += packet_length;
     fragment_length -= packet_length;
   }
-  RTC_CHECK_EQ(0u, fragment_length);
+  RTC_CHECK_EQ(0, fragment_length);
 }
 
 size_t RtpPacketizerH264::PacketizeStapA(size_t fragment_index) {
@@ -205,7 +205,7 @@ size_t RtpPacketizerH264::PacketizeStapA(size_t fragment_index) {
   const Fragment* fragment = &input_fragments_[fragment_index];
   RTC_CHECK_GE(payload_size_left, fragment->length);
   while (payload_size_left >= fragment->length + fragment_headers_length) {
-    RTC_CHECK_GT(fragment->length, 0u);
+    RTC_CHECK_GT(fragment->length, 0);
     packets_.push(PacketUnit(*fragment, aggregated_fragments == 0, false, true,
                              fragment->buffer[0]));
     payload_size_left -= fragment->length;

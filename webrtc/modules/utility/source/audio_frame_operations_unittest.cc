@@ -53,7 +53,7 @@ void VerifyFramesAreEqual(const AudioFrame& frame1, const AudioFrame& frame2) {
 void InitFrame(AudioFrame* frame, size_t channels, size_t samples_per_channel,
                int16_t left_data, int16_t right_data) {
   RTC_DCHECK(frame);
-  RTC_DCHECK_GE(2u, channels);
+  RTC_DCHECK_GE(2, channels);
   RTC_DCHECK_GE(AudioFrame::kMaxDataSizeSamples,
                 samples_per_channel * channels);
   frame->samples_per_channel_ = samples_per_channel;

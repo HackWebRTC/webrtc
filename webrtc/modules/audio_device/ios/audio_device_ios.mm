@@ -407,9 +407,9 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
                                           UInt32 num_frames,
                                           AudioBufferList* io_data) {
   // Verify 16-bit, noninterleaved mono PCM signal format.
-  RTC_DCHECK_EQ(1u, io_data->mNumberBuffers);
+  RTC_DCHECK_EQ(1, io_data->mNumberBuffers);
   AudioBuffer* audio_buffer = &io_data->mBuffers[0];
-  RTC_DCHECK_EQ(1u, audio_buffer->mNumberChannels);
+  RTC_DCHECK_EQ(1, audio_buffer->mNumberChannels);
   // Get pointer to internal audio buffer to which new audio data shall be
   // written.
   const size_t size_in_bytes = audio_buffer->mDataByteSize;

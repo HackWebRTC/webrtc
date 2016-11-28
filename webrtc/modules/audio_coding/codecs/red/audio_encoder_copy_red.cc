@@ -71,11 +71,11 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
     // discarding the (empty) vector of redundant information. This is
     // intentional.
     info.redundant.push_back(info);
-    RTC_DCHECK_EQ(info.redundant.size(), 1u);
+    RTC_DCHECK_EQ(info.redundant.size(), 1);
     if (secondary_info_.encoded_bytes > 0) {
       encoded->AppendData(secondary_encoded_);
       info.redundant.push_back(secondary_info_);
-      RTC_DCHECK_EQ(info.redundant.size(), 2u);
+      RTC_DCHECK_EQ(info.redundant.size(), 2);
     }
     // Save primary to secondary.
     secondary_encoded_.SetData(encoded->data() + primary_offset,

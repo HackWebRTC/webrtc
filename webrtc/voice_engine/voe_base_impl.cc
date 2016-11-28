@@ -535,7 +535,7 @@ int VoEBaseImpl::GetVersion(char version[1024]) {
   }
 
   std::string versionString = VoiceEngine::GetVersionString();
-  RTC_DCHECK_GT(1024u, versionString.size() + 1);
+  RTC_DCHECK_GT(1024, versionString.size() + 1);
   char* end = std::copy(versionString.cbegin(), versionString.cend(), version);
   end[0] = '\n';
   end[1] = '\0';

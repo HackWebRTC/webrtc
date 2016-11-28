@@ -82,10 +82,10 @@ void MixWithSat(int16_t target[],
                 const int16_t source[],
                 size_t source_channel,
                 size_t source_len) {
-  RTC_DCHECK_GE(target_channel, 1u);
-  RTC_DCHECK_LE(target_channel, 2u);
-  RTC_DCHECK_GE(source_channel, 1u);
-  RTC_DCHECK_LE(source_channel, 2u);
+  RTC_DCHECK_GE(target_channel, 1);
+  RTC_DCHECK_LE(target_channel, 2);
+  RTC_DCHECK_GE(source_channel, 1);
+  RTC_DCHECK_LE(source_channel, 2);
 
   if (target_channel == 2 && source_channel == 1) {
     // Convert source from mono to stereo.

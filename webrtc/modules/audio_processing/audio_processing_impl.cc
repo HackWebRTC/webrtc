@@ -813,7 +813,7 @@ void AudioProcessingImpl::QueueRenderAudio(AudioBuffer* audio) {
                                               num_reverse_channels(),
                                               &aec_render_queue_buffer_);
 
-  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+  RTC_DCHECK_GE(160, audio->num_frames_per_band());
 
   // Insert the samples into the queue.
   if (!aec_render_signal_queue_->Insert(&aec_render_queue_buffer_)) {

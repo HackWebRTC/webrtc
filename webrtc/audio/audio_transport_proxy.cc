@@ -68,8 +68,8 @@ int32_t AudioTransportProxy::NeedMorePlayData(const size_t nSamples,
                                               int64_t* elapsed_time_ms,
                                               int64_t* ntp_time_ms) {
   RTC_DCHECK_EQ(sizeof(int16_t) * nChannels, nBytesPerSample);
-  RTC_DCHECK_GE(nChannels, 1u);
-  RTC_DCHECK_LE(nChannels, 2u);
+  RTC_DCHECK_GE(nChannels, 1);
+  RTC_DCHECK_LE(nChannels, 2);
   RTC_DCHECK_GE(
       samplesPerSec,
       static_cast<uint32_t>(AudioProcessing::NativeRate::kSampleRate8kHz));
@@ -111,8 +111,8 @@ void AudioTransportProxy::PullRenderData(int bits_per_sample,
                                          int64_t* elapsed_time_ms,
                                          int64_t* ntp_time_ms) {
   RTC_DCHECK_EQ(static_cast<size_t>(bits_per_sample), 16);
-  RTC_DCHECK_GE(number_of_channels, 1u);
-  RTC_DCHECK_LE(number_of_channels, 2u);
+  RTC_DCHECK_GE(number_of_channels, 1);
+  RTC_DCHECK_LE(number_of_channels, 2);
   RTC_DCHECK_GE(static_cast<int>(sample_rate),
                 AudioProcessing::NativeRate::kSampleRate8kHz);
 

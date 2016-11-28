@@ -19,14 +19,14 @@ namespace {
 
 // Returns the lowest (right-most) |bit_count| bits in |byte|.
 uint8_t LowestBits(uint8_t byte, size_t bit_count) {
-  RTC_DCHECK_LE(bit_count, 8u);
+  RTC_DCHECK_LE(bit_count, 8);
   return byte & ((1 << bit_count) - 1);
 }
 
 // Returns the highest (left-most) |bit_count| bits in |byte|, shifted to the
 // lowest bits (to the right).
 uint8_t HighestBits(uint8_t byte, size_t bit_count) {
-  RTC_DCHECK_LE(bit_count, 8u);
+  RTC_DCHECK_LE(bit_count, 8);
   uint8_t shift = 8 - static_cast<uint8_t>(bit_count);
   uint8_t mask = 0xFF << shift;
   return (byte & mask) >> shift;

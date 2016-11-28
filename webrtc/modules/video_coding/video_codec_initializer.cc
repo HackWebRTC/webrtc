@@ -177,8 +177,8 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
   }
   for (size_t i = 0; i < streams.size(); ++i) {
     SimulcastStream* sim_stream = &video_codec.simulcastStream[i];
-    RTC_DCHECK_GT(streams[i].width, 0u);
-    RTC_DCHECK_GT(streams[i].height, 0u);
+    RTC_DCHECK_GT(streams[i].width, 0);
+    RTC_DCHECK_GT(streams[i].height, 0);
     RTC_DCHECK_GT(streams[i].max_framerate, 0);
     // Different framerates not supported per stream at the moment.
     RTC_DCHECK_EQ(streams[i].max_framerate, streams[0].max_framerate);

@@ -141,13 +141,13 @@ class OneBitVectorChunk : public TransportFeedback::PacketStatusChunk {
     buffer[0] = 0x80u;
     for (int i = 0; i < kSymbolsInFirstByte; ++i) {
       uint8_t encoded_symbol = EncodeSymbol(symbols_[i]);
-      RTC_DCHECK_LE(encoded_symbol, 1u);
+      RTC_DCHECK_LE(encoded_symbol, 1);
       buffer[0] |= encoded_symbol << (kSymbolsInFirstByte - (i + 1));
     }
     buffer[1] = 0x00u;
     for (int i = 0; i < kSymbolsInSecondByte; ++i) {
       uint8_t encoded_symbol = EncodeSymbol(symbols_[i + kSymbolsInFirstByte]);
-      RTC_DCHECK_LE(encoded_symbol, 1u);
+      RTC_DCHECK_LE(encoded_symbol, 1);
       buffer[1] |= encoded_symbol << (kSymbolsInSecondByte - (i + 1));
     }
   }

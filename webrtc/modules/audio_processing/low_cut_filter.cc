@@ -91,7 +91,7 @@ LowCutFilter::~LowCutFilter() {}
 
 void LowCutFilter::Process(AudioBuffer* audio) {
   RTC_DCHECK(audio);
-  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+  RTC_DCHECK_GE(160, audio->num_frames_per_band());
   RTC_DCHECK_EQ(filters_.size(), audio->num_channels());
   for (size_t i = 0; i < filters_.size(); i++) {
     filters_[i]->Process(audio->split_bands(i)[kBand0To8kHz],

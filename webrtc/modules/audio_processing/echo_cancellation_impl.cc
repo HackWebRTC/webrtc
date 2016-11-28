@@ -151,7 +151,7 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio,
   }
 
   RTC_DCHECK(stream_properties_);
-  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+  RTC_DCHECK_GE(160, audio->num_frames_per_band());
   RTC_DCHECK_EQ(audio->num_channels(), stream_properties_->num_proc_channels);
 
   int err = AudioProcessing::kNoError;
@@ -450,7 +450,7 @@ void EchoCancellationImpl::PackRenderAudioBuffer(
     size_t num_output_channels,
     size_t num_channels,
     std::vector<float>* packed_buffer) {
-  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+  RTC_DCHECK_GE(160, audio->num_frames_per_band());
   RTC_DCHECK_EQ(num_channels, audio->num_channels());
 
   packed_buffer->clear();

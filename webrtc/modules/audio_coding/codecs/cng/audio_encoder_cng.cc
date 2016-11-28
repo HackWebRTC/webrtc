@@ -240,9 +240,9 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeActive(
                                     samples_per_10ms_frame),
                                 encoded);
     if (i + 1 == frames_to_encode) {
-      RTC_CHECK_GT(info.encoded_bytes, 0u) << "Encoder didn't deliver data.";
+      RTC_CHECK_GT(info.encoded_bytes, 0) << "Encoder didn't deliver data.";
     } else {
-      RTC_CHECK_EQ(info.encoded_bytes, 0u)
+      RTC_CHECK_EQ(info.encoded_bytes, 0)
           << "Encoder delivered data too early.";
     }
   }

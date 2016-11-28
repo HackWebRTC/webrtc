@@ -253,9 +253,9 @@ void Packet::SetSsrc(uint32_t ssrc) {
 }
 
 void Packet::SetCsrcs(const std::vector<uint32_t>& csrcs) {
-  RTC_DCHECK_EQ(num_extensions_, 0u);
-  RTC_DCHECK_EQ(payload_size_, 0u);
-  RTC_DCHECK_EQ(padding_size_, 0u);
+  RTC_DCHECK_EQ(num_extensions_, 0);
+  RTC_DCHECK_EQ(payload_size_, 0);
+  RTC_DCHECK_EQ(padding_size_, 0);
   RTC_DCHECK_LE(csrcs.size(), 0x0fu);
   RTC_DCHECK_LE(kFixedHeaderSize + 4 * csrcs.size(), capacity());
   payload_offset_ = kFixedHeaderSize + 4 * csrcs.size();
@@ -269,7 +269,7 @@ void Packet::SetCsrcs(const std::vector<uint32_t>& csrcs) {
 }
 
 uint8_t* Packet::AllocatePayload(size_t size_bytes) {
-  RTC_DCHECK_EQ(padding_size_, 0u);
+  RTC_DCHECK_EQ(padding_size_, 0);
   if (payload_offset_ + size_bytes > capacity()) {
     LOG(LS_WARNING) << "Cannot set payload, not enough space in buffer.";
     return nullptr;
@@ -283,7 +283,7 @@ uint8_t* Packet::AllocatePayload(size_t size_bytes) {
 }
 
 void Packet::SetPayloadSize(size_t size_bytes) {
-  RTC_DCHECK_EQ(padding_size_, 0u);
+  RTC_DCHECK_EQ(padding_size_, 0);
   RTC_DCHECK_LE(size_bytes, payload_size_);
   payload_size_ = size_bytes;
   buffer_.SetSize(payload_offset_ + payload_size_);
@@ -473,8 +473,8 @@ bool Packet::AllocateExtension(ExtensionType type,
   if (extension_id == ExtensionManager::kInvalidId) {
     return false;
   }
-  RTC_DCHECK_GT(length, 0u);
-  RTC_DCHECK_LE(length, 16u);
+  RTC_DCHECK_GT(length, 0);
+  RTC_DCHECK_LE(length, 16);
 
   size_t num_csrc = data()[0] & 0x0F;
   size_t extensions_offset = kFixedHeaderSize + (num_csrc * 4) + 4;

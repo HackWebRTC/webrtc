@@ -59,7 +59,7 @@ void EncodeNetEqInput::CreatePacket() {
   // Create a new PacketData object.
   RTC_DCHECK(!packet_data_);
   packet_data_.reset(new NetEqInput::PacketData);
-  RTC_DCHECK_EQ(packet_data_->payload.size(), 0u);
+  RTC_DCHECK_EQ(packet_data_->payload.size(), 0);
 
   // Loop until we get a packet.
   AudioEncoder::EncodedInfo info;

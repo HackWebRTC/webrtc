@@ -180,7 +180,7 @@ namespace {
 // Returns a vector with the n evenly-spaced numbers a, a + (b - a)/(n - 1),
 // ..., b.
 std::vector<double> IntervalSteps(double a, double b, size_t n) {
-  RTC_DCHECK_GT(n, 1u);
+  RTC_DCHECK_GT(n, 1);
   const double step = (b - a) / (n - 1);
   std::vector<double> points;
   for (size_t i = 0; i < n; ++i)

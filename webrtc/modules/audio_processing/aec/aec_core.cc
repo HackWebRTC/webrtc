@@ -202,7 +202,7 @@ void BlockBuffer::Insert(const float block[PART_LEN]) {
 
 void BlockBuffer::ExtractExtendedBlock(float extended_block[PART_LEN2]) {
   float* block_ptr = NULL;
-  RTC_DCHECK_LT(0u, AvaliableSpace());
+  RTC_DCHECK_LT(0, AvaliableSpace());
 
   // Extract the previous block.
   WebRtc_MoveReadPtr(buffer_, -1);
@@ -461,7 +461,7 @@ static void UpdateLogRatioMetric(Stats* metric, float numerator,
   // Average.
   metric->counter++;
   // This is to protect overflow, which should almost never happen.
-  RTC_CHECK_NE(0u, metric->counter);
+  RTC_CHECK_NE(0, metric->counter);
   metric->sum += metric->instant;
   metric->average = metric->sum / metric->counter;
 
@@ -469,7 +469,7 @@ static void UpdateLogRatioMetric(Stats* metric, float numerator,
   if (metric->instant > metric->average) {
     metric->hicounter++;
     // This is to protect overflow, which should almost never happen.
-    RTC_CHECK_NE(0u, metric->hicounter);
+    RTC_CHECK_NE(0, metric->hicounter);
     metric->hisum += metric->instant;
     metric->himean = metric->hisum / metric->hicounter;
   }

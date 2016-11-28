@@ -1110,7 +1110,7 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      RTC_DCHECK_EQ(1u, encoder_config->number_of_streams);
+      RTC_DCHECK_EQ(1, encoder_config->number_of_streams);
       transport_adapter_.reset(
           new internal::TransportAdapter(send_config->send_transport));
       transport_adapter_->Enable();
@@ -1554,7 +1554,7 @@ class MaxPaddingSetTest : public test::SendTest {
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
-    RTC_DCHECK_EQ(1u, encoder_config->number_of_streams);
+    RTC_DCHECK_EQ(1, encoder_config->number_of_streams);
     if (running_without_padding_) {
       encoder_config->min_transmit_bitrate_bps = 0;
       encoder_config->content_type =

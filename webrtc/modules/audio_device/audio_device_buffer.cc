@@ -409,7 +409,7 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t samples_per_channel) {
 
 int32_t AudioDeviceBuffer::GetPlayoutData(void* audio_buffer) {
   RTC_DCHECK_RUN_ON(&playout_thread_checker_);
-  RTC_DCHECK_GT(play_buffer_.size(), 0u);
+  RTC_DCHECK_GT(play_buffer_.size(), 0);
   const size_t bytes_per_sample = sizeof(int16_t);
   memcpy(audio_buffer, play_buffer_.data(),
          play_buffer_.size() * bytes_per_sample);

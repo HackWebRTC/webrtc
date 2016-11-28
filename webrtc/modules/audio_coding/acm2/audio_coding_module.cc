@@ -536,7 +536,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
     frame_type = kEmptyFrame;
     encoded_info.payload_type = previous_pltype;
   } else {
-    RTC_DCHECK_GT(encode_buffer_.size(), 0u);
+    RTC_DCHECK_GT(encode_buffer_.size(), 0);
     frame_type = encoded_info.speech ? kAudioFrameSpeech : kAudioFrameCN;
   }
 

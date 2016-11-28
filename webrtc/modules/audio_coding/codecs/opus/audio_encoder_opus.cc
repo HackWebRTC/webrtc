@@ -452,7 +452,7 @@ void AudioEncoderOpus::SetFrameLength(int frame_length_ms) {
 }
 
 void AudioEncoderOpus::SetNumChannelsToEncode(size_t num_channels_to_encode) {
-  RTC_DCHECK_GT(num_channels_to_encode, 0u);
+  RTC_DCHECK_GT(num_channels_to_encode, 0);
   RTC_DCHECK_LE(num_channels_to_encode, config_.num_channels);
 
   if (num_channels_to_encode_ == num_channels_to_encode)

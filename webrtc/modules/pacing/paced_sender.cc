@@ -129,7 +129,7 @@ class PacketQueue {
     packet_list_.erase(packet.this_it);
     RTC_DCHECK_EQ(packet_list_.size(), prio_queue_.size());
     if (packet_list_.empty())
-      RTC_DCHECK_EQ(0u, queue_time_sum_);
+      RTC_DCHECK_EQ(0, queue_time_sum_);
   }
 
   bool Empty() const { return prio_queue_.empty(); }
@@ -285,7 +285,7 @@ void PacedSender::Resume() {
 }
 
 void PacedSender::SetProbingEnabled(bool enabled) {
-  RTC_CHECK_EQ(0u, packet_counter_);
+  RTC_CHECK_EQ(0, packet_counter_);
   CriticalSectionScoped cs(critsect_.get());
   prober_->SetEnabled(enabled);
 }
@@ -338,7 +338,7 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
 
 int64_t PacedSender::ExpectedQueueTimeMs() const {
   CriticalSectionScoped cs(critsect_.get());
-  RTC_DCHECK_GT(pacing_bitrate_kbps_, 0u);
+  RTC_DCHECK_GT(pacing_bitrate_kbps_, 0);
   return static_cast<int64_t>(packets_->SizeInBytes() * 8 /
                               pacing_bitrate_kbps_);
 }

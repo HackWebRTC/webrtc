@@ -130,7 +130,7 @@ void ResidualEchoDetector::Initialize() {
 void ResidualEchoDetector::PackRenderAudioBuffer(
     AudioBuffer* audio,
     std::vector<float>* packed_buffer) {
-  RTC_DCHECK_GE(160u, audio->num_frames_per_band());
+  RTC_DCHECK_GE(160, audio->num_frames_per_band());
 
   packed_buffer->clear();
   packed_buffer->insert(packed_buffer->end(),

@@ -20,7 +20,7 @@ namespace webrtc {
 class AudioDecoderPcmU final : public AudioDecoder {
  public:
   explicit AudioDecoderPcmU(size_t num_channels) : num_channels_(num_channels) {
-    RTC_DCHECK_GE(num_channels, 1u);
+    RTC_DCHECK_GE(num_channels, 1);
   }
   void Reset() override;
   std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
@@ -44,7 +44,7 @@ class AudioDecoderPcmU final : public AudioDecoder {
 class AudioDecoderPcmA final : public AudioDecoder {
  public:
   explicit AudioDecoderPcmA(size_t num_channels) : num_channels_(num_channels) {
-    RTC_DCHECK_GE(num_channels, 1u);
+    RTC_DCHECK_GE(num_channels, 1);
   }
   void Reset() override;
   std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,

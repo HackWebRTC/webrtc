@@ -50,7 +50,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     RtcEventLog* event_log,
     RateLimiter* retransmission_rate_limiter,
     size_t num_modules) {
-  RTC_DCHECK_GT(num_modules, 0u);
+  RTC_DCHECK_GT(num_modules, 0);
   RtpRtcp::Configuration configuration;
   ReceiveStatistics* null_receive_statistics = configuration.receive_statistics;
   configuration.audio = false;

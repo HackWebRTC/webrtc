@@ -161,7 +161,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
         current_source_frame_(nullptr),
         file_generator_(files, source_width, source_height, 1) {
     RTC_DCHECK(clock_ != nullptr);
-    RTC_DCHECK_GT(num_frames_, 0u);
+    RTC_DCHECK_GT(num_frames_, 0);
     RTC_DCHECK_GE(source_height, target_height);
     RTC_DCHECK_GE(source_width, target_width);
     RTC_DCHECK_GE(scroll_time_ms, 0);

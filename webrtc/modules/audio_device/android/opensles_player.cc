@@ -145,8 +145,8 @@ int OpenSLESPlayer::StopPlayout() {
   // Verify that the buffer queue is in fact cleared as it should.
   SLAndroidSimpleBufferQueueState buffer_queue_state;
   (*simple_buffer_queue_)->GetState(simple_buffer_queue_, &buffer_queue_state);
-  RTC_DCHECK_EQ(0u, buffer_queue_state.count);
-  RTC_DCHECK_EQ(0u, buffer_queue_state.index);
+  RTC_DCHECK_EQ(0, buffer_queue_state.count);
+  RTC_DCHECK_EQ(0, buffer_queue_state.index);
 #endif
   // The number of lower latency audio players is limited, hence we create the
   // audio player in Start() and destroy it in Stop().

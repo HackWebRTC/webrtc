@@ -1780,7 +1780,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
     const VideoCodecSettings& codec_settings) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   parameters_.encoder_config = CreateVideoEncoderConfig(codec_settings.codec);
-  RTC_DCHECK_GT(parameters_.encoder_config.number_of_streams, 0u);
+  RTC_DCHECK_GT(parameters_.encoder_config.number_of_streams, 0);
 
   AllocatedEncoder new_encoder = CreateVideoEncoder(codec_settings.codec);
   parameters_.config.encoder_settings.encoder = new_encoder.encoder;
@@ -1961,7 +1961,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::ReconfigureEncoder() {
     return;
   }
 
-  RTC_DCHECK_GT(parameters_.encoder_config.number_of_streams, 0u);
+  RTC_DCHECK_GT(parameters_.encoder_config.number_of_streams, 0);
 
   RTC_CHECK(parameters_.codec_settings);
   VideoCodecSettings codec_settings = *parameters_.codec_settings;

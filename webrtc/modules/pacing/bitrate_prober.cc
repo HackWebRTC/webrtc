@@ -27,7 +27,7 @@ constexpr int kInactivityThresholdMs = 5000;
 constexpr int kMinProbeDeltaMs = 1;
 
 int ComputeDeltaFromBitrate(size_t probe_size, uint32_t bitrate_bps) {
-  RTC_CHECK_GT(bitrate_bps, 0u);
+  RTC_CHECK_GT(bitrate_bps, 0);
   // Compute the time delta needed to send probe_size bytes at bitrate_bps
   // bps. Result is in milliseconds.
   return static_cast<int>((1000ll * probe_size * 8) / bitrate_bps);
@@ -153,7 +153,7 @@ size_t BitrateProber::RecommendedMinProbeSize() const {
 
 void BitrateProber::ProbeSent(int64_t now_ms, size_t bytes) {
   RTC_DCHECK(probing_state_ == ProbingState::kActive);
-  RTC_DCHECK_GT(bytes, 0u);
+  RTC_DCHECK_GT(bytes, 0);
   probe_size_last_sent_ = bytes;
   time_last_probe_sent_ms_ = now_ms;
   if (!clusters_.empty()) {

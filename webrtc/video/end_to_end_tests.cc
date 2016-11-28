@@ -1039,7 +1039,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
       }
       // Configure encoding and decoding with VP8, since generic packetization
       // doesn't support FEC with NACK.
-      RTC_DCHECK_EQ(1u, (*receive_configs)[0].decoders.size());
+      RTC_DCHECK_EQ(1, (*receive_configs)[0].decoders.size());
       send_config->encoder_settings.encoder = encoder_.get();
       send_config->encoder_settings.payload_name = "VP8";
       (*receive_configs)[0].decoders[0].payload_name = "VP8";
@@ -2657,7 +2657,7 @@ TEST_P(EndToEndTest, ReportsSetEncoderRates) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
-      RTC_DCHECK_EQ(1u, encoder_config->number_of_streams);
+      RTC_DCHECK_EQ(1, encoder_config->number_of_streams);
     }
 
     int32_t SetRateAllocation(const BitrateAllocation& rate_allocation,
@@ -3238,7 +3238,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
 
       if (encoder_config.number_of_streams > 1) {
         // Lower bitrates so that all streams send initially.
-        RTC_DCHECK_EQ(3u, encoder_config.number_of_streams);
+        RTC_DCHECK_EQ(3, encoder_config.number_of_streams);
         for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
           streams[i].min_bitrate_bps = 10000;
           streams[i].target_bitrate_bps = 15000;

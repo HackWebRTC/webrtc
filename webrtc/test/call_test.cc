@@ -203,8 +203,8 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
                                 size_t num_flexfec_streams,
                                 Transport* send_transport) {
   RTC_DCHECK(num_video_streams <= kNumSsrcs);
-  RTC_DCHECK_LE(num_audio_streams, 1u);
-  RTC_DCHECK_LE(num_flexfec_streams, 1u);
+  RTC_DCHECK_LE(num_audio_streams, 1);
+  RTC_DCHECK_LE(num_flexfec_streams, 1);
   RTC_DCHECK(num_audio_streams == 0 || voe_send_.channel_id >= 0);
   if (num_video_streams > 0) {
     video_send_config_ = VideoSendStream::Config(send_transport);
@@ -261,7 +261,7 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
     }
   }
 
-  RTC_DCHECK_GE(1u, num_audio_streams_);
+  RTC_DCHECK_GE(1, num_audio_streams_);
   if (num_audio_streams_ == 1) {
     RTC_DCHECK_LE(0, voe_send_.channel_id);
     AudioReceiveStream::Config audio_config;

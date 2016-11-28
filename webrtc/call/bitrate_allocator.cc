@@ -36,7 +36,7 @@ const int64_t kBweLogIntervalMs = 5000;
 namespace {
 
 double MediaRatio(uint32_t allocated_bitrate, uint32_t protection_bitrate) {
-  RTC_DCHECK_GT(allocated_bitrate, 0u);
+  RTC_DCHECK_GT(allocated_bitrate, 0);
   if (protection_bitrate == 0)
     return 1.0;
 
@@ -382,7 +382,7 @@ void BitrateAllocator::DistributeBitrateEvenly(uint32_t bitrate,
   }
   auto it = list_max_bitrates.begin();
   while (it != list_max_bitrates.end()) {
-    RTC_DCHECK_GT(bitrate, 0u);
+    RTC_DCHECK_GT(bitrate, 0);
     uint32_t extra_allocation =
         bitrate / static_cast<uint32_t>(list_max_bitrates.size());
     uint32_t total_allocation =

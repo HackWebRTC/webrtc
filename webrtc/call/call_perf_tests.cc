@@ -549,7 +549,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       VideoSendStream::Stats stats = send_stream_->GetStats();
       if (stats.substreams.size() > 0) {
-        RTC_DCHECK_EQ(1u, stats.substreams.size());
+        RTC_DCHECK_EQ(1, stats.substreams.size());
         int bitrate_kbps =
             stats.substreams.begin()->second.total_bitrate_bps / 1000;
         if (bitrate_kbps > min_acceptable_bitrate_ &&

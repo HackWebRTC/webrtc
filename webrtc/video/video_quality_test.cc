@@ -157,7 +157,7 @@ class VideoAnalyzer : public PacketReceiver,
     // spare cores.
 
     uint32_t num_cores = CpuInfo::DetectNumberOfCores();
-    RTC_DCHECK_GE(num_cores, 1u);
+    RTC_DCHECK_GE(num_cores, 1);
     static const uint32_t kMinCoresLeft = 4;
     static const uint32_t kMaxComparisonThreads = 8;
 
@@ -757,7 +757,7 @@ class VideoAnalyzer : public PacketReceiver,
 
   void AddCapturedFrameForComparison(const VideoFrame& video_frame) {
     rtc::CritScope lock(&crit_);
-    RTC_DCHECK_EQ(0u, video_frame.timestamp());
+    RTC_DCHECK_EQ(0, video_frame.timestamp());
     // Frames from the capturer does not have a rtp timestamp. Create one so it
     // can be used for comparison.
     VideoFrame copy = video_frame;
@@ -891,7 +891,7 @@ void VideoQualityTest::CheckParams() {
   if (params_.video.codec == "VP8") {
     RTC_CHECK_EQ(params_.ss.num_spatial_layers, 1);
   } else if (params_.video.codec == "VP9") {
-    RTC_CHECK_EQ(params_.ss.streams.size(), 1u);
+    RTC_CHECK_EQ(params_.ss.streams.size(), 1);
   }
 }
 

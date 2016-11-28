@@ -258,7 +258,7 @@ int FlagList::SetFlagsFromCommandLine(int* argc, const char** argv,
 
 void FlagList::Register(Flag* flag) {
   RTC_DCHECK(flag);
-  RTC_DCHECK_GT(strlen(flag->name()), 0u);
+  RTC_DCHECK_GT(strlen(flag->name()), 0);
   // NOTE: Don't call Lookup() within Register because it accesses the name_
   // of other flags in list_, and if the flags are coming from two different
   // compilation units, the initialization order between them is undefined, and

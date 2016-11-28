@@ -198,7 +198,7 @@ bool VCMCodecDataBase::SetSendCodec(const VideoCodec* send_codec,
   RTC_DCHECK_GE(number_of_cores, 1);
   RTC_DCHECK_GE(send_codec->plType, 1);
   // Make sure the start bit rate is sane...
-  RTC_DCHECK_LE(send_codec->startBitrate, 1000000u);
+  RTC_DCHECK_LE(send_codec->startBitrate, 1000000);
   RTC_DCHECK(send_codec->codecType != kVideoCodecUnknown);
   bool reset_required = pending_encoder_reset_;
   if (number_of_cores_ != number_of_cores) {

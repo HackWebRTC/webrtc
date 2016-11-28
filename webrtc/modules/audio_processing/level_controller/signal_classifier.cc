@@ -25,7 +25,7 @@ namespace webrtc {
 namespace {
 
 void RemoveDcLevel(rtc::ArrayView<float> x) {
-  RTC_DCHECK_LT(0u, x.size());
+  RTC_DCHECK_LT(0, x.size());
   float mean = std::accumulate(x.data(), x.data() + x.size(), 0.f);
   mean /= x.size();
 
@@ -37,8 +37,8 @@ void RemoveDcLevel(rtc::ArrayView<float> x) {
 void PowerSpectrum(const OouraFft* ooura_fft,
                    rtc::ArrayView<const float> x,
                    rtc::ArrayView<float> spectrum) {
-  RTC_DCHECK_EQ(65u, spectrum.size());
-  RTC_DCHECK_EQ(128u, x.size());
+  RTC_DCHECK_EQ(65, spectrum.size());
+  RTC_DCHECK_EQ(128, x.size());
   float X[128];
   std::copy(x.data(), x.data() + x.size(), X);
   ooura_fft->Fft(X);
