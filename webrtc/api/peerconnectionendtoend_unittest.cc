@@ -182,6 +182,7 @@ TEST_F(PeerConnectionEndToEndTest, Call) {
 }
 #endif // if !defined(THREAD_SANITIZER) && !defined(WEBRTC_MAC)
 
+#if !defined(ADDRESS_SANITIZER)
 TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
   FakeConstraints pc_constraints;
   pc_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -191,6 +192,7 @@ TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
   Negotiate();
   WaitForCallEstablished();
 }
+#endif  // !defined(ADDRESS_SANITIZER)
 
 // Verifies that a DataChannel created before the negotiation can transition to
 // "OPEN" and transfer data.
