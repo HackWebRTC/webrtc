@@ -13,7 +13,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <string>
 
 #define STATS_LINE_LENGTH 32
@@ -126,8 +125,8 @@ bool ExtractFrameFromY4mFile(const char* y4m_file_name,
                              int frame_number,
                              uint8_t* result_frame) {
   int frame_size = GetI420FrameSize(width, height);
-  int frame_offset = frame_number * frame_size;
-  bool errors = false;
+  int inital_offset = frame_number * (frame_size + Y4M_FRAME_HEADER_SIZE);
+  int frame_offset = 0;
 
   FILE* input_file = fopen(y4m_file_name, "rb");
   if (input_file == NULL) {
@@ -138,41 +137,43 @@ bool ExtractFrameFromY4mFile(const char* y4m_file_name,
 
   // YUV4MPEG2, a.k.a. Y4M File format has a file header and a frame header. The
   // file header has the aspect: "YUV4MPEG2 C420 W640 H360 Ip F30:1 A1:1".
-  // Skip the header if this is the first frame of the file.
-  if (frame_number == 0) {
-    char frame_header[Y4M_FILE_HEADER_MAX_SIZE];
-    size_t bytes_read =
-        fread(frame_header, 1, Y4M_FILE_HEADER_MAX_SIZE, input_file);
-    if (bytes_read != static_cast<size_t>(frame_size) && ferror(input_file)) {
-      fprintf(stdout, "Error while reading first frame from file %s\n",
-          y4m_file_name);
-      fclose(input_file);
-      return false;
-    }
-    std::string header_contents(frame_header);
-    std::size_t found = header_contents.find(Y4M_FRAME_DELIMITER);
-    if (found == std::string::npos) {
-      fprintf(stdout, "Corrupted Y4M header, could not find \"FRAME\" in %s\n",
-          header_contents.c_str());
-      fclose(input_file);
-      return false;
-    }
-    frame_offset = static_cast<int>(found);
+  char frame_header[Y4M_FILE_HEADER_MAX_SIZE];
+  size_t bytes_read =
+      fread(frame_header, 1, Y4M_FILE_HEADER_MAX_SIZE, input_file);
+  if (bytes_read != static_cast<size_t>(frame_size) && ferror(input_file)) {
+    fprintf(stdout, "Error while reading frame from file %s\n",
+        y4m_file_name);
+    fclose(input_file);
+    return false;
   }
+  std::string header_contents(frame_header);
+  std::size_t found = header_contents.find(Y4M_FRAME_DELIMITER);
+  if (found == std::string::npos) {
+    fprintf(stdout, "Corrupted Y4M header, could not find \"FRAME\" in %s\n",
+        header_contents.c_str());
+    fclose(input_file);
+    return false;
+  }
+  frame_offset = static_cast<int>(found);
 
   // Change stream pointer to new offset, skipping the frame header as well.
-  fseek(input_file, frame_offset + Y4M_FRAME_HEADER_SIZE, SEEK_SET);
+  fseek(input_file, inital_offset + frame_offset + Y4M_FRAME_HEADER_SIZE,
+        SEEK_SET);
 
-  size_t bytes_read = fread(result_frame, 1, frame_size, input_file);
-  if (bytes_read != static_cast<size_t>(frame_size) &&
-      ferror(input_file)) {
+  bytes_read = fread(result_frame, 1, frame_size, input_file);
+  if (feof(input_file)) {
+    fclose(input_file);
+    return false;
+  }
+  if (bytes_read != static_cast<size_t>(frame_size) && ferror(input_file)) {
     fprintf(stdout, "Error while reading frame no %d from file %s\n",
             frame_number, y4m_file_name);
-    errors = true;
+    fclose(input_file);
+    return false;
   }
 
   fclose(input_file);
-  return !errors;
+  return true;
 }
 
 double CalculateMetrics(VideoAnalysisMetricsType video_metrics_type,

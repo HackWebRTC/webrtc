@@ -11,6 +11,7 @@
 // This test doesn't actually verify the output since it's just printed
 // to stdout by void functions, but it's still useful as it executes the code.
 
+#include <stdio.h>
 #include <fstream>
 #include <string>
 
@@ -37,6 +38,31 @@ class VideoQualityAnalysisTest : public ::testing::Test {
   static FILE* logfile_;
 };
 FILE* VideoQualityAnalysisTest::logfile_ = NULL;
+
+TEST_F(VideoQualityAnalysisTest, MatchExtractedY4mFrame) {
+  std::string video_file =
+         webrtc::test::ResourcePath("reference_less_video_test_file", "y4m");
+
+  std::string extracted_frame_from_video_file =
+         webrtc::test::ResourcePath("video_quality_analysis_frame", "txt");
+
+  int frame_height = 720, frame_width = 1280;
+  int frame_number = 2;
+  int size = GetI420FrameSize(frame_width, frame_height);
+  uint8_t* result_frame = new uint8_t[size];
+  uint8_t* expected_frame = new uint8_t[size];
+
+  FILE* input_file = fopen(extracted_frame_from_video_file.c_str(), "rb");
+  fread(expected_frame, 1, size, input_file);
+
+  ExtractFrameFromY4mFile(video_file.c_str(),
+                          frame_width, frame_height,
+                          frame_number, result_frame);
+
+  EXPECT_EQ(*expected_frame, *result_frame);
+  delete[] result_frame;
+  delete[] expected_frame;
+}
 
 TEST_F(VideoQualityAnalysisTest, PrintAnalysisResultsEmpty) {
   ResultsContainer result;
