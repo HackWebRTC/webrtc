@@ -374,13 +374,15 @@ TEST_F(EndToEndTest, SendsAndReceivesVP9VideoRotation90) {
 
 #if defined(WEBRTC_USE_H264)
 TEST_F(EndToEndTest, SendsAndReceivesH264) {
-  CodecObserver test(500, kVideoRotation_0, "H264", H264Encoder::Create(),
+  CodecObserver test(500, kVideoRotation_0, "H264",
+                     H264Encoder::Create(cricket::VideoCodec("H264")),
                      H264Decoder::Create());
   RunBaseTest(&test);
 }
 
 TEST_F(EndToEndTest, SendsAndReceivesH264VideoRotation90) {
-  CodecObserver test(5, kVideoRotation_90, "H264", H264Encoder::Create(),
+  CodecObserver test(5, kVideoRotation_90, "H264",
+                     H264Encoder::Create(cricket::VideoCodec("H264")),
                      H264Decoder::Create());
   RunBaseTest(&test);
 }

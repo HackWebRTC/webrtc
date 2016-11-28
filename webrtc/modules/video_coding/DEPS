@@ -4,6 +4,7 @@ include_rules = [
   "+vpx",
   "+webrtc/base",
   "+webrtc/common_video",
+  "+webrtc/media/base",
   "+webrtc/system_wrappers",
   "+webrtc/tools",
 ]

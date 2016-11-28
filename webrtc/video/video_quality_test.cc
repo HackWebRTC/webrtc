@@ -1009,7 +1009,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
 
   int payload_type;
   if (params_.video.codec == "H264") {
-    video_encoder_.reset(H264Encoder::Create());
+    video_encoder_.reset(H264Encoder::Create(cricket::VideoCodec("H264")));
     payload_type = kPayloadTypeH264;
   } else if (params_.video.codec == "VP8") {
     video_encoder_.reset(VP8Encoder::Create());

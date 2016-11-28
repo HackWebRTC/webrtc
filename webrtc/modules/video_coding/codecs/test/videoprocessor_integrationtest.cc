@@ -155,7 +155,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   void SetUpCodecConfig() {
     if (codec_type_ == kVideoCodecH264) {
-      encoder_ = H264Encoder::Create();
+      encoder_ = H264Encoder::Create(cricket::VideoCodec("H264"));
       decoder_ = H264Decoder::Create();
       VideoCodingModule::Codec(kVideoCodecH264, &codec_settings_);
     } else if (codec_type_ == kVideoCodecVP8) {

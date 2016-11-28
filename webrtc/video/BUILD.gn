@@ -83,6 +83,7 @@ if (rtc_include_tests) {
       "video_quality_test.h",
     ]
     deps = [
+      "../media:rtc_media_base",
       "../system_wrappers",
       "//testing/gtest",
     ]
@@ -162,6 +163,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video",
+      "../media:rtc_media_base",
       "//testing/gmock",
       "//testing/gtest",
     ]
