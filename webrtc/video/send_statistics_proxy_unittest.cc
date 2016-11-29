@@ -26,7 +26,9 @@ const uint32_t kSecondSsrc = 42;
 const uint32_t kFirstRtxSsrc = 18;
 const uint32_t kSecondRtxSsrc = 43;
 const uint32_t kFlexFecSsrc = 55;
-
+const int kFpsPeriodicIntervalMs = 2000;
+const int kWidth = 640;
+const int kHeight = 480;
 const int kQpIdx0 = 21;
 const int kQpIdx1 = 39;
 }  // namespace
@@ -353,9 +355,6 @@ TEST_F(SendStatisticsProxyTest, OnSendEncodedImageWithoutQpQpSumWontExist) {
 }
 
 TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
-  const int kWidth = 640;
-  const int kHeight = 480;
-
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
 
@@ -371,10 +370,110 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
 }
 
-TEST_F(SendStatisticsProxyTest, CpuLimitedResolutionUpdated) {
-  const int kWidth = 640;
-  const int kHeight = 480;
+TEST_F(SendStatisticsProxyTest, InputResolutionHistogramsAreUpdated) {
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
+    statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
 
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.InputWidthInPixels", kWidth));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputHeightInPixels"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.InputHeightInPixels", kHeight));
+}
+
+TEST_F(SendStatisticsProxyTest, SentResolutionHistogramsAreUpdated) {
+  EncodedImage encoded_image;
+  encoded_image._encodedWidth = kWidth;
+  encoded_image._encodedHeight = kHeight;
+  for (int i = 0; i <= SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
+    encoded_image._timeStamp = i + 1;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.SentWidthInPixels"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.SentWidthInPixels", kWidth));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.SentHeightInPixels"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.SentHeightInPixels", kHeight));
+}
+
+TEST_F(SendStatisticsProxyTest, InputFpsHistogramIsUpdated) {
+  const int kFps = 20;
+  const int kMinPeriodicSamples = 6;
+  int frames = kMinPeriodicSamples * kFpsPeriodicIntervalMs * kFps / 1000;
+  for (int i = 0; i <= frames; ++i) {
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
+    statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputFramesPerSecond"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.InputFramesPerSecond", kFps));
+}
+
+TEST_F(SendStatisticsProxyTest, SentFpsHistogramIsUpdated) {
+  EncodedImage encoded_image;
+  const int kFps = 20;
+  const int kMinPeriodicSamples = 6;
+  int frames = kMinPeriodicSamples * kFpsPeriodicIntervalMs * kFps / 1000 + 1;
+  for (int i = 0; i <= frames; ++i) {
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
+    encoded_image._timeStamp = i + 1;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.SentFramesPerSecond"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.SentFramesPerSecond", kFps));
+}
+
+TEST_F(SendStatisticsProxyTest, InputFpsHistogramExcludesSuspendedTime) {
+  const int kFps = 20;
+  const int kSuspendTimeMs = 10000;
+  const int kMinPeriodicSamples = 6;
+  int frames = kMinPeriodicSamples * kFpsPeriodicIntervalMs * kFps / 1000;
+  for (int i = 0; i < frames; ++i) {
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
+    statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
+  }
+  // Suspend.
+  statistics_proxy_->OnSuspendChange(true);
+  fake_clock_.AdvanceTimeMilliseconds(kSuspendTimeMs);
+
+  for (int i = 0; i < frames; ++i) {
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
+    statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
+  }
+  // Suspended time interval should not affect the framerate.
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputFramesPerSecond"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.InputFramesPerSecond", kFps));
+}
+
+TEST_F(SendStatisticsProxyTest, SentFpsHistogramExcludesSuspendedTime) {
+  EncodedImage encoded_image;
+  const int kFps = 20;
+  const int kSuspendTimeMs = 10000;
+  const int kMinPeriodicSamples = 6;
+  int frames = kMinPeriodicSamples * kFpsPeriodicIntervalMs * kFps / 1000;
+  for (int i = 0; i <= frames; ++i) {
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
+    encoded_image._timeStamp = i + 1;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  }
+  // Suspend.
+  statistics_proxy_->OnSuspendChange(true);
+  fake_clock_.AdvanceTimeMilliseconds(kSuspendTimeMs);
+
+  for (int i = 0; i <= frames; ++i) {
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
+    encoded_image._timeStamp = i + 1;
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  }
+  // Suspended time interval should not affect the framerate.
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.SentFramesPerSecond"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.SentFramesPerSecond", kFps));
+}
+
+TEST_F(SendStatisticsProxyTest, CpuLimitedResolutionUpdated) {
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
 

@@ -106,7 +106,8 @@ SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
       max_sent_width_per_timestamp_(0),
       max_sent_height_per_timestamp_(0),
       input_frame_rate_tracker_(100, 10u),
-      sent_frame_rate_tracker_(100, 10u),
+      input_fps_counter_(clock, nullptr, true),
+      sent_fps_counter_(clock, nullptr, true),
       first_rtcp_stats_time_ms_(-1),
       first_rtp_stats_time_ms_(-1),
       start_stats_(stats) {}
@@ -132,28 +133,38 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     const VideoSendStream::Stats& current_stats) {
   RTC_DCHECK(uma_prefix_ == kRealtimePrefix || uma_prefix_ == kScreenPrefix);
   const int kIndex = uma_prefix_ == kScreenPrefix ? 1 : 0;
+  const int kMinRequiredPeriodicSamples = 6;
   int in_width = input_width_counter_.Avg(kMinRequiredMetricsSamples);
   int in_height = input_height_counter_.Avg(kMinRequiredMetricsSamples);
-  int in_fps = round(input_frame_rate_tracker_.ComputeTotalRate());
   if (in_width != -1) {
     RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "InputWidthInPixels",
                                 in_width);
     RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "InputHeightInPixels",
                                 in_height);
-    RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "InputFramesPerSecond",
-                              in_fps);
   }
+  AggregatedStats in_fps = input_fps_counter_.GetStats();
+  if (in_fps.num_samples >= kMinRequiredPeriodicSamples) {
+    RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "InputFramesPerSecond",
+                              in_fps.average);
+    LOG(LS_INFO) << uma_prefix_ + "InputFramesPerSecond, " << in_fps.ToString();
+  }
+
   int sent_width = sent_width_counter_.Avg(kMinRequiredMetricsSamples);
   int sent_height = sent_height_counter_.Avg(kMinRequiredMetricsSamples);
-  int sent_fps = round(sent_frame_rate_tracker_.ComputeTotalRate());
   if (sent_width != -1) {
     RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "SentWidthInPixels",
                                 sent_width);
     RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "SentHeightInPixels",
                                 sent_height);
-    RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "SentFramesPerSecond",
-                              sent_fps);
   }
+  AggregatedStats sent_fps = sent_fps_counter_.GetStats();
+  if (sent_fps.num_samples >= kMinRequiredPeriodicSamples) {
+    RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "SentFramesPerSecond",
+                              sent_fps.average);
+    LOG(LS_INFO) << uma_prefix_ + "SentFramesPerSecond, "
+                 << sent_fps.ToString();
+  }
+
   int encode_ms = encode_time_counter_.Avg(kMinRequiredMetricsSamples);
   if (encode_ms != -1) {
     RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "EncodeTimeInMs",
@@ -389,6 +400,11 @@ void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
 void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
   rtc::CritScope lock(&crit_);
   stats_.suspended = is_suspended;
+  // Pause framerate stats.
+  if (is_suspended) {
+    uma_container_->input_fps_counter_.ProcessAndPause();
+    uma_container_->sent_fps_counter_.ProcessAndPause();
+  }
 }
 
 VideoSendStream::Stats SendStatisticsProxy::GetStats() {
@@ -541,7 +557,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
   // are encoded before the next start.
   if (last_sent_frame_timestamp_ > 0 &&
       encoded_image._timeStamp != last_sent_frame_timestamp_) {
-    uma_container_->sent_frame_rate_tracker_.AddSamples(1);
+    uma_container_->sent_fps_counter_.Add(1);
     uma_container_->sent_width_counter_.Add(
         uma_container_->max_sent_width_per_timestamp_);
     uma_container_->sent_height_counter_.Add(
@@ -566,6 +582,7 @@ int SendStatisticsProxy::GetSendFrameRate() const {
 void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   rtc::CritScope lock(&crit_);
   uma_container_->input_frame_rate_tracker_.AddSamples(1);
+  uma_container_->input_fps_counter_.Add(1);
   uma_container_->input_width_counter_.Add(width);
   uma_container_->input_height_counter_.Add(height);
   uma_container_->cpu_limited_frame_counter_.Add(stats_.cpu_limited_resolution);
