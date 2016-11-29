@@ -89,9 +89,9 @@ class YuvFileGenerator : public FrameGenerator {
         frame_buffer_(new uint8_t[frame_size_]),
         frame_display_count_(frame_repeat_count),
         current_display_count_(0) {
-    assert(width > 0);
-    assert(height > 0);
-    assert(frame_repeat_count > 0);
+    RTC_DCHECK_GT(width, 0);
+    RTC_DCHECK_GT(height, 0);
+    RTC_DCHECK_GT(frame_repeat_count, 0);
   }
 
   virtual ~YuvFileGenerator() {
@@ -287,7 +287,7 @@ FrameGenerator* FrameGenerator::CreateFromYuvFile(
     size_t width,
     size_t height,
     int frame_repeat_count) {
-  assert(!filenames.empty());
+  RTC_DCHECK(!filenames.empty());
   std::vector<FILE*> files;
   for (const std::string& filename : filenames) {
     FILE* file = fopen(filename.c_str(), "rb");
@@ -307,7 +307,7 @@ FrameGenerator* FrameGenerator::CreateScrollingInputFromYuvFiles(
     size_t target_height,
     int64_t scroll_time_ms,
     int64_t pause_time_ms) {
-  assert(!filenames.empty());
+  RTC_DCHECK(!filenames.empty());
   std::vector<FILE*> files;
   for (const std::string& filename : filenames) {
     FILE* file = fopen(filename.c_str(), "rb");

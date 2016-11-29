@@ -10,8 +10,9 @@
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 
-#include <assert.h>
 #include <string.h>
+
+#include "webrtc/base/checks.h"
 
 // NOTE(ajm): Path provided by gyp.
 #include "libyuv.h"  // NOLINT
@@ -49,14 +50,14 @@ VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
     case kVideoMJPEG:
       return kMJPG;
     default:
-      assert(false);
+      RTC_NOTREACHED();
   }
   return kUnknown;
 }
 
 size_t CalcBufferSize(VideoType type, int width, int height) {
-  assert(width >= 0);
-  assert(height >= 0);
+  RTC_DCHECK_GE(width, 0);
+  RTC_DCHECK_GE(height, 0);
   size_t buffer_size = 0;
   switch (type) {
     case kI420:
@@ -84,7 +85,7 @@ size_t CalcBufferSize(VideoType type, int width, int height) {
       buffer_size = width * height * 4;
       break;
     default:
-      assert(false);
+      RTC_NOTREACHED();
       break;
   }
   return buffer_size;
@@ -135,7 +136,7 @@ int PrintVideoFrame(const VideoFrame& frame, FILE* file) {
 int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
                   size_t size,
                   uint8_t* buffer) {
-  assert(buffer);
+  RTC_DCHECK(buffer);
   if (!input_frame)
     return -1;
   int width = input_frame->width();
@@ -200,7 +201,7 @@ libyuv::RotationMode ConvertRotationMode(VideoRotation rotation) {
     case kVideoRotation_270:
       return libyuv::kRotate270;
   }
-  assert(false);
+  RTC_NOTREACHED();
   return libyuv::kRotate0;
 }
 
@@ -238,7 +239,7 @@ int ConvertVideoType(VideoType video_type) {
     case kARGB1555:
       return libyuv::FOURCC_RGBO;
   }
-  assert(false);
+  RTC_NOTREACHED();
   return libyuv::FOURCC_ANY;
 }
 

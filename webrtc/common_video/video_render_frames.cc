@@ -10,8 +10,6 @@
 
 #include "webrtc/common_video/video_render_frames.h"
 
-#include <assert.h>
-
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module_common_types.h"

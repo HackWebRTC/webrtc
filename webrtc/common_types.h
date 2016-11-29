@@ -11,13 +11,13 @@
 #ifndef WEBRTC_COMMON_TYPES_H_
 #define WEBRTC_COMMON_TYPES_H_
 
-#include <assert.h>
 #include <stddef.h>
 #include <string.h>
 
 #include <string>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
@@ -805,13 +805,13 @@ struct RtpPacketCounter {
   }
 
   void Subtract(const RtpPacketCounter& other) {
-    assert(header_bytes >= other.header_bytes);
+    RTC_DCHECK_GE(header_bytes, other.header_bytes);
     header_bytes -= other.header_bytes;
-    assert(payload_bytes >= other.payload_bytes);
+    RTC_DCHECK_GE(payload_bytes, other.payload_bytes);
     payload_bytes -= other.payload_bytes;
-    assert(padding_bytes >= other.padding_bytes);
+    RTC_DCHECK_GE(padding_bytes, other.padding_bytes);
     padding_bytes -= other.padding_bytes;
-    assert(packets >= other.packets);
+    RTC_DCHECK_GE(packets, other.packets);
     packets -= other.packets;
   }
 
