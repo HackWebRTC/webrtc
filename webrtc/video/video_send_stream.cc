@@ -27,6 +27,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/vie_remb.h"
 #include "webrtc/video_send_stream.h"
@@ -49,6 +50,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     SendDelayStats* send_delay_stats,
     RtcEventLog* event_log,
     RateLimiter* retransmission_rate_limiter,
+    OverheadObserver* overhead_observer,
     size_t num_modules) {
   RTC_DCHECK_GT(num_modules, 0);
   RtpRtcp::Configuration configuration;
@@ -72,7 +74,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
   configuration.send_packet_observer = send_delay_stats;
   configuration.event_log = event_log;
   configuration.retransmission_rate_limiter = retransmission_rate_limiter;
-
+  configuration.overhead_observer = overhead_observer;
   std::vector<RtpRtcp*> modules;
   for (size_t i = 0; i < num_modules; ++i) {
     RtpRtcp* rtp_rtcp = RtpRtcp::CreateRtpRtcp(configuration);
@@ -284,6 +286,7 @@ namespace internal {
 // An encoder may deliver frames through the EncodedImageCallback on an
 // arbitrary thread.
 class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
+                            public webrtc::OverheadObserver,
                             public webrtc::VCMProtectionCallback,
                             public ViEEncoder::EncoderSink {
  public:
@@ -336,6 +339,9 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                         uint32_t* sent_video_rate_bps,
                         uint32_t* sent_nack_rate_bps,
                         uint32_t* sent_fec_rate_bps) override;
+
+  // Implements OverheadObserver.
+  void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
 
   void OnEncoderConfigurationChanged(std::vector<VideoStream> streams,
                                      int min_transmit_bitrate_bps) override;
@@ -398,6 +404,10 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   // |weak_ptr_factory_| must be declared last to make sure all WeakPtr's are
   // invalidated before any other members are destroyed.
   rtc::WeakPtrFactory<VideoSendStreamImpl> weak_ptr_factory_;
+
+  rtc::CriticalSection overhead_bytes_per_packet_crit_;
+  size_t overhead_bytes_per_packet_ GUARDED_BY(overhead_bytes_per_packet_crit_);
+  size_t transport_overhead_bytes_per_packet_;
 };
 
 // TODO(tommi): See if there's a more elegant way to create a task that creates
@@ -734,10 +744,13 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           send_delay_stats,
           event_log,
           congestion_controller_->GetRetransmissionRateLimiter(),
+          this,
           config_->rtp.ssrcs.size())),
       payload_router_(rtp_rtcp_modules_,
                       config_->encoder_settings.payload_type),
-      weak_ptr_factory_(this) {
+      weak_ptr_factory_(this),
+      overhead_bytes_per_packet_(0),
+      transport_overhead_bytes_per_packet_(0) {
   RTC_DCHECK_RUN_ON(worker_queue_);
   LOG(LS_INFO) << "VideoSendStreamInternal: " << config_->ToString();
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
@@ -777,15 +790,12 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 
   // TODO(pbos): Should we set CNAME on all RTP modules?
   rtp_rtcp_modules_.front()->SetCNAME(config_->rtp.c_name.c_str());
-  // 28 to match packet overhead in ModuleRtpRtcpImpl.
-  static const size_t kRtpPacketSizeOverhead = 28;
-  RTC_DCHECK_LE(config_->rtp.max_packet_size, 0xFFFFu + kRtpPacketSizeOverhead);
-  const uint16_t mtu = static_cast<uint16_t>(config_->rtp.max_packet_size +
-                                             kRtpPacketSizeOverhead);
+
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     rtp_rtcp->RegisterRtcpStatisticsCallback(stats_proxy_);
     rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(stats_proxy_);
-    rtp_rtcp->SetMaxTransferUnit(mtu);
+    rtp_rtcp->SetMaxTransferUnit(
+        static_cast<uint16_t>(config_->rtp.max_packet_size));
     rtp_rtcp->RegisterVideoSendPayload(
         config_->encoder_settings.payload_type,
         config_->encoder_settings.payload_name.c_str());
@@ -1155,6 +1165,19 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(uint32_t bitrate_bps,
   RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_DCHECK(payload_router_.active())
       << "VideoSendStream::Start has not been called.";
+
+  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead") ==
+      "Enabled") {
+    // Substract overhead from bitrate.
+    rtc::CritScope lock(&overhead_bytes_per_packet_crit_);
+    int packets_per_second =
+        std::ceil(bitrate_bps / (8 * (config_->rtp.max_packet_size +
+                                      transport_overhead_bytes_per_packet_)));
+    uint32_t overhead_bps = static_cast<uint32_t>(
+        8 * overhead_bytes_per_packet_ * packets_per_second);
+    bitrate_bps = overhead_bps > bitrate_bps ? 0u : bitrate_bps - overhead_bps;
+  }
+
   // Get the encoder target rate. It is the estimated network rate -
   // protection overhead.
   encoder_target_rate_bps_ = protection_bitrate_calculator_.SetTargetRates(
@@ -1214,10 +1237,22 @@ int VideoSendStreamImpl::ProtectionRequest(
   return 0;
 }
 
+void VideoSendStreamImpl::OnOverheadChanged(size_t overhead_bytes_per_packet) {
+  rtc::CritScope lock(&overhead_bytes_per_packet_crit_);
+  overhead_bytes_per_packet_ = overhead_bytes_per_packet;
+}
+
 void VideoSendStreamImpl::SetTransportOverhead(
-    int transport_overhead_per_packet) {
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    rtp_rtcp->SetTransportOverhead(transport_overhead_per_packet);
+    int transport_overhead_bytes_per_packet) {
+  transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
+  RTC_DCHECK_LE(config_->rtp.max_packet_size,
+                0xFFFFu + transport_overhead_bytes_per_packet);
+  const uint16_t mtu = static_cast<uint16_t>(
+      config_->rtp.max_packet_size + transport_overhead_bytes_per_packet);
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+    rtp_rtcp->SetTransportOverhead(transport_overhead_bytes_per_packet);
+    rtp_rtcp->SetMaxTransferUnit(mtu);
+  }
 }
 
 }  // namespace internal

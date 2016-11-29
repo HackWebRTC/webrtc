@@ -36,6 +36,7 @@
 #include "webrtc/test/null_transport.h"
 #include "webrtc/test/rtcp_packet_parser.h"
 #include "webrtc/test/testsupport/perf_test.h"
+#include "webrtc/test/field_trial.h"
 
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
@@ -1502,21 +1503,27 @@ TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      EXPECT_LE(length,
-                IP_PACKET_SIZE - static_cast<size_t>(transport_overhead_));
+      EXPECT_LE(length, kMaxRtpPacketSize);
       if (++packets_sent_ < 100)
         return SEND_PACKET;
       observation_complete_.Set();
       return SEND_PACKET;
     }
 
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.max_packet_size = kMaxRtpPacketSize;
+    }
+
     void PerformTest() override {
-      transport_overhead_ = 500;
+      transport_overhead_ = 100;
       call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO,
                                         transport_overhead_);
       EXPECT_TRUE(Wait());
       packets_sent_ = 0;
-      transport_overhead_ = 1000;
+      transport_overhead_ = 500;
       call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO,
                                         transport_overhead_);
       EXPECT_TRUE(Wait());
@@ -1526,6 +1533,7 @@ TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
     Call* call_;
     int packets_sent_;
     int transport_overhead_;
+    const size_t kMaxRtpPacketSize = 1000;
   } test;
 
   RunBaseTest(&test);
@@ -3171,6 +3179,70 @@ TEST_F(VideoSendStreamTest,
 TEST_F(VideoSendStreamTest,
        DoNotRequestsRotationIfVideoOrientationExtensionSupported) {
   TestRequestSourceRotateVideo(true);
+}
+
+// This test verifies that overhead is removed from the bandwidth estimate by
+// testing that the maximum possible target payload rate is smaller than the
+// maximum bandwidth estimate by the overhead rate.
+TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/");
+  class RemoveOverheadFromBandwidthTest : public test::EndToEndTest,
+                                          public test::FakeEncoder {
+   public:
+    RemoveOverheadFromBandwidthTest()
+        : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
+          FakeEncoder(Clock::GetRealTimeClock()),
+          call_(nullptr),
+          max_bitrate_kbps_(0) {}
+
+    int32_t SetRateAllocation(const BitrateAllocation& bitrate,
+                              uint32_t frameRate) override {
+      rtc::CritScope lock(&crit_);
+      if (max_bitrate_kbps_ < bitrate.get_sum_kbps())
+        max_bitrate_kbps_ = bitrate.get_sum_kbps();
+      return FakeEncoder::SetRateAllocation(bitrate, frameRate);
+    }
+
+    void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+      call_ = sender_call;
+    }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.max_packet_size = 1200;
+      send_config->encoder_settings.encoder = this;
+      EXPECT_FALSE(send_config->rtp.extensions.empty());
+    }
+
+    void PerformTest() override {
+      call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO, 20);
+      Call::Config::BitrateConfig bitrate_config;
+      constexpr int kStartBitrateBps = 50000;
+      constexpr int kMaxBitrateBps = 60000;
+      bitrate_config.start_bitrate_bps = kStartBitrateBps;
+      bitrate_config.max_bitrate_bps = kMaxBitrateBps;
+      call_->SetBitrateConfig(bitrate_config);
+
+      // At a bitrate of 60kbps with a packet size of 1200B video and an
+      // overhead of 40B per packet video produces 2kbps overhead.
+      // So with a BWE should reach 58kbps but not 60kbps.
+      Wait();
+      {
+        rtc::CritScope lock(&crit_);
+        EXPECT_EQ(58u, max_bitrate_kbps_);
+      }
+    }
+
+   private:
+    Call* call_;
+    rtc::CriticalSection crit_;
+    uint32_t max_bitrate_kbps_ GUARDED_BY(&crit_);
+  } test;
+
+  RunBaseTest(&test);
 }
 
 }  // namespace webrtc
