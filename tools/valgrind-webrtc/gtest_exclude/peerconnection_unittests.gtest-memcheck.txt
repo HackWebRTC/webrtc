@@ -4,3 +4,4 @@ DtmfSenderTest.*
 P2PTestConductor.*
 PeerConnectionEndToEndTest.*
 PeerConnectionInterfaceTest.*
+RTCStatsIntegrationTest.*
