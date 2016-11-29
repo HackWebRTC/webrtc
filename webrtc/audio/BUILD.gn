@@ -37,6 +37,11 @@ rtc_static_library("audio") {
     "../modules/audio_processing",
     "../system_wrappers",
     "../voice_engine",
+    "utility",  # Bogus dep, needed for landing
+                # codereview.webrtc.org/2424173003 without breaking
+                # internal projects. See
+                # bugs.webrtc.org/6548. TODO(aleloi): remove dependency
+                # when codereview.webrtc.org/2424173003 has landed.
   ]
 }
 if (rtc_include_tests) {
