@@ -129,7 +129,7 @@ class RtpRtcp : public Module {
                                        bool ipv6,
                                        uint8_t authentication_overhead = 0) = 0;
 
-  // Sets transtport overhead per packet.
+  // Sets transport overhead per packet.
   virtual void SetTransportOverhead(int transport_overhead_per_packet) = 0;
 
   // Returns max payload length, which is a combination of the configuration
