@@ -43,6 +43,8 @@ class PeerConnectionTestWrapper
       const webrtc::MediaConstraintsInterface* constraints,
       const webrtc::PeerConnectionInterface::RTCConfiguration& config);
 
+  webrtc::PeerConnectionInterface* pc() { return peer_connection_.get(); }
+
   rtc::scoped_refptr<webrtc::DataChannelInterface> CreateDataChannel(
       const std::string& label,
       const webrtc::DataChannelInit& init);

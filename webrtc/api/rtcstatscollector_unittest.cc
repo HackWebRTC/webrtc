@@ -24,6 +24,7 @@
 #include "webrtc/api/test/mock_datachannel.h"
 #include "webrtc/api/test/mock_peerconnection.h"
 #include "webrtc/api/test/mock_webrtcsession.h"
+#include "webrtc/api/test/rtcstatsobtainer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/fakeclock.h"
 #include "webrtc/base/fakesslidentity.h"
@@ -472,37 +473,6 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   int produced_on_network_thread_ = 0;
 };
 
-class StatsCallback : public RTCStatsCollectorCallback {
- public:
-  static rtc::scoped_refptr<StatsCallback> Create(
-      rtc::scoped_refptr<const RTCStatsReport>* report_ptr = nullptr) {
-    return rtc::scoped_refptr<StatsCallback>(
-        new rtc::RefCountedObject<StatsCallback>(report_ptr));
-  }
-
-  void OnStatsDelivered(
-      const rtc::scoped_refptr<const RTCStatsReport>& report) override {
-    EXPECT_TRUE(thread_checker_.CalledOnValidThread());
-    report_ = report;
-    if (report_ptr_)
-      *report_ptr_ = report_;
-  }
-
-  rtc::scoped_refptr<const RTCStatsReport> report() const {
-    EXPECT_TRUE(thread_checker_.CalledOnValidThread());
-    return report_;
-  }
-
- protected:
-  explicit StatsCallback(rtc::scoped_refptr<const RTCStatsReport>* report_ptr)
-      : report_ptr_(report_ptr) {}
-
- private:
-  rtc::ThreadChecker thread_checker_;
-  rtc::scoped_refptr<const RTCStatsReport> report_;
-  rtc::scoped_refptr<const RTCStatsReport>* report_ptr_;
-};
-
 class RTCStatsCollectorTest : public testing::Test {
  public:
   RTCStatsCollectorTest()
@@ -512,7 +482,7 @@ class RTCStatsCollectorTest : public testing::Test {
   }
 
   rtc::scoped_refptr<const RTCStatsReport> GetStatsReport() {
-    rtc::scoped_refptr<StatsCallback> callback = StatsCallback::Create();
+    rtc::scoped_refptr<RTCStatsObtainer> callback = RTCStatsObtainer::Create();
     collector_->GetStatsReport(callback);
     EXPECT_TRUE_WAIT(callback->report(), kGetStatsReportTimeoutMs);
     int64_t after = rtc::TimeUTCMicros();
@@ -723,7 +693,7 @@ class RTCStatsCollectorTest : public testing::Test {
 
 TEST_F(RTCStatsCollectorTest, SingleCallback) {
   rtc::scoped_refptr<const RTCStatsReport> result;
-  collector_->GetStatsReport(StatsCallback::Create(&result));
+  collector_->GetStatsReport(RTCStatsObtainer::Create(&result));
   EXPECT_TRUE_WAIT(result, kGetStatsReportTimeoutMs);
 }
 
@@ -731,9 +701,9 @@ TEST_F(RTCStatsCollectorTest, MultipleCallbacks) {
   rtc::scoped_refptr<const RTCStatsReport> a;
   rtc::scoped_refptr<const RTCStatsReport> b;
   rtc::scoped_refptr<const RTCStatsReport> c;
-  collector_->GetStatsReport(StatsCallback::Create(&a));
-  collector_->GetStatsReport(StatsCallback::Create(&b));
-  collector_->GetStatsReport(StatsCallback::Create(&c));
+  collector_->GetStatsReport(RTCStatsObtainer::Create(&a));
+  collector_->GetStatsReport(RTCStatsObtainer::Create(&b));
+  collector_->GetStatsReport(RTCStatsObtainer::Create(&c));
   EXPECT_TRUE_WAIT(a, kGetStatsReportTimeoutMs);
   EXPECT_TRUE_WAIT(b, kGetStatsReportTimeoutMs);
   EXPECT_TRUE_WAIT(c, kGetStatsReportTimeoutMs);
@@ -761,11 +731,11 @@ TEST_F(RTCStatsCollectorTest, MultipleCallbacksWithInvalidatedCacheInBetween) {
   rtc::scoped_refptr<const RTCStatsReport> a;
   rtc::scoped_refptr<const RTCStatsReport> b;
   rtc::scoped_refptr<const RTCStatsReport> c;
-  collector_->GetStatsReport(StatsCallback::Create(&a));
-  collector_->GetStatsReport(StatsCallback::Create(&b));
+  collector_->GetStatsReport(RTCStatsObtainer::Create(&a));
+  collector_->GetStatsReport(RTCStatsObtainer::Create(&b));
   // Cache is invalidated after 50 ms.
   test_->fake_clock().AdvanceTime(rtc::TimeDelta::FromMilliseconds(51));
-  collector_->GetStatsReport(StatsCallback::Create(&c));
+  collector_->GetStatsReport(RTCStatsObtainer::Create(&c));
   EXPECT_TRUE_WAIT(a, kGetStatsReportTimeoutMs);
   EXPECT_TRUE_WAIT(b, kGetStatsReportTimeoutMs);
   EXPECT_TRUE_WAIT(c, kGetStatsReportTimeoutMs);
