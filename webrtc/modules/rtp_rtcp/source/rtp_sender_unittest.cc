@@ -27,6 +27,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/system_wrappers/include/stl_util.h"
+#include "webrtc/test/field_trial.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_transport.h"
@@ -1425,6 +1426,36 @@ TEST_F(RtpSenderTest, DoesNotUpdateOverheadOnEqualSize) {
 
   EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(_)).Times(1);
   SendGenericPayload();
+  SendGenericPayload();
+}
+
+TEST_F(RtpSenderTest, AddOverheadToTransportFeedbackObserver) {
+  constexpr int kTransportOverheadBytesPerPacket = 28;
+  constexpr int kRtpOverheadBytesPerPacket = 12 + 8;
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/");
+  testing::NiceMock<MockOverheadObserver> mock_overhead_observer;
+  rtp_sender_.reset(new RTPSender(
+      false, &fake_clock_, &transport_, nullptr, nullptr, &seq_num_allocator_,
+      &feedback_observer_, nullptr, nullptr, nullptr, &mock_rtc_event_log_,
+      nullptr, &retransmission_rate_limiter_, &mock_overhead_observer));
+  rtp_sender_->SetTransportOverhead(kTransportOverheadBytesPerPacket);
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionTransportSequenceNumber,
+                   kTransportSequenceNumberExtensionId));
+  EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
+      .WillOnce(testing::Return(kTransportSequenceNumber));
+  EXPECT_CALL(feedback_observer_,
+              AddPacket(kTransportSequenceNumber,
+                        sizeof(kPayloadData) + kGenericHeaderLength +
+                            kRtpOverheadBytesPerPacket +
+                            kTransportOverheadBytesPerPacket,
+                        PacketInfo::kNotAProbe))
+      .Times(1);
+  EXPECT_CALL(mock_overhead_observer,
+              OnOverheadChanged(kTransportOverheadBytesPerPacket +
+                                kRtpOverheadBytesPerPacket))
+      .Times(1);
   SendGenericPayload();
 }
 

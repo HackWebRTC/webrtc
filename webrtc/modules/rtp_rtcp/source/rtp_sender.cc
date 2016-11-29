@@ -29,6 +29,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -1293,10 +1294,16 @@ void RTPSender::SetTransportOverhead(int transport_overhead) {
 void RTPSender::AddPacketToTransportFeedback(uint16_t packet_id,
                                              const RtpPacketToSend& packet,
                                              int probe_cluster_id) {
+  size_t packet_size = packet.payload_size() + packet.padding_size();
+  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead") ==
+      "Enabled") {
+    rtc::CritScope lock(&send_critsect_);
+    packet_size = packet.size() + transport_overhead_bytes_per_packet_;
+  }
+
   if (transport_feedback_observer_) {
-    transport_feedback_observer_->AddPacket(
-        packet_id, packet.payload_size() + packet.padding_size(),
-        probe_cluster_id);
+    transport_feedback_observer_->AddPacket(packet_id, packet_size,
+                                            probe_cluster_id);
   }
 }
 
