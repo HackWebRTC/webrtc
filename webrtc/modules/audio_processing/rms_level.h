@@ -32,6 +32,8 @@ class RmsLevel {
     int peak;
   };
 
+  static constexpr int kMinLevelDb = 127;
+
   RmsLevel();
   ~RmsLevel();
 

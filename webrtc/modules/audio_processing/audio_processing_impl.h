@@ -25,6 +25,7 @@
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/render_queue_item_verifier.h"
+#include "webrtc/modules/audio_processing/rms_level.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
@@ -405,6 +406,9 @@ class AudioProcessingImpl : public AudioProcessing {
       GUARDED_BY(crit_capture_) = 0;
   std::vector<float> red_render_queue_buffer_ GUARDED_BY(crit_render_);
   std::vector<float> red_capture_queue_buffer_ GUARDED_BY(crit_capture_);
+
+  RmsLevel rms_ GUARDED_BY(crit_capture_);
+  int rms_interval_counter_ GUARDED_BY(crit_capture_) = 0;
 
   // Lock protection not needed.
   std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>

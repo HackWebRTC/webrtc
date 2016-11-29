@@ -19,7 +19,6 @@
 namespace webrtc {
 namespace {
 static constexpr float kMaxSquaredLevel = 32768 * 32768;
-static constexpr int kMinLevelDb = 127;
 // kMinLevel is the level corresponding to kMinLevelDb, that is 10^(-127/10).
 static constexpr float kMinLevel = 1.995262314968883e-13f;
 
@@ -31,7 +30,7 @@ static constexpr float kMinLevel = 1.995262314968883e-13f;
 int ComputeRms(float mean_square) {
   if (mean_square <= kMinLevel * kMaxSquaredLevel) {
     // Very faint; simply return the minimum value.
-    return kMinLevelDb;
+    return RmsLevel::kMinLevelDb;
   }
   // Normalize by the max level.
   const float mean_square_norm = mean_square / kMaxSquaredLevel;
@@ -39,7 +38,7 @@ int ComputeRms(float mean_square) {
   // 20log_10(x^0.5) = 10log_10(x)
   const float rms = 10.f * log10(mean_square_norm);
   RTC_DCHECK_LE(rms, 0.f);
-  RTC_DCHECK_GT(rms, -kMinLevelDb);
+  RTC_DCHECK_GT(rms, -RmsLevel::kMinLevelDb);
   // Return the negated value.
   return static_cast<int>(-rms + 0.5f);
 }
@@ -81,7 +80,7 @@ void RmsLevel::AnalyzeMuted(size_t length) {
 }
 
 int RmsLevel::Average() {
-  int rms = (sample_count_ == 0) ? kMinLevelDb
+  int rms = (sample_count_ == 0) ? RmsLevel::kMinLevelDb
                                  : ComputeRms(sum_square_ / sample_count_);
   Reset();
   return rms;
@@ -92,7 +91,7 @@ RmsLevel::Levels RmsLevel::AverageAndPeak() {
   // sample_count_ != 0. Also, the * operator of rtc::Optional enforces this
   // with a DCHECK.
   Levels levels = (sample_count_ == 0)
-                      ? Levels{kMinLevelDb, kMinLevelDb}
+                      ? Levels{RmsLevel::kMinLevelDb, RmsLevel::kMinLevelDb}
                       : Levels{ComputeRms(sum_square_ / sample_count_),
                                ComputeRms(max_sum_square_ / *block_size_)};
   Reset();

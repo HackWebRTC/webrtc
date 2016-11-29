@@ -1095,6 +1095,18 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   AudioBuffer* capture_buffer = capture_.capture_audio.get();  // For brevity.
 
+  rms_.Analyze(rtc::ArrayView<const int16_t>(
+      capture_buffer->channels_const()[0],
+      capture_nonlocked_.capture_processing_format.num_frames()));
+  if (++rms_interval_counter_ >= 1000) {
+    rms_interval_counter_ = 0;
+    RmsLevel::Levels levels = rms_.AverageAndPeak();
+    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.ApmCaptureInputLevelAverage",
+                         levels.average, 1, RmsLevel::kMinLevelDb, 100);
+    RTC_HISTOGRAM_COUNTS("WebRTC.Audio.ApmCaptureInputLevelPeak", levels.peak,
+                         1, RmsLevel::kMinLevelDb, 100);
+  }
+
   if (constants_.use_experimental_agc &&
       public_submodules_->gain_control->is_enabled()) {
     private_submodules_->agc_manager->AnalyzePreProcess(
