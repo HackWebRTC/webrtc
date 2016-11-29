@@ -46,6 +46,7 @@ def print_landmines():
   if platform() == 'win':
     print 'Clobber to resolve some issues with corrupt .pdb files on bots.'
     print 'Clobber due to corrupt .pdb files (after #14623)'
+    print 'Clobber due to Win 64-bit Debug linking error (crbug.com/668961)'
 
 
 def main():
