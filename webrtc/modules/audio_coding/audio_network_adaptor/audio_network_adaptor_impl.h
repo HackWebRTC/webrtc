@@ -45,6 +45,8 @@ class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
 
   void SetTargetAudioBitrate(int target_audio_bitrate_bps) override;
 
+  void SetOverhead(size_t overhead_bytes_per_packet) override;
+
   EncoderRuntimeConfig GetEncoderRuntimeConfig() override;
 
   void StartDebugDump(FILE* file_handle) override;

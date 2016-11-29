@@ -25,6 +25,7 @@ class Controller {
     rtc::Optional<float> uplink_packet_loss_fraction;
     rtc::Optional<int> target_audio_bitrate_bps;
     rtc::Optional<int> rtt_ms;
+    rtc::Optional<size_t> overhead_bytes_per_packet;
   };
 
   virtual ~Controller() = default;

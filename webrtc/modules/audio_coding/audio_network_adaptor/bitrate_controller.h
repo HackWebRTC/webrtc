@@ -34,7 +34,7 @@ class BitrateController final : public Controller {
  private:
   const Config config_;
   int bitrate_bps_;
-  int overhead_rate_bps_;
+  int frame_length_ms_;
   RTC_DISALLOW_COPY_AND_ASSIGN(BitrateController);
 };
 

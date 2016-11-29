@@ -34,14 +34,8 @@ MATCHER_P(NetworkMetricsIs, metric, "") {
   return arg.uplink_bandwidth_bps == metric.uplink_bandwidth_bps &&
          arg.target_audio_bitrate_bps == metric.target_audio_bitrate_bps &&
          arg.rtt_ms == metric.rtt_ms &&
+         arg.overhead_bytes_per_packet == metric.overhead_bytes_per_packet &&
          arg.uplink_packet_loss_fraction == metric.uplink_packet_loss_fraction;
-}
-
-MATCHER_P(ConstraintsReceiverFrameLengthRangeIs, frame_length_range, "") {
-  return arg.receiver_frame_length_range->min_frame_length_ms ==
-             frame_length_range.min_frame_length_ms &&
-         arg.receiver_frame_length_range->max_frame_length_ms ==
-             frame_length_range.max_frame_length_ms;
 }
 
 MATCHER_P(EncoderRuntimeConfigIs, config, "") {
@@ -108,6 +102,7 @@ TEST(AudioNetworkAdaptorImplTest,
   constexpr float kPacketLoss = 0.7f;
   constexpr int kRtt = 100;
   constexpr int kTargetAudioBitrate = 15000;
+  constexpr size_t kOverhead = 64;
 
   Controller::NetworkMetrics check;
   check.uplink_bandwidth_bps = rtc::Optional<int>(kBandwidth);
@@ -137,6 +132,13 @@ TEST(AudioNetworkAdaptorImplTest,
   }
   states.audio_network_adaptor->SetTargetAudioBitrate(kTargetAudioBitrate);
   states.audio_network_adaptor->GetEncoderRuntimeConfig();
+
+  check.overhead_bytes_per_packet = rtc::Optional<size_t>(kOverhead);
+  for (auto& mock_controller : states.mock_controllers) {
+    EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
+  }
+  states.audio_network_adaptor->SetOverhead(kOverhead);
+  states.audio_network_adaptor->GetEncoderRuntimeConfig();
 }
 
 TEST(AudioNetworkAdaptorImplTest,
@@ -164,6 +166,7 @@ TEST(AudioNetworkAdaptorImplTest,
   constexpr float kPacketLoss = 0.7f;
   constexpr int kRtt = 100;
   constexpr int kTargetAudioBitrate = 15000;
+  constexpr size_t kOverhead = 64;
 
   Controller::NetworkMetrics check;
   check.uplink_bandwidth_bps = rtc::Optional<int>(kBandwidth);
@@ -193,6 +196,13 @@ TEST(AudioNetworkAdaptorImplTest,
   EXPECT_CALL(*states.mock_debug_dump_writer,
               DumpNetworkMetrics(NetworkMetricsIs(check), timestamp_check));
   states.audio_network_adaptor->SetTargetAudioBitrate(kTargetAudioBitrate);
+
+  states.simulated_clock->AdvanceTimeMilliseconds(50);
+  timestamp_check += 50;
+  check.overhead_bytes_per_packet = rtc::Optional<size_t>(kOverhead);
+  EXPECT_CALL(*states.mock_debug_dump_writer,
+              DumpNetworkMetrics(NetworkMetricsIs(check), timestamp_check));
+  states.audio_network_adaptor->SetOverhead(kOverhead);
 }
 
 }  // namespace webrtc

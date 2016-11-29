@@ -42,6 +42,11 @@ void AudioNetworkAdaptorImpl::SetUplinkPacketLossFraction(
   DumpNetworkMetrics();
 }
 
+void AudioNetworkAdaptorImpl::SetRtt(int rtt_ms) {
+  last_metrics_.rtt_ms = rtc::Optional<int>(rtt_ms);
+  DumpNetworkMetrics();
+}
+
 void AudioNetworkAdaptorImpl::SetTargetAudioBitrate(
     int target_audio_bitrate_bps) {
   last_metrics_.target_audio_bitrate_bps =
@@ -49,8 +54,9 @@ void AudioNetworkAdaptorImpl::SetTargetAudioBitrate(
   DumpNetworkMetrics();
 }
 
-void AudioNetworkAdaptorImpl::SetRtt(int rtt_ms) {
-  last_metrics_.rtt_ms = rtc::Optional<int>(rtt_ms);
+void AudioNetworkAdaptorImpl::SetOverhead(size_t overhead_bytes_per_packet) {
+  last_metrics_.overhead_bytes_per_packet =
+      rtc::Optional<size_t>(overhead_bytes_per_packet);
   DumpNetworkMetrics();
 }
 
