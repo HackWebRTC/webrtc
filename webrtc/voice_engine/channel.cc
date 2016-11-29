@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/format_macros.h"
@@ -364,7 +365,7 @@ int32_t Channel::SendData(FrameType frameType,
     // Store current audio level in the RTP/RTCP module.
     // The level will be used in combination with voice-activity state
     // (frameType) to add an RTP header extension
-    _rtpRtcpModule->SetAudioLevel(rms_level_.RMS());
+    _rtpRtcpModule->SetAudioLevel(rms_level_.Average());
   }
 
   // Push data from ACM to RTP/RTCP-module to deliver audio frame for
@@ -2780,9 +2781,10 @@ uint32_t Channel::PrepareEncodeAndSend(int mixingFrequency) {
         _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
     RTC_CHECK_LE(length, sizeof(_audioFrame.data_));
     if (is_muted && previous_frame_muted_) {
-      rms_level_.ProcessMuted(length);
+      rms_level_.AnalyzeMuted(length);
     } else {
-      rms_level_.Process(_audioFrame.data_, length);
+      rms_level_.Analyze(
+          rtc::ArrayView<const int16_t>(_audioFrame.data_, length));
     }
   }
   previous_frame_muted_ = is_muted;

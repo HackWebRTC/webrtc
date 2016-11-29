@@ -508,7 +508,7 @@ class Channel
   VoiceEngineObserver* _voiceEngineObserverPtr;  // owned by base
   rtc::CriticalSection* _callbackCritSectPtr;    // owned by base
   Transport* _transportPtr;  // WebRtc socket or external transport
-  RMSLevel rms_level_;
+  RmsLevel rms_level_;
   int32_t _sendFrameType;  // Send data is voice, 1-voice, 0-otherwise
   // VoEBase
   bool _externalMixing;
