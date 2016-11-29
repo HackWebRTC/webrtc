@@ -160,6 +160,9 @@ bool SSLStreamAdapter::IsAcceptableCipher(const std::string& cipher,
 std::string SSLStreamAdapter::SslCipherSuiteToName(int cipher_suite) {
   return OpenSSLStreamAdapter::SslCipherSuiteToName(cipher_suite);
 }
+void SSLStreamAdapter::enable_time_callback_for_testing() {
+  OpenSSLStreamAdapter::enable_time_callback_for_testing();
+}
 #endif  // SSL_USE_OPENSSL
 
 ///////////////////////////////////////////////////////////////////////////////

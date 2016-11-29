@@ -118,6 +118,10 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   static bool IsAcceptableCipher(int cipher, KeyType key_type);
   static bool IsAcceptableCipher(const std::string& cipher, KeyType key_type);
 
+  // Use our timeutils.h source of timing in BoringSSL, allowing us to test
+  // using a fake clock.
+  static void enable_time_callback_for_testing();
+
  protected:
   void OnEvent(StreamInterface* stream, int events, int err) override;
 

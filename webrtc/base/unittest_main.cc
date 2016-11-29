@@ -19,6 +19,7 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/ssladapter.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -103,6 +104,7 @@ int main(int argc, char** argv) {
 
   // Initialize SSL which are used by several tests.
   rtc::InitializeSSL();
+  rtc::SSLStreamAdapter::enable_time_callback_for_testing();
 
   int res = RUN_ALL_TESTS();
 

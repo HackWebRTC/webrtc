@@ -244,6 +244,10 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // depending on specific SSL implementation.
   static std::string SslCipherSuiteToName(int cipher_suite);
 
+  // Use our timeutils.h source of timing in BoringSSL, allowing us to test
+  // using a fake clock.
+  static void enable_time_callback_for_testing();
+
   sigslot::signal1<SSLHandshakeError> SignalSSLHandshakeError;
 
  private:
