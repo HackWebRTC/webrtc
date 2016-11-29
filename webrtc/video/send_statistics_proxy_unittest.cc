@@ -722,22 +722,10 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsBandwidthLimitedResolution) {
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
   // Resolution not scaled.
   encoded_image.adapt_reason_.bw_resolutions_disabled = 0;
-  encoded_image.adapt_reason_.quality_resolution_downscales = 0;
   statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
   // Resolution scaled due to bandwidth.
   encoded_image.adapt_reason_.bw_resolutions_disabled = 1;
-  encoded_image.adapt_reason_.quality_resolution_downscales = 0;
-  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
-  // Resolution not scaled.
-  encoded_image.adapt_reason_.bw_resolutions_disabled = 0;
-  encoded_image.adapt_reason_.quality_resolution_downscales = 0;
-  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
-  // Resolution scaled due to quality.
-  encoded_image.adapt_reason_.bw_resolutions_disabled = 0;
-  encoded_image.adapt_reason_.quality_resolution_downscales = 1;
   statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
 }

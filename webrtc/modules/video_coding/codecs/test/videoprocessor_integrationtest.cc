@@ -977,38 +977,6 @@ TEST_F(VideoProcessorIntegrationTest,
                          rc_metrics);
 }
 
-// Run with no packet loss, at low bitrate. During this time we should've
-// resized once. Expect 2 key frames generated (first and one for resize).
-// Too slow to finish before timeout on iOS. See webrtc:4755.
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP8 \
-  DISABLED_ProcessNoLossSpatialResizeFrameDropVP8
-#else
-#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP8 \
-  ProcessNoLossSpatialResizeFrameDropVP8
-#endif
-TEST_F(VideoProcessorIntegrationTest,
-       MAYBE_ProcessNoLossSpatialResizeFrameDropVP8) {
-  config_.networking_config.packet_loss_probability = 0;
-  // Bitrate and frame rate profile.
-  RateProfile rate_profile;
-  SetRateProfilePars(&rate_profile, 0, 50, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesLong + 1;
-  rate_profile.num_frames = kNbrFramesLong;
-  // Codec/network settings.
-  CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP8, 0.0f, -1, 1, false,
-                     true, true, true);
-  // Metrics for expected quality.
-  QualityMetrics quality_metrics;
-  SetQualityMetrics(&quality_metrics, 25.0, 15.0, 0.70, 0.40);
-  // Metrics for rate control.
-  RateControlMetrics rc_metrics[1];
-  SetRateControlMetrics(rc_metrics, 0, 160, 80, 120, 20, 70, 1, 2);
-  ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
-}
-
 // VP8: Run with no packet loss, with 3 temporal layers, with a rate update in
 // the middle of the sequence. The max values for the frame size mismatch and
 // encoding rate mismatch are applied to each layer.

@@ -20,25 +20,13 @@
 #include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
 namespace webrtc {
 
 class Clock;
 class EncodedFrameObserver;
 class VideoFrame;
-
-// CpuOveruseObserver is called when a system overuse is detected and
-// VideoEngine cannot keep up the encoding frequency.
-class CpuOveruseObserver {
- public:
-  // Called as soon as an overuse is detected.
-  virtual void OveruseDetected() = 0;
-  // Called periodically when the system is not overused any longer.
-  virtual void NormalUsage() = 0;
-
- protected:
-  virtual ~CpuOveruseObserver() {}
-};
 
 struct CpuOveruseOptions {
   CpuOveruseOptions();
@@ -79,7 +67,7 @@ class OveruseFrameDetector {
  public:
   OveruseFrameDetector(Clock* clock,
                        const CpuOveruseOptions& options,
-                       CpuOveruseObserver* overuse_observer,
+                       ScalingObserverInterface* overuse_observer,
                        EncodedFrameObserver* encoder_timing_,
                        CpuOveruseMetricsObserver* metrics_observer);
   ~OveruseFrameDetector();
@@ -131,7 +119,7 @@ class OveruseFrameDetector {
   const CpuOveruseOptions options_;
 
   // Observer getting overuse reports.
-  CpuOveruseObserver* const observer_;
+  ScalingObserverInterface* const observer_;
   EncodedFrameObserver* const encoder_timing_;
 
   // Stats metrics.

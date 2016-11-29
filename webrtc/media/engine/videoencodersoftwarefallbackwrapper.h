@@ -42,8 +42,8 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int32_t SetRateAllocation(const BitrateAllocation& bitrate_allocation,
                             uint32_t framerate) override;
-  void OnDroppedFrame() override;
   bool SupportsNativeHandle() const override;
+  ScalingSettings GetScalingSettings() const override;
 
  private:
   bool InitFallbackEncoder();

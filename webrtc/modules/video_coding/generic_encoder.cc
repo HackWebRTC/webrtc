@@ -131,11 +131,6 @@ bool VCMGenericEncoder::InternalSource() const {
   return internal_source_;
 }
 
-void VCMGenericEncoder::OnDroppedFrame() {
-  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
-  encoder_->OnDroppedFrame();
-}
-
 bool VCMGenericEncoder::SupportsNativeHandle() const {
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   return encoder_->SupportsNativeHandle();

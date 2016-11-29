@@ -25,6 +25,7 @@
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
@@ -49,7 +50,7 @@ class SendStatisticsProxy;
 class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                    public EncodedImageCallback,
                    public VCMSendStatisticsCallback,
-                   public CpuOveruseObserver {
+                   public ScalingObserverInterface {
  public:
   // Interface for receiving encoded video frames and notifications about
   // configuration changes.
@@ -60,8 +61,10 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
         int min_transmit_bitrate_bps) = 0;
   };
 
-  // Down grade resolution at most 2 times for CPU reasons.
+  // Downscale resolution at most 2 times for CPU reasons.
   static const int kMaxCpuDowngrades = 2;
+  // Downscale resolution at most 2 times for low-quality reasons.
+  static const int kMaxQualityDowngrades = 2;
 
   ViEEncoder(uint32_t number_of_cores,
              SendStatisticsProxy* stats_proxy,
@@ -111,14 +114,14 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                         int64_t round_trip_time_ms);
 
  protected:
-  // Used for testing. For example the |CpuOveruseObserver| methods must be
-  // called on |encoder_queue_|.
+  // Used for testing. For example the |ScalingObserverInterface| methods must
+  // be called on |encoder_queue_|.
   rtc::TaskQueue* encoder_queue() { return &encoder_queue_; }
 
-  // webrtc::CpuOveruseObserver implementation.
+  // webrtc::ScalingObserverInterface implementation.
   // These methods are protected for easier testing.
-  void OveruseDetected() override;
-  void NormalUsage() override;
+  void ScaleUp(ScaleReason reason) override;
+  void ScaleDown(ScaleReason reason) override;
 
  private:
   class ConfigureEncoderTask;
@@ -161,6 +164,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
       const CodecSpecificInfo* codec_specific_info,
       const RTPFragmentationHeader* fragmentation) override;
 
+  void OnDroppedFrame() override;
+
   bool EncoderPaused() const;
   void TraceFrameDropStart();
   void TraceFrameDropEnd();
@@ -176,6 +181,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
   vcm::VideoSender video_sender_ ACCESS_ON(&encoder_queue_);
   OveruseFrameDetector overuse_detector_ ACCESS_ON(&encoder_queue_);
+  std::unique_ptr<QualityScaler> quality_scaler_ ACCESS_ON(&encoder_queue_);
 
   SendStatisticsProxy* const stats_proxy_;
   rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
@@ -203,12 +209,11 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   bool has_received_rpsi_ ACCESS_ON(&encoder_queue_);
   uint64_t picture_id_rpsi_ ACCESS_ON(&encoder_queue_);
   Clock* const clock_;
-
-  VideoSendStream::DegradationPreference degradation_preference_
-      ACCESS_ON(&encoder_queue_);
-  // Counter used for deciding if the video resolution is currently
-  // restricted by CPU usage.
-  int cpu_restricted_counter_ ACCESS_ON(&encoder_queue_);
+  // Counters used for deciding if the video resolution is currently
+  // restricted, and if so, why.
+  int scale_counter_[kScaleReasonSize] ACCESS_ON(&encoder_queue_) = {0};
+  // Set depending on degradation preferences
+  bool scaling_enabled_ ACCESS_ON(&encoder_queue_) = false;
 
   int last_frame_width_ ACCESS_ON(&encoder_queue_);
   int last_frame_height_ ACCESS_ON(&encoder_queue_);

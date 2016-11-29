@@ -57,7 +57,7 @@ class VP8EncoderImpl : public VP8Encoder {
   int SetRateAllocation(const BitrateAllocation& bitrate,
                         uint32_t new_framerate) override;
 
-  void OnDroppedFrame() override;
+  ScalingSettings GetScalingSettings() const override;
 
   const char* ImplementationName() const override;
 
@@ -116,8 +116,6 @@ class VP8EncoderImpl : public VP8Encoder {
   std::vector<vpx_codec_ctx_t> encoders_;
   std::vector<vpx_codec_enc_cfg_t> configurations_;
   std::vector<vpx_rational_t> downsampling_factors_;
-  QualityScaler quality_scaler_;
-  bool quality_scaler_enabled_;
 };  // end of VP8EncoderImpl class
 
 class VP8DecoderImpl : public VP8Decoder {

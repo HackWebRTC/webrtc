@@ -60,7 +60,7 @@ class SimulcastEncoderAdapter : public VP8Encoder {
       const CodecSpecificInfo* codec_specific_info,
       const RTPFragmentationHeader* fragmentation);
 
-  void OnDroppedFrame() override;
+  VideoEncoder::ScalingSettings GetScalingSettings() const override;
 
   bool SupportsNativeHandle() const override;
   const char* ImplementationName() const override;

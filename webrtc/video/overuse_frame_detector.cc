@@ -49,6 +49,7 @@ const int kMaxOverusesBeforeApplyRampupDelay = 4;
 const float kSampleDiffMs = 33.0f;
 const float kMaxExp = 7.0f;
 
+const auto kScaleReasonCpu = ScalingObserverInterface::ScaleReason::kCpu;
 }  // namespace
 
 CpuOveruseOptions::CpuOveruseOptions()
@@ -204,7 +205,7 @@ class OveruseFrameDetector::CheckOveruseTask : public rtc::QueuedTask {
 OveruseFrameDetector::OveruseFrameDetector(
     Clock* clock,
     const CpuOveruseOptions& options,
-    CpuOveruseObserver* observer,
+    ScalingObserverInterface* observer,
     EncodedFrameObserver* encoder_timing,
     CpuOveruseMetricsObserver* metrics_observer)
     : check_overuse_task_(nullptr),
@@ -370,13 +371,13 @@ void OveruseFrameDetector::CheckForOveruse() {
     ++num_overuse_detections_;
 
     if (observer_)
-      observer_->OveruseDetected();
+      observer_->ScaleDown(kScaleReasonCpu);
   } else if (IsUnderusing(*metrics_, now)) {
     last_rampup_time_ms_ = now;
     in_quick_rampup_ = true;
 
     if (observer_)
-      observer_->NormalUsage();
+      observer_->ScaleUp(kScaleReasonCpu);
   }
 
   int rampup_delay =

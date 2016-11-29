@@ -16,10 +16,11 @@
 #include "webrtc/test/gtest.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video_frame.h"
+#include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
 namespace webrtc {
 
-using ::testing::Invoke;
+using ::testing::InvokeWithoutArgs;
 
 namespace {
   const int kWidth = 640;
@@ -29,24 +30,24 @@ namespace {
   const int kProcessTime5ms = 5;
 }  // namespace
 
-class MockCpuOveruseObserver : public CpuOveruseObserver {
+class MockCpuOveruseObserver : public ScalingObserverInterface {
  public:
   MockCpuOveruseObserver() {}
   virtual ~MockCpuOveruseObserver() {}
 
-  MOCK_METHOD0(OveruseDetected, void());
-  MOCK_METHOD0(NormalUsage, void());
+  MOCK_METHOD1(ScaleUp, void(ScaleReason));
+  MOCK_METHOD1(ScaleDown, void(ScaleReason));
 };
 
-class CpuOveruseObserverImpl : public CpuOveruseObserver {
+class CpuOveruseObserverImpl : public ScalingObserverInterface {
  public:
   CpuOveruseObserverImpl() :
     overuse_(0),
     normaluse_(0) {}
   virtual ~CpuOveruseObserverImpl() {}
 
-  void OveruseDetected() { ++overuse_; }
-  void NormalUsage() { ++normaluse_; }
+  void ScaleDown(ScaleReason) { ++overuse_; }
+  void ScaleUp(ScaleReason) { ++normaluse_; }
 
   int overuse_;
   int normaluse_;
@@ -56,7 +57,7 @@ class OveruseFrameDetectorUnderTest : public OveruseFrameDetector {
  public:
   OveruseFrameDetectorUnderTest(Clock* clock,
                                 const CpuOveruseOptions& options,
-                                CpuOveruseObserver* overuse_observer,
+                                ScalingObserverInterface* overuse_observer,
                                 EncodedFrameObserver* encoder_timing,
                                 CpuOveruseMetricsObserver* metrics_observer)
       : OveruseFrameDetector(clock,
@@ -145,6 +146,8 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   std::unique_ptr<MockCpuOveruseObserver> observer_;
   std::unique_ptr<OveruseFrameDetectorUnderTest> overuse_detector_;
   CpuOveruseMetrics metrics_;
+
+  static const auto reason_ = ScalingObserverInterface::ScaleReason::kCpu;
 };
 
 
@@ -152,33 +155,33 @@ class OveruseFrameDetectorTest : public ::testing::Test,
 // UsagePercent() < low_encode_usage_threshold_percent => underuse.
 TEST_F(OveruseFrameDetectorTest, TriggerOveruse) {
   // usage > high => overuse
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
+  EXPECT_CALL(*(observer_.get()), ScaleDown(reason_)).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
 }
 
 TEST_F(OveruseFrameDetectorTest, OveruseAndRecover) {
   // usage > high => overuse
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
+  EXPECT_CALL(*(observer_.get()), ScaleDown(reason_)).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   // usage < low => underuse
-  EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(testing::AtLeast(1));
+  EXPECT_CALL(*(observer_.get()), ScaleUp(reason_)).Times(testing::AtLeast(1));
   TriggerUnderuse();
 }
 
 TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithNoObserver) {
   overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
       clock_.get(), options_, nullptr, nullptr, this));
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(0);
+  EXPECT_CALL(*(observer_.get()), ScaleDown(reason_)).Times(0);
   TriggerOveruse(options_.high_threshold_consecutive_count);
-  EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
+  EXPECT_CALL(*(observer_.get()), ScaleUp(reason_)).Times(0);
   TriggerUnderuse();
 }
 
 TEST_F(OveruseFrameDetectorTest, DoubleOveruseAndRecover) {
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(2);
+  EXPECT_CALL(*(observer_.get()), ScaleDown(reason_)).Times(2);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   TriggerOveruse(options_.high_threshold_consecutive_count);
-  EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(testing::AtLeast(1));
+  EXPECT_CALL(*(observer_.get()), ScaleUp(reason_)).Times(testing::AtLeast(1));
   TriggerUnderuse();
 }
 
@@ -197,22 +200,22 @@ TEST_F(OveruseFrameDetectorTest, TriggerUnderuseWithMinProcessCount) {
 }
 
 TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
-  EXPECT_CALL(*(observer_.get()), NormalUsage()).Times(0);
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(64);
+  EXPECT_CALL(*(observer_.get()), ScaleUp(reason_)).Times(0);
+  EXPECT_CALL(*(observer_.get()), ScaleDown(reason_)).Times(64);
   for (size_t i = 0; i < 64; ++i) {
     TriggerOveruse(options_.high_threshold_consecutive_count);
   }
 }
 
 TEST_F(OveruseFrameDetectorTest, ConsecutiveCountTriggersOveruse) {
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(1);
+  EXPECT_CALL(*(observer_.get()), ScaleDown(reason_)).Times(1);
   options_.high_threshold_consecutive_count = 2;
   ReinitializeOveruseDetector();
   TriggerOveruse(2);
 }
 
 TEST_F(OveruseFrameDetectorTest, IncorrectConsecutiveCountTriggersNoOveruse) {
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(0);
+  EXPECT_CALL(*(observer_.get()), ScaleDown(reason_)).Times(0);
   options_.high_threshold_consecutive_count = 2;
   ReinitializeOveruseDetector();
   TriggerOveruse(1);
@@ -278,7 +281,8 @@ TEST_F(OveruseFrameDetectorTest, InitialProcessingUsage) {
 }
 
 TEST_F(OveruseFrameDetectorTest, MeasuresMultipleConcurrentSamples) {
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(testing::AtLeast(1));
+  EXPECT_CALL(*(observer_.get()), ScaleDown(reason_))
+      .Times(testing::AtLeast(1));
   static const int kIntervalMs = 33;
   static const size_t kNumFramesEncodingDelay = 3;
   VideoFrame frame(I420Buffer::Create(kWidth, kHeight),
@@ -299,7 +303,8 @@ TEST_F(OveruseFrameDetectorTest, MeasuresMultipleConcurrentSamples) {
 
 TEST_F(OveruseFrameDetectorTest, UpdatesExistingSamples) {
   // >85% encoding time should trigger overuse.
-  EXPECT_CALL(*(observer_.get()), OveruseDetected()).Times(testing::AtLeast(1));
+  EXPECT_CALL(*(observer_.get()), ScaleDown(reason_))
+      .Times(testing::AtLeast(1));
   static const int kIntervalMs = 33;
   static const int kDelayMs = 30;
   VideoFrame frame(I420Buffer::Create(kWidth, kHeight),
@@ -332,8 +337,8 @@ TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
 
   // Expect NormalUsage(). When called, stop the |overuse_detector_| and then
   // set |event| to end the test.
-  EXPECT_CALL(*(observer_.get()), NormalUsage())
-      .WillOnce(Invoke([this, &event] {
+  EXPECT_CALL(*(observer_.get()), ScaleUp(reason_))
+      .WillOnce(InvokeWithoutArgs([this, &event] {
         overuse_detector_->StopCheckForOveruse();
         event.Set();
       }));

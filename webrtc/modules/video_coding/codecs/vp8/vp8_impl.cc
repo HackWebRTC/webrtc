@@ -123,8 +123,7 @@ VP8EncoderImpl::VP8EncoderImpl()
       token_partitions_(VP8_ONE_TOKENPARTITION),
       down_scale_requested_(false),
       down_scale_bitrate_(0),
-      key_frame_request_(kMaxSimulcastStreams, false),
-      quality_scaler_enabled_(false) {
+      key_frame_request_(kMaxSimulcastStreams, false) {
   uint32_t seed = rtc::Time32();
   srand(seed);
 
@@ -253,13 +252,7 @@ int VP8EncoderImpl::SetRateAllocation(const BitrateAllocation& bitrate,
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
   }
-  quality_scaler_.ReportFramerate(new_framerate);
   return WEBRTC_VIDEO_CODEC_OK;
-}
-
-void VP8EncoderImpl::OnDroppedFrame() {
-  if (quality_scaler_enabled_)
-    quality_scaler_.ReportDroppedFrame();
 }
 
 const char* VP8EncoderImpl::ImplementationName() const {
@@ -530,15 +523,6 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   rps_.Init();
-  quality_scaler_.Init(codec_.codecType, codec_.startBitrate, codec_.width,
-                       codec_.height, codec_.maxFramerate);
-
-  // Only apply scaling to improve for single-layer streams. The scaling metrics
-  // use frame drops as a signal and is only applicable when we drop frames.
-  quality_scaler_enabled_ = encoders_.size() == 1 &&
-                            configurations_[0].rc_dropframe_thresh > 0 &&
-                            codec_.VP8()->automaticResizeOn;
-
   return InitAndSetControlSettings();
 }
 
@@ -671,6 +655,9 @@ uint32_t VP8EncoderImpl::MaxIntraTarget(uint32_t optimalBuffersize) {
 int VP8EncoderImpl::Encode(const VideoFrame& frame,
                            const CodecSpecificInfo* codec_specific_info,
                            const std::vector<FrameType>* frame_types) {
+  RTC_DCHECK_EQ(frame.width(), codec_.width);
+  RTC_DCHECK_EQ(frame.height(), codec_.height);
+
   if (!inited_)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   if (frame.IsZeroSize())
@@ -679,20 +666,6 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
   rtc::scoped_refptr<VideoFrameBuffer> input_image = frame.video_frame_buffer();
-
-  if (quality_scaler_enabled_) {
-    quality_scaler_.OnEncodeFrame(frame.width(), frame.height());
-    input_image = quality_scaler_.GetScaledBuffer(input_image);
-
-    if (input_image->width() != codec_.width ||
-        input_image->height() != codec_.height) {
-      int ret =
-          UpdateCodecFrameSize(input_image->width(), input_image->height());
-      if (ret < 0)
-        return ret;
-    }
-  }
-
   // Since we are extracting raw pointers from |input_image| to
   // |raw_images_[0]|, the resolution of these frames must match. Note that
   // |input_image| might be scaled from |frame|. In that case, the resolution of
@@ -989,9 +962,6 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
             codec_.simulcastStream[stream_idx].height;
         encoded_images_[encoder_idx]._encodedWidth =
             codec_.simulcastStream[stream_idx].width;
-        encoded_images_[encoder_idx]
-            .adapt_reason_.quality_resolution_downscales =
-            quality_scaler_enabled_ ? quality_scaler_.downscale_shift() : -1;
         // Report once per frame (lowest stream always sent).
         encoded_images_[encoder_idx].adapt_reason_.bw_resolutions_disabled =
             (stream_idx == 0) ? bw_resolutions_disabled : -1;
@@ -1006,16 +976,14 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
       }
     }
   }
-  if (encoders_.size() == 1 && send_stream_[0]) {
-    if (encoded_images_[0]._length > 0) {
-      int qp_128;
-      vpx_codec_control(&encoders_[0], VP8E_GET_LAST_QUANTIZER, &qp_128);
-      quality_scaler_.ReportQP(qp_128);
-    } else {
-      quality_scaler_.ReportDroppedFrame();
-    }
-  }
   return result;
+}
+
+VideoEncoder::ScalingSettings VP8EncoderImpl::GetScalingSettings() const {
+  const bool enable_scaling = encoders_.size() == 1 &&
+                              configurations_[0].rc_dropframe_thresh > 0 &&
+                              codec_.VP8().automaticResizeOn;
+  return VideoEncoder::ScalingSettings(enable_scaling);
 }
 
 int VP8EncoderImpl::SetChannelParameters(uint32_t packetLoss, int64_t rtt) {

@@ -115,6 +115,7 @@ class VideoSender : public Module {
   VCMGenericEncoder* _encoder;
   media_optimization::MediaOptimization _mediaOpt;
   VCMEncodedFrameCallback _encodedFrameCallback GUARDED_BY(encoder_crit_);
+  EncodedImageCallback* const post_encode_callback_;
   VCMSendStatisticsCallback* const send_stats_callback_;
   VCMCodecDataBase _codecDataBase GUARDED_BY(encoder_crit_);
   bool frame_dropper_enabled_ GUARDED_BY(encoder_crit_);

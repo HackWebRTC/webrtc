@@ -46,7 +46,6 @@ class H264VideoToolboxEncoder : public H264Encoder {
 
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
 
-  void OnDroppedFrame() override;
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
 
   int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate) override;
@@ -67,6 +66,8 @@ class H264VideoToolboxEncoder : public H264Encoder {
                       uint32_t timestamp,
                       VideoRotation rotation);
 
+  ScalingSettings GetScalingSettings() const override;
+
  private:
   int ResetCompressionSession();
   void ConfigureCompressionSession();
@@ -85,10 +86,7 @@ class H264VideoToolboxEncoder : public H264Encoder {
   int32_t height_;
   const CFStringRef profile_;
 
-  rtc::CriticalSection quality_scaler_crit_;
-  QualityScaler quality_scaler_ GUARDED_BY(quality_scaler_crit_);
   H264BitstreamParser h264_bitstream_parser_;
-  bool enable_scaling_;
   std::vector<uint8_t> nv12_scale_buffer_;
 };  // H264VideoToolboxEncoder
 

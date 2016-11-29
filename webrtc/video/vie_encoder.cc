@@ -257,9 +257,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       has_received_rpsi_(false),
       picture_id_rpsi_(0),
       clock_(Clock::GetRealTimeClock()),
-      degradation_preference_(
-          VideoSendStream::DegradationPreference::kBalanced),
-      cpu_restricted_counter_(0),
       last_frame_width_(0),
       last_frame_height_(0),
       last_captured_timestamp_(0),
@@ -292,6 +289,7 @@ void ViEEncoder::Stop() {
     rate_allocator_.reset();
     video_sender_.RegisterExternalEncoder(nullptr, settings_.payload_type,
                                           false);
+    quality_scaler_ = nullptr;
     shutdown_event_.Set();
   });
 
@@ -318,17 +316,12 @@ void ViEEncoder::SetSource(
   source_proxy_->SetSource(source, degradation_preference);
   encoder_queue_.PostTask([this, degradation_preference] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    degradation_preference_ = degradation_preference;
-    // Set the stats for if we are currently CPU restricted. We are CPU
-    // restricted depending on degradation preference and
-    // if the overusedetector has currently detected overuse which is counted in
-    // |cpu_restricted_counter_|
-    // We do this on the encoder task queue to avoid a race with the stats set
-    // in ViEEncoder::NormalUsage and ViEEncoder::OveruseDetected.
-    stats_proxy_->SetCpuRestrictedResolution(
-        degradation_preference_ !=
-            VideoSendStream::DegradationPreference::kMaintainResolution &&
-        cpu_restricted_counter_ != 0);
+    scaling_enabled_ =
+        (degradation_preference !=
+         VideoSendStream::DegradationPreference::kMaintainResolution);
+    stats_proxy_->SetResolutionRestrictionStats(
+        scaling_enabled_ && scale_counter_[kQuality] > 0,
+        scaling_enabled_ && scale_counter_[kCpu] > 0);
   });
 }
 
@@ -420,6 +413,18 @@ void ViEEncoder::ReconfigureEncoder() {
 
   sink_->OnEncoderConfigurationChanged(
       std::move(streams), encoder_config_.min_transmit_bitrate_bps);
+
+  const auto scaling_settings = settings_.encoder->GetScalingSettings();
+  if (scaling_settings.enabled && scaling_enabled_) {
+    if (scaling_settings.thresholds) {
+      quality_scaler_.reset(
+          new QualityScaler(this, *(scaling_settings.thresholds)));
+    } else {
+      quality_scaler_.reset(new QualityScaler(this, codec_type_));
+    }
+  } else {
+    quality_scaler_.reset(nullptr);
+  }
 }
 
 void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
@@ -497,6 +502,7 @@ void ViEEncoder::TraceFrameDropEnd() {
 void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
                                   int64_t time_when_posted_in_ms) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
+
   if (pre_encode_callback_)
     pre_encode_callback_->OnFrame(video_frame);
 
@@ -574,13 +580,23 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
 
   int64_t time_sent = clock_->TimeInMilliseconds();
   uint32_t timestamp = encoded_image._timeStamp;
-
-  encoder_queue_.PostTask([this, timestamp, time_sent] {
+  const int qp = encoded_image.qp_;
+  encoder_queue_.PostTask([this, timestamp, time_sent, qp] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     overuse_detector_.FrameSent(timestamp, time_sent);
+    if (quality_scaler_)
+      quality_scaler_->ReportQP(qp);
   });
 
   return result;
+}
+
+void ViEEncoder::OnDroppedFrame() {
+  encoder_queue_.PostTask([this] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    if (quality_scaler_)
+      quality_scaler_->ReportDroppedFrame();
+  });
 }
 
 void ViEEncoder::SendStatistics(uint32_t bit_rate, uint32_t frame_rate) {
@@ -654,47 +670,67 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
   }
 }
 
-void ViEEncoder::OveruseDetected() {
+void ViEEncoder::ScaleDown(ScaleReason reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  if (degradation_preference_ ==
-          VideoSendStream::DegradationPreference::kMaintainResolution ||
-      cpu_restricted_counter_ >= kMaxCpuDowngrades) {
+  if (!scaling_enabled_)
     return;
-  }
-  LOG(LS_INFO) << "CPU overuse detected. Requesting lower resolution.";
   // Request lower resolution if the current resolution is lower than last time
   // we asked for the resolution to be lowered.
-  // Update stats accordingly.
   int current_pixel_count = last_frame_height_ * last_frame_width_;
-  if (!max_pixel_count_ || current_pixel_count < *max_pixel_count_) {
-    max_pixel_count_ = rtc::Optional<int>(current_pixel_count);
-    max_pixel_count_step_up_ = rtc::Optional<int>();
-    stats_proxy_->OnCpuRestrictedResolutionChanged(true);
-    ++cpu_restricted_counter_;
-    source_proxy_->RequestResolutionLowerThan(current_pixel_count);
+  if (max_pixel_count_ && current_pixel_count >= *max_pixel_count_)
+    return;
+  switch (reason) {
+    case kQuality:
+      if (scale_counter_[reason] >= kMaxQualityDowngrades)
+        return;
+      stats_proxy_->OnQualityRestrictedResolutionChanged(true);
+      break;
+    case kCpu:
+      if (scale_counter_[reason] >= kMaxCpuDowngrades)
+        return;
+      // Update stats accordingly.
+      stats_proxy_->OnCpuRestrictedResolutionChanged(true);
+      break;
+  }
+  max_pixel_count_ = rtc::Optional<int>(current_pixel_count);
+  max_pixel_count_step_up_ = rtc::Optional<int>();
+  ++scale_counter_[reason];
+  source_proxy_->RequestResolutionLowerThan(current_pixel_count);
+  LOG(LS_INFO) << "Scaling down resolution.";
+  for (size_t i = 0; i < kScaleReasonSize; ++i) {
+    LOG(LS_INFO) << "Scaled " << scale_counter_[i]
+                 << " times for reason: " << (i ? "quality" : "cpu");
   }
 }
 
-void ViEEncoder::NormalUsage() {
+void ViEEncoder::ScaleUp(ScaleReason reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  if (degradation_preference_ ==
-          VideoSendStream::DegradationPreference::kMaintainResolution ||
-      cpu_restricted_counter_ == 0) {
+  if (scale_counter_[reason] == 0 || !scaling_enabled_)
     return;
-  }
-
-  LOG(LS_INFO) << "CPU underuse detected. Requesting higher resolution.";
+  // Only scale if resolution is higher than last time
+  // we requested higher resolution.
   int current_pixel_count = last_frame_height_ * last_frame_width_;
-  // Request higher resolution if we are CPU restricted and the the current
-  // resolution is higher than last time we requested higher resolution.
-  // Update stats accordingly.
-  if (!max_pixel_count_step_up_ ||
-      current_pixel_count > *max_pixel_count_step_up_) {
-    max_pixel_count_ = rtc::Optional<int>();
-    max_pixel_count_step_up_ = rtc::Optional<int>(current_pixel_count);
-    --cpu_restricted_counter_;
-    stats_proxy_->OnCpuRestrictedResolutionChanged(cpu_restricted_counter_ > 0);
-    source_proxy_->RequestHigherResolutionThan(current_pixel_count);
+  if (current_pixel_count <= max_pixel_count_step_up_.value_or(0))
+    return;
+  switch (reason) {
+    case kQuality:
+      stats_proxy_->OnQualityRestrictedResolutionChanged(
+          scale_counter_[reason] > 1);
+      break;
+    case kCpu:
+      // Update stats accordingly.
+      stats_proxy_->OnCpuRestrictedResolutionChanged(scale_counter_[reason] >
+                                                     1);
+      break;
+  }
+  max_pixel_count_ = rtc::Optional<int>();
+  max_pixel_count_step_up_ = rtc::Optional<int>(current_pixel_count);
+  --scale_counter_[reason];
+  source_proxy_->RequestHigherResolutionThan(current_pixel_count);
+  LOG(LS_INFO) << "Scaling up resolution.";
+  for (size_t i = 0; i < kScaleReasonSize; ++i) {
+    LOG(LS_INFO) << "Scaled " << scale_counter_[i]
+                 << " times for reason: " << (i ? "quality" : "cpu");
   }
 }
 

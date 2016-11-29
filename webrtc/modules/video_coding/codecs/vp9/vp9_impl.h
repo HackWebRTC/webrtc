@@ -49,8 +49,6 @@ class VP9EncoderImpl : public VP9Encoder {
   int SetRateAllocation(const BitrateAllocation& bitrate_allocation,
                         uint32_t frame_rate) override;
 
-  void OnDroppedFrame() override {}
-
   const char* ImplementationName() const override;
 
   struct LayerFrameRefSettings {

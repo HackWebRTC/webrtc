@@ -235,9 +235,6 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   // TODO(pbos): Base init params on these values before submitting.
-  quality_scaler_.Init(codec_settings->codecType, codec_settings->startBitrate,
-                       codec_settings->width, codec_settings->height,
-                       codec_settings->maxFramerate);
   int video_format = EVideoFormatType::videoFormatI420;
   openh264_encoder_->SetOption(ENCODER_OPTION_DATAFORMAT,
                                &video_format);
@@ -279,7 +276,6 @@ int32_t H264EncoderImpl::SetRateAllocation(
 
   target_bps_ = bitrate_allocation.get_sum_bps();
   max_frame_rate_ = static_cast<float>(framerate);
-  quality_scaler_.ReportFramerate(framerate);
 
   SBitrateInfo target_bitrate;
   memset(&target_bitrate, 0, sizeof(SBitrateInfo));
@@ -309,20 +305,6 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  quality_scaler_.OnEncodeFrame(input_frame.width(), input_frame.height());
-  rtc::scoped_refptr<const VideoFrameBuffer> frame_buffer =
-      quality_scaler_.GetScaledBuffer(input_frame.video_frame_buffer());
-  if (frame_buffer->width() != width_ || frame_buffer->height() != height_) {
-    LOG(LS_INFO) << "Encoder reinitialized from " << width_ << "x" << height_
-                 << " to " << frame_buffer->width() << "x"
-                 << frame_buffer->height();
-    width_ = frame_buffer->width();
-    height_ = frame_buffer->height();
-    SEncParamExt encoder_params = CreateEncoderParams();
-    openh264_encoder_->SetOption(ENCODER_OPTION_SVC_ENCODE_PARAM_EXT,
-                                 &encoder_params);
-  }
-
   bool force_key_frame = false;
   if (frame_types != nullptr) {
     // We only support a single stream.
@@ -340,7 +322,8 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     // (If every frame is a key frame we get lag/delays.)
     openh264_encoder_->ForceIntraFrame(true);
   }
-
+  rtc::scoped_refptr<const VideoFrameBuffer> frame_buffer =
+      input_frame.video_frame_buffer();
   // EncodeFrame input.
   SSourcePicture picture;
   memset(&picture, 0, sizeof(SSourcePicture));
@@ -384,22 +367,16 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   // Encoder can skip frames to save bandwidth in which case
   // |encoded_image_._length| == 0.
   if (encoded_image_._length > 0) {
-    // Parse and report QP.
-    h264_bitstream_parser_.ParseBitstream(encoded_image_._buffer,
-                                          encoded_image_._length);
-    int qp = -1;
-    if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
-      quality_scaler_.ReportQP(qp);
-      encoded_image_.qp_ = qp;
-    }
-
     // Deliver encoded image.
     CodecSpecificInfo codec_specific;
     codec_specific.codecType = kVideoCodecH264;
     encoded_image_callback_->OnEncodedImage(encoded_image_, &codec_specific,
                                             &frag_header);
-  } else {
-    quality_scaler_.ReportDroppedFrame();
+
+    // Parse and report QP.
+    h264_bitstream_parser_.ParseBitstream(encoded_image_._buffer,
+                                          encoded_image_._length);
+    h264_bitstream_parser_.GetLastSliceQp(&encoded_image_.qp_);
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -500,8 +477,8 @@ int32_t H264EncoderImpl::SetPeriodicKeyFrames(bool enable) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void H264EncoderImpl::OnDroppedFrame() {
-  quality_scaler_.ReportDroppedFrame();
+VideoEncoder::ScalingSettings H264EncoderImpl::GetScalingSettings() const {
+  return VideoEncoder::ScalingSettings(true);
 }
 
 }  // namespace webrtc

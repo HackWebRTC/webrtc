@@ -37,6 +37,7 @@
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/logcat_trace_context.h"
+#include "webrtc/video_encoder.h"
 
 using rtc::Bind;
 using rtc::Thread;
@@ -120,8 +121,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // rtc::MessageHandler implementation.
   void OnMessage(rtc::Message* msg) override;
 
-  void OnDroppedFrame() override;
-
   bool SupportsNativeHandle() const override { return egl_context_ != nullptr; }
   const char* ImplementationName() const override;
 
@@ -168,7 +167,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
       webrtc::EncodedImageCallback* callback);
   int32_t ReleaseOnCodecThread();
   int32_t SetRatesOnCodecThread(uint32_t new_bit_rate, uint32_t frame_rate);
-  void OnDroppedFrameOnCodecThread();
 
   // Helper accessors for MediaCodecVideoEncoder$OutputBufferInfo members.
   int GetOutputBufferInfoIndex(JNIEnv* jni, jobject j_output_buffer_info);
@@ -183,6 +181,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
 
   // Search for H.264 start codes.
   int32_t NextNaluPosition(uint8_t *buffer, size_t buffer_size);
+
+  VideoEncoder::ScalingSettings GetScalingSettings() const override;
 
   // Displays encoder statistics.
   void LogStatistics(bool force_log);
@@ -269,13 +269,9 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // True only when between a callback_->OnEncodedImage() call return a positive
   // value and the next Encode() call being ignored.
   bool drop_next_input_frame_;
+  bool scale_;
   // Global references; must be deleted in Release().
   std::vector<jobject> input_buffers_;
-  QualityScaler quality_scaler_;
-  // Dynamic resolution change, off by default.
-  bool scale_;
-
-  // H264 bitstream parser, used to extract QP from encoded bitstreams.
   webrtc::H264BitstreamParser h264_bitstream_parser_;
 
   // VP9 variables to populate codec specific structure.
@@ -416,23 +412,6 @@ int32_t MediaCodecVideoEncoder::InitEncode(
 
   ALOGD << "InitEncode request: " << init_width << " x " << init_height;
   ALOGD << "Encoder automatic resize " << (scale_ ? "enabled" : "disabled");
-
-  if (scale_) {
-    if (codec_type == kVideoCodecVP8 || codec_type == kVideoCodecH264) {
-      quality_scaler_.Init(codec_type, codec_settings->startBitrate,
-                           codec_settings->width, codec_settings->height,
-                           codec_settings->maxFramerate);
-    } else {
-      // When adding codec support to additional hardware codecs, also configure
-      // their QP thresholds for scaling.
-      RTC_NOTREACHED() << "Unsupported codec without configured QP thresholds.";
-      scale_ = false;
-    }
-    QualityScaler::Resolution res = quality_scaler_.GetScaledResolution();
-    init_width = res.width;
-    init_height = res.height;
-    ALOGD << "Scaled resolution: " << init_width << " x " << init_height;
-  }
 
   return codec_thread_->Invoke<int32_t>(
       RTC_FROM_HERE,
@@ -715,7 +694,6 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
     drop_next_input_frame_ = false;
     current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
     frames_dropped_media_encoder_++;
-    OnDroppedFrameOnCodecThread();
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
@@ -737,32 +715,12 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       return ProcessHWErrorOnEncodeOnCodecThread();
     }
     frames_dropped_media_encoder_++;
-    OnDroppedFrameOnCodecThread();
     return WEBRTC_VIDEO_CODEC_OK;
   }
   consecutive_full_queue_frame_drops_ = 0;
 
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> input_buffer(
       frame.video_frame_buffer());
-  if (scale_) {
-    // Check framerate before spatial resolution change.
-    quality_scaler_.OnEncodeFrame(frame.width(), frame.height());
-    const webrtc::QualityScaler::Resolution scaled_resolution =
-        quality_scaler_.GetScaledResolution();
-    if (scaled_resolution.width != frame.width() ||
-        scaled_resolution.height != frame.height()) {
-      if (input_buffer->native_handle() != nullptr) {
-        input_buffer = static_cast<AndroidTextureBuffer*>(input_buffer.get())
-                           ->CropScaleAndRotate(frame.width(), frame.height(),
-                                                0, 0,
-                                                scaled_resolution.width,
-                                                scaled_resolution.height,
-                                                webrtc::kVideoRotation_0);
-      } else {
-        input_buffer = quality_scaler_.GetScaledBuffer(input_buffer);
-      }
-    }
-  }
 
   VideoFrame input_frame(input_buffer, frame.timestamp(),
                          frame.render_time_ms(), frame.rotation());
@@ -788,7 +746,6 @@ int32_t MediaCodecVideoEncoder::EncodeOnCodecThread(
       if (frames_received_ > 1) {
         current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
         frames_dropped_media_encoder_++;
-        OnDroppedFrameOnCodecThread();
       } else {
         // Input buffers are not ready after codec initialization, HW is still
         // allocating thme - this is expected and should not result in drop
@@ -969,9 +926,6 @@ int32_t MediaCodecVideoEncoder::SetRatesOnCodecThread(uint32_t new_bit_rate,
       last_set_fps_ == frame_rate) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
-  if (scale_) {
-    quality_scaler_.ReportFramerate(frame_rate);
-  }
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   if (new_bit_rate > 0) {
@@ -1086,9 +1040,6 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       image->_frameType =
           (key_frame ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta);
       image->_completeFrame = true;
-      image->adapt_reason_.quality_resolution_downscales =
-          scale_ ? quality_scaler_.downscale_shift() : -1;
-
       webrtc::CodecSpecificInfo info;
       memset(&info, 0, sizeof(info));
       info.codecType = codec_type;
@@ -1135,23 +1086,19 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         header.fragmentationLength[0] = image->_length;
         header.fragmentationPlType[0] = 0;
         header.fragmentationTimeDiff[0] = 0;
-        if (codec_type == kVideoCodecVP8 && scale_) {
+        if (codec_type == kVideoCodecVP8) {
           int qp;
           if (webrtc::vp8::GetQp(payload, payload_size, &qp)) {
             current_acc_qp_ += qp;
-            quality_scaler_.ReportQP(qp);
             image->qp_ = qp;
           }
         }
       } else if (codec_type == kVideoCodecH264) {
-        if (scale_) {
-          h264_bitstream_parser_.ParseBitstream(payload, payload_size);
-          int qp;
-          if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
-            current_acc_qp_ += qp;
-            quality_scaler_.ReportQP(qp);
-            image->qp_ = qp;
-          }
+        h264_bitstream_parser_.ParseBitstream(payload, payload_size);
+        int qp;
+        if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
+          current_acc_qp_ += qp;
+          image->qp_ = qp;
         }
         // For H.264 search for start codes.
         int32_t scPositions[MAX_NALUS_PERFRAME + 1] = {};
@@ -1252,6 +1199,11 @@ void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
   }
 }
 
+webrtc::VideoEncoder::ScalingSettings
+MediaCodecVideoEncoder::GetScalingSettings() const {
+  return VideoEncoder::ScalingSettings(scale_);
+}
+
 int32_t MediaCodecVideoEncoder::NextNaluPosition(
     uint8_t *buffer, size_t buffer_size) {
   if (buffer_size < H264_SC_LENGTH) {
@@ -1282,22 +1234,6 @@ int32_t MediaCodecVideoEncoder::NextNaluPosition(
     return (int32_t)(head - buffer);
   }
   return -1;
-}
-
-void MediaCodecVideoEncoder::OnDroppedFrame() {
-  // Methods running on the codec thread should call OnDroppedFrameOnCodecThread
-  // directly.
-  RTC_DCHECK(!codec_thread_checker_.CalledOnValidThread());
-  codec_thread_->Invoke<void>(
-      RTC_FROM_HERE,
-      Bind(&MediaCodecVideoEncoder::OnDroppedFrameOnCodecThread, this));
-}
-
-void MediaCodecVideoEncoder::OnDroppedFrameOnCodecThread() {
-  RTC_DCHECK(codec_thread_checker_.CalledOnValidThread());
-  // Report dropped frame to quality_scaler_.
-  if (scale_)
-    quality_scaler_.ReportDroppedFrame();
 }
 
 const char* MediaCodecVideoEncoder::ImplementationName() const {

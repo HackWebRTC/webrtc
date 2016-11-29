@@ -55,17 +55,17 @@ class H264EncoderImpl : public H264Encoder {
 
   const char* ImplementationName() const override;
 
+  VideoEncoder::ScalingSettings GetScalingSettings() const override;
+
   // Unsupported / Do nothing.
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int32_t SetPeriodicKeyFrames(bool enable) override;
-  void OnDroppedFrame() override;
 
  private:
   bool IsInitialized() const;
   SEncParamExt CreateEncoderParams() const;
 
   webrtc::H264BitstreamParser h264_bitstream_parser_;
-  QualityScaler quality_scaler_;
   // Reports statistics with histograms.
   void ReportInit();
   void ReportError();

@@ -451,10 +451,6 @@ bool SimulcastEncoderAdapter::Initialized() const {
   return !streaminfos_.empty();
 }
 
-void SimulcastEncoderAdapter::OnDroppedFrame() {
-  streaminfos_[0].encoder->OnDroppedFrame();
-}
-
 bool SimulcastEncoderAdapter::SupportsNativeHandle() const {
   // We should not be calling this method before streaminfos_ are configured.
   RTC_DCHECK(!streaminfos_.empty());
@@ -463,6 +459,14 @@ bool SimulcastEncoderAdapter::SupportsNativeHandle() const {
       return false;
   }
   return true;
+}
+
+VideoEncoder::ScalingSettings SimulcastEncoderAdapter::GetScalingSettings()
+    const {
+  // Turn off quality scaling for simulcast.
+  if (NumberOfStreams(codec_) != 1)
+    return VideoEncoder::ScalingSettings(false);
+  return streaminfos_[0].encoder->GetScalingSettings();
 }
 
 const char* SimulcastEncoderAdapter::ImplementationName() const {

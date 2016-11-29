@@ -159,16 +159,15 @@ int32_t VideoEncoderSoftwareFallbackWrapper::SetRateAllocation(
   return ret;
 }
 
-void VideoEncoderSoftwareFallbackWrapper::OnDroppedFrame() {
-  if (fallback_encoder_)
-    return fallback_encoder_->OnDroppedFrame();
-  return encoder_->OnDroppedFrame();
-}
-
 bool VideoEncoderSoftwareFallbackWrapper::SupportsNativeHandle() const {
   if (fallback_encoder_)
     return fallback_encoder_->SupportsNativeHandle();
   return encoder_->SupportsNativeHandle();
+}
+
+VideoEncoder::ScalingSettings
+VideoEncoderSoftwareFallbackWrapper::GetScalingSettings() const {
+  return encoder_->GetScalingSettings();
 }
 
 }  // namespace webrtc

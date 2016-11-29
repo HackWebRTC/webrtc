@@ -1465,7 +1465,13 @@ class P2PTestConductor : public testing::Test {
     FakeConstraints setup_constraints;
     setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
                                    true);
-    ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
+    // Disable resolution adaptation, we don't want it interfering with the
+    // test results.
+    webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
+    rtc_config.set_cpu_adaptation(false);
+
+    ASSERT_TRUE(CreateTestClients(&setup_constraints, nullptr, &rtc_config,
+                                  &setup_constraints, nullptr, &rtc_config));
     LocalP2PTest();
     VerifyRenderedSize(640, 480);
   }
@@ -1474,6 +1480,10 @@ class P2PTestConductor : public testing::Test {
     FakeConstraints setup_constraints;
     setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
                                    true);
+    // Disable resolution adaptation, we don't want it interfering with the
+    // test results.
+    webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
+    rtc_config.set_cpu_adaptation(false);
 
     std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
         rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
@@ -1482,7 +1492,7 @@ class P2PTestConductor : public testing::Test {
 
     // Make sure the new client is using a different certificate.
     return PeerConnectionTestClient::CreateClientWithDtlsIdentityStore(
-        "New Peer: ", &setup_constraints, nullptr, nullptr,
+        "New Peer: ", &setup_constraints, nullptr, &rtc_config,
         std::move(cert_generator), prefer_constraint_apis_,
         network_thread_.get(), worker_thread_.get());
   }

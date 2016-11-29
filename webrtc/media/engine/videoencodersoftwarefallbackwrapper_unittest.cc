@@ -74,8 +74,6 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
       return WEBRTC_VIDEO_CODEC_OK;
     }
 
-    void OnDroppedFrame() override { ++on_dropped_frame_count_; }
-
     bool SupportsNativeHandle() const override {
       ++supports_native_handle_count_;
       return false;
@@ -93,7 +91,6 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
     int release_count_ = 0;
     int set_channel_parameters_count_ = 0;
     int set_rates_count_ = 0;
-    int on_dropped_frame_count_ = 0;
     mutable int supports_native_handle_count_ = 0;
   };
 
@@ -267,20 +264,6 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
   EXPECT_EQ(1, fake_encoder_.set_rates_count_);
   fallback_wrapper_.SetRateAllocation(BitrateAllocation(), 1);
   EXPECT_EQ(2, fake_encoder_.set_rates_count_);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.Release());
-}
-
-TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
-       OnDroppedFrameForwardedWithoutFallback) {
-  fallback_wrapper_.OnDroppedFrame();
-  EXPECT_EQ(1, fake_encoder_.on_dropped_frame_count_);
-}
-
-TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
-       OnDroppedFrameNotForwardedDuringFallback) {
-  UtilizeFallbackEncoder();
-  fallback_wrapper_.OnDroppedFrame();
-  EXPECT_EQ(0, fake_encoder_.on_dropped_frame_count_);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.Release());
 }
 

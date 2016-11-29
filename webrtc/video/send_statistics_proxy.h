@@ -57,12 +57,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
 
-  // Used to indicate that the current input frame resolution is restricted due
-  // to cpu usage.
-  void SetCpuRestrictedResolution(bool cpu_restricted);
-  // Used to update the number of times the input frame resolution has changed
-  // due to cpu adaptation.
   void OnCpuRestrictedResolutionChanged(bool cpu_restricted_resolution);
+  void OnQualityRestrictedResolutionChanged(bool restricted);
+  void SetResolutionRestrictionStats(bool bandwidth, bool cpu);
 
   void OnEncoderStatsUpdate(uint32_t framerate, uint32_t bitrate);
   void OnSuspendChange(bool is_suspended);
