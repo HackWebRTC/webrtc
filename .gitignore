@@ -63,7 +63,9 @@
 /resources/**/*.rtp
 /resources/**/*.rtpdump
 /resources/**/*.rx
+/resources/**/*.txt
 /resources/**/*.wav
+/resources/**/*.y4m
 /resources/**/*.yuv
 /resources/**/*.BIT*
 /resources/**/*.INP
