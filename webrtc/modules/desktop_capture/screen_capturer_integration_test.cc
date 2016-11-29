@@ -32,6 +32,7 @@
 #include "webrtc/test/gtest.h"
 
 #if defined(WEBRTC_WIN)
+#include "webrtc/base/win32.h"
 #include "webrtc/modules/desktop_capture/win/screen_capturer_win_directx.h"
 #endif  // defined(WEBRTC_WIN)
 
@@ -89,7 +90,14 @@ class ScreenCapturerIntegrationTest : public testing::Test {
     RTC_DCHECK(capturers.size() > 0);
     // A large enough area for the tests, which should be able to be fulfilled
     // by most systems.
+#if defined(WEBRTC_WIN)
+    // On Windows, an interesting warning window may pop up randomly. The root
+    // cause is still under investigation, so reduce the test area to work
+    // around. Bug https://bugs.chromium.org/p/webrtc/issues/detail?id=6666.
+    const int kTestArea = 416;
+#else
     const int kTestArea = 512;
+#endif
     const int kRectSize = 32;
     std::unique_ptr<ScreenDrawer> drawer = ScreenDrawer::Create();
     if (!drawer || drawer->DrawableRegion().is_empty()) {
@@ -217,7 +225,7 @@ class ScreenCapturerIntegrationTest : public testing::Test {
           std::cout << frame->size().width() << " x " << frame->size().height()
                     << std::endl;
           // Split the entire string (can be over 4M) into several lines to
-          // avoid browser from stucking.
+          // avoid browser from sticking.
           static const size_t kLineLength = 32768;
           const char* result_end = result.c_str() + result.length();
           for (const char* it = result.c_str();
@@ -227,11 +235,22 @@ class ScreenCapturerIntegrationTest : public testing::Test {
             std::cout << std::string(it, std::min(kLineLength, max_length))
                       << std::endl;
           }
+          std::cout << "Failed to capture rectangle " << rect.left() << " x "
+                    << rect.top() << " - " << rect.right() << " x "
+                    << rect.bottom() << " with color ("
+                    << static_cast<int>(color.red) << ", "
+                    << static_cast<int>(color.green) << ", "
+                    << static_cast<int>(color.blue) << ", "
+                    << static_cast<int>(color.alpha) << ")" << std::endl;
           ASSERT_TRUE(false) << "ScreenCapturerIntegrationTest may be flaky. "
-                                "Please kindly FYI the broken link to "
-                                "zijiehe@chromium.org for investigation. If I "
-                                "have not responded as quick as expected, "
-                                "disable *all* tests in "
+                                "If the error message above is "
+                                "\"////AP///wD///8A\", it's a known issue, "
+                                "which should be able to recover by rerunning "
+                                "the test. Otherwise please kindly FYI the "
+                                "broken link to zijiehe@chromium.org for "
+                                "investigation. If the failure continually "
+                                "happens, but I have not responded as quick as "
+                                "expected, disable *all* tests in "
                                 "screen_capturer_integration_test.cc to "
                                 "unblock other developers.";
         }
@@ -257,15 +276,11 @@ class ScreenCapturerIntegrationTest : public testing::Test {
   }
 };
 
-// Disabled because it's flaky.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
-TEST_F(ScreenCapturerIntegrationTest, DISABLED_CaptureUpdatedRegion) {
+TEST_F(ScreenCapturerIntegrationTest, CaptureUpdatedRegion) {
   TestCaptureUpdatedRegion();
 }
 
-// Disabled because it's flaky.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
-TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoCapturers) {
+TEST_F(ScreenCapturerIntegrationTest, TwoCapturers) {
   std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
   SetUp();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
@@ -273,10 +288,8 @@ TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoCapturers) {
 
 #if defined(WEBRTC_WIN)
 
-// Disabled because it's flaky.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
 TEST_F(ScreenCapturerIntegrationTest,
-       DISABLED_CaptureUpdatedRegionWithDirectxCapturer) {
+       CaptureUpdatedRegionWithDirectxCapturer) {
   if (!CreateDirectxCapturer()) {
     return;
   }
@@ -284,9 +297,7 @@ TEST_F(ScreenCapturerIntegrationTest,
   TestCaptureUpdatedRegion();
 }
 
-// Disabled because it's flaky.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
-TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoDirectxCapturers) {
+TEST_F(ScreenCapturerIntegrationTest, TwoDirectxCapturers) {
   if (!CreateDirectxCapturer()) {
     return;
   }
@@ -296,27 +307,37 @@ TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoDirectxCapturers) {
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
 
-// Disabled because it's flaky.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
 TEST_F(ScreenCapturerIntegrationTest,
-       DISABLED_CaptureUpdatedRegionWithMagnifierCapturer) {
+       CaptureUpdatedRegionWithMagnifierCapturer) {
+  // On Windows 8 or later, magnifier APIs return a frame with a border on test
+  // environment, so disable these tests.
+  // Bug https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
+  // TODO(zijiehe): Find the root cause of the border and failure, which cannot
+  // reproduce on my dev machine.
+  if (rtc::IsWindows8OrLater()) {
+    return;
+  }
   CreateMagnifierCapturer();
   TestCaptureUpdatedRegion();
 }
 
-// Disabled because it's flaky.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
-TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoMagnifierCapturers) {
+TEST_F(ScreenCapturerIntegrationTest, TwoMagnifierCapturers) {
+  // On Windows 8 or later, magnifier APIs return a frame with a border on test
+  // environment, so disable these tests.
+  // Bug https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
+  // TODO(zijiehe): Find the root cause of the border and failure, which cannot
+  // reproduce on my dev machine.
+  if (rtc::IsWindows8OrLater()) {
+    return;
+  }
   CreateMagnifierCapturer();
   std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
   CreateMagnifierCapturer();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
 }
 
-// Disabled because it's flaky.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
 TEST_F(ScreenCapturerIntegrationTest,
-       DISABLED_MaybeCaptureUpdatedRegionWithDirectxCapturer) {
+       MaybeCaptureUpdatedRegionWithDirectxCapturer) {
   // Even DirectX capturer is not supported in current system, we should be able
   // to select a usable capturer.
   MaybeCreateDirectxCapturer();
