@@ -10,7 +10,6 @@ include_rules = [
   "-webrtc",  # Has to be disabled; otherwise all dirs below will be allowed.
   # Individual headers that will be moved out of here, see webrtc:4243.
   "+webrtc/call.h",
-  "+webrtc/common.h",
   "+webrtc/common_types.h",
   "+webrtc/common_video/rotation.h",
   "+webrtc/config.h",
@@ -20,7 +19,6 @@ include_rules = [
   "+webrtc/video_encoder.h",
   "+webrtc/video_frame.h",
   "+webrtc/video_receive_stream.h",
-  "+webrtc/video_renderer.h",
   "+webrtc/video_send_stream.h",
   "+webrtc/voice_engine_configurations.h",
 
