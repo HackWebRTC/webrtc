@@ -291,8 +291,15 @@ bool VCMDecodingState::UsingPictureId(const VCMFrameBuffer* frame) const {
 }
 
 bool VCMDecodingState::UsingFlexibleMode(const VCMFrameBuffer* frame) const {
-  return frame->CodecSpecific()->codecType == kVideoCodecVP9 &&
-         frame->CodecSpecific()->codecSpecific.VP9.flexible_mode;
+  bool is_flexible_mode =
+      frame->CodecSpecific()->codecType == kVideoCodecVP9 &&
+      frame->CodecSpecific()->codecSpecific.VP9.flexible_mode;
+  if (is_flexible_mode && frame->PictureId() == kNoPictureId) {
+    LOG(LS_WARNING) << "Frame is marked as using flexible mode but no"
+                    << "picture id is set.";
+    return false;
+  }
+  return is_flexible_mode;
 }
 
 // TODO(philipel): change how check work, this check practially
