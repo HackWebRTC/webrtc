@@ -15,6 +15,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -92,10 +93,14 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   if (decode_ms != -1)
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.DecodeTimeInMs", decode_ms);
 
-  int jb_delay_ms = jitter_buffer_delay_counter_.Avg(kMinRequiredDecodeSamples);
-  if (jb_delay_ms != -1) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.JitterBufferDelayInMs",
-                               jb_delay_ms);
+  if (field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") !=
+        "Enabled") {
+    int jb_delay_ms =
+        jitter_buffer_delay_counter_.Avg(kMinRequiredDecodeSamples);
+    if (jb_delay_ms != -1) {
+      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.JitterBufferDelayInMs",
+                                 jb_delay_ms);
+    }
   }
   int target_delay_ms = target_delay_counter_.Avg(kMinRequiredDecodeSamples);
   if (target_delay_ms != -1) {

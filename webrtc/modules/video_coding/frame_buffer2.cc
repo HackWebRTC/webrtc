@@ -45,9 +45,7 @@ FrameBuffer::FrameBuffer(Clock* clock,
       num_frames_history_(0),
       num_frames_buffered_(0),
       stopped_(false),
-      protection_mode_(kProtectionNack),
-      num_total_frames_(0),
-      num_key_frames_(0) {}
+      protection_mode_(kProtectionNack) {}
 
 FrameBuffer::~FrameBuffer() {
   UpdateHistograms();
@@ -132,6 +130,8 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
     timing_->UpdateCurrentDelay(frame->RenderTime(),
                                 clock_->TimeInMilliseconds());
+
+    UpdateJitterDelay();
 
     PropagateDecodability(next_frame_it->second);
     AdvanceLastDecodedFrame(next_frame_it);
@@ -364,6 +364,16 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
   return true;
 }
 
+void FrameBuffer::UpdateJitterDelay() {
+  int unused;
+  int delay;
+  timing_->GetTimings(&unused, &unused, &unused, &unused, &delay, &unused,
+                      &unused);
+
+  accumulated_delay_ += delay;
+  ++accumulated_delay_samples_;
+}
+
 void FrameBuffer::UpdateHistograms() const {
   rtc::CritScope lock(&crit_);
   if (num_total_frames_ > 0) {
@@ -372,6 +382,11 @@ void FrameBuffer::UpdateHistograms() const {
                                0.5f);
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesReceivedInPermille",
                               key_frames_permille);
+  }
+
+  if (accumulated_delay_samples_ > 0) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.JitterBufferDelayInMs",
+                               accumulated_delay_ / accumulated_delay_samples_);
   }
 }
 
