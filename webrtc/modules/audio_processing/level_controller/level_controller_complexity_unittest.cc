@@ -184,25 +184,40 @@ TEST(LevelControllerPerformanceTest, StandaloneProcessing) {
   }
 }
 
+void TestSomeSampleRatesWithApm(const std::string& test_name,
+                                bool use_mobile_agc,
+                                bool include_default_apm_processing) {
+  // Test some stereo combinations first.
+  size_t num_channels = 2;
+  RunTogetherWithApm(test_name, 48000, 48000, AudioProcessing::kSampleRate8kHz,
+                     AudioProcessing::kSampleRate48kHz, num_channels,
+                     use_mobile_agc, include_default_apm_processing);
+  RunTogetherWithApm(test_name, 48000, 48000, AudioProcessing::kSampleRate16kHz,
+                     AudioProcessing::kSampleRate32kHz, num_channels,
+                     use_mobile_agc, include_default_apm_processing);
+  RunTogetherWithApm(test_name, 48000, 48000, AudioProcessing::kSampleRate32kHz,
+                     AudioProcessing::kSampleRate16kHz, num_channels,
+                     use_mobile_agc, include_default_apm_processing);
+  RunTogetherWithApm(test_name, 48000, 48000, AudioProcessing::kSampleRate48kHz,
+                     AudioProcessing::kSampleRate8kHz, num_channels,
+                     use_mobile_agc, include_default_apm_processing);
+  RunTogetherWithApm(test_name, 48000, 48000, 44100, 44100, num_channels,
+                     use_mobile_agc, include_default_apm_processing);
+
+  // Then test mono combinations.
+  num_channels = 1;
+  RunTogetherWithApm(test_name, 48000, 48000, AudioProcessing::kSampleRate48kHz,
+                     AudioProcessing::kSampleRate48kHz, num_channels,
+                     use_mobile_agc, include_default_apm_processing);
+}
+
 #if !defined(WEBRTC_ANDROID)
 TEST(LevelControllerPerformanceTest, ProcessingViaApm) {
 #else
 TEST(LevelControllerPerformanceTest, DISABLED_ProcessingViaApm) {
 #endif
-  int sample_rates_to_test[] = {AudioProcessing::kSampleRate8kHz,
-                                AudioProcessing::kSampleRate16kHz,
-                                AudioProcessing::kSampleRate32kHz,
-                                AudioProcessing::kSampleRate48kHz, 44100};
-  for (auto capture_input_sample_rate_hz : sample_rates_to_test) {
-    for (auto capture_output_sample_rate_hz : sample_rates_to_test) {
-      for (size_t num_channels = 1; num_channels <= 2; ++num_channels) {
-        RunTogetherWithApm("SimpleLevelControlViaApm", 48000, 48000,
-                           capture_input_sample_rate_hz,
-                           capture_output_sample_rate_hz, num_channels, false,
-                           false);
-      }
-    }
-  }
+  // Run without default APM processing and desktop AGC.
+  TestSomeSampleRatesWithApm("SimpleLevelControlViaApm", false, false);
 }
 
 #if !defined(WEBRTC_ANDROID)
@@ -210,24 +225,11 @@ TEST(LevelControllerPerformanceTest, InteractionWithDefaultApm) {
 #else
 TEST(LevelControllerPerformanceTest, DISABLED_InteractionWithDefaultApm) {
 #endif
-  int sample_rates_to_test[] = {AudioProcessing::kSampleRate8kHz,
-                                AudioProcessing::kSampleRate16kHz,
-                                AudioProcessing::kSampleRate32kHz,
-                                AudioProcessing::kSampleRate48kHz, 44100};
-  for (auto capture_input_sample_rate_hz : sample_rates_to_test) {
-    for (auto capture_output_sample_rate_hz : sample_rates_to_test) {
-      for (size_t num_channels = 1; num_channels <= 2; ++num_channels) {
-        RunTogetherWithApm("LevelControlAndDefaultDesktopApm", 48000, 48000,
-                           capture_input_sample_rate_hz,
-                           capture_output_sample_rate_hz, num_channels, false,
-                           true);
-        RunTogetherWithApm("LevelControlAndDefaultMobileApm", 48000, 48000,
-                           capture_input_sample_rate_hz,
-                           capture_output_sample_rate_hz, num_channels, true,
-                           true);
-      }
-    }
-  }
+  bool include_default_apm_processing = true;
+  TestSomeSampleRatesWithApm("LevelControlAndDefaultDesktopApm", false,
+                             include_default_apm_processing);
+  TestSomeSampleRatesWithApm("LevelControlAndDefaultMobileApm", true,
+                             include_default_apm_processing);
 }
 
 }  // namespace webrtc
