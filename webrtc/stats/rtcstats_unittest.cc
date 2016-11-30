@@ -167,7 +167,7 @@ TEST(RTCStatsTest, EqualityOperator) {
   RTCTestStats empty_stats_different_id("testId2", 123);
   EXPECT_NE(empty_stats, empty_stats_different_id);
   RTCTestStats empty_stats_different_timestamp("testId", 321);
-  EXPECT_NE(empty_stats, empty_stats_different_timestamp);
+  EXPECT_EQ(empty_stats, empty_stats_different_timestamp);
 
   RTCChildStats child("childId", 42);
   RTCGrandChildStats grandchild("grandchildId", 42);

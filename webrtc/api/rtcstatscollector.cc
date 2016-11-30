@@ -603,6 +603,8 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
   RTC_DCHECK(signaling_thread_->IsCurrent());
   for (const auto& transport_stats : session_stats.transport_stats) {
     for (const auto& channel_stats : transport_stats.second.channel_stats) {
+      std::string transport_id = RTCTransportStatsIDFromTransportChannel(
+          transport_stats.second.transport_name, channel_stats.component);
       for (const cricket::ConnectionInfo& info :
            channel_stats.connection_infos) {
         std::unique_ptr<RTCIceCandidatePairStats> candidate_pair_stats(
@@ -610,6 +612,7 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
                 RTCIceCandidatePairStatsIDFromConnectionInfo(info),
                 timestamp_us));
 
+        candidate_pair_stats->transport_id = transport_id;
         // TODO(hbos): There could be other candidates that are not paired with
         // anything. We don't have a complete list. Local candidates come from
         // Port objects, and prflx candidates (both local and remote) are only
@@ -618,7 +621,6 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
             timestamp_us, info.local_candidate, true, report);
         candidate_pair_stats->remote_candidate_id = ProduceIceCandidateStats(
             timestamp_us, info.remote_candidate, false, report);
-
         // TODO(hbos): This writable is different than the spec. It goes to
         // false after a certain amount of time without a response passes.
         // crbug.com/633550

@@ -115,7 +115,6 @@ class RTCIceCandidatePairStats final : public RTCStats {
   RTCIceCandidatePairStats(const RTCIceCandidatePairStats& other);
   ~RTCIceCandidatePairStats() override;
 
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550, 653873
   RTCStatsMember<std::string> transport_id;
   RTCStatsMember<std::string> local_candidate_id;
   RTCStatsMember<std::string> remote_candidate_id;

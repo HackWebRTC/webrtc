@@ -67,7 +67,8 @@ class RTCStats {
   // |Members| always returns the same members in the same order.
   std::vector<const RTCStatsMemberInterface*> Members() const;
   // Checks if the two stats objects are of the same type and have the same
-  // member values. These operators are exposed for testing.
+  // member values. Timestamps are not compared. These operators are exposed for
+  // testing.
   bool operator==(const RTCStats& other) const;
   bool operator!=(const RTCStats& other) const;
 

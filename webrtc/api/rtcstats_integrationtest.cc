@@ -321,7 +321,8 @@ class RTCStatsReportVerifier {
   bool VerifyRTCIceCandidatePairStats(
       const RTCIceCandidatePairStats& candidate_pair) {
     RTCStatsVerifier verifier(report_, &candidate_pair);
-    verifier.TestMemberIsUndefined(candidate_pair.transport_id);
+    verifier.TestMemberIsIDReference(
+        candidate_pair.transport_id, RTCTransportStats::kType);
     verifier.TestMemberIsIDReference(
         candidate_pair.local_candidate_id, RTCLocalIceCandidateStats::kType);
     verifier.TestMemberIsIDReference(

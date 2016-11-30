@@ -516,68 +516,6 @@ class RTCStatsCollectorTest : public testing::Test {
     return candidate_stats;
   }
 
-  void ExpectReportContainsCandidatePair(
-      const rtc::scoped_refptr<const RTCStatsReport>& report,
-      const cricket::TransportStats& transport_stats) {
-    for (const auto& channel_stats : transport_stats.channel_stats) {
-      for (const cricket::ConnectionInfo& info :
-           channel_stats.connection_infos) {
-        const std::string& id = "RTCIceCandidatePair_" +
-            info.local_candidate.id() + "_" + info.remote_candidate.id();
-        const RTCStats* stats = report->Get(id);
-        ASSERT_TRUE(stats);
-        const RTCIceCandidatePairStats& candidate_pair_stats =
-            stats->cast_to<RTCIceCandidatePairStats>();
-
-        // TODO(hbos): Define all the undefined |candidate_pair_stats| stats.
-        // The EXPECT_FALSE are for the undefined stats, see also todos listed
-        // in rtcstats_objects.h. crbug.com/633550
-        EXPECT_FALSE(candidate_pair_stats.transport_id.is_defined());
-        const RTCIceCandidateStats* local_candidate =
-            ExpectReportContainsCandidate(report, info.local_candidate, true);
-        EXPECT_EQ(*candidate_pair_stats.local_candidate_id,
-                  local_candidate->id());
-        const RTCIceCandidateStats* remote_candidate =
-            ExpectReportContainsCandidate(report, info.remote_candidate, false);
-        EXPECT_EQ(*candidate_pair_stats.remote_candidate_id,
-                  remote_candidate->id());
-
-        EXPECT_FALSE(candidate_pair_stats.state.is_defined());
-        EXPECT_FALSE(candidate_pair_stats.priority.is_defined());
-        EXPECT_FALSE(candidate_pair_stats.nominated.is_defined());
-        EXPECT_EQ(*candidate_pair_stats.writable, info.writable);
-        EXPECT_FALSE(candidate_pair_stats.readable.is_defined());
-        EXPECT_EQ(*candidate_pair_stats.bytes_sent,
-                  static_cast<uint64_t>(info.sent_total_bytes));
-        EXPECT_EQ(*candidate_pair_stats.bytes_received,
-                  static_cast<uint64_t>(info.recv_total_bytes));
-        EXPECT_FALSE(candidate_pair_stats.total_rtt.is_defined());
-        EXPECT_EQ(*candidate_pair_stats.current_rtt,
-                  static_cast<double>(info.rtt) / 1000.0);
-        EXPECT_FALSE(
-            candidate_pair_stats.available_outgoing_bitrate.is_defined());
-        EXPECT_FALSE(
-            candidate_pair_stats.available_incoming_bitrate.is_defined());
-        EXPECT_FALSE(candidate_pair_stats.requests_received.is_defined());
-        EXPECT_EQ(*candidate_pair_stats.requests_sent,
-                  static_cast<uint64_t>(info.sent_ping_requests_total));
-        EXPECT_EQ(*candidate_pair_stats.responses_received,
-                  static_cast<uint64_t>(info.recv_ping_responses));
-        EXPECT_EQ(*candidate_pair_stats.responses_sent,
-                  static_cast<uint64_t>(info.sent_ping_responses));
-        EXPECT_FALSE(
-            candidate_pair_stats.retransmissions_received.is_defined());
-        EXPECT_FALSE(candidate_pair_stats.retransmissions_sent.is_defined());
-        EXPECT_FALSE(
-            candidate_pair_stats.consent_requests_received.is_defined());
-        EXPECT_FALSE(candidate_pair_stats.consent_requests_sent.is_defined());
-        EXPECT_FALSE(
-            candidate_pair_stats.consent_responses_received.is_defined());
-        EXPECT_FALSE(candidate_pair_stats.consent_responses_sent.is_defined());
-      }
-    }
-  }
-
   void ExpectReportContainsCertificateInfo(
       const rtc::scoped_refptr<const RTCStatsReport>& report,
       const CertificateInfo& cert_info) {
@@ -595,72 +533,6 @@ class RTCStatsCollectorTest : public testing::Test {
                   "RTCCertificate_" + cert_info.fingerprints[i + 1]);
       } else {
         EXPECT_FALSE(cert_stats.issuer_certificate_id.is_defined());
-      }
-    }
-  }
-
-  void ExpectReportContainsTransportStats(
-      const rtc::scoped_refptr<const RTCStatsReport>& report,
-      const cricket::TransportStats& transport,
-      const CertificateInfo* local_certinfo,
-      const CertificateInfo* remote_certinfo) {
-    std::string rtcp_transport_stats_id;
-    for (const auto& channel_stats : transport.channel_stats) {
-      if (channel_stats.component == cricket::ICE_CANDIDATE_COMPONENT_RTCP) {
-        rtcp_transport_stats_id = "RTCTransport_" + transport.transport_name +
-            "_" + rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTCP);
-      }
-    }
-    for (const auto& channel_stats : transport.channel_stats) {
-      const cricket::ConnectionInfo* best_connection_info = nullptr;
-      const RTCStats* stats = report->Get(
-          "RTCTransport_" + transport.transport_name + "_" +
-          rtc::ToString<>(channel_stats.component));
-      ASSERT_TRUE(stats);
-      const RTCTransportStats& transport_stats =
-          stats->cast_to<const RTCTransportStats>();
-      uint64_t bytes_sent = 0;
-      uint64_t bytes_received = 0;
-      for (const cricket::ConnectionInfo& info :
-           channel_stats.connection_infos) {
-        bytes_sent += info.sent_total_bytes;
-        bytes_received += info.recv_total_bytes;
-        if (info.best_connection)
-          best_connection_info = &info;
-      }
-      EXPECT_EQ(*transport_stats.bytes_sent, bytes_sent);
-      EXPECT_EQ(*transport_stats.bytes_received, bytes_received);
-      if (best_connection_info) {
-        EXPECT_EQ(*transport_stats.active_connection, true);
-        // TODO(hbos): Instead of testing how the ID looks, test that the
-        // corresponding pair's IP addresses are equal to the IP addresses of
-        // the |best_connection_info| data. crbug.com/653873
-        EXPECT_EQ(*transport_stats.selected_candidate_pair_id,
-                  "RTCIceCandidatePair_" +
-                  best_connection_info->local_candidate.id() + "_" +
-                  best_connection_info->remote_candidate.id());
-        EXPECT_TRUE(report->Get(*transport_stats.selected_candidate_pair_id));
-      } else {
-        EXPECT_EQ(*transport_stats.active_connection, false);
-        EXPECT_FALSE(transport_stats.selected_candidate_pair_id.is_defined());
-      }
-      if (channel_stats.component != cricket::ICE_CANDIDATE_COMPONENT_RTCP &&
-          !rtcp_transport_stats_id.empty()) {
-        EXPECT_EQ(*transport_stats.rtcp_transport_stats_id,
-                  rtcp_transport_stats_id);
-      } else {
-        EXPECT_FALSE(transport_stats.rtcp_transport_stats_id.is_defined());
-      }
-      if (local_certinfo && remote_certinfo) {
-        EXPECT_EQ(*transport_stats.local_certificate_id,
-                  "RTCCertificate_" + local_certinfo->fingerprints[0]);
-        EXPECT_EQ(*transport_stats.remote_certificate_id,
-                  "RTCCertificate_" + remote_certinfo->fingerprints[0]);
-        EXPECT_TRUE(report->Get(*transport_stats.local_certificate_id));
-        EXPECT_TRUE(report->Get(*transport_stats.remote_certificate_id));
-      } else {
-        EXPECT_FALSE(transport_stats.local_certificate_id.is_defined());
-        EXPECT_FALSE(transport_stats.remote_certificate_id.is_defined());
       }
     }
   }
@@ -1138,6 +1010,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   connection_info.sent_ping_responses = 1000;
 
   cricket::TransportChannelStats transport_channel_stats;
+  transport_channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
   transport_channel_stats.connection_infos.push_back(connection_info);
   session_stats.transport_stats["transport"].transport_name = "transport";
   session_stats.transport_stats["transport"].channel_stats.push_back(
@@ -1151,8 +1024,35 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
       }));
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  ExpectReportContainsCandidatePair(
-      report, session_stats.transport_stats["transport"]);
+
+  RTCIceCandidatePairStats expected_pair("RTCIceCandidatePair_" +
+                                             local_candidate->id() + "_" +
+                                             remote_candidate->id(),
+                                         report->timestamp_us());
+  expected_pair.transport_id =
+      "RTCTransport_transport_" +
+      rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  expected_pair.local_candidate_id = "RTCIceCandidate_" + local_candidate->id();
+  expected_pair.remote_candidate_id =
+      "RTCIceCandidate_" + remote_candidate->id();
+  expected_pair.writable = true;
+  expected_pair.bytes_sent = 42;
+  expected_pair.bytes_received = 1234;
+  expected_pair.current_rtt = 1.337;
+  expected_pair.requests_sent = 1010;
+  expected_pair.responses_received = 4321;
+  expected_pair.responses_sent = 1000;
+
+  EXPECT_TRUE(report->Get(expected_pair.id()));
+  EXPECT_EQ(
+      expected_pair,
+      report->Get(expected_pair.id())->cast_to<RTCIceCandidatePairStats>());
+
+  EXPECT_TRUE(report->Get(*expected_pair.local_candidate_id));
+  ExpectReportContainsCandidate(report, connection_info.local_candidate, true);
+  EXPECT_TRUE(report->Get(*expected_pair.remote_candidate_id));
+  ExpectReportContainsCandidate(report, connection_info.remote_candidate,
+                                false);
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
@@ -1713,8 +1613,19 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
 
   // Get stats without RTCP, an active connection or certificates.
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  ExpectReportContainsTransportStats(
-      report, session_stats.transport_stats["transport"], nullptr, nullptr);
+
+  RTCTransportStats expected_rtp_transport(
+      "RTCTransport_transport_" +
+          rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP),
+      report->timestamp_us());
+  expected_rtp_transport.bytes_sent = 42;
+  expected_rtp_transport.bytes_received = 1337;
+  expected_rtp_transport.active_connection = false;
+
+  EXPECT_TRUE(report->Get(expected_rtp_transport.id()));
+  EXPECT_EQ(
+      expected_rtp_transport,
+      report->Get(expected_rtp_transport.id())->cast_to<RTCTransportStats>());
 
   cricket::ConnectionInfo rtcp_connection_info;
   rtcp_connection_info.best_connection = false;
@@ -1732,16 +1643,48 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
   collector_->ClearCachedStatsReport();
   // Get stats with RTCP and without an active connection or certificates.
   report = GetStatsReport();
-  ExpectReportContainsTransportStats(
-      report, session_stats.transport_stats["transport"], nullptr, nullptr);
+
+  RTCTransportStats expected_rtcp_transport(
+      "RTCTransport_transport_" +
+          rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTCP),
+      report->timestamp_us());
+  expected_rtcp_transport.bytes_sent = 1337;
+  expected_rtcp_transport.bytes_received = 42;
+  expected_rtcp_transport.active_connection = false;
+
+  expected_rtp_transport.rtcp_transport_stats_id = expected_rtcp_transport.id();
+
+  EXPECT_TRUE(report->Get(expected_rtp_transport.id()));
+  EXPECT_EQ(
+      expected_rtp_transport,
+      report->Get(expected_rtp_transport.id())->cast_to<RTCTransportStats>());
+  EXPECT_TRUE(report->Get(expected_rtcp_transport.id()));
+  EXPECT_EQ(
+      expected_rtcp_transport,
+      report->Get(expected_rtcp_transport.id())->cast_to<RTCTransportStats>());
 
   // Get stats with an active connection.
-  rtcp_connection_info.best_connection = true;
+  session_stats.transport_stats["transport"]
+      .channel_stats[1]
+      .connection_infos[0]
+      .best_connection = true;
 
   collector_->ClearCachedStatsReport();
   report = GetStatsReport();
-  ExpectReportContainsTransportStats(
-      report, session_stats.transport_stats["transport"], nullptr, nullptr);
+
+  expected_rtcp_transport.active_connection = true;
+  expected_rtcp_transport.selected_candidate_pair_id =
+      "RTCIceCandidatePair_" + rtcp_local_candidate->id() + "_" +
+      rtcp_remote_candidate->id();
+
+  EXPECT_TRUE(report->Get(expected_rtp_transport.id()));
+  EXPECT_EQ(
+      expected_rtp_transport,
+      report->Get(expected_rtp_transport.id())->cast_to<RTCTransportStats>());
+  EXPECT_TRUE(report->Get(expected_rtcp_transport.id()));
+  EXPECT_EQ(
+      expected_rtcp_transport,
+      report->Get(expected_rtcp_transport.id())->cast_to<RTCTransportStats>());
 
   // Get stats with certificates.
   std::unique_ptr<CertificateInfo> local_certinfo =
@@ -1769,9 +1712,25 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
 
   collector_->ClearCachedStatsReport();
   report = GetStatsReport();
-  ExpectReportContainsTransportStats(
-      report, session_stats.transport_stats["transport"],
-      local_certinfo.get(), remote_certinfo.get());
+
+  expected_rtp_transport.local_certificate_id =
+      "RTCCertificate_" + local_certinfo->fingerprints[0];
+  expected_rtp_transport.remote_certificate_id =
+      "RTCCertificate_" + remote_certinfo->fingerprints[0];
+
+  expected_rtcp_transport.local_certificate_id =
+      *expected_rtp_transport.local_certificate_id;
+  expected_rtcp_transport.remote_certificate_id =
+      *expected_rtp_transport.remote_certificate_id;
+
+  EXPECT_TRUE(report->Get(expected_rtp_transport.id()));
+  EXPECT_EQ(
+      expected_rtp_transport,
+      report->Get(expected_rtp_transport.id())->cast_to<RTCTransportStats>());
+  EXPECT_TRUE(report->Get(expected_rtcp_transport.id()));
+  EXPECT_EQ(
+      expected_rtcp_transport,
+      report->Get(expected_rtcp_transport.id())->cast_to<RTCTransportStats>());
 }
 
 class RTCStatsCollectorTestWithFakeCollector : public testing::Test {
