@@ -503,7 +503,6 @@ if (rtc_include_tests) {
       "video_coding/jitter_buffer_unittest.cc",
       "video_coding/jitter_estimator_tests.cc",
       "video_coding/nack_module_unittest.cc",
-      "video_coding/percentile_filter_unittest.cc",
       "video_coding/protection_bitrate_calculator_unittest.cc",
       "video_coding/receiver_unittest.cc",
       "video_coding/rtp_frame_reference_finder_unittest.cc",

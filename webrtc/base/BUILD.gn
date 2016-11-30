@@ -340,6 +340,10 @@ rtc_static_library("rtc_analytics") {
   sources = [
     "analytics/exp_filter.cc",
     "analytics/exp_filter.h",
+    "analytics/percentile_filter.h",
+  ]
+  deps = [
+    ":rtc_base_approved",
   ]
 }
 

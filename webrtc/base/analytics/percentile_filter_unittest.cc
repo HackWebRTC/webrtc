@@ -9,9 +9,10 @@
  */
 
 #include <algorithm>
+#include <climits>
 
+#include "webrtc/base/analytics/percentile_filter.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/video_coding/percentile_filter.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
@@ -24,7 +25,7 @@ class PercentileFilterTest : public ::testing::TestWithParam<float> {
   }
 
  protected:
-  PercentileFilter filter_;
+  PercentileFilter<int64_t> filter_;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(PercentileFilterTest);
@@ -35,7 +36,7 @@ INSTANTIATE_TEST_CASE_P(PercentileFilterTests,
                         ::testing::Values(0.0f, 0.1f, 0.5f, 0.9f, 1.0f));
 
 TEST(PercentileFilterTest, MinFilter) {
-  PercentileFilter filter(0.0f);
+  PercentileFilter<int64_t> filter(0.0f);
   filter.Insert(4);
   EXPECT_EQ(4, filter.GetPercentileValue());
   filter.Insert(3);
@@ -43,11 +44,41 @@ TEST(PercentileFilterTest, MinFilter) {
 }
 
 TEST(PercentileFilterTest, MaxFilter) {
-  PercentileFilter filter(1.0f);
+  PercentileFilter<int64_t> filter(1.0f);
   filter.Insert(3);
   EXPECT_EQ(3, filter.GetPercentileValue());
   filter.Insert(4);
   EXPECT_EQ(4, filter.GetPercentileValue());
+}
+
+TEST(PercentileFilterTest, MedianFilterDouble) {
+  PercentileFilter<double> filter(0.5f);
+  filter.Insert(2.71828);
+  filter.Insert(3.14159);
+  filter.Insert(1.41421);
+  EXPECT_EQ(2.71828, filter.GetPercentileValue());
+}
+
+TEST(PercentileFilterTest, MedianFilterInt) {
+  PercentileFilter<int> filter(0.5f);
+  filter.Insert(INT_MIN);
+  filter.Insert(1);
+  filter.Insert(2);
+  EXPECT_EQ(1, filter.GetPercentileValue());
+  filter.Insert(INT_MAX);
+  filter.Erase(INT_MIN);
+  EXPECT_EQ(2, filter.GetPercentileValue());
+}
+
+TEST(PercentileFilterTest, MedianFilterUnsigned) {
+  PercentileFilter<unsigned> filter(0.5f);
+  filter.Insert(UINT_MAX);
+  filter.Insert(2u);
+  filter.Insert(1u);
+  EXPECT_EQ(2u, filter.GetPercentileValue());
+  filter.Insert(0u);
+  filter.Erase(UINT_MAX);
+  EXPECT_EQ(1u, filter.GetPercentileValue());
 }
 
 TEST_P(PercentileFilterTest, EmptyFilter) {

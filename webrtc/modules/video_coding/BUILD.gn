@@ -55,8 +55,6 @@ rtc_static_library("video_coding") {
     "packet.h",
     "packet_buffer.cc",
     "packet_buffer.h",
-    "percentile_filter.cc",
-    "percentile_filter.h",
     "protection_bitrate_calculator.cc",
     "protection_bitrate_calculator.h",
     "receiver.cc",
