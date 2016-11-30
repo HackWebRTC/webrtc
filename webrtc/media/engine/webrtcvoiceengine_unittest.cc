@@ -356,6 +356,29 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(expected_codec_bitrate, GetCodecBitrate(kSsrc1));
   }
 
+  void SetSendCodecsShouldWorkForBitrates(const char* min_bitrate_kbps,
+                                          int expected_min_bitrate_bps,
+                                          const char* start_bitrate_kbps,
+                                          int expected_start_bitrate_bps,
+                                          const char* max_bitrate_kbps,
+                                          int expected_max_bitrate_bps) {
+    EXPECT_TRUE(SetupSendStream());
+    auto& codecs = send_parameters_.codecs;
+    codecs.clear();
+    codecs.push_back(kOpusCodec);
+    codecs[0].params[cricket::kCodecParamMinBitrate] = min_bitrate_kbps;
+    codecs[0].params[cricket::kCodecParamStartBitrate] = start_bitrate_kbps;
+    codecs[0].params[cricket::kCodecParamMaxBitrate] = max_bitrate_kbps;
+    SetSendParameters(send_parameters_);
+
+    EXPECT_EQ(expected_min_bitrate_bps,
+              call_.GetConfig().bitrate_config.min_bitrate_bps);
+    EXPECT_EQ(expected_start_bitrate_bps,
+              call_.GetConfig().bitrate_config.start_bitrate_bps);
+    EXPECT_EQ(expected_max_bitrate_bps,
+              call_.GetConfig().bitrate_config.max_bitrate_bps);
+  }
+
   void TestSetSendRtpHeaderExtensions(const std::string& ext) {
     EXPECT_TRUE(SetupSendStream());
 
@@ -1400,6 +1423,37 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecOpusMaxAverageBitrate) {
   parameters.codecs[0].params["maxaveragebitrate"] = "200000";
   SetSendParameters(parameters);
   EXPECT_EQ(200000, GetCodecBitrate(kSsrc1));
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithBitrates) {
+  SetSendCodecsShouldWorkForBitrates("100", 100000, "150", 150000, "200",
+                                     200000);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithHighMaxBitrate) {
+  SetSendCodecsShouldWorkForBitrates("", 0, "", -1, "10000", 10000000);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake,
+       SetSendCodecsWithoutBitratesUsesCorrectDefaults) {
+  SetSendCodecsShouldWorkForBitrates("", 0, "", -1, "", -1);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCapsMinAndStartBitrate) {
+  SetSendCodecsShouldWorkForBitrates("-1", 0, "-100", -1, "", -1);
+}
+
+TEST_F(WebRtcVoiceEngineTestFake,
+       SetMaxSendBandwidthShouldPreserveOtherBitrates) {
+  SetSendCodecsShouldWorkForBitrates("100", 100000, "150", 150000, "200",
+                                     200000);
+  send_parameters_.max_bandwidth_bps = 300000;
+  SetSendParameters(send_parameters_);
+  EXPECT_EQ(100000, call_.GetConfig().bitrate_config.min_bitrate_bps)
+      << "Setting max bitrate should keep previous min bitrate.";
+  EXPECT_EQ(-1, call_.GetConfig().bitrate_config.start_bitrate_bps)
+      << "Setting max bitrate should not reset start bitrate.";
+  EXPECT_EQ(300000, call_.GetConfig().bitrate_config.max_bitrate_bps);
 }
 
 // Test that we can enable NACK with opus as caller.

@@ -259,6 +259,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool playout_ = false;
   bool send_ = false;
   webrtc::Call* const call_ = nullptr;
+  webrtc::Call::Config::BitrateConfig bitrate_config_;
 
   // SSRC of unsignalled receive stream, or -1 if there isn't one.
   int64_t default_recv_ssrc_ = -1;

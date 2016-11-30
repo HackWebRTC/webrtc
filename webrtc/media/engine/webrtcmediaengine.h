@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/call.h"
 #include "webrtc/config.h"
 #include "webrtc/media/base/mediaengine.h"
 
@@ -57,6 +58,9 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     const std::vector<webrtc::RtpExtension>& extensions,
     bool (*supported)(const std::string&),
     bool filter_redundant_extensions);
+
+webrtc::Call::Config::BitrateConfig GetBitrateConfigForCodec(
+    const Codec& codec);
 
 }  // namespace cricket
 

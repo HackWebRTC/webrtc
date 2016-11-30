@@ -73,32 +73,6 @@ class EncoderFactoryAdapter : public webrtc::VideoEncoderFactory {
   cricket::WebRtcVideoEncoderFactory* const factory_;
 };
 
-webrtc::Call::Config::BitrateConfig GetBitrateConfigForCodec(
-    const VideoCodec& codec) {
-  webrtc::Call::Config::BitrateConfig config;
-  int bitrate_kbps;
-  if (codec.GetParam(kCodecParamMinBitrate, &bitrate_kbps) &&
-      bitrate_kbps > 0) {
-    config.min_bitrate_bps = bitrate_kbps * 1000;
-  } else {
-    config.min_bitrate_bps = 0;
-  }
-  if (codec.GetParam(kCodecParamStartBitrate, &bitrate_kbps) &&
-      bitrate_kbps > 0) {
-    config.start_bitrate_bps = bitrate_kbps * 1000;
-  } else {
-    // Do not reconfigure start bitrate unless it's specified and positive.
-    config.start_bitrate_bps = -1;
-  }
-  if (codec.GetParam(kCodecParamMaxBitrate, &bitrate_kbps) &&
-      bitrate_kbps > 0) {
-    config.max_bitrate_bps = bitrate_kbps * 1000;
-  } else {
-    config.max_bitrate_bps = -1;
-  }
-  return config;
-}
-
 // An encoder factory that wraps Create requests for simulcastable codec types
 // with a webrtc::SimulcastEncoderAdapter. Non simulcastable codec type
 // requests are just passed through to the contained encoder factory.
