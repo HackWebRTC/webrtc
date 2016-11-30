@@ -35,7 +35,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       renders_fps_estimator_(1000, 1000),
       render_fps_tracker_(100, 10u),
       render_pixel_tracker_(100, 10u),
-      freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs) {
+      freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
+      first_report_block_time_ms_(-1) {
   stats_.ssrc = config_.rtp.remote_ssrc;
   for (auto it : config_.rtp.rtx)
     rtx_stats_[it.second.ssrc] = StreamDataCounters();
@@ -50,11 +51,16 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
       "WebRTC.Video.ReceiveStreamLifetimeInSeconds",
       (clock_->TimeInMilliseconds() - start_ms_) / 1000);
 
-  int fraction_lost = report_block_stats_.FractionLostInPercent();
-  if (fraction_lost != -1) {
-    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
-                             fraction_lost);
+  if (first_report_block_time_ms_ != -1 &&
+      ((clock_->TimeInMilliseconds() - first_report_block_time_ms_) / 1000) >=
+          metrics::kMinRunTimeInSeconds) {
+    int fraction_lost = report_block_stats_.FractionLostInPercent();
+    if (fraction_lost != -1) {
+      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
+                               fraction_lost);
+    }
   }
+
   const int kMinRequiredSamples = 200;
   int samples = static_cast<int>(render_fps_tracker_.TotalSampleCount());
   if (samples > kMinRequiredSamples) {
@@ -233,6 +239,9 @@ void ReceiveStatisticsProxy::StatisticsUpdated(
     return;
   stats_.rtcp_stats = statistics;
   report_block_stats_.Store(statistics, ssrc, 0);
+
+  if (first_report_block_time_ms_ == -1)
+    first_report_block_time_ms_ = clock_->TimeInMilliseconds();
 }
 
 void ReceiveStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {

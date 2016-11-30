@@ -620,6 +620,14 @@ bool RtpStreamReceiver::IsPacketRetransmitted(const RTPHeader& header,
 
 void RtpStreamReceiver::UpdateHistograms() {
   FecPacketCounter counter = ulpfec_receiver_->GetPacketCounter();
+  if (counter.first_packet_time_ms == -1)
+    return;
+
+  int64_t elapsed_sec =
+      (clock_->TimeInMilliseconds() - counter.first_packet_time_ms) / 1000;
+  if (elapsed_sec < metrics::kMinRunTimeInSeconds)
+    return;
+
   if (counter.num_packets > 0) {
     RTC_HISTOGRAM_PERCENTAGE(
         "WebRTC.Video.ReceivedFecPacketsInPercent",

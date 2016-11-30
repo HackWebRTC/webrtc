@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/gtest.h"
 
@@ -110,6 +111,64 @@ TEST_F(ReceiveStatisticsProxyTest, LifetimeHistogramIsUpdated) {
             metrics::NumSamples("WebRTC.Video.ReceiveStreamLifetimeInSeconds"));
   EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.ReceiveStreamLifetimeInSeconds",
                                   kTimeSec));
+}
+
+TEST_F(ReceiveStatisticsProxyTest, PacketLossHistogramIsUpdated) {
+  const uint32_t kCumLost1 = 1;
+  const uint32_t kExtSeqNum1 = 10;
+  const uint32_t kCumLost2 = 2;
+  const uint32_t kExtSeqNum2 = 20;
+
+  // One report block received.
+  RtcpStatistics rtcp_stats1;
+  rtcp_stats1.cumulative_lost = kCumLost1;
+  rtcp_stats1.extended_max_sequence_number = kExtSeqNum1;
+  statistics_proxy_->StatisticsUpdated(rtcp_stats1, kRemoteSsrc);
+
+  // Two report blocks received.
+  RtcpStatistics rtcp_stats2;
+  rtcp_stats2.cumulative_lost = kCumLost2;
+  rtcp_stats2.extended_max_sequence_number = kExtSeqNum2;
+  statistics_proxy_->StatisticsUpdated(rtcp_stats2, kRemoteSsrc);
+
+  // Two received report blocks but min run time has not passed.
+  fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000 - 1);
+  SetUp();  // Reset stat proxy causes histograms to be updated.
+  EXPECT_EQ(0,
+            metrics::NumSamples("WebRTC.Video.ReceivedPacketsLostInPercent"));
+
+  // Two report blocks received.
+  statistics_proxy_->StatisticsUpdated(rtcp_stats1, kRemoteSsrc);
+  statistics_proxy_->StatisticsUpdated(rtcp_stats2, kRemoteSsrc);
+
+  // Two received report blocks and min run time has passed.
+  fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000);
+  SetUp();
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.ReceivedPacketsLostInPercent"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.ReceivedPacketsLostInPercent",
+                                  (kCumLost2 - kCumLost1) * 100 /
+                                      (kExtSeqNum2 - kExtSeqNum1)));
+}
+
+TEST_F(ReceiveStatisticsProxyTest,
+       PacketLossHistogramIsNotUpdatedIfLessThanTwoReportBlocksAreReceived) {
+  RtcpStatistics rtcp_stats1;
+  rtcp_stats1.cumulative_lost = 1;
+  rtcp_stats1.extended_max_sequence_number = 10;
+
+  // Min run time has passed but no received report block.
+  fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000);
+  SetUp();  // Reset stat proxy causes histograms to be updated.
+  EXPECT_EQ(0,
+            metrics::NumSamples("WebRTC.Video.ReceivedPacketsLostInPercent"));
+
+  // Min run time has passed but only one received report block.
+  statistics_proxy_->StatisticsUpdated(rtcp_stats1, kRemoteSsrc);
+  fake_clock_.AdvanceTimeMilliseconds(metrics::kMinRunTimeInSeconds * 1000);
+  SetUp();
+  EXPECT_EQ(0,
+            metrics::NumSamples("WebRTC.Video.ReceivedPacketsLostInPercent"));
 }
 
 TEST_F(ReceiveStatisticsProxyTest, AvSyncOffsetHistogramIsUpdated) {
