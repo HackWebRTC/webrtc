@@ -407,12 +407,6 @@ class RawAudioEncoderWrapper final : public AudioEncoder {
   void SetMaxPlaybackRate(int frequency_hz) override {
     return enc_->SetMaxPlaybackRate(frequency_hz);
   }
-  void SetProjectedPacketLossRate(double fraction) override {
-    return enc_->SetProjectedPacketLossRate(fraction);
-  }
-  void SetTargetBitrate(int target_bps) override {
-    return enc_->SetTargetBitrate(target_bps);
-  }
 
  private:
   AudioEncoder* enc_;
@@ -654,7 +648,7 @@ int AudioCodingModuleImpl::SendFrequency() const {
 void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
   rtc::CritScope lock(&acm_crit_sect_);
   if (encoder_stack_) {
-    encoder_stack_->SetTargetBitrate(bitrate_bps);
+    encoder_stack_->OnReceivedTargetAudioBitrate(bitrate_bps);
   }
 }
 
@@ -906,7 +900,7 @@ int AudioCodingModuleImpl::SetCodecFEC(bool enable_codec_fec) {
 int AudioCodingModuleImpl::SetPacketLossRate(int loss_rate) {
   rtc::CritScope lock(&acm_crit_sect_);
   if (HaveValidEncoder("SetPacketLossRate")) {
-    encoder_stack_->SetProjectedPacketLossRate(loss_rate / 100.0);
+    encoder_stack_->OnReceivedUplinkPacketLossFraction(loss_rate / 100.0);
   }
   return 0;
 }

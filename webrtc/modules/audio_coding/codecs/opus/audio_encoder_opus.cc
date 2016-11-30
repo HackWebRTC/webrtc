@@ -56,18 +56,18 @@ AudioEncoderOpus::Config CreateConfig(const CodecInst& codec_inst) {
 // Additionally, to prevent toggling, margins are used, i.e., when jumping to
 // a loss rate from below, a higher threshold is used than jumping to the same
 // level from above.
-double OptimizePacketLossRate(double new_loss_rate, double old_loss_rate) {
-  RTC_DCHECK_GE(new_loss_rate, 0.0);
-  RTC_DCHECK_LE(new_loss_rate, 1.0);
-  RTC_DCHECK_GE(old_loss_rate, 0.0);
-  RTC_DCHECK_LE(old_loss_rate, 1.0);
-  const double kPacketLossRate20 = 0.20;
-  const double kPacketLossRate10 = 0.10;
-  const double kPacketLossRate5 = 0.05;
-  const double kPacketLossRate1 = 0.01;
-  const double kLossRate20Margin = 0.02;
-  const double kLossRate10Margin = 0.01;
-  const double kLossRate5Margin = 0.01;
+float OptimizePacketLossRate(float new_loss_rate, float old_loss_rate) {
+  RTC_DCHECK_GE(new_loss_rate, 0.0f);
+  RTC_DCHECK_LE(new_loss_rate, 1.0f);
+  RTC_DCHECK_GE(old_loss_rate, 0.0f);
+  RTC_DCHECK_LE(old_loss_rate, 1.0f);
+  constexpr float kPacketLossRate20 = 0.20f;
+  constexpr float kPacketLossRate10 = 0.10f;
+  constexpr float kPacketLossRate5 = 0.05f;
+  constexpr float kPacketLossRate1 = 0.01f;
+  constexpr float kLossRate20Margin = 0.02f;
+  constexpr float kLossRate10Margin = 0.01f;
+  constexpr float kLossRate5Margin = 0.01f;
   if (new_loss_rate >=
       kPacketLossRate20 +
           kLossRate20Margin *
@@ -86,7 +86,7 @@ double OptimizePacketLossRate(double new_loss_rate, double old_loss_rate) {
   } else if (new_loss_rate >= kPacketLossRate1) {
     return kPacketLossRate1;
   } else {
-    return 0.0;
+    return 0.0f;
   }
 }
 
@@ -257,28 +257,6 @@ void AudioEncoderOpus::SetMaxPlaybackRate(int frequency_hz) {
   auto conf = config_;
   conf.max_playback_rate_hz = frequency_hz;
   RTC_CHECK(RecreateEncoderInstance(conf));
-}
-
-void AudioEncoderOpus::SetProjectedPacketLossRate(double fraction) {
-  double opt_loss_rate = OptimizePacketLossRate(fraction, packet_loss_rate_);
-  if (packet_loss_rate_ != opt_loss_rate) {
-    packet_loss_rate_ = opt_loss_rate;
-    RTC_CHECK_EQ(
-        0, WebRtcOpus_SetPacketLossRate(
-               inst_, static_cast<int32_t>(packet_loss_rate_ * 100 + .5)));
-  }
-}
-
-void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
-  config_.bitrate_bps = rtc::Optional<int>(
-      std::max(std::min(bits_per_second, kMaxBitrateBps), kMinBitrateBps));
-  RTC_DCHECK(config_.IsOk());
-  RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config_.GetBitrateBps()));
-  const auto new_complexity = config_.GetNewComplexity();
-  if (new_complexity && complexity_ != *new_complexity) {
-    complexity_ = *new_complexity;
-    RTC_CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, complexity_));
-  }
 }
 
 bool AudioEncoderOpus::EnableAudioNetworkAdaptor(
@@ -460,6 +438,28 @@ void AudioEncoderOpus::SetNumChannelsToEncode(size_t num_channels_to_encode) {
 
   RTC_CHECK_EQ(0, WebRtcOpus_SetForceChannels(inst_, num_channels_to_encode));
   num_channels_to_encode_ = num_channels_to_encode;
+}
+
+void AudioEncoderOpus::SetProjectedPacketLossRate(float fraction) {
+  float opt_loss_rate = OptimizePacketLossRate(fraction, packet_loss_rate_);
+  if (packet_loss_rate_ != opt_loss_rate) {
+    packet_loss_rate_ = opt_loss_rate;
+    RTC_CHECK_EQ(
+        0, WebRtcOpus_SetPacketLossRate(
+               inst_, static_cast<int32_t>(packet_loss_rate_ * 100 + .5)));
+  }
+}
+
+void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
+  config_.bitrate_bps = rtc::Optional<int>(
+      std::max(std::min(bits_per_second, kMaxBitrateBps), kMinBitrateBps));
+  RTC_DCHECK(config_.IsOk());
+  RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, config_.GetBitrateBps()));
+  const auto new_complexity = config_.GetNewComplexity();
+  if (new_complexity && complexity_ != *new_complexity) {
+    complexity_ = *new_complexity;
+    RTC_CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, complexity_));
+  }
 }
 
 void AudioEncoderOpus::ApplyAudioNetworkAdaptor() {

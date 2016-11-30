@@ -179,17 +179,20 @@ void AudioEncoderCng::SetMaxPlaybackRate(int frequency_hz) {
   speech_encoder_->SetMaxPlaybackRate(frequency_hz);
 }
 
-void AudioEncoderCng::SetProjectedPacketLossRate(double fraction) {
-  speech_encoder_->SetProjectedPacketLossRate(fraction);
-}
-
-void AudioEncoderCng::SetTargetBitrate(int bits_per_second) {
-  speech_encoder_->SetTargetBitrate(bits_per_second);
-}
-
 rtc::ArrayView<std::unique_ptr<AudioEncoder>>
 AudioEncoderCng::ReclaimContainedEncoders() {
   return rtc::ArrayView<std::unique_ptr<AudioEncoder>>(&speech_encoder_, 1);
+}
+
+void AudioEncoderCng::OnReceivedUplinkPacketLossFraction(
+    float uplink_packet_loss_fraction) {
+  speech_encoder_->OnReceivedUplinkPacketLossFraction(
+      uplink_packet_loss_fraction);
+}
+
+void AudioEncoderCng::OnReceivedTargetAudioBitrate(
+    int target_audio_bitrate_bps) {
+  speech_encoder_->OnReceivedTargetAudioBitrate(target_audio_bitrate_bps);
 }
 
 AudioEncoder::EncodedInfo AudioEncoderCng::EncodePassive(
