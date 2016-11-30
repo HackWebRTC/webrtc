@@ -33,6 +33,7 @@ class StatsCounterObserver {
 
 struct AggregatedStats {
   std::string ToString() const;
+  std::string ToStringWithMultiplier(int multiplier) const;
 
   int64_t num_samples = 0;
   int min = -1;

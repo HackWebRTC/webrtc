@@ -26,11 +26,15 @@ const uint32_t kStreamId0 = 0;
 }  // namespace
 
 std::string AggregatedStats::ToString() const {
+  return ToStringWithMultiplier(1);
+}
+
+std::string AggregatedStats::ToStringWithMultiplier(int multiplier) const {
   std::stringstream ss;
   ss << "periodic_samples:" << num_samples << ", {";
-  ss << "min:" << min << ", ";
-  ss << "avg:" << average << ", ";
-  ss << "max:" << max << "}";
+  ss << "min:" << (min * multiplier) << ", ";
+  ss << "avg:" << (average * multiplier) << ", ";
+  ss << "max:" << (max * multiplier) << "}";
   return ss.str();
 }
 
