@@ -108,6 +108,27 @@ public class SurfaceViewRenderer
     eglRenderer.release();
   }
 
+  /**
+   * Register a callback to be invoked when a new video frame has been received.
+   *
+   * @param listener The callback to be invoked.
+   * @param scale    The scale of the Bitmap passed to the callback, or 0 if no Bitmap is
+   *                 required.
+   * @param drawer   Custom drawer to use for this frame listener.
+   */
+  public void addFrameListener(
+      EglRenderer.FrameListener listener, float scale, final RendererCommon.GlDrawer drawer) {
+    eglRenderer.addFrameListener(listener, scale, drawer);
+  }
+
+  /**
+   * Register a callback to be invoked when a new video frame has been received. This version uses
+   * the drawer of the EglRenderer that was passed in init.
+   *
+   * @param listener The callback to be invoked.
+   * @param scale    The scale of the Bitmap passed to the callback, or 0 if no Bitmap is
+   *                 required.
+   */
   public void addFrameListener(EglRenderer.FrameListener listener, float scale) {
     eglRenderer.addFrameListener(listener, scale);
   }

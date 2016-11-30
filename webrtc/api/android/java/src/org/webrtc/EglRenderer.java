@@ -35,13 +35,16 @@ public class EglRenderer implements VideoRenderer.Callbacks {
 
   public interface FrameListener { void onFrame(Bitmap frame); }
 
-  private static class ScaleAndFrameListener {
-    public final float scale;
+  private static class FrameListenerAndParams {
     public final FrameListener listener;
+    public final float scale;
+    public final RendererCommon.GlDrawer drawer;
 
-    public ScaleAndFrameListener(float scale, FrameListener listener) {
-      this.scale = scale;
+    public FrameListenerAndParams(
+        FrameListener listener, float scale, RendererCommon.GlDrawer drawer) {
       this.listener = listener;
+      this.scale = scale;
+      this.drawer = drawer;
     }
   }
 
@@ -76,7 +79,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   private final Object handlerLock = new Object();
   private Handler renderThreadHandler;
 
-  private final ArrayList<ScaleAndFrameListener> frameListeners = new ArrayList<>();
+  private final ArrayList<FrameListenerAndParams> frameListeners = new ArrayList<>();
 
   // Variables for fps reduction.
   private final Object fpsReductionLock = new Object();
@@ -357,7 +360,8 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   }
 
   /**
-   * Register a callback to be invoked when a new video frame has been received.
+   * Register a callback to be invoked when a new video frame has been received. This version uses
+   * the drawer of the EglRenderer that was passed in init.
    *
    * @param listener The callback to be invoked.
    * @param scale    The scale of the Bitmap passed to the callback, or 0 if no Bitmap is
@@ -367,7 +371,25 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     postToRenderThread(new Runnable() {
       @Override
       public void run() {
-        frameListeners.add(new ScaleAndFrameListener(scale, listener));
+        frameListeners.add(new FrameListenerAndParams(listener, scale, drawer));
+      }
+    });
+  }
+
+  /**
+   * Register a callback to be invoked when a new video frame has been received.
+   *
+   * @param listener The callback to be invoked.
+   * @param scale    The scale of the Bitmap passed to the callback, or 0 if no Bitmap is
+   *                 required.
+   * @param drawer   Custom drawer to use for this frame listener.
+   */
+  public void addFrameListener(
+      final FrameListener listener, final float scale, final RendererCommon.GlDrawer drawer) {
+    postToRenderThread(new Runnable() {
+      @Override
+      public void run() {
+        frameListeners.add(new FrameListenerAndParams(listener, scale, drawer));
       }
     });
   }
@@ -385,7 +407,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       @Override
       public void run() {
         latch.countDown();
-        final Iterator<ScaleAndFrameListener> iter = frameListeners.iterator();
+        final Iterator<FrameListenerAndParams> iter = frameListeners.iterator();
         while (iter.hasNext()) {
           if (iter.next().listener == listener) {
             iter.remove();
@@ -589,7 +611,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   private void notifyCallbacks(VideoRenderer.I420Frame frame, float[] texMatrix) {
     // Make temporary copy of callback list to avoid ConcurrentModificationException, in case
     // callbacks call addFramelistener or removeFrameListener.
-    final ArrayList<ScaleAndFrameListener> tmpList;
+    final ArrayList<FrameListenerAndParams> tmpList;
     if (frameListeners.isEmpty())
       return;
     tmpList = new ArrayList<>(frameListeners);
@@ -600,12 +622,12 @@ public class EglRenderer implements VideoRenderer.Callbacks {
             mirror ? RendererCommon.horizontalFlipMatrix() : RendererCommon.identityMatrix()),
         RendererCommon.verticalFlipMatrix());
 
-    for (ScaleAndFrameListener scaleAndListener : tmpList) {
-      final int scaledWidth = (int) (scaleAndListener.scale * frame.rotatedWidth());
-      final int scaledHeight = (int) (scaleAndListener.scale * frame.rotatedHeight());
+    for (FrameListenerAndParams listenerAndParams : tmpList) {
+      final int scaledWidth = (int) (listenerAndParams.scale * frame.rotatedWidth());
+      final int scaledHeight = (int) (listenerAndParams.scale * frame.rotatedHeight());
 
       if (scaledWidth == 0 || scaledHeight == 0) {
-        scaleAndListener.listener.onFrame(null);
+        listenerAndParams.listener.onFrame(null);
         continue;
       }
 
@@ -619,11 +641,11 @@ public class EglRenderer implements VideoRenderer.Callbacks {
           GLES20.GL_TEXTURE_2D, bitmapTextureFramebuffer.getTextureId(), 0);
 
       if (frame.yuvFrame) {
-        drawer.drawYuv(yuvTextures, bitmapMatrix, frame.rotatedWidth(), frame.rotatedHeight(),
-            0 /* viewportX */, 0 /* viewportY */, scaledWidth, scaledHeight);
+        listenerAndParams.drawer.drawYuv(yuvTextures, bitmapMatrix, frame.rotatedWidth(),
+            frame.rotatedHeight(), 0 /* viewportX */, 0 /* viewportY */, scaledWidth, scaledHeight);
       } else {
-        drawer.drawOes(frame.textureId, bitmapMatrix, frame.rotatedWidth(), frame.rotatedHeight(),
-            0 /* viewportX */, 0 /* viewportY */, scaledWidth, scaledHeight);
+        listenerAndParams.drawer.drawOes(frame.textureId, bitmapMatrix, frame.rotatedWidth(),
+            frame.rotatedHeight(), 0 /* viewportX */, 0 /* viewportY */, scaledWidth, scaledHeight);
       }
 
       final ByteBuffer bitmapBuffer = ByteBuffer.allocateDirect(scaledWidth * scaledHeight * 4);
@@ -636,7 +658,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
 
       final Bitmap bitmap = Bitmap.createBitmap(scaledWidth, scaledHeight, Bitmap.Config.ARGB_8888);
       bitmap.copyPixelsFromBuffer(bitmapBuffer);
-      scaleAndListener.listener.onFrame(bitmap);
+      listenerAndParams.listener.onFrame(bitmap);
     }
   }
 
