@@ -30,14 +30,6 @@ if (is_ios || is_mac) {
       "objc/Framework/Headers",
     ]
   }
-  config("webrtc_h264_video_toolbox_warnings_config") {
-    if (is_clang) {
-      # TODO(tkchin): Make webrtc_h264_video_toolbox compile with the standard set
-      # of warnings.
-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6307
-      cflags = [ "-Wno-thread-safety-analysis" ]
-    }
-  }
 
   rtc_static_library("rtc_sdk_common_objc") {
     deps = [
@@ -385,7 +377,6 @@ if (is_ios || is_mac) {
     ]
 
     configs += [
-      ":webrtc_h264_video_toolbox_warnings_config",
       "//webrtc:common_objc",
       "//build/config/compiler:enable_arc",
     ]
