@@ -60,8 +60,6 @@ bool AudioEncoder::SetApplication(Application application) {
 
 void AudioEncoder::SetMaxPlaybackRate(int frequency_hz) {}
 
-void AudioEncoder::SetProjectedPacketLossRate(double fraction) {}
-
 void AudioEncoder::SetTargetBitrate(int target_bps) {}
 
 rtc::ArrayView<std::unique_ptr<AudioEncoder>>
@@ -77,13 +75,9 @@ void AudioEncoder::DisableAudioNetworkAdaptor() {}
 void AudioEncoder::OnReceivedUplinkBandwidth(int uplink_bandwidth_bps) {}
 
 void AudioEncoder::OnReceivedUplinkPacketLossFraction(
-    float uplink_packet_loss_fraction) {
-  SetProjectedPacketLossRate(uplink_packet_loss_fraction);
-}
+    float uplink_packet_loss_fraction) {}
 
-void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {
-  SetTargetBitrate(target_audio_bitrate_bps);
-}
+void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {}
 
 void AudioEncoder::OnReceivedRtt(int rtt_ms) {}
 

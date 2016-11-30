@@ -151,26 +151,27 @@ TEST(AudioEncoderOpusTest, ToggleDtx) {
   EXPECT_TRUE(states.encoder->SetDtx(false));
 }
 
-TEST(AudioEncoderOpusTest, SetBitrate) {
+TEST(AudioEncoderOpusTest,
+     OnReceivedTargetAudioBitrateWithoutAudioNetworkAdaptor) {
   auto states = CreateCodec(1);
   // Constants are replicated from audio_states.encoderopus.cc.
   const int kMinBitrateBps = 500;
   const int kMaxBitrateBps = 512000;
   // Set a too low bitrate.
-  states.encoder->SetTargetBitrate(kMinBitrateBps - 1);
+  states.encoder->OnReceivedTargetAudioBitrate(kMinBitrateBps - 1);
   EXPECT_EQ(kMinBitrateBps, states.encoder->GetTargetBitrate());
   // Set a too high bitrate.
-  states.encoder->SetTargetBitrate(kMaxBitrateBps + 1);
+  states.encoder->OnReceivedTargetAudioBitrate(kMaxBitrateBps + 1);
   EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
   // Set the minimum rate.
-  states.encoder->SetTargetBitrate(kMinBitrateBps);
+  states.encoder->OnReceivedTargetAudioBitrate(kMinBitrateBps);
   EXPECT_EQ(kMinBitrateBps, states.encoder->GetTargetBitrate());
   // Set the maximum rate.
-  states.encoder->SetTargetBitrate(kMaxBitrateBps);
+  states.encoder->OnReceivedTargetAudioBitrate(kMaxBitrateBps);
   EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
   // Set rates from 1000 up to 32000 bps.
   for (int rate = 1000; rate <= 32000; rate += 1000) {
-    states.encoder->SetTargetBitrate(rate);
+    states.encoder->OnReceivedTargetAudioBitrate(rate);
     EXPECT_EQ(rate, states.encoder->GetTargetBitrate());
   }
 }
@@ -179,24 +180,31 @@ namespace {
 
 // Returns a vector with the n evenly-spaced numbers a, a + (b - a)/(n - 1),
 // ..., b.
-std::vector<double> IntervalSteps(double a, double b, size_t n) {
-  RTC_DCHECK_GT(n, 1);
-  const double step = (b - a) / (n - 1);
-  std::vector<double> points;
-  for (size_t i = 0; i < n; ++i)
+std::vector<float> IntervalSteps(float a, float b, size_t n) {
+  RTC_DCHECK_GT(n, 1u);
+  const float step = (b - a) / (n - 1);
+  std::vector<float> points;
+  points.push_back(a);
+  for (size_t i = 1; i < n - 1; ++i)
     points.push_back(a + i * step);
+  points.push_back(b);
   return points;
 }
 
 // Sets the packet loss rate to each number in the vector in turn, and verifies
 // that the loss rate as reported by the encoder is |expected_return| for all
 // of them.
-void TestSetPacketLossRate(AudioEncoderOpus* encoder,
-                           const std::vector<double>& losses,
-                           double expected_return) {
-  for (double loss : losses) {
-    encoder->SetProjectedPacketLossRate(loss);
-    EXPECT_DOUBLE_EQ(expected_return, encoder->packet_loss_rate());
+void TestSetPacketLossRate(AudioEncoderOpusStates* states,
+                           const std::vector<float>& losses,
+                           float expected_return) {
+  // |kSampleIntervalMs| is chosen to ease the calculation since
+  // 0.9999 ^ 184198 = 1e-8. Which minimizes the effect of
+  // PacketLossFractionSmoother used in AudioEncoderOpus.
+  constexpr int64_t kSampleIntervalMs = 184198;
+  for (float loss : losses) {
+    states->encoder->OnReceivedUplinkPacketLossFraction(loss);
+    states->simulated_clock->AdvanceTimeMilliseconds(kSampleIntervalMs);
+    EXPECT_FLOAT_EQ(expected_return, states->encoder->packet_loss_rate());
   }
 }
 
@@ -204,23 +212,23 @@ void TestSetPacketLossRate(AudioEncoderOpus* encoder,
 
 TEST(AudioEncoderOpusTest, PacketLossRateOptimized) {
   auto states = CreateCodec(1);
-  auto I = [](double a, double b) { return IntervalSteps(a, b, 10); };
-  const double eps = 1e-15;
+  auto I = [](float a, float b) { return IntervalSteps(a, b, 10); };
+  constexpr float eps = 1e-8f;
 
   // Note that the order of the following calls is critical.
 
   // clang-format off
-  TestSetPacketLossRate(states.encoder.get(), I(0.00      , 0.01 - eps), 0.00);
-  TestSetPacketLossRate(states.encoder.get(), I(0.01 + eps, 0.06 - eps), 0.01);
-  TestSetPacketLossRate(states.encoder.get(), I(0.06 + eps, 0.11 - eps), 0.05);
-  TestSetPacketLossRate(states.encoder.get(), I(0.11 + eps, 0.22 - eps), 0.10);
-  TestSetPacketLossRate(states.encoder.get(), I(0.22 + eps, 1.00      ), 0.20);
+  TestSetPacketLossRate(&states, I(0.00f      , 0.01f - eps), 0.00f);
+  TestSetPacketLossRate(&states, I(0.01f + eps, 0.06f - eps), 0.01f);
+  TestSetPacketLossRate(&states, I(0.06f + eps, 0.11f - eps), 0.05f);
+  TestSetPacketLossRate(&states, I(0.11f + eps, 0.22f - eps), 0.10f);
+  TestSetPacketLossRate(&states, I(0.22f + eps, 1.00f      ), 0.20f);
 
-  TestSetPacketLossRate(states.encoder.get(), I(1.00      , 0.18 + eps), 0.20);
-  TestSetPacketLossRate(states.encoder.get(), I(0.18 - eps, 0.09 + eps), 0.10);
-  TestSetPacketLossRate(states.encoder.get(), I(0.09 - eps, 0.04 + eps), 0.05);
-  TestSetPacketLossRate(states.encoder.get(), I(0.04 - eps, 0.01 + eps), 0.01);
-  TestSetPacketLossRate(states.encoder.get(), I(0.01 - eps, 0.00      ), 0.00);
+  TestSetPacketLossRate(&states, I(1.00f      , 0.18f + eps), 0.20f);
+  TestSetPacketLossRate(&states, I(0.18f - eps, 0.09f + eps), 0.10f);
+  TestSetPacketLossRate(&states, I(0.09f - eps, 0.04f + eps), 0.05f);
+  TestSetPacketLossRate(&states, I(0.04f - eps, 0.01f + eps), 0.01f);
+  TestSetPacketLossRate(&states, I(0.01f - eps, 0.00f      ), 0.00f);
   // clang-format on
 }
 
@@ -317,13 +325,13 @@ TEST(AudioEncoderOpusTest,
   // will fail.
   constexpr float kPacketLossFraction_1 = 0.02f;
   constexpr float kPacketLossFraction_2 = 0.198f;
-  // |kSecondSampleTimeMs| is chose to ease the calculation since
+  // |kSecondSampleTimeMs| is chosen to ease the calculation since
   // 0.9999 ^ 6931 = 0.5.
-  constexpr float kSecondSampleTimeMs = 6931;
+  constexpr int64_t kSecondSampleTimeMs = 6931;
 
   // First time, no filtering.
   states.encoder->OnReceivedUplinkPacketLossFraction(kPacketLossFraction_1);
-  EXPECT_DOUBLE_EQ(0.01, states.encoder->packet_loss_rate());
+  EXPECT_FLOAT_EQ(0.01f, states.encoder->packet_loss_rate());
 
   states.simulated_clock->AdvanceTimeMilliseconds(kSecondSampleTimeMs);
   states.encoder->OnReceivedUplinkPacketLossFraction(kPacketLossFraction_2);
@@ -332,7 +340,7 @@ TEST(AudioEncoderOpusTest,
   // (0.02 + 0.198) / 2 = 0.109, which reach the threshold for the optimized
   // packet loss rate to increase to 0.05. If no smoothing has been made, the
   // optimized packet loss rate should have been increase to 0.1.
-  EXPECT_DOUBLE_EQ(0.05, states.encoder->packet_loss_rate());
+  EXPECT_FLOAT_EQ(0.05f, states.encoder->packet_loss_rate());
 }
 
 }  // namespace webrtc
