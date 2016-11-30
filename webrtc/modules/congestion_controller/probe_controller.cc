@@ -35,7 +35,7 @@ constexpr int kExponentialProbingDisabled = 0;
 
 // Default probing bitrate limit. Applied only when the application didn't
 // specify max bitrate.
-constexpr int kDefaultMaxProbingBitrateBps = 100000000;
+constexpr int kDefaultMaxProbingBitrateBps = 5000000;
 
 // This is a limit on how often probing can be done when there is a BW
 // drop detected in ALR.
