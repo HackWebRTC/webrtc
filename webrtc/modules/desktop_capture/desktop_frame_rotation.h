@@ -25,8 +25,7 @@ enum class Rotation {
 };
 
 // Rotates input DesktopFrame |source|, copies pixel in an unrotated rectangle
-// |source_rect| into the target rectangle of another DesktopFrame |target|, and
-// adds target rectangle into |target|->mutable_updated_region().
+// |source_rect| into the target rectangle of another DesktopFrame |target|.
 // Target rectangle here is the rotated |source_rect| plus |target_offset|.
 // |rotation| specifies |source| to |target| rotation. |source_rect| is in
 // |source| coordinate. |target_offset| is in |target| coordinate.

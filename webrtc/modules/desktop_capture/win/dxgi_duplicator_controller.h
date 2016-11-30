@@ -26,8 +26,8 @@
 namespace webrtc {
 
 // A controller for all the objects we need to call Windows DirectX capture APIs
-// It's a singleton because, only one IDXGIOutputDuplication instance per
-// monitor is allowed per application.
+// It's a singleton because only one IDXGIOutputDuplication instance per monitor
+// is allowed per application.
 //
 // Consumers should create a DxgiDuplicatorController::Context and keep it
 // throughout their lifetime, and pass it when calling Duplicate(). Consumers
@@ -81,7 +81,7 @@ class DxgiDuplicatorController {
   // containers are destructed in correct order.
   ~DxgiDuplicatorController();
 
-  // All the following functions implicitly call Initialize() function is
+  // All the following functions implicitly call Initialize() function if
   // current instance has not been initialized.
 
   // Detects whether the system supports DXGI based capturer.

@@ -25,19 +25,18 @@ class DesktopRegion;
 // A texture copied or mapped from a DXGI_OUTDUPL_FRAME_INFO and IDXGIResource.
 class DxgiTexture {
  public:
-  // Creates a DxgiTexture instance, which represents the DesktopRect area of
+  // Creates a DxgiTexture instance, which represents the |desktop_size| area of
   // entire screen -- usually a monitor on the system.
-  explicit DxgiTexture(const DesktopRect& desktop_rect);
+  explicit DxgiTexture(const DesktopSize& desktop_size);
 
   virtual ~DxgiTexture();
 
   // Copies selected regions of a frame represented by frame_info and resource.
   // Returns false if anything wrong.
   virtual bool CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                        IDXGIResource* resource,
-                        const DesktopRegion& region) = 0;
+                        IDXGIResource* resource) = 0;
 
-  const DesktopRect& desktop_rect() const { return desktop_rect_; }
+  const DesktopSize& desktop_size() const { return desktop_size_; }
 
   uint8_t* bits() const { return static_cast<uint8_t*>(rect_.pBits); }
 
@@ -60,7 +59,7 @@ class DxgiTexture {
  private:
   virtual bool DoRelease() = 0;
 
-  const DesktopRect desktop_rect_;
+  const DesktopSize desktop_size_;
   std::unique_ptr<DesktopFrame> frame_;
 };
 

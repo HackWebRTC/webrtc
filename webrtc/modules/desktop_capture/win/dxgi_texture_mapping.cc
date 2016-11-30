@@ -19,17 +19,16 @@
 
 namespace webrtc {
 
-DxgiTextureMapping::DxgiTextureMapping(const DesktopRect& desktop_rect,
+DxgiTextureMapping::DxgiTextureMapping(const DesktopSize& desktop_size,
                                        IDXGIOutputDuplication* duplication)
-    : DxgiTexture(desktop_rect), duplication_(duplication) {
+    : DxgiTexture(desktop_size), duplication_(duplication) {
   RTC_DCHECK(duplication_);
 }
 
 DxgiTextureMapping::~DxgiTextureMapping() = default;
 
 bool DxgiTextureMapping::CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                                  IDXGIResource* resource,
-                                  const DesktopRegion& region) {
+                                  IDXGIResource* resource) {
   RTC_DCHECK(resource && frame_info.AccumulatedFrames > 0);
   rect_ = {0};
   _com_error error = duplication_->MapDesktopSurface(&rect_);

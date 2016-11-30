@@ -22,9 +22,9 @@ using Microsoft::WRL::ComPtr;
 
 namespace webrtc {
 
-DxgiTextureStaging::DxgiTextureStaging(const DesktopRect& desktop_rect,
+DxgiTextureStaging::DxgiTextureStaging(const DesktopSize& desktop_size,
                                        const D3dDevice& device)
-    : DxgiTexture(desktop_rect), device_(device) {}
+    : DxgiTexture(desktop_size), device_(device) {}
 
 DxgiTextureStaging::~DxgiTextureStaging() = default;
 
@@ -32,8 +32,8 @@ bool DxgiTextureStaging::InitializeStage(ID3D11Texture2D* texture) {
   RTC_DCHECK(texture);
   D3D11_TEXTURE2D_DESC desc = {0};
   texture->GetDesc(&desc);
-  if (static_cast<int>(desc.Width) != desktop_rect().width() ||
-      static_cast<int>(desc.Height) != desktop_rect().height()) {
+  if (static_cast<int>(desc.Width) != desktop_size().width() ||
+      static_cast<int>(desc.Height) != desktop_size().height()) {
     LOG(LS_ERROR) << "Texture size is not consistent with current DxgiTexture.";
     return false;
   }
@@ -91,8 +91,7 @@ void DxgiTextureStaging::AssertStageAndSurfaceAreSameObject() {
 }
 
 bool DxgiTextureStaging::CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                                  IDXGIResource* resource,
-                                  const DesktopRegion& region) {
+                                  IDXGIResource* resource) {
   RTC_DCHECK(resource && frame_info.AccumulatedFrames > 0);
   ComPtr<ID3D11Texture2D> texture;
   _com_error error = resource->QueryInterface(
@@ -111,20 +110,8 @@ bool DxgiTextureStaging::CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
     return false;
   }
 
-  for (DesktopRegion::Iterator it(region); !it.IsAtEnd(); it.Advance()) {
-    DesktopRect rect(it.rect());
-    rect.Translate(-desktop_rect().left(), -desktop_rect().top());
-    D3D11_BOX box;
-    box.left = rect.left();
-    box.top = rect.top();
-    box.right = rect.right();
-    box.bottom = rect.bottom();
-    box.front = 0;
-    box.back = 1;
-    device_.context()->CopySubresourceRegion(
-        static_cast<ID3D11Resource*>(stage_.Get()), 0, rect.left(), rect.top(),
-        0, static_cast<ID3D11Resource*>(texture.Get()), 0, &box);
-  }
+  device_.context()->CopyResource(static_cast<ID3D11Resource*>(stage_.Get()),
+                                  static_cast<ID3D11Resource*>(texture.Get()));
 
   rect_ = {0};
   error = surface_->Map(&rect_, DXGI_MAP_READ);

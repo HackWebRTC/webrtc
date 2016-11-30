@@ -28,14 +28,13 @@ class DxgiTextureMapping : public DxgiTexture {
  public:
   // Creates a DxgiTextureMapping instance. Caller must maintain the lifetime
   // of input duplication to make sure it outlives this instance.
-  DxgiTextureMapping(const DesktopRect& desktop_rect,
+  DxgiTextureMapping(const DesktopSize& desktop_size,
                      IDXGIOutputDuplication* duplication);
 
   ~DxgiTextureMapping() override;
 
   bool CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                IDXGIResource* resource,
-                const DesktopRegion& region) override;
+                IDXGIResource* resource) override;
 
   bool DoRelease() override;
 

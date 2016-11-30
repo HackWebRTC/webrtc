@@ -108,7 +108,6 @@ void RotateDesktopFrame(const DesktopFrame& source,
     return;
   }
 
-  target->mutable_updated_region()->AddRect(target_rect);
   int result = libyuv::ARGBRotate(
        source.GetFrameDataAtPos(source_rect.top_left()), source.stride(),
        target->GetFrameDataAtPos(target_rect.top_left()), target->stride(),

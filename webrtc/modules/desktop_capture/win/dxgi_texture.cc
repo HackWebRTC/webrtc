@@ -19,7 +19,7 @@ namespace {
 class DxgiDesktopFrame : public DesktopFrame {
  public:
   explicit DxgiDesktopFrame(const DxgiTexture& texture)
-      : DesktopFrame(texture.desktop_rect().size(),
+      : DesktopFrame(texture.desktop_size(),
                      texture.pitch(),
                      texture.bits(),
                      nullptr) {}
@@ -29,8 +29,8 @@ class DxgiDesktopFrame : public DesktopFrame {
 
 }  // namespace
 
-DxgiTexture::DxgiTexture(const DesktopRect& desktop_rect)
-    : desktop_rect_(desktop_rect) {}
+DxgiTexture::DxgiTexture(const DesktopSize& desktop_size)
+    : desktop_size_(desktop_size) {}
 
 DxgiTexture::~DxgiTexture() {}
 

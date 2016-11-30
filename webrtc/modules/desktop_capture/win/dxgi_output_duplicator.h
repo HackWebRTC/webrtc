@@ -23,6 +23,7 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "webrtc/modules/desktop_capture/desktop_region.h"
+#include "webrtc/modules/desktop_capture/desktop_frame_rotation.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/d3d_device.h"
 #include "webrtc/modules/desktop_capture/win/dxgi_texture.h"
@@ -105,16 +106,15 @@ class DxgiOutputDuplicator {
   // contexts_.
   void SpreadContextChange(const Context* const context);
 
-  // Returns a DesktopRect in the coordinate of |texture_|->AsDesktopFrame().
-  DesktopRect SourceRect(DesktopRect rect);
-
   const D3dDevice device_;
   const Microsoft::WRL::ComPtr<IDXGIOutput1> output_;
   const DesktopRect desktop_rect_;
   Microsoft::WRL::ComPtr<IDXGIOutputDuplication> duplication_;
   DXGI_OUTDUPL_DESC desc_;
-  std::vector<uint8_t> metadata;
+  std::vector<uint8_t> metadata_;
   std::unique_ptr<DxgiTexture> texture_;
+  Rotation rotation_;
+  DesktopSize unrotated_size_;
 
   // After each AcquireNextFrame() function call, updated_region_(s) of all
   // active Context(s) need to be updated. Since they have missed the
