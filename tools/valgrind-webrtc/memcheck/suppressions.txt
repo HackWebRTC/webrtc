@@ -530,12 +530,3 @@
    fun:WebRtcOpus_Decode*
    ...
 }
-{
-   bug_6788
-   Memcheck:Leak
-   fun:_Zna*
-   fun:_ZN6webrtc17RtpStreamReceiver21OnReceivedPayloadDataEPKhmPKNS_15WebRtcRTPHeaderE
-   fun:_ZN6webrtc16RTPReceiverVideo14ParseRtpPacketEPNS_15WebRtcRTPHeaderERKNS_12PayloadUnionEbPKhmlb
-   fun:_ZN6webrtc15RtpReceiverImpl17IncomingRtpPacketERKNS_9RTPHeaderEPKhmNS_12PayloadUnionEb
-   ...
-}
