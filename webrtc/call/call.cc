@@ -213,6 +213,9 @@ class Call : public webrtc::Call,
   std::map<std::string, rtc::NetworkRoute> network_routes_;
 
   VieRemb remb_;
+  PacketRouter packet_router_;
+  // TODO(nisse): Could be a direct member, except for constness
+  // issues with GetRemoteBitrateEstimator (and maybe others).
   const std::unique_ptr<CongestionController> congestion_controller_;
   const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
   const int64_t start_ms_;
@@ -267,8 +270,11 @@ Call::Call(const Call::Config& config)
       estimated_send_bitrate_kbps_counter_(clock_, nullptr, true),
       pacer_bitrate_kbps_counter_(clock_, nullptr, true),
       remb_(clock_),
-      congestion_controller_(
-          new CongestionController(clock_, this, &remb_, event_log_)),
+      congestion_controller_(new CongestionController(clock_,
+                                                      this,
+                                                      &remb_,
+                                                      event_log_,
+                                                      &packet_router_)),
       video_send_delay_stats_(new SendDelayStats(clock_)),
       start_ms_(clock_->TimeInMilliseconds()),
       worker_queue_("call_worker_queue") {
@@ -412,8 +418,8 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   event_log_->LogAudioSendStreamConfig(config);
   AudioSendStream* send_stream = new AudioSendStream(
-      config, config_.audio_state, &worker_queue_, congestion_controller_.get(),
-      bitrate_allocator_.get(), event_log_);
+      config, config_.audio_state, &worker_queue_, &packet_router_,
+      congestion_controller_.get(), bitrate_allocator_.get(), event_log_);
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
@@ -466,7 +472,10 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   event_log_->LogAudioReceiveStreamConfig(config);
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
-      congestion_controller_.get(), config, config_.audio_state, event_log_);
+      &packet_router_,
+      // TODO(nisse): Used only when UseSendSideBwe(config) is true.
+      congestion_controller_->GetRemoteBitrateEstimator(true), config,
+      config_.audio_state, event_log_);
   {
     WriteLockScoped write_lock(*receive_crit_);
     RTC_DCHECK(audio_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
@@ -525,9 +534,10 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   std::vector<uint32_t> ssrcs = config.rtp.ssrcs;
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), &worker_queue_,
-      call_stats_.get(), congestion_controller_.get(), bitrate_allocator_.get(),
-      video_send_delay_stats_.get(), &remb_, event_log_, std::move(config),
-      std::move(encoder_config), suspended_video_send_ssrcs_);
+      call_stats_.get(), congestion_controller_.get(), &packet_router_,
+      bitrate_allocator_.get(), video_send_delay_stats_.get(), &remb_,
+      event_log_, std::move(config), std::move(encoder_config),
+      suspended_video_send_ssrcs_);
 
   {
     WriteLockScoped write_lock(*send_crit_);
@@ -583,8 +593,9 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      num_cpu_cores_, congestion_controller_.get(), std::move(configuration),
-      voice_engine(), module_process_thread_.get(), call_stats_.get(), &remb_);
+      num_cpu_cores_, congestion_controller_.get(), &packet_router_,
+      std::move(configuration), voice_engine(), module_process_thread_.get(),
+      call_stats_.get(), &remb_);
 
   const webrtc::VideoReceiveStream::Config& config = receive_stream->config();
   {

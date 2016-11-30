@@ -23,6 +23,7 @@ namespace webrtc {
 class CongestionController;
 class VoiceEngine;
 class RtcEventLog;
+class PacketRouter;
 
 namespace voe {
 class ChannelProxy;
@@ -35,6 +36,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                   rtc::TaskQueue* worker_queue,
+                  PacketRouter* packet_router,
                   CongestionController* congestion_controller,
                   BitrateAllocator* bitrate_allocator,
                   RtcEventLog* event_log);

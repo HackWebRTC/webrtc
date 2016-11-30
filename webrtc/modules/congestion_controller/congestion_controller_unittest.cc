@@ -37,10 +37,9 @@ class CongestionControllerTest : public ::testing::Test {
   void SetUp() override {
     pacer_ = new NiceMock<MockPacedSender>();
     std::unique_ptr<PacedSender> pacer(pacer_);  // Passes ownership.
-    std::unique_ptr<PacketRouter> packet_router(new PacketRouter());
     controller_.reset(new CongestionController(
         &clock_, &observer_, &remote_bitrate_observer_, &event_log_,
-        std::move(packet_router), std::move(pacer)));
+        &packet_router_, std::move(pacer)));
     bandwidth_observer_.reset(
         controller_->GetBitrateController()->CreateRtcpBandwidthObserver());
 
@@ -57,6 +56,7 @@ class CongestionControllerTest : public ::testing::Test {
   NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
   NiceMock<MockRtcEventLog> event_log_;
   std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
+  PacketRouter packet_router_;
   std::unique_ptr<CongestionController> controller_;
   const uint32_t kInitialBitrateBps = 60000;
 };

@@ -152,27 +152,26 @@ CongestionController::CongestionController(
     Clock* clock,
     Observer* observer,
     RemoteBitrateObserver* remote_bitrate_observer,
+    RtcEventLog* event_log,
+    PacketRouter* packet_router)
+    : CongestionController(
+          clock,
+          observer,
+          remote_bitrate_observer,
+          event_log,
+          packet_router,
+          std::unique_ptr<PacedSender>(new PacedSender(clock, packet_router))) {
+}
+
+CongestionController::CongestionController(
+    Clock* clock,
+    Observer* observer,
+    RemoteBitrateObserver* remote_bitrate_observer,
     RtcEventLog* event_log)
-    : clock_(clock),
-      observer_(observer),
-      packet_router_(new PacketRouter()),
-      pacer_(new PacedSender(clock_, packet_router_.get())),
-      remote_bitrate_estimator_(
-          new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
-      bitrate_controller_(
-          BitrateController::CreateBitrateController(clock_, event_log)),
-      probe_controller_(new ProbeController(pacer_.get(), clock_)),
-      retransmission_rate_limiter_(
-          new RateLimiter(clock, kRetransmitWindowSizeMs)),
-      remote_estimator_proxy_(clock_, packet_router_.get()),
-      transport_feedback_adapter_(clock_, bitrate_controller_.get()),
-      min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
-      max_bitrate_bps_(0),
-      last_reported_bitrate_bps_(0),
-      last_reported_fraction_loss_(0),
-      last_reported_rtt_(0),
-      network_state_(kNetworkUp) {
-  Init();
+    : CongestionController(clock, observer, remote_bitrate_observer, event_log,
+                           new PacketRouter()) {
+  // Record ownership.
+  owned_packet_router_.reset(packet_router_);
 }
 
 CongestionController::CongestionController(
@@ -180,11 +179,11 @@ CongestionController::CongestionController(
     Observer* observer,
     RemoteBitrateObserver* remote_bitrate_observer,
     RtcEventLog* event_log,
-    std::unique_ptr<PacketRouter> packet_router,
+    PacketRouter* packet_router,
     std::unique_ptr<PacedSender> pacer)
     : clock_(clock),
       observer_(observer),
-      packet_router_(std::move(packet_router)),
+      packet_router_(packet_router),
       pacer_(std::move(pacer)),
       remote_bitrate_estimator_(
           new WrappingBitrateEstimator(remote_bitrate_observer, clock_)),
@@ -195,7 +194,7 @@ CongestionController::CongestionController(
       probe_controller_(new ProbeController(pacer_.get(), clock_)),
       retransmission_rate_limiter_(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
-      remote_estimator_proxy_(clock_, packet_router_.get()),
+      remote_estimator_proxy_(clock_, packet_router_),
       transport_feedback_adapter_(clock_, bitrate_controller_.get()),
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       max_bitrate_bps_(0),
@@ -203,15 +202,11 @@ CongestionController::CongestionController(
       last_reported_fraction_loss_(0),
       last_reported_rtt_(0),
       network_state_(kNetworkUp) {
-  Init();
-}
-
-CongestionController::~CongestionController() {}
-
-void CongestionController::Init() {
   transport_feedback_adapter_.InitBwe();
   transport_feedback_adapter_.SetMinBitrate(min_bitrate_bps_);
 }
+
+CongestionController::~CongestionController() {}
 
 void CongestionController::SetBweBitrates(int min_bitrate_bps,
                                           int start_bitrate_bps,

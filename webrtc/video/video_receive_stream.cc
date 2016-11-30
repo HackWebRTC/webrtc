@@ -189,6 +189,7 @@ namespace internal {
 VideoReceiveStream::VideoReceiveStream(
     int num_cpu_cores,
     CongestionController* congestion_controller,
+    PacketRouter* packet_router,
     VideoReceiveStream::Config config,
     webrtc::VoiceEngine* voice_engine,
     ProcessThread* process_thread,
@@ -212,7 +213,7 @@ VideoReceiveStream::VideoReceiveStream(
           &transport_adapter_,
           call_stats_->rtcp_rtt_stats(),
           congestion_controller_->pacer(),
-          congestion_controller_->packet_router(),
+          packet_router,
           remb,
           &config_,
           &stats_proxy_,

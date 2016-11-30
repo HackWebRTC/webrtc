@@ -33,7 +33,9 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   SimulatedClock clock(data[i++]);
   NullBitrateObserver observer;
   RtcEventLogNullImpl event_log;
-  CongestionController cc(&clock, &observer, &observer, &event_log);
+  PacketRouter packet_router;
+  CongestionController cc(&clock, &observer, &observer, &event_log,
+                          &packet_router);
   RemoteBitrateEstimator* rbe = cc.GetRemoteBitrateEstimator(true);
   RTPHeader header;
   header.ssrc = ByteReader<uint32_t>::ReadBigEndian(&data[i]);

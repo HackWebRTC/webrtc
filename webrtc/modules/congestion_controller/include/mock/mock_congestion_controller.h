@@ -32,11 +32,13 @@ class MockCongestionController : public CongestionController {
   MockCongestionController(Clock* clock,
                            Observer* observer,
                            RemoteBitrateObserver* remote_bitrate_observer,
-                           RtcEventLog* event_log)
+                           RtcEventLog* event_log,
+                           PacketRouter* packet_router)
       : CongestionController(clock,
                              observer,
                              remote_bitrate_observer,
-                             event_log) {}
+                             event_log,
+                             packet_router) {}
   MOCK_METHOD3(SetBweBitrates,
                void(int min_bitrate_bps,
                     int start_bitrate_bps,
@@ -47,7 +49,6 @@ class MockCongestionController : public CongestionController {
                      RemoteBitrateEstimator*(bool send_side_bwe));
   MOCK_CONST_METHOD0(GetPacerQueuingDelayMs, int64_t());
   MOCK_METHOD0(pacer, PacedSender*());
-  MOCK_METHOD0(packet_router, PacketRouter*());
   MOCK_METHOD0(GetTransportFeedbackObserver, TransportFeedbackObserver*());
   MOCK_METHOD3(UpdatePacerBitrate,
                void(int bitrate_kbps,

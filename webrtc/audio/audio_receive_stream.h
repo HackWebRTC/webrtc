@@ -22,9 +22,9 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 
 namespace webrtc {
-class CongestionController;
 class RemoteBitrateEstimator;
 class RtcEventLog;
+class PacketRouter;
 
 namespace voe {
 class ChannelProxy;
@@ -36,7 +36,8 @@ class AudioSendStream;
 class AudioReceiveStream final : public webrtc::AudioReceiveStream,
                                  public AudioMixer::Source {
  public:
-  AudioReceiveStream(CongestionController* congestion_controller,
+  AudioReceiveStream(PacketRouter* packet_router,
+                     RemoteBitrateEstimator* remote_bitrate_estimator,
                      const webrtc::AudioReceiveStream::Config& config,
                      const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                      webrtc::RtcEventLog* event_log);
@@ -69,7 +70,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   int SetVoiceEnginePlayout(bool playout);
 
   rtc::ThreadChecker thread_checker_;
-  RemoteBitrateEstimator* remote_bitrate_estimator_ = nullptr;
+  RemoteBitrateEstimator* const remote_bitrate_estimator_;
   const webrtc::AudioReceiveStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   std::unique_ptr<RtpHeaderParser> rtp_header_parser_;

@@ -45,6 +45,7 @@ AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     rtc::TaskQueue* worker_queue,
+    PacketRouter* packet_router,
     CongestionController* congestion_controller,
     BitrateAllocator* bitrate_allocator,
     RtcEventLog* event_log)
@@ -62,8 +63,7 @@ AudioSendStream::AudioSendStream(
   channel_proxy_->SetRtcEventLog(event_log);
   channel_proxy_->RegisterSenderCongestionControlObjects(
       congestion_controller->pacer(),
-      congestion_controller->GetTransportFeedbackObserver(),
-      congestion_controller->packet_router());
+      congestion_controller->GetTransportFeedbackObserver(), packet_router);
   channel_proxy_->SetRTCPStatus(true);
   channel_proxy_->SetLocalSSRC(config.rtp.ssrc);
   channel_proxy_->SetRTCP_CNAME(config.rtp.c_name);

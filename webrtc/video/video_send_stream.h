@@ -35,6 +35,7 @@ class BitrateAllocator;
 class CallStats;
 class CongestionController;
 class IvfFileWriter;
+class PacketRouter;
 class ProcessThread;
 class RtpRtcp;
 class VieRemb;
@@ -54,6 +55,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
                   rtc::TaskQueue* worker_queue,
                   CallStats* call_stats,
                   CongestionController* congestion_controller,
+                  PacketRouter* packet_router,
                   BitrateAllocator* bitrate_allocator,
                   SendDelayStats* send_delay_stats,
                   VieRemb* remb,

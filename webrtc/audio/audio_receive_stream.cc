@@ -20,7 +20,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -32,20 +31,6 @@
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
-namespace {
-
-bool UseSendSideBwe(const webrtc::AudioReceiveStream::Config& config) {
-  if (!config.rtp.transport_cc) {
-    return false;
-  }
-  for (const auto& extension : config.rtp.extensions) {
-    if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
-      return true;
-    }
-  }
-  return false;
-}
-}  // namespace
 
 std::string AudioReceiveStream::Config::Rtp::ToString() const {
   std::stringstream ss;
@@ -80,17 +65,20 @@ std::string AudioReceiveStream::Config::ToString() const {
 
 namespace internal {
 AudioReceiveStream::AudioReceiveStream(
-    CongestionController* congestion_controller,
+    PacketRouter* packet_router,
+    RemoteBitrateEstimator* remote_bitrate_estimator,
     const webrtc::AudioReceiveStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     webrtc::RtcEventLog* event_log)
-    : config_(config),
+    : remote_bitrate_estimator_(remote_bitrate_estimator),
+      config_(config),
       audio_state_(audio_state),
       rtp_header_parser_(RtpHeaderParser::Create()) {
   LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
-  RTC_DCHECK(congestion_controller);
+  RTC_DCHECK(packet_router);
+  RTC_DCHECK(remote_bitrate_estimator);
   RTC_DCHECK(rtp_header_parser_);
 
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
@@ -129,12 +117,7 @@ AudioReceiveStream::AudioReceiveStream(
     }
   }
   // Configure bandwidth estimation.
-  channel_proxy_->RegisterReceiverCongestionControlObjects(
-      congestion_controller->packet_router());
-  if (UseSendSideBwe(config)) {
-    remote_bitrate_estimator_ =
-        congestion_controller->GetRemoteBitrateEstimator(true);
-  }
+  channel_proxy_->RegisterReceiverCongestionControlObjects(packet_router);
 }
 
 AudioReceiveStream::~AudioReceiveStream() {
@@ -147,9 +130,7 @@ AudioReceiveStream::~AudioReceiveStream() {
   channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
-  if (remote_bitrate_estimator_) {
-    remote_bitrate_estimator_->RemoveStream(config_.rtp.remote_ssrc);
-  }
+  remote_bitrate_estimator_->RemoveStream(config_.rtp.remote_ssrc);
 }
 
 void AudioReceiveStream::Start() {
@@ -288,7 +269,7 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
   // Only forward if the parsed header has one of the headers necessary for
   // bandwidth estimation. RTP timestamps has different rates for audio and
   // video and shouldn't be mixed.
-  if (remote_bitrate_estimator_ &&
+  if (config_.rtp.transport_cc &&
       header.extension.hasTransportSequenceNumber) {
     int64_t arrival_time_ms = rtc::TimeMillis();
     if (packet_time.timestamp >= 0)
