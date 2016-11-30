@@ -2046,9 +2046,15 @@ TEST_F(P2PTestConductor, GetGcmRecv) {
   TestGcmNegotiation(false, true, kDefaultSrtpCryptoSuite);
 }
 
+// Disabled due to flakiness, see http://crbug.com/webrtc/6776
+#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER)
+#define MAYBE_LocalP2PTestRtpDataChannel DISABLED_LocalP2PTestRtpDataChannel
+#else
+#define MAYBE_LocalP2PTestRtpDataChannel LocalP2PTestRtpDataChannel
+#endif
 // This test sets up a call between two parties with audio, video and an RTP
 // data channel.
-TEST_F(P2PTestConductor, LocalP2PTestRtpDataChannel) {
+TEST_F(P2PTestConductor, MAYBE_LocalP2PTestRtpDataChannel) {
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
@@ -2201,9 +2207,15 @@ TEST_F(P2PTestConductor, RegisterDataChannelObserver) {
   EXPECT_EQ_WAIT(data, new_observer.last_message(), kMaxWaitMs);
 }
 
+// Disabled due to flakiness, see http://crbug.com/webrtc/6776
+#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER)
+#define MAYBE_LocalP2PTestReceiverDoesntSupportData DISABLED_LocalP2PTestReceiverDoesntSupportData
+#else
+#define MAYBE_LocalP2PTestReceiverDoesntSupportData LocalP2PTestReceiverDoesntSupportData
+#endif
 // This test sets up a call between two parties with audio, video and but only
 // the initiating client support data.
-TEST_F(P2PTestConductor, LocalP2PTestReceiverDoesntSupportData) {
+TEST_F(P2PTestConductor, MAYBE_LocalP2PTestReceiverDoesntSupportData) {
   FakeConstraints setup_constraints_1;
   setup_constraints_1.SetAllowRtpDataChannels();
   // Must disable DTLS to make negotiation succeed.
@@ -2220,9 +2232,15 @@ TEST_F(P2PTestConductor, LocalP2PTestReceiverDoesntSupportData) {
   EXPECT_FALSE(initializing_client()->data_observer()->IsOpen());
 }
 
+// Disabled due to flakiness, see http://crbug.com/webrtc/6776
+#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER)
+#define MAYBE_AddDataChannelAfterRenegotiation DISABLED_AddDataChannelAfterRenegotiation
+#else
+#define MAYBE_AddDataChannelAfterRenegotiation AddDataChannelAfterRenegotiation
+#endif
 // This test sets up a call between two parties with audio, video. When audio
 // and video is setup and flowing and data channel is negotiated.
-TEST_F(P2PTestConductor, AddDataChannelAfterRenegotiation) {
+TEST_F(P2PTestConductor, MAYBE_AddDataChannelAfterRenegotiation) {
   FakeConstraints setup_constraints;
   setup_constraints.SetAllowRtpDataChannels();
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
