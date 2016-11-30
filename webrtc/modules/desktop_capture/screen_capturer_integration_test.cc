@@ -276,11 +276,21 @@ class ScreenCapturerIntegrationTest : public testing::Test {
   }
 };
 
-TEST_F(ScreenCapturerIntegrationTest, CaptureUpdatedRegion) {
+#if defined(WEBRTC_WIN)
+#define MAYBE_CaptureUpdatedRegion DISABLED_CaptureUpdatedRegion
+#else
+#define MAYBE_CaptureUpdatedRegion CaptureUpdatedRegion
+#endif
+TEST_F(ScreenCapturerIntegrationTest, MAYBE_CaptureUpdatedRegion) {
   TestCaptureUpdatedRegion();
 }
 
-TEST_F(ScreenCapturerIntegrationTest, TwoCapturers) {
+#if defined(WEBRTC_WIN)
+#define MAYBE_TwoCapturers DISABLED_TwoCapturers
+#else
+#define MAYBE_TwoCapturers TwoCapturers
+#endif
+TEST_F(ScreenCapturerIntegrationTest, MAYBE_TwoCapturers) {
   std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
   SetUp();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
@@ -289,7 +299,7 @@ TEST_F(ScreenCapturerIntegrationTest, TwoCapturers) {
 #if defined(WEBRTC_WIN)
 
 TEST_F(ScreenCapturerIntegrationTest,
-       CaptureUpdatedRegionWithDirectxCapturer) {
+       DISABLED_CaptureUpdatedRegionWithDirectxCapturer) {
   if (!CreateDirectxCapturer()) {
     return;
   }
@@ -297,7 +307,7 @@ TEST_F(ScreenCapturerIntegrationTest,
   TestCaptureUpdatedRegion();
 }
 
-TEST_F(ScreenCapturerIntegrationTest, TwoDirectxCapturers) {
+TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoDirectxCapturers) {
   if (!CreateDirectxCapturer()) {
     return;
   }
@@ -308,7 +318,7 @@ TEST_F(ScreenCapturerIntegrationTest, TwoDirectxCapturers) {
 }
 
 TEST_F(ScreenCapturerIntegrationTest,
-       CaptureUpdatedRegionWithMagnifierCapturer) {
+       DISABLED_CaptureUpdatedRegionWithMagnifierCapturer) {
   // On Windows 8 or later, magnifier APIs return a frame with a border on test
   // environment, so disable these tests.
   // Bug https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
@@ -321,7 +331,7 @@ TEST_F(ScreenCapturerIntegrationTest,
   TestCaptureUpdatedRegion();
 }
 
-TEST_F(ScreenCapturerIntegrationTest, TwoMagnifierCapturers) {
+TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoMagnifierCapturers) {
   // On Windows 8 or later, magnifier APIs return a frame with a border on test
   // environment, so disable these tests.
   // Bug https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
@@ -337,7 +347,7 @@ TEST_F(ScreenCapturerIntegrationTest, TwoMagnifierCapturers) {
 }
 
 TEST_F(ScreenCapturerIntegrationTest,
-       MaybeCaptureUpdatedRegionWithDirectxCapturer) {
+       DISABLED_MaybeCaptureUpdatedRegionWithDirectxCapturer) {
   // Even DirectX capturer is not supported in current system, we should be able
   // to select a usable capturer.
   MaybeCreateDirectxCapturer();
