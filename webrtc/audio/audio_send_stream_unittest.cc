@@ -106,6 +106,8 @@ struct ConfigHelper {
     // Use ISAC as default codec so as to prevent unnecessary |voice_engine_|
     // calls from the default ctor behavior.
     stream_config_.send_codec_spec.codec_inst = kIsacCodec;
+    stream_config_.min_bitrate_bps = 10000;
+    stream_config_.max_bitrate_bps = 65000;
   }
 
   AudioSendStream::Config& config() { return stream_config_; }
@@ -401,6 +403,28 @@ TEST(AudioSendStreamTest, SendCodecCanApplyVad) {
       stream_config, helper.audio_state(), helper.worker_queue(),
       helper.packet_router(), helper.congestion_controller(),
       helper.bitrate_allocator(), helper.event_log());
+}
+
+TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
+  ConfigHelper helper;
+  internal::AudioSendStream send_stream(
+      helper.config(), helper.audio_state(), helper.worker_queue(),
+      helper.packet_router(), helper.congestion_controller(),
+      helper.bitrate_allocator(), helper.event_log());
+  EXPECT_CALL(*helper.channel_proxy(),
+              SetBitrate(helper.config().max_bitrate_bps, _));
+  send_stream.OnBitrateUpdated(helper.config().max_bitrate_bps + 5000, 0.0, 50,
+                               6000);
+}
+
+TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
+  ConfigHelper helper;
+  internal::AudioSendStream send_stream(
+      helper.config(), helper.audio_state(), helper.worker_queue(),
+      helper.packet_router(), helper.congestion_controller(),
+      helper.bitrate_allocator(), helper.event_log());
+  EXPECT_CALL(*helper.channel_proxy(), SetBitrate(_, 5000));
+  send_stream.OnBitrateUpdated(50000, 0.0, 50, 5000);
 }
 
 }  // namespace test

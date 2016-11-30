@@ -449,9 +449,14 @@ class BitrateObserver : public CongestionController::Observer,
  public:
   BitrateObserver() : last_bitrate_bps_(0), bitrate_updated_(false) {}
 
+  // TODO(minyue): remove this when old OnNetworkChanged is deprecated. See
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=6796
+  using CongestionController::Observer::OnNetworkChanged;
+
   void OnNetworkChanged(uint32_t bitrate_bps,
                         uint8_t fraction_loss,
-                        int64_t rtt_ms) override {
+                        int64_t rtt_ms,
+                        int64_t probing_interval_ms) override {
     last_bitrate_bps_ = bitrate_bps;
     bitrate_updated_ = true;
   }

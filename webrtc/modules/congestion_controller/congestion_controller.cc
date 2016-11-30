@@ -342,7 +342,9 @@ void CongestionController::MaybeTriggerOnNetworkChanged() {
   bitrate_bps = IsNetworkDown() || IsSendQueueFull() ? 0 : bitrate_bps;
 
   if (HasNetworkParametersToReportChanged(bitrate_bps, fraction_loss, rtt)) {
-    observer_->OnNetworkChanged(bitrate_bps, fraction_loss, rtt);
+    observer_->OnNetworkChanged(
+        bitrate_bps, fraction_loss, rtt,
+        transport_feedback_adapter_.GetProbingIntervalMs());
     remote_estimator_proxy_.OnBitrateChanged(bitrate_bps);
   }
 }

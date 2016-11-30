@@ -21,10 +21,15 @@ namespace test {
 
 class MockCongestionObserver : public CongestionController::Observer {
  public:
-  MOCK_METHOD3(OnNetworkChanged,
+  // TODO(minyue): remove this when old OnNetworkChanged is deprecated. See
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=6796
+  using CongestionController::Observer::OnNetworkChanged;
+
+  MOCK_METHOD4(OnNetworkChanged,
                void(uint32_t bitrate_bps,
                     uint8_t fraction_loss,
-                    int64_t rtt_ms));
+                    int64_t rtt_ms,
+                    int64_t probing_interval_ms));
 };
 
 class MockCongestionController : public CongestionController {

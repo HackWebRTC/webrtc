@@ -24,6 +24,7 @@ namespace {
 
 constexpr int kMinIntervalMs = 2000;
 constexpr int kMaxIntervalMs = 50000;
+constexpr int kDefaultIntervalMs = 3000;
 
 struct ProbingIntervalEstimatorStates {
   std::unique_ptr<ProbingIntervalEstimator> probing_interval_estimator;
@@ -34,12 +35,13 @@ ProbingIntervalEstimatorStates CreateProbingIntervalEstimatorStates() {
   ProbingIntervalEstimatorStates states;
   states.aimd_rate_control.reset(new MockAimdRateControl());
   states.probing_interval_estimator.reset(new ProbingIntervalEstimator(
-      kMinIntervalMs, kMaxIntervalMs, states.aimd_rate_control.get()));
+      kMinIntervalMs, kMaxIntervalMs, kDefaultIntervalMs,
+      states.aimd_rate_control.get()));
   return states;
 }
 }  // namespace
 
-TEST(ProbingIntervalEstimatorTest, NoIntervalUntillWeHaveDrop) {
+TEST(ProbingIntervalEstimatorTest, DefaultIntervalUntillWeHaveDrop) {
   auto states = CreateProbingIntervalEstimatorStates();
 
   EXPECT_CALL(*states.aimd_rate_control, GetLastBitrateDecreaseBps())
@@ -49,9 +51,9 @@ TEST(ProbingIntervalEstimatorTest, NoIntervalUntillWeHaveDrop) {
       .WillOnce(Return(4000))
       .WillOnce(Return(4000));
 
-  EXPECT_EQ(rtc::Optional<int>(),
+  EXPECT_EQ(kDefaultIntervalMs,
             states.probing_interval_estimator->GetIntervalMs());
-  EXPECT_NE(rtc::Optional<int>(),
+  EXPECT_NE(kDefaultIntervalMs,
             states.probing_interval_estimator->GetIntervalMs());
 }
 
@@ -61,8 +63,7 @@ TEST(ProbingIntervalEstimatorTest, CalcInterval) {
       .WillOnce(Return(rtc::Optional<int>(20000)));
   EXPECT_CALL(*states.aimd_rate_control, GetNearMaxIncreaseRateBps())
       .WillOnce(Return(5000));
-  EXPECT_EQ(rtc::Optional<int>(4000),
-            states.probing_interval_estimator->GetIntervalMs());
+  EXPECT_EQ(4000, states.probing_interval_estimator->GetIntervalMs());
 }
 
 TEST(ProbingIntervalEstimatorTest, IntervalDoesNotExceedMin) {
@@ -71,8 +72,7 @@ TEST(ProbingIntervalEstimatorTest, IntervalDoesNotExceedMin) {
       .WillOnce(Return(rtc::Optional<int>(1000)));
   EXPECT_CALL(*states.aimd_rate_control, GetNearMaxIncreaseRateBps())
       .WillOnce(Return(5000));
-  EXPECT_EQ(rtc::Optional<int>(kMinIntervalMs),
-            states.probing_interval_estimator->GetIntervalMs());
+  EXPECT_EQ(kMinIntervalMs, states.probing_interval_estimator->GetIntervalMs());
 }
 
 TEST(ProbingIntervalEstimatorTest, IntervalDoesNotExceedMax) {
@@ -81,7 +81,6 @@ TEST(ProbingIntervalEstimatorTest, IntervalDoesNotExceedMax) {
       .WillOnce(Return(rtc::Optional<int>(50000)));
   EXPECT_CALL(*states.aimd_rate_control, GetNearMaxIncreaseRateBps())
       .WillOnce(Return(100));
-  EXPECT_EQ(rtc::Optional<int>(kMaxIntervalMs),
-            states.probing_interval_estimator->GetIntervalMs());
+  EXPECT_EQ(kMaxIntervalMs, states.probing_interval_estimator->GetIntervalMs());
 }
 }  // namespace webrtc

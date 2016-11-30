@@ -119,9 +119,16 @@ class Call : public webrtc::Call,
 
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
+
+  // TODO(minyue): remove this when old OnNetworkChanged is deprecated. See
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=6796
+  using CongestionController::Observer::OnNetworkChanged;
+
   // Implements BitrateObserver.
-  void OnNetworkChanged(uint32_t bitrate_bps, uint8_t fraction_loss,
-                        int64_t rtt_ms) override;
+  void OnNetworkChanged(uint32_t bitrate_bps,
+                        uint8_t fraction_loss,
+                        int64_t rtt_ms,
+                        int64_t probing_interval_ms) override;
 
   // Implements BitrateAllocator::LimitObserver.
   void OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
@@ -888,19 +895,23 @@ void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
   congestion_controller_->OnSentPacket(sent_packet);
 }
 
-void Call::OnNetworkChanged(uint32_t target_bitrate_bps, uint8_t fraction_loss,
-                            int64_t rtt_ms) {
+void Call::OnNetworkChanged(uint32_t target_bitrate_bps,
+                            uint8_t fraction_loss,
+                            int64_t rtt_ms,
+                            int64_t probing_interval_ms) {
   // TODO(perkj): Consider making sure CongestionController operates on
   // |worker_queue_|.
   if (!worker_queue_.IsCurrent()) {
-    worker_queue_.PostTask([this, target_bitrate_bps, fraction_loss, rtt_ms] {
-      OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt_ms);
-    });
+    worker_queue_.PostTask(
+        [this, target_bitrate_bps, fraction_loss, rtt_ms, probing_interval_ms] {
+          OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt_ms,
+                           probing_interval_ms);
+        });
     return;
   }
   RTC_DCHECK_RUN_ON(&worker_queue_);
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss,
-                                       rtt_ms);
+                                       rtt_ms, probing_interval_ms);
 
   // Ignore updates if bitrate is zero (the aggregate network state is down).
   if (target_bitrate_bps == 0) {

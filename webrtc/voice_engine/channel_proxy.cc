@@ -148,9 +148,9 @@ bool ChannelProxy::SendTelephoneEventOutband(int event, int duration_ms) {
   return channel()->SendTelephoneEventOutband(event, duration_ms) == 0;
 }
 
-void ChannelProxy::SetBitrate(int bitrate_bps) {
+void ChannelProxy::SetBitrate(int bitrate_bps, int64_t probing_interval_ms) {
   // May be called on different threads and needs to be handled by the channel.
-  channel()->SetBitRate(bitrate_bps);
+  channel()->SetBitRate(bitrate_bps, probing_interval_ms);
 }
 
 void ChannelProxy::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
