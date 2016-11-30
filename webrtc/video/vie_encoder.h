@@ -27,7 +27,6 @@
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
-#include "webrtc/modules/video_processing/include/video_processing.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video_encoder.h"

@@ -522,8 +522,6 @@ if (rtc_include_tests) {
       "video_coding/video_receiver_unittest.cc",
       "video_coding/video_sender_unittest.cc",
       "video_processing/test/denoiser_test.cc",
-      "video_processing/test/video_processing_unittest.cc",
-      "video_processing/test/video_processing_unittest.h",
     ]
 
     if (apm_debug_dump) {
