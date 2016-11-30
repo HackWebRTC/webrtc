@@ -119,6 +119,11 @@ PlatformThread::~PlatformThread() {
 
 #if defined(WEBRTC_WIN)
 DWORD WINAPI PlatformThread::StartThread(void* param) {
+  // The GetLastError() function only returns valid results when it is called
+  // after a Win32 API function that returns a "failed" result. A crash dump
+  // contains the result from GetLastError() and to make sure it does not
+  // falsely report a Windows error we call SetLastError here.
+  ::SetLastError(ERROR_SUCCESS);
   static_cast<PlatformThread*>(param)->Run();
   return 0;
 }
