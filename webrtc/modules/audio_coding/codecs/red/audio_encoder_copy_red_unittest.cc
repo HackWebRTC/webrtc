@@ -97,14 +97,14 @@ TEST_F(AudioEncoderCopyRedTest, CheckMaxFrameSizePropagation) {
   EXPECT_EQ(17U, red_->Max10MsFramesInAPacket());
 }
 
-TEST_F(AudioEncoderCopyRedTest, CheckTargetAudioBitratePropagation) {
-  EXPECT_CALL(*mock_encoder_, OnReceivedTargetAudioBitrate(4711));
-  red_->OnReceivedTargetAudioBitrate(4711);
+TEST_F(AudioEncoderCopyRedTest, CheckSetBitratePropagation) {
+  EXPECT_CALL(*mock_encoder_, SetTargetBitrate(4711));
+  red_->SetTargetBitrate(4711);
 }
 
-TEST_F(AudioEncoderCopyRedTest, CheckPacketLossFractionPropagation) {
-  EXPECT_CALL(*mock_encoder_, OnReceivedUplinkPacketLossFraction(0.5));
-  red_->OnReceivedUplinkPacketLossFraction(0.5);
+TEST_F(AudioEncoderCopyRedTest, CheckProjectedPacketLossRatePropagation) {
+  EXPECT_CALL(*mock_encoder_, SetProjectedPacketLossRate(0.5));
+  red_->SetProjectedPacketLossRate(0.5);
 }
 
 // Checks that the an Encode() call is immediately propagated to the speech

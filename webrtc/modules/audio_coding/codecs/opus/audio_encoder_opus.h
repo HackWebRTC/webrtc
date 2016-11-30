@@ -102,6 +102,9 @@ class AudioEncoderOpus final : public AudioEncoder {
 
   bool SetApplication(Application application) override;
   void SetMaxPlaybackRate(int frequency_hz) override;
+  void SetProjectedPacketLossRate(double fraction) override;
+  void SetTargetBitrate(int target_bps) override;
+
   bool EnableAudioNetworkAdaptor(const std::string& config_string,
                                  const Clock* clock) override;
   void DisableAudioNetworkAdaptor() override;
@@ -117,7 +120,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   }
 
   // Getters for testing.
-  float packet_loss_rate() const { return packet_loss_rate_; }
+  double packet_loss_rate() const { return packet_loss_rate_; }
   ApplicationMode application() const { return config_.application; }
   bool fec_enabled() const { return config_.fec_enabled; }
   size_t num_channels_to_encode() const { return num_channels_to_encode_; }
@@ -137,15 +140,13 @@ class AudioEncoderOpus final : public AudioEncoder {
   bool RecreateEncoderInstance(const Config& config);
   void SetFrameLength(int frame_length_ms);
   void SetNumChannelsToEncode(size_t num_channels_to_encode);
-  void SetProjectedPacketLossRate(float fraction);
-  void SetTargetBitrate(int target_bps);
   void ApplyAudioNetworkAdaptor();
   std::unique_ptr<AudioNetworkAdaptor> DefaultAudioNetworkAdaptorCreator(
       const std::string& config_string,
       const Clock* clock) const;
 
   Config config_;
-  float packet_loss_rate_;
+  double packet_loss_rate_;
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;
   uint32_t first_timestamp_in_buffer_;

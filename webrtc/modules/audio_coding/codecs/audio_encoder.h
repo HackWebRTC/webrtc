@@ -144,6 +144,17 @@ class AudioEncoder {
   // implementation does nothing.
   virtual void SetMaxPlaybackRate(int frequency_hz);
 
+  // Tells the encoder what the projected packet loss rate is. The rate is in
+  // the range [0.0, 1.0]. The encoder would typically use this information to
+  // adjust channel coding efforts, such as FEC. The default implementation
+  // does nothing.
+  virtual void SetProjectedPacketLossRate(double fraction);
+
+  // Tells the encoder what average bitrate we'd like it to produce. The
+  // encoder is free to adjust or disregard the given bitrate (the default
+  // implementation does the latter).
+  virtual void SetTargetBitrate(int target_bps);
+
   // Causes this encoder to let go of any other encoders it contains, and
   // returns a pointer to an array where they are stored (which is required to
   // live as long as this encoder). Unless the returned array is empty, you may
@@ -164,7 +175,6 @@ class AudioEncoder {
   virtual void OnReceivedUplinkBandwidth(int uplink_bandwidth_bps);
 
   // Provides uplink packet loss fraction to this encoder to allow it to adapt.
-  // |uplink_packet_loss_fraction| is in the range [0.0, 1.0].
   virtual void OnReceivedUplinkPacketLossFraction(
       float uplink_packet_loss_fraction);
 

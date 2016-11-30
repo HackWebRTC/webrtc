@@ -49,11 +49,10 @@ class AudioEncoderCopyRed final : public AudioEncoder {
   bool SetDtx(bool enable) override;
   bool SetApplication(Application application) override;
   void SetMaxPlaybackRate(int frequency_hz) override;
+  void SetProjectedPacketLossRate(double fraction) override;
+  void SetTargetBitrate(int target_bps) override;
   rtc::ArrayView<std::unique_ptr<AudioEncoder>> ReclaimContainedEncoders()
       override;
-  void OnReceivedUplinkPacketLossFraction(
-      float uplink_packet_loss_fraction) override;
-  void OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) override;
 
  protected:
   EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
