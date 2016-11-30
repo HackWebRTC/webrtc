@@ -21,10 +21,6 @@
 //  Settings for VoiceEngine
 // ----------------------------------------------------------------------------
 
-#define WEBRTC_VOICE_ENGINE_AGC                 // Near-end AGC
-#define WEBRTC_VOICE_ENGINE_ECHO                // Near-end AEC
-#define WEBRTC_VOICE_ENGINE_NR                  // Near-end NS
-
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
 #define WEBRTC_VOICE_ENGINE_TYPING_DETECTION    // Typing detection
 #endif
