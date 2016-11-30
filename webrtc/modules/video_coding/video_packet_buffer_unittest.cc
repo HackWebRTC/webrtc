@@ -64,7 +64,7 @@ class TestPacketBuffer : public ::testing::Test,
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
 
-    return packet_buffer_->InsertPacket(packet);
+    return packet_buffer_->InsertPacket(&packet);
   }
 
   void CheckFrame(uint16_t first_seq_num) {
@@ -142,21 +142,21 @@ TEST_F(TestPacketBuffer, NackCount) {
   packet.markerBit = false;
   packet.timesNacked = 0;
 
-  packet_buffer_->InsertPacket(packet);
+  packet_buffer_->InsertPacket(&packet);
 
   packet.seqNum++;
   packet.isFirstPacket = false;
   packet.timesNacked = 1;
-  packet_buffer_->InsertPacket(packet);
+  packet_buffer_->InsertPacket(&packet);
 
   packet.seqNum++;
   packet.timesNacked = 3;
-  packet_buffer_->InsertPacket(packet);
+  packet_buffer_->InsertPacket(&packet);
 
   packet.seqNum++;
   packet.markerBit = true;
   packet.timesNacked = 1;
-  packet_buffer_->InsertPacket(packet);
+  packet_buffer_->InsertPacket(&packet);
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
   RtpFrameObject* frame = frames_from_callback_.begin()->second.get();
@@ -365,7 +365,7 @@ TEST_F(TestPacketBuffer, GetBitstreamH264BufferPadding) {
   packet.sizeBytes = sizeof(data_data);
   packet.isFirstPacket = true;
   packet.markerBit = true;
-  packet_buffer_->InsertPacket(packet);
+  packet_buffer_->InsertPacket(&packet);
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
   EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage()._length,
@@ -436,6 +436,28 @@ TEST_F(TestPacketBuffer, FramesAfterClear) {
   CheckFrame(9025);
   CheckFrame(9026);
   CheckFrame(9057);
+}
+
+TEST_F(TestPacketBuffer, DontLeakPayloadData) {
+  // NOTE! Any eventual leak is suppose to be detected by valgrind
+  //       or any other similar tool.
+  uint8_t* data1 = new uint8_t[5];
+  uint8_t* data2 = new uint8_t[5];
+  uint8_t* data3 = new uint8_t[5];
+  uint8_t* data4 = new uint8_t[5];
+
+  // Expected to free data1 upon PacketBuffer destruction.
+  EXPECT_TRUE(Insert(2, kKeyFrame, kFirst, kNotLast, 5, data1));
+
+  // Expect to free data2 upon insertion.
+  EXPECT_TRUE(Insert(2, kKeyFrame, kFirst, kNotLast, 5, data2));
+
+  // Expect to free data3 upon insertion (old packet).
+  packet_buffer_->ClearTo(1);
+  EXPECT_FALSE(Insert(1, kKeyFrame, kFirst, kNotLast, 5, data3));
+
+  // Expect to free data4 upon insertion (packet buffer is full).
+  EXPECT_FALSE(Insert(2 + kMaxSize, kKeyFrame, kFirst, kNotLast, 5, data4));
 }
 
 }  // namespace video_coding

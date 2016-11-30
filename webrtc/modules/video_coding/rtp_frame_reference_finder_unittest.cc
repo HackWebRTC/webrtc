@@ -33,8 +33,8 @@ class FakePacketBuffer : public PacketBuffer {
     return packet_it == packets_.end() ? nullptr : &packet_it->second;
   }
 
-  bool InsertPacket(const VCMPacket& packet) override {
-    packets_[packet.seqNum] = packet;
+  bool InsertPacket(VCMPacket* packet) override {
+    packets_[packet->seqNum] = *packet;
     return true;
   }
 
@@ -83,11 +83,11 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.codec = kVideoCodecGeneric;
     packet.seqNum = seq_num_start;
     packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
 
     packet.seqNum = seq_num_end;
     packet.markerBit = true;
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
         ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0));
@@ -110,12 +110,12 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.video_header.codecHeader.VP8.temporalIdx = tid;
     packet.video_header.codecHeader.VP8.tl0PicIdx = tl0;
     packet.video_header.codecHeader.VP8.layerSync = sync;
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
 
     if (seq_num_start != seq_num_end) {
       packet.seqNum = seq_num_end;
       packet.markerBit = true;
-      ref_packet_buffer_->InsertPacket(packet);
+      ref_packet_buffer_->InsertPacket(&packet);
     }
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
@@ -148,13 +148,13 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
       packet.video_header.codecHeader.VP9.ss_data_available = true;
       packet.video_header.codecHeader.VP9.gof = *ss;
     }
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
 
     if (seq_num_start != seq_num_end) {
       packet.markerBit = true;
       packet.video_header.codecHeader.VP9.ss_data_available = false;
       packet.seqNum = seq_num_end;
-      ref_packet_buffer_->InsertPacket(packet);
+      ref_packet_buffer_->InsertPacket(&packet);
     }
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
@@ -186,12 +186,12 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.video_header.codecHeader.VP9.num_ref_pics = refs.size();
     for (size_t i = 0; i < refs.size(); ++i)
       packet.video_header.codecHeader.VP9.pid_diff[i] = refs[i];
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
 
     if (seq_num_start != seq_num_end) {
       packet.seqNum = seq_num_end;
       packet.markerBit = true;
-      ref_packet_buffer_->InsertPacket(packet);
+      ref_packet_buffer_->InsertPacket(&packet);
     }
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
@@ -1270,7 +1270,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_PidJumpsBackwardThenForward) {
   packet.video_header.codecHeader.VP9.gof = ss;
 
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1281,7 +1281,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_PidJumpsBackwardThenForward) {
   packet.video_header.codecHeader.VP9.picture_id = 0;
 
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1291,7 +1291,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_PidJumpsBackwardThenForward) {
   packet.video_header.codecHeader.VP9.picture_id = 5000;
 
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1323,7 +1323,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_Tl0JumpsBackwardThenForward) {
   packet.video_header.codecHeader.VP9.ss_data_available = true;
   packet.video_header.codecHeader.VP9.gof = ss;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1333,7 +1333,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_Tl0JumpsBackwardThenForward) {
   packet.video_header.codecHeader.VP9.picture_id = 1;
   packet.video_header.codecHeader.VP9.tl0_pic_idx = 0;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1344,7 +1344,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_Tl0JumpsBackwardThenForward) {
   packet.video_header.codecHeader.VP9.picture_id = 2;
   packet.video_header.codecHeader.VP9.tl0_pic_idx = 2;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1356,7 +1356,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_Tl0JumpsBackwardThenForward) {
   packet.video_header.codecHeader.VP9.picture_id = 3;
   packet.video_header.codecHeader.VP9.tl0_pic_idx = 129;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1389,7 +1389,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_PidSmallJumpForward) {
   packet.video_header.codecHeader.VP9.ss_data_available = true;
   packet.video_header.codecHeader.VP9.gof = ss;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1399,7 +1399,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_PidSmallJumpForward) {
   packet.video_header.codecHeader.VP9.picture_id = 2;
   packet.video_header.codecHeader.VP9.tl0_pic_idx = 2;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1409,7 +1409,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_PidSmallJumpForward) {
   packet.video_header.codecHeader.VP9.picture_id = 3;
   packet.video_header.codecHeader.VP9.tl0_pic_idx = 2;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1419,7 +1419,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_PidSmallJumpForward) {
   packet.video_header.codecHeader.VP9.picture_id = 4;
   packet.video_header.codecHeader.VP9.tl0_pic_idx = 1;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1452,7 +1452,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_DropOldFrame) {
   packet.video_header.codecHeader.VP9.ss_data_available = true;
   packet.video_header.codecHeader.VP9.gof = ss;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1462,7 +1462,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_DropOldFrame) {
   packet.video_header.codecHeader.VP9.picture_id = 0;
   packet.video_header.codecHeader.VP9.tl0_pic_idx = 2;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));
@@ -1472,7 +1472,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9PidFix_DropOldFrame) {
   packet.video_header.codecHeader.VP9.picture_id = 3;
   packet.video_header.codecHeader.VP9.tl0_pic_idx = 2;
   {
-    ref_packet_buffer_->InsertPacket(packet);
+    ref_packet_buffer_->InsertPacket(&packet);
     std::unique_ptr<RtpFrameObject> frame(
         new RtpFrameObject(ref_packet_buffer_, 0, 0, 0, 0, 0));
     reference_finder_->ManageFrame(std::move(frame));

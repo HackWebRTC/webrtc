@@ -274,7 +274,7 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
       packet.dataPtr = data;
     }
 
-    packet_buffer_->InsertPacket(packet);
+    packet_buffer_->InsertPacket(&packet);
   } else {
     if (video_receiver_->IncomingPacket(payload_data, payload_size,
                                         rtp_header_with_ntp) != 0) {

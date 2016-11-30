@@ -48,9 +48,10 @@ class PacketBuffer {
 
   virtual ~PacketBuffer();
 
-  // Returns true if |packet| is inserted into the packet buffer,
-  // false otherwise. Made virtual for testing.
-  virtual bool InsertPacket(const VCMPacket& packet);
+  // Returns true if |packet| is inserted into the packet buffer, false
+  // otherwise. The PacketBuffer will always take ownership of the
+  // |packet.dataPtr| when this function is called. Made virtual for testing.
+  virtual bool InsertPacket(VCMPacket* packet);
   void ClearTo(uint16_t seq_num);
   void Clear();
 
