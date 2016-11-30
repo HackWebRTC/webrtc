@@ -16,6 +16,34 @@
 // Read WEBRTC_VOICE_ENGINE_XXX_API compiler flags
 #include "webrtc/voice_engine_configurations.h"
 
+#ifndef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_CODEC_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_FILE_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_HARDWARE_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
+#error "Deprecated"
+#endif
+
 // Select the tests to execute, list order below is same as they will be
 // executed. Note that, all settings below will be overriden by sub-API
 // settings in voice_engine_configurations.h.

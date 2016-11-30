@@ -18,6 +18,10 @@
 #include "webrtc/voice_engine/transmit_mixer.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
+#ifndef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
+#error "Deprecated"
+#endif
+
 // TODO(andrew): move to a common place.
 #define WEBRTC_VOICE_INIT_CHECK()                        \
   do {                                                   \

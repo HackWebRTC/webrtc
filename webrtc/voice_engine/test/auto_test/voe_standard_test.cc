@@ -23,6 +23,10 @@
 #include "webrtc/voice_engine/voice_engine_defines.h"
 #include "webrtc/voice_engine_configurations.h"
 
+#ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
+#error "Deprecated"
+#endif
+
 DEFINE_bool(include_timing_dependent_tests, true,
             "If true, we will include tests / parts of tests that are known "
             "to break in slow execution environments (such as valgrind).");

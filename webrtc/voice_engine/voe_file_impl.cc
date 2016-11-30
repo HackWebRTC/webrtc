@@ -19,6 +19,10 @@
 #include "webrtc/voice_engine/transmit_mixer.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
+#ifndef WEBRTC_VOICE_ENGINE_FILE_API
+#error "Deprecated"
+#endif
+
 namespace webrtc {
 
 VoEFile* VoEFile::GetInterface(VoiceEngine* voiceEngine) {

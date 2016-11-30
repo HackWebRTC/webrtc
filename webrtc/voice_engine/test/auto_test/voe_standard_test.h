@@ -40,6 +40,34 @@
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 #endif
 
+#ifndef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_CODEC_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_FILE_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_HARDWARE_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
+#error "Deprecated"
+#endif
+#ifndef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
+#error "Deprecated"
+#endif
+
 #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 namespace webrtc {
 class VoENetEqStats;

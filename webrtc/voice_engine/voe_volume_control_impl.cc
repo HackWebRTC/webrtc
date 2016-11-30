@@ -17,6 +17,10 @@
 #include "webrtc/voice_engine/transmit_mixer.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
+#ifndef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
+#error "Deprecated"
+#endif
+
 namespace webrtc {
 
 VoEVolumeControl* VoEVolumeControl::GetInterface(VoiceEngine* voiceEngine) {

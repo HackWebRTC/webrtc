@@ -17,6 +17,10 @@
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
+#ifndef WEBRTC_VOICE_ENGINE_CODEC_API
+#error "Deprecated"
+#endif
+
 namespace webrtc {
 
 VoECodec* VoECodec::GetInterface(VoiceEngine* voiceEngine) {
