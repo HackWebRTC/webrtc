@@ -21,36 +21,6 @@ class FullStackTest : public VideoQualityTest {
   void RunTest(const VideoQualityTest::Params &params) {
     RunWithAnalyzer(params);
   }
-
-  void ForemanCifWithoutPacketLoss(const std::string& video_codec) {
-    // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
-    VideoQualityTest::Params foreman_cif;
-    foreman_cif.video = {true, 352, 288, 30, 700000, 700000, 700000, false,
-                         video_codec, 1, 0, 0, false, false, "", "foreman_cif"};
-    foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_" + video_codec,
-                            0.0, 0.0, kFullStackTestDurationSecs};
-    RunTest(foreman_cif);
-  }
-
-  void ForemanCifPlr5(const std::string& video_codec,
-                      bool use_ulpfec,
-                      bool use_flexfec) {
-    VideoQualityTest::Params foreman_cif;
-    foreman_cif.video = {true, 352, 288, 30, 30000, 500000, 2000000, false,
-                         video_codec, 1, 0, 0, use_ulpfec, use_flexfec, "",
-                         "foreman_cif"};
-    std::string fec_description;
-    if (use_ulpfec)
-      fec_description += "_ulpfec";
-    if (use_flexfec)
-      fec_description += "_flexfec";
-    foreman_cif.analyzer = {
-        "foreman_cif_delay_50_0_plr_5_" + video_codec + fec_description, 0.0,
-        0.0, kFullStackTestDurationSecs};
-    foreman_cif.pipe.loss_percent = 5;
-    foreman_cif.pipe.queue_delay_ms = 50;
-    RunTest(foreman_cif);
-  }
 };
 
 // VideoQualityTest::Params params = {
@@ -65,13 +35,26 @@ class FullStackTest : public VideoQualityTest {
 
 #if !defined(RTC_DISABLE_VP9)
 TEST_F(FullStackTest, ForemanCifWithoutPacketLossVp9) {
-  ForemanCifWithoutPacketLoss("VP9");
+  // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 30, 700000, 700000, 700000, false,
+                       "VP9", 1, 0, 0, false, false, "", "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_VP9", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  RunTest(foreman_cif);
 }
 
 TEST_F(FullStackTest, ForemanCifPlr5Vp9) {
-  const bool kUlpfec = false;
-  const bool kFlexfec = false;
-  ForemanCifPlr5("VP9", kUlpfec, kFlexfec);
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 30, 30000, 500000, 2000000, false,
+                       "VP9", 1, 0, 0, false, false, "", "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_VP9", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  foreman_cif.pipe.loss_percent = 5;
+  foreman_cif.pipe.queue_delay_ms = 50;
+  RunTest(foreman_cif);
 }
 #endif  // !defined(RTC_DISABLE_VP9)
 
@@ -108,30 +91,80 @@ TEST_F(FullStackTest, ForemanCifPlr5) {
   RunTest(foreman_cif);
 }
 
+TEST_F(FullStackTest, ForemanCifPlr5Ulpfec) {
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 30, 30000, 500000, 2000000, false, "VP8",
+                       1, 0, 0, true, false, "", "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_ulpfec", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  foreman_cif.pipe.loss_percent = 5;
+  foreman_cif.pipe.queue_delay_ms = 50;
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCifPlr5Flexfec) {
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 30, 30000, 500000, 2000000, false, "VP8",
+                       1, 0, 0, false, true, "", "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_flexfec", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  foreman_cif.pipe.loss_percent = 5;
+  foreman_cif.pipe.queue_delay_ms = 50;
+  RunTest(foreman_cif);
+}
+
 #if defined(WEBRTC_USE_H264)
 TEST_F(FullStackTest, ForemanCifWithoutPacketlossH264) {
-  ForemanCifWithoutPacketLoss("H264");
+  // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 30, 700000, 700000, 700000, false,
+                       "H264", 1, 0, 0, false, false, "", "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_H264", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  RunTest(foreman_cif);
 }
 
 TEST_F(FullStackTest, ForemanCifPlr5H264) {
-  const bool kUlpfec = false;
-  const bool kFlexfec = false;
-  ForemanCifPlr5("H264", kUlpfec, kFlexfec);
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 30, 30000, 500000, 2000000, false,
+                       "H264", 1, 0, 0, false, false, "", "foreman_cif"};
+  std::string fec_description;
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  foreman_cif.pipe.loss_percent = 5;
+  foreman_cif.pipe.queue_delay_ms = 50;
+  RunTest(foreman_cif);
 }
 
 // Verify that this is worth the bot time, before enabling.
 TEST_F(FullStackTest, ForemanCifPlr5H264Flexfec) {
-  const bool kUlpfec = false;
-  const bool kFlexfec = true;
-  ForemanCifPlr5("H264", kUlpfec, kFlexfec);
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 30, 30000, 500000, 2000000, false,
+                       "H264", 1, 0, 0, false, true, "", "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_flexfec", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  foreman_cif.pipe.loss_percent = 5;
+  foreman_cif.pipe.queue_delay_ms = 50;
+  RunTest(foreman_cif);
 }
 
 // Ulpfec with H264 is an unsupported combination, so this test is only useful
 // for debugging. It is therefore disabled by default.
 TEST_F(FullStackTest, DISABLED_ForemanCifPlr5H264Ulpfec) {
-  const bool kUlpfec = true;
-  const bool kFlexfec = false;
-  ForemanCifPlr5("H264", kUlpfec, kFlexfec);
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 30, 30000, 500000, 2000000, false,
+                       "H264", 1, 0, 0, true, false, "", "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_ulpfec", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  foreman_cif.pipe.loss_percent = 5;
+  foreman_cif.pipe.queue_delay_ms = 50;
+  RunTest(foreman_cif);
 }
 #endif  // defined(WEBRTC_USE_H264)
 
@@ -189,10 +222,11 @@ TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
 
 TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueueRecvBwe) {
   VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = false;
   foreman_cif.video = {true, 352, 288, 30, 30000, 500000, 2000000, false, "VP8",
                        1, 0, 0, false, false, "", "foreman_cif"};
-  foreman_cif.analyzer = {"foreman_cif_500kbps_100ms_32pkts_queue", 0.0, 0.0,
-                          kFullStackTestDurationSecs};
+  foreman_cif.analyzer = {"foreman_cif_500kbps_100ms_32pkts_queue_recv_bwe",
+                          0.0, 0.0, kFullStackTestDurationSecs};
   foreman_cif.pipe.queue_length_packets = 32;
   foreman_cif.pipe.queue_delay_ms = 100;
   foreman_cif.pipe.link_capacity_kbps = 500;
@@ -290,4 +324,5 @@ TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
   RunTest(screenshare);
 }
 #endif  // !defined(RTC_DISABLE_VP9)
+
 }  // namespace webrtc
