@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  * wrapping texture frames into webrtc::VideoFrames and also handles calling returnTextureFrame()
  * when the webrtc::VideoFrame is no longer used.
  */
-class SurfaceTextureHelper {
+public class SurfaceTextureHelper {
   private static final String TAG = "SurfaceTextureHelper";
   /**
    * Callback interface for being notified that a new texture frame is available. The calls will be

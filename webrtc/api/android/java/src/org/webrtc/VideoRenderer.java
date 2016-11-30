@@ -45,8 +45,8 @@ public class VideoRenderer {
     /**
      * Construct a frame of the given dimensions with the specified planar data.
      */
-    I420Frame(int width, int height, int rotationDegree, int[] yuvStrides, ByteBuffer[] yuvPlanes,
-        long nativeFramePointer) {
+    public I420Frame(int width, int height, int rotationDegree, int[] yuvStrides,
+        ByteBuffer[] yuvPlanes, long nativeFramePointer) {
       this.width = width;
       this.height = height;
       this.yuvStrides = yuvStrides;
@@ -73,8 +73,8 @@ public class VideoRenderer {
     /**
      * Construct a texture frame of the given dimensions with data in SurfaceTexture
      */
-    I420Frame(int width, int height, int rotationDegree, int textureId, float[] samplingMatrix,
-        long nativeFramePointer) {
+    public I420Frame(int width, int height, int rotationDegree, int textureId,
+        float[] samplingMatrix, long nativeFramePointer) {
       this.width = width;
       this.height = height;
       this.yuvStrides = null;
