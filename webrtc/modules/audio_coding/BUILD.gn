@@ -1075,7 +1075,7 @@ if (rtc_include_tests) {
       ":neteq",
       ":neteq_unittest_tools",
       "../../common_audio",
-      "../../test:test_support_main",
+      "../../test:test_main",
       "//testing/gtest",
     ]
 
@@ -1173,7 +1173,7 @@ if (rtc_include_tests) {
       ":isac_fix",
       ":webrtc_opus",
       "../../system_wrappers:system_wrappers_default",
-      "../../test:test_support_main",
+      "../../test:test_main",
       "../audio_processing",
       "//testing/gtest",
     ]
@@ -1451,7 +1451,7 @@ if (rtc_include_tests) {
       ":neteq_quality_test_support",
       ":neteq_unittest_tools",
       ":webrtc_opus",
-      "../../test:test_support_main",
+      "../../test:test_main",
       "//testing/gtest",
       "//third_party/gflags",
     ]
@@ -1498,7 +1498,7 @@ if (rtc_include_tests) {
       ":neteq_quality_test_support",
       ":neteq_unittest_tools",
       "../../system_wrappers:system_wrappers_default",
-      "../../test:test_support_main",
+      "../../test:test_main",
       "//testing/gtest",
       "//third_party/gflags",
     ]
@@ -1515,7 +1515,7 @@ if (rtc_include_tests) {
       ":isac_fix",
       ":neteq",
       ":neteq_quality_test_support",
-      "../../test:test_support_main",
+      "../../test:test_main",
       "//testing/gtest",
       "//third_party/gflags",
     ]
@@ -1532,7 +1532,7 @@ if (rtc_include_tests) {
       ":g711",
       ":neteq",
       ":neteq_quality_test_support",
-      "../../test:test_support_main",
+      "../../test:test_main",
       "//testing/gtest",
       "//third_party/gflags",
     ]
@@ -1678,8 +1678,8 @@ if (rtc_include_tests) {
       ":webrtc_opus",
       "../../base:rtc_base_approved",
       "../../common_audio",
+      "../../test:test_main",
       "../../test:test_support",
-      "../../test:test_support_main",
       "//testing/gtest",
     ]
 

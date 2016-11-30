@@ -28,7 +28,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/test/test_suite.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 // Files generated at build-time by the protobuf compiler.

@@ -199,7 +199,7 @@ if (rtc_include_tests) {
       "//webrtc/modules/rtp_rtcp",
       "//webrtc/modules/utility",
       "//webrtc/system_wrappers",
-      "//webrtc/test:test_support_main",
+      "//webrtc/test:test_main",
     ]
 
     if (is_android) {

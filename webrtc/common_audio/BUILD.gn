@@ -289,7 +289,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":common_audio",
-      "../test:test_support_main",
+      "../test:test_main",
       "//testing/gmock",
       "//testing/gtest",
     ]

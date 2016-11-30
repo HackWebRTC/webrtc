@@ -22,9 +22,9 @@ group("test") {
     ":field_trial",
     ":rtp_test_utils",
     ":test_common",
+    ":test_main",
     ":test_renderer",
     ":test_support",
-    ":test_support_main",
     ":test_support_unittests",
     ":video_test_common",
   ]
@@ -98,6 +98,7 @@ rtc_source_set("test_main") {
     ":field_trial",
     ":test_support",
     "../system_wrappers:metrics_default",
+    "//testing/gmock",
     "//testing/gtest",
     "//third_party/gflags",
   ]
@@ -161,46 +162,6 @@ rtc_source_set("test_support") {
   if (rtc_use_memcheck) {
     data = valgrind_webrtc_dependencies
   }
-}
-
-# Depend on this target when you want to have test_support but also the
-# main method needed for gtest to execute!
-rtc_source_set("test_support_main") {
-  testonly = true
-
-  sources = [
-    "run_all_unittests.cc",
-    "test_suite.cc",
-    "test_suite.h",
-  ]
-
-  deps = [
-    ":field_trial",
-    ":test_support",
-    "../system_wrappers:metrics_default",
-    "//testing/gmock",
-    "//testing/gtest",
-    "//third_party/gflags",
-  ]
-}
-
-# Depend on this target when you want to have test_support and a special
-# main for mac which will run your test on a worker thread and consume
-# events on the main thread. Useful if you want to access a webcam.
-# This main will provide all the scaffolding and objective-c black magic
-# for you. All you need to do is to implement a function in the
-# run_threaded_main_mac.h file (ImplementThisToRunYourTest).
-rtc_source_set("test_support_main_threaded_mac") {
-  testonly = true
-
-  sources = [
-    "testsupport/mac/run_threaded_main_mac.h",
-    "testsupport/mac/run_threaded_main_mac.mm",
-  ]
-
-  deps = [
-    ":test_support",
-  ]
 }
 
 rtc_source_set("run_test") {
@@ -276,7 +237,7 @@ rtc_test("test_support_unittests") {
 
   deps += [
     ":test_common",
-    ":test_support_main",
+    ":test_main",
     "../modules/video_capture",
     "//testing/gmock",
     "//testing/gtest",

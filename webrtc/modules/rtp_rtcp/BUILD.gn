@@ -203,7 +203,7 @@ if (rtc_include_tests) {
     deps = [
       ":rtp_rtcp",
       "//testing/gtest",
-      "//webrtc/test:test_support_main",
+      "//webrtc/test:test_main",
     ]
   }  # test_packet_masks_metrics
 }

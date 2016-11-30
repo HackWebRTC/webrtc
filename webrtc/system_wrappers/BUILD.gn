@@ -196,7 +196,7 @@ if (rtc_include_tests) {
     deps = [
       ":metrics_default",
       ":system_wrappers",
-      "../test:test_support_main",
+      "../test:test_main",
       "//testing/gtest",
     ]
 

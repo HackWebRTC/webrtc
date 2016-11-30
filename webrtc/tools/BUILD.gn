@@ -271,7 +271,7 @@ if (rtc_include_tests) {
       ":command_line_parser",
       ":frame_editing_lib",
       ":video_quality_analysis",
-      "../test:test_support_main",
+      "../test:test_main",
       "//testing/gtest",
     ]
 

@@ -119,7 +119,7 @@ if (rtc_include_tests) {
     deps = [
       ":common_video",
       "../system_wrappers:system_wrappers",
-      "../test:test_support_main",
+      "../test:test_main",
       "../test:video_test_common",
       "//testing/gmock",
       "//testing/gtest",
