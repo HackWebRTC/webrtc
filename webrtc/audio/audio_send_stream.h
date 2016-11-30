@@ -23,6 +23,7 @@ namespace webrtc {
 class CongestionController;
 class VoiceEngine;
 class RtcEventLog;
+class RtcpRttStats;
 class PacketRouter;
 
 namespace voe {
@@ -39,7 +40,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   PacketRouter* packet_router,
                   CongestionController* congestion_controller,
                   BitrateAllocator* bitrate_allocator,
-                  RtcEventLog* event_log);
+                  RtcEventLog* event_log,
+                  RtcpRttStats* rtcp_rtt_stats);
   ~AudioSendStream() override;
 
   // webrtc::AudioSendStream implementation.

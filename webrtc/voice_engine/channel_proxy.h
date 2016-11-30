@@ -27,6 +27,7 @@ namespace webrtc {
 class AudioSinkInterface;
 class PacketRouter;
 class RtcEventLog;
+class RtcpRttStats;
 class RtpPacketSender;
 class Transport;
 class TransportFeedbackObserver;
@@ -96,6 +97,8 @@ class ChannelProxy {
   virtual void SetTransportOverhead(int transport_overhead_per_packet);
   virtual void AssociateSendChannel(const ChannelProxy& send_channel_proxy);
   virtual void DisassociateSendChannel();
+
+  virtual void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
 
  private:
   Channel* channel() const;

@@ -151,6 +151,34 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
   RTC_DISALLOW_COPY_AND_ASSIGN(RtcEventLogProxy);
 };
 
+class RtcpRttStatsProxy final : public RtcpRttStats {
+ public:
+  RtcpRttStatsProxy() : rtcp_rtt_stats_(nullptr) {}
+
+  void OnRttUpdate(int64_t rtt) override {
+    rtc::CritScope lock(&crit_);
+    if (rtcp_rtt_stats_)
+      rtcp_rtt_stats_->OnRttUpdate(rtt);
+  }
+
+  int64_t LastProcessedRtt() const override {
+    rtc::CritScope lock(&crit_);
+    if (!rtcp_rtt_stats_)
+      return 0;
+    return rtcp_rtt_stats_->LastProcessedRtt();
+  }
+
+  void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
+    rtc::CritScope lock(&crit_);
+    rtcp_rtt_stats_ = rtcp_rtt_stats;
+  }
+
+ private:
+  rtc::CriticalSection crit_;
+  RtcpRttStats* rtcp_rtt_stats_ GUARDED_BY(crit_);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtcpRttStatsProxy);
+};
+
 class TransportFeedbackProxy : public TransportFeedbackObserver {
  public:
   TransportFeedbackProxy() : feedback_observer_(nullptr) {
@@ -834,6 +862,7 @@ Channel::Channel(int32_t channelId,
     : _instanceId(instanceId),
       _channelId(channelId),
       event_log_proxy_(new RtcEventLogProxy()),
+      rtcp_rtt_stats_proxy_(new RtcpRttStatsProxy()),
       rtp_header_parser_(RtpHeaderParser::Create()),
       rtp_payload_registry_(new RTPPayloadRegistry()),
       rtp_receive_statistics_(
@@ -920,6 +949,7 @@ Channel::Channel(int32_t channelId,
     configuration.transport_feedback_callback = feedback_observer_proxy_.get();
   }
   configuration.event_log = &(*event_log_proxy_);
+  configuration.rtt_stats = &(*rtcp_rtt_stats_proxy_);
   configuration.retransmission_rate_limiter =
       retransmission_rate_limiter_.get();
 
@@ -2847,6 +2877,10 @@ void Channel::DisassociateSendChannel(int channel_id) {
 
 void Channel::SetRtcEventLog(RtcEventLog* event_log) {
   event_log_proxy_->SetEventLog(event_log);
+}
+
+void Channel::SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
+  rtcp_rtt_stats_proxy_->SetRtcpRttStats(rtcp_rtt_stats);
 }
 
 void Channel::SetTransportOverhead(int transport_overhead_per_packet) {
