@@ -125,26 +125,6 @@ class I420Buffer : public VideoFrameBuffer {
   // Scale all of |src| to the size of |this| buffer, with no cropping.
   void ScaleFrom(const VideoFrameBuffer& src);
 
-  // Deprecated methods, using smart pointer references.
-  // TODO(nisse): Delete once downstream applications are updated.
-  static rtc::scoped_refptr<I420Buffer> Copy(
-      const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
-    return Copy(*buffer);
-  }
-  void CropAndScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src,
-                        int offset_x,
-                        int offset_y,
-                        int crop_width,
-                        int crop_height) {
-    CropAndScaleFrom(*src, offset_x, offset_y, crop_width, crop_height);
-  }
-  void CropAndScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src) {
-    CropAndScaleFrom(*src);
-  }
-  void ScaleFrom(const rtc::scoped_refptr<VideoFrameBuffer>& src) {
-    ScaleFrom(*src);
-  }
-
  protected:
   I420Buffer(int width, int height);
   I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
