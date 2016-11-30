@@ -30,6 +30,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/h264_bitstream_parser.h"
+#include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/engine/internalencoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
@@ -56,10 +57,6 @@ using webrtc::QualityScaler;
 
 namespace webrtc_jni {
 
-// H.264 start code length.
-#define H264_SC_LENGTH 4
-// Maximum allowed NALUs in one output frame.
-#define MAX_NALUS_PERFRAME 32
 // Maximum supported HW video encoder fps.
 #define MAX_VIDEO_FPS 30
 // Maximum allowed fps value in SetRates() call.
@@ -178,9 +175,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder,
   // Deliver any outputs pending in the MediaCodec to our |callback_| and return
   // true on success.
   bool DeliverPendingOutputs(JNIEnv* jni);
-
-  // Search for H.264 start codes.
-  int32_t NextNaluPosition(uint8_t *buffer, size_t buffer_size);
 
   VideoEncoder::ScalingSettings GetScalingSettings() const override;
 
@@ -1101,20 +1095,9 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           image->qp_ = qp;
         }
         // For H.264 search for start codes.
-        int32_t scPositions[MAX_NALUS_PERFRAME + 1] = {};
-        int32_t scPositionsLength = 0;
-        int32_t scPosition = 0;
-        while (scPositionsLength < MAX_NALUS_PERFRAME) {
-          int32_t naluPosition = NextNaluPosition(
-              payload + scPosition, payload_size - scPosition);
-          if (naluPosition < 0) {
-            break;
-          }
-          scPosition += naluPosition;
-          scPositions[scPositionsLength++] = scPosition;
-          scPosition += H264_SC_LENGTH;
-        }
-        if (scPositionsLength == 0) {
+        const std::vector<webrtc::H264::NaluIndex> nalu_idxs =
+            webrtc::H264::FindNaluIndices(payload, payload_size);
+        if (nalu_idxs.empty()) {
           ALOGE << "Start code is not found!";
           ALOGE << "Data:" <<  image->_buffer[0] << " " << image->_buffer[1]
               << " " << image->_buffer[2] << " " << image->_buffer[3]
@@ -1122,12 +1105,10 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           ProcessHWErrorOnCodecThread(true /* reset_if_fallback_unavailable */);
           return false;
         }
-        scPositions[scPositionsLength] = payload_size;
-        header.VerifyAndAllocateFragmentationHeader(scPositionsLength);
-        for (size_t i = 0; i < scPositionsLength; i++) {
-          header.fragmentationOffset[i] = scPositions[i] + H264_SC_LENGTH;
-          header.fragmentationLength[i] =
-              scPositions[i + 1] - header.fragmentationOffset[i];
+        header.VerifyAndAllocateFragmentationHeader(nalu_idxs.size());
+        for (size_t i = 0; i < nalu_idxs.size(); i++) {
+          header.fragmentationOffset[i] = nalu_idxs[i].payload_start_offset;
+          header.fragmentationLength[i] = nalu_idxs[i].payload_size;
           header.fragmentationPlType[i] = 0;
           header.fragmentationTimeDiff[i] = 0;
         }
@@ -1202,38 +1183,6 @@ void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
 webrtc::VideoEncoder::ScalingSettings
 MediaCodecVideoEncoder::GetScalingSettings() const {
   return VideoEncoder::ScalingSettings(scale_);
-}
-
-int32_t MediaCodecVideoEncoder::NextNaluPosition(
-    uint8_t *buffer, size_t buffer_size) {
-  if (buffer_size < H264_SC_LENGTH) {
-    return -1;
-  }
-  uint8_t *head = buffer;
-  // Set end buffer pointer to 4 bytes before actual buffer end so we can
-  // access head[1], head[2] and head[3] in a loop without buffer overrun.
-  uint8_t *end = buffer + buffer_size - H264_SC_LENGTH;
-
-  while (head < end) {
-    if (head[0]) {
-      head++;
-      continue;
-    }
-    if (head[1]) { // got 00xx
-      head += 2;
-      continue;
-    }
-    if (head[2]) { // got 0000xx
-      head += 3;
-      continue;
-    }
-    if (head[3] != 0x01) { // got 000000xx
-      head++; // xx != 1, continue searching.
-      continue;
-    }
-    return (int32_t)(head - buffer);
-  }
-  return -1;
 }
 
 const char* MediaCodecVideoEncoder::ImplementationName() const {
