@@ -765,7 +765,7 @@ AdaptiveVideoSource::AdaptiveVideoSource(int flow_id,
 }
 
 void AdaptiveVideoSource::SetBitrateBps(int bitrate_bps) {
-  bits_per_second_ = std::min(bitrate_bps, 2500000);
+  bits_per_second_ = bitrate_bps;
   frame_size_bytes_ = (bits_per_second_ / 8 * frame_period_ms_ + 500) / 1000;
 }
 
