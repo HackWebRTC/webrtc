@@ -5,7 +5,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'b5ce7e0a17e32d6d145124938a90220e9f9990c5',
+  'chromium_revision': '698c4714e8ad986ee5e12cde0026cb9e1b70e6cc',
 }
 
 deps = {
