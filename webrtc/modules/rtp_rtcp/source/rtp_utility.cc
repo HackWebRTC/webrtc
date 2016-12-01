@@ -336,8 +336,8 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
       return;
     }
 
-    RTPExtensionType type;
-    if (ptrExtensionMap->GetType(id, &type) != 0) {
+    RTPExtensionType type = ptrExtensionMap->GetType(id);
+    if (type == RtpHeaderExtensionMap::kInvalidType) {
       // If we encounter an unknown extension, just skip over it.
       LOG(LS_WARNING) << "Failed to find extension id: " << id;
     } else {
@@ -444,8 +444,9 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
               max_playout_delay * kPlayoutDelayGranularityMs;
           break;
         }
-        default: {
-          LOG(LS_WARNING) << "Extension type not implemented: " << type;
+        case kRtpExtensionNone:
+        case kRtpExtensionNumberOfExtensions: {
+          RTC_NOTREACHED() << "Invalid extension type: " << type;
           return;
         }
       }

@@ -77,11 +77,6 @@ class RtpHeaderExtensionMap {
     return RegisterByType(id, type) ? 0 : -1;
   }
   int32_t Deregister(RTPExtensionType type);
-  int32_t GetType(uint8_t id, RTPExtensionType* type) const {
-    *type = GetType(id);
-    return *type == kInvalidType ? -1 : 0;
-  }
-  void GetCopy(RtpHeaderExtensionMap* copy) const { *copy = *this; }
 
  private:
   static constexpr uint8_t kMinId = 1;
