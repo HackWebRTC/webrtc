@@ -62,8 +62,6 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
   // Downscale resolution at most 2 times for CPU reasons.
   static const int kMaxCpuDowngrades = 2;
-  // Downscale resolution at most 2 times for low-quality reasons.
-  static const int kMaxQualityDowngrades = 2;
 
   ViEEncoder(uint32_t number_of_cores,
              SendStatisticsProxy* stats_proxy,

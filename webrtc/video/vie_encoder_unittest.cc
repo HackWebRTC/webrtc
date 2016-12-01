@@ -585,12 +585,15 @@ TEST_F(ViEEncoderTest,
   int frame_width = 1280;
   int frame_height = 720;
 
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, frame_width, frame_height));
+  sink_.WaitForEncodedFrame(1);
   // Trigger CPU overuse.
   vie_encoder_->TriggerCpuOveruse();
 
   video_source_.IncomingCapturedFrame(
-      CreateFrame(1, frame_width, frame_height));
-  sink_.WaitForEncodedFrame(1);
+      CreateFrame(2, frame_width, frame_height));
+  sink_.WaitForEncodedFrame(2);
   EXPECT_LT(video_source_.sink_wants().max_pixel_count.value_or(
                 std::numeric_limits<int>::max()),
             frame_width * frame_height);
@@ -606,8 +609,8 @@ TEST_F(ViEEncoderTest,
   EXPECT_FALSE(new_video_source.sink_wants().max_pixel_count_step_up);
 
   new_video_source.IncomingCapturedFrame(
-      CreateFrame(2, frame_width, frame_height));
-  sink_.WaitForEncodedFrame(2);
+      CreateFrame(3, frame_width, frame_height));
+  sink_.WaitForEncodedFrame(3);
   EXPECT_FALSE(new_video_source.sink_wants().max_pixel_count);
   EXPECT_FALSE(new_video_source.sink_wants().max_pixel_count_step_up);
 
@@ -874,11 +877,16 @@ TEST_F(ViEEncoderTest, ScalingUpAndDownDoesNothingWithMaintainResolution) {
   EXPECT_FALSE(video_source_.sink_wants().max_pixel_count);
   EXPECT_FALSE(video_source_.sink_wants().max_pixel_count_step_up);
 
-  // Trigger scale down
-  vie_encoder_->TriggerQualityLow();
   video_source_.IncomingCapturedFrame(
       CreateFrame(1, frame_width, frame_height));
   sink_.WaitForEncodedFrame(1);
+
+  // Trigger scale down
+  vie_encoder_->TriggerQualityLow();
+
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(2, frame_width, frame_height));
+  sink_.WaitForEncodedFrame(2);
 
   // Expect a scale down.
   EXPECT_TRUE(video_source_.sink_wants().max_pixel_count);
@@ -894,8 +902,8 @@ TEST_F(ViEEncoderTest, ScalingUpAndDownDoesNothingWithMaintainResolution) {
   // Trigger scale down
   vie_encoder_->TriggerQualityLow();
   new_video_source.IncomingCapturedFrame(
-      CreateFrame(2, frame_width, frame_height));
-  sink_.WaitForEncodedFrame(2);
+      CreateFrame(3, frame_width, frame_height));
+  sink_.WaitForEncodedFrame(3);
 
   // Expect no scaling
   EXPECT_FALSE(new_video_source.sink_wants().max_pixel_count);
@@ -903,11 +911,31 @@ TEST_F(ViEEncoderTest, ScalingUpAndDownDoesNothingWithMaintainResolution) {
   // Trigger scale up
   vie_encoder_->TriggerQualityHigh();
   new_video_source.IncomingCapturedFrame(
-      CreateFrame(3, frame_width, frame_height));
-  sink_.WaitForEncodedFrame(3);
+      CreateFrame(4, frame_width, frame_height));
+  sink_.WaitForEncodedFrame(4);
 
   // Expect nothing to change, still no scaling
   EXPECT_FALSE(new_video_source.sink_wants().max_pixel_count);
+
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, DoesNotScaleBelowSetLimit) {
+  const int kTargetBitrateBps = 100000;
+  int frame_width = 1280;
+  int frame_height = 720;
+  // from vie_encoder.cc
+  const int kMinPixelsPerFrame = 120 * 90;
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  for (size_t i = 1; i <= 10; i++) {
+    video_source_.IncomingCapturedFrame(
+        CreateFrame(i, frame_width, frame_height));
+    sink_.WaitForEncodedFrame(i);
+    // Trigger scale down
+    vie_encoder_->TriggerQualityLow();
+    EXPECT_GE(*video_source_.sink_wants().max_pixel_count, kMinPixelsPerFrame);
+  }
 
   vie_encoder_->Stop();
 }

@@ -32,6 +32,8 @@ namespace webrtc {
 namespace {
 // Time interval for logging frame counts.
 const int64_t kFrameLogIntervalMs = 60000;
+// We will never ask for a resolution lower than this.
+const int kMinPixelsPerFrame = 120 * 90;
 
 // TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
 // pipelining encoders better (multiple input frames before something comes
@@ -176,7 +178,10 @@ class ViEEncoder::VideoSourceProxy {
     // The input video frame size will have a resolution with less than or
     // equal to |max_pixel_count| depending on how the source can scale the
     // input frame size.
-    sink_wants_.max_pixel_count = rtc::Optional<int>((pixel_count * 3) / 5);
+    const int pixels_wanted = (pixel_count * 3) / 5;
+    if (pixels_wanted < kMinPixelsPerFrame)
+      return;
+    sink_wants_.max_pixel_count = rtc::Optional<int>(pixels_wanted);
     sink_wants_.max_pixel_count_step_up = rtc::Optional<int>();
     if (source_)
       source_->AddOrUpdateSink(vie_encoder_, sink_wants_);
@@ -681,8 +686,6 @@ void ViEEncoder::ScaleDown(ScaleReason reason) {
     return;
   switch (reason) {
     case kQuality:
-      if (scale_counter_[reason] >= kMaxQualityDowngrades)
-        return;
       stats_proxy_->OnQualityRestrictedResolutionChanged(true);
       break;
     case kCpu:
