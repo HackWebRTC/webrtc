@@ -19,6 +19,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
@@ -26,7 +27,6 @@
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video_frame.h"
-
 namespace webrtc {
 
 namespace {
@@ -270,6 +270,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       last_frame_log_ms_(clock_->TimeInMilliseconds()),
       captured_frame_count_(0),
       dropped_frame_count_(0),
+      bitrate_observer_(nullptr),
       encoder_queue_("EncoderQueue") {
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
@@ -292,6 +293,7 @@ void ViEEncoder::Stop() {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     overuse_detector_.StopCheckForOveruse();
     rate_allocator_.reset();
+    bitrate_observer_ = nullptr;
     video_sender_.RegisterExternalEncoder(nullptr, settings_.payload_type,
                                           false);
     quality_scaler_ = nullptr;
@@ -312,6 +314,16 @@ void ViEEncoder::RegisterProcessThread(ProcessThread* module_process_thread) {
 void ViEEncoder::DeRegisterProcessThread() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   module_process_thread_->DeRegisterModule(&video_sender_);
+}
+
+void ViEEncoder::SetBitrateObserver(
+    VideoBitrateAllocationObserver* bitrate_observer) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  encoder_queue_.PostTask([this, bitrate_observer] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    RTC_DCHECK(!bitrate_observer_);
+    bitrate_observer_ = bitrate_observer;
+  });
 }
 
 void ViEEncoder::SetSource(
@@ -405,7 +417,9 @@ void ViEEncoder::ReconfigureEncoder() {
     RTC_DCHECK(success);
   }
 
-  video_sender_.UpdateChannelParemeters(rate_allocator_.get());
+  video_sender_.UpdateChannelParemeters(rate_allocator_.get(),
+                                        bitrate_observer_);
+
   if (stats_proxy_) {
     int framerate = stats_proxy_->GetSendFrameRate();
     if (framerate == 0)
@@ -660,7 +674,8 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
                   << " rtt " << round_trip_time_ms;
 
   video_sender_.SetChannelParameters(bitrate_bps, fraction_lost,
-                                     round_trip_time_ms, rate_allocator_.get());
+                                     round_trip_time_ms, rate_allocator_.get(),
+                                     bitrate_observer_);
 
   encoder_start_bitrate_bps_ =
       bitrate_bps != 0 ? bitrate_bps : encoder_start_bitrate_bps_;

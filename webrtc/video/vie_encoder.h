@@ -37,6 +37,7 @@ namespace webrtc {
 
 class ProcessThread;
 class SendStatisticsProxy;
+class VideoBitrateAllocationObserver;
 
 // VieEncoder represent a video encoder that accepts raw video frames as input
 // and produces an encoded bit stream.
@@ -90,6 +91,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
   // TODO(perkj): Can we remove VideoCodec.startBitrate ?
   void SetStartBitrate(int start_bitrate_bps);
+
+  void SetBitrateObserver(VideoBitrateAllocationObserver* bitrate_observer);
 
   void ConfigureEncoder(VideoEncoderConfig config,
                         size_t max_data_payload_length,
@@ -230,6 +233,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   int64_t last_frame_log_ms_ GUARDED_BY(incoming_frame_race_checker_);
   int captured_frame_count_ ACCESS_ON(&encoder_queue_);
   int dropped_frame_count_ ACCESS_ON(&encoder_queue_);
+
+  VideoBitrateAllocationObserver* bitrate_observer_ ACCESS_ON(&encoder_queue_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.

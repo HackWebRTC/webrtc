@@ -125,7 +125,6 @@ class EndToEndTest : public test::CallTest,
   void DecodesRetransmittedFrame(bool enable_rtx, bool enable_red);
   void ReceivesPliAndRecovers(int rtp_history_ms);
   void RespectsRtcpMode(RtcpMode rtcp_mode);
-  void TestXrReceiverReferenceTimeReport(bool enable_rrtr);
   void TestSendsSetSsrcs(size_t num_ssrcs, bool send_single_ssrc_first);
   void TestRtpStatePreservation(bool use_rtx, bool provoke_rtcpsr_before_rtp);
   void VerifyHistogramStats(bool use_rtx, bool use_red, bool screenshare);
@@ -2435,89 +2434,6 @@ TEST_P(EndToEndTest, VerifyHistogramStatsWithScreenshare) {
   VerifyHistogramStats(kEnabledRtx, kEnabledRed, kScreenshare);
 }
 
-void EndToEndTest::TestXrReceiverReferenceTimeReport(bool enable_rrtr) {
-  static const int kNumRtcpReportPacketsToObserve = 5;
-  class RtcpXrObserver : public test::EndToEndTest {
-   public:
-    explicit RtcpXrObserver(bool enable_rrtr)
-        : EndToEndTest(kDefaultTimeoutMs),
-          enable_rrtr_(enable_rrtr),
-          sent_rtcp_sr_(0),
-          sent_rtcp_rr_(0),
-          sent_rtcp_rrtr_(0),
-          sent_rtcp_dlrr_(0) {}
-
-   private:
-    // Receive stream should send RR packets (and RRTR packets if enabled).
-    Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
-      test::RtcpPacketParser parser;
-      EXPECT_TRUE(parser.Parse(packet, length));
-
-      sent_rtcp_rr_ += parser.receiver_report()->num_packets();
-      EXPECT_EQ(0, parser.sender_report()->num_packets());
-      EXPECT_GE(1, parser.xr()->num_packets());
-      if (parser.xr()->num_packets() > 0) {
-        if (parser.xr()->rrtr())
-          ++sent_rtcp_rrtr_;
-        EXPECT_FALSE(parser.xr()->dlrr());
-      }
-
-      return SEND_PACKET;
-    }
-    // Send stream should send SR packets (and DLRR packets if enabled).
-    Action OnSendRtcp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
-      test::RtcpPacketParser parser;
-      EXPECT_TRUE(parser.Parse(packet, length));
-
-      sent_rtcp_sr_ += parser.sender_report()->num_packets();
-      EXPECT_GE(1, parser.xr()->num_packets());
-      if (parser.xr()->num_packets() > 0) {
-        EXPECT_FALSE(parser.xr()->rrtr());
-        if (parser.xr()->dlrr())
-          ++sent_rtcp_dlrr_;
-      }
-
-      if (sent_rtcp_sr_ > kNumRtcpReportPacketsToObserve &&
-          sent_rtcp_rr_ > kNumRtcpReportPacketsToObserve) {
-        if (enable_rrtr_) {
-          EXPECT_LT(0, sent_rtcp_rrtr_);
-          EXPECT_LT(0, sent_rtcp_dlrr_);
-        } else {
-          EXPECT_EQ(0, sent_rtcp_rrtr_);
-          EXPECT_EQ(0, sent_rtcp_dlrr_);
-        }
-        observation_complete_.Set();
-      }
-      return SEND_PACKET;
-    }
-
-    void ModifyVideoConfigs(
-        VideoSendStream::Config* send_config,
-        std::vector<VideoReceiveStream::Config>* receive_configs,
-        VideoEncoderConfig* encoder_config) override {
-      (*receive_configs)[0].rtp.rtcp_mode = RtcpMode::kReducedSize;
-      (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report =
-          enable_rrtr_;
-    }
-
-    void PerformTest() override {
-      EXPECT_TRUE(Wait())
-          << "Timed out while waiting for RTCP SR/RR packets to be sent.";
-    }
-
-    rtc::CriticalSection crit_;
-    bool enable_rrtr_;
-    int sent_rtcp_sr_;
-    int sent_rtcp_rr_ GUARDED_BY(&crit_);
-    int sent_rtcp_rrtr_ GUARDED_BY(&crit_);
-    int sent_rtcp_dlrr_;
-  } test(enable_rrtr);
-
-  RunBaseTest(&test);
-}
-
 void EndToEndTest::TestSendsSetSsrcs(size_t num_ssrcs,
                                      bool send_single_ssrc_first) {
   class SendsSetSsrcs : public test::EndToEndTest {
@@ -3064,12 +2980,99 @@ TEST_P(EndToEndTest, GetStats) {
   RunBaseTest(&test);
 }
 
-TEST_P(EndToEndTest, ReceiverReferenceTimeReportEnabled) {
-  TestXrReceiverReferenceTimeReport(true);
+class RtcpXrObserver : public test::EndToEndTest {
+ public:
+  explicit RtcpXrObserver(bool enable_rrtr)
+      : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
+        enable_rrtr_(enable_rrtr),
+        sent_rtcp_sr_(0),
+        sent_rtcp_rr_(0),
+        sent_rtcp_rrtr_(0),
+        sent_rtcp_target_bitrate_(false),
+        sent_rtcp_dlrr_(0) {}
+
+ private:
+  // Receive stream should send RR packets (and RRTR packets if enabled).
+  Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
+    rtc::CritScope lock(&crit_);
+    test::RtcpPacketParser parser;
+    EXPECT_TRUE(parser.Parse(packet, length));
+
+    sent_rtcp_rr_ += parser.receiver_report()->num_packets();
+    EXPECT_EQ(0, parser.sender_report()->num_packets());
+    EXPECT_GE(1, parser.xr()->num_packets());
+    if (parser.xr()->num_packets() > 0) {
+      if (parser.xr()->rrtr())
+        ++sent_rtcp_rrtr_;
+      EXPECT_FALSE(parser.xr()->dlrr());
+    }
+
+    return SEND_PACKET;
+  }
+  // Send stream should send SR packets (and DLRR packets if enabled).
+  Action OnSendRtcp(const uint8_t* packet, size_t length) override {
+    rtc::CritScope lock(&crit_);
+    test::RtcpPacketParser parser;
+    EXPECT_TRUE(parser.Parse(packet, length));
+
+    sent_rtcp_sr_ += parser.sender_report()->num_packets();
+    EXPECT_LE(parser.xr()->num_packets(), 1);
+    if (parser.xr()->num_packets() > 0) {
+      EXPECT_FALSE(parser.xr()->rrtr());
+      if (parser.xr()->dlrr())
+        ++sent_rtcp_dlrr_;
+      if (parser.xr()->target_bitrate())
+        sent_rtcp_target_bitrate_ = true;
+    }
+
+    if (sent_rtcp_sr_ > kNumRtcpReportPacketsToObserve &&
+        sent_rtcp_rr_ > kNumRtcpReportPacketsToObserve &&
+        sent_rtcp_target_bitrate_) {
+      if (enable_rrtr_) {
+        EXPECT_GT(sent_rtcp_rrtr_, 0);
+        EXPECT_GT(sent_rtcp_dlrr_, 0);
+      } else {
+        EXPECT_EQ(sent_rtcp_rrtr_, 0);
+        EXPECT_EQ(sent_rtcp_dlrr_, 0);
+      }
+      observation_complete_.Set();
+    }
+    return SEND_PACKET;
+  }
+
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
+    (*receive_configs)[0].rtp.rtcp_mode = RtcpMode::kReducedSize;
+    (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report =
+        enable_rrtr_;
+  }
+
+  void PerformTest() override {
+    EXPECT_TRUE(Wait())
+        << "Timed out while waiting for RTCP SR/RR packets to be sent.";
+  }
+
+  static const int kNumRtcpReportPacketsToObserve = 5;
+
+  rtc::CriticalSection crit_;
+  bool enable_rrtr_;
+  int sent_rtcp_sr_;
+  int sent_rtcp_rr_ GUARDED_BY(&crit_);
+  int sent_rtcp_rrtr_ GUARDED_BY(&crit_);
+  bool sent_rtcp_target_bitrate_ GUARDED_BY(&crit_);
+  int sent_rtcp_dlrr_;
+};
+
+TEST_P(EndToEndTest, TestExtendedReportsWithRrtr) {
+  RtcpXrObserver test(true);
+  RunBaseTest(&test);
 }
 
-TEST_P(EndToEndTest, ReceiverReferenceTimeReportDisabled) {
-  TestXrReceiverReferenceTimeReport(false);
+TEST_P(EndToEndTest, TestExtendedReportsWithoutRrtr) {
+  RtcpXrObserver test(false);
+  RunBaseTest(&test);
 }
 
 TEST_P(EndToEndTest, TestReceivedRtpPacketStats) {

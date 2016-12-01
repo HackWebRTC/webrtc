@@ -40,8 +40,8 @@ class PayloadRouter : public EncodedImageCallback {
 
   // PayloadRouter will only route packets if being active, all packets will be
   // dropped otherwise.
-  void set_active(bool active);
-  bool active();
+  void SetActive(bool active);
+  bool IsActive();
 
   // Implements EncodedImageCallback.
   // Returns 0 if the packet was routed / sent, -1 otherwise.
@@ -53,6 +53,8 @@ class PayloadRouter : public EncodedImageCallback {
   // Returns the maximum allowed data payload length, given the configured MTU
   // and RTP headers.
   size_t MaxPayloadLength() const;
+
+  void OnBitrateAllocationUpdated(const BitrateAllocation& bitrate);
 
  private:
   void UpdateModuleSendingState() EXCLUSIVE_LOCKS_REQUIRED(crit_);

@@ -63,7 +63,6 @@ void VideoSender::Process() {
       send_stats_callback_->SendStatistics(bitRate, frameRate);
     }
   }
-
   {
     rtc::CritScope cs(&params_crit_);
     // Force an encoder parameters update, so that incoming frame rate is
@@ -122,6 +121,7 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   } else if (frame_dropper_enabled_) {
     _mediaOpt.EnableFrameDropper(true);
   }
+
   {
     rtc::CritScope cs(&params_crit_);
     next_frame_types_.clear();
@@ -212,30 +212,41 @@ EncoderParameters VideoSender::UpdateEncoderParameters(
     bitrate_allocation = default_allocator.GetAllocation(video_target_rate_bps,
                                                          input_frame_rate);
   }
-
   EncoderParameters new_encoder_params = {bitrate_allocation, params.loss_rate,
                                           params.rtt, input_frame_rate};
   return new_encoder_params;
 }
 
 void VideoSender::UpdateChannelParemeters(
-    VideoBitrateAllocator* bitrate_allocator) {
-  rtc::CritScope cs(&params_crit_);
-  encoder_params_ =
-      UpdateEncoderParameters(encoder_params_, bitrate_allocator,
-                              encoder_params_.target_bitrate.get_sum_bps());
+    VideoBitrateAllocator* bitrate_allocator,
+    VideoBitrateAllocationObserver* bitrate_updated_callback) {
+  BitrateAllocation target_rate;
+  {
+    rtc::CritScope cs(&params_crit_);
+    encoder_params_ =
+        UpdateEncoderParameters(encoder_params_, bitrate_allocator,
+                                encoder_params_.target_bitrate.get_sum_bps());
+    target_rate = encoder_params_.target_bitrate;
+  }
+  if (bitrate_updated_callback)
+    bitrate_updated_callback->OnBitrateAllocationUpdated(target_rate);
 }
 
 int32_t VideoSender::SetChannelParameters(
     uint32_t target_bitrate_bps,
-    uint8_t lossRate,
+    uint8_t loss_rate,
     int64_t rtt,
-    VideoBitrateAllocator* bitrate_allocator) {
+    VideoBitrateAllocator* bitrate_allocator,
+    VideoBitrateAllocationObserver* bitrate_updated_callback) {
   EncoderParameters encoder_params;
-  encoder_params.loss_rate = lossRate;
+  encoder_params.loss_rate = loss_rate;
   encoder_params.rtt = rtt;
   encoder_params = UpdateEncoderParameters(encoder_params, bitrate_allocator,
                                            target_bitrate_bps);
+  if (bitrate_updated_callback) {
+    bitrate_updated_callback->OnBitrateAllocationUpdated(
+        encoder_params.target_bitrate);
+  }
 
   bool encoder_has_internal_source;
   {

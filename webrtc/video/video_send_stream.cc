@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/common_types.h"
+#include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/file.h"
 #include "webrtc/base/logging.h"
@@ -289,7 +290,8 @@ namespace internal {
 class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                             public webrtc::OverheadObserver,
                             public webrtc::VCMProtectionCallback,
-                            public ViEEncoder::EncoderSink {
+                            public ViEEncoder::EncoderSink,
+                            public VideoBitrateAllocationObserver {
  public:
   VideoSendStreamImpl(SendStatisticsProxy* stats_proxy,
                       rtc::TaskQueue* worker_queue,
@@ -356,6 +358,9 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       const EncodedImage& encoded_image,
       const CodecSpecificInfo* codec_specific_info,
       const RTPFragmentationHeader* fragmentation) override;
+
+  // Implements VideoBitrateAllocationObserver.
+  void OnBitrateAllocationUpdated(const BitrateAllocation& allocation) override;
 
   void ConfigureProtection();
   void ConfigureSsrcs();
@@ -598,7 +603,6 @@ VideoSendStream::VideoSendStream(
   vie_encoder_.reset(new ViEEncoder(
       num_cpu_cores, &stats_proxy_, config_.encoder_settings,
       config_.pre_encode_callback, config_.post_encode_callback));
-
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
       &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
       module_process_thread, call_stats, congestion_controller, packet_router,
@@ -610,7 +614,7 @@ VideoSendStream::VideoSendStream(
   // it was created on.
   thread_sync_event_.Wait(rtc::Event::kForever);
   send_stream_->RegisterProcessThread(module_process_thread);
-
+  vie_encoder_->SetBitrateObserver(send_stream_.get());
   vie_encoder_->RegisterProcessThread(module_process_thread);
 
   ReconfigureVideoEncoder(std::move(encoder_config));
@@ -849,7 +853,7 @@ void VideoSendStreamImpl::DeRegisterProcessThread() {
 
 VideoSendStreamImpl::~VideoSendStreamImpl() {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  RTC_DCHECK(!payload_router_.active())
+  RTC_DCHECK(!payload_router_.IsActive())
       << "VideoSendStreamImpl::Stop not called";
   LOG(LS_INFO) << "~VideoSendStreamInternal: " << config_->ToString();
 
@@ -873,10 +877,10 @@ bool VideoSendStreamImpl::DeliverRtcp(const uint8_t* packet, size_t length) {
 void VideoSendStreamImpl::Start() {
   RTC_DCHECK_RUN_ON(worker_queue_);
   LOG(LS_INFO) << "VideoSendStream::Start";
-  if (payload_router_.active())
+  if (payload_router_.IsActive())
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Start");
-  payload_router_.set_active(true);
+  payload_router_.SetActive(true);
 
   bitrate_allocator_->AddObserver(
       this, encoder_min_bitrate_bps_, encoder_max_bitrate_bps_,
@@ -898,10 +902,10 @@ void VideoSendStreamImpl::Start() {
 void VideoSendStreamImpl::Stop() {
   RTC_DCHECK_RUN_ON(worker_queue_);
   LOG(LS_INFO) << "VideoSendStream::Stop";
-  if (!payload_router_.active())
+  if (!payload_router_.IsActive())
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Stop");
-  payload_router_.set_active(false);
+  payload_router_.SetActive(false);
   bitrate_allocator_->RemoveObserver(this);
   {
     rtc::CritScope lock(&encoder_activity_crit_sect_);
@@ -921,6 +925,11 @@ void VideoSendStreamImpl::SignalEncoderTimedOut() {
     LOG(LS_INFO) << "SignalEncoderTimedOut, Encoder timed out.";
     bitrate_allocator_->RemoveObserver(this);
   }
+}
+
+void VideoSendStreamImpl::OnBitrateAllocationUpdated(
+    const BitrateAllocation& allocation) {
+  payload_router_.OnBitrateAllocationUpdated(allocation);
 }
 
 void VideoSendStreamImpl::SignalEncoderActive() {
@@ -965,7 +974,7 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
       streams[0].width, streams[0].height, number_of_temporal_layers,
       config_->rtp.max_packet_size);
 
-  if (payload_router_.active()) {
+  if (payload_router_.IsActive()) {
     // The send stream is started already. Update the allocator with new bitrate
     // limits.
     bitrate_allocator_->AddObserver(
@@ -1174,7 +1183,7 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(uint32_t bitrate_bps,
                                                int64_t rtt,
                                                int64_t probing_interval_ms) {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  RTC_DCHECK(payload_router_.active())
+  RTC_DCHECK(payload_router_.IsActive())
       << "VideoSendStream::Start has not been called.";
 
   if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead") ==

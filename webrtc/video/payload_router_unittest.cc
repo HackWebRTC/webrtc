@@ -49,7 +49,7 @@ TEST(PayloadRouterTest, SendOnOneModule) {
       EncodedImageCallback::Result::OK,
       payload_router.OnEncodedImage(encoded_image, nullptr, nullptr).error);
 
-  payload_router.set_active(true);
+  payload_router.SetActive(true);
   EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
                                     encoded_image._timeStamp,
                                     encoded_image.capture_time_ms_, &payload,
@@ -60,7 +60,7 @@ TEST(PayloadRouterTest, SendOnOneModule) {
       EncodedImageCallback::Result::OK,
       payload_router.OnEncodedImage(encoded_image, nullptr, nullptr).error);
 
-  payload_router.set_active(false);
+  payload_router.SetActive(false);
   EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
                                     encoded_image._timeStamp,
                                     encoded_image.capture_time_ms_, &payload,
@@ -70,7 +70,7 @@ TEST(PayloadRouterTest, SendOnOneModule) {
       EncodedImageCallback::Result::OK,
       payload_router.OnEncodedImage(encoded_image, nullptr, nullptr).error);
 
-  payload_router.set_active(true);
+  payload_router.SetActive(true);
   EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, payload_type,
                                     encoded_image._timeStamp,
                                     encoded_image.capture_time_ms_, &payload,
@@ -106,7 +106,7 @@ TEST(PayloadRouterTest, SendSimulcast) {
   codec_info_1.codecType = kVideoCodecVP8;
   codec_info_1.codecSpecific.VP8.simulcastIdx = 0;
 
-  payload_router.set_active(true);
+  payload_router.SetActive(true);
   EXPECT_CALL(rtp_1, SendOutgoingData(encoded_image._frameType, payload_type,
                                       encoded_image._timeStamp,
                                       encoded_image.capture_time_ms_, &payload,
@@ -136,7 +136,7 @@ TEST(PayloadRouterTest, SendSimulcast) {
                 .error);
 
   // Inactive.
-  payload_router.set_active(false);
+  payload_router.SetActive(false);
   EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _))
       .Times(0);
   EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _, _))
@@ -182,4 +182,52 @@ TEST(PayloadRouterTest, MaxPayloadLength) {
       .WillOnce(Return(kTestMinPayloadLength));
   EXPECT_EQ(kTestMinPayloadLength, payload_router.MaxPayloadLength());
 }
+
+TEST(PayloadRouterTest, SimulcastTargetBitrate) {
+  NiceMock<MockRtpRtcp> rtp_1;
+  NiceMock<MockRtpRtcp> rtp_2;
+  std::vector<RtpRtcp*> modules;
+  modules.push_back(&rtp_1);
+  modules.push_back(&rtp_2);
+  PayloadRouter payload_router(modules, 42);
+  payload_router.SetActive(true);
+
+  BitrateAllocation bitrate;
+  bitrate.SetBitrate(0, 0, 10000);
+  bitrate.SetBitrate(0, 1, 20000);
+  bitrate.SetBitrate(1, 0, 40000);
+  bitrate.SetBitrate(1, 1, 80000);
+
+  BitrateAllocation layer0_bitrate;
+  layer0_bitrate.SetBitrate(0, 0, 10000);
+  layer0_bitrate.SetBitrate(0, 1, 20000);
+
+  BitrateAllocation layer1_bitrate;
+  layer1_bitrate.SetBitrate(0, 0, 40000);
+  layer1_bitrate.SetBitrate(0, 1, 80000);
+
+  EXPECT_CALL(rtp_1, SetVideoBitrateAllocation(layer0_bitrate)).Times(1);
+  EXPECT_CALL(rtp_2, SetVideoBitrateAllocation(layer1_bitrate)).Times(1);
+
+  payload_router.OnBitrateAllocationUpdated(bitrate);
+}
+
+TEST(PayloadRouterTest, SvcTargetBitrate) {
+  NiceMock<MockRtpRtcp> rtp_1;
+  std::vector<RtpRtcp*> modules;
+  modules.push_back(&rtp_1);
+  PayloadRouter payload_router(modules, 42);
+  payload_router.SetActive(true);
+
+  BitrateAllocation bitrate;
+  bitrate.SetBitrate(0, 0, 10000);
+  bitrate.SetBitrate(0, 1, 20000);
+  bitrate.SetBitrate(1, 0, 40000);
+  bitrate.SetBitrate(1, 1, 80000);
+
+  EXPECT_CALL(rtp_1, SetVideoBitrateAllocation(bitrate)).Times(1);
+
+  payload_router.OnBitrateAllocationUpdated(bitrate);
+}
+
 }  // namespace webrtc

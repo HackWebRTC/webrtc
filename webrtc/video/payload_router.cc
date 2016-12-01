@@ -101,7 +101,7 @@ size_t PayloadRouter::DefaultMaxPayloadLength() {
   return IP_PACKET_SIZE - kIpUdpSrtpLength;
 }
 
-void PayloadRouter::set_active(bool active) {
+void PayloadRouter::SetActive(bool active) {
   rtc::CritScope lock(&crit_);
   if (active_ == active)
     return;
@@ -113,7 +113,7 @@ void PayloadRouter::set_active(bool active) {
   }
 }
 
-bool PayloadRouter::active() {
+bool PayloadRouter::IsActive() {
   rtc::CritScope lock(&crit_);
   return active_ && !rtp_modules_.empty();
 }
@@ -156,6 +156,26 @@ size_t PayloadRouter::MaxPayloadLength() const {
       min_payload_length = module_payload_length;
   }
   return min_payload_length;
+}
+
+void PayloadRouter::OnBitrateAllocationUpdated(
+    const BitrateAllocation& bitrate) {
+  rtc::CritScope lock(&crit_);
+  if (IsActive()) {
+    if (rtp_modules_.size() == 1) {
+      // If spatial scalability is enabled, it is covered by a single stream.
+      rtp_modules_[0]->SetVideoBitrateAllocation(bitrate);
+    } else {
+      // Simulcast is in use, split the BitrateAllocation into one struct per
+      // rtp stream, moving over the temporal layer allocation.
+      for (size_t si = 0; si < rtp_modules_.size(); ++si) {
+        BitrateAllocation layer_bitrate;
+        for (int tl = 0; tl < kMaxTemporalStreams; ++tl)
+          layer_bitrate.SetBitrate(0, tl, bitrate.GetBitrate(si, tl));
+        rtp_modules_[si]->SetVideoBitrateAllocation(layer_bitrate);
+      }
+    }
+  }
 }
 
 }  // namespace webrtc
