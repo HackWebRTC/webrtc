@@ -313,6 +313,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
       const ReportBlockList& report_blocks) override;
   void OnRequestSendReport() override;
 
+  void SetVideoBitrateAllocation(const BitrateAllocation& bitrate) override;
+
  protected:
   bool UpdateRTCPReceiveInformationTimers();
 

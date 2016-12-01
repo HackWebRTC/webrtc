@@ -424,6 +424,8 @@ class RtpRtcp : public Module {
   // BWE feedback packets.
   virtual bool SendFeedbackPacket(const rtcp::TransportFeedback& packet) = 0;
 
+  virtual void SetVideoBitrateAllocation(const BitrateAllocation& bitrate) = 0;
+
   // **************************************************************************
   // Audio
   // **************************************************************************

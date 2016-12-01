@@ -821,4 +821,39 @@ TEST_F(RtcpSenderTest, ByeMustBeLast) {
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpBye));
 }
 
+TEST_F(RtcpSenderTest, SendXrWithTargetBitrate) {
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
+  const size_t kNumSpatialLayers = 2;
+  const size_t kNumTemporalLayers = 2;
+  BitrateAllocation allocation;
+  for (size_t sl = 0; sl < kNumSpatialLayers; ++sl) {
+    uint32_t start_bitrate_bps = (sl + 1) * 100000;
+    for (size_t tl = 0; tl < kNumTemporalLayers; ++tl)
+      allocation.SetBitrate(sl, tl, start_bitrate_bps + (tl * 20000));
+  }
+  rtcp_sender_->SetVideoBitrateAllocation(allocation);
+
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport));
+  EXPECT_EQ(1, parser()->xr()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
+  const rtc::Optional<rtcp::TargetBitrate>& target_bitrate =
+      parser()->xr()->target_bitrate();
+  ASSERT_TRUE(target_bitrate);
+  const std::vector<rtcp::TargetBitrate::BitrateItem>& bitrates =
+      target_bitrate->GetTargetBitrates();
+  EXPECT_EQ(kNumSpatialLayers * kNumTemporalLayers, bitrates.size());
+
+  for (size_t sl = 0; sl < kNumSpatialLayers; ++sl) {
+    uint32_t start_bitrate_bps = (sl + 1) * 100000;
+    for (size_t tl = 0; tl < kNumTemporalLayers; ++tl) {
+      size_t index = (sl * kNumSpatialLayers) + tl;
+      const rtcp::TargetBitrate::BitrateItem& item = bitrates[index];
+      EXPECT_EQ(sl, item.spatial_layer);
+      EXPECT_EQ(tl, item.temporal_layer);
+      EXPECT_EQ(start_bitrate_bps + (tl * 20000),
+                item.target_bitrate_kbps * 1000);
+    }
+  }
+}
+
 }  // namespace webrtc

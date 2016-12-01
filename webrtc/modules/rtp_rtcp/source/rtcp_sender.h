@@ -21,6 +21,7 @@
 #include "webrtc/api/call/transport.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/random.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -150,6 +151,7 @@ class RTCPSender {
   void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
   void SetTargetBitrate(unsigned int target_bitrate);
+  void SetVideoBitrateAllocation(const BitrateAllocation& bitrate);
   bool SendFeedbackPacket(const rtcp::TransportFeedback& packet);
 
  private:
@@ -180,7 +182,8 @@ class RTCPSender {
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   std::unique_ptr<rtcp::RtcpPacket> BuildAPP(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  std::unique_ptr<rtcp::RtcpPacket> BuildVoIPMetric(const RtcpContext& context)
+  std::unique_ptr<rtcp::RtcpPacket> BuildExtendedReports(
+      const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   std::unique_ptr<rtcp::RtcpPacket> BuildBYE(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
@@ -191,11 +194,6 @@ class RTCPSender {
   std::unique_ptr<rtcp::RtcpPacket> BuildRPSI(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   std::unique_ptr<rtcp::RtcpPacket> BuildNACK(const RtcpContext& context)
-      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  std::unique_ptr<rtcp::RtcpPacket> BuildReceiverReferenceTime(
-      const RtcpContext& context)
-      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  std::unique_ptr<rtcp::RtcpPacket> BuildDlrr(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
  private:
@@ -257,7 +255,8 @@ class RTCPSender {
       GUARDED_BY(critical_section_rtcp_sender_);
 
   // XR VoIP metric
-  RTCPVoIPMetric xr_voip_metric_ GUARDED_BY(critical_section_rtcp_sender_);
+  rtc::Optional<RTCPVoIPMetric> xr_voip_metric_
+      GUARDED_BY(critical_section_rtcp_sender_);
 
   RtcpPacketTypeCounterObserver* const packet_type_counter_observer_;
   RtcpPacketTypeCounter packet_type_counter_
@@ -265,22 +264,25 @@ class RTCPSender {
 
   RTCPUtility::NackStats nack_stats_ GUARDED_BY(critical_section_rtcp_sender_);
 
-  void SetFlag(RTCPPacketType type, bool is_volatile)
+  rtc::Optional<BitrateAllocation> video_bitrate_allocation_
+      GUARDED_BY(critical_section_rtcp_sender_);
+
+  void SetFlag(uint32_t type, bool is_volatile)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   void SetFlags(const std::set<RTCPPacketType>& types, bool is_volatile)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  bool IsFlagPresent(RTCPPacketType type) const
+  bool IsFlagPresent(uint32_t type) const
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  bool ConsumeFlag(RTCPPacketType type, bool forced = false)
+  bool ConsumeFlag(uint32_t type, bool forced = false)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   bool AllVolatileFlagsConsumed() const
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   struct ReportFlag {
-    ReportFlag(RTCPPacketType type, bool is_volatile)
+    ReportFlag(uint32_t type, bool is_volatile)
         : type(type), is_volatile(is_volatile) {}
     bool operator<(const ReportFlag& flag) const { return type < flag.type; }
     bool operator==(const ReportFlag& flag) const { return type == flag.type; }
-    const RTCPPacketType type;
+    const uint32_t type;
     const bool is_volatile;
   };
 
@@ -288,7 +290,8 @@ class RTCPSender {
 
   typedef std::unique_ptr<rtcp::RtcpPacket> (RTCPSender::*BuilderFunc)(
       const RtcpContext&);
-  std::map<RTCPPacketType, BuilderFunc> builders_;
+  // Map from RTCPPacketType to builder.
+  std::map<uint32_t, BuilderFunc> builders_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTCPSender);
 };
