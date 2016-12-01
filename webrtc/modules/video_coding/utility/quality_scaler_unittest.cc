@@ -23,7 +23,7 @@ static const int kFramerate = 30;
 static const int kLowQp = 15;
 static const int kLowQpThreshold = 18;
 static const int kHighQp = 40;
-static const size_t kDefaultTimeoutMs = 1000;
+static const size_t kDefaultTimeoutMs = 150;
 }  // namespace
 
 class MockScaleObserver : public ScalingObserverInterface {
@@ -110,20 +110,20 @@ class QualityScalerTest : public ::testing::Test {
 
 TEST_F(QualityScalerTest, DownscalesAfterContinuousFramedrop) {
   q_->PostTask([this] { TriggerScale(kScaleDown); });
-  EXPECT_TRUE(observer_->event.Wait(50));
+  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
 }
 
 TEST_F(QualityScalerTest, KeepsScaleAtHighQp) {
   q_->PostTask([this] { TriggerScale(kKeepScaleAtHighQp); });
-  EXPECT_FALSE(observer_->event.Wait(50));
+  EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(0, observer_->scaled_down);
   EXPECT_EQ(0, observer_->scaled_up);
 }
 
 TEST_F(QualityScalerTest, DownscalesAboveHighQp) {
   q_->PostTask([this] { TriggerScale(kScaleDownAboveHighQp); });
-  EXPECT_TRUE(observer_->event.Wait(50));
+  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
   EXPECT_EQ(0, observer_->scaled_up);
 }
@@ -134,14 +134,14 @@ TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
     qs_->ReportDroppedFrame();
     qs_->ReportQP(kHighQp);
   });
-  EXPECT_TRUE(observer_->event.Wait(50));
+  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
   EXPECT_EQ(0, observer_->scaled_up);
 }
 
 TEST_F(QualityScalerTest, DoesNotDownscaleOnNormalQp) {
   q_->PostTask([this] { TriggerScale(kScaleDownAboveHighQp); });
-  EXPECT_TRUE(observer_->event.Wait(50));
+  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
   EXPECT_EQ(0, observer_->scaled_up);
 }
@@ -151,25 +151,25 @@ TEST_F(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
     qs_->ReportDroppedFrame();
     qs_->ReportQP(kHighQp);
   });
-  EXPECT_FALSE(observer_->event.Wait(50));
+  EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(0, observer_->scaled_down);
   EXPECT_EQ(0, observer_->scaled_up);
 }
 
 TEST_F(QualityScalerTest, UpscalesAfterLowQp) {
   q_->PostTask([this] { TriggerScale(kScaleUp); });
-  EXPECT_TRUE(observer_->event.Wait(50));
+  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(0, observer_->scaled_down);
   EXPECT_EQ(1, observer_->scaled_up);
 }
 
 TEST_F(QualityScalerTest, ScalesDownAndBackUp) {
   q_->PostTask([this] { TriggerScale(kScaleDown); });
-  EXPECT_TRUE(observer_->event.Wait(50));
+  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
   EXPECT_EQ(0, observer_->scaled_up);
   q_->PostTask([this] { TriggerScale(kScaleUp); });
-  EXPECT_TRUE(observer_->event.Wait(50));
+  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
   EXPECT_EQ(1, observer_->scaled_up);
 }
