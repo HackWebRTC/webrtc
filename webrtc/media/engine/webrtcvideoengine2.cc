@@ -25,6 +25,7 @@
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/engine/constants.h"
 #include "webrtc/media/engine/internalencoderfactory.h"
+#include "webrtc/media/engine/internaldecoderfactory.h"
 #include "webrtc/media/engine/simulcast.h"
 #include "webrtc/media/engine/videoencodersoftwarefallbackwrapper.h"
 #include "webrtc/media/engine/videodecodersoftwarefallbackwrapper.h"
@@ -2225,28 +2226,14 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::CreateOrReuseVideoDecoder(
         external_decoder_factory_->CreateVideoDecoderWithParams(
             type, {stream_params_.id});
     if (decoder != NULL) {
-      return AllocatedDecoder(decoder, type, true);
+      return AllocatedDecoder(decoder, type, true /* is_external */);
     }
   }
 
-  if (type == webrtc::kVideoCodecVP8) {
-    return AllocatedDecoder(
-        webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kVp8), type, false);
-  }
-
-  if (type == webrtc::kVideoCodecVP9) {
-    return AllocatedDecoder(
-        webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kVp9), type, false);
-  }
-
-  if (type == webrtc::kVideoCodecH264) {
-    return AllocatedDecoder(
-        webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kH264), type, false);
-  }
-
-  return AllocatedDecoder(
-      webrtc::VideoDecoder::Create(webrtc::VideoDecoder::kUnsupportedCodec),
-      webrtc::kVideoCodecUnknown, false);
+  InternalDecoderFactory internal_decoder_factory;
+  return AllocatedDecoder(internal_decoder_factory.CreateVideoDecoderWithParams(
+                              type, {stream_params_.id}),
+                          type, false /* is_external */);
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(

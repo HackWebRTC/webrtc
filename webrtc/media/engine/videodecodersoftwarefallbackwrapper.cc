@@ -13,34 +13,15 @@
 #include <string>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/media/engine/internaldecoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
 
 namespace webrtc {
 
-namespace {
-
-VideoDecoder::DecoderType CodecTypeToDecoderType(VideoCodecType codec_type) {
-  switch (codec_type) {
-    case kVideoCodecH264:
-      return VideoDecoder::kH264;
-    case kVideoCodecVP8:
-      return VideoDecoder::kVp8;
-    case kVideoCodecVP9:
-      return VideoDecoder::kVp9;
-    default:
-      return VideoDecoder::kUnsupportedCodec;
-  }
-}
-
-}  // anonymous namespace
-
 VideoDecoderSoftwareFallbackWrapper::VideoDecoderSoftwareFallbackWrapper(
     VideoCodecType codec_type,
     VideoDecoder* decoder)
-    : decoder_type_(CodecTypeToDecoderType(codec_type)),
-      decoder_(decoder),
-      callback_(nullptr) {
-}
+    : codec_type_(codec_type), decoder_(decoder), callback_(nullptr) {}
 
 int32_t VideoDecoderSoftwareFallbackWrapper::InitDecode(
     const VideoCodec* codec_settings,
@@ -51,10 +32,12 @@ int32_t VideoDecoderSoftwareFallbackWrapper::InitDecode(
 }
 
 bool VideoDecoderSoftwareFallbackWrapper::InitFallbackDecoder() {
-  RTC_CHECK(decoder_type_ != kUnsupportedCodec)
+  RTC_CHECK(codec_type_ != kVideoCodecUnknown)
       << "Decoder requesting fallback to codec not supported in software.";
   LOG(LS_WARNING) << "Decoder falling back to software decoding.";
-  fallback_decoder_.reset(VideoDecoder::Create(decoder_type_));
+  cricket::InternalDecoderFactory internal_decoder_factory;
+  fallback_decoder_.reset(
+      internal_decoder_factory.CreateVideoDecoder(codec_type_));
   if (fallback_decoder_->InitDecode(&codec_settings_, number_of_cores_) !=
       WEBRTC_VIDEO_CODEC_OK) {
     LOG(LS_ERROR) << "Failed to initialize software-decoder fallback.";

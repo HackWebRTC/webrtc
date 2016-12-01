@@ -46,7 +46,7 @@ class VideoDecoderSoftwareFallbackWrapper : public webrtc::VideoDecoder {
  private:
   bool InitFallbackDecoder();
 
-  const DecoderType decoder_type_;
+  const VideoCodecType codec_type_;
   VideoDecoder* const decoder_;
 
   VideoCodec codec_settings_;
