@@ -213,6 +213,19 @@ Histogram* HistogramFactoryGetCounts(const std::string& name,
                                      int min,
                                      int max,
                                      int bucket_count) {
+  // TODO(asapersson): Alternative implementation will be needed if this
+  // histogram type should be truly exponential.
+  return HistogramFactoryGetCountsLinear(name, min, max, bucket_count);
+}
+
+// Histogram with linearly spaced buckets.
+// Creates (or finds) histogram.
+// The returned histogram pointer is cached (and used for adding samples in
+// subsequent calls).
+Histogram* HistogramFactoryGetCountsLinear(const std::string& name,
+                                           int min,
+                                           int max,
+                                           int bucket_count) {
   RtcHistogramMap* map = GetMap();
   if (!map)
     return nullptr;

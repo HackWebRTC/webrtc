@@ -85,6 +85,11 @@
   RTC_HISTOGRAM_COMMON_BLOCK(name, sample, \
       webrtc::metrics::HistogramFactoryGetCounts(name, min, max, bucket_count))
 
+#define RTC_HISTOGRAM_COUNTS_LINEAR(name, sample, min, max, bucket_count)      \
+  RTC_HISTOGRAM_COMMON_BLOCK(name, sample,                                     \
+                             webrtc::metrics::HistogramFactoryGetCountsLinear( \
+                                 name, min, max, bucket_count))
+
 // Deprecated.
 // TODO(asapersson): Remove.
 #define RTC_HISTOGRAM_COUNTS_SPARSE_100(name, sample) \
@@ -212,6 +217,12 @@ class Histogram;
 // Get histogram for counters.
 Histogram* HistogramFactoryGetCounts(
     const std::string& name, int min, int max, int bucket_count);
+
+// Get histogram for counters with linear bucket spacing.
+Histogram* HistogramFactoryGetCountsLinear(const std::string& name,
+                                           int min,
+                                           int max,
+                                           int bucket_count);
 
 // Get histogram for enumerators.
 // |boundary| should be above the max enumerator sample.
