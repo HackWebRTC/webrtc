@@ -11,18 +11,18 @@
 
 Usage examples:
   Show end to end time for a single full stack test.
-  ./full_stack_plot.py -df end_to_end -o 600 --frames 1000 vp9_data.txt
+  ./full_stack_tests_plot.py -df end_to_end -o 600 --frames 1000 vp9_data.txt
 
   Show simultaneously PSNR and encoded frame size for two different runs of
   full stack test. Averaged over a cycle of 200 frames. Used e.g. for
   screenshare slide test.
-  ./full_stack_plot.py -c 200 -df psnr -drf encoded_frame_size \\
-                       before.txt after.txt
+  ./full_stack_tests_plot.py -c 200 -df psnr -drf encoded_frame_size \\
+                             before.txt after.txt
 
   Similar to the previous test, but multiple graphs.
-  ./full_stack_plot.py -c 200 -df psnr vp8.txt vp9.txt --next \\
-                       -c 200 -df sender_time vp8.txt vp9.txt --next \\
-                       -c 200 -df end_to_end vp8.txt vp9.txt
+  ./full_stack_tests_plot.py -c 200 -df psnr vp8.txt vp9.txt --next \\
+                             -c 200 -df sender_time vp8.txt vp9.txt --next \\
+                             -c 200 -df end_to_end vp8.txt vp9.txt
 """
 
 import argparse
