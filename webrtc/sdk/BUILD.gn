@@ -176,6 +176,10 @@ if (is_ios || is_mac) {
       "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
     ]
 
+    deps = [
+      ":webrtc_h264_video_toolbox",
+    ]
+
     if (is_ios) {
       sources += [
         "objc/Framework/Classes/RTCEAGLVideoView.m",
@@ -188,9 +192,6 @@ if (is_ios || is_mac) {
         "OpenGLES.framework",
         "QuartzCore.framework",
       ]
-      deps = [
-        ":webrtc_h264_video_toolbox",
-      ]
     }
 
     if (is_mac) {
@@ -202,7 +203,6 @@ if (is_ios || is_mac) {
         "CoreMedia.framework",
         "OpenGL.framework",
       ]
-      deps = []
     }
 
     configs += [
