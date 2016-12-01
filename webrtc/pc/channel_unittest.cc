@@ -50,6 +50,7 @@ const uint32_t kSsrc3 = 0x3333;
 const int kAudioPts[] = {0, 8};
 const int kVideoPts[] = {97, 99};
 enum class NetworkIsWorker { Yes, No };
+const int kDefaultTimeout = 10000;  // 10 seconds.
 }  // namespace
 
 template <class ChannelT,
@@ -1595,22 +1596,21 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckCustomRtcp2(kSsrc2));
   }
 
-  // Test that the media monitor can be run and gives timely callbacks.
+  // Test that the media monitor can be run and gives callbacks.
   void TestMediaMonitor() {
-    static const int kTimeout = 500;
     CreateChannels(0, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     channel1_->StartMediaMonitor(100);
     channel2_->StartMediaMonitor(100);
     // Ensure we get callbacks and stop.
-    EXPECT_TRUE_WAIT(media_info_callbacks1_ > 0, kTimeout);
-    EXPECT_TRUE_WAIT(media_info_callbacks2_ > 0, kTimeout);
+    EXPECT_TRUE_WAIT(media_info_callbacks1_ > 0, kDefaultTimeout);
+    EXPECT_TRUE_WAIT(media_info_callbacks2_ > 0, kDefaultTimeout);
     channel1_->StopMediaMonitor();
     channel2_->StopMediaMonitor();
     // Ensure a restart of a stopped monitor works.
     channel1_->StartMediaMonitor(100);
-    EXPECT_TRUE_WAIT(media_info_callbacks1_ > 0, kTimeout);
+    EXPECT_TRUE_WAIT(media_info_callbacks1_ > 0, kDefaultTimeout);
     channel1_->StopMediaMonitor();
     // Ensure stopping a stopped monitor is OK.
     channel1_->StopMediaMonitor();
