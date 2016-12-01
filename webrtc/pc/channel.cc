@@ -727,10 +727,16 @@ bool BaseChannel::SendPacket(bool rtcp,
     // Update the length of the packet now that we've added the auth tag.
     packet->SetSize(len);
   } else if (secure_required_) {
-    // This is a double check for something that supposedly can't happen.
-    LOG(LS_ERROR) << "Can't send outgoing " << PacketType(rtcp)
-                  << " packet when SRTP is inactive and crypto is required";
-
+    // The audio/video engines may attempt to send RTCP packets as soon as the
+    // streams are created, so don't treat this as an error for RTCP.
+    // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=6809
+    if (rtcp) {
+      return false;
+    }
+    // However, there shouldn't be any RTP packets sent before SRTP is set up
+    // (and SetSend(true) is called).
+    LOG(LS_ERROR) << "Can't send outgoing RTP packet when SRTP is inactive"
+                  << " and crypto is required";
     RTC_DCHECK(false);
     return false;
   }
