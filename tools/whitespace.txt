@@ -3,11 +3,5 @@ You can modify this file to create no-op changelists.
 Try to write something funny. And please don't add trailing whitespace.
 Whitespaces are cool, except when they're trailing. They they're kind of
 80s.
+Here's a funny story: What do you call a root beer in a square glass? Beer!
 
-Testing Git updater.
-Testing updated refs to pending
-Final whitespace after gnumbd switch completed.
-And now it's time for getting rid of svn polling. A second try
-is sometimes required to get things working properly.
-Moving over to Chromium's Rietveld using codereview.webrtc.org
-Testing WebRTC android builders.
