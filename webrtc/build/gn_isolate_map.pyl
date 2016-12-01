@@ -40,7 +40,7 @@
     "type": "console_test_launcher",
   },
   "libjingle_peerconnection_android_unittest": {
-    "label": "//webrtc/api:libjingle_peerconnection_android_unittest",
+    "label": "//webrtc/sdk/android/instrumentationtests:libjingle_peerconnection_android_unittest",
     "type": "additional_compile_target",
   },
   "modules_tests": {

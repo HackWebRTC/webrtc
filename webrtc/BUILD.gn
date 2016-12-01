@@ -309,7 +309,7 @@ if (!build_with_chromium) {
       if (is_android) {
         deps += [
           ":android_junit_tests",
-          "api:libjingle_peerconnection_android_unittest",
+          "//webrtc/sdk/android/instrumentationtests",
         ]
       } else {
         deps += [ "modules/video_capture:video_capture_tests" ]
