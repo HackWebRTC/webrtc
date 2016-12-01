@@ -32,6 +32,12 @@
   return [super initWithNativeVideoSource:source];
 }
 
+- (void)adaptOutputFormatToWidth:(int)width
+                          height:(int)height
+                             fps:(int)fps {
+  self.capturer->AdaptOutputFormat(width, height, fps);
+}
+
 - (BOOL)canUseBackCamera {
   return self.capturer->CanUseBackCamera();
 }

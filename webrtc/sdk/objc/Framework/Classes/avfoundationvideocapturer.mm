@@ -113,6 +113,11 @@ bool AVFoundationVideoCapturer::GetUseBackCamera() const {
   return _capturer.useBackCamera;
 }
 
+void AVFoundationVideoCapturer::AdaptOutputFormat(int width, int height, int fps) {
+  cricket::VideoFormat format(width, height, cricket::VideoFormat::FpsToInterval(fps), 0);
+  video_adapter()->OnOutputFormatRequest(format);
+}
+
 void AVFoundationVideoCapturer::CaptureSampleBuffer(
     CMSampleBufferRef sample_buffer, VideoRotation rotation) {
   if (CMSampleBufferGetNumSamples(sample_buffer) != 1 ||

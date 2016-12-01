@@ -58,6 +58,10 @@ class AVFoundationVideoCapturer : public cricket::VideoCapturer {
   void CaptureSampleBuffer(CMSampleBufferRef sample_buffer,
                            webrtc::VideoRotation rotation);
 
+  // Called to adjust the size of output frames to supplied |width| and
+  // |height|. Also drops frames to make the output match |fps|.
+  void AdaptOutputFormat(int width, int height, int fps);
+
  private:
   RTCAVFoundationVideoCapturerInternal *_capturer;
   webrtc::I420BufferPool _buffer_pool;
