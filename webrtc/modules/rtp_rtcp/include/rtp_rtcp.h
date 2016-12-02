@@ -34,6 +34,7 @@ class RemoteBitrateEstimator;
 class RtcEventLog;
 class RtpReceiver;
 class Transport;
+class VideoBitrateAllocationObserver;
 
 RTPExtensionType StringToRtpExtensionType(const std::string& extension);
 
@@ -68,6 +69,7 @@ class RtpRtcp : public Module {
     RtcpBandwidthObserver* bandwidth_callback = nullptr;
 
     TransportFeedbackObserver* transport_feedback_callback = nullptr;
+    VideoBitrateAllocationObserver* bitrate_allocation_observer = nullptr;
     RtcpRttStats* rtt_stats = nullptr;
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer = nullptr;
 

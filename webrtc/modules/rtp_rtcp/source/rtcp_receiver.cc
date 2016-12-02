@@ -22,6 +22,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/compound_packet.h"
@@ -67,6 +68,7 @@ struct RTCPReceiver::PacketInformation {
   uint64_t rpsi_picture_id = 0;
   uint32_t receiver_estimated_max_bitrate_bps = 0;
   std::unique_ptr<rtcp::TransportFeedback> transport_feedback;
+  rtc::Optional<BitrateAllocation> target_bitrate_allocation;
 };
 
 struct RTCPReceiver::ReceiveInformation {
@@ -103,13 +105,15 @@ RTCPReceiver::RTCPReceiver(
     RtcpBandwidthObserver* rtcp_bandwidth_observer,
     RtcpIntraFrameObserver* rtcp_intra_frame_observer,
     TransportFeedbackObserver* transport_feedback_observer,
+    VideoBitrateAllocationObserver* bitrate_allocation_observer,
     ModuleRtpRtcp* owner)
     : _clock(clock),
       receiver_only_(receiver_only),
       _rtpRtcp(*owner),
-      _cbRtcpBandwidthObserver(rtcp_bandwidth_observer),
-      _cbRtcpIntraFrameObserver(rtcp_intra_frame_observer),
-      _cbTransportFeedbackObserver(transport_feedback_observer),
+      rtcp_bandwidth_observer_(rtcp_bandwidth_observer),
+      rtcp_intra_frame_observer_(rtcp_intra_frame_observer),
+      transport_feedback_observer_(transport_feedback_observer),
+      bitrate_allocation_observer_(bitrate_allocation_observer),
       main_ssrc_(0),
       _remoteSSRC(0),
       _remoteSenderInfo(),
@@ -117,7 +121,7 @@ RTCPReceiver::RTCPReceiver(
       xr_rr_rtt_ms_(0),
       _lastReceivedRrMs(0),
       _lastIncreasedSequenceNumberMs(0),
-      stats_callback_(NULL),
+      stats_callback_(nullptr),
       packet_type_counter_observer_(packet_type_counter_observer),
       num_skipped_packets_(0),
       last_skipped_packets_warning_(clock->TimeInMilliseconds()) {
@@ -627,7 +631,7 @@ void RTCPReceiver::HandleSDES(const CommonHeader& rtcp_block,
   for (const rtcp::Sdes::Chunk& chunk : sdes.chunks()) {
     received_cnames_[chunk.ssrc] = chunk.cname;
     {
-      rtc::CritScope lock(&_criticalSectionFeedbacks);
+      rtc::CritScope lock(&feedbacks_lock_);
       if (stats_callback_)
         stats_callback_->CNameChanged(chunk.cname.c_str(), chunk.ssrc);
     }
@@ -693,6 +697,9 @@ void RTCPReceiver::HandleXr(const CommonHeader& rtcp_block,
 
   for (const rtcp::ReceiveTimeInfo& time_info : xr.dlrr().sub_blocks())
     HandleXrDlrrReportBlock(time_info);
+
+  if (xr.target_bitrate())
+    HandleXrTargetBitrate(*xr.target_bitrate(), packet_information);
 }
 
 void RTCPReceiver::HandleXrReceiveReferenceTime(
@@ -723,6 +730,17 @@ void RTCPReceiver::HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti) {
 
   uint32_t rtt_ntp = now - delay_rr - send_time;
   xr_rr_rtt_ms_ = CompactNtpRttToMs(rtt_ntp);
+}
+
+void RTCPReceiver::HandleXrTargetBitrate(
+    const rtcp::TargetBitrate& target_bitrate,
+    PacketInformation* packet_information) {
+  BitrateAllocation bitrate_allocation;
+  for (const auto& item : target_bitrate.GetTargetBitrates()) {
+    bitrate_allocation.SetBitrate(item.spatial_layer, item.temporal_layer,
+                                  item.target_bitrate_kbps * 1000);
+  }
+  packet_information->target_bitrate_allocation.emplace(bitrate_allocation);
 }
 
 void RTCPReceiver::HandlePLI(const CommonHeader& rtcp_block,
@@ -898,11 +916,11 @@ void RTCPReceiver::UpdateTmmbr() {
   std::vector<rtcp::TmmbItem> bounding =
       TMMBRHelp::FindBoundingSet(TmmbrReceived());
 
-  if (!bounding.empty() && _cbRtcpBandwidthObserver) {
+  if (!bounding.empty() && rtcp_bandwidth_observer_) {
     // We have a new bandwidth estimate on this channel.
     uint64_t bitrate_bps = TMMBRHelp::CalcMinBitrateBps(bounding);
     if (bitrate_bps <= std::numeric_limits<uint32_t>::max())
-      _cbRtcpBandwidthObserver->OnReceivedEstimatedBitrate(bitrate_bps);
+      rtcp_bandwidth_observer_->OnReceivedEstimatedBitrate(bitrate_bps);
   }
 
   // Set bounding set: inform remote clients about the new bandwidth.
@@ -911,12 +929,12 @@ void RTCPReceiver::UpdateTmmbr() {
 
 void RTCPReceiver::RegisterRtcpStatisticsCallback(
     RtcpStatisticsCallback* callback) {
-  rtc::CritScope cs(&_criticalSectionFeedbacks);
+  rtc::CritScope cs(&feedbacks_lock_);
   stats_callback_ = callback;
 }
 
 RtcpStatisticsCallback* RTCPReceiver::GetRtcpStatisticsCallback() {
-  rtc::CritScope cs(&_criticalSectionFeedbacks);
+  rtc::CritScope cs(&feedbacks_lock_);
   return stats_callback_;
 }
 
@@ -947,68 +965,72 @@ void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
       _rtpRtcp.OnReceivedNack(packet_information.nack_sequence_numbers);
     }
   }
-  {
-    // We need feedback that we have received a report block(s) so that we
-    // can generate a new packet in a conference relay scenario, one received
-    // report can generate several RTCP packets, based on number relayed/mixed
-    // a send report block should go out to all receivers.
-    if (_cbRtcpIntraFrameObserver) {
-      RTC_DCHECK(!receiver_only_);
-      if ((packet_information.packet_type_flags & kRtcpPli) ||
-          (packet_information.packet_type_flags & kRtcpFir)) {
-        if (packet_information.packet_type_flags & kRtcpPli) {
-          LOG(LS_VERBOSE) << "Incoming PLI from SSRC "
-                          << packet_information.remote_ssrc;
-        } else {
-          LOG(LS_VERBOSE) << "Incoming FIR from SSRC "
-                          << packet_information.remote_ssrc;
-        }
-        _cbRtcpIntraFrameObserver->OnReceivedIntraFrameRequest(local_ssrc);
+
+  // We need feedback that we have received a report block(s) so that we
+  // can generate a new packet in a conference relay scenario, one received
+  // report can generate several RTCP packets, based on number relayed/mixed
+  // a send report block should go out to all receivers.
+  if (rtcp_intra_frame_observer_) {
+    RTC_DCHECK(!receiver_only_);
+    if ((packet_information.packet_type_flags & kRtcpPli) ||
+        (packet_information.packet_type_flags & kRtcpFir)) {
+      if (packet_information.packet_type_flags & kRtcpPli) {
+        LOG(LS_VERBOSE) << "Incoming PLI from SSRC "
+                        << packet_information.remote_ssrc;
+      } else {
+        LOG(LS_VERBOSE) << "Incoming FIR from SSRC "
+                        << packet_information.remote_ssrc;
       }
-      if (packet_information.packet_type_flags & kRtcpSli) {
-        _cbRtcpIntraFrameObserver->OnReceivedSLI(
-            local_ssrc, packet_information.sli_picture_id);
-      }
-      if (packet_information.packet_type_flags & kRtcpRpsi) {
-        _cbRtcpIntraFrameObserver->OnReceivedRPSI(
-            local_ssrc, packet_information.rpsi_picture_id);
-      }
+      rtcp_intra_frame_observer_->OnReceivedIntraFrameRequest(local_ssrc);
     }
-    if (_cbRtcpBandwidthObserver) {
-      RTC_DCHECK(!receiver_only_);
-      if (packet_information.packet_type_flags & kRtcpRemb) {
-        LOG(LS_VERBOSE)
-            << "Incoming REMB: "
-            << packet_information.receiver_estimated_max_bitrate_bps;
-        _cbRtcpBandwidthObserver->OnReceivedEstimatedBitrate(
-            packet_information.receiver_estimated_max_bitrate_bps);
-      }
-      if ((packet_information.packet_type_flags & kRtcpSr) ||
-          (packet_information.packet_type_flags & kRtcpRr)) {
-        int64_t now = _clock->TimeInMilliseconds();
-        _cbRtcpBandwidthObserver->OnReceivedRtcpReceiverReport(
-            packet_information.report_blocks, packet_information.rtt_ms, now);
-      }
+    if (packet_information.packet_type_flags & kRtcpSli) {
+      rtcp_intra_frame_observer_->OnReceivedSLI(
+          local_ssrc, packet_information.sli_picture_id);
+    }
+    if (packet_information.packet_type_flags & kRtcpRpsi) {
+      rtcp_intra_frame_observer_->OnReceivedRPSI(
+          local_ssrc, packet_information.rpsi_picture_id);
+    }
+  }
+  if (rtcp_bandwidth_observer_) {
+    RTC_DCHECK(!receiver_only_);
+    if (packet_information.packet_type_flags & kRtcpRemb) {
+      LOG(LS_VERBOSE) << "Incoming REMB: "
+                      << packet_information.receiver_estimated_max_bitrate_bps;
+      rtcp_bandwidth_observer_->OnReceivedEstimatedBitrate(
+          packet_information.receiver_estimated_max_bitrate_bps);
     }
     if ((packet_information.packet_type_flags & kRtcpSr) ||
         (packet_information.packet_type_flags & kRtcpRr)) {
-      _rtpRtcp.OnReceivedRtcpReportBlocks(packet_information.report_blocks);
+      int64_t now = _clock->TimeInMilliseconds();
+      rtcp_bandwidth_observer_->OnReceivedRtcpReceiverReport(
+          packet_information.report_blocks, packet_information.rtt_ms, now);
     }
+  }
+  if ((packet_information.packet_type_flags & kRtcpSr) ||
+      (packet_information.packet_type_flags & kRtcpRr)) {
+    _rtpRtcp.OnReceivedRtcpReportBlocks(packet_information.report_blocks);
+  }
 
-    if (_cbTransportFeedbackObserver &&
-        (packet_information.packet_type_flags & kRtcpTransportFeedback)) {
-      uint32_t media_source_ssrc =
-          packet_information.transport_feedback->media_ssrc();
-      if (media_source_ssrc == local_ssrc ||
-          registered_ssrcs.find(media_source_ssrc) != registered_ssrcs.end()) {
-        _cbTransportFeedbackObserver->OnTransportFeedback(
-            *packet_information.transport_feedback);
-      }
+  if (transport_feedback_observer_ &&
+      (packet_information.packet_type_flags & kRtcpTransportFeedback)) {
+    uint32_t media_source_ssrc =
+        packet_information.transport_feedback->media_ssrc();
+    if (media_source_ssrc == local_ssrc ||
+        registered_ssrcs.find(media_source_ssrc) != registered_ssrcs.end()) {
+      transport_feedback_observer_->OnTransportFeedback(
+          *packet_information.transport_feedback);
     }
   }
 
+  if (bitrate_allocation_observer_ &&
+      packet_information.target_bitrate_allocation) {
+    bitrate_allocation_observer_->OnBitrateAllocationUpdated(
+        *packet_information.target_bitrate_allocation);
+  }
+
   if (!receiver_only_) {
-    rtc::CritScope cs(&_criticalSectionFeedbacks);
+    rtc::CritScope cs(&feedbacks_lock_);
     if (stats_callback_) {
       for (const auto& report_block : packet_information.report_blocks) {
         RtcpStatistics stats;

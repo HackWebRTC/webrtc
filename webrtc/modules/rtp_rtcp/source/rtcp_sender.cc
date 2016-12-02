@@ -964,6 +964,7 @@ int32_t RTCPSender::SetApplicationSpecificData(uint8_t subType,
   return 0;
 }
 
+// TODO(sprang): Remove support for VoIP metrics? (Not used in receiver.)
 int32_t RTCPSender::SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
   xr_voip_metric_.emplace(*VoIPMetric);

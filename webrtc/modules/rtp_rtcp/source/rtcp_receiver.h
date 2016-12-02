@@ -25,10 +25,12 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
+class VideoBitrateAllocationObserver;
 namespace rtcp {
 class CommonHeader;
 class ReportBlock;
 class Rrtr;
+class TargetBitrate;
 class TmmbItem;
 }  // namespace rtcp
 
@@ -53,6 +55,7 @@ class RTCPReceiver {
                RtcpBandwidthObserver* rtcp_bandwidth_observer,
                RtcpIntraFrameObserver* rtcp_intra_frame_observer,
                TransportFeedbackObserver* transport_feedback_observer,
+               VideoBitrateAllocationObserver* bitrate_allocation_observer,
                ModuleRtpRtcp* owner);
   virtual ~RTCPReceiver();
 
@@ -163,6 +166,10 @@ class RTCPReceiver {
   void HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
 
+  void HandleXrTargetBitrate(const rtcp::TargetBitrate& target_bitrate,
+                             PacketInformation* packet_information)
+      EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
+
   void HandleNACK(const rtcp::CommonHeader& rtcp_block,
                   PacketInformation* packet_information)
       EXCLUSIVE_LOCKS_REQUIRED(_criticalSectionRTCPReceiver);
@@ -210,10 +217,11 @@ class RTCPReceiver {
   const bool receiver_only_;
   ModuleRtpRtcp& _rtpRtcp;
 
-  rtc::CriticalSection _criticalSectionFeedbacks;
-  RtcpBandwidthObserver* const _cbRtcpBandwidthObserver;
-  RtcpIntraFrameObserver* const _cbRtcpIntraFrameObserver;
-  TransportFeedbackObserver* const _cbTransportFeedbackObserver;
+  rtc::CriticalSection feedbacks_lock_;
+  RtcpBandwidthObserver* const rtcp_bandwidth_observer_;
+  RtcpIntraFrameObserver* const rtcp_intra_frame_observer_;
+  TransportFeedbackObserver* const transport_feedback_observer_;
+  VideoBitrateAllocationObserver* const bitrate_allocation_observer_;
 
   rtc::CriticalSection _criticalSectionRTCPReceiver;
   uint32_t main_ssrc_ GUARDED_BY(_criticalSectionRTCPReceiver);
@@ -247,7 +255,7 @@ class RTCPReceiver {
   // delivered RTP packet to the remote side.
   int64_t _lastIncreasedSequenceNumberMs;
 
-  RtcpStatisticsCallback* stats_callback_ GUARDED_BY(_criticalSectionFeedbacks);
+  RtcpStatisticsCallback* stats_callback_ GUARDED_BY(feedbacks_lock_);
 
   RtcpPacketTypeCounterObserver* const packet_type_counter_observer_;
   RtcpPacketTypeCounter packet_type_counter_;

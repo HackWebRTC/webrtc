@@ -14,6 +14,7 @@
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/random.h"
 #include "webrtc/common_types.h"
+#include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
@@ -96,6 +97,13 @@ class MockModuleRtpRtcp : public RTCPReceiver::ModuleRtpRtcp {
   MOCK_METHOD1(OnReceivedRtcpReportBlocks, void(const ReportBlockList&));
 };
 
+class MockVideoBitrateAllocationObserver
+    : public VideoBitrateAllocationObserver {
+ public:
+  MOCK_METHOD1(OnBitrateAllocationUpdated,
+               void(const BitrateAllocation& allocation));
+};
+
 // SSRC of remote peer, that sends rtcp packet to the rtcp receiver under test.
 constexpr uint32_t kSenderSsrc = 0x10203;
 // SSRCs of local peer, that rtcp packet addressed to.
@@ -118,6 +126,7 @@ class RtcpReceiverTest : public ::testing::Test {
                        &bandwidth_observer_,
                        &intra_frame_observer_,
                        &transport_feedback_observer_,
+                       &bitrate_allocation_observer_,
                        &rtp_rtcp_impl_) {}
   void SetUp() {
     std::set<uint32_t> ssrcs = {kReceiverMainSsrc, kReceiverExtraSsrc};
@@ -142,6 +151,7 @@ class RtcpReceiverTest : public ::testing::Test {
   StrictMock<MockRtcpBandwidthObserver> bandwidth_observer_;
   StrictMock<MockRtcpIntraFrameObserver> intra_frame_observer_;
   StrictMock<MockTransportFeedbackObserver> transport_feedback_observer_;
+  StrictMock<MockVideoBitrateAllocationObserver> bitrate_allocation_observer_;
   StrictMock<MockModuleRtpRtcp> rtp_rtcp_impl_;
 
   RTCPReceiver rtcp_receiver_;
@@ -1264,6 +1274,27 @@ TEST_F(RtcpReceiverTest, ForceSenderReport) {
 
   EXPECT_CALL(rtp_rtcp_impl_, OnRequestSendReport());
   InjectRtcpPacket(rr);
+}
+
+TEST_F(RtcpReceiverTest, ReceivesTargetBitrate) {
+  BitrateAllocation expected_allocation;
+  expected_allocation.SetBitrate(0, 0, 10000);
+  expected_allocation.SetBitrate(0, 1, 20000);
+  expected_allocation.SetBitrate(1, 0, 40000);
+  expected_allocation.SetBitrate(1, 1, 80000);
+
+  rtcp::TargetBitrate bitrate;
+  bitrate.AddTargetBitrate(0, 0, expected_allocation.GetBitrate(0, 0) / 1000);
+  bitrate.AddTargetBitrate(0, 1, expected_allocation.GetBitrate(0, 1) / 1000);
+  bitrate.AddTargetBitrate(1, 0, expected_allocation.GetBitrate(1, 0) / 1000);
+  bitrate.AddTargetBitrate(1, 1, expected_allocation.GetBitrate(1, 1) / 1000);
+
+  rtcp::ExtendedReports xr;
+  xr.SetTargetBitrate(bitrate);
+
+  EXPECT_CALL(bitrate_allocation_observer_,
+              OnBitrateAllocationUpdated(expected_allocation));
+  InjectRtcpPacket(xr);
 }
 
 }  // namespace webrtc
