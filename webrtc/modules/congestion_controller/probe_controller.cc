@@ -121,28 +121,17 @@ void ProbeController::SetEstimatedBitrate(int bitrate_bps) {
   int64_t now_ms = clock_->TimeInMilliseconds();
 
   if (state_ == State::kWaitingForProbingResult) {
-    if ((now_ms - time_last_probing_initiated_ms_) >
-        kMaxWaitingTimeForProbingResultMs) {
-      LOG(LS_INFO) << "kWaitingForProbingResult: timeout";
-      state_ = State::kProbingComplete;
-      min_bitrate_to_probe_further_bps_ = kExponentialProbingDisabled;
-    } else {
-      // Continue probing if probing results indicate channel has greater
-      // capacity.
-      LOG(LS_INFO) << "Measured bitrate: " << bitrate_bps
-                   << " Minimum to probe further: "
-                   << min_bitrate_to_probe_further_bps_;
-      if (min_bitrate_to_probe_further_bps_ != kExponentialProbingDisabled &&
-          bitrate_bps > min_bitrate_to_probe_further_bps_) {
-        // Double the probing bitrate and expect a minimum of 25% gain to
-        // continue probing.
-        InitiateProbing(now_ms, {2 * bitrate_bps},
-                        bitrate_bps * kRepeatedProbeMinPercentage / 100);
-      } else {
-        // Stop exponential probing.
-        state_ = State::kProbingComplete;
-        min_bitrate_to_probe_further_bps_ = kExponentialProbingDisabled;
-      }
+    // Continue probing if probing results indicate channel has greater
+    // capacity.
+    LOG(LS_INFO) << "Measured bitrate: " << bitrate_bps
+                 << " Minimum to probe further: "
+                 << min_bitrate_to_probe_further_bps_;
+    if (min_bitrate_to_probe_further_bps_ != kExponentialProbingDisabled &&
+        bitrate_bps > min_bitrate_to_probe_further_bps_) {
+      // Double the probing bitrate and expect a minimum of 25% gain to
+      // continue probing.
+      InitiateProbing(now_ms, {2 * bitrate_bps},
+                      bitrate_bps * kRepeatedProbeMinPercentage / 100);
     }
   }
 
@@ -182,6 +171,16 @@ void ProbeController::EnablePeriodicAlrProbing(bool enable) {
 void ProbeController::Process() {
   rtc::CritScope cs(&critsect_);
 
+  int64_t now_ms = clock_->TimeInMilliseconds();
+
+  if (state_ == State::kWaitingForProbingResult &&
+      (now_ms - time_last_probing_initiated_ms_) >
+          kMaxWaitingTimeForProbingResultMs) {
+    LOG(LS_INFO) << "kWaitingForProbingResult: timeout";
+    state_ = State::kProbingComplete;
+    min_bitrate_to_probe_further_bps_ = kExponentialProbingDisabled;
+  }
+
   if (state_ != State::kProbingComplete || !enable_periodic_alr_probing_)
     return;
 
@@ -189,7 +188,6 @@ void ProbeController::Process() {
   rtc::Optional<int64_t> alr_start_time =
       pacer_->GetApplicationLimitedRegionStartTime();
   if (alr_start_time) {
-    int64_t now_ms = clock_->TimeInMilliseconds();
     int64_t next_probe_time_ms =
         std::max(*alr_start_time, time_last_probing_initiated_ms_) +
         kAlrPeriodicProbingIntervalMs;

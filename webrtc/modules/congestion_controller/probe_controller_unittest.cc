@@ -72,6 +72,7 @@ TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
   // Long enough to time out exponential probing.
   clock_.AdvanceTimeMilliseconds(kExponentialProbingTimeoutMs);
   probe_controller_->SetEstimatedBitrate(kStartBitrateBps);
+  probe_controller_->Process();
 
   EXPECT_CALL(pacer_, CreateProbeCluster(kMaxBitrateBps + 100, _));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
@@ -81,6 +82,12 @@ TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
 TEST_F(ProbeControllerTest, TestExponentialProbing) {
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
+
+  // Repeated probe should only be sent when estimated bitrate climbs above 4 *
+  // kStartBitrateBps = 1200.
+  EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(0);
+  probe_controller_->SetEstimatedBitrate(1000);
+  testing::Mock::VerifyAndClearExpectations(&pacer_);
 
   EXPECT_CALL(pacer_, CreateProbeCluster(2 * 1800, _));
   probe_controller_->SetEstimatedBitrate(1800);
@@ -92,7 +99,9 @@ TEST_F(ProbeControllerTest, TestExponentialProbingTimeout) {
 
   // Advance far enough to cause a time out in waiting for probing result.
   clock_.AdvanceTimeMilliseconds(kExponentialProbingTimeoutMs);
-  EXPECT_CALL(pacer_, CreateProbeCluster(2 * 1800, _)).Times(0);
+  probe_controller_->Process();
+
+  EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(0);
   probe_controller_->SetEstimatedBitrate(1800);
 }
 
@@ -110,6 +119,7 @@ TEST_F(ProbeControllerTest, ProbeAfterEstimateDropInAlr) {
       .WillRepeatedly(
           Return(rtc::Optional<int64_t>(clock_.TimeInMilliseconds())));
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
+  probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(50);
 }
 
