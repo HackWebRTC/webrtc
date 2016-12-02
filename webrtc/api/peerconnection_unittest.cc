@@ -1294,13 +1294,13 @@ class P2PTestConductor : public testing::Test {
     EXPECT_EQ(pc2_video_received, receiving_client_->video_frames_received());
   }
 
-  void VerifyRenderedSize(int width, int height) {
-    VerifyRenderedSize(width, height, webrtc::kVideoRotation_0);
+  void VerifyRenderedAspectRatio(int width, int height) {
+    VerifyRenderedAspectRatio(width, height, webrtc::kVideoRotation_0);
   }
 
-  void VerifyRenderedSize(int width,
-                          int height,
-                          webrtc::VideoRotation rotation) {
+  void VerifyRenderedAspectRatio(int width,
+                                 int height,
+                                 webrtc::VideoRotation rotation) {
     double expected_aspect_ratio = static_cast<double>(width) / height;
     double receiving_client_rendered_aspect_ratio =
         static_cast<double>(receiving_client()->rendered_width()) /
@@ -1308,15 +1308,19 @@ class P2PTestConductor : public testing::Test {
     double initializing_client_rendered_aspect_ratio =
         static_cast<double>(initializing_client()->rendered_width()) /
         initializing_client()->rendered_height();
+    double initializing_client_local_rendered_aspect_ratio =
+        static_cast<double>(initializing_client()->local_rendered_width()) /
+        initializing_client()->local_rendered_height();
+    // Verify end-to-end rendered aspect ratio.
     EXPECT_EQ(expected_aspect_ratio, receiving_client_rendered_aspect_ratio);
     EXPECT_EQ(expected_aspect_ratio, initializing_client_rendered_aspect_ratio);
+    // Verify aspect ratio of the local preview.
+    EXPECT_EQ(expected_aspect_ratio,
+              initializing_client_local_rendered_aspect_ratio);
 
+    // Verify rotation.
     EXPECT_EQ(rotation, receiving_client()->rendered_rotation());
     EXPECT_EQ(rotation, initializing_client()->rendered_rotation());
-
-    // Verify size of the local preview.
-    EXPECT_EQ(width, initializing_client()->local_rendered_width());
-    EXPECT_EQ(height, initializing_client()->local_rendered_height());
   }
 
   void VerifySessionDescriptions() {
@@ -1479,7 +1483,7 @@ class P2PTestConductor : public testing::Test {
     ASSERT_TRUE(CreateTestClients(&setup_constraints, nullptr, &rtc_config,
                                   &setup_constraints, nullptr, &rtc_config));
     LocalP2PTest();
-    VerifyRenderedSize(640, 480);
+    VerifyRenderedAspectRatio(640, 480);
   }
 
   PeerConnectionTestClient* CreateDtlsClientWithAlternateKey() {
@@ -1663,7 +1667,7 @@ TEST_F(P2PTestConductor, DISABLED_LocalP2PTest1280By720) {
   constraint.SetMandatoryMinHeight(720);
   SetVideoConstraints(constraint, constraint);
   LocalP2PTest();
-  VerifyRenderedSize(1280, 720);
+  VerifyRenderedAspectRatio(1280, 720);
 }
 
 // This test sets up a call between two endpoints that are configured to use
@@ -1715,7 +1719,7 @@ TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCallee) {
   SetSignalingReceivers();
   receiving_client()->SetExpectIceRestart(true);
   LocalP2PTest();
-  VerifyRenderedSize(640, 480);
+  VerifyRenderedAspectRatio(640, 480);
 }
 
 // This test sets up a non-bundle call and apply bundle during ICE restart. When
@@ -1738,13 +1742,13 @@ TEST_F(P2PTestConductor, MAYBE_LocalP2PTestDtlsBundleInIceRestart) {
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
   receiving_client()->RemoveBundleFromReceivedSdp(true);
   LocalP2PTest();
-  VerifyRenderedSize(640, 480);
+  VerifyRenderedAspectRatio(640, 480);
 
   initializing_client()->IceRestart();
   receiving_client()->SetExpectIceRestart(true);
   receiving_client()->RemoveBundleFromReceivedSdp(false);
   LocalP2PTest();
-  VerifyRenderedSize(640, 480);
+  VerifyRenderedAspectRatio(640, 480);
 }
 
 // This test sets up a call transfer to a new callee with a different DTLS
@@ -1762,14 +1766,14 @@ TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCaller) {
   SetSignalingReceivers();
   initializing_client()->IceRestart();
   LocalP2PTest();
-  VerifyRenderedSize(640, 480);
+  VerifyRenderedAspectRatio(640, 480);
 }
 
 TEST_F(P2PTestConductor, LocalP2PTestCVO) {
   ASSERT_TRUE(CreateTestClients());
   SetCaptureRotation(webrtc::kVideoRotation_90);
   LocalP2PTest();
-  VerifyRenderedSize(640, 480, webrtc::kVideoRotation_90);
+  VerifyRenderedAspectRatio(640, 480, webrtc::kVideoRotation_90);
 }
 
 TEST_F(P2PTestConductor, LocalP2PTestReceiverDoesntSupportCVO) {
@@ -1777,7 +1781,7 @@ TEST_F(P2PTestConductor, LocalP2PTestReceiverDoesntSupportCVO) {
   SetCaptureRotation(webrtc::kVideoRotation_90);
   receiving_client()->RemoveCvoFromReceivedSdp(true);
   LocalP2PTest();
-  VerifyRenderedSize(480, 640, webrtc::kVideoRotation_0);
+  VerifyRenderedAspectRatio(480, 640, webrtc::kVideoRotation_0);
 }
 
 // This test sets up a call between two endpoints that are configured to use
@@ -1791,7 +1795,7 @@ TEST_F(P2PTestConductor, LocalP2PTestOfferDtlsButNotSdes) {
   ASSERT_TRUE(CreateTestClients(&setup_constraints, &setup_constraints));
   receiving_client()->RemoveSdesCryptoFromReceivedSdp(true);
   LocalP2PTest();
-  VerifyRenderedSize(640, 480);
+  VerifyRenderedAspectRatio(640, 480);
 }
 
 // This test verifies that the negotiation will succeed with data channel only
