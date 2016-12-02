@@ -1323,12 +1323,6 @@ int32_t Channel::SetSendCodec(const CodecInst& codec) {
     }
   }
 
-  if (_rtpRtcpModule->SetAudioPacketSize(codec.pacsize) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "SetSendCodec() failed to set audio packet size");
-    return -1;
-  }
-
   return 0;
 }
 

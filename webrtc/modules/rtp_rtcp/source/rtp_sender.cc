@@ -1153,7 +1153,7 @@ int32_t RTPSender::SetAudioPacketSize(uint16_t packet_size_samples) {
   if (!audio_configured_) {
     return -1;
   }
-  return audio_->SetAudioPacketSize(packet_size_samples);
+  return 0;
 }
 
 int32_t RTPSender::SetAudioLevel(uint8_t level_d_bov) {

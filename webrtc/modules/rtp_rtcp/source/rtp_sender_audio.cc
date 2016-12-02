@@ -31,14 +31,6 @@ RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtp_sender)
 
 RTPSenderAudio::~RTPSenderAudio() {}
 
-// set audio packet size, used to determine when it's time to send a DTMF packet
-// in silence (CNG)
-int32_t RTPSenderAudio::SetAudioPacketSize(uint16_t packet_size_samples) {
-  rtc::CritScope cs(&send_audio_critsect_);
-  packet_size_samples_ = packet_size_samples;
-  return 0;
-}
-
 int32_t RTPSenderAudio::RegisterAudioPayload(
     const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const int8_t payload_type,
@@ -132,19 +124,24 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
                                const uint8_t* payload_data,
                                size_t payload_size,
                                const RTPFragmentationHeader* fragmentation) {
+  // From RFC 4733:
+  // A source has wide latitude as to how often it sends event updates. A
+  // natural interval is the spacing between non-event audio packets. [...]
+  // Alternatively, a source MAY decide to use a different spacing for event
+  // updates, with a value of 50 ms RECOMMENDED.
+  constexpr int kDtmfIntervalTimeMs = 50;
   uint8_t audio_level_dbov = 0;
-  uint16_t packet_size_samples = 0;
   uint32_t dtmf_payload_freq = 0;
   {
     rtc::CritScope cs(&send_audio_critsect_);
     audio_level_dbov = audio_level_dbov_;
-    packet_size_samples = packet_size_samples_;
     dtmf_payload_freq = dtmf_payload_freq_;
   }
 
   // Check if we have pending DTMFs to send
   if (!dtmf_event_is_on_ && dtmf_queue_.PendingDtmf()) {
-    if ((clock_->TimeInMilliseconds() - dtmf_time_last_sent_) > 50) {
+    if ((clock_->TimeInMilliseconds() - dtmf_time_last_sent_) >
+        kDtmfIntervalTimeMs) {
       // New tone to play
       dtmf_timestamp_ = rtp_timestamp;
       if (dtmf_queue_.NextDtmf(&dtmf_current_event_)) {
@@ -163,7 +160,10 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
       // kEmptyFrame is used to drive the DTMF when in CN mode
       // it can be triggered more frequently than we want to send the
       // DTMF packets.
-      if (packet_size_samples > (rtp_timestamp - dtmf_timestamp_last_sent_)) {
+      const unsigned int dtmf_interval_time_rtp =
+          dtmf_payload_freq * kDtmfIntervalTimeMs / 1000;
+      if ((rtp_timestamp - dtmf_timestamp_last_sent_) <
+          dtmf_interval_time_rtp) {
         // not time to send yet
         return true;
       }

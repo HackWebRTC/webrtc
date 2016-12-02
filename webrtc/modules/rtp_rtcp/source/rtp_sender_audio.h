@@ -42,10 +42,6 @@ class RTPSenderAudio {
                  size_t payload_size,
                  const RTPFragmentationHeader* fragmentation);
 
-  // set audio packet size, used to determine when it's time to send a DTMF
-  // packet in silence (CNG)
-  int32_t SetAudioPacketSize(uint16_t packet_size_samples);
-
   // Store the audio level in dBov for
   // header-extension-for-audio-level-indication.
   // Valid range is [0,100]. Actual value is negative.
@@ -68,8 +64,6 @@ class RTPSenderAudio {
   RTPSender* const rtp_sender_ = nullptr;
 
   rtc::CriticalSection send_audio_critsect_;
-
-  uint16_t packet_size_samples_ GUARDED_BY(send_audio_critsect_) = 160;
 
   // DTMF.
   bool dtmf_event_is_on_ = false;

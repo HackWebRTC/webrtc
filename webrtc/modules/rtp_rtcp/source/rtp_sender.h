@@ -179,9 +179,9 @@ class RTPSender {
   // Send a DTMF tone using RFC 2833 (4733).
   int32_t SendTelephoneEvent(uint8_t key, uint16_t time_ms, uint8_t level);
 
-  // Set audio packet size, used to determine when it's time to send a DTMF
-  // packet in silence (CNG).
-  int32_t SetAudioPacketSize(uint16_t packet_size_samples);
+  // This function is deprecated. It was previously used to determine when it
+  // was time to send a DTMF packet in silence (CNG).
+  RTC_DEPRECATED int32_t SetAudioPacketSize(uint16_t packet_size_samples);
 
   // Store the audio level in d_bov for
   // header-extension-for-audio-level-indication.
