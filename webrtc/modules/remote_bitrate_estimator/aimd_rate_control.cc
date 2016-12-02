@@ -228,14 +228,11 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
     default:
       assert(false);
   }
-  // Don't change the bit rate if the send side is too far off.
-  // We allow a bit more lag at very low rates to not too easily get stuck if
-  // the encoder produces uneven outputs.
-  const uint32_t max_bitrate_bps =
-      static_cast<uint32_t>(1.5f * incoming_bitrate_bps) + 10000;
-  if (current_bitrate_bps > current_bitrate_bps_ &&
-      current_bitrate_bps > max_bitrate_bps) {
-    current_bitrate_bps = std::max(current_bitrate_bps_, max_bitrate_bps);
+  if ((incoming_bitrate_bps > 100000 || current_bitrate_bps > 150000) &&
+      current_bitrate_bps > 1.5 * incoming_bitrate_bps) {
+    // Allow changing the bit rate if we are operating at very low rates
+    // Don't change the bit rate if the send side is too far off
+    current_bitrate_bps = current_bitrate_bps_;
     time_last_bitrate_change_ = now_ms;
   }
   return current_bitrate_bps;
