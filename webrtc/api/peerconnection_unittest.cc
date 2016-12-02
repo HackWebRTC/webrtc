@@ -1721,7 +1721,16 @@ TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCallee) {
 // This test sets up a non-bundle call and apply bundle during ICE restart. When
 // bundle is in effect in the restart, the channel can successfully reset its
 // DTLS-SRTP context.
-TEST_F(P2PTestConductor, LocalP2PTestDtlsBundleInIceRestart) {
+#if defined(MEMORY_SANITIZER)
+// Fails under MemorySanitizer:
+// See https://bugs.chromium.org/p/webrtc/issues/detail?id=6811
+#define MAYBE_LocalP2PTestDtlsBundleInIceRestart \
+  DISABLED_LocalP2PTestDtlsBundleInIceRestart
+#else
+#define MAYBE_LocalP2PTestDtlsBundleInIceRestart \
+  LocalP2PTestDtlsBundleInIceRestart
+#endif
+TEST_F(P2PTestConductor, MAYBE_LocalP2PTestDtlsBundleInIceRestart) {
   MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
