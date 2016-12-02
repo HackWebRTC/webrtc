@@ -15,26 +15,16 @@
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
-#ifndef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
-#error "Deprecated"
-#endif
-
 namespace webrtc {
 
 VoEVideoSync* VoEVideoSync::GetInterface(VoiceEngine* voiceEngine) {
-#ifndef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
-  return NULL;
-#else
   if (NULL == voiceEngine) {
     return NULL;
   }
   VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
   s->AddRef();
   return s;
-#endif
 }
-
-#ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
 
 VoEVideoSyncImpl::VoEVideoSyncImpl(voe::SharedData* shared) : _shared(shared) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -187,7 +177,5 @@ int VoEVideoSyncImpl::GetLeastRequiredDelayMs(int channel) const {
   }
   return channel_ptr->LeastRequiredDelayMs();
 }
-
-#endif  // #ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
 
 }  // namespace webrtc

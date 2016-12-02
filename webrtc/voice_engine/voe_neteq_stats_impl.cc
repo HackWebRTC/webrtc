@@ -16,26 +16,16 @@
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
-#ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-#error "Deprecated"
-#endif
-
 namespace webrtc {
 
 VoENetEqStats* VoENetEqStats::GetInterface(VoiceEngine* voiceEngine) {
-#ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-  return NULL;
-#else
   if (NULL == voiceEngine) {
     return NULL;
   }
   VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
   s->AddRef();
   return s;
-#endif
 }
-
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 
 VoENetEqStatsImpl::VoENetEqStatsImpl(voe::SharedData* shared)
     : _shared(shared) {
@@ -83,7 +73,5 @@ int VoENetEqStatsImpl::GetDecodingCallStatistics(
   channelPtr->GetDecodingCallStatistics(stats);
   return 0;
 }
-
-#endif  // #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 
 }  // namespace webrtc

@@ -23,56 +23,16 @@
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_interface.h"
-#ifdef WEBRTC_VOICE_ENGINE_CODEC_API
 #include "webrtc/voice_engine/include/voe_codec.h"
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
 #include "webrtc/voice_engine/include/voe_external_media.h"
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_HARDWARE_API
 #include "webrtc/voice_engine/include/voe_hardware.h"
-#endif
 #include "webrtc/voice_engine/include/voe_network.h"
-#ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
 #include "webrtc/voice_engine/include/voe_video_sync.h"
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
 #include "webrtc/voice_engine/include/voe_volume_control.h"
-#endif
 
-#ifndef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
-#error "Deprecated"
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_CODEC_API
-#error "Deprecated"
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
-#error "Deprecated"
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_FILE_API
-#error "Deprecated"
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_HARDWARE_API
-#error "Deprecated"
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-#error "Deprecated"
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
-#error "Deprecated"
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
-#error "Deprecated"
-#endif
-#ifndef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
-#error "Deprecated"
-#endif
-
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 namespace webrtc {
 class VoENetEqStats;
 }
-#endif
 
 #if defined(WEBRTC_ANDROID)
 extern char mobileLogMsg[640];
@@ -96,34 +56,16 @@ class SubAPIManager {
       _videoSync(false),
       _volumeControl(false),
       _apm(false) {
-#ifdef WEBRTC_VOICE_ENGINE_CODEC_API
       _codec = true;
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
       _externalMedia = true;
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_FILE_API
       _file = true;
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_HARDWARE_API
       _hardware = true;
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
       _netEqStats = true;
-#endif
       _network = true;
-#ifdef WEBRTC_VOICE_ENGINE_RTP_RTCP_API
       _rtp_rtcp = true;
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
       _videoSync = true;
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
       _volumeControl = true;
-#endif
-#ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
       _apm = true;
-#endif
   }
 
   void DisplayStatus() const;
@@ -190,11 +132,9 @@ class VoETestManager {
     return voe_xmedia_;
   }
 
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
   VoENetEqStats* NetEqStatsPtr() const {
     return voe_neteq_stats_;
   }
-#endif
 
  private:
   bool                   initialized_;
@@ -206,9 +146,7 @@ class VoETestManager {
   VoEFile*               voe_file_;
   VoEHardware*           voe_hardware_;
   VoENetwork*            voe_network_;
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
   VoENetEqStats*         voe_neteq_stats_;
-#endif
   VoERTP_RTCP*           voe_rtp_rtcp_;
   VoEVideoSync*          voe_vsync_;
   VoEVolumeControl*      voe_volume_control_;

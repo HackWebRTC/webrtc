@@ -25,18 +25,4 @@
 #define WEBRTC_VOICE_ENGINE_TYPING_DETECTION    // Typing detection
 #endif
 
-// ----------------------------------------------------------------------------
-//  VoiceEngine sub-APIs
-// ----------------------------------------------------------------------------
-
-#define WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
-#define WEBRTC_VOICE_ENGINE_CODEC_API
-#define WEBRTC_VOICE_ENGINE_EXTERNAL_MEDIA_API
-#define WEBRTC_VOICE_ENGINE_FILE_API
-#define WEBRTC_VOICE_ENGINE_HARDWARE_API
-#define WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-#define WEBRTC_VOICE_ENGINE_RTP_RTCP_API
-#define WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
-#define WEBRTC_VOICE_ENGINE_VOLUME_CONTROL_API
-
 #endif  // WEBRTC_VOICE_ENGINE_CONFIGURATIONS_H_

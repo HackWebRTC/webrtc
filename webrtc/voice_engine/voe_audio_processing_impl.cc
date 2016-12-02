@@ -18,10 +18,6 @@
 #include "webrtc/voice_engine/transmit_mixer.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
-#ifndef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
-#error "Deprecated"
-#endif
-
 // TODO(andrew): move to a common place.
 #define WEBRTC_VOICE_INIT_CHECK()                        \
   do {                                                   \
@@ -48,19 +44,14 @@ static const EcModes kDefaultEcMode = kEcAec;
 #endif
 
 VoEAudioProcessing* VoEAudioProcessing::GetInterface(VoiceEngine* voiceEngine) {
-#ifndef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
-  return NULL;
-#else
   if (NULL == voiceEngine) {
     return NULL;
   }
   VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
   s->AddRef();
   return s;
-#endif
 }
 
-#ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 VoEAudioProcessingImpl::VoEAudioProcessingImpl(voe::SharedData* shared)
     : _isAecMode(kDefaultEcMode == kEcAec), _shared(shared) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -779,7 +770,5 @@ void VoEAudioProcessingImpl::EnableStereoChannelSwapping(bool enable) {
 bool VoEAudioProcessingImpl::IsStereoChannelSwappingEnabled() {
   return _shared->transmit_mixer()->IsStereoChannelSwappingEnabled();
 }
-
-#endif  // #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 
 }  // namespace webrtc

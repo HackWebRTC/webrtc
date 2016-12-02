@@ -19,26 +19,16 @@
 #include "webrtc/voice_engine/transmit_mixer.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
-#ifndef WEBRTC_VOICE_ENGINE_FILE_API
-#error "Deprecated"
-#endif
-
 namespace webrtc {
 
 VoEFile* VoEFile::GetInterface(VoiceEngine* voiceEngine) {
-#ifndef WEBRTC_VOICE_ENGINE_FILE_API
-  return NULL;
-#else
   if (NULL == voiceEngine) {
     return NULL;
   }
   VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
   s->AddRef();
   return s;
-#endif
 }
-
-#ifdef WEBRTC_VOICE_ENGINE_FILE_API
 
 VoEFileImpl::VoEFileImpl(voe::SharedData* shared) : _shared(shared) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -473,7 +463,5 @@ int VoEFileImpl::StopRecordingMicrophone() {
 
   return err;
 }
-
-#endif  // #ifdef WEBRTC_VOICE_ENGINE_FILE_API
 
 }  // namespace webrtc

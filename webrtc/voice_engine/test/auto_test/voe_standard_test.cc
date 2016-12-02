@@ -23,10 +23,6 @@
 #include "webrtc/voice_engine/voice_engine_defines.h"
 #include "webrtc/voice_engine_configurations.h"
 
-#ifndef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
-#error "Deprecated"
-#endif
-
 DEFINE_bool(include_timing_dependent_tests, true,
             "If true, we will include tests / parts of tests that are known "
             "to break in slow execution environments (such as valgrind).");
@@ -100,9 +96,7 @@ VoETestManager::VoETestManager()
       voe_file_(0),
       voe_hardware_(0),
       voe_network_(0),
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
       voe_neteq_stats_(NULL),
-#endif
       voe_rtp_rtcp_(0),
       voe_vsync_(0),
       voe_volume_control_(0),
@@ -152,9 +146,7 @@ void VoETestManager::GetInterfaces() {
 #ifdef _TEST_XMEDIA_
     voe_xmedia_ = VoEExternalMedia::GetInterface(voice_engine_);
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
     voe_neteq_stats_ = VoENetEqStats::GetInterface(voice_engine_);
-#endif
   }
 }
 
@@ -205,12 +197,10 @@ int VoETestManager::ReleaseInterfaces() {
     voe_xmedia_ = NULL;
   }
 #endif
-#ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
   if (voe_neteq_stats_) {
     voe_neteq_stats_->Release();
     voe_neteq_stats_ = NULL;
   }
-#endif
   if (false == VoiceEngine::Delete(voice_engine_)) {
     TEST_LOG("\n\nVoiceEngine::Delete() failed. \n");
     releaseOK = false;

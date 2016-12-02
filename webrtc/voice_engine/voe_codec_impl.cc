@@ -17,26 +17,16 @@
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
-#ifndef WEBRTC_VOICE_ENGINE_CODEC_API
-#error "Deprecated"
-#endif
-
 namespace webrtc {
 
 VoECodec* VoECodec::GetInterface(VoiceEngine* voiceEngine) {
-#ifndef WEBRTC_VOICE_ENGINE_CODEC_API
-  return NULL;
-#else
   if (NULL == voiceEngine) {
     return NULL;
   }
   VoiceEngineImpl* s = static_cast<VoiceEngineImpl*>(voiceEngine);
   s->AddRef();
   return s;
-#endif
 }
-
-#ifdef WEBRTC_VOICE_ENGINE_CODEC_API
 
 VoECodecImpl::VoECodecImpl(voe::SharedData* shared) : _shared(shared) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_shared->instance_id(), -1),
@@ -397,7 +387,5 @@ int VoECodecImpl::GetOpusDtxStatus(int channel, bool* enabled) {
   }
   return channelPtr->GetOpusDtx(enabled);
 }
-
-#endif  // WEBRTC_VOICE_ENGINE_CODEC_API
 
 }  // namespace webrtc
