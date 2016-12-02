@@ -32,7 +32,7 @@ class AimdRateControl {
   void SetMinBitrate(int min_bitrate_bps);
   int64_t GetFeedbackInterval() const;
   // Returns true if the bitrate estimate hasn't been changed for more than
-  // an RTT, or if the incoming_bitrate is more than 5% above the current
+  // an RTT, or if the incoming_bitrate is less than half of the current
   // estimate. Should be used to decide if we should reduce the rate further
   // when over-using.
   bool TimeToReduceFurther(int64_t time_now,

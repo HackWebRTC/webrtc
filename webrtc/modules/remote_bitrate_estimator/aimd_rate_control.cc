@@ -24,7 +24,6 @@
 namespace webrtc {
 
 static const int64_t kDefaultRttMs = 200;
-static const double kWithinIncomingBitrateHysteresis = 1.05;
 static const int64_t kMaxFeedbackIntervalMs = 1000;
 
 AimdRateControl::AimdRateControl()
@@ -72,10 +71,10 @@ bool AimdRateControl::TimeToReduceFurther(int64_t time_now,
     return true;
   }
   if (ValidEstimate()) {
-    const int threshold = static_cast<int>(kWithinIncomingBitrateHysteresis *
-                                           incoming_bitrate_bps);
-    const int bitrate_difference = LatestEstimate() - incoming_bitrate_bps;
-    return bitrate_difference > threshold;
+    // TODO(terelius/holmer): Investigate consequences of increasing
+    // the threshold to 0.95 * LatestEstimate().
+    const uint32_t threshold = static_cast<uint32_t> (0.5 * LatestEstimate());
+    return incoming_bitrate_bps < threshold;
   }
   return false;
 }
