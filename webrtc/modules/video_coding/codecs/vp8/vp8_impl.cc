@@ -1022,6 +1022,7 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   }
   if (decoder_ == NULL) {
     decoder_ = new vpx_codec_ctx_t;
+    memset(decoder_, 0, sizeof(*decoder_));
   }
   if (inst && inst->codecType == kVideoCodecVP8) {
     feedback_mode_ = inst->VP8().feedbackModeOn;
@@ -1038,6 +1039,8 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
 #endif
 
   if (vpx_codec_dec_init(decoder_, vpx_codec_vp8_dx(), &cfg, flags)) {
+    delete decoder_;
+    decoder_ = nullptr;
     return WEBRTC_VIDEO_CODEC_MEMORY;
   }
 
