@@ -87,6 +87,29 @@ rtc_executable("psnr_ssim_analyzer") {
   ]
 }
 
+rtc_static_library("reference_less_video_analysis_lib") {
+  sources = [
+    "frame_analyzer/reference_less_video_analysis_lib.cc",
+    "frame_analyzer/reference_less_video_analysis_lib.h",
+  ]
+
+  deps = [
+    ":video_quality_analysis",
+  ]
+}
+
+rtc_executable("reference_less_video_analysis") {
+  sources = [
+    "frame_analyzer/reference_less_video_analysis.cc",
+  ]
+
+  deps = [
+    ":command_line_parser",
+    ":reference_less_video_analysis_lib",
+    "//build/win:default_exe_manifest",
+  ]
+}
+
 rtc_executable("rgba_to_i420_converter") {
   sources = [
     "converter/converter.cc",
@@ -254,6 +277,7 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "frame_analyzer/reference_less_video_analysis_unittest.cc",
       "frame_analyzer/video_quality_analysis_unittest.cc",
       "frame_editing/frame_editing_unittest.cc",
       "simple_command_line_parser_unittest.cc",
@@ -270,6 +294,7 @@ if (rtc_include_tests) {
     deps = [
       ":command_line_parser",
       ":frame_editing_lib",
+      ":reference_less_video_analysis_lib",
       ":video_quality_analysis",
       "../test:test_main",
       "//testing/gtest",
