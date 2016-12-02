@@ -1301,11 +1301,17 @@ class P2PTestConductor : public testing::Test {
   void VerifyRenderedSize(int width,
                           int height,
                           webrtc::VideoRotation rotation) {
-    EXPECT_EQ(width, receiving_client()->rendered_width());
-    EXPECT_EQ(height, receiving_client()->rendered_height());
+    double expected_aspect_ratio = static_cast<double>(width) / height;
+    double receiving_client_rendered_aspect_ratio =
+        static_cast<double>(receiving_client()->rendered_width()) /
+        receiving_client()->rendered_height();
+    double initializing_client_rendered_aspect_ratio =
+        static_cast<double>(initializing_client()->rendered_width()) /
+        initializing_client()->rendered_height();
+    EXPECT_EQ(expected_aspect_ratio, receiving_client_rendered_aspect_ratio);
+    EXPECT_EQ(expected_aspect_ratio, initializing_client_rendered_aspect_ratio);
+
     EXPECT_EQ(rotation, receiving_client()->rendered_rotation());
-    EXPECT_EQ(width, initializing_client()->rendered_width());
-    EXPECT_EQ(height, initializing_client()->rendered_height());
     EXPECT_EQ(rotation, initializing_client()->rendered_rotation());
 
     // Verify size of the local preview.
