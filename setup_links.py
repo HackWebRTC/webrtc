@@ -81,7 +81,6 @@ DIRECTORIES = [
   'tools/valgrind',
   'tools/vim',
   'tools/win',
-  'tools/xdisplaycheck',
 ]
 
 from sync_chromium import get_target_os_list

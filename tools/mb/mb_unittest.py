@@ -529,7 +529,6 @@ class UnitTest(unittest.TestCase):
         '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
         'base_unittests',
         'some_resource_file',
-        'xdisplaycheck',
     ])
     self.assertEqual(command, [
         '../../testing/xvfb.py',

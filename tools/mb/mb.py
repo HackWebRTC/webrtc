@@ -1106,7 +1106,6 @@ class MetaBuildWrapper(object):
       xvfb = use_x11 and test_type == 'windowed_test_launcher'
       if xvfb:
         extra_files += [
-            'xdisplaycheck',
             '../../testing/xvfb.py',
         ]
 

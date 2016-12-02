@@ -148,10 +148,6 @@ rtc_source_set("test_support") {
     configs += [ "//build/config/compiler:enable_arc" ]
   }
 
-  if (use_x11) {
-    deps += [ "//tools/xdisplaycheck" ]
-  }
-
   if (is_android) {
     deps += [ "//base:base" ]
     data = [
