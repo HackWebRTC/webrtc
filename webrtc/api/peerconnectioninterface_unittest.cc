@@ -562,9 +562,10 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     callback_triggered_ = true;
   }
 
-  void OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
-                  std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>
-                      streams) override {
+  void OnAddTrack(
+      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+      const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
+          streams) override {
     EXPECT_TRUE(receiver != nullptr);
     num_added_tracks_++;
     last_added_track_label_ = receiver->id();

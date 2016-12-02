@@ -603,7 +603,7 @@ class PeerConnectionObserver {
   // implement it.
   virtual void OnAddTrack(
       rtc::scoped_refptr<RtpReceiverInterface> receiver,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams) {}
+      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {}
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
