@@ -302,6 +302,7 @@ AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config,
       public_submodules_(new ApmPublicSubmodules()),
       private_submodules_(new ApmPrivateSubmodules(beamformer)),
       constants_(config.Get<ExperimentalAgc>().startup_min_volume,
+                 config.Get<ExperimentalAgc>().clipped_level_min,
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
                  false),
 #else
@@ -488,7 +489,7 @@ int AudioProcessingImpl::InitializeLocked() {
       private_submodules_->agc_manager.reset(new AgcManagerDirect(
           public_submodules_->gain_control.get(),
           public_submodules_->gain_control_for_experimental_agc.get(),
-          constants_.agc_startup_min_volume));
+          constants_.agc_startup_min_volume, constants_.agc_clipped_level_min));
     }
     private_submodules_->agc_manager->Initialize();
     private_submodules_->agc_manager->SetCaptureMuted(
@@ -1852,6 +1853,9 @@ int AudioProcessingImpl::WriteConfigMessage(bool forced) {
   // descriptions for other submodules.
   if (capture_nonlocked_.level_controller_enabled) {
     experiments_description += "LevelController;";
+  }
+  if (constants_.agc_clipped_level_min != kClippedLevelMin) {
+    experiments_description += "AgcClippingLevelExperiment;";
   }
   config.set_experiments_description(experiments_description);
 

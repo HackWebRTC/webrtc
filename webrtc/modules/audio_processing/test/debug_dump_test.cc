@@ -379,6 +379,8 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringInclusive) {
   Config config;
   config.Set<RefinedAdaptiveFilter>(new RefinedAdaptiveFilter(true));
   config.Set<EchoCanceller3>(new EchoCanceller3(true));
+  // Arbitrarily set clipping gain to 17, which will never be the default.
+  config.Set<ExperimentalAgc>(new ExperimentalAgc(true, 0, 17));
   DebugDumpGenerator generator(config, AudioProcessing::Config());
   generator.StartRecording();
   generator.Process(100);
@@ -397,6 +399,8 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringInclusive) {
       EXPECT_PRED_FORMAT2(testing::IsSubstring, "RefinedAdaptiveFilter",
                           msg->experiments_description().c_str());
       EXPECT_PRED_FORMAT2(testing::IsSubstring, "AEC3",
+                          msg->experiments_description().c_str());
+      EXPECT_PRED_FORMAT2(testing::IsSubstring, "AgcClippingLevelExperiment",
                           msg->experiments_description().c_str());
     }
   }
@@ -423,6 +427,8 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringExclusive) {
       EXPECT_PRED_FORMAT2(testing::IsSubstring, "RefinedAdaptiveFilter",
                           msg->experiments_description().c_str());
       EXPECT_PRED_FORMAT2(testing::IsNotSubstring, "AEC3",
+                          msg->experiments_description().c_str());
+      EXPECT_PRED_FORMAT2(testing::IsNotSubstring, "AgcClippingLevelExperiment",
                           msg->experiments_description().c_str());
     }
   }
@@ -472,6 +478,31 @@ TEST_F(DebugDumpTest, VerifyLevelControllerExperimentalString) {
       const audioproc::Config* msg = &event->config();
       ASSERT_TRUE(msg->has_experiments_description());
       EXPECT_PRED_FORMAT2(testing::IsSubstring, "LevelController",
+                          msg->experiments_description().c_str());
+    }
+  }
+}
+
+TEST_F(DebugDumpTest, VerifyAgcClippingLevelExperimentalString) {
+  Config config;
+  // Arbitrarily set clipping gain to 17, which will never be the default.
+  config.Set<ExperimentalAgc>(new ExperimentalAgc(true, 0, 17));
+  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  generator.StartRecording();
+  generator.Process(100);
+  generator.StopRecording();
+
+  DebugDumpReplayer debug_dump_replayer_;
+
+  ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
+
+  while (const rtc::Optional<audioproc::Event> event =
+             debug_dump_replayer_.GetNextEvent()) {
+    debug_dump_replayer_.RunNextEvent();
+    if (event->type() == audioproc::Event::CONFIG) {
+      const audioproc::Config* msg = &event->config();
+      ASSERT_TRUE(msg->has_experiments_description());
+      EXPECT_PRED_FORMAT2(testing::IsSubstring, "AgcClippingLevelExperiment",
                           msg->experiments_description().c_str());
     }
   }
