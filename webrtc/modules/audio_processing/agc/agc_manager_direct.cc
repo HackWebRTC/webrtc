@@ -411,8 +411,7 @@ void AgcManagerDirect::UpdateGain() {
   SetLevel(LevelFromGainError(residual_gain, level_));
   if (old_level != level_) {
     // level_ was updated by SetLevel; log the new value.
-    RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.AgcSetLevel", level_, 1,
-                                kMaxMicLevel, 50);
+    RTC_HISTOGRAM_ENUMERATION("WebRTC.Audio.AgcLevel", level_, kMaxMicLevel);
   }
 }
 
