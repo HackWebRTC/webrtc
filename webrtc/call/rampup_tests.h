@@ -118,15 +118,12 @@ class RampUpDownUpTester : public RampUpTester {
   bool PollStats() override;
 
  private:
-  static const int kHighBandwidthLimitBps = 80000;
-  static const int kExpectedHighBitrateBps = 60000;
-  static const int kLowBandwidthLimitBps = 20000;
-  static const int kExpectedLowBitrateBps = 20000;
   enum TestStates { kFirstRampup, kLowRate, kSecondRampup };
 
   Call::Config GetReceiverCallConfig() override;
 
   std::string GetModifierString() const;
+  int GetExpectedHighBitrate() const;
   void EvolveTestState(int bitrate_bps, bool suspended);
 
   TestStates test_state_;

@@ -20,6 +20,11 @@ namespace webrtc {
 namespace {
 
 static const int64_t kPollIntervalMs = 20;
+static const int kHighBandwidthLimitBps = 80000;
+static const int kExpectedHighVideoBitrateBps = 60000;
+static const int kExpectedHighAudioBitrateBps = 30000;
+static const int kLowBandwidthLimitBps = 20000;
+static const int kExpectedLowBitrateBps = 20000;
 
 std::vector<uint32_t> GenerateSsrcs(size_t num_streams, uint32_t ssrc_offset) {
   std::vector<uint32_t> ssrcs;
@@ -414,12 +419,18 @@ std::string RampUpDownUpTester::GetModifierString() const {
   return str;
 }
 
+int RampUpDownUpTester::GetExpectedHighBitrate() const {
+  if (num_audio_streams_ > 0 && num_video_streams_ == 0)
+    return kExpectedHighAudioBitrateBps;
+  return kExpectedHighVideoBitrateBps;
+}
+
 void RampUpDownUpTester::EvolveTestState(int bitrate_bps, bool suspended) {
   int64_t now = clock_->TimeInMilliseconds();
   switch (test_state_) {
     case kFirstRampup: {
       EXPECT_FALSE(suspended);
-      if (bitrate_bps >= kExpectedHighBitrateBps) {
+      if (bitrate_bps >= GetExpectedHighBitrate()) {
         // The first ramp-up has reached the target bitrate. Change the
         // channel limit, and move to the next test state.
         forward_transport_config_.link_capacity_kbps =
@@ -456,7 +467,7 @@ void RampUpDownUpTester::EvolveTestState(int bitrate_bps, bool suspended) {
       break;
     }
     case kSecondRampup: {
-      if (bitrate_bps >= kExpectedHighBitrateBps && !suspended) {
+      if (bitrate_bps >= GetExpectedHighBitrate() && !suspended) {
         webrtc::test::PrintResult("ramp_up_down_up", GetModifierString(),
                                   "second_rampup", now - state_start_ms_, "ms",
                                   false);

@@ -89,4 +89,42 @@ TEST(AimdRateControlTest, GetLastBitrateDecrease) {
             states.aimd_rate_control->GetLastBitrateDecreaseBps());
 }
 
+TEST(AimdRateControlTest, BweLimitedByAckedBitrate) {
+  auto states = CreateAimdRateControlStates();
+  constexpr int kAckedBitrate = 10000;
+  InitBitrate(states, kAckedBitrate,
+              states.simulated_clock->TimeInMilliseconds());
+  while (states.simulated_clock->TimeInMilliseconds() - kClockInitialTime <
+         20000) {
+    UpdateRateControl(states, kBwNormal, kAckedBitrate,
+                      states.simulated_clock->TimeInMilliseconds());
+    states.simulated_clock->AdvanceTimeMilliseconds(100);
+  }
+  ASSERT_TRUE(states.aimd_rate_control->ValidEstimate());
+  EXPECT_EQ(static_cast<uint32_t>(1.5 * kAckedBitrate + 10000),
+            states.aimd_rate_control->LatestEstimate());
+}
+
+TEST(AimdRateControlTest, BweNotLimitedByDecreasingAckedBitrate) {
+  auto states = CreateAimdRateControlStates();
+  constexpr int kAckedBitrate = 100000;
+  InitBitrate(states, kAckedBitrate,
+              states.simulated_clock->TimeInMilliseconds());
+  while (states.simulated_clock->TimeInMilliseconds() - kClockInitialTime <
+         20000) {
+    UpdateRateControl(states, kBwNormal, kAckedBitrate,
+                      states.simulated_clock->TimeInMilliseconds());
+    states.simulated_clock->AdvanceTimeMilliseconds(100);
+  }
+  ASSERT_TRUE(states.aimd_rate_control->ValidEstimate());
+  // If the acked bitrate decreases the BWE shouldn't be reduced to 1.5x
+  // what's being acked, but also shouldn't get to increase more.
+  uint32_t prev_estimate = states.aimd_rate_control->LatestEstimate();
+  UpdateRateControl(states, kBwNormal, kAckedBitrate / 2,
+                    states.simulated_clock->TimeInMilliseconds());
+  uint32_t new_estimate = states.aimd_rate_control->LatestEstimate();
+  EXPECT_NEAR(new_estimate, static_cast<uint32_t>(1.5 * kAckedBitrate + 10000),
+              2000);
+  EXPECT_EQ(new_estimate, prev_estimate);
+}
 }  // namespace webrtc
