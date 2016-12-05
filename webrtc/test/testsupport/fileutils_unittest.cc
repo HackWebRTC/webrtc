@@ -37,15 +37,15 @@ class FileUtilsTest : public testing::Test {
  protected:
   FileUtilsTest() {
   }
-  virtual ~FileUtilsTest() {}
+  ~FileUtilsTest() override {}
   // Runs before the first test
   static void SetUpTestCase() {
     original_working_dir_ = webrtc::test::WorkingDir();
   }
-  void SetUp() {
+  void SetUp() override {
     ASSERT_EQ(chdir(original_working_dir_.c_str()), 0);
   }
-  void TearDown() {
+  void TearDown() override {
     ASSERT_EQ(chdir(original_working_dir_.c_str()), 0);
   }
  private:

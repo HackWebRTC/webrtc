@@ -104,19 +104,28 @@ rtc_source_set("test_main") {
   ]
 }
 
+rtc_source_set("fileutils") {
+  testonly = true
+  sources = [
+    "testsupport/fileutils.cc",
+    "testsupport/fileutils.h",
+  ]
+  if (is_ios) {
+    sources += [ "testsupport/iosfileutils.mm" ]
+    configs += [ "//build/config/compiler:enable_arc" ]
+  }
+}
+
 rtc_source_set("test_support") {
   testonly = true
 
   sources = [
     "gmock.h",
     "gtest.h",
-    "testsupport/fileutils.cc",
-    "testsupport/fileutils.h",
     "testsupport/frame_reader.cc",
     "testsupport/frame_reader.h",
     "testsupport/frame_writer.cc",
     "testsupport/frame_writer.h",
-    "testsupport/iosfileutils.mm",
     "testsupport/metrics/video_metrics.cc",
     "testsupport/metrics/video_metrics.h",
     "testsupport/mock/mock_frame_reader.h",
@@ -139,13 +148,13 @@ rtc_source_set("test_support") {
     "//testing/gtest",
   ]
 
+  public_deps = [
+    ":fileutils",
+  ]
+
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  if (is_ios) {
-    configs += [ "//build/config/compiler:enable_arc" ]
   }
 
   if (is_android) {
@@ -200,7 +209,6 @@ rtc_test("test_support_unittests") {
     "rtp_file_reader_unittest.cc",
     "rtp_file_writer_unittest.cc",
     "testsupport/always_passing_unittest.cc",
-    "testsupport/fileutils_unittest.cc",
     "testsupport/frame_reader_unittest.cc",
     "testsupport/frame_writer_unittest.cc",
     "testsupport/metrics/video_metrics_unittest.cc",
@@ -232,9 +240,21 @@ rtc_test("test_support_unittests") {
   }
 
   deps += [
+    ":fileutils_unittests",
     ":test_common",
     ":test_main",
     "../modules/video_capture",
+    "//testing/gmock",
+    "//testing/gtest",
+  ]
+}
+rtc_source_set("fileutils_unittests") {
+  testonly = true
+  sources = [
+    "testsupport/fileutils_unittest.cc",
+  ]
+  deps = [
+    ":fileutils",
     "//testing/gmock",
     "//testing/gtest",
   ]

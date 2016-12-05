@@ -19,6 +19,7 @@
 #include <algorithm>
 
 #include "Shlwapi.h"
+#include "WinDef.h"
 
 #include "webrtc/system_wrappers/include/utf_util_win.h"
 #define GET_CURRENT_DIR _getcwd
@@ -135,7 +136,7 @@ std::string ProjectRootPath() {
   path = path + kPathDelimiter + ".." + kPathDelimiter + "..";
   char canonical_path[FILENAME_MAX];
 #ifdef WIN32
-  bool succeeded = PathCanonicalizeA(canonical_path, path.c_str());
+  BOOL succeeded = PathCanonicalizeA(canonical_path, path.c_str());
 #else
   bool succeeded = realpath(path.c_str(), canonical_path) != NULL;
 #endif
