@@ -18,6 +18,7 @@
 #include "webrtc/base/bitbuffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
 
 #define RETURN_FALSE_ON_ERROR(x) \
   if (!(x)) {                    \
@@ -545,21 +546,22 @@ void RtpPacketizerVp9::GeneratePackets() {
   assert(bytes_processed == payload_size_);
 }
 
-bool RtpPacketizerVp9::NextPacket(uint8_t* buffer,
-                                  size_t* bytes_to_send,
-                                  bool* last_packet) {
+bool RtpPacketizerVp9::NextPacket(RtpPacketToSend* packet, bool* last_packet) {
+  RTC_DCHECK(packet);
+  RTC_DCHECK(last_packet);
   if (packets_.empty()) {
     return false;
   }
   PacketInfo packet_info = packets_.front();
   packets_.pop();
 
-  if (!WriteHeaderAndPayload(packet_info, buffer, bytes_to_send)) {
+  if (!WriteHeaderAndPayload(packet_info, packet)) {
     return false;
   }
-  *last_packet =
-      packets_.empty() && (hdr_.spatial_idx == kNoSpatialIdx ||
-                           hdr_.spatial_idx == hdr_.num_spatial_layers - 1);
+  *last_packet = packets_.empty();
+  packet->SetMarker(packets_.empty() &&
+                    (hdr_.spatial_idx == kNoSpatialIdx ||
+                     hdr_.spatial_idx == hdr_.num_spatial_layers - 1));
   return true;
 }
 
@@ -600,8 +602,9 @@ bool RtpPacketizerVp9::NextPacket(uint8_t* buffer,
 //      +-+-+-+-+-+-+-+-+
 
 bool RtpPacketizerVp9::WriteHeaderAndPayload(const PacketInfo& packet_info,
-                                             uint8_t* buffer,
-                                             size_t* bytes_to_send) const {
+                                             RtpPacketToSend* packet) const {
+  uint8_t* buffer = packet->AllocatePayload(max_payload_length_);
+  RTC_DCHECK(buffer);
   size_t header_length;
   if (!WriteHeader(packet_info, buffer, &header_length))
     return false;
@@ -610,7 +613,7 @@ bool RtpPacketizerVp9::WriteHeaderAndPayload(const PacketInfo& packet_info,
   memcpy(&buffer[header_length],
          &payload_[packet_info.payload_start_pos], packet_info.size);
 
-  *bytes_to_send = header_length + packet_info.size;
+  packet->SetPayloadSize(header_length + packet_info.size);
   return true;
 }
 

@@ -362,15 +362,11 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
   bool last = false;
   while (!last) {
     std::unique_ptr<RtpPacketToSend> packet(new RtpPacketToSend(*rtp_header));
-    uint8_t* payload = packet->AllocatePayload(max_data_payload_length);
-    RTC_DCHECK(payload);
 
-    size_t payload_bytes_in_packet = 0;
-    if (!packetizer->NextPacket(payload, &payload_bytes_in_packet, &last))
+    if (!packetizer->NextPacket(packet.get(), &last))
       return false;
+    RTC_DCHECK_LE(packet->payload_size(), max_data_payload_length);
 
-    packet->SetPayloadSize(payload_bytes_in_packet);
-    packet->SetMarker(last);
     if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
 
