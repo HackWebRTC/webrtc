@@ -681,7 +681,7 @@ int VoEAudioProcessingImpl::StopDebugRecording() {
 int VoEAudioProcessingImpl::SetTypingDetectionStatus(bool enable) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetTypingDetectionStatus()");
-#if !defined(WEBRTC_VOICE_ENGINE_TYPING_DETECTION)
+#if !WEBRTC_VOICE_ENGINE_TYPING_DETECTION
   NOT_SUPPORTED(_shared->statistics());
 #else
   if (!_shared->statistics().Initialized()) {
@@ -723,7 +723,7 @@ int VoEAudioProcessingImpl::GetTypingDetectionStatus(bool& enabled) {
 }
 
 int VoEAudioProcessingImpl::TimeSinceLastTyping(int& seconds) {
-#if !defined(WEBRTC_VOICE_ENGINE_TYPING_DETECTION)
+#if !WEBRTC_VOICE_ENGINE_TYPING_DETECTION
   NOT_SUPPORTED(_shared->statistics());
 #else
   if (!_shared->statistics().Initialized()) {
@@ -750,7 +750,7 @@ int VoEAudioProcessingImpl::SetTypingDetectionParameters(int timeWindow,
                                                          int typeEventDelay) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
                "SetTypingDetectionParameters()");
-#if !defined(WEBRTC_VOICE_ENGINE_TYPING_DETECTION)
+#if !WEBRTC_VOICE_ENGINE_TYPING_DETECTION
   NOT_SUPPORTED(_shared->statistics());
 #else
   if (!_shared->statistics().Initialized()) {

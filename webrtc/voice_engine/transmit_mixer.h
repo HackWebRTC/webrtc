@@ -25,6 +25,12 @@
 #include "webrtc/voice_engine/monitor_module.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
+#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
+#define WEBRTC_VOICE_ENGINE_TYPING_DETECTION 1
+#else
+#define WEBRTC_VOICE_ENGINE_TYPING_DETECTION 0
+#endif
+
 namespace webrtc {
 
 class AudioProcessing;
@@ -151,7 +157,7 @@ public:
 
     void RecordFileEnded(int32_t id);
 
-#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     // Typing detection
     int TimeSinceLastTyping(int &seconds);
     int SetTypingDetectionParameters(int timeWindow,
@@ -183,7 +189,7 @@ private:
     void ProcessAudio(int delay_ms, int clock_drift, int current_mic_level,
                       bool key_pressed);
 
-#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     void TypingDetection(bool keyPressed);
 #endif
 
@@ -212,7 +218,7 @@ private:
     rtc::CriticalSection _critSect;
     rtc::CriticalSection _callbackCritSect;
 
-#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     webrtc::TypingDetection _typingDetection;
     bool _typingNoiseWarningPending;
     bool _typingNoiseDetected;

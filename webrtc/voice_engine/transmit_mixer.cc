@@ -34,7 +34,7 @@ TransmitMixer::OnPeriodicProcess()
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::OnPeriodicProcess()");
 
-#if defined(WEBRTC_VOICE_ENGINE_TYPING_DETECTION)
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     bool send_typing_noise_warning = false;
     bool typing_noise_detected = false;
     {
@@ -191,7 +191,7 @@ TransmitMixer::TransmitMixer(uint32_t instanceId) :
     _fileRecording(false),
     _fileCallRecording(false),
     _audioLevel(),
-#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     _typingNoiseWarningPending(false),
     _typingNoiseDetected(false),
 #endif
@@ -342,7 +342,7 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
       AudioFrameOperations::SwapStereoChannels(&_audioFrame);
 
     // --- Annoying typing detection (utilizes the APM/VAD decision)
-#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     TypingDetection(keyPressed);
 #endif
 
@@ -1167,7 +1167,7 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
   _saturationWarning |= agc->stream_is_saturated();
 }
 
-#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
 void TransmitMixer::TypingDetection(bool keyPressed)
 {
   // We let the VAD determine if we're using this feature or not.
@@ -1198,7 +1198,7 @@ int TransmitMixer::GetMixingFrequency()
     return _audioFrame.sample_rate_hz_;
 }
 
-#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
 int TransmitMixer::TimeSinceLastTyping(int &seconds)
 {
     // We check in VoEAudioProcessingImpl that this is only called when
@@ -1208,7 +1208,7 @@ int TransmitMixer::TimeSinceLastTyping(int &seconds)
 }
 #endif
 
-#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
 int TransmitMixer::SetTypingDetectionParameters(int timeWindow,
                                                 int costPerTyping,
                                                 int reportingThreshold,

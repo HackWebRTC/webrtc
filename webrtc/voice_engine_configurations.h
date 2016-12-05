@@ -13,16 +13,4 @@
 
 #include "webrtc/typedefs.h"
 
-// ============================================================================
-//                                 VoiceEngine
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-//  Settings for VoiceEngine
-// ----------------------------------------------------------------------------
-
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
-#define WEBRTC_VOICE_ENGINE_TYPING_DETECTION    // Typing detection
-#endif
-
 #endif  // WEBRTC_VOICE_ENGINE_CONFIGURATIONS_H_
