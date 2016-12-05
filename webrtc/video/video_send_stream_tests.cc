@@ -596,7 +596,7 @@ class FlexfecObserver : public test::EndToEndTest {
     // Therefore we need some network delay.
     const int kNetworkDelayMs = 100;
     FakeNetworkPipe::Config config;
-    config.loss_percent = 50;
+    config.loss_percent = 5;
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(sender_call, this,
                                      test::PacketTransport::kSender, config);
@@ -641,64 +641,39 @@ class FlexfecObserver : public test::EndToEndTest {
   bool header_extensions_enabled_;
 };
 
+TEST_F(VideoSendStreamTest, SupportsFlexfecVp8) {
+  FlexfecObserver test(false, false, "VP8");
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackVp8) {
+  FlexfecObserver test(false, true, "VP8");
+  RunBaseTest(&test);
+}
+
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsVp8) {
   FlexfecObserver test(true, false, "VP8");
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsVp8) {
-  FlexfecObserver test(false, false, "VP8");
-  RunBaseTest(&test);
-}
-
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsAndNackVp8) {
-  FlexfecObserver test(true, true, "VP8");
-  RunBaseTest(&test);
-}
-
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsAndNackVp8) {
-  FlexfecObserver test(false, true, "VP8");
-  RunBaseTest(&test);
-}
-
 #if !defined(RTC_DISABLE_VP9)
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsVp9) {
-  FlexfecObserver test(true, false, "VP9");
-  RunBaseTest(&test);
-}
-
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsVp9) {
+TEST_F(VideoSendStreamTest, SupportsFlexfecVp9) {
   FlexfecObserver test(false, false, "VP9");
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsAndNackVp9) {
-  FlexfecObserver test(true, true, "VP9");
-  RunBaseTest(&test);
-}
-
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsAndNackVp9) {
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackVp9) {
   FlexfecObserver test(false, true, "VP9");
   RunBaseTest(&test);
 }
 #endif  // defined(RTC_DISABLE_VP9)
 
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsH264) {
-  FlexfecObserver test(true, false, "H264");
-  RunBaseTest(&test);
-}
-
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsH264) {
+TEST_F(VideoSendStreamTest, SupportsFlexfecH264) {
   FlexfecObserver test(false, false, "H264");
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsAndNackH264) {
-  FlexfecObserver test(true, true, "H264");
-  RunBaseTest(&test);
-}
-
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithoutRtpExtensionsAndNackH264) {
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackH264) {
   FlexfecObserver test(false, true, "H264");
   RunBaseTest(&test);
 }
