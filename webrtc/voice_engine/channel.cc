@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "webrtc/audio/utility/audio_frame_operations.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
@@ -32,7 +33,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
-#include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/include/voe_external_media.h"
@@ -613,7 +613,7 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
     // TODO(henrik.lundin): We should be able to do better than this. But we
     // will have to go through all the cases below where the audio samples may
     // be used, and handle the muted case in some way.
-    audioFrame->Mute();
+    AudioFrameOperations::Mute(audioFrame);
   }
 
   // Convert module ID to internal VoE channel ID

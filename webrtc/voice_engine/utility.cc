@@ -10,13 +10,13 @@
 
 #include "webrtc/voice_engine/utility.h"
 
+#include "webrtc/audio/utility/audio_frame_operations.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 
 namespace webrtc {

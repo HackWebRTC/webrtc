@@ -32,10 +32,10 @@ rtc_static_library("audio_mixer_impl") {
   deps = [
     ":audio_frame_manipulator",
     "../..:webrtc_common",
+    "../../audio/utility:audio_frame_operations",
     "../../base:rtc_base_approved",
-    "../../modules/audio_processing",
-    "../../modules/utility",
     "../../system_wrappers",
+    "../audio_processing",
   ]
 }
 
@@ -51,7 +51,7 @@ rtc_static_library("audio_frame_manipulator") {
   ]
 
   deps = [
+    "../../audio/utility",
     "../../base:rtc_base_approved",
-    "../../modules/utility",
   ]
 }

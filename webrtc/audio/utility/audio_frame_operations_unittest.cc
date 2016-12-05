@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/audio/utility/audio_frame_operations.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/utility/include/audio_frame_operations.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
@@ -365,5 +365,25 @@ TEST_F(AudioFrameOperationsTest, ScaleWithSatSucceeds) {
   VerifyFramesAreEqual(scaled_frame, frame_);
 }
 
+TEST_F(AudioFrameOperationsTest, AddingXToEmptyGivesX) {
+  // When samples_per_channel_ is 0, the frame counts as empty and zero.
+  AudioFrame frame_to_add_to;
+  frame_to_add_to.samples_per_channel_ = 0;
+  frame_to_add_to.num_channels_ = frame_.num_channels_;
+
+  AudioFrameOperations::Add(frame_, &frame_to_add_to);
+  VerifyFramesAreEqual(frame_, frame_to_add_to);
+}
+
+TEST_F(AudioFrameOperationsTest, AddingTwoFramesProducesTheirSum) {
+  AudioFrame frame_to_add_to;
+  frame_to_add_to.samples_per_channel_ = frame_.samples_per_channel_;
+  frame_to_add_to.num_channels_ = frame_.num_channels_;
+  SetFrameData(&frame_to_add_to, 1000);
+
+  AudioFrameOperations::Add(frame_, &frame_to_add_to);
+  SetFrameData(&frame_, frame_.data_[0] + 1000);
+  VerifyFramesAreEqual(frame_, frame_to_add_to);
+}
 }  // namespace
 }  // namespace webrtc

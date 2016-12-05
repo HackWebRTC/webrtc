@@ -14,9 +14,9 @@
 #include <functional>
 #include <utility>
 
+#include "webrtc/audio/utility/audio_frame_operations.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
-#include "webrtc/modules/utility/include/audio_frame_operations.h"
 
 namespace webrtc {
 namespace {
@@ -106,12 +106,12 @@ int32_t MixFromList(AudioFrame* mixed_audio,
     // Mix |f.frame| into |mixed_audio|, with saturation protection.
     // These effect is applied to |f.frame| itself prior to mixing.
     if (use_limiter) {
-      // Divide by two to avoid saturation in the mixing.
-      // This is only meaningful if the limiter will be used.
-      *frame >>= 1;
+      // This is to avoid saturation in the mixing. It is only
+      // meaningful if the limiter will be used.
+      AudioFrameOperations::ApplyHalfGain(frame);
     }
     RTC_DCHECK_EQ(frame->num_channels_, mixed_audio->num_channels_);
-    *mixed_audio += *frame;
+    AudioFrameOperations::Add(*frame, mixed_audio);
   }
   return 0;
 }
@@ -250,7 +250,7 @@ void AudioMixerImpl::Mix(size_t number_of_channels,
   if (audio_frame_for_mixing->samples_per_channel_ == 0) {
     // Nothing was mixed, set the audio samples to silence.
     audio_frame_for_mixing->samples_per_channel_ = sample_size_;
-    audio_frame_for_mixing->Mute();
+    AudioFrameOperations::Mute(audio_frame_for_mixing);
   } else {
     // Only call the limiter if we have something to mix.
     LimitMixedAudio(audio_frame_for_mixing);
@@ -357,7 +357,7 @@ bool AudioMixerImpl::LimitMixedAudio(AudioFrame* mixed_audio) const {
   //
   // Instead we double the frame (with addition since left-shifting a
   // negative value is undefined).
-  *mixed_audio += *mixed_audio;
+  AudioFrameOperations::Add(*mixed_audio, mixed_audio);
 
   if (error != limiter_->kNoError) {
     LOG_F(LS_ERROR) << "Error from AudioProcessing: " << error;

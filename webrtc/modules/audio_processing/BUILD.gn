@@ -165,6 +165,7 @@ rtc_static_library("audio_processing") {
   defines = []
   deps = [
     "../..:webrtc_common",
+    "../../audio/utility:audio_frame_operations",
     "../audio_coding:isac",
   ]
 

@@ -8,18 +8,65 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/utility/include/audio_frame_operations.h"
+#include "webrtc/audio/utility/audio_frame_operations.h"
+
+#include <algorithm>
+
 #include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions.h"
+#include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {
-namespace  {
+namespace {
 
 // 2.7ms @ 48kHz, 4ms @ 32kHz, 8ms @ 16kHz.
 const size_t kMuteFadeFrames = 128;
 const float kMuteFadeInc = 1.0f / kMuteFadeFrames;
 
-}  // namespace {
+}  // namespace
+
+void AudioFrameOperations::Add(const AudioFrame& frame_to_add,
+                               AudioFrame* result_frame) {
+  // Sanity check.
+  RTC_DCHECK(result_frame);
+  RTC_DCHECK_GT(result_frame->num_channels_, 0);
+  RTC_DCHECK_EQ(result_frame->num_channels_, frame_to_add.num_channels_);
+
+  bool no_previous_data = false;
+  if (result_frame->samples_per_channel_ != frame_to_add.samples_per_channel_) {
+    // Special case we have no data to start with.
+    RTC_DCHECK_EQ(result_frame->samples_per_channel_, 0);
+    result_frame->samples_per_channel_ = frame_to_add.samples_per_channel_;
+    no_previous_data = true;
+  }
+
+  if (result_frame->vad_activity_ == AudioFrame::kVadActive ||
+      frame_to_add.vad_activity_ == AudioFrame::kVadActive) {
+    result_frame->vad_activity_ = AudioFrame::kVadActive;
+  } else if (result_frame->vad_activity_ == AudioFrame::kVadUnknown ||
+             frame_to_add.vad_activity_ == AudioFrame::kVadUnknown) {
+    result_frame->vad_activity_ = AudioFrame::kVadUnknown;
+  }
+
+  if (result_frame->speech_type_ != frame_to_add.speech_type_)
+    result_frame->speech_type_ = AudioFrame::kUndefined;
+
+  if (no_previous_data) {
+    std::copy(frame_to_add.data_, frame_to_add.data_ +
+                                      frame_to_add.samples_per_channel_ *
+                                          result_frame->num_channels_,
+              result_frame->data_);
+  } else {
+    for (size_t i = 0;
+         i < result_frame->samples_per_channel_ * result_frame->num_channels_;
+         i++) {
+      const int32_t wrap_guard = static_cast<int32_t>(result_frame->data_[i]) +
+                           static_cast<int32_t>(frame_to_add.data_[i]);
+      result_frame->data_[i] = rtc::saturated_cast<int16_t>(wrap_guard);
+    }
+  }
+  return;
+}
 
 void AudioFrameOperations::MonoToStereo(const int16_t* src_audio,
                                         size_t samples_per_channel,
@@ -68,7 +115,10 @@ int AudioFrameOperations::StereoToMono(AudioFrame* frame) {
 }
 
 void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {
-  if (frame->num_channels_ != 2) return;
+  RTC_DCHECK(frame);
+  if (frame->num_channels_ != 2) {
+    return;
+  }
 
   for (size_t i = 0; i < frame->samples_per_channel_ * 2; i += 2) {
     int16_t temp_data = frame->data_[i];
@@ -77,7 +127,8 @@ void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {
   }
 }
 
-void AudioFrameOperations::Mute(AudioFrame* frame, bool previous_frame_muted,
+void AudioFrameOperations::Mute(AudioFrame* frame,
+                                bool previous_frame_muted,
                                 bool current_frame_muted) {
   RTC_DCHECK(frame);
   if (!previous_frame_muted && !current_frame_muted) {
@@ -125,14 +176,30 @@ void AudioFrameOperations::Mute(AudioFrame* frame, bool previous_frame_muted,
   }
 }
 
+void AudioFrameOperations::Mute(AudioFrame* frame) {
+  Mute(frame, true, true);
+}
+
+void AudioFrameOperations::ApplyHalfGain(AudioFrame* frame) {
+  RTC_DCHECK(frame);
+  RTC_DCHECK_GT(frame->num_channels_, 0);
+  if (frame->num_channels_ < 1) {
+    return;
+  }
+
+  for (size_t i = 0; i < frame->samples_per_channel_ * frame->num_channels_;
+       i++) {
+    frame->data_[i] = frame->data_[i] >> 1;
+  }
+}
+
 int AudioFrameOperations::Scale(float left, float right, AudioFrame& frame) {
   if (frame.num_channels_ != 2) {
     return -1;
   }
 
   for (size_t i = 0; i < frame.samples_per_channel_; i++) {
-    frame.data_[2 * i] =
-        static_cast<int16_t>(left * frame.data_[2 * i]);
+    frame.data_[2 * i] = static_cast<int16_t>(left * frame.data_[2 * i]);
     frame.data_[2 * i + 1] =
         static_cast<int16_t>(right * frame.data_[2 * i + 1]);
   }
@@ -156,5 +223,4 @@ int AudioFrameOperations::ScaleWithSat(float scale, AudioFrame& frame) {
   }
   return 0;
 }
-
 }  // namespace webrtc

@@ -8,4 +8,20 @@
 import("../../build/webrtc.gni")
 
 group("utility") {
+  public_deps = [
+    ":audio_frame_operations",
+  ]
+}
+
+rtc_static_library("audio_frame_operations") {
+  sources = [
+    "audio_frame_operations.cc",
+    "audio_frame_operations.h",
+  ]
+
+  deps = [
+    "../..:webrtc_common",
+    "../../base:rtc_base_approved",
+    "../../modules/audio_coding:audio_format_conversion",
+  ]
 }

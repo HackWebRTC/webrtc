@@ -39,8 +39,8 @@ rtc_static_library("audio_conference_mixer") {
   }
 
   deps = [
+    "../../audio/utility:audio_frame_operations",
     "../../system_wrappers",
     "../audio_processing",
-    "../utility",
   ]
 }

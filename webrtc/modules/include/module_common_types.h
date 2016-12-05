@@ -18,6 +18,8 @@
 #include <limits>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/deprecation.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
@@ -520,8 +522,6 @@ class CallStatsObserver {
  *
  * - Stereo data is interleaved starting with the left channel.
  *
- * - The +operator assume that you would never add exactly opposite frames when
- *   deciding the resulting state. To do this use the -operator.
  */
 class AudioFrame {
  public:
@@ -556,26 +556,29 @@ class AudioFrame {
 
   void CopyFrom(const AudioFrame& src);
 
-  void Mute();
-
-  AudioFrame& operator>>=(const int rhs);
-  AudioFrame& operator+=(const AudioFrame& rhs);
+  // These methods are deprecated. Use the functions in
+  // webrtc/audio/utility instead. These methods will exists for a
+  // short period of time until webrtc clients have updated. See
+  // webrtc:6548 for details.
+  RTC_DEPRECATED void Mute();
+  RTC_DEPRECATED AudioFrame& operator>>=(const int rhs);
+  RTC_DEPRECATED AudioFrame& operator+=(const AudioFrame& rhs);
 
   int id_;
   // RTP timestamp of the first sample in the AudioFrame.
-  uint32_t timestamp_;
+  uint32_t timestamp_ = 0;
   // Time since the first frame in milliseconds.
   // -1 represents an uninitialized value.
-  int64_t elapsed_time_ms_;
+  int64_t elapsed_time_ms_ = -1;
   // NTP time of the estimated capture time in local timebase in milliseconds.
   // -1 represents an uninitialized value.
-  int64_t ntp_time_ms_;
+  int64_t ntp_time_ms_ = -1;
   int16_t data_[kMaxDataSizeSamples];
-  size_t samples_per_channel_;
-  int sample_rate_hz_;
-  size_t num_channels_;
-  SpeechType speech_type_;
-  VADActivity vad_activity_;
+  size_t samples_per_channel_ = 0;
+  int sample_rate_hz_ = 0;
+  size_t num_channels_ = 0;
+  SpeechType speech_type_ = kUndefined;
+  VADActivity vad_activity_ = kVadUnknown;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioFrame);
@@ -585,7 +588,6 @@ class AudioFrame {
 // See https://bugs.chromium.org/p/webrtc/issues/detail?id=5647.
 inline AudioFrame::AudioFrame()
     : data_() {
-  Reset();
 }
 
 inline void AudioFrame::Reset() {
@@ -659,18 +661,6 @@ inline AudioFrame& AudioFrame::operator>>=(const int rhs) {
   return *this;
 }
 
-namespace {
-inline int16_t ClampToInt16(int32_t input) {
-  if (input < -0x00008000) {
-    return -0x8000;
-  } else if (input > 0x00007FFF) {
-    return 0x7FFF;
-  } else {
-    return static_cast<int16_t>(input);
-  }
-}
-}
-
 inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
   // Sanity check
   assert((num_channels_ > 0) && (num_channels_ < 3));
@@ -704,7 +694,7 @@ inline AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
     for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
       int32_t wrap_guard =
           static_cast<int32_t>(data_[i]) + static_cast<int32_t>(rhs.data_[i]);
-      data_[i] = ClampToInt16(wrap_guard);
+      data_[i] = rtc::saturated_cast<int16_t>(wrap_guard);
     }
   }
   return *this;

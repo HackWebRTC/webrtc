@@ -37,11 +37,6 @@ rtc_static_library("audio") {
     "../modules/audio_processing",
     "../system_wrappers",
     "../voice_engine",
-    "utility",  # Bogus dep, needed for landing
-                # codereview.webrtc.org/2424173003 without breaking
-                # internal projects. See
-                # bugs.webrtc.org/6548. TODO(aleloi): remove dependency
-                # when codereview.webrtc.org/2424173003 has landed.
   ]
 }
 if (rtc_include_tests) {
@@ -51,6 +46,7 @@ if (rtc_include_tests) {
       "audio_receive_stream_unittest.cc",
       "audio_send_stream_unittest.cc",
       "audio_state_unittest.cc",
+      "utility/audio_frame_operations_unittest.cc",
     ]
     deps = [
       ":audio",
@@ -59,6 +55,8 @@ if (rtc_include_tests) {
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer:audio_mixer_impl",
       "../test:test_common",
+      "../test:test_support",
+      "utility:audio_frame_operations",
       "//testing/gmock",
       "//testing/gtest",
     ]

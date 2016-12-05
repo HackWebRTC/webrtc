@@ -90,6 +90,7 @@ rtc_static_library("voice_engine") {
     "../api:audio_mixer_api",
     "../api:call_api",
     "../api:transport_api",
+    "../audio/utility:audio_frame_operations",
     "../base:rtc_base_approved",
     "../common_audio",
     "../logging:rtc_event_log_api",
