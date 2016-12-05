@@ -739,6 +739,8 @@ if (rtc_include_tests) {
       "firewallsocketserver.cc",
       "firewallsocketserver.h",
       "gunit.h",
+      "sigslottester.h",
+      "sigslottester.h.pump",
       "testbase64.h",
       "testechoserver.h",
       "testutils.h",
