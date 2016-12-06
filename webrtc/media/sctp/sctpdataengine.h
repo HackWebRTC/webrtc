@@ -88,7 +88,8 @@ class SctpDataEngine : public DataEngineInterface, public sigslot::has_slots<> {
   SctpDataEngine();
   ~SctpDataEngine() override;
 
-  DataMediaChannel* CreateChannel(DataChannelType data_channel_type) override;
+  DataMediaChannel* CreateChannel(DataChannelType data_channel_type,
+                                  const MediaConfig& config) override;
   const std::vector<DataCodec>& data_codecs() override { return codecs_; }
 
  private:
@@ -125,7 +126,7 @@ class SctpDataMediaChannel : public DataMediaChannel,
 
   // Given a thread which will be used to post messages (received data) to this
   // SctpDataMediaChannel instance.
-  explicit SctpDataMediaChannel(rtc::Thread* thread);
+  explicit SctpDataMediaChannel(rtc::Thread* thread, const MediaConfig& config);
   virtual ~SctpDataMediaChannel();
 
   // When SetSend is set to true, connects. When set to false, disconnects.

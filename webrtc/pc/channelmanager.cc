@@ -346,10 +346,22 @@ DataChannel* ChannelManager::CreateDataChannel(
     const std::string* bundle_transport_name,
     bool rtcp,
     DataChannelType channel_type) {
+  return CreateDataChannel(transport_controller, nullptr, content_name,
+                           bundle_transport_name, rtcp, channel_type);
+}
+
+DataChannel* ChannelManager::CreateDataChannel(
+    TransportController* transport_controller,
+    webrtc::MediaControllerInterface* media_controller,
+    const std::string& content_name,
+    const std::string* bundle_transport_name,
+    bool rtcp,
+    DataChannelType channel_type) {
   return worker_thread_->Invoke<DataChannel*>(
       RTC_FROM_HERE,
       Bind(&ChannelManager::CreateDataChannel_w, this, transport_controller,
-           content_name, bundle_transport_name, rtcp, channel_type));
+           content_name, bundle_transport_name, rtcp, channel_type,
+           media_controller));
 }
 
 DataChannel* ChannelManager::CreateDataChannel_w(
@@ -357,11 +369,16 @@ DataChannel* ChannelManager::CreateDataChannel_w(
     const std::string& content_name,
     const std::string* bundle_transport_name,
     bool rtcp,
-    DataChannelType data_channel_type) {
+    DataChannelType data_channel_type,
+    webrtc::MediaControllerInterface* media_controller) {
   // This is ok to alloc from a thread other than the worker thread.
   ASSERT(initialized_);
-  DataMediaChannel* media_channel = data_media_engine_->CreateChannel(
-      data_channel_type);
+  MediaConfig config;
+  if (media_controller) {
+    config = media_controller->config();
+  }
+  DataMediaChannel* media_channel =
+      data_media_engine_->CreateChannel(data_channel_type, config);
   if (!media_channel) {
     LOG(LS_WARNING) << "Failed to create data channel of type "
                     << data_channel_type;

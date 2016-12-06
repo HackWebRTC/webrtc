@@ -1719,8 +1719,8 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
       rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;
   bool create_rtcp_transport_channel = !sctp && !require_rtcp_mux;
   data_channel_.reset(channel_manager_->CreateDataChannel(
-      transport_controller_.get(), content->name, bundle_transport,
-      create_rtcp_transport_channel, data_channel_type_));
+      transport_controller_.get(), media_controller_, content->name,
+      bundle_transport, create_rtcp_transport_channel, data_channel_type_));
   if (!data_channel_) {
     return false;
   }

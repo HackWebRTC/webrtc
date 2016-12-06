@@ -40,11 +40,12 @@ RtpDataEngine::RtpDataEngine() {
 }
 
 DataMediaChannel* RtpDataEngine::CreateChannel(
-    DataChannelType data_channel_type) {
+    DataChannelType data_channel_type,
+    const MediaConfig& config) {
   if (data_channel_type != DCT_RTP) {
     return NULL;
   }
-  return new RtpDataMediaChannel();
+  return new RtpDataMediaChannel(config);
 }
 
 static const DataCodec* FindCodecByName(const std::vector<DataCodec>& codecs,
@@ -56,7 +57,8 @@ static const DataCodec* FindCodecByName(const std::vector<DataCodec>& codecs,
   return nullptr;
 }
 
-RtpDataMediaChannel::RtpDataMediaChannel() {
+RtpDataMediaChannel::RtpDataMediaChannel(const MediaConfig& config)
+    : DataMediaChannel(config) {
   Construct();
 }
 
@@ -339,6 +341,10 @@ bool RtpDataMediaChannel::SendData(
     *result = SDR_SUCCESS;
   }
   return true;
+}
+
+rtc::DiffServCodePoint RtpDataMediaChannel::PreferredDscp() const {
+  return rtc::DSCP_AF41;
 }
 
 }  // namespace cricket

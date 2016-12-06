@@ -1156,6 +1156,8 @@ class DataMediaChannel : public MediaChannel {
     ERROR_RECV_SRTP_REPLAY,               // Packet replay detected.
   };
 
+  DataMediaChannel() {}
+  DataMediaChannel(const MediaConfig& config) : MediaChannel(config) {}
   virtual ~DataMediaChannel() {}
 
   virtual bool SetSendParameters(const DataSendParameters& params) = 0;

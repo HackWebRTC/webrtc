@@ -35,13 +35,14 @@ class HybridDataEngine : public DataEngineInterface {
         second_->data_codecs().end());
   }
 
-  virtual DataMediaChannel* CreateChannel(DataChannelType data_channel_type) {
+  virtual DataMediaChannel* CreateChannel(DataChannelType data_channel_type,
+                                          const MediaConfig& config) {
     DataMediaChannel* channel = NULL;
     if (first_) {
-      channel = first_->CreateChannel(data_channel_type);
+      channel = first_->CreateChannel(data_channel_type, config);
     }
     if (!channel && second_) {
-      channel = second_->CreateChannel(data_channel_type);
+      channel = second_->CreateChannel(data_channel_type, config);
     }
     return channel;
   }

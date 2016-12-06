@@ -333,11 +333,12 @@ SctpDataEngine::~SctpDataEngine() {}
 
 // Called on the worker thread.
 DataMediaChannel* SctpDataEngine::CreateChannel(
-    DataChannelType data_channel_type) {
+    DataChannelType data_channel_type,
+    const MediaConfig& config) {
   if (data_channel_type != DCT_SCTP) {
     return NULL;
   }
-  return new SctpDataMediaChannel(rtc::Thread::Current());
+  return new SctpDataMediaChannel(rtc::Thread::Current(), config);
 }
 
 // static
@@ -378,15 +379,16 @@ int SctpDataMediaChannel::SendThresholdCallback(struct socket* sock,
   return 0;
 }
 
-SctpDataMediaChannel::SctpDataMediaChannel(rtc::Thread* thread)
-    : worker_thread_(thread),
+SctpDataMediaChannel::SctpDataMediaChannel(rtc::Thread* thread,
+                                           const MediaConfig& config)
+    : DataMediaChannel(config),
+      worker_thread_(thread),
       local_port_(kSctpDefaultPort),
       remote_port_(kSctpDefaultPort),
       sock_(NULL),
       sending_(false),
       receiving_(false),
-      debug_name_("SctpDataMediaChannel") {
-}
+      debug_name_("SctpDataMediaChannel") {}
 
 SctpDataMediaChannel::~SctpDataMediaChannel() {
   CloseSctpSocket();
