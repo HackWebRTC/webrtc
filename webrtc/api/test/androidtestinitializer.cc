@@ -23,8 +23,6 @@ RTC_PUSH_IGNORING_WUNDEF()
 #include "base/android/jni_android.h"
 RTC_POP_IGNORING_WUNDEF()
 
-#include "webrtc/api/android/jni/classreferenceholder.h"
-#include "webrtc/api/android/jni/jni_helpers.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -45,9 +43,7 @@ void EnsureInitializedOnce() {
   RTC_CHECK_EQ(0, jni->GetJavaVM(&jvm));
   jobject context = ::base::android::GetApplicationContext().obj();
 
-  RTC_CHECK_GE(webrtc_jni::InitGlobalJniVariables(jvm), 0);
   RTC_CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
-  webrtc_jni::LoadGlobalClassReferenceHolder();
 
   webrtc::VoiceEngine::SetAndroidObjects(jvm, context);
 }

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/android/jni/androidnetworkmonitor_jni.h"
+#include "webrtc/sdk/android/src/jni/androidnetworkmonitor_jni.h"
 
 #include <dlfcn.h>
 // This was added in Lollipop to dlfcn.h
 #define RTLD_NOLOAD 4
 
-#include "webrtc/api/android/jni/classreferenceholder.h"
-#include "webrtc/api/android/jni/jni_helpers.h"
+#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/ipaddress.h"

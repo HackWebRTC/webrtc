@@ -11,9 +11,9 @@
 #include <map>
 #include <memory>
 
-#include "webrtc/api/android/jni/classreferenceholder.h"
-#include "webrtc/api/android/jni/jni_helpers.h"
-#include "webrtc/api/android/jni/native_handle_impl.h"
+#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 // Enables collection of native histograms and creating them.

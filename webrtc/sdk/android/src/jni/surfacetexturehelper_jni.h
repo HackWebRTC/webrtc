@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_JAVA_JNI_SURFACETEXTUREHELPER_JNI_H_
-#define WEBRTC_API_JAVA_JNI_SURFACETEXTUREHELPER_JNI_H_
+#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_SURFACETEXTUREHELPER_JNI_H_
+#define WEBRTC_SDK_ANDROID_SRC_JNI_SURFACETEXTUREHELPER_JNI_H_
 
 #include <jni.h>
 
-#include "webrtc/api/android/jni/jni_helpers.h"
-#include "webrtc/api/android/jni/native_handle_impl.h"
+#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
@@ -65,4 +65,4 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
 
 }  // namespace webrtc_jni
 
-#endif  // WEBRTC_API_JAVA_JNI_SURFACETEXTUREHELPER_JNI_H_
+#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_SURFACETEXTUREHELPER_JNI_H_

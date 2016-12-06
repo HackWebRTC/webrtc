@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
-#define WEBRTC_API_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
+#ifndef WEBRTC_SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
+#define WEBRTC_SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_
 
 #include <jni.h>
 
@@ -84,4 +84,4 @@ class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
 
 }  // namespace webrtc_jni
 
-#endif  // WEBRTC_API_JAVA_JNI_NATIVE_HANDLE_IMPL_H_
+#endif  // WEBRTC_SDK_ANDROID_SRC_JNI_NATIVE_HANDLE_IMPL_H_

@@ -7,9 +7,9 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/api/android/jni/jni_helpers.h"
+#include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
-#include "webrtc/api/android/jni/classreferenceholder.h"
+#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 
 #include <asm/unistd.h>
 #include <sys/prctl.h>

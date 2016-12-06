@@ -11,8 +11,8 @@
 #ifndef WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
 #define WEBRTC_API_ANDROID_JNI_ANDROIDVIDEOTRACKSOURCE_H_
 
-#include "webrtc/api/android/jni/native_handle_impl.h"
-#include "webrtc/api/android/jni/surfacetexturehelper_jni.h"
+#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/thread_checker.h"

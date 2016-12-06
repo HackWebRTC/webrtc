@@ -14,15 +14,15 @@
 
 // NOTICE: androidmediadecoder_jni.h must be included before
 // androidmediacodeccommon.h to avoid build errors.
-#include "webrtc/api/android/jni/androidmediadecoder_jni.h"
+#include "webrtc/sdk/android/src/jni/androidmediadecoder_jni.h"
 
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
 #include "third_party/libyuv/include/libyuv/video_common.h"
-#include "webrtc/api/android/jni/androidmediacodeccommon.h"
-#include "webrtc/api/android/jni/classreferenceholder.h"
-#include "webrtc/api/android/jni/native_handle_impl.h"
-#include "webrtc/api/android/jni/surfacetexturehelper_jni.h"
+#include "webrtc/sdk/android/src/jni/androidmediacodeccommon.h"
+#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "webrtc/sdk/android/src/jni/surfacetexturehelper_jni.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"

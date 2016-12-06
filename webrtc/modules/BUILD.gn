@@ -688,7 +688,7 @@ if (rtc_include_tests) {
     if (is_android) {
       deps += [
         "//testing/android/native_test:native_test_support",
-        "//webrtc/api:libjingle_peerconnection_java",
+        "//webrtc/sdk/android:libjingle_peerconnection_java",
       ]
 
       # Need to disable error due to the line in
