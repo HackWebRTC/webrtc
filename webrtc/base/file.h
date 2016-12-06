@@ -15,8 +15,9 @@
 
 #include <string>
 
-#include "webrtc/base/platform_file.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/base/platform_file.h"
 
 namespace rtc {
 
@@ -39,8 +40,12 @@ class File {
 
   // Open and Create give files with both reading and writing enabled.
   static File Open(const std::string& path);
+  static File Open(Pathname&& path);
+  static File Open(const Pathname& path);
   // If the file already exists it will be overwritten.
   static File Create(const std::string& path);
+  static File Create(Pathname&& path);
+  static File Create(const Pathname& path);
 
   size_t Write(const uint8_t* data, size_t length);
   size_t Read(uint8_t* buffer, size_t length);

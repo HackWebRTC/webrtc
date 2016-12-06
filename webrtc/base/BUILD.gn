@@ -126,6 +126,8 @@ rtc_static_library("rtc_base_approved") {
     "event_tracer.h",
     "file.cc",
     "file.h",
+    "flags.cc",
+    "flags.h",
     "format_macros.h",
     "function_view.h",
     "ignore_wundef.h",
@@ -139,6 +141,8 @@ rtc_static_library("rtc_base_approved") {
     "onetimeevent.h",
     "optional.cc",
     "optional.h",
+    "pathutils.cc",
+    "pathutils.h",
     "platform_file.cc",
     "platform_file.h",
     "platform_thread.cc",
@@ -179,6 +183,8 @@ rtc_static_library("rtc_base_approved") {
     "timeutils.h",
     "trace_event.h",
     "type_traits.h",
+    "urlencode.cc",
+    "urlencode.h",
   ]
 
   if (is_android) {
@@ -413,8 +419,6 @@ rtc_static_library("rtc_base") {
     "filerotatingstream.h",
     "fileutils.cc",
     "fileutils.h",
-    "flags.cc",
-    "flags.h",
     "gunit_prod.h",
     "helpers.cc",
     "helpers.h",
@@ -451,8 +455,6 @@ rtc_static_library("rtc_base") {
     "opensslidentity.h",
     "opensslstreamadapter.cc",
     "opensslstreamadapter.h",
-    "pathutils.cc",
-    "pathutils.h",
     "physicalsocketserver.cc",
     "physicalsocketserver.h",
     "proxydetect.cc",
@@ -509,8 +511,6 @@ rtc_static_library("rtc_base") {
     "taskrunner.h",
     "thread.cc",
     "thread.h",
-    "urlencode.cc",
-    "urlencode.h",
   ]
 
   # TODO(henrike): issue 3307, make rtc_base build with the Chromium default

@@ -10,7 +10,7 @@
 
 #include "webrtc/base/urlencode.h"
 
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/stringutils.h"
 
 static int HexPairValue(const char * code) {
@@ -114,7 +114,7 @@ int InternalUrlEncode(const char *source, char *dest, unsigned int max,
     }
     source++;
   }
-  ASSERT(static_cast<unsigned int>(dest - start) < max);
+  RTC_DCHECK_LT(static_cast<unsigned int>(dest - start), max);
   *dest = 0;
 
   return static_cast<int>(dest - start);

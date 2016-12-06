@@ -21,8 +21,7 @@
 #include <unistd.h>
 #endif
 
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/platform_file.h"
 
@@ -175,14 +174,14 @@ class FilesystemInterface {
     organization_name_ = organization;
   }
   void GetOrganizationName(std::string* organization) {
-    ASSERT(NULL != organization);
+    RTC_DCHECK(organization);
     *organization = organization_name_;
   }
   void SetApplicationName(const std::string& application) {
     application_name_ = application;
   }
   void GetApplicationName(std::string* application) {
-    ASSERT(NULL != application);
+    RTC_DCHECK(application);
     *application = application_name_;
   }
 
@@ -194,7 +193,7 @@ class FilesystemInterface {
 class Filesystem {
  public:
   static FilesystemInterface *default_filesystem() {
-    ASSERT(default_filesystem_ != NULL);
+    RTC_DCHECK(default_filesystem_);
     return default_filesystem_;
   }
 

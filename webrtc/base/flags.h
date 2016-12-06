@@ -24,7 +24,6 @@
 #define WEBRTC_BASE_FLAGS_H__
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/constructormagic.h"
 
 namespace rtc {

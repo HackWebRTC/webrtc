@@ -15,7 +15,7 @@
 #include <tchar.h>
 #endif  // WEBRTC_WIN
 
-#include "webrtc/base/common.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/pathutils.h"
@@ -72,7 +72,7 @@ Pathname& Pathname::operator=(const Pathname&) = default;
 Pathname& Pathname::operator=(Pathname&&) = default;
 
 void Pathname::SetFolderDelimiter(char delimiter) {
-  ASSERT(IsFolderDelimiter(delimiter));
+  RTC_DCHECK(IsFolderDelimiter(delimiter));
   folder_delimiter_ = delimiter;
 }
 
