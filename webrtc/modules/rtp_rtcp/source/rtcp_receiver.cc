@@ -22,6 +22,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
@@ -737,8 +738,16 @@ void RTCPReceiver::HandleXrTargetBitrate(
     PacketInformation* packet_information) {
   BitrateAllocation bitrate_allocation;
   for (const auto& item : target_bitrate.GetTargetBitrates()) {
-    bitrate_allocation.SetBitrate(item.spatial_layer, item.temporal_layer,
-                                  item.target_bitrate_kbps * 1000);
+    if (item.spatial_layer >= kMaxSpatialLayers ||
+        item.temporal_layer >= kMaxTemporalStreams) {
+      LOG(LS_WARNING)
+          << "Invalid layer in XR target bitrate pack: spatial index "
+          << item.spatial_layer << ", temporal index " << item.temporal_layer
+          << ", dropping.";
+    } else {
+      bitrate_allocation.SetBitrate(item.spatial_layer, item.temporal_layer,
+                                    item.target_bitrate_kbps * 1000);
+    }
   }
   packet_information->target_bitrate_allocation.emplace(bitrate_allocation);
 }

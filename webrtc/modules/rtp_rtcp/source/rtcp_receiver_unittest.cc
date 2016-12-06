@@ -1297,4 +1297,21 @@ TEST_F(RtcpReceiverTest, ReceivesTargetBitrate) {
   InjectRtcpPacket(xr);
 }
 
+TEST_F(RtcpReceiverTest, HandlesIncorrectTargetBitrate) {
+  BitrateAllocation expected_allocation;
+  expected_allocation.SetBitrate(0, 0, 10000);
+
+  rtcp::TargetBitrate bitrate;
+  bitrate.AddTargetBitrate(0, 0, expected_allocation.GetBitrate(0, 0) / 1000);
+  bitrate.AddTargetBitrate(0, kMaxTemporalStreams, 20000);
+  bitrate.AddTargetBitrate(kMaxSpatialLayers, 0, 40000);
+
+  rtcp::ExtendedReports xr;
+  xr.SetTargetBitrate(bitrate);
+
+  EXPECT_CALL(bitrate_allocation_observer_,
+              OnBitrateAllocationUpdated(expected_allocation));
+  InjectRtcpPacket(xr);
+}
+
 }  // namespace webrtc
