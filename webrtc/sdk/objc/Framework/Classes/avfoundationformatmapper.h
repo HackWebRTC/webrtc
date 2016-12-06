@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <set>
+
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
@@ -16,12 +18,12 @@
 namespace webrtc {
 // Mapping from AVCaptureDeviceFormat to cricket::VideoFormat for given input
 // device.
-extern std::set<cricket::VideoFormat> GetSupportedVideoFormatsForDevice(
+std::set<cricket::VideoFormat> GetSupportedVideoFormatsForDevice(
     AVCaptureDevice* device);
 
 // Sets device format for the provided capture device. Returns YES/NO depending
 // on success.
-extern bool SetFormatForCaptureDevice(AVCaptureDevice* device,
-                                      AVCaptureSession* session,
-                                      const cricket::VideoFormat& format);
+bool SetFormatForCaptureDevice(AVCaptureDevice* device,
+                               AVCaptureSession* session,
+                               const cricket::VideoFormat& format);
 }

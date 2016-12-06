@@ -533,6 +533,7 @@ if (rtc_include_tests) {
       deps += [
         "sdk:rtc_sdk_peerconnection_objc",
         "system_wrappers:system_wrappers_default",
+        "//third_party/ocmock",
       ]
       sources += [
         "sdk/objc/Framework/UnitTests/RTCConfigurationTest.mm",
@@ -541,6 +542,7 @@ if (rtc_include_tests) {
         "sdk/objc/Framework/UnitTests/RTCIceServerTest.mm",
         "sdk/objc/Framework/UnitTests/RTCMediaConstraintsTest.mm",
         "sdk/objc/Framework/UnitTests/RTCSessionDescriptionTest.mm",
+        "sdk/objc/Framework/UnitTests/avformatmappertests.mm",
       ]
 
       # TODO(tkchin): Cleanup this warning.
