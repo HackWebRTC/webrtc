@@ -120,7 +120,7 @@ class RtpRtcp : public Module {
   // Returns -1 on failure else 0.
   virtual int32_t SetMaxTransferUnit(uint16_t size) = 0;
 
-  // Sets transtport overhead. Default is IPv4 and UDP with no encryption.
+  // Sets transport overhead. Default is IPv4 and UDP with no encryption.
   // |tcp| - true for TCP false UDP.
   // |ipv6| - true for IP version 6 false for version 4.
   // |authentication_overhead| - number of bytes to leave for an authentication
