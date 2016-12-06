@@ -225,10 +225,6 @@ rtc_static_library("g711") {
     "codecs/g711/audio_decoder_pcm.h",
     "codecs/g711/audio_encoder_pcm.cc",
     "codecs/g711/audio_encoder_pcm.h",
-    "codecs/g711/g711.c",
-    "codecs/g711/g711.h",
-    "codecs/g711/g711_interface.c",
-    "codecs/g711/g711_interface.h",
   ]
 
   public_configs = [ ":g711_config" ]
@@ -236,6 +232,19 @@ rtc_static_library("g711") {
   deps = [
     ":audio_decoder_interface",
     ":audio_encoder_interface",
+  ]
+  public_deps = [
+    ":g711_c",
+  ]
+}
+
+rtc_source_set("g711_c") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = [
+    "codecs/g711/g711.c",
+    "codecs/g711/g711.h",
+    "codecs/g711/g711_interface.c",
+    "codecs/g711/g711_interface.h",
   ]
 }
 
@@ -252,11 +261,6 @@ rtc_static_library("g722") {
     "codecs/g722/audio_decoder_g722.h",
     "codecs/g722/audio_encoder_g722.cc",
     "codecs/g722/audio_encoder_g722.h",
-    "codecs/g722/g722_decode.c",
-    "codecs/g722/g722_enc_dec.h",
-    "codecs/g722/g722_encode.c",
-    "codecs/g722/g722_interface.c",
-    "codecs/g722/g722_interface.h",
   ]
 
   public_configs = [ ":g722_config" ]
@@ -264,6 +268,20 @@ rtc_static_library("g722") {
   deps = [
     ":audio_decoder_interface",
     ":audio_encoder_interface",
+  ]
+  public_deps = [
+    ":g722_c",
+  ]
+}
+
+rtc_source_set("g722_c") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = [
+    "codecs/g722/g722_decode.c",
+    "codecs/g722/g722_enc_dec.h",
+    "codecs/g722/g722_encode.c",
+    "codecs/g722/g722_interface.c",
+    "codecs/g722/g722_interface.h",
   ]
 }
 
@@ -276,14 +294,32 @@ config("ilbc_config") {
 
 rtc_static_library("ilbc") {
   sources = [
-    "codecs/ilbc/abs_quant.c",
-    "codecs/ilbc/abs_quant.h",
-    "codecs/ilbc/abs_quant_loop.c",
-    "codecs/ilbc/abs_quant_loop.h",
     "codecs/ilbc/audio_decoder_ilbc.cc",
     "codecs/ilbc/audio_decoder_ilbc.h",
     "codecs/ilbc/audio_encoder_ilbc.cc",
     "codecs/ilbc/audio_encoder_ilbc.h",
+  ]
+
+  public_configs = [ ":ilbc_config" ]
+
+  deps = [
+    ":audio_decoder_interface",
+    ":audio_encoder_interface",
+    "../../base:rtc_base_approved",
+    "../../common_audio",
+  ]
+  public_deps = [
+    ":ilbc_c",
+  ]
+}
+
+rtc_source_set("ilbc_c") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = [
+    "codecs/ilbc/abs_quant.c",
+    "codecs/ilbc/abs_quant.h",
+    "codecs/ilbc/abs_quant_loop.c",
+    "codecs/ilbc/abs_quant_loop.h",
     "codecs/ilbc/augmented_cb_corr.c",
     "codecs/ilbc/augmented_cb_corr.h",
     "codecs/ilbc/bw_expand.c",
@@ -424,9 +460,6 @@ rtc_static_library("ilbc") {
   public_configs = [ ":ilbc_config" ]
 
   deps = [
-    ":audio_decoder_interface",
-    ":audio_encoder_interface",
-    "../../base:rtc_base_approved",
     "../../common_audio",
   ]
 }
@@ -449,6 +482,23 @@ config("isac_config") {
 
 rtc_static_library("isac") {
   sources = [
+    "codecs/isac/main/source/audio_decoder_isac.cc",
+    "codecs/isac/main/source/audio_encoder_isac.cc",
+  ]
+
+  deps = [
+    ":audio_decoder_interface",
+    ":audio_encoder_interface",
+    ":isac_common",
+  ]
+  public_deps = [
+    ":isac_c",
+  ]
+}
+
+rtc_static_library("isac_c") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = [
     "codecs/isac/main/include/audio_decoder_isac.h",
     "codecs/isac/main/include/audio_encoder_isac.h",
     "codecs/isac/main/include/isac.h",
@@ -456,8 +506,6 @@ rtc_static_library("isac") {
     "codecs/isac/main/source/arith_routines.h",
     "codecs/isac/main/source/arith_routines_hist.c",
     "codecs/isac/main/source/arith_routines_logist.c",
-    "codecs/isac/main/source/audio_decoder_isac.cc",
-    "codecs/isac/main/source/audio_encoder_isac.cc",
     "codecs/isac/main/source/bandwidth_estimator.c",
     "codecs/isac/main/source/bandwidth_estimator.h",
     "codecs/isac/main/source/codec.h",
@@ -512,9 +560,6 @@ rtc_static_library("isac") {
   public_configs = [ ":isac_config" ]
 
   deps = [
-    ":audio_decoder_interface",
-    ":audio_encoder_interface",
-    ":isac_common",
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
     "../../common_audio",
@@ -530,6 +575,31 @@ config("isac_fix_config") {
 
 rtc_static_library("isac_fix") {
   sources = [
+    "codecs/isac/fix/source/audio_decoder_isacfix.cc",
+    "codecs/isac/fix/source/audio_encoder_isacfix.cc",
+  ]
+
+  public_configs = [ ":isac_fix_config" ]
+
+  deps = [
+    ":audio_decoder_interface",
+    ":audio_encoder_interface",
+    ":isac_common",
+    "../../common_audio",
+    "../../system_wrappers",
+  ]
+  public_deps = [
+    ":isac_fix_c",
+  ]
+
+  if (rtc_build_with_neon) {
+    deps += [ ":isac_neon" ]
+  }
+}
+
+rtc_source_set("isac_fix_c") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = [
     "codecs/isac/fix/include/audio_decoder_isacfix.h",
     "codecs/isac/fix/include/audio_encoder_isacfix.h",
     "codecs/isac/fix/include/isacfix.h",
@@ -537,8 +607,6 @@ rtc_static_library("isac_fix") {
     "codecs/isac/fix/source/arith_routines_hist.c",
     "codecs/isac/fix/source/arith_routines_logist.c",
     "codecs/isac/fix/source/arith_routins.h",
-    "codecs/isac/fix/source/audio_decoder_isacfix.cc",
-    "codecs/isac/fix/source/audio_encoder_isacfix.cc",
     "codecs/isac/fix/source/bandwidth_estimator.c",
     "codecs/isac/fix/source/bandwidth_estimator.h",
     "codecs/isac/fix/source/codec.h",
@@ -582,18 +650,6 @@ rtc_static_library("isac_fix") {
 
   public_configs = [ ":isac_fix_config" ]
 
-  deps = [
-    ":audio_decoder_interface",
-    ":audio_encoder_interface",
-    ":isac_common",
-    "../../common_audio",
-    "../../system_wrappers",
-  ]
-
-  if (rtc_build_with_neon) {
-    deps += [ ":isac_neon" ]
-  }
-
   if (current_cpu == "arm" && arm_version >= 7) {
     sources += [
       "codecs/isac/fix/source/lattice_armv7.S",
@@ -628,6 +684,10 @@ rtc_static_library("isac_fix") {
       sources -= [ "codecs/isac/fix/source/pitch_filter_c.c" ]
     }
   }
+
+  deps = [
+    "../../common_audio",
+  ]
 }
 
 if (rtc_build_with_neon) {
@@ -676,14 +736,24 @@ rtc_static_library("pcm16b") {
     "codecs/pcm16b/audio_decoder_pcm16b.h",
     "codecs/pcm16b/audio_encoder_pcm16b.cc",
     "codecs/pcm16b/audio_encoder_pcm16b.h",
-    "codecs/pcm16b/pcm16b.c",
-    "codecs/pcm16b/pcm16b.h",
   ]
 
   deps = [
     ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":g711",
+  ]
+  public_deps = [
+    ":pcm16b_c",
+  ]
+  public_configs = [ ":pcm16b_config" ]
+}
+
+rtc_source_set("pcm16b_c") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = [
+    "codecs/pcm16b/pcm16b.c",
+    "codecs/pcm16b/pcm16b.h",
   ]
 
   public_configs = [ ":pcm16b_config" ]
@@ -699,9 +769,6 @@ rtc_static_library("webrtc_opus") {
     "codecs/opus/audio_decoder_opus.h",
     "codecs/opus/audio_encoder_opus.cc",
     "codecs/opus/audio_encoder_opus.h",
-    "codecs/opus/opus_inst.h",
-    "codecs/opus/opus_interface.c",
-    "codecs/opus/opus_interface.h",
   ]
 
   deps = [
@@ -710,6 +777,9 @@ rtc_static_library("webrtc_opus") {
     ":audio_network_adaptor",
     "../../base:rtc_analytics",
     "../../base:rtc_base_approved",
+  ]
+  public_deps = [
+    ":webrtc_opus_c",
   ]
 
   defines = []
@@ -720,12 +790,31 @@ rtc_static_library("webrtc_opus") {
   }
 
   if (rtc_build_opus) {
+    public_deps += [ rtc_opus_dir ]
+  } else if (build_with_mozilla) {
+    include_dirs = [ getenv("DIST") + "/include/opus" ]
+  }
+}
+
+rtc_source_set("webrtc_opus_c") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = [
+    "codecs/opus/opus_inst.h",
+    "codecs/opus/opus_interface.c",
+    "codecs/opus/opus_interface.h",
+  ]
+
+  if (rtc_build_opus) {
     public_deps = [
       rtc_opus_dir,
     ]
   } else if (build_with_mozilla) {
     include_dirs = [ getenv("DIST") + "/include/opus" ]
   }
+
+  deps = [
+    "../../base:rtc_base_approved",
+  ]
 }
 
 if (rtc_enable_protobuf) {
@@ -1568,12 +1657,18 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_source_set("isac_test_util") {
+    testonly = true
+    sources = [
+      "codecs/isac/main/util/utility.c",
+    ]
+  }
+
   rtc_executable("isac_test") {
     testonly = true
 
     sources = [
       "codecs/isac/main/test/simpleKenny.c",
-      "codecs/isac/main/util/utility.c",
     ]
 
     include_dirs = [
@@ -1584,6 +1679,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":isac",
+      ":isac_test_util",
       "../../base:rtc_base_approved",
     ]
 
@@ -1620,11 +1716,11 @@ if (rtc_include_tests) {
 
     sources = [
       "codecs/isac/main/test/ReleaseTest-API/ReleaseTest-API.cc",
-      "codecs/isac/main/util/utility.c",
     ]
 
     deps = [
       ":isac",
+      ":isac_test_util",
       "../../base:rtc_base_approved",
     ]
 
@@ -1640,11 +1736,11 @@ if (rtc_include_tests) {
 
     sources = [
       "codecs/isac/main/test/SwitchingSampRate/SwitchingSampRate.cc",
-      "codecs/isac/main/util/utility.c",
     ]
 
     deps = [
       ":isac",
+      ":isac_test_util",
     ]
 
     include_dirs = [

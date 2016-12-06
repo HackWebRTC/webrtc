@@ -35,11 +35,6 @@ rtc_static_library("audio_processing") {
     "agc/agc_manager_direct.cc",
     "agc/agc_manager_direct.h",
     "agc/gain_map_internal.h",
-    "agc/legacy/analog_agc.c",
-    "agc/legacy/analog_agc.h",
-    "agc/legacy/digital_agc.c",
-    "agc/legacy/digital_agc.h",
-    "agc/legacy/gain_control.h",
     "agc/loudness_histogram.cc",
     "agc/loudness_histogram.h",
     "agc/utility.cc",
@@ -168,6 +163,9 @@ rtc_static_library("audio_processing") {
     "../../audio/utility:audio_frame_operations",
     "../audio_coding:isac",
   ]
+  public_deps = [
+    ":audio_processing_c",
+  ]
 
   if (apm_debug_dump) {
     defines += [ "WEBRTC_APM_DEBUG_DUMP=1" ]
@@ -198,28 +196,8 @@ rtc_static_library("audio_processing") {
 
   if (rtc_prefer_fixed_point) {
     defines += [ "WEBRTC_NS_FIXED" ]
-    sources += [
-      "ns/noise_suppression_x.c",
-      "ns/noise_suppression_x.h",
-      "ns/nsx_core.c",
-      "ns/nsx_core.h",
-      "ns/nsx_defines.h",
-    ]
-    if (current_cpu == "mipsel") {
-      sources += [ "ns/nsx_core_mips.c" ]
-    } else {
-      sources += [ "ns/nsx_core_c.c" ]
-    }
   } else {
     defines += [ "WEBRTC_NS_FLOAT" ]
-    sources += [
-      "ns/defines.h",
-      "ns/noise_suppression.c",
-      "ns/noise_suppression.h",
-      "ns/ns_core.c",
-      "ns/ns_core.h",
-      "ns/windows_private.h",
-    ]
   }
 
   if (current_cpu == "x86" || current_cpu == "x64") {
@@ -246,6 +224,47 @@ rtc_static_library("audio_processing") {
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
   deps += [
+    "../../base:rtc_base_approved",
+    "../../common_audio",
+    "../../system_wrappers",
+  ]
+}
+
+rtc_source_set("audio_processing_c") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = [
+    "agc/legacy/analog_agc.c",
+    "agc/legacy/analog_agc.h",
+    "agc/legacy/digital_agc.c",
+    "agc/legacy/digital_agc.h",
+    "agc/legacy/gain_control.h",
+  ]
+
+  if (rtc_prefer_fixed_point) {
+    sources += [
+      "ns/noise_suppression_x.c",
+      "ns/noise_suppression_x.h",
+      "ns/nsx_core.c",
+      "ns/nsx_core.h",
+      "ns/nsx_defines.h",
+    ]
+    if (current_cpu == "mipsel") {
+      sources += [ "ns/nsx_core_mips.c" ]
+    } else {
+      sources += [ "ns/nsx_core_c.c" ]
+    }
+  } else {
+    sources += [
+      "ns/defines.h",
+      "ns/noise_suppression.c",
+      "ns/noise_suppression.h",
+      "ns/ns_core.c",
+      "ns/ns_core.h",
+      "ns/windows_private.h",
+    ]
+  }
+
+  deps = [
     "../../base:rtc_base_approved",
     "../../common_audio",
     "../../system_wrappers",
@@ -287,7 +306,6 @@ if (rtc_build_with_neon) {
     sources = [
       "aec/aec_core_neon.cc",
       "aecm/aecm_core_neon.cc",
-      "ns/nsx_core_neon.c",
       "utility/ooura_fft_neon.cc",
       "utility/ooura_fft_tables_neon_sse2.h",
     ]
@@ -312,11 +330,37 @@ if (rtc_build_with_neon) {
     deps = [
       "../../common_audio",
     ]
+    public_deps = [
+      ":audio_processing_neon_c",
+    ]
 
     if (apm_debug_dump) {
       defines = [ "WEBRTC_APM_DEBUG_DUMP=1" ]
     } else {
       defines = [ "WEBRTC_APM_DEBUG_DUMP=0" ]
+    }
+  }
+
+  rtc_static_library("audio_processing_neon_c") {
+    sources = [
+      "ns/nsx_core_neon.c",
+    ]
+
+    if (current_cpu != "arm64") {
+      # Enable compilation for the NEON instruction set. This is needed
+      # since //build/config/arm.gni only enables NEON for iOS, not Android.
+      # This provides the same functionality as webrtc/build/arm_neon.gypi.
+      suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
+      cflags = [ "-mfpu=neon" ]
+    }
+
+    # Disable LTO on NEON targets due to compiler bug.
+    # TODO(fdegans): Enable this. See crbug.com/408997.
+    if (rtc_use_lto) {
+      cflags -= [
+        "-flto",
+        "-ffat-lto-objects",
+      ]
     }
   }
 }

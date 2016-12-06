@@ -6,6 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import json
 import os
 import re
 import sys
@@ -291,6 +292,35 @@ def _CheckNoSourcesAbove(input_api, gn_files, output_api):
         items=violating_gn_files)]
   return []
 
+def _CheckNoMixingCAndCCSources(input_api, gn_files, output_api):
+  # Disallow mixing .c and .cc source files in the same target.
+  source_pattern = input_api.re.compile(r' +sources \+?= \[(.*?)\]',
+                                        re.MULTILINE | re.DOTALL)
+  file_pattern = input_api.re.compile(r'"(.*)"')
+  violating_gn_files = dict()
+  for gn_file in gn_files:
+    contents = input_api.ReadFile(gn_file)
+    for source_block_match in source_pattern.finditer(contents):
+      c_files = []
+      cc_files = []
+      for file_list_match in file_pattern.finditer(source_block_match.group(1)):
+        source_file = file_list_match.group(1)
+        if source_file.endswith('.c'):
+          c_files.append(source_file)
+        if source_file.endswith('.cc'):
+          cc_files.append(source_file)
+      if c_files and cc_files:
+        violating_gn_files[gn_file.LocalPath()] = sorted(c_files + cc_files)
+  if violating_gn_files:
+    return [output_api.PresubmitError(
+        'GN targets cannot mix .cc and .c source files. Please create a '
+        'separate target for each collection of sources.\n'
+        'Mixed sources: \n'
+        '%s\n'
+        'Violating GN files:' % json.dumps(violating_gn_files, indent=2),
+        items=violating_gn_files.keys())]
+  return []
+
 def _CheckGnChanges(input_api, output_api):
   source_file_filter = lambda x: input_api.FilterSourceFile(
       x, white_list=(r'.+\.(gn|gni)$',))
@@ -304,6 +334,7 @@ def _CheckGnChanges(input_api, output_api):
   if gn_files:
     result.extend(_CheckNoRtcBaseDeps(input_api, gn_files, output_api))
     result.extend(_CheckNoSourcesAbove(input_api, gn_files, output_api))
+    result.extend(_CheckNoMixingCAndCCSources(input_api, gn_files, output_api))
   return result
 
 def _CheckUnwantedDependencies(input_api, output_api):
