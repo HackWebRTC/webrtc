@@ -262,15 +262,6 @@ enum H264PacketizationTypes {
                     // that was too large to fit into a single packet.
 };
 
-// Packetization modes are defined in RFC 6184 section 6
-// Due to the structure containing this being initialized with zeroes
-// in some places, and mode 1 being default, mode 1 needs to have the value
-// zero. https://crbug.com/webrtc/6803
-enum class H264PacketizationMode {
-  NonInterleaved = 0,  // Mode 1 - STAP-A, FU-A is allowed
-  SingleNalUnit        // Mode 0 - only single NALU allowed
-};
-
 struct NaluInfo {
   uint8_t type;
   int sps_id;
@@ -284,19 +275,14 @@ struct NaluInfo {
 const size_t kMaxNalusPerPacket = 10;
 
 struct RTPVideoHeaderH264 {
-  // The NAL unit type. If this is a header for a
-  // fragmented packet, it's the NAL unit type of
-  // the original data. If this is the header for an
-  // aggregated packet, it's the NAL unit type of
-  // the first NAL unit in the packet.
-  uint8_t nalu_type;
-  // The packetization type of this buffer - single, aggregated or fragmented.
+  uint8_t nalu_type;  // The NAL unit type. If this is a header for a
+                      // fragmented packet, it's the NAL unit type of
+                      // the original data. If this is the header for an
+                      // aggregated packet, it's the NAL unit type of
+                      // the first NAL unit in the packet.
   H264PacketizationTypes packetization_type;
   NaluInfo nalus[kMaxNalusPerPacket];
   size_t nalus_length;
-  // The packetization mode of this transport. Packetization mode
-  // determines which packetization types are allowed when packetizing.
-  H264PacketizationMode packetization_mode;
 };
 
 union RTPVideoTypeHeader {

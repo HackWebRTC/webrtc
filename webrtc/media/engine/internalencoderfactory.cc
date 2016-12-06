@@ -37,9 +37,11 @@ InternalEncoderFactory::InternalEncoderFactory() {
     cricket::VideoCodec codec(kH264CodecName);
     // TODO(magjed): Move setting these parameters into webrtc::H264Encoder
     // instead.
+    // TODO(hta): Set FMTP parameters for all codecs of type H264.
     codec.SetParam(kH264FmtpProfileLevelId,
                    kH264ProfileLevelConstrainedBaseline);
     codec.SetParam(kH264FmtpLevelAsymmetryAllowed, "1");
+    codec.SetParam(kH264FmtpPacketizationMode, "1");
     supported_codecs_.push_back(std::move(codec));
   }
 

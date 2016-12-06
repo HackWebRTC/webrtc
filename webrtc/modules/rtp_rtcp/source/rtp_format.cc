@@ -10,8 +10,6 @@
 
 #include "webrtc/modules/rtp_rtcp/source/rtp_format.h"
 
-#include <utility>
-
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_h264.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp8.h"
@@ -24,19 +22,17 @@ RtpPacketizer* RtpPacketizer::Create(RtpVideoCodecTypes type,
                                      FrameType frame_type) {
   switch (type) {
     case kRtpVideoH264:
-      RTC_CHECK(rtp_type_header);
-      return new RtpPacketizerH264(max_payload_len,
-                                   rtp_type_header->H264.packetization_mode);
+      return new RtpPacketizerH264(frame_type, max_payload_len);
     case kRtpVideoVp8:
-      RTC_CHECK(rtp_type_header);
+      assert(rtp_type_header != NULL);
       return new RtpPacketizerVp8(rtp_type_header->VP8, max_payload_len);
     case kRtpVideoVp9:
-      RTC_CHECK(rtp_type_header);
+      assert(rtp_type_header != NULL);
       return new RtpPacketizerVp9(rtp_type_header->VP9, max_payload_len);
     case kRtpVideoGeneric:
       return new RtpPacketizerGeneric(frame_type, max_payload_len);
     case kRtpVideoNone:
-      RTC_NOTREACHED();
+      assert(false);
   }
   return NULL;
 }

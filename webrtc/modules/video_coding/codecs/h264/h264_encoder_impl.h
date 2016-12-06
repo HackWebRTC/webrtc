@@ -27,7 +27,7 @@ namespace webrtc {
 
 class H264EncoderImpl : public H264Encoder {
  public:
-  explicit H264EncoderImpl(const cricket::VideoCodec& codec);
+  H264EncoderImpl();
   ~H264EncoderImpl() override;
 
   // |max_payload_size| is ignored.
@@ -39,7 +39,7 @@ class H264EncoderImpl : public H264Encoder {
   // - height
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,
-                     size_t max_payload_size) override;
+                     size_t /*max_payload_size*/) override;
   int32_t Release() override;
 
   int32_t RegisterEncodeCompleteCallback(
@@ -61,11 +61,6 @@ class H264EncoderImpl : public H264Encoder {
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int32_t SetPeriodicKeyFrames(bool enable) override;
 
-  // Exposed for testing.
-  H264PacketizationMode PacketizationModeForTesting() const {
-    return packetization_mode_;
-  }
-
  private:
   bool IsInitialized() const;
   SEncParamExt CreateEncoderParams() const;
@@ -86,9 +81,7 @@ class H264EncoderImpl : public H264Encoder {
   // H.264 specifc parameters
   bool frame_dropping_on_;
   int key_frame_interval_;
-  H264PacketizationMode packetization_mode_;
 
-  size_t max_payload_size_;
   int32_t number_of_cores_;
 
   EncodedImage encoded_image_;

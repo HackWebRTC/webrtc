@@ -78,10 +78,9 @@ bool ParseStapAStartOffsets(const uint8_t* nalu_ptr,
 
 }  // namespace
 
-RtpPacketizerH264::RtpPacketizerH264(size_t max_payload_len,
-                                     H264PacketizationMode packetization_mode)
-    : max_payload_len_(max_payload_len),
-      packetization_mode_(packetization_mode) {}
+RtpPacketizerH264::RtpPacketizerH264(FrameType frame_type,
+                                     size_t max_payload_len)
+    : max_payload_len_(max_payload_len) {}
 
 RtpPacketizerH264::~RtpPacketizerH264() {
 }
@@ -164,19 +163,11 @@ void RtpPacketizerH264::SetPayloadData(
 
 void RtpPacketizerH264::GeneratePackets() {
   for (size_t i = 0; i < input_fragments_.size();) {
-    switch (packetization_mode_) {
-      case H264PacketizationMode::SingleNalUnit:
-        PacketizeSingleNalu(i);
-        ++i;
-        break;
-      case H264PacketizationMode::NonInterleaved:
-        if (input_fragments_[i].length > max_payload_len_) {
-          PacketizeFuA(i);
-          ++i;
-        } else {
-          i = PacketizeStapA(i);
-        }
-        break;
+    if (input_fragments_[i].length > max_payload_len_) {
+      PacketizeFuA(i);
+      ++i;
+    } else {
+      i = PacketizeStapA(i);
     }
   }
 }
@@ -239,21 +230,6 @@ size_t RtpPacketizerH264::PacketizeStapA(size_t fragment_index) {
   return fragment_index;
 }
 
-void RtpPacketizerH264::PacketizeSingleNalu(size_t fragment_index) {
-  // Add a single NALU to the queue, no aggregation.
-  size_t payload_size_left = max_payload_len_;
-  const Fragment* fragment = &input_fragments_[fragment_index];
-  RTC_CHECK_GE(payload_size_left, fragment->length)
-      << "Payload size left " << payload_size_left << ", fragment length "
-      << fragment->length << ", packetization mode "
-      << (packetization_mode_ == H264PacketizationMode::SingleNalUnit
-              ? "SingleNalUnit"
-              : "NonInterleaved");
-  RTC_CHECK_GT(fragment->length, 0u);
-  packets_.push(PacketUnit(*fragment, true /* first */, true /* last */,
-                           false /* aggregated */, fragment->buffer[0]));
-}
-
 bool RtpPacketizerH264::NextPacket(RtpPacketToSend* rtp_packet,
                                    bool* last_packet) {
   RTC_DCHECK(rtp_packet);
@@ -272,10 +248,8 @@ bool RtpPacketizerH264::NextPacket(RtpPacketToSend* rtp_packet,
     packets_.pop();
     input_fragments_.pop_front();
   } else if (packet.aggregated) {
-    RTC_CHECK(packetization_mode_ == H264PacketizationMode::NonInterleaved);
     NextAggregatePacket(rtp_packet);
   } else {
-    RTC_CHECK(packetization_mode_ == H264PacketizationMode::NonInterleaved);
     NextFragmentPacket(rtp_packet);
   }
   RTC_DCHECK_LE(rtp_packet->payload_size(), max_payload_len_);

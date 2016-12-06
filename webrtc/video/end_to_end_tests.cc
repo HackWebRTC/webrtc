@@ -404,23 +404,6 @@ TEST_P(EndToEndTest, SendsAndReceivesH264VideoRotation90) {
                      H264Decoder::Create());
   RunBaseTest(&test);
 }
-
-TEST_P(EndToEndTest, SendsAndReceivesH264PacketizationMode0) {
-  cricket::VideoCodec codec = cricket::VideoCodec("H264");
-  codec.SetParam(cricket::kH264FmtpPacketizationMode, "0");
-  CodecObserver test(500, kVideoRotation_0, "H264", H264Encoder::Create(codec),
-                     H264Decoder::Create());
-  RunBaseTest(&test);
-}
-
-TEST_P(EndToEndTest, SendsAndReceivesH264PacketizationMode1) {
-  cricket::VideoCodec codec = cricket::VideoCodec("H264");
-  codec.SetParam(cricket::kH264FmtpPacketizationMode, "1");
-  CodecObserver test(500, kVideoRotation_0, "H264", H264Encoder::Create(codec),
-                     H264Decoder::Create());
-  RunBaseTest(&test);
-}
-
 #endif  // defined(WEBRTC_USE_H264)
 
 TEST_P(EndToEndTest, ReceiverUsesLocalSsrc) {
