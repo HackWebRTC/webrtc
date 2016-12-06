@@ -19,7 +19,7 @@
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
-#include "webrtc/p2p/base/jseptransport.h"
+#include "webrtc/p2p/base/transport.h"
 #include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/basictypes.h"

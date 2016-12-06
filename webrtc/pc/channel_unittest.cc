@@ -21,7 +21,6 @@
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
-#include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/pc/channel.h"
 
 #define MAYBE_SKIP_TEST(feature)                    \
@@ -272,22 +271,17 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     return channel1_->RemoveRecvStream(id);
   }
 
-  std::vector<cricket::TransportChannelImpl*> GetChannels1() {
-    return transport_controller1_->channels_for_testing();
+  cricket::FakeTransport* GetTransport1() {
+    std::string name = channel1_->content_name();
+    return network_thread_->Invoke<cricket::FakeTransport*>(
+        RTC_FROM_HERE,
+        [this, name] { return transport_controller1_->GetTransport_n(name); });
   }
-
-  std::vector<cricket::TransportChannelImpl*> GetChannels2() {
-    return transport_controller2_->channels_for_testing();
-  }
-
-  cricket::FakeTransportChannel* GetFakeChannel1(int component) {
-    return transport_controller1_->GetFakeTransportChannel_n(
-        channel1_->content_name(), component);
-  }
-
-  cricket::FakeTransportChannel* GetFakeChannel2(int component) {
-    return transport_controller2_->GetFakeTransportChannel_n(
-        channel2_->content_name(), component);
+  cricket::FakeTransport* GetTransport2() {
+    std::string name = channel2_->content_name();
+    return network_thread_->Invoke<cricket::FakeTransport*>(
+        RTC_FROM_HERE,
+        [this, name] { return transport_controller2_->GetTransport_n(name); });
   }
 
   void SendRtp1() {
@@ -1020,8 +1014,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(0, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
     SendRtp1();
     SendRtp2();
     WaitForThreads();
@@ -1049,8 +1045,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(0, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
     SendRtcp1();
     SendRtcp2();
     WaitForThreads();
@@ -1063,8 +1061,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(0, RTCP);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
-    EXPECT_EQ(2U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(2U, GetTransport2()->channels().size());
     SendRtcp1();
     SendRtcp2();
     WaitForThreads();
@@ -1077,8 +1077,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(RTCP, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
     SendRtcp1();
     SendRtcp2();
     WaitForThreads();
@@ -1091,8 +1093,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(RTCP, RTCP);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(2U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(2U, GetTransport2()->channels().size());
     SendRtcp1();
     SendRtcp2();
     WaitForThreads();
@@ -1107,8 +1111,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(RTCP | RTCP_MUX, RTCP);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(2U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(2U, GetTransport2()->channels().size());
     SendRtcp1();
     SendRtcp2();
     WaitForThreads();
@@ -1122,10 +1128,12 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void SendRtcpMuxToRtcpMux() {
     CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
     EXPECT_TRUE(SendInitiate());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
     SendRtp1();
     SendRtp2();
     SendRtcp1();
@@ -1147,8 +1155,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
     channel1_->ActivateRtcpMux();
     EXPECT_TRUE(SendInitiate());
-    EXPECT_EQ(1U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
     EXPECT_TRUE(SendAccept());
     SendRtp1();
     SendRtp2();
@@ -1171,10 +1181,12 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
     channel2_->ActivateRtcpMux();
     EXPECT_TRUE(SendInitiate());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
     SendRtp1();
     SendRtp2();
     SendRtcp1();
@@ -1197,10 +1209,12 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     channel1_->ActivateRtcpMux();
     channel2_->ActivateRtcpMux();
     EXPECT_TRUE(SendInitiate());
-    EXPECT_EQ(1U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
     SendRtp1();
     SendRtp2();
     SendRtcp1();
@@ -1222,8 +1236,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(RTCP | RTCP_MUX, RTCP);
     channel1_->ActivateRtcpMux();
     EXPECT_TRUE(SendInitiate());
-    EXPECT_EQ(1U, GetChannels1().size());
-    EXPECT_EQ(2U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(2U, GetTransport2()->channels().size());
     EXPECT_FALSE(SendAccept());
   }
 
@@ -1231,8 +1247,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void SendEarlyRtcpMuxToRtcp() {
     CreateChannels(RTCP | RTCP_MUX, RTCP);
     EXPECT_TRUE(SendInitiate());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(2U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(2U, GetTransport2()->channels().size());
 
     // RTCP can be sent before the call is accepted, if the transport is ready.
     // It should not be muxed though, as the remote side doesn't support mux.
@@ -1249,7 +1267,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Complete call setup and ensure everything is still OK.
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(2U, GetChannels1().size());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
     SendRtcp1();
     SendRtcp2();
     WaitForThreads();
@@ -1264,8 +1282,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void SendEarlyRtcpMuxToRtcpMux() {
     CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
     EXPECT_TRUE(SendInitiate());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
 
     // RTCP can't be sent yet, since the RTCP transport isn't writable, and
     // we haven't yet received the accept that says we should mux.
@@ -1281,7 +1301,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Complete call setup and ensure everything is still OK.
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
     SendRtcp1();
     SendRtcp2();
     WaitForThreads();
@@ -1369,8 +1389,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       EXPECT_TRUE(SendProvisionalAnswer());
       EXPECT_TRUE(channel1_->secure());
       EXPECT_TRUE(channel2_->secure());
-      EXPECT_EQ(2U, GetChannels1().size());
-      EXPECT_EQ(2U, GetChannels2().size());
+      ASSERT_TRUE(GetTransport1());
+      ASSERT_TRUE(GetTransport2());
+      EXPECT_EQ(2U, GetTransport1()->channels().size());
+      EXPECT_EQ(2U, GetTransport2()->channels().size());
       WaitForThreads();  // Wait for 'sending' flag go through network thread.
       SendCustomRtcp1(kSsrc1);
       SendCustomRtp1(kSsrc1, ++sequence_number1_1);
@@ -1387,8 +1409,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
       // Complete call setup and ensure everything is still OK.
       EXPECT_TRUE(SendFinalAnswer());
-      EXPECT_EQ(1U, GetChannels1().size());
-      EXPECT_EQ(1U, GetChannels2().size());
+      EXPECT_EQ(1U, GetTransport1()->channels().size());
+      EXPECT_EQ(1U, GetTransport2()->channels().size());
       EXPECT_TRUE(channel1_->secure());
       EXPECT_TRUE(channel2_->secure());
       SendCustomRtcp1(kSsrc1);
@@ -1454,8 +1476,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(0, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(1U, GetTransport1()->channels().size());
+    EXPECT_EQ(1U, GetTransport2()->channels().size());
     SendRtp1();
     SendRtp2();
     WaitForThreads();
@@ -1466,7 +1490,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Lose writability, which should fail.
     network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [this] { GetFakeChannel1(1)->SetWritable(false); });
+        RTC_FROM_HERE, [this] { GetTransport1()->SetWritable(false); });
     SendRtp1();
     SendRtp2();
     WaitForThreads();
@@ -1475,7 +1499,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Regain writability
     network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [this] { GetFakeChannel1(1)->SetWritable(true); });
+        RTC_FROM_HERE, [this] { GetTransport1()->SetWritable(true); });
     EXPECT_TRUE(media_channel1_->sending());
     SendRtp1();
     SendRtp2();
@@ -1487,7 +1511,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Lose writability completely
     network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [this] { GetFakeChannel1(1)->SetDestination(nullptr); });
+        RTC_FROM_HERE, [this] { GetTransport1()->SetDestination(NULL); });
     EXPECT_TRUE(media_channel1_->sending());
 
     // Should fail also.
@@ -1499,7 +1523,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     // Gain writability back
     network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      GetFakeChannel1(1)->SetDestination(GetFakeChannel2(1));
+      GetTransport1()->SetDestination(GetTransport2());
     });
     EXPECT_TRUE(media_channel1_->sending());
     SendRtp1();
@@ -1528,11 +1552,13 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     }
     CreateChannels(flags, flags);
     EXPECT_TRUE(SendInitiate());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(expected_channels, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(expected_channels, GetTransport2()->channels().size());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(expected_channels, GetChannels1().size());
-    EXPECT_EQ(expected_channels, GetChannels2().size());
+    EXPECT_EQ(expected_channels, GetTransport1()->channels().size());
+    EXPECT_EQ(expected_channels, GetTransport2()->channels().size());
     EXPECT_TRUE(channel1_->bundle_filter()->FindPayloadType(pl_type1));
     EXPECT_TRUE(channel2_->bundle_filter()->FindPayloadType(pl_type1));
     EXPECT_FALSE(channel1_->bundle_filter()->FindPayloadType(pl_type2));
@@ -1712,8 +1738,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(RTCP, RTCP);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(2U, GetChannels2().size());
+    ASSERT_TRUE(GetTransport1());
+    ASSERT_TRUE(GetTransport2());
+    EXPECT_EQ(2U, GetTransport1()->channels().size());
+    EXPECT_EQ(2U, GetTransport2()->channels().size());
 
     // Send RTCP1 from a different thread.
     ScopedCallThread send_rtcp([this] { SendRtcp1(); });

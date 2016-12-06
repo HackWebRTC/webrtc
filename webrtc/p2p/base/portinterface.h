@@ -13,9 +13,9 @@
 
 #include <string>
 
+#include "webrtc/p2p/base/transport.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/socketaddress.h"
-#include "webrtc/p2p/base/jseptransport.h"
 
 namespace rtc {
 class Network;

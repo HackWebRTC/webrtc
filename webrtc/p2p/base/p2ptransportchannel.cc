@@ -99,6 +99,12 @@ static constexpr int b_is_better = -1;
 
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
+                                         P2PTransport* transport,
+                                         PortAllocator* allocator)
+    : P2PTransportChannel(transport_name, component, allocator) {}
+
+P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
+                                         int component,
                                          PortAllocator* allocator)
     : TransportChannelImpl(transport_name, component),
       allocator_(allocator),

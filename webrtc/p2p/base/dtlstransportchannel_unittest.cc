@@ -11,7 +11,7 @@
 #include <memory>
 #include <set>
 
-#include "webrtc/p2p/base/dtlstransportchannel.h"
+#include "webrtc/p2p/base/dtlstransport.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
 #include "webrtc/base/common.h"
@@ -63,9 +63,6 @@ using cricket::ConnectionRole;
 
 enum Flags { NF_REOFFER = 0x1, NF_EXPECT_FAILURE = 0x2 };
 
-// TODO(deadbeef): Remove the dependency on JsepTransport. This test should be
-// testing DtlsTransportChannel by itself, calling methods to set the
-// configuration directly instead of negotiating TransportDescriptions.
 class DtlsTestClient : public sigslot::has_slots<> {
  public:
   DtlsTestClient(const std::string& name) : name_(name) {}
@@ -82,25 +79,23 @@ class DtlsTestClient : public sigslot::has_slots<> {
     use_dtls_srtp_ = true;
   }
   void SetupMaxProtocolVersion(rtc::SSLProtocolVersion version) {
+    ASSERT(!transport_);
     ssl_max_version_ = version;
   }
   void SetupChannels(int count, cricket::IceRole role, int async_delay_ms = 0) {
-    transport_.reset(
-        new cricket::JsepTransport("dtls content name", certificate_));
-    for (int i = 0; i < count; ++i) {
-      cricket::FakeTransportChannel* fake_ice_channel =
-          new cricket::FakeTransportChannel(transport_->mid(), i);
-      fake_ice_channel->SetAsync(true);
-      fake_ice_channel->SetAsyncDelay(async_delay_ms);
-      // Hook the raw packets so that we can verify they are encrypted.
-      fake_ice_channel->SignalReadPacket.connect(
-          this, &DtlsTestClient::OnFakeTransportChannelReadPacket);
+    transport_.reset(new cricket::DtlsTransport<cricket::FakeTransport>(
+        "dtls content name", nullptr, certificate_));
+    transport_->SetAsync(true);
+    transport_->SetAsyncDelay(async_delay_ms);
+    transport_->SetIceRole(role);
+    transport_->SetIceTiebreaker(
+        (role == cricket::ICEROLE_CONTROLLING) ? 1 : 2);
 
+    for (int i = 0; i < count; ++i) {
       cricket::DtlsTransportChannelWrapper* channel =
-          new cricket::DtlsTransportChannelWrapper(fake_ice_channel);
-      channel->SetLocalCertificate(certificate_);
-      channel->SetIceRole(role);
-      channel->SetIceTiebreaker((role == cricket::ICEROLE_CONTROLLING) ? 1 : 2);
+          static_cast<cricket::DtlsTransportChannelWrapper*>(
+              transport_->CreateChannel(i));
+      ASSERT_TRUE(channel != NULL);
       channel->SetSslMaxProtocolVersion(ssl_max_version_);
       channel->SignalWritableState.connect(this,
         &DtlsTestClient::OnTransportChannelWritableState);
@@ -108,32 +103,27 @@ class DtlsTestClient : public sigslot::has_slots<> {
         &DtlsTestClient::OnTransportChannelReadPacket);
       channel->SignalSentPacket.connect(
           this, &DtlsTestClient::OnTransportChannelSentPacket);
-      channels_.push_back(
-          std::unique_ptr<cricket::DtlsTransportChannelWrapper>(channel));
-      fake_channels_.push_back(
-          std::unique_ptr<cricket::FakeTransportChannel>(fake_ice_channel));
-      transport_->AddChannel(channel, i);
+      channels_.push_back(channel);
+
+      // Hook the raw packets so that we can verify they are encrypted.
+      channel->channel()->SignalReadPacket.connect(
+          this, &DtlsTestClient::OnFakeTransportChannelReadPacket);
     }
   }
 
-  cricket::JsepTransport* transport() { return transport_.get(); }
+  cricket::Transport* transport() { return transport_.get(); }
 
   cricket::FakeTransportChannel* GetFakeChannel(int component) {
-    for (const auto& ch : fake_channels_) {
-      if (ch->component() == component) {
-        return ch.get();
-      }
-    }
-    return nullptr;
+    cricket::TransportChannelImpl* ch = transport_->GetChannel(component);
+    cricket::DtlsTransportChannelWrapper* wrapper =
+        static_cast<cricket::DtlsTransportChannelWrapper*>(ch);
+    return (wrapper) ?
+        static_cast<cricket::FakeTransportChannel*>(wrapper->channel()) : NULL;
   }
 
   cricket::DtlsTransportChannelWrapper* GetDtlsChannel(int component) {
-    for (const auto& ch : channels_) {
-      if (ch->component() == component) {
-        return ch.get();
-      }
-    }
-    return nullptr;
+    cricket::TransportChannelImpl* ch = transport_->GetChannel(component);
+    return static_cast<cricket::DtlsTransportChannelWrapper*>(ch);
   }
 
   // Offer DTLS if we have an identity; pass in a remote fingerprint only if
@@ -152,7 +142,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     std::vector<int> ciphers;
     ciphers.push_back(rtc::SRTP_AES128_CM_SHA1_80);
     // SRTP ciphers will be set only in the beginning.
-    for (const auto& channel : channels_) {
+    for (cricket::DtlsTransportChannelWrapper* channel : channels_) {
       EXPECT_TRUE(channel->SetSrtpCryptoSuites(ciphers));
     }
   }
@@ -212,10 +202,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
 
   bool Connect(DtlsTestClient* peer, bool asymmetric) {
-    for (auto& channel : fake_channels_) {
-      channel->SetDestination(peer->GetFakeChannel(channel->component()),
-                              asymmetric);
-    }
+    transport_->SetDestination(peer->transport_.get(), asymmetric);
     return true;
   }
 
@@ -223,7 +210,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     if (channels_.empty()) {
       return false;
     }
-    for (const auto& channel : channels_) {
+    for (cricket::DtlsTransportChannelWrapper* channel : channels_) {
       if (!channel->writable()) {
         return false;
       }
@@ -235,7 +222,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     if (channels_.empty()) {
       return false;
     }
-    for (const auto& channel : channels_) {
+    for (cricket::DtlsTransportChannelWrapper* channel : channels_) {
       if (!channel->channel()->writable()) {
         return false;
       }
@@ -269,10 +256,11 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
 
   void CheckSrtp(int expected_crypto_suite) {
-    for (const auto& channel : channels_) {
+    for (std::vector<cricket::DtlsTransportChannelWrapper*>::iterator it =
+           channels_.begin(); it != channels_.end(); ++it) {
       int crypto_suite;
 
-      bool rv = channel->GetSrtpCryptoSuite(&crypto_suite);
+      bool rv = (*it)->GetSrtpCryptoSuite(&crypto_suite);
       if (negotiated_dtls() && expected_crypto_suite) {
         ASSERT_TRUE(rv);
 
@@ -284,10 +272,11 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
 
   void CheckSsl() {
-    for (const auto& channel : channels_) {
+    for (std::vector<cricket::DtlsTransportChannelWrapper*>::iterator it =
+           channels_.begin(); it != channels_.end(); ++it) {
       int cipher;
 
-      bool rv = channel->GetSslCipherSuite(&cipher);
+      bool rv = (*it)->GetSslCipherSuite(&cipher);
       if (negotiated_dtls()) {
         ASSERT_TRUE(rv);
 
@@ -434,9 +423,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
  private:
   std::string name_;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
-  std::vector<std::unique_ptr<cricket::FakeTransportChannel>> fake_channels_;
-  std::vector<std::unique_ptr<cricket::DtlsTransportChannelWrapper>> channels_;
-  std::unique_ptr<cricket::JsepTransport> transport_;
+  std::unique_ptr<cricket::FakeTransport> transport_;
+  std::vector<cricket::DtlsTransportChannelWrapper*> channels_;
   size_t packet_size_ = 0u;
   std::set<int> received_;
   bool use_dtls_srtp_ = false;
@@ -833,8 +821,8 @@ TEST_F(DtlsTransportChannelTest, TestDtlsSetupWithLegacyAsAnswerer) {
   NegotiateWithLegacy();
   rtc::SSLRole channel1_role;
   rtc::SSLRole channel2_role;
-  client1_.transport()->GetSslRole(&channel1_role);
-  client2_.transport()->GetSslRole(&channel2_role);
+  EXPECT_TRUE(client1_.transport()->GetSslRole(&channel1_role));
+  EXPECT_TRUE(client2_.transport()->GetSslRole(&channel2_role));
   EXPECT_EQ(rtc::SSL_SERVER, channel1_role);
   EXPECT_EQ(rtc::SSL_CLIENT, channel2_role);
 }
@@ -944,8 +932,8 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
   ASSERT_TRUE(client2_.transport()->GetLocalCertificate(&certificate2));
   ASSERT_NE(certificate1->ssl_certificate().ToPEMString(),
             certificate2->ssl_certificate().ToPEMString());
-  ASSERT_FALSE(client1_.GetDtlsChannel(0)->GetRemoteSSLCertificate());
-  ASSERT_FALSE(client2_.GetDtlsChannel(0)->GetRemoteSSLCertificate());
+  ASSERT_FALSE(client1_.transport()->GetRemoteSSLCertificate());
+  ASSERT_FALSE(client2_.transport()->GetRemoteSSLCertificate());
 }
 
 // Test Certificates state after connection.
@@ -965,12 +953,12 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesAfterConnect) {
 
   // Each side's remote certificate is the other side's local certificate.
   std::unique_ptr<rtc::SSLCertificate> remote_cert1 =
-      client1_.GetDtlsChannel(0)->GetRemoteSSLCertificate();
+      client1_.transport()->GetRemoteSSLCertificate();
   ASSERT_TRUE(remote_cert1);
   ASSERT_EQ(remote_cert1->ToPEMString(),
             certificate2->ssl_certificate().ToPEMString());
   std::unique_ptr<rtc::SSLCertificate> remote_cert2 =
-      client2_.GetDtlsChannel(0)->GetRemoteSSLCertificate();
+      client2_.transport()->GetRemoteSSLCertificate();
   ASSERT_TRUE(remote_cert2);
   ASSERT_EQ(remote_cert2->ToPEMString(),
             certificate1->ssl_certificate().ToPEMString());

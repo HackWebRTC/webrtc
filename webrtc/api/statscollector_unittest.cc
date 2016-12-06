@@ -1477,6 +1477,10 @@ TEST_F(StatsCollectorTest, NoCertificates) {
   session_stats.transport_stats[transport_stats.transport_name] =
       transport_stats;
 
+  // Fake transport object.
+  std::unique_ptr<cricket::FakeTransport> transport(
+      new cricket::FakeTransport(transport_stats.transport_name));
+
   // Configure MockWebRtcSession
   EXPECT_CALL(session_, GetTransportStats(_))
     .WillOnce(DoAll(SetArgPointee<0>(session_stats),
