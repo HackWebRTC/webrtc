@@ -27,7 +27,10 @@
 namespace webrtc {
 namespace {
 
-const size_t kNumFramesToProcess = 100;
+const size_t kNumFramesToProcess = 300;
+const size_t kNumFramesToProcessAtWarmup = 300;
+const size_t kToTalNumFrames =
+    kNumFramesToProcess + kNumFramesToProcessAtWarmup;
 
 std::string FormPerformanceMeasureString(const test::PerformanceTimer& timer) {
   std::string s = std::to_string(timer.GetDurationAverage());
@@ -45,12 +48,16 @@ void RunStandaloneSubmodule(int sample_rate_hz, size_t num_channels) {
   LevelController level_controller;
   level_controller.Initialize(sample_rate_hz);
 
-  for (size_t frame_no = 0; frame_no < kNumFramesToProcess; ++frame_no) {
+  for (size_t frame_no = 0; frame_no < kToTalNumFrames; ++frame_no) {
     buffers.UpdateInputBuffers();
 
-    timer.StartTimer();
+    if (frame_no >= kNumFramesToProcessAtWarmup) {
+      timer.StartTimer();
+    }
     level_controller.Process(buffers.capture_input_buffer.get());
-    timer.StopTimer();
+    if (frame_no >= kNumFramesToProcessAtWarmup) {
+      timer.StopTimer();
+    }
   }
   webrtc::test::PrintResultMeanAndError(
       "level_controller_call_durations",
@@ -120,27 +127,34 @@ void RunTogetherWithApm(std::string test_description,
   StreamConfig capture_output_config(capture_output_sample_rate_hz,
                                      num_channels, false);
 
-  for (size_t frame_no = 0; frame_no < kNumFramesToProcess; ++frame_no) {
+  for (size_t frame_no = 0; frame_no < kToTalNumFrames; ++frame_no) {
     buffers.UpdateInputBuffers();
 
-    total_timer.StartTimer();
-    render_timer.StartTimer();
+    if (frame_no >= kNumFramesToProcessAtWarmup) {
+      total_timer.StartTimer();
+      render_timer.StartTimer();
+    }
     ASSERT_EQ(AudioProcessing::kNoError,
               apm->ProcessReverseStream(
                   &buffers.render_input[0], render_input_config,
                   render_output_config, &buffers.render_output[0]));
 
-    render_timer.StopTimer();
+    if (frame_no >= kNumFramesToProcessAtWarmup) {
+      render_timer.StopTimer();
 
-    capture_timer.StartTimer();
+      capture_timer.StartTimer();
+    }
+
     ASSERT_EQ(AudioProcessing::kNoError, apm->set_stream_delay_ms(0));
     ASSERT_EQ(
         AudioProcessing::kNoError,
         apm->ProcessStream(&buffers.capture_input[0], capture_input_config,
                            capture_output_config, &buffers.capture_output[0]));
 
-    capture_timer.StopTimer();
-    total_timer.StopTimer();
+    if (frame_no >= kNumFramesToProcessAtWarmup) {
+      capture_timer.StopTimer();
+      total_timer.StopTimer();
+    }
   }
 
   webrtc::test::PrintResultMeanAndError(
@@ -189,14 +203,8 @@ void TestSomeSampleRatesWithApm(const std::string& test_name,
                                 bool include_default_apm_processing) {
   // Test some stereo combinations first.
   size_t num_channels = 2;
-  RunTogetherWithApm(test_name, 48000, 48000, AudioProcessing::kSampleRate8kHz,
-                     AudioProcessing::kSampleRate48kHz, num_channels,
-                     use_mobile_agc, include_default_apm_processing);
   RunTogetherWithApm(test_name, 48000, 48000, AudioProcessing::kSampleRate16kHz,
                      AudioProcessing::kSampleRate32kHz, num_channels,
-                     use_mobile_agc, include_default_apm_processing);
-  RunTogetherWithApm(test_name, 48000, 48000, AudioProcessing::kSampleRate32kHz,
-                     AudioProcessing::kSampleRate16kHz, num_channels,
                      use_mobile_agc, include_default_apm_processing);
   RunTogetherWithApm(test_name, 48000, 48000, AudioProcessing::kSampleRate48kHz,
                      AudioProcessing::kSampleRate8kHz, num_channels,
