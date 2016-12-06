@@ -12,6 +12,7 @@
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 
 #include <limits>
+#include <string>
 
 #include "third_party/openh264/src/codec/api/svc/codec_api.h"
 #include "third_party/openh264/src/codec/api/svc/codec_app_def.h"
@@ -21,6 +22,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -150,7 +152,7 @@ static void RtpFragmentize(EncodedImage* encoded_image,
   }
 }
 
-H264EncoderImpl::H264EncoderImpl()
+H264EncoderImpl::H264EncoderImpl(const cricket::VideoCodec& codec)
     : openh264_encoder_(nullptr),
       width_(0),
       height_(0),
@@ -160,10 +162,20 @@ H264EncoderImpl::H264EncoderImpl()
       mode_(kRealtimeVideo),
       frame_dropping_on_(false),
       key_frame_interval_(0),
+      packetization_mode_(H264PacketizationMode::SingleNalUnit),
+      max_payload_size_(0),
       number_of_cores_(0),
       encoded_image_callback_(nullptr),
       has_reported_init_(false),
-      has_reported_error_(false) {}
+      has_reported_error_(false) {
+  RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
+  std::string packetization_mode_string;
+  if (codec.GetParam(cricket::kH264FmtpPacketizationMode,
+                     &packetization_mode_string) &&
+      packetization_mode_string == "1") {
+    packetization_mode_ = H264PacketizationMode::NonInterleaved;
+  }
+}
 
 H264EncoderImpl::~H264EncoderImpl() {
   Release();
@@ -171,7 +183,7 @@ H264EncoderImpl::~H264EncoderImpl() {
 
 int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
                                     int32_t number_of_cores,
-                                    size_t /*max_payload_size*/) {
+                                    size_t max_payload_size) {
   ReportInit();
   if (!codec_settings ||
       codec_settings->codecType != kVideoCodecH264) {
@@ -218,6 +230,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
   mode_ = codec_settings->mode;
   frame_dropping_on_ = codec_settings->H264().frameDroppingOn;
   key_frame_interval_ = codec_settings->H264().keyFrameInterval;
+  max_payload_size_ = max_payload_size;
 
   // Codec_settings uses kbits/second; encoder uses bits/second.
   max_bps_ = codec_settings->maxBitrate * 1000;
@@ -227,6 +240,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
     target_bps_ = codec_settings->targetBitrate * 1000;
 
   SEncParamExt encoder_params = CreateEncoderParams();
+
   // Initialize.
   if (openh264_encoder_->InitializeExt(&encoder_params) != 0) {
     LOG(LS_ERROR) << "Failed to initialize OpenH264 encoder";
@@ -370,6 +384,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     // Deliver encoded image.
     CodecSpecificInfo codec_specific;
     codec_specific.codecType = kVideoCodecH264;
+    codec_specific.codecSpecific.H264.packetization_mode = packetization_mode_;
     encoded_image_callback_->OnEncodedImage(encoded_image_, &codec_specific,
                                             &frag_header);
 
@@ -434,19 +449,46 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
       encoder_params.iTargetBitrate;
   encoder_params.sSpatialLayers[0].iMaxSpatialBitrate =
       encoder_params.iMaxBitrate;
+  LOG(INFO) << "OpenH264 version is " << OPENH264_MAJOR << "."
+            << OPENH264_MINOR;
+  switch (packetization_mode_) {
+    case H264PacketizationMode::SingleNalUnit:
+// Limit the size of the packets produced.
 #if (OPENH264_MAJOR == 1) && (OPENH264_MINOR <= 5)
-  // Slice num according to number of threads.
-  encoder_params.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_AUTO_SLICE;
+      encoder_params.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
+      // The slice size is max payload size - room for a NAL header.
+      // The constant 50 is NAL_HEADER_ADD_0X30BYTES in openh264 source,
+      // but is not exported.
+      const kNalHeaderSizeAllocation = 50;
+      encoder_params.sSpatialLayers[0]
+          .sSliceCfg.sSliceArgument.uiSliceSizeConstraint =
+          static_cast<unsigned int>(max_payload_size_ -
+                                    kNalHeaderSizeAllocation);
+      encoder_params.uiMaxNalSize =
+          static_cast<unsigned int>(max_payload_size_);
 #else
-  // When uiSliceMode = SM_FIXEDSLCNUM_SLICE, uiSliceNum = 0 means auto design
-  // it with cpu core number.
-  // TODO(sprang): Set to 0 when we understand why the rate controller borks
-  //               when uiSliceNum > 1.
-  encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceNum = 1;
-  encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceMode =
-      SM_FIXEDSLCNUM_SLICE;
+      encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceNum = 1;
+      encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceMode =
+          SM_SIZELIMITED_SLICE;
+      encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceSizeConstraint =
+          static_cast<unsigned int>(max_payload_size_);
 #endif
-
+      break;
+    case H264PacketizationMode::NonInterleaved:
+#if (OPENH264_MAJOR == 1) && (OPENH264_MINOR <= 5)
+      // Slice num according to number of threads.
+      encoder_params.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_AUTO_SLICE;
+#else
+      // When uiSliceMode = SM_FIXEDSLCNUM_SLICE, uiSliceNum = 0 means auto
+      // design it with cpu core number.
+      // TODO(sprang): Set to 0 when we understand why the rate controller borks
+      //               when uiSliceNum > 1.
+      encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceNum = 1;
+      encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceMode =
+          SM_FIXEDSLCNUM_SLICE;
+#endif
+      break;
+  }
   return encoder_params;
 }
 

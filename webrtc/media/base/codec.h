@@ -184,6 +184,9 @@ struct VideoCodec : public Codec {
   // don't make sense (such as max < min bitrate), and error is logged and
   // ValidateCodecFormat returns false.
   bool ValidateCodecFormat() const;
+
+ private:
+  void SetDefaultParameters();
 };
 
 struct DataCodec : public Codec {

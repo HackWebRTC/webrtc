@@ -158,6 +158,7 @@ rtc_static_library("webrtc_h264") {
     ]
     deps += [
       "../../common_video",
+      "../../media:rtc_media_base",
       "//third_party/ffmpeg:ffmpeg",
       "//third_party/openh264:encoder",
     ]
