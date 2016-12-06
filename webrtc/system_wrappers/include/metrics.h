@@ -58,6 +58,9 @@
 // };
 //
 // RTC_HISTOGRAM_ENUMERATION("WebRTC.Types", kTypeX, kBoundary);
+//
+// NOTE: It is recommended to do the Chromium review for modifications to
+// histograms.xml before new metrics are committed to WebRTC.
 
 
 // Macros for adding samples to a named histogram.
