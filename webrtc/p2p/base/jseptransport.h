@@ -22,8 +22,8 @@
 // It is not possible to do so here because the subclass destructor will
 // already have run.
 
-#ifndef WEBRTC_P2P_BASE_TRANSPORT_H_
-#define WEBRTC_P2P_BASE_TRANSPORT_H_
+#ifndef WEBRTC_P2P_BASE_JSEPTRANSPORT_H_
+#define WEBRTC_P2P_BASE_JSEPTRANSPORT_H_
 
 #include <map>
 #include <memory>
@@ -43,11 +43,13 @@
 
 namespace cricket {
 
-class PortAllocator;
-class TransportChannel;
+class TransportChannelImpl;
 class TransportChannelImpl;
 
 typedef std::vector<Candidate> Candidates;
+
+// TODO(deadbeef): Move all of these enums, POD types and utility methods to
+// another header file.
 
 // TODO(deadbeef): Unify with PeerConnectionInterface::IceConnectionState
 // once /talk/ and /webrtc/ are combined, and also switch to ENUM_NAME naming
@@ -115,14 +117,14 @@ struct ConnectionInfo {
         recv_ping_responses(0),
         key(NULL) {}
 
-  bool best_connection;        // Is this the best connection we have?
-  bool writable;               // Has this connection received a STUN response?
-  bool receiving;              // Has this connection received anything?
-  bool timeout;                // Has this connection timed out?
-  bool new_connection;         // Is this a newly created connection?
-  size_t rtt;                  // The STUN RTT for this connection.
-  size_t sent_total_bytes;     // Total bytes sent on this connection.
-  size_t sent_bytes_second;    // Bps over the last measurement interval.
+  bool best_connection;      // Is this the best connection we have?
+  bool writable;             // Has this connection received a STUN response?
+  bool receiving;            // Has this connection received anything?
+  bool timeout;              // Has this connection timed out?
+  bool new_connection;       // Is this a newly created connection?
+  size_t rtt;                // The STUN RTT for this connection.
+  size_t sent_total_bytes;   // Total bytes sent on this connection.
+  size_t sent_bytes_second;  // Bps over the last measurement interval.
   size_t sent_discarded_packets;  // Number of outgoing packets discarded due to
                                   // socket errors.
   size_t sent_total_packets;  // Number of total outgoing packets attempted for
@@ -242,182 +244,134 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
                            const std::string& new_ufrag,
                            const std::string& new_pwd);
 
-class Transport : public sigslot::has_slots<> {
+// If a candidate is not acceptable, returns false and sets error.
+bool VerifyCandidate(const Candidate& candidate, std::string* error);
+bool VerifyCandidates(const Candidates& candidates, std::string* error);
+
+// Helper class used by TransportController that processes
+// TransportDescriptions. A TransportDescription represents the
+// transport-specific properties of an SDP m= section, processed according to
+// JSEP. Each transport consists of DTLS and ICE transport channels for RTP
+// (and possibly RTCP, if rtcp-mux isn't used).
+// TODO(deadbeef): Move this into /pc/ and out of /p2p/base/, since it's
+// PeerConnection-specific.
+class JsepTransport : public sigslot::has_slots<> {
  public:
-  Transport(const std::string& name, PortAllocator* allocator);
-  virtual ~Transport();
+  // |mid| is just used for log statements in order to identify the Transport.
+  // Note that |certificate| is allowed to be null since a remote description
+  // may be set before a local certificate is generated.
+  JsepTransport(const std::string& mid,
+                const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
 
-  // Returns the name of this transport.
-  const std::string& name() const { return name_; }
+  // Returns the MID of this transport.
+  const std::string& mid() const { return mid_; }
 
-  // Returns the port allocator object for this transport.
-  PortAllocator* port_allocator() { return allocator_; }
+  // Add or remove channel that is affected when a local/remote transport
+  // description is set on this transport. Need to add all channels before
+  // setting a transport description.
+  bool AddChannel(TransportChannelImpl* dtls, int component);
+  bool RemoveChannel(int component);
+  bool HasChannels() const;
 
   bool ready_for_remote_candidates() const {
     return local_description_set_ && remote_description_set_;
   }
 
-  void SetIceRole(IceRole role);
-  IceRole ice_role() const { return ice_role_; }
-
-  void SetIceTiebreaker(uint64_t IceTiebreaker) { tiebreaker_ = IceTiebreaker; }
-  uint64_t IceTiebreaker() { return tiebreaker_; }
-
-  void SetIceConfig(const IceConfig& config);
-
   // Must be called before applying local session description.
-  virtual void SetLocalCertificate(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {}
+  // Needed in order to verify the local fingerprint.
+  void SetLocalCertificate(
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
 
   // Get a copy of the local certificate provided by SetLocalCertificate.
-  virtual bool GetLocalCertificate(
-      rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
-    return false;
-  }
+  bool GetLocalCertificate(
+      rtc::scoped_refptr<rtc::RTCCertificate>* certificate) const;
 
-  // Get a copy of the remote certificate in use by the specified channel.
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate();
-
-  // Create, destroy, and lookup the channels of this type by their components.
-  TransportChannelImpl* CreateChannel(int component);
-
-  TransportChannelImpl* GetChannel(int component);
-
-  bool HasChannel(int component) {
-    return (NULL != GetChannel(component));
-  }
-  bool HasChannels();
-
-  void DestroyChannel(int component);
-
-  // Set the local TransportDescription to be used by TransportChannels.
+  // Set the local TransportDescription to be used by DTLS and ICE channels
+  // that are part of this Transport.
   bool SetLocalTransportDescription(const TransportDescription& description,
                                     ContentAction action,
                                     std::string* error_desc);
 
-  // Set the remote TransportDescription to be used by TransportChannels.
+  // Set the remote TransportDescription to be used by DTLS and ICE channels
+  // that are part of this Transport.
   bool SetRemoteTransportDescription(const TransportDescription& description,
                                      ContentAction action,
                                      std::string* error_desc);
 
-  // Tells channels to start gathering candidates if necessary.
-  // Should be called after ConnectChannels() has been called at least once,
-  // which will happen in SetLocalTransportDescription.
-  void MaybeStartGathering();
+  void GetSslRole(rtc::SSLRole* ssl_role) const;
 
-  // Resets all of the channels back to their initial state.  They are no
-  // longer connecting.
-  void ResetChannels();
-
-  // Destroys every channel created so far.
-  void DestroyAllChannels();
-
+  // TODO(deadbeef): Make this const. See comment in transportcontroller.h.
   bool GetStats(TransportStats* stats);
 
-  // Called when one or more candidates are ready from the remote peer.
-  bool AddRemoteCandidates(const std::vector<Candidate>& candidates,
-                           std::string* error);
-  bool RemoveRemoteCandidates(const std::vector<Candidate>& candidates,
-                              std::string* error);
-
-  virtual bool GetSslRole(rtc::SSLRole* ssl_role) const { return false; }
-
-  // Must be called before channel is starting to connect.
-  virtual bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version) {
-    return false;
-  }
-
-  // The current local transport description, for use by derived classes
-  // when performing transport description negotiation, and possibly used
+  // The current local transport description, possibly used
   // by the transport controller.
   const TransportDescription* local_description() const {
     return local_description_.get();
   }
 
-  // The current remote transport description, for use by derived classes
-  // when performing transport description negotiation, and possibly used
+  // The current remote transport description, possibly used
   // by the transport controller.
   const TransportDescription* remote_description() const {
     return remote_description_.get();
   }
 
- protected:
-  // These are called by Create/DestroyChannel above in order to create or
-  // destroy the appropriate type of channel.
-  virtual TransportChannelImpl* CreateTransportChannel(int component) = 0;
-  virtual void DestroyTransportChannel(TransportChannelImpl* channel) = 0;
-
-  // Pushes down the transport parameters from the local description, such
-  // as the ICE ufrag and pwd.
-  // Derived classes can override, but must call the base as well.
-  virtual bool ApplyLocalTransportDescription(TransportChannelImpl* channel,
-                                              std::string* error_desc);
-
-  // Pushes down remote ice credentials from the remote description to the
-  // transport channel.
-  virtual bool ApplyRemoteTransportDescription(TransportChannelImpl* ch,
-                                               std::string* error_desc);
-
-  // Negotiates the transport parameters based on the current local and remote
-  // transport description, such as the ICE role to use, and whether DTLS
-  // should be activated.
-  // Derived classes can negotiate their specific parameters here, but must call
-  // the base as well.
-  virtual bool NegotiateTransportDescription(ContentAction local_role,
-                                             std::string* error_desc);
-
-  // Pushes down the transport parameters obtained via negotiation.
-  // Derived classes can set their specific parameters here, but must call the
-  // base as well.
-  virtual bool ApplyNegotiatedTransportDescription(
-      TransportChannelImpl* channel,
-      std::string* error_desc);
+  // TODO(deadbeef): The methods below are only public for testing. Should make
+  // them utility functions or objects so they can be tested independently from
+  // this class.
 
   // Returns false if the certificate's identity does not match the fingerprint,
   // or either is NULL.
-  virtual bool VerifyCertificateFingerprint(
-      const rtc::RTCCertificate* certificate,
-      const rtc::SSLFingerprint* fingerprint,
-      std::string* error_desc) const;
+  bool VerifyCertificateFingerprint(const rtc::RTCCertificate* certificate,
+                                    const rtc::SSLFingerprint* fingerprint,
+                                    std::string* error_desc) const;
 
   // Negotiates the SSL role based off the offer and answer as specified by
   // RFC 4145, section-4.1. Returns false if the SSL role cannot be determined
   // from the local description and remote description.
-  virtual bool NegotiateRole(ContentAction local_role,
-                             rtc::SSLRole* ssl_role,
-                             std::string* error_desc) const;
+  bool NegotiateRole(ContentAction local_role,
+                     rtc::SSLRole* ssl_role,
+                     std::string* error_desc) const;
 
  private:
-  // If a candidate is not acceptable, returns false and sets error.
-  // Call this before calling OnRemoteCandidates.
-  bool VerifyCandidate(const Candidate& candidate, std::string* error);
-  bool VerifyCandidates(const Candidates& candidates, std::string* error);
+  TransportChannelImpl* GetChannel(int component);
 
-  // Candidate component => TransportChannelImpl*
-  typedef std::map<int, TransportChannelImpl*> ChannelMap;
+  // Negotiates the transport parameters based on the current local and remote
+  // transport description, such as the ICE role to use, and whether DTLS
+  // should be activated.
+  //
+  // Called when an answer TransportDescription is applied.
+  bool NegotiateTransportDescription(ContentAction local_role,
+                                     std::string* error_desc);
 
-  // Helper function that invokes the given function on every channel.
-  typedef void (TransportChannelImpl::* TransportChannelFunc)();
-  void CallChannels(TransportChannelFunc func);
+  // Pushes down the transport parameters from the local description, such
+  // as the ICE ufrag and pwd.
+  bool ApplyLocalTransportDescription(TransportChannelImpl* channel,
+                                      std::string* error_desc);
 
-  const std::string name_;
-  PortAllocator* const allocator_;
-  bool channels_destroyed_ = false;
-  IceRole ice_role_ = ICEROLE_UNKNOWN;
-  uint64_t tiebreaker_ = 0;
-  IceMode remote_ice_mode_ = ICEMODE_FULL;
-  IceConfig ice_config_;
+  // Pushes down the transport parameters from the remote description to the
+  // transport channel.
+  bool ApplyRemoteTransportDescription(TransportChannelImpl* channel,
+                                       std::string* error_desc);
+
+  // Pushes down the transport parameters obtained via negotiation.
+  bool ApplyNegotiatedTransportDescription(TransportChannelImpl* channel,
+                                           std::string* error_desc);
+
+  const std::string mid_;
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
+  rtc::SSLRole secure_role_ = rtc::SSL_CLIENT;
+  std::unique_ptr<rtc::SSLFingerprint> remote_fingerprint_;
   std::unique_ptr<TransportDescription> local_description_;
   std::unique_ptr<TransportDescription> remote_description_;
   bool local_description_set_ = false;
   bool remote_description_set_ = false;
 
-  ChannelMap channels_;
+  // Candidate component => DTLS channel
+  std::map<int, TransportChannelImpl*> channels_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(Transport);
+  RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransport);
 };
-
 
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_TRANSPORT_H_
+#endif  // WEBRTC_P2P_BASE_JSEPTRANSPORT_H_

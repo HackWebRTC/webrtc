@@ -25,7 +25,7 @@
 #include "webrtc/media/base/mediaengine.h"  // For DataChannelType
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/p2p/base/sessiondescription.h"
-#include "webrtc/p2p/base/transport.h"
+#include "webrtc/p2p/base/jseptransport.h"
 #include "webrtc/p2p/base/transportdescriptionfactory.h"
 
 namespace cricket {
