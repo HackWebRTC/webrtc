@@ -28,10 +28,9 @@ using ::testing::_;
 static const char* kTypicalPayloadName = "name";
 static const size_t kTypicalChannels = 1;
 static const uint32_t kTypicalFrequency = 44000;
-static const uint32_t kTypicalRate = 32 * 1024;
-static const CodecInst kTypicalAudioCodec = {-1 /* pltype */,   "name",
+static const CodecInst kTypicalAudioCodec = {-1 /* pltype */, "name",
                                              kTypicalFrequency, 0 /* pacsize */,
-                                             kTypicalChannels,  kTypicalRate};
+                                             kTypicalChannels};
 
 TEST(RtpPayloadRegistryTest,
      RegistersAndRemembersVideoPayloadsUntilDeregistered) {
@@ -79,7 +78,6 @@ TEST(RtpPayloadRegistryTest,
   EXPECT_TRUE(retrieved_payload->audio);
   EXPECT_EQ(kTypicalFrequency, retrieved_payload->typeSpecific.Audio.frequency);
   EXPECT_EQ(kTypicalChannels, retrieved_payload->typeSpecific.Audio.channels);
-  EXPECT_EQ(kTypicalRate, retrieved_payload->typeSpecific.Audio.rate);
 
   // Now forget about it and verify it's gone.
   EXPECT_EQ(0, rtp_payload_registry.DeRegisterReceivePayload(payload_type));
@@ -90,7 +88,6 @@ TEST(RtpPayloadRegistryTest, AudioRedWorkProperly) {
   const uint8_t kRedPayloadType = 127;
   const int kRedSampleRate = 8000;
   const size_t kRedChannels = 1;
-  const int kRedBitRate = 0;
 
   RTPPayloadRegistry rtp_payload_registry;
 
@@ -100,7 +97,6 @@ TEST(RtpPayloadRegistryTest, AudioRedWorkProperly) {
   red_audio_codec.pltype = kRedPayloadType;
   red_audio_codec.plfreq = kRedSampleRate;
   red_audio_codec.channels = kRedChannels;
-  red_audio_codec.rate = kRedBitRate;
   EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
                    red_audio_codec, &new_payload_created));
   EXPECT_TRUE(new_payload_created);
@@ -152,7 +148,6 @@ TEST(RtpPayloadRegistryTest,
   EXPECT_TRUE(retrieved_payload->audio);
   EXPECT_EQ(kTypicalFrequency, retrieved_payload->typeSpecific.Audio.frequency);
   EXPECT_EQ(kTypicalChannels, retrieved_payload->typeSpecific.Audio.channels);
-  EXPECT_EQ(kTypicalRate, retrieved_payload->typeSpecific.Audio.rate);
 
   retrieved_payload =
       rtp_payload_registry.PayloadTypeToPayload(payload_type - 1);
@@ -162,7 +157,6 @@ TEST(RtpPayloadRegistryTest,
   EXPECT_EQ(kTypicalFrequency + 1,
             retrieved_payload->typeSpecific.Audio.frequency);
   EXPECT_EQ(kTypicalChannels, retrieved_payload->typeSpecific.Audio.channels);
-  EXPECT_EQ(kTypicalRate, retrieved_payload->typeSpecific.Audio.rate);
 
   // Ok, update the rate for one of the codecs. If either the incoming rate or
   // the stored rate is zero it's not really an error to register the same
@@ -241,7 +235,6 @@ TEST_P(ParameterizedRtpPayloadRegistryTest,
   audio_codec.pltype = GetParam();
   audio_codec.plfreq = 1900;
   audio_codec.channels = 1;
-  audio_codec.rate = 17;
   EXPECT_EQ(-1,
             rtp_payload_registry.RegisterReceivePayload(audio_codec, &ignored));
 }
@@ -262,7 +255,6 @@ TEST_P(RtpPayloadRegistryGenericTest, RegisterGenericReceivePayloadType) {
   audio_codec.pltype = GetParam();
   audio_codec.plfreq = 1900;
   audio_codec.channels = 1;
-  audio_codec.rate = 17;
   EXPECT_EQ(0,
             rtp_payload_registry.RegisterReceivePayload(audio_codec, &ignored));
 }

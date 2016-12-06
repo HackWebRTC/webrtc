@@ -29,10 +29,8 @@ bool PayloadIsCompatible(const RtpUtility::Payload& payload,
   if (_stricmp(payload.name, audio_codec.plname) != 0)
     return false;
   const AudioPayload& audio_payload = payload.typeSpecific.Audio;
-  const uint32_t rate = std::max(0, audio_codec.rate);
   return audio_payload.frequency == static_cast<uint32_t>(audio_codec.plfreq) &&
-         audio_payload.channels == audio_codec.channels &&
-         (audio_payload.rate == rate || audio_payload.rate == 0 || rate == 0);
+         audio_payload.channels == audio_codec.channels;
 }
 
 bool PayloadIsCompatible(const RtpUtility::Payload& payload,
@@ -54,7 +52,7 @@ RtpUtility::Payload CreatePayloadType(const CodecInst& audio_codec) {
   RTC_DCHECK_GE(audio_codec.plfreq, 1000);
   payload.typeSpecific.Audio.frequency = audio_codec.plfreq;
   payload.typeSpecific.Audio.channels = audio_codec.channels;
-  payload.typeSpecific.Audio.rate = std::max(0, audio_codec.rate);
+  payload.typeSpecific.Audio.rate = 0;
   payload.audio = true;
   return payload;
 }
@@ -134,7 +132,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(const CodecInst& audio_codec,
     // We already use this payload type. Check if it's the same as we already
     // have. If same, ignore sending an error.
     if (PayloadIsCompatible(it->second, audio_codec)) {
-      it->second.typeSpecific.Audio.rate = std::max(0, audio_codec.rate);
+      it->second.typeSpecific.Audio.rate = 0;
       return 0;
     }
     LOG(LS_ERROR) << "Payload type already registered: " << audio_codec.pltype;

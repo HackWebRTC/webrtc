@@ -75,10 +75,7 @@ class RTPCallback : public NullRtpFeedback {
                               const int frequency,
                               const size_t channels,
                               const uint32_t rate) override {
-    if (payloadType == kPcmuPayloadType) {
-      EXPECT_EQ(kTestRate, rate) <<
-          "The rate should be 64K for this payloadType";
-    }
+    EXPECT_EQ(0u, rate) << "The rate should be zero";
     return 0;
   }
 };
