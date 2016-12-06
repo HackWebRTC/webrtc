@@ -26,7 +26,8 @@ class RtpPacketizerH264 : public RtpPacketizer {
  public:
   // Initialize with payload from encoder.
   // The payload_data must be exactly one encoded H264 frame.
-  RtpPacketizerH264(FrameType frame_type, size_t max_payload_len);
+  RtpPacketizerH264(size_t max_payload_len,
+                    H264PacketizationMode packetization_mode);
 
   virtual ~RtpPacketizerH264();
 
@@ -86,10 +87,12 @@ class RtpPacketizerH264 : public RtpPacketizer {
   void GeneratePackets();
   void PacketizeFuA(size_t fragment_index);
   size_t PacketizeStapA(size_t fragment_index);
+  void PacketizeSingleNalu(size_t fragment_index);
   void NextAggregatePacket(RtpPacketToSend* rtp_packet);
   void NextFragmentPacket(RtpPacketToSend* rtp_packet);
 
   const size_t max_payload_len_;
+  const H264PacketizationMode packetization_mode_;
   std::deque<Fragment> input_fragments_;
   std::queue<PacketUnit> packets_;
 

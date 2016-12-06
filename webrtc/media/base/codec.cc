@@ -210,10 +210,13 @@ std::string VideoCodec::ToString() const {
 }
 
 VideoCodec::VideoCodec(int id, const std::string& name)
-    : Codec(id, name, kVideoCodecClockrate) {}
+    : Codec(id, name, kVideoCodecClockrate) {
+  SetDefaultParameters();
+}
 
-VideoCodec::VideoCodec(const std::string& name)
-    : VideoCodec(0 /* id */, name) {}
+VideoCodec::VideoCodec(const std::string& name) : VideoCodec(0 /* id */, name) {
+  SetDefaultParameters();
+}
 
 VideoCodec::VideoCodec() : Codec() {
   clockrate = kVideoCodecClockrate;
@@ -223,6 +226,16 @@ VideoCodec::VideoCodec(const VideoCodec& c) = default;
 VideoCodec::VideoCodec(VideoCodec&& c) = default;
 VideoCodec& VideoCodec::operator=(const VideoCodec& c) = default;
 VideoCodec& VideoCodec::operator=(VideoCodec&& c) = default;
+
+void VideoCodec::SetDefaultParameters() {
+  if (_stricmp(kH264CodecName, name.c_str()) == 0) {
+    // This default is set for all H.264 codecs created because
+    // that was the default before packetization mode support was added.
+    // TODO(hta): Move this to the places that create VideoCodecs from
+    // SDP or from knowledge of implementation capabilities.
+    SetParam(kH264FmtpPacketizationMode, "1");
+  }
+}
 
 bool VideoCodec::operator==(const VideoCodec& c) const {
   return Codec::operator==(c);

@@ -314,7 +314,9 @@ class CodecObserver : public test::EndToEndTest,
                 const std::string& payload_name,
                 webrtc::VideoEncoder* encoder,
                 webrtc::VideoDecoder* decoder)
-      : EndToEndTest(2 * webrtc::EndToEndTest::kDefaultTimeoutMs),
+      : EndToEndTest(4 * webrtc::EndToEndTest::kDefaultTimeoutMs),
+        // TODO(hta): This timeout (120 seconds) is excessive.
+        // https://bugs.webrtc.org/6830
         no_frames_to_wait_for_(no_frames_to_wait_for),
         expected_rotation_(rotation_to_test),
         payload_name_(payload_name),
@@ -404,6 +406,23 @@ TEST_P(EndToEndTest, SendsAndReceivesH264VideoRotation90) {
                      H264Decoder::Create());
   RunBaseTest(&test);
 }
+
+TEST_P(EndToEndTest, SendsAndReceivesH264PacketizationMode0) {
+  cricket::VideoCodec codec = cricket::VideoCodec("H264");
+  codec.SetParam(cricket::kH264FmtpPacketizationMode, "0");
+  CodecObserver test(500, kVideoRotation_0, "H264", H264Encoder::Create(codec),
+                     H264Decoder::Create());
+  RunBaseTest(&test);
+}
+
+TEST_P(EndToEndTest, SendsAndReceivesH264PacketizationMode1) {
+  cricket::VideoCodec codec = cricket::VideoCodec("H264");
+  codec.SetParam(cricket::kH264FmtpPacketizationMode, "1");
+  CodecObserver test(500, kVideoRotation_0, "H264", H264Encoder::Create(codec),
+                     H264Decoder::Create());
+  RunBaseTest(&test);
+}
+
 #endif  // defined(WEBRTC_USE_H264)
 
 TEST_P(EndToEndTest, ReceiverUsesLocalSsrc) {
