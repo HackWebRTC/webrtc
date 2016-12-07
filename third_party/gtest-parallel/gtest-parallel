@@ -15,6 +15,7 @@
 import cPickle
 import errno
 import gzip
+import json
 import multiprocessing
 import optparse
 import os
@@ -186,6 +187,42 @@ class RawFormat:
   def end(self):
     pass
 
+class CollectTestResults(object):
+  def __init__(self, json_dump_filepath):
+    self.test_results_lock = threading.Lock()
+    self.json_dump_file = open(json_dump_filepath, 'w')
+    self.test_results = {
+        "interrupted": False,
+        "path_delimiter": ".",
+        # Third version of the file format. See the link in the flag description
+        # for details.
+        "version": 3,
+        "seconds_since_epoch": time.time(),
+        "num_failures_by_type": {
+            "PASS": 0,
+            "FAIL": 0,
+        },
+        "tests": {},
+    }
+
+  def log(self, test, result):
+    with self.test_results_lock:
+      self.test_results['num_failures_by_type'][result['actual']] += 1
+      results = self.test_results['tests']
+      for name in test.split('.'):
+        results = results.setdefault(name, {})
+      results.update(result)
+
+  def dump_to_file_and_close(self):
+    json.dump(self.test_results, self.json_dump_file)
+    self.json_dump_file.close()
+
+class IgnoreTestResults(object):
+  def log(self, test, result):
+    pass
+  def dump_to_file_and_close(self):
+    pass
+
 # Record of test runtimes. Has built-in locking.
 class TestTimes(object):
   def __init__(self, save_file):
@@ -272,6 +309,10 @@ parser.add_option('--shard_count', type='int', default=1,
 parser.add_option('--shard_index', type='int', default=0,
                   help='zero-indexed number identifying this shard (for '
                        'sharding test execution between multiple machines)')
+parser.add_option('--dump_json_test_results', type='string', default=None,
+                  help='Saves the results of the tests as a JSON machine-'
+                       'readable file. The format of the file is specified at '
+                       'https://www.chromium.org/developers/the-json-test-results-format')
 
 (options, binaries) = parser.parse_args()
 
@@ -294,6 +335,9 @@ if not (0 <= options.shard_index < options.shard_count):
   parser.error("Invalid shard index: %d. Must be between 0 and %d "
                "(less than the number of shards)." %
                (options.shard_index, options.shard_count - 1))
+
+test_results = (IgnoreTestResults() if options.dump_json_test_results is None
+                else CollectTestResults(options.dump_json_test_results))
 
 # Find tests.
 save_file = os.path.join(os.path.expanduser("~"), ".gtest-parallel-times")
@@ -385,6 +429,11 @@ def run_job((command, job_id, test)):
     runtime_ms = int(1000 * (time.time() - begin))
     logger.logfile(job_id, log.name)
 
+  test_results.log(test, {
+      "expected": "PASS",
+      "actual": "PASS" if code == 0 else "FAIL",
+      "time": runtime_ms,
+  })
   logger.log("%s: EXIT %s %d" % (job_id, code, runtime_ms))
   if code == 0:
     return runtime_ms
@@ -424,4 +473,6 @@ if options.print_test_times:
               if times.get_test_time(test_binary, test) is not None)
   for (time_ms, test_binary, test) in ts:
     print "%8s %s" % ("%dms" % time_ms, test)
+
+test_results.dump_to_file_and_close()
 sys.exit(-signal.SIGINT if sigint_handler.got_sigint() else exit_code)
