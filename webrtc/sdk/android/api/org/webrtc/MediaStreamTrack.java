@@ -15,6 +15,11 @@ public class MediaStreamTrack {
   /** Tracks MediaStreamTrackInterface.TrackState */
   public enum State { LIVE, ENDED }
 
+  public enum MediaType {
+    MEDIA_TYPE_AUDIO,
+    MEDIA_TYPE_VIDEO,
+  }
+
   final long nativeTrack;
 
   public MediaStreamTrack(long nativeTrack) {

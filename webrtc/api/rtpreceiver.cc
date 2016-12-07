@@ -114,7 +114,7 @@ void AudioRtpReceiver::Reconfigure() {
 void AudioRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
   observer_ = observer;
   // Deliver any notifications the observer may have missed by being set late.
-  if (received_first_packet_) {
+  if (received_first_packet_ && observer_) {
     observer_->OnFirstPacketReceived(media_type());
   }
 }
@@ -212,7 +212,7 @@ void VideoRtpReceiver::Stop() {
 void VideoRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
   observer_ = observer;
   // Deliver any notifications the observer may have missed by being set late.
-  if (received_first_packet_) {
+  if (received_first_packet_ && observer_) {
     observer_->OnFirstPacketReceived(media_type());
   }
 }

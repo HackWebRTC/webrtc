@@ -12,7 +12,14 @@ package org.webrtc;
 
 /** Java wrapper for a C++ RtpReceiverInterface. */
 public class RtpReceiver {
+  /** Java wrapper for a C++ RtpReceiverObserverInterface*/
+  public static interface Observer {
+    // Called when the first audio or video packet is received.
+    public void onFirstPacketReceived(MediaStreamTrack.MediaType media_type);
+  }
+
   final long nativeRtpReceiver;
+  private long nativeObserver;
 
   private MediaStreamTrack cachedTrack;
 
@@ -41,7 +48,19 @@ public class RtpReceiver {
 
   public void dispose() {
     cachedTrack.dispose();
+    if (nativeObserver != 0) {
+      nativeUnsetObserver(nativeRtpReceiver, nativeObserver);
+      nativeObserver = 0;
+    }
     free(nativeRtpReceiver);
+  }
+
+  public void SetObserver(Observer observer) {
+    // Unset the existing one before setting a new one.
+    if (nativeObserver != 0) {
+      nativeUnsetObserver(nativeRtpReceiver, nativeObserver);
+    }
+    nativeObserver = nativeSetObserver(nativeRtpReceiver, observer);
   }
 
   // This should increment the reference count of the track.
@@ -56,4 +75,8 @@ public class RtpReceiver {
   private static native String nativeId(long nativeRtpReceiver);
 
   private static native void free(long nativeRtpReceiver);
+
+  private static native long nativeSetObserver(long nativeRtpReceiver, Observer observer);
+
+  private static native long nativeUnsetObserver(long nativeRtpReceiver, long nativeObserver);
 };

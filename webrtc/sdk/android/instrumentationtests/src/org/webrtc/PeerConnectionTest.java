@@ -43,9 +43,9 @@ public class PeerConnectionTest extends ActivityTestCase {
         getInstrumentation().getContext(), true, true, true));
   }
 
-  private static class ObserverExpectations implements PeerConnection.Observer,
-                                                       VideoRenderer.Callbacks,
-                                                       DataChannel.Observer, StatsObserver {
+  private static class ObserverExpectations
+      implements PeerConnection.Observer, VideoRenderer.Callbacks, DataChannel.Observer,
+                 StatsObserver, RtpReceiver.Observer {
     private final String name;
     private int expectedIceCandidates = 0;
     private int expectedErrors = 0;
@@ -71,6 +71,8 @@ public class PeerConnectionTest extends ActivityTestCase {
     private int expectedStatsCallbacks = 0;
     private LinkedList<StatsReport[]> gotStatsReports = new LinkedList<StatsReport[]>();
     private final HashSet<MediaStream> gotRemoteStreams = new HashSet<MediaStream>();
+    private int expectedFirstAudioPacket = 0;
+    private int expectedFirstVideoPacket = 0;
 
     public ObserverExpectations(String name) {
       this.name = name;
@@ -258,6 +260,23 @@ public class PeerConnectionTest extends ActivityTestCase {
       gotStatsReports.add(reports);
     }
 
+    @Override
+    public synchronized void onFirstPacketReceived(MediaStreamTrack.MediaType mediaType) {
+      if (mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO) {
+        expectedFirstAudioPacket--;
+      } else {
+        expectedFirstVideoPacket--;
+      }
+      if (expectedFirstAudioPacket < 0 || expectedFirstVideoPacket < 0) {
+        throw new RuntimeException("Unexpected call of onFirstPacketReceived");
+      }
+    }
+
+    public synchronized void expectFirstPacketReceived() {
+      expectedFirstAudioPacket = 1;
+      expectedFirstVideoPacket = 1;
+    }
+
     public synchronized void expectStatsCallback() {
       ++expectedStatsCallbacks;
     }
@@ -313,6 +332,12 @@ public class PeerConnectionTest extends ActivityTestCase {
       }
       if (expectedStatsCallbacks != 0) {
         stillWaitingForExpectations.add("expectedStatsCallbacks: " + expectedStatsCallbacks);
+      }
+      if (expectedFirstAudioPacket > 0) {
+        stillWaitingForExpectations.add("expectedFirstAudioPacket: " + expectedFirstAudioPacket);
+      }
+      if (expectedFirstVideoPacket > 0) {
+        stillWaitingForExpectations.add("expectedFirstVideoPacket: " + expectedFirstVideoPacket);
       }
       return stillWaitingForExpectations;
     }
@@ -625,6 +650,17 @@ public class PeerConnectionTest extends ActivityTestCase {
     assertEquals(offeringPC.getReceivers().size(), 2);
     assertEquals(answeringPC.getSenders().size(), 2);
     assertEquals(answeringPC.getReceivers().size(), 2);
+
+    offeringExpectations.expectFirstPacketReceived();
+    answeringExpectations.expectFirstPacketReceived();
+
+    for (RtpReceiver receiver : offeringPC.getReceivers()) {
+      receiver.SetObserver(offeringExpectations);
+    }
+
+    for (RtpReceiver receiver : answeringPC.getReceivers()) {
+      receiver.SetObserver(answeringExpectations);
+    }
 
     // Wait for at least some frames to be delivered at each end (number
     // chosen arbitrarily).

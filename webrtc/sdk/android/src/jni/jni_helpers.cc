@@ -166,6 +166,16 @@ jfieldID GetFieldID(
   return f;
 }
 
+jfieldID GetStaticFieldID(JNIEnv* jni,
+                          jclass c,
+                          const char* name,
+                          const char* signature) {
+  jfieldID f = jni->GetStaticFieldID(c, name, signature);
+  CHECK_EXCEPTION(jni) << "error during GetStaticFieldID";
+  RTC_CHECK(f) << name << ", " << signature;
+  return f;
+}
+
 jclass GetObjectClass(JNIEnv* jni, jobject object) {
   jclass c = jni->GetObjectClass(object);
   CHECK_EXCEPTION(jni) << "error during GetObjectClass";
@@ -177,6 +187,13 @@ jobject GetObjectField(JNIEnv* jni, jobject object, jfieldID id) {
   jobject o = jni->GetObjectField(object, id);
   CHECK_EXCEPTION(jni) << "error during GetObjectField";
   RTC_CHECK(!IsNull(jni, o)) << "GetObjectField returned NULL";
+  return o;
+}
+
+jobject GetStaticObjectField(JNIEnv* jni, jclass c, jfieldID id) {
+  jobject o = jni->GetStaticObjectField(c, id);
+  CHECK_EXCEPTION(jni) << "error during GetStaticObjectField";
+  RTC_CHECK(!IsNull(jni, o)) << "GetStaticObjectField returned NULL";
   return o;
 }
 

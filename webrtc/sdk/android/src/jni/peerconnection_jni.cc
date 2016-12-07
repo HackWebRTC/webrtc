@@ -99,6 +99,7 @@ using webrtc::PeerConnectionFactoryInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionObserver;
 using webrtc::RtpReceiverInterface;
+using webrtc::RtpReceiverObserverInterface;
 using webrtc::RtpSenderInterface;
 using webrtc::SessionDescriptionInterface;
 using webrtc::SetSessionDescriptionObserver;
@@ -829,6 +830,46 @@ class JavaVideoRendererWrapper
   ScopedGlobalRef<jclass> j_byte_buffer_class_;
 };
 
+// Adapter between the C++ RtpReceiverObserverInterface and the Java
+// RtpReceiver.Observer interface. Wraps an instance of the Java interface and
+// dispatches C++ callbacks to Java.
+class RtpReceiverObserver : public RtpReceiverObserverInterface {
+ public:
+  RtpReceiverObserver(JNIEnv* jni, jobject j_observer)
+      : j_observer_global_(jni, j_observer) {}
+
+  ~RtpReceiverObserver() override {}
+
+  void OnFirstPacketReceived(cricket::MediaType media_type) override {
+    JNIEnv* const jni = AttachCurrentThreadIfNeeded();
+
+    jmethodID j_on_first_packet_received_mid = GetMethodID(
+        jni, GetObjectClass(jni, *j_observer_global_), "onFirstPacketReceived",
+        "(Lorg/webrtc/MediaStreamTrack$MediaType;)V");
+    // Get the Java version of media type.
+    jclass j_media_type_class =
+        FindClass(jni, "org/webrtc/MediaStreamTrack$MediaType");
+
+    RTC_DCHECK(media_type == cricket::MEDIA_TYPE_AUDIO ||
+               media_type == cricket::MEDIA_TYPE_VIDEO)
+        << "Media type: " << media_type;
+    const char* media_type_str = media_type == cricket::MEDIA_TYPE_AUDIO
+                                     ? "MEDIA_TYPE_AUDIO"
+                                     : "MEDIA_TYPE_VIDEO";
+    jfieldID j_media_type_fid =
+        GetStaticFieldID(jni, j_media_type_class, media_type_str,
+                         "Lorg/webrtc/MediaStreamTrack$MediaType;");
+    jobject JavaMediaType =
+        GetStaticObjectField(jni, j_media_type_class, j_media_type_fid);
+    // Trigger the callback function.
+    jni->CallVoidMethod(*j_observer_global_, j_on_first_packet_received_mid,
+                        JavaMediaType);
+    CHECK_EXCEPTION(jni) << "error during CallVoidMethod";
+  }
+
+ private:
+  const ScopedGlobalRef<jobject> j_observer_global_;
+};
 
 static DataChannelInterface* ExtractNativeDC(JNIEnv* jni, jobject j_dc) {
   jfieldID native_dc_id = GetFieldID(jni,
@@ -2382,20 +2423,20 @@ JOW(jlong, RtpReceiver_nativeGetTrack)(JNIEnv* jni,
 }
 
 JOW(jboolean, RtpReceiver_nativeSetParameters)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer, jobject j_parameters) {
+(JNIEnv* jni, jclass, jlong j_rtp_receiver_pointer, jobject j_parameters) {
   if (IsNull(jni, j_parameters)) {
     return false;
   }
   webrtc::RtpParameters parameters;
   JavaRtpParametersToJsepRtpParameters(jni, j_parameters, &parameters);
-  return reinterpret_cast<RtpReceiverInterface*>(j_rtp_sender_pointer)
+  return reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)
       ->SetParameters(parameters);
 }
 
 JOW(jobject, RtpReceiver_nativeGetParameters)
-(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+(JNIEnv* jni, jclass, jlong j_rtp_receiver_pointer) {
   webrtc::RtpParameters parameters =
-      reinterpret_cast<RtpReceiverInterface*>(j_rtp_sender_pointer)
+      reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)
           ->GetParameters();
   return JsepRtpParametersToJavaRtpParameters(jni, parameters);
 }
@@ -2407,8 +2448,29 @@ JOW(jstring, RtpReceiver_nativeId)(
       reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)->id());
 }
 
-JOW(void, RtpReceiver_free)(JNIEnv* jni, jclass, jlong j_rtp_receiver_pointer) {
+JOW(void, RtpReceiver_free)
+(JNIEnv* jni, jclass, jlong j_rtp_receiver_pointer) {
   reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)->Release();
+}
+
+JOW(jlong, RtpReceiver_nativeSetObserver)
+(JNIEnv* jni, jclass, jlong j_rtp_receiver_pointer, jobject j_observer) {
+  RtpReceiverObserver* rtpReceiverObserver =
+      new RtpReceiverObserver(jni, j_observer);
+  reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)
+      ->SetObserver(rtpReceiverObserver);
+  return jlongFromPointer(rtpReceiverObserver);
+}
+
+JOW(void, RtpReceiver_nativeUnsetObserver)
+(JNIEnv* jni, jclass, jlong j_rtp_receiver_pointer, jlong j_observer_pointer) {
+  reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)
+      ->SetObserver(nullptr);
+  RtpReceiverObserver* observer =
+      reinterpret_cast<RtpReceiverObserver*>(j_observer_pointer);
+  if (observer) {
+    delete observer;
+  }
 }
 
 }  // namespace webrtc_jni
