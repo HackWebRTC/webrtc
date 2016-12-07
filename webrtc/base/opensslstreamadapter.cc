@@ -1047,20 +1047,20 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
     return NULL;
 
 #ifdef OPENSSL_IS_BORINGSSL
-  SSL_CTX_set_min_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
+  SSL_CTX_set_min_proto_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
       DTLS1_VERSION : TLS1_VERSION);
   switch (ssl_max_version_) {
     case SSL_PROTOCOL_TLS_10:
-      SSL_CTX_set_max_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
+      SSL_CTX_set_max_proto_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
           DTLS1_VERSION : TLS1_VERSION);
       break;
     case SSL_PROTOCOL_TLS_11:
-      SSL_CTX_set_max_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
+      SSL_CTX_set_max_proto_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
           DTLS1_VERSION : TLS1_1_VERSION);
       break;
     case SSL_PROTOCOL_TLS_12:
     default:
-      SSL_CTX_set_max_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
+      SSL_CTX_set_max_proto_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
           DTLS1_2_VERSION : TLS1_2_VERSION);
       break;
   }
