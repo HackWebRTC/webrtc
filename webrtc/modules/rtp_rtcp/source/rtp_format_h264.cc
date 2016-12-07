@@ -245,10 +245,7 @@ void RtpPacketizerH264::PacketizeSingleNalu(size_t fragment_index) {
   const Fragment* fragment = &input_fragments_[fragment_index];
   RTC_CHECK_GE(payload_size_left, fragment->length)
       << "Payload size left " << payload_size_left << ", fragment length "
-      << fragment->length << ", packetization mode "
-      << (packetization_mode_ == H264PacketizationMode::SingleNalUnit
-              ? "SingleNalUnit"
-              : "NonInterleaved");
+      << fragment->length << ", packetization mode " << packetization_mode_;
   RTC_CHECK_GT(fragment->length, 0u);
   packets_.push(PacketUnit(*fragment, true /* first */, true /* last */,
                            false /* aggregated */, fragment->buffer[0]));
@@ -272,10 +269,10 @@ bool RtpPacketizerH264::NextPacket(RtpPacketToSend* rtp_packet,
     packets_.pop();
     input_fragments_.pop_front();
   } else if (packet.aggregated) {
-    RTC_CHECK(packetization_mode_ == H264PacketizationMode::NonInterleaved);
+    RTC_CHECK_EQ(H264PacketizationMode::NonInterleaved, packetization_mode_);
     NextAggregatePacket(rtp_packet);
   } else {
-    RTC_CHECK(packetization_mode_ == H264PacketizationMode::NonInterleaved);
+    RTC_CHECK_EQ(H264PacketizationMode::NonInterleaved, packetization_mode_);
     NextFragmentPacket(rtp_packet);
   }
   RTC_DCHECK_LE(rtp_packet->payload_size(), max_payload_len_);
