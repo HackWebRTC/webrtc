@@ -181,6 +181,10 @@ class AudioEncoder {
   // Provides RTT to this encoder to allow it to adapt.
   virtual void OnReceivedRtt(int rtt_ms);
 
+  // Provides overhead to this encoder to adapt. The overhead is the number of
+  // bytes that will be added to each packet the encoder generates.
+  virtual void OnReceivedOverhead(size_t overhead_bytes_per_packet);
+
   // To allow encoder to adapt its frame length, it must be provided the frame
   // length range that receivers can accept.
   virtual void SetReceiverFrameLengthRange(int min_frame_length_ms,

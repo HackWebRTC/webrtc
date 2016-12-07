@@ -81,6 +81,8 @@ void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {}
 
 void AudioEncoder::OnReceivedRtt(int rtt_ms) {}
 
+void AudioEncoder::OnReceivedOverhead(size_t overhead_bytes_per_packet) {}
+
 void AudioEncoder::SetReceiverFrameLengthRange(int min_frame_length_ms,
                                                int max_frame_length_ms) {}
 

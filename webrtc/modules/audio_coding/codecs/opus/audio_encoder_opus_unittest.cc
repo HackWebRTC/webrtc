@@ -14,6 +14,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
+#include "webrtc/test/field_trial.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -249,7 +250,7 @@ TEST(AudioEncoderOpusTest, SetReceiverFrameLengthRange) {
   EXPECT_THAT(states.encoder->supported_frame_lengths_ms(), ElementsAre(20));
 }
 
-TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetUplinkBandwidth) {
+TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnReceivedUplinkBandwidth) {
   auto states = CreateCodec(2);
   states.encoder->EnableAudioNetworkAdaptor("", nullptr);
 
@@ -267,7 +268,7 @@ TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetUplinkBandwidth) {
 }
 
 TEST(AudioEncoderOpusTest,
-     InvokeAudioNetworkAdaptorOnSetUplinkPacketLossFraction) {
+     InvokeAudioNetworkAdaptorOnReceivedUplinkPacketLossFraction) {
   auto states = CreateCodec(2);
   states.encoder->EnableAudioNetworkAdaptor("", nullptr);
 
@@ -284,7 +285,8 @@ TEST(AudioEncoderOpusTest,
   CheckEncoderRuntimeConfig(states.encoder.get(), config);
 }
 
-TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetTargetAudioBitrate) {
+TEST(AudioEncoderOpusTest,
+     InvokeAudioNetworkAdaptorOnReceivedTargetAudioBitrate) {
   auto states = CreateCodec(2);
   states.encoder->EnableAudioNetworkAdaptor("", nullptr);
 
@@ -301,7 +303,7 @@ TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetTargetAudioBitrate) {
   CheckEncoderRuntimeConfig(states.encoder.get(), config);
 }
 
-TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetRtt) {
+TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnReceivedRtt) {
   auto states = CreateCodec(2);
   states.encoder->EnableAudioNetworkAdaptor("", nullptr);
 
@@ -313,6 +315,22 @@ TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnSetRtt) {
   constexpr int kRtt = 30;
   EXPECT_CALL(**states.mock_audio_network_adaptor, SetRtt(kRtt));
   states.encoder->OnReceivedRtt(kRtt);
+
+  CheckEncoderRuntimeConfig(states.encoder.get(), config);
+}
+
+TEST(AudioEncoderOpusTest, InvokeAudioNetworkAdaptorOnReceivedOverhead) {
+  auto states = CreateCodec(2);
+  states.encoder->EnableAudioNetworkAdaptor("", nullptr);
+
+  auto config = CreateEncoderRuntimeConfig();
+  EXPECT_CALL(**states.mock_audio_network_adaptor, GetEncoderRuntimeConfig())
+      .WillOnce(Return(config));
+
+  // Since using mock audio network adaptor, any overhead is fine.
+  constexpr size_t kOverhead = 64;
+  EXPECT_CALL(**states.mock_audio_network_adaptor, SetOverhead(kOverhead));
+  states.encoder->OnReceivedOverhead(kOverhead);
 
   CheckEncoderRuntimeConfig(states.encoder.get(), config);
 }
@@ -341,6 +359,66 @@ TEST(AudioEncoderOpusTest,
   // packet loss rate to increase to 0.05. If no smoothing has been made, the
   // optimized packet loss rate should have been increase to 0.1.
   EXPECT_FLOAT_EQ(0.05f, states.encoder->packet_loss_rate());
+}
+
+TEST(AudioEncoderOpusTest, DoNotInvokeSetTargetBitrateIfOverheadUnknown) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/");
+
+  auto states = CreateCodec(2);
+
+  states.encoder->OnReceivedTargetAudioBitrate(kDefaultOpusSettings.rate * 2);
+
+  // Since |OnReceivedOverhead| has not been called, the codec bitrate should
+  // not change.
+  EXPECT_EQ(kDefaultOpusSettings.rate, states.encoder->GetTargetBitrate());
+}
+
+TEST(AudioEncoderOpusTest, OverheadRemovedFromTargetAudioBitrate) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/");
+
+  auto states = CreateCodec(2);
+
+  constexpr size_t kOverheadBytesPerPacket = 64;
+  states.encoder->OnReceivedOverhead(kOverheadBytesPerPacket);
+
+  constexpr int kTargetBitrateBps = 40000;
+  states.encoder->OnReceivedTargetAudioBitrate(kTargetBitrateBps);
+
+  int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusSettings.pacsize);
+  EXPECT_EQ(kTargetBitrateBps -
+                8 * static_cast<int>(kOverheadBytesPerPacket) * packet_rate,
+            states.encoder->GetTargetBitrate());
+}
+
+TEST(AudioEncoderOpusTest, BitrateBounded) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/");
+
+  constexpr int kMinBitrateBps = 500;
+  constexpr int kMaxBitrateBps = 512000;
+
+  auto states = CreateCodec(2);
+
+  constexpr size_t kOverheadBytesPerPacket = 64;
+  states.encoder->OnReceivedOverhead(kOverheadBytesPerPacket);
+
+  int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusSettings.pacsize);
+
+  // Set a target rate that is smaller than |kMinBitrateBps| when overhead is
+  // subtracted. The eventual codec rate should be bounded by |kMinBitrateBps|.
+  int target_bitrate =
+      kOverheadBytesPerPacket * 8 * packet_rate + kMinBitrateBps - 1;
+  states.encoder->OnReceivedTargetAudioBitrate(target_bitrate);
+  EXPECT_EQ(kMinBitrateBps, states.encoder->GetTargetBitrate());
+
+  // Set a target rate that is greater than |kMaxBitrateBps| when overhead is
+  // subtracted. The eventual codec rate should be bounded by |kMaxBitrateBps|.
+  target_bitrate =
+      kOverheadBytesPerPacket * 8 * packet_rate + kMaxBitrateBps + 1;
+  states.encoder->OnReceivedTargetAudioBitrate(target_bitrate);
+  EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
 }
 
 }  // namespace webrtc

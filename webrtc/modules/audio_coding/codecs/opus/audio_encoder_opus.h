@@ -110,6 +110,7 @@ class AudioEncoderOpus final : public AudioEncoder {
       float uplink_packet_loss_fraction) override;
   void OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) override;
   void OnReceivedRtt(int rtt_ms) override;
+  void OnReceivedOverhead(size_t overhead_bytes_per_packet) override;
   void SetReceiverFrameLengthRange(int min_frame_length_ms,
                                    int max_frame_length_ms) override;
   rtc::ArrayView<const int> supported_frame_lengths_ms() const {
@@ -159,6 +160,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   std::unique_ptr<PacketLossFractionSmoother> packet_loss_fraction_smoother_;
   AudioNetworkAdaptorCreator audio_network_adaptor_creator_;
   std::unique_ptr<AudioNetworkAdaptor> audio_network_adaptor_;
+  rtc::Optional<size_t> overhead_bytes_per_packet_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderOpus);
 };

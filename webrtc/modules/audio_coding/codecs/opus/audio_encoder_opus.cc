@@ -15,12 +15,14 @@
 
 #include "webrtc/base/analytics/exp_filter.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -291,10 +293,25 @@ void AudioEncoderOpus::OnReceivedUplinkPacketLossFraction(
 
 void AudioEncoderOpus::OnReceivedTargetAudioBitrate(
     int target_audio_bitrate_bps) {
-  if (!audio_network_adaptor_)
-    return SetTargetBitrate(target_audio_bitrate_bps);
-  audio_network_adaptor_->SetTargetAudioBitrate(target_audio_bitrate_bps);
-  ApplyAudioNetworkAdaptor();
+  if (audio_network_adaptor_) {
+    audio_network_adaptor_->SetTargetAudioBitrate(target_audio_bitrate_bps);
+    ApplyAudioNetworkAdaptor();
+  } else if (webrtc::field_trial::FindFullName(
+                 "WebRTC-SendSideBwe-WithOverhead") == "Enabled") {
+    if (!overhead_bytes_per_packet_) {
+      LOG(LS_INFO)
+          << "AudioEncoderOpus: Overhead unknown, target audio bitrate "
+          << target_audio_bitrate_bps << " bps is ignored.";
+      return;
+    }
+    const int overhead_bps = static_cast<int>(
+        *overhead_bytes_per_packet_ * 8 * 100 / Num10MsFramesInNextPacket());
+    SetTargetBitrate(std::min(
+        kMaxBitrateBps,
+        std::max(kMinBitrateBps, target_audio_bitrate_bps - overhead_bps)));
+  } else {
+    SetTargetBitrate(target_audio_bitrate_bps);
+  }
 }
 
 void AudioEncoderOpus::OnReceivedRtt(int rtt_ms) {
@@ -302,6 +319,16 @@ void AudioEncoderOpus::OnReceivedRtt(int rtt_ms) {
     return;
   audio_network_adaptor_->SetRtt(rtt_ms);
   ApplyAudioNetworkAdaptor();
+}
+
+void AudioEncoderOpus::OnReceivedOverhead(size_t overhead_bytes_per_packet) {
+  if (audio_network_adaptor_) {
+    audio_network_adaptor_->SetOverhead(overhead_bytes_per_packet);
+    ApplyAudioNetworkAdaptor();
+  } else {
+    overhead_bytes_per_packet_ =
+        rtc::Optional<size_t>(overhead_bytes_per_packet);
+  }
 }
 
 void AudioEncoderOpus::SetReceiverFrameLengthRange(int min_frame_length_ms,
