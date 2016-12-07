@@ -143,31 +143,6 @@ TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
   cm_->Terminate();
 }
 
-// Test that we fail to create a voice/video channel if the session is unable
-// to create a cricket::TransportChannel
-TEST_F(ChannelManagerTest, NoTransportChannelTest) {
-  EXPECT_TRUE(cm_->Init());
-  transport_controller_->set_fail_channel_creation(true);
-  // The test is useless unless the session does not fail creating
-  // cricket::TransportChannel.
-  ASSERT_TRUE(transport_controller_->CreateTransportChannel_n(
-                  "audio", cricket::ICE_CANDIDATE_COMPONENT_RTP) == nullptr);
-
-  cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
-      &fake_mc_, transport_controller_, cricket::CN_AUDIO, nullptr, false,
-      AudioOptions());
-  EXPECT_TRUE(voice_channel == nullptr);
-  cricket::VideoChannel* video_channel = cm_->CreateVideoChannel(
-      &fake_mc_, transport_controller_, cricket::CN_VIDEO, nullptr, false,
-      VideoOptions());
-  EXPECT_TRUE(video_channel == nullptr);
-  cricket::DataChannel* data_channel =
-      cm_->CreateDataChannel(transport_controller_, cricket::CN_DATA, nullptr,
-                             false, cricket::DCT_RTP);
-  EXPECT_TRUE(data_channel == nullptr);
-  cm_->Terminate();
-}
-
 TEST_F(ChannelManagerTest, SetVideoRtxEnabled) {
   std::vector<VideoCodec> codecs;
   const VideoCodec rtx_codec(96, "rtx");
