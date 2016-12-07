@@ -32,7 +32,6 @@ namespace webrtc {
 
 // Duplicates the content on one IDXGIOutput, i.e. one monitor attached to one
 // video card. None of functions in this class is thread-safe.
-// TODO(zijiehe): Understand the meaning of rotation.
 class DxgiOutputDuplicator {
  public:
   struct Context {
