@@ -206,7 +206,6 @@ rtc_static_library("rtc_base_approved") {
       "../../webrtc_overrides/webrtc/base/logging.cc",
       "../../webrtc_overrides/webrtc/base/logging.h",
     ]
-    include_dirs = [ "../../webrtc_overrides" ]
   } else {
     sources += [
       "logging.cc",
@@ -310,7 +309,6 @@ rtc_static_library("rtc_task_queue") {
       "../../webrtc_overrides/webrtc/base/task_queue.cc",
       "../../webrtc_overrides/webrtc/base/task_queue.h",
     ]
-    include_dirs = [ "../../webrtc_overrides" ]
   } else {
     sources += [
       "task_queue.h",
@@ -525,12 +523,7 @@ rtc_static_library("rtc_base") {
     if (is_win) {
       sources += [ "../../webrtc_overrides/webrtc/base/win32socketinit.cc" ]
     }
-
-    include_dirs = [
-      "../../webrtc_overrides",
-      "../../boringssl/src/include",
-    ]
-
+    include_dirs = [ "../../boringssl/src/include" ]
     public_configs += [ ":rtc_base_chromium_config" ]
   } else {
     configs += [ ":rtc_base_warnings_config" ]
