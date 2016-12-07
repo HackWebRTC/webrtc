@@ -19,7 +19,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/base/task_queue.h"
-#include "webrtc/call.h"
+#include "webrtc/call/call.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/common_video/rotation.h"
@@ -28,10 +28,10 @@
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/atomic32.h"
+#include "webrtc/typedefs.h"
 #include "webrtc/video/overuse_frame_detector.h"
 #include "webrtc/video_encoder.h"
 #include "webrtc/video_send_stream.h"
-#include "webrtc/typedefs.h"
 
 namespace webrtc {
 

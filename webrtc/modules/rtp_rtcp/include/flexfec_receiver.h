@@ -15,7 +15,7 @@
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/sequenced_task_checker.h"
-#include "webrtc/call.h"
+#include "webrtc/call/call.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/forward_error_correction.h"

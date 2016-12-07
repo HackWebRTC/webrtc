@@ -14,11 +14,11 @@
 #include <memory>
 
 #include "webrtc/api/audio/audio_mixer.h"
-#include "webrtc/api/call/audio_receive_stream.h"
-#include "webrtc/api/call/audio_state.h"
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/call/audio_receive_stream.h"
+#include "webrtc/call/audio_state.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 
 namespace webrtc {

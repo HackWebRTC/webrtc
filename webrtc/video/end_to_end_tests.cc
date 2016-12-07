@@ -20,7 +20,7 @@
 #include "webrtc/base/file.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/rate_limiter.h"
-#include "webrtc/call.h"
+#include "webrtc/call/call.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakevideorenderer.h"

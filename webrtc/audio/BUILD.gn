@@ -30,8 +30,8 @@ rtc_static_library("audio") {
   deps = [
     "..:webrtc_common",
     "../api:audio_mixer_api",
-    "../api:call_api",
     "../base:rtc_base_approved",
+    "../call:call_interfaces",
     "../common_audio",
     "../modules/audio_device",
     "../modules/audio_processing",

@@ -9,7 +9,7 @@
  */
 #include "webrtc/test/direct_transport.h"
 
-#include "webrtc/call.h"
+#include "webrtc/call/call.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"
 

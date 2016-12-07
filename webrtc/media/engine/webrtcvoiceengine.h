@@ -16,14 +16,14 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/call/audio_state.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/networkroute.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/stream.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/call.h"
+#include "webrtc/call/audio_state.h"
+#include "webrtc/call/call.h"
 #include "webrtc/config.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/engine/webrtccommon.h"

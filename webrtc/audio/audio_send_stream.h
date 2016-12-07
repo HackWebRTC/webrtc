@@ -13,10 +13,10 @@
 
 #include <memory>
 
-#include "webrtc/api/call/audio_send_stream.h"
-#include "webrtc/api/call/audio_state.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/call/audio_send_stream.h"
+#include "webrtc/call/audio_state.h"
 #include "webrtc/call/bitrate_allocator.h"
 
 namespace webrtc {

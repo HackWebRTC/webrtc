@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -27,8 +28,8 @@
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/call.h"
 #include "webrtc/call/bitrate_allocator.h"
+#include "webrtc/call/call.h"
 #include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"

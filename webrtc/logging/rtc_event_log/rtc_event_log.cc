@@ -18,7 +18,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/swap_queue.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/call.h"
+#include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_helper_thread.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"

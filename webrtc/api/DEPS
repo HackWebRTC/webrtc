@@ -18,10 +18,22 @@ specific_include_rules = {
     "+base/android",  # Allowed only for Android tests.
     "+webrtc/voice_engine",
   ],
+  # The call/call.h exceptions are here only until the peerconnection
+  # implementation has been moved out of api/. See:
+  # http://bugs.webrtc.org/5883
+  "mediacontroller\.cc": [
+    "+webrtc/call/call.h"
+  ],
+  "peerconnection\.cc": [
+    "+webrtc/call/call.h"
+  ],
   "peerconnection_jni\.cc": [
     "+webrtc/voice_engine",
   ],
   "peerconnectionfactory\.cc": [
     "+webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h",
+  ],
+  "webrtcsession\.cc": [
+    "+webrtc/call/call.h"
   ],
 }

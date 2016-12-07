@@ -23,7 +23,7 @@
 #include "webrtc/base/optional.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/call.h"
+#include "webrtc/call/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"

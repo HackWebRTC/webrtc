@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "webrtc/call.h"
+#include "webrtc/call/call.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/fake_network_pipe.h"
 #include "webrtc/test/gmock.h"

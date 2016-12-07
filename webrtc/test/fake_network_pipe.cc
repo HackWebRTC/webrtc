@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "webrtc/call.h"
+#include "webrtc/call/call.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
