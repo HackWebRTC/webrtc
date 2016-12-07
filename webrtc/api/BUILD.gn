@@ -30,6 +30,7 @@ rtc_source_set("call_api") {
     ":transport_api",
     "..:webrtc_common",
     "../base:rtc_base_approved",
+    "../modules/audio_coding:audio_decoder_factory_interface",
     "../modules/audio_coding:audio_encoder_interface",
   ]
 }
@@ -44,6 +45,7 @@ config("libjingle_peerconnection_warnings_config") {
 }
 
 rtc_static_library("libjingle_peerconnection") {
+  check_includes = false  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
   cflags = []
   sources = [
     "audiotrack.cc",
@@ -218,6 +220,7 @@ if (rtc_include_tests) {
   }
 
   rtc_test("peerconnection_unittests") {
+    check_includes = false  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
     testonly = true
     sources = [
       "datachannel_unittest.cc",
@@ -331,6 +334,7 @@ if (rtc_include_tests) {
 
     deps = [
       "//testing/gmock",
+      "//webrtc/test:test_support",
     ]
   }
 }

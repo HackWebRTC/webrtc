@@ -94,9 +94,11 @@ rtc_source_set("test_main") {
     "test_main.cc",
   ]
 
+  public_deps = [
+    ":test_support",
+  ]
   deps = [
     ":field_trial",
-    ":test_support",
     "../system_wrappers:metrics_default",
     "//testing/gmock",
     "//testing/gtest",
