@@ -42,7 +42,8 @@ namespace webrtc {
 
 namespace {
 
-ACTION_P(SaveUniquePtrArg, dest) {
+ACTION_P2(SaveCaptureResult, result, dest) {
+  *result = arg0;
   *dest = std::move(*arg1);
 }
 
@@ -243,14 +244,11 @@ class ScreenCapturerIntegrationTest : public testing::Test {
                     << static_cast<int>(color.blue) << ", "
                     << static_cast<int>(color.alpha) << ")" << std::endl;
           ASSERT_TRUE(false) << "ScreenCapturerIntegrationTest may be flaky. "
-                                "If the error message above is "
-                                "\"////AP///wD///8A\", it's a known issue, "
-                                "which should be able to recover by rerunning "
-                                "the test. Otherwise please kindly FYI the "
-                                "broken link to zijiehe@chromium.org for "
-                                "investigation. If the failure continually "
-                                "happens, but I have not responded as quick as "
-                                "expected, disable *all* tests in "
+                                "Please kindly FYI the broken link to "
+                                "zijiehe@chromium.org for investigation. If "
+                                "the failure continually happens, but I have "
+                                "not responded as quick as expected, disable "
+                                "*all* tests in "
                                 "screen_capturer_integration_test.cc to "
                                 "unblock other developers.";
         }
@@ -266,40 +264,47 @@ class ScreenCapturerIntegrationTest : public testing::Test {
 
   // Expects |capturer| to successfully capture a frame, and returns it.
   std::unique_ptr<DesktopFrame> CaptureFrame(DesktopCapturer* capturer) {
-    std::unique_ptr<DesktopFrame> frame;
-    EXPECT_CALL(callback_,
-                OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, _))
-        .WillOnce(SaveUniquePtrArg(&frame));
-    capturer->CaptureFrame();
-    EXPECT_TRUE(frame);
-    return frame;
+    for (int i = 0; i < 10; i++) {
+      std::unique_ptr<DesktopFrame> frame;
+      DesktopCapturer::Result result;
+      EXPECT_CALL(callback_, OnCaptureResultPtr(_, _))
+          .WillOnce(SaveCaptureResult(&result, &frame));
+      capturer->CaptureFrame();
+      testing::Mock::VerifyAndClearExpectations(&callback_);
+      if (result == DesktopCapturer::Result::SUCCESS) {
+        EXPECT_TRUE(frame);
+        return frame;
+      } else {
+        EXPECT_FALSE(frame);
+      }
+    }
+
+    EXPECT_TRUE(false);
+    return nullptr;
   }
 };
 
-#if defined(WEBRTC_WIN)
-#define MAYBE_CaptureUpdatedRegion DISABLED_CaptureUpdatedRegion
-#else
-#define MAYBE_CaptureUpdatedRegion CaptureUpdatedRegion
-#endif
-TEST_F(ScreenCapturerIntegrationTest, MAYBE_CaptureUpdatedRegion) {
+TEST_F(ScreenCapturerIntegrationTest, CaptureUpdatedRegion) {
+#if !defined(WEBRTC_WIN)
+  // ScreenCapturerWinGdi randomly returns blank screen, the root cause is still
+  // unknown. Bug, https://bugs.chromium.org/p/webrtc/issues/detail?id=6843.
   TestCaptureUpdatedRegion();
+#endif
 }
 
-#if defined(WEBRTC_WIN)
-#define MAYBE_TwoCapturers DISABLED_TwoCapturers
-#else
-#define MAYBE_TwoCapturers TwoCapturers
-#endif
-TEST_F(ScreenCapturerIntegrationTest, MAYBE_TwoCapturers) {
+TEST_F(ScreenCapturerIntegrationTest, TwoCapturers) {
+#if !defined(WEBRTC_WIN)
+  // ScreenCapturerWinGdi randomly returns blank screen, the root cause is still
+  // unknown. Bug, https://bugs.chromium.org/p/webrtc/issues/detail?id=6843.
   std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
   SetUp();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
+#endif
 }
 
 #if defined(WEBRTC_WIN)
 
-TEST_F(ScreenCapturerIntegrationTest,
-       DISABLED_CaptureUpdatedRegionWithDirectxCapturer) {
+TEST_F(ScreenCapturerIntegrationTest, CaptureUpdatedRegionWithDirectxCapturer) {
   if (!CreateDirectxCapturer()) {
     return;
   }
@@ -307,7 +312,7 @@ TEST_F(ScreenCapturerIntegrationTest,
   TestCaptureUpdatedRegion();
 }
 
-TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoDirectxCapturers) {
+TEST_F(ScreenCapturerIntegrationTest, TwoDirectxCapturers) {
   if (!CreateDirectxCapturer()) {
     return;
   }
@@ -318,10 +323,10 @@ TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoDirectxCapturers) {
 }
 
 TEST_F(ScreenCapturerIntegrationTest,
-       DISABLED_CaptureUpdatedRegionWithMagnifierCapturer) {
+       CaptureUpdatedRegionWithMagnifierCapturer) {
   // On Windows 8 or later, magnifier APIs return a frame with a border on test
   // environment, so disable these tests.
-  // Bug https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
+  // Bug https://bugs.chromium.org/p/webrtc/issues/detail?id=6844
   // TODO(zijiehe): Find the root cause of the border and failure, which cannot
   // reproduce on my dev machine.
   if (rtc::IsWindows8OrLater()) {
@@ -331,10 +336,10 @@ TEST_F(ScreenCapturerIntegrationTest,
   TestCaptureUpdatedRegion();
 }
 
-TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoMagnifierCapturers) {
+TEST_F(ScreenCapturerIntegrationTest, TwoMagnifierCapturers) {
   // On Windows 8 or later, magnifier APIs return a frame with a border on test
   // environment, so disable these tests.
-  // Bug https://bugs.chromium.org/p/webrtc/issues/detail?id=6666
+  // Bug https://bugs.chromium.org/p/webrtc/issues/detail?id=6844
   // TODO(zijiehe): Find the root cause of the border and failure, which cannot
   // reproduce on my dev machine.
   if (rtc::IsWindows8OrLater()) {
@@ -347,7 +352,15 @@ TEST_F(ScreenCapturerIntegrationTest, DISABLED_TwoMagnifierCapturers) {
 }
 
 TEST_F(ScreenCapturerIntegrationTest,
-       DISABLED_MaybeCaptureUpdatedRegionWithDirectxCapturer) {
+       MaybeCaptureUpdatedRegionWithDirectxCapturer) {
+  if (!rtc::IsWindows8OrLater()) {
+    // ScreenCapturerWinGdi randomly returns blank screen, the root cause is
+    // still unknown. Bug,
+    // https://bugs.chromium.org/p/webrtc/issues/detail?id=6843.
+    // On Windows 7 or early version, MaybeCreateDirectxCapturer() always
+    // creates GDI capturer.
+    return;
+  }
   // Even DirectX capturer is not supported in current system, we should be able
   // to select a usable capturer.
   MaybeCreateDirectxCapturer();
