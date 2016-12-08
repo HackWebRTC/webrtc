@@ -47,17 +47,10 @@ class CongestionController : public CallStatsObserver, public Module {
   // packet headers and is measured in bits per second.
   class Observer {
    public:
-    // This is to be deprecated. Please use the one below instead.
-    RTC_DEPRECATED virtual void OnNetworkChanged(uint32_t bitrate_bps,
-                                                 uint8_t fraction_loss,
-                                                 int64_t rtt_ms) {}
-
-    // TODO(minyue): make this method pure virtual when all uses of the old API
-    // have been updated.
     virtual void OnNetworkChanged(uint32_t bitrate_bps,
                                   uint8_t fraction_loss,  // 0 - 255.
                                   int64_t rtt_ms,
-                                  int64_t probing_interval_ms) {}
+                                  int64_t probing_interval_ms) = 0;
 
    protected:
     virtual ~Observer() {}
