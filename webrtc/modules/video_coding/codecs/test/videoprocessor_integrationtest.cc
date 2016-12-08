@@ -625,15 +625,7 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
 // VP9: Run with no packet loss and fixed bitrate. Quality should be very high.
 // One key frame (first frame only) in sequence. Setting |key_frame_interval|
 // to -1 below means no periodic key frames in test.
-
-#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER) || \
-  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
-// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
-#define MAYBE_Process0PercentPacketLossVP9 DISABLED_Process0PercentPacketLossVP9
-#else
-#define MAYBE_Process0PercentPacketLossVP9 Process0PercentPacketLossVP9
-#endif
-TEST_F(VideoProcessorIntegrationTest, MAYBE_Process0PercentPacketLossVP9) {
+TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
@@ -679,15 +671,7 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
 // low to high to medium. Check that quality and encoder response to the new
 // target rate/per-frame bandwidth (for each rate update) is within limits.
 // One key frame (first frame only) in sequence.
-#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER) || \
-  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
-// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
-#define MAYBE_ProcessNoLossChangeBitRateVP9 \
-  DISABLED_ProcessNoLossChangeBitRateVP9
-#else
-#define MAYBE_ProcessNoLossChangeBitRateVP9 ProcessNoLossChangeBitRateVP9
-#endif
-TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP9) {
+TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 200, 30, 0);
@@ -719,11 +703,8 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP9) {
 // Note: quality after update should be higher but we currently compute quality
 // metrics averaged over whole sequence run.
 
-#if defined(WEBRTC_ANDROID) || defined(THREAD_SANITIZER) || \
-  defined(UNDEFINED_SANITIZER) || \
-  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
+#if defined(WEBRTC_ANDROID)
 // Flaky on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=6057.
-// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
 #define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP9 \
   DISABLED_ProcessNoLossChangeFrameRateFrameDropVP9
 #else
@@ -757,14 +738,7 @@ TEST_F(VideoProcessorIntegrationTest,
 }
 
 // VP9: Run with no packet loss and denoiser on. One key frame (first frame).
-#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER) || \
-  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
-// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
-#define MAYBE_ProcessNoLossDenoiserOnVP9 DISABLED_ProcessNoLossDenoiserOnVP9
-#else
-#define MAYBE_ProcessNoLossDenoiserOnVP9 ProcessNoLossDenoiserOnVP9
-#endif
-TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossDenoiserOnVP9) {
+TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
@@ -787,17 +761,7 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossDenoiserOnVP9) {
 // Run with no packet loss, at low bitrate.
 // spatial_resize is on, for this low bitrate expect one resize in sequence.
 // Resize happens on delta frame. Expect only one key frame (first frame).
-#if defined(THREAD_SANITIZER) || defined(UNDEFINED_SANITIZER) || \
-  (defined(WEBRTC_ARCH_32_BITS) && defined(WEBRTC_LINUX))
-// Fails on TSan, UBSan and Linux 32-bit: https://bugs.webrtc.org/6781.
-#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP9 \
-  DISABLED_ProcessNoLossSpatialResizeFrameDropVP9
-#else
-#define MAYBE_ProcessNoLossSpatialResizeFrameDropVP9 \
-  ProcessNoLossSpatialResizeFrameDropVP9
-#endif
-TEST_F(VideoProcessorIntegrationTest,
-       MAYBE_ProcessNoLossSpatialResizeFrameDropVP9) {
+TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
