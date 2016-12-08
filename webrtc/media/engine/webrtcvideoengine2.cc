@@ -2340,7 +2340,16 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
   stream_ = call_->CreateVideoReceiveStream(config_.Copy());
   stream_->Start();
   if (IsFlexfecFieldTrialEnabled() && flexfec_config_.IsCompleteAndEnabled()) {
-    flexfec_stream_ = call_->CreateFlexfecReceiveStream(flexfec_config_);
+    webrtc::FlexfecReceiveStream::Config config;
+    // Payload types and SSRCs come from the FlexFEC specific part of the SDP.
+    config.payload_type = flexfec_config_.flexfec_payload_type;
+    config.remote_ssrc = flexfec_config_.flexfec_ssrc;
+    config.protected_media_ssrcs = flexfec_config_.protected_media_ssrcs;
+    // RTCP messages and RTP header extensions apply to the entire track
+    // in the SDP.
+    config.transport_cc = config_.rtp.transport_cc;
+    config.extensions = config_.rtp.extensions;
+    flexfec_stream_ = call_->CreateFlexfecReceiveStream(config);
     flexfec_stream_->Start();
   }
 }

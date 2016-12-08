@@ -20,8 +20,8 @@ namespace webrtc {
 
 TEST(FlexfecReceiveStreamTest, ConstructDestruct) {
   FlexfecReceiveStream::Config config;
-  config.flexfec_payload_type = 118;
-  config.flexfec_ssrc = 424223;
+  config.payload_type = 118;
+  config.remote_ssrc = 424223;
   config.protected_media_ssrcs = {912512};
   MockRecoveredPacketReceiver callback;
 
@@ -30,8 +30,8 @@ TEST(FlexfecReceiveStreamTest, ConstructDestruct) {
 
 TEST(FlexfecReceiveStreamTest, StartStop) {
   FlexfecReceiveStream::Config config;
-  config.flexfec_payload_type = 118;
-  config.flexfec_ssrc = 1652392;
+  config.payload_type = 118;
+  config.remote_ssrc = 1652392;
   config.protected_media_ssrcs = {23300443};
   MockRecoveredPacketReceiver callback;
   internal::FlexfecReceiveStream receive_stream(config, &callback);
@@ -42,8 +42,8 @@ TEST(FlexfecReceiveStreamTest, StartStop) {
 
 TEST(FlexfecReceiveStreamTest, DoesNotProcessPacketWhenNoMediaSsrcGiven) {
   FlexfecReceiveStream::Config config;
-  config.flexfec_payload_type = 118;
-  config.flexfec_ssrc = 424223;
+  config.payload_type = 118;
+  config.remote_ssrc = 424223;
   config.protected_media_ssrcs = {};
   MockRecoveredPacketReceiver callback;
   internal::FlexfecReceiveStream receive_stream(config, &callback);
@@ -94,8 +94,8 @@ TEST(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
   constexpr size_t kFlexfecPacketLength = sizeof(kFlexfecPacket);
 
   FlexfecReceiveStream::Config config;
-  config.flexfec_payload_type = kFlexfecPlType;
-  config.flexfec_ssrc = ByteReader<uint32_t>::ReadBigEndian(kFlexfecSsrc);
+  config.payload_type = kFlexfecPlType;
+  config.remote_ssrc = ByteReader<uint32_t>::ReadBigEndian(kFlexfecSsrc);
   config.protected_media_ssrcs = {
       ByteReader<uint32_t>::ReadBigEndian(kMediaSsrc)};
   testing::StrictMock<MockRecoveredPacketReceiver> recovered_packet_receiver;

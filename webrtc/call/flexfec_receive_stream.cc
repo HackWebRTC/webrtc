@@ -22,20 +22,42 @@ std::string FlexfecReceiveStream::Stats::ToString(int64_t time_ms) const {
   return ss.str();
 }
 
+std::string FlexfecReceiveStream::Config::ToString() const {
+  std::stringstream ss;
+  ss << "{payload_type: " << payload_type;
+  ss << ", remote_ssrc: " << remote_ssrc;
+  ss << ", local_ssrc: " << local_ssrc;
+  ss << ", protected_media_ssrcs: [";
+  size_t i = 0;
+  for (; i + 1 < protected_media_ssrcs.size(); ++i)
+    ss << protected_media_ssrcs[i] << ", ";
+  if (!protected_media_ssrcs.empty())
+    ss << protected_media_ssrcs[i];
+  ss << "], transport_cc: " << (transport_cc ? "on" : "off");
+  ss << ", extensions: [";
+  i = 0;
+  for (; i + 1 < extensions.size(); ++i)
+    ss << extensions[i].ToString() << ", ";
+  if (!extensions.empty())
+    ss << extensions[i].ToString();
+  ss << "]}";
+  return ss.str();
+}
+
 namespace {
 
 // TODO(brandtr): Update this function when we support multistream protection.
 std::unique_ptr<FlexfecReceiver> MaybeCreateFlexfecReceiver(
     const FlexfecReceiveStream::Config& config,
     RecoveredPacketReceiver* recovered_packet_callback) {
-  if (config.flexfec_payload_type < 0) {
+  if (config.payload_type < 0) {
     LOG(LS_WARNING) << "Invalid FlexFEC payload type given. "
                     << "This FlexfecReceiveStream will therefore be useless.";
     return nullptr;
   }
-  RTC_DCHECK_GE(config.flexfec_payload_type, 0);
-  RTC_DCHECK_LE(config.flexfec_payload_type, 127);
-  if (config.flexfec_ssrc == 0) {
+  RTC_DCHECK_GE(config.payload_type, 0);
+  RTC_DCHECK_LE(config.payload_type, 127);
+  if (config.remote_ssrc == 0) {
     LOG(LS_WARNING) << "Invalid FlexFEC SSRC given. "
                     << "This FlexfecReceiveStream will therefore be useless.";
     return nullptr;
@@ -56,7 +78,7 @@ std::unique_ptr<FlexfecReceiver> MaybeCreateFlexfecReceiver(
   }
   RTC_DCHECK_EQ(1U, config.protected_media_ssrcs.size());
   return std::unique_ptr<FlexfecReceiver>(
-      new FlexfecReceiver(config.flexfec_ssrc, config.protected_media_ssrcs[0],
+      new FlexfecReceiver(config.remote_ssrc, config.protected_media_ssrcs[0],
                           recovered_packet_callback));
 }
 

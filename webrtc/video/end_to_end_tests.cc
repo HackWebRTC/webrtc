@@ -3855,6 +3855,8 @@ void VerifyEmptyUlpfecConfig(const UlpfecConfig& config) {
 void VerifyEmptyFlexfecConfig(const FlexfecConfig& config) {
   EXPECT_EQ(-1, config.flexfec_payload_type)
       << "Enabling FlexFEC requires rtpmap: flexfec negotiation.";
+  EXPECT_EQ(0U, config.flexfec_ssrc)
+      << "Enabling FlexFEC requires ssrc-group: FEC-FR negotiation.";
   EXPECT_TRUE(config.protected_media_ssrcs.empty())
       << "Enabling FlexFEC requires ssrc-group: FEC-FR negotiation.";
 }
@@ -3893,7 +3895,12 @@ TEST_P(EndToEndTest, VerifyDefaultVideoReceiveConfigParameters) {
 
 TEST_P(EndToEndTest, VerifyDefaultFlexfecReceiveConfigParameters) {
   FlexfecReceiveStream::Config default_receive_config;
-  VerifyEmptyFlexfecConfig(default_receive_config);
+  EXPECT_EQ(-1, default_receive_config.payload_type)
+      << "Enabling FlexFEC requires rtpmap: flexfec negotiation.";
+  EXPECT_EQ(0U, default_receive_config.remote_ssrc)
+      << "Enabling FlexFEC requires ssrc-group: FEC-FR negotiation.";
+  EXPECT_TRUE(default_receive_config.protected_media_ssrcs.empty())
+      << "Enabling FlexFEC requires ssrc-group: FEC-FR negotiation.";
 }
 
 TEST_P(EndToEndTest, TransportSeqNumOnAudioAndVideo) {

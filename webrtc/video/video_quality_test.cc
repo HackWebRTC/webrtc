@@ -1073,9 +1073,9 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
         kVideoSendSsrcs[params_.ss.selected_stream]};
 
     FlexfecReceiveStream::Config flexfec_receive_config;
-    flexfec_receive_config.flexfec_payload_type =
+    flexfec_receive_config.payload_type =
         video_send_config_.rtp.flexfec.flexfec_payload_type;
-    flexfec_receive_config.flexfec_ssrc =
+    flexfec_receive_config.remote_ssrc =
         video_send_config_.rtp.flexfec.flexfec_ssrc;
     flexfec_receive_config.protected_media_ssrcs =
         video_send_config_.rtp.flexfec.protected_media_ssrcs;

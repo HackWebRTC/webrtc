@@ -2863,9 +2863,8 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetRecvParamsWithoutFecDisablesFec) {
 
   ASSERT_EQ(1U, streams.size());
   const FakeFlexfecReceiveStream& stream = streams.front();
-  EXPECT_EQ(GetEngineCodec("flexfec-03").id,
-            stream.GetConfig().flexfec_payload_type);
-  EXPECT_EQ(kFlexfecSsrc, stream.GetConfig().flexfec_ssrc);
+  EXPECT_EQ(GetEngineCodec("flexfec-03").id, stream.GetConfig().payload_type);
+  EXPECT_EQ(kFlexfecSsrc, stream.GetConfig().remote_ssrc);
   ASSERT_EQ(1U, stream.GetConfig().protected_media_ssrcs.size());
   EXPECT_EQ(kSsrcs1[0], stream.GetConfig().protected_media_ssrcs[0]);
 
@@ -2918,8 +2917,8 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetSendParamsWithFecEnablesFec) {
   ASSERT_EQ(1U, streams.size());
   const FakeFlexfecReceiveStream& stream_with_recv_params = streams.front();
   EXPECT_EQ(GetEngineCodec("flexfec-03").id,
-            stream_with_recv_params.GetConfig().flexfec_payload_type);
-  EXPECT_EQ(kFlexfecSsrc, stream_with_recv_params.GetConfig().flexfec_ssrc);
+            stream_with_recv_params.GetConfig().payload_type);
+  EXPECT_EQ(kFlexfecSsrc, stream_with_recv_params.GetConfig().remote_ssrc);
   EXPECT_EQ(1U,
             stream_with_recv_params.GetConfig().protected_media_ssrcs.size());
   EXPECT_EQ(kSsrcs1[0],
@@ -2932,8 +2931,8 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetSendParamsWithFecEnablesFec) {
   ASSERT_EQ(1U, streams.size());
   const FakeFlexfecReceiveStream& stream_with_send_params = streams.front();
   EXPECT_EQ(GetEngineCodec("flexfec-03").id,
-            stream_with_send_params.GetConfig().flexfec_payload_type);
-  EXPECT_EQ(kFlexfecSsrc, stream_with_send_params.GetConfig().flexfec_ssrc);
+            stream_with_send_params.GetConfig().payload_type);
+  EXPECT_EQ(kFlexfecSsrc, stream_with_send_params.GetConfig().remote_ssrc);
   EXPECT_EQ(1U,
             stream_with_send_params.GetConfig().protected_media_ssrcs.size());
   EXPECT_EQ(kSsrcs1[0],

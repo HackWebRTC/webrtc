@@ -16,7 +16,6 @@
 #include "webrtc/config.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
-#include "webrtc/test/call_test.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 
@@ -276,11 +275,11 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
   // TODO(brandtr): Update this when we support multistream protection.
   RTC_DCHECK(num_flexfec_streams_ <= 1);
   if (num_flexfec_streams_ == 1) {
-    FlexfecReceiveStream::Config flexfec_config;
-    flexfec_config.flexfec_payload_type = kFlexfecPayloadType;
-    flexfec_config.flexfec_ssrc = kFlexfecSendSsrc;
-    flexfec_config.protected_media_ssrcs = {kVideoSendSsrcs[0]};
-    flexfec_receive_configs_.push_back(flexfec_config);
+    FlexfecReceiveStream::Config config;
+    config.payload_type = kFlexfecPayloadType;
+    config.remote_ssrc = kFlexfecSendSsrc;
+    config.protected_media_ssrcs = {kVideoSendSsrcs[0]};
+    flexfec_receive_configs_.push_back(config);
   }
 }
 

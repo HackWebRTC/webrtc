@@ -665,9 +665,9 @@ webrtc::FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
     WriteLockScoped write_lock(*receive_crit_);
     for (auto ssrc : config.protected_media_ssrcs)
       flexfec_receive_ssrcs_media_.insert(std::make_pair(ssrc, receive_stream));
-    RTC_DCHECK(flexfec_receive_ssrcs_protection_.find(config.flexfec_ssrc) ==
+    RTC_DCHECK(flexfec_receive_ssrcs_protection_.find(config.remote_ssrc) ==
                flexfec_receive_ssrcs_protection_.end());
-    flexfec_receive_ssrcs_protection_[config.flexfec_ssrc] = receive_stream;
+    flexfec_receive_ssrcs_protection_[config.remote_ssrc] = receive_stream;
     flexfec_receive_streams_.insert(receive_stream);
   }
   // TODO(brandtr): Store config in RtcEventLog here.
