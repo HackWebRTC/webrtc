@@ -2104,7 +2104,7 @@ JOW(void, VideoFileRenderer_nativeI420Scale)(
   RTC_CHECK_GE(src_size_y, j_src_stride_y * height);
   RTC_CHECK_GE(src_size_u, j_src_stride_u * height / 4);
   RTC_CHECK_GE(src_size_v, j_src_stride_v * height / 4);
-  RTC_CHECK_GE(dst_size, dst_stride * height * 3 / 2);
+  RTC_CHECK_GE(dst_size, dst_stride * dstHeight * 3 / 2);
   uint8_t* src_y =
       reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_src_buffer_y));
   uint8_t* src_u =
