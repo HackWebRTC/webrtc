@@ -33,8 +33,8 @@ jclass FindClass(JNIEnv* jni, const char* name);
 
 // Convenience macro defining JNI-accessible methods in the org.webrtc package.
 // Eliminates unnecessary boilerplate and line-wraps, reducing visual clutter.
-#define JOW(rettype, name) extern "C" rettype JNIEXPORT JNICALL \
-  Java_org_webrtc_##name
+#define JOW(rettype, name) \
+  extern "C" JNIEXPORT rettype JNICALL Java_org_webrtc_##name
 
 }  // namespace webrtc_jni
 
