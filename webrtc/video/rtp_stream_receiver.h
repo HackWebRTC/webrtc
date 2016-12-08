@@ -123,7 +123,7 @@ class RtpStreamReceiver : public RtpData,
   int32_t RequestKeyFrame() override;
   int32_t SliceLossIndicationRequest(const uint64_t picture_id) override;
 
-  bool IsFecEnabled() const;
+  bool IsUlpfecEnabled() const;
   bool IsRetransmissionsEnabled() const;
   // Don't use, still experimental.
   void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);

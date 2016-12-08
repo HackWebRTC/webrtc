@@ -295,7 +295,7 @@ void VideoReceiveStream::Start() {
     call_stats_->RegisterStatsObserver(&rtp_stream_receiver_);
 
     if (rtp_stream_receiver_.IsRetransmissionsEnabled() &&
-        rtp_stream_receiver_.IsFecEnabled()) {
+        rtp_stream_receiver_.IsUlpfecEnabled()) {
       frame_buffer_->SetProtectionMode(kProtectionNackFEC);
     }
   }
@@ -325,7 +325,7 @@ void VideoReceiveStream::Start() {
   video_stream_decoder_.reset(new VideoStreamDecoder(
       &video_receiver_, &rtp_stream_receiver_, &rtp_stream_receiver_,
       rtp_stream_receiver_.IsRetransmissionsEnabled(),
-      rtp_stream_receiver_.IsFecEnabled(), &stats_proxy_, renderer,
+      rtp_stream_receiver_.IsUlpfecEnabled(), &stats_proxy_, renderer,
       config_.pre_render_callback));
   // Register the channel to receive stats updates.
   call_stats_->RegisterStatsObserver(video_stream_decoder_.get());

@@ -168,7 +168,7 @@ RtpStreamReceiver::RtpStreamReceiver(
                                             kv.first);
   }
 
-  if (IsFecEnabled()) {
+  if (IsUlpfecEnabled()) {
     VideoCodec ulpfec_codec = {};
     ulpfec_codec.codecType = kVideoCodecULPFEC;
     strncpy(ulpfec_codec.plName, "ulpfec", sizeof(ulpfec_codec.plName));
@@ -379,7 +379,7 @@ int32_t RtpStreamReceiver::SliceLossIndicationRequest(
       static_cast<uint8_t>(picture_id));
 }
 
-bool RtpStreamReceiver::IsFecEnabled() const {
+bool RtpStreamReceiver::IsUlpfecEnabled() const {
   return config_.rtp.ulpfec.ulpfec_payload_type != -1;
 }
 
