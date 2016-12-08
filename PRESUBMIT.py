@@ -228,42 +228,6 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
 
   return result
 
-def _CheckNoRtcBaseDeps(input_api, gn_files, output_api):
-  pattern = input_api.re.compile(r'base:rtc_base\s*"')
-  violating_files = []
-  for f in gn_files:
-    gn_exceptions = (
-        os.path.join('audio_device', 'BUILD.gn'),
-        os.path.join('base_tests', 'BUILD.gn'),
-        os.path.join('desktop_capture', 'BUILD.gn'),
-        os.path.join('p2p', 'BUILD.gn'),
-        os.path.join('sdk', 'BUILD.gn'),
-        os.path.join('webrtc_test_common', 'BUILD.gn'),
-        os.path.join('webrtc_tests', 'BUILD.gn'),
-
-        # TODO(ehmaldonado): Clean up references to rtc_base in these files.
-        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=3806
-        os.path.join('webrtc', 'BUILD.gn'),
-        os.path.join('xmllite', 'BUILD.gn'),
-        os.path.join('xmpp', 'BUILD.gn'),
-        os.path.join('modules', 'BUILD.gn'),
-        os.path.join('audio_device', 'BUILD.gn'),
-        os.path.join('pc', 'BUILD.gn'),
-    )
-    if f.LocalPath().endswith(gn_exceptions):
-      continue
-    contents = input_api.ReadFile(f)
-    if pattern.search(contents):
-      violating_files.append(f)
-  if violating_files:
-    return [output_api.PresubmitError(
-        'Depending on rtc_base is not allowed. Change your dependency to '
-        'rtc_base_approved and possibly sanitize and move the desired source '
-        'file(s) to rtc_base_approved.\nChanged GN files:',
-        items=violating_files)]
-  return []
-
-
 def _CheckNoSourcesAbove(input_api, gn_files, output_api):
   # Disallow referencing source files with paths above the GN file location.
   source_pattern = input_api.re.compile(r' +sources \+?= \[(.*?)\]',
@@ -332,7 +296,6 @@ def _CheckGnChanges(input_api, output_api):
 
   result = []
   if gn_files:
-    result.extend(_CheckNoRtcBaseDeps(input_api, gn_files, output_api))
     result.extend(_CheckNoSourcesAbove(input_api, gn_files, output_api))
     result.extend(_CheckNoMixingCAndCCSources(input_api, gn_files, output_api))
   return result
