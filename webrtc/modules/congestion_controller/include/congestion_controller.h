@@ -67,11 +67,6 @@ class CongestionController : public CallStatsObserver, public Module {
                        RemoteBitrateObserver* remote_bitrate_observer,
                        RtcEventLog* event_log,
                        PacketRouter* packet_router);
-  // TODO(nisse): Deprecated. Will create and own a PacketRouter.
-  CongestionController(Clock* clock,
-                       Observer* observer,
-                       RemoteBitrateObserver* remote_bitrate_observer,
-                       RtcEventLog* event_log);
   CongestionController(Clock* clock,
                        Observer* observer,
                        RemoteBitrateObserver* remote_bitrate_observer,
@@ -96,8 +91,6 @@ class CongestionController : public CallStatsObserver, public Module {
   // TODO(nisse): Delete this accessor function. The pacer should be
   // internal to the congestion controller.
   virtual PacedSender* pacer() { return pacer_.get(); }
-  // TODO(nisse): Deprecated, but still used by downstream projects.
-  virtual PacketRouter* packet_router() { return packet_router_; }
   virtual TransportFeedbackObserver* GetTransportFeedbackObserver();
   RateLimiter* GetRetransmissionRateLimiter();
   void EnablePeriodicAlrProbing(bool enable);
@@ -134,9 +127,6 @@ class CongestionController : public CallStatsObserver, public Module {
                                            int64_t rtt);
   Clock* const clock_;
   Observer* const observer_;
-  // Used by the deprecated constructor, where caller doesn't provide
-  // the packet_router.
-  std::unique_ptr<PacketRouter> owned_packet_router_;
   PacketRouter* const packet_router_;
   const std::unique_ptr<PacedSender> pacer_;
   const std::unique_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;

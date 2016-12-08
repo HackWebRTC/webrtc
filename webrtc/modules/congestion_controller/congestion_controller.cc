@@ -167,17 +167,6 @@ CongestionController::CongestionController(
     Clock* clock,
     Observer* observer,
     RemoteBitrateObserver* remote_bitrate_observer,
-    RtcEventLog* event_log)
-    : CongestionController(clock, observer, remote_bitrate_observer, event_log,
-                           new PacketRouter()) {
-  // Record ownership.
-  owned_packet_router_.reset(packet_router_);
-}
-
-CongestionController::CongestionController(
-    Clock* clock,
-    Observer* observer,
-    RemoteBitrateObserver* remote_bitrate_observer,
     RtcEventLog* event_log,
     PacketRouter* packet_router,
     std::unique_ptr<PacedSender> pacer)
