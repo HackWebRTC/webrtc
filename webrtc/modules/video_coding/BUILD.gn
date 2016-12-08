@@ -94,12 +94,21 @@ rtc_static_library("video_coding") {
     ":webrtc_vp9",
     "../..:webrtc_common",
     "../../base:rtc_analytics",
+    "../../base:rtc_base",
+    "../../base:rtc_base_approved",
+    "../../base:rtc_task_queue",
     "../../common_video",
     "../../system_wrappers",
+    "../rtp_rtcp:rtp_rtcp",
+    "../utility:utility",
   ]
 }
 
 rtc_static_library("video_coding_utility") {
+  # TODO(ehmaldonado): Remove (bugs.webrtc.org/6828)
+  # Errors on cyclic dependency with :video_coding if enabled.
+  check_includes = false
+
   sources = [
     "utility/default_video_bitrate_allocator.cc",
     "utility/default_video_bitrate_allocator.h",
@@ -125,13 +134,25 @@ rtc_static_library("video_coding_utility") {
   }
 
   deps = [
+    "../..:webrtc_common",
     "../../base:rtc_analytics",
+    "../../base:rtc_base_approved",
     "../../common_video",
     "../../system_wrappers",
   ]
 }
 
 rtc_static_library("webrtc_h264") {
+  # TODO(ehmaldonado): Remove (bugs.webrtc.org/6828)
+  # Errors on cyclic dependency if enabled:
+  #   //webrtc/call:call ->
+  #   //webrtc/video:video ->
+  #   //webrtc/modules/video_coding:video_coding ->
+  #   //webrtc/modules/video_coding:webrtc_h264 ->
+  #   //webrtc/media:rtc_media ->
+  #   //webrtc/call:call
+  check_includes = false
+
   sources = [
     "codecs/h264/h264.cc",
     "codecs/h264/include/h264.h",
@@ -144,6 +165,8 @@ rtc_static_library("webrtc_h264") {
 
   defines = []
   deps = [
+    ":video_coding_utility",
+    "../../base:rtc_base_approved",
     "../../system_wrappers",
   ]
 
@@ -179,6 +202,9 @@ rtc_static_library("webrtc_i420") {
   }
 
   deps = [
+    "../..:webrtc_common",
+    "../../base:rtc_base_approved",
+    "../../common_video:common_video",
     "../../system_wrappers",
   ]
 }
@@ -212,6 +238,7 @@ rtc_static_library("webrtc_vp8") {
   deps = [
     ":video_coding_utility",
     "../..:webrtc_common",
+    "../../base:rtc_base_approved",
     "../../common_video",
     "../../system_wrappers",
   ]
@@ -244,6 +271,7 @@ rtc_static_library("webrtc_vp9") {
 
   deps = [
     ":video_coding_utility",
+    "../../base:rtc_base_approved",
     "../../common_video",
     "../../system_wrappers",
   ]
@@ -273,6 +301,12 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      ":video_coding",
+      ":video_coding_utility",
+      "../..:webrtc_common",
+      "../../base:rtc_base_approved",
+      "../../common_video:common_video",
+      "../../system_wrappers:system_wrappers",
       "../../test:test_support",
     ]
   }
