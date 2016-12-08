@@ -2385,8 +2385,7 @@ bool VerifyCodec(const cricket::Codec& codec) {
   // Codec has not been populated correctly unless the name has been set. This
   // can happen if an SDP has an fmtp or rtcp-fb with a payload type but doesn't
   // have a corresponding "rtpmap" line.
-  cricket::Codec default_codec;
-  return default_codec.name != codec.name;
+  return !codec.name.empty();
 }
 
 bool VerifyAudioCodecs(const AudioContentDescription* audio_desc) {

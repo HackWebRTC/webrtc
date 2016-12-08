@@ -67,12 +67,6 @@ struct Codec {
   CodecParameterMap params;
   FeedbackParams feedback_params;
 
-  // Creates a codec with the given parameters.
-  Codec(int id, const std::string& name, int clockrate);
-  // Creates an empty codec.
-  Codec();
-  Codec(const Codec& c);
-  Codec(Codec&& c);
   virtual ~Codec();
 
   // Indicates if this codec is compatible with the specified codec.
@@ -106,6 +100,15 @@ struct Codec {
   bool operator!=(const Codec& c) const {
     return !(*this == c);
   }
+
+ protected:
+  // A Codec can't be created without a subclass.
+  // Creates a codec with the given parameters.
+  Codec(int id, const std::string& name, int clockrate);
+  // Creates an empty codec.
+  Codec();
+  Codec(const Codec& c);
+  Codec(Codec&& c);
 };
 
 struct AudioCodec : public Codec {

@@ -20,11 +20,19 @@ using cricket::kCodecParamAssociatedPayloadType;
 using cricket::kCodecParamMaxBitrate;
 using cricket::kCodecParamMinBitrate;
 
+class TestCodec : public Codec {
+ public:
+  TestCodec(int id, const std::string name, int clockrate)
+      : Codec(id, name, clockrate) {}
+  TestCodec() : Codec() {}
+  TestCodec(const TestCodec& c) : Codec(c) {}
+};
+
 TEST(CodecTest, TestCodecOperators) {
-  Codec c0(96, "D", 1000);
+  TestCodec c0(96, "D", 1000);
   c0.SetParam("a", 1);
 
-  Codec c1 = c0;
+  TestCodec c1 = c0;
   EXPECT_TRUE(c1 == c0);
 
   int param_value0;
@@ -48,8 +56,8 @@ TEST(CodecTest, TestCodecOperators) {
   c1.SetParam("a", 2);
   EXPECT_TRUE(c0 != c1);
 
-  Codec c5;
-  Codec c6(0, "", 0);
+  TestCodec c5;
+  TestCodec c6(0, "", 0);
   EXPECT_TRUE(c5 == c6);
 }
 
@@ -220,11 +228,11 @@ TEST(CodecTest, TestIntersectFeedbackParams) {
   const FeedbackParam b2("b", "2");
   const FeedbackParam b3("b", "3");
   const FeedbackParam c3("c", "3");
-  Codec c1;
+  TestCodec c1;
   c1.AddFeedbackParam(a1); // Only match with c2.
   c1.AddFeedbackParam(b2); // Same param different values.
   c1.AddFeedbackParam(c3); // Not in c2.
-  Codec c2;
+  TestCodec c2;
   c2.AddFeedbackParam(a1);
   c2.AddFeedbackParam(b3);
 

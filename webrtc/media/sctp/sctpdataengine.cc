@@ -971,9 +971,7 @@ static bool GetCodecIntParameter(const std::vector<DataCodec>& codecs,
                                  int id, const std::string& name,
                                  const std::string& param, int* dest) {
   std::string value;
-  Codec match_pattern;
-  match_pattern.id = id;
-  match_pattern.name = name;
+  DataCodec match_pattern(id, name);
   for (size_t i = 0; i < codecs.size(); ++i) {
     if (codecs[i].Matches(match_pattern)) {
       if (codecs[i].GetParam(param, &value)) {
