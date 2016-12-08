@@ -18,6 +18,7 @@
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/race_checker.h"
+#include "webrtc/modules/audio_mixer/output_rate_calculator.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
@@ -45,9 +46,10 @@ class AudioMixerImpl : public AudioMixer {
   // AudioProcessing only accepts 10 ms frames.
   static const int kFrameDurationInMs = 10;
   static const int kMaximumAmountOfMixedAudioSources = 3;
-  static const int kDefaultFrequency = 48000;
 
   static rtc::scoped_refptr<AudioMixerImpl> Create();
+  static rtc::scoped_refptr<AudioMixerImpl> CreateWithOutputRateCalculator(
+      std::unique_ptr<OutputRateCalculator> output_rate_calculator);
 
   ~AudioMixerImpl() override;
 
@@ -64,11 +66,13 @@ class AudioMixerImpl : public AudioMixer {
   bool GetAudioSourceMixabilityStatusForTest(Source* audio_source) const;
 
  protected:
-  explicit AudioMixerImpl(std::unique_ptr<AudioProcessing> limiter);
+  AudioMixerImpl(std::unique_ptr<AudioProcessing> limiter,
+                 std::unique_ptr<OutputRateCalculator> output_rate_calculator);
 
  private:
-  // Set/get mix frequency
-  void SetOutputFrequency(int frequency);
+  // Set mixing frequency through OutputFrequencyCalculator.
+  void CalculateOutputFrequency();
+  // Get mixing frequency.
   int OutputFrequency() const;
 
   // Compute what audio sources to mix from audio_source_list_. Ramp
@@ -91,6 +95,7 @@ class AudioMixerImpl : public AudioMixer {
   rtc::CriticalSection crit_;
   rtc::RaceChecker race_checker_;
 
+  std::unique_ptr<OutputRateCalculator> output_rate_calculator_;
   // The current sample frequency and sample size when mixing.
   int output_frequency_ GUARDED_BY(race_checker_);
   size_t sample_size_ GUARDED_BY(race_checker_);

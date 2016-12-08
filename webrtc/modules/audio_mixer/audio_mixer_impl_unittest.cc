@@ -18,6 +18,7 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
+#include "webrtc/modules/audio_mixer/default_output_rate_calculator.h"
 #include "webrtc/test/gmock.h"
 
 using testing::_;
@@ -83,6 +84,17 @@ class MockMixerAudioSource : public AudioMixer::Source {
 
   AudioFrame fake_frame_;
   AudioFrameInfo fake_audio_frame_info_;
+};
+
+class CustomRateCalculator : public OutputRateCalculator {
+ public:
+  explicit CustomRateCalculator(int rate) : rate_(rate) {}
+  int CalculateOutputRate(const std::vector<int>& preferred_rates) {
+    return rate_;
+  }
+
+ private:
+  const int rate_;
 };
 
 // Creates participants from |frames| and |frame_info| and adds them
@@ -440,5 +452,31 @@ TEST(AudioMixer, UnmutedShouldMixBeforeLoud) {
   expected_status[0] = false;
 
   MixAndCompare(frames, frame_info, expected_status);
+}
+
+TEST(AudioMixer, MixingRateShouldBeDecidedByRateCalculator) {
+  constexpr int kOutputRate = 22000;
+  const auto mixer = AudioMixerImpl::CreateWithOutputRateCalculator(
+      std::unique_ptr<OutputRateCalculator>(
+          new CustomRateCalculator(kOutputRate)));
+  MockMixerAudioSource audio_source;
+  mixer->AddSource(&audio_source);
+  ResetFrame(audio_source.fake_frame());
+
+  EXPECT_CALL(audio_source, GetAudioFrameWithInfo(kOutputRate, _))
+      .Times(Exactly(1));
+
+  mixer->Mix(1, &frame_for_mixing);
+}
+
+TEST(AudioMixer, ZeroSourceRateShouldBeDecidedByRateCalculator) {
+  constexpr int kOutputRate = 8000;
+  const auto mixer = AudioMixerImpl::CreateWithOutputRateCalculator(
+      std::unique_ptr<OutputRateCalculator>(
+          new CustomRateCalculator(kOutputRate)));
+
+  mixer->Mix(1, &frame_for_mixing);
+
+  EXPECT_EQ(kOutputRate, frame_for_mixing.sample_rate_hz_);
 }
 }  // namespace webrtc

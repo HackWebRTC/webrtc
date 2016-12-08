@@ -12,11 +12,13 @@
 
 #include <algorithm>
 #include <functional>
+#include <iterator>
 #include <utility>
 
 #include "webrtc/audio/utility/audio_frame_operations.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_mixer/audio_frame_manipulator.h"
+#include "webrtc/modules/audio_mixer/default_output_rate_calculator.h"
 
 namespace webrtc {
 namespace {
@@ -137,45 +139,7 @@ AudioMixerImpl::SourceStatusList::iterator FindSourceInList(
       });
 }
 
-// Rounds the maximal audio source frequency up to an APM-native
-// frequency.
-int CalculateMixingFrequency(
-    const AudioMixerImpl::SourceStatusList& audio_source_list) {
-  if (audio_source_list.empty()) {
-    return AudioMixerImpl::kDefaultFrequency;
-  }
-  using NativeRate = AudioProcessing::NativeRate;
-  int maximal_frequency = 0;
-  for (const auto& source_status : audio_source_list) {
-    const int source_needed_frequency =
-        source_status->audio_source->PreferredSampleRate();
-    RTC_DCHECK_LE(NativeRate::kSampleRate8kHz, source_needed_frequency);
-    RTC_DCHECK_LE(source_needed_frequency, NativeRate::kSampleRate48kHz);
-    maximal_frequency = std::max(maximal_frequency, source_needed_frequency);
-  }
-
-  static constexpr NativeRate native_rates[] = {
-      NativeRate::kSampleRate8kHz, NativeRate::kSampleRate16kHz,
-      NativeRate::kSampleRate32kHz, NativeRate::kSampleRate48kHz};
-  const auto rounded_up_index = std::lower_bound(
-      std::begin(native_rates), std::end(native_rates), maximal_frequency);
-  RTC_DCHECK(rounded_up_index != std::end(native_rates));
-  return *rounded_up_index;
-}
-
-}  // namespace
-
-AudioMixerImpl::AudioMixerImpl(std::unique_ptr<AudioProcessing> limiter)
-    : audio_source_list_(),
-      use_limiter_(true),
-      time_stamp_(0),
-      limiter_(std::move(limiter)) {
-  SetOutputFrequency(kDefaultFrequency);
-}
-
-AudioMixerImpl::~AudioMixerImpl() {}
-
-rtc::scoped_refptr<AudioMixerImpl> AudioMixerImpl::Create() {
+std::unique_ptr<AudioProcessing> CreateLimiter() {
   Config config;
   config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
   std::unique_ptr<AudioProcessing> limiter(AudioProcessing::Create(config));
@@ -207,9 +171,36 @@ rtc::scoped_refptr<AudioMixerImpl> AudioMixerImpl::Create() {
   if (limiter->gain_control()->Enable(true) != limiter->kNoError) {
     return nullptr;
   }
+  return limiter;
+}
 
+}  // namespace
+
+AudioMixerImpl::AudioMixerImpl(
+    std::unique_ptr<AudioProcessing> limiter,
+    std::unique_ptr<OutputRateCalculator> output_rate_calculator)
+    : output_rate_calculator_(std::move(output_rate_calculator)),
+      output_frequency_(0),
+      sample_size_(0),
+      audio_source_list_(),
+      use_limiter_(true),
+      time_stamp_(0),
+      limiter_(std::move(limiter)) {}
+
+AudioMixerImpl::~AudioMixerImpl() {}
+
+rtc::scoped_refptr<AudioMixerImpl> AudioMixerImpl::Create() {
+  return CreateWithOutputRateCalculator(
+      std::unique_ptr<DefaultOutputRateCalculator>(
+          new DefaultOutputRateCalculator()));
+}
+
+rtc::scoped_refptr<AudioMixerImpl>
+AudioMixerImpl::CreateWithOutputRateCalculator(
+    std::unique_ptr<OutputRateCalculator> output_rate_calculator) {
   return rtc::scoped_refptr<AudioMixerImpl>(
-      new rtc::RefCountedObject<AudioMixerImpl>(std::move(limiter)));
+      new rtc::RefCountedObject<AudioMixerImpl>(
+          CreateLimiter(), std::move(output_rate_calculator)));
 }
 
 void AudioMixerImpl::Mix(size_t number_of_channels,
@@ -217,14 +208,7 @@ void AudioMixerImpl::Mix(size_t number_of_channels,
   RTC_DCHECK(number_of_channels == 1 || number_of_channels == 2);
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
 
-  const int sample_rate = [&]() {
-    rtc::CritScope lock(&crit_);
-    return CalculateMixingFrequency(audio_source_list_);
-  }();
-
-  if (OutputFrequency() != sample_rate) {
-    SetOutputFrequency(sample_rate);
-  }
+  CalculateOutputFrequency();
 
   AudioFrameList mix_list;
   {
@@ -259,9 +243,19 @@ void AudioMixerImpl::Mix(size_t number_of_channels,
   return;
 }
 
-void AudioMixerImpl::SetOutputFrequency(int frequency) {
+void AudioMixerImpl::CalculateOutputFrequency() {
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
-  output_frequency_ = frequency;
+  rtc::CritScope lock(&crit_);
+
+  std::vector<int> preferred_rates;
+  std::transform(audio_source_list_.begin(), audio_source_list_.end(),
+                 std::back_inserter(preferred_rates),
+                 [&](std::unique_ptr<SourceStatus>& a) {
+                   return a->audio_source->PreferredSampleRate();
+                 });
+
+  output_frequency_ =
+      output_rate_calculator_->CalculateOutputRate(preferred_rates);
   sample_size_ = (output_frequency_ * kFrameDurationInMs) / 1000;
 }
 
