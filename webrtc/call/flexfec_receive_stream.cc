@@ -65,10 +65,10 @@ std::unique_ptr<FlexfecReceiver> MaybeCreateFlexfecReceiver(
 namespace internal {
 
 FlexfecReceiveStream::FlexfecReceiveStream(
-    Config configuration,
+    const Config& config,
     RecoveredPacketReceiver* recovered_packet_callback)
     : started_(false),
-      config_(configuration),
+      config_(config),
       receiver_(
           MaybeCreateFlexfecReceiver(config_, recovered_packet_callback)) {
   LOG(LS_INFO) << "FlexfecReceiveStream: " << config_.ToString();

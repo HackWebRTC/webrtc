@@ -477,9 +477,8 @@ void FakeCall::DestroyVideoReceiveStream(
 }
 
 webrtc::FlexfecReceiveStream* FakeCall::CreateFlexfecReceiveStream(
-    webrtc::FlexfecReceiveStream::Config config) {
-  flexfec_receive_streams_.push_back(
-      FakeFlexfecReceiveStream(std::move(config)));
+    const webrtc::FlexfecReceiveStream::Config& config) {
+  flexfec_receive_streams_.push_back(FakeFlexfecReceiveStream(config));
   ++num_created_receive_streams_;
   return &flexfec_receive_streams_.back();
 }

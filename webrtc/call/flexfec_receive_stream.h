@@ -25,11 +25,9 @@ namespace internal {
 
 class FlexfecReceiveStream : public webrtc::FlexfecReceiveStream {
  public:
-  FlexfecReceiveStream(Config configuration,
+  FlexfecReceiveStream(const Config& config,
                        RecoveredPacketReceiver* recovered_packet_callback);
   ~FlexfecReceiveStream();
-
-  const Config& config() const { return config_; }
 
   bool AddAndProcessReceivedPacket(const uint8_t* packet, size_t length);
 

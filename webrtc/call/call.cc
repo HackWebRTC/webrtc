@@ -92,7 +92,7 @@ class Call : public webrtc::Call,
       webrtc::VideoReceiveStream* receive_stream) override;
 
   webrtc::FlexfecReceiveStream* CreateFlexfecReceiveStream(
-      webrtc::FlexfecReceiveStream::Config configuration) override;
+      const webrtc::FlexfecReceiveStream::Config& config) override;
   void DestroyFlexfecReceiveStream(
       webrtc::FlexfecReceiveStream* receive_stream) override;
 
@@ -656,13 +656,11 @@ void Call::DestroyVideoReceiveStream(
 }
 
 webrtc::FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
-    webrtc::FlexfecReceiveStream::Config configuration) {
+    const webrtc::FlexfecReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateFlexfecReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  FlexfecReceiveStream* receive_stream =
-      new FlexfecReceiveStream(std::move(configuration), this);
+  FlexfecReceiveStream* receive_stream = new FlexfecReceiveStream(config, this);
 
-  const webrtc::FlexfecReceiveStream::Config& config = receive_stream->config();
   {
     WriteLockScoped write_lock(*receive_crit_);
     for (auto ssrc : config.protected_media_ssrcs)
