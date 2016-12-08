@@ -29,6 +29,8 @@ rtc_static_library("video_coding") {
     "generic_decoder.h",
     "generic_encoder.cc",
     "generic_encoder.h",
+    "h264_sprop_parameter_sets.cc",
+    "h264_sprop_parameter_sets.h",
     "h264_sps_pps_tracker.cc",
     "h264_sps_pps_tracker.h",
     "histogram.cc",

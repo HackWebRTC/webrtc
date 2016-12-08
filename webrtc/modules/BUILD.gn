@@ -495,6 +495,7 @@ if (rtc_include_tests) {
       "video_coding/codecs/vp8/simulcast_unittest.h",
       "video_coding/decoding_state_unittest.cc",
       "video_coding/frame_buffer2_unittest.cc",
+      "video_coding/h264_sprop_parameter_sets_unittest.cc",
       "video_coding/h264_sps_pps_tracker_unittest.cc",
       "video_coding/histogram_unittest.cc",
       "video_coding/include/mock/mock_vcm_callbacks.h",
