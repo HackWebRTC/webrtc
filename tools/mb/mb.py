@@ -1142,7 +1142,7 @@ class MetaBuildWrapper(object):
       executable_suffix = '.exe' if self.platform == 'win32' else ''
       executable = executable_prefix + target + executable_suffix
 
-      cmdline = (['../../testing/xvfb.py', '.'] if xvfb else
+      cmdline = (['../../testing/xvfb.py'] if xvfb else
                  ['../../testing/test_env.py'])
       if memcheck:
         cmdline += memcheck_cmdline

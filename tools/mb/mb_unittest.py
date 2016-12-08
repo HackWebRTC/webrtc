@@ -532,7 +532,6 @@ class UnitTest(unittest.TestCase):
     ])
     self.assertEqual(command, [
         '../../testing/xvfb.py',
-        '.',
         '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
         './base_unittests',
         '--',
