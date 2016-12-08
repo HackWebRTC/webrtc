@@ -66,6 +66,7 @@ public class ConnectActivity extends Activity {
   private String keyprefAudioCodec;
   private String keyprefHwCodecAcceleration;
   private String keyprefCaptureToTexture;
+  private String keyprefFlexfec;
   private String keyprefNoAudioProcessingPipeline;
   private String keyprefAecDump;
   private String keyprefOpenSLES;
@@ -106,6 +107,7 @@ public class ConnectActivity extends Activity {
     keyprefVideoCodec = getString(R.string.pref_videocodec_key);
     keyprefHwCodecAcceleration = getString(R.string.pref_hwcodec_key);
     keyprefCaptureToTexture = getString(R.string.pref_capturetotexture_key);
+    keyprefFlexfec = getString(R.string.pref_flexfec_key);
     keyprefAudioBitrateType = getString(R.string.pref_startaudiobitrate_key);
     keyprefAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
     keyprefAudioCodec = getString(R.string.pref_audiocodec_key);
@@ -354,6 +356,10 @@ public class ConnectActivity extends Activity {
         CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, R.string.pref_capturetotexture_default,
         useValuesFromIntent);
 
+    // Check FlexFEC.
+    boolean flexfecEnabled = sharedPrefGetBoolean(R.string.pref_flexfec_key,
+        CallActivity.EXTRA_FLEXFEC_ENABLED, R.string.pref_flexfec_default, useValuesFromIntent);
+
     // Check Disable Audio Processing flag.
     boolean noAudioProcessing = sharedPrefGetBoolean(R.string.pref_noaudioprocessing_key,
         CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED, R.string.pref_noaudioprocessing_default,
@@ -507,6 +513,7 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, videoCodec);
       intent.putExtra(CallActivity.EXTRA_HWCODEC_ENABLED, hwCodec);
       intent.putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, captureToTexture);
+      intent.putExtra(CallActivity.EXTRA_FLEXFEC_ENABLED, flexfecEnabled);
       intent.putExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED, noAudioProcessing);
       intent.putExtra(CallActivity.EXTRA_AECDUMP_ENABLED, aecDump);
       intent.putExtra(CallActivity.EXTRA_OPENSLES_ENABLED, useOpenSLES);

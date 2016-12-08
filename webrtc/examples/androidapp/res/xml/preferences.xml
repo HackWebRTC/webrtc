@@ -76,6 +76,12 @@
             android:title="@string/pref_capturetotexture_title"
             android:dialogTitle="@string/pref_capturetotexture_dlg"
             android:defaultValue="@string/pref_capturetotexture_default" />
+
+        <CheckBoxPreference
+            android:key="@string/pref_flexfec_key"
+            android:title="@string/pref_flexfec_title"
+            android:dialogTitle="@string/pref_flexfec_dlg"
+            android:defaultValue="@string/pref_flexfec_default" />
     </PreferenceCategory>
 
     <PreferenceCategory

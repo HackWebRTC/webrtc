@@ -71,6 +71,7 @@ public class PeerConnectionClient {
   private static final String AUDIO_CODEC_OPUS = "opus";
   private static final String AUDIO_CODEC_ISAC = "ISAC";
   private static final String VIDEO_CODEC_PARAM_START_BITRATE = "x-google-start-bitrate";
+  private static final String VIDEO_FLEXFEC_FIELDTRIAL = "WebRTC-FlexFEC-03/Enabled/";
   private static final String AUDIO_CODEC_PARAM_BITRATE = "maxaveragebitrate";
   private static final String AUDIO_ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation";
   private static final String AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl";
@@ -165,6 +166,7 @@ public class PeerConnectionClient {
     public final int videoMaxBitrate;
     public final String videoCodec;
     public final boolean videoCodecHwAcceleration;
+    public final boolean videoFlexfecEnabled;
     public final int audioStartBitrate;
     public final String audioCodec;
     public final boolean noAudioProcessing;
@@ -178,21 +180,22 @@ public class PeerConnectionClient {
 
     public PeerConnectionParameters(boolean videoCallEnabled, boolean loopback, boolean tracing,
         int videoWidth, int videoHeight, int videoFps, int videoMaxBitrate, String videoCodec,
-        boolean videoCodecHwAcceleration, int audioStartBitrate, String audioCodec,
-        boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES, boolean disableBuiltInAEC,
-        boolean disableBuiltInAGC, boolean disableBuiltInNS, boolean enableLevelControl) {
+        boolean videoCodecHwAcceleration, boolean videoFlexfecEnabled, int audioStartBitrate,
+        String audioCodec, boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
+        boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS,
+        boolean enableLevelControl) {
       this(videoCallEnabled, loopback, tracing, videoWidth, videoHeight, videoFps, videoMaxBitrate,
-          videoCodec, videoCodecHwAcceleration, audioStartBitrate, audioCodec, noAudioProcessing,
-          aecDump, useOpenSLES, disableBuiltInAEC, disableBuiltInAGC, disableBuiltInNS,
-          enableLevelControl, null);
+          videoCodec, videoCodecHwAcceleration, videoFlexfecEnabled, audioStartBitrate, audioCodec,
+          noAudioProcessing, aecDump, useOpenSLES, disableBuiltInAEC, disableBuiltInAGC,
+          disableBuiltInNS, enableLevelControl, null);
     }
 
     public PeerConnectionParameters(boolean videoCallEnabled, boolean loopback, boolean tracing,
         int videoWidth, int videoHeight, int videoFps, int videoMaxBitrate, String videoCodec,
-        boolean videoCodecHwAcceleration, int audioStartBitrate, String audioCodec,
-        boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES, boolean disableBuiltInAEC,
-        boolean disableBuiltInAGC, boolean disableBuiltInNS, boolean enableLevelControl,
-        DataChannelParameters dataChannelParameters) {
+        boolean videoCodecHwAcceleration, boolean videoFlexfecEnabled, int audioStartBitrate,
+        String audioCodec, boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
+        boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS,
+        boolean enableLevelControl, DataChannelParameters dataChannelParameters) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
       this.tracing = tracing;
@@ -201,6 +204,7 @@ public class PeerConnectionClient {
       this.videoFps = videoFps;
       this.videoMaxBitrate = videoMaxBitrate;
       this.videoCodec = videoCodec;
+      this.videoFlexfecEnabled = videoFlexfecEnabled;
       this.videoCodecHwAcceleration = videoCodecHwAcceleration;
       this.audioStartBitrate = audioStartBitrate;
       this.audioCodec = audioCodec;
@@ -366,7 +370,12 @@ public class PeerConnectionClient {
     isError = false;
 
     // Initialize field trials.
-    PeerConnectionFactory.initializeFieldTrials("");
+    if (peerConnectionParameters.videoFlexfecEnabled) {
+      PeerConnectionFactory.initializeFieldTrials(VIDEO_FLEXFEC_FIELDTRIAL);
+      Log.d(TAG, "Enable FlexFEC field trial.");
+    } else {
+      PeerConnectionFactory.initializeFieldTrials("");
+    }
 
     // Check preferred video codec.
     preferredVideoCodec = VIDEO_CODEC_VP8;
@@ -377,7 +386,7 @@ public class PeerConnectionClient {
         preferredVideoCodec = VIDEO_CODEC_H264;
       }
     }
-    Log.d(TAG, "Pereferred video codec: " + preferredVideoCodec);
+    Log.d(TAG, "Preferred video codec: " + preferredVideoCodec);
 
     // Check if ISAC is used by default.
     preferIsac = peerConnectionParameters.audioCodec != null

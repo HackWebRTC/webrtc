@@ -35,6 +35,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
   private String keyPrefVideoCodec;
   private String keyprefHwCodec;
   private String keyprefCaptureToTexture;
+  private String keyprefFlexfec;
 
   private String keyprefStartAudioBitrateType;
   private String keyprefStartAudioBitrateValue;
@@ -74,6 +75,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
     keyPrefVideoCodec = getString(R.string.pref_videocodec_key);
     keyprefHwCodec = getString(R.string.pref_hwcodec_key);
     keyprefCaptureToTexture = getString(R.string.pref_capturetotexture_key);
+    keyprefFlexfec = getString(R.string.pref_flexfec_key);
 
     keyprefStartAudioBitrateType = getString(R.string.pref_startaudiobitrate_key);
     keyprefStartAudioBitrateValue = getString(R.string.pref_startaudiobitratevalue_key);
@@ -126,6 +128,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
     updateSummary(sharedPreferences, keyPrefVideoCodec);
     updateSummaryB(sharedPreferences, keyprefHwCodec);
     updateSummaryB(sharedPreferences, keyprefCaptureToTexture);
+    updateSummaryB(sharedPreferences, keyprefFlexfec);
 
     updateSummary(sharedPreferences, keyprefStartAudioBitrateType);
     updateSummaryBitrate(sharedPreferences, keyprefStartAudioBitrateValue);
@@ -223,6 +226,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
         || key.equals(keyprefCaptureQualitySlider)
         || key.equals(keyprefHwCodec)
         || key.equals(keyprefCaptureToTexture)
+        || key.equals(keyprefFlexfec)
         || key.equals(keyprefNoAudioProcessing)
         || key.equals(keyprefAecDump)
         || key.equals(keyprefOpenSLES)

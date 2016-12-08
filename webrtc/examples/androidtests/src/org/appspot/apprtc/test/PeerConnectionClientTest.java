@@ -270,6 +270,7 @@ public class PeerConnectionClientTest
             0, /* videoStartBitrate */
             "", /* videoCodec */
             true, /* videoCodecHwAcceleration */
+            false, /* videoFlexfecEnabled */
             // Audio codec parameters.
             0, /* audioStartBitrate */
             "OPUS", /* audioCodec */
@@ -307,6 +308,7 @@ public class PeerConnectionClientTest
             0, /* videoStartBitrate */
             videoCodec, /* videoCodec */
             true, /* videoCodecHwAcceleration */
+            false, /* videoFlexfecEnabled */
             // Audio codec parameters.
             0, /* audioStartBitrate */
             "OPUS", /* audioCodec */
