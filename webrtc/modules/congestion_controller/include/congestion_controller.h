@@ -93,6 +93,8 @@ class CongestionController : public CallStatsObserver, public Module {
   virtual RemoteBitrateEstimator* GetRemoteBitrateEstimator(
       bool send_side_bwe);
   virtual int64_t GetPacerQueuingDelayMs() const;
+  // TODO(nisse): Delete this accessor function. The pacer should be
+  // internal to the congestion controller.
   virtual PacedSender* pacer() { return pacer_.get(); }
   // TODO(nisse): Deprecated, but still used by downstream projects.
   virtual PacketRouter* packet_router() { return packet_router_; }

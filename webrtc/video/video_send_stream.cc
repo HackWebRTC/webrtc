@@ -1094,7 +1094,7 @@ void VideoSendStreamImpl::ConfigureProtection() {
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     // Set NACK.
     rtp_rtcp->SetStorePacketsStatus(
-        nack_enabled || congestion_controller_->pacer(),
+        true,
         kMinSendSidePacketHistorySize);
     // Set RED/ULPFEC information.
     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
