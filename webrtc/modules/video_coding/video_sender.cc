@@ -197,8 +197,7 @@ EncoderParameters VideoSender::UpdateEncoderParameters(
     const EncoderParameters& params,
     VideoBitrateAllocator* bitrate_allocator,
     uint32_t target_bitrate_bps) {
-  uint32_t video_target_rate_bps = _mediaOpt.SetTargetRates(
-      target_bitrate_bps, params.loss_rate, params.rtt);
+  uint32_t video_target_rate_bps = _mediaOpt.SetTargetRates(target_bitrate_bps);
   uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
   if (input_frame_rate == 0)
     input_frame_rate = current_codec_.maxFramerate;
