@@ -12,13 +12,19 @@
 
 #include <utility>
 
+namespace {
+// MediaCodec wants resolution to be divisible by 2.
+const int kRequiredResolutionAlignment = 2;
+}
+
 namespace webrtc {
 
 AndroidVideoTrackSource::AndroidVideoTrackSource(rtc::Thread* signaling_thread,
                                                  JNIEnv* jni,
                                                  jobject j_egl_context,
                                                  bool is_screencast)
-    : signaling_thread_(signaling_thread),
+    : AdaptedVideoTrackSource(kRequiredResolutionAlignment),
+      signaling_thread_(signaling_thread),
       surface_texture_helper_(webrtc_jni::SurfaceTextureHelper::create(
           jni,
           "Camera SurfaceTextureHelper",

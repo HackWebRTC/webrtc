@@ -11,116 +11,73 @@
 #include "webrtc/media/base/videoadapter.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <limits>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/videocommon.h"
 
 namespace {
-
 struct Fraction {
   int numerator;
   int denominator;
 };
 
-// Scale factors optimized for in libYUV that we accept.
-// Must be sorted in decreasing scale factors for FindScaleLargerThan to work.
-const Fraction kScaleFractions[] = {
-  {1, 1},
-  {3, 4},
-  {1, 2},
-  {3, 8},
-  {1, 4},
-  {3, 16},
-};
-
-// Round |valueToRound| to a multiple of |multiple|. Prefer rounding upwards,
-// but never more than |maxValue|.
-int roundUp(int valueToRound, int multiple, int maxValue) {
-  const int roundedValue = (valueToRound + multiple - 1) / multiple * multiple;
-  return roundedValue <= maxValue ? roundedValue
-                                  : (maxValue / multiple * multiple);
+// Round |value_to_round| to a multiple of |multiple|. Prefer rounding upwards,
+// but never more than |max_value|.
+int roundUp(int value_to_round, int multiple, int max_value) {
+  const int rounded_value =
+      (value_to_round + multiple - 1) / multiple * multiple;
+  return rounded_value <= max_value ? rounded_value
+                                    : (max_value / multiple * multiple);
 }
 
-Fraction FindScaleLessThanOrEqual(int input_num_pixels, int target_num_pixels) {
-  float best_distance = std::numeric_limits<float>::max();
-  Fraction best_scale = {0, 1};  // Default to 0 if nothing matches.
-  for (const auto& fraction : kScaleFractions) {
-    const float scale =
-        fraction.numerator / static_cast<float>(fraction.denominator);
-    float test_num_pixels = input_num_pixels * scale * scale;
-    float diff = target_num_pixels - test_num_pixels;
-    if (diff < 0) {
-      continue;
-    }
-    if (diff < best_distance) {
-      best_distance = diff;
-      best_scale = fraction;
-      if (best_distance == 0) {  // Found exact match.
-        break;
-      }
+// Generates a scale factor that makes |input_num_pixels| smaller or
+// larger than |target_num_pixels|, depending on the value of |step_up|.
+Fraction FindScale(int input_num_pixels, int target_num_pixels, bool step_up) {
+  // This function only makes sense for a positive target.
+  RTC_DCHECK_GT(target_num_pixels, 0);
+  Fraction best_scale = Fraction{1, 1};
+  Fraction last_scale = Fraction{1, 1};
+  const float target_scale =
+      sqrt(target_num_pixels / static_cast<float>(input_num_pixels));
+  while (best_scale.numerator > (target_scale * best_scale.denominator)) {
+    last_scale = best_scale;
+    if (best_scale.numerator % 3 == 0 && best_scale.denominator % 2 == 0) {
+      // Multiply by 2/3
+      best_scale.numerator /= 3;
+      best_scale.denominator /= 2;
+    } else {
+      // Multiply by 3/4
+      best_scale.numerator *= 3;
+      best_scale.denominator *= 4;
     }
   }
+  if (step_up)
+    return last_scale;
   return best_scale;
 }
-
-Fraction FindScaleLargerThan(int input_num_pixels,
-                             int target_num_pixels,
-                             int* resulting_number_of_pixels) {
-  float best_distance = std::numeric_limits<float>::max();
-  Fraction best_scale = {1, 1};  // Default to unscaled if nothing matches.
-  // Default to input number of pixels.
-  float best_number_of_pixels = input_num_pixels;
-  for (const auto& fraction : kScaleFractions) {
-    const float scale =
-        fraction.numerator / static_cast<float>(fraction.denominator);
-    float test_num_pixels = input_num_pixels * scale * scale;
-    float diff = test_num_pixels - target_num_pixels;
-    if (diff <= 0) {
-      break;
-    }
-    if (diff < best_distance) {
-      best_distance = diff;
-      best_scale = fraction;
-      best_number_of_pixels = test_num_pixels;
-    }
-  }
-
-  *resulting_number_of_pixels = static_cast<int>(best_number_of_pixels + .5f);
-  return best_scale;
-}
-
-Fraction FindScale(int input_num_pixels,
-                   int max_pixel_count_step_up,
-                   int max_pixel_count) {
-  // Try scale just above |max_pixel_count_step_up_|.
-  if (max_pixel_count_step_up > 0) {
-    int resulting_pixel_count;
-    const Fraction scale = FindScaleLargerThan(
-        input_num_pixels, max_pixel_count_step_up, &resulting_pixel_count);
-    if (resulting_pixel_count <= max_pixel_count)
-      return scale;
-  }
-  // Return largest scale below |max_pixel_count|.
-  return FindScaleLessThanOrEqual(input_num_pixels, max_pixel_count);
-}
-
 }  // namespace
 
 namespace cricket {
 
-VideoAdapter::VideoAdapter()
+VideoAdapter::VideoAdapter(int required_resolution_alignment)
     : frames_in_(0),
       frames_out_(0),
       frames_scaled_(0),
       adaption_changes_(0),
       previous_width_(0),
       previous_height_(0),
+      required_resolution_alignment_(required_resolution_alignment),
       resolution_request_max_pixel_count_(std::numeric_limits<int>::max()),
-      resolution_request_max_pixel_count_step_up_(0) {}
+      step_up_(false) {}
+
+VideoAdapter::VideoAdapter() : VideoAdapter(1) {}
 
 VideoAdapter::~VideoAdapter() {}
 
@@ -167,12 +124,17 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
   // OnOutputFormatRequest and OnResolutionRequest.
   int max_pixel_count = resolution_request_max_pixel_count_;
   if (requested_format_) {
+    // TODO(kthelgason): remove the - |step_up_| hack when we change how
+    // resolution is requested from VideoSourceProxy.
+    // This is required because we must not scale above the requested
+    // format so we subtract one when scaling up.
     max_pixel_count = std::min(
-        max_pixel_count, requested_format_->width * requested_format_->height);
+        max_pixel_count, requested_format_->width * requested_format_->height -
+                             static_cast<int>(step_up_));
   }
 
   // Drop the input frame if necessary.
-  if (max_pixel_count == 0 || !KeepFrame(in_timestamp_ns)) {
+  if (max_pixel_count <= 0 || !KeepFrame(in_timestamp_ns)) {
     // Show VAdapt log every 90 frames dropped. (3 seconds)
     if ((frames_in_ - frames_out_) % 90 == 0) {
       // TODO(fbarchard): Reduce to LS_VERBOSE when adapter info is not needed
@@ -211,22 +173,25 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
     *cropped_height =
         std::min(in_height, static_cast<int>(in_width / requested_aspect));
   }
-
-  // Find best scale factor.
   const Fraction scale =
-      FindScale(*cropped_width * *cropped_height,
-                resolution_request_max_pixel_count_step_up_, max_pixel_count);
-
+      FindScale(*cropped_width * *cropped_height, max_pixel_count, step_up_);
   // Adjust cropping slightly to get even integer output size and a perfect
-  // scale factor.
-  *cropped_width = roundUp(*cropped_width, scale.denominator, in_width);
-  *cropped_height = roundUp(*cropped_height, scale.denominator, in_height);
+  // scale factor. Make sure the resulting dimensions are aligned correctly
+  // to be nice to hardware encoders.
+  *cropped_width =
+      roundUp(*cropped_width,
+              scale.denominator * required_resolution_alignment_, in_width);
+  *cropped_height =
+      roundUp(*cropped_height,
+              scale.denominator * required_resolution_alignment_, in_height);
   RTC_DCHECK_EQ(0, *cropped_width % scale.denominator);
   RTC_DCHECK_EQ(0, *cropped_height % scale.denominator);
 
   // Calculate final output size.
   *out_width = *cropped_width / scale.denominator * scale.numerator;
   *out_height = *cropped_height / scale.denominator * scale.numerator;
+  RTC_DCHECK_EQ(0, *out_height % required_resolution_alignment_);
+  RTC_DCHECK_EQ(0, *out_height % required_resolution_alignment_);
 
   ++frames_out_;
   if (scale.numerator != scale.denominator)
@@ -260,10 +225,9 @@ void VideoAdapter::OnResolutionRequest(
     rtc::Optional<int> max_pixel_count,
     rtc::Optional<int> max_pixel_count_step_up) {
   rtc::CritScope cs(&critical_section_);
-  resolution_request_max_pixel_count_ =
-      max_pixel_count.value_or(std::numeric_limits<int>::max());
-  resolution_request_max_pixel_count_step_up_ =
-      max_pixel_count_step_up.value_or(0);
+  resolution_request_max_pixel_count_ = max_pixel_count.value_or(
+      max_pixel_count_step_up.value_or(std::numeric_limits<int>::max()));
+  step_up_ = static_cast<bool>(max_pixel_count_step_up);
 }
 
 }  // namespace cricket

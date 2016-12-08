@@ -25,6 +25,7 @@ namespace cricket {
 class VideoAdapter {
  public:
   VideoAdapter();
+  VideoAdapter(int required_resolution_alignment);
   virtual ~VideoAdapter();
 
   // Return the adapted resolution and cropping parameters given the
@@ -63,6 +64,8 @@ class VideoAdapter {
   int adaption_changes_;  // Number of changes in scale factor.
   int previous_width_;    // Previous adapter output width.
   int previous_height_;   // Previous adapter output height.
+  // Resolution must be divisible by this factor.
+  const int required_resolution_alignment_;
   // The target timestamp for the next frame based on requested format.
   rtc::Optional<int64_t> next_frame_timestamp_ns_ GUARDED_BY(critical_section_);
 
@@ -71,7 +74,7 @@ class VideoAdapter {
   // The adapted output format is the minimum of these.
   rtc::Optional<VideoFormat> requested_format_ GUARDED_BY(critical_section_);
   int resolution_request_max_pixel_count_ GUARDED_BY(critical_section_);
-  int resolution_request_max_pixel_count_step_up_ GUARDED_BY(critical_section_);
+  bool step_up_ GUARDED_BY(critical_section_);
 
   // The critical section to protect the above variables.
   rtc::CriticalSection critical_section_;

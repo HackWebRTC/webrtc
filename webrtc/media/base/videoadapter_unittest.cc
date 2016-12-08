@@ -951,4 +951,64 @@ TEST_F(VideoAdapterTest, TestCroppingOddResolution) {
   EXPECT_EQ(69, out_height_);
 }
 
+TEST_F(VideoAdapterTest, TestAdaptToVerySmallResolution) {
+  // Ask for 1920x1080 (16:9 aspect), with 1/16 scaling.
+  const int w = 1920;
+  const int h = 1080;
+  adapter_.OnOutputFormatRequest(VideoFormat(w, h, 0, FOURCC_I420));
+  adapter_.OnResolutionRequest(rtc::Optional<int>(w * h * 1 / 16 * 1 / 16),
+                               rtc::Optional<int>());
+
+  // Send 1920x1080 (16:9 aspect).
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(
+      w, h, 0, &cropped_width_, &cropped_height_, &out_width_, &out_height_));
+
+  // Instead of getting the exact aspect ratio with cropped resolution 1920x1080
+  // the resolution should be adjusted to get a perfect scale factor instead.
+  EXPECT_EQ(1920, cropped_width_);
+  EXPECT_EQ(1072, cropped_height_);
+  EXPECT_EQ(120, out_width_);
+  EXPECT_EQ(67, out_height_);
+
+  // Adapt back up one step to 3/32.
+  adapter_.OnResolutionRequest(rtc::Optional<int>(),
+                               rtc::Optional<int>(w * h * 1 / 16 * 1 / 16));
+
+  // Send 1920x1080 (16:9 aspect).
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(
+      w, h, 0, &cropped_width_, &cropped_height_, &out_width_, &out_height_));
+
+  EXPECT_EQ(180, out_width_);
+  EXPECT_EQ(99, out_height_);
+}
+
+TEST_F(VideoAdapterTest, AdaptFrameResolutionDropWithResolutionRequest) {
+  VideoFormat output_format = capture_format_;
+  output_format.width = 0;
+  output_format.height = 0;
+  adapter_.OnOutputFormatRequest(output_format);
+  EXPECT_FALSE(adapter_.AdaptFrameResolution(
+      capture_format_.width, capture_format_.height, 0,
+      &cropped_width_, &cropped_height_,
+      &out_width_, &out_height_));
+
+  adapter_.OnResolutionRequest(rtc::Optional<int>(),
+                               rtc::Optional<int>(640 * 480));
+
+  // Still expect all frames to be dropped
+  EXPECT_FALSE(adapter_.AdaptFrameResolution(
+      capture_format_.width, capture_format_.height, 0,
+      &cropped_width_, &cropped_height_,
+      &out_width_, &out_height_));
+
+  adapter_.OnResolutionRequest(rtc::Optional<int>(640 * 480 - 1),
+                               rtc::Optional<int>());
+
+  // Still expect all frames to be dropped
+  EXPECT_FALSE(adapter_.AdaptFrameResolution(
+      capture_format_.width, capture_format_.height, 0,
+      &cropped_width_, &cropped_height_,
+      &out_width_, &out_height_));
+}
+
 }  // namespace cricket
