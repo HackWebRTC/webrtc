@@ -33,9 +33,10 @@ class PercentileFilter {
   // the size of the container.
   void Insert(const T& value);
 
-  // Remove one observation. The complexity of this operation is logarithmic in
-  // the size of the container.
-  void Erase(const T& value);
+  // Remove one observation or return false if |value| doesn't exist in the
+  // container. The complexity of this operation is logarithmic in the size of
+  // the container.
+  bool Erase(const T& value);
 
   // Get the percentile value. The complexity of this operation is constant.
   T GetPercentileValue() const;
@@ -76,11 +77,11 @@ void PercentileFilter<T>::Insert(const T& value) {
 }
 
 template <typename T>
-void PercentileFilter<T>::Erase(const T& value) {
+bool PercentileFilter<T>::Erase(const T& value) {
   typename std::multiset<T>::const_iterator it = set_.lower_bound(value);
   // Ignore erase operation if the element is not present in the current set.
   if (it == set_.end() || *it != value)
-    return;
+    return false;
   if (it == percentile_it_) {
     // If same iterator, update to the following element. Index is not
     // affected.
@@ -92,6 +93,7 @@ void PercentileFilter<T>::Erase(const T& value) {
       --percentile_index_;
   }
   UpdatePercentileIterator();
+  return true;
 }
 
 template <typename T>

@@ -84,15 +84,18 @@ TEST(PercentileFilterTest, MedianFilterUnsigned) {
 TEST_P(PercentileFilterTest, EmptyFilter) {
   EXPECT_EQ(0, filter_.GetPercentileValue());
   filter_.Insert(3);
-  filter_.Erase(3);
+  bool success = filter_.Erase(3);
+  EXPECT_TRUE(success);
   EXPECT_EQ(0, filter_.GetPercentileValue());
 }
 
 TEST_P(PercentileFilterTest, EraseNonExistingElement) {
-  filter_.Erase(3);
+  bool success = filter_.Erase(3);
+  EXPECT_FALSE(success);
   EXPECT_EQ(0, filter_.GetPercentileValue());
   filter_.Insert(4);
-  filter_.Erase(3);
+  success = filter_.Erase(3);
+  EXPECT_FALSE(success);
   EXPECT_EQ(4, filter_.GetPercentileValue());
 }
 

@@ -175,13 +175,11 @@ TEST_F(DelayBasedBweTest, TestLongTimeoutAndWrap) {
 class DelayBasedBweExperimentTest : public DelayBasedBweTest {
  public:
   DelayBasedBweExperimentTest()
-      : override_field_trials_("WebRTC-ImprovedBitrateEstimate/Enabled/") {}
-
- protected:
-  void SetUp() override {
+      : override_field_trials_("WebRTC-ImprovedBitrateEstimate/Enabled/") {
     bitrate_estimator_.reset(new DelayBasedBwe(&clock_));
   }
 
+ private:
   test::ScopedFieldTrials override_field_trials_;
 };
 
@@ -208,13 +206,11 @@ TEST_F(DelayBasedBweExperimentTest, CapacityDropOneStreamWrap) {
 class DelayBasedBweTrendlineExperimentTest : public DelayBasedBweTest {
  public:
   DelayBasedBweTrendlineExperimentTest()
-      : override_field_trials_("WebRTC-BweTrendlineFilter/Enabled-15,0.9,4/") {}
-
- protected:
-  void SetUp() override {
+      : override_field_trials_("WebRTC-BweTrendlineFilter/Enabled-15,0.9,4/") {
     bitrate_estimator_.reset(new DelayBasedBwe(&clock_));
   }
 
+ private:
   test::ScopedFieldTrials override_field_trials_;
 };
 
@@ -235,6 +231,37 @@ TEST_F(DelayBasedBweTrendlineExperimentTest, CapacityDropNegOffsetChange) {
 }
 
 TEST_F(DelayBasedBweTrendlineExperimentTest, CapacityDropOneStreamWrap) {
+  CapacityDropTestHelper(1, true, 600, 0);
+}
+
+class DelayBasedBweMedianSlopeExperimentTest : public DelayBasedBweTest {
+ public:
+  DelayBasedBweMedianSlopeExperimentTest()
+      : override_field_trials_("WebRTC-BweMedianSlopeFilter/Enabled-20,4/") {
+    bitrate_estimator_.reset(new DelayBasedBwe(&clock_));
+  }
+
+ private:
+  test::ScopedFieldTrials override_field_trials_;
+};
+
+TEST_F(DelayBasedBweMedianSlopeExperimentTest, RateIncreaseRtpTimestamps) {
+  RateIncreaseRtpTimestampsTestHelper(1240);
+}
+
+TEST_F(DelayBasedBweMedianSlopeExperimentTest, CapacityDropOneStream) {
+  CapacityDropTestHelper(1, false, 600, 0);
+}
+
+TEST_F(DelayBasedBweMedianSlopeExperimentTest, CapacityDropPosOffsetChange) {
+  CapacityDropTestHelper(1, false, 600, 30000);
+}
+
+TEST_F(DelayBasedBweMedianSlopeExperimentTest, CapacityDropNegOffsetChange) {
+  CapacityDropTestHelper(1, false, 1267, -30000);
+}
+
+TEST_F(DelayBasedBweMedianSlopeExperimentTest, CapacityDropOneStreamWrap) {
   CapacityDropTestHelper(1, true, 600, 0);
 }
 

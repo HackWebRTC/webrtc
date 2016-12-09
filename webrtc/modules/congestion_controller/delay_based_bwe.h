@@ -19,6 +19,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/modules/congestion_controller/median_slope_estimator.h"
 #include "webrtc/modules/congestion_controller/probe_bitrate_estimator.h"
 #include "webrtc/modules/congestion_controller/probing_interval_estimator.h"
 #include "webrtc/modules/congestion_controller/trendline_estimator.h"
@@ -84,12 +85,15 @@ class DelayBasedBwe {
                       int64_t now_ms,
                       rtc::Optional<uint32_t> acked_bitrate_bps,
                       uint32_t* target_bitrate_bps);
+  const bool in_trendline_experiment_;
+  const bool in_median_slope_experiment_;
 
   rtc::ThreadChecker network_thread_;
   Clock* const clock_;
   std::unique_ptr<InterArrival> inter_arrival_;
   std::unique_ptr<OveruseEstimator> kalman_estimator_;
   std::unique_ptr<TrendlineEstimator> trendline_estimator_;
+  std::unique_ptr<MedianSlopeEstimator> median_slope_estimator_;
   OveruseDetector detector_;
   BitrateEstimator receiver_incoming_bitrate_;
   int64_t last_update_ms_;
@@ -100,8 +104,9 @@ class DelayBasedBwe {
   size_t trendline_window_size_;
   double trendline_smoothing_coeff_;
   double trendline_threshold_gain_;
-  const bool in_trendline_experiment_;
   ProbingIntervalEstimator probing_interval_estimator_;
+  size_t median_slope_window_size_;
+  double median_slope_threshold_gain_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
 };
