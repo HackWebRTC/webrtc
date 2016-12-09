@@ -20,6 +20,16 @@
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/vie_encoder.h"
 
+namespace {
+#if defined(WEBRTC_ANDROID)
+// TODO(kthelgason): Lower this limit when better testing
+// on MediaCodec and fallback implementations are in place.
+const int kMinPixelsPerFrame = 320 * 180;
+#else
+const int kMinPixelsPerFrame = 120 * 90;
+#endif
+}
+
 namespace webrtc {
 
 using DegredationPreference = VideoSendStream::DegradationPreference;
@@ -924,8 +934,6 @@ TEST_F(ViEEncoderTest, DoesNotScaleBelowSetLimit) {
   const int kTargetBitrateBps = 100000;
   int frame_width = 1280;
   int frame_height = 720;
-  // from vie_encoder.cc
-  const int kMinPixelsPerFrame = 120 * 90;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   for (size_t i = 1; i <= 10; i++) {
