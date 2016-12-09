@@ -197,7 +197,7 @@ class CollectTestResults(object):
         # Third version of the file format. See the link in the flag description
         # for details.
         "version": 3,
-        "seconds_since_epoch": time.time(),
+        "seconds_since_epoch": int(time.time()),
         "num_failures_by_type": {
             "PASS": 0,
             "FAIL": 0,
