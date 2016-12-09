@@ -28,7 +28,6 @@ using ScaleReason = ScalingObserverInterface::ScaleReason;
 namespace {
 const size_t kMaxPayloadLength = 1440;
 const int kTargetBitrateBps = 100000;
-const unsigned char kNumSlDummy = 0;
 
 class TestBuffer : public webrtc::I420Buffer {
  public:
@@ -142,7 +141,6 @@ class ViEEncoderTest : public ::testing::Test {
   void ResetEncoder(const std::string& payload_name,
                     size_t num_streams,
                     size_t num_temporal_layers,
-                    unsigned char num_spatial_layers,
                     bool nack_enabled) {
     video_send_config_.encoder_settings.payload_name = payload_name;
 
@@ -151,13 +149,6 @@ class ViEEncoderTest : public ::testing::Test {
     video_encoder_config.max_bitrate_bps = 1000000;
     video_encoder_config.video_stream_factory =
         new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers);
-    if (payload_name == "VP9") {
-      VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
-      vp9_settings.numberOfSpatialLayers = num_spatial_layers;
-      video_encoder_config.encoder_specific_settings =
-          new rtc::RefCountedObject<
-              VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
-    }
     ConfigureEncoder(std::move(video_encoder_config), nack_enabled);
   }
 
@@ -442,7 +433,7 @@ TEST_F(ViEEncoderTest, Vp8ResilienceIsOffFor1S1TLWithNackEnabled) {
   const bool kNackEnabled = true;
   const size_t kNumStreams = 1;
   const size_t kNumTl = 1;
-  ResetEncoder("VP8", kNumStreams, kNumTl, kNumSlDummy, kNackEnabled);
+  ResetEncoder("VP8", kNumStreams, kNumTl, kNackEnabled);
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
@@ -462,7 +453,7 @@ TEST_F(ViEEncoderTest, Vp8ResilienceIsOffFor2S1TlWithNackEnabled) {
   const bool kNackEnabled = true;
   const size_t kNumStreams = 2;
   const size_t kNumTl = 1;
-  ResetEncoder("VP8", kNumStreams, kNumTl, kNumSlDummy, kNackEnabled);
+  ResetEncoder("VP8", kNumStreams, kNumTl, kNackEnabled);
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
@@ -482,7 +473,7 @@ TEST_F(ViEEncoderTest, Vp8ResilienceIsOnFor1S1TLWithNackDisabled) {
   const bool kNackEnabled = false;
   const size_t kNumStreams = 1;
   const size_t kNumTl = 1;
-  ResetEncoder("VP8", kNumStreams, kNumTl, kNumSlDummy, kNackEnabled);
+  ResetEncoder("VP8", kNumStreams, kNumTl, kNackEnabled);
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
@@ -502,7 +493,7 @@ TEST_F(ViEEncoderTest, Vp8ResilienceIsOnFor1S2TlWithNackEnabled) {
   const bool kNackEnabled = true;
   const size_t kNumStreams = 1;
   const size_t kNumTl = 2;
-  ResetEncoder("VP8", kNumStreams, kNumTl, kNumSlDummy, kNackEnabled);
+  ResetEncoder("VP8", kNumStreams, kNumTl, kNackEnabled);
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
@@ -515,94 +506,6 @@ TEST_F(ViEEncoderTest, Vp8ResilienceIsOnFor1S2TlWithNackEnabled) {
   EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP8()->numberOfTemporalLayers);
   // Resilience is on for temporal layers.
   EXPECT_EQ(kResilientStream, fake_encoder_.codec_config().VP8()->resilience);
-  vie_encoder_->Stop();
-}
-
-TEST_F(ViEEncoderTest, Vp9ResilienceIsOffFor1SL1TLWithNackEnabled) {
-  const bool kNackEnabled = true;
-  const size_t kNumStreams = 1;
-  const size_t kNumTl = 1;
-  const unsigned char kNumSl = 1;
-  ResetEncoder("VP9", kNumStreams, kNumTl, kNumSl, kNackEnabled);
-  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-
-  // Capture a frame and wait for it to synchronize with the encoder thread.
-  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
-  sink_.WaitForEncodedFrame(1);
-  // The encoder have been configured once when the first frame is received.
-  EXPECT_EQ(1, sink_.number_of_reconfigurations());
-  EXPECT_EQ(kVideoCodecVP9, fake_encoder_.codec_config().codecType);
-  EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
-  EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP9()->numberOfTemporalLayers);
-  EXPECT_EQ(kNumSl, fake_encoder_.codec_config().VP9()->numberOfSpatialLayers);
-  // Resilience is off for no spatial and temporal layers with nack on.
-  EXPECT_FALSE(fake_encoder_.codec_config().VP9()->resilienceOn);
-  vie_encoder_->Stop();
-}
-
-TEST_F(ViEEncoderTest, Vp9ResilienceIsOnFor1SL1TLWithNackDisabled) {
-  const bool kNackEnabled = false;
-  const size_t kNumStreams = 1;
-  const size_t kNumTl = 1;
-  const unsigned char kNumSl = 1;
-  ResetEncoder("VP9", kNumStreams, kNumTl, kNumSl, kNackEnabled);
-  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-
-  // Capture a frame and wait for it to synchronize with the encoder thread.
-  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
-  sink_.WaitForEncodedFrame(1);
-  // The encoder have been configured once when the first frame is received.
-  EXPECT_EQ(1, sink_.number_of_reconfigurations());
-  EXPECT_EQ(kVideoCodecVP9, fake_encoder_.codec_config().codecType);
-  EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
-  EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP9()->numberOfTemporalLayers);
-  EXPECT_EQ(kNumSl, fake_encoder_.codec_config().VP9()->numberOfSpatialLayers);
-  // Resilience is on if nack is off.
-  EXPECT_TRUE(fake_encoder_.codec_config().VP9()->resilienceOn);
-  vie_encoder_->Stop();
-}
-
-TEST_F(ViEEncoderTest, Vp9ResilienceIsOnFor2SL1TLWithNackEnabled) {
-  const bool kNackEnabled = true;
-  const size_t kNumStreams = 1;
-  const size_t kNumTl = 1;
-  const unsigned char kNumSl = 2;
-  ResetEncoder("VP9", kNumStreams, kNumTl, kNumSl, kNackEnabled);
-  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-
-  // Capture a frame and wait for it to synchronize with the encoder thread.
-  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
-  sink_.WaitForEncodedFrame(1);
-  // The encoder have been configured once when the first frame is received.
-  EXPECT_EQ(1, sink_.number_of_reconfigurations());
-  EXPECT_EQ(kVideoCodecVP9, fake_encoder_.codec_config().codecType);
-  EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
-  EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP9()->numberOfTemporalLayers);
-  EXPECT_EQ(kNumSl, fake_encoder_.codec_config().VP9()->numberOfSpatialLayers);
-  // Resilience is on for spatial layers.
-  EXPECT_TRUE(fake_encoder_.codec_config().VP9()->resilienceOn);
-  vie_encoder_->Stop();
-}
-
-TEST_F(ViEEncoderTest, Vp9ResilienceIsOnFor1SL2TLWithNackEnabled) {
-  const bool kNackEnabled = true;
-  const size_t kNumStreams = 1;
-  const size_t kNumTl = 2;
-  const unsigned char kNumSl = 1;
-  ResetEncoder("VP9", kNumStreams, kNumTl, kNumSl, kNackEnabled);
-  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-
-  // Capture a frame and wait for it to synchronize with the encoder thread.
-  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
-  sink_.WaitForEncodedFrame(1);
-  // The encoder have been configured once when the first frame is received.
-  EXPECT_EQ(1, sink_.number_of_reconfigurations());
-  EXPECT_EQ(kVideoCodecVP9, fake_encoder_.codec_config().codecType);
-  EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
-  EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP9()->numberOfTemporalLayers);
-  EXPECT_EQ(kNumSl, fake_encoder_.codec_config().VP9()->numberOfSpatialLayers);
-  // Resilience is on for temporal layers.
-  EXPECT_TRUE(fake_encoder_.codec_config().VP9()->resilienceOn);
   vie_encoder_->Stop();
 }
 
