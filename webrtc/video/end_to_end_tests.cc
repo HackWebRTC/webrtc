@@ -19,6 +19,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/file.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/random.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/include/frame_callback.h"
@@ -708,7 +709,7 @@ TEST_P(EndToEndTest, CanReceiveFlexfec) {
                                 public rtc::VideoSinkInterface<VideoFrame> {
    public:
     FlexfecRenderObserver()
-        : EndToEndTest(kDefaultTimeoutMs), state_(kFirstPacket) {}
+        : EndToEndTest(kDefaultTimeoutMs), random_(0xcafef00d1) {}
 
     size_t GetNumFlexfecStreams() const override { return 1; }
 
@@ -723,36 +724,30 @@ TEST_P(EndToEndTest, CanReceiveFlexfec) {
         EXPECT_EQ(kFlexfecPayloadType, payload_type);
       }
 
-      auto seq_num_it = protected_sequence_numbers_.find(header.sequenceNumber);
-      if (seq_num_it != protected_sequence_numbers_.end()) {
-        // Retransmitted packet, should not count.
-        protected_sequence_numbers_.erase(seq_num_it);
-        auto ts_it = protected_timestamps_.find(header.timestamp);
-        EXPECT_NE(ts_it, protected_timestamps_.end());
-        protected_timestamps_.erase(ts_it);
-        return SEND_PACKET;
+      // Is this a retransmitted media packet? From the perspective of FEC, this
+      // packet is then no longer dropped, so remove it from the list of
+      // dropped packets.
+      if (payload_type == kFakeVideoSendPayloadType) {
+        auto seq_num_it = dropped_sequence_numbers_.find(header.sequenceNumber);
+        if (seq_num_it != dropped_sequence_numbers_.end()) {
+          dropped_sequence_numbers_.erase(seq_num_it);
+          auto ts_it = dropped_timestamps_.find(header.timestamp);
+          EXPECT_NE(ts_it, dropped_timestamps_.end());
+          dropped_timestamps_.erase(ts_it);
+
+          return SEND_PACKET;
+        }
       }
 
-      switch (state_) {
-        case kFirstPacket:
-          state_ = kDropEveryOtherPacketUntilFlexfec;
-          break;
-        case kDropEveryOtherPacketUntilFlexfec:
-          if (payload_type == kFlexfecPayloadType) {
-            state_ = kDropNextMediaPacket;
-            return SEND_PACKET;
-          }
-          if (header.sequenceNumber % 2 == 0)
-            return DROP_PACKET;
-          break;
-        case kDropNextMediaPacket:
-          if (payload_type == kFakeVideoSendPayloadType) {
-            protected_sequence_numbers_.insert(header.sequenceNumber);
-            protected_timestamps_.insert(header.timestamp);
-            state_ = kDropEveryOtherPacketUntilFlexfec;
-            return DROP_PACKET;
-          }
-          break;
+      // Simulate 5% packet loss. Record what media packets, and corresponding
+      // timestamps, that were dropped.
+      if (random_.Rand(1, 100) <= 5) {
+        if (payload_type == kFakeVideoSendPayloadType) {
+          dropped_sequence_numbers_.insert(header.sequenceNumber);
+          dropped_timestamps_.insert(header.timestamp);
+        }
+
+        return DROP_PACKET;
       }
 
       return SEND_PACKET;
@@ -762,16 +757,10 @@ TEST_P(EndToEndTest, CanReceiveFlexfec) {
       rtc::CritScope lock(&crit_);
       // Rendering frame with timestamp of packet that was dropped -> FEC
       // protection worked.
-      auto it = protected_timestamps_.find(video_frame.timestamp());
-      if (it != protected_timestamps_.end())
+      auto it = dropped_timestamps_.find(video_frame.timestamp());
+      if (it != dropped_timestamps_.end())
         observation_complete_.Set();
     }
-
-    enum {
-      kFirstPacket,
-      kDropEveryOtherPacketUntilFlexfec,
-      kDropNextMediaPacket,
-    } state_;
 
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
@@ -786,10 +775,11 @@ TEST_P(EndToEndTest, CanReceiveFlexfec) {
     }
 
     rtc::CriticalSection crit_;
-    std::set<uint32_t> protected_sequence_numbers_ GUARDED_BY(crit_);
+    std::set<uint32_t> dropped_sequence_numbers_ GUARDED_BY(crit_);
     // Since several packets can have the same timestamp a multiset is used
     // instead of a set.
-    std::multiset<uint32_t> protected_timestamps_ GUARDED_BY(crit_);
+    std::multiset<uint32_t> dropped_timestamps_ GUARDED_BY(crit_);
+    Random random_;
   } test;
 
   RunBaseTest(&test);
