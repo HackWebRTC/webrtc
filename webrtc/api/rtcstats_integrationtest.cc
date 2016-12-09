@@ -469,7 +469,7 @@ class RTCStatsReportVerifier {
     VerifyRTCRTPStreamStats(inbound_stream, &verifier);
     verifier.TestMemberIsDefined(inbound_stream.packets_received);
     verifier.TestMemberIsDefined(inbound_stream.bytes_received);
-    verifier.TestMemberIsUndefined(inbound_stream.packets_lost);
+    verifier.TestMemberIsDefined(inbound_stream.packets_lost);
     if (inbound_stream.media_type.is_defined() &&
         *inbound_stream.media_type == "video") {
       verifier.TestMemberIsUndefined(inbound_stream.jitter);

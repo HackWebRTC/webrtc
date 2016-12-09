@@ -1313,6 +1313,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   voice_media_info.receivers[0].local_stats.push_back(
       cricket::SsrcReceiverInfo());
   voice_media_info.receivers[0].local_stats[0].ssrc = 1;
+  voice_media_info.receivers[0].packets_lost = 42;
   voice_media_info.receivers[0].packets_rcvd = 2;
   voice_media_info.receivers[0].bytes_rcvd = 3;
   voice_media_info.receivers[0].codec_payload_type = rtc::Optional<int>(42);
@@ -1357,6 +1358,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   expected_audio.codec_id = "RTCCodec_InboundAudio_42";
   expected_audio.packets_received = 2;
   expected_audio.bytes_received = 3;
+  expected_audio.packets_lost = 42;
   expected_audio.jitter = 4.5;
   expected_audio.fraction_lost = 5.5;
 
@@ -1382,6 +1384,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
       cricket::SsrcReceiverInfo());
   video_media_info.receivers[0].local_stats[0].ssrc = 1;
   video_media_info.receivers[0].packets_rcvd = 2;
+  video_media_info.receivers[0].packets_lost = 42;
   video_media_info.receivers[0].bytes_rcvd = 3;
   video_media_info.receivers[0].fraction_lost = 4.5f;
   video_media_info.receivers[0].codec_payload_type = rtc::Optional<int>(42);
@@ -1430,6 +1433,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   expected_video.nack_count = 7;
   expected_video.packets_received = 2;
   expected_video.bytes_received = 3;
+  expected_video.packets_lost = 42;
   expected_video.fraction_lost = 4.5;
 
   ASSERT(report->Get(expected_video.id()));

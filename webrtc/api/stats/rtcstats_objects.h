@@ -328,7 +328,6 @@ class RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
 
   RTCStatsMember<uint32_t> packets_received;
   RTCStatsMember<uint64_t> bytes_received;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
   RTCStatsMember<uint32_t> packets_lost;
   // TODO(hbos): Not collected in the "video" case by |RTCStatsCollector|.
   // crbug.com/657855

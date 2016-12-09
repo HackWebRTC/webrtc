@@ -150,6 +150,8 @@ void SetInboundRTPStreamStatsFromMediaReceiverInfo(
       static_cast<uint32_t>(media_receiver_info.packets_rcvd);
   inbound_stats->bytes_received =
       static_cast<uint64_t>(media_receiver_info.bytes_rcvd);
+  inbound_stats->packets_lost =
+      static_cast<uint32_t>(media_receiver_info.packets_lost);
   inbound_stats->fraction_lost =
       static_cast<double>(media_receiver_info.fraction_lost);
 }
