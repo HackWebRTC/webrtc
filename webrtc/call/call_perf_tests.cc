@@ -471,7 +471,12 @@ TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkJitter) {
   const int kRunTimeMs = 20000;
   TestCaptureNtpTime(net_config, kThresholdMs, kStartTimeMs, kRunTimeMs);
 }
-
+#if defined(WEBRTC_ANDROID)
+// This test is disabled on android as it does not update
+// sinkWants below 320x180, the starting resolution for these
+// tests.
+#define ReceivesCpuOveruseAndUnderuse DISABLED_ReceivesCpuOveruseAndUnderuse
+#endif
 TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
   class LoadObserver : public test::SendTest,
                        public test::FrameGeneratorCapturer::SinkWantsObserver {
