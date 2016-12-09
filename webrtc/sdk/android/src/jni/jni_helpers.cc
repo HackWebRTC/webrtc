@@ -15,6 +15,7 @@
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <vector>
 
 namespace webrtc_jni {
 
@@ -236,15 +237,27 @@ jstring JavaStringFromStdString(JNIEnv* jni, const std::string& native) {
   return jstr;
 }
 
-// Given a (UTF-16) jstring return a new UTF-8 native string.
+// Given a jstring, reinterprets it to a new native string.
 std::string JavaToStdString(JNIEnv* jni, const jstring& j_string) {
-  const char* chars = jni->GetStringUTFChars(j_string, nullptr);
-  CHECK_EXCEPTION(jni) << "Error during GetStringUTFChars";
-  std::string str(chars, jni->GetStringUTFLength(j_string));
-  CHECK_EXCEPTION(jni) << "Error during GetStringUTFLength";
-  jni->ReleaseStringUTFChars(j_string, chars);
-  CHECK_EXCEPTION(jni) << "Error during ReleaseStringUTFChars";
-  return str;
+  // Invoke String.getBytes(String charsetName) method to convert |j_string|
+  // to a byte array.
+  const jclass string_class = GetObjectClass(jni, j_string);
+  const jmethodID get_bytes =
+      GetMethodID(jni, string_class, "getBytes", "(Ljava/lang/String;)[B");
+  const jstring charset_name = jni->NewStringUTF("ISO-8859-1");
+  CHECK_EXCEPTION(jni) << "error during NewStringUTF";
+  const jbyteArray j_byte_array =
+      (jbyteArray)jni->CallObjectMethod(j_string, get_bytes, charset_name);
+  CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
+
+  const size_t len = jni->GetArrayLength(j_byte_array);
+  CHECK_EXCEPTION(jni) << "error during GetArrayLength";
+  std::vector<char> buf(len);
+  jni->GetByteArrayRegion(j_byte_array, 0, len,
+                          reinterpret_cast<jbyte*>(&buf[0]));
+  CHECK_EXCEPTION(jni) << "error during GetByteArrayRegion";
+
+  return std::string(buf.begin(), buf.end());
 }
 
 // Return the (singleton) Java Enum object corresponding to |index|;
