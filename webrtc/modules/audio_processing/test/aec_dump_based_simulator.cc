@@ -62,6 +62,11 @@ bool VerifyFloatBitExactness(const webrtc::audioproc::Stream& msg,
 
 }  // namespace
 
+AecDumpBasedSimulator::AecDumpBasedSimulator(const SimulationSettings& settings)
+    : AudioProcessingSimulator(settings) {}
+
+AecDumpBasedSimulator::~AecDumpBasedSimulator() = default;
+
 void AecDumpBasedSimulator::PrepareProcessStreamCall(
     const webrtc::audioproc::Stream& msg,
     bool* set_stream_analog_level_called) {
@@ -93,6 +98,34 @@ void AecDumpBasedSimulator::PrepareProcessStreamCall(
                    msg.input_channel(i).size());
       std::memcpy(in_buf_->channels()[i], msg.input_channel(i).data(),
                   msg.input_channel(i).size());
+    }
+  }
+
+  if (artificial_nearend_buffer_reader_) {
+    if (artificial_nearend_buffer_reader_->Read(
+            artificial_nearend_buf_.get())) {
+      if (msg.has_input_data()) {
+        for (size_t k = 0; k < in_buf_->num_frames(); ++k) {
+          fwd_frame_.data_[k] = rtc::saturated_cast<int16_t>(
+              fwd_frame_.data_[k] +
+              static_cast<int16_t>(32767 *
+                                   artificial_nearend_buf_->channels()[0][k]));
+        }
+      } else {
+        for (int i = 0; i < msg.input_channel_size(); ++i) {
+          for (size_t k = 0; k < in_buf_->num_frames(); ++k) {
+            in_buf_->channels()[i][k] +=
+                artificial_nearend_buf_->channels()[0][k];
+            in_buf_->channels()[i][k] = std::min(
+                32767.f, std::max(-32768.f, in_buf_->channels()[i][k]));
+          }
+        }
+      }
+    } else {
+      if (!artificial_nearend_eof_reported_) {
+        std::cout << "The artificial nearend file ended before the recording.";
+        artificial_nearend_eof_reported_ = true;
+      }
     }
   }
 
@@ -188,6 +221,22 @@ void AecDumpBasedSimulator::Process() {
 
   CreateAudioProcessor();
   dump_input_file_ = OpenFile(settings_.aec_dump_input_filename->c_str(), "rb");
+
+  if (settings_.artificial_nearend_filename) {
+    std::unique_ptr<WavReader> artificial_nearend_file(
+        new WavReader(settings_.artificial_nearend_filename->c_str()));
+
+    RTC_CHECK_EQ(1, artificial_nearend_file->num_channels())
+        << "Only mono files for the artificial nearend are supported, "
+           "reverted to not using the artificial nearend file";
+
+    artificial_nearend_buffer_reader_.reset(
+        new ChannelBufferWavReader(std::move(artificial_nearend_file)));
+    artificial_nearend_buf_.reset(new ChannelBuffer<float>(
+        rtc::CheckedDivExact(artificial_nearend_file->sample_rate(),
+                             kChunksPerSecond),
+        1));
+  }
 
   webrtc::audioproc::Event event_msg;
   int num_forward_chunks_processed = 0;

@@ -40,6 +40,7 @@ DEFINE_string(i, "", "Forward stream input wav filename");
 DEFINE_string(o, "", "Forward stream output wav filename");
 DEFINE_string(ri, "", "Reverse stream input wav filename");
 DEFINE_string(ro, "", "Reverse stream output wav filename");
+DEFINE_string(artificial_nearend, "", "Artificial nearend wav filename");
 DEFINE_int32(output_num_channels,
              kParameterNotSpecifiedValue,
              "Number of forward stream output channels");
@@ -208,6 +209,8 @@ SimulationSettings CreateSettings() {
   SetSettingIfSpecified(FLAGS_o, &settings.output_filename);
   SetSettingIfSpecified(FLAGS_ri, &settings.reverse_input_filename);
   SetSettingIfSpecified(FLAGS_ro, &settings.reverse_output_filename);
+  SetSettingIfSpecified(FLAGS_artificial_nearend,
+                        &settings.artificial_nearend_filename);
   SetSettingIfSpecified(FLAGS_output_num_channels,
                         &settings.output_num_channels);
   SetSettingIfSpecified(FLAGS_reverse_output_num_channels,
@@ -276,6 +279,10 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
     ReportConditionalErrorAndExit(!!settings.aec_dump_input_filename,
                                   "Error: The aec dump cannot be specified "
                                   "together with input wav files!\n");
+
+    ReportConditionalErrorAndExit(!!settings.artificial_nearend_filename,
+                                  "Error: The artificial nearend cannot be "
+                                  "specified together with input wav files!\n");
 
     ReportConditionalErrorAndExit(!settings.input_filename,
                                   "Error: When operating at wav files, the "
@@ -389,6 +396,11 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       settings.reverse_output_filename &&
           (!valid_wav_name(*settings.reverse_output_filename)),
       "Error: --ro must be a valid .wav file name.\n");
+
+  ReportConditionalErrorAndExit(
+      settings.artificial_nearend_filename &&
+          !valid_wav_name(*settings.artificial_nearend_filename),
+      "Error: --artifical_nearend must be a valid .wav file name.\n");
 }
 
 }  // namespace

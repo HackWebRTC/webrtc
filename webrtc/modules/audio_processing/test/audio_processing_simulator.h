@@ -44,6 +44,7 @@ struct SimulationSettings {
   rtc::Optional<std::string> reverse_output_filename;
   rtc::Optional<std::string> input_filename;
   rtc::Optional<std::string> reverse_input_filename;
+  rtc::Optional<std::string> artificial_nearend_filename;
   rtc::Optional<bool> use_aec;
   rtc::Optional<bool> use_aecm;
   rtc::Optional<bool> use_ed;  // Residual Echo Detector.
