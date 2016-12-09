@@ -14,7 +14,6 @@
 #include <memory>
 #include <set>
 
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 
 namespace rtc {

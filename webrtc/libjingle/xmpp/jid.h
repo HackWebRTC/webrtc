@@ -13,7 +13,6 @@
 
 #include <string>
 #include "webrtc/libjingle/xmllite/xmlconstants.h"
-#include "webrtc/base/basictypes.h"
 
 namespace buzz {
 
