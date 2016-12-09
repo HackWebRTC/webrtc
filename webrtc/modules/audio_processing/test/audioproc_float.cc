@@ -166,6 +166,7 @@ DEFINE_bool(discard_settings_in_aecdump,
 DEFINE_bool(store_intermediate_output,
             false,
             "Creates new output files after each init");
+DEFINE_string(custom_call_order_file, "", "Custom process API call order file");
 
 void SetSettingIfSpecified(const std::string value,
                            rtc::Optional<std::string>* parameter) {
@@ -257,6 +258,8 @@ SimulationSettings CreateSettings() {
   SetSettingIfSpecified(FLAGS_stream_delay, &settings.stream_delay);
   SetSettingIfSpecified(FLAGS_stream_drift_samples,
                         &settings.stream_drift_samples);
+  SetSettingIfSpecified(FLAGS_custom_call_order_file,
+                        &settings.custom_call_order_filename);
   settings.report_performance = FLAGS_performance_report;
   settings.use_verbose_logging = FLAGS_verbose;
   settings.report_bitexactness = FLAGS_bitexactness_report;
@@ -366,6 +369,11 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
   ReportConditionalErrorAndExit(
       settings.report_bitexactness && !settings.aec_dump_input_filename,
       "Error: --bitexactness_report can only be used when operating on an "
+      "aecdump\n");
+
+  ReportConditionalErrorAndExit(
+      settings.custom_call_order_filename && settings.aec_dump_input_filename,
+      "Error: --custom_call_order_file cannot be used when operating on an "
       "aecdump\n");
 
   auto valid_wav_name = [](const std::string& wav_file_name) {

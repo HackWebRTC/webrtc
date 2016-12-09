@@ -81,6 +81,7 @@ struct SimulationSettings {
   rtc::Optional<std::string> aec_dump_output_filename;
   bool fixed_interface = false;
   bool store_intermediate_output = false;
+  rtc::Optional<std::string> custom_call_order_filename;
 };
 
 // Holds a few statistics about a series of TickIntervals.
