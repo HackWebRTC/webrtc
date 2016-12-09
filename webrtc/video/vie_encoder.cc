@@ -33,13 +33,7 @@ namespace {
 // Time interval for logging frame counts.
 const int64_t kFrameLogIntervalMs = 60000;
 // We will never ask for a resolution lower than this.
-#if defined(WEBRTC_ANDROID)
-// TODO(kthelgason): Lower this limit when better testing
-// on MediaCodec and fallback implementations are in place.
-const int kMinPixelsPerFrame = 320 * 180;
-#else
 const int kMinPixelsPerFrame = 120 * 90;
-#endif
 
 // TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
 // pipelining encoders better (multiple input frames before something comes
