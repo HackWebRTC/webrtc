@@ -142,7 +142,6 @@ class RTCIceCandidatePairStats final : public RTCStats {
   RTCStatsMember<double> available_outgoing_bitrate;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<double> available_incoming_bitrate;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> requests_received;
   RTCStatsMember<uint64_t> requests_sent;
   RTCStatsMember<uint64_t> responses_received;

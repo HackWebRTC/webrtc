@@ -1005,6 +1005,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   connection_info.sent_total_bytes = 42;
   connection_info.recv_total_bytes = 1234;
   connection_info.rtt = 1337;
+  connection_info.recv_ping_requests = 2020;
   connection_info.sent_ping_requests_total = 1010;
   connection_info.recv_ping_responses = 4321;
   connection_info.sent_ping_responses = 1000;
@@ -1039,6 +1040,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   expected_pair.bytes_sent = 42;
   expected_pair.bytes_received = 1234;
   expected_pair.current_rtt = 1.337;
+  expected_pair.requests_received = 2020;
   expected_pair.requests_sent = 1010;
   expected_pair.responses_received = 4321;
   expected_pair.responses_sent = 1000;

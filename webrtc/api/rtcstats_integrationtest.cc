@@ -338,7 +338,7 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsDefined(candidate_pair.current_rtt);
     verifier.TestMemberIsUndefined(candidate_pair.available_outgoing_bitrate);
     verifier.TestMemberIsUndefined(candidate_pair.available_incoming_bitrate);
-    verifier.TestMemberIsUndefined(candidate_pair.requests_received);
+    verifier.TestMemberIsDefined(candidate_pair.requests_received);
     verifier.TestMemberIsDefined(candidate_pair.requests_sent);
     verifier.TestMemberIsDefined(candidate_pair.responses_received);
     verifier.TestMemberIsDefined(candidate_pair.responses_sent);

@@ -634,6 +634,8 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
         // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentrtt
         candidate_pair_stats->current_rtt =
             static_cast<double>(info.rtt) / rtc::kNumMillisecsPerSec;
+        candidate_pair_stats->requests_received =
+            static_cast<uint64_t>(info.recv_ping_requests);
         candidate_pair_stats->requests_sent =
             static_cast<uint64_t>(info.sent_ping_requests_total);
         candidate_pair_stats->responses_received =
