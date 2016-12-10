@@ -284,22 +284,28 @@ class ScreenCapturerIntegrationTest : public testing::Test {
   }
 };
 
-TEST_F(ScreenCapturerIntegrationTest, CaptureUpdatedRegion) {
-#if !defined(WEBRTC_WIN)
-  // ScreenCapturerWinGdi randomly returns blank screen, the root cause is still
-  // unknown. Bug, https://bugs.chromium.org/p/webrtc/issues/detail?id=6843.
-  TestCaptureUpdatedRegion();
+#if defined(WEBRTC_WIN)
+// ScreenCapturerWinGdi randomly returns blank screen, the root cause is still
+// unknown. Bug, https://bugs.chromium.org/p/webrtc/issues/detail?id=6843.
+#define MAYBE_CaptureUpdatedRegion MANUAL_CaptureUpdatedRegion
+#else
+#define MAYBE_CaptureUpdatedRegion CaptureUpdatedRegion
 #endif
+TEST_F(ScreenCapturerIntegrationTest, MAYBE_CaptureUpdatedRegion) {
+  TestCaptureUpdatedRegion();
 }
 
-TEST_F(ScreenCapturerIntegrationTest, TwoCapturers) {
-#if !defined(WEBRTC_WIN)
-  // ScreenCapturerWinGdi randomly returns blank screen, the root cause is still
-  // unknown. Bug, https://bugs.chromium.org/p/webrtc/issues/detail?id=6843.
+#if defined(WEBRTC_WIN)
+// ScreenCapturerWinGdi randomly returns blank screen, the root cause is still
+// unknown. Bug, https://bugs.chromium.org/p/webrtc/issues/detail?id=6843.
+#define MAYBE_TwoCapturers MANUAL_TwoCapturers
+#else
+#define MAYBE_TwoCapturers TwoCapturers
+#endif
+TEST_F(ScreenCapturerIntegrationTest, MAYBE_TwoCapturers) {
   std::unique_ptr<DesktopCapturer> capturer2 = std::move(capturer_);
   SetUp();
   TestCaptureUpdatedRegion({capturer_.get(), capturer2.get()});
-#endif
 }
 
 #if defined(WEBRTC_WIN)
