@@ -9,6 +9,7 @@
  */
 
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -2988,4 +2989,12 @@ TEST(CreateSessionOptionsTest, MediaConstraintsInAnswer) {
       ParseConstraintsForAnswer(&updated_answer_c, &updated_answer_options));
   EXPECT_TRUE(updated_answer_options.has_audio());
   EXPECT_TRUE(updated_answer_options.has_video());
+}
+
+TEST(RtcErrorTest, OstreamOperator) {
+  std::ostringstream oss;
+  oss << webrtc::RtcError::NONE << ' '
+      << webrtc::RtcError::INVALID_PARAMETER << ' '
+      << webrtc::RtcError::INTERNAL_ERROR;
+  EXPECT_EQ("NONE INVALID_PARAMETER INTERNAL_ERROR", oss.str());
 }

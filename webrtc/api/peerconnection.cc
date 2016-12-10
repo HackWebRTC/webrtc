@@ -432,6 +432,25 @@ void SetChannelOnSendersAndReceivers(CHANNEL* channel,
 
 namespace webrtc {
 
+static const char* const kRtcErrorNames[] = {
+    "NONE",
+    "UNSUPPORTED_PARAMETER",
+    "INVALID_PARAMETER",
+    "INVALID_RANGE",
+    "SYNTAX_ERROR",
+    "INVALID_STATE",
+    "INVALID_MODIFICATION",
+    "NETWORK_ERROR",
+    "INTERNAL_ERROR",
+};
+
+std::ostream& operator<<(std::ostream& stream, RtcError error) {
+  int index = static_cast<int>(error);
+  RTC_CHECK(index < static_cast<int>(sizeof(kRtcErrorNames) /
+                                     sizeof(kRtcErrorNames[0])));
+  return stream << kRtcErrorNames[index];
+}
+
 // Generate a RTCP CNAME when a PeerConnection is created.
 std::string GenerateRtcpCname() {
   std::string cname;

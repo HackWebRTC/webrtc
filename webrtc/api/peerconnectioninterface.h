@@ -52,6 +52,7 @@
 #define WEBRTC_API_PEERCONNECTIONINTERFACE_H_
 
 #include <memory>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -139,6 +140,44 @@ class MetricsObserverInterface : public rtc::RefCountInterface {
 };
 
 typedef MetricsObserverInterface UMAObserver;
+
+// Enumeration to represent distinct classes of errors that an application
+// may wish to act upon differently. These roughly map to DOMExceptions in
+// the web API, as described in the comments below.
+enum class RtcError {
+  // No error.
+  NONE,
+  // A supplied parameter is valid, but currently unsupported.
+  // Maps to InvalidAccessError DOMException.
+  UNSUPPORTED_PARAMETER,
+  // General error indicating that a supplied parameter is invalid.
+  // Maps to InvalidAccessError or TypeError DOMException depending on context.
+  INVALID_PARAMETER,
+  // Slightly more specific than INVALID_PARAMETER; a parameter's value was
+  // outside the allowed range.
+  // Maps to RangeError DOMException.
+  INVALID_RANGE,
+  // Slightly more specific than INVALID_PARAMETER; an error occurred while
+  // parsing string input.
+  // Maps to SyntaxError DOMException.
+  SYNTAX_ERROR,
+  // The object does not support this operation in its current state.
+  // Maps to InvalidStateError DOMException.
+  INVALID_STATE,
+  // An attempt was made to modify the object in an invalid way.
+  // Maps to InvalidModificationError DOMException.
+  INVALID_MODIFICATION,
+  // An error occurred within an underlying network protocol.
+  // Maps to NetworkError DOMException.
+  NETWORK_ERROR,
+  // The operation failed due to an internal error.
+  // Maps to OperationError DOMException.
+  INTERNAL_ERROR,
+};
+
+// Outputs the error as a friendly string.
+// Update this method when adding a new error type.
+std::ostream& operator<<(std::ostream& stream, RtcError error);
 
 class PeerConnectionInterface : public rtc::RefCountInterface {
  public:
