@@ -1298,9 +1298,16 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
     }
   }
 
-  // TODO(deadbeef): Shouldn't have to hop to the worker thread twice...
+  // TODO(deadbeef): Shouldn't have to hop to the network thread twice...
   session_->SetIceConfig(session_->ParseIceConfig(configuration));
 
+  // As described in JSEP, calling setConfiguration with new ICE servers or
+  // candidate policy must set a "needs-ice-restart" bit so that the next offer
+  // triggers an ICE restart which will pick up the changes.
+  if (configuration.servers != configuration_.servers ||
+      configuration.type != configuration_.type) {
+    session_->SetNeedsIceRestartFlag();
+  }
   configuration_ = configuration;
   return true;
 }

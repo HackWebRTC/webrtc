@@ -73,6 +73,41 @@ TEST_F(JsepTransportTest, TestIceCredentialsChanged) {
   EXPECT_FALSE(cricket::IceCredentialsChanged("u1", "p1", "u1", "p1"));
 }
 
+// Tests SetNeedsIceRestartFlag and NeedsIceRestart, ensuring NeedsIceRestart
+// only starts returning "false" once an ICE restart has been initiated.
+TEST_F(JsepTransportTest, NeedsIceRestart) {
+  // Do initial offer/answer so there's something to restart.
+  cricket::TransportDescription local_desc(kIceUfrag1, kIcePwd1);
+  cricket::TransportDescription remote_desc(kIceUfrag1, kIcePwd1);
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(
+      local_desc, cricket::CA_OFFER, nullptr));
+  ASSERT_TRUE(transport_->SetRemoteTransportDescription(
+      remote_desc, cricket::CA_ANSWER, nullptr));
+
+  // Flag initially should be false.
+  EXPECT_FALSE(transport_->NeedsIceRestart());
+
+  // After setting flag, it should be true.
+  transport_->SetNeedsIceRestartFlag();
+  EXPECT_TRUE(transport_->NeedsIceRestart());
+
+  // Doing an identical offer/answer shouldn't clear the flag.
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(
+      local_desc, cricket::CA_OFFER, nullptr));
+  ASSERT_TRUE(transport_->SetRemoteTransportDescription(
+      remote_desc, cricket::CA_ANSWER, nullptr));
+  EXPECT_TRUE(transport_->NeedsIceRestart());
+
+  // Doing an offer/answer that restarts ICE should clear the flag.
+  cricket::TransportDescription ice_restart_local_desc(kIceUfrag2, kIcePwd2);
+  cricket::TransportDescription ice_restart_remote_desc(kIceUfrag2, kIcePwd2);
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(
+      ice_restart_local_desc, cricket::CA_OFFER, nullptr));
+  ASSERT_TRUE(transport_->SetRemoteTransportDescription(
+      ice_restart_remote_desc, cricket::CA_ANSWER, nullptr));
+  EXPECT_FALSE(transport_->NeedsIceRestart());
+}
+
 TEST_F(JsepTransportTest, TestGetStats) {
   EXPECT_TRUE(SetupChannel());
   cricket::TransportStats stats;

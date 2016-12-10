@@ -64,6 +64,16 @@ class TransportController : public sigslot::has_slots<>,
   void SetIceConfig(const IceConfig& config);
   void SetIceRole(IceRole ice_role);
 
+  // Set the "needs-ice-restart" flag as described in JSEP. After the flag is
+  // set, offers should generate new ufrags/passwords until an ICE restart
+  // occurs.
+  void SetNeedsIceRestartFlag();
+  // Returns true if the ICE restart flag above was set, and no ICE restart has
+  // occurred yet for this transport (by applying a local description with
+  // changed ufrag/password). If the transport has been deleted as a result of
+  // bundling, returns false.
+  bool NeedsIceRestart(const std::string& transport_name) const;
+
   bool GetSslRole(const std::string& transport_name, rtc::SSLRole* role) const;
 
   // Specifies the identity to use in this session.
@@ -203,15 +213,15 @@ class TransportController : public sigslot::has_slots<>,
   std::vector<RefCountedChannel>::const_iterator GetChannelIterator_n(
       const std::string& transport_name,
       int component) const;
-  const JsepTransport* GetJsepTransport_n(
+  const JsepTransport* GetJsepTransport(
       const std::string& transport_name) const;
-  JsepTransport* GetJsepTransport_n(const std::string& transport_name);
+  JsepTransport* GetJsepTransport(const std::string& transport_name);
   const RefCountedChannel* GetChannel_n(const std::string& transport_name,
                                         int component) const;
   RefCountedChannel* GetChannel_n(const std::string& transport_name,
                                   int component);
 
-  JsepTransport* GetOrCreateJsepTransport_n(const std::string& transport_name);
+  JsepTransport* GetOrCreateJsepTransport(const std::string& transport_name);
   void DestroyAllChannels_n();
 
   bool SetSslMaxProtocolVersion_n(rtc::SSLProtocolVersion version);

@@ -214,6 +214,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     std::vector<std::string> urls;
     std::string username;
     std::string password;
+    bool operator==(const IceServer& o) const {
+      return uri == o.uri && urls == o.urls && username == o.username &&
+             password == o.password;
+    }
+    bool operator!=(const IceServer& o) const { return !(*this == o); }
   };
   typedef std::vector<IceServer> IceServers;
 

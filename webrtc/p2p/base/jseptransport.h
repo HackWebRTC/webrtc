@@ -288,6 +288,18 @@ class JsepTransport : public sigslot::has_slots<> {
                                      ContentAction action,
                                      std::string* error_desc);
 
+  // Set the "needs-ice-restart" flag as described in JSEP. After the flag is
+  // set, offers should generate new ufrags/passwords until an ICE restart
+  // occurs.
+  //
+  // This and the below method can be called safely from any thread as long as
+  // SetXTransportDescription is not in progress.
+  void SetNeedsIceRestartFlag();
+  // Returns true if the ICE restart flag above was set, and no ICE restart has
+  // occurred yet for this transport (by applying a local description with
+  // changed ufrag/password).
+  bool NeedsIceRestart() const;
+
   void GetSslRole(rtc::SSLRole* ssl_role) const;
 
   // TODO(deadbeef): Make this const. See comment in transportcontroller.h.
@@ -348,6 +360,8 @@ class JsepTransport : public sigslot::has_slots<> {
                                            std::string* error_desc);
 
   const std::string mid_;
+  // needs-ice-restart bit as described in JSEP.
+  bool needs_ice_restart_ = false;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::SSLRole secure_role_ = rtc::SSL_CLIENT;
   std::unique_ptr<rtc::SSLFingerprint> remote_fingerprint_;

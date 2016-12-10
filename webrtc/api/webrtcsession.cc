@@ -1330,6 +1330,14 @@ bool WebRtcSession::IceRestartPending(const std::string& content_name) const {
          pending_ice_restarts_.end();
 }
 
+void WebRtcSession::SetNeedsIceRestartFlag() {
+  transport_controller_->SetNeedsIceRestartFlag();
+}
+
+bool WebRtcSession::NeedsIceRestart(const std::string& content_name) const {
+  return transport_controller_->NeedsIceRestart(content_name);
+}
+
 void WebRtcSession::OnCertificateReady(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) {
   transport_controller_->SetLocalCertificate(certificate);

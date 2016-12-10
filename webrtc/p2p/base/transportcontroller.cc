@@ -80,6 +80,21 @@ void TransportController::SetIceRole(IceRole ice_role) {
       rtc::Bind(&TransportController::SetIceRole_n, this, ice_role));
 }
 
+void TransportController::SetNeedsIceRestartFlag() {
+  for (auto& kv : transports_) {
+    kv.second->SetNeedsIceRestartFlag();
+  }
+}
+
+bool TransportController::NeedsIceRestart(
+    const std::string& transport_name) const {
+  const JsepTransport* transport = GetJsepTransport(transport_name);
+  if (!transport) {
+    return false;
+  }
+  return transport->NeedsIceRestart();
+}
+
 bool TransportController::GetSslRole(const std::string& transport_name,
                                      rtc::SSLRole* role) const {
   return network_thread_->Invoke<bool>(
@@ -187,7 +202,7 @@ TransportChannel* TransportController::CreateTransportChannel_n(
   }
 
   // Need to create a new channel.
-  JsepTransport* transport = GetOrCreateJsepTransport_n(transport_name);
+  JsepTransport* transport = GetOrCreateJsepTransport(transport_name);
 
   // Create DTLS channel wrapping ICE channel, and configure it.
   TransportChannelImpl* ice =
@@ -251,7 +266,7 @@ void TransportController::DestroyTransportChannel_n(
   }
   channels_.erase(it);
 
-  JsepTransport* t = GetJsepTransport_n(transport_name);
+  JsepTransport* t = GetJsepTransport(transport_name);
   bool channel_removed = t->RemoveChannel(component);
   RTC_DCHECK(channel_removed);
   // Just as we create a Transport when its first channel is created,
@@ -362,16 +377,14 @@ TransportController::GetChannelIterator_n(const std::string& transport_name,
       });
 }
 
-const JsepTransport* TransportController::GetJsepTransport_n(
+const JsepTransport* TransportController::GetJsepTransport(
     const std::string& transport_name) const {
-  RTC_DCHECK(network_thread_->IsCurrent());
   auto it = transports_.find(transport_name);
   return (it == transports_.end()) ? nullptr : it->second.get();
 }
 
-JsepTransport* TransportController::GetJsepTransport_n(
+JsepTransport* TransportController::GetJsepTransport(
     const std::string& transport_name) {
-  RTC_DCHECK(network_thread_->IsCurrent());
   auto it = transports_.find(transport_name);
   return (it == transports_.end()) ? nullptr : it->second.get();
 }
@@ -392,11 +405,11 @@ TransportController::RefCountedChannel* TransportController::GetChannel_n(
   return (it == channels_.end()) ? nullptr : &(*it);
 }
 
-JsepTransport* TransportController::GetOrCreateJsepTransport_n(
+JsepTransport* TransportController::GetOrCreateJsepTransport(
     const std::string& transport_name) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
-  JsepTransport* transport = GetJsepTransport_n(transport_name);
+  JsepTransport* transport = GetJsepTransport(transport_name);
   if (transport) {
     return transport;
   }
@@ -447,7 +460,7 @@ bool TransportController::GetSslRole_n(const std::string& transport_name,
                                        rtc::SSLRole* role) const {
   RTC_DCHECK(network_thread_->IsCurrent());
 
-  const JsepTransport* t = GetJsepTransport_n(transport_name);
+  const JsepTransport* t = GetJsepTransport(transport_name);
   if (!t) {
     return false;
   }
@@ -483,7 +496,7 @@ bool TransportController::GetLocalCertificate_n(
     rtc::scoped_refptr<rtc::RTCCertificate>* certificate) const {
   RTC_DCHECK(network_thread_->IsCurrent());
 
-  const JsepTransport* t = GetJsepTransport_n(transport_name);
+  const JsepTransport* t = GetJsepTransport(transport_name);
   if (!t) {
     return false;
   }
@@ -512,7 +525,7 @@ bool TransportController::SetLocalTransportDescription_n(
     std::string* err) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
-  JsepTransport* transport = GetJsepTransport_n(transport_name);
+  JsepTransport* transport = GetJsepTransport(transport_name);
   if (!transport) {
     // If we didn't find a transport, that's not an error;
     // it could have been deleted as a result of bundling.
@@ -556,7 +569,7 @@ bool TransportController::SetRemoteTransportDescription_n(
     SetIceRole_n(ICEROLE_CONTROLLING);
   }
 
-  JsepTransport* transport = GetJsepTransport_n(transport_name);
+  JsepTransport* transport = GetJsepTransport(transport_name);
   if (!transport) {
     // If we didn't find a transport, that's not an error;
     // it could have been deleted as a result of bundling.
@@ -586,7 +599,7 @@ bool TransportController::AddRemoteCandidates_n(
     return false;
   }
 
-  JsepTransport* transport = GetJsepTransport_n(transport_name);
+  JsepTransport* transport = GetJsepTransport(transport_name);
   if (!transport) {
     // If we didn't find a transport, that's not an error;
     // it could have been deleted as a result of bundling.
@@ -625,7 +638,7 @@ bool TransportController::RemoveRemoteCandidates_n(const Candidates& candidates,
   for (const auto& kv : candidates_by_transport_name) {
     const std::string& transport_name = kv.first;
     const Candidates& candidates = kv.second;
-    JsepTransport* transport = GetJsepTransport_n(transport_name);
+    JsepTransport* transport = GetJsepTransport(transport_name);
     if (!transport) {
       // If we didn't find a transport, that's not an error;
       // it could have been deleted as a result of bundling.
@@ -646,7 +659,7 @@ bool TransportController::ReadyForRemoteCandidates_n(
     const std::string& transport_name) const {
   RTC_DCHECK(network_thread_->IsCurrent());
 
-  const JsepTransport* transport = GetJsepTransport_n(transport_name);
+  const JsepTransport* transport = GetJsepTransport(transport_name);
   if (!transport) {
     return false;
   }
@@ -657,7 +670,7 @@ bool TransportController::GetStats_n(const std::string& transport_name,
                                      TransportStats* stats) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
-  JsepTransport* transport = GetJsepTransport_n(transport_name);
+  JsepTransport* transport = GetJsepTransport(transport_name);
   if (!transport) {
     return false;
   }

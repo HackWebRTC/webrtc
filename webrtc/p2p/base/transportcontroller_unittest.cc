@@ -793,4 +793,45 @@ TEST_F(TransportControllerTest, TestSetRemoteIceLiteInAnswer) {
   EXPECT_EQ(ICEMODE_LITE, channel->remote_ice_mode());
 }
 
+// Tests SetNeedsIceRestartFlag and NeedsIceRestart, setting the flag and then
+// initiating an ICE restart for one of the transports.
+TEST_F(TransportControllerTest, NeedsIceRestart) {
+  CreateChannel("audio", 1);
+  CreateChannel("video", 1);
+
+  // Do initial offer/answer so there's something to restart.
+  TransportDescription local_desc(kIceUfrag1, kIcePwd1);
+  TransportDescription remote_desc(kIceUfrag1, kIcePwd1);
+  ASSERT_TRUE(transport_controller_->SetLocalTransportDescription(
+      "audio", local_desc, CA_OFFER, nullptr));
+  ASSERT_TRUE(transport_controller_->SetLocalTransportDescription(
+      "video", local_desc, CA_OFFER, nullptr));
+  ASSERT_TRUE(transport_controller_->SetRemoteTransportDescription(
+      "audio", remote_desc, CA_ANSWER, nullptr));
+  ASSERT_TRUE(transport_controller_->SetRemoteTransportDescription(
+      "video", remote_desc, CA_ANSWER, nullptr));
+
+  // Initially NeedsIceRestart should return false.
+  EXPECT_FALSE(transport_controller_->NeedsIceRestart("audio"));
+  EXPECT_FALSE(transport_controller_->NeedsIceRestart("video"));
+
+  // Set the needs-ice-restart flag and verify NeedsIceRestart starts returning
+  // true.
+  transport_controller_->SetNeedsIceRestartFlag();
+  EXPECT_TRUE(transport_controller_->NeedsIceRestart("audio"));
+  EXPECT_TRUE(transport_controller_->NeedsIceRestart("video"));
+  // For a nonexistent transport, false should be returned.
+  EXPECT_FALSE(transport_controller_->NeedsIceRestart("deadbeef"));
+
+  // Do ICE restart but only for audio.
+  TransportDescription ice_restart_local_desc(kIceUfrag2, kIcePwd2);
+  ASSERT_TRUE(transport_controller_->SetLocalTransportDescription(
+      "audio", ice_restart_local_desc, CA_OFFER, nullptr));
+  ASSERT_TRUE(transport_controller_->SetLocalTransportDescription(
+      "video", local_desc, CA_OFFER, nullptr));
+  // NeedsIceRestart should still be true for video.
+  EXPECT_FALSE(transport_controller_->NeedsIceRestart("audio"));
+  EXPECT_TRUE(transport_controller_->NeedsIceRestart("video"));
+}
+
 }  // namespace cricket {

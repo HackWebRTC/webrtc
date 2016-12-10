@@ -338,6 +338,18 @@ void WebRtcSessionDescriptionFactory::OnMessage(rtc::Message* msg) {
 
 void WebRtcSessionDescriptionFactory::InternalCreateOffer(
     CreateSessionDescriptionRequest request) {
+  if (session_->local_description()) {
+    for (const cricket::TransportInfo& transport :
+         session_->local_description()->description()->transport_infos()) {
+      // If the needs-ice-restart flag is set as described by JSEP, we should
+      // generate an offer with a new ufrag/password to trigger an ICE restart.
+      if (session_->NeedsIceRestart(transport.content_name)) {
+        request.options.transport_options[transport.content_name].ice_restart =
+            true;
+      }
+    }
+  }
+
   cricket::SessionDescription* desc(session_desc_factory_.CreateOffer(
       request.options, session_->local_description()
                            ? session_->local_description()->description()

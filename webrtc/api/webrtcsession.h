@@ -278,7 +278,18 @@ class WebRtcSession :
 
   cricket::DataChannelType data_channel_type() const;
 
+  // Returns true if there was an ICE restart initiated by the remote offer.
   bool IceRestartPending(const std::string& content_name) const;
+
+  // Set the "needs-ice-restart" flag as described in JSEP. After the flag is
+  // set, offers should generate new ufrags/passwords until an ICE restart
+  // occurs.
+  void SetNeedsIceRestartFlag();
+  // Returns true if the ICE restart flag above was set, and no ICE restart has
+  // occurred yet for this transport (by applying a local description with
+  // changed ufrag/password). If the transport has been deleted as a result of
+  // bundling, returns false.
+  bool NeedsIceRestart(const std::string& content_name) const;
 
   // Called when an RTCCertificate is generated or retrieved by
   // WebRTCSessionDescriptionFactory. Should happen before setLocalDescription.

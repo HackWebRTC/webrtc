@@ -176,6 +176,11 @@ bool JsepTransport::SetLocalTransportDescription(
                                    error_desc);
   }
 
+  bool ice_restarting =
+      local_description_set_ &&
+      IceCredentialsChanged(local_description_->ice_ufrag,
+                            local_description_->ice_pwd, description.ice_ufrag,
+                            description.ice_pwd);
   local_description_.reset(new TransportDescription(description));
 
   rtc::SSLFingerprint* local_fp =
@@ -199,11 +204,17 @@ bool JsepTransport::SetLocalTransportDescription(
   if (action == CA_PRANSWER || action == CA_ANSWER) {
     ret &= NegotiateTransportDescription(action, error_desc);
   }
-  if (ret) {
-    local_description_set_ = true;
+  if (!ret) {
+    return false;
   }
 
-  return ret;
+  if (needs_ice_restart_ && ice_restarting) {
+    needs_ice_restart_ = false;
+    LOG(LS_VERBOSE) << "needs-ice-restart flag cleared for transport " << mid();
+  }
+
+  local_description_set_ = true;
+  return true;
 }
 
 bool JsepTransport::SetRemoteTransportDescription(
@@ -231,6 +242,17 @@ bool JsepTransport::SetRemoteTransportDescription(
   }
 
   return ret;
+}
+
+void JsepTransport::SetNeedsIceRestartFlag() {
+  if (!needs_ice_restart_) {
+    needs_ice_restart_ = true;
+    LOG(LS_VERBOSE) << "needs-ice-restart flag set for transport " << mid();
+  }
+}
+
+bool JsepTransport::NeedsIceRestart() const {
+  return needs_ice_restart_;
 }
 
 void JsepTransport::GetSslRole(rtc::SSLRole* ssl_role) const {

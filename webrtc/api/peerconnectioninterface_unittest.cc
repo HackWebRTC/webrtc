@@ -73,11 +73,11 @@ static const char kSdpStringWithStream1[] =
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
     "t=0 0\r\n"
+    "m=audio 1 RTP/AVPF 103\r\n"
     "a=ice-ufrag:e5785931\r\n"
     "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
     "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
-    "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
@@ -86,6 +86,10 @@ static const char kSdpStringWithStream1[] =
     "a=ssrc:1 mslabel:stream1\r\n"
     "a=ssrc:1 label:audiotrack0\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
+    "a=ice-ufrag:e5785931\r\n"
+    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
+    "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
+    "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
@@ -101,11 +105,11 @@ static const char kSdpStringWithStream1AudioTrackOnly[] =
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
     "t=0 0\r\n"
+    "m=audio 1 RTP/AVPF 103\r\n"
     "a=ice-ufrag:e5785931\r\n"
     "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
     "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
-    "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
@@ -122,12 +126,12 @@ static const char kSdpStringWithStream1And2[] =
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
     "t=0 0\r\n"
+    "a=msid-semantic: WMS stream1 stream2\r\n"
+    "m=audio 1 RTP/AVPF 103\r\n"
     "a=ice-ufrag:e5785931\r\n"
     "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
     "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
-    "a=msid-semantic: WMS stream1 stream2\r\n"
-    "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
@@ -137,6 +141,10 @@ static const char kSdpStringWithStream1And2[] =
     "a=ssrc:3 cname:stream2\r\n"
     "a=ssrc:3 msid:stream2 audiotrack1\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
+    "a=ice-ufrag:e5785931\r\n"
+    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
+    "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
+    "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
@@ -152,16 +160,20 @@ static const char kSdpStringWithoutStreams[] =
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
     "t=0 0\r\n"
+    "m=audio 1 RTP/AVPF 103\r\n"
     "a=ice-ufrag:e5785931\r\n"
     "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
     "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
-    "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
+    "a=ice-ufrag:e5785931\r\n"
+    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
+    "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
+    "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
@@ -173,17 +185,21 @@ static const char kSdpStringWithMsidWithoutStreams[] =
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
     "t=0 0\r\n"
+    "a=msid-semantic: WMS\r\n"
+    "m=audio 1 RTP/AVPF 103\r\n"
     "a=ice-ufrag:e5785931\r\n"
     "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
     "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
-    "a=msid-semantic: WMS\r\n"
-    "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
+    "a=ice-ufrag:e5785931\r\n"
+    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
+    "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
+    "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
@@ -195,11 +211,11 @@ static const char kSdpStringWithoutStreamsAudioOnly[] =
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
     "t=0 0\r\n"
+    "m=audio 1 RTP/AVPF 103\r\n"
     "a=ice-ufrag:e5785931\r\n"
     "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
     "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
-    "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
@@ -211,17 +227,21 @@ static const char kSdpStringSendOnlyWithoutStreams[] =
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
     "t=0 0\r\n"
+    "m=audio 1 RTP/AVPF 103\r\n"
     "a=ice-ufrag:e5785931\r\n"
     "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
     "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
     "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
-    "m=audio 1 RTP/AVPF 103\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
     "a=sendonly\r\n"
     "a=rtcp-mux\r\n"
     "a=rtpmap:103 ISAC/16000\r\n"
     "m=video 1 RTP/AVPF 120\r\n"
+    "a=ice-ufrag:e5785931\r\n"
+    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
+    "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
+    "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
     "a=sendonly\r\n"
@@ -233,14 +253,14 @@ static const char kSdpStringInit[] =
     "o=- 0 0 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
     "t=0 0\r\n"
-    "a=ice-ufrag:e5785931\r\n"
-    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
-    "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
-    "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "a=msid-semantic: WMS\r\n";
 
 static const char kSdpStringAudio[] =
     "m=audio 1 RTP/AVPF 103\r\n"
+    "a=ice-ufrag:e5785931\r\n"
+    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
+    "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
+    "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "a=mid:audio\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
@@ -248,6 +268,10 @@ static const char kSdpStringAudio[] =
 
 static const char kSdpStringVideo[] =
     "m=video 1 RTP/AVPF 120\r\n"
+    "a=ice-ufrag:e5785931\r\n"
+    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
+    "a=fingerprint:sha-256 58:AB:6E:F5:F1:E4:57:B7:E9:46:F4:86:04:28:F9:A7:ED:"
+    "BD:AB:AE:40:EF:CE:9A:51:2C:2A:B1:9B:8B:78:84\r\n"
     "a=mid:video\r\n"
     "a=sendrecv\r\n"
     "a=rtcp-mux\r\n"
@@ -324,6 +348,18 @@ bool GetFirstSsrc(const cricket::ContentInfo* content_info, int* ssrc) {
   }
   *ssrc = media_desc->streams().begin()->first_ssrc();
   return true;
+}
+
+// Get the ufrags out of an SDP blob. Useful for testing ICE restart
+// behavior.
+std::vector<std::string> GetUfrags(
+    const webrtc::SessionDescriptionInterface* desc) {
+  std::vector<std::string> ufrags;
+  for (const cricket::TransportInfo& info :
+       desc->description()->transport_infos()) {
+    ufrags.push_back(info.description.ice_ufrag);
+  }
+  return ufrags;
 }
 
 void SetSsrcToZero(std::string* sdp) {
@@ -2725,6 +2761,116 @@ TEST_F(PeerConnectionInterfaceTest, OnAddTrackCallback) {
   CreateAndSetRemoteOffer(kSdpStringWithStream1);
   EXPECT_EQ(observer_.num_added_tracks_, 2);
   EXPECT_EQ(observer_.last_added_track_label_, kVideoTracks[0]);
+}
+
+// Test that when SetConfiguration is called and the configuration is
+// changing, the next offer causes an ICE restart.
+TEST_F(PeerConnectionInterfaceTest, SetConfigurationCausingIceRetart) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.type = PeerConnectionInterface::kRelay;
+  // Need to pass default constraints to prevent disabling of DTLS...
+  FakeConstraints default_constraints;
+  CreatePeerConnection(config, &default_constraints);
+  AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
+
+  // Do initial offer/answer so there's something to restart.
+  CreateOfferAsLocalDescription();
+  CreateAnswerAsRemoteDescription(kSdpStringWithStream1);
+
+  // Grab the ufrags.
+  std::vector<std::string> initial_ufrags = GetUfrags(pc_->local_description());
+
+  // Change ICE policy, which should trigger an ICE restart on the next offer.
+  config.type = PeerConnectionInterface::kAll;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+  CreateOfferAsLocalDescription();
+
+  // Grab the new ufrags.
+  std::vector<std::string> subsequent_ufrags =
+      GetUfrags(pc_->local_description());
+
+  // Sanity check.
+  EXPECT_EQ(initial_ufrags.size(), subsequent_ufrags.size());
+  // Check that each ufrag is different.
+  for (int i = 0; i < static_cast<int>(initial_ufrags.size()); ++i) {
+    EXPECT_NE(initial_ufrags[i], subsequent_ufrags[i]);
+  }
+}
+
+// Test that when SetConfiguration is called and the configuration *isn't*
+// changing, the next offer does *not* cause an ICE restart.
+TEST_F(PeerConnectionInterfaceTest, SetConfigurationNotCausingIceRetart) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.type = PeerConnectionInterface::kRelay;
+  // Need to pass default constraints to prevent disabling of DTLS...
+  FakeConstraints default_constraints;
+  CreatePeerConnection(config, &default_constraints);
+  AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
+
+  // Do initial offer/answer so there's something to restart.
+  CreateOfferAsLocalDescription();
+  CreateAnswerAsRemoteDescription(kSdpStringWithStream1);
+
+  // Grab the ufrags.
+  std::vector<std::string> initial_ufrags = GetUfrags(pc_->local_description());
+
+  // Call SetConfiguration with a config identical to what the PC was
+  // constructed with.
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+  CreateOfferAsLocalDescription();
+
+  // Grab the new ufrags.
+  std::vector<std::string> subsequent_ufrags =
+      GetUfrags(pc_->local_description());
+
+  EXPECT_EQ(initial_ufrags, subsequent_ufrags);
+}
+
+// Test for a weird corner case scenario:
+// 1. Audio/video session established.
+// 2. SetConfiguration changes ICE config; ICE restart needed.
+// 3. ICE restart initiated by remote peer, but only for one m= section.
+// 4. Next createOffer should initiate an ICE restart, but only for the other
+//    m= section; it would be pointless to do an ICE restart for the m= section
+//    that was already restarted.
+TEST_F(PeerConnectionInterfaceTest, SetConfigurationCausingPartialIceRestart) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.type = PeerConnectionInterface::kRelay;
+  // Need to pass default constraints to prevent disabling of DTLS...
+  FakeConstraints default_constraints;
+  CreatePeerConnection(config, &default_constraints);
+  AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
+
+  // Do initial offer/answer so there's something to restart.
+  CreateOfferAsLocalDescription();
+  CreateAnswerAsRemoteDescription(kSdpStringWithStream1);
+
+  // Change ICE policy, which should set the "needs-ice-restart" flag.
+  config.type = PeerConnectionInterface::kAll;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+
+  // Do ICE restart for the first m= section, initiated by remote peer.
+  webrtc::JsepSessionDescription* remote_offer =
+      new webrtc::JsepSessionDescription(SessionDescriptionInterface::kOffer);
+  EXPECT_TRUE(remote_offer->Initialize(kSdpStringWithStream1, nullptr));
+  remote_offer->description()->transport_infos()[0].description.ice_ufrag =
+      "modified";
+  EXPECT_TRUE(DoSetRemoteDescription(remote_offer));
+  CreateAnswerAsLocalDescription();
+
+  // Grab the ufrags.
+  std::vector<std::string> initial_ufrags = GetUfrags(pc_->local_description());
+  ASSERT_EQ(2, initial_ufrags.size());
+
+  // Create offer and grab the new ufrags.
+  CreateOfferAsLocalDescription();
+  std::vector<std::string> subsequent_ufrags =
+      GetUfrags(pc_->local_description());
+  ASSERT_EQ(2, subsequent_ufrags.size());
+
+  // Ensure that only the ufrag for the second m= section changed.
+  EXPECT_EQ(initial_ufrags[0], subsequent_ufrags[0]);
+  EXPECT_NE(initial_ufrags[1], subsequent_ufrags[1]);
 }
 
 class PeerConnectionMediaConfigTest : public testing::Test {
