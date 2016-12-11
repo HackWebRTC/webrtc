@@ -57,6 +57,28 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
   };
 
   for (const auto& constraint : constraints) {
+    // Set non-boolean constraints.
+    if (0 == constraint.key.compare(
+            MediaConstraintsInterface::kLevelControlInitialPeakLevelDBFS)) {
+      float level_control_initial_peak_level_dbfs = 0.0f;
+      if (rtc::FromString(constraint.value,
+                          &level_control_initial_peak_level_dbfs)) {
+        options->level_control_initial_peak_level_dbfs =
+            rtc::Optional<float>(level_control_initial_peak_level_dbfs);
+      }
+      continue;
+    }
+    if (constraint.key.compare(
+            MediaConstraintsInterface::kAudioNetworkAdaptorConfig) == 0) {
+      // When |kAudioNetworkAdaptorConfig| is defined, it both means that audio
+      // network adaptor is desired, and provides the config string.
+      options->audio_network_adaptor = rtc::Optional<bool>(true);
+      options->audio_network_adaptor_config =
+          rtc::Optional<std::string>(constraint.value);
+      continue;
+    }
+
+    // Parse boolean value.
     bool value = false;
     if (!rtc::FromString(constraint.value, &value))
       continue;
@@ -64,18 +86,6 @@ void FromConstraints(const MediaConstraintsInterface::Constraints& constraints,
     for (auto& entry : key_to_value) {
       if (constraint.key.compare(entry.name) == 0)
         entry.value = rtc::Optional<bool>(value);
-    }
-  }
-
-  // Set non-boolean constraints.
-  std::string value;
-  if (constraints.FindFirst(
-          MediaConstraintsInterface::kLevelControlInitialPeakLevelDBFS,
-          &value)) {
-    float level_control_initial_peak_level_dbfs;
-    if (rtc::FromString(value, &level_control_initial_peak_level_dbfs)) {
-      options->level_control_initial_peak_level_dbfs =
-          rtc::Optional<float>(level_control_initial_peak_level_dbfs);
     }
   }
 }
