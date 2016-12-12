@@ -109,7 +109,7 @@ class MockVideoEncoder : public VideoEncoder {
                      int32_t numberOfCores,
                      size_t maxPayloadSize) /* override */ {
     codec_ = *codecSettings;
-    return 0;
+    return init_encode_return_value_;
   }
 
   MOCK_METHOD3(
@@ -155,12 +155,18 @@ class MockVideoEncoder : public VideoEncoder {
   void set_supports_native_handle(bool enabled) {
     supports_native_handle_ = enabled;
   }
+
+  void set_init_encode_return_value(int32_t value) {
+    init_encode_return_value_ = value;
+  }
+
   BitrateAllocation last_set_bitrate() const { return last_set_bitrate_; }
 
   MOCK_CONST_METHOD0(ImplementationName, const char*());
 
  private:
   bool supports_native_handle_ = false;
+  int32_t init_encode_return_value_ = 0;
   BitrateAllocation last_set_bitrate_;
 
   VideoCodec codec_;
@@ -172,6 +178,7 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
   VideoEncoder* Create() override {
     MockVideoEncoder* encoder = new
         ::testing::NiceMock<MockVideoEncoder>();
+    encoder->set_init_encode_return_value(init_encode_return_value_);
     const char* encoder_name = encoder_names_.empty()
                                    ? "codec_implementation_name"
                                    : encoder_names_[encoders_.size()];
@@ -196,8 +203,12 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
   void SetEncoderNames(const std::vector<const char*>& encoder_names) {
     encoder_names_ = encoder_names;
   }
+  void set_init_encode_return_value(int32_t value) {
+    init_encode_return_value_ = value;
+  }
 
  private:
+  int32_t init_encode_return_value_ = 0;
   std::vector<MockVideoEncoder*> encoders_;
   std::vector<const char*> encoder_names_;
 };
@@ -548,6 +559,18 @@ TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
   std::vector<FrameType> frame_types(3, kVideoFrameKey);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE,
             adapter_->Encode(input_frame, nullptr, &frame_types));
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, TestInitFailureCleansUpEncoders) {
+  TestVp8Simulcast::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile));
+  codec_.VP8()->tl_factory = &tl_factory_;
+  codec_.numberOfSimulcastStreams = 3;
+  helper_->factory()->set_init_encode_return_value(
+      WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE,
+            adapter_->InitEncode(&codec_, 1, 1200));
+  EXPECT_TRUE(helper_->factory()->encoders().empty());
 }
 
 }  // namespace testing

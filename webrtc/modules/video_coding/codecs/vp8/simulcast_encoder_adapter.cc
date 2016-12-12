@@ -218,6 +218,9 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
     VideoEncoder* encoder = factory_->Create();
     ret = encoder->InitEncode(&stream_codec, number_of_cores, max_payload_size);
     if (ret < 0) {
+      // Explicitly destroy the current encoder; because we haven't registered a
+      // StreamInfo for it yet, Release won't do anything about it.
+      factory_->Destroy(encoder);
       Release();
       return ret;
     }
