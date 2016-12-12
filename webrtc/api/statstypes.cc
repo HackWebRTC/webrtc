@@ -598,8 +598,6 @@ const char* StatsReport::Value::display_name() const {
       return "googTrackId";
     case kStatsValueNameTypingNoiseState:
       return "googTypingNoiseState";
-    case kStatsValueNameViewLimitedResolution:
-      return "googViewLimitedResolution";
     case kStatsValueNameWritable:
       return "googWritable";
   }

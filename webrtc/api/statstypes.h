@@ -214,7 +214,6 @@ class StatsReport {
     kStatsValueNameTransmitBitrate,
     kStatsValueNameTransportType,
     kStatsValueNameTypingNoiseState,
-    kStatsValueNameViewLimitedResolution,
     kStatsValueNameWritable,
   };
 
