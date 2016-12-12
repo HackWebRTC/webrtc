@@ -1,5 +1,7 @@
 syntax = "proto2";
 option optimize_for = LITE_RUNTIME;
+option java_package = "org.webrtc.AudioNetworkAdaptor";
+option java_outer_classname = "Config";
 package webrtc.audio_network_adaptor.config;
 
 message FecController {
