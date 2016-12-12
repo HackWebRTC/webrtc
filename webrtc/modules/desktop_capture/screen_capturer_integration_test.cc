@@ -287,7 +287,7 @@ class ScreenCapturerIntegrationTest : public testing::Test {
 #if defined(WEBRTC_WIN)
 // ScreenCapturerWinGdi randomly returns blank screen, the root cause is still
 // unknown. Bug, https://bugs.chromium.org/p/webrtc/issues/detail?id=6843.
-#define MAYBE_CaptureUpdatedRegion MANUAL_CaptureUpdatedRegion
+#define MAYBE_CaptureUpdatedRegion DISABLED_CaptureUpdatedRegion
 #else
 #define MAYBE_CaptureUpdatedRegion CaptureUpdatedRegion
 #endif
@@ -298,7 +298,7 @@ TEST_F(ScreenCapturerIntegrationTest, MAYBE_CaptureUpdatedRegion) {
 #if defined(WEBRTC_WIN)
 // ScreenCapturerWinGdi randomly returns blank screen, the root cause is still
 // unknown. Bug, https://bugs.chromium.org/p/webrtc/issues/detail?id=6843.
-#define MAYBE_TwoCapturers MANUAL_TwoCapturers
+#define MAYBE_TwoCapturers DISABLED_TwoCapturers
 #else
 #define MAYBE_TwoCapturers TwoCapturers
 #endif
