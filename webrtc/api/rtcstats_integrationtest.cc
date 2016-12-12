@@ -345,7 +345,7 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsUndefined(candidate_pair.retransmissions_received);
     verifier.TestMemberIsUndefined(candidate_pair.retransmissions_sent);
     verifier.TestMemberIsUndefined(candidate_pair.consent_requests_received);
-    verifier.TestMemberIsUndefined(candidate_pair.consent_requests_sent);
+    verifier.TestMemberIsDefined(candidate_pair.consent_requests_sent);
     verifier.TestMemberIsUndefined(candidate_pair.consent_responses_received);
     verifier.TestMemberIsUndefined(candidate_pair.consent_responses_sent);
     return verifier.ExpectAllMembersSuccessfullyTested();

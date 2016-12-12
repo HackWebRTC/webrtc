@@ -152,7 +152,6 @@ class RTCIceCandidatePairStats final : public RTCStats {
   RTCStatsMember<uint64_t> retransmissions_sent;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> consent_requests_received;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> consent_requests_sent;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> consent_responses_received;

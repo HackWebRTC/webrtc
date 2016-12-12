@@ -638,12 +638,17 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
             static_cast<double>(info.rtt) / rtc::kNumMillisecsPerSec;
         candidate_pair_stats->requests_received =
             static_cast<uint64_t>(info.recv_ping_requests);
-        candidate_pair_stats->requests_sent =
-            static_cast<uint64_t>(info.sent_ping_requests_total);
+        candidate_pair_stats->requests_sent = static_cast<uint64_t>(
+            info.sent_ping_requests_before_first_response);
         candidate_pair_stats->responses_received =
             static_cast<uint64_t>(info.recv_ping_responses);
         candidate_pair_stats->responses_sent =
             static_cast<uint64_t>(info.sent_ping_responses);
+        RTC_DCHECK_GE(info.sent_ping_requests_total,
+                      info.sent_ping_requests_before_first_response);
+        candidate_pair_stats->consent_requests_sent = static_cast<uint64_t>(
+            info.sent_ping_requests_total -
+            info.sent_ping_requests_before_first_response);
 
         report->AddStats(std::move(candidate_pair_stats));
       }
