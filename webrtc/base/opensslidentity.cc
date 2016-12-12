@@ -61,6 +61,13 @@ static EVP_PKEY* MakeKey(const KeyParams& key_params) {
   } else if (key_params.type() == KT_ECDSA) {
     if (key_params.ec_curve() == EC_NIST_P256) {
       EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+
+      // Ensure curve name is included when EC key is serialized.
+      // Without this call, OpenSSL versions before 1.1.0 will create
+      // certificates that don't work for TLS.
+      // This is a no-op for BoringSSL and OpenSSL 1.1.0+
+      EC_KEY_set_asn1_flag(ec_key, OPENSSL_EC_NAMED_CURVE);
+
       if (!pkey || !ec_key || !EC_KEY_generate_key(ec_key) ||
           !EVP_PKEY_assign_EC_KEY(pkey, ec_key)) {
         EVP_PKEY_free(pkey);

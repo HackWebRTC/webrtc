@@ -20,6 +20,7 @@
 #include <openssl/x509v3.h>
 #ifndef OPENSSL_IS_BORINGSSL
 #include <openssl/dtls1.h>
+#include <openssl/ssl.h>
 #endif
 
 #include <memory>
