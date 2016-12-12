@@ -1217,6 +1217,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.voe_channel_id = ch;
     config_.rtp.extensions = extensions;
     config_.audio_network_adaptor_config = audio_network_adaptor_config;
+    rtp_parameters_.encodings[0].ssrc = rtc::Optional<uint32_t>(ssrc);
     RecreateAudioSendStream(send_codec_spec);
   }
 
@@ -1742,6 +1743,7 @@ webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpReceiveParameters(
   for (const AudioCodec& codec : recv_codecs_) {
     rtp_params.codecs.push_back(codec.ToCodecParameters());
   }
+  rtp_params.encodings[0].ssrc = rtc::Optional<uint32_t>(ssrc);
   return rtp_params;
 }
 

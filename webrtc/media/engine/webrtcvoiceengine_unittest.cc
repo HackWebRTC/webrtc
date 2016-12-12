@@ -1113,6 +1113,14 @@ TEST_F(WebRtcVoiceEngineTestFake, GetRtpSendParametersCodecs) {
   EXPECT_EQ(kPcmuCodec.ToCodecParameters(), rtp_parameters.codecs[1]);
 }
 
+// Test that GetRtpSendParameters returns an SSRC.
+TEST_F(WebRtcVoiceEngineTestFake, GetRtpSendParametersSsrc) {
+  EXPECT_TRUE(SetupSendStream());
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpSendParameters(kSsrc1);
+  ASSERT_EQ(1u, rtp_parameters.encodings.size());
+  EXPECT_EQ(kSsrc1, rtp_parameters.encodings[0].ssrc);
+}
+
 // Test that if we set/get parameters multiple times, we get the same results.
 TEST_F(WebRtcVoiceEngineTestFake, SetAndGetRtpSendParameters) {
   EXPECT_TRUE(SetupSendStream());
@@ -1144,6 +1152,15 @@ TEST_F(WebRtcVoiceEngineTestFake, GetRtpReceiveParametersCodecs) {
   ASSERT_EQ(2u, rtp_parameters.codecs.size());
   EXPECT_EQ(kIsacCodec.ToCodecParameters(), rtp_parameters.codecs[0]);
   EXPECT_EQ(kPcmuCodec.ToCodecParameters(), rtp_parameters.codecs[1]);
+}
+
+// Test that GetRtpReceiveParameters returns an SSRC.
+TEST_F(WebRtcVoiceEngineTestFake, GetRtpReceiveParametersSsrc) {
+  EXPECT_TRUE(SetupRecvStream());
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpReceiveParameters(kSsrc1);
+  ASSERT_EQ(1u, rtp_parameters.encodings.size());
+  EXPECT_EQ(kSsrc1, rtp_parameters.encodings[0].ssrc);
 }
 
 // Test that if we set/get parameters multiple times, we get the same results.
