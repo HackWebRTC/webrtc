@@ -231,21 +231,22 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   std::vector<std::string> tokens;
   cricket::ProtocolType turn_transport_type = cricket::PROTO_UDP;
   RTC_DCHECK(!url.empty());
-  rtc::tokenize(url, '?', &tokens);
+  rtc::tokenize_with_empty_tokens(url, '?', &tokens);
   std::string uri_without_transport = tokens[0];
   // Let's look into transport= param, if it exists.
   if (tokens.size() == kTurnTransportTokensNum) {  // ?transport= is present.
     std::string uri_transport_param = tokens[1];
-    rtc::tokenize(uri_transport_param, '=', &tokens);
-    if (tokens[0] == kTransport) {
-      // As per above grammar transport param will be consist of lower case
-      // letters.
-      if (!cricket::StringToProto(tokens[1].c_str(), &turn_transport_type) ||
-          (turn_transport_type != cricket::PROTO_UDP &&
-           turn_transport_type != cricket::PROTO_TCP)) {
-        LOG(LS_WARNING) << "Transport param should always be udp or tcp.";
-        return false;
-      }
+    rtc::tokenize_with_empty_tokens(uri_transport_param, '=', &tokens);
+    if (tokens[0] != kTransport) {
+      LOG(LS_WARNING) << "Invalid transport parameter key.";
+      return false;
+    }
+    if (tokens.size() < 2 ||
+        !cricket::StringToProto(tokens[1].c_str(), &turn_transport_type) ||
+        (turn_transport_type != cricket::PROTO_UDP &&
+         turn_transport_type != cricket::PROTO_TCP)) {
+      LOG(LS_WARNING) << "Transport param should always be udp or tcp.";
+      return false;
     }
   }
 

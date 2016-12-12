@@ -2749,6 +2749,9 @@ TEST_F(IceServerParsingTest, ParseTransport) {
   turn_servers_.clear();
 
   EXPECT_FALSE(ParseUrl("turn:hostname?transport=invalid"));
+  EXPECT_FALSE(ParseUrl("turn:hostname?transport="));
+  EXPECT_FALSE(ParseUrl("turn:hostname?="));
+  EXPECT_FALSE(ParseUrl("?"));
 }
 
 // Test parsing ICE username contained in URL.
