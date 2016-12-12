@@ -353,18 +353,17 @@ class FakeReceiveStatistics : public NullReceiveStatistics {
 class UlpfecObserver : public test::EndToEndTest {
  public:
   UlpfecObserver(bool header_extensions_enabled,
-              bool use_nack,
-              bool expect_red,
-              bool expect_ulpfec,
-              const std::string& codec)
+                 bool use_nack,
+                 bool expect_red,
+                 bool expect_ulpfec,
+                 const std::string& codec)
       : EndToEndTest(VideoSendStreamTest::kDefaultTimeoutMs),
         payload_name_(codec),
         use_nack_(use_nack),
         expect_red_(expect_red),
         expect_ulpfec_(expect_ulpfec),
-        send_count_(0),
-        received_media_(false),
-        received_fec_(false),
+        sent_media_(false),
+        sent_ulpfec_(false),
         header_extensions_enabled_(header_extensions_enabled) {
     if (codec == "H264") {
       encoder_.reset(new test::FakeH264Encoder(Clock::GetRealTimeClock()));
@@ -382,7 +381,6 @@ class UlpfecObserver : public test::EndToEndTest {
     RTPHeader header;
     EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-    ++send_count_;
     int encapsulated_payload_type = -1;
     if (header.payloadType == VideoSendStreamTest::kRedPayloadType) {
       EXPECT_TRUE(expect_red_);
@@ -399,7 +397,7 @@ class UlpfecObserver : public test::EndToEndTest {
           length) {
         // Not padding-only, media received outside of RED.
         EXPECT_FALSE(expect_red_);
-        received_media_ = true;
+        sent_media_ = true;
       }
     }
 
@@ -425,14 +423,14 @@ class UlpfecObserver : public test::EndToEndTest {
       if (encapsulated_payload_type ==
           VideoSendStreamTest::kUlpfecPayloadType) {
         EXPECT_TRUE(expect_ulpfec_);
-        received_fec_ = true;
+        sent_ulpfec_ = true;
       } else {
-        received_media_ = true;
+        sent_media_ = true;
       }
     }
 
-    if (send_count_ > 100 && received_media_) {
-      if (received_fec_ || !expect_ulpfec_)
+    if (sent_media_) {
+      if (sent_ulpfec_ || !expect_ulpfec_)
         observation_complete_.Set();
     }
 
@@ -446,7 +444,7 @@ class UlpfecObserver : public test::EndToEndTest {
     // Configure some network delay.
     const int kNetworkDelayMs = 100;
     FakeNetworkPipe::Config config;
-    config.loss_percent = 50;
+    config.loss_percent = 5;
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(sender_call, this,
                                      test::PacketTransport::kSender, config);
@@ -484,7 +482,7 @@ class UlpfecObserver : public test::EndToEndTest {
   }
 
   void PerformTest() override {
-    EXPECT_TRUE(Wait()) << "Timed out waiting for FEC and media packets.";
+    EXPECT_TRUE(Wait()) << "Timed out waiting for ULPFEC and/or media packets.";
   }
 
   std::unique_ptr<internal::TransportAdapter> transport_adapter_;
@@ -493,9 +491,8 @@ class UlpfecObserver : public test::EndToEndTest {
   const bool use_nack_;
   const bool expect_red_;
   const bool expect_ulpfec_;
-  int send_count_;
-  bool received_media_;
-  bool received_fec_;
+  bool sent_media_;
+  bool sent_ulpfec_;
   bool header_extensions_enabled_;
   RTPHeader prev_header_;
 };
