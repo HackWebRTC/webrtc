@@ -370,7 +370,7 @@ cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
   std::vector<std::string> device_names;
   {
     std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
-        webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
+        webrtc::VideoCaptureFactory::CreateDeviceInfo());
     if (!info) {
       return nullptr;
     }

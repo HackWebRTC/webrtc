@@ -35,8 +35,7 @@ typedef struct tagTHREADNAME_INFO
    DWORD dwFlags;       // reserved for future use, must be zero
 } THREADNAME_INFO;
 
-CaptureInputPin::CaptureInputPin (int32_t moduleId,
-                            IN TCHAR * szName,
+CaptureInputPin::CaptureInputPin (IN TCHAR * szName,
                             IN CaptureSinkFilter* pFilter,
                             IN CCritSec * pLock,
                             OUT HRESULT * pHr,
@@ -45,7 +44,6 @@ CaptureInputPin::CaptureInputPin (int32_t moduleId,
       _requestedCapability(),
       _resultingCapability()
 {
-    _moduleId=moduleId;
     _threadHandle = NULL;
 }
 
@@ -66,7 +64,7 @@ CaptureInputPin::GetMediaType (IN int iPosition, OUT CMediaType * pmt)
                             sizeof(VIDEOINFOHEADER));
     if(NULL == pvi)
     {
-        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _moduleId,
+        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
                      "CheckMediaType VIDEOINFOHEADER is NULL. Returning...Line:%d\n", __LINE__);
         return(E_OUTOFMEMORY);
     }
@@ -154,7 +152,7 @@ CaptureInputPin::GetMediaType (IN int iPosition, OUT CMediaType * pmt)
         return VFW_S_NO_MORE_ITEMS;
     }
     pmt->SetSampleSize(pvi->bmiHeader.biSizeImage);
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _moduleId,
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
              "GetMediaType position %d, width %d, height %d, biCompression 0x%x",
              iPosition, _requestedCapability.width,
              _requestedCapability.height,pvi->bmiHeader.biCompression);
@@ -203,7 +201,7 @@ CaptureInputPin::CheckMediaType ( IN const CMediaType * pMediaType)
            _resultingCapability.height = abs(pvi->bmiHeader.biHeight);
         }
 
-        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _moduleId,
+        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
                      "CheckMediaType width:%d height:%d Compression:0x%x\n",
                      pvi->bmiHeader.biWidth,pvi->bmiHeader.biHeight,
                      pvi->bmiHeader.biCompression);
@@ -256,7 +254,7 @@ CaptureInputPin::CheckMediaType ( IN const CMediaType * pMediaType)
             return E_INVALIDARG;
         }
 
-        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _moduleId,
+        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
                      "CheckMediaType width:%d height:%d Compression:0x%x\n",
                      pvi->bmiHeader.biWidth,pvi->bmiHeader.biHeight,
                      pvi->bmiHeader.biCompression);
@@ -373,15 +371,13 @@ HRESULT CaptureInputPin::SetMatchingMediaType(
 CaptureSinkFilter::CaptureSinkFilter (IN TCHAR * tszName,
                               IN LPUNKNOWN punk,
                               OUT HRESULT * phr,
-                              VideoCaptureExternal& captureObserver,
-                              int32_t moduleId)
+                              VideoCaptureExternal& captureObserver)
     : CBaseFilter(tszName,punk,& m_crtFilter,CLSID_SINKFILTER),
       m_pInput(NULL),
-      _captureObserver(captureObserver),
-      _moduleId(moduleId)
+      _captureObserver(captureObserver)
 {
     (* phr) = S_OK;
-    m_pInput = new CaptureInputPin(moduleId,NAME ("VideoCaptureInputPin"),
+    m_pInput = new CaptureInputPin(NAME ("VideoCaptureInputPin"),
                                    this,
                                    & m_crtFilter,
                                    phr, L"VideoCapture");

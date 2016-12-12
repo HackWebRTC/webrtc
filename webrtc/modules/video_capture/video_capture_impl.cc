@@ -25,10 +25,9 @@
 namespace webrtc {
 namespace videocapturemodule {
 rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
-    const int32_t id,
     VideoCaptureExternal*& externalCapture) {
   rtc::scoped_refptr<VideoCaptureImpl> implementation(
-      new rtc::RefCountedObject<VideoCaptureImpl>(id));
+      new rtc::RefCountedObject<VideoCaptureImpl>());
   externalCapture = implementation.get();
   return implementation;
 }
@@ -79,79 +78,14 @@ int32_t VideoCaptureImpl::RotationInDegrees(VideoRotation rotation,
   return -1;
 }
 
-// returns the number of milliseconds until the module want a worker thread to call Process
-int64_t VideoCaptureImpl::TimeUntilNextProcess()
-{
-    CriticalSectionScoped cs(&_callBackCs);
-    const int64_t kProcessIntervalMs = 300;
-    return kProcessIntervalMs -
-           (rtc::TimeNanos() - _lastProcessTimeNanos) /
-           rtc::kNumNanosecsPerMillisec;
-}
-
-// Process any pending tasks such as timeouts
-void VideoCaptureImpl::Process()
-{
-    CriticalSectionScoped cs(&_callBackCs);
-
-    const int64_t now_ns = rtc::TimeNanos();
-    _lastProcessTimeNanos = rtc::TimeNanos();
-
-    // Handle No picture alarm
-
-    if (_lastProcessFrameTimeNanos == _incomingFrameTimesNanos[0] &&
-        _captureAlarm != Raised)
-    {
-        if (_noPictureAlarmCallBack && _captureCallBack)
-        {
-            _captureAlarm = Raised;
-            _captureCallBack->OnNoPictureAlarm(_id, _captureAlarm);
-        }
-    }
-    else if (_lastProcessFrameTimeNanos != _incomingFrameTimesNanos[0] &&
-             _captureAlarm != Cleared)
-    {
-        if (_noPictureAlarmCallBack && _captureCallBack)
-        {
-            _captureAlarm = Cleared;
-            _captureCallBack->OnNoPictureAlarm(_id, _captureAlarm);
-
-        }
-    }
-
-    // Handle frame rate callback
-    if ((now_ns - _lastFrameRateCallbackTimeNanos) /
-        rtc::kNumNanosecsPerMillisec
-        > kFrameRateCallbackInterval)
-    {
-        if (_frameRateCallBack && _captureCallBack)
-        {
-            const uint32_t frameRate = CalculateFrameRate(now_ns);
-            _captureCallBack->OnCaptureFrameRate(_id, frameRate);
-        }
-        // Can be set by EnableFrameRateCallback
-        _lastFrameRateCallbackTimeNanos = now_ns;
-
-    }
-
-    _lastProcessFrameTimeNanos = _incomingFrameTimesNanos[0];
-}
-
-VideoCaptureImpl::VideoCaptureImpl(const int32_t id)
-    : _id(id),
-      _deviceUniqueId(NULL),
+VideoCaptureImpl::VideoCaptureImpl()
+    : _deviceUniqueId(NULL),
       _apiCs(*CriticalSectionWrapper::CreateCriticalSection()),
       _captureDelay(0),
       _requestedCapability(),
-      _callBackCs(*CriticalSectionWrapper::CreateCriticalSection()),
       _lastProcessTimeNanos(rtc::TimeNanos()),
       _lastFrameRateCallbackTimeNanos(rtc::TimeNanos()),
-      _frameRateCallBack(false),
-      _noPictureAlarmCallBack(false),
-      _captureAlarm(Cleared),
-      _setCaptureDelay(0),
       _dataCallBack(NULL),
-      _captureCallBack(NULL),
       _lastProcessFrameTimeNanos(rtc::TimeNanos()),
       _rotateFrame(kVideoRotation_0),
       apply_rotation_(false) {
@@ -166,8 +100,6 @@ VideoCaptureImpl::VideoCaptureImpl(const int32_t id)
 VideoCaptureImpl::~VideoCaptureImpl()
 {
     DeRegisterCaptureDataCallback();
-    DeRegisterCaptureCallback();
-    delete &_callBackCs;
     delete &_apiCs;
 
     if (_deviceUniqueId)
@@ -175,53 +107,20 @@ VideoCaptureImpl::~VideoCaptureImpl()
 }
 
 void VideoCaptureImpl::RegisterCaptureDataCallback(
-    VideoCaptureDataCallback& dataCallBack) {
+    rtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
     CriticalSectionScoped cs(&_apiCs);
-    CriticalSectionScoped cs2(&_callBackCs);
-    _dataCallBack = &dataCallBack;
+    _dataCallBack = dataCallBack;
 }
 
 void VideoCaptureImpl::DeRegisterCaptureDataCallback() {
     CriticalSectionScoped cs(&_apiCs);
-    CriticalSectionScoped cs2(&_callBackCs);
     _dataCallBack = NULL;
 }
-void VideoCaptureImpl::RegisterCaptureCallback(VideoCaptureFeedBack& callBack) {
-
-    CriticalSectionScoped cs(&_apiCs);
-    CriticalSectionScoped cs2(&_callBackCs);
-    _captureCallBack = &callBack;
-}
-void VideoCaptureImpl::DeRegisterCaptureCallback() {
-
-    CriticalSectionScoped cs(&_apiCs);
-    CriticalSectionScoped cs2(&_callBackCs);
-    _captureCallBack = NULL;
-}
-void VideoCaptureImpl::SetCaptureDelay(int32_t delayMS) {
-    CriticalSectionScoped cs(&_apiCs);
-    _captureDelay = delayMS;
-}
-int32_t VideoCaptureImpl::CaptureDelay()
-{
-    CriticalSectionScoped cs(&_apiCs);
-    return _setCaptureDelay;
-}
-
 int32_t VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame) {
   UpdateFrameCount();  // frame count used for local frame rate callback.
 
-  const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
-  // Capture delay changed
-  if (_setCaptureDelay != _captureDelay) {
-      _setCaptureDelay = _captureDelay;
-  }
-
   if (_dataCallBack) {
-    if (callOnCaptureDelayChanged) {
-      _dataCallBack->OnCaptureDelayChanged(_id, _captureDelay);
-    }
-    _dataCallBack->OnIncomingCapturedFrame(_id, captureFrame);
+    _dataCallBack->OnFrame(captureFrame);
   }
 
   return 0;
@@ -234,7 +133,6 @@ int32_t VideoCaptureImpl::IncomingFrame(
     int64_t captureTime/*=0*/)
 {
     CriticalSectionScoped cs(&_apiCs);
-    CriticalSectionScoped cs2(&_callBackCs);
 
     const int32_t width = frameInfo.width;
     const int32_t height = frameInfo.height;
@@ -308,19 +206,8 @@ int32_t VideoCaptureImpl::IncomingFrame(
 
 int32_t VideoCaptureImpl::SetCaptureRotation(VideoRotation rotation) {
   CriticalSectionScoped cs(&_apiCs);
-  CriticalSectionScoped cs2(&_callBackCs);
   _rotateFrame = rotation;
   return 0;
-}
-
-void VideoCaptureImpl::EnableFrameRateCallback(const bool enable) {
-    CriticalSectionScoped cs(&_apiCs);
-    CriticalSectionScoped cs2(&_callBackCs);
-    _frameRateCallBack = enable;
-    if (enable)
-    {
-      _lastFrameRateCallbackTimeNanos = rtc::TimeNanos();
-    }
 }
 
 bool VideoCaptureImpl::SetApplyRotation(bool enable) {
@@ -329,12 +216,6 @@ bool VideoCaptureImpl::SetApplyRotation(bool enable) {
   // The effect of this is the last caller wins.
   apply_rotation_ = enable;
   return true;
-}
-
-void VideoCaptureImpl::EnableNoPictureAlarm(const bool enable) {
-    CriticalSectionScoped cs(&_apiCs);
-    CriticalSectionScoped cs2(&_callBackCs);
-    _noPictureAlarmCallBack = enable;
 }
 
 void VideoCaptureImpl::UpdateFrameCount()

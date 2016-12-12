@@ -69,12 +69,6 @@ struct VideoCaptureCapability
     }
 };
 
-enum VideoCaptureAlarm
-{
-    Raised = 0,
-    Cleared = 1
-};
-
 /* External Capture interface. Returned by Create
  and implemented by the capture module.
  */
@@ -88,29 +82,6 @@ public:
                                   int64_t captureTime = 0) = 0;
 protected:
     ~VideoCaptureExternal() {}
-};
-
-// Callback class to be implemented by module user
-class VideoCaptureDataCallback
-{
-public:
- virtual void OnIncomingCapturedFrame(const int32_t id,
-                                      const VideoFrame& videoFrame) = 0;
-    virtual void OnCaptureDelayChanged(const int32_t id,
-                                       const int32_t delay) = 0;
-protected:
-    virtual ~VideoCaptureDataCallback(){}
-};
-
-class VideoCaptureFeedBack
-{
-public:
-    virtual void OnCaptureFrameRate(const int32_t id,
-                                    const uint32_t frameRate) = 0;
-    virtual void OnNoPictureAlarm(const int32_t id,
-                                  const VideoCaptureAlarm alarm) = 0;
-protected:
-    virtual ~VideoCaptureFeedBack(){}
 };
 
 }  // namespace webrtc
