@@ -761,7 +761,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
 // Run with no packet loss, at low bitrate.
 // spatial_resize is on, for this low bitrate expect one resize in sequence.
 // Resize happens on delta frame. Expect only one key frame (first frame).
-TEST_F(VideoProcessorIntegrationTest, ProcessNoLossSpatialResizeFrameDropVP9) {
+TEST_F(VideoProcessorIntegrationTest,
+       DISABLED_ProcessNoLossSpatialResizeFrameDropVP9) {
   config_.networking_config.packet_loss_probability = 0;
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
