@@ -20,7 +20,6 @@
 #endif
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/voice_engine_configurations.h"
 
 namespace webrtc {
 

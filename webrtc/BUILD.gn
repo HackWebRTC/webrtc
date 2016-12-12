@@ -334,7 +334,6 @@ rtc_static_library("webrtc_common") {
     "config.cc",
     "config.h",
     "typedefs.h",
-    "voice_engine_configurations.h",
   ]
 
   if (!build_with_chromium && is_clang) {

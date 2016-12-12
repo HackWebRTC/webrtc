@@ -24,6 +24,7 @@
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/trace_to_stderr.h"
+#include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
@@ -37,7 +38,6 @@
 #include "webrtc/voice_engine/include/voe_video_sync.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/test/channel_transport/channel_transport.h"
-#include "webrtc/voice_engine_configurations.h"
 
 DEFINE_bool(use_log_file, false,
     "Output logs to a file; by default they will be printed to stderr.");

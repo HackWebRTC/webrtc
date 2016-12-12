@@ -26,7 +26,7 @@
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/voice_engine_configurations.h"
+#include "webrtc/typedefs.h"
 
 DEFINE_string(codec, "isac", "Codec Name");
 DEFINE_int32(sample_rate_hz, 16000, "Sampling rate in Hertz.");

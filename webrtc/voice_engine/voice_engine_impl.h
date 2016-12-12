@@ -14,7 +14,7 @@
 #include <memory>
 
 #include "webrtc/system_wrappers/include/atomic32.h"
-#include "webrtc/voice_engine_configurations.h"
+#include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/voe_base_impl.h"
 #include "webrtc/voice_engine/voe_audio_processing_impl.h"
 #include "webrtc/voice_engine/voe_codec_impl.h"

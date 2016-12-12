@@ -18,7 +18,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
-#include "webrtc/voice_engine_configurations.h"
+#include "webrtc/typedefs.h"
 
 // ----------------------------------------------------------------------------
 //  Enumerators

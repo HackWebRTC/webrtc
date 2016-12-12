@@ -14,7 +14,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/voice_engine_configurations.h"
+#include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"

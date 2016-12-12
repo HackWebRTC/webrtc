@@ -18,7 +18,6 @@
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/voice_engine_configurations.h"
 
 namespace webrtc {
 
