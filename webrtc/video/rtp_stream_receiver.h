@@ -82,7 +82,7 @@ class RtpStreamReceiver : public RtpData,
       VCMTiming* timing);
   ~RtpStreamReceiver();
 
-  bool SetReceiveCodec(const VideoCodec& video_codec);
+  bool AddReceiveCodec(const VideoCodec& video_codec);
 
   uint32_t GetRemoteSsrc() const;
   int GetCsrcs(uint32_t* csrcs) const;

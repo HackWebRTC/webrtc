@@ -317,7 +317,7 @@ void VideoReceiveStream::Start() {
                                             decoder.payload_type);
 
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
-    RTC_CHECK(rtp_stream_receiver_.SetReceiveCodec(codec));
+    RTC_CHECK(rtp_stream_receiver_.AddReceiveCodec(codec));
     RTC_CHECK_EQ(VCM_OK, video_receiver_.RegisterReceiveCodec(
                              &codec, num_cpu_cores_, false));
   }

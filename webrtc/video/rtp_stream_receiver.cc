@@ -173,7 +173,7 @@ RtpStreamReceiver::RtpStreamReceiver(
     ulpfec_codec.codecType = kVideoCodecULPFEC;
     strncpy(ulpfec_codec.plName, "ulpfec", sizeof(ulpfec_codec.plName));
     ulpfec_codec.plType = config_.rtp.ulpfec.ulpfec_payload_type;
-    RTC_CHECK(SetReceiveCodec(ulpfec_codec));
+    RTC_CHECK(AddReceiveCodec(ulpfec_codec));
   }
 
   if (IsRedEnabled()) {
@@ -181,7 +181,7 @@ RtpStreamReceiver::RtpStreamReceiver(
     red_codec.codecType = kVideoCodecRED;
     strncpy(red_codec.plName, "red", sizeof(red_codec.plName));
     red_codec.plType = config_.rtp.ulpfec.red_payload_type;
-    RTC_CHECK(SetReceiveCodec(red_codec));
+    RTC_CHECK(AddReceiveCodec(red_codec));
     if (config_.rtp.ulpfec.red_rtx_payload_type != -1) {
       rtp_payload_registry_.SetRtxPayloadType(
           config_.rtp.ulpfec.red_rtx_payload_type,
@@ -223,7 +223,7 @@ RtpStreamReceiver::~RtpStreamReceiver() {
   UpdateHistograms();
 }
 
-bool RtpStreamReceiver::SetReceiveCodec(const VideoCodec& video_codec) {
+bool RtpStreamReceiver::AddReceiveCodec(const VideoCodec& video_codec) {
   int8_t old_pltype = -1;
   if (rtp_payload_registry_.ReceivePayloadType(video_codec, &old_pltype) !=
       -1) {
