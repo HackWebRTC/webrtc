@@ -543,27 +543,44 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   static const char* StunName(NATType type) {
     switch (type) {
-      case NAT_OPEN_CONE:       return "stun(open cone)";
-      case NAT_ADDR_RESTRICTED: return "stun(addr restricted)";
-      case NAT_PORT_RESTRICTED: return "stun(port restricted)";
-      case NAT_SYMMETRIC:       return "stun(symmetric)";
-      default:                  return "stun(?)";
+      case NAT_OPEN_CONE:
+        return "stun(open cone)";
+      case NAT_ADDR_RESTRICTED:
+        return "stun(addr restricted)";
+      case NAT_PORT_RESTRICTED:
+        return "stun(port restricted)";
+      case NAT_SYMMETRIC:
+        return "stun(symmetric)";
+      default:
+        return "stun(?)";
     }
   }
   static const char* RelayName(RelayType type, ProtocolType proto) {
     if (type == RELAY_TURN) {
       switch (proto) {
-        case PROTO_UDP:           return "turn(udp)";
-        case PROTO_TCP:           return "turn(tcp)";
-        case PROTO_SSLTCP:        return "turn(ssltcp)";
-        default:                  return "turn(?)";
+        case PROTO_UDP:
+          return "turn(udp)";
+        case PROTO_TCP:
+          return "turn(tcp)";
+        case PROTO_SSLTCP:
+          return "turn(ssltcp)";
+        case PROTO_TLS:
+          return "turn(tls)";
+        default:
+          return "turn(?)";
       }
     } else {
       switch (proto) {
-        case PROTO_UDP:           return "gturn(udp)";
-        case PROTO_TCP:           return "gturn(tcp)";
-        case PROTO_SSLTCP:        return "gturn(ssltcp)";
-        default:                  return "gturn(?)";
+        case PROTO_UDP:
+          return "gturn(udp)";
+        case PROTO_TCP:
+          return "gturn(tcp)";
+        case PROTO_SSLTCP:
+          return "gturn(ssltcp)";
+        case PROTO_TLS:
+          return "gturn(tls)";
+        default:
+          return "gturn(?)";
       }
     }
   }
@@ -2377,7 +2394,7 @@ TEST_F(PortTest, TestConnectionPriority) {
   lport->set_type_preference(cricket::ICE_TYPE_PREFERENCE_HOST);
   std::unique_ptr<TestPort> rport(
       CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
-  rport->set_type_preference(cricket::ICE_TYPE_PREFERENCE_RELAY);
+  rport->set_type_preference(cricket::ICE_TYPE_PREFERENCE_RELAY_UDP);
   lport->set_component(123);
   lport->AddCandidateAddress(SocketAddress("192.168.1.4", 1234));
   rport->set_component(23);

@@ -285,7 +285,7 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   int port = kDefaultStunPort;
   if (service_type == TURNS) {
     port = kDefaultStunTlsPort;
-    turn_transport_type = cricket::PROTO_TCP;
+    turn_transport_type = cricket::PROTO_TLS;
   }
 
   std::string address;
@@ -306,10 +306,8 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
       break;
     case TURN:
     case TURNS: {
-      bool secure = (service_type == TURNS);
-      turn_servers->push_back(
-          cricket::RelayServerConfig(address, port, username, server.password,
-                                     turn_transport_type, secure));
+      turn_servers->push_back(cricket::RelayServerConfig(
+          address, port, username, server.password, turn_transport_type));
       break;
     }
     case INVALID:

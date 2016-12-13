@@ -81,14 +81,9 @@ enum RelayType {
 };
 
 enum IcePriorityValue {
-  // The reason we are choosing Relay preference 2 is because, we can run
-  // Relay from client to server on UDP/TCP/TLS. To distinguish the transport
-  // protocol, we prefer UDP over TCP over TLS.
-  // For UDP ICE_TYPE_PREFERENCE_RELAY will be 2.
-  // For TCP ICE_TYPE_PREFERENCE_RELAY will be 1.
-  // For TLS ICE_TYPE_PREFERENCE_RELAY will be 0.
-  // Check turnport.cc for setting these values.
-  ICE_TYPE_PREFERENCE_RELAY = 2,
+  ICE_TYPE_PREFERENCE_RELAY_TLS = 0,
+  ICE_TYPE_PREFERENCE_RELAY_TCP = 1,
+  ICE_TYPE_PREFERENCE_RELAY_UDP = 2,
   ICE_TYPE_PREFERENCE_PRFLX_TCP = 80,
   ICE_TYPE_PREFERENCE_HOST_TCP = 90,
   ICE_TYPE_PREFERENCE_SRFLX = 100,
@@ -102,15 +97,12 @@ bool StringToProto(const char* value, ProtocolType* proto);
 struct ProtocolAddress {
   rtc::SocketAddress address;
   ProtocolType proto;
-  bool secure;
 
   ProtocolAddress(const rtc::SocketAddress& a, ProtocolType p)
-      : address(a), proto(p), secure(false) { }
-  ProtocolAddress(const rtc::SocketAddress& a, ProtocolType p, bool sec)
-      : address(a), proto(p), secure(sec) { }
+      : address(a), proto(p) {}
 
   bool operator==(const ProtocolAddress& o) const {
-    return address == o.address && proto == o.proto && secure == o.secure;
+    return address == o.address && proto == o.proto;
   }
   bool operator!=(const ProtocolAddress& o) const { return !(*this == o); }
 };

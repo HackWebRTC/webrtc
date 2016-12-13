@@ -192,10 +192,10 @@ class BasicPortAllocatorTest : public testing::Test,
     turn_server.credentials = credentials;
 
     if (!udp_turn.IsNil()) {
-      turn_server.ports.push_back(ProtocolAddress(udp_turn, PROTO_UDP, false));
+      turn_server.ports.push_back(ProtocolAddress(udp_turn, PROTO_UDP));
     }
     if (!tcp_turn.IsNil()) {
-      turn_server.ports.push_back(ProtocolAddress(tcp_turn, PROTO_TCP, false));
+      turn_server.ports.push_back(ProtocolAddress(tcp_turn, PROTO_TCP));
     }
     allocator_->AddTurnServer(turn_server);
   }
@@ -1449,7 +1449,7 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithServerAddressResolve) {
   RelayCredentials credentials(kTurnUsername, kTurnPassword);
   turn_server.credentials = credentials;
   turn_server.ports.push_back(
-      ProtocolAddress(rtc::SocketAddress("localhost", 3478), PROTO_UDP, false));
+      ProtocolAddress(rtc::SocketAddress("localhost", 3478), PROTO_UDP));
   allocator_->AddTurnServer(turn_server);
 
   allocator_->set_step_delay(kMinimumStepDelay);

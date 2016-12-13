@@ -119,12 +119,23 @@ struct RelayServerConfig {
                     int port,
                     const std::string& username,
                     const std::string& password,
+                    ProtocolType proto)
+      : type(RELAY_TURN), credentials(username, password) {
+    ports.push_back(ProtocolAddress(rtc::SocketAddress(address, port), proto));
+  }
+
+  // Legacy constructor where "secure" and PROTO_TCP implies PROTO_TLS.
+  RelayServerConfig(const std::string& address,
+                    int port,
+                    const std::string& username,
+                    const std::string& password,
                     ProtocolType proto,
                     bool secure)
-      : type(RELAY_TURN), credentials(username, password) {
-    ports.push_back(
-        ProtocolAddress(rtc::SocketAddress(address, port), proto, secure));
-  }
+      : RelayServerConfig(address,
+                          port,
+                          username,
+                          password,
+                          (proto == PROTO_TCP && secure ? PROTO_TLS : proto)) {}
 
   bool operator==(const RelayServerConfig& o) const {
     return type == o.type && ports == o.ports && credentials == o.credentials &&

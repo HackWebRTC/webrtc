@@ -44,16 +44,16 @@ inline bool IsTurnChannelData(uint16_t msg_type) {
   return ((msg_type & 0xC000) == 0x4000);  // MSB are 0b01
 }
 
-static int GetRelayPreference(cricket::ProtocolType proto, bool secure) {
-  int relay_preference = ICE_TYPE_PREFERENCE_RELAY;
-  if (proto == cricket::PROTO_TCP) {
-    relay_preference -= 1;
-    if (secure)
-      relay_preference -= 1;
+static int GetRelayPreference(cricket::ProtocolType proto) {
+  switch (proto) {
+    case cricket::PROTO_TCP:
+      return ICE_TYPE_PREFERENCE_RELAY_TCP;
+    case cricket::PROTO_TLS:
+      return ICE_TYPE_PREFERENCE_RELAY_TLS;
+    default:
+      RTC_DCHECK(proto == PROTO_UDP);
+      return ICE_TYPE_PREFERENCE_RELAY_UDP;
   }
-
-  ASSERT(relay_preference >= 0);
-  return relay_preference;
 }
 
 class TurnAllocateRequest : public StunRequest {
@@ -322,11 +322,13 @@ bool TurnPort::CreateTurnClientSocket() {
   if (server_address_.proto == PROTO_UDP && !SharedSocket()) {
     socket_ = socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(ip(), 0), min_port(), max_port());
-  } else if (server_address_.proto == PROTO_TCP) {
+  } else if (server_address_.proto == PROTO_TCP ||
+             server_address_.proto == PROTO_TLS) {
     ASSERT(!SharedSocket());
     int opts = rtc::PacketSocketFactory::OPT_STUN;
-    // If secure bit is enabled in server address, use TLS over TCP.
-    if (server_address_.secure) {
+
+    // Apply server address TLS and insecure bits to options.
+    if (server_address_.proto == PROTO_TLS) {
       opts |= rtc::PacketSocketFactory::OPT_TLS;
     }
     socket_ = socket_factory()->CreateClientTcpSocket(
@@ -356,7 +358,8 @@ bool TurnPort::CreateTurnClientSocket() {
 
   // TCP port is ready to send stun requests after the socket is connected,
   // while UDP port is ready to do so once the socket is created.
-  if (server_address_.proto == PROTO_TCP) {
+  if (server_address_.proto == PROTO_TCP ||
+      server_address_.proto == PROTO_TLS) {
     socket_->SignalConnect.connect(this, &TurnPort::OnSocketConnect);
     socket_->SignalClose.connect(this, &TurnPort::OnSocketClose);
   } else {
@@ -652,8 +655,7 @@ bool TurnPort::SetAlternateServer(const rtc::SocketAddress& address) {
                        << "] to TURN server ["
                        << address.ToSensitiveString()
                        << "]";
-  server_address_ = ProtocolAddress(address, server_address_.proto,
-                                    server_address_.secure);
+  server_address_ = ProtocolAddress(address, server_address_.proto);
 
   // Insert the current address to prevent redirection pingpong.
   attempted_server_addresses_.insert(server_address_.address);
@@ -736,8 +738,7 @@ void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
              UDP_PROTOCOL_NAME,
              ProtoToString(server_address_.proto),  // The first hop protocol.
              "",  // TCP canddiate type, empty for turn candidates.
-             RELAY_PORT_TYPE,
-             GetRelayPreference(server_address_.proto, server_address_.secure),
+             RELAY_PORT_TYPE, GetRelayPreference(server_address_.proto),
              server_priority_, true);
 }
 

@@ -80,6 +80,8 @@ static const cricket::ProtocolAddress kTurnUdpProtoAddr(
     kTurnUdpIntAddr, cricket::PROTO_UDP);
 static const cricket::ProtocolAddress kTurnTcpProtoAddr(
     kTurnTcpIntAddr, cricket::PROTO_TCP);
+static const cricket::ProtocolAddress kTurnTlsProtoAddr(kTurnTcpIntAddr,
+                                                        cricket::PROTO_TLS);
 static const cricket::ProtocolAddress kTurnUdpIPv6ProtoAddr(
     kTurnUdpIPv6IntAddr, cricket::PROTO_UDP);
 
@@ -1027,8 +1029,8 @@ TEST_F(TurnPortTest, TestDestroyTurnConnectionUsingSharedSocket) {
 // Test that we fail to create a connection when we want to use TLS over TCP.
 // This test should be removed once we have TLS support.
 TEST_F(TurnPortTest, TestTurnTlsTcpConnectionFails) {
-  ProtocolAddress secure_addr(kTurnTcpProtoAddr.address,
-                              kTurnTcpProtoAddr.proto, true);
+  ProtocolAddress secure_addr(kTurnTlsProtoAddr.address,
+                              kTurnTlsProtoAddr.proto);
   CreateTurnPort(kTurnUsername, kTurnPassword, secure_addr);
   turn_port_->PrepareAddress();
   EXPECT_TRUE_SIMULATED_WAIT(turn_error_, kSimulatedRtt * 2, fake_clock_);

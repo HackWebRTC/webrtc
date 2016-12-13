@@ -1487,7 +1487,7 @@ class WebRtcSessionTest
     cricket::RelayCredentials credentials(kTurnUsername, kTurnPassword);
     turn_server.credentials = credentials;
     turn_server.ports.push_back(
-        cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP, false));
+        cricket::ProtocolAddress(kTurnUdpIntAddr, cricket::PROTO_UDP));
     allocator_->AddTurnServer(turn_server);
     allocator_->set_step_delay(cricket::kMinimumStepDelay);
     allocator_->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP);

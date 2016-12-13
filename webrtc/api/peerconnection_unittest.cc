@@ -2648,13 +2648,13 @@ TEST_F(IceServerParsingTest, ParseStunPrefixes) {
   EXPECT_TRUE(ParseUrl("turn:hostname"));
   EXPECT_EQ(0U, stun_servers_.size());
   EXPECT_EQ(1U, turn_servers_.size());
-  EXPECT_FALSE(turn_servers_[0].ports[0].secure);
+  EXPECT_EQ(cricket::PROTO_UDP, turn_servers_[0].ports[0].proto);
   turn_servers_.clear();
 
   EXPECT_TRUE(ParseUrl("turns:hostname"));
   EXPECT_EQ(0U, stun_servers_.size());
   EXPECT_EQ(1U, turn_servers_.size());
-  EXPECT_TRUE(turn_servers_[0].ports[0].secure);
+  EXPECT_EQ(cricket::PROTO_TLS, turn_servers_[0].ports[0].proto);
   turn_servers_.clear();
 
   // invalid prefixes
@@ -2669,7 +2669,7 @@ TEST_F(IceServerParsingTest, VerifyDefaults) {
   EXPECT_TRUE(ParseUrl("turns:hostname"));
   EXPECT_EQ(1U, turn_servers_.size());
   EXPECT_EQ(5349, turn_servers_[0].ports[0].address.port());
-  EXPECT_EQ(cricket::PROTO_TCP, turn_servers_[0].ports[0].proto);
+  EXPECT_EQ(cricket::PROTO_TLS, turn_servers_[0].ports[0].proto);
   turn_servers_.clear();
 
   // TURN defaults

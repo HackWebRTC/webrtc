@@ -142,11 +142,11 @@ cricket::BasicPortAllocator* CreateBasicPortAllocator(
   turn_server.credentials = kRelayCredentials;
   if (!turn_server_udp.IsNil()) {
     turn_server.ports.push_back(
-        cricket::ProtocolAddress(turn_server_udp, cricket::PROTO_UDP, false));
+        cricket::ProtocolAddress(turn_server_udp, cricket::PROTO_UDP));
   }
   if (!turn_server_tcp.IsNil()) {
     turn_server.ports.push_back(
-        cricket::ProtocolAddress(turn_server_tcp, cricket::PROTO_TCP, false));
+        cricket::ProtocolAddress(turn_server_tcp, cricket::PROTO_TCP));
   }
   std::vector<cricket::RelayServerConfig> turn_servers(1, turn_server);
 
@@ -2253,8 +2253,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverWithManyConnections) {
   test_turn_server()->AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   RelayServerConfig turn_server(RELAY_TURN);
   turn_server.credentials = kRelayCredentials;
-  turn_server.ports.push_back(
-      ProtocolAddress(kTurnTcpIntAddr, PROTO_TCP, false));
+  turn_server.ports.push_back(ProtocolAddress(kTurnTcpIntAddr, PROTO_TCP));
   GetAllocator(0)->AddTurnServer(turn_server);
   GetAllocator(1)->AddTurnServer(turn_server);
   // Enable IPv6
@@ -4367,7 +4366,7 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest, TestTcpTurn) {
   turn_server()->AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   RelayServerConfig config(RELAY_TURN);
   config.credentials = kRelayCredentials;
-  config.ports.push_back(ProtocolAddress(kTurnTcpIntAddr, PROTO_TCP, false));
+  config.ports.push_back(ProtocolAddress(kTurnTcpIntAddr, PROTO_TCP));
   allocator()->AddTurnServer(config);
 
   P2PTransportChannel& ch = StartTransportChannel(true, 100);
