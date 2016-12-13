@@ -108,27 +108,28 @@ class QualityScalerTest : public ::testing::Test {
   std::unique_ptr<MockScaleObserver> observer_;
 };
 
-TEST_F(QualityScalerTest, DownscalesAfterContinuousFramedrop) {
+#define DISABLED_TEST(basename, test) TEST_F(basename, DISABLED_##test)
+DISABLED_TEST(QualityScalerTest, DownscalesAfterContinuousFramedrop) {
   q_->PostTask([this] { TriggerScale(kScaleDown); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
 }
 
-TEST_F(QualityScalerTest, KeepsScaleAtHighQp) {
+DISABLED_TEST(QualityScalerTest, KeepsScaleAtHighQp) {
   q_->PostTask([this] { TriggerScale(kKeepScaleAtHighQp); });
   EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(0, observer_->scaled_down);
   EXPECT_EQ(0, observer_->scaled_up);
 }
 
-TEST_F(QualityScalerTest, DownscalesAboveHighQp) {
+DISABLED_TEST(QualityScalerTest, DownscalesAboveHighQp) {
   q_->PostTask([this] { TriggerScale(kScaleDownAboveHighQp); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
   EXPECT_EQ(0, observer_->scaled_up);
 }
 
-TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
+DISABLED_TEST(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
   q_->PostTask([this] {
     qs_->ReportDroppedFrame();
     qs_->ReportDroppedFrame();
@@ -139,14 +140,14 @@ TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
   EXPECT_EQ(0, observer_->scaled_up);
 }
 
-TEST_F(QualityScalerTest, DoesNotDownscaleOnNormalQp) {
+DISABLED_TEST(QualityScalerTest, DoesNotDownscaleOnNormalQp) {
   q_->PostTask([this] { TriggerScale(kScaleDownAboveHighQp); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
   EXPECT_EQ(0, observer_->scaled_up);
 }
 
-TEST_F(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
+DISABLED_TEST(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
   q_->PostTask([this] {
     qs_->ReportDroppedFrame();
     qs_->ReportQP(kHighQp);
@@ -156,14 +157,14 @@ TEST_F(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
   EXPECT_EQ(0, observer_->scaled_up);
 }
 
-TEST_F(QualityScalerTest, UpscalesAfterLowQp) {
+DISABLED_TEST(QualityScalerTest, UpscalesAfterLowQp) {
   q_->PostTask([this] { TriggerScale(kScaleUp); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(0, observer_->scaled_down);
   EXPECT_EQ(1, observer_->scaled_up);
 }
 
-TEST_F(QualityScalerTest, ScalesDownAndBackUp) {
+DISABLED_TEST(QualityScalerTest, ScalesDownAndBackUp) {
   q_->PostTask([this] { TriggerScale(kScaleDown); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->scaled_down);
@@ -173,5 +174,5 @@ TEST_F(QualityScalerTest, ScalesDownAndBackUp) {
   EXPECT_EQ(1, observer_->scaled_down);
   EXPECT_EQ(1, observer_->scaled_up);
 }
-
+#undef DISABLED_TEST
 }  // namespace webrtc
