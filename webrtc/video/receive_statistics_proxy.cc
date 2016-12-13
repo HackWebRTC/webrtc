@@ -13,6 +13,7 @@
 #include <cmath>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
@@ -22,6 +23,22 @@ namespace webrtc {
 namespace {
 // Periodic time interval for processing samples for |freq_offset_counter_|.
 const int64_t kFreqOffsetProcessIntervalMs = 40000;
+
+// Configuration for bad call detection.
+const int kMinSampleLengthMs = 990;
+const int kNumMeasurements = 10;
+const int kNumMeasurementsVariance = kNumMeasurements * 1.5;
+const float kBadFraction = 0.8f;
+// For fps:
+// Low means low enough to be bad, high means high enough to be good
+const int kLowFpsThreshold = 12;
+const int kHighFpsThreshold = 14;
+// For qp and fps variance:
+// Low means low enough to be good, high means high enough to be bad
+const int kLowQpThresholdVp8 = 60;
+const int kHighQpThresholdVp8 = 70;
+const int kLowVarianceThreshold = 1;
+const int kHighVarianceThreshold = 2;
 }  // namespace
 
 ReceiveStatisticsProxy::ReceiveStatisticsProxy(
@@ -30,6 +47,19 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
     : clock_(clock),
       config_(*config),
       start_ms_(clock->TimeInMilliseconds()),
+      last_sample_time_(clock->TimeInMilliseconds()),
+      fps_threshold_(kLowFpsThreshold,
+                     kHighFpsThreshold,
+                     kBadFraction,
+                     kNumMeasurements),
+      qp_threshold_(kLowQpThresholdVp8,
+                    kHighQpThresholdVp8,
+                    kBadFraction,
+                    kNumMeasurements),
+      variance_threshold_(kLowVarianceThreshold,
+                          kHighVarianceThreshold,
+                          kBadFraction,
+                          kNumMeasurementsVariance),
       // 1000ms window, scale 1000 for ms to s.
       decode_fps_estimator_(1000, 1000),
       renders_fps_estimator_(1000, 1000),
@@ -173,6 +203,67 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   }
 }
 
+void ReceiveStatisticsProxy::QualitySample() {
+  int64_t now = clock_->TimeInMilliseconds();
+  if (last_sample_time_ + kMinSampleLengthMs > now)
+    return;
+
+  double fps =
+      render_fps_tracker_.ComputeRateForInterval(now - last_sample_time_);
+  int qp = qp_sample_.Avg(1);
+
+  bool prev_fps_bad = !fps_threshold_.IsHigh().value_or(true);
+  bool prev_qp_bad = qp_threshold_.IsHigh().value_or(false);
+  bool prev_variance_bad = variance_threshold_.IsHigh().value_or(false);
+  bool prev_any_bad = prev_fps_bad || prev_qp_bad || prev_variance_bad;
+
+  fps_threshold_.AddMeasurement(static_cast<int>(fps));
+  if (qp != -1)
+    qp_threshold_.AddMeasurement(qp);
+  rtc::Optional<double> fps_variance_opt = fps_threshold_.CalculateVariance();
+  double fps_variance = fps_variance_opt.value_or(0);
+  if (fps_variance_opt) {
+    variance_threshold_.AddMeasurement(static_cast<int>(fps_variance));
+  }
+
+  bool fps_bad = !fps_threshold_.IsHigh().value_or(true);
+  bool qp_bad = qp_threshold_.IsHigh().value_or(false);
+  bool variance_bad = variance_threshold_.IsHigh().value_or(false);
+  bool any_bad = fps_bad || qp_bad || variance_bad;
+
+  if (!prev_any_bad && any_bad) {
+    LOG(LS_WARNING) << "Bad call (any) start: " << now;
+  } else if (prev_any_bad && !any_bad) {
+    LOG(LS_WARNING) << "Bad call (any) end: " << now;
+  }
+
+  if (!prev_fps_bad && fps_bad) {
+    LOG(LS_WARNING) << "Bad call (fps) start: " << now;
+  } else if (prev_fps_bad && !fps_bad) {
+    LOG(LS_WARNING) << "Bad call (fps) end: " << now;
+  }
+
+  if (!prev_qp_bad && qp_bad) {
+    LOG(LS_WARNING) << "Bad call (qp) start: " << now;
+  } else if (prev_qp_bad && !qp_bad) {
+    LOG(LS_WARNING) << "Bad call (qp) end: " << now;
+  }
+
+  if (!prev_variance_bad && variance_bad) {
+    LOG(LS_WARNING) << "Bad call (variance) start: " << now;
+  } else if (prev_variance_bad && !variance_bad) {
+    LOG(LS_WARNING) << "Bad call (variance) end: " << now;
+  }
+
+  LOG(LS_INFO) << "SAMPLE: sample_length: " << (now - last_sample_time_)
+               << " fps: " << fps << " fps_bad: " << fps_bad << " qp: " << qp
+               << " qp_bad: " << qp_bad << " variance_bad: " << variance_bad
+               << " fps_variance: " << fps_variance;
+
+  last_sample_time_ = now;
+  qp_sample_.Reset();
+}
+
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   rtc::CritScope lock(&crit_);
   return stats_;
@@ -191,6 +282,7 @@ void ReceiveStatisticsProxy::OnDecoderImplementationName(
 void ReceiveStatisticsProxy::OnIncomingRate(unsigned int framerate,
                                             unsigned int bitrate_bps) {
   rtc::CritScope lock(&crit_);
+  QualitySample();
   stats_.network_frame_rate = framerate;
   stats_.total_bitrate_bps = bitrate_bps;
 }
@@ -340,6 +432,8 @@ void ReceiveStatisticsProxy::OnPreDecode(
   }
   if (codec_specific_info->codecType == kVideoCodecVP8) {
     qp_counters_.vp8.Add(encoded_image.qp_);
+    rtc::CritScope lock(&crit_);
+    qp_sample_.Add(encoded_image.qp_);
   }
 }
 
@@ -352,6 +446,11 @@ int ReceiveStatisticsProxy::SampleCounter::Avg(int min_required_samples) const {
   if (num_samples < min_required_samples || num_samples == 0)
     return -1;
   return sum / num_samples;
+}
+
+void ReceiveStatisticsProxy::SampleCounter::Reset() {
+  num_samples = 0;
+  sum = 0;
 }
 
 }  // namespace webrtc

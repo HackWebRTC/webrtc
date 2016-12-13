@@ -21,6 +21,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
+#include "webrtc/video/quality_threshold.h"
 #include "webrtc/video/report_block_stats.h"
 #include "webrtc/video/stats_counter.h"
 #include "webrtc/video/video_stream_decoder.h"
@@ -85,6 +86,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
     SampleCounter() : sum(0), num_samples(0) {}
     void Add(int sample);
     int Avg(int min_required_samples) const;
+    void Reset();
 
    private:
     int sum;
@@ -95,6 +97,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   };
 
   void UpdateHistograms() EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  void QualitySample() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   Clock* const clock_;
   // Ownership of this object lies with the owner of the ReceiveStatisticsProxy
@@ -108,6 +112,11 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   const int64_t start_ms_;
 
   rtc::CriticalSection crit_;
+  int64_t last_sample_time_ GUARDED_BY(crit_);
+  QualityThreshold fps_threshold_ GUARDED_BY(crit_);
+  QualityThreshold qp_threshold_ GUARDED_BY(crit_);
+  QualityThreshold variance_threshold_ GUARDED_BY(crit_);
+  SampleCounter qp_sample_ GUARDED_BY(crit_);
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);
   RateStatistics decode_fps_estimator_ GUARDED_BY(crit_);
   RateStatistics renders_fps_estimator_ GUARDED_BY(crit_);
