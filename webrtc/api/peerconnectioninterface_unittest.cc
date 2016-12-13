@@ -2203,6 +2203,26 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_EQ(1UL, session->stun_servers().size());
 }
 
+// Test that after SetLocalDescription, changing the pool size is not allowed.
+TEST_F(PeerConnectionInterfaceTest,
+       CantChangePoolSizeAfterSetLocalDescription) {
+  CreatePeerConnection();
+  // Start by setting a size of 1.
+  PeerConnectionInterface::RTCConfiguration config;
+  config.ice_candidate_pool_size = 1;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+
+  // Set remote offer; can still change pool size at this point.
+  CreateOfferAsRemoteDescription();
+  config.ice_candidate_pool_size = 2;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+
+  // Set local answer; now it's too late.
+  CreateAnswerAsLocalDescription();
+  config.ice_candidate_pool_size = 3;
+  EXPECT_FALSE(pc_->SetConfiguration(config));
+}
+
 // Test that PeerConnection::Close changes the states to closed and all remote
 // tracks change state to ended.
 TEST_F(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {

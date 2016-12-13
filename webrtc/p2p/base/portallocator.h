@@ -298,7 +298,9 @@ class PortAllocator : public sigslot::has_slots<> {
   //
   // If the servers are not changing but the candidate pool size is,
   // pooled sessions will be either created or destroyed as necessary.
-  void SetConfiguration(const ServerAddresses& stun_servers,
+  //
+  // Returns true if the configuration could successfully be changed.
+  bool SetConfiguration(const ServerAddresses& stun_servers,
                         const std::vector<RelayServerConfig>& turn_servers,
                         int candidate_pool_size,
                         bool prune_turn_ports);
@@ -309,7 +311,7 @@ class PortAllocator : public sigslot::has_slots<> {
     return turn_servers_;
   }
 
-  int candidate_pool_size() const { return target_pooled_session_count_; }
+  int candidate_pool_size() const { return candidate_pool_size_; }
 
   // Sets the network types to ignore.
   // Values are defined by the AdapterType enum.
@@ -412,11 +414,7 @@ class PortAllocator : public sigslot::has_slots<> {
  private:
   ServerAddresses stun_servers_;
   std::vector<RelayServerConfig> turn_servers_;
-  // The last size passed into SetConfiguration.
-  int target_pooled_session_count_ = 0;
-  // This variable represents the total number of pooled sessions
-  // both owned by this class and taken by TakePooledSession.
-  int allocated_pooled_session_count_ = 0;
+  int candidate_pool_size_ = 0;  // Last value passed into SetConfiguration.
   std::deque<std::unique_ptr<PortAllocatorSession>> pooled_sessions_;
   bool prune_turn_ports_ = false;
 

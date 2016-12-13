@@ -1288,6 +1288,14 @@ PeerConnectionInterface::RTCConfiguration PeerConnection::GetConfiguration() {
 
 bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
+
+  if (session_->local_description() &&
+      configuration.ice_candidate_pool_size !=
+          configuration_.ice_candidate_pool_size) {
+    LOG(LS_ERROR) << "Can't change candidate pool size after calling "
+                     "SetLocalDescription.";
+    return false;
+  }
   // TODO(deadbeef): Return false and log an error if there are any unsupported
   // modifications.
   if (port_allocator_) {
@@ -1295,6 +1303,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
             RTC_FROM_HERE,
             rtc::Bind(&PeerConnection::ReconfigurePortAllocator_n, this,
                       configuration))) {
+      LOG(LS_ERROR) << "Failed to apply configuration to PortAllocator.";
       return false;
     }
   }
@@ -2386,10 +2395,9 @@ bool PeerConnection::ReconfigurePortAllocator_n(
       ConvertIceTransportTypeToCandidateFilter(configuration.type));
   // Call this last since it may create pooled allocator sessions using the
   // candidate filter set above.
-  port_allocator_->SetConfiguration(stun_servers, turn_servers,
-                                    configuration.ice_candidate_pool_size,
-                                    configuration.prune_turn_ports);
-  return true;
+  return port_allocator_->SetConfiguration(
+      stun_servers, turn_servers, configuration.ice_candidate_pool_size,
+      configuration.prune_turn_ports);
 }
 
 bool PeerConnection::StartRtcEventLog_w(rtc::PlatformFile file,
