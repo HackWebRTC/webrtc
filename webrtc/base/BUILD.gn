@@ -388,8 +388,6 @@ rtc_static_library("rtc_base") {
 
   sources = [
     "applefilesystem.mm",
-    "asyncfile.cc",
-    "asyncfile.h",
     "asyncinvoker-inl.h",
     "asyncinvoker.cc",
     "asyncinvoker.h",

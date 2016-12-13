@@ -1051,61 +1051,6 @@ class PosixSignalDispatcher : public Dispatcher {
   PhysicalSocketServer *owner_;
 };
 
-class FileDispatcher: public Dispatcher, public AsyncFile {
- public:
-  FileDispatcher(int fd, PhysicalSocketServer *ss) : ss_(ss), fd_(fd) {
-    set_readable(true);
-
-    ss_->Add(this);
-
-    fcntl(fd_, F_SETFL, fcntl(fd_, F_GETFL, 0) | O_NONBLOCK);
-  }
-
-  ~FileDispatcher() override {
-    ss_->Remove(this);
-  }
-
-  SocketServer* socketserver() { return ss_; }
-
-  int GetDescriptor() override { return fd_; }
-
-  bool IsDescriptorClosed() override { return false; }
-
-  uint32_t GetRequestedEvents() override { return flags_; }
-
-  void OnPreEvent(uint32_t ff) override {}
-
-  void OnEvent(uint32_t ff, int err) override {
-    if ((ff & DE_READ) != 0)
-      SignalReadEvent(this);
-    if ((ff & DE_WRITE) != 0)
-      SignalWriteEvent(this);
-    if ((ff & DE_CLOSE) != 0)
-      SignalCloseEvent(this, err);
-  }
-
-  bool readable() override { return (flags_ & DE_READ) != 0; }
-
-  void set_readable(bool value) override {
-    flags_ = value ? (flags_ | DE_READ) : (flags_ & ~DE_READ);
-  }
-
-  bool writable() override { return (flags_ & DE_WRITE) != 0; }
-
-  void set_writable(bool value) override {
-    flags_ = value ? (flags_ | DE_WRITE) : (flags_ & ~DE_WRITE);
-  }
-
- private:
-  PhysicalSocketServer* ss_;
-  int fd_;
-  int flags_;
-};
-
-AsyncFile* PhysicalSocketServer::CreateFile(int fd) {
-  return new FileDispatcher(fd, this);
-}
-
 #endif // WEBRTC_POSIX
 
 #if defined(WEBRTC_WIN)
