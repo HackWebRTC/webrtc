@@ -118,6 +118,12 @@ gboolean Redraw(gpointer data) {
   return false;
 }
 
+gboolean Draw(GtkWidget* widget, cairo_t* cr, gpointer data) {
+  GtkMainWnd* wnd = reinterpret_cast<GtkMainWnd*>(data);
+  wnd->Draw(widget, cr);
+  return false;
+}
+
 }  // namespace
 
 //
@@ -232,12 +238,20 @@ void GtkMainWnd::SwitchToConnectUI() {
     peer_list_ = NULL;
   }
 
+#if GTK_MAJOR_VERSION == 2
   vbox_ = gtk_vbox_new(FALSE, 5);
+#else
+  vbox_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+#endif
   GtkWidget* valign = gtk_alignment_new(0, 1, 0, 0);
   gtk_container_add(GTK_CONTAINER(vbox_), valign);
   gtk_container_add(GTK_CONTAINER(window_), vbox_);
 
+#if GTK_MAJOR_VERSION == 2
   GtkWidget* hbox = gtk_hbox_new(FALSE, 5);
+#else
+  GtkWidget* hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+#endif
 
   GtkWidget* label = gtk_label_new("Server");
   gtk_container_add(GTK_CONTAINER(hbox), label);
@@ -317,6 +331,7 @@ void GtkMainWnd::SwitchToStreamingUI() {
 
   draw_area_ = gtk_drawing_area_new();
   gtk_container_add(GTK_CONTAINER(window_), draw_area_);
+  g_signal_connect(G_OBJECT(draw_area_), "draw", G_CALLBACK(&::Draw), this);
 
   gtk_widget_show_all(window_);
 }
@@ -345,26 +360,35 @@ void GtkMainWnd::OnClicked(GtkWidget* widget) {
 void GtkMainWnd::OnKeyPress(GtkWidget* widget, GdkEventKey* key) {
   if (key->type == GDK_KEY_PRESS) {
     switch (key->keyval) {
-     case GDK_Escape:
-       if (draw_area_) {
-         callback_->DisconnectFromCurrentPeer();
-       } else if (peer_list_) {
-         callback_->DisconnectFromServer();
-       }
-       break;
+#if GTK_MAJOR_VERSION == 2
+      case GDK_Escape:
+#else
+      case GDK_KEY_Escape:
+#endif
+        if (draw_area_) {
+          callback_->DisconnectFromCurrentPeer();
+        } else if (peer_list_) {
+          callback_->DisconnectFromServer();
+        }
+        break;
 
-     case GDK_KP_Enter:
-     case GDK_Return:
-       if (vbox_) {
-         OnClicked(NULL);
-       } else if (peer_list_) {
-         // OnRowActivated will be called automatically when the user
-         // presses enter.
-       }
-       break;
+#if GTK_MAJOR_VERSION == 2
+      case GDK_KP_Enter:
+      case GDK_Return:
+#else
+      case GDK_KEY_KP_Enter:
+      case GDK_KEY_Return:
+#endif
+        if (vbox_) {
+          OnClicked(NULL);
+        } else if (peer_list_) {
+          // OnRowActivated will be called automatically when the user
+          // presses enter.
+        }
+        break;
 
-     default:
-       break;
+      default:
+        break;
     }
   }
 }
@@ -392,30 +416,30 @@ void GtkMainWnd::OnRedraw() {
   VideoRenderer* remote_renderer = remote_renderer_.get();
   if (remote_renderer && remote_renderer->image() != NULL &&
       draw_area_ != NULL) {
-    int width = remote_renderer->width();
-    int height = remote_renderer->height();
+    width_ = remote_renderer->width();
+    height_ = remote_renderer->height();
 
     if (!draw_buffer_.get()) {
-      draw_buffer_size_ = (width * height * 4) * 4;
+      draw_buffer_size_ = (width_ * height_ * 4) * 4;
       draw_buffer_.reset(new uint8_t[draw_buffer_size_]);
-      gtk_widget_set_size_request(draw_area_, width * 2, height * 2);
+      gtk_widget_set_size_request(draw_area_, width_ * 2, height_ * 2);
     }
 
     const uint32_t* image =
         reinterpret_cast<const uint32_t*>(remote_renderer->image());
     uint32_t* scaled = reinterpret_cast<uint32_t*>(draw_buffer_.get());
-    for (int r = 0; r < height; ++r) {
-      for (int c = 0; c < width; ++c) {
+    for (int r = 0; r < height_; ++r) {
+      for (int c = 0; c < width_; ++c) {
         int x = c * 2;
         scaled[x] = scaled[x + 1] = image[c];
       }
 
       uint32_t* prev_line = scaled;
-      scaled += width * 2;
-      memcpy(scaled, prev_line, (width * 2) * 4);
+      scaled += width_ * 2;
+      memcpy(scaled, prev_line, (width_ * 2) * 4);
 
-      image += width;
-      scaled += width * 2;
+      image += width_;
+      scaled += width_ * 2;
     }
 
     VideoRenderer* local_renderer = local_renderer_.get();
@@ -423,35 +447,48 @@ void GtkMainWnd::OnRedraw() {
       image = reinterpret_cast<const uint32_t*>(local_renderer->image());
       scaled = reinterpret_cast<uint32_t*>(draw_buffer_.get());
       // Position the local preview on the right side.
-      scaled += (width * 2) - (local_renderer->width() / 2);
+      scaled += (width_ * 2) - (local_renderer->width() / 2);
       // right margin...
       scaled -= 10;
       // ... towards the bottom.
-      scaled += (height * width * 4) -
-                ((local_renderer->height() / 2) *
-                 (local_renderer->width() / 2) * 4);
+      scaled += (height_ * width_ * 4) - ((local_renderer->height() / 2) *
+                                          (local_renderer->width() / 2) * 4);
       // bottom margin...
-      scaled -= (width * 2) * 5;
+      scaled -= (width_ * 2) * 5;
       for (int r = 0; r < local_renderer->height(); r += 2) {
         for (int c = 0; c < local_renderer->width(); c += 2) {
           scaled[c / 2] = image[c + r * local_renderer->width()];
         }
-        scaled += width * 2;
+        scaled += width_ * 2;
       }
     }
 
+#if GTK_MAJOR_VERSION == 2
     gdk_draw_rgb_32_image(draw_area_->window,
-                          draw_area_->style->fg_gc[GTK_STATE_NORMAL],
-                          0,
-                          0,
-                          width * 2,
-                          height * 2,
-                          GDK_RGB_DITHER_MAX,
-                          draw_buffer_.get(),
-                          (width * 2) * 4);
+                          draw_area_->style->fg_gc[GTK_STATE_NORMAL], 0, 0,
+                          width_ * 2, height_ * 2, GDK_RGB_DITHER_MAX,
+                          draw_buffer_.get(), (width_ * 2) * 4);
+#else
+    gtk_widget_queue_draw(draw_area_);
+#endif
   }
 
   gdk_threads_leave();
+}
+
+void GtkMainWnd::Draw(GtkWidget* widget, cairo_t* cr) {
+#if GTK_MAJOR_VERSION != 2
+  cairo_format_t format = CAIRO_FORMAT_RGB24;
+  cairo_surface_t* surface = cairo_image_surface_create_for_data(
+      draw_buffer_.get(), format, width_ * 2, height_ * 2,
+      cairo_format_stride_for_width(format, width_ * 2));
+  cairo_set_source_surface(cr, surface, 0, 0);
+  cairo_rectangle(cr, 0, 0, width_ * 2, height_ * 2);
+  cairo_fill(cr);
+  cairo_surface_destroy(surface);
+#else
+  RTC_NOTREACHED();
+#endif
 }
 
 GtkMainWnd::VideoRenderer::VideoRenderer(

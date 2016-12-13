@@ -15,9 +15,6 @@ if (is_android) {
 } else if (is_ios) {
   import("//build/config/ios/rules.gni")
 }
-if (is_linux) {
-  import("//build/config/linux/pkg_config.gni")
-}
 
 group("examples") {
   # This target shall build all targets in examples.
@@ -432,18 +429,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 }
 
 if (is_linux || is_win) {
-  if (is_linux) {
-    pkg_config("gtk2_config") {
-      # Gtk requires gmodule, but it does not list it as a dependency in some
-      # misconfigured systems.
-      packages = [
-        "gmodule-2.0",
-        "gtk+-2.0",
-        "gthread-2.0",
-      ]
-    }
-  }
-
   config("peerconnection_client_warnings_config") {
     cflags = []
     if (is_win && is_clang) {
@@ -497,6 +482,12 @@ if (is_linux || is_win) {
       cflags = [ "/wd4245" ]
       configs += [ "//build/config/win:windowed" ]
     }
+    deps = [
+      "//third_party/libyuv",
+      "//webrtc/api:libjingle_peerconnection",
+      "//webrtc/system_wrappers:field_trial_default",
+      "//webrtc/system_wrappers:metrics_default",
+    ]
     if (is_linux) {
       sources += [
         "peerconnection/client/linux/main.cc",
@@ -509,14 +500,8 @@ if (is_linux || is_win) {
         "Xext",
         "Xrender",
       ]
-      public_configs = [ ":gtk2_config" ]
+      deps += [ "//build/config/linux/gtk" ]
     }
-    deps = [
-      "//third_party/libyuv",
-      "//webrtc/api:libjingle_peerconnection",
-      "//webrtc/system_wrappers:field_trial_default",
-      "//webrtc/system_wrappers:metrics_default",
-    ]
     configs += [ ":peerconnection_client_warnings_config" ]
     if (rtc_build_json) {
       deps += [ "//third_party/jsoncpp" ]
