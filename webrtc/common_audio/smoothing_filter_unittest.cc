@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cmath>
 #include <memory>
 
 #include "webrtc/common_audio/smoothing_filter.h"
@@ -17,29 +18,34 @@ namespace webrtc {
 
 namespace {
 
-constexpr int kTimeConstantMs = 1000;
-constexpr float kMaxAbsError = 0.0001f;
+constexpr int kInitTimeMs = 795;
+constexpr float kMaxAbsError = 1e-5f;
 constexpr int64_t kClockInitialTime = 123456;
 
 struct SmoothingFilterStates {
   std::unique_ptr<SimulatedClock> simulated_clock;
-  std::unique_ptr<SmoothingFilter> smoothing_filter;
+  std::unique_ptr<SmoothingFilterImpl> smoothing_filter;
 };
 
 SmoothingFilterStates CreateSmoothingFilter() {
   SmoothingFilterStates states;
   states.simulated_clock.reset(new SimulatedClock(kClockInitialTime));
   states.smoothing_filter.reset(
-      new SmoothingFilterImpl(kTimeConstantMs, states.simulated_clock.get()));
+      new SmoothingFilterImpl(kInitTimeMs, states.simulated_clock.get()));
   return states;
 }
 
+// This function does the following:
+//   1. Add a sample to filter at current clock,
+//   2. Advance the clock by |advance_time_ms|,
+//   3. Get the output of both SmoothingFilter and verify that it equals to an
+//      expected value.
 void CheckOutput(SmoothingFilterStates* states,
-                 int advance_time_ms,
                  float sample,
+                 int advance_time_ms,
                  float expected_ouput) {
-  states->simulated_clock->AdvanceTimeMilliseconds(advance_time_ms);
   states->smoothing_filter->AddSample(sample);
+  states->simulated_clock->AdvanceTimeMilliseconds(advance_time_ms);
   auto output = states->smoothing_filter->GetAverage();
   EXPECT_TRUE(output);
   EXPECT_NEAR(expected_ouput, *output, kMaxAbsError);
@@ -53,56 +59,90 @@ TEST(SmoothingFilterTest, NoOutputWhenNoSampleAdded) {
 }
 
 // Python script to calculate the reference values used in this test.
-//  import math
+//   import math
 //
-//  class ExpFilter:
-//    alpha = 0.0
-//    old_value = 0.0
-//    def calc(self, new_value):
-//      self.old_value = self.old_value * self.alpha
-//                       + (1.0 - self.alpha) * new_value
-//      return self.old_value
+//   class ExpFilter:
+//     def add_sample(self, new_value):
+//       self.state = self.state * self.alpha + (1.0 - self.alpha) * new_value
 //
-//  delta_t = 100.0
-//  filter = ExpFilter()
-//  total_t = 100.0
-//  filter.alpha = math.exp(-delta_t/ total_t)
-//  print filter.calc(1.0)
-//  total_t = 200.0
-//  filter.alpha = math.exp(-delta_t/ total_t)
-//  print filter.calc(0.0)
-//  total_t = 300.0
-//  filter.alpha = math.exp(-delta_t/ total_t)
-//  print filter.calc(1.0)
-TEST(SmoothingFilterTest, CheckBehaviorBeforeInitialized) {
-  // Adding three samples, all added before |kTimeConstantMs| is reached.
-  constexpr int kTimeIntervalMs = 100;
+//   filter = ExpFilter()
+//   init_time = 795
+//   init_factor = (1.0 / init_time) ** (1.0 / init_time)
+//
+//   filter.state = 1.0
+//
+//   for time_now in range(1, 500):
+//     filter.alpha = math.exp(-init_factor ** time_now)
+//     filter.add_sample(1.0)
+//   print filter.state
+//
+//   for time_now in range(500, 600):
+//     filter.alpha = math.exp(-init_factor ** time_now)
+//     filter.add_sample(0.5)
+//   print filter.state
+//
+//   for time_now in range(600, 700):
+//     filter.alpha = math.exp(-init_factor ** time_now)
+//     filter.add_sample(1.0)
+//   print filter.state
+//
+//   for time_now in range(700, init_time):
+//     filter.alpha = math.exp(-init_factor ** time_now)
+//     filter.add_sample(1.0)
+//
+//   filter.alpha = math.exp(-1.0 / init_time)
+//   for time_now in range(init_time, 800):
+//     filter.add_sample(1.0)
+//   print filter.state
+//
+//   for i in range(800, 900):
+//     filter.add_sample(0.5)
+//   print filter.state
+//
+//   for i in range(900, 1000):
+//     filter.add_sample(1.0)
+//   print filter.state
+TEST(SmoothingFilterTest, CheckBehaviorAroundInitTime) {
   auto states = CreateSmoothingFilter();
-  states.smoothing_filter->AddSample(0.0);
-  CheckOutput(&states, kTimeIntervalMs, 1.0, 0.63212f);
-  CheckOutput(&states, kTimeIntervalMs, 0.0, 0.38340f);
-  CheckOutput(&states, kTimeIntervalMs, 1.0, 0.55818f);
+  CheckOutput(&states, 1.0f, 500, 1.0f);
+  CheckOutput(&states, 0.5f, 100, 0.680562264029f);
+  CheckOutput(&states, 1.0f, 100, 0.794207139813f);
+  // Next step will go across initialization time.
+  CheckOutput(&states, 1.0f, 100, 0.829803409752f);
+  CheckOutput(&states, 0.5f, 100, 0.790821764210f);
+  CheckOutput(&states, 1.0f, 100, 0.815545922911f);
 }
 
-// Python script to calculate the reference value used in this test.
-// (after defining ExpFilter as for CheckBehaviorBeforeInitialized)
-//  time_constant_ms = 1000.0
-//  filter = ExpFilter()
-//  delta_t = 1100.0
-//  filter.alpha = math.exp(-delta_t/ time_constant_ms)
-//  print filter.calc(1.0)
-//  delta_t = 100.0
-//  filter.alpha = math.exp(-delta_t/ time_constant_ms)
-//  print filter.calc(0.0)
-//  print filter.calc(1.0)
-TEST(SmoothingFilterTest, CheckBehaviorAfterInitialized) {
-  constexpr int kTimeIntervalMs = 100;
+TEST(SmoothingFilterTest, GetAverageOutputsEmptyBeforeFirstSample) {
+  auto states = CreateSmoothingFilter();
+  EXPECT_FALSE(states.smoothing_filter->GetAverage());
+  constexpr float kFirstSample = 1.2345f;
+  states.smoothing_filter->AddSample(kFirstSample);
+  EXPECT_EQ(rtc::Optional<float>(kFirstSample),
+            states.smoothing_filter->GetAverage());
+}
+
+TEST(SmoothingFilterTest, CannotChangeTimeConstantDuringInitialization) {
   auto states = CreateSmoothingFilter();
   states.smoothing_filter->AddSample(0.0);
-  states.simulated_clock->AdvanceTimeMilliseconds(kTimeConstantMs);
-  CheckOutput(&states, kTimeIntervalMs, 1.0, 0.66713f);
-  CheckOutput(&states, kTimeIntervalMs, 0.0, 0.60364f);
-  CheckOutput(&states, kTimeIntervalMs, 1.0, 0.64136f);
+
+  // During initialization, |SetTimeConstantMs| does not take effect.
+  states.simulated_clock->AdvanceTimeMilliseconds(kInitTimeMs - 1);
+  states.smoothing_filter->AddSample(0.0);
+
+  EXPECT_FALSE(states.smoothing_filter->SetTimeConstantMs(kInitTimeMs * 2));
+  EXPECT_NE(exp(-1.0f / (kInitTimeMs * 2)), states.smoothing_filter->alpha());
+
+  states.simulated_clock->AdvanceTimeMilliseconds(1);
+  states.smoothing_filter->AddSample(0.0);
+  // When initialization finishes, the time constant should be come
+  // |kInitTimeConstantMs|.
+  EXPECT_FLOAT_EQ(exp(-1.0f / kInitTimeMs), states.smoothing_filter->alpha());
+
+  // After initialization, |SetTimeConstantMs| takes effect.
+  EXPECT_TRUE(states.smoothing_filter->SetTimeConstantMs(kInitTimeMs * 2));
+  EXPECT_FLOAT_EQ(exp(-1.0f / (kInitTimeMs * 2)),
+                  states.smoothing_filter->alpha());
 }
 
 }  // namespace webrtc

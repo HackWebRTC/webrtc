@@ -62,7 +62,6 @@ rtc_static_library("common_audio") {
   ]
 
   deps = [
-    "../base:rtc_analytics",
     "../system_wrappers",
   ]
   public_deps = [

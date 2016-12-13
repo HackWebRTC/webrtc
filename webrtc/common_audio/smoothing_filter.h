@@ -11,7 +11,6 @@
 #ifndef WEBRTC_COMMON_AUDIO_SMOOTHING_FILTER_H_
 #define WEBRTC_COMMON_AUDIO_SMOOTHING_FILTER_H_
 
-#include "webrtc/base/analytics/exp_filter.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -22,31 +21,49 @@ class SmoothingFilter {
  public:
   virtual ~SmoothingFilter() = default;
   virtual void AddSample(float sample) = 0;
-  virtual rtc::Optional<float> GetAverage() const = 0;
-  virtual void SetTimeConstantMs(int time_constant_ms) = 0;
+  virtual rtc::Optional<float> GetAverage() = 0;
+  virtual bool SetTimeConstantMs(int time_constant_ms) = 0;
 };
 
 // SmoothingFilterImpl applies an exponential filter
-//   alpha = exp(-sample_interval / time_constant);
+//   alpha = exp(-1.0 / time_constant_ms);
 //   y[t] = alpha * y[t-1] + (1 - alpha) * sample;
+// This implies a sample rate of 1000 Hz, i.e., 1 sample / ms.
+// But SmoothingFilterImpl allows sparse samples. All missing samples will be
+// assumed to equal the last received sample.
 class SmoothingFilterImpl final : public SmoothingFilter {
  public:
-  // |time_constant_ms| is the time constant for the exponential filter.
-  SmoothingFilterImpl(int time_constant_ms, const Clock* clock);
+  // |init_time_ms| is initialization time. It defines a period starting from
+  // the arriving time of the first sample. During this period, the exponential
+  // filter uses a varying time constant so that a smaller time constant will be
+  // applied to the earlier samples. This is to allow the the filter to adapt to
+  // earlier samples quickly. After the initialization period, the time constant
+  // will be set to |init_time_ms| first and can be changed through
+  // |SetTimeConstantMs|.
+  SmoothingFilterImpl(int init_time_ms, const Clock* clock);
+  ~SmoothingFilterImpl() override;
 
   void AddSample(float sample) override;
-  rtc::Optional<float> GetAverage() const override;
-  void SetTimeConstantMs(int time_constant_ms) override;
+  rtc::Optional<float> GetAverage() override;
+  bool SetTimeConstantMs(int time_constant_ms) override;
+
+  // Methods used for unittests.
+  float alpha() const { return alpha_; }
 
  private:
-  int time_constant_ms_;
+  void UpdateAlpha(int time_constant_ms);
+  void ExtrapolateLastSample(int64_t time_ms);
+
+  const int init_time_ms_;
+  const float init_factor_;
+  const float init_const_;
   const Clock* const clock_;
 
-  bool first_sample_received_;
-  bool initialized_;
-  int64_t first_sample_time_ms_;
-  int64_t last_sample_time_ms_;
-  rtc::ExpFilter filter_;
+  rtc::Optional<int64_t> first_sample_time_ms_;
+  float last_sample_;
+  float alpha_;
+  float state_;
+  int64_t last_state_time_ms_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SmoothingFilterImpl);
 };
