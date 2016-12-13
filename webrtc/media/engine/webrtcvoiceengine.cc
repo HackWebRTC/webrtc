@@ -277,16 +277,10 @@ void GetOpusConfig(const AudioCodec& codec,
   voe_codec->rate = GetOpusBitrate(codec, *max_playback_rate);
 }
 
-webrtc::AudioState::Config MakeAudioStateConfig(
-    VoEWrapper* voe_wrapper,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
+webrtc::AudioState::Config MakeAudioStateConfig(VoEWrapper* voe_wrapper) {
   webrtc::AudioState::Config config;
   config.voice_engine = voe_wrapper->engine();
-  if (audio_mixer) {
-    config.audio_mixer = audio_mixer;
-  } else {
-    config.audio_mixer = webrtc::AudioMixerImpl::Create();
-  }
+  config.audio_mixer = webrtc::AudioMixerImpl::Create();
   return config;
 }
 
@@ -546,17 +540,14 @@ bool WebRtcVoiceEngine::ToCodecInst(const AudioCodec& in,
 
 WebRtcVoiceEngine::WebRtcVoiceEngine(
     webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer)
-    : WebRtcVoiceEngine(adm, decoder_factory, audio_mixer, new VoEWrapper()) {
-  audio_state_ =
-      webrtc::AudioState::Create(MakeAudioStateConfig(voe(), audio_mixer));
+    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory)
+    : WebRtcVoiceEngine(adm, decoder_factory, new VoEWrapper()) {
+  audio_state_ = webrtc::AudioState::Create(MakeAudioStateConfig(voe()));
 }
 
 WebRtcVoiceEngine::WebRtcVoiceEngine(
     webrtc::AudioDeviceModule* adm,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
     VoEWrapper* voe_wrapper)
     : adm_(adm), decoder_factory_(decoder_factory), voe_wrapper_(voe_wrapper) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());

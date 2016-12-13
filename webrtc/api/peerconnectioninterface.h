@@ -87,7 +87,6 @@ class WebRtcVideoEncoderFactory;
 
 namespace webrtc {
 class AudioDeviceModule;
-class AudioMixer;
 class MediaConstraintsInterface;
 
 // MediaStream container interface.
@@ -803,20 +802,6 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
     AudioDeviceModule* default_adm,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory);
-
-// Create a new instance of PeerConnectionFactoryInterface with external audio
-// mixer.
-//
-// If |audio_mixer| is null, an internal audio mixer will be created and used.
-rtc::scoped_refptr<PeerConnectionFactoryInterface>
-CreatePeerConnectionFactoryWithAudioMixer(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    AudioDeviceModule* default_adm,
-    cricket::WebRtcVideoEncoderFactory* encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* decoder_factory,
-    rtc::scoped_refptr<AudioMixer> audio_mixer);
 
 // Create a new instance of PeerConnectionFactoryInterface.
 // Same thread is used as worker and network thread.

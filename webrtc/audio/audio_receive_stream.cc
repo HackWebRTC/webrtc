@@ -293,7 +293,7 @@ int AudioReceiveStream::PreferredSampleRate() const {
 }
 
 int AudioReceiveStream::Ssrc() const {
-  return config_.rtp.remote_ssrc;
+  return config_.rtp.local_ssrc;
 }
 
 internal::AudioState* AudioReceiveStream::audio_state() const {

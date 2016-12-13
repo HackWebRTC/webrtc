@@ -33,18 +33,13 @@ class WebRtcMediaEngine2
                      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
                          audio_decoder_factory,
                      WebRtcVideoEncoderFactory* video_encoder_factory,
-                     WebRtcVideoDecoderFactory* video_decoder_factory,
-                     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer)
+                     WebRtcVideoDecoderFactory* video_decoder_factory)
 #ifdef HAVE_WEBRTC_VIDEO
       : CompositeMediaEngine<WebRtcVoiceEngine, WebRtcVideoEngine2>(
-            adm,
-            audio_decoder_factory,
-            audio_mixer){
+            adm, audio_decoder_factory){
 #else
       : CompositeMediaEngine<WebRtcVoiceEngine, NullWebRtcVideoEngine>(
-            adm,
-            audio_decoder_factory,
-            audio_mixer) {
+            adm, audio_decoder_factory) {
 #endif
     video_.SetExternalDecoderFactory(video_decoder_factory);
     video_.SetExternalEncoderFactory(video_encoder_factory);
@@ -58,11 +53,9 @@ cricket::MediaEngineInterface* CreateWebRtcMediaEngine(
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
         audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
-  return new cricket::WebRtcMediaEngine2(adm, audio_decoder_factory,
-                                         video_encoder_factory,
-                                         video_decoder_factory, audio_mixer);
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory) {
+  return new cricket::WebRtcMediaEngine2(
+      adm, audio_decoder_factory, video_encoder_factory, video_decoder_factory);
 }
 
 void DestroyWebRtcMediaEngine(cricket::MediaEngineInterface* media_engine) {
@@ -78,9 +71,9 @@ MediaEngineInterface* WebRtcMediaEngineFactory::Create(
     webrtc::AudioDeviceModule* adm,
     WebRtcVideoEncoderFactory* video_encoder_factory,
     WebRtcVideoDecoderFactory* video_decoder_factory) {
-  return CreateWebRtcMediaEngine(
-      adm, webrtc::CreateBuiltinAudioDecoderFactory(), video_encoder_factory,
-      video_decoder_factory, nullptr);
+  return CreateWebRtcMediaEngine(adm,
+                                 webrtc::CreateBuiltinAudioDecoderFactory(),
+                                 video_encoder_factory, video_decoder_factory);
 }
 
 // Used by PeerConnectionFactory to create a media engine passed into
@@ -90,11 +83,9 @@ MediaEngineInterface* WebRtcMediaEngineFactory::Create(
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
         audio_decoder_factory,
     WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) {
+    WebRtcVideoDecoderFactory* video_decoder_factory) {
   return CreateWebRtcMediaEngine(adm, audio_decoder_factory,
-                                 video_encoder_factory, video_decoder_factory,
-                                 audio_mixer);
+                                 video_encoder_factory, video_decoder_factory);
 }
 
 namespace {
