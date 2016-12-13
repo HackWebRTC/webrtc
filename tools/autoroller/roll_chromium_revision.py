@@ -20,6 +20,13 @@ import sys
 import urllib
 
 
+# Skip these dependencies (list without solution name prefix).
+DONT_AUTOROLL_THESE = [
+  'src/third_party/gflags/src',
+  'src/third_party/winsdk_samples/src',
+]
+
+WEBRTC_URL = 'https://chromium.googlesource.com/external/webrtc'
 CHROMIUM_SRC_URL = 'https://chromium.googlesource.com/chromium/src'
 CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
 CHROMIUM_LOG_TEMPLATE = CHROMIUM_SRC_URL + '/+log/%s'
@@ -30,12 +37,15 @@ CLANG_REVISION_RE = re.compile(r'^CLANG_REVISION = \'(\d+)\'$')
 ROLL_BRANCH_NAME = 'roll_chromium_revision'
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-CHECKOUT_ROOT_DIR = os.path.realpath(os.path.join(SCRIPT_DIR, os.pardir,
-                                                  os.pardir))
-sys.path.append(CHECKOUT_ROOT_DIR)
+CHECKOUT_SRC_DIR = os.path.realpath(os.path.join(SCRIPT_DIR, os.pardir,
+                                                 os.pardir))
+CHECKOUT_ROOT_DIR = os.path.realpath(os.path.join(CHECKOUT_SRC_DIR, os.pardir))
+CHROMIUM_CHECKOUT_SRC_DIR = os.path.join(CHECKOUT_SRC_DIR, 'chromium', 'src')
+
+sys.path.append(CHECKOUT_SRC_DIR)
 import setup_links
 
-sys.path.append(os.path.join(CHECKOUT_ROOT_DIR, 'build'))
+sys.path.append(os.path.join(CHECKOUT_SRC_DIR, 'build'))
 import find_depot_tools
 find_depot_tools.add_depot_tools_to_path()
 from gclient import GClientKeywords
@@ -94,7 +104,7 @@ def _RunCommand(command, working_dir=None, ignore_exit_code=False,
   Returns:
     A tuple containing the stdout and stderr outputs as strings.
   """
-  working_dir = working_dir or CHECKOUT_ROOT_DIR
+  working_dir = working_dir or CHECKOUT_SRC_DIR
   logging.debug('CMD: %s CWD: %s', ' '.join(command), working_dir)
   env = os.environ.copy()
   if extra_env:
@@ -193,7 +203,7 @@ def GetMatchingDepsEntries(depsentry_dict, dir_path):
 
 
 def BuildDepsentryDict(deps_dict):
-  """Builds a dict of DepsEntry object from a raw parsed deps dict."""
+  """Builds a dict of paths to DepsEntry objects from a raw parsed deps dict."""
   result = {}
   def AddDepsEntries(deps_subdict):
     for path, deps_url in deps_subdict.iteritems():
@@ -203,25 +213,74 @@ def BuildDepsentryDict(deps_dict):
 
   AddDepsEntries(deps_dict['deps'])
   for deps_os in ['win', 'mac', 'unix', 'android', 'ios', 'unix']:
-    AddDepsEntries(deps_dict['deps_os'].get(deps_os, {}))
+    AddDepsEntries(deps_dict.get('deps_os', {}).get(deps_os, {}))
   return result
 
 
-def CalculateChangedDeps(current_deps, new_deps):
-  result = []
-  current_entries = BuildDepsentryDict(current_deps)
-  new_entries = BuildDepsentryDict(new_deps)
+def CalculateChangedDeps(webrtc_deps, old_cr_deps, new_cr_deps):
+  """
+  Calculate changed deps entries based on:
+  1. Entries defined in the WebRTC DEPS file:
+     - If a shared dependency with the Chromium DEPS file: roll it to the same
+       revision as Chromium (i.e. entry in the new_cr_deps dict)
+     - If it's a Chromium sub-directory, roll it to the HEAD revision (notice
+       this means it may be ahead of the chromium_revision, but generally these
+       should be close).
+     - If it's another DEPS entry (not shared with Chromium), roll it to HEAD
+       unless it's configured to be skipped.
+  2. Entries present in the setup_links.py file. If the dir has changed between
+     old_cr_deps and new_cr_deps, it is considered changed and updated to the
+     revision for the entry in the new_cr_deps dict.
 
+  Returns:
+    A list of ChangedDep objects representing the changed deps.
+  """
+  return sorted(CalculateChangedDepsProper(webrtc_deps, new_cr_deps) +
+                CalculateChangedDepsLegacy(old_cr_deps, new_cr_deps))
+
+
+def CalculateChangedDepsProper(webrtc_deps, new_cr_deps):
+  result = []
+  webrtc_entries = BuildDepsentryDict(webrtc_deps)
+  new_cr_entries = BuildDepsentryDict(new_cr_deps)
+  for path, webrtc_deps_entry in webrtc_entries.iteritems():
+    if path in DONT_AUTOROLL_THESE:
+      continue
+    cr_deps_entry = new_cr_entries.get(path)
+    if cr_deps_entry:
+      # Use the revision from Chromium's DEPS file.
+      new_rev = cr_deps_entry.revision
+      assert webrtc_deps_entry.url == cr_deps_entry.url, (
+        'WebRTC DEPS entry %s has a different URL (%s) than Chromium (%s).' %
+        (path, webrtc_deps_entry.url, cr_deps_entry.url))
+    else:
+      # Use the HEAD of the deps repo.
+      stdout, _ = _RunCommand(['git', 'ls-remote', webrtc_deps_entry.url,
+                               'HEAD'])
+      new_rev = stdout.strip().split('\t')[0]
+
+    # Check if an update is necessary.
+    if webrtc_deps_entry.revision != new_rev:
+      logging.debug('Roll dependency %s to %s', path, new_rev)
+      result.append(ChangedDep(path, webrtc_deps_entry.url,
+                               webrtc_deps_entry.revision, new_rev))
+  return result
+
+
+def CalculateChangedDepsLegacy(old_cr_deps, new_cr_deps):
+  result = []
+  new_cr_entries = BuildDepsentryDict(new_cr_deps)
+  old_cr_entries = BuildDepsentryDict(old_cr_deps)
   all_deps_dirs = setup_links.DIRECTORIES
   for deps_dir in all_deps_dirs:
     # All deps have 'src' prepended to the path in the Chromium DEPS file.
     dir_path = 'src/%s' % deps_dir
 
-    for entry in GetMatchingDepsEntries(current_entries, dir_path):
-      new_matching_entries = GetMatchingDepsEntries(new_entries, entry.path)
+    for entry in GetMatchingDepsEntries(old_cr_entries, dir_path):
+      new_matching_entries = GetMatchingDepsEntries(new_cr_entries, entry.path)
       assert len(new_matching_entries) <= 1, (
           'Should never find more than one entry matching %s in %s, found %d' %
-          (entry.path, new_entries, len(new_matching_entries)))
+          (entry.path, new_cr_entries, len(new_matching_entries)))
       if not new_matching_entries:
         result.append(ChangedDep(entry.path, entry.url, entry.revision, 'None'))
       elif entry != new_matching_entries[0]:
@@ -238,7 +297,7 @@ def CalculateChangedClang(new_cr_rev):
         return match.group(1)
     raise RollError('Could not parse Clang revision!')
 
-  chromium_src_path = os.path.join(CHECKOUT_ROOT_DIR, 'chromium', 'src',
+  chromium_src_path = os.path.join(CHROMIUM_CHECKOUT_SRC_DIR,
                                    CLANG_UPDATE_SCRIPT_LOCAL_PATH)
   with open(chromium_src_path, 'rb') as f:
     current_lines = f.readlines()
@@ -294,13 +353,25 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
   return '\n'.join(commit_msg)
 
 
-def UpdateDeps(deps_filename, old_cr_revision, new_cr_revision):
+def UpdateDepsFile(deps_filename, old_cr_revision, new_cr_revision,
+                   changed_deps):
   """Update the DEPS file with the new revision."""
+
+  # Update the chromium_revision variable.
   with open(deps_filename, 'rb') as deps_file:
     deps_content = deps_file.read()
   deps_content = deps_content.replace(old_cr_revision, new_cr_revision)
   with open(deps_filename, 'wb') as deps_file:
     deps_file.write(deps_content)
+
+  # Update each individual DEPS entry.
+  for dep in changed_deps:
+    _, stderr = _RunCommand(
+      ['roll-dep-svn', '--no-verify-revision', dep.path, dep.new_rev],
+      working_dir=CHECKOUT_SRC_DIR, ignore_exit_code=True)
+    if stderr:
+      logging.warning('roll-dep-svn: %s', stderr)
+
 
 def _IsTreeClean():
   stdout, _ = _RunCommand(['git', 'status', '--porcelain'])
@@ -378,9 +449,6 @@ def main():
                  help=('Calculate changes and modify DEPS, but don\'t create '
                        'any local branch, commit, upload CL or send any '
                        'tryjobs.'))
-  p.add_argument('--allow-reverse', action='store_true', default=False,
-                 help=('Allow rolling back in time (disabled by default but '
-                       'may be useful to be able do to manually).'))
   p.add_argument('--skip-cq', action='store_true', default=False,
                  help='Skip sending the CL to the CQ (default: %(default)s)')
   p.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -408,9 +476,9 @@ def main():
     logging.info('No revision specified. Using HEAD: %s', head_rev)
     new_cr_rev = head_rev
 
-  deps_filename = os.path.join(CHECKOUT_ROOT_DIR, 'DEPS')
-  local_deps = ParseLocalDepsFile(deps_filename)
-  current_cr_rev = local_deps['vars']['chromium_revision']
+  deps_filename = os.path.join(CHECKOUT_SRC_DIR, 'DEPS')
+  webrtc_deps = ParseLocalDepsFile(deps_filename)
+  current_cr_rev = webrtc_deps['vars']['chromium_revision']
 
   current_commit_pos = ParseCommitPosition(ReadRemoteCrCommit(current_cr_rev))
   new_commit_pos = ParseCommitPosition(ReadRemoteCrCommit(new_cr_rev))
@@ -418,23 +486,15 @@ def main():
   current_cr_deps = ParseRemoteCrDepsFile(current_cr_rev)
   new_cr_deps = ParseRemoteCrDepsFile(new_cr_rev)
 
-  if new_commit_pos > current_commit_pos or opts.allow_reverse:
-    changed_deps = sorted(CalculateChangedDeps(current_cr_deps, new_cr_deps))
-    clang_change = CalculateChangedClang(new_cr_rev)
-    commit_msg = GenerateCommitMessage(current_cr_rev, new_cr_rev,
-                                       current_commit_pos, new_commit_pos,
-                                       changed_deps, clang_change)
-    logging.debug('Commit message:\n%s', commit_msg)
-  else:
-    logging.info('Currently pinned chromium_revision: %s (#%s) is newer than '
-                 '%s (#%s). To roll to older revisions, you must pass the '
-                 '--allow-reverse flag.\n'
-                 'Aborting without action.', current_cr_rev, current_commit_pos,
-                 new_cr_rev, new_commit_pos)
-    return 0
+  changed_deps = CalculateChangedDeps(webrtc_deps, current_cr_deps, new_cr_deps)
+  clang_change = CalculateChangedClang(new_cr_rev)
+  commit_msg = GenerateCommitMessage(current_cr_rev, new_cr_rev,
+                                     current_commit_pos, new_commit_pos,
+                                     changed_deps, clang_change)
+  logging.debug('Commit message:\n%s', commit_msg)
 
   _CreateRollBranch(opts.dry_run)
-  UpdateDeps(deps_filename, current_cr_rev, new_cr_rev)
+  UpdateDepsFile(deps_filename, current_cr_rev, new_cr_rev, changed_deps)
   _LocalCommit(commit_msg, opts.dry_run)
   _UploadCL(opts.dry_run, opts.rietveld_email)
   _SendToCQ(opts.dry_run, opts.skip_cq)
