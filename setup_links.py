@@ -31,7 +31,6 @@ import textwrap
 DIRECTORIES = [
   'build',
   'buildtools',
-  'mojo',  # TODO(kjellander): Remove, see webrtc:5629.
   'testing',
   'third_party/afl',
   'third_party/binutils',
@@ -64,7 +63,6 @@ DIRECTORIES = [
   'third_party/usrsctp',
   'third_party/yasm',
   'third_party/zlib',
-  'third_party/WebKit',  # TODO(kjellander): Remove, see webrtc:5629.
   'tools/clang',
   'tools/clang_format_merge_driver',
   'tools/determinism',
