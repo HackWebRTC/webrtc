@@ -98,8 +98,8 @@ int Normal::Process(const int16_t* input,
         // Normalize new frame energy to 15 bits.
         scaling = WebRtcSpl_NormW32(energy) - 16;
         // We want background_noise_.energy() / energy in Q14.
-        int32_t bgn_energy =
-            background_noise_.Energy(channel_ix) << (scaling+14);
+        int32_t bgn_energy = WEBRTC_SPL_SHIFT_W32(
+            background_noise_.Energy(channel_ix), scaling + 14);
         int16_t energy_scaled =
             static_cast<int16_t>(WEBRTC_SPL_SHIFT_W32(energy, scaling));
         int32_t ratio = WebRtcSpl_DivW32W16(bgn_energy, energy_scaled);
