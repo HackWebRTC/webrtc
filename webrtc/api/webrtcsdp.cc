@@ -108,6 +108,7 @@ static const char kLineTypeAttributes = 'a';
 static const char kAttributeGroup[] = "group";
 static const char kAttributeMid[] = "mid";
 static const char kAttributeMsid[] = "msid";
+static const char kAttributeBundleOnly[] = "bundle-only";
 static const char kAttributeRtcpMux[] = "rtcp-mux";
 static const char kAttributeRtcpReducedSize[] = "rtcp-rsize";
 static const char kAttributeSsrc[] = "ssrc";
@@ -275,6 +276,7 @@ static bool ParseContent(const std::string& message,
                          const std::vector<int>& payload_types,
                          size_t* pos,
                          std::string* content_name,
+                         bool* bundle_only,
                          MediaContentDescription* media_desc,
                          TransportDescription* transport,
                          std::vector<JsepIceCandidate*>* candidates,
@@ -1282,13 +1284,19 @@ void BuildMediaDescription(const ContentInfo* content_info,
     fmt = " 0";
   }
 
-  // The port number in the m line will be updated later when associate with
+  // The port number in the m line will be updated later when associated with
   // the candidates.
+  //
+  // A port value of 0 indicates that the m= section is rejected.
   // RFC 3264
   // To reject an offered stream, the port number in the corresponding stream in
   // the answer MUST be set to zero.
-  const std::string& port = content_info->rejected ?
-      kMediaPortRejected : kDummyPort;
+  //
+  // However, the BUNDLE draft adds a new meaning to port zero, when used along
+  // with a=bundle-only.
+  const std::string& port =
+      (content_info->rejected || content_info->bundle_only) ? kMediaPortRejected
+                                                            : kDummyPort;
 
   rtc::SSLFingerprint* fp = (transport_info) ?
       transport_info->description.identity_fingerprint.get() : NULL;
@@ -1304,6 +1312,12 @@ void BuildMediaDescription(const ContentInfo* content_info,
   if (media_desc->bandwidth() >= 1000) {
     InitLine(kLineTypeSessionBandwidth, kApplicationSpecificMaximum, &os);
     os << kSdpDelimiterColon << (media_desc->bandwidth() / 1000);
+    AddLine(os.str(), message);
+  }
+
+  // Add the a=bundle-only line.
+  if (content_info->bundle_only) {
+    InitAttrLine(kAttributeBundleOnly, &os);
     AddLine(os.str(), message);
   }
 
@@ -2210,6 +2224,7 @@ static C* ParseContentDescription(const std::string& message,
                                   const std::vector<int>& payload_types,
                                   size_t* pos,
                                   std::string* content_name,
+                                  bool* bundle_only,
                                   TransportDescription* transport,
                                   std::vector<JsepIceCandidate*>* candidates,
                                   webrtc::SdpParseError* error) {
@@ -2229,8 +2244,8 @@ static C* ParseContentDescription(const std::string& message,
       break;
   }
   if (!ParseContent(message, media_type, mline_index, protocol, payload_types,
-                    pos, content_name, media_desc, transport, candidates,
-                    error)) {
+                    pos, content_name, bundle_only, media_desc, transport,
+                    candidates, error)) {
     delete media_desc;
     return NULL;
   }
@@ -2277,12 +2292,12 @@ bool ParseMediaDescription(const std::string& message,
     if (fields.size() < expected_min_fields) {
       return ParseFailedExpectMinFieldNum(line, expected_min_fields, error);
     }
-    bool rejected = false;
+    bool port_rejected = false;
     // RFC 3264
     // To reject an offered stream, the port number in the corresponding stream
     // in the answer MUST be set to zero.
     if (fields[1] == kMediaPortRejected) {
-      rejected = true;
+      port_rejected = true;
     }
 
     std::string protocol = fields[2];
@@ -2314,19 +2329,23 @@ bool ParseMediaDescription(const std::string& message,
 
     std::unique_ptr<MediaContentDescription> content;
     std::string content_name;
+    bool bundle_only = false;
     if (HasAttribute(line, kMediaTypeVideo)) {
       content.reset(ParseContentDescription<VideoContentDescription>(
           message, cricket::MEDIA_TYPE_VIDEO, mline_index, protocol,
-          payload_types, pos, &content_name, &transport, candidates, error));
+          payload_types, pos, &content_name, &bundle_only, &transport,
+          candidates, error));
     } else if (HasAttribute(line, kMediaTypeAudio)) {
       content.reset(ParseContentDescription<AudioContentDescription>(
           message, cricket::MEDIA_TYPE_AUDIO, mline_index, protocol,
-          payload_types, pos, &content_name, &transport, candidates, error));
+          payload_types, pos, &content_name, &bundle_only, &transport,
+          candidates, error));
     } else if (HasAttribute(line, kMediaTypeData)) {
       DataContentDescription* data_desc =
           ParseContentDescription<DataContentDescription>(
               message, cricket::MEDIA_TYPE_DATA, mline_index, protocol,
-              payload_types, pos, &content_name, &transport, candidates, error);
+              payload_types, pos, &content_name, &bundle_only, &transport,
+              candidates, error);
       content.reset(data_desc);
 
       int p;
@@ -2341,6 +2360,22 @@ bool ParseMediaDescription(const std::string& message,
     if (!content.get()) {
       // ParseContentDescription returns NULL if failed.
       return false;
+    }
+
+    bool content_rejected = false;
+    if (bundle_only) {
+      // A port of 0 is not interpreted as a rejected m= section when it's
+      // used along with a=bundle-only.
+      if (!port_rejected) {
+        return ParseFailed(
+            "a=bundle-only",
+            "a=bundle-only MUST only be used in combination with a 0 port.",
+            error);
+      }
+    } else {
+      // If not using bundle-only, interpret port 0 in the normal way; the m=
+      // section is being rejected.
+      content_rejected = port_rejected;
     }
 
     if (IsRtp(protocol)) {
@@ -2358,10 +2393,9 @@ bool ParseMediaDescription(const std::string& message,
     }
     content->set_protocol(protocol);
     desc->AddContent(content_name,
-                     IsDtlsSctp(protocol) ? cricket::NS_JINGLE_DRAFT_SCTP :
-                                            cricket::NS_JINGLE_RTP,
-                     rejected,
-                     content.release());
+                     IsDtlsSctp(protocol) ? cricket::NS_JINGLE_DRAFT_SCTP
+                                          : cricket::NS_JINGLE_RTP,
+                     content_rejected, bundle_only, content.release());
     // Create TransportInfo with the media level "ice-pwd" and "ice-ufrag".
     TransportInfo transport_info(content_name, transport);
 
@@ -2537,6 +2571,7 @@ bool ParseContent(const std::string& message,
                   const std::vector<int>& payload_types,
                   size_t* pos,
                   std::string* content_name,
+                  bool* bundle_only,
                   MediaContentDescription* media_desc,
                   TransportDescription* transport,
                   std::vector<JsepIceCandidate*>* candidates,
@@ -2619,6 +2654,8 @@ bool ParseContent(const std::string& message,
         return false;
       }
       *content_name = mline_id;
+    } else if (HasAttribute(line, kAttributeBundleOnly)) {
+      *bundle_only = true;
     } else if (HasAttribute(line, kAttributeCandidate)) {
       Candidate candidate;
       if (!ParseCandidate(line, &candidate, error, false)) {

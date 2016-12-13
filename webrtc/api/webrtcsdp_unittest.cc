@@ -331,6 +331,65 @@ static const char kSdpVideoString[] =
     "a=ssrc:2 mslabel:local_stream\r\n"
     "a=ssrc:2 label:video_track_id_1\r\n";
 
+// Reference sdp string using bundle-only.
+static const char kBundleOnlySdpFullString[] =
+    "v=0\r\n"
+    "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+    "s=-\r\n"
+    "t=0 0\r\n"
+    "a=group:BUNDLE audio_content_name video_content_name\r\n"
+    "a=msid-semantic: WMS local_stream_1\r\n"
+    "m=audio 2345 RTP/SAVPF 111 103 104\r\n"
+    "c=IN IP4 74.125.127.126\r\n"
+    "a=rtcp:2347 IN IP4 74.125.127.126\r\n"
+    "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1234 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/1 2 udp 2130706432 192.168.1.5 1235 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/2 1 udp 2130706432 ::1 1238 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/2 2 udp 2130706432 ::1 1239 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/3 1 udp 2130706432 74.125.127.126 2345 typ srflx "
+    "raddr 192.168.1.5 rport 2346 "
+    "generation 2\r\n"
+    "a=candidate:a0+B/3 2 udp 2130706432 74.125.127.126 2347 typ srflx "
+    "raddr 192.168.1.5 rport 2348 "
+    "generation 2\r\n"
+    "a=ice-ufrag:ufrag_voice\r\na=ice-pwd:pwd_voice\r\n"
+    "a=mid:audio_content_name\r\n"
+    "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
+    "a=rtcp-rsize\r\n"
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_32 "
+    "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
+    "dummy_session_params\r\n"
+    "a=rtpmap:111 opus/48000/2\r\n"
+    "a=rtpmap:103 ISAC/16000\r\n"
+    "a=rtpmap:104 ISAC/32000\r\n"
+    "a=ssrc:1 cname:stream_1_cname\r\n"
+    "a=ssrc:1 msid:local_stream_1 audio_track_id_1\r\n"
+    "a=ssrc:1 mslabel:local_stream_1\r\n"
+    "a=ssrc:1 label:audio_track_id_1\r\n"
+    "m=video 0 RTP/SAVPF 120\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
+    "a=bundle-only\r\n"
+    "a=mid:video_content_name\r\n"
+    "a=sendrecv\r\n"
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_80 "
+    "inline:d0RmdmcmVCspeEc3QGZiNWpVLFJhQX1cfHAwJSoj|2^20|1:32\r\n"
+    "a=rtpmap:120 VP8/90000\r\n"
+    "a=ssrc-group:FEC 2 3\r\n"
+    "a=ssrc:2 cname:stream_1_cname\r\n"
+    "a=ssrc:2 msid:local_stream_1 video_track_id_1\r\n"
+    "a=ssrc:2 mslabel:local_stream_1\r\n"
+    "a=ssrc:2 label:video_track_id_1\r\n"
+    "a=ssrc:3 cname:stream_1_cname\r\n"
+    "a=ssrc:3 msid:local_stream_1 video_track_id_1\r\n"
+    "a=ssrc:3 mslabel:local_stream_1\r\n"
+    "a=ssrc:3 label:video_track_id_1\r\n";
+
 // Plan B SDP reference string, with 2 streams, 2 audio tracks and 3 video
 // tracks.
 static const char kPlanBSdpFullString[] =
@@ -941,6 +1000,42 @@ class WebRtcSdpTest : public testing::Test {
     }
   }
 
+  // Turns the existing reference description into a description using
+  // a=bundle-only. This means no transport attributes and a 0 port value on
+  // the m= sections not associated with the BUNDLE-tag.
+  void MakeBundleOnlyDescription() {
+    // Remove video candidates. JsepSessionDescription doesn't make it
+    // simple.
+    const IceCandidateCollection* video_candidates_collection =
+        jdesc_.candidates(1);
+    ASSERT_NE(nullptr, video_candidates_collection);
+    std::vector<cricket::Candidate> video_candidates;
+    for (size_t i = 0; i < video_candidates_collection->count(); ++i) {
+      cricket::Candidate c = video_candidates_collection->at(i)->candidate();
+      c.set_transport_name("video_content_name");
+      video_candidates.push_back(c);
+    }
+    jdesc_.RemoveCandidates(video_candidates);
+
+    // And the rest of the transport attributes.
+    desc_.transport_infos()[1].description.ice_ufrag.clear();
+    desc_.transport_infos()[1].description.ice_pwd.clear();
+    desc_.transport_infos()[1].description.connection_role =
+        cricket::CONNECTIONROLE_NONE;
+
+    // Set bundle-only flag.
+    desc_.contents()[1].bundle_only = true;
+
+    // Add BUNDLE group.
+    ContentGroup group(cricket::GROUP_TYPE_BUNDLE);
+    group.AddContentName(kAudioContentName);
+    group.AddContentName(kVideoContentName);
+    desc_.AddGroup(group);
+
+    ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+                                  jdesc_.session_version()));
+  }
+
   // Turns the existing reference description into a plan B description,
   // with 2 audio tracks and 3 video tracks.
   void MakePlanBDescription() {
@@ -1125,11 +1220,11 @@ class WebRtcSdpTest : public testing::Test {
     for (size_t i = 0 ; i < desc1.contents().size(); ++i) {
       const cricket::ContentInfo& c1 = desc1.contents().at(i);
       const cricket::ContentInfo& c2 = desc2.contents().at(i);
-      // content name
+      // ContentInfo properties.
       EXPECT_EQ(c1.name, c2.name);
-      // content type
-      // Note, ASSERT will return from the function, but will not stop the test.
-      ASSERT_EQ(c1.type, c2.type);
+      EXPECT_EQ(c1.type, c2.type);
+      EXPECT_EQ(c1.rejected, c2.rejected);
+      EXPECT_EQ(c1.bundle_only, c2.bundle_only);
 
       ASSERT_EQ(IsAudioContent(&c1), IsAudioContent(&c2));
       if (IsAudioContent(&c1)) {
@@ -1227,8 +1322,10 @@ class WebRtcSdpTest : public testing::Test {
     for (size_t i = 0; i < desc1.number_of_mediasections(); ++i) {
       const IceCandidateCollection* cc1 = desc1.candidates(i);
       const IceCandidateCollection* cc2 = desc2.candidates(i);
-      if (cc1->count() != cc2->count())
+      if (cc1->count() != cc2->count()) {
+        ADD_FAILURE();
         return false;
+      }
       for (size_t j = 0; j < cc1->count(); ++j) {
         const IceCandidateInterface* c1 = cc1->at(j);
         const IceCandidateInterface* c2 = cc2->at(j);
@@ -3137,6 +3234,27 @@ TEST_F(WebRtcSdpTest, MediaContentOrderMaintainedRoundTrip) {
     std::string serialized_sdp = webrtc::SdpSerialize(jdesc, false);
     EXPECT_EQ(sdp_string, serialized_sdp);
   }
+}
+
+TEST_F(WebRtcSdpTest, DeserializeBundleOnlyAttribute) {
+  MakeBundleOnlyDescription();
+  JsepSessionDescription deserialized_description(kDummyString);
+  EXPECT_TRUE(
+      SdpDeserialize(kBundleOnlySdpFullString, &deserialized_description));
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, deserialized_description));
+}
+
+// "a=bundle-only" should only be used in combination with a 0 port on the m=
+// line. We should fail to parse anything else.
+TEST_F(WebRtcSdpTest, FailToDeserializeBundleOnlyWithNonzeroPort) {
+  std::string bad_sdp = kBundleOnlySdpFullString;
+  Replace("m=video 0", "m=video 9", &bad_sdp);
+  ExpectParseFailure(bad_sdp, "a=bundle-only");
+}
+
+TEST_F(WebRtcSdpTest, SerializeBundleOnlyAttribute) {
+  MakeBundleOnlyDescription();
+  TestSerialize(jdesc_, false);
 }
 
 TEST_F(WebRtcSdpTest, DeserializePlanBSessionDescription) {
