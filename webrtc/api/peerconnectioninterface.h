@@ -474,8 +474,10 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
                         StatsOutputLevel level) = 0;
   // Gets stats using the new stats collection API, see webrtc/api/stats/. These
   // will replace old stats collection API when the new API has matured enough.
-  // Master bug: crbug.com/627816
-  virtual void GetStats(RTCStatsCollectorCallback* callback) = 0;
+  // TODO(hbos): Default implementation that does nothing only exists as to not
+  // break third party projects. As soon as they have been updated this should
+  // be changed to "= 0;".
+  virtual void GetStats(RTCStatsCollectorCallback* callback) {}
 
   virtual rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,
