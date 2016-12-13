@@ -45,6 +45,7 @@ extern const char RELAY_PORT_TYPE[];
 extern const char UDP_PROTOCOL_NAME[];
 extern const char TCP_PROTOCOL_NAME[];
 extern const char SSLTCP_PROTOCOL_NAME[];
+extern const char TLS_PROTOCOL_NAME[];
 
 // RFC 6544, TCP candidate encoding rules.
 extern const int DISCARD_PORT;

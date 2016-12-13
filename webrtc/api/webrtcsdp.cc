@@ -1034,9 +1034,17 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   SocketAddress address(connection_address, port);
 
   cricket::ProtocolType protocol;
-  if (!StringToProto(transport.c_str(), &protocol) ||
-      protocol == cricket::PROTO_TLS) {
+  if (!StringToProto(transport.c_str(), &protocol)) {
     return ParseFailed(first_line, "Unsupported transport type.", error);
+  }
+  switch (protocol) {
+    case cricket::PROTO_UDP:
+    case cricket::PROTO_TCP:
+    case cricket::PROTO_SSLTCP:
+      // Supported protocol.
+      break;
+    default:
+      return ParseFailed(first_line, "Unsupported transport type.", error);
   }
 
   std::string candidate_type;
