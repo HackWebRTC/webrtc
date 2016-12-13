@@ -34,6 +34,7 @@
 namespace cricket {
 
 class AudioDeviceModule;
+class AudioMixer;
 class AudioSource;
 class VoEWrapper;
 class WebRtcVoiceMediaChannel;
@@ -48,11 +49,13 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
 
   WebRtcVoiceEngine(
       webrtc::AudioDeviceModule* adm,
-      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory);
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
   // Dependency injection for testing.
   WebRtcVoiceEngine(
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
       VoEWrapper* voe_wrapper);
   ~WebRtcVoiceEngine() override;
 
