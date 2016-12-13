@@ -660,8 +660,6 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
 
   if (!inited_)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  if (frame.IsZeroSize())
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   if (encoded_complete_callback_ == NULL)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 

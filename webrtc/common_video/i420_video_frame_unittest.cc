@@ -111,12 +111,6 @@ void CheckRotate(int width, int height, webrtc::VideoRotation rotation,
 
 }  // namespace
 
-TEST(TestVideoFrame, InitialValues) {
-  VideoFrame frame;
-  EXPECT_TRUE(frame.IsZeroSize());
-  EXPECT_EQ(kVideoRotation_0, frame.rotation());
-}
-
 TEST(TestVideoFrame, WidthHeightValues) {
   VideoFrame frame(I420Buffer::Create(10, 10, 10, 14, 90),
                    webrtc::kVideoRotation_0,

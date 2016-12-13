@@ -22,10 +22,6 @@ namespace webrtc {
 
 class VideoFrame {
  public:
-  // TODO(nisse): Deprecated. Using the default constructor violates the
-  // reasonable assumption that video_frame_buffer() returns a valid buffer.
-  VideoFrame();
-
   // TODO(nisse): This constructor is consistent with
   // cricket::WebRtcVideoFrame. After the class
   // cricket::WebRtcVideoFrame and its baseclass cricket::VideoFrame
@@ -105,15 +101,6 @@ class VideoFrame {
   int64_t render_time_ms() const {
     return timestamp_us() / rtc::kNumMicrosecsPerMillisec;
   }
-
-  // Return true if and only if video_frame_buffer() is null. Which is possible
-  // only if the object was default-constructed.
-  // TODO(nisse): Deprecated. Should be deleted in the cricket::VideoFrame and
-  // webrtc::VideoFrame merge. The intention is that video_frame_buffer() never
-  // should return nullptr. To handle potentially uninitialized or non-existent
-  // frames, consider using rtc::Optional. Otherwise, IsZeroSize() can be
-  // replaced by video_frame_buffer() == nullptr.
-  bool IsZeroSize() const;
 
   // Return the underlying buffer. Never nullptr for a properly
   // initialized VideoFrame.

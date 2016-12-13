@@ -204,7 +204,6 @@ class VideoProcessorImpl : public VideoProcessor {
   // Keep track of the last successful frame, since we need to write that
   // when decoding fails:
   uint8_t* last_successful_frame_buffer_;
-  webrtc::VideoFrame source_frame_;
   // To keep track of if we have excluded the first key frame from packet loss:
   bool first_key_frame_has_been_excluded_;
   // To tell the decoder previous frame have been dropped due to packet loss:

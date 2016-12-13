@@ -300,7 +300,6 @@ int SimulcastEncoderAdapter::Encode(
     // TODO(perkj): ensure that works going forward, and figure out how this
     // affects webrtc:5683.
     if ((dst_width == src_width && dst_height == src_height) ||
-        input_image.IsZeroSize() ||
         input_image.video_frame_buffer()->native_handle()) {
       int ret = streaminfos_[stream_idx].encoder->Encode(
           input_image, codec_specific_info, &stream_frame_types);
