@@ -101,6 +101,8 @@ void PrintTo(const RTCTransportStats& stats, ::std::ostream* os) {
 namespace {
 
 const int64_t kGetStatsReportTimeoutMs = 1000;
+const bool kDefaultRtcpEnabled = false;
+const bool kDefaultSrtpRequired = true;
 
 struct CertificateInfo {
   rtc::scoped_refptr<rtc::RTCCertificate> certificate;
@@ -657,12 +659,13 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
   MockVoiceMediaChannel* voice_media_channel = new MockVoiceMediaChannel();
   cricket::VoiceChannel voice_channel(
       test_->worker_thread(), test_->network_thread(), test_->media_engine(),
-      voice_media_channel, nullptr, "VoiceContentName", false);
+      voice_media_channel, nullptr, "VoiceContentName", kDefaultRtcpEnabled,
+      kDefaultSrtpRequired);
 
   MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
       test_->worker_thread(), test_->network_thread(), video_media_channel,
-      nullptr, "VideoContentName", false);
+      nullptr, "VideoContentName", kDefaultRtcpEnabled, kDefaultSrtpRequired);
 
   // Audio
   cricket::VoiceMediaInfo voice_media_info;
@@ -1307,7 +1310,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   MockVoiceMediaChannel* voice_media_channel = new MockVoiceMediaChannel();
   cricket::VoiceChannel voice_channel(
       test_->worker_thread(), test_->network_thread(), test_->media_engine(),
-      voice_media_channel, nullptr, "VoiceContentName", false);
+      voice_media_channel, nullptr, "VoiceContentName", kDefaultRtcpEnabled,
+      kDefaultSrtpRequired);
 
   cricket::VoiceMediaInfo voice_media_info;
 
@@ -1377,7 +1381,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
       test_->worker_thread(), test_->network_thread(), video_media_channel,
-      nullptr, "VideoContentName", false);
+      nullptr, "VideoContentName", kDefaultRtcpEnabled, kDefaultSrtpRequired);
 
   cricket::VideoMediaInfo video_media_info;
 
@@ -1451,7 +1455,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   MockVoiceMediaChannel* voice_media_channel = new MockVoiceMediaChannel();
   cricket::VoiceChannel voice_channel(
       test_->worker_thread(), test_->network_thread(), test_->media_engine(),
-      voice_media_channel, nullptr, "VoiceContentName", false);
+      voice_media_channel, nullptr, "VoiceContentName", kDefaultRtcpEnabled,
+      kDefaultSrtpRequired);
 
   cricket::VoiceMediaInfo voice_media_info;
 
@@ -1516,7 +1521,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
       test_->worker_thread(), test_->network_thread(), video_media_channel,
-      nullptr, "VideoContentName", false);
+      nullptr, "VideoContentName", kDefaultRtcpEnabled, kDefaultSrtpRequired);
 
   cricket::VideoMediaInfo video_media_info;
 

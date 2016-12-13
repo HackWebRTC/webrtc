@@ -197,7 +197,6 @@ class WebRtcSession :
 
   cricket::BaseChannel* GetChannel(const std::string& content_name);
 
-  void SetSdesPolicy(cricket::SecurePolicy secure_policy);
   cricket::SecurePolicy SdesPolicy() const;
 
   // Get current ssl role from transport.
@@ -448,6 +447,10 @@ class WebRtcSession :
   bool ReadyToUseRemoteCandidate(const IceCandidateInterface* candidate,
                                  const SessionDescriptionInterface* remote_desc,
                                  bool* valid);
+
+  // Returns true if SRTP (either using DTLS-SRTP or SDES) is required by
+  // this session.
+  bool SrtpRequired() const;
 
   void OnTransportControllerConnectionState(cricket::IceConnectionState state);
   void OnTransportControllerReceiving(bool receiving);

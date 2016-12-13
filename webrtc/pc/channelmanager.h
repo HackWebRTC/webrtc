@@ -94,6 +94,7 @@ class ChannelManager {
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
+      bool srtp_required,
       const AudioOptions& options);
   // Destroys a voice channel created with the Create API.
   void DestroyVoiceChannel(VoiceChannel* voice_channel);
@@ -105,20 +106,17 @@ class ChannelManager {
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
+      bool srtp_required,
       const VideoOptions& options);
   // Destroys a video channel created with the Create API.
   void DestroyVideoChannel(VideoChannel* video_channel);
-  DataChannel* CreateDataChannel(TransportController* transport_controller,
-                                 const std::string& content_name,
-                                 const std::string* bundle_transport_name,
-                                 bool rtcp,
-                                 DataChannelType data_channel_type);
   DataChannel* CreateDataChannel(
-      TransportController* transport_controller,
       webrtc::MediaControllerInterface* media_controller,
+      TransportController* transport_controller,
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
+      bool srtp_required,
       DataChannelType data_channel_type);
   // Destroys a data channel created with the Create API.
   void DestroyDataChannel(DataChannel* data_channel);
@@ -168,6 +166,7 @@ class ChannelManager {
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
+      bool srtp_required,
       const AudioOptions& options);
   void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
   VideoChannel* CreateVideoChannel_w(
@@ -176,15 +175,17 @@ class ChannelManager {
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
+      bool srtp_required,
       const VideoOptions& options);
   void DestroyVideoChannel_w(VideoChannel* video_channel);
   DataChannel* CreateDataChannel_w(
+      webrtc::MediaControllerInterface* media_controller,
       TransportController* transport_controller,
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
-      DataChannelType data_channel_type,
-      webrtc::MediaControllerInterface* media_controller);
+      bool srtp_required,
+      DataChannelType data_channel_type);
   void DestroyDataChannel_w(DataChannel* data_channel);
 
   std::unique_ptr<MediaEngineInterface> media_engine_;

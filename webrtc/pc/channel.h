@@ -76,12 +76,15 @@ class BaseChannel
       public ConnectionStatsGetter {
  public:
   // |rtcp| represents whether or not this channel uses RTCP.
+  // If |srtp_required| is true, the channel will not send or receive any
+  // RTP/RTCP packets without using SRTP (either using SDES or DTLS-SRTP).
   BaseChannel(rtc::Thread* worker_thread,
               rtc::Thread* network_thread,
               MediaChannel* channel,
               TransportController* transport_controller,
               const std::string& content_name,
-              bool rtcp);
+              bool rtcp,
+              bool srtp_required);
   virtual ~BaseChannel();
   bool Init_w(const std::string* bundle_transport_name);
   // Deinit may be called multiple times and is simply ignored if it's already
@@ -100,8 +103,6 @@ class BaseChannel
   // DTLS-based keying. If you turned off SRTP later, however
   // you could have secure() == false and dtls_secure() == true.
   bool secure_dtls() const { return dtls_keyed_; }
-  // This function returns true if we require secure channel for call setup.
-  bool secure_required() const { return secure_required_; }
 
   bool writable() const { return writable_; }
 
@@ -186,6 +187,9 @@ class BaseChannel
 
   bool SetCryptoOptions(const rtc::CryptoOptions& crypto_options);
 
+  // This function returns true if we require SRTP for call setup.
+  bool srtp_required_for_testing() const { return srtp_required_; }
+
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_; }
 
@@ -205,9 +209,6 @@ class BaseChannel
   }
   void set_remote_content_direction(MediaContentDirection direction) {
     remote_content_direction_ = direction;
-  }
-  void set_secure_required(bool secure_required) {
-    secure_required_ = secure_required;
   }
   // These methods verify that:
   // * The required content description directions have been set.
@@ -397,7 +398,7 @@ class BaseChannel
   bool was_ever_writable_ = false;
   bool has_received_packet_ = false;
   bool dtls_keyed_ = false;
-  bool secure_required_ = false;
+  const bool srtp_required_ = true;
   rtc::CryptoOptions crypto_options_;
   int rtp_abs_sendtime_extn_id_ = -1;
 
@@ -425,7 +426,8 @@ class VoiceChannel : public BaseChannel {
                VoiceMediaChannel* channel,
                TransportController* transport_controller,
                const std::string& content_name,
-               bool rtcp);
+               bool rtcp,
+               bool srtp_required);
   ~VoiceChannel();
   bool Init_w(const std::string* bundle_transport_name);
 
@@ -542,7 +544,8 @@ class VideoChannel : public BaseChannel {
                VideoMediaChannel* channel,
                TransportController* transport_controller,
                const std::string& content_name,
-               bool rtcp);
+               bool rtcp,
+               bool srtp_required);
   ~VideoChannel();
   bool Init_w(const std::string* bundle_transport_name);
 
@@ -620,7 +623,8 @@ class DataChannel : public BaseChannel {
               DataMediaChannel* media_channel,
               TransportController* transport_controller,
               const std::string& content_name,
-              bool rtcp);
+              bool rtcp,
+              bool srtp_required);
   ~DataChannel();
   bool Init_w(const std::string* bundle_transport_name);
 

@@ -3644,8 +3644,8 @@ TEST_F(WebRtcSessionTest, TestCryptoAfterSetLocalDescription) {
   SessionDescriptionInterface* jsep_offer_str =
       CreateSessionDescription(JsepSessionDescription::kOffer, offer_str, NULL);
   SetLocalDescriptionWithoutError(jsep_offer_str);
-  EXPECT_TRUE(session_->voice_channel()->secure_required());
-  EXPECT_TRUE(session_->video_channel()->secure_required());
+  EXPECT_TRUE(session_->voice_channel()->srtp_required_for_testing());
+  EXPECT_TRUE(session_->video_channel()->srtp_required_for_testing());
 }
 
 // This test verifies the crypto parameter when security is disabled.
@@ -3663,8 +3663,8 @@ TEST_F(WebRtcSessionTest, TestCryptoAfterSetLocalDescriptionWithDisabled) {
   SessionDescriptionInterface* jsep_offer_str =
       CreateSessionDescription(JsepSessionDescription::kOffer, offer_str, NULL);
   SetLocalDescriptionWithoutError(jsep_offer_str);
-  EXPECT_FALSE(session_->voice_channel()->secure_required());
-  EXPECT_FALSE(session_->video_channel()->secure_required());
+  EXPECT_FALSE(session_->voice_channel()->srtp_required_for_testing());
+  EXPECT_FALSE(session_->video_channel()->srtp_required_for_testing());
 }
 
 // This test verifies that an answer contains new ufrag and password if an offer

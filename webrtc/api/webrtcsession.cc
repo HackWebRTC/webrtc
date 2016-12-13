@@ -165,7 +165,7 @@ static bool VerifyMediaDescriptions(
 // Checks that each non-rejected content has SDES crypto keys or a DTLS
 // fingerprint. Mismatches, such as replying with a DTLS fingerprint to SDES
 // keys, will be caught in Transport negotiation, and backstopped by Channel's
-// |secure_required| check.
+// |srtp_required| check.
 static bool VerifyCrypto(const SessionDescription* desc,
                          bool dtls_enabled,
                          std::string* error) {
@@ -229,30 +229,6 @@ static bool VerifyIceUfragPwdPresent(const SessionDescription* desc) {
     }
   }
   return true;
-}
-
-// Forces |sdesc->crypto_required| to the appropriate state based on the
-// current security policy, to ensure a failure occurs if there is an error
-// in crypto negotiation.
-// Called when processing the local session description.
-static void UpdateSessionDescriptionSecurePolicy(cricket::CryptoType type,
-                                                 SessionDescription* sdesc) {
-  if (!sdesc) {
-    return;
-  }
-
-  // Updating the |crypto_required_| in MediaContentDescription to the
-  // appropriate state based on the current security policy.
-  for (cricket::ContentInfos::iterator iter = sdesc->contents().begin();
-       iter != sdesc->contents().end(); ++iter) {
-    if (cricket::IsMediaContent(&*iter)) {
-      MediaContentDescription* mdesc =
-          static_cast<MediaContentDescription*> (iter->description);
-      if (mdesc) {
-        mdesc->set_crypto_required(type);
-      }
-    }
-  }
 }
 
 static bool GetAudioSsrcByTrackId(const SessionDescription* session_description,
@@ -641,10 +617,6 @@ cricket::BaseChannel* WebRtcSession::GetChannel(
   return nullptr;
 }
 
-void WebRtcSession::SetSdesPolicy(cricket::SecurePolicy secure_policy) {
-  webrtc_session_desc_factory_->SetSdesPolicy(secure_policy);
-}
-
 cricket::SecurePolicy WebRtcSession::SdesPolicy() const {
   return webrtc_session_desc_factory_->SdesPolicy();
 }
@@ -696,14 +668,6 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
     initial_offerer_ = true;
     transport_controller_->SetIceRole(cricket::ICEROLE_CONTROLLING);
   }
-
-  cricket::SecurePolicy sdes_policy =
-      webrtc_session_desc_factory_->SdesPolicy();
-  cricket::CryptoType crypto_required = dtls_enabled_ ?
-      cricket::CT_DTLS : (sdes_policy == cricket::SEC_REQUIRED ?
-          cricket::CT_SDES : cricket::CT_NONE);
-  // Update the MediaContentDescription crypto settings as per the policy set.
-  UpdateSessionDescriptionSecurePolicy(crypto_required, desc->description());
 
   local_desc_.reset(desc_temp.release());
 
@@ -1671,7 +1635,8 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content,
   bool create_rtcp_transport_channel = !require_rtcp_mux;
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
       media_controller_, transport_controller_.get(), content->name,
-      bundle_transport, create_rtcp_transport_channel, audio_options_));
+      bundle_transport, create_rtcp_transport_channel, SrtpRequired(),
+      audio_options_));
   if (!voice_channel_) {
     return false;
   }
@@ -1695,7 +1660,8 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content,
   bool create_rtcp_transport_channel = !require_rtcp_mux;
   video_channel_.reset(channel_manager_->CreateVideoChannel(
       media_controller_, transport_controller_.get(), content->name,
-      bundle_transport, create_rtcp_transport_channel, video_options_));
+      bundle_transport, create_rtcp_transport_channel, SrtpRequired(),
+      video_options_));
   if (!video_channel_) {
     return false;
   }
@@ -1727,8 +1693,9 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
       rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;
   bool create_rtcp_transport_channel = !sctp && !require_rtcp_mux;
   data_channel_.reset(channel_manager_->CreateDataChannel(
-      transport_controller_.get(), media_controller_, content->name,
-      bundle_transport, create_rtcp_transport_channel, data_channel_type_));
+      media_controller_, transport_controller_.get(), content->name,
+      bundle_transport, create_rtcp_transport_channel, SrtpRequired(),
+      data_channel_type_));
   if (!data_channel_) {
     return false;
   }
@@ -1934,6 +1901,11 @@ bool WebRtcSession::ReadyToUseRemoteCandidate(
     return false;
   }
   return transport_controller_->ReadyForRemoteCandidates(transport_name);
+}
+
+bool WebRtcSession::SrtpRequired() const {
+  return dtls_enabled_ ||
+         webrtc_session_desc_factory_->SdesPolicy() == cricket::SEC_REQUIRED;
 }
 
 void WebRtcSession::OnTransportControllerGatheringState(

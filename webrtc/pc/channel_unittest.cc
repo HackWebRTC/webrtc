@@ -190,10 +190,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       typename T::MediaChannel* ch,
       cricket::TransportController* transport_controller,
       int flags) {
-    typename T::Channel* channel =
-        new typename T::Channel(worker_thread, network_thread, engine, ch,
-                                transport_controller, cricket::CN_AUDIO,
-                                (flags & RTCP) != 0);
+    typename T::Channel* channel = new typename T::Channel(
+        worker_thread, network_thread, engine, ch, transport_controller,
+        cricket::CN_AUDIO, (flags & RTCP) != 0, (flags & SECURE) != 0);
     rtc::CryptoOptions crypto_options;
     crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
     channel->SetCryptoOptions(crypto_options);
@@ -2042,10 +2041,9 @@ cricket::VideoChannel* ChannelTest<VideoTraits>::CreateChannel(
     cricket::FakeVideoMediaChannel* ch,
     cricket::TransportController* transport_controller,
     int flags) {
-  cricket::VideoChannel* channel =
-      new cricket::VideoChannel(worker_thread, network_thread, ch,
-                                transport_controller, cricket::CN_VIDEO,
-                                (flags & RTCP) != 0);
+  cricket::VideoChannel* channel = new cricket::VideoChannel(
+      worker_thread, network_thread, ch, transport_controller,
+      cricket::CN_VIDEO, (flags & RTCP) != 0, (flags & SECURE) != 0);
   rtc::CryptoOptions crypto_options;
   crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
   channel->SetCryptoOptions(crypto_options);
@@ -3315,10 +3313,9 @@ cricket::DataChannel* ChannelTest<DataTraits>::CreateChannel(
     cricket::FakeDataMediaChannel* ch,
     cricket::TransportController* transport_controller,
     int flags) {
-  cricket::DataChannel* channel =
-      new cricket::DataChannel(worker_thread, network_thread, ch,
-                               transport_controller, cricket::CN_DATA,
-                               (flags & RTCP) != 0);
+  cricket::DataChannel* channel = new cricket::DataChannel(
+      worker_thread, network_thread, ch, transport_controller, cricket::CN_DATA,
+      (flags & RTCP) != 0, (flags & SECURE) != 0);
   rtc::CryptoOptions crypto_options;
   crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
   channel->SetCryptoOptions(crypto_options);

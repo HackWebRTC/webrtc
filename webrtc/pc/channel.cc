@@ -164,7 +164,8 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
                          MediaChannel* media_channel,
                          TransportController* transport_controller,
                          const std::string& content_name,
-                         bool rtcp)
+                         bool rtcp,
+                         bool srtp_required)
     : worker_thread_(worker_thread),
       network_thread_(network_thread),
 
@@ -172,6 +173,7 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
 
       transport_controller_(transport_controller),
       rtcp_enabled_(rtcp),
+      srtp_required_(srtp_required),
       media_channel_(media_channel),
       selected_candidate_pair_(nullptr) {
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
@@ -726,7 +728,7 @@ bool BaseChannel::SendPacket(bool rtcp,
 
     // Update the length of the packet now that we've added the auth tag.
     packet->SetSize(len);
-  } else if (secure_required_) {
+  } else if (srtp_required_) {
     // The audio/video engines may attempt to send RTCP packets as soon as the
     // streams are created, so don't treat this as an error for RTCP.
     // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=6809
@@ -815,7 +817,7 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::CopyOnWriteBuffer* packet,
     }
 
     packet->SetSize(len);
-  } else if (secure_required_) {
+  } else if (srtp_required_) {
     // Our session description indicates that SRTP is required, but we got a
     // packet before our SRTP filter is active. This means either that
     // a) we got SRTP packets before we received the SDES keys, in which case
@@ -1091,7 +1093,7 @@ bool BaseChannel::SetRtpTransportParameters(
     return true;
   }
 
-  // Cache secure_required_ for belt and suspenders check on SendPacket
+  // Cache srtp_required_ for belt and suspenders check on SendPacket
   return network_thread_->Invoke<bool>(
       RTC_FROM_HERE, Bind(&BaseChannel::SetRtpTransportParameters_n, this,
                           content, action, src, error_desc));
@@ -1103,10 +1105,6 @@ bool BaseChannel::SetRtpTransportParameters_n(
     ContentSource src,
     std::string* error_desc) {
   RTC_DCHECK(network_thread_->IsCurrent());
-
-  if (src == CS_LOCAL) {
-    set_secure_required(content->crypto_required() != CT_NONE);
-  }
 
   if (!SetSrtp_n(content->cryptos(), action, src, error_desc)) {
     return false;
@@ -1476,13 +1474,15 @@ VoiceChannel::VoiceChannel(rtc::Thread* worker_thread,
                            VoiceMediaChannel* media_channel,
                            TransportController* transport_controller,
                            const std::string& content_name,
-                           bool rtcp)
+                           bool rtcp,
+                           bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   media_channel,
                   transport_controller,
                   content_name,
-                  rtcp),
+                  rtcp,
+                  srtp_required),
       media_engine_(media_engine),
       received_media_(false) {}
 
@@ -1889,13 +1889,15 @@ VideoChannel::VideoChannel(rtc::Thread* worker_thread,
                            VideoMediaChannel* media_channel,
                            TransportController* transport_controller,
                            const std::string& content_name,
-                           bool rtcp)
+                           bool rtcp,
+                           bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   media_channel,
                   transport_controller,
                   content_name,
-                  rtcp) {}
+                  rtcp,
+                  srtp_required) {}
 
 bool VideoChannel::Init_w(const std::string* bundle_transport_name) {
   if (!BaseChannel::Init_w(bundle_transport_name)) {
@@ -2150,13 +2152,15 @@ DataChannel::DataChannel(rtc::Thread* worker_thread,
                          DataMediaChannel* media_channel,
                          TransportController* transport_controller,
                          const std::string& content_name,
-                         bool rtcp)
+                         bool rtcp,
+                         bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   media_channel,
                   transport_controller,
                   content_name,
-                  rtcp),
+                  rtcp,
+                  srtp_required),
       data_channel_type_(cricket::DCT_NONE),
       ready_to_send_data_(false) {}
 

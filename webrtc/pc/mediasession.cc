@@ -749,9 +749,6 @@ static bool CreateMediaContentOffer(
     MediaContentDescriptionImpl<C>* offer) {
   offer->AddCodecs(codecs);
 
-  if (secure_policy == SEC_REQUIRED) {
-    offer->set_crypto_required(CT_SDES);
-  }
   offer->set_rtcp_mux(options.rtcp_mux_enabled);
   if (offer->type() == cricket::MEDIA_TYPE_VIDEO) {
     offer->set_rtcp_reduced_size(true);
@@ -777,7 +774,7 @@ static bool CreateMediaContentOffer(
   }
 #endif
 
-  if (offer->crypto_required() == CT_SDES && offer->cryptos().empty()) {
+  if (secure_policy == SEC_REQUIRED && offer->cryptos().empty()) {
     return false;
   }
   return true;
@@ -1068,8 +1065,7 @@ static bool CreateMediaContentAnswer(
     }
   }
 
-  if (answer->cryptos().empty() &&
-      (offer->crypto_required() == CT_SDES || sdes_policy == SEC_REQUIRED)) {
+  if (answer->cryptos().empty() && sdes_policy == SEC_REQUIRED) {
     return false;
   }
 
