@@ -63,6 +63,11 @@ public:
                               std::string* result, size_t* data_used);
   static bool DecodeFromArray(const char* data, size_t len, DecodeFlags flags,
                               std::vector<char>* result, size_t* data_used);
+  static bool DecodeFromArray(const char* data,
+                              size_t len,
+                              DecodeFlags flags,
+                              std::vector<uint8_t>* result,
+                              size_t* data_used);
 
   // Convenience Methods
   static inline std::string Encode(const std::string& data) {

@@ -197,8 +197,17 @@ bool Base64::DecodeFromArray(const char* data, size_t len, DecodeFlags flags,
 
 bool Base64::DecodeFromArray(const char* data, size_t len, DecodeFlags flags,
                              vector<char>* result, size_t* data_used) {
-  return DecodeFromArrayTemplate<vector<char> >(data, len, flags, result,
-                                                data_used);
+  return DecodeFromArrayTemplate<vector<char>>(data, len, flags, result,
+                                               data_used);
+}
+
+bool Base64::DecodeFromArray(const char* data,
+                             size_t len,
+                             DecodeFlags flags,
+                             vector<uint8_t>* result,
+                             size_t* data_used) {
+  return DecodeFromArrayTemplate<vector<uint8_t>>(data, len, flags, result,
+                                                  data_used);
 }
 
 template<typename T>
