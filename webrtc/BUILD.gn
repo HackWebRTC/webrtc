@@ -234,12 +234,6 @@ if (!build_with_chromium) {
       # http://bugs.webrtc.org/6716
       "call.h",
       "config.h",
-
-      # TODO(aleloi): remove transport.h and the transport api
-      # dependency once clients have updated to the new transport
-      # location in webrtc/api/call/transport.h See
-      # http://bugs.webrtc.org/6785.
-      "transport.h",
     ]
 
     defines = []
