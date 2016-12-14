@@ -197,12 +197,6 @@ class RTPSender {
   bool SetFecParameters(const FecProtectionParams& delta_params,
                         const FecProtectionParams& key_params);
 
-  RTC_DEPRECATED
-  size_t SendPadData(size_t bytes,
-                     bool timestamp_provided,
-                     uint32_t timestamp,
-                     int64_t capture_time_ms);
-
   // Called on update of RTP statistics.
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
   StreamDataCountersCallback* GetRtpStatisticsCallback() const;
@@ -226,12 +220,6 @@ class RTPSender {
   typedef std::map<int64_t, int> SendDelayMap;
 
   size_t SendPadData(size_t bytes, int probe_cluster_id);
-
-  size_t DeprecatedSendPadData(size_t bytes,
-                               bool timestamp_provided,
-                               uint32_t timestamp,
-                               int64_t capture_time_ms,
-                               int probe_cluster_id);
 
   bool PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
                             bool send_over_rtx,

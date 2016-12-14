@@ -479,52 +479,30 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
 }
 
 size_t RTPSender::SendPadData(size_t bytes, int probe_cluster_id) {
-  return DeprecatedSendPadData(bytes, false, 0, 0, probe_cluster_id);
-}
-
-size_t RTPSender::SendPadData(size_t bytes,
-                              bool timestamp_provided,
-                              uint32_t timestamp,
-                              int64_t capture_time_ms) {
-  return DeprecatedSendPadData(bytes, timestamp_provided, timestamp,
-                               capture_time_ms, PacketInfo::kNotAProbe);
-}
-
-size_t RTPSender::DeprecatedSendPadData(size_t bytes,
-                                        bool timestamp_provided,
-                                        uint32_t timestamp,
-                                        int64_t capture_time_ms,
-                                        int probe_cluster_id) {
   // Always send full padding packets. This is accounted for by the
-  // RtpPacketSender,
-  // which will make sure we don't send too much padding even if a single packet
-  // is larger than requested.
+  // RtpPacketSender, which will make sure we don't send too much padding even
+  // if a single packet is larger than requested.
   size_t padding_bytes_in_packet =
       std::min(MaxDataPayloadLength(), kMaxPaddingLength);
   size_t bytes_sent = 0;
-  bool using_transport_seq =
-      IsRtpHeaderExtensionRegistered(kRtpExtensionTransportSequenceNumber) &&
-      transport_sequence_number_allocator_;
-  for (; bytes > 0; bytes -= padding_bytes_in_packet) {
-    if (bytes < padding_bytes_in_packet)
-      bytes = padding_bytes_in_packet;
-
+  while (bytes_sent < bytes) {
+    int64_t now_ms = clock_->TimeInMilliseconds();
     uint32_t ssrc;
+    uint32_t timestamp;
+    int64_t capture_time_ms;
     uint16_t sequence_number;
     int payload_type;
     bool over_rtx;
     {
       rtc::CritScope lock(&send_critsect_);
       if (!sending_media_)
-        return bytes_sent;
-      if (!timestamp_provided) {
-        timestamp = last_rtp_timestamp_;
-        capture_time_ms = capture_time_ms_;
-      }
+        break;
+      timestamp = last_rtp_timestamp_;
+      capture_time_ms = capture_time_ms_;
       if (rtx_ == kRtxOff) {
         // Without RTX we can't send padding in the middle of frames.
         if (!last_packet_marker_bit_)
-          return 0;
+          break;
         ssrc = ssrc_;
         sequence_number = sequence_number_;
         ++sequence_number_;
@@ -535,19 +513,19 @@ size_t RTPSender::DeprecatedSendPadData(size_t bytes,
         // must be sent before padding so that the timestamps used for
         // estimation are correct.
         if (!media_has_been_sent_ &&
-            !(rtp_header_extension_map_.IsRegistered(
-                  kRtpExtensionAbsoluteSendTime) ||
-              using_transport_seq)) {
-          return 0;
+            !(rtp_header_extension_map_.IsRegistered(AbsoluteSendTime::kId) ||
+              (rtp_header_extension_map_.IsRegistered(
+                   TransportSequenceNumber::kId) &&
+               transport_sequence_number_allocator_))) {
+          break;
         }
         // Only change change the timestamp of padding packets sent over RTX.
         // Padding only packets over RTP has to be sent as part of a media
         // frame (and therefore the same timestamp).
         if (last_timestamp_time_ms_ > 0) {
           timestamp +=
-              (clock_->TimeInMilliseconds() - last_timestamp_time_ms_) * 90;
-          capture_time_ms +=
-              (clock_->TimeInMilliseconds() - last_timestamp_time_ms_);
+              (now_ms - last_timestamp_time_ms_) * kTimestampTicksPerMs;
+          capture_time_ms += (now_ms - last_timestamp_time_ms_);
         }
         ssrc = ssrc_rtx_;
         sequence_number = sequence_number_rtx_;
@@ -557,18 +535,16 @@ size_t RTPSender::DeprecatedSendPadData(size_t bytes,
       }
     }
 
-    RtpPacketToSend padding_packet(&rtp_header_extension_map_, IP_PACKET_SIZE);
+    RtpPacketToSend padding_packet(&rtp_header_extension_map_);
     padding_packet.SetPayloadType(payload_type);
     padding_packet.SetMarker(false);
     padding_packet.SetSequenceNumber(sequence_number);
     padding_packet.SetTimestamp(timestamp);
     padding_packet.SetSsrc(ssrc);
 
-    int64_t now_ms = clock_->TimeInMilliseconds();
-
     if (capture_time_ms > 0) {
       padding_packet.SetExtension<TransmissionOffset>(
-          kTimestampTicksPerMs * (now_ms - capture_time_ms));
+          (now_ms - capture_time_ms) * kTimestampTicksPerMs);
     }
     padding_packet.SetExtension<AbsoluteSendTime>(now_ms);
     PacketOptions options;
