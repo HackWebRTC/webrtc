@@ -486,6 +486,9 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
+  if (input_image.IsZeroSize()) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
   if (encoded_complete_callback_ == NULL) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }

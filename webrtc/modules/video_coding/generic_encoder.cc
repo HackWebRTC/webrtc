@@ -123,14 +123,8 @@ int32_t VCMGenericEncoder::SetPeriodicKeyFrames(bool enable) {
 int32_t VCMGenericEncoder::RequestFrame(
     const std::vector<FrameType>& frame_types) {
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
-
-  // TODO(nisse): Used only with internal source. Delete as soon as
-  // that feature is removed. The only implementation I've been able
-  // to find ignores what's in the frame.
-  return encoder_->Encode(VideoFrame(I420Buffer::Create(1, 1),
-                                     kVideoRotation_0, 0),
-                          NULL, &frame_types);
-  return 0;
+  VideoFrame image;
+  return encoder_->Encode(image, NULL, &frame_types);
 }
 
 bool VCMGenericEncoder::InternalSource() const {

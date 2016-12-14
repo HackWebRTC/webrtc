@@ -380,6 +380,7 @@ int H264VideoToolboxEncoder::Encode(
   // |input_frame| size should always match codec settings.
   RTC_DCHECK_EQ(frame.width(), width_);
   RTC_DCHECK_EQ(frame.height(), height_);
+  RTC_DCHECK(!frame.IsZeroSize());
   if (!callback_ || !compression_session_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }

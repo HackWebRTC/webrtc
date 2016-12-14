@@ -371,7 +371,6 @@ class VideoAnalyzer : public PacketReceiver,
   struct FrameComparison {
     FrameComparison()
         : dropped(false),
-          input_time_ms(0),
           send_time_ms(0),
           recv_time_ms(0),
           render_time_ms(0),
@@ -380,7 +379,6 @@ class VideoAnalyzer : public PacketReceiver,
     FrameComparison(const VideoFrame& reference,
                     const VideoFrame& render,
                     bool dropped,
-                    int64_t input_time_ms,
                     int64_t send_time_ms,
                     int64_t recv_time_ms,
                     int64_t render_time_ms,
@@ -388,29 +386,14 @@ class VideoAnalyzer : public PacketReceiver,
         : reference(reference),
           render(render),
           dropped(dropped),
-          input_time_ms(input_time_ms),
           send_time_ms(send_time_ms),
           recv_time_ms(recv_time_ms),
           render_time_ms(render_time_ms),
           encoded_frame_size(encoded_frame_size) {}
 
-    FrameComparison(bool dropped,
-                    int64_t input_time_ms,
-                    int64_t send_time_ms,
-                    int64_t recv_time_ms,
-                    int64_t render_time_ms,
-                    size_t encoded_frame_size)
-        : dropped(dropped),
-          input_time_ms(input_time_ms),
-          send_time_ms(send_time_ms),
-          recv_time_ms(recv_time_ms),
-          render_time_ms(render_time_ms),
-          encoded_frame_size(encoded_frame_size) {}
-
-    rtc::Optional<VideoFrame> reference;
-    rtc::Optional<VideoFrame> render;
+    VideoFrame reference;
+    VideoFrame render;
     bool dropped;
-    int64_t input_time_ms;
     int64_t send_time_ms;
     int64_t recv_time_ms;
     int64_t render_time_ms;
@@ -493,18 +476,21 @@ class VideoAnalyzer : public PacketReceiver,
     if (it != encoded_frame_sizes_.end())
       encoded_frame_sizes_.erase(it);
 
+    VideoFrame reference_copy;
+    VideoFrame render_copy;
+
     rtc::CritScope crit(&comparison_lock_);
     if (comparisons_.size() < kMaxComparisons) {
-      comparisons_.push_back(FrameComparison(reference, render, dropped,
-                                             reference.ntp_time_ms(),
-                                             send_time_ms, recv_time_ms,
-                                             render_time_ms, encoded_size));
+      reference_copy = reference;
+      render_copy = render;
     } else {
-      comparisons_.push_back(FrameComparison(dropped,
-                                             reference.ntp_time_ms(),
-                                             send_time_ms, recv_time_ms,
-                                             render_time_ms, encoded_size));
+      // Copy the time to ensure that delay calculations can still be made.
+      reference_copy.set_ntp_time_ms(reference.ntp_time_ms());
+      render_copy.set_ntp_time_ms(render.ntp_time_ms());
     }
+    comparisons_.push_back(FrameComparison(reference_copy, render_copy, dropped,
+                                           send_time_ms, recv_time_ms,
+                                           render_time_ms, encoded_size));
     comparison_available_event_.Set();
   }
 
@@ -541,6 +527,8 @@ class VideoAnalyzer : public PacketReceiver,
     if (AllFramesRecorded())
       return false;
 
+    VideoFrame reference;
+    VideoFrame render;
     FrameComparison comparison;
 
     if (!PopComparison(&comparison)) {
@@ -636,12 +624,12 @@ class VideoAnalyzer : public PacketReceiver,
     // Perform expensive psnr and ssim calculations while not holding lock.
     double psnr = -1.0;
     double ssim = -1.0;
-    if (comparison.reference) {
-      psnr = I420PSNR(&*comparison.reference, &*comparison.render);
-      ssim = I420SSIM(&*comparison.reference, &*comparison.render);
+    if (!comparison.reference.IsZeroSize()) {
+      psnr = I420PSNR(&comparison.reference, &comparison.render);
+      ssim = I420SSIM(&comparison.reference, &comparison.render);
     }
 
-    int64_t input_time_ms = comparison.reference->ntp_time_ms();
+    int64_t input_time_ms = comparison.reference.ntp_time_ms();
 
     rtc::CritScope crit(&comparison_lock_);
     if (graph_data_output_file_) {

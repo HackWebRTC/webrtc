@@ -188,7 +188,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
     }
     CropSourceToScrolledImage(scroll_factor);
 
-    return current_frame_ ? &*current_frame_ : nullptr;
+    return &current_frame_;
   }
 
   void UpdateSourceFrame(size_t frame_num) {
@@ -219,14 +219,14 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
 
     rtc::scoped_refptr<VideoFrameBuffer> frame_buffer(
         current_source_frame_->video_frame_buffer());
-    current_frame_ = rtc::Optional<webrtc::VideoFrame>(webrtc::VideoFrame(
+    current_frame_ = webrtc::VideoFrame(
         new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
             target_width_, target_height_,
             &frame_buffer->DataY()[offset_y], frame_buffer->StrideY(),
             &frame_buffer->DataU()[offset_u], frame_buffer->StrideU(),
             &frame_buffer->DataV()[offset_v], frame_buffer->StrideV(),
             KeepRefUntilDone(frame_buffer)),
-        kVideoRotation_0, 0));
+        kVideoRotation_0, 0);
   }
 
   Clock* const clock_;
@@ -239,7 +239,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
 
   size_t current_frame_num_;
   VideoFrame* current_source_frame_;
-  rtc::Optional<VideoFrame> current_frame_;
+  VideoFrame current_frame_;
   YuvFileGenerator file_generator_;
 };
 

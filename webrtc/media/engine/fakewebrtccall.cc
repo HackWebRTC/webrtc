@@ -161,28 +161,27 @@ int FakeVideoSendStream::GetNumberOfSwappedFrames() const {
 }
 
 int FakeVideoSendStream::GetLastWidth() const {
-  return last_frame_->width();
+  return last_frame_.width();
 }
 
 int FakeVideoSendStream::GetLastHeight() const {
-  return last_frame_->height();
+  return last_frame_.height();
 }
 
 int64_t FakeVideoSendStream::GetLastTimestamp() const {
-  RTC_DCHECK(last_frame_->ntp_time_ms() == 0);
-  return last_frame_->render_time_ms();
+  RTC_DCHECK(last_frame_.ntp_time_ms() == 0);
+  return last_frame_.render_time_ms();
 }
 
 void FakeVideoSendStream::OnFrame(const webrtc::VideoFrame& frame) {
   ++num_swapped_frames_;
-  if (!last_frame_ ||
-      frame.width() != last_frame_->width() ||
-      frame.height() != last_frame_->height() ||
-      frame.rotation() != last_frame_->rotation()) {
+  if (frame.width() != last_frame_.width() ||
+      frame.height() != last_frame_.height() ||
+      frame.rotation() != last_frame_.rotation()) {
     video_streams_ = encoder_config_.video_stream_factory->CreateEncoderStreams(
         frame.width(), frame.height(), encoder_config_);
   }
-  last_frame_ = rtc::Optional<webrtc::VideoFrame>(frame);
+  last_frame_ = frame;
 }
 
 void FakeVideoSendStream::SetStats(
@@ -203,15 +202,8 @@ void FakeVideoSendStream::EnableEncodedFrameRecording(
 
 void FakeVideoSendStream::ReconfigureVideoEncoder(
     webrtc::VideoEncoderConfig config) {
-  int width, height;
-  if (last_frame_) {
-    width = last_frame_->width();
-    height = last_frame_->height();
-  } else {
-    width = height = 0;
-  }
   video_streams_ = config.video_stream_factory->CreateEncoderStreams(
-      width, height, config);
+      last_frame_.width(), last_frame_.height(), config);
   if (config.encoder_specific_settings != NULL) {
     if (config_.encoder_settings.payload_name == "VP8") {
       config.encoder_specific_settings->FillVideoCodecVp8(&vpx_settings_.vp8);

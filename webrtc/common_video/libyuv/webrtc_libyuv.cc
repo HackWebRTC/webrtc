@@ -128,6 +128,8 @@ int PrintVideoFrame(const VideoFrameBuffer& frame, FILE* file) {
 }
 
 int PrintVideoFrame(const VideoFrame& frame, FILE* file) {
+  if (frame.IsZeroSize())
+    return -1;
   return PrintVideoFrame(*frame.video_frame_buffer(), file);
 }
 

@@ -308,6 +308,10 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     ReportError();
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
+  if (input_frame.IsZeroSize()) {
+    ReportError();
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
   if (!encoded_image_callback_) {
     LOG(LS_WARNING) << "InitEncode() has been called, but a callback function "
                     << "has not been set with RegisterEncodeCompleteCallback()";
