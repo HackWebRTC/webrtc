@@ -230,12 +230,11 @@ void AecDumpBasedSimulator::Process() {
         << "Only mono files for the artificial nearend are supported, "
            "reverted to not using the artificial nearend file";
 
+    const int sample_rate_hz = artificial_nearend_file->sample_rate();
     artificial_nearend_buffer_reader_.reset(
         new ChannelBufferWavReader(std::move(artificial_nearend_file)));
     artificial_nearend_buf_.reset(new ChannelBuffer<float>(
-        rtc::CheckedDivExact(artificial_nearend_file->sample_rate(),
-                             kChunksPerSecond),
-        1));
+        rtc::CheckedDivExact(sample_rate_hz, kChunksPerSecond), 1));
   }
 
   webrtc::audioproc::Event event_msg;
