@@ -183,8 +183,6 @@ rtc_static_library("rtc_base_approved") {
     "timeutils.h",
     "trace_event.h",
     "type_traits.h",
-    "urlencode.cc",
-    "urlencode.h",
   ]
 
   if (is_android) {

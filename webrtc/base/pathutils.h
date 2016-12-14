@@ -66,8 +66,6 @@ public:
   // is always false.
   bool empty() const;
 
-  std::string url() const;
-
   // Returns the folder and filename components.  If the pathname is empty,
   // returns a string representing the current directory (as a relative path,
   // i.e., ".").
