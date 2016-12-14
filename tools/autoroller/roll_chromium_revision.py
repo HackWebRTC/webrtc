@@ -449,6 +449,10 @@ def main():
                  help=('Calculate changes and modify DEPS, but don\'t create '
                        'any local branch, commit, upload CL or send any '
                        'tryjobs.'))
+  p.add_argument('-i', '--ignore-unclean-workdir', action='store_true',
+                 default=False,
+                 help=('Ignore if the current branch is not master or if there '
+                       'are uncommitted changes (default: %(default)s).'))
   p.add_argument('--skip-cq', action='store_true', default=False,
                  help='Skip sending the CL to the CQ (default: %(default)s)')
   p.add_argument('-v', '--verbose', action='store_true', default=False,
@@ -460,14 +464,15 @@ def main():
   else:
     logging.basicConfig(level=logging.INFO)
 
-  if not _IsTreeClean():
+  if not opts.ignore_unclean_workdir and not _IsTreeClean():
     logging.error('Please clean your local checkout first.')
     return 1
 
   if opts.clean:
     _RemovePreviousRollBranch(opts.dry_run)
 
-  _EnsureUpdatedMasterBranch(opts.dry_run)
+  if not opts.ignore_unclean_workdir:
+    _EnsureUpdatedMasterBranch(opts.dry_run)
 
   new_cr_rev = opts.revision
   if not new_cr_rev:
