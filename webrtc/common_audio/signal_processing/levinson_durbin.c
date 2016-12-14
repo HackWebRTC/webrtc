@@ -51,8 +51,7 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
 
     // K = A[1] = -R[1] / R[0]
 
-    temp2W32 = WEBRTC_SPL_LSHIFT_W32((int32_t)R_hi[1],16)
-            + WEBRTC_SPL_LSHIFT_W32((int32_t)R_low[1],1); // R[1] in Q31
+    temp2W32 = R[1] * (1 << norm); // R[1] in Q31
     temp3W32 = WEBRTC_SPL_ABS_W32(temp2W32); // abs R[1]
     temp1W32 = WebRtcSpl_DivW32HiLow(temp3W32, R_hi[0], R_low[0]); // abs(R[1])/R[0] in Q31
     // Put back the sign on R[1]
