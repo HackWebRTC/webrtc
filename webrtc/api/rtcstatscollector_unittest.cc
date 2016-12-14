@@ -1212,6 +1212,46 @@ TEST_F(RTCStatsCollectorTest,
 }
 
 TEST_F(RTCStatsCollectorTest,
+       CollectRTCMediaStreamStatsAndRTCMediaStreamTrackStats_Audio_Defaults) {
+  rtc::scoped_refptr<StreamCollection> local_streams =
+      StreamCollection::Create();
+  EXPECT_CALL(test_->pc(), local_streams())
+      .WillRepeatedly(Return(local_streams));
+
+  rtc::scoped_refptr<MediaStream> local_stream =
+      MediaStream::Create("LocalStreamLabel");
+  local_streams->AddStream(local_stream);
+
+  // Local audio track
+  AudioProcessorInterface::AudioProcessorStats local_audio_processor_stats;
+  local_audio_processor_stats.echo_return_loss = -100;
+  local_audio_processor_stats.echo_return_loss_enhancement = -100;
+  rtc::scoped_refptr<FakeAudioTrackForStats> local_audio_track =
+      FakeAudioTrackForStats::Create(
+          "LocalAudioTrackID",
+          MediaStreamTrackInterface::TrackState::kEnded,
+          32767,
+          new FakeAudioProcessorForStats(local_audio_processor_stats));
+  local_stream->AddTrack(local_audio_track);
+
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+
+  RTCMediaStreamTrackStats expected_local_audio_track(
+      "RTCMediaStreamTrack_LocalAudioTrackID", report->timestamp_us());
+  expected_local_audio_track.track_identifier = local_audio_track->id();
+  expected_local_audio_track.remote_source = false;
+  expected_local_audio_track.ended = true;
+  expected_local_audio_track.detached = false;
+  expected_local_audio_track.audio_level = 1.0;
+  // Should be undefined: |expected_local_audio_track.echo_return_loss| and
+  // |expected_local_audio_track.echo_return_loss_enhancement|.
+  EXPECT_TRUE(report->Get(expected_local_audio_track.id()));
+  EXPECT_EQ(expected_local_audio_track,
+            report->Get(expected_local_audio_track.id())->cast_to<
+                RTCMediaStreamTrackStats>());
+}
+
+TEST_F(RTCStatsCollectorTest,
        CollectRTCMediaStreamStatsAndRTCMediaStreamTrackStats_Video) {
   rtc::scoped_refptr<StreamCollection> local_streams =
       StreamCollection::Create();

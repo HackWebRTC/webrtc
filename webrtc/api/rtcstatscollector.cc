@@ -317,10 +317,14 @@ void ProduceMediaStreamAndTrackStats(
       if (audio_track->GetAudioProcessor()) {
         AudioProcessorInterface::AudioProcessorStats audio_processor_stats;
         audio_track->GetAudioProcessor()->GetStats(&audio_processor_stats);
-        audio_track_stats->echo_return_loss = static_cast<double>(
-            audio_processor_stats.echo_return_loss);
-        audio_track_stats->echo_return_loss_enhancement = static_cast<double>(
-            audio_processor_stats.echo_return_loss_enhancement);
+        if (audio_processor_stats.echo_return_loss != -100) {
+          audio_track_stats->echo_return_loss = static_cast<double>(
+              audio_processor_stats.echo_return_loss);
+        }
+        if (audio_processor_stats.echo_return_loss_enhancement != -100) {
+          audio_track_stats->echo_return_loss_enhancement = static_cast<double>(
+              audio_processor_stats.echo_return_loss_enhancement);
+        }
       }
       report->AddStats(std::move(audio_track_stats));
     }
