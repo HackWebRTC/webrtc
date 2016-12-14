@@ -563,8 +563,6 @@ rtc_static_library("rtc_base") {
       sources += [
         "diskcache_win32.cc",
         "diskcache_win32.h",
-        "win32regkey.cc",
-        "win32regkey.h",
         "win32socketinit.cc",
         "win32socketinit.h",
         "win32socketserver.cc",
