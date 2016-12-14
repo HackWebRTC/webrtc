@@ -20,15 +20,8 @@
 namespace {
 
 bool DecodeAndConvert(const std::string& base64, std::vector<uint8_t>* binary) {
-  // TODO(johan): Directly decode to std::vector<uint8_t> when available.
-  std::vector<char> tmp;
-  if (!rtc::Base64::DecodeFromArray(base64.data(), base64.size(),
-                                    rtc::Base64::DO_STRICT, &tmp, nullptr)) {
-    return false;
-  }
-  const uint8_t* data = reinterpret_cast<uint8_t*>(tmp.data());
-  binary->assign(data, data + tmp.size());
-  return true;
+  return rtc::Base64::DecodeFromArray(base64.data(), base64.size(),
+                                      rtc::Base64::DO_STRICT, binary, nullptr);
 }
 }  // namespace
 
