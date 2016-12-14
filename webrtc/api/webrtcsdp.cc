@@ -2641,6 +2641,8 @@ bool ParseContent(const std::string& message,
                         << cricket::kDataMaxBandwidth / 1000 << "kbps.";
             return ParseFailed(line, description.str(), error);
           }
+          // Prevent integer overflow.
+          b = std::min(b, INT_MAX / 1000);
           media_desc->set_bandwidth(b * 1000);
         }
       }

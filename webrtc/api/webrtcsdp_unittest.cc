@@ -3319,3 +3319,22 @@ TEST_F(WebRtcSdpTest, DeserializeSctpPortInVideoDescription) {
   ExpectParseFailure(std::string(kSdpWithSctpPortInVideoDescription),
                      "sctp-port");
 }
+
+// Regression test for integer overflow bug:
+// https://bugs.chromium.org/p/chromium/issues/detail?id=648071
+TEST_F(WebRtcSdpTest, DeserializeLargeBandwidthLimit) {
+  JsepSessionDescription jdesc_output(kDummyString);
+
+  // Bandwidth attribute is the max signed 32-bit int, which will get
+  // multiplied by 1000 and cause int overflow if not careful.
+  const char kSdpWithLargeBandwidth[] =
+      "v=0\r\n"
+      "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+      "s=-\r\n"
+      "t=0 0\r\n"
+      "m=video 3457 RTP/SAVPF 120\r\n"
+      "b=AS:2147483647\r\n"
+      "foo=fail\r\n";
+
+  ExpectParseFailure(std::string(kSdpWithLargeBandwidth), "foo=fail");
+}
