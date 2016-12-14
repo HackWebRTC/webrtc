@@ -17,6 +17,8 @@
 #include <vector>
 
 #include "webrtc/base/asyncinvoker.h"
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/base/refcountedobject.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/p2p/base/candidate.h"
@@ -173,44 +175,15 @@ class TransportController : public sigslot::has_slots<>,
  private:
   void OnMessage(rtc::Message* pmsg) override;
 
-  // This structure groups the DTLS and ICE channels, and helps keep track of
-  // how many external objects (BaseChannels) reference each channel.
-  struct RefCountedChannel {
-    RefCountedChannel() = default;
-    // TODO(deadbeef): Change the types of |dtls| and |ice| to
-    // DtlsTransportChannelWrapper and P2PTransportChannelWrapper,
-    // once TransportChannelImpl is removed.
-    explicit RefCountedChannel(TransportChannelImpl* dtls,
-                               TransportChannelImpl* ice)
-        : ice_(ice), dtls_(dtls), ref_(0) {}
-
-    void AddRef() { ++ref_; }
-    void DecRef() {
-      ASSERT(ref_ > 0);
-      --ref_;
-    }
-    int ref() const { return ref_; }
-
-    // Currently, all ICE-related calls still go through this DTLS channel. But
-    // that will change once we get rid of TransportChannelImpl, and the DTLS
-    // channel interface no longer includes ICE-specific methods.
-    const TransportChannelImpl* dtls() const { return dtls_.get(); }
-    TransportChannelImpl* dtls() { return dtls_.get(); }
-    const TransportChannelImpl* ice() const { return ice_.get(); }
-    TransportChannelImpl* ice() { return ice_.get(); }
-
-   private:
-    std::unique_ptr<TransportChannelImpl> ice_;
-    std::unique_ptr<TransportChannelImpl> dtls_;
-    int ref_ = 0;
-  };
+  class ChannelPair;
+  typedef rtc::RefCountedObject<ChannelPair> RefCountedChannel;
 
   // Helper functions to get a channel or transport, or iterator to it (in case
   // it needs to be erased).
-  std::vector<RefCountedChannel>::iterator GetChannelIterator_n(
+  std::vector<RefCountedChannel*>::iterator GetChannelIterator_n(
       const std::string& transport_name,
       int component);
-  std::vector<RefCountedChannel>::const_iterator GetChannelIterator_n(
+  std::vector<RefCountedChannel*>::const_iterator GetChannelIterator_n(
       const std::string& transport_name,
       int component) const;
   const JsepTransport* GetJsepTransport(
@@ -274,7 +247,7 @@ class TransportController : public sigslot::has_slots<>,
   PortAllocator* const port_allocator_ = nullptr;
 
   std::map<std::string, std::unique_ptr<JsepTransport>> transports_;
-  std::vector<RefCountedChannel> channels_;
+  std::vector<RefCountedChannel*> channels_;
 
   // Aggregate state for TransportChannelImpls.
   IceConnectionState connection_state_ = kIceConnectionConnecting;
@@ -292,6 +265,8 @@ class TransportController : public sigslot::has_slots<>,
   bool quic_ = false;
 
   webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(TransportController);
 };
 
 }  // namespace cricket

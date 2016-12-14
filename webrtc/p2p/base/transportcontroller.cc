@@ -18,7 +18,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/port.h"
 
-namespace cricket {
+namespace {
 
 enum {
   MSG_ICECONNECTIONSTATE,
@@ -29,11 +29,40 @@ enum {
 
 struct CandidatesData : public rtc::MessageData {
   CandidatesData(const std::string& transport_name,
-                 const Candidates& candidates)
+                 const cricket::Candidates& candidates)
       : transport_name(transport_name), candidates(candidates) {}
 
   std::string transport_name;
-  Candidates candidates;
+  cricket::Candidates candidates;
+};
+
+}  // namespace {
+
+namespace cricket {
+
+// This class groups the DTLS and ICE channels, and helps keep track of
+// how many external objects (BaseChannels) reference each channel.
+class TransportController::ChannelPair {
+ public:
+  // TODO(deadbeef): Change the types of |dtls| and |ice| to
+  // DtlsTransportChannelWrapper and P2PTransportChannelWrapper,
+  // once TransportChannelImpl is removed.
+  ChannelPair(TransportChannelImpl* dtls, TransportChannelImpl* ice)
+      : ice_(ice), dtls_(dtls) {}
+
+  // Currently, all ICE-related calls still go through this DTLS channel. But
+  // that will change once we get rid of TransportChannelImpl, and the DTLS
+  // channel interface no longer includes ICE-specific methods.
+  const TransportChannelImpl* dtls() const { return dtls_.get(); }
+  TransportChannelImpl* dtls() { return dtls_.get(); }
+  const TransportChannelImpl* ice() const { return ice_.get(); }
+  TransportChannelImpl* ice() { return ice_.get(); }
+
+ private:
+  std::unique_ptr<TransportChannelImpl> ice_;
+  std::unique_ptr<TransportChannelImpl> dtls_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(ChannelPair);
 };
 
 TransportController::TransportController(rtc::Thread* signaling_thread,
@@ -240,7 +269,9 @@ TransportChannel* TransportController::CreateTransportChannel_n(
       this, &TransportController::OnChannelStateChanged_n);
   dtls->SignalDtlsHandshakeError.connect(
       this, &TransportController::OnDtlsHandshakeError);
-  channels_.insert(channels_.end(), RefCountedChannel(dtls, ice))->AddRef();
+  RefCountedChannel* new_pair = new RefCountedChannel(dtls, ice);
+  new_pair->AddRef();
+  channels_.insert(channels_.end(), new_pair);
   bool channel_added = transport->AddChannel(dtls, component);
   RTC_DCHECK(channel_added);
   // Adding a channel could cause aggregate state to change.
@@ -260,8 +291,7 @@ void TransportController::DestroyTransportChannel_n(
                     << ", which doesn't exist.";
     return;
   }
-  it->DecRef();
-  if (it->ref() > 0) {
+  if ((*it)->Release() > 0) {
     return;
   }
   channels_.erase(it);
@@ -289,8 +319,8 @@ std::vector<std::string> TransportController::transport_names_for_testing() {
 
 std::vector<TransportChannelImpl*> TransportController::channels_for_testing() {
   std::vector<TransportChannelImpl*> ret;
-  for (RefCountedChannel& channel : channels_) {
-    ret.push_back(channel.dtls());
+  for (RefCountedChannel* channel : channels_) {
+    ret.push_back(channel->dtls());
   }
   return ret;
 }
@@ -353,27 +383,27 @@ void TransportController::OnMessage(rtc::Message* pmsg) {
   }
 }
 
-std::vector<TransportController::RefCountedChannel>::iterator
+std::vector<TransportController::RefCountedChannel*>::iterator
 TransportController::GetChannelIterator_n(const std::string& transport_name,
                                           int component) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  return std::find_if(
-      channels_.begin(), channels_.end(),
-      [transport_name, component](const RefCountedChannel& channel) {
-        return channel.dtls()->transport_name() == transport_name &&
-               channel.dtls()->component() == component;
-      });
+  return std::find_if(channels_.begin(), channels_.end(),
+                      [transport_name, component](RefCountedChannel* channel) {
+                        return channel->dtls()->transport_name() ==
+                                   transport_name &&
+                               channel->dtls()->component() == component;
+                      });
 }
 
-std::vector<TransportController::RefCountedChannel>::const_iterator
+std::vector<TransportController::RefCountedChannel*>::const_iterator
 TransportController::GetChannelIterator_n(const std::string& transport_name,
                                           int component) const {
   RTC_DCHECK(network_thread_->IsCurrent());
   return std::find_if(
       channels_.begin(), channels_.end(),
-      [transport_name, component](const RefCountedChannel& channel) {
-        return channel.dtls()->transport_name() == transport_name &&
-               channel.dtls()->component() == component;
+      [transport_name, component](const RefCountedChannel* channel) {
+        return channel->dtls()->transport_name() == transport_name &&
+               channel->dtls()->component() == component;
       });
 }
 
@@ -394,7 +424,7 @@ const TransportController::RefCountedChannel* TransportController::GetChannel_n(
     int component) const {
   RTC_DCHECK(network_thread_->IsCurrent());
   auto it = GetChannelIterator_n(transport_name, component);
-  return (it == channels_.end()) ? nullptr : &(*it);
+  return (it == channels_.end()) ? nullptr : *it;
 }
 
 TransportController::RefCountedChannel* TransportController::GetChannel_n(
@@ -402,7 +432,7 @@ TransportController::RefCountedChannel* TransportController::GetChannel_n(
     int component) {
   RTC_DCHECK(network_thread_->IsCurrent());
   auto it = GetChannelIterator_n(transport_name, component);
-  return (it == channels_.end()) ? nullptr : &(*it);
+  return (it == channels_.end()) ? nullptr : *it;
 }
 
 JsepTransport* TransportController::GetOrCreateJsepTransport(
@@ -422,6 +452,13 @@ JsepTransport* TransportController::GetOrCreateJsepTransport(
 void TransportController::DestroyAllChannels_n() {
   RTC_DCHECK(network_thread_->IsCurrent());
   transports_.clear();
+  for (RefCountedChannel* channel : channels_) {
+    // Even though these objects are normally ref-counted, if
+    // TransportController is deleted while they still have references, just
+    // remove all references.
+    while (channel->Release() > 0) {
+    }
+  }
   channels_.clear();
 }
 
@@ -443,7 +480,7 @@ void TransportController::SetIceConfig_n(const IceConfig& config) {
 
   ice_config_ = config;
   for (auto& channel : channels_) {
-    channel.dtls()->SetIceConfig(ice_config_);
+    channel->dtls()->SetIceConfig(ice_config_);
   }
 }
 
@@ -452,7 +489,7 @@ void TransportController::SetIceRole_n(IceRole ice_role) {
 
   ice_role_ = ice_role;
   for (auto& channel : channels_) {
-    channel.dtls()->SetIceRole(ice_role_);
+    channel->dtls()->SetIceRole(ice_role_);
   }
 }
 
@@ -485,7 +522,7 @@ bool TransportController::SetLocalCertificate_n(
   }
   // ... and for the DTLS channel, which needs it for the DTLS handshake.
   for (auto& channel : channels_) {
-    bool set_cert_success = channel.dtls()->SetLocalCertificate(certificate);
+    bool set_cert_success = channel->dtls()->SetLocalCertificate(certificate);
     RTC_DCHECK(set_cert_success);
   }
   return true;
@@ -584,7 +621,7 @@ bool TransportController::SetRemoteTransportDescription_n(
 
 void TransportController::MaybeStartGathering_n() {
   for (auto& channel : channels_) {
-    channel.dtls()->MaybeStartGathering();
+    channel->dtls()->MaybeStartGathering();
   }
 }
 
@@ -682,7 +719,7 @@ void TransportController::SetMetricsObserver_n(
   RTC_DCHECK(network_thread_->IsCurrent());
   metrics_observer_ = metrics_observer;
   for (auto& channel : channels_) {
-    channel.dtls()->SetMetricsObserver(metrics_observer);
+    channel->dtls()->SetMetricsObserver(metrics_observer);
   }
 }
 
@@ -775,21 +812,21 @@ void TransportController::UpdateAggregateStates_n() {
   bool any_gathering = false;
   bool all_done_gathering = !channels_.empty();
   for (const auto& channel : channels_) {
-    any_receiving = any_receiving || channel.dtls()->receiving();
+    any_receiving = any_receiving || channel->dtls()->receiving();
     any_failed =
         any_failed ||
-        channel.dtls()->GetState() == TransportChannelState::STATE_FAILED;
-    all_connected = all_connected && channel.dtls()->writable();
+        channel->dtls()->GetState() == TransportChannelState::STATE_FAILED;
+    all_connected = all_connected && channel->dtls()->writable();
     all_completed =
-        all_completed && channel.dtls()->writable() &&
-        channel.dtls()->GetState() == TransportChannelState::STATE_COMPLETED &&
-        channel.dtls()->GetIceRole() == ICEROLE_CONTROLLING &&
-        channel.dtls()->gathering_state() == kIceGatheringComplete;
+        all_completed && channel->dtls()->writable() &&
+        channel->dtls()->GetState() == TransportChannelState::STATE_COMPLETED &&
+        channel->dtls()->GetIceRole() == ICEROLE_CONTROLLING &&
+        channel->dtls()->gathering_state() == kIceGatheringComplete;
     any_gathering =
-        any_gathering || channel.dtls()->gathering_state() != kIceGatheringNew;
+        any_gathering || channel->dtls()->gathering_state() != kIceGatheringNew;
     all_done_gathering =
         all_done_gathering &&
-        channel.dtls()->gathering_state() == kIceGatheringComplete;
+        channel->dtls()->gathering_state() == kIceGatheringComplete;
   }
 
   if (any_failed) {
