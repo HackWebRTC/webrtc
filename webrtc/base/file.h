@@ -47,6 +47,11 @@ class File {
   static File Create(Pathname&& path);
   static File Create(const Pathname& path);
 
+  // Remove a file in the file system.
+  static bool Remove(const std::string& path);
+  static bool Remove(Pathname&& path);
+  static bool Remove(const Pathname& path);
+
   size_t Write(const uint8_t* data, size_t length);
   size_t Read(uint8_t* buffer, size_t length);
 

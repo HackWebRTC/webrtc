@@ -189,4 +189,13 @@ TEST_F(FileTest, CreateFromPathname) {
   }
 }
 
+TEST_F(FileTest, ShouldBeAbleToRemoveFile) {
+  {
+    File file = File::Open(Pathname(path_));
+    ASSERT_TRUE(file.IsOpen()) << "Error: " << LastError();
+  }
+
+  ASSERT_TRUE(File::Remove(Pathname(path_))) << "Error: " << LastError();
+}
+
 }  // namespace rtc

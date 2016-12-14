@@ -61,6 +61,21 @@ File File::Create(const Pathname& path) {
   return Create(Pathname(path));
 }
 
+// static
+bool File::Remove(const std::string& path) {
+  return RemoveFile(path);
+}
+
+// static
+bool File::Remove(Pathname&& path) {
+  return Remove(NormalizePathname(std::move(path)));
+}
+
+// static
+bool File::Remove(const Pathname& path) {
+  return Remove(Pathname(path));
+}
+
 File::File(File&& other) : file_(other.file_) {
   other.file_ = kInvalidPlatformFileValue;
 }
