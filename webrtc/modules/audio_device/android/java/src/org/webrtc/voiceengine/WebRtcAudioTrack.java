@@ -212,11 +212,6 @@ public class WebRtcAudioTrack {
       Logging.e(TAG, "Initialization of audio track failed.");
       return false;
     }
-    // Verify that all audio parameters are valid and correct.
-    if (!areParametersValid(sampleRate, channels)) {
-      Logging.e(TAG, "At least one audio track parameter is invalid.");
-      return false;
-    }
     logMainParameters();
     logMainParametersExtended();
     return true;
@@ -278,17 +273,6 @@ public class WebRtcAudioTrack {
     Logging.d(TAG, "getStreamVolume");
     assertTrue(audioManager != null);
     return audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
-  }
-
-  // Verifies that the audio track is using correct parameters, i.e., that the
-  // created track uses the parameters that we asked for.
-  private boolean areParametersValid(int sampleRate, int channels) {
-    final int streamType = audioTrack.getStreamType();
-    return (audioTrack.getAudioFormat() == AudioFormat.ENCODING_PCM_16BIT
-        && audioTrack.getChannelConfiguration() == channelCountToConfiguration(channels)
-        && streamType == AudioManager.STREAM_VOICE_CALL && audioTrack.getSampleRate() == sampleRate
-        && sampleRate == audioTrack.getNativeOutputSampleRate(streamType)
-        && audioTrack.getChannelCount() == channels);
   }
 
   private void logMainParameters() {

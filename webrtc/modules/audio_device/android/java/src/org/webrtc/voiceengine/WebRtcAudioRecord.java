@@ -198,11 +198,6 @@ public class WebRtcAudioRecord {
     if (effects != null) {
       effects.enable(audioRecord.getAudioSessionId());
     }
-    // Verify that all audio parameters are valid and correct.
-    if (!areParametersValid(sampleRate, channels)) {
-      Logging.e(TAG, "At least one audio record parameter is invalid.");
-      return -1;
-    }
     logMainParameters();
     logMainParametersExtended();
     return framesPerBuffer;
@@ -241,15 +236,6 @@ public class WebRtcAudioRecord {
     audioRecord.release();
     audioRecord = null;
     return true;
-  }
-
-  // Verifies that the audio record is using correct parameters, i.e., that the
-  // created instance uses the parameters that we asked for.
-  private boolean areParametersValid(int sampleRate, int channels) {
-    return (audioRecord.getAudioFormat() == AudioFormat.ENCODING_PCM_16BIT
-        && audioRecord.getChannelConfiguration() == channelCountToConfiguration(channels)
-        && audioRecord.getAudioSource() == AudioSource.VOICE_COMMUNICATION
-        && audioRecord.getSampleRate() == sampleRate && audioRecord.getChannelCount() == channels);
   }
 
   private void logMainParameters() {
