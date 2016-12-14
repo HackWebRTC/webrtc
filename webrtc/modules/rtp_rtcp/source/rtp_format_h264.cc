@@ -81,7 +81,11 @@ bool ParseStapAStartOffsets(const uint8_t* nalu_ptr,
 RtpPacketizerH264::RtpPacketizerH264(size_t max_payload_len,
                                      H264PacketizationMode packetization_mode)
     : max_payload_len_(max_payload_len),
-      packetization_mode_(packetization_mode) {}
+      packetization_mode_(packetization_mode) {
+  // Guard against uninitialized memory in packetization_mode.
+  RTC_CHECK(packetization_mode == H264PacketizationMode::NonInterleaved ||
+            packetization_mode == H264PacketizationMode::SingleNalUnit);
+}
 
 RtpPacketizerH264::~RtpPacketizerH264() {
 }
