@@ -620,7 +620,9 @@ TEST_F(AudioDeviceTest, StopPlayoutRequiresInitToRestart) {
 // last active instance shall deactivate the audio session. The test does not
 // explicitly verify correct audio session calls but instead focuses on
 // ensuring that audio starts for both ADMs.
-TEST_F(AudioDeviceTest, StartPlayoutOnTwoInstances) {
+
+// Failing when running on real iOS devices: bugs.webrtc.org/6889.
+TEST_F(AudioDeviceTest, DISABLED_StartPlayoutOnTwoInstances) {
   // Create and initialize a second/extra ADM instance. The default ADM is
   // created by the test harness.
   rtc::scoped_refptr<AudioDeviceModule> second_audio_device =
