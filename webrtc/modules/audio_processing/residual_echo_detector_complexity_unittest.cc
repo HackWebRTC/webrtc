@@ -26,7 +26,9 @@
 namespace webrtc {
 namespace {
 
-const size_t kNumFramesToProcess = 100;
+const size_t kNumFramesToProcess = 500;
+const size_t kProcessingBatchSize = 20;
+const size_t kWarmupBatchSize = 2 * kProcessingBatchSize;
 const int kSampleRate = AudioProcessing::kSampleRate48kHz;
 const int kNumberOfChannels = 1;
 
@@ -47,16 +49,25 @@ void RunStandaloneSubmodule() {
   echo_detector.Initialize();
 
   for (size_t frame_no = 0; frame_no < kNumFramesToProcess; ++frame_no) {
-    buffers.UpdateInputBuffers();
+    // The first batch of frames are for warming up, and are not part of the
+    // benchmark. After that the processing time is measured in chunks of
+    // kProcessingBatchSize frames.
+    if (frame_no >= kWarmupBatchSize && frame_no % kProcessingBatchSize == 0) {
+      timer.StartTimer();
+    }
 
-    timer.StartTimer();
+    buffers.UpdateInputBuffers();
     echo_detector.AnalyzeRenderAudio(rtc::ArrayView<const float>(
         buffers.render_input_buffer->split_bands_const_f(0)[kBand0To8kHz],
         buffers.render_input_buffer->num_frames_per_band()));
     echo_detector.AnalyzeCaptureAudio(rtc::ArrayView<const float>(
         buffers.capture_input_buffer->split_bands_const_f(0)[kBand0To8kHz],
         buffers.capture_input_buffer->num_frames_per_band()));
-    timer.StopTimer();
+
+    if (frame_no >= kWarmupBatchSize &&
+        frame_no % kProcessingBatchSize == kProcessingBatchSize - 1) {
+      timer.StopTimer();
+    }
   }
   webrtc::test::PrintResultMeanAndError(
       "echo_detector_call_durations", "", "StandaloneEchoDetector",
@@ -69,9 +80,7 @@ void RunTogetherWithApm(std::string test_description,
   test::SimulatorBuffers buffers(
       kSampleRate, kSampleRate, kSampleRate, kSampleRate, kNumberOfChannels,
       kNumberOfChannels, kNumberOfChannels, kNumberOfChannels);
-  test::PerformanceTimer render_timer(kNumFramesToProcess);
-  test::PerformanceTimer capture_timer(kNumFramesToProcess);
-  test::PerformanceTimer total_timer(kNumFramesToProcess);
+  test::PerformanceTimer timer(kNumFramesToProcess);
 
   webrtc::Config config;
   AudioProcessing::Config apm_config;
@@ -112,18 +121,20 @@ void RunTogetherWithApm(std::string test_description,
   StreamConfig stream_config(kSampleRate, kNumberOfChannels, false);
 
   for (size_t frame_no = 0; frame_no < kNumFramesToProcess; ++frame_no) {
+    // The first batch of frames are for warming up, and are not part of the
+    // benchmark. After that the processing time is measured in chunks of
+    // kProcessingBatchSize frames.
+    if (frame_no >= kWarmupBatchSize && frame_no % kProcessingBatchSize == 0) {
+      timer.StartTimer();
+    }
+
     buffers.UpdateInputBuffers();
 
-    total_timer.StartTimer();
-    render_timer.StartTimer();
     ASSERT_EQ(
         AudioProcessing::kNoError,
         apm->ProcessReverseStream(&buffers.render_input[0], stream_config,
                                   stream_config, &buffers.render_output[0]));
 
-    render_timer.StopTimer();
-
-    capture_timer.StartTimer();
     ASSERT_EQ(AudioProcessing::kNoError, apm->set_stream_delay_ms(0));
     if (include_default_apm_processing) {
       apm->gain_control()->set_stream_analog_level(0);
@@ -135,19 +146,15 @@ void RunTogetherWithApm(std::string test_description,
               apm->ProcessStream(&buffers.capture_input[0], stream_config,
                                  stream_config, &buffers.capture_output[0]));
 
-    capture_timer.StopTimer();
-    total_timer.StopTimer();
+    if (frame_no >= kWarmupBatchSize &&
+        frame_no % kProcessingBatchSize == kProcessingBatchSize - 1) {
+      timer.StopTimer();
+    }
   }
 
   webrtc::test::PrintResultMeanAndError(
-      "echo_detector_call_durations", "_render", test_description,
-      FormPerformanceMeasureString(render_timer), "us", false);
-  webrtc::test::PrintResultMeanAndError(
-      "echo_detector_call_durations", "_capture", test_description,
-      FormPerformanceMeasureString(capture_timer), "us", false);
-  webrtc::test::PrintResultMeanAndError(
       "echo_detector_call_durations", "_total", test_description,
-      FormPerformanceMeasureString(total_timer), "us", false);
+      FormPerformanceMeasureString(timer), "us", false);
 }
 
 }  // namespace
