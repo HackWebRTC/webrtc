@@ -65,6 +65,7 @@ if (is_android) {
   android_library("AppRTCMobile_javalib") {
     java_files = [
       "androidapp/src/org/appspot/apprtc/AppRTCAudioManager.java",
+      "androidapp/src/org/appspot/apprtc/AppRTCBluetoothManager.java",
       "androidapp/src/org/appspot/apprtc/AppRTCClient.java",
       "androidapp/src/org/appspot/apprtc/AppRTCProximitySensor.java",
       "androidapp/src/org/appspot/apprtc/CallActivity.java",

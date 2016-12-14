@@ -704,6 +704,7 @@ if (rtc_include_tests) {
         "androidjunit/src/org/webrtc/CameraEnumerationTest.java",
         "examples/androidjunit/src/org/appspot/apprtc/DirectRTCClientTest.java",
         "examples/androidjunit/src/org/appspot/apprtc/TCPChannelClientTest.java",
+        "examples/androidjunit/src/org/appspot/apprtc/BluetoothManagerTest.java",
       ]
 
       deps = [

@@ -33,6 +33,9 @@ import java.io.IOException;
 import java.lang.RuntimeException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import org.appspot.apprtc.AppRTCAudioManager.AudioDevice;
+import org.appspot.apprtc.AppRTCAudioManager.AudioManagerEvents;
 import org.appspot.apprtc.AppRTCClient.RoomConnectionParameters;
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.PeerConnectionClient.DataChannelParameters;
@@ -527,18 +530,19 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
     // Create and audio manager that will take care of audio routing,
     // audio modes, audio device enumeration etc.
-    audioManager = AppRTCAudioManager.create(this, new Runnable() {
-      // This method will be called each time the audio state (number and
-      // type of devices) has been changed.
-      @Override
-      public void run() {
-        onAudioManagerChangedState();
-      }
-    });
+    audioManager = AppRTCAudioManager.create(this);
     // Store existing audio settings and change audio mode to
     // MODE_IN_COMMUNICATION for best possible VoIP performance.
-    Log.d(TAG, "Initializing the audio manager...");
-    audioManager.init();
+    Log.d(TAG, "Starting the audio manager...");
+    audioManager.start(new AudioManagerEvents() {
+      // This method will be called each time the number of available audio
+      // devices has changed.
+      @Override
+      public void onAudioDeviceChanged(
+          AudioDevice audioDevice, Set<AudioDevice> availableAudioDevices) {
+        onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
+      }
+    });
   }
 
   // Should be called from UI thread
@@ -555,9 +559,13 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     peerConnectionClient.enableStatsEvents(true, STAT_CALLBACK_PERIOD);
   }
 
-  private void onAudioManagerChangedState() {
-    // TODO(henrika): disable video if AppRTCAudioManager.AudioDevice.EARPIECE
-    // is active.
+  // This method is called when the audio manager reports audio device change,
+  // e.g. from wired headset to speakerphone.
+  private void onAudioManagerDevicesChanged(
+      final AudioDevice device, final Set<AudioDevice> availableDevices) {
+    Log.d(TAG, "onAudioManagerDevicesChanged: " + availableDevices + ", "
+            + "selected: " + device);
+    // TODO(henrika): add callback handler.
   }
 
   // Disconnect from remote resources, dispose of local resources, and exit.
@@ -584,7 +592,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       remoteRenderScreen = null;
     }
     if (audioManager != null) {
-      audioManager.close();
+      audioManager.stop();
       audioManager = null;
     }
     if (iceConnected && !isError) {
