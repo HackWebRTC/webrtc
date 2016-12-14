@@ -1500,7 +1500,6 @@ AecCore* WebRtcAec_CreateAec(int instance_count) {
   WebRtc_set_lookahead(aec->delay_estimator, kLookaheadBlocks);
 #endif
   aec->extended_filter_enabled = 0;
-  aec->aec3_enabled = 0;
   aec->refined_adaptive_filter_enabled = false;
 
   // Assembly optimization
@@ -2012,15 +2011,6 @@ void WebRtcAec_enable_delay_agnostic(AecCore* self, int enable) {
 
 int WebRtcAec_delay_agnostic_enabled(AecCore* self) {
   return self->delay_agnostic_enabled;
-}
-
-void WebRtcAec_enable_aec3(AecCore* self, int enable) {
-  self->aec3_enabled = (enable != 0);
-}
-
-int WebRtcAec_aec3_enabled(AecCore* self) {
-  RTC_DCHECK(self->aec3_enabled == 0 || self->aec3_enabled == 1);
-  return self->aec3_enabled;
 }
 
 void WebRtcAec_enable_refined_adaptive_filter(AecCore* self, bool enable) {

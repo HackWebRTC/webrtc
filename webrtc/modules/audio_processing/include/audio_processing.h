@@ -68,17 +68,6 @@ struct ExtendedFilter {
   bool enabled;
 };
 
-// Enables the next generation AEC functionality. This feature replaces the
-// standard methods for echo removal in the AEC. This configuration only applies
-// to EchoCancellation and not EchoControlMobile. It can be set in the
-// constructor or using AudioProcessing::SetExtraOptions().
-struct EchoCanceller3 {
-  EchoCanceller3() : enabled(false) {}
-  explicit EchoCanceller3(bool enabled) : enabled(enabled) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kEchoCanceller3;
-  bool enabled;
-};
-
 // Enables the refined linear filter adaptation in the echo canceller.
 // This configuration only applies to EchoCancellation and not
 // EchoControlMobile. It can be set in the constructor
@@ -274,6 +263,14 @@ class AudioProcessing {
     struct HighPassFilter {
       bool enabled = false;
     } high_pass_filter;
+
+    // Enables the next generation AEC functionality. This feature replaces the
+    // standard methods for echo removal in the AEC.
+    // The functionality is not yet activated in the code and turning this on
+    // does not yet have the desired behavior.
+    struct EchoCanceller3 {
+      bool enabled = false;
+    } echo_canceller3;
   };
 
   // TODO(mgraczyk): Remove once all methods that use ChannelLayout are gone.

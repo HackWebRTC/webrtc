@@ -491,7 +491,7 @@ void AecDumpBasedSimulator::HandleMessage(
     }
 
     if (settings_.use_aec3) {
-      config.Set<EchoCanceller3>(new EchoCanceller3(*settings_.use_aec3));
+      apm_config.echo_canceller3.enabled = *settings_.use_aec3;
     }
 
     if (settings_.use_lc) {

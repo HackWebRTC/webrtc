@@ -26,6 +26,8 @@ rtc_static_library("audio_processing") {
     "aec/aec_resampler.h",
     "aec/echo_cancellation.cc",
     "aec/echo_cancellation.h",
+    "aec3/echo_canceller3.cc",
+    "aec3/echo_canceller3.h",
     "aecm/aecm_core.cc",
     "aecm/aecm_core.h",
     "aecm/echo_control_mobile.cc",
