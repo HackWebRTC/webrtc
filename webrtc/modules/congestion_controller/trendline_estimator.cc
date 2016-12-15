@@ -13,14 +13,12 @@
 #include <algorithm>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/optional.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 
 namespace webrtc {
 
 namespace {
-rtc::Optional<double> LinearFitSlope(
-    const std::list<std::pair<double, double>> points) {
+double LinearFitSlope(const std::list<std::pair<double, double>> points) {
   RTC_DCHECK(points.size() >= 2);
   // Compute the "center of mass".
   double sum_x = 0;
@@ -38,9 +36,7 @@ rtc::Optional<double> LinearFitSlope(
     numerator += (point.first - x_avg) * (point.second - y_avg);
     denominator += (point.first - x_avg) * (point.first - x_avg);
   }
-  if (denominator == 0)
-    return rtc::Optional<double>();
-  return rtc::Optional<double>(numerator / denominator);
+  return numerator / denominator;
 }
 }  // namespace
 
@@ -53,7 +49,6 @@ TrendlineEstimator::TrendlineEstimator(size_t window_size,
       smoothing_coef_(smoothing_coef),
       threshold_gain_(threshold_gain),
       num_of_deltas_(0),
-      first_arrival_time_ms(-1),
       accumulated_delay_(0),
       smoothed_delay_(0),
       delay_hist_(),
@@ -63,35 +58,30 @@ TrendlineEstimator::~TrendlineEstimator() {}
 
 void TrendlineEstimator::Update(double recv_delta_ms,
                                 double send_delta_ms,
-                                int64_t arrival_time_ms) {
+                                double now_ms) {
   const double delta_ms = recv_delta_ms - send_delta_ms;
   ++num_of_deltas_;
-  if (num_of_deltas_ > kDeltaCounterMax)
+  if (num_of_deltas_ > kDeltaCounterMax) {
     num_of_deltas_ = kDeltaCounterMax;
-  if (first_arrival_time_ms == -1)
-    first_arrival_time_ms = arrival_time_ms;
+  }
 
   // Exponential backoff filter.
   accumulated_delay_ += delta_ms;
-  BWE_TEST_LOGGING_PLOT(1, "accumulated_delay_ms", arrival_time_ms,
-                        accumulated_delay_);
+  BWE_TEST_LOGGING_PLOT(1, "accumulated_delay_ms", now_ms, accumulated_delay_);
   smoothed_delay_ = smoothing_coef_ * smoothed_delay_ +
                     (1 - smoothing_coef_) * accumulated_delay_;
-  BWE_TEST_LOGGING_PLOT(1, "smoothed_delay_ms", arrival_time_ms,
-                        smoothed_delay_);
+  BWE_TEST_LOGGING_PLOT(1, "smoothed_delay_ms", now_ms, smoothed_delay_);
 
   // Simple linear regression.
-  delay_hist_.push_back(std::make_pair(
-      static_cast<double>(arrival_time_ms - first_arrival_time_ms),
-      smoothed_delay_));
-  if (delay_hist_.size() > window_size_)
+  delay_hist_.push_back(std::make_pair(now_ms, smoothed_delay_));
+  if (delay_hist_.size() > window_size_) {
     delay_hist_.pop_front();
+  }
   if (delay_hist_.size() == window_size_) {
-    // Only update trendline_ if it is possible to fit a line to the data.
-    trendline_ = LinearFitSlope(delay_hist_).value_or(trendline_);
+    trendline_ = LinearFitSlope(delay_hist_);
   }
 
-  BWE_TEST_LOGGING_PLOT(1, "trendline_slope", arrival_time_ms, trendline_);
+  BWE_TEST_LOGGING_PLOT(1, "trendline_slope", now_ms, trendline_);
 }
 
 }  // namespace webrtc
