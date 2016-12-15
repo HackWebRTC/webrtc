@@ -7,7 +7,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-"""Script to roll chromium_revision in the WebRTC DEPS file."""
+"""Script to automatically roll dependencies in the WebRTC DEPS file."""
 
 import argparse
 import base64

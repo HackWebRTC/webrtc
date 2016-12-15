@@ -18,10 +18,9 @@ import unittest
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.join(SCRIPT_DIR, os.pardir)
 sys.path.append(PARENT_DIR)
-import roll_chromium_revision
-from roll_chromium_revision import CalculateChangedDepsProper, \
-  GetMatchingDepsEntries, ParseDepsDict, \
-  ParseLocalDepsFile, UpdateDepsFile
+import roll_deps
+from roll_deps import CalculateChangedDepsProper, GetMatchingDepsEntries, \
+  ParseDepsDict, ParseLocalDepsFile, UpdateDepsFile
 
 
 TEST_DATA_VARS = {
@@ -75,13 +74,13 @@ class TestRollChromiumRevision(unittest.TestCase):
     self._new_cr_depsfile = os.path.join(self._output_dir, 'DEPS.chromium.new')
 
     self.fake = FakeCmd()
-    self.old_RunCommand = getattr(roll_chromium_revision, '_RunCommand')
-    setattr(roll_chromium_revision, '_RunCommand', self.fake)
+    self.old_RunCommand = getattr(roll_deps, '_RunCommand')
+    setattr(roll_deps, '_RunCommand', self.fake)
 
   def tearDown(self):
     shutil.rmtree(self._output_dir, ignore_errors=True)
     self.assertEqual(self.fake.expectations, [])
-    setattr(roll_chromium_revision, '_RunCommand', self.old_RunCommand)
+    setattr(roll_deps, '_RunCommand', self.old_RunCommand)
 
   def testUpdateDepsFile(self):
     new_rev = 'aaaaabbbbbcccccdddddeeeeefffff0000011111'

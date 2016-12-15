@@ -405,7 +405,7 @@ def _RunPythonTests(input_api, output_api):
     return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
 
   test_directories = [
-    join('tools', 'autoroller', 'unittests'),
+    join('tools-webrtc', 'autoroller', 'unittests'),
     join('webrtc', 'tools', 'py_event_log_analyzer'),
   ]
 
