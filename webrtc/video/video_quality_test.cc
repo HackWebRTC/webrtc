@@ -103,7 +103,11 @@ class VideoStreamFactory
       int width,
       int height,
       const webrtc::VideoEncoderConfig& encoder_config) override {
-    return streams_;
+    // The highest layer must match the incoming resolution.
+    std::vector<webrtc::VideoStream> streams = streams_;
+    streams[streams_.size() - 1].height = height;
+    streams[streams_.size() - 1].width = width;
+    return streams;
   }
 
   std::vector<webrtc::VideoStream> streams_;
