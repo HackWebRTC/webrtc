@@ -10,14 +10,13 @@
 #ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_MEDIAN_SLOPE_ESTIMATOR_H_
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_MEDIAN_SLOPE_ESTIMATOR_H_
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <list>
+#include <utility>
 #include <vector>
 
 #include "webrtc/base/analytics/percentile_filter.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/common_types.h"
 
 namespace webrtc {
 
@@ -33,9 +32,7 @@ class MedianSlopeEstimator {
 
   // Update the estimator with a new sample. The deltas should represent deltas
   // between timestamp groups as defined by the InterArrival class.
-  void Update(double recv_delta_ms,
-              double send_delta_ms,
-              int64_t arrival_time_ms);
+  void Update(double recv_delta_ms, double send_delta_ms, double now_ms);
 
   // Returns the estimated trend k multiplied by some gain.
   // 0 < k < 1   ->  the delay increases, queues are filling up
@@ -48,11 +45,11 @@ class MedianSlopeEstimator {
 
  private:
   struct DelayInfo {
-    DelayInfo(int64_t time, double delay, size_t slope_count)
+    DelayInfo(double time, double delay, size_t slope_count)
         : time(time), delay(delay) {
       slopes.reserve(slope_count);
     }
-    int64_t time;
+    double time;
     double delay;
     std::vector<double> slopes;
   };
