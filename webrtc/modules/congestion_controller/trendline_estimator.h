@@ -10,11 +10,13 @@
 #ifndef WEBRTC_MODULES_CONGESTION_CONTROLLER_TRENDLINE_ESTIMATOR_H_
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_TRENDLINE_ESTIMATOR_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <list>
 #include <utility>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/common_types.h"
 
 namespace webrtc {
 
@@ -33,7 +35,9 @@ class TrendlineEstimator {
 
   // Update the estimator with a new sample. The deltas should represent deltas
   // between timestamp groups as defined by the InterArrival class.
-  void Update(double recv_delta_ms, double send_delta_ms, double now_ms);
+  void Update(double recv_delta_ms,
+              double send_delta_ms,
+              int64_t arrival_time_ms);
 
   // Returns the estimated trend k multiplied by some gain.
   // 0 < k < 1   ->  the delay increases, queues are filling up
@@ -51,6 +55,8 @@ class TrendlineEstimator {
   const double threshold_gain_;
   // Used by the existing threshold.
   unsigned int num_of_deltas_;
+  // Keep the arrival times small by using the change from the first packet.
+  int64_t first_arrival_time_ms;
   // Exponential backoff filtering.
   double accumulated_delay_;
   double smoothed_delay_;
