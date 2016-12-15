@@ -25,7 +25,10 @@
 
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  RTCInitFieldTrials(RTCFieldTrialOptionsImprovedBitrateEstimate);
+  NSDictionary *fieldTrials = @{
+    kRTCFieldTrialImprovedBitrateEstimateKey: kRTCFieldTrialEnabledValue,
+  };
+  RTCInitFieldTrialDictionary(fieldTrials);
   RTCInitializeSSL();
   RTCSetupInternalTracer();
   _window =  [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
