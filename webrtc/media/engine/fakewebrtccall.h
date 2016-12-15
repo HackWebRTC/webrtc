@@ -165,7 +165,7 @@ class FakeVideoSendStream final
   bool resolution_scaling_enabled_;
   rtc::VideoSourceInterface<webrtc::VideoFrame>* source_;
   int num_swapped_frames_;
-  webrtc::VideoFrame last_frame_;
+  rtc::Optional<webrtc::VideoFrame> last_frame_;
   webrtc::VideoSendStream::Stats stats_;
   int num_encoder_reconfigurations_ = 0;
 };

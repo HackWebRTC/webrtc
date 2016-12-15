@@ -37,8 +37,15 @@ TEST(VideoBroadcasterTest, OnFrame) {
   FakeVideoRenderer sink2;
   broadcaster.AddOrUpdateSink(&sink1, rtc::VideoSinkWants());
   broadcaster.AddOrUpdateSink(&sink2, rtc::VideoSinkWants());
+  static int kWidth = 100;
+  static int kHeight = 50;
 
-  webrtc::VideoFrame frame;
+  rtc::scoped_refptr<webrtc::I420Buffer> buffer(
+      webrtc::I420Buffer::Create(kWidth, kHeight));
+  // Initialize, to avoid warnings on use of initialized values.
+  buffer->SetToBlack();
+
+  webrtc::VideoFrame frame(buffer, webrtc::kVideoRotation_0, 0);
 
   broadcaster.OnFrame(frame);
   EXPECT_EQ(1, sink1.num_rendered_frames());

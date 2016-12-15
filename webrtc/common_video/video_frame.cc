@@ -23,13 +23,6 @@ namespace webrtc {
 // to optimized bitstream readers. See avcodec_decode_video2.
 const size_t EncodedImage::kBufferPaddingBytesH264 = 8;
 
-VideoFrame::VideoFrame()
-    : video_frame_buffer_(nullptr),
-      timestamp_rtp_(0),
-      ntp_time_ms_(0),
-      timestamp_us_(0),
-      rotation_(kVideoRotation_0) {}
-
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        webrtc::VideoRotation rotation,
                        int64_t timestamp_us)
@@ -57,10 +50,6 @@ int VideoFrame::width() const {
 
 int VideoFrame::height() const {
   return video_frame_buffer_ ? video_frame_buffer_->height() : 0;
-}
-
-bool VideoFrame::IsZeroSize() const {
-  return !video_frame_buffer_;
 }
 
 rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
