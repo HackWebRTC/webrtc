@@ -940,6 +940,7 @@ Channel::Channel(int32_t channelId,
   RtpRtcp::Configuration configuration;
   configuration.audio = true;
   configuration.outgoing_transport = this;
+  configuration.overhead_observer = this;
   configuration.receive_statistics = rtp_receive_statistics_.get();
   configuration.bandwidth_callback = rtcp_observer_.get();
   if (pacing_enabled_) {
@@ -2879,6 +2880,14 @@ void Channel::SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
 
 void Channel::SetTransportOverhead(int transport_overhead_per_packet) {
   _rtpRtcpModule->SetTransportOverhead(transport_overhead_per_packet);
+}
+
+void Channel::OnOverheadChanged(size_t overhead_bytes_per_packet) {
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder) {
+      (*encoder)->OnReceivedOverhead(overhead_bytes_per_packet);
+    }
+  });
 }
 
 int Channel::RegisterExternalMediaProcessing(ProcessingTypes type,

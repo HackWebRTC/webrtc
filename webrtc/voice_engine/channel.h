@@ -144,8 +144,8 @@ class Channel
       public AudioPacketizationCallback,  // receive encoded packets from the
                                           // ACM
       public ACMVADCallback,              // receive voice activity from the ACM
-      public MixerParticipant  // supplies output mixer with audio frames
-{
+      public MixerParticipant,  // supplies output mixer with audio frames
+      public OverheadObserver {
  public:
   friend class VoERtcpObserver;
 
@@ -416,6 +416,9 @@ class Channel
 
   void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
   void SetTransportOverhead(int transport_overhead_per_packet);
+
+  // From OverheadObserver in the RTP/RTCP module
+  void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
 
  protected:
   void OnIncomingFractionLoss(int fraction_lost);
