@@ -83,8 +83,8 @@ TEST_F(ProbeControllerTest, TestExponentialProbing) {
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
 
-  // Repeated probe should only be sent when estimated bitrate climbs above 4 *
-  // kStartBitrateBps = 1200.
+  // Repeated probe should only be sent when estimated bitrate climbs above
+  // 0.7 * 6 * kStartBitrateBps = 1260.
   EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(0);
   probe_controller_->SetEstimatedBitrate(1000);
   testing::Mock::VerifyAndClearExpectations(&pacer_);
@@ -158,6 +158,21 @@ TEST_F(ProbeControllerTest, PeriodicProbing) {
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(500);
   testing::Mock::VerifyAndClearExpectations(&pacer_);
+}
+
+TEST_F(ProbeControllerTest, TestExponentialProbingOverflow) {
+  const int64_t kMbpsMultiplier = 1000000;
+  probe_controller_->SetBitrates(kMinBitrateBps, 10 * kMbpsMultiplier,
+                                 100 * kMbpsMultiplier);
+
+  // Verify that probe bitrate is capped at the specified max bitrate
+  EXPECT_CALL(pacer_, CreateProbeCluster(100 * kMbpsMultiplier, _));
+  probe_controller_->SetEstimatedBitrate(60 * kMbpsMultiplier);
+  testing::Mock::VerifyAndClearExpectations(&pacer_);
+
+  // Verify that repeated probes aren't sent.
+  EXPECT_CALL(pacer_, CreateProbeCluster(_, _)).Times(0);
+  probe_controller_->SetEstimatedBitrate(100 * kMbpsMultiplier);
 }
 
 }  // namespace test

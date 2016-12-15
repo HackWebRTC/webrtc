@@ -14,6 +14,7 @@
 #include <initializer_list>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -35,7 +36,7 @@ constexpr int kExponentialProbingDisabled = 0;
 
 // Default probing bitrate limit. Applied only when the application didn't
 // specify max bitrate.
-constexpr int kDefaultMaxProbingBitrateBps = 5000000;
+constexpr int64_t kDefaultMaxProbingBitrateBps = 5000000;
 
 // This is a limit on how often probing can be done when there is a BW
 // drop detected in ALR.
@@ -44,8 +45,11 @@ constexpr int64_t kAlrProbingIntervalMinMs = 5000;
 // Interval between probes when ALR periodic probing is enabled.
 constexpr int64_t kAlrPeriodicProbingIntervalMs = 5000;
 
-// Minimum probe bitrate percentage to probe further for repeated probes.
-constexpr int kRepeatedProbeMinPercentage = 125;
+// Minimum probe bitrate percentage to probe further for repeated probes,
+// relative to the previous probe. For example, if 1Mbps probe results in
+// 80kbps, then we'll probe again at 1.6Mbps. In that case second probe won't be
+// sent if we get 600kbps from the first one.
+constexpr int kRepeatedProbeMinPercentage = 70;
 
 }  // namespace
 
@@ -62,9 +66,9 @@ ProbeController::ProbeController(PacedSender* pacer, Clock* clock)
       last_alr_probing_time_(clock_->TimeInMilliseconds()),
       enable_periodic_alr_probing_(false) {}
 
-void ProbeController::SetBitrates(int min_bitrate_bps,
-                                  int start_bitrate_bps,
-                                  int max_bitrate_bps) {
+void ProbeController::SetBitrates(int64_t min_bitrate_bps,
+                                  int64_t start_bitrate_bps,
+                                  int64_t max_bitrate_bps) {
   rtc::CritScope cs(&critsect_);
 
   if (start_bitrate_bps > 0)  {
@@ -73,7 +77,7 @@ void ProbeController::SetBitrates(int min_bitrate_bps,
     start_bitrate_bps_ = min_bitrate_bps;
   }
 
-  int old_max_bitrate_bps = max_bitrate_bps_;
+  int64_t old_max_bitrate_bps = max_bitrate_bps_;
   max_bitrate_bps_ = max_bitrate_bps;
 
   switch (state_) {
@@ -87,11 +91,10 @@ void ProbeController::SetBitrates(int min_bitrate_bps,
 
     case State::kProbingComplete:
       // Initiate probing when |max_bitrate_| was increased mid-call.
-      if (estimated_bitrate_bps_ != 0 &&
+      if (estimated_bitrate_bps_ != kExponentialProbingDisabled &&
           estimated_bitrate_bps_ < old_max_bitrate_bps &&
           max_bitrate_bps_ > old_max_bitrate_bps) {
-        InitiateProbing(clock_->TimeInMilliseconds(), {max_bitrate_bps},
-                        kExponentialProbingDisabled);
+        InitiateProbing(clock_->TimeInMilliseconds(), {max_bitrate_bps}, false);
       }
       break;
   }
@@ -112,11 +115,10 @@ void ProbeController::InitiateExponentialProbing() {
   // When probing at 1.8 Mbps ( 6x 300), this represents a threshold of
   // 1.2 Mbps to continue probing.
   InitiateProbing(clock_->TimeInMilliseconds(),
-                  {3 * start_bitrate_bps_, 6 * start_bitrate_bps_},
-                  4 * start_bitrate_bps_);
+                  {3 * start_bitrate_bps_, 6 * start_bitrate_bps_}, true);
 }
 
-void ProbeController::SetEstimatedBitrate(int bitrate_bps) {
+void ProbeController::SetEstimatedBitrate(int64_t bitrate_bps) {
   rtc::CritScope cs(&critsect_);
   int64_t now_ms = clock_->TimeInMilliseconds();
 
@@ -128,10 +130,8 @@ void ProbeController::SetEstimatedBitrate(int bitrate_bps) {
                  << min_bitrate_to_probe_further_bps_;
     if (min_bitrate_to_probe_further_bps_ != kExponentialProbingDisabled &&
         bitrate_bps > min_bitrate_to_probe_further_bps_) {
-      // Double the probing bitrate and expect a minimum of 25% gain to
-      // continue probing.
-      InitiateProbing(now_ms, {2 * bitrate_bps},
-                      bitrate_bps * kRepeatedProbeMinPercentage / 100);
+      // Double the probing bitrate.
+      InitiateProbing(now_ms, {2 * bitrate_bps}, true);
     }
   }
 
@@ -151,8 +151,7 @@ void ProbeController::SetEstimatedBitrate(int bitrate_bps) {
     // Track how often we probe in response to BW drop in ALR.
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.BWE.AlrProbingIntervalInS",
                                (now_ms - last_alr_probing_time_) / 1000);
-    InitiateProbing(now_ms, {estimated_bitrate_bps_},
-                    kExponentialProbingDisabled);
+    InitiateProbing(now_ms, {estimated_bitrate_bps_}, false);
     last_alr_probing_time_ = now_ms;
 
     // TODO(isheriff): May want to track when we did ALR probing in order
@@ -192,35 +191,41 @@ void ProbeController::Process() {
         std::max(*alr_start_time, time_last_probing_initiated_ms_) +
         kAlrPeriodicProbingIntervalMs;
     if (now_ms >= next_probe_time_ms) {
-      InitiateProbing(
-          now_ms, {estimated_bitrate_bps_ * 2},
-          estimated_bitrate_bps_ * kRepeatedProbeMinPercentage / 100);
+      InitiateProbing(now_ms, {estimated_bitrate_bps_ * 2}, true);
     }
   }
 }
 
 void ProbeController::InitiateProbing(
     int64_t now_ms,
-    std::initializer_list<int> bitrates_to_probe,
-    int min_bitrate_to_probe_further_bps) {
+    std::initializer_list<int64_t> bitrates_to_probe,
+    bool probe_further) {
   bool first_cluster = true;
-  for (int bitrate : bitrates_to_probe) {
-    int max_probe_bitrate_bps =
+  for (int64_t bitrate : bitrates_to_probe) {
+    int64_t max_probe_bitrate_bps =
         max_bitrate_bps_ > 0 ? max_bitrate_bps_ : kDefaultMaxProbingBitrateBps;
-    bitrate = std::min(bitrate, max_probe_bitrate_bps);
+    if (bitrate > max_probe_bitrate_bps) {
+      bitrate = max_probe_bitrate_bps;
+      probe_further = false;
+    }
     if (first_cluster) {
-      pacer_->CreateProbeCluster(bitrate, kProbeDeltasPerCluster + 1);
+      pacer_->CreateProbeCluster(rtc::checked_cast<int>(bitrate),
+                                 kProbeDeltasPerCluster + 1);
       first_cluster = false;
     } else {
-      pacer_->CreateProbeCluster(bitrate, kProbeDeltasPerCluster);
+      pacer_->CreateProbeCluster(rtc::checked_cast<int>(bitrate),
+                                 kProbeDeltasPerCluster);
     }
   }
-  min_bitrate_to_probe_further_bps_ = min_bitrate_to_probe_further_bps;
   time_last_probing_initiated_ms_ = now_ms;
-  if (min_bitrate_to_probe_further_bps == kExponentialProbingDisabled)
-    state_ = State::kProbingComplete;
-  else
+  if (probe_further) {
     state_ = State::kWaitingForProbingResult;
+    min_bitrate_to_probe_further_bps_ =
+        (*(bitrates_to_probe.end() - 1)) * kRepeatedProbeMinPercentage / 100;
+  } else {
+    state_ = State::kProbingComplete;
+    min_bitrate_to_probe_further_bps_ = kExponentialProbingDisabled;
+  }
 }
 
 }  // namespace webrtc
