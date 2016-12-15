@@ -128,7 +128,7 @@
       'linux32_rel': 'release_bot_x86',
       'linux_arm': 'release_bot_arm',
       'linux_asan': 'asan_lsan_clang_release_bot_x64',
-      'linux_memcheck': 'release_bot_x64',
+      'linux_memcheck': 'memcheck_release_bot_x64',
       'linux_msan': 'msan_clang_release_bot_x64',
       'linux_tsan2': 'tsan_clang_release_bot_x64',
       'linux_ubsan': 'ubsan_clang_release_bot_x64',
