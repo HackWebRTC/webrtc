@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/linked_ptr.h"
+
 namespace rtc {
 
 class CryptStringImpl {

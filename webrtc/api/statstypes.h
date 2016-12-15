@@ -22,6 +22,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/linked_ptr.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/stringencode.h"
@@ -320,7 +321,7 @@ class StatsReport {
 
   // TODO(tommi): Consider using a similar approach to how we store Ids using
   // scoped_refptr for values.
-  typedef std::unique_ptr<Value> ValuePtr;
+  typedef rtc::linked_ptr<Value> ValuePtr;
   typedef std::map<StatsValueName, ValuePtr> Values;
 
   // Ownership of |id| is passed to |this|.
