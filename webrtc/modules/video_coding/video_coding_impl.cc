@@ -13,16 +13,17 @@
 #include <algorithm>
 #include <utility>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/include/video_codec_initializer.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
-#include "webrtc/modules/video_coding/encoded_frame.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/packet.h"
+#include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -84,9 +85,11 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                         EncodedImageCallback* pre_decode_image_callback)
       : VideoCodingModule(),
         sender_(clock, &post_encode_callback_, nullptr),
+        timing_(new VCMTiming(clock)),
         receiver_(clock,
                   event_factory,
                   pre_decode_image_callback,
+                  timing_.get(),
                   nack_sender,
                   keyframe_request_sender) {}
 
@@ -277,6 +280,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   EncodedImageCallbackWrapper post_encode_callback_;
   vcm::VideoSender sender_;
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_;
+  std::unique_ptr<VCMTiming> timing_;
   vcm::VideoReceiver receiver_;
 };
 }  // namespace

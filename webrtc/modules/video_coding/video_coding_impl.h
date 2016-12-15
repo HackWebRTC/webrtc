@@ -148,6 +148,7 @@ class VideoReceiver : public Module {
   VideoReceiver(Clock* clock,
                 EventFactory* event_factory,
                 EncodedImageCallback* pre_decode_image_callback,
+                VCMTiming* timing,
                 NackSender* nack_sender = nullptr,
                 KeyFrameRequestSender* keyframe_request_sender = nullptr);
   ~VideoReceiver();
@@ -208,7 +209,7 @@ class VideoReceiver : public Module {
   Clock* const clock_;
   rtc::CriticalSection process_crit_;
   rtc::CriticalSection receive_crit_;
-  VCMTiming _timing;
+  VCMTiming* _timing;
   VCMReceiver _receiver;
   VCMDecodedFrameCallback _decodedFrameCallback;
   VCMFrameTypeCallback* _frameTypeCallback GUARDED_BY(process_crit_);

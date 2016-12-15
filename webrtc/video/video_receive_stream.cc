@@ -203,9 +203,9 @@ VideoReceiveStream::VideoReceiveStream(
       decode_thread_(DecodeThreadFunction, this, "DecodingThread"),
       congestion_controller_(congestion_controller),
       call_stats_(call_stats),
-      video_receiver_(clock_, nullptr, this, this, this),
-      stats_proxy_(&config_, clock_),
       timing_(new VCMTiming(clock_)),
+      video_receiver_(clock_, nullptr, this, timing_.get(), this, this),
+      stats_proxy_(&config_, clock_),
       rtp_stream_receiver_(
           &video_receiver_,
           congestion_controller_->GetRemoteBitrateEstimator(

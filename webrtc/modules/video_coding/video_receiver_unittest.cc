@@ -15,6 +15,7 @@
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/test/test_util.h"
+#include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"
@@ -33,7 +34,9 @@ class TestVideoReceiver : public ::testing::Test {
   TestVideoReceiver() : clock_(0) {}
 
   virtual void SetUp() {
-    receiver_.reset(new VideoReceiver(&clock_, &event_factory_, nullptr));
+    timing_.reset(new VCMTiming(&clock_));
+    receiver_.reset(
+        new VideoReceiver(&clock_, &event_factory_, nullptr, timing_.get()));
     receiver_->RegisterExternalDecoder(&decoder_, kUnusedPayloadType);
     const size_t kMaxNackListSize = 250;
     const int kMaxPacketAgeToNack = 450;
@@ -75,6 +78,7 @@ class TestVideoReceiver : public ::testing::Test {
   NiceMock<MockVideoDecoder> decoder_;
   NiceMock<MockPacketRequestCallback> packet_request_callback_;
 
+  std::unique_ptr<VCMTiming> timing_;
   std::unique_ptr<VideoReceiver> receiver_;
 };
 
