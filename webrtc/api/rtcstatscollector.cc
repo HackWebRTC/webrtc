@@ -640,7 +640,7 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
         // TODO(hbos): The |info.rtt| measurement is smoothed. It shouldn't be
         // smoothed according to the spec. crbug.com/633550. See
         // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentrtt
-        candidate_pair_stats->current_rtt =
+        candidate_pair_stats->current_round_trip_time =
             static_cast<double>(info.rtt) / rtc::kNumMillisecsPerSec;
         candidate_pair_stats->requests_received =
             static_cast<uint64_t>(info.recv_ping_requests);

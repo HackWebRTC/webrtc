@@ -134,10 +134,10 @@ class RTCIceCandidatePairStats final : public RTCStats {
   RTCStatsMember<uint64_t> bytes_sent;
   RTCStatsMember<uint64_t> bytes_received;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
-  RTCStatsMember<double> total_rtt;
+  RTCStatsMember<double> total_round_trip_time;
   // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
   // crbug.com/633550
-  RTCStatsMember<double> current_rtt;
+  RTCStatsMember<double> current_round_trip_time;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<double> available_outgoing_bitrate;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550

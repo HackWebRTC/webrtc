@@ -1043,7 +1043,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   expected_pair.writable = true;
   expected_pair.bytes_sent = 42;
   expected_pair.bytes_received = 1234;
-  expected_pair.current_rtt = 1.337;
+  expected_pair.current_round_trip_time = 1.337;
   expected_pair.requests_received = 2020;
   expected_pair.requests_sent = 2000;
   expected_pair.responses_received = 4321;
