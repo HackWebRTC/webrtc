@@ -450,7 +450,7 @@ class RTCStatsReportVerifier {
     verifier->TestMemberIsUndefined(stream.media_track_id);
     verifier->TestMemberIsIDReference(
         stream.transport_id, RTCTransportStats::kType);
-    verifier->TestMemberIsDefined(stream.codec_id);
+    verifier->TestMemberIsIDReference(stream.codec_id, RTCCodecStats::kType);
     if (stream.media_type.is_defined() && *stream.media_type == "video") {
       verifier->TestMemberIsDefined(stream.fir_count);
       verifier->TestMemberIsDefined(stream.pli_count);
@@ -510,9 +510,12 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsOptionalIDReference(
         transport.rtcp_transport_stats_id, RTCTransportStats::kType);
     verifier.TestMemberIsDefined(transport.active_connection);
-    verifier.TestMemberIsDefined(transport.selected_candidate_pair_id);
-    verifier.TestMemberIsDefined(transport.local_certificate_id);
-    verifier.TestMemberIsDefined(transport.remote_certificate_id);
+    verifier.TestMemberIsIDReference(
+        transport.selected_candidate_pair_id, RTCIceCandidatePairStats::kType);
+    verifier.TestMemberIsIDReference(
+        transport.local_certificate_id, RTCCertificateStats::kType);
+    verifier.TestMemberIsIDReference(
+        transport.remote_certificate_id, RTCCertificateStats::kType);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
