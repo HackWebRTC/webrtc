@@ -77,6 +77,7 @@ public class WebRtcAudioTrack {
         assertTrue(audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING);
       } catch (IllegalStateException e) {
         Logging.e(TAG, "AudioTrack.play failed: " + e.getMessage());
+        releaseAudioResources();
         return;
       }
 
@@ -202,14 +203,16 @@ public class WebRtcAudioTrack {
           AudioFormat.ENCODING_PCM_16BIT, minBufferSizeInBytes, AudioTrack.MODE_STREAM);
     } catch (IllegalArgumentException e) {
       Logging.d(TAG, e.getMessage());
+      releaseAudioResources();
       return false;
     }
 
     // It can happen that an AudioTrack is created but it was not successfully
     // initialized upon creation. Seems to be the case e.g. when the maximum
     // number of globally available audio tracks is exceeded.
-    if (audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
+    if (audioTrack == null || audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
       Logging.e(TAG, "Initialization of audio track failed.");
+      releaseAudioResources();
       return false;
     }
     logMainParameters();
@@ -222,7 +225,7 @@ public class WebRtcAudioTrack {
     assertTrue(audioTrack != null);
     assertTrue(audioThread == null);
     if (audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
-      Logging.e(TAG, "Audio track is not successfully initialized.");
+      Logging.e(TAG, "AudioTrack instance is not successfully initialized.");
       return false;
     }
     audioThread = new AudioTrackThread("AudioTrackJavaThread");
@@ -236,10 +239,7 @@ public class WebRtcAudioTrack {
     logUnderrunCount();
     audioThread.joinThread();
     audioThread = null;
-    if (audioTrack != null) {
-      audioTrack.release();
-      audioTrack = null;
-    }
+    releaseAudioResources();
     return true;
   }
 
@@ -329,5 +329,13 @@ public class WebRtcAudioTrack {
   public static void setSpeakerMute(boolean mute) {
     Logging.w(TAG, "setSpeakerMute(" + mute + ")");
     speakerMute = mute;
+  }
+
+  // Releases the native AudioTrack resources.
+  private void releaseAudioResources() {
+    if (audioTrack != null) {
+      audioTrack.release();
+      audioTrack = null;
+    }
   }
 }

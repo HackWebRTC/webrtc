@@ -189,10 +189,12 @@ public class WebRtcAudioRecord {
           AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
     } catch (IllegalArgumentException e) {
       Logging.e(TAG, e.getMessage());
+      releaseAudioResources();
       return -1;
     }
     if (audioRecord == null || audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
       Logging.e(TAG, "Failed to create a new AudioRecord instance");
+      releaseAudioResources();
       return -1;
     }
     if (effects != null) {
@@ -233,8 +235,7 @@ public class WebRtcAudioRecord {
     if (effects != null) {
       effects.release();
     }
-    audioRecord.release();
-    audioRecord = null;
+    releaseAudioResources();
     return true;
   }
 
@@ -273,5 +274,13 @@ public class WebRtcAudioRecord {
   public static void setMicrophoneMute(boolean mute) {
     Logging.w(TAG, "setMicrophoneMute(" + mute + ")");
     microphoneMute = mute;
+  }
+
+  // Releases the native AudioRecord resources.
+  private void releaseAudioResources() {
+    if (audioRecord != null) {
+      audioRecord.release();
+      audioRecord = null;
+    }
   }
 }
