@@ -91,8 +91,6 @@ BandwidthUsage OveruseDetector::Detect(double offset,
   if (num_of_deltas < 2) {
     return kBwNormal;
   }
-  const double prev_offset = prev_offset_;
-  prev_offset_ = offset;
   const double T = std::min(num_of_deltas, kMinNumDeltas) * offset;
   BWE_TEST_LOGGING_PLOT(1, "offset_ms#1", now_ms, offset);
   BWE_TEST_LOGGING_PLOT(1, "gamma_ms#1", now_ms, threshold_ / kMinNumDeltas);
@@ -108,7 +106,7 @@ BandwidthUsage OveruseDetector::Detect(double offset,
     }
     overuse_counter_++;
     if (time_over_using_ > overusing_time_threshold_ && overuse_counter_ > 1) {
-      if (offset >= prev_offset) {
+      if (offset >= prev_offset_) {
         time_over_using_ = 0;
         overuse_counter_ = 0;
         hypothesis_ = kBwOverusing;
@@ -123,6 +121,7 @@ BandwidthUsage OveruseDetector::Detect(double offset,
     overuse_counter_ = 0;
     hypothesis_ = kBwNormal;
   }
+  prev_offset_ = offset;
 
   UpdateThreshold(T, now_ms);
 
