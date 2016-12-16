@@ -62,6 +62,8 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/RTCUIApplication.h",
         "objc/Framework/Classes/RTCUIApplication.mm",
         "objc/Framework/Classes/UIDevice+RTCDevice.mm",
+        "objc/Framework/Classes/helpers.h",
+        "objc/Framework/Classes/helpers.mm",
         "objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h",
         "objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h",
       ]

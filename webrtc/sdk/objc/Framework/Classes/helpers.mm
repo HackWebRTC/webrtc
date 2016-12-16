@@ -19,7 +19,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/modules/audio_device/ios/helpers_ios.h"
+#include "webrtc/sdk/objc/Framework/Classes/helpers.h"
 
 namespace webrtc {
 namespace ios {
@@ -86,8 +86,6 @@ const char* LookUpRealName(const char* raw_name) {
   return "";
 }
 
-// TODO(henrika): move to shared location.
-// See https://code.google.com/p/webrtc/issues/detail?id=4773 for details.
 NSString* NSStringFromStdString(const std::string& stdString) {
   // std::string may contain null termination character so we construct
   // using length.
