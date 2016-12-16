@@ -754,7 +754,7 @@ void ViEEncoder::ScaleUp(ScaleReason reason) {
   LOG(LS_INFO) << "Scaling up resolution.";
   for (size_t i = 0; i < kScaleReasonSize; ++i) {
     LOG(LS_INFO) << "Scaled " << scale_counter_[i]
-                 << " times for reason: " << (i ? "quality" : "cpu");
+                 << " times for reason: " << (i ? "cpu" : "quality");
   }
 }
 
