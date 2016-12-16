@@ -428,9 +428,6 @@ if (rtc_include_tests) {
       "base/stringencode_unittest.cc",
       "base/stringutils_unittest.cc",
       "base/swap_queue_unittest.cc",
-
-      # TODO(ronghuawu): Reenable this test.
-      # "systeminfo_unittest.cc",
       "base/task_queue_unittest.cc",
       "base/task_unittest.cc",
       "base/testclient_unittest.cc",
