@@ -130,23 +130,20 @@ class RTCPSender::RtcpContext {
               const uint16_t* nack_list,
               bool repeat,
               uint64_t picture_id,
-              uint32_t ntp_sec,
-              uint32_t ntp_frac)
+              NtpTime now)
       : feedback_state_(feedback_state),
         nack_size_(nack_size),
         nack_list_(nack_list),
         repeat_(repeat),
         picture_id_(picture_id),
-        ntp_sec_(ntp_sec),
-        ntp_frac_(ntp_frac) {}
+        now_(now) {}
 
   const FeedbackState& feedback_state_;
   const int32_t nack_size_;
   const uint16_t* nack_list_;
   const bool repeat_;
   const uint64_t picture_id_;
-  const uint32_t ntp_sec_;
-  const uint32_t ntp_frac_;
+  const NtpTime now_;
 };
 
 RTCPSender::RTCPSender(
@@ -453,7 +450,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
 
   rtcp::SenderReport* report = new rtcp::SenderReport();
   report->SetSenderSsrc(ssrc_);
-  report->SetNtp(NtpTime(ctx.ntp_sec_, ctx.ntp_frac_));
+  report->SetNtp(ctx.now_);
   report->SetRtpTimestamp(rtp_timestamp);
   report->SetPacketCount(ctx.feedback_state_.packets_sent);
   report->SetOctetCount(ctx.feedback_state_.media_bytes_sent);
@@ -702,7 +699,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildExtendedReports(
 
   if (!sending_ && xr_send_receiver_reference_time_enabled_) {
     rtcp::Rrtr rrtr;
-    rrtr.SetNtp(NtpTime(ctx.ntp_sec_, ctx.ntp_frac_));
+    rrtr.SetNtp(ctx.now_);
     xr->SetRrtr(rrtr);
   }
 
@@ -787,11 +784,8 @@ int32_t RTCPSender::SendCompoundRTCP(
       packet_type_counter_.first_packet_time_ms = clock_->TimeInMilliseconds();
 
     // We need to send our NTP even if we haven't received any reports.
-    uint32_t ntp_sec;
-    uint32_t ntp_frac;
-    clock_->CurrentNtp(ntp_sec, ntp_frac);
     RtcpContext context(feedback_state, nack_size, nack_list, repeat, pictureID,
-                        ntp_sec, ntp_frac);
+                        NtpTime(*clock_));
 
     PrepareReport(feedback_state);
 
