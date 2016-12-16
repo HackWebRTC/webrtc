@@ -293,7 +293,7 @@ TEST(RtpPacketTest, ParseWithExtensionDelayed) {
 
   int32_t time_offset;
   EXPECT_FALSE(packet.GetExtension<TransmissionOffset>(&time_offset));
-  packet.IdentifyExtensions(&extensions);
+  packet.IdentifyExtensions(extensions);
   EXPECT_TRUE(packet.GetExtension<TransmissionOffset>(&time_offset));
   EXPECT_EQ(kTimeOffset, time_offset);
   EXPECT_EQ(0u, packet.payload_size());

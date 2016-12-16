@@ -35,10 +35,8 @@ class Packet {
   // Parse and move given buffer into Packet.
   bool Parse(rtc::CopyOnWriteBuffer packet);
 
-  // Maps parsed extensions to their types to allow use of GetExtension.
-  // Used after parsing when |extensions| can't be provided until base rtp
-  // header is parsed.
-  void IdentifyExtensions(const ExtensionManager* extensions);
+  // Maps extensions id to their types.
+  void IdentifyExtensions(const ExtensionManager& extensions);
 
   // Header.
   bool Marker() const;
@@ -106,6 +104,7 @@ class Packet {
   // packet creating and used if available in Parse function.
   // Adding and getting extensions will fail until |extensions| is
   // provided via constructor or IdentifyExtensions function.
+  Packet();
   explicit Packet(const ExtensionManager* extensions);
   Packet(const Packet&) = default;
   Packet(const ExtensionManager* extensions, size_t capacity);
@@ -144,8 +143,6 @@ class Packet {
   uint8_t* WriteAt(size_t offset);
   void WriteAt(size_t offset, uint8_t byte);
 
-  const ExtensionManager* extensions_;
-
   // Header.
   bool marker_;
   uint8_t payload_type_;
@@ -156,12 +153,9 @@ class Packet {
   size_t payload_offset_;  // Match header size with csrcs and extensions.
   size_t payload_size_;
 
-  uint8_t num_extensions_ = 0;
   ExtensionInfo extension_entries_[kMaxExtensionHeaders];
   uint16_t extensions_size_ = 0;  // Unaligned.
   rtc::CopyOnWriteBuffer buffer_;
-
-  Packet() = delete;
 };
 
 template <typename Extension>
