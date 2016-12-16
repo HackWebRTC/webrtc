@@ -243,7 +243,8 @@ VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
       stream_id_(stream_id),
       channel_(channel),
       track_(track),
-      cached_track_enabled_(track->enabled()) {
+      cached_track_enabled_(track->enabled()),
+      cached_track_content_hint_(track->content_hint()) {
   track_->RegisterObserver(this);
 }
 
@@ -253,7 +254,8 @@ VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
       stream_id_(rtc::CreateRandomUuid()),
       channel_(channel),
       track_(track),
-      cached_track_enabled_(track->enabled()) {
+      cached_track_enabled_(track->enabled()),
+      cached_track_content_hint_(track->content_hint()) {
   track_->RegisterObserver(this);
 }
 
@@ -269,8 +271,10 @@ VideoRtpSender::~VideoRtpSender() {
 void VideoRtpSender::OnChanged() {
   TRACE_EVENT0("webrtc", "VideoRtpSender::OnChanged");
   RTC_DCHECK(!stopped_);
-  if (cached_track_enabled_ != track_->enabled()) {
+  if (cached_track_enabled_ != track_->enabled() ||
+      cached_track_content_hint_ != track_->content_hint()) {
     cached_track_enabled_ = track_->enabled();
+    cached_track_content_hint_ = track_->content_hint();
     if (can_send_track()) {
       SetVideoSend();
     }
@@ -303,6 +307,7 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   track_ = video_track;
   if (track_) {
     cached_track_enabled_ = track_->enabled();
+    cached_track_content_hint_ = track_->content_hint();
     track_->RegisterObserver(this);
   }
 
@@ -371,6 +376,16 @@ void VideoRtpSender::SetVideoSend() {
   if (source) {
     options.is_screencast = rtc::Optional<bool>(source->is_screencast());
     options.video_noise_reduction = source->needs_denoising();
+  }
+  switch (cached_track_content_hint_) {
+    case VideoTrackInterface::ContentHint::kNone:
+      break;
+    case VideoTrackInterface::ContentHint::kFluid:
+      options.is_screencast = rtc::Optional<bool>(false);
+      break;
+    case VideoTrackInterface::ContentHint::kDetailed:
+      options.is_screencast = rtc::Optional<bool>(true);
+      break;
   }
   if (!channel_->SetVideoSend(ssrc_, track_->enabled(), &options, track_)) {
     RTC_DCHECK(false);

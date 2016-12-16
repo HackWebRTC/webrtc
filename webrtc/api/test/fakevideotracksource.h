@@ -19,22 +19,29 @@ namespace webrtc {
 
 class FakeVideoTrackSource : public VideoTrackSource {
  public:
+  static rtc::scoped_refptr<FakeVideoTrackSource> Create(bool is_screencast) {
+    return new rtc::RefCountedObject<FakeVideoTrackSource>(is_screencast);
+  }
+
   static rtc::scoped_refptr<FakeVideoTrackSource> Create() {
-    return new rtc::RefCountedObject<FakeVideoTrackSource>();
+    return Create(false);
   }
 
   cricket::FakeVideoCapturer* fake_video_capturer() {
     return &fake_video_capturer_;
   }
 
+  bool is_screencast() const override { return is_screencast_; }
+
  protected:
-  FakeVideoTrackSource()
-      : VideoTrackSource(&fake_video_capturer_,
-                         false /* remote */) {}
+  explicit FakeVideoTrackSource(bool is_screencast)
+      : VideoTrackSource(&fake_video_capturer_, false /* remote */),
+        is_screencast_(is_screencast) {}
   virtual ~FakeVideoTrackSource() {}
 
  private:
   cricket::FakeVideoCapturer fake_video_capturer_;
+  const bool is_screencast_;
 };
 
 }  // namespace webrtc

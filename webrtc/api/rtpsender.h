@@ -225,6 +225,8 @@ class VideoRtpSender : public ObserverInterface,
   rtc::scoped_refptr<VideoTrackInterface> track_;
   uint32_t ssrc_ = 0;
   bool cached_track_enabled_ = false;
+  VideoTrackInterface::ContentHint cached_track_content_hint_ =
+      VideoTrackInterface::ContentHint::kNone;
   bool stopped_ = false;
 };
 

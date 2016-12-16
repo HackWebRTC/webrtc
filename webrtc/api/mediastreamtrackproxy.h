@@ -41,6 +41,8 @@ BEGIN_PROXY_MAP(VideoTrack)
   PROXY_CONSTMETHOD0(TrackState, state)
   PROXY_CONSTMETHOD0(bool, enabled)
   PROXY_METHOD1(bool, set_enabled, bool)
+  PROXY_CONSTMETHOD0(ContentHint, content_hint)
+  PROXY_METHOD1(void, set_content_hint, ContentHint)
   PROXY_WORKER_METHOD2(void,
                        AddOrUpdateSink,
                        rtc::VideoSinkInterface<VideoFrame>*,

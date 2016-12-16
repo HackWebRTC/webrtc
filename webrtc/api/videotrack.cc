@@ -19,7 +19,8 @@ const char MediaStreamTrackInterface::kVideoKind[] = "video";
 VideoTrack::VideoTrack(const std::string& label,
                        VideoTrackSourceInterface* video_source)
     : MediaStreamTrack<VideoTrackInterface>(label),
-      video_source_(video_source) {
+      video_source_(video_source),
+      content_hint_(ContentHint::kNone) {
   worker_thread_checker_.DetachFromThread();
   video_source_->RegisterObserver(this);
 }
@@ -47,6 +48,19 @@ void VideoTrack::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   VideoSourceBase::RemoveSink(sink);
   video_source_->RemoveSink(sink);
+}
+
+VideoTrackInterface::ContentHint VideoTrack::content_hint() const {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  return content_hint_;
+}
+
+void VideoTrack::set_content_hint(ContentHint hint) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  if (content_hint_ == hint)
+    return;
+  content_hint_ = hint;
+  Notifier<VideoTrackInterface>::FireOnChanged();
 }
 
 bool VideoTrack::set_enabled(bool enable) {

@@ -36,6 +36,8 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
   VideoTrackSourceInterface* GetSource() const override {
     return video_source_.get();
   }
+  ContentHint content_hint() const override;
+  void set_content_hint(ContentHint hint) override;
   bool set_enabled(bool enable) override;
   std::string kind() const override;
 
@@ -50,6 +52,7 @@ class VideoTrack : public MediaStreamTrack<VideoTrackInterface>,
   rtc::ThreadChecker signaling_thread_checker_;
   rtc::ThreadChecker worker_thread_checker_;
   rtc::scoped_refptr<VideoTrackSourceInterface> video_source_;
+  ContentHint content_hint_ GUARDED_BY(signaling_thread_checker_);
 };
 
 }  // namespace webrtc

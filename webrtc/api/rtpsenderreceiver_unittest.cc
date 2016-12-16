@@ -101,9 +101,11 @@ class RtpSenderReceiverTest : public testing::Test {
 
   void TearDown() override { channel_manager_.Terminate(); }
 
-  void AddVideoTrack() {
+  void AddVideoTrack() { AddVideoTrack(false); }
+
+  void AddVideoTrack(bool is_screencast) {
     rtc::scoped_refptr<VideoTrackSourceInterface> source(
-        FakeVideoTrackSource::Create());
+        FakeVideoTrackSource::Create(is_screencast));
     video_track_ = VideoTrack::Create(kVideoTrackId, source);
     EXPECT_TRUE(stream_->AddTrack(video_track_));
   }
@@ -120,8 +122,10 @@ class RtpSenderReceiverTest : public testing::Test {
     VerifyVoiceChannelInput();
   }
 
-  void CreateVideoRtpSender() {
-    AddVideoTrack();
+  void CreateVideoRtpSender() { CreateVideoRtpSender(false); }
+
+  void CreateVideoRtpSender(bool is_screencast) {
+    AddVideoTrack(is_screencast);
     video_rtp_sender_ = new VideoRtpSender(stream_->GetVideoTracks()[0],
                                            stream_->label(), video_channel_);
     video_rtp_sender_->SetSsrc(kVideoSsrc);
@@ -619,6 +623,97 @@ TEST_F(RtpSenderReceiverTest, VideoReceiverCanSetParameters) {
   EXPECT_TRUE(video_rtp_receiver_->SetParameters(params));
 
   DestroyVideoRtpReceiver();
+}
+
+// Test that makes sure that a video track content hint translates to the proper
+// value for sources that are not screencast.
+TEST_F(RtpSenderReceiverTest, PropagatesVideoTrackContentHint) {
+  CreateVideoRtpSender();
+
+  video_track_->set_enabled(true);
+
+  // |video_track_| is not screencast by default.
+  EXPECT_EQ(rtc::Optional<bool>(false),
+            video_media_channel_->options().is_screencast);
+  // No content hint should be set by default.
+  EXPECT_EQ(VideoTrackInterface::ContentHint::kNone,
+            video_track_->content_hint());
+  // Setting detailed should turn a non-screencast source into screencast mode.
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
+  EXPECT_EQ(rtc::Optional<bool>(true),
+            video_media_channel_->options().is_screencast);
+  // Removing the content hint should turn the track back into non-screencast
+  // mode.
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kNone);
+  EXPECT_EQ(rtc::Optional<bool>(false),
+            video_media_channel_->options().is_screencast);
+  // Setting fluid should remain in non-screencast mode (its default).
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kFluid);
+  EXPECT_EQ(rtc::Optional<bool>(false),
+            video_media_channel_->options().is_screencast);
+
+  DestroyVideoRtpSender();
+}
+
+// Test that makes sure that a video track content hint translates to the proper
+// value for screencast sources.
+TEST_F(RtpSenderReceiverTest,
+       PropagatesVideoTrackContentHintForScreencastSource) {
+  CreateVideoRtpSender(true);
+
+  video_track_->set_enabled(true);
+
+  // |video_track_| with a screencast source should be screencast by default.
+  EXPECT_EQ(rtc::Optional<bool>(true),
+            video_media_channel_->options().is_screencast);
+  // No content hint should be set by default.
+  EXPECT_EQ(VideoTrackInterface::ContentHint::kNone,
+            video_track_->content_hint());
+  // Setting fluid should turn a screencast source into non-screencast mode.
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kFluid);
+  EXPECT_EQ(rtc::Optional<bool>(false),
+            video_media_channel_->options().is_screencast);
+  // Removing the content hint should turn the track back into screencast mode.
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kNone);
+  EXPECT_EQ(rtc::Optional<bool>(true),
+            video_media_channel_->options().is_screencast);
+  // Setting detailed should still remain in screencast mode (its default).
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
+  EXPECT_EQ(rtc::Optional<bool>(true),
+            video_media_channel_->options().is_screencast);
+
+  DestroyVideoRtpSender();
+}
+
+// Test that makes sure any content hints that are set on a track before
+// VideoRtpSender is ready to send are still applied when it gets ready to send.
+TEST_F(RtpSenderReceiverTest,
+       PropagatesVideoTrackContentHintSetBeforeEnabling) {
+  AddVideoTrack();
+  // Setting detailed overrides the default non-screencast mode. This should be
+  // applied even if the track is set on construction.
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
+  video_rtp_sender_ = new VideoRtpSender(stream_->GetVideoTracks()[0],
+                                         stream_->label(), video_channel_);
+  video_track_->set_enabled(true);
+
+  // Sender is not ready to send (no SSRC) so no option should have been set.
+  EXPECT_EQ(rtc::Optional<bool>(),
+            video_media_channel_->options().is_screencast);
+
+  // Verify that the content hint is accounted for when video_rtp_sender_ does
+  // get enabled.
+  video_rtp_sender_->SetSsrc(kVideoSsrc);
+  EXPECT_EQ(rtc::Optional<bool>(true),
+            video_media_channel_->options().is_screencast);
+
+  // And removing the hint should go back to false (to verify that false was
+  // default correctly).
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kNone);
+  EXPECT_EQ(rtc::Optional<bool>(false),
+            video_media_channel_->options().is_screencast);
+
+  DestroyVideoRtpSender();
 }
 
 }  // namespace webrtc

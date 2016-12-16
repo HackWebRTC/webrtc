@@ -133,12 +133,20 @@ class VideoTrackInterface
     : public MediaStreamTrackInterface,
       public rtc::VideoSourceInterface<VideoFrame> {
  public:
+  // Video track content hint, used to override the source is_screencast
+  // property.
+  // See https://crbug.com/653531 and https://github.com/WICG/mst-content-hint.
+  enum class ContentHint { kNone, kFluid, kDetailed };
+
   // Register a video sink for this track.
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override{};
-  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override{};
+                       const rtc::VideoSinkWants& wants) override {}
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override {}
 
   virtual VideoTrackSourceInterface* GetSource() const = 0;
+
+  virtual ContentHint content_hint() const { return ContentHint::kNone; }
+  virtual void set_content_hint(ContentHint hint) {}
 
  protected:
   virtual ~VideoTrackInterface() {}
