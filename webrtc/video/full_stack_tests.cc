@@ -79,6 +79,16 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
   RunTest(foreman_cif);
 }
 
+TEST_F(FullStackTest, ForemanCif30kbpsWithoutPacketLoss) {
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 10, 30000, 30000, 30000, false,
+                       "VP8", 1, 0, 0, false, false, "", "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_30kbps_net_delay_0_0_plr_0", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  RunTest(foreman_cif);
+}
+
 TEST_F(FullStackTest, ForemanCifPlr5) {
   VideoQualityTest::Params foreman_cif;
   foreman_cif.call.send_side_bwe = true;
@@ -124,6 +134,16 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketlossH264) {
                        "H264", 1, 0, 0, false, false, "", "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_H264", 0.0, 0.0,
                           kFullStackTestDurationSecs};
+  RunTest(foreman_cif);
+}
+
+TEST_F(FullStackTest, ForemanCif30kbpsWithoutPacketlossH264) {
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video = {true, 352, 288, 10, 30000, 30000, 30000, false, "H264",
+                       1, 0, 0, false, false, "", "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_30kbps_net_delay_0_0_plr_0_H264", 0.0,
+                          0.0, kFullStackTestDurationSecs};
   RunTest(foreman_cif);
 }
 
