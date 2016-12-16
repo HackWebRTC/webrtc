@@ -290,6 +290,10 @@ void CongestionController::SignalNetworkState(NetworkState state) {
 }
 
 void CongestionController::OnSentPacket(const rtc::SentPacket& sent_packet) {
+  // We're not interested in packets without an id, which may be stun packets,
+  // etc, sent on the same transport.
+  if (sent_packet.packet_id == -1)
+    return;
   transport_feedback_adapter_.OnSentPacket(sent_packet.packet_id,
                                            sent_packet.send_time_ms);
 }
