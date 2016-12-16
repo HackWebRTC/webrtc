@@ -80,6 +80,7 @@ class H264VideoToolboxEncoder : public H264Encoder {
   EncodedImageCallback* callback_;
   VTCompressionSessionRef compression_session_;
   BitrateAdjuster bitrate_adjuster_;
+  H264PacketizationMode packetization_mode_;
   uint32_t target_bitrate_bps_;
   uint32_t encoder_bitrate_bps_;
   int32_t width_;

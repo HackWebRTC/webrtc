@@ -342,13 +342,14 @@ namespace webrtc {
 // drastically reduced bitrate, so we want to avoid that. In steady state
 // conditions, 0.95 seems to give us better overall bitrate over long periods
 // of time.
-H264VideoToolboxEncoder::H264VideoToolboxEncoder(
-    const cricket::VideoCodec& codec)
+H264VideoToolboxEncoder::H264VideoToolboxEncoder(const cricket::VideoCodec& codec)
     : callback_(nullptr),
       compression_session_(nullptr),
       bitrate_adjuster_(Clock::GetRealTimeClock(), .5, .95),
+      packetization_mode_(H264PacketizationMode::NonInterleaved),
       profile_(internal::ExtractProfile(codec)) {
   LOG(LS_INFO) << "Using profile " << internal::CFStringToString(profile_);
+  RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
 }
 
 H264VideoToolboxEncoder::~H264VideoToolboxEncoder() {
@@ -469,6 +470,9 @@ int H264VideoToolboxEncoder::Encode(
   encode_params.reset(new internal::FrameEncodeParams(
       this, codec_specific_info, width_, height_, frame.render_time_ms(),
       frame.timestamp(), frame.rotation()));
+
+  encode_params->codec_specific_info.codecSpecific.H264.packetization_mode =
+      packetization_mode_;
 
   // Update the bitrate if needed.
   SetBitrateBps(bitrate_adjuster_.GetAdjustedBitrateBps());
