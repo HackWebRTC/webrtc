@@ -1113,7 +1113,7 @@ class MetaBuildWrapper(object):
       memcheck = is_linux and 'rtc_use_memcheck=true' in vals['gn_args']
       memcheck_cmdline = [
           'bash',
-          '../../tools/valgrind-webrtc/webrtc_tests.sh',
+          '../../tools-webrtc/valgrind/webrtc_tests.sh',
           '--tool',
           'memcheck',
           '--target',

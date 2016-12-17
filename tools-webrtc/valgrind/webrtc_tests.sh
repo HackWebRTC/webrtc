@@ -24,9 +24,9 @@ export THISDIR=`dirname $0`
 ARGV_COPY="$@"
 
 # We need to set CHROME_VALGRIND iff using Memcheck:
-#   tools/valgrind-webrtc/webrtc_tests.sh --tool memcheck
+#   tools-webrtc/valgrind/webrtc_tests.sh --tool memcheck
 # or
-#   tools/valgrind-webrtc/webrtc_tests.sh --tool=memcheck
+#   tools-webrtc/valgrind/webrtc_tests.sh --tool=memcheck
 tool="memcheck"  # Default to memcheck.
 while (( "$#" ))
 do
@@ -51,7 +51,7 @@ esac
 
 # For WebRTC, we'll use the locate_valgrind.sh script in Chromium's Valgrind
 # scripts dir to locate the Valgrind framework install
-CHROME_VALGRIND_SCRIPTS=$THISDIR/../valgrind
+CHROME_VALGRIND_SCRIPTS=$THISDIR/../../tools/valgrind
 
 if [ "$NEEDS_VALGRIND" == "1" ]
 then
@@ -98,5 +98,5 @@ fi
 
 # Add Chrome's Valgrind scripts dir to the PYTHON_PATH since it contains
 # the scripts that are needed for this script to run
-PYTHONPATH=$THISDIR/../python/google:$CHROME_VALGRIND_SCRIPTS python \
+PYTHONPATH=$THISDIR/../../tools/python/google:$CHROME_VALGRIND_SCRIPTS python \
            "$THISDIR/webrtc_tests.py" $ARGV_COPY

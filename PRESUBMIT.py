@@ -456,10 +456,10 @@ def _CommonChecks(input_api, output_api):
                   r'^tools[\\\/]refactoring[\\\/].*\.py$',
                   r'^tools[\\\/]swarming_client[\\\/].*\.py$',
                   r'^tools[\\\/]vim[\\\/].*\.py$',
-                  # TODO(phoglund): should arguably be checked.
-                  r'^tools[\\\/]valgrind-webrtc[\\\/].*\.py$',
                   r'^tools[\\\/]valgrind[\\\/].*\.py$',
                   r'^tools[\\\/]win[\\\/].*\.py$',
+                  # TODO(phoglund): should arguably be checked.
+                  r'^tools-webrtc[\\\/]valgrind[\\\/].*\.py$',
                   r'^xcodebuild.*[\\\/].*\.py$',),
       disabled_warnings=['F0401',  # Failed to import x
                          'E0611',  # No package y in x

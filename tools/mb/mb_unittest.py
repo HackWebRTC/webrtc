@@ -636,7 +636,7 @@ class UnitTest(unittest.TestCase):
       '/fake_src/out/Release/base_unittests.runtime_deps': (
           "base_unittests\n"
           "lots_of_memcheck_dependencies\n"
-          "../../tools/valgrind-webrtc/webrtc_tests.sh\n"
+          "../../tools-webrtc/valgrind/webrtc_tests.sh\n"
       ),
     }
     mbw = self.check(['gen', '-c', 'gn_memcheck_bot', '//out/Release',
@@ -652,14 +652,14 @@ class UnitTest(unittest.TestCase):
 
     self.assertEqual(files, [
         '../../testing/test_env.py',
-        '../../tools/valgrind-webrtc/webrtc_tests.sh',
+        '../../tools-webrtc/valgrind/webrtc_tests.sh',
         'base_unittests',
         'lots_of_memcheck_dependencies',
     ])
     self.assertEqual(command, [
         '../../testing/test_env.py',
         'bash',
-        '../../tools/valgrind-webrtc/webrtc_tests.sh',
+        '../../tools-webrtc/valgrind/webrtc_tests.sh',
         '--tool',
         'memcheck',
         '--target',
