@@ -170,6 +170,8 @@ rtc_static_library("rtc_base_approved") {
     "stringutils.cc",
     "stringutils.h",
     "swap_queue.h",
+    "systeminfo.cc",
+    "systeminfo.h",
     "template_util.h",
     "thread_annotations.h",
     "thread_checker.h",
