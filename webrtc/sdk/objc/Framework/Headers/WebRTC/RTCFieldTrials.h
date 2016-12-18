@@ -16,6 +16,7 @@
 RTC_EXTERN NSString * const kRTCFieldTrialAudioSendSideBweKey;
 RTC_EXTERN NSString * const kRTCFieldTrialFlexFec03Key;
 RTC_EXTERN NSString * const kRTCFieldTrialImprovedBitrateEstimateKey;
+RTC_EXTERN NSString * const kRTCFieldTrialH264HighProfileKey;
 
 /** The valid value for field trials above. */
 RTC_EXTERN NSString * const kRTCFieldTrialEnabledValue;

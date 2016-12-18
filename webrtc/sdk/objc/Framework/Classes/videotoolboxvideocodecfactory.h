@@ -28,7 +28,9 @@ class VideoToolboxVideoEncoderFactory
   const std::vector<cricket::VideoCodec>& supported_codecs() const override;
 
  private:
-  std::vector<cricket::VideoCodec> supported_codecs_;
+  // TODO(magjed): Mutable because it depends on a field trial and it is
+  // recalculated every call to supported_codecs().
+  mutable std::vector<cricket::VideoCodec> supported_codecs_;
 };
 
 class VideoToolboxVideoDecoderFactory

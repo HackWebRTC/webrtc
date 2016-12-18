@@ -20,6 +20,7 @@ NSString * const kRTCFieldTrialAudioSendSideBweKey = @"WebRTC-Audio-SendSideBwe"
 NSString * const kRTCFieldTrialFlexFec03Key = @"WebRTC-FlexFEC-03";
 NSString * const kRTCFieldTrialImprovedBitrateEstimateKey = @"WebRTC-ImprovedBitrateEstimate";
 NSString * const kRTCFieldTrialTrendlineFilterKey = @"WebRTC-BweTrendlineFilter";
+NSString * const kRTCFieldTrialH264HighProfileKey = @"WebRTC-H264HighProfile";
 NSString * const kRTCFieldTrialEnabledValue = @"Enabled";
 
 static std::unique_ptr<char[]> gFieldTrialInitString;
