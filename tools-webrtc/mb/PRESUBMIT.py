@@ -19,11 +19,7 @@ def _CommonChecks(input_api, output_api):
       input_api, output_api, '.', [ r'^.+_unittest\.py$']))
 
   # Validate the format of the mb_config.pyl file.
-  mb_config_path = input_api.os_path.join(input_api.PresubmitLocalPath(),
-                                          '..', '..', 'webrtc', 'build',
-                                          'mb_config.pyl')
-  cmd = [input_api.python_executable, 'mb.py', 'validate', '--config-file',
-         mb_config_path]
+  cmd = [input_api.python_executable, 'mb.py', 'validate']
   kwargs = {'cwd': input_api.PresubmitLocalPath()}
   results.extend(input_api.RunTests([
       input_api.Command(name='mb_validate',

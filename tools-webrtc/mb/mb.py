@@ -32,8 +32,8 @@ import urllib2
 
 from collections import OrderedDict
 
-CHROMIUM_SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))))
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+CHROMIUM_SRC_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 sys.path = [os.path.join(CHROMIUM_SRC_DIR, 'build')] + sys.path
 
 import gn_helpers
@@ -47,8 +47,7 @@ def main(args):
 class MetaBuildWrapper(object):
   def __init__(self):
     self.chromium_src_dir = CHROMIUM_SRC_DIR
-    self.default_config = os.path.join(self.chromium_src_dir, 'tools', 'mb',
-                                       'mb_config.pyl')
+    self.default_config = os.path.join(SCRIPT_DIR, 'mb_config.pyl')
     self.default_isolate_map = os.path.join(self.chromium_src_dir, 'testing',
                                             'buildbot', 'gn_isolate_map.pyl')
     self.executable = sys.executable
@@ -420,29 +419,6 @@ class MetaBuildWrapper(object):
     for mixin in self.mixins:
       if not mixin in referenced_mixins:
         errs.append('Unreferenced mixin "%s".' % mixin)
-
-    # If we're checking the Chromium config, check that the 'chromium' bots
-    # which build public artifacts do not include the chrome_with_codecs mixin.
-    if self.args.config_file == self.default_config:
-      if 'chromium' in self.masters:
-        for builder in self.masters['chromium']:
-          config = self.masters['chromium'][builder]
-          def RecurseMixins(current_mixin):
-            if current_mixin == 'chrome_with_codecs':
-              errs.append('Public artifact builder "%s" can not contain the '
-                          '"chrome_with_codecs" mixin.' % builder)
-              return
-            if not 'mixins' in self.mixins[current_mixin]:
-              return
-            for mixin in self.mixins[current_mixin]['mixins']:
-              RecurseMixins(mixin)
-
-          for mixin in self.configs[config]:
-            RecurseMixins(mixin)
-      else:
-        errs.append('Missing "chromium" master. Please update this '
-                    'proprietary codecs check with the name of the master '
-                    'responsible for public build artifacts.')
 
     if errs:
       raise MBErr(('mb config file %s has problems:' % self.args.config_file) +

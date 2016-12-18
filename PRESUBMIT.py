@@ -459,6 +459,7 @@ def _CommonChecks(input_api, output_api):
                   r'^tools[\\\/]valgrind[\\\/].*\.py$',
                   r'^tools[\\\/]win[\\\/].*\.py$',
                   # TODO(phoglund): should arguably be checked.
+                  r'^tools-webrtc[\\\/]mb[\\\/].*\.py$',
                   r'^tools-webrtc[\\\/]valgrind[\\\/].*\.py$',
                   r'^xcodebuild.*[\\\/].*\.py$',),
       disabled_warnings=['F0401',  # Failed to import x

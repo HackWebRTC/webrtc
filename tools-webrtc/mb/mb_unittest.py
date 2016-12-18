@@ -26,7 +26,7 @@ class FakeMBW(mb.MetaBuildWrapper):
     # Override vars for test portability.
     if win32:
       self.chromium_src_dir = 'c:\\fake_src'
-      self.default_config = 'c:\\fake_src\\tools\\mb\\mb_config.pyl'
+      self.default_config = 'c:\\fake_src\\tools-webrtc\\mb\\mb_config.pyl'
       self.default_isolate_map = ('c:\\fake_src\\testing\\buildbot\\'
                                   'gn_isolate_map.pyl')
       self.platform = 'win32'
@@ -34,7 +34,7 @@ class FakeMBW(mb.MetaBuildWrapper):
       self.sep = '\\'
     else:
       self.chromium_src_dir = '/fake_src'
-      self.default_config = '/fake_src/tools/mb/mb_config.pyl'
+      self.default_config = '/fake_src/tools-webrtc/mb/mb_config.pyl'
       self.default_isolate_map = '/fake_src/testing/buildbot/gn_isolate_map.pyl'
       self.executable = '/usr/bin/python'
       self.platform = 'linux2'
@@ -175,35 +175,6 @@ TEST_CONFIG = """\
   },
 }
 """
-
-
-TEST_BAD_CONFIG = """\
-{
-  'configs': {
-    'gn_rel_bot_1': ['gn', 'rel', 'chrome_with_codecs'],
-    'gn_rel_bot_2': ['gn', 'rel', 'bad_nested_config'],
-  },
-  'masters': {
-    'chromium': {
-      'a': 'gn_rel_bot_1',
-      'b': 'gn_rel_bot_2',
-    },
-  },
-  'mixins': {
-    'gn': {'type': 'gn'},
-    'chrome_with_codecs': {
-      'gn_args': 'proprietary_codecs=true',
-    },
-    'bad_nested_config': {
-      'mixins': ['chrome_with_codecs'],
-    },
-    'rel': {
-      'gn_args': 'is_debug=false',
-    },
-  },
-}
-"""
-
 
 GYP_HACKS_CONFIG = """\
 {
@@ -797,34 +768,6 @@ class UnitTest(unittest.TestCase):
   def test_validate(self):
     mbw = self.fake_mbw()
     self.check(['validate'], mbw=mbw, ret=0)
-
-  def test_bad_validate(self):
-    mbw = self.fake_mbw()
-    mbw.files[mbw.default_config] = TEST_BAD_CONFIG
-    self.check(['validate'], mbw=mbw, ret=1)
-
-  def test_gyp_env_hacks(self):
-    mbw = self.fake_mbw()
-    mbw.files[mbw.default_config] = GYP_HACKS_CONFIG
-    self.check(['lookup', '-c', 'fake_config'], mbw=mbw,
-               ret=0,
-               out=("GYP_DEFINES='foo=bar baz=1'\n"
-                    "GYP_LINK_CONCURRENCY=1\n"
-                    "LLVM_FORCE_HEAD_REVISION=1\n"
-                    "python build/gyp_chromium -G output_dir=_path_\n"))
-
-
-if __name__ == '__main__':
-  unittest.main()
-
-  def test_validate(self):
-    mbw = self.fake_mbw()
-    self.check(['validate'], mbw=mbw, ret=0)
-
-  def test_bad_validate(self):
-    mbw = self.fake_mbw()
-    mbw.files[mbw.default_config] = TEST_BAD_CONFIG
-    self.check(['validate'], mbw=mbw, ret=1)
 
   def test_gyp_env_hacks(self):
     mbw = self.fake_mbw()
