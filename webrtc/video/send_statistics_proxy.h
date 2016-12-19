@@ -113,29 +113,37 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     SampleCounter() : sum(0), num_samples(0) {}
     ~SampleCounter() {}
     void Add(int sample);
-    int Avg(int min_required_samples) const;
+    int Avg(int64_t min_required_samples) const;
 
    private:
-    int sum;
-    int num_samples;
+    int64_t sum;
+    int64_t num_samples;
   };
   class BoolSampleCounter {
    public:
     BoolSampleCounter() : sum(0), num_samples(0) {}
     ~BoolSampleCounter() {}
     void Add(bool sample);
-    int Percent(int min_required_samples) const;
-    int Permille(int min_required_samples) const;
+    void Add(bool sample, int64_t count);
+    int Percent(int64_t min_required_samples) const;
+    int Permille(int64_t min_required_samples) const;
 
    private:
-    int Fraction(int min_required_samples, float multiplier) const;
-    int sum;
-    int num_samples;
+    int Fraction(int64_t min_required_samples, float multiplier) const;
+    int64_t sum;
+    int64_t num_samples;
   };
   struct StatsUpdateTimes {
     StatsUpdateTimes() : resolution_update_ms(0), bitrate_update_ms(0) {}
     int64_t resolution_update_ms;
     int64_t bitrate_update_ms;
+  };
+  struct TargetRateUpdates {
+    TargetRateUpdates()
+        : pause_resume_events(0), last_paused_or_resumed(false), last_ms(-1) {}
+    int pause_resume_events;
+    bool last_paused_or_resumed;
+    int64_t last_ms;
   };
   struct QpCounters {
     SampleCounter vp8;   // QP range: 0-127
@@ -192,6 +200,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     RateCounter sent_fps_counter_;
     int64_t first_rtcp_stats_time_ms_;
     int64_t first_rtp_stats_time_ms_;
+    BoolSampleCounter paused_time_counter_;
+    TargetRateUpdates target_rate_updates_;
     ReportBlockStats report_block_stats_;
     const VideoSendStream::Stats start_stats_;
     std::map<int, QpCounters>

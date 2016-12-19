@@ -2391,6 +2391,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "EncodeTimeInMs"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DecodeTimeInMs"));
 
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "NumberOfPauseEvents"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "PausedTimeInPercent"));
+
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "BitrateSentInKbps"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.BitrateReceivedInKbps"));
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "MediaBitrateSentInKbps"));

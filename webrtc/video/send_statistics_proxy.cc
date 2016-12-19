@@ -322,6 +322,16 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     int64_t elapsed_sec =
         (clock_->TimeInMilliseconds() - first_rtp_stats_time_ms_) / 1000;
     if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
+      RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "NumberOfPauseEvents",
+                                target_rate_updates_.pause_resume_events);
+
+      int paused_time_percent =
+          paused_time_counter_.Percent(metrics::kMinRunTimeInSeconds * 1000);
+      if (paused_time_percent != -1) {
+        RTC_HISTOGRAMS_PERCENTAGE(kIndex, uma_prefix_ + "PausedTimeInPercent",
+                                  paused_time_percent);
+      }
+
       StreamDataCounters rtp;
       StreamDataCounters rtx;
       AccumulateRtxStats(current_stats, rtp_config.rtx.ssrcs, &rtp, &rtx);
@@ -467,6 +477,25 @@ void SendStatisticsProxy::OnInactiveSsrc(uint32_t ssrc) {
 
 void SendStatisticsProxy::OnSetEncoderTargetRate(uint32_t bitrate_bps) {
   rtc::CritScope lock(&crit_);
+  if (uma_container_->target_rate_updates_.last_ms == -1 && bitrate_bps == 0)
+    return;  // Start on first non-zero bitrate, may initially be zero.
+
+  int64_t now = clock_->TimeInMilliseconds();
+  if (uma_container_->target_rate_updates_.last_ms != -1) {
+    bool was_paused = stats_.target_media_bitrate_bps == 0;
+    int64_t diff_ms = now - uma_container_->target_rate_updates_.last_ms;
+    uma_container_->paused_time_counter_.Add(was_paused, diff_ms);
+
+    // Use last to not include update when stream is stopped and video disabled.
+    if (uma_container_->target_rate_updates_.last_paused_or_resumed)
+      ++uma_container_->target_rate_updates_.pause_resume_events;
+
+    // Check if video is paused/resumed.
+    uma_container_->target_rate_updates_.last_paused_or_resumed =
+        (bitrate_bps == 0) != was_paused;
+  }
+  uma_container_->target_rate_updates_.last_ms = now;
+
   stats_.target_media_bitrate_bps = bitrate_bps;
 }
 
@@ -699,10 +728,11 @@ void SendStatisticsProxy::SampleCounter::Add(int sample) {
   ++num_samples;
 }
 
-int SendStatisticsProxy::SampleCounter::Avg(int min_required_samples) const {
+int SendStatisticsProxy::SampleCounter::Avg(
+    int64_t min_required_samples) const {
   if (num_samples < min_required_samples || num_samples == 0)
     return -1;
-  return (sum + (num_samples / 2)) / num_samples;
+  return static_cast<int>((sum + (num_samples / 2)) / num_samples);
 }
 
 void SendStatisticsProxy::BoolSampleCounter::Add(bool sample) {
@@ -711,18 +741,24 @@ void SendStatisticsProxy::BoolSampleCounter::Add(bool sample) {
   ++num_samples;
 }
 
+void SendStatisticsProxy::BoolSampleCounter::Add(bool sample, int64_t count) {
+  if (sample)
+    sum += count;
+  num_samples += count;
+}
 int SendStatisticsProxy::BoolSampleCounter::Percent(
-    int min_required_samples) const {
+    int64_t min_required_samples) const {
   return Fraction(min_required_samples, 100.0f);
 }
 
 int SendStatisticsProxy::BoolSampleCounter::Permille(
-    int min_required_samples) const {
+    int64_t min_required_samples) const {
   return Fraction(min_required_samples, 1000.0f);
 }
 
 int SendStatisticsProxy::BoolSampleCounter::Fraction(
-    int min_required_samples, float multiplier) const {
+    int64_t min_required_samples,
+    float multiplier) const {
   if (num_samples < min_required_samples || num_samples == 0)
     return -1;
   return static_cast<int>((sum * multiplier / num_samples) + 0.5f);
