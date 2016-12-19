@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/common_types.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/video_encoder.h"
@@ -86,6 +87,31 @@ class DelayedEncoder : public test::FakeEncoder {
   rtc::CriticalSection lock_;
   int delay_ms_ GUARDED_BY(&lock_);
 };
+
+// This class implements a multi-threaded fake encoder by posting
+// FakeH264Encoder::Encode(.) tasks to |queue1_| and |queue2_|, in an
+// alternating fashion.
+class MultiThreadedFakeH264Encoder : public test::FakeH264Encoder {
+ public:
+  MultiThreadedFakeH264Encoder(Clock* clock);
+  virtual ~MultiThreadedFakeH264Encoder() override;
+
+  int32_t Encode(const VideoFrame& input_image,
+                 const CodecSpecificInfo* codec_specific_info,
+                 const std::vector<FrameType>* frame_types) override;
+
+  int32_t EncodeCallback(const VideoFrame& input_image,
+                         const CodecSpecificInfo* codec_specific_info,
+                         const std::vector<FrameType>* frame_types);
+
+ protected:
+  class EncodeTask;
+
+  int current_queue_;
+  rtc::TaskQueue queue1_;
+  rtc::TaskQueue queue2_;
+};
+
 }  // namespace test
 }  // namespace webrtc
 

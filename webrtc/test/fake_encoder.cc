@@ -12,6 +12,7 @@
 
 #include <algorithm>
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/sleep.h"
@@ -225,5 +226,61 @@ int32_t DelayedEncoder::Encode(const VideoFrame& input_image,
   SleepMs(delay_ms);
   return FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
 }
+
+MultiThreadedFakeH264Encoder::MultiThreadedFakeH264Encoder(Clock* clock)
+    : test::FakeH264Encoder(clock),
+      current_queue_(0),
+      queue1_("Queue 1"),
+      queue2_("Queue 2") {}
+
+MultiThreadedFakeH264Encoder::~MultiThreadedFakeH264Encoder() = default;
+
+class MultiThreadedFakeH264Encoder::EncodeTask : public rtc::QueuedTask {
+ public:
+  EncodeTask(MultiThreadedFakeH264Encoder* encoder,
+             const VideoFrame& input_image,
+             const CodecSpecificInfo* codec_specific_info,
+             const std::vector<FrameType>* frame_types)
+      : encoder_(encoder),
+        input_image_(input_image),
+        codec_specific_info_(),
+        frame_types_(*frame_types) {
+    if (codec_specific_info)
+      codec_specific_info_ = *codec_specific_info;
+  }
+
+ private:
+  bool Run() override {
+    encoder_->EncodeCallback(input_image_, &codec_specific_info_,
+                             &frame_types_);
+    return true;
+  }
+
+  MultiThreadedFakeH264Encoder* const encoder_;
+  VideoFrame input_image_;
+  CodecSpecificInfo codec_specific_info_;
+  std::vector<FrameType> frame_types_;
+};
+
+int32_t MultiThreadedFakeH264Encoder::Encode(
+    const VideoFrame& input_image,
+    const CodecSpecificInfo* codec_specific_info,
+    const std::vector<FrameType>* frame_types) {
+  int current_queue = rtc::AtomicOps::Increment(&current_queue_);
+  rtc::TaskQueue& queue = (current_queue % 2 == 0) ? queue1_ : queue2_;
+
+  queue.PostTask(std::unique_ptr<rtc::QueuedTask>(
+      new EncodeTask(this, input_image, codec_specific_info, frame_types)));
+
+  return 0;
+}
+
+int32_t MultiThreadedFakeH264Encoder::EncodeCallback(
+    const VideoFrame& input_image,
+    const CodecSpecificInfo* codec_specific_info,
+    const std::vector<FrameType>* frame_types) {
+  return FakeH264Encoder::Encode(input_image, codec_specific_info, frame_types);
+}
+
 }  // namespace test
 }  // namespace webrtc
