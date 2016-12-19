@@ -682,7 +682,7 @@ bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
 
   parsed_payload->type.Video.width = 0;
   parsed_payload->type.Video.height = 0;
-  parsed_payload->type.Video.isFirstPacket =
+  parsed_payload->type.Video.is_first_packet_in_frame =
       beginning_of_partition && (partition_id == 0);
   parsed_payload->type.Video.simulcastIdx = 0;
   parsed_payload->type.Video.codec = kRtpVideoVp8;

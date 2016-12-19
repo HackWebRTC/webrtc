@@ -39,7 +39,7 @@ class VCMPacket {
   FrameType frameType;
   VideoCodecType codec;
 
-  bool isFirstPacket;                // Is this first packet in a frame.
+  bool is_first_packet_in_frame;     // Is this first packet in a frame.
   VCMNaluCompleteness completeNALU;  // Default is kNaluIncomplete.
   bool insertStartCode;  // True if a start code should be inserted before this
                          // packet.

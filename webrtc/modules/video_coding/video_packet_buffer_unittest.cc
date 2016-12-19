@@ -59,7 +59,7 @@ class TestPacketBuffer : public ::testing::Test,
     packet.codec = kVideoCodecGeneric;
     packet.seqNum = seq_num;
     packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
-    packet.isFirstPacket = first == kFirst;
+    packet.is_first_packet_in_frame = first == kFirst;
     packet.markerBit = last == kLast;
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
@@ -138,14 +138,14 @@ TEST_F(TestPacketBuffer, NackCount) {
   packet.codec = kVideoCodecGeneric;
   packet.seqNum = seq_num;
   packet.frameType = kVideoFrameKey;
-  packet.isFirstPacket = true;
+  packet.is_first_packet_in_frame = true;
   packet.markerBit = false;
   packet.timesNacked = 0;
 
   packet_buffer_->InsertPacket(&packet);
 
   packet.seqNum++;
-  packet.isFirstPacket = false;
+  packet.is_first_packet_in_frame = false;
   packet.timesNacked = 1;
   packet_buffer_->InsertPacket(&packet);
 
@@ -363,7 +363,7 @@ TEST_F(TestPacketBuffer, GetBitstreamH264BufferPadding) {
   packet.video_header.codecHeader.H264.packetization_type = kH264SingleNalu;
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data_data);
-  packet.isFirstPacket = true;
+  packet.is_first_packet_in_frame = true;
   packet.markerBit = true;
   packet_buffer_->InsertPacket(&packet);
 

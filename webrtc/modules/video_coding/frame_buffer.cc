@@ -161,7 +161,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
     _rotation_set = true;
   }
 
-  if (packet.isFirstPacket) {
+  if (packet.is_first_packet_in_frame) {
     playout_delay_ = packet.video_header.playout_delay;
   }
 
