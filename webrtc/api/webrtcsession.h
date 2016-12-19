@@ -208,7 +208,6 @@ class WebRtcSession :
   virtual cricket::DataChannel* data_channel() {
     return data_channel_.get();
   }
-  std::unique_ptr<ChannelNamePairs> GetChannelNamePairs();
 
   cricket::BaseChannel* GetChannel(const std::string& content_name);
 
