@@ -31,12 +31,6 @@ const int kWidth = 640;
 const int kHeight = 480;
 const int kQpIdx0 = 21;
 const int kQpIdx1 = 39;
-const CodecSpecificInfo kDefaultCodecInfo = []() {
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP8;
-  codec_info.codecSpecific.VP8.simulcastIdx = 0;
-  return codec_info;
-}();
 }  // namespace
 
 class SendStatisticsProxyTest : public ::testing::Test {
@@ -665,10 +659,10 @@ TEST_F(SendStatisticsProxyTest,
 TEST_F(SendStatisticsProxyTest,
        QualityLimitedHistogramsNotUpdatedWhenDisabled) {
   EncodedImage encoded_image;
-  statistics_proxy_->SetResolutionRestrictionStats(false /* scaling_enabled */,
-                                                   0, 0);
+  // encoded_image.adapt_reason_.quality_resolution_downscales disabled by
+  // default: -1
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &kDefaultCodecInfo);
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
 
   // Histograms are updated when the statistics_proxy_ is deleted.
   statistics_proxy_.reset();
@@ -680,9 +674,11 @@ TEST_F(SendStatisticsProxyTest,
 
 TEST_F(SendStatisticsProxyTest,
        QualityLimitedHistogramsUpdatedWhenEnabled_NoResolutionDownscale) {
+  const int kDownscales = 0;
   EncodedImage encoded_image;
+  encoded_image.adapt_reason_.quality_resolution_downscales = kDownscales;
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &kDefaultCodecInfo);
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
 
   // Histograms are updated when the statistics_proxy_ is deleted.
   statistics_proxy_.reset();
@@ -699,9 +695,10 @@ TEST_F(SendStatisticsProxyTest,
        QualityLimitedHistogramsUpdatedWhenEnabled_TwoResolutionDownscales) {
   const int kDownscales = 2;
   EncodedImage encoded_image;
-  statistics_proxy_->OnQualityRestrictedResolutionChanged(kDownscales);
+  encoded_image.adapt_reason_.quality_resolution_downscales = kDownscales;
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &kDefaultCodecInfo);
+    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+
   // Histograms are updated when the statistics_proxy_ is deleted.
   statistics_proxy_.reset();
   EXPECT_EQ(
@@ -723,18 +720,12 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsBandwidthLimitedResolution) {
   EncodedImage encoded_image;
   statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
-
-  // Simulcast disabled resolutions
-  encoded_image.adapt_reason_.bw_resolutions_disabled = 1;
-  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
-
+  // Resolution not scaled.
   encoded_image.adapt_reason_.bw_resolutions_disabled = 0;
   statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
-
-  // Resolution scaled due to quality.
-  statistics_proxy_->OnQualityRestrictedResolutionChanged(1);
+  // Resolution scaled due to bandwidth.
+  encoded_image.adapt_reason_.bw_resolutions_disabled = 1;
   statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
 }

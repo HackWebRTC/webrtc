@@ -15,7 +15,6 @@
 #include <utility>
 
 #include "webrtc/modules/video_coding/include/video_codec_initializer.h"
-#include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
@@ -269,7 +268,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       has_received_rpsi_(false),
       picture_id_rpsi_(0),
       clock_(Clock::GetRealTimeClock()),
-      scale_counter_(kScaleReasonSize, 0),
       last_frame_width_(0),
       last_frame_height_(0),
       last_captured_timestamp_(0),
@@ -341,10 +339,12 @@ void ViEEncoder::SetSource(
   source_proxy_->SetSource(source, degradation_preference);
   encoder_queue_.PostTask([this, degradation_preference] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    scaling_enabled_ = (degradation_preference !=
+    scaling_enabled_ =
+        (degradation_preference !=
          VideoSendStream::DegradationPreference::kMaintainResolution);
     stats_proxy_->SetResolutionRestrictionStats(
-        scaling_enabled_, scale_counter_[kCpu] > 0, scale_counter_[kQuality]);
+        scaling_enabled_ && scale_counter_[kQuality] > 0,
+        scaling_enabled_ && scale_counter_[kCpu] > 0);
   });
 }
 
@@ -440,8 +440,7 @@ void ViEEncoder::ReconfigureEncoder() {
       std::move(streams), encoder_config_.min_transmit_bitrate_bps);
 
   const auto scaling_settings = settings_.encoder->GetScalingSettings();
-  scaling_enabled_ &= scaling_settings.enabled;
-  if (scaling_enabled_) {
+  if (scaling_settings.enabled && scaling_enabled_) {
     if (scaling_settings.thresholds) {
       quality_scaler_.reset(
           new QualityScaler(this, *(scaling_settings.thresholds)));
@@ -450,8 +449,6 @@ void ViEEncoder::ReconfigureEncoder() {
     }
   } else {
     quality_scaler_.reset(nullptr);
-    stats_proxy_->SetResolutionRestrictionStats(
-        false, scale_counter_[kCpu] > 0, scale_counter_[kQuality]);
   }
 }
 
@@ -599,8 +596,9 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
   // Encoded is called on whatever thread the real encoder implementation run
   // on. In the case of hardware encoders, there might be several encoders
   // running in parallel on different threads.
-  if (stats_proxy_)
+  if (stats_proxy_) {
     stats_proxy_->OnSendEncodedImage(encoded_image, codec_specific_info);
+  }
 
   EncodedImageCallback::Result result =
       sink_->OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
@@ -709,8 +707,7 @@ void ViEEncoder::ScaleDown(ScaleReason reason) {
     return;
   switch (reason) {
     case kQuality:
-      stats_proxy_->OnQualityRestrictedResolutionChanged(
-          scale_counter_[reason] + 1);
+      stats_proxy_->OnQualityRestrictedResolutionChanged(true);
       break;
     case kCpu:
       if (scale_counter_[reason] >= kMaxCpuDowngrades)
@@ -742,7 +739,7 @@ void ViEEncoder::ScaleUp(ScaleReason reason) {
   switch (reason) {
     case kQuality:
       stats_proxy_->OnQualityRestrictedResolutionChanged(
-          scale_counter_[reason] - 1);
+          scale_counter_[reason] > 1);
       break;
     case kCpu:
       // Update stats accordingly.

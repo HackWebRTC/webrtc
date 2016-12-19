@@ -506,13 +506,17 @@ void SendStatisticsProxy::OnSendEncodedImage(
   uma_container_->key_frame_counter_.Add(encoded_image._frameType ==
                                          kVideoFrameKey);
   stats_.bw_limited_resolution =
-      encoded_image.adapt_reason_.bw_resolutions_disabled > 0 ||
-      quality_downscales_ > 0;
+      stats_.bw_limited_resolution ||
+      encoded_image.adapt_reason_.bw_resolutions_disabled > 0;
 
-  if (quality_downscales_ != -1) {
-    uma_container_->quality_limited_frame_counter_.Add(quality_downscales_ > 0);
-    if (quality_downscales_ > 0)
-      uma_container_->quality_downscales_counter_.Add(quality_downscales_);
+  if (encoded_image.adapt_reason_.quality_resolution_downscales != -1) {
+    bool downscaled =
+        encoded_image.adapt_reason_.quality_resolution_downscales > 0;
+    uma_container_->quality_limited_frame_counter_.Add(downscaled);
+    if (downscaled) {
+      uma_container_->quality_downscales_counter_.Add(
+          encoded_image.adapt_reason_.quality_resolution_downscales);
+    }
   }
   if (encoded_image.adapt_reason_.bw_resolutions_disabled != -1) {
     bool bw_limited = encoded_image.adapt_reason_.bw_resolutions_disabled > 0;
@@ -583,20 +587,11 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   uma_container_->cpu_limited_frame_counter_.Add(stats_.cpu_limited_resolution);
 }
 
-void SendStatisticsProxy::SetResolutionRestrictionStats(
-    bool scaling_enabled,
-    bool cpu_restricted,
-    int num_quality_downscales) {
+void SendStatisticsProxy::SetResolutionRestrictionStats(bool bandwidth,
+                                                        bool cpu) {
   rtc::CritScope lock(&crit_);
-  if (scaling_enabled) {
-    quality_downscales_ = num_quality_downscales;
-    stats_.bw_limited_resolution = quality_downscales_ > 0;
-    stats_.cpu_limited_resolution = cpu_restricted;
-  } else {
-    stats_.bw_limited_resolution = false;
-    stats_.cpu_limited_resolution = false;
-    quality_downscales_ = -1;
-  }
+  stats_.bw_limited_resolution = bandwidth;
+  stats_.cpu_limited_resolution = cpu;
 }
 
 void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(
@@ -607,10 +602,10 @@ void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(
 }
 
 void SendStatisticsProxy::OnQualityRestrictedResolutionChanged(
-    int num_quality_downscales) {
+    bool restricted) {
   rtc::CritScope lock(&crit_);
-  quality_downscales_ = num_quality_downscales;
-  stats_.bw_limited_resolution = quality_downscales_ > 0;
+  uma_container_->quality_downscales_counter_.Add(restricted);
+  stats_.bw_limited_resolution = restricted;
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(

@@ -211,7 +211,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   Clock* const clock_;
   // Counters used for deciding if the video resolution is currently
   // restricted, and if so, why.
-  std::vector<int> scale_counter_ ACCESS_ON(&encoder_queue_);
+  int scale_counter_[kScaleReasonSize] ACCESS_ON(&encoder_queue_) = {0};
   // Set depending on degradation preferences
   bool scaling_enabled_ ACCESS_ON(&encoder_queue_) = false;
 
