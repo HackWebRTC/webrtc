@@ -591,6 +591,7 @@ if (rtc_include_tests) {
 
   webrtc_perf_tests_resources = [
     "//resources/audio_coding/speech_mono_16kHz.pcm",
+    "//resources/audio_coding/speech_mono_32_48kHz.pcm",
     "//resources/audio_coding/testfile32kHz.pcm",
     "//resources/ConferenceMotion_1280_720_50.yuv",
     "//resources/difficult_photo_1850_1110.yuv",
