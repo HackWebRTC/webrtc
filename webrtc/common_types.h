@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -328,6 +329,16 @@ struct CodecInst {
   }
 
   bool operator!=(const CodecInst& other) const { return !(*this == other); }
+
+  friend std::ostream& operator<<(std::ostream& os, const CodecInst& ci) {
+    os << "{pltype: " << ci.pltype;
+    os << ", plname: " << ci.plname;
+    os << ", plfreq: " << ci.plfreq;
+    os << ", pacsize: " << ci.pacsize;
+    os << ", channels: " << ci.channels;
+    os << ", rate: " << ci.rate << "}";
+    return os;
+  }
 };
 
 // RTP
