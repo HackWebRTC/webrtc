@@ -416,9 +416,32 @@ void RTCStatsCollector::GetStatsReport(
     invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread_,
         rtc::Bind(&RTCStatsCollector::ProducePartialResultsOnSignalingThread,
             rtc::scoped_refptr<RTCStatsCollector>(this), timestamp_us));
+
+    // TODO(hbos): No stats are gathered by
+    // |ProducePartialResultsOnWorkerThread|, remove it.
     invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_,
         rtc::Bind(&RTCStatsCollector::ProducePartialResultsOnWorkerThread,
             rtc::scoped_refptr<RTCStatsCollector>(this), timestamp_us));
+
+    // Prepare |channel_names_| and |media_info_| for use in
+    // |ProducePartialResultsOnNetworkThread|.
+    channel_name_pairs_.reset(new ChannelNamePairs());
+    if (pc_->session()->voice_channel()) {
+      channel_name_pairs_->voice = rtc::Optional<ChannelNamePair>(
+          ChannelNamePair(pc_->session()->voice_channel()->content_name(),
+                          pc_->session()->voice_channel()->transport_name()));
+    }
+    if (pc_->session()->video_channel()) {
+      channel_name_pairs_->video = rtc::Optional<ChannelNamePair>(
+          ChannelNamePair(pc_->session()->video_channel()->content_name(),
+                          pc_->session()->video_channel()->transport_name()));
+    }
+    if (pc_->session()->data_channel()) {
+      channel_name_pairs_->data = rtc::Optional<ChannelNamePair>(
+          ChannelNamePair(pc_->session()->data_channel()->content_name(),
+                          pc_->session()->data_channel()->transport_name()));
+    }
+    media_info_.reset(PrepareMediaInfo_s().release());
     invoker_.AsyncInvoke<void>(RTC_FROM_HERE, network_thread_,
         rtc::Bind(&RTCStatsCollector::ProducePartialResultsOnNetworkThread,
             rtc::scoped_refptr<RTCStatsCollector>(this), timestamp_us));
@@ -436,23 +459,6 @@ void RTCStatsCollector::ProducePartialResultsOnSignalingThread(
   rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create(
       timestamp_us);
 
-  SessionStats session_stats;
-  if (pc_->session()->GetTransportStats(&session_stats)) {
-    std::map<std::string, CertificateStatsPair> transport_cert_stats =
-        PrepareTransportCertificateStats(session_stats);
-    MediaInfo media_info = PrepareMediaInfo(session_stats);
-
-    ProduceCertificateStats_s(
-        timestamp_us, transport_cert_stats, report.get());
-    ProduceCodecStats_s(
-        timestamp_us, media_info, report.get());
-    ProduceIceCandidateAndPairStats_s(
-        timestamp_us, session_stats, report.get());
-    ProduceRTPStreamStats_s(
-        timestamp_us, session_stats, media_info, report.get());
-    ProduceTransportStats_s(
-        timestamp_us, session_stats, transport_cert_stats, report.get());
-  }
   ProduceDataChannelStats_s(timestamp_us, report.get());
   ProduceMediaStreamAndTrackStats_s(timestamp_us, report.get());
   ProducePeerConnectionStats_s(timestamp_us, report.get());
@@ -466,13 +472,8 @@ void RTCStatsCollector::ProducePartialResultsOnWorkerThread(
   rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create(
       timestamp_us);
 
-  // TODO(hbos): Gather stats on worker thread.
-  // pc_->session()'s channels are owned by the signaling thread but there are
-  // some stats that are gathered on the worker thread. Instead of a synchronous
-  // invoke on "s->w" we could to the "w" work here asynchronously if it wasn't
-  // for the ownership issue. Synchronous invokes in other places makes it
-  // difficult to introduce locks without introducing deadlocks and the channels
-  // are not reference counted.
+  // TODO(hbos): There are no stats to be gathered on this thread, remove this
+  // method.
 
   AddPartialResults(report);
 }
@@ -483,13 +484,23 @@ void RTCStatsCollector::ProducePartialResultsOnNetworkThread(
   rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create(
       timestamp_us);
 
-  // TODO(hbos): Gather stats on network thread.
-  // pc_->session()'s channels are owned by the signaling thread but there are
-  // some stats that are gathered on the network thread. Instead of a
-  // synchronous invoke on "s->n" we could to the "n" work here asynchronously
-  // if it wasn't for the ownership issue. Synchronous invokes in other places
-  // makes it difficult to introduce locks without introducing deadlocks and the
-  // channels are not reference counted.
+  std::unique_ptr<SessionStats> session_stats =
+      pc_->session()->GetStats(*channel_name_pairs_);
+  if (session_stats) {
+    std::map<std::string, CertificateStatsPair> transport_cert_stats =
+        PrepareTransportCertificateStats_n(*session_stats);
+
+    ProduceCertificateStats_n(
+        timestamp_us, transport_cert_stats, report.get());
+    ProduceCodecStats_n(
+        timestamp_us, *media_info_, report.get());
+    ProduceIceCandidateAndPairStats_n(
+        timestamp_us, *session_stats, report.get());
+    ProduceRTPStreamStats_n(
+        timestamp_us, *session_stats, *media_info_, report.get());
+    ProduceTransportStats_n(
+        timestamp_us, *session_stats, transport_cert_stats, report.get());
+  }
 
   AddPartialResults(report);
 }
@@ -534,11 +545,11 @@ void RTCStatsCollector::DeliverCachedReport() {
   callbacks_.clear();
 }
 
-void RTCStatsCollector::ProduceCertificateStats_s(
+void RTCStatsCollector::ProduceCertificateStats_n(
     int64_t timestamp_us,
     const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
     RTCStatsReport* report) const {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   for (const auto& transport_cert_stats_pair : transport_cert_stats) {
     if (transport_cert_stats_pair.second.local) {
       ProduceCertificateStatsFromSSLCertificateStats(
@@ -551,10 +562,10 @@ void RTCStatsCollector::ProduceCertificateStats_s(
   }
 }
 
-void RTCStatsCollector::ProduceCodecStats_s(
+void RTCStatsCollector::ProduceCodecStats_n(
     int64_t timestamp_us, const MediaInfo& media_info,
     RTCStatsReport* report) const {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   // Audio
   if (media_info.voice) {
     // Inbound
@@ -605,10 +616,10 @@ void RTCStatsCollector::ProduceDataChannelStats_s(
   }
 }
 
-void RTCStatsCollector::ProduceIceCandidateAndPairStats_s(
+void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
       int64_t timestamp_us, const SessionStats& session_stats,
       RTCStatsReport* report) const {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   for (const auto& transport_stats : session_stats.transport_stats) {
     for (const auto& channel_stats : transport_stats.second.channel_stats) {
       std::string transport_id = RTCTransportStatsIDFromTransportChannel(
@@ -681,10 +692,10 @@ void RTCStatsCollector::ProducePeerConnectionStats_s(
   report->AddStats(std::move(stats));
 }
 
-void RTCStatsCollector::ProduceRTPStreamStats_s(
+void RTCStatsCollector::ProduceRTPStreamStats_n(
     int64_t timestamp_us, const SessionStats& session_stats,
     const MediaInfo& media_info, RTCStatsReport* report) const {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
 
   // Audio
   if (media_info.voice) {
@@ -788,11 +799,11 @@ void RTCStatsCollector::ProduceRTPStreamStats_s(
   }
 }
 
-void RTCStatsCollector::ProduceTransportStats_s(
+void RTCStatsCollector::ProduceTransportStats_n(
     int64_t timestamp_us, const SessionStats& session_stats,
     const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
     RTCStatsReport* report) const {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   for (const auto& transport : session_stats.transport_stats) {
     // Get reference to RTCP channel, if it exists.
     std::string rtcp_transport_stats_id;
@@ -855,9 +866,9 @@ void RTCStatsCollector::ProduceTransportStats_s(
 }
 
 std::map<std::string, RTCStatsCollector::CertificateStatsPair>
-RTCStatsCollector::PrepareTransportCertificateStats(
+RTCStatsCollector::PrepareTransportCertificateStats_n(
     const SessionStats& session_stats) const {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(network_thread_->IsCurrent());
   std::map<std::string, CertificateStatsPair> transport_cert_stats;
   for (const auto& transport_stats : session_stats.transport_stats) {
     CertificateStatsPair certificate_stats_pair;
@@ -880,20 +891,21 @@ RTCStatsCollector::PrepareTransportCertificateStats(
   return transport_cert_stats;
 }
 
-RTCStatsCollector::MediaInfo RTCStatsCollector::PrepareMediaInfo(
-    const SessionStats& session_stats) const {
-  MediaInfo media_info;
+std::unique_ptr<RTCStatsCollector::MediaInfo>
+RTCStatsCollector::PrepareMediaInfo_s() const {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  std::unique_ptr<MediaInfo> media_info(new MediaInfo());
   if (pc_->session()->voice_channel()) {
     cricket::VoiceMediaInfo voice_media_info;
     if (pc_->session()->voice_channel()->GetStats(&voice_media_info)) {
-      media_info.voice = rtc::Optional<cricket::VoiceMediaInfo>(
+      media_info->voice = rtc::Optional<cricket::VoiceMediaInfo>(
           std::move(voice_media_info));
     }
   }
   if (pc_->session()->video_channel()) {
     cricket::VideoMediaInfo video_media_info;
     if (pc_->session()->video_channel()->GetStats(&video_media_info)) {
-      media_info.video = rtc::Optional<cricket::VideoMediaInfo>(
+      media_info->video = rtc::Optional<cricket::VideoMediaInfo>(
           std::move(video_media_info));
     }
   }

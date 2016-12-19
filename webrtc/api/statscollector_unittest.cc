@@ -41,6 +41,7 @@
 using testing::_;
 using testing::DoAll;
 using testing::Field;
+using testing::Invoke;
 using testing::Return;
 using testing::ReturnNull;
 using testing::ReturnRef;
@@ -509,7 +510,7 @@ class StatsCollectorTest : public testing::Test {
                                                      &event_log_)),
         session_(media_controller_.get()) {
     // By default, we ignore session GetStats calls.
-    EXPECT_CALL(session_, GetTransportStats(_)).WillRepeatedly(Return(false));
+    EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(ReturnNull());
     // Add default returns for mock classes.
     EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
     EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
@@ -612,9 +613,11 @@ class StatsCollectorTest : public testing::Test {
 
     // Instruct the session to return stats containing the transport channel.
     InitSessionStats(vc_name);
-    EXPECT_CALL(session_, GetTransportStats(_))
-        .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                              Return(true)));
+    EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+        [this](const ChannelNamePairs&) {
+          return std::unique_ptr<SessionStats>(
+              new SessionStats(session_stats_));
+        }));
 
     // Constructs an ssrc stats update.
     if (voice_sender_info)
@@ -712,9 +715,11 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_CALL(session_, GetRemoteSSLCertificate_ReturnsRawPointer(
                               transport_stats.transport_name))
         .WillOnce(Return(remote_cert.release()));
-    EXPECT_CALL(session_, GetTransportStats(_))
-      .WillOnce(DoAll(SetArgPointee<0>(session_stats),
-                      Return(true)));
+    EXPECT_CALL(session_, GetStats(_)).WillOnce(Invoke(
+        [&session_stats](const ChannelNamePairs&) {
+          return std::unique_ptr<SessionStats>(
+              new SessionStats(session_stats));
+        }));
 
     stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
 
@@ -853,9 +858,11 @@ TEST_F(StatsCollectorTest, BytesCounterHandles64Bits) {
   const char kVideoChannelName[] = "video";
 
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                            Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
@@ -900,9 +907,11 @@ TEST_F(StatsCollectorTest, BandwidthEstimationInfoIsReported) {
   const char kVideoChannelName[] = "video";
 
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                            Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
@@ -1013,9 +1022,11 @@ TEST_F(StatsCollectorTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 
   const char kVideoChannelName[] = "video";
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                            Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
@@ -1110,9 +1121,11 @@ TEST_F(StatsCollectorTest, TransportObjectLinkedFromSsrcObject) {
                           Return(true)));
 
   InitSessionStats(kVcName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                            Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   StatsReports reports;
@@ -1181,9 +1194,11 @@ TEST_F(StatsCollectorTest, RemoteSsrcInfoIsPresent) {
 
   // Instruct the session to return stats containing the transport channel.
   InitSessionStats(kVcName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                            Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   // Constructs an ssrc stats update.
   cricket::VideoMediaInfo stats_read;
@@ -1224,9 +1239,11 @@ TEST_F(StatsCollectorTest, ReportsFromRemoteTrack) {
 
   const char kVideoChannelName[] = "video";
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                            Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
@@ -1430,9 +1447,11 @@ TEST_F(StatsCollectorTest, NoTransport) {
       transport_stats;
 
   // Configure MockWebRtcSession
-  EXPECT_CALL(session_, GetTransportStats(_))
-    .WillOnce(DoAll(SetArgPointee<0>(session_stats),
-                    Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats));
+      }));
 
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
@@ -1487,9 +1506,11 @@ TEST_F(StatsCollectorTest, NoCertificates) {
       transport_stats;
 
   // Configure MockWebRtcSession
-  EXPECT_CALL(session_, GetTransportStats(_))
-    .WillOnce(DoAll(SetArgPointee<0>(session_stats),
-                    Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats));
+      }));
   stats.UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
   stats.GetStats(NULL, &reports);
 
@@ -1566,8 +1587,11 @@ TEST_F(StatsCollectorTest, FilterOutNegativeInitialValues) {
 
   // Instruct the session to return stats containing the transport channel.
   InitSessionStats(kVcName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_), Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   cricket::VoiceSenderInfo voice_sender_info;
   voice_sender_info.add_ssrc(kSsrcOfTrack);
@@ -1720,9 +1744,11 @@ TEST_F(StatsCollectorTest, GetStatsAfterRemoveAudioStream) {
 
   // Instruct the session to return stats containing the transport channel.
   InitSessionStats(kVcName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                            Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   stats.RemoveLocalAudioTrack(audio_track_.get(), kSsrcOfTrack);
   cricket::VoiceSenderInfo voice_sender_info;
@@ -1794,9 +1820,11 @@ TEST_F(StatsCollectorTest, LocalAndRemoteTracksWithSameSsrc) {
 
   // Instruct the session to return stats containing the transport channel.
   InitSessionStats(kVcName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_),
-                            Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   cricket::VoiceSenderInfo voice_sender_info;
   InitVoiceSenderInfo(&voice_sender_info);
@@ -1914,8 +1942,11 @@ TEST_F(StatsCollectorTest, VerifyVideoSendSsrcStats) {
   const char kVideoChannelName[] = "video";
 
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_), Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
@@ -1959,8 +1990,11 @@ TEST_F(StatsCollectorTest, VerifyVideoReceiveSsrcStats) {
   const char kVideoChannelName[] = "video";
 
   InitSessionStats(kVideoChannelName);
-  EXPECT_CALL(session_, GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats_), Return(true)));
+  EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(
+            new SessionStats(session_stats_));
+      }));
 
   MockVideoMediaChannel* media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(

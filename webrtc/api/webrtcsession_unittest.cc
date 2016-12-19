@@ -3039,9 +3039,8 @@ TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
   // Checks if one of the transport channels contains a connection using a given
   // port.
   auto connection_with_remote_port = [this, voice_channel](int port) {
-    SessionStats stats;
-    session_->GetChannelTransportStats(voice_channel, &stats);
-    for (auto& kv : stats.transport_stats) {
+    std::unique_ptr<webrtc::SessionStats> stats = session_->GetStats_s();
+    for (auto& kv : stats->transport_stats) {
       for (auto& chan_stat : kv.second.channel_stats) {
         for (auto& conn_info : chan_stat.connection_infos) {
           if (conn_info.remote_candidate.address().port() == port) {

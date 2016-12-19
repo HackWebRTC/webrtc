@@ -313,7 +313,7 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
         ReturnRef(data_channels_));
     EXPECT_CALL(session_, video_channel()).WillRepeatedly(ReturnNull());
     EXPECT_CALL(session_, voice_channel()).WillRepeatedly(ReturnNull());
-    EXPECT_CALL(session_, GetTransportStats(_)).WillRepeatedly(Return(false));
+    EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(ReturnNull());
     EXPECT_CALL(session_, GetLocalCertificate(_, _)).WillRepeatedly(
         Return(false));
     EXPECT_CALL(session_, GetRemoteSSLCertificate_ReturnsRawPointer(_))
@@ -628,10 +628,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
           std::vector<std::string>({ "(remote) single certificate" }));
 
   // Mock the session to return the local and remote certificates.
-  EXPECT_CALL(test_->session(), GetTransportStats(_)).WillRepeatedly(Invoke(
-      [this](SessionStats* stats) {
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        std::unique_ptr<SessionStats> stats(new SessionStats());
         stats->transport_stats["transport"].transport_name = "transport";
-        return true;
+        return stats;
       }));
   EXPECT_CALL(test_->session(), GetLocalCertificate(_, _)).WillRepeatedly(
       Invoke([this, &local_certinfo](const std::string& transport_name,
@@ -713,8 +714,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
   session_stats.transport_stats["TransportName"].transport_name =
       "TransportName";
 
-  EXPECT_CALL(test_->session(), GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats), Return(true)));
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
+      }));
   EXPECT_CALL(test_->session(), voice_channel())
       .WillRepeatedly(Return(&voice_channel));
   EXPECT_CALL(test_->session(), video_channel())
@@ -791,11 +794,12 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
       video_remote_certinfo->ders);
 
   // Mock the session to return the local and remote certificates.
-  EXPECT_CALL(test_->session(), GetTransportStats(_)).WillRepeatedly(Invoke(
-      [this](SessionStats* stats) {
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        std::unique_ptr<SessionStats> stats(new SessionStats());
         stats->transport_stats["audio"].transport_name = "audio";
         stats->transport_stats["video"].transport_name = "video";
-        return true;
+        return stats;
       }));
   EXPECT_CALL(test_->session(), GetLocalCertificate(_, _)).WillRepeatedly(
       Invoke([this, &audio_local_certinfo, &video_local_certinfo](
@@ -850,10 +854,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
       CreateFakeCertificateAndInfoFromDers(remote_ders);
 
   // Mock the session to return the local and remote certificates.
-  EXPECT_CALL(test_->session(), GetTransportStats(_)).WillRepeatedly(Invoke(
-      [this](SessionStats* stats) {
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [this](const ChannelNamePairs&) {
+        std::unique_ptr<SessionStats> stats(new SessionStats());
         stats->transport_stats["transport"].transport_name = "transport";
-        return true;
+        return stats;
       }));
   EXPECT_CALL(test_->session(), GetLocalCertificate(_, _)).WillRepeatedly(
       Invoke([this, &local_certinfo](const std::string& transport_name,
@@ -978,10 +983,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       b_transport_channel_stats);
 
   // Mock the session to return the desired candidates.
-  EXPECT_CALL(test_->session(), GetTransportStats(_)).WillRepeatedly(Invoke(
-      [this, &session_stats](SessionStats* stats) {
-        *stats = session_stats;
-        return true;
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
       }));
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
@@ -1022,10 +1026,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
       transport_channel_stats);
 
   // Mock the session to return the desired candidates.
-  EXPECT_CALL(test_->session(), GetTransportStats(_)).WillRepeatedly(Invoke(
-      [this, &session_stats](SessionStats* stats) {
-        *stats = session_stats;
-        return true;
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
       }));
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
@@ -1387,8 +1390,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   session_stats.transport_stats["TransportName"].channel_stats.push_back(
       channel_stats);
 
-  EXPECT_CALL(test_->session(), GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats), Return(true)));
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
+      }));
   EXPECT_CALL(test_->session(), voice_channel())
       .WillRepeatedly(Return(&voice_channel));
 
@@ -1459,8 +1464,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   session_stats.transport_stats["TransportName"].channel_stats.push_back(
       channel_stats);
 
-  EXPECT_CALL(test_->session(), GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats), Return(true)));
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
+      }));
   EXPECT_CALL(test_->session(), video_channel())
       .WillRepeatedly(Return(&video_channel));
 
@@ -1529,8 +1536,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   session_stats.transport_stats["TransportName"].channel_stats.push_back(
       channel_stats);
 
-  EXPECT_CALL(test_->session(), GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats), Return(true)));
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
+      }));
   EXPECT_CALL(test_->session(), voice_channel())
       .WillRepeatedly(Return(&voice_channel));
 
@@ -1597,8 +1606,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   session_stats.transport_stats["TransportName"].channel_stats.push_back(
       channel_stats);
 
-  EXPECT_CALL(test_->session(), GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats), Return(true)));
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
+      }));
   EXPECT_CALL(test_->session(), video_channel())
       .WillRepeatedly(Return(&video_channel));
 
@@ -1677,8 +1688,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Default) {
   session_stats.transport_stats["TransportName"].channel_stats.push_back(
       channel_stats);
 
-  EXPECT_CALL(test_->session(), GetTransportStats(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(session_stats), Return(true)));
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
+      }));
   EXPECT_CALL(test_->session(), voice_channel())
       .WillRepeatedly(Return(&voice_channel));
   EXPECT_CALL(test_->session(), video_channel())
@@ -1754,10 +1767,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
 
 
   // Mock the session to return the desired candidates.
-  EXPECT_CALL(test_->session(), GetTransportStats(_)).WillRepeatedly(Invoke(
-      [this, &session_stats](SessionStats* stats) {
-        *stats = session_stats;
-        return true;
+  EXPECT_CALL(test_->session(), GetStats(_)).WillRepeatedly(Invoke(
+      [&session_stats](const ChannelNamePairs&) {
+        return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
       }));
 
   // Get stats without RTCP, an active connection or certificates.

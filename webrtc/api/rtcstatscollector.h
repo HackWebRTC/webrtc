@@ -41,6 +41,7 @@ namespace webrtc {
 
 class PeerConnection;
 struct SessionStats;
+struct ChannelNamePairs;
 
 class RTCStatsCollectorCallback : public virtual rtc::RefCountInterface {
  public:
@@ -97,19 +98,19 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void DeliverCachedReport();
 
   // Produces |RTCCertificateStats|.
-  void ProduceCertificateStats_s(
+  void ProduceCertificateStats_n(
       int64_t timestamp_us,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
       RTCStatsReport* report) const;
   // Produces |RTCCodecStats|.
-  void ProduceCodecStats_s(
+  void ProduceCodecStats_n(
       int64_t timestamp_us, const MediaInfo& media_info,
       RTCStatsReport* report) const;
   // Produces |RTCDataChannelStats|.
   void ProduceDataChannelStats_s(
       int64_t timestamp_us, RTCStatsReport* report) const;
   // Produces |RTCIceCandidatePairStats| and |RTCIceCandidateStats|.
-  void ProduceIceCandidateAndPairStats_s(
+  void ProduceIceCandidateAndPairStats_n(
       int64_t timestamp_us, const SessionStats& session_stats,
       RTCStatsReport* report) const;
   // Produces |RTCMediaStreamStats| and |RTCMediaStreamTrackStats|.
@@ -119,19 +120,19 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void ProducePeerConnectionStats_s(
       int64_t timestamp_us, RTCStatsReport* report) const;
   // Produces |RTCInboundRTPStreamStats| and |RTCOutboundRTPStreamStats|.
-  void ProduceRTPStreamStats_s(
+  void ProduceRTPStreamStats_n(
       int64_t timestamp_us, const SessionStats& session_stats,
       const MediaInfo& media_info, RTCStatsReport* report) const;
   // Produces |RTCTransportStats|.
-  void ProduceTransportStats_s(
+  void ProduceTransportStats_n(
       int64_t timestamp_us, const SessionStats& session_stats,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
       RTCStatsReport* report) const;
 
   // Helper function to stats-producing functions.
   std::map<std::string, CertificateStatsPair>
-  PrepareTransportCertificateStats(const SessionStats& session_stats) const;
-  MediaInfo PrepareMediaInfo(const SessionStats& session_stats) const;
+  PrepareTransportCertificateStats_n(const SessionStats& session_stats) const;
+  std::unique_ptr<MediaInfo> PrepareMediaInfo_s() const;
 
   // Slots for signals (sigslot) that are wired up to |pc_|.
   void OnDataChannelCreated(DataChannel* channel);
@@ -149,6 +150,13 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   int64_t partial_report_timestamp_us_;
   rtc::scoped_refptr<RTCStatsReport> partial_report_;
   std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks_;
+
+  // Set in |GetStatsReport|, used in |ProducePartialResultsOnNetworkThread|
+  // (not passed as arguments to avoid copies). This is thread safe - it is set
+  // at the start of |GetStatsReport| after making sure there are no pending
+  // stats requests in progress.
+  std::unique_ptr<ChannelNamePairs> channel_name_pairs_;
+  std::unique_ptr<MediaInfo> media_info_;
 
   // A timestamp, in microseconds, that is based on a timer that is
   // monotonically increasing. That is, even if the system clock is modified the

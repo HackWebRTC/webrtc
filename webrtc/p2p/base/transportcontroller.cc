@@ -141,6 +141,9 @@ bool TransportController::SetLocalCertificate(
 bool TransportController::GetLocalCertificate(
     const std::string& transport_name,
     rtc::scoped_refptr<rtc::RTCCertificate>* certificate) const {
+  if (network_thread_->IsCurrent()) {
+    return GetLocalCertificate_n(transport_name, certificate);
+  }
   return network_thread_->Invoke<bool>(
       RTC_FROM_HERE, rtc::Bind(&TransportController::GetLocalCertificate_n,
                                this, transport_name, certificate));
@@ -149,6 +152,9 @@ bool TransportController::GetLocalCertificate(
 std::unique_ptr<rtc::SSLCertificate>
 TransportController::GetRemoteSSLCertificate(
     const std::string& transport_name) const {
+  if (network_thread_->IsCurrent()) {
+    return GetRemoteSSLCertificate_n(transport_name);
+  }
   return network_thread_->Invoke<std::unique_ptr<rtc::SSLCertificate>>(
       RTC_FROM_HERE, rtc::Bind(&TransportController::GetRemoteSSLCertificate_n,
                                this, transport_name));
@@ -206,6 +212,9 @@ bool TransportController::ReadyForRemoteCandidates(
 
 bool TransportController::GetStats(const std::string& transport_name,
                                    TransportStats* stats) {
+  if (network_thread_->IsCurrent()) {
+    return GetStats_n(transport_name, stats);
+  }
   return network_thread_->Invoke<bool>(
       RTC_FROM_HERE,
       rtc::Bind(&TransportController::GetStats_n, this, transport_name, stats));

@@ -970,50 +970,43 @@ bool WebRtcSession::GetTransportDescription(
   return true;
 }
 
-bool WebRtcSession::GetTransportStats(SessionStats* stats) {
+std::unique_ptr<SessionStats> WebRtcSession::GetStats_s() {
   ASSERT(signaling_thread()->IsCurrent());
-  return (GetChannelTransportStats(voice_channel(), stats) &&
-          GetChannelTransportStats(video_channel(), stats) &&
-          GetChannelTransportStats(data_channel(), stats));
+  ChannelNamePairs channel_name_pairs;
+  if (voice_channel()) {
+    channel_name_pairs.voice = rtc::Optional<ChannelNamePair>(ChannelNamePair(
+        voice_channel()->content_name(), voice_channel()->transport_name()));
+  }
+  if (video_channel()) {
+    channel_name_pairs.video = rtc::Optional<ChannelNamePair>(ChannelNamePair(
+        video_channel()->content_name(), video_channel()->transport_name()));
+  }
+  if (data_channel()) {
+    channel_name_pairs.data = rtc::Optional<ChannelNamePair>(ChannelNamePair(
+        data_channel()->content_name(), data_channel()->transport_name()));
+  }
+  return GetStats(channel_name_pairs);
 }
 
-bool WebRtcSession::GetChannelTransportStats(cricket::BaseChannel* ch,
-                                             SessionStats* stats) {
-  ASSERT(signaling_thread()->IsCurrent());
-  if (!ch) {
-    // Not using this channel.
-    return true;
+std::unique_ptr<SessionStats> WebRtcSession::GetStats(
+    const ChannelNamePairs& channel_name_pairs) {
+  if (network_thread()->IsCurrent()) {
+    return GetStats_n(channel_name_pairs);
   }
-
-  const std::string& content_name = ch->content_name();
-  const std::string& transport_name = ch->transport_name();
-  stats->proxy_to_transport[content_name] = transport_name;
-  if (stats->transport_stats.find(transport_name) !=
-      stats->transport_stats.end()) {
-    // Transport stats already done for this transport.
-    return true;
-  }
-
-  cricket::TransportStats tstats;
-  if (!transport_controller_->GetStats(transport_name, &tstats)) {
-    return false;
-  }
-
-  stats->transport_stats[transport_name] = tstats;
-  return true;
+  return network_thread()->Invoke<std::unique_ptr<SessionStats>>(
+      RTC_FROM_HERE,
+      rtc::Bind(&WebRtcSession::GetStats_n, this, channel_name_pairs));
 }
 
 bool WebRtcSession::GetLocalCertificate(
     const std::string& transport_name,
     rtc::scoped_refptr<rtc::RTCCertificate>* certificate) {
-  ASSERT(signaling_thread()->IsCurrent());
   return transport_controller_->GetLocalCertificate(transport_name,
                                                     certificate);
 }
 
 std::unique_ptr<rtc::SSLCertificate> WebRtcSession::GetRemoteSSLCertificate(
     const std::string& transport_name) {
-  ASSERT(signaling_thread()->IsCurrent());
   return transport_controller_->GetRemoteSSLCertificate(transport_name);
 }
 
@@ -1714,6 +1707,28 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
   SignalDataChannelCreated();
   data_channel_->SignalSentPacket.connect(this, &WebRtcSession::OnSentPacket_w);
   return true;
+}
+
+std::unique_ptr<SessionStats> WebRtcSession::GetStats_n(
+    const ChannelNamePairs& channel_name_pairs) {
+  ASSERT(network_thread()->IsCurrent());
+  std::unique_ptr<SessionStats> session_stats(new SessionStats());
+  for (const auto channel_name_pair : { &channel_name_pairs.voice,
+                                        &channel_name_pairs.video,
+                                        &channel_name_pairs.data }) {
+    if (*channel_name_pair) {
+      cricket::TransportStats transport_stats;
+      if (!transport_controller_->GetStats((*channel_name_pair)->transport_name,
+                                           &transport_stats)) {
+        return nullptr;
+      }
+      session_stats->proxy_to_transport[(*channel_name_pair)->content_name] =
+          (*channel_name_pair)->transport_name;
+      session_stats->transport_stats[(*channel_name_pair)->transport_name] =
+          std::move(transport_stats);
+    }
+  }
+  return session_stats;
 }
 
 void WebRtcSession::OnDtlsSetupFailure(cricket::BaseChannel*, bool rtcp) {

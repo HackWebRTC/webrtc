@@ -675,8 +675,8 @@ void StatsCollector::ExtractSessionInfo() {
   report->AddBoolean(StatsReport::kStatsValueNameInitiator,
                      pc_->session()->initial_offerer());
 
-  SessionStats stats;
-  if (!pc_->session()->GetTransportStats(&stats)) {
+  std::unique_ptr<SessionStats> stats = pc_->session()->GetStats_s();
+  if (!stats) {
     return;
   }
 
@@ -686,9 +686,9 @@ void StatsCollector::ExtractSessionInfo() {
   // the proxy map directly from the session stats.
   // As is, if GetStats() failed, we could be using old (incorrect?) proxy
   // data.
-  proxy_to_transport_ = stats.proxy_to_transport;
+  proxy_to_transport_ = stats->proxy_to_transport;
 
-  for (const auto& transport_iter : stats.transport_stats) {
+  for (const auto& transport_iter : stats->transport_stats) {
     // Attempt to get a copy of the certificates from the transport and
     // expose them in stats reports.  All channels in a transport share the
     // same local and remote certificates.

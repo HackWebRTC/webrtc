@@ -42,7 +42,8 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
   // track.
   MOCK_METHOD2(GetLocalTrackIdBySsrc, bool(uint32_t, std::string*));
   MOCK_METHOD2(GetRemoteTrackIdBySsrc, bool(uint32_t, std::string*));
-  MOCK_METHOD1(GetTransportStats, bool(SessionStats*));
+  MOCK_METHOD1(GetStats,
+               std::unique_ptr<SessionStats>(const ChannelNamePairs&));
   MOCK_METHOD2(GetLocalCertificate,
                bool(const std::string& transport_name,
                     rtc::scoped_refptr<rtc::RTCCertificate>* certificate));

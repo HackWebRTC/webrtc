@@ -115,6 +115,20 @@ struct SessionStats {
   TransportStatsMap transport_stats;
 };
 
+struct ChannelNamePair {
+  ChannelNamePair(
+      const std::string& content_name, const std::string& transport_name)
+      : content_name(content_name), transport_name(transport_name) {}
+  std::string content_name;
+  std::string transport_name;
+};
+
+struct ChannelNamePairs {
+  rtc::Optional<ChannelNamePair> voice;
+  rtc::Optional<ChannelNamePair> video;
+  rtc::Optional<ChannelNamePair> data;
+};
+
 // A WebRtcSession manages general session state. This includes negotiation
 // of both the application-level and network-level protocols:  the former
 // defines what will be sent and the latter defines how it will be sent.  Each
@@ -194,6 +208,7 @@ class WebRtcSession :
   virtual cricket::DataChannel* data_channel() {
     return data_channel_.get();
   }
+  std::unique_ptr<ChannelNamePairs> GetChannelNamePairs();
 
   cricket::BaseChannel* GetChannel(const std::string& content_name);
 
@@ -261,10 +276,14 @@ class WebRtcSession :
 
   // Returns stats for all channels of all transports.
   // This avoids exposing the internal structures used to track them.
-  virtual bool GetTransportStats(SessionStats* stats);
-
-  // Get stats for a specific channel
-  bool GetChannelTransportStats(cricket::BaseChannel* ch, SessionStats* stats);
+  // The parameterless version creates |ChannelNamePairs| from |voice_channel|,
+  // |video_channel| and |voice_channel| if available - this requires it to be
+  // called on the signaling thread - and invokes the other |GetStats|. The
+  // other |GetStats| can be invoked on any thread; if not invoked on the
+  // network thread a thread hop will happen.
+  std::unique_ptr<SessionStats> GetStats_s();
+  virtual std::unique_ptr<SessionStats> GetStats(
+      const ChannelNamePairs& channel_name_pairs);
 
   // virtual so it can be mocked in unit tests
   virtual bool GetLocalCertificate(
@@ -415,6 +434,9 @@ class WebRtcSession :
   bool CreateDataChannel(const cricket::ContentInfo* content,
                          const std::string* bundle_transport);
 
+  std::unique_ptr<SessionStats> GetStats_n(
+      const ChannelNamePairs& channel_name_pairs);
+
   // Listens to SCTP CONTROL messages on unused SIDs and process them as OPEN
   // messages.
   void OnDataChannelMessageReceived(cricket::DataChannel* channel,
@@ -489,7 +511,7 @@ class WebRtcSession :
   const std::string sid_;
   bool initial_offerer_ = false;
 
-  std::unique_ptr<cricket::TransportController> transport_controller_;
+  const std::unique_ptr<cricket::TransportController> transport_controller_;
   MediaControllerInterface* media_controller_;
   std::unique_ptr<cricket::VoiceChannel> voice_channel_;
   std::unique_ptr<cricket::VideoChannel> video_channel_;
