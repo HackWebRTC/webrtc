@@ -192,7 +192,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     VideoCodec codec;
     webrtc::UlpfecConfig ulpfec;
-    webrtc::FlexfecConfig flexfec;
+    int flexfec_payload_type;
     int rtx_payload_type;
   };
 

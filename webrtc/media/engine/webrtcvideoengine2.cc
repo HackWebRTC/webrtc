@@ -1416,7 +1416,7 @@ void WebRtcVideoChannel2::OnPacketReceived(
     if (payload_type == codec.rtx_payload_type ||
         payload_type == codec.ulpfec.red_rtx_payload_type ||
         payload_type == codec.ulpfec.ulpfec_payload_type ||
-        payload_type == codec.flexfec.flexfec_payload_type) {
+        payload_type == codec.flexfec_payload_type) {
       return;
     }
   }
@@ -1771,7 +1771,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
   }
   parameters_.config.rtp.ulpfec = codec_settings.ulpfec;
   parameters_.config.rtp.flexfec.flexfec_payload_type =
-      codec_settings.flexfec.flexfec_payload_type;
+      codec_settings.flexfec_payload_type;
 
   // Set RTX payload type if RTX is enabled.
   if (!parameters_.config.rtp.rtx.ssrcs.empty()) {
@@ -2258,7 +2258,8 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(
   // TODO(pbos): Reconfigure RTX based on incoming recv_codecs.
   config_.rtp.ulpfec = recv_codecs.front().ulpfec;
   flexfec_config_.flexfec_payload_type =
-      recv_codecs.front().flexfec.flexfec_payload_type;
+      recv_codecs.front().flexfec_payload_type;
+
   config_.rtp.nack.rtp_history_ms =
       HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
 }
@@ -2462,12 +2463,13 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
 }
 
 WebRtcVideoChannel2::VideoCodecSettings::VideoCodecSettings()
-    : rtx_payload_type(-1) {}
+    : flexfec_payload_type(-1), rtx_payload_type(-1) {}
 
 bool WebRtcVideoChannel2::VideoCodecSettings::operator==(
     const WebRtcVideoChannel2::VideoCodecSettings& other) const {
   return codec == other.codec && ulpfec == other.ulpfec &&
-         flexfec == other.flexfec && rtx_payload_type == other.rtx_payload_type;
+         flexfec_payload_type == other.flexfec_payload_type &&
+         rtx_payload_type == other.rtx_payload_type;
 }
 
 bool WebRtcVideoChannel2::VideoCodecSettings::operator!=(
@@ -2568,7 +2570,7 @@ WebRtcVideoChannel2::MapCodecs(const std::vector<VideoCodec>& codecs) {
 
   for (size_t i = 0; i < video_codecs.size(); ++i) {
     video_codecs[i].ulpfec = ulpfec_config;
-    video_codecs[i].flexfec.flexfec_payload_type = flexfec_payload_type;
+    video_codecs[i].flexfec_payload_type = flexfec_payload_type;
     if (rtx_mapping[video_codecs[i].codec.id] != 0 &&
         rtx_mapping[video_codecs[i].codec.id] !=
             ulpfec_config.red_payload_type) {
