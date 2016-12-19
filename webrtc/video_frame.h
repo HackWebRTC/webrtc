@@ -136,14 +136,10 @@ class EncodedImage {
   EncodedImage(uint8_t* buffer, size_t length, size_t size)
       : _buffer(buffer), _length(length), _size(size) {}
 
+  // TODO(kthelgason): get rid of this struct as it only has a single member
+  // remaining.
   struct AdaptReason {
-    AdaptReason()
-        : quality_resolution_downscales(-1),
-          bw_resolutions_disabled(-1) {}
-
-    int quality_resolution_downscales;  // Number of times this frame is down
-                                        // scaled in resolution due to quality.
-                                        // Or -1 if information is not provided.
+    AdaptReason() : bw_resolutions_disabled(-1) {}
     int bw_resolutions_disabled;  // Number of resolutions that are not sent
                                   // due to bandwidth for this frame.
                                   // Or -1 if information is not provided.

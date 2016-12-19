@@ -466,7 +466,7 @@ bool SimulcastEncoderAdapter::SupportsNativeHandle() const {
 VideoEncoder::ScalingSettings SimulcastEncoderAdapter::GetScalingSettings()
     const {
   // Turn off quality scaling for simulcast.
-  if (NumberOfStreams(codec_) != 1)
+  if (!Initialized() || NumberOfStreams(codec_) != 1)
     return VideoEncoder::ScalingSettings(false);
   return streaminfos_[0].encoder->GetScalingSettings();
 }
