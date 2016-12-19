@@ -49,8 +49,7 @@ FlexfecReceiver::~FlexfecReceiver() = default;
 
 bool FlexfecReceiver::AddAndProcessReceivedPacket(const uint8_t* packet,
                                                   size_t packet_length) {
-  RTC_DCHECK(sequence_checker_.CalledSequentially());
-
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   if (!AddReceivedPacket(packet, packet_length)) {
     return false;
   }
@@ -58,13 +57,13 @@ bool FlexfecReceiver::AddAndProcessReceivedPacket(const uint8_t* packet,
 }
 
 FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
-  RTC_DCHECK(sequence_checker_.CalledSequentially());
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   return packet_counter_;
 }
 
 bool FlexfecReceiver::AddReceivedPacket(const uint8_t* packet,
                                         size_t packet_length) {
-  RTC_DCHECK(sequence_checker_.CalledSequentially());
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   // RTP packets with a full base header (12 bytes), but without payload,
   // could conceivably be useful in the decoding. Therefore we check
@@ -130,7 +129,7 @@ bool FlexfecReceiver::AddReceivedPacket(const uint8_t* packet,
 // FlexFEC decoder, and we therefore do not interfere with the reception
 // of non-recovered media packets.
 bool FlexfecReceiver::ProcessReceivedPackets() {
-  RTC_DCHECK(sequence_checker_.CalledSequentially());
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   // Decode.
   if (!received_packets_.empty()) {

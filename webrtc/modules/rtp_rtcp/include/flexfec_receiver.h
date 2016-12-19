@@ -57,15 +57,18 @@ class FlexfecReceiver {
   const uint32_t protected_media_ssrc_;
 
   // Erasure code interfacing and callback.
-  std::unique_ptr<ForwardErrorCorrection> erasure_code_;
-  ForwardErrorCorrection::ReceivedPacketList received_packets_;
-  ForwardErrorCorrection::RecoveredPacketList recovered_packets_;
-  RecoveredPacketReceiver* const callback_;
+  std::unique_ptr<ForwardErrorCorrection> erasure_code_
+      GUARDED_BY(sequence_checker_);
+  ForwardErrorCorrection::ReceivedPacketList received_packets_
+      GUARDED_BY(sequence_checker_);
+  ForwardErrorCorrection::RecoveredPacketList recovered_packets_
+      GUARDED_BY(sequence_checker_);
+  RecoveredPacketReceiver* const callback_ GUARDED_BY(sequence_checker_);
 
   // Logging and stats.
   Clock* const clock_;
-  int64_t last_recovered_packet_ms_;
-  FecPacketCounter packet_counter_;
+  int64_t last_recovered_packet_ms_ GUARDED_BY(sequence_checker_);
+  FecPacketCounter packet_counter_ GUARDED_BY(sequence_checker_);
 
   rtc::SequencedTaskChecker sequence_checker_;
 };
