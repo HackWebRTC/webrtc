@@ -30,7 +30,7 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call/bitrate_allocator.h"
 #include "webrtc/call/call.h"
-#include "webrtc/call/flexfec_receive_stream.h"
+#include "webrtc/call/flexfec_receive_stream_impl.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
@@ -91,10 +91,10 @@ class Call : public webrtc::Call,
   void DestroyVideoReceiveStream(
       webrtc::VideoReceiveStream* receive_stream) override;
 
-  webrtc::FlexfecReceiveStream* CreateFlexfecReceiveStream(
-      const webrtc::FlexfecReceiveStream::Config& config) override;
+  FlexfecReceiveStream* CreateFlexfecReceiveStream(
+      const FlexfecReceiveStream::Config& config) override;
   void DestroyFlexfecReceiveStream(
-      webrtc::FlexfecReceiveStream* receive_stream) override;
+      FlexfecReceiveStream* receive_stream) override;
 
   Stats GetStats() const override;
 
@@ -183,11 +183,11 @@ class Call : public webrtc::Call,
       GUARDED_BY(receive_crit_);
   // Each media stream could conceivably be protected by multiple FlexFEC
   // streams.
-  std::multimap<uint32_t, FlexfecReceiveStream*> flexfec_receive_ssrcs_media_
-      GUARDED_BY(receive_crit_);
-  std::map<uint32_t, FlexfecReceiveStream*> flexfec_receive_ssrcs_protection_
-      GUARDED_BY(receive_crit_);
-  std::set<FlexfecReceiveStream*> flexfec_receive_streams_
+  std::multimap<uint32_t, FlexfecReceiveStreamImpl*>
+      flexfec_receive_ssrcs_media_ GUARDED_BY(receive_crit_);
+  std::map<uint32_t, FlexfecReceiveStreamImpl*>
+      flexfec_receive_ssrcs_protection_ GUARDED_BY(receive_crit_);
+  std::set<FlexfecReceiveStreamImpl*> flexfec_receive_streams_
       GUARDED_BY(receive_crit_);
   std::map<std::string, AudioReceiveStream*> sync_stream_mapping_
       GUARDED_BY(receive_crit_);
@@ -655,11 +655,12 @@ void Call::DestroyVideoReceiveStream(
   delete receive_stream_impl;
 }
 
-webrtc::FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
-    const webrtc::FlexfecReceiveStream::Config& config) {
+FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
+    const FlexfecReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateFlexfecReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  FlexfecReceiveStream* receive_stream = new FlexfecReceiveStream(config, this);
+  FlexfecReceiveStreamImpl* receive_stream =
+      new FlexfecReceiveStreamImpl(config, this);
 
   {
     WriteLockScoped write_lock(*receive_crit_);
@@ -674,18 +675,18 @@ webrtc::FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
   return receive_stream;
 }
 
-void Call::DestroyFlexfecReceiveStream(
-    webrtc::FlexfecReceiveStream* receive_stream) {
+void Call::DestroyFlexfecReceiveStream(FlexfecReceiveStream* receive_stream) {
   TRACE_EVENT0("webrtc", "Call::DestroyFlexfecReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(receive_stream != nullptr);
-  // There exist no other derived classes of webrtc::FlexfecReceiveStream,
+  // There exist no other derived classes of FlexfecReceiveStream,
   // so this downcast is safe.
-  FlexfecReceiveStream* receive_stream_impl =
-      static_cast<FlexfecReceiveStream*>(receive_stream);
+  FlexfecReceiveStreamImpl* receive_stream_impl =
+      static_cast<FlexfecReceiveStreamImpl*>(receive_stream);
   {
     WriteLockScoped write_lock(*receive_crit_);
-    // Remove all SSRCs pointing to the FlexfecReceiveStream to be destroyed.
+    // Remove all SSRCs pointing to the FlexfecReceiveStreamImpl to be
+    // destroyed.
     auto media_it = flexfec_receive_ssrcs_media_.begin();
     while (media_it != flexfec_receive_ssrcs_media_.end()) {
       if (media_it->second == receive_stream_impl)

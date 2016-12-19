@@ -9,7 +9,7 @@
  */
 
 #include "webrtc/base/basictypes.h"
-#include "webrtc/call/flexfec_receive_stream.h"
+#include "webrtc/call/flexfec_receive_stream_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_recovered_packet_receiver.h"
@@ -25,7 +25,7 @@ TEST(FlexfecReceiveStreamTest, ConstructDestruct) {
   config.protected_media_ssrcs = {912512};
   MockRecoveredPacketReceiver callback;
 
-  internal::FlexfecReceiveStream receive_stream(config, &callback);
+  FlexfecReceiveStreamImpl receive_stream(config, &callback);
 }
 
 TEST(FlexfecReceiveStreamTest, StartStop) {
@@ -34,7 +34,7 @@ TEST(FlexfecReceiveStreamTest, StartStop) {
   config.remote_ssrc = 1652392;
   config.protected_media_ssrcs = {23300443};
   MockRecoveredPacketReceiver callback;
-  internal::FlexfecReceiveStream receive_stream(config, &callback);
+  FlexfecReceiveStreamImpl receive_stream(config, &callback);
 
   receive_stream.Start();
   receive_stream.Stop();
@@ -46,7 +46,7 @@ TEST(FlexfecReceiveStreamTest, DoesNotProcessPacketWhenNoMediaSsrcGiven) {
   config.remote_ssrc = 424223;
   config.protected_media_ssrcs = {};
   MockRecoveredPacketReceiver callback;
-  internal::FlexfecReceiveStream receive_stream(config, &callback);
+  FlexfecReceiveStreamImpl receive_stream(config, &callback);
   const uint8_t packet[] = {0x00, 0x11, 0x22, 0x33};
   const size_t packet_length = sizeof(packet);
 
@@ -99,8 +99,7 @@ TEST(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
   config.protected_media_ssrcs = {
       ByteReader<uint32_t>::ReadBigEndian(kMediaSsrc)};
   testing::StrictMock<MockRecoveredPacketReceiver> recovered_packet_receiver;
-  internal::FlexfecReceiveStream receive_stream(config,
-                                                &recovered_packet_receiver);
+  FlexfecReceiveStreamImpl receive_stream(config, &recovered_packet_receiver);
 
   // Do not call back before being started.
   receive_stream.AddAndProcessReceivedPacket(kFlexfecPacket,

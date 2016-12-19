@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/call/flexfec_receive_stream.h"
+#include "webrtc/call/flexfec_receive_stream_impl.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -84,25 +84,24 @@ std::unique_ptr<FlexfecReceiver> MaybeCreateFlexfecReceiver(
 
 }  // namespace
 
-namespace internal {
-
-FlexfecReceiveStream::FlexfecReceiveStream(
+FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
     const Config& config,
     RecoveredPacketReceiver* recovered_packet_callback)
     : started_(false),
       config_(config),
       receiver_(
           MaybeCreateFlexfecReceiver(config_, recovered_packet_callback)) {
-  LOG(LS_INFO) << "FlexfecReceiveStream: " << config_.ToString();
+  LOG(LS_INFO) << "FlexfecReceiveStreamImpl: " << config_.ToString();
 }
 
-FlexfecReceiveStream::~FlexfecReceiveStream() {
-  LOG(LS_INFO) << "~FlexfecReceiveStream: " << config_.ToString();
+FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {
+  LOG(LS_INFO) << "~FlexfecReceiveStreamImpl: " << config_.ToString();
   Stop();
 }
 
-bool FlexfecReceiveStream::AddAndProcessReceivedPacket(const uint8_t* packet,
-                                                       size_t packet_length) {
+bool FlexfecReceiveStreamImpl::AddAndProcessReceivedPacket(
+    const uint8_t* packet,
+    size_t packet_length) {
   {
     rtc::CritScope cs(&crit_);
     if (!started_)
@@ -113,22 +112,20 @@ bool FlexfecReceiveStream::AddAndProcessReceivedPacket(const uint8_t* packet,
   return receiver_->AddAndProcessReceivedPacket(packet, packet_length);
 }
 
-void FlexfecReceiveStream::Start() {
+void FlexfecReceiveStreamImpl::Start() {
   rtc::CritScope cs(&crit_);
   started_ = true;
 }
 
-void FlexfecReceiveStream::Stop() {
+void FlexfecReceiveStreamImpl::Stop() {
   rtc::CritScope cs(&crit_);
   started_ = false;
 }
 
 // TODO(brandtr): Implement this member function when we have designed the
 // stats for FlexFEC.
-FlexfecReceiveStream::Stats FlexfecReceiveStream::GetStats() const {
-  return webrtc::FlexfecReceiveStream::Stats();
+FlexfecReceiveStreamImpl::Stats FlexfecReceiveStreamImpl::GetStats() const {
+  return FlexfecReceiveStream::Stats();
 }
-
-}  // namespace internal
 
 }  // namespace webrtc

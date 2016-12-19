@@ -21,7 +21,6 @@ group("api") {
 rtc_source_set("call_api") {
   sources = [
     "call/audio_sink.h",
-    "call/flexfec_receive_stream.h",
   ]
 
   deps = [
