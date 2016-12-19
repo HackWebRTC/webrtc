@@ -58,7 +58,7 @@ struct RTPVideoHeader {
 
   PlayoutDelay playout_delay;
 
-  bool is_first_packet_in_frame;
+  bool isFirstPacket;    // first packet in frame
   uint8_t simulcastIdx;  // Index if the simulcast encoder creating
                          // this frame, 0 if not using simulcast.
   RtpVideoCodecTypes codec;

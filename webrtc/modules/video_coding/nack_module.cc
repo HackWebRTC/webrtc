@@ -66,8 +66,7 @@ int NackModule::OnReceivedPacket(const VCMPacket& packet) {
   //                 now set it to true, which will cause the reordering
   //                 statistics to never be updated.
   bool is_retransmitted = true;
-  bool is_keyframe =
-      packet.is_first_packet_in_frame && packet.frameType == kVideoFrameKey;
+  bool is_keyframe = packet.isFirstPacket && packet.frameType == kVideoFrameKey;
 
   if (!initialized_) {
     newest_seq_num_ = seq_num;

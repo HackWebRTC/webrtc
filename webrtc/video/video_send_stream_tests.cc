@@ -2956,7 +2956,7 @@ class Vp9HeaderObserver : public test::SendTest {
 
     bool new_frame = packets_sent_ == 0 ||
                      IsNewerTimestamp(header.timestamp, last_header_.timestamp);
-    EXPECT_EQ(new_frame, video.is_first_packet_in_frame);
+    EXPECT_EQ(new_frame, video.isFirstPacket);
     if (!new_frame) {
       EXPECT_FALSE(last_header_.markerBit);
       EXPECT_EQ(last_header_.timestamp, header.timestamp);

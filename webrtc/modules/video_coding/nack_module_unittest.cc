@@ -72,7 +72,7 @@ TEST_F(TestNackModule, WrappingSeqNumClearToKeyframe) {
 
   sent_nacks_.clear();
   packet.frameType = kVideoFrameKey;
-  packet.is_first_packet_in_frame = true;
+  packet.isFirstPacket = true;
   packet.seqNum = 2;
   nack_module_.OnReceivedPacket(packet);
   EXPECT_EQ(0u, sent_nacks_.size());
@@ -239,11 +239,11 @@ TEST_F(TestNackModule, TooLargeNackListWithKeyFrame) {
   packet.seqNum = 0;
   nack_module_.OnReceivedPacket(packet);
   packet.seqNum = 1;
-  packet.is_first_packet_in_frame = true;
+  packet.isFirstPacket = true;
   packet.frameType = kVideoFrameKey;
   nack_module_.OnReceivedPacket(packet);
   packet.seqNum = 1001;
-  packet.is_first_packet_in_frame = false;
+  packet.isFirstPacket = false;
   packet.frameType = kVideoFrameKey;
   nack_module_.OnReceivedPacket(packet);
   EXPECT_EQ(999u, sent_nacks_.size());
