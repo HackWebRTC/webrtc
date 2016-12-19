@@ -73,10 +73,7 @@ Vp9FrameBufferPool::GetFrameBuffer(size_t min_size) {
             << allocated_buffers_.size() << " Vp9FrameBuffers have been "
             << "allocated by a Vp9FrameBufferPool (exceeding what is "
             << "considered reasonable, " << max_num_buffers_ << ").";
-
-        // TODO(phoglund): this limit is being hit in tests since Oct 5 2016.
-        // See https://bugs.chromium.org/p/webrtc/issues/detail?id=6484.
-        // RTC_NOTREACHED();
+        RTC_NOTREACHED();
       }
     }
   }
