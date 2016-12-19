@@ -491,7 +491,7 @@ void TCPConnection::CreateOutgoingTcpSocket() {
   ASSERT(outgoing_);
   // TODO(guoweis): Handle failures here (unlikely since TCP).
   int opts = (remote_candidate().protocol() == SSLTCP_PROTOCOL_NAME)
-                 ? rtc::PacketSocketFactory::OPT_SSLTCP
+                 ? rtc::PacketSocketFactory::OPT_TLS_FAKE
                  : 0;
   socket_.reset(port()->socket_factory()->CreateClientTcpSocket(
       rtc::SocketAddress(port()->ip(), 0), remote_candidate().address(),

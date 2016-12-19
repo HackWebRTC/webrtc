@@ -87,8 +87,8 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
     return NULL;
   }
 
-  // If using SSLTCP, wrap the TCP socket in a pseudo-SSL socket.
-  if (opts & PacketSocketFactory::OPT_SSLTCP) {
+  // If using fake TLS, wrap the TCP socket in a pseudo-SSL socket.
+  if (opts & PacketSocketFactory::OPT_TLS_FAKE) {
     ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
     socket = new AsyncSSLSocket(socket);
   }
@@ -129,13 +129,22 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
                                   proxy_info.username, proxy_info.password);
   }
 
-  // If using TLS, wrap the socket in an SSL adapter.
-  if (opts & PacketSocketFactory::OPT_TLS) {
-    ASSERT(!(opts & PacketSocketFactory::OPT_SSLTCP));
+  // Assert that at most one TLS option is used.
+  int tlsOpts =
+      opts & (PacketSocketFactory::OPT_TLS | PacketSocketFactory::OPT_TLS_FAKE |
+              PacketSocketFactory::OPT_TLS_INSECURE);
+  ASSERT((tlsOpts & (tlsOpts - 1)) == 0);
 
+  if ((tlsOpts & PacketSocketFactory::OPT_TLS) ||
+      (tlsOpts & PacketSocketFactory::OPT_TLS_INSECURE)) {
+    // Using TLS, wrap the socket in an SSL adapter.
     SSLAdapter* ssl_adapter = SSLAdapter::Create(socket);
     if (!ssl_adapter) {
       return NULL;
+    }
+
+    if (tlsOpts & PacketSocketFactory::OPT_TLS_INSECURE) {
+      ssl_adapter->set_ignore_bad_cert(true);
     }
 
     socket = ssl_adapter;
@@ -145,9 +154,8 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
       return NULL;
     }
 
-  // If using SSLTCP, wrap the TCP socket in a pseudo-SSL socket.
-  } else if (opts & PacketSocketFactory::OPT_SSLTCP) {
-    ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
+  } else if (tlsOpts & PacketSocketFactory::OPT_TLS_FAKE) {
+    // Using fake TLS, wrap the TCP socket in a pseudo-SSL socket.
     socket = new AsyncSSLSocket(socket);
   }
 

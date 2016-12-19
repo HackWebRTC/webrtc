@@ -87,6 +87,12 @@ class TurnPort : public Port {
 
   virtual ProtocolType GetProtocol() const { return server_address_.proto; }
 
+  virtual TlsCertPolicy GetTlsCertPolicy() const { return tls_cert_policy_; }
+
+  virtual void SetTlsCertPolicy(TlsCertPolicy tls_cert_policy) {
+    tls_cert_policy_ = tls_cert_policy;
+  }
+
   virtual void PrepareAddress();
   virtual Connection* CreateConnection(
       const Candidate& c, PortInterface::CandidateOrigin origin);
@@ -255,6 +261,7 @@ class TurnPort : public Port {
   bool FailAndPruneConnection(const rtc::SocketAddress& address);
 
   ProtocolAddress server_address_;
+  TlsCertPolicy tls_cert_policy_ = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
   RelayCredentials credentials_;
   AttemptedServerSet attempted_server_addresses_;
 

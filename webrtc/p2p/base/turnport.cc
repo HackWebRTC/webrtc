@@ -329,8 +329,14 @@ bool TurnPort::CreateTurnClientSocket() {
 
     // Apply server address TLS and insecure bits to options.
     if (server_address_.proto == PROTO_TLS) {
-      opts |= rtc::PacketSocketFactory::OPT_TLS;
+      if (tls_cert_policy_ ==
+          TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK) {
+        opts |= rtc::PacketSocketFactory::OPT_TLS_INSECURE;
+      } else {
+        opts |= rtc::PacketSocketFactory::OPT_TLS;
+      }
     }
+
     socket_ = socket_factory()->CreateClientTcpSocket(
         rtc::SocketAddress(ip(), 0), server_address_.address,
         proxy(), user_agent(), opts);
