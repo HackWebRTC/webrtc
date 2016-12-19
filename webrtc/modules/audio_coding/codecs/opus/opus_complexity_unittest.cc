@@ -49,14 +49,6 @@ int64_t RunComplexityTest(const AudioEncoderOpus::Config& config) {
 }
 }  // namespace
 
-#if defined(WEBRTC_ANDROID)
-#define MAYBE_AudioEncoderOpusComplexityAdaptationTest \
-  DISABLED_AudioEncoderOpusComplexityAdaptationTest
-#else
-#define MAYBE_AudioEncoderOpusComplexityAdaptationTest \
-  AudioEncoderOpusComplexityAdaptationTest
-#endif
-
 // This test encodes an audio file using Opus twice with different bitrates
 // (12.5 kbps and 15.5 kbps). The runtime for each is measured, and the ratio
 // between the two is calculated and tracked. This test explicitly sets the
@@ -67,7 +59,7 @@ int64_t RunComplexityTest(const AudioEncoderOpus::Config& config) {
 // mobiles, the regular complexity is 5, and we expect the resulting ratio to
 // be higher, since we have explicitly asked for a higher complexity setting at
 // the lower rate.
-TEST(MAYBE_AudioEncoderOpusComplexityAdaptationTest, AdaptationOn) {
+TEST(AudioEncoderOpusComplexityAdaptationTest, AdaptationOn) {
   // Create config.
   AudioEncoderOpus::Config config;
   config.bitrate_bps = rtc::Optional<int>(12500);
@@ -85,7 +77,7 @@ TEST(MAYBE_AudioEncoderOpusComplexityAdaptationTest, AdaptationOn) {
 // This test is identical to the one above, but without the complexity
 // adaptation enabled (neither on desktop, nor on mobile). The expectation is
 // that the resulting ratio is less than 100% at all times.
-TEST(MAYBE_AudioEncoderOpusComplexityAdaptationTest, AdaptationOff) {
+TEST(AudioEncoderOpusComplexityAdaptationTest, AdaptationOff) {
   // Create config.
   AudioEncoderOpus::Config config;
   config.bitrate_bps = rtc::Optional<int>(12500);
