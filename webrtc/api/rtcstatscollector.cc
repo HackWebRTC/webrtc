@@ -389,6 +389,10 @@ RTCStatsCollector::RTCStatsCollector(PeerConnection* pc,
       this, &RTCStatsCollector::OnDataChannelCreated);
 }
 
+RTCStatsCollector::~RTCStatsCollector() {
+  RTC_DCHECK_EQ(num_pending_partial_reports_, 0);
+}
+
 void RTCStatsCollector::GetStatsReport(
     rtc::scoped_refptr<RTCStatsCollectorCallback> callback) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
@@ -451,6 +455,17 @@ void RTCStatsCollector::GetStatsReport(
 void RTCStatsCollector::ClearCachedStatsReport() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   cached_report_ = nullptr;
+}
+
+void RTCStatsCollector::WaitForPendingRequest() {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  if (num_pending_partial_reports_) {
+    rtc::Thread::Current()->ProcessMessages(0);
+    while (num_pending_partial_reports_) {
+      rtc::Thread::Current()->SleepMs(1);
+      rtc::Thread::Current()->ProcessMessages(0);
+    }
+  }
 }
 
 void RTCStatsCollector::ProducePartialResultsOnSignalingThread(

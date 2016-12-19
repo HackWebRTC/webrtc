@@ -71,8 +71,13 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // calling |GetStatsReport| guarantees fresh stats.
   void ClearCachedStatsReport();
 
+  // If there is a |GetStatsReport| requests in-flight, waits until it has been
+  // completed. Must be called on the signaling thread.
+  void WaitForPendingRequest();
+
  protected:
   RTCStatsCollector(PeerConnection* pc, int64_t cache_lifetime_us);
+  ~RTCStatsCollector();
 
   // Stats gathering on a particular thread. Calls |AddPartialResults| before
   // returning. Virtual for the sake of testing.

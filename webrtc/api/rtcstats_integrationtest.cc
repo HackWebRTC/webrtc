@@ -537,6 +537,19 @@ TEST_F(RTCStatsIntegrationTest, GetStatsFromCallee) {
   RTCStatsReportVerifier(report.get()).VerifyReport();
 }
 
+TEST_F(RTCStatsIntegrationTest, GetsStatsWhileDestroyingPeerConnections) {
+  StartCall();
+
+  rtc::scoped_refptr<RTCStatsObtainer> stats_obtainer =
+      RTCStatsObtainer::Create();
+  caller_->pc()->GetStats(stats_obtainer);
+  // This will destroy the peer connection.
+  caller_ = nullptr;
+  // Any pending stats requests should have completed in the act of destroying
+  // the peer connection.
+  EXPECT_TRUE(stats_obtainer->report());
+}
+
 }  // namespace
 
 }  // namespace webrtc

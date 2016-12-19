@@ -614,6 +614,10 @@ PeerConnection::~PeerConnection() {
   }
   // Destroy stats_ because it depends on session_.
   stats_.reset(nullptr);
+  if (stats_collector_) {
+    stats_collector_->WaitForPendingRequest();
+    stats_collector_ = nullptr;
+  }
   // Now destroy session_ before destroying other members,
   // because its destruction fires signals (such as VoiceChannelDestroyed)
   // which will trigger some final actions in PeerConnection...
