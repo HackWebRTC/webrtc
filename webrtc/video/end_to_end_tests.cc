@@ -2762,8 +2762,9 @@ TEST_P(EndToEndTest, GetStats) {
       RTC_DCHECK(send_stream_);
       VideoSendStream::Stats stats = send_stream_->GetStats();
 
+      size_t expected_num_streams = kNumSsrcs + expected_send_ssrcs_.size();
       send_stats_filled_["NumStreams"] |=
-          stats.substreams.size() == expected_send_ssrcs_.size();
+          stats.substreams.size() == expected_num_streams;
 
       send_stats_filled_["CpuOveruseMetrics"] |=
           stats.avg_encode_time_ms != 0 && stats.encode_usage_percent != 0;
