@@ -38,7 +38,6 @@
 namespace webrtc {
 
 class ModuleRtpRtcpImpl;
-class RTCPReceiver;
 class RtcEventLog;
 
 class NACKStringBuilder {
