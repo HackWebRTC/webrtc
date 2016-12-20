@@ -29,6 +29,7 @@ import textwrap
 
 
 DIRECTORIES = [
+  'base',
   'build',
   'buildtools',
   'testing',
@@ -42,7 +43,6 @@ DIRECTORIES = [
   'third_party/ffmpeg',
   'third_party/instrumented_libraries',
   'third_party/jsoncpp',
-  'third_party/libc++-static',
   'third_party/libFuzzer',
   'third_party/libjpeg',
   'third_party/libjpeg_turbo',
@@ -82,13 +82,11 @@ from sync_chromium import get_target_os_list
 target_os = get_target_os_list()
 if 'android' in target_os:
   DIRECTORIES += [
-    'base',
     'third_party/accessibility_test_framework',
     'third_party/android_platform',
     'third_party/android_support_test_runner',
     'third_party/android_tools',
     'third_party/apache_velocity',
-    'third_party/appurify-python',
     'third_party/ashmem',
     'third_party/bouncycastle',
     'third_party/byte_buddy',
@@ -113,18 +111,9 @@ if 'android' in target_os:
     'third_party/sqlite4java',
     'third_party/tcmalloc',
     'tools/android',
-    'tools/telemetry',
   ]
-else:
-  DIRECTORIES += [
-    'base/third_party/libevent',
-  ]
-
-if 'ios' in target_os:
-  DIRECTORIES.append('third_party/class-dump')
 
 FILES = {
-  'tools/isolate_driver.py': None,
   'third_party/BUILD.gn': None,
 }
 
