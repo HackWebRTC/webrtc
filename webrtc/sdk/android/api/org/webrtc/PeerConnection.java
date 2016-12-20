@@ -39,12 +39,6 @@ public class PeerConnection {
     CLOSED
   }
 
-  /** Tracks PeerConnectionInterface::TlsCertPolicy */
-  public enum TlsCertPolicy {
-    TLS_CERT_POLICY_SECURE,
-    TLS_CERT_POLICY_INSECURE_NO_CHECK,
-  }
-
   /** Tracks PeerConnectionInterface::SignalingState */
   public enum SignalingState {
     STABLE,
@@ -93,7 +87,6 @@ public class PeerConnection {
     public final String uri;
     public final String username;
     public final String password;
-    public final TlsCertPolicy tlsCertPolicy;
 
     /** Convenience constructor for STUN servers. */
     public IceServer(String uri) {
@@ -101,18 +94,13 @@ public class PeerConnection {
     }
 
     public IceServer(String uri, String username, String password) {
-      this(uri, username, password, TlsCertPolicy.TLS_CERT_POLICY_SECURE);
-    }
-
-    public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy) {
       this.uri = uri;
       this.username = username;
       this.password = password;
-      this.tlsCertPolicy = tlsCertPolicy;
     }
 
     public String toString() {
-      return uri + " [" + username + ":" + password + "] [" + tlsCertPolicy + "]";
+      return uri + "[" + username + ":" + password + "]";
     }
   }
 

@@ -306,14 +306,8 @@ bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
       break;
     case TURN:
     case TURNS: {
-      cricket::RelayServerConfig config = cricket::RelayServerConfig(
-          address, port, username, server.password, turn_transport_type);
-      if (server.tls_cert_policy ==
-          PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck) {
-        config.tls_cert_policy =
-            cricket::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
-      }
-      turn_servers->push_back(config);
+      turn_servers->push_back(cricket::RelayServerConfig(
+          address, port, username, server.password, turn_transport_type));
       break;
     }
     case INVALID:
