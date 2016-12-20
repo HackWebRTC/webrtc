@@ -86,6 +86,10 @@ class EventLogAnalyzer {
 
   void CreateNetworkDelayFeedbackGraph(Plot* plot);
 
+  // Returns a vector of capture and arrival timestamps for the video frames
+  // of the stream with the most number of frames.
+  std::vector<std::pair<int64_t, int64_t>> GetFrameTimestamps() const;
+
  private:
   class StreamId {
    public:

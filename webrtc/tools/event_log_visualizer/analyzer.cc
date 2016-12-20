@@ -1167,5 +1167,33 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   plot->SetSuggestedYAxis(0, 10, "Delay (ms)", kBottomMargin, kTopMargin);
   plot->SetTitle("Network Delay Change.");
 }
+
+std::vector<std::pair<int64_t, int64_t>> EventLogAnalyzer::GetFrameTimestamps()
+    const {
+  std::vector<std::pair<int64_t, int64_t>> timestamps;
+  size_t largest_stream_size = 0;
+  const std::vector<LoggedRtpPacket>* largest_video_stream = nullptr;
+  // Find the incoming video stream with the most number of packets that is
+  // not rtx.
+  for (const auto& kv : rtp_packets_) {
+    if (kv.first.GetDirection() == kIncomingPacket &&
+        video_ssrcs_.find(kv.first) != video_ssrcs_.end() &&
+        rtx_ssrcs_.find(kv.first) == rtx_ssrcs_.end() &&
+        kv.second.size() > largest_stream_size) {
+      largest_stream_size = kv.second.size();
+      largest_video_stream = &kv.second;
+    }
+  }
+  if (largest_video_stream == nullptr) {
+    for (auto& packet : *largest_video_stream) {
+      if (packet.header.markerBit) {
+        int64_t capture_ms = packet.header.timestamp / 90.0;
+        int64_t arrival_ms = packet.timestamp / 1000.0;
+        timestamps.push_back(std::make_pair(capture_ms, arrival_ms));
+      }
+    }
+  }
+  return timestamps;
+}
 }  // namespace plotting
 }  // namespace webrtc
