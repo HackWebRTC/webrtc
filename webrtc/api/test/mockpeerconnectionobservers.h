@@ -108,12 +108,12 @@ class MockStatsObserver : public webrtc::StatsObserver {
   MockStatsObserver() : called_(false), stats_() {}
   virtual ~MockStatsObserver() {}
 
-  virtual void OnComplete(const StatsReports& reports) {
+  void OnCompleteReports(std::unique_ptr<StatsReports> reports) override {
     ASSERT(!called_);
     called_ = true;
     stats_.Clear();
-    stats_.number_of_reports = reports.size();
-    for (const auto* r : reports) {
+    stats_.number_of_reports = reports->size();
+    for (const auto* r : *reports) {
       if (r->type() == StatsReport::kStatsReportTypeSsrc) {
         stats_.timestamp = r->timestamp();
         GetIntValue(r, StatsReport::kStatsValueNameAudioOutputLevel,

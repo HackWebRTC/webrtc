@@ -1445,9 +1445,9 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
     }
     case MSG_GETSTATS: {
       GetStatsMsg* param = static_cast<GetStatsMsg*>(msg->pdata);
-      StatsReports reports;
-      stats_->GetStats(param->track, &reports);
-      param->observer->OnComplete(reports);
+      std::unique_ptr<StatsReports> reports(new StatsReports);
+      stats_->GetStats(param->track, reports.get());
+      param->observer->OnCompleteReports(std::move(reports));
       delete param;
       break;
     }
