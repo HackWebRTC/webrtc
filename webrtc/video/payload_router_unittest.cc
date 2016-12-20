@@ -149,40 +149,6 @@ TEST(PayloadRouterTest, SendSimulcast) {
                 .error);
 }
 
-TEST(PayloadRouterTest, MaxPayloadLength) {
-  // Without any limitations from the modules, verify we get the max payload
-  // length for IP/UDP/SRTP with a MTU of 150 bytes.
-  const size_t kDefaultMaxLength = 1500 - 20 - 8 - 12 - 4;
-  NiceMock<MockRtpRtcp> rtp_1;
-  NiceMock<MockRtpRtcp> rtp_2;
-  std::vector<RtpRtcp*> modules;
-  modules.push_back(&rtp_1);
-  modules.push_back(&rtp_2);
-  PayloadRouter payload_router(modules, 42);
-
-  EXPECT_EQ(kDefaultMaxLength, PayloadRouter::DefaultMaxPayloadLength());
-  std::vector<VideoStream> streams(2);
-
-  // Modules return a higher length than the default value.
-  EXPECT_CALL(rtp_1, MaxDataPayloadLength())
-      .Times(1)
-      .WillOnce(Return(kDefaultMaxLength + 10));
-  EXPECT_CALL(rtp_2, MaxDataPayloadLength())
-      .Times(1)
-      .WillOnce(Return(kDefaultMaxLength + 10));
-  EXPECT_EQ(kDefaultMaxLength, payload_router.MaxPayloadLength());
-
-  // The modules return a value lower than default.
-  const size_t kTestMinPayloadLength = 1001;
-  EXPECT_CALL(rtp_1, MaxDataPayloadLength())
-      .Times(1)
-      .WillOnce(Return(kTestMinPayloadLength + 10));
-  EXPECT_CALL(rtp_2, MaxDataPayloadLength())
-      .Times(1)
-      .WillOnce(Return(kTestMinPayloadLength));
-  EXPECT_EQ(kTestMinPayloadLength, payload_router.MaxPayloadLength());
-}
-
 TEST(PayloadRouterTest, SimulcastTargetBitrate) {
   NiceMock<MockRtpRtcp> rtp_1;
   NiceMock<MockRtpRtcp> rtp_2;

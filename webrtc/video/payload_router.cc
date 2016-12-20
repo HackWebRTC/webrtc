@@ -98,11 +98,6 @@ PayloadRouter::PayloadRouter(const std::vector<RtpRtcp*>& rtp_modules,
 
 PayloadRouter::~PayloadRouter() {}
 
-size_t PayloadRouter::DefaultMaxPayloadLength() {
-  const size_t kIpUdpSrtpLength = 44;
-  return IP_PACKET_SIZE - kIpUdpSrtpLength;
-}
-
 void PayloadRouter::SetActive(bool active) {
   rtc::CritScope lock(&crit_);
   if (active_ == active)
@@ -147,17 +142,6 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
     return Result(Result::ERROR_SEND_FAILED);
 
   return Result(Result::OK, frame_id);
-}
-
-size_t PayloadRouter::MaxPayloadLength() const {
-  size_t min_payload_length = DefaultMaxPayloadLength();
-  rtc::CritScope lock(&crit_);
-  for (size_t i = 0; i < rtp_modules_.size(); ++i) {
-    size_t module_payload_length = rtp_modules_[i]->MaxDataPayloadLength();
-    if (module_payload_length < min_payload_length)
-      min_payload_length = module_payload_length;
-  }
-  return min_payload_length;
 }
 
 void PayloadRouter::OnBitrateAllocationUpdated(
