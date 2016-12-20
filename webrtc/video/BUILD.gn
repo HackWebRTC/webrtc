@@ -63,6 +63,7 @@ rtc_static_library("video") {
     "../base:rtc_task_queue",
     "../common_video",
     "../logging:rtc_event_log_api",
+    "../media:rtc_media_base",
     "../modules/bitrate_controller",
     "../modules/congestion_controller",
     "../modules/pacing",

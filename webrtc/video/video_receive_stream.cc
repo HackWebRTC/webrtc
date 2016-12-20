@@ -315,7 +315,8 @@ void VideoReceiveStream::Start() {
   for (const Decoder& decoder : config_.decoders) {
     video_receiver_.RegisterExternalDecoder(decoder.decoder,
                                             decoder.payload_type);
-
+    // TODO(johan): make Decoder.codec_params accessible for RtpStreamReceiver
+    // which holds H264SpsPpsTracker
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
     RTC_CHECK(rtp_stream_receiver_.AddReceiveCodec(codec));
     RTC_CHECK_EQ(VCM_OK, video_receiver_.RegisterReceiveCodec(

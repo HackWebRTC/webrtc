@@ -82,6 +82,9 @@ class RtpStreamReceiver : public RtpData,
       VCMTiming* timing);
   ~RtpStreamReceiver();
 
+  bool AddReceiveCodec(const VideoCodec& video_codec,
+                       const std::map<std::string, std::string>& codec_params);
+
   bool AddReceiveCodec(const VideoCodec& video_codec);
 
   uint32_t GetRemoteSsrc() const;
@@ -158,6 +161,7 @@ class RtpStreamReceiver : public RtpData,
   void UpdateHistograms();
   void EnableReceiveRtpHeaderExtension(const std::string& extension, int id);
   bool IsRedEnabled() const;
+  void InsertSpsPpsIntoTracker(uint8_t payload_type);
 
   Clock* const clock_;
   // Ownership of this object lies with VideoReceiveStream, which owns |this|.
@@ -196,6 +200,11 @@ class RtpStreamReceiver : public RtpData,
   std::map<uint16_t, uint16_t, DescendingSeqNumComp<uint16_t>>
       last_seq_num_for_pic_id_ GUARDED_BY(last_seq_num_cs_);
   video_coding::H264SpsPpsTracker tracker_;
+  // TODO(johan): Remove pt_codec_params_ once
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=6883 is resolved.
+  // Maps a payload type to a map of out-of-band supplied codec parameters.
+  std::map<uint8_t, std::map<std::string, std::string>> pt_codec_params_;
+  int16_t last_payload_type_ = -1;
 };
 
 }  // namespace webrtc

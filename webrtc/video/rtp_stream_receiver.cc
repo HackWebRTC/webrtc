@@ -17,6 +17,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
+#include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
@@ -26,6 +27,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
 #include "webrtc/modules/video_coding/frame_object.h"
+#include "webrtc/modules/video_coding/h264_sprop_parameter_sets.h"
 #include "webrtc/modules/video_coding/h264_sps_pps_tracker.h"
 #include "webrtc/modules/video_coding/packet_buffer.h"
 #include "webrtc/modules/video_coding/video_coding_impl.h"
@@ -223,13 +225,19 @@ RtpStreamReceiver::~RtpStreamReceiver() {
   UpdateHistograms();
 }
 
+bool RtpStreamReceiver::AddReceiveCodec(
+    const VideoCodec& video_codec,
+    const std::map<std::string, std::string>& codec_params) {
+  pt_codec_params_.insert(make_pair(video_codec.plType, codec_params));
+  return AddReceiveCodec(video_codec);
+}
+
 bool RtpStreamReceiver::AddReceiveCodec(const VideoCodec& video_codec) {
   int8_t old_pltype = -1;
   if (rtp_payload_registry_.ReceivePayloadType(video_codec, &old_pltype) !=
       -1) {
     rtp_payload_registry_.DeRegisterReceivePayload(old_pltype);
   }
-
   return rtp_payload_registry_.RegisterReceivePayload(video_codec) == 0;
 }
 
@@ -259,6 +267,14 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
     packet.timesNacked = nack_module_->OnReceivedPacket(packet);
 
     if (packet.codec == kVideoCodecH264) {
+      // Only when we start to receive packets will we know what payload type
+      // that will be used. When we know the payload type insert the correct
+      // sps/pps into the tracker.
+      if (packet.payloadType != last_payload_type_) {
+        last_payload_type_ = packet.payloadType;
+        InsertSpsPpsIntoTracker(packet.payloadType);
+      }
+
       switch (tracker_.CopyAndFixBitstream(&packet)) {
         case video_coding::H264SpsPpsTracker::kRequestKeyframe:
           keyframe_request_sender_->RequestKeyFrame();
@@ -648,6 +664,27 @@ void RtpStreamReceiver::EnableReceiveRtpHeaderExtension(
   RTC_DCHECK(RtpExtension::IsSupportedForVideo(extension));
   RTC_CHECK(rtp_header_parser_->RegisterRtpHeaderExtension(
       StringToRtpExtensionType(extension), id));
+}
+
+void RtpStreamReceiver::InsertSpsPpsIntoTracker(uint8_t payload_type) {
+  auto codec_params_it = pt_codec_params_.find(payload_type);
+  if (codec_params_it == pt_codec_params_.end())
+    return;
+
+  LOG(LS_INFO) << "Found out of band supplied codec parameters for"
+               << " payload type: " << payload_type;
+
+  H264SpropParameterSets sprop_decoder;
+  auto sprop_base64_it =
+      codec_params_it->second.find(cricket::kH264FmtpSpropParameterSets);
+
+  if (sprop_base64_it == codec_params_it->second.end())
+    return;
+
+  if (!sprop_decoder.DecodeSprop(sprop_base64_it->second))
+    return;
+
+  tracker_.InsertSpsPps(sprop_decoder.sps_nalu(), sprop_decoder.pps_nalu());
 }
 
 }  // namespace webrtc

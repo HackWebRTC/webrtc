@@ -11,10 +11,13 @@
 #include "webrtc/modules/video_coding/h264_sps_pps_tracker.h"
 
 #include <string>
+#include <utility>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/h264/h264_common.h"
+#include "webrtc/common_video/h264/pps_parser.h"
+#include "webrtc/common_video/h264/sps_parser.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/packet_buffer.h"
 
@@ -177,6 +180,34 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
   packet->dataPtr = buffer;
   packet->sizeBytes = required_size;
   return kInsert;
+}
+
+void H264SpsPpsTracker::InsertSpsPps(const std::vector<uint8_t>& sps,
+                                     const std::vector<uint8_t>& pps) {
+  rtc::Optional<SpsParser::SpsState> parsed_sps =
+      SpsParser::ParseSps(sps.data(), sps.size());
+  rtc::Optional<PpsParser::PpsState> parsed_pps =
+      PpsParser::ParsePps(pps.data(), pps.size());
+
+  if (!parsed_pps || !parsed_sps) {
+    LOG(LS_WARNING) << "Failed to parse SPS or PPS parameters.";
+    return;
+  }
+
+  SpsInfo sps_info;
+  sps_info.size = sps.size();
+  uint8_t* sps_data = new uint8_t[sps_info.size];
+  memcpy(sps_data, sps.data(), sps_info.size);
+  sps_info.data.reset(sps_data);
+  sps_data_[parsed_sps->id] = std::move(sps_info);
+
+  PpsInfo pps_info;
+  pps_info.size = pps.size();
+  pps_info.sps_id = parsed_pps->sps_id;
+  uint8_t* pps_data = new uint8_t[pps_info.size];
+  memcpy(pps_data, pps.data(), pps_info.size);
+  pps_info.data.reset(pps_data);
+  pps_data_[parsed_pps->id] = std::move(pps_info);
 }
 
 }  // namespace video_coding
