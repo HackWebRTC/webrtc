@@ -8,6 +8,18 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+"""
+This tool tries to fix (some) errors reported by `gn gen --check` or
+`gn check`.
+It will run `mb gen` in a temporary directory and it is really useful to
+check for different configurations.
+
+Usage:
+    $ python tools-webrtc/gn_check_autofix.py -m some_mater -b some_bot
+    or
+    $ python tools-webrtc/gn_check_autofix.py -c some_mb_config
+"""
+
 import os
 import re
 import shutil
@@ -16,6 +28,8 @@ import sys
 import tempfile
 
 from collections import defaultdict
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 TARGET_RE = re.compile(
     r'(?P<indentation_level>\s*)\w*\("(?P<target_name>\w*)"\) {$')
@@ -96,10 +110,12 @@ def main():
   errors_by_file = defaultdict(lambda: defaultdict(set))
 
   with TemporaryDirectory() as tmp_dir:
+    mb_script_path = os.path.join(SCRIPT_DIR, 'mb', 'mb.py')
+    mb_config_file_path = os.path.join(SCRIPT_DIR, 'mb', 'mb_config.pyl')
     mb_gen_command = ([
-        'tools/mb/mb.py', 'gen',
+        mb_script_path, 'gen',
         tmp_dir,
-        '--config-file', 'webrtc/build/mb_config.pyl',
+        '--config-file', mb_config_file_path,
     ] + sys.argv[1:])
 
   mb_output = Run(mb_gen_command)
