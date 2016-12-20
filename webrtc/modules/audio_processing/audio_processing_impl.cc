@@ -1132,12 +1132,13 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   AudioBuffer* capture_buffer = capture_.capture_audio.get();  // For brevity.
 
-  rms_.Analyze(rtc::ArrayView<const int16_t>(
+  capture_input_rms_.Analyze(rtc::ArrayView<const int16_t>(
       capture_buffer->channels_const()[0],
       capture_nonlocked_.capture_processing_format.num_frames()));
-  if (++rms_interval_counter_ >= 1000) {
-    rms_interval_counter_ = 0;
-    RmsLevel::Levels levels = rms_.AverageAndPeak();
+  const bool log_rms = ++capture_rms_interval_counter_ >= 1000;
+  if (log_rms) {
+    capture_rms_interval_counter_ = 0;
+    RmsLevel::Levels levels = capture_input_rms_.AverageAndPeak();
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.ApmCaptureInputLevelAverageRms",
                                 levels.average, 1, RmsLevel::kMinLevelDb, 64);
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.ApmCaptureInputLevelPeakRms",
@@ -1274,6 +1275,17 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   // The level estimator operates on the recombined data.
   public_submodules_->level_estimator->ProcessStream(capture_buffer);
+
+  capture_output_rms_.Analyze(rtc::ArrayView<const int16_t>(
+      capture_buffer->channels_const()[0],
+      capture_nonlocked_.capture_processing_format.num_frames()));
+  if (log_rms) {
+    RmsLevel::Levels levels = capture_output_rms_.AverageAndPeak();
+    RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.ApmCaptureOutputLevelAverageRms",
+                                levels.average, 1, RmsLevel::kMinLevelDb, 64);
+    RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.ApmCaptureOutputLevelPeakRms",
+                                levels.peak, 1, RmsLevel::kMinLevelDb, 64);
+  }
 
   capture_.was_stream_delay_set = false;
   return kNoError;

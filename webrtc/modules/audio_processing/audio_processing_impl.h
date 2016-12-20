@@ -415,8 +415,9 @@ class AudioProcessingImpl : public AudioProcessing {
   std::vector<float> red_render_queue_buffer_ GUARDED_BY(crit_render_);
   std::vector<float> red_capture_queue_buffer_ GUARDED_BY(crit_capture_);
 
-  RmsLevel rms_ GUARDED_BY(crit_capture_);
-  int rms_interval_counter_ GUARDED_BY(crit_capture_) = 0;
+  RmsLevel capture_input_rms_ GUARDED_BY(crit_capture_);
+  RmsLevel capture_output_rms_ GUARDED_BY(crit_capture_);
+  int capture_rms_interval_counter_ GUARDED_BY(crit_capture_) = 0;
 
   // Lock protection not needed.
   std::unique_ptr<SwapQueue<std::vector<float>, RenderQueueItemVerifier<float>>>
