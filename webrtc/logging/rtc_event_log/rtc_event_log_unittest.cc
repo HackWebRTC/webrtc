@@ -16,6 +16,7 @@
 
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/random.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
@@ -26,7 +27,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
-#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -290,12 +290,13 @@ void LogSessionAndReadBack(size_t rtp_count,
   // When log_dumper goes out of scope, it causes the log file to be flushed
   // to disk.
   {
-    SimulatedClock fake_clock(prng.Rand<uint32_t>());
-    std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create(&fake_clock));
+    rtc::ScopedFakeClock fake_clock;
+    fake_clock.SetTimeMicros(prng.Rand<uint32_t>());
+    std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
     log_dumper->LogVideoReceiveStreamConfig(receiver_config);
-    fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+    fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
     log_dumper->LogVideoSendStreamConfig(sender_config);
-    fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+    fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
     size_t rtcp_index = 1;
     size_t playout_index = 1;
     size_t bwe_loss_index = 1;
@@ -304,7 +305,7 @@ void LogSessionAndReadBack(size_t rtp_count,
           (i % 2 == 0) ? kIncomingPacket : kOutgoingPacket,
           (i % 3 == 0) ? MediaType::AUDIO : MediaType::VIDEO,
           rtp_packets[i - 1].data(), rtp_packets[i - 1].size());
-      fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+      fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
       if (i * rtcp_count >= rtcp_index * rtp_count) {
         log_dumper->LogRtcpPacket(
             (rtcp_index % 2 == 0) ? kIncomingPacket : kOutgoingPacket,
@@ -312,23 +313,23 @@ void LogSessionAndReadBack(size_t rtp_count,
             rtcp_packets[rtcp_index - 1].data(),
             rtcp_packets[rtcp_index - 1].size());
         rtcp_index++;
-        fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+        fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
       }
       if (i * playout_count >= playout_index * rtp_count) {
         log_dumper->LogAudioPlayout(playout_ssrcs[playout_index - 1]);
         playout_index++;
-        fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+        fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
       }
       if (i * bwe_loss_count >= bwe_loss_index * rtp_count) {
         log_dumper->LogBwePacketLossEvent(
             bwe_loss_updates[bwe_loss_index - 1].first,
             bwe_loss_updates[bwe_loss_index - 1].second, i);
         bwe_loss_index++;
-        fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+        fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
       }
       if (i == rtp_count / 2) {
         log_dumper->StartLogging(temp_filename, 10000000);
-        fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+        fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
       }
     }
     log_dumper->StopLogging();
@@ -446,19 +447,20 @@ TEST(RtcEventLogTest, LogEventAndReadBack) {
       test::OutputPath() + test_info->test_case_name() + test_info->name();
 
   // Add RTP, start logging, add RTCP and then stop logging
-  SimulatedClock fake_clock(prng.Rand<uint32_t>());
-  std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create(&fake_clock));
+  rtc::ScopedFakeClock fake_clock;
+  fake_clock.SetTimeMicros(prng.Rand<uint32_t>());
+  std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
 
   log_dumper->LogRtpHeader(kIncomingPacket, MediaType::VIDEO, rtp_packet.data(),
                            rtp_packet.size());
-  fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
 
   log_dumper->StartLogging(temp_filename, 10000000);
-  fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
 
   log_dumper->LogRtcpPacket(kOutgoingPacket, MediaType::VIDEO,
                             rtcp_packet.data(), rtcp_packet.size());
-  fake_clock.AdvanceTimeMicroseconds(prng.Rand(1, 1000));
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
 
   log_dumper->StopLogging();
 
@@ -507,8 +509,9 @@ class ConfigReadWriteTest {
     GenerateConfig(extensions_bitvector);
 
     // Log a single config event and stop logging.
-    SimulatedClock fake_clock(prng.Rand<uint32_t>());
-    std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create(&fake_clock));
+    rtc::ScopedFakeClock fake_clock;
+    fake_clock.SetTimeMicros(prng.Rand<uint32_t>());
+    std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
 
     log_dumper->StartLogging(temp_filename, 10000000);
     LogConfig(log_dumper.get());

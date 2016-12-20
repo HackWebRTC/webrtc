@@ -32,9 +32,14 @@ class FakeClock : public ClockInterface {
 
   // Should only be used to set a time in the future.
   void SetTimeNanos(int64_t nanos);
+  void SetTimeMicros(int64_t micros) {
+    SetTimeNanos(kNumNanosecsPerMicrosec * micros);
+  }
 
   void AdvanceTime(TimeDelta delta);
-
+  void AdvanceTimeMicros(int64_t micros) {
+    AdvanceTime(rtc::TimeDelta::FromMicroseconds(micros));
+  }
  private:
   CriticalSection lock_;
   int64_t time_ GUARDED_BY(lock_) = 0;

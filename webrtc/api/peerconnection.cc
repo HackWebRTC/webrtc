@@ -40,7 +40,6 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/sctp/sctpdataengine.h"
 #include "webrtc/pc/channelmanager.h"
-#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace {
@@ -590,7 +589,7 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
       signaling_state_(kStable),
       ice_connection_state_(kIceConnectionNew),
       ice_gathering_state_(kIceGatheringNew),
-      event_log_(RtcEventLog::Create(webrtc::Clock::GetRealTimeClock())),
+      event_log_(RtcEventLog::Create()),
       rtcp_cname_(GenerateRtcpCname()),
       local_streams_(StreamCollection::Create()),
       remote_streams_(StreamCollection::Create()) {}

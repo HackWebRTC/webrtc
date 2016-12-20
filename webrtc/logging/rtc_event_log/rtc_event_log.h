@@ -40,7 +40,13 @@ class RtcEventLog {
   virtual ~RtcEventLog() {}
 
   // Factory method to create an RtcEventLog object.
-  static std::unique_ptr<RtcEventLog> Create(const Clock* clock);
+  static std::unique_ptr<RtcEventLog> Create();
+  // TODO(nisse): webrtc::Clock is deprecated. Delete this method and
+  // above forward declaration of Clock when
+  // webrtc/system_wrappers/include/clock.h is deleted.
+  static std::unique_ptr<RtcEventLog> Create(const Clock* clock) {
+    return Create();
+  }
 
   // Create an RtcEventLog object that does nothing.
   static std::unique_ptr<RtcEventLog> CreateNull();
