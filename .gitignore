@@ -78,8 +78,9 @@
 /third_party/expat
 /third_party/ffmpeg
 /third_party/gaeunit
-/third_party/gflags/src
+/third_party/gflags
 /third_party/google-visualization-python
+/third_party/gtest-parallel
 /third_party/guava
 /third_party/hamcrest
 /third_party/icu
@@ -123,7 +124,7 @@
 /third_party/tcmalloc
 /third_party/usrsctp
 /third_party/valgrind
-/third_party/winsdk_samples/src
+/third_party/winsdk_samples
 /third_party/yasm
 /third_party/zlib
 /tools/android
