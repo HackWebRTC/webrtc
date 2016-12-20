@@ -9,14 +9,18 @@ vars = {
 }
 
 deps = {
+  'src/third_party/gflags':
+    Var('chromium_git') + '/external/webrtc/deps/third_party/gflags' + '@' + '892576179b45861b53e04a112996a738309cf364',
   'src/third_party/gflags/src':
-    Var('chromium_git') + '/external/github.com/gflags/gflags@03bebcb065c83beff83d50ae025a55a4bf94dfca',
+    Var('chromium_git') + '/external/github.com/gflags/gflags' + '@' + '03bebcb065c83beff83d50ae025a55a4bf94dfca',
+  'src/third_party/gtest-parallel':
+    Var('chromium_git') + '/external/webrtc/deps/third_party/gtest-parallel' + '@' + '8768563f5c580f8fc416a13c35c8f23b8a602821',
 }
 
 deps_os = {
   'win': {
-    'src/third_party/winsdk_samples/src':
-      Var('chromium_git') + '/external/webrtc/deps/third_party/winsdk_samples_v71@e71b549167a665d7424d6f1dadfbff4b4aad1589',
+    'src/third_party/winsdk_samples':
+     Var('chromium_git') + '/external/webrtc/deps/third_party/winsdk_samples_v71' + '@' + '6e4f93cc0c2f597547449cbaa80a6af629215a63',
   },
 }
 

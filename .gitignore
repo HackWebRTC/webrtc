@@ -91,7 +91,6 @@
 /third_party/javax_inject
 /third_party/jsr-305
 /third_party/junit
-/third_party/junit-jar
 /third_party/libFuzzer
 /third_party/libc++
 /third_party/libc++-static
@@ -104,7 +103,6 @@
 /third_party/libxml
 /third_party/libyuv
 /third_party/llvm
-/third_party/llvm-build
 /third_party/lss
 /third_party/mockito
 /third_party/modp_b64
