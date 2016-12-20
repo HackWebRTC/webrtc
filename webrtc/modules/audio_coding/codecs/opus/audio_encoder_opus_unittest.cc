@@ -421,4 +421,26 @@ TEST(AudioEncoderOpusTest, BitrateBounded) {
   EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
 }
 
+// Verifies that the complexity adaptation in the config works as intended.
+TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
+  AudioEncoderOpus::Config config;
+  config.low_rate_complexity = 8;
+  config.complexity = 6;
+
+  // Bitrate within hysteresis window. Expect empty output.
+  config.bitrate_bps = rtc::Optional<int>(12500);
+  EXPECT_EQ(rtc::Optional<int>(), config.GetNewComplexity());
+
+  // Bitrate below hysteresis window. Expect higher complexity.
+  config.bitrate_bps = rtc::Optional<int>(10999);
+  EXPECT_EQ(rtc::Optional<int>(8), config.GetNewComplexity());
+
+  // Bitrate within hysteresis window. Expect empty output.
+  config.bitrate_bps = rtc::Optional<int>(12500);
+  EXPECT_EQ(rtc::Optional<int>(), config.GetNewComplexity());
+
+  // Bitrate above hysteresis window. Expect lower complexity.
+  config.bitrate_bps = rtc::Optional<int>(14001);
+  EXPECT_EQ(rtc::Optional<int>(6), config.GetNewComplexity());
+}
 }  // namespace webrtc
