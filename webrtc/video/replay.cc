@@ -18,6 +18,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/sleep.h"
@@ -211,7 +212,8 @@ void RtpReplay() {
   FileRenderPassthrough file_passthrough(flags::OutBase(),
                                          playback_video.get());
 
-  std::unique_ptr<Call> call(Call::Create(Call::Config()));
+  webrtc::RtcEventLogNullImpl event_log;
+  std::unique_ptr<Call> call(Call::Create(Call::Config(&event_log)));
 
   test::NullTransport transport;
   VideoReceiveStream::Config receive_config(&transport);
