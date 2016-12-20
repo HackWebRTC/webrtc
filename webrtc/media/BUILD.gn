@@ -114,28 +114,6 @@ rtc_static_library("rtc_media") {
   libs = []
   deps = []
   sources = [
-    # TODO(magjed): Remove base header files once Chromium is updated.
-    "base/adaptedvideotracksource.h",
-    "base/audiosource.h",
-    "base/codec.h",
-    "base/cryptoparams.h",
-    "base/device.h",
-    "base/hybriddataengine.h",
-    "base/mediachannel.h",
-    "base/mediaconstants.h",
-    "base/mediaengine.h",
-    "base/rtpdataengine.h",
-    "base/rtpdump.h",
-    "base/rtputils.h",
-    "base/streamparams.h",
-    "base/turnutils.h",
-    "base/videoadapter.h",
-    "base/videobroadcaster.h",
-    "base/videocapturer.h",
-    "base/videocapturerfactory.h",
-    "base/videocommon.h",
-    "base/videoframe.h",
-    "base/videosourcebase.h",
     "engine/internaldecoderfactory.cc",
     "engine/internaldecoderfactory.h",
     "engine/internalencoderfactory.cc",
