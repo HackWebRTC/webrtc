@@ -26,6 +26,18 @@ using testing::Return;
 using testing::SaveArg;
 using testing::StrictMock;
 
+namespace {
+
+// Helper to convert some time format to resolution used in absolute send time
+// header extension, rounded upwards. |t| is the time to convert, in some
+// resolution. |denom| is the value to divide |t| by to get whole seconds,
+// e.g. |denom| = 1000 if |t| is in milliseconds.
+uint32_t AbsSendTime(int64_t t, int64_t denom) {
+  return (((t << 18) + (denom >> 1)) / denom) & 0x00fffffful;
+}
+
+}  // namespace
+
 namespace webrtc {
 namespace test {
 
@@ -199,6 +211,34 @@ TEST_F(CongestionControllerTest, GetProbingInterval) {
   bandwidth_observer_->OnReceivedEstimatedBitrate(kInitialBitrateBps * 2);
   clock_.AdvanceTimeMilliseconds(25);
   controller_->Process();
+}
+
+TEST_F(CongestionControllerTest, OnReceivedPacketWithAbsSendTime) {
+  NiceMock<MockCongestionObserver> observer;
+  StrictMock<MockRemoteBitrateObserver> remote_bitrate_observer;
+  std::unique_ptr<PacedSender> pacer(new NiceMock<MockPacedSender>());
+  controller_.reset(
+      new CongestionController(&clock_, &observer, &remote_bitrate_observer,
+                               &event_log_, &packet_router_, std::move(pacer)));
+
+  size_t payload_size = 1000;
+  RTPHeader header;
+  header.ssrc = 0x11eb21c;
+  header.extension.hasAbsoluteSendTime = true;
+
+  std::vector<unsigned int> ssrcs;
+  EXPECT_CALL(remote_bitrate_observer, OnReceiveBitrateChanged(_, _))
+      .WillRepeatedly(SaveArg<0>(&ssrcs));
+
+  for (int i = 0; i < 10; ++i) {
+    clock_.AdvanceTimeMilliseconds((1000 * payload_size) / kInitialBitrateBps);
+    int64_t now_ms = clock_.TimeInMilliseconds();
+    header.extension.absoluteSendTime = AbsSendTime(now_ms, 1000);
+    controller_->OnReceivedPacket(now_ms, payload_size, header);
+  }
+
+  ASSERT_EQ(1u, ssrcs.size());
+  EXPECT_EQ(header.ssrc, ssrcs[0]);
 }
 
 }  // namespace test

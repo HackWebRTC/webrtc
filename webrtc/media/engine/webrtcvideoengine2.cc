@@ -2349,7 +2349,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
     // RTCP messages and RTP header extensions apply to the entire track
     // in the SDP.
     config.transport_cc = config_.rtp.transport_cc;
-    config.extensions = config_.rtp.extensions;
+    config.rtp_header_extensions = config_.rtp.extensions;
     flexfec_stream_ = call_->CreateFlexfecReceiveStream(config);
     flexfec_stream_->Start();
   }

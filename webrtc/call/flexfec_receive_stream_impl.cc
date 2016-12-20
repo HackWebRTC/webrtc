@@ -10,6 +10,8 @@
 
 #include "webrtc/call/flexfec_receive_stream_impl.h"
 
+#include <utility>
+
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
@@ -34,12 +36,12 @@ std::string FlexfecReceiveStream::Config::ToString() const {
   if (!protected_media_ssrcs.empty())
     ss << protected_media_ssrcs[i];
   ss << "], transport_cc: " << (transport_cc ? "on" : "off");
-  ss << ", extensions: [";
+  ss << ", rtp_header_extensions: [";
   i = 0;
-  for (; i + 1 < extensions.size(); ++i)
-    ss << extensions[i].ToString() << ", ";
-  if (!extensions.empty())
-    ss << extensions[i].ToString();
+  for (; i + 1 < rtp_header_extensions.size(); ++i)
+    ss << rtp_header_extensions[i].ToString() << ", ";
+  if (!rtp_header_extensions.empty())
+    ss << rtp_header_extensions[i].ToString();
   ss << "]}";
   return ss.str();
 }
@@ -49,7 +51,7 @@ namespace {
 // TODO(brandtr): Update this function when we support multistream protection.
 std::unique_ptr<FlexfecReceiver> MaybeCreateFlexfecReceiver(
     const FlexfecReceiveStream::Config& config,
-    RecoveredPacketReceiver* recovered_packet_callback) {
+    RecoveredPacketReceiver* recovered_packet_receiver) {
   if (config.payload_type < 0) {
     LOG(LS_WARNING) << "Invalid FlexFEC payload type given. "
                     << "This FlexfecReceiveStream will therefore be useless.";
@@ -79,18 +81,18 @@ std::unique_ptr<FlexfecReceiver> MaybeCreateFlexfecReceiver(
   RTC_DCHECK_EQ(1U, config.protected_media_ssrcs.size());
   return std::unique_ptr<FlexfecReceiver>(
       new FlexfecReceiver(config.remote_ssrc, config.protected_media_ssrcs[0],
-                          recovered_packet_callback));
+                          recovered_packet_receiver));
 }
 
 }  // namespace
 
 FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
     const Config& config,
-    RecoveredPacketReceiver* recovered_packet_callback)
+    RecoveredPacketReceiver* recovered_packet_receiver)
     : started_(false),
       config_(config),
       receiver_(
-          MaybeCreateFlexfecReceiver(config_, recovered_packet_callback)) {
+          MaybeCreateFlexfecReceiver(config_, recovered_packet_receiver)) {
   LOG(LS_INFO) << "FlexfecReceiveStreamImpl: " << config_.ToString();
 }
 
@@ -100,8 +102,7 @@ FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {
 }
 
 bool FlexfecReceiveStreamImpl::AddAndProcessReceivedPacket(
-    const uint8_t* packet,
-    size_t packet_length) {
+    RtpPacketReceived packet) {
   {
     rtc::CritScope cs(&crit_);
     if (!started_)
@@ -109,7 +110,7 @@ bool FlexfecReceiveStreamImpl::AddAndProcessReceivedPacket(
   }
   if (!receiver_)
     return false;
-  return receiver_->AddAndProcessReceivedPacket(packet, packet_length);
+  return receiver_->AddAndProcessReceivedPacket(std::move(packet));
 }
 
 void FlexfecReceiveStreamImpl::Start() {

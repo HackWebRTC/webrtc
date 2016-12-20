@@ -10,11 +10,8 @@
 
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 
-#include <utility>
-
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {
 
@@ -31,13 +28,14 @@ constexpr int kPacketLogIntervalMs = 10000;
 
 }  // namespace
 
-FlexfecReceiver::FlexfecReceiver(uint32_t ssrc,
-                                 uint32_t protected_media_ssrc,
-                                 RecoveredPacketReceiver* callback)
+FlexfecReceiver::FlexfecReceiver(
+    uint32_t ssrc,
+    uint32_t protected_media_ssrc,
+    RecoveredPacketReceiver* recovered_packet_receiver)
     : ssrc_(ssrc),
       protected_media_ssrc_(protected_media_ssrc),
       erasure_code_(ForwardErrorCorrection::CreateFlexfec()),
-      callback_(callback),
+      recovered_packet_receiver_(recovered_packet_receiver),
       clock_(Clock::GetRealTimeClock()),
       last_recovered_packet_ms_(-1) {
   // It's OK to create this object on a different thread/task queue than
@@ -47,10 +45,9 @@ FlexfecReceiver::FlexfecReceiver(uint32_t ssrc,
 
 FlexfecReceiver::~FlexfecReceiver() = default;
 
-bool FlexfecReceiver::AddAndProcessReceivedPacket(const uint8_t* packet,
-                                                  size_t packet_length) {
+bool FlexfecReceiver::AddAndProcessReceivedPacket(RtpPacketReceived packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  if (!AddReceivedPacket(packet, packet_length)) {
+  if (!AddReceivedPacket(std::move(packet))) {
     return false;
   }
   return ProcessReceivedPackets();
@@ -61,42 +58,32 @@ FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
   return packet_counter_;
 }
 
-bool FlexfecReceiver::AddReceivedPacket(const uint8_t* packet,
-                                        size_t packet_length) {
+bool FlexfecReceiver::AddReceivedPacket(RtpPacketReceived packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   // RTP packets with a full base header (12 bytes), but without payload,
   // could conceivably be useful in the decoding. Therefore we check
-  // with a strict inequality here.
-  if (packet_length < kRtpHeaderSize) {
-    LOG(LS_WARNING) << "Truncated packet, discarding.";
-    return false;
-  }
-
-  // TODO(brandtr): Consider how to handle received FlexFEC packets and
-  // the bandwidth estimator.
-  RtpPacketReceived parsed_packet;
-  if (!parsed_packet.Parse(packet, packet_length)) {
-    return false;
-  }
+  // with a non-strict inequality here.
+  RTC_DCHECK_GE(packet.size(), kRtpHeaderSize);
 
   // Demultiplex based on SSRC, and insert into erasure code decoder.
   std::unique_ptr<ReceivedPacket> received_packet(new ReceivedPacket());
-  received_packet->seq_num = parsed_packet.SequenceNumber();
-  received_packet->ssrc = parsed_packet.Ssrc();
+  received_packet->seq_num = packet.SequenceNumber();
+  received_packet->ssrc = packet.Ssrc();
   if (received_packet->ssrc == ssrc_) {
-    // This is a FEC packet belonging to this FlexFEC stream.
-    if (parsed_packet.payload_size() < kMinFlexfecHeaderSize) {
+    // This is a FlexFEC packet.
+    if (packet.payload_size() < kMinFlexfecHeaderSize) {
       LOG(LS_WARNING) << "Truncated FlexFEC packet, discarding.";
       return false;
     }
     received_packet->is_fec = true;
     ++packet_counter_.num_fec_packets;
+
     // Insert packet payload into erasure code.
     // TODO(brandtr): Remove this memcpy when the FEC packet classes
     // are using COW buffers internally.
     received_packet->pkt = rtc::scoped_refptr<Packet>(new Packet());
-    auto payload = parsed_packet.payload();
+    auto payload = packet.payload();
     memcpy(received_packet->pkt->data, payload.data(), payload.size());
     received_packet->pkt->length = payload.size();
   } else {
@@ -106,13 +93,14 @@ bool FlexfecReceiver::AddReceivedPacket(const uint8_t* packet,
       return false;
     }
     received_packet->is_fec = false;
+
     // Insert entire packet into erasure code.
     // TODO(brandtr): Remove this memcpy too.
     received_packet->pkt = rtc::scoped_refptr<Packet>(new Packet());
-    memcpy(received_packet->pkt->data, parsed_packet.data(),
-           parsed_packet.size());
-    received_packet->pkt->length = parsed_packet.size();
+    memcpy(received_packet->pkt->data, packet.data(), packet.size());
+    received_packet->pkt->length = packet.size();
   }
+
   received_packets_.push_back(std::move(received_packet));
   ++packet_counter_.num_packets;
 
@@ -144,8 +132,8 @@ bool FlexfecReceiver::ProcessReceivedPackets() {
       continue;
     }
     ++packet_counter_.num_recovered_packets;
-    if (!callback_->OnRecoveredPacket(recovered_packet->pkt->data,
-                                      recovered_packet->pkt->length)) {
+    if (!recovered_packet_receiver_->OnRecoveredPacket(
+            recovered_packet->pkt->data, recovered_packet->pkt->length)) {
       return false;
     }
     recovered_packet->returned = true;

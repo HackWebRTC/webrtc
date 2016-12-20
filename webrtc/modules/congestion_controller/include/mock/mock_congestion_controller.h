@@ -13,6 +13,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/socket.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/test/gmock.h"
 
@@ -44,6 +45,10 @@ class MockCongestionController : public CongestionController {
                              remote_bitrate_observer,
                              event_log,
                              packet_router) {}
+  MOCK_METHOD3(OnReceivedPacket,
+               void(int64_t arrival_time_ms,
+                    size_t payload_size,
+                    const RTPHeader& header));
   MOCK_METHOD3(SetBweBitrates,
                void(int min_bitrate_bps,
                     int start_bitrate_bps,
