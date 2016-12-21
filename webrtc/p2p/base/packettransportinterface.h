@@ -31,7 +31,7 @@ class PacketTransportInterface : public sigslot::has_slots<> {
   virtual ~PacketTransportInterface() {}
 
   // Identify the object for logging and debug purpose.
-  virtual const std::string debug_name() const = 0;
+  virtual std::string debug_name() const = 0;
 
   // The transport has been established.
   virtual bool writable() const = 0;

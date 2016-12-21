@@ -88,8 +88,8 @@ class DtlsTestClient : public sigslot::has_slots<> {
     transport_.reset(
         new cricket::JsepTransport("dtls content name", certificate_));
     for (int i = 0; i < count; ++i) {
-      cricket::FakeTransportChannel* fake_ice_channel =
-          new cricket::FakeTransportChannel(transport_->mid(), i);
+      cricket::FakeIceTransport* fake_ice_channel =
+          new cricket::FakeIceTransport(transport_->mid(), i);
       fake_ice_channel->SetAsync(true);
       fake_ice_channel->SetAsyncDelay(async_delay_ms);
       // Hook the raw packets so that we can verify they are encrypted.
@@ -111,14 +111,14 @@ class DtlsTestClient : public sigslot::has_slots<> {
       channels_.push_back(
           std::unique_ptr<cricket::DtlsTransportChannelWrapper>(channel));
       fake_channels_.push_back(
-          std::unique_ptr<cricket::FakeTransportChannel>(fake_ice_channel));
+          std::unique_ptr<cricket::FakeIceTransport>(fake_ice_channel));
       transport_->AddChannel(channel, i);
     }
   }
 
   cricket::JsepTransport* transport() { return transport_.get(); }
 
-  cricket::FakeTransportChannel* GetFakeChannel(int component) {
+  cricket::FakeIceTransport* GetFakeChannel(int component) {
     for (const auto& ch : fake_channels_) {
       if (ch->component() == component) {
         return ch.get();
@@ -434,7 +434,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
  private:
   std::string name_;
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
-  std::vector<std::unique_ptr<cricket::FakeTransportChannel>> fake_channels_;
+  std::vector<std::unique_ptr<cricket::FakeIceTransport>> fake_channels_;
   std::vector<std::unique_ptr<cricket::DtlsTransportChannelWrapper>> channels_;
   std::unique_ptr<cricket::JsepTransport> transport_;
   size_t packet_size_ = 0u;
@@ -639,8 +639,8 @@ class DtlsTransportChannelTest : public DtlsTransportChannelTestBase,
 // Test that transport negotiation of ICE, no DTLS works properly.
 TEST_F(DtlsTransportChannelTest, TestChannelSetupIce) {
   Negotiate();
-  cricket::FakeTransportChannel* channel1 = client1_.GetFakeChannel(0);
-  cricket::FakeTransportChannel* channel2 = client2_.GetFakeChannel(0);
+  cricket::FakeIceTransport* channel1 = client1_.GetFakeChannel(0);
+  cricket::FakeIceTransport* channel2 = client2_.GetFakeChannel(0);
   ASSERT_TRUE(channel1 != NULL);
   ASSERT_TRUE(channel2 != NULL);
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, channel1->GetIceRole());

@@ -47,7 +47,7 @@ class TransportController::ChannelPair {
   // TODO(deadbeef): Change the types of |dtls| and |ice| to
   // DtlsTransportChannelWrapper and P2PTransportChannelWrapper,
   // once TransportChannelImpl is removed.
-  ChannelPair(TransportChannelImpl* dtls, TransportChannelImpl* ice)
+  ChannelPair(TransportChannelImpl* dtls, IceTransportInternal* ice)
       : ice_(ice), dtls_(dtls) {}
 
   // Currently, all ICE-related calls still go through this DTLS channel. But
@@ -55,11 +55,11 @@ class TransportController::ChannelPair {
   // channel interface no longer includes ICE-specific methods.
   const TransportChannelImpl* dtls() const { return dtls_.get(); }
   TransportChannelImpl* dtls() { return dtls_.get(); }
-  const TransportChannelImpl* ice() const { return ice_.get(); }
-  TransportChannelImpl* ice() { return ice_.get(); }
+  const IceTransportInternal* ice() const { return ice_.get(); }
+  IceTransportInternal* ice() { return ice_.get(); }
 
  private:
-  std::unique_ptr<TransportChannelImpl> ice_;
+  std::unique_ptr<IceTransportInternal> ice_;
   std::unique_ptr<TransportChannelImpl> dtls_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ChannelPair);
@@ -243,7 +243,7 @@ TransportChannel* TransportController::CreateTransportChannel_n(
   JsepTransport* transport = GetOrCreateJsepTransport(transport_name);
 
   // Create DTLS channel wrapping ICE channel, and configure it.
-  TransportChannelImpl* ice =
+  IceTransportInternal* ice =
       CreateIceTransportChannel_n(transport_name, component);
   // TODO(deadbeef): To support QUIC, would need to create a
   // QuicTransportChannel here. What is "dtls" in this file would then become
@@ -341,7 +341,7 @@ TransportChannelImpl* TransportController::get_channel_for_testing(
   return ch ? ch->dtls() : nullptr;
 }
 
-TransportChannelImpl* TransportController::CreateIceTransportChannel_n(
+IceTransportInternal* TransportController::CreateIceTransportChannel_n(
     const std::string& transport_name,
     int component) {
   return new P2PTransportChannel(transport_name, component, port_allocator_);
@@ -350,7 +350,7 @@ TransportChannelImpl* TransportController::CreateIceTransportChannel_n(
 TransportChannelImpl* TransportController::CreateDtlsTransportChannel_n(
     const std::string&,
     int,
-    TransportChannelImpl* ice) {
+    IceTransportInternal* ice) {
   DtlsTransportChannelWrapper* dtls = new DtlsTransportChannelWrapper(ice);
   dtls->SetSslMaxProtocolVersion(ssl_max_version_);
   return dtls;
@@ -822,13 +822,12 @@ void TransportController::UpdateAggregateStates_n() {
   bool all_done_gathering = !channels_.empty();
   for (const auto& channel : channels_) {
     any_receiving = any_receiving || channel->dtls()->receiving();
-    any_failed =
-        any_failed ||
-        channel->dtls()->GetState() == TransportChannelState::STATE_FAILED;
+    any_failed = any_failed ||
+                 channel->dtls()->GetState() == IceTransportState::STATE_FAILED;
     all_connected = all_connected && channel->dtls()->writable();
     all_completed =
         all_completed && channel->dtls()->writable() &&
-        channel->dtls()->GetState() == TransportChannelState::STATE_COMPLETED &&
+        channel->dtls()->GetState() == IceTransportState::STATE_COMPLETED &&
         channel->dtls()->GetIceRole() == ICEROLE_CONTROLLING &&
         channel->dtls()->gathering_state() == kIceGatheringComplete;
     any_gathering =
