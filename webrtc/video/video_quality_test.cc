@@ -1119,6 +1119,15 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
         video_send_config_.rtp.flexfec.flexfec_ssrc;
     flexfec_receive_config.protected_media_ssrcs =
         video_send_config_.rtp.flexfec.protected_media_ssrcs;
+    flexfec_receive_config.transport_cc = params_.call.send_side_bwe;
+    if (params_.call.send_side_bwe) {
+      flexfec_receive_config.rtp_header_extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                       test::kTransportSequenceNumberExtensionId));
+    } else {
+      flexfec_receive_config.rtp_header_extensions.push_back(RtpExtension(
+          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
+    }
     flexfec_receive_configs_.push_back(flexfec_receive_config);
   }
 
