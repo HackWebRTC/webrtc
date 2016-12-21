@@ -539,27 +539,6 @@ class RTCStatsCollectorTest : public testing::Test {
     }
   }
 
-  void ExpectReportContainsDataChannel(
-      const rtc::scoped_refptr<const RTCStatsReport>& report,
-      const DataChannel& data_channel) {
-    const RTCStats* stats = report->Get("RTCDataChannel_" +
-                                        rtc::ToString<>(data_channel.id()));
-    EXPECT_TRUE(stats);
-    const RTCDataChannelStats& data_channel_stats =
-        stats->cast_to<const RTCDataChannelStats>();
-    EXPECT_EQ(*data_channel_stats.label, data_channel.label());
-    EXPECT_EQ(*data_channel_stats.protocol, data_channel.protocol());
-    EXPECT_EQ(*data_channel_stats.datachannelid, data_channel.id());
-    EXPECT_EQ(*data_channel_stats.state,
-        DataStateToRTCDataChannelStateForTesting(data_channel.state()));
-    EXPECT_EQ(*data_channel_stats.messages_sent, data_channel.messages_sent());
-    EXPECT_EQ(*data_channel_stats.bytes_sent, data_channel.bytes_sent());
-    EXPECT_EQ(*data_channel_stats.messages_received,
-              data_channel.messages_received());
-    EXPECT_EQ(*data_channel_stats.bytes_received,
-              data_channel.bytes_received());
-  }
-
  protected:
   rtc::scoped_refptr<RTCStatsCollectorTestHelper> test_;
   rtc::scoped_refptr<RTCStatsCollector> collector_;
@@ -884,40 +863,78 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
 
 TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
   test_->data_channels().push_back(
-      new MockDataChannel(0, DataChannelInterface::kConnecting));
+      new MockDataChannel(
+          0, "MockDataChannel0", DataChannelInterface::kConnecting, "udp",
+          1, 2, 3, 4));
+  RTCDataChannelStats expected_data_channel0("RTCDataChannel_0", 0);
+  expected_data_channel0.label = "MockDataChannel0";
+  expected_data_channel0.protocol = "udp";
+  expected_data_channel0.datachannelid = 0;
+  expected_data_channel0.state = "connecting";
+  expected_data_channel0.messages_sent = 1;
+  expected_data_channel0.bytes_sent = 2;
+  expected_data_channel0.messages_received = 3;
+  expected_data_channel0.bytes_received = 4;
+
   test_->data_channels().push_back(
-      new MockDataChannel(1, DataChannelInterface::kOpen));
+      new MockDataChannel(
+          1, "MockDataChannel1", DataChannelInterface::kOpen, "tcp",
+          5, 6, 7, 8));
+  RTCDataChannelStats expected_data_channel1("RTCDataChannel_1", 0);
+  expected_data_channel1.label = "MockDataChannel1";
+  expected_data_channel1.protocol = "tcp";
+  expected_data_channel1.datachannelid = 1;
+  expected_data_channel1.state = "open";
+  expected_data_channel1.messages_sent = 5;
+  expected_data_channel1.bytes_sent = 6;
+  expected_data_channel1.messages_received = 7;
+  expected_data_channel1.bytes_received = 8;
+
   test_->data_channels().push_back(
-      new MockDataChannel(2, DataChannelInterface::kClosing));
+      new MockDataChannel(
+          2, "MockDataChannel2", DataChannelInterface::kClosing, "udp",
+          9, 10, 11, 12));
+  RTCDataChannelStats expected_data_channel2("RTCDataChannel_2", 0);
+  expected_data_channel2.label = "MockDataChannel2";
+  expected_data_channel2.protocol = "udp";
+  expected_data_channel2.datachannelid = 2;
+  expected_data_channel2.state = "closing";
+  expected_data_channel2.messages_sent = 9;
+  expected_data_channel2.bytes_sent = 10;
+  expected_data_channel2.messages_received = 11;
+  expected_data_channel2.bytes_received = 12;
+
   test_->data_channels().push_back(
-      new MockDataChannel(3, DataChannelInterface::kClosed));
+      new MockDataChannel(
+          3, "MockDataChannel3", DataChannelInterface::kClosed, "tcp",
+          13, 14, 15, 16));
+  RTCDataChannelStats expected_data_channel3("RTCDataChannel_3", 0);
+  expected_data_channel3.label = "MockDataChannel3";
+  expected_data_channel3.protocol = "tcp";
+  expected_data_channel3.datachannelid = 3;
+  expected_data_channel3.state = "closed";
+  expected_data_channel3.messages_sent = 13;
+  expected_data_channel3.bytes_sent = 14;
+  expected_data_channel3.messages_received = 15;
+  expected_data_channel3.bytes_received = 16;
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  ExpectReportContainsDataChannel(report, *test_->data_channels()[0]);
-  ExpectReportContainsDataChannel(report, *test_->data_channels()[1]);
-  ExpectReportContainsDataChannel(report, *test_->data_channels()[2]);
-  ExpectReportContainsDataChannel(report, *test_->data_channels()[3]);
-
-  test_->data_channels().clear();
-  test_->data_channels().push_back(
-      new MockDataChannel(0, DataChannelInterface::kConnecting,
-                          1, 2, 3, 4));
-  test_->data_channels().push_back(
-      new MockDataChannel(1, DataChannelInterface::kOpen,
-                          5, 6, 7, 8));
-  test_->data_channels().push_back(
-      new MockDataChannel(2, DataChannelInterface::kClosing,
-                          9, 10, 11, 12));
-  test_->data_channels().push_back(
-      new MockDataChannel(3, DataChannelInterface::kClosed,
-                          13, 14, 15, 16));
-
-  collector_->ClearCachedStatsReport();
-  report = GetStatsReport();
-  ExpectReportContainsDataChannel(report, *test_->data_channels()[0]);
-  ExpectReportContainsDataChannel(report, *test_->data_channels()[1]);
-  ExpectReportContainsDataChannel(report, *test_->data_channels()[2]);
-  ExpectReportContainsDataChannel(report, *test_->data_channels()[3]);
+  ASSERT_TRUE(report->Get(expected_data_channel0.id()));
+  EXPECT_EQ(expected_data_channel0,
+            report->Get(expected_data_channel0.id())->cast_to<
+                RTCDataChannelStats>());
+  ASSERT_TRUE(report->Get(expected_data_channel1.id()));
+  EXPECT_EQ(expected_data_channel1,
+            report->Get(expected_data_channel1.id())->cast_to<
+                RTCDataChannelStats>());
+  ASSERT_TRUE(report->Get(expected_data_channel2.id()));
+  EXPECT_EQ(expected_data_channel2,
+            report->Get(expected_data_channel2.id())->cast_to<
+                RTCDataChannelStats>());
+  ASSERT_TRUE(report->Get(expected_data_channel3.id()));
+  EXPECT_EQ(expected_data_channel3,
+            report->Get(expected_data_channel3.id())->cast_to<
+                RTCDataChannelStats>());
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
@@ -1055,14 +1072,14 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   expected_pair.responses_sent = 1000;
   expected_pair.consent_requests_sent = (2020 - 2000);
 
-  EXPECT_TRUE(report->Get(expected_pair.id()));
+  ASSERT_TRUE(report->Get(expected_pair.id()));
   EXPECT_EQ(
       expected_pair,
       report->Get(expected_pair.id())->cast_to<RTCIceCandidatePairStats>());
 
-  EXPECT_TRUE(report->Get(*expected_pair.local_candidate_id));
+  ASSERT_TRUE(report->Get(*expected_pair.local_candidate_id));
   ExpectReportContainsCandidate(report, connection_info.local_candidate, true);
-  EXPECT_TRUE(report->Get(*expected_pair.remote_candidate_id));
+  ASSERT_TRUE(report->Get(*expected_pair.remote_candidate_id));
   ExpectReportContainsCandidate(report, connection_info.remote_candidate,
                                 false);
 }
@@ -1074,7 +1091,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
                                     report->timestamp_us());
     expected.data_channels_opened = 0;
     expected.data_channels_closed = 0;
-    EXPECT_TRUE(report->Get("RTCPeerConnection"));
+    ASSERT_TRUE(report->Get("RTCPeerConnection"));
     EXPECT_EQ(expected,
               report->Get("RTCPeerConnection")->cast_to<
                   RTCPeerConnectionStats>());
@@ -1098,7 +1115,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
                                     report->timestamp_us());
     expected.data_channels_opened = 1;
     expected.data_channels_closed = 0;
-    EXPECT_TRUE(report->Get("RTCPeerConnection"));
+    ASSERT_TRUE(report->Get("RTCPeerConnection"));
     EXPECT_EQ(expected,
               report->Get("RTCPeerConnection")->cast_to<
                   RTCPeerConnectionStats>());
@@ -1114,7 +1131,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
                                     report->timestamp_us());
     expected.data_channels_opened = 2;
     expected.data_channels_closed = 1;
-    EXPECT_TRUE(report->Get("RTCPeerConnection"));
+    ASSERT_TRUE(report->Get("RTCPeerConnection"));
     EXPECT_EQ(expected,
               report->Get("RTCPeerConnection")->cast_to<
                   RTCPeerConnectionStats>());
@@ -1171,7 +1188,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_local_stream.track_ids = std::vector<std::string>();
   expected_local_stream.track_ids->push_back(
       "RTCMediaStreamTrack_LocalAudioTrackID");
-  EXPECT_TRUE(report->Get(expected_local_stream.id()));
+  ASSERT_TRUE(report->Get(expected_local_stream.id()));
   EXPECT_EQ(expected_local_stream,
             report->Get(expected_local_stream.id())->cast_to<
                 RTCMediaStreamStats>());
@@ -1182,7 +1199,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_stream.track_ids = std::vector<std::string>();
   expected_remote_stream.track_ids->push_back(
       "RTCMediaStreamTrack_RemoteAudioTrackID");
-  EXPECT_TRUE(report->Get(expected_remote_stream.id()));
+  ASSERT_TRUE(report->Get(expected_remote_stream.id()));
   EXPECT_EQ(expected_remote_stream,
             report->Get(expected_remote_stream.id())->cast_to<
                 RTCMediaStreamStats>());
@@ -1196,7 +1213,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_local_audio_track.audio_level = 1.0;
   expected_local_audio_track.echo_return_loss = 42.0;
   expected_local_audio_track.echo_return_loss_enhancement = 52.0;
-  EXPECT_TRUE(report->Get(expected_local_audio_track.id()));
+  ASSERT_TRUE(report->Get(expected_local_audio_track.id()));
   EXPECT_EQ(expected_local_audio_track,
             report->Get(expected_local_audio_track.id())->cast_to<
                 RTCMediaStreamTrackStats>());
@@ -1210,7 +1227,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_audio_track.audio_level = 0.0;
   expected_remote_audio_track.echo_return_loss = 13.0;
   expected_remote_audio_track.echo_return_loss_enhancement = 37.0;
-  EXPECT_TRUE(report->Get(expected_remote_audio_track.id()));
+  ASSERT_TRUE(report->Get(expected_remote_audio_track.id()));
   EXPECT_EQ(expected_remote_audio_track,
             report->Get(expected_remote_audio_track.id())->cast_to<
                 RTCMediaStreamTrackStats>());
@@ -1250,7 +1267,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_local_audio_track.audio_level = 1.0;
   // Should be undefined: |expected_local_audio_track.echo_return_loss| and
   // |expected_local_audio_track.echo_return_loss_enhancement|.
-  EXPECT_TRUE(report->Get(expected_local_audio_track.id()));
+  ASSERT_TRUE(report->Get(expected_local_audio_track.id()));
   EXPECT_EQ(expected_local_audio_track,
             report->Get(expected_local_audio_track.id())->cast_to<
                 RTCMediaStreamTrackStats>());
@@ -1308,7 +1325,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_local_stream.track_ids = std::vector<std::string>();
   expected_local_stream.track_ids->push_back(
       "RTCMediaStreamTrack_LocalVideoTrackID");
-  EXPECT_TRUE(report->Get(expected_local_stream.id()));
+  ASSERT_TRUE(report->Get(expected_local_stream.id()));
   EXPECT_EQ(expected_local_stream,
             report->Get(expected_local_stream.id())->cast_to<
                 RTCMediaStreamStats>());
@@ -1319,7 +1336,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_stream.track_ids = std::vector<std::string>();
   expected_remote_stream.track_ids->push_back(
       "RTCMediaStreamTrack_RemoteVideoTrackID");
-  EXPECT_TRUE(report->Get(expected_remote_stream.id()));
+  ASSERT_TRUE(report->Get(expected_remote_stream.id()));
   EXPECT_EQ(expected_remote_stream,
             report->Get(expected_remote_stream.id())->cast_to<
                 RTCMediaStreamStats>());
@@ -1332,7 +1349,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_local_video_track.detached = false;
   expected_local_video_track.frame_width = 1234;
   expected_local_video_track.frame_height = 4321;
-  EXPECT_TRUE(report->Get(expected_local_video_track.id()));
+  ASSERT_TRUE(report->Get(expected_local_video_track.id()));
   EXPECT_EQ(expected_local_video_track,
             report->Get(expected_local_video_track.id())->cast_to<
                 RTCMediaStreamTrackStats>());
@@ -1345,7 +1362,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_video_track.detached = false;
   expected_remote_video_track.frame_width = 1234;
   expected_remote_video_track.frame_height = 4321;
-  EXPECT_TRUE(report->Get(expected_remote_video_track.id()));
+  ASSERT_TRUE(report->Get(expected_remote_video_track.id()));
   EXPECT_EQ(expected_remote_video_track,
             report->Get(expected_remote_video_track.id())->cast_to<
                 RTCMediaStreamTrackStats>());
@@ -1420,8 +1437,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
       expected_audio.id())->cast_to<RTCInboundRTPStreamStats>();
   EXPECT_EQ(audio, expected_audio);
 
-  EXPECT_TRUE(report->Get(*expected_audio.transport_id));
-  EXPECT_TRUE(report->Get(*expected_audio.codec_id));
+  ASSERT_TRUE(report->Get(*expected_audio.transport_id));
+  ASSERT_TRUE(report->Get(*expected_audio.codec_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
@@ -1496,8 +1513,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
       expected_video.id())->cast_to<RTCInboundRTPStreamStats>();
   EXPECT_EQ(video, expected_video);
 
-  EXPECT_TRUE(report->Get(*expected_video.transport_id));
-  EXPECT_TRUE(report->Get(*video.codec_id));
+  ASSERT_TRUE(report->Get(*expected_video.transport_id));
+  ASSERT_TRUE(report->Get(*video.codec_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
@@ -1564,8 +1581,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
       expected_audio.id())->cast_to<RTCOutboundRTPStreamStats>();
   EXPECT_EQ(audio, expected_audio);
 
-  EXPECT_TRUE(report->Get(*expected_audio.transport_id));
-  EXPECT_TRUE(report->Get(*expected_audio.codec_id));
+  ASSERT_TRUE(report->Get(*expected_audio.transport_id));
+  ASSERT_TRUE(report->Get(*expected_audio.codec_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
@@ -1637,8 +1654,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
       expected_video.id())->cast_to<RTCOutboundRTPStreamStats>();
   EXPECT_EQ(video, expected_video);
 
-  EXPECT_TRUE(report->Get(*expected_video.transport_id));
-  EXPECT_TRUE(report->Get(*expected_video.codec_id));
+  ASSERT_TRUE(report->Get(*expected_video.transport_id));
+  ASSERT_TRUE(report->Get(*expected_video.codec_id));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Default) {
@@ -1785,7 +1802,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
   expected_rtp_transport.bytes_received = 1337;
   expected_rtp_transport.active_connection = false;
 
-  EXPECT_TRUE(report->Get(expected_rtp_transport.id()));
+  ASSERT_TRUE(report->Get(expected_rtp_transport.id()));
   EXPECT_EQ(
       expected_rtp_transport,
       report->Get(expected_rtp_transport.id())->cast_to<RTCTransportStats>());
@@ -1817,11 +1834,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
 
   expected_rtp_transport.rtcp_transport_stats_id = expected_rtcp_transport.id();
 
-  EXPECT_TRUE(report->Get(expected_rtp_transport.id()));
+  ASSERT_TRUE(report->Get(expected_rtp_transport.id()));
   EXPECT_EQ(
       expected_rtp_transport,
       report->Get(expected_rtp_transport.id())->cast_to<RTCTransportStats>());
-  EXPECT_TRUE(report->Get(expected_rtcp_transport.id()));
+  ASSERT_TRUE(report->Get(expected_rtcp_transport.id()));
   EXPECT_EQ(
       expected_rtcp_transport,
       report->Get(expected_rtcp_transport.id())->cast_to<RTCTransportStats>());
@@ -1840,11 +1857,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
       "RTCIceCandidatePair_" + rtcp_local_candidate->id() + "_" +
       rtcp_remote_candidate->id();
 
-  EXPECT_TRUE(report->Get(expected_rtp_transport.id()));
+  ASSERT_TRUE(report->Get(expected_rtp_transport.id()));
   EXPECT_EQ(
       expected_rtp_transport,
       report->Get(expected_rtp_transport.id())->cast_to<RTCTransportStats>());
-  EXPECT_TRUE(report->Get(expected_rtcp_transport.id()));
+  ASSERT_TRUE(report->Get(expected_rtcp_transport.id()));
   EXPECT_EQ(
       expected_rtcp_transport,
       report->Get(expected_rtcp_transport.id())->cast_to<RTCTransportStats>());
@@ -1886,11 +1903,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
   expected_rtcp_transport.remote_certificate_id =
       *expected_rtp_transport.remote_certificate_id;
 
-  EXPECT_TRUE(report->Get(expected_rtp_transport.id()));
+  ASSERT_TRUE(report->Get(expected_rtp_transport.id()));
   EXPECT_EQ(
       expected_rtp_transport,
       report->Get(expected_rtp_transport.id())->cast_to<RTCTransportStats>());
-  EXPECT_TRUE(report->Get(expected_rtcp_transport.id()));
+  ASSERT_TRUE(report->Get(expected_rtcp_transport.id()));
   EXPECT_EQ(
       expected_rtcp_transport,
       report->Get(expected_rtcp_transport.id())->cast_to<RTCTransportStats>());
