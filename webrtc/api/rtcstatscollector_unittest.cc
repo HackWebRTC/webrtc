@@ -494,30 +494,6 @@ class RTCStatsCollectorTest : public testing::Test {
     return callback->report();
   }
 
-  const RTCIceCandidateStats* ExpectReportContainsCandidate(
-      const rtc::scoped_refptr<const RTCStatsReport>& report,
-      const cricket::Candidate& candidate,
-      bool is_local) {
-    const RTCStats* stats = report->Get("RTCIceCandidate_" + candidate.id());
-    EXPECT_TRUE(stats);
-    const RTCIceCandidateStats* candidate_stats;
-    if (is_local)
-        candidate_stats = &stats->cast_to<RTCLocalIceCandidateStats>();
-    else
-        candidate_stats = &stats->cast_to<RTCRemoteIceCandidateStats>();
-    EXPECT_EQ(*candidate_stats->ip, candidate.address().ipaddr().ToString());
-    EXPECT_EQ(*candidate_stats->port,
-              static_cast<int32_t>(candidate.address().port()));
-    EXPECT_EQ(*candidate_stats->protocol, candidate.protocol());
-    EXPECT_EQ(*candidate_stats->candidate_type,
-              CandidateTypeToRTCIceCandidateTypeForTesting(candidate.type()));
-    EXPECT_EQ(*candidate_stats->priority,
-              static_cast<int32_t>(candidate.priority()));
-    // TODO(hbos): Define candidate_stats->url. crbug.com/632723
-    EXPECT_FALSE(candidate_stats->url.is_defined());
-    return candidate_stats;
-  }
-
   void ExpectReportContainsCertificateInfo(
       const rtc::scoped_refptr<const RTCStatsReport>& report,
       const CertificateInfo& cert_info) {
@@ -944,32 +920,79 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       "a_local_host's protocol",
       cricket::LOCAL_PORT_TYPE,
       0);
+  RTCLocalIceCandidateStats expected_a_local_host(
+      "RTCIceCandidate_" + a_local_host->id(), 0);
+  expected_a_local_host.ip = "1.2.3.4";
+  expected_a_local_host.port = 5;
+  expected_a_local_host.protocol = "a_local_host's protocol";
+  expected_a_local_host.candidate_type = "host";
+  expected_a_local_host.priority = 0;
+
   std::unique_ptr<cricket::Candidate> a_remote_srflx = CreateFakeCandidate(
       "6.7.8.9", 10,
       "remote_srflx's protocol",
       cricket::STUN_PORT_TYPE,
       1);
+  RTCRemoteIceCandidateStats expected_a_remote_srflx(
+      "RTCIceCandidate_" + a_remote_srflx->id(), 0);
+  expected_a_remote_srflx.ip = "6.7.8.9";
+  expected_a_remote_srflx.port = 10;
+  expected_a_remote_srflx.protocol = "remote_srflx's protocol";
+  expected_a_remote_srflx.candidate_type = "srflx";
+  expected_a_remote_srflx.priority = 1;
+
   std::unique_ptr<cricket::Candidate> a_local_prflx = CreateFakeCandidate(
       "11.12.13.14", 15,
       "a_local_prflx's protocol",
       cricket::PRFLX_PORT_TYPE,
       2);
+  RTCLocalIceCandidateStats expected_a_local_prflx(
+      "RTCIceCandidate_" + a_local_prflx->id(), 0);
+  expected_a_local_prflx.ip = "11.12.13.14";
+  expected_a_local_prflx.port = 15;
+  expected_a_local_prflx.protocol = "a_local_prflx's protocol";
+  expected_a_local_prflx.candidate_type = "prflx";
+  expected_a_local_prflx.priority = 2;
+
   std::unique_ptr<cricket::Candidate> a_remote_relay = CreateFakeCandidate(
       "16.17.18.19", 20,
       "a_remote_relay's protocol",
       cricket::RELAY_PORT_TYPE,
       3);
+  RTCRemoteIceCandidateStats expected_a_remote_relay(
+      "RTCIceCandidate_" + a_remote_relay->id(), 0);
+  expected_a_remote_relay.ip = "16.17.18.19";
+  expected_a_remote_relay.port = 20;
+  expected_a_remote_relay.protocol = "a_remote_relay's protocol";
+  expected_a_remote_relay.candidate_type = "relay";
+  expected_a_remote_relay.priority = 3;
+
   // Candidates in the second transport stats.
   std::unique_ptr<cricket::Candidate> b_local = CreateFakeCandidate(
       "42.42.42.42", 42,
       "b_local's protocol",
       cricket::LOCAL_PORT_TYPE,
       42);
+  RTCLocalIceCandidateStats expected_b_local(
+      "RTCIceCandidate_" + b_local->id(), 0);
+  expected_b_local.ip = "42.42.42.42";
+  expected_b_local.port = 42;
+  expected_b_local.protocol = "b_local's protocol";
+  expected_b_local.candidate_type = "host";
+  expected_b_local.priority = 42;
+
   std::unique_ptr<cricket::Candidate> b_remote = CreateFakeCandidate(
       "42.42.42.42", 42,
       "b_remote's protocol",
       cricket::LOCAL_PORT_TYPE,
       42);
+  RTCRemoteIceCandidateStats expected_b_remote(
+      "RTCIceCandidate_" + b_remote->id(), 0);
+  expected_b_remote.ip = "42.42.42.42";
+  expected_b_remote.port = 42;
+  expected_b_remote.protocol = "b_remote's protocol";
+  expected_b_remote.candidate_type = "host";
+  expected_b_remote.priority = 42;
 
   SessionStats session_stats;
 
@@ -1008,12 +1031,31 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       }));
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  ExpectReportContainsCandidate(report, *a_local_host.get(), true);
-  ExpectReportContainsCandidate(report, *a_remote_srflx.get(), false);
-  ExpectReportContainsCandidate(report, *a_local_prflx.get(), true);
-  ExpectReportContainsCandidate(report, *a_remote_relay.get(), false);
-  ExpectReportContainsCandidate(report, *b_local.get(), true);
-  ExpectReportContainsCandidate(report, *b_remote.get(), false);
+
+  EXPECT_TRUE(report->Get(expected_a_local_host.id()));
+  EXPECT_EQ(expected_a_local_host,
+            report->Get(expected_a_local_host.id())->cast_to<
+                RTCLocalIceCandidateStats>());
+  EXPECT_TRUE(report->Get(expected_a_remote_srflx.id()));
+  EXPECT_EQ(expected_a_remote_srflx,
+            report->Get(expected_a_remote_srflx.id())->cast_to<
+                RTCRemoteIceCandidateStats>());
+  EXPECT_TRUE(report->Get(expected_a_local_prflx.id()));
+  EXPECT_EQ(expected_a_local_prflx,
+            report->Get(expected_a_local_prflx.id())->cast_to<
+                RTCLocalIceCandidateStats>());
+  EXPECT_TRUE(report->Get(expected_a_remote_relay.id()));
+  EXPECT_EQ(expected_a_remote_relay,
+            report->Get(expected_a_remote_relay.id())->cast_to<
+                RTCRemoteIceCandidateStats>());
+  EXPECT_TRUE(report->Get(expected_b_local.id()));
+  EXPECT_EQ(expected_b_local,
+            report->Get(expected_b_local.id())->cast_to<
+                RTCLocalIceCandidateStats>());
+  EXPECT_TRUE(report->Get(expected_b_remote.id()));
+  EXPECT_EQ(expected_b_remote,
+            report->Get(expected_b_remote.id())->cast_to<
+                RTCRemoteIceCandidateStats>());
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
@@ -1077,11 +1119,29 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
       expected_pair,
       report->Get(expected_pair.id())->cast_to<RTCIceCandidatePairStats>());
 
-  ASSERT_TRUE(report->Get(*expected_pair.local_candidate_id));
-  ExpectReportContainsCandidate(report, connection_info.local_candidate, true);
-  ASSERT_TRUE(report->Get(*expected_pair.remote_candidate_id));
-  ExpectReportContainsCandidate(report, connection_info.remote_candidate,
-                                false);
+  RTCLocalIceCandidateStats expected_local_candidate(
+      *expected_pair.local_candidate_id, report->timestamp_us());
+  expected_local_candidate.ip = "42.42.42.42";
+  expected_local_candidate.port = 42;
+  expected_local_candidate.protocol = "protocol";
+  expected_local_candidate.candidate_type = "host";
+  expected_local_candidate.priority = 42;
+  ASSERT_TRUE(report->Get(expected_local_candidate.id()));
+  EXPECT_EQ(expected_local_candidate,
+            report->Get(expected_local_candidate.id())->cast_to<
+                RTCLocalIceCandidateStats>());
+
+  RTCRemoteIceCandidateStats expected_remote_candidate(
+      *expected_pair.remote_candidate_id, report->timestamp_us());
+  expected_remote_candidate.ip = "42.42.42.42";
+  expected_remote_candidate.port = 42;
+  expected_remote_candidate.protocol = "protocol";
+  expected_remote_candidate.candidate_type = "host";
+  expected_remote_candidate.priority = 42;
+  ASSERT_TRUE(report->Get(expected_remote_candidate.id()));
+  EXPECT_EQ(expected_remote_candidate,
+            report->Get(expected_remote_candidate.id())->cast_to<
+                RTCRemoteIceCandidateStats>());
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
