@@ -41,6 +41,7 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RtpParameters;
+import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
@@ -1175,6 +1176,9 @@ public class PeerConnectionClient {
       // No need to do anything; AppRTC follows a pre-agreed-upon
       // signaling/negotiation protocol.
     }
+
+    @Override
+    public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {}
   }
 
   // Implementation detail: handle offer creation/signaling and answer setting,

@@ -80,6 +80,12 @@ public class PeerConnection {
 
     /** Triggered when renegotiation is necessary. */
     public void onRenegotiationNeeded();
+
+    /**
+     * Triggered when a new track is signaled by the remote peer, as a result of
+     * setRemoteDescription.
+     */
+    public void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams);
   }
 
   /** Java version of PeerConnectionInterface.IceServer. */

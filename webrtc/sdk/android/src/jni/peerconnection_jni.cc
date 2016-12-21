@@ -174,23 +174,27 @@ class PCOJava : public PeerConnectionObserver {
       : j_observer_global_(jni, j_observer),
         j_observer_class_(jni, GetObjectClass(jni, *j_observer_global_)),
         j_media_stream_class_(jni, FindClass(jni, "org/webrtc/MediaStream")),
-        j_media_stream_ctor_(GetMethodID(
-            jni, *j_media_stream_class_, "<init>", "(J)V")),
+        j_media_stream_ctor_(
+            GetMethodID(jni, *j_media_stream_class_, "<init>", "(J)V")),
         j_audio_track_class_(jni, FindClass(jni, "org/webrtc/AudioTrack")),
-        j_audio_track_ctor_(GetMethodID(
-            jni, *j_audio_track_class_, "<init>", "(J)V")),
+        j_audio_track_ctor_(
+            GetMethodID(jni, *j_audio_track_class_, "<init>", "(J)V")),
         j_video_track_class_(jni, FindClass(jni, "org/webrtc/VideoTrack")),
-        j_video_track_ctor_(GetMethodID(
-            jni, *j_video_track_class_, "<init>", "(J)V")),
+        j_video_track_ctor_(
+            GetMethodID(jni, *j_video_track_class_, "<init>", "(J)V")),
         j_data_channel_class_(jni, FindClass(jni, "org/webrtc/DataChannel")),
-        j_data_channel_ctor_(GetMethodID(
-            jni, *j_data_channel_class_, "<init>", "(J)V")) {
-  }
+        j_data_channel_ctor_(
+            GetMethodID(jni, *j_data_channel_class_, "<init>", "(J)V")),
+        j_rtp_receiver_class_(jni, FindClass(jni, "org/webrtc/RtpReceiver")),
+        j_rtp_receiver_ctor_(
+            GetMethodID(jni, *j_rtp_receiver_class_, "<init>", "(J)V")) {}
 
   virtual ~PCOJava() {
     ScopedLocalRefFrame local_ref_frame(jni());
     while (!remote_streams_.empty())
       DisposeRemoteStream(remote_streams_.begin());
+    while (!rtp_receivers_.empty())
+      DisposeRtpReceiver(rtp_receivers_.begin());
   }
 
   void OnIceCandidate(const IceCandidateInterface* candidate) override {
@@ -268,13 +272,9 @@ class PCOJava : public PeerConnectionObserver {
 
   void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    // Java MediaStream holds one reference. Corresponding Release() is in
-    // MediaStream_free, triggered by MediaStream.dispose().
-    stream->AddRef();
-    jobject j_stream =
-        jni()->NewObject(*j_media_stream_class_, j_media_stream_ctor_,
-                         reinterpret_cast<jlong>(stream.get()));
-    CHECK_EXCEPTION(jni()) << "error during NewObject";
+    // The stream could be added into the remote_streams_ map when calling
+    // OnAddTrack.
+    jobject j_stream = GetOrCreateJavaStream(stream);
 
     for (const auto& track : stream->GetAudioTracks()) {
       jstring id = JavaStringFromStdString(jni(), track->id());
@@ -321,7 +321,6 @@ class PCOJava : public PeerConnectionObserver {
       CHECK_EXCEPTION(jni()) << "error during CallBooleanMethod";
       RTC_CHECK(added);
     }
-    remote_streams_[stream] = NewGlobalRef(jni(), j_stream);
 
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onAddStream",
                               "(Lorg/webrtc/MediaStream;)V");
@@ -349,8 +348,9 @@ class PCOJava : public PeerConnectionObserver {
   void OnDataChannel(
       rtc::scoped_refptr<DataChannelInterface> channel) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jobject j_channel = jni()->NewObject(
-        *j_data_channel_class_, j_data_channel_ctor_, (jlong)channel.get());
+    jobject j_channel =
+        jni()->NewObject(*j_data_channel_class_, j_data_channel_ctor_,
+                         jlongFromPointer(channel.get()));
     CHECK_EXCEPTION(jni()) << "error during NewObject";
 
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onDataChannel",
@@ -375,6 +375,26 @@ class PCOJava : public PeerConnectionObserver {
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }
 
+  void OnAddTrack(rtc::scoped_refptr<RtpReceiverInterface> receiver,
+                  const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
+                      streams) override {
+    ScopedLocalRefFrame local_ref_frame(jni());
+    jobject j_rtp_receiver =
+        jni()->NewObject(*j_rtp_receiver_class_, j_rtp_receiver_ctor_,
+                         jlongFromPointer(receiver.get()));
+    CHECK_EXCEPTION(jni()) << "error during NewObject";
+    receiver->AddRef();
+    rtp_receivers_[receiver] = NewGlobalRef(jni(), j_rtp_receiver);
+
+    jobjectArray j_stream_array = ToJavaMediaStreamArray(jni(), streams);
+    jmethodID m =
+        GetMethodID(jni(), *j_observer_class_, "onAddTrack",
+                    "(Lorg/webrtc/RtpReceiver;[Lorg/webrtc/MediaStream;)V");
+    jni()->CallVoidMethod(*j_observer_global_, m, j_rtp_receiver,
+                          j_stream_array);
+    CHECK_EXCEPTION(jni()) << "Error during CallVoidMethod";
+  }
+
   void SetConstraints(ConstraintsWrapper* constraints) {
     RTC_CHECK(!constraints_.get()) << "constraints already set!";
     constraints_.reset(constraints);
@@ -384,6 +404,7 @@ class PCOJava : public PeerConnectionObserver {
 
  private:
   typedef std::map<MediaStreamInterface*, jobject> NativeToJavaStreamsMap;
+  typedef std::map<RtpReceiverInterface*, jobject> NativeToJavaRtpReceiverMap;
 
   void DisposeRemoteStream(const NativeToJavaStreamsMap::iterator& it) {
     jobject j_stream = it->second;
@@ -392,6 +413,16 @@ class PCOJava : public PeerConnectionObserver {
         j_stream, GetMethodID(jni(), *j_media_stream_class_, "dispose", "()V"));
     CHECK_EXCEPTION(jni()) << "error during MediaStream.dispose()";
     DeleteGlobalRef(jni(), j_stream);
+  }
+
+  void DisposeRtpReceiver(const NativeToJavaRtpReceiverMap::iterator& it) {
+    jobject j_rtp_receiver = it->second;
+    rtp_receivers_.erase(it);
+    jni()->CallVoidMethod(
+        j_rtp_receiver,
+        GetMethodID(jni(), *j_rtp_receiver_class_, "dispose", "()V"));
+    CHECK_EXCEPTION(jni()) << "error during RtpReceiver.dispose()";
+    DeleteGlobalRef(jni(), j_rtp_receiver);
   }
 
   jobject ToJavaCandidate(JNIEnv* jni,
@@ -424,6 +455,40 @@ class PCOJava : public PeerConnectionObserver {
     return java_candidates;
   }
 
+  jobjectArray ToJavaMediaStreamArray(
+      JNIEnv* jni,
+      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {
+    jobjectArray java_streams =
+        jni->NewObjectArray(streams.size(), *j_media_stream_class_, nullptr);
+    CHECK_EXCEPTION(jni) << "error during NewObjectArray";
+    for (size_t i = 0; i < streams.size(); ++i) {
+      jobject j_stream = GetOrCreateJavaStream(streams[i]);
+      jni->SetObjectArrayElement(java_streams, i, j_stream);
+    }
+    return java_streams;
+  }
+
+  // If the NativeToJavaStreamsMap contains the stream, return it.
+  // Otherwise, create a new Java MediaStream.
+  jobject GetOrCreateJavaStream(
+      const rtc::scoped_refptr<MediaStreamInterface>& stream) {
+    NativeToJavaStreamsMap::iterator it = remote_streams_.find(stream);
+    if (it != remote_streams_.end()) {
+      return it->second;
+    }
+
+    // Java MediaStream holds one reference. Corresponding Release() is in
+    // MediaStream_free, triggered by MediaStream.dispose().
+    stream->AddRef();
+    jobject j_stream =
+        jni()->NewObject(*j_media_stream_class_, j_media_stream_ctor_,
+                         reinterpret_cast<jlong>(stream.get()));
+    CHECK_EXCEPTION(jni()) << "error during NewObject";
+
+    remote_streams_[stream] = NewGlobalRef(jni(), j_stream);
+    return j_stream;
+  }
+
   JNIEnv* jni() {
     return AttachCurrentThreadIfNeeded();
   }
@@ -438,9 +503,12 @@ class PCOJava : public PeerConnectionObserver {
   const jmethodID j_video_track_ctor_;
   const ScopedGlobalRef<jclass> j_data_channel_class_;
   const jmethodID j_data_channel_ctor_;
+  const ScopedGlobalRef<jclass> j_rtp_receiver_class_;
+  const jmethodID j_rtp_receiver_ctor_;
   // C++ -> Java remote streams. The stored jobects are global refs and must be
   // manually deleted upon removal. Use DisposeRemoteStream().
   NativeToJavaStreamsMap remote_streams_;
+  NativeToJavaRtpReceiverMap rtp_receivers_;
   std::unique_ptr<ConstraintsWrapper> constraints_;
 };
 

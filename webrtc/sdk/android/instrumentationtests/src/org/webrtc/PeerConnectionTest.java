@@ -53,6 +53,7 @@ public class PeerConnectionTest extends ActivityTestCase {
     private int expectedWidth = 0;
     private int expectedHeight = 0;
     private int expectedFramesDelivered = 0;
+    private int expectedTracksAdded = 0;
     private LinkedList<SignalingState> expectedSignalingChanges = new LinkedList<SignalingState>();
     private LinkedList<IceConnectionState> expectedIceConnectionChanges =
         new LinkedList<IceConnectionState>();
@@ -227,6 +228,15 @@ public class PeerConnectionTest extends ActivityTestCase {
       assertTrue(--expectedRenegotiations >= 0);
     }
 
+    public synchronized void expectAddTrack(int expectedTracksAdded) {
+      this.expectedTracksAdded = expectedTracksAdded;
+    }
+
+    @Override
+    public synchronized void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams) {
+      expectedTracksAdded--;
+    }
+
     public synchronized void expectMessage(ByteBuffer expectedBuffer, boolean expectedBinary) {
       expectedBuffers.add(new DataChannel.Buffer(expectedBuffer, expectedBinary));
     }
@@ -338,6 +348,9 @@ public class PeerConnectionTest extends ActivityTestCase {
       }
       if (expectedFirstVideoPacket > 0) {
         stillWaitingForExpectations.add("expectedFirstVideoPacket: " + expectedFirstVideoPacket);
+      }
+      if (expectedTracksAdded != 0) {
+        stillWaitingForExpectations.add("expectedAddedTrack: " + expectedTracksAdded);
       }
       return stillWaitingForExpectations;
     }
@@ -571,6 +584,9 @@ public class PeerConnectionTest extends ActivityTestCase {
         addTracksToPC(factory, offeringPC, videoSource, "offeredMediaStream", "offeredVideoTrack",
             "offeredAudioTrack", new ExpectedResolutionSetter(answeringExpectations));
 
+    offeringExpectations.expectAddTrack(2);
+    answeringExpectations.expectAddTrack(2);
+
     offeringExpectations.expectRenegotiationNeeded();
     DataChannel offeringDC = offeringPC.createDataChannel("offeringDC", new DataChannel.Init());
     assertEquals("offeringDC", offeringDC.label());
@@ -751,7 +767,7 @@ public class PeerConnectionTest extends ActivityTestCase {
   }
 
   @MediumTest
-  public void testTrackRemoval() throws Exception {
+  public void testTrackRemovalAndAddition() throws Exception {
     // Allow loopback interfaces too since our Android devices often don't
     // have those.
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
@@ -788,6 +804,8 @@ public class PeerConnectionTest extends ActivityTestCase {
         addTracksToPC(factory, offeringPC, videoSource, "offeredMediaStream", "offeredVideoTrack",
             "offeredAudioTrack", new ExpectedResolutionSetter(answeringExpectations));
 
+    offeringExpectations.expectAddTrack(2);
+    answeringExpectations.expectAddTrack(2);
     // Create offer.
     SdpObserverLatch sdpLatch = new SdpObserverLatch();
     offeringPC.createOffer(sdpLatch, new MediaConstraints());
@@ -886,50 +904,7 @@ public class PeerConnectionTest extends ActivityTestCase {
     // Note that when we call removeTrack, we regain responsibility for
     // disposing of the track.
     oLMS.get().removeTrack(offererVideoTrack);
-
-    // Create offer.
-    sdpLatch = new SdpObserverLatch();
-    offeringPC.createOffer(sdpLatch, new MediaConstraints());
-    assertTrue(sdpLatch.await());
-    offerSdp = sdpLatch.getSdp();
-    assertEquals(offerSdp.type, SessionDescription.Type.OFFER);
-    assertFalse(offerSdp.description.isEmpty());
-
-    // Set local description for offerer.
-    sdpLatch = new SdpObserverLatch();
-    offeringExpectations.expectSignalingChange(SignalingState.HAVE_LOCAL_OFFER);
-    offeringPC.setLocalDescription(sdpLatch, offerSdp);
-    assertTrue(sdpLatch.await());
-    assertNull(sdpLatch.getSdp());
-
-    // Set remote description for answerer.
-    sdpLatch = new SdpObserverLatch();
-    answeringExpectations.expectSignalingChange(SignalingState.HAVE_REMOTE_OFFER);
-    answeringPC.setRemoteDescription(sdpLatch, offerSdp);
-    assertTrue(sdpLatch.await());
-    assertNull(sdpLatch.getSdp());
-
-    // Create answer.
-    sdpLatch = new SdpObserverLatch();
-    answeringPC.createAnswer(sdpLatch, new MediaConstraints());
-    assertTrue(sdpLatch.await());
-    answerSdp = sdpLatch.getSdp();
-    assertEquals(answerSdp.type, SessionDescription.Type.ANSWER);
-    assertFalse(answerSdp.description.isEmpty());
-
-    // Set local description for answerer.
-    sdpLatch = new SdpObserverLatch();
-    answeringExpectations.expectSignalingChange(SignalingState.STABLE);
-    answeringPC.setLocalDescription(sdpLatch, answerSdp);
-    assertTrue(sdpLatch.await());
-    assertNull(sdpLatch.getSdp());
-
-    // Set remote description for offerer.
-    sdpLatch = new SdpObserverLatch();
-    offeringExpectations.expectSignalingChange(SignalingState.STABLE);
-    offeringPC.setRemoteDescription(sdpLatch, answerSdp);
-    assertTrue(sdpLatch.await());
-    assertNull(sdpLatch.getSdp());
+    negotiate(offeringPC, offeringExpectations, answeringPC, answeringExpectations);
 
     // Make sure the track was really removed.
     // TODO(deadbeef): Currently the expectation is that the video track's
@@ -939,56 +914,24 @@ public class PeerConnectionTest extends ActivityTestCase {
     MediaStream aRMS = answeringExpectations.gotRemoteStreams.iterator().next();
     assertEquals(aRMS.videoTracks.get(0).state(), MediaStreamTrack.State.ENDED);
 
-    // Finally, remove the audio track as well, which should completely remove
-    // the remote stream. This used to trigger an assert.
+    // Add the video track to test if the answeringPC will create a new track
+    // for the updated remote description.
+    oLMS.get().addTrack(offererVideoTrack);
+    // The answeringPC sets the updated remote description with a track added.
+    // So the onAddTrack callback is expected to be called once.
+    answeringExpectations.expectAddTrack(1);
+    offeringExpectations.expectAddTrack(0);
+    negotiate(offeringPC, offeringExpectations, answeringPC, answeringExpectations);
+
+    // Finally, remove both the audio and video tracks, which should completely
+    // remove the remote stream. This used to trigger an assert.
     // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5128
+    oLMS.get().removeTrack(offererVideoTrack);
     AudioTrack offererAudioTrack = oLMS.get().audioTracks.get(0);
     oLMS.get().removeTrack(offererAudioTrack);
 
-    // Create offer.
-    sdpLatch = new SdpObserverLatch();
-    offeringPC.createOffer(sdpLatch, new MediaConstraints());
-    assertTrue(sdpLatch.await());
-    offerSdp = sdpLatch.getSdp();
-    assertEquals(offerSdp.type, SessionDescription.Type.OFFER);
-    assertFalse(offerSdp.description.isEmpty());
-
-    // Set local description for offerer.
-    sdpLatch = new SdpObserverLatch();
-    offeringExpectations.expectSignalingChange(SignalingState.HAVE_LOCAL_OFFER);
-    offeringPC.setLocalDescription(sdpLatch, offerSdp);
-    assertTrue(sdpLatch.await());
-    assertNull(sdpLatch.getSdp());
-
-    // Set remote description for answerer.
-    sdpLatch = new SdpObserverLatch();
-    answeringExpectations.expectSignalingChange(SignalingState.HAVE_REMOTE_OFFER);
     answeringExpectations.expectRemoveStream("offeredMediaStream");
-    answeringPC.setRemoteDescription(sdpLatch, offerSdp);
-    assertTrue(sdpLatch.await());
-    assertNull(sdpLatch.getSdp());
-
-    // Create answer.
-    sdpLatch = new SdpObserverLatch();
-    answeringPC.createAnswer(sdpLatch, new MediaConstraints());
-    assertTrue(sdpLatch.await());
-    answerSdp = sdpLatch.getSdp();
-    assertEquals(answerSdp.type, SessionDescription.Type.ANSWER);
-    assertFalse(answerSdp.description.isEmpty());
-
-    // Set local description for answerer.
-    sdpLatch = new SdpObserverLatch();
-    answeringExpectations.expectSignalingChange(SignalingState.STABLE);
-    answeringPC.setLocalDescription(sdpLatch, answerSdp);
-    assertTrue(sdpLatch.await());
-    assertNull(sdpLatch.getSdp());
-
-    // Set remote description for offerer.
-    sdpLatch = new SdpObserverLatch();
-    offeringExpectations.expectSignalingChange(SignalingState.STABLE);
-    offeringPC.setRemoteDescription(sdpLatch, answerSdp);
-    assertTrue(sdpLatch.await());
-    assertNull(sdpLatch.getSdp());
+    negotiate(offeringPC, offeringExpectations, answeringPC, answeringExpectations);
 
     // Make sure the stream was really removed.
     assertTrue(answeringExpectations.gotRemoteStreams.isEmpty());
@@ -1005,6 +948,54 @@ public class PeerConnectionTest extends ActivityTestCase {
     videoSource.dispose();
     factory.dispose();
     System.gc();
+  }
+
+  private static void negotiate(PeerConnection offeringPC,
+      ObserverExpectations offeringExpectations, PeerConnection answeringPC,
+      ObserverExpectations answeringExpectations) {
+    // Create offer.
+    SdpObserverLatch sdpLatch = new SdpObserverLatch();
+    offeringPC.createOffer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    SessionDescription offerSdp = sdpLatch.getSdp();
+    assertEquals(offerSdp.type, SessionDescription.Type.OFFER);
+    assertFalse(offerSdp.description.isEmpty());
+
+    // Set local description for offerer.
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.HAVE_LOCAL_OFFER);
+    offeringPC.setLocalDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Set remote description for answerer.
+    sdpLatch = new SdpObserverLatch();
+    answeringExpectations.expectSignalingChange(SignalingState.HAVE_REMOTE_OFFER);
+    answeringPC.setRemoteDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Create answer.
+    sdpLatch = new SdpObserverLatch();
+    answeringPC.createAnswer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    SessionDescription answerSdp = sdpLatch.getSdp();
+    assertEquals(answerSdp.type, SessionDescription.Type.ANSWER);
+    assertFalse(answerSdp.description.isEmpty());
+
+    // Set local description for answerer.
+    sdpLatch = new SdpObserverLatch();
+    answeringExpectations.expectSignalingChange(SignalingState.STABLE);
+    answeringPC.setLocalDescription(sdpLatch, answerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    // Set remote description for offerer.
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.STABLE);
+    offeringPC.setRemoteDescription(sdpLatch, answerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
   }
 
   private static void getMetrics() {
