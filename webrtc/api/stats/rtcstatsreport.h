@@ -58,7 +58,7 @@ class RTCStatsReport : public rtc::RefCountInterface {
   RTCStatsReport(const RTCStatsReport& other) = delete;
 
   int64_t timestamp_us() const { return timestamp_us_; }
-  bool AddStats(std::unique_ptr<const RTCStats> stats);
+  void AddStats(std::unique_ptr<const RTCStats> stats);
   const RTCStats* Get(const std::string& id) const;
   size_t size() const { return stats_.size(); }
 

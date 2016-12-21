@@ -233,8 +233,17 @@ void ProduceCertificateStatsFromSSLCertificateStats(
   RTCCertificateStats* prev_certificate_stats = nullptr;
   for (const rtc::SSLCertificateStats* s = &certificate_stats; s;
        s = s->issuer.get()) {
+    std::string certificate_stats_id =
+        RTCCertificateIDFromFingerprint(s->fingerprint);
+    // It is possible for the same certificate to show up multiple times, e.g.
+    // if local and remote side use the same certificate in a loopback call.
+    // If the report already contains stats for this certificate, skip it.
+    if (report->Get(certificate_stats_id)) {
+      RTC_DCHECK_EQ(s, &certificate_stats);
+      break;
+    }
     RTCCertificateStats* certificate_stats = new RTCCertificateStats(
-        RTCCertificateIDFromFingerprint(s->fingerprint), timestamp_us);
+        certificate_stats_id, timestamp_us);
     certificate_stats->fingerprint = s->fingerprint;
     certificate_stats->fingerprint_algorithm = s->fingerprint_algorithm;
     certificate_stats->base64_certificate = s->base64_certificate;
@@ -288,8 +297,9 @@ void ProduceMediaStreamAndTrackStats(
     MediaStreamInterface* stream = streams->at(i);
 
     std::unique_ptr<RTCMediaStreamStats> stream_stats(
-        new RTCMediaStreamStats("RTCMediaStream_" + stream->label(),
-                                timestamp_us));
+        new RTCMediaStreamStats(
+            (is_local ? "RTCMediaStream_local_" : "RTCMediaStream_remote_") +
+            stream->label(), timestamp_us));
     stream_stats->stream_identifier = stream->label();
     stream_stats->track_ids = std::vector<std::string>();
     // Audio Tracks

@@ -69,9 +69,12 @@ RTCStatsReport::RTCStatsReport(int64_t timestamp_us)
 RTCStatsReport::~RTCStatsReport() {
 }
 
-bool RTCStatsReport::AddStats(std::unique_ptr<const RTCStats> stats) {
-  return !stats_.insert(std::make_pair(std::string(stats->id()),
-                        std::move(stats))).second;
+void RTCStatsReport::AddStats(std::unique_ptr<const RTCStats> stats) {
+  auto result = stats_.insert(std::make_pair(std::string(stats->id()),
+                              std::move(stats)));
+  RTC_DCHECK(result.second) <<
+      "A stats object with ID " << result.first->second->id() << " is already "
+      "present in this stats report.";
 }
 
 const RTCStats* RTCStatsReport::Get(const std::string& id) const {

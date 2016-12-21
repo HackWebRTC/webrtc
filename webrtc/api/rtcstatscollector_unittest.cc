@@ -969,6 +969,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       *a_local_prflx.get();
   a_transport_channel_stats.connection_infos[1].remote_candidate =
       *a_remote_relay.get();
+  session_stats.transport_stats["a"].transport_name = "a";
   session_stats.transport_stats["a"].channel_stats.push_back(
       a_transport_channel_stats);
 
@@ -979,6 +980,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       *b_local.get();
   b_transport_channel_stats.connection_infos[0].remote_candidate =
       *b_remote.get();
+  session_stats.transport_stats["b"].transport_name = "b";
   session_stats.transport_stats["b"].channel_stats.push_back(
       b_transport_channel_stats);
 
@@ -1164,7 +1166,7 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
 
   RTCMediaStreamStats expected_local_stream(
-      "RTCMediaStream_LocalStreamLabel", report->timestamp_us());
+      "RTCMediaStream_local_LocalStreamLabel", report->timestamp_us());
   expected_local_stream.stream_identifier = local_stream->label();
   expected_local_stream.track_ids = std::vector<std::string>();
   expected_local_stream.track_ids->push_back(
@@ -1175,7 +1177,7 @@ TEST_F(RTCStatsCollectorTest,
                 RTCMediaStreamStats>());
 
   RTCMediaStreamStats expected_remote_stream(
-      "RTCMediaStream_RemoteStreamLabel", report->timestamp_us());
+      "RTCMediaStream_remote_RemoteStreamLabel", report->timestamp_us());
   expected_remote_stream.stream_identifier = remote_stream->label();
   expected_remote_stream.track_ids = std::vector<std::string>();
   expected_remote_stream.track_ids->push_back(
@@ -1301,7 +1303,7 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
 
   RTCMediaStreamStats expected_local_stream(
-      "RTCMediaStream_LocalStreamLabel", report->timestamp_us());
+      "RTCMediaStream_local_LocalStreamLabel", report->timestamp_us());
   expected_local_stream.stream_identifier = local_stream->label();
   expected_local_stream.track_ids = std::vector<std::string>();
   expected_local_stream.track_ids->push_back(
@@ -1312,7 +1314,7 @@ TEST_F(RTCStatsCollectorTest,
                 RTCMediaStreamStats>());
 
   RTCMediaStreamStats expected_remote_stream(
-      "RTCMediaStream_RemoteStreamLabel", report->timestamp_us());
+      "RTCMediaStream_remote_RemoteStreamLabel", report->timestamp_us());
   expected_remote_stream.stream_identifier = remote_stream->label();
   expected_remote_stream.track_ids = std::vector<std::string>();
   expected_remote_stream.track_ids->push_back(
