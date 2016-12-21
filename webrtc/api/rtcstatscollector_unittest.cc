@@ -496,22 +496,22 @@ class RTCStatsCollectorTest : public testing::Test {
 
   void ExpectReportContainsCertificateInfo(
       const rtc::scoped_refptr<const RTCStatsReport>& report,
-      const CertificateInfo& cert_info) {
-    for (size_t i = 0; i < cert_info.fingerprints.size(); ++i) {
-      const RTCStats* stats = report->Get(
-          "RTCCertificate_" + cert_info.fingerprints[i]);
-      ASSERT_TRUE(stats);
-      const RTCCertificateStats& cert_stats =
-          stats->cast_to<const RTCCertificateStats>();
-      EXPECT_EQ(*cert_stats.fingerprint, cert_info.fingerprints[i]);
-      EXPECT_EQ(*cert_stats.fingerprint_algorithm, "sha-1");
-      EXPECT_EQ(*cert_stats.base64_certificate, cert_info.pems[i]);
-      if (i + 1 < cert_info.fingerprints.size()) {
-        EXPECT_EQ(*cert_stats.issuer_certificate_id,
-                  "RTCCertificate_" + cert_info.fingerprints[i + 1]);
-      } else {
-        EXPECT_FALSE(cert_stats.issuer_certificate_id.is_defined());
+      const CertificateInfo& certinfo) {
+    for (size_t i = 0; i < certinfo.fingerprints.size(); ++i) {
+      RTCCertificateStats expected_certificate_stats(
+          "RTCCertificate_" + certinfo.fingerprints[i],
+          report->timestamp_us());
+      expected_certificate_stats.fingerprint = certinfo.fingerprints[i];
+      expected_certificate_stats.fingerprint_algorithm = "sha-1";
+      expected_certificate_stats.base64_certificate = certinfo.pems[i];
+      if (i + 1 < certinfo.fingerprints.size()) {
+        expected_certificate_stats.issuer_certificate_id =
+            "RTCCertificate_" + certinfo.fingerprints[i + 1];
       }
+      ASSERT_TRUE(report->Get(expected_certificate_stats.id()));
+      EXPECT_EQ(expected_certificate_stats,
+                report->Get(expected_certificate_stats.id())->cast_to<
+                      RTCCertificateStats>());
     }
   }
 
@@ -607,8 +607,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
       }));
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  ExpectReportContainsCertificateInfo(report, *local_certinfo.get());
-  ExpectReportContainsCertificateInfo(report, *remote_certinfo.get());
+  ExpectReportContainsCertificateInfo(report, *local_certinfo);
+  ExpectReportContainsCertificateInfo(report, *remote_certinfo);
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
@@ -786,10 +786,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
       }));
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  ExpectReportContainsCertificateInfo(report, *audio_local_certinfo.get());
-  ExpectReportContainsCertificateInfo(report, *audio_remote_certinfo.get());
-  ExpectReportContainsCertificateInfo(report, *video_local_certinfo.get());
-  ExpectReportContainsCertificateInfo(report, *video_remote_certinfo.get());
+  ExpectReportContainsCertificateInfo(report, *audio_local_certinfo);
+  ExpectReportContainsCertificateInfo(report, *audio_remote_certinfo);
+  ExpectReportContainsCertificateInfo(report, *video_local_certinfo);
+  ExpectReportContainsCertificateInfo(report, *video_remote_certinfo);
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
@@ -833,8 +833,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
       }));
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
-  ExpectReportContainsCertificateInfo(report, *local_certinfo.get());
-  ExpectReportContainsCertificateInfo(report, *remote_certinfo.get());
+  ExpectReportContainsCertificateInfo(report, *local_certinfo);
+  ExpectReportContainsCertificateInfo(report, *remote_certinfo);
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
