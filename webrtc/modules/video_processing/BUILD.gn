@@ -26,7 +26,6 @@ rtc_static_library("video_processing") {
   ]
 
   deps = [
-    "../../base:rtc_base_approved",
     "../../common_audio",
     "../../common_video",
     "../../modules/utility",
@@ -47,18 +46,9 @@ rtc_static_library("video_processing") {
 
 if (build_video_processing_sse2) {
   rtc_static_library("video_processing_sse2") {
-    # TODO(mbonadei): Remove (bugs.webrtc.org/6828)
-    # Errors on cyclic dependency with :video_processing if enabled.
-    check_includes = false
-
     sources = [
       "util/denoiser_filter_sse2.cc",
       "util/denoiser_filter_sse2.h",
-    ]
-
-    deps = [
-      "../../base:rtc_base_approved",
-      "../../system_wrappers",
     ]
 
     if (!build_with_chromium && is_clang) {
