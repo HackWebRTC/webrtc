@@ -104,6 +104,7 @@
 /third_party/libxml
 /third_party/libyuv
 /third_party/llvm
+/third_party/llvm-build
 /third_party/lss
 /third_party/mockito
 /third_party/modp_b64
