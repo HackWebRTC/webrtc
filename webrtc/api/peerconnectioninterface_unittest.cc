@@ -2893,6 +2893,76 @@ TEST_F(PeerConnectionInterfaceTest, SetConfigurationCausingPartialIceRestart) {
   EXPECT_NE(initial_ufrags[1], subsequent_ufrags[1]);
 }
 
+// Tests that the methods to return current/pending descriptions work as
+// expected at different points in the offer/answer exchange. This test does
+// one offer/answer exchange as the offerer, then another as the answerer.
+TEST_F(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
+  // This disables DTLS so we can apply an answer to ourselves.
+  CreatePeerConnection();
+
+  // Create initial local offer and get SDP (which will also be used as
+  // answer/pranswer);
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  std::string sdp;
+  EXPECT_TRUE(offer->ToString(&sdp));
+
+  // Set local offer.
+  SessionDescriptionInterface* local_offer = offer.release();
+  EXPECT_TRUE(DoSetLocalDescription(local_offer));
+  EXPECT_EQ(local_offer, pc_->pending_local_description());
+  EXPECT_EQ(nullptr, pc_->pending_remote_description());
+  EXPECT_EQ(nullptr, pc_->current_local_description());
+  EXPECT_EQ(nullptr, pc_->current_remote_description());
+
+  // Set remote pranswer.
+  SessionDescriptionInterface* remote_pranswer =
+      webrtc::CreateSessionDescription(SessionDescriptionInterface::kPrAnswer,
+                                       sdp, nullptr);
+  EXPECT_TRUE(DoSetRemoteDescription(remote_pranswer));
+  EXPECT_EQ(local_offer, pc_->pending_local_description());
+  EXPECT_EQ(remote_pranswer, pc_->pending_remote_description());
+  EXPECT_EQ(nullptr, pc_->current_local_description());
+  EXPECT_EQ(nullptr, pc_->current_remote_description());
+
+  // Set remote answer.
+  SessionDescriptionInterface* remote_answer = webrtc::CreateSessionDescription(
+      SessionDescriptionInterface::kAnswer, sdp, nullptr);
+  EXPECT_TRUE(DoSetRemoteDescription(remote_answer));
+  EXPECT_EQ(nullptr, pc_->pending_local_description());
+  EXPECT_EQ(nullptr, pc_->pending_remote_description());
+  EXPECT_EQ(local_offer, pc_->current_local_description());
+  EXPECT_EQ(remote_answer, pc_->current_remote_description());
+
+  // Set remote offer.
+  SessionDescriptionInterface* remote_offer = webrtc::CreateSessionDescription(
+      SessionDescriptionInterface::kOffer, sdp, nullptr);
+  EXPECT_TRUE(DoSetRemoteDescription(remote_offer));
+  EXPECT_EQ(remote_offer, pc_->pending_remote_description());
+  EXPECT_EQ(nullptr, pc_->pending_local_description());
+  EXPECT_EQ(local_offer, pc_->current_local_description());
+  EXPECT_EQ(remote_answer, pc_->current_remote_description());
+
+  // Set local pranswer.
+  SessionDescriptionInterface* local_pranswer =
+      webrtc::CreateSessionDescription(SessionDescriptionInterface::kPrAnswer,
+                                       sdp, nullptr);
+  EXPECT_TRUE(DoSetLocalDescription(local_pranswer));
+  EXPECT_EQ(remote_offer, pc_->pending_remote_description());
+  EXPECT_EQ(local_pranswer, pc_->pending_local_description());
+  EXPECT_EQ(local_offer, pc_->current_local_description());
+  EXPECT_EQ(remote_answer, pc_->current_remote_description());
+
+  // Set local answer.
+  SessionDescriptionInterface* local_answer = webrtc::CreateSessionDescription(
+      SessionDescriptionInterface::kAnswer, sdp, nullptr);
+  EXPECT_TRUE(DoSetLocalDescription(local_answer));
+  EXPECT_EQ(nullptr, pc_->pending_remote_description());
+  EXPECT_EQ(nullptr, pc_->pending_local_description());
+  EXPECT_EQ(remote_offer, pc_->current_remote_description());
+  EXPECT_EQ(local_answer, pc_->current_local_description());
+}
+
 class PeerConnectionMediaConfigTest : public testing::Test {
  protected:
   void SetUp() override {

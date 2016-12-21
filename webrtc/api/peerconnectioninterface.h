@@ -493,6 +493,25 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
   virtual const SessionDescriptionInterface* local_description() const = 0;
   virtual const SessionDescriptionInterface* remote_description() const = 0;
+  // A "current" description the one currently negotiated from a complete
+  // offer/answer exchange.
+  virtual const SessionDescriptionInterface* current_local_description() const {
+    return nullptr;
+  }
+  virtual const SessionDescriptionInterface* current_remote_description()
+      const {
+    return nullptr;
+  }
+  // A "pending" description is one that's part of an incomplete offer/answer
+  // exchange (thus, either an offer or a pranswer). Once the offer/answer
+  // exchange is finished, the "pending" description will become "current".
+  virtual const SessionDescriptionInterface* pending_local_description() const {
+    return nullptr;
+  }
+  virtual const SessionDescriptionInterface* pending_remote_description()
+      const {
+    return nullptr;
+  }
 
   // Create a new offer.
   // The CreateSessionDescriptionObserver callback will be called when done.

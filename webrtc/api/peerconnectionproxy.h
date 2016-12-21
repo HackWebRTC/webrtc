@@ -47,6 +47,14 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
                 CreateDataChannel, const std::string&, const DataChannelInit*)
   PROXY_CONSTMETHOD0(const SessionDescriptionInterface*, local_description)
   PROXY_CONSTMETHOD0(const SessionDescriptionInterface*, remote_description)
+  PROXY_CONSTMETHOD0(const SessionDescriptionInterface*,
+                     pending_local_description)
+  PROXY_CONSTMETHOD0(const SessionDescriptionInterface*,
+                     pending_remote_description)
+  PROXY_CONSTMETHOD0(const SessionDescriptionInterface*,
+                     current_local_description)
+  PROXY_CONSTMETHOD0(const SessionDescriptionInterface*,
+                     current_remote_description)
   PROXY_METHOD2(void, CreateOffer, CreateSessionDescriptionObserver*,
                 const MediaConstraintsInterface*)
   PROXY_METHOD2(void, CreateAnswer, CreateSessionDescriptionObserver*,

@@ -623,7 +623,7 @@ cricket::SecurePolicy WebRtcSession::SdesPolicy() const {
 
 bool WebRtcSession::GetSslRole(const std::string& transport_name,
                                rtc::SSLRole* role) {
-  if (!local_desc_ || !remote_desc_) {
+  if (!local_description() || !remote_description()) {
     LOG(LS_INFO) << "Local and Remote descriptions must be applied to get "
                  << "SSL Role of the session.";
     return false;
@@ -669,25 +669,31 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
     transport_controller_->SetIceRole(cricket::ICEROLE_CONTROLLING);
   }
 
-  local_desc_.reset(desc_temp.release());
+  if (action == kAnswer) {
+    current_local_description_.reset(desc_temp.release());
+    pending_local_description_.reset(nullptr);
+    current_remote_description_.reset(pending_remote_description_.release());
+  } else {
+    pending_local_description_.reset(desc_temp.release());
+  }
 
   // Transport and Media channels will be created only when offer is set.
-  if (action == kOffer && !CreateChannels(local_desc_->description())) {
+  if (action == kOffer && !CreateChannels(local_description()->description())) {
     // TODO(mallinath) - Handle CreateChannel failure, as new local description
     // is applied. Restore back to old description.
     return BadLocalSdp(desc->type(), kCreateChannelFailed, err_desc);
   }
 
   // Remove unused channels if MediaContentDescription is rejected.
-  RemoveUnusedChannels(local_desc_->description());
+  RemoveUnusedChannels(local_description()->description());
 
   if (!UpdateSessionState(action, cricket::CS_LOCAL, err_desc)) {
     return false;
   }
 
-  if (remote_desc_) {
+  if (remote_description()) {
     // Now that we have a local description, we can push down remote candidates.
-    UseCandidatesInSessionDescription(remote_desc_.get());
+    UseCandidatesInSessionDescription(remote_description());
   }
 
   pending_ice_restarts_.clear();
@@ -710,12 +716,25 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
     return false;
   }
 
-  std::unique_ptr<SessionDescriptionInterface> old_remote_desc(
-      remote_desc_.release());
-  remote_desc_.reset(desc_temp.release());
+  const SessionDescriptionInterface* old_remote_description =
+      remote_description();
+  // Grab ownership of the description being replaced for the remainder of this
+  // method, since it's used below.
+  std::unique_ptr<SessionDescriptionInterface> replaced_remote_description;
+  Action action = GetAction(desc->type());
+  if (action == kAnswer) {
+    replaced_remote_description.reset(
+        pending_remote_description_ ? pending_remote_description_.release()
+                                    : current_remote_description_.release());
+    current_remote_description_.reset(desc_temp.release());
+    pending_remote_description_.reset(nullptr);
+    current_local_description_.reset(pending_local_description_.release());
+  } else {
+    replaced_remote_description.reset(pending_remote_description_.release());
+    pending_remote_description_.reset(desc_temp.release());
+  }
 
   // Transport and Media channels will be created only when offer is set.
-  Action action = GetAction(desc->type());
   if (action == kOffer && !CreateChannels(desc->description())) {
     // TODO(mallinath) - Handle CreateChannel failure, as new local description
     // is applied. Restore back to old description.
@@ -731,19 +750,20 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
     return false;
   }
 
-  if (local_desc_ && !UseCandidatesInSessionDescription(desc)) {
+  if (local_description() && !UseCandidatesInSessionDescription(desc)) {
     return BadRemoteSdp(desc->type(), kInvalidCandidates, err_desc);
   }
 
-  if (old_remote_desc) {
+  if (old_remote_description) {
     for (const cricket::ContentInfo& content :
-         old_remote_desc->description()->contents()) {
+         old_remote_description->description()->contents()) {
       // Check if this new SessionDescription contains new ICE ufrag and
       // password that indicates the remote peer requests an ICE restart.
       // TODO(deadbeef): When we start storing both the current and pending
       // remote description, this should reset pending_ice_restarts and compare
       // against the current description.
-      if (CheckForRemoteIceRestart(old_remote_desc.get(), desc, content.name)) {
+      if (CheckForRemoteIceRestart(old_remote_description, desc,
+                                   content.name)) {
         if (action == kOffer) {
           pending_ice_restarts_.insert(content.name);
         }
@@ -756,7 +776,7 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
         // description plus any candidates added since then. We should remove
         // this once we're sure it won't break anything.
         WebRtcSessionDescriptionFactory::CopyCandidatesFromSessionDescription(
-            old_remote_desc.get(), content.name, desc);
+            old_remote_description, content.name, desc);
       }
     }
   }
@@ -839,9 +859,11 @@ bool WebRtcSession::UpdateSessionState(
     }
   } else if (action == kAnswer) {
     const cricket::ContentGroup* local_bundle =
-        local_desc_->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+        local_description()->description()->GetGroupByName(
+            cricket::GROUP_TYPE_BUNDLE);
     const cricket::ContentGroup* remote_bundle =
-        remote_desc_->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+        remote_description()->description()->GetGroupByName(
+            cricket::GROUP_TYPE_BUNDLE);
     if (local_bundle && remote_bundle) {
       // The answerer decides the transport to bundle on.
       const cricket::ContentGroup* answer_bundle =
@@ -888,11 +910,11 @@ bool WebRtcSession::PushdownMediaDescription(
     if (!ch) {
       return true;
     } else if (source == cricket::CS_LOCAL) {
-      return ch->PushdownLocalDescription(local_desc_->description(), action,
-                                          err);
+      return ch->PushdownLocalDescription(local_description()->description(),
+                                          action, err);
     } else {
-      return ch->PushdownRemoteDescription(remote_desc_->description(), action,
-                                           err);
+      return ch->PushdownRemoteDescription(remote_description()->description(),
+                                           action, err);
     }
   };
 
@@ -907,11 +929,11 @@ bool WebRtcSession::PushdownTransportDescription(cricket::ContentSource source,
   RTC_DCHECK(signaling_thread()->IsCurrent());
 
   if (source == cricket::CS_LOCAL) {
-    return PushdownLocalTransportDescription(local_desc_->description(), action,
-                                             error_desc);
+    return PushdownLocalTransportDescription(local_description()->description(),
+                                             action, error_desc);
   }
-  return PushdownRemoteTransportDescription(remote_desc_->description(), action,
-                                            error_desc);
+  return PushdownRemoteTransportDescription(remote_description()->description(),
+                                            action, error_desc);
 }
 
 bool WebRtcSession::PushdownLocalTransportDescription(
@@ -1059,7 +1081,7 @@ bool WebRtcSession::EnableBundle(const cricket::ContentGroup& bundle) {
 }
 
 bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
-  if (!remote_desc_) {
+  if (!remote_description()) {
     LOG(LS_ERROR) << "ProcessIceMessage: ICE candidates can't be added "
                   << "without any remote session description.";
     return false;
@@ -1077,7 +1099,7 @@ bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
   }
 
   // Add this candidate to the remote session description.
-  if (!remote_desc_->AddCandidate(candidate)) {
+  if (!mutable_remote_description()->AddCandidate(candidate)) {
     LOG(LS_ERROR) << "ProcessIceMessage: Candidate cannot be used.";
     return false;
   }
@@ -1092,7 +1114,7 @@ bool WebRtcSession::ProcessIceMessage(const IceCandidateInterface* candidate) {
 
 bool WebRtcSession::RemoveRemoteIceCandidates(
     const std::vector<cricket::Candidate>& candidates) {
-  if (!remote_desc_) {
+  if (!remote_description()) {
     LOG(LS_ERROR) << "RemoveRemoteIceCandidates: ICE candidates can't be "
                   << "removed without any remote session description.";
     return false;
@@ -1103,7 +1125,8 @@ bool WebRtcSession::RemoveRemoteIceCandidates(
     return false;
   }
 
-  size_t number_removed = remote_desc_->RemoveCandidates(candidates);
+  size_t number_removed =
+      mutable_remote_description()->RemoveCandidates(candidates);
   if (number_removed != candidates.size()) {
     LOG(LS_ERROR) << "RemoveRemoteIceCandidates: Failed to remove candidates. "
                   << "Requested " << candidates.size() << " but only "
@@ -1157,18 +1180,20 @@ void WebRtcSession::MaybeStartGathering() {
 
 bool WebRtcSession::GetLocalTrackIdBySsrc(uint32_t ssrc,
                                           std::string* track_id) {
-  if (!local_desc_) {
+  if (!local_description()) {
     return false;
   }
-  return webrtc::GetTrackIdBySsrc(local_desc_->description(), ssrc, track_id);
+  return webrtc::GetTrackIdBySsrc(local_description()->description(), ssrc,
+                                  track_id);
 }
 
 bool WebRtcSession::GetRemoteTrackIdBySsrc(uint32_t ssrc,
                                            std::string* track_id) {
-  if (!remote_desc_) {
+  if (!remote_description()) {
     return false;
   }
-  return webrtc::GetTrackIdBySsrc(remote_desc_->description(), ssrc, track_id);
+  return webrtc::GetTrackIdBySsrc(remote_description()->description(), ssrc,
+                                  track_id);
 }
 
 std::string WebRtcSession::BadStateErrMsg(State state) {
@@ -1186,8 +1211,8 @@ bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {
   uint32_t send_ssrc = 0;
   // The Dtmf is negotiated per channel not ssrc, so we only check if the ssrc
   // exists.
-  if (!local_desc_ ||
-      !GetAudioSsrcByTrackId(local_desc_->description(), track_id,
+  if (!local_description() ||
+      !GetAudioSsrcByTrackId(local_description()->description(), track_id,
                              &send_ssrc)) {
     LOG(LS_ERROR) << "CanInsertDtmf: Track does not exist: " << track_id;
     return false;
@@ -1203,8 +1228,9 @@ bool WebRtcSession::InsertDtmf(const std::string& track_id,
     return false;
   }
   uint32_t send_ssrc = 0;
-  if (!VERIFY(local_desc_ && GetAudioSsrcByTrackId(local_desc_->description(),
-                                                   track_id, &send_ssrc))) {
+  if (!VERIFY(local_description() &&
+              GetAudioSsrcByTrackId(local_description()->description(),
+                                    track_id, &send_ssrc))) {
     LOG(LS_ERROR) << "InsertDtmf: Track does not exist: " << track_id;
     return false;
   }
@@ -1402,8 +1428,8 @@ void WebRtcSession::OnTransportControllerCandidatesGathered(
     if (ice_observer_) {
       ice_observer_->OnIceCandidate(&candidate);
     }
-    if (local_desc_) {
-      local_desc_->AddCandidate(&candidate);
+    if (local_description()) {
+      mutable_local_description()->AddCandidate(&candidate);
     }
   }
 }
@@ -1421,8 +1447,8 @@ void WebRtcSession::OnTransportControllerCandidatesRemoved(
     }
   }
 
-  if (local_desc_) {
-    local_desc_->RemoveCandidates(candidates);
+  if (local_description()) {
+    mutable_local_description()->RemoveCandidates(candidates);
   }
   if (ice_observer_) {
     ice_observer_->OnIceCandidatesRemoved(candidates);
@@ -1444,12 +1470,12 @@ void WebRtcSession::EnableChannels() {
 // Returns the media index for a local ice candidate given the content name.
 bool WebRtcSession::GetLocalCandidateMediaIndex(const std::string& content_name,
                                                 int* sdp_mline_index) {
-  if (!local_desc_ || !sdp_mline_index) {
+  if (!local_description() || !sdp_mline_index) {
     return false;
   }
 
   bool content_found = false;
-  const ContentInfos& contents = local_desc_->description()->contents();
+  const ContentInfos& contents = local_description()->description()->contents();
   for (size_t index = 0; index < contents.size(); ++index) {
     if (contents[index].name == content_name) {
       *sdp_mline_index = static_cast<int>(index);
@@ -1490,14 +1516,15 @@ bool WebRtcSession::UseCandidatesInSessionDescription(
 
 bool WebRtcSession::UseCandidate(const IceCandidateInterface* candidate) {
   size_t mediacontent_index = static_cast<size_t>(candidate->sdp_mline_index());
-  size_t remote_content_size = remote_desc_->description()->contents().size();
+  size_t remote_content_size =
+      remote_description()->description()->contents().size();
   if (mediacontent_index >= remote_content_size) {
     LOG(LS_ERROR) << "UseCandidate: Invalid candidate media index.";
     return false;
   }
 
   cricket::ContentInfo content =
-      remote_desc_->description()->contents()[mediacontent_index];
+      remote_description()->description()->contents()[mediacontent_index];
   std::vector<cricket::Candidate> candidates;
   candidates.push_back(candidate->candidate());
   // Invoking BaseSession method to handle remote candidates.
@@ -1835,8 +1862,8 @@ bool WebRtcSession::ValidateSessionDescription(
   // Verify m-lines in Answer when compared against Offer.
   if (action == kAnswer) {
     const cricket::SessionDescription* offer_desc =
-        (source == cricket::CS_LOCAL) ? remote_desc_->description()
-                                      : local_desc_->description();
+        (source == cricket::CS_LOCAL) ? remote_description()->description()
+                                      : local_description()->description();
     if (!VerifyMediaDescriptions(sdesc->description(), offer_desc)) {
       return BadAnswerSdp(source, kMlineMismatch, err_desc);
     }
@@ -1890,7 +1917,7 @@ bool WebRtcSession::ReadyToUseRemoteCandidate(
   *valid = true;
 
   const SessionDescriptionInterface* current_remote_desc =
-      remote_desc ? remote_desc : remote_desc_.get();
+      remote_desc ? remote_desc : remote_description();
 
   if (!current_remote_desc) {
     return false;

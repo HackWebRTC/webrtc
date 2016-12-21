@@ -247,10 +247,24 @@ class WebRtcSession :
   void MaybeStartGathering();
 
   const SessionDescriptionInterface* local_description() const {
-    return local_desc_.get();
+    return pending_local_description_ ? pending_local_description_.get()
+                                      : current_local_description_.get();
   }
   const SessionDescriptionInterface* remote_description() const {
-    return remote_desc_.get();
+    return pending_remote_description_ ? pending_remote_description_.get()
+                                       : current_remote_description_.get();
+  }
+  const SessionDescriptionInterface* current_local_description() const {
+    return current_local_description_.get();
+  }
+  const SessionDescriptionInterface* current_remote_description() const {
+    return current_remote_description_.get();
+  }
+  const SessionDescriptionInterface* pending_local_description() const {
+    return pending_local_description_.get();
+  }
+  const SessionDescriptionInterface* pending_remote_description() const {
+    return pending_remote_description_.get();
   }
 
   // Get the id used as a media stream track's "id" field from ssrc.
@@ -353,6 +367,17 @@ class WebRtcSession :
     kPrAnswer,
     kAnswer,
   };
+
+  // Non-const versions of local_description()/remote_description(), for use
+  // internally.
+  SessionDescriptionInterface* mutable_local_description() {
+    return pending_local_description_ ? pending_local_description_.get()
+                                      : current_local_description_.get();
+  }
+  SessionDescriptionInterface* mutable_remote_description() {
+    return pending_remote_description_ ? pending_remote_description_.get()
+                                       : current_remote_description_.get();
+  }
 
   // Log session state.
   void LogState(State old_state, State new_state);
@@ -519,8 +544,10 @@ class WebRtcSession :
   IceObserver* ice_observer_;
   PeerConnectionInterface::IceConnectionState ice_connection_state_;
   bool ice_connection_receiving_;
-  std::unique_ptr<SessionDescriptionInterface> local_desc_;
-  std::unique_ptr<SessionDescriptionInterface> remote_desc_;
+  std::unique_ptr<SessionDescriptionInterface> current_local_description_;
+  std::unique_ptr<SessionDescriptionInterface> pending_local_description_;
+  std::unique_ptr<SessionDescriptionInterface> current_remote_description_;
+  std::unique_ptr<SessionDescriptionInterface> pending_remote_description_;
   // If the remote peer is using a older version of implementation.
   bool older_version_remote_peer_;
   bool dtls_enabled_;

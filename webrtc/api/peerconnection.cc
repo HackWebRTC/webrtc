@@ -1381,6 +1381,26 @@ const SessionDescriptionInterface* PeerConnection::remote_description() const {
   return session_->remote_description();
 }
 
+const SessionDescriptionInterface* PeerConnection::current_local_description()
+    const {
+  return session_->current_local_description();
+}
+
+const SessionDescriptionInterface* PeerConnection::current_remote_description()
+    const {
+  return session_->current_remote_description();
+}
+
+const SessionDescriptionInterface* PeerConnection::pending_local_description()
+    const {
+  return session_->pending_local_description();
+}
+
+const SessionDescriptionInterface* PeerConnection::pending_remote_description()
+    const {
+  return session_->pending_remote_description();
+}
+
 void PeerConnection::Close() {
   TRACE_EVENT0("webrtc", "PeerConnection::Close");
   // Update stats here so that we have the most recent stats for tracks and

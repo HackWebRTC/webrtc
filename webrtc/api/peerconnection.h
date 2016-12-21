@@ -113,6 +113,12 @@ class PeerConnection : public PeerConnectionInterface,
 
   const SessionDescriptionInterface* local_description() const override;
   const SessionDescriptionInterface* remote_description() const override;
+  const SessionDescriptionInterface* current_local_description() const override;
+  const SessionDescriptionInterface* current_remote_description()
+      const override;
+  const SessionDescriptionInterface* pending_local_description() const override;
+  const SessionDescriptionInterface* pending_remote_description()
+      const override;
 
   // JSEP01
   // Deprecated, use version without constraints.
