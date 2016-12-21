@@ -8,36 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/array_view.h"
 #include "webrtc/base/basictypes.h"
 #include "webrtc/call/flexfec_receive_stream_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_recovered_packet_receiver.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
 
-namespace {
-
-RtpPacketReceived ParsePacket(rtc::ArrayView<const uint8_t> packet) {
-  RtpPacketReceived parsed_packet(nullptr);
-  EXPECT_TRUE(parsed_packet.Parse(packet));
-  return parsed_packet;
-}
-
-}  // namespace
-
 TEST(FlexfecReceiveStreamTest, ConstructDestruct) {
   FlexfecReceiveStream::Config config;
   config.payload_type = 118;
   config.remote_ssrc = 424223;
   config.protected_media_ssrcs = {912512};
-  MockRecoveredPacketReceiver recovered_packet_receiver;
+  MockRecoveredPacketReceiver callback;
 
-  FlexfecReceiveStreamImpl receive_stream(config, &recovered_packet_receiver);
+  FlexfecReceiveStreamImpl receive_stream(config, &callback);
 }
 
 TEST(FlexfecReceiveStreamTest, StartStop) {
@@ -45,11 +33,25 @@ TEST(FlexfecReceiveStreamTest, StartStop) {
   config.payload_type = 118;
   config.remote_ssrc = 1652392;
   config.protected_media_ssrcs = {23300443};
-  MockRecoveredPacketReceiver recovered_packet_receiver;
-  FlexfecReceiveStreamImpl receive_stream(config, &recovered_packet_receiver);
+  MockRecoveredPacketReceiver callback;
+  FlexfecReceiveStreamImpl receive_stream(config, &callback);
 
   receive_stream.Start();
   receive_stream.Stop();
+}
+
+TEST(FlexfecReceiveStreamTest, DoesNotProcessPacketWhenNoMediaSsrcGiven) {
+  FlexfecReceiveStream::Config config;
+  config.payload_type = 118;
+  config.remote_ssrc = 424223;
+  config.protected_media_ssrcs = {};
+  MockRecoveredPacketReceiver callback;
+  FlexfecReceiveStreamImpl receive_stream(config, &callback);
+  const uint8_t packet[] = {0x00, 0x11, 0x22, 0x33};
+  const size_t packet_length = sizeof(packet);
+
+  EXPECT_FALSE(
+      receive_stream.AddAndProcessReceivedPacket(packet, packet_length));
 }
 
 // Create a FlexFEC packet that protects a single media packet and ensure
@@ -89,6 +91,7 @@ TEST(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
       // FEC payload.
       kPayloadBits,    kPayloadBits,    kPayloadBits,       kPayloadBits};
   // clang-format on
+  constexpr size_t kFlexfecPacketLength = sizeof(kFlexfecPacket);
 
   FlexfecReceiveStream::Config config;
   config.payload_type = kFlexfecPlType;
@@ -99,14 +102,16 @@ TEST(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
   FlexfecReceiveStreamImpl receive_stream(config, &recovered_packet_receiver);
 
   // Do not call back before being started.
-  receive_stream.AddAndProcessReceivedPacket(ParsePacket(kFlexfecPacket));
+  receive_stream.AddAndProcessReceivedPacket(kFlexfecPacket,
+                                             kFlexfecPacketLength);
 
   // Call back after being started.
   receive_stream.Start();
   EXPECT_CALL(
       recovered_packet_receiver,
       OnRecoveredPacket(::testing::_, kRtpHeaderSize + kPayloadLength[1]));
-  receive_stream.AddAndProcessReceivedPacket(ParsePacket(kFlexfecPacket));
+  receive_stream.AddAndProcessReceivedPacket(kFlexfecPacket,
+                                             kFlexfecPacketLength);
 }
 
 }  // namespace webrtc

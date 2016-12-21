@@ -197,23 +197,6 @@ CongestionController::CongestionController(
 
 CongestionController::~CongestionController() {}
 
-void CongestionController::OnReceivedPacket(int64_t arrival_time_ms,
-                                            size_t payload_size,
-                                            const RTPHeader& header) {
-  // Send-side BWE.
-  if (header.extension.hasTransportSequenceNumber) {
-    remote_estimator_proxy_.IncomingPacket(arrival_time_ms, payload_size,
-                                           header);
-    return;
-  }
-
-  // Receive-side BWE.
-  if (remote_bitrate_estimator_) {
-    remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
-                                              header);
-  }
-}
-
 void CongestionController::SetBweBitrates(int min_bitrate_bps,
                                           int start_bitrate_bps,
                                           int max_bitrate_bps) {

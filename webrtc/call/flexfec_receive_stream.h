@@ -59,7 +59,7 @@ class FlexfecReceiveStream {
     bool transport_cc = false;
 
     // RTP header extensions that have been negotiated for this track.
-    std::vector<RtpExtension> rtp_header_extensions;
+    std::vector<RtpExtension> extensions;
   };
 
   // Starts stream activity.

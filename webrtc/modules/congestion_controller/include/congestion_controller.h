@@ -68,10 +68,6 @@ class CongestionController : public CallStatsObserver, public Module {
                        std::unique_ptr<PacedSender> pacer);
   virtual ~CongestionController();
 
-  virtual void OnReceivedPacket(int64_t arrival_time_ms,
-                                size_t payload_size,
-                                const RTPHeader& header);
-
   virtual void SetBweBitrates(int min_bitrate_bps,
                               int start_bitrate_bps,
                               int max_bitrate_bps);

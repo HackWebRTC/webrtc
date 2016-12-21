@@ -86,10 +86,6 @@ bool Packet::Parse(const uint8_t* buffer, size_t buffer_size) {
   return true;
 }
 
-bool Packet::Parse(rtc::ArrayView<const uint8_t> packet) {
-  return Parse(packet.data(), packet.size());
-}
-
 bool Packet::Parse(rtc::CopyOnWriteBuffer buffer) {
   if (!ParseBuffer(buffer.cdata(), buffer.size())) {
     Clear();

@@ -18,19 +18,16 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {
 
 class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
  public:
   FlexfecReceiveStreamImpl(const Config& config,
-                           RecoveredPacketReceiver* recovered_packet_receiver);
+                           RecoveredPacketReceiver* recovered_packet_callback);
   ~FlexfecReceiveStreamImpl() override;
 
-  const Config& GetConfig() const { return config_; }
-
-  bool AddAndProcessReceivedPacket(RtpPacketReceived packet);
+  bool AddAndProcessReceivedPacket(const uint8_t* packet, size_t length);
 
   // Implements FlexfecReceiveStream.
   void Start() override;

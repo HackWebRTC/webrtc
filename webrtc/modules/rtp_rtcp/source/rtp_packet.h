@@ -31,7 +31,6 @@ class Packet {
 
   // Parse and copy given buffer into Packet.
   bool Parse(const uint8_t* buffer, size_t size);
-  bool Parse(rtc::ArrayView<const uint8_t> packet);
 
   // Parse and move given buffer into Packet.
   bool Parse(rtc::CopyOnWriteBuffer packet);
