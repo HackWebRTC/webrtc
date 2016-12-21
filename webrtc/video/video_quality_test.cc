@@ -113,6 +113,10 @@ class VideoStreamFactory
   std::vector<webrtc::VideoStream> streams_;
 };
 
+bool IsFlexfec(int payload_type) {
+  return payload_type == webrtc::VideoQualityTest::kFlexfecPayloadType;
+}
+
 }  // namespace
 
 namespace webrtc {
@@ -215,7 +219,10 @@ class VideoAnalyzer : public PacketReceiver,
     RtpUtility::RtpHeaderParser parser(packet, length);
     RTPHeader header;
     parser.Parse(&header);
-    {
+    if (!IsFlexfec(header.payloadType)) {
+      // Ignore FlexFEC timestamps, to avoid collisions with media timestamps.
+      // (FlexFEC and media are sent on different SSRCs, which have different
+      // timestamps spaces.)
       rtc::CritScope lock(&crit_);
       int64_t timestamp =
           wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
@@ -260,13 +267,18 @@ class VideoAnalyzer : public PacketReceiver,
         rtp_timestamp_delta_ = header.timestamp - *first_send_timestamp_;
         first_send_timestamp_ = rtc::Optional<uint32_t>();
       }
-      int64_t timestamp =
-          wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
-      send_times_[timestamp] = current_time;
-      if (!transport_->DiscardedLastPacket() &&
-          header.ssrc == ssrc_to_analyze_) {
-        encoded_frame_sizes_[timestamp] +=
-            length - (header.headerLength + header.paddingLength);
+      if (!IsFlexfec(header.payloadType)) {
+        // Ignore FlexFEC timestamps, to avoid collisions with media timestamps.
+        // (FlexFEC and media are sent on different SSRCs, which have different
+        // timestamps spaces.)
+        int64_t timestamp =
+            wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
+        send_times_[timestamp] = current_time;
+        if (!transport_->DiscardedLastPacket() &&
+            header.ssrc == ssrc_to_analyze_) {
+          encoded_frame_sizes_[timestamp] +=
+              length - (header.headerLength + header.paddingLength);
+        }
       }
     }
     return result;
@@ -666,8 +678,22 @@ class VideoAnalyzer : public PacketReceiver,
     last_render_time_ = comparison.render_time_ms;
 
     sender_time_.AddSample(comparison.send_time_ms - comparison.input_time_ms);
-    receiver_time_.AddSample(comparison.render_time_ms -
-                             comparison.recv_time_ms);
+    if (comparison.recv_time_ms > 0) {
+      // If recv_time_ms == 0, this frame consisted of a packets which were all
+      // lost in the transport. Since we were able to render the frame, however,
+      // the dropped packets were recovered by FlexFEC. The FlexFEC recovery
+      // happens internally in Call, and we can therefore here not know which
+      // FEC packets that protected the lost media packets. Consequently, we
+      // were not able to record a meaningful recv_time_ms. We therefore skip
+      // this sample.
+      //
+      // The reasoning above does not hold for ULPFEC and RTX, as for those
+      // strategies the timestamp of the received packets is set to the
+      // timestamp of the protected/retransmitted media packet. I.e., then
+      // recv_time_ms != 0, even though the media packets were lost.
+      receiver_time_.AddSample(comparison.render_time_ms -
+                               comparison.recv_time_ms);
+    }
     end_to_end_.AddSample(comparison.render_time_ms - comparison.input_time_ms);
     encoded_frame_size_.AddSample(comparison.encoded_frame_size);
   }
