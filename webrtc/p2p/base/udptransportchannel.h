@@ -35,7 +35,7 @@ class UdpTransportChannel : public rtc::PacketTransportInterface {
   UdpTransportChannel(const std::string& transport_name, rtc::SocketServer* ss);
   ~UdpTransportChannel();
 
-  std::string debug_name() const override { return transport_name_; }
+  const std::string debug_name() const override { return transport_name_; }
 
   bool receiving() const override {
     // TODO(johan): Implement method and signal.

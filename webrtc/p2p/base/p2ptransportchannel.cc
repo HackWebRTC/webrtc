@@ -100,8 +100,7 @@ static constexpr int b_is_better = -1;
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
                                          PortAllocator* allocator)
-    : transport_name_(transport_name),
-      component_(component),
+    : TransportChannelImpl(transport_name, component),
       allocator_(allocator),
       network_thread_(rtc::Thread::Current()),
       incoming_only_(false),
@@ -272,15 +271,15 @@ void P2PTransportChannel::SetIceTiebreaker(uint64_t tiebreaker) {
   tiebreaker_ = tiebreaker;
 }
 
-IceTransportState P2PTransportChannel::GetState() const {
+TransportChannelState P2PTransportChannel::GetState() const {
   return state_;
 }
 
 // A channel is considered ICE completed once there is at most one active
 // connection per network and at least one active connection.
-IceTransportState P2PTransportChannel::ComputeState() const {
+TransportChannelState P2PTransportChannel::ComputeState() const {
   if (!had_connection_) {
-    return IceTransportState::STATE_INIT;
+    return TransportChannelState::STATE_INIT;
   }
 
   std::vector<Connection*> active_connections;
@@ -290,7 +289,7 @@ IceTransportState P2PTransportChannel::ComputeState() const {
     }
   }
   if (active_connections.empty()) {
-    return IceTransportState::STATE_FAILED;
+    return TransportChannelState::STATE_FAILED;
   }
 
   std::set<rtc::Network*> networks;
@@ -302,11 +301,11 @@ IceTransportState P2PTransportChannel::ComputeState() const {
       LOG_J(LS_VERBOSE, this) << "Ice not completed yet for this channel as "
                               << network->ToString()
                               << " has more than 1 connection.";
-      return IceTransportState::STATE_CONNECTING;
+      return TransportChannelState::STATE_CONNECTING;
     }
   }
 
-  return IceTransportState::STATE_COMPLETED;
+  return TransportChannelState::STATE_COMPLETED;
 }
 
 void P2PTransportChannel::SetIceParameters(const IceParameters& ice_params) {
@@ -1400,38 +1399,33 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
 // change, it should be called after all the connection states have changed. For
 // example, we call this at the end of SortConnectionsAndUpdateState.
 void P2PTransportChannel::UpdateState() {
-  IceTransportState state = ComputeState();
+  TransportChannelState state = ComputeState();
   if (state_ != state) {
-    LOG_J(LS_INFO, this) << "Transport channel state changed from "
-                         << static_cast<int>(state_) << " to "
-                         << static_cast<int>(state);
+    LOG_J(LS_INFO, this) << "Transport channel state changed from " << state_
+                         << " to " << state;
     // Check that the requested transition is allowed. Note that
     // P2PTransportChannel does not (yet) implement a direct mapping of the ICE
     // states from the standard; the difference is covered by
     // TransportController and PeerConnection.
     switch (state_) {
-      case IceTransportState::STATE_INIT:
+      case STATE_INIT:
         // TODO(deadbeef): Once we implement end-of-candidates signaling,
         // we shouldn't go from INIT to COMPLETED.
-        RTC_DCHECK(state == IceTransportState::STATE_CONNECTING ||
-                   state == IceTransportState::STATE_COMPLETED);
+        RTC_DCHECK(state == STATE_CONNECTING || state == STATE_COMPLETED);
         break;
-      case IceTransportState::STATE_CONNECTING:
-        RTC_DCHECK(state == IceTransportState::STATE_COMPLETED ||
-                   state == IceTransportState::STATE_FAILED);
+      case STATE_CONNECTING:
+        RTC_DCHECK(state == STATE_COMPLETED || state == STATE_FAILED);
         break;
-      case IceTransportState::STATE_COMPLETED:
+      case STATE_COMPLETED:
         // TODO(deadbeef): Once we implement end-of-candidates signaling,
         // we shouldn't go from COMPLETED to CONNECTING.
         // Though we *can* go from COMPlETED to FAILED, if consent expires.
-        RTC_DCHECK(state == IceTransportState::STATE_CONNECTING ||
-                   state == IceTransportState::STATE_FAILED);
+        RTC_DCHECK(state == STATE_CONNECTING || state == STATE_FAILED);
         break;
-      case IceTransportState::STATE_FAILED:
+      case STATE_FAILED:
         // TODO(deadbeef): Once we implement end-of-candidates signaling,
         // we shouldn't go from FAILED to CONNECTING or COMPLETED.
-        RTC_DCHECK(state == IceTransportState::STATE_CONNECTING ||
-                   state == IceTransportState::STATE_COMPLETED);
+        RTC_DCHECK(state == STATE_CONNECTING || state == STATE_COMPLETED);
         break;
       default:
         RTC_DCHECK(false);
@@ -1547,8 +1541,8 @@ void P2PTransportChannel::OnCheckAndPing() {
 // A connection is considered a backup connection if the channel state
 // is completed, the connection is not the selected connection and it is active.
 bool P2PTransportChannel::IsBackupConnection(const Connection* conn) const {
-  return state_ == IceTransportState::STATE_COMPLETED &&
-         conn != selected_connection_ && conn->active();
+  return state_ == STATE_COMPLETED && conn != selected_connection_ &&
+         conn->active();
 }
 
 // Is the connection in a state for us to even consider pinging the other side?
@@ -2026,27 +2020,6 @@ Connection* P2PTransportChannel::MorePingable(Connection* conn1,
                         [conn1, conn2](Connection* conn) {
                           return conn == conn1 || conn == conn2;
                         }));
-}
-
-void P2PTransportChannel::set_writable(bool writable) {
-  if (writable_ == writable) {
-    return;
-  }
-  LOG_J(LS_VERBOSE, this) << "set_writable from:" << writable_ << " to "
-                          << writable;
-  writable_ = writable;
-  if (writable_) {
-    SignalReadyToSend(this);
-  }
-  SignalWritableState(this);
-}
-
-void P2PTransportChannel::set_receiving(bool receiving) {
-  if (receiving_ == receiving) {
-    return;
-  }
-  receiving_ = receiving;
-  SignalReceivingState(this);
 }
 
 }  // namespace cricket
