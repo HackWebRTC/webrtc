@@ -43,6 +43,8 @@ def print_landmines():
            'rolling in https://codereview.webrtc.org/2293863002')
     print ('Clobber to remove old AppRTCDemo artifacts after renaming to '
            'AppRTCMobile in https://codereview.webrtc.org/2373443005')
+    print ('Clobber to fix Android x86/x64 builds after '
+           'https://codereview.webrtc.org/1414343008/')
   if platform() == 'win':
     print 'Clobber to resolve some issues with corrupt .pdb files on bots.'
     print 'Clobber due to corrupt .pdb files (after #14623)'
