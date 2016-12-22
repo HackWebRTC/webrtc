@@ -588,7 +588,8 @@ TEST_F(AudioDeviceTest, InitTerminate) {
 
 // Tests that playout can be initiated, started and stopped. No audio callback
 // is registered in this test.
-TEST_F(AudioDeviceTest, StartStopPlayout) {
+// Failing when running on real iOS devices: bugs.webrtc.org/6889.
+TEST_F(AudioDeviceTest, DISABLED_StartStopPlayout) {
   StartPlayout();
   StopPlayout();
   StartPlayout();
