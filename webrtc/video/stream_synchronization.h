@@ -13,7 +13,7 @@
 
 #include <list>
 
-#include "webrtc/system_wrappers/include/rtp_to_ntp.h"
+#include "webrtc/system_wrappers/include/rtp_to_ntp_estimator.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -21,8 +21,8 @@ namespace webrtc {
 class StreamSynchronization {
  public:
   struct Measurements {
-    Measurements() : rtcp(), latest_receive_time_ms(0), latest_timestamp(0) {}
-    RtcpMeasurements rtcp;
+    Measurements() : latest_receive_time_ms(0), latest_timestamp(0) {}
+    RtpToNtpEstimator rtp_to_ntp;
     int64_t latest_receive_time_ms;
     uint32_t latest_timestamp;
   };

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/system_wrappers/include/rtp_to_ntp.h"
+#include "webrtc/system_wrappers/include/rtp_to_ntp_estimator.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
@@ -38,236 +38,215 @@ TEST(WrapAroundTests, BackwardWrap) {
 }
 
 TEST(WrapAroundTests, OldRtcpWrapped_OldRtpTimestamp) {
-  RtcpMeasurements rtcp;
+  RtpToNtpEstimator estimator;
   bool new_sr;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 1;
   uint32_t timestamp = 0;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   ntp_frac += kOneMsInNtpFrac;
   timestamp -= kTimestampTicksPerMs;
   // Expected to fail since the older RTCP has a smaller RTP timestamp than the
   // newer (old:0, new:4294967206).
-  EXPECT_FALSE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_FALSE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
 }
 
 TEST(WrapAroundTests, NewRtcpWrapped) {
-  RtcpMeasurements rtcp;
+  RtpToNtpEstimator estimator;
   bool new_sr;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 1;
   uint32_t timestamp = 0xFFFFFFFF;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   ntp_frac += kOneMsInNtpFrac;
   timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   int64_t timestamp_ms = -1;
-  EXPECT_TRUE(RtpToNtpMs(rtcp.list.back().rtp_timestamp, rtcp, &timestamp_ms));
+  EXPECT_TRUE(estimator.Estimate(0xFFFFFFFF, &timestamp_ms));
   // Since this RTP packet has the same timestamp as the RTCP packet constructed
   // at time 0 it should be mapped to 0 as well.
   EXPECT_EQ(0, timestamp_ms);
 }
 
 TEST(WrapAroundTests, RtpWrapped) {
-  RtcpMeasurements rtcp;
+  RtpToNtpEstimator estimator;
   bool new_sr;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 1;
   uint32_t timestamp = 0xFFFFFFFF - 2 * kTimestampTicksPerMs;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   ntp_frac += kOneMsInNtpFrac;
   timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
 
   int64_t timestamp_ms = -1;
-  EXPECT_TRUE(RtpToNtpMs(rtcp.list.back().rtp_timestamp, rtcp, &timestamp_ms));
+  EXPECT_TRUE(estimator.Estimate(0xFFFFFFFF - 2 * kTimestampTicksPerMs,
+                                 &timestamp_ms));
   // Since this RTP packet has the same timestamp as the RTCP packet constructed
   // at time 0 it should be mapped to 0 as well.
   EXPECT_EQ(0, timestamp_ms);
   // Two kTimestampTicksPerMs advanced.
   timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(RtpToNtpMs(timestamp, rtcp, &timestamp_ms));
+  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
   EXPECT_EQ(2, timestamp_ms);
   // Wrapped rtp.
   timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(RtpToNtpMs(timestamp, rtcp, &timestamp_ms));
+  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
   EXPECT_EQ(3, timestamp_ms);
 }
 
 TEST(WrapAroundTests, OldRtp_RtcpsWrapped) {
-  RtcpMeasurements rtcp;
+  RtpToNtpEstimator estimator;
   bool new_sr;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 1;
   uint32_t timestamp = 0;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   ntp_frac += kOneMsInNtpFrac;
   timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
-  timestamp -= 2*kTimestampTicksPerMs;
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  timestamp -= 2 * kTimestampTicksPerMs;
   int64_t timestamp_ms = -1;
-  EXPECT_FALSE(RtpToNtpMs(timestamp, rtcp, &timestamp_ms));
+  EXPECT_FALSE(estimator.Estimate(timestamp, &timestamp_ms));
 }
 
 TEST(WrapAroundTests, OldRtp_NewRtcpWrapped) {
-  RtcpMeasurements rtcp;
+  RtpToNtpEstimator estimator;
   bool new_sr;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 1;
   uint32_t timestamp = 0xFFFFFFFF;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   ntp_frac += kOneMsInNtpFrac;
   timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   timestamp -= kTimestampTicksPerMs;
   int64_t timestamp_ms = -1;
-  EXPECT_TRUE(RtpToNtpMs(timestamp, rtcp, &timestamp_ms));
+  EXPECT_TRUE(estimator.Estimate(timestamp, &timestamp_ms));
   // Constructed at the same time as the first RTCP and should therefore be
   // mapped to zero.
   EXPECT_EQ(0, timestamp_ms);
 }
 
-TEST(UpdateRtcpListTests, InjectRtcpSr) {
-  const uint32_t kNtpSec = 10;
-  const uint32_t kNtpFrac = 12345;
-  const uint32_t kTs = 0x12345678;
-  bool new_sr;
-  RtcpMeasurements rtcp;
-  EXPECT_TRUE(UpdateRtcpList(kNtpSec, kNtpFrac, kTs, &rtcp, &new_sr));
-  EXPECT_TRUE(new_sr);
-  EXPECT_EQ(1u, rtcp.list.size());
-  EXPECT_EQ(kNtpSec, rtcp.list.front().ntp_time.seconds());
-  EXPECT_EQ(kNtpFrac, rtcp.list.front().ntp_time.fractions());
-  EXPECT_EQ(kTs, rtcp.list.front().rtp_timestamp);
-  // Add second report.
-  EXPECT_TRUE(UpdateRtcpList(kNtpSec, kNtpFrac + kOneMsInNtpFrac, kTs + 1,
-                             &rtcp, &new_sr));
-  EXPECT_EQ(2u, rtcp.list.size());
-  EXPECT_EQ(kTs + 1, rtcp.list.front().rtp_timestamp);
-  EXPECT_EQ(kTs + 0, rtcp.list.back().rtp_timestamp);
-  // List should contain last two reports.
-  EXPECT_TRUE(UpdateRtcpList(kNtpSec, kNtpFrac + 2 * kOneMsInNtpFrac, kTs + 2,
-                             &rtcp, &new_sr));
-  EXPECT_EQ(2u, rtcp.list.size());
-  EXPECT_EQ(kTs + 2, rtcp.list.front().rtp_timestamp);
-  EXPECT_EQ(kTs + 1, rtcp.list.back().rtp_timestamp);
-}
-
-TEST(UpdateRtcpListTests, FailsForZeroNtp) {
-  RtcpMeasurements rtcp;
+TEST(UpdateRtcpMeasurementTests, FailsForZeroNtp) {
+  RtpToNtpEstimator estimator;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 0;
   uint32_t timestamp = 0x12345678;
   bool new_sr;
-  EXPECT_FALSE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_FALSE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_FALSE(new_sr);
-  EXPECT_EQ(0u, rtcp.list.size());
 }
 
-TEST(UpdateRtcpListTests, FailsForEqualNtp) {
-  RtcpMeasurements rtcp;
+TEST(UpdateRtcpMeasurementTests, FailsForEqualNtp) {
+  RtpToNtpEstimator estimator;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 699925050;
   uint32_t timestamp = 0x12345678;
   bool new_sr;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_TRUE(new_sr);
-  EXPECT_EQ(1u, rtcp.list.size());
   // Ntp time already added, list not updated.
   ++timestamp;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_FALSE(new_sr);
-  EXPECT_EQ(1u, rtcp.list.size());
 }
 
-TEST(UpdateRtcpListTests, FailsForOldNtp) {
-  RtcpMeasurements rtcp;
+TEST(UpdateRtcpMeasurementTests, FailsForOldNtp) {
+  RtpToNtpEstimator estimator;
   uint32_t ntp_sec = 1;
   uint32_t ntp_frac = 699925050;
   uint32_t timestamp = 0x12345678;
   bool new_sr;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_TRUE(new_sr);
-  EXPECT_EQ(1u, rtcp.list.size());
   // Old ntp time, list not updated.
   ntp_frac -= kOneMsInNtpFrac;
   timestamp += kTimestampTicksPerMs;
-  EXPECT_FALSE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
-  EXPECT_EQ(1u, rtcp.list.size());
+  EXPECT_FALSE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
 }
 
-TEST(UpdateRtcpListTests, FailsForEqualTimestamp) {
-  RtcpMeasurements rtcp;
+TEST(UpdateRtcpMeasurementTests, FailsForEqualTimestamp) {
+  RtpToNtpEstimator estimator;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 2;
   uint32_t timestamp = 0x12345678;
   bool new_sr;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_TRUE(new_sr);
-  EXPECT_EQ(1u, rtcp.list.size());
   // Timestamp already added, list not updated.
   ++ntp_frac;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_FALSE(new_sr);
-  EXPECT_EQ(1u, rtcp.list.size());
 }
 
-TEST(UpdateRtcpListTests, FailsForOldRtpTimestamp) {
-  RtcpMeasurements rtcp;
+TEST(UpdateRtcpMeasurementTests, FailsForOldRtpTimestamp) {
+  RtpToNtpEstimator estimator;
   uint32_t ntp_sec = 0;
   uint32_t ntp_frac = 2;
   uint32_t timestamp = 0x12345678;
   bool new_sr;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_TRUE(new_sr);
-  EXPECT_EQ(1u, rtcp.list.size());
   // Old timestamp, list not updated.
   ntp_frac += kOneMsInNtpFrac;
   timestamp -= kTimestampTicksPerMs;
-  EXPECT_FALSE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_FALSE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_FALSE(new_sr);
-  EXPECT_EQ(1u, rtcp.list.size());
 }
 
-TEST(UpdateRtcpListTests, VerifyParameters) {
-  RtcpMeasurements rtcp;
+TEST(UpdateRtcpMeasurementTests, VerifyParameters) {
+  RtpToNtpEstimator estimator;
   uint32_t ntp_sec = 1;
   uint32_t ntp_frac = 2;
   uint32_t timestamp = 0x12345678;
   bool new_sr;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
   EXPECT_TRUE(new_sr);
-  EXPECT_FALSE(rtcp.params.calculated);
+  EXPECT_FALSE(estimator.params().calculated);
   // Add second report, parameters should be calculated.
   ntp_frac += kOneMsInNtpFrac;
   timestamp += kTimestampTicksPerMs;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
-  EXPECT_TRUE(rtcp.params.calculated);
-  EXPECT_DOUBLE_EQ(90.0, rtcp.params.frequency_khz);
-  EXPECT_NE(0.0, rtcp.params.offset_ms);
-}
-
-TEST(RtpToNtpTests, FailsForEmptyList) {
-  RtcpMeasurements rtcp;
-  rtcp.params.calculated = true;
-  // List is empty, conversion of RTP to NTP time should fail.
-  EXPECT_EQ(0u, rtcp.list.size());
-  int64_t timestamp_ms = -1;
-  EXPECT_FALSE(RtpToNtpMs(0, rtcp, &timestamp_ms));
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  EXPECT_TRUE(estimator.params().calculated);
+  EXPECT_DOUBLE_EQ(90.0, estimator.params().frequency_khz);
+  EXPECT_NE(0.0, estimator.params().offset_ms);
 }
 
 TEST(RtpToNtpTests, FailsForNoParameters) {
-  RtcpMeasurements rtcp;
+  RtpToNtpEstimator estimator;
   uint32_t ntp_sec = 1;
   uint32_t ntp_frac = 2;
   uint32_t timestamp = 0x12345678;
   bool new_sr;
-  EXPECT_TRUE(UpdateRtcpList(ntp_sec, ntp_frac, timestamp, &rtcp, &new_sr));
-  EXPECT_EQ(1u, rtcp.list.size());
+  EXPECT_TRUE(
+      estimator.UpdateMeasurements(ntp_sec, ntp_frac, timestamp, &new_sr));
+  EXPECT_TRUE(new_sr);
   // Parameters are not calculated, conversion of RTP to NTP time should fail.
-  EXPECT_FALSE(rtcp.params.calculated);
+  EXPECT_FALSE(estimator.params().calculated);
   int64_t timestamp_ms = -1;
-  EXPECT_FALSE(RtpToNtpMs(timestamp, rtcp, &timestamp_ms));
+  EXPECT_FALSE(estimator.Estimate(timestamp, &timestamp_ms));
 }
 
 };  // namespace webrtc

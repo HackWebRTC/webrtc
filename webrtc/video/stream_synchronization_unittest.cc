@@ -34,13 +34,6 @@ class Time {
       : kNtpJan1970(2208988800UL),
         time_now_ms_(offset) {}
 
-  RtcpMeasurement GenerateRtcp(int frequency, uint32_t offset) const {
-    RtcpMeasurement rtcp;
-    rtcp.ntp_time = GetNowNtp();
-    rtcp.rtp_timestamp = GetNowRtp(frequency, offset);
-    return rtcp;
-  }
-
   NtpTime GetNowNtp() const {
     uint32_t ntp_secs = time_now_ms_ / 1000 + kNtpJan1970;
     int64_t remainder_ms = time_now_ms_ % 1000;
@@ -104,29 +97,29 @@ class StreamSynchronizationTest : public ::testing::Test {
     StreamSynchronization::Measurements audio;
     StreamSynchronization::Measurements video;
     // Generate NTP/RTP timestamp pair for both streams corresponding to RTCP.
-    RtcpMeasurement rtcp =
-        send_time_->GenerateRtcp(audio_frequency, audio_offset);
-    EXPECT_TRUE(UpdateRtcpList(rtcp.ntp_time.seconds(),
-                               rtcp.ntp_time.fractions(), rtcp.rtp_timestamp,
-                               &audio.rtcp, &new_sr));
+    NtpTime ntp_time = send_time_->GetNowNtp();
+    uint32_t rtp_timestamp =
+        send_time_->GetNowRtp(audio_frequency, audio_offset);
+    EXPECT_TRUE(audio.rtp_to_ntp.UpdateMeasurements(
+        ntp_time.seconds(), ntp_time.fractions(), rtp_timestamp, &new_sr));
     send_time_->IncreaseTimeMs(100);
     receive_time_->IncreaseTimeMs(100);
-    rtcp = send_time_->GenerateRtcp(video_frequency, video_offset);
-    EXPECT_TRUE(UpdateRtcpList(rtcp.ntp_time.seconds(),
-                               rtcp.ntp_time.fractions(), rtcp.rtp_timestamp,
-                               &video.rtcp, &new_sr));
+    ntp_time = send_time_->GetNowNtp();
+    rtp_timestamp = send_time_->GetNowRtp(video_frequency, video_offset);
+    EXPECT_TRUE(video.rtp_to_ntp.UpdateMeasurements(
+        ntp_time.seconds(), ntp_time.fractions(), rtp_timestamp, &new_sr));
     send_time_->IncreaseTimeMs(900);
     receive_time_->IncreaseTimeMs(900);
-    rtcp = send_time_->GenerateRtcp(audio_frequency, audio_offset);
-    EXPECT_TRUE(UpdateRtcpList(rtcp.ntp_time.seconds(),
-                               rtcp.ntp_time.fractions(), rtcp.rtp_timestamp,
-                               &audio.rtcp, &new_sr));
+    ntp_time = send_time_->GetNowNtp();
+    rtp_timestamp = send_time_->GetNowRtp(audio_frequency, audio_offset);
+    EXPECT_TRUE(audio.rtp_to_ntp.UpdateMeasurements(
+        ntp_time.seconds(), ntp_time.fractions(), rtp_timestamp, &new_sr));
     send_time_->IncreaseTimeMs(100);
     receive_time_->IncreaseTimeMs(100);
-    rtcp = send_time_->GenerateRtcp(video_frequency, video_offset);
-    EXPECT_TRUE(UpdateRtcpList(rtcp.ntp_time.seconds(),
-                               rtcp.ntp_time.fractions(), rtcp.rtp_timestamp,
-                               &video.rtcp, &new_sr));
+    ntp_time = send_time_->GetNowNtp();
+    rtp_timestamp = send_time_->GetNowRtp(video_frequency, video_offset);
+    EXPECT_TRUE(video.rtp_to_ntp.UpdateMeasurements(
+        ntp_time.seconds(), ntp_time.fractions(), rtp_timestamp, &new_sr));
 
     send_time_->IncreaseTimeMs(900);
     receive_time_->IncreaseTimeMs(900);

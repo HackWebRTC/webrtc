@@ -40,15 +40,13 @@ bool StreamSynchronization::ComputeRelativeDelay(
     int* relative_delay_ms) {
   assert(relative_delay_ms);
   int64_t audio_last_capture_time_ms;
-  if (!RtpToNtpMs(audio_measurement.latest_timestamp,
-                  audio_measurement.rtcp,
-                  &audio_last_capture_time_ms)) {
+  if (!audio_measurement.rtp_to_ntp.Estimate(audio_measurement.latest_timestamp,
+                                             &audio_last_capture_time_ms)) {
     return false;
   }
   int64_t video_last_capture_time_ms;
-  if (!RtpToNtpMs(video_measurement.latest_timestamp,
-                  video_measurement.rtcp,
-                  &video_last_capture_time_ms)) {
+  if (!video_measurement.rtp_to_ntp.Estimate(video_measurement.latest_timestamp,
+                                             &video_last_capture_time_ms)) {
     return false;
   }
   if (video_last_capture_time_ms < 0) {
