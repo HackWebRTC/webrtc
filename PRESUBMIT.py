@@ -437,6 +437,7 @@ def _CommonChecks(input_api, output_api):
       black_list=(r'^base[\\\/].*\.py$',
                   r'^build[\\\/].*\.py$',
                   r'^buildtools[\\\/].*\.py$',
+                  r'^ios[\\\/].*\.py$',
                   r'^out.*[\\\/].*\.py$',
                   r'^testing[\\\/].*\.py$',
                   r'^third_party[\\\/].*\.py$',
