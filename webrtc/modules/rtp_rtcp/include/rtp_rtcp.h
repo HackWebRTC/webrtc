@@ -22,7 +22,6 @@
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/video_coding/include/video_coding_defines.h"
 
 namespace webrtc {
 

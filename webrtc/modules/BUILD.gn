@@ -421,6 +421,7 @@ if (rtc_include_tests) {
       "remote_bitrate_estimator/test/bwe_unittest.cc",
       "remote_bitrate_estimator/test/estimators/nada_unittest.cc",
       "remote_bitrate_estimator/test/metric_recorder_unittest.cc",
+      "rtp_rtcp/mocks/mock_rtp_rtcp.h",
       "rtp_rtcp/source/byte_io_unittest.cc",
       "rtp_rtcp/source/fec_test_helper.cc",
       "rtp_rtcp/source/fec_test_helper.h",

@@ -20,7 +20,6 @@ rtc_static_library("rtp_rtcp") {
     "include/rtp_rtcp.h",
     "include/rtp_rtcp_defines.h",
     "include/ulpfec_receiver.h",
-    "mocks/mock_rtp_rtcp.h",
     "source/byte_io.h",
     "source/dtmf_queue.cc",
     "source/dtmf_queue.h",
@@ -175,7 +174,12 @@ rtc_static_library("rtp_rtcp") {
   deps = [
     "../..:webrtc_common",
     "../../api:transport_api",
+    "../../base:gtest_prod",
+    "../../base:rtc_base_approved",
+    "../../base:rtc_task_queue",
+    "../../call:call_interfaces",
     "../../common_video",
+    "../../logging:rtc_event_log_api",
     "../../system_wrappers",
     "../remote_bitrate_estimator",
   ]
