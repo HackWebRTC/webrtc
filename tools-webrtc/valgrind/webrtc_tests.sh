@@ -58,7 +58,7 @@ then
   CHROME_VALGRIND=`sh $CHROME_VALGRIND_SCRIPTS/locate_valgrind.sh`
   if [ "$CHROME_VALGRIND" = "" ]
   then
-    CHROME_VALGRIND=../../chromium/src/third_party/valgrind/linux_x64
+    CHROME_VALGRIND=../../src/third_party/valgrind/linux_x64
     echo
     echo "-------------------- WARNING ------------------------"
     echo "locate_valgrind.sh failed."
@@ -71,7 +71,7 @@ then
     echo "Notice: In the .gclient file, you need to add this for the 'src'"
     echo "solution since our directory structure is different from Chromium's:"
     echo "\"custom_deps\": {"
-    echo "  \"src/chromium/src/third_party/valgrind\":"
+    echo "  \"src/third_party/valgrind\":"
     echo "      \"https://chromium.googlesource.com/chromium/deps/valgrind/binaries\","
     echo "},"
     echo "-----------------------------------------------------"
