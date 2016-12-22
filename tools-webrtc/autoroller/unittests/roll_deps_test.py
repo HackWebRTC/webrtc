@@ -19,7 +19,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.join(SCRIPT_DIR, os.pardir)
 sys.path.append(PARENT_DIR)
 import roll_deps
-from roll_deps import CalculateChangedDepsProper, GetMatchingDepsEntries, \
+from roll_deps import CalculateChangedDeps, GetMatchingDepsEntries, \
   ParseDepsDict, ParseLocalDepsFile, UpdateDepsFile
 
 
@@ -119,12 +119,12 @@ class TestRollChromiumRevision(unittest.TestCase):
     self.assertEquals(len(entries), 1)
     self.assertEquals(entries[0], DEPS_ENTRIES['src/build'])
 
-  def testCalculateChangedDepsProper(self):
+  def testCalculateChangedDeps(self):
     _SetupGitLsRemoteCall(self.fake,
         'https://chromium.googlesource.com/chromium/src/build', BUILD_NEW_REV)
     webrtc_deps = ParseLocalDepsFile(self._webrtc_depsfile)
     new_cr_deps = ParseLocalDepsFile(self._new_cr_depsfile)
-    changed_deps = CalculateChangedDepsProper(webrtc_deps, new_cr_deps)
+    changed_deps = CalculateChangedDeps(webrtc_deps, new_cr_deps)
     self.assertEquals(len(changed_deps), 2)
     self.assertEquals(changed_deps[0].path, 'src/build')
     self.assertEquals(changed_deps[0].current_rev, BUILD_OLD_REV)
@@ -133,15 +133,6 @@ class TestRollChromiumRevision(unittest.TestCase):
     self.assertEquals(changed_deps[1].path, 'src/buildtools')
     self.assertEquals(changed_deps[1].current_rev, BUILDTOOLS_OLD_REV)
     self.assertEquals(changed_deps[1].new_rev, BUILDTOOLS_NEW_REV)
-
-  def testCalculateChangedDepsLegacy(self):
-    old_cr_deps = ParseLocalDepsFile(self._old_cr_depsfile)
-    new_cr_deps = ParseLocalDepsFile(self._new_cr_depsfile)
-    changed_deps = CalculateChangedDepsProper(old_cr_deps, new_cr_deps)
-    self.assertEquals(len(changed_deps), 1)
-    self.assertEquals(changed_deps[0].path, 'src/buildtools')
-    self.assertEquals(changed_deps[0].current_rev, BUILDTOOLS_OLD_REV)
-    self.assertEquals(changed_deps[0].new_rev, BUILDTOOLS_NEW_REV)
 
 
 def _SetupGitLsRemoteCall(cmd_fake, url, revision):

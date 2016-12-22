@@ -23,7 +23,7 @@ import urllib
 # Skip these dependencies (list without solution name prefix).
 DONT_AUTOROLL_THESE = [
   'src/third_party/gflags/src',
-  'src/third_party/winsdk_samples/src',
+  'src/third_party/winsdk_samples',
 ]
 
 WEBRTC_URL = 'https://chromium.googlesource.com/external/webrtc'
@@ -40,10 +40,6 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CHECKOUT_SRC_DIR = os.path.realpath(os.path.join(SCRIPT_DIR, os.pardir,
                                                  os.pardir))
 CHECKOUT_ROOT_DIR = os.path.realpath(os.path.join(CHECKOUT_SRC_DIR, os.pardir))
-CHROMIUM_CHECKOUT_SRC_DIR = os.path.join(CHECKOUT_SRC_DIR, 'chromium', 'src')
-
-sys.path.append(CHECKOUT_SRC_DIR)
-import setup_links
 
 sys.path.append(os.path.join(CHECKOUT_SRC_DIR, 'build'))
 import find_depot_tools
@@ -51,8 +47,8 @@ find_depot_tools.add_depot_tools_to_path()
 from gclient import GClientKeywords
 
 CLANG_UPDATE_SCRIPT_URL_PATH = 'tools/clang/scripts/update.py'
-CLANG_UPDATE_SCRIPT_LOCAL_PATH = os.path.join('tools', 'clang', 'scripts',
-                                              'update.py')
+CLANG_UPDATE_SCRIPT_LOCAL_PATH = os.path.join(CHECKOUT_SRC_DIR, 'tools',
+                                              'clang', 'scripts', 'update.py')
 
 DepsEntry = collections.namedtuple('DepsEntry', 'path url revision')
 ChangedDep = collections.namedtuple('ChangedDep',
@@ -217,10 +213,10 @@ def BuildDepsentryDict(deps_dict):
   return result
 
 
-def CalculateChangedDeps(webrtc_deps, old_cr_deps, new_cr_deps):
+def CalculateChangedDeps(webrtc_deps, new_cr_deps):
   """
-  Calculate changed deps entries based on:
-  1. Entries defined in the WebRTC DEPS file:
+  Calculate changed deps entries based on entries defined in the WebRTC DEPS
+  file:
      - If a shared dependency with the Chromium DEPS file: roll it to the same
        revision as Chromium (i.e. entry in the new_cr_deps dict)
      - If it's a Chromium sub-directory, roll it to the HEAD revision (notice
@@ -228,18 +224,10 @@ def CalculateChangedDeps(webrtc_deps, old_cr_deps, new_cr_deps):
        should be close).
      - If it's another DEPS entry (not shared with Chromium), roll it to HEAD
        unless it's configured to be skipped.
-  2. Entries present in the setup_links.py file. If the dir has changed between
-     old_cr_deps and new_cr_deps, it is considered changed and updated to the
-     revision for the entry in the new_cr_deps dict.
 
   Returns:
     A list of ChangedDep objects representing the changed deps.
   """
-  return sorted(CalculateChangedDepsProper(webrtc_deps, new_cr_deps) +
-                CalculateChangedDepsLegacy(old_cr_deps, new_cr_deps))
-
-
-def CalculateChangedDepsProper(webrtc_deps, new_cr_deps):
   result = []
   webrtc_entries = BuildDepsentryDict(webrtc_deps)
   new_cr_entries = BuildDepsentryDict(new_cr_deps)
@@ -264,29 +252,7 @@ def CalculateChangedDepsProper(webrtc_deps, new_cr_deps):
       logging.debug('Roll dependency %s to %s', path, new_rev)
       result.append(ChangedDep(path, webrtc_deps_entry.url,
                                webrtc_deps_entry.revision, new_rev))
-  return result
-
-
-def CalculateChangedDepsLegacy(old_cr_deps, new_cr_deps):
-  result = []
-  new_cr_entries = BuildDepsentryDict(new_cr_deps)
-  old_cr_entries = BuildDepsentryDict(old_cr_deps)
-  all_deps_dirs = setup_links.DIRECTORIES
-  for deps_dir in all_deps_dirs:
-    # All deps have 'src' prepended to the path in the Chromium DEPS file.
-    dir_path = 'src/%s' % deps_dir
-
-    for entry in GetMatchingDepsEntries(old_cr_entries, dir_path):
-      new_matching_entries = GetMatchingDepsEntries(new_cr_entries, entry.path)
-      assert len(new_matching_entries) <= 1, (
-          'Should never find more than one entry matching %s in %s, found %d' %
-          (entry.path, new_cr_entries, len(new_matching_entries)))
-      if not new_matching_entries:
-        result.append(ChangedDep(entry.path, entry.url, entry.revision, 'None'))
-      elif entry != new_matching_entries[0]:
-        result.append(ChangedDep(entry.path, entry.url, entry.revision,
-                                 new_matching_entries[0].revision))
-  return result
+  return sorted(result)
 
 
 def CalculateChangedClang(new_cr_rev):
@@ -297,9 +263,7 @@ def CalculateChangedClang(new_cr_rev):
         return match.group(1)
     raise RollError('Could not parse Clang revision!')
 
-  chromium_src_path = os.path.join(CHROMIUM_CHECKOUT_SRC_DIR,
-                                   CLANG_UPDATE_SCRIPT_LOCAL_PATH)
-  with open(chromium_src_path, 'rb') as f:
+  with open(CLANG_UPDATE_SCRIPT_LOCAL_PATH, 'rb') as f:
     current_lines = f.readlines()
   current_rev = GetClangRev(current_lines)
 
@@ -366,6 +330,15 @@ def UpdateDepsFile(deps_filename, old_cr_revision, new_cr_revision,
 
   # Update each individual DEPS entry.
   for dep in changed_deps:
+    local_dep_dir = os.path.join(CHECKOUT_ROOT_DIR, dep.path)
+    if not os.path.isdir(local_dep_dir):
+      raise RollError(
+          'Cannot find local directory %s. Either run\n'
+          'gclient sync --deps=all\n'
+          'or make sure the .gclient file for your solution contains all '
+          'platforms in the target_os list, i.e.\n'
+          'target_os = ["android", "unix", "mac", "ios", "win"];\n'
+          'Then run "gclient sync" again.' % local_dep_dir)
     _, stderr = _RunCommand(
       ['roll-dep-svn', '--no-verify-revision', dep.path, dep.new_rev],
       working_dir=CHECKOUT_SRC_DIR, ignore_exit_code=True)
@@ -488,10 +461,8 @@ def main():
   current_commit_pos = ParseCommitPosition(ReadRemoteCrCommit(current_cr_rev))
   new_commit_pos = ParseCommitPosition(ReadRemoteCrCommit(new_cr_rev))
 
-  current_cr_deps = ParseRemoteCrDepsFile(current_cr_rev)
   new_cr_deps = ParseRemoteCrDepsFile(new_cr_rev)
-
-  changed_deps = CalculateChangedDeps(webrtc_deps, current_cr_deps, new_cr_deps)
+  changed_deps = CalculateChangedDeps(webrtc_deps, new_cr_deps)
   clang_change = CalculateChangedClang(new_cr_rev)
   commit_msg = GenerateCommitMessage(current_cr_rev, new_cr_rev,
                                      current_commit_pos, new_commit_pos,
