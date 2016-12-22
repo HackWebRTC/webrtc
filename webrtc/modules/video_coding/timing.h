@@ -92,8 +92,9 @@ class VCMTiming {
   // certain amount of processing time.
   bool EnoughTimeToDecode(uint32_t available_processing_time_ms) const;
 
-  // Return current timing information.
-  void GetTimings(int* decode_ms,
+  // Return current timing information. Returns true if the first frame has been
+  // decoded, false otherwise.
+  bool GetTimings(int* decode_ms,
                   int* max_decode_ms,
                   int* current_delay_ms,
                   int* target_delay_ms,

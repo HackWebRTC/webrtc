@@ -74,12 +74,13 @@ void VideoReceiver::Process() {
       int jitter_buffer_ms;
       int min_playout_delay_ms;
       int render_delay_ms;
-      _timing->GetTimings(&decode_ms, &max_decode_ms, &current_delay_ms,
-                          &target_delay_ms, &jitter_buffer_ms,
-                          &min_playout_delay_ms, &render_delay_ms);
-      _decoderTimingCallback->OnDecoderTiming(
-          decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
-          jitter_buffer_ms, min_playout_delay_ms, render_delay_ms);
+      if (_timing->GetTimings(&decode_ms, &max_decode_ms, &current_delay_ms,
+                              &target_delay_ms, &jitter_buffer_ms,
+                              &min_playout_delay_ms, &render_delay_ms)) {
+        _decoderTimingCallback->OnDecoderTiming(
+            decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
+            jitter_buffer_ms, min_playout_delay_ms, render_delay_ms);
+      }
     }
   }
 
