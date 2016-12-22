@@ -28,7 +28,6 @@ check_targets = [
   "//webrtc/modules/audio_device/*",
   "//webrtc/modules/audio_mixer/*",
   "//webrtc/modules/audio_processing/*",
-  "//webrtc/modules/desktop_capture/*",
   "//webrtc/modules/media_file/*",
   "//webrtc/modules/pacing/*",
   "//webrtc/modules/video_capture/*",

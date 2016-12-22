@@ -22,14 +22,10 @@ rtc_static_library("primitives") {
     "desktop_region.h",
     "shared_desktop_frame.cc",
     "shared_desktop_frame.h",
-    "shared_memory.cc",
-    "shared_memory.h",
   ]
 
   deps = [
-    "../..:webrtc_common",
     "../../base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
-    "../../system_wrappers:system_wrappers",
   ]
 }
 
@@ -44,10 +40,6 @@ if (rtc_include_tests) {
     sources = [
       "rgba_color.cc",
       "rgba_color.h",
-    ]
-    deps = [
-      ":primitives",
-      "../..:webrtc_common",
     ]
   }
 
@@ -64,11 +56,6 @@ if (rtc_include_tests) {
       "screen_drawer_linux.cc",
       "screen_drawer_mac.cc",
       "screen_drawer_win.cc",
-    ]
-    deps = [
-      ":primitives",
-      "../../base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
     ]
   }
 
@@ -88,11 +75,7 @@ if (rtc_include_tests) {
       "fake_desktop_capturer.h",
       "mock_desktop_capturer_callback.cc",
       "mock_desktop_capturer_callback.h",
-    ]
-    deps = [
-      ":primitives",
-      "../../base:rtc_base_approved",
-      "../../test:test_support",
+      "screen_capturer_mock_objects.h",
     ]
   }
 }
@@ -138,6 +121,8 @@ rtc_static_library("desktop_capture") {
     "screen_capturer_helper.h",
     "screen_capturer_mac.mm",
     "screen_capturer_win.cc",
+    "shared_memory.cc",
+    "shared_memory.h",
     "win/cursor.cc",
     "win/cursor.h",
     "win/d3d_device.cc",
@@ -213,7 +198,6 @@ rtc_static_library("desktop_capture") {
 
   deps = [
     ":primitives",
-    "../..:webrtc_common",
     "../../base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
     "../../system_wrappers",
     "//third_party/libyuv",
