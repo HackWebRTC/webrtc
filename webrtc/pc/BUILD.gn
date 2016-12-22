@@ -15,10 +15,10 @@ group("pc") {
 }
 
 config("rtc_pc_config") {
-  defines = [
-    "HAVE_SCTP",
-    "HAVE_SRTP",
-  ]
+  defines = [ "HAVE_SRTP" ]
+  if (rtc_enable_sctp) {
+    defines += [ "HAVE_SCTP" ]
+  }
 }
 
 rtc_static_library("rtc_pc") {

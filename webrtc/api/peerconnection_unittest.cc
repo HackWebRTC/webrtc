@@ -1789,6 +1789,7 @@ TEST_F(P2PTestConductor, LocalP2PTestOfferDtlsButNotSdes) {
   VerifyRenderedAspectRatio(640, 480);
 }
 
+#ifdef HAVE_SCTP
 // This test verifies that the negotiation will succeed with data channel only
 // in max-bundle mode.
 TEST_F(P2PTestConductor, LocalP2PTestOfferDataChannelOnly) {
@@ -1799,6 +1800,7 @@ TEST_F(P2PTestConductor, LocalP2PTestOfferDataChannelOnly) {
   initializing_client()->CreateDataChannel();
   initializing_client()->Negotiate();
 }
+#endif
 
 // This test sets up a Jsep call between two parties, and the callee only
 // accept to receive video.
@@ -2088,6 +2090,7 @@ TEST_F(P2PTestConductor, LocalP2PTestRtpDataChannel) {
   EXPECT_FALSE(receiving_client()->data_observer()->IsOpen());
 }
 
+#ifdef HAVE_SCTP
 // This test sets up a call between two parties with audio, video and an SCTP
 // data channel.
 TEST_F(P2PTestConductor, LocalP2PTestSctpDataChannel) {
@@ -2175,6 +2178,7 @@ TEST_F(P2PTestConductor, UnorderedSctpDataChannel) {
                    kMaxWaitMs);
   EXPECT_TRUE_WAIT(!receiving_client()->data_observer()->IsOpen(), kMaxWaitMs);
 }
+#endif  // HAVE_SCTP
 
 // This test sets up a call between two parties and creates a data channel.
 // The test tests that received data is buffered unless an observer has been

@@ -523,6 +523,7 @@ class RTCStatsReportVerifier {
   rtc::scoped_refptr<const RTCStatsReport> report_;
 };
 
+#ifdef HAVE_SCTP
 TEST_F(RTCStatsIntegrationTest, GetStatsFromCaller) {
   StartCall();
 
@@ -549,6 +550,7 @@ TEST_F(RTCStatsIntegrationTest, GetsStatsWhileDestroyingPeerConnections) {
   // the peer connection.
   EXPECT_TRUE(stats_obtainer->report());
 }
+#endif  // HAVE_SCTP
 
 }  // namespace
 

@@ -143,9 +143,14 @@ rtc_static_library("rtc_media") {
     "engine/webrtcvoe.h",
     "engine/webrtcvoiceengine.cc",
     "engine/webrtcvoiceengine.h",
-    "sctp/sctpdataengine.cc",
-    "sctp/sctpdataengine.h",
   ]
+
+  if (rtc_enable_sctp) {
+    sources += [
+      "sctp/sctpdataengine.cc",
+      "sctp/sctpdataengine.h",
+    ]
+  }
 
   configs += [ ":rtc_media_warnings_config" ]
 
@@ -179,7 +184,7 @@ rtc_static_library("rtc_media") {
     include_dirs += [ "$rtc_libyuv_dir/include" ]
   }
 
-  if (rtc_build_usrsctp) {
+  if (rtc_enable_sctp && rtc_build_usrsctp) {
     include_dirs += [
       # TODO(jiayl): move this into the public_configs of
       # //third_party/usrsctp/BUILD.gn.
@@ -338,8 +343,11 @@ if (rtc_include_tests) {
       "engine/webrtcvideocapturer_unittest.cc",
       "engine/webrtcvideoengine2_unittest.cc",
       "engine/webrtcvoiceengine_unittest.cc",
-      "sctp/sctpdataengine_unittest.cc",
     ]
+
+    if (rtc_enable_sctp) {
+      sources += [ "sctp/sctpdataengine_unittest.cc" ]
+    }
 
     configs += [ ":rtc_media_unittests_config" ]
 

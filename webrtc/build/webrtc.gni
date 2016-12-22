@@ -47,6 +47,9 @@ declare_args() {
   # Set this to true to enable BWE test logging.
   rtc_enable_bwe_test_logging = false
 
+  # Set this to disable building with support for SCTP data channels.
+  rtc_enable_sctp = true
+
   # Disable these to not build components which can be externally provided.
   rtc_build_expat = true
   rtc_build_json = true

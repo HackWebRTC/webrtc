@@ -118,6 +118,10 @@ config("common_config") {
     defines += [ "RTC_DISABLE_VP9" ]
   }
 
+  if (rtc_enable_sctp) {
+    defines += [ "HAVE_SCTP" ]
+  }
+
   if (build_with_chromium) {
     defines += [
       # NOTICE: Since common_inherited_config is used in public_configs for our
@@ -126,7 +130,6 @@ config("common_config") {
       # source when webrtc:4256 is completed.
       "ENABLE_EXTERNAL_AUTH",
       "HAVE_OPENSSL_SSL_H",
-      "HAVE_SCTP",
       "HAVE_SRTP",
       "HAVE_WEBRTC_VIDEO",
       "HAVE_WEBRTC_VOICE",

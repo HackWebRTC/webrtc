@@ -194,6 +194,7 @@ TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
 }
 #endif  // !defined(ADDRESS_SANITIZER)
 
+#ifdef HAVE_SCTP
 // Verifies that a DataChannel created before the negotiation can transition to
 // "OPEN" and transfer data.
 TEST_F(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
@@ -319,6 +320,7 @@ TEST_F(PeerConnectionEndToEndTest,
   EXPECT_EQ(1U, dc_1_observer->received_message_count());
   EXPECT_EQ(1U, dc_2_observer->received_message_count());
 }
+#endif  // HAVE_SCTP
 
 #ifdef HAVE_QUIC
 // Test that QUIC data channels can be used and that messages go to the correct
@@ -396,6 +398,7 @@ TEST_F(PeerConnectionEndToEndTest, MessageTransferBetweenQuicDataChannels) {
 }
 #endif  // HAVE_QUIC
 
+#ifdef HAVE_SCTP
 // Verifies that a DataChannel added from an OPEN message functions after
 // a channel has been previously closed (webrtc issue 3778).
 // This previously failed because the new channel re-uses the ID of the closed
@@ -455,3 +458,4 @@ TEST_F(PeerConnectionEndToEndTest, CloseDataChannelRemotelyWhileNotReferenced) {
   // close message and be destroyed.
   rtc::Thread::Current()->ProcessMessages(100);
 }
+#endif  // HAVE_SCTP

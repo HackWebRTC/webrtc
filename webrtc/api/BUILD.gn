@@ -262,7 +262,9 @@ if (rtc_include_tests) {
       "webrtcsession_unittest.cc",
     ]
 
-    defines = [ "HAVE_SCTP" ]
+    if (rtc_enable_sctp) {
+      defines = [ "HAVE_SCTP" ]
+    }
 
     configs += [ ":peerconnection_unittests_config" ]
 
