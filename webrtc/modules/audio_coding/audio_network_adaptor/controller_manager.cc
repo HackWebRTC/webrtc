@@ -69,7 +69,7 @@ std::unique_ptr<FecController> CreateFecController(
           fec_disabling_threshold.low_bandwidth_packet_loss(),
           fec_disabling_threshold.high_bandwidth_bps(),
           fec_disabling_threshold.high_bandwidth_packet_loss()),
-      config.has_time_constant_ms(), clock)));
+      config.time_constant_ms(), clock)));
 }
 
 std::unique_ptr<FrameLengthController> CreateFrameLengthController(
