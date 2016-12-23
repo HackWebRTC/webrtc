@@ -551,6 +551,12 @@ std::vector<rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
     network_manager->GetAnyAddressNetworks(&networks);
   } else {
     network_manager->GetNetworks(&networks);
+    // If network enumeration fails, use the ANY address as a fallback, so we
+    // can at least try gathering candidates using the default route chosen by
+    // the OS.
+    if (networks.empty()) {
+      network_manager->GetAnyAddressNetworks(&networks);
+    }
   }
   networks.erase(std::remove_if(networks.begin(), networks.end(),
                                 [this](rtc::Network* network) {
