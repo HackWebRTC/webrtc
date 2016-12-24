@@ -54,12 +54,10 @@ bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
                                cricket::MediaSessionOptions* session_options);
 
 // Parses the URLs for each server in |servers| to build |stun_servers| and
-// |turn_servers|. Can return SYNTAX_ERROR if the URL is malformed, or
-// INVALID_PARAMETER if a TURN server is missing |username| or |password|.
-RTCErrorType ParseIceServers(
-    const PeerConnectionInterface::IceServers& servers,
-    cricket::ServerAddresses* stun_servers,
-    std::vector<cricket::RelayServerConfig>* turn_servers);
+// |turn_servers|.
+bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
+                     cricket::ServerAddresses* stun_servers,
+                     std::vector<cricket::RelayServerConfig>* turn_servers);
 
 // PeerConnection implements the PeerConnectionInterface interface.
 // It uses WebRtcSession to implement the PeerConnection functionality.
@@ -139,8 +137,7 @@ class PeerConnection : public PeerConnectionInterface,
                             SessionDescriptionInterface* desc) override;
   PeerConnectionInterface::RTCConfiguration GetConfiguration() override;
   bool SetConfiguration(
-      const PeerConnectionInterface::RTCConfiguration& configuration,
-      RTCError* error = nullptr) override;
+      const PeerConnectionInterface::RTCConfiguration& configuration) override;
   bool AddIceCandidate(const IceCandidateInterface* candidate) override;
   bool RemoveIceCandidates(
       const std::vector<cricket::Candidate>& candidates) override;
@@ -376,14 +373,9 @@ class PeerConnection : public PeerConnectionInterface,
 
   // Called when first configuring the port allocator.
   bool InitializePortAllocator_n(const RTCConfiguration& configuration);
-  // Called when SetConfiguration is called to apply the supported subset
-  // of the configuration on the network thread.
-  bool ReconfigurePortAllocator_n(
-      const cricket::ServerAddresses& stun_servers,
-      const std::vector<cricket::RelayServerConfig>& turn_servers,
-      IceTransportsType type,
-      int candidate_pool_size,
-      bool prune_turn_ports);
+  // Called when SetConfiguration is called. Only a subset of the configuration
+  // is applied.
+  bool ReconfigurePortAllocator_n(const RTCConfiguration& configuration);
 
   // Starts recording an Rtc EventLog using the supplied platform file.
   // This function should only be called from the worker thread.

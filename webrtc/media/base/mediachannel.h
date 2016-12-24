@@ -133,20 +133,6 @@ struct MediaConfig {
     // Enables periodic bandwidth probing in application-limited region.
     bool periodic_alr_bandwidth_probing = false;
   } video;
-
-  bool operator==(const MediaConfig& o) const {
-    return enable_dscp == o.enable_dscp &&
-           video.enable_cpu_overuse_detection ==
-               o.video.enable_cpu_overuse_detection &&
-           video.suspend_below_min_bitrate ==
-               o.video.suspend_below_min_bitrate &&
-           video.disable_prerenderer_smoothing ==
-               o.video.disable_prerenderer_smoothing &&
-           video.periodic_alr_bandwidth_probing ==
-               o.video.periodic_alr_bandwidth_probing;
-  }
-
-  bool operator!=(const MediaConfig& o) const { return !(*this == o); }
 };
 
 // Options that can be applied to a VoiceMediaChannel or a VoiceMediaEngine.

@@ -72,10 +72,9 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
   PROXY_METHOD2(void, SetRemoteDescription, SetSessionDescriptionObserver*,
                 SessionDescriptionInterface*)
   PROXY_METHOD0(PeerConnectionInterface::RTCConfiguration, GetConfiguration);
-  PROXY_METHOD2(bool,
+  PROXY_METHOD1(bool,
                 SetConfiguration,
-                const PeerConnectionInterface::RTCConfiguration&,
-                RTCError*);
+                const PeerConnectionInterface::RTCConfiguration&);
   PROXY_METHOD1(bool, AddIceCandidate, const IceCandidateInterface*)
   PROXY_METHOD1(bool,
                 RemoveIceCandidates,

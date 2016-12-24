@@ -48,8 +48,6 @@ using webrtc::DataChannel;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaStreamInterface;
 using webrtc::PeerConnectionInterface;
-using webrtc::RTCError;
-using webrtc::RTCErrorType;
 using webrtc::RtpSenderInternal;
 using webrtc::RtpSenderInterface;
 using webrtc::RtpSenderProxy;
@@ -209,11 +207,10 @@ bool ParseHostnameAndPortFromString(const std::string& in_str,
 
 // Adds a STUN or TURN server to the appropriate list,
 // by parsing |url| and using the username/password in |server|.
-RTCErrorType ParseIceServerUrl(
-    const PeerConnectionInterface::IceServer& server,
-    const std::string& url,
-    cricket::ServerAddresses* stun_servers,
-    std::vector<cricket::RelayServerConfig>* turn_servers) {
+bool ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
+                       const std::string& url,
+                       cricket::ServerAddresses* stun_servers,
+                       std::vector<cricket::RelayServerConfig>* turn_servers) {
   // draft-nandakumar-rtcweb-stun-uri-01
   // stunURI       = scheme ":" stun-host [ ":" stun-port ]
   // scheme        = "stun" / "stuns"
@@ -241,14 +238,14 @@ RTCErrorType ParseIceServerUrl(
     rtc::tokenize_with_empty_tokens(uri_transport_param, '=', &tokens);
     if (tokens[0] != kTransport) {
       LOG(LS_WARNING) << "Invalid transport parameter key.";
-      return RTCErrorType::SYNTAX_ERROR;
+      return false;
     }
     if (tokens.size() < 2 ||
         !cricket::StringToProto(tokens[1].c_str(), &turn_transport_type) ||
         (turn_transport_type != cricket::PROTO_UDP &&
          turn_transport_type != cricket::PROTO_TCP)) {
       LOG(LS_WARNING) << "Transport param should always be udp or tcp.";
-      return RTCErrorType::SYNTAX_ERROR;
+      return false;
     }
   }
 
@@ -258,7 +255,7 @@ RTCErrorType ParseIceServerUrl(
                                        &service_type,
                                        &hoststring)) {
     LOG(LS_WARNING) << "Invalid transport parameter in ICE URI: " << url;
-    return RTCErrorType::SYNTAX_ERROR;
+    return false;
   }
 
   // GetServiceTypeAndHostnameFromUri should never give an empty hoststring
@@ -271,12 +268,12 @@ RTCErrorType ParseIceServerUrl(
   std::string username(server.username);
   if (tokens.size() > kTurnHostTokensNum) {
     LOG(LS_WARNING) << "Invalid user@hostname format: " << hoststring;
-    return RTCErrorType::SYNTAX_ERROR;
+    return false;
   }
   if (tokens.size() == kTurnHostTokensNum) {
     if (tokens[0].empty() || tokens[1].empty()) {
       LOG(LS_WARNING) << "Invalid user@hostname format: " << hoststring;
-      return RTCErrorType::SYNTAX_ERROR;
+      return false;
     }
     username.assign(rtc::s_url_decode(tokens[0]));
     hoststring = tokens[1];
@@ -293,12 +290,12 @@ RTCErrorType ParseIceServerUrl(
   std::string address;
   if (!ParseHostnameAndPortFromString(hoststring, &address, &port)) {
     LOG(WARNING) << "Invalid hostname format: " << uri_without_transport;
-    return RTCErrorType::SYNTAX_ERROR;
+    return false;
   }
 
   if (port <= 0 || port > 0xffff) {
     LOG(WARNING) << "Invalid port: " << port;
-    return RTCErrorType::SYNTAX_ERROR;
+    return false;
   }
 
   switch (service_type) {
@@ -308,22 +305,16 @@ RTCErrorType ParseIceServerUrl(
       break;
     case TURN:
     case TURNS: {
-      if (username.empty() || server.password.empty()) {
-        // The WebRTC spec requires throwing an InvalidAccessError when username
-        // or credential are ommitted; this is the native equivalent.
-        return RTCErrorType::INVALID_PARAMETER;
-      }
       turn_servers->push_back(cricket::RelayServerConfig(
           address, port, username, server.password, turn_transport_type));
       break;
     }
+    case INVALID:
     default:
-      // We shouldn't get to this point with an invalid service_type, we should
-      // have returned an error already.
-      RTC_DCHECK(false) << "Unexpected service type";
-      return RTCErrorType::INTERNAL_ERROR;
+      LOG(WARNING) << "Configuration not supported: " << url;
+      return false;
   }
-  return RTCErrorType::NONE;
+  return true;
 }
 
 // Check if we can send |new_stream| on a PeerConnection.
@@ -435,19 +426,11 @@ void SetChannelOnSendersAndReceivers(CHANNEL* channel,
   }
 }
 
-// Helper to set an error and return from a method.
-bool SafeSetError(webrtc::RTCErrorType type, webrtc::RTCError* error) {
-  if (error) {
-    error->set_type(type);
-  }
-  return type == webrtc::RTCErrorType::NONE;
-}
-
 }  // namespace
 
 namespace webrtc {
 
-static const char* const kRTCErrorTypeNames[] = {
+static const char* const kRtcErrorNames[] = {
     "NONE",
     "UNSUPPORTED_PARAMETER",
     "INVALID_PARAMETER",
@@ -458,82 +441,12 @@ static const char* const kRTCErrorTypeNames[] = {
     "NETWORK_ERROR",
     "INTERNAL_ERROR",
 };
-static_assert(static_cast<int>(RTCErrorType::INTERNAL_ERROR) ==
-                  (arraysize(kRTCErrorTypeNames) - 1),
-              "kRTCErrorTypeNames must have as many strings as RTCErrorType "
-              "has values.");
 
-std::ostream& operator<<(std::ostream& stream, RTCErrorType error) {
+std::ostream& operator<<(std::ostream& stream, RtcError error) {
   int index = static_cast<int>(error);
-  return stream << kRTCErrorTypeNames[index];
-}
-
-bool PeerConnectionInterface::RTCConfiguration::operator==(
-    const PeerConnectionInterface::RTCConfiguration& o) const {
-  // This static_assert prevents us from accidentally breaking operator==.
-  struct stuff_being_tested_for_equality {
-    IceTransportsType type;
-    IceServers servers;
-    BundlePolicy bundle_policy;
-    RtcpMuxPolicy rtcp_mux_policy;
-    TcpCandidatePolicy tcp_candidate_policy;
-    CandidateNetworkPolicy candidate_network_policy;
-    int audio_jitter_buffer_max_packets;
-    bool audio_jitter_buffer_fast_accelerate;
-    int ice_connection_receiving_timeout;
-    int ice_backup_candidate_pair_ping_interval;
-    ContinualGatheringPolicy continual_gathering_policy;
-    std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> certificates;
-    bool prioritize_most_likely_ice_candidate_pairs;
-    struct cricket::MediaConfig media_config;
-    bool disable_ipv6;
-    bool enable_rtp_data_channel;
-    bool enable_quic;
-    rtc::Optional<int> screencast_min_bitrate;
-    rtc::Optional<bool> combined_audio_video_bwe;
-    rtc::Optional<bool> enable_dtls_srtp;
-    int ice_candidate_pool_size;
-    bool prune_turn_ports;
-    bool presume_writable_when_fully_relayed;
-    bool enable_ice_renomination;
-    bool redetermine_role_on_ice_restart;
-  };
-  static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
-                "Did you add something to RTCConfiguration and forget to "
-                "update operator==?");
-  return type == o.type && servers == o.servers &&
-         bundle_policy == o.bundle_policy &&
-         rtcp_mux_policy == o.rtcp_mux_policy &&
-         tcp_candidate_policy == o.tcp_candidate_policy &&
-         candidate_network_policy == o.candidate_network_policy &&
-         audio_jitter_buffer_max_packets == o.audio_jitter_buffer_max_packets &&
-         audio_jitter_buffer_fast_accelerate ==
-             o.audio_jitter_buffer_fast_accelerate &&
-         ice_connection_receiving_timeout ==
-             o.ice_connection_receiving_timeout &&
-         ice_backup_candidate_pair_ping_interval ==
-             o.ice_backup_candidate_pair_ping_interval &&
-         continual_gathering_policy == o.continual_gathering_policy &&
-         certificates == o.certificates &&
-         prioritize_most_likely_ice_candidate_pairs ==
-             o.prioritize_most_likely_ice_candidate_pairs &&
-         media_config == o.media_config && disable_ipv6 == o.disable_ipv6 &&
-         enable_rtp_data_channel == o.enable_rtp_data_channel &&
-         enable_quic == o.enable_quic &&
-         screencast_min_bitrate == o.screencast_min_bitrate &&
-         combined_audio_video_bwe == o.combined_audio_video_bwe &&
-         enable_dtls_srtp == o.enable_dtls_srtp &&
-         ice_candidate_pool_size == o.ice_candidate_pool_size &&
-         prune_turn_ports == o.prune_turn_ports &&
-         presume_writable_when_fully_relayed ==
-             o.presume_writable_when_fully_relayed &&
-         enable_ice_renomination == o.enable_ice_renomination &&
-         redetermine_role_on_ice_restart == o.redetermine_role_on_ice_restart;
-}
-
-bool PeerConnectionInterface::RTCConfiguration::operator!=(
-    const PeerConnectionInterface::RTCConfiguration& o) const {
-  return !(*this == o);
+  RTC_CHECK(index < static_cast<int>(sizeof(kRtcErrorNames) /
+                                     sizeof(kRtcErrorNames[0])));
+  return stream << kRtcErrorNames[index];
 }
 
 // Generate a RTCP CNAME when a PeerConnection is created.
@@ -635,33 +548,28 @@ bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
   return mandatory_constraints_satisfied == constraints->GetMandatory().size();
 }
 
-RTCErrorType ParseIceServers(
-    const PeerConnectionInterface::IceServers& servers,
-    cricket::ServerAddresses* stun_servers,
-    std::vector<cricket::RelayServerConfig>* turn_servers) {
+bool ParseIceServers(const PeerConnectionInterface::IceServers& servers,
+                     cricket::ServerAddresses* stun_servers,
+                     std::vector<cricket::RelayServerConfig>* turn_servers) {
   for (const webrtc::PeerConnectionInterface::IceServer& server : servers) {
     if (!server.urls.empty()) {
       for (const std::string& url : server.urls) {
         if (url.empty()) {
           LOG(LS_ERROR) << "Empty uri.";
-          return RTCErrorType::SYNTAX_ERROR;
+          return false;
         }
-        RTCErrorType err =
-            ParseIceServerUrl(server, url, stun_servers, turn_servers);
-        if (err != RTCErrorType::NONE) {
-          return err;
+        if (!ParseIceServerUrl(server, url, stun_servers, turn_servers)) {
+          return false;
         }
       }
     } else if (!server.uri.empty()) {
       // Fallback to old .uri if new .urls isn't present.
-      RTCErrorType err =
-          ParseIceServerUrl(server, server.uri, stun_servers, turn_servers);
-      if (err != RTCErrorType::NONE) {
-        return err;
+      if (!ParseIceServerUrl(server, server.uri, stun_servers, turn_servers)) {
+        return false;
       }
     } else {
       LOG(LS_ERROR) << "Empty uri.";
-      return RTCErrorType::SYNTAX_ERROR;
+      return false;
     }
   }
   // Candidates must have unique priorities, so that connectivity checks
@@ -671,7 +579,7 @@ RTCErrorType ParseIceServers(
     // First in the list gets highest priority.
     turn_server.priority = priority--;
   }
-  return RTCErrorType::NONE;
+  return true;
 }
 
 PeerConnection::PeerConnection(PeerConnectionFactory* factory)
@@ -718,18 +626,12 @@ bool PeerConnection::Initialize(
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     PeerConnectionObserver* observer) {
   TRACE_EVENT0("webrtc", "PeerConnection::Initialize");
-  if (!allocator) {
-    LOG(LS_ERROR) << "PeerConnection initialized without a PortAllocator? "
-                  << "This shouldn't happen if using PeerConnectionFactory.";
-    return false;
-  }
+  RTC_DCHECK(observer != nullptr);
   if (!observer) {
-    // TODO(deadbeef): Why do we do this?
-    LOG(LS_ERROR) << "PeerConnection initialized without a "
-                  << "PeerConnectionObserver";
     return false;
   }
   observer_ = observer;
+
   port_allocator_ = std::move(allocator);
 
   // The port allocator lives on the network thread and should be initialized
@@ -1385,8 +1287,7 @@ PeerConnectionInterface::RTCConfiguration PeerConnection::GetConfiguration() {
   return configuration_;
 }
 
-bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
-                                      RTCError* error) {
+bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
 
   if (session_->local_description() &&
@@ -1394,61 +1295,32 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
           configuration_.ice_candidate_pool_size) {
     LOG(LS_ERROR) << "Can't change candidate pool size after calling "
                      "SetLocalDescription.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    return false;
+  }
+  // TODO(deadbeef): Return false and log an error if there are any unsupported
+  // modifications.
+  if (port_allocator_) {
+    if (!network_thread()->Invoke<bool>(
+            RTC_FROM_HERE,
+            rtc::Bind(&PeerConnection::ReconfigurePortAllocator_n, this,
+                      configuration))) {
+      LOG(LS_ERROR) << "Failed to apply configuration to PortAllocator.";
+      return false;
+    }
   }
 
-  // The simplest (and most future-compatible) way to tell if the config was
-  // modified in an invalid way is to copy each property we do support
-  // modifying, then use operator==. There are far more properties we don't
-  // support modifying than those we do, and more could be added.
-  RTCConfiguration modified_config = configuration_;
-  modified_config.servers = configuration.servers;
-  modified_config.type = configuration.type;
-  modified_config.ice_candidate_pool_size =
-      configuration.ice_candidate_pool_size;
-  modified_config.prune_turn_ports = configuration.prune_turn_ports;
-  if (configuration != modified_config) {
-    LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
-  }
-
-  // Note that this isn't possible through chromium, since it's an unsigned
-  // short in WebIDL.
-  if (configuration.ice_candidate_pool_size < 0 ||
-      configuration.ice_candidate_pool_size > UINT16_MAX) {
-    return SafeSetError(RTCErrorType::INVALID_RANGE, error);
-  }
-
-  // Parse ICE servers before hopping to network thread.
-  cricket::ServerAddresses stun_servers;
-  std::vector<cricket::RelayServerConfig> turn_servers;
-  RTCErrorType parse_error =
-      ParseIceServers(configuration.servers, &stun_servers, &turn_servers);
-  if (parse_error != RTCErrorType::NONE) {
-    return SafeSetError(parse_error, error);
-  }
-
-  // In theory this shouldn't fail.
-  if (!network_thread()->Invoke<bool>(
-          RTC_FROM_HERE,
-          rtc::Bind(&PeerConnection::ReconfigurePortAllocator_n, this,
-                    stun_servers, turn_servers, modified_config.type,
-                    modified_config.ice_candidate_pool_size,
-                    modified_config.prune_turn_ports))) {
-    LOG(LS_ERROR) << "Failed to apply configuration to PortAllocator.";
-    return SafeSetError(RTCErrorType::INTERNAL_ERROR, error);
-  }
+  // TODO(deadbeef): Shouldn't have to hop to the network thread twice...
+  session_->SetIceConfig(session_->ParseIceConfig(configuration));
 
   // As described in JSEP, calling setConfiguration with new ICE servers or
   // candidate policy must set a "needs-ice-restart" bit so that the next offer
   // triggers an ICE restart which will pick up the changes.
-  if (modified_config.servers != configuration_.servers ||
-      modified_config.type != configuration_.type ||
-      modified_config.prune_turn_ports != configuration_.prune_turn_ports) {
+  if (configuration.servers != configuration_.servers ||
+      configuration.type != configuration_.type) {
     session_->SetNeedsIceRestartFlag();
   }
-  configuration_ = modified_config;
-  return SafeSetError(RTCErrorType::NONE, error);
+  configuration_ = configuration;
+  return true;
 }
 
 bool PeerConnection::AddIceCandidate(
@@ -1475,7 +1347,7 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
   }
 
   // Send information about IPv4/IPv6 status.
-  if (uma_observer_) {
+  if (uma_observer_ && port_allocator_) {
     port_allocator_->SetMetricsObserver(uma_observer_);
     if (port_allocator_->flags() & cricket::PORTALLOCATOR_ENABLE_IPV6) {
       uma_observer_->IncrementEnumCounter(
@@ -2488,8 +2360,7 @@ bool PeerConnection::InitializePortAllocator_n(
     const RTCConfiguration& configuration) {
   cricket::ServerAddresses stun_servers;
   std::vector<cricket::RelayServerConfig> turn_servers;
-  if (ParseIceServers(configuration.servers, &stun_servers, &turn_servers) !=
-      RTCErrorType::NONE) {
+  if (!ParseIceServers(configuration.servers, &stun_servers, &turn_servers)) {
     return false;
   }
 
@@ -2535,17 +2406,19 @@ bool PeerConnection::InitializePortAllocator_n(
 }
 
 bool PeerConnection::ReconfigurePortAllocator_n(
-    const cricket::ServerAddresses& stun_servers,
-    const std::vector<cricket::RelayServerConfig>& turn_servers,
-    IceTransportsType type,
-    int candidate_pool_size,
-    bool prune_turn_ports) {
+    const RTCConfiguration& configuration) {
+  cricket::ServerAddresses stun_servers;
+  std::vector<cricket::RelayServerConfig> turn_servers;
+  if (!ParseIceServers(configuration.servers, &stun_servers, &turn_servers)) {
+    return false;
+  }
   port_allocator_->set_candidate_filter(
-      ConvertIceTransportTypeToCandidateFilter(type));
+      ConvertIceTransportTypeToCandidateFilter(configuration.type));
   // Call this last since it may create pooled allocator sessions using the
   // candidate filter set above.
   return port_allocator_->SetConfiguration(
-      stun_servers, turn_servers, candidate_pool_size, prune_turn_ports);
+      stun_servers, turn_servers, configuration.ice_candidate_pool_size,
+      configuration.prune_turn_ports);
 }
 
 bool PeerConnection::StartRtcEventLog_w(rtc::PlatformFile file,
