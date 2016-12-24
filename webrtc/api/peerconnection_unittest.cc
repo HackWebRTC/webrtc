@@ -2620,6 +2620,10 @@ class IceServerParsingTest : public testing::Test {
     return ParseUrl(url, std::string(), std::string());
   }
 
+  bool ParseTurnUrl(const std::string& url) {
+    return ParseUrl(url, "username", "password");
+  }
+
   bool ParseUrl(const std::string& url,
                 const std::string& username,
                 const std::string& password) {
@@ -2629,7 +2633,8 @@ class IceServerParsingTest : public testing::Test {
     server.username = username;
     server.password = password;
     servers.push_back(server);
-    return webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_);
+    return webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_) ==
+           webrtc::RTCErrorType::NONE;
   }
 
  protected:
@@ -2649,13 +2654,13 @@ TEST_F(IceServerParsingTest, ParseStunPrefixes) {
   EXPECT_EQ(0U, turn_servers_.size());
   stun_servers_.clear();
 
-  EXPECT_TRUE(ParseUrl("turn:hostname"));
+  EXPECT_TRUE(ParseTurnUrl("turn:hostname"));
   EXPECT_EQ(0U, stun_servers_.size());
   EXPECT_EQ(1U, turn_servers_.size());
   EXPECT_EQ(cricket::PROTO_UDP, turn_servers_[0].ports[0].proto);
   turn_servers_.clear();
 
-  EXPECT_TRUE(ParseUrl("turns:hostname"));
+  EXPECT_TRUE(ParseTurnUrl("turns:hostname"));
   EXPECT_EQ(0U, stun_servers_.size());
   EXPECT_EQ(1U, turn_servers_.size());
   EXPECT_EQ(cricket::PROTO_TLS, turn_servers_[0].ports[0].proto);
@@ -2670,14 +2675,14 @@ TEST_F(IceServerParsingTest, ParseStunPrefixes) {
 
 TEST_F(IceServerParsingTest, VerifyDefaults) {
   // TURNS defaults
-  EXPECT_TRUE(ParseUrl("turns:hostname"));
+  EXPECT_TRUE(ParseTurnUrl("turns:hostname"));
   EXPECT_EQ(1U, turn_servers_.size());
   EXPECT_EQ(5349, turn_servers_[0].ports[0].address.port());
   EXPECT_EQ(cricket::PROTO_TLS, turn_servers_[0].ports[0].proto);
   turn_servers_.clear();
 
   // TURN defaults
-  EXPECT_TRUE(ParseUrl("turn:hostname"));
+  EXPECT_TRUE(ParseTurnUrl("turn:hostname"));
   EXPECT_EQ(1U, turn_servers_.size());
   EXPECT_EQ(3478, turn_servers_[0].ports[0].address.port());
   EXPECT_EQ(cricket::PROTO_UDP, turn_servers_[0].ports[0].proto);
@@ -2742,33 +2747,33 @@ TEST_F(IceServerParsingTest, ParseHostnameAndPort) {
 
 // Test parsing the "?transport=xxx" part of the URL.
 TEST_F(IceServerParsingTest, ParseTransport) {
-  EXPECT_TRUE(ParseUrl("turn:hostname:1234?transport=tcp"));
+  EXPECT_TRUE(ParseTurnUrl("turn:hostname:1234?transport=tcp"));
   EXPECT_EQ(1U, turn_servers_.size());
   EXPECT_EQ(cricket::PROTO_TCP, turn_servers_[0].ports[0].proto);
   turn_servers_.clear();
 
-  EXPECT_TRUE(ParseUrl("turn:hostname?transport=udp"));
+  EXPECT_TRUE(ParseTurnUrl("turn:hostname?transport=udp"));
   EXPECT_EQ(1U, turn_servers_.size());
   EXPECT_EQ(cricket::PROTO_UDP, turn_servers_[0].ports[0].proto);
   turn_servers_.clear();
 
-  EXPECT_FALSE(ParseUrl("turn:hostname?transport=invalid"));
-  EXPECT_FALSE(ParseUrl("turn:hostname?transport="));
-  EXPECT_FALSE(ParseUrl("turn:hostname?="));
-  EXPECT_FALSE(ParseUrl("?"));
+  EXPECT_FALSE(ParseTurnUrl("turn:hostname?transport=invalid"));
+  EXPECT_FALSE(ParseTurnUrl("turn:hostname?transport="));
+  EXPECT_FALSE(ParseTurnUrl("turn:hostname?="));
+  EXPECT_FALSE(ParseTurnUrl("?"));
 }
 
 // Test parsing ICE username contained in URL.
 TEST_F(IceServerParsingTest, ParseUsername) {
-  EXPECT_TRUE(ParseUrl("turn:user@hostname"));
+  EXPECT_TRUE(ParseTurnUrl("turn:user@hostname"));
   EXPECT_EQ(1U, turn_servers_.size());
   EXPECT_EQ("user", turn_servers_[0].credentials.username);
   turn_servers_.clear();
 
-  EXPECT_FALSE(ParseUrl("turn:@hostname"));
-  EXPECT_FALSE(ParseUrl("turn:username@"));
-  EXPECT_FALSE(ParseUrl("turn:@"));
-  EXPECT_FALSE(ParseUrl("turn:user@name@hostname"));
+  EXPECT_FALSE(ParseTurnUrl("turn:@hostname"));
+  EXPECT_FALSE(ParseTurnUrl("turn:username@"));
+  EXPECT_FALSE(ParseTurnUrl("turn:@"));
+  EXPECT_FALSE(ParseTurnUrl("turn:user@name@hostname"));
 }
 
 // Test that username and password from IceServer is copied into the resulting
@@ -2786,8 +2791,11 @@ TEST_F(IceServerParsingTest, ParseMultipleUrls) {
   PeerConnectionInterface::IceServer server;
   server.urls.push_back("stun:hostname");
   server.urls.push_back("turn:hostname");
+  server.username = "foo";
+  server.password = "bar";
   servers.push_back(server);
-  EXPECT_TRUE(webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_));
+  EXPECT_EQ(webrtc::RTCErrorType::NONE,
+            webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_));
   EXPECT_EQ(1U, stun_servers_.size());
   EXPECT_EQ(1U, turn_servers_.size());
 }
@@ -2799,8 +2807,11 @@ TEST_F(IceServerParsingTest, TurnServerPrioritiesUnique) {
   PeerConnectionInterface::IceServer server;
   server.urls.push_back("turn:hostname");
   server.urls.push_back("turn:hostname2");
+  server.username = "foo";
+  server.password = "bar";
   servers.push_back(server);
-  EXPECT_TRUE(webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_));
+  EXPECT_EQ(webrtc::RTCErrorType::NONE,
+            webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_));
   EXPECT_EQ(2U, turn_servers_.size());
   EXPECT_NE(turn_servers_[0].priority, turn_servers_[1].priority);
 }
