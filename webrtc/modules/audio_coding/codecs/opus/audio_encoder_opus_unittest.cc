@@ -444,7 +444,7 @@ TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
   EXPECT_EQ(rtc::Optional<int>(6), config.GetNewComplexity());
 }
 
-TEST(AudioEncoderOpusTest, EmptyConfigDontAffectEncoderSettings) {
+TEST(AudioEncoderOpusTest, EmptyConfigDoesNotAffectEncoderSettings) {
   auto states = CreateCodec(2);
   states.encoder->EnableAudioNetworkAdaptor("", nullptr);
 
