@@ -213,7 +213,7 @@ DelayBasedBwe::DelayBasedBwe(Clock* clock)
       inter_arrival_(),
       kalman_estimator_(),
       trendline_estimator_(),
-      detector_(OverUseDetectorOptions()),
+      detector_(),
       receiver_incoming_bitrate_(),
       last_update_ms_(-1),
       last_seen_packet_ms_(-1),

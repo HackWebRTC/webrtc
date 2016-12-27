@@ -60,14 +60,13 @@ bool ReadExperimentConstants(double* k_up, double* k_down) {
                 "%lf,%lf", k_up, k_down) == 2;
 }
 
-OveruseDetector::OveruseDetector(const OverUseDetectorOptions& options)
+OveruseDetector::OveruseDetector()
     // Experiment is on by default, but can be disabled with finch by setting
     // the field trial string to "WebRTC-AdaptiveBweThreshold/Disabled/".
     : in_experiment_(!AdaptiveThresholdExperimentIsDisabled()),
       k_up_(0.0087),
       k_down_(0.039),
       overusing_time_threshold_(100),
-      options_(options),
       threshold_(12.5),
       last_update_ms_(-1),
       prev_offset_(0.0),

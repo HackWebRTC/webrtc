@@ -38,7 +38,7 @@ struct RemoteBitrateEstimatorSingleStream::Detector {
                       kTimestampToMs,
                       enable_burst_grouping),
         estimator(options),
-        detector(options) {}
+        detector() {}
   int64_t last_packet_time_ms;
   InterArrival inter_arrival;
   OveruseEstimator estimator;
