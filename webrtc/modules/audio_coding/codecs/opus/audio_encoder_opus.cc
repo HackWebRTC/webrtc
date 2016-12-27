@@ -491,23 +491,21 @@ void AudioEncoderOpus::SetTargetBitrate(int bits_per_second) {
 
 void AudioEncoderOpus::ApplyAudioNetworkAdaptor() {
   auto config = audio_network_adaptor_->GetEncoderRuntimeConfig();
-  // |audio_network_adaptor_| is supposed to be configured to output all
-  // following parameters.
-  RTC_DCHECK(config.bitrate_bps);
-  RTC_DCHECK(config.frame_length_ms);
-  RTC_DCHECK(config.uplink_packet_loss_fraction);
-  RTC_DCHECK(config.enable_fec);
-  RTC_DCHECK(config.enable_dtx);
-  RTC_DCHECK(config.num_channels);
+  RTC_DCHECK(!config.frame_length_ms || *config.frame_length_ms == 20 ||
+             *config.frame_length_ms == 60);
 
-  RTC_DCHECK(*config.frame_length_ms == 20 || *config.frame_length_ms == 60);
-
-  SetTargetBitrate(*config.bitrate_bps);
-  SetFrameLength(*config.frame_length_ms);
-  SetFec(*config.enable_fec);
-  SetProjectedPacketLossRate(*config.uplink_packet_loss_fraction);
-  SetDtx(*config.enable_dtx);
-  SetNumChannelsToEncode(*config.num_channels);
+  if (config.bitrate_bps)
+    SetTargetBitrate(*config.bitrate_bps);
+  if (config.frame_length_ms)
+    SetFrameLength(*config.frame_length_ms);
+  if (config.enable_fec)
+    SetFec(*config.enable_fec);
+  if (config.uplink_packet_loss_fraction)
+    SetProjectedPacketLossRate(*config.uplink_packet_loss_fraction);
+  if (config.enable_dtx)
+    SetDtx(*config.enable_dtx);
+  if (config.num_channels)
+    SetNumChannelsToEncode(*config.num_channels);
 }
 
 std::unique_ptr<AudioNetworkAdaptor>

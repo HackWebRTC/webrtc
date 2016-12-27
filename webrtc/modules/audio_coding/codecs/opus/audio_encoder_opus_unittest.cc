@@ -443,4 +443,25 @@ TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
   config.bitrate_bps = rtc::Optional<int>(14001);
   EXPECT_EQ(rtc::Optional<int>(6), config.GetNewComplexity());
 }
+
+TEST(AudioEncoderOpusTest, EmptyConfigDontAffectEncoderSettings) {
+  auto states = CreateCodec(2);
+  states.encoder->EnableAudioNetworkAdaptor("", nullptr);
+
+  auto config = CreateEncoderRuntimeConfig();
+  AudioNetworkAdaptor::EncoderRuntimeConfig empty_config;
+
+  EXPECT_CALL(**states.mock_audio_network_adaptor, GetEncoderRuntimeConfig())
+      .WillOnce(Return(config))
+      .WillOnce(Return(empty_config));
+
+  constexpr size_t kOverhead = 64;
+  EXPECT_CALL(**states.mock_audio_network_adaptor, SetOverhead(kOverhead))
+      .Times(2);
+  states.encoder->OnReceivedOverhead(kOverhead);
+  states.encoder->OnReceivedOverhead(kOverhead);
+
+  CheckEncoderRuntimeConfig(states.encoder.get(), config);
+}
+
 }  // namespace webrtc
