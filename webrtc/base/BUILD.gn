@@ -763,9 +763,5 @@ if (is_android) {
     deps = [
       "//base:base_java",
     ]
-
-    data = [
-      "//webrtc/build/android/test_runner.py",
-    ]
   }
 }

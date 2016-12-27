@@ -164,9 +164,6 @@ rtc_source_set("test_support") {
 
   if (is_android) {
     deps += [ "//base:base" ]
-    data = [
-      "../build/android/test_runner.py",
-    ]
   }
 
   if (rtc_use_memcheck) {
