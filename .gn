@@ -32,6 +32,7 @@ check_targets = [
   "//webrtc/modules/media_file/*",
   "//webrtc/modules/pacing/*",
   "//webrtc/modules/rtp_rtcp/*",
+  "//webrtc/modules/utility/*",
   "//webrtc/modules/video_capture/*",
   "//webrtc/modules/video_coding/*",
   "//webrtc/stats:rtc_stats",
