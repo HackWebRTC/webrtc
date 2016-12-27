@@ -35,6 +35,7 @@ check_targets = [
   "//webrtc/modules/utility/*",
   "//webrtc/modules/video_capture/*",
   "//webrtc/modules/video_coding/*",
+  "//webrtc/modules/video_processing/*",
   "//webrtc/stats:rtc_stats",
   "//webrtc/voice_engine",
   "//webrtc/voice_engine:level_indicator",
