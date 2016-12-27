@@ -74,7 +74,10 @@
       # Android
       'Android32 Builder': 'perf_android_release_bot_arm',
       'Android64 Builder': 'perf_android_release_bot_arm64',
+      'Android32 Tests (J Nexus4)': 'none',
+      'Android32 Tests (K Nexus5)': 'none',
       'Android32 Tests (L Nexus5)': 'none',
+      'Android32 Tests (L Nexus6)': 'none',
       'Android32 Tests (L Nexus7.2)': 'none',
       'Android64 Tests (L Nexus9)': 'none',
       'Linux Trusty': 'perf_release_bot_x64',
@@ -91,11 +94,7 @@
 
       # Android
       'Android (swarming)': 'android_release_bot_arm',
-      'Android32 ASan (L Nexus6)': 'android_asan_shared_release_bot_arm',
-      'Android32 Builder': 'android_release_bot_arm',
-      'Android32 Tests (J Nexus4)': 'none',
-      'Android32 Tests (K Nexus5)': 'none',
-      'Android32 Tests (L Nexus6)': 'none',
+      'Android ASan (swarming)': 'android_asan_shared_release_bot_arm',
       # Windows
       'Win (swarming)': 'release_bot_x86',
       'Win32 SyzyASan (swarming)': 'win_syzyasan_release_bot_x86',
