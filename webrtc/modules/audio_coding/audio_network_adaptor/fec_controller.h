@@ -87,8 +87,10 @@ class FecController final : public Controller {
                                const Config::Threshold& threshold,
                                const ThresholdInfo& threshold_info) const;
 
-  bool FecEnablingDecision(const NetworkMetrics& metrics) const;
-  bool FecDisablingDecision(const NetworkMetrics& metrics) const;
+  bool FecEnablingDecision(const NetworkMetrics& metrics,
+                           const rtc::Optional<float>& packet_loss) const;
+  bool FecDisablingDecision(const NetworkMetrics& metrics,
+                            const rtc::Optional<float>& packet_loss) const;
 
   const Config config_;
   bool fec_enabled_;

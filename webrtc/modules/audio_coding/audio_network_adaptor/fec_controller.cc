@@ -75,8 +75,10 @@ void FecController::MakeDecision(
   if (metrics.uplink_packet_loss_fraction)
     packet_loss_smoothed_->AddSample(*metrics.uplink_packet_loss_fraction);
 
-  fec_enabled_ = fec_enabled_ ? !FecDisablingDecision(metrics)
-                              : FecEnablingDecision(metrics);
+  const auto& packet_loss = packet_loss_smoothed_->GetAverage();
+
+  fec_enabled_ = fec_enabled_ ? !FecDisablingDecision(metrics, packet_loss)
+                              : FecEnablingDecision(metrics, packet_loss);
 
   config->enable_fec = rtc::Optional<bool>(fec_enabled_);
 
@@ -107,27 +109,25 @@ float FecController::GetPacketLossThreshold(
   return threshold_info.offset + threshold_info.slope * bandwidth_bps;
 }
 
-bool FecController::FecEnablingDecision(const NetworkMetrics& metrics) const {
+bool FecController::FecEnablingDecision(
+    const NetworkMetrics& metrics,
+    const rtc::Optional<float>& packet_loss) const {
   if (!metrics.uplink_bandwidth_bps)
     return false;
-
-  auto packet_loss = packet_loss_smoothed_->GetAverage();
   if (!packet_loss)
     return false;
-
   return *packet_loss >= GetPacketLossThreshold(*metrics.uplink_bandwidth_bps,
                                                 config_.fec_enabling_threshold,
                                                 fec_enabling_threshold_info_);
 }
 
-bool FecController::FecDisablingDecision(const NetworkMetrics& metrics) const {
+bool FecController::FecDisablingDecision(
+    const NetworkMetrics& metrics,
+    const rtc::Optional<float>& packet_loss) const {
   if (!metrics.uplink_bandwidth_bps)
     return false;
-
-  auto packet_loss = packet_loss_smoothed_->GetAverage();
   if (!packet_loss)
     return false;
-
   return *packet_loss <= GetPacketLossThreshold(*metrics.uplink_bandwidth_bps,
                                                 config_.fec_disabling_threshold,
                                                 fec_disabling_threshold_info_);
