@@ -11,6 +11,16 @@
 #ifndef WEBRTC_P2P_BASE_ICETRANSPORTINTERNAL_H_
 #define WEBRTC_P2P_BASE_ICETRANSPORTINTERNAL_H_
 
+#include "webrtc/p2p/base/transportchannelimpl.h"
+
+namespace cricket {
+
+typedef TransportChannel IceTransportInternal;
+typedef TransportChannelImpl IceTransportInternal2;
+
+}  // namespace cricket
+
+/*
 #include <string>
 
 #include "webrtc/p2p/base/candidate.h"
@@ -127,5 +137,5 @@ class IceTransportInternal : public rtc::PacketTransportInterface {
 };
 
 }  // namespace cricket
-
+*/
 #endif  // WEBRTC_P2P_BASE_ICETRANSPORTINTERNAL_H_
