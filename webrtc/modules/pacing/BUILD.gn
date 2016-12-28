@@ -29,7 +29,6 @@ rtc_static_library("pacing") {
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
     "../../system_wrappers",
-    "../bitrate_controller",
     "../rtp_rtcp",
   ]
 }
