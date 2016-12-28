@@ -46,6 +46,7 @@
       'Linux UBSan': 'ubsan_clang_release_bot_x64',
       'Linux UBSan vptr': 'ubsan_vptr_clang_release_bot_x64',
       'Linux64 Release [large tests]': 'release_bot_x64',
+      'Linux64 Release (Libfuzzer)': 'libfuzzer_asan_release_bot_x64',
 
       # Android
       'Android32 (M Nexus5X)': 'android_release_bot_arm',
@@ -133,6 +134,7 @@
       'linux_ubsan': 'ubsan_clang_release_bot_x64',
       'linux_ubsan_vptr': 'ubsan_vptr_clang_release_bot_x64',
       'linux_baremetal': 'release_bot_x64',
+      'linux_libfuzzer_rel': 'libfuzzer_asan_release_bot_x64',
 
       # Android
       'android_compile_dbg': 'android_debug_static_bot_arm',
@@ -233,6 +235,9 @@
     ],
     'perf_release_bot_x64': [
       'gn', 'openh264', 'release', 'static', 'goma', 'x64'
+    ],
+    'libfuzzer_asan_release_bot_x64': [
+      'libfuzzer', 'asan', 'openh264_release_bot', 'x64'
     ],
     'memcheck_release_bot_x64': [
       'memcheck', 'gn', 'openh264_release_bot', 'x64'
@@ -368,6 +373,10 @@
 
     'ios': {
       'gn_args': 'target_os="ios"',
+    },
+
+    'libfuzzer': {
+      'gn_args': 'use_libfuzzer=true',
     },
 
     'lsan': {
