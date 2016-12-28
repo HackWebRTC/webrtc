@@ -18,7 +18,6 @@ namespace webrtc {
 
 namespace {
 
-constexpr int kInitTimeMs = 795;
 constexpr float kMaxAbsError = 1e-5f;
 constexpr int64_t kClockInitialTime = 123456;
 
@@ -27,11 +26,11 @@ struct SmoothingFilterStates {
   std::unique_ptr<SmoothingFilterImpl> smoothing_filter;
 };
 
-SmoothingFilterStates CreateSmoothingFilter() {
+SmoothingFilterStates CreateSmoothingFilter(int init_time_ms) {
   SmoothingFilterStates states;
   states.simulated_clock.reset(new SimulatedClock(kClockInitialTime));
   states.smoothing_filter.reset(
-      new SmoothingFilterImpl(kInitTimeMs, states.simulated_clock.get()));
+      new SmoothingFilterImpl(init_time_ms, states.simulated_clock.get()));
   return states;
 }
 
@@ -54,7 +53,8 @@ void CheckOutput(SmoothingFilterStates* states,
 }  // namespace
 
 TEST(SmoothingFilterTest, NoOutputWhenNoSampleAdded) {
-  auto states = CreateSmoothingFilter();
+  constexpr int kInitTimeMs = 100;
+  auto states = CreateSmoothingFilter(kInitTimeMs);
   EXPECT_FALSE(states.smoothing_filter->GetAverage());
 }
 
@@ -103,7 +103,8 @@ TEST(SmoothingFilterTest, NoOutputWhenNoSampleAdded) {
 //     filter.add_sample(1.0)
 //   print filter.state
 TEST(SmoothingFilterTest, CheckBehaviorAroundInitTime) {
-  auto states = CreateSmoothingFilter();
+  constexpr int kInitTimeMs = 795;
+  auto states = CreateSmoothingFilter(kInitTimeMs);
   CheckOutput(&states, 1.0f, 500, 1.0f);
   CheckOutput(&states, 0.5f, 100, 0.680562264029f);
   CheckOutput(&states, 1.0f, 100, 0.794207139813f);
@@ -113,8 +114,23 @@ TEST(SmoothingFilterTest, CheckBehaviorAroundInitTime) {
   CheckOutput(&states, 1.0f, 100, 0.815545922911f);
 }
 
+TEST(SmoothingFilterTest, InitTimeEqualsZero) {
+  constexpr int kInitTimeMs = 0;
+  auto states = CreateSmoothingFilter(kInitTimeMs);
+  CheckOutput(&states, 1.0f, 1, 1.0f);
+  CheckOutput(&states, 0.5f, 1, 0.5f);
+}
+
+TEST(SmoothingFilterTest, InitTimeEqualsOne) {
+  constexpr int kInitTimeMs = 1;
+  auto states = CreateSmoothingFilter(kInitTimeMs);
+  CheckOutput(&states, 1.0f, 1, 1.0f);
+  CheckOutput(&states, 0.5f, 1, 1.0f * exp(-1.0f) + (1.0f - exp(-1.0f)) * 0.5f);
+}
+
 TEST(SmoothingFilterTest, GetAverageOutputsEmptyBeforeFirstSample) {
-  auto states = CreateSmoothingFilter();
+  constexpr int kInitTimeMs = 100;
+  auto states = CreateSmoothingFilter(kInitTimeMs);
   EXPECT_FALSE(states.smoothing_filter->GetAverage());
   constexpr float kFirstSample = 1.2345f;
   states.smoothing_filter->AddSample(kFirstSample);
@@ -123,7 +139,8 @@ TEST(SmoothingFilterTest, GetAverageOutputsEmptyBeforeFirstSample) {
 }
 
 TEST(SmoothingFilterTest, CannotChangeTimeConstantDuringInitialization) {
-  auto states = CreateSmoothingFilter();
+  constexpr int kInitTimeMs = 100;
+  auto states = CreateSmoothingFilter(kInitTimeMs);
   states.smoothing_filter->AddSample(0.0);
 
   // During initialization, |SetTimeConstantMs| does not take effect.

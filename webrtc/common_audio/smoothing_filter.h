@@ -59,7 +59,7 @@ class SmoothingFilterImpl final : public SmoothingFilter {
   const float init_const_;
   const Clock* const clock_;
 
-  rtc::Optional<int64_t> first_sample_time_ms_;
+  rtc::Optional<int64_t> init_end_time_ms_;
   float last_sample_;
   float alpha_;
   float state_;
