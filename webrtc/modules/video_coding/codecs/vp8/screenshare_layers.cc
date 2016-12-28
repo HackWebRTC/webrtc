@@ -76,7 +76,7 @@ ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
       min_qp_(-1),
       max_qp_(-1),
       max_debt_bytes_(0),
-      framerate_(-1),
+      encode_framerate_(1000.0f, 1000.0f),  // 1 second window, second scale.
       bitrate_updated_(false) {
   RTC_CHECK_GT(num_temporal_layers, 0);
   RTC_CHECK_LE(num_temporal_layers, 2);
@@ -97,8 +97,15 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
     return 0;
   }
 
+  const int64_t now_ms = clock_->TimeInMilliseconds();
+  if (target_framerate_.value_or(0) > 0 &&
+      encode_framerate_.Rate(now_ms).value_or(0) > *target_framerate_) {
+    // Max framerate exceeded, drop frame.
+    return -1;
+  }
+
   if (stats_.first_frame_time_ms_ == -1)
-    stats_.first_frame_time_ms_ = clock_->TimeInMilliseconds();
+    stats_.first_frame_time_ms_ = now_ms;
 
   int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(timestamp);
   int flags = 0;
@@ -148,7 +155,8 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
 
   int64_t ts_diff;
   if (last_timestamp_ == -1) {
-    ts_diff = kOneSecond90Khz / (framerate_ <= 0 ? 5 : framerate_);
+    ts_diff =
+        kOneSecond90Khz / incoming_framerate_.value_or(*target_framerate_);
   } else {
     ts_diff = unwrapped_timestamp - last_timestamp_;
   }
@@ -162,13 +170,28 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
 std::vector<uint32_t> ScreenshareLayers::OnRatesUpdated(int bitrate_kbps,
                                                         int max_bitrate_kbps,
                                                         int framerate) {
-  bitrate_updated_ =
-      bitrate_kbps != static_cast<int>(layers_[0].target_rate_kbps_) ||
-      max_bitrate_kbps != static_cast<int>(layers_[1].target_rate_kbps_) ||
-      framerate != framerate_;
+  RTC_DCHECK_GT(framerate, 0);
+  if (!target_framerate_) {
+    // First OnRatesUpdated() is called during construction, with the configured
+    // targets as parameters.
+    target_framerate_.emplace(framerate);
+    incoming_framerate_ = target_framerate_;
+    bitrate_updated_ = true;
+  } else {
+    bitrate_updated_ =
+        bitrate_kbps != static_cast<int>(layers_[0].target_rate_kbps_) ||
+        max_bitrate_kbps != static_cast<int>(layers_[1].target_rate_kbps_) ||
+        (incoming_framerate_ &&
+         framerate != static_cast<int>(*incoming_framerate_));
+    if (framerate < 0) {
+      incoming_framerate_.reset();
+    } else {
+      incoming_framerate_.emplace(framerate);
+    }
+  }
+
   layers_[0].target_rate_kbps_ = bitrate_kbps;
   layers_[1].target_rate_kbps_ = max_bitrate_kbps;
-  framerate_ = framerate;
 
   std::vector<uint32_t> allocation;
   allocation.push_back(bitrate_kbps);
@@ -180,6 +203,9 @@ std::vector<uint32_t> ScreenshareLayers::OnRatesUpdated(int bitrate_kbps,
 void ScreenshareLayers::FrameEncoded(unsigned int size,
                                      uint32_t timestamp,
                                      int qp) {
+  if (size > 0)
+    encode_framerate_.Update(1, clock_->TimeInMilliseconds());
+
   if (number_of_temporal_layers_ == 1)
     return;
 
@@ -301,8 +327,9 @@ bool ScreenshareLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
       layers_[1].enhanced_max_qp = min_qp_ + (((max_qp_ - min_qp_) * 85) / 100);
     }
 
-    if (framerate_ > 0) {
-      int avg_frame_size = (target_bitrate_kbps * 1000) / (8 * framerate_);
+    if (incoming_framerate_) {
+      int avg_frame_size =
+          (target_bitrate_kbps * 1000) / (8 * *incoming_framerate_);
       max_debt_bytes_ = 4 * avg_frame_size;
     }
 

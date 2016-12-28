@@ -11,6 +11,7 @@
 
 #include <vector>
 
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/utility/frame_dropper.h"
@@ -74,7 +75,13 @@ class ScreenshareLayers : public TemporalLayers {
   int min_qp_;
   int max_qp_;
   uint32_t max_debt_bytes_;
-  int framerate_;
+
+  // Configured max framerate.
+  rtc::Optional<uint32_t> target_framerate_;
+  // Incoming framerate from capturer.
+  rtc::Optional<uint32_t> incoming_framerate_;
+  // Tracks what framerate we actually encode, and drops frames on overshoot.
+  RateStatistics encode_framerate_;
   bool bitrate_updated_;
 
   static const int kMaxNumTemporalLayers = 2;

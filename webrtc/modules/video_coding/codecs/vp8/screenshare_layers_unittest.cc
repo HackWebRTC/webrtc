@@ -577,4 +577,46 @@ TEST_F(ScreenshareLayerTest, AllowsUpdateConfigBeforeSetRates) {
   EXPECT_FALSE(layers_->UpdateConfiguration(&cfg));
 }
 
+TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {
+  ConfigureBitrates();
+
+  int64_t kTestSpanMs = 2000;
+  int64_t kFrameIntervalsMs = 1000 / kFrameRate;
+
+  uint32_t timestamp = 1234;
+  int num_input_frames = 0;
+  int num_discarded_frames = 0;
+
+  // Send at regular rate - no drops expected.
+  for (int64_t i = 0; i < kTestSpanMs; i += kFrameIntervalsMs) {
+    if (layers_->EncodeFlags(timestamp) == -1) {
+      ++num_discarded_frames;
+    } else {
+      size_t frame_size_bytes = kDefaultTl0BitrateKbps * kFrameIntervalsMs / 8;
+      layers_->FrameEncoded(frame_size_bytes, timestamp, kDefaultQp);
+    }
+    timestamp += kFrameIntervalsMs * 90;
+    clock_.AdvanceTimeMilliseconds(kFrameIntervalsMs);
+    ++num_input_frames;
+  }
+  EXPECT_EQ(0, num_discarded_frames);
+
+  // Send at twice the configured rate - drop every other frame.
+  num_input_frames = 0;
+  num_discarded_frames = 0;
+  for (int64_t i = 0; i < kTestSpanMs; i += kFrameIntervalsMs / 2) {
+    if (layers_->EncodeFlags(timestamp) == -1) {
+      ++num_discarded_frames;
+    } else {
+      size_t frame_size_bytes = kDefaultTl0BitrateKbps * kFrameIntervalsMs / 8;
+      layers_->FrameEncoded(frame_size_bytes, timestamp, kDefaultQp);
+    }
+    timestamp += kFrameIntervalsMs * 90 / 2;
+    clock_.AdvanceTimeMilliseconds(kFrameIntervalsMs / 2);
+    ++num_input_frames;
+  }
+
+  // Allow for some rounding errors in the measurements.
+  EXPECT_NEAR(num_discarded_frames, num_input_frames / 2, 2);
+}
 }  // namespace webrtc
