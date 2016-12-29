@@ -3,7 +3,7 @@
     "kjellander"
   ],
   "comments": [
-    "Tests for 64-bit iOS simulators.",
+    "Tests for 32-bit iOS simulators.",
     "gn_args in this file is only read by the buildbot recipe; ",
     "webrtc/build/mb_config.pyl contains the actual build configuration.",
     "TODO(kjellander): remove gn_args when the recipe is updated."
@@ -19,7 +19,7 @@
   "tests": [
     {
       "include": "common_tests.json",
-      "device type": "iPhone 6s",
+      "device type": "iPhone 5",
       "os": "9.0"
     }
   ]
