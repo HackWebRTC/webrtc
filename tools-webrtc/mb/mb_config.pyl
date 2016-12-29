@@ -259,7 +259,7 @@
       'gn', 'clang', 'openh264_release_bot', 'x64',
     ],
     'win_asan_clang_release_bot_x86': [
-      'gn', 'asan', 'clang', 'openh264_release_bot', 'x86',
+      'gn', 'asan', 'clang',  'full_symbols', 'openh264_release_bot', 'x86',
     ],
     'win_syzyasan_release_bot_x86': [
       'gn', 'syzyasan', 'minimal_symbols', 'openh264_release_bot', 'x86',
@@ -364,6 +364,10 @@
     # that are test-only and should never run MB.
     'error': {
       'gn_args': 'error',
+    },
+
+    'full_symbols': {
+      'gn_args': 'symbol_level=2',
     },
 
     'gcc': {
