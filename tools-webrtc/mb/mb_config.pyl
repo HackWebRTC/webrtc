@@ -239,7 +239,7 @@
       'gn', 'openh264', 'release', 'static', 'goma', 'x64'
     ],
     'libfuzzer_asan_release_bot_x64': [
-      'libfuzzer', 'asan', 'openh264_release_bot', 'x64'
+      'libfuzzer', 'asan', 'optimize_for_fuzzing', 'openh264_release_bot', 'x64'
     ],
     'memcheck_release_bot_x64': [
       'memcheck', 'gn', 'openh264_release_bot', 'x64'
@@ -423,6 +423,10 @@
 
     'openh264_release_bot': {
       'mixins': ['openh264', 'release_bot'],
+    },
+
+    'optimize_for_fuzzing': {
+      'gn_args': 'optimize_for_fuzzing=true',
     },
 
     'release': {
