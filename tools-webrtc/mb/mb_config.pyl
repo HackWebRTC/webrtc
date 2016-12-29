@@ -98,7 +98,7 @@
       'Android ASan (swarming)': 'android_asan_shared_release_bot_arm',
       # Windows
       'Win (swarming)': 'release_bot_x86',
-      'Win32 SyzyASan (swarming)': 'win_syzyasan_release_bot_x86',
+      'Win32 ASan (swarming)': 'win_asan_clang_release_bot_x86',
       'Win64 Debug (Win8)': 'debug_bot_x64',
       'Win64 Debug (Win10)': 'debug_bot_x64',
     },
@@ -255,6 +255,9 @@
     ],
     'win_clang_release_bot_x64': [
       'gn', 'clang', 'openh264_release_bot', 'x64',
+    ],
+    'win_asan_clang_release_bot_x86': [
+      'gn', 'asan', 'clang', 'openh264_release_bot', 'x86',
     ],
     'win_syzyasan_release_bot_x86': [
       'gn', 'syzyasan', 'minimal_symbols', 'openh264_release_bot', 'x86',
