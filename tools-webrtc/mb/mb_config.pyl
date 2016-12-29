@@ -88,6 +88,7 @@
     'client.webrtc.fyi': {
       # Mac
       'Mac (swarming)': 'release_bot_x64',
+      'iOS64 Sim Debug (iOS 9.0)': 'ios_debug_static_bot_x64',
 
       # Linux
       'Linux64 GCC': 'gcc_release_bot_x64',
@@ -110,6 +111,7 @@
       'ios_arm64_rel': 'ios_release_bot_arm64_device',
       'ios32_sim_dbg': 'ios_debug_static_bot_x86',
       'ios64_sim_dbg': 'ios_debug_static_bot_x64',
+      'ios64_sim_ios9_dbg': 'ios_debug_static_bot_x64',
 
       # Mac
       'mac_compile_dbg': 'debug_bot_x64',
