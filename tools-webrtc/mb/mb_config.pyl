@@ -24,8 +24,9 @@
       'iOS32 Release': 'ios_release_bot_arm_device',
       'iOS64 Debug': 'ios_debug_static_bot_arm64_device',
       'iOS64 Release': 'ios_release_bot_arm64_device',
-      'iOS32 Simulator Debug': 'ios_debug_static_bot_x86',
-      'iOS64 Simulator Debug': 'ios_debug_static_bot_x64',
+      'iOS32 Sim Debug (iOS 9.0)': 'ios_debug_static_bot_x86',
+      'iOS64 Sim Debug (iOS 9.0)': 'ios_debug_static_bot_x64',
+      'iOS64 Sim Debug (iOS 10.0)': 'ios_debug_static_bot_x64',
 
       # Mac
       'Mac64 Debug': 'debug_bot_x64',
@@ -88,7 +89,6 @@
     'client.webrtc.fyi': {
       # Mac
       'Mac (swarming)': 'release_bot_x64',
-      'iOS32 Sim Debug (iOS 9.0)': 'ios_debug_static_bot_x86',
 
       # Linux
       'Linux64 GCC': 'gcc_release_bot_x64',
@@ -109,9 +109,9 @@
       'ios_rel': 'ios_release_bot_arm_device',
       'ios_arm64_dbg': 'ios_debug_static_bot_arm64_device',
       'ios_arm64_rel': 'ios_release_bot_arm64_device',
-      'ios32_sim_dbg': 'ios_debug_static_bot_x86',
-      'ios64_sim_dbg': 'ios_debug_static_bot_x64',
+      'ios32_sim_ios9_dbg': 'ios_debug_static_bot_x86',
       'ios64_sim_ios9_dbg': 'ios_debug_static_bot_x64',
+      'ios64_sim_ios10_dbg': 'ios_debug_static_bot_x64',
 
       # Mac
       'mac_compile_dbg': 'debug_bot_x64',
