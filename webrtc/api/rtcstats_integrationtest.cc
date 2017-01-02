@@ -354,6 +354,7 @@ class RTCStatsReportVerifier {
   bool VerifyRTCIceCandidateStats(
       const RTCIceCandidateStats& candidate) {
     RTCStatsVerifier verifier(report_, &candidate);
+    verifier.TestMemberIsDefined(candidate.is_remote);
     verifier.TestMemberIsDefined(candidate.ip);
     verifier.TestMemberIsDefined(candidate.port);
     verifier.TestMemberIsDefined(candidate.protocol);

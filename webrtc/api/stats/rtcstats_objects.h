@@ -170,6 +170,7 @@ class RTCIceCandidateStats : public RTCStats {
   RTCIceCandidateStats(const RTCIceCandidateStats& other);
   ~RTCIceCandidateStats() override;
 
+  RTCStatsMember<bool> is_remote;
   RTCStatsMember<std::string> ip;
   RTCStatsMember<int32_t> port;
   RTCStatsMember<std::string> protocol;
@@ -180,8 +181,9 @@ class RTCIceCandidateStats : public RTCStats {
   RTCStatsMember<std::string> url;
 
  protected:
-  RTCIceCandidateStats(const std::string& id, int64_t timestamp_us);
-  RTCIceCandidateStats(std::string&& id, int64_t timestamp_us);
+  RTCIceCandidateStats(
+      const std::string& id, int64_t timestamp_us, bool is_remote);
+  RTCIceCandidateStats(std::string&& id, int64_t timestamp_us, bool is_remote);
 };
 
 // In the spec both local and remote varieties are of type RTCIceCandidateStats.

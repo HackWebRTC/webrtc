@@ -237,6 +237,7 @@ RTCIceCandidatePairStats::~RTCIceCandidatePairStats() {
 }
 
 WEBRTC_RTCSTATS_IMPL(RTCIceCandidateStats, RTCStats, "ice-candidate",
+    &is_remote,
     &ip,
     &port,
     &protocol,
@@ -245,13 +246,14 @@ WEBRTC_RTCSTATS_IMPL(RTCIceCandidateStats, RTCStats, "ice-candidate",
     &url);
 
 RTCIceCandidateStats::RTCIceCandidateStats(
-    const std::string& id, int64_t timestamp_us)
-    : RTCIceCandidateStats(std::string(id), timestamp_us) {
+    const std::string& id, int64_t timestamp_us, bool is_remote)
+    : RTCIceCandidateStats(std::string(id), timestamp_us, is_remote) {
 }
 
 RTCIceCandidateStats::RTCIceCandidateStats(
-    std::string&& id, int64_t timestamp_us)
+    std::string&& id, int64_t timestamp_us, bool is_remote)
     : RTCStats(std::move(id), timestamp_us),
+      is_remote("isRemote", is_remote),
       ip("ip"),
       port("port"),
       protocol("protocol"),
@@ -262,6 +264,7 @@ RTCIceCandidateStats::RTCIceCandidateStats(
 
 RTCIceCandidateStats::RTCIceCandidateStats(const RTCIceCandidateStats& other)
     : RTCStats(other.id(), other.timestamp_us()),
+      is_remote(other.is_remote),
       ip(other.ip),
       port(other.port),
       protocol(other.protocol),
@@ -277,12 +280,12 @@ const char RTCLocalIceCandidateStats::kType[] = "local-candidate";
 
 RTCLocalIceCandidateStats::RTCLocalIceCandidateStats(
     const std::string& id, int64_t timestamp_us)
-    : RTCIceCandidateStats(id, timestamp_us) {
+    : RTCIceCandidateStats(id, timestamp_us, false) {
 }
 
 RTCLocalIceCandidateStats::RTCLocalIceCandidateStats(
     std::string&& id, int64_t timestamp_us)
-    : RTCIceCandidateStats(std::move(id), timestamp_us) {
+    : RTCIceCandidateStats(std::move(id), timestamp_us, false) {
 }
 
 const char* RTCLocalIceCandidateStats::type() const {
@@ -293,12 +296,12 @@ const char RTCRemoteIceCandidateStats::kType[] = "remote-candidate";
 
 RTCRemoteIceCandidateStats::RTCRemoteIceCandidateStats(
     const std::string& id, int64_t timestamp_us)
-    : RTCIceCandidateStats(id, timestamp_us) {
+    : RTCIceCandidateStats(id, timestamp_us, true) {
 }
 
 RTCRemoteIceCandidateStats::RTCRemoteIceCandidateStats(
     std::string&& id, int64_t timestamp_us)
-    : RTCIceCandidateStats(std::move(id), timestamp_us) {
+    : RTCIceCandidateStats(std::move(id), timestamp_us, true) {
 }
 
 const char* RTCRemoteIceCandidateStats::type() const {
