@@ -13,6 +13,7 @@
 
 #include <limits.h>
 #include <math.h>
+#include <stdint.h>
 
 #include <algorithm>
 #include <iomanip>
@@ -20,7 +21,6 @@
 #include <string>
 
 #include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/socketaddress.h"

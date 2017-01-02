@@ -15,13 +15,14 @@
 #ifndef WEBRTC_API_RTPRECEIVER_H_
 #define WEBRTC_API_RTPRECEIVER_H_
 
+#include <stdint.h>
+
 #include <string>
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/remoteaudiosource.h"
 #include "webrtc/api/videotracksource.h"
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/videobroadcaster.h"
 #include "webrtc/pc/channel.h"
