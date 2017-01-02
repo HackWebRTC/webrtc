@@ -92,6 +92,16 @@ enum IcePriorityValue {
   ICE_TYPE_PREFERENCE_HOST = 126
 };
 
+// States are from RFC 5245. http://tools.ietf.org/html/rfc5245#section-5.7.4
+enum class IceCandidatePairState {
+  WAITING = 0,  // Check has not been performed, Waiting pair on CL.
+  IN_PROGRESS,  // Check has been sent, transaction is in progress.
+  SUCCEEDED,    // Check already done, produced a successful result.
+  FAILED,       // Check for this connection failed.
+  // According to spec there should also be a frozen state, but nothing is ever
+  // frozen because we have not implemented ICE freezing logic.
+};
+
 const char* ProtoToString(ProtocolType proto);
 bool StringToProto(const char* value, ProtocolType* proto);
 
@@ -419,14 +429,6 @@ class Connection : public CandidatePairInterface,
     uint32_t nomination;
   };
 
-  // States are from RFC 5245. http://tools.ietf.org/html/rfc5245#section-5.7.4
-  enum State {
-    STATE_WAITING = 0,  // Check has not been performed, Waiting pair on CL.
-    STATE_INPROGRESS,   // Check has been sent, transaction is in progress.
-    STATE_SUCCEEDED,    // Check already done, produced a successful result.
-    STATE_FAILED        // Check for this connection failed.
-  };
-
   virtual ~Connection();
 
   // The local port where this connection sends and receives packets.
@@ -467,6 +469,8 @@ class Connection : public CandidatePairInterface,
   // Estimate of the round-trip time over this connection.
   int rtt() const { return rtt_; }
 
+  // Gets the |ConnectionInfo| stats, where |best_connection| has not been
+  // populated (default value false).
   ConnectionInfo stats();
 
   sigslot::signal1<Connection*> SignalStateChange;
@@ -575,7 +579,7 @@ class Connection : public CandidatePairInterface,
   // Invoked when Connection receives STUN error response with 487 code.
   void HandleRoleConflictFromPeer();
 
-  State state() const { return state_; }
+  IceCandidatePairState state() const { return state_; }
 
   int num_pings_sent() const { return num_pings_sent_; }
 
@@ -630,7 +634,7 @@ class Connection : public CandidatePairInterface,
   // Changes the state and signals if necessary.
   void set_write_state(WriteState value);
   void UpdateReceiving(int64_t now);
-  void set_state(State state);
+  void set_state(IceCandidatePairState state);
   void set_connected(bool value);
 
   uint32_t nomination() const { return nomination_; }
@@ -686,7 +690,7 @@ class Connection : public CandidatePairInterface,
   std::vector<SentPing> pings_since_last_response_;
 
   bool reported_;
-  State state_;
+  IceCandidatePairState state_;
   // Time duration to switch from receiving to not receiving.
   int receiving_timeout_;
   int64_t time_created_ms_;

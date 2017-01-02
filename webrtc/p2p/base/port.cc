@@ -868,7 +868,7 @@ Connection::Connection(Port* port,
       last_data_received_(0),
       last_ping_response_received_(0),
       reported_(false),
-      state_(STATE_WAITING),
+      state_(IceCandidatePairState::WAITING),
       receiving_timeout_(WEAK_CONNECTION_RECEIVE_TIMEOUT),
       time_created_ms_(rtc::TimeMillis()) {
   // All of our connections start in WAITING state.
@@ -937,8 +937,8 @@ void Connection::UpdateReceiving(int64_t now) {
   SignalStateChange(this);
 }
 
-void Connection::set_state(State state) {
-  State old_state = state_;
+void Connection::set_state(IceCandidatePairState state) {
+  IceCandidatePairState old_state = state_;
   state_ = state;
   if (state != old_state) {
     LOG_J(LS_VERBOSE, this) << "set_state";
@@ -1126,12 +1126,12 @@ void Connection::Destroy() {
 }
 
 void Connection::FailAndDestroy() {
-  set_state(Connection::STATE_FAILED);
+  set_state(IceCandidatePairState::FAILED);
   Destroy();
 }
 
 void Connection::FailAndPrune() {
-  set_state(Connection::STATE_FAILED);
+  set_state(IceCandidatePairState::FAILED);
   Prune();
 }
 
@@ -1223,7 +1223,7 @@ void Connection::Ping(int64_t now) {
                           << ", id=" << rtc::hex_encode(req->id())
                           << ", nomination=" << nomination_;
   requests_.Send(req);
-  state_ = STATE_INPROGRESS;
+  state_ = IceCandidatePairState::IN_PROGRESS;
   num_pings_sent_++;
 }
 
@@ -1250,7 +1250,7 @@ void Connection::ReceivedPingResponse(int rtt, const std::string& request_id) {
   last_ping_response_received_ = rtc::TimeMillis();
   UpdateReceiving(last_ping_response_received_);
   set_write_state(STATE_WRITABLE);
-  set_state(STATE_SUCCEEDED);
+  set_state(IceCandidatePairState::SUCCEEDED);
   rtt_samples_++;
   rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
 }
@@ -1331,8 +1331,8 @@ std::string Connection::ToString() const {
      << ":" << remote.protocol() << ":" << remote.address().ToSensitiveString()
      << "|" << CONNECT_STATE_ABBREV[connected()]
      << RECEIVE_STATE_ABBREV[receiving()] << WRITE_STATE_ABBREV[write_state()]
-     << ICESTATE[state()] << "|" << remote_nomination() << "|" << nomination()
-     << "|" << priority() << "|";
+     << ICESTATE[static_cast<int>(state())] << "|" << remote_nomination() << "|"
+     << nomination() << "|" << priority() << "|";
   if (rtt_ < DEFAULT_RTT) {
     ss << rtt_ << "]";
   } else {
@@ -1471,6 +1471,16 @@ ConnectionInfo Connection::stats() {
   stats_.recv_total_bytes = recv_rate_tracker_.TotalSampleCount();
   stats_.sent_bytes_second = round(send_rate_tracker_.ComputeRate());
   stats_.sent_total_bytes = send_rate_tracker_.TotalSampleCount();
+  stats_.receiving = receiving_;
+  stats_.writable = write_state_ == STATE_WRITABLE;
+  stats_.timeout = write_state_ == STATE_WRITE_TIMEOUT;
+  stats_.new_connection = !reported_;
+  stats_.rtt = rtt_;
+  stats_.local_candidate = local_candidate();
+  stats_.remote_candidate = remote_candidate();
+  stats_.key = this;
+  stats_.state = state_;
+  stats_.priority = priority();
   return stats_;
 }
 

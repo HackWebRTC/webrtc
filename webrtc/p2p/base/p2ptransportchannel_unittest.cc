@@ -4017,14 +4017,14 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   ASSERT_TRUE(conn2 != nullptr);
   EXPECT_TRUE_SIMULATED_WAIT(!conn2->active(), kDefaultTimeout, clock);
   // |conn2| should not send a ping yet.
-  EXPECT_EQ(Connection::STATE_WAITING, conn2->state());
+  EXPECT_EQ(IceCandidatePairState::WAITING, conn2->state());
   EXPECT_EQ(TransportChannelState::STATE_COMPLETED, ch.GetState());
   // Wait for |conn1| becoming not receiving.
   EXPECT_TRUE_SIMULATED_WAIT(!conn1->receiving(), kMediumTimeout, clock);
   // Make sure conn2 is not deleted.
   conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2, &clock);
   ASSERT_TRUE(conn2 != nullptr);
-  EXPECT_EQ_SIMULATED_WAIT(Connection::STATE_INPROGRESS, conn2->state(),
+  EXPECT_EQ_SIMULATED_WAIT(IceCandidatePairState::IN_PROGRESS, conn2->state(),
                            kDefaultTimeout, clock);
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_SIMULATED_WAIT(conn2, ch.selected_connection(), kDefaultTimeout,

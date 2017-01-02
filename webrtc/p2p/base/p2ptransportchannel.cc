@@ -1012,17 +1012,8 @@ bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
   for (Connection* connection : connections_) {
     ConnectionInfo info = connection->stats();
     info.best_connection = (selected_connection_ == connection);
-    info.receiving = connection->receiving();
-    info.writable = (connection->write_state() == Connection::STATE_WRITABLE);
-    info.timeout =
-        (connection->write_state() == Connection::STATE_WRITE_TIMEOUT);
-    info.new_connection = !connection->reported();
+    infos->push_back(std::move(info));
     connection->set_reported(true);
-    info.rtt = connection->rtt();
-    info.local_candidate = connection->local_candidate();
-    info.remote_candidate = connection->remote_candidate();
-    info.key = connection;
-    infos->push_back(info);
   }
 
   return true;
@@ -1559,7 +1550,7 @@ bool P2PTransportChannel::IsPingable(const Connection* conn,
   }
 
   // A failed connection will not be pinged.
-  if (conn->state() == Connection::STATE_FAILED) {
+  if (conn->state() == IceCandidatePairState::FAILED) {
     return false;
   }
 

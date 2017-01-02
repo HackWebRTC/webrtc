@@ -32,7 +32,6 @@ struct RTCStatsIceCandidatePairState {
   static const char* kInProgress;
   static const char* kFailed;
   static const char* kSucceeded;
-  static const char* kCancelled;
 };
 
 // https://w3c.github.io/webrtc-pc/#rtcicecandidatetype-enum
@@ -120,9 +119,7 @@ class RTCIceCandidatePairStats final : public RTCStats {
   RTCStatsMember<std::string> remote_candidate_id;
   // TODO(hbos): Support enum types?
   // "RTCStatsMember<RTCStatsIceCandidatePairState>"?
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<std::string> state;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<uint64_t> priority;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<bool> nominated;

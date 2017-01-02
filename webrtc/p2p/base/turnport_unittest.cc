@@ -334,7 +334,8 @@ class TurnPortTest : public testing::Test,
   }
 
   bool CheckConnectionFailedAndPruned(Connection* conn) {
-    return conn && !conn->active() && conn->state() == Connection::STATE_FAILED;
+    return conn && !conn->active() &&
+           conn->state() == IceCandidatePairState::FAILED;
   }
 
   // Checks that |turn_port_| has a nonempty set of connections and they are all

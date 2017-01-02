@@ -114,6 +114,23 @@ const char* DataStateToRTCDataChannelState(
   }
 }
 
+const char* IceCandidatePairStateToRTCStatsIceCandidatePairState(
+    cricket::IceCandidatePairState state) {
+  switch (state) {
+    case cricket::IceCandidatePairState::WAITING:
+      return RTCStatsIceCandidatePairState::kWaiting;
+    case cricket::IceCandidatePairState::IN_PROGRESS:
+      return RTCStatsIceCandidatePairState::kInProgress;
+    case cricket::IceCandidatePairState::SUCCEEDED:
+      return RTCStatsIceCandidatePairState::kSucceeded;
+    case cricket::IceCandidatePairState::FAILED:
+      return RTCStatsIceCandidatePairState::kFailed;
+    default:
+      RTC_NOTREACHED();
+      return nullptr;
+  }
+}
+
 std::unique_ptr<RTCCodecStats> CodecStatsFromRtpCodecParameters(
     uint64_t timestamp_us, bool inbound, bool audio,
     const RtpCodecParameters& codec_params) {
@@ -646,6 +663,9 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
             timestamp_us, info.local_candidate, true, report);
         candidate_pair_stats->remote_candidate_id = ProduceIceCandidateStats(
             timestamp_us, info.remote_candidate, false, report);
+        candidate_pair_stats->state =
+            IceCandidatePairStateToRTCStatsIceCandidatePairState(info.state);
+        candidate_pair_stats->priority = info.priority;
         // TODO(hbos): This writable is different than the spec. It goes to
         // false after a certain amount of time without a response passes.
         // crbug.com/633550

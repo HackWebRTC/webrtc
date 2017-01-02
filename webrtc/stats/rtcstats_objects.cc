@@ -19,10 +19,9 @@ const char* RTCDataChannelState::kClosed = "closed";
 
 const char* RTCStatsIceCandidatePairState::kFrozen = "frozen";
 const char* RTCStatsIceCandidatePairState::kWaiting = "waiting";
-const char* RTCStatsIceCandidatePairState::kInProgress = "inprogress";
+const char* RTCStatsIceCandidatePairState::kInProgress = "in-progress";
 const char* RTCStatsIceCandidatePairState::kFailed = "failed";
 const char* RTCStatsIceCandidatePairState::kSucceeded = "succeeded";
-const char* RTCStatsIceCandidatePairState::kCancelled = "cancelled";
 
 // Strings defined in https://tools.ietf.org/html/rfc5245.
 const char* RTCIceCandidateType::kHost = "host";

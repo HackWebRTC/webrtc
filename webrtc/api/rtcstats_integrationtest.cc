@@ -359,8 +359,8 @@ class RTCStatsReportVerifier {
         candidate_pair.local_candidate_id, RTCLocalIceCandidateStats::kType);
     verifier.TestMemberIsIDReference(
         candidate_pair.remote_candidate_id, RTCRemoteIceCandidateStats::kType);
-    verifier.TestMemberIsUndefined(candidate_pair.state);
-    verifier.TestMemberIsUndefined(candidate_pair.priority);
+    verifier.TestMemberIsDefined(candidate_pair.state);
+    verifier.TestMemberIsNonNegative<uint64_t>(candidate_pair.priority);
     verifier.TestMemberIsUndefined(candidate_pair.nominated);
     verifier.TestMemberIsDefined(candidate_pair.writable);
     verifier.TestMemberIsUndefined(candidate_pair.readable);

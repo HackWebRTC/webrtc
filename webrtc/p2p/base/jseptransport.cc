@@ -41,6 +41,28 @@ static bool VerifyIceParams(const TransportDescription& desc) {
   return true;
 }
 
+ConnectionInfo::ConnectionInfo()
+    : best_connection(false),
+      writable(false),
+      receiving(false),
+      timeout(false),
+      new_connection(false),
+      rtt(0),
+      sent_total_bytes(0),
+      sent_bytes_second(0),
+      sent_discarded_packets(0),
+      sent_total_packets(0),
+      sent_ping_requests_total(0),
+      sent_ping_requests_before_first_response(0),
+      sent_ping_responses(0),
+      recv_total_bytes(0),
+      recv_bytes_second(0),
+      recv_ping_requests(0),
+      recv_ping_responses(0),
+      key(nullptr),
+      state(IceCandidatePairState::WAITING),
+      priority(0) {}
+
 bool BadTransportDescription(const std::string& desc, std::string* err_desc) {
   if (err_desc) {
     *err_desc = desc;

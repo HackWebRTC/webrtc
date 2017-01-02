@@ -31,6 +31,7 @@ namespace cricket {
 
 class TransportChannelImpl;
 class TransportChannelImpl;
+enum class IceCandidatePairState;
 
 typedef std::vector<Candidate> Candidates;
 
@@ -83,25 +84,7 @@ enum ContinualGatheringPolicy {
 // Stats that we can return about the connections for a transport channel.
 // TODO(hta): Rename to ConnectionStats
 struct ConnectionInfo {
-  ConnectionInfo()
-      : best_connection(false),
-        writable(false),
-        receiving(false),
-        timeout(false),
-        new_connection(false),
-        rtt(0),
-        sent_total_bytes(0),
-        sent_bytes_second(0),
-        sent_discarded_packets(0),
-        sent_total_packets(0),
-        sent_ping_requests_total(0),
-        sent_ping_requests_before_first_response(0),
-        sent_ping_responses(0),
-        recv_total_bytes(0),
-        recv_bytes_second(0),
-        recv_ping_requests(0),
-        recv_ping_responses(0),
-        key(NULL) {}
+  ConnectionInfo();
 
   bool best_connection;      // Is this the best connection we have?
   bool writable;             // Has this connection received a STUN response?
@@ -127,6 +110,10 @@ struct ConnectionInfo {
   Candidate local_candidate;   // The local candidate for this connection.
   Candidate remote_candidate;  // The remote candidate for this connection.
   void* key;                   // A static value that identifies this conn.
+  // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-state
+  IceCandidatePairState state;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-priority
+  uint64_t priority;
 };
 
 // Information about all the connections of a channel.

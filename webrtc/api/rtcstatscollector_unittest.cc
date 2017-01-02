@@ -1066,6 +1066,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   connection_info.sent_ping_requests_before_first_response = 2000;
   connection_info.recv_ping_responses = 4321;
   connection_info.sent_ping_responses = 1000;
+  connection_info.state = cricket::IceCandidatePairState::IN_PROGRESS;
+  connection_info.priority = 5555;
 
   cricket::TransportChannelStats transport_channel_stats;
   transport_channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
@@ -1092,6 +1094,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   expected_pair.local_candidate_id = "RTCIceCandidate_" + local_candidate->id();
   expected_pair.remote_candidate_id =
       "RTCIceCandidate_" + remote_candidate->id();
+  expected_pair.state = RTCStatsIceCandidatePairState::kInProgress;
+  expected_pair.priority = 5555;
   expected_pair.writable = true;
   expected_pair.bytes_sent = 42;
   expected_pair.bytes_received = 1234;
