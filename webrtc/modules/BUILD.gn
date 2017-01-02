@@ -597,12 +597,6 @@ if (rtc_include_tests) {
         "audio_processing:audioproc_unittest_proto",
       ]
       sources += [
-        "audio_processing/aec3/block_framer_unittest.cc",
-        "audio_processing/aec3/block_processor_unittest.cc",
-        "audio_processing/aec3/cascaded_biquad_filter_unittest.cc",
-        "audio_processing/aec3/echo_canceller3_unittest.cc",
-        "audio_processing/aec3/frame_blocker_unittest.cc",
-        "audio_processing/aec3/mock/mock_block_processor.h",
         "audio_processing/audio_processing_impl_locking_unittest.cc",
         "audio_processing/audio_processing_impl_unittest.cc",
         "audio_processing/audio_processing_unittest.cc",
