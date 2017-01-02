@@ -198,6 +198,7 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
       static_cast<uint32_t>(video_receiver_info.plis_sent);
   inbound_video->nack_count =
       static_cast<uint32_t>(video_receiver_info.nacks_sent);
+  inbound_video->frames_decoded = video_receiver_info.frames_decoded;
 }
 
 // Provides the media independent counters (both audio and video).
@@ -242,6 +243,9 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
       static_cast<uint32_t>(video_sender_info.plis_rcvd);
   outbound_video->nack_count =
       static_cast<uint32_t>(video_sender_info.nacks_rcvd);
+  if (video_sender_info.qp_sum)
+    outbound_video->qp_sum = *video_sender_info.qp_sum;
+  outbound_video->frames_encoded = video_sender_info.frames_encoded;
 }
 
 void ProduceCertificateStatsFromSSLCertificateStats(

@@ -309,6 +309,9 @@ class RTCRTPStreamStats : public RTCStats {
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657854
   // SLI count is only defined for |media_type == "video"|.
   RTCStatsMember<uint32_t> sli_count;
+  // TODO(hbos): Only collected for the outbound case, should also be collected
+  // for inbound case by |RTCStatsCollector|. crbug.com/657854, crbug.com/657855
+  RTCStatsMember<uint64_t> qp_sum;
 
  protected:
   RTCRTPStreamStats(const std::string& id, int64_t timestamp_us);
@@ -354,6 +357,7 @@ class RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<double> gap_loss_rate;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
   RTCStatsMember<double> gap_discard_rate;
+  RTCStatsMember<uint32_t> frames_decoded;
 };
 
 // https://w3c.github.io/webrtc-stats/#outboundrtpstats-dict*
@@ -373,6 +377,7 @@ class RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657856
   RTCStatsMember<double> target_bitrate;
   RTCStatsMember<double> round_trip_time;
+  RTCStatsMember<uint32_t> frames_encoded;
 };
 
 // https://w3c.github.io/webrtc-stats/#transportstats-dict*

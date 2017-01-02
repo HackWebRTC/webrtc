@@ -447,7 +447,8 @@ WEBRTC_RTCSTATS_IMPL(RTCRTPStreamStats, RTCStats, "rtp",
     &fir_count,
     &pli_count,
     &nack_count,
-    &sli_count);
+    &sli_count,
+    &qp_sum);
 
 RTCRTPStreamStats::RTCRTPStreamStats(
     const std::string& id, int64_t timestamp_us)
@@ -467,7 +468,8 @@ RTCRTPStreamStats::RTCRTPStreamStats(
       fir_count("firCount"),
       pli_count("pliCount"),
       nack_count("nackCount"),
-      sli_count("sliCount") {
+      sli_count("sliCount"),
+      qp_sum("qpSum") {
 }
 
 RTCRTPStreamStats::RTCRTPStreamStats(
@@ -483,7 +485,8 @@ RTCRTPStreamStats::RTCRTPStreamStats(
       fir_count(other.fir_count),
       pli_count(other.pli_count),
       nack_count(other.nack_count),
-      sli_count(other.sli_count) {
+      sli_count(other.sli_count),
+      qp_sum(other.qp_sum) {
 }
 
 RTCRTPStreamStats::~RTCRTPStreamStats() {
@@ -505,7 +508,8 @@ WEBRTC_RTCSTATS_IMPL(
     &burst_loss_rate,
     &burst_discard_rate,
     &gap_loss_rate,
-    &gap_discard_rate);
+    &gap_discard_rate,
+    &frames_decoded);
 
 RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
     const std::string& id, int64_t timestamp_us)
@@ -529,7 +533,8 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
       burst_loss_rate("burstLossRate"),
       burst_discard_rate("burstDiscardRate"),
       gap_loss_rate("gapLossRate"),
-      gap_discard_rate("gapDiscardRate") {
+      gap_discard_rate("gapDiscardRate"),
+      frames_decoded("framesDecoded") {
 }
 
 RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
@@ -549,7 +554,8 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
       burst_loss_rate(other.burst_loss_rate),
       burst_discard_rate(other.burst_discard_rate),
       gap_loss_rate(other.gap_loss_rate),
-      gap_discard_rate(other.gap_discard_rate) {
+      gap_discard_rate(other.gap_discard_rate),
+      frames_decoded(other.frames_decoded) {
 }
 
 RTCInboundRTPStreamStats::~RTCInboundRTPStreamStats() {
@@ -560,7 +566,8 @@ WEBRTC_RTCSTATS_IMPL(
     &packets_sent,
     &bytes_sent,
     &target_bitrate,
-    &round_trip_time);
+    &round_trip_time,
+    &frames_encoded);
 
 RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
     const std::string& id, int64_t timestamp_us)
@@ -573,7 +580,8 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
       packets_sent("packetsSent"),
       bytes_sent("bytesSent"),
       target_bitrate("targetBitrate"),
-      round_trip_time("roundTripTime") {
+      round_trip_time("roundTripTime"),
+      frames_encoded("framesEncoded") {
 }
 
 RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
@@ -582,7 +590,8 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
       packets_sent(other.packets_sent),
       bytes_sent(other.bytes_sent),
       target_bitrate(other.target_bitrate),
-      round_trip_time(other.round_trip_time) {
+      round_trip_time(other.round_trip_time),
+      frames_encoded(other.frames_encoded) {
 }
 
 RTCOutboundRTPStreamStats::~RTCOutboundRTPStreamStats() {

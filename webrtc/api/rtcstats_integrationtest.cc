@@ -509,6 +509,7 @@ class RTCStatsReportVerifier {
       const RTCInboundRTPStreamStats& inbound_stream) {
     RTCStatsVerifier verifier(report_, &inbound_stream);
     VerifyRTCRTPStreamStats(inbound_stream, &verifier);
+    verifier.TestMemberIsUndefined(inbound_stream.qp_sum);
     verifier.TestMemberIsNonNegative<uint32_t>(inbound_stream.packets_received);
     verifier.TestMemberIsNonNegative<uint64_t>(inbound_stream.bytes_received);
     verifier.TestMemberIsNonNegative<uint32_t>(inbound_stream.packets_lost);
@@ -529,6 +530,12 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsUndefined(inbound_stream.burst_discard_rate);
     verifier.TestMemberIsUndefined(inbound_stream.gap_loss_rate);
     verifier.TestMemberIsUndefined(inbound_stream.gap_discard_rate);
+    if (inbound_stream.media_type.is_defined() &&
+        *inbound_stream.media_type == "video") {
+      verifier.TestMemberIsDefined(inbound_stream.frames_decoded);
+    } else {
+      verifier.TestMemberIsUndefined(inbound_stream.frames_decoded);
+    }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
@@ -536,11 +543,23 @@ class RTCStatsReportVerifier {
       const RTCOutboundRTPStreamStats& outbound_stream) {
     RTCStatsVerifier verifier(report_, &outbound_stream);
     VerifyRTCRTPStreamStats(outbound_stream, &verifier);
+    if (outbound_stream.media_type.is_defined() &&
+        *outbound_stream.media_type == "video") {
+      verifier.TestMemberIsNonNegative<uint64_t>(outbound_stream.qp_sum);
+    } else {
+      verifier.TestMemberIsUndefined(outbound_stream.qp_sum);
+    }
     verifier.TestMemberIsNonNegative<uint32_t>(outbound_stream.packets_sent);
     verifier.TestMemberIsNonNegative<uint64_t>(outbound_stream.bytes_sent);
     verifier.TestMemberIsUndefined(outbound_stream.target_bitrate);
     // TODO(hbos): Defined in video but not audio case. Why? crbug.com/669877
     verifier.MarkMemberTested(outbound_stream.round_trip_time, true);
+    if (outbound_stream.media_type.is_defined() &&
+        *outbound_stream.media_type == "video") {
+      verifier.TestMemberIsDefined(outbound_stream.frames_encoded);
+    } else {
+      verifier.TestMemberIsUndefined(outbound_stream.frames_encoded);
+    }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 

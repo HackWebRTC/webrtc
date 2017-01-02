@@ -1522,6 +1522,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   video_media_info.receivers[0].firs_sent = 5;
   video_media_info.receivers[0].plis_sent = 6;
   video_media_info.receivers[0].nacks_sent = 7;
+  video_media_info.receivers[0].frames_decoded = 8;
 
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;
@@ -1568,6 +1569,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   expected_video.bytes_received = 3;
   expected_video.packets_lost = 42;
   expected_video.fraction_lost = 4.5;
+  expected_video.frames_decoded = 8;
 
   ASSERT(report->Get(expected_video.id()));
   const RTCInboundRTPStreamStats& video = report->Get(
@@ -1664,6 +1666,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].bytes_sent = 6;
   video_media_info.senders[0].rtt_ms = 7500;
   video_media_info.senders[0].codec_payload_type = rtc::Optional<int>(42);
+  video_media_info.senders[0].frames_encoded = 8;
+  video_media_info.senders[0].qp_sum = rtc::Optional<uint64_t>(16);
 
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;
@@ -1709,6 +1713,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.packets_sent = 5;
   expected_video.bytes_sent = 6;
   expected_video.round_trip_time = 7.5;
+  expected_video.frames_encoded = 8;
+  expected_video.qp_sum = 16;
 
   ASSERT(report->Get(expected_video.id()));
   const RTCOutboundRTPStreamStats& video = report->Get(
@@ -1750,6 +1756,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Default) {
   video_media_info.senders[0].bytes_sent = 6;
   video_media_info.senders[0].rtt_ms = -1;
   video_media_info.senders[0].codec_payload_type = rtc::Optional<int>(42);
+  video_media_info.senders[0].frames_encoded = 7;
 
   EXPECT_CALL(*voice_media_channel, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(voice_media_info), Return(true)));
@@ -1809,7 +1816,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Default) {
   expected_video.nack_count = 4;
   expected_video.packets_sent = 5;
   expected_video.bytes_sent = 6;
+  expected_video.frames_encoded = 7;
   // |expected_video.round_trip_time| should be undefined.
+  // |expected_video.qp_sum| should be undefined.
 
   ASSERT(report->Get(expected_video.id()));
   const RTCOutboundRTPStreamStats& video = report->Get(
