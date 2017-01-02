@@ -11,9 +11,9 @@
 #ifndef WEBRTC_BASE_SYSTEMINFO_H__
 #define WEBRTC_BASE_SYSTEMINFO_H__
 
-#include <string>
+#include <stdint.h>
 
-#include "webrtc/base/basictypes.h"
+#include <string>
 
 namespace rtc {
 

@@ -14,9 +14,10 @@
 #ifndef WEBRTC_MEDIA_DEVICES_GTKVIDEORENDERER_H_
 #define WEBRTC_MEDIA_DEVICES_GTKVIDEORENDERER_H_
 
+#include <stdint.h>
+
 #include <memory>
 
-#include "webrtc/base/basictypes.h"
 #include "webrtc/media/base/videosinkinterface.h"
 
 typedef struct _GtkWidget GtkWidget;  // forward declaration, defined in gtk.h

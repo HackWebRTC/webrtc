@@ -12,9 +12,9 @@
 #define WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_DEFAULTS_H_
 #pragma once
 
-#include <string>
+#include <stdint.h>
 
-#include "webrtc/base/basictypes.h"
+#include <string>
 
 extern const char kAudioLabel[];
 extern const char kVideoLabel[];

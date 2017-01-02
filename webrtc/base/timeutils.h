@@ -11,10 +11,10 @@
 #ifndef WEBRTC_BASE_TIMEUTILS_H_
 #define WEBRTC_BASE_TIMEUTILS_H_
 
-#include <ctime>
+#include <stdint.h>
 #include <time.h>
 
-#include "webrtc/base/basictypes.h"
+#include <ctime>
 
 namespace rtc {
 

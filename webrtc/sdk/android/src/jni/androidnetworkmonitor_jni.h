@@ -13,10 +13,11 @@
 
 #include "webrtc/base/networkmonitor.h"
 
+#include <stdint.h>
+
 #include <map>
 
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/thread_checker.h"
 
 namespace webrtc_jni {

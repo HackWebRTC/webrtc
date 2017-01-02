@@ -11,10 +11,11 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_UTILITY_SIMULCAST_RATE_ALLOCATOR_H_
 #define WEBRTC_MODULES_VIDEO_CODING_UTILITY_SIMULCAST_RATE_ALLOCATOR_H_
 
+#include <stdint.h>
+
 #include <map>
 #include <memory>
 
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"

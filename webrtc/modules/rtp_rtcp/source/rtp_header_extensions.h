@@ -10,7 +10,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSIONS_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSIONS_H_
 
-#include "webrtc/base/basictypes.h"
+#include <stdint.h>
+
 #include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 

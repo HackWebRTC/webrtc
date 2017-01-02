@@ -11,9 +11,10 @@
 #ifndef WEBRTC_BASE_TASKRUNNER_H__
 #define WEBRTC_BASE_TASKRUNNER_H__
 
+#include <stdint.h>
+
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/taskparent.h"
 
