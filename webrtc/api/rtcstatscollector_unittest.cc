@@ -396,15 +396,12 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
     if (!delivered_report_)
       return false;
     EXPECT_EQ(produced_on_signaling_thread_, 1);
-    EXPECT_EQ(produced_on_worker_thread_, 1);
     EXPECT_EQ(produced_on_network_thread_, 1);
 
     EXPECT_TRUE(delivered_report_->Get("SignalingThreadStats"));
-    EXPECT_TRUE(delivered_report_->Get("WorkerThreadStats"));
     EXPECT_TRUE(delivered_report_->Get("NetworkThreadStats"));
 
     produced_on_signaling_thread_ = 0;
-    produced_on_worker_thread_ = 0;
     produced_on_network_thread_ = 0;
     delivered_report_ = nullptr;
     return true;
@@ -434,20 +431,6 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
         new RTCTestStats("SignalingThreadStats", timestamp_us)));
     AddPartialResults(signaling_report);
   }
-  void ProducePartialResultsOnWorkerThread(int64_t timestamp_us) override {
-    EXPECT_TRUE(worker_thread_->IsCurrent());
-    {
-      rtc::CritScope cs(&lock_);
-      EXPECT_FALSE(delivered_report_);
-      ++produced_on_worker_thread_;
-    }
-
-    rtc::scoped_refptr<RTCStatsReport> worker_report =
-        RTCStatsReport::Create(0);
-    worker_report->AddStats(std::unique_ptr<const RTCStats>(
-        new RTCTestStats("WorkerThreadStats", timestamp_us)));
-    AddPartialResults(worker_report);
-  }
   void ProducePartialResultsOnNetworkThread(int64_t timestamp_us) override {
     EXPECT_TRUE(network_thread_->IsCurrent());
     {
@@ -471,7 +454,6 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   rtc::CriticalSection lock_;
   rtc::scoped_refptr<const RTCStatsReport> delivered_report_;
   int produced_on_signaling_thread_ = 0;
-  int produced_on_worker_thread_ = 0;
   int produced_on_network_thread_ = 0;
 };
 

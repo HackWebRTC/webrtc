@@ -82,7 +82,6 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // Stats gathering on a particular thread. Calls |AddPartialResults| before
   // returning. Virtual for the sake of testing.
   virtual void ProducePartialResultsOnSignalingThread(int64_t timestamp_us);
-  virtual void ProducePartialResultsOnWorkerThread(int64_t timestamp_us);
   virtual void ProducePartialResultsOnNetworkThread(int64_t timestamp_us);
 
   // Can be called on any thread.

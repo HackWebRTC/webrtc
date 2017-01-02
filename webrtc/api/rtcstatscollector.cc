@@ -425,17 +425,8 @@ void RTCStatsCollector::GetStatsReport(
     // necessarily monotonically increasing.
     int64_t timestamp_us = rtc::TimeUTCMicros();
 
-    num_pending_partial_reports_ = 3;
+    num_pending_partial_reports_ = 2;
     partial_report_timestamp_us_ = cache_now_us;
-    invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread_,
-        rtc::Bind(&RTCStatsCollector::ProducePartialResultsOnSignalingThread,
-            rtc::scoped_refptr<RTCStatsCollector>(this), timestamp_us));
-
-    // TODO(hbos): No stats are gathered by
-    // |ProducePartialResultsOnWorkerThread|, remove it.
-    invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_,
-        rtc::Bind(&RTCStatsCollector::ProducePartialResultsOnWorkerThread,
-            rtc::scoped_refptr<RTCStatsCollector>(this), timestamp_us));
 
     // Prepare |channel_names_| and |media_info_| for use in
     // |ProducePartialResultsOnNetworkThread|.
@@ -456,9 +447,11 @@ void RTCStatsCollector::GetStatsReport(
                           pc_->session()->data_channel()->transport_name()));
     }
     media_info_.reset(PrepareMediaInfo_s().release());
+
     invoker_.AsyncInvoke<void>(RTC_FROM_HERE, network_thread_,
         rtc::Bind(&RTCStatsCollector::ProducePartialResultsOnNetworkThread,
             rtc::scoped_refptr<RTCStatsCollector>(this), timestamp_us));
+    ProducePartialResultsOnSignalingThread(timestamp_us);
   }
 }
 
@@ -487,18 +480,6 @@ void RTCStatsCollector::ProducePartialResultsOnSignalingThread(
   ProduceDataChannelStats_s(timestamp_us, report.get());
   ProduceMediaStreamAndTrackStats_s(timestamp_us, report.get());
   ProducePeerConnectionStats_s(timestamp_us, report.get());
-
-  AddPartialResults(report);
-}
-
-void RTCStatsCollector::ProducePartialResultsOnWorkerThread(
-    int64_t timestamp_us) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
-  rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create(
-      timestamp_us);
-
-  // TODO(hbos): There are no stats to be gathered on this thread, remove this
-  // method.
 
   AddPartialResults(report);
 }
