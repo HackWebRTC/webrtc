@@ -358,7 +358,7 @@ class UlpfecObserver : public test::EndToEndTest {
                  bool expect_ulpfec,
                  const std::string& codec,
                  VideoEncoder* encoder)
-      : EndToEndTest(VideoSendStreamTest::kDefaultTimeoutMs),
+      : EndToEndTest(kTimeoutMs),
         encoder_(encoder),
         payload_name_(codec),
         use_nack_(use_nack),
@@ -367,6 +367,10 @@ class UlpfecObserver : public test::EndToEndTest {
         sent_media_(false),
         sent_ulpfec_(false),
         header_extensions_enabled_(header_extensions_enabled) {}
+
+  // Some of the test cases are expected to time out and thus we are using
+  // a shorter timeout window than the default here.
+  static constexpr size_t kTimeoutMs = 10000;
 
  private:
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -421,9 +425,8 @@ class UlpfecObserver : public test::EndToEndTest {
       }
     }
 
-    if (sent_media_) {
-      if (sent_ulpfec_ || !expect_ulpfec_)
-        observation_complete_.Set();
+    if (sent_media_ && sent_ulpfec_) {
+      observation_complete_.Set();
     }
 
     prev_header_ = header;
@@ -474,7 +477,8 @@ class UlpfecObserver : public test::EndToEndTest {
   }
 
   void PerformTest() override {
-    EXPECT_TRUE(Wait()) << "Timed out waiting for ULPFEC and/or media packets.";
+    EXPECT_EQ(expect_ulpfec_, Wait())
+        << "Timed out waiting for ULPFEC and/or media packets.";
   }
 
   std::unique_ptr<internal::TransportAdapter> transport_adapter_;
