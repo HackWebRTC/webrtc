@@ -277,7 +277,7 @@ void ProduceCertificateStatsFromSSLCertificateStats(
 
 const std::string& ProduceIceCandidateStats(
     int64_t timestamp_us, const cricket::Candidate& candidate, bool is_local,
-    RTCStatsReport* report) {
+    const std::string& transport_id, RTCStatsReport* report) {
   const std::string& id = "RTCIceCandidate_" + candidate.id();
   const RTCStats* stats = report->Get(id);
   if (!stats) {
@@ -286,6 +286,7 @@ const std::string& ProduceIceCandidateStats(
       candidate_stats.reset(new RTCLocalIceCandidateStats(id, timestamp_us));
     else
       candidate_stats.reset(new RTCRemoteIceCandidateStats(id, timestamp_us));
+    candidate_stats->transport_id = transport_id;
     candidate_stats->ip = candidate.address().ipaddr().ToString();
     candidate_stats->port = static_cast<int32_t>(candidate.address().port());
     candidate_stats->protocol = candidate.protocol();
@@ -664,9 +665,9 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
         // Port objects, and prflx candidates (both local and remote) are only
         // stored in candidate pairs. crbug.com/632723
         candidate_pair_stats->local_candidate_id = ProduceIceCandidateStats(
-            timestamp_us, info.local_candidate, true, report);
+            timestamp_us, info.local_candidate, true, transport_id, report);
         candidate_pair_stats->remote_candidate_id = ProduceIceCandidateStats(
-            timestamp_us, info.remote_candidate, false, report);
+            timestamp_us, info.remote_candidate, false, transport_id, report);
         candidate_pair_stats->state =
             IceCandidatePairStateToRTCStatsIceCandidatePairState(info.state);
         candidate_pair_stats->priority = info.priority;

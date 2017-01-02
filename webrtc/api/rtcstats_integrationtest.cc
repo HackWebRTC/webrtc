@@ -390,6 +390,8 @@ class RTCStatsReportVerifier {
   bool VerifyRTCIceCandidateStats(
       const RTCIceCandidateStats& candidate) {
     RTCStatsVerifier verifier(report_, &candidate);
+    verifier.TestMemberIsIDReference(
+        candidate.transport_id, RTCTransportStats::kType);
     verifier.TestMemberIsDefined(candidate.is_remote);
     verifier.TestMemberIsDefined(candidate.ip);
     verifier.TestMemberIsNonNegative<int32_t>(candidate.port);

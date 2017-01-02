@@ -904,6 +904,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       0);
   RTCLocalIceCandidateStats expected_a_local_host(
       "RTCIceCandidate_" + a_local_host->id(), 0);
+  expected_a_local_host.transport_id = "RTCTransport_a_0";
   expected_a_local_host.ip = "1.2.3.4";
   expected_a_local_host.port = 5;
   expected_a_local_host.protocol = "a_local_host's protocol";
@@ -918,6 +919,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       1);
   RTCRemoteIceCandidateStats expected_a_remote_srflx(
       "RTCIceCandidate_" + a_remote_srflx->id(), 0);
+  expected_a_remote_srflx.transport_id = "RTCTransport_a_0";
   expected_a_remote_srflx.ip = "6.7.8.9";
   expected_a_remote_srflx.port = 10;
   expected_a_remote_srflx.protocol = "remote_srflx's protocol";
@@ -933,6 +935,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       2);
   RTCLocalIceCandidateStats expected_a_local_prflx(
       "RTCIceCandidate_" + a_local_prflx->id(), 0);
+  expected_a_local_prflx.transport_id = "RTCTransport_a_0";
   expected_a_local_prflx.ip = "11.12.13.14";
   expected_a_local_prflx.port = 15;
   expected_a_local_prflx.protocol = "a_local_prflx's protocol";
@@ -948,6 +951,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       3);
   RTCRemoteIceCandidateStats expected_a_remote_relay(
       "RTCIceCandidate_" + a_remote_relay->id(), 0);
+  expected_a_remote_relay.transport_id = "RTCTransport_a_0";
   expected_a_remote_relay.ip = "16.17.18.19";
   expected_a_remote_relay.port = 20;
   expected_a_remote_relay.protocol = "a_remote_relay's protocol";
@@ -964,6 +968,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       42);
   RTCLocalIceCandidateStats expected_b_local(
       "RTCIceCandidate_" + b_local->id(), 0);
+  expected_b_local.transport_id = "RTCTransport_b_0";
   expected_b_local.ip = "42.42.42.42";
   expected_b_local.port = 42;
   expected_b_local.protocol = "b_local's protocol";
@@ -979,6 +984,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
       42);
   RTCRemoteIceCandidateStats expected_b_remote(
       "RTCIceCandidate_" + b_remote->id(), 0);
+  expected_b_remote.transport_id = "RTCTransport_b_0";
   expected_b_remote.ip = "42.42.42.42";
   expected_b_remote.port = 42;
   expected_b_remote.protocol = "b_remote's protocol";
@@ -1025,30 +1031,32 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
 
-  EXPECT_TRUE(report->Get(expected_a_local_host.id()));
+  ASSERT_TRUE(report->Get(expected_a_local_host.id()));
   EXPECT_EQ(expected_a_local_host,
             report->Get(expected_a_local_host.id())->cast_to<
                 RTCLocalIceCandidateStats>());
-  EXPECT_TRUE(report->Get(expected_a_remote_srflx.id()));
+  ASSERT_TRUE(report->Get(expected_a_remote_srflx.id()));
   EXPECT_EQ(expected_a_remote_srflx,
             report->Get(expected_a_remote_srflx.id())->cast_to<
                 RTCRemoteIceCandidateStats>());
-  EXPECT_TRUE(report->Get(expected_a_local_prflx.id()));
+  ASSERT_TRUE(report->Get(expected_a_local_prflx.id()));
   EXPECT_EQ(expected_a_local_prflx,
             report->Get(expected_a_local_prflx.id())->cast_to<
                 RTCLocalIceCandidateStats>());
-  EXPECT_TRUE(report->Get(expected_a_remote_relay.id()));
+  ASSERT_TRUE(report->Get(expected_a_remote_relay.id()));
   EXPECT_EQ(expected_a_remote_relay,
             report->Get(expected_a_remote_relay.id())->cast_to<
                 RTCRemoteIceCandidateStats>());
-  EXPECT_TRUE(report->Get(expected_b_local.id()));
+  ASSERT_TRUE(report->Get(expected_b_local.id()));
   EXPECT_EQ(expected_b_local,
             report->Get(expected_b_local.id())->cast_to<
                 RTCLocalIceCandidateStats>());
-  EXPECT_TRUE(report->Get(expected_b_remote.id()));
+  ASSERT_TRUE(report->Get(expected_b_remote.id()));
   EXPECT_EQ(expected_b_remote,
             report->Get(expected_b_remote.id())->cast_to<
                 RTCRemoteIceCandidateStats>());
+  EXPECT_TRUE(report->Get("RTCTransport_a_0"));
+  EXPECT_TRUE(report->Get("RTCTransport_b_0"));
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
@@ -1115,9 +1123,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   EXPECT_EQ(
       expected_pair,
       report->Get(expected_pair.id())->cast_to<RTCIceCandidatePairStats>());
+  EXPECT_TRUE(report->Get(*expected_pair.transport_id));
 
   RTCLocalIceCandidateStats expected_local_candidate(
       *expected_pair.local_candidate_id, report->timestamp_us());
+  expected_local_candidate.transport_id = *expected_pair.transport_id;
   expected_local_candidate.ip = "42.42.42.42";
   expected_local_candidate.port = 42;
   expected_local_candidate.protocol = "protocol";
@@ -1132,6 +1142,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
 
   RTCRemoteIceCandidateStats expected_remote_candidate(
       *expected_pair.remote_candidate_id, report->timestamp_us());
+  expected_remote_candidate.transport_id = *expected_pair.transport_id;
   expected_remote_candidate.ip = "42.42.42.42";
   expected_remote_candidate.port = 42;
   expected_remote_candidate.protocol = "protocol";

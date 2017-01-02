@@ -167,6 +167,7 @@ class RTCIceCandidateStats : public RTCStats {
   RTCIceCandidateStats(const RTCIceCandidateStats& other);
   ~RTCIceCandidateStats() override;
 
+  RTCStatsMember<std::string> transport_id;
   RTCStatsMember<bool> is_remote;
   RTCStatsMember<std::string> ip;
   RTCStatsMember<int32_t> port;

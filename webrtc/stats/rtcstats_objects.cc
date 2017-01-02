@@ -236,6 +236,7 @@ RTCIceCandidatePairStats::~RTCIceCandidatePairStats() {
 }
 
 WEBRTC_RTCSTATS_IMPL(RTCIceCandidateStats, RTCStats, "ice-candidate",
+    &transport_id,
     &is_remote,
     &ip,
     &port,
@@ -253,6 +254,7 @@ RTCIceCandidateStats::RTCIceCandidateStats(
 RTCIceCandidateStats::RTCIceCandidateStats(
     std::string&& id, int64_t timestamp_us, bool is_remote)
     : RTCStats(std::move(id), timestamp_us),
+      transport_id("transportId"),
       is_remote("isRemote", is_remote),
       ip("ip"),
       port("port"),
@@ -265,6 +267,7 @@ RTCIceCandidateStats::RTCIceCandidateStats(
 
 RTCIceCandidateStats::RTCIceCandidateStats(const RTCIceCandidateStats& other)
     : RTCStats(other.id(), other.timestamp_us()),
+      transport_id(other.transport_id),
       is_remote(other.is_remote),
       ip(other.ip),
       port(other.port),
