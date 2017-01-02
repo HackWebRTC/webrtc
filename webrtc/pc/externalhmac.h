@@ -28,8 +28,7 @@
 // functions and the corresponding authentication id using
 // crypto_kernel_replace_auth_type function.
 
-#include <stdint.h>
-
+#include "webrtc/base/basictypes.h"
 #ifdef HAVE_SRTP
 #include "third_party/libsrtp/crypto/include/auth.h"
 #endif  // HAVE_SRTP

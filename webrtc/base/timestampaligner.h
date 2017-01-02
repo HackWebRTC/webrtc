@@ -11,8 +11,7 @@
 #ifndef WEBRTC_BASE_TIMESTAMPALIGNER_H_
 #define WEBRTC_BASE_TIMESTAMPALIGNER_H_
 
-#include <stdint.h>
-
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 
 namespace rtc {

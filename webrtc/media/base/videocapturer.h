@@ -13,13 +13,12 @@
 #ifndef WEBRTC_MEDIA_BASE_VIDEOCAPTURER_H_
 #define WEBRTC_MEDIA_BASE_VIDEOCAPTURER_H_
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/media/base/videosourceinterface.h"

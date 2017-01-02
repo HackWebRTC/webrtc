@@ -26,13 +26,12 @@
 #ifndef WEBRTC_MEDIA_BASE_STREAMPARAMS_H_
 #define WEBRTC_MEDIA_BASE_STREAMPARAMS_H_
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
 
 namespace cricket {

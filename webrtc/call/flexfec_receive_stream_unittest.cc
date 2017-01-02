@@ -8,9 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdint.h>
-
 #include "webrtc/base/array_view.h"
+#include "webrtc/base/basictypes.h"
 #include "webrtc/call/flexfec_receive_stream_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"

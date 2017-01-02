@@ -11,8 +11,6 @@
 #ifndef WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_H_
 #define WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_H_
 
-#include <stdint.h>
-
 #include <string>
 #include <vector>
 

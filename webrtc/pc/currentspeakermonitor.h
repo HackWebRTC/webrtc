@@ -14,10 +14,9 @@
 #ifndef WEBRTC_PC_CURRENTSPEAKERMONITOR_H_
 #define WEBRTC_PC_CURRENTSPEAKERMONITOR_H_
 
-#include <stdint.h>
-
 #include <map>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/sigslot.h"
 
 namespace cricket {

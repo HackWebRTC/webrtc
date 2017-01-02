@@ -11,10 +11,9 @@
 #ifndef WEBRTC_BASE_RTCCERTIFICATE_H_
 #define WEBRTC_BASE_RTCCERTIFICATE_H_
 
-#include <stdint.h>
-
 #include <memory>
 
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sslidentity.h"

@@ -11,8 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_TIME_UTIL_H_
 
-#include <stdint.h>
-
+#include "webrtc/base/basictypes.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 
 namespace webrtc {

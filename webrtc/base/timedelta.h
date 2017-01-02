@@ -11,8 +11,7 @@
 #ifndef WEBRTC_BASE_TIMEDELTA_H_
 #define WEBRTC_BASE_TIMEDELTA_H_
 
-#include <stdint.h>
-
+#include "webrtc/base/basictypes.h"
 #include "webrtc/base/timeutils.h"
 
 // Convenience class to convert between different units of relative time.

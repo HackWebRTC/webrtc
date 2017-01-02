@@ -9,8 +9,8 @@
  */
 
 #include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
-
-#include <stdint.h>
+#include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 
