@@ -397,6 +397,7 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsDefined(candidate.candidate_type);
     verifier.TestMemberIsNonNegative<int32_t>(candidate.priority);
     verifier.TestMemberIsUndefined(candidate.url);
+    verifier.TestMemberIsDefined(candidate.deleted);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 

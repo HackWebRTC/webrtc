@@ -176,6 +176,9 @@ class RTCIceCandidateStats : public RTCStats {
   RTCStatsMember<int32_t> priority;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/632723
   RTCStatsMember<std::string> url;
+  // TODO(hbos): |deleted = true| case is not supported by |RTCStatsCollector|.
+  // crbug.com/632723
+  RTCStatsMember<bool> deleted;  // = false
 
  protected:
   RTCIceCandidateStats(

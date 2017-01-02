@@ -923,6 +923,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   expected_a_remote_srflx.protocol = "remote_srflx's protocol";
   expected_a_remote_srflx.candidate_type = "srflx";
   expected_a_remote_srflx.priority = 1;
+  expected_a_remote_srflx.deleted = false;
   EXPECT_TRUE(*expected_a_remote_srflx.is_remote);
 
   std::unique_ptr<cricket::Candidate> a_local_prflx = CreateFakeCandidate(
@@ -937,6 +938,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   expected_a_local_prflx.protocol = "a_local_prflx's protocol";
   expected_a_local_prflx.candidate_type = "prflx";
   expected_a_local_prflx.priority = 2;
+  expected_a_local_prflx.deleted = false;
   EXPECT_FALSE(*expected_a_local_prflx.is_remote);
 
   std::unique_ptr<cricket::Candidate> a_remote_relay = CreateFakeCandidate(
@@ -951,6 +953,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   expected_a_remote_relay.protocol = "a_remote_relay's protocol";
   expected_a_remote_relay.candidate_type = "relay";
   expected_a_remote_relay.priority = 3;
+  expected_a_remote_relay.deleted = false;
   EXPECT_TRUE(*expected_a_remote_relay.is_remote);
 
   // Candidates in the second transport stats.
@@ -966,6 +969,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   expected_b_local.protocol = "b_local's protocol";
   expected_b_local.candidate_type = "host";
   expected_b_local.priority = 42;
+  expected_b_local.deleted = false;
   EXPECT_FALSE(*expected_b_local.is_remote);
 
   std::unique_ptr<cricket::Candidate> b_remote = CreateFakeCandidate(
@@ -980,6 +984,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   expected_b_remote.protocol = "b_remote's protocol";
   expected_b_remote.candidate_type = "host";
   expected_b_remote.priority = 42;
+  expected_b_remote.deleted = false;
   EXPECT_TRUE(*expected_b_remote.is_remote);
 
   SessionStats session_stats;
@@ -1118,6 +1123,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   expected_local_candidate.protocol = "protocol";
   expected_local_candidate.candidate_type = "host";
   expected_local_candidate.priority = 42;
+  expected_local_candidate.deleted = false;
   EXPECT_FALSE(*expected_local_candidate.is_remote);
   ASSERT_TRUE(report->Get(expected_local_candidate.id()));
   EXPECT_EQ(expected_local_candidate,
@@ -1131,6 +1137,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   expected_remote_candidate.protocol = "protocol";
   expected_remote_candidate.candidate_type = "host";
   expected_remote_candidate.priority = 42;
+  expected_remote_candidate.deleted = false;
   EXPECT_TRUE(*expected_remote_candidate.is_remote);
   ASSERT_TRUE(report->Get(expected_remote_candidate.id()));
   EXPECT_EQ(expected_remote_candidate,

@@ -242,7 +242,8 @@ WEBRTC_RTCSTATS_IMPL(RTCIceCandidateStats, RTCStats, "ice-candidate",
     &protocol,
     &candidate_type,
     &priority,
-    &url);
+    &url,
+    &deleted);
 
 RTCIceCandidateStats::RTCIceCandidateStats(
     const std::string& id, int64_t timestamp_us, bool is_remote)
@@ -258,7 +259,8 @@ RTCIceCandidateStats::RTCIceCandidateStats(
       protocol("protocol"),
       candidate_type("candidateType"),
       priority("priority"),
-      url("url") {
+      url("url"),
+      deleted("deleted", false) {
 }
 
 RTCIceCandidateStats::RTCIceCandidateStats(const RTCIceCandidateStats& other)
@@ -269,7 +271,8 @@ RTCIceCandidateStats::RTCIceCandidateStats(const RTCIceCandidateStats& other)
       protocol(other.protocol),
       candidate_type(other.candidate_type),
       priority(other.priority),
-      url(other.url) {
+      url(other.url),
+      deleted(other.deleted) {
 }
 
 RTCIceCandidateStats::~RTCIceCandidateStats() {
