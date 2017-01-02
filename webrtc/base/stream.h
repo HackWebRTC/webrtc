@@ -11,10 +11,10 @@
 #ifndef WEBRTC_BASE_STREAM_H_
 #define WEBRTC_BASE_STREAM_H_
 
-#include <memory>
 #include <stdio.h>
 
-#include "webrtc/base/basictypes.h"
+#include <memory>
+
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"

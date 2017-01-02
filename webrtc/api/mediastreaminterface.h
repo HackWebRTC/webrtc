@@ -17,10 +17,11 @@
 #ifndef WEBRTC_API_MEDIASTREAMINTERFACE_H_
 #define WEBRTC_API_MEDIASTREAMINTERFACE_H_
 
+#include <stddef.h>
+
 #include <string>
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/optional.h"

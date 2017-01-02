@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/stringutils.h"
 

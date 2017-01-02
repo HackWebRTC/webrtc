@@ -13,10 +13,11 @@
 #ifndef WEBRTC_API_JSEP_H_
 #define WEBRTC_API_JSEP_H_
 
+#include <stddef.h>
+
 #include <string>
 #include <vector>
 
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/refcount.h"
 
 namespace cricket {
