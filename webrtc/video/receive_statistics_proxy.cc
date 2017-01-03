@@ -442,10 +442,11 @@ void ReceiveStatisticsProxy::SampleCounter::Add(int sample) {
   ++num_samples;
 }
 
-int ReceiveStatisticsProxy::SampleCounter::Avg(int min_required_samples) const {
+int ReceiveStatisticsProxy::SampleCounter::Avg(
+    int64_t min_required_samples) const {
   if (num_samples < min_required_samples || num_samples == 0)
     return -1;
-  return sum / num_samples;
+  return static_cast<int>(sum / num_samples);
 }
 
 void ReceiveStatisticsProxy::SampleCounter::Reset() {

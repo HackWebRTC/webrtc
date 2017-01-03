@@ -85,12 +85,12 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   struct SampleCounter {
     SampleCounter() : sum(0), num_samples(0) {}
     void Add(int sample);
-    int Avg(int min_required_samples) const;
+    int Avg(int64_t min_required_samples) const;
     void Reset();
 
    private:
-    int sum;
-    int num_samples;
+    int64_t sum;
+    int64_t num_samples;
   };
   struct QpCounters {
     SampleCounter vp8;
