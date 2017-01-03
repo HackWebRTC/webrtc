@@ -29,6 +29,7 @@ rtc_static_library("rtc_p2p") {
     "base/common.h",
     "base/dtlstransportchannel.cc",
     "base/dtlstransportchannel.h",
+    "base/dtlstransportinternal.h",
     "base/icetransportinternal.h",
     "base/jseptransport.cc",
     "base/jseptransport.h",
