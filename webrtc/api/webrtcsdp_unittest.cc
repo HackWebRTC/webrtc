@@ -3239,17 +3239,24 @@ TEST_F(WebRtcSdpTest, MediaContentOrderMaintainedRoundTrip) {
 TEST_F(WebRtcSdpTest, DeserializeBundleOnlyAttribute) {
   MakeBundleOnlyDescription();
   JsepSessionDescription deserialized_description(kDummyString);
-  EXPECT_TRUE(
+  ASSERT_TRUE(
       SdpDeserialize(kBundleOnlySdpFullString, &deserialized_description));
   EXPECT_TRUE(CompareSessionDescription(jdesc_, deserialized_description));
 }
 
-// "a=bundle-only" should only be used in combination with a 0 port on the m=
-// line. We should fail to parse anything else.
-TEST_F(WebRtcSdpTest, FailToDeserializeBundleOnlyWithNonzeroPort) {
-  std::string bad_sdp = kBundleOnlySdpFullString;
-  Replace("m=video 0", "m=video 9", &bad_sdp);
-  ExpectParseFailure(bad_sdp, "a=bundle-only");
+// The semantics of "a=bundle-only" are only defined when it's used in
+// combination with a 0 port on the m= line. We should ignore it if used with a
+// nonzero port.
+TEST_F(WebRtcSdpTest, IgnoreBundleOnlyWithNonzeroPort) {
+  // Make the base bundle-only description but unset the bundle-only flag.
+  MakeBundleOnlyDescription();
+  jdesc_.description()->contents()[1].bundle_only = false;
+
+  std::string modified_sdp = kBundleOnlySdpFullString;
+  Replace("m=video 0", "m=video 9", &modified_sdp);
+  JsepSessionDescription deserialized_description(kDummyString);
+  ASSERT_TRUE(SdpDeserialize(modified_sdp, &deserialized_description));
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, deserialized_description));
 }
 
 TEST_F(WebRtcSdpTest, SerializeBundleOnlyAttribute) {

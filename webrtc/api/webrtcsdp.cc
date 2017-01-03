@@ -2372,14 +2372,17 @@ bool ParseMediaDescription(const std::string& message,
     }
 
     bool content_rejected = false;
+    // A port of 0 is not interpreted as a rejected m= section when it's
+    // used along with a=bundle-only.
     if (bundle_only) {
-      // A port of 0 is not interpreted as a rejected m= section when it's
-      // used along with a=bundle-only.
       if (!port_rejected) {
-        return ParseFailed(
-            "a=bundle-only",
-            "a=bundle-only MUST only be used in combination with a 0 port.",
-            error);
+        // Usage of bundle-only with a nonzero port is unspecified. So just
+        // ignore bundle-only if we see this.
+        bundle_only = false;
+        LOG(LS_WARNING)
+            << "a=bundle-only attribute observed with a nonzero "
+            << "port; this usage is unspecified so the attribute is being "
+            << "ignored.";
       }
     } else {
       // If not using bundle-only, interpret port 0 in the normal way; the m=
