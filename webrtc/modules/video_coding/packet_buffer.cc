@@ -187,7 +187,7 @@ bool PacketBuffer::PotentialNewFrame(uint16_t seq_num) const {
   if (!sequence_buffer_[prev_index].used)
     return false;
   if (sequence_buffer_[prev_index].seq_num !=
-      sequence_buffer_[index].seq_num - 1) {
+      static_cast<uint16_t>(sequence_buffer_[index].seq_num - 1)) {
     return false;
   }
   if (sequence_buffer_[prev_index].continuous)
