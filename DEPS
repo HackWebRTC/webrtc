@@ -138,6 +138,16 @@ deps_os = {
   },
 }
 
+pre_deps_hooks = [
+  {
+    # Remove any symlinks from before 177567c518b121731e507e9b9c4049c4dc96e4c8.
+    # TODO(kjellander): Remove this in March 2017.
+    'name': 'cleanup_links',
+    'pattern': '.',
+    'action': ['python', 'src/cleanup_links.py'],
+  },
+]
+
 hooks = [
   {
     # Check for legacy named top-level dir (named 'trunk').
