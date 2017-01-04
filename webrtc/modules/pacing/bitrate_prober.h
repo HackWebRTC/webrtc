@@ -38,7 +38,7 @@ class BitrateProber {
 
   // Create a cluster used to probe for |bitrate_bps| with |num_probes| number
   // of probes.
-  void CreateProbeCluster(int bitrate_bps, int num_probes);
+  void CreateProbeCluster(int bitrate_bps);
 
   // Returns the number of milliseconds until the next probe should be sent to
   // get accurate probing.
@@ -74,9 +74,11 @@ class BitrateProber {
   // A probe cluster consists of a set of probes. Each probe in turn can be
   // divided into a number of packets to accomodate the MTU on the network.
   struct ProbeCluster {
-    int max_probes = 0;
+    int min_probes = 0;
     int sent_probes = 0;
-    int probe_bitrate_bps = 0;
+    int min_bytes = 0;
+    int sent_bytes = 0;
+    int bitrate_bps = 0;
     int id = -1;
   };
 

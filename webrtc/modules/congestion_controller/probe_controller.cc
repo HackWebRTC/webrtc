@@ -20,12 +20,6 @@
 namespace webrtc {
 
 namespace {
-
-// Number of deltas between probes per cluster. On the very first cluster,
-// we will need kProbeDeltasPerCluster + 1 probes, but on a cluster following
-// another, we need kProbeDeltasPerCluster probes.
-constexpr int kProbeDeltasPerCluster = 5;
-
 // Maximum waiting time from the time of initiating probing to getting
 // the measured results back.
 constexpr int64_t kMaxWaitingTimeForProbingResultMs = 1000;
@@ -200,7 +194,6 @@ void ProbeController::InitiateProbing(
     int64_t now_ms,
     std::initializer_list<int64_t> bitrates_to_probe,
     bool probe_further) {
-  bool first_cluster = true;
   for (int64_t bitrate : bitrates_to_probe) {
     int64_t max_probe_bitrate_bps =
         max_bitrate_bps_ > 0 ? max_bitrate_bps_ : kDefaultMaxProbingBitrateBps;
@@ -208,14 +201,7 @@ void ProbeController::InitiateProbing(
       bitrate = max_probe_bitrate_bps;
       probe_further = false;
     }
-    if (first_cluster) {
-      pacer_->CreateProbeCluster(rtc::checked_cast<int>(bitrate),
-                                 kProbeDeltasPerCluster + 1);
-      first_cluster = false;
-    } else {
-      pacer_->CreateProbeCluster(rtc::checked_cast<int>(bitrate),
-                                 kProbeDeltasPerCluster);
-    }
+    pacer_->CreateProbeCluster(rtc::checked_cast<int>(bitrate));
   }
   time_last_probing_initiated_ms_ = now_ms;
   if (probe_further) {

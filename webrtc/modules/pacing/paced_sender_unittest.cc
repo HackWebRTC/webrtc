@@ -21,9 +21,7 @@ using testing::Return;
 
 namespace {
 constexpr unsigned kFirstClusterBps = 900000;
-constexpr int kFirstClusterCount = 6;
 constexpr unsigned kSecondClusterBps = 1800000;
-constexpr int kSecondClusterCount = 5;
 
 // The error stems from truncating the time interval of probe packets to integer
 // values. This results in probing slightly higher than the target bitrate.
@@ -105,8 +103,8 @@ class PacedSenderTest : public ::testing::Test {
     srand(0);
     // Need to initialize PacedSender after we initialize clock.
     send_bucket_.reset(new PacedSender(&clock_, &callback_));
-    send_bucket_->CreateProbeCluster(kFirstClusterBps, kFirstClusterCount);
-    send_bucket_->CreateProbeCluster(kSecondClusterBps, kSecondClusterCount);
+    send_bucket_->CreateProbeCluster(kFirstClusterBps);
+    send_bucket_->CreateProbeCluster(kSecondClusterBps);
     // Default to bitrate probing disabled for testing purposes. Probing tests
     // have to enable probing, either by creating a new PacedSender instance or
     // by calling SetProbingEnabled(true).
@@ -806,18 +804,18 @@ TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
 
   PacedSenderProbing packet_sender;
   send_bucket_.reset(new PacedSender(&clock_, &packet_sender));
-  send_bucket_->CreateProbeCluster(kFirstClusterBps, kFirstClusterCount);
-  send_bucket_->CreateProbeCluster(kSecondClusterBps, kSecondClusterCount);
+  send_bucket_->CreateProbeCluster(kFirstClusterBps);
+  send_bucket_->CreateProbeCluster(kSecondClusterBps);
   send_bucket_->SetEstimatedBitrate(kInitialBitrateBps);
 
-  for (int i = 0; i < kFirstClusterCount + kSecondClusterCount; ++i) {
+  for (int i = 0; i < 10; ++i) {
     send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
                                sequence_number++, clock_.TimeInMilliseconds(),
                                kPacketSize, false);
   }
 
   int64_t start = clock_.TimeInMilliseconds();
-  while (packet_sender.packets_sent() < kFirstClusterCount) {
+  while (packet_sender.packets_sent() < 5) {
     int time_until_process = send_bucket_->TimeUntilNextProcess();
     clock_.AdvanceTimeMilliseconds(time_until_process);
     send_bucket_->Process();
@@ -831,8 +829,7 @@ TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
   EXPECT_EQ(0, packet_sender.padding_sent());
 
   start = clock_.TimeInMilliseconds();
-  while (packet_sender.packets_sent() <
-         kFirstClusterCount + kSecondClusterCount) {
+  while (packet_sender.packets_sent() < 10) {
     int time_until_process = send_bucket_->TimeUntilNextProcess();
     clock_.AdvanceTimeMilliseconds(time_until_process);
     send_bucket_->Process();
@@ -852,10 +849,10 @@ TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
 
   PacedSenderProbing packet_sender;
   send_bucket_.reset(new PacedSender(&clock_, &packet_sender));
-  send_bucket_->CreateProbeCluster(kFirstClusterBps, kFirstClusterCount);
+  send_bucket_->CreateProbeCluster(kFirstClusterBps);
   send_bucket_->SetEstimatedBitrate(kInitialBitrateBps);
 
-  for (int i = 0; i < kFirstClusterCount - 2; ++i) {
+  for (int i = 0; i < 3; ++i) {
     send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
                                sequence_number++, clock_.TimeInMilliseconds(),
                                kPacketSize, false);
@@ -863,7 +860,7 @@ TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
 
   int64_t start = clock_.TimeInMilliseconds();
   int process_count = 0;
-  while (process_count < kFirstClusterCount) {
+  while (process_count < 5) {
     int time_until_process = send_bucket_->TimeUntilNextProcess();
     clock_.AdvanceTimeMilliseconds(time_until_process);
     send_bucket_->Process();
@@ -1009,7 +1006,7 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
 
   send_bucket_->SetSendBitrateLimits(kTargetBitrateBps, kTargetBitrateBps);
   send_bucket_->SetProbingEnabled(true);
-  for (int i = 0; i < 11; ++i) {
+  for (int i = 0; i < 10; ++i) {
     send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
                                sequence_number + i, clock_.TimeInMilliseconds(),
                                kPacketSize, false);
@@ -1017,9 +1014,9 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
 
   // First probing cluster.
   EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, 0))
-      .Times(6)
+      .Times(5)
       .WillRepeatedly(Return(true));
-  for (int i = 0; i < 6; ++i) {
+  for (int i = 0; i < 5; ++i) {
     clock_.AdvanceTimeMilliseconds(20);
     send_bucket_->Process();
   }

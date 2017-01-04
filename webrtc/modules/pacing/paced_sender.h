@@ -26,6 +26,7 @@ class AlrDetector;
 class BitrateProber;
 class Clock;
 class CriticalSectionWrapper;
+class ProbeClusterCreatedObserver;
 
 namespace paced_sender {
 class IntervalBudget;
@@ -68,12 +69,11 @@ class PacedSender : public Module, public RtpPacketSender {
 
   static const size_t kMinProbePacketSize = 200;
 
-  PacedSender(Clock* clock,
-              PacketSender* packet_sender);
+  PacedSender(Clock* clock, PacketSender* packet_sender);
 
   virtual ~PacedSender();
 
-  virtual void CreateProbeCluster(int bitrate_bps, int num_packets);
+  virtual void CreateProbeCluster(int bitrate_bps);
 
   // Temporarily pause all sending.
   void Pause();

@@ -28,7 +28,7 @@ class MockPacedSender : public PacedSender {
                                 int64_t capture_time_ms,
                                 size_t bytes,
                                 bool retransmission));
-  MOCK_METHOD2(CreateProbeCluster, void(int, int));
+  MOCK_METHOD1(CreateProbeCluster, void(int));
   MOCK_METHOD1(SetEstimatedBitrate, void(uint32_t));
   MOCK_CONST_METHOD0(QueueInMs, int64_t());
   MOCK_CONST_METHOD0(QueueInPackets, int());
