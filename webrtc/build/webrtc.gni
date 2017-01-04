@@ -40,6 +40,10 @@ declare_args() {
   # Disable the code for the intelligibility enhancer by default.
   rtc_enable_intelligibility_enhancer = false
 
+  # Enable when an external authentication mechanism is used for performing
+  # packet authentication for RTP packets instead of libsrtp.
+  rtc_enable_external_auth = build_with_chromium
+
   # Selects whether debug dumps for the audio processing module
   # should be generated.
   apm_debug_dump = false

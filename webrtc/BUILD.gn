@@ -122,13 +122,16 @@ config("common_config") {
     defines += [ "HAVE_SCTP" ]
   }
 
+  if (rtc_enable_external_auth) {
+    defines += [ "ENABLE_EXTERNAL_AUTH" ]
+  }
+
   if (build_with_chromium) {
     defines += [
       # NOTICE: Since common_inherited_config is used in public_configs for our
       # targets, there's no point including the defines in that config here.
       # TODO(kjellander): Cleanup unused ones and move defines closer to the
       # source when webrtc:4256 is completed.
-      "ENABLE_EXTERNAL_AUTH",
       "HAVE_OPENSSL_SSL_H",
       "HAVE_SRTP",
       "HAVE_WEBRTC_VIDEO",
