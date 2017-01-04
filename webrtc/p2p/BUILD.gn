@@ -141,6 +141,59 @@ rtc_static_library("rtc_p2p") {
   }
 }
 
+if (rtc_include_tests) {
+  rtc_source_set("rtc_p2p_unittests") {
+    testonly = true
+    sources = [
+      "base/asyncstuntcpsocket_unittest.cc",
+      "base/dtlstransportchannel_unittest.cc",
+      "base/fakeportallocator.h",
+      "base/faketransportcontroller.h",
+      "base/jseptransport_unittest.cc",
+      "base/p2ptransportchannel_unittest.cc",
+      "base/port_unittest.cc",
+      "base/portallocator_unittest.cc",
+      "base/pseudotcp_unittest.cc",
+      "base/relayport_unittest.cc",
+      "base/relayserver_unittest.cc",
+      "base/stun_unittest.cc",
+      "base/stunport_unittest.cc",
+      "base/stunrequest_unittest.cc",
+      "base/stunserver_unittest.cc",
+      "base/tcpport_unittest.cc",
+      "base/testrelayserver.h",
+      "base/teststunserver.h",
+      "base/testturnserver.h",
+      "base/transportcontroller_unittest.cc",
+      "base/transportdescriptionfactory_unittest.cc",
+      "base/turnport_unittest.cc",
+      "base/turnserver_unittest.cc",
+      "base/udptransportchannel_unittest.cc",
+      "client/basicportallocator_unittest.cc",
+    ]
+    if (rtc_use_quic) {
+      sources += [
+        "quic/quicconnectionhelper_unittest.cc",
+        "quic/quicsession_unittest.cc",
+        "quic/quictransport_unittest.cc",
+        "quic/quictransportchannel_unittest.cc",
+        "quic/reliablequicstream_unittest.cc",
+      ]
+    }
+    deps = [
+      ":rtc_p2p",
+      "../api:fakemetricsobserver",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+    defines = [ "GTEST_RELATIVE_PATH" ]
+  }
+}
+
 rtc_static_library("libstunprober") {
   sources = [
     "stunprober/stunprober.cc",
@@ -156,4 +209,23 @@ rtc_static_library("libstunprober") {
     "..:webrtc_common",
     "../base:rtc_base",
   ]
+}
+
+if (rtc_include_tests) {
+  rtc_source_set("libstunprober_unittests") {
+    testonly = true
+    sources = [
+      "stunprober/stunprober_unittest.cc",
+    ]
+    deps = [
+      ":libstunprober",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+    defines = [ "GTEST_RELATIVE_PATH" ]
+  }
 }

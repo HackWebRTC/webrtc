@@ -52,11 +52,11 @@ bool VerifyBuffer(uint8_t* buffer, size_t length, uint8_t start_value) {
 class FileTest : public ::testing::Test {
  protected:
   std::string path_;
-  void SetUp() {
+  void SetUp() override {
     path_ = webrtc::test::TempFilename(webrtc::test::OutputPath(), "test_file");
     ASSERT_FALSE(path_.empty());
   }
-  void TearDown() { RemoveFile(path_); }
+  void TearDown() override { RemoveFile(path_); }
 };
 
 TEST_F(FileTest, DefaultConstructor) {

@@ -360,7 +360,6 @@ if (rtc_include_tests) {
     # come from a config and can"t be on the target directly.
     if (is_clang) {
       cflags = [
-        "-Wno-missing-braces",
         "-Wno-sign-compare",
         "-Wno-unused-const-variable",
       ]
@@ -369,155 +368,14 @@ if (rtc_include_tests) {
 
   rtc_test("rtc_unittests") {
     testonly = true
-    sources = [
-      "api/fakemetricsobserver.cc",
-      "base/analytics/exp_filter_unittest.cc",
-      "base/analytics/percentile_filter_unittest.cc",
-      "base/array_view_unittest.cc",
-      "base/atomicops_unittest.cc",
-      "base/autodetectproxy_unittest.cc",
-      "base/base64_unittest.cc",
-      "base/basictypes_unittest.cc",
-      "base/bind_unittest.cc",
-      "base/bitbuffer_unittest.cc",
-      "base/buffer_unittest.cc",
-      "base/bufferqueue_unittest.cc",
-      "base/bytebuffer_unittest.cc",
-      "base/byteorder_unittest.cc",
-      "base/callback_unittest.cc",
-      "base/copyonwritebuffer_unittest.cc",
-      "base/crc32_unittest.cc",
-      "base/criticalsection_unittest.cc",
-      "base/event_tracer_unittest.cc",
-      "base/event_unittest.cc",
-      "base/file_unittest.cc",
-      "base/filerotatingstream_unittest.cc",
-      "base/fileutils_unittest.cc",
-      "base/function_view_unittest.cc",
-      "base/helpers_unittest.cc",
-      "base/httpbase_unittest.cc",
-      "base/httpcommon_unittest.cc",
-      "base/httpserver_unittest.cc",
-      "base/ipaddress_unittest.cc",
-      "base/logging_unittest.cc",
-      "base/md5digest_unittest.cc",
-      "base/messagedigest_unittest.cc",
-      "base/messagequeue_unittest.cc",
-      "base/mod_ops_unittest.cc",
-      "base/nat_unittest.cc",
-      "base/network_unittest.cc",
-      "base/onetimeevent_unittest.cc",
-      "base/optional_unittest.cc",
-      "base/optionsfile_unittest.cc",
-      "base/pathutils_unittest.cc",
-      "base/platform_thread_unittest.cc",
-      "base/proxy_unittest.cc",
-      "base/proxydetect_unittest.cc",
-      "base/random_unittest.cc",
-      "base/rate_limiter_unittest.cc",
-      "base/rate_statistics_unittest.cc",
-      "base/ratelimiter_unittest.cc",
-      "base/ratetracker_unittest.cc",
-      "base/refcountedobject_unittest.cc",
-      "base/rollingaccumulator_unittest.cc",
-      "base/rtccertificate_unittest.cc",
-      "base/rtccertificategenerator_unittest.cc",
-      "base/safe_compare_unittest.cc",
-      "base/scopedptrcollection_unittest.cc",
-      "base/sequenced_task_checker_unittest.cc",
-      "base/sha1digest_unittest.cc",
-      "base/sharedexclusivelock_unittest.cc",
-      "base/signalthread_unittest.cc",
-      "base/sigslot_unittest.cc",
-      "base/sigslottester_unittest.cc",
-      "base/stream_unittest.cc",
-      "base/stringencode_unittest.cc",
-      "base/stringutils_unittest.cc",
-      "base/swap_queue_unittest.cc",
-
-      # TODO(ronghuawu): Reenable this test.
-      # "systeminfo_unittest.cc",
-      "base/task_queue_unittest.cc",
-      "base/task_unittest.cc",
-      "base/testclient_unittest.cc",
-      "base/thread_annotations_unittest.cc",
-      "base/thread_checker_unittest.cc",
-      "base/thread_unittest.cc",
-      "base/timestampaligner_unittest.cc",
-      "base/timeutils_unittest.cc",
-      "base/weak_ptr_unittest.cc",
-      "p2p/base/asyncstuntcpsocket_unittest.cc",
-      "p2p/base/dtlstransportchannel_unittest.cc",
-      "p2p/base/fakeportallocator.h",
-      "p2p/base/faketransportcontroller.h",
-      "p2p/base/jseptransport_unittest.cc",
-      "p2p/base/p2ptransportchannel_unittest.cc",
-      "p2p/base/port_unittest.cc",
-      "p2p/base/portallocator_unittest.cc",
-      "p2p/base/pseudotcp_unittest.cc",
-      "p2p/base/relayport_unittest.cc",
-      "p2p/base/relayserver_unittest.cc",
-      "p2p/base/stun_unittest.cc",
-      "p2p/base/stunport_unittest.cc",
-      "p2p/base/stunrequest_unittest.cc",
-      "p2p/base/stunserver_unittest.cc",
-      "p2p/base/tcpport_unittest.cc",
-      "p2p/base/testrelayserver.h",
-      "p2p/base/teststunserver.h",
-      "p2p/base/testturnserver.h",
-      "p2p/base/transportcontroller_unittest.cc",
-      "p2p/base/transportdescriptionfactory_unittest.cc",
-      "p2p/base/turnport_unittest.cc",
-      "p2p/base/turnserver_unittest.cc",
-      "p2p/base/udptransportchannel_unittest.cc",
-      "p2p/client/basicportallocator_unittest.cc",
-      "p2p/stunprober/stunprober_unittest.cc",
-    ]
-
-    if (is_win) {
-      sources += [
-        "base/win32_unittest.cc",
-        "base/win32window_unittest.cc",
-      ]
-    }
-
-    if (is_mac) {
-      sources += [ "base/macutils_unittest.cc" ]
-    }
-
-    if (is_posix) {
-      sources += [
-        "base/ssladapter_unittest.cc",
-        "base/sslidentity_unittest.cc",
-        "base/sslstreamadapter_unittest.cc",
-      ]
-    }
-    if (rtc_use_quic) {
-      sources += [
-        "p2p/quic/quicconnectionhelper_unittest.cc",
-        "p2p/quic/quicsession_unittest.cc",
-        "p2p/quic/quictransport_unittest.cc",
-        "p2p/quic/quictransportchannel_unittest.cc",
-        "p2p/quic/reliablequicstream_unittest.cc",
-      ]
-    }
-
-    configs += [ ":rtc_unittests_config" ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps = [
-      "base:rtc_analytics",
-      "base:rtc_base",
-      "base:rtc_base_tests_utils",
-      "base:rtc_task_queue",
-      "p2p:libstunprober",
-      "p2p:rtc_p2p",
-      "//testing/gmock",
-      "//testing/gtest",
+      "base:rtc_analytics_unittests",
+      "base:rtc_base_approved_unittests",
+      "base:rtc_base_unittests",
+      "base:rtc_task_queue_unittests",
+      "p2p:libstunprober_unittests",
+      "p2p:rtc_p2p_unittests",
     ]
 
     if (rtc_enable_protobuf) {
@@ -530,28 +388,7 @@ if (rtc_include_tests) {
     }
 
     if (is_ios || is_mac) {
-      deps += [
-        "sdk:rtc_sdk_peerconnection_objc",
-        "system_wrappers:system_wrappers_default",
-        "//third_party/ocmock",
-      ]
-      sources += [
-        "sdk/objc/Framework/UnitTests/RTCConfigurationTest.mm",
-        "sdk/objc/Framework/UnitTests/RTCDataChannelConfigurationTest.mm",
-        "sdk/objc/Framework/UnitTests/RTCIceCandidateTest.mm",
-        "sdk/objc/Framework/UnitTests/RTCIceServerTest.mm",
-        "sdk/objc/Framework/UnitTests/RTCMediaConstraintsTest.mm",
-        "sdk/objc/Framework/UnitTests/RTCSessionDescriptionTest.mm",
-        "sdk/objc/Framework/UnitTests/avformatmappertests.mm",
-      ]
-
-      # TODO(tkchin): Cleanup this warning.
-      cflags = [ "-Wno-objc-property-no-attribute" ]
-
-      # |-ObjC| flag needed to make sure category method implementations
-      # are included:
-      # https://developer.apple.com/library/mac/qa/qa1490/_index.html
-      ldflags = [ "-ObjC" ]
+      deps += [ "sdk:rtc_sdk_peerconnection_objc_unittests" ]
     }
   }
 

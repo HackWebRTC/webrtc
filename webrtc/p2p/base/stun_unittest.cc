@@ -494,7 +494,7 @@ const in6_addr kIPv6TestAddress2 = { { { 0x24, 0x01, 0xfa, 0x00,
 const in_addr kIPv4TestAddress1 =  { 0xe64417ac };
 #elif defined WEBRTC_WIN
 // Windows in_addr has a union with a uchar[] array first.
-const in_addr kIPv4TestAddress1 =  { { 0x0ac, 0x017, 0x044, 0x0e6 } };
+const in_addr kIPv4TestAddress1 =  { { { 0x0ac, 0x017, 0x044, 0x0e6 } } };
 #endif
 const char kTestUserName1[] = "abcdefgh";
 const char kTestUserName2[] = "abc";

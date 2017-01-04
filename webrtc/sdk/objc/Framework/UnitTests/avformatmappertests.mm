@@ -160,7 +160,7 @@ TEST(AVFormatMapperTest, SuportedCricketFormats) {
       webrtc::GetSupportedVideoFormatsForDevice(mockDevice);
 
   // then
-  EXPECT_EQ(1, result.size());
+  EXPECT_EQ(1u, result.size());
 
   // make sure the set has the expected format
   EXPECT_EQ(expectedFormat, *result.begin());

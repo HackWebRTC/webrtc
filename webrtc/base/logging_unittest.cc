@@ -88,12 +88,12 @@ TEST(LogTest, MultipleStreams) {
 // We should restore the correct global state at the end.
 class LogThread : public Thread {
  public:
-  virtual ~LogThread() {
+  ~LogThread() override {
     Stop();
   }
 
  private:
-  void Run() {
+  void Run() override {
     // LS_SENSITIVE to avoid cluttering up any real logging going on
     LOG(LS_SENSITIVE) << "LOG";
   }

@@ -24,7 +24,7 @@ class RateLimitTest : public ::testing::Test {
  public:
   RateLimitTest()
       : clock_(0), rate_limiter(new RateLimiter(&clock_, kWindowSizeMs)) {}
-  virtual ~RateLimitTest() {}
+  ~RateLimitTest() override {}
 
   void SetUp() override { rate_limiter->SetMaxRate(kMaxRateBps); }
 
@@ -147,7 +147,7 @@ TEST_F(RateLimitTest, MultiThreadedUsage) {
    public:
     explicit SetWindowSizeTask(RateLimiter* rate_limiter)
         : ThreadTask(rate_limiter) {}
-    virtual ~SetWindowSizeTask() {}
+    ~SetWindowSizeTask() override {}
 
     void DoRun() override {
       EXPECT_TRUE(rate_limiter_->SetWindowSize(kWindowSizeMs / 2));
@@ -160,7 +160,7 @@ TEST_F(RateLimitTest, MultiThreadedUsage) {
    public:
     explicit SetMaxRateTask(RateLimiter* rate_limiter)
         : ThreadTask(rate_limiter) {}
-    virtual ~SetMaxRateTask() {}
+    ~SetMaxRateTask() override {}
 
     void DoRun() override { rate_limiter_->SetMaxRate(kMaxRateBps * 2); }
   } set_max_rate_task(rate_limiter.get());
@@ -171,7 +171,7 @@ TEST_F(RateLimitTest, MultiThreadedUsage) {
    public:
     UseRateTask(RateLimiter* rate_limiter, SimulatedClock* clock)
         : ThreadTask(rate_limiter), clock_(clock) {}
-    virtual ~UseRateTask() {}
+    ~UseRateTask() override {}
 
     void DoRun() override {
       EXPECT_TRUE(rate_limiter_->TryUseRate(kRateFillingBytes / 2));

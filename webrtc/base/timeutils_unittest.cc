@@ -118,7 +118,7 @@ class TmToSeconds : public testing::Test {
     // Set use of the test RNG to get deterministic expiration timestamp.
     rtc::SetRandomTestMode(true);
   }
-  ~TmToSeconds() {
+  ~TmToSeconds() override {
     // Put it back for the next test.
     rtc::SetRandomTestMode(false);
   }

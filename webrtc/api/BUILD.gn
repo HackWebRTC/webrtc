@@ -224,8 +224,6 @@ if (rtc_include_tests) {
     sources = [
       "datachannel_unittest.cc",
       "dtmfsender_unittest.cc",
-      "fakemetricsobserver.cc",
-      "fakemetricsobserver.h",
       "jsepsessiondescription_unittest.cc",
       "localaudiosource_unittest.cc",
       "mediaconstraintsinterface_unittest.cc",
@@ -307,6 +305,7 @@ if (rtc_include_tests) {
     }
 
     deps += [
+      ":fakemetricsobserver",
       ":libjingle_peerconnection",
       "..:webrtc_common",
       "../base:rtc_base_tests_utils",
@@ -337,5 +336,21 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//webrtc/test:test_support",
     ]
+  }
+
+  rtc_source_set("fakemetricsobserver") {
+    testonly = true
+    sources = [
+      "fakemetricsobserver.cc",
+      "fakemetricsobserver.h",
+    ]
+    deps = [
+      ":libjingle_peerconnection",
+      "../base:rtc_base_approved",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
   }
 }

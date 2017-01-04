@@ -230,6 +230,40 @@ if (is_ios || is_mac) {
     }
   }
 
+  if (rtc_include_tests) {
+    rtc_source_set("rtc_sdk_peerconnection_objc_unittests") {
+      testonly = true
+      sources = [
+        "objc/Framework/UnitTests/RTCConfigurationTest.mm",
+        "objc/Framework/UnitTests/RTCDataChannelConfigurationTest.mm",
+        "objc/Framework/UnitTests/RTCIceCandidateTest.mm",
+        "objc/Framework/UnitTests/RTCIceServerTest.mm",
+        "objc/Framework/UnitTests/RTCMediaConstraintsTest.mm",
+        "objc/Framework/UnitTests/RTCSessionDescriptionTest.mm",
+        "objc/Framework/UnitTests/avformatmappertests.mm",
+      ]
+      deps = [
+        ":rtc_sdk_peerconnection_objc",
+        "//third_party/ocmock",
+        "//webrtc/system_wrappers:system_wrappers_default",
+      ]
+
+      # TODO(tkchin): Cleanup this warning.
+      cflags = [ "-Wno-objc-property-no-attribute" ]
+
+      # |-ObjC| flag needed to make sure category method implementations
+      # are included:
+      # https://developer.apple.com/library/mac/qa/qa1490/_index.html
+      ldflags = [ "-ObjC" ]
+
+      defines = [ "GTEST_RELATIVE_PATH" ]
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
+  }
+
   if (is_ios) {
     ios_framework_bundle("rtc_sdk_framework_objc") {
       info_plist = "objc/Framework/Info.plist"
