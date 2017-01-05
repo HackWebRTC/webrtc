@@ -942,9 +942,11 @@ inline FakeVideoMediaChannel::~FakeVideoMediaChannel() {
 
 class FakeDataEngine : public DataEngineInterface {
  public:
-  FakeDataEngine(){};
+  FakeDataEngine() : last_channel_type_(DCT_NONE) {}
 
-  virtual DataMediaChannel* CreateChannel(const MediaConfig& config) {
+  virtual DataMediaChannel* CreateChannel(DataChannelType data_channel_type,
+                                          const MediaConfig& config) {
+    last_channel_type_ = data_channel_type;
     FakeDataMediaChannel* ch = new FakeDataMediaChannel(this, DataOptions());
     channels_.push_back(ch);
     return ch;
@@ -964,9 +966,12 @@ class FakeDataEngine : public DataEngineInterface {
 
   virtual const std::vector<DataCodec>& data_codecs() { return data_codecs_; }
 
+  DataChannelType last_channel_type() const { return last_channel_type_; }
+
  private:
   std::vector<FakeDataMediaChannel*> channels_;
   std::vector<DataCodec> data_codecs_;
+  DataChannelType last_channel_type_;
 };
 
 }  // namespace cricket

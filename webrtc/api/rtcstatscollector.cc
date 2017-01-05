@@ -463,16 +463,10 @@ void RTCStatsCollector::GetStatsReport(
           ChannelNamePair(pc_->session()->video_channel()->content_name(),
                           pc_->session()->video_channel()->transport_name()));
     }
-    if (pc_->session()->rtp_data_channel()) {
-      channel_name_pairs_->data =
-          rtc::Optional<ChannelNamePair>(ChannelNamePair(
-              pc_->session()->rtp_data_channel()->content_name(),
-              pc_->session()->rtp_data_channel()->transport_name()));
-    }
-    if (pc_->session()->sctp_content_name()) {
+    if (pc_->session()->data_channel()) {
       channel_name_pairs_->data = rtc::Optional<ChannelNamePair>(
-          ChannelNamePair(*pc_->session()->sctp_content_name(),
-                          *pc_->session()->sctp_transport_name()));
+          ChannelNamePair(pc_->session()->data_channel()->content_name(),
+                          pc_->session()->data_channel()->transport_name()));
     }
     media_info_.reset(PrepareMediaInfo_s().release());
 

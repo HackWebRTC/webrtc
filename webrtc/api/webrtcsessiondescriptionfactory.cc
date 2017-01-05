@@ -400,7 +400,7 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
       // We should pass the current SSL role to the transport description
       // factory, if there is already an existing ongoing session.
       rtc::SSLRole ssl_role;
-      if (session_->GetSslRole(content.name, &ssl_role)) {
+      if (session_->GetSslRole(session_->GetChannel(content.name), &ssl_role)) {
         request.options.transport_options[content.name].prefer_passive_role =
             (rtc::SSL_SERVER == ssl_role);
       }

@@ -40,7 +40,11 @@ RtpDataEngine::RtpDataEngine() {
 }
 
 DataMediaChannel* RtpDataEngine::CreateChannel(
+    DataChannelType data_channel_type,
     const MediaConfig& config) {
+  if (data_channel_type != DCT_RTP) {
+    return NULL;
+  }
   return new RtpDataMediaChannel(config);
 }
 

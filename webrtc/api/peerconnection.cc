@@ -38,7 +38,7 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/media/sctp/sctptransport.h"
+#include "webrtc/media/sctp/sctpdataengine.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
@@ -652,14 +652,7 @@ bool PeerConnection::Initialize(
       std::unique_ptr<cricket::TransportController>(
           factory_->CreateTransportController(
               port_allocator_.get(),
-              configuration.redetermine_role_on_ice_restart)),
-#ifdef HAVE_SCTP
-      std::unique_ptr<cricket::SctpTransportInternalFactory>(
-          new cricket::SctpTransportFactory(factory_->network_thread()))
-#else
-      nullptr
-#endif
-          ));
+              configuration.redetermine_role_on_ice_restart))));
 
   stats_.reset(new StatsCollector(this));
   stats_collector_ = RTCStatsCollector::Create(this);
@@ -1126,7 +1119,7 @@ void PeerConnection::SetLocalDescription(
   // SCTP sids.
   rtc::SSLRole role;
   if (session_->data_channel_type() == cricket::DCT_SCTP &&
-      session_->GetSctpSslRole(&role)) {
+      session_->GetSslRole(session_->data_channel(), &role)) {
     AllocateSctpSids(role);
   }
 
@@ -1208,7 +1201,7 @@ void PeerConnection::SetRemoteDescription(
   // SCTP sids.
   rtc::SSLRole role;
   if (session_->data_channel_type() == cricket::DCT_SCTP &&
-      session_->GetSctpSslRole(&role)) {
+      session_->GetSslRole(session_->data_channel(), &role)) {
     AllocateSctpSids(role);
   }
 
@@ -2150,7 +2143,7 @@ rtc::scoped_refptr<DataChannel> PeerConnection::InternalCreateDataChannel(
   if (session_->data_channel_type() == cricket::DCT_SCTP) {
     if (new_config.id < 0) {
       rtc::SSLRole role;
-      if ((session_->GetSctpSslRole(&role)) &&
+      if ((session_->GetSslRole(session_->data_channel(), &role)) &&
           !sid_allocator_.AllocateSid(role, &new_config.id)) {
         LOG(LS_ERROR) << "No id can be allocated for the SCTP data channel.";
         return nullptr;

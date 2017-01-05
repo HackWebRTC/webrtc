@@ -27,7 +27,8 @@ class RtpDataEngine : public DataEngineInterface {
  public:
   RtpDataEngine();
 
-  virtual DataMediaChannel* CreateChannel(const MediaConfig& config);
+  virtual DataMediaChannel* CreateChannel(DataChannelType data_channel_type,
+                                          const MediaConfig& config);
 
   virtual const std::vector<DataCodec>& data_codecs() {
     return data_codecs_;

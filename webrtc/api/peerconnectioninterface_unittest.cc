@@ -35,7 +35,7 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/fakevideocapturer.h"
-#include "webrtc/media/sctp/sctptransportinternal.h"
+#include "webrtc/media/sctp/sctpdataengine.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/mediasession.h"
