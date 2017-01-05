@@ -150,6 +150,7 @@ if (rtc_include_tests) {
       "base/fakeportallocator.h",
       "base/faketransportcontroller.h",
       "base/jseptransport_unittest.cc",
+      "base/mockicetransport.h",
       "base/p2ptransportchannel_unittest.cc",
       "base/port_unittest.cc",
       "base/portallocator_unittest.cc",
