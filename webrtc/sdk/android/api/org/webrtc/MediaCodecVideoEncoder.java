@@ -53,6 +53,9 @@ public class MediaCodecVideoEncoder {
   private static final double BITRATE_CORRECTION_MAX_SCALE = 2;
   // Amount of correction steps to reach correction maximum scale.
   private static final int BITRATE_CORRECTION_STEPS = 10;
+  // Forced key frame interval - used to reduce color distortions on Qualcomm platform.
+  private static final long QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_M_MS = 25000;
+  private static final long QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_N_MS = 15000;
 
   // Active running encoder instance. Set in initEncode() (called from native code)
   // and reset to null in release() call.
@@ -160,6 +163,11 @@ public class MediaCodecVideoEncoder {
   private int targetBitrateBps;
   private int targetFps;
 
+  // Interval in ms to force key frame generation. Used to reduce the time of color distortions
+  // happened sometime when using Qualcomm video encoder.
+  private long forcedKeyFrameMs;
+  private long lastKeyFrameMs;
+
   // SPS and PPS NALs (Config frame) for H.264.
   private ByteBuffer configData = null;
 
@@ -198,6 +206,14 @@ public class MediaCodecVideoEncoder {
         && (findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedColorList) != null);
   }
 
+  public static EncoderProperties vp8HwEncoderProperties() {
+    if (hwEncoderDisabledTypes.contains(VP8_MIME_TYPE)) {
+      return null;
+    } else {
+      return findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedColorList);
+    }
+  }
+
   public static boolean isVp9HwSupported() {
     return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE)
         && (findHwEncoder(VP9_MIME_TYPE, vp9HwList, supportedColorList) != null);
@@ -224,7 +240,7 @@ public class MediaCodecVideoEncoder {
   }
 
   // Helper struct for findHwEncoder() below.
-  private static class EncoderProperties {
+  public static class EncoderProperties {
     public EncoderProperties(
         String codecName, int colorFormat, BitrateAdjustmentType bitrateAdjustmentType) {
       this.codecName = codecName;
@@ -395,8 +411,19 @@ public class MediaCodecVideoEncoder {
     } else {
       fps = Math.min(fps, MAXIMUM_INITIAL_FPS);
     }
+
+    forcedKeyFrameMs = 0;
+    lastKeyFrameMs = -1;
+    if (properties.codecName.startsWith(qcomVp8HwProperties.codecPrefix)) {
+      if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+        forcedKeyFrameMs = QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_M_MS;
+      } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
+        forcedKeyFrameMs = QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_N_MS;
+      }
+    }
+
     Logging.d(TAG, "Color format: " + colorFormat + ". Bitrate adjustment: " + bitrateAdjustmentType
-            + ". Initial fps: " + fps);
+            + ". Key frame interval: " + forcedKeyFrameMs + " . Initial fps: " + fps);
     targetBitrateBps = 1000 * kbps;
     targetFps = fps;
     bitrateAccumulatorMax = targetBitrateBps / 8.0;
@@ -445,20 +472,38 @@ public class MediaCodecVideoEncoder {
     return inputBuffers;
   }
 
+  void checkKeyFrameRequired(boolean requestedKeyFrame, long presentationTimestampUs) {
+    long presentationTimestampMs = (presentationTimestampUs + 500) / 1000;
+    if (lastKeyFrameMs < 0) {
+      lastKeyFrameMs = presentationTimestampMs;
+    }
+    boolean forcedKeyFrame = false;
+    if (!requestedKeyFrame && forcedKeyFrameMs > 0
+        && presentationTimestampMs > lastKeyFrameMs + forcedKeyFrameMs) {
+      forcedKeyFrame = true;
+    }
+    if (requestedKeyFrame || forcedKeyFrame) {
+      // Ideally MediaCodec would honor BUFFER_FLAG_SYNC_FRAME so we could
+      // indicate this in queueInputBuffer() below and guarantee _this_ frame
+      // be encoded as a key frame, but sadly that flag is ignored.  Instead,
+      // we request a key frame "soon".
+      if (requestedKeyFrame) {
+        Logging.d(TAG, "Sync frame request");
+      } else {
+        Logging.d(TAG, "Sync frame forced");
+      }
+      Bundle b = new Bundle();
+      b.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
+      mediaCodec.setParameters(b);
+      lastKeyFrameMs = presentationTimestampMs;
+    }
+  }
+
   boolean encodeBuffer(
       boolean isKeyframe, int inputBuffer, int size, long presentationTimestampUs) {
     checkOnMediaCodecThread();
     try {
-      if (isKeyframe) {
-        // Ideally MediaCodec would honor BUFFER_FLAG_SYNC_FRAME so we could
-        // indicate this in queueInputBuffer() below and guarantee _this_ frame
-        // be encoded as a key frame, but sadly that flag is ignored.  Instead,
-        // we request a key frame "soon".
-        Logging.d(TAG, "Sync frame request");
-        Bundle b = new Bundle();
-        b.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
-        mediaCodec.setParameters(b);
-      }
+      checkKeyFrameRequired(isKeyframe, presentationTimestampUs);
       mediaCodec.queueInputBuffer(inputBuffer, 0, size, presentationTimestampUs, 0);
       return true;
     } catch (IllegalStateException e) {
@@ -471,12 +516,7 @@ public class MediaCodecVideoEncoder {
       long presentationTimestampUs) {
     checkOnMediaCodecThread();
     try {
-      if (isKeyframe) {
-        Logging.d(TAG, "Sync frame request");
-        Bundle b = new Bundle();
-        b.putInt(MediaCodec.PARAMETER_KEY_REQUEST_SYNC_FRAME, 0);
-        mediaCodec.setParameters(b);
-      }
+      checkKeyFrameRequired(isKeyframe, presentationTimestampUs);
       eglBase.makeCurrent();
       // TODO(perkj): glClear() shouldn't be necessary since every pixel is covered anyway,
       // but it's a workaround for bug webrtc:5147.
