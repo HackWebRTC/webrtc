@@ -143,12 +143,13 @@ rtc_static_library("rtc_media") {
     "engine/webrtcvoe.h",
     "engine/webrtcvoiceengine.cc",
     "engine/webrtcvoiceengine.h",
+    "sctp/sctptransportinternal.h",
   ]
 
   if (rtc_enable_sctp) {
     sources += [
-      "sctp/sctpdataengine.cc",
-      "sctp/sctpdataengine.h",
+      "sctp/sctptransport.cc",
+      "sctp/sctptransport.h",
     ]
   }
 
@@ -346,7 +347,7 @@ if (rtc_include_tests) {
     ]
 
     if (rtc_enable_sctp) {
-      sources += [ "sctp/sctpdataengine_unittest.cc" ]
+      sources += [ "sctp/sctptransport_unittest.cc" ]
     }
 
     configs += [ ":rtc_media_unittests_config" ]

@@ -1077,8 +1077,11 @@ enum DataMessageType {
 // signal fires, on up the chain.
 struct ReceiveDataParams {
   // The in-packet stream indentifier.
-  // For SCTP, this is really SID, not SSRC.
-  uint32_t ssrc;
+  // RTP data channels use SSRCs, SCTP data channels use SIDs.
+  union {
+    uint32_t ssrc;
+    int sid;
+  };
   // The type of message (binary, text, or control).
   DataMessageType type;
   // A per-stream value incremented per packet in the stream.
@@ -1086,18 +1089,16 @@ struct ReceiveDataParams {
   // A per-stream value monotonically increasing with time.
   int timestamp;
 
-  ReceiveDataParams() :
-      ssrc(0),
-      type(DMT_TEXT),
-      seq_num(0),
-      timestamp(0) {
-  }
+  ReceiveDataParams() : sid(0), type(DMT_TEXT), seq_num(0), timestamp(0) {}
 };
 
 struct SendDataParams {
   // The in-packet stream indentifier.
-  // For SCTP, this is really SID, not SSRC.
-  uint32_t ssrc;
+  // RTP data channels use SSRCs, SCTP data channels use SIDs.
+  union {
+    uint32_t ssrc;
+    int sid;
+  };
   // The type of message (binary, text, or control).
   DataMessageType type;
 
@@ -1116,15 +1117,14 @@ struct SendDataParams {
   // is supported, not both at the same time.
   int max_rtx_ms;
 
-  SendDataParams() :
-      ssrc(0),
-      type(DMT_TEXT),
-      // TODO(pthatcher): Make these true by default?
-      ordered(false),
-      reliable(false),
-      max_rtx_count(0),
-      max_rtx_ms(0) {
-  }
+  SendDataParams()
+      : sid(0),
+        type(DMT_TEXT),
+        // TODO(pthatcher): Make these true by default?
+        ordered(false),
+        reliable(false),
+        max_rtx_count(0),
+        max_rtx_ms(0) {}
 };
 
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
@@ -1183,8 +1183,6 @@ class DataMediaChannel : public MediaChannel {
   // Signal when the media channel is ready to send the stream. Arguments are:
   //     writable(bool)
   sigslot::signal1<bool> SignalReadyToSend;
-  // Signal for notifying that the remote side has closed the DataChannel.
-  sigslot::signal1<uint32_t> SignalStreamClosedRemotely;
 };
 
 }  // namespace cricket

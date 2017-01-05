@@ -84,14 +84,14 @@ class VideoTraits : public Traits<cricket::VideoChannel,
                                   cricket::VideoMediaInfo,
                                   cricket::VideoOptions> {};
 
-class DataTraits : public Traits<cricket::DataChannel,
+class DataTraits : public Traits<cricket::RtpDataChannel,
                                  cricket::FakeDataMediaChannel,
                                  cricket::DataContentDescription,
                                  cricket::DataCodec,
                                  cricket::DataMediaInfo,
                                  cricket::DataOptions> {};
 
-// Base class for Voice/Video/DataChannel tests
+// Base class for Voice/Video/RtpDataChannel tests
 template<class T>
 class ChannelTest : public testing::Test, public sigslot::has_slots<> {
  public:
@@ -3288,32 +3288,32 @@ TEST_F(VideoChannelDoubleThreadTest, CanChangeMaxBitrate) {
   Base::CanChangeMaxBitrate();
 }
 
-// DataChannelSingleThreadTest
-class DataChannelSingleThreadTest : public ChannelTest<DataTraits> {
+// RtpDataChannelSingleThreadTest
+class RtpDataChannelSingleThreadTest : public ChannelTest<DataTraits> {
  public:
   typedef ChannelTest<DataTraits> Base;
-  DataChannelSingleThreadTest()
+  RtpDataChannelSingleThreadTest()
       : Base(true, kDataPacket, kRtcpReport, NetworkIsWorker::Yes) {}
 };
 
-// DataChannelDoubleThreadTest
-class DataChannelDoubleThreadTest : public ChannelTest<DataTraits> {
+// RtpDataChannelDoubleThreadTest
+class RtpDataChannelDoubleThreadTest : public ChannelTest<DataTraits> {
  public:
   typedef ChannelTest<DataTraits> Base;
-  DataChannelDoubleThreadTest()
+  RtpDataChannelDoubleThreadTest()
       : Base(true, kDataPacket, kRtcpReport, NetworkIsWorker::No) {}
 };
 
 // Override to avoid engine channel parameter.
 template <>
-cricket::DataChannel* ChannelTest<DataTraits>::CreateChannel(
+cricket::RtpDataChannel* ChannelTest<DataTraits>::CreateChannel(
     rtc::Thread* worker_thread,
     rtc::Thread* network_thread,
     cricket::MediaEngineInterface* engine,
     cricket::FakeDataMediaChannel* ch,
     cricket::TransportController* transport_controller,
     int flags) {
-  cricket::DataChannel* channel = new cricket::DataChannel(
+  cricket::RtpDataChannel* channel = new cricket::RtpDataChannel(
       worker_thread, network_thread, ch, transport_controller, cricket::CN_DATA,
       (flags & RTCP) != 0, (flags & SECURE) != 0);
   rtc::CryptoOptions crypto_options;
@@ -3362,136 +3362,136 @@ void ChannelTest<DataTraits>::AddLegacyStreamInContent(
   data->AddLegacyStream(ssrc);
 }
 
-TEST_F(DataChannelSingleThreadTest, TestInit) {
+TEST_F(RtpDataChannelSingleThreadTest, TestInit) {
   Base::TestInit();
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
 }
 
-TEST_F(DataChannelSingleThreadTest, TestDeinit) {
+TEST_F(RtpDataChannelSingleThreadTest, TestDeinit) {
   Base::TestDeinit();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestSetContents) {
+TEST_F(RtpDataChannelSingleThreadTest, TestSetContents) {
   Base::TestSetContents();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestSetContentsNullOffer) {
+TEST_F(RtpDataChannelSingleThreadTest, TestSetContentsNullOffer) {
   Base::TestSetContentsNullOffer();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestSetContentsRtcpMux) {
+TEST_F(RtpDataChannelSingleThreadTest, TestSetContentsRtcpMux) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestSetRemoteContentUpdate) {
+TEST_F(RtpDataChannelSingleThreadTest, TestSetRemoteContentUpdate) {
   Base::TestSetRemoteContentUpdate();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestStreams) {
+TEST_F(RtpDataChannelSingleThreadTest, TestStreams) {
   Base::TestStreams();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestUpdateStreamsInLocalContent) {
+TEST_F(RtpDataChannelSingleThreadTest, TestUpdateStreamsInLocalContent) {
   Base::TestUpdateStreamsInLocalContent();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestUpdateRemoteStreamsInContent) {
+TEST_F(RtpDataChannelSingleThreadTest, TestUpdateRemoteStreamsInContent) {
   Base::TestUpdateStreamsInRemoteContent();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestChangeStreamParamsInContent) {
+TEST_F(RtpDataChannelSingleThreadTest, TestChangeStreamParamsInContent) {
   Base::TestChangeStreamParamsInContent();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestPlayoutAndSendingStates) {
+TEST_F(RtpDataChannelSingleThreadTest, TestPlayoutAndSendingStates) {
   Base::TestPlayoutAndSendingStates();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestMediaContentDirection) {
+TEST_F(RtpDataChannelSingleThreadTest, TestMediaContentDirection) {
   Base::TestMediaContentDirection();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestCallSetup) {
+TEST_F(RtpDataChannelSingleThreadTest, TestCallSetup) {
   Base::TestCallSetup();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestCallTeardownRtcpMux) {
+TEST_F(RtpDataChannelSingleThreadTest, TestCallTeardownRtcpMux) {
   Base::TestCallTeardownRtcpMux();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestOnReadyToSend) {
+TEST_F(RtpDataChannelSingleThreadTest, TestOnReadyToSend) {
   Base::TestOnReadyToSend();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestOnReadyToSendWithRtcpMux) {
+TEST_F(RtpDataChannelSingleThreadTest, TestOnReadyToSendWithRtcpMux) {
   Base::TestOnReadyToSendWithRtcpMux();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendRtpToRtp) {
+TEST_F(RtpDataChannelSingleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendNoRtcpToNoRtcp) {
+TEST_F(RtpDataChannelSingleThreadTest, SendNoRtcpToNoRtcp) {
   Base::SendNoRtcpToNoRtcp();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendNoRtcpToRtcp) {
+TEST_F(RtpDataChannelSingleThreadTest, SendNoRtcpToRtcp) {
   Base::SendNoRtcpToRtcp();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendRtcpToNoRtcp) {
+TEST_F(RtpDataChannelSingleThreadTest, SendRtcpToNoRtcp) {
   Base::SendRtcpToNoRtcp();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendRtcpToRtcp) {
+TEST_F(RtpDataChannelSingleThreadTest, SendRtcpToRtcp) {
   Base::SendRtcpToRtcp();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendRtcpMuxToRtcp) {
+TEST_F(RtpDataChannelSingleThreadTest, SendRtcpMuxToRtcp) {
   Base::SendRtcpMuxToRtcp();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendRtcpMuxToRtcpMux) {
+TEST_F(RtpDataChannelSingleThreadTest, SendRtcpMuxToRtcpMux) {
   Base::SendRtcpMuxToRtcpMux();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendEarlyRtcpMuxToRtcp) {
+TEST_F(RtpDataChannelSingleThreadTest, SendEarlyRtcpMuxToRtcp) {
   Base::SendEarlyRtcpMuxToRtcp();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendEarlyRtcpMuxToRtcpMux) {
+TEST_F(RtpDataChannelSingleThreadTest, SendEarlyRtcpMuxToRtcpMux) {
   Base::SendEarlyRtcpMuxToRtcpMux();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendSrtpToSrtp) {
+TEST_F(RtpDataChannelSingleThreadTest, SendSrtpToSrtp) {
   Base::SendSrtpToSrtp();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendSrtpToRtp) {
+TEST_F(RtpDataChannelSingleThreadTest, SendSrtpToRtp) {
   Base::SendSrtpToSrtp();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendSrtcpMux) {
+TEST_F(RtpDataChannelSingleThreadTest, SendSrtcpMux) {
   Base::SendSrtpToSrtp(RTCP_MUX, RTCP_MUX);
 }
 
-TEST_F(DataChannelSingleThreadTest, SendRtpToRtpOnThread) {
+TEST_F(RtpDataChannelSingleThreadTest, SendRtpToRtpOnThread) {
   Base::SendRtpToRtpOnThread();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendSrtpToSrtpOnThread) {
+TEST_F(RtpDataChannelSingleThreadTest, SendSrtpToSrtpOnThread) {
   Base::SendSrtpToSrtpOnThread();
 }
 
-TEST_F(DataChannelSingleThreadTest, SendWithWritabilityLoss) {
+TEST_F(RtpDataChannelSingleThreadTest, SendWithWritabilityLoss) {
   Base::SendWithWritabilityLoss();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestMediaMonitor) {
+TEST_F(RtpDataChannelSingleThreadTest, TestMediaMonitor) {
   Base::TestMediaMonitor();
 }
 
-TEST_F(DataChannelSingleThreadTest, TestSendData) {
+TEST_F(RtpDataChannelSingleThreadTest, TestSendData) {
   CreateChannels(0, 0);
   EXPECT_TRUE(SendInitiate());
   EXPECT_TRUE(SendAccept());
@@ -3506,136 +3506,136 @@ TEST_F(DataChannelSingleThreadTest, TestSendData) {
   EXPECT_EQ("foo", media_channel1_->last_sent_data());
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestInit) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestInit) {
   Base::TestInit();
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestDeinit) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestDeinit) {
   Base::TestDeinit();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestSetContents) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestSetContents) {
   Base::TestSetContents();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestSetContentsNullOffer) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestSetContentsNullOffer) {
   Base::TestSetContentsNullOffer();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestSetContentsRtcpMux) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestSetContentsRtcpMux) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestSetRemoteContentUpdate) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestSetRemoteContentUpdate) {
   Base::TestSetRemoteContentUpdate();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestStreams) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestStreams) {
   Base::TestStreams();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestUpdateStreamsInLocalContent) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestUpdateStreamsInLocalContent) {
   Base::TestUpdateStreamsInLocalContent();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestUpdateRemoteStreamsInContent) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestUpdateRemoteStreamsInContent) {
   Base::TestUpdateStreamsInRemoteContent();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestChangeStreamParamsInContent) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestChangeStreamParamsInContent) {
   Base::TestChangeStreamParamsInContent();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestPlayoutAndSendingStates) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestPlayoutAndSendingStates) {
   Base::TestPlayoutAndSendingStates();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestMediaContentDirection) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestMediaContentDirection) {
   Base::TestMediaContentDirection();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestCallSetup) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestCallSetup) {
   Base::TestCallSetup();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestCallTeardownRtcpMux) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestCallTeardownRtcpMux) {
   Base::TestCallTeardownRtcpMux();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestOnReadyToSend) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestOnReadyToSend) {
   Base::TestOnReadyToSend();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestOnReadyToSendWithRtcpMux) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestOnReadyToSendWithRtcpMux) {
   Base::TestOnReadyToSendWithRtcpMux();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendRtpToRtp) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendNoRtcpToNoRtcp) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendNoRtcpToNoRtcp) {
   Base::SendNoRtcpToNoRtcp();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendNoRtcpToRtcp) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendNoRtcpToRtcp) {
   Base::SendNoRtcpToRtcp();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendRtcpToNoRtcp) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendRtcpToNoRtcp) {
   Base::SendRtcpToNoRtcp();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendRtcpToRtcp) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendRtcpToRtcp) {
   Base::SendRtcpToRtcp();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendRtcpMuxToRtcp) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendRtcpMuxToRtcp) {
   Base::SendRtcpMuxToRtcp();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendRtcpMuxToRtcpMux) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendRtcpMuxToRtcpMux) {
   Base::SendRtcpMuxToRtcpMux();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendEarlyRtcpMuxToRtcp) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendEarlyRtcpMuxToRtcp) {
   Base::SendEarlyRtcpMuxToRtcp();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendEarlyRtcpMuxToRtcpMux) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendEarlyRtcpMuxToRtcpMux) {
   Base::SendEarlyRtcpMuxToRtcpMux();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendSrtpToSrtp) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendSrtpToSrtp) {
   Base::SendSrtpToSrtp();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendSrtpToRtp) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendSrtpToRtp) {
   Base::SendSrtpToSrtp();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendSrtcpMux) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendSrtcpMux) {
   Base::SendSrtpToSrtp(RTCP_MUX, RTCP_MUX);
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendRtpToRtpOnThread) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendRtpToRtpOnThread) {
   Base::SendRtpToRtpOnThread();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendSrtpToSrtpOnThread) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendSrtpToSrtpOnThread) {
   Base::SendSrtpToSrtpOnThread();
 }
 
-TEST_F(DataChannelDoubleThreadTest, SendWithWritabilityLoss) {
+TEST_F(RtpDataChannelDoubleThreadTest, SendWithWritabilityLoss) {
   Base::SendWithWritabilityLoss();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestMediaMonitor) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestMediaMonitor) {
   Base::TestMediaMonitor();
 }
 
-TEST_F(DataChannelDoubleThreadTest, TestSendData) {
+TEST_F(RtpDataChannelDoubleThreadTest, TestSendData) {
   CreateChannels(0, 0);
   EXPECT_TRUE(SendInitiate());
   EXPECT_TRUE(SendAccept());

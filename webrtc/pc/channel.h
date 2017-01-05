@@ -149,9 +149,9 @@ class BaseChannel
     return remote_streams_;
   }
 
-  sigslot::signal2<BaseChannel*, bool> SignalDtlsSetupFailure;
-  void SignalDtlsSetupFailure_n(bool rtcp);
-  void SignalDtlsSetupFailure_s(bool rtcp);
+  sigslot::signal2<BaseChannel*, bool> SignalDtlsSrtpSetupFailure;
+  void SignalDtlsSrtpSetupFailure_n(bool rtcp);
+  void SignalDtlsSrtpSetupFailure_s(bool rtcp);
 
   // Used for latency measurements.
   sigslot::signal1<BaseChannel*> SignalFirstPacketReceived;
@@ -261,7 +261,7 @@ class BaseChannel
                   rtc::CopyOnWriteBuffer* packet,
                   const rtc::PacketOptions& options);
 
-  virtual bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet);
+  bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet);
   void HandlePacket(bool rtcp, rtc::CopyOnWriteBuffer* packet,
                     const rtc::PacketTime& packet_time);
   void OnPacketReceived(bool rtcp,
@@ -282,7 +282,7 @@ class BaseChannel
   bool RemoveRecvStream_w(uint32_t ssrc);
   bool AddSendStream_w(const StreamParams& sp);
   bool RemoveSendStream_w(uint32_t ssrc);
-  virtual bool ShouldSetupDtlsSrtp_n() const;
+  bool ShouldSetupDtlsSrtp_n() const;
   // Do the DTLS key expansion and impose it on the SRTP/SRTCP filters.
   // |rtcp_channel| indicates whether to set up the RTP or RTCP filter.
   bool SetupDtlsSrtp_n(bool rtcp_channel);
@@ -615,17 +615,17 @@ class VideoChannel : public BaseChannel {
   VideoRecvParameters last_recv_params_;
 };
 
-// DataChannel is a specialization for data.
-class DataChannel : public BaseChannel {
+// RtpDataChannel is a specialization for data.
+class RtpDataChannel : public BaseChannel {
  public:
-  DataChannel(rtc::Thread* worker_thread,
-              rtc::Thread* network_thread,
-              DataMediaChannel* media_channel,
-              TransportController* transport_controller,
-              const std::string& content_name,
-              bool rtcp,
-              bool srtp_required);
-  ~DataChannel();
+  RtpDataChannel(rtc::Thread* worker_thread,
+                 rtc::Thread* network_thread,
+                 DataMediaChannel* media_channel,
+                 TransportController* transport_controller,
+                 const std::string& content_name,
+                 bool rtcp,
+                 bool srtp_required);
+  ~RtpDataChannel();
   bool Init_w(const std::string* bundle_transport_name);
 
   virtual bool SendData(const SendDataParams& params,
@@ -640,17 +640,16 @@ class DataChannel : public BaseChannel {
     return ready_to_send_data_;
   }
 
-  sigslot::signal2<DataChannel*, const DataMediaInfo&> SignalMediaMonitor;
-  sigslot::signal2<DataChannel*, const std::vector<ConnectionInfo>&>
+  sigslot::signal2<RtpDataChannel*, const DataMediaInfo&> SignalMediaMonitor;
+  sigslot::signal2<RtpDataChannel*, const std::vector<ConnectionInfo>&>
       SignalConnectionMonitor;
-  sigslot::signal3<DataChannel*, const ReceiveDataParams&,
-      const rtc::CopyOnWriteBuffer&> SignalDataReceived;
+
+  sigslot::signal2<const ReceiveDataParams&, const rtc::CopyOnWriteBuffer&>
+      SignalDataReceived;
   // Signal for notifying when the channel becomes ready to send data.
   // That occurs when the channel is enabled, the transport is writable,
   // both local and remote descriptions are set, and the channel is unblocked.
   sigslot::signal1<bool> SignalReadyToSendData;
-  // Signal for notifying that the remote side has closed the DataChannel.
-  sigslot::signal1<uint32_t> SignalStreamClosedRemotely;
   cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_DATA; }
 
  protected:
@@ -693,15 +692,9 @@ class DataChannel : public BaseChannel {
 
   // overrides from BaseChannel
   const ContentInfo* GetFirstContent(const SessionDescription* sdesc) override;
-  // If data_channel_type_ is DCT_NONE, set it.  Otherwise, check that
-  // it's the same as what was set previously.  Returns false if it's
-  // set to one type one type and changed to another type later.
-  bool SetDataChannelType(DataChannelType new_data_channel_type,
-                          std::string* error_desc);
-  // Same as SetDataChannelType, but extracts the type from the
-  // DataContentDescription.
-  bool SetDataChannelTypeFromContent(const DataContentDescription* content,
-                                     std::string* error_desc);
+  // Checks that data channel type is RTP.
+  bool CheckDataChannelTypeFromContent(const DataContentDescription* content,
+                                       std::string* error_desc);
   bool SetLocalContent_w(const MediaContentDescription* content,
                          ContentAction action,
                          std::string* error_desc) override;
@@ -709,7 +702,6 @@ class DataChannel : public BaseChannel {
                           ContentAction action,
                           std::string* error_desc) override;
   void UpdateMediaSendRecvState_w() override;
-  bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) override;
 
   void OnMessage(rtc::Message* pmsg) override;
   void GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const override;
@@ -718,18 +710,13 @@ class DataChannel : public BaseChannel {
       const std::vector<ConnectionInfo>& infos) override;
   void OnMediaMonitorUpdate(DataMediaChannel* media_channel,
                             const DataMediaInfo& info);
-  bool ShouldSetupDtlsSrtp_n() const override;
   void OnDataReceived(
       const ReceiveDataParams& params, const char* data, size_t len);
   void OnDataChannelError(uint32_t ssrc, DataMediaChannel::Error error);
   void OnDataChannelReadyToSend(bool writable);
-  void OnStreamClosedRemotely(uint32_t sid);
 
   std::unique_ptr<DataMediaMonitor> media_monitor_;
-  // TODO(pthatcher): Make a separate SctpDataChannel and
-  // RtpDataChannel instead of using this.
-  DataChannelType data_channel_type_;
-  bool ready_to_send_data_;
+  bool ready_to_send_data_ = false;
 
   // Last DataSendParameters sent down to the media_channel() via
   // SetSendParameters.

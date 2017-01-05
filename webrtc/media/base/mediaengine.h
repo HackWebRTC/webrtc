@@ -171,8 +171,7 @@ enum DataChannelType { DCT_NONE = 0, DCT_RTP = 1, DCT_SCTP = 2, DCT_QUIC = 3 };
 class DataEngineInterface {
  public:
   virtual ~DataEngineInterface() {}
-  virtual DataMediaChannel* CreateChannel(DataChannelType type,
-                                          const MediaConfig& config) = 0;
+  virtual DataMediaChannel* CreateChannel(const MediaConfig& config) = 0;
   virtual const std::vector<DataCodec>& data_codecs() = 0;
 };
 

@@ -20,11 +20,7 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/device.h"
-#include "webrtc/media/base/hybriddataengine.h"
 #include "webrtc/media/base/rtpdataengine.h"
-#ifdef HAVE_SCTP
-#include "webrtc/media/sctp/sctpdataengine.h"
-#endif
 #include "webrtc/pc/srtpfilter.h"
 
 namespace cricket {
@@ -33,11 +29,7 @@ namespace cricket {
 using rtc::Bind;
 
 static DataEngineInterface* ConstructDataEngine() {
-#ifdef HAVE_SCTP
-  return new HybridDataEngine(new RtpDataEngine(), new SctpDataEngine());
-#else
   return new RtpDataEngine();
-#endif
 }
 
 ChannelManager::ChannelManager(MediaEngineInterface* me,
@@ -344,73 +336,66 @@ void ChannelManager::DestroyVideoChannel_w(VideoChannel* video_channel) {
   delete video_channel;
 }
 
-DataChannel* ChannelManager::CreateDataChannel(
+RtpDataChannel* ChannelManager::CreateRtpDataChannel(
     webrtc::MediaControllerInterface* media_controller,
     TransportController* transport_controller,
     const std::string& content_name,
     const std::string* bundle_transport_name,
     bool rtcp,
-    bool srtp_required,
-    DataChannelType channel_type) {
-  return worker_thread_->Invoke<DataChannel*>(
-      RTC_FROM_HERE,
-      Bind(&ChannelManager::CreateDataChannel_w, this, media_controller,
-           transport_controller, content_name, bundle_transport_name, rtcp,
-           srtp_required, channel_type));
+    bool srtp_required) {
+  return worker_thread_->Invoke<RtpDataChannel*>(
+      RTC_FROM_HERE, Bind(&ChannelManager::CreateRtpDataChannel_w, this,
+                          media_controller, transport_controller, content_name,
+                          bundle_transport_name, rtcp, srtp_required));
 }
 
-DataChannel* ChannelManager::CreateDataChannel_w(
+RtpDataChannel* ChannelManager::CreateRtpDataChannel_w(
     webrtc::MediaControllerInterface* media_controller,
     TransportController* transport_controller,
     const std::string& content_name,
     const std::string* bundle_transport_name,
     bool rtcp,
-    bool srtp_required,
-    DataChannelType data_channel_type) {
+    bool srtp_required) {
   // This is ok to alloc from a thread other than the worker thread.
   ASSERT(initialized_);
   MediaConfig config;
   if (media_controller) {
     config = media_controller->config();
   }
-  DataMediaChannel* media_channel =
-      data_media_engine_->CreateChannel(data_channel_type, config);
+  DataMediaChannel* media_channel = data_media_engine_->CreateChannel(config);
   if (!media_channel) {
-    LOG(LS_WARNING) << "Failed to create data channel of type "
-                    << data_channel_type;
-    return NULL;
+    LOG(LS_WARNING) << "Failed to create RTP data channel.";
+    return nullptr;
   }
 
-  // Only RTP data channels need SRTP.
-  srtp_required = srtp_required && data_channel_type == DCT_RTP;
-  DataChannel* data_channel =
-      new DataChannel(worker_thread_, network_thread_, media_channel,
-                      transport_controller, content_name, rtcp, srtp_required);
+  RtpDataChannel* data_channel = new RtpDataChannel(
+      worker_thread_, network_thread_, media_channel, transport_controller,
+      content_name, rtcp, srtp_required);
   data_channel->SetCryptoOptions(crypto_options_);
   if (!data_channel->Init_w(bundle_transport_name)) {
     LOG(LS_WARNING) << "Failed to init data channel.";
     delete data_channel;
-    return NULL;
+    return nullptr;
   }
   data_channels_.push_back(data_channel);
   return data_channel;
 }
 
-void ChannelManager::DestroyDataChannel(DataChannel* data_channel) {
-  TRACE_EVENT0("webrtc", "ChannelManager::DestroyDataChannel");
+void ChannelManager::DestroyRtpDataChannel(RtpDataChannel* data_channel) {
+  TRACE_EVENT0("webrtc", "ChannelManager::DestroyRtpDataChannel");
   if (data_channel) {
     worker_thread_->Invoke<void>(
         RTC_FROM_HERE,
-        Bind(&ChannelManager::DestroyDataChannel_w, this, data_channel));
+        Bind(&ChannelManager::DestroyRtpDataChannel_w, this, data_channel));
   }
 }
 
-void ChannelManager::DestroyDataChannel_w(DataChannel* data_channel) {
-  TRACE_EVENT0("webrtc", "ChannelManager::DestroyDataChannel_w");
+void ChannelManager::DestroyRtpDataChannel_w(RtpDataChannel* data_channel) {
+  TRACE_EVENT0("webrtc", "ChannelManager::DestroyRtpDataChannel_w");
   // Destroy data channel.
   ASSERT(initialized_);
-  DataChannels::iterator it = std::find(data_channels_.begin(),
-      data_channels_.end(), data_channel);
+  RtpDataChannels::iterator it =
+      std::find(data_channels_.begin(), data_channels_.end(), data_channel);
   ASSERT(it != data_channels_.end());
   if (it == data_channels_.end())
     return;
