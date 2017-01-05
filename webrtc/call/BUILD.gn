@@ -75,4 +75,21 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
+
+  rtc_source_set("call_perf_tests") {
+    testonly = true
+    sources = [
+      "call_perf_tests.cc",
+      "rampup_tests.cc",
+      "rampup_tests.h",
+    ]
+    deps = [
+      "//testing/gtest",
+      "//webrtc/test:test_common",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }

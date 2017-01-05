@@ -462,38 +462,15 @@ if (rtc_include_tests) {
     testonly = true
     configs += [ ":rtc_unittests_config" ]
 
-    sources = [
-      "call/call_perf_tests.cc",
-      "call/rampup_tests.cc",
-      "call/rampup_tests.h",
-      "modules/audio_coding/codecs/opus/opus_complexity_unittest.cc",
-      "modules/audio_coding/neteq/test/neteq_performance_unittest.cc",
-      "modules/audio_processing/audio_processing_performance_unittest.cc",
-      "modules/audio_processing/level_controller/level_controller_complexity_unittest.cc",
-      "modules/audio_processing/residual_echo_detector_complexity_unittest.cc",
-      "modules/remote_bitrate_estimator/remote_bitrate_estimators_test.cc",
-      "video/full_stack_tests.cc",
-    ]
     deps = [
-      "modules/audio_coding:neteq_test_support",
-      "modules/audio_processing",
-      "modules/audio_processing:audioproc_test_utils",
-      "modules/remote_bitrate_estimator:bwe_simulator_lib",
-      "modules/rtp_rtcp",
-      "test:test_common",
+      "call:call_perf_tests",
+      "modules/audio_coding:audio_coding_perf_tests",
+      "modules/audio_processing:audio_processing_perf_tests",
+      "modules/remote_bitrate_estimator:remote_bitrate_estimator_perf_tests",
       "test:test_main",
-      "test:test_renderer",
+      "video:video_full_stack_tests",
       "video:video_quality_test",
-      "voice_engine",
-      "//testing/gmock",
-      "//testing/gtest",
     ]
-
-    if (rtc_enable_intelligibility_enhancer) {
-      defines = [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
-    } else {
-      defines = [ "WEBRTC_INTELLIGIBILITY_ENHANCER=0" ]
-    }
 
     data = webrtc_perf_tests_resources
     if (is_android) {
@@ -502,13 +479,6 @@ if (rtc_include_tests) {
     }
     if (is_ios) {
       deps += [ ":webrtc_perf_tests_bundle_data" ]
-    }
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-    if (rtc_use_h264) {
-      defines += [ "WEBRTC_USE_H264" ]
     }
   }
 
