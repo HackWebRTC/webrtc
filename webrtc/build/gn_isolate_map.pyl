@@ -95,4 +95,8 @@
     "label": "//webrtc:webrtc_nonparallel_tests",
     "type": "non_parallel_console_test_launcher",
   },
+  "xmllite_xmpp_unittests": {
+    "label": "//webrtc/libjingle:xmllite_xmpp_unittests",
+    "type": "console_test_launcher",
+  }
 }
