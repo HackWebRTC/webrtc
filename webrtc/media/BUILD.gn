@@ -54,7 +54,6 @@ rtc_static_library("rtc_media_base") {
     "base/codec.h",
     "base/cryptoparams.h",
     "base/device.h",
-    "base/hybriddataengine.h",
     "base/mediachannel.h",
     "base/mediaconstants.cc",
     "base/mediaconstants.h",
