@@ -25,3 +25,22 @@ rtc_static_library("audio_frame_operations") {
     "../../modules/audio_coding:audio_format_conversion",
   ]
 }
+
+if (rtc_include_tests) {
+  rtc_source_set("utility_tests") {
+    testonly = true
+    sources = [
+      "audio_frame_operations_unittest.cc",
+    ]
+    deps = [
+      ":audio_frame_operations",
+      "../../base:rtc_base_approved",
+      "../../test:test_support",
+      "//testing/gtest",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+}

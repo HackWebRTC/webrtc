@@ -514,31 +514,12 @@ if (rtc_include_tests) {
 
   rtc_test("webrtc_nonparallel_tests") {
     testonly = true
-    configs += [ ":rtc_unittests_config" ]
-    sources = [
-      "base/nullsocketserver_unittest.cc",
-      "base/physicalsocketserver_unittest.cc",
-      "base/socket_unittest.cc",
-      "base/socket_unittest.h",
-      "base/socketaddress_unittest.cc",
-      "base/virtualsocket_unittest.cc",
-    ]
     deps = [
-      "base:rtc_base",
-      "base:rtc_base_tests_utils",
-      "//testing/gtest",
+      "base:rtc_base_nonparallel_tests",
     ]
-    if (is_win) {
-      sources += [ "base/win32socketserver_unittest.cc" ]
-    }
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]
       shard_timeout = 900
-    }
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 

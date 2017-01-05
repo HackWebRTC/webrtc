@@ -286,61 +286,6 @@ rtc_static_library("rtc_base_approved") {
   }
 }
 
-if (rtc_include_tests) {
-  rtc_source_set("rtc_base_approved_unittests") {
-    testonly = true
-    sources = [
-      "array_view_unittest.cc",
-      "atomicops_unittest.cc",
-      "base64_unittest.cc",
-      "basictypes_unittest.cc",
-      "bind_unittest.cc",
-      "bitbuffer_unittest.cc",
-      "buffer_unittest.cc",
-      "bufferqueue_unittest.cc",
-      "bytebuffer_unittest.cc",
-      "byteorder_unittest.cc",
-      "copyonwritebuffer_unittest.cc",
-      "criticalsection_unittest.cc",
-      "event_tracer_unittest.cc",
-      "event_unittest.cc",
-      "file_unittest.cc",
-      "function_view_unittest.cc",
-      "logging_unittest.cc",
-      "md5digest_unittest.cc",
-      "mod_ops_unittest.cc",
-      "onetimeevent_unittest.cc",
-      "optional_unittest.cc",
-      "pathutils_unittest.cc",
-      "platform_thread_unittest.cc",
-      "random_unittest.cc",
-      "rate_limiter_unittest.cc",
-      "rate_statistics_unittest.cc",
-      "ratetracker_unittest.cc",
-      "refcountedobject_unittest.cc",
-      "safe_compare_unittest.cc",
-      "stringencode_unittest.cc",
-      "stringutils_unittest.cc",
-      "swap_queue_unittest.cc",
-
-      # TODO(ronghuawu): Reenable this test.
-      # "systeminfo_unittest.cc",
-      "thread_annotations_unittest.cc",
-      "thread_checker_unittest.cc",
-      "timestampaligner_unittest.cc",
-      "timeutils_unittest.cc",
-    ]
-    deps = [
-      ":rtc_base_approved",
-      ":rtc_base_tests_utils",
-    ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-}
-
 config("enable_libevent_config") {
   defines = [ "WEBRTC_BUILD_LIBEVENT" ]
 }
@@ -394,25 +339,6 @@ rtc_static_library("rtc_task_queue") {
   }
 }
 
-if (rtc_include_tests) {
-  rtc_source_set("rtc_task_queue_unittests") {
-    testonly = true
-    sources = [
-      "sequenced_task_checker_unittest.cc",
-      "task_queue_unittest.cc",
-      "weak_ptr_unittest.cc",
-    ]
-    deps = [
-      ":rtc_base_tests_utils",
-      ":rtc_task_queue",
-    ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-}
-
 rtc_static_library("rtc_analytics") {
   sources = [
     "analytics/exp_filter.cc",
@@ -422,20 +348,6 @@ rtc_static_library("rtc_analytics") {
   deps = [
     ":rtc_base_approved",
   ]
-}
-
-if (rtc_include_tests) {
-  rtc_source_set("rtc_analytics_unittests") {
-    testonly = true
-    sources = [
-      "analytics/exp_filter_unittest.cc",
-      "analytics/percentile_filter_unittest.cc",
-    ]
-    deps = [
-      ":rtc_analytics",
-      ":rtc_base_tests_utils",
-    ]
-  }
 }
 
 config("rtc_base_warnings_config") {
@@ -775,7 +687,179 @@ rtc_static_library("rtc_base") {
   }
 }
 
+rtc_source_set("gtest_prod") {
+  sources = [
+    "gtest_prod_util.h",
+  ]
+}
+
 if (rtc_include_tests) {
+  config("rtc_base_tests_utils_exported_config") {
+    defines = [ "GTEST_RELATIVE_PATH" ]
+  }
+
+  config("rtc_base_tests_utils_warnings_config") {
+    if (is_win && is_clang) {
+      cflags = [
+        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6270
+        "-Wno-reorder",
+        "-Wno-sign-compare",
+      ]
+    }
+  }
+
+  rtc_source_set("rtc_base_tests_utils") {
+    testonly = true
+    sources = [
+      # Also use this as a convenient dumping ground for misc files that are
+      # included by multiple targets below.
+      "fakeclock.cc",
+      "fakeclock.h",
+      "fakenetwork.h",
+      "fakesslidentity.h",
+      "faketaskrunner.h",
+      "firewallsocketserver.cc",
+      "firewallsocketserver.h",
+      "gunit.h",
+      "natserver.cc",
+      "natserver.h",
+      "natsocketfactory.cc",
+      "natsocketfactory.h",
+      "nattypes.cc",
+      "nattypes.h",
+      "sigslottester.h",
+      "sigslottester.h.pump",
+      "testbase64.h",
+      "testechoserver.h",
+      "testutils.h",
+      "timedelta.h",
+      "unittest_main.cc",
+    ]
+    configs += [ ":rtc_base_tests_utils_warnings_config" ]
+    public_configs = [ ":rtc_base_tests_utils_exported_config" ]
+    deps = [
+      ":rtc_base",
+      "../test:field_trial",
+      "../test:test_support",
+    ]
+    public_deps = [
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  rtc_source_set("rtc_base_nonparallel_tests") {
+    testonly = true
+    sources = [
+      "nullsocketserver_unittest.cc",
+      "physicalsocketserver_unittest.cc",
+      "socket_unittest.cc",
+      "socket_unittest.h",
+      "socketaddress_unittest.cc",
+      "virtualsocket_unittest.cc",
+    ]
+    deps = [
+      ":rtc_base",
+      ":rtc_base_tests_utils",
+      "//testing/gtest",
+    ]
+    if (is_win) {
+      sources += [ "win32socketserver_unittest.cc" ]
+    }
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  rtc_source_set("rtc_base_approved_unittests") {
+    testonly = true
+    sources = [
+      "array_view_unittest.cc",
+      "atomicops_unittest.cc",
+      "base64_unittest.cc",
+      "basictypes_unittest.cc",
+      "bind_unittest.cc",
+      "bitbuffer_unittest.cc",
+      "buffer_unittest.cc",
+      "bufferqueue_unittest.cc",
+      "bytebuffer_unittest.cc",
+      "byteorder_unittest.cc",
+      "copyonwritebuffer_unittest.cc",
+      "criticalsection_unittest.cc",
+      "event_tracer_unittest.cc",
+      "event_unittest.cc",
+      "file_unittest.cc",
+      "function_view_unittest.cc",
+      "logging_unittest.cc",
+      "md5digest_unittest.cc",
+      "mod_ops_unittest.cc",
+      "onetimeevent_unittest.cc",
+      "optional_unittest.cc",
+      "pathutils_unittest.cc",
+      "platform_thread_unittest.cc",
+      "random_unittest.cc",
+      "rate_limiter_unittest.cc",
+      "rate_statistics_unittest.cc",
+      "ratetracker_unittest.cc",
+      "refcountedobject_unittest.cc",
+      "safe_compare_unittest.cc",
+      "stringencode_unittest.cc",
+      "stringutils_unittest.cc",
+      "swap_queue_unittest.cc",
+
+      # TODO(ronghuawu): Reenable this test.
+      # "systeminfo_unittest.cc",
+      "thread_annotations_unittest.cc",
+      "thread_checker_unittest.cc",
+      "timestampaligner_unittest.cc",
+      "timeutils_unittest.cc",
+    ]
+    deps = [
+      ":rtc_base_approved",
+      ":rtc_base_tests_utils",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  rtc_source_set("rtc_task_queue_unittests") {
+    testonly = true
+    sources = [
+      "sequenced_task_checker_unittest.cc",
+      "task_queue_unittest.cc",
+      "weak_ptr_unittest.cc",
+    ]
+    deps = [
+      ":rtc_base_tests_utils",
+      ":rtc_task_queue",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  rtc_source_set("rtc_analytics_unittests") {
+    testonly = true
+    sources = [
+      "analytics/exp_filter_unittest.cc",
+      "analytics/percentile_filter_unittest.cc",
+    ]
+    deps = [
+      ":rtc_analytics",
+      ":rtc_base_tests_utils",
+    ]
+  }
+
   config("rtc_base_unittests_config") {
     if (is_clang) {
       cflags = [ "-Wno-unused-const-variable" ]
@@ -839,73 +923,6 @@ if (rtc_include_tests) {
       ":rtc_base",
     ]
     configs += [ ":rtc_base_unittests_config" ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-}
-
-rtc_source_set("gtest_prod") {
-  sources = [
-    "gtest_prod_util.h",
-  ]
-}
-
-if (rtc_include_tests) {
-  config("rtc_base_tests_utils_exported_config") {
-    defines = [ "GTEST_RELATIVE_PATH" ]
-  }
-
-  config("rtc_base_tests_utils_warnings_config") {
-    if (is_win && is_clang) {
-      cflags = [
-        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6270
-        "-Wno-reorder",
-        "-Wno-sign-compare",
-      ]
-    }
-  }
-
-  rtc_source_set("rtc_base_tests_utils") {
-    testonly = true
-    sources = [
-      # Also use this as a convenient dumping ground for misc files that are
-      # included by multiple targets below.
-      "fakeclock.cc",
-      "fakeclock.h",
-      "fakenetwork.h",
-      "fakesslidentity.h",
-      "faketaskrunner.h",
-      "firewallsocketserver.cc",
-      "firewallsocketserver.h",
-      "gunit.h",
-      "natserver.cc",
-      "natserver.h",
-      "natsocketfactory.cc",
-      "natsocketfactory.h",
-      "nattypes.cc",
-      "nattypes.h",
-      "sigslottester.h",
-      "sigslottester.h.pump",
-      "testbase64.h",
-      "testechoserver.h",
-      "testutils.h",
-      "timedelta.h",
-      "unittest_main.cc",
-    ]
-    configs += [ ":rtc_base_tests_utils_warnings_config" ]
-    public_configs = [ ":rtc_base_tests_utils_exported_config" ]
-    deps = [
-      ":rtc_base",
-      "../test:field_trial",
-      "../test:test_support",
-    ]
-    public_deps = [
-      "//testing/gmock",
-      "//testing/gtest",
-    ]
-
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
