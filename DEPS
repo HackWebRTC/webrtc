@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'e2730358eadd0dc68d4da80bab44401c33ed6aac',
+  'chromium_revision': '98844111e848b9dcabad492f51e427b5df0e5e09',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -38,7 +38,7 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + 'b70310ff12178ed53288f3985ad61dab1d91b14e',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'bdf7c72757f08a7893e482474ff32414b99898a5',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + '9cde9c94fc100d67d4e36e44351bec2a09ab09af',
   'src/buildtools':
@@ -50,7 +50,7 @@ deps = {
   'src/testing/gmock':
     Var('chromium_git') + '/external/googlemock.git' + '@' + '0421b6f358139f02e102c9c332ce19a33faf75be', # from svn revision 566
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'c8621a57c953c4b2b76acc009f71d75cb5984517',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '810708495fc93d6506cbec91f24d94003f922e54',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -85,7 +85,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'c734c51eb95a36050ed589eec0e22e41a7bb02d3',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + 'adcc0a5882ee5e677123fbc1328db4d4754fef39',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'e7079f0e0e14108ab0dba58728ff219637458563',
    'src/tools/swarming_client':
