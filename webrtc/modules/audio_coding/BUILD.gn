@@ -1136,27 +1136,6 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("audio_coding_perf_tests") {
-    testonly = true
-    sources = [
-      "codecs/opus/opus_complexity_unittest.cc",
-      "neteq/test/neteq_performance_unittest.cc",
-    ]
-    deps = [
-      ":neteq_test_support",
-      ":neteq_unittest_tools",
-      ":webrtc_opus",
-      "../..:webrtc_common",
-      "../../base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
-      "../../test:test_support",
-    ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-
   rtc_source_set("acm_receive_test") {
     testonly = true
     sources = [
