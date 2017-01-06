@@ -414,7 +414,8 @@ public class MediaCodecVideoEncoder {
 
     forcedKeyFrameMs = 0;
     lastKeyFrameMs = -1;
-    if (properties.codecName.startsWith(qcomVp8HwProperties.codecPrefix)) {
+    if (type == VideoCodecType.VIDEO_CODEC_VP8
+        && properties.codecName.startsWith(qcomVp8HwProperties.codecPrefix)) {
       if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
         forcedKeyFrameMs = QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_M_MS;
       } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
