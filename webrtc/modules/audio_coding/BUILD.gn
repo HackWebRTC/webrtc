@@ -936,14 +936,6 @@ rtc_static_library("audio_network_adaptor") {
   }
 }
 
-config("neteq_config") {
-  include_dirs = [
-    # Need Opus header files for the audio classifier.
-    "//third_party/opus/src/celt",
-    "//third_party/opus/src/src",
-  ]
-}
-
 rtc_static_library("neteq") {
   # TODO(kjellander): Remove (bugs.webrtc.org/6828)
   # Cyclic dependency with :audio_coding if enabled.
@@ -952,8 +944,6 @@ rtc_static_library("neteq") {
   sources = [
     "neteq/accelerate.cc",
     "neteq/accelerate.h",
-    "neteq/audio_classifier.cc",
-    "neteq/audio_classifier.h",
     "neteq/audio_decoder_impl.cc",
     "neteq/audio_decoder_impl.h",
     "neteq/audio_multi_vector.cc",
@@ -1024,8 +1014,6 @@ rtc_static_library("neteq") {
     "neteq/timestamp_scaler.cc",
     "neteq/timestamp_scaler.h",
   ]
-
-  public_configs = [ ":neteq_config" ]
 
   deps = [
     ":audio_decoder_factory_interface",
@@ -1109,7 +1097,6 @@ if (rtc_include_tests) {
       ":RTPtimeshift",
       ":acm_receive_test",
       ":acm_send_test",
-      ":audio_classifier_test",
       ":audio_codec_speed_tests",
       ":audio_decoder_unittests",
       ":audio_decoder_unittests",
@@ -1714,18 +1701,6 @@ if (rtc_include_tests) {
       "../../system_wrappers:system_wrappers_default",
       "../../test:test_support",
       "//third_party/gflags",
-    ]
-  }
-
-  rtc_executable("audio_classifier_test") {
-    testonly = true
-    sources = [
-      "neteq/test/audio_classifier_test.cc",
-    ]
-    deps = [
-      ":neteq",
-      ":webrtc_opus",
-      "../../system_wrappers:system_wrappers_default",
     ]
   }
 
