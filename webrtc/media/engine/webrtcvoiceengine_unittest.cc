@@ -1039,14 +1039,20 @@ TEST_F(WebRtcVoiceEngineTestFake,
   // for each encoding individually.
 
   EXPECT_TRUE(SetupSendStream());
-  // Setting RtpParameters with no encoding is expected to fail.
-  webrtc::RtpParameters parameters;
-  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrc1, parameters));
-  // Setting RtpParameters with exactly one encoding should succeed.
-  parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrc1, parameters));
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(kSsrc1);
   // Two or more encodings should result in failure.
   parameters.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrc1, parameters));
+  // Zero encodings should also fail.
+  parameters.encodings.clear();
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrc1, parameters));
+}
+
+// Changing the SSRC through RtpParameters is not allowed.
+TEST_F(WebRtcVoiceEngineTestFake, CannotSetSsrcInRtpSendParameters) {
+  EXPECT_TRUE(SetupSendStream());
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(kSsrc1);
+  parameters.encodings[0].ssrc = rtc::Optional<uint32_t>(0xdeadbeef);
   EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrc1, parameters));
 }
 

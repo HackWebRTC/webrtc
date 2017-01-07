@@ -1384,8 +1384,23 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     return rtp_parameters_;
   }
 
+  bool ValidateRtpParameters(const webrtc::RtpParameters& rtp_parameters) {
+    if (rtp_parameters.encodings.size() != 1) {
+      LOG(LS_ERROR)
+          << "Attempted to set RtpParameters without exactly one encoding";
+      return false;
+    }
+    if (rtp_parameters.encodings[0].ssrc != rtp_parameters_.encodings[0].ssrc) {
+      LOG(LS_ERROR) << "Attempted to set RtpParameters with modified SSRC";
+      return false;
+    }
+    return true;
+  }
+
   bool SetRtpParameters(const webrtc::RtpParameters& parameters) {
-    RTC_CHECK_EQ(1UL, parameters.encodings.size());
+    if (!ValidateRtpParameters(parameters)) {
+      return false;
+    }
     auto send_rate = ComputeSendBitrate(max_send_bitrate_bps_,
                                         parameters.encodings[0].max_bitrate_bps,
                                         send_codec_spec_.codec_inst);
@@ -1704,9 +1719,6 @@ bool WebRtcVoiceMediaChannel::SetRtpSendParameters(
     uint32_t ssrc,
     const webrtc::RtpParameters& parameters) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  if (!ValidateRtpParameters(parameters)) {
-    return false;
-  }
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
     LOG(LS_WARNING) << "Attempting to set RTP send parameters for stream "
@@ -1760,9 +1772,6 @@ bool WebRtcVoiceMediaChannel::SetRtpReceiveParameters(
     uint32_t ssrc,
     const webrtc::RtpParameters& parameters) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  if (!ValidateRtpParameters(parameters)) {
-    return false;
-  }
   auto it = recv_streams_.find(ssrc);
   if (it == recv_streams_.end()) {
     LOG(LS_WARNING) << "Attempting to set RTP receive parameters for stream "
@@ -1774,16 +1783,6 @@ bool WebRtcVoiceMediaChannel::SetRtpReceiveParameters(
   if (current_parameters != parameters) {
     LOG(LS_ERROR) << "Changing the RTP receive parameters is currently "
                   << "unsupported.";
-    return false;
-  }
-  return true;
-}
-
-bool WebRtcVoiceMediaChannel::ValidateRtpParameters(
-    const webrtc::RtpParameters& rtp_parameters) {
-  if (rtp_parameters.encodings.size() != 1) {
-    LOG(LS_ERROR)
-        << "Attempted to set RtpParameters without exactly one encoding";
     return false;
   }
   return true;

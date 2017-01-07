@@ -1560,6 +1560,11 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
 
   sp.GetPrimarySsrcs(&parameters_.config.rtp.ssrcs);
 
+  // ValidateStreamParams should prevent this from happening.
+  RTC_CHECK(!parameters_.config.rtp.ssrcs.empty());
+  rtp_parameters_.encodings[0].ssrc =
+      rtc::Optional<uint32_t>(parameters_.config.rtp.ssrcs[0]);
+
   // RTX.
   sp.GetFidSsrcs(parameters_.config.rtp.ssrcs,
                  &parameters_.config.rtp.rtx.ssrcs);
@@ -1862,9 +1867,14 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetRtpParameters() const {
 
 bool WebRtcVideoChannel2::WebRtcVideoSendStream::ValidateRtpParameters(
     const webrtc::RtpParameters& rtp_parameters) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   if (rtp_parameters.encodings.size() != 1) {
     LOG(LS_ERROR)
         << "Attempted to set RtpParameters without exactly one encoding";
+    return false;
+  }
+  if (rtp_parameters.encodings[0].ssrc != rtp_parameters_.encodings[0].ssrc) {
+    LOG(LS_ERROR) << "Attempted to set RtpParameters with modified SSRC";
     return false;
   }
   return true;

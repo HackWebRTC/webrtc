@@ -3661,15 +3661,20 @@ TEST_F(WebRtcVideoChannel2Test,
   // for each encoding individually.
 
   AddSendStream();
-  // Setting RtpParameters with no encoding is expected to fail.
   webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
-  parameters.encodings.clear();
-  EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
-  // Setting RtpParameters with exactly one encoding should succeed.
-  parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
   // Two or more encodings should result in failure.
   parameters.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
+  // Zero encodings should also fail.
+  parameters.encodings.clear();
+  EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
+}
+
+// Changing the SSRC through RtpParameters is not allowed.
+TEST_F(WebRtcVideoChannel2Test, CannotSetSsrcInRtpSendParameters) {
+  AddSendStream();
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  parameters.encodings[0].ssrc = rtc::Optional<uint32_t>(0xdeadbeef);
   EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
 }
 
@@ -3753,6 +3758,18 @@ TEST_F(WebRtcVideoChannel2Test, GetRtpSendParametersCodecs) {
             rtp_parameters.codecs[1]);
 }
 
+// Test that RtpParameters for send stream has one encoding and it has
+// the correct SSRC.
+TEST_F(WebRtcVideoChannel2Test, GetRtpSendParametersSsrc) {
+  AddSendStream();
+
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpSendParameters(last_ssrc_);
+  ASSERT_EQ(1u, rtp_parameters.encodings.size());
+  EXPECT_EQ(rtc::Optional<uint32_t>(last_ssrc_),
+            rtp_parameters.encodings[0].ssrc);
+}
+
 // Test that if we set/get parameters multiple times, we get the same results.
 TEST_F(WebRtcVideoChannel2Test, SetAndGetRtpSendParameters) {
   AddSendStream();
@@ -3826,7 +3843,7 @@ TEST_F(WebRtcVideoChannel2Test, DISABLED_GetRtpReceiveFmtpSprop) {
 
 // Test that RtpParameters for receive stream has one encoding and it has
 // the correct SSRC.
-TEST_F(WebRtcVideoChannel2Test, RtpEncodingParametersSsrcIsSet) {
+TEST_F(WebRtcVideoChannel2Test, GetRtpReceiveParametersSsrc) {
   AddRecvStream();
 
   webrtc::RtpParameters rtp_parameters =
