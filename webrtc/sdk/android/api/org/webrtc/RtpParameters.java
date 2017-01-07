@@ -21,6 +21,7 @@ public class RtpParameters {
     public boolean active = true;
     // A null value means "no maximum bitrate".
     public Integer maxBitrateBps;
+    public Long ssrc;
   }
 
   public static class Codec {

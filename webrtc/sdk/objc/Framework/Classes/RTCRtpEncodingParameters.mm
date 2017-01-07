@@ -14,6 +14,7 @@
 
 @synthesize isActive = _isActive;
 @synthesize maxBitrateBps = _maxBitrateBps;
+@synthesize ssrc = _ssrc;
 
 static const int kBitrateUnlimited = -1;
 
@@ -30,6 +31,9 @@ static const int kBitrateUnlimited = -1;
       _maxBitrateBps =
           [NSNumber numberWithInt:nativeParameters.max_bitrate_bps];
     }
+    if (nativeParameters.ssrc) {
+      _ssrc = [NSNumber numberWithUnsignedLong:*nativeParameters.ssrc];
+    }
   }
   return self;
 }
@@ -39,6 +43,9 @@ static const int kBitrateUnlimited = -1;
   parameters.active = _isActive;
   if (_maxBitrateBps != nil) {
     parameters.max_bitrate_bps = _maxBitrateBps.intValue;
+  }
+  if (_ssrc != nil) {
+    parameters.ssrc = rtc::Optional<uint32_t>(_ssrc.unsignedLongValue);
   }
   return parameters;
 }

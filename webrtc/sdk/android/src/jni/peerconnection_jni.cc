@@ -2335,8 +2335,12 @@ static void JavaRtpParametersToJsepRtpParameters(
       GetFieldID(jni, j_encoding_parameters_class, "active", "Z");
   jfieldID bitrate_id = GetFieldID(jni, j_encoding_parameters_class,
                                    "maxBitrateBps", "Ljava/lang/Integer;");
+  jfieldID ssrc_id =
+      GetFieldID(jni, j_encoding_parameters_class, "ssrc", "Ljava/lang/Long;");
   jclass j_integer_class = jni->FindClass("java/lang/Integer");
+  jclass j_long_class = jni->FindClass("java/lang/Long");
   jmethodID int_value_id = GetMethodID(jni, j_integer_class, "intValue", "()I");
+  jmethodID long_value_id = GetMethodID(jni, j_long_class, "longValue", "()J");
 
   for (jobject j_encoding_parameters : Iterable(jni, j_encodings)) {
     webrtc::RtpEncodingParameters encoding;
@@ -2349,6 +2353,13 @@ static void JavaRtpParametersToJsepRtpParameters(
       encoding.max_bitrate_bps = bitrate_value;
     } else {
       encoding.max_bitrate_bps = kBitrateUnlimited;
+    }
+    jobject j_ssrc =
+        GetNullableObjectField(jni, j_encoding_parameters, ssrc_id);
+    if (!IsNull(jni, j_ssrc)) {
+      jlong ssrc_value = jni->CallLongMethod(j_ssrc, long_value_id);
+      CHECK_EXCEPTION(jni) << "error during CallLongMethod";
+      encoding.ssrc = rtc::Optional<uint32_t>(ssrc_value);
     }
     parameters->encodings.push_back(encoding);
   }
@@ -2394,9 +2405,13 @@ static jobject JsepRtpParametersToJavaRtpParameters(
       GetFieldID(jni, encoding_class, "active", "Z");
   jfieldID bitrate_id =
       GetFieldID(jni, encoding_class, "maxBitrateBps", "Ljava/lang/Integer;");
+  jfieldID ssrc_id =
+      GetFieldID(jni, encoding_class, "ssrc", "Ljava/lang/Long;");
 
   jclass integer_class = jni->FindClass("java/lang/Integer");
+  jclass long_class = jni->FindClass("java/lang/Long");
   jmethodID integer_ctor = GetMethodID(jni, integer_class, "<init>", "(I)V");
+  jmethodID long_ctor = GetMethodID(jni, long_class, "<init>", "(J)V");
 
   for (const webrtc::RtpEncodingParameters& encoding : parameters.encodings) {
     jobject j_encoding_parameters =
@@ -2409,6 +2424,13 @@ static jobject JsepRtpParametersToJavaRtpParameters(
           jni->NewObject(integer_class, integer_ctor, encoding.max_bitrate_bps);
       CHECK_EXCEPTION(jni) << "error during NewObject";
       jni->SetObjectField(j_encoding_parameters, bitrate_id, j_bitrate_value);
+      CHECK_EXCEPTION(jni) << "error during SetObjectField";
+    }
+    if (encoding.ssrc) {
+      jobject j_ssrc_value = jni->NewObject(long_class, long_ctor,
+                                            static_cast<jlong>(*encoding.ssrc));
+      CHECK_EXCEPTION(jni) << "error during NewObject";
+      jni->SetObjectField(j_encoding_parameters, ssrc_id, j_ssrc_value);
       CHECK_EXCEPTION(jni) << "error during SetObjectField";
     }
     jboolean added = jni->CallBooleanMethod(j_encodings, encodings_add,
