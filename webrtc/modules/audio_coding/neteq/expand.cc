@@ -441,7 +441,7 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
   for (size_t i = 0; i < kNumCorrelationCandidates; ++i) {
     int32_t ratio;
     if (best_distortion[i] > 0) {
-      ratio = (best_correlation[i] << 16) / best_distortion[i];
+      ratio = (best_correlation[i] * (1 << 16)) / best_distortion[i];
     } else if (best_correlation[i] == 0) {
       ratio = 0;  // No correlation set result to zero.
     } else {
