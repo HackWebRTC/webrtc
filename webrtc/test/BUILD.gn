@@ -166,6 +166,10 @@ rtc_source_set("test_support") {
     deps += [ "//base:base" ]
   }
 
+  if (is_ios) {
+    deps += [ "//webrtc/sdk:rtc_sdk_common_objc" ]
+  }
+
   if (rtc_use_memcheck) {
     data = valgrind_webrtc_dependencies
   }
