@@ -58,8 +58,6 @@ char kLSanDefaultSuppressions[] =
 // https://code.google.com/p/webrtc/issues/detail?id=4149 for details.
 "leak:StartDNSLookup\n"
 // https://code.google.com/p/webrtc/issues/detail?id=2527
-"leak:buzz::FakeXmppClient::SendStanza\n"
-"leak:buzz::XmppTask::XmppTask\n"
 "leak:HangoutPubSubClientTest::HangoutPubSubClientTest\n"
 "leak:MucRoomConfigTaskTest::SetUp\n"
 "leak:MucRoomDiscoveryTaskTest::SetUp\n"

@@ -16,8 +16,6 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/p2p/base/transportchannel.h"
 
-namespace buzz { class XmlElement; }
-
 namespace webrtc {
 class MetricsObserverInterface;
 }
