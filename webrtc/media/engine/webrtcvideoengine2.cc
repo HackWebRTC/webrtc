@@ -1773,6 +1773,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
             .value_or(webrtc::kVideoCodecUnknown);
     parameters_.config.encoder_settings.internal_source =
         external_encoder_factory_->EncoderTypeHasInternalSource(type);
+  } else {
+    parameters_.config.encoder_settings.internal_source = false;
   }
   parameters_.config.rtp.ulpfec = codec_settings.ulpfec;
   parameters_.config.rtp.flexfec.flexfec_payload_type =
