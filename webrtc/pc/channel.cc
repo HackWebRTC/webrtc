@@ -69,7 +69,6 @@ enum {
   MSG_READYTOSENDDATA,
   MSG_DATARECEIVED,
   MSG_FIRSTPACKETRECEIVED,
-  MSG_STREAMCLOSEDREMOTELY,
 };
 
 // Value specified in RFC 5764.
@@ -931,16 +930,16 @@ void BaseChannel::ChannelWritable_n() {
   UpdateMediaSendRecvState();
 }
 
-void BaseChannel::SignalDtlsSetupFailure_n(bool rtcp) {
+void BaseChannel::SignalDtlsSrtpSetupFailure_n(bool rtcp) {
   RTC_DCHECK(network_thread_->IsCurrent());
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, signaling_thread(),
-      Bind(&BaseChannel::SignalDtlsSetupFailure_s, this, rtcp));
+      Bind(&BaseChannel::SignalDtlsSrtpSetupFailure_s, this, rtcp));
 }
 
-void BaseChannel::SignalDtlsSetupFailure_s(bool rtcp) {
+void BaseChannel::SignalDtlsSrtpSetupFailure_s(bool rtcp) {
   RTC_DCHECK(signaling_thread() == rtc::Thread::Current());
-  SignalDtlsSetupFailure(this, rtcp);
+  SignalDtlsSrtpSetupFailure(this, rtcp);
 }
 
 bool BaseChannel::SetDtlsSrtpCryptoSuites_n(TransportChannel* tc, bool rtcp) {
@@ -1061,13 +1060,13 @@ void BaseChannel::MaybeSetupDtlsSrtp_n() {
   }
 
   if (!SetupDtlsSrtp_n(false)) {
-    SignalDtlsSetupFailure_n(false);
+    SignalDtlsSrtpSetupFailure_n(false);
     return;
   }
 
   if (rtcp_transport_channel_) {
     if (!SetupDtlsSrtp_n(true)) {
-      SignalDtlsSetupFailure_n(true);
+      SignalDtlsSrtpSetupFailure_n(true);
       return;
     }
   }
@@ -2147,25 +2146,23 @@ void VideoChannel::GetSrtpCryptoSuites_n(
   GetSupportedVideoCryptoSuites(crypto_options(), crypto_suites);
 }
 
-DataChannel::DataChannel(rtc::Thread* worker_thread,
-                         rtc::Thread* network_thread,
-                         DataMediaChannel* media_channel,
-                         TransportController* transport_controller,
-                         const std::string& content_name,
-                         bool rtcp,
-                         bool srtp_required)
+RtpDataChannel::RtpDataChannel(rtc::Thread* worker_thread,
+                               rtc::Thread* network_thread,
+                               DataMediaChannel* media_channel,
+                               TransportController* transport_controller,
+                               const std::string& content_name,
+                               bool rtcp,
+                               bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   media_channel,
                   transport_controller,
                   content_name,
                   rtcp,
-                  srtp_required),
-      data_channel_type_(cricket::DCT_NONE),
-      ready_to_send_data_(false) {}
+                  srtp_required) {}
 
-DataChannel::~DataChannel() {
-  TRACE_EVENT0("webrtc", "DataChannel::~DataChannel");
+RtpDataChannel::~RtpDataChannel() {
+  TRACE_EVENT0("webrtc", "RtpDataChannel::~RtpDataChannel");
   StopMediaMonitor();
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
@@ -2173,78 +2170,48 @@ DataChannel::~DataChannel() {
   Deinit();
 }
 
-bool DataChannel::Init_w(const std::string* bundle_transport_name) {
+bool RtpDataChannel::Init_w(const std::string* bundle_transport_name) {
   if (!BaseChannel::Init_w(bundle_transport_name)) {
     return false;
   }
-  media_channel()->SignalDataReceived.connect(
-      this, &DataChannel::OnDataReceived);
+  media_channel()->SignalDataReceived.connect(this,
+                                              &RtpDataChannel::OnDataReceived);
   media_channel()->SignalReadyToSend.connect(
-      this, &DataChannel::OnDataChannelReadyToSend);
-  media_channel()->SignalStreamClosedRemotely.connect(
-      this, &DataChannel::OnStreamClosedRemotely);
+      this, &RtpDataChannel::OnDataChannelReadyToSend);
   return true;
 }
 
-bool DataChannel::SendData(const SendDataParams& params,
-                           const rtc::CopyOnWriteBuffer& payload,
-                           SendDataResult* result) {
+bool RtpDataChannel::SendData(const SendDataParams& params,
+                              const rtc::CopyOnWriteBuffer& payload,
+                              SendDataResult* result) {
   return InvokeOnWorker(
       RTC_FROM_HERE, Bind(&DataMediaChannel::SendData, media_channel(), params,
                           payload, result));
 }
 
-const ContentInfo* DataChannel::GetFirstContent(
+const ContentInfo* RtpDataChannel::GetFirstContent(
     const SessionDescription* sdesc) {
   return GetFirstDataContent(sdesc);
 }
 
-bool DataChannel::WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) {
-  if (data_channel_type_ == DCT_SCTP) {
-    // TODO(pthatcher): Do this in a more robust way by checking for
-    // SCTP or DTLS.
-    return !IsRtpPacket(packet->data(), packet->size());
-  } else if (data_channel_type_ == DCT_RTP) {
-    return BaseChannel::WantsPacket(rtcp, packet);
-  }
-  return false;
-}
-
-bool DataChannel::SetDataChannelType(DataChannelType new_data_channel_type,
-                                     std::string* error_desc) {
-  // It hasn't been set before, so set it now.
-  if (data_channel_type_ == DCT_NONE) {
-    data_channel_type_ = new_data_channel_type;
-    return true;
-  }
-
-  // It's been set before, but doesn't match.  That's bad.
-  if (data_channel_type_ != new_data_channel_type) {
-    std::ostringstream desc;
-    desc << "Data channel type mismatch."
-         << " Expected " << data_channel_type_
-         << " Got " << new_data_channel_type;
-    SafeSetError(desc.str(), error_desc);
-    return false;
-  }
-
-  // It's hasn't changed.  Nothing to do.
-  return true;
-}
-
-bool DataChannel::SetDataChannelTypeFromContent(
+bool RtpDataChannel::CheckDataChannelTypeFromContent(
     const DataContentDescription* content,
     std::string* error_desc) {
   bool is_sctp = ((content->protocol() == kMediaProtocolSctp) ||
                   (content->protocol() == kMediaProtocolDtlsSctp));
-  DataChannelType data_channel_type = is_sctp ? DCT_SCTP : DCT_RTP;
-  return SetDataChannelType(data_channel_type, error_desc);
+  // It's been set before, but doesn't match.  That's bad.
+  if (is_sctp) {
+    SafeSetError("Data channel type mismatch. Expected RTP, got SCTP.",
+                 error_desc);
+    return false;
+  }
+  return true;
 }
 
-bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
-                                    ContentAction action,
-                                    std::string* error_desc) {
-  TRACE_EVENT0("webrtc", "DataChannel::SetLocalContent_w");
+bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
+                                       ContentAction action,
+                                       std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "RtpDataChannel::SetLocalContent_w");
   RTC_DCHECK(worker_thread() == rtc::Thread::Current());
   LOG(LS_INFO) << "Setting local data description";
 
@@ -2256,19 +2223,14 @@ bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
     return false;
   }
 
-  if (!SetDataChannelTypeFromContent(data, error_desc)) {
+  if (!CheckDataChannelTypeFromContent(data, error_desc)) {
     return false;
   }
 
-  if (data_channel_type_ == DCT_RTP) {
-    if (!SetRtpTransportParameters(content, action, CS_LOCAL, error_desc)) {
-      return false;
-    }
+  if (!SetRtpTransportParameters(content, action, CS_LOCAL, error_desc)) {
+    return false;
   }
 
-  // FYI: We send the SCTP port number (not to be confused with the
-  // underlying UDP port number) as a codec parameter.  So even SCTP
-  // data channels need codecs.
   DataRecvParameters recv_params = last_recv_params_;
   RtpParametersFromMediaDescription(data, &recv_params);
   if (!media_channel()->SetRecvParameters(recv_params)) {
@@ -2276,10 +2238,8 @@ bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
                  error_desc);
     return false;
   }
-  if (data_channel_type_ == DCT_RTP) {
-    for (const DataCodec& codec : data->codecs()) {
-      bundle_filter()->AddPayloadType(codec.id);
-    }
+  for (const DataCodec& codec : data->codecs()) {
+    bundle_filter()->AddPayloadType(codec.id);
   }
   last_recv_params_ = recv_params;
 
@@ -2297,10 +2257,10 @@ bool DataChannel::SetLocalContent_w(const MediaContentDescription* content,
   return true;
 }
 
-bool DataChannel::SetRemoteContent_w(const MediaContentDescription* content,
-                                     ContentAction action,
-                                     std::string* error_desc) {
-  TRACE_EVENT0("webrtc", "DataChannel::SetRemoteContent_w");
+bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
+                                        ContentAction action,
+                                        std::string* error_desc) {
+  TRACE_EVENT0("webrtc", "RtpDataChannel::SetRemoteContent_w");
   RTC_DCHECK(worker_thread() == rtc::Thread::Current());
 
   const DataContentDescription* data =
@@ -2317,16 +2277,14 @@ bool DataChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return true;
   }
 
-  if (!SetDataChannelTypeFromContent(data, error_desc)) {
+  if (!CheckDataChannelTypeFromContent(data, error_desc)) {
     return false;
   }
 
   LOG(LS_INFO) << "Setting remote data description";
-  if (data_channel_type_ == DCT_RTP &&
-      !SetRtpTransportParameters(content, action, CS_REMOTE, error_desc)) {
+  if (!SetRtpTransportParameters(content, action, CS_REMOTE, error_desc)) {
     return false;
   }
-
 
   DataSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription<DataCodec>(data, &send_params);
@@ -2352,7 +2310,7 @@ bool DataChannel::SetRemoteContent_w(const MediaContentDescription* content,
   return true;
 }
 
-void DataChannel::UpdateMediaSendRecvState_w() {
+void RtpDataChannel::UpdateMediaSendRecvState_w() {
   // Render incoming data if we're the active call, and we have the local
   // content. We receive data on the default channel and multiplexed streams.
   bool recv = IsReadyToReceiveMedia_w();
@@ -2373,7 +2331,7 @@ void DataChannel::UpdateMediaSendRecvState_w() {
   LOG(LS_INFO) << "Changing data state, recv=" << recv << " send=" << send;
 }
 
-void DataChannel::OnMessage(rtc::Message *pmsg) {
+void RtpDataChannel::OnMessage(rtc::Message* pmsg) {
   switch (pmsg->message_id) {
     case MSG_READYTOSENDDATA: {
       DataChannelReadyToSendMessageData* data =
@@ -2386,7 +2344,7 @@ void DataChannel::OnMessage(rtc::Message *pmsg) {
     case MSG_DATARECEIVED: {
       DataReceivedMessageData* data =
           static_cast<DataReceivedMessageData*>(pmsg->pdata);
-      SignalDataReceived(this, data->params, data->payload);
+      SignalDataReceived(data->params, data->payload);
       delete data;
       break;
     }
@@ -2396,33 +2354,27 @@ void DataChannel::OnMessage(rtc::Message *pmsg) {
       delete data;
       break;
     }
-    case MSG_STREAMCLOSEDREMOTELY: {
-      rtc::TypedMessageData<uint32_t>* data =
-          static_cast<rtc::TypedMessageData<uint32_t>*>(pmsg->pdata);
-      SignalStreamClosedRemotely(data->data());
-      delete data;
-      break;
-    }
     default:
       BaseChannel::OnMessage(pmsg);
       break;
   }
 }
 
-void DataChannel::OnConnectionMonitorUpdate(
-    ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos) {
+void RtpDataChannel::OnConnectionMonitorUpdate(
+    ConnectionMonitor* monitor,
+    const std::vector<ConnectionInfo>& infos) {
   SignalConnectionMonitor(this, infos);
 }
 
-void DataChannel::StartMediaMonitor(int cms) {
+void RtpDataChannel::StartMediaMonitor(int cms) {
   media_monitor_.reset(new DataMediaMonitor(media_channel(), worker_thread(),
       rtc::Thread::Current()));
-  media_monitor_->SignalUpdate.connect(
-      this, &DataChannel::OnMediaMonitorUpdate);
+  media_monitor_->SignalUpdate.connect(this,
+                                       &RtpDataChannel::OnMediaMonitorUpdate);
   media_monitor_->Start(cms);
 }
 
-void DataChannel::StopMediaMonitor() {
+void RtpDataChannel::StopMediaMonitor() {
   if (media_monitor_) {
     media_monitor_->Stop();
     media_monitor_->SignalUpdate.disconnect(this);
@@ -2430,27 +2382,28 @@ void DataChannel::StopMediaMonitor() {
   }
 }
 
-void DataChannel::OnMediaMonitorUpdate(
-    DataMediaChannel* media_channel, const DataMediaInfo& info) {
+void RtpDataChannel::OnMediaMonitorUpdate(DataMediaChannel* media_channel,
+                                          const DataMediaInfo& info) {
   RTC_DCHECK(media_channel == this->media_channel());
   SignalMediaMonitor(this, info);
 }
 
-void DataChannel::OnDataReceived(
-    const ReceiveDataParams& params, const char* data, size_t len) {
+void RtpDataChannel::OnDataReceived(const ReceiveDataParams& params,
+                                    const char* data,
+                                    size_t len) {
   DataReceivedMessageData* msg = new DataReceivedMessageData(
       params, data, len);
   signaling_thread()->Post(RTC_FROM_HERE, this, MSG_DATARECEIVED, msg);
 }
 
-void DataChannel::OnDataChannelError(uint32_t ssrc,
-                                     DataMediaChannel::Error err) {
+void RtpDataChannel::OnDataChannelError(uint32_t ssrc,
+                                        DataMediaChannel::Error err) {
   DataChannelErrorMessageData* data = new DataChannelErrorMessageData(
       ssrc, err);
   signaling_thread()->Post(RTC_FROM_HERE, this, MSG_CHANNEL_ERROR, data);
 }
 
-void DataChannel::OnDataChannelReadyToSend(bool writable) {
+void RtpDataChannel::OnDataChannelReadyToSend(bool writable) {
   // This is usded for congestion control to indicate that the stream is ready
   // to send by the MediaChannel, as opposed to OnReadyToSend, which indicates
   // that the transport channel is ready.
@@ -2458,19 +2411,9 @@ void DataChannel::OnDataChannelReadyToSend(bool writable) {
                            new DataChannelReadyToSendMessageData(writable));
 }
 
-void DataChannel::GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const {
+void RtpDataChannel::GetSrtpCryptoSuites_n(
+    std::vector<int>* crypto_suites) const {
   GetSupportedDataCryptoSuites(crypto_options(), crypto_suites);
-}
-
-bool DataChannel::ShouldSetupDtlsSrtp_n() const {
-  return data_channel_type_ == DCT_RTP && BaseChannel::ShouldSetupDtlsSrtp_n();
-}
-
-void DataChannel::OnStreamClosedRemotely(uint32_t sid) {
-  rtc::TypedMessageData<uint32_t>* message =
-      new rtc::TypedMessageData<uint32_t>(sid);
-  signaling_thread()->Post(RTC_FROM_HERE, this, MSG_STREAMCLOSEDREMOTELY,
-                           message);
 }
 
 }  // namespace cricket

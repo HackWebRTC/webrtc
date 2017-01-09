@@ -16,7 +16,7 @@
 #include "webrtc/api/sctputils.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/refcount.h"
-#include "webrtc/media/sctp/sctpdataengine.h"
+#include "webrtc/media/sctp/sctptransportinternal.h"
 
 namespace webrtc {
 
@@ -328,12 +328,12 @@ void DataChannel::OnMessage(rtc::Message* msg) {
   }
 }
 
-void DataChannel::OnDataReceived(cricket::DataChannel* channel,
-                                 const cricket::ReceiveDataParams& params,
+void DataChannel::OnDataReceived(const cricket::ReceiveDataParams& params,
                                  const rtc::CopyOnWriteBuffer& payload) {
-  uint32_t expected_ssrc =
-      (data_channel_type_ == cricket::DCT_RTP) ? receive_ssrc_ : config_.id;
-  if (params.ssrc != expected_ssrc) {
+  if (data_channel_type_ == cricket::DCT_RTP && params.ssrc != receive_ssrc_) {
+    return;
+  }
+  if (data_channel_type_ == cricket::DCT_SCTP && params.sid != config_.id) {
     return;
   }
 
@@ -342,17 +342,17 @@ void DataChannel::OnDataReceived(cricket::DataChannel* channel,
     if (handshake_state_ != kHandshakeWaitingForAck) {
       // Ignore it if we are not expecting an ACK message.
       LOG(LS_WARNING) << "DataChannel received unexpected CONTROL message, "
-                      << "sid = " << params.ssrc;
+                      << "sid = " << params.sid;
       return;
     }
     if (ParseDataChannelOpenAckMessage(payload)) {
       // We can send unordered as soon as we receive the ACK message.
       handshake_state_ = kHandshakeReady;
       LOG(LS_INFO) << "DataChannel received OPEN_ACK message, sid = "
-                   << params.ssrc;
+                   << params.sid;
     } else {
       LOG(LS_WARNING) << "DataChannel failed to parse OPEN_ACK message, sid = "
-                      << params.ssrc;
+                      << params.sid;
     }
     return;
   }
@@ -360,7 +360,7 @@ void DataChannel::OnDataReceived(cricket::DataChannel* channel,
   ASSERT(params.type == cricket::DMT_BINARY ||
          params.type == cricket::DMT_TEXT);
 
-  LOG(LS_VERBOSE) << "DataChannel received DATA message, sid = " << params.ssrc;
+  LOG(LS_VERBOSE) << "DataChannel received DATA message, sid = " << params.sid;
   // We can send unordered as soon as we receive any DATA message since the
   // remote side must have received the OPEN (and old clients do not send
   // OPEN_ACK).
@@ -390,9 +390,8 @@ void DataChannel::OnDataReceived(cricket::DataChannel* channel,
   }
 }
 
-void DataChannel::OnStreamClosedRemotely(uint32_t sid) {
-  if (data_channel_type_ == cricket::DCT_SCTP &&
-      sid == static_cast<uint32_t>(config_.id)) {
+void DataChannel::OnStreamClosedRemotely(int sid) {
+  if (data_channel_type_ == cricket::DCT_SCTP && sid == config_.id) {
     Close();
   }
 }
@@ -551,7 +550,7 @@ bool DataChannel::SendDataMessage(const DataBuffer& buffer,
 
     send_params.max_rtx_count = config_.maxRetransmits;
     send_params.max_rtx_ms = config_.maxRetransmitTime;
-    send_params.ssrc = config_.id;
+    send_params.sid = config_.id;
   } else {
     send_params.ssrc = send_ssrc_;
   }
@@ -623,7 +622,7 @@ bool DataChannel::SendControlMessage(const rtc::CopyOnWriteBuffer& buffer) {
          (!is_open_message || !config_.negotiated));
 
   cricket::SendDataParams send_params;
-  send_params.ssrc = config_.id;
+  send_params.sid = config_.id;
   // Send data as ordered before we receive any message from the remote peer to
   // make sure the remote peer will not receive any data before it receives the
   // OPEN message.

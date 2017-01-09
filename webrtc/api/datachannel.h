@@ -144,11 +144,10 @@ class DataChannel : public DataChannelInterface,
   // stream on an existing DataMediaChannel, and we've finished negotiation.
   void OnChannelReady(bool writable);
 
-  // Sigslots from cricket::DataChannel
-  void OnDataReceived(cricket::DataChannel* channel,
-                      const cricket::ReceiveDataParams& params,
+  // Slots for provider to connect signals to.
+  void OnDataReceived(const cricket::ReceiveDataParams& params,
                       const rtc::CopyOnWriteBuffer& payload);
-  void OnStreamClosedRemotely(uint32_t sid);
+  void OnStreamClosedRemotely(int sid);
 
   // The remote peer request that this channel should be closed.
   void RemotePeerRequestClose();

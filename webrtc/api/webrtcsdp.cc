@@ -33,7 +33,7 @@
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
-#include "webrtc/media/sctp/sctpdataengine.h"
+#include "webrtc/media/sctp/sctptransportinternal.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/port.h"
