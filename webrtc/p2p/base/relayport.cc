@@ -491,8 +491,9 @@ void RelayEntry::Connect() {
         rtc::SocketAddress(port_->ip(), 0),
         port_->min_port(), port_->max_port());
   } else if (ra->proto == PROTO_TCP || ra->proto == PROTO_SSLTCP) {
-    int opts = (ra->proto == PROTO_SSLTCP) ?
-     rtc::PacketSocketFactory::OPT_SSLTCP : 0;
+    int opts = (ra->proto == PROTO_SSLTCP)
+                   ? rtc::PacketSocketFactory::OPT_TLS_FAKE
+                   : 0;
     socket = port_->socket_factory()->CreateClientTcpSocket(
         rtc::SocketAddress(port_->ip(), 0), ra->address,
         port_->proxy(), port_->user_agent(), opts);

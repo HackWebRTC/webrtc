@@ -95,6 +95,17 @@ enum {
   CF_ALL = 0x7,
 };
 
+// TLS certificate policy.
+enum class TlsCertPolicy {
+  // For TLS based protocols, ensure the connection is secure by not
+  // circumventing certificate validation.
+  TLS_CERT_POLICY_SECURE,
+  // For TLS based protocols, disregard security completely by skipping
+  // certificate validation. This is insecure and should never be used unless
+  // security is irrelevant in that particular context.
+  TLS_CERT_POLICY_INSECURE_NO_CHECK,
+};
+
 // TODO(deadbeef): Rename to TurnCredentials (and username to ufrag).
 struct RelayCredentials {
   RelayCredentials() {}
@@ -147,6 +158,7 @@ struct RelayServerConfig {
   PortList ports;
   RelayCredentials credentials;
   int priority = 0;
+  TlsCertPolicy tls_cert_policy = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
 };
 
 class PortAllocatorSession : public sigslot::has_slots<> {

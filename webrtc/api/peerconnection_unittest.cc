@@ -40,6 +40,7 @@
 #include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/media/engine/fakewebrtcvideoengine.h"
 #include "webrtc/p2p/base/p2pconstants.h"
+#include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/base/testturnserver.h"
 #include "webrtc/p2p/client/basicportallocator.h"
@@ -2623,11 +2624,21 @@ class IceServerParsingTest : public testing::Test {
   bool ParseUrl(const std::string& url,
                 const std::string& username,
                 const std::string& password) {
+    return ParseUrl(
+        url, username, password,
+        PeerConnectionInterface::TlsCertPolicy::kTlsCertPolicySecure);
+  }
+
+  bool ParseUrl(const std::string& url,
+                const std::string& username,
+                const std::string& password,
+                PeerConnectionInterface::TlsCertPolicy tls_certificate_policy) {
     PeerConnectionInterface::IceServers servers;
     PeerConnectionInterface::IceServer server;
     server.urls.push_back(url);
     server.username = username;
     server.password = password;
+    server.tls_cert_policy = tls_certificate_policy;
     servers.push_back(server);
     return webrtc::ParseIceServers(servers, &stun_servers_, &turn_servers_);
   }
@@ -2658,6 +2669,18 @@ TEST_F(IceServerParsingTest, ParseStunPrefixes) {
   EXPECT_TRUE(ParseUrl("turns:hostname"));
   EXPECT_EQ(0U, stun_servers_.size());
   EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_EQ(cricket::PROTO_TLS, turn_servers_[0].ports[0].proto);
+  EXPECT_TRUE(turn_servers_[0].tls_cert_policy ==
+              cricket::TlsCertPolicy::TLS_CERT_POLICY_SECURE);
+  turn_servers_.clear();
+
+  EXPECT_TRUE(ParseUrl(
+      "turns:hostname", "", "",
+      PeerConnectionInterface::TlsCertPolicy::kTlsCertPolicyInsecureNoCheck));
+  EXPECT_EQ(0U, stun_servers_.size());
+  EXPECT_EQ(1U, turn_servers_.size());
+  EXPECT_TRUE(turn_servers_[0].tls_cert_policy ==
+              cricket::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK);
   EXPECT_EQ(cricket::PROTO_TLS, turn_servers_[0].ports[0].proto);
   turn_servers_.clear();
 

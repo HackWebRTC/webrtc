@@ -82,6 +82,7 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/PeerConnection$IceGatheringState");
   LoadClass(jni, "org/webrtc/PeerConnection$IceTransportsType");
   LoadClass(jni, "org/webrtc/PeerConnection$TcpCandidatePolicy");
+  LoadClass(jni, "org/webrtc/PeerConnection$TlsCertPolicy");
   LoadClass(jni, "org/webrtc/PeerConnection$CandidateNetworkPolicy");
   LoadClass(jni, "org/webrtc/PeerConnection$KeyType");
   LoadClass(jni, "org/webrtc/PeerConnection$SignalingState");

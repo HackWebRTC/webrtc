@@ -1634,6 +1634,23 @@ static PeerConnectionInterface::ContinualGatheringPolicy
   return PeerConnectionInterface::GATHER_ONCE;
 }
 
+static PeerConnectionInterface::TlsCertPolicy JavaTlsCertPolicyTypeToNativeType(
+    JNIEnv* jni,
+    jobject j_ice_server_tls_cert_policy) {
+  std::string enum_name =
+      GetJavaEnumName(jni, "org/webrtc/PeerConnection$TlsCertPolicy",
+                      j_ice_server_tls_cert_policy);
+
+  if (enum_name == "TLS_CERT_POLICY_SECURE")
+    return PeerConnectionInterface::kTlsCertPolicySecure;
+
+  if (enum_name == "TLS_CERT_POLICY_INSECURE_NO_CHECK")
+    return PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
+
+  RTC_CHECK(false) << "Unexpected TlsCertPolicy enum_name " << enum_name;
+  return PeerConnectionInterface::kTlsCertPolicySecure;
+}
+
 static void JavaIceServersToJsepIceServers(
     JNIEnv* jni, jobject j_ice_servers,
     PeerConnectionInterface::IceServers* ice_servers) {
@@ -1645,16 +1662,24 @@ static void JavaIceServersToJsepIceServers(
         GetFieldID(jni, j_ice_server_class, "username", "Ljava/lang/String;");
     jfieldID j_ice_server_password_id =
         GetFieldID(jni, j_ice_server_class, "password", "Ljava/lang/String;");
+    jfieldID j_ice_server_tls_cert_policy_id =
+        GetFieldID(jni, j_ice_server_class, "tlsCertPolicy",
+                   "Lorg/webrtc/PeerConnection$TlsCertPolicy;");
+    jobject j_ice_server_tls_cert_policy =
+        GetObjectField(jni, j_ice_server, j_ice_server_tls_cert_policy_id);
     jstring uri = reinterpret_cast<jstring>(
         GetObjectField(jni, j_ice_server, j_ice_server_uri_id));
     jstring username = reinterpret_cast<jstring>(
         GetObjectField(jni, j_ice_server, j_ice_server_username_id));
     jstring password = reinterpret_cast<jstring>(
         GetObjectField(jni, j_ice_server, j_ice_server_password_id));
+    PeerConnectionInterface::TlsCertPolicy tls_cert_policy =
+        JavaTlsCertPolicyTypeToNativeType(jni, j_ice_server_tls_cert_policy);
     PeerConnectionInterface::IceServer server;
     server.uri = JavaToStdString(jni, uri);
     server.username = JavaToStdString(jni, username);
     server.password = JavaToStdString(jni, password);
+    server.tls_cert_policy = tls_cert_policy;
     ice_servers->push_back(server);
   }
 }

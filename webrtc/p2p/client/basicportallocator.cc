@@ -1394,6 +1394,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
                               session_->allocator()->origin());
     }
     ASSERT(port != NULL);
+    port->SetTlsCertPolicy(config.tls_cert_policy);
     session_->AddAllocatedPort(port, this, true);
   }
 }

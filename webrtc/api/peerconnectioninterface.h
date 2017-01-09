@@ -216,15 +216,28 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kIceConnectionMax,
   };
 
+  // TLS certificate policy.
+  enum TlsCertPolicy {
+    // For TLS based protocols, ensure the connection is secure by not
+    // circumventing certificate validation.
+    kTlsCertPolicySecure,
+    // For TLS based protocols, disregard security completely by skipping
+    // certificate validation. This is insecure and should never be used unless
+    // security is irrelevant in that particular context.
+    kTlsCertPolicyInsecureNoCheck,
+  };
+
   struct IceServer {
     // TODO(jbauch): Remove uri when all code using it has switched to urls.
     std::string uri;
     std::vector<std::string> urls;
     std::string username;
     std::string password;
+    TlsCertPolicy tls_cert_policy = kTlsCertPolicySecure;
+
     bool operator==(const IceServer& o) const {
       return uri == o.uri && urls == o.urls && username == o.username &&
-             password == o.password;
+             password == o.password && tls_cert_policy == o.tls_cert_policy;
     }
     bool operator!=(const IceServer& o) const { return !(*this == o); }
   };
