@@ -112,12 +112,6 @@ rtc_shared_library("libjingle_peerconnection_so") {
 
 android_library("libjingle_peerconnection_java") {
   java_files = [
-    "//webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine/BuildInfo.java",
-    "//webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioEffects.java",
-    "//webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioManager.java",
-    "//webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioRecord.java",
-    "//webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioTrack.java",
-    "//webrtc/modules/audio_device/android/java/src/org/webrtc/voiceengine/WebRtcAudioUtils.java",
     "api/org/webrtc/AudioSource.java",
     "api/org/webrtc/AudioTrack.java",
     "api/org/webrtc/CallSessionFileRotatingLogSink.java",
@@ -178,6 +172,8 @@ android_library("libjingle_peerconnection_java") {
   deps = [
     "//webrtc/base:base_java",
   ]
+
+  srcjar_deps = [ "//webrtc/modules/audio_device:audio_device_java" ]
 }
 
 android_library("libjingle_peerconnection_metrics_default_java") {
