@@ -16,7 +16,6 @@
 
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/systeminfo.h"
 #include "webrtc/video_frame.h"
 
 namespace cricket {

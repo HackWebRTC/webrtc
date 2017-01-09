@@ -171,8 +171,6 @@ rtc_static_library("rtc_base_approved") {
     "stringutils.cc",
     "stringutils.h",
     "swap_queue.h",
-    "systeminfo.cc",
-    "systeminfo.h",
     "template_util.h",
     "thread_annotations.h",
     "thread_checker.h",
@@ -813,9 +811,6 @@ if (rtc_include_tests) {
       "stringencode_unittest.cc",
       "stringutils_unittest.cc",
       "swap_queue_unittest.cc",
-
-      # TODO(ronghuawu): Reenable this test.
-      # "systeminfo_unittest.cc",
       "thread_annotations_unittest.cc",
       "thread_checker_unittest.cc",
       "timestampaligner_unittest.cc",
