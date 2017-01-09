@@ -124,6 +124,7 @@ class RampUpDownUpTester : public RampUpTester {
 
   std::string GetModifierString() const;
   int GetExpectedHighBitrate() const;
+  int GetHighLinkCapacity() const;
   void EvolveTestState(int bitrate_bps, bool suspended);
 
   TestStates test_state_;
