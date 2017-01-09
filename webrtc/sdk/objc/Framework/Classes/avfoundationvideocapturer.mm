@@ -131,8 +131,8 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
     return;
   }
 
-  const int captured_width = CVPixelBufferGetWidth(image_buffer);
-  const int captured_height = CVPixelBufferGetHeight(image_buffer);
+  int captured_width = CVPixelBufferGetWidth(image_buffer);
+  int captured_height = CVPixelBufferGetHeight(image_buffer);
 
   int adapted_width;
   int adapted_height;
@@ -161,10 +161,14 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
   // not critical here.
   if (apply_rotation() && rotation != kVideoRotation_0) {
     buffer = buffer->NativeToI420Buffer();
-    rtc::scoped_refptr<I420Buffer> rotated_buffer =
-        (rotation == kVideoRotation_180)
-            ? I420Buffer::Create(adapted_width, adapted_height)
-            : I420Buffer::Create(adapted_height, adapted_width);
+    rtc::scoped_refptr<I420Buffer> rotated_buffer;
+    if (rotation == kVideoRotation_0 || rotation == kVideoRotation_180) {
+      rotated_buffer = I420Buffer::Create(adapted_width, adapted_height);
+    } else {
+      // Swap width and height.
+      rotated_buffer = I420Buffer::Create(adapted_height, adapted_width);
+      std::swap(captured_width, captured_height);
+    }
     libyuv::I420Rotate(
         buffer->DataY(), buffer->StrideY(),
         buffer->DataU(), buffer->StrideU(),
@@ -175,6 +179,7 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
         buffer->width(), buffer->height(),
         static_cast<libyuv::RotationMode>(rotation));
     buffer = rotated_buffer;
+    rotation = kVideoRotation_0;
   }
 
   OnFrame(webrtc::VideoFrame(buffer, rotation, translated_camera_time_us),
