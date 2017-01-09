@@ -72,29 +72,36 @@ class BitrateProber {
   };
 
   // A probe cluster consists of a set of probes. Each probe in turn can be
-  // divided into a number of packets to accomodate the MTU on the network.
+  // divided into a number of packets to accommodate the MTU on the network.
   struct ProbeCluster {
     int min_probes = 0;
-    int sent_probes = 0;
     int min_bytes = 0;
-    int sent_bytes = 0;
     int bitrate_bps = 0;
     int id = -1;
+
+    int sent_probes = 0;
+    int sent_bytes = 0;
+    int64_t time_started_ms = -1;
   };
 
   // Resets the state of the prober and clears any cluster/timing data tracked.
   void ResetState();
 
+  int64_t GetNextProbeTime(const ProbeCluster& cluster);
+
   ProbingState probing_state_;
+
   // Probe bitrate per packet. These are used to compute the delta relative to
   // the previous probe packet based on the size and time when that packet was
   // sent.
   std::queue<ProbeCluster> clusters_;
-  // A probe can include one or more packets.
-  size_t probe_size_last_sent_;
-  // The last time a probe was sent.
-  int64_t time_last_probe_sent_ms_;
+
+  // Time the next probe should be sent when in kActive state.
+  int64_t next_probe_time_ms_;
+
   int next_cluster_id_;
 };
+
 }  // namespace webrtc
+
 #endif  // WEBRTC_MODULES_PACING_BITRATE_PROBER_H_
