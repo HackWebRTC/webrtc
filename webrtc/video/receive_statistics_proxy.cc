@@ -232,33 +232,33 @@ void ReceiveStatisticsProxy::QualitySample() {
   bool any_bad = fps_bad || qp_bad || variance_bad;
 
   if (!prev_any_bad && any_bad) {
-    LOG(LS_WARNING) << "Bad call (any) start: " << now;
+    LOG(LS_INFO) << "Bad call (any) start: " << now;
   } else if (prev_any_bad && !any_bad) {
-    LOG(LS_WARNING) << "Bad call (any) end: " << now;
+    LOG(LS_INFO) << "Bad call (any) end: " << now;
   }
 
   if (!prev_fps_bad && fps_bad) {
-    LOG(LS_WARNING) << "Bad call (fps) start: " << now;
+    LOG(LS_INFO) << "Bad call (fps) start: " << now;
   } else if (prev_fps_bad && !fps_bad) {
-    LOG(LS_WARNING) << "Bad call (fps) end: " << now;
+    LOG(LS_INFO) << "Bad call (fps) end: " << now;
   }
 
   if (!prev_qp_bad && qp_bad) {
-    LOG(LS_WARNING) << "Bad call (qp) start: " << now;
+    LOG(LS_INFO) << "Bad call (qp) start: " << now;
   } else if (prev_qp_bad && !qp_bad) {
-    LOG(LS_WARNING) << "Bad call (qp) end: " << now;
+    LOG(LS_INFO) << "Bad call (qp) end: " << now;
   }
 
   if (!prev_variance_bad && variance_bad) {
-    LOG(LS_WARNING) << "Bad call (variance) start: " << now;
+    LOG(LS_INFO) << "Bad call (variance) start: " << now;
   } else if (prev_variance_bad && !variance_bad) {
-    LOG(LS_WARNING) << "Bad call (variance) end: " << now;
+    LOG(LS_INFO) << "Bad call (variance) end: " << now;
   }
 
-  LOG(LS_INFO) << "SAMPLE: sample_length: " << (now - last_sample_time_)
-               << " fps: " << fps << " fps_bad: " << fps_bad << " qp: " << qp
-               << " qp_bad: " << qp_bad << " variance_bad: " << variance_bad
-               << " fps_variance: " << fps_variance;
+  LOG(LS_VERBOSE) << "SAMPLE: sample_length: " << (now - last_sample_time_)
+                  << " fps: " << fps << " fps_bad: " << fps_bad << " qp: " << qp
+                  << " qp_bad: " << qp_bad << " variance_bad: " << variance_bad
+                  << " fps_variance: " << fps_variance;
 
   last_sample_time_ = now;
   qp_sample_.Reset();
