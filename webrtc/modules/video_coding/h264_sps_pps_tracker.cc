@@ -70,7 +70,7 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
         // If this is the first packet of an IDR, make sure we have the required
         // SPS/PPS and also calculate how much extra space we need in the buffer
         // to prepend the SPS/PPS to the bitstream with start codes.
-        if (video_header.isFirstPacket) {
+        if (video_header.is_first_packet_in_frame) {
           if (nalu.pps_id == -1) {
             LOG(LS_WARNING) << "No PPS id in IDR nalu.";
             return kRequestKeyframe;
@@ -111,7 +111,7 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
   if (codec_header.packetization_type == kH264StapA) {
     const uint8_t* nalu_ptr = data + 1;
     while (nalu_ptr < data + data_size) {
-      RTC_DCHECK(video_header.isFirstPacket);
+      RTC_DCHECK(video_header.is_first_packet_in_frame);
       required_size += sizeof(start_code_h264);
 
       // The first two bytes describe the length of a segment.
@@ -122,7 +122,7 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
       nalu_ptr += segment_length;
     }
   } else {
-    if (video_header.isFirstPacket)
+    if (video_header.is_first_packet_in_frame)
       required_size += sizeof(start_code_h264);
     required_size += data_size;
   }
@@ -170,7 +170,7 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
       nalu_ptr += segment_length;
     }
   } else {
-    if (video_header.isFirstPacket) {
+    if (video_header.is_first_packet_in_frame) {
       memcpy(insert_at, start_code_h264, sizeof(start_code_h264));
       insert_at += sizeof(start_code_h264);
     }

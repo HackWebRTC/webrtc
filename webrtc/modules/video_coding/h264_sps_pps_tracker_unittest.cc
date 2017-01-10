@@ -29,7 +29,7 @@ class TestH264SpsPpsTracker : public ::testing::Test {
     VCMPacket packet;
     packet.codec = kVideoCodecH264;
     packet.video_header.codecHeader.H264.nalus_length = 0;
-    packet.video_header.isFirstPacket = false;
+    packet.video_header.is_first_packet_in_frame = false;
     packet.video_header.codecHeader.H264.packetization_type = kH264SingleNalu;
 
     return packet;
@@ -96,7 +96,7 @@ TEST_F(TestH264SpsPpsTracker, FuAFirstPacket) {
   uint8_t data[] = {1, 2, 3};
   VCMPacket packet = GetDefaultPacket();
   packet.video_header.codecHeader.H264.packetization_type = kH264FuA;
-  packet.video_header.isFirstPacket = true;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data);
 
@@ -112,7 +112,7 @@ TEST_F(TestH264SpsPpsTracker, StapAIncorrectSegmentLength) {
   uint8_t data[] = {0, 0, 2, 0};
   VCMPacket packet = GetDefaultPacket();
   packet.video_header.codecHeader.H264.packetization_type = kH264StapA;
-  packet.video_header.isFirstPacket = true;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data);
 
@@ -122,7 +122,7 @@ TEST_F(TestH264SpsPpsTracker, StapAIncorrectSegmentLength) {
 TEST_F(TestH264SpsPpsTracker, NoNalusFirstPacket) {
   uint8_t data[] = {1, 2, 3};
   VCMPacket packet = GetDefaultPacket();
-  packet.video_header.isFirstPacket = true;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data);
 
@@ -151,7 +151,7 @@ TEST_F(TestH264SpsPpsTracker, IdrNoSpsPpsInserted) {
 TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoSpsPpsInserted) {
   std::vector<uint8_t> data = {1, 2, 3};
   VCMPacket packet = GetDefaultPacket();
-  packet.video_header.isFirstPacket = true;
+  packet.video_header.is_first_packet_in_frame = true;
 
   AddIdr(&packet, 0);
   packet.dataPtr = data.data();
@@ -164,7 +164,7 @@ TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoSpsPpsInserted) {
 TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoPpsInserted) {
   std::vector<uint8_t> data = {1, 2, 3};
   VCMPacket packet = GetDefaultPacket();
-  packet.video_header.isFirstPacket = true;
+  packet.video_header.is_first_packet_in_frame = true;
 
   AddSps(&packet, 0, &data);
   AddIdr(&packet, 0);
@@ -178,7 +178,7 @@ TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoPpsInserted) {
 TEST_F(TestH264SpsPpsTracker, IdrFirstPacketNoSpsInserted) {
   std::vector<uint8_t> data = {1, 2, 3};
   VCMPacket packet = GetDefaultPacket();
-  packet.video_header.isFirstPacket = true;
+  packet.video_header.is_first_packet_in_frame = true;
 
   AddPps(&packet, 0, 0, &data);
   AddIdr(&packet, 0);
@@ -204,7 +204,7 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsPacketThenIdrFirstPacket) {
 
   // Insert first packet of the IDR
   VCMPacket idr_packet = GetDefaultPacket();
-  idr_packet.video_header.isFirstPacket = true;
+  idr_packet.video_header.is_first_packet_in_frame = true;
   AddIdr(&idr_packet, 1);
   data.insert(data.end(), {1, 2, 3});
   idr_packet.dataPtr = data.data();
@@ -227,7 +227,7 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsIdrInStapA) {
   std::vector<uint8_t> data;
   VCMPacket packet = GetDefaultPacket();
   packet.video_header.codecHeader.H264.packetization_type = kH264StapA;
-  packet.video_header.isFirstPacket = true;  // Always true for StapA
+  packet.video_header.is_first_packet_in_frame = true;  // Always true for StapA
 
   data.insert(data.end(), {0});     // First byte is ignored
   data.insert(data.end(), {0, 2});  // Length of segment
