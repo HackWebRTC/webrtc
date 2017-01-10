@@ -731,7 +731,7 @@ void H264VideoToolboxEncoder::OnEncodedFrame(
     LOG(LS_ERROR) << "Encode callback failed: " << res.error;
     return;
   }
-  bitrate_adjuster_.Update(frame._size);
+  bitrate_adjuster_.Update(frame._length);
 }
 
 VideoEncoder::ScalingSettings H264VideoToolboxEncoder::GetScalingSettings()
