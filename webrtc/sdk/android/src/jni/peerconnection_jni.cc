@@ -1810,8 +1810,9 @@ JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
 
   PCOJava* observer = reinterpret_cast<PCOJava*>(observer_p);
   observer->SetConstraints(new ConstraintsWrapper(jni, j_constraints));
-  rtc::scoped_refptr<PeerConnectionInterface> pc(f->CreatePeerConnection(
-      rtc_config, observer->constraints(), NULL, NULL, observer));
+  CopyConstraintsIntoRtcConfiguration(observer->constraints(), &rtc_config);
+  rtc::scoped_refptr<PeerConnectionInterface> pc(
+      f->CreatePeerConnection(rtc_config, nullptr, nullptr, observer));
   return (jlong)pc.release();
 }
 
@@ -1926,11 +1927,15 @@ JOW(void, PeerConnection_setRemoteDescription)(
       observer, JavaSdpToNativeSdp(jni, j_sdp));
 }
 
-JOW(jboolean, PeerConnection_setConfiguration)(
-    JNIEnv* jni, jobject j_pc, jobject j_rtc_config) {
+JOW(jboolean, PeerConnection_nativeSetConfiguration)(
+    JNIEnv* jni, jobject j_pc, jobject j_rtc_config, jlong native_observer) {
+  // Need to merge constraints into RTCConfiguration again, which are stored
+  // in the observer object.
+  PCOJava* observer = reinterpret_cast<PCOJava*>(native_observer);
   PeerConnectionInterface::RTCConfiguration rtc_config(
       PeerConnectionInterface::RTCConfigurationType::kAggressive);
   JavaRTCConfigurationToJsepRTCConfiguration(jni, j_rtc_config, &rtc_config);
+  CopyConstraintsIntoRtcConfiguration(observer->constraints(), &rtc_config);
   return ExtractNativePC(jni, j_pc)->SetConfiguration(rtc_config);
 }
 

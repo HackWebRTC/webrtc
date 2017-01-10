@@ -209,7 +209,9 @@ public class PeerConnection {
 
   public native void setRemoteDescription(SdpObserver observer, SessionDescription sdp);
 
-  public native boolean setConfiguration(RTCConfiguration config);
+  public boolean setConfiguration(RTCConfiguration config) {
+    return nativeSetConfiguration(config, nativeObserver);
+  }
 
   public boolean addIceCandidate(IceCandidate candidate) {
     return nativeAddIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp);
@@ -310,6 +312,8 @@ public class PeerConnection {
   private static native void freePeerConnection(long nativePeerConnection);
 
   private static native void freeObserver(long nativeObserver);
+
+  public native boolean nativeSetConfiguration(RTCConfiguration config, long nativeObserver);
 
   private native boolean nativeAddIceCandidate(
       String sdpMid, int sdpMLineIndex, String iceCandidateSdp);
