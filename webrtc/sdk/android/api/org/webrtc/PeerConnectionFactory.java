@@ -57,6 +57,14 @@ public class PeerConnectionFactory {
   // Field trial initialization. Must be called before PeerConnectionFactory
   // is created.
   public static native void initializeFieldTrials(String fieldTrialsInitString);
+  // Wrapper of webrtc::field_trial::FindFullName. Develop the feature with default behaviour off.
+  // Example usage:
+  // if (PeerConnectionFactory.fieldTrialsFindFullName("WebRTCExperiment").equals("Enabled")) {
+  //   method1();
+  // } else {
+  //   method2();
+  // }
+  public static native String fieldTrialsFindFullName(String name);
   // Internal tracing initialization. Must be called before PeerConnectionFactory is created to
   // prevent racing with tracing code.
   public static native void initializeInternalTracer();

@@ -71,6 +71,7 @@
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/field_trial_default.h"
 #include "webrtc/system_wrappers/include/logcat_trace_context.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -1142,6 +1143,12 @@ JOW(void, PeerConnectionFactory_initializeFieldTrials)(
 
 JOW(void, PeerConnectionFactory_initializeInternalTracer)(JNIEnv* jni, jclass) {
   rtc::tracing::SetupInternalTracer();
+}
+
+JOW(jstring, PeerConnectionFactory_fieldTrialsFindFullName)
+(JNIEnv* jni, jclass, jstring j_name) {
+  return JavaStringFromStdString(
+      jni, webrtc::field_trial::FindFullName(JavaToStdString(jni, j_name)));
 }
 
 JOW(jboolean, PeerConnectionFactory_startInternalTracingCapture)(
