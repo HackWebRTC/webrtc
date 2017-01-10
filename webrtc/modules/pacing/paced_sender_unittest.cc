@@ -828,7 +828,6 @@ TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
               kFirstClusterBps, kBitrateProbingError);
   EXPECT_EQ(0, packet_sender.padding_sent());
 
-  clock_.AdvanceTimeMilliseconds(send_bucket_->TimeUntilNextProcess());
   start = clock_.TimeInMilliseconds();
   while (packet_sender.packets_sent() < 10) {
     int time_until_process = send_bucket_->TimeUntilNextProcess();
@@ -837,9 +836,9 @@ TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
   }
   packets_sent = packet_sender.packets_sent() - packets_sent;
   // Validate second cluster bitrate.
-  EXPECT_NEAR((packets_sent - 1) * kPacketSize * 8000 /
-                  (clock_.TimeInMilliseconds() - start),
-              kSecondClusterBps, kBitrateProbingError);
+  EXPECT_NEAR(
+      packets_sent * kPacketSize * 8000 / (clock_.TimeInMilliseconds() - start),
+      kSecondClusterBps, kBitrateProbingError);
 }
 
 TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
