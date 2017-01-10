@@ -19,6 +19,9 @@
       "app": "system_wrappers_unittests"
     },
     {
+      "app": "test_support_unittests"
+    },
+    {
       "app": "voice_engine_unittests"
     }
   ]
