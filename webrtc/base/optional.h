@@ -77,6 +77,12 @@ inline T* FunctionThatDoesNothing(T* x) { return x; }
 //   might make sense, but any larger parse job is probably going to need to
 //   tell the caller what the problem was, not just that there was one.
 //
+// - As a non-mutable function argument. When you want to pass a value of a
+//   type T that can fail to be there, const T* is almost always both fastest
+//   and cleanest. (If you're *sure* that the the caller will always already
+//   have an Optional<T>, const Optional<T>& is slightly faster than const T*,
+//   but this is a micro-optimization. In general, stick to const T*.)
+//
 // TODO(kwiberg): Get rid of this class when the standard library has
 // std::optional (and we're allowed to use it).
 template <typename T>
