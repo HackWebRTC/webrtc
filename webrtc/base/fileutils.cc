@@ -14,7 +14,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stringutils.h"
-#include "webrtc/base/stream.h"
 
 #if defined(WEBRTC_WIN)
 #include "webrtc/base/win32filesystem.h"
@@ -136,7 +135,7 @@ DirectoryIterator* FilesystemInterface::IterateDirectory() {
 
 bool FilesystemInterface::DeleteFolderContents(const Pathname &folder) {
   bool success = true;
-  VERIFY(IsFolder(folder));
+  RTC_CHECK(IsFolder(folder));
   DirectoryIterator *di = IterateDirectory();
   if (!di)
     return false;
