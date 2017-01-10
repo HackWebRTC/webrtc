@@ -1186,14 +1186,9 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
   webrtc::FlexfecConfig flexfec_config;
   ConfigureReceiverRtp(&config, &flexfec_config, sp);
 
-  // Set up A/V sync group based on sync label.
-  config.sync_group = sp.sync_label;
-
-  config.rtp.remb = send_codec_ ? HasRemb(send_codec_->codec) : false;
-  config.rtp.transport_cc =
-      send_codec_ ? HasTransportCc(send_codec_->codec) : false;
   config.disable_prerenderer_smoothing =
       video_config_.disable_prerenderer_smoothing;
+  config.sync_group = sp.sync_label;
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(
       call_, sp, std::move(config), external_decoder_factory_, default_stream,
@@ -1211,16 +1206,6 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
   config->rtp.remote_ssrc = ssrc;
   config->rtp.local_ssrc = rtcp_receiver_report_ssrc_;
 
-  config->rtp.extensions = recv_rtp_extensions_;
-  // Whether or not the receive stream sends reduced size RTCP is determined
-  // by the send params.
-  // TODO(deadbeef): Once we change "send_params" to "sender_params" and
-  // "recv_params" to "receiver_params", we should get this out of
-  // receiver_params_.
-  config->rtp.rtcp_mode = send_params_.rtcp.reduced_size
-                              ? webrtc::RtcpMode::kReducedSize
-                              : webrtc::RtcpMode::kCompound;
-
   // TODO(pbos): This protection is against setting the same local ssrc as
   // remote which is not permitted by the lower-level API. RTCP requires a
   // corresponding sender SSRC. Figure out what to do when we don't have
@@ -1231,6 +1216,26 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
     } else {
       config->rtp.local_ssrc = kDefaultRtcpReceiverReportSsrc + 1;
     }
+  }
+
+  // Whether or not the receive stream sends reduced size RTCP is determined
+  // by the send params.
+  // TODO(deadbeef): Once we change "send_params" to "sender_params" and
+  // "recv_params" to "receiver_params", we should get this out of
+  // receiver_params_.
+  config->rtp.rtcp_mode = send_params_.rtcp.reduced_size
+                              ? webrtc::RtcpMode::kReducedSize
+                              : webrtc::RtcpMode::kCompound;
+
+  config->rtp.remb = send_codec_ ? HasRemb(send_codec_->codec) : false;
+  config->rtp.transport_cc =
+      send_codec_ ? HasTransportCc(send_codec_->codec) : false;
+
+  // TODO(brandtr): Generalize when we add support for multistream protection.
+  uint32_t flexfec_ssrc;
+  if (sp.GetFecFrSsrc(ssrc, &flexfec_ssrc)) {
+    flexfec_config->flexfec_ssrc = flexfec_ssrc;
+    flexfec_config->protected_media_ssrcs = {ssrc};
   }
 
   for (size_t i = 0; i < recv_codecs_.size(); ++i) {
@@ -1244,13 +1249,7 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
     }
   }
 
-  // TODO(brandtr): This code needs to be generalized when we add support for
-  // multistream protection.
-  uint32_t flexfec_ssrc;
-  if (sp.GetFecFrSsrc(ssrc, &flexfec_ssrc)) {
-    flexfec_config->flexfec_ssrc = flexfec_ssrc;
-    flexfec_config->protected_media_ssrcs = {ssrc};
-  }
+  config->rtp.extensions = recv_rtp_extensions_;
 }
 
 bool WebRtcVideoChannel2::RemoveRecvStream(uint32_t ssrc) {
