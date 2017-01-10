@@ -193,7 +193,7 @@ int16_t WebRtcSpl_LevinsonDurbin(const int32_t* R, int16_t* A, int16_t* K,
 
         // Alpha = Alpha * (1-K^2)
 
-        temp1W32 = ((K_hi * K_low >> 14) + K_hi * K_hi) << 1;  // K*K in Q31
+        temp1W32 = ((K_hi * K_low >> 14) + K_hi * K_hi) * 2;  // K*K in Q31
 
         temp1W32 = WEBRTC_SPL_ABS_W32(temp1W32); // Guard against <0
         temp1W32 = (int32_t)0x7fffffffL - temp1W32; // 1 - K*K  in Q31
