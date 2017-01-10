@@ -13,7 +13,6 @@ package org.webrtc;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-
 import java.util.Arrays;
 
 @SuppressWarnings("deprecation")
@@ -258,6 +257,9 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
   @Override
   public void startCapture(int width, int height, int framerate) {
     Logging.d(TAG, "startCapture: " + width + "x" + height + "@" + framerate);
+    if (applicationContext == null) {
+      throw new RuntimeException("CameraCapturer must be initialized before calling startCapture.");
+    }
 
     synchronized (stateLock) {
       if (sessionOpening || currentSession != null) {
