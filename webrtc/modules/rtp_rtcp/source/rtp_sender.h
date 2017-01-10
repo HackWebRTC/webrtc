@@ -72,8 +72,8 @@ class RTPSender {
   uint32_t FecOverheadRate() const;
   uint32_t NackOverheadRate() const;
 
-  // Includes size of RTP and FEC headers.
-  size_t MaxDataPayloadLength() const;
+  // Excluding size of RTP and FEC headers.
+  size_t MaxPayloadSize() const;
 
   int32_t RegisterPayload(const char* payload_name,
                           const int8_t payload_type,
@@ -106,7 +106,7 @@ class RTPSender {
 
   void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
-  void SetMaxPayloadLength(size_t max_payload_length);
+  void SetMaxRtpPacketSize(size_t max_packet_size);
 
   bool SendOutgoingData(FrameType frame_type,
                         int8_t payload_type,
@@ -164,7 +164,8 @@ class RTPSender {
 
   size_t RtpHeaderLength() const;
   uint16_t AllocateSequenceNumber(uint16_t packets_to_send);
-  size_t MaxPayloadLength() const;
+  // Including RTP headers.
+  size_t MaxRtpPacketSize() const;
 
   uint32_t SSRC() const;
 
@@ -207,8 +208,6 @@ class RTPSender {
   RtpState GetRtpState() const;
   void SetRtxRtpState(const RtpState& rtp_state);
   RtpState GetRtxRtpState() const;
-
-  void SetTransportOverhead(int transport_overhead);
 
  protected:
   int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
@@ -272,7 +271,7 @@ class RTPSender {
   Transport* transport_;
   bool sending_media_ GUARDED_BY(send_critsect_);
 
-  size_t max_payload_length_;
+  size_t max_packet_size_;
 
   int8_t payload_type_ GUARDED_BY(send_critsect_);
   std::map<int8_t, RtpUtility::Payload*> payload_type_map_;
@@ -323,7 +322,6 @@ class RTPSender {
   uint32_t ssrc_rtx_ GUARDED_BY(send_critsect_);
   // Mapping rtx_payload_type_map_[associated] = rtx.
   std::map<int8_t, int8_t> rtx_payload_type_map_ GUARDED_BY(send_critsect_);
-  size_t transport_overhead_bytes_per_packet_ GUARDED_BY(send_critsect_);
   size_t rtp_overhead_bytes_per_packet_ GUARDED_BY(send_critsect_);
 
   RateLimiter* const retransmission_rate_limiter_;

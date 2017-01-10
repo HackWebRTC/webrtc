@@ -130,20 +130,10 @@ TEST_F(RtpRtcpAPITest, Basic) {
   EXPECT_TRUE(module_->Sending());
 }
 
-TEST_F(RtpRtcpAPITest, MTU) {
-  EXPECT_EQ(0, module_->SetMaxTransferUnit(1234));
-  EXPECT_EQ(1234 - 20 - 8, module_->MaxPayloadLength());
-
-  EXPECT_EQ(0, module_->SetTransportOverhead(true, true, 12));
-  EXPECT_EQ(1234 - 20 - 20 - 20 - 12, module_->MaxPayloadLength());
-
-  EXPECT_EQ(0, module_->SetTransportOverhead(false, false, 0));
-  EXPECT_EQ(1234 - 20 - 8, module_->MaxPayloadLength());
-
-  module_->SetTransportOverhead(28);
-  EXPECT_EQ(1234 - 28, module_->MaxPayloadLength());
-  module_->SetTransportOverhead(44);
-  EXPECT_EQ(1234 - 44, module_->MaxPayloadLength());
+TEST_F(RtpRtcpAPITest, PacketSize) {
+  module_->SetMaxRtpPacketSize(1234);
+  EXPECT_EQ(1234u, module_->MaxRtpPacketSize());
+  EXPECT_EQ(1234u - 12u /* Minimum RTP header */, module_->MaxPayloadSize());
 }
 
 TEST_F(RtpRtcpAPITest, SSRC) {

@@ -114,36 +114,25 @@ class RtpRtcp : public Module {
   // Sender
   // **************************************************************************
 
-  // Sets MTU.
-  // |size| - Max transfer unit in bytes, default is 1500.
-  // Returns -1 on failure else 0.
-  virtual int32_t SetMaxTransferUnit(uint16_t size) = 0;
+  // TODO(nisse): Deprecated. Kept temporarily, as an alias for the
+  // new function which has slighly different semantics. Delete as
+  // soon as known applications are updated.
+  virtual int32_t SetMaxTransferUnit(uint16_t size) {
+    SetMaxRtpPacketSize(size);
+    return 0;
+  }
 
-  // Sets transport overhead. Default is IPv4 and UDP with no encryption.
-  // |tcp| - true for TCP false UDP.
-  // |ipv6| - true for IP version 6 false for version 4.
-  // |authentication_overhead| - number of bytes to leave for an authentication
-  // header.
-  // Returns -1 on failure else 0
-  // TODO(michaelt): deprecate the function.
-  virtual int32_t SetTransportOverhead(bool tcp,
-                                       bool ipv6,
-                                       uint8_t authentication_overhead = 0) = 0;
+  // Sets the maximum size of an RTP packet, including RTP headers.
+  virtual void SetMaxRtpPacketSize(size_t size) = 0;
 
-  // Sets transport overhead per packet.
-  virtual void SetTransportOverhead(int transport_overhead_per_packet) = 0;
-
-  // Returns max payload length, which is a combination of the configuration
-  // MaxTransferUnit and TransportOverhead.
+  // Returns max payload length.
   // Does not account for RTP headers and FEC/ULP/RED overhead (when FEC is
   // enabled).
-  virtual uint16_t MaxPayloadLength() const = 0;
+  virtual size_t MaxPayloadSize() const = 0;
 
-  // Returns max data payload length, which is a combination of the
-  // configuration MaxTransferUnit, headers and TransportOverhead.
-  // Takes into account RTP headers and FEC/ULP/RED overhead (when FEC is
-  // enabled).
-  virtual uint16_t MaxDataPayloadLength() const = 0;
+  // Returns max RTP packet size. Takes into account RTP headers and
+  // FEC/ULP/RED overhead (when FEC is enabled).
+  virtual size_t MaxRtpPacketSize() const = 0;
 
   // Sets codec name and payload type. Returns -1 on failure else 0.
   virtual int32_t RegisterSendPayload(const CodecInst& voice_codec) = 0;

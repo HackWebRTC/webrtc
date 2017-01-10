@@ -1394,21 +1394,16 @@ TEST_F(RtpSenderTest, OnOverheadChanged) {
                     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
                     &retransmission_rate_limiter_, &mock_overhead_observer));
 
-  // Transport overhead is set to 28B.
-  EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(28)).Times(1);
-  rtp_sender_->SetTransportOverhead(28);
-
   // RTP overhead is 12B.
-  // 28B + 12B = 40B
-  EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(40)).Times(1);
+  EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(12)).Times(1);
   SendGenericPayload();
 
   rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
                                           kTransmissionTimeOffsetExtensionId);
 
   // TransmissionTimeOffset extension has a size of 8B.
-  // 28B + 12B + 8B = 48B
-  EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(48)).Times(1);
+  // 12B + 8B = 20B
+  EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(20)).Times(1);
   SendGenericPayload();
 }
 
@@ -1420,16 +1415,11 @@ TEST_F(RtpSenderTest, DoesNotUpdateOverheadOnEqualSize) {
                     &retransmission_rate_limiter_, &mock_overhead_observer));
 
   EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(_)).Times(1);
-  rtp_sender_->SetTransportOverhead(28);
-  rtp_sender_->SetTransportOverhead(28);
-
-  EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(_)).Times(1);
   SendGenericPayload();
   SendGenericPayload();
 }
 
 TEST_F(RtpSenderTest, AddOverheadToTransportFeedbackObserver) {
-  constexpr int kTransportOverheadBytesPerPacket = 28;
   constexpr int kRtpOverheadBytesPerPacket = 12 + 8;
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
@@ -1438,7 +1428,6 @@ TEST_F(RtpSenderTest, AddOverheadToTransportFeedbackObserver) {
       false, &fake_clock_, &transport_, nullptr, nullptr, &seq_num_allocator_,
       &feedback_observer_, nullptr, nullptr, nullptr, &mock_rtc_event_log_,
       nullptr, &retransmission_rate_limiter_, &mock_overhead_observer));
-  rtp_sender_->SetTransportOverhead(kTransportOverheadBytesPerPacket);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionTransportSequenceNumber,
                    kTransportSequenceNumberExtensionId));
@@ -1447,13 +1436,11 @@ TEST_F(RtpSenderTest, AddOverheadToTransportFeedbackObserver) {
   EXPECT_CALL(feedback_observer_,
               AddPacket(kTransportSequenceNumber,
                         sizeof(kPayloadData) + kGenericHeaderLength +
-                            kRtpOverheadBytesPerPacket +
-                            kTransportOverheadBytesPerPacket,
+                            kRtpOverheadBytesPerPacket,
                         PacketInfo::kNotAProbe))
       .Times(1);
   EXPECT_CALL(mock_overhead_observer,
-              OnOverheadChanged(kTransportOverheadBytesPerPacket +
-                                kRtpOverheadBytesPerPacket))
+              OnOverheadChanged(kRtpOverheadBytesPerPacket))
       .Times(1);
   SendGenericPayload();
 }

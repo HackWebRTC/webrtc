@@ -92,7 +92,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
 
   RtpStateMap StopPermanentlyAndGetRtpStates();
 
-  void SetTransportOverhead(int transport_overhead_per_packet);
+  void SetTransportOverhead(size_t transport_overhead_per_packet);
 
  private:
   class ConstructionTask;

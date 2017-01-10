@@ -19,6 +19,7 @@
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/utility/include/process_thread.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -59,6 +60,10 @@ void TransportFeedbackAdapter::AddPacket(uint16_t sequence_number,
                                          size_t length,
                                          int probe_cluster_id) {
   rtc::CritScope cs(&lock_);
+  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead") ==
+      "Enabled") {
+    length += transport_overhead_bytes_per_packet_;
+  }
   send_time_history_.AddAndRemoveOld(sequence_number, length, probe_cluster_id);
 }
 
@@ -71,6 +76,12 @@ void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
 void TransportFeedbackAdapter::SetMinBitrate(int min_bitrate_bps) {
   rtc::CritScope cs(&bwe_lock_);
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
+}
+
+void TransportFeedbackAdapter::SetTransportOverhead(
+    int transport_overhead_bytes_per_packet) {
+  rtc::CritScope cs(&lock_);
+  transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
 }
 
 int64_t TransportFeedbackAdapter::GetProbingIntervalMs() const {

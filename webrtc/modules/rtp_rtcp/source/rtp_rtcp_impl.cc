@@ -121,7 +121,10 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
   rtcp_sender_.SetTimestampOffset(rtp_sender_.TimestampOffset());
 
   // Set default packet size limit.
-  SetMaxTransferUnit(IP_PACKET_SIZE);
+  // TODO(nisse): Kind-of duplicates
+  // webrtc::VideoSendStream::Config::Rtp::kDefaultMaxPacketSize.
+  const size_t kTcpOverIpv4HeaderSize = 40;
+  SetMaxRtpPacketSize(IP_PACKET_SIZE - kTcpOverIpv4HeaderSize);
 }
 
 // Returns the number of milliseconds until the module want a worker thread
@@ -415,65 +418,22 @@ size_t ModuleRtpRtcpImpl::TimeToSendPadding(size_t bytes,
   return rtp_sender_.TimeToSendPadding(bytes, probe_cluster_id);
 }
 
-uint16_t ModuleRtpRtcpImpl::MaxPayloadLength() const {
-  return rtp_sender_.MaxPayloadLength();
+size_t ModuleRtpRtcpImpl::MaxPayloadSize() const {
+  return rtp_sender_.MaxPayloadSize();
 }
 
-uint16_t ModuleRtpRtcpImpl::MaxDataPayloadLength() const {
-  return rtp_sender_.MaxDataPayloadLength();
+size_t ModuleRtpRtcpImpl::MaxRtpPacketSize() const {
+  return rtp_sender_.MaxRtpPacketSize();
 }
 
-int32_t ModuleRtpRtcpImpl::SetTransportOverhead(
-    const bool tcp,
-    const bool ipv6,
-    const uint8_t authentication_overhead) {
-  uint16_t packet_overhead = 0;
-  if (ipv6) {
-    packet_overhead = 40;
-  } else {
-    packet_overhead = 20;
-  }
-  if (tcp) {
-    // TCP.
-    packet_overhead += 20;
-  } else {
-    // UDP.
-    packet_overhead += 8;
-  }
-  packet_overhead += authentication_overhead;
+void ModuleRtpRtcpImpl::SetMaxRtpPacketSize(size_t rtp_packet_size) {
+  RTC_DCHECK_LE(rtp_packet_size, IP_PACKET_SIZE)
+      << "rtp packet size too large: " << rtp_packet_size;
+  RTC_DCHECK_GT(rtp_packet_size, packet_overhead_)
+      << "rtp packet size too small: " << rtp_packet_size;
 
-  if (packet_overhead == packet_overhead_) {
-    // Ok same as before.
-    return 0;
-  }
-
-  size_t mtu = rtp_sender_.MaxPayloadLength() + packet_overhead_;
-  size_t max_payload_length = mtu - packet_overhead;
-  packet_overhead_ = packet_overhead;
-  rtcp_sender_.SetMaxPayloadLength(max_payload_length);
-  rtp_sender_.SetMaxPayloadLength(max_payload_length);
-  return 0;
-}
-
-void ModuleRtpRtcpImpl::SetTransportOverhead(
-    int transport_overhead_per_packet) {
-  RTC_DCHECK_GT(transport_overhead_per_packet, 0);
-  int mtu = rtp_sender_.MaxPayloadLength() + packet_overhead_;
-  RTC_DCHECK_LT(transport_overhead_per_packet, mtu);
-  size_t max_payload_length = mtu - transport_overhead_per_packet;
-  packet_overhead_ = transport_overhead_per_packet;
-  rtp_sender_.SetTransportOverhead(packet_overhead_);
-  rtcp_sender_.SetMaxPayloadLength(max_payload_length);
-  rtp_sender_.SetMaxPayloadLength(max_payload_length);
-}
-
-int32_t ModuleRtpRtcpImpl::SetMaxTransferUnit(uint16_t mtu) {
-  RTC_DCHECK_LE(mtu, IP_PACKET_SIZE) << "MTU too large: " << mtu;
-  RTC_DCHECK_GT(mtu, packet_overhead_) << "MTU too small: " << mtu;
-  size_t max_payload_length = mtu - packet_overhead_;
-  rtcp_sender_.SetMaxPayloadLength(max_payload_length);
-  rtp_sender_.SetMaxPayloadLength(max_payload_length);
-  return 0;
+  rtcp_sender_.SetMaxRtpPacketSize(rtp_packet_size);
+  rtp_sender_.SetMaxRtpPacketSize(rtp_packet_size);
 }
 
 RtcpMode ModuleRtpRtcpImpl::RTCP() const {

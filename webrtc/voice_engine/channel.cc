@@ -914,6 +914,8 @@ Channel::Channel(int32_t channelId,
       _lastLocalTimeStamp(0),
       _lastPayloadType(0),
       _includeAudioLevelIndication(false),
+      transport_overhead_per_packet_(0),
+      rtp_overhead_per_packet_(0),
       _outputSpeechType(AudioFrame::kNormalSpeech),
       restored_packet_in_use_(false),
       rtcp_observer_(new VoERtcpObserver(this)),
@@ -2878,16 +2880,23 @@ void Channel::SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
   rtcp_rtt_stats_proxy_->SetRtcpRttStats(rtcp_rtt_stats);
 }
 
-void Channel::SetTransportOverhead(int transport_overhead_per_packet) {
-  _rtpRtcpModule->SetTransportOverhead(transport_overhead_per_packet);
+void Channel::UpdateOverheadForEncoder() {
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder) {
+      (*encoder)->OnReceivedOverhead(transport_overhead_per_packet_ +
+                                     rtp_overhead_per_packet_);
+    }
+  });
+}
+
+void Channel::SetTransportOverhead(size_t transport_overhead_per_packet) {
+  transport_overhead_per_packet_ = transport_overhead_per_packet;
+  UpdateOverheadForEncoder();
 }
 
 void Channel::OnOverheadChanged(size_t overhead_bytes_per_packet) {
-  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
-    if (*encoder) {
-      (*encoder)->OnReceivedOverhead(overhead_bytes_per_packet);
-    }
-  });
+  rtp_overhead_per_packet_ = overhead_bytes_per_packet;
+  UpdateOverheadForEncoder();
 }
 
 int Channel::RegisterExternalMediaProcessing(ProcessingTypes type,

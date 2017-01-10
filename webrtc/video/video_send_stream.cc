@@ -39,6 +39,9 @@ namespace webrtc {
 static const int kMinSendSidePacketHistorySize = 600;
 namespace {
 
+// We don't do MTU discovery, so assume that we have the standard ethernet MTU.
+const size_t kPathMTU = 1500;
+
 std::vector<RtpRtcp*> CreateRtpRtcpModules(
     Transport* outgoing_transport,
     RtcpIntraFrameObserver* intra_frame_callback,
@@ -326,7 +329,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void EnableEncodedFrameRecording(const std::vector<rtc::PlatformFile>& files,
                                    size_t byte_limit);
 
-  void SetTransportOverhead(int transport_overhead_per_packet);
+  void SetTransportOverhead(size_t transport_overhead_per_packet);
 
  private:
   class CheckEncoderActivityTask;
@@ -689,7 +692,8 @@ VideoSendStream::RtpStateMap VideoSendStream::StopPermanentlyAndGetRtpStates() {
   return state_map;
 }
 
-void VideoSendStream::SetTransportOverhead(int transport_overhead_per_packet) {
+void VideoSendStream::SetTransportOverhead(
+    size_t transport_overhead_per_packet) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   VideoSendStreamImpl* send_stream = send_stream_.get();
   worker_queue_->PostTask([send_stream, transport_overhead_per_packet] {
@@ -808,8 +812,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     rtp_rtcp->RegisterRtcpStatisticsCallback(stats_proxy_);
     rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(stats_proxy_);
-    rtp_rtcp->SetMaxTransferUnit(
-        static_cast<uint16_t>(config_->rtp.max_packet_size));
+    rtp_rtcp->SetMaxRtpPacketSize(config_->rtp.max_packet_size);
     rtp_rtcp->RegisterVideoSendPayload(
         config_->encoder_settings.payload_type,
         config_->encoder_settings.payload_name.c_str());
@@ -1188,14 +1191,27 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(uint32_t bitrate_bps,
 
   if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead") ==
       "Enabled") {
-    // Substract overhead from bitrate.
-    rtc::CritScope lock(&overhead_bytes_per_packet_crit_);
-    int packets_per_second =
-        std::ceil(bitrate_bps / (8 * (config_->rtp.max_packet_size +
-                                      transport_overhead_bytes_per_packet_)));
-    uint32_t overhead_bps = static_cast<uint32_t>(
-        8 * overhead_bytes_per_packet_ * packets_per_second);
-    bitrate_bps = overhead_bps > bitrate_bps ? 0u : bitrate_bps - overhead_bps;
+    // Subtract total overhead (transport + rtp) from bitrate.
+    size_t rtp_overhead;
+    {
+      rtc::CritScope lock(&overhead_bytes_per_packet_crit_);
+      rtp_overhead = overhead_bytes_per_packet_;
+    }
+    RTC_CHECK_GE(rtp_overhead, 0);
+    RTC_DCHECK_LT(rtp_overhead, config_->rtp.max_packet_size);
+    if (rtp_overhead >= config_->rtp.max_packet_size) {
+      LOG(LS_WARNING) << "RTP overhead (" << rtp_overhead << " bytes)"
+                      << "exceeds maximum packet size ("
+                      << config_->rtp.max_packet_size << " bytes)";
+
+      bitrate_bps = 0;
+    } else {
+      bitrate_bps =
+          static_cast<uint32_t>(static_cast<uint64_t>(bitrate_bps) *
+                                (config_->rtp.max_packet_size - rtp_overhead) /
+                                (config_->rtp.max_packet_size +
+                                 transport_overhead_bytes_per_packet_));
+    }
   }
 
   // Get the encoder target rate. It is the estimated network rate -
@@ -1263,15 +1279,23 @@ void VideoSendStreamImpl::OnOverheadChanged(size_t overhead_bytes_per_packet) {
 }
 
 void VideoSendStreamImpl::SetTransportOverhead(
-    int transport_overhead_bytes_per_packet) {
+    size_t transport_overhead_bytes_per_packet) {
+  if (transport_overhead_bytes_per_packet >= static_cast<int>(kPathMTU)) {
+    LOG(LS_ERROR) << "Transport overhead exceeds size of ethernet frame";
+    return;
+  }
+
   transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
-  RTC_DCHECK_LE(config_->rtp.max_packet_size,
-                0xFFFFu + transport_overhead_bytes_per_packet);
-  const uint16_t mtu = static_cast<uint16_t>(
-      config_->rtp.max_packet_size + transport_overhead_bytes_per_packet);
+
+  congestion_controller_->SetTransportOverhead(
+      transport_overhead_bytes_per_packet_);
+
+  size_t rtp_packet_size =
+      std::min(config_->rtp.max_packet_size,
+               kPathMTU - transport_overhead_bytes_per_packet_);
+
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    rtp_rtcp->SetTransportOverhead(transport_overhead_bytes_per_packet);
-    rtp_rtcp->SetMaxTransferUnit(mtu);
+    rtp_rtcp->SetMaxRtpPacketSize(rtp_packet_size);
   }
 }
 

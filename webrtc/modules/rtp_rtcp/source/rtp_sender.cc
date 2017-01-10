@@ -92,8 +92,8 @@ RTPSender::RTPSender(
       transport_feedback_observer_(transport_feedback_observer),
       last_capture_time_ms_sent_(0),
       transport_(transport),
-      sending_media_(true),                      // Default to sending media.
-      max_payload_length_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
+      sending_media_(true),                   // Default to sending media.
+      max_packet_size_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
       payload_type_(-1),
       payload_type_map_(),
       rtp_header_extension_map_(),
@@ -121,7 +121,6 @@ RTPSender::RTPSender(
       last_packet_marker_bit_(false),
       csrcs_(),
       rtx_(kRtxOff),
-      transport_overhead_bytes_per_packet_(0),
       rtp_overhead_bytes_per_packet_(0),
       retransmission_rate_limiter_(retransmission_rate_limiter),
       overhead_observer_(overhead_observer) {
@@ -297,26 +296,26 @@ int8_t RTPSender::SendPayloadType() const {
   return payload_type_;
 }
 
-void RTPSender::SetMaxPayloadLength(size_t max_payload_length) {
+void RTPSender::SetMaxRtpPacketSize(size_t max_packet_size) {
   // Sanity check.
-  RTC_DCHECK(max_payload_length >= 100 && max_payload_length <= IP_PACKET_SIZE)
-      << "Invalid max payload length: " << max_payload_length;
+  RTC_DCHECK(max_packet_size >= 100 && max_packet_size <= IP_PACKET_SIZE)
+      << "Invalid max payload length: " << max_packet_size;
   rtc::CritScope lock(&send_critsect_);
-  max_payload_length_ = max_payload_length;
+  max_packet_size_ = max_packet_size;
 }
 
-size_t RTPSender::MaxDataPayloadLength() const {
+size_t RTPSender::MaxPayloadSize() const {
   if (audio_configured_) {
-    return max_payload_length_ - RtpHeaderLength();
+    return max_packet_size_ - RtpHeaderLength();
   } else {
-    return max_payload_length_ - RtpHeaderLength()  // RTP overhead.
-           - video_->FecPacketOverhead()            // FEC/ULP/RED overhead.
-           - (RtxStatus() ? kRtxHeaderSize : 0);    // RTX overhead.
+    return max_packet_size_ - RtpHeaderLength()   // RTP overhead.
+           - video_->FecPacketOverhead()          // FEC/ULP/RED overhead.
+           - (RtxStatus() ? kRtxHeaderSize : 0);  // RTX overhead.
   }
 }
 
-size_t RTPSender::MaxPayloadLength() const {
-  return max_payload_length_;
+size_t RTPSender::MaxRtpPacketSize() const {
+  return max_packet_size_;
 }
 
 void RTPSender::SetRtxStatus(int mode) {
@@ -483,7 +482,7 @@ size_t RTPSender::SendPadData(size_t bytes, int probe_cluster_id) {
   // RtpPacketSender, which will make sure we don't send too much padding even
   // if a single packet is larger than requested.
   size_t padding_bytes_in_packet =
-      std::min(MaxDataPayloadLength(), kMaxPaddingLength);
+      std::min(MaxPayloadSize(), kMaxPaddingLength);
   size_t bytes_sent = 0;
   while (bytes_sent < bytes) {
     int64_t now_ms = clock_->TimeInMilliseconds();
@@ -974,7 +973,7 @@ void RTPSender::GetDataCounters(StreamDataCounters* rtp_stats,
 std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
   rtc::CritScope lock(&send_critsect_);
   std::unique_ptr<RtpPacketToSend> packet(
-      new RtpPacketToSend(&rtp_header_extension_map_, max_payload_length_));
+      new RtpPacketToSend(&rtp_header_extension_map_, max_packet_size_));
   packet->SetSsrc(ssrc_);
   packet->SetCsrcs(csrcs_);
   // Reserve extensions, if registered, RtpSender set in SendToNetwork.
@@ -1253,31 +1252,13 @@ RtpState RTPSender::GetRtxRtpState() const {
   return state;
 }
 
-void RTPSender::SetTransportOverhead(int transport_overhead) {
-  if (!overhead_observer_)
-    return;
-  size_t overhead_bytes_per_packet = 0;
-  {
-    rtc::CritScope lock(&send_critsect_);
-    if (transport_overhead_bytes_per_packet_ ==
-        static_cast<size_t>(transport_overhead)) {
-      return;
-    }
-    transport_overhead_bytes_per_packet_ = transport_overhead;
-    overhead_bytes_per_packet =
-        rtp_overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_;
-  }
-  overhead_observer_->OnOverheadChanged(overhead_bytes_per_packet);
-}
-
 void RTPSender::AddPacketToTransportFeedback(uint16_t packet_id,
                                              const RtpPacketToSend& packet,
                                              int probe_cluster_id) {
   size_t packet_size = packet.payload_size() + packet.padding_size();
   if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead") ==
       "Enabled") {
-    rtc::CritScope lock(&send_critsect_);
-    packet_size = packet.size() + transport_overhead_bytes_per_packet_;
+    packet_size = packet.size();
   }
 
   if (transport_feedback_observer_) {
@@ -1289,15 +1270,14 @@ void RTPSender::AddPacketToTransportFeedback(uint16_t packet_id,
 void RTPSender::UpdateRtpOverhead(const RtpPacketToSend& packet) {
   if (!overhead_observer_)
     return;
-  size_t overhead_bytes_per_packet = 0;
+  size_t overhead_bytes_per_packet;
   {
     rtc::CritScope lock(&send_critsect_);
     if (rtp_overhead_bytes_per_packet_ == packet.headers_size()) {
       return;
     }
     rtp_overhead_bytes_per_packet_ = packet.headers_size();
-    overhead_bytes_per_packet =
-        rtp_overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_;
+    overhead_bytes_per_packet = rtp_overhead_bytes_per_packet_;
   }
   overhead_observer_->OnOverheadChanged(overhead_bytes_per_packet);
 }

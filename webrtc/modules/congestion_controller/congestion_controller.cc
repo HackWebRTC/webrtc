@@ -306,6 +306,12 @@ void CongestionController::SignalNetworkState(NetworkState state) {
   MaybeTriggerOnNetworkChanged();
 }
 
+void CongestionController::SetTransportOverhead(
+    size_t transport_overhead_bytes_per_packet) {
+  transport_feedback_adapter_.SetTransportOverhead(
+      transport_overhead_bytes_per_packet);
+}
+
 void CongestionController::OnSentPacket(const rtc::SentPacket& sent_packet) {
   // We're not interested in packets without an id, which may be stun packets,
   // etc, sent on the same transport.

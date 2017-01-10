@@ -49,6 +49,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
   void SetMinBitrate(int min_bitrate_bps);
+  void SetTransportOverhead(int transport_overhead_bytes_per_packet);
 
   int64_t GetProbingIntervalMs() const;
 
@@ -58,6 +59,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
 
   rtc::CriticalSection lock_;
   rtc::CriticalSection bwe_lock_;
+  int transport_overhead_bytes_per_packet_ GUARDED_BY(&lock_);
   SendTimeHistory send_time_history_ GUARDED_BY(&lock_);
   std::unique_ptr<DelayBasedBwe> delay_based_bwe_ GUARDED_BY(&bwe_lock_);
   Clock* const clock_;

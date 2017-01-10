@@ -53,12 +53,10 @@ class MockRtpRtcp : public RtpRtcp {
                        uint32_t audio_rtcp_arrival_time_frac));
   MOCK_METHOD0(InitSender, int32_t());
   MOCK_METHOD1(RegisterSendTransport, int32_t(Transport* outgoing_transport));
-  MOCK_METHOD1(SetMaxTransferUnit, int32_t(uint16_t size));
-  MOCK_METHOD3(SetTransportOverhead,
-               int32_t(bool tcp, bool ipv6, uint8_t authentication_overhead));
+  MOCK_METHOD1(SetMaxRtpPacketSize, void(size_t size));
   MOCK_METHOD1(SetTransportOverhead, void(int transport_overhead_per_packet));
-  MOCK_CONST_METHOD0(MaxPayloadLength, uint16_t());
-  MOCK_CONST_METHOD0(MaxDataPayloadLength, uint16_t());
+  MOCK_CONST_METHOD0(MaxPayloadSize, size_t());
+  MOCK_CONST_METHOD0(MaxRtpPacketSize, size_t());
   MOCK_METHOD1(RegisterSendPayload, int32_t(const CodecInst& voice_codec));
   MOCK_METHOD1(RegisterSendPayload, int32_t(const VideoCodec& video_codec));
   MOCK_METHOD2(RegisterVideoSendPayload,

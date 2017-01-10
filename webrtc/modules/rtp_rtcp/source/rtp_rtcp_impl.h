@@ -207,18 +207,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   void SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set) override;
 
-  uint16_t MaxPayloadLength() const override;
+  size_t MaxPayloadSize() const override;
 
-  uint16_t MaxDataPayloadLength() const override;
+  size_t MaxRtpPacketSize() const override;
 
-  int32_t SetMaxTransferUnit(uint16_t size) override;
-
-  // TODO(michaelt): deprecate the function.
-  int32_t SetTransportOverhead(bool tcp,
-                               bool ipv6,
-                               uint8_t authentication_overhead = 0) override;
-
-  void SetTransportOverhead(int transport_overhead_per_packet) override;
+  void SetMaxRtpPacketSize(size_t max_packet_size) override;
 
   // (NACK) Negative acknowledgment part.
 

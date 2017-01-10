@@ -81,6 +81,8 @@ class CongestionController : public CallStatsObserver, public Module {
                                    int min_bitrate_bps,
                                    int max_bitrate_bps);
   virtual void SignalNetworkState(NetworkState state);
+  virtual void SetTransportOverhead(size_t transport_overhead_bytes_per_packet);
+
   virtual BitrateController* GetBitrateController() const;
   virtual RemoteBitrateEstimator* GetRemoteBitrateEstimator(
       bool send_side_bwe);

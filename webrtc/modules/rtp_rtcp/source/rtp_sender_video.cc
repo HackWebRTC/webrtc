@@ -337,7 +337,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
     retransmission_settings = retransmission_settings_;
   }
 
-  size_t packet_capacity = rtp_sender_->MaxPayloadLength() -
+  size_t packet_capacity = rtp_sender_->MaxRtpPacketSize() -
                            fec_packet_overhead -
                            (rtp_sender_->RtxStatus() ? kRtxHeaderSize : 0);
   RTC_DCHECK_LE(packet_capacity, rtp_header->capacity());

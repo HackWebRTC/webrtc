@@ -415,7 +415,7 @@ class Channel
   void SetRtcEventLog(RtcEventLog* event_log);
 
   void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
-  void SetTransportOverhead(int transport_overhead_per_packet);
+  void SetTransportOverhead(size_t transport_overhead_per_packet);
 
   // From OverheadObserver in the RTP/RTCP module
   void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
@@ -442,6 +442,8 @@ class Channel
   int SetSendRtpHeaderExtension(bool enable,
                                 RTPExtensionType type,
                                 unsigned char id);
+
+  void UpdateOverheadForEncoder();
 
   int GetRtpTimestampRateHz() const;
   int64_t GetRTT(bool allow_associate_channel) const;
@@ -529,6 +531,8 @@ class Channel
   uint32_t _lastLocalTimeStamp;
   int8_t _lastPayloadType;
   bool _includeAudioLevelIndication;
+  size_t transport_overhead_per_packet_;
+  size_t rtp_overhead_per_packet_;
   // VoENetwork
   AudioFrame::SpeechType _outputSpeechType;
   // VoEVideoSync
