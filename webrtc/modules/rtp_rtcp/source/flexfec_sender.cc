@@ -134,14 +134,12 @@ std::vector<std::unique_ptr<RtpPacketToSend>> FlexfecSender::GetFecPackets() {
   }
   ulpfec_generator_.ResetState();
 
-  // TODO(brandtr): Remove this log output when the FlexFEC subsystem is
-  // properly wired up in a robust way.
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (!fec_packets_to_send.empty() &&
       now_ms - last_generated_packet_ms_ > kPacketLogIntervalMs) {
-    LOG(LS_INFO) << "Generated " << fec_packets_to_send.size()
-                 << " FlexFEC packets with payload type: " << payload_type_
-                 << " and SSRC: " << ssrc_ << ".";
+    LOG(LS_VERBOSE) << "Generated " << fec_packets_to_send.size()
+                    << " FlexFEC packets with payload type: " << payload_type_
+                    << " and SSRC: " << ssrc_ << ".";
     last_generated_packet_ms_ = now_ms;
   }
 
