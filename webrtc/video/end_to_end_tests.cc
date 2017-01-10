@@ -471,11 +471,12 @@ TEST_P(EndToEndTest, ReceivesAndRetransmitsNack) {
       if (dropped_packets_.find(header.sequenceNumber) !=
           dropped_packets_.end()) {
         retransmitted_packets_.insert(header.sequenceNumber);
-        if (nacks_left_ <= 0 &&
-            retransmitted_packets_.size() == dropped_packets_.size()) {
-          observation_complete_.Set();
-        }
         return SEND_PACKET;
+      }
+
+      if (nacks_left_ <= 0 &&
+          retransmitted_packets_.size() == dropped_packets_.size()) {
+        observation_complete_.Set();
       }
 
       ++sent_rtp_packets_;
