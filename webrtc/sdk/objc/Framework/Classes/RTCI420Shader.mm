@@ -15,8 +15,8 @@
 #import "RTCShader+Private.h"
 #import "WebRTC/RTCVideoFrame.h"
 
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/common_video/rotation.h"
 
 // |kNumTextures| must not exceed 8, which is the limit in OpenGLES2. Two sets
 // of 3 textures are used here, one for each of the Y, U and V planes. Having

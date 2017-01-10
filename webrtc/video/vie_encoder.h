@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/sequenced_task_checker.h"
@@ -22,7 +23,6 @@
 #include "webrtc/call/call.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
-#include "webrtc/common_video/rotation.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"

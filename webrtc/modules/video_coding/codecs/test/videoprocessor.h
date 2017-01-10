@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
@@ -21,7 +22,6 @@
 #include "webrtc/modules/video_coding/codecs/test/stats.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc {
 

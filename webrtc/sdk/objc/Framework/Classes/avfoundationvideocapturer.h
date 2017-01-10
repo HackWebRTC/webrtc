@@ -13,9 +13,9 @@
 
 #import <AVFoundation/AVFoundation.h>
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/media/base/videocapturer.h"
-#include "webrtc/video_frame.h"
 
 @class RTCAVFoundationVideoCapturerInternal;
 

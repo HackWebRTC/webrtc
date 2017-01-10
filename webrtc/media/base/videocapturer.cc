@@ -14,9 +14,10 @@
 
 #include <algorithm>
 
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/video_frame.h"
 
 namespace cricket {
 
@@ -214,7 +215,7 @@ void VideoCapturer::OnFrame(const webrtc::VideoFrame& frame,
       return;
     }
     broadcaster_.OnFrame(webrtc::VideoFrame(
-        webrtc::I420Buffer::Rotate(buffer, frame.rotation()),
+        webrtc::I420Buffer::Rotate(*buffer, frame.rotation()),
         webrtc::kVideoRotation_0, frame.timestamp_us()));
   } else {
     broadcaster_.OnFrame(frame);

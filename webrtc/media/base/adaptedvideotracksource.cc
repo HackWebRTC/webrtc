@@ -10,6 +10,8 @@
 
 #include "webrtc/media/base/adaptedvideotracksource.h"
 
+#include "webrtc/api/video/i420_buffer.h"
+
 namespace rtc {
 
 AdaptedVideoTrackSource::AdaptedVideoTrackSource() {
@@ -48,7 +50,7 @@ void AdaptedVideoTrackSource::OnFrame(const webrtc::VideoFrame& frame) {
       !buffer->native_handle()) {
     /* Apply pending rotation. */
     broadcaster_.OnFrame(webrtc::VideoFrame(
-        webrtc::I420Buffer::Rotate(buffer, frame.rotation()),
+        webrtc::I420Buffer::Rotate(*buffer, frame.rotation()),
         webrtc::kVideoRotation_0, frame.timestamp_us()));
   } else {
     broadcaster_.OnFrame(frame);

@@ -10,9 +10,9 @@
 
 #include "webrtc/test/testsupport/frame_reader.h"
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
-#include "webrtc/common_video/include/video_frame_buffer.h"
 
 namespace webrtc {
 namespace test {

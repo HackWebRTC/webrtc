@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_unittest.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
@@ -502,6 +503,7 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   EXPECT_TRUE(adapter_->SupportsNativeHandle());
 }
 
+// TODO(nisse): Reuse definition in webrtc/test/fake_texture_handle.h.
 class FakeNativeHandleBuffer : public NativeHandleBuffer {
  public:
   FakeNativeHandleBuffer(void* native_handle, int width, int height)

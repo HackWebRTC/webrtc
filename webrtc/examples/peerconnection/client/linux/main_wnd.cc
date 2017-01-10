@@ -15,6 +15,7 @@
 #include <stddef.h>
 
 #include "libyuv/convert_from.h"
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
@@ -523,9 +524,10 @@ void GtkMainWnd::VideoRenderer::OnFrame(
   gdk_threads_enter();
 
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
-      webrtc::I420Buffer::Rotate(video_frame.video_frame_buffer(),
-                                 video_frame.rotation()));
-
+      video_frame.video_frame_buffer());
+  if (video_frame.rotation() != webrtc::kVideoRotation_0) {
+    buffer = webrtc::I420Buffer::Rotate(*buffer, video_frame.rotation());
+  }
   SetSize(buffer->width(), buffer->height());
 
   libyuv::I420ToRGBA(buffer->DataY(), buffer->StrideY(),

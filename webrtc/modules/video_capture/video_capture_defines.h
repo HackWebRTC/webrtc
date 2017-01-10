@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc
 {

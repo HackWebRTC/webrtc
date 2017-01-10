@@ -15,12 +15,11 @@
  * video_capture_impl.h
  */
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/common_video/rotation.h"
 #include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc
 {

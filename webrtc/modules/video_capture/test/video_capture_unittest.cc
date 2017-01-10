@@ -14,6 +14,8 @@
 #include <memory>
 #include <sstream>
 
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -24,7 +26,6 @@
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/video_frame.h"
 
 using webrtc::CriticalSectionWrapper;
 using webrtc::CriticalSectionScoped;

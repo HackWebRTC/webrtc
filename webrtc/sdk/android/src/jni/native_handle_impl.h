@@ -13,8 +13,8 @@
 
 #include <jni.h>
 
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/common_video/rotation.h"
 
 namespace webrtc_jni {
 

@@ -10,8 +10,8 @@
 
 #import "WebRTC/RTCVideoFrame.h"
 
-#include "webrtc/common_video/include/video_frame_buffer.h"
-#include "webrtc/common_video/rotation.h"
+#include "webrtc/api/video/video_frame_buffer.h"
+#include "webrtc/api/video/video_rotation.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

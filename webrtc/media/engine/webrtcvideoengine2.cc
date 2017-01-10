@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
@@ -1680,7 +1681,7 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
       rtc::scoped_refptr<webrtc::I420Buffer> black_buffer(
           webrtc::I420Buffer::Create(last_frame_info_.width,
                                      last_frame_info_.height));
-      black_buffer->SetToBlack();
+      webrtc::I420Buffer::SetBlack(black_buffer);
 
       encoder_sink_->OnFrame(webrtc::VideoFrame(
           black_buffer, last_frame_info_.rotation, last_frame_timestamp_us_));

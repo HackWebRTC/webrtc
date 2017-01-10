@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/media/base/fakevideorenderer.h"
 #include "webrtc/media/base/videobroadcaster.h"
-#include "webrtc/video_frame.h"
 
 using rtc::VideoBroadcaster;
 using rtc::VideoSinkWants;
@@ -43,7 +44,7 @@ TEST(VideoBroadcasterTest, OnFrame) {
   rtc::scoped_refptr<webrtc::I420Buffer> buffer(
       webrtc::I420Buffer::Create(kWidth, kHeight));
   // Initialize, to avoid warnings on use of initialized values.
-  buffer->SetToBlack();
+  webrtc::I420Buffer::SetBlack(buffer);
 
   webrtc::VideoFrame frame(buffer, webrtc::kVideoRotation_0, 0);
 
@@ -141,7 +142,7 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   broadcaster.AddOrUpdateSink(&sink2, wants2);
 
   rtc::scoped_refptr<webrtc::I420Buffer> buffer(
-      new rtc::RefCountedObject<webrtc::I420Buffer>(100, 200));
+      webrtc::I420Buffer::Create(100, 200));
   // Makes it not all black.
   buffer->InitializeData();
 

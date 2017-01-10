@@ -19,9 +19,9 @@
 #import "RTCShader+Private.h"
 #import "WebRTC/RTCVideoFrame.h"
 
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/common_video/rotation.h"
 
 static const char kNV12FragmentShaderSource[] =
   SHADER_VERSION

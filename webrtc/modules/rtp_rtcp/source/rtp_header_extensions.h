@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 
-#include "webrtc/common_video/rotation.h"
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {

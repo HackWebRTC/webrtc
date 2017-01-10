@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"

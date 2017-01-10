@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/modules/video_coding/codecs/test/mock/mock_packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"

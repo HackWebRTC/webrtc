@@ -11,7 +11,6 @@ include_rules = [
   # Individual headers that will be moved out of here, see webrtc:4243.
   "+webrtc/call.h",
   "+webrtc/common_types.h",
-  "+webrtc/common_video/rotation.h",
   "+webrtc/config.h",
   "+webrtc/transport.h",
   "+webrtc/typedefs.h",

@@ -15,6 +15,7 @@
 // NOTE(ajm): Path provided by gyp.
 #include "libyuv/scale.h"  // NOLINT
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"

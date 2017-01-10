@@ -10,8 +10,9 @@
 
 // Implementation of GtkVideoRenderer
 
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/media/devices/gtkvideorenderer.h"
-#include "webrtc/video_frame.h"
 
 #include <gdk/gdk.h>
 #include <glib.h>
@@ -82,8 +83,10 @@ bool GtkVideoRenderer::SetSize(int width, int height) {
 
 void GtkVideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame) {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
-      webrtc::I420Buffer::Rotate(video_frame.video_frame_buffer(),
-                                 video_frame.rotation()));
+      video_frame.video_frame_buffer());
+  if (video_frame.rotation() != webrtc::kVideoRotation_0) {
+    buffer = webrtc::I420Buffer::Rotate(*buffer, video_frame.rotation());
+  }
 
   // Need to set size as the frame might be rotated.
   if (!SetSize(buffer->width(), buffer->height())) {

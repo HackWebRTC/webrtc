@@ -13,10 +13,10 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc {
 class Clock;

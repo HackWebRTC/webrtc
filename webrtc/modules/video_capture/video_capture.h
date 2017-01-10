@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_H_
 #define WEBRTC_MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_H_
 
-#include "webrtc/common_video/rotation.h"
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/video_capture/video_capture_defines.h"

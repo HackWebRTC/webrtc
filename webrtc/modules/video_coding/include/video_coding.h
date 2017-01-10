@@ -21,11 +21,11 @@
 #include <windows.h>
 #endif
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc {
 

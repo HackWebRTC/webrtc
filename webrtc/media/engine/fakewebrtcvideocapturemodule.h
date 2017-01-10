@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/engine/webrtcvideocapturer.h"
 
@@ -65,7 +66,7 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
     if (!running_) return;
 
     rtc::scoped_refptr<webrtc::I420Buffer> buffer =
-        new rtc::RefCountedObject<webrtc::I420Buffer>(w, h);
+        webrtc::I420Buffer::Create(w, h);
     // Initialize memory to satisfy DrMemory tests. See
     // https://bugs.chromium.org/p/libyuv/issues/detail?id=377
     buffer->InitializeData();

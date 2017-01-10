@@ -57,4 +57,3 @@ class CoreVideoFrameBuffer : public NativeHandleBuffer {
 }  // namespace webrtc
 
 #endif  // WEBRTC_COMMON_VIDEO_INCLUDE_COREVIDEO_FRAME_BUFFER_H_
-

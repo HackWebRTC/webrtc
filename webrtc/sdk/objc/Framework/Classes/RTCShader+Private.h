@@ -18,7 +18,7 @@
 #import <OpenGL/gl3.h>
 #endif
 
-#include "webrtc/common_video/rotation.h"
+#include "webrtc/api/video/video_rotation.h"
 
 RTC_EXTERN const char kRTCVertexShaderSource[];
 

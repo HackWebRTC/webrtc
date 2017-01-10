@@ -12,6 +12,7 @@
 
 #include <limits>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
@@ -109,8 +110,8 @@ VideoBroadcaster::GetBlackFrameBuffer(int width, int height) {
   if (!black_frame_buffer_ || black_frame_buffer_->width() != width ||
       black_frame_buffer_->height() != height) {
     rtc::scoped_refptr<webrtc::I420Buffer> buffer =
-        new RefCountedObject<webrtc::I420Buffer>(width, height);
-    buffer->SetToBlack();
+        webrtc::I420Buffer::Create(width, height);
+    webrtc::I420Buffer::SetBlack(buffer.get());
     black_frame_buffer_ = buffer;
   }
 

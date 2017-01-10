@@ -17,13 +17,13 @@
 #import "WebRTC/RTCLogging.h"
 
 #include "avfoundationformatmapper.h"
-#include "libyuv/rotate.h"
+
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
-#include "webrtc/common_video/rotation.h"
 
 namespace webrtc {
 
@@ -160,25 +160,12 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
   // Applying rotation is only supported for legacy reasons and performance is
   // not critical here.
   if (apply_rotation() && rotation != kVideoRotation_0) {
-    buffer = buffer->NativeToI420Buffer();
-    rtc::scoped_refptr<I420Buffer> rotated_buffer;
-    if (rotation == kVideoRotation_0 || rotation == kVideoRotation_180) {
-      rotated_buffer = I420Buffer::Create(adapted_width, adapted_height);
-    } else {
-      // Swap width and height.
-      rotated_buffer = I420Buffer::Create(adapted_height, adapted_width);
+    buffer = I420Buffer::Rotate(buffer->NativeToI420Buffer(),
+                                rotation);
+    if (rotation == kVideoRotation_90 || rotation == kVideoRotation_270) {
       std::swap(captured_width, captured_height);
     }
-    libyuv::I420Rotate(
-        buffer->DataY(), buffer->StrideY(),
-        buffer->DataU(), buffer->StrideU(),
-        buffer->DataV(), buffer->StrideV(),
-        rotated_buffer->MutableDataY(), rotated_buffer->StrideY(),
-        rotated_buffer->MutableDataU(), rotated_buffer->StrideU(),
-        rotated_buffer->MutableDataV(), rotated_buffer->StrideV(),
-        buffer->width(), buffer->height(),
-        static_cast<libyuv::RotationMode>(rotation));
-    buffer = rotated_buffer;
+
     rotation = kVideoRotation_0;
   }
 

@@ -13,6 +13,7 @@
 #include <math.h>
 
 #include "libyuv/convert_argb.h"
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/common.h"
@@ -606,8 +607,10 @@ void MainWnd::VideoRenderer::OnFrame(
     AutoLock<VideoRenderer> lock(this);
 
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
-        webrtc::I420Buffer::Rotate(video_frame.video_frame_buffer(),
-                                   video_frame.rotation()));
+        video_frame.video_frame_buffer());
+    if (video_frame.rotation() != webrtc::kVideoRotation_0) {
+      buffer = webrtc::I420Buffer::Rotate(*buffer, video_frame.rotation());
+    }
 
     SetSize(buffer->width(), buffer->height());
 

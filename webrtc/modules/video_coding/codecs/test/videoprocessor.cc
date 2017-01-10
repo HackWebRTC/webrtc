@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/video_coding/include/video_codec_initializer.h"

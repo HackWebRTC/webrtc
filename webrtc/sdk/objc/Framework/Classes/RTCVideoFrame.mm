@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "webrtc/common_video/rotation.h"
+#include "webrtc/api/video/video_rotation.h"
 
 @implementation RTCVideoFrame {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> _videoBuffer;

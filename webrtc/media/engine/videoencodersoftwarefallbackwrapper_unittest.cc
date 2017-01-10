@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
@@ -126,7 +127,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
 void VideoEncoderSoftwareFallbackWrapperTest::EncodeFrame() {
   rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
       kWidth, kHeight, kWidth, (kWidth + 1) / 2, (kWidth + 1) / 2);
-  buffer->SetToBlack();
+  I420Buffer::SetBlack(buffer);
   std::vector<FrameType> types(1, kVideoFrameKey);
 
   frame_.reset(new VideoFrame(buffer, 0, 0, webrtc::kVideoRotation_0));

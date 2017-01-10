@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/event.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gmock.h"

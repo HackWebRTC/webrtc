@@ -14,8 +14,10 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
+// For EncodedImage
 #include "webrtc/video_frame.h"
 
 namespace webrtc {

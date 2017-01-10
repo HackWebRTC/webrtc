@@ -11,6 +11,7 @@
 #include <limits>
 #include <utility>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/test/encoder_settings.h"

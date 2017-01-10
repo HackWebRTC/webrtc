@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/common_video/rotation.h"
 #include "webrtc/typedefs.h"
 
 #if defined(_MSC_VER)

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
@@ -23,7 +24,6 @@
 #include "webrtc/base/testutils.h"
 #include "webrtc/media/base/rtpdump.h"
 #include "webrtc/media/base/videocapturer.h"
-#include "webrtc/video_frame.h"
 
 namespace cricket {
 

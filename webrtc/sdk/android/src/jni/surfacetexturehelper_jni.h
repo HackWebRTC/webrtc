@@ -15,9 +15,9 @@
 
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "webrtc/api/video/video_frame_buffer.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/common_video/include/video_frame_buffer.h"
 
 namespace webrtc_jni {
 

@@ -13,8 +13,10 @@
 #include <string.h>
 
 #include "webrtc/base/checks.h"
+// TODO(nisse): Only needed for the deprecated ConvertToI420.
+#include "webrtc/api/video/i420_buffer.h"
 
-// NOTE(ajm): Path provided by gyp.
+// NOTE(ajm): Path provided by gn.
 #include "libyuv.h"  // NOLINT
 
 namespace webrtc {
