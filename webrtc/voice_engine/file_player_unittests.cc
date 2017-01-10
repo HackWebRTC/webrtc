@@ -10,7 +10,7 @@
 
 // Unit tests for FilePlayer.
 
-#include "webrtc/modules/utility/include/file_player.h"
+#include "webrtc/voice_engine/file_player.h"
 
 #include <stdio.h>
 

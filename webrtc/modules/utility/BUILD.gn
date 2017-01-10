@@ -11,15 +11,9 @@ import("../../build/webrtc.gni")
 rtc_static_library("utility") {
   sources = [
     "include/audio_frame_operations.h",
-    "include/file_player.h",
-    "include/file_recorder.h",
     "include/helpers_android.h",
     "include/jvm_android.h",
     "include/process_thread.h",
-    "source/coder.cc",
-    "source/coder.h",
-    "source/file_player.cc",
-    "source/file_recorder.cc",
     "source/helpers_android.cc",
     "source/jvm_android.cc",
     "source/process_thread_impl.cc",

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_INCLUDE_FILE_PLAYER_H_
-#define WEBRTC_MODULES_UTILITY_INCLUDE_FILE_PLAYER_H_
+#ifndef WEBRTC_VOICE_ENGINE_FILE_PLAYER_H_
+#define WEBRTC_VOICE_ENGINE_FILE_PLAYER_H_
 
 #include <memory>
 
@@ -77,4 +77,4 @@ class FilePlayer {
   virtual int32_t SetAudioScaling(float scaleFactor) = 0;
 };
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_UTILITY_INCLUDE_FILE_PLAYER_H_
+#endif  // WEBRTC_VOICE_ENGINE_FILE_PLAYER_H_

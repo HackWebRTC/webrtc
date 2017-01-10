@@ -8,6 +8,64 @@
 
 import("../build/webrtc.gni")
 
+rtc_static_library("audio_coder") {
+  sources = [
+    "coder.cc",
+    "coder.h",
+  ]
+  deps = [
+    "..:webrtc_common",
+    "../modules/audio_coding",
+    "../modules/audio_coding:audio_format_conversion",
+    "../modules/audio_coding:builtin_audio_decoder_factory",
+    "../modules/audio_coding:rent_a_codec",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
+rtc_static_library("file_player") {
+  sources = [
+    "file_player.cc",
+    "file_player.h",
+  ]
+  deps = [
+    ":audio_coder",
+    "..:webrtc_common",
+    "../common_audio",
+    "../modules/media_file",
+    "../system_wrappers",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
+rtc_static_library("file_recorder") {
+  sources = [
+    "file_recorder.cc",
+    "file_recorder.h",
+  ]
+  deps = [
+    ":audio_coder",
+    "..:webrtc_common",
+    "../base:rtc_base_approved",
+    "../common_audio",
+    "../modules/media_file:media_file",
+    "../system_wrappers",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 rtc_static_library("voice_engine") {
   sources = [
     "channel.cc",
@@ -85,6 +143,8 @@ rtc_static_library("voice_engine") {
     "../modules/audio_coding",
   ]
   deps = [
+    ":file_player",
+    ":file_recorder",
     ":level_indicator",
     "..:webrtc_common",
     "../api:audio_mixer_api",
@@ -191,6 +251,7 @@ if (rtc_include_tests) {
       ":voice_engine",
       "//testing/gmock",
       "//testing/gtest",
+      "//third_party/gflags",
       "//webrtc/common_audio",
       "//webrtc/modules/audio_coding",
       "//webrtc/modules/audio_conference_mixer",
@@ -210,6 +271,7 @@ if (rtc_include_tests) {
 
     sources = [
       "channel_unittest.cc",
+      "file_player_unittests.cc",
       "test/channel_transport/udp_socket_manager_unittest.cc",
       "test/channel_transport/udp_socket_wrapper_unittest.cc",
       "test/channel_transport/udp_transport_unittest.cc",
@@ -221,6 +283,11 @@ if (rtc_include_tests) {
       "voe_network_unittest.cc",
       "voice_engine_fixture.cc",
       "voice_engine_fixture.h",
+    ]
+
+    data = [
+      "//resources/utility/encapsulated_pcm16b_8khz.wav",
+      "//resources/utility/encapsulated_pcmu_8khz.wav",
     ]
 
     if (is_win) {

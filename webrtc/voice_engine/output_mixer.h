@@ -18,7 +18,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
-#include "webrtc/modules/utility/include/file_recorder.h"
+#include "webrtc/voice_engine/file_recorder.h"
 #include "webrtc/voice_engine/level_indicator.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UTILITY_SOURCE_CODER_H_
-#define WEBRTC_MODULES_UTILITY_SOURCE_CODER_H_
+#ifndef WEBRTC_VOICE_ENGINE_CODER_H_
+#define WEBRTC_VOICE_ENGINE_CODER_H_
 
 #include <memory>
 
@@ -65,4 +65,4 @@ class AudioCoder : public AudioPacketizationCallback {
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_UTILITY_SOURCE_CODER_H_
+#endif  // WEBRTC_VOICE_ENGINE_CODER_H_

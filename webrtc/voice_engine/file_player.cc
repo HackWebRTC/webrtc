@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/utility/include/file_player.h"
+#include "webrtc/voice_engine/file_player.h"
 
 #include "webrtc/common_audio/resampler/include/resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/media_file/media_file.h"
 #include "webrtc/modules/media_file/media_file_defines.h"
-#include "webrtc/modules/utility/source/coder.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/typedefs.h"
+#include "webrtc/voice_engine/coder.h"
 
 namespace webrtc {
 

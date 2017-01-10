@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/voice_engine/coder.h"
+
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
 #include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/utility/source/coder.h"
 
 namespace webrtc {
 namespace {
