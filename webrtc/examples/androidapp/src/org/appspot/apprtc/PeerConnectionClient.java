@@ -52,6 +52,8 @@ import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.voiceengine.WebRtcAudioManager;
+import org.webrtc.voiceengine.WebRtcAudioRecord;
+import org.webrtc.voiceengine.WebRtcAudioRecord.WebRtcAudioRecordErrorCallback;
 import org.webrtc.voiceengine.WebRtcAudioUtils;
 
 /**
@@ -425,6 +427,27 @@ public class PeerConnectionClient {
       Log.d(TAG, "Enable built-in NS if device supports it");
       WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(false);
     }
+
+    // Set audio record error callbacks.
+    WebRtcAudioRecord.setErrorCallback(new WebRtcAudioRecordErrorCallback() {
+      @Override
+      public void onWebRtcAudioRecordInitError(String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioRecordInitError: " + errorMessage);
+        reportError(errorMessage);
+      }
+
+      @Override
+      public void onWebRtcAudioRecordStartError(String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioRecordStartError: " + errorMessage);
+        reportError(errorMessage);
+      }
+
+      @Override
+      public void onWebRtcAudioRecordError(String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioRecordError: " + errorMessage);
+        reportError(errorMessage);
+      }
+    });
 
     // Create peer connection factory.
     if (!PeerConnectionFactory.initializeAndroidGlobals(
