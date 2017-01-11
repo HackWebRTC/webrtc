@@ -155,8 +155,7 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
 
   int64_t ts_diff;
   if (last_timestamp_ == -1) {
-    ts_diff =
-        kOneSecond90Khz / incoming_framerate_.value_or(*target_framerate_);
+    ts_diff = kOneSecond90Khz / capture_framerate_.value_or(*target_framerate_);
   } else {
     ts_diff = unwrapped_timestamp - last_timestamp_;
   }
@@ -175,18 +174,18 @@ std::vector<uint32_t> ScreenshareLayers::OnRatesUpdated(int bitrate_kbps,
     // First OnRatesUpdated() is called during construction, with the configured
     // targets as parameters.
     target_framerate_.emplace(framerate);
-    incoming_framerate_ = target_framerate_;
+    capture_framerate_ = target_framerate_;
     bitrate_updated_ = true;
   } else {
     bitrate_updated_ =
         bitrate_kbps != static_cast<int>(layers_[0].target_rate_kbps_) ||
         max_bitrate_kbps != static_cast<int>(layers_[1].target_rate_kbps_) ||
-        (incoming_framerate_ &&
-         framerate != static_cast<int>(*incoming_framerate_));
+        (capture_framerate_ &&
+         framerate != static_cast<int>(*capture_framerate_));
     if (framerate < 0) {
-      incoming_framerate_.reset();
+      capture_framerate_.reset();
     } else {
-      incoming_framerate_.emplace(framerate);
+      capture_framerate_.emplace(framerate);
     }
   }
 
@@ -327,9 +326,9 @@ bool ScreenshareLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
       layers_[1].enhanced_max_qp = min_qp_ + (((max_qp_ - min_qp_) * 85) / 100);
     }
 
-    if (incoming_framerate_) {
+    if (capture_framerate_) {
       int avg_frame_size =
-          (target_bitrate_kbps * 1000) / (8 * *incoming_framerate_);
+          (target_bitrate_kbps * 1000) / (8 * *capture_framerate_);
       max_debt_bytes_ = 4 * avg_frame_size;
     }
 
