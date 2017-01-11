@@ -116,6 +116,9 @@ if (is_android) {
 
     deps = [
       ":AppRTCMobile_javalib",
+      "//base:base_java_test_support",
+      "//third_party/android_support_test_runner:runner_java",
+      "//third_party/junit",
       "//webrtc/sdk/android:libjingle_peerconnection_java",
     ]
 

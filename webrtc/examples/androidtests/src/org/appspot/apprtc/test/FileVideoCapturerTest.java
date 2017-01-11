@@ -10,21 +10,25 @@
 
 package org.appspot.apprtc.test;
 
-import android.test.InstrumentationTestCase;
-import android.test.suitebuilder.annotation.LargeTest;
-import android.test.suitebuilder.annotation.MediumTest;
-import android.test.suitebuilder.annotation.SmallTest;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import org.webrtc.FileVideoCapturer;
-import org.webrtc.VideoCapturer;
-
+import android.support.test.filters.LargeTest;
+import android.support.test.filters.MediumTest;
+import android.support.test.filters.SmallTest;
 import java.io.IOException;
 import java.lang.Thread;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.webrtc.FileVideoCapturer;
+import org.webrtc.VideoCapturer;
 
-public class FileVideoCapturerTest extends InstrumentationTestCase {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class FileVideoCapturerTest {
   private static class Frame {
     public byte[] data;
     public int width;
@@ -71,6 +75,7 @@ public class FileVideoCapturerTest extends InstrumentationTestCase {
     }
   }
 
+  @Test
   @SmallTest
   public void testVideoCaptureFromFile() throws InterruptedException, IOException {
     final int FRAME_WIDTH = 4;

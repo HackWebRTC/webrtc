@@ -10,17 +10,29 @@
 
 package org.appspot.apprtc.test;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import android.os.Build;
+import android.support.test.InstrumentationRegistry;
+import android.support.test.filters.FlakyTest;
+import android.support.test.filters.SmallTest;
+import android.util.Log;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
 import org.appspot.apprtc.PeerConnectionClient;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionEvents;
 import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
-
-import android.os.Build;
-import android.test.FlakyTest;
-import android.test.InstrumentationTestCase;
-import android.test.suitebuilder.annotation.SmallTest;
-import android.util.Log;
-
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
@@ -34,15 +46,8 @@ import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoRenderer;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-public class PeerConnectionClientTest
-    extends InstrumentationTestCase implements PeerConnectionEvents {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class PeerConnectionClientTest implements PeerConnectionEvents {
   private static final String TAG = "RTCClientTest";
   private static final int ICE_CONNECTION_WAIT_TIMEOUT = 10000;
   private static final int WAIT_TIMEOUT = 7000;
@@ -251,7 +256,7 @@ public class PeerConnectionClientTest
     options.disableNetworkMonitor = true;
     client.setPeerConnectionFactoryOptions(options);
     client.createPeerConnectionFactory(
-        getInstrumentation().getTargetContext(), peerConnectionParameters, this);
+        InstrumentationRegistry.getTargetContext(), peerConnectionParameters, this);
     client.createPeerConnection(
         eglContext, localRenderer, remoteRenderer, videoCapturer, signalingParameters);
     client.createOffer();
@@ -283,12 +288,12 @@ public class PeerConnectionClientTest
   }
 
   private VideoCapturer createCameraCapturer(boolean captureToTexture) {
-    final boolean useCamera2 =
-        captureToTexture && Camera2Enumerator.isSupported(getInstrumentation().getTargetContext());
+    final boolean useCamera2 = captureToTexture
+        && Camera2Enumerator.isSupported(InstrumentationRegistry.getTargetContext());
 
     CameraEnumerator enumerator;
     if (useCamera2) {
-      enumerator = new Camera2Enumerator(getInstrumentation().getTargetContext());
+      enumerator = new Camera2Enumerator(InstrumentationRegistry.getTargetContext());
     } else {
       enumerator = new Camera1Enumerator(captureToTexture);
     }
@@ -320,7 +325,7 @@ public class PeerConnectionClientTest
     return peerConnectionParameters;
   }
 
-  @Override
+  @Before
   public void setUp() {
     signalingExecutor = Executors.newSingleThreadExecutor();
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -328,7 +333,7 @@ public class PeerConnectionClientTest
     }
   }
 
-  @Override
+  @After
   public void tearDown() {
     signalingExecutor.shutdown();
     if (eglBase != null) {
@@ -336,6 +341,7 @@ public class PeerConnectionClientTest
     }
   }
 
+  @Test
   @SmallTest
   public void testSetLocalOfferMakesVideoFlowLocally() throws InterruptedException {
     Log.d(TAG, "testSetLocalOfferMakesVideoFlowLocally");
@@ -399,29 +405,34 @@ public class PeerConnectionClientTest
     Log.d(TAG, "testLoopback done.");
   }
 
+  @Test
   @SmallTest
   public void testLoopbackAudio() throws InterruptedException {
     doLoopbackTest(createParametersForAudioCall(), null, false /* decodeToTexture */);
   }
 
+  @Test
   @SmallTest
   public void testLoopbackVp8() throws InterruptedException {
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8),
         createCameraCapturer(false /* captureToTexture */), false /* decodeToTexture */);
   }
 
+  @Test
   @SmallTest
   public void testLoopbackVp9() throws InterruptedException {
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP9),
         createCameraCapturer(false /* captureToTexture */), false /* decodeToTexture */);
   }
 
+  @Test
   @SmallTest
   public void testLoopbackH264() throws InterruptedException {
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264),
         createCameraCapturer(false /* captureToTexture */), false /* decodeToTexture */);
   }
 
+  @Test
   @SmallTest
   public void testLoopbackVp8DecodeToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -432,6 +443,7 @@ public class PeerConnectionClientTest
         createCameraCapturer(false /* captureToTexture */), true /* decodeToTexture */);
   }
 
+  @Test
   @SmallTest
   public void testLoopbackVp9DecodeToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -442,6 +454,7 @@ public class PeerConnectionClientTest
         createCameraCapturer(false /* captureToTexture */), true /* decodeToTexture */);
   }
 
+  @Test
   @SmallTest
   public void testLoopbackH264DecodeToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -452,6 +465,7 @@ public class PeerConnectionClientTest
         createCameraCapturer(false /* captureToTexture */), true /* decodeToTexture */);
   }
 
+  @Test
   @SmallTest
   public void testLoopbackVp8CaptureToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -471,6 +485,7 @@ public class PeerConnectionClientTest
   // Test that a call can be setup even if the EGL context used during initialization is
   // released before the Video codecs are created. The HW encoder and decoder is setup to use
   // textures.
+  @Test
   @SmallTest
   public void testLoopbackEglContextReleasedAfterCreatingPc() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -511,6 +526,7 @@ public class PeerConnectionClientTest
     Log.d(TAG, "testLoopback done.");
   }
 
+  @Test
   @SmallTest
   public void testLoopbackH264CaptureToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -529,6 +545,7 @@ public class PeerConnectionClientTest
 
   // Checks if default front camera can be switched to back camera and then
   // again to front camera.
+  @Test
   @SmallTest
   public void testCameraSwitch() throws InterruptedException {
     Log.d(TAG, "testCameraSwitch");
@@ -577,6 +594,7 @@ public class PeerConnectionClientTest
   // Checks if video source can be restarted - simulate app goes to
   // background and back to foreground.
   // Disabled because of https://bugs.chromium.org/p/webrtc/issues/detail?id=6478
+  @Test
   @FlakyTest
   //@SmallTest
   public void testVideoSourceRestart() throws InterruptedException {
@@ -627,6 +645,7 @@ public class PeerConnectionClientTest
 
   // Checks if capture format can be changed on fly and decoder can be reset properly.
   // Disabled because of https://bugs.chromium.org/p/webrtc/issues/detail?id=6478
+  @Test
   @FlakyTest
   //@SmallTest
   public void testCaptureFormatChange() throws InterruptedException {

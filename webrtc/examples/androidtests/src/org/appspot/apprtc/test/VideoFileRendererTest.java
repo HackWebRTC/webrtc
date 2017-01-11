@@ -10,19 +10,24 @@
 
 package org.webrtc;
 
-import android.test.InstrumentationTestCase;
-import android.test.suitebuilder.annotation.SmallTest;
+import static org.junit.Assert.assertEquals;
 
+import android.support.test.filters.SmallTest;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.Thread;
-import java.nio.charset.StandardCharsets;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Random;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-public class VideoFileRendererTest extends InstrumentationTestCase {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class VideoFileRendererTest {
+  @Test
   @SmallTest
   public void testYuvRenderingToFile() throws InterruptedException, IOException {
     EglBase eglBase = EglBase.create();
