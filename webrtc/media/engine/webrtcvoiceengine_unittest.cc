@@ -2548,6 +2548,50 @@ TEST_F(WebRtcVoiceEngineTestFake, AudioNetworkAdaptorNotGetOverridden) {
             GetAudioNetworkAdaptorConfig(kSsrc1));
 }
 
+class WebRtcVoiceEngineWithSendSideBweWithOverheadTest
+    : public WebRtcVoiceEngineTestFake {
+ public:
+  WebRtcVoiceEngineWithSendSideBweWithOverheadTest()
+      : WebRtcVoiceEngineTestFake(
+            "WebRTC-Audio-SendSideBwe/Enabled/WebRTC-SendSideBwe-WithOverhead/"
+            "Enabled/") {}
+};
+
+TEST_F(WebRtcVoiceEngineWithSendSideBweWithOverheadTest, MinAndMaxBitrate) {
+  EXPECT_TRUE(SetupSendStream());
+  cricket::AudioSendParameters parameters;
+  parameters.codecs.push_back(kOpusCodec);
+  SetSendParameters(parameters);
+  const int initial_num = call_.GetNumCreatedSendStreams();
+  EXPECT_EQ(initial_num, call_.GetNumCreatedSendStreams());
+
+  // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
+  constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
+  constexpr int kMinOverheadBps = kOverheadPerPacket * 8 * 1000 / 60;
+  constexpr int kMaxOverheadBps = kOverheadPerPacket * 8 * 1000 / 10;
+
+  constexpr int kOpusMinBitrateBps = 6000;
+  EXPECT_EQ(kOpusMinBitrateBps + kMinOverheadBps,
+            GetSendStreamConfig(kSsrc1).min_bitrate_bps);
+  constexpr int kOpusBitrateFbBps = 32000;
+  EXPECT_EQ(kOpusBitrateFbBps + kMaxOverheadBps,
+            GetSendStreamConfig(kSsrc1).max_bitrate_bps);
+
+  parameters.options.audio_network_adaptor = rtc::Optional<bool>(true);
+  parameters.options.audio_network_adaptor_config =
+      rtc::Optional<std::string>("1234");
+  SetSendParameters(parameters);
+
+  constexpr int kMinOverheadWithAnaBps = kOverheadPerPacket * 8 * 1000 / 60;
+  constexpr int kMaxOverheadWithAnaBps = kOverheadPerPacket * 8 * 1000 / 20;
+
+  EXPECT_EQ(kOpusMinBitrateBps + kMinOverheadWithAnaBps,
+            GetSendStreamConfig(kSsrc1).min_bitrate_bps);
+
+  EXPECT_EQ(kOpusBitrateFbBps + kMaxOverheadWithAnaBps,
+            GetSendStreamConfig(kSsrc1).max_bitrate_bps);
+}
+
 // Test that we can set the outgoing SSRC properly.
 // SSRC is set in SetupSendStream() by calling AddSendStream.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendSsrc) {

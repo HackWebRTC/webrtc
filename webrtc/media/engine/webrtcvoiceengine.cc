@@ -405,6 +405,24 @@ class WebRtcVoiceCodecs final {
     return 0;
   }
 
+  static rtc::ArrayView<const int> GetPacketSizesMs(
+      const webrtc::CodecInst& codec) {
+    for (size_t i = 0; i < arraysize(kCodecPrefs); ++i) {
+      if (IsCodec(codec, kCodecPrefs[i].name)) {
+        size_t num_packet_sizes = kMaxNumPacketSize;
+        for (int index = 0; index < kMaxNumPacketSize; index++) {
+          if (kCodecPrefs[i].packet_sizes_ms[index] == 0) {
+            num_packet_sizes = index;
+            break;
+          }
+        }
+        return rtc::ArrayView<const int>(kCodecPrefs[i].packet_sizes_ms,
+                                         num_packet_sizes);
+      }
+    }
+    return rtc::ArrayView<const int>();
+  }
+
   // If the AudioCodec param kCodecParamPTime is set, then we will set it to
   // codec pacsize if it's valid, or we will pick the next smallest value we
   // support.
@@ -1445,8 +1463,40 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
         "Enabled") {
       // TODO(mflodman): Keep testing this and set proper values.
       // Note: This is an early experiment currently only supported by Opus.
-      config_.min_bitrate_bps = kOpusMinBitrateBps;
-      config_.max_bitrate_bps = kOpusBitrateFbBps;
+      if (webrtc::field_trial::FindFullName(
+              "WebRTC-SendSideBwe-WithOverhead") == "Enabled") {
+        auto packet_sizes_ms = WebRtcVoiceCodecs::GetPacketSizesMs(
+            config_.send_codec_spec.codec_inst);
+        if (!packet_sizes_ms.empty()) {
+          int max_packet_size_ms =
+              *std::max_element(packet_sizes_ms.begin(), packet_sizes_ms.end());
+          int min_packet_size_ms =
+              *std::min_element(packet_sizes_ms.begin(), packet_sizes_ms.end());
+
+          // Audio network adaptor will just use 20ms and 60ms frame lengths.
+          // The adaptor will only be active for the Opus encoder.
+          if (config_.audio_network_adaptor_config &&
+              IsCodec(config_.send_codec_spec.codec_inst, kOpusCodecName)) {
+            max_packet_size_ms = 60;
+            min_packet_size_ms = 20;
+          }
+
+          // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
+          constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
+
+          int min_overhead_bps =
+              kOverheadPerPacket * 8 * 1000 / max_packet_size_ms;
+
+          int max_overhead_bps =
+              kOverheadPerPacket * 8 * 1000 / min_packet_size_ms;
+
+          config_.min_bitrate_bps = kOpusMinBitrateBps + min_overhead_bps;
+          config_.max_bitrate_bps = kOpusBitrateFbBps + max_overhead_bps;
+        }
+      } else {
+        config_.min_bitrate_bps = kOpusMinBitrateBps;
+        config_.max_bitrate_bps = kOpusBitrateFbBps;
+      }
     }
     stream_ = call_->CreateAudioSendStream(config_);
     RTC_CHECK(stream_);
