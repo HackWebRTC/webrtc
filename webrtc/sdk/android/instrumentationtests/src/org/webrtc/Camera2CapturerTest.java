@@ -10,20 +10,29 @@
 
 package org.webrtc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+
 import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.os.Handler;
 import android.os.Looper;
-import android.test.InstrumentationTestCase;
-import android.test.suitebuilder.annotation.LargeTest;
-import android.test.suitebuilder.annotation.MediumTest;
-import android.test.suitebuilder.annotation.SmallTest;
-
+import android.support.test.InstrumentationRegistry;
+import android.support.test.filters.LargeTest;
+import android.support.test.filters.MediumTest;
+import android.support.test.filters.SmallTest;
 import java.util.concurrent.CountDownLatch;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-public class Camera2CapturerTest extends InstrumentationTestCase {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class Camera2CapturerTest {
   static final String TAG = "Camera2CapturerTest";
 
   /**
@@ -151,7 +160,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
     @Override
     public Context getAppContext() {
-      return getInstrumentation().getTargetContext();
+      return InstrumentationRegistry.getTargetContext();
     }
 
     @SuppressWarnings("deprecation")
@@ -169,21 +178,23 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
   private CameraVideoCapturerTestFixtures fixtures;
 
-  @Override
-  protected void setUp() {
+  @Before
+  public void setUp() {
     fixtures = new CameraVideoCapturerTestFixtures(new TestObjectFactory());
   }
 
-  @Override
-  protected void tearDown() {
+  @After
+  public void tearDown() {
     fixtures.dispose();
   }
 
+  @Test
   @SmallTest
   public void testCreateAndDispose() throws InterruptedException {
     fixtures.createCapturerAndDispose();
   }
 
+  @Test
   @SmallTest
   public void testCreateNonExistingCamera() throws InterruptedException {
     fixtures.createNonExistingCamera();
@@ -192,6 +203,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
   // This test that the camera can be started and that the frames are forwarded
   // to a Java video renderer using a "default" capturer.
   // It tests both the Java and the C++ layer.
+  @Test
   @MediumTest
   public void testCreateCapturerAndRender() throws InterruptedException {
     fixtures.createCapturerAndRender();
@@ -200,6 +212,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
   // This test that the camera can be started and that the frames are forwarded
   // to a Java video renderer using the front facing video capturer.
   // It tests both the Java and the C++ layer.
+  @Test
   @MediumTest
   public void testStartFrontFacingVideoCapturer() throws InterruptedException {
     fixtures.createFrontFacingCapturerAndRender();
@@ -208,6 +221,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
   // This test that the camera can be started and that the frames are forwarded
   // to a Java video renderer using the back facing video capturer.
   // It tests both the Java and the C++ layer.
+  @Test
   @MediumTest
   public void testStartBackFacingVideoCapturer() throws InterruptedException {
     fixtures.createBackFacingCapturerAndRender();
@@ -216,17 +230,20 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
   // This test that the default camera can be started and that the camera can
   // later be switched to another camera.
   // It tests both the Java and the C++ layer.
+  @Test
   @MediumTest
   public void testSwitchVideoCapturer() throws InterruptedException {
     fixtures.switchCamera();
   }
 
+  @Test
   @MediumTest
   public void testCameraEvents() throws InterruptedException {
     fixtures.cameraEventsInvoked();
   }
 
   // Test what happens when attempting to call e.g. switchCamera() after camera has been stopped.
+  @Test
   @MediumTest
   public void testCameraCallsAfterStop() throws InterruptedException {
     fixtures.cameraCallsAfterStop();
@@ -234,6 +251,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
   // This test that the VideoSource that the CameraVideoCapturer is connected to can
   // be stopped and restarted. It tests both the Java and the C++ layer.
+  @Test
   @LargeTest
   public void testStopRestartVideoSource() throws InterruptedException {
     fixtures.stopRestartVideoSource();
@@ -241,6 +259,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
   // This test that the camera can be started at different resolutions.
   // It does not test or use the C++ layer.
+  @Test
   @LargeTest
   public void testStartStopWithDifferentResolutions() throws InterruptedException {
     fixtures.startStopWithDifferentResolutions();
@@ -248,6 +267,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
   // This test what happens if buffers are returned after the capturer have
   // been stopped and restarted. It does not test or use the C++ layer.
+  @Test
   @LargeTest
   public void testReturnBufferLate() throws InterruptedException {
     fixtures.returnBufferLate();
@@ -256,6 +276,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
   // This test that we can capture frames, keep the frames in a local renderer, stop capturing,
   // and then return the frames. The difference between the test testReturnBufferLate() is that we
   // also test the JNI and C++ AndroidVideoCapturer parts.
+  @Test
   @MediumTest
   public void testReturnBufferLateEndToEnd() throws InterruptedException {
     fixtures.returnBufferLateEndToEnd();
@@ -263,6 +284,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
   // This test that CameraEventsHandler.onError is triggered if video buffers are not returned to
   // the capturer.
+  @Test
   @LargeTest
   public void testCameraFreezedEventOnBufferStarvation() throws InterruptedException {
     fixtures.cameraFreezedEventOnBufferStarvation();
@@ -270,6 +292,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
   // This test that frames forwarded to a renderer is scaled if adaptOutputFormat is
   // called. This test both Java and C++ parts of of the stack.
+  @Test
   @MediumTest
   public void testScaleCameraOutput() throws InterruptedException {
     fixtures.scaleCameraOutput();
@@ -277,6 +300,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
   // This test that an error is reported if the camera is already opened
   // when CameraVideoCapturer is started.
+  @Test
   @LargeTest
   public void testStartWhileCameraIsAlreadyOpen() throws InterruptedException {
     fixtures.startWhileCameraIsAlreadyOpen();
@@ -284,6 +308,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
   // This test that CameraVideoCapturer can be started, even if the camera is already opened
   // if the camera is closed while CameraVideoCapturer is re-trying to start.
+  @Test
   @LargeTest
   public void testStartWhileCameraIsAlreadyOpenAndCloseCamera() throws InterruptedException {
     fixtures.startWhileCameraIsAlreadyOpenAndCloseCamera();
@@ -291,6 +316,7 @@ public class Camera2CapturerTest extends InstrumentationTestCase {
 
   // This test that CameraVideoCapturer.stop can be called while CameraVideoCapturer is
   // re-trying to start.
+  @Test
   @MediumTest
   public void testStartWhileCameraIsAlreadyOpenAndStop() throws InterruptedException {
     fixtures.startWhileCameraIsAlreadyOpenAndStop();

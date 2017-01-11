@@ -10,16 +10,27 @@
 
 package org.webrtc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import android.graphics.Point;
-import android.test.ActivityTestCase;
-import android.test.UiThreadTest;
-import android.test.suitebuilder.annotation.MediumTest;
+import android.support.test.InstrumentationRegistry;
+import android.support.test.annotation.UiThreadTest;
+import android.support.test.filters.MediumTest;
+import android.support.test.rule.UiThreadTestRule;
 import android.view.View.MeasureSpec;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class SurfaceViewRendererOnMeasureTest {
+  @Rule public UiThreadTestRule uiThreadTestRule = new UiThreadTestRule();
+
   /**
    * List with all possible scaling types.
    */
@@ -68,11 +79,12 @@ public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
   /**
    * Test how SurfaceViewRenderer.onMeasure() behaves when no frame has been delivered.
    */
+  @Test
   @UiThreadTest
   @MediumTest
   public void testNoFrame() {
     final SurfaceViewRenderer surfaceViewRenderer =
-        new SurfaceViewRenderer(getInstrumentation().getContext());
+        new SurfaceViewRenderer(InstrumentationRegistry.getContext());
     final String frameDimensions = "null";
 
     // Test behaviour before SurfaceViewRenderer.init() is called.
@@ -106,11 +118,12 @@ public final class SurfaceViewRendererOnMeasureTest extends ActivityTestCase {
   /**
    * Test how SurfaceViewRenderer.onMeasure() behaves with a 1280x720 frame.
    */
+  @Test
   @UiThreadTest
   @MediumTest
   public void testFrame1280x720() throws InterruptedException {
     final SurfaceViewRenderer surfaceViewRenderer =
-        new SurfaceViewRenderer(getInstrumentation().getContext());
+        new SurfaceViewRenderer(InstrumentationRegistry.getContext());
     /**
      * Mock renderer events with blocking wait functionality for frame size changes.
      */

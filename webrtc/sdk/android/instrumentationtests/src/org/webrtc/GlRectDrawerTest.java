@@ -7,18 +7,25 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 package org.webrtc;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
-import android.test.ActivityTestCase;
-import android.test.suitebuilder.annotation.MediumTest;
-import android.test.suitebuilder.annotation.SmallTest;
-
+import android.support.test.filters.MediumTest;
+import android.support.test.filters.SmallTest;
 import java.nio.ByteBuffer;
 import java.util.Random;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-public final class GlRectDrawerTest extends ActivityTestCase {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class GlRectDrawerTest {
   // Resolution of the test image.
   private static final int WIDTH = 16;
   private static final int HEIGHT = 16;
@@ -36,7 +43,8 @@ public final class GlRectDrawerTest extends ActivityTestCase {
   }
 
   // Assert RGB ByteBuffers are pixel perfect identical.
-  private static void assertEquals(int width, int height, ByteBuffer actual, ByteBuffer expected) {
+  private static void assertByteBufferEquals(
+      int width, int height, ByteBuffer actual, ByteBuffer expected) {
     actual.rewind();
     expected.rewind();
     assertEquals(actual.remaining(), width * height * 3);
@@ -77,6 +85,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     return rgbBuffer;
   }
 
+  @Test
   @SmallTest
   public void testRgbRendering() {
     // Create EGL base with a pixel buffer as display output.
@@ -108,13 +117,14 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     GlUtil.checkNoGLES2Error("glReadPixels");
 
     // Assert rendered image is pixel perfect to source RGB.
-    assertEquals(WIDTH, HEIGHT, stripAlphaChannel(rgbaData), rgbPlane);
+    assertByteBufferEquals(WIDTH, HEIGHT, stripAlphaChannel(rgbaData), rgbPlane);
 
     drawer.release();
     GLES20.glDeleteTextures(1, new int[] {rgbTexture}, 0);
     eglBase.release();
   }
 
+  @Test
   @SmallTest
   public void testYuvRendering() {
     // Create EGL base with a pixel buffer as display output.
@@ -202,6 +212,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
    *  - Render the OES texture onto the pixel buffer.
    *  - Read back the pixel buffer and compare it with the known RGB data.
    */
+  @Test
   @MediumTest
   public void testOesRendering() throws InterruptedException {
     /**
@@ -283,7 +294,7 @@ public final class GlRectDrawerTest extends ActivityTestCase {
     GlUtil.checkNoGLES2Error("glReadPixels");
 
     // Assert rendered image is pixel perfect to source RGB.
-    assertEquals(WIDTH, HEIGHT, stripAlphaChannel(rgbaData), rgbPlane);
+    assertByteBufferEquals(WIDTH, HEIGHT, stripAlphaChannel(rgbaData), rgbPlane);
 
     drawer.release();
     surfaceTextureHelper.returnTextureFrame();

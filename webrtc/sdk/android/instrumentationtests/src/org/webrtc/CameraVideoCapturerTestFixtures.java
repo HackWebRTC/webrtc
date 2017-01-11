@@ -7,18 +7,22 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 package org.webrtc;
 
-import static junit.framework.Assert.*;
-
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-import org.webrtc.VideoRenderer.I420Frame;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import android.content.Context;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.runner.RunWith;
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+import org.webrtc.VideoRenderer.I420Frame;
 
 class CameraVideoCapturerTestFixtures {
   static final String TAG = "CameraVideoCapturerTestFixtures";

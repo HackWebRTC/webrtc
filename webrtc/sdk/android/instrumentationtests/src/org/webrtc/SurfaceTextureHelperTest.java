@@ -7,19 +7,26 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 package org.webrtc;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.os.SystemClock;
-import android.test.ActivityTestCase;
-import android.test.suitebuilder.annotation.MediumTest;
-import android.test.suitebuilder.annotation.SmallTest;
-
+import android.support.test.filters.MediumTest;
+import android.support.test.filters.SmallTest;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-public final class SurfaceTextureHelperTest extends ActivityTestCase {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class SurfaceTextureHelperTest {
   /**
    * Mock texture listener with blocking wait functionality.
    */
@@ -84,7 +91,8 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   public static void assertClose(int threshold, int expected, int actual) {
     if (Math.abs(expected - actual) <= threshold)
       return;
-    failNotEquals("Not close enough, threshold " + threshold, expected, actual);
+    fail("Not close enough, threshold " + threshold + ". Expected: " + expected + " Actual: "
+        + actual);
   }
 
   /**
@@ -92,8 +100,9 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
    * as possible. The texture pixel values are inspected by drawing the texture frame to a pixel
    * buffer and reading it back with glReadPixels().
    */
+  @Test
   @MediumTest
-  public static void testThreeConstantColorFrames() throws InterruptedException {
+  public void testThreeConstantColorFrames() throws InterruptedException {
     final int width = 16;
     final int height = 16;
     // Create EGL base with a pixel buffer as display output.
@@ -160,8 +169,9 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
    * texture frame should still be valid, and this is tested by drawing the texture frame to a pixel
    * buffer and reading it back with glReadPixels().
    */
+  @Test
   @MediumTest
-  public static void testLateReturnFrame() throws InterruptedException {
+  public void testLateReturnFrame() throws InterruptedException {
     final int width = 16;
     final int height = 16;
     // Create EGL base with a pixel buffer as display output.
@@ -226,8 +236,9 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
    * Test disposing the SurfaceTextureHelper, but keep trying to produce more texture frames. No
    * frames should be delivered to the listener.
    */
+  @Test
   @MediumTest
-  public static void testDispose() throws InterruptedException {
+  public void testDispose() throws InterruptedException {
     // Create SurfaceTextureHelper and listener.
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create("SurfaceTextureHelper test" /* threadName */, null);
@@ -263,8 +274,9 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
    * Test disposing the SurfaceTextureHelper immediately after is has been setup to use a
    * shared context. No frames should be delivered to the listener.
    */
+  @Test
   @SmallTest
-  public static void testDisposeImmediately() {
+  public void testDisposeImmediately() {
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create("SurfaceTextureHelper test" /* threadName */, null);
     surfaceTextureHelper.dispose();
@@ -274,8 +286,9 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
    * Call stopListening(), but keep trying to produce more texture frames. No frames should be
    * delivered to the listener.
    */
+  @Test
   @MediumTest
-  public static void testStopListening() throws InterruptedException {
+  public void testStopListening() throws InterruptedException {
     // Create SurfaceTextureHelper and listener.
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create("SurfaceTextureHelper test" /* threadName */, null);
@@ -311,8 +324,9 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   /**
    * Test stopListening() immediately after the SurfaceTextureHelper has been setup.
    */
+  @Test
   @SmallTest
-  public static void testStopListeningImmediately() throws InterruptedException {
+  public void testStopListeningImmediately() throws InterruptedException {
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create("SurfaceTextureHelper test" /* threadName */, null);
     final MockTextureListener listener = new MockTextureListener();
@@ -325,8 +339,9 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
    * Test stopListening() immediately after the SurfaceTextureHelper has been setup on the handler
    * thread.
    */
+  @Test
   @SmallTest
-  public static void testStopListeningImmediatelyOnHandlerThread() throws InterruptedException {
+  public void testStopListeningImmediatelyOnHandlerThread() throws InterruptedException {
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create("SurfaceTextureHelper test" /* threadName */, null);
     final MockTextureListener listener = new MockTextureListener();
@@ -367,8 +382,9 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
   /**
    * Test calling startListening() with a new listener after stopListening() has been called.
    */
+  @Test
   @MediumTest
-  public static void testRestartListeningWithNewListener() throws InterruptedException {
+  public void testRestartListeningWithNewListener() throws InterruptedException {
     // Create SurfaceTextureHelper and listener.
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create("SurfaceTextureHelper test" /* threadName */, null);
@@ -410,8 +426,9 @@ public final class SurfaceTextureHelperTest extends ActivityTestCase {
     eglBase.release();
   }
 
+  @Test
   @MediumTest
-  public static void testTexturetoYUV() throws InterruptedException {
+  public void testTexturetoYUV() throws InterruptedException {
     final int width = 16;
     final int height = 16;
 

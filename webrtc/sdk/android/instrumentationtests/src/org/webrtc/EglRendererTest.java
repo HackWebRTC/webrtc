@@ -10,20 +10,33 @@
 
 package org.webrtc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-import android.test.InstrumentationTestCase;
-import android.test.suitebuilder.annotation.SmallTest;
+import android.support.test.InstrumentationRegistry;
+import android.support.test.filters.SmallTest;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 // EmptyActivity is needed for the surface.
-public class EglRendererTest extends InstrumentationTestCase {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class EglRendererTest {
   final static String TAG = "EglRendererTest";
   final static int RENDER_WAIT_MS = 1000;
   final static int SURFACE_WAIT_MS = 1000;
@@ -88,9 +101,9 @@ public class EglRendererTest extends InstrumentationTestCase {
   int oesTextureId;
   SurfaceTexture surfaceTexture;
 
-  @Override
-  protected void setUp() throws Exception {
-    PeerConnectionFactory.initializeAndroidGlobals(getInstrumentation().getTargetContext(),
+  @Before
+  public void setUp() throws Exception {
+    PeerConnectionFactory.initializeAndroidGlobals(InstrumentationRegistry.getTargetContext(),
         true /* initializeAudio */, true /* initializeVideo */, true /* videoHwAcceleration */);
     eglRenderer = new EglRenderer("TestRenderer: ");
     eglRenderer.init(null /* sharedContext */, EglBase.CONFIG_RGBA, new GlRectDrawer());
@@ -100,7 +113,7 @@ public class EglRendererTest extends InstrumentationTestCase {
     eglRenderer.createEglSurface(surfaceTexture);
   }
 
-  @Override
+  @After
   public void tearDown() {
     surfaceTexture.release();
     GLES20.glDeleteTextures(1 /* n */, new int[] {oesTextureId}, 0 /* offset */);
@@ -227,6 +240,7 @@ public class EglRendererTest extends InstrumentationTestCase {
         0));
   }
 
+  @Test
   @SmallTest
   public void testAddFrameListener() throws Exception {
     eglRenderer.addFrameListener(testFrameListener, 0f /* scaleFactor */);
@@ -242,6 +256,7 @@ public class EglRendererTest extends InstrumentationTestCase {
     assertFalse(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
   }
 
+  @Test
   @SmallTest
   public void testAddFrameListenerBitmap() throws Exception {
     eglRenderer.addFrameListener(testFrameListener, 1f /* scaleFactor */);
@@ -254,6 +269,7 @@ public class EglRendererTest extends InstrumentationTestCase {
     checkBitmapContent(testFrameListener.resetAndGetBitmap(), 1);
   }
 
+  @Test
   @SmallTest
   public void testAddFrameListenerBitmapScale() throws Exception {
     for (int i = 0; i < 3; ++i) {
@@ -269,6 +285,7 @@ public class EglRendererTest extends InstrumentationTestCase {
    * Checks that the frame listener will not be called with a frame that was delivered before the
    * frame listener was added.
    */
+  @Test
   @SmallTest
   public void testFrameListenerNotCalledWithOldFrames() throws Exception {
     feedFrame(0);
@@ -278,6 +295,7 @@ public class EglRendererTest extends InstrumentationTestCase {
   }
 
   /** Checks that the frame listener will not be called after it is removed. */
+  @Test
   @SmallTest
   public void testRemoveFrameListenerNotRacy() throws Exception {
     for (int i = 0; i < REMOVE_FRAME_LISTENER_RACY_NUM_TESTS; i++) {

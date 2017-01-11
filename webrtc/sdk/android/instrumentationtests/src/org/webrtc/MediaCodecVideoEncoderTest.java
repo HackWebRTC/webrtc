@@ -7,26 +7,33 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 package org.webrtc;
 
-import org.webrtc.MediaCodecVideoEncoder.OutputBufferInfo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import android.annotation.TargetApi;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Build;
-import android.test.ActivityTestCase;
-import android.test.suitebuilder.annotation.SmallTest;
+import android.support.test.filters.SmallTest;
 import android.util.Log;
-
 import java.nio.ByteBuffer;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.webrtc.MediaCodecVideoEncoder.OutputBufferInfo;
 
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
-public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class MediaCodecVideoEncoderTest {
   final static String TAG = "MediaCodecVideoEncoderTest";
 
+  @Test
   @SmallTest
-  public static void testInitializeUsingByteBuffer() {
+  public void testInitializeUsingByteBuffer() {
     if (!MediaCodecVideoEncoder.isVp8HwSupported()) {
       Log.i(TAG, "Hardware does not support VP8 encoding, skipping testInitReleaseUsingByteBuffer");
       return;
@@ -37,8 +44,9 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     encoder.release();
   }
 
+  @Test
   @SmallTest
-  public static void testInitilizeUsingTextures() {
+  public void testInitilizeUsingTextures() {
     if (!MediaCodecVideoEncoder.isVp8HwSupportedUsingTextures()) {
       Log.i(TAG, "hardware does not support VP8 encoding, skipping testEncoderUsingTextures");
       return;
@@ -51,8 +59,9 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     eglBase.release();
   }
 
+  @Test
   @SmallTest
-  public static void testInitializeUsingByteBufferReInitilizeUsingTextures() {
+  public void testInitializeUsingByteBufferReInitilizeUsingTextures() {
     if (!MediaCodecVideoEncoder.isVp8HwSupportedUsingTextures()) {
       Log.i(TAG, "hardware does not support VP8 encoding, skipping testEncoderUsingTextures");
       return;
@@ -68,8 +77,9 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     eglBase.release();
   }
 
+  @Test
   @SmallTest
-  public static void testEncoderUsingByteBuffer() throws InterruptedException {
+  public void testEncoderUsingByteBuffer() throws InterruptedException {
     if (!MediaCodecVideoEncoder.isVp8HwSupported()) {
       Log.i(TAG, "Hardware does not support VP8 encoding, skipping testEncoderUsingByteBuffer");
       return;
@@ -111,8 +121,9 @@ public final class MediaCodecVideoEncoderTest extends ActivityTestCase {
     encoder.release();
   }
 
+  @Test
   @SmallTest
-  public static void testEncoderUsingTextures() throws InterruptedException {
+  public void testEncoderUsingTextures() throws InterruptedException {
     if (!MediaCodecVideoEncoder.isVp8HwSupportedUsingTextures()) {
       Log.i(TAG, "Hardware does not support VP8 encoding, skipping testEncoderUsingTextures");
       return;

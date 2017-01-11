@@ -10,14 +10,14 @@
 
 package org.webrtc;
 
-import org.webrtc.Metrics.HistogramInfo;
-import org.webrtc.PeerConnection.IceConnectionState;
-import org.webrtc.PeerConnection.IceGatheringState;
-import org.webrtc.PeerConnection.SignalingState;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import android.test.ActivityTestCase;
-import android.test.suitebuilder.annotation.MediumTest;
-
+import android.support.test.InstrumentationRegistry;
+import android.support.test.filters.MediumTest;
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
@@ -31,16 +31,25 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.webrtc.Metrics.HistogramInfo;
+import org.webrtc.PeerConnection.IceConnectionState;
+import org.webrtc.PeerConnection.IceGatheringState;
+import org.webrtc.PeerConnection.SignalingState;
 
 /** End-to-end tests for PeerConnection.java. */
-public class PeerConnectionTest extends ActivityTestCase {
+@RunWith(BaseJUnit4ClassRunner.class)
+public class PeerConnectionTest {
   private static final int TIMEOUT_SECONDS = 20;
   private TreeSet<String> threadsBeforeTest = null;
 
-  @Override
-  protected void setUp() {
+  @Before
+  public void setUp() {
     assertTrue(PeerConnectionFactory.initializeAndroidGlobals(
-        getInstrumentation().getContext(), true, true, true));
+        InstrumentationRegistry.getContext(), true, true, true));
   }
 
   private static class ObserverExpectations
@@ -539,6 +548,7 @@ public class PeerConnectionTest extends ActivityTestCase {
   //   in JNI-style programming; make sure no typos!
   // - Test that shutdown mid-interaction is crash-free.
 
+  @Test
   @MediumTest
   public void testCompleteSession() throws Exception {
     Metrics.enable();
@@ -766,6 +776,7 @@ public class PeerConnectionTest extends ActivityTestCase {
     System.gc();
   }
 
+  @Test
   @MediumTest
   public void testTrackRemovalAndAddition() throws Exception {
     // Allow loopback interfaces too since our Android devices often don't

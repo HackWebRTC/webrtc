@@ -207,6 +207,10 @@ if (rtc_include_tests) {
 
     deps = [
       "//base:base_java",
+      "//base:base_java_test_support",
+      "//third_party/android_support_test_runner:rules_java",
+      "//third_party/android_support_test_runner:runner_java",
+      "//third_party/junit",
       "//webrtc/base:base_java",
       "//webrtc/sdk/android:libjingle_peerconnection_java",
       "//webrtc/sdk/android:libjingle_peerconnection_metrics_default_java",
