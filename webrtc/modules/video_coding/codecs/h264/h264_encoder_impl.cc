@@ -449,32 +449,14 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
             << OPENH264_MINOR;
   switch (packetization_mode_) {
     case H264PacketizationMode::SingleNalUnit:
-// Limit the size of the packets produced.
-#if (OPENH264_MAJOR == 1) && (OPENH264_MINOR <= 5)
-      encoder_params.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
-      // The slice size is max payload size - room for a NAL header.
-      // The constant 50 is NAL_HEADER_ADD_0X30BYTES in openh264 source,
-      // but is not exported.
-      const kNalHeaderSizeAllocation = 50;
-      encoder_params.sSpatialLayers[0]
-          .sSliceCfg.sSliceArgument.uiSliceSizeConstraint =
-          static_cast<unsigned int>(max_payload_size_ -
-                                    kNalHeaderSizeAllocation);
-      encoder_params.uiMaxNalSize =
-          static_cast<unsigned int>(max_payload_size_);
-#else
+      // Limit the size of the packets produced.
       encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceNum = 1;
       encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceMode =
           SM_SIZELIMITED_SLICE;
       encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceSizeConstraint =
           static_cast<unsigned int>(max_payload_size_);
-#endif
       break;
     case H264PacketizationMode::NonInterleaved:
-#if (OPENH264_MAJOR == 1) && (OPENH264_MINOR <= 5)
-      // Slice num according to number of threads.
-      encoder_params.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_AUTO_SLICE;
-#else
       // When uiSliceMode = SM_FIXEDSLCNUM_SLICE, uiSliceNum = 0 means auto
       // design it with cpu core number.
       // TODO(sprang): Set to 0 when we understand why the rate controller borks
@@ -482,7 +464,6 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
       encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceNum = 1;
       encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceMode =
           SM_FIXEDSLCNUM_SLICE;
-#endif
       break;
   }
   return encoder_params;
