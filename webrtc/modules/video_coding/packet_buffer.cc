@@ -40,7 +40,6 @@ PacketBuffer::PacketBuffer(Clock* clock,
       size_(start_buffer_size),
       max_size_(max_buffer_size),
       first_seq_num_(0),
-      last_seq_num_(0),
       first_packet_received_(false),
       is_cleared_to_first_seq_num_(false),
       data_buffer_(start_buffer_size),
@@ -65,7 +64,6 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
 
     if (!first_packet_received_) {
       first_seq_num_ = seq_num;
-      last_seq_num_ = seq_num;
       first_packet_received_ = true;
     } else if (AheadOf(first_seq_num_, seq_num)) {
       // If we have explicitly cleared past this packet then it's old,
@@ -99,9 +97,6 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
         return false;
       }
     }
-
-    if (AheadOf(seq_num, last_seq_num_))
-      last_seq_num_ = seq_num;
 
     sequence_buffer_[index].frame_begin = packet->is_first_packet_in_frame;
     sequence_buffer_[index].frame_end = packet->markerBit;
@@ -185,6 +180,8 @@ bool PacketBuffer::PotentialNewFrame(uint16_t seq_num) const {
   if (sequence_buffer_[index].frame_begin)
     return true;
   if (!sequence_buffer_[prev_index].used)
+    return false;
+  if (sequence_buffer_[prev_index].frame_created)
     return false;
   if (sequence_buffer_[prev_index].seq_num !=
       static_cast<uint16_t>(sequence_buffer_[index].seq_num - 1)) {

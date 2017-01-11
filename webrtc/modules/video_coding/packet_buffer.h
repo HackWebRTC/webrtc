@@ -126,9 +126,6 @@ class PacketBuffer {
   // The fist sequence number currently in the buffer.
   uint16_t first_seq_num_ GUARDED_BY(crit_);
 
-  // The last sequence number currently in the buffer.
-  uint16_t last_seq_num_ GUARDED_BY(crit_);
-
   // If the packet buffer has received its first packet.
   bool first_packet_received_ GUARDED_BY(crit_);
 

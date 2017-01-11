@@ -124,6 +124,16 @@ webrtc_fuzzer_test("flexfec_receiver_fuzzer") {
   libfuzzer_options = [ "max_len=2000" ]
 }
 
+webrtc_fuzzer_test("packet_buffer_fuzzer") {
+  sources = [
+    "packet_buffer_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/video_coding/",
+  ]
+  libfuzzer_options = [ "max_len=2000" ]
+}
+
 webrtc_fuzzer_test("rtcp_receiver_fuzzer") {
   sources = [
     "rtcp_receiver_fuzzer.cc",

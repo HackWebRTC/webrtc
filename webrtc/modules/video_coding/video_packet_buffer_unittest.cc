@@ -468,5 +468,14 @@ TEST_F(TestPacketBuffer, DontLeakPayloadData) {
   EXPECT_FALSE(Insert(2 + kMaxSize, kKeyFrame, kFirst, kNotLast, 5, data4));
 }
 
+TEST_F(TestPacketBuffer, ContinuousSeqNumDoubleMarkerBit) {
+  Insert(2, kKeyFrame, kNotFirst, kNotLast);
+  Insert(1, kKeyFrame, kFirst, kLast);
+  frames_from_callback_.clear();
+  Insert(3, kKeyFrame, kNotFirst, kLast);
+
+  EXPECT_EQ(0UL, frames_from_callback_.size());
+}
+
 }  // namespace video_coding
 }  // namespace webrtc
