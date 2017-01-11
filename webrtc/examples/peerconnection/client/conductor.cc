@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "webrtc/api/test/fakeconstraints.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/logging.h"
@@ -507,7 +508,7 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
     }
 
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       break;
   }
 }

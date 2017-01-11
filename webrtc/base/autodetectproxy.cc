@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/base/autodetectproxy.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
 #include "webrtc/base/nethelpers.h"
@@ -236,7 +237,7 @@ void AutoDetectProxy::OnConnectEvent(AsyncSocket * socket) {
       probe.assign("\005\001\000", 3);
       break;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       return;
   }
 
@@ -271,7 +272,7 @@ void AutoDetectProxy::OnReadEvent(AsyncSocket * socket) {
       }
       break;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       return;
   }
 

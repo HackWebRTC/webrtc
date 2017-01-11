@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include "webrtc/base/asynctcpsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/socketadapters.h"
@@ -745,7 +746,7 @@ void RelayServerBinding::OnMessage(rtc::Message *pmsg) {
     }
 
   } else {
-    ASSERT(false);
+    RTC_NOTREACHED();
   }
 }
 

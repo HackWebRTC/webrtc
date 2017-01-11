@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
 
@@ -164,7 +165,7 @@ void DtmfSender::OnMessage(rtc::Message* msg) {
       break;
     }
     default: {
-      ASSERT(false);
+      RTC_NOTREACHED();
       break;
     }
   }
@@ -189,7 +190,7 @@ void DtmfSender::DoInsertDtmf() {
     if (!GetDtmfCode(tone, &code)) {
       // The find_first_of(kDtmfValidTones) should have guarantee |tone| is
       // a valid DTMF tone.
-      ASSERT(false);
+      RTC_NOTREACHED();
     }
   }
 

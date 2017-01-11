@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 
 namespace rtc {
@@ -122,7 +123,7 @@ TransformAdapter::Write(const void * data, size_t data_len,
         // Note: Don't signal SR_EOS this iteration, unless no data written
         state_ = ST_COMPLETE;
       } else if (result == SR_ERROR) {
-        ASSERT(false); // When this happens, think about what should be done
+        RTC_NOTREACHED();  // When this happens, think about what should be done
         state_ = ST_ERROR;
         error_ = -1; // TODO: propagate error
         break;
@@ -140,7 +141,7 @@ TransformAdapter::Write(const void * data, size_t data_len,
                                                           &subwritten,
                                                           &error_);
       if (result == SR_BLOCK) {
-        ASSERT(false); // TODO: we should handle this
+        RTC_NOTREACHED();  // We should handle this
         return SR_BLOCK;
       } else if (result == SR_ERROR) {
         state_ = ST_ERROR;

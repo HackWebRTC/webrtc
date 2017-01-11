@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <memory>
 #include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/diskcache.h"
 #include "webrtc/base/httpclient.h"
@@ -336,7 +337,7 @@ StreamInterface* HttpClient::GetDocumentStream() {
 void HttpClient::start() {
   if (base_.mode() != HM_NONE) {
     // call reset() to abort an in-progress request
-    ASSERT(false);
+    RTC_NOTREACHED();
     return;
   }
 
@@ -345,7 +346,7 @@ void HttpClient::start() {
   if (request().hasHeader(HH_TRANSFER_ENCODING, NULL)) {
     // Exact size must be known on the client.  Instead of using chunked
     // encoding, wrap data with auto-caching file or memory stream.
-    ASSERT(false);
+    RTC_NOTREACHED();
     return;
   }
 
@@ -815,7 +816,7 @@ void HttpClient::onHttpComplete(HttpMode mode, HttpError err) {
 void HttpClient::onHttpClosed(HttpError err) {
   // This shouldn't occur, since we return the stream to the pool upon command
   // completion.
-  ASSERT(false);
+  RTC_NOTREACHED();
 }
 
 //////////////////////////////////////////////////////////////////////

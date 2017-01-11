@@ -16,6 +16,7 @@
 #include "webrtc/p2p/base/common.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/base/base64.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -538,7 +539,7 @@ bool Port::MaybeIceRoleConflict(
       }
       break;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
   }
   return ret;
 }
@@ -791,7 +792,7 @@ class ConnectionRequest : public StunRequest {
       request->AddAttribute(new StunUInt64Attribute(
           STUN_ATTR_ICE_CONTROLLED, connection_->port()->IceTiebreaker()));
     } else {
-      ASSERT(false);
+      RTC_NOTREACHED();
     }
 
     // Adding PRIORITY Attribute.
@@ -1039,7 +1040,7 @@ void Connection::OnReadPacket(
         break;
 
       default:
-        ASSERT(false);
+        RTC_NOTREACHED();
         break;
     }
   }

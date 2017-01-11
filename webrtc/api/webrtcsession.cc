@@ -393,7 +393,7 @@ static std::string GetStateString(webrtc::WebRtcSession::State state) {
     GET_STRING_OF_STATE(STATE_INPROGRESS)
     GET_STRING_OF_STATE(STATE_CLOSED)
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       break;
   }
   return result;
@@ -1503,7 +1503,7 @@ void WebRtcSession::OnTransportControllerConnectionState(
       }
       break;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
   }
 }
 

@@ -26,6 +26,7 @@
 #endif  // defined(WEBRTC_POSIX) && !defined(__native_client__)
 
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/signalthread.h"
 
@@ -34,7 +35,7 @@ namespace rtc {
 int ResolveHostname(const std::string& hostname, int family,
                     std::vector<IPAddress>* addresses) {
 #ifdef __native_client__
-  ASSERT(false);
+  RTC_NOTREACHED();
   LOG(LS_WARNING) << "ResolveHostname() is not implemented for NaCl";
   return -1;
 #else  // __native_client__

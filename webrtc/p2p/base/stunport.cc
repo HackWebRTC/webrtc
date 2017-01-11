@@ -264,7 +264,7 @@ Connection* UDPPort::CreateConnection(const Candidate& address,
   }
 
   if (SharedSocket() && Candidates()[0].type() != LOCAL_PORT_TYPE) {
-    ASSERT(false);
+    RTC_NOTREACHED();
     return NULL;
   }
 

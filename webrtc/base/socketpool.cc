@@ -11,6 +11,7 @@
 #include <iomanip>
 
 #include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/socketfactory.h"
 #include "webrtc/base/socketpool.h"
@@ -82,7 +83,7 @@ void StreamCache::ReturnConnectedStream(StreamInterface* stream) {
       return;
     }
   }
-  ASSERT(false);
+  RTC_NOTREACHED();
 }
 
 void StreamCache::OnStreamEvent(StreamInterface* stream, int events, int err) {
@@ -103,7 +104,7 @@ void StreamCache::OnStreamEvent(StreamInterface* stream, int events, int err) {
       return;
     }
   }
-  ASSERT(false);
+  RTC_NOTREACHED();
 }
 
 //////////////////////////////////////////////////////////////////////

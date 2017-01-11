@@ -18,6 +18,7 @@
 #include "webrtc/api/test/androidtestinitializer.h"
 #endif
 #include "webrtc/api/webrtcsdp.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
@@ -1360,7 +1361,7 @@ class WebRtcSdpTest : public testing::Test {
     } else if (mline_index == 1) {
       content_name = kVideoContentName;
     } else {
-      ASSERT(false);
+      RTC_NOTREACHED();
     }
     TransportInfo transport_info(
         content_name, TransportDescription(ufrag, pwd));

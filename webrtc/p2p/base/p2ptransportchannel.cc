@@ -15,6 +15,7 @@
 #include <set>
 
 #include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/logging.h"
@@ -662,7 +663,7 @@ void P2PTransportChannel::OnUnknownAddress(
                    << "candidate: " << remote_candidate.ToString();
       return;
     } else {
-      ASSERT(false);
+      RTC_NOTREACHED();
       port->SendBindingErrorResponse(stun_msg, address,
                                      STUN_ERROR_SERVER_ERROR,
                                      STUN_ERROR_REASON_SERVER_ERROR);
@@ -1497,7 +1498,7 @@ void P2PTransportChannel::OnMessage(rtc::Message *pmsg) {
       OnRegatherOnFailedNetworks();
       break;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       break;
   }
 }

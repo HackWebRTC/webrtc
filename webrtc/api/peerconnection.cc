@@ -32,6 +32,7 @@
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
@@ -399,7 +400,7 @@ uint32_t ConvertIceTransportTypeToCandidateFilter(
     case PeerConnectionInterface::kAll:
       return cricket::CF_ALL;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
   }
   return cricket::CF_NONE;
 }

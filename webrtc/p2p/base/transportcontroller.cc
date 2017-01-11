@@ -388,7 +388,7 @@ void TransportController::OnMessage(rtc::Message* pmsg) {
       break;
     }
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
   }
 }
 

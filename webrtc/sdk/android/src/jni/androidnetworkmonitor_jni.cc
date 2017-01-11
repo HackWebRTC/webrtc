@@ -17,6 +17,7 @@
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/ipaddress.h"
 
@@ -61,7 +62,7 @@ static NetworkType GetNetworkTypeFromJava(JNIEnv* jni, jobject j_network_type) {
   if (enum_name == "CONNECTION_NONE") {
     return NetworkType::NETWORK_NONE;
   }
-  ASSERT(false);
+  RTC_NOTREACHED();
   return NetworkType::NETWORK_UNKNOWN;
 }
 

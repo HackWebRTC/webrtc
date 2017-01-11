@@ -10,6 +10,7 @@
 
 #include "webrtc/base/signalthread.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 
 namespace rtc {
@@ -47,7 +48,7 @@ void SignalThread::Start() {
     OnWorkStart();
     worker_.Start();
   } else {
-    ASSERT(false);
+    RTC_NOTREACHED();
   }
 }
 
@@ -70,7 +71,7 @@ void SignalThread::Destroy(bool wait) {
       refcount_--;
     }
   } else {
-    ASSERT(false);
+    RTC_NOTREACHED();
   }
 }
 
@@ -83,7 +84,7 @@ void SignalThread::Release() {
     state_ = kReleasing;
   } else {
     // if (kInit == state_) use Destroy()
-    ASSERT(false);
+    RTC_NOTREACHED();
   }
 }
 

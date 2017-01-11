@@ -455,7 +455,7 @@ void BasicPortAllocatorSession::OnMessage(rtc::Message *message) {
     OnConfigStop();
     break;
   default:
-    ASSERT(false);
+    RTC_NOTREACHED();
   }
 }
 
@@ -975,7 +975,7 @@ void BasicPortAllocatorSession::OnPortDestroyed(
       return;
     }
   }
-  ASSERT(false);
+  RTC_NOTREACHED();
 }
 
 BasicPortAllocatorSession::PortData* BasicPortAllocatorSession::FindPort(
@@ -1156,7 +1156,7 @@ void AllocationSequence::OnMessage(rtc::Message* msg) {
       break;
 
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
   }
 
   if (state() == kRunning) {
@@ -1305,7 +1305,7 @@ void AllocationSequence::CreateRelayPorts() {
     } else if (relay.type == RELAY_TURN) {
       CreateTurnPort(relay);
     } else {
-      ASSERT(false);
+      RTC_NOTREACHED();
     }
   }
 }
@@ -1448,7 +1448,7 @@ void AllocationSequence::OnPortDestroyed(PortInterface* port) {
     turn_ports_.erase(it);
   } else {
     LOG(LS_ERROR) << "Unexpected OnPortDestroyed for nonexistent port.";
-    ASSERT(false);
+    RTC_NOTREACHED();
   }
 }
 

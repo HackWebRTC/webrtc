@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "webrtc/base/base64.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
@@ -1205,7 +1206,7 @@ std::string MediaTypeToString(MediaType type) {
       type_str = "data";
       break;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       break;
   }
   return type_str;
@@ -1227,7 +1228,7 @@ std::string MediaContentDirectionToString(MediaContentDirection direction) {
       dir_str = "sendrecv";
       break;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       break;
   }
 
@@ -1269,7 +1270,7 @@ void MediaSessionOptions::RemoveSendStream(MediaType type,
       return;
     }
   }
-  ASSERT(false);
+  RTC_NOTREACHED();
 }
 
 bool MediaSessionOptions::HasSendMediaStream(MediaType type) const {
@@ -1398,7 +1399,7 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
         }
         data_added = true;
       } else {
-        ASSERT(false);
+        RTC_NOTREACHED();
       }
     }
   }

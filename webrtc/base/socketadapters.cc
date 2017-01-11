@@ -27,6 +27,7 @@
 #include <algorithm>
 
 #include "webrtc/base/bytebuffer.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/httpcommon.h"
 #include "webrtc/base/logging.h"
@@ -105,7 +106,7 @@ void BufferedReadAdapter::OnReadEvent(AsyncSocket * socket) {
 
   if (data_len_ >= buffer_size_) {
     LOG(INFO) << "Input buffer overflow";
-    ASSERT(false);
+    RTC_NOTREACHED();
     data_len_ = 0;
   }
 

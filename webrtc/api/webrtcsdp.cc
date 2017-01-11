@@ -23,6 +23,7 @@
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
@@ -664,7 +665,7 @@ static int GetCandidatePreferenceFromType(const std::string& type) {
   } else if (type == cricket::RELAY_PORT_TYPE) {
     preference = kPreferenceRelayed;
   } else {
-    ASSERT(false);
+    RTC_NOTREACHED();
   }
   return preference;
 }
@@ -1241,7 +1242,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
   else if (media_type == cricket::MEDIA_TYPE_DATA)
     type = kMediaTypeData;
   else
-    ASSERT(false);
+    RTC_NOTREACHED();
 
   std::string fmt;
   if (media_type == cricket::MEDIA_TYPE_VIDEO) {
@@ -1830,7 +1831,7 @@ void BuildCandidate(const std::vector<Candidate>& candidates,
       type = kCandidatePrflx;
       // Peer reflexive candidate may be signaled for being removed.
     } else {
-      ASSERT(false);
+      RTC_NOTREACHED();
       // Never write out candidates if we don't know the type.
       continue;
     }
@@ -2249,7 +2250,7 @@ static C* ParseContentDescription(const std::string& message,
       *content_name = cricket::CN_DATA;
       break;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       break;
   }
   if (!ParseContent(message, media_type, mline_index, protocol, payload_types,

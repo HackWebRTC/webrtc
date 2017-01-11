@@ -14,6 +14,7 @@
 #include <ws2tcpip.h>  // NOLINT
 
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/win32window.h"
@@ -547,7 +548,7 @@ int Win32Socket::EstimateMTU(uint16_t* mtu) {
     }
   }
 
-  ASSERT(false);
+  RTC_NOTREACHED();
   return 0;
 }
 
@@ -618,7 +619,7 @@ int Win32Socket::TranslateOption(Option opt, int* slevel, int* sopt) {
       LOG(LS_WARNING) << "Socket::OPT_DSCP not supported.";
       return -1;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       return -1;
   }
   return 0;

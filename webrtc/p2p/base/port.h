@@ -25,6 +25,7 @@
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/p2p/base/stunrequest.h"
 #include "webrtc/base/asyncpacketsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/proxyinfo.h"
 #include "webrtc/base/ratetracker.h"
@@ -247,7 +248,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
       rtc::AsyncPacketSocket* socket, const char* data, size_t size,
       const rtc::SocketAddress& remote_addr,
       const rtc::PacketTime& packet_time) {
-    ASSERT(false);
+    RTC_NOTREACHED();
     return false;
   }
 

@@ -23,6 +23,7 @@
 #include "webrtc/api/videotrack.h"
 #include "webrtc/api/webrtcsession.h"
 #include "webrtc/api/webrtcsessiondescriptionfactory.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/fakenetwork.h"
 #include "webrtc/base/firewallsocketserver.h"
 #include "webrtc/base/gunit.h"
@@ -189,7 +190,7 @@ class MockIceObserver : public webrtc::IceObserver {
         mline_1_candidates_.push_back(candidate->candidate());
         break;
       default:
-        ASSERT(false);
+        RTC_NOTREACHED();
     }
 
     // The ICE gathering state should always be Gathering when a candidate is

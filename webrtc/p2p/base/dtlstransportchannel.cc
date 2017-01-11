@@ -419,7 +419,7 @@ int DtlsTransportChannelWrapper::SendPacket(
       // Can't send anything when we're closed.
       return -1;
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       return -1;
   }
 }

@@ -16,6 +16,7 @@
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/webrtcsession.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/sslidentity.h"
 
 using cricket::MediaSessionOptions;
@@ -331,7 +332,7 @@ void WebRtcSessionDescriptionFactory::OnMessage(rtc::Message* msg) {
       break;
     }
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
       break;
   }
 }

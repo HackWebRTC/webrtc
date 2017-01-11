@@ -16,6 +16,7 @@
 #define SEC_E_CERT_EXPIRED (-2146893016)
 #endif  // !WEBRTC_WIN
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/httpbase.h"
 #include "webrtc/base/logging.h"
@@ -64,7 +65,7 @@ HttpParser::Process(const char* buffer, size_t len, size_t* processed,
   *error = HE_NONE;
 
   if (state_ >= ST_COMPLETE) {
-    ASSERT(false);
+    RTC_NOTREACHED();
     return PR_COMPLETE;
   }
 
@@ -206,7 +207,7 @@ HttpParser::ProcessLine(const char* line, size_t len, HttpError* error) {
     break;
 
   default:
-    ASSERT(false);
+    RTC_NOTREACHED();
     break;
   }
 
@@ -376,7 +377,7 @@ HttpBase::isConnected() const {
 bool
 HttpBase::attach(StreamInterface* stream) {
   if ((mode_ != HM_NONE) || (http_stream_ != NULL) || (stream == NULL)) {
-    ASSERT(false);
+    RTC_NOTREACHED();
     return false;
   }
   http_stream_ = stream;
@@ -702,7 +703,7 @@ HttpBase::flush_data() {
     }
   }
 
-  ASSERT(false);
+  RTC_NOTREACHED();
 }
 
 bool

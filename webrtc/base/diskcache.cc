@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/diskcache.h"
 #include "webrtc/base/fileutils.h"
@@ -262,7 +263,7 @@ std::string DiskCache::IdToFilename(const std::string& id, size_t index) const {
 #else  // !TRANSPARENT_CACHE_NAMES
   // We might want to just use a hash of the filename at some point, both for
   // obfuscation, and to avoid both filename length and escaping issues.
-  ASSERT(false);
+  RTC_NOTREACHED();
 #endif  // !TRANSPARENT_CACHE_NAMES
 
   char extension[32];
@@ -319,7 +320,7 @@ void DiskCache::ReleaseResource(const std::string& id, size_t index) const {
   const Entry* entry = GetEntry(id);
   if (!entry) {
     LOG_F(LS_WARNING) << "Missing cache entry";
-    ASSERT(false);
+    RTC_NOTREACHED();
     return;
   }
 

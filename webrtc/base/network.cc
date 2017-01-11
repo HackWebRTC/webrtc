@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/socket.h"  // includes something that makes windows happy
@@ -407,7 +408,7 @@ void BasicNetworkManager::OnNetworksChanged() {
 
 bool BasicNetworkManager::CreateNetworks(bool include_ignored,
                                          NetworkList* networks) const {
-  ASSERT(false);
+  RTC_NOTREACHED();
   LOG(LS_WARNING) << "BasicNetworkManager doesn't work on NaCl yet";
   return false;
 }
@@ -785,7 +786,7 @@ void BasicNetworkManager::OnMessage(Message* msg) {
       break;
     }
     default:
-      ASSERT(false);
+      RTC_NOTREACHED();
   }
 }
 

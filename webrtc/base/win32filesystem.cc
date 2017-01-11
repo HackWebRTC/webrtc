@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stream.h"
@@ -117,7 +118,7 @@ std::string Win32Filesystem::TempFilename(const Pathname &dir,
   if (::GetTempFileName(ToUtf16(dir.pathname()).c_str(),
                         ToUtf16(prefix).c_str(), 0, filename) != 0)
     return ToUtf8(filename);
-  ASSERT(false);
+  RTC_NOTREACHED();
   return "";
 }
 

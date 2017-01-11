@@ -19,6 +19,7 @@
 #include <string>
 
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
@@ -486,7 +487,7 @@ bool FileStream::Flush() {
     return (0 == fflush(file_));
   }
   // try to flush empty file?
-  ASSERT(false);
+  RTC_NOTREACHED();
   return false;
 }
 
@@ -495,7 +496,7 @@ bool FileStream::Flush() {
 bool FileStream::TryLock() {
   if (file_ == NULL) {
     // Stream not open.
-    ASSERT(false);
+    RTC_NOTREACHED();
     return false;
   }
 
@@ -505,7 +506,7 @@ bool FileStream::TryLock() {
 bool FileStream::Unlock() {
   if (file_ == NULL) {
     // Stream not open.
-    ASSERT(false);
+    RTC_NOTREACHED();
     return false;
   }
 
