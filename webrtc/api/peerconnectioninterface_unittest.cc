@@ -321,6 +321,8 @@ using webrtc::NotifierInterface;
 using webrtc::ObserverInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionObserver;
+using webrtc::RTCError;
+using webrtc::RTCErrorType;
 using webrtc::RtpReceiverInterface;
 using webrtc::RtpSenderInterface;
 using webrtc::SdpParseError;
@@ -694,6 +696,17 @@ class PeerConnectionInterfaceTest : public testing::Test {
     CreatePeerConnection(PeerConnectionInterface::RTCConfiguration(), nullptr);
   }
 
+  // DTLS does not work in a loopback call, so is disabled for most of the
+  // tests in this file.
+  void CreatePeerConnectionWithoutDtls() {
+    FakeConstraints no_dtls_constraints;
+    no_dtls_constraints.AddMandatory(
+        webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, false);
+
+    CreatePeerConnection(PeerConnectionInterface::RTCConfiguration(),
+                         &no_dtls_constraints);
+  }
+
   void CreatePeerConnection(webrtc::MediaConstraintsInterface* constraints) {
     CreatePeerConnection(PeerConnectionInterface::RTCConfiguration(),
                          constraints);
@@ -721,17 +734,6 @@ class PeerConnectionInterfaceTest : public testing::Test {
     std::unique_ptr<cricket::FakePortAllocator> port_allocator(
         new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
     port_allocator_ = port_allocator.get();
-
-    // DTLS does not work in a loopback call, so is disabled for most of the
-    // tests in this file. We only create a FakeIdentityService if the test
-    // explicitly sets the constraint.
-    FakeConstraints default_constraints;
-    if (!constraints) {
-      constraints = &default_constraints;
-
-      default_constraints.AddMandatory(
-          webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, false);
-    }
 
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
     bool dtls;
@@ -898,7 +900,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
   }
 
   void InitiateCall() {
-    CreatePeerConnection();
+    CreatePeerConnectionWithoutDtls();
     // Create a local stream with audio&video tracks.
     AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
     CreateOfferReceiveAnswer();
@@ -1105,7 +1107,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
   }
 
   std::unique_ptr<SessionDescriptionInterface> CreateOfferWithOneAudioStream() {
-    CreatePeerConnection();
+    CreatePeerConnectionWithoutDtls();
     AddVoiceStream(kStreamLabel1);
     std::unique_ptr<SessionDescriptionInterface> offer;
     EXPECT_TRUE(DoCreateOffer(&offer, nullptr));
@@ -1281,7 +1283,7 @@ TEST_F(PeerConnectionInterfaceTest, GetConfigurationAfterSetConfiguration) {
 }
 
 TEST_F(PeerConnectionInterfaceTest, AddStreams) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   AddVideoStream(kStreamLabel1);
   AddVoiceStream(kStreamLabel2);
   ASSERT_EQ(2u, pc_->local_streams()->count());
@@ -1311,7 +1313,7 @@ TEST_F(PeerConnectionInterfaceTest, AddStreams) {
 
 // Test that the created offer includes streams we added.
 TEST_F(PeerConnectionInterfaceTest, AddedStreamsPresentInOffer) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   AddAudioVideoStream(kStreamLabel1, "audio_track", "video_track");
   std::unique_ptr<SessionDescriptionInterface> offer;
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
@@ -1355,7 +1357,7 @@ TEST_F(PeerConnectionInterfaceTest, AddedStreamsPresentInOffer) {
 }
 
 TEST_F(PeerConnectionInterfaceTest, RemoveStream) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   AddVideoStream(kStreamLabel1);
   ASSERT_EQ(1u, pc_->local_streams()->count());
   pc_->RemoveStream(pc_->local_streams()->at(0));
@@ -1367,7 +1369,7 @@ TEST_F(PeerConnectionInterfaceTest, RemoveStream) {
 // and that the RtpSenders are created correctly.
 // Also tests that RemoveTrack removes the tracks from subsequent offers.
 TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   // Create a dummy stream, so tracks share a stream label.
   rtc::scoped_refptr<MediaStreamInterface> stream(
       pc_factory_->CreateLocalMediaStream(kStreamLabel1));
@@ -1442,7 +1444,7 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
 // Test creating senders without a stream specified,
 // expecting a random stream ID to be generated.
 TEST_F(PeerConnectionInterfaceTest, AddTrackWithoutStream) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   // Create a dummy stream, so tracks share a stream label.
   rtc::scoped_refptr<AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
@@ -1470,7 +1472,7 @@ TEST_F(PeerConnectionInterfaceTest, CreateOfferReceiveAnswer) {
 }
 
 TEST_F(PeerConnectionInterfaceTest, CreateOfferReceivePrAnswerAndAnswer) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   AddVideoStream(kStreamLabel1);
   CreateOfferAsLocalDescription();
   std::string offer;
@@ -1480,7 +1482,7 @@ TEST_F(PeerConnectionInterfaceTest, CreateOfferReceivePrAnswerAndAnswer) {
 }
 
 TEST_F(PeerConnectionInterfaceTest, ReceiveOfferCreateAnswer) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   AddVideoStream(kStreamLabel1);
 
   CreateOfferAsRemoteDescription();
@@ -1490,7 +1492,7 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveOfferCreateAnswer) {
 }
 
 TEST_F(PeerConnectionInterfaceTest, ReceiveOfferCreatePrAnswerAndAnswer) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   AddVideoStream(kStreamLabel1);
 
   CreateOfferAsRemoteDescription();
@@ -1513,7 +1515,7 @@ TEST_F(PeerConnectionInterfaceTest, Renegotiate) {
 // Tests that after negotiating an audio only call, the respondent can perform a
 // renegotiation that removes the audio stream.
 TEST_F(PeerConnectionInterfaceTest, RenegotiateAudioOnly) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   AddVoiceStream(kStreamLabel1);
   CreateOfferAsRemoteDescription();
   CreateAnswerAsLocalDescription();
@@ -1526,7 +1528,7 @@ TEST_F(PeerConnectionInterfaceTest, RenegotiateAudioOnly) {
 
 // Test that candidates are generated and that we can parse our own candidates.
 TEST_F(PeerConnectionInterfaceTest, IceCandidates) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
 
   EXPECT_FALSE(pc_->AddIceCandidate(observer_.last_candidate_.get()));
   // SetRemoteDescription takes ownership of offer.
@@ -1549,7 +1551,7 @@ TEST_F(PeerConnectionInterfaceTest, IceCandidates) {
 // Test that CreateOffer and CreateAnswer will fail if the track labels are
 // not unique.
 TEST_F(PeerConnectionInterfaceTest, CreateOfferAnswerWithInvalidStream) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   // Create a regular offer for the CreateAnswer test later.
   std::unique_ptr<SessionDescriptionInterface> offer;
   EXPECT_TRUE(DoCreateOffer(&offer, nullptr));
@@ -1570,7 +1572,7 @@ TEST_F(PeerConnectionInterfaceTest, CreateOfferAnswerWithInvalidStream) {
 // Test that we will get different SSRCs for each tracks in the offer and answer
 // we created.
 TEST_F(PeerConnectionInterfaceTest, SsrcInOfferAnswer) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   // Create a local stream with audio&video tracks having different labels.
   AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
 
@@ -1602,7 +1604,7 @@ TEST_F(PeerConnectionInterfaceTest, SsrcInOfferAnswer) {
 // the stream to a PeerConnection.
 // TODO(deadbeef): Remove this test once this behavior is no longer supported.
 TEST_F(PeerConnectionInterfaceTest, AddTrackAfterAddStream) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   // Create audio stream and add to PeerConnection.
   AddVoiceStream(kStreamLabel1);
   MediaStreamInterface* stream = pc_->local_streams()->at(0);
@@ -1626,7 +1628,7 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackAfterAddStream) {
 // the stream to a PeerConnection.
 // TODO(deadbeef): Remove this test once this behavior is no longer supported.
 TEST_F(PeerConnectionInterfaceTest, RemoveTrackAfterAddStream) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   // Create audio/video stream and add to PeerConnection.
   AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
   MediaStreamInterface* stream = pc_->local_streams()->at(0);
@@ -1645,7 +1647,7 @@ TEST_F(PeerConnectionInterfaceTest, RemoveTrackAfterAddStream) {
 // Test creating a sender with a stream ID, and ensure the ID is populated
 // in the offer.
 TEST_F(PeerConnectionInterfaceTest, CreateSenderWithStream) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   pc_->CreateSender("video", kStreamLabel1);
 
   std::unique_ptr<SessionDescriptionInterface> offer;
@@ -2075,7 +2077,7 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
 // limited set of audio codecs and receive an updated offer with more audio
 // codecs, where the added codecs are not supported.
 TEST_F(PeerConnectionInterfaceTest, ReceiveUpdatedAudioOfferWithBadCodecs) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   AddVoiceStream("audio_label");
   CreateOfferAsLocalDescription();
 
@@ -2183,6 +2185,17 @@ TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesCandidateFilter) {
   EXPECT_EQ(cricket::CF_RELAY, port_allocator_->candidate_filter());
 }
 
+TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesPruneTurnPortsFlag) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.prune_turn_ports = false;
+  CreatePeerConnection(config, nullptr);
+  EXPECT_FALSE(port_allocator_->prune_turn_ports());
+
+  config.prune_turn_ports = true;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(port_allocator_->prune_turn_ports());
+}
+
 // Test that when SetConfiguration changes both the pool size and other
 // attributes, the pooled session is created with the updated attributes.
 TEST_F(PeerConnectionInterfaceTest,
@@ -2203,7 +2216,8 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_EQ(1UL, session->stun_servers().size());
 }
 
-// Test that after SetLocalDescription, changing the pool size is not allowed.
+// Test that after SetLocalDescription, changing the pool size is not allowed,
+// and an invalid modification error is returned.
 TEST_F(PeerConnectionInterfaceTest,
        CantChangePoolSizeAfterSetLocalDescription) {
   CreatePeerConnection();
@@ -2220,7 +2234,91 @@ TEST_F(PeerConnectionInterfaceTest,
   // Set local answer; now it's too late.
   CreateAnswerAsLocalDescription();
   config.ice_candidate_pool_size = 3;
-  EXPECT_FALSE(pc_->SetConfiguration(config));
+  RTCError error;
+  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
+  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
+}
+
+// Test that SetConfiguration returns an invalid modification error if
+// modifying a field in the configuration that isn't allowed to be modified.
+TEST_F(PeerConnectionInterfaceTest,
+       SetConfigurationReturnsInvalidModificationError) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyBalanced;
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+  config.continual_gathering_policy = PeerConnectionInterface::GATHER_ONCE;
+  CreatePeerConnection(config, nullptr);
+
+  PeerConnectionInterface::RTCConfiguration modified_config = config;
+  modified_config.bundle_policy =
+      PeerConnectionInterface::kBundlePolicyMaxBundle;
+  RTCError error;
+  EXPECT_FALSE(pc_->SetConfiguration(modified_config, &error));
+  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
+
+  modified_config = config;
+  modified_config.rtcp_mux_policy =
+      PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  error.set_type(RTCErrorType::NONE);
+  EXPECT_FALSE(pc_->SetConfiguration(modified_config, &error));
+  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
+
+  modified_config = config;
+  modified_config.continual_gathering_policy =
+      PeerConnectionInterface::GATHER_CONTINUALLY;
+  error.set_type(RTCErrorType::NONE);
+  EXPECT_FALSE(pc_->SetConfiguration(modified_config, &error));
+  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
+}
+
+// Test that SetConfiguration returns a range error if the candidate pool size
+// is negative or larger than allowed by the spec.
+TEST_F(PeerConnectionInterfaceTest,
+       SetConfigurationReturnsRangeErrorForBadCandidatePoolSize) {
+  PeerConnectionInterface::RTCConfiguration config;
+  CreatePeerConnection(config, nullptr);
+
+  config.ice_candidate_pool_size = -1;
+  RTCError error;
+  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
+  EXPECT_EQ(RTCErrorType::INVALID_RANGE, error.type());
+
+  config.ice_candidate_pool_size = INT_MAX;
+  error.set_type(RTCErrorType::NONE);
+  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
+  EXPECT_EQ(RTCErrorType::INVALID_RANGE, error.type());
+}
+
+// Test that SetConfiguration returns a syntax error if parsing an ICE server
+// URL failed.
+TEST_F(PeerConnectionInterfaceTest,
+       SetConfigurationReturnsSyntaxErrorFromBadIceUrls) {
+  PeerConnectionInterface::RTCConfiguration config;
+  CreatePeerConnection(config, nullptr);
+
+  PeerConnectionInterface::IceServer bad_server;
+  bad_server.uri = "stunn:www.example.com";
+  config.servers.push_back(bad_server);
+  RTCError error;
+  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
+  EXPECT_EQ(RTCErrorType::SYNTAX_ERROR, error.type());
+}
+
+// Test that SetConfiguration returns an invalid parameter error if a TURN
+// IceServer is missing a username or password.
+TEST_F(PeerConnectionInterfaceTest,
+       SetConfigurationReturnsInvalidParameterIfCredentialsMissing) {
+  PeerConnectionInterface::RTCConfiguration config;
+  CreatePeerConnection(config, nullptr);
+
+  PeerConnectionInterface::IceServer bad_server;
+  bad_server.uri = "turn:www.example.com";
+  // Missing password.
+  bad_server.username = "foo";
+  config.servers.push_back(bad_server);
+  RTCError error;
+  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
+  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, error.type());
 }
 
 // Test that PeerConnection::Close changes the states to closed and all remote
@@ -2255,7 +2353,7 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
 // Test that PeerConnection methods fails gracefully after
 // PeerConnection::Close has been called.
 TEST_F(PeerConnectionInterfaceTest, CloseAndTestMethods) {
-  CreatePeerConnection();
+  CreatePeerConnectionWithoutDtls();
   AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
   CreateOfferAsRemoteDescription();
   CreateAnswerAsLocalDescription();
@@ -3227,10 +3325,41 @@ TEST(CreateSessionOptionsTest, MediaConstraintsInAnswer) {
   EXPECT_TRUE(updated_answer_options.has_video());
 }
 
-TEST(RtcErrorTest, OstreamOperator) {
+TEST(RTCErrorTypeTest, OstreamOperator) {
   std::ostringstream oss;
-  oss << webrtc::RtcError::NONE << ' '
-      << webrtc::RtcError::INVALID_PARAMETER << ' '
-      << webrtc::RtcError::INTERNAL_ERROR;
+  oss << webrtc::RTCErrorType::NONE << ' '
+      << webrtc::RTCErrorType::INVALID_PARAMETER << ' '
+      << webrtc::RTCErrorType::INTERNAL_ERROR;
   EXPECT_EQ("NONE INVALID_PARAMETER INTERNAL_ERROR", oss.str());
+}
+
+// Tests a few random fields being different.
+TEST(RTCConfigurationTest, ComparisonOperators) {
+  PeerConnectionInterface::RTCConfiguration a;
+  PeerConnectionInterface::RTCConfiguration b;
+  EXPECT_EQ(a, b);
+
+  PeerConnectionInterface::RTCConfiguration c;
+  c.servers.push_back(PeerConnectionInterface::IceServer());
+  EXPECT_NE(a, c);
+
+  PeerConnectionInterface::RTCConfiguration d;
+  d.type = PeerConnectionInterface::kRelay;
+  EXPECT_NE(a, d);
+
+  PeerConnectionInterface::RTCConfiguration e;
+  e.audio_jitter_buffer_max_packets = 5;
+  EXPECT_NE(a, e);
+
+  PeerConnectionInterface::RTCConfiguration f;
+  f.ice_connection_receiving_timeout = 1337;
+  EXPECT_NE(a, f);
+
+  PeerConnectionInterface::RTCConfiguration g;
+  g.disable_ipv6 = true;
+  EXPECT_NE(a, g);
+
+  PeerConnectionInterface::RTCConfiguration h(
+      PeerConnectionInterface::RTCConfigurationType::kAggressive);
+  EXPECT_NE(a, h);
 }

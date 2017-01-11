@@ -150,9 +150,10 @@ class MetricsObserverInterface : public rtc::RefCountInterface {
 typedef MetricsObserverInterface UMAObserver;
 
 // Enumeration to represent distinct classes of errors that an application
-// may wish to act upon differently. These roughly map to DOMExceptions in
-// the web API, as described in the comments below.
-enum class RtcError {
+// may wish to act upon differently. These roughly map to DOMExceptions or
+// RTCError "errorDetailEnum" values in the web API, as described in the
+// comments below.
+enum class RTCErrorType {
   // No error.
   NONE,
   // A supplied parameter is valid, but currently unsupported.
@@ -183,9 +184,26 @@ enum class RtcError {
   INTERNAL_ERROR,
 };
 
+// Roughly corresponds to RTCError in the web api. Holds an error type and
+// possibly additional information specific to that error.
+//
+// Doesn't contain anything beyond a type now, but will in the future as more
+// errors are implemented.
+class RTCError {
+ public:
+  RTCError() : type_(RTCErrorType::NONE) {}
+  explicit RTCError(RTCErrorType type) : type_(type) {}
+
+  RTCErrorType type() const { return type_; }
+  void set_type(RTCErrorType type) { type_ = type; }
+
+ private:
+  RTCErrorType type_;
+};
+
 // Outputs the error as a friendly string.
 // Update this method when adding a new error type.
-std::ostream& operator<<(std::ostream& stream, RtcError error);
+std::ostream& operator<<(std::ostream& stream, RTCErrorType error);
 
 class PeerConnectionInterface : public rtc::RefCountInterface {
  public:
@@ -319,6 +337,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
       }
     }
 
+    bool operator==(const RTCConfiguration& o) const;
+    bool operator!=(const RTCConfiguration& o) const;
+
     bool dscp() { return media_config.enable_dscp; }
     void set_dscp(bool enable) { media_config.enable_dscp = enable; }
 
@@ -392,6 +413,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // If true, ICE role is redetermined when peerconnection sets a local
     // transport description that indicates an ICE restart.
     bool redetermine_role_on_ice_restart = true;
+    //
+    // Don't forget to update operator== if adding something.
+    //
   };
 
   struct RTCOfferAnswerOptions {
@@ -569,13 +593,37 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   virtual PeerConnectionInterface::RTCConfiguration GetConfiguration() {
     return PeerConnectionInterface::RTCConfiguration();
   }
+
   // Sets the PeerConnection's global configuration to |config|.
+  //
+  // The members of |config| that may be changed are |type|, |servers|,
+  // |ice_candidate_pool_size| and |prune_turn_ports| (though the candidate
+  // pool size can't be changed after the first call to SetLocalDescription).
+  // Note that this means the BUNDLE and RTCP-multiplexing policies cannot be
+  // changed with this method.
+  //
   // Any changes to STUN/TURN servers or ICE candidate policy will affect the
   // next gathering phase, and cause the next call to createOffer to generate
-  // new ICE credentials. Note that the BUNDLE and RTCP-multiplexing policies
-  // cannot be changed with this method.
+  // new ICE credentials, as described in JSEP. This also occurs when
+  // |prune_turn_ports| changes, for the same reasoning.
+  //
+  // If an error occurs, returns false and populates |error| if non-null:
+  // - INVALID_MODIFICATION if |config| contains a modified parameter other
+  //   than one of the parameters listed above.
+  // - INVALID_RANGE if |ice_candidate_pool_size| is out of range.
+  // - SYNTAX_ERROR if parsing an ICE server URL failed.
+  // - INVALID_PARAMETER if a TURN server is missing |username| or |password|.
+  // - INTERNAL_ERROR if an unexpected error occurred.
+  //
   // TODO(deadbeef): Make this pure virtual once all Chrome subclasses of
   // PeerConnectionInterface implement it.
+  virtual bool SetConfiguration(
+      const PeerConnectionInterface::RTCConfiguration& config,
+      RTCError* error) {
+    return false;
+  }
+  // Version without error output param for backwards compatibility.
+  // TODO(deadbeef): Remove once chromium is updated.
   virtual bool SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& config) {
     return false;
