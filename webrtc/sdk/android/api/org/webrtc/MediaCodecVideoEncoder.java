@@ -20,8 +20,8 @@ import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Surface;
+
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -114,17 +114,8 @@ public class MediaCodecVideoEncoder {
       "OMX.qcom.", Build.VERSION_CODES.KITKAT, BitrateAdjustmentType.NO_ADJUSTMENT);
   private static final MediaCodecProperties exynosVp8HwProperties = new MediaCodecProperties(
       "OMX.Exynos.", Build.VERSION_CODES.M, BitrateAdjustmentType.DYNAMIC_ADJUSTMENT);
-  private static final MediaCodecProperties intelVp8HwProperties = new MediaCodecProperties(
-      "OMX.Intel.", Build.VERSION_CODES.LOLLIPOP, BitrateAdjustmentType.NO_ADJUSTMENT);
-  private static MediaCodecProperties[] vp8HwList() {
-    final ArrayList<MediaCodecProperties> supported_codecs = new ArrayList<MediaCodecProperties>();
-    supported_codecs.add(qcomVp8HwProperties);
-    supported_codecs.add(exynosVp8HwProperties);
-    if (PeerConnectionFactory.fieldTrialsFindFullName("WebRTC-IntelVP8").equals("Enabled")) {
-      supported_codecs.add(intelVp8HwProperties);
-    }
-    return supported_codecs.toArray(new MediaCodecProperties[supported_codecs.size()]);
-  }
+  private static final MediaCodecProperties[] vp8HwList =
+      new MediaCodecProperties[] {qcomVp8HwProperties, exynosVp8HwProperties};
 
   // List of supported HW VP9 encoders.
   private static final MediaCodecProperties qcomVp9HwProperties = new MediaCodecProperties(
@@ -212,14 +203,14 @@ public class MediaCodecVideoEncoder {
   // Functions to query if HW encoding is supported.
   public static boolean isVp8HwSupported() {
     return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE)
-        && (findHwEncoder(VP8_MIME_TYPE, vp8HwList(), supportedColorList) != null);
+        && (findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedColorList) != null);
   }
 
   public static EncoderProperties vp8HwEncoderProperties() {
     if (hwEncoderDisabledTypes.contains(VP8_MIME_TYPE)) {
       return null;
     } else {
-      return findHwEncoder(VP8_MIME_TYPE, vp8HwList(), supportedColorList);
+      return findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedColorList);
     }
   }
 
@@ -235,7 +226,7 @@ public class MediaCodecVideoEncoder {
 
   public static boolean isVp8HwSupportedUsingTextures() {
     return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE)
-        && (findHwEncoder(VP8_MIME_TYPE, vp8HwList(), supportedSurfaceColorList) != null);
+        && (findHwEncoder(VP8_MIME_TYPE, vp8HwList, supportedSurfaceColorList) != null);
   }
 
   public static boolean isVp9HwSupportedUsingTextures() {
@@ -396,7 +387,7 @@ public class MediaCodecVideoEncoder {
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
       properties = findHwEncoder(
-          VP8_MIME_TYPE, vp8HwList(), useSurface ? supportedSurfaceColorList : supportedColorList);
+          VP8_MIME_TYPE, vp8HwList, useSurface ? supportedSurfaceColorList : supportedColorList);
       keyFrameIntervalSec = 100;
     } else if (type == VideoCodecType.VIDEO_CODEC_VP9) {
       mime = VP9_MIME_TYPE;
