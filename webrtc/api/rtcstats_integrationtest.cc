@@ -429,7 +429,6 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsDefined(media_stream_track.remote_source);
     verifier.TestMemberIsDefined(media_stream_track.ended);
     verifier.TestMemberIsDefined(media_stream_track.detached);
-    verifier.TestMemberIsUndefined(media_stream_track.ssrc_ids);
     // Video or audio media stream track?
     if (media_stream_track.frame_width.is_defined()) {
       // Video-only members

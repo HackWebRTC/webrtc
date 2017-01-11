@@ -239,8 +239,6 @@ class RTCMediaStreamTrackStats final : public RTCStats {
   // TODO(hbos): |RTCStatsCollector| does not return stats for detached tracks.
   // crbug.com/659137
   RTCStatsMember<bool> detached;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
-  RTCStatsMember<std::vector<std::string>> ssrc_ids;
   // Video-only members
   RTCStatsMember<uint32_t> frame_width;
   RTCStatsMember<uint32_t> frame_height;
