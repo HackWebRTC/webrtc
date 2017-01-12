@@ -34,6 +34,7 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/p2p/base/icetransportinternal.h"
 
 namespace {
 
@@ -271,11 +272,11 @@ class P2PTransportChannelTestBase : public testing::Test,
   };
 
   struct CandidatesData : public rtc::MessageData {
-    CandidatesData(TransportChannel* ch, const Candidate& c)
+    CandidatesData(IceTransportInternal* ch, const Candidate& c)
         : channel(ch), candidates(1, c) {}
-    CandidatesData(TransportChannel* ch, const std::vector<Candidate>& cc)
+    CandidatesData(IceTransportInternal* ch, const std::vector<Candidate>& cc)
         : channel(ch), candidates(cc) {}
-    TransportChannel* channel;
+    IceTransportInternal* channel;
     Candidates candidates;
   };
 
@@ -685,7 +686,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
 
   // We pass the candidates directly to the other side.
-  void OnCandidateGathered(TransportChannelImpl* ch, const Candidate& c) {
+  void OnCandidateGathered(IceTransportInternal* ch, const Candidate& c) {
     if (force_relay_ && c.type() != RELAY_PORT_TYPE)
       return;
 
@@ -698,7 +699,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     }
   }
   void OnSelectedCandidatePairChanged(
-      TransportChannel* transport_channel,
+      IceTransportInternal* transport_channel,
       CandidatePairInterface* selected_candidate_pair,
       int last_sent_packet_id,
       bool ready_to_send) {
@@ -719,7 +720,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     GetEndpoint(endpoint)->save_candidates_ = true;
   }
 
-  void OnCandidatesRemoved(TransportChannelImpl* ch,
+  void OnCandidatesRemoved(IceTransportInternal* ch,
                            const std::vector<Candidate>& candidates) {
     // Candidate removals are not paused.
     CandidatesData* candidates_data = new CandidatesData(ch, candidates);
@@ -797,7 +798,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     packets.push_front(std::string(data, len));
   }
 
-  void OnRoleConflict(TransportChannelImpl* channel) {
+  void OnRoleConflict(IceTransportInternal* channel) {
     GetEndpoint(channel)->OnRoleConflict(true);
     IceRole new_role = GetEndpoint(channel)->ice_role() == ICEROLE_CONTROLLING
                            ? ICEROLE_CONTROLLED
@@ -805,11 +806,11 @@ class P2PTransportChannelTestBase : public testing::Test,
     channel->SetIceRole(new_role);
   }
 
-  int SendData(TransportChannel* channel, const char* data, size_t len) {
+  int SendData(IceTransportInternal* channel, const char* data, size_t len) {
     rtc::PacketOptions options;
     return channel->SendPacket(data, len, options, 0);
   }
-  bool CheckDataOnChannel(TransportChannel* channel,
+  bool CheckDataOnChannel(IceTransportInternal* channel,
                           const char* data,
                           int len) {
     return GetChannelData(channel)->CheckData(data, len);
@@ -833,7 +834,7 @@ class P2PTransportChannelTestBase : public testing::Test,
       return NULL;
     }
   }
-  P2PTransportChannel* GetRemoteChannel(TransportChannel* ch) {
+  P2PTransportChannel* GetRemoteChannel(IceTransportInternal* ch) {
     if (ch == ep1_ch1())
       return ep2_ch1();
     else if (ch == ep1_ch2())
@@ -2656,7 +2657,8 @@ TEST_F(P2PTransportChannelMultihomedTest, TestPingBackupConnectionRate) {
       CreateIceConfig(2000, GATHER_ONCE, backup_ping_interval));
   // After the state becomes COMPLETED, the backup connection will be pinged
   // once every |backup_ping_interval| milliseconds.
-  ASSERT_TRUE_WAIT(ep2_ch1()->GetState() == STATE_COMPLETED, 1000);
+  ASSERT_TRUE_WAIT(ep2_ch1()->GetState() == IceTransportState::STATE_COMPLETED,
+                   1000);
   const std::vector<Connection*>& connections = ep2_ch1()->connections();
   ASSERT_EQ(2U, connections.size());
   Connection* backup_conn = connections[1];
@@ -2682,9 +2684,9 @@ TEST_F(P2PTransportChannelMultihomedTest, TestGetState) {
   CreateChannels();
 
   // Both transport channels will reach STATE_COMPLETED quickly.
-  EXPECT_EQ_SIMULATED_WAIT(TransportChannelState::STATE_COMPLETED,
+  EXPECT_EQ_SIMULATED_WAIT(IceTransportState::STATE_COMPLETED,
                            ep1_ch1()->GetState(), kShortTimeout, clock);
-  EXPECT_EQ_SIMULATED_WAIT(TransportChannelState::STATE_COMPLETED,
+  EXPECT_EQ_SIMULATED_WAIT(IceTransportState::STATE_COMPLETED,
                            ep2_ch1()->GetState(), kShortTimeout, clock);
 }
 
@@ -2766,13 +2768,13 @@ TEST_F(P2PTransportChannelMultihomedTest,
   // backup connection created using this new interface.
   AddAddress(0, cellular[0], "test_cellular0", rtc::ADAPTER_TYPE_CELLULAR);
   EXPECT_TRUE_WAIT(
-      ep1_ch1()->GetState() == STATE_COMPLETED &&
+      ep1_ch1()->GetState() == IceTransportState::STATE_COMPLETED &&
           (conn = GetConnectionWithLocalAddress(ep1_ch1(), cellular[0])) !=
               nullptr &&
           conn != ep1_ch1()->selected_connection() && conn->writable(),
       kDefaultTimeout);
   EXPECT_TRUE_WAIT(
-      ep2_ch1()->GetState() == STATE_COMPLETED &&
+      ep2_ch1()->GetState() == IceTransportState::STATE_COMPLETED &&
           (conn = GetConnectionWithRemoteAddress(ep2_ch1(), cellular[0])) !=
               nullptr &&
           conn != ep2_ch1()->selected_connection() && conn->receiving(),
@@ -2988,7 +2990,7 @@ class P2PTransportChannelPingTest : public testing::Test,
     return conn;
   }
 
-  int SendData(TransportChannel& channel,
+  int SendData(IceTransportInternal& channel,
                const char* data,
                size_t len,
                int packet_id) {
@@ -3022,7 +3024,7 @@ class P2PTransportChannelPingTest : public testing::Test,
   }
 
   void OnSelectedCandidatePairChanged(
-      TransportChannel* transport_channel,
+      IceTransportInternal* transport_channel,
       CandidatePairInterface* selected_candidate_pair,
       int last_sent_packet_id,
       bool ready_to_send) {
@@ -3056,7 +3058,7 @@ class P2PTransportChannelPingTest : public testing::Test,
   void OnReadyToSend(rtc::PacketTransportInterface* transport) {
     channel_ready_to_send_ = true;
   }
-  void OnChannelStateChanged(TransportChannelImpl* channel) {
+  void OnChannelStateChanged(IceTransportInternal* channel) {
     channel_state_ = channel->GetState();
   }
 
@@ -3066,7 +3068,7 @@ class P2PTransportChannelPingTest : public testing::Test,
   int last_sent_packet_id() { return last_sent_packet_id_; }
   bool channel_ready_to_send() { return channel_ready_to_send_; }
   void reset_channel_ready_to_send() { channel_ready_to_send_ = false; }
-  TransportChannelState channel_state() { return channel_state_; }
+  IceTransportState channel_state() { return channel_state_; }
   int reset_selected_candidate_pair_switches() {
     int switches = selected_candidate_pair_switches_;
     selected_candidate_pair_switches_ = 0;
@@ -3081,7 +3083,7 @@ class P2PTransportChannelPingTest : public testing::Test,
   int selected_candidate_pair_switches_ = 0;
   int last_sent_packet_id_ = -1;
   bool channel_ready_to_send_ = false;
-  TransportChannelState channel_state_ = STATE_INIT;
+  IceTransportState channel_state_ = IceTransportState::STATE_INIT;
 };
 
 TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {
@@ -3317,7 +3319,8 @@ TEST_F(P2PTransportChannelPingTest, TestSignalStateChanged) {
   // Pruning the connection reduces the set of active connections and changes
   // the channel state.
   conn1->Prune();
-  EXPECT_EQ_WAIT(STATE_FAILED, channel_state(), kDefaultTimeout);
+  EXPECT_EQ_WAIT(IceTransportState::STATE_FAILED, channel_state(),
+                 kDefaultTimeout);
 }
 
 // Test adding remote candidates with different ufrags. If a remote candidate
@@ -3968,7 +3971,7 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   P2PTransportChannel ch("test channel", 1, &pa);
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
-  EXPECT_EQ(TransportChannelState::STATE_INIT, ch.GetState());
+  EXPECT_EQ(IceTransportState::STATE_INIT, ch.GetState());
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 100));
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
@@ -3976,14 +3979,14 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   ASSERT_TRUE(conn1 != nullptr);
   ASSERT_TRUE(conn2 != nullptr);
   // Now there are two connections, so the transport channel is connecting.
-  EXPECT_EQ(TransportChannelState::STATE_CONNECTING, ch.GetState());
+  EXPECT_EQ(IceTransportState::STATE_CONNECTING, ch.GetState());
   // |conn1| becomes writable and receiving; it then should prune |conn2|.
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_TRUE_SIMULATED_WAIT(conn2->pruned(), kShortTimeout, clock);
-  EXPECT_EQ(TransportChannelState::STATE_COMPLETED, ch.GetState());
+  EXPECT_EQ(IceTransportState::STATE_COMPLETED, ch.GetState());
   conn1->Prune();  // All connections are pruned.
   // Need to wait until the channel state is updated.
-  EXPECT_EQ_SIMULATED_WAIT(TransportChannelState::STATE_FAILED, ch.GetState(),
+  EXPECT_EQ_SIMULATED_WAIT(IceTransportState::STATE_FAILED, ch.GetState(),
                            kShortTimeout, clock);
 }
 
@@ -4018,7 +4021,7 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   EXPECT_TRUE_SIMULATED_WAIT(!conn2->active(), kDefaultTimeout, clock);
   // |conn2| should not send a ping yet.
   EXPECT_EQ(IceCandidatePairState::WAITING, conn2->state());
-  EXPECT_EQ(TransportChannelState::STATE_COMPLETED, ch.GetState());
+  EXPECT_EQ(IceTransportState::STATE_COMPLETED, ch.GetState());
   // Wait for |conn1| becoming not receiving.
   EXPECT_TRUE_SIMULATED_WAIT(!conn1->receiving(), kMediumTimeout, clock);
   // Make sure conn2 is not deleted.
@@ -4029,14 +4032,14 @@ TEST_F(P2PTransportChannelPingTest, TestConnectionPrunedAgain) {
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_SIMULATED_WAIT(conn2, ch.selected_connection(), kDefaultTimeout,
                            clock);
-  EXPECT_EQ(TransportChannelState::STATE_CONNECTING, ch.GetState());
+  EXPECT_EQ(IceTransportState::STATE_CONNECTING, ch.GetState());
 
   // When |conn1| comes back again, |conn2| will be pruned again.
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_SIMULATED_WAIT(conn1, ch.selected_connection(), kDefaultTimeout,
                            clock);
   EXPECT_TRUE_SIMULATED_WAIT(!conn2->active(), kDefaultTimeout, clock);
-  EXPECT_EQ(TransportChannelState::STATE_COMPLETED, ch.GetState());
+  EXPECT_EQ(IceTransportState::STATE_COMPLETED, ch.GetState());
 }
 
 // Test that if all connections in a channel has timed out on writing, they

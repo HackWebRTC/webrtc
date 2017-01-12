@@ -17,15 +17,15 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/messagequeue.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/rtccertificate.h"
+#include "webrtc/base/sigslot.h"
+#include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/sessiondescription.h"
 #include "webrtc/p2p/base/transportinfo.h"
-#include "webrtc/base/messagequeue.h"
-#include "webrtc/base/rtccertificate.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/sslstreamadapter.h"
 
 namespace cricket {
 
@@ -322,8 +322,6 @@ class JsepTransport : public sigslot::has_slots<> {
                      std::string* error_desc) const;
 
  private:
-  TransportChannelImpl* GetChannel(int component);
-
   // Negotiates the transport parameters based on the current local and remote
   // transport description, such as the ICE role to use, and whether DTLS
   // should be activated.

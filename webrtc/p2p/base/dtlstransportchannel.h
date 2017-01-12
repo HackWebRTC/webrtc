@@ -15,12 +15,13 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/bufferqueue.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stream.h"
+#include "webrtc/p2p/base/icetransportinternal.h"
+#include "webrtc/p2p/base/transportchannelimpl.h"
 
 namespace rtc {
 class PacketTransportInterface;
@@ -28,11 +29,11 @@ class PacketTransportInterface;
 
 namespace cricket {
 
-// A bridge between a packet-oriented/channel-type interface on
+// A bridge between a packet-oriented/transport-type interface on
 // the bottom and a StreamInterface on the top.
 class StreamInterfaceChannel : public rtc::StreamInterface {
  public:
-  explicit StreamInterfaceChannel(TransportChannel* channel);
+  explicit StreamInterfaceChannel(IceTransportInternal* channel);
 
   // Push in a packet; this gets pulled out from Read().
   bool OnPacketReceived(const char* data, size_t size);
@@ -50,7 +51,7 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
                           int* error) override;
 
  private:
-  TransportChannel* channel_;  // owned by DtlsTransportChannelWrapper
+  IceTransportInternal* channel_;  // owned by DtlsTransportChannelWrapper
   rtc::StreamState state_;
   rtc::BufferQueue packets_;
 
@@ -88,7 +89,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
  public:
   // The parameters here are:
   // channel -- the TransportChannel we are wrapping
-  explicit DtlsTransportChannelWrapper(TransportChannelImpl* channel);
+  explicit DtlsTransportChannelWrapper(IceTransportInternal* channel);
   ~DtlsTransportChannelWrapper() override;
 
   void SetIceRole(IceRole role) override { channel_->SetIceRole(role); }
@@ -161,9 +162,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   }
 
   // TransportChannelImpl calls.
-  TransportChannelState GetState() const override {
-    return channel_->GetState();
-  }
+  IceTransportState GetState() const override { return channel_->GetState(); }
   void SetIceTiebreaker(uint64_t tiebreaker) override {
     channel_->SetIceTiebreaker(tiebreaker);
   }
@@ -199,7 +198,7 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   }
 
   // Needed by DtlsTransport.
-  TransportChannelImpl* channel() { return channel_; }
+  IceTransportInternal* channel() { return channel_; }
 
   // For informational purposes. Tells if the DTLS handshake has finished.
   // This may be true even if writable() is false, if the remote fingerprint
@@ -221,23 +220,23 @@ class DtlsTransportChannelWrapper : public TransportChannelImpl {
   bool SetupDtls();
   void MaybeStartDtls();
   bool HandleDtlsPacket(const char* data, size_t size);
-  void OnGatheringState(TransportChannelImpl* channel);
-  void OnCandidateGathered(TransportChannelImpl* channel, const Candidate& c);
-  void OnCandidatesRemoved(TransportChannelImpl* channel,
+  void OnGatheringState(IceTransportInternal* channel);
+  void OnCandidateGathered(IceTransportInternal* channel, const Candidate& c);
+  void OnCandidatesRemoved(IceTransportInternal* channel,
                            const Candidates& candidates);
-  void OnRoleConflict(TransportChannelImpl* channel);
-  void OnRouteChange(TransportChannel* channel, const Candidate& candidate);
+  void OnRoleConflict(IceTransportInternal* channel);
+  void OnRouteChange(IceTransportInternal* channel, const Candidate& candidate);
   void OnSelectedCandidatePairChanged(
-      TransportChannel* channel,
+      IceTransportInternal* channel,
       CandidatePairInterface* selected_candidate_pair,
       int last_sent_packet_id,
       bool ready_to_send);
-  void OnChannelStateChanged(TransportChannelImpl* channel);
+  void OnChannelStateChanged(IceTransportInternal* channel);
   void OnDtlsHandshakeError(rtc::SSLHandshakeError error);
 
   rtc::Thread* network_thread_;  // Everything should occur on this thread.
   // Underlying channel, not owned by this class.
-  TransportChannelImpl* const channel_;
+  IceTransportInternal* const channel_;
   std::unique_ptr<rtc::SSLStreamAdapter> dtls_;  // The DTLS stream
   StreamInterfaceChannel* downward_;  // Wrapper for channel_, owned by dtls_.
   std::vector<int> srtp_ciphers_;     // SRTP ciphers to use with DTLS.

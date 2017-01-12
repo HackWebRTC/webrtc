@@ -26,14 +26,14 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
+#include "webrtc/p2p/base/icetransportinternal.h"
 #include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/p2p/base/portinterface.h"
-#include "webrtc/p2p/base/transportchannelimpl.h"
-#include "webrtc/base/asyncpacketsocket.h"
-#include "webrtc/base/sigslot.h"
 
 namespace cricket {
 
@@ -60,7 +60,7 @@ class RemoteCandidate : public Candidate {
 
 // P2PTransportChannel manages the candidates and connection process to keep
 // two P2P clients connected to each other.
-class P2PTransportChannel : public TransportChannelImpl,
+class P2PTransportChannel : public IceTransportInternal,
                             public rtc::MessageHandler {
  public:
   P2PTransportChannel(const std::string& transport_name,
@@ -69,7 +69,11 @@ class P2PTransportChannel : public TransportChannelImpl,
   virtual ~P2PTransportChannel();
 
   // From TransportChannelImpl:
-  TransportChannelState GetState() const override;
+  IceTransportState GetState() const override;
+  const std::string& transport_name() const override { return transport_name_; }
+  int component() const override { return component_; }
+  bool writable() const override { return writable_; }
+  bool receiving() const override { return receiving_; }
   void SetIceRole(IceRole role) override;
   IceRole GetIceRole() const override { return ice_role_; }
   void SetIceTiebreaker(uint64_t tiebreaker) override;
@@ -118,57 +122,6 @@ class P2PTransportChannel : public TransportChannelImpl,
 
   IceMode remote_ice_mode() const { return remote_ice_mode_; }
 
-  // DTLS methods.
-  bool IsDtlsActive() const override { return false; }
-
-  // Default implementation.
-  bool GetSslRole(rtc::SSLRole* role) const override { return false; }
-
-  bool SetSslRole(rtc::SSLRole role) override { return false; }
-
-  // Set up the ciphers to use for DTLS-SRTP.
-  bool SetSrtpCryptoSuites(const std::vector<int>& ciphers) override {
-    return false;
-  }
-
-  // Find out which DTLS-SRTP cipher was negotiated.
-  bool GetSrtpCryptoSuite(int* cipher) override { return false; }
-
-  // Find out which DTLS cipher was negotiated.
-  bool GetSslCipherSuite(int* cipher) override { return false; }
-
-  // Returns null because the channel is not encrypted by default.
-  rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override {
-    return nullptr;
-  }
-
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
-      const override {
-    return nullptr;
-  }
-
-  // Allows key material to be extracted for external encryption.
-  bool ExportKeyingMaterial(const std::string& label,
-                            const uint8_t* context,
-                            size_t context_len,
-                            bool use_context,
-                            uint8_t* result,
-                            size_t result_len) override {
-    return false;
-  }
-
-  bool SetLocalCertificate(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override {
-    return false;
-  }
-
-  // Set DTLS Remote fingerprint. Must be after local identity set.
-  bool SetRemoteFingerprint(const std::string& digest_alg,
-                            const uint8_t* digest,
-                            size_t digest_len) override {
-    return false;
-  }
-
   void PruneAllPorts();
   int receiving_timeout() const { return config_.receiving_timeout; }
   int check_receiving_interval() const { return check_receiving_interval_; }
@@ -191,6 +144,15 @@ class P2PTransportChannel : public TransportChannelImpl,
   // Public for unit tests.
   const std::vector<RemoteCandidate>& remote_candidates() const {
     return remote_candidates_;
+  }
+
+  std::string ToString() const {
+    const char RECEIVING_ABBREV[2] = {'_', 'R'};
+    const char WRITABLE_ABBREV[2] = {'_', 'W'};
+    std::stringstream ss;
+    ss << "Channel[" << transport_name_ << "|" << component_ << "|"
+       << RECEIVING_ABBREV[receiving_] << WRITABLE_ABBREV[writable_] << "]";
+    return ss.str();
   }
 
  private:
@@ -239,7 +201,7 @@ class P2PTransportChannel : public TransportChannelImpl,
   void UpdateState();
   void HandleAllTimedOut();
   void MaybeStopPortAllocatorSessions();
-  TransportChannelState ComputeState() const;
+  IceTransportState ComputeState() const;
 
   Connection* GetBestConnectionOnNetwork(rtc::Network* network) const;
   bool CreateConnections(const Candidate& remote_candidate,
@@ -347,6 +309,13 @@ class P2PTransportChannel : public TransportChannelImpl,
                : static_cast<uint32_t>(remote_ice_parameters_.size() - 1);
   }
 
+  // Sets the writable state, signaling if necessary.
+  void set_writable(bool writable);
+  // Sets the receiving state, signaling if necessary.
+  void set_receiving(bool receiving);
+
+  std::string transport_name_;
+  int component_;
   PortAllocator* allocator_;
   rtc::Thread* network_thread_;
   bool incoming_only_;
@@ -387,13 +356,15 @@ class P2PTransportChannel : public TransportChannelImpl,
   int check_receiving_interval_;
   int64_t last_ping_sent_ms_ = 0;
   int weak_ping_interval_ = WEAK_PING_INTERVAL;
-  TransportChannelState state_ = TransportChannelState::STATE_INIT;
+  IceTransportState state_ = IceTransportState::STATE_INIT;
   IceConfig config_;
   int last_sent_packet_id_ = -1;  // -1 indicates no packet was sent before.
   bool started_pinging_ = false;
   // The value put in the "nomination" attribute for the next nominated
   // connection. A zero-value indicates the connection will not be nominated.
   uint32_t nomination_ = 0;
+  bool receiving_ = false;
+  bool writable_ = false;
 
   webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
 

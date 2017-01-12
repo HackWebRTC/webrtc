@@ -11,16 +11,6 @@
 #ifndef WEBRTC_P2P_BASE_ICETRANSPORTINTERNAL_H_
 #define WEBRTC_P2P_BASE_ICETRANSPORTINTERNAL_H_
 
-#include "webrtc/p2p/base/transportchannelimpl.h"
-
-namespace cricket {
-
-typedef TransportChannel IceTransportInternal;
-typedef TransportChannelImpl IceTransportInternal2;
-
-}  // namespace cricket
-
-/*
 #include <string>
 
 #include "webrtc/p2p/base/candidate.h"
@@ -35,11 +25,15 @@ class MetricsObserverInterface;
 
 namespace cricket {
 
-enum class TransportState {
+class IceTransportInternal;
+typedef IceTransportInternal IceTransportInternal2;
+
+// TODO(zhihuang): replace it with PeerConnectionInterface::IceConnectionState.
+enum class IceTransportState {
   STATE_INIT,
   STATE_CONNECTING,  // Will enter this state once a connection is created
   STATE_COMPLETED,
-  STATE_FAILEDs
+  STATE_FAILED
 };
 
 // TODO(zhihuang): Remove this once it's no longer used in
@@ -54,9 +48,9 @@ enum IceProtocolType {
 // the IceTransportInterface will be split from this class.
 class IceTransportInternal : public rtc::PacketTransportInterface {
  public:
-  virtual ~IceTransportInternal();
+  virtual ~IceTransportInternal(){};
 
-  virtual TransportState GetState() const = 0;
+  virtual IceTransportState GetState() const = 0;
 
   virtual const std::string& transport_name() const = 0;
 
@@ -105,6 +99,9 @@ class IceTransportInternal : public rtc::PacketTransportInterface {
 
   virtual IceGatheringState gathering_state() const = 0;
 
+  // Returns the current stats for this connection.
+  virtual bool GetStats(ConnectionInfos* infos) = 0;
+
   sigslot::signal1<IceTransportInternal*> SignalGatheringState;
 
   // Handles sending and receiving of candidates.
@@ -129,13 +126,22 @@ class IceTransportInternal : public rtc::PacketTransportInterface {
   sigslot::signal4<IceTransportInternal*, CandidatePairInterface*, int, bool>
       SignalSelectedCandidatePairChanged;
 
+  // Invoked when there is conflict in the ICE role between local and remote
+  // agents.
+  sigslot::signal1<IceTransportInternal*> SignalRoleConflict;
+
+  // Emitted whenever the transport state changed.
+  sigslot::signal1<IceTransportInternal*> SignalStateChanged;
+
   // Invoked when the transport is being destroyed.
   sigslot::signal1<IceTransportInternal*> SignalDestroyed;
 
   // Debugging description of this transport.
-  std::string ToString() const;
+  const std::string debug_name() const override {
+    return transport_name() + " " + std::to_string(component());
+  }
 };
 
 }  // namespace cricket
-*/
+
 #endif  // WEBRTC_P2P_BASE_ICETRANSPORTINTERNAL_H_

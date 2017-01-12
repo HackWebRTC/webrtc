@@ -15,19 +15,20 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/p2p/base/candidate.h"
-#include "webrtc/p2p/base/candidatepairinterface.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
-#include "webrtc/p2p/base/jseptransport.h"
-#include "webrtc/p2p/base/transportdescription.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/p2p/base/candidate.h"
+#include "webrtc/p2p/base/candidatepairinterface.h"
+#include "webrtc/p2p/base/icetransportinternal.h"
+#include "webrtc/p2p/base/jseptransport.h"
+#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/transportdescription.h"
 
 namespace cricket {
 
@@ -38,14 +39,6 @@ enum PacketFlags {
   PF_NORMAL       = 0x00,  // A normal packet.
   PF_SRTP_BYPASS  = 0x01,  // An encrypted SRTP packet; bypass any additional
                            // crypto provided by the transport (e.g. DTLS)
-};
-
-// Used to indicate channel's connection state.
-enum TransportChannelState {
-  STATE_INIT,
-  STATE_CONNECTING,  // Will enter this state once a connection is created
-  STATE_COMPLETED,
-  STATE_FAILED
 };
 
 // A TransportChannel represents one logical stream of packets that are sent
@@ -63,8 +56,8 @@ class TransportChannel : public rtc::PacketTransportInterface {
 
   // TODO(guoweis) - Make this pure virtual once all subclasses of
   // TransportChannel have this defined.
-  virtual TransportChannelState GetState() const {
-    return TransportChannelState::STATE_CONNECTING;
+  virtual IceTransportState GetState() const {
+    return IceTransportState::STATE_CONNECTING;
   }
 
   const std::string& transport_name() const { return transport_name_; }

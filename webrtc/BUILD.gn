@@ -365,7 +365,6 @@ if (rtc_include_tests) {
 
   rtc_test("rtc_unittests") {
     testonly = true
-
     deps = [
       "base:rtc_analytics_unittests",
       "base:rtc_base_approved_unittests",

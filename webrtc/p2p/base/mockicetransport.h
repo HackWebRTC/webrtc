@@ -25,10 +25,11 @@ using testing::Return;
 namespace cricket {
 
 // Used in Chromium/remoting/protocol/channel_socket_adapter_unittest.cc
-class MockIceTransport : public cricket::TransportChannel {
+class MockIceTransport : public IceTransportInternal {
  public:
-  MockIceTransport() : cricket::TransportChannel(std::string(), 0) {
-    set_writable(true);
+  MockIceTransport() {
+    SignalReadyToSend(this);
+    SignalWritableState(this);
   }
 
   MOCK_METHOD4(SendPacket,
@@ -42,27 +43,34 @@ class MockIceTransport : public cricket::TransportChannel {
   MOCK_METHOD1(GetStats, bool(cricket::ConnectionInfos* infos));
   MOCK_CONST_METHOD0(IsDtlsActive, bool());
   MOCK_CONST_METHOD1(GetSslRole, bool(rtc::SSLRole* role));
-  MOCK_METHOD1(SetSrtpCiphers, bool(const std::vector<std::string>& ciphers));
-  MOCK_METHOD1(GetSrtpCipher, bool(std::string* cipher));
-  MOCK_METHOD1(GetSslCipher, bool(std::string* cipher));
-  MOCK_CONST_METHOD0(GetLocalCertificate,
-                     rtc::scoped_refptr<rtc::RTCCertificate>());
 
-  // This can't be a real mock method because gmock doesn't support move-only
-  // return values.
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
-      const override {
-    EXPECT_TRUE(false);  // Never called.
-    return nullptr;
+  IceTransportState GetState() const override {
+    return IceTransportState::STATE_INIT;
+  }
+  const std::string& transport_name() const override { return transport_name_; }
+  int component() const override { return 0; }
+  void SetIceRole(IceRole role) override {}
+  void SetIceTiebreaker(uint64_t tiebreaker) override {}
+  // The ufrag and pwd in |ice_params| must be set
+  // before candidate gathering can start.
+  void SetIceParameters(const IceParameters& ice_params) override {}
+  void SetRemoteIceParameters(const IceParameters& ice_params) override {}
+  void SetRemoteIceMode(IceMode mode) override {}
+  void SetIceConfig(const IceConfig& config) override {}
+  void MaybeStartGathering() override {}
+  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override {
+  }
+  void AddRemoteCandidate(const Candidate& candidate) override {}
+  void RemoveRemoteCandidate(const Candidate& candidate) override {}
+  IceGatheringState gathering_state() const override {
+    return IceGatheringState::kIceGatheringComplete;
   }
 
-  MOCK_METHOD6(ExportKeyingMaterial,
-               bool(const std::string& label,
-                    const uint8_t* context,
-                    size_t context_len,
-                    bool use_context,
-                    uint8_t* result,
-                    size_t result_len));
+  bool receiving() const override { return true; }
+  bool writable() const override { return true; }
+
+ private:
+  std::string transport_name_;
 };
 
 }  // namespace cricket

@@ -164,13 +164,13 @@ class TransportController : public sigslot::has_slots<>,
   // TODO(deadbeef): Get rid of these virtual methods. Used by
   // FakeTransportController currently, but FakeTransportController shouldn't
   // even be functioning by subclassing TransportController.
-  virtual TransportChannelImpl* CreateIceTransportChannel_n(
+  virtual IceTransportInternal* CreateIceTransportChannel_n(
       const std::string& transport_name,
       int component);
   virtual TransportChannelImpl* CreateDtlsTransportChannel_n(
       const std::string& transport_name,
       int component,
-      TransportChannelImpl* ice);
+      IceTransportInternal* ice);
 
  private:
   void OnMessage(rtc::Message* pmsg) override;

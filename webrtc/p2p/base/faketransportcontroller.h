@@ -16,10 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/p2p/base/candidatepairinterface.h"
-#include "webrtc/p2p/base/transportchannel.h"
-#include "webrtc/p2p/base/transportcontroller.h"
-#include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/fakesslidentity.h"
@@ -27,6 +23,11 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslfingerprint.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/p2p/base/candidatepairinterface.h"
+#include "webrtc/p2p/base/icetransportinternal.h"
+#include "webrtc/p2p/base/transportchannel.h"
+#include "webrtc/p2p/base/transportchannelimpl.h"
+#include "webrtc/p2p/base/transportcontroller.h"
 
 #ifdef HAVE_QUIC
 #include "webrtc/p2p/quic/quictransport.h"
@@ -40,6 +41,227 @@ struct PacketMessageData : public rtc::MessageData {
   rtc::Buffer packet;
 };
 }  // namespace
+
+class FakeIceTransport : public IceTransportInternal,
+                         public rtc::MessageHandler {
+ public:
+  explicit FakeIceTransport(const std::string& name, int component)
+      : name_(name), component_(component) {}
+  ~FakeIceTransport() { Reset(); }
+
+  const std::string& transport_name() const override { return name_; }
+  int component() const override { return component_; }
+  uint64_t IceTiebreaker() const { return tiebreaker_; }
+  IceMode remote_ice_mode() const { return remote_ice_mode_; }
+  const std::string& ice_ufrag() const { return ice_ufrag_; }
+  const std::string& ice_pwd() const { return ice_pwd_; }
+  const std::string& remote_ice_ufrag() const { return remote_ice_ufrag_; }
+  const std::string& remote_ice_pwd() const { return remote_ice_pwd_; }
+
+  // If async, will send packets by "Post"-ing to message queue instead of
+  // synchronously "Send"-ing.
+  void SetAsync(bool async) { async_ = async; }
+  void SetAsyncDelay(int delay_ms) { async_delay_ms_ = delay_ms; }
+
+  IceTransportState GetState() const override {
+    if (connection_count_ == 0) {
+      return had_connection_ ? IceTransportState::STATE_FAILED
+                             : IceTransportState::STATE_INIT;
+    }
+
+    if (connection_count_ == 1) {
+      return IceTransportState::STATE_COMPLETED;
+    }
+
+    return IceTransportState::STATE_CONNECTING;
+  }
+
+  void SetIceRole(IceRole role) override { role_ = role; }
+  IceRole GetIceRole() const override { return role_; }
+  void SetIceTiebreaker(uint64_t tiebreaker) override {
+    tiebreaker_ = tiebreaker;
+  }
+  void SetIceParameters(const IceParameters& ice_params) override {
+    ice_ufrag_ = ice_params.ufrag;
+    ice_pwd_ = ice_params.pwd;
+  }
+  void SetRemoteIceParameters(const IceParameters& params) override {
+    remote_ice_ufrag_ = params.ufrag;
+    remote_ice_pwd_ = params.pwd;
+  }
+
+  void SetRemoteIceMode(IceMode mode) override { remote_ice_mode_ = mode; }
+
+  void MaybeStartGathering() override {
+    if (gathering_state_ == kIceGatheringNew) {
+      gathering_state_ = kIceGatheringGathering;
+      SignalGatheringState(this);
+    }
+  }
+
+  IceGatheringState gathering_state() const override {
+    return gathering_state_;
+  }
+
+  void Reset() {
+    if (state_ != STATE_INIT) {
+      state_ = STATE_INIT;
+      if (dest_) {
+        dest_->state_ = STATE_INIT;
+        dest_->dest_ = nullptr;
+        dest_ = nullptr;
+      }
+    }
+  }
+
+  void SetWritable(bool writable) { set_writable(writable); }
+
+  void set_writable(bool writable) {
+    if (writable_ == writable) {
+      return;
+    }
+    LOG(INFO) << "set_writable from:" << writable_ << " to " << writable;
+    writable_ = writable;
+    if (writable_) {
+      SignalReadyToSend(this);
+    }
+    SignalWritableState(this);
+  }
+  bool writable() const override { return writable_; }
+
+  // Simulates the two transports connecting to each other.
+  // If |asymmetric| is true this method only affects this FakeIceTransport.
+  // If false, it affects |dest| as well.
+  void SetDestination(FakeIceTransport* dest, bool asymmetric = false) {
+    if (state_ == STATE_INIT && dest) {
+      // This simulates the delivery of candidates.
+      dest_ = dest;
+      state_ = STATE_CONNECTED;
+      set_writable(true);
+      if (!asymmetric) {
+        dest->SetDestination(this, true);
+      }
+    } else if (state_ == STATE_CONNECTED && !dest) {
+      // Simulates loss of connectivity, by asymmetrically forgetting dest_.
+      dest_ = nullptr;
+      state_ = STATE_INIT;
+      set_writable(false);
+    }
+  }
+
+  void SetConnectionCount(size_t connection_count) {
+    size_t old_connection_count = connection_count_;
+    connection_count_ = connection_count;
+    if (connection_count)
+      had_connection_ = true;
+    // In this fake transport channel, |connection_count_| determines the
+    // transport channel state.
+    if (connection_count_ < old_connection_count)
+      SignalStateChanged(this);
+  }
+
+  void SetCandidatesGatheringComplete() {
+    if (gathering_state_ != kIceGatheringComplete) {
+      gathering_state_ = kIceGatheringComplete;
+      SignalGatheringState(this);
+    }
+  }
+
+  void SetReceiving(bool receiving) { set_receiving(receiving); }
+
+  void set_receiving(bool receiving) {
+    if (receiving_ == receiving) {
+      return;
+    }
+    receiving_ = receiving;
+    SignalReceivingState(this);
+  }
+  bool receiving() const override { return receiving_; }
+
+  void SetIceConfig(const IceConfig& config) override { ice_config_ = config; }
+
+  int receiving_timeout() const { return ice_config_.receiving_timeout; }
+  bool gather_continually() const { return ice_config_.gather_continually(); }
+
+  int SendPacket(const char* data,
+                 size_t len,
+                 const rtc::PacketOptions& options,
+                 int flags) override {
+    if (state_ != STATE_CONNECTED) {
+      return -1;
+    }
+
+    if (flags != PF_SRTP_BYPASS && flags != 0) {
+      return -1;
+    }
+
+    PacketMessageData* packet = new PacketMessageData(data, len);
+    if (async_) {
+      if (async_delay_ms_) {
+        rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, async_delay_ms_,
+                                            this, 0, packet);
+      } else {
+        rtc::Thread::Current()->Post(RTC_FROM_HERE, this, 0, packet);
+      }
+    } else {
+      rtc::Thread::Current()->Send(RTC_FROM_HERE, this, 0, packet);
+    }
+    rtc::SentPacket sent_packet(options.packet_id, rtc::TimeMillis());
+    SignalSentPacket(this, sent_packet);
+    return static_cast<int>(len);
+  }
+  int SetOption(rtc::Socket::Option opt, int value) override { return true; }
+  bool GetOption(rtc::Socket::Option opt, int* value) override { return true; }
+  int GetError() override { return 0; }
+
+  void AddRemoteCandidate(const Candidate& candidate) override {
+    remote_candidates_.push_back(candidate);
+  }
+
+  void RemoveRemoteCandidate(const Candidate& candidate) override {}
+
+  const Candidates& remote_candidates() const { return remote_candidates_; }
+
+  void OnMessage(rtc::Message* msg) override {
+    PacketMessageData* data = static_cast<PacketMessageData*>(msg->pdata);
+    dest_->SignalReadPacket(dest_, data->packet.data<char>(),
+                            data->packet.size(), rtc::CreatePacketTime(0), 0);
+    delete data;
+  }
+
+  bool GetStats(ConnectionInfos* infos) override {
+    ConnectionInfo info;
+    infos->clear();
+    infos->push_back(info);
+    return true;
+  }
+
+  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override {
+  }
+
+ private:
+  std::string name_;
+  int component_;
+  enum State { STATE_INIT, STATE_CONNECTED };
+  FakeIceTransport* dest_ = nullptr;
+  State state_ = STATE_INIT;
+  bool async_ = false;
+  int async_delay_ms_ = 0;
+  Candidates remote_candidates_;
+  IceConfig ice_config_;
+  IceRole role_ = ICEROLE_UNKNOWN;
+  uint64_t tiebreaker_ = 0;
+  std::string ice_ufrag_;
+  std::string ice_pwd_;
+  std::string remote_ice_ufrag_;
+  std::string remote_ice_pwd_;
+  IceMode remote_ice_mode_ = ICEMODE_FULL;
+  size_t connection_count_ = 0;
+  IceGatheringState gathering_state_ = kIceGatheringNew;
+  bool had_connection_ = false;
+  bool writable_ = false;
+  bool receiving_ = false;
+};
 
 // Fake transport channel class, which can be passed to anything that needs a
 // transport channel. Can be informed of another FakeTransportChannel via
@@ -68,17 +290,17 @@ class FakeTransportChannel : public TransportChannelImpl,
   void SetAsync(bool async) { async_ = async; }
   void SetAsyncDelay(int delay_ms) { async_delay_ms_ = delay_ms; }
 
-  TransportChannelState GetState() const override {
+  IceTransportState GetState() const override {
     if (connection_count_ == 0) {
-      return had_connection_ ? TransportChannelState::STATE_FAILED
-                             : TransportChannelState::STATE_INIT;
+      return had_connection_ ? IceTransportState::STATE_FAILED
+                             : IceTransportState::STATE_INIT;
     }
 
     if (connection_count_ == 1) {
-      return TransportChannelState::STATE_COMPLETED;
+      return IceTransportState::STATE_COMPLETED;
     }
 
-    return TransportChannelState::STATE_CONNECTING;
+    return IceTransportState::STATE_CONNECTING;
   }
 
   void SetIceRole(IceRole role) override { role_ = role; }
@@ -447,7 +669,7 @@ class FakeTransportController : public TransportController {
   // The ICE channel is never actually used by TransportController directly,
   // since (currently) the DTLS channel pretends to be both ICE + DTLS. This
   // will change when we get rid of TransportChannelImpl.
-  TransportChannelImpl* CreateIceTransportChannel_n(
+  IceTransportInternal* CreateIceTransportChannel_n(
       const std::string& transport_name,
       int component) override {
     return nullptr;
@@ -456,7 +678,7 @@ class FakeTransportController : public TransportController {
   TransportChannelImpl* CreateDtlsTransportChannel_n(
       const std::string& transport_name,
       int component,
-      TransportChannelImpl*) override {
+      IceTransportInternal*) override {
     return new FakeTransportChannel(transport_name, component);
   }
 

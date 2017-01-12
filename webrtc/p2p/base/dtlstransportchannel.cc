@@ -50,11 +50,10 @@ static bool IsRtpPacket(const char* data, size_t len) {
   return (len >= kMinRtpPacketLen && (u[0] & 0xC0) == 0x80);
 }
 
-StreamInterfaceChannel::StreamInterfaceChannel(TransportChannel* channel)
+StreamInterfaceChannel::StreamInterfaceChannel(IceTransportInternal* channel)
     : channel_(channel),
       state_(rtc::SS_OPEN),
-      packets_(kMaxPendingPackets, kMaxDtlsPacketLen) {
-}
+      packets_(kMaxPendingPackets, kMaxDtlsPacketLen) {}
 
 rtc::StreamResult StreamInterfaceChannel::Read(void* buffer,
                                                      size_t buffer_len,
@@ -103,7 +102,7 @@ void StreamInterfaceChannel::Close() {
 }
 
 DtlsTransportChannelWrapper::DtlsTransportChannelWrapper(
-    TransportChannelImpl* channel)
+    IceTransportInternal* channel)
     : TransportChannelImpl(channel->transport_name(), channel->component()),
       network_thread_(rtc::Thread::Current()),
       channel_(channel),
@@ -684,39 +683,39 @@ bool DtlsTransportChannelWrapper::HandleDtlsPacket(const char* data,
 }
 
 void DtlsTransportChannelWrapper::OnGatheringState(
-    TransportChannelImpl* channel) {
+    IceTransportInternal* channel) {
   RTC_DCHECK(channel == channel_);
   SignalGatheringState(this);
 }
 
 void DtlsTransportChannelWrapper::OnCandidateGathered(
-    TransportChannelImpl* channel,
+    IceTransportInternal* channel,
     const Candidate& c) {
   RTC_DCHECK(channel == channel_);
   SignalCandidateGathered(this, c);
 }
 
 void DtlsTransportChannelWrapper::OnCandidatesRemoved(
-    TransportChannelImpl* channel,
+    IceTransportInternal* channel,
     const Candidates& candidates) {
   RTC_DCHECK(channel == channel_);
   SignalCandidatesRemoved(this, candidates);
 }
 
 void DtlsTransportChannelWrapper::OnRoleConflict(
-    TransportChannelImpl* channel) {
+    IceTransportInternal* channel) {
   RTC_DCHECK(channel == channel_);
   SignalRoleConflict(this);
 }
 
-void DtlsTransportChannelWrapper::OnRouteChange(
-    TransportChannel* channel, const Candidate& candidate) {
+void DtlsTransportChannelWrapper::OnRouteChange(IceTransportInternal* channel,
+                                                const Candidate& candidate) {
   RTC_DCHECK(channel == channel_);
   SignalRouteChange(this, candidate);
 }
 
 void DtlsTransportChannelWrapper::OnSelectedCandidatePairChanged(
-    TransportChannel* channel,
+    IceTransportInternal* channel,
     CandidatePairInterface* selected_candidate_pair,
     int last_sent_packet_id,
     bool ready_to_send) {
@@ -726,7 +725,7 @@ void DtlsTransportChannelWrapper::OnSelectedCandidatePairChanged(
 }
 
 void DtlsTransportChannelWrapper::OnChannelStateChanged(
-    TransportChannelImpl* channel) {
+    IceTransportInternal* channel) {
   RTC_DCHECK(channel == channel_);
   SignalStateChanged(this);
 }
