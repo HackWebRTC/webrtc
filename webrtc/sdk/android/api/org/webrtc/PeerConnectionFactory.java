@@ -17,8 +17,15 @@ import java.util.List;
  * the PeerConnection API for clients.
  */
 public class PeerConnectionFactory {
+  private static volatile boolean nativeLibLoaded;
+
   static {
-    System.loadLibrary("jingle_peerconnection_so");
+    try {
+      System.loadLibrary("jingle_peerconnection_so");
+      nativeLibLoaded = true;
+    } catch (UnsatisfiedLinkError t) {
+      nativeLibLoaded = false;
+    }
   }
 
   private static final String TAG = "PeerConnectionFactory";
@@ -64,7 +71,10 @@ public class PeerConnectionFactory {
   // } else {
   //   method2();
   // }
-  public static native String fieldTrialsFindFullName(String name);
+  public static String fieldTrialsFindFullName(String name) {
+    return nativeLibLoaded ? nativeFieldTrialsFindFullName(name) : "";
+  }
+  private static native String nativeFieldTrialsFindFullName(String name);
   // Internal tracing initialization. Must be called before PeerConnectionFactory is created to
   // prevent racing with tracing code.
   public static native void initializeInternalTracer();

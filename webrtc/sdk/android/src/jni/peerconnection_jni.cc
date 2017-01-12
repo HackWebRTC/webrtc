@@ -1145,7 +1145,7 @@ JOW(void, PeerConnectionFactory_initializeInternalTracer)(JNIEnv* jni, jclass) {
   rtc::tracing::SetupInternalTracer();
 }
 
-JOW(jstring, PeerConnectionFactory_fieldTrialsFindFullName)
+JOW(jstring, PeerConnectionFactory_nativeFieldTrialsFindFullName)
 (JNIEnv* jni, jclass, jstring j_name) {
   return JavaStringFromStdString(
       jni, webrtc::field_trial::FindFullName(JavaToStdString(jni, j_name)));
