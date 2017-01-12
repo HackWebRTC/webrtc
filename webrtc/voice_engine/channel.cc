@@ -926,10 +926,7 @@ Channel::Channel(int32_t channelId,
       rtp_packet_sender_proxy_(new RtpPacketSenderProxy()),
       retransmission_rate_limiter_(new RateLimiter(Clock::GetRealTimeClock(),
                                                    kMaxRetransmissionWindowMs)),
-      decoder_factory_(config.acm_config.decoder_factory),
-      // Bitrate smoother can be initialized with arbitrary time constant
-      // (0 used here). The actual time constant will be set in SetBitRate.
-      bitrate_smoother_(0, Clock::GetRealTimeClock()) {
+      decoder_factory_(config.acm_config.decoder_factory) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Channel() - ctor");
   AudioCodingModule::Config acm_config(config.acm_config);
@@ -1333,29 +1330,12 @@ void Channel::SetBitRate(int bitrate_bps, int64_t probing_interval_ms) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetBitRate(bitrate_bps=%d)", bitrate_bps);
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
-    if (*encoder)
-      (*encoder)->OnReceivedTargetAudioBitrate(bitrate_bps);
-  });
-  retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
-
-  // We give smoothed bitrate allocation to audio network adaptor as
-  // the uplink bandwidth.
-  // The probing spikes should not affect the bitrate smoother more than 25%.
-  // To simplify the calculations we use a step response as input signal.
-  // The step response of an exponential filter is
-  // u(t) = 1 - e^(-t / time_constant).
-  // In order to limit the affect of a BWE spike within 25% of its value before
-  // the next probing, we would choose a time constant that fulfills
-  // 1 - e^(-probing_interval_ms / time_constant) < 0.25
-  // Then 4 * probing_interval_ms is a good choice.
-  bitrate_smoother_.SetTimeConstantMs(probing_interval_ms * 4);
-  bitrate_smoother_.AddSample(bitrate_bps);
-  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
     if (*encoder) {
       (*encoder)->OnReceivedUplinkBandwidth(
-          static_cast<int>(*bitrate_smoother_.GetAverage()));
+          bitrate_bps, rtc::Optional<int64_t>(probing_interval_ms));
     }
   });
+  retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
 }
 
 void Channel::OnIncomingFractionLoss(int fraction_lost) {

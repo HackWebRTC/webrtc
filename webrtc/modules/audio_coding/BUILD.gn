@@ -839,6 +839,7 @@ rtc_static_library("webrtc_opus") {
     "../..:webrtc_common",
     "../../base:rtc_analytics",
     "../../base:rtc_base_approved",
+    "../../common_audio",
     "../../system_wrappers",
   ]
   public_deps = [

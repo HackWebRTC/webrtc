@@ -41,8 +41,9 @@ class MockAudioEncoder : public AudioEncoder {
   MOCK_METHOD1(SetMaxPlaybackRate, void(int frequency_hz));
   MOCK_METHOD1(SetMaxBitrate, void(int max_bps));
   MOCK_METHOD1(SetMaxPayloadSize, void(int max_payload_size_bytes));
-  MOCK_METHOD1(OnReceivedTargetAudioBitrate,
-               void(int target_audio_bitrate_bps));
+  MOCK_METHOD2(OnReceivedUplinkBandwidth,
+               void(int target_audio_bitrate_bps,
+                    rtc::Optional<int64_t> probing_interval_ms));
   MOCK_METHOD1(OnReceivedUplinkPacketLossFraction,
                void(float uplink_packet_loss_fraction));
 

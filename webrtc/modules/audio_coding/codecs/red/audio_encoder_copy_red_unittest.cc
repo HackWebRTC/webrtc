@@ -98,8 +98,9 @@ TEST_F(AudioEncoderCopyRedTest, CheckMaxFrameSizePropagation) {
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckTargetAudioBitratePropagation) {
-  EXPECT_CALL(*mock_encoder_, OnReceivedTargetAudioBitrate(4711));
-  red_->OnReceivedTargetAudioBitrate(4711);
+  EXPECT_CALL(*mock_encoder_,
+              OnReceivedUplinkBandwidth(4711, rtc::Optional<int64_t>()));
+  red_->OnReceivedUplinkBandwidth(4711, rtc::Optional<int64_t>());
 }
 
 TEST_F(AudioEncoderCopyRedTest, CheckPacketLossFractionPropagation) {

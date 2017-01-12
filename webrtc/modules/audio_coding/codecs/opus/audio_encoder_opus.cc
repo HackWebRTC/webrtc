@@ -17,11 +17,11 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
-#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -172,18 +172,23 @@ rtc::Optional<int> AudioEncoderOpus::Config::GetNewComplexity() const {
 
 AudioEncoderOpus::AudioEncoderOpus(
     const Config& config,
-    AudioNetworkAdaptorCreator&& audio_network_adaptor_creator)
+    AudioNetworkAdaptorCreator&& audio_network_adaptor_creator,
+    std::unique_ptr<SmoothingFilter> bitrate_smoother)
     : packet_loss_rate_(0.0),
       inst_(nullptr),
       packet_loss_fraction_smoother_(new PacketLossFractionSmoother(
-          config.clock ? config.clock : Clock::GetRealTimeClock())),
+          config.clock)),
       audio_network_adaptor_creator_(
           audio_network_adaptor_creator
               ? std::move(audio_network_adaptor_creator)
               : [this](const std::string& config_string, const Clock* clock) {
                   return DefaultAudioNetworkAdaptorCreator(config_string,
                                                            clock);
-                }) {
+              }),
+      bitrate_smoother_(bitrate_smoother
+          ? std::move(bitrate_smoother) : std::unique_ptr<SmoothingFilter>(
+              // We choose 5sec as initial time constant due to empirical data.
+              new SmoothingFilterImpl(5000, config.clock))) {
   RTC_CHECK(RecreateEncoderInstance(config));
 }
 
@@ -272,13 +277,6 @@ void AudioEncoderOpus::DisableAudioNetworkAdaptor() {
   audio_network_adaptor_.reset(nullptr);
 }
 
-void AudioEncoderOpus::OnReceivedUplinkBandwidth(int uplink_bandwidth_bps) {
-  if (!audio_network_adaptor_)
-    return;
-  audio_network_adaptor_->SetUplinkBandwidth(uplink_bandwidth_bps);
-  ApplyAudioNetworkAdaptor();
-}
-
 void AudioEncoderOpus::OnReceivedUplinkPacketLossFraction(
     float uplink_packet_loss_fraction) {
   if (!audio_network_adaptor_) {
@@ -291,10 +289,26 @@ void AudioEncoderOpus::OnReceivedUplinkPacketLossFraction(
   ApplyAudioNetworkAdaptor();
 }
 
-void AudioEncoderOpus::OnReceivedTargetAudioBitrate(
-    int target_audio_bitrate_bps) {
+void AudioEncoderOpus::OnReceivedUplinkBandwidth(
+    int target_audio_bitrate_bps,
+    rtc::Optional<int64_t> probing_interval_ms) {
   if (audio_network_adaptor_) {
     audio_network_adaptor_->SetTargetAudioBitrate(target_audio_bitrate_bps);
+    // We give smoothed bitrate allocation to audio network adaptor as
+    // the uplink bandwidth.
+    // The probing spikes should not affect the bitrate smoother more than 25%.
+    // To simplify the calculations we use a step response as input signal.
+    // The step response of an exponential filter is
+    // u(t) = 1 - e^(-t / time_constant).
+    // In order to limit the affect of a BWE spike within 25% of its value
+    // before
+    // the next probing, we would choose a time constant that fulfills
+    // 1 - e^(-probing_interval_ms / time_constant) < 0.25
+    // Then 4 * probing_interval_ms is a good choice.
+    if (probing_interval_ms)
+      bitrate_smoother_->SetTimeConstantMs(*probing_interval_ms * 4);
+    bitrate_smoother_->AddSample(target_audio_bitrate_bps);
+
     ApplyAudioNetworkAdaptor();
   } else if (webrtc::field_trial::FindFullName(
                  "WebRTC-SendSideBwe-WithOverhead") == "Enabled") {
@@ -354,6 +368,7 @@ AudioEncoder::EncodedInfo AudioEncoderOpus::EncodeImpl(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
     rtc::Buffer* encoded) {
+  MaybeUpdateUplinkBandwidth();
 
   if (input_buffer_.empty())
     first_timestamp_in_buffer_ = rtp_timestamp;
@@ -519,6 +534,20 @@ AudioEncoderOpus::DefaultAudioNetworkAdaptorCreator(
                   config_string, NumChannels(), supported_frame_lengths_ms(),
                   num_channels_to_encode_, next_frame_length_ms_,
                   GetTargetBitrate(), config_.fec_enabled, GetDtx(), clock)));
+}
+
+void AudioEncoderOpus::MaybeUpdateUplinkBandwidth() {
+  if (audio_network_adaptor_) {
+    int64_t now_ms = rtc::TimeMillis();
+    if (!bitrate_smoother_last_update_time_ ||
+        now_ms - *bitrate_smoother_last_update_time_ >=
+            config_.uplink_bandwidth_update_interval_ms) {
+      rtc::Optional<float> smoothed_bitrate = bitrate_smoother_->GetAverage();
+      if (smoothed_bitrate)
+        audio_network_adaptor_->SetUplinkBandwidth(*smoothed_bitrate);
+      bitrate_smoother_last_update_time_ = rtc::Optional<int64_t>(now_ms);
+    }
+  }
 }
 
 }  // namespace webrtc

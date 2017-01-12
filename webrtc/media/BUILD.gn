@@ -271,7 +271,7 @@ if (rtc_include_tests) {
     }
 
     deps += [
-      "../base:rtc_base_tests_utils",
+      "../base:rtc_base_tests_main",
       "//testing/gtest",
     ]
     public_deps += [ "//testing/gmock" ]

@@ -631,7 +631,7 @@ if (rtc_include_tests) {
     # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
-    if (!build_with_chromium && is_clang) {
+    if ((!build_with_chromium || is_win) && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
@@ -648,9 +648,11 @@ if (rtc_include_tests) {
       "..:webrtc_common",
       "../api:transport_api",
       "../base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
+      "../base:rtc_base_tests_utils",
       "../common_audio",
       "../common_video",
       "../system_wrappers",
+      "../system_wrappers:metrics_default",
       "../test:rtp_test_utils",
       "../test:test_common",
       "../test:test_main",

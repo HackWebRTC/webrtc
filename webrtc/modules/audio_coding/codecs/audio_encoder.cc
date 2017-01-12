@@ -72,12 +72,16 @@ bool AudioEncoder::EnableAudioNetworkAdaptor(const std::string& config_string,
 
 void AudioEncoder::DisableAudioNetworkAdaptor() {}
 
-void AudioEncoder::OnReceivedUplinkBandwidth(int uplink_bandwidth_bps) {}
-
 void AudioEncoder::OnReceivedUplinkPacketLossFraction(
     float uplink_packet_loss_fraction) {}
 
-void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {}
+void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {
+  OnReceivedUplinkBandwidth(target_audio_bitrate_bps, rtc::Optional<int64_t>());
+}
+
+void AudioEncoder::OnReceivedUplinkBandwidth(
+    int target_audio_bitrate_bps,
+    rtc::Optional<int64_t> probing_interval_ms) {}
 
 void AudioEncoder::OnReceivedRtt(int rtt_ms) {}
 

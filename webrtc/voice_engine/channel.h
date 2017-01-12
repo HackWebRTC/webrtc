@@ -17,7 +17,6 @@
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/common_audio/smoothing_filter.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
@@ -554,8 +553,6 @@ class Channel
 
   // TODO(ossu): Remove once GetAudioDecoderFactory() is no longer needed.
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
-
-  SmoothingFilterImpl bitrate_smoother_;
 };
 
 }  // namespace voe

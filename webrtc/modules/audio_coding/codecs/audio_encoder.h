@@ -17,6 +17,7 @@
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/deprecation.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -167,16 +168,19 @@ class AudioEncoder {
   // Disables audio network adaptor.
   virtual void DisableAudioNetworkAdaptor();
 
-  // Provides uplink bandwidth to this encoder to allow it to adapt.
-  virtual void OnReceivedUplinkBandwidth(int uplink_bandwidth_bps);
-
   // Provides uplink packet loss fraction to this encoder to allow it to adapt.
   // |uplink_packet_loss_fraction| is in the range [0.0, 1.0].
   virtual void OnReceivedUplinkPacketLossFraction(
       float uplink_packet_loss_fraction);
 
   // Provides target audio bitrate to this encoder to allow it to adapt.
-  virtual void OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps);
+  virtual void OnReceivedTargetAudioBitrate(int target_bps);
+
+  // Provides target audio bitrate and corresponding probing interval of
+  // the bandwidth estimator to this encoder to allow it to adapt.
+  virtual void OnReceivedUplinkBandwidth(
+      int target_audio_bitrate_bps,
+      rtc::Optional<int64_t> probing_interval_ms);
 
   // Provides RTT to this encoder to allow it to adapt.
   virtual void OnReceivedRtt(int rtt_ms);

@@ -648,7 +648,8 @@ int AudioCodingModuleImpl::SendFrequency() const {
 void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
   rtc::CritScope lock(&acm_crit_sect_);
   if (encoder_stack_) {
-    encoder_stack_->OnReceivedTargetAudioBitrate(bitrate_bps);
+    encoder_stack_->OnReceivedUplinkBandwidth(bitrate_bps,
+                                              rtc::Optional<int64_t>());
   }
 }
 

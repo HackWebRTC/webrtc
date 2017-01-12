@@ -126,9 +126,11 @@ void AudioEncoderCopyRed::OnReceivedUplinkPacketLossFraction(
       uplink_packet_loss_fraction);
 }
 
-void AudioEncoderCopyRed::OnReceivedTargetAudioBitrate(
-    int target_audio_bitrate_bps) {
-  speech_encoder_->OnReceivedTargetAudioBitrate(target_audio_bitrate_bps);
+void AudioEncoderCopyRed::OnReceivedUplinkBandwidth(
+    int target_audio_bitrate_bps,
+    rtc::Optional<int64_t> probing_interval_ms) {
+  speech_encoder_->OnReceivedUplinkBandwidth(target_audio_bitrate_bps,
+                                             probing_interval_ms);
 }
 
 }  // namespace webrtc
