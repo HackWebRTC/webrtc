@@ -162,12 +162,10 @@
 
     <string name="pref_enable_datachannel_key">enable_datachannel_preference</string>
     <string name="pref_enable_datachannel_title">Enable datachannel.</string>
-    <string name="pref_enable_datachannel_dlg">Enable datachannel.</string>
     <string name="pref_enable_datachannel_default" translatable="false">true</string>
 
     <string name="pref_ordered_key">ordered_preference</string>
     <string name="pref_ordered_title">Order messages.</string>
-    <string name="pref_ordered_dlg">Order messages.</string>
     <string name="pref_ordered_default" translatable="false">true</string>
 
     <string name="pref_data_protocol_key">Subprotocol</string>
@@ -177,7 +175,6 @@
 
     <string name="pref_negotiated_key">negotiated_preference</string>
     <string name="pref_negotiated_title">Negotiated.</string>
-    <string name="pref_negotiated_dlg">Negotiated.</string>
     <string name="pref_negotiated_default" translatable="false">false</string>
 
     <string name="pref_max_retransmit_time_ms_key">max_retransmit_time_ms_preference</string>

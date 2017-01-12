@@ -13,6 +13,7 @@ package org.webrtc;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import android.annotation.SuppressLint;
 import android.graphics.Point;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.annotation.UiThreadTest;
@@ -60,6 +61,7 @@ public class SurfaceViewRendererOnMeasureTest {
   /**
    * Assert onMeasure() with given parameters will result in expected measured size.
    */
+  @SuppressLint("WrongCall")
   private static void assertMeasuredSize(SurfaceViewRenderer surfaceViewRenderer,
       RendererCommon.ScalingType scalingType, String frameDimensions, int expectedWidth,
       int expectedHeight, int widthSpec, int heightSpec) {
