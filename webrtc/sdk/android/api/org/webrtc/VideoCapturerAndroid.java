@@ -96,15 +96,20 @@ public class VideoCapturerAndroid
         @Override
         public void onError(int error, android.hardware.Camera camera) {
           String errorMessage;
+          boolean cameraRunning = isCameraRunning.get();
           if (error == android.hardware.Camera.CAMERA_ERROR_SERVER_DIED) {
             errorMessage = "Camera server died!";
           } else {
             errorMessage = "Camera error: " + error;
           }
-          Logging.e(TAG, errorMessage);
+          Logging.e(TAG, errorMessage + ". Camera running: " + cameraRunning);
           if (eventsHandler != null) {
             if (error == android.hardware.Camera.CAMERA_ERROR_EVICTED) {
-              eventsHandler.onCameraDisconnected();
+              if (cameraRunning) {
+                eventsHandler.onCameraDisconnected();
+              } else {
+                Logging.d(TAG, "Ignore CAMERA_ERROR_EVICTED for closed camera.");
+              }
             } else {
               eventsHandler.onCameraError(errorMessage);
             }
