@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/api/mediastream.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
 namespace webrtc {
@@ -81,7 +82,7 @@ bool MediaStream::AddTrack(TrackVector* tracks, Track* track) {
 template <typename TrackVector>
 bool MediaStream::RemoveTrack(TrackVector* tracks,
                               MediaStreamTrackInterface* track) {
-  ASSERT(tracks != NULL);
+  RTC_DCHECK(tracks != NULL);
   if (!track)
     return false;
   typename TrackVector::iterator it = FindTrack(tracks, track->id());

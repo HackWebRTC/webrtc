@@ -312,7 +312,7 @@ bool JsepTransport::VerifyCertificateFingerprint(
   }
   std::unique_ptr<rtc::SSLFingerprint> fp_tmp(rtc::SSLFingerprint::Create(
       fingerprint->algorithm, certificate->identity()));
-  ASSERT(fp_tmp.get() != NULL);
+  RTC_DCHECK(fp_tmp.get() != NULL);
   if (*fp_tmp == *fingerprint) {
     return true;
   }

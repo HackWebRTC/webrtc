@@ -16,6 +16,7 @@
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/byteorder.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nethelpers.h"
@@ -317,14 +318,14 @@ void TurnPort::PrepareAddress() {
 }
 
 bool TurnPort::CreateTurnClientSocket() {
-  ASSERT(!socket_ || SharedSocket());
+  RTC_DCHECK(!socket_ || SharedSocket());
 
   if (server_address_.proto == PROTO_UDP && !SharedSocket()) {
     socket_ = socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(ip(), 0), min_port(), max_port());
   } else if (server_address_.proto == PROTO_TCP ||
              server_address_.proto == PROTO_TLS) {
-    ASSERT(!SharedSocket());
+    RTC_DCHECK(!SharedSocket());
     int opts = rtc::PacketSocketFactory::OPT_STUN;
 
     // Apply server address TLS and insecure bits to options.
@@ -375,7 +376,7 @@ bool TurnPort::CreateTurnClientSocket() {
 }
 
 void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
-  ASSERT(server_address_.proto == PROTO_TCP);
+  RTC_DCHECK(server_address_.proto == PROTO_TCP);
   // Do not use this port if the socket bound to a different address than
   // the one we asked for. This is seen in Chrome, where TCP sockets cannot be
   // given a binding address, and the platform is expected to pick the
@@ -420,7 +421,7 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
 
 void TurnPort::OnSocketClose(rtc::AsyncPacketSocket* socket, int error) {
   LOG_J(LS_WARNING, this) << "Connection with server failed, error=" << error;
-  ASSERT(socket == socket_);
+  RTC_DCHECK(socket == socket_);
   Close();
 }
 
@@ -680,7 +681,7 @@ void TurnPort::ResolveTurnAddress(const rtc::SocketAddress& address) {
 }
 
 void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
-  ASSERT(resolver == resolver_);
+  RTC_DCHECK(resolver == resolver_);
   // If DNS resolve is failed when trying to connect to the server using TCP,
   // one of the reason could be due to DNS queries blocked by firewall.
   // In such cases we will try to connect to the server with hostname, assuming
@@ -713,7 +714,7 @@ void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
 
 void TurnPort::OnSendStunPacket(const void* data, size_t size,
                                 StunRequest* request) {
-  ASSERT(connected());
+  RTC_DCHECK(connected());
   rtc::PacketOptions options(DefaultDscpValue());
   if (Send(data, size, options) < 0) {
     LOG_J(LS_ERROR, this) << "Failed to send TURN message, err="
@@ -804,8 +805,8 @@ void TurnPort::OnMessage(rtc::Message* message) {
         // Since it's TCP, we have to delete the connected socket and reconnect
         // with the alternate server. PrepareAddress will send stun binding once
         // the new socket is connected.
-        ASSERT(server_address().proto == PROTO_TCP);
-        ASSERT(!SharedSocket());
+        RTC_DCHECK(server_address().proto == PROTO_TCP);
+        RTC_DCHECK(!SharedSocket());
         delete socket_;
         socket_ = NULL;
         PrepareAddress();
@@ -1021,7 +1022,7 @@ void TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr) {
 }
 
 void TurnPort::DestroyEntry(TurnEntry* entry) {
-  ASSERT(entry != NULL);
+  RTC_DCHECK(entry != NULL);
   entry->SignalDestroyed(entry);
   entries_.remove(entry);
   delete entry;
@@ -1042,12 +1043,12 @@ void TurnPort::HandleConnectionDestroyed(Connection* conn) {
   // already destroyed.
   const rtc::SocketAddress& remote_address = conn->remote_candidate().address();
   TurnEntry* entry = FindEntry(remote_address);
-  ASSERT(entry != NULL);
+  RTC_DCHECK(entry != NULL);
   ScheduleEntryDestruction(entry);
 }
 
 void TurnPort::ScheduleEntryDestruction(TurnEntry* entry) {
-  ASSERT(entry->destruction_timestamp() == 0);
+  RTC_DCHECK(entry->destruction_timestamp() == 0);
   int64_t timestamp = rtc::TimeMillis();
   entry->set_destruction_timestamp(timestamp);
   invoker_.AsyncInvokeDelayed<void>(
@@ -1057,7 +1058,7 @@ void TurnPort::ScheduleEntryDestruction(TurnEntry* entry) {
 }
 
 void TurnPort::CancelEntryDestruction(TurnEntry* entry) {
-  ASSERT(entry->destruction_timestamp() != 0);
+  RTC_DCHECK(entry->destruction_timestamp() != 0);
   entry->set_destruction_timestamp(0);
 }
 
@@ -1368,7 +1369,7 @@ void TurnCreatePermissionRequest::OnTimeout() {
 }
 
 void TurnCreatePermissionRequest::OnEntryDestroyed(TurnEntry* entry) {
-  ASSERT(entry_ == entry);
+  RTC_DCHECK(entry_ == entry);
   entry_ = NULL;
 }
 
@@ -1438,7 +1439,7 @@ void TurnChannelBindRequest::OnTimeout() {
 }
 
 void TurnChannelBindRequest::OnEntryDestroyed(TurnEntry* entry) {
-  ASSERT(entry_ == entry);
+  RTC_DCHECK(entry_ == entry);
   entry_ = NULL;
 }
 
@@ -1533,7 +1534,7 @@ void TurnEntry::OnCreatePermissionTimeout() {
 void TurnEntry::OnChannelBindSuccess() {
   LOG_J(LS_INFO, port_) << "Channel bind for " << ext_addr_.ToSensitiveString()
                         << " succeeded";
-  ASSERT(state_ == STATE_BINDING || state_ == STATE_BOUND);
+  RTC_DCHECK(state_ == STATE_BINDING || state_ == STATE_BOUND);
   state_ = STATE_BOUND;
 }
 

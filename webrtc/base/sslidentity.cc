@@ -200,7 +200,7 @@ std::string SSLIdentity::DerToPem(const std::string& pem_type,
 }
 
 SSLCertChain::SSLCertChain(const std::vector<SSLCertificate*>& certs) {
-  ASSERT(!certs.empty());
+  RTC_DCHECK(!certs.empty());
   certs_.resize(certs.size());
   std::transform(certs.begin(), certs.end(), certs_.begin(), DupCert);
 }

@@ -12,6 +12,7 @@
 
 #include "webrtc/api/localaudiosource.h"
 #include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/trace_event.h"
 
@@ -39,7 +40,7 @@ void LocalAudioSinkAdapter::OnData(const void* audio_data,
 
 void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
   rtc::CritScope lock(&lock_);
-  ASSERT(!sink || !sink_);
+  RTC_DCHECK(!sink || !sink_);
   sink_ = sink;
 }
 

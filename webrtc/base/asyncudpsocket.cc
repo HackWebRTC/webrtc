@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
 namespace rtc {
@@ -99,7 +100,7 @@ void AsyncUDPSocket::SetError(int error) {
 }
 
 void AsyncUDPSocket::OnReadEvent(AsyncSocket* socket) {
-  ASSERT(socket_.get() == socket);
+  RTC_DCHECK(socket_.get() == socket);
 
   SocketAddress remote_addr;
   int64_t timestamp;

@@ -185,7 +185,7 @@ AndroidNetworkMonitor::AndroidNetworkMonitor()
                   "init",
                   "(Landroid/content/Context;)Lorg/webrtc/NetworkMonitor;"),
               application_context_)) {
-  ASSERT(application_context_ != nullptr);
+  RTC_DCHECK(application_context_ != nullptr);
   CHECK_EXCEPTION(jni()) << "Error during NetworkMonitor.init";
   if (android_sdk_int_ <= 0) {
     jmethodID m = GetStaticMethodID(jni(), *j_network_monitor_class_,

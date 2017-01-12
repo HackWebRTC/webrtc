@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "webrtc/api/call/audio_sink.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/networkroute.h"
 #include "webrtc/base/stringutils.h"
@@ -468,7 +469,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     auto it = local_sinks_.find(ssrc);
     if (source) {
       if (it != local_sinks_.end()) {
-        ASSERT(it->second->source() == source);
+        RTC_DCHECK(it->second->source() == source);
       } else {
         local_sinks_.insert(
             std::make_pair(ssrc, new VoiceChannelAudioSink(source)));

@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "webrtc/p2p/base/portallocator.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/thread.h"
@@ -154,7 +155,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
     }
     void set_has_pairable_candidate(bool has_pairable_candidate) {
       if (has_pairable_candidate) {
-        ASSERT(state_ == STATE_INPROGRESS);
+        RTC_DCHECK(state_ == STATE_INPROGRESS);
       }
       has_pairable_candidate_ = has_pairable_candidate;
     }
@@ -162,7 +163,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
       state_ = STATE_COMPLETE;
     }
     void set_error() {
-      ASSERT(state_ == STATE_INPROGRESS);
+      RTC_DCHECK(state_ == STATE_INPROGRESS);
       state_ = STATE_ERROR;
     }
 

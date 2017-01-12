@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/video_capture/windows/sink_filter_ds.h"
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/video_capture/windows/help_functions_ds.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -337,7 +338,7 @@ CaptureInputPin::Receive ( IN IMediaSample * pIMediaSample )
     if (SUCCEEDED (hr))
     {
         const LONG length = pIMediaSample->GetActualDataLength();
-        ASSERT(length >= 0);
+        RTC_DCHECK(length >= 0);
 
         unsigned char* pBuffer = NULL;
         if(S_OK != pIMediaSample->GetPointer(&pBuffer))

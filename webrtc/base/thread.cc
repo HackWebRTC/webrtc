@@ -20,6 +20,7 @@
 #include <time.h>
 #endif
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nullsocketserver.h"
@@ -134,7 +135,7 @@ Thread::ScopedDisallowBlockingCalls::ScopedDisallowBlockingCalls()
 }
 
 Thread::ScopedDisallowBlockingCalls::~ScopedDisallowBlockingCalls() {
-  ASSERT(thread_->IsCurrent());
+  RTC_DCHECK(thread_->IsCurrent());
   thread_->SetAllowBlockingCalls(previous_state_);
 }
 
@@ -213,9 +214,9 @@ bool Thread::SetName(const std::string& name, const void* obj) {
 }
 
 bool Thread::Start(Runnable* runnable) {
-  ASSERT(owned_);
+  RTC_DCHECK(owned_);
   if (!owned_) return false;
-  ASSERT(!running());
+  RTC_DCHECK(!running());
   if (running()) return false;
 
   Restart();  // reset IsQuitting() if the thread is being restarted
@@ -273,14 +274,14 @@ void Thread::SafeWrapCurrent() {
 
 void Thread::Join() {
   if (running()) {
-    ASSERT(!IsCurrent());
+    RTC_DCHECK(!IsCurrent());
     if (Current() && !Current()->blocking_calls_allowed_) {
       LOG(LS_WARNING) << "Waiting for the thread to join, "
                       << "but blocking calls have been disallowed";
     }
 
 #if defined(WEBRTC_WIN)
-    ASSERT(thread_ != NULL);
+    RTC_DCHECK(thread_ != NULL);
     WaitForSingleObject(thread_, INFINITE);
     CloseHandle(thread_);
     thread_ = NULL;
@@ -294,7 +295,7 @@ void Thread::Join() {
 }
 
 bool Thread::SetAllowBlockingCalls(bool allow) {
-  ASSERT(IsCurrent());
+  RTC_DCHECK(IsCurrent());
   bool previous = blocking_calls_allowed_;
   blocking_calls_allowed_ = allow;
   return previous;
@@ -304,7 +305,7 @@ bool Thread::SetAllowBlockingCalls(bool allow) {
 void Thread::AssertBlockingIsAllowedOnCurrentThread() {
 #if !defined(NDEBUG)
   Thread* current = Thread::Current();
-  ASSERT(!current || current->blocking_calls_allowed_);
+  RTC_DCHECK(!current || current->blocking_calls_allowed_);
 #endif
 }
 
@@ -366,7 +367,7 @@ void Thread::Send(const Location& posted_from,
 
   AutoThread thread;
   Thread *current_thread = Thread::Current();
-  ASSERT(current_thread != NULL);  // AutoThread ensures this
+  RTC_DCHECK(current_thread != NULL);  // AutoThread ensures this
 
   bool ready = false;
   {
@@ -555,7 +556,7 @@ AutoThread::~AutoThread() {
 #if defined(WEBRTC_WIN)
 void ComThread::Run() {
   HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-  ASSERT(SUCCEEDED(hr));
+  RTC_DCHECK(SUCCEEDED(hr));
   if (SUCCEEDED(hr)) {
     Thread::Run();
     CoUninitialize();

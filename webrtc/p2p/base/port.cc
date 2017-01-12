@@ -184,7 +184,7 @@ Port::Port(rtc::Thread* thread,
       ice_role_(ICEROLE_UNKNOWN),
       tiebreaker_(0),
       shared_socket_(false) {
-  ASSERT(factory_ != NULL);
+  RTC_DCHECK(factory_ != NULL);
   Construct();
 }
 
@@ -193,7 +193,7 @@ void Port::Construct() {
   // relies on it.  If the username_fragment and password are empty,
   // we should just create one.
   if (ice_username_fragment_.empty()) {
-    ASSERT(password_.empty());
+    RTC_DCHECK(password_.empty());
     ice_username_fragment_ = rtc::CreateRandomString(ICE_UFRAG_LENGTH);
     password_ = rtc::CreateRandomString(ICE_PWD_LENGTH);
   }
@@ -253,7 +253,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
                       uint32_t relay_preference,
                       bool final) {
   if (protocol == TCP_PROTOCOL_NAME && type == LOCAL_PORT_TYPE) {
-    ASSERT(!tcptype.empty());
+    RTC_DCHECK(!tcptype.empty());
   }
 
   std::string foundation =
@@ -355,8 +355,8 @@ bool Port::GetStunMessage(const char* data,
   // NOTE: This could clearly be optimized to avoid allocating any memory.
   //       However, at the data rates we'll be looking at on the client side,
   //       this probably isn't worth worrying about.
-  ASSERT(out_msg != NULL);
-  ASSERT(out_username != NULL);
+  RTC_DCHECK(out_msg != NULL);
+  RTC_DCHECK(out_username != NULL);
   out_username->clear();
 
   // Don't bother parsing the packet if we can tell it's not STUN.
@@ -554,12 +554,12 @@ void Port::CreateStunUsername(const std::string& remote_username,
 
 void Port::SendBindingResponse(StunMessage* request,
                                const rtc::SocketAddress& addr) {
-  ASSERT(request->type() == STUN_BINDING_REQUEST);
+  RTC_DCHECK(request->type() == STUN_BINDING_REQUEST);
 
   // Retrieve the username from the request.
   const StunByteStringAttribute* username_attr =
       request->GetByteString(STUN_ATTR_USERNAME);
-  ASSERT(username_attr != NULL);
+  RTC_DCHECK(username_attr != NULL);
   if (username_attr == NULL) {
     // No valid username, skip the response.
     return;
@@ -618,7 +618,7 @@ void Port::SendBindingResponse(StunMessage* request,
 void Port::SendBindingErrorResponse(StunMessage* request,
                                     const rtc::SocketAddress& addr,
                                     int error_code, const std::string& reason) {
-  ASSERT(request->type() == STUN_BINDING_REQUEST);
+  RTC_DCHECK(request->type() == STUN_BINDING_REQUEST);
 
   // Fill in the response message.
   StunMessage response;
@@ -661,7 +661,7 @@ void Port::Prune() {
 }
 
 void Port::OnMessage(rtc::Message *pmsg) {
-  ASSERT(pmsg->message_id == MSG_DESTROY_IF_DEAD);
+  RTC_DCHECK(pmsg->message_id == MSG_DESTROY_IF_DEAD);
   bool dead =
       (state_ == State::INIT || state_ == State::PRUNED) &&
       connections_.empty() &&
@@ -672,7 +672,7 @@ void Port::OnMessage(rtc::Message *pmsg) {
 }
 
 void Port::OnNetworkTypeChanged(const rtc::Network* network) {
-  ASSERT(network == network_);
+  RTC_DCHECK(network == network_);
 
   UpdateNetworkCost();
 }
@@ -715,7 +715,7 @@ void Port::EnablePortPackets() {
 void Port::OnConnectionDestroyed(Connection* conn) {
   AddressMap::iterator iter =
       connections_.find(conn->remote_candidate().address());
-  ASSERT(iter != connections_.end());
+  RTC_DCHECK(iter != connections_.end());
   connections_.erase(iter);
   HandleConnectionDestroyed(conn);
 
@@ -732,7 +732,7 @@ void Port::OnConnectionDestroyed(Connection* conn) {
 }
 
 void Port::Destroy() {
-  ASSERT(connections_.empty());
+  RTC_DCHECK(connections_.empty());
   LOG_J(LS_INFO, this) << "Port deleted";
   SignalDestroyed(this);
   delete this;
@@ -883,7 +883,7 @@ Connection::~Connection() {
 }
 
 const Candidate& Connection::local_candidate() const {
-  ASSERT(local_candidate_index_ < port_->Candidates().size());
+  RTC_DCHECK(local_candidate_index_ < port_->Candidates().size());
   return port_->Candidates()[local_candidate_index_];
 }
 
@@ -1455,7 +1455,7 @@ void Connection::MaybeUpdatePeerReflexiveCandidate(
 }
 
 void Connection::OnMessage(rtc::Message *pmsg) {
-  ASSERT(pmsg->message_id == MSG_DELETE);
+  RTC_DCHECK(pmsg->message_id == MSG_DELETE);
   LOG(LS_INFO) << "Connection deleted with number of pings sent: "
                << num_pings_sent_;
   SignalDestroyed(this);
@@ -1580,7 +1580,7 @@ int ProxyConnection::Send(const void* data, size_t size,
   int sent = port_->SendTo(data, size, remote_candidate_.address(),
                            options, true);
   if (sent <= 0) {
-    ASSERT(sent < 0);
+    RTC_DCHECK(sent < 0);
     error_ = port_->GetError();
     stats_.sent_discarded_packets++;
   } else {

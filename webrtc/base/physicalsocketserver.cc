@@ -312,7 +312,7 @@ int PhysicalSocket::Send(const void* pv, size_t cb) {
   UpdateLastError();
   MaybeRemapSendError();
   // We have seen minidumps where this may be false.
-  ASSERT(sent <= static_cast<int>(cb));
+  RTC_DCHECK(sent <= static_cast<int>(cb));
   if ((sent > 0 && sent < static_cast<int>(cb)) ||
       (sent < 0 && IsBlockingError(GetError()))) {
     enabled_events_ |= DE_WRITE;
@@ -337,7 +337,7 @@ int PhysicalSocket::SendTo(const void* buffer,
   UpdateLastError();
   MaybeRemapSendError();
   // We have seen minidumps where this may be false.
-  ASSERT(sent <= static_cast<int>(length));
+  RTC_DCHECK(sent <= static_cast<int>(length));
   if ((sent > 0 && sent < static_cast<int>(length)) ||
       (sent < 0 && IsBlockingError(GetError()))) {
     enabled_events_ |= DE_WRITE;
@@ -499,7 +499,7 @@ int PhysicalSocket::EstimateMTU(uint16_t* mtu) {
     return err;
   }
 
-  ASSERT((0 <= value) && (value <= 65536));
+  RTC_DCHECK((0 <= value) && (value <= 65536));
   *mtu = value;
   return 0;
 #elif defined(__native_client__)
@@ -625,7 +625,7 @@ SocketDispatcher::~SocketDispatcher() {
 }
 
 bool SocketDispatcher::Initialize() {
-  ASSERT(s_ != INVALID_SOCKET);
+  RTC_DCHECK(s_ != INVALID_SOCKET);
   // Must be a non-blocking
 #if defined(WEBRTC_WIN)
   u_long argp = 1;
@@ -890,7 +890,7 @@ class PosixSignalHandler {
 
   // Returns true if the given signal number is set.
   bool IsSignalSet(int signum) const {
-    ASSERT(signum < static_cast<int>(arraysize(received_signal_)));
+    RTC_DCHECK(signum < static_cast<int>(arraysize(received_signal_)));
     if (signum < static_cast<int>(arraysize(received_signal_))) {
       return received_signal_[signum];
     } else {
@@ -900,7 +900,7 @@ class PosixSignalHandler {
 
   // Clears the given signal number.
   void ClearSignal(int signum) {
-    ASSERT(signum < static_cast<int>(arraysize(received_signal_)));
+    RTC_DCHECK(signum < static_cast<int>(arraysize(received_signal_)));
     if (signum < static_cast<int>(arraysize(received_signal_))) {
       received_signal_[signum] = false;
     }
@@ -1145,7 +1145,7 @@ PhysicalSocketServer::~PhysicalSocketServer() {
   signal_dispatcher_.reset();
 #endif
   delete signal_wakeup_;
-  ASSERT(dispatchers_.empty());
+  RTC_DCHECK(dispatchers_.empty());
 }
 
 void PhysicalSocketServer::WakeUp() {
@@ -1271,7 +1271,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
       for (size_t i = 0; i < dispatchers_.size(); ++i) {
         // Query dispatchers for read and write wait state
         Dispatcher *pdispatcher = dispatchers_[i];
-        ASSERT(pdispatcher);
+        RTC_DCHECK(pdispatcher);
         if (!process_io && (pdispatcher != signal_wakeup_))
           continue;
         int fd = pdispatcher->GetDescriptor();
@@ -1372,7 +1372,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
         ptvWait->tv_sec = tvStop.tv_sec - tvT.tv_sec;
         ptvWait->tv_usec = tvStop.tv_usec - tvT.tv_usec;
         if (ptvWait->tv_usec < 0) {
-          ASSERT(ptvWait->tv_sec > 0);
+          RTC_DCHECK(ptvWait->tv_sec > 0);
           ptvWait->tv_usec += 1000000;
           ptvWait->tv_sec -= 1;
         }
@@ -1476,7 +1476,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
           event_owners.push_back(disp);
         }
       }
-      ASSERT(iterators_.back() == &i);
+      RTC_DCHECK(iterators_.back() == &i);
       iterators_.pop_back();
     }
 
@@ -1579,9 +1579,9 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
             }
           }
         }
-        ASSERT(iterators_.back() == &end);
+        RTC_DCHECK(iterators_.back() == &end);
         iterators_.pop_back();
-        ASSERT(iterators_.back() == &i);
+        RTC_DCHECK(iterators_.back() == &i);
         iterators_.pop_back();
       }
 

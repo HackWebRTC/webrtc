@@ -25,6 +25,7 @@
 #include "webrtc/api/videosourceproxy.h"
 #include "webrtc/api/videotrack.h"
 #include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
@@ -129,7 +130,7 @@ PeerConnectionFactory::PeerConnectionFactory(
   RTC_DCHECK(signaling_thread);
   // TODO: Currently there is no way creating an external adm in
   // libjingle source tree. So we can 't currently assert if this is NULL.
-  // ASSERT(default_adm != NULL);
+  // RTC_DCHECK(default_adm != NULL);
 }
 
 PeerConnectionFactory::~PeerConnectionFactory() {
@@ -345,7 +346,7 @@ rtc::Thread* PeerConnectionFactory::network_thread() {
 }
 
 cricket::MediaEngineInterface* PeerConnectionFactory::CreateMediaEngine_w() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   return cricket::WebRtcMediaEngineFactory::Create(
       default_adm_.get(), audio_decoder_factory_, video_encoder_factory_.get(),
       video_decoder_factory_.get(), external_audio_mixer_);

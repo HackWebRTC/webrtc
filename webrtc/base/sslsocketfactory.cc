@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "webrtc/base/autodetectproxy.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
 #include "webrtc/base/socketadapters.h"
@@ -37,8 +38,8 @@ class ProxySocketAdapter : public AsyncSocketAdapter {
   }
 
   int Connect(const SocketAddress& addr) override {
-    ASSERT(NULL == detect_);
-    ASSERT(NULL == socket_);
+    RTC_DCHECK(NULL == detect_);
+    RTC_DCHECK(NULL == socket_);
     remote_ = addr;
     if (remote_.IsAnyIP() && remote_.hostname().empty()) {
       LOG_F(LS_ERROR) << "Empty address";
@@ -78,7 +79,7 @@ class ProxySocketAdapter : public AsyncSocketAdapter {
 private:
   // AutoDetectProxy Slots
   void OnProxyDetectionComplete(SignalThread* thread) {
-    ASSERT(detect_ == thread);
+    RTC_DCHECK(detect_ == thread);
     Attach(factory_->CreateProxySocket(detect_->proxy(), family_, type_));
     detect_->Release();
     detect_ = NULL;

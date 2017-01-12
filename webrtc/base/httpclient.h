@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/httpbase.h"
 #include "webrtc/base/nethelpers.h"
@@ -89,7 +90,10 @@ public:
   void set_uri_form(UriForm form) { uri_form_ = form; }
   UriForm uri_form() const { return uri_form_; }
 
-  void set_cache(DiskCache* cache) { ASSERT(!IsCacheActive()); cache_ = cache; }
+  void set_cache(DiskCache* cache) {
+    RTC_DCHECK(!IsCacheActive());
+    cache_ = cache;
+  }
   bool cache_enabled() const { return (NULL != cache_); }
 
   // reset clears the server, request, and response structures.  It will also

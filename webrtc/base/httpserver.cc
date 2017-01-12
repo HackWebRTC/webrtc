@@ -45,7 +45,7 @@ HttpServer::~HttpServer() {
 int
 HttpServer::HandleConnection(StreamInterface* stream) {
   int connection_id = next_connection_id_++;
-  ASSERT(connection_id != HTTP_INVALID_CONNECTION_ID);
+  RTC_DCHECK(connection_id != HTTP_INVALID_CONNECTION_ID);
   Connection* connection = new Connection(connection_id, this);
   connections_.insert(ConnectionMap::value_type(connection_id, connection));
   connection->BeginProcess(stream);
@@ -147,7 +147,7 @@ HttpServer::Connection::EndProcess() {
 
 void
 HttpServer::Connection::Respond(HttpServerTransaction* transaction) {
-  ASSERT(current_ == NULL);
+  RTC_DCHECK(current_ == NULL);
   current_ = transaction;
   if (current_->response.begin() == current_->response.end()) {
     current_->response.set_error(HC_INTERNAL_SERVER_ERROR);
@@ -179,7 +179,7 @@ HttpServer::Connection::onHttpHeaderComplete(bool chunked, size_t& data_size) {
   if (data_size == SIZE_UNKNOWN) {
     data_size = 0;
   }
-  ASSERT(current_ != NULL);
+  RTC_DCHECK(current_ != NULL);
   bool custom_document = false;
   server_->SignalHttpRequestHeader(server_, current_, &custom_document);
   if (!custom_document) {
@@ -191,7 +191,7 @@ HttpServer::Connection::onHttpHeaderComplete(bool chunked, size_t& data_size) {
 void
 HttpServer::Connection::onHttpComplete(HttpMode mode, HttpError err) {
   if (mode == HM_SEND) {
-    ASSERT(current_ != NULL);
+    RTC_DCHECK(current_ != NULL);
     signalling_ = true;
     server_->SignalHttpRequestComplete(server_, current_, err);
     signalling_ = false;
@@ -205,7 +205,7 @@ HttpServer::Connection::onHttpComplete(HttpMode mode, HttpError err) {
   } else if (mode == HM_CONNECT) {
     base_.recv(&current_->request);
   } else if (mode == HM_RECV) {
-    ASSERT(current_ != NULL);
+    RTC_DCHECK(current_ != NULL);
     // TODO: do we need this?
     //request_.document_->rewind();
     HttpServerTransaction* transaction = current_;
@@ -268,7 +268,7 @@ void HttpListenServer::StopListening() {
 }
 
 void HttpListenServer::OnReadEvent(AsyncSocket* socket) {
-  ASSERT(socket == listener_.get());
+  RTC_DCHECK(socket == listener_.get());
   AsyncSocket* incoming = listener_->Accept(NULL);
   if (incoming) {
     StreamInterface* stream = new SocketStream(incoming);

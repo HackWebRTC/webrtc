@@ -581,8 +581,8 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
                                const std::string& msid_stream_id,
                                const std::string& msid_track_id,
                                StreamParamsVec* tracks) {
-  ASSERT(tracks != NULL);
-  ASSERT(msid_stream_id.empty() == msid_track_id.empty());
+  RTC_DCHECK(tracks != NULL);
+  RTC_DCHECK(msid_stream_id.empty() == msid_track_id.empty());
   for (SsrcInfoVec::const_iterator ssrc_info = ssrc_infos.begin();
        ssrc_info != ssrc_infos.end(); ++ssrc_info) {
     if (ssrc_info->cname.empty()) {
@@ -831,7 +831,7 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc,
     std::string group_line = kAttrGroup;
     const cricket::ContentGroup* group =
         desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
-    ASSERT(group != NULL);
+    RTC_DCHECK(group != NULL);
     const cricket::ContentNames& content_names = group->content_names();
     for (cricket::ContentNames::const_iterator it = content_names.begin();
          it != content_names.end(); ++it) {
@@ -888,9 +888,9 @@ std::string SdpSerializeCandidate(const cricket::Candidate& candidate) {
   BuildCandidate(candidates, true, &message);
   // From WebRTC draft section 4.8.1.1 candidate-attribute will be
   // just candidate:<candidate> not a=candidate:<blah>CRLF
-  ASSERT(message.find("a=") == 0);
+  RTC_DCHECK(message.find("a=") == 0);
   message.erase(0, 2);
-  ASSERT(message.find(kLineBreak) == message.size() - 2);
+  RTC_DCHECK(message.find(kLineBreak) == message.size() - 2);
   message.resize(message.size() - 2);
   return message;
 }
@@ -938,7 +938,7 @@ bool SdpDeserialize(const std::string& message,
 bool SdpDeserializeCandidate(const std::string& message,
                              JsepIceCandidate* jcandidate,
                              SdpParseError* error) {
-  ASSERT(jcandidate != NULL);
+  RTC_DCHECK(jcandidate != NULL);
   Candidate candidate;
   if (!ParseCandidate(message, &candidate, error, true)) {
     return false;
@@ -951,7 +951,7 @@ bool SdpDeserializeCandidate(const std::string& transport_name,
                              const std::string& message,
                              cricket::Candidate* candidate,
                              SdpParseError* error) {
-  ASSERT(candidate != nullptr);
+  RTC_DCHECK(candidate != nullptr);
   if (!ParseCandidate(message, candidate, error, true)) {
     return false;
   }
@@ -961,7 +961,7 @@ bool SdpDeserializeCandidate(const std::string& transport_name,
 
 bool ParseCandidate(const std::string& message, Candidate* candidate,
                     SdpParseError* error, bool is_raw) {
-  ASSERT(candidate != NULL);
+  RTC_DCHECK(candidate != NULL);
 
   // Get the first line from |message|.
   std::string first_line = message;
@@ -1215,7 +1215,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
                            const std::vector<Candidate>& candidates,
                            bool unified_plan_sdp,
                            std::string* message) {
-  ASSERT(message != NULL);
+  RTC_DCHECK(message != NULL);
   if (content_info == NULL || message == NULL) {
     return;
   }
@@ -1227,7 +1227,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
   const MediaContentDescription* media_desc =
       static_cast<const MediaContentDescription*>(
           content_info->description);
-  ASSERT(media_desc != NULL);
+  RTC_DCHECK(media_desc != NULL);
 
   int sctp_port = cricket::kSctpDefaultPort;
 
@@ -1719,8 +1719,8 @@ bool GetParameter(const std::string& name,
 void BuildRtpMap(const MediaContentDescription* media_desc,
                  const MediaType media_type,
                  std::string* message) {
-  ASSERT(message != NULL);
-  ASSERT(media_desc != NULL);
+  RTC_DCHECK(message != NULL);
+  RTC_DCHECK(media_desc != NULL);
   std::ostringstream os;
   if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     const VideoContentDescription* video_desc =
@@ -1749,7 +1749,7 @@ void BuildRtpMap(const MediaContentDescription* media_desc,
     for (std::vector<cricket::AudioCodec>::const_iterator it =
              audio_desc->codecs().begin();
          it != audio_desc->codecs().end(); ++it) {
-      ASSERT(!it->name.empty());
+      RTC_DCHECK(!it->name.empty());
       // RFC 4566
       // a=rtpmap:<payload type> <encoding name>/<clock rate>
       // [/<encodingparameters>]
@@ -1781,7 +1781,7 @@ void BuildRtpMap(const MediaContentDescription* media_desc,
     if (GetMinValue(maxptimes, &min_maxptime)) {
       AddAttributeLine(kCodecParamMaxPTime, min_maxptime, message);
     }
-    ASSERT(min_maxptime > max_minptime);
+    RTC_DCHECK(min_maxptime > max_minptime);
     // Populate the ptime attribute with the smallest ptime or the largest
     // minptime, whichever is the largest, for all codecs under the same m-line.
     int ptime = INT_MAX;
@@ -2057,7 +2057,7 @@ bool ParseSessionDescription(const std::string& message, size_t* pos,
 bool ParseGroupAttribute(const std::string& line,
                          cricket::SessionDescription* desc,
                          SdpParseError* error) {
-  ASSERT(desc != NULL);
+  RTC_DCHECK(desc != NULL);
 
   // RFC 5888 and draft-holmberg-mmusic-sdp-bundle-negotiation-00
   // a=group:BUNDLE video voice
@@ -2285,7 +2285,7 @@ bool ParseMediaDescription(const std::string& message,
                            cricket::SessionDescription* desc,
                            std::vector<JsepIceCandidate*>* candidates,
                            SdpParseError* error) {
-  ASSERT(desc != NULL);
+  RTC_DCHECK(desc != NULL);
   std::string line;
   int mline_index = -1;
 
@@ -2589,9 +2589,9 @@ bool ParseContent(const std::string& message,
                   TransportDescription* transport,
                   std::vector<JsepIceCandidate*>* candidates,
                   SdpParseError* error) {
-  ASSERT(media_desc != NULL);
-  ASSERT(content_name != NULL);
-  ASSERT(transport != NULL);
+  RTC_DCHECK(media_desc != NULL);
+  RTC_DCHECK(content_name != NULL);
+  RTC_DCHECK(transport != NULL);
 
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     MaybeCreateStaticPayloadAudioCodecs(
@@ -2846,10 +2846,10 @@ bool ParseContent(const std::string& message,
   // Update the candidates with the media level "ice-pwd" and "ice-ufrag".
   for (Candidates::iterator it = candidates_orig.begin();
        it != candidates_orig.end(); ++it) {
-    ASSERT((*it).username().empty() ||
-           (*it).username() == transport->ice_ufrag);
+    RTC_DCHECK((*it).username().empty() ||
+               (*it).username() == transport->ice_ufrag);
     (*it).set_username(transport->ice_ufrag);
-    ASSERT((*it).password().empty());
+    RTC_DCHECK((*it).password().empty());
     (*it).set_password(transport->ice_pwd);
     candidates->push_back(
         new JsepIceCandidate(mline_id, mline_index, *it));
@@ -2859,7 +2859,7 @@ bool ParseContent(const std::string& message,
 
 bool ParseSsrcAttribute(const std::string& line, SsrcInfoVec* ssrc_infos,
                         SdpParseError* error) {
-  ASSERT(ssrc_infos != NULL);
+  RTC_DCHECK(ssrc_infos != NULL);
   // RFC 5576
   // a=ssrc:<ssrc-id> <attribute>
   // a=ssrc:<ssrc-id> <attribute>:<value>
@@ -2938,7 +2938,7 @@ bool ParseSsrcAttribute(const std::string& line, SsrcInfoVec* ssrc_infos,
 bool ParseSsrcGroupAttribute(const std::string& line,
                              SsrcGroupVec* ssrc_groups,
                              SdpParseError* error) {
-  ASSERT(ssrc_groups != NULL);
+  RTC_DCHECK(ssrc_groups != NULL);
   // RFC 5576
   // a=ssrc-group:<semantics> <ssrc-id> ...
   std::vector<std::string> fields;

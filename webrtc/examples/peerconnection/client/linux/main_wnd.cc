@@ -17,6 +17,7 @@
 #include "libyuv/convert_from.h"
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
@@ -142,7 +143,7 @@ GtkMainWnd::GtkMainWnd(const char* server, int port, bool autoconnect,
 }
 
 GtkMainWnd::~GtkMainWnd() {
-  ASSERT(!IsWindow());
+  RTC_DCHECK(!IsWindow());
 }
 
 void GtkMainWnd::RegisterObserver(MainWndCallback* callback) {
@@ -198,7 +199,7 @@ void GtkMainWnd::QueueUIThreadCallback(int msg_id, void* data) {
 }
 
 bool GtkMainWnd::Create() {
-  ASSERT(window_ == NULL);
+  RTC_DCHECK(window_ == NULL);
 
   window_ = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   if (window_) {
@@ -229,8 +230,8 @@ bool GtkMainWnd::Destroy() {
 void GtkMainWnd::SwitchToConnectUI() {
   LOG(INFO) << __FUNCTION__;
 
-  ASSERT(IsWindow());
-  ASSERT(vbox_ == NULL);
+  RTC_DCHECK(IsWindow());
+  RTC_DCHECK(vbox_ == NULL);
 
   gtk_container_set_border_width(GTK_CONTAINER(window_), 10);
 
@@ -322,7 +323,7 @@ void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
 void GtkMainWnd::SwitchToStreamingUI() {
   LOG(INFO) << __FUNCTION__;
 
-  ASSERT(draw_area_ == NULL);
+  RTC_DCHECK(draw_area_ == NULL);
 
   gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
   if (peer_list_) {
@@ -396,7 +397,7 @@ void GtkMainWnd::OnKeyPress(GtkWidget* widget, GdkEventKey* key) {
 
 void GtkMainWnd::OnRowActivated(GtkTreeView* tree_view, GtkTreePath* path,
                                 GtkTreeViewColumn* column) {
-  ASSERT(peer_list_ != NULL);
+  RTC_DCHECK(peer_list_ != NULL);
   GtkTreeIter iter;
   GtkTreeModel* model;
   GtkTreeSelection* selection =

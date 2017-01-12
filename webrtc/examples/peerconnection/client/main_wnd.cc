@@ -16,6 +16,7 @@
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 
@@ -79,11 +80,11 @@ MainWnd::MainWnd(const char* server, int port, bool auto_connect,
 }
 
 MainWnd::~MainWnd() {
-  ASSERT(!IsWindow());
+  RTC_DCHECK(!IsWindow());
 }
 
 bool MainWnd::Create() {
-  ASSERT(wnd_ == NULL);
+  RTC_DCHECK(wnd_ == NULL);
   if (!RegisterWindowClass())
     return false;
 
@@ -146,7 +147,7 @@ bool MainWnd::PreTranslateMessage(MSG* msg) {
 }
 
 void MainWnd::SwitchToConnectUI() {
-  ASSERT(IsWindow());
+  RTC_DCHECK(IsWindow());
   LayoutPeerListUI(false);
   ui_ = CONNECT_TO_SERVER;
   LayoutConnectUI(true);
@@ -440,7 +441,7 @@ bool MainWnd::RegisterWindowClass() {
   wcex.lpfnWndProc = &WndProc;
   wcex.lpszClassName = kClassName;
   wnd_class_ = ::RegisterClassEx(&wcex);
-  ASSERT(wnd_class_ != 0);
+  RTC_DCHECK(wnd_class_ != 0);
   return wnd_class_ != 0;
 }
 
@@ -456,7 +457,7 @@ void MainWnd::CreateChildWindow(HWND* wnd, MainWnd::ChildWindowID id,
                           100, 100, 100, 100, wnd_,
                           reinterpret_cast<HMENU>(id),
                           GetModuleHandle(NULL), NULL);
-  ASSERT(::IsWindow(*wnd) != FALSE);
+  RTC_DCHECK(::IsWindow(*wnd) != FALSE);
   ::SendMessage(*wnd, WM_SETFONT, reinterpret_cast<WPARAM>(GetDefaultFont()),
                 TRUE);
 }
@@ -614,7 +615,7 @@ void MainWnd::VideoRenderer::OnFrame(
 
     SetSize(buffer->width(), buffer->height());
 
-    ASSERT(image_.get() != NULL);
+    RTC_DCHECK(image_.get() != NULL);
     libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
                        buffer->DataU(), buffer->StrideU(),
                        buffer->DataV(), buffer->StrideV(),

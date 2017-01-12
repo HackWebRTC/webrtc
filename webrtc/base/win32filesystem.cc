@@ -76,7 +76,7 @@ FileStream *Win32Filesystem::OpenFile(const Pathname &filename,
 bool Win32Filesystem::DeleteFile(const Pathname &filename) {
   LOG(LS_INFO) << "Deleting file " << filename.pathname();
   if (!IsFile(filename)) {
-    ASSERT(IsFile(filename));
+    RTC_DCHECK(IsFile(filename));
     return false;
   }
   return ::DeleteFile(ToUtf16(filename.pathname()).c_str()) != 0;
@@ -106,7 +106,7 @@ bool Win32Filesystem::GetTemporaryFolder(Pathname &pathname, bool create,
   pathname.clear();
   pathname.SetFolder(ToUtf8(buffer));
   if (append != NULL) {
-    ASSERT(!append->empty());
+    RTC_DCHECK(!append->empty());
     pathname.AppendFolder(*append);
   }
   return !create || CreateFolder(pathname);
@@ -125,7 +125,7 @@ std::string Win32Filesystem::TempFilename(const Pathname &dir,
 bool Win32Filesystem::MoveFile(const Pathname &old_path,
                                const Pathname &new_path) {
   if (!IsFile(old_path)) {
-    ASSERT(IsFile(old_path));
+    RTC_DCHECK(IsFile(old_path));
     return false;
   }
   LOG(LS_INFO) << "Moving " << old_path.pathname()
@@ -217,8 +217,8 @@ bool Win32Filesystem::GetAppPathname(Pathname* path) {
 }
 
 bool Win32Filesystem::GetAppDataFolder(Pathname* path, bool per_user) {
-  ASSERT(!organization_name_.empty());
-  ASSERT(!application_name_.empty());
+  RTC_DCHECK(!organization_name_.empty());
+  RTC_DCHECK(!application_name_.empty());
   TCHAR buffer[MAX_PATH + 1];
   int csidl = per_user ? CSIDL_LOCAL_APPDATA : CSIDL_COMMON_APPDATA;
   if (!::SHGetSpecialFolderPath(NULL, buffer, csidl, TRUE))
@@ -282,7 +282,7 @@ bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path,
   int64_t total_number_of_free_bytes;  // receives the free bytes on disk
   // make sure things won't change in 64 bit machine
   // TODO replace with compile time assert
-  ASSERT(sizeof(ULARGE_INTEGER) == sizeof(uint64_t));  // NOLINT
+  RTC_DCHECK(sizeof(ULARGE_INTEGER) == sizeof(uint64_t));  // NOLINT
   if (::GetDiskFreeSpaceEx(target_drive,
                            (PULARGE_INTEGER)free_bytes,
                            (PULARGE_INTEGER)&total_number_of_bytes,

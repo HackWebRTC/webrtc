@@ -14,6 +14,7 @@
 #include <list>
 
 #include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 
 namespace webrtc {
@@ -26,7 +27,7 @@ class Notifier : public T {
   }
 
   virtual void RegisterObserver(ObserverInterface* observer) {
-    ASSERT(observer != NULL);
+    RTC_DCHECK(observer != NULL);
     observers_.push_back(observer);
   }
 

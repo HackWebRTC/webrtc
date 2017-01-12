@@ -16,6 +16,7 @@
 
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 
 using cricket::CaptureState;
 using webrtc::MediaConstraintsInterface;
@@ -50,7 +51,7 @@ MediaSourceInterface::SourceState GetReadyState(cricket::CaptureState state) {
     case cricket::CS_STOPPED:
       return MediaSourceInterface::kEnded;
     default:
-      ASSERT(false && "GetReadyState unknown state");
+      RTC_NOTREACHED() << "GetReadyState unknown state";
   }
   return MediaSourceInterface::kEnded;
 }
@@ -101,7 +102,7 @@ bool NewFormatWithConstraints(
     const cricket::VideoFormat& format_in,
     bool mandatory,
     cricket::VideoFormat* format_out) {
-  ASSERT(format_out != NULL);
+  RTC_DCHECK(format_out != NULL);
   *format_out = format_in;
 
   if (constraint.key == MediaConstraintsInterface::kMinWidth) {
@@ -215,7 +216,7 @@ std::vector<cricket::VideoFormat> FilterFormats(
 // default and still meets the contraints.
 const cricket::VideoFormat& GetBestCaptureFormat(
     const std::vector<cricket::VideoFormat>& formats) {
-  ASSERT(formats.size() > 0);
+  RTC_DCHECK(formats.size() > 0);
 
   int default_area = kDefaultFormat.width * kDefaultFormat.height;
 

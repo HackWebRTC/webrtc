@@ -45,6 +45,7 @@
 #endif
 
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stream.h"
@@ -136,7 +137,7 @@ bool UnixFilesystem::DeleteFile(const Pathname &filename) {
   LOG(LS_INFO) << "Deleting file:" << filename.pathname();
 
   if (!IsFile(filename)) {
-    ASSERT(IsFile(filename));
+    RTC_DCHECK(IsFile(filename));
     return false;
   }
   return ::unlink(filename.pathname().c_str()) == 0;
@@ -146,7 +147,7 @@ bool UnixFilesystem::DeleteEmptyFolder(const Pathname &folder) {
   LOG(LS_INFO) << "Deleting folder" << folder.pathname();
 
   if (!IsFolder(folder)) {
-    ASSERT(IsFolder(folder));
+    RTC_DCHECK(IsFolder(folder));
     return false;
   }
   std::string no_slash(folder.pathname(), 0, folder.pathname().length()-1);
@@ -156,7 +157,7 @@ bool UnixFilesystem::DeleteEmptyFolder(const Pathname &folder) {
 bool UnixFilesystem::GetTemporaryFolder(Pathname &pathname, bool create,
                                         const std::string *append) {
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  ASSERT(provided_app_temp_folder_ != NULL);
+  RTC_DCHECK(provided_app_temp_folder_ != NULL);
   pathname.SetPathname(provided_app_temp_folder_, "");
 #else
   if (const char* tmpdir = getenv("TMPDIR")) {
@@ -172,7 +173,7 @@ bool UnixFilesystem::GetTemporaryFolder(Pathname &pathname, bool create,
   }
 #endif  // defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
   if (append) {
-    ASSERT(!append->empty());
+    RTC_DCHECK(!append->empty());
     pathname.AppendFolder(*append);
   }
   return !create || CreateFolder(pathname);
@@ -197,7 +198,7 @@ std::string UnixFilesystem::TempFilename(const Pathname &dir,
 bool UnixFilesystem::MoveFile(const Pathname &old_path,
                               const Pathname &new_path) {
   if (!IsFile(old_path)) {
-    ASSERT(IsFile(old_path));
+    RTC_DCHECK(IsFile(old_path));
     return false;
   }
   LOG(LS_VERBOSE) << "Moving " << old_path.pathname()
@@ -247,7 +248,7 @@ bool UnixFilesystem::CopyFile(const Pathname &old_path,
 
 bool UnixFilesystem::IsTemporaryPath(const Pathname& pathname) {
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  ASSERT(provided_app_temp_folder_ != NULL);
+  RTC_DCHECK(provided_app_temp_folder_ != NULL);
 #endif
 
   const char* const kTempPrefixes[] = {
@@ -316,13 +317,13 @@ bool UnixFilesystem::GetAppDataFolder(Pathname* path, bool per_user) {
   // On macOS and iOS, there is no requirement that the path contains the
   // organization.
 #if !defined(WEBRTC_MAC)
-  ASSERT(!organization_name_.empty());
+  RTC_DCHECK(!organization_name_.empty());
 #endif
-  ASSERT(!application_name_.empty());
+  RTC_DCHECK(!application_name_.empty());
 
   // First get the base directory for app data.
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  ASSERT(provided_app_data_folder_ != NULL);
+  RTC_DCHECK(provided_app_data_folder_ != NULL);
   path->SetPathname(provided_app_data_folder_, "");
 #elif defined(WEBRTC_LINUX) // && !WEBRTC_MAC && !WEBRTC_ANDROID
   if (per_user) {
@@ -389,11 +390,11 @@ bool UnixFilesystem::GetAppDataFolder(Pathname* path, bool per_user) {
 
 bool UnixFilesystem::GetAppTempFolder(Pathname* path) {
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  ASSERT(provided_app_temp_folder_ != NULL);
+  RTC_DCHECK(provided_app_temp_folder_ != NULL);
   path->SetPathname(provided_app_temp_folder_);
   return true;
 #else
-  ASSERT(!application_name_.empty());
+  RTC_DCHECK(!application_name_.empty());
   // TODO: Consider whether we are worried about thread safety.
   if (app_temp_path_ != NULL && strlen(app_temp_path_) > 0) {
     path->SetPathname(app_temp_path_);
@@ -422,7 +423,7 @@ bool UnixFilesystem::GetDiskFreeSpace(const Pathname& path,
 #ifdef __native_client__
   return false;
 #else  // __native_client__
-  ASSERT(NULL != freebytes);
+  RTC_DCHECK(NULL != freebytes);
   // TODO: Consider making relative paths absolute using cwd.
   // TODO: When popping off a symlink, push back on the components of the
   // symlink, so we don't jump out of the target disk inadvertently.

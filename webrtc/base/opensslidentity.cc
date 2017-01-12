@@ -443,7 +443,7 @@ void OpenSSLCertificate::ToDER(Buffer* der_buffer) const {
 }
 
 void OpenSSLCertificate::AddReference() const {
-  ASSERT(x509_ != NULL);
+  RTC_DCHECK(x509_ != NULL);
 #if defined(OPENSSL_IS_BORINGSSL)
   X509_up_ref(x509_);
 #else
@@ -478,8 +478,8 @@ int64_t OpenSSLCertificate::CertificateExpirationTime() const {
 OpenSSLIdentity::OpenSSLIdentity(OpenSSLKeyPair* key_pair,
                                  OpenSSLCertificate* certificate)
     : key_pair_(key_pair), certificate_(certificate) {
-  ASSERT(key_pair != NULL);
-  ASSERT(certificate != NULL);
+  RTC_DCHECK(key_pair != NULL);
+  RTC_DCHECK(certificate != NULL);
 }
 
 OpenSSLIdentity::~OpenSSLIdentity() = default;

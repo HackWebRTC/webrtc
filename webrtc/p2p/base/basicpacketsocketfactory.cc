@@ -16,6 +16,7 @@
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
@@ -89,7 +90,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
 
   // If using fake TLS, wrap the TCP socket in a pseudo-SSL socket.
   if (opts & PacketSocketFactory::OPT_TLS_FAKE) {
-    ASSERT(!(opts & PacketSocketFactory::OPT_TLS));
+    RTC_DCHECK(!(opts & PacketSocketFactory::OPT_TLS));
     socket = new AsyncSSLSocket(socket);
   }
 
@@ -133,7 +134,7 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   int tlsOpts =
       opts & (PacketSocketFactory::OPT_TLS | PacketSocketFactory::OPT_TLS_FAKE |
               PacketSocketFactory::OPT_TLS_INSECURE);
-  ASSERT((tlsOpts & (tlsOpts - 1)) == 0);
+  RTC_DCHECK((tlsOpts & (tlsOpts - 1)) == 0);
 
   if ((tlsOpts & PacketSocketFactory::OPT_TLS) ||
       (tlsOpts & PacketSocketFactory::OPT_TLS_INSECURE)) {
@@ -204,7 +205,7 @@ int BasicPacketSocketFactory::BindSocket(AsyncSocket* socket,
 
 SocketFactory* BasicPacketSocketFactory::socket_factory() {
   if (thread_) {
-    ASSERT(thread_ == Thread::Current());
+    RTC_DCHECK(thread_ == Thread::Current());
     return thread_->socketserver();
   } else {
     return socket_factory_;

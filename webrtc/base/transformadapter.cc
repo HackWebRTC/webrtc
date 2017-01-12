@@ -67,7 +67,7 @@ TransformAdapter::Read(void * buffer, size_t buffer_len,
     StreamResult result = transform_->Transform(buffer_, &in_len,
                                                 buffer, &out_len,
                                                 (state_ == ST_FLUSHING));
-    ASSERT(result != SR_BLOCK);
+    RTC_DCHECK(result != SR_BLOCK);
     if (result == SR_EOS) {
       // Note: Don't signal SR_EOS this iteration, unless out_len is zero
       state_ = ST_COMPLETE;
@@ -118,7 +118,7 @@ TransformAdapter::Write(const void * data, size_t data_len,
                                                   buffer_ + len_, &out_len,
                                                   (state_ == ST_FLUSHING));
 
-      ASSERT(result != SR_BLOCK);
+      RTC_DCHECK(result != SR_BLOCK);
       if (result == SR_EOS) {
         // Note: Don't signal SR_EOS this iteration, unless no data written
         state_ = ST_COMPLETE;

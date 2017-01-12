@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
@@ -44,7 +45,7 @@ void StunRequestManager::Send(StunRequest* request) {
 
 void StunRequestManager::SendDelayed(StunRequest* request, int delay) {
   request->set_manager(this);
-  ASSERT(requests_.find(request->id()) == requests_.end());
+  RTC_DCHECK(requests_.find(request->id()) == requests_.end());
   request->set_origin(origin_);
   request->Construct();
   requests_[request->id()] = request;
@@ -76,10 +77,10 @@ bool StunRequestManager::HasRequest(int msg_type) {
 }
 
 void StunRequestManager::Remove(StunRequest* request) {
-  ASSERT(request->manager() == this);
+  RTC_DCHECK(request->manager() == this);
   RequestMap::iterator iter = requests_.find(request->id());
   if (iter != requests_.end()) {
-    ASSERT(iter->second == request);
+    RTC_DCHECK(iter->second == request);
     requests_.erase(iter);
     thread_->Clear(request);
   }
@@ -165,7 +166,7 @@ StunRequest::StunRequest(StunMessage* request)
 }
 
 StunRequest::~StunRequest() {
-  ASSERT(manager_ != NULL);
+  RTC_DCHECK(manager_ != NULL);
   if (manager_) {
     manager_->Remove(this);
     manager_->thread_->Clear(this);
@@ -180,12 +181,12 @@ void StunRequest::Construct() {
           origin_));
     }
     Prepare(msg_);
-    ASSERT(msg_->type() != 0);
+    RTC_DCHECK(msg_->type() != 0);
   }
 }
 
 int StunRequest::type() {
-  ASSERT(msg_ != NULL);
+  RTC_DCHECK(msg_ != NULL);
   return msg_->type();
 }
 
@@ -199,13 +200,13 @@ int StunRequest::Elapsed() const {
 
 
 void StunRequest::set_manager(StunRequestManager* manager) {
-  ASSERT(!manager_);
+  RTC_DCHECK(!manager_);
   manager_ = manager;
 }
 
 void StunRequest::OnMessage(rtc::Message* pmsg) {
-  ASSERT(manager_ != NULL);
-  ASSERT(pmsg->message_id == MSG_STUN_SEND);
+  RTC_DCHECK(manager_ != NULL);
+  RTC_DCHECK(pmsg->message_id == MSG_STUN_SEND);
 
   if (timeout_) {
     OnTimeout();

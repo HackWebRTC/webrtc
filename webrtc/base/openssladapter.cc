@@ -28,6 +28,7 @@
 #include <openssl/x509v3.h>
 
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/openssl.h"
@@ -289,7 +290,7 @@ OpenSSLAdapter::~OpenSSLAdapter() {
 
 void
 OpenSSLAdapter::SetMode(SSLMode mode) {
-  ASSERT(state_ == SSL_NONE);
+  RTC_DCHECK(state_ == SSL_NONE);
   ssl_mode_ = mode;
 }
 
@@ -318,7 +319,7 @@ OpenSSLAdapter::StartSSL(const char* hostname, bool restartable) {
 int
 OpenSSLAdapter::BeginSSL() {
   LOG(LS_INFO) << "BeginSSL: " << ssl_host_name_;
-  ASSERT(state_ == SSL_CONNECTING);
+  RTC_DCHECK(state_ == SSL_CONNECTING);
 
   int err = 0;
   BIO* bio = NULL;
@@ -370,7 +371,7 @@ ssl_error:
 
 int
 OpenSSLAdapter::ContinueSSL() {
-  ASSERT(state_ == SSL_CONNECTING);
+  RTC_DCHECK(state_ == SSL_CONNECTING);
 
   // Clear the DTLS timer
   Thread::Current()->Clear(this, MSG_TIMEOUT);
@@ -627,7 +628,7 @@ void
 OpenSSLAdapter::OnConnectEvent(AsyncSocket* socket) {
   LOG(LS_INFO) << "OpenSSLAdapter::OnConnectEvent";
   if (state_ != SSL_WAIT) {
-    ASSERT(state_ == SSL_NONE);
+    RTC_DCHECK(state_ == SSL_NONE);
     AsyncSocketAdapter::OnConnectEvent(socket);
     return;
   }

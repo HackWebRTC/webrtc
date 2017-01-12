@@ -14,6 +14,7 @@
 
 #include "webrtc/api/mediacontroller.h"
 #include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringencode.h"
@@ -154,7 +155,7 @@ void ChannelManager::GetSupportedDataCodecs(
 }
 
 bool ChannelManager::Init() {
-  ASSERT(!initialized_);
+  RTC_DCHECK(!initialized_);
   if (initialized_) {
     return false;
   }
@@ -169,17 +170,17 @@ bool ChannelManager::Init() {
 
   initialized_ = worker_thread_->Invoke<bool>(
       RTC_FROM_HERE, Bind(&ChannelManager::InitMediaEngine_w, this));
-  ASSERT(initialized_);
+  RTC_DCHECK(initialized_);
   return initialized_;
 }
 
 bool ChannelManager::InitMediaEngine_w() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   return media_engine_->Init();
 }
 
 void ChannelManager::Terminate() {
-  ASSERT(initialized_);
+  RTC_DCHECK(initialized_);
   if (!initialized_) {
     return;
   }
@@ -189,12 +190,12 @@ void ChannelManager::Terminate() {
 }
 
 void ChannelManager::DestructorDeletes_w() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   media_engine_.reset(NULL);
 }
 
 void ChannelManager::Terminate_w() {
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   // Need to destroy the voice/video channels
   while (!video_channels_.empty()) {
     DestroyVideoChannel_w(video_channels_.back());
@@ -226,9 +227,9 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
     bool rtcp,
     bool srtp_required,
     const AudioOptions& options) {
-  ASSERT(initialized_);
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  ASSERT(nullptr != media_controller);
+  RTC_DCHECK(initialized_);
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(nullptr != media_controller);
   VoiceMediaChannel* media_channel = media_engine_->CreateChannel(
       media_controller->call_w(), media_controller->config(), options);
   if (!media_channel)
@@ -258,11 +259,11 @@ void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
 void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyVoiceChannel_w");
   // Destroy voice channel.
-  ASSERT(initialized_);
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(initialized_);
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   VoiceChannels::iterator it = std::find(voice_channels_.begin(),
       voice_channels_.end(), voice_channel);
-  ASSERT(it != voice_channels_.end());
+  RTC_DCHECK(it != voice_channels_.end());
   if (it == voice_channels_.end())
     return;
   voice_channels_.erase(it);
@@ -291,9 +292,9 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
     bool rtcp,
     bool srtp_required,
     const VideoOptions& options) {
-  ASSERT(initialized_);
-  ASSERT(worker_thread_ == rtc::Thread::Current());
-  ASSERT(nullptr != media_controller);
+  RTC_DCHECK(initialized_);
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(nullptr != media_controller);
   VideoMediaChannel* media_channel = media_engine_->CreateVideoChannel(
       media_controller->call_w(), media_controller->config(), options);
   if (media_channel == NULL) {
@@ -324,11 +325,11 @@ void ChannelManager::DestroyVideoChannel(VideoChannel* video_channel) {
 void ChannelManager::DestroyVideoChannel_w(VideoChannel* video_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyVideoChannel_w");
   // Destroy video channel.
-  ASSERT(initialized_);
-  ASSERT(worker_thread_ == rtc::Thread::Current());
+  RTC_DCHECK(initialized_);
+  RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   VideoChannels::iterator it = std::find(video_channels_.begin(),
       video_channels_.end(), video_channel);
-  ASSERT(it != video_channels_.end());
+  RTC_DCHECK(it != video_channels_.end());
   if (it == video_channels_.end())
     return;
 
@@ -357,7 +358,7 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel_w(
     bool rtcp,
     bool srtp_required) {
   // This is ok to alloc from a thread other than the worker thread.
-  ASSERT(initialized_);
+  RTC_DCHECK(initialized_);
   MediaConfig config;
   if (media_controller) {
     config = media_controller->config();
@@ -393,10 +394,10 @@ void ChannelManager::DestroyRtpDataChannel(RtpDataChannel* data_channel) {
 void ChannelManager::DestroyRtpDataChannel_w(RtpDataChannel* data_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyRtpDataChannel_w");
   // Destroy data channel.
-  ASSERT(initialized_);
+  RTC_DCHECK(initialized_);
   RtpDataChannels::iterator it =
       std::find(data_channels_.begin(), data_channels_.end(), data_channel);
-  ASSERT(it != data_channels_.end());
+  RTC_DCHECK(it != data_channels_.end());
   if (it == data_channels_.end())
     return;
 

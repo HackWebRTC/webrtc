@@ -214,7 +214,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
 bool UDPPort::Init() {
   stun_keepalive_lifetime_ = GetStunKeepaliveLifetime();
   if (!SharedSocket()) {
-    ASSERT(socket_ == NULL);
+    RTC_DCHECK(socket_ == NULL);
     socket_ = socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(ip(), 0), min_port(), max_port());
     if (!socket_) {
@@ -236,7 +236,7 @@ UDPPort::~UDPPort() {
 }
 
 void UDPPort::PrepareAddress() {
-  ASSERT(requests_.empty());
+  RTC_DCHECK(requests_.empty());
   if (socket_->GetState() == rtc::AsyncPacketSocket::STATE_BOUND) {
     OnLocalAddressReady(socket_, socket_->GetLocalAddress());
   }
@@ -325,8 +325,8 @@ void UDPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
                            size_t size,
                            const rtc::SocketAddress& remote_addr,
                            const rtc::PacketTime& packet_time) {
-  ASSERT(socket == socket_);
-  ASSERT(!remote_addr.IsUnresolvedIP());
+  RTC_DCHECK(socket == socket_);
+  RTC_DCHECK(!remote_addr.IsUnresolvedIP());
 
   // Look for a response from the STUN server.
   // Even if the response doesn't match one of our outstanding requests, we
@@ -356,7 +356,7 @@ void UDPPort::OnReadyToSend(rtc::AsyncPacketSocket* socket) {
 void UDPPort::SendStunBindingRequests() {
   // We will keep pinging the stun server to make sure our NAT pin-hole stays
   // open until the deadline (specified in SendStunBindingRequest).
-  ASSERT(requests_.empty());
+  RTC_DCHECK(requests_.empty());
 
   for (ServerAddresses::const_iterator it = server_addresses_.begin();
        it != server_addresses_.end(); ++it) {
@@ -377,7 +377,7 @@ void UDPPort::ResolveStunAddress(const rtc::SocketAddress& stun_addr) {
 
 void UDPPort::OnResolveResult(const rtc::SocketAddress& input,
                               int error) {
-  ASSERT(resolver_.get() != NULL);
+  RTC_DCHECK(resolver_.get() != NULL);
 
   rtc::SocketAddress resolved;
   if (error != 0 ||

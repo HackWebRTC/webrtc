@@ -219,7 +219,7 @@ PseudoTcp::PseudoTcp(IPseudoTcpNotify* notify, uint32_t conv)
       m_sbuf_len(DEFAULT_SND_BUF_SIZE),
       m_sbuf(m_sbuf_len) {
   // Sanity check on buffer sizes (needed for OnTcpWriteable notification logic)
-  ASSERT(m_rbuf_len + MIN_PACKET < m_sbuf_len);
+  RTC_DCHECK(m_rbuf_len + MIN_PACKET < m_sbuf_len);
 
   uint32_t now = Now();
 
@@ -236,7 +236,7 @@ PseudoTcp::PseudoTcp(IPseudoTcpNotify* notify, uint32_t conv)
 
   m_msslevel = 0;
   m_largest = 0;
-  ASSERT(MIN_PACKET > PACKET_OVERHEAD);
+  RTC_DCHECK(MIN_PACKET > PACKET_OVERHEAD);
   m_mss = MIN_PACKET - PACKET_OVERHEAD;
   m_mtu_advise = MAX_PACKET;
 
@@ -388,10 +388,10 @@ void PseudoTcp::SetOption(Option opt, int value) {
   } else if (opt == OPT_ACKDELAY) {
     m_ack_delay = value;
   } else if (opt == OPT_SNDBUF) {
-    ASSERT(m_state == TCP_LISTEN);
+    RTC_DCHECK(m_state == TCP_LISTEN);
     resizeSendBuffer(value);
   } else if (opt == OPT_RCVBUF) {
-    ASSERT(m_state == TCP_LISTEN);
+    RTC_DCHECK(m_state == TCP_LISTEN);
     resizeReceiveBuffer(value);
   } else {
     RTC_NOTREACHED();
@@ -435,7 +435,7 @@ int PseudoTcp::Recv(char* buffer, size_t len) {
     m_error = EWOULDBLOCK;
     return SOCKET_ERROR;
   }
-  ASSERT(result == rtc::SR_SUCCESS);
+  RTC_DCHECK(result == rtc::SR_SUCCESS);
 
   size_t available_space = 0;
   m_rbuf.GetWriteRemaining(&available_space);
@@ -492,7 +492,7 @@ uint32_t PseudoTcp::queue(const char* data, uint32_t len, bool bCtrl) {
   m_sbuf.GetWriteRemaining(&available_space);
 
   if (len > static_cast<uint32_t>(available_space)) {
-    ASSERT(!bCtrl);
+    RTC_DCHECK(!bCtrl);
     len = static_cast<uint32_t>(available_space);
   }
 
@@ -517,7 +517,7 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32_t seq,
                                                 uint8_t flags,
                                                 uint32_t offset,
                                                 uint32_t len) {
-  ASSERT(HEADER_SIZE + len <= MAX_PACKET);
+  RTC_DCHECK(HEADER_SIZE + len <= MAX_PACKET);
 
   uint32_t now = Now();
 
@@ -540,8 +540,8 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32_t seq,
     rtc::StreamResult result = m_sbuf.ReadOffset(
         buffer.get() + HEADER_SIZE, len, offset, &bytes_read);
     RTC_UNUSED(result);
-    ASSERT(result == rtc::SR_SUCCESS);
-    ASSERT(static_cast<uint32_t>(bytes_read) == len);
+    RTC_DCHECK(result == rtc::SR_SUCCESS);
+    RTC_DCHECK(static_cast<uint32_t>(bytes_read) == len);
   }
 
 #if _DEBUGMSG >= _DBG_VERBOSE
@@ -750,7 +750,7 @@ bool PseudoTcp::process(Segment& seg) {
     m_sbuf.ConsumeReadData(nAcked);
 
     for (uint32_t nFree = nAcked; nFree > 0;) {
-      ASSERT(!m_slist.empty());
+      RTC_DCHECK(!m_slist.empty());
       if (nFree < m_slist.front().len) {
         m_slist.front().len -= nFree;
         nFree = 0;
@@ -912,7 +912,7 @@ bool PseudoTcp::process(Segment& seg) {
 
       rtc::StreamResult result = m_rbuf.WriteOffset(seg.data, seg.len,
                                                           nOffset, NULL);
-      ASSERT(result == rtc::SR_SUCCESS);
+      RTC_DCHECK(result == rtc::SR_SUCCESS);
       RTC_UNUSED(result);
 
       if (seg.seq == m_rcv_nxt) {
@@ -989,7 +989,7 @@ bool PseudoTcp::transmit(const SList::iterator& seg, uint32_t now) {
       return false;
     }
 
-    ASSERT(wres == IPseudoTcpNotify::WR_TOO_LARGE);
+    RTC_DCHECK(wres == IPseudoTcpNotify::WR_TOO_LARGE);
 
     while (true) {
       if (PACKET_MAXIMUMS[m_msslevel + 1] == 0) {
@@ -1110,7 +1110,7 @@ void PseudoTcp::attemptSend(SendFlags sflags) {
     SList::iterator it = m_slist.begin();
     while (it->xmit > 0) {
       ++it;
-      ASSERT(it != m_slist.end());
+      RTC_DCHECK(it != m_slist.end());
     }
     SList::iterator seg = it;
 
@@ -1203,7 +1203,7 @@ void PseudoTcp::parseOptions(const char* data, uint32_t len) {
     }
 
     // Length of this option.
-    ASSERT(len != 0);
+    RTC_DCHECK(len != 0);
     RTC_UNUSED(len);
     uint8_t opt_len = 0;
     buf.ReadUInt8(&opt_len);
@@ -1273,7 +1273,7 @@ void PseudoTcp::resizeReceiveBuffer(uint32_t new_size) {
   // buffer. This should always be true because this method is called either
   // before connection is established or when peers are exchanging connect
   // messages.
-  ASSERT(result);
+  RTC_DCHECK(result);
   RTC_UNUSED(result);
   m_rbuf_len = new_size;
   m_rwnd_scale = scale_factor;

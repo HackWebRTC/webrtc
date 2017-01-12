@@ -365,7 +365,7 @@ class UsedIds {
     while (IsIdUsed(next_id_) && next_id_ >= min_allowed_id_) {
       --next_id_;
     }
-    ASSERT(next_id_ >= min_allowed_id_);
+    RTC_DCHECK(next_id_ >= min_allowed_id_);
     return next_id_;
   }
 
@@ -1470,7 +1470,7 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
           return NULL;
         }
       } else {
-        ASSERT(IsMediaContentOfType(&*it, MEDIA_TYPE_DATA));
+        RTC_DCHECK(IsMediaContentOfType(&*it, MEDIA_TYPE_DATA));
         if (!AddDataContentForAnswer(offer, options, current_description,
                                      &current_streams, answer.get())) {
           return NULL;

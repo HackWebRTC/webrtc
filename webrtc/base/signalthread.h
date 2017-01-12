@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/nullsocketserver.h"
 #include "webrtc/base/sigslot.h"
@@ -124,7 +125,7 @@ class SignalThread
       t_->cs_.Enter();
       // If refcount_ is zero then the object has already been deleted and we
       // will be double-deleting it in ~EnterExit()! (shouldn't happen)
-      ASSERT(t_->refcount_ != 0);
+      RTC_DCHECK(t_->refcount_ != 0);
       ++t_->refcount_;
     }
     ~EnterExit() UNLOCK_FUNCTION() {

@@ -30,7 +30,7 @@ class SCOPED_LOCKABLE DebugNonReentrantCritScope {
       EXCLUSIVE_LOCK_FUNCTION(cs)
       : cs_(cs), locked_(locked) {
     cs_->Enter();
-    ASSERT(!*locked_);
+    RTC_DCHECK(!*locked_);
     *locked_ = true;
   }
 
@@ -329,7 +329,7 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
       }
       // If this was a dispose message, delete it and skip it.
       if (MQID_DISPOSE == pmsg->message_id) {
-        ASSERT(NULL == pmsg->phandler);
+        RTC_DCHECK(NULL == pmsg->phandler);
         delete pmsg->pdata;
         *pmsg = Message();
         continue;

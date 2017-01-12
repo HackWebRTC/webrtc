@@ -258,7 +258,7 @@ static bool GetAudioSsrcByTrackId(const SessionDescription* session_description,
 static bool GetTrackIdBySsrc(const SessionDescription* session_description,
                              uint32_t ssrc,
                              std::string* track_id) {
-  ASSERT(track_id != NULL);
+  RTC_DCHECK(track_id != NULL);
 
   const cricket::ContentInfo* audio_info =
       cricket::GetFirstAudioContent(session_description);
@@ -502,7 +502,7 @@ WebRtcSession::WebRtcSession(
 }
 
 WebRtcSession::~WebRtcSession() {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   // Destroy video_channel_ first since it may have a pointer to the
   // voice_channel_.
   if (video_channel_) {
@@ -698,7 +698,7 @@ void WebRtcSession::CreateAnswer(
 
 bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
                                         std::string* err_desc) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
 
   // Takes the ownership of |desc| regardless of the result.
   std::unique_ptr<SessionDescriptionInterface> desc_temp(desc);
@@ -752,7 +752,7 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
 
 bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
                                          std::string* err_desc) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
 
   // Takes the ownership of |desc| regardless of the result.
   std::unique_ptr<SessionDescriptionInterface> desc_temp(desc);
@@ -853,7 +853,7 @@ void WebRtcSession::LogState(State old_state, State new_state) {
 }
 
 void WebRtcSession::SetState(State state) {
-  ASSERT(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   if (state != state_) {
     LogState(state_, state);
     state_ = state;
@@ -862,7 +862,7 @@ void WebRtcSession::SetState(State state) {
 }
 
 void WebRtcSession::SetError(Error error, const std::string& error_desc) {
-  ASSERT(signaling_thread_->IsCurrent());
+  RTC_DCHECK(signaling_thread_->IsCurrent());
   if (error != error_) {
     error_ = error;
     error_desc_ = error_desc;
@@ -872,11 +872,11 @@ void WebRtcSession::SetError(Error error, const std::string& error_desc) {
 bool WebRtcSession::UpdateSessionState(
     Action action, cricket::ContentSource source,
     std::string* err_desc) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
 
   // If there's already a pending error then no state transition should happen.
   // But all call-sites should be verifying this before calling us!
-  ASSERT(error() == ERROR_NONE);
+  RTC_DCHECK(error() == ERROR_NONE);
   std::string td_err;
   if (action == kOffer) {
     if (!PushdownTransportDescription(source, cricket::CA_OFFER, &td_err)) {
@@ -944,7 +944,7 @@ WebRtcSession::Action WebRtcSession::GetAction(const std::string& type) {
   } else if (type == SessionDescriptionInterface::kAnswer) {
     return WebRtcSession::kAnswer;
   }
-  ASSERT(false && "unknown action type");
+  RTC_NOTREACHED() << "unknown action type";
   return WebRtcSession::kOffer;
 }
 
@@ -1240,7 +1240,7 @@ std::string WebRtcSession::BadStateErrMsg(State state) {
 }
 
 bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (!voice_channel_) {
     LOG(LS_ERROR) << "CanInsertDtmf: No audio channel exists.";
     return false;
@@ -1259,7 +1259,7 @@ bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {
 
 bool WebRtcSession::InsertDtmf(const std::string& track_id,
                                int code, int duration) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (!voice_channel_) {
     LOG(LS_ERROR) << "InsertDtmf: No audio channel exists.";
     return false;
@@ -1364,7 +1364,7 @@ bool WebRtcSession::ReadyToSendData() const {
 }
 
 std::unique_ptr<SessionStats> WebRtcSession::GetStats_s() {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   ChannelNamePairs channel_name_pairs;
   if (voice_channel()) {
     channel_name_pairs.voice = rtc::Optional<ChannelNamePair>(ChannelNamePair(
@@ -1524,7 +1524,7 @@ void WebRtcSession::SetIceConnectionReceiving(bool receiving) {
 void WebRtcSession::OnTransportControllerCandidatesGathered(
     const std::string& transport_name,
     const cricket::Candidates& candidates) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   int sdp_mline_index;
   if (!GetLocalCandidateMediaIndex(transport_name, &sdp_mline_index)) {
     LOG(LS_ERROR) << "OnTransportControllerCandidatesGathered: content name "
@@ -1547,7 +1547,7 @@ void WebRtcSession::OnTransportControllerCandidatesGathered(
 
 void WebRtcSession::OnTransportControllerCandidatesRemoved(
     const std::vector<cricket::Candidate>& candidates) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   // Sanity check.
   for (const cricket::Candidate& candidate : candidates) {
     if (candidate.transport_name().empty()) {
@@ -1872,7 +1872,7 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
 
 std::unique_ptr<SessionStats> WebRtcSession::GetStats_n(
     const ChannelNamePairs& channel_name_pairs) {
-  ASSERT(network_thread()->IsCurrent());
+  RTC_DCHECK(network_thread()->IsCurrent());
   std::unique_ptr<SessionStats> session_stats(new SessionStats());
   for (const auto channel_name_pair : { &channel_name_pairs.voice,
                                         &channel_name_pairs.video,
@@ -2001,13 +2001,13 @@ bool WebRtcSession::ValidateBundleSettings(const SessionDescription* desc) {
 
   const cricket::ContentGroup* bundle_group =
       desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
-  ASSERT(bundle_group != NULL);
+  RTC_DCHECK(bundle_group != NULL);
 
   const cricket::ContentInfos& contents = desc->contents();
   for (cricket::ContentInfos::const_iterator citer = contents.begin();
        citer != contents.end(); ++citer) {
     const cricket::ContentInfo* content = (&*citer);
-    ASSERT(content != NULL);
+    RTC_DCHECK(content != NULL);
     if (bundle_group->HasContentName(content->name) &&
         !content->rejected && content->type == cricket::NS_JINGLE_RTP) {
       if (!HasRtcpMuxEnabled(content))
@@ -2160,7 +2160,7 @@ bool WebRtcSession::SrtpRequired() const {
 
 void WebRtcSession::OnTransportControllerGatheringState(
     cricket::IceGatheringState state) {
-  ASSERT(signaling_thread()->IsCurrent());
+  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (state == cricket::kIceGatheringGathering) {
     if (ice_observer_) {
       ice_observer_->OnIceGatheringChange(

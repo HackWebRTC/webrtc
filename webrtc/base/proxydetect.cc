@@ -33,6 +33,7 @@
 #include <memory>
 
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/httpcommon.h"
 #include "webrtc/base/httpcommon-inl.h"
@@ -410,7 +411,7 @@ bool GetFirefoxProfilePath(Pathname* path) {
 }
 
 bool GetDefaultFirefoxProfile(Pathname* profile_path) {
-  ASSERT(NULL != profile_path);
+  RTC_DCHECK(NULL != profile_path);
   Pathname path;
   if (!GetFirefoxProfilePath(&path)) {
     return false;

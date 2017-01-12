@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/checks.h"
 
 namespace rtc {
 
@@ -27,7 +28,7 @@ AsyncSocketAdapter::~AsyncSocketAdapter() {
 }
 
 void AsyncSocketAdapter::Attach(AsyncSocket* socket) {
-  ASSERT(!socket_);
+  RTC_DCHECK(!socket_);
   socket_ = socket;
   if (socket_) {
     socket_->SignalConnectEvent.connect(this,

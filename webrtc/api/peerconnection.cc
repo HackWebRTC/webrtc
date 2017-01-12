@@ -2072,7 +2072,7 @@ void PeerConnection::OnRemoteTrackRemoved(const std::string& stream_label,
       stream->RemoveTrack(video_track);
     }
   } else {
-    ASSERT(false && "Invalid media type");
+    RTC_NOTREACHED() << "Invalid media type";
   }
 }
 
