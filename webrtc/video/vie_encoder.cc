@@ -464,7 +464,7 @@ void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
 
   // Capture time may come from clock with an offset and drift from clock_.
   int64_t capture_ntp_time_ms;
-  if (video_frame.ntp_time_ms() != 0) {
+  if (video_frame.ntp_time_ms() > 0) {
     capture_ntp_time_ms = video_frame.ntp_time_ms();
   } else if (video_frame.render_time_ms() != 0) {
     capture_ntp_time_ms = video_frame.render_time_ms() + delta_ntp_internal_ms_;
