@@ -13,6 +13,7 @@ package org.appspot.apprtc.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import android.os.Environment;
 import android.support.test.filters.LargeTest;
 import android.support.test.filters.MediumTest;
 import android.support.test.filters.SmallTest;
@@ -80,9 +81,10 @@ public class FileVideoCapturerTest {
   public void testVideoCaptureFromFile() throws InterruptedException, IOException {
     final int FRAME_WIDTH = 4;
     final int FRAME_HEIGHT = 4;
-    final FileVideoCapturer fileVideoCapturer = new FileVideoCapturer(
-        "/sdcard/chromium_tests_root/webrtc/examples/androidtests/src/org/appspot/apprtc/test/"
-        + "capturetestvideo.y4m");
+    final FileVideoCapturer fileVideoCapturer =
+        new FileVideoCapturer(Environment.getExternalStorageDirectory().getPath()
+            + "/chromium_tests_root/webrtc/examples/androidtests/src/org/appspot/apprtc/test/"
+            + "capturetestvideo.y4m");
     final MockCapturerObserver capturerObserver = new MockCapturerObserver();
     fileVideoCapturer.initialize(null, null, capturerObserver);
     fileVideoCapturer.startCapture(FRAME_WIDTH, FRAME_HEIGHT, 33);

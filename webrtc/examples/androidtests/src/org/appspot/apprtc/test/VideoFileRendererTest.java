@@ -12,6 +12,7 @@ package org.webrtc;
 
 import static org.junit.Assert.assertEquals;
 
+import android.os.Environment;
 import android.support.test.filters.SmallTest;
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +32,8 @@ public class VideoFileRendererTest {
   @SmallTest
   public void testYuvRenderingToFile() throws InterruptedException, IOException {
     EglBase eglBase = EglBase.create();
-    final String videoOutPath = "/sdcard/chromium_tests_root/testvideoout.y4m";
+    final String videoOutPath = Environment.getExternalStorageDirectory().getPath()
+        + "/chromium_tests_root/testvideoout.y4m";
     int frameWidth = 4;
     int frameHeight = 4;
     VideoFileRenderer videoFileRenderer =

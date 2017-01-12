@@ -7,9 +7,6 @@
        to suppress.py. -->
   <issue id="NewApi"></issue>
 
-  <issue id="Locale" severity="ignore"/>
-  <issue id="SdCardPath" severity="ignore"/>
-  <issue id="UseValueOf" severity="ignore"/>
   <issue id="InlinedApi" severity="ignore"/>
   <issue id="DefaultLocale" severity="ignore"/>
   <issue id="Assert" severity="ignore"/>
