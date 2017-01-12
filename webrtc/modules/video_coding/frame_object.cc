@@ -63,6 +63,8 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   _length = frame_size;
   _frameType = first_packet->frameType;
   GetBitstream(_buffer);
+  _encodedWidth = first_packet->width;
+  _encodedHeight = first_packet->height;
 
   // FrameObject members
   timestamp = first_packet->timestamp;
