@@ -30,7 +30,7 @@ int16_t MapSetting(GainControl::Mode mode) {
     case GainControl::kFixedDigital:
       return kAgcModeFixedDigital;
   }
-  RTC_DCHECK(false);
+  RTC_NOTREACHED();
   return -1;
 }
 

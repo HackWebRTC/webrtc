@@ -1743,7 +1743,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoder(
 
   // This shouldn't happen, we should not be trying to create something we don't
   // support.
-  RTC_DCHECK(false);
+  RTC_NOTREACHED();
   return AllocatedEncoder(NULL, cricket::VideoCodec(), false);
 }
 

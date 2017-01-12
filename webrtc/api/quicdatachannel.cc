@@ -173,7 +173,7 @@ void QuicDataChannel::OnQueuedBytesWritten(net::QuicStreamId stream_id,
   SetBufferedAmount_w(buffered_amount_ - queued_bytes_written);
   const auto& kv = write_blocked_quic_streams_.find(stream_id);
   if (kv == write_blocked_quic_streams_.end()) {
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
     return;
   }
   cricket::ReliableQuicStream* stream = kv->second;
@@ -301,7 +301,7 @@ void QuicDataChannel::OnDataReceived(net::QuicStreamId stream_id,
   RTC_DCHECK(data);
   const auto& kv = incoming_quic_messages_.find(stream_id);
   if (kv == incoming_quic_messages_.end()) {
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
     return;
   }
   Message& message = kv->second;

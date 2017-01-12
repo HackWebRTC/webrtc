@@ -33,7 +33,7 @@ int16_t MapSetting(EchoControlMobile::RoutingMode mode) {
     case EchoControlMobile::kLoudSpeakerphone:
       return 4;
   }
-  RTC_DCHECK(false);
+  RTC_NOTREACHED();
   return -1;
 }
 

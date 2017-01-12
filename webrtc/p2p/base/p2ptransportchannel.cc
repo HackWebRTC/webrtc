@@ -1420,7 +1420,7 @@ void P2PTransportChannel::UpdateState() {
         RTC_DCHECK(state == STATE_CONNECTING || state == STATE_COMPLETED);
         break;
       default:
-        RTC_DCHECK(false);
+        RTC_NOTREACHED();
         break;
     }
     state_ = state;
@@ -1759,7 +1759,7 @@ bool P2PTransportChannel::GetUseCandidateAttr(Connection* conn,
       return selected || better_than_selected;
     }
     default:
-      RTC_DCHECK(false);
+      RTC_NOTREACHED();
       return false;
   }
 }

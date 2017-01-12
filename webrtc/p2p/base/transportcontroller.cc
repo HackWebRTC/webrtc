@@ -759,7 +759,7 @@ void TransportController::OnChannelCandidateGathered_n(
 
   // We should never signal peer-reflexive candidates.
   if (candidate.type() == PRFLX_PORT_TYPE) {
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
     return;
   }
   std::vector<Candidate> candidates;

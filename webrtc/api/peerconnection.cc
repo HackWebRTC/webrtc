@@ -327,7 +327,7 @@ RTCErrorType ParseIceServerUrl(
     default:
       // We shouldn't get to this point with an invalid service_type, we should
       // have returned an error already.
-      RTC_DCHECK(false) << "Unexpected service type";
+      RTC_NOTREACHED() << "Unexpected service type";
       return RTCErrorType::INTERNAL_ERROR;
   }
   return RTCErrorType::NONE;
@@ -548,7 +548,7 @@ std::string GenerateRtcpCname() {
   std::string cname;
   if (!rtc::CreateRandomString(kRtcpCnameLength, &cname)) {
     LOG(LS_ERROR) << "Failed to generate CNAME.";
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
   }
   return cname;
 }
@@ -1617,7 +1617,7 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
       break;
     }
     default:
-      RTC_DCHECK(false && "Not implemented");
+      RTC_NOTREACHED() << "Not implemented";
       break;
   }
 }
@@ -2042,7 +2042,7 @@ void PeerConnection::OnRemoteTrackSeen(const std::string& stream_label,
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
     CreateVideoReceiver(stream, track_id, ssrc);
   } else {
-    RTC_DCHECK(false && "Invalid media type");
+    RTC_NOTREACHED() << "Invalid media type";
   }
 }
 

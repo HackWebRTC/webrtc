@@ -58,7 +58,7 @@ int GetProtocolPriority(cricket::ProtocolType protocol) {
     case cricket::PROTO_SSLTCP:
       return 0;
     default:
-      RTC_DCHECK(false);
+      RTC_NOTREACHED();
       return 0;
   }
 }
@@ -70,7 +70,7 @@ int GetAddressFamilyPriority(int ip_family) {
     case AF_INET:
       return 1;
     default:
-      RTC_DCHECK(false);
+      RTC_NOTREACHED();
       return 0;
   }
 }

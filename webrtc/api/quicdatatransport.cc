@@ -134,7 +134,7 @@ void QuicDataTransport::OnDataReceived(net::QuicStreamId id,
                                        size_t len) {
   const auto& quic_stream_kv = quic_stream_by_id_.find(id);
   if (quic_stream_kv == quic_stream_by_id_.end()) {
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
     return;
   }
   cricket::ReliableQuicStream* stream = quic_stream_kv->second;

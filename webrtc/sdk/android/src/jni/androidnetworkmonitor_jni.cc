@@ -84,7 +84,7 @@ static rtc::AdapterType AdapterTypeFromNetworkType(NetworkType network_type) {
       // Map it to VPN for now.
       return rtc::ADAPTER_TYPE_VPN;
     default:
-      RTC_DCHECK(false) << "Invalid network type " << network_type;
+      RTC_NOTREACHED() << "Invalid network type " << network_type;
       return rtc::ADAPTER_TYPE_UNKNOWN;
   }
 }

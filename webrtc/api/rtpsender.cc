@@ -388,7 +388,7 @@ void VideoRtpSender::SetVideoSend() {
       break;
   }
   if (!channel_->SetVideoSend(ssrc_, track_->enabled(), &options, track_)) {
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
   }
 }
 

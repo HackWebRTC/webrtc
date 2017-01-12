@@ -430,7 +430,7 @@ void VirtualSocket::OnMessage(Message* pmsg) {
   } else if (pmsg->message_id == MSG_ID_ADDRESS_BOUND) {
     SignalAddressReady(this, GetLocalAddress());
   } else {
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
   }
 }
 
@@ -689,7 +689,7 @@ int VirtualSocketServer::Bind(VirtualSocket* socket, SocketAddress* addr) {
   if (!IPIsUnspec(addr->ipaddr())) {
     addr->SetIP(addr->ipaddr().Normalized());
   } else {
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
   }
 
   if (addr->port() == 0) {

@@ -411,7 +411,7 @@ static std::string GetErrorCodeString(webrtc::WebRtcSession::Error err) {
     GET_STRING_OF_ERROR_CODE(ERROR_CONTENT)
     GET_STRING_OF_ERROR_CODE(ERROR_TRANSPORT)
     default:
-      RTC_DCHECK(false);
+      RTC_NOTREACHED();
       break;
   }
   return result;
@@ -1192,7 +1192,7 @@ cricket::IceConfig WebRtcSession::ParseIceConfig(
       gathering_policy = cricket::GATHER_CONTINUALLY;
       break;
     default:
-      RTC_DCHECK(false);
+      RTC_NOTREACHED();
       gathering_policy = cricket::GATHER_ONCE;
   }
   cricket::IceConfig ice_config;

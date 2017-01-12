@@ -738,7 +738,7 @@ bool BaseChannel::SendPacket(bool rtcp,
     // (and SetSend(true) is called).
     LOG(LS_ERROR) << "Can't send outgoing RTP packet when SRTP is inactive"
                   << " and crypto is required";
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
     return false;
   }
 
@@ -998,7 +998,7 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp_channel) {
           NULL, 0, false,
           &dtls_buffer[0], dtls_buffer.size())) {
     LOG(LS_WARNING) << "DTLS-SRTP key export failed";
-    RTC_DCHECK(false);  // This should never happen
+    RTC_NOTREACHED();  // This should never happen
     return false;
   }
 

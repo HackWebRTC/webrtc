@@ -66,7 +66,7 @@ void AudioRtpReceiver::OnSetVolume(double volume) {
   // setting the volume to the source when the track is disabled.
   if (!stopped_ && track_->enabled()) {
     if (!channel_->SetOutputVolume(ssrc_, cached_volume_)) {
-      RTC_DCHECK(false);
+      RTC_NOTREACHED();
     }
   }
 }
@@ -107,7 +107,7 @@ void AudioRtpReceiver::Reconfigure() {
   }
   if (!channel_->SetOutputVolume(ssrc_,
                                  track_->enabled() ? cached_volume_ : 0)) {
-    RTC_DCHECK(false);
+    RTC_NOTREACHED();
   }
 }
 
@@ -161,7 +161,7 @@ VideoRtpReceiver::VideoRtpReceiver(MediaStreamInterface* stream,
         << "VideoRtpReceiver::VideoRtpReceiver: No video channel exists.";
   } else {
     if (!channel_->SetSink(ssrc_, &broadcaster_)) {
-      RTC_DCHECK(false);
+      RTC_NOTREACHED();
     }
   }
   stream->AddTrack(track_);
@@ -225,7 +225,7 @@ void VideoRtpReceiver::SetChannel(cricket::VideoChannel* channel) {
   channel_ = channel;
   if (channel_) {
     if (!channel_->SetSink(ssrc_, &broadcaster_)) {
-      RTC_DCHECK(false);
+      RTC_NOTREACHED();
     }
     channel_->SignalFirstPacketReceived.connect(
         this, &VideoRtpReceiver::OnFirstPacketReceived);
