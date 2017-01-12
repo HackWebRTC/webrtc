@@ -18,7 +18,7 @@ rtc_static_library("video_coding") {
     "decoding_state.h",
     "encoded_frame.cc",
     "encoded_frame.h",
-    "fec_tables_xor.h",
+    "fec_rate_table.h",
     "frame_buffer.cc",
     "frame_buffer.h",
     "frame_buffer2.cc",

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_FEC_TABLES_XOR_H_
-#define WEBRTC_MODULES_VIDEO_CODING_FEC_TABLES_XOR_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_FEC_RATE_TABLE_H_
+#define WEBRTC_MODULES_VIDEO_CODING_FEC_RATE_TABLE_H_
 
 // This is a private header for media_opt_util.cc.
 // It should not be included by other files.
@@ -18,10 +18,12 @@ namespace webrtc {
 
 // Table for Protection factor (code rate) of delta frames, for the XOR FEC.
 // Input is the packet loss and an effective rate (bits/frame).
-// Output is array kCodeRateXORTable[k], where k = rate_i*129 + loss_j;
+// Output is array kFecRateTable[k], where k = rate_i*129 + loss_j;
 // loss_j = 0,1,..128, and rate_i varies over some range.
-static const int kSizeCodeRateXORTable = 6450;
-static const unsigned char kCodeRateXORTable[kSizeCodeRateXORTable] = {
+// TODO(brandtr): Consider replacing this big static table with a closed-form
+// expression instead.
+static const int kFecRateTableSize = 6450;
+static const unsigned char kFecRateTable[kFecRateTableSize] = {
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     0,   0,   0,   11,  11,  11,  11,  11,  11,  11,  11,  11,  11,  11,  11,
@@ -456,4 +458,4 @@ static const unsigned char kCodeRateXORTable[kSizeCodeRateXORTable] = {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_FEC_TABLES_XOR_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_FEC_RATE_TABLE_H_

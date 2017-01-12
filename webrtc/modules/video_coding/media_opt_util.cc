@@ -20,7 +20,7 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
-#include "webrtc/modules/video_coding/fec_tables_xor.h"
+#include "webrtc/modules/video_coding/fec_rate_table.h"
 #include "webrtc/modules/video_coding/nack_fec_tables.h"
 
 namespace webrtc {
@@ -309,10 +309,10 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
   uint16_t indexTable = rateIndexTable * kPacketLossMax + packetLoss;
 
   // Check on table index
-  assert(indexTable < kSizeCodeRateXORTable);
+  RTC_DCHECK_LT(indexTable, kFecRateTableSize);
 
   // Protection factor for P frame
-  codeRateDelta = kCodeRateXORTable[indexTable];
+  codeRateDelta = kFecRateTable[indexTable];
 
   if (packetLoss > lossThr && avgTotPackets > packetNumThr) {
     // Set a minimum based on first partition size.
@@ -341,13 +341,13 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
       0));
   uint16_t indexTableKey = rateIndexTable * kPacketLossMax + packetLoss;
 
-  indexTableKey = VCM_MIN(indexTableKey, kSizeCodeRateXORTable);
+  indexTableKey = VCM_MIN(indexTableKey, kFecRateTableSize);
 
   // Check on table index
-  assert(indexTableKey < kSizeCodeRateXORTable);
+  assert(indexTableKey < kFecRateTableSize);
 
   // Protection factor for I frame
-  codeRateKey = kCodeRateXORTable[indexTableKey];
+  codeRateKey = kFecRateTable[indexTableKey];
 
   // Boosting for Key frame.
   int boostKeyProt = _scaleProtKey * codeRateDelta;
