@@ -314,7 +314,6 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
       picture_id_(0),
       egl_context_(egl_context),
       sw_fallback_required_(false) {
-  ScopedLocalRefFrame local_ref_frame(jni);
   // It would be nice to avoid spinning up a new thread per MediaCodec, and
   // instead re-use e.g. the PeerConnectionFactory's |worker_thread_|, but bug
   // 2732 means that deadlocks abound.  This class synchronously trampolines
@@ -1267,8 +1266,9 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
   }
   if (FindMatchingCodec(supported_codecs_, codec)) {
     ALOGD << "Create HW video encoder for " << codec.name;
-    return new MediaCodecVideoEncoder(AttachCurrentThreadIfNeeded(), codec,
-                                      egl_context_);
+    JNIEnv* jni = AttachCurrentThreadIfNeeded();
+    ScopedLocalRefFrame local_ref_frame(jni);
+    return new MediaCodecVideoEncoder(jni, codec, egl_context_);
   }
   ALOGW << "Can not find HW video encoder for type " << codec.name;
   return nullptr;
