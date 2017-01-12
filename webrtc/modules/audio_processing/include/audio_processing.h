@@ -253,11 +253,7 @@ class AudioProcessing {
       float initial_peak_level_dbfs = -6.0206f;
     } level_controller;
     struct ResidualEchoDetector {
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-      bool enabled = false;
-#else
       bool enabled = true;
-#endif
     } residual_echo_detector;
 
     struct HighPassFilter {
