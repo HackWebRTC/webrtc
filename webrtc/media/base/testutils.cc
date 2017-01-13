@@ -22,7 +22,6 @@
 #include "webrtc/base/stream.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/testutils.h"
-#include "webrtc/media/base/rtpdump.h"
 #include "webrtc/media/base/videocapturer.h"
 
 namespace cricket {
@@ -95,117 +94,6 @@ bool RawRtcpPacket::EqualsTo(const RawRtcpPacket& packet) const {
       type == packet.type &&
       length == packet.length &&
       0 == memcmp(payload, packet.payload, sizeof(payload));
-}
-
-/////////////////////////////////////////////////////////////////////////
-// Implementation of class RtpTestUtility
-/////////////////////////////////////////////////////////////////////////
-const RawRtpPacket RtpTestUtility::kTestRawRtpPackets[] = {
-    {0x80, 0, 0, 0,  RtpTestUtility::kDefaultSsrc, "RTP frame 0"},
-    {0x80, 0, 1, 30, RtpTestUtility::kDefaultSsrc, "RTP frame 1"},
-    {0x80, 0, 2, 30, RtpTestUtility::kDefaultSsrc, "RTP frame 1"},
-    {0x80, 0, 3, 60, RtpTestUtility::kDefaultSsrc, "RTP frame 2"}
-};
-const RawRtcpPacket RtpTestUtility::kTestRawRtcpPackets[] = {
-    // The Version is 2, the Length is 2, and the payload has 8 bytes.
-    {0x80, 0, 2, "RTCP0000"},
-    {0x80, 0, 2, "RTCP0001"},
-    {0x80, 0, 2, "RTCP0002"},
-    {0x80, 0, 2, "RTCP0003"},
-};
-
-size_t RtpTestUtility::GetTestPacketCount() {
-  return std::min(arraysize(kTestRawRtpPackets),
-                  arraysize(kTestRawRtcpPackets));
-}
-
-bool RtpTestUtility::WriteTestPackets(size_t count,
-                                      bool rtcp,
-                                      uint32_t rtp_ssrc,
-                                      RtpDumpWriter* writer) {
-  if (!writer || count > GetTestPacketCount()) return false;
-
-  bool result = true;
-  uint32_t elapsed_time_ms = 0;
-  for (size_t i = 0; i < count && result; ++i) {
-    rtc::ByteBufferWriter buf;
-    if (rtcp) {
-      kTestRawRtcpPackets[i].WriteToByteBuffer(&buf);
-    } else {
-      kTestRawRtpPackets[i].WriteToByteBuffer(rtp_ssrc, &buf);
-    }
-
-    RtpDumpPacket dump_packet(buf.Data(), buf.Length(), elapsed_time_ms, rtcp);
-    elapsed_time_ms += kElapsedTimeInterval;
-    result &= (rtc::SR_SUCCESS == writer->WritePacket(dump_packet));
-  }
-  return result;
-}
-
-bool RtpTestUtility::VerifyTestPacketsFromStream(size_t count,
-                                                 rtc::StreamInterface* stream,
-                                                 uint32_t ssrc) {
-  if (!stream) return false;
-
-  uint32_t prev_elapsed_time = 0;
-  bool result = true;
-  stream->Rewind();
-  RtpDumpLoopReader reader(stream);
-  for (size_t i = 0; i < count && result; ++i) {
-    // Which loop and which index in the loop are we reading now.
-    size_t loop = i / GetTestPacketCount();
-    size_t index = i % GetTestPacketCount();
-
-    RtpDumpPacket packet;
-    result &= (rtc::SR_SUCCESS == reader.ReadPacket(&packet));
-    // Check the elapsed time of the dump packet.
-    result &= (packet.elapsed_time >= prev_elapsed_time);
-    prev_elapsed_time = packet.elapsed_time;
-
-    // Check the RTP or RTCP packet.
-    rtc::ByteBufferReader buf(reinterpret_cast<const char*>(&packet.data[0]),
-                              packet.data.size());
-    if (packet.is_rtcp()) {
-      // RTCP packet.
-      RawRtcpPacket rtcp_packet;
-      result &= rtcp_packet.ReadFromByteBuffer(&buf);
-      result &= rtcp_packet.EqualsTo(kTestRawRtcpPackets[index]);
-    } else {
-      // RTP packet.
-      RawRtpPacket rtp_packet;
-      result &= rtp_packet.ReadFromByteBuffer(&buf);
-      result &= rtp_packet.SameExceptSeqNumTimestampSsrc(
-          kTestRawRtpPackets[index],
-          static_cast<uint16_t>(kTestRawRtpPackets[index].sequence_number +
-                                loop * GetTestPacketCount()),
-          static_cast<uint32_t>(kTestRawRtpPackets[index].timestamp +
-                                loop * kRtpTimestampIncrease),
-          ssrc);
-    }
-  }
-
-  stream->Rewind();
-  return result;
-}
-
-bool RtpTestUtility::VerifyPacket(const RtpDumpPacket* dump,
-                                  const RawRtpPacket* raw,
-                                  bool header_only) {
-  if (!dump || !raw) return false;
-
-  rtc::ByteBufferWriter buf;
-  raw->WriteToByteBuffer(RtpTestUtility::kDefaultSsrc, &buf);
-
-  if (header_only) {
-    size_t header_len = 0;
-    dump->GetRtpHeaderLen(&header_len);
-    return header_len == dump->data.size() &&
-        buf.Length() > dump->data.size() &&
-        0 == memcmp(buf.Data(), &dump->data[0], dump->data.size());
-  } else {
-    return buf.Length() == dump->data.size() &&
-        0 == memcmp(buf.Data(), &dump->data[0], dump->data.size());
-  }
 }
 
 // Implementation of VideoCaptureListener.

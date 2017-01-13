@@ -61,8 +61,6 @@ rtc_static_library("rtc_media_base") {
     "base/mediaengine.h",
     "base/rtpdataengine.cc",
     "base/rtpdataengine.h",
-    "base/rtpdump.cc",
-    "base/rtpdump.h",
     "base/rtputils.cc",
     "base/rtputils.h",
     "base/streamparams.cc",
@@ -324,7 +322,6 @@ if (rtc_include_tests) {
     sources = [
       "base/codec_unittest.cc",
       "base/rtpdataengine_unittest.cc",
-      "base/rtpdump_unittest.cc",
       "base/rtputils_unittest.cc",
       "base/streamparams_unittest.cc",
       "base/turnutils_unittest.cc",

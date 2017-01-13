@@ -79,43 +79,6 @@ struct RawRtcpPacket {
   char payload[16];
 };
 
-class RtpTestUtility {
- public:
-  static size_t GetTestPacketCount();
-
-  // Write the first count number of kTestRawRtcpPackets or kTestRawRtpPackets,
-  // depending on the flag rtcp. If it is RTP, use the specified SSRC. Return
-  // true if successful.
-  static bool WriteTestPackets(size_t count,
-                               bool rtcp,
-                               uint32_t rtp_ssrc,
-                               RtpDumpWriter* writer);
-
-  // Loop read the first count number of packets from the specified stream.
-  // Verify the elapsed time of the dump packets increase monotonically. If the
-  // stream is a RTP stream, verify the RTP sequence number, timestamp, and
-  // payload. If the stream is a RTCP stream, verify the RTCP header and
-  // payload.
-  static bool VerifyTestPacketsFromStream(size_t count,
-                                          rtc::StreamInterface* stream,
-                                          uint32_t ssrc);
-
-  // Verify the dump packet is the same as the raw RTP packet.
-  static bool VerifyPacket(const RtpDumpPacket* dump,
-                           const RawRtpPacket* raw,
-                           bool header_only);
-
-  static const uint32_t kDefaultSsrc = 1;
-  static const uint32_t kRtpTimestampIncrease = 90;
-  static const uint32_t kDefaultTimeIncrease = 30;
-  static const uint32_t kElapsedTimeInterval = 10;
-  static const RawRtpPacket kTestRawRtpPackets[];
-  static const RawRtcpPacket kTestRawRtcpPackets[];
-
- private:
-  RtpTestUtility() {}
-};
-
 // Test helper for testing VideoCapturer implementations.
 class VideoCapturerListener
     : public sigslot::has_slots<>,
