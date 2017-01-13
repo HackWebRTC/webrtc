@@ -117,6 +117,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   QualityThreshold qp_threshold_ GUARDED_BY(crit_);
   QualityThreshold variance_threshold_ GUARDED_BY(crit_);
   SampleCounter qp_sample_ GUARDED_BY(crit_);
+  int num_bad_states_ GUARDED_BY(crit_);
+  int num_certain_states_ GUARDED_BY(crit_);
   VideoReceiveStream::Stats stats_ GUARDED_BY(crit_);
   RateStatistics decode_fps_estimator_ GUARDED_BY(crit_);
   RateStatistics renders_fps_estimator_ GUARDED_BY(crit_);

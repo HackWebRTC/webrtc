@@ -25,6 +25,7 @@ namespace {
 const int64_t kFreqOffsetProcessIntervalMs = 40000;
 
 // Configuration for bad call detection.
+const int kBadCallMinRequiredSamples = 10;
 const int kMinSampleLengthMs = 990;
 const int kNumMeasurements = 10;
 const int kNumMeasurementsVariance = kNumMeasurements * 1.5;
@@ -60,6 +61,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
                           kHighVarianceThreshold,
                           kBadFraction,
                           kNumMeasurementsVariance),
+      num_bad_states_(0),
+      num_certain_states_(0),
       // 1000ms window, scale 1000 for ms to s.
       decode_fps_estimator_(1000, 1000),
       renders_fps_estimator_(1000, 1000),
@@ -201,6 +204,29 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                                counters.UniqueNackRequestsInPercent());
     }
   }
+
+  if (num_certain_states_ >= kBadCallMinRequiredSamples) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.BadCall.Any",
+                             100 * num_bad_states_ / num_certain_states_);
+  }
+  rtc::Optional<double> fps_fraction =
+      fps_threshold_.FractionHigh(kBadCallMinRequiredSamples);
+  if (fps_fraction) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.BadCall.FrameRate",
+                             static_cast<int>(100 * (1 - *fps_fraction)));
+  }
+  rtc::Optional<double> variance_fraction =
+      variance_threshold_.FractionHigh(kBadCallMinRequiredSamples);
+  if (variance_fraction) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.BadCall.FrameRateVariance",
+                             static_cast<int>(100 * *variance_fraction));
+  }
+  rtc::Optional<double> qp_fraction =
+      qp_threshold_.FractionHigh(kBadCallMinRequiredSamples);
+  if (qp_fraction) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.BadCall.Qp",
+                             static_cast<int>(100 * *qp_fraction));
+  }
 }
 
 void ReceiveStatisticsProxy::QualitySample() {
@@ -262,6 +288,13 @@ void ReceiveStatisticsProxy::QualitySample() {
 
   last_sample_time_ = now;
   qp_sample_.Reset();
+
+  if (fps_threshold_.IsHigh() || variance_threshold_.IsHigh() ||
+      qp_threshold_.IsHigh()) {
+    if (any_bad)
+      ++num_bad_states_;
+    ++num_certain_states_;
+  }
 }
 
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
@@ -282,7 +315,8 @@ void ReceiveStatisticsProxy::OnDecoderImplementationName(
 void ReceiveStatisticsProxy::OnIncomingRate(unsigned int framerate,
                                             unsigned int bitrate_bps) {
   rtc::CritScope lock(&crit_);
-  QualitySample();
+  if (stats_.rtp_stats.first_packet_time_ms != -1)
+    QualitySample();
   stats_.network_frame_rate = framerate;
   stats_.total_bitrate_bps = bitrate_bps;
 }

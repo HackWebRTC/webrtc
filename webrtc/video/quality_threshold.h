@@ -29,6 +29,7 @@ class QualityThreshold {
   void AddMeasurement(int measurement);
   rtc::Optional<bool> IsHigh() const;
   rtc::Optional<double> CalculateVariance() const;
+  rtc::Optional<double> FractionHigh(int min_required_samples) const;
 
  private:
   const std::unique_ptr<int[]> buffer_;
@@ -42,6 +43,8 @@ class QualityThreshold {
   int sum_;
   int count_low_;
   int count_high_;
+  int num_high_states_;
+  int num_certain_states_;
 };
 
 }  // namespace webrtc

@@ -94,4 +94,40 @@ TEST(QualityThresholdTest, BetweenThresholds) {
   EXPECT_FALSE(thresh.IsHigh());
 }
 
+TEST(QualityThresholdTest, FractionHigh) {
+  const int kLowThreshold = 0;
+  const int kHighThreshold = 2;
+  const float kFraction = 0.75f;
+  const int kMaxMeasurements = 10;
+
+  const int kBetweenThresholds = (kLowThreshold + kHighThreshold) / 2;
+  const int kNeededMeasurements =
+      static_cast<int>(kFraction * kMaxMeasurements + 1);
+
+  QualityThreshold thresh(kLowThreshold, kHighThreshold, kFraction,
+                          kMaxMeasurements);
+
+  for (int i = 0; i < kMaxMeasurements; ++i) {
+    EXPECT_FALSE(thresh.FractionHigh(1));
+    thresh.AddMeasurement(kBetweenThresholds);
+  }
+
+  for (int i = 0; i < kNeededMeasurements; i++) {
+    EXPECT_FALSE(thresh.FractionHigh(1));
+    thresh.AddMeasurement(kHighThreshold);
+  }
+  EXPECT_FALSE(thresh.FractionHigh(2));
+  ASSERT_TRUE(thresh.FractionHigh(1));
+  EXPECT_NEAR(*thresh.FractionHigh(1), 1, 0.001);
+
+  for (int i = 0; i < kNeededMeasurements; i++) {
+    EXPECT_NEAR(*thresh.FractionHigh(1), 1, 0.001);
+    thresh.AddMeasurement(kLowThreshold);
+  }
+  EXPECT_NEAR(
+      *thresh.FractionHigh(1),
+      static_cast<double>(kNeededMeasurements) / (kNeededMeasurements + 1),
+      0.001);
+}
+
 }  // namespace webrtc
