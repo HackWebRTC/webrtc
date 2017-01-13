@@ -90,7 +90,9 @@ class ChannelManager {
   // Creates a voice channel, to be associated with the specified session.
   VoiceChannel* CreateVoiceChannel(
       webrtc::MediaControllerInterface* media_controller,
-      TransportController* transport_controller,
+      TransportChannel* rtp_transport,
+      TransportChannel* rtcp_transport,
+      rtc::Thread* signaling_thread,
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
@@ -102,7 +104,9 @@ class ChannelManager {
   // associated with the specified session.
   VideoChannel* CreateVideoChannel(
       webrtc::MediaControllerInterface* media_controller,
-      TransportController* transport_controller,
+      TransportChannel* rtp_transport,
+      TransportChannel* rtcp_transport,
+      rtc::Thread* signaling_thread,
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
@@ -112,7 +116,9 @@ class ChannelManager {
   void DestroyVideoChannel(VideoChannel* video_channel);
   RtpDataChannel* CreateRtpDataChannel(
       webrtc::MediaControllerInterface* media_controller,
-      TransportController* transport_controller,
+      TransportChannel* rtp_transport,
+      TransportChannel* rtcp_transport,
+      rtc::Thread* signaling_thread,
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
@@ -161,7 +167,9 @@ class ChannelManager {
   bool SetCryptoOptions_w(const rtc::CryptoOptions& crypto_options);
   VoiceChannel* CreateVoiceChannel_w(
       webrtc::MediaControllerInterface* media_controller,
-      TransportController* transport_controller,
+      TransportChannel* rtp_transport,
+      TransportChannel* rtcp_transport,
+      rtc::Thread* signaling_thread,
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
@@ -170,7 +178,9 @@ class ChannelManager {
   void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
   VideoChannel* CreateVideoChannel_w(
       webrtc::MediaControllerInterface* media_controller,
-      TransportController* transport_controller,
+      TransportChannel* rtp_transport,
+      TransportChannel* rtcp_transport,
+      rtc::Thread* signaling_thread,
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,
@@ -179,7 +189,9 @@ class ChannelManager {
   void DestroyVideoChannel_w(VideoChannel* video_channel);
   RtpDataChannel* CreateRtpDataChannel_w(
       webrtc::MediaControllerInterface* media_controller,
-      TransportController* transport_controller,
+      TransportChannel* rtp_transport,
+      TransportChannel* rtcp_transport,
+      rtc::Thread* signaling_thread,
       const std::string& content_name,
       const std::string* bundle_transport_name,
       bool rtcp,

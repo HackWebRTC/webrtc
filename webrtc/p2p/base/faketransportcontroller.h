@@ -665,6 +665,11 @@ class FakeTransportController : public TransportController {
     return new FakeCandidatePair(local_candidate, remote_candidate);
   }
 
+  void DestroyRtcpTransport(const std::string& transport_name) {
+    DestroyTransportChannel_n(transport_name,
+                              cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  }
+
  protected:
   // The ICE channel is never actually used by TransportController directly,
   // since (currently) the DTLS channel pretends to be both ICE + DTLS. This

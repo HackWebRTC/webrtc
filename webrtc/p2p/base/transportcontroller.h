@@ -113,6 +113,8 @@ class TransportController : public sigslot::has_slots<>,
 
   // Creates a channel if it doesn't exist. Otherwise, increments a reference
   // count and returns an existing channel.
+  TransportChannel* CreateTransportChannel(const std::string& transport_name,
+                                           int component);
   virtual TransportChannel* CreateTransportChannel_n(
       const std::string& transport_name,
       int component);

@@ -506,16 +506,13 @@ WebRtcSession::~WebRtcSession() {
   // Destroy video_channel_ first since it may have a pointer to the
   // voice_channel_.
   if (video_channel_) {
-    SignalVideoChannelDestroyed();
-    channel_manager_->DestroyVideoChannel(video_channel_.release());
+    DestroyVideoChannel();
   }
   if (voice_channel_) {
-    SignalVoiceChannelDestroyed();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
+    DestroyVoiceChannel();
   }
   if (rtp_data_channel_) {
-    SignalDataChannelDestroyed();
-    channel_manager_->DestroyRtpDataChannel(rtp_data_channel_.release());
+    DestroyDataChannel();
   }
   if (sctp_transport_) {
     SignalDataChannelDestroyed();
@@ -736,14 +733,12 @@ bool WebRtcSession::SetLocalDescription(SessionDescriptionInterface* desc,
   if (!UpdateSessionState(action, cricket::CS_LOCAL, err_desc)) {
     return false;
   }
-
   if (remote_description()) {
     // Now that we have a local description, we can push down remote candidates.
     UseCandidatesInSessionDescription(remote_description());
   }
 
   pending_ice_restarts_.clear();
-
   if (error() != ERROR_NONE) {
     return BadLocalSdp(desc->type(), GetSessionErrorMsg(), err_desc);
   }
@@ -1074,25 +1069,42 @@ bool WebRtcSession::EnableBundle(const cricket::ContentGroup& bundle) {
                   << " on " << transport_name << "with QUIC.";
   }
 #endif
-
   auto maybe_set_transport = [this, bundle,
                               transport_name](cricket::BaseChannel* ch) {
     if (!ch || !bundle.HasContentName(ch->content_name())) {
       return true;
     }
 
-    if (ch->transport_name() == transport_name) {
+    std::string old_transport_name = ch->transport_name();
+    if (old_transport_name == transport_name) {
       LOG(LS_INFO) << "BUNDLE already enabled for " << ch->content_name()
                    << " on " << transport_name << ".";
       return true;
     }
 
-    if (!ch->SetTransport(transport_name)) {
+    cricket::TransportChannel* rtp_transport =
+        transport_controller_->CreateTransportChannel(
+            transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+    bool need_rtcp = (ch->rtcp_transport() != nullptr);
+    cricket::TransportChannel* rtcp_transport = nullptr;
+    if (need_rtcp) {
+      rtcp_transport = transport_controller_->CreateTransportChannel_n(
+          transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+    }
+
+    if (!ch->SetTransport(rtp_transport, rtcp_transport)) {
       LOG(LS_WARNING) << "Failed to enable BUNDLE for " << ch->content_name();
       return false;
     }
     LOG(LS_INFO) << "Enabled BUNDLE for " << ch->content_name() << " on "
                  << transport_name << ".";
+    DestroyTransport(old_transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+    // If the channel needs rtcp, it means that the channel used to have a
+    // rtcp transport which needs to be deleted now.
+    if (need_rtcp) {
+      DestroyTransport(old_transport_name,
+                       cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+    }
     return true;
   };
 
@@ -1680,23 +1692,20 @@ void WebRtcSession::RemoveUnusedChannels(const SessionDescription* desc) {
   const cricket::ContentInfo* video_info =
       cricket::GetFirstVideoContent(desc);
   if ((!video_info || video_info->rejected) && video_channel_) {
-    SignalVideoChannelDestroyed();
-    channel_manager_->DestroyVideoChannel(video_channel_.release());
+    DestroyVideoChannel();
   }
 
   const cricket::ContentInfo* voice_info =
       cricket::GetFirstAudioContent(desc);
   if ((!voice_info || voice_info->rejected) && voice_channel_) {
-    SignalVoiceChannelDestroyed();
-    channel_manager_->DestroyVoiceChannel(voice_channel_.release());
+    DestroyVoiceChannel();
   }
 
   const cricket::ContentInfo* data_info =
       cricket::GetFirstDataContent(desc);
   if (!data_info || data_info->rejected) {
     if (rtp_data_channel_) {
-      SignalDataChannelDestroyed();
-      channel_manager_->DestroyRtpDataChannel(rtp_data_channel_.release());
+      DestroyDataChannel();
     }
     if (sctp_transport_) {
       SignalDataChannelDestroyed();
@@ -1779,13 +1788,30 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content,
   bool require_rtcp_mux =
       rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;
   bool create_rtcp_transport_channel = !require_rtcp_mux;
+
+  std::string transport_name =
+      bundle_transport ? *bundle_transport : content->name;
+
+  cricket::TransportChannel* rtp_transport =
+      transport_controller_->CreateTransportChannel(
+          transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  cricket::TransportChannel* rtcp_transport = nullptr;
+  if (create_rtcp_transport_channel) {
+    rtcp_transport = transport_controller_->CreateTransportChannel(
+        transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  }
+
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
-      media_controller_, transport_controller_.get(), content->name,
+      media_controller_, rtp_transport, rtcp_transport,
+      transport_controller_->signaling_thread(), content->name,
       bundle_transport, create_rtcp_transport_channel, SrtpRequired(),
       audio_options_));
   if (!voice_channel_) {
     return false;
   }
+
+  voice_channel_->SignalDestroyRtcpTransport.connect(
+      this, &WebRtcSession::OnDestroyRtcpTransport_n);
   if (require_rtcp_mux) {
     voice_channel_->ActivateRtcpMux();
   }
@@ -1804,13 +1830,31 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content,
   bool require_rtcp_mux =
       rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;
   bool create_rtcp_transport_channel = !require_rtcp_mux;
+
+  std::string transport_name =
+      bundle_transport ? *bundle_transport : content->name;
+
+  cricket::TransportChannel* rtp_transport =
+      transport_controller_->CreateTransportChannel(
+          transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  cricket::TransportChannel* rtcp_transport = nullptr;
+  if (create_rtcp_transport_channel) {
+    rtcp_transport = transport_controller_->CreateTransportChannel(
+        transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  }
+
   video_channel_.reset(channel_manager_->CreateVideoChannel(
-      media_controller_, transport_controller_.get(), content->name,
+      media_controller_, rtp_transport, rtcp_transport,
+      transport_controller_->signaling_thread(), content->name,
       bundle_transport, create_rtcp_transport_channel, SrtpRequired(),
       video_options_));
+
   if (!video_channel_) {
     return false;
   }
+
+  video_channel_->SignalDestroyRtcpTransport.connect(
+      this, &WebRtcSession::OnDestroyRtcpTransport_n);
   if (require_rtcp_mux) {
     video_channel_->ActivateRtcpMux();
   }
@@ -1851,12 +1895,30 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
     bool require_rtcp_mux =
         rtcp_mux_policy_ == PeerConnectionInterface::kRtcpMuxPolicyRequire;
     bool create_rtcp_transport_channel = !sctp && !require_rtcp_mux;
+
+    std::string transport_name =
+        bundle_transport ? *bundle_transport : content->name;
+    cricket::TransportChannel* rtp_transport =
+        transport_controller_->CreateTransportChannel(
+            transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+    cricket::TransportChannel* rtcp_transport = nullptr;
+    if (create_rtcp_transport_channel) {
+      rtcp_transport = transport_controller_->CreateTransportChannel(
+          transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+    }
+
     rtp_data_channel_.reset(channel_manager_->CreateRtpDataChannel(
-        media_controller_, transport_controller_.get(), content->name,
+        media_controller_, rtp_transport, rtcp_transport,
+        transport_controller_->signaling_thread(), content->name,
         bundle_transport, create_rtcp_transport_channel, SrtpRequired()));
+
     if (!rtp_data_channel_) {
       return false;
     }
+
+    rtp_data_channel_->SignalDestroyRtcpTransport.connect(
+        this, &WebRtcSession::OnDestroyRtcpTransport_n);
+
     if (require_rtcp_mux) {
       rtp_data_channel_->ActivateRtcpMux();
     }
@@ -1867,6 +1929,7 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
   }
 
   SignalDataChannelCreated();
+
   return true;
 }
 
@@ -2318,4 +2381,57 @@ const std::string WebRtcSession::GetTransportName(
   return channel->transport_name();
 }
 
+void WebRtcSession::DestroyTransport(const std::string& transport_name,
+                                     int component) {
+  network_thread_->Invoke<void>(
+      RTC_FROM_HERE,
+      rtc::Bind(&cricket::TransportController::DestroyTransportChannel_n,
+                transport_controller_.get(), transport_name, component));
+}
+
+void WebRtcSession::OnDestroyRtcpTransport_n(
+    const std::string& transport_name) {
+  ASSERT(network_thread()->IsCurrent());
+  transport_controller_->DestroyTransportChannel_n(
+      transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+}
+
+void WebRtcSession::DestroyVideoChannel() {
+  SignalVideoChannelDestroyed();
+  RTC_DCHECK(video_channel_->rtp_transport());
+  std::string transport_name;
+  transport_name = video_channel_->rtp_transport()->transport_name();
+  bool need_to_delete_rtcp = (video_channel_->rtcp_transport() != nullptr);
+  channel_manager_->DestroyVideoChannel(video_channel_.release());
+  DestroyTransport(transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  if (need_to_delete_rtcp) {
+    DestroyTransport(transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  }
+}
+
+void WebRtcSession::DestroyVoiceChannel() {
+  SignalVoiceChannelDestroyed();
+  RTC_DCHECK(voice_channel_->rtp_transport());
+  std::string transport_name;
+  transport_name = voice_channel_->rtp_transport()->transport_name();
+  bool need_to_delete_rtcp = (voice_channel_->rtcp_transport() != nullptr);
+  channel_manager_->DestroyVoiceChannel(voice_channel_.release());
+  DestroyTransport(transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  if (need_to_delete_rtcp) {
+    DestroyTransport(transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  }
+}
+
+void WebRtcSession::DestroyDataChannel() {
+  SignalDataChannelDestroyed();
+  RTC_DCHECK(rtp_data_channel_->rtp_transport());
+  std::string transport_name;
+  transport_name = rtp_data_channel_->rtp_transport()->transport_name();
+  bool need_to_delete_rtcp = (rtp_data_channel_->rtcp_transport() != nullptr);
+  channel_manager_->DestroyRtpDataChannel(rtp_data_channel_.release());
+  DestroyTransport(transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  if (need_to_delete_rtcp) {
+    DestroyTransport(transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  }
+}
 }  // namespace webrtc

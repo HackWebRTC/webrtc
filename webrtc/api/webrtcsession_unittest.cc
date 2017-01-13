@@ -306,7 +306,7 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
     if (!ch) {
       return nullptr;
     }
-    return ch->transport_channel();
+    return ch->rtp_transport();
   }
 
   rtc::PacketTransportInterface* rtcp_transport_channel(
@@ -314,7 +314,7 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
     if (!ch) {
       return nullptr;
     }
-    return ch->rtcp_transport_channel();
+    return ch->rtcp_transport();
   }
 };
 

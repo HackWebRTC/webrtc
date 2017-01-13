@@ -227,6 +227,14 @@ void TransportController::SetMetricsObserver(
                                metrics_observer));
 }
 
+TransportChannel* TransportController::CreateTransportChannel(
+    const std::string& transport_name,
+    int component) {
+  return network_thread_->Invoke<TransportChannel*>(
+      RTC_FROM_HERE, rtc::Bind(&TransportController::CreateTransportChannel_n,
+                               this, transport_name, component));
+}
+
 TransportChannel* TransportController::CreateTransportChannel_n(
     const std::string& transport_name,
     int component) {
@@ -292,7 +300,6 @@ void TransportController::DestroyTransportChannel_n(
     const std::string& transport_name,
     int component) {
   RTC_DCHECK(network_thread_->IsCurrent());
-
   auto it = GetChannelIterator_n(transport_name, component);
   if (it == channels_.end()) {
     LOG(LS_WARNING) << "Attempting to delete " << transport_name
@@ -313,7 +320,6 @@ void TransportController::DestroyTransportChannel_n(
   if (!t->HasChannels()) {
     transports_.erase(transport_name);
   }
-
   // Removing a channel could cause aggregate state to change.
   UpdateAggregateStates_n();
 }

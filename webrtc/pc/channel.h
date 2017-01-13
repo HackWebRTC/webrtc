@@ -80,13 +80,14 @@ class BaseChannel
   // RTP/RTCP packets without using SRTP (either using SDES or DTLS-SRTP).
   BaseChannel(rtc::Thread* worker_thread,
               rtc::Thread* network_thread,
+              rtc::Thread* signaling_thread,
               MediaChannel* channel,
-              TransportController* transport_controller,
               const std::string& content_name,
               bool rtcp,
               bool srtp_required);
   virtual ~BaseChannel();
-  bool Init_w(const std::string* bundle_transport_name);
+  bool Init_w(TransportChannel* rtp_transport,
+              TransportChannel* rtcp_transport);
   // Deinit may be called multiple times and is simply ignored if it's already
   // done.
   void Deinit();
@@ -111,7 +112,8 @@ class BaseChannel
   // description doesn't support RTCP mux, setting the remote
   // description will fail.
   void ActivateRtcpMux();
-  bool SetTransport(const std::string& transport_name);
+  bool SetTransport(TransportChannel* rtp_transport,
+                    TransportChannel* rtcp_transport);
   bool PushdownLocalDescription(const SessionDescription* local_desc,
                                 ContentAction action,
                                 std::string* error_desc);
@@ -159,11 +161,14 @@ class BaseChannel
   // Forward TransportChannel SignalSentPacket to worker thread.
   sigslot::signal1<const rtc::SentPacket&> SignalSentPacket;
 
-  // Only public for unit tests.  Otherwise, consider private.
-  TransportChannel* transport_channel() const { return transport_channel_; }
-  TransportChannel* rtcp_transport_channel() const {
-    return rtcp_transport_channel_;
-  }
+  // Emitted whenever the rtcp-mux is active and the rtcp-transport can be
+  // destroyed.
+  sigslot::signal1<const std::string&> SignalDestroyRtcpTransport;
+
+  TransportChannel* rtp_transport() const { return rtp_transport_; }
+  TransportChannel* rtcp_transport() const { return rtcp_transport_; }
+
+  bool NeedsRtcpTransport();
 
   // Made public for easier testing.
   //
@@ -193,15 +198,15 @@ class BaseChannel
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_; }
 
-  // Sets the |transport_channel_| (and |rtcp_transport_channel_|, if
-  // |rtcp_enabled_| is true). Gets the transport channels from
-  // |transport_controller_|.
+  // Sets the |rtp_transport_| (and |rtcp_transport_|, if
+  // |rtcp_enabled_| is true).
   // This method also updates writability and "ready-to-send" state.
-  bool SetTransport_n(const std::string& transport_name);
+  bool SetTransport_n(TransportChannel* rtp_transport,
+                      TransportChannel* rtcp_transport);
 
   // This does not update writability or "ready-to-send" state; it just
   // disconnects from the old channel and connects to the new one.
-  void SetTransportChannel_n(bool rtcp, TransportChannel* new_channel);
+  void SetTransportChannel_n(bool rtcp, TransportChannel* new_transport);
 
   bool was_ever_writable() const { return was_ever_writable_; }
   void set_local_content_direction(MediaContentDirection direction) {
@@ -222,9 +227,7 @@ class BaseChannel
   // called.
   bool IsReadyToReceiveMedia_w() const;
   bool IsReadyToSendMedia_w() const;
-  rtc::Thread* signaling_thread() {
-    return transport_controller_->signaling_thread();
-  }
+  rtc::Thread* signaling_thread() { return signaling_thread_; }
 
   void ConnectToTransportChannel(TransportChannel* tc);
   void DisconnectFromTransportChannel(TransportChannel* tc);
@@ -359,9 +362,9 @@ class BaseChannel
   }
 
  private:
-  bool InitNetwork_n(const std::string* bundle_transport_name);
+  bool InitNetwork_n(TransportChannel* rtp_transport,
+                     TransportChannel* rtcp_transport);
   void DisconnectTransportChannels_n();
-  void DestroyTransportChannels_n();
   void SignalSentPacket_n(rtc::PacketTransportInterface* transport,
                           const rtc::SentPacket& sent_packet);
   void SignalSentPacket_w(const rtc::SentPacket& sent_packet);
@@ -372,22 +375,21 @@ class BaseChannel
 
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
+  rtc::Thread* const signaling_thread_;
   rtc::AsyncInvoker invoker_;
 
   const std::string content_name_;
   std::unique_ptr<ConnectionMonitor> connection_monitor_;
 
-  // Transport related members that should be accessed from network thread.
-  TransportController* const transport_controller_;
   std::string transport_name_;
   // Is RTCP used at all by this type of channel?
   // Expected to be true (as of typing this) for everything except data
   // channels.
   const bool rtcp_enabled_;
   // TODO(johan): Replace TransportChannel* with rtc::PacketTransportInterface*.
-  TransportChannel* transport_channel_ = nullptr;
+  TransportChannel* rtp_transport_ = nullptr;
   std::vector<std::pair<rtc::Socket::Option, int> > socket_options_;
-  TransportChannel* rtcp_transport_channel_ = nullptr;
+  TransportChannel* rtcp_transport_ = nullptr;
   std::vector<std::pair<rtc::Socket::Option, int> > rtcp_socket_options_;
   SrtpFilter srtp_filter_;
   RtcpMuxFilter rtcp_mux_filter_;
@@ -422,14 +424,15 @@ class VoiceChannel : public BaseChannel {
  public:
   VoiceChannel(rtc::Thread* worker_thread,
                rtc::Thread* network_thread,
+               rtc::Thread* signaling_thread,
                MediaEngineInterface* media_engine,
                VoiceMediaChannel* channel,
-               TransportController* transport_controller,
                const std::string& content_name,
                bool rtcp,
                bool srtp_required);
   ~VoiceChannel();
-  bool Init_w(const std::string* bundle_transport_name);
+  bool Init_w(TransportChannel* rtp_transport,
+              TransportChannel* rtcp_transport);
 
   // Configure sending media on the stream with SSRC |ssrc|
   // If there is only one sending stream SSRC 0 can be used.
@@ -540,14 +543,15 @@ class VoiceChannel : public BaseChannel {
 class VideoChannel : public BaseChannel {
  public:
   VideoChannel(rtc::Thread* worker_thread,
-               rtc::Thread* netwokr_thread,
+               rtc::Thread* network_thread,
+               rtc::Thread* signaling_thread,
                VideoMediaChannel* channel,
-               TransportController* transport_controller,
                const std::string& content_name,
                bool rtcp,
                bool srtp_required);
   ~VideoChannel();
-  bool Init_w(const std::string* bundle_transport_name);
+  bool Init_w(TransportChannel* rtp_transport,
+              TransportChannel* rtcp_transport);
 
   // downcasts a MediaChannel
   VideoMediaChannel* media_channel() const override {
@@ -620,13 +624,14 @@ class RtpDataChannel : public BaseChannel {
  public:
   RtpDataChannel(rtc::Thread* worker_thread,
                  rtc::Thread* network_thread,
-                 DataMediaChannel* media_channel,
-                 TransportController* transport_controller,
+                 rtc::Thread* signaling_thread,
+                 DataMediaChannel* channel,
                  const std::string& content_name,
                  bool rtcp,
                  bool srtp_required);
   ~RtpDataChannel();
-  bool Init_w(const std::string* bundle_transport_name);
+  bool Init_w(TransportChannel* rtp_transport,
+              TransportChannel* rtcp_transport);
 
   virtual bool SendData(const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,

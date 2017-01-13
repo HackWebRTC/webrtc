@@ -145,6 +145,12 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                                           &ChannelTest<T>::OnMediaMonitor1);
     channel2_->SignalMediaMonitor.connect(this,
                                           &ChannelTest<T>::OnMediaMonitor2);
+    channel1_->SignalDestroyRtcpTransport.connect(
+        transport_controller1_.get(),
+        &cricket::FakeTransportController::DestroyRtcpTransport);
+    channel2_->SignalDestroyRtcpTransport.connect(
+        transport_controller2_.get(),
+        &cricket::FakeTransportController::DestroyRtcpTransport);
     if ((flags1 & DTLS) && (flags2 & DTLS)) {
       flags1 = (flags1 & ~SECURE);
       flags2 = (flags2 & ~SECURE);
@@ -190,13 +196,24 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       typename T::MediaChannel* ch,
       cricket::TransportController* transport_controller,
       int flags) {
+    rtc::Thread* signaling_thread =
+        transport_controller ? transport_controller->signaling_thread()
+                             : nullptr;
     typename T::Channel* channel = new typename T::Channel(
-        worker_thread, network_thread, engine, ch, transport_controller,
+        worker_thread, network_thread, signaling_thread, engine, ch,
         cricket::CN_AUDIO, (flags & RTCP) != 0, (flags & SECURE) != 0);
     rtc::CryptoOptions crypto_options;
     crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
     channel->SetCryptoOptions(crypto_options);
-    if (!channel->Init_w(nullptr)) {
+    cricket::TransportChannel* rtp_transport =
+        transport_controller->CreateTransportChannel(
+            channel->content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTP);
+    cricket::TransportChannel* rtcp_transport = nullptr;
+    if (channel->NeedsRtcpTransport()) {
+      rtcp_transport = transport_controller->CreateTransportChannel(
+          channel->content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+    }
+    if (!channel->Init_w(rtp_transport, rtcp_transport)) {
       delete channel;
       channel = NULL;
     }
@@ -383,7 +400,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Returns true if so.
   bool CheckGcmCipher(typename T::Channel* channel, int flags) {
     int suite;
-    if (!channel->transport_channel()->GetSrtpCryptoSuite(&suite)) {
+    if (!channel->rtp_transport()->GetSrtpCryptoSuite(&suite)) {
       return false;
     }
 
@@ -513,43 +530,43 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // mux.
   void TestSetContentsRtcpMux() {
     CreateChannels(RTCP, RTCP);
-    EXPECT_TRUE(channel1_->rtcp_transport_channel() != NULL);
-    EXPECT_TRUE(channel2_->rtcp_transport_channel() != NULL);
+    EXPECT_TRUE(channel1_->rtcp_transport() != NULL);
+    EXPECT_TRUE(channel2_->rtcp_transport() != NULL);
     typename T::Content content;
     CreateContent(0, kPcmuCodec, kH264Codec, &content);
     // Both sides agree on mux. Should no longer be a separate RTCP channel.
     content.set_rtcp_mux(true);
     EXPECT_TRUE(channel1_->SetLocalContent(&content, CA_OFFER, NULL));
     EXPECT_TRUE(channel1_->SetRemoteContent(&content, CA_ANSWER, NULL));
-    EXPECT_TRUE(channel1_->rtcp_transport_channel() == NULL);
+    EXPECT_TRUE(channel1_->rtcp_transport() == NULL);
     // Only initiator supports mux. Should still have a separate RTCP channel.
     EXPECT_TRUE(channel2_->SetLocalContent(&content, CA_OFFER, NULL));
     content.set_rtcp_mux(false);
     EXPECT_TRUE(channel2_->SetRemoteContent(&content, CA_ANSWER, NULL));
-    EXPECT_TRUE(channel2_->rtcp_transport_channel() != NULL);
+    EXPECT_TRUE(channel2_->rtcp_transport() != NULL);
   }
 
   // Test that SetLocalContent and SetRemoteContent properly set RTCP
   // mux when a provisional answer is received.
   void TestSetContentsRtcpMuxWithPrAnswer() {
     CreateChannels(RTCP, RTCP);
-    EXPECT_TRUE(channel1_->rtcp_transport_channel() != NULL);
-    EXPECT_TRUE(channel2_->rtcp_transport_channel() != NULL);
+    EXPECT_TRUE(channel1_->rtcp_transport() != NULL);
+    EXPECT_TRUE(channel2_->rtcp_transport() != NULL);
     typename T::Content content;
     CreateContent(0, kPcmuCodec, kH264Codec, &content);
     content.set_rtcp_mux(true);
     EXPECT_TRUE(channel1_->SetLocalContent(&content, CA_OFFER, NULL));
     EXPECT_TRUE(channel1_->SetRemoteContent(&content, CA_PRANSWER, NULL));
-    EXPECT_TRUE(channel1_->rtcp_transport_channel() != NULL);
+    EXPECT_TRUE(channel1_->rtcp_transport() != NULL);
     EXPECT_TRUE(channel1_->SetRemoteContent(&content, CA_ANSWER, NULL));
     // Both sides agree on mux. Should no longer be a separate RTCP channel.
-    EXPECT_TRUE(channel1_->rtcp_transport_channel() == NULL);
+    EXPECT_TRUE(channel1_->rtcp_transport() == NULL);
     // Only initiator supports mux. Should still have a separate RTCP channel.
     EXPECT_TRUE(channel2_->SetLocalContent(&content, CA_OFFER, NULL));
     content.set_rtcp_mux(false);
     EXPECT_TRUE(channel2_->SetRemoteContent(&content, CA_PRANSWER, NULL));
     EXPECT_TRUE(channel2_->SetRemoteContent(&content, CA_ANSWER, NULL));
-    EXPECT_TRUE(channel2_->rtcp_transport_channel() != NULL);
+    EXPECT_TRUE(channel2_->rtcp_transport() != NULL);
   }
 
   // Test that SetRemoteContent properly deals with a content update.
@@ -931,8 +948,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
     CreateChannels(0, 0);
 
-    cricket::TransportChannel* transport_channel1 =
-        channel1_->transport_channel();
+    cricket::TransportChannel* transport_channel1 = channel1_->rtp_transport();
     ASSERT_TRUE(transport_channel1);
     typename T::MediaChannel* media_channel1 =
         static_cast<typename T::MediaChannel*>(channel1_->media_channel());
@@ -1804,8 +1820,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     error_handler.mode_ = cricket::SrtpFilter::UNPROTECT;
 
     network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      cricket::TransportChannel* transport_channel =
-          channel2_->transport_channel();
+      cricket::TransportChannel* transport_channel = channel2_->rtp_transport();
       transport_channel->SignalReadPacket(
           transport_channel, reinterpret_cast<const char*>(kBadPacket),
           sizeof(kBadPacket), rtc::PacketTime(), 0);
@@ -1818,8 +1833,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   void TestOnReadyToSend() {
     CreateChannels(RTCP, RTCP);
-    TransportChannel* rtp = channel1_->transport_channel();
-    TransportChannel* rtcp = channel1_->rtcp_transport_channel();
+    TransportChannel* rtp = channel1_->rtp_transport();
+    TransportChannel* rtcp = channel1_->rtcp_transport();
     EXPECT_FALSE(media_channel1_->ready_to_send());
 
     network_thread_->Invoke<void>(RTC_FROM_HERE,
@@ -1869,8 +1884,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     content.set_rtcp_mux(true);
     EXPECT_TRUE(channel1_->SetLocalContent(&content, CA_OFFER, NULL));
     EXPECT_TRUE(channel1_->SetRemoteContent(&content, CA_ANSWER, NULL));
-    EXPECT_TRUE(channel1_->rtcp_transport_channel() == NULL);
-    TransportChannel* rtp = channel1_->transport_channel();
+    EXPECT_TRUE(channel1_->rtcp_transport() == NULL);
+    TransportChannel* rtp = channel1_->rtp_transport();
     EXPECT_FALSE(media_channel1_->ready_to_send());
     // In the case of rtcp mux, the SignalReadyToSend() from rtp channel
     // should trigger the MediaChannel's OnReadyToSend.
@@ -2041,13 +2056,23 @@ cricket::VideoChannel* ChannelTest<VideoTraits>::CreateChannel(
     cricket::FakeVideoMediaChannel* ch,
     cricket::TransportController* transport_controller,
     int flags) {
+  rtc::Thread* signaling_thread =
+      transport_controller ? transport_controller->signaling_thread() : nullptr;
   cricket::VideoChannel* channel = new cricket::VideoChannel(
-      worker_thread, network_thread, ch, transport_controller,
-      cricket::CN_VIDEO, (flags & RTCP) != 0, (flags & SECURE) != 0);
+      worker_thread, network_thread, signaling_thread, ch, cricket::CN_VIDEO,
+      (flags & RTCP) != 0, (flags & SECURE) != 0);
   rtc::CryptoOptions crypto_options;
   crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
   channel->SetCryptoOptions(crypto_options);
-  if (!channel->Init_w(nullptr)) {
+  cricket::TransportChannel* rtp_transport =
+      transport_controller->CreateTransportChannel(
+          channel->content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  cricket::TransportChannel* rtcp_transport = nullptr;
+  if (channel->NeedsRtcpTransport()) {
+    rtcp_transport = transport_controller->CreateTransportChannel(
+        channel->content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  }
+  if (!channel->Init_w(rtp_transport, rtcp_transport)) {
     delete channel;
     channel = NULL;
   }
@@ -3313,13 +3338,23 @@ cricket::RtpDataChannel* ChannelTest<DataTraits>::CreateChannel(
     cricket::FakeDataMediaChannel* ch,
     cricket::TransportController* transport_controller,
     int flags) {
+  rtc::Thread* signaling_thread =
+      transport_controller ? transport_controller->signaling_thread() : nullptr;
   cricket::RtpDataChannel* channel = new cricket::RtpDataChannel(
-      worker_thread, network_thread, ch, transport_controller, cricket::CN_DATA,
+      worker_thread, network_thread, signaling_thread, ch, cricket::CN_DATA,
       (flags & RTCP) != 0, (flags & SECURE) != 0);
   rtc::CryptoOptions crypto_options;
   crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
   channel->SetCryptoOptions(crypto_options);
-  if (!channel->Init_w(nullptr)) {
+  cricket::TransportChannel* rtp_transport =
+      transport_controller->CreateTransportChannel(
+          channel->content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  cricket::TransportChannel* rtcp_transport = nullptr;
+  if (channel->NeedsRtcpTransport()) {
+    rtcp_transport = transport_controller->CreateTransportChannel(
+        channel->content_name(), cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  }
+  if (!channel->Init_w(rtp_transport, rtcp_transport)) {
     delete channel;
     channel = NULL;
   }
