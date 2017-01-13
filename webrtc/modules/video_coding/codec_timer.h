@@ -13,7 +13,7 @@
 
 #include <queue>
 
-#include "webrtc/base/analytics/percentile_filter.h"
+#include "webrtc/base/numerics/percentile_filter.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/typedefs.h"
 

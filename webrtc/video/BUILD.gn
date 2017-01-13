@@ -58,8 +58,8 @@ rtc_static_library("video") {
   deps = [
     "..:webrtc_common",
     "../api:transport_api",
-    "../base:rtc_analytics",
     "../base:rtc_base_approved",
+    "../base:rtc_numerics",
     "../base:rtc_task_queue",
     "../common_video",
     "../logging:rtc_event_log_api",

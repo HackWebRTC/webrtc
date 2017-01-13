@@ -837,8 +837,8 @@ rtc_static_library("webrtc_opus") {
     ":audio_encoder_interface",
     ":audio_network_adaptor",
     "../..:webrtc_common",
-    "../../base:rtc_analytics",
     "../../base:rtc_base_approved",
+    "../../base:rtc_numerics",
     "../../common_audio",
     "../../system_wrappers",
   ]

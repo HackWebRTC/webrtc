@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_BASE_ANALYTICS_PERCENTILE_FILTER_H_
-#define WEBRTC_BASE_ANALYTICS_PERCENTILE_FILTER_H_
+#ifndef WEBRTC_BASE_NUMERICS_PERCENTILE_FILTER_H_
+#define WEBRTC_BASE_NUMERICS_PERCENTILE_FILTER_H_
 
 #include <stdint.h>
 
@@ -112,4 +112,4 @@ T PercentileFilter<T>::GetPercentileValue() const {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_BASE_ANALYTICS_PERCENTILE_FILTER_H_
+#endif  // WEBRTC_BASE_NUMERICS_PERCENTILE_FILTER_H_

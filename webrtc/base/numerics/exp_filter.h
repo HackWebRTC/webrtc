@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_BASE_ANALYTICS_EXP_FILTER_H_
-#define WEBRTC_BASE_ANALYTICS_EXP_FILTER_H_
+#ifndef WEBRTC_BASE_NUMERICS_EXP_FILTER_H_
+#define WEBRTC_BASE_NUMERICS_EXP_FILTER_H_
 
 namespace rtc {
 
@@ -20,8 +20,7 @@ class ExpFilter {
  public:
   static const float kValueUndefined;
 
-  explicit ExpFilter(float alpha, float max = kValueUndefined)
-      : max_(max) {
+  explicit ExpFilter(float alpha, float max = kValueUndefined) : max_(max) {
     Reset(alpha);
   }
 
@@ -40,10 +39,10 @@ class ExpFilter {
   void UpdateBase(float alpha);
 
  private:
-  float alpha_;  // Filter factor base.
+  float alpha_;     // Filter factor base.
   float filtered_;  // Current filter output.
   const float max_;
 };
 }  // namespace rtc
 
-#endif  // WEBRTC_BASE_ANALYTICS_EXP_FILTER_H_
+#endif  // WEBRTC_BASE_NUMERICS_EXP_FILTER_H_

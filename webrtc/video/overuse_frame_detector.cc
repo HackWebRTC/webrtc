@@ -18,9 +18,9 @@
 #include <map>
 
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/analytics/exp_filter.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/numerics/exp_filter.h"
 #include "webrtc/common_video/include/frame_callback.h"
 #include "webrtc/system_wrappers/include/clock.h"
 

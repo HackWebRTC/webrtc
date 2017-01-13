@@ -93,9 +93,9 @@ rtc_static_library("video_coding") {
     ":webrtc_vp8",
     ":webrtc_vp9",
     "../..:webrtc_common",
-    "../../base:rtc_analytics",
     "../../base:rtc_base",
     "../../base:rtc_base_approved",
+    "../../base:rtc_numerics",
     "../../base:rtc_task_queue",
     "../../common_video",
     "../../system_wrappers",
@@ -135,8 +135,8 @@ rtc_static_library("video_coding_utility") {
 
   deps = [
     "../..:webrtc_common",
-    "../../base:rtc_analytics",
     "../../base:rtc_base_approved",
+    "../../base:rtc_numerics",
     "../../common_video",
     "../../system_wrappers",
   ]

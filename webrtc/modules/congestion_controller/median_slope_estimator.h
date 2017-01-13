@@ -16,8 +16,8 @@
 #include <list>
 #include <vector>
 
-#include "webrtc/base/analytics/percentile_filter.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/numerics/percentile_filter.h"
 
 namespace webrtc {
 

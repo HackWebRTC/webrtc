@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/analytics/exp_filter.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/numerics/exp_filter.h"
 #include "webrtc/base/ratetracker.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/common_types.h"

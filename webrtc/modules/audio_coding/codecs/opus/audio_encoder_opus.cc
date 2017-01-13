@@ -13,9 +13,9 @@
 #include <algorithm>
 #include <iterator>
 
-#include "webrtc/base/analytics/exp_filter.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/numerics/exp_filter.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
