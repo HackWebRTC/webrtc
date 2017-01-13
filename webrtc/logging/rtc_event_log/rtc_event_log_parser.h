@@ -47,7 +47,8 @@ class ParsedRtcEventLog {
     VIDEO_RECEIVER_CONFIG_EVENT = 8,
     VIDEO_SENDER_CONFIG_EVENT = 9,
     AUDIO_RECEIVER_CONFIG_EVENT = 10,
-    AUDIO_SENDER_CONFIG_EVENT = 11
+    AUDIO_SENDER_CONFIG_EVENT = 11,
+    AUDIO_NETWORK_ADAPTATION_EVENT = 16
   };
 
   // Reads an RtcEventLog file and returns true if parsing was successful.
@@ -122,6 +123,13 @@ class ParsedRtcEventLog {
                              int32_t* bitrate,
                              uint8_t* fraction_loss,
                              int32_t* total_packets) const;
+
+  // Reads a audio network adaptation event to a (non-NULL)
+  // AudioNetworkAdaptor::EncoderRuntimeConfig struct. Only the fields that are
+  // stored in the protobuf will be written.
+  void GetAudioNetworkAdaptation(
+      size_t index,
+      AudioNetworkAdaptor::EncoderRuntimeConfig* config) const;
 
  private:
   std::vector<rtclog::Event> events_;

@@ -887,7 +887,8 @@ if (rtc_enable_protobuf) {
     sources = [
       "audio_network_adaptor/debug_dump.proto",
     ]
-    proto_out_dir = "webrtc/modules/audio_coding/audio_network_adaptor"
+    proto_in_dir = "//"
+    proto_out_dir = "."
   }
   proto_library("ana_config_proto") {
     sources = [
@@ -914,6 +915,8 @@ rtc_static_library("audio_network_adaptor") {
     "audio_network_adaptor/debug_dump_writer.h",
     "audio_network_adaptor/dtx_controller.cc",
     "audio_network_adaptor/dtx_controller.h",
+    "audio_network_adaptor/event_log_writer.cc",
+    "audio_network_adaptor/event_log_writer.h",
     "audio_network_adaptor/fec_controller.cc",
     "audio_network_adaptor/fec_controller.h",
     "audio_network_adaptor/frame_length_controller.cc",
@@ -925,6 +928,7 @@ rtc_static_library("audio_network_adaptor") {
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
     "../../common_audio",
+    "../../logging:rtc_event_log_api",
     "../../system_wrappers",
   ]
 
@@ -934,6 +938,11 @@ rtc_static_library("audio_network_adaptor") {
       ":ana_debug_dump_proto",
     ]
     defines = [ "WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP" ]
+  }
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 

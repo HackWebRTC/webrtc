@@ -79,6 +79,8 @@ ParsedRtcEventLog::EventType GetRuntimeEventType(
       return ParsedRtcEventLog::EventType::AUDIO_RECEIVER_CONFIG_EVENT;
     case rtclog::Event::AUDIO_SENDER_CONFIG_EVENT:
       return ParsedRtcEventLog::EventType::AUDIO_SENDER_CONFIG_EVENT;
+    case rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT:
+      return ParsedRtcEventLog::EventType::AUDIO_NETWORK_ADAPTATION_EVENT;
   }
   RTC_NOTREACHED();
   return ParsedRtcEventLog::EventType::UNKNOWN_EVENT;
@@ -452,6 +454,31 @@ void ParsedRtcEventLog::GetBwePacketLossEvent(size_t index,
   if (total_packets != nullptr) {
     *total_packets = loss_event.total_packets();
   }
+}
+
+void ParsedRtcEventLog::GetAudioNetworkAdaptation(
+    size_t index,
+    AudioNetworkAdaptor::EncoderRuntimeConfig* config) const {
+  RTC_CHECK_LT(index, GetNumberOfEvents());
+  const rtclog::Event& event = events_[index];
+  RTC_CHECK(event.has_type());
+  RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT);
+  RTC_CHECK(event.has_audio_network_adaptation());
+  const rtclog::AudioNetworkAdaptation& ana_event =
+      event.audio_network_adaptation();
+  if (ana_event.has_bitrate_bps())
+    config->bitrate_bps = rtc::Optional<int>(ana_event.bitrate_bps());
+  if (ana_event.has_enable_fec())
+    config->enable_fec = rtc::Optional<bool>(ana_event.enable_fec());
+  if (ana_event.has_enable_dtx())
+    config->enable_dtx = rtc::Optional<bool>(ana_event.enable_dtx());
+  if (ana_event.has_frame_length_ms())
+    config->frame_length_ms = rtc::Optional<int>(ana_event.frame_length_ms());
+  if (ana_event.has_num_channels())
+    config->num_channels = rtc::Optional<size_t>(ana_event.num_channels());
+  if (ana_event.has_uplink_packet_loss_fraction())
+    config->uplink_packet_loss_fraction =
+        rtc::Optional<float>(ana_event.uplink_packet_loss_fraction());
 }
 
 }  // namespace webrtc

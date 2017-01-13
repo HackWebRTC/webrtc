@@ -37,6 +37,7 @@ message Event {
     VIDEO_SENDER_CONFIG_EVENT = 9;
     AUDIO_RECEIVER_CONFIG_EVENT = 10;
     AUDIO_SENDER_CONFIG_EVENT = 11;
+    AUDIO_NETWORK_ADAPTATION_EVENT = 16;
   }
 
   // required - Indicates the type of this event
@@ -65,6 +66,9 @@ message Event {
 
   // optional - but required if type == AUDIO_SENDER_CONFIG_EVENT
   optional AudioSendConfig audio_sender_config = 11;
+
+  // optional - but required if type == AUDIO_NETWORK_ADAPTATION_EVENT
+  optional AudioNetworkAdaptation audio_network_adaptation = 16;
 }
 
 message RtpPacket {
@@ -226,4 +230,25 @@ message AudioSendConfig {
 
   // RTP header extensions used for the outgoing audio stream.
   repeated RtpHeaderExtension header_extensions = 2;
+}
+
+message AudioNetworkAdaptation {
+  // Bit rate that the audio encoder is operating at.
+  optional int32 bitrate_bps = 1;
+
+  // Frame length that each encoded audio packet consists of.
+  optional int32 frame_length_ms = 2;
+
+  // Packet loss fraction that the encoder's forward error correction (FEC) is
+  // optimized for.
+  optional float uplink_packet_loss_fraction = 3;
+
+  // Whether forward error correction (FEC) is turned on or off.
+  optional bool enable_fec = 4;
+
+  // Whether discontinuous transmission (DTX) is turned on or off.
+  optional bool enable_dtx = 5;
+
+  // Number of audio channels that each encoded packet consists of.
+  optional uint32 num_channels = 6;
 }
