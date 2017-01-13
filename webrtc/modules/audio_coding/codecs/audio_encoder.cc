@@ -66,6 +66,7 @@ rtc::ArrayView<std::unique_ptr<AudioEncoder>>
 AudioEncoder::ReclaimContainedEncoders() { return nullptr; }
 
 bool AudioEncoder::EnableAudioNetworkAdaptor(const std::string& config_string,
+                                             RtcEventLog* event_log,
                                              const Clock* clock) {
   return false;
 }

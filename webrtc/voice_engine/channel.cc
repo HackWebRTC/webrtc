@@ -1532,7 +1532,7 @@ bool Channel::EnableAudioNetworkAdaptor(const std::string& config_string) {
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
     if (*encoder) {
       success = (*encoder)->EnableAudioNetworkAdaptor(
-          config_string, Clock::GetRealTimeClock());
+          config_string, event_log_proxy_.get(), Clock::GetRealTimeClock());
     }
   });
   return success;

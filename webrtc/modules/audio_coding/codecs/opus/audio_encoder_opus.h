@@ -25,6 +25,8 @@
 
 namespace webrtc {
 
+class RtcEventLog;
+
 struct CodecInst;
 
 class AudioEncoderOpus final : public AudioEncoder {
@@ -78,6 +80,7 @@ class AudioEncoderOpus final : public AudioEncoder {
 
   using AudioNetworkAdaptorCreator =
       std::function<std::unique_ptr<AudioNetworkAdaptor>(const std::string&,
+                                                         RtcEventLog*,
                                                          const Clock*)>;
   AudioEncoderOpus(
       const Config& config,
@@ -106,6 +109,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   bool SetApplication(Application application) override;
   void SetMaxPlaybackRate(int frequency_hz) override;
   bool EnableAudioNetworkAdaptor(const std::string& config_string,
+                                 RtcEventLog* event_log,
                                  const Clock* clock) override;
   void DisableAudioNetworkAdaptor() override;
   void OnReceivedUplinkPacketLossFraction(
@@ -151,6 +155,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   void ApplyAudioNetworkAdaptor();
   std::unique_ptr<AudioNetworkAdaptor> DefaultAudioNetworkAdaptorCreator(
       const std::string& config_string,
+      RtcEventLog* event_log,
       const Clock* clock) const;
 
   void MaybeUpdateUplinkBandwidth();

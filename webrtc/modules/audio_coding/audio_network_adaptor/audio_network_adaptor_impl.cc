@@ -14,7 +14,8 @@
 
 namespace webrtc {
 
-AudioNetworkAdaptorImpl::Config::Config() = default;
+AudioNetworkAdaptorImpl::Config::Config()
+    : event_log(nullptr), clock(nullptr){};
 
 AudioNetworkAdaptorImpl::Config::~Config() = default;
 

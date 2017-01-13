@@ -181,9 +181,11 @@ AudioEncoderOpus::AudioEncoderOpus(
       audio_network_adaptor_creator_(
           audio_network_adaptor_creator
               ? std::move(audio_network_adaptor_creator)
-              : [this](const std::string& config_string, const Clock* clock) {
+              : [this](const std::string& config_string,
+                       RtcEventLog* event_log,
+                       const Clock* clock) {
                   return DefaultAudioNetworkAdaptorCreator(config_string,
-                                                           clock);
+                                                           event_log, clock);
               }),
       bitrate_smoother_(bitrate_smoother
           ? std::move(bitrate_smoother) : std::unique_ptr<SmoothingFilter>(
@@ -268,8 +270,10 @@ void AudioEncoderOpus::SetMaxPlaybackRate(int frequency_hz) {
 
 bool AudioEncoderOpus::EnableAudioNetworkAdaptor(
     const std::string& config_string,
+    RtcEventLog* event_log,
     const Clock* clock) {
-  audio_network_adaptor_ = audio_network_adaptor_creator_(config_string, clock);
+  audio_network_adaptor_ =
+      audio_network_adaptor_creator_(config_string, event_log, clock);
   return audio_network_adaptor_.get() != nullptr;
 }
 
@@ -526,9 +530,11 @@ void AudioEncoderOpus::ApplyAudioNetworkAdaptor() {
 std::unique_ptr<AudioNetworkAdaptor>
 AudioEncoderOpus::DefaultAudioNetworkAdaptorCreator(
     const std::string& config_string,
+    RtcEventLog* event_log,
     const Clock* clock) const {
   AudioNetworkAdaptorImpl::Config config;
   config.clock = clock;
+  config.event_log = event_log;
   return std::unique_ptr<AudioNetworkAdaptor>(new AudioNetworkAdaptorImpl(
       config, ControllerManagerImpl::Create(
                   config_string, NumChannels(), supported_frame_lengths_ms(),

@@ -23,6 +23,7 @@
 namespace webrtc {
 
 class Clock;
+class RtcEventLog;
 
 // This is the interface class for encoders in AudioCoding module. Each codec
 // type must have an implementation of this class.
@@ -163,6 +164,7 @@ class AudioEncoder {
 
   // Enables audio network adaptor. Returns true if successful.
   virtual bool EnableAudioNetworkAdaptor(const std::string& config_string,
+                                         RtcEventLog* event_log,
                                          const Clock* clock);
 
   // Disables audio network adaptor.

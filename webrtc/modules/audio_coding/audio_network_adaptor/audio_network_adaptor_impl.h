@@ -22,11 +22,14 @@
 
 namespace webrtc {
 
+class RtcEventLog;
+
 class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
  public:
   struct Config {
     Config();
     ~Config();
+    RtcEventLog* event_log;
     const Clock* clock;
   };
 
