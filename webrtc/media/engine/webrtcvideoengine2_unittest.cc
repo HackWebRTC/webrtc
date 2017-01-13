@@ -2369,6 +2369,14 @@ class WebRtcVideoChannel2FlexfecTest : public WebRtcVideoChannel2Test {
 
 // TODO(brandtr): Merge into "non-field trial" test when FlexFEC is enabled
 // by default.
+TEST_F(WebRtcVideoChannel2FlexfecTest,
+       DefaultFlexfecCodecHasTransportCcAndRembFeedbackParam) {
+  EXPECT_TRUE(cricket::HasTransportCc(GetEngineCodec("flexfec-03")));
+  EXPECT_TRUE(cricket::HasRemb(GetEngineCodec("flexfec-03")));
+}
+
+// TODO(brandtr): Merge into "non-field trial" test when FlexFEC is enabled
+// by default.
 TEST_F(WebRtcVideoChannel2FlexfecTest, SetDefaultSendCodecsWithoutSsrc) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();

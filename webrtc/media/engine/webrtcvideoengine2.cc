@@ -571,7 +571,7 @@ static rtc::Optional<int> NextFreePayloadType(
 // This is a helper function for GetSupportedCodecs below. It will append new
 // unique codecs from |input_codecs| to |unified_codecs|. It will add default
 // feedback params to the codecs and will also add an associated RTX codec for
-// recognized codecs (VP8, VP9, H264, and Red).
+// recognized codecs (VP8, VP9, H264, and RED).
 static void AppendVideoCodecs(const std::vector<VideoCodec>& input_codecs,
                               std::vector<VideoCodec>* unified_codecs) {
   for (VideoCodec codec : input_codecs) {
@@ -582,7 +582,8 @@ static void AppendVideoCodecs(const std::vector<VideoCodec>& input_codecs,
     codec.id = *payload_type;
     // TODO(magjed): Move the responsibility of setting these parameters to the
     // encoder factories instead.
-    if (codec.name != kRedCodecName && codec.name != kUlpfecCodecName)
+    if (codec.name != kRedCodecName && codec.name != kUlpfecCodecName &&
+        codec.name != kFlexfecCodecName)
       AddDefaultFeedbackParams(&codec);
     // Don't add same codec twice.
     if (FindMatchingCodec(*unified_codecs, codec))
