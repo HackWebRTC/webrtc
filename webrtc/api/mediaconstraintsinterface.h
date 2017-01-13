@@ -141,6 +141,11 @@ void CopyConstraintsIntoRtcConfiguration(
     const MediaConstraintsInterface* constraints,
     PeerConnectionInterface::RTCConfiguration* configuration);
 
+// Copy all relevant constraints into an AudioOptions object.
+void CopyConstraintsIntoAudioOptions(
+    const MediaConstraintsInterface* constraints,
+    cricket::AudioOptions* options);
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_API_MEDIACONSTRAINTSINTERFACE_H_

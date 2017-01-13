@@ -1442,8 +1442,10 @@ JOW(jlong, PeerConnectionFactory_nativeCreateAudioSource)(
       new ConstraintsWrapper(jni, j_constraints));
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
+  cricket::AudioOptions options;
+  CopyConstraintsIntoAudioOptions(constraints.get(), &options);
   rtc::scoped_refptr<AudioSourceInterface> source(
-      factory->CreateAudioSource(constraints.get()));
+      factory->CreateAudioSource(options));
   return (jlong)source.release();
 }
 
