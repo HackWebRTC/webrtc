@@ -2996,9 +2996,10 @@ TEST_P(EndToEndTest, GetStats) {
 
 class RtcpXrObserver : public test::EndToEndTest {
  public:
-  explicit RtcpXrObserver(bool enable_rrtr)
+  RtcpXrObserver(bool enable_rrtr, bool enable_target_bitrate)
       : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
         enable_rrtr_(enable_rrtr),
+        enable_target_bitrate_(enable_target_bitrate),
         sent_rtcp_sr_(0),
         sent_rtcp_rr_(0),
         sent_rtcp_rrtr_(0),
@@ -3041,7 +3042,7 @@ class RtcpXrObserver : public test::EndToEndTest {
 
     if (sent_rtcp_sr_ > kNumRtcpReportPacketsToObserve &&
         sent_rtcp_rr_ > kNumRtcpReportPacketsToObserve &&
-        sent_rtcp_target_bitrate_) {
+        (sent_rtcp_target_bitrate_ || !enable_target_bitrate_)) {
       if (enable_rrtr_) {
         EXPECT_GT(sent_rtcp_rrtr_, 0);
         EXPECT_GT(sent_rtcp_dlrr_, 0);
@@ -3049,6 +3050,7 @@ class RtcpXrObserver : public test::EndToEndTest {
         EXPECT_EQ(sent_rtcp_rrtr_, 0);
         EXPECT_EQ(sent_rtcp_dlrr_, 0);
       }
+      EXPECT_EQ(enable_target_bitrate_, sent_rtcp_target_bitrate_);
       observation_complete_.Set();
     }
     return SEND_PACKET;
@@ -3058,6 +3060,10 @@ class RtcpXrObserver : public test::EndToEndTest {
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
+    if (enable_target_bitrate_) {
+      // TargetBitrate only signaled for screensharing.
+      encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
+    }
     (*receive_configs)[0].rtp.rtcp_mode = RtcpMode::kReducedSize;
     (*receive_configs)[0].rtp.rtcp_xr.receiver_reference_time_report =
         enable_rrtr_;
@@ -3071,7 +3077,8 @@ class RtcpXrObserver : public test::EndToEndTest {
   static const int kNumRtcpReportPacketsToObserve = 5;
 
   rtc::CriticalSection crit_;
-  bool enable_rrtr_;
+  const bool enable_rrtr_;
+  const bool enable_target_bitrate_;
   int sent_rtcp_sr_;
   int sent_rtcp_rr_ GUARDED_BY(&crit_);
   int sent_rtcp_rrtr_ GUARDED_BY(&crit_);
@@ -3079,13 +3086,23 @@ class RtcpXrObserver : public test::EndToEndTest {
   int sent_rtcp_dlrr_;
 };
 
-TEST_P(EndToEndTest, TestExtendedReportsWithRrtr) {
-  RtcpXrObserver test(true);
+TEST_P(EndToEndTest, TestExtendedReportsWithRrtrWithoutTargetBitrate) {
+  RtcpXrObserver test(true, false);
   RunBaseTest(&test);
 }
 
-TEST_P(EndToEndTest, TestExtendedReportsWithoutRrtr) {
-  RtcpXrObserver test(false);
+TEST_P(EndToEndTest, TestExtendedReportsWithoutRrtrWithoutTargetBitrate) {
+  RtcpXrObserver test(false, false);
+  RunBaseTest(&test);
+}
+
+TEST_P(EndToEndTest, TestExtendedReportsWithRrtrWithTargetBitrate) {
+  RtcpXrObserver test(true, true);
+  RunBaseTest(&test);
+}
+
+TEST_P(EndToEndTest, TestExtendedReportsWithoutRrtrWithTargetBitrate) {
+  RtcpXrObserver test(false, true);
   RunBaseTest(&test);
 }
 

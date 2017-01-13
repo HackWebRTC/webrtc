@@ -617,7 +617,11 @@ VideoSendStream::VideoSendStream(
   // it was created on.
   thread_sync_event_.Wait(rtc::Event::kForever);
   send_stream_->RegisterProcessThread(module_process_thread);
-  vie_encoder_->SetBitrateObserver(send_stream_.get());
+  // TODO(sprang): Enable this also for regular video calls if it works well.
+  if (encoder_config.content_type == VideoEncoderConfig::ContentType::kScreen) {
+    // Only signal target bitrate for screenshare streams, for now.
+    vie_encoder_->SetBitrateObserver(send_stream_.get());
+  }
   vie_encoder_->RegisterProcessThread(module_process_thread);
 
   ReconfigureVideoEncoder(std::move(encoder_config));
