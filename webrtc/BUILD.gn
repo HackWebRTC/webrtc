@@ -221,8 +221,6 @@ config("common_config") {
 
 config("common_objc") {
   libs = [ "Foundation.framework" ]
-  precompiled_header = "sdk/objc/WebRTC-Prefix.pch"
-  precompiled_source = "sdk/objc/WebRTC-Prefix.pch"
 }
 
 if (!build_with_chromium) {

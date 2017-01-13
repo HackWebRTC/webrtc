@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#import <Foundation/Foundation.h>
+
 #import "RTCOpenGLDefines.h"
 
 @class RTCVideoFrame;
