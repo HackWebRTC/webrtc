@@ -1044,8 +1044,9 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   if (params_.logs)
     trace_to_stderr_.reset(new test::TraceToStderr);
 
-  size_t num_streams = params_.ss.streams.size();
-  CreateSendConfig(num_streams, 0, 0, send_transport);
+  size_t num_video_streams = params_.ss.streams.size();
+  size_t num_flexfec_streams = params_.video.flexfec ? 1 : 0;
+  CreateSendConfig(num_video_streams, 0, num_flexfec_streams, send_transport);
 
   int payload_type;
   if (params_.video.codec == "H264") {
@@ -1066,7 +1067,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   video_send_config_.encoder_settings.payload_type = payload_type;
   video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
   video_send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
-  for (size_t i = 0; i < num_streams; ++i)
+  for (size_t i = 0; i < num_video_streams; ++i)
     video_send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
 
   video_send_config_.rtp.extensions.clear();
@@ -1098,7 +1099,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
 
   CreateMatchingReceiveConfigs(recv_transport);
 
-  for (size_t i = 0; i < num_streams; ++i) {
+  for (size_t i = 0; i < num_video_streams; ++i) {
     video_receive_configs_[i].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
     video_receive_configs_[i].rtp.rtx[payload_type].ssrc = kSendRtxSsrcs[i];
     video_receive_configs_[i].rtp.rtx[payload_type].payload_type =
@@ -1107,12 +1108,14 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   }
 
   if (params_.video.flexfec) {
-    video_send_config_.rtp.flexfec.flexfec_payload_type = kFlexfecPayloadType;
-    video_send_config_.rtp.flexfec.flexfec_ssrc = kFlexfecSendSsrc;
+    // Override send config constructed by CreateSendConfig.
     video_send_config_.rtp.flexfec.protected_media_ssrcs = {
         kVideoSendSsrcs[params_.ss.selected_stream]};
 
-    FlexfecReceiveStream::Config flexfec_receive_config;
+    // The matching receive config is _not_ created by
+    // CreateMatchingReceiveConfigs, since VideoQualityTest is not a BaseTest.
+    // Set up the receive config manually instead.
+    FlexfecReceiveStream::Config flexfec_receive_config(recv_transport);
     flexfec_receive_config.payload_type =
         video_send_config_.rtp.flexfec.flexfec_payload_type;
     flexfec_receive_config.remote_ssrc =

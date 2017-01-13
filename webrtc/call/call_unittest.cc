@@ -17,6 +17,7 @@
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/test/gtest.h"
+#include "webrtc/test/mock_transport.h"
 #include "webrtc/test/mock_voice_engine.h"
 
 namespace {
@@ -222,7 +223,8 @@ TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_SendFirst) {
 
 TEST(CallTest, CreateDestroy_FlexfecReceiveStream) {
   CallHelper call;
-  FlexfecReceiveStream::Config config;
+  MockTransport rtcp_send_transport;
+  FlexfecReceiveStream::Config config(&rtcp_send_transport);
   config.payload_type = 118;
   config.remote_ssrc = 38837212;
   config.protected_media_ssrcs = {27273};
@@ -234,7 +236,8 @@ TEST(CallTest, CreateDestroy_FlexfecReceiveStream) {
 
 TEST(CallTest, CreateDestroy_FlexfecReceiveStreams) {
   CallHelper call;
-  FlexfecReceiveStream::Config config;
+  MockTransport rtcp_send_transport;
+  FlexfecReceiveStream::Config config(&rtcp_send_transport);
   config.payload_type = 118;
   std::list<FlexfecReceiveStream*> streams;
 
@@ -259,7 +262,8 @@ TEST(CallTest, CreateDestroy_FlexfecReceiveStreams) {
 
 TEST(CallTest, MultipleFlexfecReceiveStreamsProtectingSingleVideoStream) {
   CallHelper call;
-  FlexfecReceiveStream::Config config;
+  MockTransport rtcp_send_transport;
+  FlexfecReceiveStream::Config config(&rtcp_send_transport);
   config.payload_type = 118;
   config.protected_media_ssrcs = {1324234};
   FlexfecReceiveStream* stream;

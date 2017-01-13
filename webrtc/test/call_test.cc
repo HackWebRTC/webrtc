@@ -275,7 +275,7 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
   // TODO(brandtr): Update this when we support multistream protection.
   RTC_DCHECK(num_flexfec_streams_ <= 1);
   if (num_flexfec_streams_ == 1) {
-    FlexfecReceiveStream::Config config;
+    FlexfecReceiveStream::Config config(rtcp_send_transport);
     config.payload_type = kFlexfecPayloadType;
     config.remote_ssrc = kFlexfecSendSsrc;
     config.protected_media_ssrcs = {kVideoSendSsrcs[0]};

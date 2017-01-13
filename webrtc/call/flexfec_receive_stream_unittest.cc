@@ -13,15 +13,31 @@
 #include "webrtc/base/array_view.h"
 #include "webrtc/call/flexfec_receive_stream_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
-#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_recovered_packet_receiver.h"
+#include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
+#include "webrtc/test/mock_transport.h"
 
 namespace webrtc {
 
 namespace {
+
+constexpr uint8_t kFlexfecPlType = 118;
+constexpr uint8_t kFlexfecSsrc[] = {0x00, 0x00, 0x00, 0x01};
+constexpr uint8_t kMediaSsrc[] = {0x00, 0x00, 0x00, 0x02};
+
+FlexfecReceiveStream::Config CreateDefaultConfig(
+    Transport* rtcp_send_transport) {
+  FlexfecReceiveStream::Config config(rtcp_send_transport);
+  config.payload_type = kFlexfecPlType;
+  config.remote_ssrc = ByteReader<uint32_t>::ReadBigEndian(kFlexfecSsrc);
+  config.protected_media_ssrcs = {
+      ByteReader<uint32_t>::ReadBigEndian(kMediaSsrc)};
+  EXPECT_TRUE(config.IsCompleteAndEnabled());
+  return config;
+}
 
 RtpPacketReceived ParsePacket(rtc::ArrayView<const uint8_t> packet) {
   RtpPacketReceived parsed_packet(nullptr);
@@ -31,40 +47,58 @@ RtpPacketReceived ParsePacket(rtc::ArrayView<const uint8_t> packet) {
 
 }  // namespace
 
-TEST(FlexfecReceiveStreamTest, ConstructDestruct) {
-  FlexfecReceiveStream::Config config;
-  config.payload_type = 118;
-  config.remote_ssrc = 424223;
-  config.protected_media_ssrcs = {912512};
-  MockRecoveredPacketReceiver recovered_packet_receiver;
+TEST(FlexfecReceiveStreamConfigTest, IsCompleteAndEnabled) {
+  MockTransport rtcp_send_transport;
+  FlexfecReceiveStream::Config config(&rtcp_send_transport);
 
-  FlexfecReceiveStreamImpl receive_stream(config, &recovered_packet_receiver);
+  config.local_ssrc = 18374743;
+  config.rtcp_mode = RtcpMode::kCompound;
+  config.transport_cc = true;
+  config.rtp_header_extensions.emplace_back(TransportSequenceNumber::kUri, 7);
+  EXPECT_FALSE(config.IsCompleteAndEnabled());
+
+  config.payload_type = 123;
+  EXPECT_FALSE(config.IsCompleteAndEnabled());
+
+  config.remote_ssrc = 238423838;
+  EXPECT_FALSE(config.IsCompleteAndEnabled());
+
+  config.protected_media_ssrcs.push_back(138989393);
+  EXPECT_TRUE(config.IsCompleteAndEnabled());
+
+  config.protected_media_ssrcs.push_back(33423423);
+  EXPECT_FALSE(config.IsCompleteAndEnabled());
 }
 
-TEST(FlexfecReceiveStreamTest, StartStop) {
-  FlexfecReceiveStream::Config config;
-  config.payload_type = 118;
-  config.remote_ssrc = 1652392;
-  config.protected_media_ssrcs = {23300443};
-  MockRecoveredPacketReceiver recovered_packet_receiver;
-  FlexfecReceiveStreamImpl receive_stream(config, &recovered_packet_receiver);
+class FlexfecReceiveStreamTest : public ::testing::Test {
+ protected:
+  FlexfecReceiveStreamTest()
+      : config_(CreateDefaultConfig(&rtcp_send_transport_)),
+        receive_stream_(config_, &recovered_packet_receiver_) {}
 
-  receive_stream.Start();
-  receive_stream.Stop();
+  FlexfecReceiveStream::Config config_;
+  MockRecoveredPacketReceiver recovered_packet_receiver_;
+  MockTransport rtcp_send_transport_;
+
+  FlexfecReceiveStreamImpl receive_stream_;
+};
+
+TEST_F(FlexfecReceiveStreamTest, ConstructDestruct) {}
+
+TEST_F(FlexfecReceiveStreamTest, StartStop) {
+  receive_stream_.Start();
+  receive_stream_.Stop();
 }
 
 // Create a FlexFEC packet that protects a single media packet and ensure
 // that the callback is called. Correctness of recovery is checked in the
 // FlexfecReceiver unit tests.
-TEST(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
-  constexpr uint8_t kFlexfecPlType = 118;
+TEST_F(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
   constexpr uint8_t kFlexfecSeqNum[] = {0x00, 0x01};
   constexpr uint8_t kFlexfecTs[] = {0x00, 0x11, 0x22, 0x33};
-  constexpr uint8_t kFlexfecSsrc[] = {0x00, 0x00, 0x00, 0x01};
   constexpr uint8_t kMediaPlType = 107;
   constexpr uint8_t kMediaSeqNum[] = {0x00, 0x02};
   constexpr uint8_t kMediaTs[] = {0xaa, 0xbb, 0xcc, 0xdd};
-  constexpr uint8_t kMediaSsrc[] = {0x00, 0x00, 0x00, 0x02};
 
   // This packet mask protects a single media packet, i.e., the FlexFEC payload
   // is a copy of that media packet. When inserted in the FlexFEC pipeline,
@@ -91,13 +125,8 @@ TEST(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
       kPayloadBits,    kPayloadBits,    kPayloadBits,       kPayloadBits};
   // clang-format on
 
-  FlexfecReceiveStream::Config config;
-  config.payload_type = kFlexfecPlType;
-  config.remote_ssrc = ByteReader<uint32_t>::ReadBigEndian(kFlexfecSsrc);
-  config.protected_media_ssrcs = {
-      ByteReader<uint32_t>::ReadBigEndian(kMediaSsrc)};
   testing::StrictMock<MockRecoveredPacketReceiver> recovered_packet_receiver;
-  FlexfecReceiveStreamImpl receive_stream(config, &recovered_packet_receiver);
+  FlexfecReceiveStreamImpl receive_stream(config_, &recovered_packet_receiver);
 
   // Do not call back before being started.
   receive_stream.AddAndProcessReceivedPacket(ParsePacket(kFlexfecPacket));

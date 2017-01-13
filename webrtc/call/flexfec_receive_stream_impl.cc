@@ -46,6 +46,19 @@ std::string FlexfecReceiveStream::Config::ToString() const {
   return ss.str();
 }
 
+bool FlexfecReceiveStream::Config::IsCompleteAndEnabled() const {
+  // Check if FlexFEC is enabled.
+  if (payload_type < 0)
+    return false;
+  // Do we have the necessary SSRC information?
+  if (remote_ssrc == 0)
+    return false;
+  // TODO(brandtr): Update this check when we support multistream protection.
+  if (protected_media_ssrcs.size() != 1u)
+    return false;
+  return true;
+}
+
 namespace {
 
 // TODO(brandtr): Update this function when we support multistream protection.

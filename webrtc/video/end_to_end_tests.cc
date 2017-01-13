@@ -3906,7 +3906,8 @@ TEST_P(EndToEndTest, VerifyDefaultVideoReceiveConfigParameters) {
 }
 
 TEST_P(EndToEndTest, VerifyDefaultFlexfecReceiveConfigParameters) {
-  FlexfecReceiveStream::Config default_receive_config;
+  test::NullTransport rtcp_send_transport;
+  FlexfecReceiveStream::Config default_receive_config(&rtcp_send_transport);
   EXPECT_EQ(-1, default_receive_config.payload_type)
       << "Enabling FlexFEC requires rtpmap: flexfec negotiation.";
   EXPECT_EQ(0U, default_receive_config.remote_ssrc)

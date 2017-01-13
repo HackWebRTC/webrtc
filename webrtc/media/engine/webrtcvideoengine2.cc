@@ -1185,7 +1185,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
     receive_ssrcs_.insert(used_ssrc);
 
   webrtc::VideoReceiveStream::Config config(this);
-  webrtc::FlexfecConfig flexfec_config;
+  webrtc::FlexfecReceiveStream::Config flexfec_config(this);
   ConfigureReceiverRtp(&config, &flexfec_config, sp);
 
   config.disable_prerenderer_smoothing =
@@ -1201,7 +1201,7 @@ bool WebRtcVideoChannel2::AddRecvStream(const StreamParams& sp,
 
 void WebRtcVideoChannel2::ConfigureReceiverRtp(
     webrtc::VideoReceiveStream::Config* config,
-    webrtc::FlexfecConfig* flexfec_config,
+    webrtc::FlexfecReceiveStream::Config* flexfec_config,
     const StreamParams& sp) const {
   uint32_t ssrc = sp.first_ssrc();
 
@@ -1234,10 +1234,12 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
       send_codec_ ? HasTransportCc(send_codec_->codec) : false;
 
   // TODO(brandtr): Generalize when we add support for multistream protection.
-  uint32_t flexfec_ssrc;
-  if (sp.GetFecFrSsrc(ssrc, &flexfec_ssrc)) {
-    flexfec_config->flexfec_ssrc = flexfec_ssrc;
+  if (sp.GetFecFrSsrc(ssrc, &flexfec_config->remote_ssrc)) {
     flexfec_config->protected_media_ssrcs = {ssrc};
+    flexfec_config->local_ssrc = config->rtp.local_ssrc;
+    flexfec_config->rtcp_mode = config->rtp.rtcp_mode;
+    flexfec_config->transport_cc = config->rtp.transport_cc;
+    flexfec_config->rtp_header_extensions = config->rtp.extensions;
   }
 
   for (size_t i = 0; i < recv_codecs_.size(); ++i) {
@@ -2089,7 +2091,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
     WebRtcVideoDecoderFactory* external_decoder_factory,
     bool default_stream,
     const std::vector<VideoCodecSettings>& recv_codecs,
-    const webrtc::FlexfecConfig& flexfec_config)
+    const webrtc::FlexfecReceiveStream::Config& flexfec_config)
     : call_(call),
       stream_params_(sp),
       stream_(NULL),
@@ -2198,8 +2200,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(
 
   // TODO(pbos): Reconfigure RTX based on incoming recv_codecs.
   config_.rtp.ulpfec = recv_codecs.front().ulpfec;
-  flexfec_config_.flexfec_payload_type =
-      recv_codecs.front().flexfec_payload_type;
+  flexfec_config_.payload_type = recv_codecs.front().flexfec_payload_type;
 
   config_.rtp.nack.rtp_history_ms =
       HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
@@ -2282,16 +2283,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
   stream_ = call_->CreateVideoReceiveStream(config_.Copy());
   stream_->Start();
   if (IsFlexfecFieldTrialEnabled() && flexfec_config_.IsCompleteAndEnabled()) {
-    webrtc::FlexfecReceiveStream::Config config;
-    // Payload types and SSRCs come from the FlexFEC specific part of the SDP.
-    config.payload_type = flexfec_config_.flexfec_payload_type;
-    config.remote_ssrc = flexfec_config_.flexfec_ssrc;
-    config.protected_media_ssrcs = flexfec_config_.protected_media_ssrcs;
-    // RTCP messages and RTP header extensions apply to the entire track
-    // in the SDP.
-    config.transport_cc = config_.rtp.transport_cc;
-    config.rtp_header_extensions = config_.rtp.extensions;
-    flexfec_stream_ = call_->CreateFlexfecReceiveStream(config);
+    flexfec_stream_ = call_->CreateFlexfecReceiveStream(flexfec_config_);
     flexfec_stream_->Start();
   }
 }

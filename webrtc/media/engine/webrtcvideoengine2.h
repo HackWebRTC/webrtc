@@ -27,6 +27,7 @@
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/call/call.h"
+#include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/media/base/mediaengine.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
@@ -218,9 +219,10 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
   void SetMaxSendBandwidth(int bps);
 
-  void ConfigureReceiverRtp(webrtc::VideoReceiveStream::Config* config,
-                            webrtc::FlexfecConfig* flexfec_config,
-                            const StreamParams& sp) const;
+  void ConfigureReceiverRtp(
+      webrtc::VideoReceiveStream::Config* config,
+      webrtc::FlexfecReceiveStream::Config* flexfec_config,
+      const StreamParams& sp) const;
   bool ValidateSendSsrcAvailability(const StreamParams& sp) const
       EXCLUSIVE_LOCKS_REQUIRED(stream_crit_);
   bool ValidateReceiveSsrcAvailability(const StreamParams& sp) const
@@ -359,7 +361,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         WebRtcVideoDecoderFactory* external_decoder_factory,
         bool default_stream,
         const std::vector<VideoCodecSettings>& recv_codecs,
-        const webrtc::FlexfecConfig& flexfec_config);
+        const webrtc::FlexfecReceiveStream::Config& flexfec_config);
     ~WebRtcVideoReceiveStream();
 
     const std::vector<uint32_t>& GetSsrcs() const;
@@ -412,7 +414,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     webrtc::VideoReceiveStream* stream_;
     const bool default_stream_;
     webrtc::VideoReceiveStream::Config config_;
-    webrtc::FlexfecConfig flexfec_config_;
+    webrtc::FlexfecReceiveStream::Config flexfec_config_;
     webrtc::FlexfecReceiveStream* flexfec_stream_;
 
     WebRtcVideoDecoderFactory* const external_decoder_factory_;

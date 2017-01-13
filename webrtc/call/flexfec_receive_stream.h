@@ -31,7 +31,16 @@ class FlexfecReceiveStream {
   };
 
   struct Config {
+    explicit Config(Transport* rtcp_send_transport)
+        : rtcp_send_transport(rtcp_send_transport) {
+      RTC_DCHECK(rtcp_send_transport);
+    }
+
     std::string ToString() const;
+
+    // Returns true if all RTP information is available in order to
+    // enable receiving FlexFEC.
+    bool IsCompleteAndEnabled() const;
 
     // Payload type for FlexFEC.
     int payload_type = -1;
