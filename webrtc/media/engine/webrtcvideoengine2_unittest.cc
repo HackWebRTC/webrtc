@@ -1654,8 +1654,7 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
       << "Non-screenshare shouldn't use min-transmit bitrate.";
 
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, nullptr));
-  // Removing a capturer triggers a black frame to be sent.
-  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
   VideoOptions screencast_options;
   screencast_options.is_screencast = rtc::Optional<bool>(true);
   EXPECT_TRUE(
@@ -1663,7 +1662,7 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   EXPECT_TRUE(capturer.CaptureFrame());
   // Send stream not recreated after option change.
   ASSERT_EQ(send_stream, fake_call_->GetVideoSendStreams().front());
-  EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
+  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
 
   // Verify screencast settings.
   encoder_config = send_stream->GetEncoderConfig().Copy();

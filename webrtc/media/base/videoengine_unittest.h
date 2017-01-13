@@ -830,14 +830,12 @@ class VideoMediaChannelTest : public testing::Test,
     rtc::Thread::Current()->ProcessMessages(30);
     // Remove the capturer.
     EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, nullptr));
-    // Wait for one black frame for removing the capturer.
-    EXPECT_FRAME_WAIT(2, kVideoWidth, kVideoHeight, kTimeout);
 
     // No capturer was added, so this SetVideoSend shouldn't do anything.
     EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, nullptr));
     rtc::Thread::Current()->ProcessMessages(300);
     // Verify no more frames were sent.
-    EXPECT_EQ(2, renderer_.num_rendered_frames());
+    EXPECT_EQ(1, renderer_.num_rendered_frames());
   }
 
   // Tests that we can add and remove capturer as unique sources.
