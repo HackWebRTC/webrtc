@@ -423,9 +423,6 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         bwe_loss_updates_.push_back(bwe_update);
         break;
       }
-      case ParsedRtcEventLog::AUDIO_NETWORK_ADAPTATION_EVENT: {
-        break;
-      }
       case ParsedRtcEventLog::BWE_PACKET_DELAY_EVENT: {
         break;
       }

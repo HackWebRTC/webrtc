@@ -461,21 +461,6 @@ void RtcEventLogTestHelper::VerifyBweLossEvent(
   EXPECT_EQ(total_packets, parsed_total_packets);
 }
 
-void RtcEventLogTestHelper::VerifyAudioNetworkAdaptation(
-    const ParsedRtcEventLog& parsed_log,
-    size_t index,
-    const AudioNetworkAdaptor::EncoderRuntimeConfig& config) {
-  AudioNetworkAdaptor::EncoderRuntimeConfig parsed_config;
-  parsed_log.GetAudioNetworkAdaptation(index, &parsed_config);
-  EXPECT_EQ(config.bitrate_bps, parsed_config.bitrate_bps);
-  EXPECT_EQ(config.enable_dtx, parsed_config.enable_dtx);
-  EXPECT_EQ(config.enable_fec, parsed_config.enable_fec);
-  EXPECT_EQ(config.frame_length_ms, parsed_config.frame_length_ms);
-  EXPECT_EQ(config.num_channels, parsed_config.num_channels);
-  EXPECT_EQ(config.uplink_packet_loss_fraction,
-            parsed_config.uplink_packet_loss_fraction);
-}
-
 void RtcEventLogTestHelper::VerifyLogStartEvent(
     const ParsedRtcEventLog& parsed_log,
     size_t index) {

@@ -228,19 +228,6 @@ void GenerateAudioSendConfig(uint32_t extensions_bitvector,
   }
 }
 
-void GenerateAudioNetworkAdaptation(
-    uint32_t extensions_bitvector,
-    AudioNetworkAdaptor::EncoderRuntimeConfig* config,
-    Random* prng) {
-  config->bitrate_bps = rtc::Optional<int>(prng->Rand(0, 3000000));
-  config->enable_fec = rtc::Optional<bool>(prng->Rand<bool>());
-  config->enable_dtx = rtc::Optional<bool>(prng->Rand<bool>());
-  config->frame_length_ms = rtc::Optional<int>(prng->Rand(10, 120));
-  config->num_channels = rtc::Optional<size_t>(prng->Rand(1, 2));
-  config->uplink_packet_loss_fraction =
-      rtc::Optional<float>(prng->Rand<float>());
-}
-
 // Test for the RtcEventLog class. Dumps some RTP packets and other events
 // to disk, then reads them back to see if they match.
 void LogSessionAndReadBack(size_t rtp_count,
@@ -617,22 +604,6 @@ class VideoSendConfigReadWriteTest : public ConfigReadWriteTest {
   VideoSendStream::Config config;
 };
 
-class AudioNetworkAdaptationReadWriteTest : public ConfigReadWriteTest {
- public:
-  void GenerateConfig(uint32_t extensions_bitvector) override {
-    GenerateAudioNetworkAdaptation(extensions_bitvector, &config, &prng);
-  }
-  void LogConfig(RtcEventLog* event_log) override {
-    event_log->LogAudioNetworkAdaptation(config);
-  }
-  void VerifyConfig(const ParsedRtcEventLog& parsed_log,
-                    size_t index) override {
-    RtcEventLogTestHelper::VerifyAudioNetworkAdaptation(parsed_log, index,
-                                                        config);
-  }
-  AudioNetworkAdaptor::EncoderRuntimeConfig config;
-};
-
 TEST(RtcEventLogTest, LogAudioReceiveConfig) {
   AudioReceiveConfigReadWriteTest test;
   test.DoTest();
@@ -652,10 +623,4 @@ TEST(RtcEventLogTest, LogVideoSendConfig) {
   VideoSendConfigReadWriteTest test;
   test.DoTest();
 }
-
-TEST(RtcEventLogTest, LogAudioNetworkAdaptation) {
-  AudioNetworkAdaptationReadWriteTest test;
-  test.DoTest();
-}
-
 }  // namespace webrtc

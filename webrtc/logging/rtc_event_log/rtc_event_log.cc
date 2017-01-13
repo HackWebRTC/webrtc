@@ -77,8 +77,6 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogBwePacketLossEvent(int32_t bitrate,
                              uint8_t fraction_loss,
                              int32_t total_packets) override;
-  void LogAudioNetworkAdaptation(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override;
 
  private:
   void StoreEvent(std::unique_ptr<rtclog::Event>* event);
@@ -433,29 +431,6 @@ void RtcEventLogImpl::LogBwePacketLossEvent(int32_t bitrate,
   bwe_event->set_bitrate(bitrate);
   bwe_event->set_fraction_loss(fraction_loss);
   bwe_event->set_total_packets(total_packets);
-  StoreEvent(&event);
-}
-
-void RtcEventLogImpl::LogAudioNetworkAdaptation(
-    const AudioNetworkAdaptor::EncoderRuntimeConfig& config) {
-  std::unique_ptr<rtclog::Event> event(new rtclog::Event());
-  event->set_timestamp_us(rtc::TimeMicros());
-  event->set_type(rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT);
-  auto audio_network_adaptation = event->mutable_audio_network_adaptation();
-  if (config.bitrate_bps)
-    audio_network_adaptation->set_bitrate_bps(*config.bitrate_bps);
-  if (config.frame_length_ms)
-    audio_network_adaptation->set_frame_length_ms(*config.frame_length_ms);
-  if (config.uplink_packet_loss_fraction) {
-    audio_network_adaptation->set_uplink_packet_loss_fraction(
-        *config.uplink_packet_loss_fraction);
-  }
-  if (config.enable_fec)
-    audio_network_adaptation->set_enable_fec(*config.enable_fec);
-  if (config.enable_dtx)
-    audio_network_adaptation->set_enable_dtx(*config.enable_dtx);
-  if (config.num_channels)
-    audio_network_adaptation->set_num_channels(*config.num_channels);
   StoreEvent(&event);
 }
 

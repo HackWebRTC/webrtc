@@ -17,7 +17,6 @@
 #include "webrtc/base/platform_file.h"
 #include "webrtc/call/audio_receive_stream.h"
 #include "webrtc/call/audio_send_stream.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -115,10 +114,6 @@ class RtcEventLog {
                                      uint8_t fraction_loss,
                                      int32_t total_packets) = 0;
 
-  // Logs audio encoder re-configuration driven by audio network adaptor.
-  virtual void LogAudioNetworkAdaptation(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config) = 0;
-
   // Reads an RtcEventLog file and returns true when reading was successful.
   // The result is stored in the given EventStream object.
   // The order of the events in the EventStream is implementation defined.
@@ -160,8 +155,6 @@ class RtcEventLogNullImpl final : public RtcEventLog {
   void LogBwePacketLossEvent(int32_t bitrate,
                              uint8_t fraction_loss,
                              int32_t total_packets) override {}
-  void LogAudioNetworkAdaptation(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override{};
 };
 
 }  // namespace webrtc

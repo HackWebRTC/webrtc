@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller_manager.h"
@@ -53,7 +52,6 @@ struct AudioNetworkAdaptorStates {
   std::unique_ptr<AudioNetworkAdaptorImpl> audio_network_adaptor;
   std::vector<std::unique_ptr<MockController>> mock_controllers;
   std::unique_ptr<SimulatedClock> simulated_clock;
-  std::unique_ptr<MockRtcEventLog> event_log;
   MockDebugDumpWriter* mock_debug_dump_writer;
 };
 
@@ -78,7 +76,6 @@ AudioNetworkAdaptorStates CreateAudioNetworkAdaptor() {
       .WillRepeatedly(Return(controllers));
 
   states.simulated_clock.reset(new SimulatedClock(kClockInitialTimeMs * 1000));
-  states.event_log.reset(new NiceMock<MockRtcEventLog>());
 
   auto debug_dump_writer =
       std::unique_ptr<MockDebugDumpWriter>(new NiceMock<MockDebugDumpWriter>());
@@ -87,7 +84,6 @@ AudioNetworkAdaptorStates CreateAudioNetworkAdaptor() {
 
   AudioNetworkAdaptorImpl::Config config;
   config.clock = states.simulated_clock.get();
-  config.event_log = states.event_log.get();
   // AudioNetworkAdaptorImpl governs the lifetime of controller manager.
   states.audio_network_adaptor.reset(new AudioNetworkAdaptorImpl(
       config,
@@ -207,22 +203,6 @@ TEST(AudioNetworkAdaptorImplTest,
   EXPECT_CALL(*states.mock_debug_dump_writer,
               DumpNetworkMetrics(NetworkMetricsIs(check), timestamp_check));
   states.audio_network_adaptor->SetOverhead(kOverhead);
-}
-
-TEST(AudioNetworkAdaptorImplTest, LogRuntimeConfigOnGetEncoderRuntimeConfig) {
-  auto states = CreateAudioNetworkAdaptor();
-
-  AudioNetworkAdaptor::EncoderRuntimeConfig config;
-  config.bitrate_bps = rtc::Optional<int>(32000);
-  config.enable_fec = rtc::Optional<bool>(true);
-
-  EXPECT_CALL(*states.mock_controllers[0], MakeDecision(_, _))
-      .WillOnce(SetArgPointee<1>(config));
-
-  EXPECT_CALL(*states.event_log,
-              LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(config)))
-      .Times(1);
-  states.audio_network_adaptor->GetEncoderRuntimeConfig();
 }
 
 }  // namespace webrtc

@@ -12,15 +12,7 @@
 
 #include <utility>
 
-#include "webrtc/base/logging.h"
-
 namespace webrtc {
-
-namespace {
-constexpr int kEventLogMinBitrateChangeBps = 5000;
-constexpr float kEventLogMinBitrateChangeFraction = 0.25;
-constexpr float kEventLogMinPacketLossChangeFraction = 0.5;
-}  // namespace
 
 AudioNetworkAdaptorImpl::Config::Config()
     : event_log(nullptr), clock(nullptr){};
@@ -33,14 +25,7 @@ AudioNetworkAdaptorImpl::AudioNetworkAdaptorImpl(
     std::unique_ptr<DebugDumpWriter> debug_dump_writer)
     : config_(config),
       controller_manager_(std::move(controller_manager)),
-      debug_dump_writer_(std::move(debug_dump_writer)),
-      event_log_writer_(
-          config.event_log
-              ? new EventLogWriter(config.event_log,
-                                   kEventLogMinBitrateChangeBps,
-                                   kEventLogMinBitrateChangeFraction,
-                                   kEventLogMinPacketLossChangeFraction)
-              : nullptr) {
+      debug_dump_writer_(std::move(debug_dump_writer)) {
   RTC_DCHECK(controller_manager_);
 }
 
@@ -83,12 +68,10 @@ AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
        controller_manager_->GetSortedControllers(last_metrics_))
     controller->MakeDecision(last_metrics_, &config);
 
+  // TODO(minyue): Add debug dumping.
   if (debug_dump_writer_)
     debug_dump_writer_->DumpEncoderRuntimeConfig(
         config, config_.clock->TimeInMilliseconds());
-
-  if (event_log_writer_)
-    event_log_writer_->MaybeLogEncoderConfig(config);
 
   return config;
 }

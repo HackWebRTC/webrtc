@@ -56,11 +56,6 @@ class RtcEventLogTestHelper {
                                  uint8_t fraction_loss,
                                  int32_t total_packets);
 
-  static void VerifyAudioNetworkAdaptation(
-      const ParsedRtcEventLog& parsed_log,
-      size_t index,
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config);
-
   static void VerifyLogStartEvent(const ParsedRtcEventLog& parsed_log,
                                   size_t index);
   static void VerifyLogEndEvent(const ParsedRtcEventLog& parsed_log,

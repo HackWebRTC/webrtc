@@ -1,7 +1,6 @@
 include_rules = [
   "+webrtc/base",
   "+webrtc/call",
-  "+webrtc/modules/audio_coding/audio_network_adaptor",
   "+webrtc/modules/rtp_rtcp",
   "+webrtc/system_wrappers",
 ]
