@@ -212,14 +212,14 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
-    bool rtcp,
+    bool rtcp_mux_required,
     bool srtp_required,
     const AudioOptions& options) {
   return worker_thread_->Invoke<VoiceChannel*>(
       RTC_FROM_HERE,
       Bind(&ChannelManager::CreateVoiceChannel_w, this, media_controller,
            rtp_transport, rtcp_transport, signaling_thread, content_name,
-           bundle_transport_name, rtcp, srtp_required, options));
+           bundle_transport_name, rtcp_mux_required, srtp_required, options));
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel_w(
@@ -229,7 +229,7 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
-    bool rtcp,
+    bool rtcp_mux_required,
     bool srtp_required,
     const AudioOptions& options) {
   RTC_DCHECK(initialized_);
@@ -243,7 +243,7 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
 
   VoiceChannel* voice_channel = new VoiceChannel(
       worker_thread_, network_thread_, signaling_thread, media_engine_.get(),
-      media_channel, content_name, rtcp, srtp_required);
+      media_channel, content_name, rtcp_mux_required, srtp_required);
   voice_channel->SetCryptoOptions(crypto_options_);
 
   if (!voice_channel->Init_w(rtp_transport, rtcp_transport)) {
@@ -284,14 +284,14 @@ VideoChannel* ChannelManager::CreateVideoChannel(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
-    bool rtcp,
+    bool rtcp_mux_required,
     bool srtp_required,
     const VideoOptions& options) {
   return worker_thread_->Invoke<VideoChannel*>(
       RTC_FROM_HERE,
       Bind(&ChannelManager::CreateVideoChannel_w, this, media_controller,
            rtp_transport, rtcp_transport, signaling_thread, content_name,
-           bundle_transport_name, rtcp, srtp_required, options));
+           bundle_transport_name, rtcp_mux_required, srtp_required, options));
 }
 
 VideoChannel* ChannelManager::CreateVideoChannel_w(
@@ -301,7 +301,7 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
-    bool rtcp,
+    bool rtcp_mux_required,
     bool srtp_required,
     const VideoOptions& options) {
   RTC_DCHECK(initialized_);
@@ -313,9 +313,9 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
     return NULL;
   }
 
-  VideoChannel* video_channel =
-      new VideoChannel(worker_thread_, network_thread_, signaling_thread,
-                       media_channel, content_name, rtcp, srtp_required);
+  VideoChannel* video_channel = new VideoChannel(
+      worker_thread_, network_thread_, signaling_thread, media_channel,
+      content_name, rtcp_mux_required, srtp_required);
   video_channel->SetCryptoOptions(crypto_options_);
   if (!video_channel->Init_w(rtp_transport, rtcp_transport)) {
     delete video_channel;
@@ -356,13 +356,13 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
-    bool rtcp,
+    bool rtcp_mux_required,
     bool srtp_required) {
   return worker_thread_->Invoke<RtpDataChannel*>(
       RTC_FROM_HERE,
       Bind(&ChannelManager::CreateRtpDataChannel_w, this, media_controller,
            rtp_transport, rtcp_transport, signaling_thread, content_name,
-           bundle_transport_name, rtcp, srtp_required));
+           bundle_transport_name, rtcp_mux_required, srtp_required));
 }
 
 RtpDataChannel* ChannelManager::CreateRtpDataChannel_w(
@@ -372,7 +372,7 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel_w(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
-    bool rtcp,
+    bool rtcp_mux_required,
     bool srtp_required) {
   // This is ok to alloc from a thread other than the worker thread.
   RTC_DCHECK(initialized_);
@@ -386,9 +386,9 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel_w(
     return nullptr;
   }
 
-  RtpDataChannel* data_channel =
-      new RtpDataChannel(worker_thread_, network_thread_, signaling_thread,
-                         media_channel, content_name, rtcp, srtp_required);
+  RtpDataChannel* data_channel = new RtpDataChannel(
+      worker_thread_, network_thread_, signaling_thread, media_channel,
+      content_name, rtcp_mux_required, srtp_required);
   data_channel->SetCryptoOptions(crypto_options_);
   if (!data_channel->Init_w(rtp_transport, rtcp_transport)) {
     LOG(LS_WARNING) << "Failed to init data channel.";

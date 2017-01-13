@@ -163,13 +163,13 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
                          rtc::Thread* signaling_thread,
                          MediaChannel* media_channel,
                          const std::string& content_name,
-                         bool rtcp,
+                         bool rtcp_mux_required,
                          bool srtp_required)
     : worker_thread_(worker_thread),
       network_thread_(network_thread),
       signaling_thread_(signaling_thread),
       content_name_(content_name),
-      rtcp_enabled_(rtcp),
+      rtcp_mux_required_(rtcp_mux_required),
       srtp_required_(srtp_required),
       media_channel_(media_channel),
       selected_candidate_pair_(nullptr) {
@@ -240,6 +240,9 @@ bool BaseChannel::InitNetwork_n(TransportChannel* rtp_transport,
   if (rtcp_transport_ && !SetDtlsSrtpCryptoSuites_n(rtcp_transport_, true)) {
     return false;
   }
+  if (rtcp_mux_required_) {
+    rtcp_mux_filter_.SetActive();
+  }
   return true;
 }
 
@@ -291,8 +294,8 @@ bool BaseChannel::SetTransport_n(TransportChannel* rtp_transport,
     srtp_filter_.ResetParams();
   }
 
-  // If this BaseChannel uses RTCP and we haven't fully negotiated RTCP mux,
-  // we need an RTCP channel.
+  // If this BaseChannel doesn't require RTCP mux and we haven't fully
+  // negotiated RTCP mux, we need an RTCP transport.
   if (NeedsRtcpTransport()) {
     LOG(LS_INFO) << "Setting RTCP Transport for " << content_name() << " on "
                  << transport_name() << " transport " << rtcp_transport;
@@ -452,7 +455,9 @@ bool BaseChannel::GetConnectionStats(ConnectionInfos* infos) {
 }
 
 bool BaseChannel::NeedsRtcpTransport() {
-  return rtcp_enabled_ && !rtcp_mux_filter_.IsFullyActive();
+  // If this BaseChannel doesn't require RTCP mux and we haven't fully
+  // negotiated RTCP mux, we need an RTCP transport.
+  return !rtcp_mux_required_ && !rtcp_mux_filter_.IsFullyActive();
 }
 
 bool BaseChannel::IsReadyToReceiveMedia_w() const {
@@ -1157,26 +1162,6 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
   return true;
 }
 
-void BaseChannel::ActivateRtcpMux() {
-  network_thread_->Invoke<void>(RTC_FROM_HERE,
-                                Bind(&BaseChannel::ActivateRtcpMux_n, this));
-}
-
-void BaseChannel::ActivateRtcpMux_n() {
-  if (!rtcp_mux_filter_.IsActive()) {
-    rtcp_mux_filter_.SetActive();
-    bool need_to_delete_rtcp = (rtcp_transport() != nullptr);
-    SetTransportChannel_n(true, nullptr);
-    if (need_to_delete_rtcp) {
-      SignalDestroyRtcpTransport(rtp_transport()->transport_name());
-    }
-    // Update aggregate writable/ready-to-send state between RTP and RTCP upon
-    // removing channel.
-    UpdateWritableState_n();
-    SetTransportChannelReadyToSend(true, false);
-  }
-}
-
 bool BaseChannel::SetRtcpMux_n(bool enable,
                                ContentAction action,
                                ContentSource src,
@@ -1198,10 +1183,9 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
         LOG(LS_INFO) << "Enabling rtcp-mux for " << content_name()
                      << " by destroying RTCP transport channel for "
                      << transport_name();
-        bool need_to_delete_rtcp = (rtcp_transport() != nullptr);
-        SetTransportChannel_n(true, nullptr);
-        if (need_to_delete_rtcp) {
-          SignalDestroyRtcpTransport(rtp_transport()->transport_name());
+        if (rtcp_transport()) {
+          SetTransportChannel_n(true, nullptr);
+          SignalRtcpMuxFullyActive(rtp_transport()->transport_name());
         }
         UpdateWritableState_n();
         SetTransportChannelReadyToSend(true, false);
@@ -1462,14 +1446,14 @@ VoiceChannel::VoiceChannel(rtc::Thread* worker_thread,
                            MediaEngineInterface* media_engine,
                            VoiceMediaChannel* media_channel,
                            const std::string& content_name,
-                           bool rtcp,
+                           bool rtcp_mux_required,
                            bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   signaling_thread,
                   media_channel,
                   content_name,
-                  rtcp,
+                  rtcp_mux_required,
                   srtp_required),
       media_engine_(media_engine),
       received_media_(false) {}
@@ -1875,14 +1859,14 @@ VideoChannel::VideoChannel(rtc::Thread* worker_thread,
                            rtc::Thread* signaling_thread,
                            VideoMediaChannel* media_channel,
                            const std::string& content_name,
-                           bool rtcp,
+                           bool rtcp_mux_required,
                            bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   signaling_thread,
                   media_channel,
                   content_name,
-                  rtcp,
+                  rtcp_mux_required,
                   srtp_required) {}
 
 bool VideoChannel::Init_w(TransportChannel* rtp_transport,
@@ -2136,14 +2120,14 @@ RtpDataChannel::RtpDataChannel(rtc::Thread* worker_thread,
                                rtc::Thread* signaling_thread,
                                DataMediaChannel* media_channel,
                                const std::string& content_name,
-                               bool rtcp,
+                               bool rtcp_mux_required,
                                bool srtp_required)
     : BaseChannel(worker_thread,
                   network_thread,
                   signaling_thread,
                   media_channel,
                   content_name,
-                  rtcp,
+                  rtcp_mux_required,
                   srtp_required) {}
 
 RtpDataChannel::~RtpDataChannel() {

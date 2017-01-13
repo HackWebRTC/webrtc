@@ -83,7 +83,7 @@ class BaseChannel
               rtc::Thread* signaling_thread,
               MediaChannel* channel,
               const std::string& content_name,
-              bool rtcp,
+              bool rtcp_mux_required,
               bool srtp_required);
   virtual ~BaseChannel();
   bool Init_w(TransportChannel* rtp_transport,
@@ -107,11 +107,6 @@ class BaseChannel
 
   bool writable() const { return writable_; }
 
-  // Activate RTCP mux, regardless of the state so far.  Once
-  // activated, it can not be deactivated, and if the remote
-  // description doesn't support RTCP mux, setting the remote
-  // description will fail.
-  void ActivateRtcpMux();
   bool SetTransport(TransportChannel* rtp_transport,
                     TransportChannel* rtcp_transport);
   bool PushdownLocalDescription(const SessionDescription* local_desc,
@@ -161,9 +156,10 @@ class BaseChannel
   // Forward TransportChannel SignalSentPacket to worker thread.
   sigslot::signal1<const rtc::SentPacket&> SignalSentPacket;
 
-  // Emitted whenever the rtcp-mux is active and the rtcp-transport can be
-  // destroyed.
-  sigslot::signal1<const std::string&> SignalDestroyRtcpTransport;
+  // Emitted whenever rtcp-mux is fully negotiated and the rtcp-transport can
+  // be destroyed.
+  // Fired on the network thread.
+  sigslot::signal1<const std::string&> SignalRtcpMuxFullyActive;
 
   TransportChannel* rtp_transport() const { return rtp_transport_; }
   TransportChannel* rtcp_transport() const { return rtcp_transport_; }
@@ -335,7 +331,6 @@ class BaseChannel
                  ContentAction action,
                  ContentSource src,
                  std::string* error_desc);
-  void ActivateRtcpMux_n();
   bool SetRtcpMux_n(bool enable,
                     ContentAction action,
                     ContentSource src,
@@ -382,10 +377,9 @@ class BaseChannel
   std::unique_ptr<ConnectionMonitor> connection_monitor_;
 
   std::string transport_name_;
-  // Is RTCP used at all by this type of channel?
-  // Expected to be true (as of typing this) for everything except data
-  // channels.
-  const bool rtcp_enabled_;
+  // True if RTCP-multiplexing is required. In other words, no standalone RTCP
+  // transport will ever be used for this channel.
+  const bool rtcp_mux_required_;
   // TODO(johan): Replace TransportChannel* with rtc::PacketTransportInterface*.
   TransportChannel* rtp_transport_ = nullptr;
   std::vector<std::pair<rtc::Socket::Option, int> > socket_options_;
@@ -428,7 +422,7 @@ class VoiceChannel : public BaseChannel {
                MediaEngineInterface* media_engine,
                VoiceMediaChannel* channel,
                const std::string& content_name,
-               bool rtcp,
+               bool rtcp_mux_required,
                bool srtp_required);
   ~VoiceChannel();
   bool Init_w(TransportChannel* rtp_transport,
@@ -547,7 +541,7 @@ class VideoChannel : public BaseChannel {
                rtc::Thread* signaling_thread,
                VideoMediaChannel* channel,
                const std::string& content_name,
-               bool rtcp,
+               bool rtcp_mux_required,
                bool srtp_required);
   ~VideoChannel();
   bool Init_w(TransportChannel* rtp_transport,
@@ -627,7 +621,7 @@ class RtpDataChannel : public BaseChannel {
                  rtc::Thread* signaling_thread,
                  DataMediaChannel* channel,
                  const std::string& content_name,
-                 bool rtcp,
+                 bool rtcp_mux_required,
                  bool srtp_required);
   ~RtpDataChannel();
   bool Init_w(TransportChannel* rtp_transport,

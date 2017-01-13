@@ -95,8 +95,14 @@ class DataTraits : public Traits<cricket::RtpDataChannel,
 template<class T>
 class ChannelTest : public testing::Test, public sigslot::has_slots<> {
  public:
-  enum Flags { RTCP = 0x1, RTCP_MUX = 0x2, SECURE = 0x4, SSRC_MUX = 0x8,
-               DTLS = 0x10, GCM_CIPHER = 0x20 };
+  enum Flags {
+    RTCP_MUX = 0x1,
+    RTCP_MUX_REQUIRED = 0x2,
+    SECURE = 0x4,
+    SSRC_MUX = 0x8,
+    DTLS = 0x10,
+    GCM_CIPHER = 0x20
+  };
 
   ChannelTest(bool verify_playout,
               rtc::ArrayView<const uint8_t> rtp_data,
@@ -132,6 +138,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                       typename T::MediaChannel* ch2,
                       int flags1,
                       int flags2) {
+    // Make sure RTCP_MUX_REQUIRED isn't set without RTCP_MUX.
+    ASSERT_NE(RTCP_MUX_REQUIRED, flags1 & (RTCP_MUX | RTCP_MUX_REQUIRED));
+    ASSERT_NE(RTCP_MUX_REQUIRED, flags2 & (RTCP_MUX | RTCP_MUX_REQUIRED));
     rtc::Thread* worker_thread = rtc::Thread::Current();
     media_channel1_ = ch1;
     media_channel2_ = ch2;
@@ -145,10 +154,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                                           &ChannelTest<T>::OnMediaMonitor1);
     channel2_->SignalMediaMonitor.connect(this,
                                           &ChannelTest<T>::OnMediaMonitor2);
-    channel1_->SignalDestroyRtcpTransport.connect(
+    channel1_->SignalRtcpMuxFullyActive.connect(
         transport_controller1_.get(),
         &cricket::FakeTransportController::DestroyRtcpTransport);
-    channel2_->SignalDestroyRtcpTransport.connect(
+    channel2_->SignalRtcpMuxFullyActive.connect(
         transport_controller2_.get(),
         &cricket::FakeTransportController::DestroyRtcpTransport);
     if ((flags1 & DTLS) && (flags2 & DTLS)) {
@@ -201,7 +210,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                              : nullptr;
     typename T::Channel* channel = new typename T::Channel(
         worker_thread, network_thread, signaling_thread, engine, ch,
-        cricket::CN_AUDIO, (flags & RTCP) != 0, (flags & SECURE) != 0);
+        cricket::CN_AUDIO, (flags & RTCP_MUX_REQUIRED) != 0,
+        (flags & SECURE) != 0);
     rtc::CryptoOptions crypto_options;
     crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
     channel->SetCryptoOptions(crypto_options);
@@ -529,7 +539,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Test that SetLocalContent and SetRemoteContent properly set RTCP
   // mux.
   void TestSetContentsRtcpMux() {
-    CreateChannels(RTCP, RTCP);
+    CreateChannels(0, 0);
     EXPECT_TRUE(channel1_->rtcp_transport() != NULL);
     EXPECT_TRUE(channel2_->rtcp_transport() != NULL);
     typename T::Content content;
@@ -549,7 +559,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Test that SetLocalContent and SetRemoteContent properly set RTCP
   // mux when a provisional answer is received.
   void TestSetContentsRtcpMuxWithPrAnswer() {
-    CreateChannels(RTCP, RTCP);
+    CreateChannels(0, 0);
     EXPECT_TRUE(channel1_->rtcp_transport() != NULL);
     EXPECT_TRUE(channel2_->rtcp_transport() != NULL);
     typename T::Content content;
@@ -573,9 +583,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void TestSetRemoteContentUpdate() {
     CreateChannels(0, 0);
     typename T::Content content;
-    CreateContent(RTCP | RTCP_MUX | SECURE,
-                  kPcmuCodec, kH264Codec,
-                  &content);
+    CreateContent(RTCP_MUX | SECURE, kPcmuCodec, kH264Codec, &content);
     EXPECT_EQ(0U, media_channel1_->codecs().size());
     EXPECT_TRUE(channel1_->SetLocalContent(&content, CA_OFFER, NULL));
     EXPECT_TRUE(channel1_->SetRemoteContent(&content, CA_ANSWER, NULL));
@@ -1024,7 +1032,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       }
     };
     CreateChannels(new LastWordMediaChannel(), new LastWordMediaChannel(),
-                   RTCP | RTCP_MUX, RTCP | RTCP_MUX);
+                   RTCP_MUX, RTCP_MUX);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     EXPECT_TRUE(SendTerminate());
@@ -1032,7 +1040,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Send voice RTP data to the other side and ensure it gets there.
   void SendRtpToRtp() {
-    CreateChannels(0, 0);
+    CreateChannels(RTCP_MUX | RTCP_MUX_REQUIRED, RTCP_MUX | RTCP_MUX_REQUIRED);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     EXPECT_EQ(1U, GetChannels1().size());
@@ -1047,7 +1055,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   void TestDeinit() {
-    CreateChannels(RTCP, RTCP);
+    CreateChannels(0, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     SendRtp1();
@@ -1059,51 +1067,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     channel2_.reset(nullptr);
   }
 
-  // Check that RTCP is not transmitted if both sides don't support RTCP.
-  void SendNoRtcpToNoRtcp() {
-    CreateChannels(0, 0);
-    EXPECT_TRUE(SendInitiate());
-    EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
-    SendRtcp1();
-    SendRtcp2();
-    WaitForThreads();
-    EXPECT_TRUE(CheckNoRtcp1());
-    EXPECT_TRUE(CheckNoRtcp2());
-  }
-
-  // Check that RTCP is not transmitted if the callee doesn't support RTCP.
-  void SendNoRtcpToRtcp() {
-    CreateChannels(0, RTCP);
-    EXPECT_TRUE(SendInitiate());
-    EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(1U, GetChannels1().size());
-    EXPECT_EQ(2U, GetChannels2().size());
-    SendRtcp1();
-    SendRtcp2();
-    WaitForThreads();
-    EXPECT_TRUE(CheckNoRtcp1());
-    EXPECT_TRUE(CheckNoRtcp2());
-  }
-
-  // Check that RTCP is not transmitted if the caller doesn't support RTCP.
-  void SendRtcpToNoRtcp() {
-    CreateChannels(RTCP, 0);
-    EXPECT_TRUE(SendInitiate());
-    EXPECT_TRUE(SendAccept());
-    EXPECT_EQ(2U, GetChannels1().size());
-    EXPECT_EQ(1U, GetChannels2().size());
-    SendRtcp1();
-    SendRtcp2();
-    WaitForThreads();
-    EXPECT_TRUE(CheckNoRtcp1());
-    EXPECT_TRUE(CheckNoRtcp2());
-  }
-
-  // Check that RTCP is transmitted if both sides support RTCP.
+  // Check that RTCP can be transmitted between both sides.
   void SendRtcpToRtcp() {
-    CreateChannels(RTCP, RTCP);
+    CreateChannels(0, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     EXPECT_EQ(2U, GetChannels1().size());
@@ -1119,7 +1085,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Check that RTCP is transmitted if only the initiator supports mux.
   void SendRtcpMuxToRtcp() {
-    CreateChannels(RTCP | RTCP_MUX, RTCP);
+    CreateChannels(RTCP_MUX, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     EXPECT_EQ(2U, GetChannels1().size());
@@ -1135,7 +1101,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Check that RTP and RTCP are transmitted ok when both sides support mux.
   void SendRtcpMuxToRtcpMux() {
-    CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
+    CreateChannels(RTCP_MUX, RTCP_MUX);
     EXPECT_TRUE(SendInitiate());
     EXPECT_EQ(2U, GetChannels1().size());
     EXPECT_EQ(1U, GetChannels2().size());
@@ -1159,8 +1125,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Check that RTP and RTCP are transmitted ok when both sides
   // support mux and one the offerer requires mux.
   void SendRequireRtcpMuxToRtcpMux() {
-    CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
-    channel1_->ActivateRtcpMux();
+    CreateChannels(RTCP_MUX | RTCP_MUX_REQUIRED, RTCP_MUX);
     EXPECT_TRUE(SendInitiate());
     EXPECT_EQ(1U, GetChannels1().size());
     EXPECT_EQ(1U, GetChannels2().size());
@@ -1181,10 +1146,9 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   // Check that RTP and RTCP are transmitted ok when both sides
-  // support mux and one the answerer requires rtcp mux.
+  // support mux and only the answerer requires rtcp mux.
   void SendRtcpMuxToRequireRtcpMux() {
-    CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
-    channel2_->ActivateRtcpMux();
+    CreateChannels(RTCP_MUX, RTCP_MUX | RTCP_MUX_REQUIRED);
     EXPECT_TRUE(SendInitiate());
     EXPECT_EQ(2U, GetChannels1().size());
     EXPECT_EQ(1U, GetChannels2().size());
@@ -1208,9 +1172,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Check that RTP and RTCP are transmitted ok when both sides
   // require mux.
   void SendRequireRtcpMuxToRequireRtcpMux() {
-    CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
-    channel1_->ActivateRtcpMux();
-    channel2_->ActivateRtcpMux();
+    CreateChannels(RTCP_MUX | RTCP_MUX_REQUIRED, RTCP_MUX | RTCP_MUX_REQUIRED);
     EXPECT_TRUE(SendInitiate());
     EXPECT_EQ(1U, GetChannels1().size());
     EXPECT_EQ(1U, GetChannels2().size());
@@ -1234,8 +1196,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Check that SendAccept fails if the answerer doesn't support mux
   // and the offerer requires it.
   void SendRequireRtcpMuxToNoRtcpMux() {
-    CreateChannels(RTCP | RTCP_MUX, RTCP);
-    channel1_->ActivateRtcpMux();
+    CreateChannels(RTCP_MUX | RTCP_MUX_REQUIRED, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_EQ(1U, GetChannels1().size());
     EXPECT_EQ(2U, GetChannels2().size());
@@ -1244,7 +1205,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Check that RTCP data sent by the initiator before the accept is not muxed.
   void SendEarlyRtcpMuxToRtcp() {
-    CreateChannels(RTCP | RTCP_MUX, RTCP);
+    CreateChannels(RTCP_MUX, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_EQ(2U, GetChannels1().size());
     EXPECT_EQ(2U, GetChannels2().size());
@@ -1277,7 +1238,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // but that we properly demux before we get the accept message, since there
   // is a race between RTP data and the jingle accept.
   void SendEarlyRtcpMuxToRtcpMux() {
-    CreateChannels(RTCP | RTCP_MUX, RTCP | RTCP_MUX);
+    CreateChannels(RTCP_MUX, RTCP_MUX);
     EXPECT_TRUE(SendInitiate());
     EXPECT_EQ(2U, GetChannels1().size());
     EXPECT_EQ(1U, GetChannels2().size());
@@ -1310,8 +1271,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     ASSERT((flags1_in & ~(RTCP_MUX | DTLS | GCM_CIPHER)) == 0);
     ASSERT((flags2_in & ~(RTCP_MUX | DTLS | GCM_CIPHER)) == 0);
 
-    int flags1 = RTCP | SECURE | flags1_in;
-    int flags2 = RTCP | SECURE | flags2_in;
+    int flags1 = SECURE | flags1_in;
+    int flags2 = SECURE | flags2_in;
     bool dtls1 = !!(flags1_in & DTLS);
     bool dtls2 = !!(flags2_in & DTLS);
     CreateChannels(flags1, flags2);
@@ -1351,7 +1312,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Test that we properly handling SRTP negotiating down to RTP.
   void SendSrtpToRtp() {
-    CreateChannels(RTCP | SECURE, RTCP);
+    CreateChannels(SECURE, 0);
     EXPECT_FALSE(channel1_->secure());
     EXPECT_FALSE(channel2_->secure());
     EXPECT_TRUE(SendInitiate());
@@ -1378,8 +1339,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   void SendEarlyMediaUsingRtcpMuxSrtp() {
       int sequence_number1_1 = 0, sequence_number2_2 = 0;
 
-      CreateChannels(SSRC_MUX | RTCP | RTCP_MUX | SECURE,
-                     SSRC_MUX | RTCP | RTCP_MUX | SECURE);
+      CreateChannels(SSRC_MUX | RTCP_MUX | SECURE,
+                     SSRC_MUX | RTCP_MUX | SECURE);
       EXPECT_TRUE(SendOffer());
       EXPECT_TRUE(SendProvisionalAnswer());
       EXPECT_TRUE(channel1_->secure());
@@ -1419,7 +1380,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Test that we properly send RTP without SRTP from a thread.
   void SendRtpToRtpOnThread() {
-    CreateChannels(RTCP, RTCP);
+    CreateChannels(0, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     ScopedCallThread send_rtp1([this] { SendRtp1(); });
@@ -1442,7 +1403,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
 
   // Test that we properly send SRTP with RTCP from a thread.
   void SendSrtpToSrtpOnThread() {
-    CreateChannels(RTCP | SECURE, RTCP | SECURE);
+    CreateChannels(SECURE, SECURE);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     ScopedCallThread send_rtp1([this] { SendRtp1(); });
@@ -1466,7 +1427,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Test that the mediachannel retains its sending state after the transport
   // becomes non-writable.
   void SendWithWritabilityLoss() {
-    CreateChannels(0, 0);
+    CreateChannels(RTCP_MUX | RTCP_MUX_REQUIRED, RTCP_MUX | RTCP_MUX_REQUIRED);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     EXPECT_EQ(1U, GetChannels1().size());
@@ -1534,7 +1495,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     // and |channel2_|.
     int pl_type1 = pl_types[0];
     int pl_type2 = pl_types[1];
-    int flags = SSRC_MUX | RTCP;
+    int flags = SSRC_MUX;
     if (secure) flags |= SECURE;
     uint32_t expected_channels = 2U;
     if (rtcp_mux) {
@@ -1724,7 +1685,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   void TestFlushRtcp() {
-    CreateChannels(RTCP, RTCP);
+    CreateChannels(0, 0);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
     EXPECT_EQ(2U, GetChannels1().size());
@@ -1779,7 +1740,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     // TODO(deadbeef): Fix this.
     fake_clock.AdvanceTime(rtc::TimeDelta::FromSeconds(1));
 
-    CreateChannels(RTCP | SECURE, RTCP | SECURE);
+    CreateChannels(SECURE, SECURE);
     EXPECT_FALSE(channel1_->secure());
     EXPECT_FALSE(channel2_->secure());
     EXPECT_TRUE(SendInitiate());
@@ -1832,7 +1793,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   void TestOnReadyToSend() {
-    CreateChannels(RTCP, RTCP);
+    CreateChannels(0, 0);
     TransportChannel* rtp = channel1_->rtp_transport();
     TransportChannel* rtcp = channel1_->rtcp_transport();
     EXPECT_FALSE(media_channel1_->ready_to_send());
@@ -1877,7 +1838,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   void TestOnReadyToSendWithRtcpMux() {
-    CreateChannels(RTCP, RTCP);
+    CreateChannels(0, 0);
     typename T::Content content;
     CreateContent(0, kPcmuCodec, kH264Codec, &content);
     // Both sides agree on mux. Should no longer be a separate RTCP channel.
@@ -2060,7 +2021,7 @@ cricket::VideoChannel* ChannelTest<VideoTraits>::CreateChannel(
       transport_controller ? transport_controller->signaling_thread() : nullptr;
   cricket::VideoChannel* channel = new cricket::VideoChannel(
       worker_thread, network_thread, signaling_thread, ch, cricket::CN_VIDEO,
-      (flags & RTCP) != 0, (flags & SECURE) != 0);
+      (flags & RTCP_MUX_REQUIRED) != 0, (flags & SECURE) != 0);
   rtc::CryptoOptions crypto_options;
   crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
   channel->SetCryptoOptions(crypto_options);
@@ -2228,18 +2189,6 @@ TEST_F(VoiceChannelSingleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
 }
 
-TEST_F(VoiceChannelSingleThreadTest, SendNoRtcpToNoRtcp) {
-  Base::SendNoRtcpToNoRtcp();
-}
-
-TEST_F(VoiceChannelSingleThreadTest, SendNoRtcpToRtcp) {
-  Base::SendNoRtcpToRtcp();
-}
-
-TEST_F(VoiceChannelSingleThreadTest, SendRtcpToNoRtcp) {
-  Base::SendRtcpToNoRtcp();
-}
-
 TEST_F(VoiceChannelSingleThreadTest, SendRtcpToRtcp) {
   Base::SendRtcpToRtcp();
 }
@@ -2396,7 +2345,7 @@ TEST_F(VoiceChannelSingleThreadTest, TestOnReadyToSendWithRtcpMux) {
 
 // Test that we can scale the output volume properly for 1:1 calls.
 TEST_F(VoiceChannelSingleThreadTest, TestScaleVolume1to1Call) {
-  CreateChannels(RTCP, RTCP);
+  CreateChannels(0, 0);
   EXPECT_TRUE(SendInitiate());
   EXPECT_TRUE(SendAccept());
   double volume;
@@ -2420,7 +2369,7 @@ TEST_F(VoiceChannelSingleThreadTest, TestScaleVolume1to1Call) {
 
 // Test that we can scale the output volume properly for multiway calls.
 TEST_F(VoiceChannelSingleThreadTest, TestScaleVolumeMultiwayCall) {
-  CreateChannels(RTCP, RTCP);
+  CreateChannels(0, 0);
   EXPECT_TRUE(SendInitiate());
   EXPECT_TRUE(SendAccept());
   EXPECT_TRUE(AddStream1(1));
@@ -2571,18 +2520,6 @@ TEST_F(VoiceChannelDoubleThreadTest, TestCallTeardownRtcpMux) {
 
 TEST_F(VoiceChannelDoubleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
-}
-
-TEST_F(VoiceChannelDoubleThreadTest, SendNoRtcpToNoRtcp) {
-  Base::SendNoRtcpToNoRtcp();
-}
-
-TEST_F(VoiceChannelDoubleThreadTest, SendNoRtcpToRtcp) {
-  Base::SendNoRtcpToRtcp();
-}
-
-TEST_F(VoiceChannelDoubleThreadTest, SendRtcpToNoRtcp) {
-  Base::SendRtcpToNoRtcp();
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendRtcpToRtcp) {
@@ -2741,7 +2678,7 @@ TEST_F(VoiceChannelDoubleThreadTest, TestOnReadyToSendWithRtcpMux) {
 
 // Test that we can scale the output volume properly for 1:1 calls.
 TEST_F(VoiceChannelDoubleThreadTest, TestScaleVolume1to1Call) {
-  CreateChannels(RTCP, RTCP);
+  CreateChannels(0, 0);
   EXPECT_TRUE(SendInitiate());
   EXPECT_TRUE(SendAccept());
   double volume;
@@ -2765,7 +2702,7 @@ TEST_F(VoiceChannelDoubleThreadTest, TestScaleVolume1to1Call) {
 
 // Test that we can scale the output volume properly for multiway calls.
 TEST_F(VoiceChannelDoubleThreadTest, TestScaleVolumeMultiwayCall) {
-  CreateChannels(RTCP, RTCP);
+  CreateChannels(0, 0);
   EXPECT_TRUE(SendInitiate());
   EXPECT_TRUE(SendAccept());
   EXPECT_TRUE(AddStream1(1));
@@ -2912,18 +2849,6 @@ TEST_F(VideoChannelSingleThreadTest, TestCallTeardownRtcpMux) {
 
 TEST_F(VideoChannelSingleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
-}
-
-TEST_F(VideoChannelSingleThreadTest, SendNoRtcpToNoRtcp) {
-  Base::SendNoRtcpToNoRtcp();
-}
-
-TEST_F(VideoChannelSingleThreadTest, SendNoRtcpToRtcp) {
-  Base::SendNoRtcpToRtcp();
-}
-
-TEST_F(VideoChannelSingleThreadTest, SendRtcpToNoRtcp) {
-  Base::SendRtcpToNoRtcp();
 }
 
 TEST_F(VideoChannelSingleThreadTest, SendRtcpToRtcp) {
@@ -3158,18 +3083,6 @@ TEST_F(VideoChannelDoubleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
 }
 
-TEST_F(VideoChannelDoubleThreadTest, SendNoRtcpToNoRtcp) {
-  Base::SendNoRtcpToNoRtcp();
-}
-
-TEST_F(VideoChannelDoubleThreadTest, SendNoRtcpToRtcp) {
-  Base::SendNoRtcpToRtcp();
-}
-
-TEST_F(VideoChannelDoubleThreadTest, SendRtcpToNoRtcp) {
-  Base::SendRtcpToNoRtcp();
-}
-
 TEST_F(VideoChannelDoubleThreadTest, SendRtcpToRtcp) {
   Base::SendRtcpToRtcp();
 }
@@ -3342,7 +3255,7 @@ cricket::RtpDataChannel* ChannelTest<DataTraits>::CreateChannel(
       transport_controller ? transport_controller->signaling_thread() : nullptr;
   cricket::RtpDataChannel* channel = new cricket::RtpDataChannel(
       worker_thread, network_thread, signaling_thread, ch, cricket::CN_DATA,
-      (flags & RTCP) != 0, (flags & SECURE) != 0);
+      (flags & RTCP_MUX_REQUIRED) != 0, (flags & SECURE) != 0);
   rtc::CryptoOptions crypto_options;
   crypto_options.enable_gcm_crypto_suites = (flags & GCM_CIPHER) != 0;
   channel->SetCryptoOptions(crypto_options);
@@ -3464,18 +3377,6 @@ TEST_F(RtpDataChannelSingleThreadTest, TestOnReadyToSendWithRtcpMux) {
 
 TEST_F(RtpDataChannelSingleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
-}
-
-TEST_F(RtpDataChannelSingleThreadTest, SendNoRtcpToNoRtcp) {
-  Base::SendNoRtcpToNoRtcp();
-}
-
-TEST_F(RtpDataChannelSingleThreadTest, SendNoRtcpToRtcp) {
-  Base::SendNoRtcpToRtcp();
-}
-
-TEST_F(RtpDataChannelSingleThreadTest, SendRtcpToNoRtcp) {
-  Base::SendRtcpToNoRtcp();
 }
 
 TEST_F(RtpDataChannelSingleThreadTest, SendRtcpToRtcp) {
@@ -3608,18 +3509,6 @@ TEST_F(RtpDataChannelDoubleThreadTest, TestOnReadyToSendWithRtcpMux) {
 
 TEST_F(RtpDataChannelDoubleThreadTest, SendRtpToRtp) {
   Base::SendRtpToRtp();
-}
-
-TEST_F(RtpDataChannelDoubleThreadTest, SendNoRtcpToNoRtcp) {
-  Base::SendNoRtcpToNoRtcp();
-}
-
-TEST_F(RtpDataChannelDoubleThreadTest, SendNoRtcpToRtcp) {
-  Base::SendNoRtcpToRtcp();
-}
-
-TEST_F(RtpDataChannelDoubleThreadTest, SendRtcpToNoRtcp) {
-  Base::SendRtcpToNoRtcp();
 }
 
 TEST_F(RtpDataChannelDoubleThreadTest, SendRtcpToRtcp) {

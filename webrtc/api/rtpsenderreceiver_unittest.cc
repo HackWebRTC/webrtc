@@ -62,18 +62,18 @@ class RtpSenderReceiverTest : public testing::Test {
         stream_(MediaStream::Create(kStreamLabel1)) {
     // Create channels to be used by the RtpSenders and RtpReceivers.
     channel_manager_.Init();
-    bool rtcp_enabled = false;
+    bool rtcp_mux_required = true;
     bool srtp_required = true;
     cricket::TransportChannel* rtp_transport =
         fake_transport_controller_.CreateTransportChannel(
             cricket::CN_AUDIO, cricket::ICE_CANDIDATE_COMPONENT_RTP);
     voice_channel_ = channel_manager_.CreateVoiceChannel(
         &fake_media_controller_, rtp_transport, nullptr, rtc::Thread::Current(),
-        cricket::CN_AUDIO, nullptr, rtcp_enabled, srtp_required,
+        cricket::CN_AUDIO, nullptr, rtcp_mux_required, srtp_required,
         cricket::AudioOptions());
     video_channel_ = channel_manager_.CreateVideoChannel(
         &fake_media_controller_, rtp_transport, nullptr, rtc::Thread::Current(),
-        cricket::CN_VIDEO, nullptr, rtcp_enabled, srtp_required,
+        cricket::CN_VIDEO, nullptr, rtcp_mux_required, srtp_required,
         cricket::VideoOptions());
     voice_media_channel_ = media_engine_->GetVoiceChannel(0);
     video_media_channel_ = media_engine_->GetVideoChannel(0);
