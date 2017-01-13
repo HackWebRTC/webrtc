@@ -10,8 +10,7 @@
 
 #import "ARDTURNClient.h"
 
-// Requests TURN server urls from compute engine on demand.
-@interface ARDCEODTURNClient : NSObject <ARDTURNClient>
+@interface ARDTURNClient : NSObject <ARDTURNClient>
 
 - (instancetype)initWithURL:(NSURL *)url;
 
