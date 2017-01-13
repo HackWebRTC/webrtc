@@ -1166,6 +1166,15 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
                                ContentAction action,
                                ContentSource src,
                                std::string* error_desc) {
+  // Provide a more specific error message for the RTCP mux "require" policy
+  // case.
+  if (rtcp_mux_required_ && !enable) {
+    SafeSetError(
+        "rtcpMuxPolicy is 'require', but media description does not "
+        "contain 'a=rtcp-mux'.",
+        error_desc);
+    return false;
+  }
   bool ret = false;
   switch (action) {
     case CA_OFFER:
