@@ -2374,7 +2374,7 @@ void WebRtcSession::DestroyTransport(const std::string& transport_name,
 }
 
 void WebRtcSession::DestroyRtcpTransport_n(const std::string& transport_name) {
-  ASSERT(network_thread()->IsCurrent());
+  RTC_DCHECK(network_thread()->IsCurrent());
   transport_controller_->DestroyTransportChannel_n(
       transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
 }

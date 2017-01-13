@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include "webrtc/base/basictypes.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/stream.h"
@@ -254,14 +255,14 @@ public:
     if (val.empty()) {
       path_.assign(1, static_cast<CTYPE>('/'));
     } else {
-      ASSERT(val[0] == static_cast<CTYPE>('/'));
+      RTC_DCHECK(val[0] == static_cast<CTYPE>('/'));
       path_ = val;
     }
   }
   const string& path() const { return path_; }
 
   void set_query(const string& val) {
-    ASSERT(val.empty() || (val[0] == static_cast<CTYPE>('?')));
+    RTC_DCHECK(val.empty() || (val[0] == static_cast<CTYPE>('?')));
     query_ = val;
   }
   const string& query() const { return query_; }
