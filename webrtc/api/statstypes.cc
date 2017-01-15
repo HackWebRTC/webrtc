@@ -576,6 +576,8 @@ const char* StatsReport::Value::display_name() const {
       return "remoteCertificateId";
     case kStatsValueNameResidualEchoLikelihood:
       return "googResidualEchoLikelihood";
+    case kStatsValueNameResidualEchoLikelihoodRecentMax:
+      return "googResidualEchoLikelihoodRecentMax";
     case kStatsValueNameRetransmitBitrate:
       return "googRetransmitBitrate";
     case kStatsValueNameRtt:

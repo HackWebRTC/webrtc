@@ -210,6 +210,8 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
       audio_processing_stats.echo_return_loss_enhancement.instant();
   stats.residual_echo_likelihood =
       audio_processing_stats.residual_echo_likelihood;
+  stats.residual_echo_likelihood_recent_max =
+      audio_processing_stats.residual_echo_likelihood_recent_max;
 
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());

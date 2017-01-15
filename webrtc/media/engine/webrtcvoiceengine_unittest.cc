@@ -480,6 +480,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     stats.echo_return_loss = 890;
     stats.echo_return_loss_enhancement = 1234;
     stats.residual_echo_likelihood = 0.432f;
+    stats.residual_echo_likelihood_recent_max = 0.6f;
     stats.typing_noise_detected = true;
     return stats;
   }
@@ -509,6 +510,8 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(info.echo_return_loss_enhancement,
               stats.echo_return_loss_enhancement);
     EXPECT_EQ(info.residual_echo_likelihood, stats.residual_echo_likelihood);
+    EXPECT_EQ(info.residual_echo_likelihood_recent_max,
+              stats.residual_echo_likelihood_recent_max);
     EXPECT_EQ(info.typing_noise_detected,
               stats.typing_noise_detected && is_sending);
   }

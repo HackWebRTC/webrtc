@@ -632,8 +632,8 @@ struct VoiceSenderInfo : public MediaSenderInfo {
         echo_return_loss(0),
         echo_return_loss_enhancement(0),
         residual_echo_likelihood(0.0f),
-        typing_noise_detected(false) {
-  }
+        residual_echo_likelihood_recent_max(0.0f),
+        typing_noise_detected(false) {}
 
   int ext_seqnum;
   int jitter_ms;
@@ -644,6 +644,7 @@ struct VoiceSenderInfo : public MediaSenderInfo {
   int echo_return_loss;
   int echo_return_loss_enhancement;
   float residual_echo_likelihood;
+  float residual_echo_likelihood_recent_max;
   bool typing_noise_detected;
 };
 

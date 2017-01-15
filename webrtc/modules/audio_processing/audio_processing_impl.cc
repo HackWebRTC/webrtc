@@ -1585,6 +1585,19 @@ int AudioProcessingImpl::StopDebugRecording() {
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
+AudioProcessing::AudioProcessingStatistics::AudioProcessingStatistics() {
+  residual_echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
+  echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
+  echo_return_loss_enhancement.Set(-100.0f, -100.0f, -100.0f, -100.0f);
+  a_nlp.Set(-100.0f, -100.0f, -100.0f, -100.0f);
+}
+
+AudioProcessing::AudioProcessingStatistics::AudioProcessingStatistics(
+    const AudioProcessingStatistics& other) = default;
+
+AudioProcessing::AudioProcessingStatistics::~AudioProcessingStatistics() =
+    default;
+
 // TODO(ivoc): Remove this when GetStatistics() becomes pure virtual.
 AudioProcessing::AudioProcessingStatistics AudioProcessing::GetStatistics()
     const {
@@ -1606,6 +1619,8 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
   }
   stats.residual_echo_likelihood =
       private_submodules_->residual_echo_detector->echo_likelihood();
+  stats.residual_echo_likelihood_recent_max =
+      private_submodules_->residual_echo_detector->echo_likelihood_recent_max();
   public_submodules_->echo_cancellation->GetDelayMetrics(
       &stats.delay_median, &stats.delay_standard_deviation,
       &stats.fraction_poor_delays);

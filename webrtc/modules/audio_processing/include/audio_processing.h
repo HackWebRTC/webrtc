@@ -510,12 +510,9 @@ class AudioProcessing {
   };
 
   struct AudioProcessingStatistics {
-    AudioProcessingStatistics() {
-      residual_echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
-      echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
-      echo_return_loss_enhancement.Set(-100.0f, -100.0f, -100.0f, -100.0f);
-      a_nlp.Set(-100.0f, -100.0f, -100.0f, -100.0f);
-    }
+    AudioProcessingStatistics();
+    AudioProcessingStatistics(const AudioProcessingStatistics& other);
+    ~AudioProcessingStatistics();
 
     // AEC Statistics.
     // RERL = ERL + ERLE
@@ -541,10 +538,10 @@ class AudioProcessing {
     int delay_standard_deviation = -1;
     float fraction_poor_delays = -1.0f;
 
-    // Residual echo detector likelihood. This value is not yet calculated and
-    // is currently always set to zero.
-    // TODO(ivoc): Implement this stat.
+    // Residual echo detector likelihood.
     float residual_echo_likelihood = -1.0f;
+    // Maximum residual echo likelihood from the last time period.
+    float residual_echo_likelihood_recent_max = -1.0f;
   };
 
   // TODO(ivoc): Make this pure virtual when all subclasses have been updated.

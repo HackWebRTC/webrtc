@@ -414,6 +414,11 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
                        &value_in_report));
   EXPECT_EQ(rtc::ToString<float>(sinfo.residual_echo_likelihood),
             value_in_report);
+  EXPECT_TRUE(GetValue(
+      report, StatsReport::kStatsValueNameResidualEchoLikelihoodRecentMax,
+      &value_in_report));
+  EXPECT_EQ(rtc::ToString<float>(sinfo.residual_echo_likelihood_recent_max),
+            value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAudioInputLevel,
                        &value_in_report));
   EXPECT_EQ(rtc::ToString<int>(sinfo.audio_level), value_in_report);

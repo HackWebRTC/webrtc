@@ -203,14 +203,16 @@ class AudioSourceInterface : public MediaSourceInterface {
 class AudioProcessorInterface : public rtc::RefCountInterface {
  public:
   struct AudioProcessorStats {
-    AudioProcessorStats() : typing_noise_detected(false),
-                            echo_return_loss(0),
-                            echo_return_loss_enhancement(0),
-                            echo_delay_median_ms(0),
-                            echo_delay_std_ms(0),
-                            aec_quality_min(0.0),
-                            residual_echo_likelihood(0.0f),
-                            aec_divergent_filter_fraction(0.0) {}
+    AudioProcessorStats()
+        : typing_noise_detected(false),
+          echo_return_loss(0),
+          echo_return_loss_enhancement(0),
+          echo_delay_median_ms(0),
+          echo_delay_std_ms(0),
+          aec_quality_min(0.0),
+          residual_echo_likelihood(0.0f),
+          residual_echo_likelihood_recent_max(0.0f),
+          aec_divergent_filter_fraction(0.0) {}
     ~AudioProcessorStats() {}
 
     bool typing_noise_detected;
@@ -220,6 +222,7 @@ class AudioProcessorInterface : public rtc::RefCountInterface {
     int echo_delay_std_ms;
     float aec_quality_min;
     float residual_echo_likelihood;
+    float residual_echo_likelihood_recent_max;
     float aec_divergent_filter_fraction;
   };
 
