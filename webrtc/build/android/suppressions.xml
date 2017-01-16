@@ -8,7 +8,6 @@
   <issue id="NewApi"></issue>
 
   <issue id="InlinedApi" severity="ignore"/>
-  <issue id="DefaultLocale" severity="ignore"/>
   <issue id="Assert" severity="ignore"/>
   <issue id="UseSparseArrays" severity="ignore"/>
 

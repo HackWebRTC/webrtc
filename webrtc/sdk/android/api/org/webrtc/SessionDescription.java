@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import java.util.Locale;
+
 /**
  * Description of an RFC 4566 Session.
  * SDPs are passed as serialized Strings in Java-land and are materialized
@@ -23,11 +25,11 @@ public class SessionDescription {
     ANSWER;
 
     public String canonicalForm() {
-      return name().toLowerCase();
+      return name().toLowerCase(Locale.US);
     }
 
     public static Type fromCanonicalForm(String canonical) {
-      return Type.valueOf(Type.class, canonical.toUpperCase());
+      return Type.valueOf(Type.class, canonical.toUpperCase(Locale.US));
     }
   }
 

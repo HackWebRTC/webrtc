@@ -20,6 +20,7 @@ import android.view.Surface;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -678,7 +679,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
           + " Frames received: " + framesReceived + "."
           + " Dropped: " + framesDropped + "."
           + " Rendered: " + framesRendered + "."
-          + " Render fps: " + String.format("%.1f", renderFps) + "."
+          + " Render fps: " + String.format(Locale.US, "%.1f", renderFps) + "."
           + " Average render time: " + averageTimeAsString(renderTimeNs, framesRendered) + "."
           + " Average swapBuffer time: "
           + averageTimeAsString(renderSwapBufferTimeNs, framesRendered) + ".");
