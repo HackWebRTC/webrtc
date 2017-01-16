@@ -1589,7 +1589,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
         }
 
         flexfec_enabled = true;
-        parameters_.config.rtp.flexfec.flexfec_ssrc = flexfec_ssrc;
+        parameters_.config.rtp.flexfec.ssrc = flexfec_ssrc;
         parameters_.config.rtp.flexfec.protected_media_ssrcs = {primary_ssrc};
       }
     }
@@ -1720,7 +1720,7 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
     parameters_.config.encoder_settings.internal_source = false;
   }
   parameters_.config.rtp.ulpfec = codec_settings.ulpfec;
-  parameters_.config.rtp.flexfec.flexfec_payload_type =
+  parameters_.config.rtp.flexfec.payload_type =
       codec_settings.flexfec_payload_type;
 
   // Set RTX payload type if RTX is enabled.

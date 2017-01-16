@@ -75,8 +75,8 @@ class SendStatisticsProxyTest : public ::testing::Test {
     config.rtp.ssrcs.push_back(kSecondSsrc);
     config.rtp.rtx.ssrcs.push_back(kFirstRtxSsrc);
     config.rtp.rtx.ssrcs.push_back(kSecondRtxSsrc);
-    config.rtp.flexfec.flexfec_payload_type = 50;
-    config.rtp.flexfec.flexfec_ssrc = kFlexFecSsrc;
+    config.rtp.flexfec.payload_type = 50;
+    config.rtp.flexfec.ssrc = kFlexFecSsrc;
     return config;
   }
 

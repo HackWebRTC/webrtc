@@ -2346,7 +2346,7 @@ TEST_F(WebRtcVideoChannel2Test, FlexfecCodecWithoutSsrcNotExposedByDefault) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
 
-  EXPECT_EQ(-1, config.rtp.flexfec.flexfec_payload_type);
+  EXPECT_EQ(-1, config.rtp.flexfec.payload_type);
 }
 
 // TODO(brandtr): Remove when FlexFEC _is_ exposed by default.
@@ -2355,7 +2355,7 @@ TEST_F(WebRtcVideoChannel2Test, FlexfecCodecWithSsrcNotExposedByDefault) {
       CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
   webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
 
-  EXPECT_EQ(-1, config.rtp.flexfec.flexfec_payload_type);
+  EXPECT_EQ(-1, config.rtp.flexfec.payload_type);
 }
 
 // TODO(brandtr): When FlexFEC is no longer behind a field trial, merge all
@@ -2381,9 +2381,9 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetDefaultSendCodecsWithoutSsrc) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
 
-  EXPECT_EQ(GetEngineCodec("flexfec-03").id,
-            config.rtp.flexfec.flexfec_payload_type);
-  EXPECT_FALSE(config.rtp.flexfec.IsCompleteAndEnabled());
+  EXPECT_EQ(GetEngineCodec("flexfec-03").id, config.rtp.flexfec.payload_type);
+  EXPECT_EQ(0U, config.rtp.flexfec.ssrc);
+  EXPECT_TRUE(config.rtp.flexfec.protected_media_ssrcs.empty());
 }
 
 // TODO(brandtr): Merge into "non-field trial" test when FlexFEC is enabled
@@ -2393,9 +2393,10 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetDefaultSendCodecsWithSsrc) {
       CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
   webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
 
-  EXPECT_EQ(GetEngineCodec("flexfec-03").id,
-            config.rtp.flexfec.flexfec_payload_type);
-  EXPECT_TRUE(config.rtp.flexfec.IsCompleteAndEnabled());
+  EXPECT_EQ(GetEngineCodec("flexfec-03").id, config.rtp.flexfec.payload_type);
+  EXPECT_EQ(kFlexfecSsrc, config.rtp.flexfec.ssrc);
+  ASSERT_EQ(1U, config.rtp.flexfec.protected_media_ssrcs.size());
+  EXPECT_EQ(kSsrcs1[0], config.rtp.flexfec.protected_media_ssrcs[0]);
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithoutFec) {
@@ -2420,7 +2421,7 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetSendCodecsWithoutFec) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
 
-  EXPECT_EQ(-1, config.rtp.flexfec.flexfec_payload_type);
+  EXPECT_EQ(-1, config.rtp.flexfec.payload_type);
 }
 
 TEST_F(WebRtcVideoChannel2Test,
@@ -2492,9 +2493,8 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetSendCodecsWithoutFecDisablesFec) {
       CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
   webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
 
-  EXPECT_EQ(GetEngineCodec("flexfec-03").id,
-            config.rtp.flexfec.flexfec_payload_type);
-  EXPECT_EQ(kFlexfecSsrc, config.rtp.flexfec.flexfec_ssrc);
+  EXPECT_EQ(GetEngineCodec("flexfec-03").id, config.rtp.flexfec.payload_type);
+  EXPECT_EQ(kFlexfecSsrc, config.rtp.flexfec.ssrc);
   ASSERT_EQ(1U, config.rtp.flexfec.protected_media_ssrcs.size());
   EXPECT_EQ(kSsrcs1[0], config.rtp.flexfec.protected_media_ssrcs[0]);
 
@@ -2503,7 +2503,7 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetSendCodecsWithoutFecDisablesFec) {
   stream = fake_call_->GetVideoSendStreams()[0];
   ASSERT_TRUE(stream != nullptr);
   config = stream->GetConfig().Copy();
-  EXPECT_EQ(-1, config.rtp.flexfec.flexfec_payload_type)
+  EXPECT_EQ(-1, config.rtp.flexfec.payload_type)
       << "SetSendCodec without FlexFEC should disable current FlexFEC.";
 }
 

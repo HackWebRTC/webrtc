@@ -138,10 +138,21 @@ class VideoSendStream {
       // See UlpfecConfig for description.
       UlpfecConfig ulpfec;
 
-      // See FlexfecConfig for description.
-      // TODO(brandtr): Move this config to a new class FlexfecSendStream
-      // when we support multistream protection.
-      FlexfecConfig flexfec;
+      struct Flexfec {
+        // Payload type of FlexFEC. Set to -1 to disable sending FlexFEC.
+        int payload_type = -1;
+
+        // SSRC of FlexFEC stream.
+        uint32_t ssrc = 0;
+
+        // Vector containing a single element, corresponding to the SSRC of the
+        // media stream being protected by this FlexFEC stream.
+        // The vector MUST have size 1.
+        //
+        // TODO(brandtr): Update comment above when we support
+        // multistream protection.
+        std::vector<uint32_t> protected_media_ssrcs;
+      } flexfec;
 
       // Settings for RTP retransmission payload format, see RFC 4588 for
       // details.

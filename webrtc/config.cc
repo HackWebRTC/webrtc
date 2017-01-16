@@ -37,44 +37,6 @@ bool UlpfecConfig::operator==(const UlpfecConfig& other) const {
          red_rtx_payload_type == other.red_rtx_payload_type;
 }
 
-FlexfecConfig::FlexfecConfig()
-    : flexfec_payload_type(-1), flexfec_ssrc(0), protected_media_ssrcs() {}
-
-FlexfecConfig::~FlexfecConfig() = default;
-
-std::string FlexfecConfig::ToString() const {
-  std::stringstream ss;
-  ss << "{flexfec_payload_type: " << flexfec_payload_type;
-  ss << ", flexfec_ssrc: " << flexfec_ssrc;
-  ss << ", protected_media_ssrcs: [";
-  size_t i = 0;
-  for (; i + 1 < protected_media_ssrcs.size(); ++i)
-    ss << protected_media_ssrcs[i] << ", ";
-  if (!protected_media_ssrcs.empty())
-    ss << protected_media_ssrcs[i];
-  ss << "]}";
-  return ss.str();
-}
-
-bool FlexfecConfig::IsCompleteAndEnabled() const {
-  // Check if FlexFEC is enabled.
-  if (flexfec_payload_type < 0)
-    return false;
-  // Do we have the necessary SSRC information?
-  if (flexfec_ssrc == 0)
-    return false;
-  // TODO(brandtr): Update this check when we support multistream protection.
-  if (protected_media_ssrcs.size() != 1u)
-    return false;
-  return true;
-}
-
-bool FlexfecConfig::operator==(const FlexfecConfig& other) const {
-  return flexfec_payload_type == other.flexfec_payload_type &&
-         flexfec_ssrc == other.flexfec_ssrc &&
-         protected_media_ssrcs == other.protected_media_ssrcs;
-}
-
 std::string RtpExtension::ToString() const {
   std::stringstream ss;
   ss << "{uri: " << uri;

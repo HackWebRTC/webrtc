@@ -1117,9 +1117,8 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     // Set up the receive config manually instead.
     FlexfecReceiveStream::Config flexfec_receive_config(recv_transport);
     flexfec_receive_config.payload_type =
-        video_send_config_.rtp.flexfec.flexfec_payload_type;
-    flexfec_receive_config.remote_ssrc =
-        video_send_config_.rtp.flexfec.flexfec_ssrc;
+        video_send_config_.rtp.flexfec.payload_type;
+    flexfec_receive_config.remote_ssrc = video_send_config_.rtp.flexfec.ssrc;
     flexfec_receive_config.protected_media_ssrcs =
         video_send_config_.rtp.flexfec.protected_media_ssrcs;
     flexfec_receive_config.transport_cc = params_.call.send_side_bwe;

@@ -231,8 +231,8 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
 
   // TODO(brandtr): Update this when we support multistream protection.
   if (num_flexfec_streams > 0) {
-    video_send_config_.rtp.flexfec.flexfec_payload_type = kFlexfecPayloadType;
-    video_send_config_.rtp.flexfec.flexfec_ssrc = kFlexfecSendSsrc;
+    video_send_config_.rtp.flexfec.payload_type = kFlexfecPayloadType;
+    video_send_config_.rtp.flexfec.ssrc = kFlexfecSendSsrc;
     video_send_config_.rtp.flexfec.protected_media_ssrcs = {kVideoSendSsrcs[0]};
   }
 }

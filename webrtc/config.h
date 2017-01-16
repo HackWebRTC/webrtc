@@ -56,28 +56,6 @@ struct UlpfecConfig {
   int red_rtx_payload_type;
 };
 
-// Settings for FlexFEC forward error correction.
-// Set the payload type to '-1' to disable.
-struct FlexfecConfig {
-  FlexfecConfig();
-  ~FlexfecConfig();
-  std::string ToString() const;
-  bool IsCompleteAndEnabled() const;
-  bool operator==(const FlexfecConfig& other) const;
-
-  // Payload type of FlexFEC.
-  int flexfec_payload_type;
-
-  // SSRC of FlexFEC stream.
-  uint32_t flexfec_ssrc;
-
-  // Vector containing a single element, corresponding to the SSRC of the media
-  // stream being protected by this FlexFEC stream. The vector MUST have size 1.
-  //
-  // TODO(brandtr): Update comment above when we support multistream protection.
-  std::vector<uint32_t> protected_media_ssrcs;
-};
-
 // RTP header extension, see RFC 5285.
 struct RtpExtension {
   RtpExtension() : id(0) {}

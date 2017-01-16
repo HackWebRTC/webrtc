@@ -365,7 +365,7 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
             static_cast<int>(rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
                              1000));
       }
-      if (rtp_config.flexfec.flexfec_payload_type != -1 ||
+      if (rtp_config.flexfec.payload_type != -1 ||
           rtp_config.ulpfec.red_payload_type != -1) {
         RTC_HISTOGRAMS_COUNTS_10000(kIndex,
                                     uma_prefix_ + "FecBitrateSentInKbps",
@@ -447,8 +447,8 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
 
   bool is_media = std::find(rtp_config_.ssrcs.begin(), rtp_config_.ssrcs.end(),
                             ssrc) != rtp_config_.ssrcs.end();
-  bool is_flexfec = rtp_config_.flexfec.flexfec_payload_type != -1 &&
-                    ssrc == rtp_config_.flexfec.flexfec_ssrc;
+  bool is_flexfec = rtp_config_.flexfec.payload_type != -1 &&
+                    ssrc == rtp_config_.flexfec.ssrc;
   bool is_rtx =
       std::find(rtp_config_.rtx.ssrcs.begin(), rtp_config_.rtx.ssrcs.end(),
                 ssrc) != rtp_config_.rtx.ssrcs.end();

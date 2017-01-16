@@ -3864,10 +3864,11 @@ void VerifyEmptyUlpfecConfig(const UlpfecConfig& config) {
       << "Enabling RTX in ULPFEC requires rtpmap: rtx negotiation.";
 }
 
-void VerifyEmptyFlexfecConfig(const FlexfecConfig& config) {
-  EXPECT_EQ(-1, config.flexfec_payload_type)
+void VerifyEmptyFlexfecConfig(
+    const VideoSendStream::Config::Rtp::Flexfec& config) {
+  EXPECT_EQ(-1, config.payload_type)
       << "Enabling FlexFEC requires rtpmap: flexfec negotiation.";
-  EXPECT_EQ(0U, config.flexfec_ssrc)
+  EXPECT_EQ(0U, config.ssrc)
       << "Enabling FlexFEC requires ssrc-group: FEC-FR negotiation.";
   EXPECT_TRUE(config.protected_media_ssrcs.empty())
       << "Enabling FlexFEC requires ssrc-group: FEC-FR negotiation.";

@@ -94,12 +94,12 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
 // TODO(brandtr): Update this function when we support multistream protection.
 std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
     const VideoSendStream::Config& config) {
-  if (config.rtp.flexfec.flexfec_payload_type < 0) {
+  if (config.rtp.flexfec.payload_type < 0) {
     return nullptr;
   }
-  RTC_DCHECK_GE(config.rtp.flexfec.flexfec_payload_type, 0);
-  RTC_DCHECK_LE(config.rtp.flexfec.flexfec_payload_type, 127);
-  if (config.rtp.flexfec.flexfec_ssrc == 0) {
+  RTC_DCHECK_GE(config.rtp.flexfec.payload_type, 0);
+  RTC_DCHECK_LE(config.rtp.flexfec.payload_type, 127);
+  if (config.rtp.flexfec.ssrc == 0) {
     LOG(LS_WARNING) << "FlexFEC is enabled, but no FlexFEC SSRC given. "
                        "Therefore disabling FlexFEC.";
     return nullptr;
@@ -128,7 +128,7 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
 
   RTC_DCHECK_EQ(1U, config.rtp.flexfec.protected_media_ssrcs.size());
   return std::unique_ptr<FlexfecSender>(new FlexfecSender(
-      config.rtp.flexfec.flexfec_payload_type, config.rtp.flexfec.flexfec_ssrc,
+      config.rtp.flexfec.payload_type, config.rtp.flexfec.ssrc,
       config.rtp.flexfec.protected_media_ssrcs[0], config.rtp.extensions,
       Clock::GetRealTimeClock()));
 }
@@ -184,7 +184,17 @@ std::string VideoSendStream::Config::Rtp::ToString() const {
 
   ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
   ss << ", ulpfec: " << ulpfec.ToString();
-  ss << ", flexfec: " << flexfec.ToString();
+
+  ss << ", flexfec: {payload_type: " << flexfec.payload_type;
+  ss << ", ssrc: " << flexfec.ssrc;
+  ss << ", protected_media_ssrcs: [";
+  for (size_t i = 0; i < flexfec.protected_media_ssrcs.size(); ++i) {
+    ss << flexfec.protected_media_ssrcs[i];
+    if (i != flexfec.protected_media_ssrcs.size() - 1)
+      ss << ", ";
+  }
+  ss << ']';
+
   ss << ", rtx: " << rtx.ToString();
   ss << ", c_name: " << c_name;
   ss << '}';
