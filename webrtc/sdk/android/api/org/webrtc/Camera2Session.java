@@ -97,7 +97,7 @@ public class Camera2Session implements CameraSession {
     @Override
     public void onDisconnected(CameraDevice camera) {
       checkIsOnCameraThread();
-      final boolean startFailure = (captureSession == null);
+      final boolean startFailure = (captureSession == null) && (state != SessionState.STOPPED);
       state = SessionState.STOPPED;
       stopInternal();
       if (startFailure) {
@@ -402,7 +402,7 @@ public class Camera2Session implements CameraSession {
     checkIsOnCameraThread();
     Logging.e(TAG, "Error: " + error);
 
-    final boolean startFailure = (captureSession == null);
+    final boolean startFailure = (captureSession == null) && (state != SessionState.STOPPED);
     state = SessionState.STOPPED;
     stopInternal();
     if (startFailure) {
