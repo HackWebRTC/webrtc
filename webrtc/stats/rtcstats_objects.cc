@@ -29,6 +29,12 @@ const char* RTCIceCandidateType::kSrflx = "srflx";
 const char* RTCIceCandidateType::kPrflx = "prflx";
 const char* RTCIceCandidateType::kRelay = "relay";
 
+const char* RTCDtlsTransportState::kNew = "new";
+const char* RTCDtlsTransportState::kConnecting = "connecting";
+const char* RTCDtlsTransportState::kConnected = "connected";
+const char* RTCDtlsTransportState::kClosed = "closed";
+const char* RTCDtlsTransportState::kFailed = "failed";
+
 WEBRTC_RTCSTATS_IMPL(RTCCertificateStats, RTCStats, "certificate",
     &fingerprint,
     &fingerprint_algorithm,
@@ -601,7 +607,7 @@ WEBRTC_RTCSTATS_IMPL(RTCTransportStats, RTCStats, "transport",
     &bytes_sent,
     &bytes_received,
     &rtcp_transport_stats_id,
-    &active_connection,
+    &dtls_state,
     &selected_candidate_pair_id,
     &local_certificate_id,
     &remote_certificate_id);
@@ -617,7 +623,7 @@ RTCTransportStats::RTCTransportStats(
       bytes_sent("bytesSent"),
       bytes_received("bytesReceived"),
       rtcp_transport_stats_id("rtcpTransportStatsId"),
-      active_connection("activeConnection"),
+      dtls_state("dtlsState"),
       selected_candidate_pair_id("selectedCandidatePairId"),
       local_certificate_id("localCertificateId"),
       remote_certificate_id("remoteCertificateId") {
@@ -629,7 +635,7 @@ RTCTransportStats::RTCTransportStats(
       bytes_sent(other.bytes_sent),
       bytes_received(other.bytes_received),
       rtcp_transport_stats_id(other.rtcp_transport_stats_id),
-      active_connection(other.active_connection),
+      dtls_state(other.dtls_state),
       selected_candidate_pair_id(other.selected_candidate_pair_id),
       local_certificate_id(other.local_certificate_id),
       remote_certificate_id(other.remote_certificate_id) {

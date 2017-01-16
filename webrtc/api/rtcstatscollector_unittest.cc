@@ -1989,6 +1989,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
   cricket::TransportChannelStats rtp_transport_channel_stats;
   rtp_transport_channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
   rtp_transport_channel_stats.connection_infos.push_back(rtp_connection_info);
+  rtp_transport_channel_stats.dtls_state = cricket::DTLS_TRANSPORT_NEW;
   session_stats.transport_stats["transport"].channel_stats.push_back(
       rtp_transport_channel_stats);
 
@@ -2008,7 +2009,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
       report->timestamp_us());
   expected_rtp_transport.bytes_sent = 42;
   expected_rtp_transport.bytes_received = 1337;
-  expected_rtp_transport.active_connection = false;
+  expected_rtp_transport.dtls_state = RTCDtlsTransportState::kNew;
 
   ASSERT_TRUE(report->Get(expected_rtp_transport.id()));
   EXPECT_EQ(
@@ -2025,6 +2026,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
   rtcp_transport_channel_stats.component =
       cricket::ICE_CANDIDATE_COMPONENT_RTCP;
   rtcp_transport_channel_stats.connection_infos.push_back(rtcp_connection_info);
+  rtcp_transport_channel_stats.dtls_state = cricket::DTLS_TRANSPORT_CONNECTING;
   session_stats.transport_stats["transport"].channel_stats.push_back(
       rtcp_transport_channel_stats);
 
@@ -2038,7 +2040,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
       report->timestamp_us());
   expected_rtcp_transport.bytes_sent = 1337;
   expected_rtcp_transport.bytes_received = 42;
-  expected_rtcp_transport.active_connection = false;
+  expected_rtcp_transport.dtls_state = RTCDtlsTransportState::kConnecting;
 
   expected_rtp_transport.rtcp_transport_stats_id = expected_rtcp_transport.id();
 
@@ -2051,7 +2053,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
       expected_rtcp_transport,
       report->Get(expected_rtcp_transport.id())->cast_to<RTCTransportStats>());
 
-  // Get stats with an active connection.
+  // Get stats with an active connection (selected candidate pair).
   session_stats.transport_stats["transport"]
       .channel_stats[1]
       .connection_infos[0]
@@ -2060,7 +2062,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
   collector_->ClearCachedStatsReport();
   report = GetStatsReport();
 
-  expected_rtcp_transport.active_connection = true;
   expected_rtcp_transport.selected_candidate_pair_id =
       "RTCIceCandidatePair_" + rtcp_local_candidate->id() + "_" +
       rtcp_remote_candidate->id();

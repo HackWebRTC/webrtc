@@ -291,6 +291,7 @@ bool JsepTransport::GetStats(TransportStats* stats) {
     substats.component = kv.first;
     channel->GetSrtpCryptoSuite(&substats.srtp_crypto_suite);
     channel->GetSslCipherSuite(&substats.ssl_cipher_suite);
+    substats.dtls_state = channel->dtls_state();
     if (!channel->GetStats(&substats.connection_infos)) {
       return false;
     }

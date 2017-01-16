@@ -132,6 +132,25 @@ const char* IceCandidatePairStateToRTCStatsIceCandidatePairState(
   }
 }
 
+const char* DtlsTransportStateToRTCDtlsTransportState(
+    cricket::DtlsTransportState state) {
+  switch (state) {
+    case cricket::DTLS_TRANSPORT_NEW:
+      return RTCDtlsTransportState::kNew;
+    case cricket::DTLS_TRANSPORT_CONNECTING:
+      return RTCDtlsTransportState::kConnecting;
+    case cricket::DTLS_TRANSPORT_CONNECTED:
+      return RTCDtlsTransportState::kConnected;
+    case cricket::DTLS_TRANSPORT_CLOSED:
+      return RTCDtlsTransportState::kClosed;
+    case cricket::DTLS_TRANSPORT_FAILED:
+      return RTCDtlsTransportState::kFailed;
+    default:
+      RTC_NOTREACHED();
+      return nullptr;
+  }
+}
+
 std::unique_ptr<RTCCodecStats> CodecStatsFromRtpCodecParameters(
     uint64_t timestamp_us, bool inbound, bool audio,
     const RtpCodecParameters& codec_params) {
@@ -926,13 +945,13 @@ void RTCStatsCollector::ProduceTransportStats_n(
               timestamp_us));
       transport_stats->bytes_sent = 0;
       transport_stats->bytes_received = 0;
-      transport_stats->active_connection = false;
+      transport_stats->dtls_state = DtlsTransportStateToRTCDtlsTransportState(
+          channel_stats.dtls_state);
       for (const cricket::ConnectionInfo& info :
            channel_stats.connection_infos) {
         *transport_stats->bytes_sent += info.sent_total_bytes;
         *transport_stats->bytes_received += info.recv_total_bytes;
         if (info.best_connection) {
-          transport_stats->active_connection = true;
           transport_stats->selected_candidate_pair_id =
               RTCIceCandidatePairStatsIDFromConnectionInfo(info);
         }

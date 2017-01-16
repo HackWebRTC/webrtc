@@ -42,6 +42,15 @@ struct RTCIceCandidateType {
   static const char* kRelay;
 };
 
+// https://w3c.github.io/webrtc-pc/#idl-def-rtcdtlstransportstate
+struct RTCDtlsTransportState {
+  static const char* kNew;
+  static const char* kConnecting;
+  static const char* kConnected;
+  static const char* kClosed;
+  static const char* kFailed;
+};
+
 // https://w3c.github.io/webrtc-stats/#certificatestats-dict*
 class RTCCertificateStats final : public RTCStats {
  public:
@@ -391,7 +400,8 @@ class RTCTransportStats final : public RTCStats {
   RTCStatsMember<uint64_t> bytes_sent;
   RTCStatsMember<uint64_t> bytes_received;
   RTCStatsMember<std::string> rtcp_transport_stats_id;
-  RTCStatsMember<bool> active_connection;
+  // TODO(hbos): Support enum types? "RTCStatsMember<RTCDtlsTransportState>"?
+  RTCStatsMember<std::string> dtls_state;
   RTCStatsMember<std::string> selected_candidate_pair_id;
   RTCStatsMember<std::string> local_certificate_id;
   RTCStatsMember<std::string> remote_certificate_id;

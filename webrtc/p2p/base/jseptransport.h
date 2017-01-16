@@ -125,6 +125,7 @@ struct TransportChannelStats {
   ConnectionInfos connection_infos;
   int srtp_crypto_suite = rtc::SRTP_INVALID_CRYPTO_SUITE;
   int ssl_cipher_suite = rtc::TLS_NULL_WITH_NULL_NULL;
+  DtlsTransportState dtls_state = DTLS_TRANSPORT_NEW;
 };
 
 // Information about all the channels of a transport.
