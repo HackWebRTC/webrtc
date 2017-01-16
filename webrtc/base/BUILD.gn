@@ -735,7 +735,6 @@ if (rtc_include_tests) {
       "fakeclock.h",
       "fakenetwork.h",
       "fakesslidentity.h",
-      "faketaskrunner.h",
       "firewallsocketserver.cc",
       "firewallsocketserver.h",
       "gunit.h",
