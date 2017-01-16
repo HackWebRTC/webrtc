@@ -11,12 +11,10 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TRANSPORT_FEEDBACK_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_PACKET_TRANSPORT_FEEDBACK_H_
 
-#include <deque>
 #include <memory>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/deprecation.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 
 namespace webrtc {
@@ -25,11 +23,12 @@ class CommonHeader;
 
 class TransportFeedback : public Rtpfb {
  public:
-  class PacketStatusChunk;
   // TODO(sprang): IANA reg?
   static constexpr uint8_t kFeedbackMessageType = 15;
   // Convert to multiples of 0.25ms.
   static constexpr int kDeltaScaleFactor = 250;
+  // Maximum number of packets (including missing) TransportFeedback can report.
+  static constexpr size_t kMaxReportedPackets = 0xffff;
 
   TransportFeedback();
   ~TransportFeedback() override;
@@ -59,23 +58,9 @@ class TransportFeedback : public Rtpfb {
   bool Parse(const CommonHeader& packet);
   static std::unique_ptr<TransportFeedback> ParseFrom(const uint8_t* buffer,
                                                       size_t length);
-
-  RTC_DEPRECATED
-  void WithPacketSenderSsrc(uint32_t ssrc) { SetSenderSsrc(ssrc); }
-  RTC_DEPRECATED
-  void WithMediaSourceSsrc(uint32_t ssrc) { SetMediaSsrc(ssrc); }
-  RTC_DEPRECATED
-  void WithBase(uint16_t base_sequence, int64_t ref_timestamp_us) {
-    SetBase(base_sequence, ref_timestamp_us);
-  }
-  RTC_DEPRECATED
-  void WithFeedbackSequenceNumber(uint8_t feedback_sequence) {
-    SetFeedbackSequenceNumber(feedback_sequence);
-  }
-  RTC_DEPRECATED
-  bool WithReceivedPacket(uint16_t sequence_number, int64_t timestamp_us) {
-    return AddReceivedPacket(sequence_number, timestamp_us);
-  }
+  // Pre and postcondition for all public methods. Should always return true.
+  // This function is for tests.
+  bool IsConsistent() const;
 
  protected:
   bool Create(uint8_t* packet,
@@ -86,30 +71,34 @@ class TransportFeedback : public Rtpfb {
   size_t BlockLength() const override;
 
  private:
-  static PacketStatusChunk* ParseChunk(const uint8_t* buffer, size_t max_size);
+  // Size in bytes of a delta time in rtcp packet.
+  // Valid values are 0 (packet wasn't received), 1 or 2.
+  using DeltaSize = uint8_t;
+  // Keeps DeltaSizes that can be encoded into single chunk if it is last chunk.
+  class LastChunk;
+  struct ReceivedPacket {
+    ReceivedPacket(uint16_t sequence_number, int16_t delta_ticks)
+        : sequence_number(sequence_number), delta_ticks(delta_ticks) {}
+    uint16_t sequence_number;
+    int16_t delta_ticks;
+  };
 
-  int64_t Unwrap(uint16_t sequence_number);
-  bool AddSymbol(StatusSymbol symbol, int64_t seq);
-  bool Encode(StatusSymbol symbol);
-  bool HandleRleCandidate(StatusSymbol symbol,
-                          int current_capacity,
-                          int delta_size);
-  void EmitRemaining();
-  void EmitVectorChunk();
-  void EmitRunLengthChunk();
+  // Reset packet to consistent empty state.
+  void Clear();
 
-  int32_t base_seq_;
-  int64_t base_time_;
+  bool AddDeltaSize(DeltaSize delta_size);
+
+  uint16_t base_seq_no_;
+  uint16_t num_seq_no_;
+  int32_t base_time_ticks_;
   uint8_t feedback_seq_;
-  std::vector<PacketStatusChunk*> status_chunks_;
-  std::vector<int16_t> receive_deltas_;
 
-  int64_t last_seq_;
-  int64_t last_timestamp_;
-  std::deque<StatusSymbol> symbol_vec_;
-  uint16_t first_symbol_cardinality_;
-  bool vec_needs_two_bit_symbols_;
-  uint32_t size_bytes_;
+  int64_t last_timestamp_us_;
+  std::vector<ReceivedPacket> packets_;
+  // All but last encoded packet chunks.
+  std::vector<uint16_t> encoded_chunks_;
+  const std::unique_ptr<LastChunk> last_chunk_;
+  size_t size_bytes_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(TransportFeedback);
 };

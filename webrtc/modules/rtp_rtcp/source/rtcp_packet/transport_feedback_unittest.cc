@@ -53,8 +53,9 @@ class FeedbackTester {
     expected_seq_.clear();
     expected_deltas_.clear();
     feedback_.reset(new TransportFeedback());
-
     feedback_->SetBase(received_seq[0], received_ts[0]);
+    ASSERT_TRUE(feedback_->IsConsistent());
+
     int64_t last_time = feedback_->GetBaseTimeUs();
     for (int i = 0; i < length; ++i) {
       int64_t time = received_ts[i];
@@ -66,15 +67,18 @@ class FeedbackTester {
       }
       last_time = time;
     }
+    ASSERT_TRUE(feedback_->IsConsistent());
     expected_seq_.insert(expected_seq_.begin(), &received_seq[0],
                          &received_seq[length]);
   }
 
   void VerifyPacket() {
+    ASSERT_TRUE(feedback_->IsConsistent());
     serialized_ = feedback_->Build();
     VerifyInternal();
     feedback_ = TransportFeedback::ParseFrom(serialized_.data(),
                                              serialized_.size());
+    ASSERT_TRUE(feedback_->IsConsistent());
     ASSERT_NE(nullptr, feedback_.get());
     VerifyInternal();
   }
@@ -371,8 +375,8 @@ TEST(RtcpPacketTest, TransportFeedback_Limits) {
   packet->SetBase(0, 0);
   EXPECT_TRUE(packet->AddReceivedPacket(0x0, 0));
   EXPECT_TRUE(packet->AddReceivedPacket(0x8000, 1000));
-  EXPECT_TRUE(packet->AddReceivedPacket(0xFFFF, 2000));
-  EXPECT_FALSE(packet->AddReceivedPacket(0, 3000));
+  EXPECT_TRUE(packet->AddReceivedPacket(0xFFFE, 2000));
+  EXPECT_FALSE(packet->AddReceivedPacket(0xFFFF, 3000));
 
   // Too large delta.
   packet.reset(new TransportFeedback());
@@ -398,7 +402,7 @@ TEST(RtcpPacketTest, TransportFeedback_Limits) {
       ((1L << 23) - 1);
   packet.reset(new TransportFeedback());
   packet->SetBase(0, kMaxBaseTime);
-  packet->AddReceivedPacket(0, kMaxBaseTime);
+  EXPECT_TRUE(packet->AddReceivedPacket(0, kMaxBaseTime));
   // Serialize and de-serialize (verify 24bit parsing).
   rtc::Buffer raw_packet = packet->Build();
   packet = TransportFeedback::ParseFrom(raw_packet.data(), raw_packet.size());
