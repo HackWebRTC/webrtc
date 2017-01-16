@@ -186,12 +186,12 @@ class ViEEncoderTest : public ::testing::Test {
           continue_encode_event_(false, false) {}
 
     VideoCodec codec_config() {
-      rtc::CritScope lock(&crit_);
+      rtc::CritScope lock(&crit_sect_);
       return config_;
     }
 
     void BlockNextEncode() {
-      rtc::CritScope lock(&crit_);
+      rtc::CritScope lock(&local_crit_sect_);
       block_next_encode_ = true;
     }
 
@@ -203,7 +203,7 @@ class ViEEncoderTest : public ::testing::Test {
 
     void CheckLastTimeStampsMatch(int64_t ntp_time_ms,
                                   uint32_t timestamp) const {
-      rtc::CritScope lock(&crit_);
+      rtc::CritScope lock(&local_crit_sect_);
       EXPECT_EQ(timestamp_, timestamp);
       EXPECT_EQ(ntp_time_ms_, ntp_time_ms);
     }
@@ -214,7 +214,7 @@ class ViEEncoderTest : public ::testing::Test {
                    const std::vector<FrameType>* frame_types) override {
       bool block_encode;
       {
-        rtc::CritScope lock(&crit_);
+        rtc::CritScope lock(&local_crit_sect_);
         EXPECT_GT(input_image.timestamp(), timestamp_);
         EXPECT_GT(input_image.ntp_time_ms(), ntp_time_ms_);
         EXPECT_EQ(input_image.timestamp(), input_image.ntp_time_ms() * 90);
@@ -233,7 +233,7 @@ class ViEEncoderTest : public ::testing::Test {
       return result;
     }
 
-    rtc::CriticalSection crit_;
+    rtc::CriticalSection local_crit_sect_;
     bool block_next_encode_ = false;
     rtc::Event continue_encode_event_;
     uint32_t timestamp_ = 0;

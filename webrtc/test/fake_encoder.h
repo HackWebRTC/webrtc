@@ -47,12 +47,13 @@ class FakeEncoder : public VideoEncoder {
   static const char* kImplementationName;
 
  protected:
+  rtc::CriticalSection crit_sect_;
   Clock* const clock_;
-  VideoCodec config_;
-  EncodedImageCallback* callback_;
-  BitrateAllocation target_bitrate_;
-  int max_target_bitrate_kbps_;
-  int64_t last_encode_time_ms_;
+  VideoCodec config_ GUARDED_BY(crit_sect_);
+  EncodedImageCallback* callback_ GUARDED_BY(crit_sect_);
+  BitrateAllocation target_bitrate_ GUARDED_BY(crit_sect_);
+  int max_target_bitrate_kbps_ GUARDED_BY(crit_sect_);
+  int64_t last_encode_time_ms_ GUARDED_BY(crit_sect_);
   uint8_t encoded_buffer_[100000];
 };
 
@@ -69,8 +70,9 @@ class FakeH264Encoder : public FakeEncoder, public EncodedImageCallback {
                         const RTPFragmentationHeader* fragments) override;
 
  private:
-  EncodedImageCallback* callback_;
-  int idr_counter_;
+  rtc::CriticalSection local_crit_sect_;
+  EncodedImageCallback* callback_ GUARDED_BY(local_crit_sect_);
+  int idr_counter_ GUARDED_BY(local_crit_sect_);
 };
 
 class DelayedEncoder : public test::FakeEncoder {
@@ -84,17 +86,17 @@ class DelayedEncoder : public test::FakeEncoder {
                  const std::vector<FrameType>* frame_types) override;
 
  private:
-  rtc::CriticalSection lock_;
-  int delay_ms_ GUARDED_BY(&lock_);
+  rtc::CriticalSection local_crit_sect_;
+  int delay_ms_ GUARDED_BY(&local_crit_sect_);
 };
 
 // This class implements a multi-threaded fake encoder by posting
 // FakeH264Encoder::Encode(.) tasks to |queue1_| and |queue2_|, in an
 // alternating fashion.
-class MultiThreadedFakeH264Encoder : public test::FakeH264Encoder {
+class MultithreadedFakeH264Encoder : public test::FakeH264Encoder {
  public:
-  MultiThreadedFakeH264Encoder(Clock* clock);
-  virtual ~MultiThreadedFakeH264Encoder() override;
+  explicit MultithreadedFakeH264Encoder(Clock* clock);
+  virtual ~MultithreadedFakeH264Encoder() override;
 
   int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,

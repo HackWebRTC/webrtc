@@ -449,9 +449,6 @@ class UlpfecObserver : public test::EndToEndTest {
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
-    transport_adapter_.reset(
-        new internal::TransportAdapter(send_config->send_transport));
-    transport_adapter_->Enable();
     if (use_nack_) {
       send_config->rtp.nack.rtp_history_ms =
           (*receive_configs)[0].rtp.nack.rtp_history_ms =
@@ -481,7 +478,6 @@ class UlpfecObserver : public test::EndToEndTest {
         << "Timed out waiting for ULPFEC and/or media packets.";
   }
 
-  std::unique_ptr<internal::TransportAdapter> transport_adapter_;
   VideoEncoder* const encoder_;
   std::string payload_name_;
   const bool use_nack_;
@@ -538,9 +534,9 @@ TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForVp9WithNackEnabled) {
 }
 #endif  // !defined(RTC_DISABLE_VP9)
 
-TEST_F(VideoSendStreamTest, SupportsUlpfecWithMultiThreadedH264) {
+TEST_F(VideoSendStreamTest, SupportsUlpfecWithMultithreadedH264) {
   std::unique_ptr<VideoEncoder> encoder(
-      new test::MultiThreadedFakeH264Encoder(Clock::GetRealTimeClock()));
+      new test::MultithreadedFakeH264Encoder(Clock::GetRealTimeClock()));
   UlpfecObserver test(false, false, true, true, "H264", encoder.get());
   RunBaseTest(&test);
 }
@@ -606,9 +602,6 @@ class FlexfecObserver : public test::EndToEndTest {
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
-    transport_adapter_.reset(
-        new internal::TransportAdapter(send_config->send_transport));
-    transport_adapter_->Enable();
     if (use_nack_) {
       send_config->rtp.nack.rtp_history_ms =
           (*receive_configs)[0].rtp.nack.rtp_history_ms =
@@ -632,7 +625,6 @@ class FlexfecObserver : public test::EndToEndTest {
         << "Timed out waiting for FlexFEC and/or media packets.";
   }
 
-  std::unique_ptr<internal::TransportAdapter> transport_adapter_;
   VideoEncoder* const encoder_;
   std::string payload_name_;
   const bool use_nack_;
@@ -687,9 +679,9 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackH264) {
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, SupportsFlexfecWithMultiThreadedH264) {
+TEST_F(VideoSendStreamTest, SupportsFlexfecWithMultithreadedH264) {
   std::unique_ptr<VideoEncoder> encoder(
-      new test::MultiThreadedFakeH264Encoder(Clock::GetRealTimeClock()));
+      new test::MultithreadedFakeH264Encoder(Clock::GetRealTimeClock()));
   FlexfecObserver test(false, false, "H264", encoder.get());
   RunBaseTest(&test);
 }
@@ -2639,8 +2631,13 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
         encoded._frameType = (*frame_types)[i];
         encoded._encodedWidth = kEncodedResolution[i].width;
         encoded._encodedHeight = kEncodedResolution[i].height;
-        RTC_DCHECK(callback_);
-        if (callback_->OnEncodedImage(encoded, &specifics, nullptr).error !=
+        EncodedImageCallback* callback;
+        {
+          rtc::CritScope cs(&crit_sect_);
+          callback = callback_;
+        }
+        RTC_DCHECK(callback);
+        if (callback->OnEncodedImage(encoded, &specifics, nullptr).error !=
             EncodedImageCallback::Result::OK) {
           return -1;
         }
