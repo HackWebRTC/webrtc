@@ -25,6 +25,7 @@ group("examples") {
     public_deps += [
       ":AppRTCMobile",
       ":AppRTCMobileTest",
+      ":AppRTCMobileTestStubbedVideoIO",
     ]
   }
 
@@ -124,6 +125,29 @@ if (is_android) {
 
     data = [
       "//webrtc/examples/androidtests/src/org/appspot/apprtc/test/capturetestvideo.y4m",
+    ]
+  }
+
+  instrumentation_test_apk("AppRTCMobileTestStubbedVideoIO") {
+    apk_name = "AppRTCMobileTestStubbedVideoIO"
+    android_manifest = "androidtests/AndroidManifest.xml"
+
+    java_files = [ "androidtests/src/org/appspot/apprtc/test/ConnectActivityStubbedInputOutputTest.java" ]
+
+    apk_under_test = ":AppRTCMobile"
+
+    deps = [
+      ":AppRTCMobile_javalib",
+      "//third_party/android_support_test_runner:rules_java",
+      "//third_party/android_support_test_runner:runner_java",
+      "//third_party/espresso:espresso_all_java",
+      "//third_party/hamcrest:hamcrest_java",
+      "//third_party/junit",
+      "//webrtc/sdk/android:libjingle_peerconnection_java",
+    ]
+
+    data = [
+      "//resources/reference_video_640x360_30fps.y4m",
     ]
   }
 }

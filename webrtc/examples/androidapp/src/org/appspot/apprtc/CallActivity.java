@@ -280,7 +280,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       videoHeight = displayMetrics.heightPixels;
     }
     DataChannelParameters dataChannelParameters = null;
-    if (intent.getBooleanExtra(EXTRA_DATA_CHANNEL_ENABLED, true)) {
+    if (intent.getBooleanExtra(EXTRA_DATA_CHANNEL_ENABLED, false)) {
       dataChannelParameters = new DataChannelParameters(intent.getBooleanExtra(EXTRA_ORDERED, true),
           intent.getIntExtra(EXTRA_MAX_RETRANSMITS_MS, -1),
           intent.getIntExtra(EXTRA_MAX_RETRANSMITS, -1), intent.getStringExtra(EXTRA_PROTOCOL),
