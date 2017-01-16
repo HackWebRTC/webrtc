@@ -58,7 +58,8 @@ ProbeController::ProbeController(PacedSender* pacer, Clock* clock)
       start_bitrate_bps_(0),
       max_bitrate_bps_(0),
       last_alr_probing_time_(clock_->TimeInMilliseconds()),
-      enable_periodic_alr_probing_(false) {}
+      enable_periodic_alr_probing_(false),
+      mid_call_probing_waiting_for_result_(false) {}
 
 void ProbeController::SetBitrates(int64_t min_bitrate_bps,
                                   int64_t start_bitrate_bps,
@@ -88,6 +89,17 @@ void ProbeController::SetBitrates(int64_t min_bitrate_bps,
       if (estimated_bitrate_bps_ != kExponentialProbingDisabled &&
           estimated_bitrate_bps_ < old_max_bitrate_bps &&
           max_bitrate_bps_ > old_max_bitrate_bps) {
+        // The assumption is that if we jump more than 20% in the bandwidth
+        // estimate or if the bandwidth estimate is within 90% of the new
+        // max bitrate then the probing attempt was successful.
+        mid_call_probing_succcess_threshold_ =
+            std::min(estimated_bitrate_bps_ * 1.2, max_bitrate_bps_ * 0.9);
+        mid_call_probing_waiting_for_result_ = true;
+        mid_call_probing_bitrate_bps_ = max_bitrate_bps_;
+
+        RTC_HISTOGRAM_COUNTS_10000("WebRTC.BWE.MidCallProbing.Initiated",
+                                   max_bitrate_bps_ / 1000);
+
         InitiateProbing(clock_->TimeInMilliseconds(), {max_bitrate_bps}, false);
       }
       break;
@@ -116,12 +128,22 @@ void ProbeController::SetEstimatedBitrate(int64_t bitrate_bps) {
   rtc::CritScope cs(&critsect_);
   int64_t now_ms = clock_->TimeInMilliseconds();
 
+  if (mid_call_probing_waiting_for_result_ &&
+      bitrate_bps >= mid_call_probing_succcess_threshold_) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.BWE.MidCallProbing.Success",
+                               mid_call_probing_bitrate_bps_ / 1000);
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.BWE.MidCallProbing.ProbedKbps",
+                               bitrate_bps / 1000);
+    mid_call_probing_waiting_for_result_ = false;
+  }
+
   if (state_ == State::kWaitingForProbingResult) {
     // Continue probing if probing results indicate channel has greater
     // capacity.
     LOG(LS_INFO) << "Measured bitrate: " << bitrate_bps
                  << " Minimum to probe further: "
                  << min_bitrate_to_probe_further_bps_;
+
     if (min_bitrate_to_probe_further_bps_ != kExponentialProbingDisabled &&
         bitrate_bps > min_bitrate_to_probe_further_bps_) {
       // Double the probing bitrate.
@@ -166,12 +188,15 @@ void ProbeController::Process() {
 
   int64_t now_ms = clock_->TimeInMilliseconds();
 
-  if (state_ == State::kWaitingForProbingResult &&
-      (now_ms - time_last_probing_initiated_ms_) >
-          kMaxWaitingTimeForProbingResultMs) {
-    LOG(LS_INFO) << "kWaitingForProbingResult: timeout";
-    state_ = State::kProbingComplete;
-    min_bitrate_to_probe_further_bps_ = kExponentialProbingDisabled;
+  if (now_ms - time_last_probing_initiated_ms_ >
+      kMaxWaitingTimeForProbingResultMs) {
+    mid_call_probing_waiting_for_result_ = false;
+
+    if (state_ == State::kWaitingForProbingResult) {
+      LOG(LS_INFO) << "kWaitingForProbingResult: timeout";
+      state_ = State::kProbingComplete;
+      min_bitrate_to_probe_further_bps_ = kExponentialProbingDisabled;
+    }
   }
 
   if (state_ != State::kProbingComplete || !enable_periodic_alr_probing_)

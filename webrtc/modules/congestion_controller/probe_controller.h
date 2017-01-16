@@ -67,6 +67,11 @@ class ProbeController {
   int64_t last_alr_probing_time_ GUARDED_BY(critsect_);
   bool enable_periodic_alr_probing_ GUARDED_BY(critsect_);
 
+  // For WebRTC.BWE.MidCallProbing.* metric.
+  bool mid_call_probing_waiting_for_result_ GUARDED_BY(&critsect_);
+  int64_t mid_call_probing_bitrate_bps_ GUARDED_BY(&critsect_);
+  int64_t mid_call_probing_succcess_threshold_ GUARDED_BY(&critsect_);
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ProbeController);
 };
 
