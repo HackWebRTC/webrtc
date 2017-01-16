@@ -13,10 +13,13 @@
 
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
+#include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/encoder_settings.h"
 #include "webrtc/test/fake_encoder.h"
 #include "webrtc/test/frame_generator.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/vie_encoder.h"
@@ -35,6 +38,8 @@ namespace webrtc {
 
 using DegredationPreference = VideoSendStream::DegradationPreference;
 using ScaleReason = ScalingObserverInterface::ScaleReason;
+using ::testing::_;
+using ::testing::Return;
 
 namespace {
 const size_t kMaxPayloadLength = 1440;
@@ -163,19 +168,20 @@ class ViEEncoderTest : public ::testing::Test {
     ConfigureEncoder(std::move(video_encoder_config), nack_enabled);
   }
 
-  VideoFrame CreateFrame(int64_t ntp_ts, rtc::Event* destruction_event) const {
+  VideoFrame CreateFrame(int64_t ntp_time_ms,
+                         rtc::Event* destruction_event) const {
     VideoFrame frame(new rtc::RefCountedObject<TestBuffer>(
                          destruction_event, codec_width_, codec_height_),
                      99, 99, kVideoRotation_0);
-    frame.set_ntp_time_ms(ntp_ts);
+    frame.set_ntp_time_ms(ntp_time_ms);
     return frame;
   }
 
-  VideoFrame CreateFrame(int64_t ntp_ts, int width, int height) const {
+  VideoFrame CreateFrame(int64_t ntp_time_ms, int width, int height) const {
     VideoFrame frame(
         new rtc::RefCountedObject<TestBuffer>(nullptr, width, height), 99, 99,
         kVideoRotation_0);
-    frame.set_ntp_time_ms(ntp_ts);
+    frame.set_ntp_time_ms(ntp_time_ms);
     return frame;
   }
 
@@ -977,6 +983,50 @@ TEST_F(ViEEncoderTest, UMACpuLimitedResolutionInPercent) {
             metrics::NumSamples("WebRTC.Video.CpuLimitedResolutionInPercent"));
   EXPECT_EQ(
       1, metrics::NumEvents("WebRTC.Video.CpuLimitedResolutionInPercent", 50));
+}
+
+TEST_F(ViEEncoderTest, CallsBitrateObserver) {
+  class MockBitrateObserver : public VideoBitrateAllocationObserver {
+   public:
+    MOCK_METHOD1(OnBitrateAllocationUpdated, void(const BitrateAllocation&));
+  } bitrate_observer;
+  vie_encoder_->SetBitrateObserver(&bitrate_observer);
+
+  const int kDefaultFps = 30;
+  const BitrateAllocation expected_bitrate =
+      DefaultVideoBitrateAllocator(fake_encoder_.codec_config())
+          .GetAllocation(kTargetBitrateBps, kDefaultFps);
+
+  // First called on bitrate updated, then again on first frame.
+  EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
+      .Times(2);
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  const int64_t kStartTimeMs = 1;
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(kStartTimeMs, codec_width_, codec_height_));
+  sink_.WaitForEncodedFrame(kStartTimeMs);
+
+  // Not called on second frame.
+  EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
+      .Times(0);
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(kStartTimeMs + 1, codec_width_, codec_height_));
+  sink_.WaitForEncodedFrame(kStartTimeMs + 1);
+
+  // Called after a process interval.
+  const int64_t kProcessIntervalMs =
+      vcm::VCMProcessTimer::kDefaultProcessIntervalMs;
+  // TODO(sprang): ViEEncoder should die and/or get injectable clock.
+  // Sleep for one processing interval plus one frame to avoid flakiness.
+  SleepMs(kProcessIntervalMs + 1000 / kDefaultFps);
+  EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
+      .Times(1);
+  video_source_.IncomingCapturedFrame(CreateFrame(
+      kStartTimeMs + kProcessIntervalMs, codec_width_, codec_height_));
+  sink_.WaitForEncodedFrame(kStartTimeMs + kProcessIntervalMs);
+
+  vie_encoder_->Stop();
 }
 
 }  // namespace webrtc

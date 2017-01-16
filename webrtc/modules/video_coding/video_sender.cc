@@ -63,12 +63,6 @@ void VideoSender::Process() {
       send_stats_callback_->SendStatistics(bitRate, frameRate);
     }
   }
-  {
-    rtc::CritScope cs(&params_crit_);
-    // Force an encoder parameters update, so that incoming frame rate is
-    // updated even if bandwidth hasn't changed.
-    encoder_params_.input_frame_rate = _mediaOpt.InputFrameRate();
-  }
 }
 
 int64_t VideoSender::TimeUntilNextProcess() {

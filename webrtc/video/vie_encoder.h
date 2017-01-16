@@ -235,6 +235,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   int dropped_frame_count_ ACCESS_ON(&encoder_queue_);
 
   VideoBitrateAllocationObserver* bitrate_observer_ ACCESS_ON(&encoder_queue_);
+  rtc::Optional<int64_t> last_parameters_update_ms_ ACCESS_ON(&encoder_queue_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.

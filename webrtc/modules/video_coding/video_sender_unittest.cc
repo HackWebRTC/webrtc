@@ -317,22 +317,6 @@ TEST_F(TestVideoSenderWithMockEncoder, TestSetRate) {
   AddFrame();
   clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
 
-  // Add enough frames so that input frame rate will be updated.
-  const int kFramesToSend =
-      (VCMProcessTimer::kDefaultProcessIntervalMs / kFrameIntervalMs) + 1;
-  for (int i = 0; i < kFramesToSend; ++i) {
-    AddFrame();
-    clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
-  }
-
-  EXPECT_CALL(encoder_,
-              SetRateAllocation(new_rate_allocation, kActualFrameRate))
-      .Times(1)
-      .WillOnce(Return(0));
-
-  sender_->Process();
-  AddFrame();
-
   // Expect no call to encoder_.SetRates if the new bitrate is zero.
   EXPECT_CALL(encoder_, SetRateAllocation(_, _)).Times(0);
   sender_->SetChannelParameters(0, 0, 200, rate_allocator_.get(), nullptr);
@@ -376,23 +360,6 @@ TEST_F(TestVideoSenderWithMockEncoder, TestEncoderParametersForInternalSource) {
                                 rate_allocator_.get(), nullptr);
 }
 
-TEST_F(TestVideoSenderWithMockEncoder, EncoderFramerateUpdatedViaProcess) {
-  sender_->SetChannelParameters(settings_.startBitrate * 1000, 0, 200,
-                                rate_allocator_.get(), nullptr);
-  const int64_t kRateStatsWindowMs = 2000;
-  const uint32_t kInputFps = 20;
-  int64_t start_time = clock_.TimeInMilliseconds();
-  while (clock_.TimeInMilliseconds() < start_time + kRateStatsWindowMs) {
-    AddFrame();
-    clock_.AdvanceTimeMilliseconds(1000 / kInputFps);
-  }
-  EXPECT_CALL(encoder_, SetRateAllocation(_, kInputFps))
-      .Times(1)
-      .WillOnce(Return(0));
-  sender_->Process();
-  AddFrame();
-}
-
 TEST_F(TestVideoSenderWithMockEncoder,
        NoRedundantSetChannelParameterOrSetRatesCalls) {
   const uint8_t kLossRate = 4;
@@ -412,13 +379,7 @@ TEST_F(TestVideoSenderWithMockEncoder,
     AddFrame();
     clock_.AdvanceTimeMilliseconds(1000 / kInputFps);
   }
-  // After process, input framerate should be updated but not ChannelParameters
-  // as they are the same as before.
-  EXPECT_CALL(encoder_, SetRateAllocation(_, kInputFps))
-      .Times(1)
-      .WillOnce(Return(0));
-  sender_->Process();
-  AddFrame();
+
   // Call to SetChannelParameters with changed bitrate should call encoder
   // SetRates but not encoder SetChannelParameters (that are unchanged).
   uint32_t new_bitrate_bps = 2 * settings_.startBitrate * 1000;
