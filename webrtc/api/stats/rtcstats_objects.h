@@ -295,7 +295,6 @@ class RTCRTPStreamStats : public RTCStats {
   // crbug.com/657855, 657856
   RTCStatsMember<bool> is_remote;  // = false
   RTCStatsMember<std::string> media_type;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657854, 659137
   RTCStatsMember<std::string> media_track_id;
   RTCStatsMember<std::string> transport_id;
   RTCStatsMember<std::string> codec_id;

@@ -522,6 +522,10 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_CALL(pc_, session()).WillRepeatedly(Return(&session_));
     EXPECT_CALL(pc_, sctp_data_channels())
         .WillRepeatedly(ReturnRef(data_channels_));
+    EXPECT_CALL(pc_, GetSenders()).WillRepeatedly(Return(
+        std::vector<rtc::scoped_refptr<RtpSenderInterface>>()));
+    EXPECT_CALL(pc_, GetReceivers()).WillRepeatedly(Return(
+        std::vector<rtc::scoped_refptr<RtpReceiverInterface>>()));
   }
 
   ~StatsCollectorTest() {}
