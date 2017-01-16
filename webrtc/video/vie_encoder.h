@@ -128,7 +128,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   class EncodeTask;
   class VideoSourceProxy;
 
-  struct VideoFrameInfo {
+  class VideoFrameInfo {
+   public:
     VideoFrameInfo(int width,
                    int height,
                    VideoRotation rotation,
@@ -141,6 +142,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
     int height;
     VideoRotation rotation;
     bool is_texture;
+    int pixel_count() const { return width * height; }
   };
 
   void ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
@@ -215,8 +217,6 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // Set depending on degradation preferences
   bool scaling_enabled_ ACCESS_ON(&encoder_queue_) = false;
 
-  int last_frame_width_ ACCESS_ON(&encoder_queue_);
-  int last_frame_height_ ACCESS_ON(&encoder_queue_);
   // Pixel count last time the resolution was requested to be changed down.
   rtc::Optional<int> max_pixel_count_ ACCESS_ON(&encoder_queue_);
   // Pixel count last time the resolution was requested to be changed up.

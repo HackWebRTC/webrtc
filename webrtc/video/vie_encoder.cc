@@ -270,8 +270,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       picture_id_rpsi_(0),
       clock_(Clock::GetRealTimeClock()),
       scale_counter_(kScaleReasonSize, 0),
-      last_frame_width_(0),
-      last_frame_height_(0),
       last_captured_timestamp_(0),
       delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
                              clock_->TimeInMilliseconds()),
@@ -557,9 +555,6 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
   TraceFrameDropEnd();
 
-  last_frame_height_ = video_frame.height();
-  last_frame_width_ = video_frame.width();
-
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
 
@@ -703,7 +698,8 @@ void ViEEncoder::ScaleDown(ScaleReason reason) {
     return;
   // Request lower resolution if the current resolution is lower than last time
   // we asked for the resolution to be lowered.
-  int current_pixel_count = last_frame_height_ * last_frame_width_;
+  int current_pixel_count =
+      last_frame_info_ ? last_frame_info_->pixel_count() : 0;
   if (max_pixel_count_ && current_pixel_count >= *max_pixel_count_)
     return;
   switch (reason) {
@@ -725,7 +721,7 @@ void ViEEncoder::ScaleDown(ScaleReason reason) {
   LOG(LS_INFO) << "Scaling down resolution.";
   for (size_t i = 0; i < kScaleReasonSize; ++i) {
     LOG(LS_INFO) << "Scaled " << scale_counter_[i]
-                 << " times for reason: " << (i ? "quality" : "cpu");
+                 << " times for reason: " << (i ? "cpu" : "quality");
   }
 }
 
@@ -735,7 +731,8 @@ void ViEEncoder::ScaleUp(ScaleReason reason) {
     return;
   // Only scale if resolution is higher than last time
   // we requested higher resolution.
-  int current_pixel_count = last_frame_height_ * last_frame_width_;
+  int current_pixel_count =
+      last_frame_info_ ? last_frame_info_->pixel_count() : 0;
   if (current_pixel_count <= max_pixel_count_step_up_.value_or(0))
     return;
   switch (reason) {
