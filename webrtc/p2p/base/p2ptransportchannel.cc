@@ -1691,7 +1691,7 @@ Connection* P2PTransportChannel::FindNextPingableConnection() {
                [this, now](Connection* conn) { return IsPingable(conn, now); });
   auto iter =
       std::max_element(pingable_connections.begin(), pingable_connections.end(),
-                       [this, now](Connection* conn1, Connection* conn2) {
+                       [this](Connection* conn1, Connection* conn2) {
                          return MorePingable(conn1, conn2) == conn2;
                        });
   if (iter != pingable_connections.end()) {
