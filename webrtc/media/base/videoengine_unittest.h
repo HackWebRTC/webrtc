@@ -453,8 +453,12 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_EQ(0, info.receivers[0].firs_sent);
     EXPECT_EQ(0, info.receivers[0].plis_sent);
     EXPECT_EQ(0, info.receivers[0].nacks_sent);
-    EXPECT_EQ(kVideoWidth, info.receivers[0].frame_width);
-    EXPECT_EQ(kVideoHeight, info.receivers[0].frame_height);
+    // Resolution may be lower than the initial capture resolution due to
+    // quality and cpu adaptation.
+    EXPECT_LE(info.receivers[0].frame_width, kVideoWidth);
+    EXPECT_GT(info.receivers[0].frame_width, kVideoWidth / 2);
+    EXPECT_LE(info.receivers[0].frame_height, kVideoHeight);
+    EXPECT_GT(info.receivers[0].frame_height, kVideoHeight / 2);
     EXPECT_GT(info.receivers[0].framerate_rcvd, 0);
     EXPECT_GT(info.receivers[0].framerate_decoded, 0);
     EXPECT_GT(info.receivers[0].framerate_output, 0);
