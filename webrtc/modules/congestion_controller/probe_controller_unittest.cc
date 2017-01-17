@@ -79,6 +79,21 @@ TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
                                  kMaxBitrateBps + 100);
 }
 
+TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncreaseAtMaxBitrate) {
+  EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(AtLeast(2));
+  probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
+                                 kMaxBitrateBps);
+  // Long enough to time out exponential probing.
+  clock_.AdvanceTimeMilliseconds(kExponentialProbingTimeoutMs);
+  probe_controller_->SetEstimatedBitrate(kStartBitrateBps);
+  probe_controller_->Process();
+
+  probe_controller_->SetEstimatedBitrate(kMaxBitrateBps);
+  EXPECT_CALL(pacer_, CreateProbeCluster(kMaxBitrateBps + 100));
+  probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
+                                 kMaxBitrateBps + 100);
+}
+
 TEST_F(ProbeControllerTest, TestExponentialProbing) {
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
