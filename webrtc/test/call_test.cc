@@ -279,6 +279,7 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
     config.payload_type = kFlexfecPayloadType;
     config.remote_ssrc = kFlexfecSendSsrc;
     config.protected_media_ssrcs = {kVideoSendSsrcs[0]};
+    config.local_ssrc = kReceiverLocalVideoSsrc;
     for (const RtpExtension& extension : video_send_config_.rtp.extensions)
       config.rtp_header_extensions.push_back(extension);
     flexfec_receive_configs_.push_back(config);

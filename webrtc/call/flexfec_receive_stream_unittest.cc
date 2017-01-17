@@ -12,10 +12,13 @@
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/call/flexfec_receive_stream_impl.h"
+#include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_recovered_packet_receiver.h"
+#include "webrtc/modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "webrtc/modules/utility/include/mock/mock_process_thread.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_transport.h"
@@ -74,11 +77,16 @@ class FlexfecReceiveStreamTest : public ::testing::Test {
  protected:
   FlexfecReceiveStreamTest()
       : config_(CreateDefaultConfig(&rtcp_send_transport_)),
-        receive_stream_(config_, &recovered_packet_receiver_) {}
+        receive_stream_(config_,
+                        &recovered_packet_receiver_,
+                        &rtt_stats_,
+                        &process_thread_) {}
 
+  MockTransport rtcp_send_transport_;
   FlexfecReceiveStream::Config config_;
   MockRecoveredPacketReceiver recovered_packet_receiver_;
-  MockTransport rtcp_send_transport_;
+  MockRtcpRttStats rtt_stats_;
+  MockProcessThread process_thread_;
 
   FlexfecReceiveStreamImpl receive_stream_;
 };
@@ -126,7 +134,8 @@ TEST_F(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
   // clang-format on
 
   testing::StrictMock<MockRecoveredPacketReceiver> recovered_packet_receiver;
-  FlexfecReceiveStreamImpl receive_stream(config_, &recovered_packet_receiver);
+  FlexfecReceiveStreamImpl receive_stream(config_, &recovered_packet_receiver,
+                                          &rtt_stats_, &process_thread_);
 
   // Do not call back before being started.
   receive_stream.AddAndProcessReceivedPacket(ParsePacket(kFlexfecPacket));

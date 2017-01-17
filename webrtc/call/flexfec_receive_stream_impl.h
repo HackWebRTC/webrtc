@@ -12,25 +12,31 @@
 #define WEBRTC_CALL_FLEXFEC_RECEIVE_STREAM_IMPL_H_
 
 #include <memory>
-#include <string>
 
-#include "webrtc/base/basictypes.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/call/flexfec_receive_stream.h"
-#include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {
+
+class FlexfecReceiver;
+class ProcessThread;
+class ReceiveStatistics;
+class RecoveredPacketReceiver;
+class RtcpRttStats;
+class RtpPacketReceived;
+class RtpRtcp;
 
 class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
  public:
   FlexfecReceiveStreamImpl(const Config& config,
-                           RecoveredPacketReceiver* recovered_packet_receiver);
+                           RecoveredPacketReceiver* recovered_packet_receiver,
+                           RtcpRttStats* rtt_stats,
+                           ProcessThread* process_thread);
   ~FlexfecReceiveStreamImpl() override;
 
   const Config& GetConfig() const { return config_; }
 
-  bool AddAndProcessReceivedPacket(RtpPacketReceived packet);
+  bool AddAndProcessReceivedPacket(const RtpPacketReceived& packet);
 
   // Implements FlexfecReceiveStream.
   void Start() override;
@@ -38,11 +44,18 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
   Stats GetStats() const override;
 
  private:
-  rtc::CriticalSection crit_;
-  bool started_ GUARDED_BY(crit_);
-
+  // Config.
   const Config config_;
+  bool started_ GUARDED_BY(crit_);
+  rtc::CriticalSection crit_;
+
+  // Erasure code interfacing.
   const std::unique_ptr<FlexfecReceiver> receiver_;
+
+  // RTCP reporting.
+  const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
+  const std::unique_ptr<RtpRtcp> rtp_rtcp_;
+  ProcessThread* process_thread_;
 };
 
 }  // namespace webrtc

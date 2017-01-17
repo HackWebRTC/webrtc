@@ -43,13 +43,13 @@ class FlexfecReceiver {
   // Inserts a received packet (can be either media or FlexFEC) into the
   // internal buffer, and sends the received packets to the erasure code.
   // All newly recovered packets are sent back through the callback.
-  bool AddAndProcessReceivedPacket(RtpPacketReceived packet);
+  bool AddAndProcessReceivedPacket(const RtpPacketReceived& packet);
 
   // Returns a counter describing the added and recovered packets.
   FecPacketCounter GetPacketCounter() const;
 
  private:
-  bool AddReceivedPacket(RtpPacketReceived packet);
+  bool AddReceivedPacket(const RtpPacketReceived& packet);
   bool ProcessReceivedPackets();
 
   // Config.

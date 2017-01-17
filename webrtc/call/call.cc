@@ -702,8 +702,9 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
 
   RecoveredPacketReceiver* recovered_packet_receiver = this;
-  FlexfecReceiveStreamImpl* receive_stream =
-      new FlexfecReceiveStreamImpl(config, recovered_packet_receiver);
+  FlexfecReceiveStreamImpl* receive_stream = new FlexfecReceiveStreamImpl(
+      config, recovered_packet_receiver, call_stats_->rtcp_rtt_stats(),
+      module_process_thread_.get());
 
   {
     WriteLockScoped write_lock(*receive_crit_);
@@ -1165,10 +1166,9 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
           ParseRtpPacket(packet, length, packet_time);
       if (parsed_packet) {
         NotifyBweOfReceivedPacket(*parsed_packet);
-        auto status =
-            it->second->AddAndProcessReceivedPacket(std::move(*parsed_packet))
-                ? DELIVERY_OK
-                : DELIVERY_PACKET_ERROR;
+        auto status = it->second->AddAndProcessReceivedPacket(*parsed_packet)
+                          ? DELIVERY_OK
+                          : DELIVERY_PACKET_ERROR;
         if (status == DELIVERY_OK)
           event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
         return status;

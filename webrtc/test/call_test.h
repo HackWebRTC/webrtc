@@ -56,7 +56,6 @@ class CallTest : public ::testing::Test {
   static const uint32_t kFlexfecSendSsrc;
   static const uint32_t kReceiverLocalVideoSsrc;
   static const uint32_t kReceiverLocalAudioSsrc;
-  static const uint32_t kReceiverLocalFlexfecSsrc;
   static const int kNackRtpHistoryMs;
 
  protected:

@@ -705,84 +705,126 @@ TEST_P(EndToEndTest, CanReceiveUlpfec) {
   RunBaseTest(&test);
 }
 
-TEST_P(EndToEndTest, CanReceiveFlexfec) {
-  class FlexfecRenderObserver : public test::EndToEndTest,
-                                public rtc::VideoSinkInterface<VideoFrame> {
-   public:
-    FlexfecRenderObserver()
-        : EndToEndTest(kDefaultTimeoutMs), random_(0xcafef00d1) {}
+class FlexfecRenderObserver : public test::EndToEndTest,
+                              public rtc::VideoSinkInterface<VideoFrame> {
+ public:
+  static constexpr uint32_t kVideoLocalSsrc = 123;
+  static constexpr uint32_t kFlexfecLocalSsrc = 456;
 
-    size_t GetNumFlexfecStreams() const override { return 1; }
+  explicit FlexfecRenderObserver(bool expect_flexfec_rtcp)
+      : test::EndToEndTest(test::CallTest::kDefaultTimeoutMs),
+        expect_flexfec_rtcp_(expect_flexfec_rtcp),
+        received_flexfec_rtcp_(false),
+        random_(0xcafef00d1) {}
 
-   private:
-    Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      rtc::CritScope lock(&crit_);
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+  size_t GetNumFlexfecStreams() const override { return 1; }
 
-      uint8_t payload_type = header.payloadType;
-      if (payload_type != kFakeVideoSendPayloadType) {
-        EXPECT_EQ(kFlexfecPayloadType, payload_type);
-      }
+ private:
+  Action OnSendRtp(const uint8_t* packet, size_t length) override {
+    rtc::CritScope lock(&crit_);
+    RTPHeader header;
+    EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-      // Is this a retransmitted media packet? From the perspective of FEC, this
-      // packet is then no longer dropped, so remove it from the list of
-      // dropped packets.
-      if (payload_type == kFakeVideoSendPayloadType) {
-        auto seq_num_it = dropped_sequence_numbers_.find(header.sequenceNumber);
-        if (seq_num_it != dropped_sequence_numbers_.end()) {
-          dropped_sequence_numbers_.erase(seq_num_it);
-          auto ts_it = dropped_timestamps_.find(header.timestamp);
-          EXPECT_NE(ts_it, dropped_timestamps_.end());
-          dropped_timestamps_.erase(ts_it);
-
-          return SEND_PACKET;
-        }
-      }
-
-      // Simulate 5% packet loss. Record what media packets, and corresponding
-      // timestamps, that were dropped.
-      if (random_.Rand(1, 100) <= 5) {
-        if (payload_type == kFakeVideoSendPayloadType) {
-          dropped_sequence_numbers_.insert(header.sequenceNumber);
-          dropped_timestamps_.insert(header.timestamp);
-        }
-
-        return DROP_PACKET;
-      }
-
-      return SEND_PACKET;
+    uint8_t payload_type = header.payloadType;
+    if (payload_type != test::CallTest::kFakeVideoSendPayloadType) {
+      EXPECT_EQ(test::CallTest::kFlexfecPayloadType, payload_type);
     }
 
-    void OnFrame(const VideoFrame& video_frame) override {
-      rtc::CritScope lock(&crit_);
-      // Rendering frame with timestamp of packet that was dropped -> FEC
-      // protection worked.
-      auto it = dropped_timestamps_.find(video_frame.timestamp());
-      if (it != dropped_timestamps_.end())
+    // Is this a retransmitted media packet? From the perspective of FEC, this
+    // packet is then no longer dropped, so remove it from the list of
+    // dropped packets.
+    if (payload_type == test::CallTest::kFakeVideoSendPayloadType) {
+      auto seq_num_it = dropped_sequence_numbers_.find(header.sequenceNumber);
+      if (seq_num_it != dropped_sequence_numbers_.end()) {
+        dropped_sequence_numbers_.erase(seq_num_it);
+        auto ts_it = dropped_timestamps_.find(header.timestamp);
+        EXPECT_NE(ts_it, dropped_timestamps_.end());
+        dropped_timestamps_.erase(ts_it);
+
+        return SEND_PACKET;
+      }
+    }
+
+    // Simulate 5% packet loss. Record what media packets, and corresponding
+    // timestamps, that were dropped.
+    if (random_.Rand(1, 100) <= 5) {
+      if (payload_type == test::CallTest::kFakeVideoSendPayloadType) {
+        dropped_sequence_numbers_.insert(header.sequenceNumber);
+        dropped_timestamps_.insert(header.timestamp);
+      }
+
+      return DROP_PACKET;
+    }
+
+    return SEND_PACKET;
+  }
+
+  Action OnReceiveRtcp(const uint8_t* data, size_t length) override {
+    test::RtcpPacketParser parser;
+
+    parser.Parse(data, length);
+    if (parser.sender_ssrc() == kFlexfecLocalSsrc) {
+      EXPECT_EQ(1, parser.receiver_report()->num_packets());
+      const std::vector<rtcp::ReportBlock>& report_blocks =
+          parser.receiver_report()->report_blocks();
+      if (!report_blocks.empty()) {
+        EXPECT_EQ(1U, report_blocks.size());
+        EXPECT_EQ(test::CallTest::kFlexfecSendSsrc,
+                  report_blocks[0].source_ssrc());
+        received_flexfec_rtcp_ = true;
+      }
+    }
+
+    return SEND_PACKET;
+  }
+
+  void OnFrame(const VideoFrame& video_frame) override {
+    rtc::CritScope lock(&crit_);
+    // Rendering frame with timestamp of packet that was dropped -> FEC
+    // protection worked.
+    auto it = dropped_timestamps_.find(video_frame.timestamp());
+    if (it != dropped_timestamps_.end()) {
+      if (!expect_flexfec_rtcp_ || received_flexfec_rtcp_) {
         observation_complete_.Set();
+      }
     }
+  }
 
-    void ModifyVideoConfigs(
-        VideoSendStream::Config* send_config,
-        std::vector<VideoReceiveStream::Config>* receive_configs,
-        VideoEncoderConfig* encoder_config) override {
-      (*receive_configs)[0].renderer = this;
-    }
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
+    (*receive_configs)[0].rtp.local_ssrc = kVideoLocalSsrc;
+    (*receive_configs)[0].renderer = this;
+  }
 
-    void PerformTest() override {
-      EXPECT_TRUE(Wait())
-          << "Timed out waiting for dropped frames to be rendered.";
-    }
+  void ModifyFlexfecConfigs(
+      std::vector<FlexfecReceiveStream::Config>* receive_configs) override {
+    (*receive_configs)[0].local_ssrc = kFlexfecLocalSsrc;
+  }
 
-    rtc::CriticalSection crit_;
-    std::set<uint32_t> dropped_sequence_numbers_ GUARDED_BY(crit_);
-    // Since several packets can have the same timestamp a multiset is used
-    // instead of a set.
-    std::multiset<uint32_t> dropped_timestamps_ GUARDED_BY(crit_);
-    Random random_;
-  } test;
+  void PerformTest() override {
+    EXPECT_TRUE(Wait())
+        << "Timed out waiting for dropped frames to be rendered.";
+  }
 
+  rtc::CriticalSection crit_;
+  std::set<uint32_t> dropped_sequence_numbers_ GUARDED_BY(crit_);
+  // Since several packets can have the same timestamp a multiset is used
+  // instead of a set.
+  std::multiset<uint32_t> dropped_timestamps_ GUARDED_BY(crit_);
+  bool expect_flexfec_rtcp_;
+  bool received_flexfec_rtcp_;
+  Random random_;
+};
+
+TEST_P(EndToEndTest, ReceivesFlexfec) {
+  FlexfecRenderObserver test(false);
+  RunBaseTest(&test);
+}
+
+TEST_P(EndToEndTest, ReceivesFlexfecAndSendsCorrespondingRtcp) {
+  FlexfecRenderObserver test(true);
   RunBaseTest(&test);
 }
 

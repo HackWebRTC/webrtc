@@ -2219,6 +2219,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetLocalSsrc(
   }
 
   config_.rtp.local_ssrc = local_ssrc;
+  flexfec_config_.local_ssrc = local_ssrc;
   LOG(LS_INFO)
       << "RecreateWebRtcStream (recv) because of SetLocalSsrc; local_ssrc="
       << local_ssrc;
@@ -2246,6 +2247,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetFeedbackParameters(
   config_.rtp.nack.rtp_history_ms = nack_history_ms;
   config_.rtp.transport_cc = transport_cc_enabled;
   config_.rtp.rtcp_mode = rtcp_mode;
+  flexfec_config_.rtcp_mode = rtcp_mode;
   LOG(LS_INFO)
       << "RecreateWebRtcStream (recv) because of SetFeedbackParameters; nack="
       << nack_enabled << ", remb=" << remb_enabled

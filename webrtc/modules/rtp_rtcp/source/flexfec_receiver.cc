@@ -45,7 +45,8 @@ FlexfecReceiver::FlexfecReceiver(
 
 FlexfecReceiver::~FlexfecReceiver() = default;
 
-bool FlexfecReceiver::AddAndProcessReceivedPacket(RtpPacketReceived packet) {
+bool FlexfecReceiver::AddAndProcessReceivedPacket(
+    const RtpPacketReceived& packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   if (!AddReceivedPacket(std::move(packet))) {
     return false;
@@ -58,7 +59,7 @@ FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
   return packet_counter_;
 }
 
-bool FlexfecReceiver::AddReceivedPacket(RtpPacketReceived packet) {
+bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   // RTP packets with a full base header (12 bytes), but without payload,

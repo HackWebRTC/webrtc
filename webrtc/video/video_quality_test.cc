@@ -1121,6 +1121,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     flexfec_receive_config.remote_ssrc = video_send_config_.rtp.flexfec.ssrc;
     flexfec_receive_config.protected_media_ssrcs =
         video_send_config_.rtp.flexfec.protected_media_ssrcs;
+    flexfec_receive_config.local_ssrc = kReceiverLocalVideoSsrc;
     flexfec_receive_config.transport_cc = params_.call.send_side_bwe;
     if (params_.call.send_side_bwe) {
       flexfec_receive_config.rtp_header_extensions.push_back(
