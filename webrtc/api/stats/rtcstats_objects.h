@@ -51,6 +51,14 @@ struct RTCDtlsTransportState {
   static const char* kFailed;
 };
 
+// |RTCMediaStreamTrackStats::kind| is not an enum in the spec but the only
+// valid values are "audio" and "video".
+// https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-kind
+struct RTCMediaStreamTrackKind {
+  static const char* kAudio;
+  static const char* kVideo;
+};
+
 // https://w3c.github.io/webrtc-stats/#certificatestats-dict*
 class RTCCertificateStats final : public RTCStats {
  public:
@@ -237,8 +245,10 @@ class RTCMediaStreamTrackStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
 
-  RTCMediaStreamTrackStats(const std::string& id, int64_t timestamp_us);
-  RTCMediaStreamTrackStats(std::string&& id, int64_t timestamp_us);
+  RTCMediaStreamTrackStats(const std::string& id, int64_t timestamp_us,
+                           const char* kind);
+  RTCMediaStreamTrackStats(std::string&& id, int64_t timestamp_us,
+                           const char* kind);
   RTCMediaStreamTrackStats(const RTCMediaStreamTrackStats& other);
   ~RTCMediaStreamTrackStats() override;
 
@@ -248,6 +258,8 @@ class RTCMediaStreamTrackStats final : public RTCStats {
   // TODO(hbos): |RTCStatsCollector| does not return stats for detached tracks.
   // crbug.com/659137
   RTCStatsMember<bool> detached;
+  // See |RTCMediaStreamTrackKind| for valid values.
+  RTCStatsMember<std::string> kind;
   // Video-only members
   RTCStatsMember<uint32_t> frame_width;
   RTCStatsMember<uint32_t> frame_height;

@@ -1379,7 +1379,8 @@ TEST_F(RTCStatsCollectorTest,
                 RTCMediaStreamStats>());
 
   RTCMediaStreamTrackStats expected_local_audio_track(
-      "RTCMediaStreamTrack_local_LocalAudioTrackID", report->timestamp_us());
+      "RTCMediaStreamTrack_local_LocalAudioTrackID", report->timestamp_us(),
+      RTCMediaStreamTrackKind::kAudio);
   expected_local_audio_track.track_identifier = local_audio_track->id();
   expected_local_audio_track.remote_source = false;
   expected_local_audio_track.ended = true;
@@ -1393,7 +1394,8 @@ TEST_F(RTCStatsCollectorTest,
                 RTCMediaStreamTrackStats>());
 
   RTCMediaStreamTrackStats expected_remote_audio_track(
-      "RTCMediaStreamTrack_remote_RemoteAudioTrackID", report->timestamp_us());
+      "RTCMediaStreamTrack_remote_RemoteAudioTrackID", report->timestamp_us(),
+      RTCMediaStreamTrackKind::kAudio);
   expected_remote_audio_track.track_identifier = remote_audio_track->id();
   expected_remote_audio_track.remote_source = true;
   expected_remote_audio_track.ended = false;
@@ -1433,7 +1435,8 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
 
   RTCMediaStreamTrackStats expected_local_audio_track(
-      "RTCMediaStreamTrack_local_LocalAudioTrackID", report->timestamp_us());
+      "RTCMediaStreamTrack_local_LocalAudioTrackID", report->timestamp_us(),
+      RTCMediaStreamTrackKind::kAudio);
   expected_local_audio_track.track_identifier = local_audio_track->id();
   expected_local_audio_track.remote_source = false;
   expected_local_audio_track.ended = true;
@@ -1516,7 +1519,8 @@ TEST_F(RTCStatsCollectorTest,
                 RTCMediaStreamStats>());
 
   RTCMediaStreamTrackStats expected_local_video_track(
-      "RTCMediaStreamTrack_local_LocalVideoTrackID", report->timestamp_us());
+      "RTCMediaStreamTrack_local_LocalVideoTrackID", report->timestamp_us(),
+      RTCMediaStreamTrackKind::kVideo);
   expected_local_video_track.track_identifier = local_video_track->id();
   expected_local_video_track.remote_source = false;
   expected_local_video_track.ended = false;
@@ -1529,7 +1533,8 @@ TEST_F(RTCStatsCollectorTest,
                 RTCMediaStreamTrackStats>());
 
   RTCMediaStreamTrackStats expected_remote_video_track(
-      "RTCMediaStreamTrack_remote_RemoteVideoTrackID", report->timestamp_us());
+      "RTCMediaStreamTrack_remote_RemoteVideoTrackID", report->timestamp_us(),
+      RTCMediaStreamTrackKind::kVideo);
   expected_remote_video_track.track_identifier = remote_video_track->id();
   expected_remote_video_track.remote_source = true;
   expected_remote_video_track.ended = true;

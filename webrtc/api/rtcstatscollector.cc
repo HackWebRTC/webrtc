@@ -354,7 +354,8 @@ void ProduceMediaStreamAndTrackStats(
         continue;
       }
       std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats(
-          new RTCMediaStreamTrackStats(id, timestamp_us));
+          new RTCMediaStreamTrackStats(id, timestamp_us,
+                                       RTCMediaStreamTrackKind::kAudio));
       stream_stats->track_ids->push_back(audio_track_stats->id());
       SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
           *audio_track.get(),
@@ -392,7 +393,8 @@ void ProduceMediaStreamAndTrackStats(
         continue;
       }
       std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats(
-          new RTCMediaStreamTrackStats(id, timestamp_us));
+          new RTCMediaStreamTrackStats(id, timestamp_us,
+                                       RTCMediaStreamTrackKind::kVideo));
       stream_stats->track_ids->push_back(video_track_stats->id());
       SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
           *video_track.get(),

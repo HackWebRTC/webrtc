@@ -429,13 +429,21 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsDefined(media_stream_track.remote_source);
     verifier.TestMemberIsDefined(media_stream_track.ended);
     verifier.TestMemberIsDefined(media_stream_track.detached);
+    verifier.TestMemberIsDefined(media_stream_track.kind);
     // Video or audio media stream track?
-    if (media_stream_track.frame_width.is_defined()) {
+    if (*media_stream_track.kind == RTCMediaStreamTrackKind::kVideo) {
       // Video-only members
-      verifier.TestMemberIsNonNegative<uint32_t>(
-          media_stream_track.frame_width);
-      verifier.TestMemberIsNonNegative<uint32_t>(
-          media_stream_track.frame_height);
+      if (!*media_stream_track.remote_source) {
+        verifier.TestMemberIsNonNegative<uint32_t>(
+            media_stream_track.frame_width);
+        verifier.TestMemberIsNonNegative<uint32_t>(
+            media_stream_track.frame_height);
+      } else {
+        // TODO(hbos): Frame width/height should be defined for the remote case.
+        // Is this a real problem or an artifact of testing? crbug.com/659137
+        verifier.TestMemberIsUndefined(media_stream_track.frame_width);
+        verifier.TestMemberIsUndefined(media_stream_track.frame_height);
+      }
       verifier.TestMemberIsUndefined(media_stream_track.frames_per_second);
       verifier.TestMemberIsUndefined(media_stream_track.frames_sent);
       verifier.TestMemberIsUndefined(media_stream_track.frames_received);

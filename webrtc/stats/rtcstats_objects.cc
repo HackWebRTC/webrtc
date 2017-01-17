@@ -35,6 +35,9 @@ const char* RTCDtlsTransportState::kConnected = "connected";
 const char* RTCDtlsTransportState::kClosed = "closed";
 const char* RTCDtlsTransportState::kFailed = "failed";
 
+const char* RTCMediaStreamTrackKind::kAudio = "audio";
+const char* RTCMediaStreamTrackKind::kVideo = "video";
+
 WEBRTC_RTCSTATS_IMPL(RTCCertificateStats, RTCStats, "certificate",
     &fingerprint,
     &fingerprint_algorithm,
@@ -350,6 +353,7 @@ WEBRTC_RTCSTATS_IMPL(RTCMediaStreamTrackStats, RTCStats, "track",
     &remote_source,
     &ended,
     &detached,
+    &kind,
     &frame_width,
     &frame_height,
     &frames_per_second,
@@ -365,17 +369,18 @@ WEBRTC_RTCSTATS_IMPL(RTCMediaStreamTrackStats, RTCStats, "track",
     &echo_return_loss_enhancement);
 
 RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
-    const std::string& id, int64_t timestamp_us)
-    : RTCMediaStreamTrackStats(std::string(id), timestamp_us) {
+    const std::string& id, int64_t timestamp_us, const char* kind)
+    : RTCMediaStreamTrackStats(std::string(id), timestamp_us, kind) {
 }
 
 RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
-    std::string&& id, int64_t timestamp_us)
+    std::string&& id, int64_t timestamp_us, const char* kind)
     : RTCStats(std::move(id), timestamp_us),
       track_identifier("trackIdentifier"),
       remote_source("remoteSource"),
       ended("ended"),
       detached("detached"),
+      kind("kind", kind),
       frame_width("frameWidth"),
       frame_height("frameHeight"),
       frames_per_second("framesPerSecond"),
@@ -389,6 +394,8 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
       audio_level("audioLevel"),
       echo_return_loss("echoReturnLoss"),
       echo_return_loss_enhancement("echoReturnLossEnhancement") {
+  RTC_DCHECK(kind == RTCMediaStreamTrackKind::kAudio ||
+             kind == RTCMediaStreamTrackKind::kVideo);
 }
 
 RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
@@ -398,6 +405,7 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
       remote_source(other.remote_source),
       ended(other.ended),
       detached(other.detached),
+      kind(other.kind),
       frame_width(other.frame_width),
       frame_height(other.frame_height),
       frames_per_second(other.frames_per_second),
