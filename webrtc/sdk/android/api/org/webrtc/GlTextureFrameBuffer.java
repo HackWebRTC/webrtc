@@ -40,24 +40,15 @@ public class GlTextureFrameBuffer {
         throw new IllegalArgumentException("Invalid pixel format: " + pixelFormat);
     }
 
+    // Create texture.
     textureId = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
     this.width = 0;
     this.height = 0;
 
-    // Create framebuffer object and bind it.
+    // Create framebuffer object.
     final int frameBuffers[] = new int[1];
     GLES20.glGenFramebuffers(1, frameBuffers, 0);
     frameBufferId = frameBuffers[0];
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
-    GlUtil.checkNoGLES2Error("Generate framebuffer");
-
-    // Attach the texture to the framebuffer as color attachment.
-    GLES20.glFramebufferTexture2D(
-        GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, textureId, 0);
-    GlUtil.checkNoGLES2Error("Attach texture to framebuffer");
-
-    // Restore normal framebuffer.
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
   }
 
   /**
@@ -82,6 +73,19 @@ public class GlTextureFrameBuffer {
         GLES20.GL_UNSIGNED_BYTE, null);
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
     GlUtil.checkNoGLES2Error("GlTextureFrameBuffer setSize");
+
+    // Attach the texture to the framebuffer as color attachment.
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
+    GLES20.glFramebufferTexture2D(
+        GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, textureId, 0);
+
+    // Check that the framebuffer is in a good state.
+    final int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+    if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+      throw new IllegalStateException("Framebuffer not complete, status: " + status);
+    }
+
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
   }
 
   public int getWidth() {
