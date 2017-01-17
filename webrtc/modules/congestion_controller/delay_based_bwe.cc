@@ -230,8 +230,8 @@ DelayBasedBwe::DelayBasedBwe(Clock* clock)
                                             &trendline_threshold_gain_);
   }
   if (in_median_slope_experiment_) {
-    ReadMedianSlopeFilterExperimentParameters(&trendline_window_size_,
-                                              &trendline_threshold_gain_);
+    ReadMedianSlopeFilterExperimentParameters(&median_slope_window_size_,
+                                              &median_slope_threshold_gain_);
   }
 
   network_thread_.DetachFromThread();
