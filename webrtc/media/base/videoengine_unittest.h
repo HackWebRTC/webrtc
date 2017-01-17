@@ -82,7 +82,13 @@ class VideoMediaChannelTest : public testing::Test,
 
   virtual void SetUp() {
     engine_.Init();
-    channel_.reset(engine_.CreateChannel(call_.get(), cricket::MediaConfig(),
+    cricket::MediaConfig media_config;
+    // Disabling cpu overuse detection actually disables quality scaling too; it
+    // implies DegradationPreference kMaintainResolution. Automatic scaling
+    // needs to be disabled, otherwise, tests which check the size of received
+    // frames become flaky.
+    media_config.video.enable_cpu_overuse_detection = false;
+    channel_.reset(engine_.CreateChannel(call_.get(), media_config,
                                          cricket::VideoOptions()));
     channel_->OnReadyToSend(true);
     EXPECT_TRUE(channel_.get() != NULL);
