@@ -184,8 +184,13 @@ public class VideoCapturerAndroid
         }
       }
     });
-    if (!didPost && switchEventsHandler != null) {
-      switchEventsHandler.onCameraSwitchError("Camera is stopped.");
+    if (!didPost) {
+      synchronized (pendingCameraSwitchLock) {
+        pendingCameraSwitch = false;
+      }
+      if (switchEventsHandler != null) {
+        switchEventsHandler.onCameraSwitchError("Camera is stopped.");
+      }
     }
   }
 
