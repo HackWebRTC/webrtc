@@ -396,12 +396,10 @@ if (rtc_include_tests) {
   group("audio_processing_tests") {
     testonly = true
     public_deps = [
-      ":audioproc_f",
       ":audioproc_test_utils",
       ":click_annotate",
       ":nonlinear_beamformer_test",
       ":transient_suppression_test",
-      ":unpack_aecdump",
     ]
 
     if (rtc_enable_intelligibility_enhancer) {
@@ -409,7 +407,11 @@ if (rtc_include_tests) {
     }
 
     if (rtc_enable_protobuf) {
-      public_deps += [ ":audioproc_unittest_proto" ]
+      public_deps += [
+        ":audioproc_f",
+        ":audioproc_unittest_proto",
+        ":unpack_aecdump",
+      ]
     }
   }
 
@@ -442,51 +444,53 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_executable("unpack_aecdump") {
-    testonly = true
-    sources = [
-      "test/unpack.cc",
-    ]
+  if (rtc_enable_protobuf) {
+    rtc_executable("unpack_aecdump") {
+      testonly = true
+      sources = [
+        "test/unpack.cc",
+      ]
 
-    deps = [
-      ":audio_processing",
-      ":audioproc_debug_proto",
-      ":audioproc_protobuf_utils",
-      ":audioproc_test_utils",
-      "../..:webrtc_common",
-      "../../base:rtc_base_approved",
-      "../../common_audio",
-      "../../system_wrappers:system_wrappers_default",
-      "//third_party/gflags:gflags",
-    ]
-  }  # unpack_aecdump
+      deps = [
+        ":audio_processing",
+        ":audioproc_debug_proto",
+        ":audioproc_protobuf_utils",
+        ":audioproc_test_utils",
+        "../..:webrtc_common",
+        "../../base:rtc_base_approved",
+        "../../common_audio",
+        "../../system_wrappers:system_wrappers_default",
+        "//third_party/gflags:gflags",
+      ]
+    }  # unpack_aecdump
 
-  rtc_executable("audioproc_f") {
-    testonly = true
-    sources = [
-      "test/aec_dump_based_simulator.cc",
-      "test/aec_dump_based_simulator.h",
-      "test/audio_processing_simulator.cc",
-      "test/audio_processing_simulator.h",
-      "test/audioproc_float.cc",
-      "test/wav_based_simulator.cc",
-      "test/wav_based_simulator.h",
-    ]
+    rtc_executable("audioproc_f") {
+      testonly = true
+      sources = [
+        "test/aec_dump_based_simulator.cc",
+        "test/aec_dump_based_simulator.h",
+        "test/audio_processing_simulator.cc",
+        "test/audio_processing_simulator.h",
+        "test/audioproc_float.cc",
+        "test/wav_based_simulator.cc",
+        "test/wav_based_simulator.h",
+      ]
 
-    deps = [
-      ":audio_processing",
-      ":audioproc_debug_proto",
-      ":audioproc_protobuf_utils",
-      ":audioproc_test_utils",
-      "../../base:rtc_base_approved",
-      "../../common_audio:common_audio",
-      "../../system_wrappers",
-      "../../system_wrappers:system_wrappers_default",
-      "../../test:test_support",
-      "//testing/gtest",
-      "//third_party/gflags:gflags",
-    ]
-  }  # audioproc_f
+      deps = [
+        ":audio_processing",
+        ":audioproc_debug_proto",
+        ":audioproc_protobuf_utils",
+        ":audioproc_test_utils",
+        "../../base:rtc_base_approved",
+        "../../common_audio:common_audio",
+        "../../system_wrappers",
+        "../../system_wrappers:system_wrappers_default",
+        "../../test:test_support",
+        "//testing/gtest",
+        "//third_party/gflags:gflags",
+      ]
+    }  # audioproc_f
+  }
 
   rtc_source_set("audioproc_test_utils") {
     testonly = true

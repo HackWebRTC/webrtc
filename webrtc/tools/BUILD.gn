@@ -30,11 +30,13 @@ group("tools") {
   if (rtc_include_tests) {
     public_deps += [
       ":activity_metric",
-      ":rtp_analyzer",
       ":tools_unittests",
     ]
     if (rtc_enable_protobuf) {
-      public_deps += [ ":event_log_visualizer" ]
+      public_deps += [
+        ":event_log_visualizer",
+        ":rtp_analyzer",
+      ]
     }
   }
 }
