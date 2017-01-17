@@ -74,14 +74,12 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsDecoderImplementationName) {
       kName, statistics_proxy_->GetStats().decoder_implementation_name.c_str());
 }
 
-TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsOnCompleteFrame) {
-  const int kFrameSizeBytes = 1000;
-  statistics_proxy_->OnCompleteFrame(true, kFrameSizeBytes);
-  VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
-  EXPECT_EQ(1, stats.network_frame_rate);
-  EXPECT_EQ(kFrameSizeBytes * 8, stats.total_bitrate_bps);
-  EXPECT_EQ(1, stats.frame_counts.key_frames);
-  EXPECT_EQ(0, stats.frame_counts.delta_frames);
+TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsIncomingRate) {
+  const int kFramerate = 28;
+  const int kBitrateBps = 311000;
+  statistics_proxy_->OnIncomingRate(kFramerate, kBitrateBps);
+  EXPECT_EQ(kFramerate, statistics_proxy_->GetStats().network_frame_rate);
+  EXPECT_EQ(kBitrateBps, statistics_proxy_->GetStats().total_bitrate_bps);
 }
 
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsDecodeTimingStats) {
@@ -93,10 +91,9 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsDecodeTimingStats) {
   const int kMinPlayoutDelayMs = 6;
   const int kRenderDelayMs = 7;
   const int64_t kRttMs = 8;
-  statistics_proxy_->OnRttUpdate(kRttMs, 0);
-  statistics_proxy_->OnFrameBufferTimingsUpdated(
+  statistics_proxy_->OnDecoderTiming(
       kDecodeMs, kMaxDecodeMs, kCurrentDelayMs, kTargetDelayMs, kJitterBufferMs,
-      kMinPlayoutDelayMs, kRenderDelayMs);
+      kMinPlayoutDelayMs, kRenderDelayMs, kRttMs);
   VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(kDecodeMs, stats.decode_ms);
   EXPECT_EQ(kMaxDecodeMs, stats.max_decode_ms);
