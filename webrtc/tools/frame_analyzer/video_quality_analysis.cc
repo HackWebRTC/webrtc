@@ -13,7 +13,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <string>
+#include <map>
+#include <utility>
 
 #define STATS_LINE_LENGTH 32
 #define Y4M_FILE_HEADER_MAX_SIZE 200
@@ -224,8 +227,12 @@ double CalculateMetrics(VideoAnalysisMetricsType video_metrics_type,
   return result;
 }
 
-void RunAnalysis(const char* reference_file_name, const char* test_file_name,
-                 const char* stats_file_name, int width, int height,
+void RunAnalysis(const char* reference_file_name,
+                 const char* test_file_name,
+                 const char* stats_file_reference_name,
+                 const char* stats_file_test_name,
+                 int width,
+                 int height,
                  ResultsContainer* results) {
   // Check if the reference_file_name ends with "y4m".
   bool y4m_mode = false;
@@ -234,7 +241,8 @@ void RunAnalysis(const char* reference_file_name, const char* test_file_name,
   }
 
   int size = GetI420FrameSize(width, height);
-  FILE* stats_file = fopen(stats_file_name, "r");
+  FILE* stats_file_ref = fopen(stats_file_reference_name, "r");
+  FILE* stats_file_test = fopen(stats_file_test_name, "r");
 
   // String buffer for the lines in the stats file.
   char line[STATS_LINE_LENGTH];
@@ -244,10 +252,29 @@ void RunAnalysis(const char* reference_file_name, const char* test_file_name,
   uint8_t* reference_frame = new uint8_t[size];
   int previous_frame_number = -1;
 
+  // Maps barcode id to the frame id for the reference video.
+  // In case two frames have same id, then we only save the first one.
+  std::map<int, int> ref_barcode_to_frame;
   // While there are entries in the stats file.
-  while (GetNextStatsLine(stats_file, line)) {
+  while (GetNextStatsLine(stats_file_ref, line)) {
+    int extracted_ref_frame = ExtractFrameSequenceNumber(line);
+    int decoded_frame_number = ExtractDecodedFrameNumber(line);
+
+    // Insert will only add if it is not in map already.
+    ref_barcode_to_frame.insert(
+        std::make_pair(decoded_frame_number, extracted_ref_frame));
+  }
+
+  while (GetNextStatsLine(stats_file_test, line)) {
     int extracted_test_frame = ExtractFrameSequenceNumber(line);
     int decoded_frame_number = ExtractDecodedFrameNumber(line);
+    auto it = ref_barcode_to_frame.find(decoded_frame_number);
+    if (it == ref_barcode_to_frame.end()) {
+      // Not found in the reference video.
+      // TODO(mandermo) print
+      continue;
+    }
+    int extracted_ref_frame = it->second;
 
     // If there was problem decoding the barcode in this frame or the frame has
     // been duplicated, continue.
@@ -263,17 +290,17 @@ void RunAnalysis(const char* reference_file_name, const char* test_file_name,
                             test_frame);
     if (y4m_mode) {
       ExtractFrameFromY4mFile(reference_file_name, width, height,
-                              decoded_frame_number, reference_frame);
+                              extracted_ref_frame, reference_frame);
     } else {
       ExtractFrameFromYuvFile(reference_file_name, width, height,
-                              decoded_frame_number, reference_frame);
+                              extracted_ref_frame, reference_frame);
     }
 
     // Calculate the PSNR and SSIM.
-    double result_psnr = CalculateMetrics(kPSNR, reference_frame, test_frame,
-                                          width, height);
-    double result_ssim = CalculateMetrics(kSSIM, reference_frame, test_frame,
-                                          width, height);
+    double result_psnr =
+        CalculateMetrics(kPSNR, reference_frame, test_frame, width, height);
+    double result_ssim =
+        CalculateMetrics(kSSIM, reference_frame, test_frame, width, height);
 
     previous_frame_number = decoded_frame_number;
 
@@ -287,62 +314,124 @@ void RunAnalysis(const char* reference_file_name, const char* test_file_name,
   }
 
   // Cleanup.
-  fclose(stats_file);
+  fclose(stats_file_ref);
+  fclose(stats_file_test);
   delete[] test_frame;
   delete[] reference_frame;
 }
 
 void PrintMaxRepeatedAndSkippedFrames(const std::string& label,
-                                      const std::string& stats_file_name) {
-  PrintMaxRepeatedAndSkippedFrames(stdout, label, stats_file_name);
+                                      const std::string& stats_file_ref_name,
+                                      const std::string& stats_file_test_name) {
+  PrintMaxRepeatedAndSkippedFrames(stdout, label, stats_file_ref_name,
+                                   stats_file_test_name);
 }
 
-void PrintMaxRepeatedAndSkippedFrames(FILE* output, const std::string& label,
-                                      const std::string& stats_file_name) {
-  FILE* stats_file = fopen(stats_file_name.c_str(), "r");
-  if (stats_file == NULL) {
-    fprintf(stderr, "Couldn't open stats file for reading: %s\n",
-            stats_file_name.c_str());
-    return;
-  }
+namespace {
+// Clusters the frames in the file. First in the pair is the frame number and
+// second is the number
+// of frames in that cluster. So if first frame in video has number 100 and it
+// is repeated 3 after
+// each other, then the first entry in the returned vector has first set to 100
+// and second set
+// to 3.
+std::vector<std::pair<int, int> > CalculateFrameClusters(FILE* file) {
+  std::vector<std::pair<int, int> > frame_cnt;
   char line[STATS_LINE_LENGTH];
-
-  int repeated_frames = 1;
-  int max_repeated_frames = 1;
-  int max_skipped_frames = 1;
-  int previous_frame_number = -1;
-
-  while (GetNextStatsLine(stats_file, line)) {
+  while (GetNextStatsLine(file, line)) {
     int decoded_frame_number = ExtractDecodedFrameNumber(line);
-
     if (decoded_frame_number == -1) {
       continue;
     }
-
-    // Calculate how many frames a cluster of repeated frames contains.
-    if (decoded_frame_number == previous_frame_number) {
-      ++repeated_frames;
-      if (repeated_frames > max_repeated_frames) {
-        max_repeated_frames = repeated_frames;
-      }
+    if (frame_cnt.empty() || frame_cnt.back().first != decoded_frame_number) {
+      frame_cnt.push_back(std::make_pair(decoded_frame_number, 1));
     } else {
-      repeated_frames = 1;
+      ++frame_cnt.back().second;
     }
-
-    // Calculate how much frames have been skipped.
-    if (decoded_frame_number != 0 && previous_frame_number != -1) {
-      int skipped_frames = decoded_frame_number - previous_frame_number - 1;
-      if (skipped_frames > max_skipped_frames) {
-        max_skipped_frames = skipped_frames;
-      }
-    }
-    previous_frame_number = decoded_frame_number;
   }
+  return frame_cnt;
+}
+}  // namespace
+
+void PrintMaxRepeatedAndSkippedFrames(FILE* output,
+                                      const std::string& label,
+                                      const std::string& stats_file_ref_name,
+                                      const std::string& stats_file_test_name) {
+  FILE* stats_file_ref = fopen(stats_file_ref_name.c_str(), "r");
+  FILE* stats_file_test = fopen(stats_file_test_name.c_str(), "r");
+  if (stats_file_ref == NULL) {
+    fprintf(stderr, "Couldn't open reference stats file for reading: %s\n",
+            stats_file_ref_name.c_str());
+    return;
+  }
+  if (stats_file_test == NULL) {
+    fprintf(stderr, "Couldn't open test stats file for reading: %s\n",
+            stats_file_test_name.c_str());
+    fclose(stats_file_ref);
+    return;
+  }
+
+  int max_repeated_frames = 1;
+  int max_skipped_frames = 1;
+
+  std::vector<std::pair<int, int> > frame_cnt_ref =
+      CalculateFrameClusters(stats_file_ref);
+
+  std::vector<std::pair<int, int> > frame_cnt_test =
+      CalculateFrameClusters(stats_file_test);
+
+  fclose(stats_file_ref);
+  fclose(stats_file_test);
+
+  auto it_ref = frame_cnt_ref.begin();
+  auto it_test = frame_cnt_test.begin();
+  auto end_ref = frame_cnt_ref.end();
+  auto end_test = frame_cnt_test.end();
+
+  if (it_test == end_test || it_ref == end_ref) {
+    fprintf(stderr, "Either test or ref file is empty, nothing to print\n");
+    return;
+  }
+
+  // Find the first frame in the reference video that match the first frame in
+  // the test video.
+  while (it_ref != end_ref && it_ref->first != it_test->first) {
+    ++it_ref;
+  }
+  if (it_ref == end_ref) {
+    fprintf(stderr,
+            "The barcode in the test video's first frame is not in the "
+            "reference video.\n");
+    return;
+  }
+
+  for (;;) {
+    max_repeated_frames =
+        std::max(max_repeated_frames, it_test->second - it_ref->second + 1);
+    ++it_test;
+    if (it_test == end_test) {
+      break;
+    }
+    int skipped_frames = 0;
+    ++it_ref;
+    while (it_ref != end_ref && it_ref->first != it_test->first) {
+      skipped_frames += it_ref->second;
+      ++it_ref;
+    }
+    if (it_ref == end_ref) {
+      fprintf(stderr,
+              "The barcode in the test video is not in the reference video.\n");
+      return;
+    }
+    if (skipped_frames > max_skipped_frames) {
+      max_skipped_frames = skipped_frames;
+    }
+  }
+
   fprintf(output, "RESULT Max_repeated: %s= %d\n", label.c_str(),
           max_repeated_frames);
   fprintf(output, "RESULT Max_skipped: %s= %d\n", label.c_str(),
           max_skipped_frames);
-  fclose(stats_file);
 }
 
 void PrintAnalysisResults(const std::string& label, ResultsContainer* results) {

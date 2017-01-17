@@ -85,24 +85,42 @@ TEST_F(VideoQualityAnalysisTest, PrintAnalysisResultsThreeFrames) {
 }
 
 TEST_F(VideoQualityAnalysisTest, PrintMaxRepeatedAndSkippedFramesInvalidFile) {
-  std::string stats_filename = OutputPath() + "non-existing-stats-file.txt";
+  std::string stats_filename_ref =
+      OutputPath() + "non-existing-stats-file-1.txt";
+  std::string stats_filename = OutputPath() + "non-existing-stats-file-2.txt";
   remove(stats_filename.c_str());
   PrintMaxRepeatedAndSkippedFrames(logfile_, "NonExistingStatsFile",
-                                   stats_filename);
+                                   stats_filename_ref, stats_filename);
 }
 
 TEST_F(VideoQualityAnalysisTest,
        PrintMaxRepeatedAndSkippedFramesEmptyStatsFile) {
-  std::string stats_filename = OutputPath() + "empty-stats.txt";
+  std::string stats_filename_ref = OutputPath() + "empty-stats-1.txt";
+  std::string stats_filename = OutputPath() + "empty-stats-2.txt";
   std::ofstream stats_file;
+  stats_file.open(stats_filename_ref.c_str());
+  stats_file.close();
   stats_file.open(stats_filename.c_str());
   stats_file.close();
-  PrintMaxRepeatedAndSkippedFrames(logfile_, "EmptyStatsFile", stats_filename);
+  PrintMaxRepeatedAndSkippedFrames(logfile_, "EmptyStatsFile",
+                                   stats_filename_ref, stats_filename);
 }
 
 TEST_F(VideoQualityAnalysisTest, PrintMaxRepeatedAndSkippedFramesNormalFile) {
-  std::string stats_filename = OutputPath() + "stats.txt";
+  std::string stats_filename_ref = OutputPath() + "stats-1.txt";
+  std::string stats_filename = OutputPath() + "stats-2.txt";
   std::ofstream stats_file;
+
+  stats_file.open(stats_filename_ref.c_str());
+  stats_file << "frame_0001 0100\n";
+  stats_file << "frame_0002 0101\n";
+  stats_file << "frame_0003 0102\n";
+  stats_file << "frame_0004 0103\n";
+  stats_file << "frame_0005 0106\n";
+  stats_file << "frame_0006 0107\n";
+  stats_file << "frame_0007 0108\n";
+  stats_file.close();
+
   stats_file.open(stats_filename.c_str());
   stats_file << "frame_0001 0100\n";
   stats_file << "frame_0002 0101\n";
@@ -110,7 +128,8 @@ TEST_F(VideoQualityAnalysisTest, PrintMaxRepeatedAndSkippedFramesNormalFile) {
   stats_file << "frame_0004 0106\n";
   stats_file.close();
 
-  PrintMaxRepeatedAndSkippedFrames(logfile_, "NormalStatsFile", stats_filename);
+  PrintMaxRepeatedAndSkippedFrames(logfile_, "NormalStatsFile",
+                                   stats_filename_ref, stats_filename);
 }
 
 
