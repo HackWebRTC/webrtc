@@ -346,7 +346,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       peerConnectionClient.setPeerConnectionFactoryOptions(options);
     }
     peerConnectionClient.createPeerConnectionFactory(
-        CallActivity.this, peerConnectionParameters, CallActivity.this);
+        getApplicationContext(), peerConnectionParameters, CallActivity.this);
 
     if (screencaptureEnabled) {
       MediaProjectionManager mediaProjectionManager =
@@ -434,6 +434,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
   @Override
   protected void onDestroy() {
+    Thread.setDefaultUncaughtExceptionHandler(null);
     disconnect();
     if (logToast != null) {
       logToast.cancel();
@@ -530,7 +531,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
     // Create and audio manager that will take care of audio routing,
     // audio modes, audio device enumeration etc.
-    audioManager = AppRTCAudioManager.create(this);
+    audioManager = AppRTCAudioManager.create(getApplicationContext());
     // Store existing audio settings and change audio mode to
     // MODE_IN_COMMUNICATION for best possible VoIP performance.
     Log.d(TAG, "Starting the audio manager...");

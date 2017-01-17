@@ -92,7 +92,6 @@ public class PeerConnectionClient {
   private final SDPObserver sdpObserver = new SDPObserver();
   private final ScheduledExecutorService executor;
 
-  private Context context;
   private PeerConnectionFactory factory;
   private PeerConnection peerConnection;
   PeerConnectionFactory.Options options = null;
@@ -292,7 +291,6 @@ public class PeerConnectionClient {
     videoCallEnabled = peerConnectionParameters.videoCallEnabled;
     dataChannelEnabled = peerConnectionParameters.dataChannelParameters != null;
     // Reset variables to initial states.
-    this.context = null;
     factory = null;
     peerConnection = null;
     preferIsac = false;
@@ -459,7 +457,6 @@ public class PeerConnectionClient {
     if (options != null) {
       Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
     }
-    this.context = context;
     factory = new PeerConnectionFactory(options);
     Log.d(TAG, "Peer connection factory created.");
   }
@@ -639,6 +636,8 @@ public class PeerConnectionClient {
       videoSource.dispose();
       videoSource = null;
     }
+    localRender = null;
+    remoteRenders = null;
     Log.d(TAG, "Closing peer connection factory.");
     if (factory != null) {
       factory.dispose();
@@ -649,6 +648,7 @@ public class PeerConnectionClient {
     events.onPeerConnectionClosed();
     PeerConnectionFactory.stopInternalTracingCapture();
     PeerConnectionFactory.shutdownInternalTracer();
+    events = null;
   }
 
   public boolean isHDVideo() {
