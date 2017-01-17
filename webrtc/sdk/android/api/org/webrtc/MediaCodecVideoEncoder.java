@@ -49,10 +49,10 @@ public class MediaCodecVideoEncoder {
   private static final int BITRATE_ADJUSTMENT_FPS = 30;
   private static final int MAXIMUM_INITIAL_FPS = 30;
   private static final double BITRATE_CORRECTION_SEC = 3.0;
-  // Maximum bitrate correction scale - no more than 2 times.
-  private static final double BITRATE_CORRECTION_MAX_SCALE = 2;
+  // Maximum bitrate correction scale - no more than 4 times.
+  private static final double BITRATE_CORRECTION_MAX_SCALE = 4;
   // Amount of correction steps to reach correction maximum scale.
-  private static final int BITRATE_CORRECTION_STEPS = 10;
+  private static final int BITRATE_CORRECTION_STEPS = 20;
   // Forced key frame interval - used to reduce color distortions on Qualcomm platform.
   private static final long QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_M_MS = 25000;
   private static final long QCOM_VP8_KEY_FRAME_INTERVAL_ANDROID_N_MS = 15000;
@@ -753,12 +753,14 @@ public class MediaCodecVideoEncoder {
       boolean bitrateAdjustmentScaleChanged = false;
       if (bitrateAccumulator > bitrateAccumulatorMax) {
         // Encoder generates too high bitrate - need to reduce the scale.
+        int bitrateAdjustmentInc = (int) (bitrateAccumulator / bitrateAccumulatorMax + 0.5);
+        bitrateAdjustmentScaleExp -= bitrateAdjustmentInc;
         bitrateAccumulator = bitrateAccumulatorMax;
-        bitrateAdjustmentScaleExp--;
         bitrateAdjustmentScaleChanged = true;
       } else if (bitrateAccumulator < -bitrateAccumulatorMax) {
         // Encoder generates too low bitrate - need to increase the scale.
-        bitrateAdjustmentScaleExp++;
+        int bitrateAdjustmentInc = (int) (-bitrateAccumulator / bitrateAccumulatorMax + 0.5);
+        bitrateAdjustmentScaleExp += bitrateAdjustmentInc;
         bitrateAccumulator = -bitrateAccumulatorMax;
         bitrateAdjustmentScaleChanged = true;
       }
