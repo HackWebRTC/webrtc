@@ -128,6 +128,8 @@ void SetAudioProcessingStats(StatsReport* report,
   if (residual_echo_likelihood >= 0.0f) {
     report->AddFloat(StatsReport::kStatsValueNameResidualEchoLikelihood,
                      residual_echo_likelihood);
+  }
+  if (residual_echo_likelihood_recent_max >= 0.0f) {
     report->AddFloat(
         StatsReport::kStatsValueNameResidualEchoLikelihoodRecentMax,
         residual_echo_likelihood_recent_max);
