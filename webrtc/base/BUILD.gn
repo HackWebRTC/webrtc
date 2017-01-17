@@ -950,9 +950,5 @@ if (is_android) {
       "java/src/org/webrtc/Size.java",
       "java/src/org/webrtc/ThreadUtils.java",
     ]
-
-    deps = [
-      "//base:base_java",
-    ]
   }
 }
