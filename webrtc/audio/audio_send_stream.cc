@@ -53,7 +53,8 @@ AudioSendStream::AudioSendStream(
     : worker_queue_(worker_queue),
       config_(config),
       audio_state_(audio_state),
-      bitrate_allocator_(bitrate_allocator) {
+      bitrate_allocator_(bitrate_allocator),
+      congestion_controller_(congestion_controller) {
   LOG(LS_INFO) << "AudioSendStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
@@ -258,6 +259,7 @@ const webrtc::AudioSendStream::Config& AudioSendStream::config() const {
 
 void AudioSendStream::SetTransportOverhead(int transport_overhead_per_packet) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  congestion_controller_->SetTransportOverhead(transport_overhead_per_packet);
   channel_proxy_->SetTransportOverhead(transport_overhead_per_packet);
 }
 

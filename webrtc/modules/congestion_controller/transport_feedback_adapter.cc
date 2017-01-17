@@ -43,7 +43,8 @@ class PacketInfoComparator {
 TransportFeedbackAdapter::TransportFeedbackAdapter(
     Clock* clock,
     BitrateController* bitrate_controller)
-    : send_time_history_(clock, kSendTimeHistoryWindowMs),
+    : transport_overhead_bytes_per_packet_(0),
+      send_time_history_(clock, kSendTimeHistoryWindowMs),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
       last_timestamp_us_(kNoTimestamp),

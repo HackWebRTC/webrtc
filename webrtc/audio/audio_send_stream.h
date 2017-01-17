@@ -76,6 +76,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
 
   BitrateAllocator* const bitrate_allocator_;
+  CongestionController* const congestion_controller_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };
