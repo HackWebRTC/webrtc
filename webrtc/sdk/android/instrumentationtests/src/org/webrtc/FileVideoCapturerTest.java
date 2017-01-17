@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc.test;
+package org.webrtc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -25,8 +25,6 @@ import java.util.Arrays;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.webrtc.FileVideoCapturer;
-import org.webrtc.VideoCapturer;
 
 @RunWith(BaseJUnit4ClassRunner.class)
 public class FileVideoCapturerTest {
@@ -83,7 +81,7 @@ public class FileVideoCapturerTest {
     final int FRAME_HEIGHT = 4;
     final FileVideoCapturer fileVideoCapturer =
         new FileVideoCapturer(Environment.getExternalStorageDirectory().getPath()
-            + "/chromium_tests_root/webrtc/examples/androidtests/src/org/appspot/apprtc/test/"
+            + "/chromium_tests_root/webrtc/sdk/android/instrumentationtests/src/org/webrtc/"
             + "capturetestvideo.y4m");
     final MockCapturerObserver capturerObserver = new MockCapturerObserver();
     fileVideoCapturer.initialize(null, null, capturerObserver);

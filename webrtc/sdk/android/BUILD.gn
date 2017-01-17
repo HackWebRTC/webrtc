@@ -195,6 +195,7 @@ if (rtc_include_tests) {
       "instrumentationtests/src/org/webrtc/Camera2CapturerTest.java",
       "instrumentationtests/src/org/webrtc/CameraVideoCapturerTestFixtures.java",
       "instrumentationtests/src/org/webrtc/EglRendererTest.java",
+      "instrumentationtests/src/org/webrtc/FileVideoCapturerTest.java",
       "instrumentationtests/src/org/webrtc/GlRectDrawerTest.java",
       "instrumentationtests/src/org/webrtc/MediaCodecVideoEncoderTest.java",
       "instrumentationtests/src/org/webrtc/NetworkMonitorTest.java",
@@ -202,7 +203,12 @@ if (rtc_include_tests) {
       "instrumentationtests/src/org/webrtc/RendererCommonTest.java",
       "instrumentationtests/src/org/webrtc/SurfaceTextureHelperTest.java",
       "instrumentationtests/src/org/webrtc/SurfaceViewRendererOnMeasureTest.java",
+      "instrumentationtests/src/org/webrtc/VideoFileRendererTest.java",
       "instrumentationtests/src/org/webrtc/WebRtcJniBootTest.java",
+    ]
+
+    data = [
+      "//webrtc/sdk/android/instrumentationtests/src/org/webrtc/capturetestvideo.y4m",
     ]
 
     deps = [

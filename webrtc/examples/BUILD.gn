@@ -107,11 +107,7 @@ if (is_android) {
     apk_name = "AppRTCMobileTest"
     android_manifest = "androidtests/AndroidManifest.xml"
 
-    java_files = [
-      "androidtests/src/org/appspot/apprtc/test/FileVideoCapturerTest.java",
-      "androidtests/src/org/appspot/apprtc/test/PeerConnectionClientTest.java",
-      "androidtests/src/org/appspot/apprtc/test/VideoFileRendererTest.java",
-    ]
+    java_files = [ "androidtests/src/org/appspot/apprtc/test/PeerConnectionClientTest.java" ]
 
     apk_under_test = ":AppRTCMobile"
 
@@ -121,10 +117,6 @@ if (is_android) {
       "//third_party/android_support_test_runner:runner_java",
       "//third_party/junit",
       "//webrtc/sdk/android:libjingle_peerconnection_java",
-    ]
-
-    data = [
-      "//webrtc/examples/androidtests/src/org/appspot/apprtc/test/capturetestvideo.y4m",
     ]
   }
 
