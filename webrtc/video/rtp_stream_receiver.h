@@ -189,7 +189,6 @@ class RtpStreamReceiver : public RtpData,
   const std::unique_ptr<RtpRtcp> rtp_rtcp_;
 
   // Members for the new jitter buffer experiment.
-  bool jitter_buffer_experiment_;
   video_coding::OnCompleteFrameCallback* complete_frame_callback_;
   KeyFrameRequestSender* keyframe_request_sender_;
   VCMTiming* timing_;
