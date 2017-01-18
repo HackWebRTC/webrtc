@@ -85,11 +85,11 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
  public:
   EncodeTask(const VideoFrame& frame,
              ViEEncoder* vie_encoder,
-             int64_t time_when_posted_in_ms,
+             int64_t time_when_posted_us,
              bool log_stats)
       : frame_(frame),
         vie_encoder_(vie_encoder),
-        time_when_posted_ms_(time_when_posted_in_ms),
+        time_when_posted_us_(time_when_posted_us),
         log_stats_(log_stats) {
     ++vie_encoder_->posted_frames_waiting_for_encode_;
   }
@@ -102,7 +102,7 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
                                                 frame_.height());
     ++vie_encoder_->captured_frame_count_;
     if (--vie_encoder_->posted_frames_waiting_for_encode_ == 0) {
-      vie_encoder_->EncodeVideoFrame(frame_, time_when_posted_ms_);
+      vie_encoder_->EncodeVideoFrame(frame_, time_when_posted_us_);
     } else {
       // There is a newer frame in flight. Do not encode this frame.
       LOG(LS_VERBOSE)
@@ -122,7 +122,7 @@ class ViEEncoder::EncodeTask : public rtc::QueuedTask {
   }
   VideoFrame frame_;
   ViEEncoder* const vie_encoder_;
-  const int64_t time_when_posted_ms_;
+  const int64_t time_when_posted_us_;
   const bool log_stats_;
 };
 
@@ -250,8 +250,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       codec_type_(PayloadNameToCodecType(settings.payload_name)
                       .value_or(VideoCodecType::kVideoCodecUnknown)),
       video_sender_(Clock::GetRealTimeClock(), this, this),
-      overuse_detector_(Clock::GetRealTimeClock(),
-                        GetCpuOveruseOptions(settings.full_overuse_time),
+      overuse_detector_(GetCpuOveruseOptions(settings.full_overuse_time),
                         this,
                         encoder_timing,
                         stats_proxy),
@@ -493,7 +492,7 @@ void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
 
   last_captured_timestamp_ = incoming_frame.ntp_time_ms();
   encoder_queue_.PostTask(std::unique_ptr<rtc::QueuedTask>(new EncodeTask(
-      incoming_frame, this, clock_->TimeInMilliseconds(), log_stats)));
+      incoming_frame, this, rtc::TimeMicros(), log_stats)));
 }
 
 bool ViEEncoder::EncoderPaused() const {
@@ -525,7 +524,7 @@ void ViEEncoder::TraceFrameDropEnd() {
 }
 
 void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
-                                  int64_t time_when_posted_in_ms) {
+                                  int64_t time_when_posted_us) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
 
   if (pre_encode_callback_)
@@ -565,7 +564,7 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
 
-  overuse_detector_.FrameCaptured(video_frame, time_when_posted_in_ms);
+  overuse_detector_.FrameCaptured(video_frame, time_when_posted_us);
 
   if (codec_type_ == webrtc::kVideoCodecVP8) {
     webrtc::CodecSpecificInfo codec_specific_info;
@@ -606,12 +605,12 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
   EncodedImageCallback::Result result =
       sink_->OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
 
-  int64_t time_sent = clock_->TimeInMilliseconds();
+  int64_t time_sent_us = rtc::TimeMicros();
   uint32_t timestamp = encoded_image._timeStamp;
   const int qp = encoded_image.qp_;
-  encoder_queue_.PostTask([this, timestamp, time_sent, qp] {
+  encoder_queue_.PostTask([this, timestamp, time_sent_us, qp] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    overuse_detector_.FrameSent(timestamp, time_sent);
+    overuse_detector_.FrameSent(timestamp, time_sent_us);
     if (quality_scaler_)
       quality_scaler_->ReportQP(qp);
   });

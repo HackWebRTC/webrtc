@@ -285,6 +285,7 @@ if (!build_with_chromium) {
         ":webrtc_nonparallel_tests",
         ":webrtc_perf_tests",
         "api:peerconnection_unittests",
+        "base:rtc_base_tests_utils",
         "common_audio:common_audio_unittests",
         "common_video:common_video_unittests",
         "media:rtc_media_unittests",
@@ -406,6 +407,7 @@ if (rtc_include_tests) {
     testonly = true
     deps = [
       "audio:audio_tests",
+      "base:rtc_base_tests_utils",
       "call:call_tests",
       "modules/video_capture",
       "test:test_common",
