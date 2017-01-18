@@ -22,7 +22,6 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/linked_ptr.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/stringencode.h"
@@ -264,6 +263,22 @@ class StatsReport {
 
     ~Value();
 
+    // Support ref counting. Note that for performance reasons, we
+    // don't use thread safe operations. Therefore, all operations
+    // affecting the ref count (in practice, creation and copying of
+    // the Values mapping) must occur on webrtc's signalling thread.
+    int AddRef() const {
+      RTC_DCHECK_RUN_ON(&thread_checker_);
+      return ++ref_count_;
+    }
+    int Release() const {
+      RTC_DCHECK_RUN_ON(&thread_checker_);
+      int count = --ref_count_;
+      if (!count)
+        delete this;
+      return count;
+    }
+
     // TODO(tommi): This compares name as well as value...
     // I think we should only need to compare the value part and
     // move the name part into a hash map.
@@ -304,6 +319,9 @@ class StatsReport {
     const StatsValueName name;
 
    private:
+    rtc::ThreadChecker thread_checker_;
+    mutable int ref_count_ ACCESS_ON(thread_checker_) = 0;
+
     const Type type_;
     // TODO(tommi): Use C++ 11 union and make value_ const.
     union InternalType {
@@ -316,13 +334,10 @@ class StatsReport {
       Id* id_;
     } value_;
 
-   private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Value);
   };
 
-  // TODO(tommi): Consider using a similar approach to how we store Ids using
-  // scoped_refptr for values.
-  typedef rtc::linked_ptr<Value> ValuePtr;
+  typedef rtc::scoped_refptr<Value> ValuePtr;
   typedef std::map<StatsValueName, ValuePtr> Values;
 
   // Ownership of |id| is passed to |this|.

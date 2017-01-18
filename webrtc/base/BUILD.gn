@@ -424,7 +424,6 @@ rtc_static_library("rtc_base") {
     "httpcommon.h",
     "ipaddress.cc",
     "ipaddress.h",
-    "linked_ptr.h",
     "messagedigest.cc",
     "messagedigest.h",
     "messagehandler.cc",
