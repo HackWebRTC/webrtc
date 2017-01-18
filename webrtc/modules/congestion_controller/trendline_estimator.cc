@@ -20,7 +20,7 @@ namespace webrtc {
 
 namespace {
 rtc::Optional<double> LinearFitSlope(
-    const std::list<std::pair<double, double>> points) {
+    const std::deque<std::pair<double, double>>& points) {
   RTC_DCHECK(points.size() >= 2);
   // Compute the "center of mass".
   double sum_x = 0;

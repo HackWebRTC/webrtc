@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <list>
+#include <deque>
 #include <utility>
 
 #include "webrtc/base/constructormagic.h"
@@ -61,7 +61,7 @@ class TrendlineEstimator {
   double accumulated_delay_;
   double smoothed_delay_;
   // Linear least squares regression.
-  std::list<std::pair<double, double>> delay_hist_;
+  std::deque<std::pair<double, double>> delay_hist_;
   double trendline_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(TrendlineEstimator);

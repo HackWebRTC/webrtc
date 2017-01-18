@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <list>
+#include <deque>
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
@@ -63,7 +63,7 @@ class MedianSlopeEstimator {
   unsigned int num_of_deltas_;
   // Theil-Sen robust line fitting
   double accumulated_delay_;
-  std::list<DelayInfo> delay_hist_;
+  std::deque<DelayInfo> delay_hist_;
   PercentileFilter<double> median_filter_;
   double trendline_;
 
