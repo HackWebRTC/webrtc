@@ -8,33 +8,44 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_P2P_BASE_UDPTRANSPORTCHANNEL_H_
-#define WEBRTC_P2P_BASE_UDPTRANSPORTCHANNEL_H_
+#ifndef WEBRTC_P2P_BASE_UDPTRANSPORT_H_
+#define WEBRTC_P2P_BASE_UDPTRANSPORT_H_
 
 #include <memory>
 #include <string>
 
+#include "webrtc/api/udptransportinterface.h"
+#include "webrtc/base/asyncpacketsocket.h"  // For PacketOptions.
 #include "webrtc/base/optional.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
 
 namespace rtc {
 class AsyncPacketSocket;
-class PhysicalSocketServer;
+struct PacketTime;
+struct SentPacket;
 class SocketAddress;
-class SocketServer;
-class Thread;
 }
 
 namespace cricket {
 
-class UdpTransportChannel : public rtc::PacketTransportInterface {
+// Implementation of UdpTransportInterface.
+// Used by OrtcFactory.
+class UdpTransport : public webrtc::UdpTransportInterface,
+                     public rtc::PacketTransportInterface {
  public:
-  enum class State { INIT, CONNECTING, CONNECTED, FAILED };
-  explicit UdpTransportChannel(const std::string& transport_name);
-  UdpTransportChannel(const std::string& transport_name, rtc::SocketServer* ss);
-  ~UdpTransportChannel();
+  // |transport_name| is only used for identification/logging.
+  // |socket| must be non-null.
+  UdpTransport(const std::string& transport_name,
+               std::unique_ptr<rtc::AsyncPacketSocket> socket);
+  ~UdpTransport();
 
+  // Overrides of UdpTransportInterface, used by the API consumer.
+  rtc::SocketAddress GetLocalAddress() const override;
+  bool SetRemoteAddress(const rtc::SocketAddress& addr) override;
+  rtc::SocketAddress GetRemoteAddress() const override;
+
+  // Overrides of PacketTransportInterface, used by webrtc internally.
   const std::string debug_name() const override { return transport_name_; }
 
   bool receiving() const override {
@@ -53,24 +64,6 @@ class UdpTransportChannel : public rtc::PacketTransportInterface {
 
   int GetError() override { return send_error_; }
 
-  State state() const {
-    RTC_DCHECK_RUN_ON(&network_thread_checker_);
-    return state_;
-  }
-
-  // Start() makes UdpTransportChannel transition from state INIT to CONNECTING.
-  // It creates the local UDP socket and binds it to a port.
-  // Consider checking state() after calling Start().
-  void Start();
-
-  void SetRemoteParameters(const rtc::SocketAddress& remote);
-
-  // Returned optional does not have a value if in the INIT or FAILED state.
-  // Consider checking state() before calling local_parameters().
-  rtc::Optional<rtc::SocketAddress> local_parameters() const {
-    return local_parameters_;
-  }
-
  private:
   void OnSocketReadPacket(rtc::AsyncPacketSocket* socket,
                           const char* data,
@@ -79,18 +72,14 @@ class UdpTransportChannel : public rtc::PacketTransportInterface {
                           const rtc::PacketTime& packet_time);
   void OnSocketSentPacket(rtc::AsyncPacketSocket* socket,
                           const rtc::SentPacket& packet);
-  void SetState(State state);  // Set State and Signal.
   bool IsLocalConsistent();
-  void UpdateState();
   std::string transport_name_;
-  rtc::SocketServer* socket_server_;
-  State state_ = State::INIT;
   int send_error_ = 0;
   std::unique_ptr<rtc::AsyncPacketSocket> socket_;
-  rtc::Optional<rtc::SocketAddress> local_parameters_;
-  rtc::Optional<rtc::SocketAddress> remote_parameters_;
+  // If not set, will be an "nil" address ("IsNil" returns true).
+  rtc::SocketAddress remote_address_;
   rtc::ThreadChecker network_thread_checker_;
 };
 }  // namespace cricket
 
-#endif  // WEBRTC_P2P_BASE_UDPTRANSPORTCHANNEL_H_
+#endif  // WEBRTC_P2P_BASE_UDPTRANSPORT_H_

@@ -22,8 +22,9 @@
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/socketserver.h"
 #include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
-#include "webrtc/p2p/base/udptransportchannel.h"
+#include "webrtc/p2p/base/udptransport.h"
 
 namespace cricket {
 
@@ -31,28 +32,39 @@ constexpr int kTimeoutMs = 10000;
 static const rtc::IPAddress kIPv4LocalHostAddress =
     rtc::IPAddress(0x7F000001);  // 127.0.0.1
 
-class UdpTransportChannelTest : public testing::Test,
-                                public sigslot::has_slots<> {
+class UdpTransportTest : public testing::Test, public sigslot::has_slots<> {
  public:
-  UdpTransportChannelTest()
+  UdpTransportTest()
       : network_thread_(rtc::Thread::Current()),
         physical_socket_server_(new rtc::PhysicalSocketServer),
         virtual_socket_server_(
             new rtc::VirtualSocketServer(physical_socket_server_.get())),
         ss_scope_(virtual_socket_server_.get()),
-        ep1_("Name1"),
-        ep2_("name2") {
-    // Setup IP Address for outgoing packets from sockets bound to
-    // IPV4 INADDR_ANY ("0.0.0.0."). Virtual socket server sends these packets
-    // only if the default address is explicit set. With a physical socket, the
-    // actual network stack / operating system would set the IP address for
-    // outgoing packets.
+        ep1_("Name1",
+             std::unique_ptr<rtc::AsyncPacketSocket>(
+                 socket_factory_.CreateUdpSocket(
+                     rtc::SocketAddress(rtc::GetAnyIP(AF_INET), 0),
+                     0,
+                     0))),
+        ep2_("Name2",
+             std::unique_ptr<rtc::AsyncPacketSocket>(
+                 socket_factory_.CreateUdpSocket(
+                     rtc::SocketAddress(rtc::GetAnyIP(AF_INET), 0),
+                     0,
+                     0))) {
+    // Setup IP Address for outgoing packets from sockets bound to IPV4
+    // INADDR_ANY ("0.0.0.0."), as used above when creating the virtual
+    // sockets. The virtual socket server sends these packets only if the
+    // default address is explicit set. With a physical socket, the actual
+    // network stack / operating system would set the IP address for outgoing
+    // packets.
     virtual_socket_server_->SetDefaultRoute(kIPv4LocalHostAddress);
   }
 
   struct Endpoint : public sigslot::has_slots<> {
-    explicit Endpoint(std::string tch_name) {
-      ch_.reset(new UdpTransportChannel(std::move(tch_name)));
+    explicit Endpoint(std::string tch_name,
+                      std::unique_ptr<rtc::AsyncPacketSocket> socket) {
+      ch_.reset(new UdpTransport(std::move(tch_name), std::move(socket)));
       ch_->SignalReadPacket.connect(this, &Endpoint::OnReadPacket);
       ch_->SignalSentPacket.connect(this, &Endpoint::OnSentPacket);
       ch_->SignalReadyToSend.connect(this, &Endpoint::OnReadyToSend);
@@ -98,16 +110,11 @@ class UdpTransportChannelTest : public testing::Test,
     }
 
     void GetLocalPort(uint16_t* local_port) {
-      rtc::Optional<rtc::SocketAddress> addr = ch_->local_parameters();
-      if (!addr) {
-        *local_port = 0;
-        return;
-      }
-      *local_port = addr->port();
+      *local_port = ch_->GetLocalAddress().port();
     }
 
     std::list<std::string> ch_packets_;
-    std::unique_ptr<UdpTransportChannel> ch_;
+    std::unique_ptr<UdpTransport> ch_;
     uint32_t num_received_packets_ = 0;   // Increases on SignalReadPacket.
     uint32_t num_sig_sent_packets_ = 0;   // Increases on SignalSentPacket.
     uint32_t num_sig_writable_ = 0;       // Increases on SignalWritable.
@@ -118,6 +125,8 @@ class UdpTransportChannelTest : public testing::Test,
   std::unique_ptr<rtc::PhysicalSocketServer> physical_socket_server_;
   std::unique_ptr<rtc::VirtualSocketServer> virtual_socket_server_;
   rtc::SocketServerScope ss_scope_;
+  // Uses current thread's socket server, which will be set by ss_scope_.
+  rtc::BasicPacketSocketFactory socket_factory_;
 
   Endpoint ep1_;
   Endpoint ep2_;
@@ -137,43 +146,43 @@ class UdpTransportChannelTest : public testing::Test,
   }
 };
 
-TEST_F(UdpTransportChannelTest, SendRecvBasic) {
-  ep1_.ch_->Start();
-  ep2_.ch_->Start();
+TEST_F(UdpTransportTest, AddressGetters) {
+  // Initially, remote address should be nil but local address shouldn't be.
+  EXPECT_FALSE(ep1_.ch_->GetLocalAddress().IsNil());
+  EXPECT_TRUE(ep1_.ch_->GetRemoteAddress().IsNil());
+  rtc::SocketAddress destination("127.0.0.1", 1337);
+  ASSERT_TRUE(ep1_.ch_->SetRemoteAddress(destination));
+  EXPECT_EQ(destination, ep1_.ch_->GetRemoteAddress());
+}
+
+// Setting an invalid address should fail and have no effect.
+TEST_F(UdpTransportTest, SettingIncompleteRemoteAddressFails) {
+  EXPECT_FALSE(ep1_.ch_->SetRemoteAddress(rtc::SocketAddress("127.0.0.1", 0)));
+  EXPECT_TRUE(ep1_.ch_->GetRemoteAddress().IsNil());
+}
+
+TEST_F(UdpTransportTest, SendRecvBasic) {
   uint16_t port;
   ep2_.GetLocalPort(&port);
   rtc::SocketAddress addr2 = rtc::SocketAddress("127.0.0.1", port);
-  ep1_.ch_->SetRemoteParameters(addr2);
+  EXPECT_TRUE(ep1_.ch_->SetRemoteAddress(addr2));
   ep1_.GetLocalPort(&port);
   rtc::SocketAddress addr1 = rtc::SocketAddress("127.0.0.1", port);
-  ep2_.ch_->SetRemoteParameters(addr1);
+  EXPECT_TRUE(ep2_.ch_->SetRemoteAddress(addr1));
   TestSendRecv();
 }
 
-TEST_F(UdpTransportChannelTest, DefaultLocalParameters) {
-  EXPECT_FALSE(ep1_.ch_->local_parameters());
-}
-
-TEST_F(UdpTransportChannelTest, StartTwice) {
-  ep1_.ch_->Start();
-  EXPECT_EQ(UdpTransportChannel::State::CONNECTING, ep1_.ch_->state());
-  ep1_.ch_->Start();
-  EXPECT_EQ(UdpTransportChannel::State::CONNECTING, ep1_.ch_->state());
-}
-
-TEST_F(UdpTransportChannelTest, StatusAndSignals) {
-  EXPECT_EQ(UdpTransportChannel::State::INIT, ep1_.ch_->state());
-  ep1_.ch_->Start();
-  EXPECT_EQ(UdpTransportChannel::State::CONNECTING, ep1_.ch_->state());
+// Test the signals and state methods used internally by causing a UdpTransport
+// to send a packet to itself.
+TEST_F(UdpTransportTest, StatusAndSignals) {
   EXPECT_EQ(0u, ep1_.num_sig_writable_);
   EXPECT_EQ(0u, ep1_.num_sig_ready_to_send_);
   // Loopback
   EXPECT_TRUE(!ep1_.ch_->writable());
-  rtc::Optional<rtc::SocketAddress> addr = ep1_.ch_->local_parameters();
-  ASSERT_TRUE(addr);
+  rtc::SocketAddress addr = ep1_.ch_->GetLocalAddress();
   // Keep port, but explicitly set IP.
-  addr->SetIP("127.0.0.1");
-  ep1_.ch_->SetRemoteParameters(*addr);
+  addr.SetIP("127.0.0.1");
+  ep1_.ch_->SetRemoteAddress(addr);
   EXPECT_TRUE(ep1_.ch_->writable());
   EXPECT_EQ(1u, ep1_.num_sig_writable_);
   EXPECT_EQ(1u, ep1_.num_sig_ready_to_send_);
@@ -182,4 +191,5 @@ TEST_F(UdpTransportChannelTest, StatusAndSignals) {
   EXPECT_EQ_WAIT(1u, ep1_.ch_packets_.size(), kTimeoutMs);
   EXPECT_EQ_WAIT(1u, ep1_.num_sig_sent_packets_, kTimeoutMs);
 }
+
 }  // namespace cricket

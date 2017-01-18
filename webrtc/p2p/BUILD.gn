@@ -74,8 +74,8 @@ rtc_static_library("rtc_p2p") {
     "base/turnport.cc",
     "base/turnport.h",
     "base/udpport.h",
-    "base/udptransportchannel.cc",
-    "base/udptransportchannel.h",
+    "base/udptransport.cc",
+    "base/udptransport.h",
     "client/basicportallocator.cc",
     "client/basicportallocator.h",
     "client/socketmonitor.cc",
@@ -169,7 +169,7 @@ if (rtc_include_tests) {
       "base/transportdescriptionfactory_unittest.cc",
       "base/turnport_unittest.cc",
       "base/turnserver_unittest.cc",
-      "base/udptransportchannel_unittest.cc",
+      "base/udptransport_unittest.cc",
       "client/basicportallocator_unittest.cc",
     ]
     if (rtc_use_quic) {
