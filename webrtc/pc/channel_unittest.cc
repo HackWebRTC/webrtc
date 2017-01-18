@@ -12,6 +12,7 @@
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/fakeclock.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
@@ -1268,8 +1269,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   // Test that we properly send SRTP with RTCP in both directions.
   // You can pass in DTLS and/or RTCP_MUX as flags.
   void SendSrtpToSrtp(int flags1_in = 0, int flags2_in = 0) {
-    ASSERT((flags1_in & ~(RTCP_MUX | DTLS | GCM_CIPHER)) == 0);
-    ASSERT((flags2_in & ~(RTCP_MUX | DTLS | GCM_CIPHER)) == 0);
+    RTC_CHECK((flags1_in & ~(RTCP_MUX | DTLS | GCM_CIPHER)) == 0);
+    RTC_CHECK((flags2_in & ~(RTCP_MUX | DTLS | GCM_CIPHER)) == 0);
 
     int flags1 = SECURE | flags1_in;
     int flags2 = SECURE | flags2_in;

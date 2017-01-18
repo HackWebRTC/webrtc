@@ -14,6 +14,7 @@
 #include "webrtc/p2p/base/dtlstransportchannel.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/gunit.h"
@@ -78,7 +79,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     return certificate_;
   }
   void SetupSrtp() {
-    ASSERT(certificate_);
+    EXPECT_TRUE(certificate_ != nullptr);
     use_dtls_srtp_ = true;
   }
   void SetupMaxProtocolVersion(rtc::SSLProtocolVersion version) {
@@ -300,7 +301,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
 
   void SendPackets(size_t channel, size_t size, size_t count, bool srtp) {
-    ASSERT(channel < channels_.size());
+    RTC_CHECK(channel < channels_.size());
     std::unique_ptr<char[]> packet(new char[size]);
     size_t sent = 0;
     do {
@@ -324,7 +325,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
 
   int SendInvalidSrtpPacket(size_t channel, size_t size) {
-    ASSERT(channel < channels_.size());
+    RTC_CHECK(channel < channels_.size());
     std::unique_ptr<char[]> packet(new char[size]);
     // Fill the packet with 0 to form an invalid SRTP packet.
     memset(packet.get(), 0, size);

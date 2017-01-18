@@ -618,7 +618,7 @@ class StatsCollectorTest : public testing::Test {
       StatsReports* reports) {
     // A track can't have both sender report and recv report at the same time
     // for now, this might change in the future though.
-    ASSERT((voice_sender_info == NULL) ^ (voice_receiver_info == NULL));
+    EXPECT_TRUE((voice_sender_info == NULL) ^ (voice_receiver_info == NULL));
 
     // Instruct the session to return stats containing the transport channel.
     InitSessionStats(vc_name);
@@ -1315,7 +1315,7 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   uint32_t priority = 1000;
 
   cricket::Candidate c;
-  ASSERT(c.id().length() > 0);
+  EXPECT_GT(c.id().length(), 0u);
   c.set_type(cricket::LOCAL_PORT_TYPE);
   c.set_protocol(cricket::UDP_PROTOCOL_NAME);
   c.set_address(local_address);
@@ -1325,7 +1325,7 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   EXPECT_EQ("Cand-" + c.id(), report_id);
 
   c = cricket::Candidate();
-  ASSERT(c.id().length() > 0);
+  EXPECT_GT(c.id().length(), 0u);
   c.set_type(cricket::PRFLX_PORT_TYPE);
   c.set_protocol(cricket::UDP_PROTOCOL_NAME);
   c.set_address(remote_address);

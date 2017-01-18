@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/base/bufferqueue.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/ssladapter.h"
@@ -383,7 +384,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
       // Make sure we simulate a reliable network for TLS.
       // This is just a check to make sure that people don't write wrong
       // tests.
-      ASSERT((mtu_ == 1460) && (loss_ == 0) && (lose_first_packet_ == 0));
+      RTC_CHECK((mtu_ == 1460) && (loss_ == 0) && (lose_first_packet_ == 0));
     }
 
     if (!identities_set_)
@@ -420,7 +421,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
       // Make sure we simulate a reliable network for TLS.
       // This is just a check to make sure that people don't write wrong
       // tests.
-      ASSERT((mtu_ == 1460) && (loss_ == 0) && (lose_first_packet_ == 0));
+      RTC_CHECK((mtu_ == 1460) && (loss_ == 0) && (lose_first_packet_ == 0));
     }
 
     // Start the handshake

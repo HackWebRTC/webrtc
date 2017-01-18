@@ -790,22 +790,22 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
   expected_outbound_video_codec.codec = "video/VP8";
   expected_outbound_video_codec.clock_rate = 1340;
 
-  ASSERT(report->Get(expected_inbound_audio_codec.id()));
+  ASSERT_TRUE(report->Get(expected_inbound_audio_codec.id()));
   EXPECT_EQ(expected_inbound_audio_codec,
             report->Get(expected_inbound_audio_codec.id())->cast_to<
                   RTCCodecStats>());
 
-  ASSERT(report->Get(expected_outbound_audio_codec.id()));
+  ASSERT_TRUE(report->Get(expected_outbound_audio_codec.id()));
   EXPECT_EQ(expected_outbound_audio_codec,
             report->Get(expected_outbound_audio_codec.id())->cast_to<
                   RTCCodecStats>());
 
-  ASSERT(report->Get(expected_inbound_video_codec.id()));
+  ASSERT_TRUE(report->Get(expected_inbound_video_codec.id()));
   EXPECT_EQ(expected_inbound_video_codec,
             report->Get(expected_inbound_video_codec.id())->cast_to<
                   RTCCodecStats>());
 
-  ASSERT(report->Get(expected_outbound_video_codec.id()));
+  ASSERT_TRUE(report->Get(expected_outbound_video_codec.id()));
   EXPECT_EQ(expected_outbound_video_codec,
             report->Get(expected_outbound_video_codec.id())->cast_to<
                   RTCCodecStats>());
@@ -1618,7 +1618,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   expected_audio.jitter = 4.5;
   expected_audio.fraction_lost = 5.5;
 
-  ASSERT(report->Get(expected_audio.id()));
+  ASSERT_TRUE(report->Get(expected_audio.id()));
   const RTCInboundRTPStreamStats& audio = report->Get(
       expected_audio.id())->cast_to<RTCInboundRTPStreamStats>();
   EXPECT_EQ(audio, expected_audio);
@@ -1703,7 +1703,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   expected_video.fraction_lost = 4.5;
   expected_video.frames_decoded = 8;
 
-  ASSERT(report->Get(expected_video.id()));
+  ASSERT_TRUE(report->Get(expected_video.id()));
   const RTCInboundRTPStreamStats& video = report->Get(
       expected_video.id())->cast_to<RTCInboundRTPStreamStats>();
   EXPECT_EQ(video, expected_video);
@@ -1776,7 +1776,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   expected_audio.bytes_sent = 3;
   expected_audio.round_trip_time = 4.5;
 
-  ASSERT(report->Get(expected_audio.id()));
+  ASSERT_TRUE(report->Get(expected_audio.id()));
   const RTCOutboundRTPStreamStats& audio = report->Get(
       expected_audio.id())->cast_to<RTCOutboundRTPStreamStats>();
   EXPECT_EQ(audio, expected_audio);
@@ -1859,7 +1859,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.frames_encoded = 8;
   expected_video.qp_sum = 16;
 
-  ASSERT(report->Get(expected_video.id()));
+  ASSERT_TRUE(report->Get(expected_video.id()));
   const RTCOutboundRTPStreamStats& video = report->Get(
       expected_video.id())->cast_to<RTCOutboundRTPStreamStats>();
   EXPECT_EQ(video, expected_video);
@@ -1943,7 +1943,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Default) {
   expected_audio.bytes_sent = 3;
   // |expected_audio.round_trip_time| should be undefined.
 
-  ASSERT(report->Get(expected_audio.id()));
+  ASSERT_TRUE(report->Get(expected_audio.id()));
   const RTCOutboundRTPStreamStats& audio = report->Get(
       expected_audio.id())->cast_to<RTCOutboundRTPStreamStats>();
   EXPECT_EQ(audio, expected_audio);
@@ -1965,7 +1965,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Default) {
   // |expected_video.round_trip_time| should be undefined.
   // |expected_video.qp_sum| should be undefined.
 
-  ASSERT(report->Get(expected_video.id()));
+  ASSERT_TRUE(report->Get(expected_video.id()));
   const RTCOutboundRTPStreamStats& video = report->Get(
       expected_video.id())->cast_to<RTCOutboundRTPStreamStats>();
   EXPECT_EQ(video, expected_video);

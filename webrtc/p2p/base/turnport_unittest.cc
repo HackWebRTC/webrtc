@@ -22,6 +22,7 @@
 #include "webrtc/p2p/base/udpport.h"
 #include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/buffer.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/fakeclock.h"
 #include "webrtc/base/firewallsocketserver.h"
@@ -163,7 +164,7 @@ class TurnPortTest : public testing::Test,
   }
 
   virtual void OnMessage(rtc::Message* msg) {
-    ASSERT(msg->message_id == MSG_TESTFINISH);
+    RTC_CHECK(msg->message_id == MSG_TESTFINISH);
     if (msg->message_id == MSG_TESTFINISH)
       test_finish_ = true;
   }
@@ -273,7 +274,7 @@ class TurnPortTest : public testing::Test,
   void CreateSharedTurnPort(const std::string& username,
                             const std::string& password,
                             const ProtocolAddress& server_address) {
-    ASSERT(server_address.proto == PROTO_UDP);
+    RTC_CHECK(server_address.proto == PROTO_UDP);
 
     if (!socket_) {
       socket_.reset(socket_factory_.CreateUdpSocket(

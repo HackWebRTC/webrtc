@@ -1450,10 +1450,10 @@ class WebRtcSessionTest
 
   bool VerifyNoCNCodecs(const cricket::ContentInfo* content) {
     const cricket::ContentDescription* description = content->description;
-    ASSERT(description != NULL);
+    RTC_CHECK(description != NULL);
     const cricket::AudioContentDescription* audio_content_desc =
         static_cast<const cricket::AudioContentDescription*>(description);
-    ASSERT(audio_content_desc != NULL);
+    RTC_CHECK(audio_content_desc != NULL);
     for (size_t i = 0; i < audio_content_desc->codecs().size(); ++i) {
       if (audio_content_desc->codecs()[i].name == "CN")
         return false;
@@ -1463,7 +1463,7 @@ class WebRtcSessionTest
 
   void CreateDataChannel() {
     webrtc::InternalDataChannelInit dci;
-    ASSERT(session_.get());
+    RTC_CHECK(session_.get());
     dci.reliable = session_->data_channel_type() == cricket::DCT_SCTP;
     data_channel_ = DataChannel::Create(
         session_.get(), session_->data_channel_type(), "datachannel", dci);
@@ -3082,7 +3082,7 @@ TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
             session_->video_rtp_transport_channel());
 
   cricket::BaseChannel* voice_channel = session_->voice_channel();
-  ASSERT(voice_channel != NULL);
+  ASSERT_TRUE(voice_channel != NULL);
 
   // Checks if one of the transport channels contains a connection using a given
   // port.

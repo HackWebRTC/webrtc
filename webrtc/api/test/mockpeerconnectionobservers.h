@@ -17,6 +17,7 @@
 #include <string>
 
 #include "webrtc/api/datachannelinterface.h"
+#include "webrtc/base/checks.h"
 
 namespace webrtc {
 
@@ -109,7 +110,7 @@ class MockStatsObserver : public webrtc::StatsObserver {
   virtual ~MockStatsObserver() {}
 
   virtual void OnComplete(const StatsReports& reports) {
-    ASSERT(!called_);
+    RTC_CHECK(!called_);
     called_ = true;
     stats_.Clear();
     stats_.number_of_reports = reports.size();
@@ -143,37 +144,37 @@ class MockStatsObserver : public webrtc::StatsObserver {
   double timestamp() const { return stats_.timestamp; }
 
   int AudioOutputLevel() const {
-    ASSERT(called_);
+    RTC_CHECK(called_);
     return stats_.audio_output_level;
   }
 
   int AudioInputLevel() const {
-    ASSERT(called_);
+    RTC_CHECK(called_);
     return stats_.audio_input_level;
   }
 
   int BytesReceived() const {
-    ASSERT(called_);
+    RTC_CHECK(called_);
     return stats_.bytes_received;
   }
 
   int BytesSent() const {
-    ASSERT(called_);
+    RTC_CHECK(called_);
     return stats_.bytes_sent;
   }
 
   int AvailableReceiveBandwidth() const {
-    ASSERT(called_);
+    RTC_CHECK(called_);
     return stats_.available_receive_bandwidth;
   }
 
   std::string DtlsCipher() const {
-    ASSERT(called_);
+    RTC_CHECK(called_);
     return stats_.dtls_cipher;
   }
 
   std::string SrtpCipher() const {
-    ASSERT(called_);
+    RTC_CHECK(called_);
     return stats_.srtp_cipher;
   }
 

@@ -1300,7 +1300,7 @@ TEST_F(PortTest, TestConnectionDead) {
   ch1.CreateConnection(GetCandidate(port2));
   int64_t after_created = rtc::TimeMillis();
   Connection* conn = ch1.conn();
-  ASSERT(conn != nullptr);
+  ASSERT_NE(conn, nullptr);
   // It is not dead if it is after MIN_CONNECTION_LIFETIME but not pruned.
   conn->UpdateState(after_created + MIN_CONNECTION_LIFETIME + 1);
   rtc::Thread::Current()->ProcessMessages(0);
@@ -1318,7 +1318,7 @@ TEST_F(PortTest, TestConnectionDead) {
   // Create a connection again and receive a ping.
   ch1.CreateConnection(GetCandidate(port2));
   conn = ch1.conn();
-  ASSERT(conn != nullptr);
+  ASSERT_NE(conn, nullptr);
   int64_t before_last_receiving = rtc::TimeMillis();
   conn->ReceivedPing();
   int64_t after_last_receiving = rtc::TimeMillis();

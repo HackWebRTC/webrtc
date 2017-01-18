@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/messagedigest.h"
@@ -451,10 +452,10 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
 
   bool VerifyNoCNCodecs(const cricket::ContentInfo* content) {
     const cricket::ContentDescription* description = content->description;
-    ASSERT(description != NULL);
+    RTC_CHECK(description != NULL);
     const cricket::AudioContentDescription* audio_content_desc =
         static_cast<const cricket::AudioContentDescription*>(description);
-    ASSERT(audio_content_desc != NULL);
+    RTC_CHECK(audio_content_desc != NULL);
     for (size_t i = 0; i < audio_content_desc->codecs().size(); ++i) {
       if (audio_content_desc->codecs()[i].name == "CN")
         return false;

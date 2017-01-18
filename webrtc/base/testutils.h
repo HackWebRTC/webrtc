@@ -28,6 +28,7 @@
 #include <vector>
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/asyncsocket.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/nethelpers.h"
@@ -177,7 +178,7 @@ public:
     va_start(args, format);
     char buffer[1024];
     size_t len = vsprintfn(buffer, sizeof(buffer), format, args);
-    ASSERT(len < sizeof(buffer) - 1);
+    RTC_CHECK(len < sizeof(buffer) - 1);
     va_end(args);
     QueueData(buffer, len);
   }
@@ -297,7 +298,7 @@ public:
     va_start(args, format);
     char buffer[1024];
     size_t len = vsprintfn(buffer, sizeof(buffer), format, args);
-    ASSERT(len < sizeof(buffer) - 1);
+    RTC_CHECK(len < sizeof(buffer) - 1);
     va_end(args);
     QueueData(buffer, len);
   }

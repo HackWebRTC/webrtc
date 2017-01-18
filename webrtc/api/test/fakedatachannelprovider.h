@@ -12,6 +12,7 @@
 #define WEBRTC_API_TEST_FAKEDATACHANNELPROVIDER_H_
 
 #include "webrtc/api/datachannel.h"
+#include "webrtc/base/checks.h"
 
 class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
  public:
@@ -25,7 +26,7 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   bool SendData(const cricket::SendDataParams& params,
                 const rtc::CopyOnWriteBuffer& payload,
                 cricket::SendDataResult* result) override {
-    ASSERT(ready_to_send_ && transport_available_);
+    RTC_CHECK(ready_to_send_ && transport_available_);
     if (send_blocked_) {
       *result = cricket::SDR_BLOCK;
       return false;
@@ -41,7 +42,8 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   }
 
   bool ConnectDataChannel(webrtc::DataChannel* data_channel) override {
-    ASSERT(connected_channels_.find(data_channel) == connected_channels_.end());
+    RTC_CHECK(connected_channels_.find(data_channel) ==
+              connected_channels_.end());
     if (!transport_available_) {
       return false;
     }
@@ -51,13 +53,14 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   }
 
   void DisconnectDataChannel(webrtc::DataChannel* data_channel) override {
-    ASSERT(connected_channels_.find(data_channel) != connected_channels_.end());
+    RTC_CHECK(connected_channels_.find(data_channel) !=
+              connected_channels_.end());
     LOG(LS_INFO) << "DataChannel disconnected " << data_channel;
     connected_channels_.erase(data_channel);
   }
 
   void AddSctpDataStream(int sid) override {
-    ASSERT(sid >= 0);
+    RTC_CHECK(sid >= 0);
     if (!transport_available_) {
       return;
     }
@@ -66,7 +69,7 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   }
 
   void RemoveSctpDataStream(int sid) override {
-    ASSERT(sid >= 0);
+    RTC_CHECK(sid >= 0);
     send_ssrcs_.erase(sid);
     recv_ssrcs_.erase(sid);
   }
@@ -99,7 +102,7 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
   // Set true to emulate the transport ReadyToSendData signal when the transport
   // becomes writable for the first time.
   void set_ready_to_send(bool ready) {
-    ASSERT(transport_available_);
+    RTC_CHECK(transport_available_);
     ready_to_send_ = ready;
     if (ready) {
       std::set<webrtc::DataChannel*>::iterator it;

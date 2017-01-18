@@ -639,7 +639,7 @@ void FakeAudioCaptureModule::UpdateProcessing(bool start) {
 }
 
 void FakeAudioCaptureModule::StartProcessP() {
-  ASSERT(process_thread_->IsCurrent());
+  RTC_CHECK(process_thread_->IsCurrent());
   if (started_) {
     // Already started.
     return;
@@ -648,7 +648,7 @@ void FakeAudioCaptureModule::StartProcessP() {
 }
 
 void FakeAudioCaptureModule::ProcessFrameP() {
-  ASSERT(process_thread_->IsCurrent());
+  RTC_CHECK(process_thread_->IsCurrent());
   if (!started_) {
     next_frame_time_ = rtc::TimeMillis();
     started_ = true;
@@ -673,7 +673,7 @@ void FakeAudioCaptureModule::ProcessFrameP() {
 }
 
 void FakeAudioCaptureModule::ReceiveFrameP() {
-  ASSERT(process_thread_->IsCurrent());
+  RTC_CHECK(process_thread_->IsCurrent());
   {
     rtc::CritScope cs(&crit_callback_);
     if (!audio_callback_) {
@@ -689,7 +689,7 @@ void FakeAudioCaptureModule::ReceiveFrameP() {
                                          &elapsed_time_ms, &ntp_time_ms) != 0) {
       RTC_NOTREACHED();
     }
-    ASSERT(nSamplesOut == kNumberSamples);
+    RTC_CHECK(nSamplesOut == kNumberSamples);
   }
   // The SetBuffer() function ensures that after decoding, the audio buffer
   // should contain samples of similar magnitude (there is likely to be some
@@ -704,7 +704,7 @@ void FakeAudioCaptureModule::ReceiveFrameP() {
 }
 
 void FakeAudioCaptureModule::SendFrameP() {
-  ASSERT(process_thread_->IsCurrent());
+  RTC_CHECK(process_thread_->IsCurrent());
   rtc::CritScope cs(&crit_callback_);
   if (!audio_callback_) {
     return;
