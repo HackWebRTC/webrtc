@@ -531,7 +531,13 @@ void GtkMainWnd::VideoRenderer::OnFrame(
   }
   SetSize(buffer->width(), buffer->height());
 
-  libyuv::I420ToRGBA(buffer->DataY(), buffer->StrideY(),
+  // The order in the name of libyuv::I420To(ABGR,RGBA) is ambiguous because
+  // it doesn't tell you if it is referring to how it is laid out in memory as
+  // bytes or if endiannes is taken into account.
+  // This was supposed to be a call to libyuv::I420ToRGBA but it was resulting
+  // in a reddish video output (see https://bugs.webrtc.org/6857) because it
+  // was producing an unexpected byte order (ABGR, byte swapped).
+  libyuv::I420ToABGR(buffer->DataY(), buffer->StrideY(),
                      buffer->DataU(), buffer->StrideU(),
                      buffer->DataV(), buffer->StrideV(),
                      image_.get(), width_ * 4,
