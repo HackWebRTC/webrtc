@@ -30,6 +30,8 @@ static const int kQpDeltaThresholdForSync = 8;
 const double ScreenshareLayers::kMaxTL0FpsReduction = 2.5;
 const double ScreenshareLayers::kAcceptableTargetOvershoot = 2.0;
 
+constexpr int ScreenshareLayers::kMaxNumTemporalLayers;
+
 // Since this is TL0 we only allow updating and predicting from the LAST
 // reference frame.
 const int ScreenshareLayers::kTl0Flags =
@@ -55,8 +57,14 @@ webrtc::TemporalLayers* ScreenshareTemporalLayersFactory::Create(
     int simulcast_id,
     int num_temporal_layers,
     uint8_t initial_tl0_pic_idx) const {
-  webrtc::TemporalLayers* tl = new webrtc::ScreenshareLayers(
-      num_temporal_layers, rand(), webrtc::Clock::GetRealTimeClock());
+  webrtc::TemporalLayers* tl;
+  if (simulcast_id == 0) {
+    tl = new webrtc::ScreenshareLayers(num_temporal_layers, rand(),
+                                       webrtc::Clock::GetRealTimeClock());
+  } else {
+    RealTimeTemporalLayersFactory rt_tl_factory;
+    tl = rt_tl_factory.Create(simulcast_id, num_temporal_layers, rand());
+  }
   if (listener_)
     listener_->OnTemporalLayersCreated(simulcast_id, tl);
   return tl;
@@ -66,7 +74,8 @@ ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
                                      uint8_t initial_tl0_pic_idx,
                                      Clock* clock)
     : clock_(clock),
-      number_of_temporal_layers_(num_temporal_layers),
+      number_of_temporal_layers_(
+          std::min(kMaxNumTemporalLayers, num_temporal_layers)),
       last_base_layer_sync_(false),
       tl0_pic_idx_(initial_tl0_pic_idx),
       active_layer_(-1),
@@ -78,8 +87,8 @@ ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
       max_debt_bytes_(0),
       encode_framerate_(1000.0f, 1000.0f),  // 1 second window, second scale.
       bitrate_updated_(false) {
-  RTC_CHECK_GT(num_temporal_layers, 0);
-  RTC_CHECK_LE(num_temporal_layers, 2);
+  RTC_CHECK_GT(number_of_temporal_layers_, 0);
+  RTC_CHECK_LE(number_of_temporal_layers_, kMaxNumTemporalLayers);
 }
 
 ScreenshareLayers::~ScreenshareLayers() {
