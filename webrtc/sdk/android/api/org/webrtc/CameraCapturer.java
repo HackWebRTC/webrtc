@@ -61,7 +61,7 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
         }
 
         @Override
-        public void onFailure(String error) {
+        public void onFailure(CameraSession.FailureType failureType, String error) {
           checkIsOnCameraThread();
           uiThreadHandler.removeCallbacks(openCameraTimeoutRunnable);
           synchronized (stateLock) {
@@ -81,7 +81,11 @@ public abstract class CameraCapturer implements CameraVideoCapturer {
                 switchState = SwitchState.IDLE;
               }
 
-              eventsHandler.onCameraError(error);
+              if (failureType == CameraSession.FailureType.DISCONNECTED) {
+                eventsHandler.onCameraDisconnected();
+              } else {
+                eventsHandler.onCameraError(error);
+              }
             } else {
               Logging.w(TAG, "Opening camera failed, retry: " + error);
 

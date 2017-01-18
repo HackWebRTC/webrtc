@@ -11,10 +11,12 @@
 package org.webrtc;
 
 public interface CameraSession {
+  enum FailureType { ERROR, DISCONNECTED }
+
   // Callbacks are fired on the camera thread.
   public interface CreateSessionCallback {
     void onDone(CameraSession session);
-    void onFailure(String error);
+    void onFailure(FailureType failureType, String error);
   }
 
   // Events are fired on the camera thread.

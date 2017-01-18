@@ -101,7 +101,7 @@ public class Camera2Session implements CameraSession {
       state = SessionState.STOPPED;
       stopInternal();
       if (startFailure) {
-        callback.onFailure("Camera disconnected / evicted.");
+        callback.onFailure(FailureType.DISCONNECTED, "Camera disconnected / evicted.");
       } else {
         events.onCameraDisconnected(Camera2Session.this);
       }
@@ -406,7 +406,7 @@ public class Camera2Session implements CameraSession {
     state = SessionState.STOPPED;
     stopInternal();
     if (startFailure) {
-      callback.onFailure(error);
+      callback.onFailure(FailureType.ERROR, error);
     } else {
       events.onCameraError(this, error);
     }

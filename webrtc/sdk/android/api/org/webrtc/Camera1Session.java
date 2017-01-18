@@ -65,7 +65,7 @@ public class Camera1Session implements CameraSession {
     try {
       camera = android.hardware.Camera.open(cameraId);
     } catch (RuntimeException e) {
-      callback.onFailure(e.getMessage());
+      callback.onFailure(FailureType.ERROR, e.getMessage());
       return;
     }
 
@@ -73,7 +73,7 @@ public class Camera1Session implements CameraSession {
       camera.setPreviewTexture(surfaceTextureHelper.getSurfaceTexture());
     } catch (IOException e) {
       camera.release();
-      callback.onFailure(e.getMessage());
+      callback.onFailure(FailureType.ERROR, e.getMessage());
       return;
     }
 
