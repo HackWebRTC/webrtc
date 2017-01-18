@@ -109,14 +109,7 @@ class StreamCollectionInterface : public rtc::RefCountInterface {
 
 class StatsObserver : public rtc::RefCountInterface {
  public:
-  // TODO(nisse, hbos): Old version, not passing ownership. Should
-  // perhaps be deprecated, but since all of this is a legacy
-  // interface anyway, probably best to leave as is until this class
-  // can be deleted.
-  virtual void OnComplete(const StatsReports& reports) {}
-  virtual void OnCompleteReports(std::unique_ptr<StatsReports> reports) {
-    OnComplete(*reports);
-  }
+  virtual void OnComplete(const StatsReports& reports) = 0;
 
  protected:
   virtual ~StatsObserver() {}

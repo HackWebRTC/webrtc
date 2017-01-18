@@ -740,9 +740,9 @@ class StatsObserverWrapper : public StatsObserver {
 
   virtual ~StatsObserverWrapper() {}
 
-  void OnCompleteReports(std::unique_ptr<StatsReports> reports) override {
+  void OnComplete(const StatsReports& reports) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jobjectArray j_reports = ReportsToJava(jni(), *reports);
+    jobjectArray j_reports = ReportsToJava(jni(), reports);
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "onComplete",
                               "([Lorg/webrtc/StatsReport;)V");
     jni()->CallVoidMethod(*j_observer_global_, m, j_reports);

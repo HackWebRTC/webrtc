@@ -29,10 +29,10 @@ class StatsObserverAdapter : public StatsObserver {
     completion_handler_ = nil;
   }
 
-  void OnCompleteReports(std::unique_ptr<StatsReports> reports) override {
+  void OnComplete(const StatsReports& reports) override {
     RTC_DCHECK(completion_handler_);
-    NSMutableArray *stats = [NSMutableArray arrayWithCapacity:reports->size()];
-    for (const auto* report : *reports) {
+    NSMutableArray *stats = [NSMutableArray arrayWithCapacity:reports.size()];
+    for (const auto* report : reports) {
       RTCLegacyStatsReport *statsReport =
           [[RTCLegacyStatsReport alloc] initWithNativeReport:*report];
       [stats addObject:statsReport];
