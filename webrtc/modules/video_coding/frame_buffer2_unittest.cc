@@ -419,5 +419,22 @@ TEST_F(TestFrameBuffer2, LastContinuousFrameTwoLayers) {
   EXPECT_EQ(pid + 3, InsertFrame(pid + 3, 1, ts, true, pid + 2));
 }
 
+TEST_F(TestFrameBuffer2, PictureIdJumpBack) {
+  uint16_t pid = Rand();
+  uint32_t ts = Rand();
+
+  EXPECT_EQ(pid, InsertFrame(pid, 0, ts, false));
+  EXPECT_EQ(pid + 1, InsertFrame(pid + 1, 0, ts + 1, false, pid));
+  ExtractFrame();
+  CheckFrame(0, pid, 0);
+
+  // Jump back in pid but increase ts.
+  EXPECT_EQ(pid - 1, InsertFrame(pid - 1, 0, ts + 2, false));
+  ExtractFrame();
+  ExtractFrame();
+  CheckFrame(1, pid - 1, 0);
+  CheckNoFrame(2);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc

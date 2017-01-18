@@ -135,6 +135,7 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
 
     PropagateDecodability(next_frame_it->second);
     AdvanceLastDecodedFrame(next_frame_it);
+    last_decoded_frame_timestamp_ = frame->timestamp;
     *frame_out = std::move(frame);
     return kFrameFound;
   } else {
@@ -189,14 +190,27 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
 
   if (last_decoded_frame_it_ != frames_.end() &&
       key < last_decoded_frame_it_->first) {
-    LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) (" << key.picture_id
-                    << ":" << static_cast<int>(key.spatial_layer)
-                    << ") inserted after frame ("
-                    << last_decoded_frame_it_->first.picture_id << ":"
-                    << static_cast<int>(
-                           last_decoded_frame_it_->first.spatial_layer)
-                    << ") was handed off for decoding, dropping frame.";
-    return last_continuous_picture_id;
+    if (AheadOf(frame->timestamp, last_decoded_frame_timestamp_) &&
+        frame->num_references == 0) {
+      // If this frame has a newer timestamp but an earlier picture id then we
+      // assume there has been a jump in the picture id due to some encoder
+      // reconfiguration or some other reason. Even though this is not according
+      // to spec we can still continue to decode from this frame if it is a
+      // keyframe.
+      LOG(LS_WARNING) << "A jump in picture id was detected, clearing buffer.";
+      ClearFramesAndHistory();
+      last_continuous_picture_id = -1;
+    } else {
+      LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
+                      << key.picture_id << ":"
+                      << static_cast<int>(key.spatial_layer)
+                      << ") inserted after frame ("
+                      << last_decoded_frame_it_->first.picture_id << ":"
+                      << static_cast<int>(
+                             last_decoded_frame_it_->first.spatial_layer)
+                      << ") was handed off for decoding, dropping frame.";
+      return last_continuous_picture_id;
+    }
   }
 
   auto info = frames_.insert(std::make_pair(key, FrameInfo())).first;
@@ -388,6 +402,14 @@ void FrameBuffer::UpdateHistograms() const {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.JitterBufferDelayInMs",
                                accumulated_delay_ / accumulated_delay_samples_);
   }
+}
+
+void FrameBuffer::ClearFramesAndHistory() {
+  frames_.clear();
+  last_decoded_frame_it_ = frames_.end();
+  last_continuous_frame_it_ = frames_.end();
+  num_frames_history_ = 0;
+  num_frames_buffered_ = 0;
 }
 
 }  // namespace video_coding
