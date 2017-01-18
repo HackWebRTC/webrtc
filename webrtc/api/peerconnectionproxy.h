@@ -18,10 +18,9 @@ namespace webrtc {
 
 // Define proxy for PeerConnectionInterface.
 BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
-  PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>,
-                local_streams)
-  PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>,
-                remote_streams)
+  PROXY_SIGNALING_THREAD_DESTRUCTOR()
+  PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>, local_streams)
+  PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>, remote_streams)
   PROXY_METHOD1(bool, AddStream, MediaStreamInterface*)
   PROXY_METHOD1(void, RemoveStream, MediaStreamInterface*)
   PROXY_METHOD2(rtc::scoped_refptr<RtpSenderInterface>,
@@ -30,7 +29,8 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
                 std::vector<MediaStreamInterface*>)
   PROXY_METHOD1(bool, RemoveTrack, RtpSenderInterface*)
   PROXY_METHOD1(rtc::scoped_refptr<DtmfSenderInterface>,
-                CreateDtmfSender, AudioTrackInterface*)
+                CreateDtmfSender,
+                AudioTrackInterface*)
   PROXY_METHOD2(rtc::scoped_refptr<RtpSenderInterface>,
                 CreateSender,
                 const std::string&,
@@ -39,12 +39,16 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
                      GetSenders)
   PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<RtpReceiverInterface>>,
                      GetReceivers)
-  PROXY_METHOD3(bool, GetStats, StatsObserver*,
+  PROXY_METHOD3(bool,
+                GetStats,
+                StatsObserver*,
                 MediaStreamTrackInterface*,
                 StatsOutputLevel)
   PROXY_METHOD1(void, GetStats, RTCStatsCollectorCallback*)
   PROXY_METHOD2(rtc::scoped_refptr<DataChannelInterface>,
-                CreateDataChannel, const std::string&, const DataChannelInit*)
+                CreateDataChannel,
+                const std::string&,
+                const DataChannelInit*)
   PROXY_CONSTMETHOD0(const SessionDescriptionInterface*, local_description)
   PROXY_CONSTMETHOD0(const SessionDescriptionInterface*, remote_description)
   PROXY_CONSTMETHOD0(const SessionDescriptionInterface*,
@@ -55,9 +59,13 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
                      current_local_description)
   PROXY_CONSTMETHOD0(const SessionDescriptionInterface*,
                      current_remote_description)
-  PROXY_METHOD2(void, CreateOffer, CreateSessionDescriptionObserver*,
+  PROXY_METHOD2(void,
+                CreateOffer,
+                CreateSessionDescriptionObserver*,
                 const MediaConstraintsInterface*)
-  PROXY_METHOD2(void, CreateAnswer, CreateSessionDescriptionObserver*,
+  PROXY_METHOD2(void,
+                CreateAnswer,
+                CreateSessionDescriptionObserver*,
                 const MediaConstraintsInterface*)
   PROXY_METHOD2(void,
                 CreateOffer,
@@ -67,9 +75,13 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
                 CreateAnswer,
                 CreateSessionDescriptionObserver*,
                 const RTCOfferAnswerOptions&)
-  PROXY_METHOD2(void, SetLocalDescription, SetSessionDescriptionObserver*,
+  PROXY_METHOD2(void,
+                SetLocalDescription,
+                SetSessionDescriptionObserver*,
                 SessionDescriptionInterface*)
-  PROXY_METHOD2(void, SetRemoteDescription, SetSessionDescriptionObserver*,
+  PROXY_METHOD2(void,
+                SetRemoteDescription,
+                SetSessionDescriptionObserver*,
                 SessionDescriptionInterface*)
   PROXY_METHOD0(PeerConnectionInterface::RTCConfiguration, GetConfiguration);
   PROXY_METHOD2(bool,
@@ -90,7 +102,7 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
   PROXY_METHOD2(bool, StartRtcEventLog, rtc::PlatformFile, int64_t)
   PROXY_METHOD0(void, StopRtcEventLog)
   PROXY_METHOD0(void, Close)
-END_SIGNALING_PROXY()
+END_PROXY_MAP()
 
 }  // namespace webrtc
 

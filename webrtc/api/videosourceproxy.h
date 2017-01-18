@@ -21,6 +21,7 @@ namespace webrtc {
 // destroyed on the signaling thread and marshals all method calls to the
 // signaling thread.
 BEGIN_PROXY_MAP(VideoTrackSource)
+  PROXY_SIGNALING_THREAD_DESTRUCTOR()
   PROXY_CONSTMETHOD0(SourceState, state)
   PROXY_CONSTMETHOD0(bool, remote)
   PROXY_CONSTMETHOD0(bool, is_screencast)
@@ -33,7 +34,7 @@ BEGIN_PROXY_MAP(VideoTrackSource)
   PROXY_WORKER_METHOD1(void, RemoveSink, rtc::VideoSinkInterface<VideoFrame>*)
   PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
   PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
-END_PROXY()
+END_PROXY_MAP()
 
 }  // namespace webrtc
 
