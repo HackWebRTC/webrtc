@@ -80,15 +80,12 @@ class YuvConverter {
       + "}\n";
   // clang-format on
 
-  private final int frameBufferId;
-  private final int frameTextureId;
+  private final GlTextureFrameBuffer textureFrameBuffer;
   private final GlShader shader;
   private final int texMatrixLoc;
   private final int xUnitLoc;
   private final int coeffsLoc;
   private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
-  private int frameBufferWidth;
-  private int frameBufferHeight;
   private boolean released = false;
 
   /**
@@ -96,25 +93,7 @@ class YuvConverter {
    */
   public YuvConverter() {
     threadChecker.checkIsOnValidThread();
-    frameTextureId = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
-    this.frameBufferWidth = 0;
-    this.frameBufferHeight = 0;
-
-    // Create framebuffer object and bind it.
-    final int frameBuffers[] = new int[1];
-    GLES20.glGenFramebuffers(1, frameBuffers, 0);
-    frameBufferId = frameBuffers[0];
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
-    GlUtil.checkNoGLES2Error("Generate framebuffer");
-
-    // Attach the texture to the framebuffer as color attachment.
-    GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
-        GLES20.GL_TEXTURE_2D, frameTextureId, 0);
-    GlUtil.checkNoGLES2Error("Attach texture to framebuffer");
-
-    // Restore normal framebuffer.
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-
+    textureFrameBuffer = new GlTextureFrameBuffer(GLES20.GL_RGBA);
     shader = new GlShader(VERTEX_SHADER, FRAGMENT_SHADER);
     shader.useProgram();
     texMatrixLoc = shader.getUniformLocation("texMatrix");
@@ -186,25 +165,13 @@ class YuvConverter {
     transformMatrix =
         RendererCommon.multiplyMatrices(transformMatrix, RendererCommon.verticalFlipMatrix());
 
+    final int frameBufferWidth = stride / 4;
+    final int frameBufferHeight = total_height;
+    textureFrameBuffer.setSize(frameBufferWidth, frameBufferHeight);
+
     // Bind our framebuffer.
-    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBufferId);
+    GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, textureFrameBuffer.getFrameBufferId());
     GlUtil.checkNoGLES2Error("glBindFramebuffer");
-
-    if (frameBufferWidth != stride / 4 || frameBufferHeight != total_height) {
-      frameBufferWidth = stride / 4;
-      frameBufferHeight = total_height;
-      // (Re)-Allocate texture.
-      GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frameTextureId);
-      GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, frameBufferWidth,
-          frameBufferHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-
-      // Check that the framebuffer is in a good state.
-      final int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-      if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-        throw new IllegalStateException("Framebuffer not complete, status: " + status);
-      }
-    }
 
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
     GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, srcTextureId);
@@ -251,9 +218,6 @@ class YuvConverter {
     threadChecker.checkIsOnValidThread();
     released = true;
     shader.release();
-    GLES20.glDeleteTextures(1, new int[] {frameTextureId}, 0);
-    GLES20.glDeleteFramebuffers(1, new int[] {frameBufferId}, 0);
-    frameBufferWidth = 0;
-    frameBufferHeight = 0;
+    textureFrameBuffer.release();
   }
 }
