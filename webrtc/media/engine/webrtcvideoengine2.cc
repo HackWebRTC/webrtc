@@ -301,16 +301,11 @@ class EncoderStreamFactory
       int width,
       int height,
       const webrtc::VideoEncoderConfig& encoder_config) override {
-    if (is_screencast_ &&
-        (!conference_mode_ || !cricket::UseSimulcastScreenshare())) {
-      RTC_DCHECK_EQ(1, encoder_config.number_of_streams);
-    }
-    if (encoder_config.number_of_streams > 1 ||
-        (CodecNamesEq(codec_name_, kVp8CodecName) && is_screencast_ &&
-         conference_mode_)) {
+    RTC_DCHECK(encoder_config.number_of_streams > 1 ? !is_screencast_ : true);
+    if (encoder_config.number_of_streams > 1) {
       return GetSimulcastConfig(encoder_config.number_of_streams, width, height,
                                 encoder_config.max_bitrate_bps, max_qp_,
-                                max_framerate_, is_screencast_);
+                                max_framerate_);
     }
 
     // For unset max bitrates set default bitrate for non-simulcast.
@@ -326,6 +321,20 @@ class EncoderStreamFactory
     stream.min_bitrate_bps = kMinVideoBitrateKbps * 1000;
     stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate_bps;
     stream.max_qp = max_qp_;
+
+    // Conference mode screencast uses 2 temporal layers split at 100kbit.
+    if (conference_mode_ && is_screencast_) {
+      ScreenshareLayerConfig config = ScreenshareLayerConfig::GetDefault();
+      // For screenshare in conference mode, tl0 and tl1 bitrates are
+      // piggybacked
+      // on the VideoCodec struct as target and max bitrates, respectively.
+      // See eg. webrtc::VP8EncoderImpl::SetRates().
+      stream.target_bitrate_bps = config.tl0_bitrate_kbps * 1000;
+      stream.max_bitrate_bps = config.tl1_bitrate_kbps * 1000;
+      stream.temporal_layer_thresholds_bps.clear();
+      stream.temporal_layer_thresholds_bps.push_back(config.tl0_bitrate_kbps *
+                                                     1000);
+    }
 
     if (CodecNamesEq(codec_name_, kVp9CodecName) && !is_screencast_) {
       stream.temporal_layer_thresholds_bps.resize(
@@ -1542,7 +1551,6 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
       enable_cpu_overuse_detection_(enable_cpu_overuse_detection),
       source_(nullptr),
       external_encoder_factory_(external_encoder_factory),
-      internal_encoder_factory_(new InternalEncoderFactory()),
       stream_(nullptr),
       encoder_sink_(nullptr),
       parameters_(std::move(config), options, max_bitrate_bps, codec_settings),
@@ -1670,20 +1678,10 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoder(
   }
 
   // Try creating internal encoder.
-  if (FindMatchingCodec(internal_encoder_factory_->supported_codecs(), codec)) {
-    if (parameters_.encoder_config.content_type ==
-            webrtc::VideoEncoderConfig::ContentType::kScreen &&
-        parameters_.conference_mode && UseSimulcastScreenshare()) {
-      // TODO(sprang): Remove this adapter once libvpx supports simulcast with
-      // same-resolution substreams.
-      WebRtcSimulcastEncoderFactory adapter_factory(
-          internal_encoder_factory_.get());
-      return AllocatedEncoder(adapter_factory.CreateVideoEncoder(codec), codec,
-                              false /* is_external */);
-    }
-    return AllocatedEncoder(
-        internal_encoder_factory_->CreateVideoEncoder(codec), codec,
-        false /* is_external */);
+  InternalEncoderFactory internal_encoder_factory;
+  if (FindMatchingCodec(internal_encoder_factory.supported_codecs(), codec)) {
+    return AllocatedEncoder(internal_encoder_factory.CreateVideoEncoder(codec),
+                            codec, false /* is_external */);
   }
 
   // This shouldn't happen, we should not be trying to create something we don't
@@ -1860,11 +1858,9 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
 
   // By default, the stream count for the codec configuration should match the
   // number of negotiated ssrcs. But if the codec is blacklisted for simulcast
-  // or a screencast (and not in simulcast screenshare experiment), only
-  // configure a single stream.
+  // or a screencast, only configure a single stream.
   encoder_config.number_of_streams = parameters_.config.rtp.ssrcs.size();
-  if (IsCodecBlacklistedForSimulcast(codec.name) ||
-      (is_screencast && !UseSimulcastScreenshare())) {
+  if (IsCodecBlacklistedForSimulcast(codec.name) || is_screencast) {
     encoder_config.number_of_streams = 1;
   }
 

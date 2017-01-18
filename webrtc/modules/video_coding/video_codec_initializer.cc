@@ -38,8 +38,8 @@ bool VideoCodecInitializer::SetupCodec(
     case kVideoCodecVP8: {
       if (!codec->VP8()->tl_factory) {
         if (codec->mode == kScreensharing &&
-            codec->numberOfSimulcastStreams >= 1 &&
-            codec->VP8()->numberOfTemporalLayers >= 1) {
+            codec->numberOfSimulcastStreams == 1 &&
+            codec->VP8()->numberOfTemporalLayers == 2) {
           // Conference mode temporal layering for screen content.
           tl_factory.reset(new ScreenshareTemporalLayersFactory());
         } else {

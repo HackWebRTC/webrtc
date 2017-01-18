@@ -84,7 +84,7 @@ class ScreenshareLayers : public TemporalLayers {
   RateStatistics encode_framerate_;
   bool bitrate_updated_;
 
-  static constexpr int kMaxNumTemporalLayers = 2;
+  static const int kMaxNumTemporalLayers = 2;
   struct TemporalLayer {
     TemporalLayer()
         : state(State::kNormal),
