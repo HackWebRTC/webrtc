@@ -771,6 +771,7 @@ class FlexfecRenderObserver : public test::EndToEndTest,
         EXPECT_EQ(1U, report_blocks.size());
         EXPECT_EQ(test::CallTest::kFlexfecSendSsrc,
                   report_blocks[0].source_ssrc());
+        rtc::CritScope lock(&crit_);
         received_flexfec_rtcp_ = true;
       }
     }
@@ -813,8 +814,8 @@ class FlexfecRenderObserver : public test::EndToEndTest,
   // Since several packets can have the same timestamp a multiset is used
   // instead of a set.
   std::multiset<uint32_t> dropped_timestamps_ GUARDED_BY(crit_);
-  bool expect_flexfec_rtcp_;
-  bool received_flexfec_rtcp_;
+  const bool expect_flexfec_rtcp_;
+  bool received_flexfec_rtcp_ GUARDED_BY(crit_);
   Random random_;
 };
 
