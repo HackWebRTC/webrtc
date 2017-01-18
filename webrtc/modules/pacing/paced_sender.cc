@@ -450,9 +450,11 @@ void PacedSender::Process() {
         bytes_sent += SendPadding(padding_needed, probe_cluster_id);
     }
   }
-  if (is_probing && bytes_sent > 0)
-    prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
-  alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
+  if (bytes_sent > 0) {
+    if (is_probing)
+      prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
+    alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
+  }
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,

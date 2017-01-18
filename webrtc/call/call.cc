@@ -173,7 +173,7 @@ class Call : public webrtc::Call,
 
   const int num_cpu_cores_;
   const std::unique_ptr<ProcessThread> module_process_thread_;
-  const std::unique_ptr<ProcessThread> pacer_thread_;
+  const std::unique_ptr<ProcessThread> congestion_controller_thread_;
   const std::unique_ptr<CallStats> call_stats_;
   const std::unique_ptr<BitrateAllocator> bitrate_allocator_;
   Call::Config config_;
@@ -277,7 +277,8 @@ Call::Call(const Call::Config& config)
     : clock_(Clock::GetRealTimeClock()),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
-      pacer_thread_(ProcessThread::Create("PacerThread")),
+      congestion_controller_thread_(
+          ProcessThread::Create("CongestionControllerThread")),
       call_stats_(new CallStats(clock_)),
       bitrate_allocator_(new BitrateAllocator(this)),
       config_(config),
@@ -324,11 +325,8 @@ Call::Call(const Call::Config& config)
 
   module_process_thread_->Start();
   module_process_thread_->RegisterModule(call_stats_.get());
-  module_process_thread_->RegisterModule(congestion_controller_.get());
-  pacer_thread_->RegisterModule(congestion_controller_->pacer());
-  pacer_thread_->RegisterModule(
-      congestion_controller_->GetRemoteBitrateEstimator(true));
-  pacer_thread_->Start();
+  congestion_controller_thread_->RegisterModule(congestion_controller_.get());
+  congestion_controller_thread_->Start();
 }
 
 Call::~Call() {
@@ -342,11 +340,8 @@ Call::~Call() {
   RTC_CHECK(video_receive_ssrcs_.empty());
   RTC_CHECK(video_receive_streams_.empty());
 
-  pacer_thread_->Stop();
-  pacer_thread_->DeRegisterModule(congestion_controller_->pacer());
-  pacer_thread_->DeRegisterModule(
-      congestion_controller_->GetRemoteBitrateEstimator(true));
-  module_process_thread_->DeRegisterModule(congestion_controller_.get());
+  congestion_controller_thread_->Stop();
+  congestion_controller_thread_->DeRegisterModule(congestion_controller_.get());
   module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();
   call_stats_->DeregisterStatsObserver(congestion_controller_.get());

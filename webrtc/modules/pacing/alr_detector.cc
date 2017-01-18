@@ -36,6 +36,10 @@ AlrDetector::AlrDetector()
 AlrDetector::~AlrDetector() {}
 
 void AlrDetector::OnBytesSent(size_t bytes_sent, int64_t now_ms) {
+  // TODO(nisse): It's unclear what guarantees there are that this
+  // function isn't called before SetEstimatedBitrate. Document that
+  // guarantee, if it exists. Or else, remove the DCHECK and tolerate
+  // that current estimate is zero, e.g., by just returning false.
   RTC_DCHECK(estimated_bitrate_bps_);
 
   rate_.Update(bytes_sent, now_ms);
