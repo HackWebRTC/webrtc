@@ -23,6 +23,21 @@ class CommonHeader;
 
 class TransportFeedback : public Rtpfb {
  public:
+  class ReceivedPacket {
+   public:
+    ReceivedPacket(uint16_t sequence_number, int16_t delta_ticks)
+        : sequence_number_(sequence_number), delta_ticks_(delta_ticks) {}
+    ReceivedPacket(const ReceivedPacket&) = default;
+    ReceivedPacket& operator=(const ReceivedPacket&) = default;
+
+    uint16_t sequence_number() const { return sequence_number_; }
+    int16_t delta_ticks() const { return delta_ticks_; }
+    int32_t delta_us() const { return delta_ticks_ * kDeltaScaleFactor; }
+
+   private:
+    uint16_t sequence_number_;
+    int16_t delta_ticks_;
+  };
   // TODO(sprang): IANA reg?
   static constexpr uint8_t kFeedbackMessageType = 15;
   // Convert to multiples of 0.25ms.
@@ -38,6 +53,7 @@ class TransportFeedback : public Rtpfb {
   void SetFeedbackSequenceNumber(uint8_t feedback_sequence);
   // NOTE: This method requires increasing sequence numbers (excepting wraps).
   bool AddReceivedPacket(uint16_t sequence_number, int64_t timestamp_us);
+  const std::vector<ReceivedPacket>& GetReceivedPackets() const;
 
   enum class StatusSymbol {
     kNotReceived,
@@ -76,12 +92,6 @@ class TransportFeedback : public Rtpfb {
   using DeltaSize = uint8_t;
   // Keeps DeltaSizes that can be encoded into single chunk if it is last chunk.
   class LastChunk;
-  struct ReceivedPacket {
-    ReceivedPacket(uint16_t sequence_number, int16_t delta_ticks)
-        : sequence_number(sequence_number), delta_ticks(delta_ticks) {}
-    uint16_t sequence_number;
-    int16_t delta_ticks;
-  };
 
   // Reset packet to consistent empty state.
   void Clear();

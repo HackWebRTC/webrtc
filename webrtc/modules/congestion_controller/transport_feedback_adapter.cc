@@ -112,33 +112,24 @@ std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
   }
   last_timestamp_us_ = timestamp_us;
 
-  uint16_t sequence_number = feedback.GetBaseSequence();
-  std::vector<int64_t> delta_vec = feedback.GetReceiveDeltasUs();
-  auto delta_it = delta_vec.begin();
   std::vector<PacketInfo> packet_feedback_vector;
-  packet_feedback_vector.reserve(delta_vec.size());
-
+  packet_feedback_vector.reserve(feedback.GetReceivedPackets().size());
   {
     rtc::CritScope cs(&lock_);
     size_t failed_lookups = 0;
     int64_t offset_us = 0;
-    for (auto symbol : feedback.GetStatusVector()) {
-      if (symbol != rtcp::TransportFeedback::StatusSymbol::kNotReceived) {
-        RTC_DCHECK(delta_it != delta_vec.end());
-        offset_us += *(delta_it++);
-        int64_t timestamp_ms = current_offset_ms_ + (offset_us / 1000);
-        PacketInfo info(timestamp_ms, sequence_number);
-        if (send_time_history_.GetInfo(&info, true) && info.send_time_ms >= 0) {
-          packet_feedback_vector.push_back(info);
-        } else {
-          ++failed_lookups;
-        }
+    for (const auto& packet : feedback.GetReceivedPackets()) {
+      offset_us += packet.delta_us();
+      int64_t timestamp_ms = current_offset_ms_ + (offset_us / 1000);
+      PacketInfo info(timestamp_ms, packet.sequence_number());
+      if (send_time_history_.GetInfo(&info, true) && info.send_time_ms >= 0) {
+        packet_feedback_vector.push_back(info);
+      } else {
+        ++failed_lookups;
       }
-      ++sequence_number;
     }
     std::sort(packet_feedback_vector.begin(), packet_feedback_vector.end(),
               PacketInfoComparator());
-    RTC_DCHECK(delta_it == delta_vec.end());
     if (failed_lookups > 0) {
       LOG(LS_WARNING) << "Failed to lookup send time for " << failed_lookups
                       << " packet" << (failed_lookups > 1 ? "s" : "")
