@@ -296,6 +296,14 @@ TransportChannel* TransportController::CreateTransportChannel_n(
   return dtls;
 }
 
+void TransportController::DestroyTransportChannel(
+    const std::string& transport_name,
+    int component) {
+  network_thread_->Invoke<void>(
+      RTC_FROM_HERE, rtc::Bind(&TransportController::DestroyTransportChannel_n,
+                               this, transport_name, component));
+}
+
 void TransportController::DestroyTransportChannel_n(
     const std::string& transport_name,
     int component) {

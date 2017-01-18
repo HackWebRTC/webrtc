@@ -315,11 +315,11 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   RTCStatsCollectorTestHelper()
       : worker_thread_(rtc::Thread::Current()),
         network_thread_(rtc::Thread::Current()),
+        signaling_thread_(rtc::Thread::Current()),
         media_engine_(new cricket::FakeMediaEngine()),
-        channel_manager_(
-            new cricket::ChannelManager(media_engine_,
-                                        worker_thread_,
-                                        network_thread_)),
+        channel_manager_(new cricket::ChannelManager(media_engine_,
+                                                     worker_thread_,
+                                                     network_thread_)),
         media_controller_(
             MediaControllerInterface::Create(cricket::MediaConfig(),
                                              worker_thread_,
@@ -349,6 +349,7 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   rtc::ScopedFakeClock& fake_clock() { return fake_clock_; }
   rtc::Thread* worker_thread() { return worker_thread_; }
   rtc::Thread* network_thread() { return network_thread_; }
+  rtc::Thread* signaling_thread() { return signaling_thread_; }
   cricket::FakeMediaEngine* media_engine() { return media_engine_; }
   MockWebRtcSession& session() { return session_; }
   MockPeerConnection& pc() { return pc_; }
@@ -442,6 +443,7 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   RtcEventLogNullImpl event_log_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
+  rtc::Thread* const signaling_thread_;
   cricket::FakeMediaEngine* media_engine_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
   std::unique_ptr<MediaControllerInterface> media_controller_;
@@ -697,15 +699,15 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
 TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
   MockVoiceMediaChannel* voice_media_channel = new MockVoiceMediaChannel();
   cricket::VoiceChannel voice_channel(
-      test_->worker_thread(), test_->network_thread(), nullptr,
-      test_->media_engine(), voice_media_channel, "VoiceContentName",
-      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      test_->worker_thread(), test_->network_thread(),
+      test_->signaling_thread(), test_->media_engine(), voice_media_channel,
+      "VoiceContentName", kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
   MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      test_->worker_thread(), test_->network_thread(), nullptr,
-      video_media_channel, "VideoContentName", kDefaultRtcpMuxRequired,
-      kDefaultSrtpRequired);
+      test_->worker_thread(), test_->network_thread(),
+      test_->signaling_thread(), video_media_channel, "VideoContentName",
+      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
   // Audio
   cricket::VoiceMediaInfo voice_media_info;
@@ -1550,9 +1552,9 @@ TEST_F(RTCStatsCollectorTest,
 TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   MockVoiceMediaChannel* voice_media_channel = new MockVoiceMediaChannel();
   cricket::VoiceChannel voice_channel(
-      test_->worker_thread(), test_->network_thread(), nullptr,
-      test_->media_engine(), voice_media_channel, "VoiceContentName",
-      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      test_->worker_thread(), test_->network_thread(),
+      test_->signaling_thread(), test_->media_engine(), voice_media_channel,
+      "VoiceContentName", kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
   test_->SetupRemoteTrackAndReceiver(
       cricket::MEDIA_TYPE_AUDIO, "RemoteAudioTrackID", 1);
@@ -1629,9 +1631,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
 TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      test_->worker_thread(), test_->network_thread(), nullptr,
-      video_media_channel, "VideoContentName", kDefaultRtcpMuxRequired,
-      kDefaultSrtpRequired);
+      test_->worker_thread(), test_->network_thread(),
+      test_->signaling_thread(), video_media_channel, "VideoContentName",
+      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
   test_->SetupRemoteTrackAndReceiver(
       cricket::MEDIA_TYPE_VIDEO, "RemoteVideoTrackID", 1);
@@ -1714,9 +1716,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
 TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   MockVoiceMediaChannel* voice_media_channel = new MockVoiceMediaChannel();
   cricket::VoiceChannel voice_channel(
-      test_->worker_thread(), test_->network_thread(), nullptr,
-      test_->media_engine(), voice_media_channel, "VoiceContentName",
-      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      test_->worker_thread(), test_->network_thread(),
+      test_->signaling_thread(), test_->media_engine(), voice_media_channel,
+      "VoiceContentName", kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
   test_->SetupLocalTrackAndSender(
       cricket::MEDIA_TYPE_AUDIO, "LocalAudioTrackID", 1);
@@ -1787,9 +1789,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
 TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      test_->worker_thread(), test_->network_thread(), nullptr,
-      video_media_channel, "VideoContentName", kDefaultRtcpMuxRequired,
-      kDefaultSrtpRequired);
+      test_->worker_thread(), test_->network_thread(),
+      test_->signaling_thread(), video_media_channel, "VideoContentName",
+      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
   test_->SetupLocalTrackAndSender(
       cricket::MEDIA_TYPE_VIDEO, "LocalVideoTrackID", 1);
@@ -1870,14 +1872,14 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
 TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Default) {
   MockVoiceMediaChannel* voice_media_channel = new MockVoiceMediaChannel();
   cricket::VoiceChannel voice_channel(
-      test_->worker_thread(), test_->network_thread(), nullptr,
-      test_->media_engine(), voice_media_channel, "VoiceContentName",
-      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+      test_->worker_thread(), test_->network_thread(),
+      test_->signaling_thread(), test_->media_engine(), voice_media_channel,
+      "VoiceContentName", kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
   MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
   cricket::VideoChannel video_channel(
-      test_->worker_thread(), test_->network_thread(), nullptr,
-      video_media_channel, "VideoContentName", kDefaultRtcpMuxRequired,
-      kDefaultSrtpRequired);
+      test_->worker_thread(), test_->network_thread(),
+      test_->signaling_thread(), video_media_channel, "VideoContentName",
+      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
 
   cricket::VoiceMediaInfo voice_media_info;
   voice_media_info.senders.push_back(cricket::VoiceSenderInfo());

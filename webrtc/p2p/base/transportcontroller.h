@@ -121,6 +121,8 @@ class TransportController : public sigslot::has_slots<>,
 
   // Decrements a channel's reference count, and destroys the channel if
   // nothing is referencing it.
+  virtual void DestroyTransportChannel(const std::string& transport_name,
+                                       int component);
   virtual void DestroyTransportChannel_n(const std::string& transport_name,
                                          int component);
 

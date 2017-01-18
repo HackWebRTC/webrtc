@@ -107,8 +107,14 @@ class BaseChannel
 
   bool writable() const { return writable_; }
 
-  bool SetTransport(TransportChannel* rtp_transport,
-                    TransportChannel* rtcp_transport);
+  // Set the transport(s), and update writability and "ready-to-send" state.
+  // |rtp_transport| must be non-null.
+  // |rtcp_transport| must be supplied if NeedsRtcpTransport() is true (meaning
+  // RTCP muxing is not fully active yet).
+  // |rtp_transport| and |rtcp_transport| must share the same transport name as
+  // well.
+  void SetTransports(TransportChannel* rtp_transport,
+                     TransportChannel* rtcp_transport);
   bool PushdownLocalDescription(const SessionDescription* local_desc,
                                 ContentAction action,
                                 std::string* error_desc);
@@ -194,11 +200,8 @@ class BaseChannel
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_; }
 
-  // Sets the |rtp_transport_| (and |rtcp_transport_|, if
-  // |rtcp_enabled_| is true).
-  // This method also updates writability and "ready-to-send" state.
-  bool SetTransport_n(TransportChannel* rtp_transport,
-                      TransportChannel* rtcp_transport);
+  void SetTransports_n(TransportChannel* rtp_transport,
+                       TransportChannel* rtcp_transport);
 
   // This does not update writability or "ready-to-send" state; it just
   // disconnects from the old channel and connects to the new one.

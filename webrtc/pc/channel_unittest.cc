@@ -3577,4 +3577,85 @@ TEST_F(RtpDataChannelDoubleThreadTest, TestSendData) {
   EXPECT_EQ("foo", media_channel1_->last_sent_data());
 }
 
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+
+// Verifies some DCHECKs are in place.
+// Uses VoiceChannel, but any BaseChannel subclass would work.
+class BaseChannelDeathTest : public testing::Test {
+ public:
+  BaseChannelDeathTest()
+      :  // RTCP mux not required, SRTP required.
+        voice_channel_(
+            rtc::Thread::Current(),
+            rtc::Thread::Current(),
+            rtc::Thread::Current(),
+            &fake_media_engine_,
+            new cricket::FakeVoiceMediaChannel(nullptr,
+                                               cricket::AudioOptions()),
+            cricket::CN_AUDIO,
+            false,
+            true) {
+    rtp_transport_ = fake_transport_controller_.CreateTransportChannel(
+        "foo", cricket::ICE_CANDIDATE_COMPONENT_RTP);
+    rtcp_transport_ = fake_transport_controller_.CreateTransportChannel(
+        "foo", cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+    EXPECT_TRUE(voice_channel_.Init_w(rtp_transport_, rtcp_transport_));
+  }
+
+ protected:
+  cricket::FakeTransportController fake_transport_controller_;
+  cricket::FakeMediaEngine fake_media_engine_;
+  cricket::VoiceChannel voice_channel_;
+  // Will be cleaned up by FakeTransportController, don't need to worry about
+  // deleting them in this test.
+  cricket::TransportChannel* rtp_transport_;
+  cricket::TransportChannel* rtcp_transport_;
+};
+
+TEST_F(BaseChannelDeathTest, SetTransportWithNullRtpTransport) {
+  cricket::TransportChannel* new_rtcp_transport =
+      fake_transport_controller_.CreateTransportChannel(
+          "bar", cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  EXPECT_DEATH(voice_channel_.SetTransports(nullptr, new_rtcp_transport), "");
+}
+
+TEST_F(BaseChannelDeathTest, SetTransportWithMissingRtcpTransport) {
+  cricket::TransportChannel* new_rtp_transport =
+      fake_transport_controller_.CreateTransportChannel(
+          "bar", cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  EXPECT_DEATH(voice_channel_.SetTransports(new_rtp_transport, nullptr), "");
+}
+
+TEST_F(BaseChannelDeathTest, SetTransportWithUnneededRtcpTransport) {
+  // Activate RTCP muxing, simulating offer/answer negotiation.
+  cricket::AudioContentDescription content;
+  content.set_rtcp_mux(true);
+  ASSERT_TRUE(voice_channel_.SetLocalContent(&content, CA_OFFER, nullptr));
+  ASSERT_TRUE(voice_channel_.SetRemoteContent(&content, CA_ANSWER, nullptr));
+  cricket::TransportChannel* new_rtp_transport =
+      fake_transport_controller_.CreateTransportChannel(
+          "bar", cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  cricket::TransportChannel* new_rtcp_transport =
+      fake_transport_controller_.CreateTransportChannel(
+          "bar", cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  // After muxing is enabled, no RTCP transport should be passed in here.
+  EXPECT_DEATH(
+      voice_channel_.SetTransports(new_rtp_transport, new_rtcp_transport), "");
+}
+
+// This test will probably go away if/when we move the transport name out of
+// the transport classes and into their parent classes.
+TEST_F(BaseChannelDeathTest, SetTransportWithMismatchingTransportNames) {
+  cricket::TransportChannel* new_rtp_transport =
+      fake_transport_controller_.CreateTransportChannel(
+          "bar", cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  cricket::TransportChannel* new_rtcp_transport =
+      fake_transport_controller_.CreateTransportChannel(
+          "baz", cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  EXPECT_DEATH(
+      voice_channel_.SetTransports(new_rtp_transport, new_rtcp_transport), "");
+}
+
+#endif  // RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+
 // TODO(pthatcher): TestSetReceiver?

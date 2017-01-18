@@ -228,11 +228,7 @@ bool BaseChannel::Init_w(TransportChannel* rtp_transport,
 bool BaseChannel::InitNetwork_n(TransportChannel* rtp_transport,
                                 TransportChannel* rtcp_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  //  const std::string& transport_name =
-  //      (bundle_transport_name ? *bundle_transport_name : content_name());
-  if (!SetTransport_n(rtp_transport, rtcp_transport)) {
-    return false;
-  }
+  SetTransports_n(rtp_transport, rtcp_transport);
 
   if (!SetDtlsSrtpCryptoSuites_n(rtp_transport_, false)) {
     return false;
@@ -256,30 +252,27 @@ void BaseChannel::Deinit() {
       RTC_FROM_HERE, Bind(&BaseChannel::DisconnectTransportChannels_n, this));
 }
 
-bool BaseChannel::SetTransport(TransportChannel* rtp_transport,
-                               TransportChannel* rtcp_transport) {
-  return network_thread_->Invoke<bool>(
+void BaseChannel::SetTransports(TransportChannel* rtp_transport,
+                                TransportChannel* rtcp_transport) {
+  network_thread_->Invoke<void>(
       RTC_FROM_HERE,
-      Bind(&BaseChannel::SetTransport_n, this, rtp_transport, rtcp_transport));
+      Bind(&BaseChannel::SetTransports_n, this, rtp_transport, rtcp_transport));
 }
 
-bool BaseChannel::SetTransport_n(TransportChannel* rtp_transport,
-                                 TransportChannel* rtcp_transport) {
+void BaseChannel::SetTransports_n(TransportChannel* rtp_transport,
+                                  TransportChannel* rtcp_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  if (!rtp_transport && !rtcp_transport) {
-    LOG(LS_ERROR) << "Setting nullptr to RTP Transport and RTCP Transport.";
-    return false;
-  }
-
+  // Verify some assumptions (as described in the comment above SetTransport).
+  RTC_DCHECK(rtp_transport);
+  RTC_DCHECK(NeedsRtcpTransport() == (rtcp_transport != nullptr));
   if (rtcp_transport) {
     RTC_DCHECK(rtp_transport->transport_name() ==
                rtcp_transport->transport_name());
-    RTC_DCHECK(NeedsRtcpTransport());
   }
 
   if (rtp_transport->transport_name() == transport_name_) {
     // Nothing to do if transport name isn't changing.
-    return true;
+    return;
   }
 
   transport_name_ = rtp_transport->transport_name();
@@ -300,17 +293,13 @@ bool BaseChannel::SetTransport_n(TransportChannel* rtp_transport,
     LOG(LS_INFO) << "Setting RTCP Transport for " << content_name() << " on "
                  << transport_name() << " transport " << rtcp_transport;
     SetTransportChannel_n(true, rtcp_transport);
-    if (!rtcp_transport_) {
-      return false;
-    }
+    RTC_DCHECK(rtcp_transport_);
   }
 
   LOG(LS_INFO) << "Setting non-RTCP Transport for " << content_name() << " on "
                << transport_name() << " transport " << rtp_transport;
   SetTransportChannel_n(false, rtp_transport);
-  if (!rtp_transport_) {
-    return false;
-  }
+  RTC_DCHECK(rtp_transport_);
 
   // Update aggregate writable/ready-to-send state between RTP and RTCP upon
   // setting new transport channels.
@@ -328,7 +317,6 @@ bool BaseChannel::SetTransport_n(TransportChannel* rtp_transport,
                                  rtp_transport_ && rtp_transport_->writable());
   SetTransportChannelReadyToSend(
       true, rtcp_transport_ && rtcp_transport_->writable());
-  return true;
 }
 
 void BaseChannel::SetTransportChannel_n(bool rtcp,

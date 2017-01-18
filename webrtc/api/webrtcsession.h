@@ -553,7 +553,6 @@ class WebRtcSession :
 
   const std::string GetTransportName(const std::string& content_name);
 
-  void DestroyTransport(const std::string& transport_name, int component);
   void DestroyRtcpTransport_n(const std::string& transport_name);
   void DestroyVideoChannel();
   void DestroyVoiceChannel();
