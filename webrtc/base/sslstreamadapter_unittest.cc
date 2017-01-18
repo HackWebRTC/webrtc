@@ -114,8 +114,8 @@ class SSLDummyStreamBase : public rtc::StreamInterface,
     int mask = (rtc::SE_READ | rtc::SE_CLOSE);
 
     if (sig & mask) {
-      LOG(LS_INFO) << "SSLDummyStreamBase::OnEvent side=" << side_ <<  " sig="
-        << sig << " forwarding upward";
+      LOG(LS_VERBOSE) << "SSLDummyStreamBase::OnEvent side=" << side_
+                      << " sig=" << sig << " forwarding upward";
       PostEvent(sig & mask, 0);
     }
   }
@@ -123,8 +123,8 @@ class SSLDummyStreamBase : public rtc::StreamInterface,
   // Catch writeability events on out and pass them up.
   void OnEventOut(rtc::StreamInterface* stream, int sig, int err) {
     if (sig & rtc::SE_WRITE) {
-      LOG(LS_INFO) << "SSLDummyStreamBase::OnEvent side=" << side_ <<  " sig="
-        << sig << " forwarding upward";
+      LOG(LS_VERBOSE) << "SSLDummyStreamBase::OnEvent side=" << side_
+                      << " sig=" << sig << " forwarding upward";
 
       PostEvent(sig & rtc::SE_WRITE, 0);
     }
@@ -315,7 +315,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
   }
 
   virtual void OnEvent(rtc::StreamInterface *stream, int sig, int err) {
-    LOG(LS_INFO) << "SSLStreamAdapterTestBase::OnEvent sig=" << sig;
+    LOG(LS_VERBOSE) << "SSLStreamAdapterTestBase::OnEvent sig=" << sig;
 
     if (sig & rtc::SE_READ) {
       ReadData(stream);
@@ -467,12 +467,12 @@ class SSLStreamAdapterTestBase : public testing::Test,
                                 int *error) {
     // Randomly drop loss_ percent of packets
     if (rtc::CreateRandomId() % 100 < static_cast<uint32_t>(loss_)) {
-      LOG(LS_INFO) << "Randomly dropping packet, size=" << data_len;
+      LOG(LS_VERBOSE) << "Randomly dropping packet, size=" << data_len;
       *written = data_len;
       return rtc::SR_SUCCESS;
     }
     if (dtls_ && (data_len > mtu_)) {
-      LOG(LS_INFO) << "Dropping packet > mtu, size=" << data_len;
+      LOG(LS_VERBOSE) << "Dropping packet > mtu, size=" << data_len;
       *written = data_len;
       return rtc::SR_SUCCESS;
     }
@@ -483,7 +483,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
     if (damage_ && (*static_cast<const unsigned char *>(data) == 23)) {
       std::vector<char> buf(data_len);
 
-      LOG(LS_INFO) << "Damaging packet";
+      LOG(LS_VERBOSE) << "Damaging packet";
 
       memcpy(&buf[0], data, data_len);
       buf[data_len - 1]++;
@@ -707,7 +707,7 @@ class SSLStreamAdapterTestTLS
         break;
 
       ASSERT_EQ(rtc::SR_SUCCESS, r);
-      LOG(LS_INFO) << "Read " << bread;
+      LOG(LS_VERBOSE) << "Read " << bread;
 
       recv_stream_.Write(buffer, bread, NULL, NULL);
     }
@@ -800,7 +800,7 @@ class SSLStreamAdapterTestDTLS
         break;
 
       ASSERT_EQ(rtc::SR_SUCCESS, r);
-      LOG(LS_INFO) << "Read " << bread;
+      LOG(LS_VERBOSE) << "Read " << bread;
 
       // Now parse the datagram
       ASSERT_EQ(packet_size_, bread);
@@ -847,7 +847,7 @@ class SSLStreamAdapterTestDTLS
 
 rtc::StreamResult SSLDummyStreamBase::Write(const void* data, size_t data_len,
                                               size_t* written, int* error) {
-  LOG(LS_INFO) << "Writing to loopback " << data_len;
+  LOG(LS_VERBOSE) << "Writing to loopback " << data_len;
 
   if (first_packet_) {
     first_packet_ = false;
