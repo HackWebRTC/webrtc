@@ -64,8 +64,8 @@ class RtpSenderReceiverTest : public testing::Test {
     channel_manager_.Init();
     bool rtcp_mux_required = true;
     bool srtp_required = true;
-    cricket::TransportChannel* rtp_transport =
-        fake_transport_controller_.CreateTransportChannel(
+    cricket::DtlsTransportInternal* rtp_transport =
+        fake_transport_controller_.CreateDtlsTransport(
             cricket::CN_AUDIO, cricket::ICE_CANDIDATE_COMPONENT_RTP);
     voice_channel_ = channel_manager_.CreateVoiceChannel(
         &fake_media_controller_, rtp_transport, nullptr, rtc::Thread::Current(),

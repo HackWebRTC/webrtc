@@ -29,8 +29,7 @@
 
 namespace cricket {
 
-class TransportChannelImpl;
-class TransportChannelImpl;
+class DtlsTransportInternal;
 enum class IceCandidatePairState;
 
 typedef std::vector<Candidate> Candidates;
@@ -247,7 +246,7 @@ class JsepTransport : public sigslot::has_slots<> {
   // Add or remove channel that is affected when a local/remote transport
   // description is set on this transport. Need to add all channels before
   // setting a transport description.
-  bool AddChannel(TransportChannelImpl* dtls, int component);
+  bool AddChannel(DtlsTransportInternal* dtls, int component);
   bool RemoveChannel(int component);
   bool HasChannels() const;
 
@@ -333,17 +332,18 @@ class JsepTransport : public sigslot::has_slots<> {
 
   // Pushes down the transport parameters from the local description, such
   // as the ICE ufrag and pwd.
-  bool ApplyLocalTransportDescription(TransportChannelImpl* channel,
+  bool ApplyLocalTransportDescription(DtlsTransportInternal* dtls_transport,
                                       std::string* error_desc);
 
   // Pushes down the transport parameters from the remote description to the
   // transport channel.
-  bool ApplyRemoteTransportDescription(TransportChannelImpl* channel,
+  bool ApplyRemoteTransportDescription(DtlsTransportInternal* dtls_transport,
                                        std::string* error_desc);
 
   // Pushes down the transport parameters obtained via negotiation.
-  bool ApplyNegotiatedTransportDescription(TransportChannelImpl* channel,
-                                           std::string* error_desc);
+  bool ApplyNegotiatedTransportDescription(
+      DtlsTransportInternal* dtls_transport,
+      std::string* error_desc);
 
   const std::string mid_;
   // needs-ice-restart bit as described in JSEP.
@@ -357,7 +357,7 @@ class JsepTransport : public sigslot::has_slots<> {
   bool remote_description_set_ = false;
 
   // Candidate component => DTLS channel
-  std::map<int, TransportChannelImpl*> channels_;
+  std::map<int, DtlsTransportInternal*> channels_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransport);
 };

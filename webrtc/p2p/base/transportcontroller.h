@@ -113,18 +113,18 @@ class TransportController : public sigslot::has_slots<>,
 
   // Creates a channel if it doesn't exist. Otherwise, increments a reference
   // count and returns an existing channel.
-  TransportChannel* CreateTransportChannel(const std::string& transport_name,
-                                           int component);
-  virtual TransportChannel* CreateTransportChannel_n(
+  DtlsTransportInternal* CreateDtlsTransport(const std::string& transport_name,
+                                             int component);
+  virtual DtlsTransportInternal* CreateDtlsTransport_n(
       const std::string& transport_name,
       int component);
 
   // Decrements a channel's reference count, and destroys the channel if
   // nothing is referencing it.
-  virtual void DestroyTransportChannel(const std::string& transport_name,
-                                       int component);
-  virtual void DestroyTransportChannel_n(const std::string& transport_name,
-                                         int component);
+  virtual void DestroyDtlsTransport(const std::string& transport_name,
+                                    int component);
+  virtual void DestroyDtlsTransport_n(const std::string& transport_name,
+                                      int component);
 
   void use_quic() { quic_ = true; }
   bool quic() const { return quic_; }
@@ -135,8 +135,8 @@ class TransportController : public sigslot::has_slots<>,
     return certificate_;
   }
   std::vector<std::string> transport_names_for_testing();
-  std::vector<TransportChannelImpl*> channels_for_testing();
-  TransportChannelImpl* get_channel_for_testing(
+  std::vector<DtlsTransportInternal*> channels_for_testing();
+  DtlsTransportInternal* get_channel_for_testing(
       const std::string& transport_name,
       int component);
 
@@ -171,7 +171,7 @@ class TransportController : public sigslot::has_slots<>,
   virtual IceTransportInternal* CreateIceTransportChannel_n(
       const std::string& transport_name,
       int component);
-  virtual TransportChannelImpl* CreateDtlsTransportChannel_n(
+  virtual DtlsTransportInternal* CreateDtlsTransportChannel_n(
       const std::string& transport_name,
       int component,
       IceTransportInternal* ice);
@@ -233,14 +233,14 @@ class TransportController : public sigslot::has_slots<>,
   // Handlers for signals from Transport.
   void OnChannelWritableState_n(rtc::PacketTransportInterface* transport);
   void OnChannelReceivingState_n(rtc::PacketTransportInterface* transport);
-  void OnChannelGatheringState_n(TransportChannelImpl* channel);
-  void OnChannelCandidateGathered_n(TransportChannelImpl* channel,
+  void OnChannelGatheringState_n(IceTransportInternal* channel);
+  void OnChannelCandidateGathered_n(IceTransportInternal* channel,
                                     const Candidate& candidate);
   void OnChannelCandidatesRemoved(const Candidates& candidates);
-  void OnChannelCandidatesRemoved_n(TransportChannelImpl* channel,
+  void OnChannelCandidatesRemoved_n(IceTransportInternal* channel,
                                     const Candidates& candidates);
-  void OnChannelRoleConflict_n(TransportChannelImpl* channel);
-  void OnChannelStateChanged_n(TransportChannelImpl* channel);
+  void OnChannelRoleConflict_n(IceTransportInternal* channel);
+  void OnChannelStateChanged_n(IceTransportInternal* channel);
 
   void UpdateAggregateStates_n();
 

@@ -22,6 +22,12 @@
 
 namespace cricket {
 
+enum PacketFlags {
+  PF_NORMAL = 0x00,       // A normal packet.
+  PF_SRTP_BYPASS = 0x01,  // An encrypted SRTP packet; bypass any additional
+                          // crypto provided by the transport (e.g. DTLS)
+};
+
 // DtlsTransportInternal is an internal interface that does DTLS.
 // Once the public interface is supported,
 // (https://www.w3.org/TR/webrtc/#rtcdtlstransport-interface)
@@ -93,6 +99,9 @@ class DtlsTransportInternal : public rtc::PacketTransportInterface {
   std::string debug_name() const override {
     return transport_name() + " " + std::to_string(component());
   }
+
+ protected:
+  DtlsTransportInternal() {}
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(DtlsTransportInternal);

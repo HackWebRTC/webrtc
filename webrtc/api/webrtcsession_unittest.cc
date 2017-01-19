@@ -46,7 +46,6 @@
 #include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
-#include "webrtc/p2p/base/transportchannel.h"
 #include "webrtc/p2p/client/basicportallocator.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/pc/mediasession.h"
@@ -219,7 +218,7 @@ class MockIceObserver : public webrtc::IceObserver {
 // local/remote ports.
 class FakeSctpTransport : public cricket::SctpTransportInternal {
  public:
-  void SetTransportChannel(cricket::TransportChannel* channel) override {}
+  void SetTransportChannel(rtc::PacketTransportInterface* channel) override {}
   bool Start(int local_port, int remote_port) override {
     local_port_ = local_port;
     remote_port_ = remote_port;
@@ -246,7 +245,7 @@ class FakeSctpTransport : public cricket::SctpTransportInternal {
 class FakeSctpTransportFactory : public cricket::SctpTransportInternalFactory {
  public:
   std::unique_ptr<cricket::SctpTransportInternal> CreateSctpTransport(
-      cricket::TransportChannel*) override {
+      rtc::PacketTransportInterface*) override {
     last_fake_sctp_transport_ = new FakeSctpTransport();
     return std::unique_ptr<cricket::SctpTransportInternal>(
         last_fake_sctp_transport_);
@@ -306,7 +305,7 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
     if (!ch) {
       return nullptr;
     }
-    return ch->rtp_transport();
+    return ch->rtp_dtls_transport();
   }
 
   rtc::PacketTransportInterface* rtcp_transport_channel(
@@ -314,7 +313,7 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
     if (!ch) {
       return nullptr;
     }
-    return ch->rtcp_transport();
+    return ch->rtcp_dtls_transport();
   }
 };
 

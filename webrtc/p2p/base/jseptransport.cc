@@ -8,20 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/p2p/base/jseptransport.h"
+
 #include <memory>
 #include <utility>  // for std::pair
 
-#include "webrtc/p2p/base/jseptransport.h"
-
+#include "webrtc/base/bind.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/dtlstransportchannel.h"
 #include "webrtc/p2p/base/p2pconstants.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
 #include "webrtc/p2p/base/port.h"
-#include "webrtc/p2p/base/transportchannelimpl.h"
-#include "webrtc/base/bind.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
 
 namespace cricket {
 
@@ -127,7 +126,7 @@ JsepTransport::JsepTransport(
     const rtc::scoped_refptr<rtc::RTCCertificate>& certificate)
     : mid_(mid), certificate_(certificate) {}
 
-bool JsepTransport::AddChannel(TransportChannelImpl* dtls, int component) {
+bool JsepTransport::AddChannel(DtlsTransportInternal* dtls, int component) {
   if (channels_.find(component) != channels_.end()) {
     LOG(LS_ERROR) << "Adding channel for component " << component << " twice.";
     return false;
@@ -286,13 +285,14 @@ bool JsepTransport::GetStats(TransportStats* stats) {
   stats->transport_name = mid();
   stats->channel_stats.clear();
   for (auto& kv : channels_) {
-    TransportChannelImpl* channel = kv.second;
+    DtlsTransportInternal* dtls_transport = kv.second;
     TransportChannelStats substats;
     substats.component = kv.first;
-    channel->GetSrtpCryptoSuite(&substats.srtp_crypto_suite);
-    channel->GetSslCipherSuite(&substats.ssl_cipher_suite);
-    substats.dtls_state = channel->dtls_state();
-    if (!channel->GetStats(&substats.connection_infos)) {
+    dtls_transport->GetSrtpCryptoSuite(&substats.srtp_crypto_suite);
+    dtls_transport->GetSslCipherSuite(&substats.ssl_cipher_suite);
+    substats.dtls_state = dtls_transport->dtls_state();
+    if (!dtls_transport->ice_transport()->GetStats(
+            &substats.connection_infos)) {
       return false;
     }
     stats->channel_stats.push_back(substats);
@@ -325,36 +325,39 @@ bool JsepTransport::VerifyCertificateFingerprint(
 }
 
 bool JsepTransport::ApplyLocalTransportDescription(
-    TransportChannelImpl* channel,
+    DtlsTransportInternal* dtls_transport,
     std::string* error_desc) {
-  channel->SetIceParameters(local_description_->GetIceParameters());
+  dtls_transport->ice_transport()->SetIceParameters(
+      local_description_->GetIceParameters());
   return true;
 }
 
 bool JsepTransport::ApplyRemoteTransportDescription(
-    TransportChannelImpl* channel,
+    DtlsTransportInternal* dtls_transport,
     std::string* error_desc) {
   // Currently, all ICE-related calls still go through this DTLS channel. But
   // that will change once we get rid of TransportChannelImpl, and the DTLS
   // channel interface no longer includes ICE-specific methods. Then this class
   // will need to call dtls->ice()->SetIceRole(), for example, assuming the Dtls
   // interface will expose its inner ICE channel.
-  channel->SetRemoteIceParameters(remote_description_->GetIceParameters());
-  channel->SetRemoteIceMode(remote_description_->ice_mode);
+  dtls_transport->ice_transport()->SetRemoteIceParameters(
+      remote_description_->GetIceParameters());
+  dtls_transport->ice_transport()->SetRemoteIceMode(
+      remote_description_->ice_mode);
   return true;
 }
 
 bool JsepTransport::ApplyNegotiatedTransportDescription(
-    TransportChannelImpl* channel,
+    DtlsTransportInternal* dtls_transport,
     std::string* error_desc) {
   // Set SSL role. Role must be set before fingerprint is applied, which
   // initiates DTLS setup.
-  if (!channel->SetSslRole(secure_role_)) {
+  if (!dtls_transport->SetSslRole(secure_role_)) {
     return BadTransportDescription("Failed to set SSL role for the channel.",
                                    error_desc);
   }
   // Apply remote fingerprint.
-  if (!channel->SetRemoteFingerprint(
+  if (!dtls_transport->SetRemoteFingerprint(
           remote_fingerprint_->algorithm,
           reinterpret_cast<const uint8_t*>(remote_fingerprint_->digest.data()),
           remote_fingerprint_->digest.size())) {

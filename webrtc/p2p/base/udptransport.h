@@ -46,7 +46,7 @@ class UdpTransport : public webrtc::UdpTransportInterface,
   rtc::SocketAddress GetRemoteAddress() const override;
 
   // Overrides of PacketTransportInterface, used by webrtc internally.
-  const std::string debug_name() const override { return transport_name_; }
+  std::string debug_name() const override { return transport_name_; }
 
   bool receiving() const override {
     // TODO(johan): Implement method and signal.
