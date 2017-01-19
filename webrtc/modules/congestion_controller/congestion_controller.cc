@@ -327,19 +327,15 @@ void CongestionController::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
 }
 
 int64_t CongestionController::TimeUntilNextProcess() {
-  return std::min({bitrate_controller_->TimeUntilNextProcess(),
-                   remote_bitrate_estimator_->TimeUntilNextProcess(),
-                   pacer_->TimeUntilNextProcess(),
-                   remote_estimator_proxy_.TimeUntilNextProcess()});
+  return std::min(bitrate_controller_->TimeUntilNextProcess(),
+                  remote_bitrate_estimator_->TimeUntilNextProcess());
 }
 
 void CongestionController::Process() {
   bitrate_controller_->Process();
   remote_bitrate_estimator_->Process();
-  MaybeTriggerOnNetworkChanged();
   probe_controller_->Process();
-  pacer_->Process();
-  remote_estimator_proxy_.Process();
+  MaybeTriggerOnNetworkChanged();
 }
 
 void CongestionController::MaybeTriggerOnNetworkChanged() {
