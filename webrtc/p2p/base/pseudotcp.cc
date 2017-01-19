@@ -910,10 +910,14 @@ bool PseudoTcp::process(Segment& seg) {
     } else {
       uint32_t nOffset = seg.seq - m_rcv_nxt;
 
-      rtc::StreamResult result = m_rbuf.WriteOffset(seg.data, seg.len,
-                                                          nOffset, NULL);
+      rtc::StreamResult result =
+          m_rbuf.WriteOffset(seg.data, seg.len, nOffset, NULL);
+      if (result == rtc::SR_BLOCK) {
+        // Ignore incoming packets outside of the receive window.
+        return false;
+      }
+
       RTC_DCHECK(result == rtc::SR_SUCCESS);
-      RTC_UNUSED(result);
 
       if (seg.seq == m_rcv_nxt) {
         m_rbuf.ConsumeWriteBuffer(seg.len);
