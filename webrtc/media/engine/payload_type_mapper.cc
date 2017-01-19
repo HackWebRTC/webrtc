@@ -12,8 +12,13 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/media/base/mediaconstants.h"
+#include "webrtc/modules/audio_coding/codecs/audio_format.h"
 
 namespace cricket {
+
+webrtc::SdpAudioFormat AudioCodecToSdpAudioFormat(const AudioCodec& ac) {
+  return webrtc::SdpAudioFormat(ac.name, ac.clockrate, ac.channels, ac.params);
+}
 
 PayloadTypeMapper::PayloadTypeMapper()
     // RFC 3551 reserves payload type numbers in the range 96-127 exclusively

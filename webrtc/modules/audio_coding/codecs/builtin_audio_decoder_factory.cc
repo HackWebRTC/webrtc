@@ -40,89 +40,133 @@ namespace {
 
 struct NamedDecoderConstructor {
   const char* name;
-  std::unique_ptr<AudioDecoder> (*constructor)(const SdpAudioFormat&);
-};
 
-std::unique_ptr<AudioDecoder> Unique(AudioDecoder* d) {
-  return std::unique_ptr<AudioDecoder>(d);
-}
+  // If |format| is good, return true and (if |out| isn't null) reset |*out| to
+  // a new decoder object. If the |format| is not good, return false.
+  bool (*constructor)(const SdpAudioFormat& format,
+                      std::unique_ptr<AudioDecoder>* out);
+};
 
 // TODO(kwiberg): These factory functions should probably be moved to each
 // decoder.
 NamedDecoderConstructor decoder_constructors[] = {
     {"pcmu",
-     [](const SdpAudioFormat& format) {
-       return format.clockrate_hz == 8000 && format.num_channels >= 1
-                  ? Unique(new AudioDecoderPcmU(format.num_channels))
-                  : nullptr;
+     [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
+       if (format.clockrate_hz == 8000 && format.num_channels >= 1) {
+         if (out) {
+           out->reset(new AudioDecoderPcmU(format.num_channels));
+         }
+         return true;
+       } else {
+         return false;
+       }
      }},
     {"pcma",
-     [](const SdpAudioFormat& format) {
-       return format.clockrate_hz == 8000 && format.num_channels >= 1
-                  ? Unique(new AudioDecoderPcmA(format.num_channels))
-                  : nullptr;
+     [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
+       if (format.clockrate_hz == 8000 && format.num_channels >= 1) {
+         if (out) {
+           out->reset(new AudioDecoderPcmA(format.num_channels));
+         }
+         return true;
+       } else {
+         return false;
+       }
      }},
 #ifdef WEBRTC_CODEC_ILBC
     {"ilbc",
-     [](const SdpAudioFormat& format) {
-       return format.clockrate_hz == 8000 && format.num_channels == 1
-                  ? Unique(new AudioDecoderIlbc)
-                  : nullptr;
+     [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
+       if (format.clockrate_hz == 8000 && format.num_channels == 1) {
+         if (out) {
+           out->reset(new AudioDecoderIlbc);
+         }
+         return true;
+       } else {
+         return false;
+       }
      }},
 #endif
 #if defined(WEBRTC_CODEC_ISACFX)
     {"isac",
-     [](const SdpAudioFormat& format) {
-       return format.clockrate_hz == 16000 && format.num_channels == 1
-                  ? Unique(new AudioDecoderIsacFix(format.clockrate_hz))
-                  : nullptr;
+     [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
+       if (format.clockrate_hz == 16000 && format.num_channels == 1) {
+         if (out) {
+           out->reset(new AudioDecoderIsacFix(format.clockrate_hz));
+         }
+         return true;
+       } else {
+         return false;
+       }
      }},
 #elif defined(WEBRTC_CODEC_ISAC)
     {"isac",
-     [](const SdpAudioFormat& format) {
-       return (format.clockrate_hz == 16000 || format.clockrate_hz == 32000) &&
-                      format.num_channels == 1
-                  ? Unique(new AudioDecoderIsac(format.clockrate_hz))
-                  : nullptr;
+     [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
+       if ((format.clockrate_hz == 16000 || format.clockrate_hz == 32000) &&
+           format.num_channels == 1) {
+         if (out) {
+           out->reset(new AudioDecoderIsac(format.clockrate_hz));
+         }
+         return true;
+       } else {
+         return false;
+       }
      }},
 #endif
     {"l16",
-     [](const SdpAudioFormat& format) {
-       return format.num_channels >= 1
-                  ? Unique(new AudioDecoderPcm16B(format.clockrate_hz,
-                                                  format.num_channels))
-                  : nullptr;
+     [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
+       if (format.num_channels >= 1) {
+         if (out) {
+           out->reset(new AudioDecoderPcm16B(format.clockrate_hz,
+                                             format.num_channels));
+         }
+         return true;
+       } else {
+         return false;
+       }
      }},
 #ifdef WEBRTC_CODEC_G722
     {"g722",
-     [](const SdpAudioFormat& format) {
+     [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
        if (format.clockrate_hz == 8000) {
-         if (format.num_channels == 1)
-           return Unique(new AudioDecoderG722);
-         if (format.num_channels == 2)
-           return Unique(new AudioDecoderG722Stereo);
+         if (format.num_channels == 1) {
+           if (out) {
+             out->reset(new AudioDecoderG722);
+           }
+           return true;
+         } else if (format.num_channels == 2) {
+           if (out) {
+             out->reset(new AudioDecoderG722Stereo);
+           }
+           return true;
+         }
        }
-       return Unique(nullptr);
+       return false;
      }},
 #endif
 #ifdef WEBRTC_CODEC_OPUS
     {"opus",
-     [](const SdpAudioFormat& format) {
-       rtc::Optional<int> num_channels = [&] {
+     [](const SdpAudioFormat& format, std::unique_ptr<AudioDecoder>* out) {
+       const rtc::Optional<int> num_channels = [&] {
          auto stereo = format.parameters.find("stereo");
          if (stereo != format.parameters.end()) {
            if (stereo->second == "0") {
              return rtc::Optional<int>(1);
            } else if (stereo->second == "1") {
              return rtc::Optional<int>(2);
+           } else {
+             return rtc::Optional<int>();  // Bad stereo parameter.
            }
          }
-         return rtc::Optional<int>();
+         return rtc::Optional<int>(1);  // Default to mono.
        }();
-       return format.clockrate_hz == 48000 && format.num_channels == 2 &&
-                      num_channels
-                  ? Unique(new AudioDecoderOpus(*num_channels))
-                  : nullptr;
+       if (format.clockrate_hz == 48000 && format.num_channels == 2 &&
+           num_channels) {
+         if (out) {
+           out->reset(new AudioDecoderOpus(*num_channels));
+         }
+         return true;
+       } else {
+         return false;
+       }
      }},
 #endif
 };
@@ -140,37 +184,48 @@ class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
       },
 #endif
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-      { { "isac", 16000, 1 }, true },
+      {{"isac", 16000, 1}, true},
 #endif
 #if (defined(WEBRTC_CODEC_ISAC))
-      { { "isac", 32000, 1 }, true },
+      {{"isac", 32000, 1}, true},
 #endif
 #ifdef WEBRTC_CODEC_G722
-      { { "G722", 8000,  1 }, true },
+      {{"G722", 8000, 1}, true},
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-      { { "iLBC", 8000,  1 }, true },
+      {{"iLBC", 8000, 1}, true},
 #endif
-      { { "PCMU", 8000,  1 }, true },
-      { { "PCMA", 8000,  1 }, true }
+      {{"PCMU", 8000, 1}, true},
+      {{"PCMA", 8000, 1}, true}
     };
 
     return specs;
+  }
+
+  bool IsSupportedDecoder(const SdpAudioFormat& format) override {
+    for (const auto& dc : decoder_constructors) {
+      if (STR_CASE_CMP(format.name.c_str(), dc.name) == 0) {
+        return dc.constructor(format, nullptr);
+      }
+    }
+    return false;
   }
 
   std::unique_ptr<AudioDecoder> MakeAudioDecoder(
       const SdpAudioFormat& format) override {
     for (const auto& dc : decoder_constructors) {
       if (STR_CASE_CMP(format.name.c_str(), dc.name) == 0) {
-        std::unique_ptr<AudioDecoder> dec = dc.constructor(format);
-        if (dec) {
+        std::unique_ptr<AudioDecoder> decoder;
+        bool ok = dc.constructor(format, &decoder);
+        RTC_DCHECK_EQ(ok, decoder != nullptr);
+        if (decoder) {
           const int expected_sample_rate_hz =
               STR_CASE_CMP(format.name.c_str(), "g722") == 0
                   ? 2 * format.clockrate_hz
                   : format.clockrate_hz;
-          RTC_CHECK_EQ(expected_sample_rate_hz, dec->SampleRateHz());
+          RTC_CHECK_EQ(expected_sample_rate_hz, decoder->SampleRateHz());
         }
-        return dec;
+        return decoder;
       }
     }
     return nullptr;

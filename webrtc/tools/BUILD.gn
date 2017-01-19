@@ -205,6 +205,9 @@ if (rtc_enable_protobuf) {
       "../call:call_interfaces",
       "../logging:rtc_event_log_impl",
       "../logging:rtc_event_log_parser",
+
+      # TODO(kwiberg): Remove this dependency.
+      "../modules/audio_coding:audio_format",
       "../modules/congestion_controller",
       "../modules/rtp_rtcp",
       "../system_wrappers:system_wrappers_default",

@@ -1041,6 +1041,10 @@ TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
     std::vector<AudioCodecSpec> GetSupportedDecoders() override {
       return fact_->GetSupportedDecoders();
     }
+    bool IsSupportedDecoder(const SdpAudioFormat& format) override {
+      return format.name == "MockPCMu" ? true
+                                       : fact_->IsSupportedDecoder(format);
+    }
     std::unique_ptr<AudioDecoder> MakeAudioDecoder(
         const SdpAudioFormat& format) override {
       return format.name == "MockPCMu" ? std::move(mock_decoder_)

@@ -196,6 +196,7 @@ class Channel
   int32_t SetVADStatus(bool enableVAD, ACMVADMode mode, bool disableDTX);
   int32_t GetVADStatus(bool& enabledVAD, ACMVADMode& mode, bool& disabledDTX);
   int32_t SetRecPayloadType(const CodecInst& codec);
+  int32_t SetRecPayloadType(int payload_type, const SdpAudioFormat& format);
   int32_t GetRecPayloadType(CodecInst& codec);
   int32_t SetSendCNPayloadType(int type, PayloadFrequencies frequency);
   int SetOpusMaxPlaybackRate(int frequency_hz);

@@ -17,6 +17,7 @@
 namespace webrtc {
 
 SdpAudioFormat CodecInstToSdp(const CodecInst& codec_inst);
+CodecInst SdpToCodecInst(int payload_type, const SdpAudioFormat& audio_format);
 
 }  // namespace webrtc
 

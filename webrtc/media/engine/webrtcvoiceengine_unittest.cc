@@ -107,7 +107,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   explicit WebRtcVoiceEngineTestFake(const char* field_trials)
       : call_(webrtc::Call::Config(&event_log_)), voe_(&apm_),
         override_field_trials_(field_trials) {
-    auto factory = webrtc::MockAudioDecoderFactory::CreateUnusedFactory();
     EXPECT_CALL(adm_, AddRef()).WillOnce(Return(0));
     EXPECT_CALL(adm_, Release()).WillOnce(Return(0));
     EXPECT_CALL(adm_, BuiltInAECIsAvailable()).WillOnce(Return(false));
@@ -116,8 +115,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_CALL(apm_, ApplyConfig(testing::_));
     EXPECT_CALL(apm_, SetExtraOptions(testing::_));
     EXPECT_CALL(apm_, Initialize()).WillOnce(Return(0));
-    engine_.reset(new cricket::WebRtcVoiceEngine(&adm_, factory, nullptr,
-                                                 new FakeVoEWrapper(&voe_)));
+    // TODO(kwiberg): We should use a mock AudioDecoderFactory, but a bunch of
+    // the tests here probe the specific set of codecs provided by the builtin
+    // factory. Those tests should probably be moved elsewhere.
+    engine_.reset(new cricket::WebRtcVoiceEngine(
+        &adm_, webrtc::CreateBuiltinAudioDecoderFactory(), nullptr,
+        new FakeVoEWrapper(&voe_)));
     send_parameters_.codecs.push_back(kPcmuCodec);
     recv_parameters_.codecs.push_back(kPcmuCodec);
   }
@@ -873,14 +876,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsAfterAddingStreams) {
   parameters.codecs[0].id = 106;  // collide with existing CN 32k
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 
-  int channel_num2 = voe_.GetLastChannel();
-  webrtc::CodecInst gcodec;
-  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "ISAC");
-  gcodec.plfreq = 16000;
-  gcodec.channels = 1;
-  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
-  EXPECT_EQ(106, gcodec.pltype);
-  EXPECT_STREQ("ISAC", gcodec.plname);
+  const auto& dm = GetRecvStreamConfig(kSsrc1).decoder_map;
+  ASSERT_EQ(1, dm.count(106));
+  EXPECT_EQ(webrtc::SdpAudioFormat("isac", 16000, 1), dm.at(106));
 }
 
 // Test that we can apply the same set of codecs again while playing.

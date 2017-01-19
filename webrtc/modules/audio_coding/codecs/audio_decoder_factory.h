@@ -27,6 +27,8 @@ class AudioDecoderFactory : public rtc::RefCountInterface {
  public:
   virtual std::vector<AudioCodecSpec> GetSupportedDecoders() = 0;
 
+  virtual bool IsSupportedDecoder(const SdpAudioFormat& format) = 0;
+
   virtual std::unique_ptr<AudioDecoder> MakeAudioDecoder(
       const SdpAudioFormat& format) = 0;
 };

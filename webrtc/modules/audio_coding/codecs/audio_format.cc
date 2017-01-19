@@ -22,14 +22,28 @@ SdpAudioFormat::SdpAudioFormat(const char* name,
                                int num_channels)
     : name(name), clockrate_hz(clockrate_hz), num_channels(num_channels) {}
 
+SdpAudioFormat::SdpAudioFormat(const std::string& name,
+                               int clockrate_hz,
+                               int num_channels)
+    : name(name), clockrate_hz(clockrate_hz), num_channels(num_channels) {}
+
 SdpAudioFormat::SdpAudioFormat(const char* name,
                                int clockrate_hz,
                                int num_channels,
-                               Parameters&& param)
+                               const Parameters& param)
     : name(name),
       clockrate_hz(clockrate_hz),
       num_channels(num_channels),
-      parameters(std::move(param)) {}
+      parameters(param) {}
+
+SdpAudioFormat::SdpAudioFormat(const std::string& name,
+                               int clockrate_hz,
+                               int num_channels,
+                               const Parameters& param)
+    : name(name),
+      clockrate_hz(clockrate_hz),
+      num_channels(num_channels),
+      parameters(param) {}
 
 SdpAudioFormat::~SdpAudioFormat() = default;
 SdpAudioFormat& SdpAudioFormat::operator=(const SdpAudioFormat&) = default;

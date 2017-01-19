@@ -74,6 +74,8 @@ class ChannelProxy {
                                                 int payload_frequency);
   virtual bool SendTelephoneEventOutband(int event, int duration_ms);
   virtual void SetBitrate(int bitrate_bps, int64_t probing_interval_ms);
+  virtual void SetRecPayloadType(int payload_type,
+                                 const SdpAudioFormat& format);
   virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink);
   virtual void SetInputMute(bool muted);
   virtual void RegisterExternalTransport(Transport* transport);

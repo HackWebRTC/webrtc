@@ -102,11 +102,8 @@ class AudioReceiveStream {
     // stream to one audio stream. Tracked by issue webrtc:4762.
     std::string sync_group;
 
-    // Decoders for every payload that we can receive. Call owns the
-    // AudioDecoder instances once the Config is submitted to
-    // Call::CreateReceiveStream().
-    // TODO(solenberg): Use unique_ptr<> once our std lib fully supports C++11.
-    std::map<uint8_t, AudioDecoder*> decoder_map;
+    // Decoder specifications for every payload type that we can receive.
+    std::map<int, SdpAudioFormat> decoder_map;
 
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
   };

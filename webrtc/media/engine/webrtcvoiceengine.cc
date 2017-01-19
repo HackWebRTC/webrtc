@@ -1542,14 +1542,15 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     RTC_DCHECK_GE(ch, 0);
     RTC_DCHECK(call);
     config_.rtp.remote_ssrc = remote_ssrc;
+    config_.rtp.local_ssrc = local_ssrc;
+    config_.rtp.transport_cc = use_transport_cc;
+    config_.rtp.nack.rtp_history_ms = use_nack ? kNackRtpHistoryMs : 0;
+    config_.rtp.extensions = extensions;
     config_.rtcp_send_transport = rtcp_send_transport;
     config_.voe_channel_id = ch;
     config_.sync_group = sync_group;
     config_.decoder_factory = decoder_factory;
-    RecreateAudioReceiveStream(local_ssrc,
-                               use_transport_cc,
-                               use_nack,
-                               extensions);
+    RecreateAudioReceiveStream();
   }
 
   ~WebRtcAudioReceiveStream() {
@@ -1559,27 +1560,40 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
 
   void RecreateAudioReceiveStream(uint32_t local_ssrc) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RecreateAudioReceiveStream(local_ssrc,
-                               config_.rtp.transport_cc,
-                               config_.rtp.nack.rtp_history_ms != 0,
-                               config_.rtp.extensions);
+    config_.rtp.local_ssrc = local_ssrc;
+    RecreateAudioReceiveStream();
   }
 
   void RecreateAudioReceiveStream(bool use_transport_cc, bool use_nack) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RecreateAudioReceiveStream(config_.rtp.local_ssrc,
-                               use_transport_cc,
-                               use_nack,
-                               config_.rtp.extensions);
+    config_.rtp.transport_cc = use_transport_cc;
+    config_.rtp.nack.rtp_history_ms = use_nack ? kNackRtpHistoryMs : 0;
+    RecreateAudioReceiveStream();
   }
 
   void RecreateAudioReceiveStream(
       const std::vector<webrtc::RtpExtension>& extensions) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RecreateAudioReceiveStream(config_.rtp.local_ssrc,
-                               config_.rtp.transport_cc,
-                               config_.rtp.nack.rtp_history_ms != 0,
-                               extensions);
+    config_.rtp.extensions = extensions;
+    RecreateAudioReceiveStream();
+  }
+
+  // Set a new payload type -> decoder map. The new map must be a superset of
+  // the old one.
+  void RecreateAudioReceiveStream(
+      const std::map<int, webrtc::SdpAudioFormat>& decoder_map) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    RTC_DCHECK([&] {
+      for (const auto& item : config_.decoder_map) {
+        auto it = decoder_map.find(item.first);
+        if (it == decoder_map.end() || *it != item) {
+          return false;  // The old map isn't a subset of the new map.
+        }
+      }
+      return true;
+    }());
+    config_.decoder_map = decoder_map;
+    RecreateAudioReceiveStream();
   }
 
   webrtc::AudioReceiveStream::Stats GetStats() const {
@@ -1617,21 +1631,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
   }
 
  private:
-  void RecreateAudioReceiveStream(
-      uint32_t local_ssrc,
-      bool use_transport_cc,
-      bool use_nack,
-      const std::vector<webrtc::RtpExtension>& extensions) {
+  void RecreateAudioReceiveStream() {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     if (stream_) {
       call_->DestroyAudioReceiveStream(stream_);
-      stream_ = nullptr;
     }
-    config_.rtp.local_ssrc = local_ssrc;
-    config_.rtp.transport_cc = use_transport_cc;
-    config_.rtp.nack.rtp_history_ms = use_nack ? kNackRtpHistoryMs : 0;
-    config_.rtp.extensions = extensions;
-    RTC_DCHECK(!stream_);
     stream_ = call_->CreateAudioReceiveStream(config_);
     RTC_CHECK(stream_);
     SetPlayout(playout_);
@@ -1901,40 +1905,34 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     return true;
   }
 
+  // Create a payload type -> SdpAudioFormat map with all the decoders. Fail
+  // unless the factory claims to support all decoders.
+  std::map<int, webrtc::SdpAudioFormat> decoder_map;
+  for (const AudioCodec& codec : codecs) {
+    auto format = AudioCodecToSdpAudioFormat(codec);
+    if (!IsCodec(codec, "cn") && !IsCodec(codec, "telephone-event") &&
+        !engine()->decoder_factory_->IsSupportedDecoder(format)) {
+      LOG(LS_ERROR) << "Unsupported codec: " << format;
+      return false;
+    }
+    decoder_map.insert({codec.id, std::move(format)});
+  }
+
   if (playout_) {
     // Receive codecs can not be changed while playing. So we temporarily
     // pause playout.
     ChangePlayout(false);
   }
 
-  bool result = true;
-  for (const AudioCodec& codec : new_codecs) {
-    webrtc::CodecInst voe_codec = {0};
-    if (WebRtcVoiceEngine::ToCodecInst(codec, &voe_codec)) {
-      LOG(LS_INFO) << ToString(codec);
-      voe_codec.pltype = codec.id;
-      for (const auto& ch : recv_streams_) {
-        if (engine()->voe()->codec()->SetRecPayloadType(
-                ch.second->channel(), voe_codec) == -1) {
-          LOG_RTCERR2(SetRecPayloadType, ch.second->channel(),
-                      ToString(voe_codec));
-          result = false;
-        }
-      }
-    } else {
-      LOG(LS_WARNING) << "Unknown codec " << ToString(codec);
-      result = false;
-      break;
-    }
+  for (auto& kv : recv_streams_) {
+    kv.second->RecreateAudioReceiveStream(decoder_map);
   }
-  if (result) {
-    recv_codecs_ = codecs;
-  }
+  recv_codecs_ = codecs;
 
   if (desired_playout_ && !playout_) {
     ChangePlayout(desired_playout_);
   }
-  return result;
+  return true;
 }
 
 // Utility function called from SetSendParameters() to extract current send

@@ -20,6 +20,8 @@
 
 namespace cricket {
 
+webrtc::SdpAudioFormat AudioCodecToSdpAudioFormat(const AudioCodec& ac);
+
 class PayloadTypeMapper {
  public:
   PayloadTypeMapper();

@@ -87,9 +87,7 @@ rtc::Optional<SdpAudioFormat> RentACodec::NetEqDecoderToSdpAudioFormat(
     case NetEqDecoder::kDecoderG722_2ch:
       return rtc::Optional<SdpAudioFormat>(SdpAudioFormat("g722", 8000, 2));
     case NetEqDecoder::kDecoderOpus:
-      return rtc::Optional<SdpAudioFormat>(
-          SdpAudioFormat("opus", 48000, 2,
-                         std::map<std::string, std::string>{{"stereo", "0"}}));
+      return rtc::Optional<SdpAudioFormat>(SdpAudioFormat("opus", 48000, 2));
     case NetEqDecoder::kDecoderOpus_2ch:
       return rtc::Optional<SdpAudioFormat>(
           SdpAudioFormat("opus", 48000, 2,

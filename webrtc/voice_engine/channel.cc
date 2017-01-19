@@ -1372,6 +1372,11 @@ int32_t Channel::GetVADStatus(bool& enabledVAD,
 }
 
 int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
+  return SetRecPayloadType(codec.pltype, CodecInstToSdp(codec));
+}
+
+int32_t Channel::SetRecPayloadType(int payload_type,
+                                   const SdpAudioFormat& format) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetRecPayloadType()");
 
@@ -1382,7 +1387,22 @@ int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
     return -1;
   }
 
-  if (codec.pltype == -1) {
+  const CodecInst codec = [&] {
+    CodecInst c = SdpToCodecInst(payload_type, format);
+
+    // Bug 6986: Emulate an old bug that caused us to always choose to decode
+    // Opus in stereo. To be able to remove this, we first need to fix the
+    // other half of bug 6986, which is about losing the Opus "stereo"
+    // parameter.
+    // TODO(kwiberg): Remove this special case, a.k.a. fix bug 6986.
+    if (STR_CASE_CMP(codec.plname, "opus") == 0) {
+      c.channels = 2;
+    }
+
+    return c;
+  }();
+
+  if (payload_type == -1) {
     // De-register the selected codec (RTP/RTCP module and ACM)
 
     int8_t pltype(-1);
@@ -1420,11 +1440,9 @@ int32_t Channel::SetRecPayloadType(const CodecInst& codec) {
       return -1;
     }
   }
-  if (!audio_coding_->RegisterReceiveCodec(codec.pltype,
-                                           CodecInstToSdp(codec))) {
-    audio_coding_->UnregisterReceiveCodec(codec.pltype);
-    if (!audio_coding_->RegisterReceiveCodec(codec.pltype,
-                                             CodecInstToSdp(codec))) {
+  if (!audio_coding_->RegisterReceiveCodec(payload_type, format)) {
+    audio_coding_->UnregisterReceiveCodec(payload_type);
+    if (!audio_coding_->RegisterReceiveCodec(payload_type, format)) {
       _engineStatisticsPtr->SetLastError(
           VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
           "SetRecPayloadType() ACM registration failed - 1");

@@ -153,6 +153,13 @@ void ChannelProxy::SetBitrate(int bitrate_bps, int64_t probing_interval_ms) {
   channel()->SetBitRate(bitrate_bps, probing_interval_ms);
 }
 
+void ChannelProxy::SetRecPayloadType(int payload_type,
+                                     const SdpAudioFormat& format) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  const int result = channel()->SetRecPayloadType(payload_type, format);
+  RTC_DCHECK_EQ(0, result);
+}
+
 void ChannelProxy::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   channel()->SetSink(std::move(sink));
