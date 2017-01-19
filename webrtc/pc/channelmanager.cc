@@ -207,8 +207,8 @@ void ChannelManager::Terminate_w() {
 
 VoiceChannel* ChannelManager::CreateVoiceChannel(
     webrtc::MediaControllerInterface* media_controller,
-    DtlsTransportInternal* rtp_transport,
-    DtlsTransportInternal* rtcp_transport,
+    TransportChannel* rtp_transport,
+    TransportChannel* rtcp_transport,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
@@ -224,8 +224,8 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
 
 VoiceChannel* ChannelManager::CreateVoiceChannel_w(
     webrtc::MediaControllerInterface* media_controller,
-    DtlsTransportInternal* rtp_transport,
-    DtlsTransportInternal* rtcp_transport,
+    TransportChannel* rtp_transport,
+    TransportChannel* rtcp_transport,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
@@ -279,8 +279,8 @@ void ChannelManager::DestroyVoiceChannel_w(VoiceChannel* voice_channel) {
 
 VideoChannel* ChannelManager::CreateVideoChannel(
     webrtc::MediaControllerInterface* media_controller,
-    DtlsTransportInternal* rtp_transport,
-    DtlsTransportInternal* rtcp_transport,
+    TransportChannel* rtp_transport,
+    TransportChannel* rtcp_transport,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
@@ -296,8 +296,8 @@ VideoChannel* ChannelManager::CreateVideoChannel(
 
 VideoChannel* ChannelManager::CreateVideoChannel_w(
     webrtc::MediaControllerInterface* media_controller,
-    DtlsTransportInternal* rtp_transport,
-    DtlsTransportInternal* rtcp_transport,
+    TransportChannel* rtp_transport,
+    TransportChannel* rtcp_transport,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
@@ -351,8 +351,8 @@ void ChannelManager::DestroyVideoChannel_w(VideoChannel* video_channel) {
 
 RtpDataChannel* ChannelManager::CreateRtpDataChannel(
     webrtc::MediaControllerInterface* media_controller,
-    DtlsTransportInternal* rtp_transport,
-    DtlsTransportInternal* rtcp_transport,
+    TransportChannel* rtp_transport,
+    TransportChannel* rtcp_transport,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,
@@ -367,8 +367,8 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel(
 
 RtpDataChannel* ChannelManager::CreateRtpDataChannel_w(
     webrtc::MediaControllerInterface* media_controller,
-    DtlsTransportInternal* rtp_transport,
-    DtlsTransportInternal* rtcp_transport,
+    TransportChannel* rtp_transport,
+    TransportChannel* rtcp_transport,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     const std::string* bundle_transport_name,

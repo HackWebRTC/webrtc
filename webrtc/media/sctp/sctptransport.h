@@ -26,6 +26,7 @@
 // For SendDataParams/ReceiveDataParams.
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
+#include "webrtc/p2p/base/transportchannel.h"
 
 // Defined by "usrsctplib/usrsctp.h"
 struct sockaddr_conn;
@@ -58,7 +59,6 @@ struct SctpInboundPacket;
 //  12. SctpTransport::SignalDataReceived(data)
 // [from the same thread, methods registered/connected to
 //  SctpTransport are called with the recieved data]
-// TODO(zhihuang): Rename "channel" to "transport" on network-level.
 class SctpTransport : public SctpTransportInternal,
                       public sigslot::has_slots<> {
  public:
@@ -67,11 +67,11 @@ class SctpTransport : public SctpTransportInternal,
   // methods can be called.
   // |channel| is required (must not be null).
   SctpTransport(rtc::Thread* network_thread,
-                rtc::PacketTransportInterface* channel);
+                cricket::TransportChannel* channel);
   ~SctpTransport() override;
 
   // SctpTransportInternal overrides (see sctptransportinternal.h for comments).
-  void SetTransportChannel(rtc::PacketTransportInterface* channel) override;
+  void SetTransportChannel(cricket::TransportChannel* channel) override;
   bool Start(int local_port, int remote_port) override;
   bool OpenStream(int sid) override;
   bool ResetStream(int sid) override;
@@ -140,7 +140,7 @@ class SctpTransport : public SctpTransportInternal,
   // Helps pass inbound/outbound packets asynchronously to the network thread.
   rtc::AsyncInvoker invoker_;
   // Underlying DTLS channel.
-  rtc::PacketTransportInterface* transport_channel_;
+  TransportChannel* transport_channel_;
   bool was_ever_writable_ = false;
   int local_port_ = kSctpDefaultPort;
   int remote_port_ = kSctpDefaultPort;
@@ -179,7 +179,7 @@ class SctpTransportFactory : public SctpTransportInternalFactory {
       : network_thread_(network_thread) {}
 
   std::unique_ptr<SctpTransportInternal> CreateSctpTransport(
-      rtc::PacketTransportInterface* channel) override {
+      TransportChannel* channel) override {
     return std::unique_ptr<SctpTransportInternal>(
         new SctpTransport(network_thread_, channel));
   }

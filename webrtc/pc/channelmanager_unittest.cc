@@ -102,8 +102,8 @@ TEST_F(ChannelManagerTest, StartupShutdownOnThread) {
 // Test that we can create and destroy a voice and video channel.
 TEST_F(ChannelManagerTest, CreateDestroyChannels) {
   EXPECT_TRUE(cm_->Init());
-  cricket::DtlsTransportInternal* rtp_transport =
-      transport_controller_->CreateDtlsTransport(
+  cricket::TransportChannel* rtp_transport =
+      transport_controller_->CreateTransportChannel(
           cricket::CN_AUDIO, cricket::ICE_CANDIDATE_COMPONENT_RTP);
   cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
       &fake_mc_, rtp_transport, nullptr /*rtcp_transport*/,
@@ -136,8 +136,8 @@ TEST_F(ChannelManagerTest, CreateDestroyChannelsOnThread) {
   delete transport_controller_;
   transport_controller_ =
       new cricket::FakeTransportController(&network_, ICEROLE_CONTROLLING);
-  cricket::DtlsTransportInternal* rtp_transport =
-      transport_controller_->CreateDtlsTransport(
+  cricket::TransportChannel* rtp_transport =
+      transport_controller_->CreateTransportChannel(
           cricket::CN_AUDIO, cricket::ICE_CANDIDATE_COMPONENT_RTP);
   cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
       &fake_mc_, rtp_transport, nullptr /*rtcp_transport*/,

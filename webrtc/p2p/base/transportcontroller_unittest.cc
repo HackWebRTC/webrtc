@@ -71,14 +71,15 @@ class TransportControllerTest : public testing::Test,
         this, &TransportControllerTest::OnCandidatesGathered);
   }
 
-  FakeDtlsTransport* CreateChannel(const std::string& content, int component) {
-    DtlsTransportInternal* channel =
-        transport_controller_->CreateDtlsTransport_n(content, component);
-    return static_cast<FakeDtlsTransport*>(channel);
+  FakeTransportChannel* CreateChannel(const std::string& content,
+                                      int component) {
+    TransportChannel* channel =
+        transport_controller_->CreateTransportChannel_n(content, component);
+    return static_cast<FakeTransportChannel*>(channel);
   }
 
   void DestroyChannel(const std::string& content, int component) {
-    transport_controller_->DestroyDtlsTransport_n(content, component);
+    transport_controller_->DestroyTransportChannel_n(content, component);
   }
 
   Candidate CreateCandidate(int component) {
@@ -101,9 +102,9 @@ class TransportControllerTest : public testing::Test,
 
   void CreateChannelsAndCompleteConnection_w() {
     transport_controller_->SetIceRole(ICEROLE_CONTROLLING);
-    FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+    FakeTransportChannel* channel1 = CreateChannel("audio", 1);
     ASSERT_NE(nullptr, channel1);
-    FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+    FakeTransportChannel* channel2 = CreateChannel("video", 1);
     ASSERT_NE(nullptr, channel2);
 
     TransportDescription local_desc(std::vector<std::string>(), kIceUfrag1,
@@ -115,10 +116,8 @@ class TransportControllerTest : public testing::Test,
     transport_controller_->SetLocalTransportDescription("video", local_desc,
                                                         CA_OFFER, &err);
     transport_controller_->MaybeStartGathering();
-    channel1->ice_transport()->SignalCandidateGathered(
-        channel1->ice_transport(), CreateCandidate(1));
-    channel2->ice_transport()->SignalCandidateGathered(
-        channel2->ice_transport(), CreateCandidate(1));
+    channel1->SignalCandidateGathered(channel1, CreateCandidate(1));
+    channel2->SignalCandidateGathered(channel2, CreateCandidate(1));
     channel1->SetCandidatesGatheringComplete();
     channel2->SetCandidatesGatheringComplete();
     channel1->SetConnectionCount(2);
@@ -196,7 +195,7 @@ class TransportControllerTest : public testing::Test,
 };
 
 TEST_F(TransportControllerTest, TestSetIceConfig) {
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
 
   transport_controller_->SetIceConfig(
@@ -207,7 +206,7 @@ TEST_F(TransportControllerTest, TestSetIceConfig) {
   transport_controller_->SetIceConfig(
       CreateIceConfig(1000, GATHER_CONTINUALLY_AND_RECOVER));
   // Test that value stored in controller is applied to new channels.
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
   EXPECT_EQ(1000, channel2->receiving_timeout());
   EXPECT_TRUE(channel2->gather_continually());
@@ -216,7 +215,7 @@ TEST_F(TransportControllerTest, TestSetIceConfig) {
 TEST_F(TransportControllerTest, TestSetSslMaxProtocolVersion) {
   EXPECT_TRUE(transport_controller_->SetSslMaxProtocolVersion(
       rtc::SSL_PROTOCOL_DTLS_12));
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
 
   ASSERT_NE(nullptr, channel);
   EXPECT_EQ(rtc::SSL_PROTOCOL_DTLS_12, channel->ssl_max_protocol_version());
@@ -227,7 +226,7 @@ TEST_F(TransportControllerTest, TestSetSslMaxProtocolVersion) {
 }
 
 TEST_F(TransportControllerTest, TestSetIceRole) {
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
 
   transport_controller_->SetIceRole(ICEROLE_CONTROLLING);
@@ -236,7 +235,7 @@ TEST_F(TransportControllerTest, TestSetIceRole) {
   EXPECT_EQ(ICEROLE_CONTROLLED, channel1->GetIceRole());
 
   // Test that value stored in controller is applied to new channels.
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
   EXPECT_EQ(ICEROLE_CONTROLLED, channel2->GetIceRole());
 }
@@ -244,28 +243,28 @@ TEST_F(TransportControllerTest, TestSetIceRole) {
 // Test that when one channel encounters a role conflict, the ICE role is
 // swapped on every channel.
 TEST_F(TransportControllerTest, TestIceRoleConflict) {
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
 
   transport_controller_->SetIceRole(ICEROLE_CONTROLLING);
   EXPECT_EQ(ICEROLE_CONTROLLING, channel1->GetIceRole());
   EXPECT_EQ(ICEROLE_CONTROLLING, channel2->GetIceRole());
 
-  channel1->ice_transport()->SignalRoleConflict(channel1->ice_transport());
+  channel1->SignalRoleConflict(channel1);
   EXPECT_EQ(ICEROLE_CONTROLLED, channel1->GetIceRole());
   EXPECT_EQ(ICEROLE_CONTROLLED, channel2->GetIceRole());
 
   // Should be able to handle a second role conflict. The remote endpoint can
   // change its role/tie-breaker when it does an ICE restart.
-  channel2->ice_transport()->SignalRoleConflict(channel2->ice_transport());
+  channel2->SignalRoleConflict(channel2);
   EXPECT_EQ(ICEROLE_CONTROLLING, channel1->GetIceRole());
   EXPECT_EQ(ICEROLE_CONTROLLING, channel2->GetIceRole());
 }
 
 TEST_F(TransportControllerTest, TestGetSslRole) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   ASSERT_TRUE(channel->SetSslRole(rtc::SSL_CLIENT));
   rtc::SSLRole role;
@@ -283,7 +282,7 @@ TEST_F(TransportControllerTest, TestSetAndGetLocalCertificate) {
           rtc::SSLIdentity::Generate("session2", rtc::KT_DEFAULT)));
   rtc::scoped_refptr<rtc::RTCCertificate> returned_certificate;
 
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
 
   EXPECT_TRUE(transport_controller_->SetLocalCertificate(certificate1));
@@ -297,7 +296,7 @@ TEST_F(TransportControllerTest, TestSetAndGetLocalCertificate) {
       "video", &returned_certificate));
 
   // Test that identity stored in controller is applied to new channels.
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
   EXPECT_TRUE(transport_controller_->GetLocalCertificate(
       "video", &returned_certificate));
@@ -311,7 +310,7 @@ TEST_F(TransportControllerTest, TestSetAndGetLocalCertificate) {
 TEST_F(TransportControllerTest, TestGetRemoteSSLCertificate) {
   rtc::FakeSSLCertificate fake_certificate("fake_data");
 
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
 
   channel->SetRemoteSSLCertificate(&fake_certificate);
@@ -326,7 +325,7 @@ TEST_F(TransportControllerTest, TestGetRemoteSSLCertificate) {
 }
 
 TEST_F(TransportControllerTest, TestSetLocalTransportDescription) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   TransportDescription local_desc(std::vector<std::string>(), kIceUfrag1,
                                   kIcePwd1, ICEMODE_FULL,
@@ -345,7 +344,7 @@ TEST_F(TransportControllerTest, TestSetLocalTransportDescription) {
 }
 
 TEST_F(TransportControllerTest, TestSetRemoteTransportDescription) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   TransportDescription remote_desc(std::vector<std::string>(), kIceUfrag1,
                                    kIcePwd1, ICEMODE_FULL,
@@ -359,7 +358,7 @@ TEST_F(TransportControllerTest, TestSetRemoteTransportDescription) {
 }
 
 TEST_F(TransportControllerTest, TestAddRemoteCandidates) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   Candidates candidates;
   candidates.push_back(CreateCandidate(1));
@@ -370,7 +369,7 @@ TEST_F(TransportControllerTest, TestAddRemoteCandidates) {
 }
 
 TEST_F(TransportControllerTest, TestReadyForRemoteCandidates) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   // We expect to be ready for remote candidates only after local and remote
   // descriptions are set.
@@ -393,11 +392,11 @@ TEST_F(TransportControllerTest, TestReadyForRemoteCandidates) {
 }
 
 TEST_F(TransportControllerTest, TestGetStats) {
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("audio", 2);
+  FakeTransportChannel* channel2 = CreateChannel("audio", 2);
   ASSERT_NE(nullptr, channel2);
-  FakeDtlsTransport* channel3 = CreateChannel("video", 1);
+  FakeTransportChannel* channel3 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel3);
 
   TransportStats stats;
@@ -408,12 +407,12 @@ TEST_F(TransportControllerTest, TestGetStats) {
 
 // Test that transport gets destroyed when it has no more channels.
 TEST_F(TransportControllerTest, TestCreateAndDestroyChannel) {
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel2 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel2);
   ASSERT_EQ(channel1, channel2);
-  FakeDtlsTransport* channel3 = CreateChannel("audio", 2);
+  FakeTransportChannel* channel3 = CreateChannel("audio", 2);
   ASSERT_NE(nullptr, channel3);
 
   // Using GetStats to check if transport is destroyed from an outside class's
@@ -430,9 +429,9 @@ TEST_F(TransportControllerTest, TestCreateAndDestroyChannel) {
 TEST_F(TransportControllerTest, TestSignalConnectionStateFailed) {
   // Need controlling ICE role to get in failed state.
   transport_controller_->SetIceRole(ICEROLE_CONTROLLING);
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
 
   // Should signal "failed" if any channel failed; channel is considered failed
@@ -447,11 +446,11 @@ TEST_F(TransportControllerTest, TestSignalConnectionStateFailed) {
 
 TEST_F(TransportControllerTest, TestSignalConnectionStateConnected) {
   transport_controller_->SetIceRole(ICEROLE_CONTROLLING);
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
-  FakeDtlsTransport* channel3 = CreateChannel("video", 2);
+  FakeTransportChannel* channel3 = CreateChannel("video", 2);
   ASSERT_NE(nullptr, channel3);
 
   // First, have one channel connect, and another fail, to ensure that
@@ -480,15 +479,15 @@ TEST_F(TransportControllerTest, TestSignalConnectionStateConnected) {
 
 TEST_F(TransportControllerTest, TestSignalConnectionStateComplete) {
   transport_controller_->SetIceRole(ICEROLE_CONTROLLING);
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
-  FakeDtlsTransport* channel3 = CreateChannel("video", 2);
+  FakeTransportChannel* channel3 = CreateChannel("video", 2);
   ASSERT_NE(nullptr, channel3);
 
   // Similar to above test, but we're now reaching the completed state, which
-  // means only one connection per FakeDtlsTransport.
+  // means only one connection per FakeTransportChannel.
   channel1->SetCandidatesGatheringComplete();
   channel1->SetConnectionCount(1);
   channel1->SetWritable(true);
@@ -520,9 +519,9 @@ TEST_F(TransportControllerTest, TestSignalConnectionStateComplete) {
 // Make sure that if we're "connected" and remove a transport, we stay in the
 // "connected" state.
 TEST_F(TransportControllerTest, TestDestroyTransportAndStayConnected) {
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
 
   channel1->SetCandidatesGatheringComplete();
@@ -546,7 +545,7 @@ TEST_F(TransportControllerTest, TestDestroyTransportAndStayConnected) {
 // If we destroy the last/only transport, we should simply transition to
 // "connecting".
 TEST_F(TransportControllerTest, TestDestroyLastTransportWhileConnected) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
 
   channel->SetCandidatesGatheringComplete();
@@ -562,9 +561,9 @@ TEST_F(TransportControllerTest, TestDestroyLastTransportWhileConnected) {
 }
 
 TEST_F(TransportControllerTest, TestSignalReceiving) {
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
 
   // Should signal receiving as soon as any channel is receiving.
@@ -580,23 +579,23 @@ TEST_F(TransportControllerTest, TestSignalReceiving) {
 }
 
 TEST_F(TransportControllerTest, TestSignalGatheringStateGathering) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
-  channel->ice_transport()->MaybeStartGathering();
+  channel->MaybeStartGathering();
   // Should be in the gathering state as soon as any transport starts gathering.
   EXPECT_EQ_WAIT(kIceGatheringGathering, gathering_state_, kTimeout);
   EXPECT_EQ(1, gathering_state_signal_count_);
 }
 
 TEST_F(TransportControllerTest, TestSignalGatheringStateComplete) {
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
-  FakeDtlsTransport* channel3 = CreateChannel("data", 1);
+  FakeTransportChannel* channel3 = CreateChannel("data", 1);
   ASSERT_NE(nullptr, channel3);
 
-  channel3->ice_transport()->MaybeStartGathering();
+  channel3->MaybeStartGathering();
   EXPECT_EQ_WAIT(kIceGatheringGathering, gathering_state_, kTimeout);
   EXPECT_EQ(1, gathering_state_signal_count_);
 
@@ -608,8 +607,8 @@ TEST_F(TransportControllerTest, TestSignalGatheringStateComplete) {
   EXPECT_EQ(2, gathering_state_signal_count_);
 
   // Make remaining channels start and then finish gathering.
-  channel1->ice_transport()->MaybeStartGathering();
-  channel2->ice_transport()->MaybeStartGathering();
+  channel1->MaybeStartGathering();
+  channel2->MaybeStartGathering();
   EXPECT_EQ_WAIT(kIceGatheringGathering, gathering_state_, kTimeout);
   EXPECT_EQ(3, gathering_state_signal_count_);
 
@@ -626,9 +625,9 @@ TEST_F(TransportControllerTest, TestSignalGatheringStateComplete) {
 TEST_F(TransportControllerTest,
        TestSignalingWhenLastIncompleteTransportDestroyed) {
   transport_controller_->SetIceRole(ICEROLE_CONTROLLING);
-  FakeDtlsTransport* channel1 = CreateChannel("audio", 1);
+  FakeTransportChannel* channel1 = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel1);
-  FakeDtlsTransport* channel2 = CreateChannel("video", 1);
+  FakeTransportChannel* channel2 = CreateChannel("video", 1);
   ASSERT_NE(nullptr, channel2);
 
   channel1->SetCandidatesGatheringComplete();
@@ -645,7 +644,7 @@ TEST_F(TransportControllerTest,
 }
 
 TEST_F(TransportControllerTest, TestSignalCandidatesGathered) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
 
   // Transport won't signal candidates until it has a local description.
@@ -657,8 +656,7 @@ TEST_F(TransportControllerTest, TestSignalCandidatesGathered) {
       "audio", local_desc, CA_OFFER, &err));
   transport_controller_->MaybeStartGathering();
 
-  channel->ice_transport()->SignalCandidateGathered(channel->ice_transport(),
-                                                    CreateCandidate(1));
+  channel->SignalCandidateGathered(channel, CreateCandidate(1));
   EXPECT_EQ_WAIT(1, candidates_signal_count_, kTimeout);
   EXPECT_EQ(1U, candidates_["audio"].size());
 }
@@ -692,7 +690,7 @@ TEST_F(TransportControllerTest, TestSignalingOccursOnSignalingThread) {
 // TODO(deadbeef): Remove this when these old versions of Chrome reach a low
 // enough population.
 TEST_F(TransportControllerTest, IceRoleRedeterminedOnIceRestartByDefault) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   std::string err;
   // Do an initial offer answer, so that the next offer is an ICE restart.
@@ -725,7 +723,7 @@ TEST_F(TransportControllerTest, IceRoleRedeterminedOnIceRestartByDefault) {
 TEST_F(TransportControllerTest, IceRoleNotRedetermined) {
   bool redetermine_role = false;
   transport_controller_.reset(new TransportControllerForTest(redetermine_role));
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   std::string err;
   // Do an initial offer answer, so that the next offer is an ICE restart.
@@ -753,7 +751,7 @@ TEST_F(TransportControllerTest, IceRoleNotRedetermined) {
 
 // Tests channel role is reversed after receiving ice-lite from remote.
 TEST_F(TransportControllerTest, TestSetRemoteIceLiteInOffer) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   std::string err;
 
@@ -773,7 +771,7 @@ TEST_F(TransportControllerTest, TestSetRemoteIceLiteInOffer) {
 
 // Tests ice-lite in remote answer.
 TEST_F(TransportControllerTest, TestSetRemoteIceLiteInAnswer) {
-  FakeDtlsTransport* channel = CreateChannel("audio", 1);
+  FakeTransportChannel* channel = CreateChannel("audio", 1);
   ASSERT_NE(nullptr, channel);
   std::string err;
 

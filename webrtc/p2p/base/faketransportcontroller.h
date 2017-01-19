@@ -24,9 +24,9 @@
 #include "webrtc/base/sslfingerprint.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
-#include "webrtc/p2p/base/dtlstransportinternal.h"
 #include "webrtc/p2p/base/icetransportinternal.h"
-
+#include "webrtc/p2p/base/transportchannel.h"
+#include "webrtc/p2p/base/transportchannelimpl.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 
 #ifdef HAVE_QUIC
@@ -263,75 +263,85 @@ class FakeIceTransport : public IceTransportInternal,
   bool receiving_ = false;
 };
 
-class FakeDtlsTransport : public DtlsTransportInternal {
+// Fake transport channel class, which can be passed to anything that needs a
+// transport channel. Can be informed of another FakeTransportChannel via
+// SetDestination.
+// TODO(hbos): Move implementation to .cc file, this and other classes in file.
+class FakeTransportChannel : public TransportChannelImpl,
+                             public rtc::MessageHandler {
  public:
-  explicit FakeDtlsTransport(FakeIceTransport* ice_transport)
-      : ice_transport_(ice_transport),
-        transport_name_(ice_transport->transport_name()),
-        component_(ice_transport->component()),
-        dtls_fingerprint_("", nullptr, 0) {
-    ice_transport_->SignalReadPacket.connect(
-        this, &FakeDtlsTransport::OnIceTransportReadPacket);
-  }
+  explicit FakeTransportChannel(const std::string& name, int component)
+      : TransportChannelImpl(name, component),
+        dtls_fingerprint_("", nullptr, 0) {}
+  ~FakeTransportChannel() { Reset(); }
 
-  explicit FakeDtlsTransport(const std::string& name, int component)
-      : ice_transport_(new FakeIceTransport(name, component)),
-        transport_name_(ice_transport_->transport_name()),
-        component_(ice_transport_->component()),
-        dtls_fingerprint_("", nullptr, 0) {
-    ice_transport_->SignalReadPacket.connect(
-        this, &FakeDtlsTransport::OnIceTransportReadPacket);
-  }
-
-  ~FakeDtlsTransport() override { Reset(); }
-
-  uint64_t IceTiebreaker() const { return ice_transport_->IceTiebreaker(); }
-  IceMode remote_ice_mode() const { return ice_transport_->remote_ice_mode(); }
-  const std::string& ice_ufrag() const { return ice_transport_->ice_ufrag(); }
-  const std::string& ice_pwd() const { return ice_transport_->ice_pwd(); }
-  const std::string& remote_ice_ufrag() const {
-    return ice_transport_->remote_ice_ufrag();
-  }
-  const std::string& remote_ice_pwd() const {
-    return ice_transport_->remote_ice_pwd();
-  }
-
-  DtlsTransportState dtls_state() const override { return dtls_state_; }
-
-  const std::string& transport_name() const override { return transport_name_; }
-
-  int component() const override { return component_; }
-
+  uint64_t IceTiebreaker() const { return tiebreaker_; }
+  IceMode remote_ice_mode() const { return remote_ice_mode_; }
+  const std::string& ice_ufrag() const { return ice_ufrag_; }
+  const std::string& ice_pwd() const { return ice_pwd_; }
+  const std::string& remote_ice_ufrag() const { return remote_ice_ufrag_; }
+  const std::string& remote_ice_pwd() const { return remote_ice_pwd_; }
   const rtc::SSLFingerprint& dtls_fingerprint() const {
     return dtls_fingerprint_;
   }
 
   // If async, will send packets by "Post"-ing to message queue instead of
   // synchronously "Send"-ing.
-  void SetAsync(bool async) { ice_transport_->SetAsync(async); }
-  void SetAsyncDelay(int delay_ms) { ice_transport_->SetAsyncDelay(delay_ms); }
+  void SetAsync(bool async) { async_ = async; }
+  void SetAsyncDelay(int delay_ms) { async_delay_ms_ = delay_ms; }
 
-  IceRole GetIceRole() const { return ice_transport_->GetIceRole(); }
+  IceTransportState GetState() const override {
+    if (connection_count_ == 0) {
+      return had_connection_ ? IceTransportState::STATE_FAILED
+                             : IceTransportState::STATE_INIT;
+    }
 
+    if (connection_count_ == 1) {
+      return IceTransportState::STATE_COMPLETED;
+    }
+
+    return IceTransportState::STATE_CONNECTING;
+  }
+
+  void SetIceRole(IceRole role) override { role_ = role; }
+  IceRole GetIceRole() const override { return role_; }
+  void SetIceTiebreaker(uint64_t tiebreaker) override {
+    tiebreaker_ = tiebreaker;
+  }
+  void SetIceParameters(const IceParameters& ice_params) override {
+    ice_ufrag_ = ice_params.ufrag;
+    ice_pwd_ = ice_params.pwd;
+  }
+  void SetRemoteIceParameters(const IceParameters& params) override {
+    remote_ice_ufrag_ = params.ufrag;
+    remote_ice_pwd_ = params.pwd;
+  }
+
+  void SetRemoteIceMode(IceMode mode) override { remote_ice_mode_ = mode; }
   bool SetRemoteFingerprint(const std::string& alg,
                             const uint8_t* digest,
                             size_t digest_len) override {
     dtls_fingerprint_ = rtc::SSLFingerprint(alg, digest, digest_len);
     return true;
   }
-
   bool SetSslRole(rtc::SSLRole role) override {
     ssl_role_ = role;
     return true;
   }
-
   bool GetSslRole(rtc::SSLRole* role) const override {
     *role = ssl_role_;
     return true;
   }
 
-  IceGatheringState gathering_state() const {
-    return ice_transport_->gathering_state();
+  void MaybeStartGathering() override {
+    if (gathering_state_ == kIceGatheringNew) {
+      gathering_state_ = kIceGatheringGathering;
+      SignalGatheringState(this);
+    }
+  }
+
+  IceGatheringState gathering_state() const override {
+    return gathering_state_;
   }
 
   void Reset() {
@@ -348,9 +358,9 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   void SetWritable(bool writable) { set_writable(writable); }
 
   // Simulates the two transport channels connecting to each other.
-  // If |asymmetric| is true this method only affects this FakeDtlsTransport.
+  // If |asymmetric| is true this method only affects this FakeTransportChannel.
   // If false, it affects |dest| as well.
-  void SetDestination(FakeDtlsTransport* dest, bool asymmetric = false) {
+  void SetDestination(FakeTransportChannel* dest, bool asymmetric = false) {
     if (state_ == STATE_INIT && dest) {
       // This simulates the delivery of candidates.
       dest_ = dest;
@@ -359,58 +369,87 @@ class FakeDtlsTransport : public DtlsTransportInternal {
         NegotiateSrtpCiphers();
       }
       state_ = STATE_CONNECTED;
-      SetWritable(true);
+      set_writable(true);
       if (!asymmetric) {
         dest->SetDestination(this, true);
       }
-      ice_transport_->SetDestination(
-          static_cast<FakeIceTransport*>(dest->ice_transport()), asymmetric);
     } else if (state_ == STATE_CONNECTED && !dest) {
       // Simulates loss of connectivity, by asymmetrically forgetting dest_.
       dest_ = nullptr;
       state_ = STATE_INIT;
-      SetWritable(false);
-      ice_transport_->SetDestination(nullptr, asymmetric);
+      set_writable(false);
     }
   }
 
   void SetConnectionCount(size_t connection_count) {
-    ice_transport_->SetConnectionCount(connection_count);
+    size_t old_connection_count = connection_count_;
+    connection_count_ = connection_count;
+    if (connection_count)
+      had_connection_ = true;
+    // In this fake transport channel, |connection_count_| determines the
+    // transport channel state.
+    if (connection_count_ < old_connection_count)
+      SignalStateChanged(this);
   }
 
   void SetCandidatesGatheringComplete() {
-    ice_transport_->SetCandidatesGatheringComplete();
+    if (gathering_state_ != kIceGatheringComplete) {
+      gathering_state_ = kIceGatheringComplete;
+      SignalGatheringState(this);
+    }
   }
 
-  void SetReceiving(bool receiving) {
-    ice_transport_->SetReceiving(receiving);
-    set_receiving(receiving);
-  }
+  void SetReceiving(bool receiving) { set_receiving(receiving); }
 
-  int receiving_timeout() const { return ice_transport_->receiving_timeout(); }
-  bool gather_continually() const {
-    return ice_transport_->gather_continually();
-  }
+  void SetIceConfig(const IceConfig& config) override { ice_config_ = config; }
+
+  int receiving_timeout() const { return ice_config_.receiving_timeout; }
+  bool gather_continually() const { return ice_config_.gather_continually(); }
 
   int SendPacket(const char* data,
                  size_t len,
                  const rtc::PacketOptions& options,
                  int flags) override {
-    return ice_transport_->SendPacket(data, len, options, flags);
-  }
+    if (state_ != STATE_CONNECTED) {
+      return -1;
+    }
 
+    if (flags != PF_SRTP_BYPASS && flags != 0) {
+      return -1;
+    }
+
+    PacketMessageData* packet = new PacketMessageData(data, len);
+    if (async_) {
+      if (async_delay_ms_) {
+        rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, async_delay_ms_,
+                                            this, 0, packet);
+      } else {
+        rtc::Thread::Current()->Post(RTC_FROM_HERE, this, 0, packet);
+      }
+    } else {
+      rtc::Thread::Current()->Send(RTC_FROM_HERE, this, 0, packet);
+    }
+    rtc::SentPacket sent_packet(options.packet_id, rtc::TimeMillis());
+    SignalSentPacket(this, sent_packet);
+    return static_cast<int>(len);
+  }
+  int SetOption(rtc::Socket::Option opt, int value) override { return true; }
   bool GetOption(rtc::Socket::Option opt, int* value) override { return true; }
+  int GetError() override { return 0; }
 
-  const Candidates& remote_candidates() const {
-    return ice_transport_->remote_candidates();
+  void AddRemoteCandidate(const Candidate& candidate) override {
+    remote_candidates_.push_back(candidate);
   }
 
-  void OnIceTransportReadPacket(PacketTransportInterface* ice_,
-                                const char* data,
-                                size_t len,
-                                const rtc::PacketTime& time,
-                                int flags) {
-    SignalReadPacket(this, data, len, time, flags);
+  void RemoveRemoteCandidate(const Candidate& candidate) override {}
+
+  const Candidates& remote_candidates() const { return remote_candidates_; }
+
+  void OnMessage(rtc::Message* msg) override {
+    PacketMessageData* data = static_cast<PacketMessageData*>(msg->pdata);
+    dest_->SignalReadPacket(dest_, data->packet.data<char>(),
+                            data->packet.size(), rtc::CreatePacketTime(0), 0);
+    delete data;
   }
 
   bool SetLocalCertificate(
@@ -465,6 +504,13 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     return false;
   }
 
+  bool GetStats(ConnectionInfos* infos) override {
+    ConnectionInfo info;
+    infos->clear();
+    infos->push_back(info);
+    return true;
+  }
+
   void set_ssl_max_protocol_version(rtc::SSLProtocolVersion version) {
     ssl_max_version_ = version;
   }
@@ -472,24 +518,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     return ssl_max_version_;
   }
 
-  IceTransportInternal* ice_transport() override { return ice_transport_; }
-
-  bool writable() const override { return writable_; }
-
-  bool receiving() const override { return receiving_; }
-
-  int GetError() override { return ice_transport_->GetError(); }
-
-  int SetOption(rtc::Socket::Option opt, int value) override {
-    return ice_transport_->SetOption(opt, value);
-  }
-
-  bool SetSrtpCiphers(const std::vector<std::string>& ciphers) override {
-    std::vector<int> crypto_suites;
-    for (const auto cipher : ciphers) {
-      crypto_suites.push_back(rtc::SrtpCryptoSuiteFromName(cipher));
-    }
-    return SetSrtpCryptoSuites(crypto_suites);
+  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override {
   }
 
  private:
@@ -506,45 +535,31 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     }
   }
 
-  void set_receiving(bool receiving) {
-    if (receiving_ == receiving) {
-      return;
-    }
-    receiving_ = receiving;
-    SignalReceivingState(this);
-  }
-
-  void set_writable(bool writable) {
-    if (writable_ == writable) {
-      return;
-    }
-    writable_ = writable;
-    if (writable_) {
-      SignalReadyToSend(this);
-    }
-    SignalWritableState(this);
-  }
-
   enum State { STATE_INIT, STATE_CONNECTED };
-  FakeIceTransport* ice_transport_;
-  std::string transport_name_;
-  int component_;
-  FakeDtlsTransport* dest_ = nullptr;
+  FakeTransportChannel* dest_ = nullptr;
   State state_ = STATE_INIT;
+  bool async_ = false;
+  int async_delay_ms_ = 0;
   Candidates remote_candidates_;
   rtc::scoped_refptr<rtc::RTCCertificate> local_cert_;
   rtc::FakeSSLCertificate* remote_cert_ = nullptr;
   bool do_dtls_ = false;
   std::vector<int> srtp_ciphers_;
   int chosen_crypto_suite_ = rtc::SRTP_INVALID_CRYPTO_SUITE;
+  IceConfig ice_config_;
+  IceRole role_ = ICEROLE_UNKNOWN;
+  uint64_t tiebreaker_ = 0;
+  std::string ice_ufrag_;
+  std::string ice_pwd_;
+  std::string remote_ice_ufrag_;
+  std::string remote_ice_pwd_;
+  IceMode remote_ice_mode_ = ICEMODE_FULL;
   rtc::SSLProtocolVersion ssl_max_version_ = rtc::SSL_PROTOCOL_DTLS_12;
   rtc::SSLFingerprint dtls_fingerprint_;
   rtc::SSLRole ssl_role_ = rtc::SSL_CLIENT;
-
-  DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;
-
-  bool receiving_ = false;
-  bool writable_ = false;
+  size_t connection_count_ = 0;
+  IceGatheringState gathering_state_ = kIceGatheringNew;
+  bool had_connection_ = false;
 };
 
 // Fake candidate pair class, which can be passed to BaseChannel for testing
@@ -599,9 +614,10 @@ class FakeTransportController : public TransportController {
     SetIceRole(role);
   }
 
-  FakeDtlsTransport* GetFakeDtlsTransport_n(const std::string& transport_name,
-                                            int component) {
-    return static_cast<FakeDtlsTransport*>(
+  FakeTransportChannel* GetFakeTransportChannel_n(
+      const std::string& transport_name,
+      int component) {
+    return static_cast<FakeTransportChannel*>(
         get_channel_for_testing(transport_name, component));
   }
 
@@ -650,8 +666,8 @@ class FakeTransportController : public TransportController {
   }
 
   void DestroyRtcpTransport(const std::string& transport_name) {
-    DestroyDtlsTransport_n(transport_name,
-                           cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+    DestroyTransportChannel_n(transport_name,
+                              cricket::ICE_CANDIDATE_COMPONENT_RTCP);
   }
 
  protected:
@@ -661,21 +677,21 @@ class FakeTransportController : public TransportController {
   IceTransportInternal* CreateIceTransportChannel_n(
       const std::string& transport_name,
       int component) override {
-    return new FakeIceTransport(transport_name, component);
+    return nullptr;
   }
 
-  DtlsTransportInternal* CreateDtlsTransportChannel_n(
+  TransportChannelImpl* CreateDtlsTransportChannel_n(
       const std::string& transport_name,
       int component,
-      IceTransportInternal* ice) override {
-    return new FakeDtlsTransport(static_cast<FakeIceTransport*>(ice));
+      IceTransportInternal*) override {
+    return new FakeTransportChannel(transport_name, component);
   }
 
  private:
   void SetChannelDestinations_n(FakeTransportController* dest) {
-    for (DtlsTransportInternal* tc : channels_for_testing()) {
-      FakeDtlsTransport* local = static_cast<FakeDtlsTransport*>(tc);
-      FakeDtlsTransport* remote = dest->GetFakeDtlsTransport_n(
+    for (TransportChannelImpl* tc : channels_for_testing()) {
+      FakeTransportChannel* local = static_cast<FakeTransportChannel*>(tc);
+      FakeTransportChannel* remote = dest->GetFakeTransportChannel_n(
           local->transport_name(), local->component());
       if (remote) {
         bool asymmetric = false;

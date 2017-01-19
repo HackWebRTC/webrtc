@@ -39,7 +39,6 @@ enum PreservedErrno {
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"  // For IsRtpPacket
 #include "webrtc/media/base/streamparams.h"
-#include "webrtc/p2p/base/dtlstransportinternal.h"  // For PF_NORMAL
 
 namespace {
 
@@ -385,7 +384,7 @@ class SctpTransport::UsrSctpWrapper {
 };
 
 SctpTransport::SctpTransport(rtc::Thread* network_thread,
-                             rtc::PacketTransportInterface* channel)
+                             TransportChannel* channel)
     : network_thread_(network_thread),
       transport_channel_(channel),
       was_ever_writable_(channel->writable()) {
@@ -400,8 +399,7 @@ SctpTransport::~SctpTransport() {
   CloseSctpSocket();
 }
 
-void SctpTransport::SetTransportChannel(
-    rtc::PacketTransportInterface* channel) {
+void SctpTransport::SetTransportChannel(cricket::TransportChannel* channel) {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(channel);
   DisconnectTransportChannelSignals();

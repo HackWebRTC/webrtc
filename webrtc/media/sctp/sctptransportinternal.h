@@ -24,7 +24,7 @@
 // TODO(deadbeef): Use something else for SCTP. It's confusing that we use an
 // SSRC field for SID.
 #include "webrtc/media/base/mediachannel.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/transportchannel.h"
 
 namespace cricket {
 
@@ -58,7 +58,7 @@ class SctpTransportInternal {
   // Changes what underlying DTLS channel is uses. Used when switching which
   // bundled transport the SctpTransport uses.
   // Assumes |channel| is non-null.
-  virtual void SetTransportChannel(rtc::PacketTransportInterface* channel) = 0;
+  virtual void SetTransportChannel(TransportChannel* channel) = 0;
 
   // When Start is called, connects as soon as possible; this can be called
   // before DTLS completes, in which case the connection will begin when DTLS
@@ -129,7 +129,7 @@ class SctpTransportInternalFactory {
 
   // Create an SCTP transport using |channel| for the underlying transport.
   virtual std::unique_ptr<SctpTransportInternal> CreateSctpTransport(
-      rtc::PacketTransportInterface* channel) = 0;
+      TransportChannel* channel) = 0;
 };
 
 }  // namespace cricket
