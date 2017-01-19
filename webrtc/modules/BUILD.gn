@@ -260,6 +260,7 @@ if (rtc_include_tests) {
     deps += [
       "../test:test_main",
       "audio_coding:audio_coding_unittests",
+      "audio_conference_mixer:audio_conference_mixer_unittests",
       "audio_device:audio_device_unittests",
       "audio_mixer:audio_mixer_unittests",
       "audio_processing:audio_processing_unittests",
