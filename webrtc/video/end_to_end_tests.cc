@@ -1228,6 +1228,9 @@ TEST_P(EndToEndTest, ReceivesPliAndRecoversWithNack) {
 }
 
 TEST_P(EndToEndTest, ReceivesPliAndRecoversWithoutNack) {
+  // This test makes no sense for the new video jitter buffer.
+  if (GetParam() == new_jb_enabled)
+    return;
   ReceivesPliAndRecovers(0);
 }
 
@@ -3026,6 +3029,10 @@ TEST_P(EndToEndTest, GetStats) {
     rtc::Event check_stats_event_;
     ReceiveStreamRenderer receive_stream_renderer_;
   } test;
+
+  // TODO(philipel): Implement statistics for the new video jitter buffer.
+  if (GetParam() == new_jb_enabled)
+    return;
 
   RunBaseTest(&test);
 }
