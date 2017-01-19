@@ -2237,6 +2237,19 @@ JOW(void, VideoFileRenderer_nativeI420Scale)(
   }
 }
 
+JOW(jobject, VideoFileRenderer_nativeCreateNativeByteBuffer)
+(JNIEnv* jni, jclass, jint size) {
+  void* new_data = ::operator new(size);
+  jobject byte_buffer = jni->NewDirectByteBuffer(new_data, size);
+  return byte_buffer;
+}
+
+JOW(void, VideoFileRenderer_nativeFreeNativeByteBuffer)
+(JNIEnv* jni, jclass, jobject byte_buffer) {
+  void* data = jni->GetDirectBufferAddress(byte_buffer);
+  ::operator delete(data);
+}
+
 JOW(jstring, MediaStreamTrack_nativeId)(JNIEnv* jni, jclass, jlong j_p) {
   return JavaStringFromStdString(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->id());
