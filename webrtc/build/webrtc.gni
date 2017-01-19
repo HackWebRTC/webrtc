@@ -167,6 +167,9 @@ rtc_libvpx_dir = "//third_party/libvpx"
 rtc_libyuv_dir = "//third_party/libyuv"
 rtc_opus_dir = "//third_party/opus"
 
+# Desktop capturer is supported only on Windows, OSX and Linux.
+rtc_desktop_capture_supported = is_win || is_mac || is_linux
+
 ###############################################################################
 # Templates
 #

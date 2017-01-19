@@ -1457,8 +1457,6 @@ if (rtc_include_tests) {
       "neteq/tools/input_audio_file.cc",
       "neteq/tools/input_audio_file.h",
       "neteq/tools/neteq_input.h",
-      "neteq/tools/neteq_packet_source_input.cc",
-      "neteq/tools/neteq_packet_source_input.h",
       "neteq/tools/neteq_replacement_input.cc",
       "neteq/tools/neteq_replacement_input.h",
       "neteq/tools/output_audio_file.h",
@@ -1498,6 +1496,10 @@ if (rtc_include_tests) {
     ]
 
     if (rtc_enable_protobuf) {
+      sources += [
+        "neteq/tools/neteq_packet_source_input.cc",
+        "neteq/tools/neteq_packet_source_input.h",
+      ]
       deps += [ ":rtc_event_log_source" ]
     }
   }
@@ -1912,6 +1914,139 @@ if (rtc_include_tests) {
       "../../test:test_main",
       "//testing/gtest",
     ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  rtc_source_set("audio_coding_unittests") {
+    testonly = true
+
+    sources = [
+      "acm2/acm_receiver_unittest.cc",
+      "acm2/audio_coding_module_unittest.cc",
+      "acm2/call_statistics_unittest.cc",
+      "acm2/codec_manager_unittest.cc",
+      "acm2/rent_a_codec_unittest.cc",
+      "audio_network_adaptor/audio_network_adaptor_impl_unittest.cc",
+      "audio_network_adaptor/bitrate_controller_unittest.cc",
+      "audio_network_adaptor/channel_controller_unittest.cc",
+      "audio_network_adaptor/controller_manager_unittest.cc",
+      "audio_network_adaptor/dtx_controller_unittest.cc",
+      "audio_network_adaptor/fec_controller_unittest.cc",
+      "audio_network_adaptor/frame_length_controller_unittest.cc",
+      "audio_network_adaptor/mock/mock_controller.h",
+      "audio_network_adaptor/mock/mock_controller_manager.h",
+      "codecs/audio_decoder_factory_unittest.cc",
+      "codecs/cng/audio_encoder_cng_unittest.cc",
+      "codecs/cng/cng_unittest.cc",
+      "codecs/ilbc/ilbc_unittest.cc",
+      "codecs/isac/fix/source/filterbanks_unittest.cc",
+      "codecs/isac/fix/source/filters_unittest.cc",
+      "codecs/isac/fix/source/lpc_masking_model_unittest.cc",
+      "codecs/isac/fix/source/transform_unittest.cc",
+      "codecs/isac/main/source/audio_encoder_isac_unittest.cc",
+      "codecs/isac/main/source/isac_unittest.cc",
+      "codecs/isac/unittest.cc",
+      "codecs/legacy_encoded_audio_frame_unittest.cc",
+      "codecs/mock/mock_audio_encoder.cc",
+      "codecs/opus/audio_encoder_opus_unittest.cc",
+      "codecs/opus/opus_unittest.cc",
+      "codecs/red/audio_encoder_copy_red_unittest.cc",
+      "neteq/audio_multi_vector_unittest.cc",
+      "neteq/audio_vector_unittest.cc",
+      "neteq/background_noise_unittest.cc",
+      "neteq/buffer_level_filter_unittest.cc",
+      "neteq/comfort_noise_unittest.cc",
+      "neteq/decision_logic_unittest.cc",
+      "neteq/decoder_database_unittest.cc",
+      "neteq/delay_manager_unittest.cc",
+      "neteq/delay_peak_detector_unittest.cc",
+      "neteq/dsp_helper_unittest.cc",
+      "neteq/dtmf_buffer_unittest.cc",
+      "neteq/dtmf_tone_generator_unittest.cc",
+      "neteq/expand_unittest.cc",
+      "neteq/merge_unittest.cc",
+      "neteq/mock/mock_audio_decoder.h",
+      "neteq/mock/mock_buffer_level_filter.h",
+      "neteq/mock/mock_decoder_database.h",
+      "neteq/mock/mock_delay_manager.h",
+      "neteq/mock/mock_delay_peak_detector.h",
+      "neteq/mock/mock_dtmf_buffer.h",
+      "neteq/mock/mock_dtmf_tone_generator.h",
+      "neteq/mock/mock_expand.h",
+      "neteq/mock/mock_external_decoder_pcm16b.h",
+      "neteq/mock/mock_packet_buffer.h",
+      "neteq/mock/mock_red_payload_splitter.h",
+      "neteq/nack_tracker_unittest.cc",
+      "neteq/neteq_external_decoder_unittest.cc",
+      "neteq/neteq_impl_unittest.cc",
+      "neteq/neteq_network_stats_unittest.cc",
+      "neteq/neteq_stereo_unittest.cc",
+      "neteq/neteq_unittest.cc",
+      "neteq/normal_unittest.cc",
+      "neteq/packet_buffer_unittest.cc",
+      "neteq/post_decode_vad_unittest.cc",
+      "neteq/random_vector_unittest.cc",
+      "neteq/red_payload_splitter_unittest.cc",
+      "neteq/sync_buffer_unittest.cc",
+      "neteq/tick_timer_unittest.cc",
+      "neteq/time_stretch_unittest.cc",
+      "neteq/timestamp_scaler_unittest.cc",
+      "neteq/tools/input_audio_file_unittest.cc",
+      "neteq/tools/packet_unittest.cc",
+    ]
+
+    deps = [
+      ":acm_receive_test",
+      ":acm_send_test",
+      ":audio_coding",
+      ":audio_decoder_interface",
+      ":audio_encoder_interface",
+      ":audio_format_conversion",
+      ":audio_network_adaptor",
+      ":builtin_audio_decoder_factory",
+      ":cng",
+      ":g711",
+      ":ilbc",
+      ":isac_c",
+      ":isac_fix",
+      ":neteq",
+      ":neteq_test_support",
+      ":neteq_unittest_tools",
+      ":pcm16b",
+      ":red",
+      ":rent_a_codec",
+      ":webrtc_opus",
+      "../..:webrtc_common",
+      "../../base:rtc_base",
+      "../../base:rtc_base_approved",
+      "../../base:rtc_base_tests_utils",
+      "../../common_audio",
+      "../../system_wrappers:system_wrappers",
+      "../../test:field_trial",
+      "../../test:rtp_test_utils",
+      "../../test:test_common",
+      "../../test:test_support",
+      "//testing/gmock",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
+
+    defines = audio_coding_defines
+
+    if (rtc_enable_protobuf) {
+      defines += [
+        "WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP",
+        "WEBRTC_NETEQ_UNITTEST_BITEXACT",
+      ]
+      deps += [
+        ":ana_config_proto",
+        ":neteq_unittest_proto",
+      ]
+    }
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

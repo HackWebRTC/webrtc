@@ -140,6 +140,7 @@ rtc_source_set("test_support") {
     "testsupport/perf_test.h",
     "testsupport/trace_to_stderr.cc",
     "testsupport/trace_to_stderr.h",
+    "testsupport/unittest_utils.h",
   ]
 
   deps = [
@@ -221,7 +222,6 @@ rtc_test("test_support_unittests") {
     "testsupport/metrics/video_metrics_unittest.cc",
     "testsupport/packet_reader_unittest.cc",
     "testsupport/perf_test_unittest.cc",
-    "testsupport/unittest_utils.h",
   ]
 
   # TODO(jschuh): Bug 1348: fix this warning.
@@ -333,6 +333,7 @@ rtc_source_set("test_common") {
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing",
     "../modules/media_file",
+    "../modules/video_capture:video_capture",
     "../modules/video_capture:video_capture_module",
     "../video",
     "//testing/gmock",

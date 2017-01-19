@@ -210,4 +210,93 @@ if (rtc_include_tests) {
       "//webrtc/test:test_main",
     ]
   }  # test_packet_masks_metrics
+
+  rtc_source_set("rtp_rtcp_unittests") {
+    testonly = true
+    sources = [
+      "mocks/mock_rtp_rtcp.h",
+      "source/byte_io_unittest.cc",
+      "source/fec_test_helper.cc",
+      "source/fec_test_helper.h",
+      "source/flexfec_header_reader_writer_unittest.cc",
+      "source/flexfec_receiver_unittest.cc",
+      "source/flexfec_sender_unittest.cc",
+      "source/nack_rtx_unittest.cc",
+      "source/packet_loss_stats_unittest.cc",
+      "source/playout_delay_oracle_unittest.cc",
+      "source/receive_statistics_unittest.cc",
+      "source/remote_ntp_time_estimator_unittest.cc",
+      "source/rtcp_packet/app_unittest.cc",
+      "source/rtcp_packet/bye_unittest.cc",
+      "source/rtcp_packet/common_header_unittest.cc",
+      "source/rtcp_packet/compound_packet_unittest.cc",
+      "source/rtcp_packet/dlrr_unittest.cc",
+      "source/rtcp_packet/extended_jitter_report_unittest.cc",
+      "source/rtcp_packet/extended_reports_unittest.cc",
+      "source/rtcp_packet/fir_unittest.cc",
+      "source/rtcp_packet/nack_unittest.cc",
+      "source/rtcp_packet/pli_unittest.cc",
+      "source/rtcp_packet/rapid_resync_request_unittest.cc",
+      "source/rtcp_packet/receiver_report_unittest.cc",
+      "source/rtcp_packet/remb_unittest.cc",
+      "source/rtcp_packet/report_block_unittest.cc",
+      "source/rtcp_packet/rpsi_unittest.cc",
+      "source/rtcp_packet/rrtr_unittest.cc",
+      "source/rtcp_packet/sdes_unittest.cc",
+      "source/rtcp_packet/sender_report_unittest.cc",
+      "source/rtcp_packet/sli_unittest.cc",
+      "source/rtcp_packet/target_bitrate_unittest.cc",
+      "source/rtcp_packet/tmmbn_unittest.cc",
+      "source/rtcp_packet/tmmbr_unittest.cc",
+      "source/rtcp_packet/transport_feedback_unittest.cc",
+      "source/rtcp_packet/voip_metric_unittest.cc",
+      "source/rtcp_packet_unittest.cc",
+      "source/rtcp_receiver_unittest.cc",
+      "source/rtcp_sender_unittest.cc",
+      "source/rtcp_utility_unittest.cc",
+      "source/rtp_fec_unittest.cc",
+      "source/rtp_format_h264_unittest.cc",
+      "source/rtp_format_vp8_test_helper.cc",
+      "source/rtp_format_vp8_test_helper.h",
+      "source/rtp_format_vp8_unittest.cc",
+      "source/rtp_format_vp9_unittest.cc",
+      "source/rtp_header_extension_unittest.cc",
+      "source/rtp_packet_history_unittest.cc",
+      "source/rtp_packet_unittest.cc",
+      "source/rtp_payload_registry_unittest.cc",
+      "source/rtp_rtcp_impl_unittest.cc",
+      "source/rtp_sender_unittest.cc",
+      "source/rtp_utility_unittest.cc",
+      "source/time_util_unittest.cc",
+      "source/ulpfec_generator_unittest.cc",
+      "source/ulpfec_header_reader_writer_unittest.cc",
+      "source/ulpfec_receiver_unittest.cc",
+      "source/vp8_partition_aggregator_unittest.cc",
+      "test/testAPI/test_api.cc",
+      "test/testAPI/test_api.h",
+      "test/testAPI/test_api_audio.cc",
+      "test/testAPI/test_api_rtcp.cc",
+      "test/testAPI/test_api_video.cc",
+    ]
+    deps = [
+      ":rtp_rtcp",
+      "../..:webrtc_common",
+      "../../api:transport_api",
+      "../../base:rtc_base_approved",
+      "../../common_video:common_video",
+      "../../system_wrappers:system_wrappers",
+      "../../test:field_trial",
+      "../../test:rtp_test_utils",
+      "../../test:test_common",
+      "../../test:test_support",
+      "//testing/gmock",
+    ]
+
+    # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
+    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }

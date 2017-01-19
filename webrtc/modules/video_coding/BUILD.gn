@@ -310,4 +310,88 @@ if (rtc_include_tests) {
       "../../test:test_support",
     ]
   }
+  rtc_source_set("video_coding_unittests") {
+    testonly = true
+    sources = [
+      "codecs/test/packet_manipulator_unittest.cc",
+      "codecs/test/stats_unittest.cc",
+      "codecs/test/videoprocessor_unittest.cc",
+      "codecs/vp8/default_temporal_layers_unittest.cc",
+      "codecs/vp8/reference_picture_selection_unittest.cc",
+      "codecs/vp8/screenshare_layers_unittest.cc",
+      "codecs/vp8/simulcast_encoder_adapter_unittest.cc",
+      "codecs/vp8/simulcast_unittest.cc",
+      "codecs/vp8/simulcast_unittest.h",
+      "decoding_state_unittest.cc",
+      "frame_buffer2_unittest.cc",
+      "h264_sprop_parameter_sets_unittest.cc",
+      "h264_sps_pps_tracker_unittest.cc",
+      "histogram_unittest.cc",
+      "include/mock/mock_vcm_callbacks.h",
+      "jitter_buffer_unittest.cc",
+      "jitter_estimator_tests.cc",
+      "nack_module_unittest.cc",
+      "protection_bitrate_calculator_unittest.cc",
+      "receiver_unittest.cc",
+      "rtp_frame_reference_finder_unittest.cc",
+      "sequence_number_util_unittest.cc",
+      "session_info_unittest.cc",
+      "test/stream_generator.cc",
+      "test/stream_generator.h",
+      "timing_unittest.cc",
+      "utility/default_video_bitrate_allocator_unittest.cc",
+      "utility/frame_dropper_unittest.cc",
+      "utility/ivf_file_writer_unittest.cc",
+      "utility/moving_average_unittest.cc",
+      "utility/quality_scaler_unittest.cc",
+      "utility/simulcast_rate_allocator_unittest.cc",
+      "video_coding_robustness_unittest.cc",
+      "video_packet_buffer_unittest.cc",
+      "video_receiver_unittest.cc",
+      "video_sender_unittest.cc",
+    ]
+    if (rtc_libvpx_build_vp9) {
+      sources += [ "codecs/vp9/vp9_screenshare_layers_unittest.cc" ]
+    }
+    if (rtc_use_h264) {
+      sources += [ "codecs/h264/h264_encoder_impl_unittest.cc" ]
+    }
+    deps = [
+      ":video_codecs_test_framework",
+      ":video_coding",
+      ":video_coding_utility",
+      ":webrtc_h264",
+      ":webrtc_vp8",
+      ":webrtc_vp9",
+      "../..:webrtc_common",
+      "../../api:video_frame_api",
+      "../../base:rtc_base",
+      "../../base:rtc_base_approved",
+      "../../base:rtc_task_queue",
+      "../../common_video:common_video",
+      "../../system_wrappers:metrics_default",
+      "../../system_wrappers:system_wrappers",
+      "../../test:field_trial",
+      "../../test:test_support",
+      "../../test:video_test_common",
+      "../rtp_rtcp:rtp_rtcp",
+      "//testing/gmock",
+    ]
+    if (rtc_build_libvpx) {
+      deps += [ rtc_libvpx_dir ]
+    }
+    if (is_win) {
+      cflags = [
+        # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
+        "/wd4373",  # virtual function override.
+      ]
+    }
+
+    # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
+    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }

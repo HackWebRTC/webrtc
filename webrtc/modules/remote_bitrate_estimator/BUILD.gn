@@ -141,4 +141,48 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
+
+  rtc_source_set("remote_bitrate_estimator_unittests") {
+    testonly = true
+    sources = [
+      "aimd_rate_control_unittest.cc",
+      "include/mock/mock_remote_bitrate_estimator.h",
+      "include/mock/mock_remote_bitrate_observer.h",
+      "inter_arrival_unittest.cc",
+      "overuse_detector_unittest.cc",
+      "remote_bitrate_estimator_abs_send_time_unittest.cc",
+      "remote_bitrate_estimator_single_stream_unittest.cc",
+      "remote_bitrate_estimator_unittest_helper.cc",
+      "remote_bitrate_estimator_unittest_helper.h",
+      "remote_estimator_proxy_unittest.cc",
+      "send_time_history_unittest.cc",
+      "test/bwe_test_framework_unittest.cc",
+      "test/bwe_unittest.cc",
+      "test/estimators/nada_unittest.cc",
+      "test/metric_recorder_unittest.cc",
+    ]
+    deps = [
+      ":bwe_simulator_lib",
+      ":remote_bitrate_estimator",
+      "../..:webrtc_common",
+      "../../base:rtc_base",
+      "../../base:rtc_base_approved",
+      "../../system_wrappers:system_wrappers",
+      "../../test:field_trial",
+      "../../test:test_support",
+      "../pacing:pacing",
+      "../rtp_rtcp:rtp_rtcp",
+      "//testing/gmock",
+    ]
+    if (is_win) {
+      cflags = [
+        # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
+        "/wd4373",  # virtual function override.
+      ]
+    }
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }

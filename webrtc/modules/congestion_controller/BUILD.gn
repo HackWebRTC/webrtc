@@ -55,3 +55,38 @@ rtc_static_library("congestion_controller") {
     "../utility",
   ]
 }
+
+if (rtc_include_tests) {
+  rtc_source_set("congestion_controller_unittests") {
+    testonly = true
+    sources = [
+      "congestion_controller_unittest.cc",
+      "delay_based_bwe_unittest.cc",
+      "delay_based_bwe_unittest_helper.cc",
+      "delay_based_bwe_unittest_helper.h",
+      "median_slope_estimator_unittest.cc",
+      "probe_bitrate_estimator_unittest.cc",
+      "probe_controller_unittest.cc",
+      "probing_interval_estimator_unittest.cc",
+      "transport_feedback_adapter_unittest.cc",
+      "trendline_estimator_unittest.cc",
+    ]
+    deps = [
+      ":congestion_controller",
+      "../../base:rtc_base_approved",
+      "../../system_wrappers:system_wrappers",
+      "../../test:field_trial",
+      "../../test:test_support",
+      "../bitrate_controller:bitrate_controller",
+      "../pacing:pacing",
+      "../remote_bitrate_estimator:remote_bitrate_estimator",
+      "../remote_bitrate_estimator:remote_bitrate_estimator_unittests",
+      "../rtp_rtcp:rtp_rtcp",
+      "//testing/gmock",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+}

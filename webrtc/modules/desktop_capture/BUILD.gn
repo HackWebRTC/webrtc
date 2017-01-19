@@ -33,6 +33,51 @@ rtc_static_library("primitives") {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("desktop_capture_unittests") {
+    testonly = true
+    sources = []
+    deps = []
+    if (rtc_desktop_capture_supported || is_android) {
+      deps += [
+        ":desktop_capture",
+        ":primitives",
+        "../..:webrtc_common",
+        "../../base:rtc_base_approved",
+        "../../system_wrappers:system_wrappers",
+        "../../test:test_support",
+        "//testing/gmock",
+      ]
+      sources += [
+        "desktop_region_unittest.cc",
+        "differ_block_unittest.cc",
+      ]
+    }
+    if (rtc_desktop_capture_supported) {
+      sources += [
+        "desktop_and_cursor_composer_unittest.cc",
+        "desktop_capturer_differ_wrapper_unittest.cc",
+        "desktop_frame_rotation_unittest.cc",
+        "mouse_cursor_monitor_unittest.cc",
+        "rgba_color_unittest.cc",
+        "screen_capturer_helper_unittest.cc",
+        "screen_capturer_mac_unittest.cc",
+        "screen_capturer_unittest.cc",
+        "test_utils.cc",
+        "test_utils.h",
+        "test_utils_unittest.cc",
+        "win/cursor_unittest.cc",
+        "win/cursor_unittest_resources.h",
+        "win/cursor_unittest_resources.rc",
+        "window_capturer_unittest.cc",
+      ]
+      deps += [ ":desktop_capture_mock" ]
+    }
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   source_set("rgba_color") {
     testonly = true
 

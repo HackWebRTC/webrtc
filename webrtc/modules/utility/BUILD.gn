@@ -42,3 +42,18 @@ rtc_static_library("utility") {
     "../media_file",
   ]
 }
+
+if (rtc_include_tests) {
+  rtc_source_set("utility_unittests") {
+    testonly = true
+    sources = [
+      "source/process_thread_impl_unittest.cc",
+    ]
+    deps = [
+      ":utility",
+      "../../base:rtc_task_queue",
+      "../../test:test_support",
+      "//testing/gmock",
+    ]
+  }
+}
