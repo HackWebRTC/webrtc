@@ -436,6 +436,7 @@ ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
     video_track_stats->frame_height = static_cast<uint32_t>(
         video_receiver_info.frame_height);
   }
+  video_track_stats->frames_received = video_receiver_info.frames_received;
   return video_track_stats;
 }
 

@@ -749,6 +749,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
         framerate_output(0),
         framerate_render_input(0),
         framerate_render_output(0),
+        frames_received(0),
         frames_decoded(0),
         decode_ms(0),
         max_decode_ms(0),
@@ -776,6 +777,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   int framerate_render_input;
   // Framerate that the renderer reports.
   int framerate_render_output;
+  uint32_t frames_received;
   uint32_t frames_decoded;
 
   // All stats below are gathered per-VideoReceiver, but some will be correlated

@@ -439,7 +439,12 @@ class RTCStatsReportVerifier {
           media_stream_track.frame_height);
       verifier.TestMemberIsUndefined(media_stream_track.frames_per_second);
       verifier.TestMemberIsUndefined(media_stream_track.frames_sent);
-      verifier.TestMemberIsUndefined(media_stream_track.frames_received);
+      if (*media_stream_track.remote_source) {
+        verifier.TestMemberIsNonNegative<uint32_t>(
+            media_stream_track.frames_received);
+      } else {
+        verifier.TestMemberIsUndefined(media_stream_track.frames_received);
+      }
       verifier.TestMemberIsUndefined(media_stream_track.frames_decoded);
       verifier.TestMemberIsUndefined(media_stream_track.frames_dropped);
       verifier.TestMemberIsUndefined(media_stream_track.frames_corrupted);
@@ -451,6 +456,8 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(
           media_stream_track.echo_return_loss_enhancement);
     } else {
+      RTC_DCHECK_EQ(*media_stream_track.kind,
+                    RTCMediaStreamTrackKind::kAudio);
       // Video-only members should be undefined
       verifier.TestMemberIsUndefined(media_stream_track.frame_width);
       verifier.TestMemberIsUndefined(media_stream_track.frame_height);

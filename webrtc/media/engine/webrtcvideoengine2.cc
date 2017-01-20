@@ -2383,6 +2383,8 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   info.jitter_buffer_ms = stats.jitter_buffer_ms;
   info.min_playout_delay_ms = stats.min_playout_delay_ms;
   info.render_delay_ms = stats.render_delay_ms;
+  info.frames_received = stats.frame_counts.key_frames +
+                         stats.frame_counts.delta_frames;
   info.frames_decoded = stats.frames_decoded;
 
   info.codec_name = GetCodecNameFromPayloadType(stats.current_payload_type);
