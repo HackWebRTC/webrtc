@@ -440,6 +440,11 @@ ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
         video_receiver_info.frame_height);
   }
   video_track_stats->frames_received = video_receiver_info.frames_received;
+  // TODO(hbos): When we support receiving simulcast, this should be the total
+  // number of frames correctly decoded, independent of which SSRC it was
+  // received from. Since we don't support that, this is correct and is the same
+  // value as "RTCInboundRTPStreamStats.framesDecoded". crbug.com/659137
+  video_track_stats->frames_decoded = video_receiver_info.frames_decoded;
   return video_track_stats;
 }
 

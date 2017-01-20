@@ -442,12 +442,14 @@ class RTCStatsReportVerifier {
         verifier.TestMemberIsUndefined(media_stream_track.frames_sent);
         verifier.TestMemberIsNonNegative<uint32_t>(
             media_stream_track.frames_received);
+        verifier.TestMemberIsNonNegative<uint32_t>(
+            media_stream_track.frames_decoded);
       } else {
         verifier.TestMemberIsNonNegative<uint32_t>(
             media_stream_track.frames_sent);
         verifier.TestMemberIsUndefined(media_stream_track.frames_received);
+        verifier.TestMemberIsUndefined(media_stream_track.frames_decoded);
       }
-      verifier.TestMemberIsUndefined(media_stream_track.frames_decoded);
       verifier.TestMemberIsUndefined(media_stream_track.frames_dropped);
       verifier.TestMemberIsUndefined(media_stream_track.frames_corrupted);
       verifier.TestMemberIsUndefined(media_stream_track.partial_frames_lost);
