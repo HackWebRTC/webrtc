@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+// This is included for PacketOptions.
+#include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
 
@@ -31,7 +33,7 @@ class PacketTransportInterface : public sigslot::has_slots<> {
   virtual ~PacketTransportInterface() {}
 
   // Identify the object for logging and debug purpose.
-  virtual const std::string debug_name() const = 0;
+  virtual std::string debug_name() const = 0;
 
   // The transport has been established.
   virtual bool writable() const = 0;

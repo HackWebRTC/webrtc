@@ -25,7 +25,11 @@ class MetricsObserverInterface;
 
 namespace cricket {
 
-// TODO(zhihuang): replace it with PeerConnectionInterface::IceConnectionState.
+class IceTransportInternal;
+typedef IceTransportInternal IceTransportInternal2;
+
+// TODO(zhihuang): Replace this with
+// PeerConnectionInterface::IceConnectionState.
 enum class IceTransportState {
   STATE_INIT,
   STATE_CONNECTING,  // Will enter this state once a connection is created
@@ -134,7 +138,7 @@ class IceTransportInternal : public rtc::PacketTransportInterface {
   sigslot::signal1<IceTransportInternal*> SignalDestroyed;
 
   // Debugging description of this transport.
-  const std::string debug_name() const override {
+  std::string debug_name() const override {
     return transport_name() + " " + std::to_string(component());
   }
 };

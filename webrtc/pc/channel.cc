@@ -25,7 +25,6 @@
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
-#include "webrtc/p2p/base/transportchannel.h"
 #include "webrtc/pc/channelmanager.h"
 
 namespace cricket {
@@ -198,11 +197,11 @@ void BaseChannel::DisconnectTransportChannels_n() {
 
   // Stop signals from transport channels, but keep them alive because
   // media_channel may use them from a different thread.
-  if (rtp_transport_) {
-    DisconnectFromTransportChannel(rtp_transport_);
+  if (rtp_dtls_transport_) {
+    DisconnectFromTransport(rtp_dtls_transport_);
   }
-  if (rtcp_transport_) {
-    DisconnectFromTransportChannel(rtcp_transport_);
+  if (rtcp_dtls_transport_) {
+    DisconnectFromTransport(rtcp_dtls_transport_);
   }
 
   // Clear pending read packets/messages.
@@ -210,11 +209,11 @@ void BaseChannel::DisconnectTransportChannels_n() {
   network_thread_->Clear(this);
 }
 
-bool BaseChannel::Init_w(TransportChannel* rtp_transport,
-                         TransportChannel* rtcp_transport) {
+bool BaseChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
+                         DtlsTransportInternal* rtcp_dtls_transport) {
   if (!network_thread_->Invoke<bool>(
-          RTC_FROM_HERE, Bind(&BaseChannel::InitNetwork_n, this, rtp_transport,
-                              rtcp_transport))) {
+          RTC_FROM_HERE, Bind(&BaseChannel::InitNetwork_n, this,
+                              rtp_dtls_transport, rtcp_dtls_transport))) {
     return false;
   }
 
@@ -225,15 +224,16 @@ bool BaseChannel::Init_w(TransportChannel* rtp_transport,
   return true;
 }
 
-bool BaseChannel::InitNetwork_n(TransportChannel* rtp_transport,
-                                TransportChannel* rtcp_transport) {
+bool BaseChannel::InitNetwork_n(DtlsTransportInternal* rtp_dtls_transport,
+                                DtlsTransportInternal* rtcp_dtls_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  SetTransports_n(rtp_transport, rtcp_transport);
+  SetTransports_n(rtp_dtls_transport, rtcp_dtls_transport);
 
-  if (!SetDtlsSrtpCryptoSuites_n(rtp_transport_, false)) {
+  if (!SetDtlsSrtpCryptoSuites_n(rtp_dtls_transport_, false)) {
     return false;
   }
-  if (rtcp_transport_ && !SetDtlsSrtpCryptoSuites_n(rtcp_transport_, true)) {
+  if (rtcp_dtls_transport_ &&
+      !SetDtlsSrtpCryptoSuites_n(rtcp_dtls_transport_, true)) {
     return false;
   }
   if (rtcp_mux_required_) {
@@ -252,30 +252,36 @@ void BaseChannel::Deinit() {
       RTC_FROM_HERE, Bind(&BaseChannel::DisconnectTransportChannels_n, this));
 }
 
-void BaseChannel::SetTransports(TransportChannel* rtp_transport,
-                                TransportChannel* rtcp_transport) {
-  network_thread_->Invoke<void>(
-      RTC_FROM_HERE,
-      Bind(&BaseChannel::SetTransports_n, this, rtp_transport, rtcp_transport));
+void BaseChannel::SetTransports(DtlsTransportInternal* rtp_dtls_transport,
+                                DtlsTransportInternal* rtcp_dtls_transport) {
+  network_thread_->Invoke<void>(RTC_FROM_HERE,
+                                Bind(&BaseChannel::SetTransports_n, this,
+                                     rtp_dtls_transport, rtcp_dtls_transport));
 }
 
-void BaseChannel::SetTransports_n(TransportChannel* rtp_transport,
-                                  TransportChannel* rtcp_transport) {
+void BaseChannel::SetTransports_n(DtlsTransportInternal* rtp_dtls_transport,
+                                  DtlsTransportInternal* rtcp_dtls_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  // Verify some assumptions (as described in the comment above SetTransport).
-  RTC_DCHECK(rtp_transport);
-  RTC_DCHECK(NeedsRtcpTransport() == (rtcp_transport != nullptr));
-  if (rtcp_transport) {
-    RTC_DCHECK(rtp_transport->transport_name() ==
-               rtcp_transport->transport_name());
+  if (!rtp_dtls_transport && !rtcp_dtls_transport) {
+    LOG(LS_ERROR) << "Setting nullptr to RTP Transport and RTCP Transport.";
+    return;
   }
 
-  if (rtp_transport->transport_name() == transport_name_) {
+  if (rtp_dtls_transport && rtcp_dtls_transport) {
+    RTC_DCHECK(rtp_dtls_transport->transport_name() ==
+               rtcp_dtls_transport->transport_name());
+    RTC_DCHECK(NeedsRtcpTransport());
+  }
+
+  std::string transport_name = rtp_dtls_transport
+                                   ? rtp_dtls_transport->transport_name()
+                                   : rtcp_dtls_transport->transport_name();
+  if (transport_name == transport_name_) {
     // Nothing to do if transport name isn't changing.
     return;
   }
 
-  transport_name_ = rtp_transport->transport_name();
+  transport_name_ = transport_name;
 
   // When using DTLS-SRTP, we must reset the SrtpFilter every time the transport
   // changes and wait until the DTLS handshake is complete to set the newly
@@ -291,15 +297,15 @@ void BaseChannel::SetTransports_n(TransportChannel* rtp_transport,
   // negotiated RTCP mux, we need an RTCP transport.
   if (NeedsRtcpTransport()) {
     LOG(LS_INFO) << "Setting RTCP Transport for " << content_name() << " on "
-                 << transport_name() << " transport " << rtcp_transport;
-    SetTransportChannel_n(true, rtcp_transport);
-    RTC_DCHECK(rtcp_transport_);
+                 << transport_name << " transport " << rtcp_dtls_transport;
+    SetTransport_n(true, rtcp_dtls_transport);
+    RTC_DCHECK(rtcp_dtls_transport_);
   }
 
   LOG(LS_INFO) << "Setting non-RTCP Transport for " << content_name() << " on "
-               << transport_name() << " transport " << rtp_transport;
-  SetTransportChannel_n(false, rtp_transport);
-  RTC_DCHECK(rtp_transport_);
+               << transport_name << " transport " << rtp_dtls_transport;
+  SetTransport_n(false, rtp_dtls_transport);
+  RTC_DCHECK(rtp_dtls_transport_);
 
   // Update aggregate writable/ready-to-send state between RTP and RTCP upon
   // setting new transport channels.
@@ -313,23 +319,26 @@ void BaseChannel::SetTransports_n(TransportChannel* rtp_transport,
   // This won't always be accurate (the last SendPacket call from another
   // BaseChannel could have resulted in an error), but even so, we'll just
   // encounter the error again and update "ready to send" accordingly.
-  SetTransportChannelReadyToSend(false,
-                                 rtp_transport_ && rtp_transport_->writable());
   SetTransportChannelReadyToSend(
-      true, rtcp_transport_ && rtcp_transport_->writable());
+      false, rtp_dtls_transport_ && rtp_dtls_transport_->writable());
+  SetTransportChannelReadyToSend(
+      true, rtcp_dtls_transport_ && rtcp_dtls_transport_->writable());
 }
 
-void BaseChannel::SetTransportChannel_n(bool rtcp,
-                                        TransportChannel* new_transport) {
+void BaseChannel::SetTransport_n(bool rtcp,
+                                 DtlsTransportInternal* new_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  TransportChannel*& old_transport = rtcp ? rtcp_transport_ : rtp_transport_;
+  DtlsTransportInternal*& old_transport =
+      rtcp ? rtcp_dtls_transport_ : rtp_dtls_transport_;
+
   if (!old_transport && !new_transport) {
     // Nothing to do.
     return;
   }
+
   RTC_DCHECK(old_transport != new_transport);
   if (old_transport) {
-    DisconnectFromTransportChannel(old_transport);
+    DisconnectFromTransport(old_transport);
   }
 
   old_transport = new_transport;
@@ -340,7 +349,7 @@ void BaseChannel::SetTransportChannel_n(bool rtcp,
           << "Setting RTCP for DTLS/SRTP after SrtpFilter is active "
           << "should never happen.";
     }
-    ConnectToTransportChannel(new_transport);
+    ConnectToTransport(new_transport);
     auto& socket_options = rtcp ? rtcp_socket_options_ : socket_options_;
     for (const auto& pair : socket_options) {
       new_transport->SetOption(pair.first, pair.second);
@@ -348,28 +357,30 @@ void BaseChannel::SetTransportChannel_n(bool rtcp,
   }
 }
 
-void BaseChannel::ConnectToTransportChannel(TransportChannel* tc) {
+void BaseChannel::ConnectToTransport(DtlsTransportInternal* transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
-  tc->SignalWritableState.connect(this, &BaseChannel::OnWritableState);
-  tc->SignalReadPacket.connect(this, &BaseChannel::OnPacketRead);
-  tc->SignalReadyToSend.connect(this, &BaseChannel::OnReadyToSend);
-  tc->SignalDtlsState.connect(this, &BaseChannel::OnDtlsState);
-  tc->SignalSelectedCandidatePairChanged.connect(
+  transport->SignalWritableState.connect(this, &BaseChannel::OnWritableState);
+  transport->SignalReadPacket.connect(this, &BaseChannel::OnPacketRead);
+  transport->SignalReadyToSend.connect(this, &BaseChannel::OnReadyToSend);
+  transport->SignalDtlsState.connect(this, &BaseChannel::OnDtlsState);
+  transport->SignalSentPacket.connect(this, &BaseChannel::SignalSentPacket_n);
+  transport->ice_transport()->SignalSelectedCandidatePairChanged.connect(
       this, &BaseChannel::OnSelectedCandidatePairChanged);
-  tc->SignalSentPacket.connect(this, &BaseChannel::SignalSentPacket_n);
 }
 
-void BaseChannel::DisconnectFromTransportChannel(TransportChannel* tc) {
+void BaseChannel::DisconnectFromTransport(DtlsTransportInternal* transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  OnSelectedCandidatePairChanged(tc, nullptr, -1, false);
+  OnSelectedCandidatePairChanged(transport->ice_transport(), nullptr, -1,
+                                 false);
 
-  tc->SignalWritableState.disconnect(this);
-  tc->SignalReadPacket.disconnect(this);
-  tc->SignalReadyToSend.disconnect(this);
-  tc->SignalDtlsState.disconnect(this);
-  tc->SignalSelectedCandidatePairChanged.disconnect(this);
-  tc->SignalSentPacket.disconnect(this);
+  transport->SignalWritableState.disconnect(this);
+  transport->SignalReadPacket.disconnect(this);
+  transport->SignalReadyToSend.disconnect(this);
+  transport->SignalDtlsState.disconnect(this);
+  transport->SignalSentPacket.disconnect(this);
+  transport->ice_transport()->SignalSelectedCandidatePairChanged.disconnect(
+      this);
 }
 
 bool BaseChannel::Enable(bool enable) {
@@ -417,8 +428,8 @@ bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
 }
 
 void BaseChannel::StartConnectionMonitor(int cms) {
-  // We pass in the BaseChannel instead of the rtp_transport_
-  // because if the rtp_transport_ changes, the ConnectionMonitor
+  // We pass in the BaseChannel instead of the rtp_dtls_transport_
+  // because if the rtp_dtls_transport_ changes, the ConnectionMonitor
   // would be pointing to the wrong TransportChannel.
   // We pass in the network thread because on that thread connection monitor
   // will call BaseChannel::GetConnectionStats which must be called on the
@@ -439,7 +450,7 @@ void BaseChannel::StopConnectionMonitor() {
 
 bool BaseChannel::GetConnectionStats(ConnectionInfos* infos) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  return rtp_transport_->GetStats(infos);
+  return rtp_dtls_transport_->ice_transport()->GetStats(infos);
 }
 
 bool BaseChannel::NeedsRtcpTransport() {
@@ -488,20 +499,20 @@ int BaseChannel::SetOption_n(SocketType type,
                              rtc::Socket::Option opt,
                              int value) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  TransportChannel* channel = nullptr;
+  DtlsTransportInternal* transport = nullptr;
   switch (type) {
     case ST_RTP:
-      channel = rtp_transport_;
+      transport = rtp_dtls_transport_;
       socket_options_.push_back(
           std::pair<rtc::Socket::Option, int>(opt, value));
       break;
     case ST_RTCP:
-      channel = rtcp_transport_;
+      transport = rtcp_dtls_transport_;
       rtcp_socket_options_.push_back(
           std::pair<rtc::Socket::Option, int>(opt, value));
       break;
   }
-  return channel ? channel->SetOption(opt, value) : -1;
+  return transport ? transport->ice_transport()->SetOption(opt, value) : -1;
 }
 
 bool BaseChannel::SetCryptoOptions(const rtc::CryptoOptions& crypto_options) {
@@ -510,7 +521,8 @@ bool BaseChannel::SetCryptoOptions(const rtc::CryptoOptions& crypto_options) {
 }
 
 void BaseChannel::OnWritableState(rtc::PacketTransportInterface* transport) {
-  RTC_DCHECK(transport == rtp_transport_ || transport == rtcp_transport_);
+  RTC_DCHECK(transport == rtp_dtls_transport_ ||
+             transport == rtcp_dtls_transport_);
   RTC_DCHECK(network_thread_->IsCurrent());
   UpdateWritableState_n();
 }
@@ -532,11 +544,12 @@ void BaseChannel::OnPacketRead(rtc::PacketTransportInterface* transport,
 }
 
 void BaseChannel::OnReadyToSend(rtc::PacketTransportInterface* transport) {
-  RTC_DCHECK(transport == rtp_transport_ || transport == rtcp_transport_);
-  SetTransportChannelReadyToSend(transport == rtcp_transport_, true);
+  RTC_DCHECK(transport == rtp_dtls_transport_ ||
+             transport == rtcp_dtls_transport_);
+  SetTransportChannelReadyToSend(transport == rtcp_dtls_transport_, true);
 }
 
-void BaseChannel::OnDtlsState(TransportChannel* channel,
+void BaseChannel::OnDtlsState(DtlsTransportInternal* transport,
                               DtlsTransportState state) {
   if (!ShouldSetupDtlsSrtp_n()) {
     return;
@@ -544,7 +557,7 @@ void BaseChannel::OnDtlsState(TransportChannel* channel,
 
   // Reset the srtp filter if it's not the CONNECTED state. For the CONNECTED
   // state, setting up DTLS-SRTP context is deferred to ChannelWritable_w to
-  // cover other scenarios like the whole channel is writable (not just this
+  // cover other scenarios like the whole transport is writable (not just this
   // TransportChannel) or when TransportChannel is attached after DTLS is
   // negotiated.
   if (state != DTLS_TRANSPORT_CONNECTED) {
@@ -553,14 +566,15 @@ void BaseChannel::OnDtlsState(TransportChannel* channel,
 }
 
 void BaseChannel::OnSelectedCandidatePairChanged(
-    TransportChannel* channel,
+    IceTransportInternal* ice_transport,
     CandidatePairInterface* selected_candidate_pair,
     int last_sent_packet_id,
     bool ready_to_send) {
-  RTC_DCHECK(channel == rtp_transport_ || channel == rtcp_transport_);
+  RTC_DCHECK(ice_transport == rtp_dtls_transport_->ice_transport() ||
+             ice_transport == rtcp_dtls_transport_->ice_transport());
   RTC_DCHECK(network_thread_->IsCurrent());
   selected_candidate_pair_ = selected_candidate_pair;
-  std::string transport_name = channel->transport_name();
+  std::string transport_name = ice_transport->transport_name();
   rtc::NetworkRoute network_route;
   if (selected_candidate_pair) {
     network_route = rtc::NetworkRoute(
@@ -586,8 +600,8 @@ void BaseChannel::SetTransportChannelReadyToSend(bool rtcp, bool ready) {
 
   bool ready_to_send =
       (rtp_ready_to_send_ &&
-       // In the case of rtcp mux |rtcp_transport_| will be null.
-       (rtcp_ready_to_send_ || !rtcp_transport_));
+       // In the case of rtcp mux |rtcp_dtls_transport_| will be null.
+       (rtcp_ready_to_send_ || !rtcp_dtls_transport_));
 
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_,
@@ -597,7 +611,7 @@ void BaseChannel::SetTransportChannelReadyToSend(bool rtcp, bool ready) {
 bool BaseChannel::PacketIsRtcp(const rtc::PacketTransportInterface* transport,
                                const char* data,
                                size_t len) {
-  return (transport == rtcp_transport_ ||
+  return (transport == rtcp_dtls_transport_ ||
           rtcp_mux_filter_.DemuxRtcp(data, static_cast<int>(len)));
 }
 
@@ -626,9 +640,10 @@ bool BaseChannel::SendPacket(bool rtcp,
   // packet before doing anything. (We might get RTCP packets that we don't
   // intend to send.) If we've negotiated RTCP mux, send RTCP over the RTP
   // transport.
-  TransportChannel* channel =
-      (!rtcp || rtcp_mux_filter_.IsActive()) ? rtp_transport_ : rtcp_transport_;
-  if (!channel || !channel->writable()) {
+  DtlsTransportInternal* transport = (!rtcp || rtcp_mux_filter_.IsActive())
+                                         ? rtp_dtls_transport_
+                                         : rtcp_dtls_transport_;
+  if (!transport || !transport->writable()) {
     return false;
   }
 
@@ -719,10 +734,10 @@ bool BaseChannel::SendPacket(bool rtcp,
 
   // Bon voyage.
   int flags = (secure() && secure_dtls()) ? PF_SRTP_BYPASS : PF_NORMAL;
-  int ret = channel->SendPacket(packet->data<char>(), packet->size(),
-                                updated_options, flags);
+  int ret = transport->SendPacket(packet->data<char>(), packet->size(),
+                                  updated_options, flags);
   if (ret != static_cast<int>(packet->size())) {
-    if (channel->GetError() == ENOTCONN) {
+    if (transport->GetError() == ENOTCONN) {
       LOG(LS_WARNING) << "Got ENOTCONN from transport.";
       SetTransportChannelReadyToSend(rtcp, false);
     }
@@ -797,11 +812,12 @@ void BaseChannel::HandlePacket(bool rtcp, rtc::CopyOnWriteBuffer* packet,
     // a) we got SRTP packets before we received the SDES keys, in which case
     //    we can't decrypt it anyway, or
     // b) we got SRTP packets before DTLS completed on both the RTP and RTCP
-    //    channels, so we haven't yet extracted keys, even if DTLS did complete
-    //    on the channel that the packets are being sent on. It's really good
-    //    practice to wait for both RTP and RTCP to be good to go before sending
-    //    media, to prevent weird failure modes, so it's fine for us to just eat
-    //    packets here. This is all sidestepped if RTCP mux is used anyway.
+    //    transports, so we haven't yet extracted keys, even if DTLS did
+    //    complete on the transport that the packets are being sent on. It's
+    //    really good practice to wait for both RTP and RTCP to be good to go
+    //    before sending  media, to prevent weird failure modes, so it's fine
+    //    for us to just eat packets here. This is all sidestepped if RTCP mux
+    //    is used anyway.
     LOG(LS_WARNING) << "Can't process incoming " << PacketType(rtcp)
                     << " packet when SRTP is inactive and crypto is required";
     return;
@@ -875,8 +891,8 @@ void BaseChannel::DisableMedia_w() {
 }
 
 void BaseChannel::UpdateWritableState_n() {
-  if (rtp_transport_ && rtp_transport_->writable() &&
-      (!rtcp_transport_ || rtcp_transport_->writable())) {
+  if (rtp_dtls_transport_ && rtp_dtls_transport_->writable() &&
+      (!rtcp_dtls_transport_ || rtcp_dtls_transport_->writable())) {
     ChannelWritable_n();
   } else {
     ChannelNotWritable_n();
@@ -917,7 +933,8 @@ void BaseChannel::SignalDtlsSrtpSetupFailure_s(bool rtcp) {
   SignalDtlsSrtpSetupFailure(this, rtcp);
 }
 
-bool BaseChannel::SetDtlsSrtpCryptoSuites_n(TransportChannel* tc, bool rtcp) {
+bool BaseChannel::SetDtlsSrtpCryptoSuites_n(DtlsTransportInternal* transport,
+                                            bool rtcp) {
   std::vector<int> crypto_suites;
   // We always use the default SRTP crypto suites for RTCP, but we may use
   // different crypto suites for RTP depending on the media type.
@@ -926,34 +943,34 @@ bool BaseChannel::SetDtlsSrtpCryptoSuites_n(TransportChannel* tc, bool rtcp) {
   } else {
     GetDefaultSrtpCryptoSuites(crypto_options(), &crypto_suites);
   }
-  return tc->SetSrtpCryptoSuites(crypto_suites);
+  return transport->SetSrtpCryptoSuites(crypto_suites);
 }
 
 bool BaseChannel::ShouldSetupDtlsSrtp_n() const {
-  // Since DTLS is applied to all channels, checking RTP should be enough.
-  return rtp_transport_ && rtp_transport_->IsDtlsActive();
+  // Since DTLS is applied to all transports, checking RTP should be enough.
+  return rtp_dtls_transport_ && rtp_dtls_transport_->IsDtlsActive();
 }
 
 // This function returns true if either DTLS-SRTP is not in use
 // *or* DTLS-SRTP is successfully set up.
-bool BaseChannel::SetupDtlsSrtp_n(bool rtcp_channel) {
+bool BaseChannel::SetupDtlsSrtp_n(bool rtcp) {
   RTC_DCHECK(network_thread_->IsCurrent());
   bool ret = false;
 
-  TransportChannel* channel = rtcp_channel ? rtcp_transport_ : rtp_transport_;
+  DtlsTransportInternal* transport =
+      rtcp ? rtcp_dtls_transport_ : rtp_dtls_transport_;
 
-  RTC_DCHECK(channel->IsDtlsActive());
+  RTC_DCHECK(transport->IsDtlsActive());
 
   int selected_crypto_suite;
 
-  if (!channel->GetSrtpCryptoSuite(&selected_crypto_suite)) {
+  if (!transport->GetSrtpCryptoSuite(&selected_crypto_suite)) {
     LOG(LS_ERROR) << "No DTLS-SRTP selected crypto suite";
     return false;
   }
 
-  LOG(LS_INFO) << "Installing keys from DTLS-SRTP on "
-               << content_name() << " "
-               << PacketType(rtcp_channel);
+  LOG(LS_INFO) << "Installing keys from DTLS-SRTP on " << content_name() << " "
+               << PacketType(rtcp);
 
   int key_len;
   int salt_len;
@@ -967,10 +984,8 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp_channel) {
   std::vector<unsigned char> dtls_buffer(key_len * 2 + salt_len * 2);
 
   // RFC 5705 exporter using the RFC 5764 parameters
-  if (!channel->ExportKeyingMaterial(
-          kDtlsSrtpExporterLabel,
-          NULL, 0, false,
-          &dtls_buffer[0], dtls_buffer.size())) {
+  if (!transport->ExportKeyingMaterial(kDtlsSrtpExporterLabel, NULL, 0, false,
+                                       &dtls_buffer[0], dtls_buffer.size())) {
     LOG(LS_WARNING) << "DTLS-SRTP key export failed";
     RTC_NOTREACHED();  // This should never happen
     return false;
@@ -990,7 +1005,7 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp_channel) {
 
   std::vector<unsigned char> *send_key, *recv_key;
   rtc::SSLRole role;
-  if (!channel->GetSslRole(&role)) {
+  if (!transport->GetSslRole(&role)) {
     LOG(LS_WARNING) << "GetSslRole failed";
     return false;
   }
@@ -1003,7 +1018,7 @@ bool BaseChannel::SetupDtlsSrtp_n(bool rtcp_channel) {
     recv_key = &server_write_key;
   }
 
-  if (rtcp_channel) {
+  if (rtcp) {
     ret = srtp_filter_.SetRtcpParams(selected_crypto_suite, &(*send_key)[0],
                                      static_cast<int>(send_key->size()),
                                      selected_crypto_suite, &(*recv_key)[0],
@@ -1038,7 +1053,7 @@ void BaseChannel::MaybeSetupDtlsSrtp_n() {
     return;
   }
 
-  if (rtcp_transport_) {
+  if (rtcp_dtls_transport_) {
     if (!SetupDtlsSrtp_n(true)) {
       SignalDtlsSrtpSetupFailure_n(true);
       return;
@@ -1090,12 +1105,12 @@ bool BaseChannel::SetRtpTransportParameters_n(
   return true;
 }
 
-// |dtls| will be set to true if DTLS is active for transport channel and
-// crypto is empty.
+// |dtls| will be set to true if DTLS is active for transport and crypto is
+// empty.
 bool BaseChannel::CheckSrtpConfig_n(const std::vector<CryptoParams>& cryptos,
                                     bool* dtls,
                                     std::string* error_desc) {
-  *dtls = rtp_transport_->IsDtlsActive();
+  *dtls = rtp_dtls_transport_->IsDtlsActive();
   if (*dtls && !cryptos.empty()) {
     SafeSetError("Cryptos must be empty when DTLS is active.", error_desc);
     return false;
@@ -1169,7 +1184,7 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
       ret = rtcp_mux_filter_.SetOffer(enable, src);
       break;
     case CA_PRANSWER:
-      // This may activate RTCP muxing, but we don't yet destroy the channel
+      // This may activate RTCP muxing, but we don't yet destroy the transport
       // because the final answer may deactivate it.
       ret = rtcp_mux_filter_.SetProvisionalAnswer(enable, src);
       break;
@@ -1178,11 +1193,11 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
       if (ret && rtcp_mux_filter_.IsActive()) {
         // We activated RTCP mux, close down the RTCP transport.
         LOG(LS_INFO) << "Enabling rtcp-mux for " << content_name()
-                     << " by destroying RTCP transport channel for "
+                     << " by destroying RTCP transport for "
                      << transport_name();
-        if (rtcp_transport()) {
-          SetTransportChannel_n(true, nullptr);
-          SignalRtcpMuxFullyActive(rtp_transport()->transport_name());
+        if (rtcp_dtls_transport()) {
+          SetTransport_n(true, nullptr);
+          SignalRtcpMuxFullyActive(rtp_dtls_transport()->transport_name());
         }
         UpdateWritableState_n();
         SetTransportChannelReadyToSend(true, false);
@@ -1200,11 +1215,11 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
     return false;
   }
   // |rtcp_mux_filter_| can be active if |action| is CA_PRANSWER or
-  // CA_ANSWER, but we only want to tear down the RTCP transport channel if we
-  // received a final answer.
+  // CA_ANSWER, but we only want to tear down the RTCP transport if we received
+  // a final answer.
   if (rtcp_mux_filter_.IsActive()) {
     // If the RTP transport is already writable, then so are we.
-    if (rtp_transport_->writable()) {
+    if (rtp_dtls_transport_->writable()) {
       ChannelWritable_n();
     }
   }
@@ -1464,9 +1479,9 @@ VoiceChannel::~VoiceChannel() {
   Deinit();
 }
 
-bool VoiceChannel::Init_w(TransportChannel* rtp_transport,
-                          TransportChannel* rtcp_transport) {
-  return BaseChannel::Init_w(rtp_transport, rtcp_transport);
+bool VoiceChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
+                          DtlsTransportInternal* rtcp_dtls_transport) {
+  return BaseChannel::Init_w(rtp_dtls_transport, rtcp_dtls_transport);
 }
 
 bool VoiceChannel::SetAudioSend(uint32_t ssrc,
@@ -1866,9 +1881,9 @@ VideoChannel::VideoChannel(rtc::Thread* worker_thread,
                   rtcp_mux_required,
                   srtp_required) {}
 
-bool VideoChannel::Init_w(TransportChannel* rtp_transport,
-                          TransportChannel* rtcp_transport) {
-  return BaseChannel::Init_w(rtp_transport, rtcp_transport);
+bool VideoChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
+                          DtlsTransportInternal* rtcp_dtls_transport) {
+  return BaseChannel::Init_w(rtp_dtls_transport, rtcp_dtls_transport);
 }
 
 VideoChannel::~VideoChannel() {
@@ -2136,9 +2151,9 @@ RtpDataChannel::~RtpDataChannel() {
   Deinit();
 }
 
-bool RtpDataChannel::Init_w(TransportChannel* rtp_transport,
-                            TransportChannel* rtcp_transport) {
-  if (!BaseChannel::Init_w(rtp_transport, rtcp_transport)) {
+bool RtpDataChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
+                            DtlsTransportInternal* rtcp_dtls_transport) {
+  if (!BaseChannel::Init_w(rtp_dtls_transport, rtcp_dtls_transport)) {
     return false;
   }
   media_channel()->SignalDataReceived.connect(this,
