@@ -93,7 +93,6 @@ if (is_android) {
       ":AppRTCMobile_resources",
       "//webrtc/base:base_java",
       "//webrtc/examples/androidapp/third_party/autobanh:autobanh_java",
-      "//webrtc/modules/audio_device:audio_device_java",
       "//webrtc/sdk/android:libjingle_peerconnection_java",
       "//webrtc/sdk/android:libjingle_peerconnection_metrics_default_java",
     ]

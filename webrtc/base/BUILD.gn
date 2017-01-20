@@ -942,7 +942,7 @@ if (rtc_include_tests) {
   }
 }
 
-if (!build_with_chromium && is_android) {
+if (is_android) {
   android_library("base_java") {
     java_files = [
       "java/src/org/webrtc/Logging.java",
