@@ -61,7 +61,7 @@ use_xcode_clang=true is_component_build=false"
   GN_ARGS="${GN_ARGS} rtc_libvpx_build_vp9=${libvpx_build_vp9}"
 
   # Add bitcode option.
-  GN_ARGS="${GN_ARGS} rtc_ios_enable_bitcode=${use_bitcode}"
+  GN_ARGS="${GN_ARGS} enable_ios_bitcode=${use_bitcode}"
 
   # Add custom options.
   if [[ -n "${custom_gn_options}" ]]; then
@@ -119,7 +119,7 @@ CUSTOM_GN_OPTS=""
 WEBRTC_REVISION="0"
 
 # Parse arguments.
-while getopts "hb:co:r:" opt; do
+while getopts "hb:co:r:e" opt; do
   case "${opt}" in
     h) usage;;
     b) BUILD_TYPE="${OPTARG}";;
