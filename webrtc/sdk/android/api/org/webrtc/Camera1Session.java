@@ -177,7 +177,6 @@ public class Camera1Session implements CameraSession {
     checkIsOnCameraThread();
     if (state != SessionState.STOPPED) {
       final long stopStartTime = System.nanoTime();
-      state = SessionState.STOPPED;
       stopInternal();
       final int stopTimeMs = (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
       camera1StopTimeMsHistogram.addSample(stopTimeMs);
@@ -200,7 +199,6 @@ public class Camera1Session implements CameraSession {
           errorMessage = "Camera error: " + error;
         }
         Logging.e(TAG, errorMessage);
-        state = SessionState.STOPPED;
         stopInternal();
         if (error == android.hardware.Camera.CAMERA_ERROR_EVICTED) {
           events.onCameraDisconnected(Camera1Session.this);
@@ -218,7 +216,6 @@ public class Camera1Session implements CameraSession {
     try {
       camera.startPreview();
     } catch (RuntimeException e) {
-      state = SessionState.STOPPED;
       stopInternal();
       events.onCameraError(this, e.getMessage());
     }
@@ -227,16 +224,19 @@ public class Camera1Session implements CameraSession {
   private void stopInternal() {
     Logging.d(TAG, "Stop internal");
     checkIsOnCameraThread();
+    if (state == SessionState.STOPPED) {
+      Logging.d(TAG, "Camera is already stopped");
+      return;
+    }
 
+    state = SessionState.STOPPED;
     surfaceTextureHelper.stopListening();
-
     // Note: stopPreview or other driver code might deadlock. Deadlock in
     // android.hardware.Camera._stopPreview(Native Method) has been observed on
     // Nexus 5 (hammerhead), OS version LMY48I.
     camera.stopPreview();
     camera.release();
     events.onCameraClosed(this);
-
     Logging.d(TAG, "Stop done");
   }
 
