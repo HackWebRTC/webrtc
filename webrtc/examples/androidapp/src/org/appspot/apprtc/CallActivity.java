@@ -64,6 +64,14 @@ import org.webrtc.VideoRenderer;
 public class CallActivity extends Activity implements AppRTCClient.SignalingEvents,
                                                       PeerConnectionClient.PeerConnectionEvents,
                                                       CallFragment.OnCallEvents {
+  // Fix for devices running old Android versions not finding the libraries.
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=6751
+  static {
+    System.loadLibrary("c++_shared");
+    System.loadLibrary("boringssl.cr");
+    System.loadLibrary("protobuf_lite.cr");
+  }
+
   public static final String EXTRA_ROOMID = "org.appspot.apprtc.ROOMID";
   public static final String EXTRA_LOOPBACK = "org.appspot.apprtc.LOOPBACK";
   public static final String EXTRA_VIDEO_CALL = "org.appspot.apprtc.VIDEO_CALL";
