@@ -410,6 +410,9 @@ ProduceMediaStreamTrackStatsFromVideoSenderInfo(
       video_sender_info.send_frame_width);
   video_track_stats->frame_height = static_cast<uint32_t>(
       video_sender_info.send_frame_height);
+  // TODO(hbos): Will reduce this by frames dropped due to congestion control
+  // when available. crbug.com/659137
+  video_track_stats->frames_sent = video_sender_info.frames_encoded;
   return video_track_stats;
 }
 
