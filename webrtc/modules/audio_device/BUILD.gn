@@ -347,14 +347,17 @@ if (rtc_include_tests) {
 }
 
 if (!build_with_chromium && is_android) {
-  android_shared_srcjar("audio_device_java") {
-    sources = [
+  android_library("audio_device_java") {
+    java_files = [
       "android/java/src/org/webrtc/voiceengine/BuildInfo.java",
       "android/java/src/org/webrtc/voiceengine/WebRtcAudioEffects.java",
       "android/java/src/org/webrtc/voiceengine/WebRtcAudioManager.java",
       "android/java/src/org/webrtc/voiceengine/WebRtcAudioRecord.java",
       "android/java/src/org/webrtc/voiceengine/WebRtcAudioTrack.java",
       "android/java/src/org/webrtc/voiceengine/WebRtcAudioUtils.java",
+    ]
+    deps = [
+      "//webrtc/base:base_java",
     ]
   }
 }
