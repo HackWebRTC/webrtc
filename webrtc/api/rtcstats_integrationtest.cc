@@ -433,17 +433,10 @@ class RTCStatsReportVerifier {
     // Video or audio media stream track?
     if (*media_stream_track.kind == RTCMediaStreamTrackKind::kVideo) {
       // Video-only members
-      if (!*media_stream_track.remote_source) {
-        verifier.TestMemberIsNonNegative<uint32_t>(
-            media_stream_track.frame_width);
-        verifier.TestMemberIsNonNegative<uint32_t>(
-            media_stream_track.frame_height);
-      } else {
-        // TODO(hbos): Frame width/height should be defined for the remote case.
-        // Is this a real problem or an artifact of testing? crbug.com/659137
-        verifier.TestMemberIsUndefined(media_stream_track.frame_width);
-        verifier.TestMemberIsUndefined(media_stream_track.frame_height);
-      }
+      verifier.TestMemberIsNonNegative<uint32_t>(
+          media_stream_track.frame_width);
+      verifier.TestMemberIsNonNegative<uint32_t>(
+          media_stream_track.frame_height);
       verifier.TestMemberIsUndefined(media_stream_track.frames_per_second);
       verifier.TestMemberIsUndefined(media_stream_track.frames_sent);
       verifier.TestMemberIsUndefined(media_stream_track.frames_received);
@@ -470,14 +463,14 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(media_stream_track.partial_frames_lost);
       verifier.TestMemberIsUndefined(media_stream_track.full_frames_lost);
       // Audio-only members
-      // TODO(hbos): Why are the audio track missing |audio_level|,
-      // |echo_return_loss| and |echo_return_loss_enhancement|? Is this a real
-      // problem or does it have to do with testing and not using real devices?
+      verifier.TestMemberIsNonNegative<double>(media_stream_track.audio_level);
+      // TODO(hbos): Find out why |echo_return_loss| and
+      // |echo_return_loss_enhancement| are undefined in the integration test.
+      // Is this a real problem or a test problem? Update test so that they are.
       // crbug.com/627816
-      verifier.MarkMemberTested(media_stream_track.audio_level, true);
-      verifier.MarkMemberTested(media_stream_track.echo_return_loss, true);
-      verifier.MarkMemberTested(
-          media_stream_track.echo_return_loss_enhancement, true);
+      verifier.TestMemberIsUndefined(media_stream_track.echo_return_loss);
+      verifier.TestMemberIsUndefined(
+          media_stream_track.echo_return_loss_enhancement);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
