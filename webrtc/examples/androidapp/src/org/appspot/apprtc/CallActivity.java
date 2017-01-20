@@ -418,8 +418,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
   // Activity interfaces
   @Override
-  public void onPause() {
-    super.onPause();
+  public void onStop() {
+    super.onStop();
     activityRunning = false;
     // Don't stop the video when using screencapture to allow user to show other apps to the remote
     // end.
@@ -430,8 +430,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   }
 
   @Override
-  public void onResume() {
-    super.onResume();
+  public void onStart() {
+    super.onStart();
     activityRunning = true;
     // Video is not paused for screencapture. See onPause.
     if (peerConnectionClient != null && !screencaptureEnabled) {
