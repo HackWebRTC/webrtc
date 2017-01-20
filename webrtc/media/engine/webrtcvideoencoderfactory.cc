@@ -22,6 +22,7 @@ webrtc::VideoEncoder* WebRtcVideoEncoderFactory::CreateVideoEncoder(
 
 const std::vector<cricket::VideoCodec>&
 WebRtcVideoEncoderFactory::supported_codecs() const {
+  codecs_.clear();
   const std::vector<VideoCodec>& encoder_codecs = codecs();
   for (const VideoCodec& encoder_codec : encoder_codecs) {
     codecs_.push_back(cricket::VideoCodec(encoder_codec.name));
@@ -38,6 +39,7 @@ webrtc::VideoEncoder* WebRtcVideoEncoderFactory::CreateVideoEncoder(
 
 const std::vector<WebRtcVideoEncoderFactory::VideoCodec>&
 WebRtcVideoEncoderFactory::codecs() const {
+  encoder_codecs_.clear();
   const std::vector<cricket::VideoCodec>& codecs = supported_codecs();
   for (const cricket::VideoCodec& codec : codecs) {
     encoder_codecs_.push_back(

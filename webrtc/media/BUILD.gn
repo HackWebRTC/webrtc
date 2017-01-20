@@ -338,6 +338,7 @@ if (rtc_include_tests) {
       "engine/videoencodersoftwarefallbackwrapper_unittest.cc",
       "engine/webrtcmediaengine_unittest.cc",
       "engine/webrtcvideocapturer_unittest.cc",
+      "engine/webrtcvideoencoderfactory_unittest.cc",
       "engine/webrtcvideoengine2_unittest.cc",
       "engine/webrtcvoiceengine_unittest.cc",
     ]
