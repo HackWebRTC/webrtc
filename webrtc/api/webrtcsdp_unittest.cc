@@ -3311,11 +3311,9 @@ TEST_F(WebRtcSdpTest, SerializeUnifiedPlanSessionDescription) {
 // Regression test for heap overflow bug:
 // https://bugs.chromium.org/p/chromium/issues/detail?id=647916
 TEST_F(WebRtcSdpTest, DeserializeSctpPortInVideoDescription) {
-  JsepSessionDescription jdesc_output(kDummyString);
-
   // The issue occurs when the sctp-port attribute is found in a video
   // description. The actual heap overflow occurs when parsing the fmtp line.
-  const char kSdpWithSctpPortInVideoDescription[] =
+  static const char kSdpWithSctpPortInVideoDescription[] =
       "v=0\r\n"
       "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
       "s=-\r\n"
@@ -3331,11 +3329,9 @@ TEST_F(WebRtcSdpTest, DeserializeSctpPortInVideoDescription) {
 // Regression test for integer overflow bug:
 // https://bugs.chromium.org/p/chromium/issues/detail?id=648071
 TEST_F(WebRtcSdpTest, DeserializeLargeBandwidthLimit) {
-  JsepSessionDescription jdesc_output(kDummyString);
-
   // Bandwidth attribute is the max signed 32-bit int, which will get
   // multiplied by 1000 and cause int overflow if not careful.
-  const char kSdpWithLargeBandwidth[] =
+  static const char kSdpWithLargeBandwidth[] =
       "v=0\r\n"
       "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
       "s=-\r\n"
@@ -3345,4 +3341,34 @@ TEST_F(WebRtcSdpTest, DeserializeLargeBandwidthLimit) {
       "foo=fail\r\n";
 
   ExpectParseFailure(std::string(kSdpWithLargeBandwidth), "foo=fail");
+}
+
+// Test that "ufrag"/"pwd" in the candidate line itself are ignored, and only
+// the "a=ice-ufrag"/"a=ice-pwd" attributes are used.
+// Regression test for:
+// https://bugs.chromium.org/p/chromium/issues/detail?id=681286
+TEST_F(WebRtcSdpTest, IceCredentialsInCandidateStringIgnored) {
+  // Important piece is "ufrag foo pwd bar".
+  static const char kSdpWithIceCredentialsInCandidateString[] =
+      "v=0\r\n"
+      "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+      "s=-\r\n"
+      "t=0 0\r\n"
+      "m=audio 9 RTP/SAVPF 111\r\n"
+      "c=IN IP4 0.0.0.0\r\n"
+      "a=rtcp:9 IN IP4 0.0.0.0\r\n"
+      "a=ice-ufrag:ufrag_voice\r\na=ice-pwd:pwd_voice\r\n"
+      "a=rtpmap:111 opus/48000/2\r\n"
+      "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1234 typ host "
+      "generation 2 ufrag foo pwd bar\r\n";
+
+  JsepSessionDescription jdesc_output(kDummyString);
+  EXPECT_TRUE(
+      SdpDeserialize(kSdpWithIceCredentialsInCandidateString, &jdesc_output));
+  const IceCandidateCollection* candidates = jdesc_output.candidates(0);
+  ASSERT_NE(nullptr, candidates);
+  ASSERT_EQ(1, candidates->count());
+  cricket::Candidate c = candidates->at(0)->candidate();
+  EXPECT_EQ("ufrag_voice", c.username());
+  EXPECT_EQ("pwd_voice", c.password());
 }

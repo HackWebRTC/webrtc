@@ -2676,6 +2676,12 @@ bool ParseContent(const std::string& message,
       if (!ParseCandidate(line, &candidate, error, false)) {
         return false;
       }
+      // ParseCandidate will parse non-standard ufrag and password attributes,
+      // since it's used for candidate trickling, but we only want to process
+      // the "a=ice-ufrag"/"a=ice-pwd" values in a session description, so
+      // strip them off at this point.
+      candidate.set_username(std::string());
+      candidate.set_password(std::string());
       candidates_orig.push_back(candidate);
     } else if (HasAttribute(line, kAttributeIceUfrag)) {
       if (!GetValue(line, kAttributeIceUfrag, &transport->ice_ufrag, error)) {
