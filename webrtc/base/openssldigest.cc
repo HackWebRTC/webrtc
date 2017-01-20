@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if HAVE_OPENSSL_SSL_H
-
 #include "webrtc/base/openssldigest.h"
 
 #include "webrtc/base/checks.h"
@@ -118,5 +116,3 @@ bool OpenSSLDigest::GetDigestSize(const std::string& algorithm,
 }
 
 }  // namespace rtc
-
-#endif  // HAVE_OPENSSL_SSL_H

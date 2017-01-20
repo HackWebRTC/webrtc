@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if HAVE_OPENSSL_SSL_H
-
 #include "webrtc/base/opensslidentity.h"
 
 #include <memory>
@@ -576,5 +574,3 @@ bool OpenSSLIdentity::operator!=(const OpenSSLIdentity& other) const {
 }
 
 }  // namespace rtc
-
-#endif  // HAVE_OPENSSL_SSL_H

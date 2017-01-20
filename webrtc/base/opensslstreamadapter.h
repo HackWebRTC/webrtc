@@ -109,10 +109,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   bool IsTlsConnected() override;
 
-  // Capabilities interfaces
-  static bool HaveDtls();
-  static bool HaveDtlsSrtp();
-  static bool HaveExporter();
+  // Capabilities interfaces.
   static bool IsBoringSsl();
 
   static bool IsAcceptableCipher(int cipher, KeyType key_type);
