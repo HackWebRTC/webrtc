@@ -16,7 +16,6 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.SystemClock;
 import android.util.Log;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -24,6 +23,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -204,7 +204,8 @@ class CpuMonitor {
     }
 
     executor = Executors.newSingleThreadScheduledExecutor();
-    executor.scheduleAtFixedRate(new Runnable() {
+    @SuppressWarnings("unused") // Prevent downstream linter warnings.
+    Future<?> possiblyIgnoredError = executor.scheduleAtFixedRate(new Runnable() {
       @Override
       public void run() {
         cpuUtilizationTask();
