@@ -613,24 +613,28 @@ class FakeTransportController : public TransportController {
   // exchange of ICE candidates.
   void Connect(FakeTransportController* dest) {
     for (const std::string& transport_name : transport_names_for_testing()) {
+      std::unique_ptr<rtc::SSLFingerprint> local_fingerprint;
+      std::unique_ptr<rtc::SSLFingerprint> remote_fingerprint;
+      if (certificate_for_testing()) {
+        local_fingerprint.reset(rtc::SSLFingerprint::CreateFromCertificate(
+            certificate_for_testing()));
+      }
+      if (dest->certificate_for_testing()) {
+        remote_fingerprint.reset(rtc::SSLFingerprint::CreateFromCertificate(
+            dest->certificate_for_testing()));
+      }
       TransportDescription local_desc(
           std::vector<std::string>(),
           rtc::CreateRandomString(cricket::ICE_UFRAG_LENGTH),
           rtc::CreateRandomString(cricket::ICE_PWD_LENGTH),
           cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_NONE,
-          certificate_for_testing()
-              ? rtc::SSLFingerprint::CreateFromCertificate(
-                    certificate_for_testing())
-              : nullptr);
+          local_fingerprint.get());
       TransportDescription remote_desc(
           std::vector<std::string>(),
           rtc::CreateRandomString(cricket::ICE_UFRAG_LENGTH),
           rtc::CreateRandomString(cricket::ICE_PWD_LENGTH),
           cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_NONE,
-          dest->certificate_for_testing()
-              ? rtc::SSLFingerprint::CreateFromCertificate(
-                    dest->certificate_for_testing())
-              : nullptr);
+          remote_fingerprint.get());
       std::string err;
       SetLocalTransportDescription(transport_name, local_desc,
                                    cricket::CA_OFFER, &err);
