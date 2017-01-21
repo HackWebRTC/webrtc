@@ -46,6 +46,12 @@
 #include "webrtc/p2p/client/basicportallocator.h"
 #include "webrtc/pc/mediasession.h"
 
+#define MAYBE_SKIP_TEST(feature)                    \
+  if (!(feature())) {                               \
+    LOG(LS_INFO) << "Feature disabled... skipping"; \
+    return;                                         \
+  }
+
 using cricket::ContentInfo;
 using cricket::FakeWebRtcVideoDecoder;
 using cricket::FakeWebRtcVideoDecoderFactory;
@@ -217,7 +223,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread) {
     std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
-        new FakeRTCCertificateGenerator());
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
+            new FakeRTCCertificateGenerator() : nullptr);
 
     return CreateClientWithDtlsIdentityStore(id, constraints, options, config,
                                              std::move(cert_generator), true,
@@ -230,7 +237,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread) {
     std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
-        new FakeRTCCertificateGenerator());
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
+            new FakeRTCCertificateGenerator() : nullptr);
 
     return CreateClientWithDtlsIdentityStore(id, nullptr, options, nullptr,
                                              std::move(cert_generator), false,
@@ -1464,6 +1472,7 @@ class P2PTestConductor : public testing::Test {
   }
 
   void SetupAndVerifyDtlsCall() {
+    MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
     FakeConstraints setup_constraints;
     setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
                                    true);
@@ -1488,7 +1497,8 @@ class P2PTestConductor : public testing::Test {
     rtc_config.set_cpu_adaptation(false);
 
     std::unique_ptr<FakeRTCCertificateGenerator> cert_generator(
-        new FakeRTCCertificateGenerator());
+        rtc::SSLStreamAdapter::HaveDtlsSrtp() ?
+            new FakeRTCCertificateGenerator() : nullptr);
     cert_generator->use_alternate_key();
 
     // Make sure the new client is using a different certificate.
@@ -1684,6 +1694,7 @@ TEST_F(P2PTestConductor, OneWayMediaCallWithoutConstraints) {
 // This test sets up a audio call initially and then upgrades to audio/video,
 // using DTLS.
 TEST_F(P2PTestConductor, LocalP2PTestDtlsRenegotiate) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
                                  true);
@@ -1697,6 +1708,7 @@ TEST_F(P2PTestConductor, LocalP2PTestDtlsRenegotiate) {
 // This test sets up a call transfer to a new caller with a different DTLS
 // fingerprint.
 TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCallee) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   SetupAndVerifyDtlsCall();
 
   // Keeping the original peer around which will still send packets to the
@@ -1715,6 +1727,7 @@ TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCallee) {
 // bundle is in effect in the restart, the channel can successfully reset its
 // DTLS-SRTP context.
 TEST_F(P2PTestConductor, LocalP2PTestDtlsBundleInIceRestart) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
                                  true);
@@ -1733,6 +1746,7 @@ TEST_F(P2PTestConductor, LocalP2PTestDtlsBundleInIceRestart) {
 // This test sets up a call transfer to a new callee with a different DTLS
 // fingerprint.
 TEST_F(P2PTestConductor, LocalP2PTestDtlsTransferCaller) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   SetupAndVerifyDtlsCall();
 
   // Keeping the original peer around which will still send packets to the
@@ -1766,6 +1780,7 @@ TEST_F(P2PTestConductor, LocalP2PTestReceiverDoesntSupportCVO) {
 // DTLS key agreement. The offerer don't support SDES. As a result, DTLS is
 // negotiated and used for transport.
 TEST_F(P2PTestConductor, LocalP2PTestOfferDtlsButNotSdes) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints setup_constraints;
   setup_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
                                  true);
@@ -2242,6 +2257,7 @@ TEST_F(P2PTestConductor, AddDataChannelAfterRenegotiation) {
 // negotiation is completed without error.
 #ifdef HAVE_SCTP
 TEST_F(P2PTestConductor, CreateOfferWithSctpDataChannel) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints constraints;
   constraints.SetMandatory(
       MediaConstraintsInterface::kEnableDtlsSrtp, true);

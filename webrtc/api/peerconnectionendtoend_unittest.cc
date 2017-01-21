@@ -24,6 +24,12 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 
+#define MAYBE_SKIP_TEST(feature)                    \
+  if (!(feature())) {                               \
+    LOG(LS_INFO) << "Feature disabled... skipping"; \
+    return;                                         \
+  }
+
 using webrtc::DataChannelInterface;
 using webrtc::FakeConstraints;
 using webrtc::MediaConstraintsInterface;
@@ -192,6 +198,8 @@ TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
 // Verifies that a DataChannel created before the negotiation can transition to
 // "OPEN" and transfer data.
 TEST_F(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+
   CreatePcs();
 
   webrtc::DataChannelInit init;
@@ -216,6 +224,8 @@ TEST_F(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
 // Verifies that a DataChannel created after the negotiation can transition to
 // "OPEN" and transfer data.
 TEST_F(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+
   CreatePcs();
 
   webrtc::DataChannelInit init;
@@ -247,6 +257,8 @@ TEST_F(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
 
 // Verifies that DataChannel IDs are even/odd based on the DTLS roles.
 TEST_F(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+
   CreatePcs();
 
   webrtc::DataChannelInit init;
@@ -274,6 +286,8 @@ TEST_F(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
 // there are multiple DataChannels.
 TEST_F(PeerConnectionEndToEndTest,
        MessageTransferBetweenTwoPairsOfDataChannels) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+
   CreatePcs();
 
   webrtc::DataChannelInit init;
@@ -395,6 +409,8 @@ TEST_F(PeerConnectionEndToEndTest, MessageTransferBetweenQuicDataChannels) {
 // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=4453
 TEST_F(PeerConnectionEndToEndTest,
        DISABLED_DataChannelFromOpenWorksAfterClose) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+
   CreatePcs();
 
   webrtc::DataChannelInit init;
@@ -421,6 +437,8 @@ TEST_F(PeerConnectionEndToEndTest,
 // reference count), no memory access violation will occur.
 // See: https://code.google.com/p/chromium/issues/detail?id=565048
 TEST_F(PeerConnectionEndToEndTest, CloseDataChannelRemotelyWhileNotReferenced) {
+  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
+
   CreatePcs();
 
   webrtc::DataChannelInit init;

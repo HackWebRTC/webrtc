@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#if HAVE_OPENSSL_SSL_H
+
 #include "webrtc/base/opensslstreamadapter.h"
 
 #include <openssl/bio.h>
@@ -43,10 +45,11 @@ namespace {
 
 namespace rtc {
 
-#if (OPENSSL_VERSION_NUMBER < 0x10001000L)
-#error "webrtc requires at least OpenSSL version 1.0.1, to support DTLS-SRTP"
+#if (OPENSSL_VERSION_NUMBER >= 0x10001000L)
+#define HAVE_DTLS_SRTP
 #endif
 
+#ifdef HAVE_DTLS_SRTP
 // SRTP cipher suite table. |internal_name| is used to construct a
 // colon-separated profile strings which is needed by
 // SSL_CTX_set_tlsext_use_srtp().
@@ -62,6 +65,7 @@ static SrtpCipherMapEntry SrtpCipherMap[] = {
     {"SRTP_AEAD_AES_128_GCM", SRTP_AEAD_AES_128_GCM},
     {"SRTP_AEAD_AES_256_GCM", SRTP_AEAD_AES_256_GCM},
     {nullptr, 0}};
+#endif
 
 #ifdef OPENSSL_IS_BORINGSSL
 // Not used in production code. Actual time should be relative to Jan 1, 1970.
@@ -428,6 +432,7 @@ bool OpenSSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
                                                 bool use_context,
                                                 uint8_t* result,
                                                 size_t result_len) {
+#ifdef HAVE_DTLS_SRTP
   int i;
 
   i = SSL_export_keying_material(ssl_, result, result_len, label.c_str(),
@@ -438,10 +443,14 @@ bool OpenSSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
     return false;
 
   return true;
+#else
+  return false;
+#endif
 }
 
 bool OpenSSLStreamAdapter::SetDtlsSrtpCryptoSuites(
     const std::vector<int>& ciphers) {
+#ifdef HAVE_DTLS_SRTP
   std::string internal_ciphers;
 
   if (state_ != SSL_NONE)
@@ -472,9 +481,13 @@ bool OpenSSLStreamAdapter::SetDtlsSrtpCryptoSuites(
 
   srtp_ciphers_ = internal_ciphers;
   return true;
+#else
+  return false;
+#endif
 }
 
 bool OpenSSLStreamAdapter::GetDtlsSrtpCryptoSuite(int* crypto_suite) {
+#ifdef HAVE_DTLS_SRTP
   RTC_DCHECK(state_ == SSL_CONNECTED);
   if (state_ != SSL_CONNECTED)
     return false;
@@ -488,6 +501,9 @@ bool OpenSSLStreamAdapter::GetDtlsSrtpCryptoSuite(int* crypto_suite) {
   *crypto_suite = srtp_profile->id;
   RTC_DCHECK(!SrtpCryptoSuiteToName(*crypto_suite).empty());
   return true;
+#else
+  return false;
+#endif
 }
 
 bool OpenSSLStreamAdapter::IsTlsConnected() {
@@ -1080,12 +1096,14 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   SSL_CTX_set_cipher_list(ctx,
       "DEFAULT:!NULL:!aNULL:!SHA256:!SHA384:!aECDH:!AESGCM+AES256:!aPSK");
 
+#ifdef HAVE_DTLS_SRTP
   if (!srtp_ciphers_.empty()) {
     if (SSL_CTX_set_tlsext_use_srtp(ctx, srtp_ciphers_.c_str())) {
       SSL_CTX_free(ctx);
       return NULL;
     }
   }
+#endif
 
   return ctx;
 }
@@ -1149,6 +1167,26 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
   }
 
   return stream->VerifyPeerCertificate();
+}
+
+bool OpenSSLStreamAdapter::HaveDtls() {
+  return true;
+}
+
+bool OpenSSLStreamAdapter::HaveDtlsSrtp() {
+#ifdef HAVE_DTLS_SRTP
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool OpenSSLStreamAdapter::HaveExporter() {
+#ifdef HAVE_DTLS_SRTP
+  return true;
+#else
+  return false;
+#endif
 }
 
 bool OpenSSLStreamAdapter::IsBoringSsl() {
@@ -1235,3 +1273,5 @@ void OpenSSLStreamAdapter::enable_time_callback_for_testing() {
 }
 
 }  // namespace rtc
+
+#endif  // HAVE_OPENSSL_SSL_H

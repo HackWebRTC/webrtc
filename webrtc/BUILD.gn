@@ -30,6 +30,7 @@ config("common_inherited_config") {
     defines = [
       # TODO(kjellander): Cleanup unused ones and move defines closer to
       # the source when webrtc:4256 is completed.
+      "FEATURE_ENABLE_SSL",
       "FEATURE_ENABLE_VOICEMAIL",
       "EXPAT_RELATIVE_PATH",
       "GTEST_RELATIVE_PATH",
@@ -131,10 +132,12 @@ config("common_config") {
       # targets, there's no point including the defines in that config here.
       # TODO(kjellander): Cleanup unused ones and move defines closer to the
       # source when webrtc:4256 is completed.
+      "HAVE_OPENSSL_SSL_H",
       "HAVE_SRTP",
       "HAVE_WEBRTC_VIDEO",
       "HAVE_WEBRTC_VOICE",
       "LOGGING_INSIDE_WEBRTC",
+      "SSL_USE_OPENSSL",
       "USE_WEBRTC_DEV_BRANCH",
     ]
   } else {

@@ -693,6 +693,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferSrtpTwoChannels) {
 
 // Connect with DTLS, and transfer some data.
 TEST_F(DtlsTransportChannelTest, TestTransferDtls) {
+  MAYBE_SKIP_TEST(HaveDtls);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
   TestTransfer(0, 1000, 100, false);
@@ -700,6 +701,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtls) {
 
 // Create two channels with DTLS, and transfer some data.
 TEST_F(DtlsTransportChannelTest, TestTransferDtlsTwoChannels) {
+  MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
@@ -723,6 +725,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsNotOffered) {
 
 // Create two channels with DTLS 1.0 and check ciphers.
 TEST_F(DtlsTransportChannelTest, TestDtls12None) {
+  MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   SetMaxProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_10);
@@ -731,6 +734,7 @@ TEST_F(DtlsTransportChannelTest, TestDtls12None) {
 
 // Create two channels with DTLS 1.2 and check ciphers.
 TEST_F(DtlsTransportChannelTest, TestDtls12Both) {
+  MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   SetMaxProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
@@ -739,6 +743,7 @@ TEST_F(DtlsTransportChannelTest, TestDtls12Both) {
 
 // Create two channels with DTLS 1.0 / DTLS 1.2 and check ciphers.
 TEST_F(DtlsTransportChannelTest, TestDtls12Client1) {
+  MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   SetMaxProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_10);
@@ -747,6 +752,7 @@ TEST_F(DtlsTransportChannelTest, TestDtls12Client1) {
 
 // Create two channels with DTLS 1.2 / DTLS 1.0 and check ciphers.
 TEST_F(DtlsTransportChannelTest, TestDtls12Client2) {
+  MAYBE_SKIP_TEST(HaveDtls);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   SetMaxProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_12);
@@ -755,6 +761,7 @@ TEST_F(DtlsTransportChannelTest, TestDtls12Client2) {
 
 // Connect with DTLS, negotiate DTLS-SRTP, and transfer SRTP using bypass.
 TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtp) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
   ASSERT_TRUE(Connect());
@@ -764,6 +771,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtp) {
 // Connect with DTLS-SRTP, transfer an invalid SRTP packet, and expects -1
 // returned.
 TEST_F(DtlsTransportChannelTest, TestTransferDtlsInvalidSrtpPacket) {
+  MAYBE_SKIP_TEST(HaveDtls);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
   ASSERT_TRUE(Connect());
@@ -773,6 +781,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsInvalidSrtpPacket) {
 
 // Connect with DTLS. A does DTLS-SRTP but B does not.
 TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpRejected) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, false);
   ASSERT_TRUE(Connect());
@@ -780,6 +789,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpRejected) {
 
 // Connect with DTLS. B does DTLS-SRTP but A does not.
 TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpNotOffered) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(false, true);
   ASSERT_TRUE(Connect());
@@ -787,6 +797,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpNotOffered) {
 
 // Create two channels with DTLS, negotiate DTLS-SRTP, and transfer bypass SRTP.
 TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpTwoChannels) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -797,6 +808,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpTwoChannels) {
 
 // Create a single channel with DTLS, and send normal data and SRTP data on it.
 TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpDemux) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
   ASSERT_TRUE(Connect());
@@ -806,6 +818,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsSrtpDemux) {
 
 // Testing when the remote is passive.
 TEST_F(DtlsTransportChannelTest, TestTransferDtlsAnswererIsPassive) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -818,6 +831,7 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsAnswererIsPassive) {
 // Testing with the legacy DTLS client which doesn't use setup attribute.
 // In this case legacy is the answerer.
 TEST_F(DtlsTransportChannelTest, TestDtlsSetupWithLegacyAsAnswerer) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   NegotiateWithLegacy();
   rtc::SSLRole channel1_role;
@@ -831,6 +845,7 @@ TEST_F(DtlsTransportChannelTest, TestDtlsSetupWithLegacyAsAnswerer) {
 // Testing re offer/answer after the session is estbalished. Roles will be
 // kept same as of the previous negotiation.
 TEST_F(DtlsTransportChannelTest, TestDtlsReOfferFromOfferer) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -847,6 +862,7 @@ TEST_F(DtlsTransportChannelTest, TestDtlsReOfferFromOfferer) {
 }
 
 TEST_F(DtlsTransportChannelTest, TestDtlsReOfferFromAnswerer) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -864,6 +880,7 @@ TEST_F(DtlsTransportChannelTest, TestDtlsReOfferFromAnswerer) {
 
 // Test that any change in role after the intial setup will result in failure.
 TEST_F(DtlsTransportChannelTest, TestDtlsRoleReversal) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -879,6 +896,7 @@ TEST_F(DtlsTransportChannelTest, TestDtlsRoleReversal) {
 // Test that using different setup attributes which results in similar ssl
 // role as the initial negotiation will result in success.
 TEST_F(DtlsTransportChannelTest, TestDtlsReOfferWithDifferentSetupAttr) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -894,6 +912,7 @@ TEST_F(DtlsTransportChannelTest, TestDtlsReOfferWithDifferentSetupAttr) {
 // Test that re-negotiation can be started before the clients become connected
 // in the first negotiation.
 TEST_F(DtlsTransportChannelTest, TestRenegotiateBeforeConnect) {
+  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   SetChannelCount(2);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   PrepareDtlsSrtp(true, true);
@@ -913,6 +932,7 @@ TEST_F(DtlsTransportChannelTest, TestRenegotiateBeforeConnect) {
 
 // Test Certificates state after negotiation but before connection.
 TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
+  MAYBE_SKIP_TEST(HaveDtls);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   Negotiate();
 
@@ -933,6 +953,7 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesBeforeConnect) {
 
 // Test Certificates state after connection.
 TEST_F(DtlsTransportChannelTest, TestCertificatesAfterConnect) {
+  MAYBE_SKIP_TEST(HaveDtls);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   ASSERT_TRUE(Connect());
 
@@ -963,6 +984,7 @@ TEST_F(DtlsTransportChannelTest, TestCertificatesAfterConnect) {
 // 60 seconds. The timer defaults to 1 second, but for WebRTC we should be
 // initializing it to 50ms.
 TEST_F(DtlsTransportChannelTest, TestRetransmissionSchedule) {
+  MAYBE_SKIP_TEST(HaveDtls);
   // We can only change the retransmission schedule with a recently-added
   // BoringSSL API. Skip the test if not built with BoringSSL.
   MAYBE_SKIP_TEST(IsBoringSsl);
@@ -1003,6 +1025,7 @@ TEST_F(DtlsTransportChannelTest, TestRetransmissionSchedule) {
 // Test that a DTLS connection can be made even if the underlying transport
 // is connected before DTLS fingerprints/roles have been negotiated.
 TEST_F(DtlsTransportChannelTest, TestConnectBeforeNegotiate) {
+  MAYBE_SKIP_TEST(HaveDtls);
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   ASSERT_TRUE(Connect(cricket::CONNECTIONROLE_ACTPASS,
                       cricket::CONNECTIONROLE_ACTIVE,
@@ -1135,6 +1158,7 @@ class DtlsEventOrderingTest
 };
 
 TEST_P(DtlsEventOrderingTest, TestEventOrdering) {
+  MAYBE_SKIP_TEST(HaveDtls);
   TestEventOrdering(::testing::get<0>(GetParam()),
                     ::testing::get<1>(GetParam()));
 }

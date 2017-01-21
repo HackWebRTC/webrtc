@@ -76,7 +76,8 @@ bool PeerConnectionTestWrapper::CreatePc(
   }
 
   std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator(
-      new FakeRTCCertificateGenerator());
+      rtc::SSLStreamAdapter::HaveDtlsSrtp() ? new FakeRTCCertificateGenerator()
+                                            : nullptr);
   peer_connection_ = peer_connection_factory_->CreatePeerConnection(
       config, constraints, std::move(port_allocator), std::move(cert_generator),
       this);

@@ -35,8 +35,19 @@ config("rtc_base_approved_all_dependent_config") {
   }
 }
 
+config("rtc_base_config") {
+  defines = [ "FEATURE_ENABLE_SSL" ]
+}
+
 config("rtc_base_chromium_config") {
   defines = [ "NO_MAIN_THREAD_WRAPPING" ]
+}
+
+config("openssl_config") {
+  defines = [
+    "SSL_USE_OPENSSL",
+    "HAVE_OPENSSL_SSL_H",
+  ]
 }
 
 config("rtc_base_all_dependent_config") {
@@ -360,6 +371,16 @@ rtc_static_library("rtc_base") {
     ":rtc_base_approved",
   ]
 
+  configs += [
+    ":openssl_config",
+    ":rtc_base_config",
+  ]
+
+  public_configs = [
+    ":openssl_config",
+    ":rtc_base_config",
+  ]
+
   all_dependent_configs = [ ":rtc_base_all_dependent_config" ]
 
   sources = [
@@ -516,6 +537,7 @@ rtc_static_library("rtc_base") {
       "proxyserver.h",
       "rollingaccumulator.h",
       "scopedptrcollection.h",
+      "sslconfig.h",
       "sslroots.h",
       "testbase64.h",
       "testclient.cc",
