@@ -293,6 +293,31 @@ static const char kSdpStringMs1Video1[] =
     "a=ssrc:4 cname:stream1\r\n"
     "a=ssrc:4 msid:stream1 videotrack1\r\n";
 
+static const char kDtlsSdesFallbackSdp[] =
+    "v=0\r\n"
+    "o=xxxxxx 7 2 IN IP4 0.0.0.0\r\n"
+    "s=-\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "t=0 0\r\n"
+    "a=group:BUNDLE audio\r\n"
+    "a=msid-semantic: WMS\r\n"
+    "m=audio 1 RTP/SAVPF 0\r\n"
+    "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
+    "a=mid:audio\r\n"
+    "a=ssrc:1 cname:stream1\r\n"
+    "a=ssrc:1 mslabel:stream1\r\n"
+    "a=ssrc:1 label:audiotrack0\r\n"
+    "a=ice-ufrag:e5785931\r\n"
+    "a=ice-pwd:36fb7878390db89481c1d46daa4278d8\r\n"
+    "a=rtpmap:0 pcmu/8000\r\n"
+    "a=fingerprint:sha-1 "
+    "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B:19:E5:7C:AB\r\n"
+    "a=setup:actpass\r\n"
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_32 "
+    "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
+    "dummy_session_params\r\n";
+
 #define MAYBE_SKIP_TEST(feature)                    \
   if (!(feature())) {                               \
     LOG(LS_INFO) << "Feature disabled... skipping"; \
@@ -741,7 +766,8 @@ class PeerConnectionInterfaceTest : public testing::Test {
                        webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                        &dtls,
                        nullptr) && dtls) {
-      cert_generator.reset(new FakeRTCCertificateGenerator());
+      fake_certificate_generator_ = new FakeRTCCertificateGenerator();
+      cert_generator.reset(fake_certificate_generator_);
     }
     pc_ = pc_factory_->CreatePeerConnection(
         config, constraints, std::move(port_allocator),
@@ -1135,6 +1161,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
   }
 
   cricket::FakePortAllocator* port_allocator_ = nullptr;
+  FakeRTCCertificateGenerator* fake_certificate_generator_ = nullptr;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory_;
   rtc::scoped_refptr<PeerConnectionFactoryForTest> pc_factory_for_test_;
   rtc::scoped_refptr<PeerConnectionInterface> pc_;
@@ -2071,6 +2098,26 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
   ASSERT_TRUE(content != NULL);
   EXPECT_TRUE(content->rejected);
 #endif
+}
+
+// Test that an offer can be received which offers DTLS with SDES fallback.
+// Regression test for issue:
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=6972
+TEST_F(PeerConnectionInterfaceTest, ReceiveDtlsSdesFallbackOffer) {
+  FakeConstraints constraints;
+  constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
+                           true);
+  CreatePeerConnection(&constraints);
+  // Wait for fake certificate to be generated. Previously, this is what caused
+  // the "a=crypto" lines to be rejected.
+  AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
+  ASSERT_NE(nullptr, fake_certificate_generator_);
+  EXPECT_EQ_WAIT(1, fake_certificate_generator_->generated_certificates(),
+                 kTimeout);
+  SessionDescriptionInterface* desc = webrtc::CreateSessionDescription(
+      SessionDescriptionInterface::kOffer, kDtlsSdesFallbackSdp, nullptr);
+  EXPECT_TRUE(DoSetSessionDescription(desc, false));
+  CreateAnswerAsLocalDescription();
 }
 
 // Test that we can create an audio only offer and receive an answer with a

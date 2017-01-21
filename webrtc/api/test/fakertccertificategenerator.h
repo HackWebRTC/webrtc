@@ -134,6 +134,8 @@ class FakeRTCCertificateGenerator
   void use_original_key() { key_index_ = 0; }
   void use_alternate_key() { key_index_ = 1; }
 
+  int generated_certificates() { return generated_certificates_; }
+
   void GenerateCertificateAsync(
       const rtc::KeyParams& key_params,
       const rtc::Optional<uint64_t>& expires_ms,
@@ -210,6 +212,7 @@ class FakeRTCCertificateGenerator
             msg->message_id == MSG_SUCCESS_RSA ? rtc::KT_RSA : rtc::KT_ECDSA;
         certificate = rtc::RTCCertificate::FromPEM(get_pem(key_type));
         RTC_DCHECK(certificate);
+        ++generated_certificates_;
         callback->OnSuccess(certificate);
         break;
       }
@@ -222,6 +225,7 @@ class FakeRTCCertificateGenerator
 
   bool should_fail_;
   int key_index_ = 0;
+  int generated_certificates_ = 0;
 };
 
 #endif  // WEBRTC_API_TEST_FAKERTCCERTIFICATEGENERATOR_H_

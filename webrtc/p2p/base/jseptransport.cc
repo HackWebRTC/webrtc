@@ -329,7 +329,12 @@ bool JsepTransport::ApplyLocalTransportDescription(
     std::string* error_desc) {
   dtls_transport->ice_transport()->SetIceParameters(
       local_description_->GetIceParameters());
-  return true;
+  bool ret = true;
+  if (certificate_) {
+    ret = dtls_transport->SetLocalCertificate(certificate_);
+    RTC_DCHECK(ret);
+  }
+  return ret;
 }
 
 bool JsepTransport::ApplyRemoteTransportDescription(

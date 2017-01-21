@@ -617,12 +617,20 @@ class FakeTransportController : public TransportController {
           std::vector<std::string>(),
           rtc::CreateRandomString(cricket::ICE_UFRAG_LENGTH),
           rtc::CreateRandomString(cricket::ICE_PWD_LENGTH),
-          cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_NONE, nullptr);
+          cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_NONE,
+          certificate_for_testing()
+              ? rtc::SSLFingerprint::CreateFromCertificate(
+                    certificate_for_testing())
+              : nullptr);
       TransportDescription remote_desc(
           std::vector<std::string>(),
           rtc::CreateRandomString(cricket::ICE_UFRAG_LENGTH),
           rtc::CreateRandomString(cricket::ICE_PWD_LENGTH),
-          cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_NONE, nullptr);
+          cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_NONE,
+          dest->certificate_for_testing()
+              ? rtc::SSLFingerprint::CreateFromCertificate(
+                    dest->certificate_for_testing())
+              : nullptr);
       std::string err;
       SetLocalTransportDescription(transport_name, local_desc,
                                    cricket::CA_OFFER, &err);
