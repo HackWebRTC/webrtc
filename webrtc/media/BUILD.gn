@@ -32,16 +32,6 @@ config("rtc_media_warnings_config") {
   }
 }
 
-if (is_linux && rtc_use_gtk) {
-  pkg_config("gtk-lib") {
-    packages = [
-      "gobject-2.0",
-      "gthread-2.0",
-      "gtk+-2.0",
-    ]
-  }
-}
-
 rtc_static_library("rtc_media_base") {
   defines = []
   libs = []
@@ -197,13 +187,6 @@ rtc_static_library("rtc_media") {
   } else {
     public_configs += [ ":rtc_media_defines_config" ]
     deps += [ "../modules/video_capture:video_capture_internal_impl" ]
-  }
-  if (is_linux && rtc_use_gtk) {
-    sources += [
-      "devices/gtkvideorenderer.cc",
-      "devices/gtkvideorenderer.h",
-    ]
-    public_configs += [ ":gtk-lib" ]
   }
   deps += [
     ":rtc_media_base",
