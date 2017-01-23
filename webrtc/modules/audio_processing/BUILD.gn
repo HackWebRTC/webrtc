@@ -429,7 +429,6 @@ if (rtc_include_tests) {
       "beamformer/covariance_matrix_generator_unittest.cc",
       "beamformer/matrix_unittest.cc",
       "beamformer/mock_nonlinear_beamformer.h",
-      "beamformer/nonlinear_beamformer_unittest.cc",
       "config_unittest.cc",
       "echo_cancellation_impl_unittest.cc",
       "splitting_filter_unittest.cc",
@@ -456,7 +455,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":audio_processing",
-      ":audioproc_debug_proto",
       ":audioproc_test_utils",
       "../..:webrtc_common",
       "../../base:gtest_prod",
@@ -497,6 +495,7 @@ if (rtc_include_tests) {
     if (rtc_enable_protobuf) {
       defines += [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
       deps += [
+        ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",
         ":audioproc_unittest_proto",
       ]
@@ -510,6 +509,7 @@ if (rtc_include_tests) {
         "audio_processing_impl_locking_unittest.cc",
         "audio_processing_impl_unittest.cc",
         "audio_processing_unittest.cc",
+        "beamformer/nonlinear_beamformer_unittest.cc",
         "echo_cancellation_bit_exact_unittest.cc",
         "echo_control_mobile_unittest.cc",
         "echo_detector/circular_buffer_unittest.cc",
