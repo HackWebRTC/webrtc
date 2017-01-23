@@ -114,7 +114,7 @@ class CpuMonitor {
     private final int size;
     private double sum;
     private double currentValue;
-    private double circBuffer[];
+    private double[] circBuffer;
     private int circBufferIndex;
 
     public MovingAverage(int size) {
@@ -480,7 +480,7 @@ class CpuMonitor {
         // cpu  5093818 271838 3512830 165934119 101374 447076 272086 0 0 0
         //       user    nice  system     idle   iowait  irq   softirq
         String line = reader.readLine();
-        String lines[] = line.split("\\s+");
+        String[] lines = line.split("\\s+");
         int length = lines.length;
         if (length >= 5) {
           userTime = parseLong(lines[1]); // user
