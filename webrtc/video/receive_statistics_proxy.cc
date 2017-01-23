@@ -414,6 +414,7 @@ void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
   rtc::CritScope lock(&crit_);
   renders_fps_estimator_.Update(1, now);
   stats_.render_frame_rate = renders_fps_estimator_.Rate(now).value_or(0);
+  ++stats_.frames_rendered;
   stats_.width = width;
   stats_.height = height;
   render_width_counter_.Add(width);

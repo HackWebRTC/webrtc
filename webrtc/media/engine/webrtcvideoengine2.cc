@@ -2389,6 +2389,7 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   info.frames_received = stats.frame_counts.key_frames +
                          stats.frame_counts.delta_frames;
   info.frames_decoded = stats.frames_decoded;
+  info.frames_rendered = stats.frames_rendered;
 
   info.codec_name = GetCodecNameFromPayloadType(stats.current_payload_type);
 

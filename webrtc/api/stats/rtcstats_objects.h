@@ -268,7 +268,6 @@ class RTCMediaStreamTrackStats final : public RTCStats {
   RTCStatsMember<uint32_t> frames_sent;
   RTCStatsMember<uint32_t> frames_received;
   RTCStatsMember<uint32_t> frames_decoded;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
   RTCStatsMember<uint32_t> frames_dropped;
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
   RTCStatsMember<uint32_t> frames_corrupted;

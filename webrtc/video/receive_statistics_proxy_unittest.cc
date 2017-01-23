@@ -12,6 +12,8 @@
 
 #include <memory>
 
+#include "webrtc/api/video/video_frame.h"
+#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
@@ -54,6 +56,16 @@ TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesFramesDecoded) {
   for (uint32_t i = 1; i <= 3; ++i) {
     statistics_proxy_->OnDecodedFrame();
     EXPECT_EQ(i, statistics_proxy_->GetStats().frames_decoded);
+  }
+}
+
+TEST_F(ReceiveStatisticsProxyTest, OnRenderedFrameIncreasesFramesRendered) {
+  EXPECT_EQ(0u, statistics_proxy_->GetStats().frames_rendered);
+  webrtc::VideoFrame frame(
+      webrtc::I420Buffer::Create(1, 1), 0, 0, webrtc::kVideoRotation_0);
+  for (uint32_t i = 1; i <= 3; ++i) {
+    statistics_proxy_->OnRenderedFrame(frame);
+    EXPECT_EQ(i, statistics_proxy_->GetStats().frames_rendered);
   }
 }
 

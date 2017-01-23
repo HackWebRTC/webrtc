@@ -3323,7 +3323,8 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesDecodeStatsCorrectly) {
   stats.height = 10;
   stats.frame_counts.key_frames = 11;
   stats.frame_counts.delta_frames = 12;
-  stats.frames_decoded = 13;
+  stats.frames_rendered = 13;
+  stats.frames_decoded = 14;
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
@@ -3341,6 +3342,7 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesDecodeStatsCorrectly) {
   EXPECT_EQ(stats.height, info.receivers[0].frame_height);
   EXPECT_EQ(stats.frame_counts.key_frames + stats.frame_counts.delta_frames,
             info.receivers[0].frames_received);
+  EXPECT_EQ(stats.frames_rendered, info.receivers[0].frames_rendered);
   EXPECT_EQ(stats.frames_decoded, info.receivers[0].frames_decoded);
 }
 

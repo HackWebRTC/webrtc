@@ -1542,8 +1542,9 @@ TEST_F(RTCStatsCollectorTest,
   video_receiver_info_ssrc3.local_stats[0].ssrc = 3;
   video_receiver_info_ssrc3.frame_width = 6789;
   video_receiver_info_ssrc3.frame_height = 9876;
-  video_receiver_info_ssrc3.frames_received = 2468;
-  video_receiver_info_ssrc3.frames_decoded = 1234;
+  video_receiver_info_ssrc3.frames_received = 1000;
+  video_receiver_info_ssrc3.frames_decoded = 995;
+  video_receiver_info_ssrc3.frames_rendered = 990;
 
   // Remote video track with undefined (default) values
   rtc::scoped_refptr<MediaStreamTrackInterface> remote_video_track_ssrc4 =
@@ -1559,6 +1560,7 @@ TEST_F(RTCStatsCollectorTest,
   video_receiver_info_ssrc4.frame_height = 0;
   video_receiver_info_ssrc4.frames_received = 0;
   video_receiver_info_ssrc4.frames_decoded = 0;
+  video_receiver_info_ssrc4.frames_rendered = 0;
 
   test_->CreateMockRtpSendersReceiversAndChannels(
       {}, {},
@@ -1633,8 +1635,9 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_video_track_ssrc3.detached = false;
   expected_remote_video_track_ssrc3.frame_width = 6789;
   expected_remote_video_track_ssrc3.frame_height = 9876;
-  expected_remote_video_track_ssrc3.frames_received = 2468;
-  expected_remote_video_track_ssrc3.frames_decoded = 1234;
+  expected_remote_video_track_ssrc3.frames_received = 1000;
+  expected_remote_video_track_ssrc3.frames_decoded = 995;
+  expected_remote_video_track_ssrc3.frames_dropped = 1000 - 990;
   ASSERT_TRUE(report->Get(expected_remote_video_track_ssrc3.id()));
   EXPECT_EQ(expected_remote_video_track_ssrc3,
             report->Get(expected_remote_video_track_ssrc3.id())->cast_to<
@@ -1650,6 +1653,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_video_track_ssrc4.detached = false;
   expected_remote_video_track_ssrc4.frames_received = 0;
   expected_remote_video_track_ssrc4.frames_decoded = 0;
+  expected_remote_video_track_ssrc4.frames_dropped = 0;
   // Should be undefined: |expected_remote_video_track_ssrc4.frame_width| and
   // |expected_remote_video_track_ssrc4.frame_height|.
   ASSERT_TRUE(report->Get(expected_remote_video_track_ssrc4.id()));
