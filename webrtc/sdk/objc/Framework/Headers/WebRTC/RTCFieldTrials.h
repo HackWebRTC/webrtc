@@ -21,6 +21,11 @@ RTC_EXTERN NSString * const kRTCFieldTrialH264HighProfileKey;
 /** The valid value for field trials above. */
 RTC_EXTERN NSString * const kRTCFieldTrialEnabledValue;
 
+/** Use a string returned by RTCFieldTrialMedianSlopeFilterValue as the value. */
+RTC_EXTERN NSString * const kRTCFieldTrialMedianSlopeFilterKey;
+RTC_EXTERN NSString *RTCFieldTrialMedianSlopeFilterValue(
+    size_t windowSize, double thresholdGain);
+
 /** Use a string returned by RTCFieldTrialTrendlineFilterValue as the value. */
 RTC_EXTERN NSString * const kRTCFieldTrialTrendlineFilterKey;
 /** Returns a valid value for kRTCFieldTrialTrendlineFilterKey. */
