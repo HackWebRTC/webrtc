@@ -301,3 +301,13 @@ webrtc_fuzzer_test("pseudotcp_parser_fuzzer") {
     "../../p2p:rtc_p2p",
   ]
 }
+
+webrtc_fuzzer_test("transport_feedback_packet_loss_tracker_fuzzer") {
+  sources = [
+    "transport_feedback_packet_loss_tracker_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp",
+    "../../voice_engine",
+  ]
+}
