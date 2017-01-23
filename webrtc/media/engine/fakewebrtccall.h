@@ -20,7 +20,6 @@
 #ifndef WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
 #define WEBRTC_MEDIA_ENGINE_FAKEWEBRTCCALL_H_
 
-#include <list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -230,7 +229,7 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   const std::vector<FakeAudioReceiveStream*>& GetAudioReceiveStreams();
   const FakeAudioReceiveStream* GetAudioReceiveStream(uint32_t ssrc);
 
-  const std::list<FakeFlexfecReceiveStream>& GetFlexfecReceiveStreams();
+  const std::vector<FakeFlexfecReceiveStream*>& GetFlexfecReceiveStreams();
 
   rtc::SentPacket last_sent_packet() const { return last_sent_packet_; }
 
@@ -299,7 +298,7 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   std::vector<FakeAudioSendStream*> audio_send_streams_;
   std::vector<FakeVideoReceiveStream*> video_receive_streams_;
   std::vector<FakeAudioReceiveStream*> audio_receive_streams_;
-  std::list<FakeFlexfecReceiveStream> flexfec_receive_streams_;
+  std::vector<FakeFlexfecReceiveStream*> flexfec_receive_streams_;
 
   int num_created_send_streams_;
   int num_created_receive_streams_;

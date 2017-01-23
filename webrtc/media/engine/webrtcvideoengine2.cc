@@ -2126,6 +2126,9 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::AllocatedDecoder::
 }
 
 WebRtcVideoChannel2::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
+  if (flexfec_stream_) {
+    call_->DestroyFlexfecReceiveStream(flexfec_stream_);
+  }
   call_->DestroyVideoReceiveStream(stream_);
   ClearDecoders(&allocated_decoders_);
 }

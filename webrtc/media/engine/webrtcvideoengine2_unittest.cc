@@ -9,7 +9,6 @@
  */
 
 #include <algorithm>
-#include <list>
 #include <map>
 #include <memory>
 #include <vector>
@@ -2424,6 +2423,27 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetSendCodecsWithoutFec) {
   EXPECT_EQ(-1, config.rtp.flexfec.payload_type);
 }
 
+TEST_F(WebRtcVideoChannel2FlexfecTest, SetRecvCodecsWithFec) {
+  AddRecvStream(
+      CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
+  const std::vector<FakeFlexfecReceiveStream*>& streams =
+      fake_call_->GetFlexfecReceiveStreams();
+
+  cricket::VideoRecvParameters recv_parameters;
+  recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
+  recv_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
+  ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
+  ASSERT_EQ(1U, streams.size());
+  const FakeFlexfecReceiveStream* stream_with_recv_params = streams.front();
+  EXPECT_EQ(GetEngineCodec("flexfec-03").id,
+            stream_with_recv_params->GetConfig().payload_type);
+  EXPECT_EQ(kFlexfecSsrc, stream_with_recv_params->GetConfig().remote_ssrc);
+  EXPECT_EQ(1U,
+            stream_with_recv_params->GetConfig().protected_media_ssrcs.size());
+  EXPECT_EQ(kSsrcs1[0],
+            stream_with_recv_params->GetConfig().protected_media_ssrcs[0]);
+}
+
 TEST_F(WebRtcVideoChannel2Test,
        SetSendCodecRejectsRtxWithoutAssociatedPayloadType) {
   const int kUnusedPayloadType = 127;
@@ -2865,15 +2885,15 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetRecvParamsWithoutFecDisablesFec) {
 
   AddRecvStream(
       CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
-  const std::list<FakeFlexfecReceiveStream>& streams =
+  const std::vector<FakeFlexfecReceiveStream*>& streams =
       fake_call_->GetFlexfecReceiveStreams();
 
   ASSERT_EQ(1U, streams.size());
-  const FakeFlexfecReceiveStream& stream = streams.front();
-  EXPECT_EQ(GetEngineCodec("flexfec-03").id, stream.GetConfig().payload_type);
-  EXPECT_EQ(kFlexfecSsrc, stream.GetConfig().remote_ssrc);
-  ASSERT_EQ(1U, stream.GetConfig().protected_media_ssrcs.size());
-  EXPECT_EQ(kSsrcs1[0], stream.GetConfig().protected_media_ssrcs[0]);
+  const FakeFlexfecReceiveStream* stream = streams.front();
+  EXPECT_EQ(GetEngineCodec("flexfec-03").id, stream->GetConfig().payload_type);
+  EXPECT_EQ(kFlexfecSsrc, stream->GetConfig().remote_ssrc);
+  ASSERT_EQ(1U, stream->GetConfig().protected_media_ssrcs.size());
+  EXPECT_EQ(kSsrcs1[0], stream->GetConfig().protected_media_ssrcs[0]);
 
   cricket::VideoRecvParameters recv_parameters;
   recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
@@ -2914,7 +2934,7 @@ TEST_F(WebRtcVideoChannel2Test, SetSendParamsWithFecEnablesFec) {
 TEST_F(WebRtcVideoChannel2FlexfecTest, SetSendParamsWithFecEnablesFec) {
   AddRecvStream(
       CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
-  const std::list<FakeFlexfecReceiveStream>& streams =
+  const std::vector<FakeFlexfecReceiveStream*>& streams =
       fake_call_->GetFlexfecReceiveStreams();
 
   cricket::VideoRecvParameters recv_parameters;
@@ -2922,28 +2942,28 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetSendParamsWithFecEnablesFec) {
   recv_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
   ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
   ASSERT_EQ(1U, streams.size());
-  const FakeFlexfecReceiveStream& stream_with_recv_params = streams.front();
+  const FakeFlexfecReceiveStream* stream_with_recv_params = streams.front();
   EXPECT_EQ(GetEngineCodec("flexfec-03").id,
-            stream_with_recv_params.GetConfig().payload_type);
-  EXPECT_EQ(kFlexfecSsrc, stream_with_recv_params.GetConfig().remote_ssrc);
+            stream_with_recv_params->GetConfig().payload_type);
+  EXPECT_EQ(kFlexfecSsrc, stream_with_recv_params->GetConfig().remote_ssrc);
   EXPECT_EQ(1U,
-            stream_with_recv_params.GetConfig().protected_media_ssrcs.size());
+            stream_with_recv_params->GetConfig().protected_media_ssrcs.size());
   EXPECT_EQ(kSsrcs1[0],
-            stream_with_recv_params.GetConfig().protected_media_ssrcs[0]);
+            stream_with_recv_params->GetConfig().protected_media_ssrcs[0]);
 
   cricket::VideoSendParameters send_parameters;
   send_parameters.codecs.push_back(GetEngineCodec("VP8"));
   send_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
   ASSERT_TRUE(channel_->SetSendParameters(send_parameters));
   ASSERT_EQ(1U, streams.size());
-  const FakeFlexfecReceiveStream& stream_with_send_params = streams.front();
+  const FakeFlexfecReceiveStream* stream_with_send_params = streams.front();
   EXPECT_EQ(GetEngineCodec("flexfec-03").id,
-            stream_with_send_params.GetConfig().payload_type);
-  EXPECT_EQ(kFlexfecSsrc, stream_with_send_params.GetConfig().remote_ssrc);
+            stream_with_send_params->GetConfig().payload_type);
+  EXPECT_EQ(kFlexfecSsrc, stream_with_send_params->GetConfig().remote_ssrc);
   EXPECT_EQ(1U,
-            stream_with_send_params.GetConfig().protected_media_ssrcs.size());
+            stream_with_send_params->GetConfig().protected_media_ssrcs.size());
   EXPECT_EQ(kSsrcs1[0],
-            stream_with_send_params.GetConfig().protected_media_ssrcs[0]);
+            stream_with_send_params->GetConfig().protected_media_ssrcs[0]);
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsRejectDuplicateFecPayloads) {
