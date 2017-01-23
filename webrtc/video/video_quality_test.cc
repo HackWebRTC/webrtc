@@ -137,6 +137,7 @@ class VideoAnalyzer : public PacketReceiver,
       : transport_(transport),
         receiver_(nullptr),
         send_stream_(nullptr),
+        receive_stream_(nullptr),
         captured_frame_forwarder_(this),
         test_label_(test_label),
         graph_data_output_file_(graph_data_output_file),
@@ -197,6 +198,12 @@ class VideoAnalyzer : public PacketReceiver,
     rtc::CritScope lock(&crit_);
     RTC_DCHECK(!send_stream_);
     send_stream_ = stream;
+  }
+
+  void SetReceiveStream(VideoReceiveStream* stream) {
+    rtc::CritScope lock(&crit_);
+    RTC_DCHECK(!receive_stream_);
+    receive_stream_ = stream;
   }
 
   rtc::VideoSinkInterface<VideoFrame>* InputInterface() {
@@ -532,19 +539,27 @@ class VideoAnalyzer : public PacketReceiver,
     if (done_.Wait(kSendStatsPollingIntervalMs))
       return false;
 
-    VideoSendStream::Stats stats = send_stream_->GetStats();
-
     rtc::CritScope crit(&comparison_lock_);
+
+    VideoSendStream::Stats send_stats = send_stream_->GetStats();
     // It's not certain that we yet have estimates for any of these stats. Check
     // that they are positive before mixing them in.
-    if (stats.encode_frame_rate > 0)
-      encode_frame_rate_.AddSample(stats.encode_frame_rate);
-    if (stats.avg_encode_time_ms > 0)
-      encode_time_ms.AddSample(stats.avg_encode_time_ms);
-    if (stats.encode_usage_percent > 0)
-      encode_usage_percent.AddSample(stats.encode_usage_percent);
-    if (stats.media_bitrate_bps > 0)
-      media_bitrate_bps.AddSample(stats.media_bitrate_bps);
+    if (send_stats.encode_frame_rate > 0)
+      encode_frame_rate_.AddSample(send_stats.encode_frame_rate);
+    if (send_stats.avg_encode_time_ms > 0)
+      encode_time_ms_.AddSample(send_stats.avg_encode_time_ms);
+    if (send_stats.encode_usage_percent > 0)
+      encode_usage_percent_.AddSample(send_stats.encode_usage_percent);
+    if (send_stats.media_bitrate_bps > 0)
+      media_bitrate_bps_.AddSample(send_stats.media_bitrate_bps);
+
+    if (receive_stream_ != nullptr) {
+      VideoReceiveStream::Stats receive_stats = receive_stream_->GetStats();
+      if (receive_stats.decode_ms > 0)
+        decode_time_ms_.AddSample(receive_stats.decode_ms);
+      if (receive_stats.max_decode_ms > 0)
+        decode_time_max_ms_.AddSample(receive_stats.max_decode_ms);
+    }
 
     return true;
   }
@@ -633,9 +648,14 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("time_between_rendered_frames", rendered_delta_, " ms");
     PrintResult("encoded_frame_size", encoded_frame_size_, " bytes");
     PrintResult("encode_frame_rate", encode_frame_rate_, " fps");
-    PrintResult("encode_time", encode_time_ms, " ms");
-    PrintResult("encode_usage_percent", encode_usage_percent, " percent");
-    PrintResult("media_bitrate", media_bitrate_bps, " bps");
+    PrintResult("encode_time", encode_time_ms_, " ms");
+    PrintResult("encode_usage_percent", encode_usage_percent_, " percent");
+    PrintResult("media_bitrate", media_bitrate_bps_, " bps");
+
+    if (receive_stream_ != nullptr) {
+      PrintResult("decode_time", decode_time_ms_, " ms");
+      PrintResult("decode_time_max", decode_time_max_ms_, " ms");
+    }
 
     printf("RESULT dropped_frames: %s = %d frames\n", test_label_.c_str(),
            dropped_frames_);
@@ -806,6 +826,7 @@ class VideoAnalyzer : public PacketReceiver,
   }
 
   VideoSendStream* send_stream_;
+  VideoReceiveStream* receive_stream_;
   CapturedFrameForwarder captured_frame_forwarder_;
   const std::string test_label_;
   FILE* const graph_data_output_file_;
@@ -823,9 +844,11 @@ class VideoAnalyzer : public PacketReceiver,
   test::Statistics rendered_delta_ GUARDED_BY(comparison_lock_);
   test::Statistics encoded_frame_size_ GUARDED_BY(comparison_lock_);
   test::Statistics encode_frame_rate_ GUARDED_BY(comparison_lock_);
-  test::Statistics encode_time_ms GUARDED_BY(comparison_lock_);
-  test::Statistics encode_usage_percent GUARDED_BY(comparison_lock_);
-  test::Statistics media_bitrate_bps GUARDED_BY(comparison_lock_);
+  test::Statistics encode_time_ms_ GUARDED_BY(comparison_lock_);
+  test::Statistics encode_usage_percent_ GUARDED_BY(comparison_lock_);
+  test::Statistics decode_time_ms_ GUARDED_BY(comparison_lock_);
+  test::Statistics decode_time_max_ms_ GUARDED_BY(comparison_lock_);
+  test::Statistics media_bitrate_bps_ GUARDED_BY(comparison_lock_);
 
   const int frames_to_process_;
   int frames_recorded_;
@@ -1309,6 +1332,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   CreateFlexfecStreams();
   CreateVideoStreams();
   analyzer.SetSendStream(video_send_stream_);
+  if (video_receive_streams_.size() == 1)
+    analyzer.SetReceiveStream(video_receive_streams_[0]);
   video_send_stream_->SetSource(
       analyzer.OutputInterface(),
       VideoSendStream::DegradationPreference::kBalanced);
