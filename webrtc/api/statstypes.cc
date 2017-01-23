@@ -632,6 +632,8 @@ StatsReport::StatsReport(const Id& id) : id_(id), timestamp_(0.0) {
   RTC_DCHECK(id_.get());
 }
 
+StatsReport::~StatsReport() = default;
+
 // static
 StatsReport::Id StatsReport::NewBandwidthEstimationId() {
   return Id(new RefCountedObject<BandwidthEstimationId>());

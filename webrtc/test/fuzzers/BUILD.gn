@@ -266,7 +266,7 @@ webrtc_fuzzer_test("sdp_parser_fuzzer") {
     "sdp_parser_fuzzer.cc",
   ]
   deps = [
-    "../../api:libjingle_peerconnection",
+    "../../pc:libjingle_peerconnection",
   ]
   seed_corpus = "corpora/sdp-corpus"
 }

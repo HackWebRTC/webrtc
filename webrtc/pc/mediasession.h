@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/mediatypes.h"
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/mediachannel.h"
@@ -36,14 +37,6 @@ typedef std::vector<VideoCodec> VideoCodecs;
 typedef std::vector<DataCodec> DataCodecs;
 typedef std::vector<CryptoParams> CryptoParamsVec;
 typedef std::vector<webrtc::RtpExtension> RtpHeaderExtensions;
-
-enum MediaType {
-  MEDIA_TYPE_AUDIO,
-  MEDIA_TYPE_VIDEO,
-  MEDIA_TYPE_DATA
-};
-
-std::string MediaTypeToString(MediaType type);
 
 enum MediaContentDirection {
   MD_INACTIVE,

@@ -67,7 +67,7 @@ rtc_static_library("libjingle_peerconnection_jni") {
   }
 
   deps = [
-    "//webrtc/api:libjingle_peerconnection",
+    "//webrtc/pc:libjingle_peerconnection",
   ]
 
   if (rtc_build_libyuv) {
@@ -89,7 +89,7 @@ rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
   configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
 
   deps = [
-    "//webrtc/api:libjingle_peerconnection",
+    "//webrtc/pc:libjingle_peerconnection",
     "//webrtc/system_wrappers:field_trial_default",
     "//webrtc/system_wrappers:metrics_default",
   ]
@@ -105,7 +105,7 @@ rtc_shared_library("libjingle_peerconnection_so") {
   deps = [
     ":libjingle_peerconnection_jni",
     ":libjingle_peerconnection_metrics_default_jni",
-    "//webrtc/api:libjingle_peerconnection",
+    "//webrtc/pc:libjingle_peerconnection",
   ]
   output_extension = "so"
 }

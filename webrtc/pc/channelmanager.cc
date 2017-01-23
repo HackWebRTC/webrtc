@@ -12,7 +12,6 @@
 
 #include <algorithm>
 
-#include "webrtc/api/mediacontroller.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"
@@ -23,6 +22,7 @@
 #include "webrtc/media/base/device.h"
 #include "webrtc/media/base/rtpdataengine.h"
 #include "webrtc/pc/srtpfilter.h"
+#include "webrtc/pc/mediacontroller.h"
 
 namespace cricket {
 

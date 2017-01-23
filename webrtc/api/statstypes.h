@@ -342,6 +342,7 @@ class StatsReport {
 
   // Ownership of |id| is passed to |this|.
   explicit StatsReport(const Id& id);
+  ~StatsReport();
 
   // Factory functions for various types of stats IDs.
   static Id NewBandwidthEstimationId();

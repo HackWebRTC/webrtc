@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/fakemediacontroller.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
@@ -19,6 +18,7 @@
 #include "webrtc/media/engine/fakewebrtccall.h"
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/channelmanager.h"
+#include "webrtc/pc/fakemediacontroller.h"
 
 namespace cricket {
 const bool kDefaultRtcpMuxRequired = true;

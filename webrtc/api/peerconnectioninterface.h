@@ -61,7 +61,7 @@
 #include "webrtc/api/dtmfsenderinterface.h"
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/rtcstatscollector.h"
+#include "webrtc/api/stats/rtcstatscollectorcallback.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/statstypes.h"

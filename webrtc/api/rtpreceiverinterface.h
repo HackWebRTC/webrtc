@@ -16,12 +16,12 @@
 
 #include <string>
 
+#include "webrtc/api/mediatypes.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/proxy.h"
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/pc/mediasession.h"
 
 namespace webrtc {
 

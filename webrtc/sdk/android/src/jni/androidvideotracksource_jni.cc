@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/api/videosourceproxy.h"
 #include "webrtc/sdk/android/src/jni/androidvideotracksource.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/api/videosourceproxy.h"
 
 // Identifiers are over 80 characters long so this is needed to fit them on one
 // line.
