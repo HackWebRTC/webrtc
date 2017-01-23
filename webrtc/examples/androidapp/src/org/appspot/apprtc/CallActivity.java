@@ -64,12 +64,18 @@ import org.webrtc.VideoRenderer;
 public class CallActivity extends Activity implements AppRTCClient.SignalingEvents,
                                                       PeerConnectionClient.PeerConnectionEvents,
                                                       CallFragment.OnCallEvents {
+  private static final String TAG = "CallRTCClient";
+
   // Fix for devices running old Android versions not finding the libraries.
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=6751
   static {
-    System.loadLibrary("c++_shared");
-    System.loadLibrary("boringssl.cr");
-    System.loadLibrary("protobuf_lite.cr");
+    try {
+      System.loadLibrary("c++_shared");
+      System.loadLibrary("boringssl.cr");
+      System.loadLibrary("protobuf_lite.cr");
+    } catch (UnsatisfiedLinkError e) {
+      Logging.w(TAG, "Failed to load native dependencies: ", e);
+    }
   }
 
   public static final String EXTRA_ROOMID = "org.appspot.apprtc.ROOMID";
@@ -118,7 +124,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_NEGOTIATED = "org.appspot.apprtc.NEGOTIATED";
   public static final String EXTRA_ID = "org.appspot.apprtc.ID";
 
-  private static final String TAG = "CallRTCClient";
   private static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
   // List of mandatory application permissions.
