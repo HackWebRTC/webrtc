@@ -319,8 +319,8 @@ CaptureInputPin::Receive ( IN IMediaSample * pIMediaSample )
 {
     HRESULT hr = S_OK;
 
-    ASSERT (m_pFilter);
-    ASSERT (pIMediaSample);
+    RTC_DCHECK(m_pFilter);
+    RTC_DCHECK(pIMediaSample);
 
     // get the thread handle of the delivering thread inc its priority
     if( _threadHandle == NULL)

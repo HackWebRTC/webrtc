@@ -665,12 +665,6 @@ rtc_static_library("rtc_base") {
       "unixfilesystem.cc",
       "unixfilesystem.h",
     ]
-    if (is_debug) {
-      # The Chromium build/common.gypi defines this for all posix
-      # _except_ for ios & mac.  We want it there as well, e.g.
-      # because ASSERT and friends trigger off of it.
-      defines += [ "_DEBUG" ]
-    }
   }
 
   if (is_nacl) {

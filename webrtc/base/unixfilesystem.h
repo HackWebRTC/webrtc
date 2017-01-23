@@ -44,7 +44,7 @@ class UnixFilesystem : public FilesystemInterface {
   bool DeleteFile(const Pathname& filename) override;
 
   // This will attempt to delete the folder located at 'folder'
-  // It ASSERTs and returns false if you pass it a non-existant folder or a
+  // It DCHECKs and returns false if you pass it a non-existant folder or a
   // plain file.
   bool DeleteEmptyFolder(const Pathname& folder) override;
 

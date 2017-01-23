@@ -496,7 +496,7 @@ class WebRtcVoiceCodecs final {
   // codec.
   static void MaybeFixupG722(webrtc::CodecInst* voe_codec, int new_plfreq) {
     if (IsCodec(*voe_codec, kG722CodecName)) {
-      // If the ASSERT triggers, the codec definition in WebRTC VoiceEngine
+      // If the DCHECK triggers, the codec definition in WebRTC VoiceEngine
       // has changed, and this special case is no longer needed.
       RTC_DCHECK(voe_codec->plfreq != new_plfreq);
       voe_codec->plfreq = new_plfreq;

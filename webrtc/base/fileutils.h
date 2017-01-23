@@ -92,12 +92,12 @@ class FilesystemInterface {
                                const std::string &mode) = 0;
 
   // This will attempt to delete the path located at filename.
-  // It ASSERTS and returns false if the path points to a folder or a
+  // It DCHECKs and returns false if the path points to a folder or a
   // non-existent file.
   virtual bool DeleteFile(const Pathname &filename) = 0;
 
   // This will attempt to delete the empty folder located at 'folder'
-  // It ASSERTS and returns false if the path points to a file or a non-existent
+  // It DCHECKs and returns false if the path points to a file or a non-existent
   // folder. It fails normally if the folder is not empty or can otherwise
   // not be deleted.
   virtual bool DeleteEmptyFolder(const Pathname &folder) = 0;
@@ -116,13 +116,13 @@ class FilesystemInterface {
   virtual bool CreateFolder(const Pathname &pathname) = 0;
 
   // This moves a file from old_path to new_path, where "old_path" is a
-  // plain file. This ASSERTs and returns false if old_path points to a
+  // plain file. This DCHECKs and returns false if old_path points to a
   // directory, and returns true if the function succeeds.
   // If the new path is on a different volume than the old path, this function
   // will attempt to copy and, if that succeeds, delete the old path.
   virtual bool MoveFile(const Pathname &old_path, const Pathname &new_path) = 0;
 
-  // This copies a file from old_path to new_path. This method ASSERTs and
+  // This copies a file from old_path to new_path. This method DCHECKs and
   // returns false if old_path is a folder, and returns true if the copy
   // succeeds.
   virtual bool CopyFile(const Pathname &old_path, const Pathname &new_path) = 0;
