@@ -1888,7 +1888,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsBitrate) {
     const auto& gcodec = GetSendStreamConfig(kSsrc1).send_codec_spec.codec_inst;
     EXPECT_EQ(103, gcodec.pltype);
     EXPECT_STREQ("ISAC", gcodec.plname);
-    EXPECT_EQ(-1, gcodec.rate);
+    EXPECT_EQ(32000, gcodec.rate);
   }
   parameters.codecs[0].bitrate = 28000;     // bitrate == 28000
   SetSendParameters(parameters);

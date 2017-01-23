@@ -205,11 +205,6 @@ static const char kApplicationSpecificMaximum[] = "AS";
 
 static const int kDefaultVideoClockrate = 90000;
 
-// ISAC special-case.
-static const char kIsacCodecName[] = "ISAC";  // From webrtcvoiceengine.cc
-static const int kIsacWbDefaultRate = 32000;  // From acm_common_defs.h
-static const int kIsacSwbDefaultRate = 56000;  // From acm_common_defs.h
-
 static const char kDefaultSctpmapProtocol[] = "webrtc-datachannel";
 
 // RTP payload type is in the 0-127 range. Use -1 to indicate "all" payload
@@ -3098,21 +3093,9 @@ bool ParseRtpmapAttribute(const std::string& line,
         return false;
       }
     }
-    int bitrate = 0;
-    // The default behavior for ISAC (bitrate == 0) in webrtcvoiceengine.cc
-    // (specifically FindWebRtcCodec) is bandwidth-adaptive variable bitrate.
-    // The bandwidth adaptation doesn't always work well, so this code
-    // sets a fixed target bitrate instead.
-    if (_stricmp(encoding_name.c_str(), kIsacCodecName) == 0) {
-      if (clock_rate <= 16000) {
-        bitrate = kIsacWbDefaultRate;
-      } else {
-        bitrate = kIsacSwbDefaultRate;
-      }
-    }
     AudioContentDescription* audio_desc =
         static_cast<AudioContentDescription*>(media_desc);
-    UpdateCodec(payload_type, encoding_name, clock_rate, bitrate, channels,
+    UpdateCodec(payload_type, encoding_name, clock_rate, 0, channels,
                 audio_desc);
   } else if (media_type == cricket::MEDIA_TYPE_DATA) {
     DataContentDescription* data_desc =

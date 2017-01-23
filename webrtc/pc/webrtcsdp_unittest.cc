@@ -1128,8 +1128,8 @@ class WebRtcSdpTest : public testing::Test {
     audio->set_protocol(cricket::kMediaProtocolSavpf);
     AudioCodec opus(111, "opus", 48000, 0, 2);
     audio->AddCodec(opus);
-    audio->AddCodec(AudioCodec(103, "ISAC", 16000, 32000, 1));
-    audio->AddCodec(AudioCodec(104, "ISAC", 32000, 56000, 1));
+    audio->AddCodec(AudioCodec(103, "ISAC", 16000, 0, 1));
+    audio->AddCodec(AudioCodec(104, "ISAC", 32000, 0, 1));
     return audio;
   }
 
@@ -1664,13 +1664,6 @@ class WebRtcSdpTest : public testing::Test {
       cricket::AudioCodec codec = acd->codecs()[i];
       VerifyCodecParameter(codec.params, "ptime", params.ptime);
       VerifyCodecParameter(codec.params, "maxptime", params.max_ptime);
-      if (codec.name == "ISAC") {
-        if (codec.clockrate == 16000) {
-          EXPECT_EQ(32000, codec.bitrate);
-        } else {
-          EXPECT_EQ(56000, codec.bitrate);
-        }
-      }
     }
 
     const ContentInfo* vc = GetFirstVideoContent(jdesc_output->description());
@@ -2275,7 +2268,7 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutRtpmap) {
   // the payload types (<fmt>s) on the m= line.
   ref_codecs.push_back(AudioCodec(0, "PCMU", 8000, 0, 1));
   ref_codecs.push_back(AudioCodec(18, "G729", 16000, 0, 1));
-  ref_codecs.push_back(AudioCodec(103, "ISAC", 16000, 32000, 1));
+  ref_codecs.push_back(AudioCodec(103, "ISAC", 16000, 0, 1));
   EXPECT_EQ(ref_codecs, audio->codecs());
 }
 

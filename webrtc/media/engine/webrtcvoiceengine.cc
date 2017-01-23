@@ -371,12 +371,6 @@ class WebRtcVoiceCodecs final {
           // Reset G722 sample rate to 16000 to match WebRTC.
           MaybeFixupG722(&voe_codec, 16000);
 
-          // Apply codec-specific settings.
-          if (IsCodec(codec, kIsacCodecName)) {
-            // If ISAC and an explicit bitrate is not specified,
-            // enable auto bitrate adjustment.
-            voe_codec.rate = (in.bitrate > 0) ? in.bitrate : -1;
-          }
           *out = voe_codec;
         }
         return true;
