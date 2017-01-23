@@ -1242,6 +1242,12 @@ void VideoQualityTest::CreateCapturer() {
     if (params_.video.clip_name.empty()) {
       video_capturer_.reset(test::VcmCapturer::Create(
           params_.video.width, params_.video.height, params_.video.fps));
+      if (!video_capturer_) {
+        // Failed to get actual camera, use chroma generator as backup.
+        video_capturer_.reset(test::FrameGeneratorCapturer::Create(
+            params_.video.width, params_.video.height, params_.video.fps,
+            clock_));
+      }
     } else {
       video_capturer_.reset(test::FrameGeneratorCapturer::CreateFromYuvFile(
           test::ResourcePath(params_.video.clip_name, "yuv"),
@@ -1252,6 +1258,7 @@ void VideoQualityTest::CreateCapturer() {
                                    << ".yuv. Is this resource file present?";
     }
   }
+  RTC_DCHECK(video_capturer_.get());
 }
 
 void VideoQualityTest::RunWithAnalyzer(const Params& params) {
