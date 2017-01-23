@@ -146,11 +146,14 @@ rtc_static_library("libjingle_peerconnection") {
   deps = [
     ":rtc_pc",
     "../api:call_api",
-    "../api:libjingle_peerconnection_api",
     "../api:rtc_stats_api",
     "../call",
     "../media",
     "../stats",
+  ]
+
+  public_deps = [
+    "../api:libjingle_peerconnection_api",
   ]
 
   if (rtc_use_quic) {
