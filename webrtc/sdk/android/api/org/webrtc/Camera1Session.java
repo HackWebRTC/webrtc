@@ -41,9 +41,6 @@ public class Camera1Session implements CameraSession {
   private final Context applicationContext;
   private final SurfaceTextureHelper surfaceTextureHelper;
   private final int cameraId;
-  private final int width;
-  private final int height;
-  private final int framerate;
   private final android.hardware.Camera camera;
   private final android.hardware.Camera.CameraInfo info;
   private final CaptureFormat captureFormat;
@@ -99,9 +96,8 @@ public class Camera1Session implements CameraSession {
     // Calculate orientation manually and send it as CVO insted.
     camera.setDisplayOrientation(0 /* degrees */);
 
-    callback.onDone(
-        new Camera1Session(events, captureToTexture, applicationContext, surfaceTextureHelper,
-            cameraId, width, height, framerate, camera, info, captureFormat, constructionTimeNs));
+    callback.onDone(new Camera1Session(events, captureToTexture, applicationContext,
+        surfaceTextureHelper, cameraId, camera, info, captureFormat, constructionTimeNs));
   }
 
   private static void updateCameraParameters(android.hardware.Camera camera,
@@ -149,9 +145,9 @@ public class Camera1Session implements CameraSession {
   }
 
   private Camera1Session(Events events, boolean captureToTexture, Context applicationContext,
-      SurfaceTextureHelper surfaceTextureHelper, int cameraId, int width, int height, int framerate,
-      android.hardware.Camera camera, android.hardware.Camera.CameraInfo info,
-      CaptureFormat captureFormat, long constructionTimeNs) {
+      SurfaceTextureHelper surfaceTextureHelper, int cameraId, android.hardware.Camera camera,
+      android.hardware.Camera.CameraInfo info, CaptureFormat captureFormat,
+      long constructionTimeNs) {
     Logging.d(TAG, "Create new camera1 session on camera " + cameraId);
 
     this.cameraThreadHandler = new Handler();
@@ -160,9 +156,6 @@ public class Camera1Session implements CameraSession {
     this.applicationContext = applicationContext;
     this.surfaceTextureHelper = surfaceTextureHelper;
     this.cameraId = cameraId;
-    this.width = width;
-    this.height = height;
-    this.framerate = framerate;
     this.camera = camera;
     this.info = info;
     this.captureFormat = captureFormat;
