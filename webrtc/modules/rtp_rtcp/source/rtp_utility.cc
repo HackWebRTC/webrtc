@@ -15,6 +15,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_cvo.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 
 namespace webrtc {
 
@@ -281,6 +282,7 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
     if (static_cast<size_t>(remain) < (4 + XLen)) {
       return false;
     }
+    static constexpr uint16_t kRtpOneByteHeaderExtensionId = 0xBEDE;
     if (definedByProfile == kRtpOneByteHeaderExtensionId) {
       const uint8_t* ptrRTPDataExtensionEnd = ptr + XLen;
       ParseOneByteExtensionHeader(header,
@@ -439,9 +441,9 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           int min_playout_delay = (ptr[0] << 4) | ((ptr[1] >> 4) & 0xf);
           int max_playout_delay = ((ptr[1] & 0xf) << 8) | ptr[2];
           header->extension.playout_delay.min_ms =
-              min_playout_delay * kPlayoutDelayGranularityMs;
+              min_playout_delay * PlayoutDelayLimits::kGranularityMs;
           header->extension.playout_delay.max_ms =
-              max_playout_delay * kPlayoutDelayGranularityMs;
+              max_playout_delay * PlayoutDelayLimits::kGranularityMs;
           break;
         }
         case kRtpExtensionNone:

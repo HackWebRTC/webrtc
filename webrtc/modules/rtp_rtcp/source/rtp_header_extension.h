@@ -21,23 +21,6 @@
 
 namespace webrtc {
 
-const uint16_t kRtpOneByteHeaderExtensionId = 0xBEDE;
-
-const size_t kRtpOneByteHeaderLength = 4;
-const size_t kTransmissionTimeOffsetLength = 4;
-const size_t kAudioLevelLength = 2;
-const size_t kAbsoluteSendTimeLength = 4;
-const size_t kVideoRotationLength = 2;
-const size_t kTransportSequenceNumberLength = 3;
-const size_t kPlayoutDelayLength = 4;
-
-// Playout delay in milliseconds. A playout delay limit (min or max)
-// has 12 bits allocated. This allows a range of 0-4095 values which translates
-// to a range of 0-40950 in milliseconds.
-const int kPlayoutDelayGranularityMs = 10;
-// Maximum playout delay value in milliseconds.
-const int kPlayoutDelayMaxMs = 40950;
-
 class RtpHeaderExtensionMap {
  public:
   static constexpr RTPExtensionType kInvalidType = kRtpExtensionNone;
