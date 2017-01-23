@@ -182,15 +182,41 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
   return kInsert;
 }
 
-void H264SpsPpsTracker::InsertSpsPps(const std::vector<uint8_t>& sps,
-                                     const std::vector<uint8_t>& pps) {
-  rtc::Optional<SpsParser::SpsState> parsed_sps =
-      SpsParser::ParseSps(sps.data(), sps.size());
-  rtc::Optional<PpsParser::PpsState> parsed_pps =
-      PpsParser::ParsePps(pps.data(), pps.size());
+void H264SpsPpsTracker::InsertSpsPpsNalus(const std::vector<uint8_t>& sps,
+                                          const std::vector<uint8_t>& pps) {
+  constexpr size_t kNaluHeaderOffset = 1;
+  if (sps.size() < kNaluHeaderOffset) {
+    LOG(LS_WARNING) << "SPS size  " << sps.size() << " is smaller than "
+                    << kNaluHeaderOffset;
+    return;
+  }
+  if ((sps[0] & 0x1f) != H264::NaluType::kSps) {
+    LOG(LS_WARNING) << "SPS Nalu header missing";
+    return;
+  }
+  if (pps.size() < kNaluHeaderOffset) {
+    LOG(LS_WARNING) << "PPS size  " << pps.size() << " is smaller than "
+                    << kNaluHeaderOffset;
+    return;
+  }
+  if ((pps[0] & 0x1f) != H264::NaluType::kPps) {
+    LOG(LS_WARNING) << "SPS Nalu header missing";
+    return;
+  }
+  rtc::Optional<SpsParser::SpsState> parsed_sps = SpsParser::ParseSps(
+      sps.data() + kNaluHeaderOffset, sps.size() - kNaluHeaderOffset);
+  rtc::Optional<PpsParser::PpsState> parsed_pps = PpsParser::ParsePps(
+      pps.data() + kNaluHeaderOffset, pps.size() - kNaluHeaderOffset);
+
+  if (!parsed_sps) {
+    LOG(LS_WARNING) << "Failed to parse SPS.";
+  }
+
+  if (!parsed_pps) {
+    LOG(LS_WARNING) << "Failed to parse PPS.";
+  }
 
   if (!parsed_pps || !parsed_sps) {
-    LOG(LS_WARNING) << "Failed to parse SPS or PPS parameters.";
     return;
   }
 
@@ -208,6 +234,10 @@ void H264SpsPpsTracker::InsertSpsPps(const std::vector<uint8_t>& sps,
   memcpy(pps_data, pps.data(), pps_info.size);
   pps_info.data.reset(pps_data);
   pps_data_[parsed_pps->id] = std::move(pps_info);
+
+  LOG(LS_INFO) << "Inserted SPS id " << parsed_sps->id << " and PPS id "
+               << parsed_pps->id << " (referencing SPS " << parsed_pps->sps_id
+               << ")";
 }
 
 }  // namespace video_coding
