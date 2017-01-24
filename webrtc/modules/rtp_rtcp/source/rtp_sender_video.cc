@@ -198,11 +198,13 @@ void RTPSenderVideo::SendVideoPacketWithFlexfec(
     std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
         flexfec_sender_->GetFecPackets();
     for (auto& fec_packet : fec_packets) {
+      size_t packet_length = fec_packet->size();
       uint32_t timestamp = fec_packet->Timestamp();
       uint16_t seq_num = fec_packet->SequenceNumber();
       if (rtp_sender_->SendToNetwork(std::move(fec_packet), kDontRetransmit,
                                      RtpPacketSender::kLowPriority)) {
-        // TODO(brandtr): Wire up stats here.
+        rtc::CritScope cs(&stats_crit_);
+        fec_bitrate_.Update(packet_length, clock_->TimeInMilliseconds());
         TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                              "Video::PacketFlexfec", "timestamp", timestamp,
                              "seqnum", seq_num);

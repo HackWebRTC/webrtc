@@ -891,6 +891,52 @@ TEST_F(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   EXPECT_EQ(kFlexfecSsrc, flexfec_packet.Ssrc());
 }
 
+TEST_F(RtpSenderTest, FecOverheadRate) {
+  constexpr int kMediaPayloadType = 127;
+  constexpr int kFlexfecPayloadType = 118;
+  constexpr uint32_t kMediaSsrc = 1234;
+  constexpr uint32_t kFlexfecSsrc = 5678;
+  const std::vector<RtpExtension> kNoRtpExtensions;
+  FlexfecSender flexfec_sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,
+                               kNoRtpExtensions, &fake_clock_);
+
+  // Reset |rtp_sender_| to use FlexFEC.
+  rtp_sender_.reset(new RTPSender(
+      false, &fake_clock_, &transport_, &mock_paced_sender_, &flexfec_sender,
+      &seq_num_allocator_, nullptr, nullptr, nullptr, nullptr,
+      &mock_rtc_event_log_, &send_packet_observer_,
+      &retransmission_rate_limiter_, nullptr));
+  rtp_sender_->SetSSRC(kMediaSsrc);
+  rtp_sender_->SetSequenceNumber(kSeqNum);
+  rtp_sender_->SetSendPayloadType(kMediaPayloadType);
+
+  // Parameters selected to generate a single FEC packet per media packet.
+  FecProtectionParams params;
+  params.fec_rate = 15;
+  params.max_fec_frames = 1;
+  params.fec_mask_type = kFecMaskRandom;
+  rtp_sender_->SetFecParameters(params, params);
+
+  constexpr size_t kNumMediaPackets = 10;
+  constexpr size_t kNumFecPackets = kNumMediaPackets;
+  constexpr int64_t kTimeBetweenPacketsMs = 10;
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(_, _, _, _, _, false))
+      .Times(kNumMediaPackets + kNumFecPackets);
+  for (size_t i = 0; i < kNumMediaPackets; ++i) {
+    SendGenericPayload();
+    fake_clock_.AdvanceTimeMilliseconds(kTimeBetweenPacketsMs);
+  }
+  constexpr size_t kRtpHeaderLength = 12;
+  constexpr size_t kFlexfecHeaderLength = 20;
+  constexpr size_t kGenericCodecHeaderLength = 1;
+  constexpr size_t kPayloadLength = sizeof(kPayloadData);
+  constexpr size_t kPacketLength = kRtpHeaderLength + kFlexfecHeaderLength +
+                                   kGenericCodecHeaderLength + kPayloadLength;
+  EXPECT_NEAR(kNumFecPackets * kPacketLength * 8 /
+                  (kNumFecPackets * kTimeBetweenPacketsMs / 1000.0f),
+              rtp_sender_->FecOverheadRate(), 500);
+}
+
 TEST_F(RtpSenderTest, FrameCountCallbacks) {
   class TestCallback : public FrameCountObserver {
    public:
