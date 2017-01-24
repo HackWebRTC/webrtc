@@ -212,13 +212,11 @@ VideoReceiveStream::VideoReceiveStream(
               UseSendSideBwe(config_)),
           &transport_adapter_,
           call_stats_->rtcp_rtt_stats(),
-          congestion_controller_->pacer(),
           packet_router,
           remb,
           &config_,
           &stats_proxy_,
           process_thread_,
-          congestion_controller_->GetRetransmissionRateLimiter(),
           this,  // NackSender
           this,  // KeyFrameRequestSender
           this,  // OnCompleteFrameCallback

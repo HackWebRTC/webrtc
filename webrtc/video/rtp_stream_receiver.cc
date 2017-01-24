@@ -51,9 +51,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
     RtcpRttStats* rtt_stats,
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
     RemoteBitrateEstimator* remote_bitrate_estimator,
-    RtpPacketSender* paced_sender,
-    TransportSequenceNumberAllocator* transport_sequence_number_allocator,
-    RateLimiter* retransmission_rate_limiter) {
+    TransportSequenceNumberAllocator* transport_sequence_number_allocator) {
   RtpRtcp::Configuration configuration;
   configuration.audio = false;
   configuration.receiver_only = true;
@@ -63,7 +61,6 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.rtt_stats = rtt_stats;
   configuration.rtcp_packet_type_counter_observer =
       rtcp_packet_type_counter_observer;
-  configuration.paced_sender = paced_sender;
   configuration.transport_sequence_number_allocator =
       transport_sequence_number_allocator;
   configuration.send_bitrate_observer = nullptr;
@@ -72,7 +69,6 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.send_packet_observer = nullptr;
   configuration.bandwidth_callback = nullptr;
   configuration.transport_feedback_callback = nullptr;
-  configuration.retransmission_rate_limiter = retransmission_rate_limiter;
 
   std::unique_ptr<RtpRtcp> rtp_rtcp(RtpRtcp::CreateRtpRtcp(configuration));
   rtp_rtcp->SetSendingStatus(false);
@@ -89,13 +85,11 @@ RtpStreamReceiver::RtpStreamReceiver(
     RemoteBitrateEstimator* remote_bitrate_estimator,
     Transport* transport,
     RtcpRttStats* rtt_stats,
-    PacedSender* paced_sender,
     PacketRouter* packet_router,
     VieRemb* remb,
     const VideoReceiveStream::Config* config,
     ReceiveStatisticsProxy* receive_stats_proxy,
     ProcessThread* process_thread,
-    RateLimiter* retransmission_rate_limiter,
     NackSender* nack_sender,
     KeyFrameRequestSender* keyframe_request_sender,
     video_coding::OnCompleteFrameCallback* complete_frame_callback,
@@ -123,9 +117,7 @@ RtpStreamReceiver::RtpStreamReceiver(
                                     rtt_stats,
                                     receive_stats_proxy,
                                     remote_bitrate_estimator_,
-                                    paced_sender,
-                                    packet_router,
-                                    retransmission_rate_limiter)),
+                                    packet_router)),
       complete_frame_callback_(complete_frame_callback),
       keyframe_request_sender_(keyframe_request_sender),
       timing_(timing) {
