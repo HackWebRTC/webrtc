@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if HAVE_OPENSSL_SSL_H
-
 #include "webrtc/base/openssladapter.h"
 
 #if defined(WEBRTC_POSIX)
@@ -965,5 +963,3 @@ OpenSSLAdapter::SetupSSLContext() {
 }
 
 } // namespace rtc
-
-#endif  // HAVE_OPENSSL_SSL_H

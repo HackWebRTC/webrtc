@@ -228,10 +228,9 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // SS_OPENING but IsTlsConnected should return true.
   virtual bool IsTlsConnected() = 0;
 
-  // Capabilities testing
-  static bool HaveDtls();
-  static bool HaveDtlsSrtp();
-  static bool HaveExporter();
+  // Capabilities testing.
+  // Used to have "DTLS supported", "DTLS-SRTP supported" etc. methods, but now
+  // that's assumed.
   static bool IsBoringSsl();
 
   // Returns true iff the supplied cipher is deemed to be strong.

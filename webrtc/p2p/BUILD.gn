@@ -79,7 +79,7 @@ rtc_static_library("rtc_p2p") {
     "client/socketmonitor.h",
   ]
 
-  defines = [ "FEATURE_ENABLE_SSL" ]
+  defines = []
 
   deps = [
     "../base:rtc_base",

@@ -370,8 +370,6 @@ class SSLAdapterTestDTLS_ECDSA : public SSLAdapterTestBase {
       : SSLAdapterTestBase(rtc::SSL_MODE_DTLS, rtc::KeyParams::ECDSA()) {}
 };
 
-#if SSL_USE_OPENSSL
-
 // Basic tests: TLS
 
 // Test that handshake works, using RSA
@@ -419,5 +417,3 @@ TEST_F(SSLAdapterTestDTLS_ECDSA, TestDTLSTransfer) {
   TestHandshake(true);
   TestTransfer("Hello, world!");
 }
-
-#endif  // SSL_USE_OPENSSL

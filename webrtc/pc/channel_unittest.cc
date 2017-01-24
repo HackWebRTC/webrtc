@@ -25,12 +25,6 @@
 #include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/channel.h"
 
-#define MAYBE_SKIP_TEST(feature)                    \
-  if (!(rtc::SSLStreamAdapter::feature())) {  \
-    LOG(LS_INFO) << "Feature disabled... skipping"; \
-    return;                                         \
-  }
-
 using cricket::CA_OFFER;
 using cricket::CA_PRANSWER;
 using cricket::CA_ANSWER;
@@ -2243,32 +2237,26 @@ TEST_F(VoiceChannelSingleThreadTest, SendSrtcpMux) {
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToSrtp) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, 0);
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtp) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, DTLS);
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtpGcmBoth) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS | GCM_CIPHER, DTLS | GCM_CIPHER);
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtpGcmOne) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS | GCM_CIPHER, DTLS);
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtpGcmTwo) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, DTLS | GCM_CIPHER);
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtpRtcpMux) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS | RTCP_MUX, DTLS | RTCP_MUX);
 }
 
@@ -2576,32 +2564,26 @@ TEST_F(VoiceChannelDoubleThreadTest, SendSrtcpMux) {
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToSrtp) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, 0);
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtp) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, DTLS);
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtpGcmBoth) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS | GCM_CIPHER, DTLS | GCM_CIPHER);
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtpGcmOne) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS | GCM_CIPHER, DTLS);
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtpGcmTwo) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, DTLS | GCM_CIPHER);
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtpRtcpMux) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS | RTCP_MUX, DTLS | RTCP_MUX);
 }
 
@@ -2901,17 +2883,14 @@ TEST_F(VideoChannelSingleThreadTest, SendSrtpToRtp) {
 }
 
 TEST_F(VideoChannelSingleThreadTest, SendDtlsSrtpToSrtp) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, 0);
 }
 
 TEST_F(VideoChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtp) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, DTLS);
 }
 
 TEST_F(VideoChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtpRtcpMux) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS | RTCP_MUX, DTLS | RTCP_MUX);
 }
 
@@ -3133,17 +3112,14 @@ TEST_F(VideoChannelDoubleThreadTest, SendSrtpToRtp) {
 }
 
 TEST_F(VideoChannelDoubleThreadTest, SendDtlsSrtpToSrtp) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, 0);
 }
 
 TEST_F(VideoChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtp) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS, DTLS);
 }
 
 TEST_F(VideoChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtpRtcpMux) {
-  MAYBE_SKIP_TEST(HaveDtlsSrtp);
   Base::SendSrtpToSrtp(DTLS | RTCP_MUX, DTLS | RTCP_MUX);
 }
 

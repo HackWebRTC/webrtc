@@ -318,12 +318,6 @@ static const char kDtlsSdesFallbackSdp[] =
     "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
     "dummy_session_params\r\n";
 
-#define MAYBE_SKIP_TEST(feature)                    \
-  if (!(feature())) {                               \
-    LOG(LS_INFO) << "Feature disabled... skipping"; \
-    return;                                         \
-  }
-
 using ::testing::Exactly;
 using cricket::StreamParams;
 using webrtc::AudioSourceInterface;
@@ -2069,7 +2063,6 @@ TEST_F(PeerConnectionInterfaceTest, TestRejectDataChannelInAnswer) {
 // FireFox, use it as a remote session description, generate an answer and use
 // the answer as a local description.
 TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
-  MAYBE_SKIP_TEST(rtc::SSLStreamAdapter::HaveDtlsSrtp);
   FakeConstraints constraints;
   constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                            true);
