@@ -914,20 +914,6 @@ class FakeMediaEngine :
   }
 };
 
-// CompositeMediaEngine with FakeVoiceEngine to expose SetAudioCodecs to
-// establish a media connectionwith minimum set of audio codes required
-template <class VIDEO>
-class CompositeMediaEngineWithFakeVoiceEngine :
-    public CompositeMediaEngine<FakeVoiceEngine, VIDEO> {
- public:
-  CompositeMediaEngineWithFakeVoiceEngine() {}
-  virtual ~CompositeMediaEngineWithFakeVoiceEngine() {}
-
-  virtual void SetAudioCodecs(const std::vector<AudioCodec>& codecs) {
-    CompositeMediaEngine<FakeVoiceEngine, VIDEO>::voice_.SetCodecs(codecs);
-  }
-};
-
 // Have to come afterwards due to declaration order
 inline FakeVoiceMediaChannel::~FakeVoiceMediaChannel() {
   if (engine_) {
