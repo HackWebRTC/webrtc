@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../../build/webrtc.gni")
+import("../../webrtc.gni")
 
 rtc_static_library("remote_bitrate_estimator") {
   # TODO(mbonadei): Remove (bugs.webrtc.org/6828)
