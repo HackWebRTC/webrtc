@@ -32,7 +32,7 @@ ubsan_vptr_blacklist_path =
     rebase_path("//tools-webrtc/ubsan/vptr_blacklist.txt", root_build_dir)
 
 # Android lint suppressions file
-lint_suppressions_file = "//webrtc/build/android/suppressions.xml"
+lint_suppressions_file = "//tools-webrtc/android/suppressions.xml"
 
 # For Chromium, Android 32-bit non-component, non-clang builds hit a 4GiB size
 # limit, making them requiring symbol_level=2. WebRTC doesn't hit that problem
