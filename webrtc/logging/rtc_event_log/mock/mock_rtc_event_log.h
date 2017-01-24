@@ -58,6 +58,8 @@ class MockRtcEventLog : public RtcEventLog {
                void(int32_t bitrate,
                     uint8_t fraction_loss,
                     int32_t total_packets));
+  MOCK_METHOD1(LogAudioNetworkAdaptation,
+               void(const AudioNetworkAdaptor::EncoderRuntimeConfig& config));
 };
 
 }  // namespace webrtc

@@ -42,6 +42,7 @@ rtc_static_library("rtc_event_log_impl") {
     ":rtc_event_log_api",
     "..:webrtc_common",
     "../call:call_interfaces",
+    "../modules/audio_coding:audio_network_adaptor",
     "../modules/rtp_rtcp",
   ]
 
