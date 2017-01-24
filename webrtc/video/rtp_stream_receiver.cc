@@ -213,7 +213,9 @@ RtpStreamReceiver::~RtpStreamReceiver() {
 
   packet_router_->RemoveRtpModule(rtp_rtcp_.get());
   rtp_rtcp_->SetREMBStatus(false);
-  remb_->RemoveReceiveChannel(rtp_rtcp_.get());
+  if (config_.rtp.remb) {
+    remb_->RemoveReceiveChannel(rtp_rtcp_.get());
+  }
   UpdateHistograms();
 }
 
@@ -249,7 +251,6 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
     const uint8_t* payload_data,
     size_t payload_size,
     const WebRtcRTPHeader* rtp_header) {
-  RTC_DCHECK(video_receiver_);
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
   rtp_header_with_ntp.ntp_time_ms =
       ntp_estimator_.Estimate(rtp_header->header.timestamp);
@@ -284,6 +285,7 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
 
     packet_buffer_->InsertPacket(&packet);
   } else {
+    RTC_DCHECK(video_receiver_);
     if (video_receiver_->IncomingPacket(payload_data, payload_size,
                                         rtp_header_with_ntp) != 0) {
       // Check this...
@@ -664,7 +666,7 @@ void RtpStreamReceiver::InsertSpsPpsIntoTracker(uint8_t payload_type) {
     return;
 
   LOG(LS_INFO) << "Found out of band supplied codec parameters for"
-               << " payload type: " << payload_type;
+               << " payload type: " << static_cast<int>(payload_type);
 
   H264SpropParameterSets sprop_decoder;
   auto sprop_base64_it =
@@ -673,7 +675,7 @@ void RtpStreamReceiver::InsertSpsPpsIntoTracker(uint8_t payload_type) {
   if (sprop_base64_it == codec_params_it->second.end())
     return;
 
-  if (!sprop_decoder.DecodeSprop(sprop_base64_it->second))
+  if (!sprop_decoder.DecodeSprop(sprop_base64_it->second.c_str()))
     return;
 
   tracker_.InsertSpsPpsNalus(sprop_decoder.sps_nalu(),
