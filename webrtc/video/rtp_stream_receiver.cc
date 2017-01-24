@@ -684,8 +684,7 @@ void RtpStreamReceiver::InsertSpsPpsIntoTracker(uint8_t payload_type) {
   if (!sprop_decoder.DecodeSprop(sprop_base64_it->second))
     return;
 
-  tracker_.InsertSpsPpsNalus(sprop_decoder.sps_nalu(),
-                             sprop_decoder.pps_nalu());
+  tracker_.InsertSpsPps(sprop_decoder.sps_nalu(), sprop_decoder.pps_nalu());
 }
 
 }  // namespace webrtc
