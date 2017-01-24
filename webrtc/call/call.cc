@@ -126,10 +126,6 @@ class Call : public webrtc::Call,
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
 
-  // TODO(minyue): remove this when old OnNetworkChanged is deprecated. See
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=6796
-  using CongestionController::Observer::OnNetworkChanged;
-
   // Implements BitrateObserver.
   void OnNetworkChanged(uint32_t bitrate_bps,
                         uint8_t fraction_loss,
