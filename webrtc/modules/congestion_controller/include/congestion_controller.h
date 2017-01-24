@@ -12,9 +12,10 @@
 #define WEBRTC_MODULES_CONGESTION_CONTROLLER_INCLUDE_CONGESTION_CONTROLLER_H_
 
 #include <memory>
+#include <vector>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/deprecation.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/congestion_controller/transport_feedback_adapter.h"
 #include "webrtc/modules/include/module.h"
@@ -117,6 +118,44 @@ class CongestionController : public CallStatsObserver, public Module {
   void Process() override;
 
  private:
+  class WrappingBitrateEstimator : public RemoteBitrateEstimator {
+   public:
+    WrappingBitrateEstimator(RemoteBitrateObserver* observer, Clock* clock);
+
+    virtual ~WrappingBitrateEstimator() {}
+
+    void IncomingPacket(int64_t arrival_time_ms,
+                        size_t payload_size,
+                        const RTPHeader& header) override;
+
+    void Process() override;
+
+    int64_t TimeUntilNextProcess() override;
+
+    void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
+
+    void RemoveStream(unsigned int ssrc) override;
+
+    bool LatestEstimate(std::vector<unsigned int>* ssrcs,
+                        unsigned int* bitrate_bps) const override;
+
+    void SetMinBitrate(int min_bitrate_bps) override;
+
+   private:
+    void PickEstimatorFromHeader(const RTPHeader& header)
+        EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+    void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+    RemoteBitrateObserver* observer_;
+    Clock* const clock_;
+    rtc::CriticalSection crit_sect_;
+    std::unique_ptr<RemoteBitrateEstimator> rbe_;
+    bool using_absolute_send_time_;
+    uint32_t packets_since_absolute_send_time_;
+    int min_bitrate_bps_;
+
+    RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WrappingBitrateEstimator);
+  };
+
   void MaybeTriggerOnNetworkChanged();
 
   bool IsSendQueueFull() const;
@@ -128,10 +167,10 @@ class CongestionController : public CallStatsObserver, public Module {
   Observer* const observer_;
   PacketRouter* const packet_router_;
   const std::unique_ptr<PacedSender> pacer_;
-  const std::unique_ptr<RemoteBitrateEstimator> remote_bitrate_estimator_;
   const std::unique_ptr<BitrateController> bitrate_controller_;
   const std::unique_ptr<ProbeController> probe_controller_;
   const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
+  WrappingBitrateEstimator remote_bitrate_estimator_;
   RemoteEstimatorProxy remote_estimator_proxy_;
   TransportFeedbackAdapter transport_feedback_adapter_;
   int min_bitrate_bps_;
