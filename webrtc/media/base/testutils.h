@@ -105,20 +105,6 @@ class VideoCapturerListener
   bool resolution_changed_;
 };
 
-class ScreencastEventCatcher : public sigslot::has_slots<> {
- public:
-  ScreencastEventCatcher() : ssrc_(0), ev_(rtc::WE_RESIZE) { }
-  uint32_t ssrc() const { return ssrc_; }
-  rtc::WindowEvent event() const { return ev_; }
-  void OnEvent(uint32_t ssrc, rtc::WindowEvent ev) {
-    ssrc_ = ssrc;
-    ev_ = ev;
-  }
- private:
-  uint32_t ssrc_;
-  rtc::WindowEvent ev_;
-};
-
 class VideoMediaErrorCatcher : public sigslot::has_slots<> {
  public:
   VideoMediaErrorCatcher() : ssrc_(0), error_(VideoMediaChannel::ERROR_NONE) { }
