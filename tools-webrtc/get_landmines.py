@@ -16,7 +16,7 @@ import os
 import sys
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
-checkout_root = os.path.abspath(os.path.join(script_dir, os.pardir, os.pardir))
+checkout_root = os.path.abspath(os.path.join(script_dir, os.pardir))
 sys.path.insert(0, os.path.join(checkout_root, 'build'))
 import landmine_utils
 
