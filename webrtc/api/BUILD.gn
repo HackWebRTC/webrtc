@@ -74,6 +74,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "umametrics.h",
     "videosourceproxy.h",
     "videotracksource.h",
+    "webrtcsdp.h",
   ]
 
   if (!build_with_chromium && is_clang) {
