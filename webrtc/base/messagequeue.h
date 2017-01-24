@@ -94,19 +94,6 @@ class TypedMessageData : public MessageData {
   T data_;
 };
 
-// Like TypedMessageData, but for pointers that require a delete.
-template <class T>
-class ScopedMessageData : public MessageData {
- public:
-  explicit ScopedMessageData(T* data) : data_(data) { }
-  const std::unique_ptr<T>& data() const { return data_; }
-  std::unique_ptr<T>& data() { return data_; }
-
- private:
-  std::unique_ptr<T> data_;
-};
-
-// Like ScopedMessageData, but for reference counted pointers.
 template <class T>
 class ScopedRefMessageData : public MessageData {
  public:
