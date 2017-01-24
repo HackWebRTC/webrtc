@@ -1455,6 +1455,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_DCHECK(!stream_);
     if (webrtc::field_trial::FindFullName("WebRTC-Audio-SendSideBwe") ==
         "Enabled") {
+      config_.min_bitrate_bps = kOpusMinBitrateBps;
+      config_.max_bitrate_bps = kOpusBitrateFbBps;
       // TODO(mflodman): Keep testing this and set proper values.
       // Note: This is an early experiment currently only supported by Opus.
       if (webrtc::field_trial::FindFullName(
@@ -1487,9 +1489,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
           config_.min_bitrate_bps = kOpusMinBitrateBps + min_overhead_bps;
           config_.max_bitrate_bps = kOpusBitrateFbBps + max_overhead_bps;
         }
-      } else {
-        config_.min_bitrate_bps = kOpusMinBitrateBps;
-        config_.max_bitrate_bps = kOpusBitrateFbBps;
       }
     }
     stream_ = call_->CreateAudioSendStream(config_);
