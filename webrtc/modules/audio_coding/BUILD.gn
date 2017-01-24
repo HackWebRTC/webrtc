@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../../build/webrtc.gni")
+import("../../webrtc.gni")
 import("audio_coding.gni")
 import("//build/config/arm.gni")
 import("//third_party/protobuf/proto_library.gni")

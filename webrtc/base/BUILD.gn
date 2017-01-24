@@ -8,7 +8,7 @@
 
 import("//build/config/crypto.gni")
 import("//build/config/ui.gni")
-import("../build/webrtc.gni")
+import("../webrtc.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
