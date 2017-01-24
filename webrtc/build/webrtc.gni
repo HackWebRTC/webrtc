@@ -178,7 +178,7 @@ rtc_desktop_capture_supported = is_win || is_mac || is_linux
 # chromium.
 # We need absolute paths for all configs in templates as they are shared in
 # different subdirectories.
-webrtc_root = get_path_info(".", "abspath")
+webrtc_root = get_path_info("../", "abspath")
 
 # Global configuration that should be applied to all WebRTC targets.
 # You normally shouldn't need to include this in your target as it's

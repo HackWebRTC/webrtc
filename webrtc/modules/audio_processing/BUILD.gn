@@ -8,7 +8,7 @@
 
 import("//build/config/arm.gni")
 import("//third_party/protobuf/proto_library.gni")
-import("../../webrtc.gni")
+import("../../build/webrtc.gni")
 
 declare_args() {
   # Disables the usual mode where we trust the reported system delay

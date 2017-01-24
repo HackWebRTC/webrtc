@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("webrtc/webrtc.gni")
+import("webrtc/build/webrtc.gni")
 
 group("default") {
   testonly = true

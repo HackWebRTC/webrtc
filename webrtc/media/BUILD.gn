@@ -7,7 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("//build/config/linux/pkg_config.gni")
-import("../webrtc.gni")
+import("../build/webrtc.gni")
 
 group("media") {
   public_deps = [

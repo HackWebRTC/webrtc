@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../../webrtc.gni")
+import("../../build/webrtc.gni")
 
 # Note this target is missing an implementation for the video capture.
 # Targets must link with either 'video_capture' or

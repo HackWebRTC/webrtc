@@ -10,7 +10,7 @@ if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
 }
-import("../webrtc.gni")
+import("../build/webrtc.gni")
 
 rtc_static_library("system_wrappers") {
   sources = [
