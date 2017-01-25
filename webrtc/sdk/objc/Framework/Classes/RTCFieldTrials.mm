@@ -17,6 +17,7 @@
 #include "webrtc/system_wrappers/include/field_trial_default.h"
 
 NSString * const kRTCFieldTrialAudioSendSideBweKey = @"WebRTC-Audio-SendSideBwe";
+NSString * const kRTCFieldTrialSendSideBweWithOverheadKey = @"WebRTC-SendSideBwe-WithOverhead";
 NSString * const kRTCFieldTrialFlexFec03Key = @"WebRTC-FlexFEC-03";
 NSString * const kRTCFieldTrialImprovedBitrateEstimateKey = @"WebRTC-ImprovedBitrateEstimate";
 NSString * const kRTCFieldTrialMedianSlopeFilterKey = @"WebRTC-BweMedianSlopeFilter";
