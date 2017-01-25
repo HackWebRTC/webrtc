@@ -285,6 +285,17 @@ bool VideoReceiveStream::OnRecoveredPacket(const uint8_t* packet,
   return rtp_stream_receiver_.OnRecoveredPacket(packet, length);
 }
 
+void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
+                                        int audio_channel_id) {
+  if (voice_engine && audio_channel_id != -1) {
+    VoEVideoSync* voe_sync_interface = VoEVideoSync::GetInterface(voice_engine);
+    rtp_stream_sync_.ConfigureSync(audio_channel_id, voe_sync_interface);
+    voe_sync_interface->Release();
+  } else {
+    rtp_stream_sync_.ConfigureSync(-1, nullptr);
+  }
+}
+
 void VideoReceiveStream::Start() {
   if (decode_thread_.IsRunning())
     return;
@@ -361,19 +372,26 @@ void VideoReceiveStream::Stop() {
   transport_adapter_.Disable();
 }
 
-void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
-                                        int audio_channel_id) {
-  if (voice_engine && audio_channel_id != -1) {
-    VoEVideoSync* voe_sync_interface = VoEVideoSync::GetInterface(voice_engine);
-    rtp_stream_sync_.ConfigureSync(audio_channel_id, voe_sync_interface);
-    voe_sync_interface->Release();
-  } else {
-    rtp_stream_sync_.ConfigureSync(-1, nullptr);
-  }
-}
-
 VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
   return stats_proxy_.GetStats();
+}
+
+void VideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
+                                                     size_t byte_limit) {
+  {
+    rtc::CritScope lock(&ivf_writer_lock_);
+    if (file == rtc::kInvalidPlatformFileValue) {
+      ivf_writer_.reset();
+    } else {
+      ivf_writer_ = IvfFileWriter::Wrap(rtc::File(file), byte_limit);
+    }
+  }
+
+  if (file != rtc::kInvalidPlatformFileValue) {
+    // Make a keyframe appear as early as possible in the logs, to give actually
+    // decodable output.
+    RequestKeyFrame();
+  }
 }
 
 // TODO(tommi): This method grabs a lock 6 times.
@@ -401,13 +419,6 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
   stats_proxy_.OnRenderedFrame(video_frame);
 }
 
-void VideoReceiveStream::OnCompleteFrame(
-    std::unique_ptr<video_coding::FrameObject> frame) {
-  int last_continuous_pid = frame_buffer_->InsertFrame(std::move(frame));
-  if (last_continuous_pid != -1)
-    rtp_stream_receiver_.FrameContinuous(last_continuous_pid);
-}
-
 // TODO(asapersson): Consider moving callback from video_encoder.h or
 // creating a different callback.
 EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
@@ -431,6 +442,22 @@ EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
   }
 
   return Result(Result::OK, encoded_image._timeStamp);
+}
+
+void VideoReceiveStream::SendNack(
+    const std::vector<uint16_t>& sequence_numbers) {
+  rtp_stream_receiver_.RequestPacketRetransmit(sequence_numbers);
+}
+
+void VideoReceiveStream::RequestKeyFrame() {
+  rtp_stream_receiver_.RequestKeyFrame();
+}
+
+void VideoReceiveStream::OnCompleteFrame(
+    std::unique_ptr<video_coding::FrameObject> frame) {
+  int last_continuous_pid = frame_buffer_->InsertFrame(std::move(frame));
+  if (last_continuous_pid != -1)
+    rtp_stream_receiver_.FrameContinuous(last_continuous_pid);
 }
 
 bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
@@ -460,33 +487,6 @@ void VideoReceiveStream::Decode() {
   } else {
     video_receiver_.Decode(kMaxDecodeWaitTimeMs);
   }
-}
-
-void VideoReceiveStream::SendNack(
-    const std::vector<uint16_t>& sequence_numbers) {
-  rtp_stream_receiver_.RequestPacketRetransmit(sequence_numbers);
-}
-
-void VideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
-                                                     size_t byte_limit) {
-  {
-    rtc::CritScope lock(&ivf_writer_lock_);
-    if (file == rtc::kInvalidPlatformFileValue) {
-      ivf_writer_.reset();
-    } else {
-      ivf_writer_ = IvfFileWriter::Wrap(rtc::File(file), byte_limit);
-    }
-  }
-
-  if (file != rtc::kInvalidPlatformFileValue) {
-    // Make a keyframe appear as early as possible in the logs, to give actually
-    // decodable output.
-    RequestKeyFrame();
-  }
-}
-
-void VideoReceiveStream::RequestKeyFrame() {
-  rtp_stream_receiver_.RequestKeyFrame();
 }
 
 }  // namespace internal

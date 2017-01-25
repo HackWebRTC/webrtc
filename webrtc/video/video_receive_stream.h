@@ -58,6 +58,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      VieRemb* remb);
   ~VideoReceiveStream() override;
 
+  const Config& config() const { return config_; }
+
   void SignalNetworkState(NetworkState state);
   bool DeliverRtcp(const uint8_t* packet, size_t length);
   bool DeliverRtp(const uint8_t* packet,
@@ -66,34 +68,13 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   bool OnRecoveredPacket(const uint8_t* packet, size_t length);
 
-  // webrtc::VideoReceiveStream implementation.
+  void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id);
+
+  // Implements webrtc::VideoReceiveStream.
   void Start() override;
   void Stop() override;
 
   webrtc::VideoReceiveStream::Stats GetStats() const override;
-
-  // Overrides rtc::VideoSinkInterface<VideoFrame>.
-  void OnFrame(const VideoFrame& video_frame) override;
-
-  // Implements video_coding::OnCompleteFrameCallback.
-  void OnCompleteFrame(
-      std::unique_ptr<video_coding::FrameObject> frame) override;
-
-  // Overrides EncodedImageCallback.
-  EncodedImageCallback::Result OnEncodedImage(
-      const EncodedImage& encoded_image,
-      const CodecSpecificInfo* codec_specific_info,
-      const RTPFragmentationHeader* fragmentation) override;
-
-  const Config& config() const { return config_; }
-
-  void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id);
-
-  // Implements NackSender.
-  void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
-
-  // Implements KeyFrameRequestSender.
-  void RequestKeyFrame() override;
 
   // Takes ownership of the file, is responsible for closing it later.
   // Calling this method will close and finalize any current log.
@@ -102,6 +83,25 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // the log is closed and finalized. A |byte_limit| of 0 means no limit.
   void EnableEncodedFrameRecording(rtc::PlatformFile file,
                                    size_t byte_limit) override;
+
+  // Implements rtc::VideoSinkInterface<VideoFrame>.
+  void OnFrame(const VideoFrame& video_frame) override;
+
+  // Implements EncodedImageCallback.
+  EncodedImageCallback::Result OnEncodedImage(
+      const EncodedImage& encoded_image,
+      const CodecSpecificInfo* codec_specific_info,
+      const RTPFragmentationHeader* fragmentation) override;
+
+  // Implements NackSender.
+  void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
+
+  // Implements KeyFrameRequestSender.
+  void RequestKeyFrame() override;
+
+  // Implements video_coding::OnCompleteFrameCallback.
+  void OnCompleteFrame(
+      std::unique_ptr<video_coding::FrameObject> frame) override;
 
  private:
   static bool DecodeThreadFunction(void* ptr);
