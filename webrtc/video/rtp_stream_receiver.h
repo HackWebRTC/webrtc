@@ -82,9 +82,6 @@ class RtpStreamReceiver : public RtpData,
 
   bool AddReceiveCodec(const VideoCodec& video_codec,
                        const std::map<std::string, std::string>& codec_params);
-
-  bool AddReceiveCodec(const VideoCodec& video_codec);
-
   uint32_t GetRemoteSsrc() const;
   int GetCsrcs(uint32_t* csrcs) const;
 
@@ -144,6 +141,7 @@ class RtpStreamReceiver : public RtpData,
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
  private:
+  bool AddReceiveCodec(const VideoCodec& video_codec);
   bool ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
                      const RTPHeader& header,
