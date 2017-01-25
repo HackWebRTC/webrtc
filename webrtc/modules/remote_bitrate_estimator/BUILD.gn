@@ -185,4 +185,36 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
+
+  rtc_test("bwe_simulator") {
+    testonly = true
+
+    sources = [
+      "bwe_simulations.cc",
+    ]
+    deps = [
+      ":bwe_simulator_lib",
+      ":remote_bitrate_estimator",
+      "../..:webrtc_common",
+      "../../base:rtc_base_approved",
+      "../../test:test_common",
+      "../../test:test_main",
+      "../video_capture",
+      "//testing/gmock",
+      "//testing/gtest",
+      "//third_party/gflags",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    if (is_win) {
+      cflags = [
+        # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
+        "/wd4373",  # virtual function override.
+      ]
+    }
+  }
 }

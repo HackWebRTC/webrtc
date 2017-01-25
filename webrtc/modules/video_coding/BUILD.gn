@@ -310,6 +310,36 @@ if (rtc_include_tests) {
       "../../test:test_support",
     ]
   }
+
+  rtc_source_set("video_coding_modules_tests") {
+    testonly = true
+    sources = [
+      "codecs/test/videoprocessor_integrationtest.cc",
+      "codecs/vp8/test/vp8_impl_unittest.cc",
+    ]
+    deps = [
+      ":video_codecs_test_framework",
+      ":video_coding",
+      ":webrtc_h264",
+      ":webrtc_vp8",
+      ":webrtc_vp9",
+      "../..:webrtc_common",
+      "../../api:video_frame_api",
+      "../../base:rtc_base_approved",
+      "../../common_video:common_video",
+      "../../media:rtc_media_base",
+      "../../test:test_support",
+      "../../test:video_test_common",
+    ]
+    if (rtc_use_h264) {
+      defines = [ "WEBRTC_VIDEOPROCESSOR_H264_TESTS" ]
+    }
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   rtc_source_set("video_coding_unittests") {
     testonly = true
     sources = [
