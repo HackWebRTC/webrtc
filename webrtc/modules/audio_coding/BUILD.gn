@@ -1139,50 +1139,6 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("audio_coding_modules_tests") {
-    testonly = true
-    sources = [
-      "test/APITest.cc",
-      "test/Channel.cc",
-      "test/EncodeDecodeTest.cc",
-      "test/PCMFile.cc",
-      "test/PacketLossTest.cc",
-      "test/RTPFile.cc",
-      "test/TestAllCodecs.cc",
-      "test/TestRedFec.cc",
-      "test/TestStereo.cc",
-      "test/TestVADDTX.cc",
-      "test/Tester.cc",
-      "test/TwoWayCommunication.cc",
-      "test/iSACTest.cc",
-      "test/opus_test.cc",
-      "test/target_delay_unittest.cc",
-      "test/utility.cc",
-    ]
-    deps = [
-      ":audio_coding",
-      ":audio_format_conversion",
-      ":builtin_audio_decoder_factory",
-      ":pcm16b_c",
-      "../..:webrtc_common",
-      "../../base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
-      "../../test:fileutils",
-      "../../test:test_support",
-    ]
-    defines = audio_coding_defines
-    if (is_win) {
-      cflags = [
-        # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
-        "/wd4373",  # virtual function override.
-      ]
-    }
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-
   rtc_source_set("audio_coding_perf_tests") {
     testonly = true
     sources = [
