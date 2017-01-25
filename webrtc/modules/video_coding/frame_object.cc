@@ -121,6 +121,10 @@ int64_t RtpFrameObject::RenderTime() const {
   return _renderTimeMs;
 }
 
+bool RtpFrameObject::delayed_by_retransmission() const {
+  return times_nacked() > 0;
+}
+
 rtc::Optional<RTPVideoTypeHeader> RtpFrameObject::GetCodecHeader() const {
   rtc::CritScope lock(&packet_buffer_->crit_);
   VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num_);

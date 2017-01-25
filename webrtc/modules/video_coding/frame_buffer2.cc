@@ -118,18 +118,20 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
   rtc::CritScope lock(&crit_);
   if (next_frame_it != frames_.end()) {
     std::unique_ptr<FrameObject> frame = std::move(next_frame_it->second.frame);
-    int64_t received_time = frame->ReceivedTime();
-    uint32_t timestamp = frame->timestamp;
 
-    int64_t frame_delay;
-    if (inter_frame_delay_.CalculateDelay(timestamp, &frame_delay,
-                                          received_time)) {
-      jitter_estimator_->UpdateEstimate(frame_delay, frame->size());
+    if (!frame->delayed_by_retransmission()) {
+      int64_t frame_delay;
+
+      if (inter_frame_delay_.CalculateDelay(frame->timestamp, &frame_delay,
+                                            frame->ReceivedTime())) {
+        jitter_estimator_->UpdateEstimate(frame_delay, frame->size());
+      }
+
+      float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
+      timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
+      timing_->UpdateCurrentDelay(frame->RenderTime(),
+                                  clock_->TimeInMilliseconds());
     }
-    float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
-    timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
-    timing_->UpdateCurrentDelay(frame->RenderTime(),
-                                clock_->TimeInMilliseconds());
 
     UpdateJitterDelay();
 
