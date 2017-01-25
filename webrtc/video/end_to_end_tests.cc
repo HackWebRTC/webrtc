@@ -58,6 +58,16 @@
 
 namespace webrtc {
 
+// Disable for Asan due to timeout, see bugs.webrtc.org/7047 for
+// details.
+#if defined(ADDRESS_SANITIZER)
+#define MAYBE_ReceivesFlexfecAndSendsCorrespondingRtcp \
+  DISABLED_ReceivesFlexfecAndSendsCorrespondingRtcp
+#else
+#define MAYBE_ReceivesFlexfecAndSendsCorrespondingRtcp \
+  ReceivesFlexfecAndSendsCorrespondingRtcp
+#endif
+
 namespace {
 const char new_jb_enabled[] = "WebRTC-NewVideoJitterBuffer/Enabled/";
 const char new_jb_disabled[] = "WebRTC-NewVideoJitterBuffer/Disabled/";
@@ -824,7 +834,7 @@ TEST_P(EndToEndTest, ReceivesFlexfec) {
   RunBaseTest(&test);
 }
 
-TEST_P(EndToEndTest, ReceivesFlexfecAndSendsCorrespondingRtcp) {
+TEST_P(EndToEndTest, MAYBE_ReceivesFlexfecAndSendsCorrespondingRtcp) {
   FlexfecRenderObserver test(true);
   RunBaseTest(&test);
 }
