@@ -22,8 +22,8 @@ build_with_chromium = false
 
 # Use our own suppressions files.
 asan_suppressions_file = "//build/sanitizers/asan_suppressions.cc"
-lsan_suppressions_file = "//webrtc/build/sanitizers/lsan_suppressions_webrtc.cc"
-tsan_suppressions_file = "//webrtc/build/sanitizers/tsan_suppressions_webrtc.cc"
+lsan_suppressions_file = "//tools-webrtc/sanitizers/lsan_suppressions_webrtc.cc"
+tsan_suppressions_file = "//tools-webrtc/sanitizers/tsan_suppressions_webrtc.cc"
 msan_blacklist_path =
     rebase_path("//tools-webrtc/msan/blacklist.txt", root_build_dir)
 ubsan_blacklist_path =
