@@ -73,6 +73,9 @@ use_xcode_clang=true is_component_build=false"
   elif [[ ${build_type} == "framework" ]]; then
     GN_TARGET_NAME="rtc_sdk_framework_objc"
     GN_ARGS="${GN_ARGS} enable_dsyms=true enable_stripping=true"
+  else
+    echo "Build type \"${build_type}\" is not supported."
+    exit 1
   fi
 
   echo "Building WebRTC with args: ${GN_ARGS}"
