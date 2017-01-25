@@ -27,7 +27,6 @@
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/audiotrack.h"
 #include "webrtc/pc/mediasession.h"
 #include "webrtc/pc/mediastream.h"

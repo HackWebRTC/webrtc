@@ -24,7 +24,7 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/media/sctp/sctptransport.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/p2p/base/fakedtlstransport.h"
 
 namespace {
 static const int kDefaultTimeout = 10000;  // 10 seconds.

@@ -13,7 +13,8 @@
 #include "webrtc/base/fakesslidentity.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/network.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/p2p/base/fakedtlstransport.h"
+#include "webrtc/p2p/base/fakeicetransport.h"
 
 using cricket::JsepTransport;
 using cricket::TransportChannel;
@@ -34,15 +35,16 @@ class JsepTransportTest : public testing::Test, public sigslot::has_slots<> {
   JsepTransportTest()
       : transport_(new JsepTransport("test content name", nullptr)) {}
   bool SetupChannel() {
-    fake_ice_channel_.reset(new FakeIceTransport(transport_->mid(), 1));
-    fake_dtls_transport_.reset(new FakeDtlsTransport(fake_ice_channel_.get()));
+    fake_ice_transport_.reset(new FakeIceTransport(transport_->mid(), 1));
+    fake_dtls_transport_.reset(
+        new FakeDtlsTransport(fake_ice_transport_.get()));
     return transport_->AddChannel(fake_dtls_transport_.get(), 1);
   }
   void DestroyChannel() { transport_->RemoveChannel(1); }
 
  protected:
   std::unique_ptr<FakeDtlsTransport> fake_dtls_transport_;
-  std::unique_ptr<FakeIceTransport> fake_ice_channel_;
+  std::unique_ptr<FakeIceTransport> fake_ice_transport_;
   std::unique_ptr<JsepTransport> transport_;
 };
 
@@ -53,16 +55,16 @@ TEST_F(JsepTransportTest, TestChannelIceParameters) {
   ASSERT_TRUE(transport_->SetLocalTransportDescription(
       local_desc, cricket::CA_OFFER, NULL));
   EXPECT_TRUE(SetupChannel());
-  EXPECT_EQ(cricket::ICEMODE_FULL, fake_dtls_transport_->remote_ice_mode());
-  EXPECT_EQ(kIceUfrag1, fake_dtls_transport_->ice_ufrag());
-  EXPECT_EQ(kIcePwd1, fake_dtls_transport_->ice_pwd());
+  EXPECT_EQ(cricket::ICEMODE_FULL, fake_ice_transport_->remote_ice_mode());
+  EXPECT_EQ(kIceUfrag1, fake_ice_transport_->ice_ufrag());
+  EXPECT_EQ(kIcePwd1, fake_ice_transport_->ice_pwd());
 
   cricket::TransportDescription remote_desc(kIceUfrag1, kIcePwd1);
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(
       remote_desc, cricket::CA_ANSWER, NULL));
-  EXPECT_EQ(cricket::ICEMODE_FULL, fake_dtls_transport_->remote_ice_mode());
-  EXPECT_EQ(kIceUfrag1, fake_dtls_transport_->remote_ice_ufrag());
-  EXPECT_EQ(kIcePwd1, fake_dtls_transport_->remote_ice_pwd());
+  EXPECT_EQ(cricket::ICEMODE_FULL, fake_ice_transport_->remote_ice_mode());
+  EXPECT_EQ(kIceUfrag1, fake_ice_transport_->remote_ice_ufrag());
+  EXPECT_EQ(kIcePwd1, fake_ice_transport_->remote_ice_pwd());
 }
 
 // Verifies that IceCredentialsChanged returns true when either ufrag or pwd

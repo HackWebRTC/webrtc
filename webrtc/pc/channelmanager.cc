@@ -246,7 +246,8 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
       media_channel, content_name, rtcp_mux_required, srtp_required);
   voice_channel->SetCryptoOptions(crypto_options_);
 
-  if (!voice_channel->Init_w(rtp_transport, rtcp_transport)) {
+  if (!voice_channel->Init_w(rtp_transport, rtcp_transport, rtp_transport,
+                             rtcp_transport)) {
     delete voice_channel;
     return nullptr;
   }
@@ -317,7 +318,8 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
       worker_thread_, network_thread_, signaling_thread, media_channel,
       content_name, rtcp_mux_required, srtp_required);
   video_channel->SetCryptoOptions(crypto_options_);
-  if (!video_channel->Init_w(rtp_transport, rtcp_transport)) {
+  if (!video_channel->Init_w(rtp_transport, rtcp_transport, rtp_transport,
+                             rtcp_transport)) {
     delete video_channel;
     return NULL;
   }
@@ -390,7 +392,8 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel_w(
       worker_thread_, network_thread_, signaling_thread, media_channel,
       content_name, rtcp_mux_required, srtp_required);
   data_channel->SetCryptoOptions(crypto_options_);
-  if (!data_channel->Init_w(rtp_transport, rtcp_transport)) {
+  if (!data_channel->Init_w(rtp_transport, rtcp_transport, rtp_transport,
+                            rtcp_transport)) {
     LOG(LS_WARNING) << "Failed to init data channel.";
     delete data_channel;
     return nullptr;

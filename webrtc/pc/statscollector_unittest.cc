@@ -24,7 +24,6 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/test/mock_mediachannel.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/pc/mediastream.h"
 #include "webrtc/pc/mediastreamtrack.h"

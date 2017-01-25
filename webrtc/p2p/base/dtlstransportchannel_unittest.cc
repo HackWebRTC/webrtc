@@ -12,7 +12,7 @@
 #include <set>
 
 #include "webrtc/p2p/base/dtlstransportchannel.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
+#include "webrtc/p2p/base/fakeicetransport.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/common.h"

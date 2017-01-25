@@ -144,6 +144,9 @@ if (rtc_include_tests) {
     sources = [
       "base/asyncstuntcpsocket_unittest.cc",
       "base/dtlstransportchannel_unittest.cc",
+      "base/fakedtlstransport.h",
+      "base/fakeicetransport.h",
+      "base/fakepackettransport.h",
       "base/fakeportallocator.h",
       "base/faketransportcontroller.h",
       "base/jseptransport_unittest.cc",

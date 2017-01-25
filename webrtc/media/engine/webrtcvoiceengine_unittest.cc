@@ -15,7 +15,6 @@
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/call/call.h"
-#include "webrtc/p2p/base/faketransportcontroller.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
