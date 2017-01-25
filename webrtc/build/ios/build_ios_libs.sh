@@ -51,7 +51,6 @@ use_xcode_clang=true is_component_build=false"
   fi
 
   # Add the specified architecture.
-  OUTPUT_LIB=${OUTPUT_DIR}/${SDK_LIB_NAME}
   GN_ARGS="${GN_ARGS} target_cpu=\"${target_arch}\""
 
   # Add deployment target.
