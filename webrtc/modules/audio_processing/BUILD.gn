@@ -284,6 +284,10 @@ rtc_source_set("audio_processing_c") {
     "../../common_audio",
     "../../system_wrappers",
   ]
+
+  if (rtc_build_with_neon) {
+    deps += [ ":audio_processing_neon_c" ]
+  }
 }
 
 if (rtc_enable_protobuf) {
@@ -365,6 +369,10 @@ if (rtc_build_with_neon) {
   }
 
   rtc_static_library("audio_processing_neon_c") {
+    # TODO(mbonadei): Remove (bugs.webrtc.org/6828)
+    # Errors on cyclic dependency with :audio_processing_c if enabled.
+    check_includes = false
+
     sources = [
       "ns/nsx_core_neon.c",
     ]
@@ -386,7 +394,6 @@ if (rtc_build_with_neon) {
       ]
     }
     deps = [
-      ":audio_processing_c",
       "../../base:rtc_base_approved",
     ]
   }

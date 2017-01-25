@@ -708,6 +708,10 @@ rtc_source_set("isac_fix_c") {
     "../../system_wrappers",
   ]
 
+  if (rtc_build_with_neon) {
+    deps += [ ":isac_neon" ]
+  }
+
   if (current_cpu == "arm" && arm_version >= 7) {
     sources += [
       "codecs/isac/fix/source/lattice_armv7.S",
@@ -746,6 +750,10 @@ rtc_source_set("isac_fix_c") {
 
 if (rtc_build_with_neon) {
   rtc_static_library("isac_neon") {
+    # TODO(mbonadei): Remove (bugs.webrtc.org/6828)
+    # Errors on cyclic dependency with :isac_fix_c if enabled.
+    check_includes = false
+
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
       "codecs/isac/fix/source/filterbanks_neon.c",
@@ -772,7 +780,6 @@ if (rtc_build_with_neon) {
     }
 
     deps = [
-      ":isac_fix_c",
       "../../base:rtc_base_approved",
       "../../common_audio",
     ]
