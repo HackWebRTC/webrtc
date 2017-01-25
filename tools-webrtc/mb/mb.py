@@ -48,8 +48,7 @@ class MetaBuildWrapper(object):
   def __init__(self):
     self.chromium_src_dir = CHROMIUM_SRC_DIR
     self.default_config = os.path.join(SCRIPT_DIR, 'mb_config.pyl')
-    self.default_isolate_map = os.path.join(self.chromium_src_dir, 'testing',
-                                            'buildbot', 'gn_isolate_map.pyl')
+    self.default_isolate_map = os.path.join(SCRIPT_DIR, 'gn_isolate_map.pyl')
     self.executable = sys.executable
     self.platform = sys.platform
     self.sep = os.sep
