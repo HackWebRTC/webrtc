@@ -14,7 +14,6 @@
 
 #include "webrtc/p2p/base/stun.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 
 namespace cricket {

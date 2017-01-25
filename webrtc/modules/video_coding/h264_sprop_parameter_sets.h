@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/base/common.h"
+#include "webrtc/base/constructormagic.h"
 
 namespace webrtc {
 

@@ -21,7 +21,6 @@
 #endif  // WEBRTC_WIN
 
 #include "webrtc/base/arraysize.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"

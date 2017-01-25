@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/pc/mediamonitor.h"
 

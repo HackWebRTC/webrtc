@@ -22,7 +22,6 @@
 
 #if defined(WEBRTC_MAC)
 
-#include "webrtc/base/common.h"
 #include "webrtc/base/constructormagic.h"
 
 // This header may be included from Obj-C files or C++ files.

@@ -11,7 +11,6 @@
 #include "webrtc/base/networkmonitor.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 
 namespace {
 const uint32_t UPDATE_NETWORKS_MESSAGE = 1;

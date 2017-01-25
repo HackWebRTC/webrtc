@@ -22,7 +22,6 @@
 #include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/base/stringutils.h"
@@ -539,7 +538,6 @@ IPseudoTcpNotify::WriteResult PseudoTcp::packet(uint32_t seq,
     size_t bytes_read = 0;
     rtc::StreamResult result = m_sbuf.ReadOffset(
         buffer.get() + HEADER_SIZE, len, offset, &bytes_read);
-    RTC_UNUSED(result);
     RTC_DCHECK(result == rtc::SR_SUCCESS);
     RTC_DCHECK(static_cast<uint32_t>(bytes_read) == len);
   }
@@ -1047,7 +1045,6 @@ void PseudoTcp::attemptSend(SendFlags sflags) {
 
 #if _DEBUGMSG
   bool bFirst = true;
-  RTC_UNUSED(bFirst);
 #endif // _DEBUGMSG
 
   while (true) {
@@ -1208,7 +1205,6 @@ void PseudoTcp::parseOptions(const char* data, uint32_t len) {
 
     // Length of this option.
     RTC_DCHECK(len != 0);
-    RTC_UNUSED(len);
     uint8_t opt_len = 0;
     buf.ReadUInt8(&opt_len);
 
@@ -1278,7 +1274,6 @@ void PseudoTcp::resizeReceiveBuffer(uint32_t new_size) {
   // before connection is established or when peers are exchanging connect
   // messages.
   RTC_DCHECK(result);
-  RTC_UNUSED(result);
   m_rbuf_len = new_size;
   m_rwnd_scale = scale_factor;
   m_ssthresh = new_size;

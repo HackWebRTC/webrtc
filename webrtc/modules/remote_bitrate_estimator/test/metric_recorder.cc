@@ -12,6 +12,7 @@
 
 #include <algorithm>
 
+#include "webrtc/base/common.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/packet_sender.h"
 
 namespace webrtc {

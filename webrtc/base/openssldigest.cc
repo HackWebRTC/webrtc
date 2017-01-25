@@ -11,7 +11,6 @@
 #include "webrtc/base/openssldigest.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/openssl.h"
 
 namespace rtc {

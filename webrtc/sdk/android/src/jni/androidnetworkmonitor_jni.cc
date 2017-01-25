@@ -18,7 +18,6 @@
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/ipaddress.h"
 
 namespace webrtc_jni {

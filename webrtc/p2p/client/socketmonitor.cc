@@ -11,7 +11,6 @@
 #include "webrtc/p2p/client/socketmonitor.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 
 namespace cricket {
 

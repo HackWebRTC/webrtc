@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/base/common.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"

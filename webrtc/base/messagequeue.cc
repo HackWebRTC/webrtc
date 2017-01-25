@@ -11,7 +11,6 @@
 
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/stringencode.h"

@@ -15,7 +15,6 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 
 namespace webrtc {
 

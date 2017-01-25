@@ -15,7 +15,6 @@
 #include "webrtc/p2p/base/fakeicetransport.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"

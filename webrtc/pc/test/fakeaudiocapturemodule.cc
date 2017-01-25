@@ -11,7 +11,6 @@
 #include "webrtc/pc/test/fakeaudiocapturemodule.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/timeutils.h"

@@ -11,7 +11,6 @@
 #include <memory>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/messagehandler.h"

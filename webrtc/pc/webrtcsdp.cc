@@ -24,7 +24,6 @@
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
 #include "webrtc/base/stringutils.h"

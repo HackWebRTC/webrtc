@@ -11,7 +11,6 @@
 #include <stdio.h>
 
 #include "webrtc/base/arraysize.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/media/base/streamparams.h"
 #include "webrtc/media/engine/simulcast.h"

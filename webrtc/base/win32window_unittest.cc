@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/win32window.h"
 #include "webrtc/base/logging.h"
 

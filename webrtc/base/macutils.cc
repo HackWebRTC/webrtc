@@ -15,7 +15,6 @@
 #include <sys/utsname.h>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/macutils.h"
 #include "webrtc/base/stringutils.h"

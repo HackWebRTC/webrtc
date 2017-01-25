@@ -18,7 +18,6 @@
 #include <string>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sslidentity.h"
 

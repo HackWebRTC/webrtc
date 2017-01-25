@@ -16,7 +16,6 @@
 
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 
 namespace cricket {

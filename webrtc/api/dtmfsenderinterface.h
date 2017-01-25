@@ -14,7 +14,6 @@
 #include <string>
 
 #include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/refcount.h"
 
 // This file contains interfaces for DtmfSender.

@@ -14,6 +14,7 @@
 
 #include <sstream>
 
+#include "webrtc/base/common.h"
 #include "webrtc/base/constructormagic.h"
 
 namespace webrtc {

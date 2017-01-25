@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/base/arraysize.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"

@@ -16,7 +16,6 @@
 
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/examples/peerconnection/client/defaults.h"
