@@ -103,7 +103,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       break;
     case VideoEncoderConfig::ContentType::kScreen:
       video_codec.mode = kScreensharing;
-      if (streams.size() >= 1 &&
+      if (!streams.empty() &&
           streams[0].temporal_layer_thresholds_bps.size() == 1) {
         video_codec.targetBitrate =
             streams[0].temporal_layer_thresholds_bps[0] / 1000;
