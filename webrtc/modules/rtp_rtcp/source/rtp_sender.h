@@ -327,6 +327,8 @@ class RTPSender {
   RateLimiter* const retransmission_rate_limiter_;
   OverheadObserver* overhead_observer_;
 
+  const bool send_side_bwe_with_overhead_;
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSender);
 };
 

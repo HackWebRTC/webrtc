@@ -123,7 +123,10 @@ RTPSender::RTPSender(
       rtx_(kRtxOff),
       rtp_overhead_bytes_per_packet_(0),
       retransmission_rate_limiter_(retransmission_rate_limiter),
-      overhead_observer_(overhead_observer) {
+      overhead_observer_(overhead_observer),
+      send_side_bwe_with_overhead_(
+          webrtc::field_trial::FindFullName(
+              "WebRTC-SendSideBwe-WithOverhead") == "Enabled") {
   ssrc_ = ssrc_db_->CreateSSRC();
   RTC_DCHECK(ssrc_ != 0);
   ssrc_rtx_ = ssrc_db_->CreateSSRC();
@@ -1256,8 +1259,7 @@ void RTPSender::AddPacketToTransportFeedback(uint16_t packet_id,
                                              const RtpPacketToSend& packet,
                                              int probe_cluster_id) {
   size_t packet_size = packet.payload_size() + packet.padding_size();
-  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead") ==
-      "Enabled") {
+  if (send_side_bwe_with_overhead_) {
     packet_size = packet.size();
   }
 
