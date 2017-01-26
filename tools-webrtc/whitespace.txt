@@ -5,3 +5,5 @@ Whitespaces are cool, except when they're trailing. They they're kind of
 80s.
 Here's a funny story: What do you call a root beer in a square glass? Beer!
 Holidays are coming, beware! Bought any gifts yet?
+
+Foo Bar
