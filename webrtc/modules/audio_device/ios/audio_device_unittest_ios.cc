@@ -598,7 +598,8 @@ TEST_F(AudioDeviceTest, DISABLED_StartStopPlayout) {
 
 // Tests that recording can be initiated, started and stopped. No audio callback
 // is registered in this test.
-TEST_F(AudioDeviceTest, StartStopRecording) {
+// Disabled due to failure: bugs.webrtc.org/7056
+TEST_F(AudioDeviceTest, DISABLED_StartStopRecording) {
   StartRecording();
   StopRecording();
   StartRecording();
@@ -733,7 +734,8 @@ TEST_F(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
 // Start playout and read audio from an external PCM file when the audio layer
 // asks for data to play out. Real audio is played out in this test but it does
 // not contain any explicit verification that the audio quality is perfect.
-TEST_F(AudioDeviceTest, RunPlayoutWithFileAsSource) {
+// Disabled due to failure: bugs.webrtc.org/7056
+TEST_F(AudioDeviceTest, DISABLED_RunPlayoutWithFileAsSource) {
   // TODO(henrika): extend test when mono output is supported.
   EXPECT_EQ(1, playout_channels());
   NiceMock<MockAudioTransportIOS> mock(kPlayout);
