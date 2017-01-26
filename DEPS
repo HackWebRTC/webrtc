@@ -123,6 +123,10 @@ deps_os = {
     'src/third_party/ub-uiautomator/lib':
       Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
   },
+  'ios': {
+    'src/ios':
+      Var('chromium_git') + '/chromium/src/ios' + '@' + '44a908d160175dd44c8a66c66d912066bcb364fd',
+  },
   'unix': {
     'src/third_party/lss':
       Var('chromium_git') + '/linux-syscall-support.git' + '@' + Var('lss_revision'),
