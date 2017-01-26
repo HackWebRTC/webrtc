@@ -296,9 +296,16 @@ void RtpReplay() {
         ++unknown_packets[header.ssrc];
         break;
       }
-      case PacketReceiver::DELIVERY_PACKET_ERROR:
+      case PacketReceiver::DELIVERY_PACKET_ERROR: {
         fprintf(stderr, "Packet error, corrupt packets or incorrect setup?\n");
+        RTPHeader header;
+        std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        parser->Parse(packet.data, packet.length, &header);
+        fprintf(stderr, "Packet len=%ld pt=%u seq=%u ts=%u ssrc=0x%8x\n",
+            packet.length, header.payloadType, header.sequenceNumber,
+            header.timestamp, header.ssrc);
         break;
+      }
     }
     if (last_time_ms != 0 && last_time_ms != packet.time_ms) {
       SleepMs(packet.time_ms - last_time_ms);
