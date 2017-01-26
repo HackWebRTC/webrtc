@@ -3169,16 +3169,10 @@ TEST_F(VideoSendStreamTest,
   TestRequestSourceRotateVideo(true);
 }
 
-// Flaky on Win32 Release: http://crbug.com/webrtc/6886
-#if defined(WEBRTC_WIN)
-#define MAYBE_RemoveOverheadFromBandwidth DISABLED_RemoveOverheadFromBandwidth
-#else
-#define MAYBE_RemoveOverheadFromBandwidth RemoveOverheadFromBandwidth
-#endif
 // This test verifies that overhead is removed from the bandwidth estimate by
 // testing that the maximum possible target payload rate is smaller than the
 // maximum bandwidth estimate by the overhead rate.
-TEST_F(VideoSendStreamTest, MAYBE_RemoveOverheadFromBandwidth) {
+TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
   class RemoveOverheadFromBandwidthTest : public test::EndToEndTest,
@@ -3188,13 +3182,19 @@ TEST_F(VideoSendStreamTest, MAYBE_RemoveOverheadFromBandwidth) {
         : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           call_(nullptr),
-          max_bitrate_kbps_(0) {}
+          max_bitrate_bps_(0),
+          first_packet_sent_(false),
+          bitrate_changed_event_(false, false) {}
 
     int32_t SetRateAllocation(const BitrateAllocation& bitrate,
                               uint32_t frameRate) override {
       rtc::CritScope lock(&crit_);
-      if (max_bitrate_kbps_ < bitrate.get_sum_kbps())
-        max_bitrate_kbps_ = bitrate.get_sum_kbps();
+      // Wait for the first sent packet so that videosendstream knows
+      // rtp_overhead.
+      if (first_packet_sent_) {
+        max_bitrate_bps_ = bitrate.get_sum_bps();
+        bitrate_changed_event_.Set();
+      }
       return FakeEncoder::SetRateAllocation(bitrate, frameRate);
     }
 
@@ -3211,29 +3211,39 @@ TEST_F(VideoSendStreamTest, MAYBE_RemoveOverheadFromBandwidth) {
       EXPECT_FALSE(send_config->rtp.extensions.empty());
     }
 
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
+      first_packet_sent_ = true;
+      return SEND_PACKET;
+    }
+
     void PerformTest() override {
-      call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO, 20);
       Call::Config::BitrateConfig bitrate_config;
-      constexpr int kStartBitrateBps = 50000;
+      constexpr int kStartBitrateBps = 60000;
       constexpr int kMaxBitrateBps = 60000;
+      constexpr int kMinBitrateBps = 10000;
       bitrate_config.start_bitrate_bps = kStartBitrateBps;
       bitrate_config.max_bitrate_bps = kMaxBitrateBps;
+      bitrate_config.min_bitrate_bps = kMinBitrateBps;
       call_->SetBitrateConfig(bitrate_config);
+      call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO, 20);
 
       // At a bitrate of 60kbps with a packet size of 1200B video and an
-      // overhead of 40B per packet video produces 2kbps overhead.
-      // So with a BWE should reach 58kbps but not 60kbps.
-      Wait();
+      // overhead of 40B per packet video produces 2240bps overhead.
+      // So the encoder BW should be set to 57760bps.
+      bitrate_changed_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs);
       {
         rtc::CritScope lock(&crit_);
-        EXPECT_EQ(58u, max_bitrate_kbps_);
+        EXPECT_LE(57760u, max_bitrate_bps_);
       }
     }
 
    private:
     Call* call_;
     rtc::CriticalSection crit_;
-    uint32_t max_bitrate_kbps_ GUARDED_BY(&crit_);
+    uint32_t max_bitrate_bps_ GUARDED_BY(&crit_);
+    bool first_packet_sent_ GUARDED_BY(&crit_);
+    rtc::Event bitrate_changed_event_;
   } test;
 
   RunBaseTest(&test);
