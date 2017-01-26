@@ -170,4 +170,10 @@ VideoEncoderSoftwareFallbackWrapper::GetScalingSettings() const {
   return encoder_->GetScalingSettings();
 }
 
+const char *VideoEncoderSoftwareFallbackWrapper::ImplementationName() const {
+  if (fallback_encoder_)
+    return fallback_encoder_->ImplementationName();
+  return encoder_->ImplementationName();
+}
+
 }  // namespace webrtc

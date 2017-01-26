@@ -44,6 +44,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
                             uint32_t framerate) override;
   bool SupportsNativeHandle() const override;
   ScalingSettings GetScalingSettings() const override;
+  const char *ImplementationName() const override;
 
  private:
   bool InitFallbackEncoder();
