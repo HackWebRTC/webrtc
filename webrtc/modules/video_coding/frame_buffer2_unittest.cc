@@ -260,7 +260,8 @@ TEST_F(TestFrameBuffer2, OneSuperFrame) {
   CheckFrame(1, pid, 1);
 }
 
-TEST_F(TestFrameBuffer2, OneUnorderedSuperFrame) {
+// Flaky test, see bugs.webrtc.org/7068.
+TEST_F(TestFrameBuffer2, DISABLED_OneUnorderedSuperFrame) {
   uint16_t pid = Rand();
   uint32_t ts = Rand();
 
