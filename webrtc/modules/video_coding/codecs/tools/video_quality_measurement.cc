@@ -491,7 +491,8 @@ int main(int argc, char* argv[]) {
   webrtc::VP8Decoder* decoder = webrtc::VP8Decoder::Create();
   webrtc::test::Stats stats;
   webrtc::test::FrameReaderImpl frame_reader(config.input_filename,
-                                             config.frame_length_in_bytes);
+                                             config.codec_settings->width,
+                                             config.codec_settings->height);
   webrtc::test::FrameWriterImpl frame_writer(config.output_filename,
                                              config.frame_length_in_bytes);
   frame_reader.Init();
