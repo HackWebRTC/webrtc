@@ -28,16 +28,6 @@
 #include "webrtc/video_encoder.h"
 
 namespace cricket {
-
-static const int kMinVideoBitrate = 100;
-static const int kStartVideoBitrate = 300;
-static const int kMaxVideoBitrate = 1000;
-
-// WebRtc channel id and capture id share the same number space.
-// This is how AddRenderer(renderId, ...) is able to tell if it is adding a
-// renderer for a channel or it is adding a renderer for a capturer.
-static const int kViEChannelIdBase = 0;
-static const int kViEChannelIdMax = 1000;
 static const int kEventTimeoutMs = 10000;
 
 // Fake class for mocking out webrtc::VideoDecoder
