@@ -17,7 +17,7 @@ set -e
 export PATH=/usr/libexec:$PATH
 
 SCRIPT_DIR=$(cd $(dirname $0) && pwd)
-WEBRTC_BASE_DIR=${SCRIPT_DIR}/../../..
+WEBRTC_BASE_DIR=${SCRIPT_DIR}/../..
 
 function clean_artifacts {
   local output_dir=$1
