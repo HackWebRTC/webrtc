@@ -649,8 +649,11 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
     RTC_DCHECK(video_receive_ssrcs_.find(config.rtp.remote_ssrc) ==
                video_receive_ssrcs_.end());
     video_receive_ssrcs_[config.rtp.remote_ssrc] = receive_stream;
-    if (config.rtp.rtx_ssrc)
-      video_receive_ssrcs_[config.rtp.rtx_ssrc] = receive_stream;
+    // TODO(pbos): Configure different RTX payloads per receive payload.
+    VideoReceiveStream::Config::Rtp::RtxMap::const_iterator it =
+        config.rtp.rtx.begin();
+    if (it != config.rtp.rtx.end())
+      video_receive_ssrcs_[it->second.ssrc] = receive_stream;
     video_receive_streams_.insert(receive_stream);
     ConfigureSync(config.sync_group);
   }

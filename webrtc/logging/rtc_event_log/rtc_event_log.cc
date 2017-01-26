@@ -242,11 +242,11 @@ void RtcEventLogImpl::LogVideoReceiveStreamConfig(
   receiver_config->set_rtcp_mode(ConvertRtcpMode(config.rtp.rtcp_mode));
   receiver_config->set_remb(config.rtp.remb);
 
-  for (const auto& kv : config.rtp.rtx_payload_types) {
+  for (const auto& kv : config.rtp.rtx) {
     rtclog::RtxMap* rtx = receiver_config->add_rtx_map();
     rtx->set_payload_type(kv.first);
-    rtx->mutable_config()->set_rtx_ssrc(config.rtp.rtx_ssrc);
-    rtx->mutable_config()->set_rtx_payload_type(kv.second);
+    rtx->mutable_config()->set_rtx_ssrc(kv.second.ssrc);
+    rtx->mutable_config()->set_rtx_payload_type(kv.second.payload_type);
   }
 
   for (const auto& e : config.rtp.extensions) {

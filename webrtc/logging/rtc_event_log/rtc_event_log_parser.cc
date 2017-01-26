@@ -10,10 +10,8 @@
 
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 
-#include <stdint.h>
 #include <string.h>
 
-#include <algorithm>
 #include <fstream>
 #include <istream>
 #include <utility>
@@ -316,30 +314,17 @@ void ParsedRtcEventLog::GetVideoReceiveConfig(
   RTC_CHECK(receiver_config.has_remb());
   config->rtp.remb = receiver_config.remb();
   // Get RTX map.
-  std::vector<uint32_t> rtx_ssrcs(receiver_config.rtx_map_size());
-  config->rtp.rtx_payload_types.clear();
+  config->rtp.rtx.clear();
   for (int i = 0; i < receiver_config.rtx_map_size(); i++) {
     const rtclog::RtxMap& map = receiver_config.rtx_map(i);
     RTC_CHECK(map.has_payload_type());
     RTC_CHECK(map.has_config());
     RTC_CHECK(map.config().has_rtx_ssrc());
-    rtx_ssrcs[i] = map.config().rtx_ssrc();
     RTC_CHECK(map.config().has_rtx_payload_type());
-    config->rtp.rtx_payload_types.insert(
-        std::make_pair(map.payload_type(), map.config().rtx_payload_type()));
-  }
-  if (!rtx_ssrcs.empty()) {
-    config->rtp.rtx_ssrc = rtx_ssrcs[0];
-
-    auto pred = [&config](uint32_t ssrc) {
-      return ssrc == config->rtp.rtx_ssrc;
-    };
-    if (!std::all_of(rtx_ssrcs.cbegin(), rtx_ssrcs.cend(), pred)) {
-      LOG(LS_WARNING) << "RtcEventLog protobuf contained different SSRCs for "
-                         "different received RTX payload types. Will only use "
-                         "rtx_ssrc = "
-                      << config->rtp.rtx_ssrc << ".";
-    }
+    webrtc::VideoReceiveStream::Config::Rtp::Rtx rtx_pair;
+    rtx_pair.ssrc = map.config().rtx_ssrc();
+    rtx_pair.payload_type = map.config().rtx_payload_type();
+    config->rtp.rtx.insert(std::make_pair(map.payload_type(), rtx_pair));
   }
   // Get header extensions.
   GetHeaderExtensions(&config->rtp.extensions,

@@ -1091,8 +1091,8 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
       if (retransmission_ssrc_ == kSendRtxSsrcs[0]) {
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
-        (*receive_configs)[0].rtp.rtx_ssrc = kSendRtxSsrcs[0];
-        (*receive_configs)[0].rtp.rtx_payload_types[payload_type_] =
+        (*receive_configs)[0].rtp.rtx[payload_type_].ssrc = kSendRtxSsrcs[0];
+        (*receive_configs)[0].rtp.rtx[payload_type_].payload_type =
             kSendRtxPayloadType;
       }
       // Configure encoding and decoding with VP8, since generic packetization
@@ -2331,8 +2331,9 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
       if (use_rtx_) {
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
         send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
-        (*receive_configs)[0].rtp.rtx_ssrc = kSendRtxSsrcs[0];
-        (*receive_configs)[0].rtp.rtx_payload_types[kFakeVideoSendPayloadType] =
+        (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].ssrc =
+            kSendRtxSsrcs[0];
+        (*receive_configs)[0].rtp.rtx[kFakeVideoSendPayloadType].payload_type =
             kSendRtxPayloadType;
       }
       // RTT needed for RemoteNtpTimeEstimator for the receive stream.
@@ -2952,8 +2953,9 @@ TEST_P(EndToEndTest, GetStats) {
         (*receive_configs)[i].renderer = &receive_stream_renderer_;
         (*receive_configs)[i].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
 
-        (*receive_configs)[i].rtp.rtx_ssrc = kSendRtxSsrcs[i];
-        (*receive_configs)[i].rtp.rtx_payload_types[kFakeVideoSendPayloadType] =
+        (*receive_configs)[i].rtp.rtx[kFakeVideoSendPayloadType].ssrc =
+            kSendRtxSsrcs[i];
+        (*receive_configs)[i].rtp.rtx[kFakeVideoSendPayloadType].payload_type =
             kSendRtxPayloadType;
       }
 
@@ -3937,9 +3939,7 @@ TEST_P(EndToEndTest, VerifyDefaultVideoReceiveConfigParameters) {
   EXPECT_FALSE(
       default_receive_config.rtp.rtcp_xr.receiver_reference_time_report)
       << "RTCP XR settings require rtcp-xr to be negotiated.";
-  EXPECT_EQ(0U, default_receive_config.rtp.rtx_ssrc)
-      << "Enabling RTX requires ssrc-group: FID negotiation";
-  EXPECT_TRUE(default_receive_config.rtp.rtx_payload_types.empty())
+  EXPECT_TRUE(default_receive_config.rtp.rtx.empty())
       << "Enabling RTX requires rtpmap: rtx negotiation.";
   EXPECT_TRUE(default_receive_config.rtp.extensions.empty())
       << "Enabling RTP extensions require negotiation.";

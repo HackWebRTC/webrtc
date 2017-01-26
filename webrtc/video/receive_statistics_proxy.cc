@@ -78,11 +78,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       avg_rtt_ms_(0),
       frame_window_accumulated_bytes_(0) {
   stats_.ssrc = config_.rtp.remote_ssrc;
-  // TODO(brandtr): Replace |rtx_stats_| with a single instance of
-  // StreamDataCounters.
-  if (config_.rtp.rtx_ssrc) {
-    rtx_stats_[config_.rtp.rtx_ssrc] = StreamDataCounters();
-  }
+  for (auto it : config_.rtp.rtx)
+    rtx_stats_[it.second.ssrc] = StreamDataCounters();
 }
 
 ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {

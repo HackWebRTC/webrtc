@@ -127,18 +127,19 @@ void RtcEventLogTestHelper::VerifyVideoReceiveStreamConfig(
   ASSERT_TRUE(receiver_config.has_remb());
   EXPECT_EQ(config.rtp.remb, receiver_config.remb());
   // Check RTX map.
-  ASSERT_EQ(static_cast<int>(config.rtp.rtx_payload_types.size()),
+  ASSERT_EQ(static_cast<int>(config.rtp.rtx.size()),
             receiver_config.rtx_map_size());
   for (const rtclog::RtxMap& rtx_map : receiver_config.rtx_map()) {
     ASSERT_TRUE(rtx_map.has_payload_type());
     ASSERT_TRUE(rtx_map.has_config());
-    EXPECT_EQ(1u, config.rtp.rtx_payload_types.count(rtx_map.payload_type()));
+    EXPECT_EQ(1u, config.rtp.rtx.count(rtx_map.payload_type()));
     const rtclog::RtxConfig& rtx_config = rtx_map.config();
+    const VideoReceiveStream::Config::Rtp::Rtx& rtx =
+        config.rtp.rtx.at(rtx_map.payload_type());
     ASSERT_TRUE(rtx_config.has_rtx_ssrc());
     ASSERT_TRUE(rtx_config.has_rtx_payload_type());
-    EXPECT_EQ(config.rtp.rtx_ssrc, rtx_config.rtx_ssrc());
-    EXPECT_EQ(config.rtp.rtx_payload_types.at(rtx_map.payload_type()),
-              rtx_config.rtx_payload_type());
+    EXPECT_EQ(rtx.ssrc, rtx_config.rtx_ssrc());
+    EXPECT_EQ(rtx.payload_type, rtx_config.rtx_payload_type());
   }
   // Check header extensions.
   ASSERT_EQ(static_cast<int>(config.rtp.extensions.size()),
@@ -172,13 +173,12 @@ void RtcEventLogTestHelper::VerifyVideoReceiveStreamConfig(
   EXPECT_EQ(config.rtp.rtcp_mode, parsed_config.rtp.rtcp_mode);
   EXPECT_EQ(config.rtp.remb, parsed_config.rtp.remb);
   // Check RTX map.
-  EXPECT_EQ(config.rtp.rtx_ssrc, parsed_config.rtp.rtx_ssrc);
-  EXPECT_EQ(config.rtp.rtx_payload_types.size(),
-            parsed_config.rtp.rtx_payload_types.size());
-  for (const auto& kv : config.rtp.rtx_payload_types) {
-    auto parsed_kv = parsed_config.rtp.rtx_payload_types.find(kv.first);
+  EXPECT_EQ(config.rtp.rtx.size(), parsed_config.rtp.rtx.size());
+  for (const auto& kv : config.rtp.rtx) {
+    auto parsed_kv = parsed_config.rtp.rtx.find(kv.first);
     EXPECT_EQ(kv.first, parsed_kv->first);
-    EXPECT_EQ(kv.second, parsed_kv->second);
+    EXPECT_EQ(kv.second.ssrc, parsed_kv->second.ssrc);
+    EXPECT_EQ(kv.second.payload_type, parsed_kv->second.payload_type);
   }
   // Check header extensions.
   EXPECT_EQ(config.rtp.extensions.size(), parsed_config.rtp.extensions.size());

@@ -150,13 +150,14 @@ RtpStreamReceiver::RtpStreamReceiver(
                                            : kDefaultMaxReorderingThreshold;
   rtp_receive_statistics_->SetMaxReorderingThreshold(max_reordering_threshold);
 
-  if (config_.rtp.rtx_ssrc) {
-    rtp_payload_registry_.SetRtxSsrc(config_.rtp.rtx_ssrc);
+  // TODO(pbos): Support multiple RTX, per video payload.
+  for (const auto& kv : config_.rtp.rtx) {
+    RTC_DCHECK(kv.second.ssrc != 0);
+    RTC_DCHECK(kv.second.payload_type != 0);
 
-    for (const auto& kv : config_.rtp.rtx_payload_types) {
-      RTC_DCHECK(kv.second != 0);
-      rtp_payload_registry_.SetRtxPayloadType(kv.second, kv.first);
-    }
+    rtp_payload_registry_.SetRtxSsrc(kv.second.ssrc);
+    rtp_payload_registry_.SetRtxPayloadType(kv.second.payload_type,
+                                            kv.first);
   }
 
   if (IsUlpfecEnabled()) {
