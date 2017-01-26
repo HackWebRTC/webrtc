@@ -1233,16 +1233,7 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
     flexfec_config->rtp_header_extensions = config->rtp.extensions;
   }
 
-  for (size_t i = 0; i < recv_codecs_.size(); ++i) {
-    uint32_t rtx_ssrc;
-    if (recv_codecs_[i].rtx_payload_type != -1 &&
-        sp.GetFidSsrc(ssrc, &rtx_ssrc)) {
-      webrtc::VideoReceiveStream::Config::Rtp::Rtx& rtx =
-          config->rtp.rtx[recv_codecs_[i].codec.id];
-      rtx.ssrc = rtx_ssrc;
-      rtx.payload_type = recv_codecs_[i].rtx_payload_type;
-    }
-  }
+  sp.GetFidSsrc(ssrc, &config->rtp.rtx_ssrc);
 
   config->rtp.extensions = recv_rtp_extensions_;
 }
@@ -2205,7 +2196,12 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(
     config_.decoders.push_back(decoder);
   }
 
-  // TODO(pbos): Reconfigure RTX based on incoming recv_codecs.
+  config_.rtp.rtx_payload_types.clear();
+  for (const VideoCodecSettings& recv_codec : recv_codecs) {
+    config_.rtp.rtx_payload_types[recv_codec.codec.id] =
+        recv_codec.rtx_payload_type;
+  }
+
   config_.rtp.ulpfec = recv_codecs.front().ulpfec;
   flexfec_config_.payload_type = recv_codecs.front().flexfec_payload_type;
 

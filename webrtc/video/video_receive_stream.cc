@@ -100,12 +100,10 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
   ss << ", transport_cc: " << (transport_cc ? "on" : "off");
   ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
   ss << ", ulpfec: " << ulpfec.ToString();
-  ss << ", rtx: {";
-  for (auto& kv : rtx) {
-    ss << kv.first << " -> ";
-    ss << "{ssrc: " << kv.second.ssrc;
-    ss << ", payload_type: " << kv.second.payload_type;
-    ss << '}';
+  ss << ", rtx_ssrc: " << rtx_ssrc;
+  ss << ", rtx_payload_types: {";
+  for (auto& kv : rtx_payload_types) {
+    ss << kv.first << " (apt) -> " << kv.second << " (pt), ";
   }
   ss << '}';
   ss << ", extensions: [";

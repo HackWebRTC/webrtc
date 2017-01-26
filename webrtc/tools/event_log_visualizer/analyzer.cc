@@ -311,13 +311,11 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         StreamId stream(config.rtp.remote_ssrc, kIncomingPacket);
         extension_maps[stream] = RtpHeaderExtensionMap(config.rtp.extensions);
         video_ssrcs_.insert(stream);
-        for (auto kv : config.rtp.rtx) {
-          StreamId rtx_stream(kv.second.ssrc, kIncomingPacket);
-          extension_maps[rtx_stream] =
-              RtpHeaderExtensionMap(config.rtp.extensions);
-          video_ssrcs_.insert(rtx_stream);
-          rtx_ssrcs_.insert(rtx_stream);
-        }
+        StreamId rtx_stream(config.rtp.rtx_ssrc, kIncomingPacket);
+        extension_maps[rtx_stream] =
+            RtpHeaderExtensionMap(config.rtp.extensions);
+        video_ssrcs_.insert(rtx_stream);
+        rtx_ssrcs_.insert(rtx_stream);
         break;
       }
       case ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT: {

@@ -165,11 +165,10 @@ void GenerateVideoReceiveConfig(uint32_t extensions_bitvector,
   config->rtp.rtcp_mode =
       prng->Rand<bool>() ? RtcpMode::kCompound : RtcpMode::kReducedSize;
   config->rtp.remb = prng->Rand<bool>();
-  // Add a map from a payload type to a new ssrc and a new payload type for RTX.
-  VideoReceiveStream::Config::Rtp::Rtx rtx_pair;
-  rtx_pair.ssrc = prng->Rand<uint32_t>();
-  rtx_pair.payload_type = prng->Rand(0, 127);
-  config->rtp.rtx.insert(std::make_pair(prng->Rand(0, 127), rtx_pair));
+  config->rtp.rtx_ssrc = prng->Rand<uint32_t>();
+  // Add a map from a payload type to a new payload type for RTX.
+  config->rtp.rtx_payload_types.insert(
+      std::make_pair(prng->Rand(0, 127), prng->Rand(0, 127)));
   // Add header extensions.
   for (unsigned i = 0; i < kNumExtensions; i++) {
     if (extensions_bitvector & (1u << i)) {
