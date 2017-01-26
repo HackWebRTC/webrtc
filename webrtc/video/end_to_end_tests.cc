@@ -58,16 +58,6 @@
 
 namespace webrtc {
 
-// Disable for Asan due to timeout, see bugs.webrtc.org/7047 for
-// details.
-#if defined(ADDRESS_SANITIZER)
-#define MAYBE_ReceivesFlexfecAndSendsCorrespondingRtcp \
-  DISABLED_ReceivesFlexfecAndSendsCorrespondingRtcp
-#else
-#define MAYBE_ReceivesFlexfecAndSendsCorrespondingRtcp \
-  ReceivesFlexfecAndSendsCorrespondingRtcp
-#endif
-
 namespace {
 const char new_jb_enabled[] = "WebRTC-NewVideoJitterBuffer/Enabled/";
 const char new_jb_disabled[] = "WebRTC-NewVideoJitterBuffer/Disabled/";
@@ -613,7 +603,9 @@ TEST_P(EndToEndTest, ReceivesNackAndRetransmitsAudio) {
   RunBaseTest(&test);
 }
 
-TEST_P(EndToEndTest, CanReceiveUlpfec) {
+// Disable due to failure, see bugs.webrtc.org/7050 for
+// details.
+TEST_P(EndToEndTest, DISABLED_CanReceiveUlpfec) {
   class UlpfecRenderObserver : public test::EndToEndTest,
                                public rtc::VideoSinkInterface<VideoFrame> {
    public:
@@ -829,12 +821,16 @@ class FlexfecRenderObserver : public test::EndToEndTest,
   Random random_;
 };
 
-TEST_P(EndToEndTest, ReceivesFlexfec) {
+// Disable due to failure, see bugs.webrtc.org/7050 for
+// details.
+TEST_P(EndToEndTest, DISABLED_ReceivesFlexfec) {
   FlexfecRenderObserver test(false);
   RunBaseTest(&test);
 }
 
-TEST_P(EndToEndTest, MAYBE_ReceivesFlexfecAndSendsCorrespondingRtcp) {
+// Disable due to failure, see bugs.webrtc.org/7050 for
+// details.
+TEST_P(EndToEndTest, DISABLED_ReceivesFlexfecAndSendsCorrespondingRtcp) {
   FlexfecRenderObserver test(true);
   RunBaseTest(&test);
 }
