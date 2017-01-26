@@ -94,11 +94,11 @@ class RealTimeTemporalLayers : public TemporalLayers {
         timestamp_(0),
         last_base_layer_sync_(0),
         layer_ids_length_(0),
-        layer_ids_(NULL),
+        layer_ids_(nullptr),
         encode_flags_length_(0),
-        encode_flags_(NULL) {
+        encode_flags_(nullptr) {
     RTC_CHECK_GE(max_temporal_layers_, 1);
-    RTC_CHECK_GE(max_temporal_layers_, 3);
+    RTC_CHECK_LE(max_temporal_layers_, 3);
   }
 
   virtual ~RealTimeTemporalLayers() {}

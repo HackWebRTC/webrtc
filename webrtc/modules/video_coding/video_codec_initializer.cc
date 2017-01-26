@@ -38,8 +38,9 @@ bool VideoCodecInitializer::SetupCodec(
     case kVideoCodecVP8: {
       if (!codec->VP8()->tl_factory) {
         if (codec->mode == kScreensharing &&
-            codec->numberOfSimulcastStreams == 1 &&
-            codec->VP8()->numberOfTemporalLayers == 2) {
+            (codec->numberOfSimulcastStreams > 1 ||
+             (codec->numberOfSimulcastStreams == 1 &&
+              codec->VP8()->numberOfTemporalLayers == 2))) {
           // Conference mode temporal layering for screen content.
           tl_factory.reset(new ScreenshareTemporalLayersFactory());
         } else {
@@ -102,7 +103,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       break;
     case VideoEncoderConfig::ContentType::kScreen:
       video_codec.mode = kScreensharing;
-      if (streams.size() == 1 &&
+      if (streams.size() >= 1 &&
           streams[0].temporal_layer_thresholds_bps.size() == 1) {
         video_codec.targetBitrate =
             streams[0].temporal_layer_thresholds_bps[0] / 1000;
@@ -180,8 +181,12 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     RTC_DCHECK_GT(streams[i].width, 0);
     RTC_DCHECK_GT(streams[i].height, 0);
     RTC_DCHECK_GT(streams[i].max_framerate, 0);
-    // Different framerates not supported per stream at the moment.
-    RTC_DCHECK_EQ(streams[i].max_framerate, streams[0].max_framerate);
+    // Different framerates not supported per stream at the moment, unless it's
+    // screenshare where there is an exception and a simulcast encoder adapter,
+    // which supports different framerates, is used instead.
+    if (config.content_type != VideoEncoderConfig::ContentType::kScreen) {
+      RTC_DCHECK_EQ(streams[i].max_framerate, streams[0].max_framerate);
+    }
     RTC_DCHECK_GE(streams[i].min_bitrate_bps, 0);
     RTC_DCHECK_GE(streams[i].target_bitrate_bps, streams[i].min_bitrate_bps);
     RTC_DCHECK_GE(streams[i].max_bitrate_bps, streams[i].target_bitrate_bps);

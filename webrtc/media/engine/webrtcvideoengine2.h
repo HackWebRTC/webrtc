@@ -330,6 +330,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
         ACCESS_ON(&thread_checker_);
     WebRtcVideoEncoderFactory* const external_encoder_factory_
         ACCESS_ON(&thread_checker_);
+    const std::unique_ptr<WebRtcVideoEncoderFactory> internal_encoder_factory_
+        ACCESS_ON(&thread_checker_);
 
     webrtc::VideoSendStream* stream_ ACCESS_ON(&thread_checker_);
     rtc::VideoSinkInterface<webrtc::VideoFrame>* encoder_sink_

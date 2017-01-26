@@ -106,23 +106,24 @@ BitrateAllocation SimulcastRateAllocator::GetAllocation(
     const int num_temporal_streams = std::max<uint8_t>(
         1, codec_.numberOfSimulcastStreams == 0
                ? codec_.VP8().numberOfTemporalLayers
-               : codec_.simulcastStream[0].numberOfTemporalLayers);
+               : codec_.simulcastStream[simulcast_id].numberOfTemporalLayers);
 
     uint32_t max_bitrate_kbps;
-    if (num_spatial_streams == 1) {
-      max_bitrate_kbps = codec_.maxBitrate;
-
-      // TODO(holmer): This is a temporary hack for screensharing, where we
+    // Legacy temporal-layered only screenshare, or simulcast screenshare
+    // with legacy mode for simulcast stream 0.
+    if (codec_.mode == kScreensharing && codec_.targetBitrate > 0 &&
+        ((num_spatial_streams == 1 && num_temporal_streams == 2) ||  // Legacy.
+         (num_spatial_streams > 1 && simulcast_id == 0))) {  // Simulcast.
+      // TODO(holmer): This is a "temporary" hack for screensharing, where we
       // interpret the startBitrate as the encoder target bitrate. This is
       // to allow for a different max bitrate, so if the codec can't meet
       // the target we still allow it to overshoot up to the max before dropping
       // frames. This hack should be improved.
-      if (codec_.mode == kScreensharing && codec_.targetBitrate > 0 &&
-          num_temporal_streams == 2) {
-        int tl0_bitrate = std::min(codec_.targetBitrate, target_bitrate_kbps);
-        max_bitrate_kbps = std::min(codec_.maxBitrate, target_bitrate_kbps);
-        target_bitrate_kbps = tl0_bitrate;
-      }
+      int tl0_bitrate = std::min(codec_.targetBitrate, target_bitrate_kbps);
+      max_bitrate_kbps = std::min(codec_.maxBitrate, target_bitrate_kbps);
+      target_bitrate_kbps = tl0_bitrate;
+    } else if (num_spatial_streams == 1) {
+      max_bitrate_kbps = codec_.maxBitrate;
     } else {
       max_bitrate_kbps = codec_.simulcastStream[simulcast_id].maxBitrate;
     }
