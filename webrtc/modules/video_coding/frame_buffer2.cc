@@ -16,6 +16,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/video_coding/include/video_coding_defines.h"
 #include "webrtc/modules/video_coding/jitter_estimator.h"
 #include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -34,7 +35,8 @@ constexpr int kMaxFramesHistory = 50;
 
 FrameBuffer::FrameBuffer(Clock* clock,
                          VCMJitterEstimator* jitter_estimator,
-                         VCMTiming* timing)
+                         VCMTiming* timing,
+                         VCMReceiveStatisticsCallback* stats_callback)
     : clock_(clock),
       new_countinuous_frame_event_(false, false),
       jitter_estimator_(jitter_estimator),
@@ -45,11 +47,10 @@ FrameBuffer::FrameBuffer(Clock* clock,
       num_frames_history_(0),
       num_frames_buffered_(0),
       stopped_(false),
-      protection_mode_(kProtectionNack) {}
+      protection_mode_(kProtectionNack),
+      stats_callback_(stats_callback) {}
 
-FrameBuffer::~FrameBuffer() {
-  UpdateHistograms();
-}
+FrameBuffer::~FrameBuffer() {}
 
 FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     int64_t max_wait_time_ms,
@@ -165,9 +166,8 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   rtc::CritScope lock(&crit_);
   RTC_DCHECK(frame);
 
-  ++num_total_frames_;
-  if (frame->num_references == 0)
-    ++num_key_frames_;
+  if (stats_callback_)
+    stats_callback_->OnCompleteFrame(frame->num_references == 0, frame->size());
 
   FrameKey key(frame->picture_id, frame->spatial_layer);
   int last_continuous_picture_id =
@@ -381,28 +381,22 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
 }
 
 void FrameBuffer::UpdateJitterDelay() {
-  int unused;
-  int delay;
-  timing_->GetTimings(&unused, &unused, &unused, &unused, &delay, &unused,
-                      &unused);
+  if (!stats_callback_)
+    return;
 
-  accumulated_delay_ += delay;
-  ++accumulated_delay_samples_;
-}
-
-void FrameBuffer::UpdateHistograms() const {
-  rtc::CritScope lock(&crit_);
-  if (num_total_frames_ > 0) {
-    int key_frames_permille = (static_cast<float>(num_key_frames_) * 1000.0f /
-                                   static_cast<float>(num_total_frames_) +
-                               0.5f);
-    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesReceivedInPermille",
-                              key_frames_permille);
-  }
-
-  if (accumulated_delay_samples_ > 0) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.JitterBufferDelayInMs",
-                               accumulated_delay_ / accumulated_delay_samples_);
+  int decode_ms;
+  int max_decode_ms;
+  int current_delay_ms;
+  int target_delay_ms;
+  int jitter_buffer_ms;
+  int min_playout_delay_ms;
+  int render_delay_ms;
+  if (timing_->GetTimings(&decode_ms, &max_decode_ms, &current_delay_ms,
+                          &target_delay_ms, &jitter_buffer_ms,
+                          &min_playout_delay_ms, &render_delay_ms)) {
+    stats_callback_->OnFrameBufferTimingsUpdated(
+        decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
+        jitter_buffer_ms, min_playout_delay_ms, render_delay_ms);
   }
 }
 

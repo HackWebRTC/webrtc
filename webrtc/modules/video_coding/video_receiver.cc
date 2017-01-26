@@ -56,31 +56,14 @@ VideoReceiver::~VideoReceiver() {}
 
 void VideoReceiver::Process() {
   // Receive-side statistics
+
+  // TODO(philipel): Remove this if block when we know what to do with
+  //                 ReceiveStatisticsProxy::QualitySample.
   if (_receiveStatsTimer.TimeUntilProcess() == 0) {
     _receiveStatsTimer.Processed();
     rtc::CritScope cs(&process_crit_);
     if (_receiveStatsCallback != nullptr) {
-      uint32_t bitRate;
-      uint32_t frameRate;
-      _receiver.ReceiveStatistics(&bitRate, &frameRate);
-      _receiveStatsCallback->OnReceiveRatesUpdated(bitRate, frameRate);
-    }
-
-    if (_decoderTimingCallback != nullptr) {
-      int decode_ms;
-      int max_decode_ms;
-      int current_delay_ms;
-      int target_delay_ms;
-      int jitter_buffer_ms;
-      int min_playout_delay_ms;
-      int render_delay_ms;
-      if (_timing->GetTimings(&decode_ms, &max_decode_ms, &current_delay_ms,
-                              &target_delay_ms, &jitter_buffer_ms,
-                              &min_playout_delay_ms, &render_delay_ms)) {
-        _decoderTimingCallback->OnDecoderTiming(
-            decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
-            jitter_buffer_ms, min_playout_delay_ms, render_delay_ms);
-      }
+      _receiveStatsCallback->OnReceiveRatesUpdated(0, 0);
     }
   }
 
@@ -292,7 +275,7 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   return ret;
 }
 
-// Used for the WebRTC-NewVideoJitterBuffer experiment.
+// Used for the new jitter buffer.
 // TODO(philipel): Clean up among the Decode functions as we replace
 //                 VCMEncodedFrame with FrameObject.
 int32_t VideoReceiver::Decode(const webrtc::VCMEncodedFrame* frame) {
