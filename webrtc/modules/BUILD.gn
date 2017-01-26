@@ -24,7 +24,6 @@ group("modules") {
     "remote_bitrate_estimator",
     "rtp_rtcp",
     "utility",
-    "video_capture",
     "video_coding",
     "video_processing",
   ]
