@@ -317,7 +317,11 @@ if (is_ios || is_mac) {
         public_headers += [ "objc/Framework/Headers/WebRTC/RTCFileLogger.h" ]
       }
 
-      ldflags = [ "-all_load" ]
+      ldflags = [
+        "-all_load",
+        "-install_name",
+        "@rpath/$output_name.framework/$output_name",
+      ]
 
       deps = [
         ":rtc_sdk_peerconnection_objc",
