@@ -81,6 +81,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
 static const int kPacketLogIntervalMs = 10000;
 
 RtpStreamReceiver::RtpStreamReceiver(
+    vcm::VideoReceiver* video_receiver,
     RemoteBitrateEstimator* remote_bitrate_estimator,
     Transport* transport,
     RtcpRttStats* rtt_stats,
@@ -95,6 +96,7 @@ RtpStreamReceiver::RtpStreamReceiver(
     VCMTiming* timing)
     : clock_(Clock::GetRealTimeClock()),
       config_(*config),
+      video_receiver_(video_receiver),
       remote_bitrate_estimator_(remote_bitrate_estimator),
       packet_router_(packet_router),
       remb_(remb),
@@ -189,21 +191,25 @@ RtpStreamReceiver::RtpStreamReceiver(
 
   process_thread_->RegisterModule(rtp_rtcp_.get());
 
-  nack_module_.reset(
-      new NackModule(clock_, nack_sender, keyframe_request_sender));
-  if (config_.rtp.nack.rtp_history_ms == 0)
-    nack_module_->Stop();
-  process_thread_->RegisterModule(nack_module_.get());
+  jitter_buffer_experiment_ =
+      field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") == "Enabled";
 
-  packet_buffer_ = video_coding::PacketBuffer::Create(
-      clock_, kPacketBufferStartSize, kPacketBufferMaxSixe, this);
-  reference_finder_.reset(new video_coding::RtpFrameReferenceFinder(this));
+  if (jitter_buffer_experiment_) {
+    nack_module_.reset(
+        new NackModule(clock_, nack_sender, keyframe_request_sender));
+    process_thread_->RegisterModule(nack_module_.get());
+
+    packet_buffer_ = video_coding::PacketBuffer::Create(
+        clock_, kPacketBufferStartSize, kPacketBufferMaxSixe, this);
+    reference_finder_.reset(new video_coding::RtpFrameReferenceFinder(this));
+  }
 }
 
 RtpStreamReceiver::~RtpStreamReceiver() {
   process_thread_->DeRegisterModule(rtp_rtcp_.get());
 
-  process_thread_->DeRegisterModule(nack_module_.get());
+  if (jitter_buffer_experiment_)
+    process_thread_->DeRegisterModule(nack_module_.get());
 
   packet_router_->RemoveRtpModule(rtp_rtcp_.get());
   rtp_rtcp_->SetREMBStatus(false);
@@ -248,36 +254,44 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
   rtp_header_with_ntp.ntp_time_ms =
       ntp_estimator_.Estimate(rtp_header->header.timestamp);
-  VCMPacket packet(payload_data, payload_size, rtp_header_with_ntp);
-  timing_->IncomingTimestamp(packet.timestamp, clock_->TimeInMilliseconds());
-  packet.timesNacked = nack_module_->OnReceivedPacket(packet);
+  if (jitter_buffer_experiment_) {
+    VCMPacket packet(payload_data, payload_size, rtp_header_with_ntp);
+    timing_->IncomingTimestamp(packet.timestamp, clock_->TimeInMilliseconds());
+    packet.timesNacked = nack_module_->OnReceivedPacket(packet);
 
-  if (packet.codec == kVideoCodecH264) {
-    // Only when we start to receive packets will we know what payload type
-    // that will be used. When we know the payload type insert the correct
-    // sps/pps into the tracker.
-    if (packet.payloadType != last_payload_type_) {
-      last_payload_type_ = packet.payloadType;
-      InsertSpsPpsIntoTracker(packet.payloadType);
+    if (packet.codec == kVideoCodecH264) {
+      // Only when we start to receive packets will we know what payload type
+      // that will be used. When we know the payload type insert the correct
+      // sps/pps into the tracker.
+      if (packet.payloadType != last_payload_type_) {
+        last_payload_type_ = packet.payloadType;
+        InsertSpsPpsIntoTracker(packet.payloadType);
+      }
+
+      switch (tracker_.CopyAndFixBitstream(&packet)) {
+        case video_coding::H264SpsPpsTracker::kRequestKeyframe:
+          keyframe_request_sender_->RequestKeyFrame();
+          FALLTHROUGH();
+        case video_coding::H264SpsPpsTracker::kDrop:
+          return 0;
+        case video_coding::H264SpsPpsTracker::kInsert:
+          break;
+      }
+    } else {
+      uint8_t* data = new uint8_t[packet.sizeBytes];
+      memcpy(data, packet.dataPtr, packet.sizeBytes);
+      packet.dataPtr = data;
     }
 
-    switch (tracker_.CopyAndFixBitstream(&packet)) {
-      case video_coding::H264SpsPpsTracker::kRequestKeyframe:
-        keyframe_request_sender_->RequestKeyFrame();
-        FALLTHROUGH();
-      case video_coding::H264SpsPpsTracker::kDrop:
-        return 0;
-      case video_coding::H264SpsPpsTracker::kInsert:
-        break;
-    }
-
+    packet_buffer_->InsertPacket(&packet);
   } else {
-    uint8_t* data = new uint8_t[packet.sizeBytes];
-    memcpy(data, packet.dataPtr, packet.sizeBytes);
-    packet.dataPtr = data;
+    RTC_DCHECK(video_receiver_);
+    if (video_receiver_->IncomingPacket(payload_data, payload_size,
+                                        rtp_header_with_ntp) != 0) {
+      // Check this...
+      return -1;
+    }
   }
-
-  packet_buffer_->InsertPacket(&packet);
   return 0;
 }
 
@@ -414,7 +428,8 @@ void RtpStreamReceiver::OnCompleteFrame(
 }
 
 void RtpStreamReceiver::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
-  nack_module_->UpdateRtt(max_rtt_ms);
+  if (jitter_buffer_experiment_)
+    nack_module_->UpdateRtt(max_rtt_ms);
 }
 
 bool RtpStreamReceiver::ReceivePacket(const uint8_t* packet,
@@ -542,31 +557,35 @@ bool RtpStreamReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
 }
 
 void RtpStreamReceiver::FrameContinuous(uint16_t picture_id) {
-  int seq_num = -1;
-  {
-    rtc::CritScope lock(&last_seq_num_cs_);
-    auto seq_num_it = last_seq_num_for_pic_id_.find(picture_id);
-    if (seq_num_it != last_seq_num_for_pic_id_.end())
-      seq_num = seq_num_it->second;
+  if (jitter_buffer_experiment_) {
+    int seq_num = -1;
+    {
+      rtc::CritScope lock(&last_seq_num_cs_);
+      auto seq_num_it = last_seq_num_for_pic_id_.find(picture_id);
+      if (seq_num_it != last_seq_num_for_pic_id_.end())
+        seq_num = seq_num_it->second;
+    }
+    if (seq_num != -1)
+      nack_module_->ClearUpTo(seq_num);
   }
-  if (seq_num != -1)
-    nack_module_->ClearUpTo(seq_num);
 }
 
 void RtpStreamReceiver::FrameDecoded(uint16_t picture_id) {
-  int seq_num = -1;
-  {
-    rtc::CritScope lock(&last_seq_num_cs_);
-    auto seq_num_it = last_seq_num_for_pic_id_.find(picture_id);
-    if (seq_num_it != last_seq_num_for_pic_id_.end()) {
-      seq_num = seq_num_it->second;
-      last_seq_num_for_pic_id_.erase(last_seq_num_for_pic_id_.begin(),
-                                     ++seq_num_it);
+  if (jitter_buffer_experiment_) {
+    int seq_num = -1;
+    {
+      rtc::CritScope lock(&last_seq_num_cs_);
+      auto seq_num_it = last_seq_num_for_pic_id_.find(picture_id);
+      if (seq_num_it != last_seq_num_for_pic_id_.end()) {
+        seq_num = seq_num_it->second;
+        last_seq_num_for_pic_id_.erase(last_seq_num_for_pic_id_.begin(),
+                                       ++seq_num_it);
+      }
     }
-  }
-  if (seq_num != -1) {
-    packet_buffer_->ClearTo(seq_num);
-    reference_finder_->ClearTo(seq_num);
+    if (seq_num != -1) {
+      packet_buffer_->ClearTo(seq_num);
+      reference_finder_->ClearTo(seq_num);
+    }
   }
 }
 

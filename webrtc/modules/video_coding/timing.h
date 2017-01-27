@@ -94,13 +94,13 @@ class VCMTiming {
 
   // Return current timing information. Returns true if the first frame has been
   // decoded, false otherwise.
-  virtual bool GetTimings(int* decode_ms,
-                          int* max_decode_ms,
-                          int* current_delay_ms,
-                          int* target_delay_ms,
-                          int* jitter_buffer_ms,
-                          int* min_playout_delay_ms,
-                          int* render_delay_ms) const;
+  bool GetTimings(int* decode_ms,
+                  int* max_decode_ms,
+                  int* current_delay_ms,
+                  int* target_delay_ms,
+                  int* jitter_buffer_ms,
+                  int* min_playout_delay_ms,
+                  int* render_delay_ms) const;
 
   enum { kDefaultRenderDelayMs = 10 };
   enum { kDelayMaxChangeMsPerS = 100 };

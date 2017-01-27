@@ -65,6 +65,7 @@ class RtpStreamReceiver : public RtpData,
                           public CallStatsObserver {
  public:
   RtpStreamReceiver(
+      vcm::VideoReceiver* video_receiver,
       RemoteBitrateEstimator* remote_bitrate_estimator,
       Transport* transport,
       RtcpRttStats* rtt_stats,
@@ -161,6 +162,7 @@ class RtpStreamReceiver : public RtpData,
   Clock* const clock_;
   // Ownership of this object lies with VideoReceiveStream, which owns |this|.
   const VideoReceiveStream::Config& config_;
+  vcm::VideoReceiver* const video_receiver_;
   RemoteBitrateEstimator* const remote_bitrate_estimator_;
   PacketRouter* const packet_router_;
   VieRemb* const remb_;
@@ -183,6 +185,7 @@ class RtpStreamReceiver : public RtpData,
   const std::unique_ptr<RtpRtcp> rtp_rtcp_;
 
   // Members for the new jitter buffer experiment.
+  bool jitter_buffer_experiment_;
   video_coding::OnCompleteFrameCallback* complete_frame_callback_;
   KeyFrameRequestSender* keyframe_request_sender_;
   VCMTiming* timing_;

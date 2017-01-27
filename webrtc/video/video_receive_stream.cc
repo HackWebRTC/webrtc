@@ -207,6 +207,7 @@ VideoReceiveStream::VideoReceiveStream(
       video_receiver_(clock_, nullptr, this, timing_.get(), this, this),
       stats_proxy_(&config_, clock_),
       rtp_stream_receiver_(
+          &video_receiver_,
           congestion_controller_->GetRemoteBitrateEstimator(
               UseSendSideBwe(config_)),
           &transport_adapter_,
@@ -220,7 +221,10 @@ VideoReceiveStream::VideoReceiveStream(
           this,  // KeyFrameRequestSender
           this,  // OnCompleteFrameCallback
           timing_.get()),
-      rtp_stream_sync_(&video_receiver_, &rtp_stream_receiver_) {
+      rtp_stream_sync_(&video_receiver_, &rtp_stream_receiver_),
+      jitter_buffer_experiment_(
+          field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") ==
+          "Enabled") {
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   RTC_DCHECK(process_thread_);
@@ -240,9 +244,11 @@ VideoReceiveStream::VideoReceiveStream(
 
   video_receiver_.SetRenderDelay(config.render_delay_ms);
 
-  jitter_estimator_.reset(new VCMJitterEstimator(clock_));
-  frame_buffer_.reset(new video_coding::FrameBuffer(
-      clock_, jitter_estimator_.get(), timing_.get(), &stats_proxy_));
+  if (jitter_buffer_experiment_) {
+    jitter_estimator_.reset(new VCMJitterEstimator(clock_));
+    frame_buffer_.reset(new video_coding::FrameBuffer(
+        clock_, jitter_estimator_.get(), timing_.get()));
+  }
 
   process_thread_->RegisterModule(&video_receiver_);
   process_thread_->RegisterModule(&rtp_stream_sync_);
@@ -293,15 +299,15 @@ void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
 void VideoReceiveStream::Start() {
   if (decode_thread_.IsRunning())
     return;
+  if (jitter_buffer_experiment_) {
+    frame_buffer_->Start();
+    call_stats_->RegisterStatsObserver(&rtp_stream_receiver_);
 
-  frame_buffer_->Start();
-  call_stats_->RegisterStatsObserver(&rtp_stream_receiver_);
-
-  if (rtp_stream_receiver_.IsRetransmissionsEnabled() &&
-      rtp_stream_receiver_.IsUlpfecEnabled()) {
-    frame_buffer_->SetProtectionMode(kProtectionNackFEC);
+    if (rtp_stream_receiver_.IsRetransmissionsEnabled() &&
+        rtp_stream_receiver_.IsUlpfecEnabled()) {
+      frame_buffer_->SetProtectionMode(kProtectionNackFEC);
+    }
   }
-
   transport_adapter_.Enable();
   rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;
   if (config_.renderer) {
@@ -345,8 +351,10 @@ void VideoReceiveStream::Stop() {
   // before joining the decoder thread thread.
   video_receiver_.TriggerDecoderShutdown();
 
-  frame_buffer_->Stop();
-  call_stats_->DeregisterStatsObserver(&rtp_stream_receiver_);
+  if (jitter_buffer_experiment_) {
+    frame_buffer_->Stop();
+    call_stats_->DeregisterStatsObserver(&rtp_stream_receiver_);
+  }
 
   if (decode_thread_.IsRunning()) {
     decode_thread_.Stop();
@@ -458,21 +466,26 @@ bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
 }
 
 void VideoReceiveStream::Decode() {
-  static const int kMaxWaitForFrameMs = 3000;
-  std::unique_ptr<video_coding::FrameObject> frame;
-  video_coding::FrameBuffer::ReturnReason res =
-      frame_buffer_->NextFrame(kMaxWaitForFrameMs, &frame);
+  static const int kMaxDecodeWaitTimeMs = 50;
+  if (jitter_buffer_experiment_) {
+    static const int kMaxWaitForFrameMs = 3000;
+    std::unique_ptr<video_coding::FrameObject> frame;
+    video_coding::FrameBuffer::ReturnReason res =
+        frame_buffer_->NextFrame(kMaxWaitForFrameMs, &frame);
 
-  if (res == video_coding::FrameBuffer::ReturnReason::kStopped)
-    return;
+    if (res == video_coding::FrameBuffer::ReturnReason::kStopped)
+      return;
 
-  if (frame) {
-    if (video_receiver_.Decode(frame.get()) == VCM_OK)
-      rtp_stream_receiver_.FrameDecoded(frame->picture_id);
+    if (frame) {
+      if (video_receiver_.Decode(frame.get()) == VCM_OK)
+        rtp_stream_receiver_.FrameDecoded(frame->picture_id);
+    } else {
+      LOG(LS_WARNING) << "No decodable frame in " << kMaxWaitForFrameMs
+                      << " ms, requesting keyframe.";
+      RequestKeyFrame();
+    }
   } else {
-    LOG(LS_WARNING) << "No decodable frame in " << kMaxWaitForFrameMs
-                    << " ms, requesting keyframe.";
-    RequestKeyFrame();
+    video_receiver_.Decode(kMaxDecodeWaitTimeMs);
   }
 }
 
