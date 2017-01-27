@@ -76,6 +76,8 @@ public class PeerConnectionClient {
   private static final String VIDEO_CODEC_PARAM_START_BITRATE = "x-google-start-bitrate";
   private static final String VIDEO_FLEXFEC_FIELDTRIAL = "WebRTC-FlexFEC-03/Enabled/";
   private static final String VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL = "WebRTC-IntelVP8/Enabled/";
+  private static final String VIDEO_H264_HIGH_PROFILE_FIELDTRIAL =
+      "WebRTC-H264HighProfile/Enabled/";
   private static final String AUDIO_CODEC_PARAM_BITRATE = "maxaveragebitrate";
   private static final String AUDIO_ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation";
   private static final String AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl";
@@ -378,6 +380,7 @@ public class PeerConnectionClient {
       Log.d(TAG, "Enable FlexFEC field trial.");
     }
     fieldTrials += VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL;
+    fieldTrials += VIDEO_H264_HIGH_PROFILE_FIELDTRIAL;
     PeerConnectionFactory.initializeFieldTrials(fieldTrials);
 
     // Check preferred video codec.

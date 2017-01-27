@@ -73,6 +73,8 @@ public class MediaCodecVideoDecoder {
   // List of supported HW H.264 decoders.
   private static final String[] supportedH264HwCodecPrefixes = {
       "OMX.qcom.", "OMX.Intel.", "OMX.Exynos."};
+  // List of supported HW H.264 high profile decoders.
+  private static final String[] supportedH264HighProfileHwCodecPrefixes = {"OMX.qcom."};
 
   // NV12 color format supported by QCOM codec, but not declared in MediaCodec -
   // see /hardware/qcom/media/mm-core/inc/OMX_QCOMExtns.h
@@ -147,6 +149,12 @@ public class MediaCodecVideoDecoder {
   public static boolean isH264HwSupported() {
     return !hwDecoderDisabledTypes.contains(H264_MIME_TYPE)
         && (findDecoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null);
+  }
+
+  public static boolean isH264HighProfileHwSupported() {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+        && !hwDecoderDisabledTypes.contains(H264_MIME_TYPE)
+        && (findDecoder(H264_MIME_TYPE, supportedH264HighProfileHwCodecPrefixes) != null);
   }
 
   public static void printStackTrace() {

@@ -83,6 +83,7 @@ namespace {
 // Maximum time limit between incoming frames before requesting a key frame.
 const size_t kFrameDiffThresholdMs = 350;
 const int kMinKeyFrameInterval = 6;
+const char kH264HighProfileFieldTrial[] = "WebRTC-H264HighProfile";
 }  // namespace
 
 // MediaCodecVideoEncoder is a webrtc::VideoEncoder implementation that uses
@@ -1193,6 +1194,7 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   jclass j_encoder_class = FindClass(jni, "org/webrtc/MediaCodecVideoEncoder");
+  jclass j_decoder_class = FindClass(jni, "org/webrtc/MediaCodecVideoDecoder");
   supported_codecs_.clear();
 
   bool is_vp8_hw_supported = jni->CallStaticBooleanMethod(
@@ -1213,6 +1215,32 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
     supported_codecs_.push_back(cricket::VideoCodec("VP9"));
   }
 
+  // Check if high profile is supported by decoder. If yes, encoder can always
+  // fall back to baseline profile as a subset as high profile.
+  bool is_h264_high_profile_hw_supported = false;
+  if (webrtc::field_trial::FindFullName(kH264HighProfileFieldTrial) ==
+      "Enabled") {
+    is_h264_high_profile_hw_supported = jni->CallStaticBooleanMethod(
+        j_decoder_class,
+        GetStaticMethodID(jni, j_decoder_class, "isH264HighProfileHwSupported",
+                          "()Z"));
+    CHECK_EXCEPTION(jni);
+  }
+  if (is_h264_high_profile_hw_supported) {
+    ALOGD << "H.264 High Profile HW Encoder supported.";
+    // TODO(magjed): Enumerate actual level instead of using hardcoded level
+    // 3.1. Level 3.1 is 1280x720@30fps which is enough for now.
+    cricket::VideoCodec constrained_high(cricket::kH264CodecName);
+    const webrtc::H264::ProfileLevelId constrained_high_profile(
+        webrtc::H264::kProfileConstrainedHigh, webrtc::H264::kLevel3_1);
+    constrained_high.SetParam(
+        cricket::kH264FmtpProfileLevelId,
+        *webrtc::H264::ProfileLevelIdToString(constrained_high_profile));
+    constrained_high.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
+    constrained_high.SetParam(cricket::kH264FmtpPacketizationMode, "1");
+    supported_codecs_.push_back(constrained_high);
+  }
+
   bool is_h264_hw_supported = jni->CallStaticBooleanMethod(
       j_encoder_class,
       GetStaticMethodID(jni, j_encoder_class, "isH264HwSupported", "()Z"));
@@ -1224,8 +1252,6 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
     // profile as long as we have decode support for it and still send Baseline
     // since Baseline is a subset of the High profile.
     cricket::VideoCodec constrained_baseline(cricket::kH264CodecName);
-    // TODO(magjed): Enumerate actual level instead of using hardcoded level
-    // 3.1. Level 3.1 is 1280x720@30fps which is enough for now.
     const webrtc::H264::ProfileLevelId constrained_baseline_profile(
         webrtc::H264::kProfileConstrainedBaseline, webrtc::H264::kLevel3_1);
     constrained_baseline.SetParam(
