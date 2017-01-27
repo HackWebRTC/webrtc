@@ -312,7 +312,7 @@ class RTCRTPStreamStats : public RTCStats {
   // crbug.com/657855, 657856
   RTCStatsMember<bool> is_remote;  // = false
   RTCStatsMember<std::string> media_type;
-  RTCStatsMember<std::string> media_track_id;
+  RTCStatsMember<std::string> track_id;
   RTCStatsMember<std::string> transport_id;
   RTCStatsMember<std::string> codec_id;
   // FIR and PLI counts are only defined for |media_type == "video"|.

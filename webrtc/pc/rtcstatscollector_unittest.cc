@@ -1720,7 +1720,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   expected_audio.ssrc = "1";
   expected_audio.is_remote = false;
   expected_audio.media_type = "audio";
-  expected_audio.media_track_id =
+  expected_audio.track_id =
       "RTCMediaStreamTrack_remote_audio_RemoteAudioTrackID_1";
   expected_audio.transport_id = "RTCTransport_TransportName_" +
       rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -1736,7 +1736,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
       expected_audio.id())->cast_to<RTCInboundRTPStreamStats>();
   EXPECT_EQ(audio, expected_audio);
 
-  EXPECT_TRUE(report->Get(*expected_audio.media_track_id));
+  EXPECT_TRUE(report->Get(*expected_audio.track_id));
   EXPECT_TRUE(report->Get(*expected_audio.transport_id));
   EXPECT_TRUE(report->Get(*expected_audio.codec_id));
 }
@@ -1802,7 +1802,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   expected_video.ssrc = "1";
   expected_video.is_remote = false;
   expected_video.media_type = "video";
-  expected_video.media_track_id =
+  expected_video.track_id =
       "RTCMediaStreamTrack_remote_video_RemoteVideoTrackID_1";
   expected_video.transport_id = "RTCTransport_TransportName_" +
       rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -1821,7 +1821,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
       expected_video.id())->cast_to<RTCInboundRTPStreamStats>();
   EXPECT_EQ(video, expected_video);
 
-  EXPECT_TRUE(report->Get(*expected_video.media_track_id));
+  EXPECT_TRUE(report->Get(*expected_video.track_id));
   EXPECT_TRUE(report->Get(*expected_video.transport_id));
   EXPECT_TRUE(report->Get(*video.codec_id));
 }
@@ -1881,7 +1881,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   expected_audio.ssrc = "1";
   expected_audio.is_remote = false;
   expected_audio.media_type = "audio";
-  expected_audio.media_track_id =
+  expected_audio.track_id =
       "RTCMediaStreamTrack_local_audio_LocalAudioTrackID_1";
   expected_audio.transport_id = "RTCTransport_TransportName_" +
       rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -1895,7 +1895,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
       expected_audio.id())->cast_to<RTCOutboundRTPStreamStats>();
   EXPECT_EQ(audio, expected_audio);
 
-  EXPECT_TRUE(report->Get(*expected_audio.media_track_id));
+  EXPECT_TRUE(report->Get(*expected_audio.track_id));
   EXPECT_TRUE(report->Get(*expected_audio.transport_id));
   EXPECT_TRUE(report->Get(*expected_audio.codec_id));
 }
@@ -1960,7 +1960,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.ssrc = "1";
   expected_video.is_remote = false;
   expected_video.media_type = "video";
-  expected_video.media_track_id =
+  expected_video.track_id =
       "RTCMediaStreamTrack_local_video_LocalVideoTrackID_1";
   expected_video.transport_id = "RTCTransport_TransportName_" +
       rtc::ToString<>(cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -1979,7 +1979,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
       expected_video.id())->cast_to<RTCOutboundRTPStreamStats>();
   EXPECT_EQ(video, expected_video);
 
-  EXPECT_TRUE(report->Get(*expected_video.media_track_id));
+  EXPECT_TRUE(report->Get(*expected_video.track_id));
   EXPECT_TRUE(report->Get(*expected_video.transport_id));
   EXPECT_TRUE(report->Get(*expected_video.codec_id));
 }

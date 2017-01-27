@@ -930,7 +930,7 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
           track_media_info_map_->GetAudioTrack(voice_receiver_info);
       if (audio_track) {
         RTC_DCHECK(track_to_id_.find(audio_track.get()) != track_to_id_.end());
-        inbound_audio->media_track_id =
+        inbound_audio->track_id =
             RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
                 false,
                 MediaStreamTrackInterface::kAudioKind,
@@ -963,7 +963,7 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
           track_media_info_map_->GetAudioTrack(voice_sender_info);
       if (audio_track) {
         RTC_DCHECK(track_to_id_.find(audio_track.get()) != track_to_id_.end());
-        outbound_audio->media_track_id =
+        outbound_audio->track_id =
             RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
                 true,
                 MediaStreamTrackInterface::kAudioKind,
@@ -1002,7 +1002,7 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
           track_media_info_map_->GetVideoTrack(video_receiver_info);
       if (video_track) {
         RTC_DCHECK(track_to_id_.find(video_track.get()) != track_to_id_.end());
-        inbound_video->media_track_id =
+        inbound_video->track_id =
             RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
                 false,
                 MediaStreamTrackInterface::kVideoKind,
@@ -1035,7 +1035,7 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
           track_media_info_map_->GetVideoTrack(video_sender_info);
       if (video_track) {
         RTC_DCHECK(track_to_id_.find(video_track.get()) != track_to_id_.end());
-        outbound_video->media_track_id =
+        outbound_video->track_id =
             RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
                 true,
                 MediaStreamTrackInterface::kVideoKind,

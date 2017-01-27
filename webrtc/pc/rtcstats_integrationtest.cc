@@ -505,7 +505,7 @@ class RTCStatsReportVerifier {
     verifier->TestMemberIsDefined(stream.is_remote);
     verifier->TestMemberIsDefined(stream.media_type);
     verifier->TestMemberIsIDReference(
-        stream.media_track_id, RTCMediaStreamTrackStats::kType);
+        stream.track_id, RTCMediaStreamTrackStats::kType);
     verifier->TestMemberIsIDReference(
         stream.transport_id, RTCTransportStats::kType);
     verifier->TestMemberIsIDReference(stream.codec_id, RTCCodecStats::kType);
