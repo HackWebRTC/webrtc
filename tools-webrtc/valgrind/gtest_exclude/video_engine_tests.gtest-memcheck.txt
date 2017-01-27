@@ -9,3 +9,6 @@ EndToEndTest.VerifyHistogramStatsWithRed
 # https://bugs.chromium.org/p/webrtc/issues/detail?id=5134
 EndToEndTest.AssignsTransportSequenceNumbers
 
+# https://bugs.chromium.org/p/webrtc/issues/detail?id=6886
+VideoSendStreamTest.RemoveOverheadFromBandwidth
+
