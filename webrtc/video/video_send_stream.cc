@@ -815,9 +815,12 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       config_->periodic_alr_bandwidth_probing);
 
   // RTP/RTCP initialization.
-  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+
+  // We add the highest spatial layer first to ensure it'll be prioritized
+  // when sending padding, with the hope that the packet rate will be smaller,
+  // and that it's more important to protect than the lower layers.
+  for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
     packet_router_->AddRtpModule(rtp_rtcp);
-  }
 
   for (size_t i = 0; i < config_->rtp.extensions.size(); ++i) {
     const std::string& extension = config_->rtp.extensions[i].uri;

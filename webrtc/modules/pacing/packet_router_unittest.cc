@@ -108,34 +108,37 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   const uint16_t kSsrc2 = 4567;
 
   MockRtpRtcp rtp_1;
+  EXPECT_CALL(rtp_1, RtxSendStatus()).WillOnce(Return(kRtxOff));
   EXPECT_CALL(rtp_1, SSRC()).WillRepeatedly(Return(kSsrc1));
   MockRtpRtcp rtp_2;
+  // rtp_2 will be prioritized for padding.
+  EXPECT_CALL(rtp_2, RtxSendStatus()).WillOnce(Return(kRtxRedundantPayloads));
   EXPECT_CALL(rtp_2, SSRC()).WillRepeatedly(Return(kSsrc2));
   packet_router_->AddRtpModule(&rtp_1);
   packet_router_->AddRtpModule(&rtp_2);
 
   // Default configuration, sending padding on all modules sending media,
-  // ordered by SSRC.
+  // ordered by priority (based on rtx mode).
   const size_t requested_padding_bytes = 1000;
   const size_t sent_padding_bytes = 890;
-  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
-  EXPECT_CALL(rtp_1, TimeToSendPadding(requested_padding_bytes, 111))
+  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, 111))
       .Times(1)
       .WillOnce(Return(sent_padding_bytes));
-  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
-  EXPECT_CALL(rtp_2, TimeToSendPadding(
+  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, TimeToSendPadding(
                          requested_padding_bytes - sent_padding_bytes, 111))
       .Times(1)
       .WillOnce(Return(requested_padding_bytes - sent_padding_bytes));
   EXPECT_EQ(requested_padding_bytes,
             packet_router_->TimeToSendPadding(requested_padding_bytes, 111));
 
-  // Let only the second module be sending and verify the padding request is
-  // routed there.
-  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(false));
-  EXPECT_CALL(rtp_1, TimeToSendPadding(requested_padding_bytes, _)).Times(0);
-  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
-  EXPECT_CALL(rtp_2, TimeToSendPadding(_, _))
+  // Let only the lower priority module be sending and verify the padding
+  // request is routed there.
+  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
+  EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, _)).Times(0);
+  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, TimeToSendPadding(_, _))
       .Times(1)
       .WillOnce(Return(sent_padding_bytes));
   EXPECT_EQ(sent_padding_bytes,
