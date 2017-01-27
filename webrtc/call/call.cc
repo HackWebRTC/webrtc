@@ -638,10 +638,18 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
     webrtc::VideoReceiveStream::Config configuration) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
+
+  bool protected_by_flexfec = false;
+  {
+    ReadLockScoped read_lock(*receive_crit_);
+    protected_by_flexfec =
+        flexfec_receive_ssrcs_media_.find(configuration.rtp.remote_ssrc) !=
+        flexfec_receive_ssrcs_media_.end();
+  }
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      num_cpu_cores_, congestion_controller_.get(), &packet_router_,
-      std::move(configuration), voice_engine(), module_process_thread_.get(),
-      call_stats_.get(), &remb_);
+      num_cpu_cores_, protected_by_flexfec, congestion_controller_.get(),
+      &packet_router_, std::move(configuration), voice_engine(),
+      module_process_thread_.get(), call_stats_.get(), &remb_);
 
   const webrtc::VideoReceiveStream::Config& config = receive_stream->config();
   {

@@ -119,6 +119,9 @@ class Call {
   virtual void DestroyVideoReceiveStream(
       VideoReceiveStream* receive_stream) = 0;
 
+  // In order for a created VideoReceiveStream to be aware that it is
+  // protected by a FlexfecReceiveStream, the latter should be created before
+  // the former.
   virtual FlexfecReceiveStream* CreateFlexfecReceiveStream(
       const FlexfecReceiveStream::Config& config) = 0;
   virtual void DestroyFlexfecReceiveStream(

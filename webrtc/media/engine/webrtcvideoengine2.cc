@@ -2278,19 +2278,20 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvParameters(
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
+  if (stream_) {
+    call_->DestroyVideoReceiveStream(stream_);
+    stream_ = nullptr;
+  }
   if (flexfec_stream_) {
     call_->DestroyFlexfecReceiveStream(flexfec_stream_);
     flexfec_stream_ = nullptr;
   }
-  if (stream_) {
-    call_->DestroyVideoReceiveStream(stream_);
-  }
-  stream_ = call_->CreateVideoReceiveStream(config_.Copy());
-  stream_->Start();
   if (IsFlexfecFieldTrialEnabled() && flexfec_config_.IsCompleteAndEnabled()) {
     flexfec_stream_ = call_->CreateFlexfecReceiveStream(flexfec_config_);
     flexfec_stream_->Start();
   }
+  stream_ = call_->CreateVideoReceiveStream(config_.Copy());
+  stream_->Start();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders(

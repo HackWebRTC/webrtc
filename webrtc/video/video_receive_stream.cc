@@ -186,6 +186,7 @@ namespace internal {
 
 VideoReceiveStream::VideoReceiveStream(
     int num_cpu_cores,
+    bool protected_by_flexfec,
     CongestionController* congestion_controller,
     PacketRouter* packet_router,
     VideoReceiveStream::Config config,
@@ -196,6 +197,7 @@ VideoReceiveStream::VideoReceiveStream(
     : transport_adapter_(config.rtcp_send_transport),
       config_(std::move(config)),
       num_cpu_cores_(num_cpu_cores),
+      protected_by_flexfec_(protected_by_flexfec),
       process_thread_(process_thread),
       clock_(Clock::GetRealTimeClock()),
       decode_thread_(DecodeThreadFunction, this, "DecodingThread"),
@@ -204,21 +206,20 @@ VideoReceiveStream::VideoReceiveStream(
       timing_(new VCMTiming(clock_)),
       video_receiver_(clock_, nullptr, this, timing_.get(), this, this),
       stats_proxy_(&config_, clock_),
-      rtp_stream_receiver_(
-          &video_receiver_,
-          congestion_controller_->GetRemoteBitrateEstimator(
-              UseSendSideBwe(config_)),
-          &transport_adapter_,
-          call_stats_->rtcp_rtt_stats(),
-          packet_router,
-          remb,
-          &config_,
-          &stats_proxy_,
-          process_thread_,
-          this,  // NackSender
-          this,  // KeyFrameRequestSender
-          this,  // OnCompleteFrameCallback
-          timing_.get()),
+      rtp_stream_receiver_(&video_receiver_,
+                           congestion_controller_->GetRemoteBitrateEstimator(
+                               UseSendSideBwe(config_)),
+                           &transport_adapter_,
+                           call_stats_->rtcp_rtt_stats(),
+                           packet_router,
+                           remb,
+                           &config_,
+                           &stats_proxy_,
+                           process_thread_,
+                           this,  // NackSender
+                           this,  // KeyFrameRequestSender
+                           this,  // OnCompleteFrameCallback
+                           timing_.get()),
       rtp_stream_sync_(&video_receiver_, &rtp_stream_receiver_),
       jitter_buffer_experiment_(
           field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") ==
@@ -297,12 +298,15 @@ void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
 void VideoReceiveStream::Start() {
   if (decode_thread_.IsRunning())
     return;
+
+  bool protected_by_fec =
+      protected_by_flexfec_ || rtp_stream_receiver_.IsUlpfecEnabled();
+
   if (jitter_buffer_experiment_) {
     frame_buffer_->Start();
     call_stats_->RegisterStatsObserver(&rtp_stream_receiver_);
 
-    if (rtp_stream_receiver_.IsRetransmissionsEnabled() &&
-        rtp_stream_receiver_.IsUlpfecEnabled()) {
+    if (rtp_stream_receiver_.IsRetransmissionsEnabled() && protected_by_fec) {
       frame_buffer_->SetProtectionMode(kProtectionNackFEC);
     }
   }
@@ -331,9 +335,8 @@ void VideoReceiveStream::Start() {
 
   video_stream_decoder_.reset(new VideoStreamDecoder(
       &video_receiver_, &rtp_stream_receiver_, &rtp_stream_receiver_,
-      rtp_stream_receiver_.IsRetransmissionsEnabled(),
-      rtp_stream_receiver_.IsUlpfecEnabled(), &stats_proxy_, renderer,
-      config_.pre_render_callback));
+      rtp_stream_receiver_.IsRetransmissionsEnabled(), protected_by_fec,
+      &stats_proxy_, renderer, config_.pre_render_callback));
   // Register the channel to receive stats updates.
   call_stats_->RegisterStatsObserver(video_stream_decoder_.get());
   // Start the decode thread

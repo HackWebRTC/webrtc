@@ -100,6 +100,10 @@ void CallTest::RunBaseTest(BaseTest* test) {
     test->ModifyFlexfecConfigs(&flexfec_receive_configs_);
   }
 
+  if (num_flexfec_streams_ > 0) {
+    CreateFlexfecStreams();
+    test->OnFlexfecStreamsCreated(flexfec_receive_streams_);
+  }
   if (num_video_streams_ > 0) {
     CreateVideoStreams();
     test->OnVideoStreamsCreated(video_send_stream_, video_receive_streams_);
@@ -107,10 +111,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
   if (num_audio_streams_ > 0) {
     CreateAudioStreams();
     test->OnAudioStreamsCreated(audio_send_stream_, audio_receive_streams_);
-  }
-  if (num_flexfec_streams_ > 0) {
-    CreateFlexfecStreams();
-    test->OnFlexfecStreamsCreated(flexfec_receive_streams_);
   }
 
   if (num_video_streams_ > 0) {
@@ -352,17 +352,17 @@ void CallTest::CreateFlexfecStreams() {
 }
 
 void CallTest::DestroyStreams() {
-  if (video_send_stream_)
-    sender_call_->DestroyVideoSendStream(video_send_stream_);
-  video_send_stream_ = nullptr;
-  for (VideoReceiveStream* video_recv_stream : video_receive_streams_)
-    receiver_call_->DestroyVideoReceiveStream(video_recv_stream);
-
   if (audio_send_stream_)
     sender_call_->DestroyAudioSendStream(audio_send_stream_);
   audio_send_stream_ = nullptr;
   for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
     receiver_call_->DestroyAudioReceiveStream(audio_recv_stream);
+
+  if (video_send_stream_)
+    sender_call_->DestroyVideoSendStream(video_send_stream_);
+  video_send_stream_ = nullptr;
+  for (VideoReceiveStream* video_recv_stream : video_receive_streams_)
+    receiver_call_->DestroyVideoReceiveStream(video_recv_stream);
 
   for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
     receiver_call_->DestroyFlexfecReceiveStream(flexfec_recv_stream);
