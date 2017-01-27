@@ -76,15 +76,15 @@ class EchoCanceller3 {
   void AnalyzeCapture(AudioBuffer* capture);
   // Processes the split-band domain capture signal in order to remove any echo
   // present in the signal.
-  void ProcessCapture(AudioBuffer* capture, bool known_echo_path_change);
+  void ProcessCapture(AudioBuffer* capture, bool level_change);
 
   // Signals whether an external detector has detected echo leakage from the
   // echo canceller.
   // Note that in the case echo leakage has been flagged, it should be unflagged
   // once it is no longer occurring.
-  void ReportEchoLeakage(bool leakage_detected) {
+  void UpdateEchoLeakageStatus(bool leakage_detected) {
     RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
-    block_processor_->ReportEchoLeakage(leakage_detected);
+    block_processor_->UpdateEchoLeakageStatus(leakage_detected);
   }
 
   // Validates a config.
@@ -96,6 +96,8 @@ class EchoCanceller3 {
  private:
   class RenderWriter;
 
+  // Empties the render SwapQueue. A bool is returned that indicates the success
+  // of the operation.
   bool EmptyRenderQueue();
 
   rtc::RaceChecker capture_race_checker_;

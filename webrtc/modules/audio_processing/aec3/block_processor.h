@@ -14,8 +14,9 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
+#include "webrtc/modules/audio_processing/aec3/echo_remover.h"
+#include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
+#include "webrtc/modules/audio_processing/aec3/render_delay_controller.h"
 
 namespace webrtc {
 
@@ -23,20 +24,31 @@ namespace webrtc {
 class BlockProcessor {
  public:
   static BlockProcessor* Create(int sample_rate_hz);
+  // Only used for testing purposes.
+  static BlockProcessor* Create(
+      int sample_rate_hz,
+      std::unique_ptr<RenderDelayBuffer> render_buffer);
+  static BlockProcessor* Create(
+      int sample_rate_hz,
+      std::unique_ptr<RenderDelayBuffer> render_buffer,
+      std::unique_ptr<RenderDelayController> delay_controller,
+      std::unique_ptr<EchoRemover> echo_remover);
+
   virtual ~BlockProcessor() = default;
 
   // Processes a block of capture data.
   virtual void ProcessCapture(
-      bool known_echo_path_change,
-      bool saturated_microphone_signal,
+      bool echo_path_gain_change,
+      bool capture_signal_saturation,
       std::vector<std::vector<float>>* capture_block) = 0;
 
-  // Buffers a block of render data supplied by a FrameBlocker object.
+  // Buffers a block of render data supplied by a FrameBlocker object. Returns a
+  // bool indicating the success of the buffering.
   virtual bool BufferRender(std::vector<std::vector<float>>* render_block) = 0;
 
   // Reports whether echo leakage has been detected in the echo canceller
   // output.
-  virtual void ReportEchoLeakage(bool leakage_detected) = 0;
+  virtual void UpdateEchoLeakageStatus(bool leakage_detected) = 0;
 };
 
 }  // namespace webrtc

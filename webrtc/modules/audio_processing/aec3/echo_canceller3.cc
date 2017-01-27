@@ -53,7 +53,7 @@ void FillSubFrameView(std::vector<std::vector<float>>* frame,
 
 void ProcessCaptureFrameContent(
     AudioBuffer* capture,
-    bool known_echo_path_change,
+    bool level_change,
     bool saturated_microphone_signal,
     size_t sub_frame_index,
     FrameBlocker* capture_blocker,
@@ -63,13 +63,13 @@ void ProcessCaptureFrameContent(
     std::vector<rtc::ArrayView<float>>* sub_frame_view) {
   FillSubFrameView(capture, sub_frame_index, sub_frame_view);
   capture_blocker->InsertSubFrameAndExtractBlock(*sub_frame_view, block);
-  block_processor->ProcessCapture(known_echo_path_change,
-                                  saturated_microphone_signal, block);
+  block_processor->ProcessCapture(level_change, saturated_microphone_signal,
+                                  block);
   output_framer->InsertBlockAndExtractSubFrame(*block, sub_frame_view);
 }
 
 void ProcessRemainingCaptureFrameContent(
-    bool known_echo_path_change,
+    bool level_change,
     bool saturated_microphone_signal,
     FrameBlocker* capture_blocker,
     BlockFramer* output_framer,
@@ -80,8 +80,8 @@ void ProcessRemainingCaptureFrameContent(
   }
 
   capture_blocker->ExtractBlock(block);
-  block_processor->ProcessCapture(known_echo_path_change,
-                                  saturated_microphone_signal, block);
+  block_processor->ProcessCapture(level_change, saturated_microphone_signal,
+                                  block);
   output_framer->InsertBlock(*block);
 }
 
@@ -101,7 +101,7 @@ bool BufferRemainingRenderFrameContent(FrameBlocker* render_blocker,
                                        BlockProcessor* block_processor,
                                        std::vector<std::vector<float>>* block) {
   if (!render_blocker->IsBlockAvailable()) {
-    return false;
+    return true;
   }
   render_blocker->ExtractBlock(block);
   return block_processor->BufferRender(block);
@@ -275,8 +275,7 @@ void EchoCanceller3::AnalyzeCapture(AudioBuffer* capture) {
   }
 }
 
-void EchoCanceller3::ProcessCapture(AudioBuffer* capture,
-                                    bool known_echo_path_change) {
+void EchoCanceller3::ProcessCapture(AudioBuffer* capture, bool level_change) {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   RTC_DCHECK(capture);
   RTC_DCHECK_EQ(1u, capture->num_channels());
@@ -289,27 +288,26 @@ void EchoCanceller3::ProcessCapture(AudioBuffer* capture,
   data_dumper_->DumpWav("aec3_capture_input", capture_lower_band,
                         LowestBandRate(sample_rate_hz_), 1);
 
-  const bool render_buffer_overrun = EmptyRenderQueue();
-  RTC_DCHECK(!render_buffer_overrun);
+  const bool successful_buffering = EmptyRenderQueue();
+  RTC_DCHECK(successful_buffering);
 
   if (capture_highpass_filter_) {
     capture_highpass_filter_->Process(capture_lower_band);
   }
 
-  ProcessCaptureFrameContent(capture, known_echo_path_change,
-                             saturated_microphone_signal_, 0, &capture_blocker_,
-                             &output_framer_, block_processor_.get(), &block_,
-                             &sub_frame_view_);
+  ProcessCaptureFrameContent(
+      capture, level_change, saturated_microphone_signal_, 0, &capture_blocker_,
+      &output_framer_, block_processor_.get(), &block_, &sub_frame_view_);
 
   if (sample_rate_hz_ != 8000) {
     ProcessCaptureFrameContent(
-        capture, known_echo_path_change, saturated_microphone_signal_, 1,
+        capture, level_change, saturated_microphone_signal_, 1,
         &capture_blocker_, &output_framer_, block_processor_.get(), &block_,
         &sub_frame_view_);
   }
 
   ProcessRemainingCaptureFrameContent(
-      known_echo_path_change, saturated_microphone_signal_, &capture_blocker_,
+      level_change, saturated_microphone_signal_, &capture_blocker_,
       &output_framer_, block_processor_.get(), &block_);
 
   data_dumper_->DumpWav("aec3_capture_output", frame_length_,
@@ -332,27 +330,33 @@ bool EchoCanceller3::Validate(
 
 bool EchoCanceller3::EmptyRenderQueue() {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
-  bool render_buffer_overrun = false;
+  bool successful_buffering = true;
   bool frame_to_buffer =
       render_transfer_queue_.Remove(&render_queue_output_frame_);
   while (frame_to_buffer) {
-    render_buffer_overrun |= BufferRenderFrameContent(
-        &render_queue_output_frame_, 0, &render_blocker_,
-        block_processor_.get(), &block_, &sub_frame_view_);
+    successful_buffering =
+        BufferRenderFrameContent(&render_queue_output_frame_, 0,
+                                 &render_blocker_, block_processor_.get(),
+                                 &block_, &sub_frame_view_) &&
+        successful_buffering;
 
     if (sample_rate_hz_ != 8000) {
-      render_buffer_overrun |= BufferRenderFrameContent(
-          &render_queue_output_frame_, 1, &render_blocker_,
-          block_processor_.get(), &block_, &sub_frame_view_);
+      successful_buffering =
+          BufferRenderFrameContent(&render_queue_output_frame_, 1,
+                                   &render_blocker_, block_processor_.get(),
+                                   &block_, &sub_frame_view_) &&
+          successful_buffering;
     }
 
-    render_buffer_overrun |= BufferRemainingRenderFrameContent(
-        &render_blocker_, block_processor_.get(), &block_);
+    successful_buffering =
+        BufferRemainingRenderFrameContent(&render_blocker_,
+                                          block_processor_.get(), &block_) &&
+        successful_buffering;
 
     frame_to_buffer =
         render_transfer_queue_.Remove(&render_queue_output_frame_);
   }
-  return render_buffer_overrun;
+  return successful_buffering;
 }
 
 }  // namespace webrtc

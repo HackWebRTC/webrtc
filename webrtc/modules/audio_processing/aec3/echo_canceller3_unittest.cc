@@ -28,6 +28,7 @@
 namespace webrtc {
 namespace {
 
+using testing::Return;
 using testing::StrictMock;
 using testing::_;
 
@@ -82,16 +83,16 @@ class CaptureTransportVerificationProcessor : public BlockProcessor {
   explicit CaptureTransportVerificationProcessor(size_t num_bands) {}
   ~CaptureTransportVerificationProcessor() override = default;
 
-  void ProcessCapture(bool known_echo_path_change,
+  void ProcessCapture(bool level_change,
                       bool saturated_microphone_signal,
                       std::vector<std::vector<float>>* capture_block) override {
   }
 
   bool BufferRender(std::vector<std::vector<float>>* block) override {
-    return false;
+    return true;
   }
 
-  void ReportEchoLeakage(bool leakage_detected) override {}
+  void UpdateEchoLeakageStatus(bool leakage_detected) override {}
 
  private:
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(CaptureTransportVerificationProcessor);
@@ -104,7 +105,7 @@ class RenderTransportVerificationProcessor : public BlockProcessor {
   explicit RenderTransportVerificationProcessor(size_t num_bands) {}
   ~RenderTransportVerificationProcessor() override = default;
 
-  void ProcessCapture(bool known_echo_path_change,
+  void ProcessCapture(bool level_change,
                       bool saturated_microphone_signal,
                       std::vector<std::vector<float>>* capture_block) override {
     std::vector<std::vector<float>> render_block =
@@ -115,10 +116,10 @@ class RenderTransportVerificationProcessor : public BlockProcessor {
 
   bool BufferRender(std::vector<std::vector<float>>* block) override {
     received_render_blocks_.push_back(*block);
-    return false;
+    return true;
   }
 
-  void ReportEchoLeakage(bool leakage_detected) override {}
+  void UpdateEchoLeakageStatus(bool leakage_detected) override {}
 
  private:
   std::deque<std::vector<std::vector<float>>> received_render_blocks_;
@@ -217,8 +218,9 @@ class EchoCanceller3Tester {
         block_processor_mock(
             new StrictMock<webrtc::test::MockBlockProcessor>());
     EXPECT_CALL(*block_processor_mock, BufferRender(_))
-        .Times(expected_num_block_to_process);
-    EXPECT_CALL(*block_processor_mock, ReportEchoLeakage(_)).Times(0);
+        .Times(expected_num_block_to_process)
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*block_processor_mock, UpdateEchoLeakageStatus(_)).Times(0);
 
     switch (echo_path_change_test_variant) {
       case EchoPathChangeTestVariant::kNone:
@@ -294,24 +296,28 @@ class EchoCanceller3Tester {
         block_processor_mock(
             new StrictMock<webrtc::test::MockBlockProcessor>());
     EXPECT_CALL(*block_processor_mock, BufferRender(_))
-        .Times(expected_num_block_to_process);
+        .Times(expected_num_block_to_process)
+        .WillRepeatedly(Return(true));
     EXPECT_CALL(*block_processor_mock, ProcessCapture(_, _, _))
         .Times(expected_num_block_to_process);
 
     switch (leakage_report_variant) {
       case EchoLeakageTestVariant::kNone:
-        EXPECT_CALL(*block_processor_mock, ReportEchoLeakage(_)).Times(0);
+        EXPECT_CALL(*block_processor_mock, UpdateEchoLeakageStatus(_)).Times(0);
         break;
       case EchoLeakageTestVariant::kFalseSticky:
-        EXPECT_CALL(*block_processor_mock, ReportEchoLeakage(false)).Times(1);
+        EXPECT_CALL(*block_processor_mock, UpdateEchoLeakageStatus(false))
+            .Times(1);
         break;
       case EchoLeakageTestVariant::kTrueSticky:
-        EXPECT_CALL(*block_processor_mock, ReportEchoLeakage(true)).Times(1);
+        EXPECT_CALL(*block_processor_mock, UpdateEchoLeakageStatus(true))
+            .Times(1);
         break;
       case EchoLeakageTestVariant::kTrueNonSticky: {
         testing::InSequence s;
-        EXPECT_CALL(*block_processor_mock, ReportEchoLeakage(true)).Times(1);
-        EXPECT_CALL(*block_processor_mock, ReportEchoLeakage(false))
+        EXPECT_CALL(*block_processor_mock, UpdateEchoLeakageStatus(true))
+            .Times(1);
+        EXPECT_CALL(*block_processor_mock, UpdateEchoLeakageStatus(false))
             .Times(kNumFramesToProcess - 1);
       } break;
     }
@@ -326,19 +332,19 @@ class EchoCanceller3Tester {
           break;
         case EchoLeakageTestVariant::kFalseSticky:
           if (frame_index == 0) {
-            aec3.ReportEchoLeakage(false);
+            aec3.UpdateEchoLeakageStatus(false);
           }
           break;
         case EchoLeakageTestVariant::kTrueSticky:
           if (frame_index == 0) {
-            aec3.ReportEchoLeakage(true);
+            aec3.UpdateEchoLeakageStatus(true);
           }
           break;
         case EchoLeakageTestVariant::kTrueNonSticky:
           if (frame_index == 0) {
-            aec3.ReportEchoLeakage(true);
+            aec3.UpdateEchoLeakageStatus(true);
           } else {
-            aec3.ReportEchoLeakage(false);
+            aec3.UpdateEchoLeakageStatus(false);
           }
           break;
       }
@@ -381,8 +387,9 @@ class EchoCanceller3Tester {
         block_processor_mock(
             new StrictMock<webrtc::test::MockBlockProcessor>());
     EXPECT_CALL(*block_processor_mock, BufferRender(_))
-        .Times(expected_num_block_to_process);
-    EXPECT_CALL(*block_processor_mock, ReportEchoLeakage(_)).Times(0);
+        .Times(expected_num_block_to_process)
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*block_processor_mock, UpdateEchoLeakageStatus(_)).Times(0);
 
     switch (saturation_variant) {
       case SaturationTestVariant::kNone:

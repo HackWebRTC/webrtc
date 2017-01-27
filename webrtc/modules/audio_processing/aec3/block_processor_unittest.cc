@@ -15,11 +15,23 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/base/checks.h"
+#include "webrtc/base/random.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/mock/mock_echo_remover.h"
+#include "webrtc/modules/audio_processing/aec3/mock/mock_render_delay_buffer.h"
+#include "webrtc/modules/audio_processing/aec3/mock/mock_render_delay_controller.h"
+#include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace {
+
+using testing::AtLeast;
+using testing::Return;
+using testing::StrictMock;
+using testing::_;
 
 // Verifies that the basic BlockProcessor functionality works and that the API
 // methods are callable.
@@ -29,9 +41,9 @@ void RunBasicSetupAndApiCallTest(int sample_rate_hz) {
   std::vector<std::vector<float>> block(NumBandsForRate(sample_rate_hz),
                                         std::vector<float>(kBlockSize, 0.f));
 
-  EXPECT_FALSE(block_processor->BufferRender(&block));
+  EXPECT_TRUE(block_processor->BufferRender(&block));
   block_processor->ProcessCapture(false, false, &block);
-  block_processor->ReportEchoLeakage(false);
+  block_processor->UpdateEchoLeakageStatus(false);
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
@@ -86,6 +98,110 @@ std::string ProduceDebugText(int sample_rate_hz) {
 
 }  // namespace
 
+// Verifies that the delay controller functionality is properly integrated with
+// the render delay buffer inside block processor.
+// TODO(peah): Activate the unittest once the required code has been landed.
+TEST(BlockProcessor, DISABLED_DelayControllerIntegration) {
+  constexpr size_t kNumBlocks = 310;
+  constexpr size_t kDelayInSamples = 640;
+  constexpr size_t kDelayHeadroom = 1;
+  constexpr size_t kDelayInBlocks =
+      kDelayInSamples / kBlockSize - kDelayHeadroom;
+  Random random_generator(42U);
+  for (auto rate : {8000, 16000, 32000, 48000}) {
+    SCOPED_TRACE(ProduceDebugText(rate));
+    std::unique_ptr<testing::StrictMock<webrtc::test::MockRenderDelayBuffer>>
+        render_delay_buffer_mock(
+            new StrictMock<webrtc::test::MockRenderDelayBuffer>(rate));
+    EXPECT_CALL(*render_delay_buffer_mock, Insert(_))
+        .Times(kNumBlocks)
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*render_delay_buffer_mock, IsBlockAvailable())
+        .Times(kNumBlocks)
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*render_delay_buffer_mock, SetDelay(kDelayInBlocks))
+        .Times(AtLeast(1));
+    EXPECT_CALL(*render_delay_buffer_mock, MaxDelay()).WillOnce(Return(30));
+    EXPECT_CALL(*render_delay_buffer_mock, MaxApiJitter()).WillOnce(Return(30));
+    EXPECT_CALL(*render_delay_buffer_mock, Delay())
+        .Times(kNumBlocks + 1)
+        .WillRepeatedly(Return(0));
+    std::unique_ptr<BlockProcessor> block_processor(
+        BlockProcessor::Create(rate, std::move(render_delay_buffer_mock)));
+
+    std::vector<std::vector<float>> render_block(
+        NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
+    std::vector<std::vector<float>> capture_block(
+        NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
+    DelayBuffer<float> signal_delay_buffer(kDelayInSamples);
+    for (size_t k = 0; k < kNumBlocks; ++k) {
+      RandomizeSampleVector(&random_generator, render_block[0]);
+      signal_delay_buffer.Delay(render_block[0], capture_block[0]);
+      EXPECT_TRUE(block_processor->BufferRender(&render_block));
+      block_processor->ProcessCapture(false, false, &capture_block);
+    }
+  }
+}
+
+// Verifies that BlockProcessor submodules are called in a proper manner.
+TEST(BlockProcessor, SubmoduleIntegration) {
+  constexpr size_t kNumBlocks = 310;
+  Random random_generator(42U);
+  for (auto rate : {8000, 16000, 32000, 48000}) {
+    SCOPED_TRACE(ProduceDebugText(rate));
+    std::unique_ptr<testing::StrictMock<webrtc::test::MockRenderDelayBuffer>>
+        render_delay_buffer_mock(
+            new StrictMock<webrtc::test::MockRenderDelayBuffer>(rate));
+    std::unique_ptr<
+        testing::StrictMock<webrtc::test::MockRenderDelayController>>
+        render_delay_controller_mock(
+            new StrictMock<webrtc::test::MockRenderDelayController>());
+    std::unique_ptr<testing::StrictMock<webrtc::test::MockEchoRemover>>
+        echo_remover_mock(new StrictMock<webrtc::test::MockEchoRemover>());
+
+    EXPECT_CALL(*render_delay_buffer_mock, Insert(_))
+        .Times(kNumBlocks)
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*render_delay_buffer_mock, IsBlockAvailable())
+        .Times(kNumBlocks)
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*render_delay_buffer_mock, GetNext()).Times(kNumBlocks);
+    EXPECT_CALL(*render_delay_buffer_mock, SetDelay(9)).Times(AtLeast(1));
+    EXPECT_CALL(*render_delay_buffer_mock, Delay())
+        .Times(kNumBlocks)
+        .WillRepeatedly(Return(0));
+    EXPECT_CALL(*render_delay_controller_mock, GetDelay(_))
+        .Times(kNumBlocks)
+        .WillRepeatedly(Return(9));
+    EXPECT_CALL(*render_delay_controller_mock, AnalyzeRender(_))
+        .Times(kNumBlocks)
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(*render_delay_controller_mock, AlignmentHeadroomSamples())
+        .Times(kNumBlocks);
+    EXPECT_CALL(*echo_remover_mock, ProcessBlock(_, _, _, _, _))
+        .Times(kNumBlocks);
+    EXPECT_CALL(*echo_remover_mock, UpdateEchoLeakageStatus(_))
+        .Times(kNumBlocks);
+
+    std::unique_ptr<BlockProcessor> block_processor(BlockProcessor::Create(
+        rate, std::move(render_delay_buffer_mock),
+        std::move(render_delay_controller_mock), std::move(echo_remover_mock)));
+
+    std::vector<std::vector<float>> render_block(
+        NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
+    std::vector<std::vector<float>> capture_block(
+        NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
+    DelayBuffer<float> signal_delay_buffer(640);
+    for (size_t k = 0; k < kNumBlocks; ++k) {
+      RandomizeSampleVector(&random_generator, render_block[0]);
+      signal_delay_buffer.Delay(render_block[0], capture_block[0]);
+      EXPECT_TRUE(block_processor->BufferRender(&render_block));
+      block_processor->ProcessCapture(false, false, &capture_block);
+      block_processor->UpdateEchoLeakageStatus(false);
+    }
+  }
+}
+
 TEST(BlockProcessor, BasicSetupAndApiCalls) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
@@ -94,30 +210,28 @@ TEST(BlockProcessor, BasicSetupAndApiCalls) {
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-// TODO(peah): Enable all DEATH tests below, or add suppressions, once clarity
-// has been reached on why they fail on the trybots.
-TEST(BlockProcessor, DISABLED_VerifyRenderBlockSizeCheck) {
+TEST(BlockProcessor, VerifyRenderBlockSizeCheck) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     RunRenderBlockSizeVerificationTest(rate);
   }
 }
 
-TEST(BlockProcessor, DISABLED_VerifyCaptureBlockSizeCheck) {
+TEST(BlockProcessor, VerifyCaptureBlockSizeCheck) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     RunCaptureBlockSizeVerificationTest(rate);
   }
 }
 
-TEST(BlockProcessor, DISABLED_VerifyRenderNumBandsCheck) {
+TEST(BlockProcessor, VerifyRenderNumBandsCheck) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     RunRenderNumBandsVerificationTest(rate);
   }
 }
 
-TEST(BlockProcessor, DISABLED_VerifyCaptureNumBandsCheck) {
+TEST(BlockProcessor, VerifyCaptureNumBandsCheck) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     RunCaptureNumBandsVerificationTest(rate);
@@ -125,14 +239,14 @@ TEST(BlockProcessor, DISABLED_VerifyCaptureNumBandsCheck) {
 }
 
 // Verifiers that the verification for null ProcessCapture input works.
-TEST(BlockProcessor, DISABLED_NullProcessCaptureParameter) {
+TEST(BlockProcessor, NullProcessCaptureParameter) {
   EXPECT_DEATH(std::unique_ptr<BlockProcessor>(BlockProcessor::Create(8000))
                    ->ProcessCapture(false, false, nullptr),
                "");
 }
 
 // Verifiers that the verification for null BufferRender input works.
-TEST(BlockProcessor, DISABLED_NullBufferRenderParameter) {
+TEST(BlockProcessor, NullBufferRenderParameter) {
   EXPECT_DEATH(std::unique_ptr<BlockProcessor>(BlockProcessor::Create(8000))
                    ->BufferRender(nullptr),
                "");
