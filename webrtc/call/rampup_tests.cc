@@ -36,9 +36,11 @@ std::vector<uint32_t> GenerateSsrcs(size_t num_streams, uint32_t ssrc_offset) {
 RampUpTester::RampUpTester(size_t num_video_streams,
                            size_t num_audio_streams,
                            unsigned int start_bitrate_bps,
+                           int64_t min_run_time_ms,
                            const std::string& extension_type,
                            bool rtx,
-                           bool red)
+                           bool red,
+                           bool report_perf_stats)
     : EndToEndTest(test::CallTest::kLongTimeoutMs),
       event_(false, false),
       clock_(Clock::GetRealTimeClock()),
@@ -49,7 +51,8 @@ RampUpTester::RampUpTester(size_t num_video_streams,
       sender_call_(nullptr),
       send_stream_(nullptr),
       start_bitrate_bps_(start_bitrate_bps),
-      start_bitrate_verified_(false),
+      min_run_time_ms_(min_run_time_ms),
+      report_perf_stats_(report_perf_stats),
       expected_bitrate_bps_(0),
       test_start_ms_(-1),
       ramp_up_finished_ms_(-1),
@@ -253,17 +256,11 @@ bool RampUpTester::PollStats() {
   if (sender_call_) {
     Call::Stats stats = sender_call_->GetStats();
 
-    RTC_DCHECK_GT(expected_bitrate_bps_, 0);
-    if (!start_bitrate_verified_ && start_bitrate_bps_ != 0) {
-      // For tests with an explicitly set start bitrate, verify the first
-      // bitrate estimate is close to the start bitrate and lower than the
-      // test target bitrate. This is to verify a call respects the configured
-      // start bitrate, but due to the BWE implementation we can't guarantee the
-      // first estimate really is as high as the start bitrate.
-      EXPECT_GT(stats.send_bandwidth_bps, 0.9 * start_bitrate_bps_);
-      start_bitrate_verified_ = true;
-    }
-    if (stats.send_bandwidth_bps >= expected_bitrate_bps_) {
+    EXPECT_GE(stats.send_bandwidth_bps, start_bitrate_bps_);
+    EXPECT_GE(expected_bitrate_bps_, 0);
+    if (stats.send_bandwidth_bps >= expected_bitrate_bps_ &&
+        (min_run_time_ms_ == -1 ||
+         clock_->TimeInMilliseconds() - test_start_ms_ >= min_run_time_ms_)) {
       ramp_up_finished_ms_ = clock_->TimeInMilliseconds();
       observation_complete_.Set();
     }
@@ -325,21 +322,23 @@ void RampUpTester::TriggerTestDone() {
                     &rtx_total_sent, &rtx_padding_sent, &rtx_media_sent);
   }
 
-  ReportResult("ramp-up-total-packets-sent", total_packets_sent, "packets");
-  ReportResult("ramp-up-total-sent", total_sent, "bytes");
-  ReportResult("ramp-up-media-sent", media_sent, "bytes");
-  ReportResult("ramp-up-padding-sent", padding_sent, "bytes");
-  ReportResult("ramp-up-rtx-total-packets-sent", rtx_total_packets_sent,
-               "packets");
-  ReportResult("ramp-up-rtx-total-sent", rtx_total_sent, "bytes");
-  ReportResult("ramp-up-rtx-media-sent", rtx_media_sent, "bytes");
-  ReportResult("ramp-up-rtx-padding-sent", rtx_padding_sent, "bytes");
-  if (ramp_up_finished_ms_ >= 0) {
-    ReportResult("ramp-up-time", ramp_up_finished_ms_ - test_start_ms_,
-                 "milliseconds");
+  if (report_perf_stats_) {
+    ReportResult("ramp-up-total-packets-sent", total_packets_sent, "packets");
+    ReportResult("ramp-up-total-sent", total_sent, "bytes");
+    ReportResult("ramp-up-media-sent", media_sent, "bytes");
+    ReportResult("ramp-up-padding-sent", padding_sent, "bytes");
+    ReportResult("ramp-up-rtx-total-packets-sent", rtx_total_packets_sent,
+                 "packets");
+    ReportResult("ramp-up-rtx-total-sent", rtx_total_sent, "bytes");
+    ReportResult("ramp-up-rtx-media-sent", rtx_media_sent, "bytes");
+    ReportResult("ramp-up-rtx-padding-sent", rtx_padding_sent, "bytes");
+    if (ramp_up_finished_ms_ >= 0) {
+      ReportResult("ramp-up-time", ramp_up_finished_ms_ - test_start_ms_,
+                   "milliseconds");
+    }
+    ReportResult("ramp-up-average-network-latency",
+                 send_transport_->GetAverageDelayMs(), "milliseconds");
   }
-  ReportResult("ramp-up-average-network-latency",
-               send_transport_->GetAverageDelayMs(), "milliseconds");
 }
 
 void RampUpTester::PerformTest() {
@@ -359,9 +358,11 @@ RampUpDownUpTester::RampUpDownUpTester(size_t num_video_streams,
     : RampUpTester(num_video_streams,
                    num_audio_streams,
                    start_bitrate_bps,
+                   0,
                    extension_type,
                    rtx,
-                   red),
+                   red,
+                   true),
       test_state_(kFirstRampup),
       state_start_ms_(clock_->TimeInMilliseconds()),
       interval_start_ms_(clock_->TimeInMilliseconds()),
@@ -525,35 +526,45 @@ TEST_F(RampUpTest, UpDownUpAudioTransportSequenceNumberRtx) {
 }
 
 TEST_F(RampUpTest, TOffsetSimulcastRedRtx) {
-  RampUpTester test(3, 0, 0, RtpExtension::kTimestampOffsetUri, true, true);
+  RampUpTester test(3, 0, 0, 0, RtpExtension::kTimestampOffsetUri, true, true,
+                    true);
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, AbsSendTime) {
-  RampUpTester test(1, 0, 0, RtpExtension::kAbsSendTimeUri, false, false);
+  RampUpTester test(1, 0, 0, 0, RtpExtension::kAbsSendTimeUri, false, false,
+                    true);
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, AbsSendTimeSimulcastRedRtx) {
-  RampUpTester test(3, 0, 0, RtpExtension::kAbsSendTimeUri, true, true);
+  RampUpTester test(3, 0, 0, 0, RtpExtension::kAbsSendTimeUri, true, true,
+                    true);
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, TransportSequenceNumber) {
-  RampUpTester test(1, 0, 0, RtpExtension::kTransportSequenceNumberUri, false,
-                    false);
+  RampUpTester test(1, 0, 0, 0, RtpExtension::kTransportSequenceNumberUri,
+                    false, false, true);
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSimulcast) {
-  RampUpTester test(3, 0, 0, RtpExtension::kTransportSequenceNumberUri, false,
-                    false);
+  RampUpTester test(3, 0, 0, 0, RtpExtension::kTransportSequenceNumberUri,
+                    false, false, true);
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSimulcastRedRtx) {
-  RampUpTester test(3, 0, 0, RtpExtension::kTransportSequenceNumberUri, true,
-                    true);
+  RampUpTester test(3, 0, 0, 0, RtpExtension::kTransportSequenceNumberUri,
+                    true, true, true);
+  RunBaseTest(&test);
+}
+
+TEST_F(RampUpTest, AudioTransportSequenceNumber) {
+  RampUpTester test(0, 1, 300000, 10000,
+                    RtpExtension::kTransportSequenceNumberUri, false, false,
+                    false);
   RunBaseTest(&test);
 }
 }  // namespace webrtc

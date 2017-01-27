@@ -303,7 +303,7 @@ Call::Call(const Call::Config& config)
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(config.event_log != nullptr);
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
-  RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
+  RTC_DCHECK_GT(config.bitrate_config.start_bitrate_bps,
                 config.bitrate_config.min_bitrate_bps);
   if (config.bitrate_config.max_bitrate_bps != -1) {
     RTC_DCHECK_GE(config.bitrate_config.max_bitrate_bps,
@@ -809,6 +809,7 @@ void Call::SetBitrateConfig(
   if (bitrate_config.start_bitrate_bps > 0)
     config_.bitrate_config.start_bitrate_bps = bitrate_config.start_bitrate_bps;
   config_.bitrate_config.max_bitrate_bps = bitrate_config.max_bitrate_bps;
+  RTC_DCHECK_NE(bitrate_config.start_bitrate_bps, 0);
   congestion_controller_->SetBweBitrates(bitrate_config.min_bitrate_bps,
                                          bitrate_config.start_bitrate_bps,
                                          bitrate_config.max_bitrate_bps);
@@ -905,6 +906,7 @@ void Call::OnNetworkRouteChanged(const std::string& transport_name,
                  << " bps, start: " << config_.bitrate_config.start_bitrate_bps
                  << " bps,  max: " << config_.bitrate_config.start_bitrate_bps
                  << " bps.";
+    RTC_DCHECK_GT(config_.bitrate_config.start_bitrate_bps, 0);
     congestion_controller_->ResetBweAndBitrates(
         config_.bitrate_config.start_bitrate_bps,
         config_.bitrate_config.min_bitrate_bps,

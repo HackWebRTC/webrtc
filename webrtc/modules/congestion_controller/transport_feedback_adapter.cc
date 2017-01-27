@@ -74,6 +74,11 @@ void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
   send_time_history_.OnSentPacket(sequence_number, send_time_ms);
 }
 
+void TransportFeedbackAdapter::SetStartBitrate(int start_bitrate_bps) {
+  rtc::CritScope cs(&bwe_lock_);
+  delay_based_bwe_->SetStartBitrate(start_bitrate_bps);
+}
+
 void TransportFeedbackAdapter::SetMinBitrate(int min_bitrate_bps) {
   rtc::CritScope cs(&bwe_lock_);
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps);

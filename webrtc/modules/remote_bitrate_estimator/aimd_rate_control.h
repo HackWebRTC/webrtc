@@ -24,11 +24,12 @@ namespace webrtc {
 class AimdRateControl {
  public:
   AimdRateControl();
-  virtual ~AimdRateControl() {}
+  virtual ~AimdRateControl();
 
   // Returns true if there is a valid estimate of the incoming bitrate, false
   // otherwise.
   bool ValidEstimate() const;
+  void SetStartBitrate(int start_bitrate_bps);
   void SetMinBitrate(int min_bitrate_bps);
   int64_t GetFeedbackInterval() const;
   // Returns true if the bitrate estimate hasn't been changed for more than

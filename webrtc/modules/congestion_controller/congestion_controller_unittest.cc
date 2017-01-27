@@ -240,6 +240,5 @@ TEST_F(CongestionControllerTest, OnReceivedPacketWithAbsSendTime) {
   ASSERT_EQ(1u, ssrcs.size());
   EXPECT_EQ(header.ssrc, ssrcs[0]);
 }
-
 }  // namespace test
 }  // namespace webrtc

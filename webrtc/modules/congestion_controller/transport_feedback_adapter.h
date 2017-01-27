@@ -48,6 +48,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   // Implements CallStatsObserver.
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
+  void SetStartBitrate(int start_bitrate_bps);
   void SetMinBitrate(int min_bitrate_bps);
   void SetTransportOverhead(int transport_overhead_bytes_per_packet);
 

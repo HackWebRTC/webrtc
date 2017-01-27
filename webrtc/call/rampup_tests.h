@@ -34,9 +34,11 @@ class RampUpTester : public test::EndToEndTest {
   RampUpTester(size_t num_video_streams,
                size_t num_audio_streams,
                unsigned int start_bitrate_bps,
+               int64_t min_run_time_ms,
                const std::string& extension_type,
                bool rtx,
-               bool red);
+               bool red,
+               bool report_perf_stats);
   ~RampUpTester() override;
 
   size_t GetNumVideoStreams() const override;
@@ -91,7 +93,8 @@ class RampUpTester : public test::EndToEndTest {
   static bool BitrateStatsPollingThread(void* obj);
 
   const int start_bitrate_bps_;
-  bool start_bitrate_verified_;
+  const int64_t min_run_time_ms_;
+  const bool report_perf_stats_;
   int expected_bitrate_bps_;
   int64_t test_start_ms_;
   int64_t ramp_up_finished_ms_;

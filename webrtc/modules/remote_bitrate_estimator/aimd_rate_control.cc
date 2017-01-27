@@ -43,6 +43,13 @@ AimdRateControl::AimdRateControl()
       rtt_(kDefaultRttMs),
       in_experiment_(!AdaptiveThresholdExperimentIsDisabled()) {}
 
+AimdRateControl::~AimdRateControl() {}
+
+void AimdRateControl::SetStartBitrate(int start_bitrate_bps) {
+  current_bitrate_bps_ = start_bitrate_bps;
+  bitrate_is_initialized_ = true;
+}
+
 void AimdRateControl::SetMinBitrate(int min_bitrate_bps) {
   min_configured_bitrate_bps_ = min_bitrate_bps;
   current_bitrate_bps_ = std::max<int>(min_bitrate_bps, current_bitrate_bps_);

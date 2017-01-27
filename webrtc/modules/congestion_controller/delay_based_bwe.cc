@@ -383,6 +383,11 @@ bool DelayBasedBwe::LatestEstimate(std::vector<uint32_t>* ssrcs,
   return true;
 }
 
+void DelayBasedBwe::SetStartBitrate(int start_bitrate_bps) {
+  LOG(LS_WARNING) << "BWE Setting start bitrate to: " << start_bitrate_bps;
+  rate_control_.SetStartBitrate(start_bitrate_bps);
+}
+
 void DelayBasedBwe::SetMinBitrate(int min_bitrate_bps) {
   // Called from both the configuration thread and the network thread. Shouldn't
   // be called from the network thread in the future.

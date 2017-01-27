@@ -52,6 +52,7 @@ class DelayBasedBwe {
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms);
   bool LatestEstimate(std::vector<uint32_t>* ssrcs,
                       uint32_t* bitrate_bps) const;
+  void SetStartBitrate(int start_bitrate_bps);
   void SetMinBitrate(int min_bitrate_bps);
   int64_t GetProbingIntervalMs() const;
 
