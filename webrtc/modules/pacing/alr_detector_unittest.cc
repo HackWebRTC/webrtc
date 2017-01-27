@@ -61,12 +61,12 @@ TEST_F(AlrDetectorTest, AlrDetection) {
   SimulateOutgoingTraffic(500, 20);
   EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
-  // Verify that we remain in ALR state while usage is still below 50%.
-  SimulateOutgoingTraffic(500, 40);
+  // Verify that we remain in ALR state while usage is still below 70%.
+  SimulateOutgoingTraffic(500, 69);
   EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
-  // Verify that ALR ends when usage is above 50%.
-  SimulateOutgoingTraffic(500, 60);
+  // Verify that ALR ends when usage is above 70%.
+  SimulateOutgoingTraffic(500, 75);
   EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 }
 
@@ -85,8 +85,8 @@ TEST_F(AlrDetectorTest, ShortSpike) {
   SimulateOutgoingTraffic(200, 20);
   EXPECT_TRUE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
-  // ALR ends when usage is above 50%.
-  SimulateOutgoingTraffic(500, 60);
+  // ALR ends when usage is above 70%.
+  SimulateOutgoingTraffic(500, 75);
   EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 }
 

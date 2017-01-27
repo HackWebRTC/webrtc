@@ -164,7 +164,7 @@ void ProbeController::SetEstimatedBitrate(int64_t bitrate_bps) {
   // it ramps up from bitrate_bps.
   if (state_ == State::kProbingComplete &&
       pacer_->GetApplicationLimitedRegionStartTime() &&
-      bitrate_bps < estimated_bitrate_bps_ / 2 &&
+      bitrate_bps < 2 * estimated_bitrate_bps_ / 3 &&
       (now_ms - last_alr_probing_time_) > kAlrProbingIntervalMinMs) {
     LOG(LS_INFO) << "Detected big BW drop in ALR, start probe.";
     // Track how often we probe in response to BW drop in ALR.

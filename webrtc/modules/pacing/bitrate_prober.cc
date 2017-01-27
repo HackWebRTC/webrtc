@@ -36,6 +36,11 @@ constexpr int kMaxProbeDelayMs = 3;
 // Number of times probing is retried before the cluster is dropped.
 constexpr int kMaxRetryAttempts = 3;
 
+// The min probe packet size is scaled with the bitrate we're probing at.
+// This defines the max min probe packet size, meaning that on high bitrates
+// we have a min probe packet size of 200 bytes.
+constexpr size_t kMinProbePacketSize = 200;
+
 }  // namespace
 
 BitrateProber::BitrateProber()
@@ -64,9 +69,9 @@ bool BitrateProber::IsProbing() const {
 void BitrateProber::OnIncomingPacket(size_t packet_size) {
   // Don't initialize probing unless we have something large enough to start
   // probing.
-  if (probing_state_ == ProbingState::kInactive &&
-      !clusters_.empty() &&
-      packet_size >= PacedSender::kMinProbePacketSize) {
+  if (probing_state_ == ProbingState::kInactive && !clusters_.empty() &&
+      packet_size >=
+          std::min<size_t>(RecommendedMinProbeSize(), kMinProbePacketSize)) {
     // Send next probe right away.
     next_probe_time_ms_ = -1;
     probing_state_ = ProbingState::kActive;
@@ -136,7 +141,7 @@ int BitrateProber::CurrentClusterId() const {
 // feasible.
 size_t BitrateProber::RecommendedMinProbeSize() const {
   RTC_DCHECK(!clusters_.empty());
-  return clusters_.front().bitrate_bps * 2 * kMinProbeDeltaMs / (8 * 1000);
+  return clusters_.front().bitrate_bps * 3 * kMinProbeDeltaMs / (8 * 1000);
 }
 
 void BitrateProber::ProbeSent(int64_t now_ms, size_t bytes) {

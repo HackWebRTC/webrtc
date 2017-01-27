@@ -57,9 +57,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
     IncomingFeedback(now_ms, now_ms, seq_num++, 1000, 0);
     // Non-paced packet, arriving 5 ms after.
     clock_.AdvanceTimeMilliseconds(5);
-    IncomingFeedback(now_ms, now_ms, seq_num++,
-                     PacedSender::kMinProbePacketSize + 1,
-                     PacketInfo::kNotAProbe);
+    IncomingFeedback(now_ms, now_ms, seq_num++, 100, PacketInfo::kNotAProbe);
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());

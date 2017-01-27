@@ -88,10 +88,6 @@ TEST(BitrateProberTest, DoesntProbeWithoutRecentPackets) {
   // Let time pass, no large enough packets put into prober.
   now_ms += 6000;
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
-  // Insert a small packet, not a candidate for probing.
-  prober.OnIncomingPacket(100);
-  EXPECT_FALSE(prober.IsProbing());
-  EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
   // Insert a large-enough packet after downtime while probing should reset to
   // perform a new probe since the requested one didn't finish.
   prober.OnIncomingPacket(1000);
@@ -147,7 +143,7 @@ TEST(BitrateProberTest, ScaleBytesUsedForProbing) {
   prober.OnIncomingPacket(kPacketSizeBytes);
   int bytes_sent = 0;
   while (bytes_sent < kExpectedBytesSent) {
-    EXPECT_TRUE(prober.IsProbing());
+    ASSERT_TRUE(prober.IsProbing());
     prober.ProbeSent(0, kPacketSizeBytes);
     bytes_sent += kPacketSizeBytes;
   }

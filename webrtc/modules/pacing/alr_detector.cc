@@ -23,8 +23,8 @@ constexpr int kMeasurementPeriodMs = 500;
 // kAlrStartUsagePercent and ends when it raises above kAlrEndUsagePercent.
 // NOTE: This is intentionally conservative at the moment until BW adjustments
 // of application limited region is fine tuned.
-constexpr int kAlrStartUsagePercent = 30;
-constexpr int kAlrEndUsagePercent = 50;
+constexpr int kAlrStartUsagePercent = 60;
+constexpr int kAlrEndUsagePercent = 70;
 
 }  // namespace
 

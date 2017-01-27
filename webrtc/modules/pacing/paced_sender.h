@@ -67,8 +67,6 @@ class PacedSender : public Module, public RtpPacketSender {
   // overshoots from the encoder.
   static const float kDefaultPaceMultiplier;
 
-  static const size_t kMinProbePacketSize = 200;
-
   PacedSender(Clock* clock, PacketSender* packet_sender);
 
   virtual ~PacedSender();
