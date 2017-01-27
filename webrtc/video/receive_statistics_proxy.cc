@@ -71,8 +71,11 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
       first_report_block_time_ms_(-1) {
   stats_.ssrc = config_.rtp.remote_ssrc;
-  for (auto it : config_.rtp.rtx)
-    rtx_stats_[it.second.ssrc] = StreamDataCounters();
+  // TODO(brandtr): Replace |rtx_stats_| with a single instance of
+  // StreamDataCounters.
+  if (config_.rtp.rtx_ssrc) {
+    rtx_stats_[config_.rtp.rtx_ssrc] = StreamDataCounters();
+  }
 }
 
 ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {

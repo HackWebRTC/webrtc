@@ -1228,13 +1228,11 @@ TEST_F(WebRtcVideoChannel2Test, RecvStreamWithSimAndRtx) {
   // Receiver side.
   FakeVideoReceiveStream* recv_stream = AddRecvStream(
       cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs));
-  EXPECT_FALSE(recv_stream->GetConfig().rtp.rtx.empty());
+  EXPECT_FALSE(recv_stream->GetConfig().rtp.rtx_payload_types.empty());
   EXPECT_EQ(recv_stream->GetConfig().decoders.size(),
-            recv_stream->GetConfig().rtp.rtx.size())
+            recv_stream->GetConfig().rtp.rtx_payload_types.size())
       << "RTX should be mapped for all decoders/payload types.";
-  for (const auto& kv : recv_stream->GetConfig().rtp.rtx) {
-    EXPECT_EQ(rtx_ssrcs[0], kv.second.ssrc);
-  }
+  EXPECT_EQ(rtx_ssrcs[0], recv_stream->GetConfig().rtp.rtx_ssrc);
 }
 
 TEST_F(WebRtcVideoChannel2Test, RecvStreamWithRtx) {
@@ -1243,8 +1241,7 @@ TEST_F(WebRtcVideoChannel2Test, RecvStreamWithRtx) {
       cricket::StreamParams::CreateLegacy(kSsrcs1[0]);
   params.AddFidSsrc(kSsrcs1[0], kRtxSsrcs1[0]);
   FakeVideoReceiveStream* recv_stream = AddRecvStream(params);
-  EXPECT_EQ(kRtxSsrcs1[0],
-            recv_stream->GetConfig().rtp.rtx.begin()->second.ssrc);
+  EXPECT_EQ(kRtxSsrcs1[0], recv_stream->GetConfig().rtp.rtx_ssrc);
 }
 
 TEST_F(WebRtcVideoChannel2Test, RecvStreamNoRtx) {
@@ -1252,7 +1249,7 @@ TEST_F(WebRtcVideoChannel2Test, RecvStreamNoRtx) {
   cricket::StreamParams params =
       cricket::StreamParams::CreateLegacy(kSsrcs1[0]);
   FakeVideoReceiveStream* recv_stream = AddRecvStream(params);
-  ASSERT_TRUE(recv_stream->GetConfig().rtp.rtx.empty());
+  ASSERT_EQ(0U, recv_stream->GetConfig().rtp.rtx_ssrc);
 }
 
 TEST_F(WebRtcVideoChannel2Test, NoHeaderExtesionsByDefault) {
@@ -2482,6 +2479,43 @@ TEST_F(WebRtcVideoChannel2Test,
   }
 }
 
+TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithChangedRtxPayloadType) {
+  const int kUnusedPayloadType1 = 126;
+  const int kUnusedPayloadType2 = 127;
+  EXPECT_FALSE(FindCodecById(engine_.codecs(), kUnusedPayloadType1));
+  EXPECT_FALSE(FindCodecById(engine_.codecs(), kUnusedPayloadType2));
+
+  // SSRCs for RTX.
+  cricket::StreamParams params =
+      cricket::StreamParams::CreateLegacy(kSsrcs1[0]);
+  params.AddFidSsrc(kSsrcs1[0], kRtxSsrcs1[0]);
+  AddSendStream(params);
+
+  // Original payload type for RTX.
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  cricket::VideoCodec rtx_codec(kUnusedPayloadType1, "rtx");
+  rtx_codec.SetParam("apt", GetEngineCodec("VP8").id);
+  parameters.codecs.push_back(rtx_codec);
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  ASSERT_EQ(1U, fake_call_->GetVideoSendStreams().size());
+  const webrtc::VideoSendStream::Config& config_before =
+      fake_call_->GetVideoSendStreams()[0]->GetConfig();
+  EXPECT_EQ(kUnusedPayloadType1, config_before.rtp.rtx.payload_type);
+  ASSERT_EQ(1U, config_before.rtp.rtx.ssrcs.size());
+  EXPECT_EQ(kRtxSsrcs1[0], config_before.rtp.rtx.ssrcs[0]);
+
+  // Change payload type for RTX.
+  parameters.codecs[1].id = kUnusedPayloadType2;
+  EXPECT_TRUE(channel_->SetSendParameters(parameters));
+  ASSERT_EQ(1U, fake_call_->GetVideoSendStreams().size());
+  const webrtc::VideoSendStream::Config& config_after =
+      fake_call_->GetVideoSendStreams()[0]->GetConfig();
+  EXPECT_EQ(kUnusedPayloadType2, config_after.rtp.rtx.payload_type);
+  ASSERT_EQ(1U, config_after.rtp.rtx.ssrcs.size());
+  EXPECT_EQ(kRtxSsrcs1[0], config_after.rtp.rtx.ssrcs[0]);
+}
+
 TEST_F(WebRtcVideoChannel2Test, SetSendCodecsWithoutFecDisablesFec) {
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("VP8"));
@@ -2810,6 +2844,49 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithRtx) {
   EXPECT_FALSE(channel_->SetRecvParameters(parameters)) <<
       "RTX codec with another RTX as associated payload type should be "
       "rejected.";
+}
+
+TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithChangedRtxPayloadType) {
+  const int kUnusedPayloadType1 = 126;
+  const int kUnusedPayloadType2 = 127;
+  EXPECT_FALSE(FindCodecById(engine_.codecs(), kUnusedPayloadType1));
+  EXPECT_FALSE(FindCodecById(engine_.codecs(), kUnusedPayloadType2));
+
+  // SSRCs for RTX.
+  cricket::StreamParams params =
+      cricket::StreamParams::CreateLegacy(kSsrcs1[0]);
+  params.AddFidSsrc(kSsrcs1[0], kRtxSsrcs1[0]);
+  AddRecvStream(params);
+
+  // Original payload type for RTX.
+  cricket::VideoRecvParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  cricket::VideoCodec rtx_codec(kUnusedPayloadType1, "rtx");
+  rtx_codec.SetParam("apt", GetEngineCodec("VP8").id);
+  parameters.codecs.push_back(rtx_codec);
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+  ASSERT_EQ(1U, fake_call_->GetVideoReceiveStreams().size());
+  const webrtc::VideoReceiveStream::Config& config_before =
+      fake_call_->GetVideoReceiveStreams()[0]->GetConfig();
+  EXPECT_EQ(1U, config_before.rtp.rtx_payload_types.size());
+  auto it_before =
+      config_before.rtp.rtx_payload_types.find(GetEngineCodec("VP8").id);
+  ASSERT_NE(it_before, config_before.rtp.rtx_payload_types.end());
+  EXPECT_EQ(kUnusedPayloadType1, it_before->second);
+  EXPECT_EQ(kRtxSsrcs1[0], config_before.rtp.rtx_ssrc);
+
+  // Change payload type for RTX.
+  parameters.codecs[1].id = kUnusedPayloadType2;
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+  ASSERT_EQ(1U, fake_call_->GetVideoReceiveStreams().size());
+  const webrtc::VideoReceiveStream::Config& config_after =
+      fake_call_->GetVideoReceiveStreams()[0]->GetConfig();
+  EXPECT_EQ(1U, config_after.rtp.rtx_payload_types.size());
+  auto it_after =
+      config_after.rtp.rtx_payload_types.find(GetEngineCodec("VP8").id);
+  ASSERT_NE(it_after, config_after.rtp.rtx_payload_types.end());
+  EXPECT_EQ(kUnusedPayloadType2, it_after->second);
+  EXPECT_EQ(kRtxSsrcs1[0], config_after.rtp.rtx_ssrc);
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsDifferentPayloadType) {
@@ -3441,21 +3518,19 @@ TEST_F(WebRtcVideoChannel2Test, DefaultReceiveStreamReconfiguresToUseRtx) {
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
       << "No default receive stream created.";
   FakeVideoReceiveStream* recv_stream = fake_call_->GetVideoReceiveStreams()[0];
-  EXPECT_TRUE(recv_stream->GetConfig().rtp.rtx.empty())
+  EXPECT_EQ(0u, recv_stream->GetConfig().rtp.rtx_ssrc)
       << "Default receive stream should not have configured RTX";
 
   EXPECT_TRUE(channel_->AddRecvStream(
       cricket::CreateSimWithRtxStreamParams("cname", ssrcs, rtx_ssrcs)));
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
-      << "AddRecvStream should've reconfigured, not added a new receiver.";
+      << "AddRecvStream should have reconfigured, not added a new receiver.";
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
-  EXPECT_FALSE(recv_stream->GetConfig().rtp.rtx.empty());
+  EXPECT_FALSE(recv_stream->GetConfig().rtp.rtx_payload_types.empty());
   EXPECT_EQ(recv_stream->GetConfig().decoders.size(),
-            recv_stream->GetConfig().rtp.rtx.size())
+            recv_stream->GetConfig().rtp.rtx_payload_types.size())
       << "RTX should be mapped for all decoders/payload types.";
-  for (const auto& kv : recv_stream->GetConfig().rtp.rtx) {
-    EXPECT_EQ(rtx_ssrcs[0], kv.second.ssrc);
-  }
+  EXPECT_EQ(rtx_ssrcs[0], recv_stream->GetConfig().rtp.rtx_ssrc);
 }
 
 TEST_F(WebRtcVideoChannel2Test, RejectsAddingStreamsWithMissingSsrcsForRtx) {

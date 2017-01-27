@@ -117,6 +117,7 @@ class VideoReceiveStream {
 
       // Synchronization source (stream identifier) to be received.
       uint32_t remote_ssrc = 0;
+
       // Sender SSRC used for sending RTCP (such as receiver reports).
       uint32_t local_ssrc = 0;
 
@@ -142,27 +143,18 @@ class VideoReceiveStream {
       // See UlpfecConfig for description.
       UlpfecConfig ulpfec;
 
-      // RTX settings for incoming video payloads that may be received. RTX is
-      // disabled if there's no config present.
-      struct Rtx {
-        // SSRCs to use for the RTX streams.
-        uint32_t ssrc = 0;
+      // SSRC for retransmissions.
+      uint32_t rtx_ssrc = 0;
 
-        // Payload type to use for the RTX stream.
-        int payload_type = 0;
-      };
-
-      // Map from video RTP payload type -> RTX config.
-      typedef std::map<int, Rtx> RtxMap;
-      RtxMap rtx;
+      // Map from video payload type (apt) -> RTX payload type (pt).
+      // For RTX to be enabled, both an SSRC and this mapping are needed.
+      std::map<int, int> rtx_payload_types;
 
       // TODO(brandtr): Remove this member function when internal project has
       // been updated.
-      void AddRtxInfo(int media_pt, int rtx_pt, uint32_t rtx_ssrc) {
-        Rtx r;
-        r.ssrc = rtx_ssrc;
-        r.payload_type = rtx_pt;
-        rtx[media_pt] = r;
+      void AddRtxInfo(int media_pt, int rtx_pt, uint32_t new_rtx_ssrc) {
+        rtx_ssrc = new_rtx_ssrc;
+        rtx_payload_types[media_pt] = rtx_pt;
       }
 
       // RTP header extensions used for the received stream.
