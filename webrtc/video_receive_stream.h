@@ -156,6 +156,15 @@ class VideoReceiveStream {
       typedef std::map<int, Rtx> RtxMap;
       RtxMap rtx;
 
+      // TODO(brandtr): Remove this member function when internal project has
+      // been updated.
+      void AddRtxInfo(int media_pt, int rtx_pt, uint32_t rtx_ssrc) {
+        Rtx r;
+        r.ssrc = rtx_ssrc;
+        r.payload_type = rtx_pt;
+        rtx[media_pt] = r;
+      }
+
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
     } rtp;
