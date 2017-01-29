@@ -255,7 +255,6 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
       ntp_estimator_.Estimate(rtp_header->header.timestamp);
   if (jitter_buffer_experiment_) {
     VCMPacket packet(payload_data, payload_size, rtp_header_with_ntp);
-    timing_->IncomingTimestamp(packet.timestamp, clock_->TimeInMilliseconds());
     packet.timesNacked = nack_module_->OnReceivedPacket(packet);
 
     if (packet.codec == kVideoCodecH264) {
@@ -412,6 +411,8 @@ int32_t RtpStreamReceiver::ResendPackets(const uint16_t* sequence_numbers,
 
 void RtpStreamReceiver::OnReceivedFrame(
     std::unique_ptr<video_coding::RtpFrameObject> frame) {
+  if (!frame->delayed_by_retransmission())
+    timing_->IncomingTimestamp(frame->timestamp, clock_->TimeInMilliseconds());
   reference_finder_->ManageFrame(std::move(frame));
 }
 
