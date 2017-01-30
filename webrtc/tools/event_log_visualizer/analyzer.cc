@@ -26,6 +26,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
+#include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
@@ -686,7 +687,8 @@ void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
     const std::vector<LoggedRtpPacket>& packet_stream = kv.second;
     // Filter on direction and SSRC.
     if (stream_id.GetDirection() != kIncomingPacket ||
-        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_)) {
+        !MatchingSsrc(stream_id.GetSsrc(), desired_ssrc_) ||
+        packet_stream.size() == 0) {
       continue;
     }
 
@@ -694,27 +696,40 @@ void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
     time_series.label = GetStreamName(stream_id);
     time_series.style = LINE_DOT_GRAPH;
     const uint64_t kWindowUs = 1000000;
-    const LoggedRtpPacket* first_in_window = &packet_stream.front();
-    const LoggedRtpPacket* last_in_window = &packet_stream.front();
-    int packets_in_window = 0;
-    for (const LoggedRtpPacket& packet : packet_stream) {
-      if (packet.timestamp > first_in_window->timestamp + kWindowUs) {
-        uint16_t expected_num_packets = last_in_window->header.sequenceNumber -
-            first_in_window->header.sequenceNumber + 1;
-        float fraction_lost = (expected_num_packets - packets_in_window) /
-            static_cast<float>(expected_num_packets);
-        float y = fraction_lost * 100;
-        float x =
-            static_cast<float>(last_in_window->timestamp - begin_time_) /
-            1000000;
-        time_series.points.emplace_back(x, y);
-        first_in_window = &packet;
-        last_in_window = &packet;
-        packets_in_window = 1;
-        continue;
+    const uint64_t kStep = 1000000;
+    SequenceNumberUnwrapper unwrapper_;
+    SequenceNumberUnwrapper prior_unwrapper_;
+    size_t window_index_begin = 0;
+    size_t window_index_end = 0;
+    int64_t highest_seq_number =
+        unwrapper_.Unwrap(packet_stream[0].header.sequenceNumber) - 1;
+    int64_t highest_prior_seq_number =
+        prior_unwrapper_.Unwrap(packet_stream[0].header.sequenceNumber) - 1;
+
+    for (uint64_t t = begin_time_; t < end_time_ + kStep; t += kStep) {
+      while (window_index_end < packet_stream.size() &&
+             packet_stream[window_index_end].timestamp < t) {
+        int64_t sequence_number = unwrapper_.Unwrap(
+            packet_stream[window_index_end].header.sequenceNumber);
+        highest_seq_number = std::max(highest_seq_number, sequence_number);
+        ++window_index_end;
       }
-      ++packets_in_window;
-      last_in_window = &packet;
+      while (window_index_begin < packet_stream.size() &&
+             packet_stream[window_index_begin].timestamp < t - kWindowUs) {
+        int64_t sequence_number = prior_unwrapper_.Unwrap(
+            packet_stream[window_index_begin].header.sequenceNumber);
+        highest_prior_seq_number =
+            std::max(highest_prior_seq_number, sequence_number);
+        ++window_index_begin;
+      }
+      float x = static_cast<float>(t - begin_time_) / 1000000;
+      int64_t expected_packets = highest_seq_number - highest_prior_seq_number;
+      if (expected_packets > 0) {
+        int64_t received_packets = window_index_end - window_index_begin;
+        int64_t lost_packets = expected_packets - received_packets;
+        float y = static_cast<float>(lost_packets) / expected_packets * 100;
+        time_series.points.emplace_back(x, y);
+      }
     }
     plot->series_list_.push_back(std::move(time_series));
   }
