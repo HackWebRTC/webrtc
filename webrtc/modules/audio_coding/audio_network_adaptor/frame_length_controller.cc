@@ -51,15 +51,22 @@ FrameLengthController::FrameLengthController(const Config& config)
 
 FrameLengthController::~FrameLengthController() = default;
 
+void FrameLengthController::UpdateNetworkMetrics(
+    const NetworkMetrics& network_metrics) {
+  if (network_metrics.uplink_bandwidth_bps)
+    uplink_bandwidth_bps_ = network_metrics.uplink_bandwidth_bps;
+  if (network_metrics.uplink_packet_loss_fraction)
+    uplink_packet_loss_fraction_ = network_metrics.uplink_packet_loss_fraction;
+}
+
 void FrameLengthController::MakeDecision(
-    const NetworkMetrics& metrics,
     AudioNetworkAdaptor::EncoderRuntimeConfig* config) {
   // Decision on |frame_length_ms| should not have been made.
   RTC_DCHECK(!config->frame_length_ms);
 
-  if (FrameLengthIncreasingDecision(metrics, *config)) {
+  if (FrameLengthIncreasingDecision(*config)) {
     ++frame_length_ms_;
-  } else if (FrameLengthDecreasingDecision(metrics, *config)) {
+  } else if (FrameLengthDecreasingDecision(*config)) {
     --frame_length_ms_;
   }
   config->frame_length_ms = rtc::Optional<int>(*frame_length_ms_);
@@ -81,7 +88,6 @@ bool FrameLengthController::FrameLengthChange::operator<(
 }
 
 bool FrameLengthController::FrameLengthIncreasingDecision(
-    const NetworkMetrics& metrics,
     const AudioNetworkAdaptor::EncoderRuntimeConfig& config) const {
   // Increase frame length if
   // 1. longer frame length is available AND
@@ -99,16 +105,15 @@ bool FrameLengthController::FrameLengthIncreasingDecision(
   if (increase_threshold == frame_length_change_criteria_.end())
     return false;
 
-  return (metrics.uplink_bandwidth_bps &&
-          *metrics.uplink_bandwidth_bps <= increase_threshold->second) &&
-         (metrics.uplink_packet_loss_fraction &&
-          *metrics.uplink_packet_loss_fraction <=
+  return (uplink_bandwidth_bps_ &&
+          *uplink_bandwidth_bps_ <= increase_threshold->second) &&
+         (uplink_packet_loss_fraction_ &&
+          *uplink_packet_loss_fraction_ <=
               config_.fl_increasing_packet_loss_fraction) &&
          !config.enable_fec.value_or(false);
 }
 
 bool FrameLengthController::FrameLengthDecreasingDecision(
-    const NetworkMetrics& metrics,
     const AudioNetworkAdaptor::EncoderRuntimeConfig& config) const {
   // Decrease frame length if
   // 1. shorter frame length is available AND one or more of the followings:
@@ -125,10 +130,10 @@ bool FrameLengthController::FrameLengthDecreasingDecision(
   if (decrease_threshold == frame_length_change_criteria_.end())
     return false;
 
-  return (metrics.uplink_bandwidth_bps &&
-          *metrics.uplink_bandwidth_bps >= decrease_threshold->second) ||
-         (metrics.uplink_packet_loss_fraction &&
-          *metrics.uplink_packet_loss_fraction >=
+  return (uplink_bandwidth_bps_ &&
+          *uplink_bandwidth_bps_ >= decrease_threshold->second) ||
+         (uplink_packet_loss_fraction_ &&
+          *uplink_packet_loss_fraction_ >=
               config_.fl_decreasing_packet_loss_fraction) ||
          config.enable_fec.value_or(false);
 }

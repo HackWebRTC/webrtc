@@ -96,52 +96,70 @@ AudioNetworkAdaptorStates CreateAudioNetworkAdaptor() {
   return states;
 }
 
+void SetExpectCallToUpdateNetworkMetrics(
+    const std::vector<std::unique_ptr<MockController>>& controllers,
+    const Controller::NetworkMetrics& check) {
+  for (auto& mock_controller : controllers) {
+    EXPECT_CALL(*mock_controller,
+                UpdateNetworkMetrics(NetworkMetricsIs(check)));
+  }
+}
+
 }  // namespace
+
+TEST(AudioNetworkAdaptorImplTest,
+     UpdateNetworkMetricsIsCalledOnSetUplinkBandwidth) {
+  auto states = CreateAudioNetworkAdaptor();
+  constexpr int kBandwidth = 16000;
+  Controller::NetworkMetrics check;
+  check.uplink_bandwidth_bps = rtc::Optional<int>(kBandwidth);
+  SetExpectCallToUpdateNetworkMetrics(states.mock_controllers, check);
+  states.audio_network_adaptor->SetUplinkBandwidth(kBandwidth);
+}
+
+TEST(AudioNetworkAdaptorImplTest,
+     UpdateNetworkMetricsIsCalledOnSetUplinkPacketLossFraction) {
+  auto states = CreateAudioNetworkAdaptor();
+  constexpr float kPacketLoss = 0.7f;
+  Controller::NetworkMetrics check;
+  check.uplink_packet_loss_fraction = rtc::Optional<float>(kPacketLoss);
+  SetExpectCallToUpdateNetworkMetrics(states.mock_controllers, check);
+  states.audio_network_adaptor->SetUplinkPacketLossFraction(kPacketLoss);
+}
+
+TEST(AudioNetworkAdaptorImplTest, UpdateNetworkMetricsIsCalledOnSetRtt) {
+  auto states = CreateAudioNetworkAdaptor();
+  constexpr int kRtt = 100;
+  Controller::NetworkMetrics check;
+  check.rtt_ms = rtc::Optional<int>(kRtt);
+  SetExpectCallToUpdateNetworkMetrics(states.mock_controllers, check);
+  states.audio_network_adaptor->SetRtt(kRtt);
+}
+
+TEST(AudioNetworkAdaptorImplTest,
+     UpdateNetworkMetricsIsCalledOnSetTargetAudioBitrate) {
+  auto states = CreateAudioNetworkAdaptor();
+  constexpr int kTargetAudioBitrate = 15000;
+  Controller::NetworkMetrics check;
+  check.target_audio_bitrate_bps = rtc::Optional<int>(kTargetAudioBitrate);
+  SetExpectCallToUpdateNetworkMetrics(states.mock_controllers, check);
+  states.audio_network_adaptor->SetTargetAudioBitrate(kTargetAudioBitrate);
+}
+
+TEST(AudioNetworkAdaptorImplTest, UpdateNetworkMetricsIsCalledOnSetOverhead) {
+  auto states = CreateAudioNetworkAdaptor();
+  constexpr size_t kOverhead = 64;
+  Controller::NetworkMetrics check;
+  check.overhead_bytes_per_packet = rtc::Optional<size_t>(kOverhead);
+  SetExpectCallToUpdateNetworkMetrics(states.mock_controllers, check);
+  states.audio_network_adaptor->SetOverhead(kOverhead);
+}
 
 TEST(AudioNetworkAdaptorImplTest,
      MakeDecisionIsCalledOnGetEncoderRuntimeConfig) {
   auto states = CreateAudioNetworkAdaptor();
-
-  constexpr int kBandwidth = 16000;
-  constexpr float kPacketLoss = 0.7f;
-  constexpr int kRtt = 100;
-  constexpr int kTargetAudioBitrate = 15000;
-  constexpr size_t kOverhead = 64;
-
-  Controller::NetworkMetrics check;
-  check.uplink_bandwidth_bps = rtc::Optional<int>(kBandwidth);
-  for (auto& mock_controller : states.mock_controllers) {
-    EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
-  }
-  states.audio_network_adaptor->SetUplinkBandwidth(kBandwidth);
-  states.audio_network_adaptor->GetEncoderRuntimeConfig();
-
-  check.uplink_packet_loss_fraction = rtc::Optional<float>(kPacketLoss);
-  for (auto& mock_controller : states.mock_controllers) {
-    EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
-  }
-  states.audio_network_adaptor->SetUplinkPacketLossFraction(kPacketLoss);
-  states.audio_network_adaptor->GetEncoderRuntimeConfig();
-
-  check.rtt_ms = rtc::Optional<int>(kRtt);
-  for (auto& mock_controller : states.mock_controllers) {
-    EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
-  }
-  states.audio_network_adaptor->SetRtt(kRtt);
-  states.audio_network_adaptor->GetEncoderRuntimeConfig();
-
-  check.target_audio_bitrate_bps = rtc::Optional<int>(kTargetAudioBitrate);
-  for (auto& mock_controller : states.mock_controllers) {
-    EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
-  }
-  states.audio_network_adaptor->SetTargetAudioBitrate(kTargetAudioBitrate);
-  states.audio_network_adaptor->GetEncoderRuntimeConfig();
-
-  check.overhead_bytes_per_packet = rtc::Optional<size_t>(kOverhead);
-  for (auto& mock_controller : states.mock_controllers) {
-    EXPECT_CALL(*mock_controller, MakeDecision(NetworkMetricsIs(check), _));
-  }
-  states.audio_network_adaptor->SetOverhead(kOverhead);
+  for (auto& mock_controller : states.mock_controllers)
+    EXPECT_CALL(*mock_controller, MakeDecision(_));
   states.audio_network_adaptor->GetEncoderRuntimeConfig();
 }
 
@@ -153,8 +171,8 @@ TEST(AudioNetworkAdaptorImplTest,
   config.bitrate_bps = rtc::Optional<int>(32000);
   config.enable_fec = rtc::Optional<bool>(true);
 
-  EXPECT_CALL(*states.mock_controllers[0], MakeDecision(_, _))
-      .WillOnce(SetArgPointee<1>(config));
+  EXPECT_CALL(*states.mock_controllers[0], MakeDecision(_))
+      .WillOnce(SetArgPointee<0>(config));
 
   EXPECT_CALL(*states.mock_debug_dump_writer,
               DumpEncoderRuntimeConfig(EncoderRuntimeConfigIs(config),
@@ -216,8 +234,8 @@ TEST(AudioNetworkAdaptorImplTest, LogRuntimeConfigOnGetEncoderRuntimeConfig) {
   config.bitrate_bps = rtc::Optional<int>(32000);
   config.enable_fec = rtc::Optional<bool>(true);
 
-  EXPECT_CALL(*states.mock_controllers[0], MakeDecision(_, _))
-      .WillOnce(SetArgPointee<1>(config));
+  EXPECT_CALL(*states.mock_controllers[0], MakeDecision(_))
+      .WillOnce(SetArgPointee<0>(config));
 
   EXPECT_CALL(*states.event_log,
               LogAudioNetworkAdaptation(EncoderRuntimeConfigIs(config)))

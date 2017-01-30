@@ -38,17 +38,31 @@ std::unique_ptr<FrameLengthController> CreateController(
   return controller;
 }
 
+void UpdateNetworkMetrics(
+    FrameLengthController* controller,
+    const rtc::Optional<int>& uplink_bandwidth_bps,
+    const rtc::Optional<float>& uplink_packet_loss_fraction) {
+  // UpdateNetworkMetrics can accept multiple network metric updates at once.
+  // However, currently, the most used case is to update one metric at a time.
+  // To reflect this fact, we separate the calls.
+  if (uplink_bandwidth_bps) {
+    Controller::NetworkMetrics network_metrics;
+    network_metrics.uplink_bandwidth_bps = uplink_bandwidth_bps;
+    controller->UpdateNetworkMetrics(network_metrics);
+  }
+  if (uplink_packet_loss_fraction) {
+    Controller::NetworkMetrics network_metrics;
+    network_metrics.uplink_packet_loss_fraction = uplink_packet_loss_fraction;
+    controller->UpdateNetworkMetrics(network_metrics);
+  }
+}
+
 void CheckDecision(FrameLengthController* controller,
-                   const rtc::Optional<int>& uplink_bandwidth_bps,
-                   const rtc::Optional<float>& uplink_packet_loss_fraction,
                    const rtc::Optional<bool>& enable_fec,
                    int expected_frame_length_ms) {
-  Controller::NetworkMetrics metrics;
-  metrics.uplink_bandwidth_bps = uplink_bandwidth_bps;
-  metrics.uplink_packet_loss_fraction = uplink_packet_loss_fraction;
   AudioNetworkAdaptor::EncoderRuntimeConfig config;
   config.enable_fec = enable_fec;
-  controller->MakeDecision(metrics, &config);
+  controller->MakeDecision(&config);
   EXPECT_EQ(rtc::Optional<int>(expected_frame_length_ms),
             config.frame_length_ms);
 }
@@ -57,21 +71,22 @@ void CheckDecision(FrameLengthController* controller,
 
 TEST(FrameLengthControllerTest, DecreaseTo20MsOnHighUplinkBandwidth) {
   auto controller = CreateController({20, 60}, 60);
-  CheckDecision(controller.get(), rtc::Optional<int>(kFl60msTo20msBandwidthBps),
-                rtc::Optional<float>(), rtc::Optional<bool>(), 20);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl60msTo20msBandwidthBps),
+                       rtc::Optional<float>());
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, DecreaseTo20MsOnHighUplinkPacketLossFraction) {
   auto controller = CreateController({20, 60}, 60);
-  CheckDecision(controller.get(), rtc::Optional<int>(),
-                rtc::Optional<float>(kFlDecreasingPacketLossFraction),
-                rtc::Optional<bool>(), 20);
+  UpdateNetworkMetrics(controller.get(), rtc::Optional<int>(),
+                       rtc::Optional<float>(kFlDecreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, DecreaseTo20MsWhenFecIsOn) {
   auto controller = CreateController({20, 60}, 60);
-  CheckDecision(controller.get(), rtc::Optional<int>(), rtc::Optional<float>(),
-                rtc::Optional<bool>(true), 20);
+  CheckDecision(controller.get(), rtc::Optional<bool>(true), 20);
 }
 
 TEST(FrameLengthControllerTest,
@@ -79,8 +94,7 @@ TEST(FrameLengthControllerTest,
   auto controller = CreateController({60}, 60);
   // Set FEC on that would cause frame length to decrease if receiver frame
   // length range included 20ms.
-  CheckDecision(controller.get(), rtc::Optional<int>(), rtc::Optional<float>(),
-                rtc::Optional<bool>(true), 60);
+  CheckDecision(controller.get(), rtc::Optional<bool>(true), 60);
 }
 
 TEST(FrameLengthControllerTest, Maintain60MsOnMultipleConditions) {
@@ -89,9 +103,10 @@ TEST(FrameLengthControllerTest, Maintain60MsOnMultipleConditions) {
   // 2. |uplink_packet_loss_fraction| is at medium,
   // 3. FEC is not decided ON.
   auto controller = CreateController({20, 60}, 60);
-  CheckDecision(controller.get(), rtc::Optional<int>(kMediumBandwidthBps),
-                rtc::Optional<float>(kMediumPacketLossFraction),
-                rtc::Optional<bool>(), 60);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kMediumBandwidthBps),
+                       rtc::Optional<float>(kMediumPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
 }
 
 TEST(FrameLengthControllerTest, IncreaseTo60MsOnMultipleConditions) {
@@ -101,9 +116,28 @@ TEST(FrameLengthControllerTest, IncreaseTo60MsOnMultipleConditions) {
   //    AND
   // 3. FEC is not decided or OFF.
   auto controller = CreateController({20, 60}, 20);
-  CheckDecision(controller.get(), rtc::Optional<int>(kFl20msTo60msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 60);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl20msTo60msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
+}
+
+TEST(FrameLengthControllerTest, UpdateMultipleNetworkMetricsAtOnce) {
+  // This test is similar to IncreaseTo60MsOnMultipleConditions. But instead of
+  // using ::UpdateNetworkMetrics(...), which calls
+  // FrameLengthController::UpdateNetworkMetrics(...) multiple times, we
+  // we call it only once. This is to verify that
+  // FrameLengthController::UpdateNetworkMetrics(...) can handle multiple
+  // network updates at once. This is, however, not a common use case in current
+  // audio_network_adaptor_impl.cc.
+  auto controller = CreateController({20, 60}, 20);
+  Controller::NetworkMetrics network_metrics;
+  network_metrics.uplink_bandwidth_bps =
+      rtc::Optional<int>(kFl20msTo60msBandwidthBps);
+  network_metrics.uplink_packet_loss_fraction =
+      rtc::Optional<float>(kFlIncreasingPacketLossFraction);
+  controller->UpdateNetworkMetrics(network_metrics);
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
 }
 
 TEST(FrameLengthControllerTest,
@@ -111,34 +145,38 @@ TEST(FrameLengthControllerTest,
   auto controller = CreateController({20}, 20);
   // Use a low uplink bandwidth and a low uplink packet loss fraction that would
   // cause frame length to increase if receiver frame length included 60ms.
-  CheckDecision(controller.get(), rtc::Optional<int>(kFl20msTo60msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 20);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl20msTo60msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, Maintain20MsOnMediumUplinkBandwidth) {
   auto controller = CreateController({20, 60}, 20);
-  CheckDecision(controller.get(), rtc::Optional<int>(kMediumBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 20);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kMediumBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, Maintain20MsOnMediumUplinkPacketLossFraction) {
   auto controller = CreateController({20, 60}, 20);
   // Use a low uplink bandwidth that would cause frame length to increase if
   // uplink packet loss fraction was low.
-  CheckDecision(controller.get(), rtc::Optional<int>(kFl20msTo60msBandwidthBps),
-                rtc::Optional<float>(kMediumPacketLossFraction),
-                rtc::Optional<bool>(), 20);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl20msTo60msBandwidthBps),
+                       rtc::Optional<float>(kMediumPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, Maintain20MsWhenFecIsOn) {
   auto controller = CreateController({20, 60}, 20);
   // Use a low uplink bandwidth and a low uplink packet loss fraction that would
   // cause frame length to increase if FEC was not ON.
-  CheckDecision(controller.get(), rtc::Optional<int>(kFl20msTo60msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(true), 20);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl20msTo60msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(true), 20);
 }
 
 namespace {
@@ -176,30 +214,34 @@ class FrameLengthControllerForTest {
 TEST(FrameLengthControllerTest, From120MsTo20MsOnHighUplinkBandwidth) {
   FrameLengthControllerForTest controller({20, 60, 120}, 120);
   // It takes two steps for frame length to go from 120ms to 20ms.
-  CheckDecision(controller.get(), rtc::Optional<int>(kFl60msTo20msBandwidthBps),
-                rtc::Optional<float>(), rtc::Optional<bool>(), 60);
-  CheckDecision(controller.get(), rtc::Optional<int>(kFl60msTo20msBandwidthBps),
-                rtc::Optional<float>(), rtc::Optional<bool>(), 20);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl60msTo20msBandwidthBps),
+                       rtc::Optional<float>());
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
+
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl60msTo20msBandwidthBps),
+                       rtc::Optional<float>());
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, From120MsTo20MsOnHighUplinkPacketLossFraction) {
   FrameLengthControllerForTest controller({20, 60, 120}, 120);
   // It takes two steps for frame length to go from 120ms to 20ms.
-  CheckDecision(controller.get(), rtc::Optional<int>(),
-                rtc::Optional<float>(kFlDecreasingPacketLossFraction),
-                rtc::Optional<bool>(), 60);
-  CheckDecision(controller.get(), rtc::Optional<int>(),
-                rtc::Optional<float>(kFlDecreasingPacketLossFraction),
-                rtc::Optional<bool>(), 20);
+  UpdateNetworkMetrics(controller.get(), rtc::Optional<int>(),
+                       rtc::Optional<float>(kFlDecreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
+
+  UpdateNetworkMetrics(controller.get(), rtc::Optional<int>(),
+                       rtc::Optional<float>(kFlDecreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
 }
 
 TEST(FrameLengthControllerTest, From120MsTo20MsWhenFecIsOn) {
   FrameLengthControllerForTest controller({20, 60, 120}, 120);
   // It takes two steps for frame length to go from 120ms to 20ms.
-  CheckDecision(controller.get(), rtc::Optional<int>(), rtc::Optional<float>(),
-                rtc::Optional<bool>(true), 60);
-  CheckDecision(controller.get(), rtc::Optional<int>(), rtc::Optional<float>(),
-                rtc::Optional<bool>(true), 20);
+  CheckDecision(controller.get(), rtc::Optional<bool>(true), 60);
+  CheckDecision(controller.get(), rtc::Optional<bool>(true), 20);
 }
 
 TEST(FrameLengthControllerTest, From20MsTo120MsOnMultipleConditions) {
@@ -210,51 +252,59 @@ TEST(FrameLengthControllerTest, From20MsTo120MsOnMultipleConditions) {
   // 3. FEC is not decided or OFF.
   FrameLengthControllerForTest controller({20, 60, 120}, 20);
   // It takes two steps for frame length to go from 20ms to 120ms.
-  CheckDecision(controller.get(),
-                rtc::Optional<int>(kFl60msTo120msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 60);
-  CheckDecision(controller.get(),
-                rtc::Optional<int>(kFl60msTo120msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 120);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl60msTo120msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl60msTo120msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 120);
 }
 
 TEST(FrameLengthControllerTest, Stall60MsIf120MsNotInReceiverFrameLengthRange) {
   FrameLengthControllerForTest controller({20, 60}, 20);
-  CheckDecision(controller.get(),
-                rtc::Optional<int>(kFl60msTo120msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 60);
-  CheckDecision(controller.get(),
-                rtc::Optional<int>(kFl60msTo120msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 60);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl60msTo120msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl60msTo120msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
 }
 
 TEST(FrameLengthControllerTest, CheckBehaviorOnChangingNetworkMetrics) {
   FrameLengthControllerForTest controller({20, 60, 120}, 20);
-  CheckDecision(controller.get(), rtc::Optional<int>(kMediumBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 20);
-  CheckDecision(controller.get(), rtc::Optional<int>(kFl20msTo60msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 60);
-  CheckDecision(controller.get(),
-                rtc::Optional<int>(kFl60msTo120msBandwidthBps),
-                rtc::Optional<float>(kMediumPacketLossFraction),
-                rtc::Optional<bool>(), 60);
-  CheckDecision(controller.get(),
-                rtc::Optional<int>(kFl60msTo120msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 120);
-  CheckDecision(controller.get(),
-                rtc::Optional<int>(kFl120msTo60msBandwidthBps),
-                rtc::Optional<float>(kFlIncreasingPacketLossFraction),
-                rtc::Optional<bool>(), 60);
-  CheckDecision(controller.get(), rtc::Optional<int>(kMediumPacketLossFraction),
-                rtc::Optional<float>(kFlDecreasingPacketLossFraction),
-                rtc::Optional<bool>(), 20);
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kMediumBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
+
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl20msTo60msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
+
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl60msTo120msBandwidthBps),
+                       rtc::Optional<float>(kMediumPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
+
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl60msTo120msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 120);
+
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kFl120msTo60msBandwidthBps),
+                       rtc::Optional<float>(kFlIncreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
+
+  UpdateNetworkMetrics(controller.get(),
+                       rtc::Optional<int>(kMediumPacketLossFraction),
+                       rtc::Optional<float>(kFlDecreasingPacketLossFraction));
+  CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
 }
 
 }  // namespace webrtc

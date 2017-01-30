@@ -49,8 +49,9 @@ class FrameLengthController final : public Controller {
 
   ~FrameLengthController() override;
 
-  void MakeDecision(const NetworkMetrics& metrics,
-                    AudioNetworkAdaptor::EncoderRuntimeConfig* config) override;
+  void UpdateNetworkMetrics(const NetworkMetrics& network_metrics) override;
+
+  void MakeDecision(AudioNetworkAdaptor::EncoderRuntimeConfig* config) override;
 
  private:
   friend class FrameLengthControllerForTest;
@@ -64,11 +65,9 @@ class FrameLengthController final : public Controller {
   };
 
   bool FrameLengthIncreasingDecision(
-      const NetworkMetrics& metrics,
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) const;
 
   bool FrameLengthDecreasingDecision(
-      const NetworkMetrics& metrics,
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) const;
 
   const Config config_;
@@ -76,6 +75,10 @@ class FrameLengthController final : public Controller {
   std::vector<int>::const_iterator frame_length_ms_;
 
   std::map<FrameLengthChange, int> frame_length_change_criteria_;
+
+  rtc::Optional<int> uplink_bandwidth_bps_;
+
+  rtc::Optional<float> uplink_packet_loss_fraction_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FrameLengthController);
 };

@@ -30,8 +30,11 @@ class Controller {
 
   virtual ~Controller() = default;
 
+  // Informs network metrics update to this controller. Any non-empty field
+  // indicates an update on the corresponding network metric.
+  virtual void UpdateNetworkMetrics(const NetworkMetrics& network_metrics) = 0;
+
   virtual void MakeDecision(
-      const NetworkMetrics& metrics,
       AudioNetworkAdaptor::EncoderRuntimeConfig* config) = 0;
 };
 

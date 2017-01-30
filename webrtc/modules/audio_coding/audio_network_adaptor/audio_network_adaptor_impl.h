@@ -60,6 +60,8 @@ class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
  private:
   void DumpNetworkMetrics();
 
+  void UpdateNetworkMetrics(const Controller::NetworkMetrics& network_metrics);
+
   const Config config_;
 
   std::unique_ptr<ControllerManager> controller_manager_;

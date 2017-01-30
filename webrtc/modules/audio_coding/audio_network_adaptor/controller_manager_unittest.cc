@@ -299,14 +299,13 @@ void CheckControllersOrder(const std::vector<Controller*>& controllers,
   // We also check that the controllers follow the initial settings.
   AudioNetworkAdaptor::EncoderRuntimeConfig encoder_config;
 
-  // We do not check the internal logic of controllers. We only check that
-  // when no network metrics are known, controllers provide the initial values.
-  Controller::NetworkMetrics metrics;
-
   for (size_t i = 0; i < controllers.size(); ++i) {
     AudioNetworkAdaptor::EncoderRuntimeConfig encoder_config;
     // We check the order of |controllers| by judging their decisions.
-    controllers[i]->MakeDecision(metrics, &encoder_config);
+    controllers[i]->MakeDecision(&encoder_config);
+
+    // Since controllers are not provided with network metrics, they give the
+    // initial values.
     switch (expected_types[i]) {
       case ControllerType::FEC:
         EXPECT_EQ(rtc::Optional<bool>(kInitialFecEnabled),

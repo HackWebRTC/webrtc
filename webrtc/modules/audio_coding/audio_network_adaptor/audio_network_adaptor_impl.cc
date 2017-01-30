@@ -49,6 +49,11 @@ AudioNetworkAdaptorImpl::~AudioNetworkAdaptorImpl() = default;
 void AudioNetworkAdaptorImpl::SetUplinkBandwidth(int uplink_bandwidth_bps) {
   last_metrics_.uplink_bandwidth_bps = rtc::Optional<int>(uplink_bandwidth_bps);
   DumpNetworkMetrics();
+
+  Controller::NetworkMetrics network_metrics;
+  network_metrics.uplink_bandwidth_bps =
+      rtc::Optional<int>(uplink_bandwidth_bps);
+  UpdateNetworkMetrics(network_metrics);
 }
 
 void AudioNetworkAdaptorImpl::SetUplinkPacketLossFraction(
@@ -56,11 +61,20 @@ void AudioNetworkAdaptorImpl::SetUplinkPacketLossFraction(
   last_metrics_.uplink_packet_loss_fraction =
       rtc::Optional<float>(uplink_packet_loss_fraction);
   DumpNetworkMetrics();
+
+  Controller::NetworkMetrics network_metrics;
+  network_metrics.uplink_packet_loss_fraction =
+      rtc::Optional<float>(uplink_packet_loss_fraction);
+  UpdateNetworkMetrics(network_metrics);
 }
 
 void AudioNetworkAdaptorImpl::SetRtt(int rtt_ms) {
   last_metrics_.rtt_ms = rtc::Optional<int>(rtt_ms);
   DumpNetworkMetrics();
+
+  Controller::NetworkMetrics network_metrics;
+  network_metrics.rtt_ms = rtc::Optional<int>(rtt_ms);
+  UpdateNetworkMetrics(network_metrics);
 }
 
 void AudioNetworkAdaptorImpl::SetTargetAudioBitrate(
@@ -68,12 +82,22 @@ void AudioNetworkAdaptorImpl::SetTargetAudioBitrate(
   last_metrics_.target_audio_bitrate_bps =
       rtc::Optional<int>(target_audio_bitrate_bps);
   DumpNetworkMetrics();
+
+  Controller::NetworkMetrics network_metrics;
+  network_metrics.target_audio_bitrate_bps =
+      rtc::Optional<int>(target_audio_bitrate_bps);
+  UpdateNetworkMetrics(network_metrics);
 }
 
 void AudioNetworkAdaptorImpl::SetOverhead(size_t overhead_bytes_per_packet) {
   last_metrics_.overhead_bytes_per_packet =
       rtc::Optional<size_t>(overhead_bytes_per_packet);
   DumpNetworkMetrics();
+
+  Controller::NetworkMetrics network_metrics;
+  network_metrics.overhead_bytes_per_packet =
+      rtc::Optional<size_t>(overhead_bytes_per_packet);
+  UpdateNetworkMetrics(network_metrics);
 }
 
 AudioNetworkAdaptor::EncoderRuntimeConfig
@@ -81,7 +105,7 @@ AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
   EncoderRuntimeConfig config;
   for (auto& controller :
        controller_manager_->GetSortedControllers(last_metrics_))
-    controller->MakeDecision(last_metrics_, &config);
+    controller->MakeDecision(&config);
 
   if (debug_dump_writer_)
     debug_dump_writer_->DumpEncoderRuntimeConfig(
@@ -105,6 +129,12 @@ void AudioNetworkAdaptorImpl::DumpNetworkMetrics() {
   if (debug_dump_writer_)
     debug_dump_writer_->DumpNetworkMetrics(last_metrics_,
                                            config_.clock->TimeInMilliseconds());
+}
+
+void AudioNetworkAdaptorImpl::UpdateNetworkMetrics(
+    const Controller::NetworkMetrics& network_metrics) {
+  for (auto& controller : controller_manager_->GetControllers())
+    controller->UpdateNetworkMetrics(network_metrics);
 }
 
 }  // namespace webrtc
