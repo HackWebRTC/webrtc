@@ -9,6 +9,7 @@
 import json
 import os
 import re
+import subprocess
 import sys
 
 
@@ -82,6 +83,18 @@ LEGACY_API_DIRS = (
   'webrtc/voice_engine/include',
 )
 API_DIRS = NATIVE_API_DIRS[:] + LEGACY_API_DIRS[:]
+
+
+def _RunCommand(command, cwd):
+  """Runs a command and returns the output from that command."""
+  p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                       cwd=cwd)
+  stdout = p.stdout.read()
+  stderr = p.stderr.read()
+  p.wait()
+  p.stdout.close()
+  p.stderr.close()
+  return p.returncode, stdout, stderr
 
 
 def _VerifyNativeApiHeadersListIsValid(input_api, output_api):
@@ -285,6 +298,19 @@ def _CheckNoMixingCAndCCSources(input_api, gn_files, output_api):
         items=violating_gn_files.keys())]
   return []
 
+def _CheckNoPackageBoundaryViolations(input_api, gn_files, output_api):
+  cwd = input_api.PresubmitLocalPath()
+  script_path = os.path.join('tools-webrtc', 'check_package_boundaries.py')
+  webrtc_path = os.path.join('webrtc')
+  command = [sys.executable, script_path, webrtc_path]
+  command += [gn_file.LocalPath() for gn_file in gn_files]
+  returncode, _, stderr = _RunCommand(command, cwd)
+  if returncode:
+    return [output_api.PresubmitError(
+        'There are package boundary violations in the following GN files:\n\n'
+        '%s' % stderr)]
+  return []
+
 def _CheckGnChanges(input_api, output_api):
   source_file_filter = lambda x: input_api.FilterSourceFile(
       x, white_list=(r'.+\.(gn|gni)$',))
@@ -298,6 +324,8 @@ def _CheckGnChanges(input_api, output_api):
   if gn_files:
     result.extend(_CheckNoSourcesAbove(input_api, gn_files, output_api))
     result.extend(_CheckNoMixingCAndCCSources(input_api, gn_files, output_api))
+    result.extend(_CheckNoPackageBoundaryViolations(
+        input_api, gn_files, output_api))
   return result
 
 def _CheckUnwantedDependencies(input_api, output_api):
@@ -405,8 +433,10 @@ def _RunPythonTests(input_api, output_api):
     return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
 
   test_directories = [
-    join('tools-webrtc', 'autoroller', 'unittests'),
-    join('webrtc', 'tools', 'py_event_log_analyzer'),
+      join('webrtc', 'tools', 'py_event_log_analyzer')
+  ] + [
+      root for root, _, files in os.walk(join('tools-webrtc'))
+      if any(f.endswith('_test.py') for f in files)
   ]
 
   tests = []
