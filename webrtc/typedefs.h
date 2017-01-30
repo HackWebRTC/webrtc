@@ -98,6 +98,7 @@
 #endif
 #endif
 
+#ifndef NO_RETURN
 // Annotate a function that will not return control flow to the caller.
 #if defined(_MSC_VER)
 #define NO_RETURN __declspec(noreturn)
@@ -105,6 +106,7 @@
 #define NO_RETURN __attribute__ ((__noreturn__))
 #else
 #define NO_RETURN
+#endif
 #endif
 
 #endif  // WEBRTC_TYPEDEFS_H_
