@@ -456,8 +456,11 @@ void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
   VideoFrame incoming_frame = video_frame;
 
   // Local time in webrtc time base.
-  int64_t current_time = clock_->TimeInMilliseconds();
-  incoming_frame.set_render_time_ms(current_time);
+  int64_t current_time_us = clock_->TimeInMicroseconds();
+  int64_t current_time_ms = current_time_us / rtc::kNumMicrosecsPerMillisec;
+  // TODO(nisse): This always overrides the incoming timestamp. Don't
+  // do that, trust the frame source.
+  incoming_frame.set_timestamp_us(current_time_us);
 
   // Capture time may come from clock with an offset and drift from clock_.
   int64_t capture_ntp_time_ms;
@@ -466,7 +469,7 @@ void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
   } else if (video_frame.render_time_ms() != 0) {
     capture_ntp_time_ms = video_frame.render_time_ms() + delta_ntp_internal_ms_;
   } else {
-    capture_ntp_time_ms = current_time + delta_ntp_internal_ms_;
+    capture_ntp_time_ms = current_time_ms + delta_ntp_internal_ms_;
   }
   incoming_frame.set_ntp_time_ms(capture_ntp_time_ms);
 
@@ -485,8 +488,8 @@ void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
   }
 
   bool log_stats = false;
-  if (current_time - last_frame_log_ms_ > kFrameLogIntervalMs) {
-    last_frame_log_ms_ = current_time;
+  if (current_time_ms - last_frame_log_ms_ > kFrameLogIntervalMs) {
+    last_frame_log_ms_ = current_time_ms;
     log_stats = true;
   }
 

@@ -71,9 +71,11 @@ class VideoFrame {
   uint32_t transport_frame_id() const { return timestamp(); }
 
   // Set capture ntp time in milliseconds.
+  // TODO(nisse): Deprecated. Migrate all users to timestamp_us().
   void set_ntp_time_ms(int64_t ntp_time_ms) { ntp_time_ms_ = ntp_time_ms; }
 
   // Get capture ntp time in milliseconds.
+  // TODO(nisse): Deprecated. Migrate all users to timestamp_us().
   int64_t ntp_time_ms() const { return ntp_time_ms_; }
 
   // Naming convention for Coordination of Video Orientation. Please see
@@ -89,10 +91,8 @@ class VideoFrame {
   VideoRotation rotation() const { return rotation_; }
   void set_rotation(VideoRotation rotation) { rotation_ = rotation; }
 
-  // Set render time in milliseconds.
-  void set_render_time_ms(int64_t render_time_ms);
-
   // Get render time in milliseconds.
+  // TODO(nisse): Deprecated. Migrate all users to timestamp_us().
   int64_t render_time_ms() const;
 
   // Return the underlying buffer. Never nullptr for a properly

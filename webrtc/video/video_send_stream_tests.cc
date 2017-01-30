@@ -1939,7 +1939,8 @@ VideoFrame CreateVideoFrame(int width, int height, uint8_t data) {
       I420Buffer::Create(width, height, width, width / 2, width / 2),
       kVideoRotation_0, data);
   frame.set_timestamp(data);
-  frame.set_render_time_ms(data);
+  // Use data as a ms timestamp.
+  frame.set_timestamp_us(data * rtc::kNumMicrosecsPerMillisec);
   return frame;
 }
 

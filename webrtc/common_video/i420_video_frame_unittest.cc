@@ -129,7 +129,7 @@ TEST(TestVideoFrame, WidthHeightValues) {
 TEST(TestVideoFrame, ShallowCopy) {
   uint32_t timestamp = 1;
   int64_t ntp_time_ms = 2;
-  int64_t render_time_ms = 3;
+  int64_t timestamp_us = 3;
   int stride_y = 15;
   int stride_u = 10;
   int stride_v = 10;
@@ -155,7 +155,7 @@ TEST(TestVideoFrame, ShallowCopy) {
       kRotation, 0);
   frame1.set_timestamp(timestamp);
   frame1.set_ntp_time_ms(ntp_time_ms);
-  frame1.set_render_time_ms(render_time_ms);
+  frame1.set_timestamp_us(timestamp_us);
   VideoFrame frame2(frame1);
 
   EXPECT_EQ(frame1.video_frame_buffer(), frame2.video_frame_buffer());
@@ -168,17 +168,17 @@ TEST(TestVideoFrame, ShallowCopy) {
 
   EXPECT_EQ(frame2.timestamp(), frame1.timestamp());
   EXPECT_EQ(frame2.ntp_time_ms(), frame1.ntp_time_ms());
-  EXPECT_EQ(frame2.render_time_ms(), frame1.render_time_ms());
+  EXPECT_EQ(frame2.timestamp_us(), frame1.timestamp_us());
   EXPECT_EQ(frame2.rotation(), frame1.rotation());
 
   frame2.set_timestamp(timestamp + 1);
   frame2.set_ntp_time_ms(ntp_time_ms + 1);
-  frame2.set_render_time_ms(render_time_ms + 1);
+  frame2.set_timestamp_us(timestamp_us + 1);
   frame2.set_rotation(kVideoRotation_90);
 
   EXPECT_NE(frame2.timestamp(), frame1.timestamp());
   EXPECT_NE(frame2.ntp_time_ms(), frame1.ntp_time_ms());
-  EXPECT_NE(frame2.render_time_ms(), frame1.render_time_ms());
+  EXPECT_NE(frame2.timestamp_us(), frame1.timestamp_us());
   EXPECT_NE(frame2.rotation(), frame1.rotation());
 }
 
@@ -195,8 +195,8 @@ TEST(TestVideoFrame, TextureInitialValues) {
 
   frame.set_timestamp(200);
   EXPECT_EQ(200u, frame.timestamp());
-  frame.set_render_time_ms(20);
-  EXPECT_EQ(20, frame.render_time_ms());
+  frame.set_timestamp_us(20);
+  EXPECT_EQ(20, frame.timestamp_us());
 }
 
 TEST(TestI420FrameBuffer, Copy) {

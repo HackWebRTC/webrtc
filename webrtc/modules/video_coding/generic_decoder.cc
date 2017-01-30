@@ -74,7 +74,8 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   _timing->StopDecodeTimer(decodedImage.timestamp(), decode_time_ms, now_ms,
                            frameInfo->renderTimeMs);
 
-  decodedImage.set_render_time_ms(frameInfo->renderTimeMs);
+  decodedImage.set_timestamp_us(
+      frameInfo->renderTimeMs * rtc::kNumMicrosecsPerMillisec);
   decodedImage.set_rotation(frameInfo->rotation);
   // TODO(sakal): Investigate why callback is NULL sometimes and replace if
   // statement with a DCHECK.

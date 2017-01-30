@@ -55,10 +55,6 @@ rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }
 
-void VideoFrame::set_render_time_ms(int64_t render_time_ms) {
-  set_timestamp_us(render_time_ms * rtc::kNumMicrosecsPerMillisec);
-}
-
 int64_t VideoFrame::render_time_ms() const {
   return timestamp_us() / rtc::kNumMicrosecsPerMillisec;
 }
