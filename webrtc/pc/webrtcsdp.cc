@@ -1597,33 +1597,11 @@ void WriteFmtpParameters(const cricket::CodecParameterMap& parameters,
 }
 
 bool IsFmtpParam(const std::string& name) {
-  const char* kFmtpParams[] = {
-      // TODO(hta): Split FMTP parameters apart from parameters in general.
-      // FMTP parameters are codec specific, not generic.
-      kCodecParamMinPTime,
-      kCodecParamSPropStereo,
-      kCodecParamStereo,
-      kCodecParamUseInbandFec,
-      kCodecParamUseDtx,
-      kCodecParamStartBitrate,
-      kCodecParamMaxBitrate,
-      kCodecParamMinBitrate,
-      kCodecParamMaxQuantization,
-      kCodecParamSctpProtocol,
-      kCodecParamSctpStreams,
-      kCodecParamMaxAverageBitrate,
-      kCodecParamMaxPlaybackRate,
-      kCodecParamAssociatedPayloadType,
-      cricket::kH264FmtpPacketizationMode,
-      cricket::kH264FmtpLevelAsymmetryAllowed,
-      cricket::kH264FmtpProfileLevelId,
-      cricket::kFlexfecFmtpRepairWindow};
-  for (size_t i = 0; i < arraysize(kFmtpParams); ++i) {
-    if (name.compare(kFmtpParams[i]) == 0) {
-      return true;
-    }
-  }
-  return false;
+  // RFC 4855, section 3 specifies the mapping of media format parameters to SDP
+  // parameters. Only ptime, maxptime, channels and rate are placed outside of
+  // the fmtp line. In WebRTC, channels and rate are already handled separately
+  // and thus not included in the CodecParameterMap.
+  return name != kCodecParamPTime && name != kCodecParamMaxPTime;
 }
 
 // Retreives fmtp parameters from |params|, which may contain other parameters

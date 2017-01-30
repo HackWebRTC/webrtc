@@ -3074,6 +3074,65 @@ TEST_F(WebRtcSdpTest, DeserializeVideoFmtpWithSpace) {
   EXPECT_EQ(found->second, "40");
 }
 
+TEST_F(WebRtcSdpTest, SerializeAudioFmtpWithUnknownParameter) {
+  AudioContentDescription* acd = static_cast<AudioContentDescription*>(
+      GetFirstAudioContent(&desc_)->description);
+
+  cricket::AudioCodecs codecs = acd->codecs();
+  codecs[0].params["unknown-future-parameter"] = "SomeFutureValue";
+  acd->set_codecs(codecs);
+
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(),
+                                jdesc_.session_id(),
+                                jdesc_.session_version()));
+  std::string message = webrtc::SdpSerialize(jdesc_, false);
+  std::string sdp_with_fmtp = kSdpFullString;
+  InjectAfter("a=rtpmap:111 opus/48000/2\r\n",
+              "a=fmtp:111 unknown-future-parameter=SomeFutureValue\r\n",
+              &sdp_with_fmtp);
+  EXPECT_EQ(sdp_with_fmtp, message);
+}
+
+TEST_F(WebRtcSdpTest, SerializeAudioFmtpWithKnownFmtpParameter) {
+  AudioContentDescription* acd = static_cast<AudioContentDescription*>(
+      GetFirstAudioContent(&desc_)->description);
+
+  cricket::AudioCodecs codecs = acd->codecs();
+  codecs[0].params["stereo"] = "1";
+  acd->set_codecs(codecs);
+
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(),
+                                jdesc_.session_id(),
+                                jdesc_.session_version()));
+  std::string message = webrtc::SdpSerialize(jdesc_, false);
+  std::string sdp_with_fmtp = kSdpFullString;
+  InjectAfter("a=rtpmap:111 opus/48000/2\r\n",
+              "a=fmtp:111 stereo=1\r\n",
+              &sdp_with_fmtp);
+  EXPECT_EQ(sdp_with_fmtp, message);
+}
+
+TEST_F(WebRtcSdpTest, SerializeAudioFmtpWithPTimeAndMaxPTime) {
+  AudioContentDescription* acd = static_cast<AudioContentDescription*>(
+      GetFirstAudioContent(&desc_)->description);
+
+  cricket::AudioCodecs codecs = acd->codecs();
+  codecs[0].params["ptime"] = "20";
+  codecs[0].params["maxptime"] = "120";
+  acd->set_codecs(codecs);
+
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(),
+                                jdesc_.session_id(),
+                                jdesc_.session_version()));
+  std::string message = webrtc::SdpSerialize(jdesc_, false);
+  std::string sdp_with_fmtp = kSdpFullString;
+  InjectAfter("a=rtpmap:104 ISAC/32000\r\n",
+              "a=maxptime:120\r\n"  // No comma here. String merging!
+              "a=ptime:20\r\n",
+              &sdp_with_fmtp);
+  EXPECT_EQ(sdp_with_fmtp, message);
+}
+
 TEST_F(WebRtcSdpTest, SerializeVideoFmtp) {
   VideoContentDescription* vcd = static_cast<VideoContentDescription*>(
       GetFirstVideoContent(&desc_)->description);
