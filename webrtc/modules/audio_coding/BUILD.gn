@@ -77,10 +77,6 @@ rtc_source_set("audio_decoder_factory_interface") {
 }
 
 rtc_static_library("builtin_audio_decoder_factory") {
-  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-  # Errors on cyclic dependency with :isac_fix if enabled.
-  check_includes = false
-
   sources = [
     "codecs/builtin_audio_decoder_factory.cc",
     "codecs/builtin_audio_decoder_factory.h",
@@ -500,10 +496,6 @@ rtc_source_set("ilbc_c") {
 }
 
 rtc_static_library("isac_common") {
-  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-  # Has a cyclic dependency with :isac if checks are enabled.
-  check_includes = false
-
   sources = [
     "codecs/isac/audio_encoder_isac_t.h",
     "codecs/isac/audio_encoder_isac_t_impl.h",
@@ -512,6 +504,7 @@ rtc_static_library("isac_common") {
   ]
   deps = [
     ":audio_encoder_interface",
+    "../..:webrtc_common",
     "../../base:rtc_base_approved",
   ]
 }
@@ -525,6 +518,8 @@ config("isac_config") {
 
 rtc_static_library("isac") {
   sources = [
+    "codecs/isac/main/include/audio_decoder_isac.h",
+    "codecs/isac/main/include/audio_encoder_isac.h",
     "codecs/isac/main/source/audio_decoder_isac.cc",
     "codecs/isac/main/source/audio_encoder_isac.cc",
   ]
@@ -542,8 +537,6 @@ rtc_static_library("isac") {
 rtc_static_library("isac_c") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
-    "codecs/isac/main/include/audio_decoder_isac.h",
-    "codecs/isac/main/include/audio_encoder_isac.h",
     "codecs/isac/main/include/isac.h",
     "codecs/isac/main/source/arith_routines.c",
     "codecs/isac/main/source/arith_routines.h",
@@ -641,11 +634,18 @@ rtc_static_library("isac_fix") {
   }
 }
 
-rtc_source_set("isac_fix_c") {
-  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-  # Errors on cyclic dependency with :builtin_audio_decoder_factory if enabled.
-  check_includes = false
+rtc_source_set("isac_fix_common") {
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+  sources = [
+    "codecs/isac/fix/source/codec.h",
+    "codecs/isac/fix/source/fft.c",
+    "codecs/isac/fix/source/fft.h",
+    "codecs/isac/fix/source/settings.h",
+  ]
+  public_configs = [ ":isac_fix_config" ]
+}
 
+rtc_source_set("isac_fix_c") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "codecs/isac/fix/include/audio_decoder_isacfix.h",
@@ -657,15 +657,12 @@ rtc_source_set("isac_fix_c") {
     "codecs/isac/fix/source/arith_routins.h",
     "codecs/isac/fix/source/bandwidth_estimator.c",
     "codecs/isac/fix/source/bandwidth_estimator.h",
-    "codecs/isac/fix/source/codec.h",
     "codecs/isac/fix/source/decode.c",
     "codecs/isac/fix/source/decode_bwe.c",
     "codecs/isac/fix/source/decode_plc.c",
     "codecs/isac/fix/source/encode.c",
     "codecs/isac/fix/source/entropy_coding.c",
     "codecs/isac/fix/source/entropy_coding.h",
-    "codecs/isac/fix/source/fft.c",
-    "codecs/isac/fix/source/fft.h",
     "codecs/isac/fix/source/filterbank_tables.c",
     "codecs/isac/fix/source/filterbank_tables.h",
     "codecs/isac/fix/source/filterbanks.c",
@@ -688,7 +685,6 @@ rtc_source_set("isac_fix_c") {
     "codecs/isac/fix/source/pitch_gain_tables.h",
     "codecs/isac/fix/source/pitch_lag_tables.c",
     "codecs/isac/fix/source/pitch_lag_tables.h",
-    "codecs/isac/fix/source/settings.h",
     "codecs/isac/fix/source/spectrum_ar_model_tables.c",
     "codecs/isac/fix/source/spectrum_ar_model_tables.h",
     "codecs/isac/fix/source/structs.h",
@@ -706,6 +702,10 @@ rtc_source_set("isac_fix_c") {
     "../../base:rtc_base_approved",
     "../../common_audio",
     "../../system_wrappers",
+  ]
+
+  public_deps = [
+    ":isac_fix_common",
   ]
 
   if (rtc_build_with_neon) {
@@ -750,10 +750,6 @@ rtc_source_set("isac_fix_c") {
 
 if (rtc_build_with_neon) {
   rtc_static_library("isac_neon") {
-    # TODO(mbonadei): Remove (bugs.webrtc.org/6828)
-    # Errors on cyclic dependency with :isac_fix_c if enabled.
-    check_includes = false
-
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
       "codecs/isac/fix/source/filterbanks_neon.c",
@@ -780,6 +776,7 @@ if (rtc_build_with_neon) {
     }
 
     deps = [
+      ":isac_fix_common",
       "../../base:rtc_base_approved",
       "../../common_audio",
     ]
@@ -2071,6 +2068,7 @@ if (rtc_include_tests) {
       ":cng",
       ":g711",
       ":ilbc",
+      ":isac",
       ":isac_c",
       ":isac_fix",
       ":neteq",
