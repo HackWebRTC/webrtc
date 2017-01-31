@@ -141,7 +141,7 @@ int BitrateProber::CurrentClusterId() const {
 // feasible.
 size_t BitrateProber::RecommendedMinProbeSize() const {
   RTC_DCHECK(!clusters_.empty());
-  return clusters_.front().bitrate_bps * 3 * kMinProbeDeltaMs / (8 * 1000);
+  return clusters_.front().bitrate_bps * 2 * kMinProbeDeltaMs / (8 * 1000);
 }
 
 void BitrateProber::ProbeSent(int64_t now_ms, size_t bytes) {
