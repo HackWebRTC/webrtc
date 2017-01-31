@@ -43,7 +43,9 @@ class PacketInfoComparator {
 TransportFeedbackAdapter::TransportFeedbackAdapter(
     Clock* clock,
     BitrateController* bitrate_controller)
-    : transport_overhead_bytes_per_packet_(0),
+    : send_side_bwe_with_overhead_(webrtc::field_trial::FindFullName(
+          "WebRTC-SendSideBwe-WithOverhead") == "Enabled"),
+      transport_overhead_bytes_per_packet_(0),
       send_time_history_(clock, kSendTimeHistoryWindowMs),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
@@ -61,8 +63,7 @@ void TransportFeedbackAdapter::AddPacket(uint16_t sequence_number,
                                          size_t length,
                                          int probe_cluster_id) {
   rtc::CritScope cs(&lock_);
-  if (webrtc::field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead") ==
-      "Enabled") {
+  if (send_side_bwe_with_overhead_) {
     length += transport_overhead_bytes_per_packet_;
   }
   send_time_history_.AddAndRemoveOld(sequence_number, length, probe_cluster_id);

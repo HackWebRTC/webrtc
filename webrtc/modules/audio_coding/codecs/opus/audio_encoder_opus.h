@@ -161,6 +161,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   void MaybeUpdateUplinkBandwidth();
 
   Config config_;
+  const bool send_side_bwe_with_overhead_;
   float packet_loss_rate_;
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;

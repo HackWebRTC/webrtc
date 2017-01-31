@@ -58,6 +58,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   std::vector<PacketInfo> GetPacketFeedbackVector(
       const rtcp::TransportFeedback& feedback);
 
+  const bool send_side_bwe_with_overhead_;
   rtc::CriticalSection lock_;
   rtc::CriticalSection bwe_lock_;
   int transport_overhead_bytes_per_packet_ GUARDED_BY(&lock_);

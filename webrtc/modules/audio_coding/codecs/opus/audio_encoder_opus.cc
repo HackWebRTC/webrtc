@@ -174,7 +174,9 @@ AudioEncoderOpus::AudioEncoderOpus(
     const Config& config,
     AudioNetworkAdaptorCreator&& audio_network_adaptor_creator,
     std::unique_ptr<SmoothingFilter> bitrate_smoother)
-    : packet_loss_rate_(0.0),
+    : send_side_bwe_with_overhead_(webrtc::field_trial::FindFullName(
+          "WebRTC-SendSideBwe-WithOverhead") == "Enabled"),
+      packet_loss_rate_(0.0),
       inst_(nullptr),
       packet_loss_fraction_smoother_(new PacketLossFractionSmoother(
           config.clock)),
@@ -314,8 +316,7 @@ void AudioEncoderOpus::OnReceivedUplinkBandwidth(
     bitrate_smoother_->AddSample(target_audio_bitrate_bps);
 
     ApplyAudioNetworkAdaptor();
-  } else if (webrtc::field_trial::FindFullName(
-                 "WebRTC-SendSideBwe-WithOverhead") == "Enabled") {
+  } else if (send_side_bwe_with_overhead_) {
     if (!overhead_bytes_per_packet_) {
       LOG(LS_INFO)
           << "AudioEncoderOpus: Overhead unknown, target audio bitrate "

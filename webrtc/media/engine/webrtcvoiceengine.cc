@@ -1226,6 +1226,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       : voe_audio_transport_(voe_audio_transport),
         call_(call),
         config_(send_transport),
+        send_side_bwe_with_overhead_(webrtc::field_trial::FindFullName(
+            "WebRTC-SendSideBwe-WithOverhead") == "Enabled"),
         max_send_bitrate_bps_(max_send_bitrate_bps),
         rtp_parameters_(CreateRtpParametersWithOneEncoding()) {
     RTC_DCHECK_GE(ch, 0);
@@ -1458,8 +1460,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       config_.max_bitrate_bps = kOpusBitrateFbBps;
       // TODO(mflodman): Keep testing this and set proper values.
       // Note: This is an early experiment currently only supported by Opus.
-      if (webrtc::field_trial::FindFullName(
-              "WebRTC-SendSideBwe-WithOverhead") == "Enabled") {
+      if (send_side_bwe_with_overhead_) {
         auto packet_sizes_ms = WebRtcVoiceCodecs::GetPacketSizesMs(
             config_.send_codec_spec.codec_inst);
         if (!packet_sizes_ms.empty()) {
@@ -1500,6 +1501,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   webrtc::AudioTransport* const voe_audio_transport_ = nullptr;
   webrtc::Call* call_ = nullptr;
   webrtc::AudioSendStream::Config config_;
+  const bool send_side_bwe_with_overhead_;
   // The stream is owned by WebRtcAudioSendStream and may be reallocated if
   // configuration changes.
   webrtc::AudioSendStream* stream_ = nullptr;
