@@ -453,7 +453,8 @@ void MessageQueue::DoDelayPost(const Location& posted_from,
     // If this message queue processes 1 message every millisecond for 50 days,
     // we will wrap this number.  Even then, only messages with identical times
     // will be misordered, and then only briefly.  This is probably ok.
-    VERIFY(0 != ++dmsgq_next_num_);
+    ++dmsgq_next_num_;
+    RTC_DCHECK_NE(0, dmsgq_next_num_);
   }
   WakeUpSocketServer();
 }

@@ -1307,8 +1307,8 @@ bool BaseChannel::RemoveRecvStream_w(uint32_t ssrc) {
 bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                                        ContentAction action,
                                        std::string* error_desc) {
-  if (!VERIFY(action == CA_OFFER || action == CA_ANSWER ||
-              action == CA_PRANSWER || action == CA_UPDATE))
+  if (!(action == CA_OFFER || action == CA_ANSWER ||
+        action == CA_PRANSWER || action == CA_UPDATE))
     return false;
 
   // If this is an update, streams only contain streams that have changed.
@@ -1380,8 +1380,8 @@ bool BaseChannel::UpdateRemoteStreams_w(
     const std::vector<StreamParams>& streams,
     ContentAction action,
     std::string* error_desc) {
-  if (!VERIFY(action == CA_OFFER || action == CA_ANSWER ||
-              action == CA_PRANSWER || action == CA_UPDATE))
+  if (!(action == CA_OFFER || action == CA_ANSWER ||
+        action == CA_PRANSWER || action == CA_UPDATE))
     return false;
 
   // If this is an update, streams only contain streams that have changed.

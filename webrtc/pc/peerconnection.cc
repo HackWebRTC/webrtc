@@ -1014,7 +1014,7 @@ bool PeerConnection::GetStats(StatsObserver* observer,
                               StatsOutputLevel level) {
   TRACE_EVENT0("webrtc", "PeerConnection::GetStats");
   RTC_DCHECK(signaling_thread()->IsCurrent());
-  if (!VERIFY(observer != NULL)) {
+  if (!observer) {
     LOG(LS_ERROR) << "GetStats - observer is NULL.";
     return false;
   }
@@ -1097,7 +1097,7 @@ PeerConnection::CreateDataChannel(
 void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
                                  const MediaConstraintsInterface* constraints) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateOffer");
-  if (!VERIFY(observer != nullptr)) {
+  if (!observer) {
     LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
     return;
   }
@@ -1149,7 +1149,7 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
 void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
                                  const RTCOfferAnswerOptions& options) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateOffer");
-  if (!VERIFY(observer != nullptr)) {
+  if (!observer) {
     LOG(LS_ERROR) << "CreateOffer - observer is NULL.";
     return;
   }
@@ -1169,7 +1169,7 @@ void PeerConnection::CreateAnswer(
     CreateSessionDescriptionObserver* observer,
     const MediaConstraintsInterface* constraints) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
-  if (!VERIFY(observer != nullptr)) {
+  if (!observer) {
     LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
     return;
   }
@@ -1188,7 +1188,7 @@ void PeerConnection::CreateAnswer(
 void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
                                   const RTCOfferAnswerOptions& options) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
-  if (!VERIFY(observer != nullptr)) {
+  if (!observer) {
     LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
     return;
   }
@@ -1211,7 +1211,7 @@ void PeerConnection::SetLocalDescription(
   if (IsClosed()) {
     return;
   }
-  if (!VERIFY(observer != nullptr)) {
+  if (!observer) {
     LOG(LS_ERROR) << "SetLocalDescription - observer is NULL.";
     return;
   }
@@ -1293,7 +1293,7 @@ void PeerConnection::SetRemoteDescription(
   if (IsClosed()) {
     return;
   }
-  if (!VERIFY(observer != nullptr)) {
+  if (!observer) {
     LOG(LS_ERROR) << "SetRemoteDescription - observer is NULL.";
     return;
   }
@@ -2190,7 +2190,8 @@ void PeerConnection::UpdateLocalRtpDataChannels(
     // track label is the same as |streamid|.
     const std::string& channel_label = params.sync_label;
     auto data_channel_it = rtp_data_channels_.find(channel_label);
-    if (!VERIFY(data_channel_it != rtp_data_channels_.end())) {
+    if (data_channel_it == rtp_data_channels_.end()) {
+      LOG(LS_ERROR) << "channel label not found";
       continue;
     }
     // Set the SSRC the data channel should use for sending.

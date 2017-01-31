@@ -1274,9 +1274,9 @@ bool WebRtcSession::InsertDtmf(const std::string& track_id,
     return false;
   }
   uint32_t send_ssrc = 0;
-  if (!VERIFY(local_description() &&
-              GetAudioSsrcByTrackId(local_description()->description(),
-                                    track_id, &send_ssrc))) {
+  if (!(local_description() &&
+        GetAudioSsrcByTrackId(local_description()->description(),
+                              track_id, &send_ssrc))) {
     LOG(LS_ERROR) << "InsertDtmf: Track does not exist: " << track_id;
     return false;
   }
