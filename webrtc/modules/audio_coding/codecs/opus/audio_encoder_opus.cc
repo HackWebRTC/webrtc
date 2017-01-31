@@ -29,7 +29,11 @@ namespace webrtc {
 namespace {
 
 constexpr int kSampleRateHz = 48000;
-constexpr int kMinBitrateBps = 500;
+
+// Opus API allows a min bitrate of 500bps, but Opus documentation suggests
+// a minimum bitrate of 6kbps.
+constexpr int kMinBitrateBps = 6000;
+
 constexpr int kMaxBitrateBps = 512000;
 constexpr int kSupportedFrameLengths[] = {20, 60};
 

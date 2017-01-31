@@ -17,9 +17,11 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
+#include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
+#include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -113,6 +115,23 @@ void CheckEncoderRuntimeConfig(
   EXPECT_EQ(*config.num_channels, encoder->num_channels_to_encode());
 }
 
+// Create 10ms audio data blocks for a total packet size of "packet_size_ms".
+std::unique_ptr<test::AudioLoop> Create10msAudioBlocks(
+    const std::unique_ptr<AudioEncoderOpus>& encoder,
+    int packet_size_ms) {
+  const std::string file_name =
+      test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+
+  std::unique_ptr<test::AudioLoop> speech_data(new test::AudioLoop());
+  int audio_samples_per_ms =
+      rtc::CheckedDivExact(encoder->SampleRateHz(), 1000);
+  RTC_DCHECK(speech_data->Init(
+      file_name,
+      packet_size_ms * audio_samples_per_ms * encoder->num_channels_to_encode(),
+      10 * audio_samples_per_ms * encoder->num_channels_to_encode()));
+  return speech_data;
+}
+
 }  // namespace
 
 TEST(AudioEncoderOpusTest, DefaultApplicationModeMono) {
@@ -165,7 +184,7 @@ TEST(AudioEncoderOpusTest,
      OnReceivedUplinkBandwidthWithoutAudioNetworkAdaptor) {
   auto states = CreateCodec(1);
   // Constants are replicated from audio_states.encoderopus.cc.
-  const int kMinBitrateBps = 500;
+  const int kMinBitrateBps = 6000;
   const int kMaxBitrateBps = 512000;
   // Set a too low bitrate.
   states.encoder->OnReceivedUplinkBandwidth(kMinBitrateBps - 1,
@@ -183,8 +202,8 @@ TEST(AudioEncoderOpusTest,
   states.encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps,
                                             rtc::Optional<int64_t>());
   EXPECT_EQ(kMaxBitrateBps, states.encoder->GetTargetBitrate());
-  // Set rates from 1000 up to 32000 bps.
-  for (int rate = 1000; rate <= 32000; rate += 1000) {
+  // Set rates from kMaxBitrateBps up to 32000 bps.
+  for (int rate = kMinBitrateBps; rate <= 32000; rate += 1000) {
     states.encoder->OnReceivedUplinkBandwidth(rate, rtc::Optional<int64_t>());
     EXPECT_EQ(rate, states.encoder->GetTargetBitrate());
   }
@@ -398,7 +417,7 @@ TEST(AudioEncoderOpusTest, BitrateBounded) {
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
 
-  constexpr int kMinBitrateBps = 500;
+  constexpr int kMinBitrateBps = 6000;
   constexpr int kMaxBitrateBps = 512000;
 
   auto states = CreateCodec(2);
@@ -496,6 +515,33 @@ TEST(AudioEncoderOpusTest, UpdateUplinkBandwidthInAudioNetworkAdaptor) {
     fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(1));
     states.encoder->Encode(
         0, rtc::ArrayView<const int16_t>(audio.data(), audio.size()), &encoded);
+  }
+}
+
+TEST(AudioEncoderOpusTest, EncodeAtMinBitrate) {
+  auto states = CreateCodec(1);
+  constexpr int kNumPacketsToEncode = 2;
+  auto audio_frames =
+      Create10msAudioBlocks(states.encoder, kNumPacketsToEncode * 20);
+  rtc::Buffer encoded;
+  uint32_t rtp_timestamp = 12345;  // Just a number not important to this test.
+
+  states.encoder->OnReceivedUplinkBandwidth(0, rtc::Optional<int64_t>());
+  for (int packet_index = 0; packet_index < kNumPacketsToEncode;
+       packet_index++) {
+    // Make sure we are not encoding before we have enough data for
+    // a 20ms packet.
+    for (int index = 0; index < 1; index++) {
+      states.encoder->Encode(rtp_timestamp, audio_frames->GetNextBlock(),
+                             &encoded);
+      EXPECT_EQ(0u, encoded.size());
+    }
+
+    // Should encode now.
+    states.encoder->Encode(rtp_timestamp, audio_frames->GetNextBlock(),
+                           &encoded);
+    EXPECT_GT(encoded.size(), 0u);
+    encoded.Clear();
   }
 }
 
