@@ -530,3 +530,15 @@
    fun:WebRtcOpus_Decode*
    ...
 }
+{
+   bug_687087
+   Memcheck:Uninitialized
+   fun:vfprintf
+   fun:vsnprintf
+   fun:snprintf
+   fun:_ZN7testing12_GLOBAL__N_126PrintByteSegmentInObjectToEPKhmmPSo
+   fun:_ZN7testing9internal220PrintBytesInObjectToEPKhmPSo
+   fun:_ZN7testing8internal25UntypedFunctionMockerBase17UntypedInvokeWithEPKv
+   fun:_ZNK6webrtc11MockRtpRtcp11FlexfecSsrcEv
+   ...
+}
