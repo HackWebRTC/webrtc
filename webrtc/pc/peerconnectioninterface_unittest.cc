@@ -547,26 +547,6 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     EXPECT_EQ(pc_->signaling_state(), new_state);
     state_ = new_state;
   }
-  // TODO(bemasc): Remove this once callers transition to OnIceGatheringChange.
-  virtual void OnStateChange(StateType state_changed) {
-    if (pc_.get() == NULL)
-      return;
-    switch (state_changed) {
-      case kSignalingState:
-        // OnSignalingChange and OnStateChange(kSignalingState) should always
-        // be called approximately simultaneously.  To ease testing, we require
-        // that they always be called in that order.  This check verifies
-        // that OnSignalingChange has just been called.
-        EXPECT_EQ(pc_->signaling_state(), state_);
-        break;
-      case kIceState:
-        ADD_FAILURE();
-        break;
-      default:
-        ADD_FAILURE();
-        break;
-    }
-  }
 
   MediaStreamInterface* RemoteStream(const std::string& label) {
     return remote_streams_->find(label);

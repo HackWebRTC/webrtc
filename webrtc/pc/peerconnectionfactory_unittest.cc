@@ -71,21 +71,20 @@ class NullPeerConnectionObserver : public PeerConnectionObserver {
   using PeerConnectionObserver::OnDataChannel;
 
   virtual ~NullPeerConnectionObserver() = default;
-  virtual void OnMessage(const std::string& msg) {}
-  virtual void OnSignalingMessage(const std::string& msg) {}
-  virtual void OnSignalingChange(
-      PeerConnectionInterface::SignalingState new_state) {}
-  virtual void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) {}
-  virtual void OnRemoveStream(rtc::scoped_refptr<MediaStreamInterface> stream) {
-  }
-  virtual void OnDataChannel(
-      rtc::scoped_refptr<DataChannelInterface> data_channel) {}
-  virtual void OnRenegotiationNeeded() {}
-  virtual void OnIceConnectionChange(
-      PeerConnectionInterface::IceConnectionState new_state) {}
-  virtual void OnIceGatheringChange(
-      PeerConnectionInterface::IceGatheringState new_state) {}
-  virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {}
+  void OnSignalingChange(
+      PeerConnectionInterface::SignalingState new_state) override {}
+  void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) override {}
+  void OnRemoveStream(
+      rtc::scoped_refptr<MediaStreamInterface> stream) override {}
+  void OnDataChannel(
+      rtc::scoped_refptr<DataChannelInterface> data_channel) override {}
+  void OnRenegotiationNeeded() override {}
+  void OnIceConnectionChange(
+      PeerConnectionInterface::IceConnectionState new_state) override {}
+  void OnIceGatheringChange(
+      PeerConnectionInterface::IceGatheringState new_state) override {}
+  void OnIceCandidate(
+      const webrtc::IceCandidateInterface* candidate) override {}
 };
 
 }  // namespace
