@@ -73,6 +73,7 @@
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 #include "webrtc/p2p/base/portallocator.h"
 
 namespace rtc {
@@ -830,6 +831,14 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   ~PeerConnectionFactoryInterface() {} // NOLINT
 };
 
+// TODO(ossu): Remove these and define a real builtin audio encoder factory
+// instead.
+class AudioEncoderFactory : public rtc::RefCountInterface {};
+inline rtc::scoped_refptr<AudioEncoderFactory>
+CreateBuiltinAudioEncoderFactory() {
+  return nullptr;
+}
+
 // Create a new instance of PeerConnectionFactoryInterface.
 //
 // This method relies on the thread it's called on as the "signaling thread"
@@ -840,6 +849,12 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 // rtc::Thread::Current()->Run(), or call
 // rtc::Thread::Current()->ProcessMessages() within the application's own
 // message loop.
+rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory);
+
+// Deprecated variant of the above.
+// TODO(kwiberg): Remove.
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory();
 
@@ -850,6 +865,18 @@ CreatePeerConnectionFactory();
 //
 // If non-null, ownership of |default_adm|, |encoder_factory| and
 // |decoder_factory| are transferred to the returned factory.
+rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    rtc::Thread* network_thread,
+    rtc::Thread* worker_thread,
+    rtc::Thread* signaling_thread,
+    AudioDeviceModule* default_adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory);
+
+// Deprecated variant of the above.
+// TODO(kwiberg): Remove.
 rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
@@ -868,12 +895,43 @@ CreatePeerConnectionFactoryWithAudioMixer(
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
     AudioDeviceModule* default_adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
+    rtc::scoped_refptr<AudioMixer> audio_mixer);
+
+// Deprecated variant of the above.
+// TODO(kwiberg): Remove.
+rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactoryWithAudioMixer(
+    rtc::Thread* network_thread,
+    rtc::Thread* worker_thread,
+    rtc::Thread* signaling_thread,
+    AudioDeviceModule* default_adm,
     cricket::WebRtcVideoEncoderFactory* encoder_factory,
     cricket::WebRtcVideoDecoderFactory* decoder_factory,
     rtc::scoped_refptr<AudioMixer> audio_mixer);
 
 // Create a new instance of PeerConnectionFactoryInterface.
 // Same thread is used as worker and network thread.
+inline rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
+    rtc::Thread* worker_and_network_thread,
+    rtc::Thread* signaling_thread,
+    AudioDeviceModule* default_adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory) {
+  return CreatePeerConnectionFactory(
+      worker_and_network_thread, worker_and_network_thread, signaling_thread,
+      default_adm, audio_encoder_factory, audio_decoder_factory,
+      video_encoder_factory, video_decoder_factory);
+}
+
+// Deprecated variant of the above.
+// TODO(kwiberg): Remove.
 inline rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory(
     rtc::Thread* worker_and_network_thread,

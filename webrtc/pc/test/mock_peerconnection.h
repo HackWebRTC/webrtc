@@ -20,7 +20,12 @@ namespace webrtc {
 
 // The factory isn't really used; it just satisfies the base PeerConnection.
 class FakePeerConnectionFactory
-    : public rtc::RefCountedObject<webrtc::PeerConnectionFactory> {};
+    : public rtc::RefCountedObject<webrtc::PeerConnectionFactory> {
+ public:
+  FakePeerConnectionFactory()
+      : rtc::RefCountedObject<webrtc::PeerConnectionFactory>(nullptr, nullptr) {
+  }
+};
 
 class MockPeerConnection
     : public rtc::RefCountedObject<webrtc::PeerConnection> {

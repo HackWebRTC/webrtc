@@ -23,7 +23,13 @@ specific_include_rules = {
   "srtpfilter_unittest\.cc": [
     "+crypto",
   ],
+
+  # TODO(kwiberg): Remove these exceptions when audio_decoder_factory.h
+  # has moved to api/.
   "peerconnectionfactory\.cc": [
+    "+webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h",
+  ],
+  "peerconnectioninterface_unittest\.cc": [
     "+webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h",
   ],
 }

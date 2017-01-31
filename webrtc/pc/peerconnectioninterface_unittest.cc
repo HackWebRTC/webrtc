@@ -26,6 +26,7 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/pc/audiotrack.h"
 #include "webrtc/pc/mediasession.h"
@@ -665,6 +666,11 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 // constructors, but that is not exercised by these unittest.
 class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
  public:
+  PeerConnectionFactoryForTest()
+      : webrtc::PeerConnectionFactory(
+            webrtc::CreateBuiltinAudioEncoderFactory(),
+            webrtc::CreateBuiltinAudioDecoderFactory()) {}
+
   webrtc::MediaControllerInterface* CreateMediaController(
       const cricket::MediaConfig& config,
       webrtc::RtcEventLog* event_log) const override {

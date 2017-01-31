@@ -11,4 +11,10 @@ specific_include_rules = {
   "peerconnection_jni\.cc": [
     "+webrtc/voice_engine",
   ],
+
+  # TODO(kwiberg): Remove this exception when audio_decoder_factory.h
+  # has moved to api/.
+  "peerconnectioninterface\.h": [
+    "+webrtc/modules/audio_coding/codecs/audio_decoder_factory.h",
+  ],
 }

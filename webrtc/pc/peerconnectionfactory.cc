@@ -36,10 +36,12 @@
 
 namespace webrtc {
 
-rtc::scoped_refptr<PeerConnectionFactoryInterface>
-CreatePeerConnectionFactory() {
+rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory) {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
-      new rtc::RefCountedObject<PeerConnectionFactory>());
+      new rtc::RefCountedObject<PeerConnectionFactory>(audio_encoder_factory,
+                                                       audio_decoder_factory));
 
   RTC_CHECK(rtc::Thread::Current() == pc_factory->signaling_thread());
   // The signaling thread is the current thread so we can
@@ -49,6 +51,27 @@ CreatePeerConnectionFactory() {
   }
   return PeerConnectionFactoryProxy::Create(pc_factory->signaling_thread(),
                                             pc_factory);
+}
+
+rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory() {
+  return CreatePeerConnectionFactory(CreateBuiltinAudioEncoderFactory(),
+                                     CreateBuiltinAudioDecoderFactory());
+}
+
+rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    rtc::Thread* network_thread,
+    rtc::Thread* worker_thread,
+    rtc::Thread* signaling_thread,
+    AudioDeviceModule* default_adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory) {
+  return CreatePeerConnectionFactoryWithAudioMixer(
+      network_thread, worker_thread, signaling_thread, default_adm,
+      audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
+      video_decoder_factory, nullptr);
 }
 
 rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
@@ -63,35 +86,22 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
       encoder_factory, decoder_factory, nullptr);
 }
 
-PeerConnectionFactory::PeerConnectionFactory()
-    : owns_ptrs_(true),
-      wraps_current_thread_(false),
-      network_thread_(rtc::Thread::CreateWithSocketServer().release()),
-      worker_thread_(rtc::Thread::Create().release()),
-      signaling_thread_(rtc::Thread::Current()),
-      audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()) {
-  if (!signaling_thread_) {
-    signaling_thread_ = rtc::ThreadManager::Instance()->WrapCurrentThread();
-    wraps_current_thread_ = true;
-  }
-  network_thread_->Start();
-  worker_thread_->Start();
-}
-
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactoryWithAudioMixer(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
     AudioDeviceModule* default_adm,
-    cricket::WebRtcVideoEncoderFactory* encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* decoder_factory,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
     rtc::scoped_refptr<AudioMixer> audio_mixer) {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
       new rtc::RefCountedObject<PeerConnectionFactory>(
           network_thread, worker_thread, signaling_thread, default_adm,
-          CreateBuiltinAudioDecoderFactory(), encoder_factory, decoder_factory,
-          audio_mixer));
+          audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
+          video_decoder_factory, audio_mixer));
 
   // Call Initialize synchronously but make sure it is executed on
   // |signaling_thread|.
@@ -105,13 +115,46 @@ CreatePeerConnectionFactoryWithAudioMixer(
   return PeerConnectionFactoryProxy::Create(signaling_thread, pc_factory);
 }
 
+rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactoryWithAudioMixer(
+    rtc::Thread* network_thread,
+    rtc::Thread* worker_thread,
+    rtc::Thread* signaling_thread,
+    AudioDeviceModule* default_adm,
+    cricket::WebRtcVideoEncoderFactory* encoder_factory,
+    cricket::WebRtcVideoDecoderFactory* decoder_factory,
+    rtc::scoped_refptr<AudioMixer> audio_mixer) {
+  return CreatePeerConnectionFactoryWithAudioMixer(
+      network_thread, worker_thread, signaling_thread, default_adm,
+      CreateBuiltinAudioEncoderFactory(), CreateBuiltinAudioDecoderFactory(),
+      encoder_factory, decoder_factory, audio_mixer);
+}
+
+PeerConnectionFactory::PeerConnectionFactory(
+    rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory)
+    : owns_ptrs_(true),
+      wraps_current_thread_(false),
+      network_thread_(rtc::Thread::CreateWithSocketServer().release()),
+      worker_thread_(rtc::Thread::Create().release()),
+      signaling_thread_(rtc::Thread::Current()),
+      // TODO(ossu): Take care of audio_encoder_factory (see bug 5806).
+      audio_decoder_factory_(audio_decoder_factory) {
+  if (!signaling_thread_) {
+    signaling_thread_ = rtc::ThreadManager::Instance()->WrapCurrentThread();
+    wraps_current_thread_ = true;
+  }
+  network_thread_->Start();
+  worker_thread_->Start();
+}
+
 PeerConnectionFactory::PeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
     AudioDeviceModule* default_adm,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
+    rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
     cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
     cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
     rtc::scoped_refptr<AudioMixer> audio_mixer)
@@ -121,6 +164,7 @@ PeerConnectionFactory::PeerConnectionFactory(
       worker_thread_(worker_thread),
       signaling_thread_(signaling_thread),
       default_adm_(default_adm),
+      // TODO(ossu): Take care of audio_encoder_factory (see bug 5806).
       audio_decoder_factory_(audio_decoder_factory),
       video_encoder_factory_(video_encoder_factory),
       video_decoder_factory_(video_decoder_factory),

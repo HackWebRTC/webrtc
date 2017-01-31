@@ -102,14 +102,16 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   const Options& options() const { return options_; }
 
  protected:
-  PeerConnectionFactory();
+  PeerConnectionFactory(
+      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
+      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory);
   PeerConnectionFactory(
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       rtc::Thread* signaling_thread,
       AudioDeviceModule* default_adm,
-      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-          audio_decoder_factory,
+      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
+      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
       cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
       cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
       rtc::scoped_refptr<AudioMixer> audio_mixer);
