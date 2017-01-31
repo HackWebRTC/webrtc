@@ -26,10 +26,10 @@ static const int kFilterLength = 4;
 // Minimum difference between audio and video to warrant a change.
 static const int kMinDeltaMs = 30;
 
-StreamSynchronization::StreamSynchronization(uint32_t video_primary_ssrc,
-                                             int audio_channel_id)
-    : video_primary_ssrc_(video_primary_ssrc),
-      audio_channel_id_(audio_channel_id),
+StreamSynchronization::StreamSynchronization(int video_stream_id,
+                                             int audio_stream_id)
+    : video_stream_id_(video_stream_id),
+      audio_stream_id_(audio_stream_id),
       base_target_delay_ms_(0),
       avg_diff_ms_(0) {
 }
@@ -72,7 +72,7 @@ bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
   int current_video_delay_ms = *total_video_delay_target_ms;
   LOG(LS_VERBOSE) << "Audio delay: " << current_audio_delay_ms
                   << " current diff: " << relative_delay_ms
-                  << " for channel " << audio_channel_id_;
+                  << " for stream " << audio_stream_id_;
   // Calculate the difference between the lowest possible video delay and
   // the current audio delay.
   int current_diff_ms = current_video_delay_ms - current_audio_delay_ms +
@@ -166,9 +166,9 @@ bool StreamSynchronization::ComputeDelays(int relative_delay_ms,
   channel_delay_.last_audio_delay_ms = new_audio_delay_ms;
 
   LOG(LS_VERBOSE) << "Sync video delay " << new_video_delay_ms
-                  << " for video primary SSRC " << video_primary_ssrc_
+                  << " for video stream " << video_stream_id_
                   << " and audio delay " << channel_delay_.extra_audio_delay_ms
-                  << " for audio channel " << audio_channel_id_;
+                  << " for audio stream " << audio_stream_id_;
 
   // Return values.
   *total_video_delay_target_ms = new_video_delay_ms;

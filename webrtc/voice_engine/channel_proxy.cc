@@ -256,6 +256,42 @@ void ChannelProxy::DisassociateSendChannel() {
   channel()->set_associate_send_channel(ChannelOwner(nullptr));
 }
 
+void ChannelProxy::GetRtpRtcp(RtpRtcp** rtp_rtcp,
+                              RtpReceiver** rtp_receiver) const {
+  // Called on Call's module_process_thread_.
+  RTC_DCHECK(rtp_rtcp);
+  RTC_DCHECK(rtp_receiver);
+  int error = channel()->GetRtpRtcp(rtp_rtcp, rtp_receiver);
+  RTC_DCHECK_EQ(0, error);
+}
+
+void ChannelProxy::GetDelayEstimate(int* jitter_buffer_delay_ms,
+                                    int* playout_buffer_delay_ms) const {
+  // Called on Call's module_process_thread_.
+  RTC_DCHECK(jitter_buffer_delay_ms);
+  RTC_DCHECK(playout_buffer_delay_ms);
+  bool error = channel()->GetDelayEstimate(jitter_buffer_delay_ms,
+                                           playout_buffer_delay_ms);
+  RTC_DCHECK(error);
+}
+
+uint32_t ChannelProxy::GetPlayoutTimestamp() const {
+  // Called on video capture thread.
+  unsigned int timestamp = 0;
+  int error = channel()->GetPlayoutTimestamp(timestamp);
+  RTC_DCHECK(!error || timestamp == 0);
+  return timestamp;
+}
+
+void ChannelProxy::SetMinimumPlayoutDelay(int delay_ms) {
+  // Called on Call's module_process_thread_.
+  // Limit to range accepted by both VoE and ACM, so we're at least getting as
+  // close as possible, instead of failing.
+  delay_ms = std::max(0, std::min(delay_ms, 10000));
+  int error = channel()->SetMinimumPlayoutDelay(delay_ms);
+  RTC_DCHECK_EQ(0, error);
+}
+
 void ChannelProxy::SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   channel()->SetRtcpRttStats(rtcp_rtt_stats);

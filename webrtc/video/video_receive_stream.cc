@@ -22,6 +22,8 @@
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
@@ -33,7 +35,6 @@
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video_receive_stream.h"
-#include "webrtc/voice_engine/include/voe_video_sync.h"
 
 namespace webrtc {
 
@@ -190,7 +191,6 @@ VideoReceiveStream::VideoReceiveStream(
     CongestionController* congestion_controller,
     PacketRouter* packet_router,
     VideoReceiveStream::Config config,
-    webrtc::VoiceEngine* voice_engine,
     ProcessThread* process_thread,
     CallStats* call_stats,
     VieRemb* remb)
@@ -220,7 +220,7 @@ VideoReceiveStream::VideoReceiveStream(
                            this,  // KeyFrameRequestSender
                            this,  // OnCompleteFrameCallback
                            timing_.get()),
-      rtp_stream_sync_(&video_receiver_, &rtp_stream_receiver_),
+      rtp_stream_sync_(this),
       jitter_buffer_experiment_(
           field_trial::FindFullName("WebRTC-NewVideoJitterBuffer") ==
           "Enabled") {
@@ -229,6 +229,8 @@ VideoReceiveStream::VideoReceiveStream(
   RTC_DCHECK(process_thread_);
   RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(call_stats_);
+
+  module_process_thread_checker_.DetachFromThread();
 
   RTC_DCHECK(!config_.decoders.empty());
   std::set<int> decoder_payload_types;
@@ -254,6 +256,7 @@ VideoReceiveStream::VideoReceiveStream(
 }
 
 VideoReceiveStream::~VideoReceiveStream() {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
   Stop();
 
@@ -265,6 +268,7 @@ VideoReceiveStream::~VideoReceiveStream() {
 }
 
 void VideoReceiveStream::SignalNetworkState(NetworkState state) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtp_stream_receiver_.SignalNetworkState(state);
 }
 
@@ -281,21 +285,17 @@ bool VideoReceiveStream::DeliverRtp(const uint8_t* packet,
 
 bool VideoReceiveStream::OnRecoveredPacket(const uint8_t* packet,
                                            size_t length) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   return rtp_stream_receiver_.OnRecoveredPacket(packet, length);
 }
 
-void VideoReceiveStream::SetSyncChannel(VoiceEngine* voice_engine,
-                                        int audio_channel_id) {
-  if (voice_engine && audio_channel_id != -1) {
-    VoEVideoSync* voe_sync_interface = VoEVideoSync::GetInterface(voice_engine);
-    rtp_stream_sync_.ConfigureSync(audio_channel_id, voe_sync_interface);
-    voe_sync_interface->Release();
-  } else {
-    rtp_stream_sync_.ConfigureSync(-1, nullptr);
-  }
+void VideoReceiveStream::SetSync(Syncable* audio_syncable) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  rtp_stream_sync_.ConfigureSync(audio_syncable);
 }
 
 void VideoReceiveStream::Start() {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (decode_thread_.IsRunning())
     return;
 
@@ -346,6 +346,7 @@ void VideoReceiveStream::Start() {
 }
 
 void VideoReceiveStream::Stop() {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtp_stream_receiver_.StopReceive();
   // TriggerDecoderShutdown will release any waiting decoder thread and make it
   // stop immediately, instead of waiting for a timeout. Needs to be called
@@ -407,7 +408,9 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
   // function itself, another in GetChannel() and a third in
   // GetPlayoutTimestamp.  Seems excessive.  Anyhow, I'm assuming the function
   // succeeds most of the time, which leads to grabbing a fourth lock.
-  if (rtp_stream_sync_.GetStreamSyncOffsetInMs(video_frame, &sync_offset_ms,
+  if (rtp_stream_sync_.GetStreamSyncOffsetInMs(video_frame.timestamp(),
+                                               video_frame.render_time_ms(),
+                                               &sync_offset_ms,
                                                &estimated_freq_khz)) {
     // TODO(tommi): OnSyncOffsetUpdated grabs a lock.
     stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms, estimated_freq_khz);
@@ -461,6 +464,46 @@ void VideoReceiveStream::OnCompleteFrame(
     rtp_stream_receiver_.FrameContinuous(last_continuous_pid);
 }
 
+int VideoReceiveStream::id() const {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  return config_.rtp.remote_ssrc;
+}
+
+rtc::Optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
+  RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
+  Syncable::Info info;
+
+  RtpReceiver* rtp_receiver = rtp_stream_receiver_.GetRtpReceiver();
+  RTC_DCHECK(rtp_receiver);
+  if (!rtp_receiver->Timestamp(&info.latest_received_capture_timestamp))
+    return rtc::Optional<Syncable::Info>();
+  if (!rtp_receiver->LastReceivedTimeMs(&info.latest_receive_time_ms))
+    return rtc::Optional<Syncable::Info>();
+
+  RtpRtcp* rtp_rtcp = rtp_stream_receiver_.rtp_rtcp();
+  RTC_DCHECK(rtp_rtcp);
+  if (rtp_rtcp->RemoteNTP(&info.capture_time_ntp_secs,
+                          &info.capture_time_ntp_frac,
+                          nullptr,
+                          nullptr,
+                          &info.capture_time_source_clock) != 0) {
+    return rtc::Optional<Syncable::Info>();
+  }
+
+  info.current_delay_ms = video_receiver_.Delay();
+  return rtc::Optional<Syncable::Info>(info);
+}
+
+uint32_t VideoReceiveStream::GetPlayoutTimestamp() const {
+  RTC_NOTREACHED();
+  return 0;
+}
+
+void VideoReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
+  RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
+  video_receiver_.SetMinimumPlayoutDelay(delay_ms);
+}
+
 bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
   static_cast<VideoReceiveStream*>(ptr)->Decode();
   return true;
@@ -489,6 +532,5 @@ void VideoReceiveStream::Decode() {
     video_receiver_.Decode(kMaxDecodeWaitTimeMs);
   }
 }
-
 }  // namespace internal
 }  // namespace webrtc

@@ -29,6 +29,8 @@ class PacketRouter;
 class RtcEventLog;
 class RtcpRttStats;
 class RtpPacketSender;
+class RtpReceiver;
+class RtpRtcp;
 class Transport;
 class TransportFeedbackObserver;
 
@@ -99,6 +101,12 @@ class ChannelProxy {
   virtual void SetTransportOverhead(int transport_overhead_per_packet);
   virtual void AssociateSendChannel(const ChannelProxy& send_channel_proxy);
   virtual void DisassociateSendChannel();
+  virtual void GetRtpRtcp(RtpRtcp** rtp_rtcp,
+                          RtpReceiver** rtp_receiver) const;
+  virtual void GetDelayEstimate(int* jitter_buffer_delay_ms,
+                                int* playout_buffer_delay_ms) const;
+  virtual uint32_t GetPlayoutTimestamp() const;
+  virtual void SetMinimumPlayoutDelay(int delay_ms);
 
   virtual void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
 

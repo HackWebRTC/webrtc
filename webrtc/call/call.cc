@@ -55,7 +55,6 @@
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
 #include "webrtc/video/vie_remb.h"
-#include "webrtc/voice_engine/include/voe_codec.h"
 
 namespace webrtc {
 
@@ -145,15 +144,6 @@ class Call : public webrtc::Call,
                             const PacketTime& packet_time);
   void ConfigureSync(const std::string& sync_group)
       EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
-
-  VoiceEngine* voice_engine() {
-    internal::AudioState* audio_state =
-        static_cast<internal::AudioState*>(config_.audio_state.get());
-    if (audio_state)
-      return audio_state->voice_engine();
-    else
-      return nullptr;
-  }
 
   rtc::Optional<RtpPacketReceived> ParseRtpPacket(const uint8_t* packet,
                                                   size_t length,
@@ -648,8 +638,8 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   }
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       num_cpu_cores_, protected_by_flexfec, congestion_controller_.get(),
-      &packet_router_, std::move(configuration), voice_engine(),
-      module_process_thread_.get(), call_stats_.get(), &remb_);
+      &packet_router_, std::move(configuration), module_process_thread_.get(),
+      call_stats_.get(), &remb_);
 
   const webrtc::VideoReceiveStream::Config& config = receive_stream->config();
   {
@@ -1019,7 +1009,7 @@ void Call::OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
 
 void Call::ConfigureSync(const std::string& sync_group) {
   // Set sync only if there was no previous one.
-  if (voice_engine() == nullptr || sync_group.empty())
+  if (sync_group.empty())
     return;
 
   AudioReceiveStream* sync_audio_stream = nullptr;
@@ -1056,11 +1046,11 @@ void Call::ConfigureSync(const std::string& sync_group) {
                          "the current implementation.";
     }
     // Only sync the first A/V pair within this sync group.
-    if (sync_audio_stream != nullptr && num_synced_streams == 1) {
-      video_stream->SetSyncChannel(voice_engine(),
-                                   sync_audio_stream->config().voe_channel_id);
+    if (num_synced_streams == 1) {
+      // sync_audio_stream may be null and that's ok.
+      video_stream->SetSync(sync_audio_stream);
     } else {
-      video_stream->SetSyncChannel(voice_engine(), -1);
+      video_stream->SetSync(nullptr);
     }
   }
 }

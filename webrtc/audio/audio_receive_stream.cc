@@ -21,6 +21,8 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
@@ -81,6 +83,8 @@ AudioReceiveStream::AudioReceiveStream(
   RTC_DCHECK(remote_bitrate_estimator);
   RTC_DCHECK(rtp_header_parser_);
 
+  module_process_thread_checker_.DetachFromThread();
+
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
   channel_proxy_->SetRtcEventLog(event_log);
@@ -125,7 +129,7 @@ AudioReceiveStream::AudioReceiveStream(
 }
 
 AudioReceiveStream::~AudioReceiveStream() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
   if (playing_) {
     Stop();
@@ -138,7 +142,7 @@ AudioReceiveStream::~AudioReceiveStream() {
 }
 
 void AudioReceiveStream::Start() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (playing_) {
     return;
   }
@@ -159,7 +163,7 @@ void AudioReceiveStream::Start() {
 }
 
 void AudioReceiveStream::Stop() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (!playing_) {
     return;
   }
@@ -170,7 +174,7 @@ void AudioReceiveStream::Stop() {
 }
 
 webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   webrtc::AudioReceiveStream::Stats stats;
   stats.remote_ssrc = config_.rtp.remote_ssrc;
   ScopedVoEInterface<VoECodec> codec(voice_engine());
@@ -220,22 +224,78 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
 }
 
 void AudioReceiveStream::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   channel_proxy_->SetSink(std::move(sink));
 }
 
 void AudioReceiveStream::SetGain(float gain) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   channel_proxy_->SetChannelOutputVolumeScaling(gain);
 }
 
-const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  return config_;
+AudioMixer::Source::AudioFrameInfo AudioReceiveStream::GetAudioFrameWithInfo(
+    int sample_rate_hz,
+    AudioFrame* audio_frame) {
+  return channel_proxy_->GetAudioFrameWithInfo(sample_rate_hz, audio_frame);
+}
+
+int AudioReceiveStream::Ssrc() const {
+  return config_.rtp.remote_ssrc;
+}
+
+int AudioReceiveStream::PreferredSampleRate() const {
+  return channel_proxy_->NeededFrequency();
+}
+
+int AudioReceiveStream::id() const {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  return config_.rtp.remote_ssrc;
+}
+
+rtc::Optional<Syncable::Info> AudioReceiveStream::GetInfo() const {
+  RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
+  Syncable::Info info;
+
+  RtpRtcp* rtp_rtcp = nullptr;
+  RtpReceiver* rtp_receiver = nullptr;
+  channel_proxy_->GetRtpRtcp(&rtp_rtcp, &rtp_receiver);
+  RTC_DCHECK(rtp_rtcp);
+  RTC_DCHECK(rtp_receiver);
+
+  if (!rtp_receiver->Timestamp(&info.latest_received_capture_timestamp)) {
+    return rtc::Optional<Syncable::Info>();
+  }
+  if (!rtp_receiver->LastReceivedTimeMs(&info.latest_receive_time_ms)) {
+    return rtc::Optional<Syncable::Info>();
+  }
+  if (rtp_rtcp->RemoteNTP(&info.capture_time_ntp_secs,
+                          &info.capture_time_ntp_frac,
+                          nullptr,
+                          nullptr,
+                          &info.capture_time_source_clock) != 0) {
+    return rtc::Optional<Syncable::Info>();
+  }
+
+  int jitter_buffer_delay_ms = 0;
+  int playout_buffer_delay_ms = 0;
+  channel_proxy_->GetDelayEstimate(&jitter_buffer_delay_ms,
+                                   &playout_buffer_delay_ms);
+  info.current_delay_ms = jitter_buffer_delay_ms + playout_buffer_delay_ms;
+  return rtc::Optional<Syncable::Info>(info);
+}
+
+uint32_t AudioReceiveStream::GetPlayoutTimestamp() const {
+  // Called on video capture thread.
+  return channel_proxy_->GetPlayoutTimestamp();
+}
+
+void AudioReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
+  RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
+  return channel_proxy_->SetMinimumPlayoutDelay(delay_ms);
 }
 
 void AudioReceiveStream::AssociateSendStream(AudioSendStream* send_stream) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (send_stream) {
     VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
     std::unique_ptr<voe::ChannelProxy> send_channel_proxy =
@@ -247,7 +307,7 @@ void AudioReceiveStream::AssociateSendStream(AudioSendStream* send_stream) {
 }
 
 void AudioReceiveStream::SignalNetworkState(NetworkState state) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
 }
 
 bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
@@ -286,30 +346,21 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
   return channel_proxy_->ReceivedRTPPacket(packet, length, packet_time);
 }
 
-AudioMixer::Source::AudioFrameInfo AudioReceiveStream::GetAudioFrameWithInfo(
-    int sample_rate_hz,
-    AudioFrame* audio_frame) {
-  return channel_proxy_->GetAudioFrameWithInfo(sample_rate_hz, audio_frame);
-}
-
-int AudioReceiveStream::PreferredSampleRate() const {
-  return channel_proxy_->NeededFrequency();
-}
-
-int AudioReceiveStream::Ssrc() const {
-  return config_.rtp.remote_ssrc;
-}
-
-internal::AudioState* AudioReceiveStream::audio_state() const {
-  auto* audio_state = static_cast<internal::AudioState*>(audio_state_.get());
-  RTC_DCHECK(audio_state);
-  return audio_state;
+const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  return config_;
 }
 
 VoiceEngine* AudioReceiveStream::voice_engine() const {
   auto* voice_engine = audio_state()->voice_engine();
   RTC_DCHECK(voice_engine);
   return voice_engine;
+}
+
+internal::AudioState* AudioReceiveStream::audio_state() const {
+  auto* audio_state = static_cast<internal::AudioState*>(audio_state_.get());
+  RTC_DCHECK(audio_state);
+  return audio_state;
 }
 
 int AudioReceiveStream::SetVoiceEnginePlayout(bool playout) {
@@ -320,6 +371,5 @@ int AudioReceiveStream::SetVoiceEnginePlayout(bool playout) {
     return base->StopPlayout(config_.voe_channel_id);
   }
 }
-
 }  // namespace internal
 }  // namespace webrtc

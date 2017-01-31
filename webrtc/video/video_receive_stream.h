@@ -14,6 +14,8 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/thread_checker.h"
+#include "webrtc/call/syncable.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
@@ -34,7 +36,6 @@ class CongestionController;
 class IvfFileWriter;
 class ProcessThread;
 class RTPFragmentationHeader;
-class VoiceEngine;
 class VieRemb;
 class VCMTiming;
 class VCMJitterEstimator;
@@ -46,14 +47,14 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public EncodedImageCallback,
                            public NackSender,
                            public KeyFrameRequestSender,
-                           public video_coding::OnCompleteFrameCallback {
+                           public video_coding::OnCompleteFrameCallback,
+                           public Syncable {
  public:
   VideoReceiveStream(int num_cpu_cores,
                      bool protected_by_flexfec,
                      CongestionController* congestion_controller,
                      PacketRouter* packet_router,
                      VideoReceiveStream::Config config,
-                     webrtc::VoiceEngine* voice_engine,
                      ProcessThread* process_thread,
                      CallStats* call_stats,
                      VieRemb* remb);
@@ -69,7 +70,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   bool OnRecoveredPacket(const uint8_t* packet, size_t length);
 
-  void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id);
+  void SetSync(Syncable* audio_syncable);
 
   // Implements webrtc::VideoReceiveStream.
   void Start() override;
@@ -104,9 +105,18 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void OnCompleteFrame(
       std::unique_ptr<video_coding::FrameObject> frame) override;
 
+  // Implements Syncable.
+  int id() const override;
+  rtc::Optional<Syncable::Info> GetInfo() const override;
+  uint32_t GetPlayoutTimestamp() const override;
+  void SetMinimumPlayoutDelay(int delay_ms) override;
+
  private:
   static bool DecodeThreadFunction(void* ptr);
   void Decode();
+
+  rtc::ThreadChecker worker_thread_checker_;
+  rtc::ThreadChecker module_process_thread_checker_;
 
   TransportAdapter transport_adapter_;
   const VideoReceiveStream::Config config_;
