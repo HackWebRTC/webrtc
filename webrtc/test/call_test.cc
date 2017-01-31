@@ -140,16 +140,10 @@ void CallTest::Start() {
   for (VideoReceiveStream* video_recv_stream : video_receive_streams_)
     video_recv_stream->Start();
   if (audio_send_stream_) {
-    fake_send_audio_device_->Start();
     audio_send_stream_->Start();
-    EXPECT_EQ(0, voe_send_.base->StartSend(voe_send_.channel_id));
   }
   for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
     audio_recv_stream->Start();
-  if (!audio_receive_streams_.empty()) {
-    fake_recv_audio_device_->Start();
-    EXPECT_EQ(0, voe_recv_.base->StartPlayout(voe_recv_.channel_id));
-  }
   for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
     flexfec_recv_stream->Start();
   if (frame_generator_capturer_.get() != NULL)
@@ -161,15 +155,9 @@ void CallTest::Stop() {
     frame_generator_capturer_->Stop();
   for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
     flexfec_recv_stream->Stop();
-  if (!audio_receive_streams_.empty()) {
-    fake_recv_audio_device_->Stop();
-    EXPECT_EQ(0, voe_recv_.base->StopPlayout(voe_recv_.channel_id));
-  }
   for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
     audio_recv_stream->Stop();
   if (audio_send_stream_) {
-    fake_send_audio_device_->Stop();
-    EXPECT_EQ(0, voe_send_.base->StopSend(voe_send_.channel_id));
     audio_send_stream_->Stop();
   }
   for (VideoReceiveStream* video_recv_stream : video_receive_streams_)
@@ -309,12 +297,8 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
 }
 
 void CallTest::CreateFakeAudioDevices() {
-  fake_send_audio_device_.reset(new FakeAudioDevice(
-      clock_, test::ResourcePath("voice_engine/audio_long16", "pcm"),
-      DriftingClock::kNoDrift));
-  fake_recv_audio_device_.reset(new FakeAudioDevice(
-      clock_, test::ResourcePath("voice_engine/audio_long16", "pcm"),
-      DriftingClock::kNoDrift));
+  fake_send_audio_device_.reset(new FakeAudioDevice(1.f, 48000, 256));
+  fake_recv_audio_device_.reset(new FakeAudioDevice(1.f, 48000, 256));
 }
 
 void CallTest::CreateVideoStreams() {

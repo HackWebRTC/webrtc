@@ -21,6 +21,8 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   virtual ~FakeAudioDeviceModule() {}
   virtual int32_t AddRef() const { return 0; }
   virtual int32_t Release() const { return 0; }
+
+ private:
   virtual int32_t RegisterEventObserver(AudioDeviceObserver* eventCallback) {
     return 0;
   }
@@ -121,7 +123,10 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   virtual int32_t PlayoutBuffer(BufferType* type, uint16_t* sizeMS) const {
     return 0;
   }
-  virtual int32_t PlayoutDelay(uint16_t* delayMS) const { return 0; }
+  virtual int32_t PlayoutDelay(uint16_t* delayMS) const {
+    *delayMS = 0;
+    return 0;
+  }
   virtual int32_t RecordingDelay(uint16_t* delayMS) const { return 0; }
   virtual int32_t CPULoad(uint16_t* load) const { return 0; }
   virtual int32_t StartRawOutputFileRecording(

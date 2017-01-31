@@ -146,11 +146,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   metrics::Reset();
   VoiceEngine* voice_engine = VoiceEngine::Create();
   VoEBase* voe_base = VoEBase::GetInterface(voice_engine);
-  const std::string audio_filename =
-      test::ResourcePath("voice_engine/audio_long16", "pcm");
-  ASSERT_STRNE("", audio_filename.c_str());
-  FakeAudioDevice fake_audio_device(Clock::GetRealTimeClock(), audio_filename,
-                                    audio_rtp_speed);
+  FakeAudioDevice fake_audio_device(audio_rtp_speed, 48000, 256);
   EXPECT_EQ(0, voe_base->Init(&fake_audio_device, nullptr, decoder_factory_));
   VoEBase::ChannelConfig config;
   config.enable_voice_pacing = true;
@@ -264,16 +260,14 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   Start();
 
-  fake_audio_device.Start();
+  audio_send_stream->Start();
   audio_receive_stream->Start();
-  EXPECT_EQ(0, voe_base->StartSend(send_channel_id));
 
   EXPECT_TRUE(observer.Wait())
       << "Timed out while waiting for audio and video to be synchronized.";
 
-  EXPECT_EQ(0, voe_base->StopSend(send_channel_id));
-  EXPECT_EQ(0, voe_base->StopPlayout(recv_channel_id));
-  fake_audio_device.Stop();
+  audio_send_stream->Stop();
+  audio_receive_stream->Stop();
 
   Stop();
   video_send_transport.StopSending();
