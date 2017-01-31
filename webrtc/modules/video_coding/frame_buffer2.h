@@ -156,6 +156,7 @@ class FrameBuffer {
   uint32_t last_decoded_frame_timestamp_ GUARDED_BY(crit_);
   FrameMap::iterator last_decoded_frame_it_ GUARDED_BY(crit_);
   FrameMap::iterator last_continuous_frame_it_ GUARDED_BY(crit_);
+  FrameMap::iterator next_frame_it_ GUARDED_BY(crit_);
   int num_frames_history_ GUARDED_BY(crit_);
   int num_frames_buffered_ GUARDED_BY(crit_);
   bool stopped_ GUARDED_BY(crit_);

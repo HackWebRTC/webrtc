@@ -54,9 +54,9 @@ FrameBuffer::~FrameBuffer() {
 FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     int64_t max_wait_time_ms,
     std::unique_ptr<FrameObject>* frame_out) {
-  int64_t latest_return_time = clock_->TimeInMilliseconds() + max_wait_time_ms;
+  int64_t latest_return_time_ms =
+      clock_->TimeInMilliseconds() + max_wait_time_ms;
   int64_t wait_ms = max_wait_time_ms;
-  FrameMap::iterator next_frame_it;
 
   do {
     int64_t now_ms = clock_->TimeInMilliseconds();
@@ -71,7 +71,7 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
       // Need to hold |crit_| in order to use |frames_|, therefore we
       // set it here in the loop instead of outside the loop in order to not
       // acquire the lock unnecesserily.
-      next_frame_it = frames_.end();
+      next_frame_it_ = frames_.end();
 
       // |frame_it| points to the first frame after the
       // |last_decoded_frame_it_|.
@@ -96,7 +96,7 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         }
 
         FrameObject* frame = frame_it->second.frame.get();
-        next_frame_it = frame_it;
+        next_frame_it_ = frame_it;
         if (frame->RenderTime() == -1)
           frame->SetRenderTime(timing_->RenderTimeMs(frame->timestamp, now_ms));
         wait_ms = timing_->MaxWaitingTime(frame->RenderTime(), now_ms);
@@ -111,13 +111,15 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
       }
     }  // rtc::Critscope lock(&crit_);
 
-    wait_ms = std::min<int64_t>(wait_ms, latest_return_time - now_ms);
+    wait_ms = std::min<int64_t>(wait_ms, latest_return_time_ms - now_ms);
     wait_ms = std::max<int64_t>(wait_ms, 0);
   } while (new_countinuous_frame_event_.Wait(wait_ms));
 
   rtc::CritScope lock(&crit_);
-  if (next_frame_it != frames_.end()) {
-    std::unique_ptr<FrameObject> frame = std::move(next_frame_it->second.frame);
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  if (next_frame_it_ != frames_.end()) {
+    std::unique_ptr<FrameObject> frame =
+        std::move(next_frame_it_->second.frame);
 
     if (!frame->delayed_by_retransmission()) {
       int64_t frame_delay;
@@ -129,17 +131,22 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
 
       float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
       timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
-      timing_->UpdateCurrentDelay(frame->RenderTime(),
-                                  clock_->TimeInMilliseconds());
+      timing_->UpdateCurrentDelay(frame->RenderTime(), now_ms);
     }
 
     UpdateJitterDelay();
 
-    PropagateDecodability(next_frame_it->second);
-    AdvanceLastDecodedFrame(next_frame_it);
+    PropagateDecodability(next_frame_it_->second);
+    AdvanceLastDecodedFrame(next_frame_it_);
     last_decoded_frame_timestamp_ = frame->timestamp;
     *frame_out = std::move(frame);
     return kFrameFound;
+  } else if (latest_return_time_ms - now_ms > 0) {
+    // If |next_frame_it_ == frames_.end()| and there is still time left, it
+    // means that the frame buffer was cleared as the thread in this function
+    // was waiting to acquire |crit_| in order to return. Wait for the
+    // remaining time and then return.
+    return NextFrame(latest_return_time_ms - now_ms, frame_out);
   } else {
     return kTimeout;
   }
@@ -410,6 +417,7 @@ void FrameBuffer::ClearFramesAndHistory() {
   frames_.clear();
   last_decoded_frame_it_ = frames_.end();
   last_continuous_frame_it_ = frames_.end();
+  next_frame_it_ = frames_.end();
   num_frames_history_ = 0;
   num_frames_buffered_ = 0;
 }
