@@ -228,8 +228,7 @@ bool Thread::Start(Runnable* runnable) {
   init->thread = this;
   init->runnable = runnable;
 #if defined(WEBRTC_WIN)
-  thread_ = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PreRun, init, 0,
-                         &thread_id_);
+  thread_ = CreateThread(NULL, 0, PreRun, init, 0, &thread_id_);
   if (thread_) {
     running_.Set();
   } else {
@@ -308,7 +307,12 @@ void Thread::AssertBlockingIsAllowedOnCurrentThread() {
 #endif
 }
 
+// static
+#if defined(WEBRTC_WIN)
+DWORD WINAPI Thread::PreRun(LPVOID pv) {
+#else
 void* Thread::PreRun(void* pv) {
+#endif
   ThreadInit* init = static_cast<ThreadInit*>(pv);
   ThreadManager::Instance()->SetCurrentThread(init->thread);
   rtc::SetCurrentThreadName(init->thread->name_.c_str());
@@ -325,7 +329,11 @@ void* Thread::PreRun(void* pv) {
       init->thread->Run();
     }
     delete init;
-    return NULL;
+#ifdef WEBRTC_WIN
+    return 0;
+#else
+    return nullptr;
+#endif
   }
 }
 

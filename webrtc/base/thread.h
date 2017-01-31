@@ -238,7 +238,11 @@ class LOCKABLE Thread : public MessageQueue {
   friend class ScopedDisallowBlockingCalls;
 
  private:
+#if defined(WEBRTC_WIN)
+  static DWORD WINAPI PreRun(LPVOID context);
+#else
   static void *PreRun(void *pv);
+#endif
 
   // ThreadManager calls this instead WrapCurrent() because
   // ThreadManager::Instance() cannot be used while ThreadManager is
