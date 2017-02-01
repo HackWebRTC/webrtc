@@ -21,18 +21,21 @@
 
 namespace webrtc {
 
-// An interface for a class that receives scale up/down requests.
-class ScalingObserverInterface {
+// An interface for signaling requests to limit or increase the resolution or
+// framerate of the captured video stream.
+class AdaptationObserverInterface {
  public:
-  enum ScaleReason : size_t { kQuality = 0, kCpu = 1 };
+  // Indicates if the adaptation is due to overuse of the CPU resources, or if
+  // the quality of the encoded frames have dropped too low.
+  enum AdaptReason : size_t { kQuality = 0, kCpu = 1 };
   static const size_t kScaleReasonSize = 2;
-  // Called to signal that we can handle larger frames.
-  virtual void ScaleUp(ScaleReason reason) = 0;
-  // Called to signal that encoder to scale down.
-  virtual void ScaleDown(ScaleReason reason) = 0;
+  // Called to signal that we can handle larger or more frequent frames.
+  virtual void AdaptUp(AdaptReason reason) = 0;
+  // Called to signal that the source should reduce the resolution or framerate.
+  virtual void AdaptDown(AdaptReason reason) = 0;
 
  protected:
-  virtual ~ScalingObserverInterface() {}
+  virtual ~AdaptationObserverInterface() {}
 };
 
 // QualityScaler runs asynchronously and monitors QP values of encoded frames.
@@ -43,9 +46,10 @@ class QualityScaler {
   // Construct a QualityScaler with a given |observer|.
   // This starts the quality scaler periodically checking what the average QP
   // has been recently.
-  QualityScaler(ScalingObserverInterface* observer, VideoCodecType codec_type);
+  QualityScaler(AdaptationObserverInterface* observer,
+                VideoCodecType codec_type);
   // If specific thresholds are desired these can be supplied as |thresholds|.
-  QualityScaler(ScalingObserverInterface* observer,
+  QualityScaler(AdaptationObserverInterface* observer,
                 VideoEncoder::QpThresholds thresholds);
   virtual ~QualityScaler();
   // Should be called each time the encoder drops a frame
@@ -55,7 +59,7 @@ class QualityScaler {
 
   // The following members declared protected for testing purposes
  protected:
-  QualityScaler(ScalingObserverInterface* observer,
+  QualityScaler(AdaptationObserverInterface* observer,
                 VideoEncoder::QpThresholds thresholds,
                 int64_t sampling_period);
 
@@ -68,7 +72,7 @@ class QualityScaler {
   int64_t GetSamplingPeriodMs() const;
 
   CheckQPTask* check_qp_task_ GUARDED_BY(&task_checker_);
-  ScalingObserverInterface* const observer_ GUARDED_BY(&task_checker_);
+  AdaptationObserverInterface* const observer_ GUARDED_BY(&task_checker_);
   rtc::SequencedTaskChecker task_checker_;
 
   const int64_t sampling_period_ms_;

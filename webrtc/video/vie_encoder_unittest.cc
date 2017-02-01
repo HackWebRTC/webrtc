@@ -13,6 +13,7 @@
 
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/media/base/videoadapter.h"
 #include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/system_wrappers/include/sleep.h"
@@ -37,7 +38,7 @@ const int kMinPixelsPerFrame = 120 * 90;
 namespace webrtc {
 
 using DegredationPreference = VideoSendStream::DegradationPreference;
-using ScaleReason = ScalingObserverInterface::ScaleReason;
+using ScaleReason = AdaptationObserverInterface::AdaptReason;
 using ::testing::_;
 using ::testing::Return;
 
@@ -69,22 +70,22 @@ class ViEEncoderUnderTest : public ViEEncoder {
                    nullptr /* pre_encode_callback */,
                    nullptr /* encoder_timing */) {}
 
-  void PostTaskAndWait(bool down, ScaleReason reason) {
+  void PostTaskAndWait(bool down, AdaptReason reason) {
     rtc::Event event(false, false);
     encoder_queue()->PostTask([this, &event, reason, down] {
-      down ? ScaleDown(reason) : ScaleUp(reason);
+      down ? AdaptDown(reason) : AdaptUp(reason);
       event.Set();
     });
     RTC_DCHECK(event.Wait(5000));
   }
 
-  void TriggerCpuOveruse() { PostTaskAndWait(true, ScaleReason::kCpu); }
+  void TriggerCpuOveruse() { PostTaskAndWait(true, AdaptReason::kCpu); }
 
-  void TriggerCpuNormalUsage() { PostTaskAndWait(false, ScaleReason::kCpu); }
+  void TriggerCpuNormalUsage() { PostTaskAndWait(false, AdaptReason::kCpu); }
 
-  void TriggerQualityLow() { PostTaskAndWait(true, ScaleReason::kQuality); }
+  void TriggerQualityLow() { PostTaskAndWait(true, AdaptReason::kQuality); }
 
-  void TriggerQualityHigh() { PostTaskAndWait(false, ScaleReason::kQuality); }
+  void TriggerQualityHigh() { PostTaskAndWait(false, AdaptReason::kQuality); }
 };
 
 class VideoStreamFactory
@@ -110,6 +111,52 @@ class VideoStreamFactory
   const size_t num_temporal_layers_;
 };
 
+class AdaptingFrameForwarder : public test::FrameForwarder {
+ public:
+  AdaptingFrameForwarder() : adaptation_enabled_(false) {}
+  virtual ~AdaptingFrameForwarder() {}
+
+  void set_adaptation_enabled(bool enabled) {
+    rtc::CritScope cs(&crit_);
+    adaptation_enabled_ = enabled;
+  }
+
+  bool adaption_enabled() {
+    rtc::CritScope cs(&crit_);
+    return adaptation_enabled_;
+  }
+
+  void IncomingCapturedFrame(const VideoFrame& video_frame) override {
+    int cropped_width = 0;
+    int cropped_height = 0;
+    int out_width = 0;
+    int out_height = 0;
+    if (adaption_enabled() &&
+        adapter_.AdaptFrameResolution(video_frame.width(), video_frame.height(),
+                                      video_frame.timestamp_us() * 1000,
+                                      &cropped_width, &cropped_height,
+                                      &out_width, &out_height)) {
+      VideoFrame adapted_frame(
+          new rtc::RefCountedObject<TestBuffer>(nullptr, out_width, out_height),
+          99, 99, kVideoRotation_0);
+      adapted_frame.set_ntp_time_ms(video_frame.ntp_time_ms());
+      test::FrameForwarder::IncomingCapturedFrame(adapted_frame);
+    } else {
+      test::FrameForwarder::IncomingCapturedFrame(video_frame);
+    }
+  }
+
+  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override {
+    rtc::CritScope cs(&crit_);
+    adapter_.OnResolutionRequest(wants.max_pixel_count,
+                                 wants.max_pixel_count_step_up);
+    test::FrameForwarder::AddOrUpdateSink(sink, wants);
+  }
+
+  cricket::VideoAdapter adapter_;
+  bool adaptation_enabled_ GUARDED_BY(crit_);
+};
 }  // namespace
 
 class ViEEncoderTest : public ::testing::Test {
@@ -258,9 +305,23 @@ class ViEEncoderTest : public ::testing::Test {
       EXPECT_TRUE(encoded_frame_event_.Wait(kDefaultTimeoutMs));
       {
         rtc::CritScope lock(&crit_);
-        timestamp = timestamp_;
+        timestamp = last_timestamp_;
       }
       test_encoder_->CheckLastTimeStampsMatch(expected_ntp_time, timestamp);
+    }
+
+    void WaitForEncodedFrame(uint32_t expected_width,
+                             uint32_t expected_height) {
+      uint32_t width = 0;
+      uint32_t height = 0;
+      EXPECT_TRUE(encoded_frame_event_.Wait(kDefaultTimeoutMs));
+      {
+        rtc::CritScope lock(&crit_);
+        width = last_width_;
+        height = last_height_;
+      }
+      EXPECT_EQ(expected_height, height);
+      EXPECT_EQ(expected_width, width);
     }
 
     void SetExpectNoFrames() {
@@ -285,9 +346,11 @@ class ViEEncoderTest : public ::testing::Test {
         const RTPFragmentationHeader* fragmentation) override {
       rtc::CritScope lock(&crit_);
       EXPECT_TRUE(expect_frames_);
-      timestamp_ = encoded_image._timeStamp;
+      last_timestamp_ = encoded_image._timeStamp;
+      last_width_ = encoded_image._encodedWidth;
+      last_height_ = encoded_image._encodedHeight;
       encoded_frame_event_.Set();
-      return Result(Result::OK, timestamp_);
+      return Result(Result::OK, last_timestamp_);
     }
 
     void OnEncoderConfigurationChanged(std::vector<VideoStream> streams,
@@ -300,7 +363,9 @@ class ViEEncoderTest : public ::testing::Test {
     rtc::CriticalSection crit_;
     TestEncoder* test_encoder_;
     rtc::Event encoded_frame_event_;
-    uint32_t timestamp_ = 0;
+    uint32_t last_timestamp_ = 0;
+    uint32_t last_height_ = 0;
+    uint32_t last_width_ = 0;
     bool expect_frames_ = true;
     int number_of_reconfigurations_ = 0;
     int min_transmit_bitrate_bps_ = 0;
@@ -313,7 +378,7 @@ class ViEEncoderTest : public ::testing::Test {
   TestEncoder fake_encoder_;
   std::unique_ptr<SendStatisticsProxy> stats_proxy_;
   TestSink sink_;
-  test::FrameForwarder video_source_;
+  AdaptingFrameForwarder video_source_;
   std::unique_ptr<ViEEncoderUnderTest> vie_encoder_;
 };
 
@@ -1029,4 +1094,32 @@ TEST_F(ViEEncoderTest, CallsBitrateObserver) {
   vie_encoder_->Stop();
 }
 
+// TODO(sprang): Extend this with fps throttling and any "balanced" extensions.
+TEST_F(ViEEncoderTest, AdaptsResolutionOnOveruse) {
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  const int kFrameWidth = 1280;
+  const int kFrameHeight = 720;
+  // Enabled default VideoAdapter downscaling. First step is 3/4, not 3/5 as
+  // requested by ViEEncoder::VideoSourceProxy::RequestResolutionLowerThan().
+  video_source_.set_adaptation_enabled(true);
+
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(kFrameWidth, kFrameHeight);
+
+  // Trigger CPU overuse, downscale by 3/4.
+  vie_encoder_->TriggerCpuOveruse();
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(2, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame((kFrameWidth * 3) / 4, (kFrameHeight * 3) / 4);
+
+  // Trigger CPU normal use, return to original resoluton;
+  vie_encoder_->TriggerCpuNormalUsage();
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(3, kFrameWidth, kFrameHeight));
+  sink_.WaitForEncodedFrame(kFrameWidth, kFrameHeight);
+
+  vie_encoder_->Stop();
+}
 }  // namespace webrtc

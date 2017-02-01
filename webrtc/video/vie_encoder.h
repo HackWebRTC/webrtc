@@ -50,7 +50,7 @@ class VideoBitrateAllocationObserver;
 class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                    public EncodedImageCallback,
                    public VCMSendStatisticsCallback,
-                   public ScalingObserverInterface {
+                   public AdaptationObserverInterface {
  public:
   // Interface for receiving encoded video frames and notifications about
   // configuration changes.
@@ -120,8 +120,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
   // webrtc::ScalingObserverInterface implementation.
   // These methods are protected for easier testing.
-  void ScaleUp(ScaleReason reason) override;
-  void ScaleDown(ScaleReason reason) override;
+  void AdaptUp(AdaptReason reason) override;
+  void AdaptDown(AdaptReason reason) override;
 
  private:
   class ConfigureEncoderTask;
@@ -215,7 +215,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // restricted, and if so, why.
   std::vector<int> scale_counter_ ACCESS_ON(&encoder_queue_);
   // Set depending on degradation preferences
-  bool scaling_enabled_ ACCESS_ON(&encoder_queue_) = false;
+  VideoSendStream::DegradationPreference degradation_preference_
+      ACCESS_ON(&encoder_queue_);
 
   // Pixel count last time the resolution was requested to be changed down.
   rtc::Optional<int> max_pixel_count_ ACCESS_ON(&encoder_queue_);

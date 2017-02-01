@@ -29,12 +29,13 @@ namespace test {
 class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
  public:
   FrameForwarder();
+  virtual ~FrameForwarder();
   // Forwards |video_frame| to the registered |sink_|.
-  void IncomingCapturedFrame(const VideoFrame& video_frame);
+  virtual void IncomingCapturedFrame(const VideoFrame& video_frame);
   rtc::VideoSinkWants sink_wants() const;
   bool has_sinks() const;
 
- private:
+ protected:
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
   void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;

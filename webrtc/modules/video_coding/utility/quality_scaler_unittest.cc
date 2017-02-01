@@ -26,29 +26,29 @@ static const int kHighQp = 40;
 static const size_t kDefaultTimeoutMs = 150;
 }  // namespace
 
-class MockScaleObserver : public ScalingObserverInterface {
+class MockAdaptationObserver : public AdaptationObserverInterface {
  public:
-  MockScaleObserver() : event(false, false) {}
-  virtual ~MockScaleObserver() {}
+  MockAdaptationObserver() : event(false, false) {}
+  virtual ~MockAdaptationObserver() {}
 
-  void ScaleUp(ScaleReason r) override {
-    scaled_up++;
+  void AdaptUp(AdaptReason r) override {
+    adapt_up_events_++;
     event.Set();
   }
-  void ScaleDown(ScaleReason r) override {
-    scaled_down++;
+  void AdaptDown(AdaptReason r) override {
+    adapt_down_events_++;
     event.Set();
   }
 
   rtc::Event event;
-  int scaled_up = 0;
-  int scaled_down = 0;
+  int adapt_up_events_ = 0;
+  int adapt_down_events_ = 0;
 };
 
 // Pass a lower sampling period to speed up the tests.
 class QualityScalerUnderTest : public QualityScaler {
  public:
-  explicit QualityScalerUnderTest(ScalingObserverInterface* observer,
+  explicit QualityScalerUnderTest(AdaptationObserverInterface* observer,
                                   VideoEncoder::QpThresholds thresholds)
       : QualityScaler(observer, thresholds, 5) {}
 };
@@ -64,7 +64,7 @@ class QualityScalerTest : public ::testing::Test {
 
   QualityScalerTest()
       : q_(new rtc::TaskQueue("QualityScalerTestQueue")),
-        observer_(new MockScaleObserver()) {
+        observer_(new MockAdaptationObserver()) {
     rtc::Event event(false, false);
     q_->PostTask([this, &event] {
       qs_ = std::unique_ptr<QualityScaler>(new QualityScalerUnderTest(
@@ -105,28 +105,28 @@ class QualityScalerTest : public ::testing::Test {
 
   std::unique_ptr<rtc::TaskQueue> q_;
   std::unique_ptr<QualityScaler> qs_;
-  std::unique_ptr<MockScaleObserver> observer_;
+  std::unique_ptr<MockAdaptationObserver> observer_;
 };
 
 #define DISABLED_TEST(basename, test) TEST_F(basename, DISABLED_##test)
 DISABLED_TEST(QualityScalerTest, DownscalesAfterContinuousFramedrop) {
   q_->PostTask([this] { TriggerScale(kScaleDown); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(1, observer_->scaled_down);
+  EXPECT_EQ(1, observer_->adapt_down_events_);
 }
 
 DISABLED_TEST(QualityScalerTest, KeepsScaleAtHighQp) {
   q_->PostTask([this] { TriggerScale(kKeepScaleAtHighQp); });
   EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(0, observer_->scaled_down);
-  EXPECT_EQ(0, observer_->scaled_up);
+  EXPECT_EQ(0, observer_->adapt_down_events_);
+  EXPECT_EQ(0, observer_->adapt_up_events_);
 }
 
 DISABLED_TEST(QualityScalerTest, DownscalesAboveHighQp) {
   q_->PostTask([this] { TriggerScale(kScaleDownAboveHighQp); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(1, observer_->scaled_down);
-  EXPECT_EQ(0, observer_->scaled_up);
+  EXPECT_EQ(1, observer_->adapt_down_events_);
+  EXPECT_EQ(0, observer_->adapt_up_events_);
 }
 
 DISABLED_TEST(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
@@ -136,15 +136,15 @@ DISABLED_TEST(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
     qs_->ReportQP(kHighQp);
   });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(1, observer_->scaled_down);
-  EXPECT_EQ(0, observer_->scaled_up);
+  EXPECT_EQ(1, observer_->adapt_down_events_);
+  EXPECT_EQ(0, observer_->adapt_up_events_);
 }
 
 DISABLED_TEST(QualityScalerTest, DoesNotDownscaleOnNormalQp) {
   q_->PostTask([this] { TriggerScale(kScaleDownAboveHighQp); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(1, observer_->scaled_down);
-  EXPECT_EQ(0, observer_->scaled_up);
+  EXPECT_EQ(1, observer_->adapt_down_events_);
+  EXPECT_EQ(0, observer_->adapt_up_events_);
 }
 
 DISABLED_TEST(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
@@ -153,26 +153,26 @@ DISABLED_TEST(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
     qs_->ReportQP(kHighQp);
   });
   EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(0, observer_->scaled_down);
-  EXPECT_EQ(0, observer_->scaled_up);
+  EXPECT_EQ(0, observer_->adapt_down_events_);
+  EXPECT_EQ(0, observer_->adapt_up_events_);
 }
 
 DISABLED_TEST(QualityScalerTest, UpscalesAfterLowQp) {
   q_->PostTask([this] { TriggerScale(kScaleUp); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(0, observer_->scaled_down);
-  EXPECT_EQ(1, observer_->scaled_up);
+  EXPECT_EQ(0, observer_->adapt_down_events_);
+  EXPECT_EQ(1, observer_->adapt_up_events_);
 }
 
 DISABLED_TEST(QualityScalerTest, ScalesDownAndBackUp) {
   q_->PostTask([this] { TriggerScale(kScaleDown); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(1, observer_->scaled_down);
-  EXPECT_EQ(0, observer_->scaled_up);
+  EXPECT_EQ(1, observer_->adapt_down_events_);
+  EXPECT_EQ(0, observer_->adapt_up_events_);
   q_->PostTask([this] { TriggerScale(kScaleUp); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(1, observer_->scaled_down);
-  EXPECT_EQ(1, observer_->scaled_up);
+  EXPECT_EQ(1, observer_->adapt_down_events_);
+  EXPECT_EQ(1, observer_->adapt_up_events_);
 }
 #undef DISABLED_TEST
 }  // namespace webrtc

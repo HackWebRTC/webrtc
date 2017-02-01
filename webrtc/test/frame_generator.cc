@@ -248,6 +248,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
 }  // namespace
 
 FrameForwarder::FrameForwarder() : sink_(nullptr) {}
+FrameForwarder::~FrameForwarder() {}
 
 void FrameForwarder::IncomingCapturedFrame(const VideoFrame& video_frame) {
   rtc::CritScope lock(&crit_);

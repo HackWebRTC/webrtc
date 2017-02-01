@@ -39,8 +39,6 @@ static const int kHighH264QpThreshold = 37;
 // bitstream range of [0, 127] and not the user-level range of [0,63].
 static const int kLowVp8QpThreshold = 29;
 static const int kHighVp8QpThreshold = 95;
-const ScalingObserverInterface::ScaleReason scale_reason_ =
-    ScalingObserverInterface::ScaleReason::kQuality;
 
 static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
     VideoCodecType codec_type) {
@@ -91,16 +89,16 @@ class QualityScaler::CheckQPTask : public rtc::QueuedTask {
   rtc::SequencedTaskChecker task_checker_;
 };
 
-QualityScaler::QualityScaler(ScalingObserverInterface* observer,
+QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoCodecType codec_type)
     : QualityScaler(observer, CodecTypeToDefaultThresholds(codec_type)) {}
 
-QualityScaler::QualityScaler(ScalingObserverInterface* observer,
+QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoEncoder::QpThresholds thresholds)
     : QualityScaler(observer, thresholds, kMeasureMs) {}
 
 // Protected ctor, should not be called directly.
-QualityScaler::QualityScaler(ScalingObserverInterface* observer,
+QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoEncoder::QpThresholds thresholds,
                              int64_t sampling_period)
     : check_qp_task_(nullptr),
@@ -167,14 +165,14 @@ void QualityScaler::ReportQPLow() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   LOG(LS_INFO) << "QP has been low, asking for higher resolution.";
   ClearSamples();
-  observer_->ScaleUp(scale_reason_);
+  observer_->AdaptUp(AdaptationObserverInterface::AdaptReason::kQuality);
 }
 
 void QualityScaler::ReportQPHigh() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   LOG(LS_INFO) << "QP has been high , asking for lower resolution.";
   ClearSamples();
-  observer_->ScaleDown(scale_reason_);
+  observer_->AdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
   // If we've scaled down, wait longer before scaling up again.
   if (fast_rampup_) {
     fast_rampup_ = false;
