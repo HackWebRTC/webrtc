@@ -42,6 +42,10 @@ const int kMinPixelsPerFrame = 320 * 180;
 const int kMinPixelsPerFrame = 120 * 90;
 #endif
 
+// The maximum number of frames to drop at beginning of stream
+// to try and achieve desired bitrate.
+const int kMaxInitialFramedrop = 4;
+
 // TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
 // pipelining encoders better (multiple input frames before something comes
 // out). This should effectively turn off CPU adaptations for systems that
@@ -53,6 +57,17 @@ CpuOveruseOptions GetCpuOveruseOptions(bool full_overuse_time) {
     options.high_encode_usage_threshold_percent = 200;
   }
   return options;
+}
+
+uint32_t MaximumFrameSizeForBitrate(uint32_t kbps) {
+  if (kbps > 0) {
+    if (kbps < 300 /* qvga */) {
+      return 320 * 240;
+    } else if (kbps < 500 /* vga */) {
+      return 640 * 480;
+    }
+  }
+  return std::numeric_limits<uint32_t>::max();
 }
 
 }  //  namespace
@@ -244,6 +259,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
                        EncodedFrameObserver* encoder_timing)
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
+      initial_rampup_(0),
       source_proxy_(new VideoSourceProxy(this)),
       sink_(nullptr),
       settings_(settings),
@@ -340,8 +356,8 @@ void ViEEncoder::SetSource(
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     scaling_enabled_ = (degradation_preference !=
          VideoSendStream::DegradationPreference::kMaintainResolution);
-    stats_proxy_->SetResolutionRestrictionStats(
-        scaling_enabled_, scale_counter_[kCpu] > 0, scale_counter_[kQuality]);
+    initial_rampup_ = scaling_enabled_ ? 0 : kMaxInitialFramedrop;
+    ConfigureQualityScaler();
   });
 }
 
@@ -436,8 +452,14 @@ void ViEEncoder::ReconfigureEncoder() {
   sink_->OnEncoderConfigurationChanged(
       std::move(streams), encoder_config_.min_transmit_bitrate_bps);
 
+  ConfigureQualityScaler();
+}
+
+void ViEEncoder::ConfigureQualityScaler() {
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
   const auto scaling_settings = settings_.encoder->GetScalingSettings();
   if (scaling_enabled_ && scaling_settings.enabled) {
+    // Drop frames and scale down until desired quality is achieved.
     if (scaling_settings.thresholds) {
       quality_scaler_.reset(
           new QualityScaler(this, *(scaling_settings.thresholds)));
@@ -446,9 +468,9 @@ void ViEEncoder::ReconfigureEncoder() {
     }
   } else {
     quality_scaler_.reset(nullptr);
-    stats_proxy_->SetResolutionRestrictionStats(
-        false, scale_counter_[kCpu] > 0, scale_counter_[kQuality]);
   }
+  stats_proxy_->SetResolutionRestrictionStats(
+      scaling_enabled_, scale_counter_[kCpu] > 0, scale_counter_[kQuality]);
 }
 
 void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
@@ -546,6 +568,16 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
                  << ", rotation=" << last_frame_info_->rotation
                  << ", texture=" << last_frame_info_->is_texture;
   }
+
+  if (initial_rampup_ < kMaxInitialFramedrop &&
+      video_frame.size() >
+          MaximumFrameSizeForBitrate(encoder_start_bitrate_bps_ / 1000)) {
+    LOG(LS_INFO) << "Dropping frame. Too large for target bitrate.";
+    ScaleDown(kQuality);
+    ++initial_rampup_;
+    return;
+  }
+  initial_rampup_ = kMaxInitialFramedrop;
 
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (pending_encoder_reconfiguration_) {

@@ -48,9 +48,10 @@ class VideoFrame {
 
   // Get frame width.
   int width() const;
-
   // Get frame height.
   int height() const;
+  // Get frame size in pixels.
+  uint32_t size() const;
 
   // System monotonic clock, same timebase as rtc::TimeMicros().
   int64_t timestamp_us() const { return timestamp_us_; }

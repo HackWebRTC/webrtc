@@ -51,6 +51,10 @@ int VideoFrame::height() const {
   return video_frame_buffer_ ? video_frame_buffer_->height() : 0;
 }
 
+uint32_t VideoFrame::size() const {
+  return width() * height();
+}
+
 rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }

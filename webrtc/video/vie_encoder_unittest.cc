@@ -43,7 +43,9 @@ using ::testing::Return;
 
 namespace {
 const size_t kMaxPayloadLength = 1440;
-const int kTargetBitrateBps = 100000;
+const int kTargetBitrateBps = 1000000;
+const int kLowTargetBitrateBps = kTargetBitrateBps / 10;
+const int kMaxInitialFramedrop = 4;
 
 class TestBuffer : public webrtc::I420Buffer {
  public:
@@ -149,7 +151,7 @@ class ViEEncoderTest : public ::testing::Test {
     vie_encoder_->SetSink(&sink_, false /* rotation_applied */);
     vie_encoder_->SetSource(&video_source_,
                             VideoSendStream::DegradationPreference::kBalanced);
-    vie_encoder_->SetStartBitrate(10000);
+    vie_encoder_->SetStartBitrate(kTargetBitrateBps);
     vie_encoder_->ConfigureEncoder(std::move(video_encoder_config),
                                    kMaxPayloadLength, nack_enabled);
   }
@@ -162,7 +164,7 @@ class ViEEncoderTest : public ::testing::Test {
 
     VideoEncoderConfig video_encoder_config;
     video_encoder_config.number_of_streams = num_streams;
-    video_encoder_config.max_bitrate_bps = 1000000;
+    video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
     video_encoder_config.video_stream_factory =
         new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers);
     ConfigureEncoder(std::move(video_encoder_config), nack_enabled);
@@ -262,6 +264,8 @@ class ViEEncoderTest : public ::testing::Test {
       }
       test_encoder_->CheckLastTimeStampsMatch(expected_ntp_time, timestamp);
     }
+
+    void ExpectDroppedFrame() { EXPECT_FALSE(encoded_frame_event_.Wait(20)); }
 
     void SetExpectNoFrames() {
       rtc::CritScope lock(&crit_);
@@ -679,7 +683,6 @@ TEST_F(ViEEncoderTest, StatsTracksAdaptationStats) {
 }
 
 TEST_F(ViEEncoderTest, SwitchingSourceKeepsCpuAdaptation) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   int frame_width = 1280;
@@ -749,7 +752,6 @@ TEST_F(ViEEncoderTest, SwitchingSourceKeepsCpuAdaptation) {
 }
 
 TEST_F(ViEEncoderTest, SwitchingSourceKeepsQualityAdaptation) {
-  const int kTargetBitrateBps = 100000;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   int frame_width = 1280;
@@ -885,7 +887,6 @@ TEST_F(ViEEncoderTest, StatsTracksPreferredBitrate) {
 }
 
 TEST_F(ViEEncoderTest, ScalingUpAndDownDoesNothingWithMaintainResolution) {
-  const int kTargetBitrateBps = 100000;
   int frame_width = 1280;
   int frame_height = 720;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
@@ -938,7 +939,6 @@ TEST_F(ViEEncoderTest, ScalingUpAndDownDoesNothingWithMaintainResolution) {
 }
 
 TEST_F(ViEEncoderTest, DoesNotScaleBelowSetLimit) {
-  const int kTargetBitrateBps = 100000;
   int frame_width = 1280;
   int frame_height = 720;
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
@@ -995,12 +995,12 @@ TEST_F(ViEEncoderTest, CallsBitrateObserver) {
   const int kDefaultFps = 30;
   const BitrateAllocation expected_bitrate =
       DefaultVideoBitrateAllocator(fake_encoder_.codec_config())
-          .GetAllocation(kTargetBitrateBps, kDefaultFps);
+          .GetAllocation(kLowTargetBitrateBps, kDefaultFps);
 
   // First called on bitrate updated, then again on first frame.
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
       .Times(2);
-  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+  vie_encoder_->OnBitrateUpdated(kLowTargetBitrateBps, 0, 0);
 
   const int64_t kStartTimeMs = 1;
   video_source_.IncomingCapturedFrame(
@@ -1025,6 +1025,78 @@ TEST_F(ViEEncoderTest, CallsBitrateObserver) {
   video_source_.IncomingCapturedFrame(CreateFrame(
       kStartTimeMs + kProcessIntervalMs, codec_width_, codec_height_));
   sink_.WaitForEncodedFrame(kStartTimeMs + kProcessIntervalMs);
+
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, DropsFramesAndScalesWhenBitrateIsTooLow) {
+  vie_encoder_->OnBitrateUpdated(kLowTargetBitrateBps, 0, 0);
+  int frame_width = 640;
+  int frame_height = 360;
+
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, frame_width, frame_height));
+
+  // Expect to drop this frame, the wait should time out.
+  sink_.ExpectDroppedFrame();
+
+  // Expect the sink_wants to specify a scaled frame.
+  EXPECT_TRUE(video_source_.sink_wants().max_pixel_count);
+  EXPECT_LT(*video_source_.sink_wants().max_pixel_count, 1000 * 1000);
+
+  int last_pixel_count = *video_source_.sink_wants().max_pixel_count;
+
+  // Next frame is scaled
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(2, frame_width * 3 / 4, frame_height * 3 / 4));
+
+  // Expect to drop this frame, the wait should time out.
+  sink_.ExpectDroppedFrame();
+
+  EXPECT_LT(*video_source_.sink_wants().max_pixel_count, last_pixel_count);
+
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, NrOfDroppedFramesLimited) {
+  // 1kbps. This can never be achieved.
+  vie_encoder_->OnBitrateUpdated(1000, 0, 0);
+  int frame_width = 640;
+  int frame_height = 360;
+
+  // We expect the n initial frames to get dropped.
+  int i;
+  for (i = 1; i <= kMaxInitialFramedrop; ++i) {
+    video_source_.IncomingCapturedFrame(
+        CreateFrame(i, frame_width, frame_height));
+    sink_.ExpectDroppedFrame();
+  }
+  // The n+1th frame should not be dropped, even though it's size is too large.
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(i, frame_width, frame_height));
+  sink_.WaitForEncodedFrame(i);
+
+  // Expect the sink_wants to specify a scaled frame.
+  EXPECT_TRUE(video_source_.sink_wants().max_pixel_count);
+  EXPECT_LT(*video_source_.sink_wants().max_pixel_count, 1000 * 1000);
+
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, InitialFrameDropOffWithMaintainResolutionPreference) {
+  int frame_width = 640;
+  int frame_height = 360;
+  vie_encoder_->OnBitrateUpdated(kLowTargetBitrateBps, 0, 0);
+
+  // Set degradation preference.
+  vie_encoder_->SetSource(
+      &video_source_,
+      VideoSendStream::DegradationPreference::kMaintainResolution);
+
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, frame_width, frame_height));
+  // Frame should not be dropped, even if it's too large.
+  sink_.WaitForEncodedFrame(1);
 
   vie_encoder_->Stop();
 }
