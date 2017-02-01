@@ -35,6 +35,7 @@ BitrateAllocation DefaultVideoBitrateAllocator::GetAllocation(
   } else {
     allocation.SetBitrate(0, 0, total_bitrate_bps);
   }
+
   return allocation;
 }
 
