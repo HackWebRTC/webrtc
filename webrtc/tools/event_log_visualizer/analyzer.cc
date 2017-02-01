@@ -555,12 +555,11 @@ void EventLogAnalyzer::CreateAccumulatedPacketsTimeSeries(
 
     TimeSeries time_series;
     time_series.label = label_prefix + " " + GetStreamName(stream_id);
-    time_series.style = LINE_GRAPH;
+    time_series.style = LINE_STEP_GRAPH;
 
     for (size_t i = 0; i < packet_stream.size(); i++) {
       float x = static_cast<float>(packet_stream[i].timestamp - begin_time_) /
                 1000000;
-      time_series.points.emplace_back(x, i);
       time_series.points.emplace_back(x, i + 1);
     }
 
@@ -893,9 +892,8 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
       plot->series_list_.back().points.emplace_back(x, y);
     }
     plot->series_list_.back().label = "Loss-based estimate";
-    plot->series_list_.back().style = LINE_GRAPH;
+    plot->series_list_.back().style = LINE_STEP_GRAPH;
   }
-  plot->series_list_.back().style = LINE_GRAPH;
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Bitrate (kbps)", kBottomMargin, kTopMargin);
   if (desired_direction == webrtc::PacketDirection::kIncomingPacket) {
