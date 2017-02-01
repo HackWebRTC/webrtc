@@ -11,6 +11,8 @@
 #ifndef WEBRTC_API_MEDIASTREAMPROXY_H_
 #define WEBRTC_API_MEDIASTREAMPROXY_H_
 
+#include <string>
+
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/proxy.h"
 

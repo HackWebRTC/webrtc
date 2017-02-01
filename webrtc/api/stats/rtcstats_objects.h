@@ -12,6 +12,7 @@
 #define WEBRTC_API_STATS_RTCSTATS_OBJECTS_H_
 
 #include <string>
+#include <vector>
 
 #include "webrtc/api/stats/rtcstats.h"
 

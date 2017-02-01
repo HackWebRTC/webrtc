@@ -70,7 +70,7 @@ void ConstraintToOptional(const webrtc::MediaConstraintsInterface* constraints,
     *value_out = rtc::Optional<T>(value);
   }
 }
-}
+}  // namespace
 
 namespace webrtc {
 

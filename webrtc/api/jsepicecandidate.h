@@ -14,6 +14,8 @@
 #define WEBRTC_API_JSEPICECANDIDATE_H_
 
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "webrtc/api/jsep.h"
 #include "webrtc/base/constructormagic.h"

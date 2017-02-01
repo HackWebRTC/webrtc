@@ -11,6 +11,9 @@
 #ifndef WEBRTC_API_PEERCONNECTIONPROXY_H_
 #define WEBRTC_API_PEERCONNECTIONPROXY_H_
 
+#include <string>
+#include <vector>
+
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/proxy.h"
 

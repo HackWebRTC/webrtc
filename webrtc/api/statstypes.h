@@ -18,6 +18,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/constructormagic.h"
@@ -234,7 +235,7 @@ class StatsReport {
     // Protected since users of the IdBase type will be using the Id typedef.
     virtual bool Equals(const IdBase& other) const;
 
-    IdBase(StatsType type);  // Only meant for derived classes.
+    explicit IdBase(StatsType type);  // Only meant for derived classes.
     const StatsType type_;
 
     static const char kSeparator = '_';

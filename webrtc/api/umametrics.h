@@ -113,7 +113,6 @@ enum IceCandidatePairType {
 
 class MetricsObserverInterface : public rtc::RefCountInterface {
  public:
-
   // |type| is the type of the enum counter to be incremented. |counter|
   // is the particular counter in that type. |counter_max| is the next sequence
   // number after the highest counter.

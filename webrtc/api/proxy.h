@@ -52,6 +52,7 @@
 #define WEBRTC_API_PROXY_H_
 
 #include <memory>
+#include <utility>
 
 #include "webrtc/base/event.h"
 #include "webrtc/base/thread.h"
@@ -349,6 +350,7 @@ class MethodCall5 : public rtc::Message,
   T5 a5_;
 };
 
+
 // Helper macros to reduce code duplication.
 #define PROXY_MAP_BOILERPLATE(c)                                \
   template <class INTERNAL_CLASS>                               \
@@ -362,6 +364,9 @@ class MethodCall5 : public rtc::Message,
    public:                                                      \
     const INTERNAL_CLASS* internal() const { return c_.get(); } \
     INTERNAL_CLASS* internal() { return c_.get(); }
+
+#define END_PROXY_MAP() \
+  };
 
 #define SIGNALING_PROXY_MAP_BOILERPLATE(c)                               \
  protected:                                                              \
@@ -448,13 +453,13 @@ class MethodCall5 : public rtc::Message,
  private:                                                              \
   rtc::Thread* destructor_thread() const { return signaling_thread_; } \
                                                                        \
- public:
+ public:  // NOLINTNEXTLINE
 
 #define PROXY_WORKER_THREAD_DESTRUCTOR()                            \
  private:                                                           \
   rtc::Thread* destructor_thread() const { return worker_thread_; } \
                                                                     \
- public:
+ public:  // NOLINTNEXTLINE
 
 #define PROXY_METHOD0(r, method)                           \
   r method() override {                                    \
@@ -548,10 +553,6 @@ class MethodCall5 : public rtc::Message,
                                         std::move(a2));                      \
     return call.Marshal(RTC_FROM_HERE, worker_thread_);                      \
   }
-
-#define END_PROXY_MAP() \
-  }                     \
-  ;
 
 }  // namespace webrtc
 

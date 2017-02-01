@@ -288,7 +288,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // Chrome in particular.
 
     RTCConfiguration() = default;
-    RTCConfiguration(RTCConfigurationType type) {
+    explicit RTCConfiguration(RTCConfigurationType type) {
       if (type == RTCConfigurationType::kAggressive) {
         // These parameters are also defined in Java and IOS configurations,
         // so their values may be overwritten by the Java or IOS configuration.
@@ -669,7 +669,7 @@ class PeerConnectionObserver {
 
   // Triggered when a remote peer opens a data channel.
   virtual void OnDataChannel(
-      rtc::scoped_refptr<DataChannelInterface> data_channel){};
+      rtc::scoped_refptr<DataChannelInterface> data_channel) {}
   // Deprecated; please use the version that uses a scoped_refptr.
   virtual void OnDataChannel(DataChannelInterface* data_channel) {}
 
