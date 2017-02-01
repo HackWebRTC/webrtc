@@ -19,6 +19,29 @@ namespace webrtc {
 
 namespace {
 
+template <typename T>
+T FuzzInput(const uint8_t** data, size_t* size) {
+  RTC_CHECK_GE(*size, sizeof(T));
+  T rc = ByteReader<T>::ReadBigEndian(*data);
+  *data += sizeof(T);
+  *size -= sizeof(T);
+  return rc;
+}
+
+size_t FuzzInRange(const uint8_t** data,
+                   size_t* size,
+                   size_t lower,
+                   size_t upper) {
+  // Achieve a close-to-uniform distribution.
+  RTC_CHECK_LE(lower, upper);
+  RTC_CHECK_LT(upper - lower, 1 << (8 * sizeof(uint16_t)));
+  const size_t range = upper - lower;
+  const uint16_t fuzzed = FuzzInput<uint16_t>(data, size);
+  const size_t offset = (static_cast<float>(fuzzed) / 0x10000) * (range + 1);
+  RTC_CHECK_LE(offset, range);  // (fuzzed <= 0xffff) -> (offset < range + 1)
+  return lower + offset;
+}
+
 class TransportFeedbackGenerator {
  public:
   explicit TransportFeedbackGenerator(rtc::ArrayView<const uint8_t> data)
@@ -63,7 +86,7 @@ class TransportFeedbackGenerator {
  private:
   template <typename T>
   bool ReadData(T* value) {
-    RTC_DCHECK(!ended_);
+    RTC_CHECK(!ended_);
     if (data_idx_ + sizeof(T) > data_.size()) {
       ended_ = true;
       return false;
@@ -81,25 +104,25 @@ class TransportFeedbackGenerator {
 }  // namespace
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  if (size < sizeof(uint32_t)) {
+  if (size < 3 * sizeof(uint16_t)) {
     return;
   }
   constexpr size_t kSeqNumHalf = 0x8000u;
-  const size_t window_size_1 = std::min<size_t>(
-      kSeqNumHalf,
-      std::max<uint16_t>(1, ByteReader<uint16_t>::ReadBigEndian(data)));
-  data += sizeof(uint16_t);
-  const size_t window_size_2 = std::min<size_t>(
-      kSeqNumHalf,
-      std::max<uint16_t>(1, ByteReader<uint16_t>::ReadBigEndian(data)));
-  data += sizeof(uint16_t);
-  size -= 2 * sizeof(uint16_t);
+
+  // 0x8000 >= max_window_size >= plr_min_num_packets > rplr_min_num_pairs >= 1
+  // (The distribution isn't uniform, but it's enough; more would be overkill.)
+  const size_t max_window_size = FuzzInRange(&data, &size, 2, kSeqNumHalf);
+  const size_t plr_min_num_packets =
+      FuzzInRange(&data, &size, 2, max_window_size);
+  const size_t rplr_min_num_pairs =
+      FuzzInRange(&data, &size, 1, plr_min_num_packets - 1);
 
   TransportFeedbackPacketLossTracker tracker(
-      std::min(window_size_1, window_size_2),
-      std::max(window_size_1, window_size_2));
+      max_window_size, plr_min_num_packets, rplr_min_num_pairs);
+
   TransportFeedbackGenerator feedback_generator(
       rtc::ArrayView<const uint8_t>(data, size));
+
   while (!feedback_generator.ended()) {
     rtcp::TransportFeedback feedback;
     feedback_generator.GetNextTransportFeedback(&feedback);
