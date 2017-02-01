@@ -388,7 +388,6 @@ void PacedSender::Process() {
   int64_t elapsed_time_ms = (now_us - time_last_update_us_ + 500) / 1000;
   time_last_update_us_ = now_us;
   int target_bitrate_kbps = pacing_bitrate_kbps_;
-  // TODO(holmer): Remove the !paused_ check when issue 5307 has been fixed.
   if (!paused_ && elapsed_time_ms > 0) {
     size_t queue_size_bytes = packets_->SizeInBytes();
     if (queue_size_bytes > 0) {
@@ -437,7 +436,6 @@ void PacedSender::Process() {
     }
   }
 
-  // TODO(holmer): Remove the paused_ check when issue 5307 has been fixed.
   if (packets_->Empty() && !paused_) {
     // We can not send padding unless a normal packet has first been sent. If we
     // do, timestamps get messed up.
@@ -457,16 +455,11 @@ void PacedSender::Process() {
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,
                              int probe_cluster_id) {
-  // TODO(holmer): Because of this bug issue 5307 we have to send audio
-  // packets even when the pacer is paused. Here we assume audio packets are
-  // always high priority and that they are the only high priority packets.
-  if (packet.priority != kHighPriority) {
-    if (paused_)
-      return false;
-    if (media_budget_->bytes_remaining() == 0 &&
-        probe_cluster_id == PacketInfo::kNotAProbe) {
-      return false;
-    }
+  if (paused_)
+    return false;
+  if (media_budget_->bytes_remaining() == 0 &&
+      probe_cluster_id == PacketInfo::kNotAProbe) {
+    return false;
   }
   critsect_->Leave();
   const bool success = packet_sender_->TimeToSendPacket(

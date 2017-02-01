@@ -629,28 +629,25 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_EQ(second_capture_time_ms - capture_time_ms,
             send_bucket_->QueueInMs());
 
-  // Expect only high priority packets to come out while paused.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_CALL(callback_,
-              TimeToSendPacket(ssrc_high_priority, _, capture_time_ms, _, _))
-      .Times(packets_to_send_per_interval)
-      .WillRepeatedly(Return(true));
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc_high_priority, _,
-                                          second_capture_time_ms, _, _))
-      .Times(packets_to_send_per_interval)
-      .WillRepeatedly(Return(true));
-
   for (int i = 0; i < 10; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
     send_bucket_->Process();
   }
 
-  // Expect normal prio packets to come out first (in capture order)
-  // followed by all low prio packets (in capture order).
+  // Expect high prio packets to come out first followed by normal
+  // prio packets and low prio packets (all in capture order).
   {
     ::testing::InSequence sequence;
+    EXPECT_CALL(callback_,
+                TimeToSendPacket(ssrc_high_priority, _, capture_time_ms, _, _))
+        .Times(packets_to_send_per_interval)
+        .WillRepeatedly(Return(true));
+    EXPECT_CALL(callback_, TimeToSendPacket(ssrc_high_priority, _,
+                                            second_capture_time_ms, _, _))
+        .Times(packets_to_send_per_interval)
+        .WillRepeatedly(Return(true));
+
     for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
       EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, capture_time_ms, _, _))
           .Times(1)
