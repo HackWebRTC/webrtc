@@ -248,6 +248,13 @@ TEST(AudioReceiveStreamTest, ConstructDestruct) {
       helper.config(), helper.audio_state(), helper.event_log());
 }
 
+MATCHER_P(VerifyHeaderExtension, expected_extension, "") {
+  return arg.extension.hasTransportSequenceNumber ==
+             expected_extension.hasTransportSequenceNumber &&
+         arg.extension.transportSequenceNumber ==
+             expected_extension.transportSequenceNumber;
+}
+
 TEST(AudioReceiveStreamTest, ReceiveRtpPacket) {
   ConfigHelper helper;
   helper.config().rtp.transport_cc = true;
@@ -260,6 +267,15 @@ TEST(AudioReceiveStreamTest, ReceiveRtpPacket) {
   std::vector<uint8_t> rtp_packet = CreateRtpHeaderWithOneByteExtension(
       kTransportSequenceNumberId, kTransportSequenceNumberValue, 2);
   PacketTime packet_time(5678000, 0);
+  const size_t kExpectedHeaderLength = 20;
+  RTPHeaderExtension expected_extension;
+  expected_extension.hasTransportSequenceNumber = true;
+  expected_extension.transportSequenceNumber = kTransportSequenceNumberValue;
+  EXPECT_CALL(*helper.remote_bitrate_estimator(),
+              IncomingPacket(packet_time.timestamp / 1000,
+                             rtp_packet.size() - kExpectedHeaderLength,
+                             VerifyHeaderExtension(expected_extension)))
+      .Times(1);
   EXPECT_CALL(*helper.channel_proxy(),
               ReceivedRTPPacket(&rtp_packet[0],
                                 rtp_packet.size(),

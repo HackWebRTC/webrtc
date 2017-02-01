@@ -336,6 +336,7 @@ bool RtpStreamReceiver::DeliverRtp(const uint8_t* rtp_packet,
                                  &header)) {
     return false;
   }
+  size_t payload_length = rtp_packet_length - header.headerLength;
   int64_t arrival_time_ms;
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (packet_time.timestamp != -1)
@@ -361,6 +362,8 @@ bool RtpStreamReceiver::DeliverRtp(const uint8_t* rtp_packet,
     }
   }
 
+  remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_length,
+                                            header);
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 
   bool in_order = IsPacketInOrder(header);

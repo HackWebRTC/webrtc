@@ -330,6 +330,19 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
     return false;
   }
 
+  // Only forward if the parsed header has one of the headers necessary for
+  // bandwidth estimation. RTP timestamps has different rates for audio and
+  // video and shouldn't be mixed.
+  if (config_.rtp.transport_cc &&
+      header.extension.hasTransportSequenceNumber) {
+    int64_t arrival_time_ms = rtc::TimeMillis();
+    if (packet_time.timestamp >= 0)
+      arrival_time_ms = (packet_time.timestamp + 500) / 1000;
+    size_t payload_size = length - header.headerLength;
+    remote_bitrate_estimator_->IncomingPacket(arrival_time_ms, payload_size,
+                                              header);
+  }
+
   return channel_proxy_->ReceivedRTPPacket(packet, length, packet_time);
 }
 
