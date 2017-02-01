@@ -29,6 +29,9 @@ void Ramp(float start_gain, float target_gain, AudioFrame* audio_frame) {
   RTC_DCHECK(audio_frame);
   RTC_DCHECK_GE(start_gain, 0.0f);
   RTC_DCHECK_GE(target_gain, 0.0f);
+  if (start_gain == target_gain) {
+    return;
+  }
 
   size_t samples = audio_frame->samples_per_channel_;
   RTC_DCHECK_LT(0, samples);
