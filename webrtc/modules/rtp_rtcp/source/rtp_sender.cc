@@ -36,6 +36,7 @@ namespace webrtc {
 namespace {
 // Max in the RFC 3550 is 255 bytes, we limit it to be modulus 32 for SRTP.
 constexpr size_t kMaxPaddingLength = 224;
+constexpr size_t kMinAudioPaddingLength = 50;
 constexpr int kSendSideDelayWindowMs = 1000;
 constexpr size_t kRtpHeaderLength = 12;
 constexpr uint16_t kMaxInitRtpSeqNumber = 32767;  // 2^15 -1.
@@ -481,11 +482,21 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
 }
 
 size_t RTPSender::SendPadData(size_t bytes, int probe_cluster_id) {
-  // Always send full padding packets. This is accounted for by the
-  // RtpPacketSender, which will make sure we don't send too much padding even
-  // if a single packet is larger than requested.
-  size_t padding_bytes_in_packet =
-      std::min(MaxPayloadSize(), kMaxPaddingLength);
+  size_t padding_bytes_in_packet;
+  if (audio_configured_) {
+    // Allow smaller padding packets for audio.
+    padding_bytes_in_packet = std::max(std::min(bytes, MaxPayloadSize()),
+                                       kMinAudioPaddingLength);
+    if (padding_bytes_in_packet > kMaxPaddingLength)
+      padding_bytes_in_packet = kMaxPaddingLength;
+  } else {
+    // Always send full padding packets. This is accounted for by the
+    // RtpPacketSender, which will make sure we don't send too much padding even
+    // if a single packet is larger than requested.
+    // We do this to avoid frequently sending small packets on higher bitrates.
+    padding_bytes_in_packet =
+        std::min(MaxPayloadSize(), kMaxPaddingLength);
+  }
   size_t bytes_sent = 0;
   while (bytes_sent < bytes) {
     int64_t now_ms = clock_->TimeInMilliseconds();
@@ -502,9 +513,15 @@ size_t RTPSender::SendPadData(size_t bytes, int probe_cluster_id) {
       timestamp = last_rtp_timestamp_;
       capture_time_ms = capture_time_ms_;
       if (rtx_ == kRtxOff) {
-        // Without RTX we can't send padding in the middle of frames.
-        if (!last_packet_marker_bit_)
+        if (payload_type_ == -1)
           break;
+        // Without RTX we can't send padding in the middle of frames.
+        // For audio marker bits doesn't mark the end of a frame and frames
+        // are usually a single packet, so for now we don't apply this rule
+        // for audio.
+        if (!audio_configured_ && !last_packet_marker_bit_) {
+          break;
+        }
         ssrc = ssrc_;
         sequence_number = sequence_number_;
         ++sequence_number_;
@@ -796,7 +813,7 @@ bool RTPSender::IsFecPacket(const RtpPacketToSend& packet) const {
 }
 
 size_t RTPSender::TimeToSendPadding(size_t bytes, int probe_cluster_id) {
-  if (audio_configured_ || bytes == 0)
+  if (bytes == 0)
     return 0;
   size_t bytes_sent = TrySendRedundantPayloads(bytes, probe_cluster_id);
   if (bytes_sent < bytes)
