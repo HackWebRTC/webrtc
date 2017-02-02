@@ -313,9 +313,8 @@ TEST_F(NetEqImplTest, InsertPacket) {
   rtc::scoped_refptr<MockAudioDecoderFactory> mock_decoder_factory(
       new rtc::RefCountedObject<MockAudioDecoderFactory>);
   EXPECT_CALL(*mock_decoder_factory, MakeAudioDecoderMock(_, _))
-      .WillOnce(Invoke([kPayloadLength, kFirstSequenceNumber, kFirstTimestamp,
-                        kFirstReceiveTime](const SdpAudioFormat& format,
-                                           std::unique_ptr<AudioDecoder>* dec) {
+      .WillOnce(Invoke([&](const SdpAudioFormat& format,
+                           std::unique_ptr<AudioDecoder>* dec) {
         EXPECT_EQ("pcmu", format.name);
 
         std::unique_ptr<MockAudioDecoder> mock_decoder(new MockAudioDecoder);
