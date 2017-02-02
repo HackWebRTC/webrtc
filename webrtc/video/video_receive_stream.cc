@@ -285,7 +285,6 @@ bool VideoReceiveStream::DeliverRtp(const uint8_t* packet,
 
 bool VideoReceiveStream::OnRecoveredPacket(const uint8_t* packet,
                                            size_t length) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   return rtp_stream_receiver_.OnRecoveredPacket(packet, length);
 }
 
