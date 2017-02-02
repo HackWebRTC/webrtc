@@ -872,6 +872,8 @@ rtc_source_set("webrtc_opus_c") {
     "codecs/opus/opus_interface.h",
   ]
 
+  defines = audio_coding_defines
+
   if (rtc_build_opus) {
     public_deps = [
       rtc_opus_dir,

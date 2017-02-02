@@ -151,7 +151,11 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
     // Opus supports frames shorter than 10ms,
     // but it doesn't help us to use them.
     // Mono and stereo.
+#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
+    {5, {480, 960, 1920, 2880, 5760}, 0, 2},
+#else
     {4, {480, 960, 1920, 2880}, 0, 2},
+#endif
 #endif
     // Comfort noise for three different sampling frequencies.
     {1, {240}, 240, 1},

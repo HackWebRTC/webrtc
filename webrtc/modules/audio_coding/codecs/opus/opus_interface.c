@@ -17,8 +17,13 @@
 #include <string.h>
 
 enum {
+#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
+  /* Maximum supported frame size in WebRTC is 120 ms. */
+  kWebRtcOpusMaxEncodeFrameSizeMs = 120,
+#else
   /* Maximum supported frame size in WebRTC is 60 ms. */
   kWebRtcOpusMaxEncodeFrameSizeMs = 60,
+#endif
 
   /* The format allows up to 120 ms frames. Since we don't control the other
    * side, we must allow for packets of that size. NetEq is currently limited

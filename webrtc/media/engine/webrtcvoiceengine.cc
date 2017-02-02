@@ -498,7 +498,12 @@ class WebRtcVoiceCodecs final {
 };
 
 const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[14] = {
+#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
+    {kOpusCodecName, 48000, 2, 111, true, {10, 20, 40, 60, 120},
+     kOpusMaxBitrateBps},
+#else
     {kOpusCodecName, 48000, 2, 111, true, {10, 20, 40, 60}, kOpusMaxBitrateBps},
+#endif
     {kIsacCodecName, 16000, 1, 103, true, {30, 60}, kIsacMaxBitrateBps},
     {kIsacCodecName, 32000, 1, 104, true, {30}, kIsacMaxBitrateBps},
     // G722 should be advertised as 8000 Hz because of the RFC "bug".
