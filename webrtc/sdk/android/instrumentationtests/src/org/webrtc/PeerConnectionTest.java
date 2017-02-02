@@ -716,14 +716,20 @@ public class PeerConnectionTest {
     assertEquals(PeerConnection.SignalingState.STABLE, offeringPC.signalingState());
     assertEquals(PeerConnection.SignalingState.STABLE, answeringPC.signalingState());
 
-    // Set a bitrate limit for the outgoing video stream for the offerer.
+    // Test some of the RtpSender API.
     RtpSender videoSender = null;
+    RtpSender audioSender = null;
     for (RtpSender sender : offeringPC.getSenders()) {
       if (sender.track().kind().equals("video")) {
         videoSender = sender;
+      } else {
+        audioSender = sender;
       }
     }
     assertNotNull(videoSender);
+    assertNotNull(audioSender);
+
+    // Set a bitrate limit for the outgoing video stream for the offerer.
     RtpParameters rtpParameters = videoSender.getParameters();
     assertNotNull(rtpParameters);
     assertEquals(1, rtpParameters.encodings.size());
@@ -731,6 +737,12 @@ public class PeerConnectionTest {
 
     rtpParameters.encodings.get(0).maxBitrateBps = 300000;
     assertTrue(videoSender.setParameters(rtpParameters));
+
+    // Create a DTMF sender.
+    DtmfSender dtmfSender = audioSender.dtmf();
+    assertNotNull(dtmfSender);
+    assertTrue(dtmfSender.canInsertDtmf());
+    assertTrue(dtmfSender.insertDtmf("123", 300, 100));
 
     // Verify that we can read back the updated value.
     rtpParameters = videoSender.getParameters();

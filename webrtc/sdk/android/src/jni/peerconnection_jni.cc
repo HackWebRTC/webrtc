@@ -90,6 +90,7 @@ using webrtc::DataBuffer;
 using webrtc::DataChannelInit;
 using webrtc::DataChannelInterface;
 using webrtc::DataChannelObserver;
+using webrtc::DtmfSenderInterface;
 using webrtc::IceCandidateInterface;
 using webrtc::LogcatTraceContext;
 using webrtc::MediaConstraintsInterface;
@@ -2357,13 +2358,19 @@ JOW(jboolean, RtpSender_nativeSetTrack)(JNIEnv* jni,
       ->SetTrack(reinterpret_cast<MediaStreamTrackInterface*>(j_track_pointer));
 }
 
-JOW(jlong, RtpSender_nativeGetTrack)(JNIEnv* jni,
-                                  jclass,
-                                  jlong j_rtp_sender_pointer,
-                                  jlong j_track_pointer) {
+JOW(jlong, RtpSender_nativeGetTrack)
+(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
   return jlongFromPointer(
       reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
           ->track()
+          .release());
+}
+
+JOW(jlong, RtpSender_nativeGetDtmfSender)
+(JNIEnv* jni, jclass, jlong j_rtp_sender_pointer) {
+  return jlongFromPointer(
+      reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
+          ->GetDtmfSender()
           .release());
 }
 
@@ -2613,6 +2620,47 @@ JOW(void, RtpReceiver_nativeUnsetObserver)
   if (observer) {
     delete observer;
   }
+}
+
+JOW(jboolean, DtmfSender_nativeCanInsertDtmf)
+(JNIEnv* jni, jclass, jlong j_dtmf_sender_pointer) {
+  return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
+      ->CanInsertDtmf();
+}
+
+JOW(jboolean, DtmfSender_nativeInsertDtmf)
+(JNIEnv* jni,
+ jclass,
+ jlong j_dtmf_sender_pointer,
+ jstring tones,
+ jint duration,
+ jint inter_tone_gap) {
+  return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
+      ->InsertDtmf(JavaToStdString(jni, tones), duration, inter_tone_gap);
+}
+
+JOW(jstring, DtmfSender_nativeTones)
+(JNIEnv* jni, jclass, jlong j_dtmf_sender_pointer) {
+  return JavaStringFromStdString(
+      jni,
+      reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)->tones());
+}
+
+JOW(jint, DtmfSender_nativeDuration)
+(JNIEnv* jni, jclass, jlong j_dtmf_sender_pointer) {
+  return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
+      ->duration();
+}
+
+JOW(jint, DtmfSender_nativeInterToneGap)
+(JNIEnv* jni, jclass, jlong j_dtmf_sender_pointer) {
+  return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
+      ->inter_tone_gap();
+}
+
+JOW(void, DtmfSender_free)
+(JNIEnv* jni, jclass, jlong j_dtmf_sender_pointer) {
+  reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)->Release();
 }
 
 }  // namespace webrtc_jni

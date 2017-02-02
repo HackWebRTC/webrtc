@@ -140,6 +140,7 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/CameraSession.java",
     "api/org/webrtc/CameraVideoCapturer.java",
     "api/org/webrtc/DataChannel.java",
+    "api/org/webrtc/DtmfSender.java",
     "api/org/webrtc/EglBase.java",
     "api/org/webrtc/EglBase10.java",
     "api/org/webrtc/EglBase14.java",

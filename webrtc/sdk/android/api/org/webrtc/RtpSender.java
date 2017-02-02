@@ -17,11 +17,16 @@ public class RtpSender {
   private MediaStreamTrack cachedTrack;
   private boolean ownsTrack = true;
 
+  private final DtmfSender dtmfSender;
+
   public RtpSender(long nativeRtpSender) {
     this.nativeRtpSender = nativeRtpSender;
     long track = nativeGetTrack(nativeRtpSender);
     // It may be possible for an RtpSender to be created without a track.
-    cachedTrack = (track == 0) ? null : new MediaStreamTrack(track);
+    cachedTrack = (track != 0) ? new MediaStreamTrack(track) : null;
+
+    long nativeDtmfSender = nativeGetDtmfSender(nativeRtpSender);
+    dtmfSender = (nativeDtmfSender != 0) ? new DtmfSender(nativeDtmfSender) : null;
   }
 
   // If |takeOwnership| is true, the RtpSender takes ownership of the track
@@ -57,7 +62,14 @@ public class RtpSender {
     return nativeId(nativeRtpSender);
   }
 
+  public DtmfSender dtmf() {
+    return dtmfSender;
+  }
+
   public void dispose() {
+    if (dtmfSender != null) {
+      dtmfSender.dispose();
+    }
     if (cachedTrack != null && ownsTrack) {
       cachedTrack.dispose();
     }
@@ -69,6 +81,10 @@ public class RtpSender {
   // This should increment the reference count of the track.
   // Will be released in dispose() or setTrack().
   private static native long nativeGetTrack(long nativeRtpSender);
+
+  // This should increment the reference count of the DTMF sender.
+  // Will be released in dispose().
+  private static native long nativeGetDtmfSender(long nativeRtpSender);
 
   private static native boolean nativeSetParameters(long nativeRtpSender, RtpParameters parameters);
 
