@@ -10,8 +10,6 @@
 
 package org.webrtc.voiceengine;
 
-import org.webrtc.Logging;
-
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -20,9 +18,9 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.os.Build;
-
 import java.util.Timer;
 import java.util.TimerTask;
+import org.webrtc.Logging;
 
 // WebRtcAudioManager handles tasks that uses android.media.AudioManager.
 // At construction, storeAudioParameters() is called and it retrieves
@@ -248,6 +246,7 @@ public class WebRtcAudioManager {
 
   // Returns true if the device has professional audio level of functionality
   // and therefore supports the lowest possible round-trip latency.
+  @TargetApi(23)
   private boolean isProAudioSupported() {
     return WebRtcAudioUtils.runningOnMarshmallowOrHigher()
         && context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_PRO);

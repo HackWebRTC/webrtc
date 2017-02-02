@@ -7,7 +7,6 @@
        to suppress.py. -->
   <issue id="NewApi"></issue>
 
-  <issue id="InlinedApi" severity="ignore"/>
   <issue id="Assert" severity="ignore"/>
   <issue id="UseSparseArrays" severity="ignore"/>
 
@@ -33,4 +32,9 @@
   <issue id="MissingApplicationIcon" severity="ignore"/>
   <issue id="AllowBackup" severity="ignore"/>
   <issue id="MissingVersion" severity="ignore"/>
+
+  <!-- Ignore all lint errors in Chromium code. -->
+  <issue id="all">
+    <ignore path="**/org/chromium/**/*.java" />
+  </issue>
 </lint>

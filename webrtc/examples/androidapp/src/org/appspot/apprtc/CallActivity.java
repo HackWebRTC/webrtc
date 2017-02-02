@@ -10,6 +10,7 @@
 
 package org.appspot.apprtc;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
@@ -20,6 +21,7 @@ import android.content.pm.PackageManager;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -191,8 +193,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     getWindow().addFlags(LayoutParams.FLAG_FULLSCREEN | LayoutParams.FLAG_KEEP_SCREEN_ON
         | LayoutParams.FLAG_DISMISS_KEYGUARD | LayoutParams.FLAG_SHOW_WHEN_LOCKED
         | LayoutParams.FLAG_TURN_SCREEN_ON);
-    getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-        | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
     setContentView(R.layout.activity_call);
 
     iceConnected = false;
@@ -362,14 +363,28 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
         getApplicationContext(), peerConnectionParameters, CallActivity.this);
 
     if (screencaptureEnabled) {
-      MediaProjectionManager mediaProjectionManager =
-          (MediaProjectionManager) getApplication().getSystemService(
-              Context.MEDIA_PROJECTION_SERVICE);
-      startActivityForResult(
-          mediaProjectionManager.createScreenCaptureIntent(), CAPTURE_PERMISSION_REQUEST_CODE);
+      startScreenCapture();
     } else {
       startCall();
     }
+  }
+
+  @TargetApi(19)
+  private static int getSystemUiVisibility() {
+    int flags = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      flags |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+    }
+    return flags;
+  }
+
+  @TargetApi(21)
+  private void startScreenCapture() {
+    MediaProjectionManager mediaProjectionManager =
+        (MediaProjectionManager) getApplication().getSystemService(
+            Context.MEDIA_PROJECTION_SERVICE);
+    startActivityForResult(
+        mediaProjectionManager.createScreenCaptureIntent(), CAPTURE_PERMISSION_REQUEST_CODE);
   }
 
   @Override

@@ -10,9 +10,6 @@
 
 package org.webrtc;
 
-import static android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET;
-import static android.net.NetworkCapabilities.TRANSPORT_CELLULAR;
-
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -31,7 +28,6 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.telephony.TelephonyManager;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -327,14 +323,17 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
         return false;
       }
       final NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
-      return capabilities != null && capabilities.hasCapability(NET_CAPABILITY_INTERNET);
+      return capabilities != null
+          && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
     }
 
     /** Only callable on Lollipop and newer releases. */
     @SuppressLint("NewApi")
     public void registerNetworkCallback(NetworkCallback networkCallback) {
       connectivityManager.registerNetworkCallback(
-          new NetworkRequest.Builder().addCapability(NET_CAPABILITY_INTERNET).build(),
+          new NetworkRequest.Builder()
+              .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+              .build(),
           networkCallback);
     }
 
@@ -342,7 +341,8 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     @SuppressLint("NewApi")
     public void requestMobileNetwork(NetworkCallback networkCallback) {
       NetworkRequest.Builder builder = new NetworkRequest.Builder();
-      builder.addCapability(NET_CAPABILITY_INTERNET).addTransportType(TRANSPORT_CELLULAR);
+      builder.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+          .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
       connectivityManager.requestNetwork(builder.build(), networkCallback);
     }
 
