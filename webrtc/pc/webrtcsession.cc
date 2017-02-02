@@ -1189,6 +1189,7 @@ cricket::IceConfig WebRtcSession::ParseIceConfig(
   ice_config.continual_gathering_policy = gathering_policy;
   ice_config.presume_writable_when_fully_relayed =
       config.presume_writable_when_fully_relayed;
+  ice_config.ice_check_min_interval = config.ice_check_min_interval;
   return ice_config;
 }
 

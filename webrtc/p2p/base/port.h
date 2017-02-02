@@ -72,7 +72,10 @@ static const int CONNECTION_WRITE_TIMEOUT = 15 * 1000;  // 15 seconds
 static const int CONNECTION_WRITE_CONNECT_TIMEOUT = 5 * 1000;  // 5 seconds
 
 // This is the length of time that we wait for a ping response to come back.
-static const int CONNECTION_RESPONSE_TIMEOUT = 5 * 1000;  // 5 seconds
+// There is no harm to keep this value high other than a small amount
+// of increased memory.  But in some networks (2G),
+// we observe up to 60s RTTs.
+static const int CONNECTION_RESPONSE_TIMEOUT = 60 * 1000;  // 60 seconds
 
 // The number of pings that must fail to respond before we become unwritable.
 static const uint32_t CONNECTION_WRITE_CONNECT_FAILURES = 5;

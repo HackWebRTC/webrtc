@@ -42,6 +42,7 @@ namespace cricket {
 enum class IceRestartState { CONNECTING, CONNECTED, DISCONNECTED, MAX_VALUE };
 
 extern const int WEAK_PING_INTERVAL;
+extern const int STRONG_PING_INTERVAL;
 extern const int WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL;
 extern const int STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL;
 static const int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
@@ -162,6 +163,23 @@ class P2PTransportChannel : public IceTransportInternal,
   // A transport channel is weak if the current best connection is either
   // not receiving or not writable, or if there is no best connection at all.
   bool weak() const;
+
+  int weak_ping_interval() const {
+    if (config_.ice_check_min_interval &&
+        weak_ping_interval_ < *config_.ice_check_min_interval) {
+      return *config_.ice_check_min_interval;
+    }
+    return weak_ping_interval_;
+  }
+
+  int strong_ping_interval() const {
+    if (config_.ice_check_min_interval &&
+        STRONG_PING_INTERVAL < *config_.ice_check_min_interval) {
+      return *config_.ice_check_min_interval;
+    }
+    return STRONG_PING_INTERVAL;
+  }
+
   // Returns true if it's possible to send packets on |connection|.
   bool ReadyToSend(Connection* connection) const;
   void UpdateConnectionStates();

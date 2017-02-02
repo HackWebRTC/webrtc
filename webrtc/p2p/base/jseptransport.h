@@ -187,6 +187,11 @@ struct IceConfig {
   // Default nomination mode if the remote does not support renomination.
   NominationMode default_nomination_mode = NominationMode::SEMI_AGGRESSIVE;
 
+  // ICE checks (STUN pings) will not be sent at higher rate (lower interval)
+  // than this, no matter what other settings there are.
+  // Measure in milliseconds.
+  rtc::Optional<int> ice_check_min_interval;
+
   IceConfig() {}
   IceConfig(int receiving_timeout_ms,
             int backup_connection_ping_interval,

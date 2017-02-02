@@ -71,7 +71,7 @@ static const int PING_PACKET_SIZE = 60 * 8;
 // The next two ping intervals are at the channel level.
 // STRONG_PING_INTERVAL (480ms) is applied when the selected connection is both
 // writable and receiving.
-static const int STRONG_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 1000;
+const int STRONG_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 1000;
 // WEAK_PING_INTERVAL (48ms) is applied when the selected connection is either
 // not writable or not receiving.
 const int WEAK_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 10000;
@@ -429,6 +429,12 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     config_.default_nomination_mode = config.default_nomination_mode;
     LOG(LS_INFO) << "Set default nomination mode to "
                  << static_cast<int>(config_.default_nomination_mode);
+  }
+
+  if (config_.ice_check_min_interval != config.ice_check_min_interval) {
+    config_.ice_check_min_interval = config.ice_check_min_interval;
+    LOG(LS_INFO) << "Set min ping interval to "
+                 << *config_.ice_check_min_interval;
   }
 }
 
@@ -1522,8 +1528,8 @@ void P2PTransportChannel::OnCheckAndPing() {
                conn->num_pings_sent() < MIN_PINGS_AT_WEAK_PING_INTERVAL;
       });
   int ping_interval = (weak() || need_more_pings_at_weak_interval)
-                          ? weak_ping_interval_
-                          : STRONG_PING_INTERVAL;
+                          ? weak_ping_interval()
+                          : strong_ping_interval();
   if (rtc::TimeMillis() >= last_ping_sent_ms_ + ping_interval) {
     Connection* conn = FindNextPingableConnection();
     if (conn) {
@@ -1607,7 +1613,7 @@ int P2PTransportChannel::CalculateActiveWritablePingInterval(
   // Ping each connection at a higher rate at least
   // MIN_PINGS_AT_WEAK_PING_INTERVAL times.
   if (conn->num_pings_sent() < MIN_PINGS_AT_WEAK_PING_INTERVAL) {
-    return weak_ping_interval_;
+    return weak_ping_interval();
   }
 
   int stable_interval = config_.stable_writable_connection_ping_interval;

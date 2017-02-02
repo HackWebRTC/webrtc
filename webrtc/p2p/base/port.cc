@@ -60,11 +60,11 @@ inline bool TooLongWithoutResponse(
 // We will restrict RTT estimates (when used for determining state) to be
 // within a reasonable range.
 const int MINIMUM_RTT = 100;   // 0.1 seconds
-const int MAXIMUM_RTT = 3000;  // 3 seconds
+const int MAXIMUM_RTT = 60000;  // 60 seconds
 
 // When we don't have any RTT data, we have to pick something reasonable.  We
 // use a large value just in case the connection is really slow.
-const int DEFAULT_RTT = MAXIMUM_RTT;
+const int DEFAULT_RTT = 3000;  // 3 seconds
 
 // Computes our estimate of the RTT given the current estimate.
 inline int ConservativeRTTEstimate(int rtt) {

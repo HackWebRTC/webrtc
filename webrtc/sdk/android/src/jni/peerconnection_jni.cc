@@ -1759,6 +1759,11 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   jfieldID j_prune_turn_ports_id =
       GetFieldID(jni, j_rtc_config_class, "pruneTurnPorts", "Z");
 
+  jfieldID j_ice_check_min_interval_id = GetFieldID(
+      jni, j_rtc_config_class, "iceCheckMinInterval", "Ljava/lang/Integer;");
+  jclass j_integer_class = jni->FindClass("java/lang/Integer");
+  jmethodID int_value_id = GetMethodID(jni, j_integer_class, "intValue", "()I");
+
   rtc_config->type =
       JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
   rtc_config->bundle_policy =
@@ -1787,6 +1792,14 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
       GetBooleanField(jni, j_rtc_config, j_prune_turn_ports_id);
   rtc_config->presume_writable_when_fully_relayed = GetBooleanField(
       jni, j_rtc_config, j_presume_writable_when_fully_relayed_id);
+  jobject j_ice_check_min_interval =
+      GetNullableObjectField(jni, j_rtc_config, j_ice_check_min_interval_id);
+  if (!IsNull(jni, j_ice_check_min_interval)) {
+    int ice_check_min_interval_value =
+        jni->CallIntMethod(j_ice_check_min_interval, int_value_id);
+    rtc_config->ice_check_min_interval =
+        rtc::Optional<int>(ice_check_min_interval_value);
+  }
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(

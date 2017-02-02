@@ -380,6 +380,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // If true, ICE role is redetermined when peerconnection sets a local
     // transport description that indicates an ICE restart.
     bool redetermine_role_on_ice_restart = true;
+    // If set, the min interval (max rate) at which we will send ICE checks
+    // (STUN pings), in milliseconds.
+    rtc::Optional<int> ice_check_min_interval;
     //
     // Don't forget to update operator== if adding something.
     //

@@ -1217,7 +1217,7 @@ TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileDisconnected) {
 
   // Drop all packets so that both channels become not writable.
   fw()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, kPublicAddrs[0]);
-  const int kWriteTimeoutDelay = 6000;
+  const int kWriteTimeoutDelay = 8000;
   EXPECT_TRUE_SIMULATED_WAIT(!ep1_ch1()->writable() && !ep2_ch1()->writable(),
                              kWriteTimeoutDelay, clock);
 
