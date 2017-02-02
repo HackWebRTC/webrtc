@@ -928,12 +928,12 @@ void TurnPort::SendRequest(StunRequest* req, int delay) {
 void TurnPort::AddRequestAuthInfo(StunMessage* msg) {
   // If we've gotten the necessary data from the server, add it to our request.
   VERIFY(!hash_.empty());
-  VERIFY(msg->AddAttribute(new StunByteStringAttribute(
-      STUN_ATTR_USERNAME, credentials_.username)));
-  VERIFY(msg->AddAttribute(new StunByteStringAttribute(
-      STUN_ATTR_REALM, realm_)));
-  VERIFY(msg->AddAttribute(new StunByteStringAttribute(
-      STUN_ATTR_NONCE, nonce_)));
+  msg->AddAttribute(new StunByteStringAttribute(
+      STUN_ATTR_USERNAME, credentials_.username));
+  msg->AddAttribute(new StunByteStringAttribute(
+      STUN_ATTR_REALM, realm_));
+  msg->AddAttribute(new StunByteStringAttribute(
+      STUN_ATTR_NONCE, nonce_));
   VERIFY(msg->AddMessageIntegrity(hash()));
 }
 
@@ -1082,7 +1082,7 @@ void TurnAllocateRequest::Prepare(StunMessage* request) {
   StunUInt32Attribute* transport_attr = StunAttribute::CreateUInt32(
       STUN_ATTR_REQUESTED_TRANSPORT);
   transport_attr->SetValue(IPPROTO_UDP << 24);
-  VERIFY(request->AddAttribute(transport_attr));
+  request->AddAttribute(transport_attr);
   if (!port_->hash().empty()) {
     port_->AddRequestAuthInfo(request);
   }
@@ -1256,8 +1256,8 @@ void TurnRefreshRequest::Prepare(StunMessage* request) {
   // No attributes need to be included.
   request->SetType(TURN_REFRESH_REQUEST);
   if (lifetime_ > -1) {
-    VERIFY(request->AddAttribute(new StunUInt32Attribute(
-        STUN_ATTR_LIFETIME, lifetime_)));
+    request->AddAttribute(new StunUInt32Attribute(
+        STUN_ATTR_LIFETIME, lifetime_));
   }
 
   port_->AddRequestAuthInfo(request);
@@ -1326,8 +1326,8 @@ TurnCreatePermissionRequest::TurnCreatePermissionRequest(
 void TurnCreatePermissionRequest::Prepare(StunMessage* request) {
   // Create the request as indicated in RFC5766, Section 9.1.
   request->SetType(TURN_CREATE_PERMISSION_REQUEST);
-  VERIFY(request->AddAttribute(new StunXorAddressAttribute(
-      STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_)));
+  request->AddAttribute(new StunXorAddressAttribute(
+      STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
   port_->AddRequestAuthInfo(request);
 }
 
@@ -1387,10 +1387,10 @@ TurnChannelBindRequest::TurnChannelBindRequest(
 void TurnChannelBindRequest::Prepare(StunMessage* request) {
   // Create the request as indicated in RFC5766, Section 11.1.
   request->SetType(TURN_CHANNEL_BIND_REQUEST);
-  VERIFY(request->AddAttribute(new StunUInt32Attribute(
-      STUN_ATTR_CHANNEL_NUMBER, channel_id_ << 16)));
-  VERIFY(request->AddAttribute(new StunXorAddressAttribute(
-      STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_)));
+  request->AddAttribute(new StunUInt32Attribute(
+      STUN_ATTR_CHANNEL_NUMBER, channel_id_ << 16));
+  request->AddAttribute(new StunXorAddressAttribute(
+      STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
   port_->AddRequestAuthInfo(request);
 }
 
@@ -1471,10 +1471,10 @@ int TurnEntry::Send(const void* data, size_t size, bool payload,
     msg.SetType(TURN_SEND_INDICATION);
     msg.SetTransactionID(
         rtc::CreateRandomString(kStunTransactionIdLength));
-    VERIFY(msg.AddAttribute(new StunXorAddressAttribute(
-        STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_)));
-    VERIFY(msg.AddAttribute(new StunByteStringAttribute(
-        STUN_ATTR_DATA, data, size)));
+    msg.AddAttribute(new StunXorAddressAttribute(
+        STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
+    msg.AddAttribute(new StunByteStringAttribute(
+        STUN_ATTR_DATA, data, size));
     VERIFY(msg.Write(&buf));
 
     // If we're sending real data, request a channel bind that we can use later.

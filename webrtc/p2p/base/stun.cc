@@ -16,7 +16,6 @@
 
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/crc32.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
@@ -74,11 +73,10 @@ bool StunMessage::SetTransactionID(const std::string& str) {
   return true;
 }
 
-bool StunMessage::AddAttribute(StunAttribute* attr) {
+void StunMessage::AddAttribute(StunAttribute* attr) {
   // Fail any attributes that aren't valid for this type of message.
-  if (attr->value_type() != GetAttributeValueType(attr->type())) {
-    return false;
-  }
+  RTC_DCHECK_EQ(attr->value_type(), GetAttributeValueType(attr->type()));
+
   attrs_->push_back(attr);
   attr->SetOwner(this);
   size_t attr_length = attr->length();
@@ -86,7 +84,6 @@ bool StunMessage::AddAttribute(StunAttribute* attr) {
     attr_length += (4 - (attr_length % 4));
   }
   length_ += static_cast<uint16_t>(attr_length + 4);
-  return true;
 }
 
 const StunAddressAttribute* StunMessage::GetAddress(int type) const {
@@ -220,7 +217,7 @@ bool StunMessage::AddMessageIntegrity(const char* key,
   StunByteStringAttribute* msg_integrity_attr =
       new StunByteStringAttribute(STUN_ATTR_MESSAGE_INTEGRITY,
           std::string(kStunMessageIntegritySize, '0'));
-  VERIFY(AddAttribute(msg_integrity_attr));
+  AddAttribute(msg_integrity_attr);
 
   // Calculate the HMAC for the message.
   ByteBufferWriter buf;
@@ -281,7 +278,7 @@ bool StunMessage::AddFingerprint() {
   // it can't fail.
   StunUInt32Attribute* fingerprint_attr =
      new StunUInt32Attribute(STUN_ATTR_FINGERPRINT, 0);
-  VERIFY(AddAttribute(fingerprint_attr));
+  AddAttribute(fingerprint_attr);
 
   // Calculate the CRC-32 for the message and insert it.
   ByteBufferWriter buf;

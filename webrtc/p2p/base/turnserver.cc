@@ -113,8 +113,8 @@ static bool InitErrorResponse(const StunMessage* req, int code,
     return false;
   resp->SetType(resp_type);
   resp->SetTransactionID(req->transaction_id());
-  VERIFY(resp->AddAttribute(new cricket::StunErrorCodeAttribute(
-      STUN_ATTR_ERROR_CODE, code, reason)));
+  resp->AddAttribute(new cricket::StunErrorCodeAttribute(
+      STUN_ATTR_ERROR_CODE, code, reason));
   return true;
 }
 
@@ -356,7 +356,7 @@ void TurnServer::HandleBindingRequest(TurnServerConnection* conn,
   StunAddressAttribute* mapped_addr_attr;
   mapped_addr_attr = new StunXorAddressAttribute(
       STUN_ATTR_XOR_MAPPED_ADDRESS, conn->src());
-  VERIFY(response.AddAttribute(mapped_addr_attr));
+  response.AddAttribute(mapped_addr_attr);
 
   SendStun(conn, &response);
 }
@@ -470,10 +470,10 @@ void TurnServer::SendErrorResponseWithRealmAndNonce(
     timestamp = ts_for_next_nonce_;
     ts_for_next_nonce_ = 0;
   }
-  VERIFY(resp.AddAttribute(
-      new StunByteStringAttribute(STUN_ATTR_NONCE, GenerateNonce(timestamp))));
-  VERIFY(resp.AddAttribute(new StunByteStringAttribute(
-      STUN_ATTR_REALM, realm_)));
+  resp.AddAttribute(
+      new StunByteStringAttribute(STUN_ATTR_NONCE, GenerateNonce(timestamp)));
+  resp.AddAttribute(new StunByteStringAttribute(
+      STUN_ATTR_REALM, realm_));
   SendStun(conn, &resp);
 }
 
@@ -483,8 +483,8 @@ void TurnServer::SendErrorResponseWithAlternateServer(
   TurnMessage resp;
   InitErrorResponse(msg, STUN_ERROR_TRY_ALTERNATE,
                     STUN_ERROR_REASON_TRY_ALTERNATE_SERVER, &resp);
-  VERIFY(resp.AddAttribute(new StunAddressAttribute(
-      STUN_ATTR_ALTERNATE_SERVER, addr)));
+  resp.AddAttribute(new StunAddressAttribute(
+      STUN_ATTR_ALTERNATE_SERVER, addr));
   SendStun(conn, &resp);
 }
 
@@ -492,8 +492,8 @@ void TurnServer::SendStun(TurnServerConnection* conn, StunMessage* msg) {
   rtc::ByteBufferWriter buf;
   // Add a SOFTWARE attribute if one is set.
   if (!software_.empty()) {
-    VERIFY(msg->AddAttribute(
-        new StunByteStringAttribute(STUN_ATTR_SOFTWARE, software_)));
+    msg->AddAttribute(
+        new StunByteStringAttribute(STUN_ATTR_SOFTWARE, software_));
   }
   msg->Write(&buf);
   Send(conn, buf);
@@ -658,9 +658,9 @@ void TurnServerAllocation::HandleAllocateRequest(const TurnMessage* msg) {
           external_socket_->GetLocalAddress());
   StunUInt32Attribute* lifetime_attr =
       new StunUInt32Attribute(STUN_ATTR_LIFETIME, lifetime_secs);
-  VERIFY(response.AddAttribute(mapped_addr_attr));
-  VERIFY(response.AddAttribute(relayed_addr_attr));
-  VERIFY(response.AddAttribute(lifetime_attr));
+  response.AddAttribute(mapped_addr_attr);
+  response.AddAttribute(relayed_addr_attr);
+  response.AddAttribute(lifetime_attr);
 
   SendResponse(&response);
 }
@@ -682,7 +682,7 @@ void TurnServerAllocation::HandleRefreshRequest(const TurnMessage* msg) {
 
   StunUInt32Attribute* lifetime_attr =
       new StunUInt32Attribute(STUN_ATTR_LIFETIME, lifetime_secs);
-  VERIFY(response.AddAttribute(lifetime_attr));
+  response.AddAttribute(lifetime_attr);
 
   SendResponse(&response);
 }
@@ -819,10 +819,10 @@ void TurnServerAllocation::OnExternalPacket(
     msg.SetType(TURN_DATA_INDICATION);
     msg.SetTransactionID(
         rtc::CreateRandomString(kStunTransactionIdLength));
-    VERIFY(msg.AddAttribute(new StunXorAddressAttribute(
-        STUN_ATTR_XOR_PEER_ADDRESS, addr)));
-    VERIFY(msg.AddAttribute(new StunByteStringAttribute(
-        STUN_ATTR_DATA, data, size)));
+    msg.AddAttribute(new StunXorAddressAttribute(
+        STUN_ATTR_XOR_PEER_ADDRESS, addr));
+    msg.AddAttribute(new StunByteStringAttribute(
+        STUN_ATTR_DATA, data, size));
     server_->SendStun(&conn_, &msg);
   } else {
     LOG_J(LS_WARNING, this) << "Received external packet without permission, "

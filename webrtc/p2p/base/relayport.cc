@@ -580,32 +580,32 @@ int RelayEntry::SendTo(const void* data, size_t size,
       StunAttribute::CreateByteString(STUN_ATTR_MAGIC_COOKIE);
   magic_cookie_attr->CopyBytes(TURN_MAGIC_COOKIE_VALUE,
                                sizeof(TURN_MAGIC_COOKIE_VALUE));
-  VERIFY(request.AddAttribute(magic_cookie_attr));
+  request.AddAttribute(magic_cookie_attr);
 
   StunByteStringAttribute* username_attr =
       StunAttribute::CreateByteString(STUN_ATTR_USERNAME);
   username_attr->CopyBytes(port_->username_fragment().c_str(),
                            port_->username_fragment().size());
-  VERIFY(request.AddAttribute(username_attr));
+  request.AddAttribute(username_attr);
 
   StunAddressAttribute* addr_attr =
       StunAttribute::CreateAddress(STUN_ATTR_DESTINATION_ADDRESS);
   addr_attr->SetIP(addr.ipaddr());
   addr_attr->SetPort(addr.port());
-  VERIFY(request.AddAttribute(addr_attr));
+  request.AddAttribute(addr_attr);
 
   // Attempt to lock
   if (ext_addr_ == addr) {
     StunUInt32Attribute* options_attr =
       StunAttribute::CreateUInt32(STUN_ATTR_OPTIONS);
     options_attr->SetValue(0x1);
-    VERIFY(request.AddAttribute(options_attr));
+    request.AddAttribute(options_attr);
   }
 
   StunByteStringAttribute* data_attr =
       StunAttribute::CreateByteString(STUN_ATTR_DATA);
   data_attr->CopyBytes(data, size);
-  VERIFY(request.AddAttribute(data_attr));
+  request.AddAttribute(data_attr);
 
   // TODO: compute the HMAC.
 
@@ -792,7 +792,7 @@ void AllocateRequest::Prepare(StunMessage* request) {
   username_attr->CopyBytes(
       entry_->port()->username_fragment().c_str(),
       entry_->port()->username_fragment().size());
-  VERIFY(request->AddAttribute(username_attr));
+  request->AddAttribute(username_attr);
 }
 
 void AllocateRequest::OnSent() {
