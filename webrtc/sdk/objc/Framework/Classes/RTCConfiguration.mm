@@ -37,6 +37,7 @@
 @synthesize shouldPruneTurnPorts = _shouldPruneTurnPorts;
 @synthesize shouldPresumeWritableWhenFullyRelayed =
     _shouldPresumeWritableWhenFullyRelayed;
+@synthesize iceCheckMinInterval = _iceCheckMinInterval;
 
 - (instancetype)init {
   if (self = [super init]) {
@@ -68,13 +69,17 @@
     _shouldPruneTurnPorts = config.prune_turn_ports;
     _shouldPresumeWritableWhenFullyRelayed =
         config.presume_writable_when_fully_relayed;
+    if (config.ice_check_min_interval) {
+      _iceCheckMinInterval =
+          [NSNumber numberWithInt:*config.ice_check_min_interval];
+    }
   }
   return self;
 }
 
 - (NSString *)description {
   return [NSString stringWithFormat:
-      @"RTCConfiguration: {\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n}\n",
+      @"RTCConfiguration: {\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n}\n",
       _iceServers,
       [[self class] stringForTransportPolicy:_iceTransportPolicy],
       [[self class] stringForBundlePolicy:_bundlePolicy],
@@ -89,7 +94,8 @@
       _iceBackupCandidatePairPingInterval,
       _iceCandidatePoolSize,
       _shouldPruneTurnPorts,
-      _shouldPresumeWritableWhenFullyRelayed];
+      _shouldPresumeWritableWhenFullyRelayed,
+      _iceCheckMinInterval];
 }
 
 #pragma mark - Private
@@ -139,6 +145,10 @@
   nativeConfig->prune_turn_ports = _shouldPruneTurnPorts ? true : false;
   nativeConfig->presume_writable_when_fully_relayed =
       _shouldPresumeWritableWhenFullyRelayed ? true : false;
+  if (_iceCheckMinInterval != nil) {
+    nativeConfig->ice_check_min_interval =
+        rtc::Optional<int>(_iceCheckMinInterval.intValue);
+  }
 
   return nativeConfig.release();
 }
