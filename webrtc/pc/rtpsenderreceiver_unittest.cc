@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
 #include "webrtc/media/base/mediachannel.h"
@@ -38,6 +39,8 @@ using ::testing::Exactly;
 using ::testing::InvokeWithoutArgs;
 using ::testing::Return;
 
+namespace {
+
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoTrackId[] = "video_1";
 static const char kAudioTrackId[] = "audio_1";
@@ -45,10 +48,14 @@ static const uint32_t kVideoSsrc = 98;
 static const uint32_t kVideoSsrc2 = 100;
 static const uint32_t kAudioSsrc = 99;
 static const uint32_t kAudioSsrc2 = 101;
+static const int kDefaultTimeout = 10000;  // 10 seconds.
+
+}  // namespace
 
 namespace webrtc {
 
-class RtpSenderReceiverTest : public testing::Test {
+class RtpSenderReceiverTest : public testing::Test,
+                              public sigslot::has_slots<> {
  public:
   RtpSenderReceiverTest()
       :  // Create fake media engine/etc. so we can create channels to use to
@@ -75,6 +82,8 @@ class RtpSenderReceiverTest : public testing::Test {
         &fake_media_controller_, rtp_transport, nullptr, rtc::Thread::Current(),
         cricket::CN_VIDEO, nullptr, rtcp_mux_required, srtp_required,
         cricket::VideoOptions());
+    voice_channel_->Enable(true);
+    video_channel_->Enable(true);
     voice_media_channel_ = media_engine_->GetVoiceChannel(0);
     video_media_channel_ = media_engine_->GetVideoChannel(0);
     RTC_CHECK(voice_channel_);
@@ -104,7 +113,14 @@ class RtpSenderReceiverTest : public testing::Test {
         cricket::StreamParams::CreateLegacy(kVideoSsrc2));
   }
 
-  void TearDown() override { channel_manager_.Terminate(); }
+  // Needed to use DTMF sender.
+  void AddDtmfCodec() {
+    cricket::AudioSendParameters params;
+    const cricket::AudioCodec kTelephoneEventCodec(106, "telephone-event", 8000,
+                                                   0, 1);
+    params.codecs.push_back(kTelephoneEventCodec);
+    voice_media_channel_->SetSendParameters(params);
+  }
 
   void AddVideoTrack() { AddVideoTrack(false); }
 
@@ -124,8 +140,12 @@ class RtpSenderReceiverTest : public testing::Test {
         new AudioRtpSender(stream_->GetAudioTracks()[0], stream_->label(),
                            voice_channel_, nullptr);
     audio_rtp_sender_->SetSsrc(kAudioSsrc);
+    audio_rtp_sender_->GetOnDestroyedSignal()->connect(
+        this, &RtpSenderReceiverTest::OnAudioSenderDestroyed);
     VerifyVoiceChannelInput();
   }
+
+  void OnAudioSenderDestroyed() { audio_sender_destroyed_signal_fired_ = true; }
 
   void CreateVideoRtpSender() { CreateVideoRtpSender(false); }
 
@@ -247,6 +267,7 @@ class RtpSenderReceiverTest : public testing::Test {
   rtc::scoped_refptr<MediaStreamInterface> stream_;
   rtc::scoped_refptr<VideoTrackInterface> video_track_;
   rtc::scoped_refptr<AudioTrackInterface> audio_track_;
+  bool audio_sender_destroyed_signal_fired_ = false;
 };
 
 // Test that |voice_channel_| is updated when an audio track is associated
@@ -719,6 +740,68 @@ TEST_F(RtpSenderReceiverTest,
             video_media_channel_->options().is_screencast);
 
   DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, AudioSenderHasDtmfSender) {
+  CreateAudioRtpSender();
+  EXPECT_NE(nullptr, audio_rtp_sender_->GetDtmfSender());
+}
+
+TEST_F(RtpSenderReceiverTest, VideoSenderDoesNotHaveDtmfSender) {
+  CreateVideoRtpSender();
+  EXPECT_EQ(nullptr, video_rtp_sender_->GetDtmfSender());
+}
+
+// Test that the DTMF sender is really using |voice_channel_|, and thus returns
+// true/false from CanSendDtmf based on what |voice_channel_| returns.
+TEST_F(RtpSenderReceiverTest, CanInsertDtmf) {
+  AddDtmfCodec();
+  CreateAudioRtpSender();
+  auto dtmf_sender = audio_rtp_sender_->GetDtmfSender();
+  ASSERT_NE(nullptr, dtmf_sender);
+  EXPECT_TRUE(dtmf_sender->CanInsertDtmf());
+}
+
+TEST_F(RtpSenderReceiverTest, CanNotInsertDtmf) {
+  CreateAudioRtpSender();
+  auto dtmf_sender = audio_rtp_sender_->GetDtmfSender();
+  ASSERT_NE(nullptr, dtmf_sender);
+  // DTMF codec has not been added, as it was in the above test.
+  EXPECT_FALSE(dtmf_sender->CanInsertDtmf());
+}
+
+TEST_F(RtpSenderReceiverTest, InsertDtmf) {
+  AddDtmfCodec();
+  CreateAudioRtpSender();
+  auto dtmf_sender = audio_rtp_sender_->GetDtmfSender();
+  ASSERT_NE(nullptr, dtmf_sender);
+
+  EXPECT_EQ(0U, voice_media_channel_->dtmf_info_queue().size());
+
+  // Insert DTMF
+  const int expected_duration = 90;
+  dtmf_sender->InsertDtmf("012", expected_duration, 100);
+
+  // Verify
+  ASSERT_EQ_WAIT(3U, voice_media_channel_->dtmf_info_queue().size(),
+                 kDefaultTimeout);
+  const uint32_t send_ssrc =
+      voice_media_channel_->send_streams()[0].first_ssrc();
+  EXPECT_TRUE(CompareDtmfInfo(voice_media_channel_->dtmf_info_queue()[0],
+                              send_ssrc, 0, expected_duration));
+  EXPECT_TRUE(CompareDtmfInfo(voice_media_channel_->dtmf_info_queue()[1],
+                              send_ssrc, 1, expected_duration));
+  EXPECT_TRUE(CompareDtmfInfo(voice_media_channel_->dtmf_info_queue()[2],
+                              send_ssrc, 2, expected_duration));
+}
+
+// Make sure the signal from "GetOnDestroyedSignal()" fires when the sender is
+// destroyed, which is needed for the DTMF sender.
+TEST_F(RtpSenderReceiverTest, TestOnDestroyedSignal) {
+  CreateAudioRtpSender();
+  EXPECT_FALSE(audio_sender_destroyed_signal_fired_);
+  audio_rtp_sender_ = nullptr;
+  EXPECT_TRUE(audio_sender_destroyed_signal_fired_);
 }
 
 }  // namespace webrtc

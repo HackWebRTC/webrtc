@@ -434,8 +434,6 @@ class WebRtcSessionTest
             fake_sctp_transport_factory_)));
     session_->SignalDataChannelOpenMessage.connect(
         this, &WebRtcSessionTest::OnDataChannelOpenMessage);
-    session_->GetOnDestroyedSignal()->connect(
-        this, &WebRtcSessionTest::OnSessionDestroyed);
 
     configuration_.rtcp_mux_policy = rtcp_mux_policy;
     EXPECT_EQ(PeerConnectionInterface::kIceConnectionNew,
@@ -453,8 +451,6 @@ class WebRtcSessionTest
     last_data_channel_label_ = label;
     last_data_channel_config_ = config;
   }
-
-  void OnSessionDestroyed() { session_destroyed_ = true; }
 
   void Init() {
     Init(nullptr, PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
@@ -500,17 +496,6 @@ class WebRtcSessionTest
     cert_generator->set_should_fail(true);
     Init(std::move(cert_generator),
          PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
-  }
-
-  void InitWithDtmfCodec() {
-    // Add kTelephoneEventCodec for dtmf test.
-    const cricket::AudioCodec kTelephoneEventCodec(106, "telephone-event", 8000,
-                                                   0, 1);
-    std::vector<cricket::AudioCodec> codecs;
-    codecs.push_back(kTelephoneEventCodec);
-    media_engine_->SetAudioCodecs(codecs);
-    desc_factory_->set_audio_codecs(codecs, codecs);
-    Init();
   }
 
   void InitWithGcm() {
@@ -1197,18 +1182,6 @@ class WebRtcSessionTest
       EXPECT_EQ(expected_candidate_num, observer_.mline_1_candidates_.size());
     }
   }
-  // Tests that we can only send DTMF when the dtmf codec is supported.
-  void TestCanInsertDtmf(bool can) {
-    if (can) {
-      InitWithDtmfCodec();
-    } else {
-      Init();
-    }
-    SendAudioVideoStream1();
-    CreateAndSetRemoteOfferAndLocalAnswer();
-    EXPECT_FALSE(session_->CanInsertDtmf(""));
-    EXPECT_EQ(can, session_->CanInsertDtmf(kAudioTrack1));
-  }
 
   bool ContainsVideoCodecWithName(const SessionDescriptionInterface* desc,
                                   const std::string& codec_name) {
@@ -1567,7 +1540,6 @@ class WebRtcSessionTest
   // Last values received from data channel creation signal.
   std::string last_data_channel_label_;
   InternalDataChannelInit last_data_channel_config_;
-  bool session_destroyed_ = false;
   bool with_gcm_ = false;
 };
 
@@ -3507,39 +3479,6 @@ TEST_F(WebRtcSessionTest, SetSetupGcm) {
   CreateAndSetRemoteOfferAndLocalAnswer();
 }
 
-TEST_F(WebRtcSessionTest, CanNotInsertDtmf) {
-  TestCanInsertDtmf(false);
-}
-
-TEST_F(WebRtcSessionTest, CanInsertDtmf) {
-  TestCanInsertDtmf(true);
-}
-
-TEST_F(WebRtcSessionTest, InsertDtmf) {
-  // Setup
-  Init();
-  SendAudioVideoStream1();
-  CreateAndSetRemoteOfferAndLocalAnswer();
-  FakeVoiceMediaChannel* channel = media_engine_->GetVoiceChannel(0);
-  EXPECT_EQ(0U, channel->dtmf_info_queue().size());
-
-  // Insert DTMF
-  const int expected_duration = 90;
-  session_->InsertDtmf(kAudioTrack1, 0, expected_duration);
-  session_->InsertDtmf(kAudioTrack1, 1, expected_duration);
-  session_->InsertDtmf(kAudioTrack1, 2, expected_duration);
-
-  // Verify
-  ASSERT_EQ(3U, channel->dtmf_info_queue().size());
-  const uint32_t send_ssrc = channel->send_streams()[0].first_ssrc();
-  EXPECT_TRUE(CompareDtmfInfo(channel->dtmf_info_queue()[0], send_ssrc, 0,
-                              expected_duration));
-  EXPECT_TRUE(CompareDtmfInfo(channel->dtmf_info_queue()[1], send_ssrc, 1,
-                              expected_duration));
-  EXPECT_TRUE(CompareDtmfInfo(channel->dtmf_info_queue()[2], send_ssrc, 2,
-                              expected_duration));
-}
-
 // This test verifies the |initial_offerer| flag when session initiates the
 // call.
 TEST_F(WebRtcSessionTest, TestInitiatorFlagAsOriginator) {
@@ -4398,14 +4337,6 @@ TEST_F(WebRtcSessionTest, CreateOffersAndShutdown) {
 
 TEST_F(WebRtcSessionTest, TestPacketOptionsAndOnPacketSent) {
   TestPacketOptions();
-}
-
-// Make sure the signal from "GetOnDestroyedSignal()" fires when the session
-// is destroyed.
-TEST_F(WebRtcSessionTest, TestOnDestroyedSignal) {
-  Init();
-  session_.reset();
-  EXPECT_TRUE(session_destroyed_);
 }
 
 // TODO(bemasc): Add a TestIceStatesBundle with BUNDLE enabled.  That test

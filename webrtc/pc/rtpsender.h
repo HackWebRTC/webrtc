@@ -24,6 +24,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/media/base/audiosource.h"
 #include "webrtc/pc/channel.h"
+#include "webrtc/pc/dtmfsender.h"
 #include "webrtc/pc/statscollector.h"
 
 namespace webrtc {
@@ -68,7 +69,8 @@ class LocalAudioSinkAdapter : public AudioTrackSinkInterface,
   rtc::CriticalSection lock_;
 };
 
-class AudioRtpSender : public ObserverInterface,
+class AudioRtpSender : public DtmfProviderInterface,
+                       public ObserverInterface,
                        public rtc::RefCountedObject<RtpSenderInternal> {
  public:
   // StatsCollector provided so that Add/RemoveLocalAudioTrack can be called
@@ -91,10 +93,15 @@ class AudioRtpSender : public ObserverInterface,
 
   virtual ~AudioRtpSender();
 
-  // ObserverInterface implementation
+  // DtmfSenderProvider implementation.
+  bool CanInsertDtmf() override;
+  bool InsertDtmf(int code, int duration) override;
+  sigslot::signal0<>* GetOnDestroyedSignal() override;
+
+  // ObserverInterface implementation.
   void OnChanged() override;
 
-  // RtpSenderInterface implementation
+  // RtpSenderInterface implementation.
   bool SetTrack(MediaStreamTrackInterface* track) override;
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
     return track_;
@@ -115,6 +122,8 @@ class AudioRtpSender : public ObserverInterface,
 
   RtpParameters GetParameters() const override;
   bool SetParameters(const RtpParameters& parameters) override;
+
+  rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
 
   // RtpSenderInternal implementation.
   void SetSsrc(uint32_t ssrc) override;
@@ -140,11 +149,16 @@ class AudioRtpSender : public ObserverInterface,
   // Helper function to call SetAudioSend with "stop sending" parameters.
   void ClearAudioSend();
 
+  void CreateDtmfSender();
+
+  sigslot::signal0<> SignalDestroyed;
+
   std::string id_;
   std::string stream_id_;
   cricket::VoiceChannel* channel_ = nullptr;
   StatsCollector* stats_;
   rtc::scoped_refptr<AudioTrackInterface> track_;
+  rtc::scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
   uint32_t ssrc_ = 0;
   bool cached_track_enabled_ = false;
   bool stopped_ = false;
@@ -196,6 +210,8 @@ class VideoRtpSender : public ObserverInterface,
 
   RtpParameters GetParameters() const override;
   bool SetParameters(const RtpParameters& parameters) override;
+
+  rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
 
   // RtpSenderInternal implementation.
   void SetSsrc(uint32_t ssrc) override;

@@ -57,6 +57,7 @@ AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
       sink_adapter_(new LocalAudioSinkAdapter()) {
   track_->RegisterObserver(this);
   track_->AddSink(sink_adapter_.get());
+  CreateDtmfSender();
 }
 
 AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
@@ -71,6 +72,7 @@ AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
       sink_adapter_(new LocalAudioSinkAdapter()) {
   track_->RegisterObserver(this);
   track_->AddSink(sink_adapter_.get());
+  CreateDtmfSender();
 }
 
 AudioRtpSender::AudioRtpSender(cricket::VoiceChannel* channel,
@@ -79,10 +81,48 @@ AudioRtpSender::AudioRtpSender(cricket::VoiceChannel* channel,
       stream_id_(rtc::CreateRandomUuid()),
       channel_(channel),
       stats_(stats),
-      sink_adapter_(new LocalAudioSinkAdapter()) {}
+      sink_adapter_(new LocalAudioSinkAdapter()) {
+  CreateDtmfSender();
+}
 
 AudioRtpSender::~AudioRtpSender() {
+  // For DtmfSender.
+  SignalDestroyed();
   Stop();
+}
+
+bool AudioRtpSender::CanInsertDtmf() {
+  if (!channel_) {
+    LOG(LS_ERROR) << "CanInsertDtmf: No audio channel exists.";
+    return false;
+  }
+  // Check that this RTP sender is active (description has been applied that
+  // matches an SSRC to its ID).
+  if (!ssrc_) {
+    LOG(LS_ERROR) << "CanInsertDtmf: Sender does not have SSRC.";
+    return false;
+  }
+  return channel_->CanInsertDtmf();
+}
+
+bool AudioRtpSender::InsertDtmf(int code, int duration) {
+  if (!channel_) {
+    LOG(LS_ERROR) << "CanInsertDtmf: No audio channel exists.";
+    return false;
+  }
+  if (!ssrc_) {
+    LOG(LS_ERROR) << "CanInsertDtmf: Sender does not have SSRC.";
+    return false;
+  }
+  if (!channel_->InsertDtmf(ssrc_, code, duration)) {
+    LOG(LS_ERROR) << "Failed to insert DTMF to channel.";
+    return false;
+  }
+  return true;
+}
+
+sigslot::signal0<>* AudioRtpSender::GetOnDestroyedSignal() {
+  return &SignalDestroyed;
 }
 
 void AudioRtpSender::OnChanged() {
@@ -156,6 +196,10 @@ bool AudioRtpSender::SetParameters(const RtpParameters& parameters) {
     return false;
   }
   return channel_->SetRtpSendParameters(ssrc_, parameters);
+}
+
+rtc::scoped_refptr<DtmfSenderInterface> AudioRtpSender::GetDtmfSender() const {
+  return dtmf_sender_proxy_;
 }
 
 void AudioRtpSender::SetSsrc(uint32_t ssrc) {
@@ -235,6 +279,20 @@ void AudioRtpSender::ClearAudioSend() {
   if (!channel_->SetAudioSend(ssrc_, false, &options, nullptr)) {
     LOG(LS_WARNING) << "ClearAudioSend: ssrc is incorrect: " << ssrc_;
   }
+}
+
+void AudioRtpSender::CreateDtmfSender() {
+  // Should be on signaling thread.
+  // TODO(deadbeef): Add thread checking to RtpSender/RtpReceiver
+  // implementations.
+  rtc::scoped_refptr<DtmfSenderInterface> sender(
+      DtmfSender::Create(track_, rtc::Thread::Current(), this));
+  if (!sender.get()) {
+    LOG(LS_ERROR) << "CreateDtmfSender failed on DtmfSender::Create.";
+    RTC_NOTREACHED();
+  }
+  dtmf_sender_proxy_ =
+      DtmfSenderProxy::Create(rtc::Thread::Current(), sender.get());
 }
 
 VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
@@ -334,6 +392,11 @@ bool VideoRtpSender::SetParameters(const RtpParameters& parameters) {
     return false;
   }
   return channel_->SetRtpSendParameters(ssrc_, parameters);
+}
+
+rtc::scoped_refptr<DtmfSenderInterface> VideoRtpSender::GetDtmfSender() const {
+  LOG(LS_ERROR) << "Tried to get DTMF sender from video sender.";
+  return nullptr;
 }
 
 void VideoRtpSender::SetSsrc(uint32_t ssrc) {

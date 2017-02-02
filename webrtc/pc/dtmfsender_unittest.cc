@@ -78,13 +78,9 @@ class FakeDtmfProvider : public DtmfProviderInterface {
   }
 
   // Implements DtmfProviderInterface.
-  bool CanInsertDtmf(const std::string& track_label) override {
-    return (can_insert_dtmf_tracks_.count(track_label) != 0);
-  }
+  bool CanInsertDtmf() override { return can_insert_; }
 
-  bool InsertDtmf(const std::string& track_label,
-                  int code,
-                  int duration) override {
+  bool InsertDtmf(int code, int duration) override {
     int gap = 0;
     // TODO(ronghuawu): Make the timer (basically the rtc::TimeNanos)
     // mockable and use a fake timer in the unit tests.
@@ -110,15 +106,10 @@ class FakeDtmfProvider : public DtmfProviderInterface {
   }
 
   // helper functions
-  void AddCanInsertDtmfTrack(const std::string& label) {
-    can_insert_dtmf_tracks_.insert(label);
-  }
-  void RemoveCanInsertDtmfTrack(const std::string& label) {
-    can_insert_dtmf_tracks_.erase(label);
-  }
+  void SetCanInsertDtmf(bool can_insert) { can_insert_ = can_insert; }
 
  private:
-  std::set<std::string> can_insert_dtmf_tracks_;
+  bool can_insert_ = false;
   std::vector<DtmfInfo> dtmf_info_queue_;
   int64_t last_insert_dtmf_call_;
   sigslot::signal0<> SignalDestroyed;
@@ -130,7 +121,7 @@ class DtmfSenderTest : public testing::Test {
       : track_(AudioTrack::Create(kTestAudioLabel, NULL)),
         observer_(new rtc::RefCountedObject<FakeDtmfObserver>()),
         provider_(new FakeDtmfProvider()) {
-    provider_->AddCanInsertDtmfTrack(kTestAudioLabel);
+    provider_->SetCanInsertDtmf(true);
     dtmf_ = DtmfSender::Create(track_, rtc::Thread::Current(),
                                provider_.get());
     dtmf_->RegisterObserver(observer_.get());
@@ -227,7 +218,7 @@ class DtmfSenderTest : public testing::Test {
 
 TEST_F(DtmfSenderTest, CanInsertDtmf) {
   EXPECT_TRUE(dtmf_->CanInsertDtmf());
-  provider_->RemoveCanInsertDtmfTrack(kTestAudioLabel);
+  provider_->SetCanInsertDtmf(false);
   EXPECT_FALSE(dtmf_->CanInsertDtmf());
 }
 
@@ -333,7 +324,7 @@ TEST_F(DtmfSenderTest, TryInsertDtmfWhenItDoesNotWork) {
   std::string tones = "3,4";
   int duration = 100;
   int inter_tone_gap = 50;
-  provider_->RemoveCanInsertDtmfTrack(kTestAudioLabel);
+  provider_->SetCanInsertDtmf(false);
   EXPECT_FALSE(dtmf_->InsertDtmf(tones, duration, inter_tone_gap));
 }
 

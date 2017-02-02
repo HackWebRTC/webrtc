@@ -63,8 +63,8 @@ rtc::scoped_refptr<DtmfSender> DtmfSender::Create(
     AudioTrackInterface* track,
     rtc::Thread* signaling_thread,
     DtmfProviderInterface* provider) {
-  if (!track || !signaling_thread) {
-    return NULL;
+  if (!signaling_thread) {
+    return nullptr;
   }
   rtc::scoped_refptr<DtmfSender> dtmf_sender(
       new rtc::RefCountedObject<DtmfSender>(track, signaling_thread,
@@ -81,7 +81,6 @@ DtmfSender::DtmfSender(AudioTrackInterface* track,
       provider_(provider),
       duration_(kDtmfDefaultDurationMs),
       inter_tone_gap_(kDtmfDefaultGapMs) {
-  RTC_DCHECK(track_ != NULL);
   RTC_DCHECK(signaling_thread_ != NULL);
   // TODO(deadbeef): Once we can use shared_ptr and weak_ptr,
   // do that instead of relying on a "destroyed" signal.
@@ -109,7 +108,7 @@ bool DtmfSender::CanInsertDtmf() {
   if (!provider_) {
     return false;
   }
-  return provider_->CanInsertDtmf(track_->id());
+  return provider_->CanInsertDtmf();
 }
 
 bool DtmfSender::InsertDtmf(const std::string& tones, int duration,
@@ -206,7 +205,7 @@ void DtmfSender::DoInsertDtmf() {
     }
     // The provider starts playout of the given tone on the
     // associated RTP media stream, using the appropriate codec.
-    if (!provider_->InsertDtmf(track_->id(), code, duration_)) {
+    if (!provider_->InsertDtmf(code, duration_)) {
       LOG(LS_ERROR) << "The DtmfProvider can no longer send DTMF.";
       return;
     }

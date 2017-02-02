@@ -949,20 +949,15 @@ rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
   }
   if (!track) {
     LOG(LS_ERROR) << "CreateDtmfSender - track is NULL.";
-    return NULL;
+    return nullptr;
   }
-  if (!local_streams_->FindAudioTrack(track->id())) {
-    LOG(LS_ERROR) << "CreateDtmfSender is called with a non local audio track.";
-    return NULL;
+  auto it = FindSenderForTrack(track);
+  if (it == senders_.end()) {
+    LOG(LS_ERROR) << "CreateDtmfSender called with a non-added track.";
+    return nullptr;
   }
 
-  rtc::scoped_refptr<DtmfSenderInterface> sender(
-      DtmfSender::Create(track, signaling_thread(), session_.get()));
-  if (!sender.get()) {
-    LOG(LS_ERROR) << "CreateDtmfSender failed on DtmfSender::Create.";
-    return NULL;
-  }
-  return DtmfSenderProxy::Create(signaling_thread(), sender.get());
+  return (*it)->GetDtmfSender();
 }
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(

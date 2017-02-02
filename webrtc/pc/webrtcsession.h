@@ -27,7 +27,6 @@
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/pc/datachannel.h"
-#include "webrtc/pc/dtmfsender.h"
 #include "webrtc/pc/mediacontroller.h"
 #include "webrtc/pc/mediasession.h"
 
@@ -140,8 +139,6 @@ struct ChannelNamePairs {
 // packets are represented by TransportChannels.  The application-level protocol
 // is represented by SessionDecription objects.
 class WebRtcSession :
-
-    public DtmfProviderInterface,
     public DataChannelProviderInterface,
     public sigslot::has_slots<> {
  public:
@@ -285,12 +282,6 @@ class WebRtcSession :
   virtual bool GetLocalTrackIdBySsrc(uint32_t ssrc, std::string* track_id);
   virtual bool GetRemoteTrackIdBySsrc(uint32_t ssrc, std::string* track_id);
 
-  // Implements DtmfProviderInterface.
-  bool CanInsertDtmf(const std::string& track_id) override;
-  bool InsertDtmf(const std::string& track_id,
-                  int code, int duration) override;
-  sigslot::signal0<>* GetOnDestroyedSignal() override;
-
   // Implements DataChannelProviderInterface.
   bool SendData(const cricket::SendDataParams& params,
                 const rtc::CopyOnWriteBuffer& payload,
@@ -361,8 +352,6 @@ class WebRtcSession :
   sigslot::signal0<> SignalVideoChannelDestroyed;
   sigslot::signal0<> SignalDataChannelCreated;
   sigslot::signal0<> SignalDataChannelDestroyed;
-  // Called when the whole session is destroyed.
-  sigslot::signal0<> SignalDestroyed;
 
   // Called when a valid data channel OPEN message is received.
   // std::string represents the data channel label.

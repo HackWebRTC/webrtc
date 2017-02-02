@@ -231,29 +231,6 @@ static bool VerifyIceUfragPwdPresent(const SessionDescription* desc) {
   return true;
 }
 
-static bool GetAudioSsrcByTrackId(const SessionDescription* session_description,
-                                  const std::string& track_id,
-                                  uint32_t* ssrc) {
-  const cricket::ContentInfo* audio_info =
-      cricket::GetFirstAudioContent(session_description);
-  if (!audio_info) {
-    LOG(LS_ERROR) << "Audio not used in this call";
-    return false;
-  }
-
-  const cricket::MediaContentDescription* audio_content =
-      static_cast<const cricket::MediaContentDescription*>(
-          audio_info->description);
-  const cricket::StreamParams* stream =
-      cricket::GetStreamByIds(audio_content->streams(), "", track_id);
-  if (!stream) {
-    return false;
-  }
-
-  *ssrc = stream->first_ssrc();
-  return true;
-}
-
 static bool GetTrackIdBySsrc(const SessionDescription* session_description,
                              uint32_t ssrc,
                              std::string* track_id) {
@@ -523,7 +500,6 @@ WebRtcSession::~WebRtcSession() {
     quic_data_transport_.reset();
   }
 #endif
-  SignalDestroyed();
 
   LOG(LS_INFO) << "Session: " << id() << " is destroyed.";
 }
@@ -1246,49 +1222,6 @@ std::string WebRtcSession::BadStateErrMsg(State state) {
   std::ostringstream desc;
   desc << "Called in wrong state: " << GetStateString(state);
   return desc.str();
-}
-
-bool WebRtcSession::CanInsertDtmf(const std::string& track_id) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
-  if (!voice_channel_) {
-    LOG(LS_ERROR) << "CanInsertDtmf: No audio channel exists.";
-    return false;
-  }
-  uint32_t send_ssrc = 0;
-  // The Dtmf is negotiated per channel not ssrc, so we only check if the ssrc
-  // exists.
-  if (!local_description() ||
-      !GetAudioSsrcByTrackId(local_description()->description(), track_id,
-                             &send_ssrc)) {
-    LOG(LS_ERROR) << "CanInsertDtmf: Track does not exist: " << track_id;
-    return false;
-  }
-  return voice_channel_->CanInsertDtmf();
-}
-
-bool WebRtcSession::InsertDtmf(const std::string& track_id,
-                               int code, int duration) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
-  if (!voice_channel_) {
-    LOG(LS_ERROR) << "InsertDtmf: No audio channel exists.";
-    return false;
-  }
-  uint32_t send_ssrc = 0;
-  if (!(local_description() &&
-        GetAudioSsrcByTrackId(local_description()->description(),
-                              track_id, &send_ssrc))) {
-    LOG(LS_ERROR) << "InsertDtmf: Track does not exist: " << track_id;
-    return false;
-  }
-  if (!voice_channel_->InsertDtmf(send_ssrc, code, duration)) {
-    LOG(LS_ERROR) << "Failed to insert DTMF to channel.";
-    return false;
-  }
-  return true;
-}
-
-sigslot::signal0<>* WebRtcSession::GetOnDestroyedSignal() {
-  return &SignalDestroyed;
 }
 
 bool WebRtcSession::SendData(const cricket::SendDataParams& params,
