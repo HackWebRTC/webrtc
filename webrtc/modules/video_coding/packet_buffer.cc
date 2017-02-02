@@ -211,17 +211,38 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       // Find the start index by searching backward until the packet with
       // the |frame_begin| flag is set.
       int start_index = index;
+
+      bool is_h264 = data_buffer_[start_index].codec == kVideoCodecH264;
+      int64_t frame_timestamp = data_buffer_[start_index].timestamp;
       while (true) {
         frame_size += data_buffer_[start_index].sizeBytes;
         max_nack_count =
             std::max(max_nack_count, data_buffer_[start_index].timesNacked);
         sequence_buffer_[start_index].frame_created = true;
 
-        if (sequence_buffer_[start_index].frame_begin)
+        if (!is_h264 && sequence_buffer_[start_index].frame_begin)
           break;
 
         start_index = start_index > 0 ? start_index - 1 : size_ - 1;
-        start_seq_num--;
+
+        // In the case of H264 we don't have a frame_begin bit (yes,
+        // |frame_begin| might be set to true but that is a lie). So instead
+        // we traverese backwards as long as we have a previous packet and
+        // the timestamp of that packet is the same as this one. This may cause
+        // the PacketBuffer to hand out incomplete frames.
+        // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=7106
+        //
+        // Since we ignore the |frame_begin| flag of the inserted packets
+        // we check that |start_index != static_cast<int>(index)| to make sure
+        // that we don't get stuck in a loop if the packet buffer is filled
+        // with packets of the same timestamp.
+        if (is_h264 && start_index != static_cast<int>(index) &&
+            (!sequence_buffer_[start_index].used ||
+             data_buffer_[start_index].timestamp != frame_timestamp)) {
+          break;
+        }
+
+        --start_seq_num;
       }
 
       found_frames.emplace_back(
