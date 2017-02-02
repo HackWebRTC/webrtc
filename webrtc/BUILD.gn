@@ -227,15 +227,21 @@ if (!build_with_chromium) {
     visibility = [ "//:default" ]
 
     sources = [
-      # TODO(kjellander): Remove this whenever possible. GN's static_library
-      # target type requires at least one object to avoid errors linking.
-      "no_op_function.cc",
-
       # TODO(ossu): Keep this here until donwstream projects have updated.
       # http://bugs.webrtc.org/6716
       "call.h",
       "config.h",
     ]
+
+    # complete_static_lib doesn't work on Mac since libtool cannot support
+    # multiple objects with the same filenames (https://bugs.webrtc.org/6418).
+    if (is_win || is_linux || is_android) {
+      complete_static_lib = true
+    } else {
+      # TODO(kjellander): Remove this whenever possible. GN's static_library
+      # target type requires at least one object to avoid errors linking.
+      sources += [ "no_op_function.cc" ]
+    }
 
     defines = []
 
