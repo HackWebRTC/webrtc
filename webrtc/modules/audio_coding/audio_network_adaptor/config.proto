@@ -51,6 +51,12 @@ message FrameLengthController {
 
   // Uplink bandwidth above which frame length should switch from 60ms to 20ms.
   optional int32 fl_60ms_to_20ms_bandwidth_bps = 4;
+
+  // Uplink bandwidth below which frame length can switch from 60ms to 120ms.
+  optional int32 fl_60ms_to_120ms_bandwidth_bps = 5;
+
+  // Uplink bandwidth above which frame length should switch from 120ms to 60ms.
+  optional int32 fl_120ms_to_60ms_bandwidth_bps = 6;
 }
 
 message ChannelController {

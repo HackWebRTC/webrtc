@@ -850,7 +850,7 @@ rtc_static_library("webrtc_opus") {
     ":webrtc_opus_c",
   ]
 
-  defines = []
+  defines = audio_codec_defines
   if (rtc_opus_variable_complexity) {
     defines += [ "WEBRTC_OPUS_VARIABLE_COMPLEXITY=1" ]
   } else {

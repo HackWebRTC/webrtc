@@ -22,14 +22,12 @@ FrameLengthController::Config::Config(
     int initial_frame_length_ms,
     float fl_increasing_packet_loss_fraction,
     float fl_decreasing_packet_loss_fraction,
-    int fl_20ms_to_60ms_bandwidth_bps,
-    int fl_60ms_to_20ms_bandwidth_bps)
+    std::map<FrameLengthChange, int> fl_changing_bandwidths_bps)
     : encoder_frame_lengths_ms(encoder_frame_lengths_ms),
       initial_frame_length_ms(initial_frame_length_ms),
       fl_increasing_packet_loss_fraction(fl_increasing_packet_loss_fraction),
       fl_decreasing_packet_loss_fraction(fl_decreasing_packet_loss_fraction),
-      fl_20ms_to_60ms_bandwidth_bps(fl_20ms_to_60ms_bandwidth_bps),
-      fl_60ms_to_20ms_bandwidth_bps(fl_60ms_to_20ms_bandwidth_bps) {}
+      fl_changing_bandwidths_bps(std::move(fl_changing_bandwidths_bps)) {}
 
 FrameLengthController::Config::Config(const Config& other) = default;
 
@@ -42,11 +40,6 @@ FrameLengthController::FrameLengthController(const Config& config)
                                config_.initial_frame_length_ms);
   // |encoder_frame_lengths_ms| must contain |initial_frame_length_ms|.
   RTC_DCHECK(frame_length_ms_ != config_.encoder_frame_lengths_ms.end());
-
-  frame_length_change_criteria_.insert(std::make_pair(
-      FrameLengthChange(20, 60), config_.fl_20ms_to_60ms_bandwidth_bps));
-  frame_length_change_criteria_.insert(std::make_pair(
-      FrameLengthChange(60, 20), config_.fl_60ms_to_20ms_bandwidth_bps));
 }
 
 FrameLengthController::~FrameLengthController() = default;
@@ -72,15 +65,13 @@ void FrameLengthController::MakeDecision(
   config->frame_length_ms = rtc::Optional<int>(*frame_length_ms_);
 }
 
-FrameLengthController::FrameLengthChange::FrameLengthChange(
+FrameLengthController::Config::FrameLengthChange::FrameLengthChange(
     int from_frame_length_ms,
     int to_frame_length_ms)
     : from_frame_length_ms(from_frame_length_ms),
       to_frame_length_ms(to_frame_length_ms) {}
 
-FrameLengthController::FrameLengthChange::~FrameLengthChange() = default;
-
-bool FrameLengthController::FrameLengthChange::operator<(
+bool FrameLengthController::Config::FrameLengthChange::operator<(
     const FrameLengthChange& rhs) const {
   return from_frame_length_ms < rhs.from_frame_length_ms ||
          (from_frame_length_ms == rhs.from_frame_length_ms &&
@@ -99,10 +90,10 @@ bool FrameLengthController::FrameLengthIncreasingDecision(
   if (longer_frame_length_ms == config_.encoder_frame_lengths_ms.end())
     return false;
 
-  auto increase_threshold = frame_length_change_criteria_.find(
-      FrameLengthChange(*frame_length_ms_, *longer_frame_length_ms));
+  auto increase_threshold = config_.fl_changing_bandwidths_bps.find(
+      Config::FrameLengthChange(*frame_length_ms_, *longer_frame_length_ms));
 
-  if (increase_threshold == frame_length_change_criteria_.end())
+  if (increase_threshold == config_.fl_changing_bandwidths_bps.end())
     return false;
 
   return (uplink_bandwidth_bps_ &&
@@ -124,10 +115,10 @@ bool FrameLengthController::FrameLengthDecreasingDecision(
     return false;
 
   auto shorter_frame_length_ms = std::prev(frame_length_ms_);
-  auto decrease_threshold = frame_length_change_criteria_.find(
-      FrameLengthChange(*frame_length_ms_, *shorter_frame_length_ms));
+  auto decrease_threshold = config_.fl_changing_bandwidths_bps.find(
+      Config::FrameLengthChange(*frame_length_ms_, *shorter_frame_length_ms));
 
-  if (decrease_threshold == frame_length_change_criteria_.end())
+  if (decrease_threshold == config_.fl_changing_bandwidths_bps.end())
     return false;
 
   return (uplink_bandwidth_bps_ &&

@@ -1478,7 +1478,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
           // The adaptor will only be active for the Opus encoder.
           if (config_.audio_network_adaptor_config &&
               IsCodec(config_.send_codec_spec.codec_inst, kOpusCodecName)) {
+#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
+            max_packet_size_ms = 120;
+#else
             max_packet_size_ms = 60;
+#endif
             min_packet_size_ms = 20;
           }
 

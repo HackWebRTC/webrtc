@@ -35,7 +35,12 @@ constexpr int kSampleRateHz = 48000;
 constexpr int kMinBitrateBps = 6000;
 
 constexpr int kMaxBitrateBps = 512000;
+
+#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
+constexpr int kSupportedFrameLengths[] = {20, 60, 120};
+#else
 constexpr int kSupportedFrameLengths[] = {20, 60};
+#endif
 
 // PacketLossFractionSmoother uses an exponential filter with a time constant
 // of -1.0 / ln(0.9999) = 10000 ms.

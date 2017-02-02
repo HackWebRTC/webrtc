@@ -24,12 +24,17 @@ namespace webrtc {
 class FrameLengthController final : public Controller {
  public:
   struct Config {
+    struct FrameLengthChange {
+      FrameLengthChange(int from_frame_length_ms, int to_frame_length_ms);
+      bool operator<(const FrameLengthChange& rhs) const;
+      int from_frame_length_ms;
+      int to_frame_length_ms;
+    };
     Config(const std::vector<int>& encoder_frame_lengths_ms,
            int initial_frame_length_ms,
            float fl_increasing_packet_loss_fraction,
            float fl_decreasing_packet_loss_fraction,
-           int fl_20ms_to_60ms_bandwidth_bps,
-           int fl_60ms_to_20ms_bandwidth_bps);
+           std::map<FrameLengthChange, int> fl_changing_bandwidths_bps);
     Config(const Config& other);
     ~Config();
     std::vector<int> encoder_frame_lengths_ms;
@@ -38,11 +43,7 @@ class FrameLengthController final : public Controller {
     float fl_increasing_packet_loss_fraction;
     // Uplink packet loss fraction below which frame length should decrease.
     float fl_decreasing_packet_loss_fraction;
-    // Uplink bandwidth below which frame length can switch from 20ms to 60ms.
-    int fl_20ms_to_60ms_bandwidth_bps;
-    // Uplink bandwidth above which frame length should switch from 60ms to
-    // 20ms.
-    int fl_60ms_to_20ms_bandwidth_bps;
+    std::map<FrameLengthChange, int> fl_changing_bandwidths_bps;
   };
 
   explicit FrameLengthController(const Config& config);
@@ -54,16 +55,6 @@ class FrameLengthController final : public Controller {
   void MakeDecision(AudioNetworkAdaptor::EncoderRuntimeConfig* config) override;
 
  private:
-  friend class FrameLengthControllerForTest;
-
-  struct FrameLengthChange {
-    FrameLengthChange(int from_frame_length_ms, int to_frame_length_ms);
-    ~FrameLengthChange();
-    bool operator<(const FrameLengthChange& rhs) const;
-    int from_frame_length_ms;
-    int to_frame_length_ms;
-  };
-
   bool FrameLengthIncreasingDecision(
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) const;
 
@@ -73,8 +64,6 @@ class FrameLengthController final : public Controller {
   const Config config_;
 
   std::vector<int>::const_iterator frame_length_ms_;
-
-  std::map<FrameLengthChange, int> frame_length_change_criteria_;
 
   rtc::Optional<int> uplink_bandwidth_bps_;
 
