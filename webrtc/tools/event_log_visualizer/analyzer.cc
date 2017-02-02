@@ -30,6 +30,8 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
@@ -385,7 +387,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
 
         // Currently feedback is logged twice, both for audio and video.
         // Only act on one of them.
-        if (media_type == MediaType::VIDEO) {
+        if (media_type == MediaType::AUDIO || media_type == MediaType::ANY) {
           rtcp::CommonHeader header;
           const uint8_t* packet_end = packet + total_length;
           for (const uint8_t* block = packet; block < packet_end;
@@ -401,6 +403,26 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
                 uint64_t timestamp = parsed_log_.GetTimestamp(i);
                 rtcp_packets_[stream].push_back(LoggedRtcpPacket(
                     timestamp, kRtcpTransportFeedback, std::move(rtcp_packet)));
+              }
+            } else if (header.type() == rtcp::SenderReport::kPacketType) {
+              std::unique_ptr<rtcp::SenderReport> rtcp_packet(
+                  new rtcp::SenderReport());
+              if (rtcp_packet->Parse(header)) {
+                uint32_t ssrc = rtcp_packet->sender_ssrc();
+                StreamId stream(ssrc, direction);
+                uint64_t timestamp = parsed_log_.GetTimestamp(i);
+                rtcp_packets_[stream].push_back(LoggedRtcpPacket(
+                    timestamp, kRtcpSr, std::move(rtcp_packet)));
+              }
+            } else if (header.type() == rtcp::ReceiverReport::kPacketType) {
+              std::unique_ptr<rtcp::ReceiverReport> rtcp_packet(
+                  new rtcp::ReceiverReport());
+              if (rtcp_packet->Parse(header)) {
+                uint32_t ssrc = rtcp_packet->sender_ssrc();
+                StreamId stream(ssrc, direction);
+                uint64_t timestamp = parsed_log_.GetTimestamp(i);
+                rtcp_packets_[stream].push_back(LoggedRtcpPacket(
+                    timestamp, kRtcpRr, std::move(rtcp_packet)));
               }
             }
           }
@@ -1208,6 +1230,49 @@ std::vector<std::pair<int64_t, int64_t>> EventLogAnalyzer::GetFrameTimestamps()
     }
   }
   return timestamps;
+}
+
+void EventLogAnalyzer::CreateTimestampGraph(Plot* plot) {
+  for (const auto& kv : rtp_packets_) {
+    const std::vector<LoggedRtpPacket>& rtp_packets = kv.second;
+    StreamId stream_id = kv.first;
+
+    {
+      TimeSeries timestamp_data;
+      timestamp_data.label = GetStreamName(stream_id) + " capture-time";
+      timestamp_data.style = LINE_DOT_GRAPH;
+      for (LoggedRtpPacket packet : rtp_packets) {
+        float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
+        float y = packet.header.timestamp;
+        timestamp_data.points.emplace_back(x, y);
+      }
+      plot->series_list_.push_back(std::move(timestamp_data));
+    }
+
+    {
+      auto kv = rtcp_packets_.find(stream_id);
+      if (kv != rtcp_packets_.end()) {
+        const auto& packets = kv->second;
+        TimeSeries timestamp_data;
+        timestamp_data.label = GetStreamName(stream_id) + " rtcp capture-time";
+        timestamp_data.style = LINE_DOT_GRAPH;
+        for (const LoggedRtcpPacket& rtcp : packets) {
+          if (rtcp.type != kRtcpSr)
+            continue;
+          rtcp::SenderReport* sr;
+          sr = static_cast<rtcp::SenderReport*>(rtcp.packet.get());
+          float x = static_cast<float>(rtcp.timestamp - begin_time_) / 1000000;
+          float y = sr->rtp_timestamp();
+          timestamp_data.points.emplace_back(x, y);
+        }
+        plot->series_list_.push_back(std::move(timestamp_data));
+      }
+    }
+  }
+
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Timestamp (90khz)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Timestamps");
 }
 }  // namespace plotting
 }  // namespace webrtc

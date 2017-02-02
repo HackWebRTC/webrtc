@@ -59,6 +59,9 @@ DEFINE_bool(plot_fraction_loss,
             false,
             "Plot packet loss in percent for outgoing packets (as perceived by "
             "the send-side bandwidth estimator).");
+DEFINE_bool(plot_timestamps,
+            false,
+            "Plot the rtp timestamps of all rtp and rtcp packets over time.");
 DEFINE_string(
     force_fieldtrials,
     "",
@@ -178,6 +181,10 @@ int main(int argc, char* argv[]) {
 
   if (FLAGS_plot_all || FLAGS_plot_network_delay_feedback) {
     analyzer.CreateNetworkDelayFeedbackGraph(collection->AppendNewPlot());
+  }
+
+  if (FLAGS_plot_all || FLAGS_plot_timestamps) {
+    analyzer.CreateTimestampGraph(collection->AppendNewPlot());
   }
 
   collection->Draw();

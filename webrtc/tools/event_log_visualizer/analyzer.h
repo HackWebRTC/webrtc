@@ -85,6 +85,7 @@ class EventLogAnalyzer {
   void CreateBweSimulationGraph(Plot* plot);
 
   void CreateNetworkDelayFeedbackGraph(Plot* plot);
+  void CreateTimestampGraph(Plot* plot);
 
   // Returns a vector of capture and arrival timestamps for the video frames
   // of the stream with the most number of frames.
