@@ -145,11 +145,7 @@ bool RTCPReceiver::IncomingPacket(const uint8_t* packet, size_t packet_size) {
 
 int64_t RTCPReceiver::LastReceivedReceiverReport() const {
   rtc::CritScope lock(&rtcp_receiver_lock_);
-  int64_t last_received_rr = -1;
-  for (const auto& kv : received_infos_)
-    if (kv.second.last_time_received_ms > last_received_rr)
-      last_received_rr = kv.second.last_time_received_ms;
-  return last_received_rr;
+  return last_received_rr_ms_;
 }
 
 void RTCPReceiver::SetRemoteSSRC(uint32_t ssrc) {
@@ -445,6 +441,8 @@ void RTCPReceiver::HandleReceiverReport(const CommonHeader& rtcp_block,
     return;
   }
 
+  last_received_rr_ms_ = clock_->TimeInMilliseconds();
+
   const uint32_t remote_ssrc = receiver_report.sender_ssrc();
 
   packet_information->remote_ssrc = remote_ssrc;
@@ -478,8 +476,6 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
 
   ReportBlockWithRtt* report_block_info =
       &received_report_blocks_[report_block.source_ssrc()][remote_ssrc];
-
-  last_received_rr_ms_ = clock_->TimeInMilliseconds();
   report_block_info->report_block.remoteSSRC = remote_ssrc;
   report_block_info->report_block.sourceSSRC = report_block.source_ssrc();
   report_block_info->report_block.fractionLost = report_block.fraction_lost();
@@ -489,7 +485,7 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
       report_block_info->report_block.extendedHighSeqNum) {
     // We have successfully delivered new RTP packets to the remote side after
     // the last RR was sent from the remote side.
-    last_increased_sequence_number_ms_ = last_received_rr_ms_;
+    last_increased_sequence_number_ms_ = clock_->TimeInMilliseconds();
   }
   report_block_info->report_block.extendedHighSeqNum =
       report_block.extended_high_seq_num();
@@ -579,22 +575,30 @@ bool RTCPReceiver::RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms) {
 bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
   rtc::CritScope lock(&rtcp_receiver_lock_);
 
-  bool update_bounding_set = false;
   int64_t now_ms = clock_->TimeInMilliseconds();
   // Use audio define since we don't know what interval the remote peer use.
-  int64_t timeouted_ms = now_ms - 5 * RTCP_INTERVAL_AUDIO_MS;
+  int64_t timeout_ms = now_ms - 5 * RTCP_INTERVAL_AUDIO_MS;
 
+  if (oldest_received_info_ms_ >= timeout_ms)
+    return false;
+
+  bool update_bounding_set = false;
+  oldest_received_info_ms_ = -1;
   for (auto receive_info_it = received_infos_.begin();
        receive_info_it != received_infos_.end();) {
     ReceiveInformation* receive_info = &receive_info_it->second;
     if (receive_info->last_time_received_ms > 0) {
-      if (receive_info->last_time_received_ms < timeouted_ms) {
+      if (receive_info->last_time_received_ms < timeout_ms) {
         // No rtcp packet for the last 5 regular intervals, reset limitations.
         receive_info->tmmbr.clear();
         // Prevent that we call this over and over again.
         receive_info->last_time_received_ms = 0;
         // Send new TMMBN to all channels using the default codec.
         update_bounding_set = true;
+      } else if (oldest_received_info_ms_ == -1 ||
+                 receive_info->last_time_received_ms <
+                     oldest_received_info_ms_) {
+        oldest_received_info_ms_ = receive_info->last_time_received_ms;
       }
       ++receive_info_it;
     } else if (receive_info->ready_for_delete) {
@@ -1070,11 +1074,11 @@ std::vector<rtcp::TmmbItem> RTCPReceiver::TmmbrReceived() {
 
   int64_t now_ms = clock_->TimeInMilliseconds();
   // Use audio define since we don't know what interval the remote peer use.
-  int64_t timeouted_ms = now_ms - 5 * RTCP_INTERVAL_AUDIO_MS;
+  int64_t timeout_ms = now_ms - 5 * RTCP_INTERVAL_AUDIO_MS;
 
   for (auto& kv : received_infos_) {
     for (auto it = kv.second.tmmbr.begin(); it != kv.second.tmmbr.end();) {
-      if (it->second.last_updated_ms < timeouted_ms) {
+      if (it->second.last_updated_ms < timeout_ms) {
         // Erase timeout entries.
         it = kv.second.tmmbr.erase(it);
       } else {

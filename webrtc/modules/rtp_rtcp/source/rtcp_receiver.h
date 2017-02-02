@@ -244,11 +244,12 @@ class RTCPReceiver {
   // Received report blocks.
   ReportBlockMap received_report_blocks_ GUARDED_BY(rtcp_receiver_lock_);
   ReceivedInfoMap received_infos_ GUARDED_BY(rtcp_receiver_lock_);
+  int64_t oldest_received_info_ms_ GUARDED_BY(rtcp_receiver_lock_);
   std::map<uint32_t, std::string> received_cnames_
       GUARDED_BY(rtcp_receiver_lock_);
 
   // The last time we received an RTCP RR.
-  int64_t last_received_rr_ms_;
+  int64_t last_received_rr_ms_ GUARDED_BY(rtcp_receiver_lock_);
 
   // The time we last received an RTCP RR telling we have successfully
   // delivered RTP packet to the remote side.

@@ -211,7 +211,7 @@ void ModuleRtpRtcpImpl::Process() {
   if (rtcp_sender_.TimeToSendRTCPReport())
     rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
 
-  if (UpdateRTCPReceiveInformationTimers()) {
+  if (TMMBR() && rtcp_receiver_.UpdateRTCPReceiveInformationTimers()) {
     // A receiver has timed out.
     rtcp_receiver_.UpdateTmmbr();
   }
@@ -865,12 +865,6 @@ bool ModuleRtpRtcpImpl::LastReceivedNTP(
   *remote_sr =
       ((ntp_secs & 0x0000ffff) << 16) + ((ntp_frac & 0xffff0000) >> 16);
   return true;
-}
-
-bool ModuleRtpRtcpImpl::UpdateRTCPReceiveInformationTimers() {
-  // If this returns true this channel has timed out.
-  // Periodically check if this is true and if so call UpdateTMMBR.
-  return rtcp_receiver_.UpdateRTCPReceiveInformationTimers();
 }
 
 // Called from RTCPsender.
