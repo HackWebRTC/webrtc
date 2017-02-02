@@ -22,7 +22,6 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/testsupport/perf_test.h"
 
-using std::string;
 using std::vector;
 
 namespace webrtc {
@@ -113,8 +112,9 @@ BweTest::~BweTest() {
 void BweTest::SetUp() {
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
-  string test_name =
-      string(test_info->test_case_name()) + "_" + string(test_info->name());
+  std::string test_name =
+      std::string(test_info->test_case_name()) + "_" +
+      std::string(test_info->name());
   BWE_TEST_LOGGING_GLOBAL_CONTEXT(test_name);
   BWE_TEST_LOGGING_GLOBAL_ENABLE(false);
 }
@@ -181,10 +181,10 @@ void BweTest::RunFor(int64_t time_ms) {
   }
 }
 
-string BweTest::GetTestName() const {
+std::string BweTest::GetTestName() const {
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
-  return string(test_info->name());
+  return std::string(test_info->name());
 }
 
 void BweTest::PrintResults(double max_throughput_kbps,
