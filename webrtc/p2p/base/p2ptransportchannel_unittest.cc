@@ -1199,7 +1199,6 @@ TEST_F(P2PTransportChannelTest, GetStats) {
   EXPECT_EQ(0U, best_conn_info->sent_discarded_packets);
   EXPECT_EQ(10 * 36U, best_conn_info->sent_total_bytes);
   EXPECT_EQ(10 * 36U, best_conn_info->recv_total_bytes);
-  EXPECT_GT(best_conn_info->rtt, 0U);
   DestroyChannels();
 }
 

@@ -151,6 +151,10 @@ class FakeIceTransport : public IceTransportInternal {
     return true;
   }
 
+  rtc::Optional<int> GetRttEstimate() override {
+    return rtc::Optional<int>();
+  }
+
   void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override {
   }
 

@@ -103,6 +103,10 @@ class IceTransportInternal : public rtc::PacketTransportInterface {
   // Returns the current stats for this connection.
   virtual bool GetStats(ConnectionInfos* infos) = 0;
 
+  // Returns RTT estimate over the currently active connection, or an empty
+  // rtc::Optional if there is none.
+  virtual rtc::Optional<int> GetRttEstimate() = 0;
+
   sigslot::signal1<IceTransportInternal*> SignalGatheringState;
 
   // Handles sending and receiving of candidates.

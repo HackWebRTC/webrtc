@@ -108,6 +108,7 @@ class P2PTransportChannel : public IceTransportInternal,
   bool GetOption(rtc::Socket::Option opt, int* value) override;
   int GetError() override { return error_; }
   bool GetStats(std::vector<ConnectionInfo>* stats) override;
+  rtc::Optional<int> GetRttEstimate() override;
 
   // TODO(honghaiz): Remove this method once the reference of it in
   // Chromoting is removed.

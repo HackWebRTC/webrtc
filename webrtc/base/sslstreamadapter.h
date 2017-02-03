@@ -156,6 +156,12 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // next lower will be used.
   virtual void SetMaxProtocolVersion(SSLProtocolVersion version) = 0;
 
+  // Set the initial retransmission timeout for DTLS messages. When the timeout
+  // expires, the message gets retransmitted and the timeout is exponentially
+  // increased.
+  // This should only be called before StartSSL().
+  virtual void SetInitialRetransmissionTimeout(int timeout_ms) = 0;
+
   // StartSSL starts negotiation with a peer, whose certificate is verified
   // using the certificate digest. Generally, SetIdentity() and possibly
   // SetServerRole() should have been called before this.

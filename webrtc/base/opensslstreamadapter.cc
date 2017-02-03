@@ -523,6 +523,12 @@ void OpenSSLStreamAdapter::SetMaxProtocolVersion(SSLProtocolVersion version) {
   ssl_max_version_ = version;
 }
 
+void OpenSSLStreamAdapter::SetInitialRetransmissionTimeout(
+    int timeout_ms) {
+  RTC_DCHECK(ssl_ctx_ == NULL);
+  dtls_handshake_timeout_ms_ = timeout_ms;
+}
+
 //
 // StreamInterface Implementation
 //
@@ -800,11 +806,7 @@ int OpenSSLStreamAdapter::BeginSSL() {
   SSL_set_bio(ssl_, bio, bio);  // the SSL object owns the bio now.
   if (ssl_mode_ == SSL_MODE_DTLS) {
 #ifdef OPENSSL_IS_BORINGSSL
-    // Change the initial retransmission timer from 1 second to 50ms.
-    // This will likely result in some spurious retransmissions, but
-    // it's useful for ensuring a timely handshake when there's packet
-    // loss.
-    DTLSv1_set_initial_timeout_duration(ssl_, 50);
+    DTLSv1_set_initial_timeout_duration(ssl_, dtls_handshake_timeout_ms_);
 #else
     // Enable read-ahead for DTLS so whole packets are read from internal BIO
     // before parsing. This is done internally by BoringSSL for DTLS.

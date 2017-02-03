@@ -276,6 +276,15 @@ IceTransportState P2PTransportChannel::GetState() const {
   return state_;
 }
 
+rtc::Optional<int> P2PTransportChannel::GetRttEstimate() {
+  if (selected_connection_ != nullptr
+      && selected_connection_->rtt_samples() > 0) {
+    return rtc::Optional<int>(selected_connection_->rtt());
+  } else {
+    return rtc::Optional<int>();
+  }
+}
+
 // A channel is considered ICE completed once there is at most one active
 // connection per network and at least one active connection.
 IceTransportState P2PTransportChannel::ComputeState() const {

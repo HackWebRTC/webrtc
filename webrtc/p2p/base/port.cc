@@ -1252,8 +1252,12 @@ void Connection::ReceivedPingResponse(int rtt, const std::string& request_id) {
   UpdateReceiving(last_ping_response_received_);
   set_write_state(STATE_WRITABLE);
   set_state(IceCandidatePairState::SUCCEEDED);
+  if (rtt_samples_ > 0) {
+    rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
+  } else {
+    rtt_ = rtt;
+  }
   rtt_samples_++;
-  rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
 }
 
 bool Connection::dead(int64_t now) const {

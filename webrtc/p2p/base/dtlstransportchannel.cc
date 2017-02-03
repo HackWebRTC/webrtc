@@ -34,6 +34,11 @@ static const size_t kMinRtpPacketLen = 12;
 // after they have been written, so a capacity of "1" is sufficient.
 static const size_t kMaxPendingPackets = 1;
 
+// Minimum and maximum values for the initial DTLS handshake timeout. We'll pick
+// an initial timeout based on ICE RTT estimates, but clamp it to this range.
+static const int kMinHandshakeTimeout = 50;
+static const int kMaxHandshakeTimeout = 3000;
+
 static bool IsDtlsPacket(const char* data, size_t len) {
   const uint8_t* u = reinterpret_cast<const uint8_t*>(data);
   return (len >= kDtlsRecordHeaderLen && (u[0] > 19 && u[0] < 64));
@@ -603,6 +608,8 @@ void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int err) {
 
 void DtlsTransport::MaybeStartDtls() {
   if (dtls_ && ice_transport_->writable()) {
+    ConfigureHandshakeTimeout();
+
     if (dtls_->StartSSL()) {
       // This should never fail:
       // Because we are operating in a nonblocking mode and all
@@ -692,5 +699,25 @@ void DtlsTransport::set_dtls_state(DtlsTransportState state) {
 void DtlsTransport::OnDtlsHandshakeError(rtc::SSLHandshakeError error) {
   SignalDtlsHandshakeError(error);
 }
+
+void DtlsTransport::ConfigureHandshakeTimeout() {
+  RTC_DCHECK(dtls_);
+  rtc::Optional<int> rtt = ice_transport_->GetRttEstimate();
+  if (rtt) {
+    // Limit the timeout to a reasonable range in case the ICE RTT takes
+    // extreme values.
+    int initial_timeout = std::max(kMinHandshakeTimeout,
+                                   std::min(kMaxHandshakeTimeout,
+                                            2 * (*rtt)));
+    LOG_J(LS_INFO, this) << "configuring DTLS handshake timeout "
+                         << initial_timeout << " based on ICE RTT " << *rtt;
+
+    dtls_->SetInitialRetransmissionTimeout(initial_timeout);
+  } else {
+    LOG_J(LS_INFO, this)
+        << "no RTT estimate - using default DTLS handshake timeout";
+  }
+}
+
 
 }  // namespace cricket

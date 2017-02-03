@@ -76,6 +76,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   int StartSSL() override;
   void SetMode(SSLMode mode) override;
   void SetMaxProtocolVersion(SSLProtocolVersion version) override;
+  void SetInitialRetransmissionTimeout(int timeout_ms) override;
 
   StreamResult Read(void* data,
                     size_t data_len,
@@ -212,6 +213,10 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   // Max. allowed protocol version
   SSLProtocolVersion ssl_max_version_;
+
+  // A 50-ms initial timeout ensures rapid setup on fast connections, but may
+  // be too aggressive for low bandwidth links.
+  int dtls_handshake_timeout_ms_ = 50;
 };
 
 /////////////////////////////////////////////////////////////////////////////
