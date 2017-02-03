@@ -1032,7 +1032,8 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   if (config_->post_encode_callback) {
     config_->post_encode_callback->EncodedFrameCallback(
         EncodedFrame(encoded_image._buffer, encoded_image._length,
-                     encoded_image._frameType));
+                     encoded_image._frameType, encoded_image._encodedWidth,
+                     encoded_image._encodedHeight, encoded_image._timeStamp));
   }
   {
     rtc::CritScope lock(&encoder_activity_crit_sect_);
