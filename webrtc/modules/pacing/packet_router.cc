@@ -72,7 +72,7 @@ size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,
   rtc::CritScope cs(&modules_crit_);
   // Rtp modules are ordered by which stream can most benefit from padding.
   for (RtpRtcp* module : rtp_modules_) {
-    if (module->SendingMedia()) {
+    if (module->SendingMedia() && module->HasBweExtensions()) {
       size_t bytes_sent = module->TimeToSendPadding(
           bytes_to_send - total_bytes_sent, probe_cluster_id);
       total_bytes_sent += bytes_sent;

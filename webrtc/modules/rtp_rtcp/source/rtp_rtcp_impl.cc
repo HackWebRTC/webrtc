@@ -617,6 +617,15 @@ int32_t ModuleRtpRtcpImpl::DeregisterSendRtpHeaderExtension(
   return rtp_sender_.DeregisterRtpHeaderExtension(type);
 }
 
+bool ModuleRtpRtcpImpl::HasBweExtensions() const {
+  return rtp_sender_.IsRtpHeaderExtensionRegistered(
+             kRtpExtensionTransportSequenceNumber) ||
+         rtp_sender_.IsRtpHeaderExtensionRegistered(
+             kRtpExtensionAbsoluteSendTime) ||
+         rtp_sender_.IsRtpHeaderExtensionRegistered(
+             kRtpExtensionTransmissionTimeOffset);
+}
+
 // (TMMBR) Temporary Max Media Bit Rate.
 bool ModuleRtpRtcpImpl::TMMBR() const {
   return rtcp_sender_.TMMBR();

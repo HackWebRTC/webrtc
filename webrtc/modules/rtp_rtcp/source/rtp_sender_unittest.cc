@@ -1491,4 +1491,29 @@ TEST_F(RtpSenderTest, AddOverheadToTransportFeedbackObserver) {
   SendGenericPayload();
 }
 
+TEST_F(RtpSenderTest, SendAudioPadding) {
+  MockTransport transport;
+  const bool kEnableAudio = true;
+  rtp_sender_.reset(new RTPSender(
+      kEnableAudio, &fake_clock_, &transport, &mock_paced_sender_, nullptr,
+      nullptr, nullptr, nullptr, nullptr, nullptr, &mock_rtc_event_log_,
+      nullptr, &retransmission_rate_limiter_, nullptr));
+  rtp_sender_->SetSendPayloadType(kPayload);
+  rtp_sender_->SetSequenceNumber(kSeqNum);
+  rtp_sender_->SetTimestampOffset(0);
+  rtp_sender_->SetSSRC(kSsrc);
+
+  const size_t kPaddingSize = 59;
+  EXPECT_CALL(transport, SendRtp(_, kPaddingSize + kRtpHeaderSize, _))
+      .WillOnce(testing::Return(true));
+  EXPECT_EQ(kPaddingSize, rtp_sender_->TimeToSendPadding(
+                              kPaddingSize, PacketInfo::kNotAProbe));
+
+  // Requested padding size is too small, will send a larger one.
+  const size_t kMinPaddingSize = 50;
+  EXPECT_CALL(transport, SendRtp(_, kMinPaddingSize + kRtpHeaderSize, _))
+      .WillOnce(testing::Return(true));
+  EXPECT_EQ(kMinPaddingSize, rtp_sender_->TimeToSendPadding(
+                                 kMinPaddingSize - 5, PacketInfo::kNotAProbe));
+}
 }  // namespace webrtc

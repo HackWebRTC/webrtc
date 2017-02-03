@@ -122,10 +122,12 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   const size_t requested_padding_bytes = 1000;
   const size_t sent_padding_bytes = 890;
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, 111))
       .Times(1)
       .WillOnce(Return(sent_padding_bytes));
   EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_1, TimeToSendPadding(
                          requested_padding_bytes - sent_padding_bytes, 111))
       .Times(1)
@@ -138,6 +140,7 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, _)).Times(0);
   EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_1, TimeToSendPadding(_, _))
       .Times(1)
       .WillOnce(Return(sent_padding_bytes));
@@ -153,11 +156,25 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   EXPECT_EQ(0u, packet_router_->TimeToSendPadding(requested_padding_bytes,
                                                   PacketInfo::kNotAProbe));
 
+  // Only one module has BWE extensions.
+  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, HasBweExtensions()).Times(1).WillOnce(Return(false));
+  EXPECT_CALL(rtp_1, TimeToSendPadding(requested_padding_bytes, _)).Times(0);
+  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, HasBweExtensions()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, _))
+      .Times(1)
+      .WillOnce(Return(sent_padding_bytes));
+  EXPECT_EQ(sent_padding_bytes,
+            packet_router_->TimeToSendPadding(requested_padding_bytes,
+                                              PacketInfo::kNotAProbe));
+
   packet_router_->RemoveRtpModule(&rtp_1);
 
   // rtp_1 has been removed, try sending padding and make sure rtp_1 isn't asked
   // to send by not expecting any calls. Instead verify rtp_2 is called.
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, _)).Times(1);
   EXPECT_EQ(0u, packet_router_->TimeToSendPadding(requested_padding_bytes,
                                                   PacketInfo::kNotAProbe));

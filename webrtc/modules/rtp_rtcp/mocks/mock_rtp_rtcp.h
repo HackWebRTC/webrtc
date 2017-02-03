@@ -66,6 +66,7 @@ class MockRtpRtcp : public RtpRtcp {
                int32_t(RTPExtensionType type, uint8_t id));
   MOCK_METHOD1(DeregisterSendRtpHeaderExtension,
                int32_t(RTPExtensionType type));
+  MOCK_CONST_METHOD0(HasBweExtensions, bool());
   MOCK_CONST_METHOD0(StartTimestamp, uint32_t());
   MOCK_METHOD1(SetStartTimestamp, void(uint32_t timestamp));
   MOCK_CONST_METHOD0(SequenceNumber, uint16_t());

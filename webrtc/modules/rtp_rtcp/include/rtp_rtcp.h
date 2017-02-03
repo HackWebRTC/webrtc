@@ -155,6 +155,8 @@ class RtpRtcp : public Module {
 
   virtual int32_t DeregisterSendRtpHeaderExtension(RTPExtensionType type) = 0;
 
+  virtual bool HasBweExtensions() const = 0;
+
   // Returns start timestamp.
   virtual uint32_t StartTimestamp() const = 0;
 
