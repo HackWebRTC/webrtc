@@ -174,7 +174,7 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
  public:
   explicit FakeVideoReceiveStream(webrtc::VideoReceiveStream::Config config);
 
-  const webrtc::VideoReceiveStream::Config& GetConfig();
+  const webrtc::VideoReceiveStream::Config& GetConfig() const;
 
   bool IsReceiving() const;
 

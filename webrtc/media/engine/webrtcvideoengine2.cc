@@ -1224,18 +1224,20 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
   config->rtp.transport_cc =
       send_codec_ ? HasTransportCc(send_codec_->codec) : false;
 
+  sp.GetFidSsrc(ssrc, &config->rtp.rtx_ssrc);
+
+  config->rtp.extensions = recv_rtp_extensions_;
+
   // TODO(brandtr): Generalize when we add support for multistream protection.
   if (sp.GetFecFrSsrc(ssrc, &flexfec_config->remote_ssrc)) {
     flexfec_config->protected_media_ssrcs = {ssrc};
     flexfec_config->local_ssrc = config->rtp.local_ssrc;
     flexfec_config->rtcp_mode = config->rtp.rtcp_mode;
+    // TODO(brandtr): We should be spec-compliant and set |transport_cc| here
+    // based on the rtcp-fb for the FlexFEC codec, not the media codec.
     flexfec_config->transport_cc = config->rtp.transport_cc;
     flexfec_config->rtp_header_extensions = config->rtp.extensions;
   }
-
-  sp.GetFidSsrc(ssrc, &config->rtp.rtx_ssrc);
-
-  config->rtp.extensions = recv_rtp_extensions_;
 }
 
 bool WebRtcVideoChannel2::RemoveRecvStream(uint32_t ssrc) {
@@ -2250,7 +2252,10 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetFeedbackParameters(
   config_.rtp.nack.rtp_history_ms = nack_history_ms;
   config_.rtp.transport_cc = transport_cc_enabled;
   config_.rtp.rtcp_mode = rtcp_mode;
-  flexfec_config_.rtcp_mode = rtcp_mode;
+  // TODO(brandtr): We should be spec-compliant and set |transport_cc| here
+  // based on the rtcp-fb for the FlexFEC codec, not the media codec.
+  flexfec_config_.transport_cc = config_.rtp.transport_cc;
+  flexfec_config_.rtcp_mode = config_.rtp.rtcp_mode;
   LOG(LS_INFO)
       << "RecreateWebRtcStream (recv) because of SetFeedbackParameters; nack="
       << nack_enabled << ", remb=" << remb_enabled
@@ -2268,6 +2273,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvParameters(
   }
   if (params.rtp_header_extensions) {
     config_.rtp.extensions = *params.rtp_header_extensions;
+    flexfec_config_.rtp_header_extensions = *params.rtp_header_extensions;
     needs_recreation = true;
   }
   if (needs_recreation) {

@@ -16,6 +16,7 @@
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/mediaconstants.h"
@@ -2424,22 +2425,40 @@ TEST_F(WebRtcVideoChannel2FlexfecTest, SetSendCodecsWithoutFec) {
 TEST_F(WebRtcVideoChannel2FlexfecTest, SetRecvCodecsWithFec) {
   AddRecvStream(
       CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
-  const std::vector<FakeFlexfecReceiveStream*>& streams =
-      fake_call_->GetFlexfecReceiveStreams();
 
   cricket::VideoRecvParameters recv_parameters;
   recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
   recv_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
   ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
-  ASSERT_EQ(1U, streams.size());
-  const FakeFlexfecReceiveStream* stream_with_recv_params = streams.front();
+
+  const std::vector<FakeFlexfecReceiveStream*>& flexfec_streams =
+      fake_call_->GetFlexfecReceiveStreams();
+  ASSERT_EQ(1U, flexfec_streams.size());
+  const FakeFlexfecReceiveStream* flexfec_stream = flexfec_streams.front();
+  const webrtc::FlexfecReceiveStream::Config& flexfec_stream_config =
+      flexfec_stream->GetConfig();
   EXPECT_EQ(GetEngineCodec("flexfec-03").id,
-            stream_with_recv_params->GetConfig().payload_type);
-  EXPECT_EQ(kFlexfecSsrc, stream_with_recv_params->GetConfig().remote_ssrc);
-  EXPECT_EQ(1U,
-            stream_with_recv_params->GetConfig().protected_media_ssrcs.size());
-  EXPECT_EQ(kSsrcs1[0],
-            stream_with_recv_params->GetConfig().protected_media_ssrcs[0]);
+            flexfec_stream_config.payload_type);
+  EXPECT_EQ(kFlexfecSsrc, flexfec_stream_config.remote_ssrc);
+  ASSERT_EQ(1U, flexfec_stream_config.protected_media_ssrcs.size());
+  EXPECT_EQ(kSsrcs1[0], flexfec_stream_config.protected_media_ssrcs[0]);
+  const std::vector<FakeVideoReceiveStream*>& video_streams =
+      fake_call_->GetVideoReceiveStreams();
+  const FakeVideoReceiveStream* video_stream = video_streams.front();
+  const webrtc::VideoReceiveStream::Config& video_stream_config =
+      video_stream->GetConfig();
+  EXPECT_EQ(video_stream_config.rtp.local_ssrc,
+            flexfec_stream_config.local_ssrc);
+  EXPECT_EQ(video_stream_config.rtp.rtcp_mode, flexfec_stream_config.rtcp_mode);
+  EXPECT_EQ(video_stream_config.rtcp_send_transport,
+            flexfec_stream_config.rtcp_send_transport);
+  // TODO(brandtr): Update this EXPECT when we set |transport_cc| in a
+  // spec-compliant way.
+  EXPECT_EQ(video_stream_config.rtp.transport_cc,
+            flexfec_stream_config.transport_cc);
+  EXPECT_EQ(video_stream_config.rtp.rtcp_mode, flexfec_stream_config.rtcp_mode);
+  EXPECT_EQ(video_stream_config.rtp.extensions,
+            flexfec_stream_config.rtp_header_extensions);
 }
 
 TEST_F(WebRtcVideoChannel2Test,

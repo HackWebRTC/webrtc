@@ -270,7 +270,8 @@ FakeVideoReceiveStream::FakeVideoReceiveStream(
     webrtc::VideoReceiveStream::Config config)
     : config_(std::move(config)), receiving_(false) {}
 
-const webrtc::VideoReceiveStream::Config& FakeVideoReceiveStream::GetConfig() {
+const webrtc::VideoReceiveStream::Config& FakeVideoReceiveStream::GetConfig()
+    const {
   return config_;
 }
 
