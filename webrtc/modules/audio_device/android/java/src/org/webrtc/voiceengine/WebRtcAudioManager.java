@@ -83,11 +83,11 @@ public class WebRtcAudioManager {
 
   // Private utility class that periodically checks and logs the volume level
   // of the audio stream that is currently controlled by the volume control.
-  // A timer triggers logs once every 10 seconds and the timer's associated
+  // A timer triggers logs once every 30 seconds and the timer's associated
   // thread is named "WebRtcVolumeLevelLoggerThread".
   private static class VolumeLogger {
     private static final String THREAD_NAME = "WebRtcVolumeLevelLoggerThread";
-    private static final int TIMER_PERIOD_IN_SECONDS = 10;
+    private static final int TIMER_PERIOD_IN_SECONDS = 30;
 
     private final AudioManager audioManager;
     private Timer timer;
