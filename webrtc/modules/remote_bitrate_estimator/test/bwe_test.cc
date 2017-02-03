@@ -136,7 +136,7 @@ void Link::AddPacketProcessor(PacketProcessor* processor,
 }
 
 void Link::RemovePacketProcessor(PacketProcessor* processor) {
-  for (vector<PacketProcessorRunner>::iterator it = processors_.begin();
+  for (std::vector<PacketProcessorRunner>::iterator it = processors_.begin();
        it != processors_.end(); ++it) {
     if (it->RunsProcessor(processor)) {
       processors_.erase(it);
