@@ -280,6 +280,23 @@ TEST_F(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueue) {
   RunTest(conf_motion_hd);
 }
 
+#if !defined(RTC_DISABLE_VP9)
+TEST_F(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueueVP9) {
+  VideoQualityTest::Params conf_motion_hd;
+  conf_motion_hd.call.send_side_bwe = true;
+  conf_motion_hd.video = {true, 1280, 720, 50, 30000, 3000000, 3000000, false,
+                          "VP9", 1, 0, 0, false, false, "",
+                          "ConferenceMotion_1280_720_50"};
+  conf_motion_hd.analyzer = {
+      "conference_motion_hd_2000kbps_100ms_32pkts_queue_vp9", 0.0, 0.0,
+      kFullStackTestDurationSecs};
+  conf_motion_hd.pipe.queue_length_packets = 32;
+  conf_motion_hd.pipe.queue_delay_ms = 100;
+  conf_motion_hd.pipe.link_capacity_kbps = 2000;
+  RunTest(conf_motion_hd);
+}
+#endif
+
 TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL) {
   VideoQualityTest::Params screenshare;
   screenshare.call.send_side_bwe = true;
