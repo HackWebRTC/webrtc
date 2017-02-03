@@ -32,6 +32,8 @@ NSString * const kRTCMediaConstraintsMaxFrameRate =
     @(webrtc::MediaConstraintsInterface::kMaxFrameRate);
 NSString * const kRTCMediaConstraintsLevelControl =
     @(webrtc::MediaConstraintsInterface::kLevelControl);
+NSString * const kRTCMediaConstraintsAudioNetworkAdaptorConfig =
+    @(webrtc::MediaConstraintsInterface::kAudioNetworkAdaptorConfig);
 
 NSString * const kRTCMediaConstraintsValueTrue =
     @(webrtc::MediaConstraintsInterface::kValueTrue);
@@ -109,8 +111,17 @@ MediaConstraints::GetOptional() const {
     NSString *value = [constraints objectForKey:key];
     NSAssert([value isKindOfClass:[NSString class]],
              @"%@ is not an NSString.", value);
-    nativeConstraints.push_back(webrtc::MediaConstraintsInterface::Constraint(
-        key.stdString, value.stdString));
+    if ([kRTCMediaConstraintsAudioNetworkAdaptorConfig isEqualToString:key]) {
+      // This value is base64 encoded.
+      NSData *charData = [[NSData alloc] initWithBase64EncodedString:value options:0];
+      std::string configValue =
+          std::string(reinterpret_cast<const char *>(charData.bytes), charData.length);
+      nativeConstraints.push_back(webrtc::MediaConstraintsInterface::Constraint(
+          key.stdString, configValue));
+    } else {
+      nativeConstraints.push_back(webrtc::MediaConstraintsInterface::Constraint(
+          key.stdString, value.stdString));
+    }
   }
   return nativeConstraints;
 }
