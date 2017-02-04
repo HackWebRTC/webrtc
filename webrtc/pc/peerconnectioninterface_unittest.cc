@@ -2221,6 +2221,20 @@ TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesPruneTurnPortsFlag) {
   EXPECT_TRUE(port_allocator_->prune_turn_ports());
 }
 
+// Test that the ice check interval can be changed. This does not verify that
+// the setting makes it all the way to P2PTransportChannel, as that would
+// require a very complex set of mocks.
+TEST_F(PeerConnectionInterfaceTest, SetConfigurationChangesIceCheckInterval) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.ice_check_min_interval = rtc::Optional<int>();
+  CreatePeerConnection(config, nullptr);
+  config.ice_check_min_interval = rtc::Optional<int>(100);
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+  PeerConnectionInterface::RTCConfiguration new_config =
+      pc_->GetConfiguration();
+  EXPECT_EQ(new_config.ice_check_min_interval, rtc::Optional<int>(100));
+}
+
 // Test that when SetConfiguration changes both the pool size and other
 // attributes, the pooled session is created with the updated attributes.
 TEST_F(PeerConnectionInterfaceTest,

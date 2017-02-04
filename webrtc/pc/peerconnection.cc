@@ -1419,6 +1419,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   modified_config.ice_candidate_pool_size =
       configuration.ice_candidate_pool_size;
   modified_config.prune_turn_ports = configuration.prune_turn_ports;
+  modified_config.ice_check_min_interval = configuration.ice_check_min_interval;
   if (configuration != modified_config) {
     LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
@@ -1459,6 +1460,12 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
       modified_config.prune_turn_ports != configuration_.prune_turn_ports) {
     session_->SetNeedsIceRestartFlag();
   }
+
+  if (modified_config.ice_check_min_interval !=
+      configuration_.ice_check_min_interval) {
+    session_->SetIceConfig(session_->ParseIceConfig(modified_config));
+  }
+
   configuration_ = modified_config;
   return SafeSetError(RTCErrorType::NONE, error);
 }
