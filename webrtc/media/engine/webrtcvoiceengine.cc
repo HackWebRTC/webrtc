@@ -520,10 +520,16 @@ const WebRtcVoiceCodecs::CodecPref WebRtcVoiceCodecs::kCodecPrefs[14] = {
     {kDtmfCodecName, 8000, 1, 126, false, {}}
 };
 
+// |max_send_bitrate_bps| is the bitrate from "b=" in SDP.
+// |rtp_max_bitrate_bps| is the bitrate from RtpSender::SetParameters.
 rtc::Optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
-                                      int rtp_max_bitrate_bps,
+                                      rtc::Optional<int> rtp_max_bitrate_bps,
                                       const webrtc::CodecInst& codec_inst) {
-  const int bps = MinPositive(max_send_bitrate_bps, rtp_max_bitrate_bps);
+  // If application-configured bitrate is set, take minimum of that and SDP
+  // bitrate.
+  const int bps = rtp_max_bitrate_bps
+                      ? MinPositive(max_send_bitrate_bps, *rtp_max_bitrate_bps)
+                      : max_send_bitrate_bps;
   const int codec_rate = codec_inst.rate;
 
   if (bps <= 0) {

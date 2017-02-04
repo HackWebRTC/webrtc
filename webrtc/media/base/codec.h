@@ -162,6 +162,8 @@ struct VideoCodec : public Codec {
 
   std::string ToString() const;
 
+  webrtc::RtpCodecParameters ToCodecParameters() const override;
+
   VideoCodec& operator=(const VideoCodec& c);
   VideoCodec& operator=(VideoCodec&& c);
 

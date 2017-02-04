@@ -575,19 +575,19 @@ TEST_F(RtpSenderReceiverTest, SetAudioMaxSendBitrate) {
   EXPECT_EQ(-1, voice_media_channel_->max_bps());
   webrtc::RtpParameters params = audio_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(-1, params.encodings[0].max_bitrate_bps);
-  params.encodings[0].max_bitrate_bps = 1000;
+  EXPECT_FALSE(params.encodings[0].max_bitrate_bps);
+  params.encodings[0].max_bitrate_bps = rtc::Optional<int>(1000);
   EXPECT_TRUE(audio_rtp_sender_->SetParameters(params));
 
   // Read back the parameters and verify they have been changed.
   params = audio_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(rtc::Optional<int>(1000), params.encodings[0].max_bitrate_bps);
 
   // Verify that the audio channel received the new parameters.
   params = voice_media_channel_->GetRtpSendParameters(kAudioSsrc);
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(rtc::Optional<int>(1000), params.encodings[0].max_bitrate_bps);
 
   // Verify that the global bitrate limit has not been changed.
   EXPECT_EQ(-1, voice_media_channel_->max_bps());
@@ -611,19 +611,19 @@ TEST_F(RtpSenderReceiverTest, SetVideoMaxSendBitrate) {
   EXPECT_EQ(-1, video_media_channel_->max_bps());
   webrtc::RtpParameters params = video_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(-1, params.encodings[0].max_bitrate_bps);
-  params.encodings[0].max_bitrate_bps = 1000;
+  EXPECT_FALSE(params.encodings[0].max_bitrate_bps);
+  params.encodings[0].max_bitrate_bps = rtc::Optional<int>(1000);
   EXPECT_TRUE(video_rtp_sender_->SetParameters(params));
 
   // Read back the parameters and verify they have been changed.
   params = video_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(rtc::Optional<int>(1000), params.encodings[0].max_bitrate_bps);
 
   // Verify that the video channel received the new parameters.
   params = video_media_channel_->GetRtpSendParameters(kVideoSsrc);
   EXPECT_EQ(1, params.encodings.size());
-  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(rtc::Optional<int>(1000), params.encodings[0].max_bitrate_bps);
 
   // Verify that the global bitrate limit has not been changed.
   EXPECT_EQ(-1, video_media_channel_->max_bps());

@@ -1861,9 +1861,12 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     encoder_config.number_of_streams = 1;
   }
 
-  int stream_max_bitrate =
-      MinPositive(rtp_parameters_.encodings[0].max_bitrate_bps,
-                  parameters_.max_bitrate_bps);
+  int stream_max_bitrate = parameters_.max_bitrate_bps;
+  if (rtp_parameters_.encodings[0].max_bitrate_bps) {
+    stream_max_bitrate =
+        MinPositive(*(rtp_parameters_.encodings[0].max_bitrate_bps),
+                    parameters_.max_bitrate_bps);
+  }
 
   int codec_max_bitrate_kbps;
   if (codec.GetParam(kCodecParamMaxBitrate, &codec_max_bitrate_kbps)) {

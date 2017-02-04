@@ -16,8 +16,6 @@
 @synthesize maxBitrateBps = _maxBitrateBps;
 @synthesize ssrc = _ssrc;
 
-static const int kBitrateUnlimited = -1;
-
 - (instancetype)init {
   return [super init];
 }
@@ -26,10 +24,9 @@ static const int kBitrateUnlimited = -1;
     (const webrtc::RtpEncodingParameters &)nativeParameters {
   if (self = [self init]) {
     _isActive = nativeParameters.active;
-    // TODO(skvlad): Replace with rtc::Optional once the C++ code is updated.
-    if (nativeParameters.max_bitrate_bps != kBitrateUnlimited) {
+    if (nativeParameters.max_bitrate_bps) {
       _maxBitrateBps =
-          [NSNumber numberWithInt:nativeParameters.max_bitrate_bps];
+          [NSNumber numberWithInt:*nativeParameters.max_bitrate_bps];
     }
     if (nativeParameters.ssrc) {
       _ssrc = [NSNumber numberWithUnsignedLong:*nativeParameters.ssrc];
@@ -42,7 +39,7 @@ static const int kBitrateUnlimited = -1;
   webrtc::RtpEncodingParameters parameters;
   parameters.active = _isActive;
   if (_maxBitrateBps != nil) {
-    parameters.max_bitrate_bps = _maxBitrateBps.intValue;
+    parameters.max_bitrate_bps = rtc::Optional<int>(_maxBitrateBps.intValue);
   }
   if (_ssrc != nil) {
     parameters.ssrc = rtc::Optional<uint32_t>(_ssrc.unsignedLongValue);

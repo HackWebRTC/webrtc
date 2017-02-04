@@ -289,7 +289,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(ssrc);
     EXPECT_EQ(1UL, parameters.encodings.size());
 
-    parameters.encodings[0].max_bitrate_bps = bitrate;
+    parameters.encodings[0].max_bitrate_bps = rtc::Optional<int>(bitrate);
     return channel_->SetRtpSendParameters(ssrc, parameters);
   }
 

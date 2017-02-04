@@ -765,15 +765,17 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
 
   RtpCodecParameters inbound_audio_codec;
   inbound_audio_codec.payload_type = 1;
-  inbound_audio_codec.mime_type = "opus";
-  inbound_audio_codec.clock_rate = 1337;
+  inbound_audio_codec.kind = cricket::MEDIA_TYPE_AUDIO;
+  inbound_audio_codec.name = "opus";
+  inbound_audio_codec.clock_rate = rtc::Optional<int>(1337);
   voice_media_info.receive_codecs.insert(
       std::make_pair(inbound_audio_codec.payload_type, inbound_audio_codec));
 
   RtpCodecParameters outbound_audio_codec;
   outbound_audio_codec.payload_type = 2;
-  outbound_audio_codec.mime_type = "isac";
-  outbound_audio_codec.clock_rate = 1338;
+  outbound_audio_codec.kind = cricket::MEDIA_TYPE_AUDIO;
+  outbound_audio_codec.name = "isac";
+  outbound_audio_codec.clock_rate = rtc::Optional<int>(1338);
   voice_media_info.send_codecs.insert(
       std::make_pair(outbound_audio_codec.payload_type, outbound_audio_codec));
 
@@ -785,15 +787,17 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
 
   RtpCodecParameters inbound_video_codec;
   inbound_video_codec.payload_type = 3;
-  inbound_video_codec.mime_type = "H264";
-  inbound_video_codec.clock_rate = 1339;
+  inbound_video_codec.kind = cricket::MEDIA_TYPE_VIDEO;
+  inbound_video_codec.name = "H264";
+  inbound_video_codec.clock_rate = rtc::Optional<int>(1339);
   video_media_info.receive_codecs.insert(
       std::make_pair(inbound_video_codec.payload_type, inbound_video_codec));
 
   RtpCodecParameters outbound_video_codec;
   outbound_video_codec.payload_type = 4;
-  outbound_video_codec.mime_type = "VP8";
-  outbound_video_codec.clock_rate = 1340;
+  outbound_video_codec.kind = cricket::MEDIA_TYPE_VIDEO;
+  outbound_video_codec.name = "VP8";
+  outbound_video_codec.clock_rate = rtc::Optional<int>(1340);
   video_media_info.send_codecs.insert(
       std::make_pair(outbound_video_codec.payload_type, outbound_video_codec));
 
@@ -1687,8 +1691,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
 
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;
-  codec_parameters.mime_type = "dummy";
-  codec_parameters.clock_rate = 0;
+  codec_parameters.kind = cricket::MEDIA_TYPE_AUDIO;
+  codec_parameters.name = "dummy";
+  codec_parameters.clock_rate = rtc::Optional<int>(0);
   voice_media_info.receive_codecs.insert(
       std::make_pair(codec_parameters.payload_type, codec_parameters));
 
@@ -1769,8 +1774,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
 
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;
-  codec_parameters.mime_type = "dummy";
-  codec_parameters.clock_rate = 0;
+  codec_parameters.kind = cricket::MEDIA_TYPE_AUDIO;
+  codec_parameters.name = "dummy";
+  codec_parameters.clock_rate = rtc::Optional<int>(0);
   video_media_info.receive_codecs.insert(
       std::make_pair(codec_parameters.payload_type, codec_parameters));
 
@@ -1848,8 +1854,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
 
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;
-  codec_parameters.mime_type = "dummy";
-  codec_parameters.clock_rate = 0;
+  codec_parameters.kind = cricket::MEDIA_TYPE_AUDIO;
+  codec_parameters.name = "dummy";
+  codec_parameters.clock_rate = rtc::Optional<int>(0);
   voice_media_info.send_codecs.insert(
       std::make_pair(codec_parameters.payload_type, codec_parameters));
 
@@ -1927,8 +1934,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
 
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;
-  codec_parameters.mime_type = "dummy";
-  codec_parameters.clock_rate = 0;
+  codec_parameters.kind = cricket::MEDIA_TYPE_AUDIO;
+  codec_parameters.name = "dummy";
+  codec_parameters.clock_rate = rtc::Optional<int>(0);
   video_media_info.send_codecs.insert(
       std::make_pair(codec_parameters.payload_type, codec_parameters));
 

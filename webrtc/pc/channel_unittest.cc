@@ -1956,7 +1956,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     return channel1_->SetRemoteContent(&content, CA_OFFER, NULL);
   }
 
-  webrtc::RtpParameters BitrateLimitedParameters(int limit) {
+  webrtc::RtpParameters BitrateLimitedParameters(rtc::Optional<int> limit) {
     webrtc::RtpParameters parameters;
     webrtc::RtpEncodingParameters encoding;
     encoding.max_bitrate_bps = limit;
@@ -1965,7 +1965,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   void VerifyMaxBitrate(const webrtc::RtpParameters& parameters,
-                        int expected_bitrate) {
+                        rtc::Optional<int> expected_bitrate) {
     EXPECT_EQ(1UL, parameters.encodings.size());
     EXPECT_EQ(expected_bitrate, parameters.encodings[0].max_bitrate_bps);
   }
@@ -1975,7 +1975,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(
         channel1_->SetLocalContent(&local_media_content1_, CA_OFFER, NULL));
     EXPECT_EQ(media_channel1_->max_bps(), -1);
-    VerifyMaxBitrate(media_channel1_->GetRtpSendParameters(kSsrc1), -1);
+    VerifyMaxBitrate(media_channel1_->GetRtpSendParameters(kSsrc1),
+                     rtc::Optional<int>());
   }
 
   void CanChangeMaxBitrate() {
@@ -1984,15 +1985,19 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         channel1_->SetLocalContent(&local_media_content1_, CA_OFFER, NULL));
 
     EXPECT_TRUE(channel1_->SetRtpSendParameters(
-        kSsrc1, BitrateLimitedParameters(1000)));
-    VerifyMaxBitrate(channel1_->GetRtpSendParameters(kSsrc1), 1000);
-    VerifyMaxBitrate(media_channel1_->GetRtpSendParameters(kSsrc1), 1000);
+        kSsrc1, BitrateLimitedParameters(rtc::Optional<int>(1000))));
+    VerifyMaxBitrate(channel1_->GetRtpSendParameters(kSsrc1),
+                     rtc::Optional<int>(1000));
+    VerifyMaxBitrate(media_channel1_->GetRtpSendParameters(kSsrc1),
+                     rtc::Optional<int>(1000));
     EXPECT_EQ(-1, media_channel1_->max_bps());
 
-    EXPECT_TRUE(
-        channel1_->SetRtpSendParameters(kSsrc1, BitrateLimitedParameters(-1)));
-    VerifyMaxBitrate(channel1_->GetRtpSendParameters(kSsrc1), -1);
-    VerifyMaxBitrate(media_channel1_->GetRtpSendParameters(kSsrc1), -1);
+    EXPECT_TRUE(channel1_->SetRtpSendParameters(
+        kSsrc1, BitrateLimitedParameters(rtc::Optional<int>())));
+    VerifyMaxBitrate(channel1_->GetRtpSendParameters(kSsrc1),
+                     rtc::Optional<int>());
+    VerifyMaxBitrate(media_channel1_->GetRtpSendParameters(kSsrc1),
+                     rtc::Optional<int>());
     EXPECT_EQ(-1, media_channel1_->max_bps());
   }
 

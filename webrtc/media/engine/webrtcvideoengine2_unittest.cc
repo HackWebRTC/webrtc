@@ -1177,12 +1177,13 @@ class WebRtcVideoChannel2Test : public WebRtcVideoEngine2Test {
     webrtc::RtpParameters parameters =
         channel_->GetRtpSendParameters(last_ssrc_);
     EXPECT_EQ(1UL, parameters.encodings.size());
-    parameters.encodings[0].max_bitrate_bps = stream_max;
+    parameters.encodings[0].max_bitrate_bps = rtc::Optional<int>(stream_max);
     EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
     // Read back the parameteres and verify they have the correct value
     parameters = channel_->GetRtpSendParameters(last_ssrc_);
     EXPECT_EQ(1UL, parameters.encodings.size());
-    EXPECT_EQ(stream_max, parameters.encodings[0].max_bitrate_bps);
+    EXPECT_EQ(rtc::Optional<int>(stream_max),
+              parameters.encodings[0].max_bitrate_bps);
     // Verify that the new value propagated down to the encoder
     EXPECT_EQ(expected_encoder_bitrate, GetMaxEncoderBitrate());
   }

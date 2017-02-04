@@ -170,13 +170,16 @@ std::unique_ptr<RTCCodecStats> CodecStatsFromRtpCodecParameters(
     const RtpCodecParameters& codec_params) {
   RTC_DCHECK_GE(codec_params.payload_type, 0);
   RTC_DCHECK_LE(codec_params.payload_type, 127);
+  RTC_DCHECK(codec_params.clock_rate);
   uint32_t payload_type = static_cast<uint32_t>(codec_params.payload_type);
   std::unique_ptr<RTCCodecStats> codec_stats(new RTCCodecStats(
       RTCCodecStatsIDFromDirectionMediaAndPayload(inbound, audio, payload_type),
       timestamp_us));
   codec_stats->payload_type = payload_type;
-  codec_stats->codec = (audio ? "audio/" : "video/") + codec_params.mime_type;
-  codec_stats->clock_rate = static_cast<uint32_t>(codec_params.clock_rate);
+  codec_stats->codec = codec_params.mime_type();
+  if (codec_params.clock_rate) {
+    codec_stats->clock_rate = static_cast<uint32_t>(*codec_params.clock_rate);
+  }
   return codec_stats;
 }
 
