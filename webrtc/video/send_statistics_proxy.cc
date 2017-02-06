@@ -108,22 +108,37 @@ SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
       input_frame_rate_tracker_(100, 10u),
       input_fps_counter_(clock, nullptr, true),
       sent_fps_counter_(clock, nullptr, true),
+      total_byte_counter_(clock, nullptr, true),
+      media_byte_counter_(clock, nullptr, true),
+      rtx_byte_counter_(clock, nullptr, true),
+      padding_byte_counter_(clock, nullptr, true),
+      retransmit_byte_counter_(clock, nullptr, true),
+      fec_byte_counter_(clock, nullptr, true),
       first_rtcp_stats_time_ms_(-1),
       first_rtp_stats_time_ms_(-1),
-      start_stats_(stats) {}
+      start_stats_(stats) {
+  InitializeBitrateCounters(stats);
+}
 
 SendStatisticsProxy::UmaSamplesContainer::~UmaSamplesContainer() {}
 
-void AccumulateRtxStats(const VideoSendStream::Stats& stats,
-                        const std::vector<uint32_t>& rtx_ssrcs,
-                        StreamDataCounters* total_rtp_stats,
-                        StreamDataCounters* rtx_stats) {
-  for (auto it : stats.substreams) {
-    if (std::find(rtx_ssrcs.begin(), rtx_ssrcs.end(), it.first) !=
-        rtx_ssrcs.end()) {
-      rtx_stats->Add(it.second.rtp_stats);
+void SendStatisticsProxy::UmaSamplesContainer::InitializeBitrateCounters(
+    const VideoSendStream::Stats& stats) {
+  for (const auto& it : stats.substreams) {
+    uint32_t ssrc = it.first;
+    total_byte_counter_.SetLast(it.second.rtp_stats.transmitted.TotalBytes(),
+                                ssrc);
+    padding_byte_counter_.SetLast(it.second.rtp_stats.transmitted.padding_bytes,
+                                  ssrc);
+    retransmit_byte_counter_.SetLast(
+        it.second.rtp_stats.retransmitted.TotalBytes(), ssrc);
+    fec_byte_counter_.SetLast(it.second.rtp_stats.fec.TotalBytes(), ssrc);
+    if (it.second.is_rtx) {
+      rtx_byte_counter_.SetLast(it.second.rtp_stats.transmitted.TotalBytes(),
+                                ssrc);
     } else {
-      total_rtp_stats->Add(it.second.rtp_stats);
+      media_byte_counter_.SetLast(it.second.rtp_stats.MediaPayloadBytes(),
+                                  ssrc);
     }
   }
 }
@@ -331,47 +346,63 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
         RTC_HISTOGRAMS_PERCENTAGE(kIndex, uma_prefix_ + "PausedTimeInPercent",
                                   paused_time_percent);
       }
+    }
+  }
 
-      StreamDataCounters rtp;
-      StreamDataCounters rtx;
-      AccumulateRtxStats(current_stats, rtp_config.rtx.ssrcs, &rtp, &rtx);
-      StreamDataCounters start_rtp;
-      StreamDataCounters start_rtx;
-      AccumulateRtxStats(start_stats_, rtp_config.rtx.ssrcs, &start_rtp,
-                         &start_rtx);
-      rtp.Subtract(start_rtp);
-      rtx.Subtract(start_rtx);
-      StreamDataCounters rtp_rtx = rtp;
-      rtp_rtx.Add(rtx);
-
-      RTC_HISTOGRAMS_COUNTS_10000(
-          kIndex, uma_prefix_ + "BitrateSentInKbps",
-          static_cast<int>(rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
-                           1000));
-      RTC_HISTOGRAMS_COUNTS_10000(
-          kIndex, uma_prefix_ + "MediaBitrateSentInKbps",
-          static_cast<int>(rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000));
-      RTC_HISTOGRAMS_COUNTS_10000(
-          kIndex, uma_prefix_ + "PaddingBitrateSentInKbps",
-          static_cast<int>(rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec /
-                           1000));
-      RTC_HISTOGRAMS_COUNTS_10000(
-          kIndex, uma_prefix_ + "RetransmittedBitrateSentInKbps",
-          static_cast<int>(rtp_rtx.retransmitted.TotalBytes() * 8 /
-                           elapsed_sec / 1000));
-      if (!rtp_config.rtx.ssrcs.empty()) {
-        RTC_HISTOGRAMS_COUNTS_10000(
-            kIndex, uma_prefix_ + "RtxBitrateSentInKbps",
-            static_cast<int>(rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
-                             1000));
-      }
-      if (rtp_config.flexfec.payload_type != -1 ||
-          rtp_config.ulpfec.red_payload_type != -1) {
-        RTC_HISTOGRAMS_COUNTS_10000(kIndex,
-                                    uma_prefix_ + "FecBitrateSentInKbps",
-                                    static_cast<int>(rtp_rtx.fec.TotalBytes() *
-                                                     8 / elapsed_sec / 1000));
-      }
+  AggregatedStats total_bytes_per_sec = total_byte_counter_.GetStats();
+  if (total_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
+    RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "BitrateSentInKbps",
+                                total_bytes_per_sec.average * 8 / 1000);
+    LOG(LS_INFO) << uma_prefix_ << "BitrateSentInBps, "
+                 << total_bytes_per_sec.ToStringWithMultiplier(8);
+  }
+  AggregatedStats media_bytes_per_sec = media_byte_counter_.GetStats();
+  if (media_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
+    RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "MediaBitrateSentInKbps",
+                                media_bytes_per_sec.average * 8 / 1000);
+    LOG(LS_INFO) << uma_prefix_ << "MediaBitrateSentInBps, "
+                 << media_bytes_per_sec.ToStringWithMultiplier(8);
+  }
+  AggregatedStats padding_bytes_per_sec = padding_byte_counter_.GetStats();
+  if (padding_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
+    RTC_HISTOGRAMS_COUNTS_10000(kIndex,
+                                uma_prefix_ + "PaddingBitrateSentInKbps",
+                                padding_bytes_per_sec.average * 8 / 1000);
+    LOG(LS_INFO) << uma_prefix_ << "PaddingBitrateSentInBps, "
+                 << padding_bytes_per_sec.ToStringWithMultiplier(8);
+  }
+  AggregatedStats retransmit_bytes_per_sec =
+      retransmit_byte_counter_.GetStats();
+  if (retransmit_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
+    RTC_HISTOGRAMS_COUNTS_10000(kIndex,
+                                uma_prefix_ + "RetransmittedBitrateSentInKbps",
+                                retransmit_bytes_per_sec.average * 8 / 1000);
+    LOG(LS_INFO) << uma_prefix_ << "RetransmittedBitrateSentInBps, "
+                 << retransmit_bytes_per_sec.ToStringWithMultiplier(8);
+  }
+  if (!rtp_config.rtx.ssrcs.empty()) {
+    AggregatedStats rtx_bytes_per_sec = rtx_byte_counter_.GetStats();
+    int rtx_bytes_per_sec_avg = -1;
+    if (rtx_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
+      rtx_bytes_per_sec_avg = rtx_bytes_per_sec.average;
+      LOG(LS_INFO) << uma_prefix_ << "RtxBitrateSentInBps, "
+                   << rtx_bytes_per_sec.ToStringWithMultiplier(8);
+    } else if (total_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
+      rtx_bytes_per_sec_avg = 0;  // RTX enabled but no RTX data sent, record 0.
+    }
+    if (rtx_bytes_per_sec_avg != -1) {
+      RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "RtxBitrateSentInKbps",
+                                  rtx_bytes_per_sec_avg * 8 / 1000);
+    }
+  }
+  if (rtp_config.flexfec.payload_type != -1 ||
+      rtp_config.ulpfec.red_payload_type != -1) {
+    AggregatedStats fec_bytes_per_sec = fec_byte_counter_.GetStats();
+    if (fec_bytes_per_sec.num_samples > kMinRequiredPeriodicSamples) {
+      RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "FecBitrateSentInKbps",
+                                  fec_bytes_per_sec.average * 8 / 1000);
+      LOG(LS_INFO) << uma_prefix_ << "FecBitrateSentInBps, "
+                   << fec_bytes_per_sec.ToStringWithMultiplier(8);
     }
   }
 }
@@ -410,10 +441,26 @@ void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
 void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
   rtc::CritScope lock(&crit_);
   stats_.suspended = is_suspended;
-  // Pause framerate stats.
   if (is_suspended) {
-    uma_container_->input_fps_counter_.ProcessAndPause();
-    uma_container_->sent_fps_counter_.ProcessAndPause();
+    // Pause framerate (add min pause time since there may be frames/packets
+    // that are not yet sent).
+    const int64_t kMinMs = 500;
+    uma_container_->input_fps_counter_.ProcessAndPauseForDuration(kMinMs);
+    uma_container_->sent_fps_counter_.ProcessAndPauseForDuration(kMinMs);
+    // Pause bitrate stats.
+    uma_container_->total_byte_counter_.ProcessAndPauseForDuration(kMinMs);
+    uma_container_->media_byte_counter_.ProcessAndPauseForDuration(kMinMs);
+    uma_container_->rtx_byte_counter_.ProcessAndPauseForDuration(kMinMs);
+    uma_container_->padding_byte_counter_.ProcessAndPauseForDuration(kMinMs);
+    uma_container_->retransmit_byte_counter_.ProcessAndPauseForDuration(kMinMs);
+    uma_container_->fec_byte_counter_.ProcessAndPauseForDuration(kMinMs);
+  } else {
+    // Stop pause explicitly for stats that may be zero/not updated for some
+    // time.
+    uma_container_->rtx_byte_counter_.ProcessAndStopPause();
+    uma_container_->padding_byte_counter_.ProcessAndStopPause();
+    uma_container_->retransmit_byte_counter_.ProcessAndStopPause();
+    uma_container_->fec_byte_counter_.ProcessAndStopPause();
   }
 }
 
@@ -673,8 +720,7 @@ void SendStatisticsProxy::DataCountersUpdated(
     uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
   VideoSendStream::StreamStats* stats = GetStatsEntry(ssrc);
-  RTC_DCHECK(stats) << "DataCountersUpdated reported for unknown ssrc: "
-                    << ssrc;
+  RTC_DCHECK(stats) << "DataCountersUpdated reported for unknown ssrc " << ssrc;
 
   if (stats->is_flexfec) {
     // The same counters are reported for both the media ssrc and flexfec ssrc.
@@ -685,6 +731,20 @@ void SendStatisticsProxy::DataCountersUpdated(
   stats->rtp_stats = counters;
   if (uma_container_->first_rtp_stats_time_ms_ == -1)
     uma_container_->first_rtp_stats_time_ms_ = clock_->TimeInMilliseconds();
+
+  uma_container_->total_byte_counter_.Set(counters.transmitted.TotalBytes(),
+                                          ssrc);
+  uma_container_->padding_byte_counter_.Set(counters.transmitted.padding_bytes,
+                                            ssrc);
+  uma_container_->retransmit_byte_counter_.Set(
+      counters.retransmitted.TotalBytes(), ssrc);
+  uma_container_->fec_byte_counter_.Set(counters.fec.TotalBytes(), ssrc);
+  if (stats->is_rtx) {
+    uma_container_->rtx_byte_counter_.Set(counters.transmitted.TotalBytes(),
+                                          ssrc);
+  } else {
+    uma_container_->media_byte_counter_.Set(counters.MediaPayloadBytes(), ssrc);
+  }
 }
 
 void SendStatisticsProxy::Notify(uint32_t total_bitrate_bps,

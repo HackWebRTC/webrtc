@@ -178,6 +178,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     void UpdateHistograms(const VideoSendStream::Config::Rtp& rtp_config,
                           const VideoSendStream::Stats& current_stats);
 
+    void InitializeBitrateCounters(const VideoSendStream::Stats& stats);
+
     const std::string uma_prefix_;
     Clock* const clock_;
     int max_sent_width_per_timestamp_;
@@ -198,6 +200,12 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     rtc::RateTracker input_frame_rate_tracker_;
     RateCounter input_fps_counter_;
     RateCounter sent_fps_counter_;
+    RateAccCounter total_byte_counter_;
+    RateAccCounter media_byte_counter_;
+    RateAccCounter rtx_byte_counter_;
+    RateAccCounter padding_byte_counter_;
+    RateAccCounter retransmit_byte_counter_;
+    RateAccCounter fec_byte_counter_;
     int64_t first_rtcp_stats_time_ms_;
     int64_t first_rtp_stats_time_ms_;
     BoolSampleCounter paused_time_counter_;
