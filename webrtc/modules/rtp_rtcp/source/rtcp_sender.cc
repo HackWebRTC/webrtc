@@ -1049,6 +1049,12 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
     // but we can't because of an incorrect warning (C4822) in MVS 2013.
   } sender(transport_, event_log_);
 
+  {
+    rtc::CritScope lock(&critical_section_rtcp_sender_);
+    if (method_ == RtcpMode::kOff)
+      return false;
+  }
+
   RTC_DCHECK_LE(max_packet_size_, IP_PACKET_SIZE);
   uint8_t buffer[IP_PACKET_SIZE];
   return packet.BuildExternalBuffer(buffer, max_packet_size_, &sender) &&

@@ -240,9 +240,6 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = &encoder_;
-      send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kTransportSequenceNumberUri, kExtensionId));
     }
 
     void PerformTest() override {
@@ -460,12 +457,12 @@ class UlpfecObserver : public test::EndToEndTest {
         VideoSendStreamTest::kRedPayloadType;
     send_config->rtp.ulpfec.ulpfec_payload_type =
         VideoSendStreamTest::kUlpfecPayloadType;
-    if (header_extensions_enabled_) {
+    EXPECT_FALSE(send_config->rtp.extensions.empty());
+    if (!header_extensions_enabled_) {
+      send_config->rtp.extensions.clear();
+    } else {
       send_config->rtp.extensions.push_back(RtpExtension(
           RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                       test::kTransportSequenceNumberExtensionId));
     }
     (*receive_configs)[0].rtp.ulpfec.red_payload_type =
         send_config->rtp.ulpfec.red_payload_type;
@@ -614,9 +611,8 @@ class FlexfecObserver : public test::EndToEndTest {
           RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
       send_config->rtp.extensions.push_back(RtpExtension(
           RtpExtension::kTimestampOffsetUri, test::kTOffsetExtensionId));
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                       test::kTransportSequenceNumberExtensionId));
+    } else {
+      send_config->rtp.extensions.clear();
     }
   }
 
@@ -1272,19 +1268,9 @@ TEST_F(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                       test::kTransportSequenceNumberExtensionId));
       // Turn on RTX.
       send_config->rtp.rtx.payload_type = kFakeVideoSendPayloadType;
       send_config->rtp.rtx.ssrcs.push_back(kVideoSendSsrcs[0]);
-
-      (*receive_configs)[0].rtp.extensions.clear();
-      (*receive_configs)[0].rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                       test::kTransportSequenceNumberExtensionId));
-      (*receive_configs)[0].rtp.transport_cc = true;
     }
 
     void PerformTest() override {

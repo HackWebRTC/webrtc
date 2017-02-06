@@ -200,7 +200,8 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
     video_send_config_.encoder_settings.payload_type =
         kFakeVideoSendPayloadType;
     video_send_config_.rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
+        RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                     kTransportSequenceNumberExtensionId));
     FillEncoderConfiguration(num_video_streams, &video_encoder_config_);
 
     for (size_t i = 0; i < num_video_streams; ++i)
@@ -231,7 +232,8 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
   if (num_video_streams_ > 0) {
     RTC_DCHECK(!video_send_config_.rtp.ssrcs.empty());
     VideoReceiveStream::Config video_config(rtcp_send_transport);
-    video_config.rtp.remb = true;
+    video_config.rtp.remb = false;
+    video_config.rtp.transport_cc = true;
     video_config.rtp.local_ssrc = kReceiverLocalVideoSsrc;
     for (const RtpExtension& extension : video_send_config_.rtp.extensions)
       video_config.rtp.extensions.push_back(extension);

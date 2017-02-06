@@ -1308,6 +1308,7 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       if (++sent_rtp_ % 3 == 0)
         return DROP_PACKET;
 
@@ -1315,6 +1316,7 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
     }
 
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
+      rtc::CritScope lock(&crit_);
       ++sent_rtcp_;
       test::RtcpPacketParser parser;
       EXPECT_TRUE(parser.Parse(packet, length));
@@ -1323,7 +1325,10 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
 
       switch (rtcp_mode_) {
         case RtcpMode::kCompound:
-          if (parser.receiver_report()->num_packets() == 0) {
+          // TODO(holmer): We shouldn't send transport feedback alone if
+          // compound RTCP is negotiated.
+          if (parser.receiver_report()->num_packets() == 0 &&
+              parser.transport_feedback()->num_packets() == 0) {
             ADD_FAILURE() << "Received RTCP packet without receiver report for "
                              "RtcpMode::kCompound.";
             observation_complete_.Set();
@@ -1362,8 +1367,11 @@ void EndToEndTest::RespectsRtcpMode(RtcpMode rtcp_mode) {
     }
 
     RtcpMode rtcp_mode_;
-    int sent_rtp_;
-    int sent_rtcp_;
+    rtc::CriticalSection crit_;
+    // Must be protected since RTCP can be sent by both the process thread
+    // and the pacer thread.
+    int sent_rtp_ GUARDED_BY(&crit_);
+    int sent_rtcp_ GUARDED_BY(&crit_);
   } test(rtcp_mode);
 
   RunBaseTest(&test);
@@ -1803,10 +1811,6 @@ class TransportFeedbackTester : public test::EndToEndTest {
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
-    send_config->rtp.extensions.clear();
-    send_config->rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kTransportSequenceNumberUri, kExtensionId));
-    (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
     (*receive_configs)[0].rtp.transport_cc = feedback_enabled_;
   }
 
@@ -1934,6 +1938,17 @@ TEST_P(EndToEndTest, ReceiveStreamSendsRemb) {
    public:
     RembObserver() : EndToEndTest(kDefaultTimeoutMs) {}
 
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.extensions.clear();
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
+      (*receive_configs)[0].rtp.remb = true;
+      (*receive_configs)[0].rtp.transport_cc = false;
+    }
+
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
       test::RtcpPacketParser parser;
       EXPECT_TRUE(parser.Parse(packet, length));
@@ -1958,46 +1973,66 @@ TEST_P(EndToEndTest, ReceiveStreamSendsRemb) {
   RunBaseTest(&test);
 }
 
-TEST_P(EndToEndTest, VerifyBandwidthStats) {
-  class RtcpObserver : public test::EndToEndTest {
-   public:
-    RtcpObserver()
-        : EndToEndTest(kDefaultTimeoutMs),
-          sender_call_(nullptr),
-          receiver_call_(nullptr),
-          has_seen_pacer_delay_(false) {}
+class BandwidthStatsTest : public test::EndToEndTest {
+ public:
+  explicit BandwidthStatsTest(bool send_side_bwe)
+      : EndToEndTest(test::CallTest::kDefaultTimeoutMs),
+        sender_call_(nullptr),
+        receiver_call_(nullptr),
+        has_seen_pacer_delay_(false),
+        send_side_bwe_(send_side_bwe) {}
 
-    Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      Call::Stats sender_stats = sender_call_->GetStats();
-      Call::Stats receiver_stats = receiver_call_->GetStats();
-      if (!has_seen_pacer_delay_)
-        has_seen_pacer_delay_ = sender_stats.pacer_delay_ms > 0;
-      if (sender_stats.send_bandwidth_bps > 0 &&
-          receiver_stats.recv_bandwidth_bps > 0 && has_seen_pacer_delay_) {
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
+    if (!send_side_bwe_) {
+      send_config->rtp.extensions.clear();
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
+      (*receive_configs)[0].rtp.remb = true;
+      (*receive_configs)[0].rtp.transport_cc = false;
+    }
+  }
+
+  Action OnSendRtp(const uint8_t* packet, size_t length) override {
+    Call::Stats sender_stats = sender_call_->GetStats();
+    Call::Stats receiver_stats = receiver_call_->GetStats();
+    if (!has_seen_pacer_delay_)
+      has_seen_pacer_delay_ = sender_stats.pacer_delay_ms > 0;
+    if (sender_stats.send_bandwidth_bps > 0 && has_seen_pacer_delay_) {
+      if (send_side_bwe_ || receiver_stats.recv_bandwidth_bps > 0)
         observation_complete_.Set();
-      }
-      return SEND_PACKET;
     }
+    return SEND_PACKET;
+  }
 
-    void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
-      sender_call_ = sender_call;
-      receiver_call_ = receiver_call;
-    }
+  void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+    sender_call_ = sender_call;
+    receiver_call_ = receiver_call;
+  }
 
-    void PerformTest() override {
-      EXPECT_TRUE(Wait()) << "Timed out while waiting for "
-                             "non-zero bandwidth stats.";
-    }
+  void PerformTest() override {
+    EXPECT_TRUE(Wait()) << "Timed out while waiting for "
+                           "non-zero bandwidth stats.";
+  }
 
-   private:
-    Call* sender_call_;
-    Call* receiver_call_;
-    bool has_seen_pacer_delay_;
-  } test;
+ private:
+  Call* sender_call_;
+  Call* receiver_call_;
+  bool has_seen_pacer_delay_;
+  const bool send_side_bwe_;
+};
 
+TEST_P(EndToEndTest, VerifySendSideBweStats) {
+  BandwidthStatsTest test(true);
   RunBaseTest(&test);
 }
 
+TEST_P(EndToEndTest, VerifyRecvSideBweStats) {
+  BandwidthStatsTest test(false);
+  RunBaseTest(&test);
+}
 
 // Verifies that it's possible to limit the send BWE by sending a REMB.
 // This is verified by allowing the send BWE to ramp-up to >1000 kbps,
@@ -2042,18 +2077,11 @@ TEST_P(EndToEndTest, RembWithSendSideBwe) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       ASSERT_EQ(1u, send_config->rtp.ssrcs.size());
-      send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                       test::kTransportSequenceNumberExtensionId));
       sender_ssrc_ = send_config->rtp.ssrcs[0];
 
       encoder_config->max_bitrate_bps = 2000000;
 
       ASSERT_EQ(1u, receive_configs->size());
-      (*receive_configs)[0].rtp.remb = false;
-      (*receive_configs)[0].rtp.transport_cc = true;
-      (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
       RtpRtcp::Configuration config;
       config.receiver_only = true;
       config.clock = clock_;
@@ -2307,11 +2335,6 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      static const int kExtensionId = 8;
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kTransportSequenceNumberUri, kExtensionId));
-      (*receive_configs)[0].rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kTransportSequenceNumberUri, kExtensionId));
       // NACK
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
@@ -3973,16 +3996,6 @@ TEST_P(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
 
     size_t GetNumVideoStreams() const override { return 1; }
     size_t GetNumAudioStreams() const override { return 1; }
-
-    void ModifyVideoConfigs(
-        VideoSendStream::Config* send_config,
-        std::vector<VideoReceiveStream::Config>* receive_configs,
-        VideoEncoderConfig* encoder_config) override {
-      send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kTransportSequenceNumberUri, kExtensionId));
-      (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
-    }
 
     void ModifyAudioConfigs(
         AudioSendStream::Config* send_config,
