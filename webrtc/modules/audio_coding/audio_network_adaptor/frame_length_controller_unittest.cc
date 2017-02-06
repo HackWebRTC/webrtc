@@ -323,7 +323,7 @@ TEST(FrameLengthControllerTest, CheckBehaviorOnChangingNetworkMetrics) {
   CheckDecision(controller.get(), rtc::Optional<bool>(), 60);
 
   UpdateNetworkMetrics(controller.get(),
-                       rtc::Optional<int>(kMediumPacketLossFraction),
+                       rtc::Optional<int>(kMediumBandwidthBps),
                        rtc::Optional<float>(kFlDecreasingPacketLossFraction));
   CheckDecision(controller.get(), rtc::Optional<bool>(), 20);
 }
