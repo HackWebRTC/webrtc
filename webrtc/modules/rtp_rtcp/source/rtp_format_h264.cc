@@ -293,6 +293,7 @@ void RtpPacketizerH264::NextAggregatePacket(RtpPacketToSend* rtp_packet) {
   // STAP-A NALU header.
   buffer[0] = (packet->header & (kFBit | kNriMask)) | H264::NaluType::kStapA;
   size_t index = kNalHeaderSize;
+  bool is_last_fragment = packet->last_fragment;
   while (packet->aggregated) {
     const Fragment& fragment = packet->source_fragment;
     // Add NAL unit length field.
@@ -303,11 +304,12 @@ void RtpPacketizerH264::NextAggregatePacket(RtpPacketToSend* rtp_packet) {
     index += fragment.length;
     packets_.pop();
     input_fragments_.pop_front();
-    if (packet->last_fragment)
+    if (is_last_fragment)
       break;
     packet = &packets_.front();
+    is_last_fragment = packet->last_fragment;
   }
-  RTC_CHECK(packet->last_fragment);
+  RTC_CHECK(is_last_fragment);
   rtp_packet->SetPayloadSize(index);
 }
 
