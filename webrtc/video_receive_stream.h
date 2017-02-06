@@ -150,13 +150,6 @@ class VideoReceiveStream {
       // For RTX to be enabled, both an SSRC and this mapping are needed.
       std::map<int, int> rtx_payload_types;
 
-      // TODO(brandtr): Remove this member function when internal project has
-      // been updated.
-      void AddRtxInfo(int media_pt, int rtx_pt, uint32_t new_rtx_ssrc) {
-        rtx_ssrc = new_rtx_ssrc;
-        rtx_payload_types[media_pt] = rtx_pt;
-      }
-
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
     } rtp;
