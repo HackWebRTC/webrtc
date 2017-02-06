@@ -208,7 +208,7 @@ class Call : public webrtc::Call,
     // extensions per SSRC instead, which leads to some storage overhead.
     RtpHeaderExtensionMap extensions;
     // Set if the RTCP feedback message needed for send side BWE was negotiated.
-    bool transport_cc;
+    bool transport_cc = false;
   };
   std::map<uint32_t, ReceiveRtpConfig> receive_rtp_config_
       GUARDED_BY(receive_crit_);

@@ -69,14 +69,12 @@ AudioReceiveStream::AudioReceiveStream(
     webrtc::RtcEventLog* event_log)
     : remote_bitrate_estimator_(remote_bitrate_estimator),
       config_(config),
-      audio_state_(audio_state),
-      rtp_header_parser_(RtpHeaderParser::Create()) {
+      audio_state_(audio_state) {
   LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
   RTC_DCHECK(packet_router);
   RTC_DCHECK(remote_bitrate_estimator);
-  RTC_DCHECK(rtp_header_parser_);
 
   module_process_thread_checker_.DetachFromThread();
 
@@ -107,14 +105,8 @@ AudioReceiveStream::AudioReceiveStream(
   for (const auto& extension : config.rtp.extensions) {
     if (extension.uri == RtpExtension::kAudioLevelUri) {
       channel_proxy_->SetReceiveAudioLevelIndicationStatus(true, extension.id);
-      bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionAudioLevel, extension.id);
-      RTC_DCHECK(registered);
     } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       channel_proxy_->EnableReceiveTransportSequenceNumber(extension.id);
-      bool registered = rtp_header_parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionTransportSequenceNumber, extension.id);
-      RTC_DCHECK(registered);
     } else {
       RTC_NOTREACHED() << "Unsupported RTP extension.";
     }
@@ -321,11 +313,6 @@ bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
   // calls on the worker thread. We should move towards always using a network
   // thread. Then this check can be enabled.
   // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
-  RTPHeader header;
-  if (!rtp_header_parser_->Parse(packet, length, &header)) {
-    return false;
-  }
-
   return channel_proxy_->ReceivedRTPPacket(packet, length, packet_time);
 }
 

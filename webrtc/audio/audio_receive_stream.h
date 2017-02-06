@@ -19,7 +19,6 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call/audio_receive_stream.h"
 #include "webrtc/call/syncable.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 
 namespace webrtc {
 class PacketRouter;
@@ -81,7 +80,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   RemoteBitrateEstimator* const remote_bitrate_estimator_;
   const webrtc::AudioReceiveStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
-  std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
 
   bool playing_ ACCESS_ON(worker_thread_checker_) = false;
