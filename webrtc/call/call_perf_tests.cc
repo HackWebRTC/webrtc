@@ -663,8 +663,9 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
         EXPECT_EQ(2 * kDefaultWidth, config->width);
         EXPECT_EQ(2 * kDefaultHeight, config->height);
         EXPECT_GE(last_set_bitrate_kbps_, kReconfigureThresholdKbps);
-        EXPECT_NEAR(config->startBitrate, last_set_bitrate_kbps_,
-                    kPermittedReconfiguredBitrateDiffKbps)
+        EXPECT_GT(
+            config->startBitrate,
+            last_set_bitrate_kbps_ - kPermittedReconfiguredBitrateDiffKbps)
             << "Encoder reconfigured with bitrate too far away from last set.";
         observation_complete_.Set();
       }
