@@ -37,8 +37,13 @@ rtc_source_set("video_test_common") {
     "fake_texture_frame.h",
     "frame_generator.cc",
     "frame_generator.h",
+    "frame_generator_capturer.cc",
+    "frame_generator_capturer.h",
     "frame_utils.cc",
     "frame_utils.h",
+    "vcm_capturer.cc",
+    "vcm_capturer.h",
+    "video_capturer.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -47,7 +52,9 @@ rtc_source_set("video_test_common") {
   }
 
   deps = [
+    ":video_test_support",
     "../common_video",
+    "../modules/video_capture:video_capture_module",
   ]
 }
 
@@ -118,22 +125,59 @@ rtc_source_set("fileutils") {
   }
 }
 
+rtc_source_set("video_test_support") {
+  testonly = true
+
+  sources = [
+    "testsupport/frame_reader.cc",
+    "testsupport/frame_reader.h",
+    "testsupport/frame_writer.cc",
+    "testsupport/frame_writer.h",
+    "testsupport/metrics/video_metrics.cc",
+    "testsupport/metrics/video_metrics.h",
+    "testsupport/mock/mock_frame_reader.h",
+    "testsupport/mock/mock_frame_writer.h",
+  ]
+
+  deps = [
+    "../base:rtc_base_approved",
+    "../common_video",
+    "../system_wrappers",
+    "//testing/gmock",
+    "//testing/gtest",
+    "//third_party/gflags",
+  ]
+
+  public_deps = [
+    ":fileutils",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  if (is_android) {
+    deps += [ "//base:base" ]
+  }
+
+  if (is_ios) {
+    deps += [ "//webrtc/sdk:rtc_sdk_common_objc" ]
+  }
+
+  if (rtc_use_memcheck) {
+    data = valgrind_webrtc_dependencies
+  }
+}
+
 rtc_source_set("test_support") {
   testonly = true
 
   sources = [
     "gmock.h",
     "gtest.h",
-    "testsupport/frame_reader.cc",
-    "testsupport/frame_reader.h",
-    "testsupport/frame_writer.cc",
-    "testsupport/frame_writer.h",
     "testsupport/isolated_output.cc",
     "testsupport/isolated_output.h",
-    "testsupport/metrics/video_metrics.cc",
-    "testsupport/metrics/video_metrics.h",
-    "testsupport/mock/mock_frame_reader.h",
-    "testsupport/mock/mock_frame_writer.h",
     "testsupport/packet_reader.cc",
     "testsupport/packet_reader.h",
     "testsupport/perf_test.cc",
@@ -144,7 +188,6 @@ rtc_source_set("test_support") {
   ]
 
   deps = [
-    ":video_test_common",
     "../base:gtest_prod",
     "../base:rtc_base_approved",
     "../common_video",
@@ -250,6 +293,7 @@ rtc_test("test_support_unittests") {
     ":fileutils_unittests",
     ":test_common",
     ":test_main",
+    ":video_test_common",
     "../modules/video_capture",
     "//testing/gmock",
     "//testing/gtest",
@@ -292,8 +336,6 @@ rtc_source_set("test_common") {
     "fake_network_pipe.cc",
     "fake_network_pipe.h",
     "fake_videorenderer.h",
-    "frame_generator_capturer.cc",
-    "frame_generator_capturer.h",
     "layer_filtering_transport.cc",
     "layer_filtering_transport.h",
     "mock_transport.h",
@@ -304,9 +346,6 @@ rtc_source_set("test_common") {
     "rtp_rtcp_observer.h",
     "statistics.cc",
     "statistics.h",
-    "vcm_capturer.cc",
-    "vcm_capturer.h",
-    "video_capturer.h",
     "win/run_loop_win.cc",
   ]
   if (!is_win) {
@@ -332,8 +371,6 @@ rtc_source_set("test_common") {
     "../modules/audio_device:mock_audio_device",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing",
-    "../modules/video_capture:video_capture",
-    "../modules/video_capture:video_capture_module",
     "../video",
     "//testing/gmock",
     "//testing/gtest",

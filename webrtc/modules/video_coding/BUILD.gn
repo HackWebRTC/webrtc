@@ -303,6 +303,9 @@ if (rtc_include_tests) {
       "../../system_wrappers:metrics_default",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
+      "../../test:video_test_common",
+      "../../test:video_test_support",
+      "../video_capture",
       "//third_party/gflags",
     ]
   }  # video_quality_measurement
@@ -334,6 +337,7 @@ if (rtc_include_tests) {
       "../../common_video:common_video",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
+      "../../test:video_test_support",
     ]
   }
 
@@ -356,6 +360,8 @@ if (rtc_include_tests) {
       "../../media:rtc_media_base",
       "../../test:test_support",
       "../../test:video_test_common",
+      "../../test:video_test_support",
+      "../video_capture",
     ]
     if (rtc_use_h264) {
       defines = [ "WEBRTC_VIDEOPROCESSOR_H264_TESTS" ]
@@ -431,6 +437,7 @@ if (rtc_include_tests) {
       "../../test:field_trial",
       "../../test:test_support",
       "../../test:video_test_common",
+      "../../test:video_test_support",
       "../rtp_rtcp:rtp_rtcp",
       "//testing/gmock",
     ]

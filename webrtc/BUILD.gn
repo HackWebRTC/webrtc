@@ -416,6 +416,7 @@ if (rtc_include_tests) {
       "modules/video_capture",
       "test:test_common",
       "test:test_main",
+      "test:video_test_common",
       "video:video_tests",
     ]
     data = video_engine_tests_resources

@@ -348,6 +348,7 @@ if (rtc_include_tests) {
         "//webrtc/system_wrappers/:system_wrappers_default",
         "//webrtc/test/:test_common",
         "//webrtc/test/:test_support",
+        "//webrtc/test/:video_test_common",
       ]
 
       sources = [

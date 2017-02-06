@@ -52,6 +52,7 @@ if (rtc_include_tests) {
 
     deps = [
       "../test:test_main",
+      "../test:video_test_common",
       "audio_coding:audio_coding_modules_tests",
       "desktop_capture:desktop_capture_modules_tests",
       "rtp_rtcp:rtp_rtcp_modules_tests",
@@ -225,6 +226,7 @@ if (rtc_include_tests) {
       "remote_bitrate_estimator:remote_bitrate_estimator_unittests",
       "rtp_rtcp:rtp_rtcp_unittests",
       "utility:utility_unittests",
+      "video_capture",
       "video_coding:video_coding_unittests",
       "video_processing:video_processing_unittests",
     ]

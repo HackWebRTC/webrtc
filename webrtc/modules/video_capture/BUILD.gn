@@ -31,7 +31,6 @@ rtc_static_library("video_capture_module") {
     "../../base:rtc_base_approved",
     "../../common_video",
     "../../system_wrappers",
-    "../utility",
   ]
 
   if (!build_with_chromium && is_clang) {

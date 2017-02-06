@@ -119,6 +119,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":common_video",
+      "../modules/video_capture:video_capture",
       "../system_wrappers:system_wrappers",
       "../test:test_main",
       "../test:video_test_common",
