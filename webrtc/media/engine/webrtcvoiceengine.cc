@@ -2499,14 +2499,6 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
     return;
   }
 
-  if (default_recv_ssrc_ != -1) {
-    LOG(LS_INFO) << "Removing default receive stream with ssrc "
-                 << default_recv_ssrc_;
-    RTC_DCHECK_NE(ssrc, default_recv_ssrc_);
-    RemoveRecvStream(default_recv_ssrc_);
-    default_recv_ssrc_ = -1;
-  }
-
   StreamParams sp;
   sp.ssrcs.push_back(ssrc);
   LOG(LS_INFO) << "Creating default receive stream for SSRC=" << ssrc << ".";
@@ -2514,7 +2506,14 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
     LOG(LS_WARNING) << "Could not create default receive stream.";
     return;
   }
+  if (default_recv_ssrc_ != -1) {
+    LOG(LS_INFO) << "Removing default receive stream with ssrc "
+                 << default_recv_ssrc_;
+    RTC_DCHECK_NE(ssrc, default_recv_ssrc_);
+    RemoveRecvStream(default_recv_ssrc_);
+  }
   default_recv_ssrc_ = ssrc;
+
   SetOutputVolume(default_recv_ssrc_, default_recv_volume_);
   if (default_sink_) {
     std::unique_ptr<webrtc::AudioSinkInterface> proxy_sink(
