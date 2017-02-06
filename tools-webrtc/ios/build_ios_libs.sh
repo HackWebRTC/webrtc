@@ -181,13 +181,6 @@ elif [[ ${BUILD_TYPE} = "framework" ]]; then
        ${X64_LIB_PATH}/${DYLIB_PATH} \
        -create -output ${SDK_OUTPUT_DIR}/${DYLIB_PATH}
 
-  # Remove stray mobileprovision if it exists until chromium roll lands.
-  # See https://codereview.chromium.org/2397433002.
-  PROVISION_FILE=${SDK_OUTPUT_DIR}/WebRTC.framework/embedded.mobileprovision
-  if [[ -e ${PROVISION_FILE} ]]; then
-    rm ${PROVISION_FILE}
-  fi
-
   # Merge the dSYM slices.
   DSYM_PATH="WebRTC.dSYM/Contents/Resources/DWARF/WebRTC"
   cp -R ${ARM64_LIB_PATH}/WebRTC.dSYM ${SDK_OUTPUT_DIR}
