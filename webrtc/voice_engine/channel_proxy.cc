@@ -297,6 +297,74 @@ void ChannelProxy::SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
   channel()->SetRtcpRttStats(rtcp_rtt_stats);
 }
 
+bool ChannelProxy::GetRecCodec(CodecInst* codec_inst) const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  return channel()->GetRecCodec(*codec_inst) == 0;
+}
+
+bool ChannelProxy::GetSendCodec(CodecInst* codec_inst) const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  return channel()->GetSendCodec(*codec_inst) == 0;
+}
+
+bool ChannelProxy::SetVADStatus(bool enable) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  return channel()->SetVADStatus(enable, VADNormal, false) == 0;
+}
+
+bool ChannelProxy::SetCodecFECStatus(bool enable) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  return channel()->SetCodecFECStatus(enable) == 0;
+}
+
+bool ChannelProxy::SetOpusDtx(bool enable) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  return channel()->SetOpusDtx(enable) == 0;
+}
+
+bool ChannelProxy::SetOpusMaxPlaybackRate(int frequency_hz) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  return channel()->SetOpusMaxPlaybackRate(frequency_hz) == 0;
+}
+
+bool ChannelProxy::SetSendCodec(const CodecInst& codec_inst) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  // Validation code copied from VoECodecImpl::SetSendCodec().
+  if ((STR_CASE_CMP(codec_inst.plname, "L16") == 0) &&
+      (codec_inst.pacsize >= 960)) {
+    return false;
+  }
+  if (!STR_CASE_CMP(codec_inst.plname, "CN") ||
+      !STR_CASE_CMP(codec_inst.plname, "TELEPHONE-EVENT") ||
+      !STR_CASE_CMP(codec_inst.plname, "RED")) {
+    return false;
+  }
+  if ((codec_inst.channels != 1) && (codec_inst.channels != 2)) {
+    return false;
+  }
+  if (!AudioCodingModule::IsCodecValid(codec_inst)) {
+    return false;
+  }
+  return channel()->SetSendCodec(codec_inst) == 0;
+}
+
+bool ChannelProxy::SetSendCNPayloadType(int type,
+                                        PayloadFrequencies frequency) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  // Validation code copied from VoECodecImpl::SetSendCNPayloadType().
+  if (type < 96 || type > 127) {
+    // Only allow dynamic range: 96 to 127
+    return false;
+  }
+  if ((frequency != kFreq16000Hz) && (frequency != kFreq32000Hz)) {
+    // It is not possible to modify the payload type for CN/8000.
+    // We only allow modification of the CN payload type for CN/16000
+    // and CN/32000.
+    return false;
+  }
+  return channel()->SetSendCNPayloadType(type, frequency) == 0;
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();

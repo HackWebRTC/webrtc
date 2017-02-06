@@ -143,7 +143,7 @@ struct ConfigHelper {
 
   void SetupMockForGetStats() {
     using testing::DoAll;
-    using testing::SetArgReferee;
+    using testing::SetArgPointee;
 
     ASSERT_TRUE(channel_proxy_);
     EXPECT_CALL(*channel_proxy_, GetRTCPStatistics())
@@ -156,9 +156,8 @@ struct ConfigHelper {
         .WillOnce(Return(kNetworkStats));
     EXPECT_CALL(*channel_proxy_, GetDecodingCallStatistics())
         .WillOnce(Return(kAudioDecodeStats));
-
-    EXPECT_CALL(voice_engine_, GetRecCodec(kChannelId, _))
-        .WillOnce(DoAll(SetArgReferee<1>(kCodecInst), Return(0)));
+    EXPECT_CALL(*channel_proxy_, GetRecCodec(_))
+        .WillOnce(DoAll(SetArgPointee<0>(kCodecInst), Return(true)));
   }
 
  private:

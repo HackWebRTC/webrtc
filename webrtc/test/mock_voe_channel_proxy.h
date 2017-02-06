@@ -79,6 +79,15 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
                                             int* playout_buffer_delay_ms));
   MOCK_CONST_METHOD0(GetPlayoutTimestamp, uint32_t());
   MOCK_METHOD1(SetMinimumPlayoutDelay, void(int delay_ms));
+  MOCK_CONST_METHOD1(GetRecCodec, bool(CodecInst* codec_inst));
+  MOCK_CONST_METHOD1(GetSendCodec, bool(CodecInst* codec_inst));
+  MOCK_METHOD1(SetVADStatus, bool(bool enable));
+  MOCK_METHOD1(SetCodecFECStatus, bool(bool enable));
+  MOCK_METHOD1(SetOpusDtx, bool(bool enable));
+  MOCK_METHOD1(SetOpusMaxPlaybackRate, bool(int frequency_hz));
+  MOCK_METHOD1(SetSendCodec, bool(const CodecInst& codec_inst));
+  MOCK_METHOD2(SetSendCNPayloadType,
+               bool(int type, PayloadFrequencies frequency));
 };
 }  // namespace test
 }  // namespace webrtc

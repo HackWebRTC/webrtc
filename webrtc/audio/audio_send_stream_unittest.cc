@@ -154,16 +154,15 @@ struct ConfigHelper {
   }
 
   void SetupMockForSetupSendCodec() {
-    EXPECT_CALL(voice_engine_, SetVADStatus(kChannelId, false, _, _))
-        .WillOnce(Return(0));
-    EXPECT_CALL(voice_engine_, SetFECStatus(kChannelId, false))
-        .WillOnce(Return(0));
+    EXPECT_CALL(*channel_proxy_, SetVADStatus(false))
+        .WillOnce(Return(true));
+    EXPECT_CALL(*channel_proxy_, SetCodecFECStatus(false))
+        .WillOnce(Return(true));
     EXPECT_CALL(*channel_proxy_, DisableAudioNetworkAdaptor());
-    // Let |GetSendCodec| return -1 for the first time to indicate that no send
-    // codec has been set.
-    EXPECT_CALL(voice_engine_, GetSendCodec(kChannelId, _))
-        .WillOnce(Return(-1));
-    EXPECT_CALL(voice_engine_, SetSendCodec(kChannelId, _)).WillOnce(Return(0));
+    // Let |GetSendCodec| return false for the first time to indicate that no
+    // send codec has been set.
+    EXPECT_CALL(*channel_proxy_, GetSendCodec(_)).WillOnce(Return(false));
+    EXPECT_CALL(*channel_proxy_, SetSendCodec(_)).WillOnce(Return(true));
   }
   RtcpRttStats* rtcp_rtt_stats() { return &rtcp_rtt_stats_; }
 
@@ -180,6 +179,7 @@ struct ConfigHelper {
 
   void SetupMockForGetStats() {
     using testing::DoAll;
+    using testing::SetArgPointee;
     using testing::SetArgReferee;
 
     std::vector<ReportBlock> report_blocks;
@@ -195,9 +195,8 @@ struct ConfigHelper {
         .WillRepeatedly(Return(kCallStats));
     EXPECT_CALL(*channel_proxy_, GetRemoteRTCPReportBlocks())
         .WillRepeatedly(Return(report_blocks));
-
-    EXPECT_CALL(voice_engine_, GetSendCodec(kChannelId, _))
-        .WillRepeatedly(DoAll(SetArgReferee<1>(kIsacCodec), Return(0)));
+    EXPECT_CALL(*channel_proxy_, GetSendCodec(_))
+        .WillRepeatedly(DoAll(SetArgPointee<0>(kIsacCodec), Return(true)));
     EXPECT_CALL(voice_engine_, GetSpeechInputLevelFullRange(_))
         .WillRepeatedly(DoAll(SetArgReferee<0>(kSpeechInputLevel), Return(0)));
     EXPECT_CALL(voice_engine_, audio_processing())
@@ -365,22 +364,22 @@ TEST(AudioSendStreamTest, SendCodecAppliesConfigParams) {
   stream_config.send_codec_spec.max_ptime_ms = 60;
   stream_config.audio_network_adaptor_config =
       rtc::Optional<std::string>("abced");
-  EXPECT_CALL(*helper.voice_engine(), SetFECStatus(kChannelId, true))
-      .WillOnce(Return(0));
+  EXPECT_CALL(*helper.channel_proxy(), SetCodecFECStatus(true))
+      .WillOnce(Return(true));
   EXPECT_CALL(
-      *helper.voice_engine(),
-      SetOpusDtx(kChannelId, stream_config.send_codec_spec.enable_opus_dtx))
-      .WillOnce(Return(0));
+      *helper.channel_proxy(),
+      SetOpusDtx(stream_config.send_codec_spec.enable_opus_dtx))
+      .WillOnce(Return(true));
   EXPECT_CALL(
-      *helper.voice_engine(),
+      *helper.channel_proxy(),
       SetOpusMaxPlaybackRate(
-          kChannelId, stream_config.send_codec_spec.opus_max_playback_rate))
-      .WillOnce(Return(0));
-  EXPECT_CALL(*helper.voice_engine(),
+          stream_config.send_codec_spec.opus_max_playback_rate))
+      .WillOnce(Return(true));
+  EXPECT_CALL(*helper.channel_proxy(),
               SetSendCNPayloadType(
-                  kChannelId, stream_config.send_codec_spec.cng_payload_type,
+                  stream_config.send_codec_spec.cng_payload_type,
                   webrtc::kFreq16000Hz))
-      .WillOnce(Return(0));
+      .WillOnce(Return(true));
   EXPECT_CALL(
       *helper.channel_proxy(),
       SetReceiverFrameLengthRange(stream_config.send_codec_spec.min_ptime_ms,
@@ -403,8 +402,8 @@ TEST(AudioSendStreamTest, SendCodecCanApplyVad) {
   stream_config.send_codec_spec.codec_inst = kG722Codec;
   stream_config.send_codec_spec.cng_plfreq = 8000;
   stream_config.send_codec_spec.cng_payload_type = 105;
-  EXPECT_CALL(*helper.voice_engine(), SetVADStatus(kChannelId, true, _, _))
-      .WillOnce(Return(0));
+  EXPECT_CALL(*helper.channel_proxy(), SetVADStatus(true))
+      .WillOnce(Return(true));
   internal::AudioSendStream send_stream(
       stream_config, helper.audio_state(), helper.worker_queue(),
       helper.packet_router(), helper.congestion_controller(),

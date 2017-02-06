@@ -107,8 +107,15 @@ class ChannelProxy {
                                 int* playout_buffer_delay_ms) const;
   virtual uint32_t GetPlayoutTimestamp() const;
   virtual void SetMinimumPlayoutDelay(int delay_ms);
-
   virtual void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
+  virtual bool GetRecCodec(CodecInst* codec_inst) const;
+  virtual bool GetSendCodec(CodecInst* codec_inst) const;
+  virtual bool SetVADStatus(bool enable);
+  virtual bool SetCodecFECStatus(bool enable);
+  virtual bool SetOpusDtx(bool enable);
+  virtual bool SetOpusMaxPlaybackRate(int frequency_hz);
+  virtual bool SetSendCodec(const CodecInst& codec_inst);
+  virtual bool SetSendCNPayloadType(int type, PayloadFrequencies frequency);
 
  private:
   Channel* channel() const;

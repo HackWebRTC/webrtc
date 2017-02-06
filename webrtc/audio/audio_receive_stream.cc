@@ -25,11 +25,6 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_codec.h"
-#include "webrtc/voice_engine/include/voe_neteq_stats.h"
-#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
-#include "webrtc/voice_engine/include/voe_video_sync.h"
-#include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
@@ -177,11 +172,12 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   webrtc::AudioReceiveStream::Stats stats;
   stats.remote_ssrc = config_.rtp.remote_ssrc;
-  ScopedVoEInterface<VoECodec> codec(voice_engine());
 
   webrtc::CallStatistics call_stats = channel_proxy_->GetRTCPStatistics();
+  // TODO(solenberg): Don't return here if we can't get the codec - return the
+  //                  stats we *can* get.
   webrtc::CodecInst codec_inst = {0};
-  if (codec->GetRecCodec(config_.voe_channel_id, codec_inst) == -1) {
+  if (!channel_proxy_->GetRecCodec(&codec_inst)) {
     return stats;
   }
 

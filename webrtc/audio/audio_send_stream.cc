@@ -23,9 +23,7 @@
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/voice_engine/channel_proxy.h"
-#include "webrtc/voice_engine/include/voe_audio_processing.h"
-#include "webrtc/voice_engine/include/voe_codec.h"
-#include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
+#include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
@@ -155,9 +153,6 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   webrtc::AudioSendStream::Stats stats;
   stats.local_ssrc = config_.rtp.ssrc;
-  ScopedVoEInterface<VoEAudioProcessing> processing(voice_engine());
-  ScopedVoEInterface<VoECodec> codec(voice_engine());
-  ScopedVoEInterface<VoEVolumeControl> volume(voice_engine());
 
   webrtc::CallStatistics call_stats = channel_proxy_->GetRTCPStatistics();
   stats.bytes_sent = call_stats.bytesSent;
@@ -172,7 +167,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   stats.aec_quality_min = -1;
 
   webrtc::CodecInst codec_inst = {0};
-  if (codec->GetSendCodec(config_.voe_channel_id, codec_inst) != -1) {
+  if (channel_proxy_->GetSendCodec(&codec_inst)) {
     RTC_DCHECK_NE(codec_inst.pltype, -1);
     stats.codec_name = codec_inst.plname;
     stats.codec_payload_type = rtc::Optional<int>(codec_inst.pltype);
@@ -196,6 +191,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
 
   // Local speech level.
   {
+    ScopedVoEInterface<VoEVolumeControl> volume(voice_engine());
     unsigned int level = 0;
     int error = volume->GetSpeechInputLevelFullRange(level);
     RTC_DCHECK_EQ(0, error);
@@ -274,14 +270,9 @@ VoiceEngine* AudioSendStream::voice_engine() const {
 
 // Apply current codec settings to a single voe::Channel used for sending.
 bool AudioSendStream::SetupSendCodec() {
-  ScopedVoEInterface<VoEBase> base(voice_engine());
-  ScopedVoEInterface<VoECodec> codec(voice_engine());
-
-  const int channel = config_.voe_channel_id;
-
   // Disable VAD and FEC unless we know the other side wants them.
-  codec->SetVADStatus(channel, false);
-  codec->SetFECStatus(channel, false);
+  channel_proxy_->SetVADStatus(false);
+  channel_proxy_->SetCodecFECStatus(false);
 
   // We disable audio network adaptor here. This will on one hand make sure that
   // audio network adaptor is disabled by default, and on the other allow audio
@@ -298,36 +289,35 @@ bool AudioSendStream::SetupSendCodec() {
   // TODO(minyue): check if this check is really needed, or can we move it into
   // |codec->SetSendCodec|.
   webrtc::CodecInst current_codec = {0};
-  if (codec->GetSendCodec(channel, current_codec) != 0 ||
+  if (!channel_proxy_->GetSendCodec(&current_codec) ||
       (send_codec_spec.codec_inst != current_codec)) {
-    if (codec->SetSendCodec(channel, send_codec_spec.codec_inst) == -1) {
-      LOG(LS_WARNING) << "SetSendCodec() failed: " << base->LastError();
+    if (!channel_proxy_->SetSendCodec(send_codec_spec.codec_inst)) {
+      LOG(LS_WARNING) << "SetSendCodec() failed.";
       return false;
     }
   }
 
   // Codec internal FEC. Treat any failure as fatal internal error.
   if (send_codec_spec.enable_codec_fec) {
-    if (codec->SetFECStatus(channel, true) != 0) {
-      LOG(LS_WARNING) << "SetFECStatus() failed: " << base->LastError();
+    if (!channel_proxy_->SetCodecFECStatus(true)) {
+      LOG(LS_WARNING) << "SetCodecFECStatus() failed.";
       return false;
     }
   }
 
   // DTX and maxplaybackrate are only set if current codec is Opus.
   if (IsCodec(send_codec_spec.codec_inst, kOpusCodecName)) {
-    if (codec->SetOpusDtx(channel, send_codec_spec.enable_opus_dtx) != 0) {
-      LOG(LS_WARNING) << "SetOpusDtx() failed: " << base->LastError();
+    if (!channel_proxy_->SetOpusDtx(send_codec_spec.enable_opus_dtx)) {
+      LOG(LS_WARNING) << "SetOpusDtx() failed.";
       return false;
     }
 
     // If opus_max_playback_rate <= 0, the default maximum playback rate
     // (48 kHz) will be used.
     if (send_codec_spec.opus_max_playback_rate > 0) {
-      if (codec->SetOpusMaxPlaybackRate(
-              channel, send_codec_spec.opus_max_playback_rate) != 0) {
-        LOG(LS_WARNING) << "SetOpusMaxPlaybackRate() failed: "
-                        << base->LastError();
+      if (!channel_proxy_->SetOpusMaxPlaybackRate(
+              send_codec_spec.opus_max_playback_rate)) {
+        LOG(LS_WARNING) << "SetOpusMaxPlaybackRate() failed.";
         return false;
       }
     }
@@ -361,10 +351,9 @@ bool AudioSendStream::SetupSendCodec() {
           RTC_NOTREACHED();
           return false;
       }
-      if (codec->SetSendCNPayloadType(channel, send_codec_spec.cng_payload_type,
-                                      cn_freq) != 0) {
-        LOG(LS_WARNING) << "SetSendCNPayloadType() failed: "
-                        << base->LastError();
+      if (!channel_proxy_->SetSendCNPayloadType(
+          send_codec_spec.cng_payload_type, cn_freq)) {
+        LOG(LS_WARNING) << "SetSendCNPayloadType() failed.";
         // TODO(ajm): This failure condition will be removed from VoE.
         // Restore the return here when we update to a new enough webrtc.
         //
@@ -382,8 +371,8 @@ bool AudioSendStream::SetupSendCodec() {
         send_codec_spec.codec_inst.channels == 1) {
       // TODO(minyue): If CN frequency == 48000 Hz is allowed, consider the
       // interaction between VAD and Opus FEC.
-      if (codec->SetVADStatus(channel, true) != 0) {
-        LOG(LS_WARNING) << "SetVADStatus() failed: " << base->LastError();
+      if (!channel_proxy_->SetVADStatus(true)) {
+        LOG(LS_WARNING) << "SetVADStatus() failed.";
         return false;
       }
     }
