@@ -1187,10 +1187,10 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   if (private_submodules_->echo_canceller3) {
     private_submodules_->echo_canceller3->ProcessCapture(capture_buffer, false);
+  } else {
+    RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessCaptureAudio(
+        capture_buffer, stream_delay_ms()));
   }
-
-  RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessCaptureAudio(
-      capture_buffer, stream_delay_ms()));
 
   if (public_submodules_->echo_control_mobile->is_enabled() &&
       public_submodules_->noise_suppression->is_enabled()) {
