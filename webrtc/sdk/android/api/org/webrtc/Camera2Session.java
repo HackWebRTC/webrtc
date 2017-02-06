@@ -315,6 +315,7 @@ public class Camera2Session implements CameraSession {
       cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId);
     } catch (final CameraAccessException e) {
       reportError("getCameraCharacteristics(): " + e.getMessage());
+      return;
     }
     cameraOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
     isCameraFrontFacing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING)
@@ -338,6 +339,7 @@ public class Camera2Session implements CameraSession {
 
     if (framerateRanges.isEmpty() || sizes.isEmpty()) {
       reportError("No supported capture formats.");
+      return;
     }
 
     final CaptureFormat.FramerateRange bestFpsRange =
@@ -360,6 +362,7 @@ public class Camera2Session implements CameraSession {
       cameraManager.openCamera(cameraId, new CameraStateCallback(), cameraThreadHandler);
     } catch (CameraAccessException e) {
       reportError("Failed to open camera: " + e);
+      return;
     }
   }
 
