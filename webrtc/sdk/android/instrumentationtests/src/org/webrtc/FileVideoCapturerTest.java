@@ -19,7 +19,7 @@ import android.support.test.filters.MediumTest;
 import android.support.test.filters.SmallTest;
 import java.io.IOException;
 import java.lang.Thread;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
@@ -106,7 +106,7 @@ public class FileVideoCapturerTest {
       assertEquals(FRAME_WIDTH * FRAME_HEIGHT * 3 / 2, frame.data.length);
 
       byte[] expectedNV12Bytes = new byte[frame.data.length];
-      FileVideoCapturer.nativeI420ToNV21(expectedFrames[i].getBytes(StandardCharsets.US_ASCII),
+      FileVideoCapturer.nativeI420ToNV21(expectedFrames[i].getBytes(Charset.forName("US-ASCII")),
           FRAME_WIDTH, FRAME_HEIGHT, expectedNV12Bytes);
 
       assertTrue(Arrays.equals(expectedNV12Bytes, frame.data));

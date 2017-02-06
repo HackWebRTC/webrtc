@@ -284,6 +284,7 @@ public class WebRtcAudioTrack {
             + "max gain: " + audioTrack.getMaxVolume());
   }
 
+  @TargetApi(24)
   private void logMainParametersExtended() {
     if (WebRtcAudioUtils.runningOnMarshmallowOrHigher()) {
       Logging.d(TAG, "AudioTrack: "
@@ -303,6 +304,7 @@ public class WebRtcAudioTrack {
   // potential audio glitch.
   // TODO(henrika): keep track of this value in the field and possibly add new
   // UMA stat if needed.
+  @TargetApi(24)
   private void logUnderrunCount() {
     if (WebRtcAudioUtils.runningOnNougatOrHigher()) {
       Logging.d(TAG, "underrun count: " + audioTrack.getUnderrunCount());

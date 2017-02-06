@@ -10,18 +10,17 @@
 
 package org.webrtc.voiceengine;
 
-import org.webrtc.Logging;
-import org.webrtc.ThreadUtils;
-
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Process;
-
 import java.lang.System;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
+import org.webrtc.Logging;
+import org.webrtc.ThreadUtils;
 
 public class WebRtcAudioRecord {
   private static final boolean DEBUG = false;
@@ -263,6 +262,7 @@ public class WebRtcAudioRecord {
             + "sample rate: " + audioRecord.getSampleRate());
   }
 
+  @TargetApi(23)
   private void logMainParametersExtended() {
     if (WebRtcAudioUtils.runningOnMarshmallowOrHigher()) {
       Logging.d(TAG, "AudioRecord: "

@@ -286,10 +286,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     screencaptureEnabled = intent.getBooleanExtra(EXTRA_SCREENCAPTURE, false);
     // If capturing format is not specified for screencapture, use screen resolution.
     if (screencaptureEnabled && videoWidth == 0 && videoHeight == 0) {
-      DisplayMetrics displayMetrics = new DisplayMetrics();
-      WindowManager windowManager =
-          (WindowManager) getApplication().getSystemService(Context.WINDOW_SERVICE);
-      windowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
+      DisplayMetrics displayMetrics = getDisplayMetrics();
       videoWidth = displayMetrics.widthPixels;
       videoHeight = displayMetrics.heightPixels;
     }
@@ -369,6 +366,15 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     }
   }
 
+  @TargetApi(17)
+  private DisplayMetrics getDisplayMetrics() {
+    DisplayMetrics displayMetrics = new DisplayMetrics();
+    WindowManager windowManager =
+        (WindowManager) getApplication().getSystemService(Context.WINDOW_SERVICE);
+    windowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
+    return displayMetrics;
+  }
+
   @TargetApi(19)
   private static int getSystemUiVisibility() {
     int flags = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN;
@@ -434,6 +440,21 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     }
 
     return null;
+  }
+
+  @TargetApi(21)
+  private VideoCapturer createScreenCapturer() {
+    if (mediaProjectionPermissionResultCode != Activity.RESULT_OK) {
+      reportError("User didn't give permission to capture the screen.");
+      return null;
+    }
+    return new ScreenCapturerAndroid(
+        mediaProjectionPermissionResultData, new MediaProjection.Callback() {
+      @Override
+      public void onStop() {
+        reportError("User revoked permission to capture the screen.");
+      }
+    });
   }
 
   // Activity interfaces
@@ -687,17 +708,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
         return null;
       }
     } else if (screencaptureEnabled) {
-      if (mediaProjectionPermissionResultCode != Activity.RESULT_OK) {
-        reportError("User didn't give permission to capture the screen.");
-        return null;
-      }
-      return new ScreenCapturerAndroid(
-          mediaProjectionPermissionResultData, new MediaProjection.Callback() {
-            @Override
-            public void onStop() {
-              reportError("User revoked permission to capture the screen.");
-            }
-          });
+      return createScreenCapturer();
     } else if (useCamera2()) {
       if (!captureToTexture()) {
         reportError(getString(R.string.camera2_texture_only_error));

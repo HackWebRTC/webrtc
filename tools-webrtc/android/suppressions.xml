@@ -5,7 +5,6 @@
        should lint cleanly for the issues below. -->
   <!-- TODO(phoglund): make work with suppress.py or remove printout referring
        to suppress.py. -->
-  <issue id="NewApi"></issue>
 
   <issue id="Assert" severity="ignore"/>
   <issue id="UseSparseArrays" severity="ignore"/>
@@ -21,7 +20,6 @@
   <issue id="RelativeOverlap" severity="ignore"/>
   <issue id="RtlCompat" severity="ignore"/>
   <issue id="IconMissingDensityFolder" severity="ignore"/>
-  <issue id="NewApi" severity="ignore"/>
   <issue id="OldTargetApi" severity="ignore"/>
 
   <issue id="GoogleAppIndexingWarning" severity="ignore"/>
