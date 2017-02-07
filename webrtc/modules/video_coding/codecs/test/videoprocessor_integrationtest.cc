@@ -10,6 +10,8 @@
 
 #include <math.h>
 
+#include <memory>
+
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
@@ -28,7 +30,7 @@
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
-
+namespace {
 // Maximum number of rate updates (i.e., calls to encoder to change bitrate
 // and/or frame rate) for the current tests.
 const int kMaxNumRateUpdates = 3;
@@ -94,6 +96,68 @@ const float kInitialBufferSize = 0.5f;
 const float kOptimalBufferSize = 0.6f;
 const float kScaleKeyFrameSize = 0.5f;
 
+void SetRateProfilePars(RateProfile* rate_profile,
+                        int update_index,
+                        int bit_rate,
+                        int frame_rate,
+                        int frame_index_rate_update) {
+  rate_profile->target_bit_rate[update_index] = bit_rate;
+  rate_profile->input_frame_rate[update_index] = frame_rate;
+  rate_profile->frame_index_rate_update[update_index] = frame_index_rate_update;
+}
+
+void SetCodecParameters(CodecConfigPars* process_settings,
+                        VideoCodecType codec_type,
+                        float packet_loss,
+                        int key_frame_interval,
+                        int num_temporal_layers,
+                        bool error_concealment_on,
+                        bool denoising_on,
+                        bool frame_dropper_on,
+                        bool spatial_resize_on) {
+  process_settings->codec_type = codec_type;
+  process_settings->packet_loss = packet_loss;
+  process_settings->key_frame_interval = key_frame_interval;
+  process_settings->num_temporal_layers = num_temporal_layers,
+  process_settings->error_concealment_on = error_concealment_on;
+  process_settings->denoising_on = denoising_on;
+  process_settings->frame_dropper_on = frame_dropper_on;
+  process_settings->spatial_resize_on = spatial_resize_on;
+}
+
+void SetQualityMetrics(QualityMetrics* quality_metrics,
+                       double minimum_avg_psnr,
+                       double minimum_min_psnr,
+                       double minimum_avg_ssim,
+                       double minimum_min_ssim) {
+  quality_metrics->minimum_avg_psnr = minimum_avg_psnr;
+  quality_metrics->minimum_min_psnr = minimum_min_psnr;
+  quality_metrics->minimum_avg_ssim = minimum_avg_ssim;
+  quality_metrics->minimum_min_ssim = minimum_min_ssim;
+}
+
+void SetRateControlMetrics(RateControlMetrics* rc_metrics,
+                           int update_index,
+                           int max_num_dropped_frames,
+                           int max_key_frame_size_mismatch,
+                           int max_delta_frame_size_mismatch,
+                           int max_encoding_rate_mismatch,
+                           int max_time_hit_target,
+                           int num_spatial_resizes,
+                           int num_key_frames) {
+  rc_metrics[update_index].max_num_dropped_frames = max_num_dropped_frames;
+  rc_metrics[update_index].max_key_frame_size_mismatch =
+      max_key_frame_size_mismatch;
+  rc_metrics[update_index].max_delta_frame_size_mismatch =
+      max_delta_frame_size_mismatch;
+  rc_metrics[update_index].max_encoding_rate_mismatch =
+      max_encoding_rate_mismatch;
+  rc_metrics[update_index].max_time_hit_target = max_time_hit_target;
+  rc_metrics[update_index].num_spatial_resizes = num_spatial_resizes;
+  rc_metrics[update_index].num_key_frames = num_key_frames;
+}
+}  // namespace
+
 // Integration test for video processor. Encodes+decodes a clip and
 // writes it to the output directory. After completion, quality metrics
 // (PSNR and SSIM) and rate control metrics are computed to verify that the
@@ -104,16 +168,16 @@ const float kScaleKeyFrameSize = 0.5f;
 // happen when some significant regression or breakdown occurs.
 class VideoProcessorIntegrationTest : public testing::Test {
  protected:
-  VideoEncoder* encoder_;
-  VideoDecoder* decoder_;
-  webrtc::test::FrameReader* frame_reader_;
-  webrtc::test::FrameWriter* frame_writer_;
-  webrtc::test::PacketReader packet_reader_;
-  webrtc::test::PacketManipulator* packet_manipulator_;
-  webrtc::test::Stats stats_;
-  webrtc::test::TestConfig config_;
+  std::unique_ptr<VideoEncoder> encoder_;
+  std::unique_ptr<VideoDecoder> decoder_;
+  std::unique_ptr<test::FrameReader> frame_reader_;
+  std::unique_ptr<test::FrameWriter> frame_writer_;
+  test::PacketReader packet_reader_;
+  std::unique_ptr<test::PacketManipulator> packet_manipulator_;
+  test::Stats stats_;
+  test::TestConfig config_;
   VideoCodec codec_settings_;
-  webrtc::test::VideoProcessor* processor_;
+  std::unique_ptr<test::VideoProcessor> processor_;
   TemporalLayersFactory tl_factory_;
 
   // Quantities defined/updated for every encoder rate update.
@@ -155,16 +219,16 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   void SetUpCodecConfig() {
     if (codec_type_ == kVideoCodecH264) {
-      encoder_ = H264Encoder::Create(cricket::VideoCodec("H264"));
-      decoder_ = H264Decoder::Create();
+      encoder_.reset(H264Encoder::Create(cricket::VideoCodec("H264")));
+      decoder_.reset(H264Decoder::Create());
       VideoCodingModule::Codec(kVideoCodecH264, &codec_settings_);
     } else if (codec_type_ == kVideoCodecVP8) {
-      encoder_ = VP8Encoder::Create();
-      decoder_ = VP8Decoder::Create();
+      encoder_.reset(VP8Encoder::Create());
+      decoder_.reset(VP8Decoder::Create());
       VideoCodingModule::Codec(kVideoCodecVP8, &codec_settings_);
     } else if (codec_type_ == kVideoCodecVP9) {
-      encoder_ = VP9Encoder::Create();
-      decoder_ = VP9Decoder::Create();
+      encoder_.reset(VP9Encoder::Create());
+      decoder_.reset(VP9Decoder::Create());
       VideoCodingModule::Codec(kVideoCodecVP9, &codec_settings_);
     }
 
@@ -219,19 +283,19 @@ class VideoProcessorIntegrationTest : public testing::Test {
         assert(false);
         break;
     }
-    frame_reader_ = new webrtc::test::FrameReaderImpl(
+    frame_reader_.reset(new test::FrameReaderImpl(
         config_.input_filename, config_.codec_settings->width,
-        config_.codec_settings->height);
-    frame_writer_ = new webrtc::test::FrameWriterImpl(
-        config_.output_filename, config_.frame_length_in_bytes);
+        config_.codec_settings->height));
+    frame_writer_.reset(new test::FrameWriterImpl(
+        config_.output_filename, config_.frame_length_in_bytes));
     ASSERT_TRUE(frame_reader_->Init());
     ASSERT_TRUE(frame_writer_->Init());
 
-    packet_manipulator_ = new webrtc::test::PacketManipulatorImpl(
-        &packet_reader_, config_.networking_config, config_.verbose);
-    processor_ = new webrtc::test::VideoProcessorImpl(
-        encoder_, decoder_, frame_reader_, frame_writer_, packet_manipulator_,
-        config_, &stats_);
+    packet_manipulator_.reset(new test::PacketManipulatorImpl(
+        &packet_reader_, config_.networking_config, config_.verbose));
+    processor_.reset(new test::VideoProcessorImpl(
+        encoder_.get(), decoder_.get(), frame_reader_.get(),
+        frame_writer_.get(), packet_manipulator_.get(), config_, &stats_));
     ASSERT_TRUE(processor_->Init());
   }
 
@@ -319,9 +383,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
         " Frame rate: %d \n",
         update_index, bit_rate_, encoding_bitrate_total_, frame_rate_);
     printf(
-        " Number of frames to approach target rate = %d, \n"
-        " Number of dropped frames = %d, \n"
-        " Number of spatial resizes = %d, \n",
+        " Number of frames to approach target rate: %d, \n"
+        " Number of dropped frames: %d, \n"
+        " Number of spatial resizes: %d, \n",
         num_frames_to_hit_target_, num_dropped_frames, num_resize_actions);
     EXPECT_LE(perc_encoding_rate_mismatch_, max_encoding_rate_mismatch);
     if (num_key_frames_ > 0) {
@@ -336,7 +400,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     printf("\n");
     printf("Rates statistics for Layer data \n");
     for (int i = 0; i < num_temporal_layers_; i++) {
-      printf("Layer #%d \n", i);
+      printf("Temporal layer #%d \n", i);
       int perc_frame_size_mismatch =
           100 * sum_frame_size_mismatch_[i] / num_frames_per_update_[i];
       int perc_encoding_rate_mismatch =
@@ -348,8 +412,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
           " Layer per frame bandwidth: %f, \n"
           " Layer Encoding bit rate: %f, \n"
           " Layer Percent frame size mismatch: %d,  \n"
-          " Layer Percent encoding rate mismatch = %d, \n"
-          " Number of frame processed per layer = %d \n",
+          " Layer Percent encoding rate mismatch: %d, \n"
+          " Number of frame processed per layer: %d \n",
           bit_rate_layer_[i], frame_rate_layer_[i], per_frame_bandwidth_[i],
           encoding_bitrate_[i], perc_frame_size_mismatch,
           perc_encoding_rate_mismatch, num_frames_per_update_[i]);
@@ -411,15 +475,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
     if (num_temporal_layers_ == 3) {
       frame_rate_layer_[2] = frame_rate_ / 2.0f;
     }
-  }
-
-  void TearDown() {
-    delete processor_;
-    delete packet_manipulator_;
-    delete frame_writer_;
-    delete frame_reader_;
-    delete decoder_;
-    delete encoder_;
   }
 
   // Processes all frames in the clip and verifies the result.
@@ -506,13 +561,13 @@ class VideoProcessorIntegrationTest : public testing::Test {
     frame_writer_->Close();
 
     // TODO(marpan): should compute these quality metrics per SetRates update.
-    webrtc::test::QualityMetricsResult psnr_result, ssim_result;
-    EXPECT_EQ(
-        0, webrtc::test::I420MetricsFromFiles(
-               config_.input_filename.c_str(), config_.output_filename.c_str(),
-               config_.codec_settings->width, config_.codec_settings->height,
-               &psnr_result, &ssim_result));
-    printf("PSNR avg: %f, min: %f    SSIM avg: %f, min: %f\n",
+    test::QualityMetricsResult psnr_result, ssim_result;
+    EXPECT_EQ(0, test::I420MetricsFromFiles(config_.input_filename.c_str(),
+                                            config_.output_filename.c_str(),
+                                            config_.codec_settings->width,
+                                            config_.codec_settings->height,
+                                            &psnr_result, &ssim_result));
+    printf("PSNR avg: %f, min: %f\nSSIM avg: %f, min: %f\n",
            psnr_result.average, psnr_result.min, ssim_result.average,
            ssim_result.min);
     stats_.PrintSummary();
@@ -525,67 +580,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
   }
 };
-
-void SetRateProfilePars(RateProfile* rate_profile,
-                        int update_index,
-                        int bit_rate,
-                        int frame_rate,
-                        int frame_index_rate_update) {
-  rate_profile->target_bit_rate[update_index] = bit_rate;
-  rate_profile->input_frame_rate[update_index] = frame_rate;
-  rate_profile->frame_index_rate_update[update_index] = frame_index_rate_update;
-}
-
-void SetCodecParameters(CodecConfigPars* process_settings,
-                        VideoCodecType codec_type,
-                        float packet_loss,
-                        int key_frame_interval,
-                        int num_temporal_layers,
-                        bool error_concealment_on,
-                        bool denoising_on,
-                        bool frame_dropper_on,
-                        bool spatial_resize_on) {
-  process_settings->codec_type = codec_type;
-  process_settings->packet_loss = packet_loss;
-  process_settings->key_frame_interval = key_frame_interval;
-  process_settings->num_temporal_layers = num_temporal_layers,
-  process_settings->error_concealment_on = error_concealment_on;
-  process_settings->denoising_on = denoising_on;
-  process_settings->frame_dropper_on = frame_dropper_on;
-  process_settings->spatial_resize_on = spatial_resize_on;
-}
-
-void SetQualityMetrics(QualityMetrics* quality_metrics,
-                       double minimum_avg_psnr,
-                       double minimum_min_psnr,
-                       double minimum_avg_ssim,
-                       double minimum_min_ssim) {
-  quality_metrics->minimum_avg_psnr = minimum_avg_psnr;
-  quality_metrics->minimum_min_psnr = minimum_min_psnr;
-  quality_metrics->minimum_avg_ssim = minimum_avg_ssim;
-  quality_metrics->minimum_min_ssim = minimum_min_ssim;
-}
-
-void SetRateControlMetrics(RateControlMetrics* rc_metrics,
-                           int update_index,
-                           int max_num_dropped_frames,
-                           int max_key_frame_size_mismatch,
-                           int max_delta_frame_size_mismatch,
-                           int max_encoding_rate_mismatch,
-                           int max_time_hit_target,
-                           int num_spatial_resizes,
-                           int num_key_frames) {
-  rc_metrics[update_index].max_num_dropped_frames = max_num_dropped_frames;
-  rc_metrics[update_index].max_key_frame_size_mismatch =
-      max_key_frame_size_mismatch;
-  rc_metrics[update_index].max_delta_frame_size_mismatch =
-      max_delta_frame_size_mismatch;
-  rc_metrics[update_index].max_encoding_rate_mismatch =
-      max_encoding_rate_mismatch;
-  rc_metrics[update_index].max_time_hit_target = max_time_hit_target;
-  rc_metrics[update_index].num_spatial_resizes = num_spatial_resizes;
-  rc_metrics[update_index].num_key_frames = num_key_frames;
-}
 
 #if defined(WEBRTC_VIDEOPROCESSOR_H264_TESTS)
 

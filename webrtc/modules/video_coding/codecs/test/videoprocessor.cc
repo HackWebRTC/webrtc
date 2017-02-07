@@ -20,6 +20,7 @@
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/include/video_codec_initializer.h"
 #include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
@@ -147,10 +148,30 @@ bool VideoProcessorImpl::Init() {
     printf("  #CPU cores used  : %d\n", nbr_of_cores);
     printf("  Total # of frames: %d\n", frame_reader_->NumberOfFrames());
     printf("  Codec settings:\n");
-    printf("    Start bitrate  : %d kbps\n",
+    printf("    Start bitrate    : %d kbps\n",
            config_.codec_settings->startBitrate);
-    printf("    Width          : %d\n", config_.codec_settings->width);
-    printf("    Height         : %d\n", config_.codec_settings->height);
+    printf("    Width            : %d\n", config_.codec_settings->width);
+    printf("    Height           : %d\n", config_.codec_settings->height);
+    printf("    Codec type       : %s\n",
+           CodecTypeToPayloadName(config_.codec_settings->codecType)
+               .value_or("Unknown"));
+    printf("    Encoder implementation name: %s\n",
+           encoder_->ImplementationName());
+    printf("    Decoder implementation name: %s\n",
+           decoder_->ImplementationName());
+    if (config_.codec_settings->codecType == kVideoCodecVP8) {
+      printf("    Denoising        : %d\n",
+             config_.codec_settings->VP8()->denoisingOn);
+      printf("    Error concealment: %d\n",
+             config_.codec_settings->VP8()->errorConcealmentOn);
+      printf("    Frame dropping   : %d\n",
+             config_.codec_settings->VP8()->frameDroppingOn);
+      printf("    Resilience       : %d\n",
+             config_.codec_settings->VP8()->resilience);
+    } else if (config_.codec_settings->codecType == kVideoCodecVP9) {
+      printf("    Resilience       : %d\n",
+             config_.codec_settings->VP9()->resilience);
+    }
   }
   initialized_ = true;
   return true;
