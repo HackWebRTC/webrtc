@@ -26,11 +26,7 @@
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
 
-#if !defined(NDEBUG)
-#define TRANSPARENT_CACHE_NAMES 1
-#else
-#define TRANSPARENT_CACHE_NAMES 0
-#endif
+#define TRANSPARENT_CACHE_NAMES RTC_DCHECK_IS_ON
 
 namespace rtc {
 
@@ -214,7 +210,7 @@ bool DiskCache::DeleteResource(const std::string& id) {
 }
 
 bool DiskCache::CheckLimit() {
-#if !defined(NDEBUG)
+#if RTC_DCHECK_IS_ON
   // Temporary check to make sure everything is working correctly.
   size_t cache_size = 0;
   for (EntryMap::iterator it = map_.begin(); it != map_.end(); ++it) {

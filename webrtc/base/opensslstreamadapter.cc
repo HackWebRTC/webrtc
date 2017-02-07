@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/stream.h"

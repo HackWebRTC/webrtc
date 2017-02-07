@@ -14,6 +14,7 @@
 
 #include "webrtc/base/asyncsocket.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/common.h"
 #include "webrtc/base/httpserver.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/socketstream.h"

@@ -104,7 +104,7 @@ class NetworkTest : public testing::Test, public sigslot::has_slots<>  {
   AdapterType GetAdapterType(BasicNetworkManager& network_manager) {
     BasicNetworkManager::NetworkList list;
     network_manager.GetNetworks(&list);
-    RTC_CHECK(list.size() == 1u);
+    RTC_CHECK_EQ(1, list.size());
     return list[0]->type();
   }
 

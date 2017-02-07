@@ -377,7 +377,9 @@ class SSLStreamAdapterTestBase : public testing::Test,
       // Make sure we simulate a reliable network for TLS.
       // This is just a check to make sure that people don't write wrong
       // tests.
-      RTC_CHECK((mtu_ == 1460) && (loss_ == 0) && (lose_first_packet_ == 0));
+      RTC_CHECK_EQ(1460, mtu_);
+      RTC_CHECK(!loss_);
+      RTC_CHECK(!lose_first_packet_);
     }
 
     if (!identities_set_)
@@ -414,7 +416,9 @@ class SSLStreamAdapterTestBase : public testing::Test,
       // Make sure we simulate a reliable network for TLS.
       // This is just a check to make sure that people don't write wrong
       // tests.
-      RTC_CHECK((mtu_ == 1460) && (loss_ == 0) && (lose_first_packet_ == 0));
+      RTC_CHECK_EQ(1460, mtu_);
+      RTC_CHECK(!loss_);
+      RTC_CHECK(!lose_first_packet_);
     }
 
     // Start the handshake

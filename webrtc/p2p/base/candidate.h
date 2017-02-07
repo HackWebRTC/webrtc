@@ -149,7 +149,7 @@ class Candidate {
   // cost of 0 indicates this candidate can be used freely. A value of
   // rtc::kNetworkCostMax indicates it should be used only as the last resort.
   void set_network_cost(uint16_t network_cost) {
-    RTC_DCHECK(network_cost <= rtc::kNetworkCostMax);
+    RTC_DCHECK_LE(network_cost, rtc::kNetworkCostMax);
     network_cost_ = network_cost;
   }
   uint16_t network_cost() const { return network_cost_; }

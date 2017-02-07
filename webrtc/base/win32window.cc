@@ -9,7 +9,6 @@
  */
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/win32window.h"
 
@@ -65,7 +64,8 @@ bool Win32Window::Create(HWND parent, const wchar_t* title, DWORD style,
 }
 
 void Win32Window::Destroy() {
-  VERIFY(::DestroyWindow(wnd_) != FALSE);
+  const bool success = ::DestroyWindow(wnd_);
+  RTC_DCHECK(success);
 }
 
 void Win32Window::Shutdown() {

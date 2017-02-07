@@ -332,7 +332,7 @@ class FakeWebRtcVoiceEngine
   }
   bool GetNetEqFastAccelerate() const {
     auto ch = channels_.find(last_channel_);
-    RTC_DCHECK(ch != channels_.end());
+    RTC_CHECK(ch != channels_.end());
     return ch->second->neteq_fast_accelerate;
   }
 

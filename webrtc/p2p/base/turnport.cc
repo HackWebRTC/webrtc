@@ -927,14 +927,15 @@ void TurnPort::SendRequest(StunRequest* req, int delay) {
 
 void TurnPort::AddRequestAuthInfo(StunMessage* msg) {
   // If we've gotten the necessary data from the server, add it to our request.
-  VERIFY(!hash_.empty());
+  RTC_DCHECK(!hash_.empty());
   msg->AddAttribute(new StunByteStringAttribute(
       STUN_ATTR_USERNAME, credentials_.username));
   msg->AddAttribute(new StunByteStringAttribute(
       STUN_ATTR_REALM, realm_));
   msg->AddAttribute(new StunByteStringAttribute(
       STUN_ATTR_NONCE, nonce_));
-  VERIFY(msg->AddMessageIntegrity(hash()));
+  const bool success = msg->AddMessageIntegrity(hash());
+  RTC_DCHECK(success);
 }
 
 int TurnPort::Send(const void* data, size_t len,
@@ -943,8 +944,9 @@ int TurnPort::Send(const void* data, size_t len,
 }
 
 void TurnPort::UpdateHash() {
-  VERIFY(ComputeStunCredentialHash(credentials_.username, realm_,
-                                   credentials_.password, &hash_));
+  const bool success = ComputeStunCredentialHash(credentials_.username, realm_,
+                                                 credentials_.password, &hash_);
+  RTC_DCHECK(success);
 }
 
 bool TurnPort::UpdateNonce(StunMessage* response) {
@@ -1475,7 +1477,8 @@ int TurnEntry::Send(const void* data, size_t size, bool payload,
         STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
     msg.AddAttribute(new StunByteStringAttribute(
         STUN_ATTR_DATA, data, size));
-    VERIFY(msg.Write(&buf));
+    const bool success = msg.Write(&buf);
+    RTC_DCHECK(success);
 
     // If we're sending real data, request a channel bind that we can use later.
     if (state_ == STATE_UNBOUND && payload) {

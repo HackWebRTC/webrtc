@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "webrtc/base/base64.h"
+#include "webrtc/base/common.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"

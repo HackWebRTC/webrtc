@@ -1376,7 +1376,9 @@ void BuildMediaDescription(const ContentInfo* content_info,
         cricket::ConnectionRole role =
             transport_info->description.connection_role;
         std::string dtls_role_str;
-        VERIFY(cricket::ConnectionRoleToString(role, &dtls_role_str));
+        const bool success =
+            cricket::ConnectionRoleToString(role, &dtls_role_str);
+        RTC_DCHECK(success);
         InitAttrLine(kAttributeSetup, &os);
         os << kSdpDelimiterColon << dtls_role_str;
         AddLine(os.str(), message);

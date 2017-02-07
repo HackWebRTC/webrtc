@@ -11,7 +11,6 @@
 #ifndef WEBRTC_BASE_ASYNCSOCKET_H_
 #define WEBRTC_BASE_ASYNCSOCKET_H_
 
-#include "webrtc/base/common.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/socket.h"
 

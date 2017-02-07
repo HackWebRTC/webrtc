@@ -13,7 +13,6 @@
 
 #include <memory>
 
-#include "webrtc/base/common.h"
 #include "webrtc/media/engine/webrtccommon.h"
 
 #include "webrtc/common_types.h"
@@ -30,12 +29,18 @@ namespace cricket {
 class scoped_voe_engine {
  public:
   explicit scoped_voe_engine(webrtc::VoiceEngine* e) : ptr(e) {}
-  // VERIFY, to ensure that there are no leaks at shutdown
-  ~scoped_voe_engine() { if (ptr) VERIFY(webrtc::VoiceEngine::Delete(ptr)); }
+  // RTC_DCHECK, to ensure that there are no leaks at shutdown
+  ~scoped_voe_engine() {
+    if (ptr) {
+      const bool success = webrtc::VoiceEngine::Delete(ptr);
+      RTC_DCHECK(success);
+    }
+  }
   // Releases the current pointer.
   void reset() {
     if (ptr) {
-      VERIFY(webrtc::VoiceEngine::Delete(ptr));
+      const bool success = webrtc::VoiceEngine::Delete(ptr);
+      RTC_DCHECK(success);
       ptr = NULL;
     }
   }

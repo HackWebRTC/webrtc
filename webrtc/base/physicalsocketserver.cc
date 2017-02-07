@@ -138,7 +138,9 @@ PhysicalSocket::PhysicalSocket(PhysicalSocketServer* ss, SOCKET s)
 
     int type = SOCK_STREAM;
     socklen_t len = sizeof(type);
-    VERIFY(0 == getsockopt(s_, SOL_SOCKET, SO_TYPE, (SockOptArg)&type, &len));
+    const int res =
+        getsockopt(s_, SOL_SOCKET, SO_TYPE, (SockOptArg)&type, &len);
+    RTC_DCHECK_EQ(0, res);
     udp_ = (SOCK_DGRAM == type);
   }
 }
@@ -834,9 +836,9 @@ class EventDispatcher : public Dispatcher {
     CritScope cs(&crit_);
     if (!fSignaled_) {
       const uint8_t b[1] = {0};
-      if (VERIFY(1 == write(afd_[1], b, sizeof(b)))) {
-        fSignaled_ = true;
-      }
+      const ssize_t res = write(afd_[1], b, sizeof(b));
+      RTC_DCHECK_EQ(1, res);
+      fSignaled_ = true;
     }
   }
 
@@ -849,7 +851,8 @@ class EventDispatcher : public Dispatcher {
     CritScope cs(&crit_);
     if (fSignaled_) {
       uint8_t b[4];  // Allow for reading more than 1 byte, but expect 1.
-      VERIFY(1 == read(afd_[0], b, sizeof(b)));
+      const ssize_t res = read(afd_[0], b, sizeof(b));
+      RTC_DCHECK_EQ(1, res);
       fSignaled_ = false;
     }
   }

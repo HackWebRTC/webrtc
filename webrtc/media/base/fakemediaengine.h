@@ -469,7 +469,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     auto it = local_sinks_.find(ssrc);
     if (source) {
       if (it != local_sinks_.end()) {
-        RTC_DCHECK(it->second->source() == source);
+        RTC_CHECK(it->second->source() == source);
       } else {
         local_sinks_.insert(
             std::make_pair(ssrc, new VoiceChannelAudioSink(source)));

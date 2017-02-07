@@ -354,7 +354,8 @@ bool DtlsTransport::SetSrtpCryptoSuites(const std::vector<int>& ciphers) {
     return true;
   }
 
-  if (!VERIFY(dtls_state() == DTLS_TRANSPORT_NEW)) {
+  if (dtls_state() != DTLS_TRANSPORT_NEW) {
+    LOG(LS_ERROR) << "Can't set SRTP ciphers for a closed session";
     return false;
   }
 
