@@ -263,7 +263,10 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
           // ConnectivityManager.getDefaultNetwork() though this
           // may give confusing results with VPNs and is only
           // available with Android Marshmallow.
-          assert defaultNetId == INVALID_NET_ID;
+          if (defaultNetId != INVALID_NET_ID) {
+            throw new RuntimeException(
+                "Multiple connected networks of same type are not supported.");
+          }
           defaultNetId = networkToNetId(network);
         }
       }

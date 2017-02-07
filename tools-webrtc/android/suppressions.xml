@@ -6,7 +6,6 @@
   <!-- TODO(phoglund): make work with suppress.py or remove printout referring
        to suppress.py. -->
 
-  <issue id="Assert" severity="ignore"/>
   <issue id="UseSparseArrays" severity="ignore"/>
 
   <issue id="LongLogTag" severity="ignore"/>
