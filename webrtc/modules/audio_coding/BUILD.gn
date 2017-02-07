@@ -1325,6 +1325,7 @@ if (rtc_include_tests) {
     deps += audio_coding_deps
     deps += [
       ":audio_decoder_interface",
+      ":ilbc",
       ":isac",
       ":isac_fix",
       ":neteq",
