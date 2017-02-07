@@ -105,6 +105,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // Produces |RTCIceCandidatePairStats| and |RTCIceCandidateStats|.
   void ProduceIceCandidateAndPairStats_n(
       int64_t timestamp_us, const SessionStats& session_stats,
+      const cricket::VideoMediaInfo* video_media_info,
       RTCStatsReport* report) const;
   // Produces |RTCMediaStreamStats| and |RTCMediaStreamTrackStats|.
   void ProduceMediaStreamAndTrackStats_s(

@@ -1219,6 +1219,12 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
+  MockVideoMediaChannel* video_media_channel = new MockVideoMediaChannel();
+  cricket::VideoChannel video_channel(
+      test_->worker_thread(), test_->network_thread(),
+      test_->signaling_thread(), video_media_channel, "VideoContentName",
+      kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+
   std::unique_ptr<cricket::Candidate> local_candidate = CreateFakeCandidate(
       "42.42.42.42", 42, "protocol", cricket::LOCAL_PORT_TYPE, 42);
   std::unique_ptr<cricket::Candidate> remote_candidate = CreateFakeCandidate(
@@ -1227,6 +1233,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   SessionStats session_stats;
 
   cricket::ConnectionInfo connection_info;
+  connection_info.best_connection = false;
   connection_info.local_candidate = *local_candidate.get();
   connection_info.remote_candidate = *remote_candidate.get();
   connection_info.writable = true;
@@ -1244,6 +1251,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   cricket::TransportChannelStats transport_channel_stats;
   transport_channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
   transport_channel_stats.connection_infos.push_back(connection_info);
+  session_stats.proxy_to_transport["VideoContentName"] = "transport";
   session_stats.transport_stats["transport"].transport_name = "transport";
   session_stats.transport_stats["transport"].channel_stats.push_back(
       transport_channel_stats);
@@ -1253,6 +1261,17 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
       [&session_stats](const ChannelNamePairs&) {
         return std::unique_ptr<SessionStats>(new SessionStats(session_stats));
       }));
+
+  // Mock the session to return bandwidth estimation info. These should only
+  // be used for a selected candidate pair.
+  cricket::VideoMediaInfo video_media_info;
+  video_media_info.bw_estimations.push_back(cricket::BandwidthEstimationInfo());
+  video_media_info.bw_estimations[0].available_send_bandwidth = 8888;
+  video_media_info.bw_estimations[0].available_recv_bandwidth = 9999;
+  EXPECT_CALL(*video_media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
+  EXPECT_CALL(test_->session(), video_channel())
+      .WillRepeatedly(Return(&video_channel));
 
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
 
@@ -1277,7 +1296,43 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   expected_pair.responses_received = 4321;
   expected_pair.responses_sent = 1000;
   expected_pair.consent_requests_sent = (2020 - 2000);
+  // |expected_pair.available_[outgoing/incoming]_bitrate| should be undefined
+  // because is is not the current pair.
 
+  ASSERT_TRUE(report->Get(expected_pair.id()));
+  EXPECT_EQ(
+      expected_pair,
+      report->Get(expected_pair.id())->cast_to<RTCIceCandidatePairStats>());
+  EXPECT_TRUE(report->Get(*expected_pair.transport_id));
+
+  // Make pair the current pair, clear bandwidth and "GetStats" again.
+  session_stats.transport_stats["transport"]
+      .channel_stats[0]
+      .connection_infos[0]
+      .best_connection = true;
+  video_media_info.bw_estimations[0].available_send_bandwidth = 0;
+  video_media_info.bw_estimations[0].available_recv_bandwidth = 0;
+  EXPECT_CALL(*video_media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
+  collector_->ClearCachedStatsReport();
+  report = GetStatsReport();
+  // |expected_pair.available_[outgoing/incoming]_bitrate| should still be
+  // undefined because bandwidth is not set.
+  ASSERT_TRUE(report->Get(expected_pair.id()));
+  EXPECT_EQ(
+      expected_pair,
+      report->Get(expected_pair.id())->cast_to<RTCIceCandidatePairStats>());
+  EXPECT_TRUE(report->Get(*expected_pair.transport_id));
+
+  // Set bandwidth and "GetStats" again.
+  video_media_info.bw_estimations[0].available_send_bandwidth = 888;
+  video_media_info.bw_estimations[0].available_recv_bandwidth = 999;
+  EXPECT_CALL(*video_media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
+  collector_->ClearCachedStatsReport();
+  report = GetStatsReport();
+  expected_pair.available_outgoing_bitrate = 888;
+  expected_pair.available_incoming_bitrate = 999;
   ASSERT_TRUE(report->Get(expected_pair.id()));
   EXPECT_EQ(
       expected_pair,

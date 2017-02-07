@@ -119,7 +119,7 @@ class RTCDataChannelStats final : public RTCStats {
 };
 
 // https://w3c.github.io/webrtc-stats/#candidatepair-dict*
-// TODO(hbos): Tracking bug crbug.com/633550
+// TODO(hbos): Tracking bug https://bugs.webrtc.org/7062
 class RTCIceCandidatePairStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -136,38 +136,39 @@ class RTCIceCandidatePairStats final : public RTCStats {
   // "RTCStatsMember<RTCStatsIceCandidatePairState>"?
   RTCStatsMember<std::string> state;
   RTCStatsMember<uint64_t> priority;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<bool> nominated;
-  // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
-  // crbug.com/633550
+  // TODO(hbos): Collect this the way the spec describes it. We have a value for
+  // it but it is not spec-compliant. https://bugs.webrtc.org/7062
   RTCStatsMember<bool> writable;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<bool> readable;
   RTCStatsMember<uint64_t> bytes_sent;
   RTCStatsMember<uint64_t> bytes_received;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<double> total_round_trip_time;
-  // TODO(hbos): Collected by |RTCStatsCollector| but different than the spec.
-  // crbug.com/633550
+  // TODO(hbos): Collect this the way the spec describes it. We have a value for
+  // it but it is not spec-compliant. https://bugs.webrtc.org/7062
   RTCStatsMember<double> current_round_trip_time;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
   RTCStatsMember<double> available_outgoing_bitrate;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
+  // TODO(hbos): Populate this value. It is wired up and collected the same way
+  // |VideoBwe.googAvailableReceiveBandwidth| is, but that value is always
+  // undefined. https://bugs.webrtc.org/7062
   RTCStatsMember<double> available_incoming_bitrate;
   RTCStatsMember<uint64_t> requests_received;
   RTCStatsMember<uint64_t> requests_sent;
   RTCStatsMember<uint64_t> responses_received;
   RTCStatsMember<uint64_t> responses_sent;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<uint64_t> retransmissions_received;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<uint64_t> retransmissions_sent;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<uint64_t> consent_requests_received;
   RTCStatsMember<uint64_t> consent_requests_sent;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<uint64_t> consent_responses_received;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/633550
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<uint64_t> consent_responses_sent;
 };
 

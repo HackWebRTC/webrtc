@@ -259,6 +259,11 @@ class RTCStatsReportVerifier {
   void VerifyReport() {
     std::set<const char*> missing_stats = StatsTypes();
     bool verify_successful = true;
+    std::vector<const RTCTransportStats*> transport_stats =
+        report_->GetStatsOfType<RTCTransportStats>();
+    EXPECT_EQ(transport_stats.size(), 1);
+    std::string selected_candidate_pair_id =
+        *transport_stats[0]->selected_candidate_pair_id;
     for (const RTCStats& stats : *report_) {
       missing_stats.erase(stats.type());
       if (stats.type() == RTCCertificateStats::kType) {
@@ -272,7 +277,8 @@ class RTCStatsReportVerifier {
             stats.cast_to<RTCDataChannelStats>());
       } else if (stats.type() == RTCIceCandidatePairStats::kType) {
         verify_successful &= VerifyRTCIceCandidatePairStats(
-            stats.cast_to<RTCIceCandidatePairStats>());
+            stats.cast_to<RTCIceCandidatePairStats>(),
+            stats.id() == selected_candidate_pair_id);
       } else if (stats.type() == RTCLocalIceCandidateStats::kType) {
         verify_successful &= VerifyRTCLocalIceCandidateStats(
             stats.cast_to<RTCLocalIceCandidateStats>());
@@ -351,7 +357,7 @@ class RTCStatsReportVerifier {
   }
 
   bool VerifyRTCIceCandidatePairStats(
-      const RTCIceCandidatePairStats& candidate_pair) {
+      const RTCIceCandidatePairStats& candidate_pair, bool is_selected_pair) {
     RTCStatsVerifier verifier(report_, &candidate_pair);
     verifier.TestMemberIsIDReference(
         candidate_pair.transport_id, RTCTransportStats::kType);
@@ -369,7 +375,12 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsUndefined(candidate_pair.total_round_trip_time);
     verifier.TestMemberIsNonNegative<double>(
         candidate_pair.current_round_trip_time);
-    verifier.TestMemberIsUndefined(candidate_pair.available_outgoing_bitrate);
+    if (is_selected_pair) {
+      verifier.TestMemberIsNonNegative<double>(
+          candidate_pair.available_outgoing_bitrate);
+    } else {
+      verifier.TestMemberIsUndefined(candidate_pair.available_outgoing_bitrate);
+    }
     verifier.TestMemberIsUndefined(candidate_pair.available_incoming_bitrate);
     verifier.TestMemberIsNonNegative<uint64_t>(
         candidate_pair.requests_received);

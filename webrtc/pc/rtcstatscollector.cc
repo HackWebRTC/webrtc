@@ -707,7 +707,8 @@ void RTCStatsCollector::ProducePartialResultsOnNetworkThread(
     ProduceCodecStats_n(
         timestamp_us, *track_media_info_map_, report.get());
     ProduceIceCandidateAndPairStats_n(
-        timestamp_us, *session_stats, report.get());
+        timestamp_us, *session_stats, track_media_info_map_->video_media_info(),
+        report.get());
     ProduceRTPStreamStats_n(
         timestamp_us, *session_stats, *track_media_info_map_, report.get());
     ProduceTransportStats_n(
@@ -837,6 +838,7 @@ void RTCStatsCollector::ProduceDataChannelStats_s(
 
 void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
       int64_t timestamp_us, const SessionStats& session_stats,
+      const cricket::VideoMediaInfo* video_media_info,
       RTCStatsReport* report) const {
   RTC_DCHECK(network_thread_->IsCurrent());
   for (const auto& transport_stats : session_stats.transport_stats) {
@@ -875,6 +877,26 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
         // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentrtt
         candidate_pair_stats->current_round_trip_time =
             static_cast<double>(info.rtt) / rtc::kNumMillisecsPerSec;
+        if (info.best_connection && video_media_info &&
+            !video_media_info->bw_estimations.empty()) {
+          // The bandwidth estimations we have are for the selected candidate
+          // pair ("info.best_connection").
+          RTC_DCHECK_EQ(video_media_info->bw_estimations.size(), 1);
+          RTC_DCHECK_GE(
+              video_media_info->bw_estimations[0].available_send_bandwidth, 0);
+          RTC_DCHECK_GE(
+              video_media_info->bw_estimations[0].available_recv_bandwidth, 0);
+          if (video_media_info->bw_estimations[0].available_send_bandwidth) {
+            candidate_pair_stats->available_outgoing_bitrate =
+                static_cast<double>(video_media_info->bw_estimations[0]
+                                        .available_send_bandwidth);
+          }
+          if (video_media_info->bw_estimations[0].available_recv_bandwidth) {
+            candidate_pair_stats->available_incoming_bitrate =
+                static_cast<double>(video_media_info->bw_estimations[0]
+                                        .available_recv_bandwidth);
+          }
+        }
         candidate_pair_stats->requests_received =
             static_cast<uint64_t>(info.recv_ping_requests);
         candidate_pair_stats->requests_sent = static_cast<uint64_t>(
