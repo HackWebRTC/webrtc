@@ -36,10 +36,11 @@ std::string RTCCertificateIDFromFingerprint(const std::string& fingerprint) {
 
 std::string RTCCodecStatsIDFromDirectionMediaAndPayload(
     bool inbound, bool audio, uint32_t payload_type) {
-  // TODO(hbos): When we are able to handle multiple m= lines of the same media
-  // type (and multiple BaseChannels for the same type is possible?) this needs
-  // to be updated to differentiate the transport being used, and stats need to
-  // be collected for all of them. crbug.com/659117
+  // TODO(hbos): The present codec ID assignment is not sufficient to support
+  // Unified Plan or unbundled connections in all cases. When we are able to
+  // handle multiple m= lines of the same media type (and multiple BaseChannels
+  // for the same type is possible?) this needs to be updated to differentiate
+  // the transport being used, and stats need to be collected for all of them.
   if (inbound) {
     return audio ? "RTCCodec_InboundAudio_" + rtc::ToString<>(payload_type)
                  : "RTCCodec_InboundVideo_" + rtc::ToString<>(payload_type);
@@ -198,8 +199,6 @@ void SetInboundRTPStreamStatsFromMediaReceiverInfo(
   inbound_stats->ssrc = rtc::ToString<>(media_receiver_info.ssrc());
   // TODO(hbos): Support the remote case. crbug.com/657855
   inbound_stats->is_remote = false;
-  // TODO(hbos): Set |codec_id| when we have |RTCCodecStats|. Maybe relevant:
-  // |media_receiver_info.codec_name|. crbug.com/657854, 657855, 659117
   inbound_stats->packets_received =
       static_cast<uint32_t>(media_receiver_info.packets_rcvd);
   inbound_stats->bytes_received =
@@ -216,6 +215,11 @@ void SetInboundRTPStreamStatsFromVoiceReceiverInfo(
   SetInboundRTPStreamStatsFromMediaReceiverInfo(
       voice_receiver_info, inbound_audio);
   inbound_audio->media_type = "audio";
+  if (voice_receiver_info.codec_payload_type) {
+    inbound_audio->codec_id =
+        RTCCodecStatsIDFromDirectionMediaAndPayload(
+            true, true, *voice_receiver_info.codec_payload_type);
+  }
   inbound_audio->jitter =
       static_cast<double>(voice_receiver_info.jitter_ms) /
           rtc::kNumMillisecsPerSec;
@@ -229,6 +233,11 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
   SetInboundRTPStreamStatsFromMediaReceiverInfo(
       video_receiver_info, inbound_video);
   inbound_video->media_type = "video";
+  if (video_receiver_info.codec_payload_type) {
+    inbound_video->codec_id =
+        RTCCodecStatsIDFromDirectionMediaAndPayload(
+            true, false, *video_receiver_info.codec_payload_type);
+  }
   inbound_video->fir_count =
       static_cast<uint32_t>(video_receiver_info.firs_sent);
   inbound_video->pli_count =
@@ -246,8 +255,6 @@ void SetOutboundRTPStreamStatsFromMediaSenderInfo(
   outbound_stats->ssrc = rtc::ToString<>(media_sender_info.ssrc());
   // TODO(hbos): Support the remote case. crbug.com/657856
   outbound_stats->is_remote = false;
-  // TODO(hbos): Set |codec_id| when we have |RTCCodecStats|. Maybe relevant:
-  // |media_sender_info.codec_name|. crbug.com/657854, 657856, 659117
   outbound_stats->packets_sent =
       static_cast<uint32_t>(media_sender_info.packets_sent);
   outbound_stats->bytes_sent =
@@ -264,6 +271,11 @@ void SetOutboundRTPStreamStatsFromVoiceSenderInfo(
   SetOutboundRTPStreamStatsFromMediaSenderInfo(
       voice_sender_info, outbound_audio);
   outbound_audio->media_type = "audio";
+  if (voice_sender_info.codec_payload_type) {
+    outbound_audio->codec_id =
+        RTCCodecStatsIDFromDirectionMediaAndPayload(
+            false, true, *voice_sender_info.codec_payload_type);
+  }
   // |fir_count|, |pli_count| and |sli_count| are only valid for video and are
   // purposefully left undefined for audio.
 }
@@ -274,6 +286,11 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
   SetOutboundRTPStreamStatsFromMediaSenderInfo(
       video_sender_info, outbound_video);
   outbound_video->media_type = "video";
+  if (video_sender_info.codec_payload_type) {
+    outbound_video->codec_id =
+        RTCCodecStatsIDFromDirectionMediaAndPayload(
+            false, false, *video_sender_info.codec_payload_type);
+  }
   outbound_video->fir_count =
       static_cast<uint32_t>(video_sender_info.firs_rcvd);
   outbound_video->pli_count =
@@ -941,11 +958,6 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
                 voice_receiver_info.ssrc());
       }
       inbound_audio->transport_id = transport_id;
-      if (voice_receiver_info.codec_payload_type) {
-        inbound_audio->codec_id =
-            RTCCodecStatsIDFromDirectionMediaAndPayload(
-                true, true, *voice_receiver_info.codec_payload_type);
-      }
       report->AddStats(std::move(inbound_audio));
     }
     // Outbound
@@ -974,11 +986,6 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
                 voice_sender_info.ssrc());
       }
       outbound_audio->transport_id = transport_id;
-      if (voice_sender_info.codec_payload_type) {
-        outbound_audio->codec_id =
-            RTCCodecStatsIDFromDirectionMediaAndPayload(
-                false, true, *voice_sender_info.codec_payload_type);
-      }
       report->AddStats(std::move(outbound_audio));
     }
   }
@@ -1013,11 +1020,6 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
                 video_receiver_info.ssrc());
       }
       inbound_video->transport_id = transport_id;
-      if (video_receiver_info.codec_payload_type) {
-        inbound_video->codec_id =
-            RTCCodecStatsIDFromDirectionMediaAndPayload(
-                true, false, *video_receiver_info.codec_payload_type);
-      }
       report->AddStats(std::move(inbound_video));
     }
     // Outbound
@@ -1046,11 +1048,6 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
                 video_sender_info.ssrc());
       }
       outbound_video->transport_id = transport_id;
-      if (video_sender_info.codec_payload_type) {
-        outbound_video->codec_id =
-            RTCCodecStatsIDFromDirectionMediaAndPayload(
-                false, false, *video_sender_info.codec_payload_type);
-      }
       report->AddStats(std::move(outbound_video));
     }
   }

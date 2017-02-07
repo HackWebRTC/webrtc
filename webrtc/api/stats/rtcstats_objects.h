@@ -77,9 +77,6 @@ class RTCCertificateStats final : public RTCStats {
 };
 
 // https://w3c.github.io/webrtc-stats/#codec-dict*
-// Tracking bug crbug.com/659117
-// TODO(hbos): The present codec ID assignment is not sufficient to support
-// Unified Plan or unbundled connections in all cases. crbug.com/659117
 class RTCCodecStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -92,11 +89,11 @@ class RTCCodecStats final : public RTCStats {
   RTCStatsMember<uint32_t> payload_type;
   RTCStatsMember<std::string> codec;
   RTCStatsMember<uint32_t> clock_rate;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659117
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7061
   RTCStatsMember<uint32_t> channels;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659117
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7061
   RTCStatsMember<std::string> parameters;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659117
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7061
   RTCStatsMember<std::string> implementation;
 };
 
