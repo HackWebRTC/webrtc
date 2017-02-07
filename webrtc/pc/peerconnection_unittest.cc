@@ -2767,6 +2767,7 @@ TEST_F(IceServerParsingTest, ParseTransport) {
   EXPECT_FALSE(ParseTurnUrl("turn:hostname?transport=invalid"));
   EXPECT_FALSE(ParseTurnUrl("turn:hostname?transport="));
   EXPECT_FALSE(ParseTurnUrl("turn:hostname?="));
+  EXPECT_FALSE(ParseTurnUrl("turn:hostname?"));
   EXPECT_FALSE(ParseTurnUrl("?"));
 }
 

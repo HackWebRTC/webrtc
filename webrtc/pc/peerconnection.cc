@@ -245,11 +245,14 @@ RTCErrorType ParseIceServerUrl(
       LOG(LS_WARNING) << "Invalid transport parameter key.";
       return RTCErrorType::SYNTAX_ERROR;
     }
-    if (tokens.size() < 2 ||
-        !cricket::StringToProto(tokens[1].c_str(), &turn_transport_type) ||
+    if (tokens.size() < 2) {
+      LOG(LS_WARNING) << "Transport parameter missing value.";
+      return RTCErrorType::SYNTAX_ERROR;
+    }
+    if (!cricket::StringToProto(tokens[1].c_str(), &turn_transport_type) ||
         (turn_transport_type != cricket::PROTO_UDP &&
          turn_transport_type != cricket::PROTO_TCP)) {
-      LOG(LS_WARNING) << "Transport param should always be udp or tcp.";
+      LOG(LS_WARNING) << "Transport parameter should always be udp or tcp.";
       return RTCErrorType::SYNTAX_ERROR;
     }
   }
