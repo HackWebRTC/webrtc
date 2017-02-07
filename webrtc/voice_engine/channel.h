@@ -304,12 +304,13 @@ class Channel
   void EnableSendTransportSequenceNumber(int id);
   void EnableReceiveTransportSequenceNumber(int id);
 
-    void RegisterSenderCongestionControlObjects(
-        RtpPacketSender* rtp_packet_sender,
-        TransportFeedbackObserver* transport_feedback_observer,
-        PacketRouter* packet_router);
-    void RegisterReceiverCongestionControlObjects(PacketRouter* packet_router);
-    void ResetCongestionControlObjects();
+  void RegisterSenderCongestionControlObjects(
+      RtpPacketSender* rtp_packet_sender,
+      TransportFeedbackObserver* transport_feedback_observer,
+      PacketRouter* packet_router,
+      RtcpBandwidthObserver* bandwidth_observer);
+  void RegisterReceiverCongestionControlObjects(PacketRouter* packet_router);
+  void ResetCongestionControlObjects();
 
   void SetRTCPStatus(bool enable);
   int GetRTCPStatus(bool& enabled);

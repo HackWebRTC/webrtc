@@ -75,10 +75,12 @@ void ChannelProxy::EnableReceiveTransportSequenceNumber(int id) {
 void ChannelProxy::RegisterSenderCongestionControlObjects(
     RtpPacketSender* rtp_packet_sender,
     TransportFeedbackObserver* transport_feedback_observer,
-    PacketRouter* packet_router) {
+    PacketRouter* packet_router,
+    RtcpBandwidthObserver* bandwidth_observer) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   channel()->RegisterSenderCongestionControlObjects(
-      rtp_packet_sender, transport_feedback_observer, packet_router);
+      rtp_packet_sender, transport_feedback_observer, packet_router,
+      bandwidth_observer);
 }
 
 void ChannelProxy::RegisterReceiverCongestionControlObjects(

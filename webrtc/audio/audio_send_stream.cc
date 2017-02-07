@@ -19,6 +19,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/task_queue.h"
+#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -62,9 +63,6 @@ AudioSendStream::AudioSendStream(
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
   channel_proxy_->SetRtcEventLog(event_log);
   channel_proxy_->SetRtcpRttStats(rtcp_rtt_stats);
-  channel_proxy_->RegisterSenderCongestionControlObjects(
-      congestion_controller->pacer(),
-      congestion_controller->GetTransportFeedbackObserver(), packet_router);
   channel_proxy_->SetRTCPStatus(true);
   channel_proxy_->SetLocalSSRC(config.rtp.ssrc);
   channel_proxy_->SetRTCP_CNAME(config.rtp.c_name);
@@ -81,10 +79,16 @@ AudioSendStream::AudioSendStream(
     } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       channel_proxy_->EnableSendTransportSequenceNumber(extension.id);
       congestion_controller->EnablePeriodicAlrProbing(true);
+      bandwidth_observer_.reset(congestion_controller->GetBitrateController()
+                                    ->CreateRtcpBandwidthObserver());
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";
     }
   }
+  channel_proxy_->RegisterSenderCongestionControlObjects(
+      congestion_controller->pacer(),
+      congestion_controller->GetTransportFeedbackObserver(), packet_router,
+      bandwidth_observer_.get());
   if (!SetupSendCodec()) {
     LOG(LS_ERROR) << "Failed to set up send codec state.";
   }

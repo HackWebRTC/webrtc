@@ -333,16 +333,32 @@ class StatisticsProxy : public RtcpStatisticsCallback {
 
 class VoERtcpObserver : public RtcpBandwidthObserver {
  public:
-  explicit VoERtcpObserver(Channel* owner) : owner_(owner) {}
+  explicit VoERtcpObserver(Channel* owner)
+      : owner_(owner), bandwidth_observer_(nullptr) {}
   virtual ~VoERtcpObserver() {}
 
+  void SetBandwidthObserver(RtcpBandwidthObserver* bandwidth_observer) {
+    rtc::CritScope lock(&crit_);
+    bandwidth_observer_ = bandwidth_observer;
+  }
+
   void OnReceivedEstimatedBitrate(uint32_t bitrate) override {
-    // Not used for Voice Engine.
+    rtc::CritScope lock(&crit_);
+    if (bandwidth_observer_) {
+      bandwidth_observer_->OnReceivedEstimatedBitrate(bitrate);
+    }
   }
 
   void OnReceivedRtcpReceiverReport(const ReportBlockList& report_blocks,
                                     int64_t rtt,
                                     int64_t now_ms) override {
+    {
+      rtc::CritScope lock(&crit_);
+      if (bandwidth_observer_) {
+        bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, rtt,
+                                                          now_ms);
+      }
+    }
     // TODO(mflodman): Do we need to aggregate reports here or can we jut send
     // what we get? I.e. do we ever get multiple reports bundled into one RTCP
     // report for VoiceEngine?
@@ -384,6 +400,8 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
   Channel* owner_;
   // Maps remote side ssrc to extended highest sequence number received.
   std::map<uint32_t, uint32_t> extended_max_sequence_number_;
+  rtc::CriticalSection crit_;
+  RtcpBandwidthObserver* bandwidth_observer_ GUARDED_BY(crit_);
 };
 
 int32_t Channel::SendData(FrameType frameType,
@@ -2424,10 +2442,12 @@ void Channel::EnableReceiveTransportSequenceNumber(int id) {
 void Channel::RegisterSenderCongestionControlObjects(
     RtpPacketSender* rtp_packet_sender,
     TransportFeedbackObserver* transport_feedback_observer,
-    PacketRouter* packet_router) {
+    PacketRouter* packet_router,
+    RtcpBandwidthObserver* bandwidth_observer) {
   RTC_DCHECK(rtp_packet_sender);
   RTC_DCHECK(transport_feedback_observer);
   RTC_DCHECK(packet_router && !packet_router_);
+  rtcp_observer_->SetBandwidthObserver(bandwidth_observer);
   feedback_observer_proxy_->SetTransportFeedbackObserver(
       transport_feedback_observer);
   seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
@@ -2447,6 +2467,7 @@ void Channel::RegisterReceiverCongestionControlObjects(
 void Channel::ResetCongestionControlObjects() {
   RTC_DCHECK(packet_router_);
   _rtpRtcpModule->SetStorePacketsStatus(false, 600);
+  rtcp_observer_->SetBandwidthObserver(nullptr);
   feedback_observer_proxy_->SetTransportFeedbackObserver(nullptr);
   seq_num_allocator_proxy_->SetSequenceNumberAllocator(nullptr);
   packet_router_->RemoveRtpModule(_rtpRtcpModule.get());

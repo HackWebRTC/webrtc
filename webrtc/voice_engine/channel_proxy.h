@@ -27,6 +27,7 @@ namespace webrtc {
 class AudioSinkInterface;
 class PacketRouter;
 class RtcEventLog;
+class RtcpBandwidthObserver;
 class RtcpRttStats;
 class RtpPacketSender;
 class RtpReceiver;
@@ -62,7 +63,8 @@ class ChannelProxy {
   virtual void RegisterSenderCongestionControlObjects(
       RtpPacketSender* rtp_packet_sender,
       TransportFeedbackObserver* transport_feedback_observer,
-      PacketRouter* packet_router);
+      PacketRouter* packet_router,
+      RtcpBandwidthObserver* bandwidth_observer);
   virtual void RegisterReceiverCongestionControlObjects(
       PacketRouter* packet_router);
   virtual void ResetCongestionControlObjects();

@@ -927,6 +927,8 @@ std::string VideoQualityTest::GenerateGraphTitle() const {
 }
 
 void VideoQualityTest::CheckParams() {
+  if (!params_.video.enabled)
+    return;
   // Add a default stream in none specified.
   if (params_.ss.streams.empty())
     params_.ss.streams.push_back(VideoQualityTest::DefaultVideoStream(params_));

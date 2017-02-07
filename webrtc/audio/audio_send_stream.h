@@ -23,6 +23,7 @@ namespace webrtc {
 class CongestionController;
 class VoiceEngine;
 class RtcEventLog;
+class RtcpBandwidthObserver;
 class RtcpRttStats;
 class PacketRouter;
 
@@ -77,6 +78,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   BitrateAllocator* const bitrate_allocator_;
   CongestionController* const congestion_controller_;
+  std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };
