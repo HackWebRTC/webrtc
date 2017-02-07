@@ -536,14 +536,7 @@ class RTCStatsReportVerifier {
       const RTCInboundRTPStreamStats& inbound_stream) {
     RTCStatsVerifier verifier(report_, &inbound_stream);
     VerifyRTCRTPStreamStats(inbound_stream, &verifier);
-    // TODO(hbos): As soon as the decoders provide |qp_sum| values, this
-    // if-statement needs to be included. https://bugs.webrtc.org/7065
-    // if (inbound_stream.media_type.is_defined() &&
-    //     *inbound_stream.media_type == "video") {
-    //   verifier.TestMemberIsNonNegative<uint64_t>(inbound_stream.qp_sum);
-    // } else {
-      verifier.TestMemberIsUndefined(inbound_stream.qp_sum);
-    // }
+    verifier.TestMemberIsUndefined(inbound_stream.qp_sum);
     verifier.TestMemberIsNonNegative<uint32_t>(inbound_stream.packets_received);
     verifier.TestMemberIsNonNegative<uint64_t>(inbound_stream.bytes_received);
     verifier.TestMemberIsNonNegative<uint32_t>(inbound_stream.packets_lost);

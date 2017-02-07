@@ -245,8 +245,6 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
   inbound_video->nack_count =
       static_cast<uint32_t>(video_receiver_info.nacks_sent);
   inbound_video->frames_decoded = video_receiver_info.frames_decoded;
-  if (video_receiver_info.qp_sum)
-    inbound_video->qp_sum = *video_receiver_info.qp_sum;
 }
 
 // Provides the media independent counters (both audio and video).
