@@ -131,7 +131,7 @@ def Build(tmp_dir, arch, use_goma, extra_gn_args):
 
   ninja_args = TARGETS
   if use_goma:
-    ninja_args.extend(['-j', '1024'])
+    ninja_args.extend(['-j', '200'])
   _RunNinja(output_directory, ninja_args)
 
 
