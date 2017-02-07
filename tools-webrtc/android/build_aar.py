@@ -48,12 +48,14 @@ def _ParseArgs():
   parser = argparse.ArgumentParser(description='libwebrtc.aar generator.')
   parser.add_argument('--output', default='libwebrtc.aar',
       help='Output file of the script.')
-  parser.add_argument('--arch', action='append', default=[],
-      help='Architectures to build. Defaults to ' + str(DEFAULT_ARCHS))
+  parser.add_argument('--arch', default=DEFAULT_ARCHS, nargs='*',
+      help='Architectures to build. Defaults to %(default)s.')
   parser.add_argument('--use-goma', action='store_true', default=False,
       help='Use goma.')
   parser.add_argument('--verbose', action='store_true', default=False,
       help='Debug logging.')
+  parser.add_argument('--extra-gn-args', default=[], nargs='*',
+      help='Additional GN args to be used during Ninja generation.')
   return parser.parse_args()
 
 
@@ -108,7 +110,7 @@ def _GetArmVersion(arch):
     raise Exception('Unknown arch: ' + arch)
 
 
-def Build(tmp_dir, arch, use_goma):
+def Build(tmp_dir, arch, use_goma, extra_gn_args):
   """Generates target architecture using GN and builds it using ninja."""
   logging.info('Building: %s', arch)
   output_directory = _GetOutputDirectory(tmp_dir, arch)
@@ -123,7 +125,7 @@ def Build(tmp_dir, arch, use_goma):
   if arm_version:
     gn_args['arm_version'] = arm_version
   gn_args_str = '--args=' + ' '.join([
-      k + '=' + _EncodeForGN(v) for k, v in gn_args.items()])
+      k + '=' + _EncodeForGN(v) for k, v in gn_args.items()] + extra_gn_args)
 
   _RunGN(['gen', output_directory, gn_args_str])
 
@@ -154,15 +156,12 @@ def Collect(aar_file, tmp_dir, arch):
 
 def main():
   args = _ParseArgs()
-  if not args.arch:
-    args.arch = DEFAULT_ARCHS
-
   logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
 
   tmp_dir = tempfile.mkdtemp()
 
   for arch in args.arch:
-    Build(tmp_dir, arch, args.use_goma)
+    Build(tmp_dir, arch, args.use_goma, args.extra_gn_args)
 
   with zipfile.ZipFile(args.output, 'w') as aar_file:
     # Architecture doesn't matter here, arbitrarily using the first one.
