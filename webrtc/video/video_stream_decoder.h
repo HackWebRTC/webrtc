@@ -29,7 +29,6 @@ namespace webrtc {
 class CallStatsObserver;
 class ChannelStatsObserver;
 class EncodedImageCallback;
-class I420FrameCallback;
 class ReceiveStatisticsProxy;
 class VideoRenderCallback;
 
@@ -49,14 +48,14 @@ class VideoStreamDecoder : public VCMReceiveCallback,
  public:
   friend class ChannelStatsObserver;
 
-  VideoStreamDecoder(vcm::VideoReceiver* video_receiver,
-                     VCMFrameTypeCallback* vcm_frame_type_callback,
-                     VCMPacketRequestCallback* vcm_packet_request_callback,
-                     bool enable_nack,
-                     bool enable_fec,
-                     ReceiveStatisticsProxy* receive_statistics_proxy,
-                     rtc::VideoSinkInterface<VideoFrame>* incoming_video_stream,
-                     I420FrameCallback* pre_render_callback);
+  VideoStreamDecoder(
+      vcm::VideoReceiver* video_receiver,
+      VCMFrameTypeCallback* vcm_frame_type_callback,
+      VCMPacketRequestCallback* vcm_packet_request_callback,
+      bool enable_nack,
+      bool enable_fec,
+      ReceiveStatisticsProxy* receive_statistics_proxy,
+      rtc::VideoSinkInterface<VideoFrame>* incoming_video_stream);
   ~VideoStreamDecoder();
 
   // Implements VCMReceiveCallback.
@@ -102,10 +101,6 @@ class VideoStreamDecoder : public VCMReceiveCallback,
 
   ReceiveStatisticsProxy* const receive_stats_callback_;
   rtc::VideoSinkInterface<VideoFrame>* const incoming_video_stream_;
-
-  // TODO(tommi): This callback is basically the same thing as the one above.
-  // We shouldn't need to support both.
-  I420FrameCallback* const pre_render_callback_;
 
   int64_t last_rtt_ms_ GUARDED_BY(crit_);
 };

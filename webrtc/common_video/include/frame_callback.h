@@ -50,16 +50,6 @@ struct EncodedFrame {
   const uint32_t timestamp_;
 };
 
-class I420FrameCallback {
- public:
-  // This function is called with a I420 frame allowing the user to modify the
-  // frame content.
-  virtual void FrameCallback(VideoFrame* video_frame) = 0;
-
- protected:
-  virtual ~I420FrameCallback() {}
-};
-
 class EncodedFrameObserver {
  public:
   virtual void EncodedFrameCallback(const EncodedFrame& encoded_frame) = 0;

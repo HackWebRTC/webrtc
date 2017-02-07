@@ -206,7 +206,7 @@ std::string VideoSendStream::Config::ToString() const {
   ss << "{encoder_settings: " << encoder_settings.ToString();
   ss << ", rtp: " << rtp.ToString();
   ss << ", pre_encode_callback: "
-     << (pre_encode_callback ? "(I420FrameCallback)" : "nullptr");
+     << (pre_encode_callback ? "(VideoSinkInterface)" : "nullptr");
   ss << ", post_encode_callback: "
      << (post_encode_callback ? "(EncodedFrameObserver)" : "nullptr");
   ss << ", render_delay_ms: " << render_delay_ms;

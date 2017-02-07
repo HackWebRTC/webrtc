@@ -67,8 +67,6 @@ std::string VideoReceiveStream::Config::ToString() const {
     ss << ", sync_group: " << sync_group;
   ss << ", pre_decode_callback: "
      << (pre_decode_callback ? "(EncodedFrameObserver)" : "nullptr");
-  ss << ", pre_render_callback: "
-     << (pre_render_callback ? "(I420FrameCallback)" : "nullptr");
   ss << ", target_delay_ms: " << target_delay_ms;
   ss << '}';
 
@@ -309,7 +307,7 @@ void VideoReceiveStream::Start() {
   video_stream_decoder_.reset(new VideoStreamDecoder(
       &video_receiver_, &rtp_stream_receiver_, &rtp_stream_receiver_,
       rtp_stream_receiver_.IsRetransmissionsEnabled(), protected_by_fec,
-      &stats_proxy_, renderer, config_.pre_render_callback));
+      &stats_proxy_, renderer));
   // Register the channel to receive stats updates.
   call_stats_->RegisterStatsObserver(video_stream_decoder_.get());
   // Start the decode thread

@@ -195,33 +195,21 @@ TEST_P(EndToEndTest, RendersSingleDelayedFrame) {
   // This constant is chosen to be higher than the timeout in the video_render
   // module. This makes sure that frames aren't dropped if there are no other
   // frames in the queue.
-  static const int kDelayRenderCallbackMs = 1000;
+  static const int kRenderDelayMs = 1000;
 
   class Renderer : public rtc::VideoSinkInterface<VideoFrame> {
    public:
     Renderer() : event_(false, false) {}
 
-    void OnFrame(const VideoFrame& video_frame) override { event_.Set(); }
+    void OnFrame(const VideoFrame& video_frame) override {
+      SleepMs(kRenderDelayMs);
+      event_.Set();
+    }
 
     bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
 
     rtc::Event event_;
   } renderer;
-
-  class TestFrameCallback : public I420FrameCallback {
-   public:
-    TestFrameCallback() : event_(false, false) {}
-
-    bool Wait() { return event_.Wait(kDefaultTimeoutMs); }
-
-   private:
-    void FrameCallback(VideoFrame* frame) override {
-      SleepMs(kDelayRenderCallbackMs);
-      event_.Set();
-    }
-
-    rtc::Event event_;
-  };
 
   CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
 
@@ -233,8 +221,6 @@ TEST_P(EndToEndTest, RendersSingleDelayedFrame) {
   CreateSendConfig(1, 0, 0, &sender_transport);
   CreateMatchingReceiveConfigs(&receiver_transport);
 
-  TestFrameCallback pre_render_callback;
-  video_receive_configs_[0].pre_render_callback = &pre_render_callback;
   video_receive_configs_[0].renderer = &renderer;
 
   CreateVideoStreams();
@@ -249,8 +235,6 @@ TEST_P(EndToEndTest, RendersSingleDelayedFrame) {
       &frame_forwarder, VideoSendStream::DegradationPreference::kBalanced);
 
   frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
-  EXPECT_TRUE(pre_render_callback.Wait())
-      << "Timed out while waiting for pre-render callback.";
   EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
 
@@ -1052,7 +1036,7 @@ TEST_P(EndToEndTest, ReceivedUlpfecPacketsNotNacked) {
 void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
   static const int kDroppedFrameNumber = 10;
   class RetransmissionObserver : public test::EndToEndTest,
-                                 public I420FrameCallback {
+                                 public rtc::VideoSinkInterface<VideoFrame> {
    public:
     RetransmissionObserver(bool enable_rtx, bool enable_red)
         : EndToEndTest(kDefaultTimeoutMs),
@@ -1108,11 +1092,12 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
       return SEND_PACKET;
     }
 
-    void FrameCallback(VideoFrame* frame) override {
+    void OnFrame(const VideoFrame& frame) override {
       rtc::CritScope lock(&crit_);
-      if (frame->timestamp() == retransmitted_timestamp_)
+      if (frame.timestamp() == retransmitted_timestamp_)
         observation_complete_.Set();
-      rendered_timestamps_.push_back(frame->timestamp());
+      rendered_timestamps_.push_back(frame.timestamp());
+      orig_renderer_->OnFrame(frame);
     }
 
     void ModifyVideoConfigs(
@@ -1120,7 +1105,13 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      (*receive_configs)[0].pre_render_callback = this;
+
+      // Insert ourselves into the rendering pipeline.
+      RTC_DCHECK(!orig_renderer_);
+      orig_renderer_ = (*receive_configs)[0].renderer;
+      RTC_DCHECK(orig_renderer_);
+      (*receive_configs)[0].renderer = this;
+
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
 
       if (payload_type_ == kRedPayloadType) {
@@ -1168,6 +1159,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
     }
 
     rtc::CriticalSection crit_;
+    rtc::VideoSinkInterface<VideoFrame>* orig_renderer_ = nullptr;
     const int payload_type_;
     const uint32_t retransmission_ssrc_;
     const int retransmission_payload_type_;

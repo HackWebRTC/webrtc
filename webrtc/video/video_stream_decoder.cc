@@ -32,12 +32,10 @@ VideoStreamDecoder::VideoStreamDecoder(
     bool enable_nack,
     bool enable_fec,
     ReceiveStatisticsProxy* receive_statistics_proxy,
-    rtc::VideoSinkInterface<VideoFrame>* incoming_video_stream,
-    I420FrameCallback* pre_render_callback)
+    rtc::VideoSinkInterface<VideoFrame>* incoming_video_stream)
     : video_receiver_(video_receiver),
       receive_stats_callback_(receive_statistics_proxy),
       incoming_video_stream_(incoming_video_stream),
-      pre_render_callback_(pre_render_callback),
       last_rtt_ms_(0) {
   RTC_DCHECK(video_receiver_);
 
@@ -77,13 +75,6 @@ VideoStreamDecoder::~VideoStreamDecoder() {
 // Release. Acquiring the same lock in the path of decode callback can deadlock.
 int32_t VideoStreamDecoder::FrameToRender(VideoFrame& video_frame,
                                           rtc::Optional<uint8_t> qp) {
-  if (pre_render_callback_) {
-    // Post processing is not supported if the frame is backed by a texture.
-    if (!video_frame.video_frame_buffer()->native_handle()) {
-      pre_render_callback_->FrameCallback(&video_frame);
-    }
-  }
-
   receive_stats_callback_->OnDecodedFrame(qp);
   incoming_video_stream_->OnFrame(video_frame);
 
