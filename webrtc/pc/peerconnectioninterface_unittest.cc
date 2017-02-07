@@ -3100,6 +3100,20 @@ TEST_F(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
   EXPECT_EQ(local_answer, pc_->current_local_description());
 }
 
+// Tests that it won't crash when calling StartRtcEventLog or StopRtcEventLog
+// after the PeerConnection is closed.
+TEST_F(PeerConnectionInterfaceTest,
+       StartAndStopLoggingAfterPeerConnectionClosed) {
+  CreatePeerConnection();
+  // The RtcEventLog will be reset when the PeerConnection is closed.
+  pc_->Close();
+
+  rtc::PlatformFile file = 0;
+  int64_t max_size_bytes = 1024;
+  EXPECT_FALSE(pc_->StartRtcEventLog(file, max_size_bytes));
+  pc_->StopRtcEventLog();
+}
+
 class PeerConnectionMediaConfigTest : public testing::Test {
  protected:
   void SetUp() override {

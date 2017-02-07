@@ -1558,6 +1558,7 @@ void PeerConnection::Close() {
   stats_->UpdateStats(kStatsOutputLevelStandard);
 
   session_->Close();
+  event_log_.reset();
 }
 
 void PeerConnection::OnSessionStateChange(WebRtcSession* /*session*/,
@@ -2573,10 +2574,15 @@ bool PeerConnection::ReconfigurePortAllocator_n(
 
 bool PeerConnection::StartRtcEventLog_w(rtc::PlatformFile file,
                                         int64_t max_size_bytes) {
+  if (!event_log_) {
+    return false;
+  }
   return event_log_->StartLogging(file, max_size_bytes);
 }
 
 void PeerConnection::StopRtcEventLog_w() {
-  event_log_->StopLogging();
+  if (event_log_) {
+    event_log_->StopLogging();
+  }
 }
 }  // namespace webrtc
