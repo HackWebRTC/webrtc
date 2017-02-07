@@ -14,7 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 
 namespace webrtc {
@@ -109,8 +108,6 @@ class TransportFeedback : public Rtpfb {
   std::vector<uint16_t> encoded_chunks_;
   const std::unique_ptr<LastChunk> last_chunk_;
   size_t size_bytes_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(TransportFeedback);
 };
 
 }  // namespace rtcp
