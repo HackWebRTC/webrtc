@@ -2018,7 +2018,6 @@ TEST_F(StatsCollectorTest, VerifyVideoReceiveSsrcStats) {
   // Construct a stats value to read.
   video_receiver_info.add_ssrc(1234);
   video_receiver_info.frames_decoded = 10;
-  video_receiver_info.qp_sum = rtc::Optional<uint64_t>(11);
   stats_read.receivers.push_back(video_receiver_info);
 
   EXPECT_CALL(session_, video_channel()).WillRepeatedly(Return(&video_channel));
@@ -2030,8 +2029,6 @@ TEST_F(StatsCollectorTest, VerifyVideoReceiveSsrcStats) {
   EXPECT_EQ(rtc::ToString(video_receiver_info.frames_decoded),
             ExtractSsrcStatsValue(reports,
                                   StatsReport::kStatsValueNameFramesDecoded));
-  EXPECT_EQ(rtc::ToString(*video_receiver_info.qp_sum),
-            ExtractSsrcStatsValue(reports, StatsReport::kStatsValueNameQpSum));
 }
 
 }  // namespace webrtc

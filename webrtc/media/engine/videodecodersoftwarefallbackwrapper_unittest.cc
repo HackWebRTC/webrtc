@@ -141,11 +141,6 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
       RTC_NOTREACHED();
       return -1;
     }
-    void Decoded(webrtc::VideoFrame& decodedImage,
-                 rtc::Optional<int32_t> decode_time_ms,
-                 rtc::Optional<uint8_t> qp) override {
-      RTC_NOTREACHED();
-    }
   } callback, callback2;
 
   VideoCodec codec = {};

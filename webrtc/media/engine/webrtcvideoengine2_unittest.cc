@@ -3430,7 +3430,6 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesDecodeStatsCorrectly) {
   stats.frame_counts.delta_frames = 12;
   stats.frames_rendered = 13;
   stats.frames_decoded = 14;
-  stats.qp_sum = rtc::Optional<uint64_t>(15);
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
@@ -3450,7 +3449,6 @@ TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesDecodeStatsCorrectly) {
             info.receivers[0].frames_received);
   EXPECT_EQ(stats.frames_rendered, info.receivers[0].frames_rendered);
   EXPECT_EQ(stats.frames_decoded, info.receivers[0].frames_decoded);
-  EXPECT_EQ(stats.qp_sum, info.receivers[0].qp_sum);
 }
 
 TEST_F(WebRtcVideoChannel2Test, GetStatsTranslatesReceivePacketStatsCorrectly) {

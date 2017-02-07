@@ -367,6 +367,10 @@ void VideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
 
 // TODO(tommi): This method grabs a lock 6 times.
 void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
+  // TODO(tommi): OnDecodedFrame grabs a lock, incidentally the same lock
+  // that OnSyncOffsetUpdated() and OnRenderedFrame() below grab.
+  stats_proxy_.OnDecodedFrame();
+
   int64_t sync_offset_ms;
   double estimated_freq_khz;
   // TODO(tommi): GetStreamSyncOffsetInMs grabs three locks.  One inside the

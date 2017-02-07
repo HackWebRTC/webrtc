@@ -37,13 +37,11 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
     void SetUserReceiveCallback(VCMReceiveCallback* receiveCallback);
     VCMReceiveCallback* UserReceiveCallback();
 
-    int32_t Decoded(VideoFrame& decodedImage) override;
-    int32_t Decoded(VideoFrame& decodedImage, int64_t decode_time_ms) override;
-    void Decoded(VideoFrame& decodedImage,
-                 rtc::Optional<int32_t> decode_time_ms,
-                 rtc::Optional<uint8_t> qp) override;
-    int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId) override;
-    int32_t ReceivedDecodedFrame(const uint64_t pictureId) override;
+    virtual int32_t Decoded(VideoFrame& decodedImage);  // NOLINT
+    virtual int32_t Decoded(VideoFrame& decodedImage,   // NOLINT
+                            int64_t decode_time_ms);
+    virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId);
+    virtual int32_t ReceivedDecodedFrame(const uint64_t pictureId);
 
     uint64_t LastReceivedPictureID() const;
     void OnDecoderImplementationName(const char* implementation_name);

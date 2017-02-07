@@ -221,9 +221,6 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
     report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
                      info.capture_start_ntp_time_ms);
   }
-  if (info.qp_sum)
-    report->AddInt64(StatsReport::kStatsValueNameQpSum, *info.qp_sum);
-
   const IntForAdd ints[] = {
     { StatsReport::kStatsValueNameCurrentDelayMs, info.current_delay_ms },
     { StatsReport::kStatsValueNameDecodeMs, info.decode_ms },
