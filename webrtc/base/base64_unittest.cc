@@ -345,7 +345,7 @@ size_t Base64Unescape(const char *src, size_t szsrc, char *dest,
   return unescaped.size();
 }
 
-size_t Base64Unescape(const char *src, size_t szsrc, string *s) {
+size_t Base64Unescape(const char *src, size_t szsrc, std::string *s) {
   EXPECT_TRUE(Base64::DecodeFromArray(src, szsrc, Base64::DO_LAX, s, NULL));
   return s->size();
 }
@@ -417,7 +417,7 @@ TEST(Base64, EncodeDecodeBattery) {
 
       // Try chopping off the equals sign(s) entirely.  The decoder
       // should still be okay with this.
-      string decoded2("this junk should also be ignored");
+      std::string decoded2("this junk should also be ignored");
       *first_equals = '\0';
       EXPECT_NE(0U, Base64Unescape(encode_buffer, first_equals-encode_buffer,
                            &decoded2));
