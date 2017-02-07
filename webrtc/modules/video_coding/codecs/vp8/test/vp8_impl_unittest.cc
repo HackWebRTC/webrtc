@@ -97,6 +97,11 @@ class Vp8UnitTestDecodeCompleteCallback : public webrtc::DecodedImageCallback {
     RTC_NOTREACHED();
     return -1;
   }
+  void Decoded(VideoFrame& frame,
+               rtc::Optional<int32_t> decode_time_ms,
+               rtc::Optional<uint8_t> qp) override {
+    RTC_NOTREACHED();
+  }
   bool DecodeComplete();
 
  private:

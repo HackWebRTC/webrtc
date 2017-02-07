@@ -428,11 +428,26 @@ void ReceiveStatisticsProxy::DataCountersUpdated(
   }
 }
 
-void ReceiveStatisticsProxy::OnDecodedFrame() {
+void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp) {
   uint64_t now = clock_->TimeInMilliseconds();
 
   rtc::CritScope lock(&crit_);
   ++stats_.frames_decoded;
+  if (qp) {
+    if (!stats_.qp_sum) {
+      if (stats_.frames_decoded != 1) {
+        LOG(LS_WARNING)
+            << "Frames decoded was not 1 when first qp value was received.";
+        stats_.frames_decoded = 1;
+      }
+      stats_.qp_sum = rtc::Optional<uint64_t>(0);
+    }
+    *stats_.qp_sum += *qp;
+  } else if (stats_.qp_sum) {
+    LOG(LS_WARNING)
+        << "QP sum was already set and no QP was given for a frame.";
+    stats_.qp_sum = rtc::Optional<uint64_t>();
+  }
   decode_fps_estimator_.Update(1, now);
   stats_.decode_frame_rate = decode_fps_estimator_.Rate(now).value_or(0);
 }

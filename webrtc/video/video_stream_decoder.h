@@ -60,7 +60,8 @@ class VideoStreamDecoder : public VCMReceiveCallback,
   ~VideoStreamDecoder();
 
   // Implements VCMReceiveCallback.
-  int32_t FrameToRender(VideoFrame& video_frame) override;  // NOLINT
+  int32_t FrameToRender(VideoFrame& video_frame,
+                        rtc::Optional<uint8_t> qp) override;
   int32_t ReceivedDecodedReferenceFrame(const uint64_t picture_id) override;
   void OnIncomingPayloadType(int payload_type) override;
   void OnDecoderImplementationName(const char* implementation_name) override;
