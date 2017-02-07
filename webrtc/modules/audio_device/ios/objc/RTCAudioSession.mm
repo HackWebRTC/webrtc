@@ -810,18 +810,18 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 
 - (void)notifyMediaServicesWereLost {
   for (auto delegate : self.delegates) {
-    SEL sel = @selector(audioSessionMediaServicesWereLost:);
+    SEL sel = @selector(audioSessionMediaServerTerminated:);
     if ([delegate respondsToSelector:sel]) {
-      [delegate audioSessionMediaServicesWereLost:self];
+      [delegate audioSessionMediaServerTerminated:self];
     }
   }
 }
 
 - (void)notifyMediaServicesWereReset {
   for (auto delegate : self.delegates) {
-    SEL sel = @selector(audioSessionMediaServicesWereReset:);
+    SEL sel = @selector(audioSessionMediaServerReset:);
     if ([delegate respondsToSelector:sel]) {
-      [delegate audioSessionMediaServicesWereReset:self];
+      [delegate audioSessionMediaServerReset:self];
     }
   }
 }
