@@ -302,7 +302,7 @@ class RTCRTPStreamStats : public RTCStats {
   RTCRTPStreamStats(const RTCRTPStreamStats& other);
   ~RTCRTPStreamStats() override;
 
-  RTCStatsMember<std::string> ssrc;
+  RTCStatsMember<uint32_t> ssrc;
   // TODO(hbos): When the remote case is supported |RTCStatsCollector| needs to
   // set this. crbug.com/657855, 657856
   RTCStatsMember<std::string> associate_stats_id;

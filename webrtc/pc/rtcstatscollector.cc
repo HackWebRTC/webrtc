@@ -196,7 +196,7 @@ void SetInboundRTPStreamStatsFromMediaReceiverInfo(
     const cricket::MediaReceiverInfo& media_receiver_info,
     RTCInboundRTPStreamStats* inbound_stats) {
   RTC_DCHECK(inbound_stats);
-  inbound_stats->ssrc = rtc::ToString<>(media_receiver_info.ssrc());
+  inbound_stats->ssrc = media_receiver_info.ssrc();
   // TODO(hbos): Support the remote case. crbug.com/657855
   inbound_stats->is_remote = false;
   inbound_stats->packets_received =
@@ -252,7 +252,7 @@ void SetOutboundRTPStreamStatsFromMediaSenderInfo(
     const cricket::MediaSenderInfo& media_sender_info,
     RTCOutboundRTPStreamStats* outbound_stats) {
   RTC_DCHECK(outbound_stats);
-  outbound_stats->ssrc = rtc::ToString<>(media_sender_info.ssrc());
+  outbound_stats->ssrc = media_sender_info.ssrc();
   // TODO(hbos): Support the remote case. crbug.com/657856
   outbound_stats->is_remote = false;
   outbound_stats->packets_sent =

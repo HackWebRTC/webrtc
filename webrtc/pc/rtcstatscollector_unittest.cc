@@ -1722,7 +1722,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
 
   RTCInboundRTPStreamStats expected_audio(
       "RTCInboundRTPAudioStream_1", report->timestamp_us());
-  expected_audio.ssrc = "1";
+  expected_audio.ssrc = 1;
   expected_audio.is_remote = false;
   expected_audio.media_type = "audio";
   expected_audio.track_id =
@@ -1805,7 +1805,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
 
   RTCInboundRTPStreamStats expected_video(
       "RTCInboundRTPVideoStream_1", report->timestamp_us());
-  expected_video.ssrc = "1";
+  expected_video.ssrc = 1;
   expected_video.is_remote = false;
   expected_video.media_type = "video";
   expected_video.track_id =
@@ -1885,7 +1885,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
 
   RTCOutboundRTPStreamStats expected_audio(
       "RTCOutboundRTPAudioStream_1", report->timestamp_us());
-  expected_audio.ssrc = "1";
+  expected_audio.ssrc = 1;
   expected_audio.is_remote = false;
   expected_audio.media_type = "audio";
   expected_audio.track_id =
@@ -1965,7 +1965,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
 
   RTCOutboundRTPStreamStats expected_video(
       "RTCOutboundRTPVideoStream_1", report->timestamp_us());
-  expected_video.ssrc = "1";
+  expected_video.ssrc = 1;
   expected_video.is_remote = false;
   expected_video.media_type = "video";
   expected_video.track_id =
@@ -2056,7 +2056,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Default) {
 
   RTCOutboundRTPStreamStats expected_audio(
       "RTCOutboundRTPAudioStream_1", report->timestamp_us());
-  expected_audio.ssrc = "1";
+  expected_audio.ssrc = 1;
   expected_audio.is_remote = false;
   expected_audio.media_type = "audio";
   expected_audio.transport_id = "RTCTransport_TransportName_" +
@@ -2073,7 +2073,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Default) {
 
   RTCOutboundRTPStreamStats expected_video(
       "RTCOutboundRTPVideoStream_1", report->timestamp_us());
-  expected_video.ssrc = "1";
+  expected_video.ssrc = 1;
   expected_video.is_remote = false;
   expected_video.media_type = "video";
   expected_video.transport_id = "RTCTransport_TransportName_" +
