@@ -329,12 +329,10 @@ class VideoAnalyzer : public PacketReceiver,
         // No previous frame rendered, this one was dropped after sending but
         // before rendering.
         ++dropped_frames_before_rendering_;
-        frames_.pop_front();
-        RTC_CHECK(!frames_.empty());
-        continue;
+      } else {
+        AddFrameComparison(frames_.front(), *last_rendered_frame_, true,
+                           render_time_ms);
       }
-      AddFrameComparison(frames_.front(), *last_rendered_frame_, true,
-                         render_time_ms);
       frames_.pop_front();
       RTC_DCHECK(!frames_.empty());
     }
@@ -1196,6 +1194,8 @@ void VideoQualityTest::SetupScreenshare() {
 
   // Fill out codec settings.
   video_encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
+  degradation_preference_ =
+      VideoSendStream::DegradationPreference::kMaintainResolution;
   if (params_.video.codec == "VP8") {
     VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
     vp8_settings.denoisingOn = false;
@@ -1360,9 +1360,9 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   analyzer.SetSendStream(video_send_stream_);
   if (video_receive_streams_.size() == 1)
     analyzer.SetReceiveStream(video_receive_streams_[0]);
-  video_send_stream_->SetSource(
-      analyzer.OutputInterface(),
-      VideoSendStream::DegradationPreference::kBalanced);
+
+  video_send_stream_->SetSource(analyzer.OutputInterface(),
+                                degradation_preference_);
 
   CreateCapturer();
   rtc::VideoSinkWants wants;
@@ -1504,9 +1504,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     video_receive_stream = call->CreateVideoReceiveStream(
         video_receive_configs_[stream_id].Copy());
     CreateCapturer();
-    video_send_stream_->SetSource(
-        video_capturer_.get(),
-        VideoSendStream::DegradationPreference::kBalanced);
+    video_send_stream_->SetSource(video_capturer_.get(),
+                                  degradation_preference_);
   }
 
   AudioReceiveStream* audio_receive_stream = nullptr;

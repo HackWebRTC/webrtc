@@ -150,6 +150,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                                    bool nack_enabled);
   void ReconfigureEncoder();
 
+  void ConfigureQualityScaler();
+
   // Implements VideoSinkInterface.
   void OnFrame(const VideoFrame& video_frame) override;
 
@@ -175,6 +177,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   rtc::Event shutdown_event_;
 
   const uint32_t number_of_cores_;
+  // Counts how many frames we've dropped in the initial rampup phase.
+  int initial_rampup_;
 
   const std::unique_ptr<VideoSourceProxy> source_proxy_;
   EncoderSink* sink_;
