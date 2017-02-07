@@ -21,7 +21,6 @@
 #include "webrtc/base/optional.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
@@ -37,16 +36,6 @@
 #include "webrtc/video_receive_stream.h"
 
 namespace webrtc {
-
-static bool UseSendSideBwe(const VideoReceiveStream::Config& config) {
-  if (!config.rtp.transport_cc)
-    return false;
-  for (const auto& extension : config.rtp.extensions) {
-    if (extension.uri == RtpExtension::kTransportSequenceNumberUri)
-      return true;
-  }
-  return false;
-}
 
 std::string VideoReceiveStream::Decoder::ToString() const {
   std::stringstream ss;
@@ -188,7 +177,6 @@ namespace internal {
 VideoReceiveStream::VideoReceiveStream(
     int num_cpu_cores,
     bool protected_by_flexfec,
-    CongestionController* congestion_controller,
     PacketRouter* packet_router,
     VideoReceiveStream::Config config,
     ProcessThread* process_thread,
@@ -201,14 +189,11 @@ VideoReceiveStream::VideoReceiveStream(
       process_thread_(process_thread),
       clock_(Clock::GetRealTimeClock()),
       decode_thread_(DecodeThreadFunction, this, "DecodingThread"),
-      congestion_controller_(congestion_controller),
       call_stats_(call_stats),
       timing_(new VCMTiming(clock_)),
       video_receiver_(clock_, nullptr, this, timing_.get(), this, this),
       stats_proxy_(&config_, clock_),
-      rtp_stream_receiver_(congestion_controller_->GetRemoteBitrateEstimator(
-                               UseSendSideBwe(config_)),
-                           &transport_adapter_,
+      rtp_stream_receiver_(&transport_adapter_,
                            call_stats_->rtcp_rtt_stats(),
                            packet_router,
                            remb,
@@ -223,7 +208,6 @@ VideoReceiveStream::VideoReceiveStream(
   LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
   RTC_DCHECK(process_thread_);
-  RTC_DCHECK(congestion_controller_);
   RTC_DCHECK(call_stats_);
 
   module_process_thread_checker_.DetachFromThread();
@@ -256,9 +240,6 @@ VideoReceiveStream::~VideoReceiveStream() {
 
   process_thread_->DeRegisterModule(&rtp_stream_sync_);
   process_thread_->DeRegisterModule(&video_receiver_);
-
-  congestion_controller_->GetRemoteBitrateEstimator(UseSendSideBwe(config_))
-      ->RemoveStream(rtp_stream_receiver_.GetRemoteSsrc());
 }
 
 void VideoReceiveStream::SignalNetworkState(NetworkState state) {

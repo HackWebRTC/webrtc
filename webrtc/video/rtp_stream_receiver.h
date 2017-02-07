@@ -41,7 +41,6 @@ class PacketRouter;
 class ProcessThread;
 class ReceiveStatistics;
 class ReceiveStatisticsProxy;
-class RemoteBitrateEstimator;
 class RemoteNtpTimeEstimator;
 class RtcpRttStats;
 class RtpHeaderParser;
@@ -65,7 +64,6 @@ class RtpStreamReceiver : public RtpData,
                           public CallStatsObserver {
  public:
   RtpStreamReceiver(
-      RemoteBitrateEstimator* remote_bitrate_estimator,
       Transport* transport,
       RtcpRttStats* rtt_stats,
       PacketRouter* packet_router,
@@ -161,7 +159,6 @@ class RtpStreamReceiver : public RtpData,
   Clock* const clock_;
   // Ownership of this object lies with VideoReceiveStream, which owns |this|.
   const VideoReceiveStream::Config& config_;
-  RemoteBitrateEstimator* const remote_bitrate_estimator_;
   PacketRouter* const packet_router_;
   VieRemb* const remb_;
   ProcessThread* const process_thread_;

@@ -32,7 +32,6 @@
 namespace webrtc {
 
 class CallStats;
-class CongestionController;
 class IvfFileWriter;
 class ProcessThread;
 class RTPFragmentationHeader;
@@ -52,7 +51,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
  public:
   VideoReceiveStream(int num_cpu_cores,
                      bool protected_by_flexfec,
-                     CongestionController* congestion_controller,
                      PacketRouter* packet_router,
                      VideoReceiveStream::Config config,
                      ProcessThread* process_thread,
@@ -127,7 +125,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   rtc::PlatformThread decode_thread_;
 
-  CongestionController* const congestion_controller_;
   CallStats* const call_stats_;
 
   std::unique_ptr<VCMTiming> timing_;  // Jitter buffer experiment.

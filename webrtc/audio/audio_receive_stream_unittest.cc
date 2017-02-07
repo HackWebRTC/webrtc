@@ -18,7 +18,6 @@
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
@@ -126,20 +125,12 @@ struct ConfigHelper {
   }
 
   PacketRouter* packet_router() { return &packet_router_; }
-  MockRemoteBitrateEstimator* remote_bitrate_estimator() {
-    return &remote_bitrate_estimator_;
-  }
   MockRtcEventLog* event_log() { return &event_log_; }
   AudioReceiveStream::Config& config() { return stream_config_; }
   rtc::scoped_refptr<AudioState> audio_state() { return audio_state_; }
   rtc::scoped_refptr<MockAudioMixer> audio_mixer() { return audio_mixer_; }
   MockVoiceEngine& voice_engine() { return voice_engine_; }
   MockVoEChannelProxy* channel_proxy() { return channel_proxy_; }
-
-  void SetupMockForBweFeedback(bool send_side_bwe) {
-    EXPECT_CALL(remote_bitrate_estimator_,
-                RemoveStream(stream_config_.rtp.remote_ssrc));
-  }
 
   void SetupMockForGetStats() {
     using testing::DoAll;
@@ -163,7 +154,6 @@ struct ConfigHelper {
  private:
   PacketRouter packet_router_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
-  MockRemoteBitrateEstimator remote_bitrate_estimator_;
   MockRtcEventLog event_log_;
   testing::StrictMock<MockVoiceEngine> voice_engine_;
   rtc::scoped_refptr<AudioState> audio_state_;
@@ -243,17 +233,14 @@ TEST(AudioReceiveStreamTest, ConstructDestruct) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
       helper.packet_router(),
-      helper.remote_bitrate_estimator(),
       helper.config(), helper.audio_state(), helper.event_log());
 }
 
 TEST(AudioReceiveStreamTest, ReceiveRtpPacket) {
   ConfigHelper helper;
   helper.config().rtp.transport_cc = true;
-  helper.SetupMockForBweFeedback(true);
   internal::AudioReceiveStream recv_stream(
       helper.packet_router(),
-      helper.remote_bitrate_estimator(),
       helper.config(), helper.audio_state(), helper.event_log());
   const int kTransportSequenceNumberValue = 1234;
   std::vector<uint8_t> rtp_packet = CreateRtpHeaderWithOneByteExtension(
@@ -271,10 +258,8 @@ TEST(AudioReceiveStreamTest, ReceiveRtpPacket) {
 TEST(AudioReceiveStreamTest, ReceiveRtcpPacket) {
   ConfigHelper helper;
   helper.config().rtp.transport_cc = true;
-  helper.SetupMockForBweFeedback(true);
   internal::AudioReceiveStream recv_stream(
       helper.packet_router(),
-      helper.remote_bitrate_estimator(),
       helper.config(), helper.audio_state(), helper.event_log());
 
   std::vector<uint8_t> rtcp_packet = CreateRtcpSenderReport();
@@ -288,7 +273,6 @@ TEST(AudioReceiveStreamTest, GetStats) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
       helper.packet_router(),
-      helper.remote_bitrate_estimator(),
       helper.config(), helper.audio_state(), helper.event_log());
   helper.SetupMockForGetStats();
   AudioReceiveStream::Stats stats = recv_stream.GetStats();
@@ -334,7 +318,6 @@ TEST(AudioReceiveStreamTest, SetGain) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
       helper.packet_router(),
-      helper.remote_bitrate_estimator(),
       helper.config(), helper.audio_state(), helper.event_log());
   EXPECT_CALL(*helper.channel_proxy(),
       SetChannelOutputVolumeScaling(FloatEq(0.765f)));
@@ -345,7 +328,6 @@ TEST(AudioReceiveStreamTest, StreamShouldNotBeAddedToMixerWhenVoEReturnsError) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
       helper.packet_router(),
-      helper.remote_bitrate_estimator(),
       helper.config(), helper.audio_state(), helper.event_log());
 
   EXPECT_CALL(helper.voice_engine(), StartPlayout(_)).WillOnce(Return(-1));
@@ -358,7 +340,6 @@ TEST(AudioReceiveStreamTest, StreamShouldBeAddedToMixerOnStart) {
   ConfigHelper helper;
   internal::AudioReceiveStream recv_stream(
       helper.packet_router(),
-      helper.remote_bitrate_estimator(),
       helper.config(), helper.audio_state(), helper.event_log());
 
   EXPECT_CALL(helper.voice_engine(), StartPlayout(_)).WillOnce(Return(0));

@@ -50,7 +50,6 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
     Transport* outgoing_transport,
     RtcpRttStats* rtt_stats,
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
-    RemoteBitrateEstimator* remote_bitrate_estimator,
     TransportSequenceNumberAllocator* transport_sequence_number_allocator) {
   RtpRtcp::Configuration configuration;
   configuration.audio = false;
@@ -81,7 +80,6 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
 static const int kPacketLogIntervalMs = 10000;
 
 RtpStreamReceiver::RtpStreamReceiver(
-    RemoteBitrateEstimator* remote_bitrate_estimator,
     Transport* transport,
     RtcpRttStats* rtt_stats,
     PacketRouter* packet_router,
@@ -95,7 +93,6 @@ RtpStreamReceiver::RtpStreamReceiver(
     VCMTiming* timing)
     : clock_(Clock::GetRealTimeClock()),
       config_(*config),
-      remote_bitrate_estimator_(remote_bitrate_estimator),
       packet_router_(packet_router),
       remb_(remb),
       process_thread_(process_thread),
@@ -114,7 +111,6 @@ RtpStreamReceiver::RtpStreamReceiver(
                                     transport,
                                     rtt_stats,
                                     receive_stats_proxy,
-                                    remote_bitrate_estimator_,
                                     packet_router)),
       complete_frame_callback_(complete_frame_callback),
       keyframe_request_sender_(keyframe_request_sender),
@@ -309,7 +305,6 @@ void RtpStreamReceiver::OnIncomingSSRCChanged(const uint32_t ssrc) {
 bool RtpStreamReceiver::DeliverRtp(const uint8_t* rtp_packet,
                                    size_t rtp_packet_length,
                                    const PacketTime& packet_time) {
-  RTC_DCHECK(remote_bitrate_estimator_);
   {
     rtc::CritScope lock(&receive_cs_);
     if (!receiving_) {

@@ -63,18 +63,15 @@ std::string AudioReceiveStream::Config::ToString() const {
 namespace internal {
 AudioReceiveStream::AudioReceiveStream(
     PacketRouter* packet_router,
-    RemoteBitrateEstimator* remote_bitrate_estimator,
     const webrtc::AudioReceiveStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     webrtc::RtcEventLog* event_log)
-    : remote_bitrate_estimator_(remote_bitrate_estimator),
-      config_(config),
+    : config_(config),
       audio_state_(audio_state) {
   LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
   RTC_DCHECK(packet_router);
-  RTC_DCHECK(remote_bitrate_estimator);
 
   module_process_thread_checker_.DetachFromThread();
 
@@ -125,7 +122,6 @@ AudioReceiveStream::~AudioReceiveStream() {
   channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
-  remote_bitrate_estimator_->RemoveStream(config_.rtp.remote_ssrc);
 }
 
 void AudioReceiveStream::Start() {

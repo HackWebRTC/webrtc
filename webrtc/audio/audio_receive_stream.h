@@ -22,7 +22,6 @@
 
 namespace webrtc {
 class PacketRouter;
-class RemoteBitrateEstimator;
 class RtcEventLog;
 
 namespace voe {
@@ -37,7 +36,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
                                  public Syncable {
  public:
   AudioReceiveStream(PacketRouter* packet_router,
-                     RemoteBitrateEstimator* remote_bitrate_estimator,
                      const webrtc::AudioReceiveStream::Config& config,
                      const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                      webrtc::RtcEventLog* event_log);
@@ -77,7 +75,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
 
   rtc::ThreadChecker worker_thread_checker_;
   rtc::ThreadChecker module_process_thread_checker_;
-  RemoteBitrateEstimator* const remote_bitrate_estimator_;
   const webrtc::AudioReceiveStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
