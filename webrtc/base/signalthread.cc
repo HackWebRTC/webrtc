@@ -147,4 +147,8 @@ void SignalThread::OnMainThreadDestroyed() {
   main_ = NULL;
 }
 
+bool SignalThread::Worker::IsProcessingMessages() {
+  return false;
+}
+
 }  // namespace rtc

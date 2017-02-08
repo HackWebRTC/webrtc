@@ -111,6 +111,7 @@ class SignalThread
           parent_(parent) {}
     ~Worker() override;
     void Run() override;
+    bool IsProcessingMessages() override;
 
    private:
     SignalThread* parent_;

@@ -56,6 +56,16 @@ class ScopedFakeClock : public FakeClock {
   ClockInterface* prev_clock_;
 };
 
+// Helper class to "undo" the fake clock temporarily.
+class ScopedRealClock {
+ public:
+  ScopedRealClock();
+  ~ScopedRealClock();
+
+ private:
+  ClockInterface* prev_clock_;
+};
+
 }  // namespace rtc
 
 #endif  // WEBRTC_BASE_FAKECLOCK_H_

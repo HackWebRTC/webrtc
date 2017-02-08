@@ -146,9 +146,10 @@ void MessageQueueManager::ProcessAllMessageQueuesInternal() {
   {
     DebugNonReentrantCritScope cs(&crit_, &locked_);
     for (MessageQueue* queue : message_queues_) {
-      if (queue->IsQuitting()) {
-        // If the queue is quitting, it's done processing messages so it can
-        // be ignored. If we tried to post a message to it, it would be dropped.
+      if (!queue->IsProcessingMessages()) {
+        // If the queue is not processing messages, it can
+        // be ignored. If we tried to post a message to it, it would be dropped
+        // or ignored.
         continue;
       }
       queue->PostDelayed(RTC_FROM_HERE, 0, nullptr, MQID_DISPOSE,
@@ -249,6 +250,10 @@ void MessageQueue::Quit() {
 
 bool MessageQueue::IsQuitting() {
   return AtomicOps::AcquireLoad(&stop_) != 0;
+}
+
+bool MessageQueue::IsProcessingMessages() {
+  return !IsQuitting();
 }
 
 void MessageQueue::Restart() {

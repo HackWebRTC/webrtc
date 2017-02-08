@@ -209,6 +209,10 @@ class MessageQueue {
   virtual void Quit();
   virtual bool IsQuitting();
   virtual void Restart();
+  // Not all message queues actually process messages (such as SignalThread).
+  // In those cases, it's important to know, before posting, that it won't be
+  // Processed.  Normally, this would be true until IsQuitting() is true.
+  virtual bool IsProcessingMessages();
 
   // Get() will process I/O until:
   //  1) A message is available (returns true)
