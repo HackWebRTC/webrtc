@@ -2945,13 +2945,13 @@ void TestAudioCodecsAnswer(MediaContentDirection offer_direction,
 }  // namespace
 
 class AudioCodecsOfferTest
-    : public ::testing::TestWithParam<std::tr1::tuple<MediaContentDirection,
-                                                      bool>> {
+    : public ::testing::TestWithParam<::testing::tuple<MediaContentDirection,
+                                                       bool>> {
 };
 
 TEST_P(AudioCodecsOfferTest, TestCodecsInOffer) {
-  TestAudioCodecsOffer(std::tr1::get<0>(GetParam()),
-                       std::tr1::get<1>(GetParam()));
+  TestAudioCodecsOffer(::testing::get<0>(GetParam()),
+                       ::testing::get<1>(GetParam()));
 }
 
 INSTANTIATE_TEST_CASE_P(MediaSessionDescriptionFactoryTest,
@@ -2964,15 +2964,15 @@ INSTANTIATE_TEST_CASE_P(MediaSessionDescriptionFactoryTest,
                              ::testing::Bool()));
 
 class AudioCodecsAnswerTest
-    : public ::testing::TestWithParam<std::tr1::tuple<MediaContentDirection,
-                                                      MediaContentDirection,
-                                                      bool>> {
+    : public ::testing::TestWithParam<::testing::tuple<MediaContentDirection,
+                                                       MediaContentDirection,
+                                                       bool>> {
 };
 
 TEST_P(AudioCodecsAnswerTest, TestCodecsInAnswer) {
-  TestAudioCodecsAnswer(std::tr1::get<0>(GetParam()),
-                        std::tr1::get<1>(GetParam()),
-                        std::tr1::get<2>(GetParam()));
+  TestAudioCodecsAnswer(::testing::get<0>(GetParam()),
+                        ::testing::get<1>(GetParam()),
+                        ::testing::get<2>(GetParam()));
 }
 
 INSTANTIATE_TEST_CASE_P(MediaSessionDescriptionFactoryTest,
