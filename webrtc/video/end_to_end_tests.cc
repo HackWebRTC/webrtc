@@ -1093,10 +1093,12 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
     }
 
     void OnFrame(const VideoFrame& frame) override {
-      rtc::CritScope lock(&crit_);
-      if (frame.timestamp() == retransmitted_timestamp_)
-        observation_complete_.Set();
-      rendered_timestamps_.push_back(frame.timestamp());
+      {
+        rtc::CritScope lock(&crit_);
+        if (frame.timestamp() == retransmitted_timestamp_)
+          observation_complete_.Set();
+        rendered_timestamps_.push_back(frame.timestamp());
+      }
       orig_renderer_->OnFrame(frame);
     }
 
@@ -1110,6 +1112,7 @@ void EndToEndTest::DecodesRetransmittedFrame(bool enable_rtx, bool enable_red) {
       RTC_DCHECK(!orig_renderer_);
       orig_renderer_ = (*receive_configs)[0].renderer;
       RTC_DCHECK(orig_renderer_);
+      (*receive_configs)[0].disable_prerenderer_smoothing = true;
       (*receive_configs)[0].renderer = this;
 
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
