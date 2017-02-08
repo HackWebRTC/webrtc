@@ -61,7 +61,9 @@ BlockProcessorImpl::BlockProcessorImpl(
       sample_rate_hz_(sample_rate_hz),
       render_buffer_(std::move(render_buffer)),
       delay_controller_(std::move(delay_controller)),
-      echo_remover_(std::move(echo_remover)) {}
+      echo_remover_(std::move(echo_remover)) {
+  RTC_DCHECK(ValidFullBandRate(sample_rate_hz_));
+}
 
 BlockProcessorImpl::~BlockProcessorImpl() = default;
 

@@ -115,9 +115,8 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(
       max_delay_(render_delay_buffer.MaxDelay()),
       delay_(render_delay_buffer.Delay()),
       render_buffer_(render_delay_buffer.MaxApiJitter() + 1),
-      delay_estimator_(data_dumper_.get(), sample_rate_hz) {
-  RTC_DCHECK(sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
-             sample_rate_hz == 32000 || sample_rate_hz == 48000);
+      delay_estimator_(data_dumper_.get()) {
+  RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
 }
 
 RenderDelayControllerImpl::~RenderDelayControllerImpl() = default;

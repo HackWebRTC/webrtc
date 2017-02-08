@@ -227,6 +227,8 @@ EchoCanceller3::EchoCanceller3(int sample_rate_hz,
                                  std::vector<float>(frame_length_, 0.f)),
       block_(num_bands_, std::vector<float>(kBlockSize, 0.f)),
       sub_frame_view_(num_bands_) {
+  RTC_DCHECK(ValidFullBandRate(sample_rate_hz_));
+
   std::unique_ptr<CascadedBiQuadFilter> render_highpass_filter;
   if (use_highpass_filter) {
     render_highpass_filter.reset(new CascadedBiQuadFilter(

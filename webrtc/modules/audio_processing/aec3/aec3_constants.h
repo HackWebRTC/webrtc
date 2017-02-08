@@ -34,6 +34,11 @@ constexpr int LowestBandRate(int sample_rate_hz) {
   return sample_rate_hz == 8000 ? sample_rate_hz : 16000;
 }
 
+constexpr bool ValidFullBandRate(int sample_rate_hz) {
+  return sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
+         sample_rate_hz == 32000 || sample_rate_hz == 48000;
+}
+
 static_assert(1 == NumBandsForRate(8000), "Number of bands for 8 kHz");
 static_assert(1 == NumBandsForRate(16000), "Number of bands for 16 kHz");
 static_assert(2 == NumBandsForRate(32000), "Number of bands for 32 kHz");
@@ -46,6 +51,17 @@ static_assert(16000 == LowestBandRate(32000),
               "Sample rate of band 0 for 32 kHz");
 static_assert(16000 == LowestBandRate(48000),
               "Sample rate of band 0 for 48 kHz");
+
+static_assert(ValidFullBandRate(8000),
+              "Test that 8 kHz is a valid sample rate");
+static_assert(ValidFullBandRate(16000),
+              "Test that 16 kHz is a valid sample rate");
+static_assert(ValidFullBandRate(32000),
+              "Test that 32 kHz is a valid sample rate");
+static_assert(ValidFullBandRate(48000),
+              "Test that 48 kHz is a valid sample rate");
+static_assert(!ValidFullBandRate(8001),
+              "Test that 8001 Hz is not a valid sample rate");
 
 }  // namespace webrtc
 

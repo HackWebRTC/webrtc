@@ -252,6 +252,12 @@ TEST(BlockProcessor, NullBufferRenderParameter) {
                "");
 }
 
+// Verifies the check for correct sample rate.
+TEST(BlockProcessor, WrongSampleRate) {
+  EXPECT_DEATH(std::unique_ptr<BlockProcessor>(BlockProcessor::Create(8001)),
+               "");
+}
+
 #endif
 
 }  // namespace webrtc

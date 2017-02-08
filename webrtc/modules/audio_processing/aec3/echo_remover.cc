@@ -42,8 +42,7 @@ class EchoRemoverImpl final : public EchoRemover {
 // TODO(peah): Add functionality.
 EchoRemoverImpl::EchoRemoverImpl(int sample_rate_hz)
     : sample_rate_hz_(sample_rate_hz) {
-  RTC_DCHECK(sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
-             sample_rate_hz == 32000 || sample_rate_hz == 48000);
+  RTC_DCHECK(ValidFullBandRate(sample_rate_hz_));
 }
 
 EchoRemoverImpl::~EchoRemoverImpl() = default;

@@ -719,6 +719,12 @@ TEST(EchoCanceller3InputCheck, NullCaptureProcessingParameter) {
   EXPECT_DEATH(EchoCanceller3(8000, false).ProcessCapture(nullptr, false), "");
 }
 
+// Verifies the check for correct sample rate.
+TEST(EchoCanceller3InputCheck, WrongSampleRate) {
+  ApmDataDumper data_dumper(0);
+  EXPECT_DEATH(EchoCanceller3(8001, false), "");
+}
+
 #endif
 
 }  // namespace webrtc

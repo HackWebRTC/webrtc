@@ -105,8 +105,7 @@ TEST(RenderDelayController, BasicApiCalls) {
 
 // Verifies that the RenderDelayController is able to align the signals for
 // simple timeshifts between the signals.
-// TODO(peah): Activate the unittest once the required code has been landed.
-TEST(RenderDelayController, DISABLED_Alignment) {
+TEST(RenderDelayController, Alignment) {
   Random random_generator(42U);
   std::vector<float> render_block(kBlockSize, 0.f);
   std::vector<float> capture_block(kBlockSize, 0.f);
@@ -148,8 +147,7 @@ TEST(RenderDelayController, DISABLED_Alignment) {
 
 // Verifies that the RenderDelayController is able to align the signals for
 // simple timeshifts between the signals when there is jitter in the API calls.
-// TODO(peah): Activate the unittest once the required code has been landed.
-TEST(RenderDelayController, DISABLED_AlignmentWithJitter) {
+TEST(RenderDelayController, AlignmentWithJitter) {
   Random random_generator(42U);
   std::vector<float> render_block(kBlockSize, 0.f);
   std::vector<float> capture_block(kBlockSize, 0.f);
