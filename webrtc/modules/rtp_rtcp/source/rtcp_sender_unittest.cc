@@ -454,7 +454,7 @@ TEST_F(RtcpSenderTest, SetInvalidApplicationSpecificData) {
       0, 0, kData, kInvalidDataLength));  // Should by multiple of 4.
 }
 
-TEST_F(RtcpSenderTest, SendFirNonRepeat) {
+TEST_F(RtcpSenderTest, SendFir) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpFir));
   EXPECT_EQ(1, parser()->fir()->num_packets());
@@ -462,23 +462,9 @@ TEST_F(RtcpSenderTest, SendFirNonRepeat) {
   EXPECT_EQ(1U, parser()->fir()->requests().size());
   EXPECT_EQ(kRemoteSsrc, parser()->fir()->requests()[0].ssrc);
   uint8_t seq = parser()->fir()->requests()[0].seq_nr;
-  // Sends non-repeat FIR as default.
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpFir));
   EXPECT_EQ(2, parser()->fir()->num_packets());
   EXPECT_EQ(seq + 1, parser()->fir()->requests()[0].seq_nr);
-}
-
-TEST_F(RtcpSenderTest, SendFirRepeat) {
-  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpFir));
-  EXPECT_EQ(1, parser()->fir()->num_packets());
-  EXPECT_EQ(1U, parser()->fir()->requests().size());
-  uint8_t seq = parser()->fir()->requests()[0].seq_nr;
-  const bool kRepeat = true;
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpFir, 0, nullptr,
-                                      kRepeat));
-  EXPECT_EQ(2, parser()->fir()->num_packets());
-  EXPECT_EQ(seq, parser()->fir()->requests()[0].seq_nr);
 }
 
 TEST_F(RtcpSenderTest, SendPli) {
@@ -496,7 +482,7 @@ TEST_F(RtcpSenderTest, SendRpsi) {
   RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
   feedback_state.send_payload_type = kPayloadType;
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpRpsi, 0, nullptr,
-                                      false, kPictureId));
+                                      kPictureId));
   EXPECT_EQ(1, parser()->rpsi()->num_packets());
   EXPECT_EQ(kPayloadType, parser()->rpsi()->payload_type());
   EXPECT_EQ(kPictureId, parser()->rpsi()->picture_id());
@@ -508,7 +494,7 @@ TEST_F(RtcpSenderTest, SendSli) {
   const uint8_t kPictureId = 60;
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSli, 0, nullptr,
-                                      false, kPictureId));
+                                      kPictureId));
   EXPECT_EQ(1, parser()->sli()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->sli()->sender_ssrc());
   EXPECT_EQ(kRemoteSsrc, parser()->sli()->media_ssrc());

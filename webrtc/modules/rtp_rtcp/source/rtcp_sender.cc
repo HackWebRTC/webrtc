@@ -128,20 +128,17 @@ class RTCPSender::RtcpContext {
   RtcpContext(const FeedbackState& feedback_state,
               int32_t nack_size,
               const uint16_t* nack_list,
-              bool repeat,
               uint64_t picture_id,
               NtpTime now)
       : feedback_state_(feedback_state),
         nack_size_(nack_size),
         nack_list_(nack_list),
-        repeat_(repeat),
         picture_id_(picture_id),
         now_(now) {}
 
   const FeedbackState& feedback_state_;
   const int32_t nack_size_;
   const uint16_t* nack_list_;
-  const bool repeat_;
   const uint64_t picture_id_;
   const NtpTime now_;
 };
@@ -502,8 +499,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildPLI(const RtcpContext& ctx) {
 }
 
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildFIR(const RtcpContext& ctx) {
-  if (!ctx.repeat_)
-    ++sequence_number_fir_;  // Do not increase if repetition.
+  ++sequence_number_fir_;
 
   rtcp::Fir* fir = new rtcp::Fir();
   fir->SetSenderSsrc(ssrc_);
@@ -739,11 +735,10 @@ int32_t RTCPSender::SendRTCP(const FeedbackState& feedback_state,
                              RTCPPacketType packetType,
                              int32_t nack_size,
                              const uint16_t* nack_list,
-                             bool repeat,
                              uint64_t pictureID) {
   return SendCompoundRTCP(
       feedback_state, std::set<RTCPPacketType>(&packetType, &packetType + 1),
-      nack_size, nack_list, repeat, pictureID);
+      nack_size, nack_list, pictureID);
 }
 
 int32_t RTCPSender::SendCompoundRTCP(
@@ -751,7 +746,6 @@ int32_t RTCPSender::SendCompoundRTCP(
     const std::set<RTCPPacketType>& packet_types,
     int32_t nack_size,
     const uint16_t* nack_list,
-    bool repeat,
     uint64_t pictureID) {
   PacketContainer container(transport_, event_log_);
   {
@@ -784,7 +778,7 @@ int32_t RTCPSender::SendCompoundRTCP(
       packet_type_counter_.first_packet_time_ms = clock_->TimeInMilliseconds();
 
     // We need to send our NTP even if we haven't received any reports.
-    RtcpContext context(feedback_state, nack_size, nack_list, repeat, pictureID,
+    RtcpContext context(feedback_state, nack_size, nack_list, pictureID,
                         NtpTime(*clock_));
 
     PrepareReport(feedback_state);

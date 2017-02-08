@@ -113,14 +113,12 @@ class RTCPSender {
                    RTCPPacketType packetType,
                    int32_t nackSize = 0,
                    const uint16_t* nackList = 0,
-                   bool repeat = false,
                    uint64_t pictureID = 0);
 
   int32_t SendCompoundRTCP(const FeedbackState& feedback_state,
                            const std::set<RTCPPacketType>& packetTypes,
                            int32_t nackSize = 0,
                            const uint16_t* nackList = 0,
-                           bool repeat = false,
                            uint64_t pictureID = 0);
 
   bool REMB() const;

@@ -773,10 +773,8 @@ int32_t ModuleRtpRtcpImpl::RequestKeyFrame() {
   return -1;
 }
 
-int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
-    const uint8_t picture_id) {
-  return rtcp_sender_.SendRTCP(
-      GetFeedbackState(), kRtcpSli, 0, 0, false, picture_id);
+int32_t ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(uint8_t picture_id) {
+  return rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpSli, 0, 0, picture_id);
 }
 
 void ModuleRtpRtcpImpl::SetUlpfecConfig(int red_payload_type,
@@ -830,8 +828,7 @@ void ModuleRtpRtcpImpl::OnRequestSendReport() {
 
 int32_t ModuleRtpRtcpImpl::SendRTCPReferencePictureSelection(
     const uint64_t picture_id) {
-  return rtcp_sender_.SendRTCP(
-      GetFeedbackState(), kRtcpRpsi, 0, 0, false, picture_id);
+  return rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpRpsi, 0, 0, picture_id);
 }
 
 void ModuleRtpRtcpImpl::OnReceivedNack(
