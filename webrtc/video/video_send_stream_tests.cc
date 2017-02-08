@@ -3156,17 +3156,10 @@ TEST_F(VideoSendStreamTest,
   TestRequestSourceRotateVideo(true);
 }
 
-// Flaky on Win http://crbug.com/webrtc/6886
-#if defined(WEBRTC_WIN)
-#define MAYBE_RemoveOverheadFromBandwidth DISABLED_RemoveOverheadFromBandwidth
-#else
-#define MAYBE_RemoveOverheadFromBandwidth RemoveOverheadFromBandwidth
-#endif
-
 // This test verifies that overhead is removed from the bandwidth estimate by
 // testing that the maximum possible target payload rate is smaller than the
 // maximum bandwidth estimate by the overhead rate.
-TEST_F(VideoSendStreamTest, MAYBE_RemoveOverheadFromBandwidth) {
+TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-SendSideBwe-WithOverhead/Enabled/");
   class RemoveOverheadFromBandwidthTest : public test::EndToEndTest,
@@ -3220,7 +3213,7 @@ TEST_F(VideoSendStreamTest, MAYBE_RemoveOverheadFromBandwidth) {
       bitrate_config.max_bitrate_bps = kMaxBitrateBps;
       bitrate_config.min_bitrate_bps = kMinBitrateBps;
       call_->SetBitrateConfig(bitrate_config);
-      call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO, 20);
+      call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO, 40);
 
       // At a bitrate of 60kbps with a packet size of 1200B video and an
       // overhead of 40B per packet video produces 2240bps overhead.
@@ -3228,7 +3221,7 @@ TEST_F(VideoSendStreamTest, MAYBE_RemoveOverheadFromBandwidth) {
       bitrate_changed_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs);
       {
         rtc::CritScope lock(&crit_);
-        EXPECT_LE(57760u, max_bitrate_bps_);
+        EXPECT_LE(max_bitrate_bps_, 57760u);
       }
     }
 
