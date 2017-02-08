@@ -104,10 +104,10 @@ class RtpStreamReceiverTest : public testing::Test {
 
   void SetUp() {
     rtp_stream_receiver_.reset(new RtpStreamReceiver(
-        &mock_transport_, nullptr, &packet_router_, nullptr, &config_,
-        nullptr, process_thread_.get(), &mock_nack_sender_,
-        &mock_key_frame_request_sender_, &mock_on_complete_frame_callback_,
-        &timing_));
+        nullptr, &mock_transport_, nullptr, &packet_router_,
+        nullptr, &config_, nullptr, process_thread_.get(),
+        &mock_nack_sender_, &mock_key_frame_request_sender_,
+        &mock_on_complete_frame_callback_, &timing_));
   }
 
   WebRtcRTPHeader GetDefaultPacket() {
