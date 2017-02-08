@@ -228,10 +228,19 @@ DelayBasedBwe::DelayBasedBwe(Clock* clock)
     ReadTrendlineFilterExperimentParameters(&trendline_window_size_,
                                             &trendline_smoothing_coeff_,
                                             &trendline_threshold_gain_);
+    LOG(LS_INFO) << "Trendline filter experiment enabled with parameters "
+                 << trendline_window_size_ << ',' << trendline_smoothing_coeff_
+                 << ',' << trendline_threshold_gain_;
   }
   if (in_median_slope_experiment_) {
     ReadMedianSlopeFilterExperimentParameters(&median_slope_window_size_,
                                               &median_slope_threshold_gain_);
+    LOG(LS_INFO) << "Median-slope filter experiment enabled with parameters "
+                 << median_slope_window_size_ << ','
+                 << median_slope_threshold_gain_;
+  }
+  if (!in_trendline_experiment_ && !in_median_slope_experiment_) {
+    LOG(LS_INFO) << "No overuse experiment enabled. Using Kalman filter.";
   }
 
   network_thread_.DetachFromThread();
