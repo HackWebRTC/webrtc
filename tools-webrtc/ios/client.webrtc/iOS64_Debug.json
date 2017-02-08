@@ -1,7 +1,4 @@
 {
-  "owners": [
-    "kjellander"
-  ],
   "comments": [
     "Builder for 64-bit devices.",
     "gn_args in this file is only read by the buildbot recipe; ",
@@ -10,9 +7,10 @@
   ],
   "xcode version": "8.0",
   "gn_args": [
+    "is_debug=true",
+    "target_cpu=\"arm64\"",
     "use_goma=true"
   ],
-  "compiler": "ninja",
   "additional_compile_targets": [ "all" ],
   "configuration": "Debug",
   "sdk": "iphoneos10.0",

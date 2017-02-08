@@ -1,7 +1,4 @@
 {
-  "owners": [
-    "kjellander"
-  ],
   "comments": [
     "Tests for 64-bit iOS simulators.",
     "gn_args in this file is only read by the buildbot recipe; ",
@@ -10,10 +7,11 @@
   ],
   "xcode version": "8.0",
   "gn_args": [
+    "is_debug=true",
+    "target_cpu=\"x64\"",
     "use_goma=true"
   ],
   "use_analyze": false,
-  "compiler": "ninja",
   "additional_compile_targets": [ "all" ],
   "configuration": "Debug",
   "sdk": "iphonesimulator10.0",
