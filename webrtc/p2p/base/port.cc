@@ -74,8 +74,9 @@ inline int ConservativeRTTEstimate(int rtt) {
 // Weighting of the old rtt value to new data.
 const int RTT_RATIO = 3;  // 3 : 1
 
-// The delay before we begin checking if this port is useless.
-const int kPortTimeoutDelay = 30 * 1000;  // 30 seconds
+// The delay before we begin checking if this port is useless. We set
+// it to a little higher than a total STUN timeout.
+const int kPortTimeoutDelay = cricket::STUN_TOTAL_TIMEOUT + 5000;
 }  // namespace
 
 namespace cricket {

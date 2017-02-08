@@ -84,11 +84,9 @@ static const int kDefaultAllocationTimeout = 3000;
 static const char kTurnUsername[] = "test";
 static const char kTurnPassword[] = "test";
 
-// STUN timeout (with all retries) is 9500ms.
+// STUN timeout (with all retries) is cricket::STUN_TOTAL_TIMEOUT.
 // Add some margin of error for slow bots.
-// TODO(deadbeef): Use simulated clock instead of just increasing timeouts to
-// fix flaky tests.
-static const int kStunTimeoutMs = 15000;
+static const int kStunTimeoutMs = cricket::STUN_TOTAL_TIMEOUT;
 
 namespace cricket {
 
@@ -1231,10 +1229,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "ssltcp",
                kRelaySslTcpIntAddr);
   EXPECT_PRED4(HasCandidate, candidates_, "relay", "udp", kRelayUdpExtAddr);
-  // We wait at least for a full STUN timeout, which is currently 9.5
-  // seconds.  But since 3-3.5 seconds already passed (see above), we
-  // only need 6.5 more seconds.
-  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_, 6500, fake_clock);
+  // We wait at least for a full STUN timeout, which
+  // cricket::STUN_TOTAL_TIMEOUT seconds.  But since 3-3.5 seconds
+  // already passed (see above), we wait 3 seconds less than that.
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             cricket::STUN_TOTAL_TIMEOUT - 3000, fake_clock);
 }
 
 TEST_F(BasicPortAllocatorTest, TestCandidatePriorityOfMultipleInterfaces) {

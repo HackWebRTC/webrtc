@@ -30,11 +30,9 @@ static const SocketAddress kStunAddr3("127.0.0.1", 3000);
 static const SocketAddress kBadAddr("0.0.0.1", 5000);
 static const SocketAddress kStunHostnameAddr("localhost", 5000);
 static const SocketAddress kBadHostnameAddr("not-a-real-hostname", 5000);
-// STUN timeout (with all retries) is 9500ms.
+// STUN timeout (with all retries) is cricket::STUN_TOTAL_TIMEOUT.
 // Add some margin of error for slow bots.
-// TODO(deadbeef): Use simulated clock instead of just increasing timeouts to
-// fix flaky tests.
-static const int kTimeoutMs = 15000;
+static const int kTimeoutMs = cricket::STUN_TOTAL_TIMEOUT;
 // stun prio = 100 << 24 | 30 (IPV4) << 8 | 256 - 0
 static const uint32_t kStunCandidatePriority = 1677729535;
 static const int kInfiniteLifetime = -1;

@@ -106,8 +106,6 @@ static const char kMediaContentName1[] = "video";
 
 static const int kDefaultTimeout = 10000;  // 10 seconds.
 static const int kIceCandidatesTimeout = 10000;
-// STUN timeout with all retransmissions is a total of 9500ms.
-static const int kStunTimeout = 9500;
 
 static const char kFakeDtlsFingerprint[] =
     "BB:CD:72:F7:2F:D0:BA:43:F3:68:B1:0C:23:72:B6:4A:"
@@ -1593,7 +1591,8 @@ TEST_F(WebRtcSessionTest, TestStunError) {
   SendAudioVideoStream1();
   InitiateCall();
   // Since kClientAddrHost1 is blocked, not expecting stun candidates for it.
-  EXPECT_TRUE_SIMULATED_WAIT(observer_.oncandidatesready_, kStunTimeout, clock);
+  EXPECT_TRUE_SIMULATED_WAIT(observer_.oncandidatesready_,
+                             cricket::STUN_TOTAL_TIMEOUT, clock);
   EXPECT_EQ(6u, observer_.mline_0_candidates_.size());
   EXPECT_EQ(6u, observer_.mline_1_candidates_.size());
   // Destroy session before scoped fake clock goes out of scope to avoid TSan

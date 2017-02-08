@@ -22,9 +22,22 @@ namespace cricket {
 
 const uint32_t MSG_STUN_SEND = 1;
 
-const int MAX_SENDS = 9;
-const int DELAY_UNIT = 100;  // 100 milliseconds
-const int DELAY_MAX_FACTOR = 16;
+// RFC 5389 says SHOULD be 500ms.
+// For years, this was 100ms, but for networks that
+// experience moments of high RTT (such as 2G networks), this doesn't
+// work well.
+const int STUN_INITIAL_RTO = 250;  // milliseconds
+
+// The timeout doubles each retransmission, up to this many times
+// RFC 5389 says SHOULD retransmit 7 times.
+// This has been 8 for years (not sure why).
+const int STUN_MAX_RETRANSMISSIONS = 8;  // Total sends: 9
+
+// We also cap the doubling, even though the standard doesn't say to.
+// This has been 1.6 seconds for years, but for networks that
+// experience moments of high RTT (such as 2G networks), this doesn't
+// work well.
+const int STUN_MAX_RTO = 8000;  // milliseconds, or 5 doublings
 
 StunRequestManager::StunRequestManager(rtc::Thread* thread)
     : thread_(thread) {
@@ -226,7 +239,8 @@ void StunRequest::OnMessage(rtc::Message* pmsg) {
 
 void StunRequest::OnSent() {
   count_ += 1;
-  if (count_ == MAX_SENDS) {
+  int retransmissions = (count_ - 1);
+  if (retransmissions >= STUN_MAX_RETRANSMISSIONS) {
     timeout_ = true;
   }
   LOG(LS_VERBOSE) << "Sent STUN request " << count_
@@ -237,7 +251,9 @@ int StunRequest::resend_delay() {
   if (count_ == 0) {
     return 0;
   }
-  return DELAY_UNIT * std::min(1 << (count_-1), DELAY_MAX_FACTOR);
+  int retransmissions = (count_ - 1);
+  int rto = STUN_INITIAL_RTO << retransmissions;
+  return std::min(rto, STUN_MAX_RTO);
 }
 
 }  // namespace cricket
