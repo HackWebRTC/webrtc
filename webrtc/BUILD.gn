@@ -322,6 +322,9 @@ if (!build_with_chromium) {
           "voice_engine:voe_auto_test",
         ]
       }
+      if (rtc_enable_protobuf) {
+        deps += [ "logging:rtc_event_log2rtp_dump" ]
+      }
     }
   }
 }
