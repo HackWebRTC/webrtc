@@ -38,7 +38,7 @@ class BitrateProber {
 
   // Create a cluster used to probe for |bitrate_bps| with |num_probes| number
   // of probes.
-  void CreateProbeCluster(int bitrate_bps);
+  void CreateProbeCluster(int bitrate_bps, int64_t now_ms);
 
   // Returns the number of milliseconds until the next probe should be sent to
   // get accurate probing.
@@ -81,13 +81,14 @@ class BitrateProber {
 
     int sent_probes = 0;
     int sent_bytes = 0;
+    int64_t time_created_ms = -1;
     int64_t time_started_ms = -1;
 
     int retries = 0;
   };
 
   // Resets the state of the prober and clears any cluster/timing data tracked.
-  void ResetState();
+  void ResetState(int64_t now_ms);
 
   int64_t GetNextProbeTime(const ProbeCluster& cluster);
 

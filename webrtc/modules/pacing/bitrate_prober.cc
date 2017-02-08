@@ -41,6 +41,8 @@ constexpr int kMaxRetryAttempts = 3;
 // we have a min probe packet size of 200 bytes.
 constexpr size_t kMinProbePacketSize = 200;
 
+constexpr int64_t kProbeClusterTimeoutMs = 5000;
+
 }  // namespace
 
 BitrateProber::BitrateProber()
@@ -78,12 +80,18 @@ void BitrateProber::OnIncomingPacket(size_t packet_size) {
   }
 }
 
-void BitrateProber::CreateProbeCluster(int bitrate_bps) {
+void BitrateProber::CreateProbeCluster(int bitrate_bps, int64_t now_ms) {
   RTC_DCHECK(probing_state_ != ProbingState::kDisabled);
+  while (!clusters_.empty() &&
+         now_ms - clusters_.front().time_created_ms > kProbeClusterTimeoutMs) {
+    clusters_.pop();
+  }
+
   ProbeCluster cluster;
   cluster.min_probes = kMinProbePacketsSent;
   cluster.min_bytes = bitrate_bps * kMinProbeDurationMs / 8000;
   cluster.bitrate_bps = bitrate_bps;
+  cluster.time_created_ms = now_ms;
   cluster.id = next_cluster_id_++;
   clusters_.push(cluster);
 
@@ -96,7 +104,7 @@ void BitrateProber::CreateProbeCluster(int bitrate_bps) {
     probing_state_ = ProbingState::kInactive;
 }
 
-void BitrateProber::ResetState() {
+void BitrateProber::ResetState(int64_t now_ms) {
   RTC_DCHECK(probing_state_ == ProbingState::kActive);
 
   // Recreate all probing clusters.
@@ -104,7 +112,7 @@ void BitrateProber::ResetState() {
   clusters.swap(clusters_);
   while (!clusters.empty()) {
     if (clusters.front().retries < kMaxRetryAttempts) {
-      CreateProbeCluster(clusters.front().bitrate_bps);
+      CreateProbeCluster(clusters.front().bitrate_bps, now_ms);
       clusters_.back().retries = clusters.front().retries + 1;
     }
     clusters.pop();
@@ -122,7 +130,7 @@ int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
   if (next_probe_time_ms_ >= 0) {
     time_until_probe_ms = next_probe_time_ms_ - now_ms;
     if (time_until_probe_ms < -kMaxProbeDelayMs) {
-      ResetState();
+      ResetState(now_ms);
       return -1;
     }
   }

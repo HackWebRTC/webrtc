@@ -269,7 +269,7 @@ PacedSender::~PacedSender() {}
 
 void PacedSender::CreateProbeCluster(int bitrate_bps) {
   CriticalSectionScoped cs(critsect_.get());
-  prober_->CreateProbeCluster(bitrate_bps);
+  prober_->CreateProbeCluster(bitrate_bps, clock_->TimeInMilliseconds());
 }
 
 void PacedSender::Pause() {
