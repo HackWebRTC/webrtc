@@ -54,6 +54,7 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
   // but this API also applies them to receivers, similar to ORTC:
   // http://ortc.org/wp-content/uploads/2016/03/ortc.html#rtcrtpparameters*.
   virtual RtpParameters GetParameters() const = 0;
+  // Currently, doesn't support changing any parameters, but may in the future.
   virtual bool SetParameters(const RtpParameters& parameters) = 0;
 
   // Does not take ownership of observer.
@@ -65,6 +66,8 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
 };
 
 // Define proxy for RtpReceiverInterface.
+// TODO(deadbeef): Move this to .cc file and out of api/. What threads methods
+// are called on is an implementation detail.
 BEGIN_SIGNALING_PROXY_MAP(RtpReceiver)
   PROXY_SIGNALING_THREAD_DESTRUCTOR()
   PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)

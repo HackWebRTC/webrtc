@@ -10,6 +10,7 @@
 
 // This file contains Macros for creating proxies for webrtc MediaStream and
 // PeerConnection classes.
+// TODO(deadbeef): Move this to pc/; this is part of the implementation.
 
 //
 // Example usage:

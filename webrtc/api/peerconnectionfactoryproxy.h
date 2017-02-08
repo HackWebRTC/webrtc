@@ -21,6 +21,8 @@
 
 namespace webrtc {
 
+// TODO(deadbeef): Move this to .cc file and out of api/. What threads methods
+// are called on is an implementation detail.
 BEGIN_SIGNALING_PROXY_MAP(PeerConnectionFactory)
   PROXY_SIGNALING_THREAD_DESTRUCTOR()
   PROXY_METHOD1(void, SetOptions, const Options&)

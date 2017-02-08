@@ -45,6 +45,8 @@ class UdpTransportInterface {
   virtual rtc::SocketAddress GetRemoteAddress() const = 0;
 };
 
+// TODO(deadbeef): Move this to .cc file and out of api/. What threads methods
+// are called on is an implementation detail.
 BEGIN_OWNED_PROXY_MAP(UdpTransport)
   PROXY_WORKER_THREAD_DESTRUCTOR()
   PROXY_WORKER_CONSTMETHOD0(rtc::SocketAddress, GetLocalAddress)

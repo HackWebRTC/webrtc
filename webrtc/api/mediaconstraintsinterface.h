@@ -28,9 +28,12 @@
 
 namespace webrtc {
 
-// MediaConstraintsInterface
 // Interface used for passing arguments about media constraints
 // to the MediaStream and PeerConnection implementation.
+//
+// Constraints may be either "mandatory", which means that unless satisfied,
+// the method taking the constraints should fail, or "optional", which means
+// they may not be satisfied..
 class MediaConstraintsInterface {
  public:
   struct Constraint {

@@ -47,9 +47,13 @@ class RtpSenderInterface : public rtc::RefCountInterface {
   // to uniquely identify a receiver until we implement Unified Plan SDP.
   virtual std::string id() const = 0;
 
+  // Returns a list of streams associated with this sender's track. Although we
+  // only support one track per stream, in theory the API allows for multiple.
   virtual std::vector<std::string> stream_ids() const = 0;
 
   virtual RtpParameters GetParameters() const = 0;
+  // Note that only a subset of the parameters can currently be changed. See
+  // rtpparameters.h
   virtual bool SetParameters(const RtpParameters& parameters) = 0;
 
   // Returns null for a video sender.
@@ -60,6 +64,8 @@ class RtpSenderInterface : public rtc::RefCountInterface {
 };
 
 // Define proxy for RtpSenderInterface.
+// TODO(deadbeef): Move this to .cc file and out of api/. What threads methods
+// are called on is an implementation detail.
 BEGIN_SIGNALING_PROXY_MAP(RtpSender)
   PROXY_SIGNALING_THREAD_DESTRUCTOR()
   PROXY_METHOD1(bool, SetTrack, MediaStreamTrackInterface*)

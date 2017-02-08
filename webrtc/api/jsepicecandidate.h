@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// Implements the IceCandidateInterface.
+// TODO(deadbeef): Move this out of api/; it's an implementation detail and
+// shouldn't be used externally.
 
 #ifndef WEBRTC_API_JSEPICECANDIDATE_H_
 #define WEBRTC_API_JSEPICECANDIDATE_H_
@@ -23,13 +24,14 @@
 
 namespace webrtc {
 
+// Implementation of IceCandidateInterface.
 class JsepIceCandidate : public IceCandidateInterface {
  public:
   JsepIceCandidate(const std::string& sdp_mid, int sdp_mline_index);
   JsepIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
                    const cricket::Candidate& candidate);
   ~JsepIceCandidate();
-  // |error| can be NULL if don't care about the failure reason.
+  // |err| may be NULL.
   bool Initialize(const std::string& sdp, SdpParseError* err);
   void SetCandidate(const cricket::Candidate& candidate) {
     candidate_ = candidate;
@@ -51,8 +53,7 @@ class JsepIceCandidate : public IceCandidateInterface {
   RTC_DISALLOW_COPY_AND_ASSIGN(JsepIceCandidate);
 };
 
-// Implementation of IceCandidateCollection.
-// This implementation stores JsepIceCandidates.
+// Implementation of IceCandidateCollection which stores JsepIceCandidates.
 class JsepCandidateCollection : public IceCandidateCollection {
  public:
   JsepCandidateCollection() {}
@@ -66,6 +67,8 @@ class JsepCandidateCollection : public IceCandidateCollection {
   }
   virtual bool HasCandidate(const IceCandidateInterface* candidate) const;
   // Adds and takes ownership of the JsepIceCandidate.
+  // TODO(deadbeef): Make this use an std::unique_ptr<>, so ownership logic is
+  // more clear.
   virtual void add(JsepIceCandidate* candidate) {
     candidates_.push_back(candidate);
   }
@@ -73,6 +76,7 @@ class JsepCandidateCollection : public IceCandidateCollection {
     return candidates_[index];
   }
   // Removes the candidate that has a matching address and protocol.
+  //
   // Returns the number of candidates that were removed.
   size_t remove(const cricket::Candidate& candidate);
 

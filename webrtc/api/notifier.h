@@ -18,7 +18,8 @@
 
 namespace webrtc {
 
-// Implement a template version of a notifier.
+// Implements a template version of a notifier.
+// TODO(deadbeef): This is an implementation detail; move out of api/.
 template <class T>
 class Notifier : public T {
  public:

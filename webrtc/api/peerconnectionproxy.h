@@ -19,7 +19,8 @@
 
 namespace webrtc {
 
-// Define proxy for PeerConnectionInterface.
+// TODO(deadbeef): Move this to .cc file and out of api/. What threads methods
+// are called on is an implementation detail.
 BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
   PROXY_SIGNALING_THREAD_DESTRUCTOR()
   PROXY_METHOD0(rtc::scoped_refptr<StreamCollectionInterface>, local_streams)
