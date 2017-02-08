@@ -312,6 +312,25 @@ rtc_source_set("fileutils_unittests") {
   ]
 }
 
+rtc_source_set("direct_transport") {
+  testonly = true
+  sources = [
+    "direct_transport.cc",
+    "direct_transport.h",
+    "fake_network_pipe.cc",
+    "fake_network_pipe.h",
+  ]
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+  deps = [
+    "../api:transport_api",
+    "../base:rtc_base_approved",
+    "../call",
+  ]
+}
+
 rtc_source_set("test_common") {
   testonly = true
   sources = [
@@ -321,8 +340,6 @@ rtc_source_set("test_common") {
     "configurable_frame_size_encoder.h",
     "constants.cc",
     "constants.h",
-    "direct_transport.cc",
-    "direct_transport.h",
     "drifting_clock.cc",
     "drifting_clock.h",
     "encoder_settings.cc",
@@ -333,8 +350,6 @@ rtc_source_set("test_common") {
     "fake_decoder.h",
     "fake_encoder.cc",
     "fake_encoder.h",
-    "fake_network_pipe.cc",
-    "fake_network_pipe.h",
     "fake_videorenderer.h",
     "layer_filtering_transport.cc",
     "layer_filtering_transport.h",
@@ -361,10 +376,10 @@ rtc_source_set("test_common") {
   }
 
   deps = [
+    ":direct_transport",
     ":rtp_test_utils",
     ":test_support",
     "..:webrtc_common",
-    "../api:transport_api",
     "../audio",
     "../base:rtc_base_approved",
     "../call",

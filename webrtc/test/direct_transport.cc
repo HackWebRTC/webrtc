@@ -11,7 +11,6 @@
 
 #include "webrtc/call/call.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/test/gtest.h"
 
 namespace webrtc {
 namespace test {
