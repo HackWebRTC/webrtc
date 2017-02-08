@@ -137,6 +137,9 @@ if (rtc_enable_protobuf) {
         ":rtc_event_log_impl",
         ":rtc_event_log_parser",
         "../base:rtc_base_approved",
+
+        # TODO(kwiberg): Remove this dependency.
+        "../modules/audio_coding:audio_format",
         "../modules/rtp_rtcp:rtp_rtcp",
         "//third_party/gflags",
       ]
