@@ -689,6 +689,13 @@ int SocketDispatcher::GetDescriptor() {
 }
 
 bool SocketDispatcher::IsDescriptorClosed() {
+  if (udp_) {
+    // The MSG_PEEK trick doesn't work for UDP, since (at least in some
+    // circumstances) it requires reading an entire UDP packet, which would be
+    // bad for performance here. So, just check whether |s_| has been closed,
+    // which should be sufficient.
+    return s_ == INVALID_SOCKET;
+  }
   // We don't have a reliable way of distinguishing end-of-stream
   // from readability.  So test on each readable call.  Is this
   // inefficient?  Probably.
@@ -707,6 +714,11 @@ bool SocketDispatcher::IsDescriptorClosed() {
       // Returned during ungraceful peer shutdown.
       case ECONNRESET:
         return true;
+      // The normal blocking error; don't log anything.
+      case EWOULDBLOCK:
+      // Interrupted system call.
+      case EINTR:
+        return false;
       default:
         // Assume that all other errors are just blocking errors, meaning the
         // connection is still good but we just can't read from it right now.
