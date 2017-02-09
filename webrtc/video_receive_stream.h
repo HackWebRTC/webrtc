@@ -70,6 +70,7 @@ class VideoReceiveStream {
     int min_playout_delay_ms = 0;
     int render_delay_ms = 10;
     uint32_t frames_decoded = 0;
+    rtc::Optional<uint64_t> qp_sum;
 
     int current_payload_type = -1;
 

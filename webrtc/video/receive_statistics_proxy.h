@@ -45,7 +45,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 
   VideoReceiveStream::Stats GetStats() const;
 
-  void OnDecodedFrame();
+  void OnDecodedFrame(rtc::Optional<uint8_t> qp);
   void OnSyncOffsetUpdated(int64_t sync_offset_ms, double estimated_freq_khz);
   void OnRenderedFrame(const VideoFrame& frame);
   void OnIncomingPayloadType(int payload_type);

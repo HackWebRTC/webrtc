@@ -35,10 +35,17 @@ class DecodedImageCallback {
   // decode time excluding waiting time for any previous pending frame to
   // return. This is necessary for breaking positive feedback in the delay
   // estimation when the decoder has a single output buffer.
-  // TODO(perkj): Remove default implementation when chromium has been updated.
   virtual int32_t Decoded(VideoFrame& decodedImage, int64_t decode_time_ms) {
     // The default implementation ignores custom decode time value.
     return Decoded(decodedImage);
+  }
+  // TODO(sakal): Remove other implementations when upstream projects have been
+  // updated.
+  virtual void Decoded(VideoFrame& decodedImage,
+                       rtc::Optional<int32_t> decode_time_ms,
+                       rtc::Optional<uint8_t> qp) {
+    Decoded(decodedImage,
+            decode_time_ms ? static_cast<int32_t>(*decode_time_ms) : -1);
   }
 
   virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId) {

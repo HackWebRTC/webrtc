@@ -54,9 +54,42 @@ class ReceiveStatisticsProxyTest : public ::testing::Test {
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesFramesDecoded) {
   EXPECT_EQ(0u, statistics_proxy_->GetStats().frames_decoded);
   for (uint32_t i = 1; i <= 3; ++i) {
-    statistics_proxy_->OnDecodedFrame();
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>());
     EXPECT_EQ(i, statistics_proxy_->GetStats().frames_decoded);
   }
+}
+
+TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithQpResetsFramesDecoded) {
+  EXPECT_EQ(0u, statistics_proxy_->GetStats().frames_decoded);
+  for (uint32_t i = 1; i <= 3; ++i) {
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>());
+    EXPECT_EQ(i, statistics_proxy_->GetStats().frames_decoded);
+  }
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(1u));
+  EXPECT_EQ(1u, statistics_proxy_->GetStats().frames_decoded);
+}
+
+TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesQpSum) {
+  EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(3u));
+  EXPECT_EQ(rtc::Optional<uint64_t>(3u), statistics_proxy_->GetStats().qp_sum);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(127u));
+  EXPECT_EQ(rtc::Optional<uint64_t>(130u),
+            statistics_proxy_->GetStats().qp_sum);
+}
+
+TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpQpSumWontExist) {
+  EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>());
+  EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
+}
+
+TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpResetsQpSum) {
+  EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(3u));
+  EXPECT_EQ(rtc::Optional<uint64_t>(3u), statistics_proxy_->GetStats().qp_sum);
+  statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>());
+  EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
 }
 
 TEST_F(ReceiveStatisticsProxyTest, OnRenderedFrameIncreasesFramesRendered) {
