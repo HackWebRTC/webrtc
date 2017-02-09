@@ -174,31 +174,36 @@ NamedDecoderConstructor decoder_constructors[] = {
 class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
  public:
   std::vector<AudioCodecSpec> GetSupportedDecoders() override {
-    static std::vector<AudioCodecSpec> specs = {
+    // Although this looks a bit strange, it means specs need only be initalized
+    // once, and that that initialization is thread-safe.
+    static std::vector<AudioCodecSpec> specs =
+        []{
+          std::vector<AudioCodecSpec> specs;
 #ifdef WEBRTC_CODEC_OPUS
-      { { "opus", 48000, 2, {
-            {"minptime", "10" },
-            {"useinbandfec", "1" }
-          }
-        }, false
-      },
+          AudioCodecSpec opus({"opus", 48000, 2, {
+                                 {"minptime", "10"},
+                                 {"useinbandfec", "1"}
+                               }});
+          opus.allow_comfort_noise = false;
+          opus.supports_network_adaption = true;
+          specs.push_back(opus);
 #endif
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-      {{"isac", 16000, 1}, true},
+          specs.push_back(AudioCodecSpec({"isac", 16000, 1}));
 #endif
 #if (defined(WEBRTC_CODEC_ISAC))
-      {{"isac", 32000, 1}, true},
+          specs.push_back(AudioCodecSpec({"isac", 32000, 1}));
 #endif
 #ifdef WEBRTC_CODEC_G722
-      {{"G722", 8000, 1}, true},
+          specs.push_back(AudioCodecSpec({"G722", 8000, 1}));
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-      {{"iLBC", 8000, 1}, true},
+          specs.push_back(AudioCodecSpec({"iLBC", 8000, 1}));
 #endif
-      {{"PCMU", 8000, 1}, true},
-      {{"PCMA", 8000, 1}, true}
-    };
-
+          specs.push_back(AudioCodecSpec({"PCMU", 8000, 1}));
+          specs.push_back(AudioCodecSpec({"PCMA", 8000, 1}));
+          return specs;
+        }();
     return specs;
   }
 

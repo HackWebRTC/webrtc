@@ -77,4 +77,10 @@ std::ostream& operator<<(std::ostream& os, const SdpAudioFormat& saf) {
   return os;
 }
 
+AudioCodecSpec::AudioCodecSpec(const SdpAudioFormat& format)
+    : format(format) {}
+
+AudioCodecSpec::AudioCodecSpec(SdpAudioFormat&& format)
+    : format(std::move(format)) {}
+
 }  // namespace webrtc

@@ -54,10 +54,26 @@ struct SdpAudioFormat {
 void swap(SdpAudioFormat& a, SdpAudioFormat& b);
 std::ostream& operator<<(std::ostream& os, const SdpAudioFormat& saf);
 
+// To avoid API breakage, and make the code clearer, AudioCodecSpec should not
+// be directly initializable with any flags indicating optional support. If it
+// were, these initializers would break any time a new flag was added. It's also
+// more difficult to understand:
+//   AudioCodecSpec spec{{"format", 8000, 1}, true, false, false, true, true};
+// than
+//   AudioCodecSpec spec({"format", 8000, 1});
+//   spec.allow_comfort_noise = true;
+//   spec.future_flag_b = true;
+//   spec.future_flag_c = true;
 struct AudioCodecSpec {
+  explicit AudioCodecSpec(const SdpAudioFormat& format);
+  explicit AudioCodecSpec(SdpAudioFormat&& format);
+  ~AudioCodecSpec() = default;
+
   SdpAudioFormat format;
-  bool allow_comfort_noise;  // This encoder can be used with an external
-                             // comfort noise generator.
+  bool allow_comfort_noise = true;    // This codec can be used with an external
+                                      // comfort noise generator.
+  bool supports_network_adaption = false;  // This codec can adapt to varying
+                                           // network conditions.
 };
 
 }  // namespace webrtc

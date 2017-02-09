@@ -3680,3 +3680,73 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   parameters.codecs = engine.recv_codecs();
   EXPECT_TRUE(channel.SetRecvParameters(parameters));
 }
+
+TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
+  std::vector<webrtc::AudioCodecSpec> specs;
+  webrtc::AudioCodecSpec spec1({"codec1", 48000, 2, {{"param1", "value1"}}});
+  spec1.allow_comfort_noise = false;
+  spec1.supports_network_adaption = true;
+  specs.push_back(spec1);
+  webrtc::AudioCodecSpec spec2({"codec2", 32000, 1});
+  spec2.allow_comfort_noise = false;
+  specs.push_back(spec2);
+  specs.push_back(webrtc::AudioCodecSpec({"codec3", 16000, 1,
+                                          {{"param1", "value1b"},
+                                           {"param2", "value2"}}}));
+  specs.push_back(webrtc::AudioCodecSpec({"codec4", 8000, 1}));
+  specs.push_back(webrtc::AudioCodecSpec({"codec5", 8000, 2}));
+
+  rtc::scoped_refptr<webrtc::MockAudioDecoderFactory> mock_factory =
+      new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>;
+  EXPECT_CALL(*mock_factory.get(), GetSupportedDecoders())
+      .WillOnce(Return(specs));
+
+  cricket::WebRtcVoiceEngine engine(nullptr, mock_factory, nullptr);
+  auto codecs = engine.recv_codecs();
+  EXPECT_EQ(11, codecs.size());
+
+  // Rather than just ASSERTing that there are enough codecs, ensure that we can
+  // check the actual values safely, to provide better test results.
+  auto get_codec =
+      [&codecs](size_t index) -> const cricket::AudioCodec& {
+        static const cricket::AudioCodec missing_codec(0, "<missing>", 0, 0, 0);
+        if (codecs.size() > index)
+          return codecs[index];
+        return missing_codec;
+      };
+
+  // Ensure the general codecs are generated first and in order.
+  for (size_t i = 0; i != specs.size(); ++i) {
+    EXPECT_EQ(specs[i].format.name, get_codec(i).name);
+    EXPECT_EQ(specs[i].format.clockrate_hz, get_codec(i).clockrate);
+    EXPECT_EQ(specs[i].format.num_channels, get_codec(i).channels);
+    EXPECT_EQ(specs[i].format.parameters, get_codec(i).params);
+  }
+
+  // Find the index of a codec, or -1 if not found, so that we can easily check
+  // supplementary codecs are orderd after the general codecs.
+  auto find_codec =
+      [&codecs](const webrtc::SdpAudioFormat& format) -> int {
+        for (size_t i = 0; i != codecs.size(); ++i) {
+          const cricket::AudioCodec& codec = codecs[i];
+          if (STR_CASE_CMP(codec.name.c_str(), format.name.c_str()) == 0 &&
+              codec.clockrate == format.clockrate_hz &&
+              codec.channels == format.num_channels) {
+            return static_cast<int>(i);
+          }
+        }
+        return -1;
+      };
+
+  // Ensure all supplementary codecs are generated last. Their internal ordering
+  // is not important.
+  // Without this cast, the comparison turned unsigned and, thus, failed for -1.
+  const int num_specs = static_cast<int>(specs.size());
+  EXPECT_GE(find_codec({"cn", 8000, 1}), num_specs);
+  EXPECT_GE(find_codec({"cn", 16000, 1}), num_specs);
+  EXPECT_EQ(find_codec({"cn", 32000, 1}), -1);
+  EXPECT_GE(find_codec({"telephone-event", 8000, 1}), num_specs);
+  EXPECT_GE(find_codec({"telephone-event", 16000, 1}), num_specs);
+  EXPECT_GE(find_codec({"telephone-event", 32000, 1}), num_specs);
+  EXPECT_GE(find_codec({"telephone-event", 48000, 1}), num_specs);
+}

@@ -1166,26 +1166,30 @@ AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
                                                           { 32000, false },
                                                           { 48000, false }};
 
-  auto map_format = [&mapper, &out] (const webrtc::SdpAudioFormat& format) {
+  auto map_format = [&mapper](const webrtc::SdpAudioFormat& format,
+                              AudioCodecs* out) {
     rtc::Optional<AudioCodec> opt_codec = mapper.ToAudioCodec(format);
-    if (!opt_codec) {
+    if (opt_codec) {
+      if (out) {
+        out->push_back(*opt_codec);
+      }
+    } else {
       LOG(LS_ERROR) << "Unable to assign payload type to format: " << format;
-      return false;
     }
 
-    auto& codec = *opt_codec;
-    if (IsCodec(codec, kOpusCodecName)) {
-      // TODO(ossu): Set this specifically for Opus for now, until we have a
-      // better way of dealing with rtcp-fb parameters.
-      codec.AddFeedbackParam(
-          FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
-    }
-    out.push_back(codec);
-    return true;
+    return opt_codec;
   };
 
   for (const auto& spec : specs) {
-    if (map_format(spec.format)) {
+    // We need to do some extra stuff before adding the main codecs to out.
+    rtc::Optional<AudioCodec> opt_codec = map_format(spec.format, nullptr);
+    if (opt_codec) {
+      AudioCodec& codec = *opt_codec;
+      if (spec.supports_network_adaption) {
+        codec.AddFeedbackParam(
+            FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
+      }
+
       if (spec.allow_comfort_noise) {
         // Generate a CN entry if the decoder allows it and we support the
         // clockrate.
@@ -1200,20 +1204,22 @@ AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
       if (dtmf != generate_dtmf.end()) {
         dtmf->second = true;
       }
+
+      out.push_back(codec);
     }
   }
 
   // Add CN codecs after "proper" audio codecs.
   for (const auto& cn : generate_cn) {
     if (cn.second) {
-      map_format({kCnCodecName, cn.first, 1});
+      map_format({kCnCodecName, cn.first, 1}, &out);
     }
   }
 
   // Add telephone-event codecs last.
   for (const auto& dtmf : generate_dtmf) {
     if (dtmf.second) {
-      map_format({kDtmfCodecName, dtmf.first, 1});
+      map_format({kDtmfCodecName, dtmf.first, 1}, &out);
     }
   }
 
