@@ -230,7 +230,7 @@ class VideoAnalyzer : public PacketReceiver,
     RtpUtility::RtpHeaderParser parser(packet, length);
     RTPHeader header;
     parser.Parse(&header);
-    if (!IsFlexfec(header.payloadType) && header.ssrc != ssrc_to_analyze_) {
+    if (!IsFlexfec(header.payloadType) && header.ssrc == ssrc_to_analyze_) {
       // Ignore FlexFEC timestamps, to avoid collisions with media timestamps.
       // (FlexFEC and media are sent on different SSRCs, which have different
       // timestamps spaces.)
@@ -285,6 +285,7 @@ class VideoAnalyzer : public PacketReceiver,
     {
       rtc::CritScope lock(&crit_);
       if (rtp_timestamp_delta_ == 0 && header.ssrc == ssrc_to_analyze_) {
+        RTC_CHECK(static_cast<bool>(first_sent_timestamp_));
         rtp_timestamp_delta_ = header.timestamp - *first_sent_timestamp_;
       }
 
