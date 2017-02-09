@@ -18,7 +18,6 @@
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/test/auto_test/automated_mode.h"
-#include "webrtc/voice_engine/test/auto_test/voe_cpu_test.h"
 #include "webrtc/voice_engine/test/auto_test/voe_stress_test.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_defines.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
@@ -228,9 +227,6 @@ int run_auto_test(TestType test_type) {
   if (test_type == Stress) {
     VoEStressTest stressTest(test_manager);
     result = stressTest.DoTest();
-  } else if (test_type == CPU) {
-    VoECpuTest cpuTest(test_manager);
-    result = cpuTest.DoTest();
   } else {
     // Should never end up here
     assert(false);
@@ -264,7 +260,6 @@ int RunInManualMode() {
   printf(" (2)  [OBSOLETE: Extended test(s)...]\n");
   printf(" (3)  Stress test(s)...\n");
   printf(" (4)  [OBSOLETE: Unit test(s)...]\n");
-  printf(" (5)  CPU & memory reference test [Windows]...\n");
   printf("\n: ");
 
   int selection(0);
@@ -283,9 +278,6 @@ int RunInManualMode() {
       test_type = Stress;
       break;
     case 4:
-      break;
-    case 5:
-      test_type = CPU;
       break;
     default:
       TEST_LOG("Invalid selection!\n");

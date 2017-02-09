@@ -385,8 +385,6 @@ if (rtc_include_tests) {
         "test/auto_test/standard/voe_base_misc_test.cc",
         "test/auto_test/standard/volume_test.cc",
         "test/auto_test/voe_conference_test.cc",
-        "test/auto_test/voe_cpu_test.cc",
-        "test/auto_test/voe_cpu_test.h",
         "test/auto_test/voe_standard_test.cc",
         "test/auto_test/voe_standard_test.h",
         "test/auto_test/voe_stress_test.cc",

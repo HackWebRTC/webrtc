@@ -26,9 +26,7 @@ enum TestType {
   Invalid = -1,
   Standard = 0,
 
-  Stress = 2,
-
-  CPU = 4
+  Stress = 2
 };
 
 // Main test function
