@@ -28,7 +28,8 @@ import tempfile
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
+SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir,
+                                        os.pardir))
 
 
 def _RunCommand(argv, **kwargs):
@@ -39,7 +40,7 @@ def _RunCommand(argv, **kwargs):
 def _ParseArgs():
   parser = argparse.ArgumentParser(description='Start loopback video analysis.')
   parser.add_argument('--source_dir', default=SRC_DIR,
-      help='The path to the WebRTC source directory. Default: %default.')
+      help='The path to the WebRTC source directory. Default: %(default)s.')
   parser.add_argument('build_dir_android',
       help='The path to the build directory for Android.')
   parser.add_argument('--build_dir_x86',
