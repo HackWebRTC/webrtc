@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc.test;
+package org.webrtc;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SmallTest;
