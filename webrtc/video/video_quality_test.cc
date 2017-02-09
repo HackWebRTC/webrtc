@@ -133,9 +133,7 @@ class VideoAnalyzer : public PacketReceiver,
                 int duration_frames,
                 FILE* graph_data_output_file,
                 const std::string& graph_title,
-                uint32_t ssrc_to_analyze,
-                uint32_t selected_width,
-                uint32_t selected_height)
+                uint32_t ssrc_to_analyze)
       : transport_(transport),
         receiver_(nullptr),
         send_stream_(nullptr),
@@ -145,8 +143,6 @@ class VideoAnalyzer : public PacketReceiver,
         graph_data_output_file_(graph_data_output_file),
         graph_title_(graph_title),
         ssrc_to_analyze_(ssrc_to_analyze),
-        selected_width_(selected_width),
-        selected_height_(selected_height),
         pre_encode_proxy_(this),
         encode_timing_proxy_(this),
         frames_to_process_(duration_frames),
@@ -230,11 +226,10 @@ class VideoAnalyzer : public PacketReceiver,
     RtpUtility::RtpHeaderParser parser(packet, length);
     RTPHeader header;
     parser.Parse(&header);
-    if (!IsFlexfec(header.payloadType) && header.ssrc != ssrc_to_analyze_) {
+    if (!IsFlexfec(header.payloadType)) {
       // Ignore FlexFEC timestamps, to avoid collisions with media timestamps.
       // (FlexFEC and media are sent on different SSRCs, which have different
       // timestamps spaces.)
-      // Also ignore packets from wrong SSRC.
       rtc::CritScope lock(&crit_);
       int64_t timestamp =
           wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
@@ -252,23 +247,13 @@ class VideoAnalyzer : public PacketReceiver,
 
   void PreEncodeOnFrame(const VideoFrame& video_frame) {
     rtc::CritScope lock(&crit_);
-    if (!first_encoded_timestamp_) {
+    if (!first_send_timestamp_ && rtp_timestamp_delta_ == 0) {
       while (frames_.front().timestamp() != video_frame.timestamp()) {
         ++dropped_frames_before_first_encode_;
         frames_.pop_front();
         RTC_CHECK(!frames_.empty());
       }
-      first_encoded_timestamp_ =
-          rtc::Optional<uint32_t>(video_frame.timestamp());
-    }
-  }
-
-  void PostEncodeFrameCallback(const EncodedFrame& encoded_frame) {
-    rtc::CritScope lock(&crit_);
-    if (!first_sent_timestamp_ &&
-        encoded_frame.encoded_width_ == selected_width_ &&
-        encoded_frame.encoded_height_ == selected_height_) {
-      first_sent_timestamp_ = rtc::Optional<uint32_t>(encoded_frame.timestamp_);
+      first_send_timestamp_ = rtc::Optional<uint32_t>(video_frame.timestamp());
     }
   }
 
@@ -284,15 +269,15 @@ class VideoAnalyzer : public PacketReceiver,
     bool result = transport_->SendRtp(packet, length, options);
     {
       rtc::CritScope lock(&crit_);
-      if (rtp_timestamp_delta_ == 0 && header.ssrc == ssrc_to_analyze_) {
-        rtp_timestamp_delta_ = header.timestamp - *first_sent_timestamp_;
-      }
 
-      if (!IsFlexfec(header.payloadType) && header.ssrc == ssrc_to_analyze_) {
+      if (rtp_timestamp_delta_ == 0) {
+        rtp_timestamp_delta_ = header.timestamp - *first_send_timestamp_;
+        first_send_timestamp_ = rtc::Optional<uint32_t>();
+      }
+      if (!IsFlexfec(header.payloadType)) {
         // Ignore FlexFEC timestamps, to avoid collisions with media timestamps.
         // (FlexFEC and media are sent on different SSRCs, which have different
         // timestamps spaces.)
-        // Also ignore packets from wrong SSRC.
         int64_t timestamp =
             wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
         send_times_[timestamp] = current_time;
@@ -490,9 +475,7 @@ class VideoAnalyzer : public PacketReceiver,
     void OnEncodeTiming(int64_t ntp_time_ms, int encode_time_ms) override {
       parent_->MeasuredEncodeTiming(ntp_time_ms, encode_time_ms);
     }
-    void EncodedFrameCallback(const EncodedFrame& frame) override {
-      parent_->PostEncodeFrameCallback(frame);
-    }
+    void EncodedFrameCallback(const EncodedFrame& frame) override {}
 
    private:
     VideoAnalyzer* const parent_;
@@ -802,11 +785,9 @@ class VideoAnalyzer : public PacketReceiver,
    private:
     void OnFrame(const VideoFrame& video_frame) override {
       VideoFrame copy = video_frame;
-      // Frames from the capturer does not have a rtp timestamp.
-      // Create one so it can be used for comparison.
-      RTC_DCHECK_EQ(0, video_frame.timestamp());
       copy.set_timestamp(copy.ntp_time_ms() * 90);
-      analyzer_->AddCapturedFrameForComparison(copy);
+
+      analyzer_->AddCapturedFrameForComparison(video_frame);
       rtc::CritScope lock(&crit_);
       if (send_stream_input_)
         send_stream_input_->OnFrame(video_frame);
@@ -834,7 +815,12 @@ class VideoAnalyzer : public PacketReceiver,
 
   void AddCapturedFrameForComparison(const VideoFrame& video_frame) {
     rtc::CritScope lock(&crit_);
-    frames_.push_back(video_frame);
+    RTC_DCHECK_EQ(0, video_frame.timestamp());
+    // Frames from the capturer does not have a rtp timestamp. Create one so it
+    // can be used for comparison.
+    VideoFrame copy = video_frame;
+    copy.set_timestamp(copy.ntp_time_ms() * 90);
+    frames_.push_back(copy);
   }
 
   VideoSendStream* send_stream_;
@@ -844,8 +830,6 @@ class VideoAnalyzer : public PacketReceiver,
   FILE* const graph_data_output_file_;
   const std::string graph_title_;
   const uint32_t ssrc_to_analyze_;
-  const uint32_t selected_width_;
-  const uint32_t selected_height_;
   PreEncodeProxy pre_encode_proxy_;
   OnEncodeTimingProxy encode_timing_proxy_;
   std::vector<Sample> samples_ GUARDED_BY(comparison_lock_);
@@ -880,8 +864,7 @@ class VideoAnalyzer : public PacketReceiver,
   std::map<int64_t, int64_t> send_times_ GUARDED_BY(crit_);
   std::map<int64_t, int64_t> recv_times_ GUARDED_BY(crit_);
   std::map<int64_t, size_t> encoded_frame_sizes_ GUARDED_BY(crit_);
-  rtc::Optional<uint32_t> first_encoded_timestamp_ GUARDED_BY(crit_);
-  rtc::Optional<uint32_t> first_sent_timestamp_ GUARDED_BY(crit_);
+  rtc::Optional<uint32_t> first_send_timestamp_ GUARDED_BY(crit_);
   const double avg_psnr_threshold_;
   const double avg_ssim_threshold_;
 
@@ -1329,7 +1312,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   if (disable_quality_check) {
     fprintf(stderr,
             "Warning: Calculating PSNR and SSIM for downsized resolution "
-            "not implemented yet! Skipping PSNR and SSIM calculations!\n");
+            "not implemented yet! Skipping PSNR and SSIM calculations!");
   }
 
   VideoAnalyzer analyzer(
@@ -1338,9 +1321,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       disable_quality_check ? -1.1 : params_.analyzer.avg_ssim_threshold,
       params_.analyzer.test_durations_secs * params_.video.fps,
       graph_data_output_file, graph_title,
-      kVideoSendSsrcs[params_.ss.selected_stream],
-      static_cast<uint32_t>(selected_stream.width),
-      static_cast<uint32_t>(selected_stream.height));
+      kVideoSendSsrcs[params_.ss.selected_stream]);
 
   analyzer.SetReceiver(receiver_call_->Receiver());
   send_transport.SetReceiver(&analyzer);

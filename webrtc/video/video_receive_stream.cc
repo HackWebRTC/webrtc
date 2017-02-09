@@ -393,6 +393,7 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
     // TODO(tommi): OnSyncOffsetUpdated grabs a lock.
     stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms, estimated_freq_khz);
   }
+
   // config_.renderer must never be null if we're getting this callback.
   config_.renderer->OnFrame(video_frame);
 
@@ -410,8 +411,7 @@ EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
   if (config_.pre_decode_callback) {
     config_.pre_decode_callback->EncodedFrameCallback(
         EncodedFrame(encoded_image._buffer, encoded_image._length,
-                     encoded_image._frameType, encoded_image._encodedWidth,
-                     encoded_image._encodedHeight, encoded_image._timeStamp));
+                     encoded_image._frameType));
   }
   {
     rtc::CritScope lock(&ivf_writer_lock_);
