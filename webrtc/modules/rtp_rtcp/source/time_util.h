@@ -22,11 +22,6 @@ inline uint32_t NtpToRtp(NtpTime ntp, uint32_t freq) {
   uint32_t tmp = (static_cast<uint64_t>(ntp.fractions()) * freq) >> 32;
   return ntp.seconds() * freq + tmp;
 }
-// Return the current RTP timestamp from the NTP timestamp
-// returned by the specified clock.
-inline uint32_t CurrentRtp(const Clock& clock, uint32_t freq) {
-  return NtpToRtp(NtpTime(clock), freq);
-}
 
 // Helper function for compact ntp representation:
 // RFC 3550, Section 4. Time Format.

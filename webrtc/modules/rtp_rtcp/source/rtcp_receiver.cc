@@ -260,7 +260,7 @@ bool RTCPReceiver::LastReceivedXrReferenceTimeInfo(
 
   // Get the delay since last received report (RFC 3611).
   uint32_t receive_time_ntp = CompactNtp(last_received_xr_ntp_);
-  uint32_t now_ntp = CompactNtp(NtpTime(*clock_));
+  uint32_t now_ntp = CompactNtp(clock_->CurrentNtpTime());
 
   info->delay_since_last_rr = now_ntp - receive_time_ntp;
   return true;
@@ -423,7 +423,7 @@ void RTCPReceiver::HandleSenderReport(const CommonHeader& rtcp_block,
     remote_sender_info_.sendPacketCount = sender_report.sender_packet_count();
     remote_sender_info_.sendOctetCount = sender_report.sender_octet_count();
 
-    last_received_sr_ntp_.SetCurrent(*clock_);
+    last_received_sr_ntp_ = clock_->CurrentNtpTime();
   } else {
     // We will only store the send report from one source, but
     // we will store all the receive blocks.
@@ -504,7 +504,7 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
   if (!receiver_only_ && send_time_ntp != 0) {
     uint32_t delay_ntp = report_block.delay_since_last_sr();
     // Local NTP time.
-    uint32_t receive_time_ntp = CompactNtp(NtpTime(*clock_));
+    uint32_t receive_time_ntp = CompactNtp(clock_->CurrentNtpTime());
 
     // RTT in 1/(2^16) seconds.
     uint32_t rtt_ntp = receive_time_ntp - delay_ntp - send_time_ntp;
@@ -709,7 +709,7 @@ void RTCPReceiver::HandleXrReceiveReferenceTime(uint32_t sender_ssrc,
                                                 const rtcp::Rrtr& rrtr) {
   remote_time_info_.ssrc = sender_ssrc;
   remote_time_info_.last_rr = CompactNtp(rrtr.ntp());
-  last_received_xr_ntp_.SetCurrent(*clock_);
+  last_received_xr_ntp_ = clock_->CurrentNtpTime();
 }
 
 void RTCPReceiver::HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti) {
@@ -728,7 +728,7 @@ void RTCPReceiver::HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti) {
     return;
 
   uint32_t delay_ntp = rti.delay_since_last_rr;
-  uint32_t now_ntp = CompactNtp(NtpTime(*clock_));
+  uint32_t now_ntp = CompactNtp(clock_->CurrentNtpTime());
 
   uint32_t rtt_ntp = now_ntp - delay_ntp - send_time_ntp;
   xr_rr_rtt_ms_ = CompactNtpRttToMs(rtt_ntp);

@@ -779,7 +779,7 @@ int32_t RTCPSender::SendCompoundRTCP(
 
     // We need to send our NTP even if we haven't received any reports.
     RtcpContext context(feedback_state, nack_size, nack_list, pictureID,
-                        NtpTime(*clock_));
+                        clock_->CurrentNtpTime());
 
     PrepareReport(feedback_state);
 

@@ -12,25 +12,17 @@
 
 #include <stdint.h>
 
-#include "webrtc/system_wrappers/include/clock.h"
-
 namespace webrtc {
 
 class NtpTime {
  public:
   NtpTime() : seconds_(0), fractions_(0) {}
-  explicit NtpTime(const Clock& clock) {
-    clock.CurrentNtp(seconds_, fractions_);
-  }
   NtpTime(uint32_t seconds, uint32_t fractions)
       : seconds_(seconds), fractions_(fractions) {}
 
   NtpTime(const NtpTime&) = default;
   NtpTime& operator=(const NtpTime&) = default;
 
-  void SetCurrent(const Clock& clock) {
-    clock.CurrentNtp(seconds_, fractions_);
-  }
   void Set(uint32_t seconds, uint32_t fractions) {
     seconds_ = seconds;
     fractions_ = fractions;
@@ -40,8 +32,12 @@ class NtpTime {
     fractions_ = 0;
   }
 
-  int64_t ToMs() const { return Clock::NtpToMs(seconds_, fractions_); }
-
+  int64_t ToMs() const {
+    static constexpr double kNtpFracPerMs = 4.294967296E6;  // 2^32 / 1000.
+    const double frac_ms = static_cast<double>(fractions_) / kNtpFracPerMs;
+    return 1000 * static_cast<int64_t>(seconds_) +
+           static_cast<int64_t>(frac_ms + 0.5);
+  }
   // NTP standard (RFC1305, section 3.1) explicitly state value 0/0 is invalid.
   bool Valid() const { return !(seconds_ == 0 && fractions_ == 0); }
 
