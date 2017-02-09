@@ -19,8 +19,8 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_nack_stats.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
 #include "webrtc/typedefs.h"
 
@@ -260,7 +260,7 @@ class RTCPReceiver {
   RtcpPacketTypeCounterObserver* const packet_type_counter_observer_;
   RtcpPacketTypeCounter packet_type_counter_;
 
-  RTCPUtility::NackStats nack_stats_;
+  RtcpNackStats nack_stats_;
 
   size_t num_skipped_packets_;
   int64_t last_skipped_packets_warning_ms_;

@@ -28,11 +28,11 @@
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_nack_stats.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_utility.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -259,7 +259,7 @@ class RTCPSender {
   RtcpPacketTypeCounter packet_type_counter_
       GUARDED_BY(critical_section_rtcp_sender_);
 
-  RTCPUtility::NackStats nack_stats_ GUARDED_BY(critical_section_rtcp_sender_);
+  RtcpNackStats nack_stats_ GUARDED_BY(critical_section_rtcp_sender_);
 
   rtc::Optional<BitrateAllocation> video_bitrate_allocation_
       GUARDED_BY(critical_section_rtcp_sender_);

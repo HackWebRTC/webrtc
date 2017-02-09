@@ -40,6 +40,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/time_util.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 #include "webrtc/system_wrappers/include/ntp_time.h"
