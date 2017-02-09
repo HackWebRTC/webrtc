@@ -1145,6 +1145,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     video_receive_configs_[i].rtp.rtx_payload_types[payload_type] =
         kSendRtxPayloadType;
     video_receive_configs_[i].rtp.transport_cc = params_.call.send_side_bwe;
+    video_receive_configs_[i].rtp.remb = !params_.call.send_side_bwe;
   }
 
   if (params_.video.flexfec) {
