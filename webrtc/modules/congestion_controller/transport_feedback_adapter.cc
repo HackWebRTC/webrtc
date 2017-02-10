@@ -24,7 +24,7 @@
 namespace webrtc {
 
 const int64_t kNoTimestamp = -1;
-const int64_t kSendTimeHistoryWindowMs = 10000;
+const int64_t kSendTimeHistoryWindowMs = 60000;
 const int64_t kBaseTimestampScaleFactor =
     rtcp::TransportFeedback::kDeltaScaleFactor * (1 << 8);
 const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);

@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/call/call.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -37,7 +38,8 @@ FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
       sent_packets_(0),
       total_packet_delay_(0),
       bursting_(false),
-      next_process_time_(clock_->TimeInMilliseconds()) {
+      next_process_time_(clock_->TimeInMilliseconds()),
+      last_log_time_(clock_->TimeInMilliseconds()) {
   double prob_loss = config.loss_percent / 100.0;
   if (config_.avg_burst_loss_length == -1) {
     // Uniform loss
@@ -134,6 +136,14 @@ void FakeNetworkPipe::Process() {
   std::queue<NetworkPacket*> packets_to_deliver;
   {
     rtc::CritScope crit(&lock_);
+    if (time_now - last_log_time_ > 5000) {
+      int64_t queueing_delay_ms = 0;
+      if (!capacity_link_.empty()) {
+        queueing_delay_ms = time_now - capacity_link_.front()->send_time();
+      }
+      LOG(LS_INFO) << "Network queue: " << queueing_delay_ms << " ms.";
+      last_log_time_ = time_now;
+    }
     // Check the capacity link first.
     while (!capacity_link_.empty() &&
            time_now >= capacity_link_.front()->arrival_time()) {

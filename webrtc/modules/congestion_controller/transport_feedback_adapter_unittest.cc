@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/transport_feedback_adapter.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -126,6 +127,72 @@ TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
 
   adapter_->OnTransportFeedback(feedback);
   ComparePacketVectors(packets, adapter_->GetTransportFeedbackVector());
+}
+
+TEST_F(TransportFeedbackAdapterTest, Timeout) {
+  const int64_t kFeedbackTimeoutMs = 60001;
+  {
+    std::vector<PacketInfo> packets;
+    packets.push_back(PacketInfo(100, 200, 0, 1500, 0));
+    packets.push_back(PacketInfo(110, 210, 1, 1500, 0));
+    packets.push_back(PacketInfo(120, 220, 2, 1500, 0));
+    packets.push_back(PacketInfo(130, 230, 3, 1500, 1));
+    packets.push_back(PacketInfo(140, 240, 4, 1500, 1));
+
+    for (const PacketInfo& packet : packets)
+      OnSentPacket(packet);
+
+    rtcp::TransportFeedback feedback;
+    feedback.SetBase(packets[0].sequence_number,
+                     packets[0].arrival_time_ms * 1000);
+
+    for (const PacketInfo& packet : packets) {
+      EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
+                                             packet.arrival_time_ms * 1000));
+    }
+
+    feedback.Build();
+
+    clock_.AdvanceTimeMilliseconds(kFeedbackTimeoutMs);
+    PacketInfo later_packet(kFeedbackTimeoutMs + 140, kFeedbackTimeoutMs + 240,
+                            5, 1500, 1);
+    OnSentPacket(later_packet);
+
+    adapter_->OnTransportFeedback(feedback);
+    EXPECT_EQ(0, rtc::checked_cast<int>(
+                     adapter_->GetTransportFeedbackVector().size()));
+  }
+
+  {
+    std::vector<PacketInfo> packets;
+    packets.push_back(PacketInfo(100, 200, 0, 1500, 0));
+    packets.push_back(PacketInfo(110, 210, 1, 1500, 0));
+    packets.push_back(PacketInfo(120, 220, 2, 1500, 0));
+    packets.push_back(PacketInfo(130, 230, 3, 1500, 1));
+    packets.push_back(PacketInfo(140, 240, 4, 1500, 1));
+
+    for (const PacketInfo& packet : packets)
+      OnSentPacket(packet);
+
+    rtcp::TransportFeedback feedback;
+    feedback.SetBase(packets[0].sequence_number,
+                     packets[0].arrival_time_ms * 1000);
+
+    for (const PacketInfo& packet : packets) {
+      EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
+                                             packet.arrival_time_ms * 1000));
+    }
+
+    feedback.Build();
+
+    clock_.AdvanceTimeMilliseconds(kFeedbackTimeoutMs - 1);
+    PacketInfo later_packet(kFeedbackTimeoutMs + 140, kFeedbackTimeoutMs + 240,
+                            5, 1500, 1);
+    OnSentPacket(later_packet);
+
+    adapter_->OnTransportFeedback(feedback);
+    ComparePacketVectors(packets, adapter_->GetTransportFeedbackVector());
+  }
 }
 
 TEST_F(TransportFeedbackAdapterTest, HandlesDroppedPackets) {
