@@ -183,12 +183,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool RemoveRecvStream(uint32_t ssrc) override;
   bool GetActiveStreams(AudioInfo::StreamList* actives) override;
   int GetOutputLevel() override;
-  int GetTimeSinceLastTyping() override;
-  void SetTypingDetectionParameters(int time_window,
-                                    int cost_per_typing,
-                                    int reporting_threshold,
-                                    int penalty_decay,
-                                    int type_event_delay) override;
   bool SetOutputVolume(uint32_t ssrc, double volume) override;
 
   bool CanInsertDtmf() override;

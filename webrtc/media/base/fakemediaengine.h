@@ -304,7 +304,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   };
   explicit FakeVoiceMediaChannel(FakeVoiceEngine* engine,
                                  const AudioOptions& options)
-      : engine_(engine), time_since_last_typing_(-1), max_bps_(-1) {
+      : engine_(engine), max_bps_(-1) {
     output_scalings_[0] = 1.0;  // For default channel.
     SetOptions(options);
   }
@@ -366,11 +366,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
 
   virtual bool GetActiveStreams(AudioInfo::StreamList* streams) { return true; }
   virtual int GetOutputLevel() { return 0; }
-  void set_time_since_last_typing(int ms) { time_since_last_typing_ = ms; }
-  virtual int GetTimeSinceLastTyping() { return time_since_last_typing_; }
-  virtual void SetTypingDetectionParameters(
-      int time_window, int cost_per_typing, int reporting_threshold,
-      int penalty_decay, int type_event_delay) {}
 
   virtual bool CanInsertDtmf() {
     for (std::vector<AudioCodec>::const_iterator it = send_codecs_.begin();
@@ -488,7 +483,6 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   std::vector<AudioCodec> send_codecs_;
   std::map<uint32_t, double> output_scalings_;
   std::vector<DtmfInfo> dtmf_info_queue_;
-  int time_since_last_typing_;
   AudioOptions options_;
   std::map<uint32_t, VoiceChannelAudioSink*> local_sinks_;
   std::unique_ptr<webrtc::AudioSinkInterface> sink_;

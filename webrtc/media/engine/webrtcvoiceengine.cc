@@ -2405,31 +2405,6 @@ int WebRtcVoiceMediaChannel::GetOutputLevel() {
   return highest;
 }
 
-int WebRtcVoiceMediaChannel::GetTimeSinceLastTyping() {
-  int ret;
-  if (engine()->voe()->processing()->TimeSinceLastTyping(ret) == -1) {
-    // In case of error, log the info and continue
-    LOG_RTCERR0(TimeSinceLastTyping);
-    ret = -1;
-  } else {
-    ret *= 1000;  // We return ms, webrtc returns seconds.
-  }
-  return ret;
-}
-
-void WebRtcVoiceMediaChannel::SetTypingDetectionParameters(int time_window,
-    int cost_per_typing, int reporting_threshold, int penalty_decay,
-    int type_event_delay) {
-  if (engine()->voe()->processing()->SetTypingDetectionParameters(
-          time_window, cost_per_typing,
-          reporting_threshold, penalty_decay, type_event_delay) == -1) {
-    // In case of error, log the info and continue
-    LOG_RTCERR5(SetTypingDetectionParameters, time_window,
-                cost_per_typing, reporting_threshold, penalty_decay,
-                type_event_delay);
-  }
-}
-
 bool WebRtcVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (ssrc == 0) {
