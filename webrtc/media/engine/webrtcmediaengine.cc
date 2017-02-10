@@ -9,16 +9,17 @@
  */
 
 #include "webrtc/media/engine/webrtcmediaengine.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 
 #include <algorithm>
+
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/media/engine/webrtcvoiceengine.h"
 
 #ifdef HAVE_WEBRTC_VIDEO
 #include "webrtc/media/engine/webrtcvideoengine2.h"
 #else
 #include "webrtc/media/engine/nullwebrtcvideoengine.h"
 #endif
-#include "webrtc/media/engine/webrtcvoiceengine.h"
 
 namespace cricket {
 

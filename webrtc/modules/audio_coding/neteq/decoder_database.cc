@@ -12,9 +12,9 @@
 
 #include <utility>  // pair
 
+#include "webrtc/api/audio_codecs/audio_decoder.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 
 namespace webrtc {
 

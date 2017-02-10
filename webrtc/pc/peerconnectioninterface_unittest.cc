@@ -13,6 +13,7 @@
 #include <string>
 #include <utility>
 
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/api/jsepsessiondescription.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
@@ -26,7 +27,6 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/pc/audiotrack.h"
 #include "webrtc/pc/mediasession.h"

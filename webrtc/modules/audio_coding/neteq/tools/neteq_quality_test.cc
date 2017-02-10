@@ -10,8 +10,9 @@
 
 #include <math.h>
 #include <stdio.h>
+
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/tools/neteq_quality_test.h"
 #include "webrtc/modules/audio_coding/neteq/tools/output_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/output_wav_file.h"

@@ -208,7 +208,7 @@ if (rtc_enable_protobuf) {
       "../modules/audio_coding:ana_debug_dump_proto",
 
       # TODO(kwiberg): Remove this dependency.
-      "../modules/audio_coding:audio_format",
+      "../api/audio_codecs:audio_codecs_api",
       "../modules/congestion_controller",
       "../modules/rtp_rtcp",
       "../system_wrappers:system_wrappers_default",

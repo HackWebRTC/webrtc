@@ -139,7 +139,7 @@ if (rtc_enable_protobuf) {
         "../base:rtc_base_approved",
 
         # TODO(kwiberg): Remove this dependency.
-        "../modules/audio_coding:audio_format",
+        "../api/audio_codecs:audio_codecs_api",
         "../modules/rtp_rtcp:rtp_rtcp",
         "//third_party/gflags",
       ]

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/audio_format.h"
+#include "webrtc/api/audio_codecs/audio_format.h"
 
 #include "webrtc/common_types.h"
 
@@ -77,8 +77,7 @@ std::ostream& operator<<(std::ostream& os, const SdpAudioFormat& saf) {
   return os;
 }
 
-AudioCodecSpec::AudioCodecSpec(const SdpAudioFormat& format)
-    : format(format) {}
+AudioCodecSpec::AudioCodecSpec(const SdpAudioFormat& format) : format(format) {}
 
 AudioCodecSpec::AudioCodecSpec(SdpAudioFormat&& format)
     : format(std::move(format)) {}

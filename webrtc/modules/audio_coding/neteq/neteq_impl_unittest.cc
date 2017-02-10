@@ -10,14 +10,12 @@
 
 #include <memory>
 
-#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
-#include "webrtc/modules/audio_coding/neteq/neteq_impl.h"
-
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/base/safe_conversions.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"
 #include "webrtc/modules/audio_coding/neteq/expand.h"
+#include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_buffer_level_filter.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_decoder_database.h"
@@ -27,6 +25,7 @@
 #include "webrtc/modules/audio_coding/neteq/mock/mock_dtmf_tone_generator.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_packet_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/mock/mock_red_payload_splitter.h"
+#include "webrtc/modules/audio_coding/neteq/neteq_impl.h"
 #include "webrtc/modules/audio_coding/neteq/preemptive_expand.h"
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"

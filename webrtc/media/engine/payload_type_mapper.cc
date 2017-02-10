@@ -10,9 +10,9 @@
 
 #include "webrtc/media/engine/payload_type_mapper.h"
 
+#include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/common_types.h"
 #include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/modules/audio_coding/codecs/audio_format.h"
 
 namespace cricket {
 

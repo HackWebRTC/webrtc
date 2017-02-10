@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
+#include "webrtc/api/audio_codecs/audio_decoder.h"
 
 #include <assert.h>
 #include <memory>
@@ -18,9 +18,38 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/sanitizer.h"
 #include "webrtc/base/trace_event.h"
-#include "webrtc/modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
 
 namespace webrtc {
+
+namespace {
+
+class OldStyleEncodedFrame final : public AudioDecoder::EncodedAudioFrame {
+ public:
+  OldStyleEncodedFrame(AudioDecoder* decoder, rtc::Buffer&& payload)
+      : decoder_(decoder), payload_(std::move(payload)) {}
+
+  size_t Duration() const override {
+    const int ret = decoder_->PacketDuration(payload_.data(), payload_.size());
+    return ret < 0 ? 0 : static_cast<size_t>(ret);
+  }
+
+  rtc::Optional<DecodeResult> Decode(
+      rtc::ArrayView<int16_t> decoded) const override {
+    auto speech_type = AudioDecoder::kSpeech;
+    const int ret = decoder_->Decode(
+        payload_.data(), payload_.size(), decoder_->SampleRateHz(),
+        decoded.size() * sizeof(int16_t), decoded.data(), &speech_type);
+    return ret < 0 ? rtc::Optional<DecodeResult>()
+                   : rtc::Optional<DecodeResult>(
+                         {static_cast<size_t>(ret), speech_type});
+  }
+
+ private:
+  AudioDecoder* const decoder_;
+  const rtc::Buffer payload_;
+};
+
+}  // namespace
 
 AudioDecoder::ParseResult::ParseResult() = default;
 AudioDecoder::ParseResult::ParseResult(ParseResult&& b) = default;
@@ -41,14 +70,17 @@ std::vector<AudioDecoder::ParseResult> AudioDecoder::ParsePayload(
     uint32_t timestamp) {
   std::vector<ParseResult> results;
   std::unique_ptr<EncodedAudioFrame> frame(
-      new LegacyEncodedAudioFrame(this, std::move(payload)));
+      new OldStyleEncodedFrame(this, std::move(payload)));
   results.emplace_back(timestamp, 0, std::move(frame));
   return results;
 }
 
-int AudioDecoder::Decode(const uint8_t* encoded, size_t encoded_len,
-                         int sample_rate_hz, size_t max_decoded_bytes,
-                         int16_t* decoded, SpeechType* speech_type) {
+int AudioDecoder::Decode(const uint8_t* encoded,
+                         size_t encoded_len,
+                         int sample_rate_hz,
+                         size_t max_decoded_bytes,
+                         int16_t* decoded,
+                         SpeechType* speech_type) {
   TRACE_EVENT0("webrtc", "AudioDecoder::Decode");
   rtc::MsanCheckInitialized(rtc::MakeArrayView(encoded, encoded_len));
   int duration = PacketDuration(encoded, encoded_len);
@@ -60,9 +92,12 @@ int AudioDecoder::Decode(const uint8_t* encoded, size_t encoded_len,
                         speech_type);
 }
 
-int AudioDecoder::DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
-                                  int sample_rate_hz, size_t max_decoded_bytes,
-                                  int16_t* decoded, SpeechType* speech_type) {
+int AudioDecoder::DecodeRedundant(const uint8_t* encoded,
+                                  size_t encoded_len,
+                                  int sample_rate_hz,
+                                  size_t max_decoded_bytes,
+                                  int16_t* decoded,
+                                  SpeechType* speech_type) {
   TRACE_EVENT0("webrtc", "AudioDecoder::DecodeRedundant");
   rtc::MsanCheckInitialized(rtc::MakeArrayView(encoded, encoded_len));
   int duration = PacketDurationRedundant(encoded, encoded_len);
@@ -76,13 +111,16 @@ int AudioDecoder::DecodeRedundant(const uint8_t* encoded, size_t encoded_len,
 
 int AudioDecoder::DecodeRedundantInternal(const uint8_t* encoded,
                                           size_t encoded_len,
-                                          int sample_rate_hz, int16_t* decoded,
+                                          int sample_rate_hz,
+                                          int16_t* decoded,
                                           SpeechType* speech_type) {
   return DecodeInternal(encoded, encoded_len, sample_rate_hz, decoded,
                         speech_type);
 }
 
-bool AudioDecoder::HasDecodePlc() const { return false; }
+bool AudioDecoder::HasDecodePlc() const {
+  return false;
+}
 
 size_t AudioDecoder::DecodePlc(size_t num_frames, int16_t* decoded) {
   return 0;
@@ -96,7 +134,9 @@ int AudioDecoder::IncomingPacket(const uint8_t* payload,
   return 0;
 }
 
-int AudioDecoder::ErrorCode() { return 0; }
+int AudioDecoder::ErrorCode() {
+  return 0;
+}
 
 int AudioDecoder::PacketDuration(const uint8_t* encoded,
                                  size_t encoded_len) const {

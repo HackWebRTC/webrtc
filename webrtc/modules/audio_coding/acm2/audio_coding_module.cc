@@ -10,13 +10,13 @@
 
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/modules/audio_coding/acm2/acm_receiver.h"
 #include "webrtc/modules/audio_coding/acm2/acm_resampler.h"
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/trace.h"
 

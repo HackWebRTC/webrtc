@@ -20,9 +20,9 @@
 #include <Windows.h>
 #endif
 
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/test/PCMFile.h"
 #include "webrtc/modules/audio_coding/test/utility.h"
 #include "webrtc/system_wrappers/include/trace.h"

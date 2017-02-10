@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/mediastreamproxy.h"
 #include "webrtc/api/mediastreamtrackproxy.h"
@@ -23,7 +24,6 @@
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/client/basicportallocator.h"

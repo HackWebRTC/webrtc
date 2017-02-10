@@ -39,52 +39,27 @@ audio_coding_deps = audio_codec_deps + [
                       "../../system_wrappers",
                     ]
 
-rtc_static_library("audio_format") {
-  sources = [
-    "codecs/audio_format.cc",
-    "codecs/audio_format.h",
-  ]
-  deps = [
-    "../..:webrtc_common",
-  ]
-}
-
 rtc_static_library("audio_format_conversion") {
   sources = [
     "codecs/audio_format_conversion.cc",
     "codecs/audio_format_conversion.h",
   ]
   deps = [
-    ":audio_format",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
   ]
 }
 
-rtc_source_set("audio_decoder_factory_interface") {
+rtc_static_library("builtin_audio_decoder_factory_internal") {
   sources = [
-    "codecs/audio_decoder_factory.h",
-  ]
-  deps = [
-    ":audio_decoder_interface",
-    ":audio_format",
-
-    # TODO(charujain): Clean this dependency when downstream projects are
-    # updated to properly depend on audio_format_conversion target.
-    ":audio_format_conversion",
-    "../../base:rtc_base_approved",
-  ]
-}
-
-rtc_static_library("builtin_audio_decoder_factory") {
-  sources = [
-    "codecs/builtin_audio_decoder_factory.cc",
-    "codecs/builtin_audio_decoder_factory.h",
+    "codecs/builtin_audio_decoder_factory_internal.cc",
+    "codecs/builtin_audio_decoder_factory_internal.h",
   ]
   deps = [
            "../..:webrtc_common",
            "../../base:rtc_base_approved",
-           ":audio_decoder_factory_interface",
+           "../../api/audio_codecs:audio_codecs_api",
          ] + audio_codec_deps
   defines = audio_codec_defines
 }
@@ -101,7 +76,7 @@ rtc_static_library("rent_a_codec") {
     "acm2/rent_a_codec.h",
   ]
   deps = [
-           ":audio_decoder_interface",
+           "../../api/audio_codecs:audio_codecs_api",
            "../..:webrtc_common",
            "../../base:rtc_base_approved",
          ] + audio_codec_deps
@@ -149,9 +124,8 @@ rtc_static_library("audio_coding") {
   }
 
   deps = audio_coding_deps + [
-           ":audio_decoder_interface",
-           ":audio_decoder_factory_interface",
-           ":builtin_audio_decoder_factory",
+           "../../api/audio_codecs:audio_codecs_api",
+           "../../api/audio_codecs:builtin_audio_decoder_factory",
            ":neteq",
            ":rent_a_codec",
            "../../base:rtc_base_approved",
@@ -160,15 +134,13 @@ rtc_static_library("audio_coding") {
   defines = audio_coding_defines
 }
 
-rtc_static_library("audio_decoder_interface") {
+rtc_static_library("legacy_encoded_audio_frame") {
   sources = [
-    "codecs/audio_decoder.cc",
-    "codecs/audio_decoder.h",
     "codecs/legacy_encoded_audio_frame.cc",
     "codecs/legacy_encoded_audio_frame.h",
   ]
   deps = [
-    "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
   ]
 }
@@ -246,9 +218,10 @@ rtc_static_library("g711") {
   public_configs = [ ":g711_config" ]
 
   deps = [
-    ":audio_decoder_interface",
     ":audio_encoder_interface",
+    ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
   ]
   public_deps = [
@@ -287,9 +260,10 @@ rtc_static_library("g722") {
   public_configs = [ ":g722_config" ]
 
   deps = [
-    ":audio_decoder_interface",
     ":audio_encoder_interface",
+    ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
   ]
   public_deps = [
@@ -329,9 +303,10 @@ rtc_static_library("ilbc") {
   public_configs = [ ":ilbc_config" ]
 
   deps = [
-    ":audio_decoder_interface",
     ":audio_encoder_interface",
+    ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
     "../../common_audio",
   ]
@@ -487,9 +462,9 @@ rtc_source_set("ilbc_c") {
   public_configs = [ ":ilbc_config" ]
 
   deps = [
-    ":audio_decoder_interface",
     ":audio_encoder_interface",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
     "../../common_audio",
   ]
@@ -525,9 +500,9 @@ rtc_static_library("isac") {
   ]
 
   deps = [
-    ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":isac_common",
+    "../../api/audio_codecs:audio_codecs_api",
   ]
   public_deps = [
     ":isac_c",
@@ -619,9 +594,9 @@ rtc_static_library("isac_fix") {
   public_configs = [ ":isac_fix_config" ]
 
   deps = [
-    ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":isac_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
     "../../system_wrappers",
   ]
@@ -695,10 +670,10 @@ rtc_source_set("isac_fix_c") {
   public_configs = [ ":isac_fix_config" ]
 
   deps = [
-    ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":isac_common",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
     "../../common_audio",
     "../../system_wrappers",
@@ -799,10 +774,11 @@ rtc_static_library("pcm16b") {
   ]
 
   deps = [
-    ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":g711",
+    ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
   ]
   public_deps = [
@@ -837,10 +813,10 @@ rtc_static_library("webrtc_opus") {
   ]
 
   deps = [
-    ":audio_decoder_interface",
     ":audio_encoder_interface",
     ":audio_network_adaptor",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
     "../../base:rtc_numerics",
     "../../common_audio",
@@ -1031,16 +1007,13 @@ rtc_static_library("neteq") {
   ]
 
   deps = [
-    ":audio_decoder_factory_interface",
-    ":audio_decoder_interface",
-    ":audio_format",
-    ":builtin_audio_decoder_factory",
     ":cng",
     ":g711",
     ":isac_fix",
     ":pcm16b",
     ":rent_a_codec",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:gtest_prod",
     "../../base:rtc_base_approved",
     "../../common_audio",
@@ -1095,9 +1068,9 @@ rtc_source_set("neteq_test_minimal") {
 
   deps = [
     ":audio_encoder_interface",
-    ":builtin_audio_decoder_factory",
     ":neteq",
     "../..:webrtc_common",
+    "../../api/audio_codecs:builtin_audio_decoder_factory",
     "../../base:rtc_base_approved",
   ]
 }
@@ -1161,9 +1134,9 @@ if (rtc_include_tests) {
     deps = [
       ":audio_coding",
       ":audio_format_conversion",
-      ":builtin_audio_decoder_factory",
       ":pcm16b_c",
       "../..:webrtc_common",
+      "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:fileutils",
@@ -1215,8 +1188,8 @@ if (rtc_include_tests) {
     deps = audio_coding_deps + [
              ":audio_coding",
              ":audio_format_conversion",
-             ":audio_decoder_factory_interface",
-             ":builtin_audio_decoder_factory",
+             "../../api/audio_codecs:audio_codecs_api",
+             "../../api/audio_codecs:builtin_audio_decoder_factory",
              ":neteq_unittest_tools",
              "../../base:rtc_base_approved",
              "../../test:test_support",
@@ -1235,7 +1208,7 @@ if (rtc_include_tests) {
 
     deps = audio_coding_deps + [
              ":audio_coding",
-             ":audio_decoder_interface",
+             "../../api/audio_codecs:audio_codecs_api",
              ":audio_encoder_interface",
              ":neteq_unittest_tools",
              "../../base:rtc_base_approved",
@@ -1324,12 +1297,12 @@ if (rtc_include_tests) {
 
     deps += audio_coding_deps
     deps += [
-      ":audio_decoder_interface",
       ":ilbc",
       ":isac",
       ":isac_fix",
       ":neteq",
       ":neteq_unittest_tools",
+      "../../api/audio_codecs:audio_codecs_api",
       "../../common_audio",
       "../../test:test_main",
       "//testing/gtest",
@@ -1460,12 +1433,12 @@ if (rtc_include_tests) {
     }
 
     deps = [
-      ":audio_decoder_interface",
-      ":builtin_audio_decoder_factory",
       ":neteq",
       ":neteq_unittest_tools",
       ":pcm16b",
       "../..:webrtc_common",
+      "../../api/audio_codecs:audio_codecs_api",
+      "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../base:rtc_base_approved",
       "../../system_wrappers",
       "../../test:test_support",
@@ -1486,10 +1459,10 @@ if (rtc_include_tests) {
     }
 
     deps = [
-      ":builtin_audio_decoder_factory",
       ":neteq",
       ":neteq_unittest_tools",
       "../..:webrtc_common",
+      "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../base:rtc_base_approved",
       "../../test:test_support",
       "//testing/gtest",
@@ -1540,10 +1513,10 @@ if (rtc_include_tests) {
     }
 
     deps = [
-      ":audio_decoder_interface",
       ":audio_encoder_interface",
       ":pcm16b",
       "../..:webrtc_common",
+      "../../api/audio_codecs:audio_codecs_api",
       "../../base:rtc_base_approved",
       "../../common_audio",
       "../../test:rtp_test_utils",
@@ -1999,7 +1972,7 @@ if (rtc_include_tests) {
       "audio_network_adaptor/frame_length_controller_unittest.cc",
       "audio_network_adaptor/mock/mock_controller.h",
       "audio_network_adaptor/mock/mock_controller_manager.h",
-      "codecs/audio_decoder_factory_unittest.cc",
+      "codecs/builtin_audio_decoder_factory_unittest.cc",
       "codecs/cng/audio_encoder_cng_unittest.cc",
       "codecs/cng/cng_unittest.cc",
       "codecs/ilbc/ilbc_unittest.cc",
@@ -2063,17 +2036,16 @@ if (rtc_include_tests) {
       ":acm_receive_test",
       ":acm_send_test",
       ":audio_coding",
-      ":audio_decoder_interface",
       ":audio_encoder_interface",
       ":audio_format_conversion",
       ":audio_network_adaptor",
-      ":builtin_audio_decoder_factory",
       ":cng",
       ":g711",
       ":ilbc",
       ":isac",
       ":isac_c",
       ":isac_fix",
+      ":legacy_encoded_audio_frame",
       ":neteq",
       ":neteq_test_support",
       ":neteq_unittest_tools",
@@ -2082,6 +2054,8 @@ if (rtc_include_tests) {
       ":rent_a_codec",
       ":webrtc_opus",
       "../..:webrtc_common",
+      "../../api/audio_codecs:audio_codecs_api",
+      "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../base:rtc_base",
       "../../base:rtc_base_approved",
       "../../base:rtc_base_tests_utils",
@@ -2114,4 +2088,28 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
+}
+
+# For backwards compatibility only! Use
+# webrtc/api/audio_codecs:audio_codecs_api instead.
+# TODO(kwiberg): Remove this.
+rtc_source_set("audio_decoder_interface") {
+  sources = [
+    "codecs/audio_decoder.h",
+  ]
+  deps = [
+    "../../api/audio_codecs:audio_codecs_api",
+  ]
+}
+
+# For backwards compatibility only! Use
+# webrtc/api/audio_codecs:builtin_audio_decoder_factory instead.
+# TODO(kwiberg): Remove this.
+rtc_source_set("builtin_audio_decoder_factory") {
+  sources = [
+    "codecs/builtin_audio_decoder_factory.h",
+  ]
+  deps = [
+    "../../api/audio_codecs:builtin_audio_decoder_factory",
+  ]
 }

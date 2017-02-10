@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/audio_codecs/audio_decoder_factory.h"
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/sigslotrepeater.h"
@@ -25,7 +26,6 @@
 #include "webrtc/media/base/codec.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 
 #if defined(GOOGLE_CHROME_BUILD) || defined(CHROMIUM_BUILD)
 #define DISABLE_MEDIA_ENGINE_FACTORY

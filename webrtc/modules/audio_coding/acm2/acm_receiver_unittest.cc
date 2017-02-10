@@ -13,9 +13,9 @@
 #include <algorithm>  // std::min
 #include <memory>
 
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/safe_conversions.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "webrtc/system_wrappers/include/clock.h"

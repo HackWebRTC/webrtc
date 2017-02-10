@@ -17,13 +17,13 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/api/audio_codecs/audio_decoder.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/sanitizer.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder.h"
 #include "webrtc/modules/audio_coding/neteq/accelerate.h"
 #include "webrtc/modules/audio_coding/neteq/background_noise.h"
 #include "webrtc/modules/audio_coding/neteq/buffer_level_filter.h"
@@ -39,11 +39,11 @@
 #include "webrtc/modules/audio_coding/neteq/merge.h"
 #include "webrtc/modules/audio_coding/neteq/nack_tracker.h"
 #include "webrtc/modules/audio_coding/neteq/normal.h"
-#include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/packet.h"
-#include "webrtc/modules/audio_coding/neteq/red_payload_splitter.h"
+#include "webrtc/modules/audio_coding/neteq/packet_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/post_decode_vad.h"
 #include "webrtc/modules/audio_coding/neteq/preemptive_expand.h"
+#include "webrtc/modules/audio_coding/neteq/red_payload_splitter.h"
 #include "webrtc/modules/audio_coding/neteq/sync_buffer.h"
 #include "webrtc/modules/audio_coding/neteq/tick_timer.h"
 #include "webrtc/modules/audio_coding/neteq/timestamp_scaler.h"

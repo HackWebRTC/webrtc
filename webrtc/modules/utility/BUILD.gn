@@ -35,10 +35,6 @@ rtc_static_library("utility") {
     "../../base:rtc_task_queue",
     "../../common_audio",
     "../../system_wrappers",
-    "../audio_coding",
-    "../audio_coding:audio_format_conversion",
-    "../audio_coding:builtin_audio_decoder_factory",
-    "../audio_coding:rent_a_codec",
     "../media_file",
   ]
 }

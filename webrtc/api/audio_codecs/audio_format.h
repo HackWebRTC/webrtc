@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_FORMAT_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_FORMAT_H_
+#ifndef WEBRTC_API_AUDIO_CODECS_AUDIO_FORMAT_H_
+#define WEBRTC_API_AUDIO_CODECS_AUDIO_FORMAT_H_
 
 #include <map>
 #include <ostream>
@@ -70,12 +70,12 @@ struct AudioCodecSpec {
   ~AudioCodecSpec() = default;
 
   SdpAudioFormat format;
-  bool allow_comfort_noise = true;    // This codec can be used with an external
-                                      // comfort noise generator.
+  bool allow_comfort_noise = true;  // This codec can be used with an external
+                                    // comfort noise generator.
   bool supports_network_adaption = false;  // This codec can adapt to varying
                                            // network conditions.
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_AUDIO_FORMAT_H_
+#endif  // WEBRTC_API_AUDIO_CODECS_AUDIO_FORMAT_H_

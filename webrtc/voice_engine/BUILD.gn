@@ -15,9 +15,9 @@ rtc_static_library("audio_coder") {
   ]
   deps = [
     "..:webrtc_common",
+    "../api/audio_codecs:builtin_audio_decoder_factory",
     "../modules/audio_coding",
     "../modules/audio_coding:audio_format_conversion",
-    "../modules/audio_coding:builtin_audio_decoder_factory",
     "../modules/audio_coding:rent_a_codec",
   ]
 
@@ -152,13 +152,13 @@ rtc_static_library("voice_engine") {
     "../api:audio_mixer_api",
     "../api:call_api",
     "../api:transport_api",
+    "../api/audio_codecs:audio_codecs_api",
+    "../api/audio_codecs:builtin_audio_decoder_factory",
     "../audio/utility:audio_frame_operations",
     "../base:rtc_base_approved",
     "../common_audio",
     "../logging:rtc_event_log_api",
-    "../modules/audio_coding:audio_decoder_factory_interface",
     "../modules/audio_coding:audio_format_conversion",
-    "../modules/audio_coding:builtin_audio_decoder_factory",
     "../modules/audio_coding:rent_a_codec",
     "../modules/audio_conference_mixer",
     "../modules/audio_device",

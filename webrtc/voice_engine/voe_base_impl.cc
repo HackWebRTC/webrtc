@@ -10,10 +10,10 @@
 
 #include "webrtc/voice_engine/voe_base_impl.h"
 
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"

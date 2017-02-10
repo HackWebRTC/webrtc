@@ -10,9 +10,9 @@
 
 #include "webrtc/voice_engine/coder.h"
 
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/modules/include/module_common_types.h"
 
 namespace webrtc {

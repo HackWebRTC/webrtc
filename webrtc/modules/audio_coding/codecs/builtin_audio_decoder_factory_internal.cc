@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory_internal.h"
 
+#include <memory>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -176,34 +177,35 @@ class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
   std::vector<AudioCodecSpec> GetSupportedDecoders() override {
     // Although this looks a bit strange, it means specs need only be initalized
     // once, and that that initialization is thread-safe.
-    static std::vector<AudioCodecSpec> specs =
-        []{
-          std::vector<AudioCodecSpec> specs;
+    static std::vector<AudioCodecSpec> specs = [] {
+      std::vector<AudioCodecSpec> specs;
 #ifdef WEBRTC_CODEC_OPUS
-          AudioCodecSpec opus({"opus", 48000, 2, {
-                                 {"minptime", "10"},
-                                 {"useinbandfec", "1"}
-                               }});
-          opus.allow_comfort_noise = false;
-          opus.supports_network_adaption = true;
-          specs.push_back(opus);
+      // clang-format off
+      AudioCodecSpec opus({"opus", 48000, 2, {
+                             {"minptime", "10"},
+                             {"useinbandfec", "1"}
+                           }});
+      // clang-format on
+      opus.allow_comfort_noise = false;
+      opus.supports_network_adaption = true;
+      specs.push_back(opus);
 #endif
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-          specs.push_back(AudioCodecSpec({"isac", 16000, 1}));
+      specs.push_back(AudioCodecSpec({"isac", 16000, 1}));
 #endif
 #if (defined(WEBRTC_CODEC_ISAC))
-          specs.push_back(AudioCodecSpec({"isac", 32000, 1}));
+      specs.push_back(AudioCodecSpec({"isac", 32000, 1}));
 #endif
 #ifdef WEBRTC_CODEC_G722
-          specs.push_back(AudioCodecSpec({"G722", 8000, 1}));
+      specs.push_back(AudioCodecSpec({"G722", 8000, 1}));
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-          specs.push_back(AudioCodecSpec({"iLBC", 8000, 1}));
+      specs.push_back(AudioCodecSpec({"iLBC", 8000, 1}));
 #endif
-          specs.push_back(AudioCodecSpec({"PCMU", 8000, 1}));
-          specs.push_back(AudioCodecSpec({"PCMA", 8000, 1}));
-          return specs;
-        }();
+      specs.push_back(AudioCodecSpec({"PCMU", 8000, 1}));
+      specs.push_back(AudioCodecSpec({"PCMA", 8000, 1}));
+      return specs;
+    }();
     return specs;
   }
 
@@ -239,7 +241,8 @@ class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
 
 }  // namespace
 
-rtc::scoped_refptr<AudioDecoderFactory> CreateBuiltinAudioDecoderFactory() {
+rtc::scoped_refptr<AudioDecoderFactory>
+CreateBuiltinAudioDecoderFactoryInternal() {
   return rtc::scoped_refptr<AudioDecoderFactory>(
       new rtc::RefCountedObject<BuiltinAudioDecoderFactory>);
 }

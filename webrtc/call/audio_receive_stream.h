@@ -16,10 +16,10 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/audio_codecs/audio_decoder_factory.h"
 #include "webrtc/api/call/transport.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/scoped_ref_ptr.h"
-#include "webrtc/modules/audio_coding/codecs/audio_decoder_factory.h"
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
 #include "webrtc/typedefs.h"
