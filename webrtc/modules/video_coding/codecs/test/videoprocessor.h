@@ -190,20 +190,20 @@ class VideoProcessorImpl : public VideoProcessor {
   // Return the number of spatial resizes.
   int NumberSpatialResizes() override;
 
-  webrtc::VideoEncoder* encoder_;
-  webrtc::VideoDecoder* decoder_;
+  webrtc::VideoEncoder* const encoder_;
+  webrtc::VideoDecoder* const decoder_;
   std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
-  FrameReader* frame_reader_;
-  FrameWriter* frame_writer_;
-  PacketManipulator* packet_manipulator_;
+  FrameReader* const frame_reader_;
+  FrameWriter* const frame_writer_;
+  PacketManipulator* const packet_manipulator_;
   const TestConfig& config_;
   Stats* stats_;
 
-  EncodedImageCallback* encode_callback_;
-  DecodedImageCallback* decode_callback_;
+  std::unique_ptr<EncodedImageCallback> encode_callback_;
+  std::unique_ptr<DecodedImageCallback> decode_callback_;
   // Keep track of the last successful frame, since we need to write that
   // when decoding fails:
-  uint8_t* last_successful_frame_buffer_;
+  std::unique_ptr<uint8_t[]> last_successful_frame_buffer_;
   // To keep track of if we have excluded the first key frame from packet loss:
   bool first_key_frame_has_been_excluded_;
   // To tell the decoder previous frame have been dropped due to packet loss:
@@ -235,7 +235,7 @@ class VideoProcessorImpl : public VideoProcessor {
         const webrtc::RTPFragmentationHeader* fragmentation) override;
 
    private:
-    VideoProcessorImpl* video_processor_;
+    VideoProcessorImpl* const video_processor_;
   };
 
   // Callback class required to implement according to the VideoDecoder API.
@@ -257,7 +257,7 @@ class VideoProcessorImpl : public VideoProcessor {
     }
 
    private:
-    VideoProcessorImpl* video_processor_;
+    VideoProcessorImpl* const video_processor_;
   };
 };
 
