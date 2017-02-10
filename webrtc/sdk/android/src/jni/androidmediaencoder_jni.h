@@ -42,6 +42,7 @@ class MediaCodecVideoEncoderFactory
 
   // Empty if platform support is lacking, const after ctor returns.
   std::vector<cricket::VideoCodec> supported_codecs_;
+  std::vector<cricket::VideoCodec> supported_codecs_with_h264_hp_;
 };
 
 }  // namespace webrtc_jni

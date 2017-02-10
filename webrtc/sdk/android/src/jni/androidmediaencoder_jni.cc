@@ -1215,32 +1215,6 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
     supported_codecs_.push_back(cricket::VideoCodec("VP9"));
   }
 
-  // Check if high profile is supported by decoder. If yes, encoder can always
-  // fall back to baseline profile as a subset as high profile.
-  bool is_h264_high_profile_hw_supported = false;
-  if (webrtc::field_trial::FindFullName(kH264HighProfileFieldTrial) ==
-      "Enabled") {
-    is_h264_high_profile_hw_supported = jni->CallStaticBooleanMethod(
-        j_decoder_class,
-        GetStaticMethodID(jni, j_decoder_class, "isH264HighProfileHwSupported",
-                          "()Z"));
-    CHECK_EXCEPTION(jni);
-  }
-  if (is_h264_high_profile_hw_supported) {
-    ALOGD << "H.264 High Profile HW Encoder supported.";
-    // TODO(magjed): Enumerate actual level instead of using hardcoded level
-    // 3.1. Level 3.1 is 1280x720@30fps which is enough for now.
-    cricket::VideoCodec constrained_high(cricket::kH264CodecName);
-    const webrtc::H264::ProfileLevelId constrained_high_profile(
-        webrtc::H264::kProfileConstrainedHigh, webrtc::H264::kLevel3_1);
-    constrained_high.SetParam(
-        cricket::kH264FmtpProfileLevelId,
-        *webrtc::H264::ProfileLevelIdToString(constrained_high_profile));
-    constrained_high.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
-    constrained_high.SetParam(cricket::kH264FmtpPacketizationMode, "1");
-    supported_codecs_.push_back(constrained_high);
-  }
-
   bool is_h264_hw_supported = jni->CallStaticBooleanMethod(
       j_encoder_class,
       GetStaticMethodID(jni, j_encoder_class, "isH264HwSupported", "()Z"));
@@ -1260,6 +1234,29 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
     constrained_baseline.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
     constrained_baseline.SetParam(cricket::kH264FmtpPacketizationMode, "1");
     supported_codecs_.push_back(constrained_baseline);
+  }
+
+  // Check if high profile is supported by decoder. If yes, encoder can always
+  // fall back to baseline profile as a subset as high profile.
+  supported_codecs_with_h264_hp_ = supported_codecs_;
+  bool is_h264_high_profile_hw_supported = jni->CallStaticBooleanMethod(
+      j_decoder_class,
+      GetStaticMethodID(jni, j_decoder_class, "isH264HighProfileHwSupported",
+                        "()Z"));
+  CHECK_EXCEPTION(jni);
+  if (is_h264_high_profile_hw_supported) {
+    ALOGD << "H.264 High Profile HW Encoder supported.";
+    // TODO(magjed): Enumerate actual level instead of using hardcoded level
+    // 3.1. Level 3.1 is 1280x720@30fps which is enough for now.
+    cricket::VideoCodec constrained_high(cricket::kH264CodecName);
+    const webrtc::H264::ProfileLevelId constrained_high_profile(
+        webrtc::H264::kProfileConstrainedHigh, webrtc::H264::kLevel3_1);
+    constrained_high.SetParam(
+        cricket::kH264FmtpProfileLevelId,
+        *webrtc::H264::ProfileLevelIdToString(constrained_high_profile));
+    constrained_high.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
+    constrained_high.SetParam(cricket::kH264FmtpPacketizationMode, "1");
+    supported_codecs_with_h264_hp_.push_back(constrained_high);
   }
 }
 
@@ -1286,11 +1283,11 @@ void MediaCodecVideoEncoderFactory::SetEGLContext(
 
 webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
     const cricket::VideoCodec& codec) {
-  if (supported_codecs_.empty()) {
+  if (supported_codecs().empty()) {
     ALOGW << "No HW video encoder for codec " << codec.name;
     return nullptr;
   }
-  if (FindMatchingCodec(supported_codecs_, codec)) {
+  if (FindMatchingCodec(supported_codecs(), codec)) {
     ALOGD << "Create HW video encoder for " << codec.name;
     JNIEnv* jni = AttachCurrentThreadIfNeeded();
     ScopedLocalRefFrame local_ref_frame(jni);
@@ -1302,7 +1299,11 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
 
 const std::vector<cricket::VideoCodec>&
 MediaCodecVideoEncoderFactory::supported_codecs() const {
-  return supported_codecs_;
+  if (webrtc::field_trial::FindFullName(kH264HighProfileFieldTrial) ==
+      "Enabled")
+    return supported_codecs_with_h264_hp_;
+  else
+    return supported_codecs_;
 }
 
 void MediaCodecVideoEncoderFactory::DestroyVideoEncoder(
