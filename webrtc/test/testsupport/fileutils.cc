@@ -101,7 +101,7 @@ void SetExecutablePath(const std::string& path) {
   relative_dir_path_set = true;
 }
 
-bool FileExists(std::string& file_name) {
+bool FileExists(const std::string& file_name) {
   struct stat file_info = {0};
   return stat(file_name.c_str(), &file_info) == 0;
 }
@@ -206,7 +206,7 @@ std::string TempFilename(const std::string &dir, const std::string &prefix) {
 #endif
 }
 
-bool CreateDir(std::string directory_name) {
+bool CreateDir(const std::string& directory_name) {
   struct stat path_info = {0};
   // Check if the path exists already:
   if (stat(directory_name.c_str(), &path_info) == 0) {
@@ -226,7 +226,8 @@ bool CreateDir(std::string directory_name) {
   return true;
 }
 
-std::string ResourcePath(std::string name, std::string extension) {
+std::string ResourcePath(const std::string& name,
+                         const std::string& extension) {
 #if defined(WEBRTC_IOS)
   return IOSResourcePath(name, extension);
 #else
@@ -270,7 +271,7 @@ std::string ResourcePath(std::string name, std::string extension) {
 #endif  // defined (WEBRTC_IOS)
 }
 
-size_t GetFileSize(std::string filename) {
+size_t GetFileSize(const std::string& filename) {
   FILE* f = fopen(filename.c_str(), "rb");
   size_t size = 0;
   if (f != NULL) {

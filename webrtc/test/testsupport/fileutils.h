@@ -58,7 +58,8 @@ std::string TempFilename(const std::string &dir, const std::string &prefix);
 //           If a directory path is prepended to the filename, a subdirectory
 //           hierarchy reflecting that path is assumed to be present.
 //    extension - File extension, without the dot, i.e. "bmp" or "yuv".
-std::string ResourcePath(std::string name, std::string extension);
+std::string ResourcePath(const std::string& name,
+                         const std::string& extension);
 
 // Gets the current working directory for the executing program.
 // Returns "./" if for some reason it is not possible to find the working
@@ -68,14 +69,14 @@ std::string WorkingDir();
 // Creates a directory if it not already exists.
 // Returns true if successful. Will print an error message to stderr and return
 // false if a file with the same name already exists.
-bool CreateDir(std::string directory_name);
+bool CreateDir(const std::string& directory_name);
 
 // Checks if a file exists.
-bool FileExists(std::string& file_name);
+bool FileExists(const std::string& file_name);
 
 // File size of the supplied file in bytes. Will return 0 if the file is
 // empty or if the file does not exist/is readable.
-size_t GetFileSize(std::string filename);
+size_t GetFileSize(const std::string& filename);
 
 // Sets the executable path, i.e. the path to the executable that is being used
 // when launching it. This is usually the path relative to the working directory
