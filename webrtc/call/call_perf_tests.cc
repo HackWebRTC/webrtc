@@ -490,13 +490,20 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
                             const rtc::VideoSinkWants& wants) override {
       // First expect CPU overuse. Then expect CPU underuse when the encoder
       // delay has been decreased.
-      if (wants.max_pixel_count) {
+      if (wants.target_pixel_count &&
+          *wants.target_pixel_count <
+              wants.max_pixel_count.value_or(std::numeric_limits<int>::max())) {
+        // On adapting up, ViEEncoder::VideoSourceProxy will set the target
+        // pixel count to a step up from the current and the max value to
+        // something higher than the target.
+        EXPECT_FALSE(expect_lower_resolution_wants_);
+        observation_complete_.Set();
+      } else if (wants.max_pixel_count) {
+        // On adapting down, ViEEncoder::VideoSourceProxy will set only the max
+        // pixel count, leaving the target unset.
         EXPECT_TRUE(expect_lower_resolution_wants_);
         expect_lower_resolution_wants_ = false;
         encoder_.SetDelay(2);
-      } else if (wants.max_pixel_count_step_up) {
-        EXPECT_FALSE(expect_lower_resolution_wants_);
-        observation_complete_.Set();
       }
     }
 

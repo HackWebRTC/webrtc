@@ -222,10 +222,16 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   VideoSendStream::DegradationPreference degradation_preference_
       ACCESS_ON(&encoder_queue_);
 
-  // Pixel count last time the resolution was requested to be changed down.
-  rtc::Optional<int> max_pixel_count_ ACCESS_ON(&encoder_queue_);
-  // Pixel count last time the resolution was requested to be changed up.
-  rtc::Optional<int> max_pixel_count_step_up_ ACCESS_ON(&encoder_queue_);
+  struct AdaptationRequest {
+    // The pixel count produced by the source at the time of the adaptation.
+    int input_pixel_count_;
+    // Indicates if request was to adapt up or down.
+    enum class Mode { kAdaptUp, kAdaptDown } mode_;
+  };
+  // Stores a snapshot of the last adaptation request triggered by an AdaptUp
+  // or AdaptDown signal.
+  rtc::Optional<AdaptationRequest> last_adaptation_request_
+      ACCESS_ON(&encoder_queue_);
 
   rtc::RaceChecker incoming_frame_race_checker_
       GUARDED_BY(incoming_frame_race_checker_);

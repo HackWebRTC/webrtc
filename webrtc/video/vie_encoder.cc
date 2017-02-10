@@ -204,7 +204,7 @@ class ViEEncoder::VideoSourceProxy {
     if (pixels_wanted < kMinPixelsPerFrame)
       return;
     sink_wants_.max_pixel_count = rtc::Optional<int>(pixels_wanted);
-    sink_wants_.max_pixel_count_step_up = rtc::Optional<int>();
+    sink_wants_.target_pixel_count = rtc::Optional<int>();
     if (source_)
       source_->AddOrUpdateSink(vie_encoder_, sink_wants_);
   }
@@ -219,9 +219,10 @@ class ViEEncoder::VideoSourceProxy {
     }
     // The input video frame size will have a resolution with "one step up"
     // pixels than |max_pixel_count_step_up| where "one step up" depends on
-    // how the source can scale the input frame size.
-    sink_wants_.max_pixel_count = rtc::Optional<int>();
-    sink_wants_.max_pixel_count_step_up = rtc::Optional<int>(pixel_count);
+    // how the source can scale the input frame size. We still cap the step up
+    // to be at most twice the number of pixels.
+    sink_wants_.target_pixel_count = rtc::Optional<int>((pixel_count * 5) / 3);
+    sink_wants_.max_pixel_count = rtc::Optional<int>(pixel_count * 4);
     if (source_)
       source_->AddOrUpdateSink(vie_encoder_, sink_wants_);
   }
@@ -651,7 +652,7 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
   encoder_queue_.PostTask([this, timestamp, time_sent_us, qp] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     overuse_detector_.FrameSent(timestamp, time_sent_us);
-    if (quality_scaler_)
+    if (quality_scaler_ && qp >= 0)
       quality_scaler_->ReportQP(qp);
   });
 
@@ -740,14 +741,21 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
 
 void ViEEncoder::AdaptDown(AdaptReason reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  if (degradation_preference_ != DegradationPreference::kBalanced)
+  if (degradation_preference_ != DegradationPreference::kBalanced ||
+      !last_frame_info_) {
     return;
-  // Request lower resolution if the current resolution is lower than last time
-  // we asked for the resolution to be lowered.
-  int current_pixel_count =
-      last_frame_info_ ? last_frame_info_->pixel_count() : 0;
-  if (max_pixel_count_ && current_pixel_count >= *max_pixel_count_)
+  }
+  int current_pixel_count = last_frame_info_->pixel_count();
+  if (last_adaptation_request_ &&
+      last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptDown &&
+      current_pixel_count >= last_adaptation_request_->input_pixel_count_) {
+    // Don't request lower resolution if the current resolution is not lower
+    // than the last time we asked for the resolution to be lowered.
     return;
+  }
+  last_adaptation_request_.emplace(AdaptationRequest{
+      current_pixel_count, AdaptationRequest::Mode::kAdaptDown});
+
   switch (reason) {
     case kQuality:
       stats_proxy_->OnQualityRestrictedResolutionChanged(
@@ -760,8 +768,6 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
       stats_proxy_->OnCpuRestrictedResolutionChanged(true);
       break;
   }
-  max_pixel_count_ = rtc::Optional<int>(current_pixel_count);
-  max_pixel_count_step_up_ = rtc::Optional<int>();
   ++scale_counter_[reason];
   source_proxy_->RequestResolutionLowerThan(current_pixel_count);
   LOG(LS_INFO) << "Scaling down resolution.";
@@ -774,15 +780,23 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
 void ViEEncoder::AdaptUp(AdaptReason reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   if (scale_counter_[reason] == 0 ||
-      degradation_preference_ != DegradationPreference::kBalanced) {
+      degradation_preference_ != DegradationPreference::kBalanced ||
+      !last_frame_info_) {
     return;
   }
-  // Only scale if resolution is higher than last time
-  // we requested higher resolution.
-  int current_pixel_count =
-      last_frame_info_ ? last_frame_info_->pixel_count() : 0;
-  if (current_pixel_count <= max_pixel_count_step_up_.value_or(0))
+  // Only scale if resolution is higher than last time we requested higher
+  // resolution.
+  int current_pixel_count = last_frame_info_->pixel_count();
+  if (last_adaptation_request_ &&
+      last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptUp &&
+      current_pixel_count <= last_adaptation_request_->input_pixel_count_) {
+    // Don't request higher resolution if the current resolution is not higher
+    // than the last time we asked for the resolution to be higher.
     return;
+  }
+  last_adaptation_request_.emplace(AdaptationRequest{
+      current_pixel_count, AdaptationRequest::Mode::kAdaptUp});
+
   switch (reason) {
     case kQuality:
       stats_proxy_->OnQualityRestrictedResolutionChanged(
@@ -794,8 +808,6 @@ void ViEEncoder::AdaptUp(AdaptReason reason) {
                                                      1);
       break;
   }
-  max_pixel_count_ = rtc::Optional<int>();
-  max_pixel_count_step_up_ = rtc::Optional<int>(current_pixel_count);
   --scale_counter_[reason];
   source_proxy_->RequestHigherResolutionThan(current_pixel_count);
   LOG(LS_INFO) << "Scaling up resolution.";

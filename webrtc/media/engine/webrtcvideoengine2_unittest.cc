@@ -2124,19 +2124,24 @@ TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
   EXPECT_EQ(724 / 2, send_stream->GetLastHeight());
 
   // Trigger underuse which should go back up in resolution.
-  wants.max_pixel_count = rtc::Optional<int>();
-  wants.max_pixel_count_step_up = rtc::Optional<int>(
-      send_stream->GetLastWidth() * send_stream->GetLastHeight());
+  int current_pixel_count =
+      send_stream->GetLastWidth() * send_stream->GetLastHeight();
+  // Cap the max to 4x the pixel count (assuming max 1/2 x 1/2 scale downs)
+  // of the current stream, so we don't take too large steps.
+  wants.max_pixel_count = rtc::Optional<int>(current_pixel_count * 4);
+  // Default step down is 3/5 pixel count, so go up by 5/3.
+  wants.target_pixel_count = rtc::Optional<int>((current_pixel_count * 5) / 3);
   send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
   EXPECT_EQ(5, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1284 * 3 / 4, send_stream->GetLastWidth());
   EXPECT_EQ(724 * 3 / 4, send_stream->GetLastHeight());
 
-  // Trigger underuse which should go back up in resolution.
-  wants.max_pixel_count = rtc::Optional<int>();
-  wants.max_pixel_count_step_up = rtc::Optional<int>(
-      send_stream->GetLastWidth() * send_stream->GetLastHeight());
+  // Trigger underuse again, should go back up to full resolution.
+  current_pixel_count =
+      send_stream->GetLastWidth() * send_stream->GetLastHeight();
+  wants.max_pixel_count = rtc::Optional<int>(current_pixel_count * 4);
+  wants.target_pixel_count = rtc::Optional<int>((current_pixel_count * 5) / 3);
   send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
   EXPECT_EQ(6, send_stream->GetNumberOfSwappedFrames());
@@ -2272,9 +2277,10 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
   EXPECT_LT(send_stream->GetLastHeight(), capture_format.height);
 
   // Trigger underuse which should go back to normal resolution.
-  wants.max_pixel_count = rtc::Optional<int>();
-  wants.max_pixel_count_step_up = rtc::Optional<int>(
-      send_stream->GetLastWidth() * send_stream->GetLastHeight());
+  int last_pixel_count =
+      send_stream->GetLastWidth() * send_stream->GetLastHeight();
+  wants.max_pixel_count = rtc::Optional<int>(last_pixel_count * 4);
+  wants.target_pixel_count = rtc::Optional<int>((last_pixel_count * 5) / 3);
   send_stream->InjectVideoSinkWants(wants);
 
   EXPECT_TRUE(capturer.CaptureFrame());

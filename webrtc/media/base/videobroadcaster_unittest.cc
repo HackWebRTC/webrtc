@@ -106,25 +106,25 @@ TEST(VideoBroadcasterTest, AppliesMinOfSinkWantsMaxPixelCount) {
   EXPECT_EQ(1280 * 720, *broadcaster.wants().max_pixel_count);
 }
 
-TEST(VideoBroadcasterTest, AppliesMinOfSinkWantsMaxPixelCountStepUp) {
+TEST(VideoBroadcasterTest, AppliesMinOfSinkWantsMaxAndTargetPixelCount) {
   VideoBroadcaster broadcaster;
-  EXPECT_TRUE(!broadcaster.wants().max_pixel_count_step_up);
+  EXPECT_TRUE(!broadcaster.wants().target_pixel_count);
 
   FakeVideoRenderer sink1;
   VideoSinkWants wants1;
-  wants1.max_pixel_count_step_up = rtc::Optional<int>(1280 * 720);
+  wants1.target_pixel_count = rtc::Optional<int>(1280 * 720);
 
   broadcaster.AddOrUpdateSink(&sink1, wants1);
-  EXPECT_EQ(1280 * 720, *broadcaster.wants().max_pixel_count_step_up);
+  EXPECT_EQ(1280 * 720, *broadcaster.wants().target_pixel_count);
 
   FakeVideoRenderer sink2;
   VideoSinkWants wants2;
-  wants2.max_pixel_count_step_up = rtc::Optional<int>(640 * 360);
+  wants2.target_pixel_count = rtc::Optional<int>(640 * 360);
   broadcaster.AddOrUpdateSink(&sink2, wants2);
-  EXPECT_EQ(640 * 360, *broadcaster.wants().max_pixel_count_step_up);
+  EXPECT_EQ(640 * 360, *broadcaster.wants().target_pixel_count);
 
   broadcaster.RemoveSink(&sink2);
-  EXPECT_EQ(1280 * 720, *broadcaster.wants().max_pixel_count_step_up);
+  EXPECT_EQ(1280 * 720, *broadcaster.wants().target_pixel_count);
 }
 
 TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {

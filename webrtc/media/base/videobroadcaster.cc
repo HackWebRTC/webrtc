@@ -89,18 +89,20 @@ void VideoBroadcaster::UpdateWants() {
          (*sink.wants.max_pixel_count < *wants.max_pixel_count))) {
       wants.max_pixel_count = sink.wants.max_pixel_count;
     }
-    // wants.max_pixel_count_step_up == MIN(sink.wants.max_pixel_count_step_up)
-    if (sink.wants.max_pixel_count_step_up &&
-        (!wants.max_pixel_count_step_up ||
-         (*sink.wants.max_pixel_count_step_up <
-          *wants.max_pixel_count_step_up))) {
-      wants.max_pixel_count_step_up = sink.wants.max_pixel_count_step_up;
+    // Select the minimum requested target_pixel_count, if any, of all sinks so
+    // that we don't over utilize the resources for any one.
+    // TODO(sprang): Consider using the median instead, since the limit can be
+    // expressed by max_pixel_count.
+    if (sink.wants.target_pixel_count &&
+        (!wants.target_pixel_count ||
+         (*sink.wants.target_pixel_count < *wants.target_pixel_count))) {
+      wants.target_pixel_count = sink.wants.target_pixel_count;
     }
   }
 
-  if (wants.max_pixel_count && wants.max_pixel_count_step_up &&
-      *wants.max_pixel_count_step_up >= *wants.max_pixel_count) {
-    wants.max_pixel_count_step_up = Optional<int>();
+  if (wants.max_pixel_count && wants.target_pixel_count &&
+      *wants.target_pixel_count >= *wants.max_pixel_count) {
+    wants.target_pixel_count = wants.max_pixel_count;
   }
   current_wants_ = wants;
 }
