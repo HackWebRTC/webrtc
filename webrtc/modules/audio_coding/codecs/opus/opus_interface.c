@@ -113,7 +113,7 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
       return 0;
     } else {
       inst->in_dtx_mode = 1;
-      return 1;
+      return res;
     }
   }
 
