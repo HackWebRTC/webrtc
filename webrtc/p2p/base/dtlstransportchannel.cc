@@ -14,7 +14,7 @@
 #include "webrtc/p2p/base/dtlstransportchannel.h"
 
 #include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/dscp.h"
@@ -427,7 +427,7 @@ bool DtlsTransport::IsDtlsConnected() {
 //       start the DTLS handshake
 //     - Once the DTLS handshake completes, the state is that of the
 //       impl again
-void DtlsTransport::OnWritableState(rtc::PacketTransportInterface* transport) {
+void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
   RTC_DCHECK(rtc::Thread::Current() == network_thread_);
   RTC_DCHECK(transport == ice_transport_);
   LOG_J(LS_VERBOSE, this)
@@ -459,7 +459,7 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInterface* transport) {
   }
 }
 
-void DtlsTransport::OnReceivingState(rtc::PacketTransportInterface* transport) {
+void DtlsTransport::OnReceivingState(rtc::PacketTransportInternal* transport) {
   RTC_DCHECK(rtc::Thread::Current() == network_thread_);
   RTC_DCHECK(transport == ice_transport_);
   LOG_J(LS_VERBOSE, this) << "DTLSTransportChannelWrapper: ice_transport "
@@ -471,7 +471,7 @@ void DtlsTransport::OnReceivingState(rtc::PacketTransportInterface* transport) {
   }
 }
 
-void DtlsTransport::OnReadPacket(rtc::PacketTransportInterface* transport,
+void DtlsTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
                                  const char* data,
                                  size_t size,
                                  const rtc::PacketTime& packet_time,
@@ -549,14 +549,14 @@ void DtlsTransport::OnReadPacket(rtc::PacketTransportInterface* transport,
   }
 }
 
-void DtlsTransport::OnSentPacket(rtc::PacketTransportInterface* transport,
+void DtlsTransport::OnSentPacket(rtc::PacketTransportInternal* transport,
                                  const rtc::SentPacket& sent_packet) {
   RTC_DCHECK(rtc::Thread::Current() == network_thread_);
 
   SignalSentPacket(this, sent_packet);
 }
 
-void DtlsTransport::OnReadyToSend(rtc::PacketTransportInterface* transport) {
+void DtlsTransport::OnReadyToSend(rtc::PacketTransportInternal* transport) {
   if (writable()) {
     SignalReadyToSend(this);
   }

@@ -34,7 +34,7 @@
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/engine/fakewebrtccall.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
@@ -210,7 +210,7 @@ class MockIceObserver : public webrtc::IceObserver {
 // local/remote ports.
 class FakeSctpTransport : public cricket::SctpTransportInternal {
  public:
-  void SetTransportChannel(rtc::PacketTransportInterface* channel) override {}
+  void SetTransportChannel(rtc::PacketTransportInternal* channel) override {}
   bool Start(int local_port, int remote_port) override {
     local_port_ = local_port;
     remote_port_ = remote_port;
@@ -237,7 +237,7 @@ class FakeSctpTransport : public cricket::SctpTransportInternal {
 class FakeSctpTransportFactory : public cricket::SctpTransportInternalFactory {
  public:
   std::unique_ptr<cricket::SctpTransportInternal> CreateSctpTransport(
-      rtc::PacketTransportInterface*) override {
+      rtc::PacketTransportInternal*) override {
     last_fake_sctp_transport_ = new FakeSctpTransport();
     return std::unique_ptr<cricket::SctpTransportInternal>(
         last_fake_sctp_transport_);
@@ -275,24 +275,24 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
 
   // Note that these methods are only safe to use if the signaling thread
   // is the same as the worker thread
-  rtc::PacketTransportInterface* voice_rtp_transport_channel() {
+  rtc::PacketTransportInternal* voice_rtp_transport_channel() {
     return rtp_transport_channel(voice_channel());
   }
 
-  rtc::PacketTransportInterface* voice_rtcp_transport_channel() {
+  rtc::PacketTransportInternal* voice_rtcp_transport_channel() {
     return rtcp_transport_channel(voice_channel());
   }
 
-  rtc::PacketTransportInterface* video_rtp_transport_channel() {
+  rtc::PacketTransportInternal* video_rtp_transport_channel() {
     return rtp_transport_channel(video_channel());
   }
 
-  rtc::PacketTransportInterface* video_rtcp_transport_channel() {
+  rtc::PacketTransportInternal* video_rtcp_transport_channel() {
     return rtcp_transport_channel(video_channel());
   }
 
  private:
-  rtc::PacketTransportInterface* rtp_transport_channel(
+  rtc::PacketTransportInternal* rtp_transport_channel(
       cricket::BaseChannel* ch) {
     if (!ch) {
       return nullptr;
@@ -300,7 +300,7 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
     return ch->rtp_dtls_transport();
   }
 
-  rtc::PacketTransportInterface* rtcp_transport_channel(
+  rtc::PacketTransportInternal* rtcp_transport_channel(
       cricket::BaseChannel* ch) {
     if (!ch) {
       return nullptr;
@@ -2444,13 +2444,13 @@ TEST_F(WebRtcSessionTest, TestChannelCreationsWithContentNames) {
   SessionDescriptionInterface* answer = CreateAnswer();
   SetLocalDescriptionWithoutError(answer);
 
-  rtc::PacketTransportInterface* voice_transport_channel =
+  rtc::PacketTransportInternal* voice_transport_channel =
       session_->voice_rtp_transport_channel();
   EXPECT_TRUE(voice_transport_channel != NULL);
   EXPECT_EQ(voice_transport_channel->debug_name(),
             "audio_content_name " +
                 std::to_string(cricket::ICE_CANDIDATE_COMPONENT_RTP));
-  rtc::PacketTransportInterface* video_transport_channel =
+  rtc::PacketTransportInternal* video_transport_channel =
       session_->video_rtp_transport_channel();
   ASSERT_TRUE(video_transport_channel != NULL);
   EXPECT_EQ(video_transport_channel->debug_name(),

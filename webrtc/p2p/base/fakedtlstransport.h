@@ -182,7 +182,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
 
   IceTransportInternal* ice_transport() override { return ice_transport_; }
 
-  // PacketTransportInterface implementation, which passes through to fake ICE
+  // PacketTransportInternal implementation, which passes through to fake ICE
   // transport for sending actual packets.
   bool writable() const override { return writable_; }
   bool receiving() const override { return receiving_; }
@@ -205,7 +205,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   int GetError() override { return ice_transport_->GetError(); }
 
  private:
-  void OnIceTransportReadPacket(PacketTransportInterface* ice_,
+  void OnIceTransportReadPacket(PacketTransportInternal* ice_,
                                 const char* data,
                                 size_t len,
                                 const rtc::PacketTime& time,

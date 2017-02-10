@@ -16,7 +16,7 @@
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/jseptransport.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/p2p/base/transportdescription.h"
 
 namespace webrtc {
@@ -47,7 +47,7 @@ enum IceProtocolType {
 // Once the public interface is supported,
 // (https://www.w3.org/TR/webrtc/#rtcicetransport-interface)
 // the IceTransportInterface will be split from this class.
-class IceTransportInternal : public rtc::PacketTransportInterface {
+class IceTransportInternal : public rtc::PacketTransportInternal {
  public:
   virtual ~IceTransportInternal(){};
 

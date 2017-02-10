@@ -31,7 +31,7 @@
 #include "webrtc/media/base/videosinkinterface.h"
 #include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/p2p/base/dtlstransportinternal.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/p2p/client/socketmonitor.h"
 #include "webrtc/pc/audiomonitor.h"
@@ -85,8 +85,8 @@ class BaseChannel
   virtual ~BaseChannel();
   bool Init_w(DtlsTransportInternal* rtp_dtls_transport,
               DtlsTransportInternal* rtcp_dtls_transport,
-              rtc::PacketTransportInterface* rtp_packet_transport,
-              rtc::PacketTransportInterface* rtcp_packet_transport);
+              rtc::PacketTransportInternal* rtp_packet_transport,
+              rtc::PacketTransportInternal* rtcp_packet_transport);
   // Deinit may be called multiple times and is simply ignored if it's already
   // done.
   void Deinit();
@@ -113,12 +113,12 @@ class BaseChannel
   // RTCP muxing is not fully active yet).
   // |rtp_transport| and |rtcp_transport| must share the same transport name as
   // well.
-  // Can not start with "rtc::PacketTransportInterface" and switch to
+  // Can not start with "rtc::PacketTransportInternal" and switch to
   // "DtlsTransportInternal", or vice-versa.
   void SetTransports(DtlsTransportInternal* rtp_dtls_transport,
                      DtlsTransportInternal* rtcp_dtls_transport);
-  void SetTransports(rtc::PacketTransportInterface* rtp_packet_transport,
-                     rtc::PacketTransportInterface* rtcp_packet_transport);
+  void SetTransports(rtc::PacketTransportInternal* rtp_packet_transport,
+                     rtc::PacketTransportInternal* rtcp_packet_transport);
   bool PushdownLocalDescription(const SessionDescription* local_desc,
                                 ContentAction action,
                                 std::string* error_desc);
@@ -211,14 +211,14 @@ class BaseChannel
 
   void SetTransports_n(DtlsTransportInternal* rtp_dtls_transport,
                        DtlsTransportInternal* rtcp_dtls_transport,
-                       rtc::PacketTransportInterface* rtp_packet_transport,
-                       rtc::PacketTransportInterface* rtcp_packet_transport);
+                       rtc::PacketTransportInternal* rtp_packet_transport,
+                       rtc::PacketTransportInternal* rtcp_packet_transport);
 
   // This does not update writability or "ready-to-send" state; it just
   // disconnects from the old channel and connects to the new one.
   void SetTransport_n(bool rtcp,
                       DtlsTransportInternal* new_dtls_transport,
-                      rtc::PacketTransportInterface* new_packet_transport);
+                      rtc::PacketTransportInternal* new_packet_transport);
 
   bool was_ever_writable() const { return was_ever_writable_; }
   void set_local_content_direction(MediaContentDirection direction) {
@@ -243,8 +243,8 @@ class BaseChannel
 
   void ConnectToDtlsTransport(DtlsTransportInternal* transport);
   void DisconnectFromDtlsTransport(DtlsTransportInternal* transport);
-  void ConnectToPacketTransport(rtc::PacketTransportInterface* transport);
-  void DisconnectFromPacketTransport(rtc::PacketTransportInterface* transport);
+  void ConnectToPacketTransport(rtc::PacketTransportInternal* transport);
+  void DisconnectFromPacketTransport(rtc::PacketTransportInternal* transport);
 
   void FlushRtcpMessages_n();
 
@@ -255,13 +255,13 @@ class BaseChannel
                 const rtc::PacketOptions& options) override;
 
   // From TransportChannel
-  void OnWritableState(rtc::PacketTransportInterface* transport);
-  virtual void OnPacketRead(rtc::PacketTransportInterface* transport,
+  void OnWritableState(rtc::PacketTransportInternal* transport);
+  virtual void OnPacketRead(rtc::PacketTransportInternal* transport,
                             const char* data,
                             size_t len,
                             const rtc::PacketTime& packet_time,
                             int flags);
-  void OnReadyToSend(rtc::PacketTransportInterface* transport);
+  void OnReadyToSend(rtc::PacketTransportInternal* transport);
 
   void OnDtlsState(DtlsTransportInternal* transport, DtlsTransportState state);
 
@@ -271,7 +271,7 @@ class BaseChannel
       int last_sent_packet_id,
       bool ready_to_send);
 
-  bool PacketIsRtcp(const rtc::PacketTransportInterface* transport,
+  bool PacketIsRtcp(const rtc::PacketTransportInternal* transport,
                     const char* data,
                     size_t len);
   bool SendPacket(bool rtcp,
@@ -377,10 +377,10 @@ class BaseChannel
  private:
   bool InitNetwork_n(DtlsTransportInternal* rtp_dtls_transport,
                      DtlsTransportInternal* rtcp_dtls_transport,
-                     rtc::PacketTransportInterface* rtp_packet_transport,
-                     rtc::PacketTransportInterface* rtcp_packet_transport);
+                     rtc::PacketTransportInternal* rtp_packet_transport,
+                     rtc::PacketTransportInternal* rtcp_packet_transport);
   void DisconnectTransportChannels_n();
-  void SignalSentPacket_n(rtc::PacketTransportInterface* transport,
+  void SignalSentPacket_n(rtc::PacketTransportInternal* transport,
                           const rtc::SentPacket& sent_packet);
   void SignalSentPacket_w(const rtc::SentPacket& sent_packet);
   bool IsReadyToSendMedia_n() const;
@@ -407,8 +407,8 @@ class BaseChannel
   // If non-null, "X_dtls_transport_" will always equal "X_packet_transport_".
   DtlsTransportInternal* rtp_dtls_transport_ = nullptr;
   DtlsTransportInternal* rtcp_dtls_transport_ = nullptr;
-  rtc::PacketTransportInterface* rtp_packet_transport_ = nullptr;
-  rtc::PacketTransportInterface* rtcp_packet_transport_ = nullptr;
+  rtc::PacketTransportInternal* rtp_packet_transport_ = nullptr;
+  rtc::PacketTransportInternal* rtcp_packet_transport_ = nullptr;
   std::vector<std::pair<rtc::Socket::Option, int> > socket_options_;
   std::vector<std::pair<rtc::Socket::Option, int> > rtcp_socket_options_;
   SrtpFilter srtp_filter_;
@@ -516,7 +516,7 @@ class VoiceChannel : public BaseChannel {
 
  private:
   // overrides from BaseChannel
-  void OnPacketRead(rtc::PacketTransportInterface* transport,
+  void OnPacketRead(rtc::PacketTransportInternal* transport,
                     const char* data,
                     size_t len,
                     const rtc::PacketTime& packet_time,
@@ -648,8 +648,8 @@ class RtpDataChannel : public BaseChannel {
   ~RtpDataChannel();
   bool Init_w(DtlsTransportInternal* rtp_dtls_transport,
               DtlsTransportInternal* rtcp_dtls_transport,
-              rtc::PacketTransportInterface* rtp_packet_transport,
-              rtc::PacketTransportInterface* rtcp_packet_transport);
+              rtc::PacketTransportInternal* rtp_packet_transport,
+              rtc::PacketTransportInternal* rtcp_packet_transport);
 
   virtual bool SendData(const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,

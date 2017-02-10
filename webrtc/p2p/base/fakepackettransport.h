@@ -15,12 +15,12 @@
 
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/copyonwritebuffer.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 
 namespace rtc {
 
 // Used to simulate a packet-based transport.
-class FakePacketTransport : public PacketTransportInterface {
+class FakePacketTransport : public PacketTransportInternal {
  public:
   explicit FakePacketTransport(const std::string& debug_name)
       : debug_name_(debug_name) {}
@@ -57,7 +57,7 @@ class FakePacketTransport : public PacketTransportInterface {
     }
   }
 
-  // Fake PacketTransportInterface implementation.
+  // Fake PacketTransportInternal implementation.
   std::string debug_name() const override { return debug_name_; }
   bool writable() const override { return writable_; }
   bool receiving() const override { return receiving_; }

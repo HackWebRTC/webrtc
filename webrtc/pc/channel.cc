@@ -23,7 +23,7 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/pc/channelmanager.h"
 
 namespace cricket {
@@ -214,8 +214,8 @@ void BaseChannel::DisconnectTransportChannels_n() {
 
 bool BaseChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
                          DtlsTransportInternal* rtcp_dtls_transport,
-                         rtc::PacketTransportInterface* rtp_packet_transport,
-                         rtc::PacketTransportInterface* rtcp_packet_transport) {
+                         rtc::PacketTransportInternal* rtp_packet_transport,
+                         rtc::PacketTransportInternal* rtcp_packet_transport) {
   if (!network_thread_->Invoke<bool>(
           RTC_FROM_HERE, Bind(&BaseChannel::InitNetwork_n, this,
                               rtp_dtls_transport, rtcp_dtls_transport,
@@ -232,8 +232,8 @@ bool BaseChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
 bool BaseChannel::InitNetwork_n(
     DtlsTransportInternal* rtp_dtls_transport,
     DtlsTransportInternal* rtcp_dtls_transport,
-    rtc::PacketTransportInterface* rtp_packet_transport,
-    rtc::PacketTransportInterface* rtcp_packet_transport) {
+    rtc::PacketTransportInternal* rtp_packet_transport,
+    rtc::PacketTransportInternal* rtcp_packet_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
   SetTransports_n(rtp_dtls_transport, rtcp_dtls_transport, rtp_packet_transport,
                   rtcp_packet_transport);
@@ -271,8 +271,8 @@ void BaseChannel::SetTransports(DtlsTransportInternal* rtp_dtls_transport,
 }
 
 void BaseChannel::SetTransports(
-    rtc::PacketTransportInterface* rtp_packet_transport,
-    rtc::PacketTransportInterface* rtcp_packet_transport) {
+    rtc::PacketTransportInternal* rtp_packet_transport,
+    rtc::PacketTransportInternal* rtcp_packet_transport) {
   network_thread_->Invoke<void>(
       RTC_FROM_HERE, Bind(&BaseChannel::SetTransports_n, this, nullptr, nullptr,
                           rtp_packet_transport, rtcp_packet_transport));
@@ -281,8 +281,8 @@ void BaseChannel::SetTransports(
 void BaseChannel::SetTransports_n(
     DtlsTransportInternal* rtp_dtls_transport,
     DtlsTransportInternal* rtcp_dtls_transport,
-    rtc::PacketTransportInterface* rtp_packet_transport,
-    rtc::PacketTransportInterface* rtcp_packet_transport) {
+    rtc::PacketTransportInternal* rtp_packet_transport,
+    rtc::PacketTransportInternal* rtcp_packet_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
   // Validate some assertions about the input.
   RTC_DCHECK(rtp_packet_transport);
@@ -357,11 +357,11 @@ void BaseChannel::SetTransports_n(
 void BaseChannel::SetTransport_n(
     bool rtcp,
     DtlsTransportInternal* new_dtls_transport,
-    rtc::PacketTransportInterface* new_packet_transport) {
+    rtc::PacketTransportInternal* new_packet_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
   DtlsTransportInternal*& old_dtls_transport =
       rtcp ? rtcp_dtls_transport_ : rtp_dtls_transport_;
-  rtc::PacketTransportInterface*& old_packet_transport =
+  rtc::PacketTransportInternal*& old_packet_transport =
       rtcp ? rtcp_packet_transport_ : rtp_packet_transport_;
 
   if (!old_packet_transport && !new_packet_transport) {
@@ -428,7 +428,7 @@ void BaseChannel::DisconnectFromDtlsTransport(
 }
 
 void BaseChannel::ConnectToPacketTransport(
-    rtc::PacketTransportInterface* transport) {
+    rtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(network_thread_);
   transport->SignalWritableState.connect(this, &BaseChannel::OnWritableState);
   transport->SignalReadPacket.connect(this, &BaseChannel::OnPacketRead);
@@ -437,7 +437,7 @@ void BaseChannel::ConnectToPacketTransport(
 }
 
 void BaseChannel::DisconnectFromPacketTransport(
-    rtc::PacketTransportInterface* transport) {
+    rtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(network_thread_);
   transport->SignalWritableState.disconnect(this);
   transport->SignalReadPacket.disconnect(this);
@@ -564,7 +564,7 @@ int BaseChannel::SetOption_n(SocketType type,
                              rtc::Socket::Option opt,
                              int value) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  rtc::PacketTransportInterface* transport = nullptr;
+  rtc::PacketTransportInternal* transport = nullptr;
   switch (type) {
     case ST_RTP:
       transport = rtp_packet_transport_;
@@ -585,14 +585,14 @@ bool BaseChannel::SetCryptoOptions(const rtc::CryptoOptions& crypto_options) {
   return true;
 }
 
-void BaseChannel::OnWritableState(rtc::PacketTransportInterface* transport) {
+void BaseChannel::OnWritableState(rtc::PacketTransportInternal* transport) {
   RTC_DCHECK(transport == rtp_packet_transport_ ||
              transport == rtcp_packet_transport_);
   RTC_DCHECK(network_thread_->IsCurrent());
   UpdateWritableState_n();
 }
 
-void BaseChannel::OnPacketRead(rtc::PacketTransportInterface* transport,
+void BaseChannel::OnPacketRead(rtc::PacketTransportInternal* transport,
                                const char* data,
                                size_t len,
                                const rtc::PacketTime& packet_time,
@@ -608,7 +608,7 @@ void BaseChannel::OnPacketRead(rtc::PacketTransportInterface* transport,
   HandlePacket(rtcp, &packet, packet_time);
 }
 
-void BaseChannel::OnReadyToSend(rtc::PacketTransportInterface* transport) {
+void BaseChannel::OnReadyToSend(rtc::PacketTransportInternal* transport) {
   RTC_DCHECK(transport == rtp_packet_transport_ ||
              transport == rtcp_packet_transport_);
   SetTransportChannelReadyToSend(transport == rtcp_packet_transport_, true);
@@ -675,7 +675,7 @@ void BaseChannel::SetTransportChannelReadyToSend(bool rtcp, bool ready) {
       Bind(&MediaChannel::OnReadyToSend, media_channel_, ready_to_send));
 }
 
-bool BaseChannel::PacketIsRtcp(const rtc::PacketTransportInterface* transport,
+bool BaseChannel::PacketIsRtcp(const rtc::PacketTransportInternal* transport,
                                const char* data,
                                size_t len) {
   return (transport == rtcp_packet_transport_ ||
@@ -707,7 +707,7 @@ bool BaseChannel::SendPacket(bool rtcp,
   // packet before doing anything. (We might get RTCP packets that we don't
   // intend to send.) If we've negotiated RTCP mux, send RTCP over the RTP
   // transport.
-  rtc::PacketTransportInterface* transport =
+  rtc::PacketTransportInternal* transport =
       (!rtcp || rtcp_mux_filter_.IsActive()) ? rtp_packet_transport_
                                              : rtcp_packet_transport_;
   if (!transport || !transport->writable()) {
@@ -1506,7 +1506,7 @@ void BaseChannel::FlushRtcpMessages_n() {
 }
 
 void BaseChannel::SignalSentPacket_n(
-    rtc::PacketTransportInterface* /* transport */,
+    rtc::PacketTransportInternal* /* transport */,
     const rtc::SentPacket& sent_packet) {
   RTC_DCHECK(network_thread_->IsCurrent());
   invoker_.AsyncInvoke<void>(
@@ -1697,7 +1697,7 @@ void VoiceChannel::GetActiveStreams_w(AudioInfo::StreamList* actives) {
   media_channel()->GetActiveStreams(actives);
 }
 
-void VoiceChannel::OnPacketRead(rtc::PacketTransportInterface* transport,
+void VoiceChannel::OnPacketRead(rtc::PacketTransportInternal* transport,
                                 const char* data,
                                 size_t len,
                                 const rtc::PacketTime& packet_time,
@@ -2211,8 +2211,8 @@ RtpDataChannel::~RtpDataChannel() {
 bool RtpDataChannel::Init_w(
     DtlsTransportInternal* rtp_dtls_transport,
     DtlsTransportInternal* rtcp_dtls_transport,
-    rtc::PacketTransportInterface* rtp_packet_transport,
-    rtc::PacketTransportInterface* rtcp_packet_transport) {
+    rtc::PacketTransportInternal* rtp_packet_transport,
+    rtc::PacketTransportInternal* rtcp_packet_transport) {
   if (!BaseChannel::Init_w(rtp_dtls_transport, rtcp_dtls_transport,
                            rtp_packet_transport, rtcp_packet_transport)) {
     return false;

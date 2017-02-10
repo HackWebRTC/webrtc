@@ -25,13 +25,13 @@ static const rtc::IPAddress kIPv4LocalHostAddress =
 
 class PacketReceiver : public sigslot::has_slots<> {
  public:
-  explicit PacketReceiver(rtc::PacketTransportInterface* transport) {
+  explicit PacketReceiver(rtc::PacketTransportInternal* transport) {
     transport->SignalReadPacket.connect(this, &PacketReceiver::OnReadPacket);
   }
   int packets_read() const { return packets_read_; }
 
  private:
-  void OnReadPacket(rtc::PacketTransportInterface*,
+  void OnReadPacket(rtc::PacketTransportInternal*,
                     const char*,
                     size_t,
                     const rtc::PacketTime&,

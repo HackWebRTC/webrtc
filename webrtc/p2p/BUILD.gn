@@ -39,6 +39,7 @@ rtc_static_library("rtc_p2p") {
     "base/p2ptransportchannel.h",
     "base/packetsocketfactory.h",
     "base/packettransportinterface.h",
+    "base/packettransportinternal.h",
     "base/port.cc",
     "base/port.h",
     "base/portallocator.cc",

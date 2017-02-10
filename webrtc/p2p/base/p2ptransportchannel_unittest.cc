@@ -31,7 +31,7 @@
 #include "webrtc/p2p/base/icetransportinternal.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
 #include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/p2p/base/testrelayserver.h"
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/p2p/base/testturnserver.h"
@@ -287,10 +287,10 @@ class P2PTransportChannelTestBase : public testing::Test,
           tiebreaker_(0),
           role_conflict_(false),
           save_candidates_(false) {}
-    bool HasTransport(const rtc::PacketTransportInterface* transport) {
+    bool HasTransport(const rtc::PacketTransportInternal* transport) {
       return (transport == cd1_.ch_.get() || transport == cd2_.ch_.get());
     }
-    ChannelData* GetChannelData(rtc::PacketTransportInterface* transport) {
+    ChannelData* GetChannelData(rtc::PacketTransportInternal* transport) {
       if (!HasTransport(transport))
         return NULL;
       if (cd1_.ch_.get() == transport)
@@ -327,7 +327,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     bool ready_to_send_ = false;
   };
 
-  ChannelData* GetChannelData(rtc::PacketTransportInterface* transport) {
+  ChannelData* GetChannelData(rtc::PacketTransportInternal* transport) {
     if (ep1_.HasTransport(transport))
       return ep1_.GetChannelData(transport);
     else
@@ -682,7 +682,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     TestSendRecv(clock);
   }
 
-  void OnReadyToSend(rtc::PacketTransportInterface* transport) {
+  void OnReadyToSend(rtc::PacketTransportInternal* transport) {
     GetEndpoint(transport)->ready_to_send_ = true;
   }
 
@@ -790,7 +790,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     }
   }
 
-  void OnReadPacket(rtc::PacketTransportInterface* transport,
+  void OnReadPacket(rtc::PacketTransportInternal* transport,
                     const char* data,
                     size_t len,
                     const rtc::PacketTime& packet_time,
@@ -826,7 +826,7 @@ class P2PTransportChannelTestBase : public testing::Test,
                ? &ch->selected_connection()->remote_candidate()
                : NULL;
   }
-  Endpoint* GetEndpoint(rtc::PacketTransportInterface* transport) {
+  Endpoint* GetEndpoint(rtc::PacketTransportInternal* transport) {
     if (ep1_.HasTransport(transport)) {
       return &ep1_;
     } else if (ep2_.HasTransport(transport)) {
@@ -848,7 +848,7 @@ class P2PTransportChannelTestBase : public testing::Test,
       return NULL;
   }
   std::list<std::string>& GetPacketList(
-      rtc::PacketTransportInterface* transport) {
+      rtc::PacketTransportInternal* transport) {
     return GetChannelData(transport)->ch_packets_;
   }
 
@@ -3055,7 +3055,7 @@ class P2PTransportChannelPingTest : public testing::Test,
     conn->OnReadPacket(buf.Data(), buf.Length(), rtc::CreatePacketTime(0));
   }
 
-  void OnReadyToSend(rtc::PacketTransportInterface* transport) {
+  void OnReadyToSend(rtc::PacketTransportInternal* transport) {
     channel_ready_to_send_ = true;
   }
   void OnChannelStateChanged(IceTransportInternal* channel) {

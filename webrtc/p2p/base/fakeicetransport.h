@@ -158,7 +158,7 @@ class FakeIceTransport : public IceTransportInternal {
   void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override {
   }
 
-  // Fake PacketTransportInterface implementation.
+  // Fake PacketTransportInternal implementation.
   bool writable() const override { return writable_; }
   bool receiving() const override { return receiving_; }
   int SendPacket(const char* data,

@@ -28,7 +28,7 @@
 
 namespace rtc {
 class Thread;
-class PacketTransportInterface;
+class PacketTransportInternal;
 }
 namespace webrtc {
 class MetricsObserverInterface;
@@ -231,8 +231,8 @@ class TransportController : public sigslot::has_slots<>,
   void SetMetricsObserver_n(webrtc::MetricsObserverInterface* metrics_observer);
 
   // Handlers for signals from Transport.
-  void OnChannelWritableState_n(rtc::PacketTransportInterface* transport);
-  void OnChannelReceivingState_n(rtc::PacketTransportInterface* transport);
+  void OnChannelWritableState_n(rtc::PacketTransportInternal* transport);
+  void OnChannelReceivingState_n(rtc::PacketTransportInternal* transport);
   void OnChannelGatheringState_n(IceTransportInternal* channel);
   void OnChannelCandidateGathered_n(IceTransportInternal* channel,
                                     const Candidate& candidate);

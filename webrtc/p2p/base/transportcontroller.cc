@@ -741,7 +741,7 @@ void TransportController::SetMetricsObserver_n(
 }
 
 void TransportController::OnChannelWritableState_n(
-    rtc::PacketTransportInterface* transport) {
+    rtc::PacketTransportInternal* transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
   LOG(LS_INFO) << " TransportChannel " << transport->debug_name()
                << " writability changed to " << transport->writable() << ".";
@@ -749,7 +749,7 @@ void TransportController::OnChannelWritableState_n(
 }
 
 void TransportController::OnChannelReceivingState_n(
-    rtc::PacketTransportInterface* transport) {
+    rtc::PacketTransportInternal* transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
   UpdateAggregateStates_n();
 }

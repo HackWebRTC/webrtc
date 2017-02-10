@@ -18,7 +18,7 @@
 #include "webrtc/base/asyncpacketsocket.h"  // For PacketOptions.
 #include "webrtc/base/optional.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 
 namespace rtc {
 class AsyncPacketSocket;
@@ -32,7 +32,7 @@ namespace cricket {
 // Implementation of UdpTransportInterface.
 // Used by OrtcFactory.
 class UdpTransport : public webrtc::UdpTransportInterface,
-                     public rtc::PacketTransportInterface {
+                     public rtc::PacketTransportInternal {
  public:
   // |transport_name| is only used for identification/logging.
   // |socket| must be non-null.
@@ -45,7 +45,7 @@ class UdpTransport : public webrtc::UdpTransportInterface,
   bool SetRemoteAddress(const rtc::SocketAddress& addr) override;
   rtc::SocketAddress GetRemoteAddress() const override;
 
-  // Overrides of PacketTransportInterface, used by webrtc internally.
+  // Overrides of PacketTransportInternal, used by webrtc internally.
   std::string debug_name() const override { return transport_name_; }
 
   bool receiving() const override {

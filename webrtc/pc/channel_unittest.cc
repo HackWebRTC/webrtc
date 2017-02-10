@@ -98,7 +98,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     SSRC_MUX = 0x8,
     DTLS = 0x10,
     GCM_CIPHER = 0x20,
-    // Use BaseChannel with PacketTransportInterface rather than
+    // Use BaseChannel with PacketTransportInternal rather than
     // DtlsTransportInternal.
     RAW_PACKET_TRANSPORT = 0x40,
   };
@@ -143,10 +143,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     rtc::Thread* worker_thread = rtc::Thread::Current();
     media_channel1_ = ch1;
     media_channel2_ = ch2;
-    rtc::PacketTransportInterface* rtp1 = nullptr;
-    rtc::PacketTransportInterface* rtcp1 = nullptr;
-    rtc::PacketTransportInterface* rtp2 = nullptr;
-    rtc::PacketTransportInterface* rtcp2 = nullptr;
+    rtc::PacketTransportInternal* rtp1 = nullptr;
+    rtc::PacketTransportInternal* rtcp1 = nullptr;
+    rtc::PacketTransportInternal* rtp2 = nullptr;
+    rtc::PacketTransportInternal* rtcp2 = nullptr;
     // Based on flags, create fake DTLS or raw packet transports.
     if (flags1 & RAW_PACKET_TRANSPORT) {
       fake_rtp_packet_transport1_.reset(
@@ -255,8 +255,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       typename T::MediaChannel* ch,
       cricket::DtlsTransportInternal* fake_rtp_dtls_transport,
       cricket::DtlsTransportInternal* fake_rtcp_dtls_transport,
-      rtc::PacketTransportInterface* fake_rtp_packet_transport,
-      rtc::PacketTransportInterface* fake_rtcp_packet_transport,
+      rtc::PacketTransportInternal* fake_rtp_packet_transport,
+      rtc::PacketTransportInternal* fake_rtcp_packet_transport,
       int flags) {
     rtc::Thread* signaling_thread = rtc::Thread::Current();
     typename T::Channel* channel = new typename T::Channel(
@@ -2117,8 +2117,8 @@ cricket::VideoChannel* ChannelTest<VideoTraits>::CreateChannel(
     cricket::FakeVideoMediaChannel* ch,
     cricket::DtlsTransportInternal* fake_rtp_dtls_transport,
     cricket::DtlsTransportInternal* fake_rtcp_dtls_transport,
-    rtc::PacketTransportInterface* fake_rtp_packet_transport,
-    rtc::PacketTransportInterface* fake_rtcp_packet_transport,
+    rtc::PacketTransportInternal* fake_rtp_packet_transport,
+    rtc::PacketTransportInternal* fake_rtcp_packet_transport,
     int flags) {
   rtc::Thread* signaling_thread = rtc::Thread::Current();
   cricket::VideoChannel* channel = new cricket::VideoChannel(
@@ -3355,8 +3355,8 @@ cricket::RtpDataChannel* ChannelTest<DataTraits>::CreateChannel(
     cricket::FakeDataMediaChannel* ch,
     cricket::DtlsTransportInternal* fake_rtp_dtls_transport,
     cricket::DtlsTransportInternal* fake_rtcp_dtls_transport,
-    rtc::PacketTransportInterface* fake_rtp_packet_transport,
-    rtc::PacketTransportInterface* fake_rtcp_packet_transport,
+    rtc::PacketTransportInternal* fake_rtp_packet_transport,
+    rtc::PacketTransportInternal* fake_rtcp_packet_transport,
     int flags) {
   rtc::Thread* signaling_thread = rtc::Thread::Current();
   cricket::RtpDataChannel* channel = new cricket::RtpDataChannel(
@@ -3760,20 +3760,20 @@ TEST_F(BaseChannelDeathTest, SetTransportsWithMismatchingTransportNames) {
 }
 
 // Not expected to support going from DtlsTransportInternal to
-// PacketTransportInterface.
+// PacketTransportInternal.
 TEST_F(BaseChannelDeathTest, SetTransportsDtlsToNonDtls) {
   ASSERT_TRUE(voice_channel_.Init_w(
       &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_,
       &fake_rtp_dtls_transport_, &fake_rtcp_dtls_transport_));
   EXPECT_DEATH(
-      voice_channel_.SetTransports(static_cast<rtc::PacketTransportInterface*>(
-                                       &fake_rtp_dtls_transport_),
-                                   static_cast<rtc::PacketTransportInterface*>(
-                                       &fake_rtp_dtls_transport_)),
+      voice_channel_.SetTransports(
+          static_cast<rtc::PacketTransportInternal*>(&fake_rtp_dtls_transport_),
+          static_cast<rtc::PacketTransportInternal*>(
+              &fake_rtp_dtls_transport_)),
       "");
 }
 
-// Not expected to support going from PacketTransportInterface to
+// Not expected to support going from PacketTransportInternal to
 // DtlsTransportInternal.
 TEST_F(BaseChannelDeathTest, SetTransportsNonDtlsToDtls) {
   ASSERT_TRUE(voice_channel_.Init_w(nullptr, nullptr, &fake_rtp_dtls_transport_,

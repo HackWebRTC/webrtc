@@ -23,7 +23,7 @@
 #include "webrtc/base/socketserver.h"
 #include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/p2p/base/udptransport.h"
 
 namespace cricket {
@@ -81,15 +81,15 @@ class UdpTransportTest : public testing::Test, public sigslot::has_slots<> {
       return ret;
     }
 
-    void OnWritableState(rtc::PacketTransportInterface* transport) {
+    void OnWritableState(rtc::PacketTransportInternal* transport) {
       num_sig_writable_++;
     }
 
-    void OnReadyToSend(rtc::PacketTransportInterface* transport) {
+    void OnReadyToSend(rtc::PacketTransportInternal* transport) {
       num_sig_ready_to_send_++;
     }
 
-    void OnReadPacket(rtc::PacketTransportInterface* transport,
+    void OnReadPacket(rtc::PacketTransportInternal* transport,
                       const char* data,
                       size_t len,
                       const rtc::PacketTime& packet_time,
@@ -99,7 +99,7 @@ class UdpTransportTest : public testing::Test, public sigslot::has_slots<> {
       ch_packets_.push_front(std::string(data, len));
     }
 
-    void OnSentPacket(rtc::PacketTransportInterface* transport,
+    void OnSentPacket(rtc::PacketTransportInternal* transport,
                       const rtc::SentPacket&) {
       num_sig_sent_packets_++;
     }

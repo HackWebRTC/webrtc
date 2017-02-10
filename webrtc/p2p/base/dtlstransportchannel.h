@@ -24,7 +24,7 @@
 #include "webrtc/p2p/base/icetransportinternal.h"
 
 namespace rtc {
-class PacketTransportInterface;
+class PacketTransportInternal;
 }
 
 namespace cricket {
@@ -192,16 +192,16 @@ class DtlsTransport : public DtlsTransportInternal {
   }
 
  private:
-  void OnWritableState(rtc::PacketTransportInterface* transport);
-  void OnReadPacket(rtc::PacketTransportInterface* transport,
+  void OnWritableState(rtc::PacketTransportInternal* transport);
+  void OnReadPacket(rtc::PacketTransportInternal* transport,
                     const char* data,
                     size_t size,
                     const rtc::PacketTime& packet_time,
                     int flags);
-  void OnSentPacket(rtc::PacketTransportInterface* transport,
+  void OnSentPacket(rtc::PacketTransportInternal* transport,
                     const rtc::SentPacket& sent_packet);
-  void OnReadyToSend(rtc::PacketTransportInterface* transport);
-  void OnReceivingState(rtc::PacketTransportInterface* transport);
+  void OnReadyToSend(rtc::PacketTransportInternal* transport);
+  void OnReceivingState(rtc::PacketTransportInternal* transport);
   void OnDtlsEvent(rtc::StreamInterface* stream_, int sig, int err);
   bool SetupDtls();
   void MaybeStartDtls();

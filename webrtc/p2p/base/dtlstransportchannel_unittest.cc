@@ -13,7 +13,7 @@
 
 #include "webrtc/p2p/base/dtlstransportchannel.h"
 #include "webrtc/p2p/base/fakeicetransport.h"
-#include "webrtc/p2p/base/packettransportinterface.h"
+#include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/dscp.h"
 #include "webrtc/base/gunit.h"
@@ -378,12 +378,12 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   // Transport channel callbacks
   void OnTransportChannelWritableState(
-      rtc::PacketTransportInterface* transport) {
+      rtc::PacketTransportInternal* transport) {
     LOG(LS_INFO) << name_ << ": Channel '" << transport->debug_name()
                  << "' is writable";
   }
 
-  void OnTransportChannelReadPacket(rtc::PacketTransportInterface* transport,
+  void OnTransportChannelReadPacket(rtc::PacketTransportInternal* transport,
                                     const char* data,
                                     size_t size,
                                     const rtc::PacketTime& packet_time,
@@ -397,7 +397,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
     ASSERT_EQ(expected_flags, flags);
   }
 
-  void OnTransportChannelSentPacket(rtc::PacketTransportInterface* transport,
+  void OnTransportChannelSentPacket(rtc::PacketTransportInternal* transport,
                                     const rtc::SentPacket& sent_packet) {
     sent_packet_ = sent_packet;
   }
@@ -405,12 +405,11 @@ class DtlsTestClient : public sigslot::has_slots<> {
   rtc::SentPacket sent_packet() const { return sent_packet_; }
 
   // Hook into the raw packet stream to make sure DTLS packets are encrypted.
-  void OnFakeTransportChannelReadPacket(
-      rtc::PacketTransportInterface* transport,
-      const char* data,
-      size_t size,
-      const rtc::PacketTime& time,
-      int flags) {
+  void OnFakeTransportChannelReadPacket(rtc::PacketTransportInternal* transport,
+                                        const char* data,
+                                        size_t size,
+                                        const rtc::PacketTime& time,
+                                        int flags) {
     // Flags shouldn't be set on the underlying TransportChannel packets.
     ASSERT_EQ(0, flags);
 
