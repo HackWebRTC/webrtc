@@ -32,13 +32,16 @@ class SocketAddress {
 
   // Creates the address with the given host and port. Host may be a
   // literal IP string or a hostname to be resolved later.
+  // DCHECKs that port is in valid range (0 to 2^16-1).
   SocketAddress(const std::string& hostname, int port);
 
   // Creates the address with the given IP and port.
   // IP is given as an integer in host byte order. V4 only, to be deprecated.
+  // DCHECKs that port is in valid range (0 to 2^16-1).
   SocketAddress(uint32_t ip_as_host_order_integer, int port);
 
   // Creates the address with the given IP and port.
+  // DCHECKs that port is in valid range (0 to 2^16-1).
   SocketAddress(const IPAddress& ip, int port);
 
   // Creates a copy of the given address.
@@ -77,6 +80,7 @@ class SocketAddress {
   void SetResolvedIP(const IPAddress& ip);
 
   // Changes the port of this address to the given one.
+  // DCHECKs that port is in valid range (0 to 2^16-1).
   void SetPort(int port);
 
   // Returns the hostname.

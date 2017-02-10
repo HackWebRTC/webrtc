@@ -79,6 +79,8 @@ namespace cricket {
 class SessionDescription;
 }
 
+// TODO(deadbeef): Switch to using anonymous namespace rather than declaring
+// everything "static".
 namespace webrtc {
 
 // Line type
@@ -790,6 +792,10 @@ static void GetCandidatesByMindex(const SessionDescriptionInterface& desci,
   }
 }
 
+static bool IsValidPort(int port) {
+  return port >= 0 && port <= 65535;
+}
+
 std::string SdpSerialize(const JsepSessionDescription& jdesc,
                          bool unified_plan_sdp) {
   const cricket::SessionDescription* desc = jdesc.description();
@@ -1026,6 +1032,9 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
   if (!GetValueFromString(first_line, fields[5], &port, error)) {
     return false;
   }
+  if (!IsValidPort(port)) {
+    return ParseFailed(first_line, "Invalid port number.", error);
+  }
   SocketAddress address(connection_address, port);
 
   cricket::ProtocolType protocol;
@@ -1071,6 +1080,9 @@ bool ParseCandidate(const std::string& message, Candidate* candidate,
     if (!GetValueFromString(
         first_line, fields[++current_position], &port, error)) {
       return false;
+    }
+    if (!IsValidPort(port)) {
+      return ParseFailed(first_line, "Invalid port number.", error);
     }
     related_address.SetPort(port);
     ++current_position;
