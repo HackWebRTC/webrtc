@@ -134,6 +134,7 @@ class VideoAnalyzer : public PacketReceiver,
                 FILE* graph_data_output_file,
                 const std::string& graph_title,
                 uint32_t ssrc_to_analyze,
+                uint32_t rtx_ssrc_to_analyze,
                 uint32_t selected_width,
                 uint32_t selected_height)
       : transport_(transport),
@@ -145,6 +146,7 @@ class VideoAnalyzer : public PacketReceiver,
         graph_data_output_file_(graph_data_output_file),
         graph_title_(graph_title),
         ssrc_to_analyze_(ssrc_to_analyze),
+        rtx_ssrc_to_analyze_(rtx_ssrc_to_analyze),
         selected_width_(selected_width),
         selected_height_(selected_height),
         pre_encode_proxy_(this),
@@ -230,11 +232,13 @@ class VideoAnalyzer : public PacketReceiver,
     RtpUtility::RtpHeaderParser parser(packet, length);
     RTPHeader header;
     parser.Parse(&header);
-    if (!IsFlexfec(header.payloadType) && header.ssrc == ssrc_to_analyze_) {
+    if (!IsFlexfec(header.payloadType) &&
+        (header.ssrc == ssrc_to_analyze_ ||
+         header.ssrc == rtx_ssrc_to_analyze_)) {
       // Ignore FlexFEC timestamps, to avoid collisions with media timestamps.
       // (FlexFEC and media are sent on different SSRCs, which have different
       // timestamps spaces.)
-      // Also ignore packets from wrong SSRC.
+      // Also ignore packets from wrong SSRC, but include retransmits.
       rtc::CritScope lock(&crit_);
       int64_t timestamp =
           wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
@@ -293,7 +297,7 @@ class VideoAnalyzer : public PacketReceiver,
         // Ignore FlexFEC timestamps, to avoid collisions with media timestamps.
         // (FlexFEC and media are sent on different SSRCs, which have different
         // timestamps spaces.)
-        // Also ignore packets from wrong SSRC.
+        // Also ignore packets from wrong SSRC and retransmits.
         int64_t timestamp =
             wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
         send_times_[timestamp] = current_time;
@@ -845,6 +849,7 @@ class VideoAnalyzer : public PacketReceiver,
   FILE* const graph_data_output_file_;
   const std::string graph_title_;
   const uint32_t ssrc_to_analyze_;
+  const uint32_t rtx_ssrc_to_analyze_;
   const uint32_t selected_width_;
   const uint32_t selected_height_;
   PreEncodeProxy pre_encode_proxy_;
@@ -1341,6 +1346,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       params_.analyzer.test_durations_secs * params_.video.fps,
       graph_data_output_file, graph_title,
       kVideoSendSsrcs[params_.ss.selected_stream],
+      kSendRtxSsrcs[params_.ss.selected_stream],
       static_cast<uint32_t>(selected_stream.width),
       static_cast<uint32_t>(selected_stream.height));
 
