@@ -345,6 +345,7 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "codecs/test/videoprocessor_integrationtest.cc",
+      "codecs/test/videoprocessor_integrationtest.h",
       "codecs/vp8/test/vp8_impl_unittest.cc",
     ]
     deps = [
