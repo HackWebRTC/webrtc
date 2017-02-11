@@ -1733,8 +1733,8 @@ bool WebRtcSession::CreateVoiceChannel(const cricket::ContentInfo* content,
 
   voice_channel_.reset(channel_manager_->CreateVoiceChannel(
       media_controller_, rtp_dtls_transport, rtcp_dtls_transport,
-      transport_controller_->signaling_thread(), content->name,
-      bundle_transport, require_rtcp_mux, SrtpRequired(), audio_options_));
+      transport_controller_->signaling_thread(), content->name, SrtpRequired(),
+      audio_options_));
   if (!voice_channel_) {
     transport_controller_->DestroyDtlsTransport(
         transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -1775,8 +1775,8 @@ bool WebRtcSession::CreateVideoChannel(const cricket::ContentInfo* content,
 
   video_channel_.reset(channel_manager_->CreateVideoChannel(
       media_controller_, rtp_dtls_transport, rtcp_dtls_transport,
-      transport_controller_->signaling_thread(), content->name,
-      bundle_transport, require_rtcp_mux, SrtpRequired(), video_options_));
+      transport_controller_->signaling_thread(), content->name, SrtpRequired(),
+      video_options_));
 
   if (!video_channel_) {
     transport_controller_->DestroyDtlsTransport(
@@ -1841,7 +1841,7 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
     rtp_data_channel_.reset(channel_manager_->CreateRtpDataChannel(
         media_controller_, rtp_dtls_transport, rtcp_dtls_transport,
         transport_controller_->signaling_thread(), content->name,
-        bundle_transport, require_rtcp_mux, SrtpRequired()));
+        SrtpRequired()));
 
     if (!rtp_data_channel_) {
       transport_controller_->DestroyDtlsTransport(

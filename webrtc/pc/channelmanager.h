@@ -93,8 +93,6 @@ class ChannelManager {
       DtlsTransportInternal* rtcp_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
-      const std::string* bundle_transport_name,
-      bool rtcp_mux_required,
       bool srtp_required,
       const AudioOptions& options);
   // Destroys a voice channel created with the Create API.
@@ -107,8 +105,6 @@ class ChannelManager {
       DtlsTransportInternal* rtcp_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
-      const std::string* bundle_transport_name,
-      bool rtcp_mux_required,
       bool srtp_required,
       const VideoOptions& options);
   // Destroys a video channel created with the Create API.
@@ -119,8 +115,6 @@ class ChannelManager {
       DtlsTransportInternal* rtcp_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
-      const std::string* bundle_transport_name,
-      bool rtcp_mux_required,
       bool srtp_required);
   // Destroys a data channel created with the Create API.
   void DestroyRtpDataChannel(RtpDataChannel* data_channel);
@@ -170,8 +164,6 @@ class ChannelManager {
       DtlsTransportInternal* rtcp_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
-      const std::string* bundle_transport_name,
-      bool rtcp_mux_required,
       bool srtp_required,
       const AudioOptions& options);
   void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
@@ -181,8 +173,6 @@ class ChannelManager {
       DtlsTransportInternal* rtcp_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
-      const std::string* bundle_transport_name,
-      bool rtcp_mux_required,
       bool srtp_required,
       const VideoOptions& options);
   void DestroyVideoChannel_w(VideoChannel* video_channel);
@@ -192,8 +182,6 @@ class ChannelManager {
       DtlsTransportInternal* rtcp_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
-      const std::string* bundle_transport_name,
-      bool rtcp_mux_required,
       bool srtp_required);
   void DestroyRtpDataChannel_w(RtpDataChannel* data_channel);
 
