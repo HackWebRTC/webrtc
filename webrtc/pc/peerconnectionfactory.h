@@ -33,6 +33,12 @@ class RtcEventLog;
 
 class PeerConnectionFactory : public PeerConnectionFactoryInterface {
  public:
+  // Use the overloads of CreateVideoSource that take raw VideoCapturer
+  // pointers from PeerConnectionFactoryInterface.
+  // TODO(deadbeef): Remove this using statement once those overloads are
+  // removed.
+  using PeerConnectionFactoryInterface::CreateVideoSource;
+
   void SetOptions(const Options& options) override;
 
   // Deprecated, use version without constraints.
@@ -61,13 +67,13 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       const MediaConstraintsInterface* constraints) override;
 
   virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
-      cricket::VideoCapturer* capturer) override;
+      std::unique_ptr<cricket::VideoCapturer> capturer) override;
   // This version supports filtering on width, height and frame rate.
   // For the "constraints=null" case, use the version without constraints.
   // TODO(hta): Design a version without MediaConstraintsInterface.
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=5617
   rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
-      cricket::VideoCapturer* capturer,
+      std::unique_ptr<cricket::VideoCapturer> capturer,
       const MediaConstraintsInterface* constraints) override;
 
   rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
@@ -118,7 +124,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   virtual ~PeerConnectionFactory();
 
  private:
-  cricket::MediaEngineInterface* CreateMediaEngine_w();
+  std::unique_ptr<cricket::MediaEngineInterface> CreateMediaEngine_w();
 
   bool owns_ptrs_;
   bool wraps_current_thread_;

@@ -588,8 +588,9 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     fake_capturer->SetRotation(capture_rotation_);
     video_capturers_.push_back(fake_capturer);
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
-        peer_connection_factory_->CreateVideoSource(fake_capturer,
-                                                    &source_constraints);
+        peer_connection_factory_->CreateVideoSource(
+            std::unique_ptr<cricket::VideoCapturer>(fake_capturer),
+            &source_constraints);
     std::string label = stream_label + kVideoTrackLabelBase;
 
     rtc::scoped_refptr<webrtc::VideoTrackInterface> track(

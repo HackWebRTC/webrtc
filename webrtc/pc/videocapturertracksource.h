@@ -34,18 +34,18 @@ class VideoCapturerTrackSource : public VideoTrackSource,
                                  public sigslot::has_slots<> {
  public:
   // Creates an instance of VideoCapturerTrackSource.
-  // VideoCapturerTrackSource take ownership of |capturer|.
+  // VideoCapturerTrackSource takes ownership of |capturer|.
   // |constraints| can be NULL and in that case the camera is opened using a
   // default resolution.
   static rtc::scoped_refptr<VideoTrackSourceInterface> Create(
       rtc::Thread* worker_thread,
-      cricket::VideoCapturer* capturer,
+      std::unique_ptr<cricket::VideoCapturer> capturer,
       const webrtc::MediaConstraintsInterface* constraints,
       bool remote);
 
   static rtc::scoped_refptr<VideoTrackSourceInterface> Create(
       rtc::Thread* worker_thread,
-      cricket::VideoCapturer* capturer,
+      std::unique_ptr<cricket::VideoCapturer> capturer,
       bool remote);
 
   bool is_screencast() const override {
@@ -59,7 +59,7 @@ class VideoCapturerTrackSource : public VideoTrackSource,
 
  protected:
   VideoCapturerTrackSource(rtc::Thread* worker_thread,
-                           cricket::VideoCapturer* capturer,
+                           std::unique_ptr<cricket::VideoCapturer> capturer,
                            bool remote);
   virtual ~VideoCapturerTrackSource();
   void Initialize(const webrtc::MediaConstraintsInterface* constraints);

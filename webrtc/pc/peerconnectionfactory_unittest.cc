@@ -336,9 +336,11 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
 // local video track.
 TEST_F(PeerConnectionFactoryTest, LocalRendering) {
   cricket::FakeVideoCapturer* capturer = new cricket::FakeVideoCapturer();
-  // The source take ownership of |capturer|.
+  // The source takes ownership of |capturer|, but we keep a raw pointer to
+  // inject fake frames.
   rtc::scoped_refptr<VideoTrackSourceInterface> source(
-      factory_->CreateVideoSource(capturer, NULL));
+      factory_->CreateVideoSource(
+          std::unique_ptr<cricket::VideoCapturer>(capturer), NULL));
   ASSERT_TRUE(source.get() != NULL);
   rtc::scoped_refptr<VideoTrackInterface> track(
       factory_->CreateVideoTrack("testlabel", source));

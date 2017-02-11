@@ -366,7 +366,7 @@ void Conductor::ConnectToPeer(int peer_id) {
   }
 }
 
-cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
+std::unique_ptr<cricket::VideoCapturer> Conductor::OpenVideoCaptureDevice() {
   std::vector<std::string> device_names;
   {
     std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
@@ -386,7 +386,7 @@ cricket::VideoCapturer* Conductor::OpenVideoCaptureDevice() {
   }
 
   cricket::WebRtcVideoDeviceCapturerFactory factory;
-  cricket::VideoCapturer* capturer = nullptr;
+  std::unique_ptr<cricket::VideoCapturer> capturer;
   for (const auto& name : device_names) {
     capturer = factory.Create(cricket::Device(name, 0));
     if (capturer) {

@@ -28,28 +28,26 @@ namespace cricket {
 
 using rtc::Bind;
 
-static DataEngineInterface* ConstructDataEngine() {
-  return new RtpDataEngine();
-}
-
-ChannelManager::ChannelManager(MediaEngineInterface* me,
-                               DataEngineInterface* dme,
+ChannelManager::ChannelManager(std::unique_ptr<MediaEngineInterface> me,
+                               std::unique_ptr<DataEngineInterface> dme,
                                rtc::Thread* thread) {
-  Construct(me, dme, thread, thread);
+  Construct(std::move(me), std::move(dme), thread, thread);
 }
 
-ChannelManager::ChannelManager(MediaEngineInterface* me,
+ChannelManager::ChannelManager(std::unique_ptr<MediaEngineInterface> me,
                                rtc::Thread* worker_thread,
                                rtc::Thread* network_thread) {
-  Construct(me, ConstructDataEngine(), worker_thread, network_thread);
+  Construct(std::move(me),
+            std::unique_ptr<DataEngineInterface>(new RtpDataEngine()),
+            worker_thread, network_thread);
 }
 
-void ChannelManager::Construct(MediaEngineInterface* me,
-                               DataEngineInterface* dme,
+void ChannelManager::Construct(std::unique_ptr<MediaEngineInterface> me,
+                               std::unique_ptr<DataEngineInterface> dme,
                                rtc::Thread* worker_thread,
                                rtc::Thread* network_thread) {
-  media_engine_.reset(me);
-  data_media_engine_.reset(dme);
+  media_engine_ = std::move(me);
+  data_media_engine_ = std::move(dme);
   initialized_ = false;
   main_thread_ = rtc::Thread::Current();
   worker_thread_ = worker_thread;

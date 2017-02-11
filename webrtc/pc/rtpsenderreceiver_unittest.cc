@@ -61,9 +61,10 @@ class RtpSenderReceiverTest : public testing::Test,
       :  // Create fake media engine/etc. so we can create channels to use to
         // test RtpSenders/RtpReceivers.
         media_engine_(new cricket::FakeMediaEngine()),
-        channel_manager_(media_engine_,
-                         rtc::Thread::Current(),
-                         rtc::Thread::Current()),
+        channel_manager_(
+            std::unique_ptr<cricket::MediaEngineInterface>(media_engine_),
+            rtc::Thread::Current(),
+            rtc::Thread::Current()),
         fake_call_(Call::Config(&event_log_)),
         fake_media_controller_(&channel_manager_, &fake_call_),
         stream_(MediaStream::Create(kStreamLabel1)) {
@@ -251,6 +252,7 @@ class RtpSenderReceiverTest : public testing::Test,
 
  protected:
   webrtc::RtcEventLogNullImpl event_log_;
+  // |media_engine_| is actually owned by |channel_manager_|.
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeTransportController fake_transport_controller_;
   cricket::ChannelManager channel_manager_;

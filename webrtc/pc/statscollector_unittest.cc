@@ -504,9 +504,10 @@ class StatsCollectorTest : public testing::Test {
       : worker_thread_(rtc::Thread::Current()),
         network_thread_(rtc::Thread::Current()),
         media_engine_(new cricket::FakeMediaEngine()),
-        channel_manager_(new cricket::ChannelManager(media_engine_,
-                                                     worker_thread_,
-                                                     network_thread_)),
+        channel_manager_(new cricket::ChannelManager(
+            std::unique_ptr<cricket::MediaEngineInterface>(media_engine_),
+            worker_thread_,
+            network_thread_)),
         media_controller_(
             webrtc::MediaControllerInterface::Create(cricket::MediaConfig(),
                                                      worker_thread_,
@@ -780,6 +781,7 @@ class StatsCollectorTest : public testing::Test {
   webrtc::RtcEventLogNullImpl event_log_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
+  // |media_engine_| is actually owned by |channel_manager_|.
   cricket::FakeMediaEngine* media_engine_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
   std::unique_ptr<webrtc::MediaControllerInterface> media_controller_;

@@ -369,9 +369,10 @@ class WebRtcSessionTest
   WebRtcSessionTest()
       : media_engine_(new cricket::FakeMediaEngine()),
         data_engine_(new cricket::FakeDataEngine()),
-        channel_manager_(new cricket::ChannelManager(media_engine_,
-                                                     data_engine_,
-                                                     rtc::Thread::Current())),
+        channel_manager_(new cricket::ChannelManager(
+            std::unique_ptr<cricket::MediaEngineInterface>(media_engine_),
+            std::unique_ptr<cricket::DataEngineInterface>(data_engine_),
+            rtc::Thread::Current())),
         fake_call_(webrtc::Call::Config(&event_log_)),
         media_controller_(
             webrtc::MediaControllerInterface::Create(cricket::MediaConfig(),
@@ -1504,6 +1505,8 @@ class WebRtcSessionTest
   }
 
   webrtc::RtcEventLogNullImpl event_log_;
+  // |media_engine_| and |data_engine_| are actually owned by
+  // |channel_manager_|.
   cricket::FakeMediaEngine* media_engine_;
   cricket::FakeDataEngine* data_engine_;
   // Actually owned by session_.

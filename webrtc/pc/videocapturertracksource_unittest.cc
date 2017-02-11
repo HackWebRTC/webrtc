@@ -109,9 +109,8 @@ class VideoCapturerTrackSourceTest : public testing::Test {
  protected:
   VideoCapturerTrackSourceTest() { InitCapturer(false); }
   void InitCapturer(bool is_screencast) {
-    capturer_cleanup_ = std::unique_ptr<TestVideoCapturer>(
-        new TestVideoCapturer(is_screencast));
-    capturer_ = capturer_cleanup_.get();
+    capturer_ = new TestVideoCapturer(is_screencast);
+    capturer_cleanup_.reset(capturer_);
   }
 
   void InitScreencast() { InitCapturer(true); }
@@ -120,9 +119,8 @@ class VideoCapturerTrackSourceTest : public testing::Test {
 
   void CreateVideoCapturerSource(
       const webrtc::MediaConstraintsInterface* constraints) {
-    // VideoSource take ownership of |capturer_|
     source_ = VideoCapturerTrackSource::Create(rtc::Thread::Current(),
-                                               capturer_cleanup_.release(),
+                                               std::move(capturer_cleanup_),
                                                constraints, false);
 
     ASSERT_TRUE(source_.get() != NULL);
@@ -132,7 +130,7 @@ class VideoCapturerTrackSourceTest : public testing::Test {
     source_->AddOrUpdateSink(&renderer_, rtc::VideoSinkWants());
   }
 
-  std::unique_ptr<TestVideoCapturer> capturer_cleanup_;
+  std::unique_ptr<cricket::VideoCapturer> capturer_cleanup_;
   TestVideoCapturer* capturer_;
   cricket::FakeVideoRenderer renderer_;
   std::unique_ptr<StateObserver> state_observer_;

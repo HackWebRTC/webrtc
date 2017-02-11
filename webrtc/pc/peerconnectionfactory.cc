@@ -211,13 +211,13 @@ bool PeerConnectionFactory::Initialize() {
 
   // TODO:  Need to make sure only one VoE is created inside
   // WebRtcMediaEngine.
-  cricket::MediaEngineInterface* media_engine =
-      worker_thread_->Invoke<cricket::MediaEngineInterface*>(
+  std::unique_ptr<cricket::MediaEngineInterface> media_engine =
+      worker_thread_->Invoke<std::unique_ptr<cricket::MediaEngineInterface>>(
           RTC_FROM_HERE,
           rtc::Bind(&PeerConnectionFactory::CreateMediaEngine_w, this));
 
   channel_manager_.reset(new cricket::ChannelManager(
-      media_engine, worker_thread_, network_thread_));
+      std::move(media_engine), worker_thread_, network_thread_));
 
   channel_manager_->SetVideoRtxEnabled(true);
   channel_manager_->SetCryptoOptions(options_.crypto_options);
@@ -254,21 +254,23 @@ PeerConnectionFactory::CreateAudioSource(const cricket::AudioOptions& options) {
 
 rtc::scoped_refptr<VideoTrackSourceInterface>
 PeerConnectionFactory::CreateVideoSource(
-    cricket::VideoCapturer* capturer,
+    std::unique_ptr<cricket::VideoCapturer> capturer,
     const MediaConstraintsInterface* constraints) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoTrackSourceInterface> source(
-      VideoCapturerTrackSource::Create(worker_thread_, capturer, constraints,
-                                       false));
+      VideoCapturerTrackSource::Create(worker_thread_, std::move(capturer),
+                                       constraints, false));
   return VideoTrackSourceProxy::Create(signaling_thread_, worker_thread_,
                                        source);
 }
 
 rtc::scoped_refptr<VideoTrackSourceInterface>
-PeerConnectionFactory::CreateVideoSource(cricket::VideoCapturer* capturer) {
+PeerConnectionFactory::CreateVideoSource(
+    std::unique_ptr<cricket::VideoCapturer> capturer) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<VideoTrackSourceInterface> source(
-      VideoCapturerTrackSource::Create(worker_thread_, capturer, false));
+      VideoCapturerTrackSource::Create(worker_thread_, std::move(capturer),
+                                       false));
   return VideoTrackSourceProxy::Create(signaling_thread_, worker_thread_,
                                        source);
 }
@@ -389,11 +391,14 @@ rtc::Thread* PeerConnectionFactory::network_thread() {
   return network_thread_;
 }
 
-cricket::MediaEngineInterface* PeerConnectionFactory::CreateMediaEngine_w() {
+std::unique_ptr<cricket::MediaEngineInterface>
+PeerConnectionFactory::CreateMediaEngine_w() {
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
-  return cricket::WebRtcMediaEngineFactory::Create(
-      default_adm_.get(), audio_decoder_factory_, video_encoder_factory_.get(),
-      video_decoder_factory_.get(), external_audio_mixer_);
+  return std::unique_ptr<cricket::MediaEngineInterface>(
+      cricket::WebRtcMediaEngineFactory::Create(
+          default_adm_.get(), audio_decoder_factory_,
+          video_encoder_factory_.get(), video_decoder_factory_.get(),
+          external_audio_mixer_));
 }
 
 }  // namespace webrtc

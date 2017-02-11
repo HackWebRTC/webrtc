@@ -258,39 +258,39 @@ namespace webrtc {
 
 rtc::scoped_refptr<VideoTrackSourceInterface> VideoCapturerTrackSource::Create(
     rtc::Thread* worker_thread,
-    cricket::VideoCapturer* capturer,
+    std::unique_ptr<cricket::VideoCapturer> capturer,
     const webrtc::MediaConstraintsInterface* constraints,
     bool remote) {
   RTC_DCHECK(worker_thread != NULL);
   RTC_DCHECK(capturer != NULL);
   rtc::scoped_refptr<VideoCapturerTrackSource> source(
-      new rtc::RefCountedObject<VideoCapturerTrackSource>(worker_thread,
-                                                          capturer, remote));
+      new rtc::RefCountedObject<VideoCapturerTrackSource>(
+          worker_thread, std::move(capturer), remote));
   source->Initialize(constraints);
   return source;
 }
 
 rtc::scoped_refptr<VideoTrackSourceInterface> VideoCapturerTrackSource::Create(
     rtc::Thread* worker_thread,
-    cricket::VideoCapturer* capturer,
+    std::unique_ptr<cricket::VideoCapturer> capturer,
     bool remote) {
   RTC_DCHECK(worker_thread != NULL);
   RTC_DCHECK(capturer != NULL);
   rtc::scoped_refptr<VideoCapturerTrackSource> source(
-      new rtc::RefCountedObject<VideoCapturerTrackSource>(worker_thread,
-                                                          capturer, remote));
+      new rtc::RefCountedObject<VideoCapturerTrackSource>(
+          worker_thread, std::move(capturer), remote));
   source->Initialize(nullptr);
   return source;
 }
 
 VideoCapturerTrackSource::VideoCapturerTrackSource(
     rtc::Thread* worker_thread,
-    cricket::VideoCapturer* capturer,
+    std::unique_ptr<cricket::VideoCapturer> capturer,
     bool remote)
-    : VideoTrackSource(capturer, remote),
+    : VideoTrackSource(capturer.get(), remote),
       signaling_thread_(rtc::Thread::Current()),
       worker_thread_(worker_thread),
-      video_capturer_(capturer),
+      video_capturer_(std::move(capturer)),
       started_(false) {
   video_capturer_->SignalStateChange.connect(
       this, &VideoCapturerTrackSource::OnStateChange);

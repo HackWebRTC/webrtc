@@ -90,6 +90,7 @@
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/media/base/mediachannel.h"
+#include "webrtc/media/base/videocapturer.h"
 #include "webrtc/p2p/base/portallocator.h"
 
 namespace rtc {
@@ -966,16 +967,37 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 
   // Creates a VideoTrackSourceInterface. The new source takes ownership of
   // |capturer|.
-  // TODO(deadbeef): Switch to std::unique_ptr<>, to make this transfership of
-  // ownership more clear.
+  // TODO(deadbeef): Make pure virtual once downstream mock PC factory classes
+  // are updated.
   virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
-      cricket::VideoCapturer* capturer) = 0;
+      std::unique_ptr<cricket::VideoCapturer> capturer) {
+    return nullptr;
+  }
+
   // A video source creator that allows selection of resolution and frame rate.
   // |constraints| decides video resolution and frame rate but can be NULL.
   // In the NULL case, use the version above.
+  //
+  // |constraints| is only used for the invocation of this method, and can
+  // safely be destroyed afterwards.
+  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
+      std::unique_ptr<cricket::VideoCapturer> capturer,
+      const MediaConstraintsInterface* constraints) {
+    return nullptr;
+  }
+
+  // Deprecated; please use the versions that take unique_ptrs above.
+  // TODO(deadbeef): Remove these once safe to do so.
+  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
+      cricket::VideoCapturer* capturer) {
+    return CreateVideoSource(std::unique_ptr<cricket::VideoCapturer>(capturer));
+  }
   virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer,
-      const MediaConstraintsInterface* constraints) = 0;
+      const MediaConstraintsInterface* constraints) {
+    return CreateVideoSource(std::unique_ptr<cricket::VideoCapturer>(capturer),
+                             constraints);
+  }
 
   // Creates a new local VideoTrack. The same |source| can be used in several
   // tracks.

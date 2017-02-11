@@ -269,7 +269,9 @@ rtc::scoped_refptr<webrtc::MediaStreamInterface>
 
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
         peer_connection_factory_->CreateVideoSource(
-            new webrtc::FakePeriodicVideoCapturer(), &constraints);
+            std::unique_ptr<cricket::VideoCapturer>(
+                new webrtc::FakePeriodicVideoCapturer()),
+            &constraints);
     std::string videotrack_label = label + kVideoTrackLabelBase;
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         peer_connection_factory_->CreateVideoTrack(videotrack_label, source));

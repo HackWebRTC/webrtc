@@ -40,6 +40,8 @@ class WebRtcMediaEngineFactory {
       WebRtcVideoEncoderFactory* video_encoder_factory,
       WebRtcVideoDecoderFactory* video_decoder_factory);
 
+  // TODO(deadbeef): Change these to return an std::unique_ptr<>, to indicate
+  // that the caller owns the returned object.
   static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&

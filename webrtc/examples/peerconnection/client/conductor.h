@@ -14,6 +14,7 @@
 
 #include <deque>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 
@@ -58,7 +59,7 @@ class Conductor
   void DeletePeerConnection();
   void EnsureStreamingUI();
   void AddStreams();
-  cricket::VideoCapturer* OpenVideoCaptureDevice();
+  std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice();
 
   //
   // PeerConnectionObserver implementation.
