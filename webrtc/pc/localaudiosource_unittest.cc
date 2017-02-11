@@ -21,7 +21,6 @@
 using webrtc::LocalAudioSource;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaSourceInterface;
-using webrtc::PeerConnectionFactoryInterface;
 
 TEST(LocalAudioSourceTest, SetValidOptions) {
   webrtc::FakeConstraints constraints;
@@ -37,8 +36,7 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
   constraints.AddOptional(MediaConstraintsInterface::kHighpassFilter, true);
 
   rtc::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
-                               &constraints);
+      LocalAudioSource::Create(&constraints);
 
   EXPECT_EQ(rtc::Optional<bool>(false), source->options().echo_cancellation);
   EXPECT_EQ(rtc::Optional<bool>(true), source->options().extended_filter_aec);
@@ -52,8 +50,7 @@ TEST(LocalAudioSourceTest, SetValidOptions) {
 TEST(LocalAudioSourceTest, OptionNotSet) {
   webrtc::FakeConstraints constraints;
   rtc::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
-                               &constraints);
+      LocalAudioSource::Create(&constraints);
   EXPECT_EQ(rtc::Optional<bool>(), source->options().highpass_filter);
 }
 
@@ -65,8 +62,7 @@ TEST(LocalAudioSourceTest, MandatoryOverridesOptional) {
       MediaConstraintsInterface::kGoogEchoCancellation, true);
 
   rtc::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
-                               &constraints);
+      LocalAudioSource::Create(&constraints);
 
   EXPECT_EQ(rtc::Optional<bool>(false), source->options().echo_cancellation);
 }
@@ -77,8 +73,7 @@ TEST(LocalAudioSourceTest, InvalidOptional) {
   constraints.AddOptional("invalidKey", false);
 
   rtc::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
-                               &constraints);
+      LocalAudioSource::Create(&constraints);
 
   EXPECT_EQ(MediaSourceInterface::kLive, source->state());
   EXPECT_EQ(rtc::Optional<bool>(false), source->options().highpass_filter);
@@ -90,8 +85,7 @@ TEST(LocalAudioSourceTest, InvalidMandatory) {
   constraints.AddMandatory("invalidKey", false);
 
   rtc::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
-                               &constraints);
+      LocalAudioSource::Create(&constraints);
 
   EXPECT_EQ(MediaSourceInterface::kLive, source->state());
   EXPECT_EQ(rtc::Optional<bool>(false), source->options().highpass_filter);
@@ -100,14 +94,13 @@ TEST(LocalAudioSourceTest, InvalidMandatory) {
 TEST(LocalAudioSourceTest, InitWithAudioOptions) {
   cricket::AudioOptions audio_options;
   audio_options.highpass_filter = rtc::Optional<bool>(true);
-  rtc::scoped_refptr<LocalAudioSource> source = LocalAudioSource::Create(
-      PeerConnectionFactoryInterface::Options(), &audio_options);
+  rtc::scoped_refptr<LocalAudioSource> source =
+      LocalAudioSource::Create(&audio_options);
   EXPECT_EQ(rtc::Optional<bool>(true), source->options().highpass_filter);
 }
 
 TEST(LocalAudioSourceTest, InitWithNoOptions) {
   rtc::scoped_refptr<LocalAudioSource> source =
-      LocalAudioSource::Create(PeerConnectionFactoryInterface::Options(),
-                               (cricket::AudioOptions*)nullptr);
+      LocalAudioSource::Create((cricket::AudioOptions*)nullptr);
   EXPECT_EQ(rtc::Optional<bool>(), source->options().highpass_filter);
 }

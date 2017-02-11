@@ -240,7 +240,7 @@ PeerConnectionFactory::CreateAudioSource(
     const MediaConstraintsInterface* constraints) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<LocalAudioSource> source(
-      LocalAudioSource::Create(options_, constraints));
+      LocalAudioSource::Create(constraints));
   return source;
 }
 
@@ -248,7 +248,7 @@ rtc::scoped_refptr<AudioSourceInterface>
 PeerConnectionFactory::CreateAudioSource(const cricket::AudioOptions& options) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   rtc::scoped_refptr<LocalAudioSource> source(
-      LocalAudioSource::Create(options_, &options));
+      LocalAudioSource::Create(&options));
   return source;
 }
 

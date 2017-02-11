@@ -21,31 +21,27 @@ using webrtc::MediaSourceInterface;
 namespace webrtc {
 
 rtc::scoped_refptr<LocalAudioSource> LocalAudioSource::Create(
-    const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface* constraints) {
   rtc::scoped_refptr<LocalAudioSource> source(
       new rtc::RefCountedObject<LocalAudioSource>());
-  source->Initialize(options, constraints);
+  source->Initialize(constraints);
   return source;
 }
 
 rtc::scoped_refptr<LocalAudioSource> LocalAudioSource::Create(
-    const PeerConnectionFactoryInterface::Options& options,
     const cricket::AudioOptions* audio_options) {
   rtc::scoped_refptr<LocalAudioSource> source(
       new rtc::RefCountedObject<LocalAudioSource>());
-  source->Initialize(options, audio_options);
+  source->Initialize(audio_options);
   return source;
 }
 
 void LocalAudioSource::Initialize(
-    const PeerConnectionFactoryInterface::Options& options,
     const MediaConstraintsInterface* constraints) {
   CopyConstraintsIntoAudioOptions(constraints, &options_);
 }
 
 void LocalAudioSource::Initialize(
-    const PeerConnectionFactoryInterface::Options& options,
     const cricket::AudioOptions* audio_options) {
   if (!audio_options)
     return;
