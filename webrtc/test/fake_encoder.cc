@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
@@ -35,8 +34,6 @@ FakeEncoder::FakeEncoder(Clock* clock)
     encoded_buffer_[i] = static_cast<uint8_t>(i);
   }
 }
-
-FakeEncoder::~FakeEncoder() {}
 
 void FakeEncoder::SetMaxBitrate(int max_kbps) {
   RTC_DCHECK_GE(max_kbps, -1);  // max_kbps == -1 disables it.
@@ -254,33 +251,47 @@ EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
 }
 
 DelayedEncoder::DelayedEncoder(Clock* clock, int delay_ms)
-    : test::FakeEncoder(clock),
-      delay_ms_(delay_ms) {}
+    : test::FakeEncoder(clock), delay_ms_(delay_ms) {
+  // The encoder could be created on a different thread than
+  // it is being used on.
+  sequence_checker_.Detach();
+}
 
 void DelayedEncoder::SetDelay(int delay_ms) {
-  rtc::CritScope cs(&local_crit_sect_);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   delay_ms_ = delay_ms;
 }
 
 int32_t DelayedEncoder::Encode(const VideoFrame& input_image,
                                const CodecSpecificInfo* codec_specific_info,
                                const std::vector<FrameType>* frame_types) {
-  int delay_ms = 0;
-  {
-    rtc::CritScope cs(&local_crit_sect_);
-    delay_ms = delay_ms_;
-  }
-  SleepMs(delay_ms);
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+
+  SleepMs(delay_ms_);
+
   return FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
 }
 
 MultithreadedFakeH264Encoder::MultithreadedFakeH264Encoder(Clock* clock)
     : test::FakeH264Encoder(clock),
       current_queue_(0),
-      queue1_("Queue 1"),
-      queue2_("Queue 2") {}
+      queue1_(nullptr),
+      queue2_(nullptr) {
+  // The encoder could be created on a different thread than
+  // it is being used on.
+  sequence_checker_.Detach();
+}
 
-MultithreadedFakeH264Encoder::~MultithreadedFakeH264Encoder() = default;
+int32_t MultithreadedFakeH264Encoder::InitEncode(const VideoCodec* config,
+                                                 int32_t number_of_cores,
+                                                 size_t max_payload_size) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+
+  queue1_.reset(new rtc::TaskQueue("Queue 1"));
+  queue2_.reset(new rtc::TaskQueue("Queue 2"));
+
+  return FakeH264Encoder::InitEncode(config, number_of_cores, max_payload_size);
+}
 
 class MultithreadedFakeH264Encoder::EncodeTask : public rtc::QueuedTask {
  public:
@@ -313,13 +324,19 @@ int32_t MultithreadedFakeH264Encoder::Encode(
     const VideoFrame& input_image,
     const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
-  int current_queue = rtc::AtomicOps::Increment(&current_queue_);
-  rtc::TaskQueue& queue = (current_queue % 2 == 0) ? queue1_ : queue2_;
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
-  queue.PostTask(std::unique_ptr<rtc::QueuedTask>(
+  std::unique_ptr<rtc::TaskQueue>& queue =
+      (current_queue_++ % 2 == 0) ? queue1_ : queue2_;
+
+  if (!queue) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+
+  queue->PostTask(std::unique_ptr<rtc::QueuedTask>(
       new EncodeTask(this, input_image, codec_specific_info, frame_types)));
 
-  return 0;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int32_t MultithreadedFakeH264Encoder::EncodeCallback(
@@ -327,6 +344,15 @@ int32_t MultithreadedFakeH264Encoder::EncodeCallback(
     const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
   return FakeH264Encoder::Encode(input_image, codec_specific_info, frame_types);
+}
+
+int32_t MultithreadedFakeH264Encoder::Release() {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+
+  queue1_.reset();
+  queue2_.reset();
+
+  return FakeH264Encoder::Release();
 }
 
 }  // namespace test
