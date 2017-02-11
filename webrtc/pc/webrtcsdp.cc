@@ -2136,9 +2136,16 @@ static bool ParseMsidAttribute(const std::string& line,
     return ParseFailedExpectFieldNum(line, expected_fields, error);
   }
 
+  if (track_id->empty()) {
+    return ParseFailed(line, "Missing track ID in msid attribute.", error);
+  }
+
   // msid:<msid-id>
   if (!GetValue(field1, kAttributeMsid, stream_id, error)) {
     return false;
+  }
+  if (stream_id->empty()) {
+    return ParseFailed(line, "Missing stream ID in msid attribute.", error);
   }
   return true;
 }
