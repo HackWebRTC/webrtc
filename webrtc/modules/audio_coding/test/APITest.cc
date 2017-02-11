@@ -678,7 +678,7 @@ void APITest::TestDelay(char side) {
   double averageEstimDelay = 0;
   double averageDelay = 0;
 
-  CircularBuffer estimDelayCB(100);
+  test::CircularBuffer estimDelayCB(100);
   estimDelayCB.SetArithMean(true);
 
   if (side == 'A') {

@@ -136,6 +136,8 @@ void PrintCodecs() {
 
 }
 
+namespace test {
+
 CircularBuffer::CircularBuffer(uint32_t len)
     : _buff(NULL),
       _idx(0),
@@ -264,6 +266,8 @@ int16_t CircularBuffer::Variance(double& var) {
     }
   }
 }
+
+}  // namespace test
 
 bool FixedPayloadTypeCodec(const char* payloadName) {
   char fixPayloadTypeCodecs[NUM_CODECS_WITH_FIXED_PAYLOAD_TYPE][32] = { "PCMU",
