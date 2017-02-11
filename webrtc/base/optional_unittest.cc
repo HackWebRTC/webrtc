@@ -725,4 +725,19 @@ TEST(OptionalTest, TestSwap) {
             *log);
 }
 
+TEST(OptionalTest, TestMoveValue) {
+  auto log = Logger::Setup();
+  {
+    Optional<Logger> x(Logger(42));
+    log->push_back("---");
+    Logger moved = x.MoveValue();
+    log->push_back("---");
+  }
+  EXPECT_EQ(
+      V("0:42. explicit constructor", "1:42. move constructor (from 0:42)",
+        "0:42. destructor", "---", "2:42. move constructor (from 1:42)", "---",
+        "2:42. destructor", "1:42. destructor"),
+      *log);
+}
+
 }  // namespace rtc

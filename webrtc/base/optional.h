@@ -239,6 +239,12 @@ class Optional final {
                       : default_val;
   }
 
+  // Dereference and move value.
+  T MoveValue() {
+    RTC_DCHECK(has_value_);
+    return std::move(value_);
+  }
+
   // Equality tests. Two Optionals are equal if they contain equivalent values,
   // or if they're both empty.
   friend bool operator==(const Optional& m1, const Optional& m2) {

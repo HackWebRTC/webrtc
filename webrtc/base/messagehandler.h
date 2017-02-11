@@ -45,23 +45,13 @@ class FunctorMessageHandler : public MessageHandler {
   }
   const ReturnT& result() const { return result_; }
 
+  // Returns moved result. Should not call result() or MoveResult() again
+  // after this.
+  ReturnT MoveResult() { return std::move(result_); }
+
  private:
   FunctorT functor_;
   ReturnT result_;
-};
-
-// Specialization for std::unique_ptr<ReturnT>.
-template <class ReturnT, class FunctorT>
-class FunctorMessageHandler<class std::unique_ptr<ReturnT>, FunctorT>
-    : public MessageHandler {
- public:
-  explicit FunctorMessageHandler(const FunctorT& functor) : functor_(functor) {}
-  virtual void OnMessage(Message* msg) { result_ = std::move(functor_()); }
-  std::unique_ptr<ReturnT> result() { return std::move(result_); }
-
- private:
-  FunctorT functor_;
-  std::unique_ptr<ReturnT> result_;
 };
 
 // Specialization for ReturnT of void.
@@ -74,6 +64,7 @@ class FunctorMessageHandler<void, FunctorT> : public MessageHandler {
     functor_();
   }
   void result() const {}
+  void MoveResult() {}
 
  private:
   FunctorT functor_;

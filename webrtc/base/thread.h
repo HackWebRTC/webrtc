@@ -168,7 +168,7 @@ class LOCKABLE Thread : public MessageQueue {
   ReturnT Invoke(const Location& posted_from, const FunctorT& functor) {
     FunctorMessageHandler<ReturnT, FunctorT> handler(functor);
     InvokeInternal(posted_from, &handler);
-    return handler.result();
+    return handler.MoveResult();
   }
 
   // From MessageQueue
