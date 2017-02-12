@@ -19,7 +19,6 @@
 #include "webrtc/api/stats/rtcstats_objects.h"
 #include "webrtc/api/stats/rtcstatscollectorcallback.h"
 #include "webrtc/api/stats/rtcstatsreport.h"
-#include "webrtc/api/trackmediainfomap.h"
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/refcount.h"
@@ -29,6 +28,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/pc/datachannel.h"
+#include "webrtc/pc/trackmediainfomap.h"
 
 namespace cricket {
 class Candidate;

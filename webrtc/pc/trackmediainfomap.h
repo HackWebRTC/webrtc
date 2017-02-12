@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_TRACKMEDIAINFOMAP_H_
-#define WEBRTC_API_TRACKMEDIAINFOMAP_H_
+#ifndef WEBRTC_PC_TRACKMEDIAINFOMAP_H_
+#define WEBRTC_PC_TRACKMEDIAINFOMAP_H_
 
 #include <map>
 #include <memory>
@@ -84,15 +84,19 @@ class TrackMediaInfoMap {
   // the inverse of the maps above. One info object always maps to only one
   // track.
   std::map<const cricket::VoiceSenderInfo*,
-      rtc::scoped_refptr<AudioTrackInterface>> audio_track_by_sender_info_;
+           rtc::scoped_refptr<AudioTrackInterface>>
+      audio_track_by_sender_info_;
   std::map<const cricket::VoiceReceiverInfo*,
-      rtc::scoped_refptr<AudioTrackInterface>> audio_track_by_receiver_info_;
+           rtc::scoped_refptr<AudioTrackInterface>>
+      audio_track_by_receiver_info_;
   std::map<const cricket::VideoSenderInfo*,
-      rtc::scoped_refptr<VideoTrackInterface>> video_track_by_sender_info_;
+           rtc::scoped_refptr<VideoTrackInterface>>
+      video_track_by_sender_info_;
   std::map<const cricket::VideoReceiverInfo*,
-      rtc::scoped_refptr<VideoTrackInterface>> video_track_by_receiver_info_;
+           rtc::scoped_refptr<VideoTrackInterface>>
+      video_track_by_receiver_info_;
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_TRACKMEDIAINFOMAP_H_
+#endif  // WEBRTC_PC_TRACKMEDIAINFOMAP_H_

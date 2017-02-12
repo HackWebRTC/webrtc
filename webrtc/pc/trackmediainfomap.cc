@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/api/trackmediainfomap.h"
+#include "webrtc/pc/trackmediainfomap.h"
 
 #include <utility>
 
@@ -16,13 +16,13 @@ namespace webrtc {
 
 namespace {
 
-template<typename K, typename V>
+template <typename K, typename V>
 V FindValueOrNull(const std::map<K, V>& map, const K& key) {
   auto it = map.find(key);
   return (it != map.end()) ? it->second : nullptr;
 }
 
-template<typename K, typename V>
+template <typename K, typename V>
 const V* FindAddressOrNull(const std::map<K, V>& map, const K& key) {
   auto it = map.find(key);
   return (it != map.end()) ? &it->second : nullptr;
@@ -46,10 +46,9 @@ void GetAudioAndVideoTrackBySsrc(
     if (!track) {
       continue;
     }
-    RTC_DCHECK_EQ(track->kind(),
-                  media_type == cricket::MEDIA_TYPE_AUDIO
-                      ? MediaStreamTrackInterface::kAudioKind
-                      : MediaStreamTrackInterface::kVideoKind);
+    RTC_DCHECK_EQ(track->kind(), media_type == cricket::MEDIA_TYPE_AUDIO
+                                     ? MediaStreamTrackInterface::kAudioKind
+                                     : MediaStreamTrackInterface::kVideoKind);
     // TODO(deadbeef): |ssrc| should be removed in favor of |GetParameters|.
     uint32_t ssrc = rtp_sender->ssrc();
     if (ssrc != 0) {
@@ -69,10 +68,9 @@ void GetAudioAndVideoTrackBySsrc(
     cricket::MediaType media_type = rtp_receiver->media_type();
     MediaStreamTrackInterface* track = rtp_receiver->track();
     RTC_DCHECK(track);
-    RTC_DCHECK_EQ(track->kind(),
-                  media_type == cricket::MEDIA_TYPE_AUDIO
-                      ? MediaStreamTrackInterface::kAudioKind
-                      : MediaStreamTrackInterface::kVideoKind);
+    RTC_DCHECK_EQ(track->kind(), media_type == cricket::MEDIA_TYPE_AUDIO
+                                     ? MediaStreamTrackInterface::kAudioKind
+                                     : MediaStreamTrackInterface::kVideoKind);
     RtpParameters params = rtp_receiver->GetParameters();
     for (const RtpEncodingParameters& encoding : params.encodings) {
       if (!encoding.ssrc) {
@@ -104,8 +102,8 @@ TrackMediaInfoMap::TrackMediaInfoMap(
       video_media_info_(std::move(video_media_info)) {
   std::map<uint32_t, AudioTrackInterface*> audio_track_by_ssrc;
   std::map<uint32_t, VideoTrackInterface*> video_track_by_ssrc;
-  GetAudioAndVideoTrackBySsrc(
-      rtp_senders, rtp_receivers, &audio_track_by_ssrc, &video_track_by_ssrc);
+  GetAudioAndVideoTrackBySsrc(rtp_senders, rtp_receivers, &audio_track_by_ssrc,
+                              &video_track_by_ssrc);
   if (voice_media_info_) {
     for (auto& sender_info : voice_media_info_->senders) {
       AudioTrackInterface* associated_track =

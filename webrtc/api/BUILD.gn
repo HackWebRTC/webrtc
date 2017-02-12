@@ -68,8 +68,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "statstypes.cc",
     "statstypes.h",
     "streamcollection.h",
-    "trackmediainfomap.cc",
-    "trackmediainfomap.h",
     "udptransportinterface.h",
     "umametrics.h",
     "videosourceproxy.h",
