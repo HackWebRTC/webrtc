@@ -175,8 +175,8 @@ NamedDecoderConstructor decoder_constructors[] = {
 class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
  public:
   std::vector<AudioCodecSpec> GetSupportedDecoders() override {
-    // Although this looks a bit strange, it means specs need only be initalized
-    // once, and that that initialization is thread-safe.
+    // Although this looks a bit strange, it means specs need only be
+    // initialized once, and that that initialization is thread-safe.
     static std::vector<AudioCodecSpec> specs = [] {
       std::vector<AudioCodecSpec> specs;
 #ifdef WEBRTC_CODEC_OPUS

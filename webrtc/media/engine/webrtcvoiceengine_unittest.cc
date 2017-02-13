@@ -14,6 +14,7 @@
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/safe_conversions.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/fakemediaengine.h"
@@ -3724,7 +3725,7 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
   }
 
   // Find the index of a codec, or -1 if not found, so that we can easily check
-  // supplementary codecs are orderd after the general codecs.
+  // supplementary codecs are ordered after the general codecs.
   auto find_codec =
       [&codecs](const webrtc::SdpAudioFormat& format) -> int {
         for (size_t i = 0; i != codecs.size(); ++i) {
@@ -3732,7 +3733,7 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
           if (STR_CASE_CMP(codec.name.c_str(), format.name.c_str()) == 0 &&
               codec.clockrate == format.clockrate_hz &&
               codec.channels == format.num_channels) {
-            return static_cast<int>(i);
+            return rtc::checked_cast<int>(i);
           }
         }
         return -1;
