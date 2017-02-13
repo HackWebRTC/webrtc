@@ -38,6 +38,7 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   virtual void SetUp() {
     adapter_.reset(new TransportFeedbackAdapter(&clock_, &bitrate_controller_));
     adapter_->InitBwe();
+    adapter_->SetStartBitrate(300000);
   }
 
   virtual void TearDown() { adapter_.reset(); }
@@ -129,15 +130,16 @@ TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
   ComparePacketVectors(packets, adapter_->GetTransportFeedbackVector());
 }
 
-TEST_F(TransportFeedbackAdapterTest, Timeout) {
+TEST_F(TransportFeedbackAdapterTest, LongFeedbackDelays) {
   const int64_t kFeedbackTimeoutMs = 60001;
-  {
+  const int kMaxConsecutiveFailedLookups = 5;
+  for (int i = 0; i < kMaxConsecutiveFailedLookups; ++i) {
     std::vector<PacketInfo> packets;
-    packets.push_back(PacketInfo(100, 200, 0, 1500, 0));
-    packets.push_back(PacketInfo(110, 210, 1, 1500, 0));
-    packets.push_back(PacketInfo(120, 220, 2, 1500, 0));
-    packets.push_back(PacketInfo(130, 230, 3, 1500, 1));
-    packets.push_back(PacketInfo(140, 240, 4, 1500, 1));
+    packets.push_back(PacketInfo(i * 100, 2 * i * 100, 0, 1500, 0));
+    packets.push_back(PacketInfo(i * 100 + 10, 2 * i * 100 + 10, 1, 1500, 0));
+    packets.push_back(PacketInfo(i * 100 + 20, 2 * i * 100 + 20, 2, 1500, 0));
+    packets.push_back(PacketInfo(i * 100 + 30, 2 * i * 100 + 30, 3, 1500, 1));
+    packets.push_back(PacketInfo(i * 100 + 40, 2 * i * 100 + 40, 4, 1500, 1));
 
     for (const PacketInfo& packet : packets)
       OnSentPacket(packet);
@@ -154,15 +156,25 @@ TEST_F(TransportFeedbackAdapterTest, Timeout) {
     feedback.Build();
 
     clock_.AdvanceTimeMilliseconds(kFeedbackTimeoutMs);
-    PacketInfo later_packet(kFeedbackTimeoutMs + 140, kFeedbackTimeoutMs + 240,
-                            5, 1500, 1);
+    PacketInfo later_packet(kFeedbackTimeoutMs + i * 100 + 40,
+                            kFeedbackTimeoutMs + i * 200 + 40, 5, 1500, 1);
     OnSentPacket(later_packet);
 
     adapter_->OnTransportFeedback(feedback);
-    EXPECT_EQ(0, rtc::checked_cast<int>(
-                     adapter_->GetTransportFeedbackVector().size()));
+
+    // Check that packets have timed out.
+    for (PacketInfo& packet : packets) {
+      packet.send_time_ms = -1;
+      packet.payload_size = 0;
+      packet.probe_cluster_id = -1;
+    }
+    ComparePacketVectors(packets, adapter_->GetTransportFeedbackVector());
   }
 
+  // Target bitrate should have halved due to feedback delays.
+  EXPECT_EQ(150000u, target_bitrate_bps_);
+
+  // Test with feedback that isn't late enough to time out.
   {
     std::vector<PacketInfo> packets;
     packets.push_back(PacketInfo(100, 200, 0, 1500, 0));
@@ -225,8 +237,14 @@ TEST_F(TransportFeedbackAdapterTest, HandlesDroppedPackets) {
   feedback.Build();
 
   std::vector<PacketInfo> expected_packets(
-      packets.begin() + kSendSideDropBefore,
-      packets.begin() + kReceiveSideDropAfter + 1);
+      packets.begin(), packets.begin() + kReceiveSideDropAfter + 1);
+  // Packets that have timed out on the send-side have lost the
+  // information stored on the send-side.
+  for (size_t i = 0; i < kSendSideDropBefore; ++i) {
+    expected_packets[i].send_time_ms = -1;
+    expected_packets[i].probe_cluster_id = -1;
+    expected_packets[i].payload_size = 0;
+  }
 
   adapter_->OnTransportFeedback(feedback);
   ComparePacketVectors(expected_packets,

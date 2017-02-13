@@ -44,7 +44,8 @@ TransportFeedbackAdapter::TransportFeedbackAdapter(
     Clock* clock,
     BitrateController* bitrate_controller)
     : send_side_bwe_with_overhead_(webrtc::field_trial::FindFullName(
-          "WebRTC-SendSideBwe-WithOverhead") == "Enabled"),
+                                       "WebRTC-SendSideBwe-WithOverhead") ==
+                                   "Enabled"),
       transport_overhead_bytes_per_packet_(0),
       send_time_history_(clock, kSendTimeHistoryWindowMs),
       clock_(clock),
@@ -118,21 +119,25 @@ std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
   }
   last_timestamp_us_ = timestamp_us;
 
+  auto received_packets = feedback.GetReceivedPackets();
   std::vector<PacketInfo> packet_feedback_vector;
-  packet_feedback_vector.reserve(feedback.GetReceivedPackets().size());
+  packet_feedback_vector.reserve(received_packets.size());
+  if (received_packets.empty()) {
+    LOG(LS_INFO) << "Empty transport feedback packet received.";
+    return packet_feedback_vector;
+  }
   {
     rtc::CritScope cs(&lock_);
     size_t failed_lookups = 0;
     int64_t offset_us = 0;
+    int64_t timestamp_ms = 0;
     for (const auto& packet : feedback.GetReceivedPackets()) {
       offset_us += packet.delta_us();
-      int64_t timestamp_ms = current_offset_ms_ + (offset_us / 1000);
+      timestamp_ms = current_offset_ms_ + (offset_us / 1000);
       PacketInfo info(timestamp_ms, packet.sequence_number());
-      if (send_time_history_.GetInfo(&info, true) && info.send_time_ms >= 0) {
-        packet_feedback_vector.push_back(info);
-      } else {
+      if (!send_time_history_.GetInfo(&info, true))
         ++failed_lookups;
-      }
+      packet_feedback_vector.push_back(info);
     }
     std::sort(packet_feedback_vector.begin(), packet_feedback_vector.end(),
               PacketInfoComparator());

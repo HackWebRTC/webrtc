@@ -210,7 +210,8 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
 
   remote_bitrate_estimator_.SetMinBitrate(min_bitrate_bps);
   min_bitrate_bps_ = min_bitrate_bps;
-  transport_feedback_adapter_.SetStartBitrate(start_bitrate_bps);
+  if (start_bitrate_bps > 0)
+    transport_feedback_adapter_.SetStartBitrate(start_bitrate_bps);
   transport_feedback_adapter_.SetMinBitrate(min_bitrate_bps_);
   MaybeTriggerOnNetworkChanged();
 }

@@ -30,15 +30,6 @@ AimdRateControlStates CreateAimdRateControlStates() {
   return states;
 }
 
-void InitBitrate(const AimdRateControlStates& states,
-                 int bitrate,
-                 int64_t now_ms) {
-  // Reduce the bitrate by 1000 to compensate for the Update after SetEstimate.
-  bitrate -= 1000;
-
-  states.aimd_rate_control->SetEstimate(bitrate, now_ms);
-}
-
 void UpdateRateControl(const AimdRateControlStates& states,
                        const BandwidthUsage& bandwidth_usage,
                        int bitrate,
@@ -54,21 +45,24 @@ void UpdateRateControl(const AimdRateControlStates& states,
 TEST(AimdRateControlTest, MinNearMaxIncreaseRateOnLowBandwith) {
   auto states = CreateAimdRateControlStates();
   constexpr int kBitrate = 30000;
-  InitBitrate(states, kBitrate, states.simulated_clock->TimeInMilliseconds());
+  states.aimd_rate_control->SetEstimate(
+      kBitrate, states.simulated_clock->TimeInMilliseconds());
   EXPECT_EQ(4000, states.aimd_rate_control->GetNearMaxIncreaseRateBps());
 }
 
 TEST(AimdRateControlTest, NearMaxIncreaseRateIs5kbpsOn90kbpsAnd200msRtt) {
   auto states = CreateAimdRateControlStates();
   constexpr int kBitrate = 90000;
-  InitBitrate(states, kBitrate, states.simulated_clock->TimeInMilliseconds());
+  states.aimd_rate_control->SetEstimate(
+      kBitrate, states.simulated_clock->TimeInMilliseconds());
   EXPECT_EQ(5000, states.aimd_rate_control->GetNearMaxIncreaseRateBps());
 }
 
 TEST(AimdRateControlTest, NearMaxIncreaseRateIs5kbpsOn60kbpsAnd100msRtt) {
   auto states = CreateAimdRateControlStates();
   constexpr int kBitrate = 60000;
-  InitBitrate(states, kBitrate, states.simulated_clock->TimeInMilliseconds());
+  states.aimd_rate_control->SetEstimate(
+      kBitrate, states.simulated_clock->TimeInMilliseconds());
   states.aimd_rate_control->SetRtt(100);
   EXPECT_EQ(5000, states.aimd_rate_control->GetNearMaxIncreaseRateBps());
 }
@@ -82,7 +76,8 @@ TEST(AimdRateControlTest, UnknownBitrateDecreaseBeforeFirstOveruse) {
 TEST(AimdRateControlTest, GetLastBitrateDecrease) {
   auto states = CreateAimdRateControlStates();
   constexpr int kBitrate = 300000;
-  InitBitrate(states, kBitrate, states.simulated_clock->TimeInMilliseconds());
+  states.aimd_rate_control->SetEstimate(
+      kBitrate, states.simulated_clock->TimeInMilliseconds());
   UpdateRateControl(states, kBwOverusing, kBitrate - 2000,
                     states.simulated_clock->TimeInMilliseconds());
   EXPECT_EQ(rtc::Optional<int>(46700),
@@ -92,8 +87,8 @@ TEST(AimdRateControlTest, GetLastBitrateDecrease) {
 TEST(AimdRateControlTest, BweLimitedByAckedBitrate) {
   auto states = CreateAimdRateControlStates();
   constexpr int kAckedBitrate = 10000;
-  InitBitrate(states, kAckedBitrate,
-              states.simulated_clock->TimeInMilliseconds());
+  states.aimd_rate_control->SetEstimate(
+      kAckedBitrate, states.simulated_clock->TimeInMilliseconds());
   while (states.simulated_clock->TimeInMilliseconds() - kClockInitialTime <
          20000) {
     UpdateRateControl(states, kBwNormal, kAckedBitrate,
@@ -108,8 +103,8 @@ TEST(AimdRateControlTest, BweLimitedByAckedBitrate) {
 TEST(AimdRateControlTest, BweNotLimitedByDecreasingAckedBitrate) {
   auto states = CreateAimdRateControlStates();
   constexpr int kAckedBitrate = 100000;
-  InitBitrate(states, kAckedBitrate,
-              states.simulated_clock->TimeInMilliseconds());
+  states.aimd_rate_control->SetEstimate(
+      kAckedBitrate, states.simulated_clock->TimeInMilliseconds());
   while (states.simulated_clock->TimeInMilliseconds() - kClockInitialTime <
          20000) {
     UpdateRateControl(states, kBwNormal, kAckedBitrate,

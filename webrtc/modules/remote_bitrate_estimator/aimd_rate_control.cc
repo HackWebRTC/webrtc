@@ -133,7 +133,8 @@ void AimdRateControl::Update(const RateControlInput* input, int64_t now_ms) {
 void AimdRateControl::SetEstimate(int bitrate_bps, int64_t now_ms) {
   updated_ = true;
   bitrate_is_initialized_ = true;
-  current_bitrate_bps_ = ChangeBitrate(bitrate_bps, bitrate_bps, now_ms);
+  current_bitrate_bps_ = ClampBitrate(bitrate_bps, bitrate_bps);
+  time_last_bitrate_change_ = now_ms;
 }
 
 int AimdRateControl::GetNearMaxIncreaseRateBps() const {
@@ -153,7 +154,7 @@ rtc::Optional<int> AimdRateControl::GetLastBitrateDecreaseBps() const {
   return last_decrease_;
 }
 
-uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
+uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
                                         uint32_t incoming_bitrate_bps,
                                         int64_t now_ms) {
   if (!updated_) {
@@ -186,11 +187,11 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
       if (rate_control_region_ == kRcNearMax) {
         uint32_t additive_increase_bps =
             AdditiveRateIncrease(now_ms, time_last_bitrate_change_);
-        current_bitrate_bps += additive_increase_bps;
+        new_bitrate_bps += additive_increase_bps;
       } else {
         uint32_t multiplicative_increase_bps = MultiplicativeRateIncrease(
-            now_ms, time_last_bitrate_change_, current_bitrate_bps);
-        current_bitrate_bps += multiplicative_increase_bps;
+            now_ms, time_last_bitrate_change_, new_bitrate_bps);
+        new_bitrate_bps += multiplicative_increase_bps;
       }
 
       time_last_bitrate_change_ = now_ms;
@@ -198,35 +199,30 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
 
     case kRcDecrease:
       bitrate_is_initialized_ = true;
-      if (incoming_bitrate_bps < min_configured_bitrate_bps_) {
-        current_bitrate_bps = min_configured_bitrate_bps_;
-      } else {
-        // Set bit rate to something slightly lower than max
-        // to get rid of any self-induced delay.
-        current_bitrate_bps = static_cast<uint32_t>(beta_ *
-                                                    incoming_bitrate_bps + 0.5);
-        if (current_bitrate_bps > current_bitrate_bps_) {
-          // Avoid increasing the rate when over-using.
-          if (rate_control_region_ != kRcMaxUnknown) {
-            current_bitrate_bps = static_cast<uint32_t>(
-                beta_ * avg_max_bitrate_kbps_ * 1000 + 0.5f);
-          }
-          current_bitrate_bps = std::min(current_bitrate_bps,
-                                         current_bitrate_bps_);
+      // Set bit rate to something slightly lower than max
+      // to get rid of any self-induced delay.
+      new_bitrate_bps =
+          static_cast<uint32_t>(beta_ * incoming_bitrate_bps + 0.5);
+      if (new_bitrate_bps > current_bitrate_bps_) {
+        // Avoid increasing the rate when over-using.
+        if (rate_control_region_ != kRcMaxUnknown) {
+          new_bitrate_bps = static_cast<uint32_t>(
+              beta_ * avg_max_bitrate_kbps_ * 1000 + 0.5f);
         }
-        ChangeRegion(kRcNearMax);
-
-        if (incoming_bitrate_bps < current_bitrate_bps_) {
-          last_decrease_ =
-              rtc::Optional<int>(current_bitrate_bps_ - current_bitrate_bps);
-        }
-        if (incoming_bitrate_kbps < avg_max_bitrate_kbps_ -
-            3 * std_max_bit_rate) {
-          avg_max_bitrate_kbps_ = -1.0f;
-        }
-
-        UpdateMaxBitRateEstimate(incoming_bitrate_kbps);
+        new_bitrate_bps = std::min(new_bitrate_bps, current_bitrate_bps_);
       }
+      ChangeRegion(kRcNearMax);
+
+      if (incoming_bitrate_bps < current_bitrate_bps_) {
+        last_decrease_ =
+            rtc::Optional<int>(current_bitrate_bps_ - new_bitrate_bps);
+      }
+      if (incoming_bitrate_kbps <
+          avg_max_bitrate_kbps_ - 3 * std_max_bit_rate) {
+        avg_max_bitrate_kbps_ = -1.0f;
+      }
+
+      UpdateMaxBitRateEstimate(incoming_bitrate_kbps);
       // Stay on hold until the pipes are cleared.
       ChangeState(kRcHold);
       time_last_bitrate_change_ = now_ms;
@@ -235,17 +231,22 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t current_bitrate_bps,
     default:
       assert(false);
   }
+  return ClampBitrate(new_bitrate_bps, incoming_bitrate_bps);
+}
+
+uint32_t AimdRateControl::ClampBitrate(uint32_t new_bitrate_bps,
+                                       uint32_t incoming_bitrate_bps) const {
   // Don't change the bit rate if the send side is too far off.
   // We allow a bit more lag at very low rates to not too easily get stuck if
   // the encoder produces uneven outputs.
   const uint32_t max_bitrate_bps =
       static_cast<uint32_t>(1.5f * incoming_bitrate_bps) + 10000;
-  if (current_bitrate_bps > current_bitrate_bps_ &&
-      current_bitrate_bps > max_bitrate_bps) {
-    current_bitrate_bps = std::max(current_bitrate_bps_, max_bitrate_bps);
-    time_last_bitrate_change_ = now_ms;
+  if (new_bitrate_bps > current_bitrate_bps_ &&
+      new_bitrate_bps > max_bitrate_bps) {
+    new_bitrate_bps = std::max(current_bitrate_bps_, max_bitrate_bps);
   }
-  return current_bitrate_bps;
+  new_bitrate_bps = std::max(new_bitrate_bps, min_configured_bitrate_bps_);
+  return new_bitrate_bps;
 }
 
 uint32_t AimdRateControl::MultiplicativeRateIncrease(

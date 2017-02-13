@@ -49,6 +49,8 @@ constexpr double kDefaultTrendlineThresholdGain = 4.0;
 constexpr size_t kDefaultMedianSlopeWindowSize = 20;
 constexpr double kDefaultMedianSlopeThresholdGain = 4.0;
 
+constexpr int kMaxConsecutiveFailedLookups = 5;
+
 const char kBitrateEstimateExperiment[] = "WebRTC-ImprovedBitrateEstimate";
 const char kBweTrendlineFilterExperiment[] = "WebRTC-BweTrendlineFilter";
 const char kBweMedianSlopeFilterExperiment[] = "WebRTC-BweMedianSlopeFilter";
@@ -223,7 +225,8 @@ DelayBasedBwe::DelayBasedBwe(Clock* clock)
       trendline_threshold_gain_(kDefaultTrendlineThresholdGain),
       probing_interval_estimator_(&rate_control_),
       median_slope_window_size_(kDefaultMedianSlopeWindowSize),
-      median_slope_threshold_gain_(kDefaultMedianSlopeThresholdGain) {
+      median_slope_threshold_gain_(kDefaultMedianSlopeThresholdGain),
+      consecutive_delayed_feedbacks_(0) {
   if (in_trendline_experiment_) {
     ReadTrendlineFilterExperimentParameters(&trendline_window_size_,
                                             &trendline_smoothing_coeff_,
@@ -256,12 +259,43 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     uma_recorded_ = true;
   }
   Result aggregated_result;
+  bool delayed_feedback = true;
   for (const auto& packet_info : packet_feedback_vector) {
+    if (packet_info.send_time_ms < 0)
+      continue;
+    delayed_feedback = false;
     Result result = IncomingPacketInfo(packet_info);
     if (result.updated)
       aggregated_result = result;
   }
+  if (delayed_feedback) {
+    ++consecutive_delayed_feedbacks_;
+  } else {
+    consecutive_delayed_feedbacks_ = 0;
+  }
+  if (consecutive_delayed_feedbacks_ >= kMaxConsecutiveFailedLookups) {
+    aggregated_result =
+        OnLongFeedbackDelay(packet_feedback_vector.back().arrival_time_ms);
+    consecutive_delayed_feedbacks_ = 0;
+  }
   return aggregated_result;
+}
+
+DelayBasedBwe::Result DelayBasedBwe::OnLongFeedbackDelay(
+    int64_t arrival_time_ms) {
+  // Estimate should always be valid since a start bitrate always is set in the
+  // Call constructor. An alternative would be to return an empty Result here,
+  // or to estimate the throughput based on the feedback we received.
+  RTC_DCHECK(rate_control_.ValidEstimate());
+  rate_control_.SetEstimate(rate_control_.LatestEstimate() / 2,
+                            arrival_time_ms);
+  Result result;
+  result.updated = true;
+  result.probe = false;
+  result.target_bitrate_bps = rate_control_.LatestEstimate();
+  LOG(LS_WARNING) << "Long feedback delay detected, reducing BWE to "
+                  << result.target_bitrate_bps;
+  return result;
 }
 
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(

@@ -80,6 +80,7 @@ class DelayBasedBwe {
   };
 
   Result IncomingPacketInfo(const PacketInfo& info);
+  Result OnLongFeedbackDelay(int64_t arrival_time_ms);
   // Updates the current remote rate estimate and returns true if a valid
   // estimate exists.
   bool UpdateEstimate(int64_t packet_arrival_time_ms,
@@ -108,6 +109,7 @@ class DelayBasedBwe {
   ProbingIntervalEstimator probing_interval_estimator_;
   size_t median_slope_window_size_;
   double median_slope_threshold_gain_;
+  int consecutive_delayed_feedbacks_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
 };
