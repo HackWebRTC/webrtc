@@ -20,7 +20,7 @@ const bool kErrorConcealmentOn = false;
 const bool kDenoisingOn = false;
 const bool kFrameDropperOn = true;
 const bool kSpatialResizeOn = false;
-const VideoCodecType kVideoCodecType = kVideoCodecVP8;
+const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
 
 // Packet loss probability [0.0, 1.0].
 const float kPacketLoss = 0.0f;
@@ -31,30 +31,28 @@ const bool kVerboseLogging = true;
 // Tests for plotting statistics from logs.
 class PlotVideoProcessorIntegrationTest
     : public VideoProcessorIntegrationTest,
-      public ::testing::WithParamInterface<::testing::tuple<int, int>> {
+      public ::testing::WithParamInterface<
+          ::testing::tuple<int, int, VideoCodecType>> {
  protected:
   PlotVideoProcessorIntegrationTest()
       : bitrate_(::testing::get<0>(GetParam())),
-        framerate_(::testing::get<1>(GetParam())) {}
+        framerate_(::testing::get<1>(GetParam())),
+        codec_type_(::testing::get<2>(GetParam())) {}
 
   virtual ~PlotVideoProcessorIntegrationTest() {}
 
-  void RunTest(int bitrate,
-               int framerate,
-               int width,
-               int height,
-               const std::string& filename) {
+  void RunTest(int width, int height, const std::string& filename) {
     // Bitrate and frame rate profile.
     RateProfile rate_profile;
     SetRateProfilePars(&rate_profile,
                        0,  // update_index
-                       bitrate, framerate,
+                       bitrate_, framerate_,
                        0);  // frame_index_rate_update
     rate_profile.frame_index_rate_update[1] = kNbrFramesLong + 1;
     rate_profile.num_frames = kNbrFramesLong;
     // Codec/network settings.
     CodecConfigPars process_settings;
-    SetCodecParameters(&process_settings, kVideoCodecType, kPacketLoss,
+    SetCodecParameters(&process_settings, codec_type_, kPacketLoss,
                        -1,  // key_frame_interval
                        1,   // num_temporal_layers
                        kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
@@ -79,31 +77,34 @@ class PlotVideoProcessorIntegrationTest
   }
   const int bitrate_;
   const int framerate_;
+  const VideoCodecType codec_type_;
 };
 
-INSTANTIATE_TEST_CASE_P(CodecSettings,
-                        PlotVideoProcessorIntegrationTest,
-                        ::testing::Combine(::testing::ValuesIn(kBitrates),
-                                           ::testing::ValuesIn(kFps)));
+INSTANTIATE_TEST_CASE_P(
+    CodecSettings,
+    PlotVideoProcessorIntegrationTest,
+    ::testing::Combine(::testing::ValuesIn(kBitrates),
+                       ::testing::ValuesIn(kFps),
+                       ::testing::ValuesIn(kVideoCodecType)));
 
 TEST_P(PlotVideoProcessorIntegrationTest, ProcessSQCif) {
-  RunTest(bitrate_, framerate_, 128, 96, "foreman_128x96");
+  RunTest(128, 96, "foreman_128x96");
 }
 
 TEST_P(PlotVideoProcessorIntegrationTest, ProcessQQVga) {
-  RunTest(bitrate_, framerate_, 160, 120, "foreman_160x120");
+  RunTest(160, 120, "foreman_160x120");
 }
 
 TEST_P(PlotVideoProcessorIntegrationTest, ProcessQCif) {
-  RunTest(bitrate_, framerate_, 176, 144, "foreman_176x144");
+  RunTest(176, 144, "foreman_176x144");
 }
 
 TEST_P(PlotVideoProcessorIntegrationTest, ProcessQVga) {
-  RunTest(bitrate_, framerate_, 320, 240, "foreman_320x240");
+  RunTest(320, 240, "foreman_320x240");
 }
 
 TEST_P(PlotVideoProcessorIntegrationTest, ProcessCif) {
-  RunTest(bitrate_, framerate_, 352, 288, "foreman_cif");
+  RunTest(352, 288, "foreman_cif");
 }
 
 }  // namespace test

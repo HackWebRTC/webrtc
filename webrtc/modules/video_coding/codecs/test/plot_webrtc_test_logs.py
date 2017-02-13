@@ -56,10 +56,7 @@ SETTINGS = [
   WIDTH,
   HEIGHT,
   FILENAME,
-  CODEC_TYPE,
   NUM_FRAMES,
-  ENCODER_IMPLEMENTATION_NAME,
-  DECODER_IMPLEMENTATION_NAME,
   ENCODE_TIME,
   DECODE_TIME,
   FRAME_SIZE,
@@ -75,6 +72,13 @@ X_SETTINGS = [
   BITRATE,  # TODO(asapersson): Needs to be last.
 ]
 
+# Settings, options for subplots.
+SUBPLOT_SETTINGS = [
+  CODEC_TYPE,
+  ENCODER_IMPLEMENTATION_NAME,
+  DECODER_IMPLEMENTATION_NAME,
+] + X_SETTINGS
+
 # Results.
 RESULTS = [
   PSNR,
@@ -88,7 +92,7 @@ RESULTS = [
   AVG_NON_KEY_FRAME_SIZE,
 ]
 
-METRICS_TO_PARSE = SETTINGS + X_SETTINGS + RESULTS
+METRICS_TO_PARSE = SETTINGS + SUBPLOT_SETTINGS + RESULTS
 
 Y_METRICS = [res[1] for res in RESULTS]
 
@@ -393,8 +397,9 @@ def main():
     resolutions = ParseSetting(filename, WIDTH[1])
     idx = GetIdx("Select metric for x-axis:\n%s" % ToString(X_SETTINGS))
     if X_SETTINGS[idx] == BITRATE:
-      idx = GetIdx("Plot per:\n%s" % ToStringWithoutMetric(X_SETTINGS, BITRATE))
-      idx_setting = METRICS_TO_PARSE.index(X_SETTINGS[idx])
+      idx = GetIdx("Plot per:\n%s" % ToStringWithoutMetric(SUBPLOT_SETTINGS,
+                                                           BITRATE))
+      idx_setting = METRICS_TO_PARSE.index(SUBPLOT_SETTINGS[idx])
       # Plot one metric. One subplot for each resolution.
       # Per subplot: metric vs bitrate (per setting).
       setting1 = WIDTH[1]
