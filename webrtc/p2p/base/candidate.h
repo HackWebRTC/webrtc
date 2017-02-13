@@ -161,7 +161,6 @@ class Candidate {
   const std::string& foundation() const {
     return foundation_;
   }
-
   void set_foundation(const std::string& foundation) {
     foundation_ = foundation;
   }
@@ -183,6 +182,10 @@ class Candidate {
   void set_transport_name(const std::string& transport_name) {
     transport_name_ = transport_name;
   }
+
+  // The URL of the ICE server which this candidate is gathered from.
+  const std::string& url() const { return url_; }
+  void set_url(const std::string& url) { url_ = url; }
 
   // Determines whether this candidate is equivalent to the given one.
   bool IsEquivalent(const Candidate& c) const {
@@ -284,6 +287,7 @@ class Candidate {
   std::string transport_name_;
   uint16_t network_id_;
   uint16_t network_cost_;
+  std::string url_;
 };
 
 // Used during parsing and writing to map component to channel name

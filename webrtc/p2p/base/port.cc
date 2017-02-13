@@ -252,6 +252,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
                       const std::string& type,
                       uint32_t type_preference,
                       uint32_t relay_preference,
+                      const std::string& url,
                       bool final) {
   if (protocol == TCP_PROTOCOL_NAME && type == LOCAL_PORT_TYPE) {
     RTC_DCHECK(!tcptype.empty());
@@ -268,6 +269,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   c.set_network_name(network_->name());
   c.set_network_type(network_->type());
   c.set_related_address(related_address);
+  c.set_url(url);
   candidates_.push_back(c);
   SignalCandidateReady(this, c);
 

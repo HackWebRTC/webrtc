@@ -245,7 +245,7 @@ void RelayPort::SetReady() {
       // address.
       AddAddress(iter->address, iter->address, rtc::SocketAddress(), proto_name,
                  proto_name, "", RELAY_PORT_TYPE, ICE_TYPE_PREFERENCE_RELAY_UDP,
-                 0, false);
+                 0, "", false);
     }
     ready_ = true;
     SignalPortComplete(this);

@@ -745,7 +745,7 @@ void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
              ProtoToString(server_address_.proto),  // The first hop protocol.
              "",  // TCP canddiate type, empty for turn candidates.
              RELAY_PORT_TYPE, GetRelayPreference(server_address_.proto),
-             server_priority_, true);
+             server_priority_, ReconstructedServerUrl(), true);
 }
 
 void TurnPort::OnAllocateError() {
@@ -1071,6 +1071,34 @@ bool TurnPort::SetEntryChannelId(const rtc::SocketAddress& address,
   }
   entry->set_channel_id(channel_id);
   return true;
+}
+
+std::string TurnPort::ReconstructedServerUrl() {
+  // draft-petithuguenin-behave-turn-uris-01
+  // turnURI       = scheme ":" turn-host [ ":" turn-port ]
+  //                 [ "?transport=" transport ]
+  // scheme        = "turn" / "turns"
+  // transport     = "udp" / "tcp" / transport-ext
+  // transport-ext = 1*unreserved
+  // turn-host     = IP-literal / IPv4address / reg-name
+  // turn-port     = *DIGIT
+  std::string scheme = "turn";
+  std::string transport = "tcp";
+  switch (server_address_.proto) {
+    case PROTO_SSLTCP:
+    case PROTO_TLS:
+      scheme = "turns";
+      break;
+    case PROTO_UDP:
+      transport = "udp";
+      break;
+    case PROTO_TCP:
+      break;
+  }
+  std::ostringstream url;
+  url << scheme << ":" << server_address_.address.ipaddr().ToString() << ":"
+      << server_address_.address.port() << "?transport=" << transport;
+  return url.str();
 }
 
 TurnAllocateRequest::TurnAllocateRequest(TurnPort* port)

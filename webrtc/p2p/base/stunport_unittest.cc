@@ -201,6 +201,8 @@ TEST_F(StunPortTest, TestPrepareAddress) {
   EXPECT_TRUE_SIMULATED_WAIT(done(), kTimeoutMs, fake_clock);
   ASSERT_EQ(1U, port()->Candidates().size());
   EXPECT_TRUE(kLocalAddr.EqualIPs(port()->Candidates()[0].address()));
+  std::string expected_server_url = "stun:127.0.0.1:5000";
+  EXPECT_EQ(port()->Candidates()[0].url(), expected_server_url);
 
   // TODO: Add IPv6 tests here, once either physicalsocketserver supports
   // IPv6, or this test is changed to use VirtualSocketServer.

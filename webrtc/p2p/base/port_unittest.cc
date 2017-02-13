@@ -146,7 +146,7 @@ class TestPort : public Port {
   virtual void PrepareAddress() {
     rtc::SocketAddress addr(ip(), min_port());
     AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", "", Type(),
-               ICE_TYPE_PREFERENCE_HOST, 0, true);
+               ICE_TYPE_PREFERENCE_HOST, 0, "", true);
   }
 
   virtual bool SupportsProtocol(const std::string& protocol) const {
@@ -158,7 +158,7 @@ class TestPort : public Port {
   // Exposed for testing candidate building.
   void AddCandidateAddress(const rtc::SocketAddress& addr) {
     AddAddress(addr, addr, rtc::SocketAddress(), "udp", "", "", Type(),
-               type_preference_, 0, false);
+               type_preference_, 0, "", false);
   }
   void AddCandidateAddress(const rtc::SocketAddress& addr,
                            const rtc::SocketAddress& base_address,
@@ -166,7 +166,7 @@ class TestPort : public Port {
                            int type_preference,
                            bool final) {
     AddAddress(addr, base_address, rtc::SocketAddress(), "udp", "", "", type,
-               type_preference, 0, final);
+               type_preference, 0, "", final);
   }
 
   virtual Connection* CreateConnection(const Candidate& remote_candidate,
