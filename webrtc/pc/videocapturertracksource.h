@@ -33,8 +33,7 @@ class MediaConstraintsInterface;
 class VideoCapturerTrackSource : public VideoTrackSource,
                                  public sigslot::has_slots<> {
  public:
-  // Creates an instance of VideoCapturerTrackSource.
-  // VideoCapturerTrackSource takes ownership of |capturer|.
+  // Creates an instance of VideoCapturerTrackSource from |capturer|.
   // |constraints| can be NULL and in that case the camera is opened using a
   // default resolution.
   static rtc::scoped_refptr<VideoTrackSourceInterface> Create(

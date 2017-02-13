@@ -965,8 +965,11 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const MediaConstraintsInterface* constraints) = 0;
 
-  // Creates a VideoTrackSourceInterface. The new source takes ownership of
-  // |capturer|.
+  // Creates a VideoTrackSourceInterface from |capturer|.
+  // TODO(deadbeef): We should aim to remove cricket::VideoCapturer from the
+  // API. It's mainly used as a wrapper around webrtc's provided
+  // platform-specific capturers, but these should be refactored to use
+  // VideoTrackSourceInterface directly.
   // TODO(deadbeef): Make pure virtual once downstream mock PC factory classes
   // are updated.
   virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(

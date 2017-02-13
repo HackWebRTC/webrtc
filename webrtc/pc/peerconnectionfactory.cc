@@ -209,8 +209,6 @@ bool PeerConnectionFactory::Initialize() {
     return false;
   }
 
-  // TODO:  Need to make sure only one VoE is created inside
-  // WebRtcMediaEngine.
   std::unique_ptr<cricket::MediaEngineInterface> media_engine =
       worker_thread_->Invoke<std::unique_ptr<cricket::MediaEngineInterface>>(
           RTC_FROM_HERE,
