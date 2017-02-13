@@ -295,6 +295,7 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       dropped_frame_count_(0),
       bitrate_observer_(nullptr),
       encoder_queue_("EncoderQueue") {
+  RTC_DCHECK(stats_proxy);
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     overuse_detector_.StartCheckForOveruse();
@@ -444,13 +445,11 @@ void ViEEncoder::ReconfigureEncoder() {
   video_sender_.UpdateChannelParemeters(rate_allocator_.get(),
                                         bitrate_observer_);
 
-  if (stats_proxy_) {
-    int framerate = stats_proxy_->GetSendFrameRate();
-    if (framerate == 0)
-      framerate = codec.maxFramerate;
-    stats_proxy_->OnEncoderReconfigured(
-        encoder_config_, rate_allocator_->GetPreferredBitrateBps(framerate));
-  }
+  int framerate = stats_proxy_->GetSendFrameRate();
+  if (framerate == 0)
+    framerate = codec.maxFramerate;
+  stats_proxy_->OnEncoderReconfigured(
+      encoder_config_, rate_allocator_->GetPreferredBitrateBps(framerate));
 
   pending_encoder_reconfiguration_ = false;
 
@@ -642,8 +641,7 @@ EncodedImageCallback::Result ViEEncoder::OnEncodedImage(
   // Encoded is called on whatever thread the real encoder implementation run
   // on. In the case of hardware encoders, there might be several encoders
   // running in parallel on different threads.
-  if (stats_proxy_)
-    stats_proxy_->OnSendEncodedImage(encoded_image, codec_specific_info);
+  stats_proxy_->OnSendEncodedImage(encoded_image, codec_specific_info);
 
   EncodedImageCallback::Result result =
       sink_->OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
@@ -671,8 +669,7 @@ void ViEEncoder::OnDroppedFrame() {
 
 void ViEEncoder::SendStatistics(uint32_t bit_rate, uint32_t frame_rate) {
   RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
-  if (stats_proxy_)
-    stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate);
+  stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate);
 }
 
 void ViEEncoder::OnReceivedSLI(uint8_t picture_id) {
@@ -734,7 +731,7 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
   bool video_suspension_changed = video_is_suspended != EncoderPaused();
   last_observed_bitrate_bps_ = bitrate_bps;
 
-  if (stats_proxy_ && video_suspension_changed) {
+  if (video_suspension_changed) {
     LOG(LS_INFO) << "Video suspend state changed to: "
                  << (video_is_suspended ? "suspended" : "not suspended");
     stats_proxy_->OnSuspendChange(video_is_suspended);
