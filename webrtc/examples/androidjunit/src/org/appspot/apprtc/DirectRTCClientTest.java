@@ -41,6 +41,7 @@ public class DirectRTCClientTest {
 
   private static final String DUMMY_SDP_MID = "sdpMid";
   private static final String DUMMY_SDP = "sdp";
+  private static final String DUMMY_SERVER_URL = "serverUrl";
 
   public static final int SERVER_WAIT = 100;
   public static final int NETWORK_TIMEOUT = 1000;
@@ -136,7 +137,7 @@ public class DirectRTCClientTest {
     verify(serverEvents, timeout(NETWORK_TIMEOUT))
         .onRemoteDescription(isNotNull(SessionDescription.class));
 
-    IceCandidate candidate = new IceCandidate(DUMMY_SDP_MID, 0, DUMMY_SDP);
+    IceCandidate candidate = new IceCandidate(DUMMY_SDP_MID, 0, DUMMY_SDP, DUMMY_SERVER_URL);
     server.sendLocalIceCandidate(candidate);
     verify(clientEvents, timeout(NETWORK_TIMEOUT))
         .onRemoteIceCandidate(isNotNull(IceCandidate.class));
