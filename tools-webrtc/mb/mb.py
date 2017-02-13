@@ -1100,13 +1100,16 @@ class MetaBuildWrapper(object):
 
       gtest_parallel = (test_type != 'non_parallel_console_test_launcher' and
                         not memcheck)
-      gtest_parallel_wrapper = [
-          '../../third_party/gtest-parallel/gtest-parallel-wrapper.py'
-      ]
       if gtest_parallel:
         extra_files += [
             '../../third_party/gtest-parallel/gtest-parallel',
             '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
+        ]
+        sep = '\\' if self.platform == 'win32' else '/'
+        output_dir = '${ISOLATED_OUTDIR}' + sep + 'test_logs'
+        gtest_parallel_wrapper = [
+            '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
+            '--output_dir=%s' % output_dir,
         ]
 
       asan = 'is_asan=true' in vals['gn_args']

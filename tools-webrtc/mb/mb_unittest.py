@@ -504,6 +504,7 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(command, [
         '../../testing/xvfb.py',
         '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
+        '--output_dir=${ISOLATED_OUTDIR}/test_logs',
         './base_unittests',
         '--',
         '--asan=0',
@@ -548,6 +549,7 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(command, [
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
+        '--output_dir=${ISOLATED_OUTDIR}\\test_logs',
         r'.\unittests.exe',
         '--',
         '--asan=0',
@@ -588,6 +590,7 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(command, [
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel-wrapper.py',
+        '--output_dir=${ISOLATED_OUTDIR}/test_logs',
         './base_unittests',
         '--',
         '--asan=0',
