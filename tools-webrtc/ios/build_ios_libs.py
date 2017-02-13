@@ -31,7 +31,7 @@ SDK_OUTPUT_DIR = os.path.join(WEBRTC_BASE_DIR, 'out_ios_libs')
 SDK_LIB_NAME = 'librtc_sdk_objc.a'
 SDK_FRAMEWORK_NAME = 'WebRTC.framework'
 
-ENABLED_ARCHITECTURES = ['arm', 'arm64', 'x64']
+DEFAULT_ARCHS = ENABLED_ARCHS = ['arm64', 'arm', 'x64', 'x86']
 IOS_DEPLOYMENT_TARGET = '8.0'
 LIBVPX_BUILD_VP9 = False
 
@@ -46,6 +46,9 @@ def _ParseArgs():
       choices=['debug', 'release'],
       help='The build config. Can be "debug" or "release". '
            'Defaults to "release".')
+  parser.add_argument('--arch', nargs='+', default=DEFAULT_ARCHS,
+      choices=ENABLED_ARCHS,
+      help='Architectures to build. Defaults to %(default)s.')
   parser.add_argument('-c', '--clean', action='store_true', default=False,
       help='Removes the previously generated build output, if any.')
   parser.add_argument('-o', '--output-dir', default=SDK_OUTPUT_DIR,
@@ -138,67 +141,61 @@ def main():
     _CleanArtifacts(args.output_dir)
     return 0
 
+  architectures = list(args.arch)
+  # Ignoring x86 except for static libraries for now because of a GN build issue
+  # where the generated dynamic framework has the wrong architectures.
+  if 'x86' in architectures and args.build_type != 'static_only':
+    architectures.remove('x86')
+
   # Build all architectures.
-  for arch in ENABLED_ARCHITECTURES:
+  for arch in architectures:
     BuildWebRTC(args.output_dir, arch, args.build_config, args.build_type,
                 IOS_DEPLOYMENT_TARGET, LIBVPX_BUILD_VP9, args.bitcode,
                 args.use_goma, args.extra_gn_args)
 
-  # Ignoring x86 except for static libraries for now because of a GN build issue
-  # where the generated dynamic framework has the wrong architectures.
-
   # Create FAT archive.
   if args.build_type == 'static_only':
-    BuildWebRTC(args.output_dir, 'x86', args.build_config, args.build_type,
-                IOS_DEPLOYMENT_TARGET, LIBVPX_BUILD_VP9, args.bitcode,
-                args.use_goma, args.extra_gn_args)
-
-    arm_lib_path = os.path.join(args.output_dir, 'arm_libs', SDK_LIB_NAME)
-    arm64_lib_path = os.path.join(args.output_dir, 'arm64_libs', SDK_LIB_NAME)
-    x64_lib_path = os.path.join(args.output_dir, 'x64_libs', SDK_LIB_NAME)
-    x86_lib_path = os.path.join(args.output_dir, 'x86_libs', SDK_LIB_NAME)
-
+    lib_paths = [os.path.join(args.output_dir, arch + '_libs', SDK_LIB_NAME)
+                 for arch in architectures]
+    out_lib_path = os.path.join(args.output_dir, SDK_LIB_NAME)
     # Combine the slices.
-    cmd = ['lipo', arm_lib_path, arm64_lib_path, x64_lib_path, x86_lib_path,
-           '-create', '-output', os.path.join(args.output_dir, SDK_LIB_NAME)]
+    cmd = ['lipo'] + lib_paths + ['-create', '-output', out_lib_path]
     _RunCommand(cmd)
 
   elif args.build_type == 'framework':
-    arm_lib_path = os.path.join(args.output_dir, 'arm_libs')
-    arm64_lib_path = os.path.join(args.output_dir, 'arm64_libs')
-    x64_lib_path = os.path.join(args.output_dir, 'x64_libs')
+    lib_paths = [os.path.join(args.output_dir, arch + '_libs')
+                 for arch in architectures]
 
     # Combine the slices.
     dylib_path = os.path.join(SDK_FRAMEWORK_NAME, 'WebRTC')
+    # Dylibs will be combined, all other files are the same across archs.
     # Use distutils instead of shutil to support merging folders.
     distutils.dir_util.copy_tree(
-        os.path.join(arm64_lib_path, SDK_FRAMEWORK_NAME),
+        os.path.join(lib_paths[0], SDK_FRAMEWORK_NAME),
         os.path.join(args.output_dir, SDK_FRAMEWORK_NAME))
     try:
       os.remove(os.path.join(args.output_dir, dylib_path))
     except OSError:
       pass
     logging.info('Merging framework slices.')
-    cmd = ['lipo', os.path.join(arm_lib_path, dylib_path),
-           os.path.join(arm64_lib_path, dylib_path),
-           os.path.join(x64_lib_path, dylib_path),
-           '-create', '-output', os.path.join(args.output_dir, dylib_path)]
+    dylib_paths = [os.path.join(path, dylib_path) for path in lib_paths]
+    out_dylib_path = os.path.join(args.output_dir, dylib_path)
+    cmd = ['lipo'] + dylib_paths + ['-create', '-output', out_dylib_path]
     _RunCommand(cmd)
 
     # Merge the dSYM slices.
     dsym_path = os.path.join('WebRTC.dSYM', 'Contents', 'Resources', 'DWARF',
                              'WebRTC')
-    distutils.dir_util.copy_tree(os.path.join(arm64_lib_path, 'WebRTC.dSYM'),
+    distutils.dir_util.copy_tree(os.path.join(lib_paths[0], 'WebRTC.dSYM'),
                                  os.path.join(args.output_dir, 'WebRTC.dSYM'))
     try:
       os.remove(os.path.join(args.output_dir, dsym_path))
     except OSError:
       pass
     logging.info('Merging dSYM slices.')
-    cmd = ['lipo', os.path.join(arm_lib_path, dsym_path),
-           os.path.join(arm64_lib_path, dsym_path),
-           os.path.join(x64_lib_path, dsym_path),
-           '-create', '-output', os.path.join(args.output_dir, dsym_path)]
+    dsym_paths = [os.path.join(path, dsym_path) for path in lib_paths]
+    out_dsym_path = os.path.join(args.output_dir, dsym_path)
+    cmd = ['lipo'] + dsym_paths + ['-create', '-output', out_dsym_path]
     _RunCommand(cmd)
 
     # Modify the version number.
