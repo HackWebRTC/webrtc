@@ -44,6 +44,7 @@ class ReceiveStatisticsProxy;
 class RemoteNtpTimeEstimator;
 class RtcpRttStats;
 class RtpHeaderParser;
+class RtpPacketReceived;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class Transport;
@@ -89,9 +90,6 @@ class RtpStreamReceiver : public RtpData,
   void StartReceive();
   void StopReceive();
 
-  bool DeliverRtp(const uint8_t* rtp_packet,
-                  size_t rtp_packet_length,
-                  const PacketTime& packet_time);
   bool DeliverRtcp(const uint8_t* rtcp_packet, size_t rtcp_packet_length);
 
   void FrameContinuous(uint16_t seq_num);
@@ -99,6 +97,9 @@ class RtpStreamReceiver : public RtpData,
   void FrameDecoded(uint16_t seq_num);
 
   void SignalNetworkState(NetworkState state);
+
+  // TODO(nisse): Intended to be part of an RtpPacketReceiver interface.
+  void OnRtpPacket(const RtpPacketReceived& packet);
 
   // Implements RtpData.
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,

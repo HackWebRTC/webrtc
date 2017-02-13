@@ -62,9 +62,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   void SignalNetworkState(NetworkState state);
   bool DeliverRtcp(const uint8_t* packet, size_t length);
-  bool DeliverRtp(const uint8_t* packet,
-                  size_t length,
-                  const PacketTime& packet_time);
 
   bool OnRecoveredPacket(const uint8_t* packet, size_t length);
 
@@ -83,6 +80,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // the log is closed and finalized. A |byte_limit| of 0 means no limit.
   void EnableEncodedFrameRecording(rtc::PlatformFile file,
                                    size_t byte_limit) override;
+
+  // TODO(nisse): Intended to be part of an RtpPacketReceiver interface.
+  void OnRtpPacket(const RtpPacketReceived& packet);
 
   // Implements rtc::VideoSinkInterface<VideoFrame>.
   void OnFrame(const VideoFrame& video_frame) override;

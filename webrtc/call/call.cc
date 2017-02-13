@@ -1211,35 +1211,26 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     if (it != video_receive_ssrcs_.end()) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_video_bytes_per_second_counter_.Add(static_cast<int>(length));
-      // TODO(brandtr): Notify the BWE of received media packets here.
-      auto status = it->second->DeliverRtp(packet, length, packet_time)
-                        ? DELIVERY_OK
-                        : DELIVERY_PACKET_ERROR;
-      // Deliver media packets to FlexFEC subsystem. RTP header extensions need
-      // not be parsed, as FlexFEC is oblivious to the semantic meaning of the
-      // packet contents beyond the 12 byte RTP base header. The BWE is fed
-      // information about these media packets from the regular media pipeline.
-      if (parsed_packet) {
-        auto it_bounds = flexfec_receive_ssrcs_media_.equal_range(ssrc);
-        for (auto it = it_bounds.first; it != it_bounds.second; ++it)
-          it->second->AddAndProcessReceivedPacket(*parsed_packet);
-      }
-      if (status == DELIVERY_OK)
-        event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
-      return status;
+      it->second->OnRtpPacket(*parsed_packet);
+
+      // Deliver media packets to FlexFEC subsystem.
+      auto it_bounds = flexfec_receive_ssrcs_media_.equal_range(ssrc);
+      for (auto it = it_bounds.first; it != it_bounds.second; ++it)
+        it->second->AddAndProcessReceivedPacket(*parsed_packet);
+
+      event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
+      return DELIVERY_OK;
     }
   }
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
     auto it = flexfec_receive_ssrcs_protection_.find(ssrc);
     if (it != flexfec_receive_ssrcs_protection_.end()) {
-      if (parsed_packet) {
-        auto status = it->second->AddAndProcessReceivedPacket(*parsed_packet)
-                          ? DELIVERY_OK
-                          : DELIVERY_PACKET_ERROR;
-        if (status == DELIVERY_OK)
-          event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
-        return status;
-      }
+      auto status = it->second->AddAndProcessReceivedPacket(*parsed_packet)
+                        ? DELIVERY_OK
+                        : DELIVERY_PACKET_ERROR;
+      if (status == DELIVERY_OK)
+        event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
+      return status;
     }
   }
   return DELIVERY_UNKNOWN_SSRC;

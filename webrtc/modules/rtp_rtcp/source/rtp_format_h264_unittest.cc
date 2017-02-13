@@ -867,6 +867,12 @@ TEST_F(RtpDepacketizerH264Test, TestTruncatedSingleStapANalu) {
   EXPECT_FALSE(depacketizer_->Parse(&payload, kPayload, sizeof(kPayload)));
 }
 
+TEST_F(RtpDepacketizerH264Test, TestStapAPacketWithTruncatedNalUnits) {
+  const uint8_t kPayload[] = { 0x58, 0xCB, 0xED, 0xDF};
+  RtpDepacketizer::ParsedPayload payload;
+  EXPECT_FALSE(depacketizer_->Parse(&payload, kPayload, sizeof(kPayload)));
+}
+
 TEST_F(RtpDepacketizerH264Test, TestTruncationJustAfterSingleStapANalu) {
   const uint8_t kPayload[] = {0x38, 0x27, 0x27};
   RtpDepacketizer::ParsedPayload payload;

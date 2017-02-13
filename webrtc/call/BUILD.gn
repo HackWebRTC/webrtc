@@ -61,7 +61,6 @@ if (rtc_include_tests) {
       "bitrate_estimator_tests.cc",
       "call_unittest.cc",
       "flexfec_receive_stream_unittest.cc",
-      "packet_injection_tests.cc",
     ]
     deps = [
       ":call",

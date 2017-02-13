@@ -256,10 +256,8 @@ bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return rtp_stream_receiver_.DeliverRtcp(packet, length);
 }
 
-bool VideoReceiveStream::DeliverRtp(const uint8_t* packet,
-                                    size_t length,
-                                    const PacketTime& packet_time) {
-  return rtp_stream_receiver_.DeliverRtp(packet, length, packet_time);
+void VideoReceiveStream::OnRtpPacket(const RtpPacketReceived& packet) {
+  rtp_stream_receiver_.OnRtpPacket(packet);
 }
 
 bool VideoReceiveStream::OnRecoveredPacket(const uint8_t* packet,

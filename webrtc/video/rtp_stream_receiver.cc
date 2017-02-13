@@ -26,6 +26,8 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/include/ulpfec_receiver.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/h264_sprop_parameter_sets.h"
 #include "webrtc/modules/video_coding/h264_sps_pps_tracker.h"
@@ -316,57 +318,54 @@ void RtpStreamReceiver::OnIncomingSSRCChanged(const uint32_t ssrc) {
   rtp_rtcp_->SetRemoteSSRC(ssrc);
 }
 
-bool RtpStreamReceiver::DeliverRtp(const uint8_t* rtp_packet,
-                                   size_t rtp_packet_length,
-                                   const PacketTime& packet_time) {
+void RtpStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   {
     rtc::CritScope lock(&receive_cs_);
     if (!receiving_) {
-      return false;
+      return;
     }
   }
 
-  RTPHeader header;
-  if (!rtp_header_parser_->Parse(rtp_packet, rtp_packet_length,
-                                 &header)) {
-    return false;
-  }
-  int64_t arrival_time_ms;
   int64_t now_ms = clock_->TimeInMilliseconds();
-  if (packet_time.timestamp != -1)
-    arrival_time_ms = (packet_time.timestamp + 500) / 1000;
-  else
-    arrival_time_ms = now_ms;
 
   {
     // Periodically log the RTP header of incoming packets.
     rtc::CritScope lock(&receive_cs_);
     if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
       std::stringstream ss;
-      ss << "Packet received on SSRC: " << header.ssrc << " with payload type: "
-         << static_cast<int>(header.payloadType) << ", timestamp: "
-         << header.timestamp << ", sequence number: " << header.sequenceNumber
-         << ", arrival time: " << arrival_time_ms;
-      if (header.extension.hasTransmissionTimeOffset)
-        ss << ", toffset: " << header.extension.transmissionTimeOffset;
-      if (header.extension.hasAbsoluteSendTime)
-        ss << ", abs send time: " << header.extension.absoluteSendTime;
+      ss << "Packet received on SSRC: " << packet.Ssrc()
+         << " with payload type: " << static_cast<int>(packet.PayloadType())
+         << ", timestamp: " << packet.Timestamp()
+         << ", sequence number: " << packet.SequenceNumber()
+         << ", arrival time: " << packet.arrival_time_ms();
+      int32_t time_offset;
+      if (packet.GetExtension<TransmissionOffset>(&time_offset)) {
+        ss << ", toffset: " << time_offset;
+      }
+      uint32_t send_time;
+      if (packet.GetExtension<AbsoluteSendTime>(&send_time)) {
+        ss << ", abs send time: " << send_time;
+      }
       LOG(LS_INFO) << ss.str();
       last_packet_log_ms_ = now_ms;
     }
   }
 
+  // TODO(nisse): Delete use of GetHeader, but needs refactoring of
+  // ReceivePacket and IncomingPacket methods below.
+  RTPHeader header;
+  packet.GetHeader(&header);
+
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 
   bool in_order = IsPacketInOrder(header);
   rtp_payload_registry_.SetIncomingPayloadType(header);
-  bool ret = ReceivePacket(rtp_packet, rtp_packet_length, header, in_order);
+  ReceivePacket(packet.data(), packet.size(), header, in_order);
   // Update receive statistics after ReceivePacket.
   // Receive statistics will be reset if the payload type changes (make sure
   // that the first packet is included in the stats).
   rtp_receive_statistics_->IncomingPacket(
-      header, rtp_packet_length, IsPacketRetransmitted(header, in_order));
-  return ret;
+      header, packet.size(), IsPacketRetransmitted(header, in_order));
 }
 
 int32_t RtpStreamReceiver::RequestKeyFrame() {
@@ -424,6 +423,7 @@ void RtpStreamReceiver::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
     nack_module_->UpdateRtt(max_rtt_ms);
 }
 
+// TODO(nisse): Drop return value.
 bool RtpStreamReceiver::ReceivePacket(const uint8_t* packet,
                                       size_t packet_length,
                                       const RTPHeader& header,
