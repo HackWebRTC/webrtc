@@ -14,6 +14,7 @@
 
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/socket_unittest.h"
 #include "webrtc/base/testutils.h"
@@ -83,6 +84,18 @@ class FakePhysicalSocketServer : public PhysicalSocketServer {
 
  private:
   PhysicalSocketTest* test_;
+};
+
+class FakeNetworkBinder : public NetworkBinderInterface {
+ public:
+  NetworkBindingResult BindSocketToNetwork(int, const IPAddress&) override {
+    return result_;
+  }
+
+  void set_result(NetworkBindingResult result) { result_ = result; }
+
+ private:
+  NetworkBindingResult result_ = NetworkBindingResult::SUCCESS;
 };
 
 class PhysicalSocketTest : public SocketTest {
@@ -414,6 +427,32 @@ TEST_F(PhysicalSocketTest, TestSocketRecvTimestampIPv6) {
   SocketTest::TestSocketRecvTimestampIPv6();
 }
 #endif
+
+// Verify that if the socket was unable to be bound to a real network interface
+// (not loopback), Bind will return an error.
+TEST_F(PhysicalSocketTest,
+       BindFailsIfNetworkBinderFailsForNonLoopbackInterface) {
+  FakeNetworkBinder fake_network_binder;
+  server_->set_network_binder(&fake_network_binder);
+  std::unique_ptr<AsyncSocket> socket(
+      server_->CreateAsyncSocket(AF_INET, SOCK_DGRAM));
+  fake_network_binder.set_result(NetworkBindingResult::FAILURE);
+  EXPECT_EQ(-1, socket->Bind(SocketAddress("192.168.0.1", 0)));
+  server_->set_network_binder(nullptr);
+}
+
+// For a loopback interface, failures to bind to the interface should be
+// tolerated.
+TEST_F(PhysicalSocketTest,
+       BindSucceedsIfNetworkBinderFailsForLoopbackInterface) {
+  FakeNetworkBinder fake_network_binder;
+  server_->set_network_binder(&fake_network_binder);
+  std::unique_ptr<AsyncSocket> socket(
+      server_->CreateAsyncSocket(AF_INET, SOCK_DGRAM));
+  fake_network_binder.set_result(NetworkBindingResult::FAILURE);
+  EXPECT_EQ(0, socket->Bind(SocketAddress(kIPv4Loopback, 0)));
+  server_->set_network_binder(nullptr);
+}
 
 class PosixSignalDeliveryTest : public testing::Test {
  public:

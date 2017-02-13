@@ -236,8 +236,9 @@ void AndroidNetworkMonitor::Stop() {
 
 // The implementation is largely taken from UDPSocketPosix::BindToNetwork in
 // https://cs.chromium.org/chromium/src/net/udp/udp_socket_posix.cc
-int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
-                                               const rtc::IPAddress& address) {
+rtc::NetworkBindingResult AndroidNetworkMonitor::BindSocketToNetwork(
+    int socket_fd,
+    const rtc::IPAddress& address) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
   // Android prior to Lollipop didn't have support for binding sockets to
   // networks. In that case it should not have reached here because
@@ -246,12 +247,12 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
   if (android_sdk_int_ < SDK_VERSION_LOLLIPOP) {
     LOG(LS_ERROR) << "BindSocketToNetwork is not supported in Android SDK "
                   << android_sdk_int_;
-    return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
+    return rtc::NetworkBindingResult::NOT_IMPLEMENTED;
   }
 
   auto iter = network_handle_by_address_.find(address);
   if (iter == network_handle_by_address_.end()) {
-    return rtc::NETWORK_BIND_ADDRESS_NOT_FOUND;
+    return rtc::NetworkBindingResult::ADDRESS_NOT_FOUND;
   }
   NetworkHandle network_handle = iter->second;
 
@@ -271,7 +272,7 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
       void* lib = dlopen(android_native_lib_path.c_str(), RTLD_NOW);
       if (lib == nullptr) {
         LOG(LS_ERROR) << "Library " << android_native_lib_path << " not found!";
-        return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
+        return rtc::NetworkBindingResult::NOT_IMPLEMENTED;
       }
       marshmallowSetNetworkForSocket =
           reinterpret_cast<MarshmallowSetNetworkForSocket>(
@@ -279,7 +280,7 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
     }
     if (!marshmallowSetNetworkForSocket) {
       LOG(LS_ERROR) << "Symbol marshmallowSetNetworkForSocket is not found";
-      return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
+      return rtc::NetworkBindingResult::NOT_IMPLEMENTED;
     }
     rv = marshmallowSetNetworkForSocket(network_handle, socket_fd);
   } else {
@@ -300,7 +301,7 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
       void* lib = dlopen(net_library_path.c_str(), RTLD_NOW | RTLD_NOLOAD);
       if (lib == nullptr) {
         LOG(LS_ERROR) << "Library " << net_library_path << " not found!";
-        return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
+        return rtc::NetworkBindingResult::NOT_IMPLEMENTED;
       }
       lollipopSetNetworkForSocket =
           reinterpret_cast<LollipopSetNetworkForSocket>(
@@ -308,7 +309,7 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
     }
     if (!lollipopSetNetworkForSocket) {
       LOG(LS_ERROR) << "Symbol lollipopSetNetworkForSocket is not found ";
-      return rtc::NETWORK_BIND_NOT_IMPLEMENTED;
+      return rtc::NetworkBindingResult::NOT_IMPLEMENTED;
     }
     rv = lollipopSetNetworkForSocket(network_handle, socket_fd);
   }
@@ -317,12 +318,12 @@ int AndroidNetworkMonitor::BindSocketToNetwork(int socket_fd,
   // ERR_NETWORK_CHANGED, rather than MapSystemError(ENONET) which gives back
   // the less descriptive ERR_FAILED.
   if (rv == 0) {
-    return rtc::NETWORK_BIND_SUCCESS;
+    return rtc::NetworkBindingResult::SUCCESS;
   }
   if (rv == ENONET) {
-    return rtc::NETWORK_BIND_NETWORK_CHANGED;
+    return rtc::NetworkBindingResult::NETWORK_CHANGED;
   }
-  return rtc::NETWORK_BIND_FAILURE;
+  return rtc::NetworkBindingResult::FAILURE;
 }
 
 void AndroidNetworkMonitor::OnNetworkConnected(

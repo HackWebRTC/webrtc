@@ -190,8 +190,42 @@ SocketAddress PhysicalSocket::GetRemoteAddress() const {
 }
 
 int PhysicalSocket::Bind(const SocketAddress& bind_addr) {
+  SocketAddress copied_bind_addr = bind_addr;
+  // If a network binder is available, use it to bind a socket to an interface
+  // instead of bind(), since this is more reliable on an OS with a weak host
+  // model.
+  if (ss_->network_binder()) {
+    NetworkBindingResult result =
+        ss_->network_binder()->BindSocketToNetwork(s_, bind_addr.ipaddr());
+    if (result == NetworkBindingResult::SUCCESS) {
+      // Since the network binder handled binding the socket to the desired
+      // network interface, we don't need to (and shouldn't) include an IP in
+      // the bind() call; bind() just needs to assign a port.
+      copied_bind_addr.SetIP(GetAnyIP(copied_bind_addr.ipaddr().family()));
+    } else if (result == NetworkBindingResult::NOT_IMPLEMENTED) {
+      LOG(LS_INFO) << "Can't bind socket to network because "
+                      "network binding is not implemented for this OS.";
+    } else {
+      if (bind_addr.IsLoopbackIP()) {
+        // If we couldn't bind to a loopback IP (which should only happen in
+        // test scenarios), continue on. This may be expected behavior.
+        LOG(LS_VERBOSE) << "Binding socket to loopback address "
+                        << bind_addr.ipaddr().ToString()
+                        << " failed; result: " << static_cast<int>(result);
+      } else {
+        LOG(LS_WARNING) << "Binding socket to network address "
+                        << bind_addr.ipaddr().ToString()
+                        << " failed; result: " << static_cast<int>(result);
+        // If a network binding was attempted and failed, we should stop here
+        // and not try to use the socket. Otherwise, we may end up sending
+        // packets with an invalid source address.
+        // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=7026
+        return -1;
+      }
+    }
+  }
   sockaddr_storage addr_storage;
-  size_t len = bind_addr.ToSockAddrStorage(&addr_storage);
+  size_t len = copied_bind_addr.ToSockAddrStorage(&addr_storage);
   sockaddr* addr = reinterpret_cast<sockaddr*>(&addr_storage);
   int err = ::bind(s_, addr, static_cast<int>(len));
   UpdateLastError();
@@ -201,14 +235,6 @@ int PhysicalSocket::Bind(const SocketAddress& bind_addr) {
     dbg_addr_.append(GetLocalAddress().ToString());
   }
 #endif
-  if (ss_->network_binder()) {
-    int result =
-        ss_->network_binder()->BindSocketToNetwork(s_, bind_addr.ipaddr());
-    if (result < 0) {
-      LOG(LS_INFO) << "Binding socket to network address "
-                   << bind_addr.ipaddr().ToString() << " result " << result;
-    }
-  }
   return err;
 }
 
