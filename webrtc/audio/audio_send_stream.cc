@@ -35,7 +35,7 @@ namespace {
 constexpr char kOpusCodecName[] = "opus";
 
 bool IsCodec(const webrtc::CodecInst& codec, const char* ref_name) {
-  return (_stricmp(codec.plname, ref_name) == 0);
+  return (STR_CASE_CMP(codec.plname, ref_name) == 0);
 }
 }  // namespace
 
