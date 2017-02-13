@@ -27,7 +27,7 @@ class VideoDecoderSoftwareFallbackWrapperTest : public ::testing::Test {
     int32_t InitDecode(const VideoCodec* codec_settings,
                        int32_t number_of_cores) override {
       ++init_decode_count_;
-      return WEBRTC_VIDEO_CODEC_OK;
+      return init_decode_return_code_;
     }
 
     int32_t Decode(const EncodedImage& input_image,
@@ -56,6 +56,7 @@ class VideoDecoderSoftwareFallbackWrapperTest : public ::testing::Test {
 
     int init_decode_count_ = 0;
     int decode_count_ = 0;
+    int32_t init_decode_return_code_ = WEBRTC_VIDEO_CODEC_OK;
     int32_t decode_return_code_ = WEBRTC_VIDEO_CODEC_OK;
     DecodedImageCallback* decode_complete_callback_ = nullptr;
     int release_count_ = 0;
@@ -69,6 +70,32 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, InitializesDecoder) {
   VideoCodec codec = {};
   fallback_wrapper_.InitDecode(&codec, 2);
   EXPECT_EQ(1, fake_decoder_.init_decode_count_);
+
+  EncodedImage encoded_image;
+  encoded_image._frameType = kVideoFrameKey;
+  fallback_wrapper_.Decode(encoded_image, false, nullptr, nullptr, -1);
+  EXPECT_EQ(1, fake_decoder_.init_decode_count_)
+      << "Initialized decoder should not be reinitialized.";
+  EXPECT_EQ(1, fake_decoder_.decode_count_);
+}
+
+TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
+       UsesFallbackDecoderAfterOnInitDecodeFailure) {
+  VideoCodec codec = {};
+  fake_decoder_.init_decode_return_code_ = WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
+  fallback_wrapper_.InitDecode(&codec, 2);
+  EXPECT_EQ(1, fake_decoder_.init_decode_count_);
+
+  EncodedImage encoded_image;
+  encoded_image._frameType = kVideoFrameKey;
+  fallback_wrapper_.Decode(encoded_image, false, nullptr, nullptr, -1);
+  EXPECT_EQ(2, fake_decoder_.init_decode_count_)
+      << "Should have attempted reinitializing the fallback decoder on "
+         "keyframe.";
+  // Unfortunately faking a VP8 frame is hard. Rely on no Decode -> using SW
+  // decoder.
+  EXPECT_EQ(0, fake_decoder_.decode_count_)
+      << "Decoder used even though no InitDecode had succeeded.";
 }
 
 TEST_F(VideoDecoderSoftwareFallbackWrapperTest,

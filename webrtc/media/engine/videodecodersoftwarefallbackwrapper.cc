@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/media/engine/internaldecoderfactory.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
@@ -21,14 +22,30 @@ namespace webrtc {
 VideoDecoderSoftwareFallbackWrapper::VideoDecoderSoftwareFallbackWrapper(
     VideoCodecType codec_type,
     VideoDecoder* decoder)
-    : codec_type_(codec_type), decoder_(decoder), callback_(nullptr) {}
+    : codec_type_(codec_type),
+      decoder_(decoder),
+      decoder_initialized_(false),
+      callback_(nullptr) {}
 
 int32_t VideoDecoderSoftwareFallbackWrapper::InitDecode(
     const VideoCodec* codec_settings,
     int32_t number_of_cores) {
+  RTC_DCHECK(!fallback_decoder_) << "Fallback decoder should never be "
+                                    "initialized here, it should've been "
+                                    "released.";
   codec_settings_ = *codec_settings;
   number_of_cores_ = number_of_cores;
-  return decoder_->InitDecode(codec_settings, number_of_cores);
+  int32_t ret = decoder_->InitDecode(codec_settings, number_of_cores);
+  if (ret != WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE) {
+    decoder_initialized_ = (ret == WEBRTC_VIDEO_CODEC_OK);
+    return ret;
+  }
+  decoder_initialized_ = false;
+
+  // Try to initialize fallback decoder.
+  if (InitFallbackDecoder())
+    return WEBRTC_VIDEO_CODEC_OK;
+  return ret;
 }
 
 bool VideoDecoderSoftwareFallbackWrapper::InitFallbackDecoder() {
@@ -58,14 +75,25 @@ int32_t VideoDecoderSoftwareFallbackWrapper::Decode(
     const RTPFragmentationHeader* fragmentation,
     const CodecSpecificInfo* codec_specific_info,
     int64_t render_time_ms) {
-  // Try decoding with the provided decoder on every keyframe or when there's no
-  // fallback decoder. This is the normal case.
+  // Try initializing and decoding with the provided decoder on every keyframe
+  // or when there's no fallback decoder. This is the normal case.
   if (!fallback_decoder_ || input_image._frameType == kVideoFrameKey) {
-    int32_t ret = decoder_->Decode(input_image, missing_frames, fragmentation,
-                                   codec_specific_info, render_time_ms);
+    int32_t ret = WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
+    // Try reinitializing the decoder if it had failed before.
+    if (!decoder_initialized_) {
+      decoder_initialized_ =
+          decoder_->InitDecode(&codec_settings_, number_of_cores_) ==
+          WEBRTC_VIDEO_CODEC_OK;
+    }
+    if (decoder_initialized_) {
+      ret = decoder_->Decode(input_image, missing_frames, fragmentation,
+                             codec_specific_info, render_time_ms);
+    }
     if (ret == WEBRTC_VIDEO_CODEC_OK) {
       if (fallback_decoder_) {
         // Decode OK -> stop using fallback decoder.
+        LOG(LS_INFO)
+            << "Decode OK, no longer using the software fallback decoder.";
         fallback_decoder_->Release();
         fallback_decoder_.reset();
         return WEBRTC_VIDEO_CODEC_OK;
@@ -93,8 +121,12 @@ int32_t VideoDecoderSoftwareFallbackWrapper::RegisterDecodeCompleteCallback(
 }
 
 int32_t VideoDecoderSoftwareFallbackWrapper::Release() {
-  if (fallback_decoder_)
+  if (fallback_decoder_) {
+    LOG(LS_INFO) << "Releasing software fallback decoder.";
     fallback_decoder_->Release();
+    fallback_decoder_.reset();
+  }
+  decoder_initialized_ = false;
   return decoder_->Release();
 }
 
