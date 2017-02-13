@@ -283,6 +283,13 @@ public class SurfaceViewRenderer
     }
   }
 
+  /**
+   * Post a task to clear the SurfaceView to a transparent uniform color.
+   */
+  public void clearImage() {
+    eglRenderer.clearImage();
+  }
+
   // Update frame dimensions and report any changes to |rendererEvents|.
   private void updateFrameDimensionsAndReportEvents(VideoRenderer.I420Frame frame) {
     synchronized (layoutLock) {
