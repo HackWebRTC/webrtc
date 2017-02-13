@@ -64,6 +64,8 @@ if (is_android) {
   }
 
   android_library("AppRTCMobile_javalib") {
+    android_manifest = "androidapp/AndroidManifest.xml"
+
     java_files = [
       "androidapp/src/org/appspot/apprtc/AppRTCAudioManager.java",
       "androidapp/src/org/appspot/apprtc/AppRTCBluetoothManager.java",
@@ -77,7 +79,6 @@ if (is_android) {
       "androidapp/src/org/appspot/apprtc/DirectRTCClient.java",
       "androidapp/src/org/appspot/apprtc/HudFragment.java",
       "androidapp/src/org/appspot/apprtc/PeerConnectionClient.java",
-      "androidapp/src/org/appspot/apprtc/PercentFrameLayout.java",
       "androidapp/src/org/appspot/apprtc/RoomParametersFetcher.java",
       "androidapp/src/org/appspot/apprtc/SettingsActivity.java",
       "androidapp/src/org/appspot/apprtc/SettingsFragment.java",
