@@ -34,7 +34,6 @@ SDK_FRAMEWORK_NAME = 'WebRTC.framework'
 ENABLED_ARCHITECTURES = ['arm', 'arm64', 'x64']
 IOS_DEPLOYMENT_TARGET = '8.0'
 LIBVPX_BUILD_VP9 = False
-CUSTOM_GN_OPTS = [] # example: ['some_option=foo bar', 'other_option=true']
 
 
 def _ParseArgs():
@@ -58,6 +57,11 @@ def _ParseArgs():
       help='Compile with bitcode.')
   parser.add_argument('--verbose', action='store_true', default=False,
       help='Debug logging.')
+  parser.add_argument('--use-goma', action='store_true', default=False,
+      help='Use goma to build.')
+  parser.add_argument('--extra-gn-args', default=[], nargs='*',
+      help='Additional GN args to be used during Ninja generation.')
+
   return parser.parse_args()
 
 
@@ -74,7 +78,7 @@ def _CleanArtifacts(output_dir):
 
 def BuildWebRTC(output_dir, target_arch, flavor, build_type,
                 ios_deployment_target, libvpx_build_vp9, use_bitcode,
-                custom_gn_options=()):
+                use_goma, extra_gn_args):
   output_dir = os.path.join(output_dir, target_arch + '_libs')
   gn_args = ['target_os="ios"', 'ios_enable_code_signing=false',
              'use_xcode_clang=true', 'is_component_build=false']
@@ -96,8 +100,7 @@ def BuildWebRTC(output_dir, target_arch, flavor, build_type,
 
   gn_args.append('enable_ios_bitcode=' +
                  ('true' if use_bitcode else 'false'))
-
-  gn_args.extend(custom_gn_options)
+  gn_args.append('use_goma=' + ('true' if use_goma else 'false'))
 
   # Generate static or dynamic.
   if build_type == 'static_only':
@@ -111,7 +114,7 @@ def BuildWebRTC(output_dir, target_arch, flavor, build_type,
 
   logging.info('Building WebRTC with args: %s', ' '.join(gn_args))
   cmd = ['gn', 'gen', output_dir,
-         '--args=' + ' '.join(gn_args)]
+         '--args=' + ' '.join(gn_args + extra_gn_args)]
   _RunCommand(cmd)
   logging.info('Building target: %s', gn_target_name)
   cmd = ['ninja', '-C', output_dir, gn_target_name]
@@ -139,7 +142,7 @@ def main():
   for arch in ENABLED_ARCHITECTURES:
     BuildWebRTC(args.output_dir, arch, args.build_config, args.build_type,
                 IOS_DEPLOYMENT_TARGET, LIBVPX_BUILD_VP9, args.bitcode,
-                CUSTOM_GN_OPTS)
+                args.use_goma, args.extra_gn_args)
 
   # Ignoring x86 except for static libraries for now because of a GN build issue
   # where the generated dynamic framework has the wrong architectures.
@@ -148,7 +151,7 @@ def main():
   if args.build_type == 'static_only':
     BuildWebRTC(args.output_dir, 'x86', args.build_config, args.build_type,
                 IOS_DEPLOYMENT_TARGET, LIBVPX_BUILD_VP9, args.bitcode,
-                CUSTOM_GN_OPTS)
+                args.use_goma, args.extra_gn_args)
 
     arm_lib_path = os.path.join(args.output_dir, 'arm_libs', SDK_LIB_NAME)
     arm64_lib_path = os.path.join(args.output_dir, 'arm64_libs', SDK_LIB_NAME)
