@@ -33,6 +33,7 @@ class Logger(object):
   def log(self, build_file_path, line_number, target_name, source_file,
           subpackage):
     build_file_path = os.path.relpath(build_file_path, self.test_dir)
+    build_file_path = build_file_path.replace(os.path.sep, '/')
     self.messages.append([build_file_path, line_number, target_name,
                           source_file, subpackage])
 

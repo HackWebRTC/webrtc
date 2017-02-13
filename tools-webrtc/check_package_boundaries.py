@@ -54,11 +54,11 @@ class Logger(object):
 def _BuildSubpackagesPattern(packages, query):
   """Returns a regular expression that matches source files inside subpackages
   of the given query."""
-  query += '/'
+  query += os.path.sep
   length = len(query)
   pattern = r'(?P<line_number>\d+)\$\s*"(?P<source_file>(?P<subpackage>'
-  pattern += '|'.join(package[length:] for package in packages
-                      if package.startswith(query))
+  pattern += '|'.join(package[length:].replace(os.path.sep, '/')
+                      for package in packages if package.startswith(query))
   pattern += r')/[\w\./]*)"'
   return re.compile(pattern)
 
