@@ -115,8 +115,8 @@ public class RoomParametersFetcher {
             offerSdp = new SessionDescription(
                 SessionDescription.Type.fromCanonicalForm(messageType), message.getString("sdp"));
           } else if (messageType.equals("candidate")) {
-            IceCandidate candidate = new IceCandidate(message.getString("id"),
-                message.getInt("label"), message.getString("candidate"), message.getString("url"));
+            IceCandidate candidate = new IceCandidate(
+                message.getString("id"), message.getInt("label"), message.getString("candidate"));
             iceCandidates.add(candidate);
           } else {
             Log.e(TAG, "Unknown message: " + messageString);
