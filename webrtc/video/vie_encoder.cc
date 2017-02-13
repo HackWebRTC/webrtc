@@ -217,10 +217,12 @@ class ViEEncoder::VideoSourceProxy {
       // task queue.
       return;
     }
-    // The input video frame size will have a resolution with "one step up"
-    // pixels than |max_pixel_count_step_up| where "one step up" depends on
-    // how the source can scale the input frame size. We still cap the step up
-    // to be at most twice the number of pixels.
+    // On step down we request at most 3/5 the pixel count of the previous
+    // resolution, so in order to take "one step up" we request a resolution as
+    // close as possible to 5/3 of the current resolution. The actual pixel
+    // count selected depends on the capabilities of the source. In order to not
+    // take a too large step up, we cap the requested pixel count to be at most
+    // four time the current number of pixels.
     sink_wants_.target_pixel_count = rtc::Optional<int>((pixel_count * 5) / 3);
     sink_wants_.max_pixel_count = rtc::Optional<int>(pixel_count * 4);
     if (source_)
@@ -741,10 +743,9 @@ void ViEEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
 
 void ViEEncoder::AdaptDown(AdaptReason reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  if (degradation_preference_ != DegradationPreference::kBalanced ||
-      !last_frame_info_) {
+  if (degradation_preference_ != DegradationPreference::kBalanced)
     return;
-  }
+  RTC_DCHECK(static_cast<bool>(last_frame_info_));
   int current_pixel_count = last_frame_info_->pixel_count();
   if (last_adaptation_request_ &&
       last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptDown &&
@@ -780,12 +781,12 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
 void ViEEncoder::AdaptUp(AdaptReason reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   if (scale_counter_[reason] == 0 ||
-      degradation_preference_ != DegradationPreference::kBalanced ||
-      !last_frame_info_) {
+      degradation_preference_ != DegradationPreference::kBalanced) {
     return;
   }
   // Only scale if resolution is higher than last time we requested higher
   // resolution.
+  RTC_DCHECK(static_cast<bool>(last_frame_info_));
   int current_pixel_count = last_frame_info_->pixel_count();
   if (last_adaptation_request_ &&
       last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptUp &&

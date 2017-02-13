@@ -885,8 +885,6 @@ TEST_F(ViEEncoderTest, StatsTracksAdaptationStatsWhenSwitchingSource) {
   int frame_height = 720;
   int sequence = 1;
 
-  // Trigger CPU overuse, won't bite before first frame.
-  vie_encoder_->TriggerCpuOveruse();
   video_source_.IncomingCapturedFrame(
       CreateFrame(sequence, frame_width, frame_height));
   sink_.WaitForEncodedFrame(sequence++);
