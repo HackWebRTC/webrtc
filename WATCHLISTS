@@ -154,8 +154,11 @@
     'neteq': ['audio-team@agora.io',
               'henrik.lundin@webrtc.org',
               'minyue@webrtc.org'],
-    'audio_mixer': ['henrik.lundin@webrtc.org'],
-    'audio_processing': ['aluebs@webrtc.org',
+    'audio_mixer': ['aleloi@webrtc.org',
+                    'henrik.lundin@webrtc.org'
+    ],
+    'audio_processing': ['aleloi@webrtc.org',
+                         'aluebs@webrtc.org',
                          'andrew@webrtc.org',
                          'audio-team@agora.io',
                          'bjornv@webrtc.org',
