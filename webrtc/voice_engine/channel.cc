@@ -288,49 +288,6 @@ class RtpPacketSenderProxy : public RtpPacketSender {
   RtpPacketSender* rtp_packet_sender_ GUARDED_BY(&crit_);
 };
 
-// Extend the default RTCP statistics struct with max_jitter, defined as the
-// maximum jitter value seen in an RTCP report block.
-struct ChannelStatistics : public RtcpStatistics {
-  ChannelStatistics() : rtcp(), max_jitter(0) {}
-
-  RtcpStatistics rtcp;
-  uint32_t max_jitter;
-};
-
-// Statistics callback, called at each generation of a new RTCP report block.
-class StatisticsProxy : public RtcpStatisticsCallback {
- public:
-  StatisticsProxy(uint32_t ssrc) : ssrc_(ssrc) {}
-  virtual ~StatisticsProxy() {}
-
-  void StatisticsUpdated(const RtcpStatistics& statistics,
-                         uint32_t ssrc) override {
-    if (ssrc != ssrc_)
-      return;
-
-    rtc::CritScope cs(&stats_lock_);
-    stats_.rtcp = statistics;
-    if (statistics.jitter > stats_.max_jitter) {
-      stats_.max_jitter = statistics.jitter;
-    }
-  }
-
-  void CNameChanged(const char* cname, uint32_t ssrc) override {}
-
-  ChannelStatistics GetStats() {
-    rtc::CritScope cs(&stats_lock_);
-    return stats_;
-  }
-
- private:
-  // StatisticsUpdated calls are triggered from threads in the RTP module,
-  // while GetStats calls can be triggered from the public voice engine API,
-  // hence synchronization is needed.
-  rtc::CriticalSection stats_lock_;
-  const uint32_t ssrc_;
-  ChannelStatistics stats_;
-};
-
 class VoERtcpObserver : public RtcpBandwidthObserver {
  public:
   explicit VoERtcpObserver(Channel* owner)
@@ -575,7 +532,6 @@ int32_t Channel::OnReceivedPayloadData(const uint8_t* payloadData,
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
                  "received packet is discarded since playing is not"
                  " activated");
-    _numberOfDiscardedPackets++;
     return 0;
   }
 
@@ -914,9 +870,7 @@ Channel::Channel(int32_t channelId,
                       // random offset
       ntp_estimator_(Clock::GetRealTimeClock()),
       playout_timestamp_rtp_(0),
-      playout_timestamp_rtcp_(0),
       playout_delay_ms_(0),
-      _numberOfDiscardedPackets(0),
       send_sequence_number_(0),
       rtp_ts_wraparound_handler_(new rtc::TimestampWrapAroundHandler()),
       capture_start_rtp_time_stamp_(-1),
@@ -981,10 +935,6 @@ Channel::Channel(int32_t channelId,
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);
-
-  statistics_proxy_.reset(new StatisticsProxy(_rtpRtcpModule->SSRC()));
-  rtp_receive_statistics_->RegisterRtcpStatisticsCallback(
-      statistics_proxy_.get());
 }
 
 Channel::~Channel() {
@@ -1277,12 +1227,6 @@ int32_t Channel::StopSend() {
   _rtpRtcpModule->SetSendingMediaStatus(false);
 
   return 0;
-}
-
-void Channel::ResetDiscardedPacketCount() {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::ResetDiscardedPacketCount()");
-  _numberOfDiscardedPackets = 0;
 }
 
 int32_t Channel::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
@@ -2518,75 +2462,6 @@ int Channel::GetRemoteRTCP_CNAME(char cName[256]) {
   return 0;
 }
 
-int Channel::GetRemoteRTCPData(unsigned int& NTPHigh,
-                               unsigned int& NTPLow,
-                               unsigned int& timestamp,
-                               unsigned int& playoutTimestamp,
-                               unsigned int* jitter,
-                               unsigned short* fractionLost) {
-  // --- Information from sender info in received Sender Reports
-
-  RTCPSenderInfo senderInfo;
-  if (_rtpRtcpModule->RemoteRTCPStat(&senderInfo) != 0) {
-    _engineStatisticsPtr->SetLastError(
-        VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-        "GetRemoteRTCPData() failed to retrieve sender info for remote "
-        "side");
-    return -1;
-  }
-
-  // We only utilize 12 out of 20 bytes in the sender info (ignores packet
-  // and octet count)
-  NTPHigh = senderInfo.NTPseconds;
-  NTPLow = senderInfo.NTPfraction;
-  timestamp = senderInfo.RTPtimeStamp;
-
-  // --- Locally derived information
-
-  // This value is updated on each incoming RTCP packet (0 when no packet
-  // has been received)
-  playoutTimestamp = playout_timestamp_rtcp_;
-
-  if (NULL != jitter || NULL != fractionLost) {
-    // Get all RTCP receiver report blocks that have been received on this
-    // channel. If we receive RTP packets from a remote source we know the
-    // remote SSRC and use the report block from him.
-    // Otherwise use the first report block.
-    std::vector<RTCPReportBlock> remote_stats;
-    if (_rtpRtcpModule->RemoteRTCPStat(&remote_stats) != 0 ||
-        remote_stats.empty()) {
-      WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                   "GetRemoteRTCPData() failed to measure statistics due"
-                   " to lack of received RTP and/or RTCP packets");
-      return -1;
-    }
-
-    uint32_t remoteSSRC = rtp_receiver_->SSRC();
-    std::vector<RTCPReportBlock>::const_iterator it = remote_stats.begin();
-    for (; it != remote_stats.end(); ++it) {
-      if (it->remoteSSRC == remoteSSRC)
-        break;
-    }
-
-    if (it == remote_stats.end()) {
-      // If we have not received any RTCP packets from this SSRC it probably
-      // means that we have not received any RTP packets.
-      // Use the first received report block instead.
-      it = remote_stats.begin();
-      remoteSSRC = it->remoteSSRC;
-    }
-
-    if (jitter) {
-      *jitter = it->jitter;
-    }
-
-    if (fractionLost) {
-      *fractionLost = it->fractionLost;
-    }
-  }
-  return 0;
-}
-
 int Channel::SendApplicationDefinedRTCPPacket(
     unsigned char subType,
     unsigned int name,
@@ -2628,37 +2503,6 @@ int Channel::SendApplicationDefinedRTCPPacket(
         "SendApplicationDefinedRTCPPacket() failed to send RTCP packet");
     return -1;
   }
-  return 0;
-}
-
-int Channel::GetRTPStatistics(unsigned int& averageJitterMs,
-                              unsigned int& maxJitterMs,
-                              unsigned int& discardedPackets) {
-  // The jitter statistics is updated for each received RTP packet and is
-  // based on received packets.
-  if (_rtpRtcpModule->RTCP() == RtcpMode::kOff) {
-    // If RTCP is off, there is no timed thread in the RTCP module regularly
-    // generating new stats, trigger the update manually here instead.
-    StreamStatistician* statistician =
-        rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
-    if (statistician) {
-      // Don't use returned statistics, use data from proxy instead so that
-      // max jitter can be fetched atomically.
-      RtcpStatistics s;
-      statistician->GetStatistics(&s, true);
-    }
-  }
-
-  ChannelStatistics stats = statistics_proxy_->GetStats();
-  const int32_t playoutFrequency = audio_coding_->PlayoutFrequency();
-  if (playoutFrequency > 0) {
-    // Scale RTP statistics given the current playout frequency
-    maxJitterMs = stats.max_jitter / (playoutFrequency / 1000);
-    averageJitterMs = stats.rtcp.jitter / (playoutFrequency / 1000);
-  }
-
-  discardedPackets = _numberOfDiscardedPackets;
-
   return 0;
 }
 
@@ -3219,9 +3063,7 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
 
   {
     rtc::CritScope lock(&video_sync_lock_);
-    if (rtcp) {
-      playout_timestamp_rtcp_ = playout_timestamp;
-    } else {
+    if (!rtcp) {
       playout_timestamp_rtp_ = playout_timestamp;
     }
     playout_delay_ms_ = delay_ms;

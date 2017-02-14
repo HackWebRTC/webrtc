@@ -70,7 +70,6 @@ class RtcEventLogProxy;
 class RtcpRttStatsProxy;
 class RtpPacketSenderProxy;
 class Statistics;
-class StatisticsProxy;
 class TransportFeedbackProxy;
 class TransmitMixer;
 class TransportSequenceNumberProxy;
@@ -184,7 +183,6 @@ class Channel
   int32_t StopPlayout();
   int32_t StartSend();
   int32_t StopSend();
-  void ResetDiscardedPacketCount();
   int32_t RegisterVoiceEngineObserver(VoiceEngineObserver& observer);
   int32_t DeRegisterVoiceEngineObserver();
 
@@ -299,8 +297,6 @@ class Channel
   int GetRemoteSSRC(unsigned int& ssrc);
   int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
   int SetReceiveAudioLevelIndicationStatus(bool enable, unsigned char id);
-  int SetSendAbsoluteSenderTimeStatus(bool enable, unsigned char id);
-  int SetReceiveAbsoluteSenderTimeStatus(bool enable, unsigned char id);
   void EnableSendTransportSequenceNumber(int id);
   void EnableReceiveTransportSequenceNumber(int id);
 
@@ -316,19 +312,10 @@ class Channel
   int GetRTCPStatus(bool& enabled);
   int SetRTCP_CNAME(const char cName[256]);
   int GetRemoteRTCP_CNAME(char cName[256]);
-  int GetRemoteRTCPData(unsigned int& NTPHigh,
-                        unsigned int& NTPLow,
-                        unsigned int& timestamp,
-                        unsigned int& playoutTimestamp,
-                        unsigned int* jitter,
-                        unsigned short* fractionLost);
   int SendApplicationDefinedRTCPPacket(unsigned char subType,
                                        unsigned int name,
                                        const char* data,
                                        unsigned short dataLengthInBytes);
-  int GetRTPStatistics(unsigned int& averageJitterMs,
-                       unsigned int& maxJitterMs,
-                       unsigned int& discardedPackets);
   int GetRemoteRTCPReportBlocks(std::vector<ReportBlock>* report_blocks);
   int GetRTPStatistics(CallStatistics& stats);
   int SetCodecFECStatus(bool enable);
@@ -463,7 +450,6 @@ class Channel
   std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
-  std::unique_ptr<StatisticsProxy> statistics_proxy_;
   std::unique_ptr<RtpReceiver> rtp_receiver_;
   TelephoneEventHandler* telephone_event_handler_;
   std::unique_ptr<RtpRtcp> _rtpRtcpModule;
@@ -493,9 +479,7 @@ class Channel
   // Timestamp of the audio pulled from NetEq.
   rtc::Optional<uint32_t> jitter_buffer_playout_timestamp_;
   uint32_t playout_timestamp_rtp_ GUARDED_BY(video_sync_lock_);
-  uint32_t playout_timestamp_rtcp_;
   uint32_t playout_delay_ms_ GUARDED_BY(video_sync_lock_);
-  uint32_t _numberOfDiscardedPackets;
   uint16_t send_sequence_number_;
   uint8_t restored_packet_[kVoiceEngineMaxIpPacketSizeBytes];
 

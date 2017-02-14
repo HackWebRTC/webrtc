@@ -436,7 +436,6 @@ int VoEBaseImpl::StartReceive(int channel) {
                           "StartReceive() failed to locate channel");
     return -1;
   }
-  channelPtr->ResetDiscardedPacketCount();
   return 0;
 }
 
