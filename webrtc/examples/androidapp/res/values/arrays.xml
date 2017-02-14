@@ -32,7 +32,8 @@
     <string-array name="videoCodecs">
         <item>VP8</item>
         <item>VP9</item>
-        <item>H264</item>
+        <item>H264 Baseline</item>
+        <item>H264 High</item>
     </string-array>
 
     <string-array name="audioCodecs">

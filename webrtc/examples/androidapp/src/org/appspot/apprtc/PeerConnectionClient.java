@@ -74,6 +74,8 @@ public class PeerConnectionClient {
   private static final String VIDEO_CODEC_VP8 = "VP8";
   private static final String VIDEO_CODEC_VP9 = "VP9";
   private static final String VIDEO_CODEC_H264 = "H264";
+  private static final String VIDEO_CODEC_H264_BASELINE = "H264 Baseline";
+  private static final String VIDEO_CODEC_H264_HIGH = "H264 High";
   private static final String AUDIO_CODEC_OPUS = "opus";
   private static final String AUDIO_CODEC_ISAC = "ISAC";
   private static final String VIDEO_CODEC_PARAM_START_BITRATE = "x-google-start-bitrate";
@@ -383,19 +385,32 @@ public class PeerConnectionClient {
       Log.d(TAG, "Enable FlexFEC field trial.");
     }
     fieldTrials += VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL;
-    fieldTrials += VIDEO_H264_HIGH_PROFILE_FIELDTRIAL;
-    PeerConnectionFactory.initializeFieldTrials(fieldTrials);
 
     // Check preferred video codec.
     preferredVideoCodec = VIDEO_CODEC_VP8;
     if (videoCallEnabled && peerConnectionParameters.videoCodec != null) {
-      if (peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_VP9)) {
-        preferredVideoCodec = VIDEO_CODEC_VP9;
-      } else if (peerConnectionParameters.videoCodec.equals(VIDEO_CODEC_H264)) {
-        preferredVideoCodec = VIDEO_CODEC_H264;
+      switch (peerConnectionParameters.videoCodec) {
+        case VIDEO_CODEC_VP8:
+          preferredVideoCodec = VIDEO_CODEC_VP8;
+          break;
+        case VIDEO_CODEC_VP9:
+          preferredVideoCodec = VIDEO_CODEC_VP9;
+          break;
+        case VIDEO_CODEC_H264_BASELINE:
+          preferredVideoCodec = VIDEO_CODEC_H264;
+          break;
+        case VIDEO_CODEC_H264_HIGH:
+          // TODO(magjed): Strip High from SDP when selecting Baseline instead of using field trial.
+          fieldTrials += VIDEO_H264_HIGH_PROFILE_FIELDTRIAL;
+          preferredVideoCodec = VIDEO_CODEC_H264;
+          break;
+        default:
+          preferredVideoCodec = VIDEO_CODEC_VP8;
       }
     }
     Log.d(TAG, "Preferred video codec: " + preferredVideoCodec);
+    PeerConnectionFactory.initializeFieldTrials(fieldTrials);
+    Log.d(TAG, "Field trials: " + fieldTrials);
 
     // Check if ISAC is used by default.
     preferIsac = peerConnectionParameters.audioCodec != null
