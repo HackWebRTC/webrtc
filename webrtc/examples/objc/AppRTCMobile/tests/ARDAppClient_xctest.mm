@@ -11,108 +11,19 @@
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 #import <QuartzCore/CoreAnimation.h>
+#import <XCTest/XCTest.h>
 
-#include "webrtc/base/gunit.h"
 #include "webrtc/base/ssladapter.h"
 
 #import "WebRTC/RTCMediaConstraints.h"
 #import "WebRTC/RTCPeerConnectionFactory.h"
-#import "WebRTC/RTCSessionDescription.h"
 
 #import "ARDAppClient+Internal.h"
 #import "ARDJoinResponse+Internal.h"
 #import "ARDMessageResponse+Internal.h"
 #import "ARDSDPUtils.h"
 
-static NSString *kARDAppClientTestsDomain = @"org.webrtc.ARDAppClientTests";
-static NSInteger kARDAppClientTestsExpectationTimeoutError = 100;
-
-// These classes mimic XCTest APIs, to make eventual conversion to XCTest
-// easier. Conversion will happen once XCTest is supported well on build bots.
-@interface ARDTestExpectation : NSObject
-
-@property(nonatomic, readonly) NSString *description;
-@property(nonatomic, readonly) BOOL isFulfilled;
-
-- (instancetype)initWithDescription:(NSString *)description;
-- (void)fulfill;
-
-@end
-
-@implementation ARDTestExpectation
-
-@synthesize description = _description;
-@synthesize isFulfilled = _isFulfilled;
-
-- (instancetype)initWithDescription:(NSString *)description {
-  if (self = [super init]) {
-    _description = description;
-  }
-  return self;
-}
-
-- (void)fulfill {
-  _isFulfilled = YES;
-}
-
-@end
-
-@interface ARDTestCase : NSObject
-
-- (ARDTestExpectation *)expectationWithDescription:(NSString *)description;
-- (void)waitForExpectationsWithTimeout:(NSTimeInterval)timeout
-                               handler:(void (^)(NSError *error))handler;
-
-@end
-
-@implementation ARDTestCase {
-  NSMutableArray *_expectations;
-}
-
-- (instancetype)init {
-  if (self = [super init]) {
-   _expectations = [NSMutableArray array];
-  }
-  return self;
-}
-
-- (ARDTestExpectation *)expectationWithDescription:(NSString *)description {
-  ARDTestExpectation *expectation =
-      [[ARDTestExpectation alloc] initWithDescription:description];
-  [_expectations addObject:expectation];
-  return expectation;
-}
-
-- (void)waitForExpectationsWithTimeout:(NSTimeInterval)timeout
-                               handler:(void (^)(NSError *error))handler {
-  CFTimeInterval startTime = CACurrentMediaTime();
-  NSError *error = nil;
-  while (![self areExpectationsFulfilled]) {
-    CFTimeInterval duration = CACurrentMediaTime() - startTime;
-    if (duration > timeout) {
-      error = [NSError errorWithDomain:kARDAppClientTestsDomain
-                                  code:kARDAppClientTestsExpectationTimeoutError
-                              userInfo:@{}];
-      break;
-    }
-    [[NSRunLoop currentRunLoop]
-        runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
-  }
-  handler(error);
-}
-
-- (BOOL)areExpectationsFulfilled {
-  for (ARDTestExpectation *expectation in _expectations) {
-    if (!expectation.isFulfilled) {
-      return NO;
-    }
-  }
-  return YES;
-}
-
-@end
-
-@interface ARDAppClientTest : ARDTestCase
+@interface ARDAppClientTest : XCTestCase
 @end
 
 @implementation ARDAppClientTest
@@ -255,9 +166,9 @@ static NSInteger kARDAppClientTestsExpectationTimeoutError = 100;
   NSString *callerId = @"testCallerId";
   NSString *answererId = @"testAnswererId";
 
-  ARDTestExpectation *callerConnectionExpectation =
+  XCTestExpectation *callerConnectionExpectation =
       [self expectationWithDescription:@"Caller PC connected."];
-  ARDTestExpectation *answererConnectionExpectation =
+  XCTestExpectation *answererConnectionExpectation =
       [self expectationWithDescription:@"Answerer PC connected."];
 
   caller = [self createAppClientForRoomId:roomId
@@ -309,7 +220,7 @@ static NSInteger kARDAppClientTestsExpectationTimeoutError = 100;
           shouldUseLevelControl:NO];
   [self waitForExpectationsWithTimeout:20 handler:^(NSError *error) {
     if (error) {
-      EXPECT_TRUE(0);
+      XCTFail(@"Expectation failed with error %@.", error);
     }
   }];
 }
@@ -317,23 +228,22 @@ static NSInteger kARDAppClientTestsExpectationTimeoutError = 100;
 // Test to see that we get a local video connection
 // Note this will currently pass even when no camera is connected as a local
 // video track is created regardless (Perhaps there should be a test for that...)
+#if !TARGET_IPHONE_SIMULATOR // Expect to fail on simulator due to no camera support
 - (void)testSessionShouldGetLocalVideoTrackCallback {
   ARDAppClient *caller = nil;
   NSString *roomId = @"testRoom";
   NSString *callerId = @"testCallerId";
 
-  ARDTestExpectation *localVideoTrackExpectation =
+  XCTestExpectation *localVideoTrackExpectation =
       [self expectationWithDescription:@"Caller got local video."];
 
   caller = [self createAppClientForRoomId:roomId
                                  clientId:callerId
                               isInitiator:YES
                                  messages:[NSArray array]
-                           messageHandler:^(ARDSignalingMessage *message) {
-  }                      connectedHandler:^{
-  }                localVideoTrackHandler:^{
-    [localVideoTrackExpectation fulfill];
-  }];
+                           messageHandler:^(ARDSignalingMessage *message) {}
+                         connectedHandler:^{}
+                   localVideoTrackHandler:^{ [localVideoTrackExpectation fulfill]; }];
   caller.defaultPeerConnectionConstraints =
       [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
                                           optionalConstraints:nil];
@@ -346,112 +256,10 @@ static NSInteger kARDAppClientTestsExpectationTimeoutError = 100;
         shouldUseLevelControl:NO];
   [self waitForExpectationsWithTimeout:20 handler:^(NSError *error) {
     if (error) {
-      EXPECT_TRUE(0);
+      XCTFail("Expectation timed out with error: %@.", error);
     }
   }];
 }
-
-@end
-
-@interface ARDSDPUtilsTest : ARDTestCase
-- (void)testPreferVideoCodec:(NSString *)codec
-                         sdp:(NSString *)sdp
-                 expectedSdp:(NSString *)expectedSdp;
-@end
-
-@implementation ARDSDPUtilsTest
-
-- (void)testPreferVideoCodec:(NSString *)codec
-                         sdp:(NSString *)sdp
-                 expectedSdp:(NSString *)expectedSdp {
-  RTCSessionDescription* desc =
-      [[RTCSessionDescription alloc] initWithType:RTCSdpTypeOffer sdp:sdp];
-  RTCSessionDescription *outputDesc =
-      [ARDSDPUtils descriptionForDescription:desc
-                         preferredVideoCodec:codec];
-  EXPECT_TRUE([outputDesc.description rangeOfString:expectedSdp].location !=
-              NSNotFound);
-}
-
-@end
-
-class SignalingTest : public ::testing::Test {
- protected:
-  static void SetUpTestCase() {
-    rtc::InitializeSSL();
-  }
-  static void TearDownTestCase() {
-    rtc::CleanupSSL();
-  }
-};
-
-TEST_F(SignalingTest, SessionTest) {
-  @autoreleasepool {
-    ARDAppClientTest *test = [[ARDAppClientTest alloc] init];
-    [test testSession];
-  }
-}
-
-#if !TARGET_IPHONE_SIMULATOR
-// Expected fail on iOS Simulator due to no camera support
-TEST_F(SignalingTest, SessionLocalVideoCallbackTest) {
-  @autoreleasepool {
-    ARDAppClientTest *test = [[ARDAppClientTest alloc] init];
-    [test testSessionShouldGetLocalVideoTrackCallback];
-  }
-}
 #endif
 
-TEST_F(SignalingTest, SdpH264Test) {
-  @autoreleasepool {
-    ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
-    NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\n"
-                      "a=rtpmap:120 H264/90000\n"
-                      "a=rtpmap:97 H264/90000\n");
-    NSString *expectedSdp = @("m=video 9 RTP/SAVPF 120 97 100 116 117 96\n"
-                              "a=rtpmap:120 H264/90000\n"
-                              "a=rtpmap:97 H264/90000\n");
-    [test testPreferVideoCodec:@"H264"
-                           sdp:sdp
-                   expectedSdp:expectedSdp];
-  }
-}
-
-TEST_F(SignalingTest, SdpVp8Test) {
-  @autoreleasepool {
-    ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
-    NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\n"
-                      "a=rtpmap:116 VP8/90000\n");
-    NSString *expectedSdp = @("m=video 9 RTP/SAVPF 116 100 117 96 120 97\n"
-                              "a=rtpmap:116 VP8/90000\n");
-    [test testPreferVideoCodec:@"VP8"
-                           sdp:sdp
-                   expectedSdp:expectedSdp];
-  }
-}
-
-TEST_F(SignalingTest, SdpNoMLineTest) {
-  @autoreleasepool {
-    ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
-    NSString *sdp = @("a=rtpmap:116 VP8/90000\n");
-    [test testPreferVideoCodec:@"VP8"
-                           sdp:sdp
-                   expectedSdp:sdp];
-  }
-}
-
-TEST_F(SignalingTest, SdpMissingCodecTest) {
-  @autoreleasepool {
-    ARDSDPUtilsTest *test = [[ARDSDPUtilsTest alloc] init];
-    NSString *sdp = @("m=video 9 RTP/SAVPF 100 116 117 96 120 97\n"
-                      "a=rtpmap:116 VP8/90000\n");
-    [test testPreferVideoCodec:@"foo"
-                           sdp:sdp
-                   expectedSdp:sdp];
-  }
-}
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+@end

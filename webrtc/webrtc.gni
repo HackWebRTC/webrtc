@@ -13,6 +13,9 @@ import("//build/config/sanitizers/sanitizers.gni")
 import("//build/config/ui.gni")
 import("//build_overrides/build.gni")
 import("//testing/test.gni")
+if (is_ios) {
+  import("//build/config/ios/rules.gni")
+}
 
 declare_args() {
   # Disable this to avoid building the Opus audio codec.
@@ -325,6 +328,32 @@ template("rtc_shared_library") {
     public_configs = [ rtc_common_inherited_config ]
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
+    }
+  }
+}
+
+if (is_ios) {
+  set_defaults("rtc_ios_xctest_test") {
+    configs = rtc_add_configs
+    suppressed_configs = []
+  }
+
+  template("rtc_ios_xctest_test") {
+    ios_xctest_test(target_name) {
+      forward_variables_from(invoker,
+                             "*",
+                             [
+                               "configs",
+                               "public_configs",
+                               "suppressed_configs",
+                             ])
+      configs += invoker.configs
+      configs -= rtc_remove_configs
+      configs -= invoker.suppressed_configs
+      public_configs = [ rtc_common_inherited_config ]
+      if (defined(invoker.public_configs)) {
+        public_configs += invoker.public_configs
+      }
     }
   }
 }

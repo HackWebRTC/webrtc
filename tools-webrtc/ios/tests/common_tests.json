@@ -1,6 +1,10 @@
 {
   "tests": [
     {
+      "app": "apprtcmobile_tests",
+      "xctest": true
+    },
+    {
       "app": "audio_decoder_unittests"
     },
     {

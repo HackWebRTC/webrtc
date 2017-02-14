@@ -433,32 +433,38 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
   }
 
   if (rtc_include_tests) {
-    config("rtc_apprtcmobile_config") {
-      defines = [ "GTEST_RELATIVE_PATH" ]
-    }
-
-    rtc_test("apprtcmobile_tests") {
-      include_dirs = [ "objc/AppRTCMobile/ios" ]
-      deps = [
-        ":AppRTCMobile_lib",
-        ":apprtc_signaling",
-        "//testing/gtest",
-        "//third_party/ocmock",
-      ]
-
-      sources = [
-        "objc/AppRTCMobile/tests/ARDAppClientTest.mm",
-        "objc/AppRTCMobile/tests/ARDSettingsModelTests.mm",
-      ]
-
-      if (is_ios) {
-        info_plist = "objc/AppRTCMobile/ios/Info.plist"
+    # TODO(kthelgason): compile xctests on mac when chromium supports it.
+    if (is_ios) {
+      rtc_source_set("apprtcmobile_test_sources") {
+        include_dirs = [
+          "objc/AppRTCMobile",
+          "objc/AppRTCMobile/ios",
+        ]
+        testonly = true
+        sources = [
+          "objc/AppRTCMobile/tests/ARDAppClient_xctest.mm",
+          "objc/AppRTCMobile/tests/ARDSDPUtils_xctest.mm",
+          "objc/AppRTCMobile/tests/ARDSettingsModel_xctest.mm",
+        ]
+        public_deps = [
+          ":AppRTCMobile_ios_frameworks",
+          ":AppRTCMobile_lib",
+          "//build/config/ios:xctest",
+          "//third_party/ocmock",
+        ]
+        configs += [ "//build/config/compiler:enable_arc" ]
       }
 
-      configs += [
-        ":rtc_apprtcmobile_config",
-        "//build/config/compiler:enable_arc",
-      ]
+      rtc_ios_xctest_test("apprtcmobile_tests") {
+        info_plist = "objc/AppRTCMobile/ios/Info.plist"
+        sources = [
+          "objc/AppRTCMobile/ios/main.m",
+        ]
+        deps = [
+          ":apprtcmobile_test_sources",
+        ]
+        ldflags = [ "-all_load" ]
+      }
     }
   }
 }
