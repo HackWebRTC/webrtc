@@ -497,7 +497,6 @@ rtc_static_library("rtc_base") {
     configs += [ ":rtc_base_warnings_config" ]
     sources += [
       "callback.h",
-      "fileutils_mock.h",
       "json.cc",
       "json.h",
       "logsinks.cc",
