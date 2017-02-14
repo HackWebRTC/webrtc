@@ -408,13 +408,12 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelEvents 
     jsonPut(json, "label", candidate.sdpMLineIndex);
     jsonPut(json, "id", candidate.sdpMid);
     jsonPut(json, "candidate", candidate.sdp);
-    jsonPut(json, "url", candidate.serverUrl);
     return json;
   }
 
   // Converts a JSON candidate to a Java object.
   IceCandidate toJavaCandidate(JSONObject json) throws JSONException {
-    return new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"),
-        json.getString("url"));
+    return new IceCandidate(
+        json.getString("id"), json.getInt("label"), json.getString("candidate"));
   }
 }
