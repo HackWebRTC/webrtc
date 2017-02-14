@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if defined(WEBRTC_IOS)
 
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 #import <sys/sysctl.h>
+#if defined(WEBRTC_IOS)
 #import <UIKit/UIKit.h>
+#endif
 
 #include <memory>
 
@@ -24,9 +25,11 @@
 namespace webrtc {
 namespace ios {
 
+#if defined(WEBRTC_IOS)
 bool isOperatingSystemAtLeastVersion(double version) {
   return GetSystemVersion() >= version;
 }
+#endif
 
 NSString* NSStringFromStdString(const std::string& stdString) {
   // std::string may contain null termination character so we construct
@@ -61,6 +64,7 @@ std::string GetCurrentThreadDescription() {
   return StdStringFromNSString(name);
 }
 
+#if defined(WEBRTC_IOS)
 std::string GetAudioSessionCategory() {
   NSString* category = [[AVAudioSession sharedInstance] category];
   return StdStringFromNSString(category);
@@ -89,6 +93,7 @@ std::string GetDeviceType() {
   NSString* deviceModel = [[UIDevice currentDevice] model];
   return StdStringFromNSString(deviceModel);
 }
+#endif
 
 std::string GetDeviceName() {
   size_t size;
@@ -134,4 +139,3 @@ bool GetLowPowerModeEnabled() {
 }  // namespace ios
 }  // namespace webrtc
 
-#endif  // defined(WEBRTC_IOS)

@@ -47,6 +47,8 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/RTCMetricsSampleInfo.mm",
       "objc/Framework/Classes/RTCSSLAdapter.mm",
       "objc/Framework/Classes/RTCTracing.mm",
+      "objc/Framework/Classes/helpers.h",
+      "objc/Framework/Classes/helpers.mm",
       "objc/Framework/Headers/WebRTC/RTCDispatcher.h",
       "objc/Framework/Headers/WebRTC/RTCFieldTrials.h",
       "objc/Framework/Headers/WebRTC/RTCLogging.h",
@@ -62,8 +64,6 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/RTCUIApplication.h",
         "objc/Framework/Classes/RTCUIApplication.mm",
         "objc/Framework/Classes/UIDevice+RTCDevice.mm",
-        "objc/Framework/Classes/helpers.h",
-        "objc/Framework/Classes/helpers.mm",
         "objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h",
         "objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h",
       ]
