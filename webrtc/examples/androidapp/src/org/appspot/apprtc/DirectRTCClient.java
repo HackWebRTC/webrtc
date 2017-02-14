@@ -187,6 +187,7 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
         jsonPut(json, "label", candidate.sdpMLineIndex);
         jsonPut(json, "id", candidate.sdpMid);
         jsonPut(json, "candidate", candidate.sdp);
+        jsonPut(json, "url", candidate.serverUrl);
 
         if (roomState != ConnectionState.CONNECTED) {
           reportError("Sending ICE candidate in non connected state.");
@@ -336,12 +337,13 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
     jsonPut(json, "label", candidate.sdpMLineIndex);
     jsonPut(json, "id", candidate.sdpMid);
     jsonPut(json, "candidate", candidate.sdp);
+    jsonPut(json, "url", candidate.serverUrl);
     return json;
   }
 
   // Converts a JSON candidate to a Java object.
   private static IceCandidate toJavaCandidate(JSONObject json) throws JSONException {
-    return new IceCandidate(
-        json.getString("id"), json.getInt("label"), json.getString("candidate"));
+    return new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"),
+        json.getString("url"));
   }
 }
