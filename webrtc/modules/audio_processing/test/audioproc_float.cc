@@ -121,6 +121,9 @@ DEFINE_int32(aec3,
 DEFINE_int32(lc,
              kParameterNotSpecifiedValue,
              "Activate (1) or deactivate(0) the level control");
+DEFINE_int32(experimental_agc,
+             kParameterNotSpecifiedValue,
+             "Activate (1) or deactivate(0) the experimental AGC");
 DEFINE_int32(
     refined_adaptive_filter,
     kParameterNotSpecifiedValue,
@@ -245,6 +248,7 @@ SimulationSettings CreateSettings() {
 
   SetSettingIfFlagSet(FLAGS_aec3, &settings.use_aec3);
   SetSettingIfFlagSet(FLAGS_lc, &settings.use_lc);
+  SetSettingIfFlagSet(FLAGS_experimental_agc, &settings.use_experimental_agc);
   SetSettingIfSpecified(FLAGS_aecm_routing_mode, &settings.aecm_routing_mode);
   SetSettingIfFlagSet(FLAGS_aecm_comfort_noise,
                       &settings.use_aecm_comfort_noise);

@@ -285,6 +285,8 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
       !settings_.use_extended_filter || *settings_.use_extended_filter));
   config.Set<DelayAgnostic>(new DelayAgnostic(!settings_.use_delay_agnostic ||
                                               *settings_.use_delay_agnostic));
+  config.Set<ExperimentalAgc>(new ExperimentalAgc(
+      !settings_.use_experimental_agc || *settings_.use_experimental_agc));
   if (settings_.use_ed) {
     apm_config.residual_echo_detector.enabled = *settings_.use_ed;
   }
@@ -327,7 +329,11 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
                  ap_->gain_control()->set_target_level_dbfs(
                      *settings_.agc_target_level));
   }
-
+  if (settings_.agc_compression_gain) {
+    RTC_CHECK_EQ(AudioProcessing::kNoError,
+                 ap_->gain_control()->set_compression_gain_db(
+                     *settings_.agc_compression_gain));
+  }
   if (settings_.agc_mode) {
     RTC_CHECK_EQ(
         AudioProcessing::kNoError,
