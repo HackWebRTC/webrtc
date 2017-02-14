@@ -384,8 +384,6 @@ rtc_static_library("rtc_base") {
     "crc32.h",
     "cryptstring.cc",
     "cryptstring.h",
-    "diskcache.cc",
-    "diskcache.h",
     "filerotatingstream.cc",
     "filerotatingstream.h",
     "fileutils.cc",
@@ -395,8 +393,6 @@ rtc_static_library("rtc_base") {
     "helpers.h",
     "httpbase.cc",
     "httpbase.h",
-    "httpclient.cc",
-    "httpclient.h",
     "httpcommon-inl.h",
     "httpcommon.cc",
     "httpcommon.h",
@@ -454,8 +450,6 @@ rtc_static_library("rtc_base") {
     "socketaddresspair.cc",
     "socketaddresspair.h",
     "socketfactory.h",
-    "socketpool.cc",
-    "socketpool.h",
     "socketserver.h",
     "socketstream.cc",
     "socketstream.h",
@@ -519,8 +513,6 @@ rtc_static_library("rtc_base") {
 
     if (is_win) {
       sources += [
-        "diskcache_win32.cc",
-        "diskcache_win32.h",
         "win32socketinit.cc",
         "win32socketinit.h",
         "win32socketserver.cc",
