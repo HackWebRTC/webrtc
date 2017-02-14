@@ -31,7 +31,6 @@ class SubAPIManager {
   SubAPIManager()
     : _base(true),
       _codec(false),
-      _externalMedia(false),
       _file(false),
       _hardware(false),
       _netEqStats(false),
@@ -41,7 +40,6 @@ class SubAPIManager {
       _volumeControl(false),
       _apm(false) {
       _codec = true;
-      _externalMedia = true;
       _file = true;
       _hardware = true;
       _netEqStats = true;
@@ -56,7 +54,7 @@ class SubAPIManager {
 
  private:
   bool _base, _codec;
-  bool _externalMedia, _file, _hardware;
+  bool _file, _hardware;
   bool _netEqStats, _network, _rtp_rtcp, _videoSync, _volumeControl, _apm;
 };
 

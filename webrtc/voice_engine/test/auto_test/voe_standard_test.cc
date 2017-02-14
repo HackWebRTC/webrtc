@@ -40,8 +40,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Base\n");
   if (_codec)
     TEST_LOG("  Codec\n");
-  if (_externalMedia)
-    TEST_LOG("  ExternalMedia\n");
   if (_file)
     TEST_LOG("  File\n");
   if (_hardware)
@@ -64,8 +62,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Base\n");
   if (!_codec)
     TEST_LOG("  Codec\n");
-  if (!_externalMedia)
-    TEST_LOG("  ExternamMedia\n");
   if (!_file)
     TEST_LOG("  File\n");
   if (!_hardware)

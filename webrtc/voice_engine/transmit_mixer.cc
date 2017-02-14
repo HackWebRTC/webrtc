@@ -19,7 +19,6 @@
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/channel.h"
 #include "webrtc/voice_engine/channel_manager.h"
-#include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/statistics.h"
 #include "webrtc/voice_engine/utility.h"
 #include "webrtc/voice_engine/voe_base_impl.h"
@@ -199,8 +198,6 @@ TransmitMixer::TransmitMixer(uint32_t instanceId) :
     _instanceId(instanceId),
     _mixFileWithMicrophone(false),
     _captureLevel(0),
-    external_postproc_ptr_(NULL),
-    external_preproc_ptr_(NULL),
     _mute(false),
     stereo_codec_(false),
     swap_stereo_channels_(false)
@@ -218,8 +215,6 @@ TransmitMixer::~TransmitMixer()
     {
         _processThreadPtr->DeRegisterModule(&_monitorModule);
     }
-    DeRegisterExternalMediaProcessing(kRecordingAllChannelsMixed);
-    DeRegisterExternalMediaProcessing(kRecordingPreprocessing);
     {
         rtc::CritScope cs(&_critSect);
         if (file_recorder_) {
@@ -323,17 +318,6 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
                        nChannels,
                        samplesPerSec);
 
-    {
-      rtc::CritScope cs(&_callbackCritSect);
-      if (external_preproc_ptr_) {
-        external_preproc_ptr_->Process(-1, kRecordingPreprocessing,
-                                       _audioFrame.data_,
-                                       _audioFrame.samples_per_channel_,
-                                       _audioFrame.sample_rate_hz_,
-                                       _audioFrame.num_channels_ == 2);
-      }
-    }
-
     // --- Near-end audio processing.
     ProcessAudio(totalDelayMS, clockDrift, currentMicLevel, keyPressed);
 
@@ -364,17 +348,6 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     if (file_recording)
     {
         RecordAudioToFile(_audioFrame.sample_rate_hz_);
-    }
-
-    {
-      rtc::CritScope cs(&_callbackCritSect);
-      if (external_postproc_ptr_) {
-        external_postproc_ptr_->Process(-1, kRecordingAllChannelsMixed,
-                                        _audioFrame.data_,
-                                        _audioFrame.samples_per_channel_,
-                                        _audioFrame.sample_rate_hz_,
-                                        _audioFrame.num_channels_ == 2);
-      }
     }
 
     // --- Measure audio level of speech after all processing.
@@ -962,43 +935,6 @@ TransmitMixer::SetMixWithMicStatus(bool mix)
     _mixFileWithMicrophone = mix;
 }
 
-int TransmitMixer::RegisterExternalMediaProcessing(
-    VoEMediaProcess* object,
-    ProcessingTypes type) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-               "TransmitMixer::RegisterExternalMediaProcessing()");
-
-  rtc::CritScope cs(&_callbackCritSect);
-  if (!object) {
-    return -1;
-  }
-
-  // Store the callback object according to the processing type.
-  if (type == kRecordingAllChannelsMixed) {
-    external_postproc_ptr_ = object;
-  } else if (type == kRecordingPreprocessing) {
-    external_preproc_ptr_ = object;
-  } else {
-    return -1;
-  }
-  return 0;
-}
-
-int TransmitMixer::DeRegisterExternalMediaProcessing(ProcessingTypes type) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-               "TransmitMixer::DeRegisterExternalMediaProcessing()");
-
-  rtc::CritScope cs(&_callbackCritSect);
-  if (type == kRecordingAllChannelsMixed) {
-    external_postproc_ptr_ = NULL;
-  } else if (type == kRecordingPreprocessing) {
-    external_preproc_ptr_ = NULL;
-  } else {
-    return -1;
-  }
-  return 0;
-}
-
 int
 TransmitMixer::SetMute(bool enable)
 {
@@ -1191,12 +1127,6 @@ void TransmitMixer::TypingDetection(bool keyPressed)
   }
 }
 #endif
-
-int TransmitMixer::GetMixingFrequency()
-{
-    assert(_audioFrame.sample_rate_hz_ != 0);
-    return _audioFrame.sample_rate_hz_;
-}
 
 #if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
 int TransmitMixer::TimeSinceLastTyping(int &seconds)

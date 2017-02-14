@@ -29,7 +29,6 @@
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
-#include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_file.h"
 #include "webrtc/voice_engine/include/voe_hardware.h"
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
@@ -61,7 +60,6 @@ VoENetwork* netw = NULL;
 VoEFile* file = NULL;
 VoEVideoSync* vsync = NULL;
 VoEHardware* hardware = NULL;
-VoEExternalMedia* xmedia = NULL;
 VoENetEqStats* neteqst = NULL;
 
 void RunTest(std::string out_path);
@@ -133,7 +131,6 @@ int main(int argc, char** argv) {
   file = VoEFile::GetInterface(m_voe);
   vsync = VoEVideoSync::GetInterface(m_voe);
   hardware = VoEHardware::GetInterface(m_voe);
-  xmedia = VoEExternalMedia::GetInterface(m_voe);
   neteqst = VoENetEqStats::GetInterface(m_voe);
 
   MyObserver my_observer;
@@ -203,9 +200,6 @@ int main(int argc, char** argv) {
 
   if (hardware)
     hardware->Release();
-
-  if (xmedia)
-    xmedia->Release();
 
   if (neteqst)
     neteqst->Release();

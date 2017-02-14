@@ -35,7 +35,6 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/trace.h"
-#include "webrtc/voice_engine/include/voe_external_media.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/output_mixer.h"
 #include "webrtc/voice_engine/statistics.h"
@@ -658,18 +657,6 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
     muted = false;  // We may have added non-zero samples.
   }
 
-  // External media
-  if (_outputExternalMedia) {
-    rtc::CritScope cs(&_callbackCritSect);
-    const bool isStereo = (audioFrame->num_channels_ == 2);
-    if (_outputExternalMediaCallbackPtr) {
-      _outputExternalMediaCallbackPtr->Process(
-          _channelId, kPlaybackPerChannel, (int16_t*)audioFrame->data_,
-          audioFrame->samples_per_channel_, audioFrame->sample_rate_hz_,
-          isStereo);
-    }
-  }
-
   // Record playout if enabled
   {
     rtc::CritScope cs(&_fileCritSect);
@@ -863,9 +850,6 @@ Channel::Channel(int32_t channelId,
       _outputFilePlayerId(VoEModuleId(instanceId, channelId) + 1025),
       _outputFileRecorderId(VoEModuleId(instanceId, channelId) + 1026),
       _outputFileRecording(false),
-      _outputExternalMedia(false),
-      _inputExternalMediaCallbackPtr(NULL),
-      _outputExternalMediaCallbackPtr(NULL),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
       ntp_estimator_(Clock::GetRealTimeClock()),
@@ -884,7 +868,6 @@ Channel::Channel(int32_t channelId,
       _callbackCritSectPtr(NULL),
       _transportPtr(NULL),
       _sendFrameType(0),
-      _externalMixing(false),
       _mixFileWithMicrophone(false),
       input_mute_(false),
       previous_frame_muted_(false),
@@ -942,12 +925,6 @@ Channel::~Channel() {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::~Channel() - dtor");
 
-  if (_outputExternalMedia) {
-    DeRegisterExternalMediaProcessing(kPlaybackPerChannel);
-  }
-  if (channel_state_.Get().input_external_media) {
-    DeRegisterExternalMediaProcessing(kRecordingPerChannel);
-  }
   StopSend();
   StopPlayout();
 
@@ -1134,14 +1111,12 @@ int32_t Channel::StartPlayout() {
     return 0;
   }
 
-  if (!_externalMixing) {
-    // Add participant as candidates for mixing.
-    if (_outputMixerPtr->SetMixabilityStatus(*this, true) != 0) {
-      _engineStatisticsPtr->SetLastError(
-          VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
-          "StartPlayout() failed to add participant to mixer");
-      return -1;
-    }
+  // Add participant as candidates for mixing.
+  if (_outputMixerPtr->SetMixabilityStatus(*this, true) != 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
+        "StartPlayout() failed to add participant to mixer");
+    return -1;
   }
 
   channel_state_.SetPlaying(true);
@@ -1158,14 +1133,12 @@ int32_t Channel::StopPlayout() {
     return 0;
   }
 
-  if (!_externalMixing) {
-    // Remove participant as candidates for mixing
-    if (_outputMixerPtr->SetMixabilityStatus(*this, false) != 0) {
-      _engineStatisticsPtr->SetLastError(
-          VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
-          "StopPlayout() failed to remove participant from mixer");
-      return -1;
-    }
+  // Remove participant as candidates for mixing
+  if (_outputMixerPtr->SetMixabilityStatus(*this, false) != 0) {
+    _engineStatisticsPtr->SetLastError(
+        VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
+        "StopPlayout() failed to remove participant from mixer");
+    return -1;
   }
 
   channel_state_.SetPlaying(false);
@@ -2668,17 +2641,6 @@ uint32_t Channel::PrepareEncodeAndSend(int mixingFrequency) {
   bool is_muted = InputMute();  // Cache locally as InputMute() takes a lock.
   AudioFrameOperations::Mute(&_audioFrame, previous_frame_muted_, is_muted);
 
-  if (channel_state_.Get().input_external_media) {
-    rtc::CritScope cs(&_callbackCritSect);
-    const bool isStereo = (_audioFrame.num_channels_ == 2);
-    if (_inputExternalMediaCallbackPtr) {
-      _inputExternalMediaCallbackPtr->Process(
-          _channelId, kRecordingPerChannel, (int16_t*)_audioFrame.data_,
-          _audioFrame.samples_per_channel_, _audioFrame.sample_rate_hz_,
-          isStereo);
-    }
-  }
-
   if (_includeAudioLevelIndication) {
     size_t length =
         _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
@@ -2768,85 +2730,6 @@ void Channel::SetTransportOverhead(size_t transport_overhead_per_packet) {
 void Channel::OnOverheadChanged(size_t overhead_bytes_per_packet) {
   rtp_overhead_per_packet_ = overhead_bytes_per_packet;
   UpdateOverheadForEncoder();
-}
-
-int Channel::RegisterExternalMediaProcessing(ProcessingTypes type,
-                                             VoEMediaProcess& processObject) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::RegisterExternalMediaProcessing()");
-
-  rtc::CritScope cs(&_callbackCritSect);
-
-  if (kPlaybackPerChannel == type) {
-    if (_outputExternalMediaCallbackPtr) {
-      _engineStatisticsPtr->SetLastError(
-          VE_INVALID_OPERATION, kTraceError,
-          "Channel::RegisterExternalMediaProcessing() "
-          "output external media already enabled");
-      return -1;
-    }
-    _outputExternalMediaCallbackPtr = &processObject;
-    _outputExternalMedia = true;
-  } else if (kRecordingPerChannel == type) {
-    if (_inputExternalMediaCallbackPtr) {
-      _engineStatisticsPtr->SetLastError(
-          VE_INVALID_OPERATION, kTraceError,
-          "Channel::RegisterExternalMediaProcessing() "
-          "output external media already enabled");
-      return -1;
-    }
-    _inputExternalMediaCallbackPtr = &processObject;
-    channel_state_.SetInputExternalMedia(true);
-  }
-  return 0;
-}
-
-int Channel::DeRegisterExternalMediaProcessing(ProcessingTypes type) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::DeRegisterExternalMediaProcessing()");
-
-  rtc::CritScope cs(&_callbackCritSect);
-
-  if (kPlaybackPerChannel == type) {
-    if (!_outputExternalMediaCallbackPtr) {
-      _engineStatisticsPtr->SetLastError(
-          VE_INVALID_OPERATION, kTraceWarning,
-          "Channel::DeRegisterExternalMediaProcessing() "
-          "output external media already disabled");
-      return 0;
-    }
-    _outputExternalMedia = false;
-    _outputExternalMediaCallbackPtr = NULL;
-  } else if (kRecordingPerChannel == type) {
-    if (!_inputExternalMediaCallbackPtr) {
-      _engineStatisticsPtr->SetLastError(
-          VE_INVALID_OPERATION, kTraceWarning,
-          "Channel::DeRegisterExternalMediaProcessing() "
-          "input external media already disabled");
-      return 0;
-    }
-    channel_state_.SetInputExternalMedia(false);
-    _inputExternalMediaCallbackPtr = NULL;
-  }
-
-  return 0;
-}
-
-int Channel::SetExternalMixing(bool enabled) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetExternalMixing(enabled=%d)", enabled);
-
-  if (channel_state_.Get().playing) {
-    _engineStatisticsPtr->SetLastError(
-        VE_INVALID_OPERATION, kTraceError,
-        "Channel::SetExternalMixing() "
-        "external mixing cannot be changed while playing.");
-    return -1;
-  }
-
-  _externalMixing = enabled;
-
-  return 0;
 }
 
 int Channel::GetNetworkStatistics(NetworkStatistics& stats) {

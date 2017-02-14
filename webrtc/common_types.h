@@ -142,14 +142,6 @@ enum FileFormats {
   kFileFormatPcm32kHzFile = 9
 };
 
-enum ProcessingTypes {
-  kPlaybackPerChannel = 0,
-  kPlaybackAllChannelsMixed,
-  kRecordingPerChannel,
-  kRecordingAllChannelsMixed,
-  kRecordingPreprocessing
-};
-
 enum FrameType {
   kEmptyFrame = 0,
   kAudioFrameSpeech = 1,

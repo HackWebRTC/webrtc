@@ -159,17 +159,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD2(SetOpusMaxPlaybackRate, int(int channel, int frequency_hz));
   MOCK_METHOD2(SetOpusDtx, int(int channel, bool enable_dtx));
 
-  // VoEExternalMedia
-  MOCK_METHOD3(RegisterExternalMediaProcessing,
-               int(int channel,
-                   ProcessingTypes type,
-                   VoEMediaProcess& processObject));
-  MOCK_METHOD2(DeRegisterExternalMediaProcessing,
-               int(int channel, ProcessingTypes type));
-  MOCK_METHOD3(GetAudioFrame,
-               int(int channel, int desired_sample_rate_hz, AudioFrame* frame));
-  MOCK_METHOD2(SetExternalMixing, int(int channel, bool enable));
-
   // VoEFile
   MOCK_METHOD7(StartPlayingFileLocally,
                int(int channel,

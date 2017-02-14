@@ -35,8 +35,6 @@ namespace webrtc {
 
 class AudioProcessing;
 class ProcessThread;
-class VoEExternalMedia;
-class VoEMediaProcess;
 
 namespace voe {
 
@@ -82,13 +80,6 @@ public:
     uint32_t CaptureLevel() const;
 
     int32_t StopSend();
-
-    // VoEExternalMedia
-    int RegisterExternalMediaProcessing(VoEMediaProcess* object,
-                                        ProcessingTypes type);
-    int DeRegisterExternalMediaProcessing(ProcessingTypes type);
-
-    int GetMixingFrequency();
 
     // VoEVolumeControl
     int SetMute(bool enable);
@@ -228,8 +219,6 @@ private:
     int _instanceId;
     bool _mixFileWithMicrophone;
     uint32_t _captureLevel;
-    VoEMediaProcess* external_postproc_ptr_;
-    VoEMediaProcess* external_preproc_ptr_;
     bool _mute;
     bool stereo_codec_;
     bool swap_stereo_channels_;

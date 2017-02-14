@@ -18,7 +18,6 @@
 #include "webrtc/voice_engine/voe_base_impl.h"
 #include "webrtc/voice_engine/voe_audio_processing_impl.h"
 #include "webrtc/voice_engine/voe_codec_impl.h"
-#include "webrtc/voice_engine/voe_external_media_impl.h"
 #include "webrtc/voice_engine/voe_file_impl.h"
 #include "webrtc/voice_engine/voe_hardware_impl.h"
 #include "webrtc/voice_engine/voe_neteq_stats_impl.h"
@@ -36,7 +35,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
                         public VoiceEngine,
                         public VoEAudioProcessingImpl,
                         public VoECodecImpl,
-                        public VoEExternalMediaImpl,
                         public VoEFileImpl,
                         public VoEHardwareImpl,
                         public VoENetEqStatsImpl,
@@ -50,7 +48,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
       : SharedData(),
         VoEAudioProcessingImpl(this),
         VoECodecImpl(this),
-        VoEExternalMediaImpl(this),
         VoEFileImpl(this),
         VoEHardwareImpl(this),
         VoENetEqStatsImpl(this),

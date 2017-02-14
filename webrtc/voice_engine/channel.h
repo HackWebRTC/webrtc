@@ -55,7 +55,6 @@ class RtpReceiver;
 class RTPReceiverAudio;
 class RtpRtcp;
 class TelephoneEventHandler;
-class VoEMediaProcess;
 class VoERTPObserver;
 class VoiceEngineObserver;
 
@@ -83,7 +82,6 @@ class VoERtcpObserver;
 class ChannelState {
  public:
   struct State {
-    bool input_external_media = false;
     bool output_file_playing = false;
     bool input_file_playing = false;
     bool playing = false;
@@ -101,11 +99,6 @@ class ChannelState {
   State Get() const {
     rtc::CritScope lock(&lock_);
     return state_;
-  }
-
-  void SetInputExternalMedia(bool enable) {
-    rtc::CritScope lock(&lock_);
-    state_.input_external_media = enable;
   }
 
   void SetOutputFilePlaying(bool enable) {
@@ -251,12 +244,6 @@ class Channel
 
   void SetMixWithMicStatus(bool mix);
 
-  // VoEExternalMediaProcessing
-  int RegisterExternalMediaProcessing(ProcessingTypes type,
-                                      VoEMediaProcess& processObject);
-  int DeRegisterExternalMediaProcessing(ProcessingTypes type);
-  int SetExternalMixing(bool enabled);
-
   // VoEVolumeControl
   int GetSpeechOutputLevel(uint32_t& level) const;
   int GetSpeechOutputLevelFullRange(uint32_t& level) const;
@@ -379,7 +366,6 @@ class Channel
     rtc::CritScope cs(&_callbackCritSect);
     return _externalTransport;
   }
-  bool ExternalMixing() const { return _externalMixing; }
   RtpRtcp* RtpRtcpModulePtr() const { return _rtpRtcpModule.get(); }
   int8_t OutputEnergyLevel() const { return _outputAudioLevel.Level(); }
   uint32_t Demultiplex(const AudioFrame& audioFrame);
@@ -469,9 +455,6 @@ class Channel
   int _outputFilePlayerId;
   int _outputFileRecorderId;
   bool _outputFileRecording;
-  bool _outputExternalMedia;
-  VoEMediaProcess* _inputExternalMediaCallbackPtr;
-  VoEMediaProcess* _outputExternalMediaCallbackPtr;
   uint32_t _timeStamp;
 
   RemoteNtpTimeEstimator ntp_estimator_ GUARDED_BY(ts_stats_lock_);
@@ -504,7 +487,6 @@ class Channel
   RmsLevel rms_level_;
   int32_t _sendFrameType;  // Send data is voice, 1-voice, 0-otherwise
   // VoEBase
-  bool _externalMixing;
   bool _mixFileWithMicrophone;
   // VoEVolumeControl
   bool input_mute_ GUARDED_BY(volume_settings_critsect_);
