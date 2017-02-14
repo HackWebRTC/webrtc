@@ -1186,6 +1186,9 @@ TEST_F(ViEEncoderTest, InitialFrameDropOffWhenEncoderDisabledScaling) {
   int frame_height = 360;
   fake_encoder_.SetQualityScaling(false);
   vie_encoder_->OnBitrateUpdated(kLowTargetBitrateBps, 0, 0);
+  // Force quality scaler reconfiguration by resetting the source.
+  vie_encoder_->SetSource(&video_source_,
+                          VideoSendStream::DegradationPreference::kBalanced);
 
   video_source_.IncomingCapturedFrame(
       CreateFrame(1, frame_width, frame_height));
