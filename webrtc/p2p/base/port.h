@@ -323,6 +323,19 @@ class Port : public PortInterface, public rtc::MessageHandler,
 
   void set_type(const std::string& type) { type_ = type; }
 
+  // Deprecated. Use the AddAddress() method below with "url" instead.
+  // TODO(zhihuang): Remove this after downstream applications stop using it.
+  void AddAddress(const rtc::SocketAddress& address,
+                  const rtc::SocketAddress& base_address,
+                  const rtc::SocketAddress& related_address,
+                  const std::string& protocol,
+                  const std::string& relay_protocol,
+                  const std::string& tcptype,
+                  const std::string& type,
+                  uint32_t type_preference,
+                  uint32_t relay_preference,
+                  bool final);
+
   void AddAddress(const rtc::SocketAddress& address,
                   const rtc::SocketAddress& base_address,
                   const rtc::SocketAddress& related_address,

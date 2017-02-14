@@ -252,6 +252,20 @@ void Port::AddAddress(const rtc::SocketAddress& address,
                       const std::string& type,
                       uint32_t type_preference,
                       uint32_t relay_preference,
+                      bool final) {
+  AddAddress(address, base_address, related_address, protocol, relay_protocol,
+             tcptype, type, type_preference, relay_preference, "", final);
+}
+
+void Port::AddAddress(const rtc::SocketAddress& address,
+                      const rtc::SocketAddress& base_address,
+                      const rtc::SocketAddress& related_address,
+                      const std::string& protocol,
+                      const std::string& relay_protocol,
+                      const std::string& tcptype,
+                      const std::string& type,
+                      uint32_t type_preference,
+                      uint32_t relay_preference,
                       const std::string& url,
                       bool final) {
   if (protocol == TCP_PROTOCOL_NAME && type == LOCAL_PORT_TYPE) {
