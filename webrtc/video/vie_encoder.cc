@@ -474,6 +474,7 @@ void ViEEncoder::ConfigureQualityScaler() {
     }
   } else {
     quality_scaler_.reset(nullptr);
+    initial_rampup_ = kMaxInitialFramedrop;
   }
   stats_proxy_->SetResolutionRestrictionStats(
       degradation_preference_allows_scaling, scale_counter_[kCpu] > 0,

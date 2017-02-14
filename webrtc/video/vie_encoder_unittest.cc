@@ -251,7 +251,9 @@ class ViEEncoderTest : public ::testing::Test {
     }
 
     VideoEncoder::ScalingSettings GetScalingSettings() const override {
-      return VideoEncoder::ScalingSettings(true, 1, 2);
+      if (quality_scaling_)
+        return VideoEncoder::ScalingSettings(true, 1, 2);
+      return VideoEncoder::ScalingSettings(false);
     }
 
     void ContinueEncode() { continue_encode_event_.Set(); }
@@ -262,6 +264,8 @@ class ViEEncoderTest : public ::testing::Test {
       EXPECT_EQ(timestamp_, timestamp);
       EXPECT_EQ(ntp_time_ms_, ntp_time_ms);
     }
+
+    void SetQualityScaling(bool b) { quality_scaling_ = b; }
 
    private:
     int32_t Encode(const VideoFrame& input_image,
@@ -295,6 +299,7 @@ class ViEEncoderTest : public ::testing::Test {
     int64_t ntp_time_ms_ = 0;
     int last_input_width_ = 0;
     int last_input_height_ = 0;
+    bool quality_scaling_ = true;
   };
 
   class TestSink : public ViEEncoder::EncoderSink {
@@ -1174,6 +1179,21 @@ TEST_F(ViEEncoderTest, InitialFrameDropOffWithMaintainResolutionPreference) {
   sink_.WaitForEncodedFrame(1);
 
   vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, InitialFrameDropOffWhenEncoderDisabledScaling) {
+  int frame_width = 640;
+  int frame_height = 360;
+  fake_encoder_.SetQualityScaling(false);
+  vie_encoder_->OnBitrateUpdated(kLowTargetBitrateBps, 0, 0);
+
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, frame_width, frame_height));
+  // Frame should not be dropped, even if it's too large.
+  sink_.WaitForEncodedFrame(1);
+
+  vie_encoder_->Stop();
+  fake_encoder_.SetQualityScaling(true);
 }
 
 // TODO(sprang): Extend this with fps throttling and any "balanced" extensions.
