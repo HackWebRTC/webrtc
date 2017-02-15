@@ -33,6 +33,7 @@
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/include/cpu_info.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/layer_filtering_transport.h"
 #include "webrtc/test/run_loop.h"
@@ -52,6 +53,7 @@ constexpr size_t kMaxComparisons = 10;
 constexpr char kSyncGroup[] = "av_sync";
 constexpr int kOpusMinBitrateBps = 6000;
 constexpr int kOpusBitrateFbBps = 32000;
+constexpr int kFramesSentInQuickTest = 1;
 
 struct VoiceEngineState {
   VoiceEngineState()
@@ -136,7 +138,8 @@ class VideoAnalyzer : public PacketReceiver,
                 uint32_t ssrc_to_analyze,
                 uint32_t rtx_ssrc_to_analyze,
                 uint32_t selected_width,
-                uint32_t selected_height)
+                uint32_t selected_height,
+                bool is_quick_test_enabled)
       : transport_(transport),
         receiver_(nullptr),
         send_stream_(nullptr),
@@ -161,6 +164,7 @@ class VideoAnalyzer : public PacketReceiver,
         rtp_timestamp_delta_(0),
         avg_psnr_threshold_(avg_psnr_threshold),
         avg_ssim_threshold_(avg_ssim_threshold),
+        is_quick_test_enabled_(is_quick_test_enabled),
         stats_polling_thread_(&PollStatsThread, this, "StatsPoller"),
         comparison_available_event_(false, false),
         done_(true, false) {
@@ -683,9 +687,12 @@ class VideoAnalyzer : public PacketReceiver,
            test_label_.c_str(), dropped_frames_before_first_encode_);
     printf("RESULT dropped_frames_before_rendering: %s = %d frames\n",
            test_label_.c_str(), dropped_frames_before_rendering_);
-
-    EXPECT_GT(psnr_.Mean(), avg_psnr_threshold_);
-    EXPECT_GT(ssim_.Mean(), avg_ssim_threshold_);
+    //  Disable quality check for quick test, as quality checks may fail
+    //  because too few samples were collected.
+    if (!is_quick_test_enabled_) {
+      EXPECT_GT(psnr_.Mean(), avg_psnr_threshold_);
+      EXPECT_GT(ssim_.Mean(), avg_ssim_threshold_);
+    }
   }
 
   void PerformFrameComparison(const FrameComparison& comparison) {
@@ -890,6 +897,7 @@ class VideoAnalyzer : public PacketReceiver,
   rtc::Optional<uint32_t> first_sent_timestamp_ GUARDED_BY(crit_);
   const double avg_psnr_threshold_;
   const double avg_ssim_threshold_;
+  bool is_quick_test_enabled_;
 
   rtc::CriticalSection comparison_lock_;
   std::vector<rtc::PlatformThread*> comparison_thread_pool_;
@@ -1339,17 +1347,20 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
             "not implemented yet! Skipping PSNR and SSIM calculations!\n");
   }
 
+  bool is_quick_test_enabled =
+      field_trial::FindFullName("WebRTC-QuickPerfTest") == "Enabled";
   VideoAnalyzer analyzer(
       &send_transport, params_.analyzer.test_label,
       disable_quality_check ? -1.1 : params_.analyzer.avg_psnr_threshold,
       disable_quality_check ? -1.1 : params_.analyzer.avg_ssim_threshold,
-      params_.analyzer.test_durations_secs * params_.video.fps,
+      is_quick_test_enabled
+          ? kFramesSentInQuickTest
+          : params_.analyzer.test_durations_secs * params_.video.fps,
       graph_data_output_file, graph_title,
       kVideoSendSsrcs[params_.ss.selected_stream],
       kSendRtxSsrcs[params_.ss.selected_stream],
       static_cast<uint32_t>(selected_stream.width),
-      static_cast<uint32_t>(selected_stream.height));
-
+      static_cast<uint32_t>(selected_stream.height), is_quick_test_enabled);
   analyzer.SetReceiver(receiver_call_->Receiver());
   send_transport.SetReceiver(&analyzer);
   recv_transport.SetReceiver(sender_call_->Receiver());
