@@ -24,8 +24,8 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
-  rate_profile.num_frames = kNbrFramesShort;
+  rate_profile.frame_index_rate_update[1] = kNumFramesShort + 1;
+  rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecH264, 0.0f, -1, 1, false,
@@ -55,8 +55,8 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
-  rate_profile.num_frames = kNbrFramesShort;
+  rate_profile.frame_index_rate_update[1] = kNumFramesShort + 1;
+  rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP9, 0.0f, -1, 1, false,
@@ -77,8 +77,8 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
-  rate_profile.num_frames = kNbrFramesShort;
+  rate_profile.frame_index_rate_update[1] = kNumFramesShort + 1;
+  rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP9, 0.05f, -1, 1, false,
@@ -103,8 +103,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   SetRateProfilePars(&rate_profile, 0, 200, 30, 0);
   SetRateProfilePars(&rate_profile, 1, 700, 30, 100);
   SetRateProfilePars(&rate_profile, 2, 500, 30, 200);
-  rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
-  rate_profile.num_frames = kNbrFramesLong;
+  rate_profile.frame_index_rate_update[3] = kNumFramesLong + 1;
+  rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP9, 0.0f, -1, 1, false,
@@ -136,8 +136,8 @@ TEST_F(VideoProcessorIntegrationTest,
   SetRateProfilePars(&rate_profile, 0, 100, 24, 0);
   SetRateProfilePars(&rate_profile, 1, 100, 15, 100);
   SetRateProfilePars(&rate_profile, 2, 100, 10, 200);
-  rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
-  rate_profile.num_frames = kNbrFramesLong;
+  rate_profile.frame_index_rate_update[3] = kNumFramesLong + 1;
+  rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP9, 0.0f, -1, 1, false,
@@ -159,8 +159,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
-  rate_profile.num_frames = kNbrFramesShort;
+  rate_profile.frame_index_rate_update[1] = kNumFramesShort + 1;
+  rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP9, 0.0f, -1, 1, false,
@@ -184,8 +184,8 @@ TEST_F(VideoProcessorIntegrationTest,
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 50, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesLong + 1;
-  rate_profile.num_frames = kNbrFramesLong;
+  rate_profile.frame_index_rate_update[1] = kNumFramesLong + 1;
+  rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP9, 0.0f, -1, 1, false,
@@ -212,8 +212,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
-  rate_profile.num_frames = kNbrFramesShort;
+  rate_profile.frame_index_rate_update[1] = kNumFramesShort + 1;
+  rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP8, 0.0f, -1, 1, false,
@@ -234,8 +234,8 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
-  rate_profile.num_frames = kNbrFramesShort;
+  rate_profile.frame_index_rate_update[1] = kNumFramesShort + 1;
+  rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP8, 0.05f, -1, 1, false,
@@ -256,8 +256,8 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
   // Bitrate and frame rate profile.
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 500, 30, 0);
-  rate_profile.frame_index_rate_update[1] = kNbrFramesShort + 1;
-  rate_profile.num_frames = kNbrFramesShort;
+  rate_profile.frame_index_rate_update[1] = kNumFramesShort + 1;
+  rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP8, 0.1f, -1, 1, false,
@@ -300,8 +300,8 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
   SetRateProfilePars(&rate_profile, 0, 200, 30, 0);
   SetRateProfilePars(&rate_profile, 1, 800, 30, 100);
   SetRateProfilePars(&rate_profile, 2, 500, 30, 200);
-  rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
-  rate_profile.num_frames = kNbrFramesLong;
+  rate_profile.frame_index_rate_update[3] = kNumFramesLong + 1;
+  rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP8, 0.0f, -1, 1, false,
@@ -341,8 +341,8 @@ TEST_F(VideoProcessorIntegrationTest,
   SetRateProfilePars(&rate_profile, 0, 80, 24, 0);
   SetRateProfilePars(&rate_profile, 1, 80, 15, 100);
   SetRateProfilePars(&rate_profile, 2, 80, 10, 200);
-  rate_profile.frame_index_rate_update[3] = kNbrFramesLong + 1;
-  rate_profile.num_frames = kNbrFramesLong;
+  rate_profile.frame_index_rate_update[3] = kNumFramesLong + 1;
+  rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP8, 0.0f, -1, 1, false,
@@ -377,8 +377,8 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossTemporalLayersVP8) {
   RateProfile rate_profile;
   SetRateProfilePars(&rate_profile, 0, 200, 30, 0);
   SetRateProfilePars(&rate_profile, 1, 400, 30, 150);
-  rate_profile.frame_index_rate_update[2] = kNbrFramesLong + 1;
-  rate_profile.num_frames = kNbrFramesLong;
+  rate_profile.frame_index_rate_update[2] = kNumFramesLong + 1;
+  rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
   SetCodecParameters(&process_settings, kVideoCodecVP8, 0.0f, -1, 3, false,

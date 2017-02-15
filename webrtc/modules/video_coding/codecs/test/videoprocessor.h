@@ -38,10 +38,11 @@ enum ExcludeFrameTypes {
   // sequence they occur.
   kExcludeAllKeyFrames
 };
+
 // Returns a string representation of the enum value.
 const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e);
 
-// Test configuration for a test run
+// Test configuration for a test run.
 struct TestConfig {
   TestConfig();
   ~TestConfig();
@@ -136,7 +137,7 @@ class VideoProcessor {
 
   // Processes a single frame. Returns true as long as there's more frames
   // available in the source clip.
-  // Frame number must be an integer >=0.
+  // Frame number must be an integer >= 0.
   virtual bool ProcessFrame(int frame_number) = 0;
 
   // Updates the encoder with the target bit rate and the frame rate.
@@ -170,59 +171,6 @@ class VideoProcessorImpl : public VideoProcessor {
   bool ProcessFrame(int frame_number) override;
 
  private:
-  // Invoked by the callback when a frame has completed encoding.
-  void FrameEncoded(webrtc::VideoCodecType codec,
-                    const webrtc::EncodedImage& encodedImage,
-                    const webrtc::RTPFragmentationHeader* fragmentation);
-  // Invoked by the callback when a frame has completed decoding.
-  void FrameDecoded(const webrtc::VideoFrame& image);
-  // Used for getting a 32-bit integer representing time
-  // (checks the size is within signed 32-bit bounds before casting it)
-  int GetElapsedTimeMicroseconds(int64_t start, int64_t stop);
-  // Updates the encoder with the target bit rate and the frame rate.
-  void SetRates(int bit_rate, int frame_rate) override;
-  // Return the size of the encoded frame in bytes.
-  size_t EncodedFrameSize() override;
-  // Return the encoded frame type (key or delta).
-  FrameType EncodedFrameType() override;
-  // Return the number of dropped frames.
-  int NumberDroppedFrames() override;
-  // Return the number of spatial resizes.
-  int NumberSpatialResizes() override;
-
-  webrtc::VideoEncoder* const encoder_;
-  webrtc::VideoDecoder* const decoder_;
-  std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
-  FrameReader* const frame_reader_;
-  FrameWriter* const frame_writer_;
-  PacketManipulator* const packet_manipulator_;
-  const TestConfig& config_;
-  Stats* stats_;
-
-  std::unique_ptr<EncodedImageCallback> encode_callback_;
-  std::unique_ptr<DecodedImageCallback> decode_callback_;
-  // Keep track of the last successful frame, since we need to write that
-  // when decoding fails:
-  std::unique_ptr<uint8_t[]> last_successful_frame_buffer_;
-  // To keep track of if we have excluded the first key frame from packet loss:
-  bool first_key_frame_has_been_excluded_;
-  // To tell the decoder previous frame have been dropped due to packet loss:
-  bool last_frame_missing_;
-  // If Init() has executed successfully.
-  bool initialized_;
-  size_t encoded_frame_size_;
-  FrameType encoded_frame_type_;
-  int prev_time_stamp_;
-  int num_dropped_frames_;
-  int num_spatial_resizes_;
-  int last_encoder_frame_width_;
-  int last_encoder_frame_height_;
-
-  // Statistics
-  double bit_rate_factor_;  // multiply frame length with this to get bit rate
-  int64_t encode_start_ns_;
-  int64_t decode_start_ns_;
-
   // Callback class required to implement according to the VideoEncoder API.
   class VideoProcessorEncodeCompleteCallback
       : public webrtc::EncodedImageCallback {
@@ -232,7 +180,13 @@ class VideoProcessorImpl : public VideoProcessor {
     Result OnEncodedImage(
         const webrtc::EncodedImage& encoded_image,
         const webrtc::CodecSpecificInfo* codec_specific_info,
-        const webrtc::RTPFragmentationHeader* fragmentation) override;
+        const webrtc::RTPFragmentationHeader* fragmentation) override {
+      // Forward to parent class.
+      RTC_CHECK(codec_specific_info);
+      video_processor_->FrameEncoded(codec_specific_info->codecType,
+                                     encoded_image, fragmentation);
+      return Result(Result::OK, 0);
+    }
 
    private:
     VideoProcessorImpl* const video_processor_;
@@ -244,7 +198,11 @@ class VideoProcessorImpl : public VideoProcessor {
    public:
     explicit VideoProcessorDecodeCompleteCallback(VideoProcessorImpl* vp)
         : video_processor_(vp) {}
-    int32_t Decoded(webrtc::VideoFrame& image) override;
+    int32_t Decoded(webrtc::VideoFrame& image) override {
+      // Forward to parent class.
+      video_processor_->FrameDecoded(image);
+      return 0;
+    }
     int32_t Decoded(webrtc::VideoFrame& image,
                     int64_t decode_time_ms) override {
       RTC_NOTREACHED();
@@ -259,6 +217,67 @@ class VideoProcessorImpl : public VideoProcessor {
    private:
     VideoProcessorImpl* const video_processor_;
   };
+
+  // Invoked by the callback when a frame has completed encoding.
+  void FrameEncoded(webrtc::VideoCodecType codec,
+                    const webrtc::EncodedImage& encodedImage,
+                    const webrtc::RTPFragmentationHeader* fragmentation);
+
+  // Invoked by the callback when a frame has completed decoding.
+  void FrameDecoded(const webrtc::VideoFrame& image);
+
+  // Used for getting a 32-bit integer representing time
+  // (checks the size is within signed 32-bit bounds before casting it)
+  int GetElapsedTimeMicroseconds(int64_t start, int64_t stop);
+
+  // Updates the encoder with the target bit rate and the frame rate.
+  void SetRates(int bit_rate, int frame_rate) override;
+
+  // Return the size of the encoded frame in bytes.
+  size_t EncodedFrameSize() override;
+
+  // Return the encoded frame type (key or delta).
+  FrameType EncodedFrameType() override;
+
+  // Return the number of dropped frames.
+  int NumberDroppedFrames() override;
+
+  // Return the number of spatial resizes.
+  int NumberSpatialResizes() override;
+
+  webrtc::VideoEncoder* const encoder_;
+  webrtc::VideoDecoder* const decoder_;
+  std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
+  FrameReader* const frame_reader_;
+  FrameWriter* const frame_writer_;
+  PacketManipulator* const packet_manipulator_;
+  const TestConfig& config_;
+  Stats* stats_;
+
+  std::unique_ptr<EncodedImageCallback> encode_callback_;
+  std::unique_ptr<DecodedImageCallback> decode_callback_;
+
+  // Keep track of the last successful frame, since we need to write that
+  // when decoding fails.
+  std::unique_ptr<uint8_t[]> last_successful_frame_buffer_;
+  // To keep track of if we have excluded the first key frame from packet loss.
+  bool first_key_frame_has_been_excluded_;
+  // To tell the decoder previous frame have been dropped due to packet loss.
+  bool last_frame_missing_;
+  // If Init() has executed successfully.
+  bool initialized_;
+  size_t encoded_frame_size_;
+  FrameType encoded_frame_type_;
+  int prev_time_stamp_;
+  int num_dropped_frames_;
+  int num_spatial_resizes_;
+  int last_encoder_frame_width_;
+  int last_encoder_frame_height_;
+
+  // Statistics.
+  double bit_rate_factor_;  // Multiply frame length with this to get bit rate.
+  int64_t encode_start_ns_;
+  int64_t decode_start_ns_;
 };
 
 }  // namespace test

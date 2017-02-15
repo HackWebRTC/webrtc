@@ -29,6 +29,18 @@
 namespace webrtc {
 namespace test {
 
+const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
+  switch (e) {
+    case kExcludeOnlyFirstKeyFrame:
+      return "ExcludeOnlyFirstKeyFrame";
+    case kExcludeAllKeyFrames:
+      return "ExcludeAllKeyFrames";
+    default:
+      RTC_NOTREACHED();
+      return "Unknown";
+  }
+}
+
 TestConfig::TestConfig()
     : name(""),
       description(""),
@@ -89,18 +101,19 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
 }
 
 bool VideoProcessorImpl::Init() {
-  // Calculate a factor used for bit rate calculations:
+  // Calculate a factor used for bit rate calculations.
   bit_rate_factor_ = config_.codec_settings->maxFramerate * 0.001 * 8;  // bits
 
-  // Initialize data structures used by the encoder/decoder APIs
+  // Initialize data structures used by the encoder/decoder APIs.
   size_t frame_length_in_bytes = frame_reader_->FrameLength();
   last_successful_frame_buffer_.reset(new uint8_t[frame_length_in_bytes]);
+
   // Set fixed properties common for all frames.
   // To keep track of spatial resize actions by encoder.
   last_encoder_frame_width_ = config_.codec_settings->width;
   last_encoder_frame_height_ = config_.codec_settings->height;
 
-  // Setup required callbacks for the encoder/decoder:
+  // Setup required callbacks for the encoder/decoder.
   encode_callback_.reset(new VideoProcessorEncodeCompleteCallback(this));
   decode_callback_.reset(new VideoProcessorDecodeCompleteCallback(this));
   RTC_CHECK_EQ(encoder_->RegisterEncodeCompleteCallback(encode_callback_.get()),
@@ -110,24 +123,24 @@ bool VideoProcessorImpl::Init() {
                WEBRTC_VIDEO_CODEC_OK)
       << "Failed to register decode complete callback";
 
-  // Init the encoder and decoder
-  uint32_t nbr_of_cores = 1;
+  // Init the encoder and decoder.
+  uint32_t num_cores = 1;
   if (!config_.use_single_core) {
-    nbr_of_cores = CpuInfo::DetectNumberOfCores();
+    num_cores = CpuInfo::DetectNumberOfCores();
   }
   RTC_CHECK_EQ(
-      encoder_->InitEncode(config_.codec_settings, nbr_of_cores,
+      encoder_->InitEncode(config_.codec_settings, num_cores,
                            config_.networking_config.max_payload_size_in_bytes),
       WEBRTC_VIDEO_CODEC_OK)
       << "Failed to initialize VideoEncoder";
 
-  RTC_CHECK_EQ(decoder_->InitDecode(config_.codec_settings, nbr_of_cores),
+  RTC_CHECK_EQ(decoder_->InitDecode(config_.codec_settings, num_cores),
                WEBRTC_VIDEO_CODEC_OK)
       << "Failed to initialize VideoDecoder";
 
   if (config_.verbose) {
     printf("Video Processor:\n");
-    printf("  #CPU cores used  : %d\n", nbr_of_cores);
+    printf("  #CPU cores used  : %d\n", num_cores);
     printf("  Total # of frames: %d\n", frame_reader_->NumberOfFrames());
     printf("  Codec settings:\n");
     printf("    Start bitrate    : %d kbps\n",
@@ -198,17 +211,18 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
   if (frame_number == 0) {
     prev_time_stamp_ = -1;
   }
+
   rtc::scoped_refptr<VideoFrameBuffer> buffer(frame_reader_->ReadFrame());
   if (buffer) {
-    // Use the frame number as "timestamp" to identify frames
+    // Use the frame number as "timestamp" to identify frames.
     VideoFrame source_frame(buffer, frame_number, 0, webrtc::kVideoRotation_0);
 
-    // Ensure we have a new statistics data object we can fill:
+    // Ensure we have a new statistics data object we can fill.
     FrameStatistic& stat = stats_->NewFrame(frame_number);
 
     encode_start_ns_ = rtc::TimeNanos();
 
-    // Decide if we're going to force a keyframe:
+    // Decide if we are going to force a keyframe.
     std::vector<FrameType> frame_types(1, kVideoFrameDelta);
     if (config_.keyframe_interval > 0 &&
         frame_number % config_.keyframe_interval == 0) {
@@ -227,9 +241,11 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
               frame_number, encode_result);
     }
     stat.encode_return_code = encode_result;
+
     return true;
   } else {
-    return false;  // we've reached the last frame
+    // Last frame has been reached.
+    return false;
   }
 }
 
@@ -252,11 +268,11 @@ void VideoProcessorImpl::FrameEncoded(
   // Frame is not dropped, so update the encoded frame size
   // (encoder callback is only called for non-zero length frames).
   encoded_frame_size_ = encoded_image._length;
-
   encoded_frame_type_ = encoded_image._frameType;
 
   int64_t encode_stop_ns = rtc::TimeNanos();
   int frame_number = encoded_image._timeStamp;
+
   FrameStatistic& stat = stats_->stats_[frame_number];
   stat.encode_time_in_us =
       GetElapsedTimeMicroseconds(encode_start_ns_, encode_stop_ns);
@@ -269,9 +285,9 @@ void VideoProcessorImpl::FrameEncoded(
       encoded_image._length / config_.networking_config.packet_size_in_bytes +
       1;
 
-  // Perform packet loss if criteria is fullfilled:
+  // Simulate packet loss.
   bool exclude_this_frame = false;
-  // Only keyframes can be excluded
+  // Only keyframes can be excluded.
   if (encoded_image._frameType == kVideoFrameKey) {
     switch (config_.exclude_frame_types) {
       case kExcludeOnlyFirstKeyFrame:
@@ -305,32 +321,35 @@ void VideoProcessorImpl::FrameEncoded(
   }
 
   // Keep track of if frames are lost due to packet loss so we can tell
-  // this to the encoder (this is handled by the RTP logic in the full stack)
+  // this to the encoder (this is handled by the RTP logic in the full stack).
   decode_start_ns_ = rtc::TimeNanos();
   // TODO(kjellander): Pass fragmentation header to the decoder when
   // CL 172001 has been submitted and PacketManipulator supports this.
   int32_t decode_result =
       decoder_->Decode(copied_image, last_frame_missing_, nullptr);
   stat.decode_return_code = decode_result;
+
   if (decode_result != WEBRTC_VIDEO_CODEC_OK) {
     // Write the last successful frame the output file to avoid getting it out
-    // of sync with the source file for SSIM and PSNR comparisons:
+    // of sync with the source file for SSIM and PSNR comparisons.
     frame_writer_->WriteFrame(last_successful_frame_buffer_.get());
   }
-  // save status for losses so we can inform the decoder for the next frame:
+
+  // Save status for losses so we can inform the decoder for the next frame.
   last_frame_missing_ = copied_image._length == 0;
 }
 
 void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
   int64_t decode_stop_ns = rtc::TimeNanos();
+
+  // Report stats.
   int frame_number = image.timestamp();
-  // Report stats
   FrameStatistic& stat = stats_->stats_[frame_number];
   stat.decode_time_in_us =
       GetElapsedTimeMicroseconds(decode_start_ns_, decode_stop_ns);
   stat.decoding_successful = true;
 
-  // Check for resize action (either down or up):
+  // Check for resize action (either down or up).
   if (static_cast<int>(image.width()) != last_encoder_frame_width_ ||
       static_cast<int>(image.height()) != last_encoder_frame_height_) {
     ++num_spatial_resizes_;
@@ -338,7 +357,8 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
     last_encoder_frame_height_ = image.height();
   }
   // Check if codec size is different from native/original size, and if so,
-  // upsample back to original size: needed for PSNR and SSIM computations.
+  // upsample back to original size. This is needed for PSNR and SSIM
+  // calculations.
   if (image.width() != config_.codec_settings->width ||
       image.height() != config_.codec_settings->height) {
     rtc::scoped_refptr<I420Buffer> up_image(
@@ -354,7 +374,7 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
     std::unique_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
     int extracted_length = ExtractBuffer(up_image, length, image_buffer.get());
     RTC_DCHECK_GT(extracted_length, 0);
-    // Update our copy of the last successful frame:
+    // Update our copy of the last successful frame.
     memcpy(last_successful_frame_buffer_.get(), image_buffer.get(),
            extracted_length);
     bool write_success = frame_writer_->WriteFrame(image_buffer.get());
@@ -363,7 +383,7 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
       fprintf(stderr, "Failed to write frame %d to disk!", frame_number);
     }
   } else {  // No resize.
-    // Update our copy of the last successful frame:
+    // Update our copy of the last successful frame.
     // TODO(mikhal): Add as a member function, so won't be allocated per frame.
     size_t length = CalcBufferSize(kI420, image.width(), image.height());
     std::unique_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
@@ -386,38 +406,6 @@ int VideoProcessorImpl::GetElapsedTimeMicroseconds(int64_t start,
   RTC_DCHECK_GE(encode_time, std::numeric_limits<int>::min());
   RTC_DCHECK_LE(encode_time, std::numeric_limits<int>::max());
   return static_cast<int>(encode_time);
-}
-
-const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
-  switch (e) {
-    case kExcludeOnlyFirstKeyFrame:
-      return "ExcludeOnlyFirstKeyFrame";
-    case kExcludeAllKeyFrames:
-      return "ExcludeAllKeyFrames";
-    default:
-      RTC_NOTREACHED();
-      return "Unknown";
-  }
-}
-
-// Callbacks
-EncodedImageCallback::Result
-VideoProcessorImpl::VideoProcessorEncodeCompleteCallback::OnEncodedImage(
-    const EncodedImage& encoded_image,
-    const webrtc::CodecSpecificInfo* codec_specific_info,
-    const webrtc::RTPFragmentationHeader* fragmentation) {
-  // Forward to parent class.
-  RTC_CHECK(codec_specific_info);
-  video_processor_->FrameEncoded(codec_specific_info->codecType,
-                                 encoded_image,
-                                 fragmentation);
-  return Result(Result::OK, 0);
-}
-int32_t VideoProcessorImpl::VideoProcessorDecodeCompleteCallback::Decoded(
-    VideoFrame& image) {
-  // Forward to parent class.
-  video_processor_->FrameDecoded(image);
-  return 0;
 }
 
 }  // namespace test

@@ -48,8 +48,8 @@ class PlotVideoProcessorIntegrationTest
                        0,  // update_index
                        bitrate_, framerate_,
                        0);  // frame_index_rate_update
-    rate_profile.frame_index_rate_update[1] = kNbrFramesLong + 1;
-    rate_profile.num_frames = kNbrFramesLong;
+    rate_profile.frame_index_rate_update[1] = kNumFramesLong + 1;
+    rate_profile.num_frames = kNumFramesLong;
     // Codec/network settings.
     CodecConfigPars process_settings;
     SetCodecParameters(&process_settings, codec_type_, kPacketLoss,

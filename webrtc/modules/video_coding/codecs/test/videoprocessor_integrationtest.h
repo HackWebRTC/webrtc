@@ -16,6 +16,7 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
@@ -97,9 +98,9 @@ struct RateControlMetrics {
 };
 
 #if !defined(WEBRTC_IOS)
-const int kNbrFramesShort = 100;  // Some tests are run for shorter sequence.
+const int kNumFramesShort = 100;
 #endif
-const int kNbrFramesLong = 299;
+const int kNumFramesLong = 299;
 
 // Parameters from VP8 wrapper, which control target size of key frames.
 const float kInitialBufferSize = 0.5f;
@@ -116,52 +117,6 @@ const float kScaleKeyFrameSize = 0.5f;
 // happen when some significant regression or breakdown occurs.
 class VideoProcessorIntegrationTest : public testing::Test {
  protected:
-  std::unique_ptr<VideoEncoder> encoder_;
-  std::unique_ptr<VideoDecoder> decoder_;
-  std::unique_ptr<test::FrameReader> frame_reader_;
-  std::unique_ptr<test::FrameWriter> frame_writer_;
-  test::PacketReader packet_reader_;
-  std::unique_ptr<test::PacketManipulator> packet_manipulator_;
-  test::Stats stats_;
-  test::TestConfig config_;
-  VideoCodec codec_settings_;
-  std::unique_ptr<test::VideoProcessor> processor_;
-  TemporalLayersFactory tl_factory_;
-
-  // Quantities defined/updated for every encoder rate update.
-  // Some quantities defined per temporal layer (at most 3 layers in this test).
-  int num_frames_per_update_[3];
-  float sum_frame_size_mismatch_[3];
-  float sum_encoded_frame_size_[3];
-  float encoding_bitrate_[3];
-  float per_frame_bandwidth_[3];
-  float bit_rate_layer_[3];
-  float frame_rate_layer_[3];
-  int num_frames_total_;
-  float sum_encoded_frame_size_total_;
-  float encoding_bitrate_total_;
-  float perc_encoding_rate_mismatch_;
-  int num_frames_to_hit_target_;
-  bool encoding_rate_within_target_;
-  int bit_rate_;
-  int frame_rate_;
-  int layer_;
-  float target_size_key_frame_initial_;
-  float target_size_key_frame_;
-  float sum_key_frame_size_mismatch_;
-  int num_key_frames_;
-  float start_bitrate_;
-
-  // Codec and network settings.
-  VideoCodecType codec_type_;
-  float packet_loss_;
-  int num_temporal_layers_;
-  int key_frame_interval_;
-  bool error_concealment_on_;
-  bool denoising_on_;
-  bool frame_dropper_on_;
-  bool spatial_resize_on_;
-
   VideoProcessorIntegrationTest() {}
   virtual ~VideoProcessorIntegrationTest() {}
 
@@ -230,7 +185,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
         config_.codec_settings->VP9()->keyFrameInterval = kBaseKeyFrameInterval;
         break;
       default:
-        assert(false);
+        RTC_NOTREACHED();
         break;
     }
     frame_reader_.reset(new test::FrameReaderImpl(
@@ -238,15 +193,15 @@ class VideoProcessorIntegrationTest : public testing::Test {
         config_.codec_settings->height));
     frame_writer_.reset(new test::FrameWriterImpl(
         config_.output_filename, config_.frame_length_in_bytes));
-    ASSERT_TRUE(frame_reader_->Init());
-    ASSERT_TRUE(frame_writer_->Init());
+    RTC_CHECK(frame_reader_->Init());
+    RTC_CHECK(frame_writer_->Init());
 
     packet_manipulator_.reset(new test::PacketManipulatorImpl(
         &packet_reader_, config_.networking_config, config_.verbose));
     processor_.reset(new test::VideoProcessorImpl(
         encoder_.get(), decoder_.get(), frame_reader_.get(),
         frame_writer_.get(), packet_manipulator_.get(), config_, &stats_));
-    ASSERT_TRUE(processor_->Init());
+    RTC_CHECK(processor_->Init());
   }
 
   // Reset quantities after each encoder update, update the target
@@ -401,13 +356,13 @@ class VideoProcessorIntegrationTest : public testing::Test {
         layer_ = 2;
       }
     } else {
-      assert(false);  // Only up to 3 layers.
+      RTC_NOTREACHED() << "Max 3 layers are supported.";
     }
   }
 
   // Set the bitrate and frame rate per layer, for up to 3 layers.
   void SetLayerRates() {
-    assert(num_temporal_layers_ <= 3);
+    RTC_DCHECK_LE(num_temporal_layers_, 3);
     for (int i = 0; i < num_temporal_layers_; i++) {
       float bit_rate_ratio =
           kVp8LayerRateAlloction[num_temporal_layers_ - 1][i];
@@ -452,6 +407,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     target_size_key_frame_initial_ =
         0.5 * kInitialBufferSize * bit_rate_layer_[0];
     processor_->SetRates(bit_rate_, frame_rate_);
+
     // Process each frame, up to |num_frames|.
     int num_frames = rate_profile.num_frames;
     int update_index = 0;
@@ -507,6 +463,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     // Release encoder and decoder to make sure they have finished processing:
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Release());
+
     // Close the files before we start using them for SSIM/PSNR calculations.
     frame_reader_->Close();
     frame_writer_->Close();
@@ -616,6 +573,52 @@ class VideoProcessorIntegrationTest : public testing::Test {
     rc_metrics[update_index].num_spatial_resizes = num_spatial_resizes;
     rc_metrics[update_index].num_key_frames = num_key_frames;
   }
+
+  std::unique_ptr<VideoEncoder> encoder_;
+  std::unique_ptr<VideoDecoder> decoder_;
+  std::unique_ptr<test::FrameReader> frame_reader_;
+  std::unique_ptr<test::FrameWriter> frame_writer_;
+  test::PacketReader packet_reader_;
+  std::unique_ptr<test::PacketManipulator> packet_manipulator_;
+  test::Stats stats_;
+  test::TestConfig config_;
+  VideoCodec codec_settings_;
+  std::unique_ptr<test::VideoProcessor> processor_;
+  TemporalLayersFactory tl_factory_;
+
+  // Quantities defined/updated for every encoder rate update.
+  // Some quantities defined per temporal layer (at most 3 layers in this test).
+  int num_frames_per_update_[3];
+  float sum_frame_size_mismatch_[3];
+  float sum_encoded_frame_size_[3];
+  float encoding_bitrate_[3];
+  float per_frame_bandwidth_[3];
+  float bit_rate_layer_[3];
+  float frame_rate_layer_[3];
+  int num_frames_total_;
+  float sum_encoded_frame_size_total_;
+  float encoding_bitrate_total_;
+  float perc_encoding_rate_mismatch_;
+  int num_frames_to_hit_target_;
+  bool encoding_rate_within_target_;
+  int bit_rate_;
+  int frame_rate_;
+  int layer_;
+  float target_size_key_frame_initial_;
+  float target_size_key_frame_;
+  float sum_key_frame_size_mismatch_;
+  int num_key_frames_;
+  float start_bitrate_;
+
+  // Codec and network settings.
+  VideoCodecType codec_type_;
+  float packet_loss_;
+  int num_temporal_layers_;
+  int key_frame_interval_;
+  bool error_concealment_on_;
+  bool denoising_on_;
+  bool frame_dropper_on_;
+  bool spatial_resize_on_;
 };
 
 }  // namespace test
