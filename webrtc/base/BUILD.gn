@@ -553,8 +553,6 @@ rtc_static_library("rtc_base") {
     sources += [
       "maccocoathreadhelper.h",
       "maccocoathreadhelper.mm",
-      "macconversion.cc",
-      "macconversion.h",
       "macifaddrs_converter.cc",
       "scoped_autorelease_pool.h",
       "scoped_autorelease_pool.mm",
