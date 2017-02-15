@@ -137,8 +137,8 @@ class VideoAnalyzer : public PacketReceiver,
                 const std::string& graph_title,
                 uint32_t ssrc_to_analyze,
                 uint32_t rtx_ssrc_to_analyze,
-                uint32_t selected_width,
-                uint32_t selected_height,
+                uint32_t selected_stream_width,
+                uint32_t selected_stream_height,
                 bool is_quick_test_enabled)
       : transport_(transport),
         receiver_(nullptr),
@@ -150,8 +150,8 @@ class VideoAnalyzer : public PacketReceiver,
         graph_title_(graph_title),
         ssrc_to_analyze_(ssrc_to_analyze),
         rtx_ssrc_to_analyze_(rtx_ssrc_to_analyze),
-        selected_width_(selected_width),
-        selected_height_(selected_height),
+        selected_stream_width_(selected_stream_width),
+        selected_stream_height_(selected_stream_height),
         pre_encode_proxy_(this),
         encode_timing_proxy_(this),
         frames_to_process_(duration_frames),
@@ -232,7 +232,6 @@ class VideoAnalyzer : public PacketReceiver,
     if (RtpHeaderParser::IsRtcp(packet, length)) {
       return receiver_->DeliverPacket(media_type, packet, length, packet_time);
     }
-
     RtpUtility::RtpHeaderParser parser(packet, length);
     RTPHeader header;
     parser.Parse(&header);
@@ -274,8 +273,8 @@ class VideoAnalyzer : public PacketReceiver,
   void PostEncodeFrameCallback(const EncodedFrame& encoded_frame) {
     rtc::CritScope lock(&crit_);
     if (!first_sent_timestamp_ &&
-        encoded_frame.encoded_width_ == selected_width_ &&
-        encoded_frame.encoded_height_ == selected_height_) {
+        encoded_frame.encoded_width_ == selected_stream_width_ &&
+        encoded_frame.encoded_height_ == selected_stream_height_) {
       first_sent_timestamp_ = rtc::Optional<uint32_t>(encoded_frame.timestamp_);
     }
   }
@@ -289,6 +288,7 @@ class VideoAnalyzer : public PacketReceiver,
 
     int64_t current_time =
         Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
+
     bool result = transport_->SendRtp(packet, length, options);
     {
       rtc::CritScope lock(&crit_);
@@ -857,8 +857,8 @@ class VideoAnalyzer : public PacketReceiver,
   const std::string graph_title_;
   const uint32_t ssrc_to_analyze_;
   const uint32_t rtx_ssrc_to_analyze_;
-  const uint32_t selected_width_;
-  const uint32_t selected_height_;
+  const uint32_t selected_stream_width_;
+  const uint32_t selected_stream_height_;
   PreEncodeProxy pre_encode_proxy_;
   OnEncodeTimingProxy encode_timing_proxy_;
   std::vector<Sample> samples_ GUARDED_BY(comparison_lock_);
@@ -1206,62 +1206,73 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   }
 }
 
-void VideoQualityTest::SetupScreenshare() {
-  RTC_CHECK(params_.screenshare.enabled);
+void VideoQualityTest::SetupScreenshareOrSVC() {
+  if (params_.screenshare.enabled) {
+    // Fill out codec settings.
+    video_encoder_config_.content_type =
+        VideoEncoderConfig::ContentType::kScreen;
+    degradation_preference_ =
+        VideoSendStream::DegradationPreference::kMaintainResolution;
+    if (params_.video.codec == "VP8") {
+      VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
+      vp8_settings.denoisingOn = false;
+      vp8_settings.frameDroppingOn = false;
+      vp8_settings.numberOfTemporalLayers =
+          static_cast<unsigned char>(params_.video.num_temporal_layers);
+      video_encoder_config_.encoder_specific_settings =
+          new rtc::RefCountedObject<
+              VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
+    } else if (params_.video.codec == "VP9") {
+      VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
+      vp9_settings.denoisingOn = false;
+      vp9_settings.frameDroppingOn = false;
+      vp9_settings.numberOfTemporalLayers =
+          static_cast<unsigned char>(params_.video.num_temporal_layers);
+      vp9_settings.numberOfSpatialLayers =
+          static_cast<unsigned char>(params_.ss.num_spatial_layers);
+      video_encoder_config_.encoder_specific_settings =
+          new rtc::RefCountedObject<
+              VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
+    }
+    // Setup frame generator.
+    const size_t kWidth = 1850;
+    const size_t kHeight = 1110;
+    std::vector<std::string> slides;
+    slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
+    slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
+    slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
+    slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
 
-  // Fill out codec settings.
-  video_encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
-  degradation_preference_ =
-      VideoSendStream::DegradationPreference::kMaintainResolution;
-  if (params_.video.codec == "VP8") {
-    VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
-    vp8_settings.denoisingOn = false;
-    vp8_settings.frameDroppingOn = false;
-    vp8_settings.numberOfTemporalLayers =
-        static_cast<unsigned char>(params_.video.num_temporal_layers);
-    video_encoder_config_.encoder_specific_settings = new rtc::RefCountedObject<
-        VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
-  } else if (params_.video.codec == "VP9") {
+    if (params_.screenshare.scroll_duration == 0) {
+      // Cycle image every slide_change_interval seconds.
+      frame_generator_.reset(test::FrameGenerator::CreateFromYuvFile(
+          slides, kWidth, kHeight,
+          params_.screenshare.slide_change_interval * params_.video.fps));
+    } else {
+      RTC_CHECK_LE(params_.video.width, kWidth);
+      RTC_CHECK_LE(params_.video.height, kHeight);
+      RTC_CHECK_GT(params_.screenshare.slide_change_interval, 0);
+      const int kPauseDurationMs = (params_.screenshare.slide_change_interval -
+                                    params_.screenshare.scroll_duration) *
+                                   1000;
+      RTC_CHECK_LE(params_.screenshare.scroll_duration,
+                   params_.screenshare.slide_change_interval);
+
+      frame_generator_.reset(
+          test::FrameGenerator::CreateScrollingInputFromYuvFiles(
+              clock_, slides, kWidth, kHeight, params_.video.width,
+              params_.video.height, params_.screenshare.scroll_duration * 1000,
+              kPauseDurationMs));
+    }
+  } else if (params_.ss.num_spatial_layers > 1) {  // For non-screenshare case.
+    RTC_CHECK(params_.video.codec == "VP9");
     VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
-    vp9_settings.denoisingOn = false;
-    vp9_settings.frameDroppingOn = false;
     vp9_settings.numberOfTemporalLayers =
         static_cast<unsigned char>(params_.video.num_temporal_layers);
     vp9_settings.numberOfSpatialLayers =
         static_cast<unsigned char>(params_.ss.num_spatial_layers);
     video_encoder_config_.encoder_specific_settings = new rtc::RefCountedObject<
         VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
-  }
-
-  // Setup frame generator.
-  const size_t kWidth = 1850;
-  const size_t kHeight = 1110;
-  std::vector<std::string> slides;
-  slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
-  slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
-  slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
-  slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
-
-  if (params_.screenshare.scroll_duration == 0) {
-    // Cycle image every slide_change_interval seconds.
-    frame_generator_.reset(test::FrameGenerator::CreateFromYuvFile(
-        slides, kWidth, kHeight,
-        params_.screenshare.slide_change_interval * params_.video.fps));
-  } else {
-    RTC_CHECK_LE(params_.video.width, kWidth);
-    RTC_CHECK_LE(params_.video.height, kHeight);
-    RTC_CHECK_GT(params_.screenshare.slide_change_interval, 0);
-    const int kPauseDurationMs = (params_.screenshare.slide_change_interval -
-                                  params_.screenshare.scroll_duration) *
-                                 1000;
-    RTC_CHECK_LE(params_.screenshare.scroll_duration,
-                 params_.screenshare.slide_change_interval);
-
-    frame_generator_.reset(
-        test::FrameGenerator::CreateScrollingInputFromYuvFiles(
-            clock_, slides, kWidth, kHeight, params_.video.width,
-            params_.video.height, params_.screenshare.scroll_duration * 1000,
-            kPauseDurationMs));
   }
 }
 
@@ -1332,27 +1343,13 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   // 0.0 by default. Setting the thresholds to -1.1 prevents the unnecessary
   // abort.
   VideoStream& selected_stream = params_.ss.streams[params_.ss.selected_stream];
-  int selected_sl = params_.ss.selected_sl != -1
-                        ? params_.ss.selected_sl
-                        : params_.ss.num_spatial_layers - 1;
-  bool disable_quality_check =
-      selected_stream.width != params_.video.width ||
-      selected_stream.height != params_.video.height ||
-      (!params_.ss.spatial_layers.empty() &&
-       params_.ss.spatial_layers[selected_sl].scaling_factor_num !=
-           params_.ss.spatial_layers[selected_sl].scaling_factor_den);
-  if (disable_quality_check) {
-    fprintf(stderr,
-            "Warning: Calculating PSNR and SSIM for downsized resolution "
-            "not implemented yet! Skipping PSNR and SSIM calculations!\n");
-  }
 
   bool is_quick_test_enabled =
       field_trial::FindFullName("WebRTC-QuickPerfTest") == "Enabled";
   VideoAnalyzer analyzer(
       &send_transport, params_.analyzer.test_label,
-      disable_quality_check ? -1.1 : params_.analyzer.avg_psnr_threshold,
-      disable_quality_check ? -1.1 : params_.analyzer.avg_ssim_threshold,
+
+      params_.analyzer.avg_psnr_threshold, params_.analyzer.avg_ssim_threshold,
       is_quick_test_enabled
           ? kFramesSentInQuickTest
           : params_.analyzer.test_durations_secs * params_.video.fps,
@@ -1373,8 +1370,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   RTC_DCHECK(!video_send_config_.post_encode_callback);
   video_send_config_.post_encode_callback = analyzer.encode_timing_proxy();
 
-  if (params_.screenshare.enabled)
-    SetupScreenshare();
+  SetupScreenshareOrSVC();
 
   CreateFlexfecStreams();
   CreateVideoStreams();
@@ -1513,7 +1509,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
       video_receive_configs_[stream_id].sync_group = kSyncGroup;
 
     if (params_.screenshare.enabled)
-      SetupScreenshare();
+      SetupScreenshareOrSVC();
 
     video_send_stream_ = call->CreateVideoSendStream(
         video_send_config_.Copy(), video_encoder_config_.Copy());

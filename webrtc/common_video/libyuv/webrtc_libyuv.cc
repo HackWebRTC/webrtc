@@ -288,22 +288,24 @@ int ConvertFromI420(const VideoFrame& src_frame,
       ConvertVideoType(dst_video_type));
 }
 
-// Compute PSNR for an I420 frame (all planes)
+// Compute PSNR for an I420 frame (all planes). Can upscale test frame.
 double I420PSNR(const VideoFrameBuffer& ref_buffer,
                 const VideoFrameBuffer& test_buffer) {
+  RTC_DCHECK_GE(ref_buffer.width(), test_buffer.width());
+  RTC_DCHECK_GE(ref_buffer.height(), test_buffer.height());
   if ((ref_buffer.width() != test_buffer.width()) ||
-      (ref_buffer.height() != test_buffer.height()))
-    return -1;
-  else if (ref_buffer.width() < 0 || ref_buffer.height() < 0)
-    return -1;
-
-  double psnr = libyuv::I420Psnr(ref_buffer.DataY(), ref_buffer.StrideY(),
-                                 ref_buffer.DataU(), ref_buffer.StrideU(),
-                                 ref_buffer.DataV(), ref_buffer.StrideV(),
-                                 test_buffer.DataY(), test_buffer.StrideY(),
-                                 test_buffer.DataU(), test_buffer.StrideU(),
-                                 test_buffer.DataV(), test_buffer.StrideV(),
-                                 test_buffer.width(), test_buffer.height());
+      (ref_buffer.height() != test_buffer.height())) {
+    rtc::scoped_refptr<I420Buffer> scaled_buffer =
+        I420Buffer::Create(ref_buffer.width(), ref_buffer.height());
+    scaled_buffer->ScaleFrom(test_buffer);
+    return I420PSNR(ref_buffer, *scaled_buffer);
+  }
+  double psnr = libyuv::I420Psnr(
+      ref_buffer.DataY(), ref_buffer.StrideY(), ref_buffer.DataU(),
+      ref_buffer.StrideU(), ref_buffer.DataV(), ref_buffer.StrideV(),
+      test_buffer.DataY(), test_buffer.StrideY(), test_buffer.DataU(),
+      test_buffer.StrideU(), test_buffer.DataV(), test_buffer.StrideV(),
+      test_buffer.width(), test_buffer.height());
   // LibYuv sets the max psnr value to 128, we restrict it here.
   // In case of 0 mse in one frame, 128 can skew the results significantly.
   return (psnr > kPerfectPSNR) ? kPerfectPSNR : psnr;
@@ -317,22 +319,24 @@ double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
                   *test_frame->video_frame_buffer());
 }
 
-// Compute SSIM for an I420 frame (all planes)
+// Compute SSIM for an I420 frame (all planes). Can upscale test_buffer.
 double I420SSIM(const VideoFrameBuffer& ref_buffer,
                 const VideoFrameBuffer& test_buffer) {
+  RTC_DCHECK_GE(ref_buffer.width(), test_buffer.width());
+  RTC_DCHECK_GE(ref_buffer.height(), test_buffer.height());
   if ((ref_buffer.width() != test_buffer.width()) ||
-      (ref_buffer.height() != test_buffer.height()))
-    return -1;
-  else if (ref_buffer.width() < 0 || ref_buffer.height() < 0)
-    return -1;
-
-  return libyuv::I420Ssim(ref_buffer.DataY(), ref_buffer.StrideY(),
-                          ref_buffer.DataU(), ref_buffer.StrideU(),
-                          ref_buffer.DataV(), ref_buffer.StrideV(),
-                          test_buffer.DataY(), test_buffer.StrideY(),
-                          test_buffer.DataU(), test_buffer.StrideU(),
-                          test_buffer.DataV(), test_buffer.StrideV(),
-                          test_buffer.width(), test_buffer.height());
+      (ref_buffer.height() != test_buffer.height())) {
+    rtc::scoped_refptr<I420Buffer> scaled_buffer =
+        I420Buffer::Create(ref_buffer.width(), ref_buffer.height());
+    scaled_buffer->ScaleFrom(test_buffer);
+    return I420SSIM(ref_buffer, *scaled_buffer);
+  }
+  return libyuv::I420Ssim(
+      ref_buffer.DataY(), ref_buffer.StrideY(), ref_buffer.DataU(),
+      ref_buffer.StrideU(), ref_buffer.DataV(), ref_buffer.StrideV(),
+      test_buffer.DataY(), test_buffer.StrideY(), test_buffer.DataU(),
+      test_buffer.StrideU(), test_buffer.DataV(), test_buffer.StrideV(),
+      test_buffer.width(), test_buffer.height());
 }
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
   if (!ref_frame || !test_frame)

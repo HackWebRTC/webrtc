@@ -111,7 +111,7 @@ class VideoQualityTest : public test::CallTest {
   // Helper methods for setting up the call.
   void CreateCapturer();
   void SetupVideo(Transport* send_transport, Transport* recv_transport);
-  void SetupScreenshare();
+  void SetupScreenshareOrSVC();
   void SetupAudio(int send_channel_id,
                   int receive_channel_id,
                   Call* call,

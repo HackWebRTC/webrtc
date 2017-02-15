@@ -251,8 +251,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (inst->VP9().numberOfTemporalLayers > 3) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  // libvpx currently supports only one or two spatial layers.
-  if (inst->VP9().numberOfSpatialLayers > 2) {
+  // libvpx probably does not support more than 3 spatial layers.
+  if (inst->VP9().numberOfSpatialLayers > 3) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
