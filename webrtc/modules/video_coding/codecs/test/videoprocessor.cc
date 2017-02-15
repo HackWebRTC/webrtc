@@ -220,8 +220,6 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     // Ensure we have a new statistics data object we can fill.
     FrameStatistic& stat = stats_->NewFrame(frame_number);
 
-    encode_start_ns_ = rtc::TimeNanos();
-
     // Decide if we are going to force a keyframe.
     std::vector<FrameType> frame_types(1, kVideoFrameDelta);
     if (config_.keyframe_interval > 0 &&
@@ -233,6 +231,9 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     encoded_frame_size_ = 0;
     encoded_frame_type_ = kVideoFrameDelta;
 
+    // For the highest measurement accuracy of the encode time, the start/stop
+    // time recordings should wrap the Encode call as tightly as possible.
+    encode_start_ns_ = rtc::TimeNanos();
     int32_t encode_result =
         encoder_->Encode(source_frame, nullptr, &frame_types);
 
@@ -253,6 +254,10 @@ void VideoProcessorImpl::FrameEncoded(
     webrtc::VideoCodecType codec,
     const EncodedImage& encoded_image,
     const webrtc::RTPFragmentationHeader* fragmentation) {
+  // For the highest measurement accuracy of the encode time, the start/stop
+  // time recordings should wrap the Encode call as tightly as possible.
+  int64_t encode_stop_ns = rtc::TimeNanos();
+
   // Timestamp is frame number, so this gives us #dropped frames.
   int num_dropped_from_prev_encode =
       encoded_image._timeStamp - prev_time_stamp_ - 1;
@@ -269,8 +274,6 @@ void VideoProcessorImpl::FrameEncoded(
   // (encoder callback is only called for non-zero length frames).
   encoded_frame_size_ = encoded_image._length;
   encoded_frame_type_ = encoded_image._frameType;
-
-  int64_t encode_stop_ns = rtc::TimeNanos();
   int frame_number = encoded_image._timeStamp;
 
   FrameStatistic& stat = stats_->stats_[frame_number];
@@ -322,9 +325,12 @@ void VideoProcessorImpl::FrameEncoded(
 
   // Keep track of if frames are lost due to packet loss so we can tell
   // this to the encoder (this is handled by the RTP logic in the full stack).
-  decode_start_ns_ = rtc::TimeNanos();
   // TODO(kjellander): Pass fragmentation header to the decoder when
   // CL 172001 has been submitted and PacketManipulator supports this.
+
+  // For the highest measurement accuracy of the decode time, the start/stop
+  // time recordings should wrap the Decode call as tightly as possible.
+  decode_start_ns_ = rtc::TimeNanos();
   int32_t decode_result =
       decoder_->Decode(copied_image, last_frame_missing_, nullptr);
   stat.decode_return_code = decode_result;
@@ -340,6 +346,8 @@ void VideoProcessorImpl::FrameEncoded(
 }
 
 void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
+  // For the highest measurement accuracy of the decode time, the start/stop
+  // time recordings should wrap the Decode call as tightly as possible.
   int64_t decode_stop_ns = rtc::TimeNanos();
 
   // Report stats.
