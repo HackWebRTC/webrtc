@@ -20,13 +20,13 @@
   'masters': {
     'client.webrtc': {
       # iOS
-      'iOS32 Debug': 'ios_debug_static_bot_arm_device',
-      'iOS32 Release': 'ios_release_bot_arm_device',
-      'iOS64 Debug': 'ios_debug_static_bot_arm64_device',
-      'iOS64 Release': 'ios_release_bot_arm64_device',
-      'iOS32 Sim Debug (iOS 9.0)': 'ios_debug_static_bot_x86',
-      'iOS64 Sim Debug (iOS 9.0)': 'ios_debug_static_bot_x64',
-      'iOS64 Sim Debug (iOS 10.0)': 'ios_debug_static_bot_x64',
+      'iOS32 Debug': 'ios',
+      'iOS32 Release': 'ios',
+      'iOS64 Debug': 'ios',
+      'iOS64 Release': 'ios',
+      'iOS32 Sim Debug (iOS 9.0)': 'ios',
+      'iOS64 Sim Debug (iOS 9.0)': 'ios',
+      'iOS64 Sim Debug (iOS 10.0)': 'ios',
 
       # Mac
       'Mac64 Debug': 'debug_bot_x64',
@@ -105,13 +105,13 @@
     },
     'tryserver.webrtc': {
       # iOS
-      'ios_dbg': 'ios_debug_static_bot_arm_device',
-      'ios_rel': 'ios_release_bot_arm_device',
-      'ios_arm64_dbg': 'ios_debug_static_bot_arm64_device',
-      'ios_arm64_rel': 'ios_release_bot_arm64_device',
-      'ios32_sim_ios9_dbg': 'ios_debug_static_bot_x86',
-      'ios64_sim_ios9_dbg': 'ios_debug_static_bot_x64',
-      'ios64_sim_ios10_dbg': 'ios_debug_static_bot_x64',
+      'ios_dbg': 'ios',
+      'ios_rel': 'ios',
+      'ios_arm64_dbg': 'ios',
+      'ios_arm64_rel': 'ios',
+      'ios32_sim_ios9_dbg': 'ios',
+      'ios64_sim_ios9_dbg': 'ios',
+      'ios64_sim_ios10_dbg': 'ios',
 
       # Mac
       'mac_compile_dbg': 'debug_bot_x64',
@@ -178,26 +178,6 @@
   # A given config *may* be platform-specific but is not necessarily so (i.e.,
   #  we might have mac, win, and linux bots all using the 'release_bot' config).
   'configs': {
-    # iOS
-    'ios_debug_static_bot_arm64_device': [
-      'ios', 'gn', 'debug_static_bot', 'arm64', 'device'
-    ],
-    'ios_release_bot_arm64_device': [
-      'ios', 'gn', 'release_bot', 'arm64', 'device'
-    ],
-    'ios_debug_static_bot_arm_device': [
-      'ios', 'gn', 'debug_static_bot', 'arm', 'device'
-    ],
-    'ios_release_bot_arm_device': [
-      'ios', 'gn', 'release_bot', 'arm', 'device'
-    ],
-    'ios_debug_static_bot_x86': [
-      'ios', 'gn', 'debug_static_bot', 'x86'
-    ],
-    'ios_debug_static_bot_x64': [
-      'ios', 'gn', 'debug_static_bot', 'x64'
-    ],
-
     # Linux, Mac and Windows
     'gcc_release_bot_x64': [
       'gn', 'gcc', 'release_bot', 'x64'
@@ -244,6 +224,13 @@
     'memcheck_release_bot_x64': [
       'memcheck', 'gn', 'openh264_release_bot', 'x64'
     ],
+
+    # iOS
+    # The 'ios' config is just used for auditing. iOS bots
+    # use the ios recipes and look up their GN arguments via files checked in
+    # under //tools-webrtc/ios/bots. It is an error to actually use one of these
+    # configs to generate the build files.
+    'ios': [ 'error'],
 
     # Windows
     'win_clang_debug_bot_x86': [
@@ -354,10 +341,6 @@
       'mixins': ['debug', 'static', 'minimal_symbols', 'goma'],
     },
 
-    'device': {
-      'gn_args': 'ios_enable_code_signing=false',
-    },
-
     # This mixin is used to force configs that use it to fail. It
     # is used in two cases: when we have bots that we haven't looked
     # at yet and don't know whether they need MB or not, and for bots
@@ -378,10 +361,6 @@
 
     'goma': {
       'gn_args': 'use_goma=true',
-    },
-
-    'ios': {
-      'gn_args': 'target_os="ios"',
     },
 
     'libfuzzer': {

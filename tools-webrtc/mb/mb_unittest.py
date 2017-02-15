@@ -25,7 +25,7 @@ class FakeMBW(mb.MetaBuildWrapper):
 
     # Override vars for test portability.
     if win32:
-      self.chromium_src_dir = 'c:\\fake_src'
+      self.src_dir = 'c:\\fake_src'
       self.default_config = 'c:\\fake_src\\tools-webrtc\\mb\\mb_config.pyl'
       self.default_isolate_map = ('c:\\fake_src\\testing\\buildbot\\'
                                   'gn_isolate_map.pyl')
@@ -33,7 +33,7 @@ class FakeMBW(mb.MetaBuildWrapper):
       self.executable = 'c:\\python\\python.exe'
       self.sep = '\\'
     else:
-      self.chromium_src_dir = '/fake_src'
+      self.src_dir = '/fake_src'
       self.default_config = '/fake_src/tools-webrtc/mb/mb_config.pyl'
       self.default_isolate_map = '/fake_src/testing/buildbot/gn_isolate_map.pyl'
       self.executable = '/usr/bin/python'
