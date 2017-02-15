@@ -26,8 +26,8 @@ import sys
 os.environ['PATH'] = '/usr/libexec' + os.pathsep + os.environ['PATH']
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-WEBRTC_BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
-SDK_OUTPUT_DIR = os.path.join(WEBRTC_BASE_DIR, 'out_ios_libs')
+WEBRTC_SRC_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
+SDK_OUTPUT_DIR = os.path.join(WEBRTC_SRC_DIR, 'out_ios_libs')
 SDK_LIB_NAME = 'librtc_sdk_objc.a'
 SDK_FRAMEWORK_NAME = 'WebRTC.framework'
 
@@ -70,7 +70,7 @@ def _ParseArgs():
 
 def _RunCommand(cmd):
   logging.debug('Running: %r', cmd)
-  subprocess.check_call(cmd)
+  subprocess.check_call(cmd, cwd=WEBRTC_SRC_DIR)
 
 
 def _CleanArtifacts(output_dir):
