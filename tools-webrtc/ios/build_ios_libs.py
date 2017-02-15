@@ -116,11 +116,15 @@ def BuildWebRTC(output_dir, target_arch, flavor, build_type,
     raise ValueError('Build type "%s" is not supported.' % build_type)
 
   logging.info('Building WebRTC with args: %s', ' '.join(gn_args))
+
   cmd = ['gn', 'gen', output_dir,
          '--args=' + ' '.join(gn_args + extra_gn_args)]
   _RunCommand(cmd)
   logging.info('Building target: %s', gn_target_name)
+
   cmd = ['ninja', '-C', output_dir, gn_target_name]
+  if use_goma:
+    cmd.extend(['-j', '200'])
   _RunCommand(cmd)
 
   # Strip debug symbols to reduce size.
