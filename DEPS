@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'a23d6ceb29374e303c7bfd356c4455fde45ca208',
+  'chromium_revision': '20557391eabfddda39e9dd2734af1c8197845430',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -38,9 +38,9 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '8635043285b8b46c9b1bae28a4087efa7c98d466',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'e1bc37849938cba4901edf6893c7a003e18605b0',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '13190454b2dcfde529eca393f2b1aae595f41bfb',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '5af1827589217d48c6d24da120263cb2d6a1432b',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + 'a7cc7a3e21a061975b33dcdcd81a9716ba614c3c',
   'src/testing':
@@ -50,7 +50,7 @@ deps = {
   'src/testing/gmock':
     Var('chromium_git') + '/external/googlemock.git' + '@' + '0421b6f358139f02e102c9c332ce19a33faf75be', # from svn revision 566
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '430b656d42a0ef42a2f11d6e61f7707dae744c20',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'ece686a2ed5b78584684ee2e139576b7f8762814',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
