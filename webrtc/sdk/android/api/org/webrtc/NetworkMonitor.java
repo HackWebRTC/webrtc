@@ -114,6 +114,12 @@ public class NetworkMonitor {
     nativeNetworkObservers.remove(nativeObserver);
   }
 
+  // Called by the native code to determine if network binding is supported
+  // on this platform.
+  private boolean networkBindingSupported() {
+    return autoDetector != null && autoDetector.supportNetworkCallback();
+  }
+
   // Called by the native code to get the Android SDK version.
   private static int androidSdkInt() {
     return Build.VERSION.SDK_INT;

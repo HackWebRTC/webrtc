@@ -469,6 +469,10 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     }
   }
 
+  public boolean supportNetworkCallback() {
+    return connectivityManagerDelegate.supportNetworkCallback();
+  }
+
   /**
    * Allows overriding the ConnectivityManagerDelegate for tests.
    */

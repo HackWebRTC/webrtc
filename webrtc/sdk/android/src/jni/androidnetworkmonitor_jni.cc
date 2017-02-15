@@ -240,13 +240,18 @@ rtc::NetworkBindingResult AndroidNetworkMonitor::BindSocketToNetwork(
     int socket_fd,
     const rtc::IPAddress& address) {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
+
+  jmethodID network_binding_supported_id = GetMethodID(
+      jni(), *j_network_monitor_class_, "networkBindingSupported", "()Z");
   // Android prior to Lollipop didn't have support for binding sockets to
-  // networks. In that case it should not have reached here because
-  // |network_handle_by_address_| is only populated in Android Lollipop
-  // and above.
-  if (android_sdk_int_ < SDK_VERSION_LOLLIPOP) {
-    LOG(LS_ERROR) << "BindSocketToNetwork is not supported in Android SDK "
-                  << android_sdk_int_;
+  // networks. This may also occur if there is no connectivity manager service.
+  bool network_binding_supported = jni()->CallBooleanMethod(
+      *j_network_monitor_, network_binding_supported_id);
+  CHECK_EXCEPTION(jni())
+      << "Error during NetworkMonitor.networkBindingSupported";
+  if (!network_binding_supported) {
+    LOG(LS_WARNING) << "BindSocketToNetwork is not supported on this platform "
+                    << "(Android SDK: " << android_sdk_int_ << ")";
     return rtc::NetworkBindingResult::NOT_IMPLEMENTED;
   }
 
