@@ -258,17 +258,10 @@ class Channel
   int GetNetworkStatistics(NetworkStatistics& stats);
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
 
-  // VoEVideoSync
-  bool GetDelayEstimate(int* jitter_buffer_delay_ms,
-                        int* playout_buffer_delay_ms) const;
+  // Audio+Video Sync
   uint32_t GetDelayEstimate() const;
-  int LeastRequiredDelayMs() const;
   int SetMinimumPlayoutDelay(int delayMs);
   int GetPlayoutTimestamp(unsigned int& timestamp);
-  int SetInitTimestamp(unsigned int timestamp);
-  int SetInitSequenceNumber(short sequenceNumber);
-
-  // VoEVideoSyncExtended
   int GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const;
 
   // DTMF

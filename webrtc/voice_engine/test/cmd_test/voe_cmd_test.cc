@@ -34,7 +34,6 @@
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
-#include "webrtc/voice_engine/include/voe_video_sync.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/test/channel_transport/channel_transport.h"
 
@@ -58,7 +57,6 @@ VoERTP_RTCP* rtp_rtcp = NULL;
 VoEAudioProcessing* apm = NULL;
 VoENetwork* netw = NULL;
 VoEFile* file = NULL;
-VoEVideoSync* vsync = NULL;
 VoEHardware* hardware = NULL;
 VoENetEqStats* neteqst = NULL;
 
@@ -129,7 +127,6 @@ int main(int argc, char** argv) {
   rtp_rtcp = VoERTP_RTCP::GetInterface(m_voe);
   netw = VoENetwork::GetInterface(m_voe);
   file = VoEFile::GetInterface(m_voe);
-  vsync = VoEVideoSync::GetInterface(m_voe);
   hardware = VoEHardware::GetInterface(m_voe);
   neteqst = VoENetEqStats::GetInterface(m_voe);
 
@@ -194,9 +191,6 @@ int main(int argc, char** argv) {
 
   if (file)
     file->Release();
-
-  if (vsync)
-    vsync->Release();
 
   if (hardware)
     hardware->Release();

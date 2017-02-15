@@ -24,7 +24,6 @@
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
-#include "webrtc/voice_engine/include/voe_video_sync.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 
@@ -56,7 +55,6 @@ class BeforeInitializationFixture : public testing::Test {
   webrtc::VoEAudioProcessing* voe_apm_;
   webrtc::VoENetwork*         voe_network_;
   webrtc::VoEFile*            voe_file_;
-  webrtc::VoEVideoSync*       voe_vsync_;
   webrtc::VoEHardware*        voe_hardware_;
   webrtc::VoENetEqStats*      voe_neteq_stats_;
 };

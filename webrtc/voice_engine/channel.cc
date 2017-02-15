@@ -1150,16 +1150,16 @@ int32_t Channel::StopPlayout() {
 int32_t Channel::StartSend() {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::StartSend()");
-  // Resume the previous sequence number which was reset by StopSend().
-  // This needs to be done before |sending| is set to true.
-  if (send_sequence_number_)
-    SetInitSequenceNumber(send_sequence_number_);
-
   if (channel_state_.Get().sending) {
     return 0;
   }
   channel_state_.SetSending(true);
 
+  // Resume the previous sequence number which was reset by StopSend(). This
+  // needs to be done before |sending| is set to true on the RTP/RTCP module.
+  if (send_sequence_number_) {
+    _rtpRtcpModule->SetSequenceNumber(send_sequence_number_);
+  }
   _rtpRtcpModule->SetSendingMediaStatus(true);
   if (_rtpRtcpModule->SetSendingStatus(true) != 0) {
     _engineStatisticsPtr->SetLastError(
@@ -2740,23 +2740,9 @@ void Channel::GetDecodingCallStatistics(AudioDecodingCallStats* stats) const {
   audio_coding_->GetDecodingCallStatistics(stats);
 }
 
-bool Channel::GetDelayEstimate(int* jitter_buffer_delay_ms,
-                               int* playout_buffer_delay_ms) const {
-  rtc::CritScope lock(&video_sync_lock_);
-  *jitter_buffer_delay_ms = audio_coding_->FilteredCurrentDelayMs();
-  *playout_buffer_delay_ms = playout_delay_ms_;
-  return true;
-}
-
 uint32_t Channel::GetDelayEstimate() const {
-  int jitter_buffer_delay_ms = 0;
-  int playout_buffer_delay_ms = 0;
-  GetDelayEstimate(&jitter_buffer_delay_ms, &playout_buffer_delay_ms);
-  return jitter_buffer_delay_ms + playout_buffer_delay_ms;
-}
-
-int Channel::LeastRequiredDelayMs() const {
-  return audio_coding_->LeastRequiredDelayMs();
+  rtc::CritScope lock(&video_sync_lock_);
+  return audio_coding_->FilteredCurrentDelayMs() + playout_delay_ms_;
 }
 
 int Channel::SetMinimumPlayoutDelay(int delayMs) {
@@ -2791,30 +2777,6 @@ int Channel::GetPlayoutTimestamp(unsigned int& timestamp) {
     return -1;
   }
   timestamp = playout_timestamp_rtp;
-  return 0;
-}
-
-int Channel::SetInitTimestamp(unsigned int timestamp) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetInitTimestamp()");
-  if (channel_state_.Get().sending) {
-    _engineStatisticsPtr->SetLastError(VE_SENDING, kTraceError,
-                                       "SetInitTimestamp() already sending");
-    return -1;
-  }
-  _rtpRtcpModule->SetStartTimestamp(timestamp);
-  return 0;
-}
-
-int Channel::SetInitSequenceNumber(short sequenceNumber) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetInitSequenceNumber()");
-  if (channel_state_.Get().sending) {
-    _engineStatisticsPtr->SetLastError(
-        VE_SENDING, kTraceError, "SetInitSequenceNumber() already sending");
-    return -1;
-  }
-  _rtpRtcpModule->SetSequenceNumber(sequenceNumber);
   return 0;
 }
 

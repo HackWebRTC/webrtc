@@ -36,7 +36,6 @@ class SubAPIManager {
       _netEqStats(false),
       _network(false),
       _rtp_rtcp(false),
-      _videoSync(false),
       _volumeControl(false),
       _apm(false) {
       _codec = true;
@@ -45,7 +44,6 @@ class SubAPIManager {
       _netEqStats = true;
       _network = true;
       _rtp_rtcp = true;
-      _videoSync = true;
       _volumeControl = true;
       _apm = true;
   }
@@ -55,7 +53,7 @@ class SubAPIManager {
  private:
   bool _base, _codec;
   bool _file, _hardware;
-  bool _netEqStats, _network, _rtp_rtcp, _videoSync, _volumeControl, _apm;
+  bool _netEqStats, _network, _rtp_rtcp, _volumeControl, _apm;
 };
 
 }  // namespace voetest

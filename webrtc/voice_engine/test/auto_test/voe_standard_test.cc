@@ -50,8 +50,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Network\n");
   if (_rtp_rtcp)
     TEST_LOG("  RTP_RTCP\n");
-  if (_videoSync)
-    TEST_LOG("  VideoSync\n");
   if (_volumeControl)
     TEST_LOG("  VolumeControl\n");
   if (_apm)
@@ -72,8 +70,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Network\n");
   if (!_rtp_rtcp)
     TEST_LOG("  RTP_RTCP\n");
-  if (!_videoSync)
-    TEST_LOG("  VideoSync\n");
   if (!_volumeControl)
     TEST_LOG("  VolumeControl\n");
   if (!_apm)

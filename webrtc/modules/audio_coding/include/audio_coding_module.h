@@ -637,7 +637,8 @@ class AudioCodingModule {
   //
   virtual int SetMaximumPlayoutDelay(int time_ms) = 0;
 
-  //
+  // TODO(kwiberg): Consider if this is needed anymore, now that voe::Channel
+  //                doesn't use it.
   // The shortest latency, in milliseconds, required by jitter buffer. This
   // is computed based on inter-arrival times and playout mode of NetEq. The
   // actual delay is the maximum of least-required-delay and the minimum-delay

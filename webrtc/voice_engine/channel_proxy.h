@@ -105,8 +105,6 @@ class ChannelProxy {
   virtual void DisassociateSendChannel();
   virtual void GetRtpRtcp(RtpRtcp** rtp_rtcp,
                           RtpReceiver** rtp_receiver) const;
-  virtual void GetDelayEstimate(int* jitter_buffer_delay_ms,
-                                int* playout_buffer_delay_ms) const;
   virtual uint32_t GetPlayoutTimestamp() const;
   virtual void SetMinimumPlayoutDelay(int delay_ms);
   virtual void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
@@ -122,8 +120,18 @@ class ChannelProxy {
  private:
   Channel* channel() const;
 
-  rtc::ThreadChecker thread_checker_;
-  rtc::RaceChecker race_checker_;
+  // Thread checkers document and lock usage of some methods on voe::Channel to
+  // specific threads we know about. The goal is to eventually split up
+  // voe::Channel into parts with single-threaded semantics, and thereby reduce
+  // the need for locks.
+  rtc::ThreadChecker worker_thread_checker_;
+  rtc::ThreadChecker module_process_thread_checker_;
+  // Methods accessed from audio and video threads are checked for sequential-
+  // only access. We don't necessarily own and control these threads, so thread
+  // checkers cannot be used. E.g. Chromium may transfer "ownership" from one
+  // audio thread to another, but access is still sequential.
+  rtc::RaceChecker audio_thread_race_checker_;
+  rtc::RaceChecker video_capture_thread_race_checker_;
   ChannelOwner channel_owner_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ChannelProxy);

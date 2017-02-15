@@ -260,11 +260,7 @@ rtc::Optional<Syncable::Info> AudioReceiveStream::GetInfo() const {
     return rtc::Optional<Syncable::Info>();
   }
 
-  int jitter_buffer_delay_ms = 0;
-  int playout_buffer_delay_ms = 0;
-  channel_proxy_->GetDelayEstimate(&jitter_buffer_delay_ms,
-                                   &playout_buffer_delay_ms);
-  info.current_delay_ms = jitter_buffer_delay_ms + playout_buffer_delay_ms;
+  info.current_delay_ms = channel_proxy_->GetDelayEstimate();
   return rtc::Optional<Syncable::Info>(info);
 }
 

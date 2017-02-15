@@ -76,8 +76,6 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD0(DisassociateSendChannel, void());
   MOCK_CONST_METHOD2(GetRtpRtcp, void(RtpRtcp** rtp_rtcp,
                                       RtpReceiver** rtp_receiver));
-  MOCK_CONST_METHOD2(GetDelayEstimate, void(int* jitter_buffer_delay_ms,
-                                            int* playout_buffer_delay_ms));
   MOCK_CONST_METHOD0(GetPlayoutTimestamp, uint32_t());
   MOCK_METHOD1(SetMinimumPlayoutDelay, void(int delay_ms));
   MOCK_CONST_METHOD1(GetRecCodec, bool(CodecInst* codec_inst));
