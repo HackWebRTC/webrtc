@@ -54,5 +54,12 @@ TEST(NtpTimeTest, ToMsMeansToNtpMilliseconds) {
   EXPECT_EQ(ntp.ToMs(), clock.CurrentNtpInMilliseconds());
 }
 
+TEST(NtpTimeTest, CanExplicitlyConvertToAndFromUint64) {
+  uint64_t untyped_time = 0x123456789;
+  NtpTime time(untyped_time);
+  EXPECT_EQ(untyped_time, static_cast<uint64_t>(time));
+  EXPECT_EQ(NtpTime(0x12345678, 0x90abcdef), NtpTime(0x1234567890abcdef));
+}
+
 }  // namespace
 }  // namespace webrtc
