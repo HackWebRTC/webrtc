@@ -36,7 +36,8 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
 
   const Config& GetConfig() const { return config_; }
 
-  bool AddAndProcessReceivedPacket(const RtpPacketReceived& packet);
+  // TODO(nisse): Intended to be part of an RtpPacketReceiver interface.
+  void OnRtpPacket(const RtpPacketReceived& packet);
 
   // Implements FlexfecReceiveStream.
   void Start() override;

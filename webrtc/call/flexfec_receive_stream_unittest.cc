@@ -138,14 +138,14 @@ TEST_F(FlexfecReceiveStreamTest, RecoversPacketWhenStarted) {
                                           &rtt_stats_, &process_thread_);
 
   // Do not call back before being started.
-  receive_stream.AddAndProcessReceivedPacket(ParsePacket(kFlexfecPacket));
+  receive_stream.OnRtpPacket(ParsePacket(kFlexfecPacket));
 
   // Call back after being started.
   receive_stream.Start();
   EXPECT_CALL(
       recovered_packet_receiver,
       OnRecoveredPacket(::testing::_, kRtpHeaderSize + kPayloadLength[1]));
-  receive_stream.AddAndProcessReceivedPacket(ParsePacket(kFlexfecPacket));
+  receive_stream.OnRtpPacket(ParsePacket(kFlexfecPacket));
 }
 
 }  // namespace webrtc

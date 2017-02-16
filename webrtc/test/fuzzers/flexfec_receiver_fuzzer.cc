@@ -64,7 +64,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     }
     RtpPacketReceived parsed_packet;
     if (parsed_packet.Parse(packet.get(), packet_length)) {
-      receiver.AddAndProcessReceivedPacket(parsed_packet);
+      receiver.OnRtpPacket(parsed_packet);
     }
   }
 }

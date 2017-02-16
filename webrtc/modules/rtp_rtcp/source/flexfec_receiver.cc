@@ -45,13 +45,12 @@ FlexfecReceiver::FlexfecReceiver(
 
 FlexfecReceiver::~FlexfecReceiver() = default;
 
-bool FlexfecReceiver::AddAndProcessReceivedPacket(
-    const RtpPacketReceived& packet) {
+void FlexfecReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  if (!AddReceivedPacket(std::move(packet))) {
-    return false;
+  if (!AddReceivedPacket(packet)) {
+    return;
   }
-  return ProcessReceivedPackets();
+  ProcessReceivedPackets();
 }
 
 FecPacketCounter FlexfecReceiver::GetPacketCounter() const {

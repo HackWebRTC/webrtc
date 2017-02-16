@@ -45,6 +45,18 @@ RtpPacketReceived ParsePacket(const Packet& packet) {
 
 }  // namespace
 
+class FlexfecReceiverForTest : public FlexfecReceiver {
+ public:
+  FlexfecReceiverForTest(uint32_t ssrc,
+                         uint32_t protected_media_ssrc,
+                         RecoveredPacketReceiver* recovered_packet_receiver)
+      : FlexfecReceiver(ssrc, protected_media_ssrc, recovered_packet_receiver) {
+  }
+  // Expose methods for tests.
+  using FlexfecReceiver::AddReceivedPacket;
+  using FlexfecReceiver::ProcessReceivedPackets;
+};
+
 class FlexfecReceiverTest : public ::testing::Test {
  protected:
   FlexfecReceiverTest()
@@ -61,7 +73,7 @@ class FlexfecReceiverTest : public ::testing::Test {
   std::list<Packet*> EncodeFec(const PacketList& media_packets,
                                size_t num_fec_packets);
 
-  FlexfecReceiver receiver_;
+  FlexfecReceiverForTest receiver_;
   std::unique_ptr<ForwardErrorCorrection> erasure_code_;
 
   FlexfecPacketGenerator packet_generator_;
@@ -100,8 +112,8 @@ TEST_F(FlexfecReceiverTest, ReceivesMediaPacket) {
   std::unique_ptr<Packet> media_packet(
       packet_generator_.NextPacket(0, kPayloadLength));
 
-  EXPECT_TRUE(
-      receiver_.AddAndProcessReceivedPacket(ParsePacket(*media_packet)));
+  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
+  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
 }
 
 TEST_F(FlexfecReceiverTest, ReceivesMediaAndFecPackets) {
@@ -114,9 +126,10 @@ TEST_F(FlexfecReceiverTest, ReceivesMediaAndFecPackets) {
   const auto& media_packet = media_packets.front();
   auto fec_packet = packet_generator_.BuildFlexfecPacket(*fec_packets.front());
 
-  EXPECT_TRUE(
-      receiver_.AddAndProcessReceivedPacket(ParsePacket(*media_packet)));
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(ParsePacket(*fec_packet)));
+  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
+  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
+  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*fec_packet)));
+  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
 }
 
 TEST_F(FlexfecReceiverTest, FailsOnTruncatedFecPacket) {
@@ -131,9 +144,9 @@ TEST_F(FlexfecReceiverTest, FailsOnTruncatedFecPacket) {
   fec_packets.front()->length = 1;
   auto fec_packet = packet_generator_.BuildFlexfecPacket(*fec_packets.front());
 
-  EXPECT_TRUE(
-      receiver_.AddAndProcessReceivedPacket(ParsePacket(*media_packet)));
-  EXPECT_FALSE(receiver_.AddAndProcessReceivedPacket(ParsePacket(*fec_packet)));
+  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
+  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
+  EXPECT_FALSE(receiver_.AddReceivedPacket(ParsePacket(*fec_packet)));
 }
 
 TEST_F(FlexfecReceiverTest, FailsOnUnknownMediaSsrc) {
@@ -148,8 +161,7 @@ TEST_F(FlexfecReceiverTest, FailsOnUnknownMediaSsrc) {
   media_packet->data[10] = 2;
   media_packet->data[11] = 3;
 
-  EXPECT_FALSE(
-      receiver_.AddAndProcessReceivedPacket(ParsePacket(*media_packet)));
+  EXPECT_FALSE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
 }
 
 TEST_F(FlexfecReceiverTest, FailsOnUnknownFecSsrc) {
@@ -167,9 +179,9 @@ TEST_F(FlexfecReceiverTest, FailsOnUnknownFecSsrc) {
   fec_packet->data[10] = 6;
   fec_packet->data[11] = 7;
 
-  EXPECT_TRUE(
-      receiver_.AddAndProcessReceivedPacket(ParsePacket(*media_packet)));
-  EXPECT_FALSE(receiver_.AddAndProcessReceivedPacket(ParsePacket(*fec_packet)));
+  EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
+  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
+  EXPECT_FALSE(receiver_.AddReceivedPacket(ParsePacket(*fec_packet)));
 }
 
 TEST_F(FlexfecReceiverTest, ReceivesMultiplePackets) {
@@ -182,16 +194,17 @@ TEST_F(FlexfecReceiverTest, ReceivesMultiplePackets) {
 
   // Receive all media packets.
   for (const auto& media_packet : media_packets) {
-    EXPECT_TRUE(
-        receiver_.AddAndProcessReceivedPacket(ParsePacket(*media_packet)));
+    EXPECT_TRUE(receiver_.AddReceivedPacket(ParsePacket(*media_packet)));
+    EXPECT_TRUE(receiver_.ProcessReceivedPackets());
   }
 
   // Receive FEC packet.
   auto fec_packet = fec_packets.front();
   std::unique_ptr<Packet> packet_with_rtp_header =
       packet_generator_.BuildFlexfecPacket(*fec_packet);
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-      ParsePacket(*packet_with_rtp_header)));
+  EXPECT_TRUE(
+      receiver_.AddReceivedPacket(ParsePacket(*packet_with_rtp_header)));
+  EXPECT_TRUE(receiver_.ProcessReceivedPackets());
 }
 
 TEST_F(FlexfecReceiverTest, RecoversFromSingleMediaLoss) {
@@ -204,7 +217,7 @@ TEST_F(FlexfecReceiverTest, RecoversFromSingleMediaLoss) {
 
   // Receive first media packet but drop second.
   auto media_it = media_packets.begin();
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_it)));
+  receiver_.OnRtpPacket(ParsePacket(**media_it));
 
   // Receive FEC packet and ensure recovery of lost media packet.
   auto fec_it = fec_packets.begin();
@@ -216,8 +229,7 @@ TEST_F(FlexfecReceiverTest, RecoversFromSingleMediaLoss) {
       .With(
           Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
       .WillOnce(Return(true));
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-      ParsePacket(*packet_with_rtp_header)));
+  receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 }
 
 TEST_F(FlexfecReceiverTest, RecoversFromDoubleMediaLoss) {
@@ -240,8 +252,7 @@ TEST_F(FlexfecReceiverTest, RecoversFromDoubleMediaLoss) {
       .With(
           Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
       .WillOnce(Return(true));
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-      ParsePacket(*packet_with_rtp_header)));
+  receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Receive second FEC packet and recover second lost media packet.
   fec_it++;
@@ -252,8 +263,7 @@ TEST_F(FlexfecReceiverTest, RecoversFromDoubleMediaLoss) {
       .With(
           Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
       .WillOnce(Return(true));
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-      ParsePacket(*packet_with_rtp_header)));
+  receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 }
 
 TEST_F(FlexfecReceiverTest, DoesNotRecoverFromMediaAndFecLoss) {
@@ -266,7 +276,7 @@ TEST_F(FlexfecReceiverTest, DoesNotRecoverFromMediaAndFecLoss) {
 
   // Receive first media packet.
   auto media_it = media_packets.begin();
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_it)));
+  receiver_.OnRtpPacket(ParsePacket(**media_it));
 
   // Drop second media packet and FEC packet. Do not expect call back.
 }
@@ -281,7 +291,7 @@ TEST_F(FlexfecReceiverTest, DoesNotCallbackTwice) {
 
   // Receive first media packet but drop second.
   auto media_it = media_packets.begin();
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_it)));
+  receiver_.OnRtpPacket(ParsePacket(**media_it));
 
   // Receive FEC packet and ensure recovery of lost media packet.
   auto fec_it = fec_packets.begin();
@@ -293,12 +303,10 @@ TEST_F(FlexfecReceiverTest, DoesNotCallbackTwice) {
       .With(
           Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
       .WillOnce(Return(true));
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-      ParsePacket(*packet_with_rtp_header)));
+  receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Receive FEC packet again.
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-      ParsePacket(*packet_with_rtp_header)));
+  receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Do not call back again.
 }
@@ -320,7 +328,7 @@ TEST_F(FlexfecReceiverTest, RecoversFrom50PercentLoss) {
   // Drop every second media packet.
   auto media_it = media_packets.begin();
   while (media_it != media_packets.end()) {
-    EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_it)));
+    receiver_.OnRtpPacket(ParsePacket(**media_it));
     ++media_it;
     if (media_it == media_packets.end()) {
       break;
@@ -342,8 +350,7 @@ TEST_F(FlexfecReceiverTest, RecoversFrom50PercentLoss) {
         .With(Args<0, 1>(
             ElementsAreArray((*media_it)->data, (*media_it)->length)))
         .WillOnce(Return(true));
-    EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-        ParsePacket(*fec_packet_with_rtp_header)));
+    receiver_.OnRtpPacket(ParsePacket(*fec_packet_with_rtp_header));
     ++media_it;
   }
 }
@@ -370,7 +377,7 @@ TEST_F(FlexfecReceiverTest, DelayedFecPacketDoesHelp) {
 
   // Receive all other media packets.
   while (media_it != media_packets.end()) {
-    EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_it)));
+    receiver_.OnRtpPacket(ParsePacket(**media_it));
     ++media_it;
   }
 
@@ -384,8 +391,7 @@ TEST_F(FlexfecReceiverTest, DelayedFecPacketDoesHelp) {
       .With(
           Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
       .WillOnce(Return(true));
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-      ParsePacket(*packet_with_rtp_header)));
+  receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 }
 
 TEST_F(FlexfecReceiverTest, TooDelayedFecPacketDoesNotHelp) {
@@ -410,7 +416,7 @@ TEST_F(FlexfecReceiverTest, TooDelayedFecPacketDoesNotHelp) {
 
   // Receive all other media packets.
   while (media_it != media_packets.end()) {
-    EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_it)));
+    receiver_.OnRtpPacket(ParsePacket(**media_it));
     ++media_it;
   }
 
@@ -418,8 +424,7 @@ TEST_F(FlexfecReceiverTest, TooDelayedFecPacketDoesNotHelp) {
   auto fec_it = fec_packets.begin();
   std::unique_ptr<Packet> packet_with_rtp_header =
       packet_generator_.BuildFlexfecPacket(**fec_it);
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-      ParsePacket(*packet_with_rtp_header)));
+  receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Do not expect a call back.
 }
@@ -440,14 +445,10 @@ TEST_F(FlexfecReceiverTest, RecoversWithMediaPacketsOutOfOrder) {
   auto media_packet3 = media_it++;
   auto media_packet4 = media_it++;
   auto media_packet5 = media_it++;
-  EXPECT_TRUE(
-      receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_packet5)));
-  EXPECT_TRUE(
-      receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_packet2)));
-  EXPECT_TRUE(
-      receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_packet3)));
-  EXPECT_TRUE(
-      receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_packet0)));
+  receiver_.OnRtpPacket(ParsePacket(**media_packet5));
+  receiver_.OnRtpPacket(ParsePacket(**media_packet2));
+  receiver_.OnRtpPacket(ParsePacket(**media_packet3));
+  receiver_.OnRtpPacket(ParsePacket(**media_packet0));
 
   // Expect to recover lost media packets.
   EXPECT_CALL(recovered_packet_receiver_,
@@ -466,8 +467,7 @@ TEST_F(FlexfecReceiverTest, RecoversWithMediaPacketsOutOfOrder) {
   std::unique_ptr<Packet> packet_with_rtp_header;
   while (fec_it != fec_packets.end()) {
     packet_with_rtp_header = packet_generator_.BuildFlexfecPacket(**fec_it);
-    EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-        ParsePacket(*packet_with_rtp_header)));
+    receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
     ++fec_it;
   }
 }
@@ -482,7 +482,7 @@ TEST_F(FlexfecReceiverTest, CalculatesNumberOfPackets) {
 
   // Receive first media packet but drop second.
   auto media_it = media_packets.begin();
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(ParsePacket(**media_it)));
+  receiver_.OnRtpPacket(ParsePacket(**media_it));
 
   // Receive FEC packet and ensure recovery of lost media packet.
   auto fec_it = fec_packets.begin();
@@ -494,8 +494,7 @@ TEST_F(FlexfecReceiverTest, CalculatesNumberOfPackets) {
       .With(
           Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
       .WillOnce(Return(true));
-  EXPECT_TRUE(receiver_.AddAndProcessReceivedPacket(
-      ParsePacket(*packet_with_rtp_header)));
+  receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Check stats calculations.
   FecPacketCounter packet_counter = receiver_.GetPacketCounter();

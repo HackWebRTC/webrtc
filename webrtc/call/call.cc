@@ -1216,7 +1216,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
       // Deliver media packets to FlexFEC subsystem.
       auto it_bounds = flexfec_receive_ssrcs_media_.equal_range(ssrc);
       for (auto it = it_bounds.first; it != it_bounds.second; ++it)
-        it->second->AddAndProcessReceivedPacket(*parsed_packet);
+        it->second->OnRtpPacket(*parsed_packet);
 
       event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
       return DELIVERY_OK;
@@ -1225,12 +1225,9 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
     auto it = flexfec_receive_ssrcs_protection_.find(ssrc);
     if (it != flexfec_receive_ssrcs_protection_.end()) {
-      auto status = it->second->AddAndProcessReceivedPacket(*parsed_packet)
-                        ? DELIVERY_OK
-                        : DELIVERY_PACKET_ERROR;
-      if (status == DELIVERY_OK)
-        event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
-      return status;
+      it->second->OnRtpPacket(*parsed_packet);
+      event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
+      return DELIVERY_OK;
     }
   }
   return DELIVERY_UNKNOWN_SSRC;
