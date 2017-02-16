@@ -78,7 +78,7 @@ class ViEEncoderUnderTest : public ViEEncoder {
       down ? AdaptDown(reason) : AdaptUp(reason);
       event.Set();
     });
-    RTC_DCHECK(event.Wait(5000));
+    ASSERT_TRUE(event.Wait(5000));
   }
 
   void TriggerCpuOveruse() { PostTaskAndWait(true, AdaptReason::kCpu); }
