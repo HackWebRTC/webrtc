@@ -115,10 +115,10 @@ def BuildWebRTC(output_dir, target_arch, flavor, build_type,
   else:
     raise ValueError('Build type "%s" is not supported.' % build_type)
 
-  logging.info('Building WebRTC with args: %s', ' '.join(gn_args))
+  args_string = ' '.join(gn_args + extra_gn_args)
+  logging.info('Building WebRTC with args: %s', args_string)
 
-  cmd = ['gn', 'gen', output_dir,
-         '--args=' + ' '.join(gn_args + extra_gn_args)]
+  cmd = ['gn', 'gen', output_dir, '--args=' + args_string]
   _RunCommand(cmd)
   logging.info('Building target: %s', gn_target_name)
 
