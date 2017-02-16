@@ -341,6 +341,13 @@ if (rtc_include_tests) {
     if (rtc_use_h264) {
       defines += [ "WEBRTC_USE_H264" ]
     }
+
+    if (rtc_opus_support_120ms_ptime) {
+      defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=1" ]
+    } else {
+      defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=0" ]
+    }
+
     if (is_win) {
       cflags = [
         "/wd4245",  # conversion from int to size_t, signed/unsigned mismatch.

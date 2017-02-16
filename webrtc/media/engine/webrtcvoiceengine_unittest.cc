@@ -2568,7 +2568,9 @@ TEST_F(WebRtcVoiceEngineWithSendSideBweWithOverheadTest, MinAndMaxBitrate) {
 
   // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
   constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
-  constexpr int kMinOverheadBps = kOverheadPerPacket * 8 * 1000 / 60;
+  constexpr int kOpusMaxPtimeMs = WEBRTC_OPUS_SUPPORT_120MS_PTIME ? 120 : 60;
+  constexpr int kMinOverheadBps =
+      kOverheadPerPacket * 8 * 1000 / kOpusMaxPtimeMs;
   constexpr int kMaxOverheadBps = kOverheadPerPacket * 8 * 1000 / 10;
 
   constexpr int kOpusMinBitrateBps = 6000;
@@ -2583,7 +2585,8 @@ TEST_F(WebRtcVoiceEngineWithSendSideBweWithOverheadTest, MinAndMaxBitrate) {
       rtc::Optional<std::string>("1234");
   SetSendParameters(parameters);
 
-  constexpr int kMinOverheadWithAnaBps = kOverheadPerPacket * 8 * 1000 / 60;
+  constexpr int kMinOverheadWithAnaBps =
+      kOverheadPerPacket * 8 * 1000 / kOpusMaxPtimeMs;
   constexpr int kMaxOverheadWithAnaBps = kOverheadPerPacket * 8 * 1000 / 20;
 
   EXPECT_EQ(kOpusMinBitrateBps + kMinOverheadWithAnaBps,
@@ -3551,17 +3554,25 @@ TEST(WebRtcVoiceEngineTest, HasCorrectCodecs) {
   // module.
 
   // Check codecs by name.
+#ifdef WEBRTC_CODEC_OPUS
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "OPUS", 48000, 0, 2), nullptr));
+#endif
+#if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "ISAC", 16000, 0, 1), nullptr));
+#endif
+#if (defined(WEBRTC_CODEC_ISAC))
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "ISAC", 32000, 0, 1), nullptr));
+#endif
+#ifdef WEBRTC_CODEC_ILBC
   // Check that name matching is case-insensitive.
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "ILBC", 8000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "iLBC", 8000, 0, 1), nullptr));
+#endif
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
       cricket::AudioCodec(96, "CN", 32000, 0, 1), nullptr));
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(
