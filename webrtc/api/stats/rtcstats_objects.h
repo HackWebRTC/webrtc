@@ -323,8 +323,6 @@ class RTCRTPStreamStats : public RTCStats {
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657854
   // SLI count is only defined for |media_type == "video"|.
   RTCStatsMember<uint32_t> sli_count;
-  // TODO(hbos): Only collected for the outbound case, should also be collected
-  // for inbound case by |RTCStatsCollector|. crbug.com/657854, crbug.com/657855
   RTCStatsMember<uint64_t> qp_sum;
 
  protected:
