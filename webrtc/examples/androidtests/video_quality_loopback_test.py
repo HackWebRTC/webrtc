@@ -32,15 +32,13 @@ SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir,
                                         os.pardir))
 
 
-def _RunCommand(argv, **kwargs):
+def _RunCommand(argv, cwd=SRC_DIR, **kwargs):
   logging.info('Running %r', argv)
-  subprocess.check_call(argv, **kwargs)
+  subprocess.check_call(argv, cwd=cwd, **kwargs)
 
 
 def _ParseArgs():
   parser = argparse.ArgumentParser(description='Start loopback video analysis.')
-  parser.add_argument('--source_dir', default=SRC_DIR,
-      help='The path to the WebRTC source directory. Default: %(default)s.')
   parser.add_argument('build_dir_android',
       help='The path to the build directory for Android.')
   parser.add_argument('--build_dir_x86',
@@ -57,7 +55,6 @@ def main():
 
   args = _ParseArgs()
 
-  source_dir = args.source_dir
   build_dir_android = args.build_dir_android
   build_dir_x86 = args.build_dir_x86
   temp_dir = args.temp_dir
@@ -72,7 +69,7 @@ def main():
     _RunCommand(['gn', 'gen', build_dir_x86])
     _RunCommand(['ninja', '-C', build_dir_x86, 'frame_analyzer'])
 
-  toolchain_dir = os.path.join(source_dir, 'tools-webrtc',
+  toolchain_dir = os.path.join(SRC_DIR, 'tools-webrtc',
       'video_quality_toolchain')
 
   # Download ffmpeg and zxing.
@@ -97,7 +94,7 @@ def main():
 
   convert_video(test_video, test_video_yuv)
 
-  reference_video = os.path.join(source_dir,
+  reference_video = os.path.join(SRC_DIR,
       'resources', 'reference_video_640x360_30fps.y4m')
 
   reference_video_yuv = os.path.join(temp_dir,
@@ -106,7 +103,7 @@ def main():
   convert_video(reference_video, reference_video_yuv)
 
   # Run compare script.
-  compare_script = os.path.join(source_dir, 'webrtc', 'tools',
+  compare_script = os.path.join(SRC_DIR, 'webrtc', 'tools',
       'compare_videos.py')
   zxing_path = os.path.join(toolchain_dir, 'linux', 'zxing')
 
