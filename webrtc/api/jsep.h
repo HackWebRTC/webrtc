@@ -59,6 +59,10 @@ class IceCandidateInterface {
   virtual int sdp_mline_index() const = 0;
   // Only for use internally.
   virtual const cricket::Candidate& candidate() const = 0;
+  // The URL of the ICE server which this candidate was gathered from.
+  // TODO(zhihuang): Remove the default implementation once the subclasses
+  // implement this method.
+  virtual std::string server_url() const { return ""; }
   // Creates a SDP-ized form of this candidate.
   virtual bool ToString(std::string* out) const = 0;
 };

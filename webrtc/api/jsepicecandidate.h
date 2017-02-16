@@ -43,6 +43,8 @@ class JsepIceCandidate : public IceCandidateInterface {
     return candidate_;
   }
 
+  virtual std::string server_url() const { return candidate_.url(); }
+
   virtual bool ToString(std::string* out) const;
 
  private:
