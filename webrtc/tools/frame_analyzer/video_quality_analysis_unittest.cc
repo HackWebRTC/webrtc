@@ -26,18 +26,20 @@ namespace test {
 // want those numbers to be picked up as perf numbers.
 class VideoQualityAnalysisTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() {
-    std::string log_filename = webrtc::test::OutputPath() +
-        "VideoQualityAnalysisTest.log";
+  void SetUp() {
+    std::string log_filename = TempFilename(webrtc::test::OutputPath(),
+                                            "VideoQualityAnalysisTest.log");
     logfile_ = fopen(log_filename.c_str(), "w");
     ASSERT_TRUE(logfile_ != NULL);
+
+    stats_filename_ref_ = TempFilename(OutputPath(), "stats-1.txt");
+    stats_filename_ = TempFilename(OutputPath(), "stats-2.txt");
   }
-  static void TearDownTestCase() {
-    ASSERT_EQ(0, fclose(logfile_));
-  }
-  static FILE* logfile_;
+  void TearDown() { ASSERT_EQ(0, fclose(logfile_)); }
+  FILE* logfile_;
+  std::string stats_filename_ref_;
+  std::string stats_filename_;
 };
-FILE* VideoQualityAnalysisTest::logfile_ = NULL;
 
 TEST_F(VideoQualityAnalysisTest, MatchExtractedY4mFrame) {
   std::string video_file =
@@ -85,33 +87,26 @@ TEST_F(VideoQualityAnalysisTest, PrintAnalysisResultsThreeFrames) {
 }
 
 TEST_F(VideoQualityAnalysisTest, PrintMaxRepeatedAndSkippedFramesInvalidFile) {
-  std::string stats_filename_ref =
-      OutputPath() + "non-existing-stats-file-1.txt";
-  std::string stats_filename = OutputPath() + "non-existing-stats-file-2.txt";
-  remove(stats_filename.c_str());
+  remove(stats_filename_.c_str());
   PrintMaxRepeatedAndSkippedFrames(logfile_, "NonExistingStatsFile",
-                                   stats_filename_ref, stats_filename);
+                                   stats_filename_ref_, stats_filename_);
 }
 
 TEST_F(VideoQualityAnalysisTest,
        PrintMaxRepeatedAndSkippedFramesEmptyStatsFile) {
-  std::string stats_filename_ref = OutputPath() + "empty-stats-1.txt";
-  std::string stats_filename = OutputPath() + "empty-stats-2.txt";
   std::ofstream stats_file;
-  stats_file.open(stats_filename_ref.c_str());
+  stats_file.open(stats_filename_ref_.c_str());
   stats_file.close();
-  stats_file.open(stats_filename.c_str());
+  stats_file.open(stats_filename_.c_str());
   stats_file.close();
   PrintMaxRepeatedAndSkippedFrames(logfile_, "EmptyStatsFile",
-                                   stats_filename_ref, stats_filename);
+                                   stats_filename_ref_, stats_filename_);
 }
 
 TEST_F(VideoQualityAnalysisTest, PrintMaxRepeatedAndSkippedFramesNormalFile) {
-  std::string stats_filename_ref = OutputPath() + "stats-1.txt";
-  std::string stats_filename = OutputPath() + "stats-2.txt";
   std::ofstream stats_file;
 
-  stats_file.open(stats_filename_ref.c_str());
+  stats_file.open(stats_filename_ref_.c_str());
   stats_file << "frame_0001 0100\n";
   stats_file << "frame_0002 0101\n";
   stats_file << "frame_0003 0102\n";
@@ -121,7 +116,7 @@ TEST_F(VideoQualityAnalysisTest, PrintMaxRepeatedAndSkippedFramesNormalFile) {
   stats_file << "frame_0007 0108\n";
   stats_file.close();
 
-  stats_file.open(stats_filename.c_str());
+  stats_file.open(stats_filename_.c_str());
   stats_file << "frame_0001 0100\n";
   stats_file << "frame_0002 0101\n";
   stats_file << "frame_0003 0101\n";
@@ -129,9 +124,217 @@ TEST_F(VideoQualityAnalysisTest, PrintMaxRepeatedAndSkippedFramesNormalFile) {
   stats_file.close();
 
   PrintMaxRepeatedAndSkippedFrames(logfile_, "NormalStatsFile",
-                                   stats_filename_ref, stats_filename);
+                                   stats_filename_ref_, stats_filename_);
 }
 
+namespace {
+void VerifyLogOutput(const std::string& log_filename,
+                     const std::vector<std::string>& expected_out) {
+  std::ifstream logf(log_filename);
+  std::string line;
 
+  std::size_t i;
+  for (i = 0; i < expected_out.size() && getline(logf, line); ++i) {
+    ASSERT_EQ(expected_out.at(i), line);
+  }
+  ASSERT_TRUE(i == expected_out.size()) << "Not enough input data";
+}
+}  // unnamed namespace
+
+TEST_F(VideoQualityAnalysisTest,
+       PrintMaxRepeatedAndSkippedFramesSkippedFrames) {
+  std::ofstream stats_file;
+
+  std::string log_filename =
+      TempFilename(webrtc::test::OutputPath(), "log.log");
+  FILE* logfile = fopen(log_filename.c_str(), "w");
+  ASSERT_TRUE(logfile != NULL);
+  stats_file.open(stats_filename_ref_.c_str());
+  stats_file << "frame_0001 0100\n";
+  stats_file << "frame_0002 0101\n";
+  stats_file << "frame_0002 0101\n";
+  stats_file << "frame_0003 0103\n";
+  stats_file << "frame_0004 0103\n";
+  stats_file << "frame_0005 0106\n";
+  stats_file << "frame_0006 0106\n";
+  stats_file << "frame_0007 0108\n";
+  stats_file << "frame_0008 0110\n";
+  stats_file << "frame_0009 0112\n";
+  stats_file.close();
+
+  stats_file.open(stats_filename_.c_str());
+  stats_file << "frame_0001 0101\n";
+  stats_file << "frame_0002 0101\n";
+  stats_file << "frame_0003 0101\n";
+  stats_file << "frame_0004 0108\n";
+  stats_file << "frame_0005 0108\n";
+  stats_file << "frame_0006 0112\n";
+  stats_file.close();
+
+  PrintMaxRepeatedAndSkippedFrames(logfile, "NormalStatsFile",
+                                   stats_filename_ref_, stats_filename_);
+  ASSERT_EQ(0, fclose(logfile));
+
+  std::vector<std::string> expected_out = {
+      "RESULT Max_repeated: NormalStatsFile= 2",
+      "RESULT Max_skipped: NormalStatsFile= 2",
+      "RESULT Total_skipped: NormalStatsFile= 3",
+      "RESULT Decode_errors_reference: NormalStatsFile= 0",
+      "RESULT Decode_errors_test: NormalStatsFile= 0"};
+  VerifyLogOutput(log_filename, expected_out);
+}
+
+TEST_F(VideoQualityAnalysisTest,
+       PrintMaxRepeatedAndSkippedFramesDecodeErrorInTest) {
+  std::ofstream stats_file;
+
+  std::string log_filename =
+      TempFilename(webrtc::test::OutputPath(), "log.log");
+  FILE* logfile = fopen(log_filename.c_str(), "w");
+  ASSERT_TRUE(logfile != NULL);
+  stats_file.open(stats_filename_ref_.c_str());
+  stats_file << "frame_0001 0100\n";
+  stats_file << "frame_0002 0100\n";
+  stats_file << "frame_0002 0101\n";
+  stats_file << "frame_0003 0103\n";
+  stats_file << "frame_0004 0103\n";
+  stats_file << "frame_0005 0106\n";
+  stats_file << "frame_0006 0107\n";
+  stats_file << "frame_0007 0107\n";
+  stats_file << "frame_0008 0110\n";
+  stats_file << "frame_0009 0112\n";
+  stats_file.close();
+
+  stats_file.open(stats_filename_.c_str());
+  stats_file << "frame_0001 0101\n";
+  stats_file << "frame_0002 Barcode error\n";
+  stats_file << "frame_0003 Barcode error\n";
+  stats_file << "frame_0004 Barcode error\n";
+  stats_file << "frame_0005 0107\n";
+  stats_file << "frame_0006 0110\n";
+  stats_file.close();
+
+  PrintMaxRepeatedAndSkippedFrames(logfile, "NormalStatsFile",
+                                   stats_filename_ref_, stats_filename_);
+  ASSERT_EQ(0, fclose(logfile));
+
+  std::vector<std::string> expected_out = {
+      "RESULT Max_repeated: NormalStatsFile= 1",
+      "RESULT Max_skipped: NormalStatsFile= 0",
+      "RESULT Total_skipped: NormalStatsFile= 0",
+      "RESULT Decode_errors_reference: NormalStatsFile= 0",
+      "RESULT Decode_errors_test: NormalStatsFile= 3"};
+  VerifyLogOutput(log_filename, expected_out);
+}
+
+TEST_F(VideoQualityAnalysisTest, CalculateFrameClustersOneValue) {
+  std::ofstream stats_file;
+
+  stats_file.open(stats_filename_.c_str());
+  stats_file << "frame_0001 0101\n";
+  stats_file.close();
+
+  FILE* stats_filef = fopen(stats_filename_.c_str(), "r");
+  ASSERT_TRUE(stats_filef != NULL);
+
+  auto clusters = CalculateFrameClusters(stats_filef, nullptr);
+  ASSERT_EQ(0, fclose(stats_filef));
+  decltype(clusters) expected = {std::make_pair(101, 1)};
+  ASSERT_EQ(expected, clusters);
+}
+
+TEST_F(VideoQualityAnalysisTest, CalculateFrameClustersOneOneTwo) {
+  std::ofstream stats_file;
+
+  stats_file.open(stats_filename_.c_str());
+  stats_file << "frame_0001 0101\n";
+  stats_file << "frame_0002 0101\n";
+  stats_file << "frame_0003 0102\n";
+  stats_file.close();
+
+  FILE* stats_filef = fopen(stats_filename_.c_str(), "r");
+  ASSERT_TRUE(stats_filef != NULL);
+
+  auto clusters = CalculateFrameClusters(stats_filef, nullptr);
+  ASSERT_EQ(0, fclose(stats_filef));
+  decltype(clusters) expected = {std::make_pair(101, 2),
+                                 std::make_pair(102, 1)};
+  ASSERT_EQ(expected, clusters);
+}
+
+TEST_F(VideoQualityAnalysisTest, CalculateFrameClustersOneOneErrErrThree) {
+  std::ofstream stats_file;
+
+  stats_file.open(stats_filename_.c_str());
+  stats_file << "frame_0001 0101\n";
+  stats_file << "frame_0002 0101\n";
+  stats_file << "frame_0003 Barcode error\n";
+  stats_file << "frame_0004 Barcode error\n";
+  stats_file << "frame_0005 0103\n";
+  stats_file.close();
+
+  FILE* stats_filef = fopen(stats_filename_.c_str(), "r");
+  ASSERT_TRUE(stats_filef != NULL);
+
+  auto clusters = CalculateFrameClusters(stats_filef, nullptr);
+  ASSERT_EQ(0, fclose(stats_filef));
+  decltype(clusters) expected = {std::make_pair(101, 2),
+                                 std::make_pair(DECODE_ERROR, 2),
+                                 std::make_pair(103, 1)};
+  ASSERT_EQ(expected, clusters);
+}
+
+TEST_F(VideoQualityAnalysisTest, CalculateFrameClustersErrErr) {
+  std::ofstream stats_file;
+
+  stats_file.open(stats_filename_.c_str());
+  stats_file << "frame_0001 Barcode error\n";
+  stats_file << "frame_0002 Barcode error\n";
+  stats_file.close();
+
+  FILE* stats_filef = fopen(stats_filename_.c_str(), "r");
+  ASSERT_TRUE(stats_filef != NULL);
+
+  auto clusters = CalculateFrameClusters(stats_filef, nullptr);
+  ASSERT_EQ(0, fclose(stats_filef));
+  decltype(clusters) expected = {std::make_pair(DECODE_ERROR, 2)};
+  ASSERT_EQ(expected, clusters);
+}
+
+TEST_F(VideoQualityAnalysisTest, CalculateFrameClustersOneOneErrErrOneOne) {
+  std::ofstream stats_file;
+
+  stats_file.open(stats_filename_.c_str());
+  stats_file << "frame_0001 0101\n";
+  stats_file << "frame_0002 0101\n";
+  stats_file << "frame_0003 Barcode error\n";
+  stats_file << "frame_0004 Barcode error\n";
+  stats_file << "frame_0005 0101\n";
+  stats_file << "frame_0006 0101\n";
+  stats_file.close();
+
+  FILE* stats_filef = fopen(stats_filename_.c_str(), "r");
+  ASSERT_TRUE(stats_filef != NULL);
+
+  auto clusters = CalculateFrameClusters(stats_filef, nullptr);
+  ASSERT_EQ(0, fclose(stats_filef));
+  decltype(clusters) expected = {std::make_pair(101, 6)};
+  ASSERT_EQ(expected, clusters);
+}
+
+TEST_F(VideoQualityAnalysisTest, CalculateFrameClustersEmpty) {
+  std::ofstream stats_file;
+
+  stats_file.open(stats_filename_.c_str());
+  stats_file.close();
+
+  FILE* stats_filef = fopen(stats_filename_.c_str(), "r");
+  ASSERT_TRUE(stats_filef != NULL);
+
+  auto clusters = CalculateFrameClusters(stats_filef, nullptr);
+  ASSERT_EQ(0, fclose(stats_filef));
+  decltype(clusters) expected;
+  ASSERT_EQ(expected, clusters);
+}
 }  // namespace test
 }  // namespace webrtc

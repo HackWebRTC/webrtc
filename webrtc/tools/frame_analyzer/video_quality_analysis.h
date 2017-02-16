@@ -13,6 +13,7 @@
 
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "libyuv/compare.h"  // NOLINT
 #include "libyuv/convert.h"  // NOLINT
@@ -81,6 +82,23 @@ void PrintAnalysisResults(const std::string& label, ResultsContainer* results);
 // Similar to the above, but will print to the specified file handle.
 void PrintAnalysisResults(FILE* output, const std::string& label,
                           ResultsContainer* results);
+
+// The barcode number that means that the barcode could not be decoded.
+const int DECODE_ERROR = -1;
+
+// Clusters the frames in the file. First in the pair is the frame number and
+// second is the number of frames in that cluster. So if first frame in video
+// has number 100 and it is repeated 3 after each other, then the first entry
+// in the returned vector has first set to 100 and second set to 3.
+// Decode errors between two frames with same barcode, then it interprets
+// the frame with the decode error as having the same id as the two frames
+// around it. Eg. [400, DECODE_ERROR, DECODE_ERROR, 400] is becomes an entry
+// in return vector with first==400 and second==4. In other cases with decode
+// errors like [400, DECODE_ERROR, 401] becomes three entries, each with
+// second==1 and the middle has first==DECODE_ERROR.
+std::vector<std::pair<int, int> > CalculateFrameClusters(
+    FILE* file,
+    int* num_decode_errors);
 
 // Calculates max repeated and skipped frames and prints them to stdout in a
 // format that is compatible with Chromium performance numbers.

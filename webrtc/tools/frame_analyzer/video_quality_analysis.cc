@@ -325,23 +325,32 @@ void PrintMaxRepeatedAndSkippedFrames(const std::string& label,
                                    stats_file_test_name);
 }
 
-namespace {
-// Clusters the frames in the file. First in the pair is the frame number and
-// second is the number
-// of frames in that cluster. So if first frame in video has number 100 and it
-// is repeated 3 after
-// each other, then the first entry in the returned vector has first set to 100
-// and second set
-// to 3.
-std::vector<std::pair<int, int> > CalculateFrameClusters(FILE* file) {
+std::vector<std::pair<int, int> > CalculateFrameClusters(
+    FILE* file,
+    int* num_decode_errors) {
+  if (num_decode_errors) {
+    *num_decode_errors = 0;
+  }
   std::vector<std::pair<int, int> > frame_cnt;
   char line[STATS_LINE_LENGTH];
   while (GetNextStatsLine(file, line)) {
-    int decoded_frame_number = ExtractDecodedFrameNumber(line);
-    if (decoded_frame_number == -1) {
-      continue;
+    int decoded_frame_number;
+    if (IsThereBarcodeError(line)) {
+      decoded_frame_number = DECODE_ERROR;
+      if (num_decode_errors) {
+        ++*num_decode_errors;
+      }
+    } else {
+      decoded_frame_number = ExtractDecodedFrameNumber(line);
     }
-    if (frame_cnt.empty() || frame_cnt.back().first != decoded_frame_number) {
+    if (frame_cnt.size() >= 2 && decoded_frame_number != DECODE_ERROR &&
+        frame_cnt.back().first == DECODE_ERROR &&
+        frame_cnt[frame_cnt.size() - 2].first == decoded_frame_number) {
+      // Handle when there is a decoding error inside a cluster of frames.
+      frame_cnt[frame_cnt.size() - 2].second += frame_cnt.back().second + 1;
+      frame_cnt.pop_back();
+    } else if (frame_cnt.empty() ||
+               frame_cnt.back().first != decoded_frame_number) {
       frame_cnt.push_back(std::make_pair(decoded_frame_number, 1));
     } else {
       ++frame_cnt.back().second;
@@ -349,7 +358,6 @@ std::vector<std::pair<int, int> > CalculateFrameClusters(FILE* file) {
   }
   return frame_cnt;
 }
-}  // namespace
 
 void PrintMaxRepeatedAndSkippedFrames(FILE* output,
                                       const std::string& label,
@@ -370,13 +378,16 @@ void PrintMaxRepeatedAndSkippedFrames(FILE* output,
   }
 
   int max_repeated_frames = 1;
-  int max_skipped_frames = 1;
+  int max_skipped_frames = 0;
+
+  int decode_errors_ref = 0;
+  int decode_errors_test = 0;
 
   std::vector<std::pair<int, int> > frame_cnt_ref =
-      CalculateFrameClusters(stats_file_ref);
+      CalculateFrameClusters(stats_file_ref, &decode_errors_ref);
 
   std::vector<std::pair<int, int> > frame_cnt_test =
-      CalculateFrameClusters(stats_file_test);
+      CalculateFrameClusters(stats_file_test, &decode_errors_test);
 
   fclose(stats_file_ref);
   fclose(stats_file_test);
@@ -391,9 +402,19 @@ void PrintMaxRepeatedAndSkippedFrames(FILE* output,
     return;
   }
 
+  while (it_test != end_test && it_test->first == DECODE_ERROR) {
+    ++it_test;
+  }
+
+  if (it_test == end_test) {
+    fprintf(stderr, "Test video only has barcode decode errors\n");
+    return;
+  }
+
   // Find the first frame in the reference video that match the first frame in
   // the test video.
-  while (it_ref != end_ref && it_ref->first != it_test->first) {
+  while (it_ref != end_ref &&
+         (it_ref->first == DECODE_ERROR || it_ref->first != it_test->first)) {
     ++it_ref;
   }
   if (it_ref == end_ref) {
@@ -403,33 +424,58 @@ void PrintMaxRepeatedAndSkippedFrames(FILE* output,
     return;
   }
 
+  int total_skipped_frames = 0;
   for (;;) {
     max_repeated_frames =
         std::max(max_repeated_frames, it_test->second - it_ref->second + 1);
+
+    bool passed_error = false;
+
     ++it_test;
+    while (it_test != end_test && it_test->first == DECODE_ERROR) {
+      ++it_test;
+      passed_error = true;
+    }
     if (it_test == end_test) {
       break;
     }
+
     int skipped_frames = 0;
     ++it_ref;
-    while (it_ref != end_ref && it_ref->first != it_test->first) {
-      skipped_frames += it_ref->second;
-      ++it_ref;
+    for (; it_ref != end_ref; ++it_ref) {
+      if (it_ref->first != DECODE_ERROR && it_ref->first >= it_test->first) {
+        break;
+      }
+      ++skipped_frames;
     }
-    if (it_ref == end_ref) {
-      fprintf(stderr,
-              "The barcode in the test video is not in the reference video.\n");
-      return;
+    if (passed_error) {
+      // If we pass an error in the test video, then we are conservative
+      // and will not calculate skipped frames for that part.
+      skipped_frames = 0;
     }
-    if (skipped_frames > max_skipped_frames) {
-      max_skipped_frames = skipped_frames;
+    if (it_ref != end_ref && it_ref->first == it_test->first) {
+      total_skipped_frames += skipped_frames;
+      if (skipped_frames > max_skipped_frames) {
+        max_skipped_frames = skipped_frames;
+      }
+      continue;
     }
+    fprintf(stderr,
+            "Found barcode %d in test video, which is not in reference video",
+            it_test->first);
+    return;
   }
 
   fprintf(output, "RESULT Max_repeated: %s= %d\n", label.c_str(),
           max_repeated_frames);
   fprintf(output, "RESULT Max_skipped: %s= %d\n", label.c_str(),
           max_skipped_frames);
+  fprintf(output, "RESULT Total_skipped: %s= %d\n", label.c_str(),
+          total_skipped_frames);
+  fprintf(output, "RESULT Decode_errors_reference: %s= %d\n", label.c_str(),
+          decode_errors_ref);
+  fprintf(output, "RESULT Decode_errors_test: %s= %d\n", label.c_str(),
+          decode_errors_test);
 }
 
 void PrintAnalysisResults(const std::string& label, ResultsContainer* results) {
