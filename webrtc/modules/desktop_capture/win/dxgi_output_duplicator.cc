@@ -85,13 +85,10 @@ DxgiOutputDuplicator::~DxgiOutputDuplicator() {
 
 bool DxgiOutputDuplicator::Initialize() {
   if (DuplicateOutput()) {
-    DesktopSize unrotated_size =
-        RotateSize(desktop_rect().size(), ReverseRotation(rotation_));
     if (desc_.DesktopImageInSystemMemory) {
-      texture_.reset(
-          new DxgiTextureMapping(unrotated_size, duplication_.Get()));
+      texture_.reset(new DxgiTextureMapping(duplication_.Get()));
     } else {
-      texture_.reset(new DxgiTextureStaging(unrotated_size, device_));
+      texture_.reset(new DxgiTextureStaging(device_));
     }
     return true;
   } else {

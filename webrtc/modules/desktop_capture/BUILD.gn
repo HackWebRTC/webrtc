@@ -200,6 +200,8 @@ rtc_static_library("desktop_capture") {
     "mouse_cursor_monitor.h",
     "mouse_cursor_monitor_mac.mm",
     "mouse_cursor_monitor_win.cc",
+    "resolution_change_detector.cc",
+    "resolution_change_detector.h",
     "screen_capture_frame_queue.h",
     "screen_capturer_helper.cc",
     "screen_capturer_helper.h",

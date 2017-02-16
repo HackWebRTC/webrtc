@@ -33,14 +33,15 @@ class DxgiTextureStaging : public DxgiTexture {
  public:
   // Creates a DxgiTextureStaging instance. Caller must maintain the lifetime
   // of input device to make sure it outlives this instance.
-  DxgiTextureStaging(const DesktopSize& desktop_size, const D3dDevice& device);
+  explicit DxgiTextureStaging(const D3dDevice& device);
 
   ~DxgiTextureStaging() override;
 
-  // Copies selected regions of a frame represented by frame_info and resource.
+ protected:
+  // Copies selected regions of a frame represented by frame_info and texture.
   // Returns false if anything wrong.
-  bool CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                IDXGIResource* resource) override;
+  bool CopyFromTexture(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
+                       ID3D11Texture2D* texture) override;
 
   bool DoRelease() override;
 

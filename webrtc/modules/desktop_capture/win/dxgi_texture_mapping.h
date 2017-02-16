@@ -27,14 +27,14 @@ namespace webrtc {
 class DxgiTextureMapping : public DxgiTexture {
  public:
   // Creates a DxgiTextureMapping instance. Caller must maintain the lifetime
-  // of input duplication to make sure it outlives this instance.
-  DxgiTextureMapping(const DesktopSize& desktop_size,
-                     IDXGIOutputDuplication* duplication);
+  // of input |duplication| to make sure it outlives this instance.
+  explicit DxgiTextureMapping(IDXGIOutputDuplication* duplication);
 
   ~DxgiTextureMapping() override;
 
-  bool CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                IDXGIResource* resource) override;
+ protected:
+  bool CopyFromTexture(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
+                       ID3D11Texture2D* texture) override;
 
   bool DoRelease() override;
 

@@ -22,9 +22,8 @@ using Microsoft::WRL::ComPtr;
 
 namespace webrtc {
 
-DxgiTextureStaging::DxgiTextureStaging(const DesktopSize& desktop_size,
-                                       const D3dDevice& device)
-    : DxgiTexture(desktop_size), device_(device) {}
+DxgiTextureStaging::DxgiTextureStaging(const D3dDevice& device)
+    : device_(device) {}
 
 DxgiTextureStaging::~DxgiTextureStaging() = default;
 
@@ -32,11 +31,6 @@ bool DxgiTextureStaging::InitializeStage(ID3D11Texture2D* texture) {
   RTC_DCHECK(texture);
   D3D11_TEXTURE2D_DESC desc = {0};
   texture->GetDesc(&desc);
-  if (static_cast<int>(desc.Width) != desktop_size().width() ||
-      static_cast<int>(desc.Height) != desktop_size().height()) {
-    LOG(LS_ERROR) << "Texture size is not consistent with current DxgiTexture.";
-    return false;
-  }
 
   desc.ArraySize = 1;
   desc.BindFlags = 0;
@@ -90,33 +84,24 @@ void DxgiTextureStaging::AssertStageAndSurfaceAreSameObject() {
   RTC_DCHECK(left.Get() == right.Get());
 }
 
-bool DxgiTextureStaging::CopyFrom(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                                  IDXGIResource* resource) {
-  RTC_DCHECK(resource && frame_info.AccumulatedFrames > 0);
-  ComPtr<ID3D11Texture2D> texture;
-  _com_error error = resource->QueryInterface(
-      __uuidof(ID3D11Texture2D),
-      reinterpret_cast<void**>(texture.GetAddressOf()));
-  if (error.Error() != S_OK || !texture) {
-    LOG(LS_ERROR) << "Failed to convert IDXGIResource to ID3D11Texture2D, "
-                     "error "
-                  << error.ErrorMessage() << ", code " << error.Error();
-    return false;
-  }
+bool DxgiTextureStaging::CopyFromTexture(
+    const DXGI_OUTDUPL_FRAME_INFO& frame_info,
+    ID3D11Texture2D* texture) {
+  RTC_DCHECK(texture && frame_info.AccumulatedFrames > 0);
 
   // AcquireNextFrame returns a CPU inaccessible IDXGIResource, so we need to
   // copy it to a CPU accessible staging ID3D11Texture2D.
-  if (!InitializeStage(texture.Get())) {
+  if (!InitializeStage(texture)) {
     return false;
   }
 
   device_.context()->CopyResource(static_cast<ID3D11Resource*>(stage_.Get()),
-                                  static_cast<ID3D11Resource*>(texture.Get()));
+                                  static_cast<ID3D11Resource*>(texture));
 
-  rect_ = {0};
-  error = surface_->Map(&rect_, DXGI_MAP_READ);
+  *rect() = {0};
+  _com_error error = surface_->Map(rect(), DXGI_MAP_READ);
   if (error.Error() != S_OK) {
-    rect_ = {0};
+    *rect() = {0};
     LOG(LS_ERROR) << "Failed to map the IDXGISurface to a bitmap, error "
                   << error.ErrorMessage() << ", code " << error.Error();
     return false;

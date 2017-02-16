@@ -13,15 +13,22 @@
 #include <windows.h>
 
 #include <algorithm>
+#include <string>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/desktop_capture/desktop_capture_types.h"
+#include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
 
 namespace webrtc {
 
-DxgiDuplicatorController::Context::Context() {}
+DxgiDuplicatorController::Context::Context() = default;
 
 DxgiDuplicatorController::Context::~Context() {
   DxgiDuplicatorController::Instance()->Unregister(this);
+}
+
+void DxgiDuplicatorController::Context::Reset() {
+  identity_ = 0;
 }
 
 // static
@@ -42,6 +49,11 @@ DxgiDuplicatorController::~DxgiDuplicatorController() {
 bool DxgiDuplicatorController::IsSupported() {
   rtc::CritScope lock(&lock_);
   return Initialize();
+}
+
+void DxgiDuplicatorController::Reset() {
+  rtc::CritScope lock(&lock_);
+  Deinitialize();
 }
 
 bool DxgiDuplicatorController::RetrieveD3dInfo(D3dInfo* info) {
@@ -182,6 +194,7 @@ bool DxgiDuplicatorController::DoInitialize() {
 void DxgiDuplicatorController::Deinitialize() {
   desktop_rect_ = DesktopRect();
   duplicators_.clear();
+  resolution_change_detector_.Reset();
 }
 
 bool DxgiDuplicatorController::ContextExpired(
@@ -219,8 +232,26 @@ bool DxgiDuplicatorController::DoDuplicate(Context* context,
   RTC_DCHECK(target);
   target->mutable_updated_region()->Clear();
   rtc::CritScope lock(&lock_);
+  if (DoDuplicateUnlocked(context, monitor_id, target)) {
+    return true;
+  }
+  Deinitialize();
+  return false;
+}
+
+bool DxgiDuplicatorController::DoDuplicateUnlocked(Context* context,
+                                                   int monitor_id,
+                                                   SharedDesktopFrame* target) {
   if (!Initialize()) {
     // Cannot initialize COM components now, display mode may be changing.
+    return false;
+  }
+
+  if (resolution_change_detector_.IsChanged(
+          GetScreenRect(kFullDesktopScreenId, std::wstring()).size())) {
+    // Resolution of entire screen has been changed, which usually means a new
+    // monitor has been attached or one has been removed. The simplest way is to
+    // Deinitialize() and returns false to indicate downstream components.
     return false;
   }
 
@@ -229,7 +260,6 @@ bool DxgiDuplicatorController::DoDuplicate(Context* context,
     // Capture entire screen.
     for (size_t i = 0; i < duplicators_.size(); i++) {
       if (!duplicators_[i].Duplicate(&context->contexts_[i], target)) {
-        Deinitialize();
         return false;
       }
     }
@@ -248,7 +278,6 @@ bool DxgiDuplicatorController::DoDuplicate(Context* context,
         target->set_dpi(dpi());
         return true;
       }
-      Deinitialize();
       return false;
     }
   }
