@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "webrtc/base/stringencode.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/candidatepairinterface.h"
 #include "webrtc/p2p/base/jseptransport.h"
@@ -143,7 +144,7 @@ class IceTransportInternal : public rtc::PacketTransportInternal {
 
   // Debugging description of this transport.
   std::string debug_name() const override {
-    return transport_name() + " " + std::to_string(component());
+    return transport_name() + " " + rtc::ToString(component());
   }
 };
 

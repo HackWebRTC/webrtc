@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "webrtc/base/sslstreamadapter.h"
+#include "webrtc/base/stringencode.h"
 #include "webrtc/p2p/base/icetransportinternal.h"
 #include "webrtc/p2p/base/jseptransport.h"
 #include "webrtc/p2p/base/packettransportinternal.h"
@@ -97,7 +98,7 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
 
   // Debugging description of this transport.
   std::string debug_name() const override {
-    return transport_name() + " " + std::to_string(component());
+    return transport_name() + " " + rtc::ToString(component());
   }
 
  protected:
