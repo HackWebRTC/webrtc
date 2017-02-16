@@ -33,8 +33,8 @@ import urllib2
 from collections import OrderedDict
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-CHROMIUM_SRC_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-sys.path = [os.path.join(CHROMIUM_SRC_DIR, 'build')] + sys.path
+SRC_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+sys.path = [os.path.join(SRC_DIR, 'build')] + sys.path
 
 import gn_helpers
 
@@ -46,7 +46,7 @@ def main(args):
 
 class MetaBuildWrapper(object):
   def __init__(self):
-    self.chromium_src_dir = CHROMIUM_SRC_DIR
+    self.src_dir = SRC_DIR
     self.default_config = os.path.join(SCRIPT_DIR, 'mb_config.pyl')
     self.default_isolate_map = os.path.join(SCRIPT_DIR, 'gn_isolate_map.pyl')
     self.executable = sys.executable
@@ -619,8 +619,9 @@ class MetaBuildWrapper(object):
   def ReadIOSBotConfig(self):
     if not self.args.master or not self.args.builder:
       return {}
-    path = self.PathJoin(self.chromium_src_dir, 'ios', 'build', 'bots',
-                         self.args.master, self.args.builder + '.json')
+    path = self.PathJoin(self.src_dir, 'tools-webrtc', 'ios',
+                         self.args.master,
+                         self.args.builder.replace(' ', '_') + '.json')
     if not self.Exists(path):
       return {}
 
@@ -921,7 +922,7 @@ class MetaBuildWrapper(object):
           '--isolate',
           self.ToSrcRelPath('%s/%s.isolate' % (build_dir, target)),
         ],
-        'dir': self.chromium_src_dir,
+        'dir': self.src_dir,
         'version': 1,
       },
       isolate_path + 'd.gen.json',
@@ -966,7 +967,7 @@ class MetaBuildWrapper(object):
     else:
       subdir, exe = 'win', 'gn.exe'
 
-    gn_path = self.PathJoin(self.chromium_src_dir, 'buildtools', subdir, exe)
+    gn_path = self.PathJoin(self.src_dir, 'buildtools', subdir, exe)
     return [gn_path, subcommand, path] + list(args)
 
 
@@ -1137,7 +1138,7 @@ class MetaBuildWrapper(object):
     return cmdline, extra_files
 
   def ToAbsPath(self, build_path, *comps):
-    return self.PathJoin(self.chromium_src_dir,
+    return self.PathJoin(self.src_dir,
                          self.ToSrcRelPath(build_path),
                          *comps)
 
@@ -1145,7 +1146,7 @@ class MetaBuildWrapper(object):
     """Returns a relative path from the top of the repo."""
     if path.startswith('//'):
       return path[2:].replace('/', self.sep)
-    return self.RelPath(path, self.chromium_src_dir)
+    return self.RelPath(path, self.src_dir)
 
   def ParseGYPConfigPath(self, path):
     rpath = self.ToSrcRelPath(path)
@@ -1433,12 +1434,12 @@ class MetaBuildWrapper(object):
 
   def Call(self, cmd, env=None, buffer_output=True):
     if buffer_output:
-      p = subprocess.Popen(cmd, shell=False, cwd=self.chromium_src_dir,
+      p = subprocess.Popen(cmd, shell=False, cwd=self.src_dir,
                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                            env=env)
       out, err = p.communicate()
     else:
-      p = subprocess.Popen(cmd, shell=False, cwd=self.chromium_src_dir,
+      p = subprocess.Popen(cmd, shell=False, cwd=self.src_dir,
                            env=env)
       p.wait()
       out = err = ''
