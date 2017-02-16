@@ -4124,6 +4124,13 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
       expected_streams = GetSimulcastConfig(
           num_configured_streams, capture_width, capture_height, 0,
           kDefaultQpMax, kDefaultVideoMaxFramerate, screenshare);
+      if (screenshare) {
+        for (const webrtc::VideoStream& stream : expected_streams) {
+          // Never scale screen content.
+          EXPECT_EQ(stream.width, capture_width);
+          EXPECT_EQ(stream.height, capture_height);
+        }
+      }
     } else {
       webrtc::VideoStream stream;
       stream.width = capture_width;

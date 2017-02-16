@@ -230,8 +230,10 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,
       streams[s].max_framerate = max_framerate;
     }
 
-    width /= 2;
-    height /= 2;
+    if (!is_screencast) {
+      width /= 2;
+      height /= 2;
+    }
     if (s == 0)
       break;
   }
