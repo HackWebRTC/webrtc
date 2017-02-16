@@ -100,7 +100,8 @@ rtc_shared_library("libjingle_peerconnection_so") {
     "src/jni/jni_onload.cc",
   ]
 
-  suppressed_configs += [ "//build/config/android:hide_native_jni_exports" ]
+  suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
+  configs += [ "//build/config/android:hide_all_but_jni" ]
 
   deps = [
     ":libjingle_peerconnection_jni",
