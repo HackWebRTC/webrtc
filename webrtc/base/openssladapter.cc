@@ -704,9 +704,6 @@ OpenSSLAdapter::OnCloseEvent(AsyncSocket* socket, int err) {
   AsyncSocketAdapter::OnCloseEvent(socket, err);
 }
 
-// This code is taken from the "Network Security with OpenSSL"
-// sample in chapter 5
-
 bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
                                       bool ignore_bad_cert) {
   if (!host)
@@ -739,59 +736,25 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
 #endif
 
   bool ok = false;
-  int extension_count = X509_get_ext_count(certificate);
-  for (int i = 0; i < extension_count; ++i) {
-    X509_EXTENSION* extension = X509_get_ext(certificate, i);
-    int extension_nid = OBJ_obj2nid(X509_EXTENSION_get_object(extension));
-
-    if (extension_nid == NID_subject_alt_name) {
-      const X509V3_EXT_METHOD* meth = X509V3_EXT_get(extension);
-      if (!meth)
+  GENERAL_NAMES* names = reinterpret_cast<GENERAL_NAMES*>(
+      X509_get_ext_d2i(certificate, NID_subject_alt_name, nullptr, nullptr));
+  if (names) {
+    for (size_t i = 0; i < sk_GENERAL_NAME_num(names); i++) {
+      const GENERAL_NAME* name = sk_GENERAL_NAME_value(names, i);
+      if (name->type != GEN_DNS)
+        continue;
+      std::string value(
+          reinterpret_cast<const char*>(ASN1_STRING_data(name->d.dNSName)),
+          ASN1_STRING_length(name->d.dNSName));
+      // string_match takes NUL-terminated strings, so check for embedded NULs.
+      if (value.find('\0') != std::string::npos)
+        continue;
+      if (string_match(host, value.c_str())) {
+        ok = true;
         break;
-
-      void* ext_str = NULL;
-
-      // We assign this to a local variable, instead of passing the address
-      // directly to ASN1_item_d2i.
-      // See http://readlist.com/lists/openssl.org/openssl-users/0/4761.html.
-      unsigned char* ext_value_data = extension->value->data;
-
-      const unsigned char **ext_value_data_ptr =
-          (const_cast<const unsigned char **>(&ext_value_data));
-
-      if (meth->it) {
-        ext_str = ASN1_item_d2i(NULL, ext_value_data_ptr,
-                                extension->value->length,
-                                ASN1_ITEM_ptr(meth->it));
-      } else {
-        ext_str = meth->d2i(NULL, ext_value_data_ptr, extension->value->length);
       }
-
-      STACK_OF(CONF_VALUE)* value = meth->i2v(meth, ext_str, NULL);
-
-      // Cast to size_t to be compilable for both OpenSSL and BoringSSL.
-      for (size_t j = 0; j < static_cast<size_t>(sk_CONF_VALUE_num(value));
-           ++j) {
-        CONF_VALUE* nval = sk_CONF_VALUE_value(value, j);
-        // The value for nval can contain wildcards
-        if (!strcmp(nval->name, "DNS") && string_match(host, nval->value)) {
-          ok = true;
-          break;
-        }
-      }
-      sk_CONF_VALUE_pop_free(value, X509V3_conf_free);
-      value = NULL;
-
-      if (meth->it) {
-        ASN1_item_free(reinterpret_cast<ASN1_VALUE*>(ext_str),
-                       ASN1_ITEM_ptr(meth->it));
-      } else {
-        meth->ext_free(ext_str);
-      }
-      ext_str = NULL;
     }
-    if (ok)
-      break;
+    GENERAL_NAMES_free(names);
   }
 
   char data[256];
