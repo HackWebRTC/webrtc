@@ -682,8 +682,6 @@ if (rtc_include_tests) {
     sources = [
       # Also use this as a convenient dumping ground for misc files that are
       # included by multiple targets below.
-      "cpu_time.cc",
-      "cpu_time.h",
       "fakeclock.cc",
       "fakeclock.h",
       "fakenetwork.h",
@@ -765,7 +763,6 @@ if (rtc_include_tests) {
       "bytebuffer_unittest.cc",
       "byteorder_unittest.cc",
       "copyonwritebuffer_unittest.cc",
-      "cpu_time_unittest.cc",
       "criticalsection_unittest.cc",
       "event_tracer_unittest.cc",
       "event_unittest.cc",
