@@ -61,6 +61,8 @@ rtc_static_library("libjingle_peerconnection_api") {
     "peerconnectioninterface.h",
     "peerconnectionproxy.h",
     "proxy.h",
+    "rtcerror.cc",
+    "rtcerror.h",
     "rtpparameters.h",
     "rtpreceiverinterface.h",
     "rtpsender.h",
@@ -196,6 +198,31 @@ if (rtc_include_tests) {
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  rtc_test("rtc_api_unittests") {
+    testonly = true
+
+    sources = [
+      "rtcerror_unittest.cc",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    deps = [
+      ":libjingle_peerconnection_api",
+      "../base:rtc_base_tests_main",
+      "../base:rtc_base_tests_utils",
+      "../system_wrappers:metrics_default",
+      "../test:test_support",
+    ]
+
+    if (is_android) {
+      deps += [ "//testing/android/native_test:native_test_support" ]
     }
   }
 }

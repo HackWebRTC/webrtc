@@ -458,27 +458,6 @@ bool SafeSetError(webrtc::RTCErrorType type, webrtc::RTCError* error) {
 
 namespace webrtc {
 
-static const char* const kRTCErrorTypeNames[] = {
-    "NONE",
-    "UNSUPPORTED_PARAMETER",
-    "INVALID_PARAMETER",
-    "INVALID_RANGE",
-    "SYNTAX_ERROR",
-    "INVALID_STATE",
-    "INVALID_MODIFICATION",
-    "NETWORK_ERROR",
-    "INTERNAL_ERROR",
-};
-static_assert(static_cast<int>(RTCErrorType::INTERNAL_ERROR) ==
-                  (arraysize(kRTCErrorTypeNames) - 1),
-              "kRTCErrorTypeNames must have as many strings as RTCErrorType "
-              "has values.");
-
-std::ostream& operator<<(std::ostream& stream, RTCErrorType error) {
-  int index = static_cast<int>(error);
-  return stream << kRTCErrorTypeNames[index];
-}
-
 bool PeerConnectionInterface::RTCConfiguration::operator==(
     const PeerConnectionInterface::RTCConfiguration& o) const {
   // This static_assert prevents us from accidentally breaking operator==.

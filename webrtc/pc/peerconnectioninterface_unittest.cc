@@ -3384,14 +3384,6 @@ TEST(CreateSessionOptionsTest, MediaConstraintsInAnswer) {
   EXPECT_TRUE(updated_answer_options.has_video());
 }
 
-TEST(RTCErrorTypeTest, OstreamOperator) {
-  std::ostringstream oss;
-  oss << webrtc::RTCErrorType::NONE << ' '
-      << webrtc::RTCErrorType::INVALID_PARAMETER << ' '
-      << webrtc::RTCErrorType::INTERNAL_ERROR;
-  EXPECT_EQ("NONE INVALID_PARAMETER INTERNAL_ERROR", oss.str());
-}
-
 // Tests a few random fields being different.
 TEST(RTCConfigurationTest, ComparisonOperators) {
   PeerConnectionInterface::RTCConfiguration a;

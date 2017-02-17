@@ -78,6 +78,7 @@
 #include "webrtc/api/dtmfsenderinterface.h"
 #include "webrtc/api/jsep.h"
 #include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/rtcerror.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/stats/rtcstatscollectorcallback.h"
@@ -132,62 +133,6 @@ class StatsObserver : public rtc::RefCountInterface {
  protected:
   virtual ~StatsObserver() {}
 };
-
-// Enumeration to represent distinct classes of errors that an application
-// may wish to act upon differently. These roughly map to DOMExceptions or
-// RTCError "errorDetailEnum" values in the web API, as described in the
-// comments below.
-enum class RTCErrorType {
-  // No error.
-  NONE,
-  // A supplied parameter is valid, but currently unsupported.
-  // Maps to InvalidAccessError DOMException.
-  UNSUPPORTED_PARAMETER,
-  // General error indicating that a supplied parameter is invalid.
-  // Maps to InvalidAccessError or TypeError DOMException depending on context.
-  INVALID_PARAMETER,
-  // Slightly more specific than INVALID_PARAMETER; a parameter's value was
-  // outside the allowed range.
-  // Maps to RangeError DOMException.
-  INVALID_RANGE,
-  // Slightly more specific than INVALID_PARAMETER; an error occurred while
-  // parsing string input.
-  // Maps to SyntaxError DOMException.
-  SYNTAX_ERROR,
-  // The object does not support this operation in its current state.
-  // Maps to InvalidStateError DOMException.
-  INVALID_STATE,
-  // An attempt was made to modify the object in an invalid way.
-  // Maps to InvalidModificationError DOMException.
-  INVALID_MODIFICATION,
-  // An error occurred within an underlying network protocol.
-  // Maps to NetworkError DOMException.
-  NETWORK_ERROR,
-  // The operation failed due to an internal error.
-  // Maps to OperationError DOMException.
-  INTERNAL_ERROR,
-};
-
-// Roughly corresponds to RTCError in the web api. Holds an error type and
-// possibly additional information specific to that error.
-//
-// Doesn't contain anything beyond a type now, but will in the future as more
-// errors are implemented.
-class RTCError {
- public:
-  RTCError() : type_(RTCErrorType::NONE) {}
-  explicit RTCError(RTCErrorType type) : type_(type) {}
-
-  RTCErrorType type() const { return type_; }
-  void set_type(RTCErrorType type) { type_ = type; }
-
- private:
-  RTCErrorType type_;
-};
-
-// Outputs the error as a friendly string.
-// Update this method when adding a new error type.
-std::ostream& operator<<(std::ostream& stream, RTCErrorType error);
 
 class PeerConnectionInterface : public rtc::RefCountInterface {
  public:
