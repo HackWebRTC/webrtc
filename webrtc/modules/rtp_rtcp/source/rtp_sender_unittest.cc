@@ -343,6 +343,7 @@ TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
       false, &fake_clock_, &transport_, nullptr, nullptr, &seq_num_allocator_,
       &feedback_observer_, nullptr, nullptr, nullptr, &mock_rtc_event_log_,
       &send_packet_observer_, &retransmission_rate_limiter_, nullptr));
+  rtp_sender_->SetSSRC(kSsrc);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionTransportSequenceNumber,
                    kTransportSequenceNumberExtensionId));
@@ -960,7 +961,7 @@ TEST_F(RtpSenderTest, FrameCountCallbacks) {
       new RTPSender(false, &fake_clock_, &transport_, &mock_paced_sender_,
                     nullptr, nullptr, nullptr, nullptr, &callback, nullptr,
                     nullptr, nullptr, &retransmission_rate_limiter_, nullptr));
-
+  rtp_sender_->SetSSRC(kSsrc);
   char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
   const uint8_t payload_type = 127;
   ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
@@ -1022,6 +1023,7 @@ TEST_F(RtpSenderTest, BitrateCallbacks) {
                                   nullptr, nullptr, nullptr, &callback, nullptr,
                                   nullptr, nullptr, nullptr,
                                   &retransmission_rate_limiter_, nullptr));
+  rtp_sender_->SetSSRC(kSsrc);
 
   // Simulate kNumPackets sent with kPacketInterval ms intervals, with the
   // number of packets selected so that we fill (but don't overflow) the one
@@ -1080,6 +1082,7 @@ class RtpSenderAudioTest : public RtpSenderTest {
                                     nullptr, nullptr, nullptr, nullptr, nullptr,
                                     nullptr, nullptr, nullptr,
                                     &retransmission_rate_limiter_, nullptr));
+    rtp_sender_->SetSSRC(kSsrc);
     rtp_sender_->SetSequenceNumber(kSeqNum);
   }
 };
@@ -1440,6 +1443,7 @@ TEST_F(RtpSenderTest, OnOverheadChanged) {
       new RTPSender(false, &fake_clock_, &transport_, nullptr, nullptr, nullptr,
                     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
                     &retransmission_rate_limiter_, &mock_overhead_observer));
+  rtp_sender_->SetSSRC(kSsrc);
 
   // RTP overhead is 12B.
   EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(12)).Times(1);
@@ -1460,6 +1464,7 @@ TEST_F(RtpSenderTest, DoesNotUpdateOverheadOnEqualSize) {
       new RTPSender(false, &fake_clock_, &transport_, nullptr, nullptr, nullptr,
                     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
                     &retransmission_rate_limiter_, &mock_overhead_observer));
+  rtp_sender_->SetSSRC(kSsrc);
 
   EXPECT_CALL(mock_overhead_observer, OnOverheadChanged(_)).Times(1);
   SendGenericPayload();
@@ -1475,6 +1480,7 @@ TEST_F(RtpSenderTest, AddOverheadToTransportFeedbackObserver) {
       false, &fake_clock_, &transport_, nullptr, nullptr, &seq_num_allocator_,
       &feedback_observer_, nullptr, nullptr, nullptr, &mock_rtc_event_log_,
       nullptr, &retransmission_rate_limiter_, &mock_overhead_observer));
+  rtp_sender_->SetSSRC(kSsrc);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionTransportSequenceNumber,
                    kTransportSequenceNumberExtensionId));

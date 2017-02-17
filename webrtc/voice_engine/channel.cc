@@ -583,7 +583,7 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
     int32_t id,
     AudioFrame* audioFrame) {
   unsigned int ssrc;
-  RTC_CHECK_EQ(GetLocalSSRC(ssrc), 0);
+  RTC_CHECK_EQ(GetRemoteSSRC(ssrc), 0);
   event_log_proxy_->LogAudioPlayout(ssrc);
   // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
   bool muted;
