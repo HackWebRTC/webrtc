@@ -285,7 +285,6 @@ int32_t DeviceInfoLinux::FillCapabilities(int fd)
                     VideoCaptureCapability cap;
                     cap.width = video_fmt.fmt.pix.width;
                     cap.height = video_fmt.fmt.pix.height;
-                    cap.expectedCaptureDelay = 120;
                     if (videoFormats[fmts] == V4L2_PIX_FMT_YUYV)
                     {
                         cap.rawType = kVideoYUY2;

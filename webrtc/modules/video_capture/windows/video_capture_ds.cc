@@ -233,8 +233,6 @@ int32_t VideoCaptureDS::SetCameraOutput(
     {
         capability.maxFPS = 30;
     }
-    // Store the new expected capture delay
-    _captureDelay = capability.expectedCaptureDelay;
 
     // Convert it to the windows capability index since they are not nexessary
     // the same

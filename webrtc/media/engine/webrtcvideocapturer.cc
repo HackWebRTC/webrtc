@@ -94,7 +94,6 @@ static bool FormatToCapability(const VideoFormat& format,
   cap->width = format.width;
   cap->height = format.height;
   cap->maxFPS = VideoFormat::IntervalToFps(format.interval);
-  cap->expectedCaptureDelay = 0;
   cap->rawType = webrtc_type;
   cap->codecType = webrtc::kVideoCodecUnknown;
   cap->interlaced = false;

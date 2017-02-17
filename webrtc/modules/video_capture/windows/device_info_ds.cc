@@ -11,7 +11,6 @@
 #include "webrtc/modules/video_capture/windows/device_info_ds.h"
 
 #include "webrtc/modules/video_capture/video_capture_config.h"
-#include "webrtc/modules/video_capture/video_capture_delay.h"
 #include "webrtc/modules/video_capture/windows/help_functions_ds.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
@@ -22,24 +21,6 @@ namespace webrtc
 {
 namespace videocapturemodule
 {
-const int32_t NoWindowsCaptureDelays = 1;
-const DelayValues WindowsCaptureDelays[NoWindowsCaptureDelays] = {
-  "Microsoft LifeCam Cinema",
-  "usb#vid_045e&pid_075d",
-  {
-    {640,480,125},
-    {640,360,117},
-    {424,240,111},
-    {352,288,111},
-    {320,240,116},
-    {176,144,101},
-    {160,120,109},
-    {1280,720,166},
-    {960,544,126},
-    {800,448,120},
-    {800,600,127}
-  },
-};
 
 // static
 DeviceInfoDS* DeviceInfoDS::Create()
@@ -658,13 +639,6 @@ int32_t DeviceInfoDS::CreateCapabilityMap(
                 continue;
             }
 
-            // Get the expected capture delay from the static list
-            capability.expectedCaptureDelay
-                            = GetExpectedCaptureDelay(WindowsCaptureDelays,
-                                                      NoWindowsCaptureDelays,
-                                                      productId,
-                                                      capability.width,
-                                                      capability.height);
             _captureCapabilities.push_back(capability);
             _captureCapabilitiesWindows.push_back(capability);
             WEBRTC_TRACE( webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,

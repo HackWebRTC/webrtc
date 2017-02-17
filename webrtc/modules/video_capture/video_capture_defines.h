@@ -31,7 +31,6 @@ struct VideoCaptureCapability
     int32_t width;
     int32_t height;
     int32_t maxFPS;
-    int32_t expectedCaptureDelay;
     RawVideoType rawType;
     VideoCodecType codecType;
     bool interlaced;
@@ -41,7 +40,6 @@ struct VideoCaptureCapability
         width = 0;
         height = 0;
         maxFPS = 0;
-        expectedCaptureDelay = 0;
         rawType = kVideoUnknown;
         codecType = kVideoCodecUnknown;
         interlaced = false;

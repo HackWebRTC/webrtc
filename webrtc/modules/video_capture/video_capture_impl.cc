@@ -82,7 +82,6 @@ int32_t VideoCaptureImpl::RotationInDegrees(VideoRotation rotation,
 VideoCaptureImpl::VideoCaptureImpl()
     : _deviceUniqueId(NULL),
       _apiCs(*CriticalSectionWrapper::CreateCriticalSection()),
-      _captureDelay(0),
       _requestedCapability(),
       _lastProcessTimeNanos(rtc::TimeNanos()),
       _lastFrameRateCallbackTimeNanos(rtc::TimeNanos()),

@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "webrtc/modules/video_capture/video_capture.h"
-#include "webrtc/modules/video_capture/video_capture_delay.h"
 #include "webrtc/system_wrappers/include/rw_lock_wrapper.h"
 
 namespace webrtc
@@ -48,12 +47,6 @@ protected:
      */
     virtual int32_t CreateCapabilityMap(const char* deviceUniqueIdUTF8)=0;
 
-    /* Returns the expected Capture delay*/
-    int32_t GetExpectedCaptureDelay(const DelayValues delayValues[],
-                                    const uint32_t sizeOfDelayValues,
-                                    const char* productId,
-                                    const uint32_t width,
-                                    const uint32_t height);
 protected:
     // Data members
     typedef std::vector<VideoCaptureCapability> VideoCaptureCapabilities;

@@ -19,7 +19,6 @@ rtc_static_library("video_capture_module") {
     "video_capture.h",
     "video_capture_config.h",
     "video_capture_defines.h",
-    "video_capture_delay.h",
     "video_capture_factory.cc",
     "video_capture_factory.h",
     "video_capture_impl.cc",

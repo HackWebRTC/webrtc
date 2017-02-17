@@ -94,7 +94,6 @@ protected:
 
     char* _deviceUniqueId; // current Device unique name;
     CriticalSectionWrapper& _apiCs;
-    int32_t _captureDelay; // Current capture delay. May be changed of platform dependent parts.
     VideoCaptureCapability _requestedCapability; // Should be set by platform dependent code in StartCapture.
 private:
     void UpdateFrameCount();
