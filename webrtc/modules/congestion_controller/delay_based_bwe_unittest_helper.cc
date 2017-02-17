@@ -60,7 +60,7 @@ int64_t RtpStream::GenerateFrame(int64_t time_now_us,
     PacketInfo packet(-1, sequence_number_++);
     packet.send_time_ms = (time_now_us + kSendSideOffsetUs) / 1000;
     packet.payload_size = payload_size;
-    packet.probe_cluster_id = PacketInfo::kNotAProbe;
+    packet.probe_cluster_id = PacedPacketInfo::kNotAProbe;
     packets->push_back(packet);
   }
   next_rtp_time_ = time_now_us + (1000000 + fps_ / 2) / fps_;
@@ -169,7 +169,7 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
                                          uint16_t sequence_number,
                                          size_t payload_size) {
   IncomingFeedback(arrival_time_ms, send_time_ms, sequence_number, payload_size,
-                   PacketInfo::kNotAProbe);
+                   PacedPacketInfo::kNotAProbe);
 }
 
 void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
@@ -280,7 +280,8 @@ void DelayBasedBweTest::InitialBehaviorTestHelper(
   for (int i = 0; i < 5 * kFramerate + 1 + kNumInitialPackets; ++i) {
     // NOTE!!! If the following line is moved under the if case then this test
     //         wont work on windows realease bots.
-    int cluster_id = i < kInitialProbingPackets ? 0 : PacketInfo::kNotAProbe;
+    int cluster_id =
+        i < kInitialProbingPackets ? 0 : PacedPacketInfo::kNotAProbe;
 
     if (i == kNumInitialPackets) {
       EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
@@ -312,7 +313,8 @@ void DelayBasedBweTest::RateIncreaseReorderingTestHelper(
   for (int i = 0; i < 5 * kFramerate + 1 + kNumInitialPackets; ++i) {
     // NOTE!!! If the following line is moved under the if case then this test
     //         wont work on windows realease bots.
-    int cluster_id = i < kInitialProbingPackets ? 0 : PacketInfo::kNotAProbe;
+    int cluster_id =
+        i < kInitialProbingPackets ? 0 : PacedPacketInfo::kNotAProbe;
 
     // TODO(sprang): Remove this hack once the single stream estimator is gone,
     // as it doesn't do anything in Process().

@@ -33,7 +33,7 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
 
   prober.OnIncomingPacket(kProbeSize);
   EXPECT_TRUE(prober.IsProbing());
-  EXPECT_EQ(0, prober.CurrentClusterId());
+  EXPECT_EQ(0, prober.CurrentCluster().probe_cluster_id);
 
   // First packet should probe as soon as possible.
   EXPECT_EQ(0, prober.TimeUntilNextProbe(now_ms));
@@ -41,7 +41,7 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   for (int i = 0; i < kClusterSize; ++i) {
     now_ms += prober.TimeUntilNextProbe(now_ms);
     EXPECT_EQ(0, prober.TimeUntilNextProbe(now_ms));
-    EXPECT_EQ(0, prober.CurrentClusterId());
+    EXPECT_EQ(0, prober.CurrentCluster().probe_cluster_id);
     prober.ProbeSent(now_ms, kProbeSize);
   }
 
@@ -57,7 +57,7 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
   for (int i = 0; i < kClusterSize; ++i) {
     now_ms += prober.TimeUntilNextProbe(now_ms);
     EXPECT_EQ(0, prober.TimeUntilNextProbe(now_ms));
-    EXPECT_EQ(1, prober.CurrentClusterId());
+    EXPECT_EQ(1, prober.CurrentCluster().probe_cluster_id);
     prober.ProbeSent(now_ms, kProbeSize);
   }
 

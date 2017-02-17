@@ -17,6 +17,7 @@
 #include "webrtc/test/gtest.h"
 
 using testing::_;
+using testing::Field;
 using testing::Return;
 
 namespace {
@@ -41,8 +42,9 @@ class MockPacedSenderCallback : public PacedSender::PacketSender {
                     uint16_t sequence_number,
                     int64_t capture_time_ms,
                     bool retransmission,
-                    int probe_cluster_id));
-  MOCK_METHOD2(TimeToSendPadding, size_t(size_t bytes, int probe_cluster_id));
+                    const PacedPacketInfo& pacing_info));
+  MOCK_METHOD2(TimeToSendPadding,
+               size_t(size_t bytes, const PacedPacketInfo& pacing_info));
 };
 
 class PacedSenderPadding : public PacedSender::PacketSender {
@@ -53,11 +55,12 @@ class PacedSenderPadding : public PacedSender::PacketSender {
                         uint16_t sequence_number,
                         int64_t capture_time_ms,
                         bool retransmission,
-                        int probe_cluster_id) override {
+                        const PacedPacketInfo& pacing_info) override {
     return true;
   }
 
-  size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) override {
+  size_t TimeToSendPadding(size_t bytes,
+                           const PacedPacketInfo& pacing_info) override {
     const size_t kPaddingPacketSize = 224;
     size_t num_packets = (bytes + kPaddingPacketSize - 1) / kPaddingPacketSize;
     padding_sent_ += kPaddingPacketSize * num_packets;
@@ -78,12 +81,13 @@ class PacedSenderProbing : public PacedSender::PacketSender {
                         uint16_t sequence_number,
                         int64_t capture_time_ms,
                         bool retransmission,
-                        int probe_cluster_id) override {
+                        const PacedPacketInfo& pacing_info) override {
     packets_sent_++;
     return true;
   }
 
-  size_t TimeToSendPadding(size_t bytes, int probe_cluster_id) override {
+  size_t TimeToSendPadding(size_t bytes,
+                           const PacedPacketInfo& pacing_info) override {
     padding_sent_ += bytes;
     return padding_sent_;
   }
@@ -127,7 +131,6 @@ class PacedSenderTest : public ::testing::Test {
         .Times(1)
         .WillRepeatedly(Return(true));
   }
-
   SimulatedClock clock_;
   MockPacedSenderCallback callback_;
   std::unique_ptr<PacedSender> send_bucket_;
@@ -1011,7 +1014,9 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
   }
 
   // First probing cluster.
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, 0))
+  EXPECT_CALL(callback_,
+              TimeToSendPacket(_, _, _, _,
+                               Field(&PacedPacketInfo::probe_cluster_id, 0)))
       .Times(5)
       .WillRepeatedly(Return(true));
   for (int i = 0; i < 5; ++i) {
@@ -1020,7 +1025,9 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
   }
 
   // Second probing cluster.
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, 1))
+  EXPECT_CALL(callback_,
+              TimeToSendPacket(_, _, _, _,
+                               Field(&PacedPacketInfo::probe_cluster_id, 1)))
       .Times(5)
       .WillRepeatedly(Return(true));
   for (int i = 0; i < 5; ++i) {
@@ -1028,10 +1035,14 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
     send_bucket_->Process();
   }
 
+  // Needed for the Field comparer below.
+  const int kNotAProbe = PacedPacketInfo::kNotAProbe;
   // No more probing packets.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, PacketInfo::kNotAProbe))
-        .Times(1)
-        .WillRepeatedly(Return(500));
+  EXPECT_CALL(callback_,
+              TimeToSendPadding(
+                  _, Field(&PacedPacketInfo::probe_cluster_id, kNotAProbe)))
+      .Times(1)
+      .WillRepeatedly(Return(500));
   send_bucket_->Process();
 }
 

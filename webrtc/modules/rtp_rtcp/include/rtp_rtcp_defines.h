@@ -251,7 +251,7 @@ struct PacketInfo {
                    -1,
                    sequence_number,
                    0,
-                   kNotAProbe) {}
+                   PacedPacketInfo::kNotAProbe) {}
 
   PacketInfo(int64_t arrival_time_ms,
              int64_t send_time_ms,
@@ -278,8 +278,6 @@ struct PacketInfo {
         payload_size(payload_size),
         probe_cluster_id(probe_cluster_id) {}
 
-  static constexpr int kNotAProbe = -1;
-
   // Time corresponding to when this object was created.
   int64_t creation_time_ms;
   // Time corresponding to when the packet was received. Timestamped with the
@@ -294,6 +292,7 @@ struct PacketInfo {
   // Size of the packet excluding RTP headers.
   size_t payload_size;
   // Which probing cluster this packets belongs to.
+  // TODO(philipel): replace this with pacing information when it is available.
   int probe_cluster_id;
 };
 

@@ -112,7 +112,7 @@ void SendSideBweSender::OnPacketsSent(const Packets& packets) {
       //                 to create tests for probing using cluster ids.
       send_time_history_.AddAndRemoveOld(media_packet->header().sequenceNumber,
                                          media_packet->payload_size(),
-                                         PacketInfo::kNotAProbe);
+                                         PacedPacketInfo::kNotAProbe);
       send_time_history_.OnSentPacket(media_packet->header().sequenceNumber,
                                       media_packet->sender_timestamp_ms());
     }

@@ -355,7 +355,7 @@ TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
   EXPECT_CALL(feedback_observer_,
               AddPacket(kTransportSequenceNumber,
                         sizeof(kPayloadData) + kGenericHeaderLength,
-                        PacketInfo::kNotAProbe))
+                        PacedPacketInfo::kNotAProbe))
       .Times(1);
 
   SendGenericPayload();
@@ -450,7 +450,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingWithExtensions) {
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
 
   rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum, capture_time_ms, false,
-                                PacketInfo::kNotAProbe);
+                                PacedPacketInfo::kNotAProbe);
 
   // Process send bucket. Packet should now be sent.
   EXPECT_EQ(1, transport_.packets_sent());
@@ -501,7 +501,7 @@ TEST_F(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_EQ(0, transport_.packets_sent());
 
   rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum, capture_time_ms, false,
-                                PacketInfo::kNotAProbe);
+                                PacedPacketInfo::kNotAProbe);
 
   // Process send bucket. Packet should now be sent.
   EXPECT_EQ(1, transport_.packets_sent());
@@ -560,7 +560,7 @@ TEST_F(RtpSenderTest, SendPadding) {
   const int kStoredTimeInMs = 100;
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
   rtp_sender_->TimeToSendPacket(kSsrc, seq_num++, capture_time_ms, false,
-                                PacketInfo::kNotAProbe);
+                                PacedPacketInfo::kNotAProbe);
   // Packet should now be sent. This test doesn't verify the regular video
   // packet, since it is tested in another test.
   EXPECT_EQ(++total_packets_sent, transport_.packets_sent());
@@ -572,8 +572,9 @@ TEST_F(RtpSenderTest, SendPadding) {
     const size_t kPaddingBytes = 100;
     const size_t kMaxPaddingLength = 224;  // Value taken from rtp_sender.cc.
     // Padding will be forced to full packets.
-    EXPECT_EQ(kMaxPaddingLength, rtp_sender_->TimeToSendPadding(
-                                     kPaddingBytes, PacketInfo::kNotAProbe));
+    EXPECT_EQ(kMaxPaddingLength,
+              rtp_sender_->TimeToSendPadding(kPaddingBytes,
+                                             PacedPacketInfo::kNotAProbe));
 
     // Process send bucket. Padding should now be sent.
     EXPECT_EQ(++total_packets_sent, transport_.packets_sent());
@@ -611,7 +612,7 @@ TEST_F(RtpSenderTest, SendPadding) {
                                          RtpPacketSender::kNormalPriority));
 
   rtp_sender_->TimeToSendPacket(kSsrc, seq_num, capture_time_ms, false,
-                                PacketInfo::kNotAProbe);
+                                PacedPacketInfo::kNotAProbe);
   // Process send bucket.
   EXPECT_EQ(++total_packets_sent, transport_.packets_sent());
   EXPECT_EQ(packet_size, transport_.last_sent_packet().size());
@@ -645,7 +646,7 @@ TEST_F(RtpSenderTest, OnSendPacketUpdated) {
   const bool kIsRetransmit = false;
   rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum,
                                 fake_clock_.TimeInMilliseconds(), kIsRetransmit,
-                                PacketInfo::kNotAProbe);
+                                PacedPacketInfo::kNotAProbe);
   EXPECT_EQ(1, transport_.packets_sent());
 }
 
@@ -665,7 +666,7 @@ TEST_F(RtpSenderTest, OnSendPacketNotUpdatedForRetransmits) {
   const bool kIsRetransmit = true;
   rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum,
                                 fake_clock_.TimeInMilliseconds(), kIsRetransmit,
-                                PacketInfo::kNotAProbe);
+                                PacedPacketInfo::kNotAProbe);
   EXPECT_EQ(1, transport_.packets_sent());
 }
 
@@ -691,7 +692,7 @@ TEST_F(RtpSenderTest, OnSendPacketNotUpdatedWithoutSeqNumAllocator) {
   const bool kIsRetransmit = false;
   rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum,
                                 fake_clock_.TimeInMilliseconds(), kIsRetransmit,
-                                PacketInfo::kNotAProbe);
+                                PacedPacketInfo::kNotAProbe);
   EXPECT_EQ(1, transport_.packets_sent());
 }
 
@@ -734,7 +735,7 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
     EXPECT_CALL(transport, SendRtp(_, _, _)).WillOnce(testing::Return(true));
     SendPacket(capture_time_ms, kPayloadSizes[i]);
     rtp_sender_->TimeToSendPacket(kSsrc, seq_num++, capture_time_ms, false,
-                                  PacketInfo::kNotAProbe);
+                                  PacedPacketInfo::kNotAProbe);
     fake_clock_.AdvanceTimeMilliseconds(33);
   }
 
@@ -746,13 +747,13 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len, _))
       .WillOnce(testing::Return(true));
   EXPECT_EQ(kMaxPaddingSize,
-            rtp_sender_->TimeToSendPadding(49, PacketInfo::kNotAProbe));
+            rtp_sender_->TimeToSendPadding(49, PacedPacketInfo::kNotAProbe));
 
   EXPECT_CALL(transport,
               SendRtp(_, kPayloadSizes[0] + rtp_header_len + kRtxHeaderSize, _))
       .WillOnce(testing::Return(true));
   EXPECT_EQ(kPayloadSizes[0],
-            rtp_sender_->TimeToSendPadding(500, PacketInfo::kNotAProbe));
+            rtp_sender_->TimeToSendPadding(500, PacedPacketInfo::kNotAProbe));
 
   EXPECT_CALL(transport, SendRtp(_, kPayloadSizes[kNumPayloadSizes - 1] +
                                         rtp_header_len + kRtxHeaderSize,
@@ -761,7 +762,7 @@ TEST_F(RtpSenderTest, SendRedundantPayloads) {
   EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len, _))
       .WillOnce(testing::Return(true));
   EXPECT_EQ(kPayloadSizes[kNumPayloadSizes - 1] + kMaxPaddingSize,
-            rtp_sender_->TimeToSendPadding(999, PacketInfo::kNotAProbe));
+            rtp_sender_->TimeToSendPadding(999, PacedPacketInfo::kNotAProbe));
 }
 
 TEST_F(RtpSenderTestWithoutPacer, SendGenericVideo) {
@@ -1155,7 +1156,7 @@ TEST_F(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   callback.Matches(ssrc, expected);
 
   // Send padding.
-  rtp_sender_->TimeToSendPadding(kMaxPaddingSize, PacketInfo::kNotAProbe);
+  rtp_sender_->TimeToSendPadding(kMaxPaddingSize, PacedPacketInfo::kNotAProbe);
   expected.transmitted.payload_bytes = 12;
   expected.transmitted.header_bytes = 36;
   expected.transmitted.padding_bytes = kMaxPaddingSize;
@@ -1283,8 +1284,8 @@ TEST_F(RtpSenderTestWithoutPacer, BytesReportedCorrectly) {
                       sizeof(payload), nullptr, nullptr, nullptr));
 
   // Will send 2 full-size padding packets.
-  rtp_sender_->TimeToSendPadding(1, PacketInfo::kNotAProbe);
-  rtp_sender_->TimeToSendPadding(1, PacketInfo::kNotAProbe);
+  rtp_sender_->TimeToSendPadding(1, PacedPacketInfo::kNotAProbe);
+  rtp_sender_->TimeToSendPadding(1, PacedPacketInfo::kNotAProbe);
 
   StreamDataCounters rtp_stats;
   StreamDataCounters rtx_stats;
@@ -1483,7 +1484,7 @@ TEST_F(RtpSenderTest, AddOverheadToTransportFeedbackObserver) {
               AddPacket(kTransportSequenceNumber,
                         sizeof(kPayloadData) + kGenericHeaderLength +
                             kRtpOverheadBytesPerPacket,
-                        PacketInfo::kNotAProbe))
+                        PacedPacketInfo::kNotAProbe))
       .Times(1);
   EXPECT_CALL(mock_overhead_observer,
               OnOverheadChanged(kRtpOverheadBytesPerPacket))
@@ -1506,14 +1507,16 @@ TEST_F(RtpSenderTest, SendAudioPadding) {
   const size_t kPaddingSize = 59;
   EXPECT_CALL(transport, SendRtp(_, kPaddingSize + kRtpHeaderSize, _))
       .WillOnce(testing::Return(true));
-  EXPECT_EQ(kPaddingSize, rtp_sender_->TimeToSendPadding(
-                              kPaddingSize, PacketInfo::kNotAProbe));
+  EXPECT_EQ(kPaddingSize,
+            rtp_sender_->TimeToSendPadding(kPaddingSize,
+                                           PacedPacketInfo::kNotAProbe));
 
   // Requested padding size is too small, will send a larger one.
   const size_t kMinPaddingSize = 50;
   EXPECT_CALL(transport, SendRtp(_, kMinPaddingSize + kRtpHeaderSize, _))
       .WillOnce(testing::Return(true));
-  EXPECT_EQ(kMinPaddingSize, rtp_sender_->TimeToSendPadding(
-                                 kMinPaddingSize - 5, PacketInfo::kNotAProbe));
+  EXPECT_EQ(kMinPaddingSize,
+            rtp_sender_->TimeToSendPadding(kMinPaddingSize - 5,
+                                           PacedPacketInfo::kNotAProbe));
 }
 }  // namespace webrtc

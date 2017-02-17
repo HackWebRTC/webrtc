@@ -52,7 +52,7 @@ class PacketInfo : public webrtc::PacketInfo {
                    0,
                    sequence_number,
                    0,
-                   PacketInfo::kNotAProbe) {}
+                   PacedPacketInfo::kNotAProbe) {}
   PacketInfo(int64_t arrival_time_ms,
              int64_t send_time_ms,
              uint16_t sequence_number,
@@ -98,7 +98,7 @@ TEST_F(SendTimeHistoryTest, PopulatesExpectedFields) {
   const size_t kPayloadSize = 42;
 
   AddPacketWithSendTime(kSeqNo, kPayloadSize, kSendTime,
-                        PacketInfo::kNotAProbe);
+                        PacedPacketInfo::kNotAProbe);
 
   PacketInfo info(kReceiveTime, kSeqNo);
   EXPECT_TRUE(history_.GetInfo(&info, true));
@@ -121,7 +121,7 @@ TEST_F(SendTimeHistoryTest, AddThenRemoveOutOfOrder) {
                                       kProbeClusterId));
     received_packets.push_back(PacketInfo(
         static_cast<int64_t>(i) + kTransmissionTime, 0,
-        static_cast<uint16_t>(i), kPacketSize, PacketInfo::kNotAProbe));
+        static_cast<uint16_t>(i), kPacketSize, PacedPacketInfo::kNotAProbe));
   }
   for (size_t i = 0; i < num_items; ++i) {
     history_.AddAndRemoveOld(sent_packets[i].sequence_number,
@@ -148,19 +148,21 @@ TEST_F(SendTimeHistoryTest, HistorySize) {
   const int kItems = kDefaultHistoryLengthMs / 100;
   for (int i = 0; i < kItems; ++i) {
     clock_.AdvanceTimeMilliseconds(100);
-    AddPacketWithSendTime(i, 0, i * 100, PacketInfo::kNotAProbe);
+    AddPacketWithSendTime(i, 0, i * 100, PacedPacketInfo::kNotAProbe);
   }
   for (int i = 0; i < kItems; ++i) {
-    PacketInfo info(0, 0, static_cast<uint16_t>(i), 0, PacketInfo::kNotAProbe);
+    PacketInfo info(0, 0, static_cast<uint16_t>(i), 0,
+                    PacedPacketInfo::kNotAProbe);
     EXPECT_TRUE(history_.GetInfo(&info, false));
     EXPECT_EQ(i * 100, info.send_time_ms);
   }
   clock_.AdvanceTimeMilliseconds(101);
-  AddPacketWithSendTime(kItems, 0, kItems * 101, PacketInfo::kNotAProbe);
-  PacketInfo info(0, 0, 0, 0, PacketInfo::kNotAProbe);
+  AddPacketWithSendTime(kItems, 0, kItems * 101, PacedPacketInfo::kNotAProbe);
+  PacketInfo info(0, 0, 0, 0, PacedPacketInfo::kNotAProbe);
   EXPECT_FALSE(history_.GetInfo(&info, false));
   for (int i = 1; i < (kItems + 1); ++i) {
-    PacketInfo info2(0, 0, static_cast<uint16_t>(i), 0, PacketInfo::kNotAProbe);
+    PacketInfo info2(0, 0, static_cast<uint16_t>(i), 0,
+                     PacedPacketInfo::kNotAProbe);
     EXPECT_TRUE(history_.GetInfo(&info2, false));
     int64_t expected_time_ms = (i == kItems) ? i * 101 : i * 100;
     EXPECT_EQ(expected_time_ms, info2.send_time_ms);
@@ -169,16 +171,17 @@ TEST_F(SendTimeHistoryTest, HistorySize) {
 
 TEST_F(SendTimeHistoryTest, HistorySizeWithWraparound) {
   const uint16_t kMaxSeqNo = std::numeric_limits<uint16_t>::max();
-  AddPacketWithSendTime(kMaxSeqNo - 2, 0, 0, PacketInfo::kNotAProbe);
+  AddPacketWithSendTime(kMaxSeqNo - 2, 0, 0, PacedPacketInfo::kNotAProbe);
 
   clock_.AdvanceTimeMilliseconds(100);
-  AddPacketWithSendTime(kMaxSeqNo - 1, 1, 100, PacketInfo::kNotAProbe);
+  AddPacketWithSendTime(kMaxSeqNo - 1, 1, 100, PacedPacketInfo::kNotAProbe);
 
   clock_.AdvanceTimeMilliseconds(100);
-  AddPacketWithSendTime(kMaxSeqNo, 0, 200, PacketInfo::kNotAProbe);
+  AddPacketWithSendTime(kMaxSeqNo, 0, 200, PacedPacketInfo::kNotAProbe);
 
   clock_.AdvanceTimeMilliseconds(kDefaultHistoryLengthMs - 200 + 1);
-  AddPacketWithSendTime(0, 0, kDefaultHistoryLengthMs, PacketInfo::kNotAProbe);
+  AddPacketWithSendTime(0, 0, kDefaultHistoryLengthMs,
+                        PacedPacketInfo::kNotAProbe);
 
   PacketInfo info(0, static_cast<uint16_t>(kMaxSeqNo - 2));
   EXPECT_FALSE(history_.GetInfo(&info, false));
@@ -194,7 +197,7 @@ TEST_F(SendTimeHistoryTest, HistorySizeWithWraparound) {
   EXPECT_TRUE(history_.GetInfo(&info5, true));
 
   clock_.AdvanceTimeMilliseconds(100);
-  AddPacketWithSendTime(1, 0, 1100, PacketInfo::kNotAProbe);
+  AddPacketWithSendTime(1, 0, 1100, PacedPacketInfo::kNotAProbe);
 
   PacketInfo info6(0, static_cast<uint16_t>(kMaxSeqNo - 2));
   EXPECT_FALSE(history_.GetInfo(&info6, false));

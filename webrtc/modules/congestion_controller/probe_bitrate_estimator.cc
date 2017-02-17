@@ -38,7 +38,7 @@ ProbeBitrateEstimator::ProbeBitrateEstimator() {}
 
 int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
     const PacketInfo& packet_info) {
-  RTC_DCHECK_NE(packet_info.probe_cluster_id, PacketInfo::kNotAProbe);
+  RTC_DCHECK_NE(packet_info.probe_cluster_id, PacedPacketInfo::kNotAProbe);
 
   EraseOldClusters(packet_info.arrival_time_ms - kMaxClusterHistoryMs);
 

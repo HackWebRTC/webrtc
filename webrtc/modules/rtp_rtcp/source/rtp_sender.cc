@@ -622,7 +622,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
   bool rtx = (RtxStatus() & kRtxRetransmitted) > 0;
   int32_t packet_size = static_cast<int32_t>(packet->size());
   if (!PrepareAndSendPacket(std::move(packet), rtx, true,
-                            PacketInfo::kNotAProbe))
+                            PacedPacketInfo::kNotAProbe))
     return -1;
   return packet_size;
 }
@@ -880,7 +880,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   PacketOptions options;
   if (UpdateTransportSequenceNumber(packet.get(), &options.packet_id)) {
     AddPacketToTransportFeedback(options.packet_id, *packet.get(),
-                                 PacketInfo::kNotAProbe);
+                                 PacedPacketInfo::kNotAProbe);
   }
 
   UpdateDelayStatistics(packet->capture_time_ms(), now_ms);

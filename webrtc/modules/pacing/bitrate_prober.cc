@@ -88,16 +88,18 @@ void BitrateProber::CreateProbeCluster(int bitrate_bps, int64_t now_ms) {
   }
 
   ProbeCluster cluster;
-  cluster.min_probes = kMinProbePacketsSent;
-  cluster.min_bytes = bitrate_bps * kMinProbeDurationMs / 8000;
-  cluster.bitrate_bps = bitrate_bps;
   cluster.time_created_ms = now_ms;
-  cluster.id = next_cluster_id_++;
+  cluster.pace_info.probe_cluster_min_probes = kMinProbePacketsSent;
+  cluster.pace_info.probe_cluster_min_bytes =
+      bitrate_bps * kMinProbeDurationMs / 8000;
+  cluster.pace_info.send_bitrate_bps = bitrate_bps;
+  cluster.pace_info.probe_cluster_id = next_cluster_id_++;
   clusters_.push(cluster);
 
   LOG(LS_INFO) << "Probe cluster (bitrate:min bytes:min packets): ("
-               << cluster.bitrate_bps << ":" << cluster.min_bytes << ":"
-               << cluster.min_probes << ")";
+               << cluster.pace_info.send_bitrate_bps << ":"
+               << cluster.pace_info.probe_cluster_min_bytes << ":"
+               << cluster.pace_info.probe_cluster_min_probes << ")";
   // If we are already probing, continue to do so. Otherwise set it to
   // kInactive and wait for OnIncomingPacket to start the probing.
   if (probing_state_ != ProbingState::kActive)
@@ -112,7 +114,7 @@ void BitrateProber::ResetState(int64_t now_ms) {
   clusters.swap(clusters_);
   while (!clusters.empty()) {
     if (clusters.front().retries < kMaxRetryAttempts) {
-      CreateProbeCluster(clusters.front().bitrate_bps, now_ms);
+      CreateProbeCluster(clusters.front().pace_info.send_bitrate_bps, now_ms);
       clusters_.back().retries = clusters.front().retries + 1;
     }
     clusters.pop();
@@ -138,10 +140,10 @@ int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
   return std::max(time_until_probe_ms, 0);
 }
 
-int BitrateProber::CurrentClusterId() const {
+PacedPacketInfo BitrateProber::CurrentCluster() const {
   RTC_DCHECK(!clusters_.empty());
   RTC_DCHECK(ProbingState::kActive == probing_state_);
-  return clusters_.front().id;
+  return clusters_.front().pace_info;
 }
 
 // Probe size is recommended based on the probe bitrate required. We choose
@@ -149,7 +151,8 @@ int BitrateProber::CurrentClusterId() const {
 // feasible.
 size_t BitrateProber::RecommendedMinProbeSize() const {
   RTC_DCHECK(!clusters_.empty());
-  return clusters_.front().bitrate_bps * 2 * kMinProbeDeltaMs / (8 * 1000);
+  return clusters_.front().pace_info.send_bitrate_bps * 2 * kMinProbeDeltaMs /
+         (8 * 1000);
 }
 
 void BitrateProber::ProbeSent(int64_t now_ms, size_t bytes) {
@@ -165,8 +168,8 @@ void BitrateProber::ProbeSent(int64_t now_ms, size_t bytes) {
     cluster->sent_bytes += static_cast<int>(bytes);
     cluster->sent_probes += 1;
     next_probe_time_ms_ = GetNextProbeTime(clusters_.front());
-    if (cluster->sent_bytes >= cluster->min_bytes &&
-        cluster->sent_probes >= cluster->min_probes) {
+    if (cluster->sent_bytes >= cluster->pace_info.probe_cluster_min_bytes &&
+        cluster->sent_probes >= cluster->pace_info.probe_cluster_min_probes) {
       clusters_.pop();
     }
     if (clusters_.empty())
@@ -175,13 +178,14 @@ void BitrateProber::ProbeSent(int64_t now_ms, size_t bytes) {
 }
 
 int64_t BitrateProber::GetNextProbeTime(const ProbeCluster& cluster) {
-  RTC_CHECK_GT(cluster.bitrate_bps, 0);
+  RTC_CHECK_GT(cluster.pace_info.send_bitrate_bps, 0);
   RTC_CHECK_GE(cluster.time_started_ms, 0);
 
   // Compute the time delta from the cluster start to ensure probe bitrate stays
   // close to the target bitrate. Result is in milliseconds.
-  int64_t delta_ms = (8000ll * cluster.sent_bytes + cluster.bitrate_bps / 2) /
-                  cluster.bitrate_bps;
+  int64_t delta_ms =
+      (8000ll * cluster.sent_bytes + cluster.pace_info.send_bitrate_bps / 2) /
+      cluster.pace_info.send_bitrate_bps;
   return cluster.time_started_ms + delta_ms;
 }
 

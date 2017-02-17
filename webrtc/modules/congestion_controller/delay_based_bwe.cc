@@ -361,7 +361,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
   }
 
   int probing_bps = 0;
-  if (info.probe_cluster_id != PacketInfo::kNotAProbe) {
+  if (info.probe_cluster_id != PacedPacketInfo::kNotAProbe) {
     probing_bps = probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(info);
   }
   rtc::Optional<uint32_t> acked_bitrate_bps =

@@ -50,7 +50,7 @@ bool PacketRouter::TimeToSendPacket(uint32_t ssrc,
                                     uint16_t sequence_number,
                                     int64_t capture_timestamp,
                                     bool retransmission,
-                                    int probe_cluster_id) {
+                                    const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(pacer_thread_checker_.CalledOnValidThread());
   rtc::CritScope cs(&modules_crit_);
   for (auto* rtp_module : rtp_modules_) {
@@ -59,14 +59,14 @@ bool PacketRouter::TimeToSendPacket(uint32_t ssrc,
     if (ssrc == rtp_module->SSRC() || ssrc == rtp_module->FlexfecSsrc()) {
       return rtp_module->TimeToSendPacket(ssrc, sequence_number,
                                           capture_timestamp, retransmission,
-                                          probe_cluster_id);
+                                          pacing_info);
     }
   }
   return true;
 }
 
 size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,
-                                       int probe_cluster_id) {
+                                       const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(pacer_thread_checker_.CalledOnValidThread());
   size_t total_bytes_sent = 0;
   rtc::CritScope cs(&modules_crit_);
@@ -74,7 +74,7 @@ size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,
   for (RtpRtcp* module : rtp_modules_) {
     if (module->SendingMedia() && module->HasBweExtensions()) {
       size_t bytes_sent = module->TimeToSendPadding(
-          bytes_to_send - total_bytes_sent, probe_cluster_id);
+          bytes_to_send - total_bytes_sent, pacing_info);
       total_bytes_sent += bytes_sent;
       if (total_bytes_sent >= bytes_to_send)
         break;

@@ -410,11 +410,11 @@ void PacedSender::Process() {
   }
 
   bool is_probing = prober_->IsProbing();
-  int probe_cluster_id = PacketInfo::kNotAProbe;
+  PacedPacketInfo pacing_info;
   size_t bytes_sent = 0;
   size_t recommended_probe_size = 0;
   if (is_probing) {
-    probe_cluster_id = prober_->CurrentClusterId();
+    pacing_info = prober_->CurrentCluster();
     recommended_probe_size = prober_->RecommendedMinProbeSize();
   }
   while (!packets_->Empty()) {
@@ -423,7 +423,7 @@ void PacedSender::Process() {
     // reinsert it if send fails.
     const paced_sender::Packet& packet = packets_->BeginPop();
 
-    if (SendPacket(packet, probe_cluster_id)) {
+    if (SendPacket(packet, pacing_info)) {
       // Send succeeded, remove it from the queue.
       bytes_sent += packet.bytes;
       packets_->FinalizePop(packet);
@@ -445,7 +445,7 @@ void PacedSender::Process() {
                                       : padding_budget_->bytes_remaining());
 
       if (padding_needed > 0)
-        bytes_sent += SendPadding(padding_needed, probe_cluster_id);
+        bytes_sent += SendPadding(padding_needed, pacing_info);
     }
   }
   if (is_probing && bytes_sent > 0)
@@ -454,17 +454,18 @@ void PacedSender::Process() {
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,
-                             int probe_cluster_id) {
+                             const PacedPacketInfo& pacing_info) {
   if (paused_)
     return false;
   if (media_budget_->bytes_remaining() == 0 &&
-      probe_cluster_id == PacketInfo::kNotAProbe) {
+      pacing_info.probe_cluster_id == PacedPacketInfo::kNotAProbe) {
     return false;
   }
+
   critsect_->Leave();
   const bool success = packet_sender_->TimeToSendPacket(
       packet.ssrc, packet.sequence_number, packet.capture_time_ms,
-      packet.retransmission, probe_cluster_id);
+      packet.retransmission, pacing_info);
   critsect_->Enter();
 
   if (success) {
@@ -479,10 +480,11 @@ bool PacedSender::SendPacket(const paced_sender::Packet& packet,
   return success;
 }
 
-size_t PacedSender::SendPadding(size_t padding_needed, int probe_cluster_id) {
+size_t PacedSender::SendPadding(size_t padding_needed,
+                                const PacedPacketInfo& pacing_info) {
   critsect_->Leave();
   size_t bytes_sent =
-      packet_sender_->TimeToSendPadding(padding_needed, probe_cluster_id);
+      packet_sender_->TimeToSendPadding(padding_needed, pacing_info);
   critsect_->Enter();
 
   if (bytes_sent > 0) {

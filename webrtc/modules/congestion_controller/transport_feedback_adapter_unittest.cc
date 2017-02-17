@@ -258,11 +258,11 @@ TEST_F(TransportFeedbackAdapterTest, SendTimeWrapsBothWays) {
                                static_cast<int64_t>((1 << 23) - 1) / 1000;
   std::vector<PacketInfo> packets;
   packets.push_back(PacketInfo(kHighArrivalTimeMs - 64, 200, 0, 1500,
-                               PacketInfo::kNotAProbe));
+                               PacedPacketInfo::kNotAProbe));
   packets.push_back(PacketInfo(kHighArrivalTimeMs + 64, 210, 1, 1500,
-                               PacketInfo::kNotAProbe));
-  packets.push_back(
-      PacketInfo(kHighArrivalTimeMs, 220, 2, 1500, PacketInfo::kNotAProbe));
+                               PacedPacketInfo::kNotAProbe));
+  packets.push_back(PacketInfo(kHighArrivalTimeMs, 220, 2, 1500,
+                               PacedPacketInfo::kNotAProbe));
 
   for (const PacketInfo& packet : packets)
     OnSentPacket(packet);
@@ -329,7 +329,7 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
       rtcp::TransportFeedback::kDeltaScaleFactor *
       std::numeric_limits<int16_t>::min();
 
-  PacketInfo info(100, 200, 0, 1500, true, PacketInfo::kNotAProbe);
+  PacketInfo info(100, 200, 0, 1500, true, PacedPacketInfo::kNotAProbe);
   sent_packets.push_back(info);
 
   info.send_time_ms += kSmallDeltaUs / 1000;
@@ -418,7 +418,7 @@ TEST_F(TransportFeedbackAdapterTest, UpdatesDelayBasedEstimate) {
   int64_t start_time_ms = clock_.TimeInMilliseconds();
   while (clock_.TimeInMilliseconds() - start_time_ms < kRunTimeMs) {
     PacketInfo packet(clock_.TimeInMilliseconds(), clock_.TimeInMilliseconds(),
-                      seq_num, kPayloadSize, PacketInfo::kNotAProbe);
+                      seq_num, kPayloadSize, PacedPacketInfo::kNotAProbe);
     OnSentPacket(packet);
     // Create expected feedback and send into adapter.
     std::unique_ptr<rtcp::TransportFeedback> feedback(
