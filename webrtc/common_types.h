@@ -467,7 +467,6 @@ enum StereoChannel { kStereoLeft = 0, kStereoRight, kStereoBoth };
 // Audio device layers
 enum AudioLayers {
   kAudioPlatformDefault = 0,
-  kAudioWindowsWave = 1,
   kAudioWindowsCore = 2,
   kAudioLinuxAlsa = 3,
   kAudioLinuxPulse = 4
