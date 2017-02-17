@@ -1609,6 +1609,14 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     RecreateAudioReceiveStream();
   }
 
+  void MaybeRecreateAudioReceiveStream(const std::string& sync_group) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    if (config_.sync_group != sync_group) {
+      config_.sync_group = sync_group;
+      RecreateAudioReceiveStream();
+    }
+  }
+
   webrtc::AudioReceiveStream::Stats GetStats() const {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(stream_);
@@ -2276,10 +2284,13 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     return false;
   }
 
-  // Remove the default receive stream if one had been created with this ssrc;
-  // we'll recreate it then.
+  // If the default receive stream was created with this ssrc, we unmark it as
+  // being the default stream, and possibly recreate the AudioReceiveStream, if
+  // sync_label has changed.
   if (IsDefaultRecvStream(ssrc)) {
-    RemoveRecvStream(ssrc);
+    recv_streams_[ssrc]->MaybeRecreateAudioReceiveStream(sp.sync_label);
+    default_recv_ssrc_ = -1;
+    return true;
   }
 
   if (GetReceiveChannelId(ssrc) != -1) {

@@ -21,7 +21,8 @@
 
 namespace cricket {
 FakeAudioSendStream::FakeAudioSendStream(
-    const webrtc::AudioSendStream::Config& config) : config_(config) {
+    int id, const webrtc::AudioSendStream::Config& config)
+    : id_(id), config_(config) {
   RTC_DCHECK(config.voe_channel_id != -1);
 }
 
@@ -59,8 +60,8 @@ webrtc::AudioSendStream::Stats FakeAudioSendStream::GetStats() const {
 }
 
 FakeAudioReceiveStream::FakeAudioReceiveStream(
-    const webrtc::AudioReceiveStream::Config& config)
-    : config_(config) {
+    int id, const webrtc::AudioReceiveStream::Config& config)
+    : id_(id), config_(config) {
   RTC_DCHECK(config.voe_channel_id != -1);
 }
 
@@ -404,7 +405,8 @@ webrtc::NetworkState FakeCall::GetNetworkState(webrtc::MediaType media) const {
 
 webrtc::AudioSendStream* FakeCall::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
-  FakeAudioSendStream* fake_stream = new FakeAudioSendStream(config);
+  FakeAudioSendStream* fake_stream = new FakeAudioSendStream(next_stream_id_++,
+                                                             config);
   audio_send_streams_.push_back(fake_stream);
   ++num_created_send_streams_;
   return fake_stream;
@@ -424,7 +426,8 @@ void FakeCall::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
 
 webrtc::AudioReceiveStream* FakeCall::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
-  audio_receive_streams_.push_back(new FakeAudioReceiveStream(config));
+  audio_receive_streams_.push_back(new FakeAudioReceiveStream(next_stream_id_++,
+                                                              config));
   ++num_created_receive_streams_;
   return audio_receive_streams_.back();
 }

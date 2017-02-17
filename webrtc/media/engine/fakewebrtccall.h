@@ -43,8 +43,10 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
     int duration_ms = 0;
   };
 
-  explicit FakeAudioSendStream(const webrtc::AudioSendStream::Config& config);
+  explicit FakeAudioSendStream(
+      int id, const webrtc::AudioSendStream::Config& config);
 
+  int id() const { return id_; }
   const webrtc::AudioSendStream::Config& GetConfig() const;
   void SetStats(const webrtc::AudioSendStream::Stats& stats);
   TelephoneEvent GetLatestTelephoneEvent() const;
@@ -61,6 +63,7 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
   void SetMuted(bool muted) override;
   webrtc::AudioSendStream::Stats GetStats() const override;
 
+  int id_ = -1;
   TelephoneEvent latest_telephone_event_;
   webrtc::AudioSendStream::Config config_;
   webrtc::AudioSendStream::Stats stats_;
@@ -71,8 +74,9 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
 class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
  public:
   explicit FakeAudioReceiveStream(
-      const webrtc::AudioReceiveStream::Config& config);
+      int id, const webrtc::AudioReceiveStream::Config& config);
 
+  int id() const { return id_; }
   const webrtc::AudioReceiveStream::Config& GetConfig() const;
   void SetStats(const webrtc::AudioReceiveStream::Stats& stats);
   int received_packets() const { return received_packets_; }
@@ -93,6 +97,7 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   void SetSink(std::unique_ptr<webrtc::AudioSinkInterface> sink) override;
   void SetGain(float gain) override;
 
+  int id_ = -1;
   webrtc::AudioReceiveStream::Config config_;
   webrtc::AudioReceiveStream::Stats stats_;
   int received_packets_ = 0;
@@ -293,6 +298,7 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   webrtc::NetworkState video_network_state_;
   rtc::SentPacket last_sent_packet_;
   int last_sent_nonnegative_packet_id_ = -1;
+  int next_stream_id_ = 665;
   webrtc::Call::Stats stats_;
   std::vector<FakeVideoSendStream*> video_send_streams_;
   std::vector<FakeAudioSendStream*> audio_send_streams_;

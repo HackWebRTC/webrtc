@@ -2814,6 +2814,50 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvUnsignalledAfterSignalled) {
   EXPECT_EQ(2, call_.GetAudioReceiveStreams().size());
 }
 
+// Two tests to verify that adding a receive stream with the same SSRC as a
+// previously added unsignaled stream will only recreate underlying stream
+// objects if the stream parameters have changed.
+TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamAfterUnsignaled_NoRecreate) {
+  EXPECT_TRUE(SetupChannel());
+
+  // Spawn unsignaled stream with SSRC=1.
+  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  EXPECT_EQ(1, call_.GetAudioReceiveStreams().size());
+  EXPECT_TRUE(GetRecvStream(1).VerifyLastPacket(kPcmuFrame,
+                                                sizeof(kPcmuFrame)));
+
+  // Verify that the underlying stream object in Call is not recreated when a
+  // stream with SSRC=1 is added.
+  const auto& streams = call_.GetAudioReceiveStreams();
+  EXPECT_EQ(1, streams.size());
+  int audio_receive_stream_id = streams.front()->id();
+  EXPECT_TRUE(AddRecvStream(1));
+  EXPECT_EQ(1, streams.size());
+  EXPECT_EQ(audio_receive_stream_id, streams.front()->id());
+}
+
+TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamAfterUnsignaled_Recreate) {
+  EXPECT_TRUE(SetupChannel());
+
+  // Spawn unsignaled stream with SSRC=1.
+  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  EXPECT_EQ(1, call_.GetAudioReceiveStreams().size());
+  EXPECT_TRUE(GetRecvStream(1).VerifyLastPacket(kPcmuFrame,
+                                                sizeof(kPcmuFrame)));
+
+  // Verify that the underlying stream object in Call *is* recreated when a
+  // stream with SSRC=1 is added, and which has changed stream parameters.
+  const auto& streams = call_.GetAudioReceiveStreams();
+  EXPECT_EQ(1, streams.size());
+  int audio_receive_stream_id = streams.front()->id();
+  cricket::StreamParams stream_params;
+  stream_params.ssrcs.push_back(1);
+  stream_params.sync_label = "sync_label";
+  EXPECT_TRUE(channel_->AddRecvStream(stream_params));
+  EXPECT_EQ(1, streams.size());
+  EXPECT_NE(audio_receive_stream_id, streams.front()->id());
+}
+
 // Test that we properly handle failures to add a receive stream.
 TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamFail) {
   EXPECT_TRUE(SetupChannel());
