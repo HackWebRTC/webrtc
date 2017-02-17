@@ -428,9 +428,9 @@ DefaultUnsignalledSsrcHandler::DefaultUnsignalledSsrcHandler()
 UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
     WebRtcVideoChannel2* channel,
     uint32_t ssrc) {
-  if (default_recv_ssrc_ != 0) {  // Already one default stream.
-    LOG(LS_WARNING) << "Unknown SSRC, but default receive stream already set.";
-    return kDropPacket;
+  if (default_recv_ssrc_ != 0) {  // Already one default stream, so replace it.
+    channel->RemoveRecvStream(default_recv_ssrc_);
+    default_recv_ssrc_ = 0;
   }
 
   StreamParams sp;

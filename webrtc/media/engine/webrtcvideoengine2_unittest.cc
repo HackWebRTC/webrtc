@@ -20,6 +20,7 @@
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/mediaconstants.h"
+#include "webrtc/media/base/rtputils.h"
 #include "webrtc/media/base/testutils.h"
 #include "webrtc/media/base/videoengine_unittest.h"
 #include "webrtc/media/engine/constants.h"
@@ -43,6 +44,8 @@ static const uint32_t kSsrcs3[] = {1, 2, 3};
 static const uint32_t kRtxSsrcs1[] = {4};
 static const uint32_t kFlexfecSsrc = 5;
 static const uint32_t kIncomingUnsignalledSsrc = 0xC0FFEE;
+static const uint32_t kDefaultRecvSsrc = 0;
+
 static const char kUnsupportedExtensionName[] =
     "urn:ietf:params:rtp-hdrext:unsupported";
 
@@ -3752,6 +3755,83 @@ TEST_F(WebRtcVideoChannel2FlexfecTest,
 TEST_F(WebRtcVideoChannel2Test, RedRtxPacketDoesntCreateUnsignalledStream) {
   TestReceiveUnsignaledSsrcPacket(kRedRtxPayloadType,
                                   false /* expect_created_receive_stream */);
+}
+
+// Test that receiving any unsignalled SSRC works even if it changes.
+// The first unsignalled SSRC received will create a default receive stream.
+// Any different unsignalled SSRC received will replace the default.
+TEST_F(WebRtcVideoChannel2Test, ReceiveDifferentUnsignaledSsrc) {
+
+  // Allow receiving VP8, VP9, H264 (if enabled).
+  cricket::VideoRecvParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  parameters.codecs.push_back(GetEngineCodec("VP9"));
+
+#if defined(WEBRTC_USE_H264)
+  cricket::VideoCodec H264codec(126, "H264");
+  parameters.codecs.push_back(H264codec);
+#endif
+
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+  // No receive streams yet.
+  ASSERT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
+  cricket::FakeVideoRenderer renderer;
+  EXPECT_TRUE(channel_->SetSink(kDefaultRecvSsrc, &renderer));
+
+  // Receive VP8 packet on first SSRC.
+  uint8_t data[kMinRtpPacketLen];
+  cricket::RtpHeader rtpHeader;
+  rtpHeader.payload_type = GetEngineCodec("VP8").id;
+  rtpHeader.seq_num = rtpHeader.timestamp = 0;
+  rtpHeader.ssrc = kIncomingUnsignalledSsrc+1;
+  cricket::SetRtpHeader(data, sizeof(data), rtpHeader);
+  rtc::CopyOnWriteBuffer packet(data, sizeof(data));
+  rtc::PacketTime packet_time;
+  channel_->OnPacketReceived(&packet, packet_time);
+  // VP8 packet should create default receive stream.
+  ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
+  FakeVideoReceiveStream* recv_stream =
+    fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_EQ(rtpHeader.ssrc, recv_stream->GetConfig().rtp.remote_ssrc);
+  // Verify that the receive stream sinks to a renderer.
+  webrtc::VideoFrame video_frame(CreateBlackFrameBuffer(4, 4), 100, 0,
+                                 webrtc::kVideoRotation_0);
+  recv_stream->InjectFrame(video_frame);
+  EXPECT_EQ(1, renderer.num_rendered_frames());
+
+  // Receive VP9 packet on second SSRC.
+  rtpHeader.payload_type = GetEngineCodec("VP9").id;
+  rtpHeader.ssrc = kIncomingUnsignalledSsrc+2;
+  cricket::SetRtpHeader(data, sizeof(data), rtpHeader);
+  rtc::CopyOnWriteBuffer packet2(data, sizeof(data));
+  channel_->OnPacketReceived(&packet2, packet_time);
+  // VP9 packet should replace the default receive SSRC.
+  ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
+  recv_stream = fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_EQ(rtpHeader.ssrc, recv_stream->GetConfig().rtp.remote_ssrc);
+  // Verify that the receive stream sinks to a renderer.
+  webrtc::VideoFrame video_frame2(CreateBlackFrameBuffer(4, 4), 200, 0,
+                                 webrtc::kVideoRotation_0);
+  recv_stream->InjectFrame(video_frame2);
+  EXPECT_EQ(2, renderer.num_rendered_frames());
+
+#if defined(WEBRTC_USE_H264)
+  // Receive H264 packet on third SSRC.
+  rtpHeader.payload_type = 126;
+  rtpHeader.ssrc = kIncomingUnsignalledSsrc+3;
+  cricket::SetRtpHeader(data, sizeof(data), rtpHeader);
+  rtc::CopyOnWriteBuffer packet3(data, sizeof(data));
+  channel_->OnPacketReceived(&packet3, packet_time);
+  // H264 packet should replace the default receive SSRC.
+  ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
+  recv_stream = fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_EQ(rtpHeader.ssrc, recv_stream->GetConfig().rtp.remote_ssrc);
+  // Verify that the receive stream sinks to a renderer.
+  webrtc::VideoFrame video_frame3(CreateBlackFrameBuffer(4, 4), 300, 0,
+                                 webrtc::kVideoRotation_0);
+  recv_stream->InjectFrame(video_frame3);
+  EXPECT_EQ(3, renderer.num_rendered_frames());
+#endif
 }
 
 TEST_F(WebRtcVideoChannel2Test, CanSentMaxBitrateForExistingStream) {
