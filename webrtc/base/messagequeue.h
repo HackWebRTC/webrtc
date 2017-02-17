@@ -17,7 +17,6 @@
 #include <list>
 #include <memory>
 #include <queue>
-#include <utility>
 #include <vector>
 
 #include "webrtc/base/basictypes.h"
@@ -99,10 +98,9 @@ class TypedMessageData : public MessageData {
 template <class T>
 class ScopedMessageData : public MessageData {
  public:
-  explicit ScopedMessageData(std::unique_ptr<T> data)
-      : data_(std::move(data)) {}
-  const T& data() const { return *data_; }
-  T& data() { return *data_; }
+  explicit ScopedMessageData(T* data) : data_(data) { }
+  const std::unique_ptr<T>& data() const { return data_; }
+  std::unique_ptr<T>& data() { return data_; }
 
  private:
   std::unique_ptr<T> data_;

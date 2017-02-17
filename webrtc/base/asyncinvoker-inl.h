@@ -15,6 +15,8 @@
 #include "webrtc/base/callback.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/messagehandler.h"
+#include "webrtc/base/refcount.h"
+#include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 
@@ -23,13 +25,15 @@ namespace rtc {
 class AsyncInvoker;
 
 // Helper class for AsyncInvoker. Runs a task and triggers a callback
-// on the calling thread if necessary.
-class AsyncClosure {
+// on the calling thread if necessary. Instances are ref-counted so their
+// lifetime can be independent of AsyncInvoker.
+class AsyncClosure : public RefCountInterface {
  public:
-  virtual ~AsyncClosure() {}
   // Runs the asynchronous task, and triggers a callback to the calling
   // thread if needed. Should be called from the target thread.
   virtual void Execute() = 0;
+ protected:
+  ~AsyncClosure() override {}
 };
 
 // Simple closure that doesn't trigger a callback for the calling thread.

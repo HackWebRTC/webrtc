@@ -26,11 +26,14 @@ AsyncInvoker::~AsyncInvoker() {
 
 void AsyncInvoker::OnMessage(Message* msg) {
   // Get the AsyncClosure shared ptr from this message's data.
-  ScopedMessageData<AsyncClosure>* data =
-      static_cast<ScopedMessageData<AsyncClosure>*>(msg->pdata);
+  ScopedRefMessageData<AsyncClosure>* data =
+      static_cast<ScopedRefMessageData<AsyncClosure>*>(msg->pdata);
+  scoped_refptr<AsyncClosure> closure = data->data();
+  delete msg->pdata;
+  msg->pdata = NULL;
+
   // Execute the closure and trigger the return message if needed.
-  data->data().Execute();
-  delete data;
+  closure->Execute();
 }
 
 void AsyncInvoker::Flush(Thread* thread, uint32_t id /*= MQID_ANY*/) {
@@ -53,19 +56,19 @@ void AsyncInvoker::Flush(Thread* thread, uint32_t id /*= MQID_ANY*/) {
 
 void AsyncInvoker::DoInvoke(const Location& posted_from,
                             Thread* thread,
-                            std::unique_ptr<AsyncClosure> closure,
+                            const scoped_refptr<AsyncClosure>& closure,
                             uint32_t id) {
   if (destroying_) {
     LOG(LS_WARNING) << "Tried to invoke while destroying the invoker.";
     return;
   }
   thread->Post(posted_from, this, id,
-               new ScopedMessageData<AsyncClosure>(std::move(closure)));
+               new ScopedRefMessageData<AsyncClosure>(closure));
 }
 
 void AsyncInvoker::DoInvokeDelayed(const Location& posted_from,
                                    Thread* thread,
-                                   std::unique_ptr<AsyncClosure> closure,
+                                   const scoped_refptr<AsyncClosure>& closure,
                                    uint32_t delay_ms,
                                    uint32_t id) {
   if (destroying_) {
@@ -73,7 +76,7 @@ void AsyncInvoker::DoInvokeDelayed(const Location& posted_from,
     return;
   }
   thread->PostDelayed(posted_from, delay_ms, this, id,
-                      new ScopedMessageData<AsyncClosure>(std::move(closure)));
+                      new ScopedRefMessageData<AsyncClosure>(closure));
 }
 
 GuardedAsyncInvoker::GuardedAsyncInvoker() : thread_(Thread::Current()) {
