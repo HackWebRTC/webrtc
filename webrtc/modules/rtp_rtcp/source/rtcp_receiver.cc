@@ -55,6 +55,7 @@ using rtcp::ReportBlock;
 const int kRrTimeoutIntervals = 3;
 
 const int64_t kMaxWarningLogIntervalMs = 10000;
+const int64_t kRtcpMinFrameLengthMs = 17;
 
 }  // namespace
 
@@ -80,9 +81,6 @@ struct RTCPReceiver::ReceiveInformation {
 
   int64_t last_time_received_ms = 0;
 
-  int64_t last_fir_request_ms = 0;
-  int32_t last_fir_sequence_number = -1;
-
   bool ready_for_delete = false;
 
   std::vector<rtcp::TmmbItem> tmmbn;
@@ -97,6 +95,13 @@ struct RTCPReceiver::ReportBlockWithRtt {
   int64_t max_rtt_ms = 0;
   int64_t sum_rtt_ms = 0;
   size_t num_rtts = 0;
+};
+
+struct RTCPReceiver::LastFirStatus {
+  LastFirStatus(int64_t now_ms, uint8_t sequence_number)
+      : request_ms(now_ms), sequence_number(sequence_number) {}
+  int64_t request_ms;
+  uint8_t sequence_number;
 };
 
 RTCPReceiver::RTCPReceiver(
@@ -683,6 +688,7 @@ void RTCPReceiver::HandleBye(const CommonHeader& rtcp_block) {
   if (receive_info)
     receive_info->ready_for_delete = true;
 
+  last_fir_.erase(bye.sender_ssrc());
   received_cnames_.erase(bye.sender_ssrc());
   xr_rr_rtt_ms_ = 0;
 }
@@ -880,8 +886,6 @@ void RTCPReceiver::HandleFir(const CommonHeader& rtcp_block,
     return;
   }
 
-  ReceiveInformation* receive_info = GetReceiveInformation(fir.sender_ssrc());
-
   for (const rtcp::Fir::Request& fir_request : fir.requests()) {
     // Is it our sender that is requested to generate a new keyframe.
     if (main_ssrc_ != fir_request.ssrc)
@@ -889,18 +893,22 @@ void RTCPReceiver::HandleFir(const CommonHeader& rtcp_block,
 
     ++packet_type_counter_.fir_packets;
 
-    if (receive_info) {
+    int64_t now_ms = clock_->TimeInMilliseconds();
+    auto inserted = last_fir_.insert(std::make_pair(
+        fir.sender_ssrc(), LastFirStatus(now_ms, fir_request.seq_nr)));
+    if (!inserted.second) {  // There was already an entry.
+      LastFirStatus* last_fir = &inserted.first->second;
+
       // Check if we have reported this FIRSequenceNumber before.
-      if (fir_request.seq_nr == receive_info->last_fir_sequence_number)
+      if (fir_request.seq_nr == last_fir->sequence_number)
         continue;
 
-      int64_t now_ms = clock_->TimeInMilliseconds();
       // Sanity: don't go crazy with the callbacks.
-      if (now_ms - receive_info->last_fir_request_ms < RTCP_MIN_FRAME_LENGTH_MS)
+      if (now_ms - last_fir->request_ms < kRtcpMinFrameLengthMs)
         continue;
 
-      receive_info->last_fir_request_ms = now_ms;
-      receive_info->last_fir_sequence_number = fir_request.seq_nr;
+      last_fir->request_ms = now_ms;
+      last_fir->sequence_number = fir_request.seq_nr;
     }
     // Received signal that we need to send a new key frame.
     packet_information->packet_type_flags |= kRtcpFir;

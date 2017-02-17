@@ -119,6 +119,7 @@ class RTCPReceiver {
   struct PacketInformation;
   struct ReceiveInformation;
   struct ReportBlockWithRtt;
+  struct LastFirStatus;
   // Mapped by remote ssrc.
   using ReceivedInfoMap = std::map<uint32_t, ReceiveInformation>;
   // RTCP report blocks mapped by remote SSRC.
@@ -245,6 +246,7 @@ class RTCPReceiver {
   ReportBlockMap received_report_blocks_ GUARDED_BY(rtcp_receiver_lock_);
   ReceivedInfoMap received_infos_ GUARDED_BY(rtcp_receiver_lock_);
   int64_t oldest_received_info_ms_ GUARDED_BY(rtcp_receiver_lock_);
+  std::map<uint32_t, LastFirStatus> last_fir_ GUARDED_BY(rtcp_receiver_lock_);
   std::map<uint32_t, std::string> received_cnames_
       GUARDED_BY(rtcp_receiver_lock_);
 

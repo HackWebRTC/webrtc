@@ -23,7 +23,6 @@ enum { RTCP_INTERVAL_VIDEO_MS = 1000 };
 enum { RTCP_INTERVAL_AUDIO_MS = 5000 };
 enum { RTCP_SEND_BEFORE_KEY_FRAME_MS = 100 };
 enum { RTCP_MAX_REPORT_BLOCKS = 31 };  // RFC 3550 page 37
-enum { RTCP_MIN_FRAME_LENGTH_MS = 17 };
 enum {
   kRtcpAppCode_DATA_SIZE = 32 * 4
 };  // multiple of 4, this is not a limitation of the size
