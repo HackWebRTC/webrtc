@@ -88,6 +88,20 @@ ParsedRtcEventLog::EventType GetRuntimeEventType(
   return ParsedRtcEventLog::EventType::UNKNOWN_EVENT;
 }
 
+BandwidthUsage GetRuntimeDetectorState(
+    rtclog::BwePacketDelayEvent::DetectorState detector_state) {
+  switch (detector_state) {
+    case rtclog::BwePacketDelayEvent::BWE_NORMAL:
+      return kBwNormal;
+    case rtclog::BwePacketDelayEvent::BWE_UNDERUSING:
+      return kBwUnderusing;
+    case rtclog::BwePacketDelayEvent::BWE_OVERUSING:
+      return kBwOverusing;
+  }
+  RTC_NOTREACHED();
+  return kBwNormal;
+}
+
 std::pair<uint64_t, bool> ParseVarInt(std::istream& stream) {
   uint64_t varint = 0;
   for (size_t bytes_read = 0; bytes_read < 10; ++bytes_read) {
@@ -468,6 +482,27 @@ void ParsedRtcEventLog::GetBwePacketLossEvent(size_t index,
   RTC_CHECK(loss_event.has_total_packets());
   if (total_packets != nullptr) {
     *total_packets = loss_event.total_packets();
+  }
+}
+
+void ParsedRtcEventLog::GetBwePacketDelayEvent(
+    size_t index,
+    int32_t* bitrate,
+    BandwidthUsage* detector_state) const {
+  RTC_CHECK_LT(index, GetNumberOfEvents());
+  const rtclog::Event& event = events_[index];
+  RTC_CHECK(event.has_type());
+  RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PACKET_DELAY_EVENT);
+  RTC_CHECK(event.has_bwe_packet_delay_event());
+  const rtclog::BwePacketDelayEvent& delay_event =
+      event.bwe_packet_delay_event();
+  RTC_CHECK(delay_event.has_bitrate());
+  if (bitrate != nullptr) {
+    *bitrate = delay_event.bitrate();
+  }
+  RTC_CHECK(delay_event.has_detector_state());
+  if (detector_state != nullptr) {
+    *detector_state = GetRuntimeDetectorState(delay_event.detector_state());
   }
 }
 

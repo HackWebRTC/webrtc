@@ -139,6 +139,14 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
     }
   }
 
+  void LogBwePacketDelayEvent(int32_t bitrate,
+                              BandwidthUsage detector_state) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogBwePacketDelayEvent(bitrate, detector_state);
+    }
+  }
+
   void LogAudioNetworkAdaptation(
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override {
     rtc::CritScope lock(&crit_);

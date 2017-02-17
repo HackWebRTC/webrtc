@@ -31,6 +31,8 @@
 
 namespace webrtc {
 
+class RtcEventLog;
+
 class DelayBasedBwe {
  public:
   static const int64_t kStreamTimeOutMs = 2000;
@@ -44,7 +46,7 @@ class DelayBasedBwe {
     uint32_t target_bitrate_bps;
   };
 
-  explicit DelayBasedBwe(Clock* clock);
+  DelayBasedBwe(RtcEventLog* event_log, Clock* clock);
   virtual ~DelayBasedBwe() {}
 
   Result IncomingPacketFeedbackVector(
@@ -91,6 +93,7 @@ class DelayBasedBwe {
   const bool in_median_slope_experiment_;
 
   rtc::ThreadChecker network_thread_;
+  RtcEventLog* const event_log_;
   Clock* const clock_;
   std::unique_ptr<InterArrival> inter_arrival_;
   std::unique_ptr<OveruseEstimator> kalman_estimator_;
@@ -110,6 +113,8 @@ class DelayBasedBwe {
   size_t median_slope_window_size_;
   double median_slope_threshold_gain_;
   int consecutive_delayed_feedbacks_;
+  uint32_t last_logged_bitrate_;
+  BandwidthUsage last_logged_state_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
 };

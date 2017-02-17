@@ -15,6 +15,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
@@ -41,6 +42,7 @@ class PacketInfoComparator {
 };
 
 TransportFeedbackAdapter::TransportFeedbackAdapter(
+    RtcEventLog* event_log,
     Clock* clock,
     BitrateController* bitrate_controller)
     : send_side_bwe_with_overhead_(webrtc::field_trial::FindFullName(
@@ -48,6 +50,7 @@ TransportFeedbackAdapter::TransportFeedbackAdapter(
                                    "Enabled"),
       transport_overhead_bytes_per_packet_(0),
       send_time_history_(clock, kSendTimeHistoryWindowMs),
+      event_log_(event_log),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
       last_timestamp_us_(kNoTimestamp),
@@ -57,7 +60,7 @@ TransportFeedbackAdapter::~TransportFeedbackAdapter() {}
 
 void TransportFeedbackAdapter::InitBwe() {
   rtc::CritScope cs(&bwe_lock_);
-  delay_based_bwe_.reset(new DelayBasedBwe(clock_));
+  delay_based_bwe_.reset(new DelayBasedBwe(event_log_, clock_));
 }
 
 void TransportFeedbackAdapter::AddPacket(uint16_t sequence_number,

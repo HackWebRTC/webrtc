@@ -36,7 +36,8 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
   virtual ~TransportFeedbackAdapterTest() {}
 
   virtual void SetUp() {
-    adapter_.reset(new TransportFeedbackAdapter(&clock_, &bitrate_controller_));
+    adapter_.reset(
+        new TransportFeedbackAdapter(nullptr, &clock_, &bitrate_controller_));
     adapter_->InitBwe();
     adapter_->SetStartBitrate(300000);
   }

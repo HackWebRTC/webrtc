@@ -42,6 +42,20 @@ MediaType GetRuntimeMediaType(rtclog::MediaType media_type) {
   RTC_NOTREACHED();
   return MediaType::ANY;
 }
+
+BandwidthUsage GetRuntimeDetectorState(
+    rtclog::BwePacketDelayEvent::DetectorState detector_state) {
+  switch (detector_state) {
+    case rtclog::BwePacketDelayEvent::BWE_NORMAL:
+      return kBwNormal;
+    case rtclog::BwePacketDelayEvent::BWE_UNDERUSING:
+      return kBwUnderusing;
+    case rtclog::BwePacketDelayEvent::BWE_OVERUSING:
+      return kBwOverusing;
+  }
+  RTC_NOTREACHED();
+  return kBwNormal;
+}
 }  // namespace
 
 // Checks that the event has a timestamp, a type and exactly the data field
@@ -63,6 +77,19 @@ MediaType GetRuntimeMediaType(rtclog::MediaType media_type) {
     return ::testing::AssertionFailure()
            << "Event of type " << type << " has "
            << (event.has_rtcp_packet() ? "" : "no ") << "RTCP packet";
+  }
+  if ((type == rtclog::Event::BWE_PACKET_LOSS_EVENT) !=
+      event.has_bwe_packet_loss_event()) {
+    return ::testing::AssertionFailure()
+           << "Event of type " << type << " has "
+           << (event.has_bwe_packet_loss_event() ? "" : "no ") << "packet loss";
+  }
+  if ((type == rtclog::Event::BWE_PACKET_DELAY_EVENT) !=
+      event.has_bwe_packet_delay_event()) {
+    return ::testing::AssertionFailure()
+           << "Event of type " << type << " has "
+           << (event.has_bwe_packet_delay_event() ? "" : "no ")
+           << "packet delay";
   }
   if ((type == rtclog::Event::AUDIO_PLAYOUT_EVENT) !=
       event.has_audio_playout_event()) {
@@ -97,6 +124,13 @@ MediaType GetRuntimeMediaType(rtclog::MediaType media_type) {
            << "Event of type " << type << " has "
            << (event.has_audio_sender_config() ? "" : "no ")
            << "audio sender config";
+  }
+  if ((type == rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT) !=
+      event.has_audio_network_adaptation()) {
+    return ::testing::AssertionFailure()
+           << "Event of type " << type << " has "
+           << (event.has_audio_network_adaptation() ? "" : "no ")
+           << "audio network adaptation";
   }
   return ::testing::AssertionSuccess();
 }
@@ -459,6 +493,30 @@ void RtcEventLogTestHelper::VerifyBweLossEvent(
   EXPECT_EQ(bitrate, parsed_bitrate);
   EXPECT_EQ(fraction_loss, parsed_fraction_loss);
   EXPECT_EQ(total_packets, parsed_total_packets);
+}
+
+void RtcEventLogTestHelper::VerifyBweDelayEvent(
+    const ParsedRtcEventLog& parsed_log,
+    size_t index,
+    int32_t bitrate,
+    BandwidthUsage detector_state) {
+  const rtclog::Event& event = parsed_log.events_[index];
+  ASSERT_TRUE(IsValidBasicEvent(event));
+  ASSERT_EQ(rtclog::Event::BWE_PACKET_DELAY_EVENT, event.type());
+  const rtclog::BwePacketDelayEvent& bwe_event = event.bwe_packet_delay_event();
+  ASSERT_TRUE(bwe_event.has_bitrate());
+  EXPECT_EQ(bitrate, bwe_event.bitrate());
+  ASSERT_TRUE(bwe_event.has_detector_state());
+  EXPECT_EQ(detector_state,
+            GetRuntimeDetectorState(bwe_event.detector_state()));
+
+  // Check consistency of the parser.
+  int32_t parsed_bitrate;
+  BandwidthUsage parsed_detector_state;
+  parsed_log.GetBwePacketDelayEvent(index, &parsed_bitrate,
+                                    &parsed_detector_state);
+  EXPECT_EQ(bitrate, parsed_bitrate);
+  EXPECT_EQ(detector_state, parsed_detector_state);
 }
 
 void RtcEventLogTestHelper::VerifyAudioNetworkAdaptation(

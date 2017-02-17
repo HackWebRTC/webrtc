@@ -18,6 +18,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -208,9 +209,10 @@ rtc::Optional<uint32_t> DelayBasedBwe::BitrateEstimator::bitrate_bps() const {
   return rtc::Optional<uint32_t>(bitrate_estimate_ * 1000);
 }
 
-DelayBasedBwe::DelayBasedBwe(Clock* clock)
+DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, Clock* clock)
     : in_trendline_experiment_(TrendlineFilterExperimentIsEnabled()),
       in_median_slope_experiment_(MedianSlopeFilterExperimentIsEnabled()),
+      event_log_(event_log),
       clock_(clock),
       inter_arrival_(),
       kalman_estimator_(),
@@ -226,7 +228,9 @@ DelayBasedBwe::DelayBasedBwe(Clock* clock)
       probing_interval_estimator_(&rate_control_),
       median_slope_window_size_(kDefaultMedianSlopeWindowSize),
       median_slope_threshold_gain_(kDefaultMedianSlopeThresholdGain),
-      consecutive_delayed_feedbacks_(0) {
+      consecutive_delayed_feedbacks_(0),
+      last_logged_bitrate_(0),
+      last_logged_state_(kBwNormal) {
   if (in_trendline_experiment_) {
     ReadTrendlineFilterExperimentParameters(&trendline_window_size_,
                                             &trendline_smoothing_coeff_,
@@ -389,6 +393,13 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
     last_update_ms_ = now_ms;
     BWE_TEST_LOGGING_PLOT(1, "target_bitrate_bps", now_ms,
                           result.target_bitrate_bps);
+    if (event_log_ && (result.target_bitrate_bps != last_logged_bitrate_ ||
+                       detector_.State() != last_logged_state_)) {
+      event_log_->LogBwePacketDelayEvent(result.target_bitrate_bps,
+                                         detector_.State());
+      last_logged_bitrate_ = result.target_bitrate_bps;
+      last_logged_state_ = detector_.State();
+    }
   }
 
   return result;

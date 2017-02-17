@@ -150,7 +150,7 @@ int64_t StreamGenerator::GenerateFrame(std::vector<PacketInfo>* packets,
 
 DelayBasedBweTest::DelayBasedBweTest()
     : clock_(100000000),
-      bitrate_estimator_(new DelayBasedBwe(&clock_)),
+      bitrate_estimator_(new DelayBasedBwe(nullptr, &clock_)),
       stream_generator_(new test::StreamGenerator(1e6,  // Capacity.
                                                   clock_.TimeInMicroseconds())),
       arrival_time_offset_ms_(0),

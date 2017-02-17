@@ -169,7 +169,7 @@ CongestionController::CongestionController(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
       remote_bitrate_estimator_(remote_bitrate_observer, clock_),
       remote_estimator_proxy_(clock_, packet_router_),
-      transport_feedback_adapter_(clock_, bitrate_controller_.get()),
+      transport_feedback_adapter_(event_log, clock_, bitrate_controller_.get()),
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       max_bitrate_bps_(0),
       last_reported_bitrate_bps_(0),

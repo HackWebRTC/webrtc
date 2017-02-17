@@ -500,6 +500,94 @@ TEST(RtcEventLogTest, LogEventAndReadBack) {
   remove(temp_filename.c_str());
 }
 
+TEST(RtcEventLogTest, LogPacketLossEventAndReadBack) {
+  Random prng(1234);
+
+  // Generate a random packet loss event.
+  int32_t bitrate = prng.Rand(0, 10000000);
+  uint8_t fraction_lost = prng.Rand<uint8_t>();
+  int32_t total_packets = prng.Rand(1, 1000);
+
+  // Find the name of the current test, in order to use it as a temporary
+  // filename.
+  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+  const std::string temp_filename =
+      test::OutputPath() + test_info->test_case_name() + test_info->name();
+
+  // Start logging, add the packet loss event and then stop logging.
+  rtc::ScopedFakeClock fake_clock;
+  fake_clock.SetTimeMicros(prng.Rand<uint32_t>());
+  std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
+  log_dumper->StartLogging(temp_filename, 10000000);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogBwePacketLossEvent(bitrate, fraction_lost, total_packets);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->StopLogging();
+
+  // Read the generated file from disk.
+  ParsedRtcEventLog parsed_log;
+  ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
+
+  // Verify that what we read back from the event log is the same as
+  // what we wrote down.
+  EXPECT_EQ(3u, parsed_log.GetNumberOfEvents());
+  RtcEventLogTestHelper::VerifyLogStartEvent(parsed_log, 0);
+  RtcEventLogTestHelper::VerifyBweLossEvent(parsed_log, 1, bitrate,
+                                            fraction_lost, total_packets);
+  RtcEventLogTestHelper::VerifyLogEndEvent(parsed_log, 2);
+
+  // Clean up temporary file - can be pretty slow.
+  remove(temp_filename.c_str());
+}
+
+TEST(RtcEventLogTest, LogPacketDelayEventAndReadBack) {
+  Random prng(1234);
+
+  // Generate 3 random packet delay event.
+  int32_t bitrate1 = prng.Rand(0, 10000000);
+  int32_t bitrate2 = prng.Rand(0, 10000000);
+  int32_t bitrate3 = prng.Rand(0, 10000000);
+
+  // Find the name of the current test, in order to use it as a temporary
+  // filename.
+  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+  const std::string temp_filename =
+      test::OutputPath() + test_info->test_case_name() + test_info->name();
+
+  // Start logging, add the packet delay events and then stop logging.
+  rtc::ScopedFakeClock fake_clock;
+  fake_clock.SetTimeMicros(prng.Rand<uint32_t>());
+  std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
+  log_dumper->StartLogging(temp_filename, 10000000);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogBwePacketDelayEvent(bitrate1, kBwNormal);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogBwePacketDelayEvent(bitrate2, kBwOverusing);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogBwePacketDelayEvent(bitrate3, kBwUnderusing);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->StopLogging();
+
+  // Read the generated file from disk.
+  ParsedRtcEventLog parsed_log;
+  ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
+
+  // Verify that what we read back from the event log is the same as
+  // what we wrote down.
+  EXPECT_EQ(5u, parsed_log.GetNumberOfEvents());
+  RtcEventLogTestHelper::VerifyLogStartEvent(parsed_log, 0);
+  RtcEventLogTestHelper::VerifyBweDelayEvent(parsed_log, 1, bitrate1,
+                                             kBwNormal);
+  RtcEventLogTestHelper::VerifyBweDelayEvent(parsed_log, 2, bitrate2,
+                                             kBwOverusing);
+  RtcEventLogTestHelper::VerifyBweDelayEvent(parsed_log, 3, bitrate3,
+                                             kBwUnderusing);
+  RtcEventLogTestHelper::VerifyLogEndEvent(parsed_log, 4);
+
+  // Clean up temporary file - can be pretty slow.
+  remove(temp_filename.c_str());
+}
+
 class ConfigReadWriteTest {
  public:
   ConfigReadWriteTest() : prng(987654321) {}

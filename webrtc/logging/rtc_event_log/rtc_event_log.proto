@@ -55,6 +55,9 @@ message Event {
   // optional - but required if type == BWE_PACKET_LOSS_EVENT
   optional BwePacketLossEvent bwe_packet_loss_event = 6;
 
+  // optional - but required if type == BWE_PACKET_DELAY_EVENT
+  optional BwePacketDelayEvent bwe_packet_delay_event = 7;
+
   // optional - but required if type == VIDEO_RECEIVER_CONFIG_EVENT
   optional VideoReceiveConfig video_receiver_config = 8;
 
@@ -115,6 +118,20 @@ message BwePacketLossEvent {
   // TODO(terelius): Is this really needed? Remove or make optional?
   // required - Total number of packets that the BWE update is based on.
   optional int32 total_packets = 3;
+}
+
+message BwePacketDelayEvent {
+  enum DetectorState {
+    BWE_NORMAL = 0;
+    BWE_UNDERUSING = 1;
+    BWE_OVERUSING = 2;
+  }
+
+  // required - Bandwidth estimate (in bps) after the update.
+  optional int32 bitrate = 1;
+
+  // required - The state of the overuse detector.
+  optional DetectorState detector_state = 2;
 }
 
 // TODO(terelius): Video and audio streams could in principle share SSRC,

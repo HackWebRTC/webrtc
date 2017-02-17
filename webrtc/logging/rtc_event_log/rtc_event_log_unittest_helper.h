@@ -55,6 +55,10 @@ class RtcEventLogTestHelper {
                                  int32_t bitrate,
                                  uint8_t fraction_loss,
                                  int32_t total_packets);
+  static void VerifyBweDelayEvent(const ParsedRtcEventLog& parsed_log,
+                                  size_t index,
+                                  int32_t bitrate,
+                                  BandwidthUsage detector_state);
 
   static void VerifyAudioNetworkAdaptation(
       const ParsedRtcEventLog& parsed_log,

@@ -47,6 +47,7 @@ rtc_static_library("congestion_controller") {
     "../../base:rtc_base",
     "../../base:rtc_base_approved",
     "../../base:rtc_numerics",
+    "../../logging:rtc_event_log_api",
     "../../system_wrappers",
     "../bitrate_controller",
     "../pacing",

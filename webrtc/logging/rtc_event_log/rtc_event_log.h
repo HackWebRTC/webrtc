@@ -18,6 +18,7 @@
 #include "webrtc/call/audio_receive_stream.h"
 #include "webrtc/call/audio_send_stream.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -115,6 +116,10 @@ class RtcEventLog {
                                      uint8_t fraction_loss,
                                      int32_t total_packets) = 0;
 
+  // Logs a bitrate update from the bandwidth estimator based on delay changes.
+  virtual void LogBwePacketDelayEvent(int32_t bitrate,
+                                      BandwidthUsage detector_state) = 0;
+
   // Logs audio encoder re-configuration driven by audio network adaptor.
   virtual void LogAudioNetworkAdaptation(
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) = 0;
@@ -160,8 +165,10 @@ class RtcEventLogNullImpl final : public RtcEventLog {
   void LogBwePacketLossEvent(int32_t bitrate,
                              uint8_t fraction_loss,
                              int32_t total_packets) override {}
+  void LogBwePacketDelayEvent(int32_t bitrate,
+                              BandwidthUsage detector_state) override {}
   void LogAudioNetworkAdaptation(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override{};
+      const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override {}
 };
 
 }  // namespace webrtc

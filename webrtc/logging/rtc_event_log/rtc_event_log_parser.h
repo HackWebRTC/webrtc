@@ -71,8 +71,8 @@ class ParsedRtcEventLog {
 
   // Reads the header, direction, media type, header length and packet length
   // from the RTP event at |index|, and stores the values in the corresponding
-  // output parameters. The output parameters can be set to nullptr if those
-  // values aren't needed.
+  // output parameters. Each output parameter can be set to nullptr if that
+  // value isn't needed.
   // NB: The header must have space for at least IP_PACKET_SIZE bytes.
   void GetRtpHeader(size_t index,
                     PacketDirection* incoming,
@@ -83,7 +83,7 @@ class ParsedRtcEventLog {
 
   // Reads packet, direction, media type and packet length from the RTCP event
   // at |index|, and stores the values in the corresponding output parameters.
-  // The output parameters can be set to nullptr if those values aren't needed.
+  // Each output parameter can be set to nullptr if that value isn't needed.
   // NB: The packet must have space for at least IP_PACKET_SIZE bytes.
   void GetRtcpPacket(size_t index,
                      PacketDirection* incoming,
@@ -115,14 +115,23 @@ class ParsedRtcEventLog {
   void GetAudioPlayout(size_t index, uint32_t* ssrc) const;
 
   // Reads bitrate, fraction loss (as defined in RFC 1889) and total number of
-  // expected packets from the BWE event at |index| and stores the values in
-  // the corresponding output parameters. The output parameters can be set to
-  // nullptr if those values aren't needed.
-  // NB: The packet must have space for at least IP_PACKET_SIZE bytes.
+  // expected packets from the loss based BWE event at |index| and stores the
+  // values in
+  // the corresponding output parameters. Each output parameter can be set to
+  // nullptr if that
+  // value isn't needed.
   void GetBwePacketLossEvent(size_t index,
                              int32_t* bitrate,
                              uint8_t* fraction_loss,
                              int32_t* total_packets) const;
+
+  // Reads bitrate and detector_state from the delay based BWE event at |index|
+  // and stores the values in the corresponding output parameters. Each output
+  // parameter can be set to nullptr if that
+  // value isn't needed.
+  void GetBwePacketDelayEvent(size_t index,
+                              int32_t* bitrate,
+                              BandwidthUsage* detector_state) const;
 
   // Reads a audio network adaptation event to a (non-NULL)
   // AudioNetworkAdaptor::EncoderRuntimeConfig struct. Only the fields that are

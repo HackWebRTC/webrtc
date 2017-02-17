@@ -24,12 +24,15 @@
 namespace webrtc {
 
 class BitrateController;
+class RtcEventLog;
 class ProcessThread;
 
 class TransportFeedbackAdapter : public TransportFeedbackObserver,
                                  public CallStatsObserver {
  public:
-  TransportFeedbackAdapter(Clock* clock, BitrateController* bitrate_controller);
+  TransportFeedbackAdapter(RtcEventLog* event_log,
+                           Clock* clock,
+                           BitrateController* bitrate_controller);
   virtual ~TransportFeedbackAdapter();
 
   void InitBwe();
@@ -64,6 +67,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   int transport_overhead_bytes_per_packet_ GUARDED_BY(&lock_);
   SendTimeHistory send_time_history_ GUARDED_BY(&lock_);
   std::unique_ptr<DelayBasedBwe> delay_based_bwe_ GUARDED_BY(&bwe_lock_);
+  RtcEventLog* const event_log_;
   Clock* const clock_;
   int64_t current_offset_ms_;
   int64_t last_timestamp_us_;
