@@ -178,6 +178,11 @@ class LOCKABLE TaskQueue {
   void PostTaskAndReply(std::unique_ptr<QueuedTask> task,
                         std::unique_ptr<QueuedTask> reply);
 
+  // Schedules a task to execute a specified number of milliseconds from when
+  // the call is made. The precision should be considered as "best effort"
+  // and in some cases, such as on Windows when all high precision timers have
+  // been used up, can be off by as much as 15 millseconds (although 8 would be
+  // more likely). This can be mitigated by limiting the use of delayed tasks.
   void PostDelayedTask(std::unique_ptr<QueuedTask> task, uint32_t milliseconds);
 
   template <class Closure>
@@ -185,6 +190,7 @@ class LOCKABLE TaskQueue {
     PostTask(std::unique_ptr<QueuedTask>(new ClosureTask<Closure>(closure)));
   }
 
+  // See documentation above for performance expectations.
   template <class Closure>
   void PostDelayedTask(const Closure& closure, uint32_t milliseconds) {
     PostDelayedTask(
@@ -254,10 +260,12 @@ class LOCKABLE TaskQueue {
   dispatch_queue_t queue_;
   QueueContext* const context_;
 #elif defined(WEBRTC_WIN)
+  class MultimediaTimer;
   typedef std::unordered_map<UINT_PTR, std::unique_ptr<QueuedTask>>
       DelayedTasks;
   static bool ThreadMain(void* context);
-  static bool ProcessQueuedMessages(DelayedTasks* delayed_tasks);
+  static bool ProcessQueuedMessages(DelayedTasks* delayed_tasks,
+                                    std::vector<MultimediaTimer>* timers);
 
   class WorkerThread : public PlatformThread {
    public:

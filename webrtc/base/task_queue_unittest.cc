@@ -112,14 +112,14 @@ TEST(TaskQueueTest, PostMultipleDelayed) {
   TaskQueue queue(kQueueName);
 
   std::vector<std::unique_ptr<Event>> events;
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 100; ++i) {
     events.push_back(std::unique_ptr<Event>(new Event(false, false)));
     queue.PostDelayedTask(
         Bind(&CheckCurrent, kQueueName, events.back().get(), &queue), 10);
   }
 
   for (const auto& e : events)
-    EXPECT_TRUE(e->Wait(100));
+    EXPECT_TRUE(e->Wait(1000));
 }
 
 TEST(TaskQueueTest, PostDelayedAfterDestruct) {
