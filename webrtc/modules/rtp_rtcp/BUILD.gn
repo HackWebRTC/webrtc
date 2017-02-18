@@ -143,6 +143,8 @@ rtc_static_library("rtp_rtcp") {
     "source/rtp_sender_video.h",
     "source/rtp_utility.cc",
     "source/rtp_utility.h",
+    "source/ssrc_database.cc",
+    "source/ssrc_database.h",
     "source/time_util.cc",
     "source/time_util.h",
     "source/tmmbr_help.cc",

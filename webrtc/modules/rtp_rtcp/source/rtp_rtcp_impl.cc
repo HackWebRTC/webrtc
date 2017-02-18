@@ -100,6 +100,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                      this),
       clock_(configuration.clock),
       audio_(configuration.audio),
+      collision_detected_(false),
       last_process_time_(configuration.clock->TimeInMilliseconds()),
       last_bitrate_process_time_(configuration.clock->TimeInMilliseconds()),
       last_rtt_process_time_(configuration.clock->TimeInMilliseconds()),
@@ -111,6 +112,11 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       remote_bitrate_(configuration.remote_bitrate_estimator),
       rtt_stats_(configuration.rtt_stats),
       rtt_ms_(0) {
+  // Make sure that RTCP objects are aware of our SSRC.
+  uint32_t SSRC = rtp_sender_.SSRC();
+  rtcp_sender_.SetSSRC(SSRC);
+  SetRtcpReceiverSsrcs(SSRC);
+
   // Make sure rtcp sender use same timestamp offset as rtp sender.
   rtcp_sender_.SetTimestampOffset(rtp_sender_.TimestampOffset());
 
@@ -349,6 +355,19 @@ int32_t ModuleRtpRtcpImpl::SetSendingStatus(const bool sending) {
     if (rtcp_sender_.SetSendingStatus(GetFeedbackState(), sending) != 0) {
       LOG(LS_WARNING) << "Failed to send RTCP BYE";
     }
+
+    collision_detected_ = false;
+
+    // Generate a new SSRC for the next "call" if false
+    rtp_sender_.SetSendingStatus(sending);
+
+    // Make sure that RTCP objects are aware of our SSRC (it could have changed
+    // Due to collision)
+    uint32_t SSRC = rtp_sender_.SSRC();
+    rtcp_sender_.SetSSRC(SSRC);
+    SetRtcpReceiverSsrcs(SSRC);
+
+    return 0;
   }
   return 0;
 }
@@ -775,6 +794,24 @@ void ModuleRtpRtcpImpl::SetRemoteSSRC(const uint32_t ssrc) {
   // Inform about the incoming SSRC.
   rtcp_sender_.SetRemoteSSRC(ssrc);
   rtcp_receiver_.SetRemoteSSRC(ssrc);
+
+  // Check for a SSRC collision.
+  if (rtp_sender_.SSRC() == ssrc && !collision_detected_) {
+    // If we detect a collision change the SSRC but only once.
+    collision_detected_ = true;
+    uint32_t new_ssrc = rtp_sender_.GenerateNewSSRC();
+    if (new_ssrc == 0) {
+      // Configured via API ignore.
+      return;
+    }
+    if (RtcpMode::kOff != rtcp_sender_.Status()) {
+      // Send RTCP bye on the current SSRC.
+      SendRTCP(kRtcpBye);
+    }
+    // Change local SSRC and inform all objects about the new SSRC.
+    rtcp_sender_.SetSSRC(new_ssrc);
+    SetRtcpReceiverSsrcs(new_ssrc);
+  }
 }
 
 void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,

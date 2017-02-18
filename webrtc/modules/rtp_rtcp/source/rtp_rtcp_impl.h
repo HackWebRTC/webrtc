@@ -333,6 +333,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   bool TimeToSendFullNackList(int64_t now) const;
 
   const bool audio_;
+  bool collision_detected_;
   int64_t last_process_time_;
   int64_t last_bitrate_process_time_;
   int64_t last_rtt_process_time_;

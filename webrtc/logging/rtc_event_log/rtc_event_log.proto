@@ -102,8 +102,6 @@ message RtcpPacket {
 }
 
 message AudioPlayoutEvent {
-  // TODO(ivoc): Rename, we currently use the "remote" ssrc, i.e. identifying
-  // the receive stream, while local_ssrc identifies the send stream, if any.
   // required - The SSRC of the audio stream associated with the playout event.
   optional uint32 local_ssrc = 2;
 }

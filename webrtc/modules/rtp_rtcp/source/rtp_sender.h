@@ -32,6 +32,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
+#include "webrtc/modules/rtp_rtcp/source/ssrc_database.h"
 
 namespace webrtc {
 
@@ -86,6 +87,8 @@ class RTPSender {
 
   int8_t SendPayloadType() const;
 
+  void SetSendingStatus(bool enabled);
+
   void SetSendingMediaStatus(bool enabled);
   bool SendingMedia() const;
 
@@ -95,6 +98,7 @@ class RTPSender {
   uint32_t TimestampOffset() const;
   void SetTimestampOffset(uint32_t timestamp);
 
+  uint32_t GenerateNewSSRC();
   void SetSSRC(uint32_t ssrc);
 
   uint16_t SequenceNumber() const;
@@ -301,13 +305,13 @@ class RTPSender {
 
   // RTP variables
   uint32_t timestamp_offset_ GUARDED_BY(send_critsect_);
+  SSRCDatabase* const ssrc_db_;
   uint32_t remote_ssrc_ GUARDED_BY(send_critsect_);
   bool sequence_number_forced_ GUARDED_BY(send_critsect_);
   uint16_t sequence_number_ GUARDED_BY(send_critsect_);
   uint16_t sequence_number_rtx_ GUARDED_BY(send_critsect_);
-  // Must be explicitly set by the application, use of rtc::Optional
-  // only to keep track of correct use.
-  rtc::Optional<uint32_t> ssrc_ GUARDED_BY(send_critsect_);
+  bool ssrc_forced_ GUARDED_BY(send_critsect_);
+  uint32_t ssrc_ GUARDED_BY(send_critsect_);
   uint32_t last_rtp_timestamp_ GUARDED_BY(send_critsect_);
   int64_t capture_time_ms_ GUARDED_BY(send_critsect_);
   int64_t last_timestamp_time_ms_ GUARDED_BY(send_critsect_);
@@ -315,7 +319,7 @@ class RTPSender {
   bool last_packet_marker_bit_ GUARDED_BY(send_critsect_);
   std::vector<uint32_t> csrcs_ GUARDED_BY(send_critsect_);
   int rtx_ GUARDED_BY(send_critsect_);
-  rtc::Optional<uint32_t> ssrc_rtx_ GUARDED_BY(send_critsect_);
+  uint32_t ssrc_rtx_ GUARDED_BY(send_critsect_);
   // Mapping rtx_payload_type_map_[associated] = rtx.
   std::map<int8_t, int8_t> rtx_payload_type_map_ GUARDED_BY(send_critsect_);
   size_t rtp_overhead_bytes_per_packet_ GUARDED_BY(send_critsect_);

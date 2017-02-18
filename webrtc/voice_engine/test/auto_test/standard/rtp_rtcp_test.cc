@@ -91,10 +91,9 @@ TEST_F(RtpRtcpTest, RemoteRtcpCnameHasPropagatedToRemoteSide) {
     return;
   }
 
-  // We need to sleep a bit here for the name to propagate. For
-  // instance, 200 milliseconds is not enough, 1 second still flaky,
-  // so we'll go with five seconds here.
-  Sleep(5000);
+  // We need to sleep a bit here for the name to propagate. For instance,
+  // 200 milliseconds is not enough, so we'll go with one second here.
+  Sleep(1000);
 
   char char_buffer[256];
   voe_rtp_rtcp_->GetRemoteRTCP_CNAME(channel_, char_buffer);
