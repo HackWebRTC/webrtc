@@ -912,27 +912,27 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswer) {
   std::unique_ptr<SessionDescription> answer(
       f2_.CreateAnswer(offer.get(), opts, NULL));
   const ContentInfo* ac = answer->GetContentByName("audio");
-  const ContentInfo* vc = answer->GetContentByName("data");
+  const ContentInfo* dc = answer->GetContentByName("data");
   ASSERT_TRUE(ac != NULL);
-  ASSERT_TRUE(vc != NULL);
+  ASSERT_TRUE(dc != NULL);
   EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), vc->type);
+  EXPECT_EQ(std::string(NS_JINGLE_RTP), dc->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
-  const DataContentDescription* vcd =
-      static_cast<const DataContentDescription*>(vc->description);
+  const DataContentDescription* dcd =
+      static_cast<const DataContentDescription*>(dc->description);
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
   EXPECT_EQ(MAKE_VECTOR(kAudioCodecsAnswer), acd->codecs());
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
   EXPECT_NE(0U, acd->first_ssrc());             // a random nonzero ssrc
   EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
   ASSERT_CRYPTO(acd, 1U, CS_AES_CM_128_HMAC_SHA1_32);
-  EXPECT_EQ(MEDIA_TYPE_DATA, vcd->type());
-  EXPECT_EQ(MAKE_VECTOR(kDataCodecsAnswer), vcd->codecs());
-  EXPECT_NE(0U, vcd->first_ssrc());             // a random nonzero ssrc
-  EXPECT_TRUE(vcd->rtcp_mux());                 // negotiated rtcp-mux
-  ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
-  EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
+  EXPECT_EQ(MEDIA_TYPE_DATA, dcd->type());
+  EXPECT_EQ(MAKE_VECTOR(kDataCodecsAnswer), dcd->codecs());
+  EXPECT_NE(0U, dcd->first_ssrc());  // a random nonzero ssrc
+  EXPECT_TRUE(dcd->rtcp_mux());      // negotiated rtcp-mux
+  ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), dcd->protocol());
 }
 
 TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerGcm) {
@@ -946,27 +946,70 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerGcm) {
   std::unique_ptr<SessionDescription> answer(
       f2_.CreateAnswer(offer.get(), opts, NULL));
   const ContentInfo* ac = answer->GetContentByName("audio");
-  const ContentInfo* vc = answer->GetContentByName("data");
+  const ContentInfo* dc = answer->GetContentByName("data");
   ASSERT_TRUE(ac != NULL);
-  ASSERT_TRUE(vc != NULL);
+  ASSERT_TRUE(dc != NULL);
   EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), vc->type);
+  EXPECT_EQ(std::string(NS_JINGLE_RTP), dc->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
-  const DataContentDescription* vcd =
-      static_cast<const DataContentDescription*>(vc->description);
+  const DataContentDescription* dcd =
+      static_cast<const DataContentDescription*>(dc->description);
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
   EXPECT_EQ(MAKE_VECTOR(kAudioCodecsAnswer), acd->codecs());
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
   EXPECT_NE(0U, acd->first_ssrc());             // a random nonzero ssrc
   EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
   ASSERT_CRYPTO(acd, 1U, CS_AEAD_AES_256_GCM);
-  EXPECT_EQ(MEDIA_TYPE_DATA, vcd->type());
-  EXPECT_EQ(MAKE_VECTOR(kDataCodecsAnswer), vcd->codecs());
-  EXPECT_NE(0U, vcd->first_ssrc());             // a random nonzero ssrc
-  EXPECT_TRUE(vcd->rtcp_mux());                 // negotiated rtcp-mux
-  ASSERT_CRYPTO(vcd, 1U, CS_AEAD_AES_256_GCM);
-  EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
+  EXPECT_EQ(MEDIA_TYPE_DATA, dcd->type());
+  EXPECT_EQ(MAKE_VECTOR(kDataCodecsAnswer), dcd->codecs());
+  EXPECT_NE(0U, dcd->first_ssrc());  // a random nonzero ssrc
+  EXPECT_TRUE(dcd->rtcp_mux());      // negotiated rtcp-mux
+  ASSERT_CRYPTO(dcd, 1U, CS_AEAD_AES_256_GCM);
+  EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), dcd->protocol());
+}
+
+// The use_sctpmap flag should be set in a DataContentDescription by default.
+// The answer's use_sctpmap flag should match the offer's.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerUsesSctpmap) {
+  MediaSessionOptions opts;
+  opts.data_channel_type = cricket::DCT_SCTP;
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  ContentInfo* dc_offer = offer->GetContentByName("data");
+  ASSERT_TRUE(dc_offer != NULL);
+  DataContentDescription* dcd_offer =
+      static_cast<DataContentDescription*>(dc_offer->description);
+  EXPECT_TRUE(dcd_offer->use_sctpmap());
+
+  std::unique_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
+  const ContentInfo* dc_answer = answer->GetContentByName("data");
+  ASSERT_TRUE(dc_answer != NULL);
+  const DataContentDescription* dcd_answer =
+      static_cast<const DataContentDescription*>(dc_answer->description);
+  EXPECT_TRUE(dcd_answer->use_sctpmap());
+}
+
+// The answer's use_sctpmap flag should match the offer's.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerWithoutSctpmap) {
+  MediaSessionOptions opts;
+  opts.data_channel_type = cricket::DCT_SCTP;
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  ASSERT_TRUE(offer.get() != NULL);
+  ContentInfo* dc_offer = offer->GetContentByName("data");
+  ASSERT_TRUE(dc_offer != NULL);
+  DataContentDescription* dcd_offer =
+      static_cast<DataContentDescription*>(dc_offer->description);
+  dcd_offer->set_use_sctpmap(false);
+
+  std::unique_ptr<SessionDescription> answer(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
+  const ContentInfo* dc_answer = answer->GetContentByName("data");
+  ASSERT_TRUE(dc_answer != NULL);
+  const DataContentDescription* dcd_answer =
+      static_cast<const DataContentDescription*>(dc_answer->description);
+  EXPECT_FALSE(dcd_answer->use_sctpmap());
 }
 
 // Verifies that the order of the media contents in the offer is preserved in

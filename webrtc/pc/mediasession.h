@@ -401,10 +401,18 @@ class VideoContentDescription : public MediaContentDescriptionImpl<VideoCodec> {
 
 class DataContentDescription : public MediaContentDescriptionImpl<DataCodec> {
  public:
+  DataContentDescription() {}
+
   virtual ContentDescription* Copy() const {
     return new DataContentDescription(*this);
   }
   virtual MediaType type() const { return MEDIA_TYPE_DATA; }
+
+  bool use_sctpmap() const { return use_sctpmap_; }
+  void set_use_sctpmap(bool enable) { use_sctpmap_ = enable; }
+
+ private:
+  bool use_sctpmap_ = true;
 };
 
 // Creates media session descriptions according to the supplied codecs and
@@ -456,9 +464,9 @@ class MediaSessionDescriptionFactory {
       const MediaSessionOptions& options,
       const SessionDescription* current_description) const;
   SessionDescription* CreateAnswer(
-        const SessionDescription* offer,
-        const MediaSessionOptions& options,
-        const SessionDescription* current_description) const;
+      const SessionDescription* offer,
+      const MediaSessionOptions& options,
+      const SessionDescription* current_description) const;
 
  private:
   const AudioCodecs& GetAudioCodecsForOffer(

@@ -1996,6 +1996,12 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
     return false;  // Fails the session setup.
   }
 
+  // Respond with sctpmap if the offer uses sctpmap.
+  const DataContentDescription* offer_data_description =
+      static_cast<const DataContentDescription*>(data_content->description);
+  bool offer_uses_sctpmap = offer_data_description->use_sctpmap();
+  data_answer->set_use_sctpmap(offer_uses_sctpmap);
+
   bool rejected = !options.has_data() || data_content->rejected ||
       !IsMediaProtocolSupported(MEDIA_TYPE_DATA,
                                 data_answer->protocol(),

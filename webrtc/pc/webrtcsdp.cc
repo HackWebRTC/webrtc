@@ -234,7 +234,9 @@ static void BuildMediaDescription(const ContentInfo* content_info,
                                   const std::vector<Candidate>& candidates,
                                   bool unified_plan_sdp,
                                   std::string* message);
-static void BuildSctpContentAttributes(std::string* message, int sctp_port);
+static void BuildSctpContentAttributes(std::string* message,
+                                       int sctp_port,
+                                       bool use_sctpmap);
 static void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
                                       const MediaType media_type,
                                       bool unified_plan_sdp,
@@ -1275,16 +1277,21 @@ void BuildMediaDescription(const ContentInfo* content_info,
     if (IsDtlsSctp(media_desc->protocol())) {
       fmt.append(" ");
 
-      for (std::vector<cricket::DataCodec>::const_iterator it =
-           data_desc->codecs().begin();
-           it != data_desc->codecs().end(); ++it) {
-        if (cricket::CodecNamesEq(it->name, cricket::kGoogleSctpDataCodecName)
-            && it->GetParam(cricket::kCodecParamPort, &sctp_port)) {
-          break;
+      if (data_desc->use_sctpmap()) {
+        for (std::vector<cricket::DataCodec>::const_iterator it =
+                 data_desc->codecs().begin();
+             it != data_desc->codecs().end(); ++it) {
+          if (cricket::CodecNamesEq(it->name,
+                                    cricket::kGoogleSctpDataCodecName) &&
+              it->GetParam(cricket::kCodecParamPort, &sctp_port)) {
+            break;
+          }
         }
-      }
 
-      fmt.append(rtc::ToString<int>(sctp_port));
+        fmt.append(rtc::ToString<int>(sctp_port));
+      } else {
+        fmt.append(kDefaultSctpmapProtocol);
+      }
     } else {
       for (std::vector<cricket::DataCodec>::const_iterator it =
            data_desc->codecs().begin();
@@ -1407,23 +1414,34 @@ void BuildMediaDescription(const ContentInfo* content_info,
   AddLine(os.str(), message);
 
   if (IsDtlsSctp(media_desc->protocol())) {
-    BuildSctpContentAttributes(message, sctp_port);
+    const DataContentDescription* data_desc =
+        static_cast<const DataContentDescription*>(media_desc);
+    bool use_sctpmap = data_desc->use_sctpmap();
+    BuildSctpContentAttributes(message, sctp_port, use_sctpmap);
   } else if (IsRtp(media_desc->protocol())) {
     BuildRtpContentAttributes(media_desc, media_type, unified_plan_sdp,
                               message);
   }
 }
 
-void BuildSctpContentAttributes(std::string* message, int sctp_port) {
-  // draft-ietf-mmusic-sctp-sdp-04
-  // a=sctpmap:sctpmap-number  protocol  [streams]
-  // TODO(lally): switch this over to mmusic-sctp-sdp-12 (or later), with
-  // 'a=sctp-port:'
+void BuildSctpContentAttributes(std::string* message,
+                                int sctp_port,
+                                bool use_sctpmap) {
   std::ostringstream os;
-  InitAttrLine(kAttributeSctpmap, &os);
-  os << kSdpDelimiterColon << sctp_port << kSdpDelimiterSpace
-     << kDefaultSctpmapProtocol << kSdpDelimiterSpace
-     << cricket::kMaxSctpStreams;
+  if (use_sctpmap) {
+    // draft-ietf-mmusic-sctp-sdp-04
+    // a=sctpmap:sctpmap-number  protocol  [streams]
+    InitAttrLine(kAttributeSctpmap, &os);
+    os << kSdpDelimiterColon << sctp_port << kSdpDelimiterSpace
+       << kDefaultSctpmapProtocol << kSdpDelimiterSpace
+       << cricket::kMaxSctpStreams;
+  } else {
+    // draft-ietf-mmusic-sctp-sdp-23
+    // a=sctp-port:<port>
+    InitAttrLine(kAttributeSctpPort, &os);
+    os << kSdpDelimiterColon << sctp_port;
+    // TODO(zstein): emit max-message-size here
+  }
   AddLine(os.str(), message);
 }
 
@@ -2291,6 +2309,7 @@ bool ParseMediaDescription(const std::string& message,
     std::vector<std::string> fields;
     rtc::split(line.substr(kLinePrefixLength),
                      kSdpDelimiterSpace, &fields);
+
     const size_t expected_min_fields = 4;
     if (fields.size() < expected_min_fields) {
       return ParseFailedExpectMinFieldNum(line, expected_min_fields, error);
@@ -2351,10 +2370,15 @@ bool ParseMediaDescription(const std::string& message,
               candidates, error);
       content.reset(data_desc);
 
-      int p;
-      if (data_desc && IsDtlsSctp(protocol) && rtc::FromString(fields[3], &p)) {
-        if (!AddSctpDataCodec(data_desc, p))
-          return false;
+      if (data_desc && IsDtlsSctp(protocol)) {
+        int p;
+        if (rtc::FromString(fields[3], &p)) {
+          if (!AddSctpDataCodec(data_desc, p)) {
+            return false;
+          }
+        } else if (fields[3] == kDefaultSctpmapProtocol) {
+          data_desc->set_use_sctpmap(false);
+        }
       }
     } else {
       LOG(LS_WARNING) << "Unsupported media type: " << line;

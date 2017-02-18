@@ -65,6 +65,9 @@ typedef std::vector<AudioCodec> AudioCodecs;
 typedef std::vector<Candidate> Candidates;
 
 static const uint32_t kDefaultSctpPort = 5000;
+static const char kDefaultSctpPortStr[] = "5000";
+static const uint16_t kUnusualSctpPort = 9556;
+static const char kUnusualSctpPortStr[] = "9556";
 static const char kSessionTime[] = "t=0 0\r\n";
 static const uint32_t kCandidatePriority = 2130706432U;  // pref = 1.0
 static const char kAttributeIceUfragVoice[] = "a=ice-ufrag:ufrag_voice\r\n";
@@ -1210,6 +1213,11 @@ class WebRtcSdpTest : public testing::Test {
     }
   }
 
+  void CompareDataContentDescription(const DataContentDescription* dcd1,
+                                     const DataContentDescription* dcd2) {
+    EXPECT_EQ(dcd1->use_sctpmap(), dcd2->use_sctpmap());
+    CompareMediaContentDescription<DataContentDescription>(dcd1, dcd2);
+  }
 
   void CompareSessionDescription(const SessionDescription& desc1,
                                  const SessionDescription& desc2) {
@@ -1251,7 +1259,7 @@ class WebRtcSdpTest : public testing::Test {
             static_cast<const DataContentDescription*>(c1.description);
         const DataContentDescription* dcd2 =
             static_cast<const DataContentDescription*>(c2.description);
-        CompareMediaContentDescription<DataContentDescription>(dcd1, dcd2);
+        CompareDataContentDescription(dcd1, dcd2);
       }
     }
 
@@ -1486,9 +1494,10 @@ class WebRtcSdpTest : public testing::Test {
     return true;
   }
 
-  void AddSctpDataChannel() {
+  void AddSctpDataChannel(bool use_sctpmap) {
     std::unique_ptr<DataContentDescription> data(new DataContentDescription());
     data_desc_ = data.get();
+    data_desc_->set_use_sctpmap(use_sctpmap);
     data_desc_->set_protocol(cricket::kMediaProtocolDtlsSctp);
     DataCodec codec(cricket::kGoogleSctpDataCodecPlType,
                     cricket::kGoogleSctpDataCodecName);
@@ -2058,7 +2067,8 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithRtpDataChannel) {
 }
 
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithSctpDataChannel) {
-  AddSctpDataChannel();
+  bool use_sctpmap = true;
+  AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jsep_desc(kDummyString);
 
   ASSERT_TRUE(jsep_desc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
@@ -2070,7 +2080,8 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithSctpDataChannel) {
 }
 
 TEST_F(WebRtcSdpTest, SerializeWithSctpDataChannelAndNewPort) {
-  AddSctpDataChannel();
+  bool use_sctpmap = true;
+  AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jsep_desc(kDummyString);
 
   ASSERT_TRUE(jsep_desc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
@@ -2570,7 +2581,8 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithRtpDataChannels) {
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannels) {
-  AddSctpDataChannel();
+  bool use_sctpmap = true;
+  AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyString);
   ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
 
@@ -2596,7 +2608,8 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannels) {
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpPort) {
-  AddSctpDataChannel();
+  bool use_sctpmap = false;
+  AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyString);
   ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
 
@@ -2622,7 +2635,8 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpPort) {
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpColonPort) {
-  AddSctpDataChannel();
+  bool use_sctpmap = false;
+  AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyString);
   ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
 
@@ -2650,7 +2664,8 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpColonPort) {
 // Test to check the behaviour if sctp-port is specified
 // on the m= line and in a=sctp-port.
 TEST_F(WebRtcSdpTest, DeserializeSdpWithMultiSctpPort) {
-  AddSctpDataChannel();
+  bool use_sctpmap = true;
+  AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyString);
   ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
 
@@ -2676,20 +2691,10 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithCorruptedSctpDataChannels) {
   // No crash is a pass.
 }
 
-TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
-  AddSctpDataChannel();
-  const uint16_t kUnusualSctpPort = 9556;
-  char default_portstr[16];
-  char unusual_portstr[16];
-  rtc::sprintfn(default_portstr, sizeof(default_portstr), "%d",
-                      kDefaultSctpPort);
-  rtc::sprintfn(unusual_portstr, sizeof(unusual_portstr), "%d",
-                      kUnusualSctpPort);
-
-  // First setup the expected JsepSessionDescription.
-  JsepSessionDescription jdesc(kDummyString);
+void MutateJsepSctpPort(JsepSessionDescription& jdesc,
+                        const SessionDescription& desc) {
   // take our pre-built session description and change the SCTP port.
-  cricket::SessionDescription* mutant = desc_.Copy();
+  cricket::SessionDescription* mutant = desc.Copy();
   DataContentDescription* dcdesc = static_cast<DataContentDescription*>(
       mutant->GetContentDescriptionByName(kDataContentName));
   std::vector<cricket::DataCodec> codecs(dcdesc->codecs());
@@ -2701,27 +2706,46 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndNewPort) {
   // note: mutant's owned by jdesc now.
   ASSERT_TRUE(jdesc.Initialize(mutant, kSessionId, kSessionVersion));
   mutant = NULL;
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndUnusualPort) {
+  bool use_sctpmap = true;
+  AddSctpDataChannel(use_sctpmap);
+
+  // First setup the expected JsepSessionDescription.
+  JsepSessionDescription jdesc(kDummyString);
+  MutateJsepSctpPort(jdesc, desc_);
 
   // Then get the deserialized JsepSessionDescription.
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelString);
-  rtc::replace_substrs(default_portstr, strlen(default_portstr),
-                             unusual_portstr, strlen(unusual_portstr),
-                             &sdp_with_data);
+  rtc::replace_substrs(kDefaultSctpPortStr, strlen(kDefaultSctpPortStr),
+                       kUnusualSctpPortStr, strlen(kUnusualSctpPortStr),
+                       &sdp_with_data);
   JsepSessionDescription jdesc_output(kDummyString);
 
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+}
+
+TEST_F(WebRtcSdpTest,
+       DeserializeSdpWithSctpDataChannelAndUnusualPortInAttribute) {
+  bool use_sctpmap = false;
+  AddSctpDataChannel(use_sctpmap);
+
+  JsepSessionDescription jdesc(kDummyString);
+  MutateJsepSctpPort(jdesc, desc_);
 
   // We need to test the deserialized JsepSessionDescription from
   // kSdpSctpDataChannelStringWithSctpPort for
   // draft-ietf-mmusic-sctp-sdp-07
   // a=sctp-port
-  sdp_with_data = kSdpString;
+  std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelStringWithSctpPort);
-  rtc::replace_substrs(default_portstr, strlen(default_portstr),
-                             unusual_portstr, strlen(unusual_portstr),
-                             &sdp_with_data);
+  rtc::replace_substrs(kDefaultSctpPortStr, strlen(kDefaultSctpPortStr),
+                       kUnusualSctpPortStr, strlen(kUnusualSctpPortStr),
+                       &sdp_with_data);
+  JsepSessionDescription jdesc_output(kDummyString);
 
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
@@ -2744,7 +2768,8 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithRtpDataChannelsAndBandwidth) {
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsAndBandwidth) {
-  AddSctpDataChannel();
+  bool use_sctpmap = true;
+  AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyString);
   DataContentDescription* dcd = static_cast<DataContentDescription*>(
      GetFirstDataContent(&desc_)->description);
