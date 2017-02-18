@@ -211,8 +211,6 @@ rtc_static_library("audio_device") {
         sources += [
           "win/audio_device_core_win.cc",
           "win/audio_device_core_win.h",
-          "win/audio_mixer_manager_win.cc",
-          "win/audio_mixer_manager_win.h",
         ]
         libs = [
           # Required for the built-in WASAPI AEC.
