@@ -11,11 +11,13 @@
 #ifndef WEBRTC_BASE_ASYNCINVOKER_H_
 #define WEBRTC_BASE_ASYNCINVOKER_H_
 
+#include <memory>
+#include <utility>
+
 #include "webrtc/base/asyncinvoker-inl.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sigslot.h"
-#include "webrtc/base/scopedptrcollection.h"
 #include "webrtc/base/thread.h"
 
 namespace rtc {
@@ -79,9 +81,9 @@ class AsyncInvoker : public MessageHandler {
                    Thread* thread,
                    const FunctorT& functor,
                    uint32_t id = 0) {
-    scoped_refptr<AsyncClosure> closure(
-        new RefCountedObject<FireAndForgetAsyncClosure<FunctorT> >(functor));
-    DoInvoke(posted_from, thread, closure, id);
+    std::unique_ptr<AsyncClosure> closure(
+        new FireAndForgetAsyncClosure<FunctorT>(functor));
+    DoInvoke(posted_from, thread, std::move(closure), id);
   }
 
   // Call |functor| asynchronously on |thread| with |delay_ms|, with no callback
@@ -92,9 +94,9 @@ class AsyncInvoker : public MessageHandler {
                           const FunctorT& functor,
                           uint32_t delay_ms,
                           uint32_t id = 0) {
-    scoped_refptr<AsyncClosure> closure(
-        new RefCountedObject<FireAndForgetAsyncClosure<FunctorT> >(functor));
-    DoInvokeDelayed(posted_from, thread, closure, delay_ms, id);
+    std::unique_ptr<AsyncClosure> closure(
+        new FireAndForgetAsyncClosure<FunctorT>(functor));
+    DoInvokeDelayed(posted_from, thread, std::move(closure), delay_ms, id);
   }
 
   // Call |functor| asynchronously on |thread|, calling |callback| when done.
@@ -108,11 +110,11 @@ class AsyncInvoker : public MessageHandler {
                    void (HostT::*callback)(ReturnT),
                    HostT* callback_host,
                    uint32_t id = 0) {
-    scoped_refptr<AsyncClosure> closure(
-        new RefCountedObject<NotifyingAsyncClosure<ReturnT, FunctorT, HostT> >(
+    std::unique_ptr<AsyncClosure> closure(
+        new NotifyingAsyncClosure<ReturnT, FunctorT, HostT>(
             this, callback_posted_from, Thread::Current(), functor, callback,
             callback_host));
-    DoInvoke(posted_from, thread, closure, id);
+    DoInvoke(posted_from, thread, std::move(closure), id);
   }
 
   // Call |functor| asynchronously on |thread|, calling |callback| when done.
@@ -127,11 +129,11 @@ class AsyncInvoker : public MessageHandler {
                    void (HostT::*callback)(),
                    HostT* callback_host,
                    uint32_t id = 0) {
-    scoped_refptr<AsyncClosure> closure(
-        new RefCountedObject<NotifyingAsyncClosure<void, FunctorT, HostT> >(
+    std::unique_ptr<AsyncClosure> closure(
+        new NotifyingAsyncClosure<void, FunctorT, HostT>(
             this, callback_posted_from, Thread::Current(), functor, callback,
             callback_host));
-    DoInvoke(posted_from, thread, closure, id);
+    DoInvoke(posted_from, thread, std::move(closure), id);
   }
 
   // Synchronously execute on |thread| all outstanding calls we own
@@ -148,11 +150,11 @@ class AsyncInvoker : public MessageHandler {
   void OnMessage(Message* msg) override;
   void DoInvoke(const Location& posted_from,
                 Thread* thread,
-                const scoped_refptr<AsyncClosure>& closure,
+                std::unique_ptr<AsyncClosure> closure,
                 uint32_t id);
   void DoInvokeDelayed(const Location& posted_from,
                        Thread* thread,
-                       const scoped_refptr<AsyncClosure>& closure,
+                       std::unique_ptr<AsyncClosure> closure,
                        uint32_t delay_ms,
                        uint32_t id);
   bool destroying_;
