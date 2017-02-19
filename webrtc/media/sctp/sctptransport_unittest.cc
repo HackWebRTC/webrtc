@@ -50,8 +50,8 @@ class SctpFakeDataReceiver : public sigslot::has_slots<> {
     last_params_ = ReceiveDataParams();
   }
 
-  virtual void OnDataReceived(const ReceiveDataParams& params,
-                              const rtc::CopyOnWriteBuffer& data) {
+  void OnDataReceived(const ReceiveDataParams& params,
+                      const rtc::CopyOnWriteBuffer& data) {
     received_ = true;
     last_data_ = std::string(data.data<char>(), data.size());
     last_params_ = params;
