@@ -51,6 +51,11 @@ def _ParseArgs():
 
 
 def main():
+  print '@@@STEP_WARNINGS@@@'
+  print 'This test is currently disabled (https://bugs.webrtc.org/7185)'
+  print '@@@STEP_LINK@Disabled@https://bugs.webrtc.org/7185@@@ (webrtc:7185)'
+  sys.exit(0)
+
   logging.basicConfig(level=logging.INFO)
 
   args = _ParseArgs()
