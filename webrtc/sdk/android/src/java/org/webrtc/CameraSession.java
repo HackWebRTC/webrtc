@@ -10,7 +10,7 @@
 
 package org.webrtc;
 
-public interface CameraSession {
+interface CameraSession {
   enum FailureType { ERROR, DISCONNECTED }
 
   // Callbacks are fired on the camera thread.

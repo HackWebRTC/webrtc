@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 @TargetApi(21)
-public class Camera2Session implements CameraSession {
+class Camera2Session implements CameraSession {
   private static final String TAG = "Camera2Session";
 
   private static final Histogram camera2StartTimeMsHistogram =
@@ -167,7 +167,7 @@ public class Camera2Session implements CameraSession {
         // Set auto exposure fps range.
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
             new Range<Integer>(captureFormat.framerate.min / fpsUnitFactor,
-                                      captureFormat.framerate.max / fpsUnitFactor));
+                captureFormat.framerate.max / fpsUnitFactor));
         captureRequestBuilder.set(
             CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);

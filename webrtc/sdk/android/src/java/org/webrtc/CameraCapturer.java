@@ -16,7 +16,7 @@ import android.os.Looper;
 import java.util.Arrays;
 
 @SuppressWarnings("deprecation")
-public abstract class CameraCapturer implements CameraVideoCapturer {
+abstract class CameraCapturer implements CameraVideoCapturer {
   enum SwitchState {
     IDLE, // No switch requested.
     PENDING, // Waiting for previous capture session to open.

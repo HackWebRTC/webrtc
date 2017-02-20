@@ -131,14 +131,10 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/CallSessionFileRotatingLogSink.java",
     "api/org/webrtc/Camera1Capturer.java",
     "api/org/webrtc/Camera1Enumerator.java",
-    "api/org/webrtc/Camera1Session.java",
     "api/org/webrtc/Camera2Capturer.java",
     "api/org/webrtc/Camera2Enumerator.java",
-    "api/org/webrtc/Camera2Session.java",
-    "api/org/webrtc/CameraCapturer.java",
     "api/org/webrtc/CameraEnumerationAndroid.java",
     "api/org/webrtc/CameraEnumerator.java",
-    "api/org/webrtc/CameraSession.java",
     "api/org/webrtc/CameraVideoCapturer.java",
     "api/org/webrtc/DataChannel.java",
     "api/org/webrtc/DtmfSender.java",
@@ -181,6 +177,10 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/VideoSource.java",
     "api/org/webrtc/VideoTrack.java",
     "api/org/webrtc/YuvConverter.java",
+    "src/java/org/webrtc/Camera1Session.java",
+    "src/java/org/webrtc/Camera2Session.java",
+    "src/java/org/webrtc/CameraCapturer.java",
+    "src/java/org/webrtc/CameraSession.java",
   ]
 
   deps = [
