@@ -348,6 +348,19 @@ config("rtc_base_warnings_config") {
   }
 }
 
+# TODO(nisse): This target is temporarily split out, to aid moving the
+# code over to Chrome. It should be deleted from webrtc soon.
+rtc_static_library("rtc_task_runner") {
+  sources = [
+    "task.cc",
+    "task.h",
+    "taskparent.cc",
+    "taskparent.h",
+    "taskrunner.cc",
+    "taskrunner.h",
+  ]
+}
+
 rtc_static_library("rtc_base") {
   cflags = []
   cflags_cc = []
@@ -358,6 +371,7 @@ rtc_static_library("rtc_base") {
   ]
   public_deps = [
     ":rtc_base_approved",
+    ":rtc_task_runner",
   ]
   public_configs = []
 
@@ -463,12 +477,6 @@ rtc_static_library("rtc_base") {
     "sslstreamadapter.h",
     "stream.cc",
     "stream.h",
-    "task.cc",
-    "task.h",
-    "taskparent.cc",
-    "taskparent.h",
-    "taskrunner.cc",
-    "taskrunner.h",
     "thread.cc",
     "thread.h",
   ]
