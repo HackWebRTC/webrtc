@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/stream.h"
@@ -253,9 +252,6 @@ static int stream_puts(BIO* b, const char* str) {
 }
 
 static long stream_ctrl(BIO* b, int cmd, long num, void* ptr) {
-  RTC_UNUSED(num);
-  RTC_UNUSED(ptr);
-
   switch (cmd) {
     case BIO_CTRL_RESET:
       return 0;

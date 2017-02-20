@@ -19,11 +19,11 @@
 #include <utility>
 
 #include "webrtc/base/base64.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/base/cryptoparams.h"
 #include "webrtc/media/base/mediaconstants.h"
@@ -702,7 +702,7 @@ static bool ContainsRtxCodec(const std::vector<C>& codecs) {
 
 template <class C>
 static bool IsRtxCodec(const C& codec) {
-  return stricmp(codec.name.c_str(), kRtxCodecName) == 0;
+  return STR_CASE_CMP(codec.name.c_str(), kRtxCodecName) == 0;
 }
 
 template <class C>
@@ -717,7 +717,7 @@ static bool ContainsFlexfecCodec(const std::vector<C>& codecs) {
 
 template <class C>
 static bool IsFlexfecCodec(const C& codec) {
-  return stricmp(codec.name.c_str(), kFlexfecCodecName) == 0;
+  return STR_CASE_CMP(codec.name.c_str(), kFlexfecCodecName) == 0;
 }
 
 static TransportOptions GetTransportOptions(const MediaSessionOptions& options,
@@ -1013,7 +1013,7 @@ static void NegotiateRtpHeaderExtensions(
 static void StripCNCodecs(AudioCodecs* audio_codecs) {
   AudioCodecs::iterator iter = audio_codecs->begin();
   while (iter != audio_codecs->end()) {
-    if (stricmp(iter->name.c_str(), kComfortNoiseCodecName) == 0) {
+    if (STR_CASE_CMP(iter->name.c_str(), kComfortNoiseCodecName) == 0) {
       iter = audio_codecs->erase(iter);
     } else {
       ++iter;

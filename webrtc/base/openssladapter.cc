@@ -27,7 +27,6 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
-#include "webrtc/base/common.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/openssl.h"
 #include "webrtc/base/safe_conversions.h"
@@ -148,9 +147,6 @@ static int socket_puts(BIO* b, const char* str) {
 }
 
 static long socket_ctrl(BIO* b, int cmd, long num, void* ptr) {
-  RTC_UNUSED(num);
-  RTC_UNUSED(ptr);
-
   switch (cmd) {
   case BIO_CTRL_RESET:
     return 0;

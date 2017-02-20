@@ -392,8 +392,6 @@ rtc_static_library("rtc_base") {
     "asynctcpsocket.h",
     "asyncudpsocket.cc",
     "asyncudpsocket.h",
-    "common.cc",
-    "common.h",
     "crc32.cc",
     "crc32.h",
     "cryptstring.cc",
