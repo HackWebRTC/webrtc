@@ -105,23 +105,20 @@ class RTCPReceiver {
   bool RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms);
 
   std::vector<rtcp::TmmbItem> TmmbrReceived();
-
-  bool UpdateRTCPReceiveInformationTimers();
-
+  // Return true if new bandwidth should be set.
+  bool UpdateTmmbrTimers();
   std::vector<rtcp::TmmbItem> BoundingSet(bool* tmmbr_owner);
-
-  void UpdateTmmbr();
+  // Set new bandwidth and notify remote clients about it.
+  void NotifyTmmbrUpdated();
 
   void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback);
   RtcpStatisticsCallback* GetRtcpStatisticsCallback();
 
  private:
   struct PacketInformation;
-  struct ReceiveInformation;
+  struct TmmbrInformation;
   struct ReportBlockWithRtt;
   struct LastFirStatus;
-  // Mapped by remote ssrc.
-  using ReceivedInfoMap = std::map<uint32_t, ReceiveInformation>;
   // RTCP report blocks mapped by remote SSRC.
   using ReportBlockInfoMap = std::map<uint32_t, ReportBlockWithRtt>;
   // RTCP report blocks map mapped by source SSRC.
@@ -134,9 +131,9 @@ class RTCPReceiver {
   void TriggerCallbacksFromRtcpPacket(
       const PacketInformation& packet_information);
 
-  void CreateReceiveInformation(uint32_t remote_ssrc)
+  void CreateTmmbrInformation(uint32_t remote_ssrc)
       EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
-  ReceiveInformation* GetReceiveInformation(uint32_t remote_ssrc)
+  TmmbrInformation* GetTmmbrInformation(uint32_t remote_ssrc)
       EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
   void HandleSenderReport(const rtcp::CommonHeader& rtcp_block,
@@ -242,10 +239,12 @@ class RTCPReceiver {
   bool xr_rrtr_status_ GUARDED_BY(rtcp_receiver_lock_);
   int64_t xr_rr_rtt_ms_;
 
-  // Received report blocks.
+  int64_t oldest_tmmbr_info_ms_ GUARDED_BY(rtcp_receiver_lock_);
+  // Mapped by remote ssrc.
+  std::map<uint32_t, TmmbrInformation> tmmbr_infos_
+      GUARDED_BY(rtcp_receiver_lock_);
+
   ReportBlockMap received_report_blocks_ GUARDED_BY(rtcp_receiver_lock_);
-  ReceivedInfoMap received_infos_ GUARDED_BY(rtcp_receiver_lock_);
-  int64_t oldest_received_info_ms_ GUARDED_BY(rtcp_receiver_lock_);
   std::map<uint32_t, LastFirStatus> last_fir_ GUARDED_BY(rtcp_receiver_lock_);
   std::map<uint32_t, std::string> received_cnames_
       GUARDED_BY(rtcp_receiver_lock_);

@@ -211,9 +211,8 @@ void ModuleRtpRtcpImpl::Process() {
   if (rtcp_sender_.TimeToSendRTCPReport())
     rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
 
-  if (TMMBR() && rtcp_receiver_.UpdateRTCPReceiveInformationTimers()) {
-    // A receiver has timed out.
-    rtcp_receiver_.UpdateTmmbr();
+  if (TMMBR() && rtcp_receiver_.UpdateTmmbrTimers()) {
+    rtcp_receiver_.NotifyTmmbrUpdated();
   }
 }
 
