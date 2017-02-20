@@ -196,9 +196,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "-Wno-sign-compare",
       "-Wno-unused-variable",
     ]
-    if (is_mac) {
-      cflags += [ "-Wno-partial-availability" ]
-    }
   }
 
   rtc_static_library("apprtc_signaling") {
@@ -368,8 +365,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     mac_app_bundle("AppRTCMobile") {
       output_name = "AppRTCMobile"
 
-      extra_substitutions = [ "MACOSX_DEPLOYMENT_TARGET=10.8" ]
-
       sources = [
         "objc/AppRTCMobile/mac/main.m",
       ]
@@ -409,10 +404,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       # https://bugs.chromium.org/p/webrtc/issues/detail?id=6396
       "-Wno-unused-result",
     ]
-
-    if (is_mac) {
-      cflags += [ "-Wno-partial-availability" ]
-    }
   }
 
   rtc_static_library("socketrocket") {
