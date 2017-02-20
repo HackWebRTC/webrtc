@@ -733,6 +733,7 @@ if (rtc_include_tests) {
   rtc_source_set("rtc_base_nonparallel_tests") {
     testonly = true
     sources = [
+      "filerotatingstream_unittest.cc",
       "nullsocketserver_unittest.cc",
       "physicalsocketserver_unittest.cc",
       "socket_unittest.cc",
@@ -844,7 +845,6 @@ if (rtc_include_tests) {
     sources = [
       "callback_unittest.cc",
       "crc32_unittest.cc",
-      "filerotatingstream_unittest.cc",
       "fileutils_unittest.cc",
       "helpers_unittest.cc",
       "httpbase_unittest.cc",
