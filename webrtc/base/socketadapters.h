@@ -142,18 +142,6 @@ class AsyncHttpsProxySocket : public BufferedReadAdapter {
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncHttpsProxySocket);
 };
 
-/* TODO: Implement this.
-class AsyncHttpsProxyServerSocket : public AsyncProxyServerSocket {
- public:
-  explicit AsyncHttpsProxyServerSocket(AsyncSocket* socket);
-
- private:
-  virtual void ProcessInput(char * data, size_t& len);
-  void Error(int error);
-  RTC_DISALLOW_COPY_AND_ASSIGN(AsyncHttpsProxyServerSocket);
-};
-*/
-
 ///////////////////////////////////////////////////////////////////////////////
 
 // Implements a socket adapter that speaks the SOCKS proxy protocol.
@@ -213,37 +201,6 @@ class AsyncSocksProxyServerSocket : public AsyncProxyServerSocket {
   State state_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncSocksProxyServerSocket);
 };
-
-///////////////////////////////////////////////////////////////////////////////
-
-// Implements a socket adapter that logs everything that it sends and receives.
-class LoggingSocketAdapter : public AsyncSocketAdapter {
- public:
-  LoggingSocketAdapter(AsyncSocket* socket, LoggingSeverity level,
-                 const char * label, bool hex_mode = false);
-
-  int Send(const void* pv, size_t cb) override;
-  int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
-  int Recv(void* pv, size_t cb, int64_t* timestamp) override;
-  int RecvFrom(void* pv,
-               size_t cb,
-               SocketAddress* paddr,
-               int64_t* timestamp) override;
-  int Close() override;
-
- protected:
-  void OnConnectEvent(AsyncSocket* socket) override;
-  void OnCloseEvent(AsyncSocket* socket, int err) override;
-
- private:
-  LoggingSeverity level_;
-  std::string label_;
-  bool hex_mode_;
-  LogMultilineState lms_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(LoggingSocketAdapter);
-};
-
-///////////////////////////////////////////////////////////////////////////////
 
 }  // namespace rtc
 
