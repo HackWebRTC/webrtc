@@ -306,7 +306,7 @@ class AutoThread : public Thread {
 class ComThread : public Thread {
  public:
   ComThread() {}
-  ~ComThread() override { Stop(); }
+  ~ComThread() override;
 
  protected:
   void Run() override;

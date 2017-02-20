@@ -561,6 +561,10 @@ AutoThread::~AutoThread() {
 }
 
 #if defined(WEBRTC_WIN)
+ComThread::~ComThread() {
+  Stop();
+}
+
 void ComThread::Run() {
   HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
   RTC_DCHECK(SUCCEEDED(hr));
