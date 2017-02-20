@@ -149,7 +149,8 @@ class VP8DecoderImpl : public VP8Decoder {
 
   int ReturnFrame(const vpx_image_t* img,
                   uint32_t timeStamp,
-                  int64_t ntp_time_ms);
+                  int64_t ntp_time_ms,
+                  int qp);
 
   I420BufferPool buffer_pool_;
   DecodedImageCallback* decode_complete_callback_;
