@@ -38,6 +38,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.h"
+#include "webrtc/modules/rtp_rtcp/source/time_util.h"
 #include "webrtc/modules/rtp_rtcp/source/tmmbr_help.h"
 
 namespace webrtc {
@@ -906,17 +907,13 @@ bool RTCPSender::AddReportBlock(const FeedbackState& feedback_state,
 
   // TODO(sprang): Do we really need separate time stamps for each report?
   // Get our NTP as late as possible to avoid a race.
-  uint32_t ntp_secs;
-  uint32_t ntp_frac;
-  clock_->CurrentNtp(ntp_secs, ntp_frac);
+  NtpTime ntp = clock_->CurrentNtpTime();
 
   // Delay since last received report.
   if ((feedback_state.last_rr_ntp_secs != 0) ||
       (feedback_state.last_rr_ntp_frac != 0)) {
     // Get the 16 lowest bits of seconds and the 16 highest bits of fractions.
-    uint32_t now = ntp_secs & 0x0000FFFF;
-    now <<= 16;
-    now += (ntp_frac & 0xffff0000) >> 16;
+    uint32_t now = CompactNtp(ntp);
 
     uint32_t receiveTime = feedback_state.last_rr_ntp_secs & 0x0000FFFF;
     receiveTime <<= 16;
