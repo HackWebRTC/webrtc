@@ -21,6 +21,7 @@ const bool kDenoisingOn = false;
 const bool kFrameDropperOn = true;
 const bool kSpatialResizeOn = false;
 const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
+const bool kHwCodec = false;
 
 // Packet loss probability [0.0, 1.0].
 const float kPacketLoss = 0.0f;
@@ -52,7 +53,7 @@ class PlotVideoProcessorIntegrationTest
     rate_profile.num_frames = kNumFramesLong;
     // Codec/network settings.
     CodecConfigPars process_settings;
-    SetCodecParameters(&process_settings, codec_type_, kPacketLoss,
+    SetCodecParameters(&process_settings, codec_type_, kHwCodec, kPacketLoss,
                        -1,  // key_frame_interval
                        1,   // num_temporal_layers
                        kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
@@ -87,23 +88,23 @@ INSTANTIATE_TEST_CASE_P(
                        ::testing::ValuesIn(kFps),
                        ::testing::ValuesIn(kVideoCodecType)));
 
-TEST_P(PlotVideoProcessorIntegrationTest, ProcessSQCif) {
+TEST_P(PlotVideoProcessorIntegrationTest, Process128x96) {
   RunTest(128, 96, "foreman_128x96");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, ProcessQQVga) {
+TEST_P(PlotVideoProcessorIntegrationTest, Process160x120) {
   RunTest(160, 120, "foreman_160x120");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, ProcessQCif) {
+TEST_P(PlotVideoProcessorIntegrationTest, Process176x144) {
   RunTest(176, 144, "foreman_176x144");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, ProcessQVga) {
+TEST_P(PlotVideoProcessorIntegrationTest, Process320x240) {
   RunTest(320, 240, "foreman_320x240");
 }
 
-TEST_P(PlotVideoProcessorIntegrationTest, ProcessCif) {
+TEST_P(PlotVideoProcessorIntegrationTest, Process352x288) {
   RunTest(352, 288, "foreman_cif");
 }
 

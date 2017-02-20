@@ -16,7 +16,18 @@
 #include <memory>
 #include <string>
 
+#if defined(WEBRTC_ANDROID)
+#include "webrtc/modules/video_coding/codecs/test/android_test_initializer.h"
+#include "webrtc/sdk/android/src/jni/androidmediadecoder_jni.h"
+#include "webrtc/sdk/android/src/jni/androidmediaencoder_jni.h"
+#elif defined(WEBRTC_IOS)
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_decoder.h"
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_encoder.h"
+#endif
+
 #include "webrtc/base/checks.h"
+#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
+#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
@@ -51,6 +62,7 @@ const char kFilenameForemanCif[] = "foreman_cif";
 // Codec and network settings.
 struct CodecConfigPars {
   VideoCodecType codec_type;
+  bool hw_codec;
   float packet_loss;
   int num_temporal_layers;
   int key_frame_interval;
@@ -117,26 +129,74 @@ const float kScaleKeyFrameSize = 0.5f;
 // happen when some significant regression or breakdown occurs.
 class VideoProcessorIntegrationTest : public testing::Test {
  protected:
-  VideoProcessorIntegrationTest() {}
-  virtual ~VideoProcessorIntegrationTest() {}
+  VideoProcessorIntegrationTest() {
+#if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED) && \
+    defined(WEBRTC_ANDROID)
+    InitializeAndroidObjects();
+
+    external_encoder_factory_.reset(
+        new webrtc_jni::MediaCodecVideoEncoderFactory());
+    external_decoder_factory_.reset(
+        new webrtc_jni::MediaCodecVideoDecoderFactory());
+#endif
+  }
+  virtual ~VideoProcessorIntegrationTest() = default;
 
   void SetUpCodecConfig(const std::string& filename,
                         int width,
                         int height,
                         bool verbose_logging) {
-    if (codec_type_ == kVideoCodecH264) {
-      encoder_.reset(H264Encoder::Create(cricket::VideoCodec("H264")));
-      decoder_.reset(H264Decoder::Create());
-      VideoCodingModule::Codec(kVideoCodecH264, &codec_settings_);
-    } else if (codec_type_ == kVideoCodecVP8) {
-      encoder_.reset(VP8Encoder::Create());
-      decoder_.reset(VP8Decoder::Create());
-      VideoCodingModule::Codec(kVideoCodecVP8, &codec_settings_);
-    } else if (codec_type_ == kVideoCodecVP9) {
-      encoder_.reset(VP9Encoder::Create());
-      decoder_.reset(VP9Decoder::Create());
-      VideoCodingModule::Codec(kVideoCodecVP9, &codec_settings_);
+    if (hw_codec_) {
+#if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
+#if defined(WEBRTC_ANDROID)
+      // In general, external codecs should be destroyed by the factories that
+      // allocated them. For the particular case of the Android
+      // MediaCodecVideo{En,De}coderFactory's, however, it turns out that it is
+      // fine for the std::unique_ptr to destroy the owned codec directly.
+      if (codec_type_ == kVideoCodecH264) {
+        encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
+            cricket::VideoCodec(cricket::kH264CodecName)));
+        decoder_.reset(
+            external_decoder_factory_->CreateVideoDecoder(kVideoCodecH264));
+      } else if (codec_type_ == kVideoCodecVP8) {
+        encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
+            cricket::VideoCodec(cricket::kVp8CodecName)));
+        decoder_.reset(
+            external_decoder_factory_->CreateVideoDecoder(kVideoCodecVP8));
+      } else if (codec_type_ == kVideoCodecVP9) {
+        encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
+            cricket::VideoCodec(cricket::kVp9CodecName)));
+        decoder_.reset(
+            external_decoder_factory_->CreateVideoDecoder(kVideoCodecVP9));
+      }
+#elif defined(WEBRTC_IOS)
+      RTC_DCHECK_EQ(kVideoCodecH264, codec_type_)
+          << "iOS HW codecs only support H264.";
+      encoder_.reset(new H264VideoToolboxEncoder(
+          cricket::VideoCodec(cricket::kH264CodecName)));
+      decoder_.reset(new H264VideoToolboxDecoder());
+#else
+      RTC_NOTREACHED() << "Only support HW codecs on Android and iOS.";
+#endif
+#endif  // WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED
+      RTC_DCHECK(encoder_) << "HW encoder not successfully created.";
+      RTC_DCHECK(decoder_) << "HW decoder not successfully created.";
+    } else {
+      // SW codecs.
+      if (codec_type_ == kVideoCodecH264) {
+        encoder_.reset(
+            H264Encoder::Create(cricket::VideoCodec(cricket::kH264CodecName)));
+        decoder_.reset(H264Decoder::Create());
+      } else if (codec_type_ == kVideoCodecVP8) {
+        encoder_.reset(VP8Encoder::Create());
+        decoder_.reset(VP8Decoder::Create());
+      } else if (codec_type_ == kVideoCodecVP9) {
+        encoder_.reset(VP9Encoder::Create());
+        decoder_.reset(VP9Decoder::Create());
+      }
     }
+
+    VideoCodingModule::Codec(codec_type_, &codec_settings_);
 
     // Configure input filename.
     config_.input_filename = test::ResourcePath(filename, "yuv");
@@ -389,6 +449,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                               RateControlMetrics* rc_metrics) {
     // Codec/config settings.
     codec_type_ = process.codec_type;
+    hw_codec_ = process.hw_codec;
     start_bitrate_ = rate_profile.target_bit_rate[0];
     packet_loss_ = process.packet_loss;
     key_frame_interval_ = process.key_frame_interval;
@@ -501,6 +562,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   static void SetCodecParameters(CodecConfigPars* process_settings,
                                  VideoCodecType codec_type,
+                                 bool hw_codec,
                                  float packet_loss,
                                  int key_frame_interval,
                                  int num_temporal_layers,
@@ -513,6 +575,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                  const std::string& filename,
                                  bool verbose_logging) {
     process_settings->codec_type = codec_type;
+    process_settings->hw_codec = hw_codec;
     process_settings->packet_loss = packet_loss;
     process_settings->key_frame_interval = key_frame_interval;
     process_settings->num_temporal_layers = num_temporal_layers,
@@ -528,6 +591,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   static void SetCodecParameters(CodecConfigPars* process_settings,
                                  VideoCodecType codec_type,
+                                 bool hw_codec,
                                  float packet_loss,
                                  int key_frame_interval,
                                  int num_temporal_layers,
@@ -535,7 +599,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                  bool denoising_on,
                                  bool frame_dropper_on,
                                  bool spatial_resize_on) {
-    SetCodecParameters(process_settings, codec_type, packet_loss,
+    SetCodecParameters(process_settings, codec_type, hw_codec, packet_loss,
                        key_frame_interval, num_temporal_layers,
                        error_concealment_on, denoising_on, frame_dropper_on,
                        spatial_resize_on, kCifWidth, kCifHeight,
@@ -575,7 +639,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
 
   std::unique_ptr<VideoEncoder> encoder_;
+  std::unique_ptr<cricket::WebRtcVideoEncoderFactory> external_encoder_factory_;
   std::unique_ptr<VideoDecoder> decoder_;
+  std::unique_ptr<cricket::WebRtcVideoDecoderFactory> external_decoder_factory_;
   std::unique_ptr<test::FrameReader> frame_reader_;
   std::unique_ptr<test::FrameWriter> frame_writer_;
   test::PacketReader packet_reader_;
@@ -583,6 +649,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   test::Stats stats_;
   test::TestConfig config_;
   VideoCodec codec_settings_;
+  // Must be destroyed before |encoder_| and |decoder_|.
   std::unique_ptr<test::VideoProcessor> processor_;
   TemporalLayersFactory tl_factory_;
 
@@ -612,6 +679,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Codec and network settings.
   VideoCodecType codec_type_;
+  bool hw_codec_;
   float packet_loss_;
   int num_temporal_layers_;
   int key_frame_interval_;

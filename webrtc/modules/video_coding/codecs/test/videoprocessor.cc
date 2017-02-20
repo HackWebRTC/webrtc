@@ -374,7 +374,11 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
                            config_.codec_settings->height));
 
     // Should be the same aspect ratio, no cropping needed.
-    up_image->ScaleFrom(*image.video_frame_buffer());
+    if (image.video_frame_buffer()->native_handle()) {
+      up_image->ScaleFrom(*image.video_frame_buffer()->NativeToI420Buffer());
+    } else {
+      up_image->ScaleFrom(*image.video_frame_buffer());
+    }
 
     // TODO(mikhal): Extracting the buffer for now - need to update test.
     size_t length =
@@ -395,7 +399,15 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
     // TODO(mikhal): Add as a member function, so won't be allocated per frame.
     size_t length = CalcBufferSize(kI420, image.width(), image.height());
     std::unique_ptr<uint8_t[]> image_buffer(new uint8_t[length]);
-    int extracted_length = ExtractBuffer(image, length, image_buffer.get());
+    int extracted_length;
+    if (image.video_frame_buffer()->native_handle()) {
+      extracted_length =
+          ExtractBuffer(image.video_frame_buffer()->NativeToI420Buffer(),
+                        length, image_buffer.get());
+    } else {
+      extracted_length =
+          ExtractBuffer(image.video_frame_buffer(), length, image_buffer.get());
+    }
     RTC_DCHECK_GT(extracted_length, 0);
     memcpy(last_successful_frame_buffer_.get(), image_buffer.get(),
            extracted_length);

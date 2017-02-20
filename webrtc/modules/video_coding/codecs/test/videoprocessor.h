@@ -205,13 +205,13 @@ class VideoProcessorImpl : public VideoProcessor {
     }
     int32_t Decoded(webrtc::VideoFrame& image,
                     int64_t decode_time_ms) override {
-      RTC_NOTREACHED();
-      return -1;
+      return Decoded(image);
     }
-    void Decoded(VideoFrame& frame,
+    void Decoded(webrtc::VideoFrame& image,
                  rtc::Optional<int32_t> decode_time_ms,
                  rtc::Optional<uint8_t> qp) override {
-      RTC_NOTREACHED();
+      Decoded(image,
+              decode_time_ms ? static_cast<int32_t>(*decode_time_ms) : -1);
     }
 
    private:
