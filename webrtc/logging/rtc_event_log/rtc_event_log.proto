@@ -31,8 +31,8 @@ message Event {
     RTP_EVENT = 3;
     RTCP_EVENT = 4;
     AUDIO_PLAYOUT_EVENT = 5;
-    BWE_PACKET_LOSS_EVENT = 6;
-    BWE_PACKET_DELAY_EVENT = 7;
+    LOSS_BASED_BWE_UPDATE = 6;
+    DELAY_BASED_BWE_UPDATE = 7;
     VIDEO_RECEIVER_CONFIG_EVENT = 8;
     VIDEO_SENDER_CONFIG_EVENT = 9;
     AUDIO_RECEIVER_CONFIG_EVENT = 10;
@@ -52,11 +52,11 @@ message Event {
   // optional - but required if type == AUDIO_PLAYOUT_EVENT
   optional AudioPlayoutEvent audio_playout_event = 5;
 
-  // optional - but required if type == BWE_PACKET_LOSS_EVENT
-  optional BwePacketLossEvent bwe_packet_loss_event = 6;
+  // optional - but required if type == LOSS_BASED_BWE_UPDATE
+  optional LossBasedBweUpdate loss_based_bwe_update = 6;
 
-  // optional - but required if type == BWE_PACKET_DELAY_EVENT
-  optional BwePacketDelayEvent bwe_packet_delay_event = 7;
+  // optional - but required if type == DELAY_BASED_BWE_UPDATE
+  optional DelayBasedBweUpdate delay_based_bwe_update = 7;
 
   // optional - but required if type == VIDEO_RECEIVER_CONFIG_EVENT
   optional VideoReceiveConfig video_receiver_config = 8;
@@ -106,9 +106,9 @@ message AudioPlayoutEvent {
   optional uint32 local_ssrc = 2;
 }
 
-message BwePacketLossEvent {
+message LossBasedBweUpdate {
   // required - Bandwidth estimate (in bps) after the update.
-  optional int32 bitrate = 1;
+  optional int32 bitrate_bps = 1;
 
   // required - Fraction of lost packets since last receiver report
   // computed as floor( 256 * (#lost_packets / #total_packets) ).
@@ -120,7 +120,7 @@ message BwePacketLossEvent {
   optional int32 total_packets = 3;
 }
 
-message BwePacketDelayEvent {
+message DelayBasedBweUpdate {
   enum DetectorState {
     BWE_NORMAL = 0;
     BWE_UNDERUSING = 1;
@@ -128,7 +128,7 @@ message BwePacketDelayEvent {
   }
 
   // required - Bandwidth estimate (in bps) after the update.
-  optional int32 bitrate = 1;
+  optional int32 bitrate_bps = 1;
 
   // required - The state of the overuse detector.
   optional DetectorState detector_state = 2;

@@ -69,10 +69,10 @@ ParsedRtcEventLog::EventType GetRuntimeEventType(
       return ParsedRtcEventLog::EventType::RTCP_EVENT;
     case rtclog::Event::AUDIO_PLAYOUT_EVENT:
       return ParsedRtcEventLog::EventType::AUDIO_PLAYOUT_EVENT;
-    case rtclog::Event::BWE_PACKET_LOSS_EVENT:
-      return ParsedRtcEventLog::EventType::BWE_PACKET_LOSS_EVENT;
-    case rtclog::Event::BWE_PACKET_DELAY_EVENT:
-      return ParsedRtcEventLog::EventType::BWE_PACKET_DELAY_EVENT;
+    case rtclog::Event::LOSS_BASED_BWE_UPDATE:
+      return ParsedRtcEventLog::EventType::LOSS_BASED_BWE_UPDATE;
+    case rtclog::Event::DELAY_BASED_BWE_UPDATE:
+      return ParsedRtcEventLog::EventType::DELAY_BASED_BWE_UPDATE;
     case rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT:
       return ParsedRtcEventLog::EventType::VIDEO_RECEIVER_CONFIG_EVENT;
     case rtclog::Event::VIDEO_SENDER_CONFIG_EVENT:
@@ -89,13 +89,13 @@ ParsedRtcEventLog::EventType GetRuntimeEventType(
 }
 
 BandwidthUsage GetRuntimeDetectorState(
-    rtclog::BwePacketDelayEvent::DetectorState detector_state) {
+    rtclog::DelayBasedBweUpdate::DetectorState detector_state) {
   switch (detector_state) {
-    case rtclog::BwePacketDelayEvent::BWE_NORMAL:
+    case rtclog::DelayBasedBweUpdate::BWE_NORMAL:
       return kBwNormal;
-    case rtclog::BwePacketDelayEvent::BWE_UNDERUSING:
+    case rtclog::DelayBasedBweUpdate::BWE_UNDERUSING:
       return kBwUnderusing;
-    case rtclog::BwePacketDelayEvent::BWE_OVERUSING:
+    case rtclog::DelayBasedBweUpdate::BWE_OVERUSING:
       return kBwOverusing;
   }
   RTC_NOTREACHED();
@@ -461,19 +461,19 @@ void ParsedRtcEventLog::GetAudioPlayout(size_t index, uint32_t* ssrc) const {
   }
 }
 
-void ParsedRtcEventLog::GetBwePacketLossEvent(size_t index,
-                                              int32_t* bitrate,
+void ParsedRtcEventLog::GetLossBasedBweUpdate(size_t index,
+                                              int32_t* bitrate_bps,
                                               uint8_t* fraction_loss,
                                               int32_t* total_packets) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
-  RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PACKET_LOSS_EVENT);
-  RTC_CHECK(event.has_bwe_packet_loss_event());
-  const rtclog::BwePacketLossEvent& loss_event = event.bwe_packet_loss_event();
-  RTC_CHECK(loss_event.has_bitrate());
-  if (bitrate != nullptr) {
-    *bitrate = loss_event.bitrate();
+  RTC_CHECK_EQ(event.type(), rtclog::Event::LOSS_BASED_BWE_UPDATE);
+  RTC_CHECK(event.has_loss_based_bwe_update());
+  const rtclog::LossBasedBweUpdate& loss_event = event.loss_based_bwe_update();
+  RTC_CHECK(loss_event.has_bitrate_bps());
+  if (bitrate_bps != nullptr) {
+    *bitrate_bps = loss_event.bitrate_bps();
   }
   RTC_CHECK(loss_event.has_fraction_loss());
   if (fraction_loss != nullptr) {
@@ -485,20 +485,20 @@ void ParsedRtcEventLog::GetBwePacketLossEvent(size_t index,
   }
 }
 
-void ParsedRtcEventLog::GetBwePacketDelayEvent(
+void ParsedRtcEventLog::GetDelayBasedBweUpdate(
     size_t index,
-    int32_t* bitrate,
+    int32_t* bitrate_bps,
     BandwidthUsage* detector_state) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
-  RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PACKET_DELAY_EVENT);
-  RTC_CHECK(event.has_bwe_packet_delay_event());
-  const rtclog::BwePacketDelayEvent& delay_event =
-      event.bwe_packet_delay_event();
-  RTC_CHECK(delay_event.has_bitrate());
-  if (bitrate != nullptr) {
-    *bitrate = delay_event.bitrate();
+  RTC_CHECK_EQ(event.type(), rtclog::Event::DELAY_BASED_BWE_UPDATE);
+  RTC_CHECK(event.has_delay_based_bwe_update());
+  const rtclog::DelayBasedBweUpdate& delay_event =
+      event.delay_based_bwe_update();
+  RTC_CHECK(delay_event.has_bitrate_bps());
+  if (bitrate_bps != nullptr) {
+    *bitrate_bps = delay_event.bitrate_bps();
   }
   RTC_CHECK(delay_event.has_detector_state());
   if (detector_state != nullptr) {

@@ -44,13 +44,13 @@ MediaType GetRuntimeMediaType(rtclog::MediaType media_type) {
 }
 
 BandwidthUsage GetRuntimeDetectorState(
-    rtclog::BwePacketDelayEvent::DetectorState detector_state) {
+    rtclog::DelayBasedBweUpdate::DetectorState detector_state) {
   switch (detector_state) {
-    case rtclog::BwePacketDelayEvent::BWE_NORMAL:
+    case rtclog::DelayBasedBweUpdate::BWE_NORMAL:
       return kBwNormal;
-    case rtclog::BwePacketDelayEvent::BWE_UNDERUSING:
+    case rtclog::DelayBasedBweUpdate::BWE_UNDERUSING:
       return kBwUnderusing;
-    case rtclog::BwePacketDelayEvent::BWE_OVERUSING:
+    case rtclog::DelayBasedBweUpdate::BWE_OVERUSING:
       return kBwOverusing;
   }
   RTC_NOTREACHED();
@@ -78,18 +78,18 @@ BandwidthUsage GetRuntimeDetectorState(
            << "Event of type " << type << " has "
            << (event.has_rtcp_packet() ? "" : "no ") << "RTCP packet";
   }
-  if ((type == rtclog::Event::BWE_PACKET_LOSS_EVENT) !=
-      event.has_bwe_packet_loss_event()) {
+  if ((type == rtclog::Event::LOSS_BASED_BWE_UPDATE) !=
+      event.has_loss_based_bwe_update()) {
     return ::testing::AssertionFailure()
            << "Event of type " << type << " has "
-           << (event.has_bwe_packet_loss_event() ? "" : "no ") << "packet loss";
+           << (event.has_loss_based_bwe_update() ? "" : "no ") << "loss update";
   }
-  if ((type == rtclog::Event::BWE_PACKET_DELAY_EVENT) !=
-      event.has_bwe_packet_delay_event()) {
+  if ((type == rtclog::Event::DELAY_BASED_BWE_UPDATE) !=
+      event.has_delay_based_bwe_update()) {
     return ::testing::AssertionFailure()
            << "Event of type " << type << " has "
-           << (event.has_bwe_packet_delay_event() ? "" : "no ")
-           << "packet delay";
+           << (event.has_delay_based_bwe_update() ? "" : "no ")
+           << "delay update";
   }
   if ((type == rtclog::Event::AUDIO_PLAYOUT_EVENT) !=
       event.has_audio_playout_event()) {
@@ -475,10 +475,10 @@ void RtcEventLogTestHelper::VerifyBweLossEvent(
     int32_t total_packets) {
   const rtclog::Event& event = parsed_log.events_[index];
   ASSERT_TRUE(IsValidBasicEvent(event));
-  ASSERT_EQ(rtclog::Event::BWE_PACKET_LOSS_EVENT, event.type());
-  const rtclog::BwePacketLossEvent& bwe_event = event.bwe_packet_loss_event();
-  ASSERT_TRUE(bwe_event.has_bitrate());
-  EXPECT_EQ(bitrate, bwe_event.bitrate());
+  ASSERT_EQ(rtclog::Event::LOSS_BASED_BWE_UPDATE, event.type());
+  const rtclog::LossBasedBweUpdate& bwe_event = event.loss_based_bwe_update();
+  ASSERT_TRUE(bwe_event.has_bitrate_bps());
+  EXPECT_EQ(bitrate, bwe_event.bitrate_bps());
   ASSERT_TRUE(bwe_event.has_fraction_loss());
   EXPECT_EQ(fraction_loss, bwe_event.fraction_loss());
   ASSERT_TRUE(bwe_event.has_total_packets());
@@ -488,7 +488,7 @@ void RtcEventLogTestHelper::VerifyBweLossEvent(
   int32_t parsed_bitrate;
   uint8_t parsed_fraction_loss;
   int32_t parsed_total_packets;
-  parsed_log.GetBwePacketLossEvent(
+  parsed_log.GetLossBasedBweUpdate(
       index, &parsed_bitrate, &parsed_fraction_loss, &parsed_total_packets);
   EXPECT_EQ(bitrate, parsed_bitrate);
   EXPECT_EQ(fraction_loss, parsed_fraction_loss);
@@ -502,10 +502,10 @@ void RtcEventLogTestHelper::VerifyBweDelayEvent(
     BandwidthUsage detector_state) {
   const rtclog::Event& event = parsed_log.events_[index];
   ASSERT_TRUE(IsValidBasicEvent(event));
-  ASSERT_EQ(rtclog::Event::BWE_PACKET_DELAY_EVENT, event.type());
-  const rtclog::BwePacketDelayEvent& bwe_event = event.bwe_packet_delay_event();
-  ASSERT_TRUE(bwe_event.has_bitrate());
-  EXPECT_EQ(bitrate, bwe_event.bitrate());
+  ASSERT_EQ(rtclog::Event::DELAY_BASED_BWE_UPDATE, event.type());
+  const rtclog::DelayBasedBweUpdate& bwe_event = event.delay_based_bwe_update();
+  ASSERT_TRUE(bwe_event.has_bitrate_bps());
+  EXPECT_EQ(bitrate, bwe_event.bitrate_bps());
   ASSERT_TRUE(bwe_event.has_detector_state());
   EXPECT_EQ(detector_state,
             GetRuntimeDetectorState(bwe_event.detector_state()));
@@ -513,7 +513,7 @@ void RtcEventLogTestHelper::VerifyBweDelayEvent(
   // Check consistency of the parser.
   int32_t parsed_bitrate;
   BandwidthUsage parsed_detector_state;
-  parsed_log.GetBwePacketDelayEvent(index, &parsed_bitrate,
+  parsed_log.GetDelayBasedBweUpdate(index, &parsed_bitrate,
                                     &parsed_detector_state);
   EXPECT_EQ(bitrate, parsed_bitrate);
   EXPECT_EQ(detector_state, parsed_detector_state);

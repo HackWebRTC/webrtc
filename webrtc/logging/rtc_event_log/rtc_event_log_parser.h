@@ -42,8 +42,8 @@ class ParsedRtcEventLog {
     RTP_EVENT = 3,
     RTCP_EVENT = 4,
     AUDIO_PLAYOUT_EVENT = 5,
-    BWE_PACKET_LOSS_EVENT = 6,
-    BWE_PACKET_DELAY_EVENT = 7,
+    LOSS_BASED_BWE_UPDATE = 6,
+    DELAY_BASED_BWE_UPDATE = 7,
     VIDEO_RECEIVER_CONFIG_EVENT = 8,
     VIDEO_SENDER_CONFIG_EVENT = 9,
     AUDIO_RECEIVER_CONFIG_EVENT = 10,
@@ -120,8 +120,8 @@ class ParsedRtcEventLog {
   // the corresponding output parameters. Each output parameter can be set to
   // nullptr if that
   // value isn't needed.
-  void GetBwePacketLossEvent(size_t index,
-                             int32_t* bitrate,
+  void GetLossBasedBweUpdate(size_t index,
+                             int32_t* bitrate_bps,
                              uint8_t* fraction_loss,
                              int32_t* total_packets) const;
 
@@ -129,8 +129,8 @@ class ParsedRtcEventLog {
   // and stores the values in the corresponding output parameters. Each output
   // parameter can be set to nullptr if that
   // value isn't needed.
-  void GetBwePacketDelayEvent(size_t index,
-                              int32_t* bitrate,
+  void GetDelayBasedBweUpdate(size_t index,
+                              int32_t* bitrate_bps,
                               BandwidthUsage* detector_state) const;
 
   // Reads a audio network adaptation event to a (non-NULL)

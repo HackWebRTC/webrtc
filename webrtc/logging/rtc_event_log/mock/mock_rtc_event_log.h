@@ -54,13 +54,13 @@ class MockRtcEventLog : public RtcEventLog {
 
   MOCK_METHOD1(LogAudioPlayout, void(uint32_t ssrc));
 
-  MOCK_METHOD3(LogBwePacketLossEvent,
-               void(int32_t bitrate,
+  MOCK_METHOD3(LogLossBasedBweUpdate,
+               void(int32_t bitrate_bps,
                     uint8_t fraction_loss,
                     int32_t total_packets));
 
-  MOCK_METHOD2(LogBwePacketDelayEvent,
-               void(int32_t bitrate, BandwidthUsage detector_state));
+  MOCK_METHOD2(LogDelayBasedBweUpdate,
+               void(int32_t bitrate_bps, BandwidthUsage detector_state));
 
   MOCK_METHOD1(LogAudioNetworkAdaptation,
                void(const AudioNetworkAdaptor::EncoderRuntimeConfig& config));

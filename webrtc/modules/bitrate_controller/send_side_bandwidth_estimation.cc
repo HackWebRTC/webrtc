@@ -286,7 +286,7 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
       last_fraction_loss_ != last_logged_fraction_loss_ ||
       last_rtc_event_log_ms_ == -1 ||
       now_ms - last_rtc_event_log_ms_ > kRtcEventLogPeriodMs) {
-    event_log_->LogBwePacketLossEvent(capped_bitrate, last_fraction_loss_,
+    event_log_->LogLossBasedBweUpdate(capped_bitrate, last_fraction_loss_,
                                       expected_packets_since_last_loss_update_);
     last_logged_fraction_loss_ = last_fraction_loss_;
     last_rtc_event_log_ms_ = now_ms;

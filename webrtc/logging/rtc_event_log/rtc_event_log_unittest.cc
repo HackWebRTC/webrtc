@@ -283,7 +283,7 @@ void LogSessionAndReadBack(size_t rtp_count,
   for (size_t i = 0; i < playout_count; i++) {
     playout_ssrcs.push_back(prng.Rand<uint32_t>());
   }
-  // Create bwe_loss_count random bitrate updates for BwePacketLoss.
+  // Create bwe_loss_count random bitrate updates for LossBasedBwe.
   for (size_t i = 0; i < bwe_loss_count; i++) {
     bwe_loss_updates.push_back(
         std::make_pair(prng.Rand<int32_t>(), prng.Rand<uint8_t>()));
@@ -333,7 +333,7 @@ void LogSessionAndReadBack(size_t rtp_count,
         fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
       }
       if (i * bwe_loss_count >= bwe_loss_index * rtp_count) {
-        log_dumper->LogBwePacketLossEvent(
+        log_dumper->LogLossBasedBweUpdate(
             bwe_loss_updates[bwe_loss_index - 1].first,
             bwe_loss_updates[bwe_loss_index - 1].second, i);
         bwe_loss_index++;
@@ -500,7 +500,7 @@ TEST(RtcEventLogTest, LogEventAndReadBack) {
   remove(temp_filename.c_str());
 }
 
-TEST(RtcEventLogTest, LogPacketLossEventAndReadBack) {
+TEST(RtcEventLogTest, LogLossBasedBweUpdateAndReadBack) {
   Random prng(1234);
 
   // Generate a random packet loss event.
@@ -520,7 +520,7 @@ TEST(RtcEventLogTest, LogPacketLossEventAndReadBack) {
   std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
   log_dumper->StartLogging(temp_filename, 10000000);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
-  log_dumper->LogBwePacketLossEvent(bitrate, fraction_lost, total_packets);
+  log_dumper->LogLossBasedBweUpdate(bitrate, fraction_lost, total_packets);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
   log_dumper->StopLogging();
 
@@ -540,7 +540,7 @@ TEST(RtcEventLogTest, LogPacketLossEventAndReadBack) {
   remove(temp_filename.c_str());
 }
 
-TEST(RtcEventLogTest, LogPacketDelayEventAndReadBack) {
+TEST(RtcEventLogTest, LogDelayBasedBweUpdateAndReadBack) {
   Random prng(1234);
 
   // Generate 3 random packet delay event.
@@ -560,11 +560,11 @@ TEST(RtcEventLogTest, LogPacketDelayEventAndReadBack) {
   std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
   log_dumper->StartLogging(temp_filename, 10000000);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
-  log_dumper->LogBwePacketDelayEvent(bitrate1, kBwNormal);
+  log_dumper->LogDelayBasedBweUpdate(bitrate1, kBwNormal);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
-  log_dumper->LogBwePacketDelayEvent(bitrate2, kBwOverusing);
+  log_dumper->LogDelayBasedBweUpdate(bitrate2, kBwOverusing);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
-  log_dumper->LogBwePacketDelayEvent(bitrate3, kBwUnderusing);
+  log_dumper->LogDelayBasedBweUpdate(bitrate3, kBwUnderusing);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
   log_dumper->StopLogging();
 

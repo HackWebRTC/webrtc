@@ -130,20 +130,21 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
     }
   }
 
-  void LogBwePacketLossEvent(int32_t bitrate,
+  void LogLossBasedBweUpdate(int32_t bitrate_bps,
                              uint8_t fraction_loss,
                              int32_t total_packets) override {
     rtc::CritScope lock(&crit_);
     if (event_log_) {
-      event_log_->LogBwePacketLossEvent(bitrate, fraction_loss, total_packets);
+      event_log_->LogLossBasedBweUpdate(bitrate_bps, fraction_loss,
+                                        total_packets);
     }
   }
 
-  void LogBwePacketDelayEvent(int32_t bitrate,
+  void LogDelayBasedBweUpdate(int32_t bitrate_bps,
                               BandwidthUsage detector_state) override {
     rtc::CritScope lock(&crit_);
     if (event_log_) {
-      event_log_->LogBwePacketDelayEvent(bitrate, detector_state);
+      event_log_->LogDelayBasedBweUpdate(bitrate_bps, detector_state);
     }
   }
 

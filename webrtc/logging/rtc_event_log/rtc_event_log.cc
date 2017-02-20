@@ -74,10 +74,10 @@ class RtcEventLogImpl final : public RtcEventLog {
                      const uint8_t* packet,
                      size_t length) override;
   void LogAudioPlayout(uint32_t ssrc) override;
-  void LogBwePacketLossEvent(int32_t bitrate,
+  void LogLossBasedBweUpdate(int32_t bitrate_bps,
                              uint8_t fraction_loss,
                              int32_t total_packets) override;
-  void LogBwePacketDelayEvent(int32_t bitrate,
+  void LogDelayBasedBweUpdate(int32_t bitrate_bps,
                               BandwidthUsage detector_state) override;
   void LogAudioNetworkAdaptation(
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override;
@@ -131,18 +131,18 @@ rtclog::MediaType ConvertMediaType(MediaType media_type) {
   return rtclog::ANY;
 }
 
-rtclog::BwePacketDelayEvent::DetectorState ConvertDetectorState(
+rtclog::DelayBasedBweUpdate::DetectorState ConvertDetectorState(
     BandwidthUsage state) {
   switch (state) {
     case BandwidthUsage::kBwNormal:
-      return rtclog::BwePacketDelayEvent::BWE_NORMAL;
+      return rtclog::DelayBasedBweUpdate::BWE_NORMAL;
     case BandwidthUsage::kBwUnderusing:
-      return rtclog::BwePacketDelayEvent::BWE_UNDERUSING;
+      return rtclog::DelayBasedBweUpdate::BWE_UNDERUSING;
     case BandwidthUsage::kBwOverusing:
-      return rtclog::BwePacketDelayEvent::BWE_OVERUSING;
+      return rtclog::DelayBasedBweUpdate::BWE_OVERUSING;
   }
   RTC_NOTREACHED();
-  return rtclog::BwePacketDelayEvent::BWE_NORMAL;
+  return rtclog::DelayBasedBweUpdate::BWE_NORMAL;
 }
 
 // The RTP and RTCP buffers reserve space for twice the expected number of
@@ -439,26 +439,26 @@ void RtcEventLogImpl::LogAudioPlayout(uint32_t ssrc) {
   StoreEvent(&event);
 }
 
-void RtcEventLogImpl::LogBwePacketLossEvent(int32_t bitrate,
+void RtcEventLogImpl::LogLossBasedBweUpdate(int32_t bitrate_bps,
                                             uint8_t fraction_loss,
                                             int32_t total_packets) {
   std::unique_ptr<rtclog::Event> event(new rtclog::Event());
   event->set_timestamp_us(rtc::TimeMicros());
-  event->set_type(rtclog::Event::BWE_PACKET_LOSS_EVENT);
-  auto bwe_event = event->mutable_bwe_packet_loss_event();
-  bwe_event->set_bitrate(bitrate);
+  event->set_type(rtclog::Event::LOSS_BASED_BWE_UPDATE);
+  auto bwe_event = event->mutable_loss_based_bwe_update();
+  bwe_event->set_bitrate_bps(bitrate_bps);
   bwe_event->set_fraction_loss(fraction_loss);
   bwe_event->set_total_packets(total_packets);
   StoreEvent(&event);
 }
 
-void RtcEventLogImpl::LogBwePacketDelayEvent(int32_t bitrate,
+void RtcEventLogImpl::LogDelayBasedBweUpdate(int32_t bitrate_bps,
                                              BandwidthUsage detector_state) {
   std::unique_ptr<rtclog::Event> event(new rtclog::Event());
   event->set_timestamp_us(rtc::TimeMicros());
-  event->set_type(rtclog::Event::BWE_PACKET_DELAY_EVENT);
-  auto bwe_event = event->mutable_bwe_packet_delay_event();
-  bwe_event->set_bitrate(bitrate);
+  event->set_type(rtclog::Event::DELAY_BASED_BWE_UPDATE);
+  auto bwe_event = event->mutable_delay_based_bwe_update();
+  bwe_event->set_bitrate_bps(bitrate_bps);
   bwe_event->set_detector_state(ConvertDetectorState(detector_state));
   StoreEvent(&event);
 }

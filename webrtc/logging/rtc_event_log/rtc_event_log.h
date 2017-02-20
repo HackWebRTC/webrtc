@@ -112,12 +112,12 @@ class RtcEventLog {
   virtual void LogAudioPlayout(uint32_t ssrc) = 0;
 
   // Logs a bitrate update from the bandwidth estimator based on packet loss.
-  virtual void LogBwePacketLossEvent(int32_t bitrate,
+  virtual void LogLossBasedBweUpdate(int32_t bitrate_bps,
                                      uint8_t fraction_loss,
                                      int32_t total_packets) = 0;
 
   // Logs a bitrate update from the bandwidth estimator based on delay changes.
-  virtual void LogBwePacketDelayEvent(int32_t bitrate,
+  virtual void LogDelayBasedBweUpdate(int32_t bitrate_bps,
                                       BandwidthUsage detector_state) = 0;
 
   // Logs audio encoder re-configuration driven by audio network adaptor.
@@ -162,10 +162,10 @@ class RtcEventLogNullImpl final : public RtcEventLog {
                      const uint8_t* packet,
                      size_t length) override {}
   void LogAudioPlayout(uint32_t ssrc) override {}
-  void LogBwePacketLossEvent(int32_t bitrate,
+  void LogLossBasedBweUpdate(int32_t bitrate_bps,
                              uint8_t fraction_loss,
                              int32_t total_packets) override {}
-  void LogBwePacketDelayEvent(int32_t bitrate,
+  void LogDelayBasedBweUpdate(int32_t bitrate_bps,
                               BandwidthUsage detector_state) override {}
   void LogAudioNetworkAdaptation(
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override {}

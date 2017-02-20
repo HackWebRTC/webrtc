@@ -45,7 +45,7 @@ struct LoggedRtcpPacket {
   std::unique_ptr<rtcp::RtcpPacket> packet;
 };
 
-struct BwePacketLossEvent {
+struct LossBasedBweUpdate {
   uint64_t timestamp;
   int32_t new_bitrate;
   uint8_t fraction_loss;
@@ -150,7 +150,7 @@ class EventLogAnalyzer {
   std::map<StreamId, std::vector<LoggedRtcpPacket>> rtcp_packets_;
 
   // A list of all updates from the send-side loss-based bandwidth estimator.
-  std::vector<BwePacketLossEvent> bwe_loss_updates_;
+  std::vector<LossBasedBweUpdate> bwe_loss_updates_;
 
   // Window and step size used for calculating moving averages, e.g. bitrate.
   // The generated data points will be |step_| microseconds apart.

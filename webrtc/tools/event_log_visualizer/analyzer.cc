@@ -435,22 +435,22 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
       case ParsedRtcEventLog::LOG_END: {
         break;
       }
-      case ParsedRtcEventLog::BWE_PACKET_LOSS_EVENT: {
-        BwePacketLossEvent bwe_update;
+      case ParsedRtcEventLog::AUDIO_PLAYOUT_EVENT: {
+        break;
+      }
+      case ParsedRtcEventLog::LOSS_BASED_BWE_UPDATE: {
+        LossBasedBweUpdate bwe_update;
         bwe_update.timestamp = parsed_log_.GetTimestamp(i);
-        parsed_log_.GetBwePacketLossEvent(i, &bwe_update.new_bitrate,
-                                             &bwe_update.fraction_loss,
-                                             &bwe_update.expected_packets);
+        parsed_log_.GetLossBasedBweUpdate(i, &bwe_update.new_bitrate,
+                                          &bwe_update.fraction_loss,
+                                          &bwe_update.expected_packets);
         bwe_loss_updates_.push_back(bwe_update);
         break;
       }
+      case ParsedRtcEventLog::DELAY_BASED_BWE_UPDATE: {
+        break;
+      }
       case ParsedRtcEventLog::AUDIO_NETWORK_ADAPTATION_EVENT: {
-        break;
-      }
-      case ParsedRtcEventLog::BWE_PACKET_DELAY_EVENT: {
-        break;
-      }
-      case ParsedRtcEventLog::AUDIO_PLAYOUT_EVENT: {
         break;
       }
       case ParsedRtcEventLog::UNKNOWN_EVENT: {
