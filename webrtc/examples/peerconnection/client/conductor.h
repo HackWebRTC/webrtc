@@ -10,7 +10,6 @@
 
 #ifndef WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_CONDUCTOR_H_
 #define WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_CONDUCTOR_H_
-#pragma once
 
 #include <deque>
 #include <map>

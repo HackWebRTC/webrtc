@@ -169,6 +169,26 @@ def _CheckNoIOStreamInHeaders(input_api, output_api):
   return []
 
 
+def _CheckNoPragmaOnce(input_api, output_api):
+  """Make sure that banned functions are not used."""
+  files = []
+  pattern = input_api.re.compile(r'^#pragma\s+once',
+                                 input_api.re.MULTILINE)
+  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
+    if not f.LocalPath().endswith('.h'):
+      continue
+    contents = input_api.ReadFile(f)
+    if pattern.search(contents):
+      files.append(f)
+
+  if files:
+    return [output_api.PresubmitError(
+        'Do not use #pragma once in header files.\n'
+        'See http://www.chromium.org/developers/coding-style#TOC-File-headers',
+        files)]
+  return []
+
+
 def _CheckNoFRIEND_TEST(input_api, output_api):
   """Make sure that gtest's FRIEND_TEST() macro is not used, the
   FRIEND_TEST_ALL_PREFIXES() macro from testsupport/gtest_prod_util.h should be
@@ -514,6 +534,7 @@ def _CommonChecks(input_api, output_api):
       input_api, output_api))
   results.extend(_CheckNativeApiHeaderChanges(input_api, output_api))
   results.extend(_CheckNoIOStreamInHeaders(input_api, output_api))
+  results.extend(_CheckNoPragmaOnce(input_api, output_api))
   results.extend(_CheckNoFRIEND_TEST(input_api, output_api))
   results.extend(_CheckGnChanges(input_api, output_api))
   results.extend(_CheckUnwantedDependencies(input_api, output_api))

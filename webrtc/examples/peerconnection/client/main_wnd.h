@@ -10,7 +10,6 @@
 
 #ifndef WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_MAIN_WND_H_
 #define WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_MAIN_WND_H_
-#pragma once
 
 #include <map>
 #include <memory>
