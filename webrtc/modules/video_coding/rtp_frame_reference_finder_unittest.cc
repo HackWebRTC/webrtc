@@ -300,6 +300,19 @@ TEST_F(TestRtpFrameReferenceFinder, PaddingPacketsReorderedMultipleKeyframes) {
   EXPECT_EQ(4UL, frames_from_callback_.size());
 }
 
+TEST_F(TestRtpFrameReferenceFinder, AdvanceSavedKeyframe) {
+  uint16_t sn = Rand();
+
+  InsertGeneric(sn, sn, true);
+  InsertGeneric(sn + 1, sn + 1, true);
+  InsertGeneric(sn + 2, sn + 10000, false);
+  InsertGeneric(sn + 10001, sn + 20000, false);
+  InsertGeneric(sn + 20001, sn + 30000, false);
+  InsertGeneric(sn + 30001, sn + 40000, false);
+
+  EXPECT_EQ(6UL, frames_from_callback_.size());
+}
+
 TEST_F(TestRtpFrameReferenceFinder, ClearTo) {
   uint16_t sn = Rand();
 
