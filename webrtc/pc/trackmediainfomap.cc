@@ -31,10 +31,14 @@ const V* FindAddressOrNull(const std::map<K, V>& map, const K& key) {
 void GetAudioAndVideoTrackBySsrc(
     const std::vector<rtc::scoped_refptr<RtpSenderInterface>>& rtp_senders,
     const std::vector<rtc::scoped_refptr<RtpReceiverInterface>>& rtp_receivers,
-    std::map<uint32_t, AudioTrackInterface*>* audio_track_by_ssrc,
-    std::map<uint32_t, VideoTrackInterface*>* video_track_by_ssrc) {
-  RTC_DCHECK(audio_track_by_ssrc->empty());
-  RTC_DCHECK(video_track_by_ssrc->empty());
+    std::map<uint32_t, AudioTrackInterface*>* local_audio_track_by_ssrc,
+    std::map<uint32_t, VideoTrackInterface*>* local_video_track_by_ssrc,
+    std::map<uint32_t, AudioTrackInterface*>* remote_audio_track_by_ssrc,
+    std::map<uint32_t, VideoTrackInterface*>* remote_video_track_by_ssrc) {
+  RTC_DCHECK(local_audio_track_by_ssrc->empty());
+  RTC_DCHECK(local_video_track_by_ssrc->empty());
+  RTC_DCHECK(remote_audio_track_by_ssrc->empty());
+  RTC_DCHECK(remote_video_track_by_ssrc->empty());
   // TODO(hbos): RTP senders/receivers uses a proxy to the signaling thread, and
   // our sender/receiver implementations invokes on the worker thread. (This
   // means one thread jump if on signaling thread and two thread jumps if on any
@@ -53,13 +57,15 @@ void GetAudioAndVideoTrackBySsrc(
     uint32_t ssrc = rtp_sender->ssrc();
     if (ssrc != 0) {
       if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-        RTC_DCHECK(audio_track_by_ssrc->find(ssrc) ==
-                   audio_track_by_ssrc->end());
-        (*audio_track_by_ssrc)[ssrc] = static_cast<AudioTrackInterface*>(track);
+        RTC_DCHECK(local_audio_track_by_ssrc->find(ssrc) ==
+                   local_audio_track_by_ssrc->end());
+        (*local_audio_track_by_ssrc)[ssrc] =
+            static_cast<AudioTrackInterface*>(track);
       } else {
-        RTC_DCHECK(video_track_by_ssrc->find(ssrc) ==
-                   video_track_by_ssrc->end());
-        (*video_track_by_ssrc)[ssrc] = static_cast<VideoTrackInterface*>(track);
+        RTC_DCHECK(local_video_track_by_ssrc->find(ssrc) ==
+                   local_video_track_by_ssrc->end());
+        (*local_video_track_by_ssrc)[ssrc] =
+            static_cast<VideoTrackInterface*>(track);
       }
     }
   }
@@ -77,14 +83,14 @@ void GetAudioAndVideoTrackBySsrc(
         continue;
       }
       if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-        RTC_DCHECK(audio_track_by_ssrc->find(*encoding.ssrc) ==
-                   audio_track_by_ssrc->end());
-        (*audio_track_by_ssrc)[*encoding.ssrc] =
+        RTC_DCHECK(remote_audio_track_by_ssrc->find(*encoding.ssrc) ==
+                   remote_audio_track_by_ssrc->end());
+        (*remote_audio_track_by_ssrc)[*encoding.ssrc] =
             static_cast<AudioTrackInterface*>(track);
       } else {
-        RTC_DCHECK(video_track_by_ssrc->find(*encoding.ssrc) ==
-                   video_track_by_ssrc->end());
-        (*video_track_by_ssrc)[*encoding.ssrc] =
+        RTC_DCHECK(remote_video_track_by_ssrc->find(*encoding.ssrc) ==
+                   remote_video_track_by_ssrc->end());
+        (*remote_video_track_by_ssrc)[*encoding.ssrc] =
             static_cast<VideoTrackInterface*>(track);
       }
     }
@@ -100,14 +106,20 @@ TrackMediaInfoMap::TrackMediaInfoMap(
     const std::vector<rtc::scoped_refptr<RtpReceiverInterface>>& rtp_receivers)
     : voice_media_info_(std::move(voice_media_info)),
       video_media_info_(std::move(video_media_info)) {
-  std::map<uint32_t, AudioTrackInterface*> audio_track_by_ssrc;
-  std::map<uint32_t, VideoTrackInterface*> video_track_by_ssrc;
-  GetAudioAndVideoTrackBySsrc(rtp_senders, rtp_receivers, &audio_track_by_ssrc,
-                              &video_track_by_ssrc);
+  std::map<uint32_t, AudioTrackInterface*> local_audio_track_by_ssrc;
+  std::map<uint32_t, VideoTrackInterface*> local_video_track_by_ssrc;
+  std::map<uint32_t, AudioTrackInterface*> remote_audio_track_by_ssrc;
+  std::map<uint32_t, VideoTrackInterface*> remote_video_track_by_ssrc;
+  GetAudioAndVideoTrackBySsrc(rtp_senders,
+                              rtp_receivers,
+                              &local_audio_track_by_ssrc,
+                              &local_video_track_by_ssrc,
+                              &remote_audio_track_by_ssrc,
+                              &remote_video_track_by_ssrc);
   if (voice_media_info_) {
     for (auto& sender_info : voice_media_info_->senders) {
       AudioTrackInterface* associated_track =
-          FindValueOrNull(audio_track_by_ssrc, sender_info.ssrc());
+          FindValueOrNull(local_audio_track_by_ssrc, sender_info.ssrc());
       if (associated_track) {
         // One sender is associated with at most one track.
         // One track may be associated with multiple senders.
@@ -117,7 +129,7 @@ TrackMediaInfoMap::TrackMediaInfoMap(
     }
     for (auto& receiver_info : voice_media_info_->receivers) {
       AudioTrackInterface* associated_track =
-          FindValueOrNull(audio_track_by_ssrc, receiver_info.ssrc());
+          FindValueOrNull(remote_audio_track_by_ssrc, receiver_info.ssrc());
       if (associated_track) {
         // One receiver is associated with at most one track, which is uniquely
         // associated with that receiver.
@@ -131,7 +143,7 @@ TrackMediaInfoMap::TrackMediaInfoMap(
   if (video_media_info_) {
     for (auto& sender_info : video_media_info_->senders) {
       VideoTrackInterface* associated_track =
-          FindValueOrNull(video_track_by_ssrc, sender_info.ssrc());
+          FindValueOrNull(local_video_track_by_ssrc, sender_info.ssrc());
       if (associated_track) {
         // One sender is associated with at most one track.
         // One track may be associated with multiple senders.
@@ -141,7 +153,7 @@ TrackMediaInfoMap::TrackMediaInfoMap(
     }
     for (auto& receiver_info : video_media_info_->receivers) {
       VideoTrackInterface* associated_track =
-          FindValueOrNull(video_track_by_ssrc, receiver_info.ssrc());
+          FindValueOrNull(remote_video_track_by_ssrc, receiver_info.ssrc());
       if (associated_track) {
         // One receiver is associated with at most one track, which is uniquely
         // associated with that receiver.

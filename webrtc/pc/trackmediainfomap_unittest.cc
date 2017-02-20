@@ -345,6 +345,43 @@ TEST_F(TrackMediaInfoMapTest, MultipleMultiSsrcSendersPerTrack) {
             local_video_track_.get());
 }
 
+// SSRCs can be reused for send and receive in loopback.
+TEST_F(TrackMediaInfoMapTest, SingleSenderReceiverPerTrackWithSsrcNotUnique) {
+  AddRtpSenderWithSsrcs({1}, local_audio_track_);
+  AddRtpReceiverWithSsrcs({1}, remote_audio_track_);
+  AddRtpSenderWithSsrcs({2}, local_video_track_);
+  AddRtpReceiverWithSsrcs({2}, remote_video_track_);
+  CreateMap();
+
+  // Local audio track <-> RTP audio senders
+  ASSERT_TRUE(map_->GetVoiceSenderInfos(*local_audio_track_));
+  EXPECT_EQ(
+      *map_->GetVoiceSenderInfos(*local_audio_track_),
+      std::vector<cricket::VoiceSenderInfo*>({&voice_media_info_->senders[0]}));
+  EXPECT_EQ(map_->GetAudioTrack(voice_media_info_->senders[0]),
+            local_audio_track_.get());
+
+  // Remote audio track <-> RTP audio receiver
+  EXPECT_EQ(map_->GetVoiceReceiverInfo(*remote_audio_track_),
+            &voice_media_info_->receivers[0]);
+  EXPECT_EQ(map_->GetAudioTrack(voice_media_info_->receivers[0]),
+            remote_audio_track_.get());
+
+  // Local video track <-> RTP video senders
+  ASSERT_TRUE(map_->GetVideoSenderInfos(*local_video_track_));
+  EXPECT_EQ(
+      *map_->GetVideoSenderInfos(*local_video_track_),
+      std::vector<cricket::VideoSenderInfo*>({&video_media_info_->senders[0]}));
+  EXPECT_EQ(map_->GetVideoTrack(video_media_info_->senders[0]),
+            local_video_track_.get());
+
+  // Remote video track <-> RTP video receiver
+  EXPECT_EQ(map_->GetVideoReceiverInfo(*remote_video_track_),
+            &video_media_info_->receivers[0]);
+  EXPECT_EQ(map_->GetVideoTrack(video_media_info_->receivers[0]),
+            remote_video_track_.get());
+}
+
 // Death tests.
 // Disabled on Android because death tests misbehave on Android, see
 // base/test/gtest_util.h.
@@ -365,15 +402,6 @@ TEST_F(TrackMediaInfoMapDeathTest, MultipleMultiSsrcReceiversPerTrack) {
   AddRtpReceiverWithSsrcs({3, 4}, remote_audio_track_);
   AddRtpReceiverWithSsrcs({5, 6}, remote_video_track_);
   AddRtpReceiverWithSsrcs({7, 8}, remote_video_track_);
-  EXPECT_DEATH(CreateMap(), "");
-}
-
-TEST_F(TrackMediaInfoMapDeathTest,
-       SingleSenderReceiverPerTrackWithSsrcNotUnique) {
-  AddRtpSenderWithSsrcs({1}, local_audio_track_);
-  AddRtpReceiverWithSsrcs({1}, remote_audio_track_);
-  AddRtpSenderWithSsrcs({2}, local_video_track_);
-  AddRtpReceiverWithSsrcs({2}, remote_video_track_);
   EXPECT_DEATH(CreateMap(), "");
 }
 
