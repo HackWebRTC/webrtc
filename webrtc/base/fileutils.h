@@ -296,19 +296,6 @@ class Filesystem {
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Filesystem);
 };
 
-class FilesystemScope{
- public:
-  explicit FilesystemScope(FilesystemInterface *new_fs) {
-    old_fs_ = Filesystem::swap_default_filesystem(new_fs);
-  }
-  ~FilesystemScope() {
-    Filesystem::set_default_filesystem(old_fs_);
-  }
- private:
-  FilesystemInterface* old_fs_;
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FilesystemScope);
-};
-
 }  // namespace rtc
 
 #endif  // WEBRTC_BASE_FILEUTILS_H_
