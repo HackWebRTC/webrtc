@@ -85,7 +85,9 @@ TEST(ProcessThreadImpl, ProcessCall) {
   std::unique_ptr<EventWrapper> event(EventWrapper::Create());
 
   MockModule module;
-  EXPECT_CALL(module, TimeUntilNextProcess()).WillRepeatedly(Return(0));
+  EXPECT_CALL(module, TimeUntilNextProcess())
+      .WillOnce(Return(0))
+      .WillRepeatedly(Return(1));
   EXPECT_CALL(module, Process())
       .WillOnce(DoAll(SetEvent(event.get()), Return()))
       .WillRepeatedly(Return());
@@ -105,7 +107,9 @@ TEST(ProcessThreadImpl, ProcessCall2) {
   std::unique_ptr<EventWrapper> event(EventWrapper::Create());
 
   MockModule module;
-  EXPECT_CALL(module, TimeUntilNextProcess()).WillRepeatedly(Return(0));
+  EXPECT_CALL(module, TimeUntilNextProcess())
+      .WillOnce(Return(0))
+      .WillRepeatedly(Return(1));
   EXPECT_CALL(module, Process())
       .WillOnce(DoAll(SetEvent(event.get()), Return()))
       .WillRepeatedly(Return());
@@ -128,7 +132,9 @@ TEST(ProcessThreadImpl, Deregister) {
 
   int process_count = 0;
   MockModule module;
-  EXPECT_CALL(module, TimeUntilNextProcess()).WillRepeatedly(Return(0));
+  EXPECT_CALL(module, TimeUntilNextProcess())
+      .WillOnce(Return(0))
+      .WillRepeatedly(Return(1));
   EXPECT_CALL(module, Process())
       .WillOnce(DoAll(SetEvent(event.get()),
                       Increment(&process_count),

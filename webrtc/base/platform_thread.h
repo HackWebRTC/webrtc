@@ -94,15 +94,16 @@ class PlatformThread {
 #if defined(WEBRTC_WIN)
   static DWORD WINAPI StartThread(void* param);
 
-  bool stop_;
-  HANDLE thread_;
-  DWORD thread_id_;
+  bool stop_ = false;
+  HANDLE thread_ = nullptr;
+  DWORD thread_id_ = 0;
 #else
   static void* StartThread(void* param);
 
-  rtc::Event stop_event_;
-
-  pthread_t thread_;
+  // An atomic flag that we use to stop the thread. Only modified on the
+  // controlling thread and checked on the worker thread.
+  volatile int stop_flag_ = 0;
+  pthread_t thread_ = 0;
 #endif  // defined(WEBRTC_WIN)
   RTC_DISALLOW_COPY_AND_ASSIGN(PlatformThread);
 };
