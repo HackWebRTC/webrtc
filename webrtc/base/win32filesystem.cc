@@ -216,82 +216,11 @@ bool Win32Filesystem::GetAppPathname(Pathname* path) {
   return true;
 }
 
-bool Win32Filesystem::GetAppDataFolder(Pathname* path, bool per_user) {
-  RTC_DCHECK(!organization_name_.empty());
-  RTC_DCHECK(!application_name_.empty());
-  TCHAR buffer[MAX_PATH + 1];
-  int csidl = per_user ? CSIDL_LOCAL_APPDATA : CSIDL_COMMON_APPDATA;
-  if (!::SHGetSpecialFolderPath(NULL, buffer, csidl, TRUE))
-    return false;
-  if (!IsCurrentProcessLowIntegrity() &&
-      !::GetLongPathName(buffer, buffer, arraysize(buffer)))
-    return false;
-  size_t len = strcatn(buffer, arraysize(buffer), __T("\\"));
-  len += strcpyn(buffer + len, arraysize(buffer) - len,
-                 ToUtf16(organization_name_).c_str());
-  if ((len > 0) && (buffer[len-1] != __T('\\'))) {
-    len += strcpyn(buffer + len, arraysize(buffer) - len, __T("\\"));
-  }
-  len += strcpyn(buffer + len, arraysize(buffer) - len,
-                 ToUtf16(application_name_).c_str());
-  if ((len > 0) && (buffer[len-1] != __T('\\'))) {
-    len += strcpyn(buffer + len, arraysize(buffer) - len, __T("\\"));
-  }
-  if (len >= arraysize(buffer) - 1)
-    return false;
-  path->clear();
-  path->SetFolder(ToUtf8(buffer));
-  return CreateFolder(*path);
-}
-
 bool Win32Filesystem::GetAppTempFolder(Pathname* path) {
   if (!GetAppPathname(path))
     return false;
   std::string filename(path->filename());
   return GetTemporaryFolder(*path, true, &filename);
-}
-
-bool Win32Filesystem::GetDiskFreeSpace(const Pathname& path,
-                                       int64_t* free_bytes) {
-  if (!free_bytes) {
-    return false;
-  }
-  char drive[4];
-  std::wstring drive16;
-  const wchar_t* target_drive = NULL;
-  if (path.GetDrive(drive, sizeof(drive))) {
-    drive16 = ToUtf16(drive);
-    target_drive = drive16.c_str();
-  } else if (path.folder().substr(0, 2) == "\\\\") {
-    // UNC path, fail.
-    // TODO: Handle UNC paths.
-    return false;
-  } else {
-    // The path is probably relative.  GetDriveType and GetDiskFreeSpaceEx
-    // use the current drive if NULL is passed as the drive name.
-    // TODO: Add method to Pathname to determine if the path is relative.
-    // TODO: Add method to Pathname to convert a path to absolute.
-  }
-  UINT drive_type = ::GetDriveType(target_drive);
-  if ((drive_type == DRIVE_REMOTE) || (drive_type == DRIVE_UNKNOWN)) {
-    LOG(LS_VERBOSE) << "Remote or unknown drive: " << drive;
-    return false;
-  }
-
-  int64_t total_number_of_bytes;       // receives the number of bytes on disk
-  int64_t total_number_of_free_bytes;  // receives the free bytes on disk
-  // make sure things won't change in 64 bit machine
-  // TODO replace with compile time assert
-  RTC_DCHECK(sizeof(ULARGE_INTEGER) == sizeof(uint64_t));  // NOLINT
-  if (::GetDiskFreeSpaceEx(target_drive,
-                           (PULARGE_INTEGER)free_bytes,
-                           (PULARGE_INTEGER)&total_number_of_bytes,
-                           (PULARGE_INTEGER)&total_number_of_free_bytes)) {
-    return true;
-  } else {
-    LOG(LS_VERBOSE) << "GetDiskFreeSpaceEx returns error.";
-    return false;
-  }
 }
 
 }  // namespace rtc

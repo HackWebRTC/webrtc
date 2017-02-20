@@ -94,12 +94,8 @@ class UnixFilesystem : public FilesystemInterface {
                    FileTimeType which,
                    time_t* time) override;
 
-  bool GetAppDataFolder(Pathname* path, bool per_user) override;
-
   // Get a temporary folder that is unique to the current user and application.
   bool GetAppTempFolder(Pathname* path) override;
-
-  bool GetDiskFreeSpace(const Pathname& path, int64_t* freebytes) override;
 
  private:
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)

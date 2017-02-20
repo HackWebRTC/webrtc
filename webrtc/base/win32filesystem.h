@@ -74,12 +74,8 @@ class Win32Filesystem : public FilesystemInterface {
   virtual bool GetTemporaryFolder(Pathname &path, bool create,
                                  const std::string *append);
 
-  virtual bool GetAppDataFolder(Pathname* path, bool per_user);
-
   // Get a temporary folder that is unique to the current user and application.
   virtual bool GetAppTempFolder(Pathname* path);
-
-  virtual bool GetDiskFreeSpace(const Pathname& path, int64_t* free_bytes);
 
  private:
   // Returns the path to the running application.

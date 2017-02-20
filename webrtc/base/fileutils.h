@@ -155,18 +155,11 @@ class FilesystemInterface {
   virtual bool GetFileTime(const Pathname& path, FileTimeType which,
                            time_t* time) = 0;
 
-  // Get a folder that is unique to the current application, which is suitable
-  // for sharing data between executions of the app.  If the per_user arg is
-  // true, the folder is also specific to the current user.
-  virtual bool GetAppDataFolder(Pathname* path, bool per_user) = 0;
-
   // Get a temporary folder that is unique to the current user and application.
   // TODO: Re-evaluate the goals of this function.  We probably just need any
   // directory that won't collide with another existing directory, and which
   // will be cleaned up when the program exits.
   virtual bool GetAppTempFolder(Pathname* path) = 0;
-
-  virtual bool GetDiskFreeSpace(const Pathname& path, int64_t* freebytes) = 0;
 
   // Note: These might go into some shared config section later, but they're
   // used by some methods in this interface, so we're leaving them here for now.
@@ -276,16 +269,8 @@ class Filesystem {
     return EnsureDefaultFilesystem()->GetFileTime(path, which, time);
   }
 
-  static bool GetAppDataFolder(Pathname* path, bool per_user) {
-    return EnsureDefaultFilesystem()->GetAppDataFolder(path, per_user);
-  }
-
   static bool GetAppTempFolder(Pathname* path) {
     return EnsureDefaultFilesystem()->GetAppTempFolder(path);
-  }
-
-  static bool GetDiskFreeSpace(const Pathname& path, int64_t* freebytes) {
-    return EnsureDefaultFilesystem()->GetDiskFreeSpace(path, freebytes);
   }
 
   static void SetOrganizationName(const std::string& organization) {
