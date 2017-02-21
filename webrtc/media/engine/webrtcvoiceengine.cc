@@ -32,6 +32,7 @@
 #include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
+#include "webrtc/media/engine/apm_helpers.h"
 #include "webrtc/media/engine/payload_type_mapper.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvoe.h"
@@ -40,6 +41,7 @@
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/voice_engine/transmit_mixer.h"
 
 namespace cricket {
 namespace {
@@ -559,7 +561,7 @@ rtc::Optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
   return rtc::Optional<int>(codec_rate);
 }
 
-}  // namespace {
+}  // namespace
 
 bool WebRtcVoiceEngine::ToCodecInst(const AudioCodec& in,
                                     webrtc::CodecInst* out) {
@@ -620,10 +622,12 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
   apm_ = voe_wrapper_->base()->audio_processing();
   RTC_DCHECK(apm_);
 
+  transmit_mixer_ = voe_wrapper_->base()->transmit_mixer();
+  RTC_DCHECK(transmit_mixer_);
+
   // Save the default AGC configuration settings. This must happen before
   // calling ApplyOptions or the default will be overwritten.
-  int error = voe_wrapper_->processing()->GetAgcConfig(default_agc_config_);
-  RTC_DCHECK_EQ(0, error);
+  default_agc_config_ = webrtc::apm_helpers::GetAgcConfig(apm_);
 
   // Set default engine options.
   {
@@ -680,9 +684,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   // kEcConference is AEC with high suppression.
   webrtc::EcModes ec_mode = webrtc::kEcConference;
-  webrtc::AecmModes aecm_mode = webrtc::kAecmSpeakerphone;
   webrtc::AgcModes agc_mode = webrtc::kAgcAdaptiveAnalog;
-  webrtc::NsModes ns_mode = webrtc::kNsHighSuppression;
   if (options.aecm_generate_comfort_noise) {
     LOG(LS_VERBOSE) << "Comfort noise explicitly set to "
                     << *options.aecm_generate_comfort_noise
@@ -729,8 +731,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   options.intelligibility_enhancer = rtc::Optional<bool>(false);
 #endif
 
-  webrtc::VoEAudioProcessing* voep = voe_wrapper_->processing();
-
   if (options.echo_cancellation) {
     // Check if platform supports built-in EC. Currently only supported on
     // Android and in combination with Java based audio layer.
@@ -751,26 +751,14 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         LOG(LS_INFO) << "Disabling EC since built-in EC will be used instead";
       }
     }
-    if (voep->SetEcStatus(*options.echo_cancellation, ec_mode) == -1) {
-      LOG_RTCERR2(SetEcStatus, *options.echo_cancellation, ec_mode);
-      return false;
-    } else {
-      LOG(LS_INFO) << "Echo control set to " << *options.echo_cancellation
-                   << " with mode " << ec_mode;
-    }
+    webrtc::apm_helpers::SetEcStatus(
+        apm(), *options.echo_cancellation, ec_mode);
 #if !defined(ANDROID)
-    // TODO(ajm): Remove the error return on Android from webrtc.
-    if (voep->SetEcMetricsStatus(*options.echo_cancellation) == -1) {
-      LOG_RTCERR1(SetEcMetricsStatus, *options.echo_cancellation);
-      return false;
-    }
+    webrtc::apm_helpers::SetEcMetricsStatus(apm(), *options.echo_cancellation);
 #endif
     if (ec_mode == webrtc::kEcAecm) {
       bool cn = options.aecm_generate_comfort_noise.value_or(false);
-      if (voep->SetAecmMode(aecm_mode, cn) != 0) {
-        LOG_RTCERR2(SetAecmMode, aecm_mode, cn);
-        return false;
-      }
+      webrtc::apm_helpers::SetAecmMode(apm(), cn);
     }
   }
 
@@ -785,17 +773,12 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         LOG(LS_INFO) << "Disabling AGC since built-in AGC will be used instead";
       }
     }
-    if (voep->SetAgcStatus(*options.auto_gain_control, agc_mode) == -1) {
-      LOG_RTCERR2(SetAgcStatus, *options.auto_gain_control, agc_mode);
-      return false;
-    } else {
-      LOG(LS_INFO) << "Auto gain set to " << *options.auto_gain_control
-                   << " with mode " << agc_mode;
-    }
+    webrtc::apm_helpers::SetAgcStatus(
+        apm(), adm(), *options.auto_gain_control, agc_mode);
   }
 
   if (options.tx_agc_target_dbov || options.tx_agc_digital_compression_gain ||
-      options.tx_agc_limiter) {
+      options.tx_agc_limiter || options.adjust_agc_delta) {
     // Override default_agc_config_. Generally, an unset option means "leave
     // the VoE bits alone" in this function, so we want whatever is set to be
     // stored as the new "default". If we didn't, then setting e.g.
@@ -811,13 +794,15 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
             default_agc_config_.digitalCompressionGaindB);
     default_agc_config_.limiterEnable =
         options.tx_agc_limiter.value_or(default_agc_config_.limiterEnable);
-    if (voe_wrapper_->processing()->SetAgcConfig(default_agc_config_) == -1) {
-      LOG_RTCERR3(SetAgcConfig,
-                  default_agc_config_.targetLeveldBOv,
-                  default_agc_config_.digitalCompressionGaindB,
-                  default_agc_config_.limiterEnable);
-      return false;
+
+    webrtc::AgcConfig config = default_agc_config_;
+    if (options.adjust_agc_delta) {
+      config.targetLeveldBOv -= *options.adjust_agc_delta;
+      LOG(LS_INFO) << "Adjusting AGC level from default -"
+                   << default_agc_config_.targetLeveldBOv << "dB to -"
+                   << config.targetLeveldBOv << "dB";
     }
+    webrtc::apm_helpers::SetAgcConfig(apm_, config);
   }
 
   if (options.intelligibility_enhancer) {
@@ -840,22 +825,12 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         LOG(LS_INFO) << "Disabling NS since built-in NS will be used instead";
       }
     }
-    if (voep->SetNsStatus(*options.noise_suppression, ns_mode) == -1) {
-      LOG_RTCERR2(SetNsStatus, *options.noise_suppression, ns_mode);
-      return false;
-    } else {
-      LOG(LS_INFO) << "Noise suppression set to " << *options.noise_suppression
-                   << " with mode " << ns_mode;
-    }
+    webrtc::apm_helpers::SetNsStatus(apm(), *options.noise_suppression);
   }
 
   if (options.stereo_swapping) {
     LOG(LS_INFO) << "Stereo swapping enabled? " << *options.stereo_swapping;
-    voep->EnableStereoChannelSwapping(*options.stereo_swapping);
-    if (voep->IsStereoChannelSwappingEnabled() != *options.stereo_swapping) {
-      LOG_RTCERR1(EnableStereoChannelSwapping, *options.stereo_swapping);
-      return false;
-    }
+    transmit_mixer()->EnableStereoChannelSwapping(*options.stereo_swapping);
   }
 
   if (options.audio_jitter_buffer_max_packets) {
@@ -874,17 +849,8 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   if (options.typing_detection) {
     LOG(LS_INFO) << "Typing detection is enabled? "
                  << *options.typing_detection;
-    if (voep->SetTypingDetectionStatus(*options.typing_detection) == -1) {
-      // In case of error, log the info and continue
-      LOG_RTCERR1(SetTypingDetectionStatus, *options.typing_detection);
-    }
-  }
-
-  if (options.adjust_agc_delta) {
-    LOG(LS_INFO) << "Adjust agc delta is " << *options.adjust_agc_delta;
-    if (!AdjustAgcLevel(*options.adjust_agc_delta)) {
-      return false;
-    }
+    webrtc::apm_helpers::SetTypingDetectionStatus(
+        apm(), *options.typing_detection);
   }
 
   webrtc::Config config;
@@ -1067,25 +1033,6 @@ void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel* channel) {
   channels_.erase(it);
 }
 
-// Adjusts the default AGC target level by the specified delta.
-// NB: If we start messing with other config fields, we'll want
-// to save the current webrtc::AgcConfig as well.
-bool WebRtcVoiceEngine::AdjustAgcLevel(int delta) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  webrtc::AgcConfig config = default_agc_config_;
-  config.targetLeveldBOv -= delta;
-
-  LOG(LS_INFO) << "Adjusting AGC level from default -"
-               << default_agc_config_.targetLeveldBOv << "dB to -"
-               << config.targetLeveldBOv << "dB";
-
-  if (voe_wrapper_->processing()->SetAgcConfig(config) == -1) {
-    LOG_RTCERR1(SetAgcConfig, config.targetLeveldBOv);
-    return false;
-  }
-  return true;
-}
-
 bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
                                      int64_t max_size_bytes) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
@@ -1146,6 +1093,12 @@ webrtc::AudioProcessing* WebRtcVoiceEngine::apm() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(apm_);
   return apm_;
+}
+
+webrtc::voe::TransmitMixer* WebRtcVoiceEngine::transmit_mixer() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(transmit_mixer_);
+  return transmit_mixer_;
 }
 
 AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
@@ -1884,7 +1837,7 @@ bool WebRtcVoiceMediaChannel::SetOptions(const AudioOptions& options) {
     it.second->RecreateAudioSendStream(audio_network_adatptor_config);
   }
 
-  LOG(LS_INFO) << "Set voice channel options.  Current options: "
+  LOG(LS_INFO) << "Set voice channel options. Current options: "
                << options_.ToString();
   return true;
 }

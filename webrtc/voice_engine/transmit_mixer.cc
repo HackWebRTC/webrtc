@@ -176,31 +176,12 @@ TransmitMixer::Destroy(TransmitMixer*& mixer)
 }
 
 TransmitMixer::TransmitMixer(uint32_t instanceId) :
-    _engineStatisticsPtr(NULL),
-    _channelManagerPtr(NULL),
-    audioproc_(NULL),
-    _voiceEngineObserverPtr(NULL),
-    _processThreadPtr(NULL),
     // Avoid conflict with other channels by adding 1024 - 1026,
     // won't use as much as 1024 channels.
     _filePlayerId(instanceId + 1024),
     _fileRecorderId(instanceId + 1025),
     _fileCallRecorderId(instanceId + 1026),
-    _filePlaying(false),
-    _fileRecording(false),
-    _fileCallRecording(false),
-    _audioLevel(),
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    _typingNoiseWarningPending(false),
-    _typingNoiseDetected(false),
-#endif
-    _saturationWarning(false),
-    _instanceId(instanceId),
-    _mixFileWithMicrophone(false),
-    _captureLevel(0),
-    _mute(false),
-    stereo_codec_(false),
-    swap_stereo_channels_(false)
+    _instanceId(instanceId)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::TransmitMixer() - ctor");

@@ -44,6 +44,9 @@ namespace webrtc {
 class AudioDeviceModule;
 class AudioProcessing;
 class AudioTransport;
+namespace voe {
+class TransmitMixer;
+}  // namespace voe
 
 // VoiceEngineObserver
 class WEBRTC_DLLEXPORT VoiceEngineObserver {
@@ -142,6 +145,10 @@ class WEBRTC_DLLEXPORT VoEBase {
   // This method is WIP - DO NOT USE!
   // Returns NULL before Init() is called.
   virtual AudioDeviceModule* audio_device_module() = 0;
+
+  // This method is WIP - DO NOT USE!
+  // Returns NULL before Init() is called.
+  virtual voe::TransmitMixer* transmit_mixer() = 0;
 
   // Terminates all VoiceEngine functions and releases allocated resources.
   // Returns 0.

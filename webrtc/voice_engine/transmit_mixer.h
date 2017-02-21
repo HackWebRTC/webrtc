@@ -138,15 +138,15 @@ public:
 
 
     // FileCallback
-    void PlayNotification(int32_t id,
-                          uint32_t durationMs);
+    void PlayNotification(const int32_t id,
+                          const uint32_t durationMs);
 
-    void RecordNotification(int32_t id,
-                            uint32_t durationMs);
+    void RecordNotification(const int32_t id,
+                            const uint32_t durationMs);
 
-    void PlayFileEnded(int32_t id);
+    void PlayFileEnded(const int32_t id);
 
-    void RecordFileEnded(int32_t id);
+    void RecordFileEnded(const int32_t id);
 
 #if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     // Typing detection
@@ -158,8 +158,12 @@ public:
                                      int typeEventDelay);
 #endif
 
-  void EnableStereoChannelSwapping(bool enable);
+  // Virtual to allow mocking.
+  virtual void EnableStereoChannelSwapping(bool enable);
   bool IsStereoChannelSwappingEnabled();
+
+protected:
+    TransmitMixer() = default;
 
 private:
     TransmitMixer(uint32_t instanceId);
@@ -185,11 +189,11 @@ private:
 #endif
 
     // uses
-    Statistics* _engineStatisticsPtr;
-    ChannelManager* _channelManagerPtr;
-    AudioProcessing* audioproc_;
-    VoiceEngineObserver* _voiceEngineObserverPtr;
-    ProcessThread* _processThreadPtr;
+    Statistics* _engineStatisticsPtr = nullptr;
+    ChannelManager* _channelManagerPtr = nullptr;
+    AudioProcessing* audioproc_ = nullptr;
+    VoiceEngineObserver* _voiceEngineObserverPtr = nullptr;
+    ProcessThread* _processThreadPtr = nullptr;
 
     // owns
     MonitorModule _monitorModule;
@@ -198,12 +202,12 @@ private:
     std::unique_ptr<FilePlayer> file_player_;
     std::unique_ptr<FileRecorder> file_recorder_;
     std::unique_ptr<FileRecorder> file_call_recorder_;
-    int _filePlayerId;
-    int _fileRecorderId;
-    int _fileCallRecorderId;
-    bool _filePlaying;
-    bool _fileRecording;
-    bool _fileCallRecording;
+    int _filePlayerId = 0;
+    int _fileRecorderId = 0;
+    int _fileCallRecorderId = 0;
+    bool _filePlaying = false;
+    bool _fileRecording = false;
+    bool _fileCallRecording = false;
     voe::AudioLevel _audioLevel;
     // protect file instances and their variables in MixedParticipants()
     rtc::CriticalSection _critSect;
@@ -211,21 +215,19 @@ private:
 
 #if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     webrtc::TypingDetection _typingDetection;
-    bool _typingNoiseWarningPending;
-    bool _typingNoiseDetected;
+    bool _typingNoiseWarningPending = false;
+    bool _typingNoiseDetected = false;
 #endif
-    bool _saturationWarning;
+    bool _saturationWarning = false;
 
-    int _instanceId;
-    bool _mixFileWithMicrophone;
-    uint32_t _captureLevel;
-    bool _mute;
-    bool stereo_codec_;
-    bool swap_stereo_channels_;
+    int _instanceId = 0;
+    bool _mixFileWithMicrophone = false;
+    uint32_t _captureLevel = 0;
+    bool _mute = false;
+    bool stereo_codec_ = false;
+    bool swap_stereo_channels_ = false;
 };
-
 }  // namespace voe
-
 }  // namespace webrtc
 
 #endif  // WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H

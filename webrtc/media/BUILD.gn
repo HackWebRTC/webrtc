@@ -101,6 +101,8 @@ rtc_static_library("rtc_media") {
   libs = []
   deps = []
   sources = [
+    "engine/apm_helpers.cc",
+    "engine/apm_helpers.h",
     "engine/internaldecoderfactory.cc",
     "engine/internaldecoderfactory.h",
     "engine/internalencoderfactory.cc",
@@ -319,6 +321,7 @@ if (rtc_include_tests) {
       "base/videocapturer_unittest.cc",
       "base/videocommon_unittest.cc",
       "base/videoengine_unittest.h",
+      "engine/apm_helpers_unittest.cc",
       "engine/internaldecoderfactory_unittest.cc",
       "engine/nullwebrtcvideoengine_unittest.cc",
       "engine/payload_type_mapper_unittest.cc",

@@ -17,7 +17,6 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
-#include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
 #include "webrtc/voice_engine/include/voe_errors.h"
@@ -78,17 +77,15 @@ class scoped_voe_ptr {
 class VoEWrapper {
  public:
   VoEWrapper()
-      : engine_(webrtc::VoiceEngine::Create()), processing_(engine_),
+      : engine_(webrtc::VoiceEngine::Create()),
         base_(engine_), codec_(engine_), hw_(engine_),
         volume_(engine_) {
   }
-  VoEWrapper(webrtc::VoEAudioProcessing* processing,
-             webrtc::VoEBase* base,
+  VoEWrapper(webrtc::VoEBase* base,
              webrtc::VoECodec* codec,
              webrtc::VoEHardware* hw,
              webrtc::VoEVolumeControl* volume)
       : engine_(NULL),
-        processing_(processing),
         base_(base),
         codec_(codec),
         hw_(hw),
@@ -96,7 +93,6 @@ class VoEWrapper {
   }
   ~VoEWrapper() {}
   webrtc::VoiceEngine* engine() const { return engine_.get(); }
-  webrtc::VoEAudioProcessing* processing() const { return processing_.get(); }
   webrtc::VoEBase* base() const { return base_.get(); }
   webrtc::VoECodec* codec() const { return codec_.get(); }
   webrtc::VoEHardware* hw() const { return hw_.get(); }
@@ -105,7 +101,6 @@ class VoEWrapper {
 
  private:
   scoped_voe_engine engine_;
-  scoped_voe_ptr<webrtc::VoEAudioProcessing> processing_;
   scoped_voe_ptr<webrtc::VoEBase> base_;
   scoped_voe_ptr<webrtc::VoECodec> codec_;
   scoped_voe_ptr<webrtc::VoEHardware> hw_;
