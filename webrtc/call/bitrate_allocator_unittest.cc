@@ -98,8 +98,6 @@ TEST_F(BitrateAllocatorTest, UpdatingBitrateObserver) {
                           true);
   EXPECT_EQ(4000000, allocator_->GetStartBitrate(&bitrate_observer));
 
-  EXPECT_CALL(limit_observer_,
-              OnAllocationLimitsChanged(kMinSendBitrateBps, 0));
   allocator_->AddObserver(&bitrate_observer, kMinSendBitrateBps, 1500000, 0,
                           true);
   EXPECT_EQ(3000000, allocator_->GetStartBitrate(&bitrate_observer));
@@ -183,7 +181,7 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserver) {
   TestBitrateObserver bitrate_observer_1;
   // Expect OnAllocationLimitsChanged with |min_send_bitrate_bps| = 0 since
   // AddObserver is called with |enforce_min_bitrate| = false.
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0));
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 120000));
   allocator_->AddObserver(&bitrate_observer_1, 100000, 400000, 0, false);
   EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer_1));
 
@@ -264,7 +262,7 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   TestBitrateObserver bitrate_observer;
   // Expect OnAllocationLimitsChanged with |min_send_bitrate_bps| = 0 since
   // AddObserver is called with |enforce_min_bitrate| = false.
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0));
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 168000));
   allocator_->AddObserver(
       &bitrate_observer, 100000, 400000, 0, false);
   EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer));
@@ -292,6 +290,7 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   EXPECT_EQ(0u, bitrate_observer.last_bitrate_bps_);
 
   // Just enough to enable video again.
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0));
   allocator_->OnNetworkChanged(168000, 0, fraction_loss,
                                kDefaultProbingIntervalMs);
   EXPECT_EQ(168000u, bitrate_observer.last_bitrate_bps_);
@@ -304,7 +303,6 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   allocator_->OnNetworkChanged(139000, 0, 0, kDefaultProbingIntervalMs);
   EXPECT_EQ(139000u, bitrate_observer.last_bitrate_bps_);
 
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0));
   allocator_->RemoveObserver(&bitrate_observer);
 }
 

@@ -215,7 +215,7 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
     audio_send_config_.voe_channel_id = voe_send_.channel_id;
     audio_send_config_.rtp.ssrc = kAudioSendSsrc;
     audio_send_config_.send_codec_spec.codec_inst =
-        CodecInst{kAudioSendPayloadType, "ISAC", 16000, 480, 1, 32000};
+        CodecInst{kAudioSendPayloadType, "OPUS", 48000, 960, 2, 64000};
   }
 
   // TODO(brandtr): Update this when we support multistream protection.

@@ -24,7 +24,7 @@ const size_t DefaultVideoStreamFactory::kMaxNumberOfStreams;
 const int DefaultVideoStreamFactory::kMaxBitratePerStream[] = {150000, 450000,
                                                                1500000};
 const int DefaultVideoStreamFactory::kDefaultMinBitratePerStream[] = {
-    50000, 200000, 700000};
+    30000, 200000, 700000};
 
 // static
 std::vector<VideoStream> CreateVideoStreams(
