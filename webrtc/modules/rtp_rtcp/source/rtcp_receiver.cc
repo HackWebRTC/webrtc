@@ -412,7 +412,7 @@ void RTCPReceiver::HandleSenderReport(const CommonHeader& rtcp_block,
 
   packet_information->remote_ssrc = remote_ssrc;
 
-  CreateTmmbrInformation(remote_ssrc);
+  UpdateTmmbrRemoteIsAlive(remote_ssrc);
 
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "SR",
                        "remote_ssrc", remote_ssrc, "ssrc", main_ssrc_);
@@ -454,7 +454,7 @@ void RTCPReceiver::HandleReceiverReport(const CommonHeader& rtcp_block,
 
   packet_information->remote_ssrc = remote_ssrc;
 
-  CreateTmmbrInformation(remote_ssrc);
+  UpdateTmmbrRemoteIsAlive(remote_ssrc);
 
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR",
                        "remote_ssrc", remote_ssrc, "ssrc", main_ssrc_);
@@ -535,11 +535,19 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
   packet_information->report_blocks.push_back(report_block_info->report_block);
 }
 
-void RTCPReceiver::CreateTmmbrInformation(uint32_t remote_ssrc) {
+RTCPReceiver::TmmbrInformation* RTCPReceiver::FindOrCreateTmmbrInfo(
+    uint32_t remote_ssrc) {
   // Create or find receive information.
   TmmbrInformation* tmmbr_info = &tmmbr_infos_[remote_ssrc];
   // Update that this remote is alive.
   tmmbr_info->last_time_received_ms = clock_->TimeInMilliseconds();
+  return tmmbr_info;
+}
+
+void RTCPReceiver::UpdateTmmbrRemoteIsAlive(uint32_t remote_ssrc) {
+  auto tmmbr_it = tmmbr_infos_.find(remote_ssrc);
+  if (tmmbr_it != tmmbr_infos_.end())
+    tmmbr_it->second.last_time_received_ms = clock_->TimeInMilliseconds();
 }
 
 RTCPReceiver::TmmbrInformation* RTCPReceiver::GetTmmbrInformation(
@@ -783,10 +791,6 @@ void RTCPReceiver::HandleTmmbr(const CommonHeader& rtcp_block,
   }
 
   uint32_t sender_ssrc = tmmbr.sender_ssrc();
-  TmmbrInformation* receive_info = GetTmmbrInformation(sender_ssrc);
-  if (!receive_info)  // This remote SSRC must be saved before.
-    return;
-
   if (tmmbr.media_ssrc()) {
     // media_ssrc() SHOULD be 0 if same as SenderSSRC.
     // In relay mode this is a valid number.
@@ -794,15 +798,18 @@ void RTCPReceiver::HandleTmmbr(const CommonHeader& rtcp_block,
   }
 
   for (const rtcp::TmmbItem& request : tmmbr.requests()) {
-    if (main_ssrc_ == request.ssrc() && request.bitrate_bps()) {
-      auto* entry = &receive_info->tmmbr[sender_ssrc];
-      entry->tmmbr_item = rtcp::TmmbItem(sender_ssrc,
-                                         request.bitrate_bps(),
-                                         request.packet_overhead());
-      entry->last_updated_ms = clock_->TimeInMilliseconds();
+    if (main_ssrc_ != request.ssrc() || request.bitrate_bps() == 0)
+      continue;
 
-      packet_information->packet_type_flags |= kRtcpTmmbr;
-    }
+    TmmbrInformation* tmmbr_info = FindOrCreateTmmbrInfo(tmmbr.sender_ssrc());
+    auto* entry = &tmmbr_info->tmmbr[sender_ssrc];
+    entry->tmmbr_item = rtcp::TmmbItem(sender_ssrc,
+                                       request.bitrate_bps(),
+                                       request.packet_overhead());
+    entry->last_updated_ms = clock_->TimeInMilliseconds();
+
+    packet_information->packet_type_flags |= kRtcpTmmbr;
+    break;
   }
 }
 
@@ -814,14 +821,11 @@ void RTCPReceiver::HandleTmmbn(const CommonHeader& rtcp_block,
     return;
   }
 
-  TmmbrInformation* receive_info = GetTmmbrInformation(tmmbn.sender_ssrc());
-  if (!receive_info)  // This remote SSRC must be saved before.
-    return;
+  TmmbrInformation* tmmbr_info = FindOrCreateTmmbrInfo(tmmbn.sender_ssrc());
 
   packet_information->packet_type_flags |= kRtcpTmmbn;
 
-  for (const auto& item : tmmbn.items())
-    receive_info->tmmbn.push_back(item);
+  tmmbr_info->tmmbn = tmmbn.items();
 }
 
 void RTCPReceiver::HandleSrReq(const CommonHeader& rtcp_block,

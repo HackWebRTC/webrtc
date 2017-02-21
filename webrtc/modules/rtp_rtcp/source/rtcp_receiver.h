@@ -131,7 +131,10 @@ class RTCPReceiver {
   void TriggerCallbacksFromRtcpPacket(
       const PacketInformation& packet_information);
 
-  void CreateTmmbrInformation(uint32_t remote_ssrc)
+  TmmbrInformation* FindOrCreateTmmbrInfo(uint32_t remote_ssrc)
+      EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
+  // Update TmmbrInformation (if present) is alive.
+  void UpdateTmmbrRemoteIsAlive(uint32_t remote_ssrc)
       EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
   TmmbrInformation* GetTmmbrInformation(uint32_t remote_ssrc)
       EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
