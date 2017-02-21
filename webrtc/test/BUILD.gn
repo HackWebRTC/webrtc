@@ -129,15 +129,14 @@ rtc_source_set("video_test_support") {
   testonly = true
 
   sources = [
+    "testsupport/frame_reader.cc",
     "testsupport/frame_reader.h",
+    "testsupport/frame_writer.cc",
     "testsupport/frame_writer.h",
     "testsupport/metrics/video_metrics.cc",
     "testsupport/metrics/video_metrics.h",
     "testsupport/mock/mock_frame_reader.h",
     "testsupport/mock/mock_frame_writer.h",
-    "testsupport/y4m_frame_writer.cc",
-    "testsupport/yuv_frame_reader.cc",
-    "testsupport/yuv_frame_writer.cc",
   ]
 
   deps = [
@@ -260,13 +259,12 @@ rtc_test("test_support_unittests") {
     "rtp_file_reader_unittest.cc",
     "rtp_file_writer_unittest.cc",
     "testsupport/always_passing_unittest.cc",
+    "testsupport/frame_reader_unittest.cc",
+    "testsupport/frame_writer_unittest.cc",
     "testsupport/isolated_output_unittest.cc",
     "testsupport/metrics/video_metrics_unittest.cc",
     "testsupport/packet_reader_unittest.cc",
     "testsupport/perf_test_unittest.cc",
-    "testsupport/y4m_frame_writer_unittest.cc",
-    "testsupport/yuv_frame_reader_unittest.cc",
-    "testsupport/yuv_frame_writer_unittest.cc",
   ]
 
   # TODO(jschuh): Bug 1348: fix this warning.

@@ -46,14 +46,14 @@ class FrameReader {
   virtual int NumberOfFrames() = 0;
 };
 
-class YuvFrameReaderImpl : public FrameReader {
+class FrameReaderImpl : public FrameReader {
  public:
   // Creates a file handler. The input file is assumed to exist and be readable.
   // Parameters:
   //   input_filename          The file to read from.
   //   width, height           Size of each frame to read.
-  YuvFrameReaderImpl(std::string input_filename, int width, int height);
-  ~YuvFrameReaderImpl() override;
+  FrameReaderImpl(std::string input_filename, int width, int height);
+  ~FrameReaderImpl() override;
   bool Init() override;
   rtc::scoped_refptr<I420Buffer> ReadFrame() override;
   void Close() override;
@@ -61,10 +61,10 @@ class YuvFrameReaderImpl : public FrameReader {
   int NumberOfFrames() override;
 
  private:
-  const std::string input_filename_;
+  std::string input_filename_;
   size_t frame_length_in_bytes_;
-  const int width_;
-  const int height_;
+  int width_;
+  int height_;
   int number_of_frames_;
   FILE* input_file_;
 };

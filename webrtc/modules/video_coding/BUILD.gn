@@ -351,7 +351,6 @@ if (rtc_include_tests) {
     deps = [
       ":video_codecs_test_framework",
       ":video_coding",
-      ":video_coding_utility",
       ":webrtc_h264",
       ":webrtc_vp8",
       ":webrtc_vp9",

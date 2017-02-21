@@ -69,9 +69,7 @@ TEST_F(VideoProcessorTest, Init) {
   ExpectInit();
   VideoProcessorImpl video_processor(
       &encoder_mock_, &decoder_mock_, &frame_reader_mock_, &frame_writer_mock_,
-      &packet_manipulator_mock_, config_, &stats_,
-      nullptr /* source_frame_writer */, nullptr /* encoded_frame_writer */,
-      nullptr /* decoded_frame_writer */);
+      &packet_manipulator_mock_, config_, &stats_);
   ASSERT_TRUE(video_processor.Init());
 }
 
@@ -84,9 +82,7 @@ TEST_F(VideoProcessorTest, ProcessFrame) {
   // be more than initialized...
   VideoProcessorImpl video_processor(
       &encoder_mock_, &decoder_mock_, &frame_reader_mock_, &frame_writer_mock_,
-      &packet_manipulator_mock_, config_, &stats_,
-      nullptr /* source_frame_writer */, nullptr /* encoded_frame_writer */,
-      nullptr /* decoded_frame_writer */);
+      &packet_manipulator_mock_, config_, &stats_);
   ASSERT_TRUE(video_processor.Init());
   video_processor.ProcessFrame(0);
 }

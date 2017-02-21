@@ -490,12 +490,11 @@ int main(int argc, char* argv[]) {
   webrtc::VP8Encoder* encoder = webrtc::VP8Encoder::Create();
   webrtc::VP8Decoder* decoder = webrtc::VP8Decoder::Create();
   webrtc::test::Stats stats;
-  webrtc::test::YuvFrameReaderImpl frame_reader(config.input_filename,
-                                                config.codec_settings->width,
-                                                config.codec_settings->height);
-  webrtc::test::YuvFrameWriterImpl frame_writer(config.output_filename,
-                                                config.codec_settings->width,
-                                                config.codec_settings->height);
+  webrtc::test::FrameReaderImpl frame_reader(config.input_filename,
+                                             config.codec_settings->width,
+                                             config.codec_settings->height);
+  webrtc::test::FrameWriterImpl frame_writer(config.output_filename,
+                                             config.frame_length_in_bytes);
   frame_reader.Init();
   frame_writer.Init();
   webrtc::test::PacketReader packet_reader;
@@ -508,11 +507,9 @@ int main(int argc, char* argv[]) {
     packet_manipulator.InitializeRandomSeed(time(NULL));
   }
   webrtc::test::VideoProcessor* processor =
-      new webrtc::test::VideoProcessorImpl(
-          encoder, decoder, &frame_reader, &frame_writer, &packet_manipulator,
-          config, &stats, nullptr /* source_frame_writer */,
-          nullptr /* encoded_frame_writer */,
-          nullptr /* decoded_frame_writer */);
+      new webrtc::test::VideoProcessorImpl(encoder, decoder, &frame_reader,
+                                           &frame_writer, &packet_manipulator,
+                                           config, &stats);
   processor->Init();
 
   int frame_number = 0;
