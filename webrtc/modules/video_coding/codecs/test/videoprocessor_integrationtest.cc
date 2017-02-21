@@ -43,10 +43,8 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
   // Metrics for rate control.
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 2, 60, 20, 10, 20, 0, 1);
-  ProcessFramesAndVerify(quality_metrics,
-                         rate_profile,
-                         process_settings,
-                         rc_metrics);
+  ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 #endif  // defined(WEBRTC_VIDEOPROCESSOR_H264_TESTS)
@@ -75,7 +73,7 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0, 1);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // VP9: Run with 5% packet loss and fixed bitrate. Quality should be a bit
@@ -97,7 +95,7 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0, 1);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // VP9: Run with no packet loss, with varying bitrate (3 rate updates):
@@ -125,7 +123,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   SetRateControlMetrics(rc_metrics, 1, 2, 0, 20, 20, 60, 0, 0);
   SetRateControlMetrics(rc_metrics, 2, 0, 0, 25, 20, 40, 0, 0);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // VP9: Run with no packet loss, with an update (decrease) in frame rate.
@@ -158,7 +156,7 @@ TEST_F(VideoProcessorIntegrationTest,
   SetRateControlMetrics(rc_metrics, 1, 10, 0, 40, 10, 30, 0, 0);
   SetRateControlMetrics(rc_metrics, 2, 5, 0, 30, 5, 20, 0, 0);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // VP9: Run with no packet loss and denoiser on. One key frame (first frame).
@@ -179,7 +177,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 20, 0, 1);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // Run with no packet loss, at low bitrate.
@@ -204,7 +202,7 @@ TEST_F(VideoProcessorIntegrationTest,
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 228, 70, 160, 15, 80, 1, 1);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // TODO(marpan): Add temporal layer test for VP9, once changes are in
@@ -232,7 +230,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0, 1);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // VP8: Run with 5% packet loss and fixed bitrate. Quality should be a bit
@@ -254,7 +252,7 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0, 1);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // VP8: Run with 10% packet loss and fixed bitrate. Quality should be lower.
@@ -276,7 +274,7 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
   RateControlMetrics rc_metrics[1];
   SetRateControlMetrics(rc_metrics, 0, 0, 40, 20, 10, 15, 0, 1);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 #endif  // !defined(WEBRTC_IOS)
@@ -322,7 +320,7 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
   SetRateControlMetrics(rc_metrics, 1, 0, 0, 25, 20, 10, 0, 0);
   SetRateControlMetrics(rc_metrics, 2, 0, 0, 25, 15, 10, 0, 0);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // VP8: Run with no packet loss, with an update (decrease) in frame rate.
@@ -363,7 +361,7 @@ TEST_F(VideoProcessorIntegrationTest,
   SetRateControlMetrics(rc_metrics, 1, 10, 0, 25, 10, 35, 0, 0);
   SetRateControlMetrics(rc_metrics, 2, 0, 0, 20, 10, 15, 0, 0);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 
 // VP8: Run with no packet loss, with 3 temporal layers, with a rate update in
@@ -398,7 +396,7 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossTemporalLayersVP8) {
   SetRateControlMetrics(rc_metrics, 0, 0, 20, 30, 10, 10, 0, 1);
   SetRateControlMetrics(rc_metrics, 1, 0, 0, 30, 15, 10, 0, 0);
   ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                         rc_metrics);
+                         rc_metrics, nullptr /* visualization_params */);
 }
 }  // namespace test
 }  // namespace webrtc

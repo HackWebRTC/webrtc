@@ -12,6 +12,7 @@
 
 namespace webrtc {
 namespace test {
+
 namespace {
 // Codec settings.
 const int kBitrates[] = {30, 50, 100, 200, 300, 500, 1000};
@@ -25,6 +26,12 @@ const bool kHwCodec = false;
 
 // Packet loss probability [0.0, 1.0].
 const float kPacketLoss = 0.0f;
+
+const VisualizationParams kVisualizationParams = {
+    false,  // save_source_y4m
+    false,  // save_encoded_ivf
+    false,  // save_decoded_y4m
+};
 
 const bool kVerboseLogging = true;
 }  // namespace
@@ -74,7 +81,7 @@ class PlotVideoProcessorIntegrationTest
                           0,    // num_spatial_resizes
                           1);   // num_key_frames
     ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                           rc_metrics);
+                           rc_metrics, &kVisualizationParams);
   }
   const int bitrate_;
   const int framerate_;
