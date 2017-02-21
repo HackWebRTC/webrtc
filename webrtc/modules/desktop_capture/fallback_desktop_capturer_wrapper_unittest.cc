@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -80,15 +80,15 @@ class FallbackDesktopCapturerWrapperTest : public testing::Test,
   // DesktopCapturer::Callback interface
   void OnCaptureResult(DesktopCapturer::Result result,
                        std::unique_ptr<DesktopFrame> frame) override;
-  PainterDesktopFrameGenerator frame_generator;
+  PainterDesktopFrameGenerator frame_generator_;
 };
 
 FallbackDesktopCapturerWrapperTest::FallbackDesktopCapturerWrapperTest() {
-  frame_generator.size()->set(1024, 768);
+  frame_generator_.size()->set(1024, 768);
   std::unique_ptr<DesktopCapturer> main_capturer =
-      CreateDesktopCapturer(&frame_generator);
+      CreateDesktopCapturer(&frame_generator_);
   std::unique_ptr<DesktopCapturer> secondary_capturer =
-      CreateDesktopCapturer(&frame_generator);
+      CreateDesktopCapturer(&frame_generator_);
   main_capturer_ = static_cast<FakeDesktopCapturer*>(main_capturer.get());
   secondary_capturer_ =
       static_cast<FakeDesktopCapturer*>(secondary_capturer.get());
