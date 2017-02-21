@@ -375,7 +375,11 @@ TEST(AudioMixer, ConstructFromOtherThread) {
   std::unique_ptr<rtc::Thread> participant_thread = rtc::Thread::Create();
   init_thread->Start();
   const auto mixer = init_thread->Invoke<rtc::scoped_refptr<AudioMixer>>(
-      RTC_FROM_HERE, &AudioMixerImpl::Create);
+      RTC_FROM_HERE,
+      // Since AudioMixerImpl::Create is overloaded, we have to
+      // specify the type of which version we want.
+      static_cast<rtc::scoped_refptr<AudioMixerImpl>(*)()>(
+          &AudioMixerImpl::Create));
   MockMixerAudioSource participant;
 
   ResetFrame(participant.fake_frame());
@@ -470,10 +474,10 @@ TEST(AudioMixer, UnmutedShouldMixBeforeLoud) {
 
 TEST(AudioMixer, MixingRateShouldBeDecidedByRateCalculator) {
   constexpr int kOutputRate = 22000;
-  const auto mixer = AudioMixerImpl::CreateWithOutputRateCalculatorAndLimiter(
-      std::unique_ptr<OutputRateCalculator>(
-          new CustomRateCalculator(kOutputRate)),
-      true);
+  const auto mixer =
+      AudioMixerImpl::Create(std::unique_ptr<OutputRateCalculator>(
+                                 new CustomRateCalculator(kOutputRate)),
+                             true);
   MockMixerAudioSource audio_source;
   mixer->AddSource(&audio_source);
   ResetFrame(audio_source.fake_frame());
@@ -486,10 +490,10 @@ TEST(AudioMixer, MixingRateShouldBeDecidedByRateCalculator) {
 
 TEST(AudioMixer, ZeroSourceRateShouldBeDecidedByRateCalculator) {
   constexpr int kOutputRate = 8000;
-  const auto mixer = AudioMixerImpl::CreateWithOutputRateCalculatorAndLimiter(
-      std::unique_ptr<OutputRateCalculator>(
-          new CustomRateCalculator(kOutputRate)),
-      true);
+  const auto mixer =
+      AudioMixerImpl::Create(std::unique_ptr<OutputRateCalculator>(
+                                 new CustomRateCalculator(kOutputRate)),
+                             true);
 
   mixer->Mix(1, &frame_for_mixing);
 
@@ -497,7 +501,7 @@ TEST(AudioMixer, ZeroSourceRateShouldBeDecidedByRateCalculator) {
 }
 
 TEST(AudioMixer, NoLimiterBasicApiCalls) {
-  const auto mixer = AudioMixerImpl::CreateWithOutputRateCalculatorAndLimiter(
+  const auto mixer = AudioMixerImpl::Create(
       std::unique_ptr<OutputRateCalculator>(new DefaultOutputRateCalculator()),
       false);
   mixer->Mix(1, &frame_for_mixing);
@@ -513,10 +517,9 @@ TEST(AudioMixer, AnyRateIsPossibleWithNoLimiter) {
         SCOPED_TRACE(
             ProduceDebugText(rate, number_of_sources, number_of_sources));
         const auto mixer =
-            AudioMixerImpl::CreateWithOutputRateCalculatorAndLimiter(
-                std::unique_ptr<OutputRateCalculator>(
-                    new CustomRateCalculator(rate)),
-                false);
+            AudioMixerImpl::Create(std::unique_ptr<OutputRateCalculator>(
+                                       new CustomRateCalculator(rate)),
+                                   false);
 
         std::vector<MockMixerAudioSource> sources(number_of_sources);
         for (auto& source : sources) {
