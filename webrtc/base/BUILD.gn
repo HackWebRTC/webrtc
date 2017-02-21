@@ -688,6 +688,8 @@ if (rtc_include_tests) {
     sources = [
       # Also use this as a convenient dumping ground for misc files that are
       # included by multiple targets below.
+      "cpu_time.cc",
+      "cpu_time.h",
       "fakeclock.cc",
       "fakeclock.h",
       "fakenetwork.h",
@@ -733,6 +735,7 @@ if (rtc_include_tests) {
   rtc_source_set("rtc_base_nonparallel_tests") {
     testonly = true
     sources = [
+      "cpu_time_unittest.cc",
       "filerotatingstream_unittest.cc",
       "nullsocketserver_unittest.cc",
       "physicalsocketserver_unittest.cc",
