@@ -10,6 +10,8 @@
 
 #import "RTCVideoFrame+Private.h"
 
+#include "webrtc/common_video/include/corevideo_frame_buffer.h"
+
 @implementation RTCVideoFrame {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> _videoBuffer;
   RTCVideoRotation _rotation;
@@ -65,6 +67,36 @@
       initWithVideoBuffer:_videoBuffer->NativeToI420Buffer()
                  rotation:_rotation
               timeStampNs:_timeStampNs];
+}
+
+- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
+                           rotation:(RTCVideoRotation)rotation
+                        timeStampNs:(int64_t)timeStampNs {
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> videoBuffer(
+      new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(pixelBuffer));
+  return [self initWithVideoBuffer:videoBuffer
+                          rotation:rotation
+                       timeStampNs:timeStampNs];
+}
+
+- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
+                        scaledWidth:(int)scaledWidth
+                       scaledHeight:(int)scaledHeight
+                          cropWidth:(int)cropWidth
+                         cropHeight:(int)cropHeight
+                              cropX:(int)cropX
+                              cropY:(int)cropY
+                           rotation:(RTCVideoRotation)rotation
+                        timeStampNs:(int64_t)timeStampNs {
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> videoBuffer(
+      new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(
+          pixelBuffer,
+          scaledWidth, scaledHeight,
+          cropWidth, cropHeight,
+          cropX, cropY));
+  return [self initWithVideoBuffer:videoBuffer
+                          rotation:rotation
+                       timeStampNs:timeStampNs];
 }
 
 #pragma mark - Private

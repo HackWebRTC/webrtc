@@ -50,6 +50,27 @@ RTC_EXPORT
 @property(nonatomic, readonly) CVPixelBufferRef nativeHandle;
 
 - (instancetype)init NS_UNAVAILABLE;
+- (instancetype)new NS_UNAVAILABLE;
+
+/** Initialize an RTCVideoFrame from a pixel buffer, rotation, and timestamp.
+ */
+- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
+                           rotation:(RTCVideoRotation)rotation
+                        timeStampNs:(int64_t)timeStampNs;
+
+/** Initialize an RTCVideoFrame from a pixel buffer combined with cropping and
+ *  scaling. Cropping will be applied first on the pixel buffer, followed by
+ *  scaling to the final resolution of scaledWidth x scaledHeight.
+ */
+- (instancetype)initWithPixelBuffer:(CVPixelBufferRef)pixelBuffer
+                        scaledWidth:(int)scaledWidth
+                       scaledHeight:(int)scaledHeight
+                          cropWidth:(int)cropWidth
+                         cropHeight:(int)cropHeight
+                              cropX:(int)cropX
+                              cropY:(int)cropY
+                           rotation:(RTCVideoRotation)rotation
+                        timeStampNs:(int64_t)timeStampNs;
 
 /** Return a frame that is guaranteed to be I420, i.e. it is possible to access
  *  the YUV data on it.
