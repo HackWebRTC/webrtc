@@ -15,7 +15,6 @@
 #import "RTCShader+Private.h"
 #import "WebRTC/RTCVideoFrame.h"
 
-#include "webrtc/api/video/video_rotation.h"
 #include "webrtc/base/optional.h"
 
 // |kNumTextures| must not exceed 8, which is the limit in OpenGLES2. Two sets
@@ -62,7 +61,7 @@ static const char kI420FragmentShaderSource[] =
   GLint _vSampler;
   // Store current rotation and only upload new vertex data when rotation
   // changes.
-  rtc::Optional<webrtc::VideoRotation> _currentRotation;
+  rtc::Optional<RTCVideoRotation> _currentRotation;
   // Used to create a non-padded plane for GPU upload when we receive padded
   // frames.
   std::vector<uint8_t> _planeBuffer;
@@ -126,8 +125,7 @@ static const char kI420FragmentShaderSource[] =
 #endif
   glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
   if (!_currentRotation || frame.rotation != *_currentRotation) {
-    _currentRotation = rtc::Optional<webrtc::VideoRotation>(
-        static_cast<webrtc::VideoRotation>(frame.rotation));
+    _currentRotation = rtc::Optional<RTCVideoRotation>(frame.rotation);
     RTCSetVertexData(*_currentRotation);
   }
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -188,32 +186,34 @@ static const char kI420FragmentShaderSource[] =
   GLint textureOffset = _currentTextureSet * 3;
   NSAssert(textureOffset + 3 <= kNumTextures, @"invalid offset");
 
-  if (frame.yPitch != static_cast<int32_t>(frame.width) ||
-      frame.uPitch != static_cast<int32_t>(frame.chromaWidth) ||
-      frame.vPitch != static_cast<int32_t>(frame.chromaWidth)) {
+  const int chromaWidth = (frame.width + 1) / 2;
+  const int chromaHeight = (frame.height + 1) / 2;
+  if (frame.strideY != frame.width ||
+      frame.strideU != chromaWidth ||
+      frame.strideV != chromaWidth) {
     _planeBuffer.resize(frame.width * frame.height);
   }
 
-  [self uploadPlane:frame.yPlane
+  [self uploadPlane:frame.dataY
             sampler:_ySampler
              offset:textureOffset
               width:frame.width
              height:frame.height
-             stride:frame.yPitch];
+             stride:frame.strideY];
 
-  [self uploadPlane:frame.uPlane
+  [self uploadPlane:frame.dataU
             sampler:_uSampler
              offset:textureOffset + 1
-              width:frame.chromaWidth
-             height:frame.chromaHeight
-             stride:frame.uPitch];
+              width:chromaWidth
+             height:chromaHeight
+             stride:frame.strideU];
 
-  [self uploadPlane:frame.vPlane
+  [self uploadPlane:frame.dataV
             sampler:_vSampler
              offset:textureOffset + 2
-              width:frame.chromaWidth
-             height:frame.chromaHeight
-             stride:frame.vPitch];
+              width:chromaWidth
+             height:chromaHeight
+             stride:frame.strideV];
 
   _currentTextureSet = (_currentTextureSet + 1) % kNumTextureSets;
   return YES;

@@ -11,18 +11,14 @@
 #import "WebRTC/RTCVideoFrame.h"
 
 #include "webrtc/api/video/video_frame_buffer.h"
-#include "webrtc/api/video/video_rotation.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface RTCVideoFrame ()
 
-@property(nonatomic, readonly)
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> i420Buffer;
-
 - (instancetype)initWithVideoBuffer:
                     (rtc::scoped_refptr<webrtc::VideoFrameBuffer>)videoBuffer
-                           rotation:(webrtc::VideoRotation)rotation
+                           rotation:(RTCVideoRotation)rotation
                         timeStampNs:(int64_t)timeStampNs
     NS_DESIGNATED_INITIALIZER;
 
