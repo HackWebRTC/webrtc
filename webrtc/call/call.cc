@@ -1198,12 +1198,9 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     if (it != audio_receive_ssrcs_.end()) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_audio_bytes_per_second_counter_.Add(static_cast<int>(length));
-      auto status = it->second->DeliverRtp(packet, length, packet_time)
-                        ? DELIVERY_OK
-                        : DELIVERY_PACKET_ERROR;
-      if (status == DELIVERY_OK)
-        event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
-      return status;
+      it->second->OnRtpPacket(*parsed_packet);
+      event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
+      return DELIVERY_OK;
     }
   }
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {

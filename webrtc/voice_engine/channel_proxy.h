@@ -30,6 +30,7 @@ class RtcEventLog;
 class RtcpBandwidthObserver;
 class RtcpRttStats;
 class RtpPacketSender;
+class RtpPacketReceived;
 class RtpReceiver;
 class RtpRtcp;
 class Transport;
@@ -84,9 +85,7 @@ class ChannelProxy {
   virtual void SetInputMute(bool muted);
   virtual void RegisterExternalTransport(Transport* transport);
   virtual void DeRegisterExternalTransport();
-  virtual bool ReceivedRTPPacket(const uint8_t* packet,
-                                 size_t length,
-                                 const PacketTime& packet_time);
+  virtual void OnRtpPacket(const RtpPacketReceived& packet);
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length);
   virtual const rtc::scoped_refptr<AudioDecoderFactory>&
       GetAudioDecoderFactory() const;

@@ -53,6 +53,7 @@ class RtcEventLog;
 class RTPPayloadRegistry;
 class RtpReceiver;
 class RTPReceiverAudio;
+class RtpPacketReceived;
 class RtpRtcp;
 class TelephoneEventHandler;
 class VoERTPObserver;
@@ -204,7 +205,9 @@ class Channel
   int32_t ReceivedRTPPacket(const uint8_t* received_packet,
                             size_t length,
                             const PacketTime& packet_time);
+  // TODO(nisse, solenberg): Delete when VoENetwork is deleted.
   int32_t ReceivedRTCPPacket(const uint8_t* data, size_t length);
+  void OnRtpPacket(const RtpPacketReceived& packet);
 
   // VoEFile
   int StartPlayingFileLocally(const char* fileName,
@@ -391,6 +394,9 @@ class Channel
   void OnIncomingFractionLoss(int fraction_lost);
 
  private:
+  bool OnRtpPacketWithHeader(const uint8_t* received_packet,
+                             size_t length,
+                             RTPHeader *header);
   bool ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
                      const RTPHeader& header,

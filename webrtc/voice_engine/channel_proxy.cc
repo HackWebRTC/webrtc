@@ -188,11 +188,9 @@ void ChannelProxy::DeRegisterExternalTransport() {
   channel()->DeRegisterExternalTransport();
 }
 
-bool ChannelProxy::ReceivedRTPPacket(const uint8_t* packet,
-                                     size_t length,
-                                     const PacketTime& packet_time) {
+void ChannelProxy::OnRtpPacket(const RtpPacketReceived& packet) {
   // May be called on either worker thread or network thread.
-  return channel()->ReceivedRTPPacket(packet, length, packet_time) == 0;
+  channel()->OnRtpPacket(packet);
 }
 
 bool ChannelProxy::ReceivedRTCPPacket(const uint8_t* packet, size_t length) {

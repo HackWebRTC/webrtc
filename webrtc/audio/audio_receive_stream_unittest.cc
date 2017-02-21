@@ -246,13 +246,15 @@ TEST(AudioReceiveStreamTest, ReceiveRtpPacket) {
   std::vector<uint8_t> rtp_packet = CreateRtpHeaderWithOneByteExtension(
       kTransportSequenceNumberId, kTransportSequenceNumberValue, 2);
   PacketTime packet_time(5678000, 0);
+
+  RtpPacketReceived parsed_packet;
+  ASSERT_TRUE(parsed_packet.Parse(&rtp_packet[0], rtp_packet.size()));
+  parsed_packet.set_arrival_time_ms((packet_time.timestamp + 500) / 1000);
+
   EXPECT_CALL(*helper.channel_proxy(),
-              ReceivedRTPPacket(&rtp_packet[0],
-                                rtp_packet.size(),
-                                _))
-      .WillOnce(Return(true));
-  EXPECT_TRUE(
-      recv_stream.DeliverRtp(&rtp_packet[0], rtp_packet.size(), packet_time));
+              OnRtpPacket(testing::Ref(parsed_packet)));
+
+  recv_stream.OnRtpPacket(parsed_packet);
 }
 
 TEST(AudioReceiveStreamTest, ReceiveRtcpPacket) {

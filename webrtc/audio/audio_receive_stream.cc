@@ -298,14 +298,12 @@ bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return channel_proxy_->ReceivedRTCPPacket(packet, length);
 }
 
-bool AudioReceiveStream::DeliverRtp(const uint8_t* packet,
-                                    size_t length,
-                                    const PacketTime& packet_time) {
+void AudioReceiveStream::OnRtpPacket(const RtpPacketReceived& packet) {
   // TODO(solenberg): Tests call this function on a network thread, libjingle
   // calls on the worker thread. We should move towards always using a network
   // thread. Then this check can be enabled.
   // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
-  return channel_proxy_->ReceivedRTPPacket(packet, length, packet_time);
+  channel_proxy_->OnRtpPacket(packet);
 }
 
 const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {

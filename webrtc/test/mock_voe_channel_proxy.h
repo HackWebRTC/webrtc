@@ -15,6 +15,7 @@
 
 #include "webrtc/test/gmock.h"
 #include "webrtc/voice_engine/channel_proxy.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {
 namespace test {
@@ -52,9 +53,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(SetInputMute, void(bool muted));
   MOCK_METHOD1(RegisterExternalTransport, void(Transport* transport));
   MOCK_METHOD0(DeRegisterExternalTransport, void());
-  MOCK_METHOD3(ReceivedRTPPacket, bool(const uint8_t* packet,
-                                       size_t length,
-                                       const PacketTime& packet_time));
+  MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived& packet));
   MOCK_METHOD2(ReceivedRTCPPacket, bool(const uint8_t* packet, size_t length));
   MOCK_CONST_METHOD0(GetAudioDecoderFactory,
                      const rtc::scoped_refptr<AudioDecoderFactory>&());

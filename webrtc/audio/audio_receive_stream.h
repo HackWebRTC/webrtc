@@ -23,6 +23,7 @@
 namespace webrtc {
 class PacketRouter;
 class RtcEventLog;
+class RtpPacketReceived;
 
 namespace voe {
 class ChannelProxy;
@@ -48,6 +49,9 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   void SetSink(std::unique_ptr<AudioSinkInterface> sink) override;
   void SetGain(float gain) override;
 
+  // TODO(nisse): Intended to be part of an RtpPacketReceiver interface.
+  void OnRtpPacket(const RtpPacketReceived& packet);
+
   // AudioMixer::Source
   AudioFrameInfo GetAudioFrameWithInfo(int sample_rate_hz,
                                        AudioFrame* audio_frame) override;
@@ -63,9 +67,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   void AssociateSendStream(AudioSendStream* send_stream);
   void SignalNetworkState(NetworkState state);
   bool DeliverRtcp(const uint8_t* packet, size_t length);
-  bool DeliverRtp(const uint8_t* packet,
-                  size_t length,
-                  const PacketTime& packet_time);
   const webrtc::AudioReceiveStream::Config& config() const;
 
  private:
