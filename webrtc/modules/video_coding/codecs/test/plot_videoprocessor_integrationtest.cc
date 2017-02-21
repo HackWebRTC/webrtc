@@ -22,6 +22,7 @@ const bool kFrameDropperOn = true;
 const bool kSpatialResizeOn = false;
 const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
 const bool kHwCodec = false;
+const bool kUseSingleCore = true;
 
 // Packet loss probability [0.0, 1.0].
 const float kPacketLoss = 0.0f;
@@ -53,12 +54,12 @@ class PlotVideoProcessorIntegrationTest
     rate_profile.num_frames = kNumFramesLong;
     // Codec/network settings.
     CodecConfigPars process_settings;
-    SetCodecParameters(&process_settings, codec_type_, kHwCodec, kPacketLoss,
-                       -1,  // key_frame_interval
-                       1,   // num_temporal_layers
-                       kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
-                       kSpatialResizeOn, width, height, filename,
-                       kVerboseLogging);
+    SetCodecParameters(
+        &process_settings, codec_type_, kHwCodec, kUseSingleCore, kPacketLoss,
+        -1,  // key_frame_interval
+        1,   // num_temporal_layers
+        kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
+        width, height, filename, kVerboseLogging);
     // Metrics for expected quality (PSNR avg, PSNR min, SSIM avg, SSIM min).
     QualityMetrics quality_metrics;
     SetQualityMetrics(&quality_metrics, 15.0, 10.0, 0.2, 0.1);

@@ -63,6 +63,7 @@ const char kFilenameForemanCif[] = "foreman_cif";
 struct CodecConfigPars {
   VideoCodecType codec_type;
   bool hw_codec;
+  bool use_single_core;
   float packet_loss;
   int num_temporal_layers;
   int key_frame_interval;
@@ -142,10 +143,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
   virtual ~VideoProcessorIntegrationTest() = default;
 
-  void SetUpCodecConfig(const std::string& filename,
-                        int width,
-                        int height,
-                        bool verbose_logging) {
+  void SetUpCodecConfig(const CodecConfigPars& process) {
     if (hw_codec_) {
 #if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
 #if defined(WEBRTC_ANDROID)
@@ -199,16 +197,16 @@ class VideoProcessorIntegrationTest : public testing::Test {
     VideoCodingModule::Codec(codec_type_, &codec_settings_);
 
     // Configure input filename.
-    config_.input_filename = test::ResourcePath(filename, "yuv");
-    if (verbose_logging)
-      printf("Filename: %s\n", filename.c_str());
+    config_.input_filename = test::ResourcePath(process.filename, "yuv");
+    if (process.verbose_logging)
+      printf("Filename: %s\n", process.filename.c_str());
     // Generate an output filename in a safe way.
     config_.output_filename = test::TempFilename(
         test::OutputPath(), "videoprocessor_integrationtest");
-    config_.frame_length_in_bytes = CalcBufferSize(kI420, width, height);
-    config_.verbose = verbose_logging;
-    // Only allow encoder/decoder to use single core, for predictability.
-    config_.use_single_core = true;
+    config_.frame_length_in_bytes =
+        CalcBufferSize(kI420, process.width, process.height);
+    config_.verbose = process.verbose_logging;
+    config_.use_single_core = process.use_single_core;
     // Key frame interval and packet loss are set for each test.
     config_.keyframe_interval = key_frame_interval_;
     config_.networking_config.packet_loss_probability = packet_loss_;
@@ -216,8 +214,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     // Configure codec settings.
     config_.codec_settings = &codec_settings_;
     config_.codec_settings->startBitrate = start_bitrate_;
-    config_.codec_settings->width = width;
-    config_.codec_settings->height = height;
+    config_.codec_settings->width = process.width;
+    config_.codec_settings->height = process.height;
 
     // These features may be set depending on the test.
     switch (config_.codec_settings->codecType) {
@@ -458,8 +456,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     denoising_on_ = process.denoising_on;
     frame_dropper_on_ = process.frame_dropper_on;
     spatial_resize_on_ = process.spatial_resize_on;
-    SetUpCodecConfig(process.filename, process.width, process.height,
-                     process.verbose_logging);
+    SetUpCodecConfig(process);
     // Update the layers and the codec with the initial rates.
     bit_rate_ = rate_profile.target_bit_rate[0];
     frame_rate_ = rate_profile.input_frame_rate[0];
@@ -563,6 +560,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   static void SetCodecParameters(CodecConfigPars* process_settings,
                                  VideoCodecType codec_type,
                                  bool hw_codec,
+                                 bool use_single_core,
                                  float packet_loss,
                                  int key_frame_interval,
                                  int num_temporal_layers,
@@ -576,6 +574,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                  bool verbose_logging) {
     process_settings->codec_type = codec_type;
     process_settings->hw_codec = hw_codec;
+    process_settings->use_single_core = use_single_core;
     process_settings->packet_loss = packet_loss;
     process_settings->key_frame_interval = key_frame_interval;
     process_settings->num_temporal_layers = num_temporal_layers,
@@ -592,6 +591,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   static void SetCodecParameters(CodecConfigPars* process_settings,
                                  VideoCodecType codec_type,
                                  bool hw_codec,
+                                 bool use_single_core,
                                  float packet_loss,
                                  int key_frame_interval,
                                  int num_temporal_layers,
@@ -599,8 +599,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
                                  bool denoising_on,
                                  bool frame_dropper_on,
                                  bool spatial_resize_on) {
-    SetCodecParameters(process_settings, codec_type, hw_codec, packet_loss,
-                       key_frame_interval, num_temporal_layers,
+    SetCodecParameters(process_settings, codec_type, hw_codec, use_single_core,
+                       packet_loss, key_frame_interval, num_temporal_layers,
                        error_concealment_on, denoising_on, frame_dropper_on,
                        spatial_resize_on, kCifWidth, kCifHeight,
                        kFilenameForemanCif, false /* verbose_logging */);

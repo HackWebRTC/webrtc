@@ -30,7 +30,7 @@ CODEC_TYPE = ('Codec type', 'Codec')
 ENCODER_IMPLEMENTATION_NAME = ('Encoder implementation name', 'enc name')
 DECODER_IMPLEMENTATION_NAME = ('Decoder implementation name', 'dec name')
 NUM_FRAMES = ('Total # of frames', 'num frames')
-CORES = ('#CPU cores used', 'cores')
+CORES = ('#CPU cores used', 'CPU cores used')
 DENOISING = ('Denoising', 'denoising')
 RESILIENCE = ('Resilience', 'resilience')
 ERROR_CONCEALMENT = ('Error concealment', 'error concealment')
@@ -146,7 +146,7 @@ def ParseMetrics(filename, setting1, setting2):
   Args:
     filename: The name of the file.
     setting1: First setting for sorting metrics (e.g. width).
-    setting2: Second setting for sorting metrics (e.g. cores).
+    setting2: Second setting for sorting metrics (e.g. CPU cores used).
 
   Returns:
     A dictionary holding parsed metrics.
@@ -156,19 +156,19 @@ def ParseMetrics(filename, setting1, setting2):
 
   metrics = {
   "width: 352": {
-    "cores: 1.0": {
+    "CPU cores used: 1.0": {
       "encode time (us)": [0.718005, 0.806925, 0.909726, 0.931835, 0.953642],
       "PSNR (dB)": [25.546029, 29.465518, 34.723535, 36.428493, 38.686551],
       "bitrate (kbps)": [50, 100, 300, 500, 1000]
     },
-    "cores: 2.0": {
+    "CPU cores used: 2.0": {
       "encode time (us)": [0.718005, 0.806925, 0.909726, 0.931835, 0.953642],
       "PSNR (dB)": [25.546029, 29.465518, 34.723535, 36.428493, 38.686551],
       "bitrate (kbps)": [50, 100, 300, 500, 1000]
     },
   },
   "width: 176": {
-    "cores: 1.0": {
+    "CPU cores used: 1.0": {
       "encode time (us)": [0.857897, 0.91608, 0.959173, 0.971116, 0.980961],
       "PSNR (dB)": [30.243646, 33.375592, 37.574387, 39.42184, 41.437897],
       "bitrate (kbps)": [50, 100, 300, 500, 1000]
@@ -273,11 +273,11 @@ def Plot(y_metric, x_metric, metrics):
     y_metric = 'PSNR (dB)'
     x_metric = 'bitrate (kbps)'
     metrics = {
-      "cores: 1.0": {
+      "CPU cores used: 1.0": {
         "PSNR (dB)": [25.546029, 29.465518, 34.723535, 36.428493, 38.686551],
         "bitrate (kbps)": [50, 100, 300, 500, 1000]
       },
-      "cores: 2.0": {
+      "CPU cores used: 2.0": {
         "PSNR (dB)": [25.546029, 29.465518, 34.723535, 36.428493, 38.686551],
         "bitrate (kbps)": [50, 100, 300, 500, 1000]
       },
@@ -338,6 +338,10 @@ def GetTitle(filename):
   codec_types = ParseSetting(filename, CODEC_TYPE[1])
   for i in range(0, len(codec_types)):
     title += codec_types[i] + ', '
+
+  cores = ParseSetting(filename, CORES[1])
+  for i in range(0, len(cores)):
+    title += cores[i].split('.')[0] + ', '
 
   framerate = ParseSetting(filename, FRAMERATE[1])
   for i in range(0, len(framerate)):

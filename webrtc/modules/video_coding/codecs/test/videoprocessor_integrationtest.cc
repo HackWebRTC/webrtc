@@ -18,6 +18,9 @@ namespace {
 // In these correctness tests, we only consider SW codecs.
 const bool kHwCodec = false;
 
+// Only allow encoder/decoder to use single core, for predictability.
+const bool kUseSingleCore = true;
+
 }  // namespace
 
 #if defined(WEBRTC_VIDEOPROCESSOR_H264_TESTS)
@@ -35,8 +38,8 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossH264) {
   rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecH264, kHwCodec, 0.0f, -1, 1,
-                     false, false, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecH264, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 1, false, false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 35.0, 25.0, 0.93, 0.70);
@@ -66,8 +69,8 @@ TEST_F(VideoProcessorIntegrationTest, Process0PercentPacketLossVP9) {
   rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec, 0.0f, -1, 1,
-                     false, false, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 1, false, false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 37.0, 36.0, 0.93, 0.92);
@@ -88,8 +91,8 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLossVP9) {
   rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec, 0.05f, -1, 1,
-                     false, false, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec,
+                     kUseSingleCore, 0.05f, -1, 1, false, false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 17.0, 14.0, 0.45, 0.36);
@@ -114,8 +117,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec, 0.0f, -1, 1,
-                     false, false, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 1, false, false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 35.5, 30.0, 0.90, 0.85);
@@ -147,8 +150,8 @@ TEST_F(VideoProcessorIntegrationTest,
   rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec, 0.0f, -1, 1,
-                     false, false, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 1, false, false, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 31.5, 18.0, 0.80, 0.43);
@@ -170,8 +173,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossDenoiserOnVP9) {
   rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec, 0.0f, -1, 1,
-                     false, true, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 1, false, true, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 36.8, 35.8, 0.92, 0.91);
@@ -195,8 +198,8 @@ TEST_F(VideoProcessorIntegrationTest,
   rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec, 0.0f, -1, 1,
-                     false, false, true, true);
+  SetCodecParameters(&process_settings, kVideoCodecVP9, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 1, false, false, true, true);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 24.0, 13.0, 0.65, 0.37);
@@ -223,8 +226,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
   rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec, 0.0f, -1, 1,
-                     false, true, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 1, false, true, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 34.95, 33.0, 0.90, 0.89);
@@ -245,8 +248,8 @@ TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
   rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec, 0.05f, -1, 1,
-                     false, true, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec,
+                     kUseSingleCore, 0.05f, -1, 1, false, true, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 20.0, 16.0, 0.60, 0.40);
@@ -267,8 +270,8 @@ TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
   rate_profile.num_frames = kNumFramesShort;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec, 0.1f, -1, 1,
-                     false, true, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec,
+                     kUseSingleCore, 0.1f, -1, 1, false, true, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 19.0, 16.0, 0.50, 0.35);
@@ -311,8 +314,8 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossChangeBitRateVP8) {
   rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec, 0.0f, -1, 1,
-                     false, true, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 1, false, true, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 34.0, 32.0, 0.85, 0.80);
@@ -352,8 +355,8 @@ TEST_F(VideoProcessorIntegrationTest,
   rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec, 0.0f, -1, 1,
-                     false, true, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 1, false, true, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 31.0, 22.0, 0.80, 0.65);
@@ -388,8 +391,8 @@ TEST_F(VideoProcessorIntegrationTest, MAYBE_ProcessNoLossTemporalLayersVP8) {
   rate_profile.num_frames = kNumFramesLong;
   // Codec/network settings.
   CodecConfigPars process_settings;
-  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec, 0.0f, -1, 3,
-                     false, true, true, false);
+  SetCodecParameters(&process_settings, kVideoCodecVP8, kHwCodec,
+                     kUseSingleCore, 0.0f, -1, 3, false, true, true, false);
   // Metrics for expected quality.
   QualityMetrics quality_metrics;
   SetQualityMetrics(&quality_metrics, 32.5, 30.0, 0.85, 0.80);

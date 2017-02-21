@@ -124,10 +124,8 @@ bool VideoProcessorImpl::Init() {
       << "Failed to register decode complete callback";
 
   // Init the encoder and decoder.
-  uint32_t num_cores = 1;
-  if (!config_.use_single_core) {
-    num_cores = CpuInfo::DetectNumberOfCores();
-  }
+  uint32_t num_cores =
+      config_.use_single_core ? 1 : CpuInfo::DetectNumberOfCores();
   RTC_CHECK_EQ(
       encoder_->InitEncode(config_.codec_settings, num_cores,
                            config_.networking_config.max_payload_size_in_bytes),
