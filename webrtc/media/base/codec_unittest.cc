@@ -68,18 +68,18 @@ TEST(CodecTest, TestAudioCodecOperators) {
   AudioCodec c3(96, "A", 48000, 20000, 2);
   AudioCodec c4(96, "A", 44100, 10000, 2);
   AudioCodec c5(96, "A", 44100, 20000, 1);
-  EXPECT_TRUE(c0 != c1);
-  EXPECT_TRUE(c0 != c2);
-  EXPECT_TRUE(c0 != c3);
-  EXPECT_TRUE(c0 != c4);
-  EXPECT_TRUE(c0 != c5);
+  EXPECT_NE(c0, c1);
+  EXPECT_NE(c0, c2);
+  EXPECT_NE(c0, c3);
+  EXPECT_NE(c0, c4);
+  EXPECT_NE(c0, c5);
 
   AudioCodec c7;
   AudioCodec c8(0, "", 0, 0, 0);
   AudioCodec c9 = c0;
-  EXPECT_TRUE(c8 == c7);
-  EXPECT_TRUE(c9 != c7);
-  EXPECT_TRUE(c9 == c0);
+  EXPECT_EQ(c8, c7);
+  EXPECT_NE(c9, c7);
+  EXPECT_EQ(c9, c0);
 
   AudioCodec c10(c0);
   AudioCodec c11(c0);
@@ -89,13 +89,13 @@ TEST(CodecTest, TestAudioCodecOperators) {
   c11.params["x"] = "def";
   c12.params["y"] = "abc";
   c13.params["x"] = "abc";
-  EXPECT_TRUE(c10 != c0);
-  EXPECT_TRUE(c11 != c0);
-  EXPECT_TRUE(c11 != c10);
-  EXPECT_TRUE(c12 != c0);
-  EXPECT_TRUE(c12 != c10);
-  EXPECT_TRUE(c12 != c11);
-  EXPECT_TRUE(c13 == c10);
+  EXPECT_NE(c10, c0);
+  EXPECT_NE(c11, c0);
+  EXPECT_NE(c11, c10);
+  EXPECT_NE(c12, c0);
+  EXPECT_NE(c12, c10);
+  EXPECT_NE(c12, c11);
+  EXPECT_EQ(c13, c10);
 }
 
 TEST(CodecTest, TestAudioCodecMatches) {
