@@ -168,9 +168,9 @@ class RtpRtcpImplTest : public ::testing::Test {
         sender_(&clock_),
         receiver_(&clock_) {
     // Send module.
+    sender_.impl_->SetSSRC(kSenderSsrc);
     EXPECT_EQ(0, sender_.impl_->SetSendingStatus(true));
     sender_.impl_->SetSendingMediaStatus(true);
-    sender_.impl_->SetSSRC(kSenderSsrc);
     sender_.SetRemoteSsrc(kReceiverSsrc);
     sender_.impl_->SetSequenceNumber(kSequenceNumber);
     sender_.impl_->SetStorePacketsStatus(true, 100);
