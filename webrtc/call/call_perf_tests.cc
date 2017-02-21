@@ -288,7 +288,11 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   VoiceEngine::Delete(voice_engine);
 
   observer.PrintResults();
-  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.AVSyncOffsetInMs"));
+
+  // In quick test synchronization may not be achieved in time.
+  if (field_trial::FindFullName("WebRTC-QuickPerfTest") != "Enabled") {
+    EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.AVSyncOffsetInMs"));
+  }
 }
 
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoNtpDrift) {
