@@ -165,8 +165,6 @@ class BitrateAllocator {
   int num_pause_events_ GUARDED_BY(&sequenced_checker_);
   Clock* const clock_ GUARDED_BY(&sequenced_checker_);
   int64_t last_bwe_log_time_ GUARDED_BY(&sequenced_checker_);
-  uint32_t total_requested_padding_bitrate_ GUARDED_BY(&sequenced_checker_);
-  uint32_t total_requested_min_bitrate_ GUARDED_BY(&sequenced_checker_);
 };
 }  // namespace webrtc
 #endif  // WEBRTC_CALL_BITRATE_ALLOCATOR_H_

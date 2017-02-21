@@ -54,9 +54,7 @@ BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
       last_rtt_(0),
       num_pause_events_(0),
       clock_(Clock::GetRealTimeClock()),
-      last_bwe_log_time_(0),
-      total_requested_padding_bitrate_(0),
-      total_requested_min_bitrate_(0) {
+      last_bwe_log_time_(0) {
   sequenced_checker_.Detach();
 }
 
@@ -117,7 +115,6 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
       config.media_ratio = MediaRatio(allocated_bitrate, protection_bitrate);
     config.allocated_bitrate_bps = allocated_bitrate;
   }
-  UpdateAllocationLimits();
 }
 
 void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
@@ -170,23 +167,11 @@ void BitrateAllocator::UpdateAllocationLimits() {
   uint32_t total_requested_min_bitrate = 0;
 
   for (const auto& config : bitrate_observer_configs_) {
-    uint32_t stream_padding = config.pad_up_bitrate_bps;
     if (config.enforce_min_bitrate) {
       total_requested_min_bitrate += config.min_bitrate_bps;
-    } else if (config.allocated_bitrate_bps == 0) {
-      stream_padding =
-          std::max(MinBitrateWithHysteresis(config), stream_padding);
     }
-    total_requested_padding_bitrate += stream_padding;
+    total_requested_padding_bitrate += config.pad_up_bitrate_bps;
   }
-
-  if (total_requested_padding_bitrate == total_requested_padding_bitrate_ &&
-      total_requested_min_bitrate == total_requested_min_bitrate_) {
-    return;
-  }
-
-  total_requested_min_bitrate_ = total_requested_min_bitrate;
-  total_requested_padding_bitrate_ = total_requested_padding_bitrate;
 
   LOG(LS_INFO) << "UpdateAllocationLimits : total_requested_min_bitrate: "
                << total_requested_min_bitrate
@@ -431,9 +416,8 @@ bool BitrateAllocator::EnoughBitrateForAllObservers(uint32_t bitrate,
       static_cast<uint32_t>(bitrate_observer_configs_.size());
   for (const auto& observer_config : bitrate_observer_configs_) {
     if (observer_config.min_bitrate_bps + extra_bitrate_per_observer <
-        MinBitrateWithHysteresis(observer_config)) {
+        MinBitrateWithHysteresis(observer_config))
       return false;
-    }
   }
   return true;
 }
