@@ -238,7 +238,7 @@ class RTCPSender {
       GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t tmmbr_send_bps_ GUARDED_BY(critical_section_rtcp_sender_);
   uint32_t packet_oh_send_ GUARDED_BY(critical_section_rtcp_sender_);
-  size_t max_packet_size_;
+  size_t max_packet_size_ GUARDED_BY(critical_section_rtcp_sender_);
 
   // APP
   uint8_t app_sub_type_ GUARDED_BY(critical_section_rtcp_sender_);

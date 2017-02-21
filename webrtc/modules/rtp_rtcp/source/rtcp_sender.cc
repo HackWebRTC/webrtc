@@ -282,6 +282,7 @@ void RTCPSender::SetTMMBRStatus(bool enable) {
 }
 
 void RTCPSender::SetMaxRtpPacketSize(size_t max_packet_size) {
+  rtc::CritScope lock(&critical_section_rtcp_sender_);
   max_packet_size_ = max_packet_size;
 }
 
@@ -749,6 +750,8 @@ int32_t RTCPSender::SendCompoundRTCP(
     const uint16_t* nack_list,
     uint64_t pictureID) {
   PacketContainer container(transport_, event_log_);
+  size_t max_packet_size;
+
   {
     rtc::CritScope lock(&critical_section_rtcp_sender_);
     if (method_ == RtcpMode::kOff) {
@@ -821,9 +824,10 @@ int32_t RTCPSender::SendCompoundRTCP(
     }
 
     RTC_DCHECK(AllVolatileFlagsConsumed());
+    max_packet_size = max_packet_size_;
   }
 
-  size_t bytes_sent = container.SendPackets(max_packet_size_);
+  size_t bytes_sent = container.SendPackets(max_packet_size);
   return bytes_sent == 0 ? -1 : 0;
 }
 
@@ -1040,15 +1044,17 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
     // but we can't because of an incorrect warning (C4822) in MVS 2013.
   } sender(transport_, event_log_);
 
+  size_t max_packet_size;
   {
     rtc::CritScope lock(&critical_section_rtcp_sender_);
     if (method_ == RtcpMode::kOff)
       return false;
+    max_packet_size = max_packet_size_;
   }
 
-  RTC_DCHECK_LE(max_packet_size_, IP_PACKET_SIZE);
+  RTC_DCHECK_LE(max_packet_size, IP_PACKET_SIZE);
   uint8_t buffer[IP_PACKET_SIZE];
-  return packet.BuildExternalBuffer(buffer, max_packet_size_, &sender) &&
+  return packet.BuildExternalBuffer(buffer, max_packet_size, &sender) &&
          !sender.send_failure_;
 }
 
