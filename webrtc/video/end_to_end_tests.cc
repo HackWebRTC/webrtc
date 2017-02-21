@@ -2095,7 +2095,7 @@ TEST_P(EndToEndTest, RembWithSendSideBwe) {
           sender_ssrc_(0),
           remb_bitrate_bps_(1000000),
           receive_transport_(nullptr),
-          event_(false, false),
+          stop_event_(false, false),
           poller_thread_(&BitrateStatsPollingThread,
                          this,
                          "BitrateStatsPollingThread"),
@@ -2183,13 +2183,14 @@ TEST_P(EndToEndTest, RembWithSendSideBwe) {
         }
       }
 
-      return !event_.Wait(1000);
+      return !stop_event_.Wait(1000);
     }
 
     void PerformTest() override {
       poller_thread_.Start();
       EXPECT_TRUE(Wait())
           << "Timed out while waiting for bitrate to change according to REMB.";
+      stop_event_.Set();
       poller_thread_.Stop();
     }
 
@@ -2202,7 +2203,7 @@ TEST_P(EndToEndTest, RembWithSendSideBwe) {
     int remb_bitrate_bps_;
     std::unique_ptr<RtpRtcp> rtp_rtcp_;
     test::PacketTransport* receive_transport_;
-    rtc::Event event_;
+    rtc::Event stop_event_;
     rtc::PlatformThread poller_thread_;
     TestState state_;
     RateLimiter retransmission_rate_limiter_;
