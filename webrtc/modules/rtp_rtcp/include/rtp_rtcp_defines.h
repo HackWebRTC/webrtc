@@ -278,8 +278,6 @@ struct PacketInfo {
         payload_size(payload_size),
         probe_cluster_id(probe_cluster_id) {}
 
-  static constexpr int kNotAProbe = -1;
-
   // Time corresponding to when this object was created.
   int64_t creation_time_ms;
   // Time corresponding to when the packet was received. Timestamped with the
