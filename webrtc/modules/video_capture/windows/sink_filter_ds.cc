@@ -87,11 +87,6 @@ CaptureInputPin::GetMediaType (IN int iPosition, OUT CMediaType * pmt)
     pmt->SetTemporalCompression(FALSE);
 
     int32_t positionOffset=1;
-    if(_requestedCapability.codecType!=kVideoCodecUnknown)
-    {
-        positionOffset=0;
-    }
-
     switch (iPosition+positionOffset)
     {
         case 0:

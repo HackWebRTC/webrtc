@@ -154,7 +154,6 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
     int32_t bestHeight = 0;
     int32_t bestFrameRate = 0;
     RawVideoType bestRawType = kVideoUnknown;
-    webrtc::VideoCodecType bestCodecType = webrtc::kVideoCodecUnknown;
 
     const int32_t numberOfCapabilies =
         static_cast<int32_t>(_captureCapabilities.size());
@@ -201,7 +200,6 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
                                         || capability.rawType == kVideoYUY2
                                         || capability.rawType == kVideoYV12))
                                 {
-                                    bestCodecType = capability.codecType;
                                     bestRawType = capability.rawType;
                                     bestformatIndex = tmp;
                                 }
@@ -210,54 +208,36 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
                                     && capability.width == requested.width
                                     && capability.maxFPS >= requested.maxFPS)
                                 {
-                                    if (capability.codecType == requested.codecType
-                                        && bestCodecType != requested.codecType)
-                                    {
-                                        bestCodecType = capability.codecType;
-                                        bestformatIndex = tmp;
-                                    }
+                                  bestformatIndex = tmp;
                                 }
                             }
                             else // Better frame rate
                             {
-                                if (requested.codecType == capability.codecType)
-                                {
-
-                                    bestWidth = capability.width;
-                                    bestHeight = capability.height;
-                                    bestFrameRate = capability.maxFPS;
-                                    bestCodecType = capability.codecType;
-                                    bestRawType = capability.rawType;
-                                    bestformatIndex = tmp;
-                                }
+                                bestWidth = capability.width;
+                                bestHeight = capability.height;
+                                bestFrameRate = capability.maxFPS;
+                                bestRawType = capability.rawType;
+                                bestformatIndex = tmp;
                             }
                         }
                     }
                     else // Better width than previously
                     {
-                        if (requested.codecType == capability.codecType)
-                        {
-                            bestWidth = capability.width;
-                            bestHeight = capability.height;
-                            bestFrameRate = capability.maxFPS;
-                            bestCodecType = capability.codecType;
-                            bestRawType = capability.rawType;
-                            bestformatIndex = tmp;
-                        }
+                        bestWidth = capability.width;
+                        bestHeight = capability.height;
+                        bestFrameRate = capability.maxFPS;
+                        bestRawType = capability.rawType;
+                        bestformatIndex = tmp;
                     }
                 }// else width no good
             }
             else // Better height
             {
-                if (requested.codecType == capability.codecType)
-                {
-                    bestWidth = capability.width;
-                    bestHeight = capability.height;
-                    bestFrameRate = capability.maxFPS;
-                    bestCodecType = capability.codecType;
-                    bestRawType = capability.rawType;
-                    bestformatIndex = tmp;
-                }
+                bestWidth = capability.width;
+                bestHeight = capability.height;
+                bestFrameRate = capability.maxFPS;
+                bestRawType = capability.rawType;
+                bestformatIndex = tmp;
             }
         }// else height not good
     }//end for
