@@ -91,8 +91,16 @@ class VCMSendStatisticsCallback {
 class VCMReceiveStatisticsCallback {
  public:
   virtual void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) = 0;
+  virtual void OnCompleteFrame(bool is_keyframe, size_t size_bytes) = 0;
   virtual void OnDiscardedPacketsUpdated(int discarded_packets) = 0;
   virtual void OnFrameCountsUpdated(const FrameCounts& frame_counts) = 0;
+  virtual void OnFrameBufferTimingsUpdated(int decode_ms,
+                                           int max_decode_ms,
+                                           int current_delay_ms,
+                                           int target_delay_ms,
+                                           int jitter_buffer_ms,
+                                           int min_playout_delay_ms,
+                                           int render_delay_ms) = 0;
 
  protected:
   virtual ~VCMReceiveStatisticsCallback() {}

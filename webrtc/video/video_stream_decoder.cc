@@ -115,17 +115,17 @@ void VideoStreamDecoder::OnDecoderTiming(int decode_ms,
                                          int target_delay_ms,
                                          int jitter_buffer_ms,
                                          int min_playout_delay_ms,
-                                         int render_delay_ms) {
-  int last_rtt = -1;
-  {
-    rtc::CritScope lock(&crit_);
-    last_rtt = last_rtt_ms_;
-  }
+                                         int render_delay_ms) {}
 
-  receive_stats_callback_->OnDecoderTiming(
-      decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
-      jitter_buffer_ms, min_playout_delay_ms, render_delay_ms, last_rtt);
-}
+void VideoStreamDecoder::OnFrameBufferTimingsUpdated(int decode_ms,
+                                                     int max_decode_ms,
+                                                     int current_delay_ms,
+                                                     int target_delay_ms,
+                                                     int jitter_buffer_ms,
+                                                     int min_playout_delay_ms,
+                                                     int render_delay_ms) {}
+
+void VideoStreamDecoder::OnCompleteFrame(bool is_keyframe, size_t size_bytes) {}
 
 void VideoStreamDecoder::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   video_receiver_->SetReceiveChannelParameters(max_rtt_ms);
