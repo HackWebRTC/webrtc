@@ -44,7 +44,7 @@
 //       Histogram* histogram_pointer, const std::string& name, int sample);
 //
 // - or link with the default implementations (i.e.
-//   system_wrappers/system_wrappers.gyp:metrics_default).
+//   system_wrappers:metrics_default).
 //
 //
 // Example usage:
@@ -242,4 +242,3 @@ void HistogramAdd(Histogram* histogram_pointer, int sample);
 }  // namespace webrtc
 
 #endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
-
