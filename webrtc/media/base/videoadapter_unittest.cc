@@ -1016,4 +1016,17 @@ TEST_F(VideoAdapterTest, AdaptFrameResolutionDropWithResolutionRequest) {
       &out_width_, &out_height_));
 }
 
+// Test that we will adapt to max given a target pixel count close to max.
+TEST_F(VideoAdapterTest, TestAdaptToMax) {
+  adapter_.OnOutputFormatRequest(VideoFormat(640, 360, 0, FOURCC_I420));
+  adapter_.OnResolutionRequest(rtc::Optional<int>(640 * 360 - 1) /* target */,
+                               rtc::Optional<int>());
+
+  EXPECT_TRUE(adapter_.AdaptFrameResolution(640, 360, 0, &cropped_width_,
+                                            &cropped_height_, &out_width_,
+                                            &out_height_));
+  EXPECT_EQ(640, out_width_);
+  EXPECT_EQ(360, out_height_);
+}
+
 }  // namespace cricket

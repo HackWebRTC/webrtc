@@ -60,7 +60,7 @@ Fraction FindScale(int input_pixels, int target_pixels, int max_pixels) {
   // The minimum (absolute) difference between the number of output pixels and
   // the target pixel count.
   int min_pixel_diff = std::numeric_limits<int>::max();
-  if (input_pixels < max_pixels) {
+  if (input_pixels <= max_pixels) {
     // Start condition for 1/1 case, if it is less than max.
     min_pixel_diff = std::abs(input_pixels - target_pixels);
   }
