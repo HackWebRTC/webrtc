@@ -371,7 +371,6 @@ rtc_static_library("rtc_base") {
   ]
   public_deps = [
     ":rtc_base_approved",
-    ":rtc_task_runner",
   ]
   public_configs = []
 
@@ -893,6 +892,7 @@ if (rtc_include_tests) {
     }
     deps = [
       ":rtc_base_tests_main",
+      ":rtc_task_runner",
     ]
     public_deps = [
       ":rtc_base",
