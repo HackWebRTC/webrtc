@@ -49,6 +49,10 @@ def print_landmines():
     print 'Clobber to resolve some issues with corrupt .pdb files on bots.'
     print 'Clobber due to corrupt .pdb files (after #14623)'
     print 'Clobber due to Win 64-bit Debug linking error (crbug.com/668961)'
+  if platform() == 'mac':
+    # platform == 'ios' doesn't work since it assumes GYP_DEFINES is set, which
+    # is no longer the case.
+    print 'Clobber due to iOS compile errors (crbug.com/694721)'
 
 
 def main():
