@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/function_view.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
@@ -50,6 +51,11 @@ struct LossBasedBweUpdate {
   int32_t new_bitrate;
   uint8_t fraction_loss;
   int32_t expected_packets;
+};
+
+struct AudioNetworkAdaptationEvent {
+  uint64_t timestamp;
+  AudioNetworkAdaptor::EncoderRuntimeConfig config;
 };
 
 class EventLogAnalyzer {
@@ -86,6 +92,13 @@ class EventLogAnalyzer {
 
   void CreateNetworkDelayFeedbackGraph(Plot* plot);
   void CreateTimestampGraph(Plot* plot);
+
+  void CreateAudioEncoderTargetBitrateGraph(Plot* plot);
+  void CreateAudioEncoderFrameLengthGraph(Plot* plot);
+  void CreateAudioEncoderUplinkPacketLossFractionGraph(Plot* plot);
+  void CreateAudioEncoderEnableFecGraph(Plot* plot);
+  void CreateAudioEncoderEnableDtxGraph(Plot* plot);
+  void CreateAudioEncoderNumChannelsGraph(Plot* plot);
 
   // Returns a vector of capture and arrival timestamps for the video frames
   // of the stream with the most number of frames.
@@ -127,6 +140,11 @@ class EventLogAnalyzer {
 
   std::string GetStreamName(StreamId) const;
 
+  void FillAudioEncoderTimeSeries(
+      Plot* plot,
+      rtc::FunctionView<rtc::Optional<float>(
+          const AudioNetworkAdaptationEvent& ana_event)> get_y) const;
+
   const ParsedRtcEventLog& parsed_log_;
 
   // A list of SSRCs we are interested in analysing.
@@ -151,6 +169,8 @@ class EventLogAnalyzer {
 
   // A list of all updates from the send-side loss-based bandwidth estimator.
   std::vector<LossBasedBweUpdate> bwe_loss_updates_;
+
+  std::vector<AudioNetworkAdaptationEvent> audio_network_adaptation_events_;
 
   // Window and step size used for calculating moving averages, e.g. bitrate.
   // The generated data points will be |step_| microseconds apart.

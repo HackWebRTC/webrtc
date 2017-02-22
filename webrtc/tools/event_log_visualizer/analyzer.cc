@@ -451,6 +451,10 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         break;
       }
       case ParsedRtcEventLog::AUDIO_NETWORK_ADAPTATION_EVENT: {
+        AudioNetworkAdaptationEvent ana_event;
+        ana_event.timestamp = parsed_log_.GetTimestamp(i);
+        parsed_log_.GetAudioNetworkAdaptation(i, &ana_event.config);
+        audio_network_adaptation_events_.push_back(ana_event);
         break;
       }
       case ParsedRtcEventLog::UNKNOWN_EVENT: {
@@ -530,6 +534,21 @@ std::string EventLogAnalyzer::GetStreamName(StreamId stream_id) const {
   }
   name << SsrcToString(stream_id.GetSsrc());
   return name.str();
+}
+
+void EventLogAnalyzer::FillAudioEncoderTimeSeries(
+    Plot* plot,
+    rtc::FunctionView<rtc::Optional<float>(
+        const AudioNetworkAdaptationEvent& ana_event)> get_y) const {
+  plot->series_list_.push_back(TimeSeries());
+  plot->series_list_.back().style = LINE_DOT_GRAPH;
+  for (auto& ana_event : audio_network_adaptation_events_) {
+    rtc::Optional<float> y = get_y(ana_event);
+    if (y) {
+      float x = static_cast<float>(ana_event.timestamp - begin_time_) / 1000000;
+      plot->series_list_.back().points.emplace_back(x, *y);
+    }
+  }
 }
 
 void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
@@ -1274,6 +1293,93 @@ void EventLogAnalyzer::CreateTimestampGraph(Plot* plot) {
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Timestamp (90khz)", kBottomMargin, kTopMargin);
   plot->SetTitle("Timestamps");
+}
+
+void EventLogAnalyzer::CreateAudioEncoderTargetBitrateGraph(Plot* plot) {
+  FillAudioEncoderTimeSeries(
+      plot, [](const AudioNetworkAdaptationEvent& ana_event) {
+        if (ana_event.config.bitrate_bps)
+          return rtc::Optional<float>(
+              static_cast<float>(*ana_event.config.bitrate_bps));
+        return rtc::Optional<float>();
+      });
+  plot->series_list_.back().label = "Audio encoder target bitrate";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Bitrate (bps)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Reported audio encoder target bitrate");
+}
+
+void EventLogAnalyzer::CreateAudioEncoderFrameLengthGraph(Plot* plot) {
+  FillAudioEncoderTimeSeries(
+      plot, [](const AudioNetworkAdaptationEvent& ana_event) {
+        if (ana_event.config.frame_length_ms)
+          return rtc::Optional<float>(
+              static_cast<float>(*ana_event.config.frame_length_ms));
+        return rtc::Optional<float>();
+      });
+  plot->series_list_.back().label = "Audio encoder frame length";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Frame length (ms)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Reported audio encoder frame length");
+}
+
+void EventLogAnalyzer::CreateAudioEncoderUplinkPacketLossFractionGraph(
+    Plot* plot) {
+  FillAudioEncoderTimeSeries(
+      plot, [&](const AudioNetworkAdaptationEvent& ana_event) {
+        if (ana_event.config.uplink_packet_loss_fraction)
+          return rtc::Optional<float>(static_cast<float>(
+              *ana_event.config.uplink_packet_loss_fraction));
+        return rtc::Optional<float>();
+      });
+  plot->series_list_.back().label = "Audio encoder uplink packet loss fraction";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 10, "Percent lost packets", kBottomMargin,
+                          kTopMargin);
+  plot->SetTitle("Reported audio encoder lost packets");
+}
+
+void EventLogAnalyzer::CreateAudioEncoderEnableFecGraph(Plot* plot) {
+  FillAudioEncoderTimeSeries(
+      plot, [&](const AudioNetworkAdaptationEvent& ana_event) {
+        if (ana_event.config.enable_fec)
+          return rtc::Optional<float>(
+              static_cast<float>(*ana_event.config.enable_fec));
+        return rtc::Optional<float>();
+      });
+  plot->series_list_.back().label = "Audio encoder FEC";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "FEC (false/true)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Reported audio encoder FEC");
+}
+
+void EventLogAnalyzer::CreateAudioEncoderEnableDtxGraph(Plot* plot) {
+  FillAudioEncoderTimeSeries(
+      plot, [&](const AudioNetworkAdaptationEvent& ana_event) {
+        if (ana_event.config.enable_dtx)
+          return rtc::Optional<float>(
+              static_cast<float>(*ana_event.config.enable_dtx));
+        return rtc::Optional<float>();
+      });
+  plot->series_list_.back().label = "Audio encoder DTX";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "DTX (false/true)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Reported audio encoder DTX");
+}
+
+void EventLogAnalyzer::CreateAudioEncoderNumChannelsGraph(Plot* plot) {
+  FillAudioEncoderTimeSeries(
+      plot, [&](const AudioNetworkAdaptationEvent& ana_event) {
+        if (ana_event.config.num_channels)
+          return rtc::Optional<float>(
+              static_cast<float>(*ana_event.config.num_channels));
+        return rtc::Optional<float>();
+      });
+  plot->series_list_.back().label = "Audio encoder number of channels";
+  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Number of channels (1 (mono)/2 (stereo))",
+                          kBottomMargin, kTopMargin);
+  plot->SetTitle("Reported audio encoder number of channels");
 }
 }  // namespace plotting
 }  // namespace webrtc
