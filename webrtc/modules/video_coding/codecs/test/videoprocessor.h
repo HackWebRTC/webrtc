@@ -20,6 +20,7 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/stats.h"
+#include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
 
@@ -161,11 +162,14 @@ class VideoProcessorImpl : public VideoProcessor {
  public:
   VideoProcessorImpl(webrtc::VideoEncoder* encoder,
                      webrtc::VideoDecoder* decoder,
-                     FrameReader* frame_reader,
-                     FrameWriter* frame_writer,
+                     FrameReader* analysis_frame_reader,
+                     FrameWriter* analysis_frame_writer,
                      PacketManipulator* packet_manipulator,
                      const TestConfig& config,
-                     Stats* stats);
+                     Stats* stats,
+                     FrameWriter* source_frame_writer,
+                     IvfFileWriter* encoded_frame_writer,
+                     FrameWriter* decoded_frame_writer);
   virtual ~VideoProcessorImpl();
   bool Init() override;
   bool ProcessFrame(int frame_number) override;
@@ -248,12 +252,24 @@ class VideoProcessorImpl : public VideoProcessor {
   webrtc::VideoEncoder* const encoder_;
   webrtc::VideoDecoder* const decoder_;
   std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
-  FrameReader* const frame_reader_;
-  FrameWriter* const frame_writer_;
+  // These (mandatory) file manipulators are used for, e.g., objective PSNR and
+  // SSIM calculations at the end of a test run.
+  FrameReader* const analysis_frame_reader_;
+  FrameWriter* const analysis_frame_writer_;
   PacketManipulator* const packet_manipulator_;
   const TestConfig& config_;
   Stats* stats_;
+  // These (optional) file writers are used for persistently storing the output
+  // of the coding pipeline at different stages: pre encode (source), post
+  // encode (encoded), and post decode (decoded). The purpose is to give the
+  // experimenter an option to subjectively evaluate the quality of the
+  // encoding, given the test settings. Each frame writer is enabled by being
+  // non-null.
+  FrameWriter* const source_frame_writer_;
+  IvfFileWriter* const encoded_frame_writer_;
+  FrameWriter* const decoded_frame_writer_;
 
+  // Adapters for the codec callbacks.
   std::unique_ptr<EncodedImageCallback> encode_callback_;
   std::unique_ptr<DecodedImageCallback> decode_callback_;
 

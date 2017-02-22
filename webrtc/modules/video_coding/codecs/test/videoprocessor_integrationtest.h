@@ -15,6 +15,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #if defined(WEBRTC_ANDROID)
 #include "webrtc/modules/video_coding/codecs/test/android_test_initializer.h"
@@ -26,6 +27,7 @@
 #endif
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/file.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
@@ -33,10 +35,10 @@
 #include "webrtc/modules/video_coding/codecs/test/videoprocessor.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
-#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/frame_reader.h"
@@ -110,6 +112,13 @@ struct RateControlMetrics {
   int num_key_frames;
 };
 
+// Should video files be saved persistently to disk for post-run visualization?
+struct VisualizationParams {
+  bool save_source_y4m;
+  bool save_encoded_ivf;
+  bool save_decoded_y4m;
+};
+
 #if !defined(WEBRTC_IOS)
 const int kNumFramesShort = 100;
 #endif
@@ -143,7 +152,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
   virtual ~VideoProcessorIntegrationTest() = default;
 
-  void SetUpCodecConfig(const CodecConfigPars& process) {
+  void SetUpCodecConfig(const CodecConfigPars& process,
+                        const VisualizationParams* visualization_params) {
     if (process.hw_codec) {
 #if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
 #if defined(WEBRTC_ANDROID)
@@ -175,7 +185,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
           break;
       }
 #elif defined(WEBRTC_IOS)
-      RTC_DCHECK_EQ(kVideoCodecH264, process.codec_type)
+      ASSERT_EQ(kVideoCodecH264, process.codec_type)
           << "iOS HW codecs only support H264.";
       encoder_.reset(new H264VideoToolboxEncoder(
           cricket::VideoCodec(cricket::kH264CodecName)));
@@ -184,8 +194,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
       RTC_NOTREACHED() << "Only support HW codecs on Android and iOS.";
 #endif
 #endif  // WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED
-      RTC_DCHECK(encoder_) << "HW encoder not successfully created.";
-      RTC_DCHECK(decoder_) << "HW decoder not successfully created.";
+      RTC_CHECK(encoder_) << "HW encoder not successfully created.";
+      RTC_CHECK(decoder_) << "HW decoder not successfully created.";
     } else {
       // SW codecs.
       switch (process.codec_type) {
@@ -265,19 +275,54 @@ class VideoProcessorIntegrationTest : public testing::Test {
         RTC_NOTREACHED();
         break;
     }
-    frame_reader_.reset(new test::FrameReaderImpl(
+
+    // Create file objects for quality analysis.
+    analysis_frame_reader_.reset(new test::YuvFrameReaderImpl(
         config_.input_filename, config_.codec_settings->width,
         config_.codec_settings->height));
-    frame_writer_.reset(new test::FrameWriterImpl(
-        config_.output_filename, config_.frame_length_in_bytes));
-    RTC_CHECK(frame_reader_->Init());
-    RTC_CHECK(frame_writer_->Init());
+    analysis_frame_writer_.reset(new test::YuvFrameWriterImpl(
+        config_.output_filename, config_.codec_settings->width,
+        config_.codec_settings->height));
+    RTC_CHECK(analysis_frame_reader_->Init());
+    RTC_CHECK(analysis_frame_writer_->Init());
+
+    if (visualization_params) {
+      // clang-format off
+      const std::string output_filename_base =
+          test::OutputPath() + process.filename +
+          "_cd-" + CodecTypeToPayloadName(process.codec_type).value_or("") +
+          "_hw-" + std::to_string(process.hw_codec) +
+          "_fr-" + std::to_string(start_frame_rate_) +
+          "_br-" + std::to_string(static_cast<int>(start_bitrate_));
+      // clang-format on
+      if (visualization_params->save_source_y4m) {
+        source_frame_writer_.reset(new test::Y4mFrameWriterImpl(
+            output_filename_base + "_source.y4m", config_.codec_settings->width,
+            config_.codec_settings->height, start_frame_rate_));
+        RTC_CHECK(source_frame_writer_->Init());
+      }
+      if (visualization_params->save_encoded_ivf) {
+        rtc::File post_encode_file =
+            rtc::File::Create(output_filename_base + "_encoded.ivf");
+        encoded_frame_writer_ =
+            IvfFileWriter::Wrap(std::move(post_encode_file), 0);
+      }
+      if (visualization_params->save_decoded_y4m) {
+        decoded_frame_writer_.reset(new test::Y4mFrameWriterImpl(
+            output_filename_base + "_decoded.y4m",
+            config_.codec_settings->width, config_.codec_settings->height,
+            start_frame_rate_));
+        RTC_CHECK(decoded_frame_writer_->Init());
+      }
+    }
 
     packet_manipulator_.reset(new test::PacketManipulatorImpl(
         &packet_reader_, config_.networking_config, config_.verbose));
     processor_.reset(new test::VideoProcessorImpl(
-        encoder_.get(), decoder_.get(), frame_reader_.get(),
-        frame_writer_.get(), packet_manipulator_.get(), config_, &stats_));
+        encoder_.get(), decoder_.get(), analysis_frame_reader_.get(),
+        analysis_frame_writer_.get(), packet_manipulator_.get(), config_,
+        &stats_, source_frame_writer_.get(), encoded_frame_writer_.get(),
+        decoded_frame_writer_.get()));
     RTC_CHECK(processor_->Init());
   }
 
@@ -463,12 +508,14 @@ class VideoProcessorIntegrationTest : public testing::Test {
   void ProcessFramesAndVerify(QualityMetrics quality_metrics,
                               RateProfile rate_profile,
                               CodecConfigPars process,
-                              RateControlMetrics* rc_metrics) {
+                              RateControlMetrics* rc_metrics,
+                              const VisualizationParams* visualization_params) {
     // Codec/config settings.
     start_bitrate_ = rate_profile.target_bit_rate[0];
+    start_frame_rate_ = rate_profile.input_frame_rate[0];
     packet_loss_ = process.packet_loss;
     num_temporal_layers_ = process.num_temporal_layers;
-    SetUpCodecConfig(process);
+    SetUpCodecConfig(process, visualization_params);
     // Update the layers and the codec with the initial rates.
     bit_rate_ = rate_profile.target_bit_rate[0];
     frame_rate_ = rate_profile.input_frame_rate[0];
@@ -534,11 +581,22 @@ class VideoProcessorIntegrationTest : public testing::Test {
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Release());
 
-    // Close the files before we start using them for SSIM/PSNR calculations.
-    frame_reader_->Close();
-    frame_writer_->Close();
+    // Close the analysis files before we use them for SSIM/PSNR calculations.
+    analysis_frame_reader_->Close();
+    analysis_frame_writer_->Close();
 
-    // TODO(marpan): should compute these quality metrics per SetRates update.
+    // Close visualization files.
+    if (source_frame_writer_) {
+      source_frame_writer_->Close();
+    }
+    if (encoded_frame_writer_) {
+      encoded_frame_writer_->Close();
+    }
+    if (decoded_frame_writer_) {
+      decoded_frame_writer_->Close();
+    }
+
+    // TODO(marpan): Should compute these quality metrics per SetRates update.
     test::QualityMetricsResult psnr_result, ssim_result;
     EXPECT_EQ(0, test::I420MetricsFromFiles(config_.input_filename.c_str(),
                                             config_.output_filename.c_str(),
@@ -553,20 +611,11 @@ class VideoProcessorIntegrationTest : public testing::Test {
     EXPECT_GT(psnr_result.min, quality_metrics.minimum_min_psnr);
     EXPECT_GT(ssim_result.average, quality_metrics.minimum_avg_ssim);
     EXPECT_GT(ssim_result.min, quality_metrics.minimum_min_ssim);
+
+    // Remove analysis file.
     if (remove(config_.output_filename.c_str()) < 0) {
       fprintf(stderr, "Failed to remove temporary file!\n");
     }
-  }
-
-  static void SetRateProfilePars(RateProfile* rate_profile,
-                                 int update_index,
-                                 int bit_rate,
-                                 int frame_rate,
-                                 int frame_index_rate_update) {
-    rate_profile->target_bit_rate[update_index] = bit_rate;
-    rate_profile->input_frame_rate[update_index] = frame_rate;
-    rate_profile->frame_index_rate_update[update_index] =
-        frame_index_rate_update;
   }
 
   static void SetCodecParameters(CodecConfigPars* process_settings,
@@ -629,6 +678,17 @@ class VideoProcessorIntegrationTest : public testing::Test {
     quality_metrics->minimum_min_ssim = minimum_min_ssim;
   }
 
+  static void SetRateProfilePars(RateProfile* rate_profile,
+                                 int update_index,
+                                 int bit_rate,
+                                 int frame_rate,
+                                 int frame_index_rate_update) {
+    rate_profile->target_bit_rate[update_index] = bit_rate;
+    rate_profile->input_frame_rate[update_index] = frame_rate;
+    rate_profile->frame_index_rate_update[update_index] =
+        frame_index_rate_update;
+  }
+
   static void SetRateControlMetrics(RateControlMetrics* rc_metrics,
                                     int update_index,
                                     int max_num_dropped_frames,
@@ -650,20 +710,27 @@ class VideoProcessorIntegrationTest : public testing::Test {
     rc_metrics[update_index].num_key_frames = num_key_frames;
   }
 
+  // Codecs.
   std::unique_ptr<VideoEncoder> encoder_;
   std::unique_ptr<cricket::WebRtcVideoEncoderFactory> external_encoder_factory_;
   std::unique_ptr<VideoDecoder> decoder_;
   std::unique_ptr<cricket::WebRtcVideoDecoderFactory> external_decoder_factory_;
-  std::unique_ptr<test::FrameReader> frame_reader_;
-  std::unique_ptr<test::FrameWriter> frame_writer_;
+  VideoCodec codec_settings_;
+
+  // Helper objects.
+  std::unique_ptr<test::FrameReader> analysis_frame_reader_;
+  std::unique_ptr<test::FrameWriter> analysis_frame_writer_;
   test::PacketReader packet_reader_;
   std::unique_ptr<test::PacketManipulator> packet_manipulator_;
   test::Stats stats_;
   test::TestConfig config_;
-  VideoCodec codec_settings_;
   // Must be destroyed before |encoder_| and |decoder_|.
   std::unique_ptr<test::VideoProcessor> processor_;
-  TemporalLayersFactory tl_factory_;
+
+  // Visualization objects.
+  std::unique_ptr<test::FrameWriter> source_frame_writer_;
+  std::unique_ptr<IvfFileWriter> encoded_frame_writer_;
+  std::unique_ptr<test::FrameWriter> decoded_frame_writer_;
 
   // Quantities defined/updated for every encoder rate update.
   // Some quantities defined per temporal layer (at most 3 layers in this test).
@@ -688,6 +755,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   float sum_key_frame_size_mismatch_;
   int num_key_frames_;
   float start_bitrate_;
+  int start_frame_rate_;
 
   // Codec and network settings.
   float packet_loss_;
