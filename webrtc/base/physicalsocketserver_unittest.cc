@@ -89,13 +89,17 @@ class FakePhysicalSocketServer : public PhysicalSocketServer {
 class FakeNetworkBinder : public NetworkBinderInterface {
  public:
   NetworkBindingResult BindSocketToNetwork(int, const IPAddress&) override {
+    ++num_binds_;
     return result_;
   }
 
   void set_result(NetworkBindingResult result) { result_ = result; }
 
+  int num_binds() { return num_binds_; }
+
  private:
   NetworkBindingResult result_ = NetworkBindingResult::SUCCESS;
+  int num_binds_ = 0;
 };
 
 class PhysicalSocketTest : public SocketTest {
@@ -438,6 +442,18 @@ TEST_F(PhysicalSocketTest,
       server_->CreateAsyncSocket(AF_INET, SOCK_DGRAM));
   fake_network_binder.set_result(NetworkBindingResult::FAILURE);
   EXPECT_EQ(-1, socket->Bind(SocketAddress("192.168.0.1", 0)));
+  server_->set_network_binder(nullptr);
+}
+
+// Network binder shouldn't be used if the socket is bound to the "any" IP.
+TEST_F(PhysicalSocketTest,
+       NetworkBinderIsNotUsedForAnyIp) {
+  FakeNetworkBinder fake_network_binder;
+  server_->set_network_binder(&fake_network_binder);
+  std::unique_ptr<AsyncSocket> socket(
+      server_->CreateAsyncSocket(AF_INET, SOCK_DGRAM));
+  EXPECT_EQ(0, socket->Bind(SocketAddress("0.0.0.0", 0)));
+  EXPECT_EQ(0, fake_network_binder.num_binds());
   server_->set_network_binder(nullptr);
 }
 
