@@ -270,6 +270,7 @@ constexpr size_t kIntialChannelsToEncode = 1;
 constexpr bool kInitialDtxEnabled = true;
 constexpr bool kInitialFecEnabled = true;
 constexpr int kInitialFrameLengthMs = 60;
+constexpr int kMinBitrateBps = 6000;
 
 ControllerManagerStates CreateControllerManager(
     const std::string& config_string) {
@@ -279,8 +280,9 @@ ControllerManagerStates CreateControllerManager(
   const std::vector<int> encoder_frame_lengths_ms = {20, 60};
   states.controller_manager = ControllerManagerImpl::Create(
       config_string, kNumEncoderChannels, encoder_frame_lengths_ms,
-      kIntialChannelsToEncode, kInitialFrameLengthMs, kInitialBitrateBps,
-      kInitialFecEnabled, kInitialDtxEnabled, states.simulated_clock.get());
+      kMinBitrateBps, kIntialChannelsToEncode, kInitialFrameLengthMs,
+      kInitialBitrateBps, kInitialFecEnabled, kInitialDtxEnabled,
+      states.simulated_clock.get());
   return states;
 }
 

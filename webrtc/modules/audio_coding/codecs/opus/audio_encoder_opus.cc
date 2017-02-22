@@ -546,10 +546,11 @@ AudioEncoderOpus::DefaultAudioNetworkAdaptorCreator(
   config.clock = clock;
   config.event_log = event_log;
   return std::unique_ptr<AudioNetworkAdaptor>(new AudioNetworkAdaptorImpl(
-      config, ControllerManagerImpl::Create(
-                  config_string, NumChannels(), supported_frame_lengths_ms(),
-                  num_channels_to_encode_, next_frame_length_ms_,
-                  GetTargetBitrate(), config_.fec_enabled, GetDtx(), clock)));
+      config,
+      ControllerManagerImpl::Create(
+          config_string, NumChannels(), supported_frame_lengths_ms(),
+          kMinBitrateBps, num_channels_to_encode_, next_frame_length_ms_,
+          GetTargetBitrate(), config_.fec_enabled, GetDtx(), clock)));
 }
 
 void AudioEncoderOpus::MaybeUpdateUplinkBandwidth() {

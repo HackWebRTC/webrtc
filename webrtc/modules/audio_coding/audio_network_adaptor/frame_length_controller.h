@@ -32,6 +32,7 @@ class FrameLengthController final : public Controller {
     };
     Config(const std::vector<int>& encoder_frame_lengths_ms,
            int initial_frame_length_ms,
+           int min_encoder_bitrate_bps,
            float fl_increasing_packet_loss_fraction,
            float fl_decreasing_packet_loss_fraction,
            std::map<FrameLengthChange, int> fl_changing_bandwidths_bps);
@@ -39,6 +40,7 @@ class FrameLengthController final : public Controller {
     ~Config();
     std::vector<int> encoder_frame_lengths_ms;
     int initial_frame_length_ms;
+    int min_encoder_bitrate_bps;
     // Uplink packet loss fraction below which frame length can increase.
     float fl_increasing_packet_loss_fraction;
     // Uplink packet loss fraction below which frame length should decrease.
@@ -68,6 +70,8 @@ class FrameLengthController final : public Controller {
   rtc::Optional<int> uplink_bandwidth_bps_;
 
   rtc::Optional<float> uplink_packet_loss_fraction_;
+
+  rtc::Optional<size_t> overhead_bytes_per_packet_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FrameLengthController);
 };

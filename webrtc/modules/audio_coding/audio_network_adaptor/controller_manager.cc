@@ -75,7 +75,8 @@ std::unique_ptr<FecController> CreateFecController(
 std::unique_ptr<FrameLengthController> CreateFrameLengthController(
     const audio_network_adaptor::config::FrameLengthController& config,
     rtc::ArrayView<const int> encoder_frame_lengths_ms,
-    int initial_frame_length_ms) {
+    int initial_frame_length_ms,
+    int min_encoder_bitrate_bps) {
   RTC_CHECK(config.has_fl_increasing_packet_loss_fraction());
   RTC_CHECK(config.has_fl_decreasing_packet_loss_fraction());
   RTC_CHECK(config.has_fl_20ms_to_60ms_bandwidth_bps());
@@ -99,7 +100,7 @@ std::unique_ptr<FrameLengthController> CreateFrameLengthController(
   }
 
   FrameLengthController::Config ctor_config(
-      std::vector<int>(), initial_frame_length_ms,
+      std::vector<int>(), initial_frame_length_ms, min_encoder_bitrate_bps,
       config.fl_increasing_packet_loss_fraction(),
       config.fl_decreasing_packet_loss_fraction(),
       std::move(fl_changing_bandwidths_bps));
@@ -159,6 +160,7 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
     const std::string& config_string,
     size_t num_encoder_channels,
     rtc::ArrayView<const int> encoder_frame_lengths_ms,
+    int min_encoder_bitrate_bps,
     size_t intial_channels_to_encode,
     int initial_frame_length_ms,
     int initial_bitrate_bps,
@@ -183,7 +185,8 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
       case audio_network_adaptor::config::Controller::kFrameLengthController:
         controller = CreateFrameLengthController(
             controller_config.frame_length_controller(),
-            encoder_frame_lengths_ms, initial_frame_length_ms);
+            encoder_frame_lengths_ms, initial_frame_length_ms,
+            min_encoder_bitrate_bps);
         break;
       case audio_network_adaptor::config::Controller::kChannelController:
         controller = CreateChannelController(
