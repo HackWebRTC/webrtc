@@ -127,9 +127,13 @@ class AudioVector {
   static inline size_t WrapIndex(size_t index,
                                  size_t begin_index,
                                  size_t capacity) {
-    RTC_DCHECK_GE(begin_index + index, index);  // Check for overflow.
-    const size_t ix =
-        begin_index + index - (begin_index + index >= capacity ? capacity : 0);
+    RTC_DCHECK_LT(index, capacity);
+    RTC_DCHECK_LT(begin_index, capacity);
+    size_t ix = begin_index + index;
+    RTC_DCHECK_GE(ix, index);  // Check for overflow.
+    if (ix >= capacity) {
+      ix -= capacity;
+    }
     RTC_DCHECK_LT(ix, capacity);
     return ix;
   }
