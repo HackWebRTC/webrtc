@@ -144,31 +144,38 @@ class VideoProcessorIntegrationTest : public testing::Test {
   virtual ~VideoProcessorIntegrationTest() = default;
 
   void SetUpCodecConfig(const CodecConfigPars& process) {
-    if (hw_codec_) {
+    if (process.hw_codec) {
 #if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
 #if defined(WEBRTC_ANDROID)
       // In general, external codecs should be destroyed by the factories that
       // allocated them. For the particular case of the Android
       // MediaCodecVideo{En,De}coderFactory's, however, it turns out that it is
       // fine for the std::unique_ptr to destroy the owned codec directly.
-      if (codec_type_ == kVideoCodecH264) {
-        encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
-            cricket::VideoCodec(cricket::kH264CodecName)));
-        decoder_.reset(
-            external_decoder_factory_->CreateVideoDecoder(kVideoCodecH264));
-      } else if (codec_type_ == kVideoCodecVP8) {
-        encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
-            cricket::VideoCodec(cricket::kVp8CodecName)));
-        decoder_.reset(
-            external_decoder_factory_->CreateVideoDecoder(kVideoCodecVP8));
-      } else if (codec_type_ == kVideoCodecVP9) {
-        encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
-            cricket::VideoCodec(cricket::kVp9CodecName)));
-        decoder_.reset(
-            external_decoder_factory_->CreateVideoDecoder(kVideoCodecVP9));
+      switch (process.codec_type) {
+        case kVideoCodecH264:
+          encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
+              cricket::VideoCodec(cricket::kH264CodecName)));
+          decoder_.reset(
+              external_decoder_factory_->CreateVideoDecoder(kVideoCodecH264));
+          break;
+        case kVideoCodecVP8:
+          encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
+              cricket::VideoCodec(cricket::kVp8CodecName)));
+          decoder_.reset(
+              external_decoder_factory_->CreateVideoDecoder(kVideoCodecVP8));
+          break;
+        case kVideoCodecVP9:
+          encoder_.reset(external_encoder_factory_->CreateVideoEncoder(
+              cricket::VideoCodec(cricket::kVp9CodecName)));
+          decoder_.reset(
+              external_decoder_factory_->CreateVideoDecoder(kVideoCodecVP9));
+          break;
+        default:
+          RTC_NOTREACHED();
+          break;
       }
 #elif defined(WEBRTC_IOS)
-      RTC_DCHECK_EQ(kVideoCodecH264, codec_type_)
+      RTC_DCHECK_EQ(kVideoCodecH264, process.codec_type)
           << "iOS HW codecs only support H264.";
       encoder_.reset(new H264VideoToolboxEncoder(
           cricket::VideoCodec(cricket::kH264CodecName)));
@@ -181,20 +188,27 @@ class VideoProcessorIntegrationTest : public testing::Test {
       RTC_DCHECK(decoder_) << "HW decoder not successfully created.";
     } else {
       // SW codecs.
-      if (codec_type_ == kVideoCodecH264) {
-        encoder_.reset(
-            H264Encoder::Create(cricket::VideoCodec(cricket::kH264CodecName)));
-        decoder_.reset(H264Decoder::Create());
-      } else if (codec_type_ == kVideoCodecVP8) {
-        encoder_.reset(VP8Encoder::Create());
-        decoder_.reset(VP8Decoder::Create());
-      } else if (codec_type_ == kVideoCodecVP9) {
-        encoder_.reset(VP9Encoder::Create());
-        decoder_.reset(VP9Decoder::Create());
+      switch (process.codec_type) {
+        case kVideoCodecH264:
+          encoder_.reset(H264Encoder::Create(
+              cricket::VideoCodec(cricket::kH264CodecName)));
+          decoder_.reset(H264Decoder::Create());
+          break;
+        case kVideoCodecVP8:
+          encoder_.reset(VP8Encoder::Create());
+          decoder_.reset(VP8Decoder::Create());
+          break;
+        case kVideoCodecVP9:
+          encoder_.reset(VP9Encoder::Create());
+          decoder_.reset(VP9Decoder::Create());
+          break;
+        default:
+          RTC_NOTREACHED();
+          break;
       }
     }
 
-    VideoCodingModule::Codec(codec_type_, &codec_settings_);
+    VideoCodingModule::Codec(process.codec_type, &codec_settings_);
 
     // Configure input filename.
     config_.input_filename = test::ResourcePath(process.filename, "yuv");
@@ -208,7 +222,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     config_.verbose = process.verbose_logging;
     config_.use_single_core = process.use_single_core;
     // Key frame interval and packet loss are set for each test.
-    config_.keyframe_interval = key_frame_interval_;
+    config_.keyframe_interval = process.key_frame_interval;
     config_.networking_config.packet_loss_probability = packet_loss_;
 
     // Configure codec settings.
@@ -220,26 +234,31 @@ class VideoProcessorIntegrationTest : public testing::Test {
     // These features may be set depending on the test.
     switch (config_.codec_settings->codecType) {
       case kVideoCodecH264:
-        config_.codec_settings->H264()->frameDroppingOn = frame_dropper_on_;
+        config_.codec_settings->H264()->frameDroppingOn =
+            process.frame_dropper_on;
         config_.codec_settings->H264()->keyFrameInterval =
             kBaseKeyFrameInterval;
         break;
       case kVideoCodecVP8:
         config_.codec_settings->VP8()->errorConcealmentOn =
-            error_concealment_on_;
-        config_.codec_settings->VP8()->denoisingOn = denoising_on_;
+            process.error_concealment_on;
+        config_.codec_settings->VP8()->denoisingOn = process.denoising_on;
         config_.codec_settings->VP8()->numberOfTemporalLayers =
             num_temporal_layers_;
-        config_.codec_settings->VP8()->frameDroppingOn = frame_dropper_on_;
-        config_.codec_settings->VP8()->automaticResizeOn = spatial_resize_on_;
+        config_.codec_settings->VP8()->frameDroppingOn =
+            process.frame_dropper_on;
+        config_.codec_settings->VP8()->automaticResizeOn =
+            process.spatial_resize_on;
         config_.codec_settings->VP8()->keyFrameInterval = kBaseKeyFrameInterval;
         break;
       case kVideoCodecVP9:
-        config_.codec_settings->VP9()->denoisingOn = denoising_on_;
+        config_.codec_settings->VP9()->denoisingOn = process.denoising_on;
         config_.codec_settings->VP9()->numberOfTemporalLayers =
             num_temporal_layers_;
-        config_.codec_settings->VP9()->frameDroppingOn = frame_dropper_on_;
-        config_.codec_settings->VP9()->automaticResizeOn = spatial_resize_on_;
+        config_.codec_settings->VP9()->frameDroppingOn =
+            process.frame_dropper_on;
+        config_.codec_settings->VP9()->automaticResizeOn =
+            process.spatial_resize_on;
         config_.codec_settings->VP9()->keyFrameInterval = kBaseKeyFrameInterval;
         break;
       default:
@@ -446,16 +465,9 @@ class VideoProcessorIntegrationTest : public testing::Test {
                               CodecConfigPars process,
                               RateControlMetrics* rc_metrics) {
     // Codec/config settings.
-    codec_type_ = process.codec_type;
-    hw_codec_ = process.hw_codec;
     start_bitrate_ = rate_profile.target_bit_rate[0];
     packet_loss_ = process.packet_loss;
-    key_frame_interval_ = process.key_frame_interval;
     num_temporal_layers_ = process.num_temporal_layers;
-    error_concealment_on_ = process.error_concealment_on;
-    denoising_on_ = process.denoising_on;
-    frame_dropper_on_ = process.frame_dropper_on;
-    spatial_resize_on_ = process.spatial_resize_on;
     SetUpCodecConfig(process);
     // Update the layers and the codec with the initial rates.
     bit_rate_ = rate_profile.target_bit_rate[0];
@@ -678,15 +690,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
   float start_bitrate_;
 
   // Codec and network settings.
-  VideoCodecType codec_type_;
-  bool hw_codec_;
   float packet_loss_;
   int num_temporal_layers_;
-  int key_frame_interval_;
-  bool error_concealment_on_;
-  bool denoising_on_;
-  bool frame_dropper_on_;
-  bool spatial_resize_on_;
 };
 
 }  // namespace test
