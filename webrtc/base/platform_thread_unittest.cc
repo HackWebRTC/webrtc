@@ -16,19 +16,64 @@
 namespace rtc {
 namespace {
 // Function that does nothing, and reports success.
-bool NullRunFunction(void* obj) {
+bool NullRunFunctionDeprecated(void* obj) {
   webrtc::SleepMs(0);  // Hand over timeslice, prevents busy looping.
   return true;
 }
 
+void NullRunFunction(void* obj) {}
+
 // Function that sets a boolean.
-bool SetFlagRunFunction(void* obj) {
+bool SetFlagRunFunctionDeprecated(void* obj) {
   bool* obj_as_bool = static_cast<bool*>(obj);
   *obj_as_bool = true;
   webrtc::SleepMs(0);  // Hand over timeslice, prevents busy looping.
   return true;
 }
+
+void SetFlagRunFunction(void* obj) {
+  bool* obj_as_bool = static_cast<bool*>(obj);
+  *obj_as_bool = true;
+}
+
 }  // namespace
+
+TEST(PlatformThreadTest, StartStopDeprecated) {
+  PlatformThread thread(&NullRunFunctionDeprecated, nullptr,
+                        "PlatformThreadTest");
+  EXPECT_TRUE(thread.name() == "PlatformThreadTest");
+  EXPECT_TRUE(thread.GetThreadRef() == 0);
+  thread.Start();
+  EXPECT_TRUE(thread.GetThreadRef() != 0);
+  thread.Stop();
+  EXPECT_TRUE(thread.GetThreadRef() == 0);
+}
+
+TEST(PlatformThreadTest, StartStop2Deprecated) {
+  PlatformThread thread1(&NullRunFunctionDeprecated, nullptr,
+                         "PlatformThreadTest1");
+  PlatformThread thread2(&NullRunFunctionDeprecated, nullptr,
+                         "PlatformThreadTest2");
+  EXPECT_TRUE(thread1.GetThreadRef() == thread2.GetThreadRef());
+  thread1.Start();
+  thread2.Start();
+  EXPECT_TRUE(thread1.GetThreadRef() != thread2.GetThreadRef());
+  thread2.Stop();
+  thread1.Stop();
+}
+
+TEST(PlatformThreadTest, RunFunctionIsCalledDeprecated) {
+  bool flag = false;
+  PlatformThread thread(&SetFlagRunFunctionDeprecated, &flag,
+                        "RunFunctionIsCalled");
+  thread.Start();
+
+  // At this point, the flag may be either true or false.
+  thread.Stop();
+
+  // We expect the thread to have run at least once.
+  EXPECT_TRUE(flag);
+}
 
 TEST(PlatformThreadTest, StartStop) {
   PlatformThread thread(&NullRunFunction, nullptr, "PlatformThreadTest");
@@ -62,4 +107,5 @@ TEST(PlatformThreadTest, RunFunctionIsCalled) {
   // We expect the thread to have run at least once.
   EXPECT_TRUE(flag);
 }
+
 }  // rtc

@@ -307,10 +307,9 @@ void RtcEventLogHelperThread::ProcessEvents() {
   }
 }
 
-bool RtcEventLogHelperThread::ThreadOutputFunction(void* obj) {
+void RtcEventLogHelperThread::ThreadOutputFunction(void* obj) {
   RtcEventLogHelperThread* helper = static_cast<RtcEventLogHelperThread*>(obj);
   helper->ProcessEvents();
-  return false;
 }
 
 }  // namespace webrtc

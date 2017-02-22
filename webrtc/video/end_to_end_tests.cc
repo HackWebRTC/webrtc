@@ -2142,45 +2142,45 @@ TEST_P(EndToEndTest, RembWithSendSideBwe) {
       sender_call_ = sender_call;
     }
 
-    static bool BitrateStatsPollingThread(void* obj) {
-      return static_cast<BweObserver*>(obj)->PollStats();
+    static void BitrateStatsPollingThread(void* obj) {
+      static_cast<BweObserver*>(obj)->PollStats();
     }
 
-    bool PollStats() {
-      if (sender_call_) {
-        Call::Stats stats = sender_call_->GetStats();
-        switch (state_) {
-          case kWaitForFirstRampUp:
-            if (stats.send_bandwidth_bps >= remb_bitrate_bps_) {
-              state_ = kWaitForRemb;
-              remb_bitrate_bps_ /= 2;
-              rtp_rtcp_->SetREMBData(
-                  remb_bitrate_bps_,
-                  std::vector<uint32_t>(&sender_ssrc_, &sender_ssrc_ + 1));
-              rtp_rtcp_->SendRTCP(kRtcpRr);
-            }
-            break;
+    void PollStats() {
+      do {
+        if (sender_call_) {
+          Call::Stats stats = sender_call_->GetStats();
+          switch (state_) {
+            case kWaitForFirstRampUp:
+              if (stats.send_bandwidth_bps >= remb_bitrate_bps_) {
+                state_ = kWaitForRemb;
+                remb_bitrate_bps_ /= 2;
+                rtp_rtcp_->SetREMBData(
+                    remb_bitrate_bps_,
+                    std::vector<uint32_t>(&sender_ssrc_, &sender_ssrc_ + 1));
+                rtp_rtcp_->SendRTCP(kRtcpRr);
+              }
+              break;
 
-          case kWaitForRemb:
-            if (stats.send_bandwidth_bps == remb_bitrate_bps_) {
-              state_ = kWaitForSecondRampUp;
-              remb_bitrate_bps_ *= 2;
-              rtp_rtcp_->SetREMBData(
-                  remb_bitrate_bps_,
-                  std::vector<uint32_t>(&sender_ssrc_, &sender_ssrc_ + 1));
-              rtp_rtcp_->SendRTCP(kRtcpRr);
-            }
-            break;
+            case kWaitForRemb:
+              if (stats.send_bandwidth_bps == remb_bitrate_bps_) {
+                state_ = kWaitForSecondRampUp;
+                remb_bitrate_bps_ *= 2;
+                rtp_rtcp_->SetREMBData(
+                    remb_bitrate_bps_,
+                    std::vector<uint32_t>(&sender_ssrc_, &sender_ssrc_ + 1));
+                rtp_rtcp_->SendRTCP(kRtcpRr);
+              }
+              break;
 
-          case kWaitForSecondRampUp:
-            if (stats.send_bandwidth_bps == remb_bitrate_bps_) {
-              observation_complete_.Set();
-            }
-            break;
+            case kWaitForSecondRampUp:
+              if (stats.send_bandwidth_bps == remb_bitrate_bps_) {
+                observation_complete_.Set();
+              }
+              break;
+          }
         }
-      }
-
-      return !stop_event_.Wait(1000);
+      } while (!stop_event_.Wait(1000));
     }
 
     void PerformTest() override {

@@ -256,7 +256,7 @@ void TaskQueue::PostTaskAndReply(std::unique_ptr<QueuedTask> task,
 }
 
 // static
-bool TaskQueue::ThreadMain(void* context) {
+void TaskQueue::ThreadMain(void* context) {
   TaskQueue* me = static_cast<TaskQueue*>(context);
 
   QueueContext queue_context(me);
@@ -269,8 +269,6 @@ bool TaskQueue::ThreadMain(void* context) {
 
   for (TimerEvent* timer : queue_context.pending_timers_)
     delete timer;
-
-  return false;
 }
 
 // static

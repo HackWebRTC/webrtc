@@ -130,9 +130,8 @@ class ThreadTask {
   rtc::Event end_signal_;
 };
 
-bool RunTask(void* thread_task) {
+void RunTask(void* thread_task) {
   reinterpret_cast<ThreadTask*>(thread_task)->Run();
-  return false;
 }
 
 TEST_F(RateLimitTest, MultiThreadedUsage) {

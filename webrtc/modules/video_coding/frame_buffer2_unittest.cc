@@ -197,7 +197,7 @@ class TestFrameBuffer2 : public ::testing::Test {
     ASSERT_FALSE(frames_[index]);
   }
 
-  static bool ExtractLoop(void* obj) {
+  static void ExtractLoop(void* obj) {
     TestFrameBuffer2* tfb = static_cast<TestFrameBuffer2*>(obj);
     while (true) {
       tfb->trigger_extract_event_.Wait(rtc::Event::kForever);
@@ -205,7 +205,7 @@ class TestFrameBuffer2 : public ::testing::Test {
         rtc::CritScope lock(&tfb->crit_);
         tfb->crit_acquired_event_.Set();
         if (tfb->tear_down_)
-          return false;
+          return;
 
         std::unique_ptr<FrameObject> frame;
         FrameBuffer::ReturnReason res =

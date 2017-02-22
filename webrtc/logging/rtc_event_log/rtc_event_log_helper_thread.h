@@ -81,7 +81,7 @@ class RtcEventLogHelperThread final {
   void SignalNewEvent();
 
  private:
-  static bool ThreadOutputFunction(void* obj);
+  static void ThreadOutputFunction(void* obj);
 
   bool AppendEventToString(rtclog::Event* event);
   bool LogToMemory();

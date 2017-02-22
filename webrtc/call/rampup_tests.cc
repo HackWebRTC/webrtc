@@ -44,7 +44,7 @@ RampUpTester::RampUpTester(size_t num_video_streams,
                            bool red,
                            bool report_perf_stats)
     : EndToEndTest(test::CallTest::kLongTimeoutMs),
-      event_(false, false),
+      stop_event_(false, false),
       clock_(Clock::GetRealTimeClock()),
       num_video_streams_(num_video_streams),
       num_audio_streams_(num_audio_streams),
@@ -72,7 +72,6 @@ RampUpTester::RampUpTester(size_t num_video_streams,
 }
 
 RampUpTester::~RampUpTester() {
-  event_.Set();
 }
 
 Call::Config RampUpTester::GetSenderCallConfig() {
@@ -282,25 +281,25 @@ void RampUpTester::OnCallsCreated(Call* sender_call, Call* receiver_call) {
   sender_call_ = sender_call;
 }
 
-bool RampUpTester::BitrateStatsPollingThread(void* obj) {
-  return static_cast<RampUpTester*>(obj)->PollStats();
+void RampUpTester::BitrateStatsPollingThread(void* obj) {
+  static_cast<RampUpTester*>(obj)->PollStats();
 }
 
-bool RampUpTester::PollStats() {
-  if (sender_call_) {
-    Call::Stats stats = sender_call_->GetStats();
+void RampUpTester::PollStats() {
+  do {
+    if (sender_call_) {
+      Call::Stats stats = sender_call_->GetStats();
 
-    EXPECT_GE(stats.send_bandwidth_bps, start_bitrate_bps_);
-    EXPECT_GE(expected_bitrate_bps_, 0);
-    if (stats.send_bandwidth_bps >= expected_bitrate_bps_ &&
-        (min_run_time_ms_ == -1 ||
-         clock_->TimeInMilliseconds() - test_start_ms_ >= min_run_time_ms_)) {
-      ramp_up_finished_ms_ = clock_->TimeInMilliseconds();
-      observation_complete_.Set();
+      EXPECT_GE(stats.send_bandwidth_bps, start_bitrate_bps_);
+      EXPECT_GE(expected_bitrate_bps_, 0);
+      if (stats.send_bandwidth_bps >= expected_bitrate_bps_ &&
+          (min_run_time_ms_ == -1 ||
+           clock_->TimeInMilliseconds() - test_start_ms_ >= min_run_time_ms_)) {
+        ramp_up_finished_ms_ = clock_->TimeInMilliseconds();
+        observation_complete_.Set();
+      }
     }
-  }
-
-  return !event_.Wait(kPollIntervalMs);
+  } while (!stop_event_.Wait(kPollIntervalMs));
 }
 
 void RampUpTester::ReportResult(const std::string& measurement,
@@ -380,6 +379,7 @@ void RampUpTester::PerformTest() {
   poller_thread_.Start();
   EXPECT_TRUE(Wait()) << "Timed out while waiting for ramp-up to complete.";
   TriggerTestDone();
+  stop_event_.Set();
   poller_thread_.Stop();
 }
 
@@ -415,22 +415,22 @@ RampUpDownUpTester::RampUpDownUpTester(size_t num_video_streams,
 
 RampUpDownUpTester::~RampUpDownUpTester() {}
 
-bool RampUpDownUpTester::PollStats() {
-  if (send_stream_) {
-    webrtc::VideoSendStream::Stats stats = send_stream_->GetStats();
-    int transmit_bitrate_bps = 0;
-    for (auto it : stats.substreams) {
-      transmit_bitrate_bps += it.second.total_bitrate_bps;
+void RampUpDownUpTester::PollStats() {
+  do {
+    if (send_stream_) {
+      webrtc::VideoSendStream::Stats stats = send_stream_->GetStats();
+      int transmit_bitrate_bps = 0;
+      for (auto it : stats.substreams) {
+        transmit_bitrate_bps += it.second.total_bitrate_bps;
+      }
+      EvolveTestState(transmit_bitrate_bps, stats.suspended);
+    } else if (num_audio_streams_ > 0 && sender_call_ != nullptr) {
+      // An audio send stream doesn't have bitrate stats, so the call send BW is
+      // currently used instead.
+      int transmit_bitrate_bps = sender_call_->GetStats().send_bandwidth_bps;
+      EvolveTestState(transmit_bitrate_bps, false);
     }
-    EvolveTestState(transmit_bitrate_bps, stats.suspended);
-  } else if (num_audio_streams_ > 0 && sender_call_ != nullptr) {
-    // An audio send stream doesn't have bitrate stats, so the call send BW is
-    // currently used instead.
-    int transmit_bitrate_bps = sender_call_->GetStats().send_bandwidth_bps;
-    EvolveTestState(transmit_bitrate_bps, false);
-  }
-
-  return !event_.Wait(kPollIntervalMs);
+  } while (!stop_event_.Wait(kPollIntervalMs));
 }
 
 Call::Config RampUpDownUpTester::GetReceiverCallConfig() {

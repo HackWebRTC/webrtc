@@ -16,13 +16,18 @@
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
+namespace {
+const int kEventStartupTimeMs = 10;
+const int kEventMaxWaitTimeMs = 100;
+}  // namespace
 
 IncomingVideoStream::IncomingVideoStream(
     int32_t delay_ms,
     rtc::VideoSinkInterface<VideoFrame>* callback)
     : incoming_render_thread_(&IncomingVideoStreamThreadFun,
                               this,
-                              "IncomingVideoStreamThread"),
+                              "IncomingVideoStreamThread",
+                              rtc::kRealtimePriority),
       deliver_buffer_event_(EventTimerWrapper::Create()),
       external_callback_(callback),
       render_buffers_(new VideoRenderFrames(delay_ms)) {
@@ -32,7 +37,6 @@ IncomingVideoStream::IncomingVideoStream(
 
   deliver_buffer_event_->StartTimer(false, kEventStartupTimeMs);
   incoming_render_thread_.Start();
-  incoming_render_thread_.SetPriority(rtc::kRealtimePriority);
 }
 
 IncomingVideoStream::~IncomingVideoStream() {
@@ -57,39 +61,44 @@ void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
   }
 }
 
-bool IncomingVideoStream::IncomingVideoStreamThreadFun(void* obj) {
-  return static_cast<IncomingVideoStream*>(obj)->IncomingVideoStreamProcess();
+// static
+void IncomingVideoStream::IncomingVideoStreamThreadFun(void* obj) {
+  static_cast<IncomingVideoStream*>(obj)->IncomingVideoStreamProcess();
 }
 
-bool IncomingVideoStream::IncomingVideoStreamProcess() {
+void IncomingVideoStream::IncomingVideoStreamProcess() {
   RTC_DCHECK_RUN_ON(&render_thread_checker_);
 
-  if (kEventError != deliver_buffer_event_->Wait(kEventMaxWaitTimeMs)) {
-    // Get a new frame to render and the time for the frame after this one.
-    rtc::Optional<VideoFrame> frame_to_render;
-    uint32_t wait_time;
-    {
-      rtc::CritScope cs(&buffer_critsect_);
-      if (!render_buffers_.get()) {
-        // Terminating
-        return false;
+  while (true) {
+    if (kEventError != deliver_buffer_event_->Wait(kEventMaxWaitTimeMs)) {
+      // Get a new frame to render and the time for the frame after this one.
+      rtc::Optional<VideoFrame> frame_to_render;
+      uint32_t wait_time;
+      {
+        rtc::CritScope cs(&buffer_critsect_);
+        if (!render_buffers_.get()) {
+          // Terminating
+          return;
+        }
+
+        frame_to_render = render_buffers_->FrameToRender();
+        wait_time = render_buffers_->TimeToNextFrameRelease();
       }
-      frame_to_render = render_buffers_->FrameToRender();
-      wait_time = render_buffers_->TimeToNextFrameRelease();
-    }
 
-    // Set timer for next frame to render.
-    if (wait_time > kEventMaxWaitTimeMs) {
-      wait_time = kEventMaxWaitTimeMs;
-    }
+      // Set timer for next frame to render.
+      if (wait_time > kEventMaxWaitTimeMs) {
+        wait_time = kEventMaxWaitTimeMs;
+      }
 
-    deliver_buffer_event_->StartTimer(false, wait_time);
+      deliver_buffer_event_->StartTimer(false, wait_time);
 
-    if (frame_to_render) {
-      external_callback_->OnFrame(*frame_to_render);
+      if (frame_to_render) {
+        external_callback_->OnFrame(*frame_to_render);
+      }
+    } else {
+      RTC_NOTREACHED();
     }
   }
-  return true;
 }
 
 }  // namespace webrtc

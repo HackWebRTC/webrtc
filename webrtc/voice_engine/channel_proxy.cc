@@ -155,8 +155,12 @@ bool ChannelProxy::SendTelephoneEventOutband(int event, int duration_ms) {
 }
 
 void ChannelProxy::SetBitrate(int bitrate_bps, int64_t probing_interval_ms) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread() ||
-             module_process_thread_checker_.CalledOnValidThread());
+  // This method can be called on the worker thread, module process thread
+  // or on a TaskQueue via VideoSendStreamImpl::OnEncoderConfigurationChanged.
+  // TODO(solenberg): Figure out a good way to check this or enforce calling
+  // rules.
+  // RTC_DCHECK(worker_thread_checker_.CalledOnValidThread() ||
+  //            module_process_thread_checker_.CalledOnValidThread());
   channel()->SetBitRate(bitrate_bps, probing_interval_ms);
 }
 

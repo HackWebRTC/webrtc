@@ -232,7 +232,7 @@ class LOCKABLE TaskQueue {
 
  private:
 #if defined(WEBRTC_BUILD_LIBEVENT)
-  static bool ThreadMain(void* context);
+  static void ThreadMain(void* context);
   static void OnWakeup(int socket, short flags, void* context);  // NOLINT
   static void RunTask(int fd, short flags, void* context);       // NOLINT
   static void RunTimer(int fd, short flags, void* context);      // NOLINT
@@ -263,7 +263,7 @@ class LOCKABLE TaskQueue {
   class MultimediaTimer;
   typedef std::unordered_map<UINT_PTR, std::unique_ptr<QueuedTask>>
       DelayedTasks;
-  static bool ThreadMain(void* context);
+  static void ThreadMain(void* context);
   static bool ProcessQueuedMessages(DelayedTasks* delayed_tasks,
                                     std::vector<MultimediaTimer>* timers);
 

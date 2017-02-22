@@ -228,7 +228,7 @@ void TaskQueue::PostTaskAndReply(std::unique_ptr<QueuedTask> task,
 }
 
 // static
-bool TaskQueue::ThreadMain(void* context) {
+void TaskQueue::ThreadMain(void* context) {
   HANDLE timer_handles[MultimediaTimer::kMaxTimers];
   // Active multimedia timers.
   std::vector<MultimediaTimer> mm_timers;
@@ -283,8 +283,6 @@ bool TaskQueue::ThreadMain(void* context) {
       RTC_DCHECK_EQ(WAIT_IO_COMPLETION, result);
     }
   }
-
-  return false;
 }
 
 // static

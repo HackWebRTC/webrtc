@@ -31,14 +31,10 @@ class IncomingVideoStream : public rtc::VideoSinkInterface<VideoFrame> {
   ~IncomingVideoStream() override;
 
  protected:
-  static bool IncomingVideoStreamThreadFun(void* obj);
-  bool IncomingVideoStreamProcess();
+  static void IncomingVideoStreamThreadFun(void* obj);
+  void IncomingVideoStreamProcess();
 
  private:
-  enum { kEventStartupTimeMs = 10 };
-  enum { kEventMaxWaitTimeMs = 100 };
-  enum { kFrameRatePeriodMs = 1000 };
-
   void OnFrame(const VideoFrame& video_frame) override;
 
   rtc::ThreadChecker main_thread_checker_;

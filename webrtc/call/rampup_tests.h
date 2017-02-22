@@ -49,7 +49,7 @@ class RampUpTester : public test::EndToEndTest {
   void PerformTest() override;
 
  protected:
-  virtual bool PollStats();
+  virtual void PollStats();
 
   void AccumulateStats(const VideoSendStream::StreamStats& stream,
                        size_t* total_packets_sent,
@@ -63,7 +63,7 @@ class RampUpTester : public test::EndToEndTest {
   void TriggerTestDone();
 
   webrtc::RtcEventLogNullImpl event_log_;
-  rtc::Event event_;
+  rtc::Event stop_event_;
   Clock* const clock_;
   FakeNetworkPipe::Config forward_transport_config_;
   const size_t num_video_streams_;
@@ -95,7 +95,7 @@ class RampUpTester : public test::EndToEndTest {
       std::vector<FlexfecReceiveStream::Config>* receive_configs) override;
   void OnCallsCreated(Call* sender_call, Call* receiver_call) override;
 
-  static bool BitrateStatsPollingThread(void* obj);
+  static void BitrateStatsPollingThread(void* obj);
 
   const int start_bitrate_bps_;
   const int64_t min_run_time_ms_;
@@ -125,7 +125,7 @@ class RampUpDownUpTester : public RampUpTester {
   ~RampUpDownUpTester() override;
 
  protected:
-  bool PollStats() override;
+  void PollStats() override;
 
  private:
   enum TestStates {

@@ -555,37 +555,34 @@ class VideoAnalyzer : public PacketReceiver,
     comparison_available_event_.Set();
   }
 
-  static bool PollStatsThread(void* obj) {
-    return static_cast<VideoAnalyzer*>(obj)->PollStats();
+  static void PollStatsThread(void* obj) {
+    static_cast<VideoAnalyzer*>(obj)->PollStats();
   }
 
-  bool PollStats() {
-    if (done_.Wait(kSendStatsPollingIntervalMs))
-      return false;
+  void PollStats() {
+    while (!done_.Wait(kSendStatsPollingIntervalMs)) {
+      rtc::CritScope crit(&comparison_lock_);
 
-    rtc::CritScope crit(&comparison_lock_);
+      VideoSendStream::Stats send_stats = send_stream_->GetStats();
+      // It's not certain that we yet have estimates for any of these stats.
+      // Check that they are positive before mixing them in.
+      if (send_stats.encode_frame_rate > 0)
+        encode_frame_rate_.AddSample(send_stats.encode_frame_rate);
+      if (send_stats.avg_encode_time_ms > 0)
+        encode_time_ms_.AddSample(send_stats.avg_encode_time_ms);
+      if (send_stats.encode_usage_percent > 0)
+        encode_usage_percent_.AddSample(send_stats.encode_usage_percent);
+      if (send_stats.media_bitrate_bps > 0)
+        media_bitrate_bps_.AddSample(send_stats.media_bitrate_bps);
 
-    VideoSendStream::Stats send_stats = send_stream_->GetStats();
-    // It's not certain that we yet have estimates for any of these stats. Check
-    // that they are positive before mixing them in.
-    if (send_stats.encode_frame_rate > 0)
-      encode_frame_rate_.AddSample(send_stats.encode_frame_rate);
-    if (send_stats.avg_encode_time_ms > 0)
-      encode_time_ms_.AddSample(send_stats.avg_encode_time_ms);
-    if (send_stats.encode_usage_percent > 0)
-      encode_usage_percent_.AddSample(send_stats.encode_usage_percent);
-    if (send_stats.media_bitrate_bps > 0)
-      media_bitrate_bps_.AddSample(send_stats.media_bitrate_bps);
-
-    if (receive_stream_ != nullptr) {
-      VideoReceiveStream::Stats receive_stats = receive_stream_->GetStats();
-      if (receive_stats.decode_ms > 0)
-        decode_time_ms_.AddSample(receive_stats.decode_ms);
-      if (receive_stats.max_decode_ms > 0)
-        decode_time_max_ms_.AddSample(receive_stats.max_decode_ms);
+      if (receive_stream_ != nullptr) {
+        VideoReceiveStream::Stats receive_stats = receive_stream_->GetStats();
+        if (receive_stats.decode_ms > 0)
+          decode_time_ms_.AddSample(receive_stats.decode_ms);
+        if (receive_stats.max_decode_ms > 0)
+          decode_time_max_ms_.AddSample(receive_stats.max_decode_ms);
+      }
     }
-
-    return true;
   }
 
   static bool FrameComparisonThread(void* obj) {
