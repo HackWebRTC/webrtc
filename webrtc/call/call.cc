@@ -1220,6 +1220,9 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     }
   }
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
+    received_bytes_per_second_counter_.Add(static_cast<int>(length));
+    // TODO(brandtr): Update here when FlexFEC supports protecting audio.
+    received_video_bytes_per_second_counter_.Add(static_cast<int>(length));
     auto it = flexfec_receive_ssrcs_protection_.find(ssrc);
     if (it != flexfec_receive_ssrcs_protection_.end()) {
       it->second->OnRtpPacket(*parsed_packet);
