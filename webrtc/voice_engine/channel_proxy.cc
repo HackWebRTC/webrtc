@@ -14,6 +14,7 @@
 
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/voice_engine/channel.h"
 
 namespace webrtc {
@@ -284,7 +285,9 @@ void ChannelProxy::SetMinimumPlayoutDelay(int delay_ms) {
   // close as possible, instead of failing.
   delay_ms = std::max(0, std::min(delay_ms, 10000));
   int error = channel()->SetMinimumPlayoutDelay(delay_ms);
-  RTC_DCHECK_EQ(0, error);
+  if (0 != error) {
+    LOG(LS_WARNING) << "Error setting minimum playout delay.";
+  }
 }
 
 void ChannelProxy::SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
