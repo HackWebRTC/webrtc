@@ -729,6 +729,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   int stride = GetIntField(jni, *j_media_codec_video_decoder_, j_stride_field_);
   int slice_height = GetIntField(jni, *j_media_codec_video_decoder_,
       j_slice_height_field_);
+  RTC_CHECK_GE(slice_height, height);
 
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> frame_buffer;
   int64_t presentation_timestamps_ms = 0;
@@ -804,22 +805,46 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     payload += output_buffer_offset;
 
     // Create yuv420 frame.
-    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer;
-
-    i420_buffer = decoded_frame_pool_.CreateBuffer(width, height);
+    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+        decoded_frame_pool_.CreateBuffer(width, height);
     if (color_format == COLOR_FormatYUV420Planar) {
       RTC_CHECK_EQ(0, stride % 2);
-      RTC_CHECK_EQ(0, slice_height % 2);
       const int uv_stride = stride / 2;
-      const int u_slice_height = slice_height / 2;
       const uint8_t* y_ptr = payload;
       const uint8_t* u_ptr = y_ptr + stride * slice_height;
-      const uint8_t* v_ptr = u_ptr + uv_stride * u_slice_height;
-      libyuv::I420Copy(y_ptr, stride, u_ptr, uv_stride, v_ptr, uv_stride,
-                       i420_buffer->MutableDataY(), i420_buffer->StrideY(),
-                       i420_buffer->MutableDataU(), i420_buffer->StrideU(),
-                       i420_buffer->MutableDataV(), i420_buffer->StrideV(),
-                       width, height);
+
+      // Note that the case with odd |slice_height| is handled in a special way.
+      // The chroma height contained in the payload is rounded down instead of
+      // up, making it one row less than what we expect in WebRTC. Therefore, we
+      // have to duplicate the last chroma rows for this case. Also, the offset
+      // between the Y plane and the U plane is unintuitive for this case. See
+      // http://bugs.webrtc.org/6651 for more info.
+      const int chroma_width = (width + 1) / 2;
+      const int chroma_height =
+          (slice_height % 2 == 0) ? (height + 1) / 2 : height / 2;
+      const int u_offset = uv_stride * slice_height / 2;
+      const uint8_t* v_ptr = u_ptr + u_offset;
+      libyuv::CopyPlane(y_ptr, stride,
+                        i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+                        width, height);
+      libyuv::CopyPlane(u_ptr, uv_stride,
+                        i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+                        chroma_width, chroma_height);
+      libyuv::CopyPlane(v_ptr, uv_stride,
+                        i420_buffer->MutableDataV(), i420_buffer->StrideV(),
+                        chroma_width, chroma_height);
+      if (slice_height % 2 == 1) {
+        RTC_CHECK_EQ(height, slice_height);
+        // Duplicate the last chroma rows.
+        uint8_t* u_last_row_ptr = i420_buffer->MutableDataU() +
+                                  chroma_height * i420_buffer->StrideU();
+        memcpy(u_last_row_ptr, u_last_row_ptr - i420_buffer->StrideU(),
+               i420_buffer->StrideU());
+        uint8_t* v_last_row_ptr = i420_buffer->MutableDataV() +
+                                  chroma_height * i420_buffer->StrideV();
+        memcpy(v_last_row_ptr, v_last_row_ptr - i420_buffer->StrideV(),
+               i420_buffer->StrideV());
+      }
     } else {
       // All other supported formats are nv12.
       const uint8_t* y_ptr = payload;
