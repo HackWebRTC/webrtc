@@ -149,6 +149,7 @@ int SimulcastEncoderAdapter::Release() {
   while (!streaminfos_.empty()) {
     VideoEncoder* encoder = streaminfos_.back().encoder;
     EncodedImageCallback* callback = streaminfos_.back().callback;
+    encoder->Release();
     factory_->Destroy(encoder);
     delete callback;
     streaminfos_.pop_back();
