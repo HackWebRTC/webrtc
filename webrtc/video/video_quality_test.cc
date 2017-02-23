@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/cpu_time.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/format_macros.h"
 #include "webrtc/base/optional.h"
@@ -162,6 +163,8 @@ class VideoAnalyzer : public PacketReceiver,
         dropped_frames_before_rendering_(0),
         last_render_time_(0),
         rtp_timestamp_delta_(0),
+        cpu_time_(0),
+        wallclock_time_(0),
         avg_psnr_threshold_(avg_psnr_threshold),
         avg_ssim_threshold_(avg_ssim_threshold),
         is_quick_test_enabled_(is_quick_test_enabled),
@@ -330,6 +333,9 @@ class VideoAnalyzer : public PacketReceiver,
         Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
 
     rtc::CritScope lock(&crit_);
+
+    StartExcludingCpuThreadTime();
+
     int64_t send_timestamp =
         wrap_handler_.Unwrap(video_frame.timestamp() - rtp_timestamp_delta_);
 
@@ -360,6 +366,8 @@ class VideoAnalyzer : public PacketReceiver,
     AddFrameComparison(reference_frame, video_frame, false, render_time_ms);
 
     last_rendered_frame_ = rtc::Optional<VideoFrame>(video_frame);
+
+    StopExcludingCpuThreadTime();
   }
 
   void Wait() {
@@ -408,6 +416,33 @@ class VideoAnalyzer : public PacketReceiver,
     return &pre_encode_proxy_;
   }
   EncodedFrameObserver* encode_timing_proxy() { return &encode_timing_proxy_; }
+
+  void StartMeasuringCpuProcessTime() {
+    rtc::CritScope lock(&cpu_measurement_lock_);
+    cpu_time_ -= rtc::GetProcessCpuTimeNanos();
+    wallclock_time_ -= rtc::SystemTimeNanos();
+  }
+
+  void StopMeasuringCpuProcessTime() {
+    rtc::CritScope lock(&cpu_measurement_lock_);
+    cpu_time_ += rtc::GetProcessCpuTimeNanos();
+    wallclock_time_ += rtc::SystemTimeNanos();
+  }
+
+  void StartExcludingCpuThreadTime() {
+    rtc::CritScope lock(&cpu_measurement_lock_);
+    cpu_time_ += rtc::GetThreadCpuTimeNanos();
+  }
+
+  void StopExcludingCpuThreadTime() {
+    rtc::CritScope lock(&cpu_measurement_lock_);
+    cpu_time_ -= rtc::GetThreadCpuTimeNanos();
+  }
+
+  double GetCpuUsagePercent() {
+    rtc::CritScope lock(&cpu_measurement_lock_);
+    return static_cast<double>(cpu_time_) / wallclock_time_ * 100.0;
+  }
 
   test::LayerFilteringTransport* const transport_;
   PacketReceiver* receiver_;
@@ -606,7 +641,11 @@ class VideoAnalyzer : public PacketReceiver,
       return true;  // Try again.
     }
 
+    StartExcludingCpuThreadTime();
+
     PerformFrameComparison(comparison);
+
+    StopExcludingCpuThreadTime();
 
     if (FrameProcessed()) {
       PrintResults();
@@ -660,6 +699,7 @@ class VideoAnalyzer : public PacketReceiver,
   }
 
   void PrintResults() {
+    StopMeasuringCpuProcessTime();
     rtc::CritScope crit(&comparison_lock_);
     PrintResult("psnr", psnr_, " dB");
     PrintResult("ssim", ssim_, " score");
@@ -684,6 +724,8 @@ class VideoAnalyzer : public PacketReceiver,
            test_label_.c_str(), dropped_frames_before_first_encode_);
     printf("RESULT dropped_frames_before_rendering: %s = %d frames\n",
            test_label_.c_str(), dropped_frames_before_rendering_);
+    printf("RESULT cpu_usage: %s = %lf %%\n", test_label_.c_str(),
+           GetCpuUsagePercent());
     //  Disable quality check for quick test, as quality checks may fail
     //  because too few samples were collected.
     if (!is_quick_test_enabled_) {
@@ -882,6 +924,10 @@ class VideoAnalyzer : public PacketReceiver,
   int dropped_frames_before_rendering_;
   int64_t last_render_time_;
   uint32_t rtp_timestamp_delta_;
+
+  int64_t cpu_time_ GUARDED_BY(cpu_measurement_lock_);
+  int64_t wallclock_time_ GUARDED_BY(cpu_measurement_lock_);
+  rtc::CriticalSection cpu_measurement_lock_;
 
   rtc::CriticalSection crit_;
   std::deque<VideoFrame> frames_ GUARDED_BY(crit_);
@@ -1389,6 +1435,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     receive_stream->Start();
   for (FlexfecReceiveStream* receive_stream : flexfec_receive_streams_)
     receive_stream->Start();
+  analyzer.StartMeasuringCpuProcessTime();
   video_capturer_->Start();
 
   analyzer.Wait();

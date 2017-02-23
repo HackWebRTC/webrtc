@@ -85,6 +85,7 @@ if (rtc_include_tests) {
       "video_quality_test.h",
     ]
     deps = [
+      "../base:rtc_base_tests_utils",
       "../base:rtc_task_queue",
       "../media:rtc_media_base",
       "../system_wrappers",
