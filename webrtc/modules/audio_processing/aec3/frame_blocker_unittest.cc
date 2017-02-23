@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/block_framer.h"
 #include "webrtc/test/gtest.h"
 

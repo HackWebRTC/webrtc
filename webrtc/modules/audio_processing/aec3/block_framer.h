@@ -15,7 +15,7 @@
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 
 namespace webrtc {
 

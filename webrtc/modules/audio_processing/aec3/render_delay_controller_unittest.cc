@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "webrtc/base/random.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 #include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
@@ -33,16 +33,17 @@ std::string ProduceDebugText(int sample_rate_hz) {
 }
 
 std::string ProduceDebugText(int sample_rate_hz, size_t delay) {
-  std::ostringstream ss(ProduceDebugText(sample_rate_hz));
-  ss << ", Delay: " << delay;
+  std::ostringstream ss;
+  ss << ProduceDebugText(sample_rate_hz) << ", Delay: " << delay;
   return ss.str();
 }
 
 std::string ProduceDebugText(int sample_rate_hz,
                              size_t delay,
                              size_t max_jitter) {
-  std::ostringstream ss(ProduceDebugText(sample_rate_hz, delay));
-  ss << ", Max Api call jitter: " << max_jitter;
+  std::ostringstream ss;
+  ss << ProduceDebugText(sample_rate_hz, delay)
+     << ", Max Api call jitter: " << max_jitter;
   return ss.str();
 }
 
@@ -111,7 +112,7 @@ TEST(RenderDelayController, Alignment) {
   std::vector<float> capture_block(kBlockSize, 0.f);
   size_t delay_blocks = 0;
   for (auto rate : {8000, 16000, 32000, 48000}) {
-    for (size_t delay_samples : {0, 50, 150, 200, 800, 4000}) {
+    for (size_t delay_samples : {15, 50, 150, 200, 800, 4000}) {
       SCOPED_TRACE(ProduceDebugText(rate, delay_samples));
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(250, NumBandsForRate(rate),
@@ -119,7 +120,7 @@ TEST(RenderDelayController, Alignment) {
       std::unique_ptr<RenderDelayController> delay_controller(
           RenderDelayController::Create(rate, *render_delay_buffer));
       DelayBuffer<float> signal_delay_buffer(delay_samples);
-      for (size_t k = 0; k < (300 + delay_samples / kBlockSize); ++k) {
+      for (size_t k = 0; k < (400 + delay_samples / kBlockSize); ++k) {
         RandomizeSampleVector(&random_generator, render_block);
         signal_delay_buffer.Delay(render_block, capture_block);
         EXPECT_TRUE(delay_controller->AnalyzeRender(render_block));
@@ -152,7 +153,7 @@ TEST(RenderDelayController, AlignmentWithJitter) {
   std::vector<float> render_block(kBlockSize, 0.f);
   std::vector<float> capture_block(kBlockSize, 0.f);
   for (auto rate : {8000, 16000, 32000, 48000}) {
-    for (size_t delay_samples : {0, 50, 800}) {
+    for (size_t delay_samples : {15, 50, 800}) {
       for (size_t max_jitter : {1, 9, 20}) {
         size_t delay_blocks = 0;
         SCOPED_TRACE(ProduceDebugText(rate, delay_samples, max_jitter));

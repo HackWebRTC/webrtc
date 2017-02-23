@@ -17,7 +17,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/random.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/mock/mock_echo_remover.h"
 #include "webrtc/modules/audio_processing/aec3/mock/mock_render_delay_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/mock/mock_render_delay_controller.h"
@@ -231,6 +231,8 @@ TEST(BlockProcessor, VerifyRenderNumBandsCheck) {
   }
 }
 
+// TODO(peah): Verify the check for correct number of bands in the capture
+// signal.
 TEST(BlockProcessor, VerifyCaptureNumBandsCheck) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));

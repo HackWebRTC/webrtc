@@ -8,15 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_AEC3_CONSTANTS_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_AEC3_CONSTANTS_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_AEC3_COMMON_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_AEC3_COMMON_H_
 
 #include <stddef.h>
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 
+#ifdef _MSC_VER /* visual c++ */
+#define ALIGN16_BEG __declspec(align(16))
+#define ALIGN16_END
+#else /* gcc or icc */
+#define ALIGN16_BEG
+#define ALIGN16_END __attribute__((aligned(16)))
+#endif
+
+enum class Aec3Optimization { kNone, kSse2 };
+
 constexpr size_t kFftLengthBy2 = 64;
 constexpr size_t kFftLengthBy2Plus1 = kFftLengthBy2 + 1;
+constexpr size_t kFftLengthBy2Minus1 = kFftLengthBy2 - 1;
 constexpr size_t kFftLength = 2 * kFftLengthBy2;
 
 constexpr size_t kMaxNumBands = 3;
@@ -38,6 +50,9 @@ constexpr bool ValidFullBandRate(int sample_rate_hz) {
   return sample_rate_hz == 8000 || sample_rate_hz == 16000 ||
          sample_rate_hz == 32000 || sample_rate_hz == 48000;
 }
+
+// Detects what kind of optimizations to use for the code.
+Aec3Optimization DetectOptimization();
 
 static_assert(1 == NumBandsForRate(8000), "Number of bands for 8 kHz");
 static_assert(1 == NumBandsForRate(16000), "Number of bands for 16 kHz");
@@ -65,4 +80,4 @@ static_assert(!ValidFullBandRate(8001),
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_AEC3_CONSTANTS_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_AEC3_COMMON_H_

@@ -20,7 +20,7 @@ namespace {
 
 bool DetectSaturation(rtc::ArrayView<const float> y) {
   for (auto y_k : y) {
-    if (y_k >= 32767.0f || y_k <= -32768.0f) {
+    if (y_k >= 32700.0f || y_k <= -32700.0f) {
       return true;
     }
   }
@@ -107,16 +107,14 @@ bool BufferRemainingRenderFrameContent(FrameBlocker* render_blocker,
   return block_processor->BufferRender(block);
 }
 
-void CopyAudioBufferIntoFrame(AudioBuffer* buffer,
-                              size_t num_bands,
-                              size_t frame_length,
-                              std::vector<std::vector<float>>* frame) {
+void CopyLowestBandIntoFrame(AudioBuffer* buffer,
+                             size_t num_bands,
+                             size_t frame_length,
+                             std::vector<std::vector<float>>* frame) {
   RTC_DCHECK_EQ(num_bands, frame->size());
-  for (size_t i = 0; i < num_bands; ++i) {
-    rtc::ArrayView<float> buffer_view(&buffer->split_bands_f(0)[i][0],
-                                      frame_length);
-    std::copy(buffer_view.begin(), buffer_view.end(), (*frame)[i].begin());
-  }
+  RTC_DCHECK_EQ(frame_length, (*frame)[0].size());
+  rtc::ArrayView<float> buffer_view(&buffer->channels_f()[0][0], frame_length);
+  std::copy(buffer_view.begin(), buffer_view.end(), (*frame)[0].begin());
 }
 
 // [B,A] = butter(2,100/4000,'high')
@@ -182,14 +180,13 @@ EchoCanceller3::RenderWriter::~RenderWriter() = default;
 
 bool EchoCanceller3::RenderWriter::Insert(AudioBuffer* input) {
   RTC_DCHECK_EQ(1, input->num_channels());
-  RTC_DCHECK_EQ(num_bands_, input->num_bands());
   RTC_DCHECK_EQ(frame_length_, input->num_frames_per_band());
   data_dumper_->DumpWav("aec3_render_input", frame_length_,
-                        &input->split_bands_f(0)[0][0],
+                        &input->channels_f()[0][0],
                         LowestBandRate(sample_rate_hz_), 1);
 
-  CopyAudioBufferIntoFrame(input, num_bands_, frame_length_,
-                           &render_queue_input_frame_);
+  CopyLowestBandIntoFrame(input, num_bands_, frame_length_,
+                          &render_queue_input_frame_);
 
   if (render_highpass_filter_) {
     render_highpass_filter_->Process(render_queue_input_frame_[0]);

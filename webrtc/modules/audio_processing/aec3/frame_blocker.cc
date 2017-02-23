@@ -13,7 +13,6 @@
 #include <algorithm>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
 
 namespace webrtc {
 

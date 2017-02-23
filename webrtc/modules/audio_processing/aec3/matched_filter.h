@@ -17,9 +17,34 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 
 namespace webrtc {
+namespace aec3 {
+
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+
+// Filter core for the matched filter that is optimized for SSE2.
+void MatchedFilterCore_SSE2(size_t x_start_index,
+                            float x2_sum_threshold,
+                            rtc::ArrayView<const float> x,
+                            rtc::ArrayView<const float> y,
+                            rtc::ArrayView<float> h,
+                            bool* filters_updated,
+                            float* error_sum);
+
+#endif
+
+// Filter core for the matched filter.
+void MatchedFilterCore(size_t x_start_index,
+                       float x2_sum_threshold,
+                       rtc::ArrayView<const float> x,
+                       rtc::ArrayView<const float> y,
+                       rtc::ArrayView<float> h,
+                       bool* filters_updated,
+                       float* error_sum);
+
+}  // namespace aec3
 
 class ApmDataDumper;
 
@@ -41,6 +66,7 @@ class MatchedFilter {
   };
 
   MatchedFilter(ApmDataDumper* data_dumper,
+                Aec3Optimization optimization,
                 size_t window_size_sub_blocks,
                 int num_matched_filters,
                 size_t alignment_shift_sub_blocks);
@@ -71,6 +97,7 @@ class MatchedFilter {
   };
 
   ApmDataDumper* const data_dumper_;
+  const Aec3Optimization optimization_;
   const size_t filter_intra_lag_shift_;
   std::vector<std::vector<float>> filters_;
   std::vector<LagEstimate> lag_estimates_;

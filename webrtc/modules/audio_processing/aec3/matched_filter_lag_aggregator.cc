@@ -59,7 +59,7 @@ rtc::Optional<size_t> MatchedFilterLagAggregator::Aggregate(
     candidate_ = lag_estimates[best_lag_estimate_index].lag;
   }
 
-  return candidate_counter_ >= 10 ? rtc::Optional<size_t>(candidate_)
+  return candidate_counter_ >= 15 ? rtc::Optional<size_t>(candidate_)
                                   : rtc::Optional<size_t>();
 }
 

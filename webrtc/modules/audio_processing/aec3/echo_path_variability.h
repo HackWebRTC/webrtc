@@ -14,8 +14,7 @@
 namespace webrtc {
 
 struct EchoPathVariability {
-  EchoPathVariability(bool gain_change, bool delay_change)
-      : gain_change(gain_change), delay_change(delay_change) {}
+  EchoPathVariability(bool gain_change, bool delay_change);
 
   bool AudioPathChanged() const { return gain_change || delay_change; }
   bool gain_change;

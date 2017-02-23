@@ -15,7 +15,7 @@
 #include <string>
 
 #include "webrtc/base/random.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 #include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
 #include "webrtc/test/gtest.h"
@@ -49,7 +49,7 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
   std::vector<float> render(kBlockSize, 0.f);
   std::vector<float> capture(kBlockSize, 0.f);
   ApmDataDumper data_dumper(0);
-  for (size_t delay_samples : {0, 64, 150, 200, 800, 4000}) {
+  for (size_t delay_samples : {15, 64, 150, 200, 800, 4000}) {
     SCOPED_TRACE(ProduceDebugText(delay_samples));
     DelayBuffer<float> signal_delay_buffer(delay_samples);
     EchoPathDelayEstimator estimator(&data_dumper);

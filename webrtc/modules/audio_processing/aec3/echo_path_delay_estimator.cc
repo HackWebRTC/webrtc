@@ -13,7 +13,7 @@
 #include <array>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 
@@ -32,6 +32,7 @@ constexpr int kDownSamplingFactor = 4;
 EchoPathDelayEstimator::EchoPathDelayEstimator(ApmDataDumper* data_dumper)
     : data_dumper_(data_dumper),
       matched_filter_(data_dumper_,
+                      DetectOptimization(),
                       kMatchedFilterWindowSizeSubBlocks,
                       kNumMatchedFilters,
                       kMatchedFilterAlignmentShiftSizeSubBlocks),

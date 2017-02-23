@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/block_processor.h"
 #include "webrtc/modules/audio_processing/aec3/frame_blocker.h"
 #include "webrtc/modules/audio_processing/aec3/mock/mock_block_processor.h"
@@ -48,6 +48,17 @@ void PopulateInputFrame(size_t frame_length,
   }
 }
 
+// Populates the frame with linearly increasing sample values.
+void PopulateInputFrame(size_t frame_length,
+                        size_t frame_index,
+                        float* frame,
+                        int offset) {
+  for (size_t i = 0; i < frame_length; ++i) {
+    float value = static_cast<int>(frame_index * frame_length + i) + offset;
+    frame[i] = std::max(value, 0.f);
+  }
+}
+
 // Verifies the that samples in the output frame are identical to the samples
 // that were produced for the input frame, with an offset in order to compensate
 // for buffering delays.
@@ -69,6 +80,25 @@ bool VerifyOutputFrameBitexactness(size_t frame_length,
       if (reference_frame[k][i] != frame[k][i]) {
         return false;
       }
+    }
+  }
+
+  return true;
+}
+
+// Verifies the that samples in the output frame are identical to the samples
+// that were produced for the input frame, with an offset in order to compensate
+// for buffering delays.
+bool VerifyOutputFrameBitexactness(size_t frame_length,
+                                   size_t frame_index,
+                                   const float* const* frame,
+                                   int offset) {
+  float reference_frame[480];
+
+  PopulateInputFrame(frame_length, frame_index, reference_frame, offset);
+  for (size_t i = 0; i < frame_length; ++i) {
+    if (reference_frame[i] != frame[0][i]) {
+      return false;
     }
   }
 
@@ -159,8 +189,8 @@ class EchoCanceller3Tester {
       OptionalBandSplit();
       PopulateInputFrame(frame_length_, num_bands_, frame_index,
                          &capture_buffer_.split_bands_f(0)[0], 0);
-      PopulateInputFrame(frame_length_, num_bands_, frame_index,
-                         &render_buffer_.split_bands_f(0)[0], 100);
+      PopulateInputFrame(frame_length_, frame_index,
+                         &render_buffer_.channels_f()[0][0], 0);
 
       EXPECT_TRUE(aec3.AnalyzeRender(&render_buffer_));
       aec3.ProcessCapture(&capture_buffer_, false);
@@ -184,14 +214,14 @@ class EchoCanceller3Tester {
       OptionalBandSplit();
       PopulateInputFrame(frame_length_, num_bands_, frame_index,
                          &capture_buffer_.split_bands_f(0)[0], 100);
-      PopulateInputFrame(frame_length_, num_bands_, frame_index,
-                         &render_buffer_.split_bands_f(0)[0], 0);
+      PopulateInputFrame(frame_length_, frame_index,
+                         &render_buffer_.channels_f()[0][0], 0);
 
       EXPECT_TRUE(aec3.AnalyzeRender(&render_buffer_));
       aec3.ProcessCapture(&capture_buffer_, false);
       EXPECT_TRUE(VerifyOutputFrameBitexactness(
-          frame_length_, num_bands_, frame_index,
-          &capture_buffer_.split_bands_f(0)[0], -64));
+          frame_length_, frame_index, &capture_buffer_.split_bands_f(0)[0],
+          -64));
     }
   }
 
@@ -263,8 +293,8 @@ class EchoCanceller3Tester {
 
       PopulateInputFrame(frame_length_, num_bands_, frame_index,
                          &capture_buffer_.split_bands_f(0)[0], 0);
-      PopulateInputFrame(frame_length_, num_bands_, frame_index,
-                         &render_buffer_.split_bands_f(0)[0], 0);
+      PopulateInputFrame(frame_length_, frame_index,
+                         &render_buffer_.channels_f()[0][0], 0);
 
       EXPECT_TRUE(aec3.AnalyzeRender(&render_buffer_));
       aec3.ProcessCapture(&capture_buffer_, echo_path_change);
@@ -354,8 +384,8 @@ class EchoCanceller3Tester {
 
       PopulateInputFrame(frame_length_, num_bands_, frame_index,
                          &capture_buffer_.split_bands_f(0)[0], 0);
-      PopulateInputFrame(frame_length_, num_bands_, frame_index,
-                         &render_buffer_.split_bands_f(0)[0], 0);
+      PopulateInputFrame(frame_length_, frame_index,
+                         &render_buffer_.channels_f()[0][0], 0);
 
       EXPECT_TRUE(aec3.AnalyzeRender(&render_buffer_));
       aec3.ProcessCapture(&capture_buffer_, false);
@@ -414,7 +444,6 @@ class EchoCanceller3Tester {
 
     EchoCanceller3 aec3(sample_rate_hz_, false,
                         std::move(block_processor_mock));
-
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
          ++frame_index) {
       for (int k = 0; k < fullband_frame_length_; ++k) {
@@ -440,8 +469,8 @@ class EchoCanceller3Tester {
 
       PopulateInputFrame(frame_length_, num_bands_, frame_index,
                          &capture_buffer_.split_bands_f(0)[0], 0);
-      PopulateInputFrame(frame_length_, num_bands_, frame_index,
-                         &render_buffer_.split_bands_f(0)[0], 0);
+      PopulateInputFrame(frame_length_, frame_index,
+                         &render_buffer_.channels_f()[0][0], 0);
 
       EXPECT_TRUE(aec3.AnalyzeRender(&render_buffer_));
       aec3.ProcessCapture(&capture_buffer_, false);
@@ -462,8 +491,8 @@ class EchoCanceller3Tester {
       if (sample_rate_hz_ > 16000) {
         render_buffer_.SplitIntoFrequencyBands();
       }
-      PopulateInputFrame(frame_length_, num_bands_, frame_index,
-                         &render_buffer_.split_bands_f(0)[0], 0);
+      PopulateInputFrame(frame_length_, frame_index,
+                         &render_buffer_.channels_f()[0][0], 0);
 
       EXPECT_TRUE(aec3.AnalyzeRender(&render_buffer_));
     }
@@ -480,8 +509,8 @@ class EchoCanceller3Tester {
 
       aec3.ProcessCapture(&capture_buffer_, false);
       EXPECT_TRUE(VerifyOutputFrameBitexactness(
-          frame_length_, num_bands_, frame_index,
-          &capture_buffer_.split_bands_f(0)[0], -64));
+          frame_length_, frame_index, &capture_buffer_.split_bands_f(0)[0],
+          -64));
     }
   }
 
@@ -497,8 +526,8 @@ class EchoCanceller3Tester {
         if (sample_rate_hz_ > 16000) {
           render_buffer_.SplitIntoFrequencyBands();
         }
-        PopulateInputFrame(frame_length_, num_bands_, frame_index,
-                           &render_buffer_.split_bands_f(0)[0], 0);
+        PopulateInputFrame(frame_length_, frame_index,
+                           &render_buffer_.channels_f()[0][0], 0);
 
         if (k == 0) {
           EXPECT_TRUE(aec3.AnalyzeRender(&render_buffer_));
@@ -518,8 +547,7 @@ class EchoCanceller3Tester {
     // way that the number of bands for the rates are different.
     const int aec3_sample_rate_hz = sample_rate_hz_ == 48000 ? 32000 : 48000;
     EchoCanceller3 aec3(aec3_sample_rate_hz, false);
-    PopulateInputFrame(frame_length_, num_bands_, 0,
-                       &render_buffer_.split_bands_f(0)[0], 0);
+    PopulateInputFrame(frame_length_, 0, &render_buffer_.channels_f()[0][0], 0);
 
     EXPECT_DEATH(aec3.AnalyzeRender(&render_buffer_), "");
   }
@@ -547,8 +575,7 @@ class EchoCanceller3Tester {
     EchoCanceller3 aec3(aec3_sample_rate_hz, false);
 
     OptionalBandSplit();
-    PopulateInputFrame(frame_length_, num_bands_, 0,
-                       &render_buffer_.split_bands_f(0)[0], 0);
+    PopulateInputFrame(frame_length_, 0, &render_buffer_.channels_f()[0][0], 0);
 
     EXPECT_DEATH(aec3.AnalyzeRender(&render_buffer_), "");
   }
@@ -673,12 +700,6 @@ TEST(EchoCanceller3Messaging, EchoLeakage) {
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST(EchoCanceller3InputCheck, WrongRenderNumBandsCheckVerification) {
-  for (auto rate : {8000, 16000, 32000, 48000}) {
-    SCOPED_TRACE(ProduceDebugText(rate));
-    EchoCanceller3Tester(rate).RunAnalyzeRenderNumBandsCheckVerification();
-  }
-}
 
 TEST(EchoCanceller3InputCheck, WrongCaptureNumBandsCheckVerification) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
@@ -687,7 +708,10 @@ TEST(EchoCanceller3InputCheck, WrongCaptureNumBandsCheckVerification) {
   }
 }
 
-TEST(EchoCanceller3InputCheck, WrongRenderFrameLengthCheckVerification) {
+// TODO(peah): Re-enable the test once the issue with memory leaks during DEATH
+// tests on test bots has been fixed.
+TEST(EchoCanceller3InputCheck,
+     DISABLED_WrongRenderFrameLengthCheckVerification) {
   for (auto rate : {8000, 16000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     EchoCanceller3Tester(rate).RunAnalyzeRenderFrameLengthCheckVerification();

@@ -16,7 +16,7 @@
 
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_delay_estimator.h"
 #include "webrtc/system_wrappers/include/logging.h"
 
@@ -147,7 +147,7 @@ size_t RenderDelayControllerImpl::GetDelay(
     const int headroom = echo_path_delay_samples_ - delay_ * kBlockSize;
     RTC_DCHECK_LE(0, headroom);
     headroom_samples_ = rtc::Optional<size_t>(headroom);
-  } else if (++blocks_since_last_delay_estimate_ > 25000) {
+  } else if (++blocks_since_last_delay_estimate_ > 250 * 20) {
     headroom_samples_ = rtc::Optional<size_t>();
   }
 

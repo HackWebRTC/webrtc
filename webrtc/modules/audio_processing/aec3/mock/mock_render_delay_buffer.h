@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
 #include "webrtc/test/gmock.h"
 

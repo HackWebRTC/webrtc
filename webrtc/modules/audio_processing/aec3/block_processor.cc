@@ -12,7 +12,7 @@
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/modules/audio_processing/aec3/aec3_constants.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 #include "webrtc/system_wrappers/include/logging.h"
