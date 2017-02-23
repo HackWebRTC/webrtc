@@ -53,36 +53,36 @@ class PlotVideoProcessorIntegrationTest
   void RunTest(int width, int height, const std::string& filename) {
     // Bitrate and frame rate profile.
     RateProfile rate_profile;
-    SetRateProfilePars(&rate_profile,
-                       0,  // update_index
-                       bitrate_, framerate_,
-                       0);  // frame_index_rate_update
+    SetRateProfile(&rate_profile,
+                   0,  // update_index
+                   bitrate_, framerate_,
+                   0);  // frame_index_rate_update
     rate_profile.frame_index_rate_update[1] = kNumFramesLong + 1;
     rate_profile.num_frames = kNumFramesLong;
     // Codec/network settings.
-    CodecConfigPars process_settings;
-    SetCodecParameters(
-        &process_settings, codec_type_, kHwCodec, kUseSingleCore, kPacketLoss,
-        -1,  // key_frame_interval
-        1,   // num_temporal_layers
-        kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
-        width, height, filename, kVerboseLogging);
-    // Metrics for expected quality (PSNR avg, PSNR min, SSIM avg, SSIM min).
-    QualityMetrics quality_metrics;
-    SetQualityMetrics(&quality_metrics, 15.0, 10.0, 0.2, 0.1);
-    // Metrics for rate control.
-    RateControlMetrics rc_metrics[1];
-    SetRateControlMetrics(rc_metrics,
-                          0,    // update_index
-                          300,  // max_num_dropped_frames,
-                          400,  // max_key_frame_size_mismatch
-                          200,  // max_delta_frame_size_mismatch
-                          100,  // max_encoding_rate_mismatch
-                          300,  // max_time_hit_target
-                          0,    // num_spatial_resizes
-                          1);   // num_key_frames
-    ProcessFramesAndVerify(quality_metrics, rate_profile, process_settings,
-                           rc_metrics, &kVisualizationParams);
+    CodecParams process_settings;
+    SetCodecParams(&process_settings, codec_type_, kHwCodec, kUseSingleCore,
+                   kPacketLoss,
+                   -1,  // key_frame_interval
+                   1,   // num_temporal_layers
+                   kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
+                   kSpatialResizeOn, width, height, filename, kVerboseLogging);
+    // Thresholds for expected quality (PSNR avg, PSNR min, SSIM avg, SSIM min).
+    QualityThresholds quality_thresholds;
+    SetQualityThresholds(&quality_thresholds, 15.0, 10.0, 0.2, 0.1);
+    // Thresholds for rate control.
+    RateControlThresholds rc_thresholds[1];
+    SetRateControlThresholds(rc_thresholds,
+                             0,    // update_index
+                             300,  // max_num_dropped_frames,
+                             400,  // max_key_frame_size_mismatch
+                             200,  // max_delta_frame_size_mismatch
+                             100,  // max_encoding_rate_mismatch
+                             300,  // max_time_hit_target
+                             0,    // num_spatial_resizes
+                             1);   // num_key_frames
+    ProcessFramesAndVerify(quality_thresholds, rate_profile, process_settings,
+                           rc_thresholds, &kVisualizationParams);
   }
   const int bitrate_;
   const int framerate_;

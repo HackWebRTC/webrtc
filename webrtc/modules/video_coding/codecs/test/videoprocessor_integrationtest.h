@@ -62,32 +62,36 @@ const int kCifHeight = 288;
 const char kFilenameForemanCif[] = "foreman_cif";
 
 // Codec and network settings.
-struct CodecConfigPars {
+struct CodecParams {
   VideoCodecType codec_type;
   bool hw_codec;
   bool use_single_core;
-  float packet_loss;
+
+  int width;
+  int height;
+
   int num_temporal_layers;
   int key_frame_interval;
   bool error_concealment_on;
   bool denoising_on;
   bool frame_dropper_on;
   bool spatial_resize_on;
-  int width;
-  int height;
+
+  float packet_loss_probability;  // [0.0, 1.0].
+
   std::string filename;
   bool verbose_logging;
 };
 
-// Quality metrics.
-struct QualityMetrics {
-  double minimum_avg_psnr;
-  double minimum_min_psnr;
-  double minimum_avg_ssim;
-  double minimum_min_ssim;
+// Thresholds for the quality metrics.
+struct QualityThresholds {
+  double min_avg_psnr;
+  double min_min_psnr;
+  double min_avg_ssim;
+  double min_min_ssim;
 };
 
-// The sequence of bitrate and frame rate changes for the encoder, the frame
+// The sequence of bit rate and frame rate changes for the encoder, the frame
 // number where the changes are made, and the total number of frames for the
 // test.
 struct RateProfile {
@@ -97,12 +101,12 @@ struct RateProfile {
   int num_frames;
 };
 
-// Metrics for the rate control. The rate mismatch metrics are defined as
-// percentages.|max_time_hit_target| is defined as number of frames, after a
-// rate update is made to the encoder, for the encoder to reach within
-// |kPercTargetvsActualMismatch| of new target rate. The metrics are defined for
-// each rate update sequence.
-struct RateControlMetrics {
+// Thresholds for the rate control metrics. The rate mismatch thresholds are
+// defined as percentages. |max_time_hit_target| is defined as number of frames,
+// after a rate update is made to the encoder, for the encoder to reach within
+// |kPercTargetvsActualMismatch| of new target rate. The thresholds are defined
+// for each rate update sequence.
+struct RateControlThresholds {
   int max_num_dropped_frames;
   int max_key_frame_size_mismatch;
   int max_delta_frame_size_mismatch;
@@ -131,12 +135,13 @@ const float kScaleKeyFrameSize = 0.5f;
 
 // Integration test for video processor. Encodes+decodes a clip and
 // writes it to the output directory. After completion, quality metrics
-// (PSNR and SSIM) and rate control metrics are computed to verify that the
-// quality and encoder response is acceptable. The rate control tests allow us
-// to verify the behavior for changing bitrate, changing frame rate, frame
-// dropping/spatial resize, and temporal layers. The limits for the rate
-// control metrics are set to be fairly conservative, so failure should only
-// happen when some significant regression or breakdown occurs.
+// (PSNR and SSIM) and rate control metrics are computed and compared to given
+// thresholds, to verify that the quality and encoder response is acceptable.
+// The rate control tests allow us to verify the behavior for changing bit rate,
+// changing frame rate, frame dropping/spatial resize, and temporal layers.
+// The thresholds for the rate control metrics are set to be fairly
+// conservative, so failure should only happen when some significant regression
+// or breakdown occurs.
 class VideoProcessorIntegrationTest : public testing::Test {
  protected:
   VideoProcessorIntegrationTest() {
@@ -152,7 +157,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
   virtual ~VideoProcessorIntegrationTest() = default;
 
-  void SetUpCodecConfig(const CodecConfigPars& process,
+  void SetUpCodecConfig(const CodecParams& process,
                         const VisualizationParams* visualization_params) {
     if (process.hw_codec) {
 #if defined(WEBRTC_VIDEOPROCESSOR_INTEGRATIONTEST_HW_CODECS_ENABLED)
@@ -233,7 +238,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
     config_.use_single_core = process.use_single_core;
     // Key frame interval and packet loss are set for each test.
     config_.keyframe_interval = process.key_frame_interval;
-    config_.networking_config.packet_loss_probability = packet_loss_;
+    config_.networking_config.packet_loss_probability =
+        packet_loss_probability_;
 
     // Configure codec settings.
     config_.codec_settings = &codec_settings_;
@@ -393,14 +399,14 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
 
   // Verify expected behavior of rate control and print out data.
-  void VerifyRateControl(int update_index,
-                         int max_key_frame_size_mismatch,
-                         int max_delta_frame_size_mismatch,
-                         int max_encoding_rate_mismatch,
-                         int max_time_hit_target,
-                         int max_num_dropped_frames,
-                         int num_spatial_resizes,
-                         int num_key_frames) {
+  void VerifyRateControlMetrics(int update_index,
+                                int max_key_frame_size_mismatch,
+                                int max_delta_frame_size_mismatch,
+                                int max_encoding_rate_mismatch,
+                                int max_time_hit_target,
+                                int max_num_dropped_frames,
+                                int num_spatial_resizes,
+                                int num_key_frames) {
     int num_dropped_frames = processor_->NumberDroppedFrames();
     int num_resize_actions = processor_->NumberSpatialResizes();
     printf(
@@ -454,6 +460,15 @@ class VideoProcessorIntegrationTest : public testing::Test {
     EXPECT_EQ(num_key_frames_, num_key_frames);
   }
 
+  void VerifyQuality(const test::QualityMetricsResult& psnr_result,
+                     const test::QualityMetricsResult& ssim_result,
+                     const QualityThresholds& quality_thresholds) {
+    EXPECT_GT(psnr_result.average, quality_thresholds.min_avg_psnr);
+    EXPECT_GT(psnr_result.min, quality_thresholds.min_min_psnr);
+    EXPECT_GT(ssim_result.average, quality_thresholds.min_avg_ssim);
+    EXPECT_GT(ssim_result.min, quality_thresholds.min_min_ssim);
+  }
+
   // Layer index corresponding to frame number, for up to 3 layers.
   void LayerIndexForFrame(int frame_number) {
     if (num_temporal_layers_ == 1) {
@@ -505,15 +520,15 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
 
   // Processes all frames in the clip and verifies the result.
-  void ProcessFramesAndVerify(QualityMetrics quality_metrics,
+  void ProcessFramesAndVerify(QualityThresholds quality_thresholds,
                               RateProfile rate_profile,
-                              CodecConfigPars process,
-                              RateControlMetrics* rc_metrics,
+                              CodecParams process,
+                              RateControlThresholds* rc_thresholds,
                               const VisualizationParams* visualization_params) {
     // Codec/config settings.
     start_bitrate_ = rate_profile.target_bit_rate[0];
     start_frame_rate_ = rate_profile.input_frame_rate[0];
-    packet_loss_ = process.packet_loss;
+    packet_loss_probability_ = process.packet_loss_probability;
     num_temporal_layers_ = process.num_temporal_layers;
     SetUpCodecConfig(process, visualization_params);
     // Update the layers and the codec with the initial rates.
@@ -548,14 +563,15 @@ class VideoProcessorIntegrationTest : public testing::Test {
       // update layers and codec with new rates.
       if (frame_number ==
           rate_profile.frame_index_rate_update[update_index + 1]) {
-        VerifyRateControl(
-            update_index, rc_metrics[update_index].max_key_frame_size_mismatch,
-            rc_metrics[update_index].max_delta_frame_size_mismatch,
-            rc_metrics[update_index].max_encoding_rate_mismatch,
-            rc_metrics[update_index].max_time_hit_target,
-            rc_metrics[update_index].max_num_dropped_frames,
-            rc_metrics[update_index].num_spatial_resizes,
-            rc_metrics[update_index].num_key_frames);
+        VerifyRateControlMetrics(
+            update_index,
+            rc_thresholds[update_index].max_key_frame_size_mismatch,
+            rc_thresholds[update_index].max_delta_frame_size_mismatch,
+            rc_thresholds[update_index].max_encoding_rate_mismatch,
+            rc_thresholds[update_index].max_time_hit_target,
+            rc_thresholds[update_index].max_num_dropped_frames,
+            rc_thresholds[update_index].num_spatial_resizes,
+            rc_thresholds[update_index].num_key_frames);
         // Update layer rates and the codec with new rates.
         ++update_index;
         bit_rate_ = rate_profile.target_bit_rate[update_index];
@@ -566,14 +582,14 @@ class VideoProcessorIntegrationTest : public testing::Test {
         processor_->SetRates(bit_rate_, frame_rate_);
       }
     }
-    VerifyRateControl(update_index,
-                      rc_metrics[update_index].max_key_frame_size_mismatch,
-                      rc_metrics[update_index].max_delta_frame_size_mismatch,
-                      rc_metrics[update_index].max_encoding_rate_mismatch,
-                      rc_metrics[update_index].max_time_hit_target,
-                      rc_metrics[update_index].max_num_dropped_frames,
-                      rc_metrics[update_index].num_spatial_resizes,
-                      rc_metrics[update_index].num_key_frames);
+    VerifyRateControlMetrics(
+        update_index, rc_thresholds[update_index].max_key_frame_size_mismatch,
+        rc_thresholds[update_index].max_delta_frame_size_mismatch,
+        rc_thresholds[update_index].max_encoding_rate_mismatch,
+        rc_thresholds[update_index].max_time_hit_target,
+        rc_thresholds[update_index].max_num_dropped_frames,
+        rc_thresholds[update_index].num_spatial_resizes,
+        rc_thresholds[update_index].num_key_frames);
     EXPECT_EQ(num_frames, frame_number);
     EXPECT_EQ(num_frames + 1, static_cast<int>(stats_.stats_.size()));
 
@@ -607,10 +623,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
            psnr_result.average, psnr_result.min, ssim_result.average,
            ssim_result.min);
     stats_.PrintSummary();
-    EXPECT_GT(psnr_result.average, quality_metrics.minimum_avg_psnr);
-    EXPECT_GT(psnr_result.min, quality_metrics.minimum_min_psnr);
-    EXPECT_GT(ssim_result.average, quality_metrics.minimum_avg_ssim);
-    EXPECT_GT(ssim_result.min, quality_metrics.minimum_min_ssim);
+    VerifyQuality(psnr_result, ssim_result, quality_thresholds);
 
     // Remove analysis file.
     if (remove(config_.output_filename.c_str()) < 0) {
@@ -618,25 +631,25 @@ class VideoProcessorIntegrationTest : public testing::Test {
     }
   }
 
-  static void SetCodecParameters(CodecConfigPars* process_settings,
-                                 VideoCodecType codec_type,
-                                 bool hw_codec,
-                                 bool use_single_core,
-                                 float packet_loss,
-                                 int key_frame_interval,
-                                 int num_temporal_layers,
-                                 bool error_concealment_on,
-                                 bool denoising_on,
-                                 bool frame_dropper_on,
-                                 bool spatial_resize_on,
-                                 int width,
-                                 int height,
-                                 const std::string& filename,
-                                 bool verbose_logging) {
+  static void SetCodecParams(CodecParams* process_settings,
+                             VideoCodecType codec_type,
+                             bool hw_codec,
+                             bool use_single_core,
+                             float packet_loss_probability,
+                             int key_frame_interval,
+                             int num_temporal_layers,
+                             bool error_concealment_on,
+                             bool denoising_on,
+                             bool frame_dropper_on,
+                             bool spatial_resize_on,
+                             int width,
+                             int height,
+                             const std::string& filename,
+                             bool verbose_logging) {
     process_settings->codec_type = codec_type;
     process_settings->hw_codec = hw_codec;
     process_settings->use_single_core = use_single_core;
-    process_settings->packet_loss = packet_loss;
+    process_settings->packet_loss_probability = packet_loss_probability;
     process_settings->key_frame_interval = key_frame_interval;
     process_settings->num_temporal_layers = num_temporal_layers,
     process_settings->error_concealment_on = error_concealment_on;
@@ -649,65 +662,65 @@ class VideoProcessorIntegrationTest : public testing::Test {
     process_settings->verbose_logging = verbose_logging;
   }
 
-  static void SetCodecParameters(CodecConfigPars* process_settings,
-                                 VideoCodecType codec_type,
-                                 bool hw_codec,
-                                 bool use_single_core,
-                                 float packet_loss,
-                                 int key_frame_interval,
-                                 int num_temporal_layers,
-                                 bool error_concealment_on,
-                                 bool denoising_on,
-                                 bool frame_dropper_on,
-                                 bool spatial_resize_on) {
-    SetCodecParameters(process_settings, codec_type, hw_codec, use_single_core,
-                       packet_loss, key_frame_interval, num_temporal_layers,
-                       error_concealment_on, denoising_on, frame_dropper_on,
-                       spatial_resize_on, kCifWidth, kCifHeight,
-                       kFilenameForemanCif, false /* verbose_logging */);
+  static void SetCodecParams(CodecParams* process_settings,
+                             VideoCodecType codec_type,
+                             bool hw_codec,
+                             bool use_single_core,
+                             float packet_loss_probability,
+                             int key_frame_interval,
+                             int num_temporal_layers,
+                             bool error_concealment_on,
+                             bool denoising_on,
+                             bool frame_dropper_on,
+                             bool spatial_resize_on) {
+    SetCodecParams(process_settings, codec_type, hw_codec, use_single_core,
+                   packet_loss_probability, key_frame_interval,
+                   num_temporal_layers, error_concealment_on, denoising_on,
+                   frame_dropper_on, spatial_resize_on, kCifWidth, kCifHeight,
+                   kFilenameForemanCif, false /* verbose_logging */);
   }
 
-  static void SetQualityMetrics(QualityMetrics* quality_metrics,
-                                double minimum_avg_psnr,
-                                double minimum_min_psnr,
-                                double minimum_avg_ssim,
-                                double minimum_min_ssim) {
-    quality_metrics->minimum_avg_psnr = minimum_avg_psnr;
-    quality_metrics->minimum_min_psnr = minimum_min_psnr;
-    quality_metrics->minimum_avg_ssim = minimum_avg_ssim;
-    quality_metrics->minimum_min_ssim = minimum_min_ssim;
+  static void SetQualityThresholds(QualityThresholds* quality_thresholds,
+                                   double min_avg_psnr,
+                                   double min_min_psnr,
+                                   double min_avg_ssim,
+                                   double min_min_ssim) {
+    quality_thresholds->min_avg_psnr = min_avg_psnr;
+    quality_thresholds->min_min_psnr = min_min_psnr;
+    quality_thresholds->min_avg_ssim = min_avg_ssim;
+    quality_thresholds->min_min_ssim = min_min_ssim;
   }
 
-  static void SetRateProfilePars(RateProfile* rate_profile,
-                                 int update_index,
-                                 int bit_rate,
-                                 int frame_rate,
-                                 int frame_index_rate_update) {
+  static void SetRateProfile(RateProfile* rate_profile,
+                             int update_index,
+                             int bit_rate,
+                             int frame_rate,
+                             int frame_index_rate_update) {
     rate_profile->target_bit_rate[update_index] = bit_rate;
     rate_profile->input_frame_rate[update_index] = frame_rate;
     rate_profile->frame_index_rate_update[update_index] =
         frame_index_rate_update;
   }
 
-  static void SetRateControlMetrics(RateControlMetrics* rc_metrics,
-                                    int update_index,
-                                    int max_num_dropped_frames,
-                                    int max_key_frame_size_mismatch,
-                                    int max_delta_frame_size_mismatch,
-                                    int max_encoding_rate_mismatch,
-                                    int max_time_hit_target,
-                                    int num_spatial_resizes,
-                                    int num_key_frames) {
-    rc_metrics[update_index].max_num_dropped_frames = max_num_dropped_frames;
-    rc_metrics[update_index].max_key_frame_size_mismatch =
+  static void SetRateControlThresholds(RateControlThresholds* rc_thresholds,
+                                       int update_index,
+                                       int max_num_dropped_frames,
+                                       int max_key_frame_size_mismatch,
+                                       int max_delta_frame_size_mismatch,
+                                       int max_encoding_rate_mismatch,
+                                       int max_time_hit_target,
+                                       int num_spatial_resizes,
+                                       int num_key_frames) {
+    rc_thresholds[update_index].max_num_dropped_frames = max_num_dropped_frames;
+    rc_thresholds[update_index].max_key_frame_size_mismatch =
         max_key_frame_size_mismatch;
-    rc_metrics[update_index].max_delta_frame_size_mismatch =
+    rc_thresholds[update_index].max_delta_frame_size_mismatch =
         max_delta_frame_size_mismatch;
-    rc_metrics[update_index].max_encoding_rate_mismatch =
+    rc_thresholds[update_index].max_encoding_rate_mismatch =
         max_encoding_rate_mismatch;
-    rc_metrics[update_index].max_time_hit_target = max_time_hit_target;
-    rc_metrics[update_index].num_spatial_resizes = num_spatial_resizes;
-    rc_metrics[update_index].num_key_frames = num_key_frames;
+    rc_thresholds[update_index].max_time_hit_target = max_time_hit_target;
+    rc_thresholds[update_index].num_spatial_resizes = num_spatial_resizes;
+    rc_thresholds[update_index].num_key_frames = num_key_frames;
   }
 
   // Codecs.
@@ -758,7 +771,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   int start_frame_rate_;
 
   // Codec and network settings.
-  float packet_loss_;
+  float packet_loss_probability_;
   int num_temporal_layers_;
 };
 
