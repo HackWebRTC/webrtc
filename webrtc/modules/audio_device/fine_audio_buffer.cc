@@ -29,17 +29,8 @@ FineAudioBuffer::FineAudioBuffer(AudioDeviceBuffer* device_buffer,
       samples_per_10_ms_(static_cast<size_t>(sample_rate_ * 10 / 1000)),
       bytes_per_10_ms_(samples_per_10_ms_ * sizeof(int16_t)),
       playout_cached_buffer_start_(0),
-      playout_cached_bytes_(0),
-      // Allocate extra space on the recording side to reduce the number of
-      // memmove() calls.
-      required_record_buffer_size_bytes_(
-          5 * (desired_frame_size_bytes + bytes_per_10_ms_)),
-      record_cached_bytes_(0),
-      record_read_pos_(0),
-      record_write_pos_(0) {
+      playout_cached_bytes_(0) {
   playout_cache_buffer_.reset(new int8_t[bytes_per_10_ms_]);
-  record_cache_buffer_.reset(new int8_t[required_record_buffer_size_bytes_]);
-  memset(record_cache_buffer_.get(), 0, required_record_buffer_size_bytes_);
 }
 
 FineAudioBuffer::~FineAudioBuffer() {}
@@ -58,10 +49,7 @@ void FineAudioBuffer::ResetPlayout() {
 }
 
 void FineAudioBuffer::ResetRecord() {
-  record_cached_bytes_ = 0;
-  record_read_pos_ = 0;
-  record_write_pos_ = 0;
-  memset(record_cache_buffer_.get(), 0, required_record_buffer_size_bytes_);
+  record_buffer_.Clear();
 }
 
 void FineAudioBuffer::GetPlayoutData(int8_t* buffer) {
@@ -115,34 +103,19 @@ void FineAudioBuffer::DeliverRecordedData(const int8_t* buffer,
                                           size_t size_in_bytes,
                                           int playout_delay_ms,
                                           int record_delay_ms) {
-  // Check if the temporary buffer can store the incoming buffer. If not,
-  // move the remaining (old) bytes to the beginning of the temporary buffer
-  // and start adding new samples after the old samples.
-  if (record_write_pos_ + size_in_bytes > required_record_buffer_size_bytes_) {
-    if (record_cached_bytes_ > 0) {
-      memmove(record_cache_buffer_.get(),
-              record_cache_buffer_.get() + record_read_pos_,
-              record_cached_bytes_);
-    }
-    record_write_pos_ = record_cached_bytes_;
-    record_read_pos_ = 0;
-  }
-  // Add recorded samples to a temporary buffer.
-  memcpy(record_cache_buffer_.get() + record_write_pos_, buffer, size_in_bytes);
-  record_write_pos_ += size_in_bytes;
-  record_cached_bytes_ += size_in_bytes;
-  // Consume samples in temporary buffer in chunks of 10ms until there is not
+  // Always append new data and grow the buffer if needed.
+  record_buffer_.AppendData(buffer, size_in_bytes);
+  // Consume samples from buffer in chunks of 10ms until there is not
   // enough data left. The number of remaining bytes in the cache is given by
-  // |record_cached_bytes_| after this while loop is done.
-  while (record_cached_bytes_ >= bytes_per_10_ms_) {
-    device_buffer_->SetRecordedBuffer(
-        record_cache_buffer_.get() + record_read_pos_, samples_per_10_ms_);
+  // the new size of the buffer.
+  while (record_buffer_.size() >= bytes_per_10_ms_) {
+    device_buffer_->SetRecordedBuffer(record_buffer_.data(),
+                                      samples_per_10_ms_);
     device_buffer_->SetVQEData(playout_delay_ms, record_delay_ms, 0);
     device_buffer_->DeliverRecordedData();
-    // Read next chunk of 10ms data.
-    record_read_pos_ += bytes_per_10_ms_;
-    // Reduce number of cached bytes with the consumed amount.
-    record_cached_bytes_ -= bytes_per_10_ms_;
+    memmove(record_buffer_.data(), record_buffer_.data() + bytes_per_10_ms_,
+            record_buffer_.size() - bytes_per_10_ms_);
+    record_buffer_.SetSize(record_buffer_.size() - bytes_per_10_ms_);
   }
 }
 

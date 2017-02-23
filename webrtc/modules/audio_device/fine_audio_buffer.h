@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/base/buffer.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -94,14 +95,7 @@ class FineAudioBuffer {
   size_t playout_cached_bytes_;
   // Storage for input samples that are about to be delivered to the WebRTC
   // ADB or remains from the last successful delivery of a 10ms audio buffer.
-  std::unique_ptr<int8_t[]> record_cache_buffer_;
-  // Required (max) size in bytes of the |record_cache_buffer_|.
-  const size_t required_record_buffer_size_bytes_;
-  // Number of bytes in input (contains recorded samples) cache.
-  size_t record_cached_bytes_;
-  // Read and write pointers used in the buffering scheme on the recording side.
-  size_t record_read_pos_;
-  size_t record_write_pos_;
+  rtc::BufferT<int8_t> record_buffer_;
 };
 
 }  // namespace webrtc
