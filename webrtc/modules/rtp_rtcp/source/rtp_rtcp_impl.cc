@@ -394,14 +394,13 @@ bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
                                          bool retransmission,
                                          const PacedPacketInfo& pacing_info) {
   return rtp_sender_.TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
-                                      retransmission,
-                                      pacing_info.probe_cluster_id);
+                                      retransmission, pacing_info);
 }
 
 size_t ModuleRtpRtcpImpl::TimeToSendPadding(
     size_t bytes,
     const PacedPacketInfo& pacing_info) {
-  return rtp_sender_.TimeToSendPadding(bytes, pacing_info.probe_cluster_id);
+  return rtp_sender_.TimeToSendPadding(bytes, pacing_info);
 }
 
 size_t ModuleRtpRtcpImpl::MaxPayloadSize() const {

@@ -538,6 +538,13 @@ struct PacedPacketInfo {
         probe_cluster_min_probes(probe_cluster_min_probes),
         probe_cluster_min_bytes(probe_cluster_min_bytes) {}
 
+  bool operator==(const PacedPacketInfo& rhs) const {
+    return send_bitrate_bps == rhs.send_bitrate_bps &&
+           probe_cluster_id == rhs.probe_cluster_id &&
+           probe_cluster_min_probes == rhs.probe_cluster_min_probes &&
+           probe_cluster_min_bytes == rhs.probe_cluster_min_bytes;
+  }
+
   static constexpr int kNotAProbe = -1;
   int send_bitrate_bps = -1;
   int probe_cluster_id = kNotAProbe;

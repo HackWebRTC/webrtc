@@ -39,7 +39,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   // Implements TransportFeedbackObserver.
   void AddPacket(uint16_t sequence_number,
                  size_t length,
-                 int probe_cluster_id) override;
+                 const PacedPacketInfo& pacing_info) override;
   void OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
 
   // TODO(holmer): This method should return DelayBasedBwe::Result so that we

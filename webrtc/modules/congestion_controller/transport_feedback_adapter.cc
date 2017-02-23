@@ -65,12 +65,12 @@ void TransportFeedbackAdapter::InitBwe() {
 
 void TransportFeedbackAdapter::AddPacket(uint16_t sequence_number,
                                          size_t length,
-                                         int probe_cluster_id) {
+                                         const PacedPacketInfo& pacing_info) {
   rtc::CritScope cs(&lock_);
   if (send_side_bwe_with_overhead_) {
     length += transport_overhead_bytes_per_packet_;
   }
-  send_time_history_.AddAndRemoveOld(sequence_number, length, probe_cluster_id);
+  send_time_history_.AddAndRemoveOld(sequence_number, length, pacing_info);
 }
 
 void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,

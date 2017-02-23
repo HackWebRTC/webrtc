@@ -19,7 +19,8 @@
 namespace webrtc {
 
 namespace {
-
+const PacedPacketInfo kPacingInfo0(0, 5, 2000);
+const PacedPacketInfo kPacingInfo1(1, 8, 4000);
 constexpr int kNumProbes = 5;
 }  // namespace
 
@@ -31,7 +32,7 @@ TEST_F(DelayBasedBweTest, ProbeDetection) {
   for (int i = 0; i < kNumProbes; ++i) {
     clock_.AdvanceTimeMilliseconds(10);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, 0);
+    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, kPacingInfo0);
   }
   EXPECT_TRUE(bitrate_observer_.updated());
 
@@ -39,7 +40,7 @@ TEST_F(DelayBasedBweTest, ProbeDetection) {
   for (int i = 0; i < kNumProbes; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, 1);
+    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, kPacingInfo1);
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());
@@ -54,11 +55,10 @@ TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
   for (int i = 0; i < kNumProbes; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, 0);
+    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, kPacingInfo0);
     // Non-paced packet, arriving 5 ms after.
     clock_.AdvanceTimeMilliseconds(5);
-    IncomingFeedback(now_ms, now_ms, seq_num++, 100,
-                     PacedPacketInfo::kNotAProbe);
+    IncomingFeedback(now_ms, now_ms, seq_num++, 100, PacedPacketInfo());
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());
@@ -75,7 +75,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
     clock_.AdvanceTimeMilliseconds(1);
     send_time_ms += 10;
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, 0);
+    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, kPacingInfo0);
   }
 
   EXPECT_FALSE(bitrate_observer_.updated());
@@ -91,7 +91,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
     clock_.AdvanceTimeMilliseconds(7);
     send_time_ms += 5;
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, 1);
+    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, kPacingInfo1);
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());
@@ -108,7 +108,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
     clock_.AdvanceTimeMilliseconds(2);
     send_time_ms += 1;
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, 1);
+    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, kPacingInfo1);
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());

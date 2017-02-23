@@ -448,7 +448,7 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
 }
 
 size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
-                                           int probe_cluster_id) {
+                                           const PacedPacketInfo& pacing_info) {
   {
     rtc::CritScope lock(&send_critsect_);
     if (!sending_media_)
@@ -464,14 +464,15 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
     if (!packet)
       break;
     size_t payload_size = packet->payload_size();
-    if (!PrepareAndSendPacket(std::move(packet), true, false, probe_cluster_id))
+    if (!PrepareAndSendPacket(std::move(packet), true, false, pacing_info))
       break;
     bytes_left -= payload_size;
   }
   return bytes_to_send - bytes_left;
 }
 
-size_t RTPSender::SendPadData(size_t bytes, int probe_cluster_id) {
+size_t RTPSender::SendPadData(size_t bytes,
+                              const PacedPacketInfo& pacing_info) {
   size_t padding_bytes_in_packet;
   if (audio_configured_) {
     // Allow smaller padding packets for audio.
@@ -574,7 +575,7 @@ size_t RTPSender::SendPadData(size_t bytes, int probe_cluster_id) {
 
     if (has_transport_seq_num) {
       AddPacketToTransportFeedback(options.packet_id, padding_packet,
-                                   probe_cluster_id);
+                                   pacing_info);
     }
 
     if (!SendPacketToNetwork(padding_packet, options))
@@ -623,8 +624,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
   }
   bool rtx = (RtxStatus() & kRtxRetransmitted) > 0;
   int32_t packet_size = static_cast<int32_t>(packet->size());
-  if (!PrepareAndSendPacket(std::move(packet), rtx, true,
-                            PacedPacketInfo::kNotAProbe))
+  if (!PrepareAndSendPacket(std::move(packet), rtx, true, PacedPacketInfo()))
     return -1;
   return packet_size;
 }
@@ -693,7 +693,7 @@ bool RTPSender::TimeToSendPacket(uint32_t ssrc,
                                  uint16_t sequence_number,
                                  int64_t capture_time_ms,
                                  bool retransmission,
-                                 int probe_cluster_id) {
+                                 const PacedPacketInfo& pacing_info) {
   if (!SendingMedia())
     return true;
 
@@ -714,13 +714,13 @@ bool RTPSender::TimeToSendPacket(uint32_t ssrc,
   return PrepareAndSendPacket(
       std::move(packet),
       retransmission && (RtxStatus() & kRtxRetransmitted) > 0, retransmission,
-      probe_cluster_id);
+      pacing_info);
 }
 
 bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
                                      bool send_over_rtx,
                                      bool is_retransmit,
-                                     int probe_cluster_id) {
+                                     const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(packet);
   int64_t capture_time_ms = packet->capture_time_ms();
   RtpPacketToSend* packet_to_send = packet.get();
@@ -751,7 +751,7 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   PacketOptions options;
   if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id)) {
     AddPacketToTransportFeedback(options.packet_id, *packet_to_send,
-                                 probe_cluster_id);
+                                 pacing_info);
   }
 
   if (!is_retransmit && !send_over_rtx) {
@@ -813,12 +813,13 @@ bool RTPSender::IsFecPacket(const RtpPacketToSend& packet) const {
          static_cast<int>(packet.payload()[0]) == pt_fec;
 }
 
-size_t RTPSender::TimeToSendPadding(size_t bytes, int probe_cluster_id) {
+size_t RTPSender::TimeToSendPadding(size_t bytes,
+                                    const PacedPacketInfo& pacing_info) {
   if (bytes == 0)
     return 0;
-  size_t bytes_sent = TrySendRedundantPayloads(bytes, probe_cluster_id);
+  size_t bytes_sent = TrySendRedundantPayloads(bytes, pacing_info);
   if (bytes_sent < bytes)
-    bytes_sent += SendPadData(bytes - bytes_sent, probe_cluster_id);
+    bytes_sent += SendPadData(bytes - bytes_sent, pacing_info);
   return bytes_sent;
 }
 
@@ -882,7 +883,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   PacketOptions options;
   if (UpdateTransportSequenceNumber(packet.get(), &options.packet_id)) {
     AddPacketToTransportFeedback(options.packet_id, *packet.get(),
-                                 PacedPacketInfo::kNotAProbe);
+                                 PacedPacketInfo());
   }
 
   UpdateDelayStatistics(packet->capture_time_ms(), now_ms);
@@ -1249,9 +1250,10 @@ RtpState RTPSender::GetRtxRtpState() const {
   return state;
 }
 
-void RTPSender::AddPacketToTransportFeedback(uint16_t packet_id,
-                                             const RtpPacketToSend& packet,
-                                             int probe_cluster_id) {
+void RTPSender::AddPacketToTransportFeedback(
+    uint16_t packet_id,
+    const RtpPacketToSend& packet,
+    const PacedPacketInfo& pacing_info) {
   size_t packet_size = packet.payload_size() + packet.padding_size();
   if (send_side_bwe_with_overhead_) {
     packet_size = packet.size();
@@ -1259,7 +1261,7 @@ void RTPSender::AddPacketToTransportFeedback(uint16_t packet_id,
 
   if (transport_feedback_observer_) {
     transport_feedback_observer_->AddPacket(packet_id, packet_size,
-                                            probe_cluster_id);
+                                            pacing_info);
   }
 }
 

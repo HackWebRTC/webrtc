@@ -123,8 +123,8 @@ class RTPSender {
                         uint16_t sequence_number,
                         int64_t capture_time_ms,
                         bool retransmission,
-                        int probe_cluster_id);
-  size_t TimeToSendPadding(size_t bytes, int probe_cluster_id);
+                        const PacedPacketInfo& pacing_info);
+  size_t TimeToSendPadding(size_t bytes, const PacedPacketInfo& pacing_info);
 
   // NACK.
   int SelectiveRetransmissions() const;
@@ -214,16 +214,17 @@ class RTPSender {
   // time.
   typedef std::map<int64_t, int> SendDelayMap;
 
-  size_t SendPadData(size_t bytes, int probe_cluster_id);
+  size_t SendPadData(size_t bytes, const PacedPacketInfo& pacing_info);
 
   bool PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
                             bool send_over_rtx,
                             bool is_retransmit,
-                            int probe_cluster_id);
+                            const PacedPacketInfo& pacing_info);
 
   // Return the number of bytes sent.  Note that both of these functions may
   // return a larger value that their argument.
-  size_t TrySendRedundantPayloads(size_t bytes, int probe_cluster_id);
+  size_t TrySendRedundantPayloads(size_t bytes,
+                                  const PacedPacketInfo& pacing_info);
 
   std::unique_ptr<RtpPacketToSend> BuildRtxPacket(
       const RtpPacketToSend& packet);
@@ -246,7 +247,7 @@ class RTPSender {
 
   void AddPacketToTransportFeedback(uint16_t packet_id,
                                     const RtpPacketToSend& packet,
-                                    int probe_cluster_id);
+                                    const PacedPacketInfo& pacing_info);
 
   void UpdateRtpOverhead(const RtpPacketToSend& packet);
 
