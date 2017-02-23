@@ -60,6 +60,7 @@ const float kSqrtHanning[kFftLength] = {
 
 SuppressionFilter::SuppressionFilter(int sample_rate_hz)
     : sample_rate_hz_(sample_rate_hz),
+      fft_(),
       e_output_old_(NumBandsForRate(sample_rate_hz_)) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz_));
   e_input_old_.fill(0.f);

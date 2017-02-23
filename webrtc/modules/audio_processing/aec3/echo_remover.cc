@@ -97,7 +97,8 @@ class EchoRemoverImpl final : public EchoRemover {
 int EchoRemoverImpl::instance_count_ = 0;
 
 EchoRemoverImpl::EchoRemoverImpl(int sample_rate_hz)
-    : data_dumper_(
+    : fft_(),
+      data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
       sample_rate_hz_(sample_rate_hz),

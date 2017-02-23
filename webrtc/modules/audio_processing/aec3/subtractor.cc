@@ -47,7 +47,8 @@ std::vector<size_t> Subtractor::NumBlocksInRenderSums() const {
 
 Subtractor::Subtractor(ApmDataDumper* data_dumper,
                        Aec3Optimization optimization)
-    : data_dumper_(data_dumper),
+    : fft_(),
+      data_dumper_(data_dumper),
       optimization_(optimization),
       main_filter_(kMainFilterSizePartitions, true, optimization, data_dumper_),
       shadow_filter_(kShadowFilterSizePartitions,
