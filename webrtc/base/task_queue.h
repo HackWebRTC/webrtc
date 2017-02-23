@@ -27,6 +27,9 @@
 #endif
 
 #if defined(WEBRTC_BUILD_LIBEVENT)
+#include "webrtc/base/refcountedobject.h"
+#include "webrtc/base/scoped_ref_ptr.h"
+
 struct event_base;
 struct event;
 #endif
@@ -237,11 +240,13 @@ class LOCKABLE TaskQueue {
   static void RunTask(int fd, short flags, void* context);       // NOLINT
   static void RunTimer(int fd, short flags, void* context);      // NOLINT
 
+  class ReplyTaskOwner;
   class PostAndReplyTask;
   class SetTimerTask;
 
-  void PrepareReplyTask(PostAndReplyTask* reply_task);
-  void ReplyTaskDone(PostAndReplyTask* reply_task);
+  typedef RefCountedObject<ReplyTaskOwner> ReplyTaskOwnerRef;
+
+  void PrepareReplyTask(scoped_refptr<ReplyTaskOwnerRef> reply_task);
 
   struct QueueContext;
 
@@ -252,7 +257,8 @@ class LOCKABLE TaskQueue {
   PlatformThread thread_;
   rtc::CriticalSection pending_lock_;
   std::list<std::unique_ptr<QueuedTask>> pending_ GUARDED_BY(pending_lock_);
-  std::list<PostAndReplyTask*> pending_replies_ GUARDED_BY(pending_lock_);
+  std::list<scoped_refptr<ReplyTaskOwnerRef>> pending_replies_
+      GUARDED_BY(pending_lock_);
 #elif defined(WEBRTC_MAC)
   struct QueueContext;
   struct TaskContext;
