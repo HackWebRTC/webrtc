@@ -236,6 +236,7 @@ AdaptiveFirFilter::AdaptiveFirFilter(size_t size_partitions,
                                      Aec3Optimization optimization,
                                      ApmDataDumper* data_dumper)
     : data_dumper_(data_dumper),
+      fft_(),
       optimization_(optimization),
       H_(size_partitions) {
   RTC_DCHECK(data_dumper_);
