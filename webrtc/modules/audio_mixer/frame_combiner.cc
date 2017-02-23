@@ -97,7 +97,7 @@ void FrameCombiner::Combine(const std::vector<AudioFrame*>& mix_list,
       -1, 0, nullptr, samples_per_channel, sample_rate, AudioFrame::kUndefined,
       AudioFrame::kVadUnknown, number_of_channels);
 
-  if (mix_list.size() == 0) {
+  if (mix_list.empty()) {
     CombineZeroFrames(audio_frame_for_mixing);
   } else if (mix_list.size() == 1) {
     CombineOneFrame(mix_list.front(), audio_frame_for_mixing);
