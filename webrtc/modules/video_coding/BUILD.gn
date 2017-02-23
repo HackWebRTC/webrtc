@@ -389,11 +389,13 @@ if (rtc_include_tests) {
     sources = [
       "codecs/test/videoprocessor_integrationtest.cc",
       "codecs/vp8/test/vp8_impl_unittest.cc",
+      "codecs/vp9/test/vp9_impl_unittest.cc",
     ]
 
     deps = [
       ":video_coding_videoprocessor_integration_test",
       ":webrtc_vp8",
+      ":webrtc_vp9",
       "../../api:video_frame_api",
       "../../base:rtc_base_approved",
       "../../common_video:common_video",
