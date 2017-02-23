@@ -163,20 +163,32 @@ static bool VerifyMediaDescriptions(
 }
 
 // Checks that each non-rejected content has SDES crypto keys or a DTLS
-// fingerprint. Mismatches, such as replying with a DTLS fingerprint to SDES
-// keys, will be caught in Transport negotiation, and backstopped by Channel's
-// |srtp_required| check.
+// fingerprint, unless it's in a BUNDLE group, in which case only the
+// BUNDLE-tag section (first media section/description in the BUNDLE group)
+// needs a ufrag and pwd. Mismatches, such as replying with a DTLS fingerprint
+// to SDES keys, will be caught in JsepTransport negotiation, and backstopped
+// by Channel's |srtp_required| check.
 static bool VerifyCrypto(const SessionDescription* desc,
                          bool dtls_enabled,
                          std::string* error) {
+  const cricket::ContentGroup* bundle =
+      desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
   const ContentInfos& contents = desc->contents();
   for (size_t index = 0; index < contents.size(); ++index) {
     const ContentInfo* cinfo = &contents[index];
     if (cinfo->rejected) {
       continue;
     }
+    if (bundle && bundle->HasContentName(cinfo->name) &&
+        cinfo->name != *(bundle->FirstContentName())) {
+      // This isn't the first media section in the BUNDLE group, so it's not
+      // required to have crypto attributes, since only the crypto attributes
+      // from the first section actually get used.
+      continue;
+    }
 
-    // If the content isn't rejected, crypto must be present.
+    // If the content isn't rejected or bundled into another m= section, crypto
+    // must be present.
     const MediaContentDescription* media =
         static_cast<const MediaContentDescription*>(cinfo->description);
     const TransportInfo* tinfo = desc->GetTransportInfoByName(cinfo->name);
@@ -206,16 +218,28 @@ static bool VerifyCrypto(const SessionDescription* desc,
   return true;
 }
 
-// Checks that each non-rejected content has ice-ufrag and ice-pwd set.
+// Checks that each non-rejected content has ice-ufrag and ice-pwd set, unless
+// it's in a BUNDLE group, in which case only the BUNDLE-tag section (first
+// media section/description in the BUNDLE group) needs a ufrag and pwd.
 static bool VerifyIceUfragPwdPresent(const SessionDescription* desc) {
+  const cricket::ContentGroup* bundle =
+      desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
   const ContentInfos& contents = desc->contents();
   for (size_t index = 0; index < contents.size(); ++index) {
     const ContentInfo* cinfo = &contents[index];
     if (cinfo->rejected) {
       continue;
     }
+    if (bundle && bundle->HasContentName(cinfo->name) &&
+        cinfo->name != *(bundle->FirstContentName())) {
+      // This isn't the first media section in the BUNDLE group, so it's not
+      // required to have ufrag/password, since only the ufrag/password from
+      // the first section actually get used.
+      continue;
+    }
 
-    // If the content isn't rejected, ice-ufrag and ice-pwd must be present.
+    // If the content isn't rejected or bundled into another m= section,
+    // ice-ufrag and ice-pwd must be present.
     const TransportInfo* tinfo = desc->GetTransportInfoByName(cinfo->name);
     if (!tinfo) {
       // Something is not right.

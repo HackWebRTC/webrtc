@@ -22,6 +22,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
@@ -1430,6 +1431,9 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
 SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
     const SessionDescription* offer, const MediaSessionOptions& options,
     const SessionDescription* current_description) const {
+  if (!offer) {
+    return nullptr;
+  }
   // The answer contains the intersection of the codecs in the offer with the
   // codecs we support. As indicated by XEP-0167, we retain the same payload ids
   // from the offer in the answer.
@@ -1438,54 +1442,60 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
   StreamParamsVec current_streams;
   GetCurrentStreamParams(current_description, &current_streams);
 
-  if (offer) {
-    ContentInfos::const_iterator it = offer->contents().begin();
-    for (; it != offer->contents().end(); ++it) {
-      if (IsMediaContentOfType(&*it, MEDIA_TYPE_AUDIO)) {
-        if (!AddAudioContentForAnswer(offer, options, current_description,
-                                  &current_streams, answer.get())) {
-          return NULL;
-        }
-      } else if (IsMediaContentOfType(&*it, MEDIA_TYPE_VIDEO)) {
-        if (!AddVideoContentForAnswer(offer, options, current_description,
-                                      &current_streams, answer.get())) {
-          return NULL;
-        }
-      } else {
-        RTC_DCHECK(IsMediaContentOfType(&*it, MEDIA_TYPE_DATA));
-        if (!AddDataContentForAnswer(offer, options, current_description,
-                                     &current_streams, answer.get())) {
-          return NULL;
-        }
+  // If the offer supports BUNDLE, and we want to use it too, create a BUNDLE
+  // group in the answer with the appropriate content names.
+  const ContentGroup* offer_bundle = offer->GetGroupByName(GROUP_TYPE_BUNDLE);
+  ContentGroup answer_bundle(GROUP_TYPE_BUNDLE);
+  // Transport info shared by the bundle group.
+  std::unique_ptr<TransportInfo> bundle_transport;
+
+  ContentInfos::const_iterator it = offer->contents().begin();
+  for (; it != offer->contents().end(); ++it) {
+    if (IsMediaContentOfType(&*it, MEDIA_TYPE_AUDIO)) {
+      if (!AddAudioContentForAnswer(offer, options, current_description,
+                                    bundle_transport.get(), &current_streams,
+                                    answer.get())) {
+        return NULL;
       }
+    } else if (IsMediaContentOfType(&*it, MEDIA_TYPE_VIDEO)) {
+      if (!AddVideoContentForAnswer(offer, options, current_description,
+                                    bundle_transport.get(), &current_streams,
+                                    answer.get())) {
+        return NULL;
+      }
+    } else {
+      RTC_DCHECK(IsMediaContentOfType(&*it, MEDIA_TYPE_DATA));
+      if (!AddDataContentForAnswer(offer, options, current_description,
+                                   bundle_transport.get(), &current_streams,
+                                   answer.get())) {
+        return NULL;
+      }
+    }
+    // See if we can add the newly generated m= section to the BUNDLE group in
+    // the answer.
+    ContentInfo& added = answer->contents().back();
+    if (!added.rejected && options.bundle_enabled && offer_bundle &&
+        offer_bundle->HasContentName(added.name)) {
+      answer_bundle.AddContentName(added.name);
+      bundle_transport.reset(
+          new TransportInfo(*answer->GetTransportInfoByName(added.name)));
     }
   }
 
-  // If the offer supports BUNDLE, and we want to use it too, create a BUNDLE
-  // group in the answer with the appropriate content names.
-  if (offer->HasGroup(GROUP_TYPE_BUNDLE) && options.bundle_enabled) {
-    const ContentGroup* offer_bundle = offer->GetGroupByName(GROUP_TYPE_BUNDLE);
-    ContentGroup answer_bundle(GROUP_TYPE_BUNDLE);
-    for (ContentInfos::const_iterator content = answer->contents().begin();
-       content != answer->contents().end(); ++content) {
-      if (!content->rejected && offer_bundle->HasContentName(content->name)) {
-        answer_bundle.AddContentName(content->name);
-      }
+  // Only put BUNDLE group in answer if nonempty.
+  if (answer_bundle.FirstContentName()) {
+    answer->AddGroup(answer_bundle);
+
+    // Share the same ICE credentials and crypto params across all contents,
+    // as BUNDLE requires.
+    if (!UpdateTransportInfoForBundle(answer_bundle, answer.get())) {
+      LOG(LS_ERROR) << "CreateAnswer failed to UpdateTransportInfoForBundle.";
+      return NULL;
     }
-    if (answer_bundle.FirstContentName()) {
-      answer->AddGroup(answer_bundle);
 
-      // Share the same ICE credentials and crypto params across all contents,
-      // as BUNDLE requires.
-      if (!UpdateTransportInfoForBundle(answer_bundle, answer.get())) {
-        LOG(LS_ERROR) << "CreateAnswer failed to UpdateTransportInfoForBundle.";
-        return NULL;
-      }
-
-      if (!UpdateCryptoParamsForBundle(answer_bundle, answer.get())) {
-        LOG(LS_ERROR) << "CreateAnswer failed to UpdateCryptoParamsForBundle.";
-        return NULL;
-      }
+    if (!UpdateCryptoParamsForBundle(answer_bundle, answer.get())) {
+      LOG(LS_ERROR) << "CreateAnswer failed to UpdateCryptoParamsForBundle.";
+      return NULL;
     }
   }
 
@@ -1634,16 +1644,17 @@ TransportDescription* MediaSessionDescriptionFactory::CreateTransportAnswer(
     const std::string& content_name,
     const SessionDescription* offer_desc,
     const TransportOptions& transport_options,
-    const SessionDescription* current_desc) const {
+    const SessionDescription* current_desc,
+    bool require_transport_attributes) const {
   if (!transport_desc_factory_)
     return NULL;
   const TransportDescription* offer_tdesc =
       GetTransportDescription(content_name, offer_desc);
   const TransportDescription* current_tdesc =
       GetTransportDescription(content_name, current_desc);
-  return
-      transport_desc_factory_->CreateAnswer(offer_tdesc, transport_options,
-                                            current_tdesc);
+  return transport_desc_factory_->CreateAnswer(offer_tdesc, transport_options,
+                                               require_transport_attributes,
+                                               current_tdesc);
 }
 
 bool MediaSessionDescriptionFactory::AddTransportAnswer(
@@ -1838,15 +1849,17 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     const SessionDescription* offer,
     const MediaSessionOptions& options,
     const SessionDescription* current_description,
+    const TransportInfo* bundle_transport,
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
   const ContentInfo* audio_content = GetFirstAudioContent(offer);
   const AudioContentDescription* offer_audio =
       static_cast<const AudioContentDescription*>(audio_content->description);
 
-  std::unique_ptr<TransportDescription> audio_transport(CreateTransportAnswer(
-      audio_content->name, offer,
-      GetTransportOptions(options, audio_content->name), current_description));
+  std::unique_ptr<TransportDescription> audio_transport(
+      CreateTransportAnswer(audio_content->name, offer,
+                            GetTransportOptions(options, audio_content->name),
+                            current_description, bundle_transport != nullptr));
   if (!audio_transport) {
     return false;
   }
@@ -1885,10 +1898,11 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     return false;  // Fails the session setup.
   }
 
+  bool secure = bundle_transport ? bundle_transport->description.secure()
+                                 : audio_transport->secure();
   bool rejected = !options.has_audio() || audio_content->rejected ||
-      !IsMediaProtocolSupported(MEDIA_TYPE_AUDIO,
-                                audio_answer->protocol(),
-                                audio_transport->secure());
+                  !IsMediaProtocolSupported(MEDIA_TYPE_AUDIO,
+                                            audio_answer->protocol(), secure);
   if (!rejected) {
     AddTransportAnswer(audio_content->name, *(audio_transport.get()), answer);
   } else {
@@ -1906,12 +1920,14 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     const SessionDescription* offer,
     const MediaSessionOptions& options,
     const SessionDescription* current_description,
+    const TransportInfo* bundle_transport,
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
   const ContentInfo* video_content = GetFirstVideoContent(offer);
-  std::unique_ptr<TransportDescription> video_transport(CreateTransportAnswer(
-      video_content->name, offer,
-      GetTransportOptions(options, video_content->name), current_description));
+  std::unique_ptr<TransportDescription> video_transport(
+      CreateTransportAnswer(video_content->name, offer,
+                            GetTransportOptions(options, video_content->name),
+                            current_description, bundle_transport != nullptr));
   if (!video_transport) {
     return false;
   }
@@ -1937,10 +1953,11 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
           video_answer.get())) {
     return false;
   }
+  bool secure = bundle_transport ? bundle_transport->description.secure()
+                                 : video_transport->secure();
   bool rejected = !options.has_video() || video_content->rejected ||
-      !IsMediaProtocolSupported(MEDIA_TYPE_VIDEO,
-                                video_answer->protocol(),
-                                video_transport->secure());
+                  !IsMediaProtocolSupported(MEDIA_TYPE_VIDEO,
+                                            video_answer->protocol(), secure);
   if (!rejected) {
     if (!AddTransportAnswer(video_content->name, *(video_transport.get()),
                             answer)) {
@@ -1961,12 +1978,14 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
     const SessionDescription* offer,
     const MediaSessionOptions& options,
     const SessionDescription* current_description,
+    const TransportInfo* bundle_transport,
     StreamParamsVec* current_streams,
     SessionDescription* answer) const {
   const ContentInfo* data_content = GetFirstDataContent(offer);
-  std::unique_ptr<TransportDescription> data_transport(CreateTransportAnswer(
-      data_content->name, offer,
-      GetTransportOptions(options, data_content->name), current_description));
+  std::unique_ptr<TransportDescription> data_transport(
+      CreateTransportAnswer(data_content->name, offer,
+                            GetTransportOptions(options, data_content->name),
+                            current_description, bundle_transport != nullptr));
   if (!data_transport) {
     return false;
   }
@@ -2002,10 +2021,12 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
   bool offer_uses_sctpmap = offer_data_description->use_sctpmap();
   data_answer->set_use_sctpmap(offer_uses_sctpmap);
 
+  bool secure = bundle_transport ? bundle_transport->description.secure()
+                                 : data_transport->secure();
+
   bool rejected = !options.has_data() || data_content->rejected ||
-      !IsMediaProtocolSupported(MEDIA_TYPE_DATA,
-                                data_answer->protocol(),
-                                data_transport->secure());
+                  !IsMediaProtocolSupported(MEDIA_TYPE_DATA,
+                                            data_answer->protocol(), secure);
   if (!rejected) {
     data_answer->set_bandwidth(options.data_bandwidth);
     if (!AddTransportAnswer(data_content->name, *(data_transport.get()),

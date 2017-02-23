@@ -56,6 +56,7 @@ TransportDescription* TransportDescriptionFactory::CreateOffer(
 TransportDescription* TransportDescriptionFactory::CreateAnswer(
     const TransportDescription* offer,
     const TransportOptions& options,
+    bool require_transport_attributes,
     const TransportDescription* current_description) const {
   // TODO(juberti): Figure out why we get NULL offers, and fix this upstream.
   if (!offer) {
@@ -91,7 +92,7 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
         return NULL;
       }
     }
-  } else if (secure_ == SEC_REQUIRED) {
+  } else if (require_transport_attributes && secure_ == SEC_REQUIRED) {
     // We require DTLS, but the other side didn't offer it. Fail.
     LOG(LS_WARNING) << "Failed to create TransportDescription answer "
                        "because of incompatible security settings";

@@ -517,6 +517,10 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
 
   void RemoveCvoFromReceivedSdp(bool remove) { remove_cvo_ = remove; }
 
+  void MakeSpecCompliantMaxBundleOfferFromReceivedSdp(bool real) {
+    make_spec_compliant_max_bundle_offer_ = real;
+  }
+
   bool can_receive_audio() {
     bool value;
     if (prefer_constraint_apis_) {
@@ -1049,6 +1053,33 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
     }
     std::unique_ptr<SessionDescriptionInterface> desc(
         webrtc::CreateSessionDescription("offer", msg, nullptr));
+
+    // Do the equivalent of setting the port to 0, adding a=bundle-only, and
+    // removing a=ice-ufrag, a=ice-pwd, a=fingerprint and a=setup from all but
+    // the first m= section.
+    if (make_spec_compliant_max_bundle_offer_) {
+      bool first = true;
+      for (cricket::ContentInfo& content : desc->description()->contents()) {
+        if (first) {
+          first = false;
+          continue;
+        }
+        content.bundle_only = true;
+      }
+      first = true;
+      for (cricket::TransportInfo& transport :
+           desc->description()->transport_infos()) {
+        if (first) {
+          first = false;
+          continue;
+        }
+        transport.description.ice_ufrag.clear();
+        transport.description.ice_pwd.clear();
+        transport.description.connection_role = cricket::CONNECTIONROLE_NONE;
+        transport.description.identity_fingerprint.reset(nullptr);
+      }
+    }
+
     EXPECT_TRUE(DoSetRemoteDescription(desc.release()));
     // Set the RtpReceiverObserver after receivers are created.
     SetRtpReceiverObservers();
@@ -1209,6 +1240,8 @@ class PeerConnectionTestClient : public webrtc::PeerConnectionObserver,
   // |remove_cvo_| is true if extension urn:3gpp:video-orientation should be
   // removed in the received SDP.
   bool remove_cvo_ = false;
+  // See LocalP2PTestWithSpecCompliantMaxBundleOffer.
+  bool make_spec_compliant_max_bundle_offer_ = false;
 
   rtc::scoped_refptr<DataChannelInterface> data_channel_;
   std::unique_ptr<MockDataChannelObserver> data_observer_;
@@ -1847,6 +1880,19 @@ TEST_F(P2PTestConductor, LocalP2PTestTwoStreams) {
   ASSERT_EQ(2u, initializing_client()->NumberOfLocalMediaStreams());
   LocalP2PTest();
   EXPECT_EQ(2u, receiving_client()->number_of_remote_streams());
+}
+
+// Test that if applying a true "max bundle" offer, which uses ports of 0,
+// "a=bundle-only", omitting "a=fingerprint", "a=setup", "a=ice-ufrag" and
+// "a=ice-pwd" for all but the audio "m=" section, negotiation still completes
+// successfully and media flows.
+// TODO(deadbeef): Update this test to also omit "a=rtcp-mux", once that works.
+// TODO(deadbeef): Won't need this test once we start generating actual
+// standards-compliant SDP.
+TEST_F(P2PTestConductor, LocalP2PTestWithSpecCompliantMaxBundleOffer) {
+  ASSERT_TRUE(CreateTestClients());
+  receiving_client()->MakeSpecCompliantMaxBundleOfferFromReceivedSdp(true);
+  LocalP2PTest();
 }
 
 // Test that we can receive the audio output level from a remote audio track.

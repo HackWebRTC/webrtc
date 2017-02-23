@@ -494,7 +494,8 @@ class MediaSessionDescriptionFactory {
       const std::string& content_name,
       const SessionDescription* offer_desc,
       const TransportOptions& transport_options,
-      const SessionDescription* current_desc) const;
+      const SessionDescription* current_desc,
+      bool require_transport_attributes) const;
 
   bool AddTransportAnswer(
       const std::string& content_name,
@@ -528,26 +529,26 @@ class MediaSessionDescriptionFactory {
       StreamParamsVec* current_streams,
       SessionDescription* desc) const;
 
-  bool AddAudioContentForAnswer(
-      const SessionDescription* offer,
-      const MediaSessionOptions& options,
-      const SessionDescription* current_description,
-      StreamParamsVec* current_streams,
-      SessionDescription* answer) const;
+  bool AddAudioContentForAnswer(const SessionDescription* offer,
+                                const MediaSessionOptions& options,
+                                const SessionDescription* current_description,
+                                const TransportInfo* bundle_transport,
+                                StreamParamsVec* current_streams,
+                                SessionDescription* answer) const;
 
-  bool AddVideoContentForAnswer(
-      const SessionDescription* offer,
-      const MediaSessionOptions& options,
-      const SessionDescription* current_description,
-      StreamParamsVec* current_streams,
-      SessionDescription* answer) const;
+  bool AddVideoContentForAnswer(const SessionDescription* offer,
+                                const MediaSessionOptions& options,
+                                const SessionDescription* current_description,
+                                const TransportInfo* bundle_transport,
+                                StreamParamsVec* current_streams,
+                                SessionDescription* answer) const;
 
-  bool AddDataContentForAnswer(
-      const SessionDescription* offer,
-      const MediaSessionOptions& options,
-      const SessionDescription* current_description,
-      StreamParamsVec* current_streams,
-      SessionDescription* answer) const;
+  bool AddDataContentForAnswer(const SessionDescription* offer,
+                               const MediaSessionOptions& options,
+                               const SessionDescription* current_description,
+                               const TransportInfo* bundle_transport,
+                               StreamParamsVec* current_streams,
+                               SessionDescription* answer) const;
 
   AudioCodecs audio_send_codecs_;
   AudioCodecs audio_recv_codecs_;
