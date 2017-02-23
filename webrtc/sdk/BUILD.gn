@@ -67,22 +67,7 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h",
         "objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h",
       ]
-      if (current_cpu == "arm64") {
-        sources += [
-          "objc/Framework/Classes/Metal/RTCMTLNV12Renderer.h",
-          "objc/Framework/Classes/Metal/RTCMTLNV12Renderer.mm",
-          "objc/Framework/Classes/Metal/RTCMTLVideoView.m",
-        ]
-      }
-
       libs = [ "AVFoundation.framework" ]
-      if (current_cpu == "arm64") {
-        libs += [
-          "CoreVideo.framework",
-          "Metal.framework",
-          "MetalKit.framework",
-        ]
-      }
     }
     if (!build_with_chromium) {
       sources += [
@@ -306,7 +291,6 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCMediaStreamTrack.h",
         "objc/Framework/Headers/WebRTC/RTCMetrics.h",
         "objc/Framework/Headers/WebRTC/RTCMetricsSampleInfo.h",
-        "objc/Framework/Headers/WebRTC/RTCMTLVideoView.h",
         "objc/Framework/Headers/WebRTC/RTCPeerConnection.h",
         "objc/Framework/Headers/WebRTC/RTCPeerConnectionFactory.h",
         "objc/Framework/Headers/WebRTC/RTCRtpCodecParameters.h",
