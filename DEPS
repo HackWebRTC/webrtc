@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '89bae66c5cf1b268665973046236e6bf3722796e',
+  'chromium_revision': '06f768b0d3bc4e9ea1185567ec9f496cbb06d055',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -27,7 +27,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'c9d8aeb226cd14cd176285d0c1c6a8f7031944f7',
+  'catapult_revision': '423221a041c16d4c8b720eedb4a566e45ac431e1',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -38,9 +38,9 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + 'a625e715345e7112fec1fb02f8c812ae895f1ff7',
+    Var('chromium_git') + '/chromium/src/base' + '@' + '650978218a091b01ba719bddfe49dcec728599d4',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + 'b2274b43be4f2f55502cdfd123e138dc56cf839a',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '8efe3f941cacf0ce417f299ac2620239caab8838',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '7e53759cf4e553e3a51b5c97420da022cc83de44',
   'src/testing':
@@ -50,7 +50,7 @@ deps = {
   'src/testing/gmock':
     Var('chromium_git') + '/external/googlemock.git' + '@' + '0421b6f358139f02e102c9c332ce19a33faf75be', # from svn revision 566
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'b9e127e8f9a27b698d3f8fb7833ab8af2c67cdbd',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '15434ef5af60f5da64f749553dcb07d1e6ce10bd',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -85,7 +85,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'c35e48869f591bd2375cb3bd44fd87024457856c',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '736c1e1dea6054db6c86c4121752c7e40493c568',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'e7079f0e0e14108ab0dba58728ff219637458563',
    'src/tools/swarming_client':
@@ -125,7 +125,7 @@ deps_os = {
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + '039726889f491ee2ff05ba8f0cc64339e91227e1',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + 'b43e63a69ab639eb18b3f5d12063189bfac69f59',
   },
   'unix': {
     'src/third_party/lss':
