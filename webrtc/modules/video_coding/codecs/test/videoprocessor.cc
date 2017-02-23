@@ -314,6 +314,7 @@ void VideoProcessorImpl::FrameEncoded(
   stat.encoded_frame_length_in_bytes = encoded_image._length;
   stat.frame_number = frame_number;
   stat.frame_type = encoded_image._frameType;
+  stat.qp = encoded_image.qp_;
   stat.bit_rate_in_kbps = encoded_image._length * bit_rate_factor_;
   stat.total_packets =
       encoded_image._length / config_.networking_config.packet_size_in_bytes +

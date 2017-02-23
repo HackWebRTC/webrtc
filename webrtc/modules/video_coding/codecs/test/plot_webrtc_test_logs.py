@@ -34,6 +34,7 @@ CORES = ('#CPU cores used', 'CPU cores used')
 DENOISING = ('Denoising', 'denoising')
 RESILIENCE = ('Resilience', 'resilience')
 ERROR_CONCEALMENT = ('Error concealment', 'error concealment')
+QP = ('Average QP', 'avg QP')
 PSNR = ('PSNR avg', 'PSNR (dB)')
 SSIM = ('SSIM avg', 'SSIM')
 ENC_BITRATE = ('Encoding bitrate', 'encoded bitrate (kbps)')
@@ -88,6 +89,7 @@ RESULTS = [
   NUM_FRAMES_TO_TARGET,
   ENCODE_TIME_AVG,
   DECODE_TIME_AVG,
+  QP,
   AVG_KEY_FRAME_SIZE,
   AVG_NON_KEY_FRAME_SIZE,
 ]
