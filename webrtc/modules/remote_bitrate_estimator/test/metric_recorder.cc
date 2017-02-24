@@ -307,10 +307,6 @@ void MetricRecorder::PlotDelayHistogram(const std::string& title,
 #if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
   double average_delay_ms =
       static_cast<double>(sum_delays_ms_) / num_packets_received_;
-
-  // Prevent the error to be too close to zero (plotting issue).
-  double extra_error = average_delay_ms / 500;
-  double tenth_sigma_ms = DelayStdDev() / 10.0 + extra_error;
   int64_t percentile_5_ms = NthDelayPercentile(5);
   int64_t percentile_95_ms = NthDelayPercentile(95);
 
