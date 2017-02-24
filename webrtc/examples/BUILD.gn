@@ -399,6 +399,10 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     cflags_objc = [
       # Enabled for cflags_objc in build/config/compiler/BUILD.gn.
       "-Wno-objc-missing-property-synthesis",
+
+      # Hide the warning for SecRandomCopyBytes(), until we update to upstream.
+      # https://bugs.chromium.org/p/webrtc/issues/detail?id=6396
+      "-Wno-unused-result",
     ]
   }
 
