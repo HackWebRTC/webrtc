@@ -80,6 +80,11 @@ char kTSanDefaultSuppressions[] =
 // https://code.google.com/p/libyuv/issues/detail?id=508
 "race:InitCpuFlags\n"
 
+// Test-only race due to PeerConnection::session() being virtual for testing.
+// The stats collector may call session() before or after the destructor begins
+// executing, which modifies the vtable.
+"race:*RTCStatsIntegrationTest_GetsStatsWhileDestroyingPeerConnections_Test::TestBody\n"
+
 // End of suppressions.
 ;  // Please keep this semicolon.
 
