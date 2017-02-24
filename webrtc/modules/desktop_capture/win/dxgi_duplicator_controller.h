@@ -171,7 +171,7 @@ class DxgiDuplicatorController {
   // Updates Context if needed.
   void Setup(Context* context);
 
-  // Do the real duplication work. |monitor_id < 0| to capture entire screen.
+  // Does the real duplication work. |monitor_id < 0| to capture entire screen.
   bool DoDuplicate(Context* context,
                    int monitor_id,
                    SharedDesktopFrame* target);
@@ -179,6 +179,26 @@ class DxgiDuplicatorController {
   bool DoDuplicateUnlocked(Context* context,
                            int monitor_id,
                            SharedDesktopFrame* target);
+
+  // Captures all monitors.
+  bool DoDuplicateAll(Context* context, SharedDesktopFrame* target);
+
+  // Captures one monitor.
+  bool DoDuplicateOne(Context* context,
+                      int monitor_id,
+                      SharedDesktopFrame* target);
+
+  // The minimum GetNumFramesCaptured() returned by |duplicators_|.
+  int64_t GetNumFramesCaptured() const;
+
+  int ScreenCountUnlocked();
+
+  // Retries DoDuplicateAll() for several times until GetNumFramesCaptured() is
+  // large enough. Returns false if DoDuplicateAll() returns false, or
+  // GetNumFramesCaptured() has never reached the requirement.
+  // According to http://crbug.com/682112, dxgi capturer returns a black frame
+  // during first several capture attempts.
+  bool EnsureFrameCaptured(Context* context, SharedDesktopFrame* target);
 
   // This lock must be locked whenever accessing any of the following objects.
   rtc::CriticalSection lock_;

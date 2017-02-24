@@ -31,7 +31,10 @@ using Microsoft::WRL::ComPtr;
 namespace {
 
 // Timeout for AcquireNextFrame() call.
-const int kAcquireTimeoutMs = 10;
+// DxgiDuplicatorController leverages external components to do the capture
+// scheduling. So here DxgiOutputDuplicator does not need to actively wait for a
+// new frame. 1 millisecond is the minimium value AcquireNextFrame() accepts.
+const int kAcquireTimeoutMs = 1;
 
 DesktopRect RECTToDesktopRect(const RECT& rect) {
   return DesktopRect::MakeLTRB(rect.left, rect.top, rect.right, rect.bottom);
@@ -204,6 +207,7 @@ bool DxgiOutputDuplicator::Duplicate(Context* context,
     last_frame_ = target->Share();
     last_frame_offset_ = offset;
     target->mutable_updated_region()->AddRegion(updated_region);
+    num_frames_captured_++;
     return texture_->Release() && ReleaseFrame();
   }
 
@@ -336,6 +340,13 @@ void DxgiOutputDuplicator::SpreadContextChange(const Context* const source) {
       dest->updated_region.AddRegion(source->updated_region);
     }
   }
+}
+
+int64_t DxgiOutputDuplicator::num_frames_captured() const {
+#if !defined(NDEBUG)
+  RTC_DCHECK_EQ(!!last_frame_, num_frames_captured_ > 0);
+#endif
+  return num_frames_captured_;
 }
 
 }  // namespace webrtc

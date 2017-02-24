@@ -72,9 +72,14 @@ class DxgiOutputDuplicator {
   // Returns the desktop rect covered by this DxgiOutputDuplicator.
   DesktopRect desktop_rect() const { return desktop_rect_; }
 
- private:
-  friend class DxgiAdapterDuplicator;
+  void Setup(Context* context);
 
+  void Unregister(const Context* const context);
+
+  // How many frames have been captured by this DxigOutputDuplicator.
+  int64_t num_frames_captured() const;
+
+ private:
   // Detects updated region translated by offset from IDXGIOutput1. This
   // function will set the |updated_region| as entire DesktopRect starts from
   // offset if it failed to execute Windows APIs.
@@ -96,10 +101,6 @@ class DxgiOutputDuplicator {
   // Returns a DesktopRect with the same size of desktop_size_, but translated
   // by offset.
   DesktopRect TranslatedDesktopRect(DesktopVector offset);
-
-  void Setup(Context* context);
-
-  void Unregister(const Context* const context);
 
   // Spreads changes from |context| to other registered Context(s) in
   // contexts_.
@@ -126,6 +127,8 @@ class DxgiOutputDuplicator {
   // |last_frame_|.
   std::unique_ptr<SharedDesktopFrame> last_frame_;
   DesktopVector last_frame_offset_;
+
+  int64_t num_frames_captured_;
 };
 
 }  // namespace webrtc
