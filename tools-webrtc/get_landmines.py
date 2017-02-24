@@ -53,6 +53,7 @@ def print_landmines():
     # platform == 'ios' doesn't work since it assumes GYP_DEFINES is set, which
     # is no longer the case.
     print 'Clobber due to iOS compile errors (crbug.com/694721)'
+    print 'Clobber to unblock https://codereview.webrtc.org/2709573003'
 
 
 def main():
