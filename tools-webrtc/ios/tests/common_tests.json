@@ -17,6 +17,9 @@
       "app": "modules_tests"
     },
     {
+      "app": "ortc_unittests"
+    },
+    {
       "app": "rtc_pc_unittests"
     },
     {

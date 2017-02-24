@@ -51,6 +51,10 @@
     "label": "//webrtc/modules:modules_unittests",
     "type": "windowed_test_launcher",
   },
+  "ortc_unittests": {
+    "label": "//webrtc/ortc:ortc_unittests",
+    "type": "console_test_launcher",
+  },
   "peerconnection_unittests": {
     "label": "//webrtc/pc:peerconnection_unittests",
     "type": "console_test_launcher",
