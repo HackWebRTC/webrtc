@@ -46,6 +46,8 @@
 /testing
 /third_party
 /tools
+/tools-webrtc/android/profiling/flamegraph
+/tools-webrtc/android/profiling/simpleperf
 /tools-webrtc/video_quality_toolchain/linux/ffmpeg
 /tools-webrtc/video_quality_toolchain/linux/zxing
 /tools-webrtc/video_quality_toolchain/mac/ffmpeg
