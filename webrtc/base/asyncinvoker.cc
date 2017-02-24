@@ -10,18 +10,29 @@
 
 #include "webrtc/base/asyncinvoker.h"
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
 namespace rtc {
 
-AsyncInvoker::AsyncInvoker() : destroying_(false) {}
+AsyncInvoker::AsyncInvoker() : invocation_complete_(false, false) {}
 
 AsyncInvoker::~AsyncInvoker() {
   destroying_ = true;
   SignalInvokerDestroyed();
   // Messages for this need to be cleared *before* our destructor is complete.
   MessageQueueManager::Clear(this);
+  // And we need to wait for any invocations that are still in progress on
+  // other threads.
+  while (AtomicOps::AcquireLoad(&pending_invocations_)) {
+    // If the destructor was called while AsyncInvoke was being called by
+    // another thread, WITHIN an AsyncInvoked functor, it may do another
+    // Thread::Post even after we called MessageQueueManager::Clear(this). So
+    // we need to keep calling Clear to discard these posts.
+    MessageQueueManager::Clear(this);
+    invocation_complete_.Wait(Event::kForever);
+  }
 }
 
 void AsyncInvoker::OnMessage(Message* msg) {
@@ -59,6 +70,7 @@ void AsyncInvoker::DoInvoke(const Location& posted_from,
     LOG(LS_WARNING) << "Tried to invoke while destroying the invoker.";
     return;
   }
+  AtomicOps::Increment(&pending_invocations_);
   thread->Post(posted_from, this, id,
                new ScopedMessageData<AsyncClosure>(std::move(closure)));
 }
@@ -72,6 +84,7 @@ void AsyncInvoker::DoInvokeDelayed(const Location& posted_from,
     LOG(LS_WARNING) << "Tried to invoke while destroying the invoker.";
     return;
   }
+  AtomicOps::Increment(&pending_invocations_);
   thread->PostDelayed(posted_from, delay_ms, this, id,
                       new ScopedMessageData<AsyncClosure>(std::move(closure)));
 }
@@ -99,11 +112,16 @@ void GuardedAsyncInvoker::ThreadDestroyed() {
   thread_ = nullptr;
 }
 
+AsyncClosure::~AsyncClosure() {
+  AtomicOps::Decrement(&invoker_->pending_invocations_);
+  invoker_->invocation_complete_.Set();
+}
+
 NotifyingAsyncClosureBase::NotifyingAsyncClosureBase(
     AsyncInvoker* invoker,
     const Location& callback_posted_from,
     Thread* calling_thread)
-    : invoker_(invoker),
+    : AsyncClosure(invoker),
       callback_posted_from_(callback_posted_from),
       calling_thread_(calling_thread) {
   calling_thread->SignalQueueDestroyed.connect(

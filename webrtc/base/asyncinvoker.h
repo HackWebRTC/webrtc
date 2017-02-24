@@ -17,6 +17,7 @@
 #include "webrtc/base/asyncinvoker-inl.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 
@@ -82,7 +83,7 @@ class AsyncInvoker : public MessageHandler {
                    const FunctorT& functor,
                    uint32_t id = 0) {
     std::unique_ptr<AsyncClosure> closure(
-        new FireAndForgetAsyncClosure<FunctorT>(functor));
+        new FireAndForgetAsyncClosure<FunctorT>(this, functor));
     DoInvoke(posted_from, thread, std::move(closure), id);
   }
 
@@ -95,7 +96,7 @@ class AsyncInvoker : public MessageHandler {
                           uint32_t delay_ms,
                           uint32_t id = 0) {
     std::unique_ptr<AsyncClosure> closure(
-        new FireAndForgetAsyncClosure<FunctorT>(functor));
+        new FireAndForgetAsyncClosure<FunctorT>(this, functor));
     DoInvokeDelayed(posted_from, thread, std::move(closure), delay_ms, id);
   }
 
@@ -157,7 +158,10 @@ class AsyncInvoker : public MessageHandler {
                        std::unique_ptr<AsyncClosure> closure,
                        uint32_t delay_ms,
                        uint32_t id);
-  bool destroying_;
+  volatile int pending_invocations_ = 0;
+  Event invocation_complete_;
+  bool destroying_ = false;
+  friend class AsyncClosure;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncInvoker);
 };

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_BASE_ASYNCINVOKER_INL_H_
 #define WEBRTC_BASE_ASYNCINVOKER_INL_H_
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/callback.h"
 #include "webrtc/base/criticalsection.h"
@@ -26,18 +27,23 @@ class AsyncInvoker;
 // on the calling thread if necessary.
 class AsyncClosure {
  public:
-  virtual ~AsyncClosure() {}
+  explicit AsyncClosure(AsyncInvoker* invoker) : invoker_(invoker) {}
+  virtual ~AsyncClosure();
   // Runs the asynchronous task, and triggers a callback to the calling
   // thread if needed. Should be called from the target thread.
   virtual void Execute() = 0;
+
+ protected:
+  AsyncInvoker* invoker_;
 };
 
 // Simple closure that doesn't trigger a callback for the calling thread.
 template <class FunctorT>
 class FireAndForgetAsyncClosure : public AsyncClosure {
  public:
-  explicit FireAndForgetAsyncClosure(const FunctorT& functor)
-      : functor_(functor) {}
+  explicit FireAndForgetAsyncClosure(AsyncInvoker* invoker,
+                                     const FunctorT& functor)
+      : AsyncClosure(invoker), functor_(functor) {}
   virtual void Execute() {
     functor_();
   }
@@ -65,7 +71,6 @@ class NotifyingAsyncClosureBase : public AsyncClosure,
   bool CallbackCanceled() const { return calling_thread_ == NULL; }
 
  private:
-  AsyncInvoker* invoker_;
   Location callback_posted_from_;
   Callback0<void> callback_;
   CriticalSection crit_;
