@@ -161,8 +161,16 @@ static std::unique_ptr<QueuedTask> NewClosure(const Closure& closure,
 // so assumptions about lifetimes of pending tasks should not be made.
 class LOCKABLE TaskQueue {
  public:
-  explicit TaskQueue(const char* queue_name);
-  // TODO(tommi): Implement move semantics?
+  // TaskQueue priority levels. On some platforms these will map to thread
+  // priorities, on others such as Mac and iOS, GCD queue priorities.
+  enum class Priority {
+    NORMAL = 0,
+    HIGH,
+    LOW,
+  };
+
+  explicit TaskQueue(const char* queue_name,
+                     Priority priority = Priority::NORMAL);
   ~TaskQueue();
 
   static TaskQueue* Current();
@@ -275,8 +283,11 @@ class LOCKABLE TaskQueue {
 
   class WorkerThread : public PlatformThread {
    public:
-    WorkerThread(ThreadRunFunction func, void* obj, const char* thread_name)
-        : PlatformThread(func, obj, thread_name) {}
+    WorkerThread(ThreadRunFunction func,
+                 void* obj,
+                 const char* thread_name,
+                 ThreadPriority priority)
+        : PlatformThread(func, obj, thread_name, priority) {}
 
     bool QueueAPC(PAPCFUNC apc_function, ULONG_PTR data) {
       return PlatformThread::QueueAPC(apc_function, data);

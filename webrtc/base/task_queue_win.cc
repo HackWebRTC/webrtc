@@ -24,6 +24,8 @@ namespace {
 #define WM_RUN_TASK WM_USER + 1
 #define WM_QUEUE_DELAYED_TASK WM_USER + 2
 
+using Priority = TaskQueue::Priority;
+
 DWORD g_queue_ptr_tls = 0;
 
 BOOL CALLBACK InitializeTls(PINIT_ONCE init_once, void* param, void** context) {
@@ -48,6 +50,21 @@ void CALLBACK InitializeQueueThread(ULONG_PTR param) {
   ThreadStartupData* data = reinterpret_cast<ThreadStartupData*>(param);
   ::TlsSetValue(GetQueuePtrTls(), data->thread_context);
   data->started->Set();
+}
+
+ThreadPriority TaskQueuePriorityToThreadPriority(Priority priority) {
+  switch (priority) {
+    case Priority::HIGH:
+      return kRealtimePriority;
+    case Priority::LOW:
+      return kLowPriority;
+    case Priority::NORMAL:
+      return kNormalPriority;
+    default:
+      RTC_NOTREACHED();
+      break;
+  }
+  return kNormalPriority;
 }
 }  // namespace
 
@@ -145,8 +162,11 @@ class TaskQueue::MultimediaTimer {
   RTC_DISALLOW_COPY_AND_ASSIGN(MultimediaTimer);
 };
 
-TaskQueue::TaskQueue(const char* queue_name)
-    : thread_(&TaskQueue::ThreadMain, this, queue_name) {
+TaskQueue::TaskQueue(const char* queue_name, Priority priority /*= NORMAL*/)
+    : thread_(&TaskQueue::ThreadMain,
+              this,
+              queue_name,
+              TaskQueuePriorityToThreadPriority(priority)) {
   RTC_DCHECK(queue_name);
   thread_.Start();
   Event event(false, false);

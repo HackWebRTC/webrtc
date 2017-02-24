@@ -30,6 +30,8 @@ static const char kQuit = 1;
 static const char kRunTask = 2;
 static const char kRunReplyTask = 3;
 
+using Priority = TaskQueue::Priority;
+
 // This ignores the SIGPIPE signal on the calling thread.
 // This signal can be fired when trying to write() to a pipe that's being
 // closed or while closing a pipe that's being written to.
@@ -83,6 +85,21 @@ void EventAssign(struct event* ev,
   event_set(ev, fd, events, callback, arg);
   RTC_CHECK_EQ(0, event_base_set(base, ev));
 #endif
+}
+
+ThreadPriority TaskQueuePriorityToThreadPriority(Priority priority) {
+  switch (priority) {
+    case Priority::HIGH:
+      return kRealtimePriority;
+    case Priority::LOW:
+      return kLowPriority;
+    case Priority::NORMAL:
+      return kNormalPriority;
+    default:
+      RTC_NOTREACHED();
+      break;
+  }
+  return kNormalPriority;
 }
 }  // namespace
 
@@ -201,10 +218,13 @@ class TaskQueue::SetTimerTask : public QueuedTask {
   const uint32_t posted_;
 };
 
-TaskQueue::TaskQueue(const char* queue_name)
+TaskQueue::TaskQueue(const char* queue_name, Priority priority /*= NORMAL*/)
     : event_base_(event_base_new()),
       wakeup_event_(new event()),
-      thread_(&TaskQueue::ThreadMain, this, queue_name) {
+      thread_(&TaskQueue::ThreadMain,
+              this,
+              queue_name,
+              TaskQueuePriorityToThreadPriority(priority)) {
   RTC_DCHECK(queue_name);
   int fds[2];
   RTC_CHECK(pipe(fds) == 0);

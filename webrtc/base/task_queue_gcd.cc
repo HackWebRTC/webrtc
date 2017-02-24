@@ -21,6 +21,22 @@
 #include "webrtc/base/task_queue_posix.h"
 
 namespace rtc {
+namespace {
+
+using Priority = TaskQueue::Priority;
+
+int TaskQueuePriorityToGCD(Priority priority) {
+  switch (priority) {
+    case Priority::NORMAL:
+      return DISPATCH_QUEUE_PRIORITY_DEFAULT;
+    case Priority::HIGH:
+      return DISPATCH_QUEUE_PRIORITY_HIGH;
+    case Priority::LOW:
+      return DISPATCH_QUEUE_PRIORITY_LOW;
+  }
+}
+}
+
 using internal::GetQueuePtrTls;
 using internal::AutoSetCurrentQueuePtr;
 
@@ -94,7 +110,7 @@ struct TaskQueue::PostTaskAndReplyContext : public TaskQueue::TaskContext {
   dispatch_queue_t reply_queue_;
 };
 
-TaskQueue::TaskQueue(const char* queue_name)
+TaskQueue::TaskQueue(const char* queue_name, Priority priority /*= NORMAL*/)
     : queue_(dispatch_queue_create(queue_name, DISPATCH_QUEUE_SERIAL)),
       context_(new QueueContext(this)) {
   RTC_DCHECK(queue_name);
@@ -104,6 +120,9 @@ TaskQueue::TaskQueue(const char* queue_name)
   // to the queue is released.  This may run after the TaskQueue object has
   // been deleted.
   dispatch_set_finalizer_f(queue_, &QueueContext::DeleteContext);
+
+  dispatch_set_target_queue(
+      queue_, dispatch_get_global_queue(TaskQueuePriorityToGCD(priority), 0));
 }
 
 TaskQueue::~TaskQueue() {
