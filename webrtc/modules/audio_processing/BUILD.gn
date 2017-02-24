@@ -469,6 +469,7 @@ if (rtc_include_tests) {
         ":audioproc_f",
         ":audioproc_unittest_proto",
         ":unpack_aecdump",
+        "test/py_quality_assessment",
       ]
     }
   }
