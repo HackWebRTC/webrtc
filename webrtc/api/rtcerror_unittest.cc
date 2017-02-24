@@ -22,8 +22,12 @@ struct MoveOnlyInt {
   MoveOnlyInt() {}
   explicit MoveOnlyInt(int value) : value(value) {}
   MoveOnlyInt(const MoveOnlyInt& other) = delete;
-  MoveOnlyInt(MoveOnlyInt&& other) = default;
-  MoveOnlyInt& operator=(MoveOnlyInt&& other) = default;
+  MoveOnlyInt& operator=(const MoveOnlyInt& other) = delete;
+  MoveOnlyInt(MoveOnlyInt&& other) : value(other.value) {}
+  MoveOnlyInt& operator=(MoveOnlyInt&& other) {
+    value = other.value;
+    return *this;
+  }
 
   int value = kDefaultMoveOnlyIntValue;
 };
@@ -34,8 +38,12 @@ struct MoveOnlyInt2 {
   MoveOnlyInt2() {}
   explicit MoveOnlyInt2(int value) : value(value) {}
   MoveOnlyInt2(const MoveOnlyInt2& other) = delete;
-  MoveOnlyInt2(MoveOnlyInt2&& other) = default;
-  MoveOnlyInt2& operator=(MoveOnlyInt2&& other) = default;
+  MoveOnlyInt2& operator=(const MoveOnlyInt2& other) = delete;
+  MoveOnlyInt2(MoveOnlyInt2&& other) : value(other.value) {}
+  MoveOnlyInt2& operator=(MoveOnlyInt2&& other) {
+    value = other.value;
+    return *this;
+  }
 
   explicit MoveOnlyInt2(MoveOnlyInt&& other) : value(other.value) {}
   MoveOnlyInt2& operator=(MoveOnlyInt&& other) {

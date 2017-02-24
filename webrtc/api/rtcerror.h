@@ -233,8 +233,17 @@ class RTCErrorOr {
   RTCErrorOr& operator=(const RTCErrorOr& other) = delete;
 
   // Move constructor and move-assignment operator.
-  RTCErrorOr(RTCErrorOr&& other) = default;
-  RTCErrorOr& operator=(RTCErrorOr&& other) = default;
+  //
+  // Visual Studio doesn't support "= default" with move constructors or
+  // assignment operators (even though they compile, they segfault), so define
+  // them explicitly.
+  RTCErrorOr(RTCErrorOr&& other)
+      : error_(std::move(other.error_)), value_(std::move(other.value_)) {}
+  RTCErrorOr& operator=(RTCErrorOr&& other) {
+    error_ = std::move(other.error_);
+    value_ = std::move(other.value_);
+    return *this;
+  }
 
   // Conversion constructor and assignment operator; T must be copy or move
   // constructible from U.
