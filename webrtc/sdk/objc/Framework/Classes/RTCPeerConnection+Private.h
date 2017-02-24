@@ -49,8 +49,12 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
   void OnIceCandidatesRemoved(
       const std::vector<cricket::Candidate>& candidates) override;
 
+  void OnAddTrack(
+      rtc::scoped_refptr<RtpReceiverInterface> receiver,
+      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) override;
+
  private:
-  __weak RTCPeerConnection *peer_connection_;
+  __weak RTCPeerConnection* peer_connection_;
 };
 
 } // namespace webrtc
@@ -101,6 +105,11 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
 
 + (webrtc::PeerConnectionInterface::StatsOutputLevel)
     nativeStatsOutputLevelForLevel:(RTCStatsOutputLevel)level;
+
+- (RTCMediaStream *)mediaStreamForNativeStream:
+    (rtc::scoped_refptr<webrtc::MediaStreamInterface>)stream;
+
+- (void)removeNativeMediaStream:(rtc::scoped_refptr<webrtc::MediaStreamInterface>)stream;
 
 @end
 

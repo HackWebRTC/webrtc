@@ -27,6 +27,7 @@
 
 #include "webrtc/api/jsepicecandidate.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/sdk/objc/Framework/Classes/helpers.h"
 
 NSString * const kRTCPeerConnectionErrorDomain =
     @"org.webrtc.RTCPeerConnection";
@@ -127,9 +128,8 @@ void PeerConnectionDelegateAdapter::OnSignalingChange(
 
 void PeerConnectionDelegateAdapter::OnAddStream(
     rtc::scoped_refptr<MediaStreamInterface> stream) {
-  RTCMediaStream *mediaStream =
-      [[RTCMediaStream alloc] initWithNativeMediaStream:stream];
   RTCPeerConnection *peer_connection = peer_connection_;
+  RTCMediaStream *mediaStream = [peer_connection mediaStreamForNativeStream:stream];
   [peer_connection.delegate peerConnection:peer_connection
                               didAddStream:mediaStream];
 }
@@ -141,6 +141,7 @@ void PeerConnectionDelegateAdapter::OnRemoveStream(
   RTCPeerConnection *peer_connection = peer_connection_;
   [peer_connection.delegate peerConnection:peer_connection
                            didRemoveStream:mediaStream];
+  [peer_connection removeNativeMediaStream:stream];
 }
 
 void PeerConnectionDelegateAdapter::OnDataChannel(
@@ -200,6 +201,28 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
                     didRemoveIceCandidates:ice_candidates];
 }
 
+void PeerConnectionDelegateAdapter::OnAddTrack(
+    rtc::scoped_refptr<RtpReceiverInterface> receiver,
+    const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {
+  RTCRtpReceiver* rtpReceiver =
+      [[RTCRtpReceiver alloc] initWithNativeRtpReceiver:receiver];
+  NSMutableArray* mediaStreams =
+      [NSMutableArray arrayWithCapacity:streams.size()];
+
+  RTCPeerConnection* peer_connection = peer_connection_;
+  for (const auto stream : streams) {
+    RTCMediaStream* mediaStream =
+        [peer_connection mediaStreamForNativeStream:stream];
+    [mediaStreams addObject:mediaStream];
+  }
+  if ([peer_connection.delegate
+      respondsToSelector:@selector(peerConnection:didAddTrack:streams:)]) {
+    [peer_connection.delegate peerConnection:peer_connection
+                                 didAddTrack:rtpReceiver
+                                     streams:mediaStreams];
+  }
+}
+
 }  // namespace webrtc
 
 
@@ -209,6 +232,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> _peerConnection;
   std::unique_ptr<webrtc::MediaConstraints> _nativeConstraints;
   BOOL _hasStartedRtcEventLog;
+  NSMutableDictionary<NSString *, RTCMediaStream *> *_mediaStreamsByStreamId;
 }
 
 @synthesize delegate = _delegate;
@@ -238,6 +262,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
     }
     _localStreams = [[NSMutableArray alloc] init];
     _delegate = delegate;
+    _mediaStreamsByStreamId = [NSMutableDictionary dictionary];
   }
   return self;
 }
@@ -586,6 +611,21 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
     case RTCStatsOutputLevelDebug:
       return webrtc::PeerConnectionInterface::kStatsOutputLevelDebug;
   }
+}
+
+- (RTCMediaStream *)mediaStreamForNativeStream:
+    (rtc::scoped_refptr<webrtc::MediaStreamInterface>)stream {
+  RTCMediaStream *mediaStream =
+      _mediaStreamsByStreamId[[NSString stringForStdString:stream->label()]];
+  if (!mediaStream) {
+    mediaStream = [[RTCMediaStream alloc] initWithNativeMediaStream:stream.get()];
+    _mediaStreamsByStreamId[[NSString stringForStdString:stream->label()]] = mediaStream;
+  }
+  return mediaStream;
+}
+
+- (void)removeNativeMediaStream:(rtc::scoped_refptr<webrtc::MediaStreamInterface>)stream {
+  [_mediaStreamsByStreamId removeObjectForKey:[NSString stringForStdString:stream->label()]];
 }
 
 - (rtc::scoped_refptr<webrtc::PeerConnectionInterface>)nativePeerConnection {

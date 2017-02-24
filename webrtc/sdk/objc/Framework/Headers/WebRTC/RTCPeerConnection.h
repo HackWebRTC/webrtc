@@ -106,6 +106,14 @@ RTC_EXPORT
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     didOpenDataChannel:(RTCDataChannel *)dataChannel;
 
+@optional
+/** Called when a new track is signaled from remote peer. The new track is
+ * attached to the RtpReceiver.
+ * TODO(zhihuang): Remove the @optional once the downstream applitions implement this method.*/
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+           didAddTrack:(RTCRtpReceiver *)rtpReceiver
+               streams:(NSArray<RTCMediaStream *> *)mediaStreams;
+
 @end
 
 RTC_EXPORT
