@@ -28,10 +28,16 @@ std::unique_ptr<OrtcFactoryInterface> OrtcFactoryInterface::Create(
     rtc::PacketSocketFactory* socket_factory) {
   // Hop to signaling thread if needed.
   if (signaling_thread && !signaling_thread->IsCurrent()) {
+    // The template parameters are necessary because there are two
+    // OrtcFactoryInterface::Create methods, so the types can't be derived from
+    // just the function pointer.
     return signaling_thread->Invoke<std::unique_ptr<OrtcFactoryInterface>>(
         RTC_FROM_HERE,
-        rtc::Bind(&OrtcFactoryInterface::Create, network_thread,
-                  signaling_thread, network_manager, socket_factory));
+        rtc::Bind<std::unique_ptr<OrtcFactoryInterface>, rtc::Thread*,
+                  rtc::Thread*, rtc::NetworkManager*,
+                  rtc::PacketSocketFactory*>(&OrtcFactoryInterface::Create,
+                                             network_thread, signaling_thread,
+                                             network_manager, socket_factory));
   }
   OrtcFactory* new_factory =
       new OrtcFactory(network_thread, signaling_thread,
