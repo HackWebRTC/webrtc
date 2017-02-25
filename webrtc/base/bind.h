@@ -17,6 +17,10 @@
 // ref-counted method object or any arguments passed by pointer, and calling the
 // functor with a destroyed object will surely do bad things.
 //
+// To prevent the method object from being captured as a scoped_refptr<>, you
+// can use Unretained. But this should only be done when absolutely necessary,
+// and when the caller knows the extra reference isn't needed.
+//
 // Example usage:
 //   struct Foo {
 //     int Test1() { return 42; }
@@ -125,7 +129,22 @@ struct PointerType {
                                        T*>::type type;
 };
 
+template <typename T>
+class UnretainedWrapper {
+ public:
+  explicit UnretainedWrapper(T* o) : ptr_(o) {}
+  T* get() const { return ptr_; }
+
+ private:
+  T* ptr_;
+};
+
 }  // namespace detail
+
+template <typename T>
+static inline detail::UnretainedWrapper<T> Unretained(T* o) {
+  return detail::UnretainedWrapper<T>(o);
+}
 
 template <class ObjectT, class MethodT, class R, typename... Args>
 class MethodFunctor {
@@ -147,6 +166,31 @@ class MethodFunctor {
 
   MethodT method_;
   typename detail::PointerType<ObjectT>::type object_;
+  typename std::tuple<typename std::remove_reference<Args>::type...> args_;
+};
+
+template <class ObjectT, class MethodT, class R, typename... Args>
+class UnretainedMethodFunctor {
+ public:
+  UnretainedMethodFunctor(MethodT method,
+                          detail::UnretainedWrapper<ObjectT> object,
+                          Args... args)
+      : method_(method), object_(object.get()), args_(args...) {}
+  R operator()() const {
+    return CallMethod(typename sequence_generator<sizeof...(Args)>::type());
+  }
+
+ private:
+  // Use sequence_generator (see template_util.h) to expand an
+  // UnretainedMethodFunctor with 2 arguments to (std::get<0>(args_),
+  // std::get<1>(args_)), for instance.
+  template <int... S>
+  R CallMethod(sequence<S...>) const {
+    return (object_->*method_)(std::get<S>(args_)...);
+  }
+
+  MethodT method_;
+  ObjectT* object_;
   typename std::tuple<typename std::remove_reference<Args>::type...> args_;
 };
 
@@ -183,6 +227,24 @@ MethodFunctor<ObjectT, FP_T(NONAME), R, Args...> Bind(
                                                           args...);
 }
 
+template <class ObjectT, class R, typename... Args>
+MethodFunctor<ObjectT, FP_T(NONAME), R, Args...> Bind(
+    FP_T(method),
+    const scoped_refptr<ObjectT>& object,
+    typename detail::identity<Args>::type... args) {
+  return MethodFunctor<ObjectT, FP_T(NONAME), R, Args...>(method, object.get(),
+                                                          args...);
+}
+
+template <class ObjectT, class R, typename... Args>
+UnretainedMethodFunctor<ObjectT, FP_T(NONAME), R, Args...> Bind(
+    FP_T(method),
+    detail::UnretainedWrapper<ObjectT> object,
+    typename detail::identity<Args>::type... args) {
+  return UnretainedMethodFunctor<ObjectT, FP_T(NONAME), R, Args...>(
+      method, object, args...);
+}
+
 #undef FP_T
 #define FP_T(x) R (ObjectT::*x)(Args...) const
 
@@ -194,17 +256,13 @@ MethodFunctor<const ObjectT, FP_T(NONAME), R, Args...> Bind(
   return MethodFunctor<const ObjectT, FP_T(NONAME), R, Args...>(method, object,
                                                                 args...);
 }
-
-#undef FP_T
-#define FP_T(x) R (ObjectT::*x)(Args...)
-
 template <class ObjectT, class R, typename... Args>
-MethodFunctor<ObjectT, FP_T(NONAME), R, Args...> Bind(
+UnretainedMethodFunctor<const ObjectT, FP_T(NONAME), R, Args...> Bind(
     FP_T(method),
-    const scoped_refptr<ObjectT>& object,
+    detail::UnretainedWrapper<const ObjectT> object,
     typename detail::identity<Args>::type... args) {
-  return MethodFunctor<ObjectT, FP_T(NONAME), R, Args...>(method, object.get(),
-                                                          args...);
+  return UnretainedMethodFunctor<const ObjectT, FP_T(NONAME), R, Args...>(
+      method, object, args...);
 }
 
 #undef FP_T
