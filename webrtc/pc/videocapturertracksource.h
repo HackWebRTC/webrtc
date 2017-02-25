@@ -47,14 +47,10 @@ class VideoCapturerTrackSource : public VideoTrackSource,
       std::unique_ptr<cricket::VideoCapturer> capturer,
       bool remote);
 
-  bool is_screencast() const override {
-    return video_capturer_->IsScreencast();
-  }
-  rtc::Optional<bool> needs_denoising() const override {
-    return needs_denoising_;
-  }
+  bool is_screencast() const final { return video_capturer_->IsScreencast(); }
+  rtc::Optional<bool> needs_denoising() const final { return needs_denoising_; }
 
-  bool GetStats(Stats* stats) override;
+  bool GetStats(Stats* stats) final;
 
  protected:
   VideoCapturerTrackSource(rtc::Thread* worker_thread,

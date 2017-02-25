@@ -382,10 +382,14 @@ void VideoCapturerTrackSource::OnStateChange(
     cricket::VideoCapturer* capturer,
     cricket::CaptureState capture_state) {
   if (rtc::Thread::Current() != signaling_thread_) {
+    // Use rtc::Unretained, because we don't want this to capture a reference
+    // to ourselves. If our destructor is called while this task is executing,
+    // that's fine; our AsyncInvoker destructor will wait for it to finish if
+    // it isn't simply canceled.
     invoker_.AsyncInvoke<void>(
         RTC_FROM_HERE, signaling_thread_,
-        rtc::Bind(&VideoCapturerTrackSource::OnStateChange, this, capturer,
-                  capture_state));
+        rtc::Bind(&VideoCapturerTrackSource::OnStateChange,
+                  rtc::Unretained(this), capturer, capture_state));
     return;
   }
 
