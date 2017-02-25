@@ -35,12 +35,14 @@ using DegradationPreference = VideoSendStream::DegradationPreference;
 
 // Time interval for logging frame counts.
 const int64_t kFrameLogIntervalMs = 60000;
-
 // We will never ask for a resolution lower than this.
+#if defined(WEBRTC_ANDROID)
 // TODO(kthelgason): Lower this limit when better testing
 // on MediaCodec and fallback implementations are in place.
-// See https://bugs.chromium.org/p/webrtc/issues/detail?id=7206
 const int kMinPixelsPerFrame = 320 * 180;
+#else
+const int kMinPixelsPerFrame = 120 * 90;
+#endif
 
 // The maximum number of frames to drop at beginning of stream
 // to try and achieve desired bitrate.
