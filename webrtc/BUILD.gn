@@ -321,7 +321,10 @@ if (!build_with_chromium) {
         deps += [ "modules/video_capture:video_capture_tests" ]
       }
       if (!is_ios) {
-        deps += [ "voice_engine:voe_auto_test" ]
+        deps += [
+          "modules/audio_device:audio_device_tests",
+          "voice_engine:voe_auto_test",
+        ]
       }
       if (rtc_enable_protobuf) {
         deps += [ "logging:rtc_event_log2rtp_dump" ]
