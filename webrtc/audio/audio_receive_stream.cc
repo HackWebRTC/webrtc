@@ -51,7 +51,7 @@ std::string AudioReceiveStream::Config::ToString() const {
   std::stringstream ss;
   ss << "{rtp: " << rtp.ToString();
   ss << ", rtcp_send_transport: "
-     << (rtcp_send_transport ? "(Transport)" : "nullptr");
+     << (rtcp_send_transport ? "(Transport)" : "null");
   ss << ", voe_channel_id: " << voe_channel_id;
   if (!sync_group.empty()) {
     ss << ", sync_group: " << sync_group;

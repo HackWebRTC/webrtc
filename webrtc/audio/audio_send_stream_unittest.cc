@@ -276,7 +276,7 @@ TEST(AudioSendStreamTest, ConfigToString) {
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extensions: [{uri: "
       "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 2}], nack: "
-      "{rtp_history_ms: 0}, c_name: foo_name}, send_transport: nullptr, "
+      "{rtp_history_ms: 0}, c_name: foo_name}, send_transport: null, "
       "voe_channel_id: 1, min_bitrate_bps: 12000, max_bitrate_bps: 34000, "
       "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "
       "enable_codec_fec: true, enable_opus_dtx: false, opus_max_playback_rate: "

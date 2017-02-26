@@ -40,10 +40,10 @@ FIRFilter* FIRFilter::Create(const float* coefficients,
                              size_t max_input_length) {
   if (!coefficients || coefficients_length <= 0 || max_input_length <= 0) {
     RTC_NOTREACHED();
-    return NULL;
+    return nullptr;
   }
 
-  FIRFilter* filter = NULL;
+  FIRFilter* filter = nullptr;
 // If we know the minimum architecture at compile time, avoid CPU detection.
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #if defined(__SSE2__)

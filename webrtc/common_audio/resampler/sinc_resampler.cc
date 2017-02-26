@@ -161,7 +161,7 @@ SincResampler::SincResampler(double io_sample_rate_ratio,
       input_buffer_(static_cast<float*>(
           AlignedMalloc(sizeof(float) * input_buffer_size_, 16))),
 #if defined(WEBRTC_CPU_DETECTION)
-      convolve_proc_(NULL),
+      convolve_proc_(nullptr),
 #endif
       r1_(input_buffer_.get()),
       r2_(input_buffer_.get() + kKernelSize / 2) {

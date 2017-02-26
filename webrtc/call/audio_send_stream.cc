@@ -40,7 +40,7 @@ AudioSendStream::Config::~Config() = default;
 std::string AudioSendStream::Config::ToString() const {
   std::stringstream ss;
   ss << "{rtp: " << rtp.ToString();
-  ss << ", send_transport: " << (send_transport ? "(Transport)" : "nullptr");
+  ss << ", send_transport: " << (send_transport ? "(Transport)" : "null");
   ss << ", voe_channel_id: " << voe_channel_id;
   ss << ", min_bitrate_bps: " << min_bitrate_bps;
   ss << ", max_bitrate_bps: " << max_bitrate_bps;
