@@ -26,6 +26,7 @@ typedef std::map<std::string, std::string> CodecParameterMap;
 
 class FeedbackParam {
  public:
+  FeedbackParam() = default;
   FeedbackParam(const std::string& id, const std::string& param)
       : id_(id),
         param_(param) {

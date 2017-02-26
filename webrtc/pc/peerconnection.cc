@@ -1615,9 +1615,10 @@ void PeerConnection::CreateAudioReceiver(MediaStreamInterface* stream,
                                          uint32_t ssrc) {
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
       receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
-          signaling_thread(), new AudioRtpReceiver(stream, track_id, ssrc,
-                                                   session_->voice_channel()));
-
+          signaling_thread(),
+          new AudioRtpReceiver(track_id, ssrc, session_->voice_channel()));
+  stream->AddTrack(
+      static_cast<AudioTrackInterface*>(receiver->internal()->track().get()));
   receivers_.push_back(receiver);
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
   streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));
@@ -1630,8 +1631,10 @@ void PeerConnection::CreateVideoReceiver(MediaStreamInterface* stream,
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
       receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
           signaling_thread(),
-          new VideoRtpReceiver(stream, track_id, factory_->worker_thread(),
-                               ssrc, session_->video_channel()));
+          new VideoRtpReceiver(track_id, factory_->worker_thread(), ssrc,
+                               session_->video_channel()));
+  stream->AddTrack(
+      static_cast<VideoTrackInterface*>(receiver->internal()->track().get()));
   receivers_.push_back(receiver);
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
   streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));

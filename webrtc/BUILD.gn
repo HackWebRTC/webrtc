@@ -258,6 +258,7 @@ if (!build_with_chromium) {
       "media",
       "modules",
       "modules/video_capture:video_capture_internal_impl",
+      "ortc",
       "p2p",
       "pc",
       "sdk",

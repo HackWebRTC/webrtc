@@ -204,8 +204,6 @@ static const char kDummyPort[] = "9";
 // RFC 3556
 static const char kApplicationSpecificMaximum[] = "AS";
 
-static const int kDefaultVideoClockrate = 90000;
-
 static const char kDefaultSctpmapProtocol[] = "webrtc-datachannel";
 
 // RTP payload type is in the 0-127 range. Use -1 to indicate "all" payload
@@ -1737,8 +1735,8 @@ void BuildRtpMap(const MediaContentDescription* media_desc,
       // [/<encodingparameters>]
       if (it->id != kWildcardPayloadType) {
         InitAttrLine(kAttributeRtpmap, &os);
-        os << kSdpDelimiterColon << it->id << " " << it->name
-         << "/" << kDefaultVideoClockrate;
+        os << kSdpDelimiterColon << it->id << " " << it->name << "/"
+           << cricket::kVideoCodecClockrate;
         AddLine(os.str(), message);
       }
       AddRtcpFbLines(*it, message);

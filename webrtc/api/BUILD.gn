@@ -56,7 +56,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "mediatypes.cc",
     "mediatypes.h",
     "notifier.h",
-    "ortcfactoryinterface.h",
     "peerconnectionfactoryproxy.h",
     "peerconnectioninterface.h",
     "peerconnectionproxy.h",
@@ -70,7 +69,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "statstypes.cc",
     "statstypes.h",
     "streamcollection.h",
-    "udptransportinterface.h",
     "umametrics.h",
     "videosourceproxy.h",
     "videotracksource.h",
@@ -84,6 +82,27 @@ rtc_static_library("libjingle_peerconnection_api") {
 
   deps = [
     ":rtc_stats_api",
+  ]
+}
+
+rtc_source_set("ortc_api") {
+  check_includes = false  # TODO(deadbeef): Remove (bugs.webrtc.org/6828)
+  sources = [
+    "ortc/ortcfactoryinterface.h",
+    "ortc/ortcrtpreceiverinterface.h",
+    "ortc/ortcrtpsenderinterface.h",
+    "ortc/packettransportinterface.h",
+    "ortc/rtptransportcontrollerinterface.h",
+    "ortc/rtptransportinterface.h",
+    "ortc/udptransportinterface.h",
+  ]
+
+  # For mediastreaminterface.h, etc.
+  # TODO(deadbeef): Create a separate target for the common things ORTC and
+  # PeerConnection code shares, so that ortc_api can depend on that instead of
+  # libjingle_peerconnection_api.
+  public_deps = [
+    ":libjingle_peerconnection_api",
   ]
 }
 

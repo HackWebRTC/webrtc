@@ -404,12 +404,10 @@ class UsedPayloadTypes : public UsedIds<Codec> {
 class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
  public:
   UsedRtpHeaderExtensionIds()
-      : UsedIds<webrtc::RtpExtension>(kLocalIdMin, kLocalIdMax) {}
+      : UsedIds<webrtc::RtpExtension>(webrtc::RtpExtension::kMinId,
+                                      webrtc::RtpExtension::kMaxId) {}
 
  private:
-  // Min and Max local identifier for one-byte header extensions, per RFC5285.
-  static const int kLocalIdMin = 1;
-  static const int kLocalIdMax = 14;
 };
 
 static bool IsSctp(const MediaContentDescription* desc) {
@@ -1281,7 +1279,6 @@ MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
       transport_desc_factory_(transport_desc_factory) {
   channel_manager->GetSupportedAudioSendCodecs(&audio_send_codecs_);
   channel_manager->GetSupportedAudioReceiveCodecs(&audio_recv_codecs_);
-  channel_manager->GetSupportedAudioSendCodecs(&audio_send_codecs_);
   channel_manager->GetSupportedAudioRtpHeaderExtensions(&audio_rtp_extensions_);
   channel_manager->GetSupportedVideoCodecs(&video_codecs_);
   channel_manager->GetSupportedVideoRtpHeaderExtensions(&video_rtp_extensions_);

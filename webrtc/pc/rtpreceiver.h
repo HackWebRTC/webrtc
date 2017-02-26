@@ -34,6 +34,9 @@ namespace webrtc {
 class RtpReceiverInternal : public RtpReceiverInterface {
  public:
   virtual void Stop() = 0;
+  // This SSRC is used as an identifier for the receiver between the API layer
+  // and the WebRtcVideoEngine2, WebRtcVoiceEngine layer.
+  virtual uint32_t ssrc() const = 0;
 };
 
 class AudioRtpReceiver : public ObserverInterface,
@@ -41,8 +44,11 @@ class AudioRtpReceiver : public ObserverInterface,
                          public rtc::RefCountedObject<RtpReceiverInternal>,
                          public sigslot::has_slots<> {
  public:
-  AudioRtpReceiver(MediaStreamInterface* stream,
-                   const std::string& track_id,
+  // An SSRC of 0 will create a receiver that will match the first SSRC it
+  // sees.
+  // TODO(deadbeef): Use rtc::Optional, or have another constructor that
+  // doesn't take an SSRC, and make this one DCHECK(ssrc != 0).
+  AudioRtpReceiver(const std::string& track_id,
                    uint32_t ssrc,
                    cricket::VoiceChannel* channel);
 
@@ -74,6 +80,7 @@ class AudioRtpReceiver : public ObserverInterface,
 
   // RtpReceiverInternal implementation.
   void Stop() override;
+  uint32_t ssrc() const override { return ssrc_; }
 
   void SetObserver(RtpReceiverObserverInterface* observer) override;
 
@@ -99,8 +106,9 @@ class AudioRtpReceiver : public ObserverInterface,
 class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal>,
                          public sigslot::has_slots<> {
  public:
-  VideoRtpReceiver(MediaStreamInterface* stream,
-                   const std::string& track_id,
+  // An SSRC of 0 will create a receiver that will match the first SSRC it
+  // sees.
+  VideoRtpReceiver(const std::string& track_id,
                    rtc::Thread* worker_thread,
                    uint32_t ssrc,
                    cricket::VideoChannel* channel);
@@ -127,6 +135,7 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal>,
 
   // RtpReceiverInternal implementation.
   void Stop() override;
+  uint32_t ssrc() const override { return ssrc_; }
 
   void SetObserver(RtpReceiverObserverInterface* observer) override;
 

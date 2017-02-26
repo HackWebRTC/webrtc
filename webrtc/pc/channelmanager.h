@@ -95,6 +95,15 @@ class ChannelManager {
       const std::string& content_name,
       bool srtp_required,
       const AudioOptions& options);
+  // Version of the above that takes PacketTransportInternal.
+  VoiceChannel* CreateVoiceChannel(
+      webrtc::MediaControllerInterface* media_controller,
+      rtc::PacketTransportInternal* rtp_transport,
+      rtc::PacketTransportInternal* rtcp_transport,
+      rtc::Thread* signaling_thread,
+      const std::string& content_name,
+      bool srtp_required,
+      const AudioOptions& options);
   // Destroys a voice channel created with the Create API.
   void DestroyVoiceChannel(VoiceChannel* voice_channel);
   // Creates a video channel, synced with the specified voice channel, and
@@ -103,6 +112,15 @@ class ChannelManager {
       webrtc::MediaControllerInterface* media_controller,
       DtlsTransportInternal* rtp_transport,
       DtlsTransportInternal* rtcp_transport,
+      rtc::Thread* signaling_thread,
+      const std::string& content_name,
+      bool srtp_required,
+      const VideoOptions& options);
+  // Version of the above that takes PacketTransportInternal.
+  VideoChannel* CreateVideoChannel(
+      webrtc::MediaControllerInterface* media_controller,
+      rtc::PacketTransportInternal* rtp_transport,
+      rtc::PacketTransportInternal* rtcp_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
       bool srtp_required,
@@ -160,8 +178,10 @@ class ChannelManager {
   bool SetCryptoOptions_w(const rtc::CryptoOptions& crypto_options);
   VoiceChannel* CreateVoiceChannel_w(
       webrtc::MediaControllerInterface* media_controller,
-      DtlsTransportInternal* rtp_transport,
-      DtlsTransportInternal* rtcp_transport,
+      DtlsTransportInternal* rtp_dtls_transport,
+      DtlsTransportInternal* rtcp_dtls_transport,
+      rtc::PacketTransportInternal* rtp_packet_transport,
+      rtc::PacketTransportInternal* rtcp_packet_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
       bool srtp_required,
@@ -169,8 +189,10 @@ class ChannelManager {
   void DestroyVoiceChannel_w(VoiceChannel* voice_channel);
   VideoChannel* CreateVideoChannel_w(
       webrtc::MediaControllerInterface* media_controller,
-      DtlsTransportInternal* rtp_transport,
-      DtlsTransportInternal* rtcp_transport,
+      DtlsTransportInternal* rtp_dtls_transport,
+      DtlsTransportInternal* rtcp_dtls_transport,
+      rtc::PacketTransportInternal* rtp_packet_transport,
+      rtc::PacketTransportInternal* rtcp_packet_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
       bool srtp_required,

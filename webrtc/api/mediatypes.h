@@ -22,6 +22,9 @@ enum MediaType {
 };
 
 std::string MediaTypeToString(MediaType type);
+// Aborts on invalid string. Only expected to be used on strings that are
+// guaranteed to be valid, such as MediaStreamTrackInterface::kind().
+MediaType MediaTypeFromString(const std::string& type_str);
 
 }  // namespace cricket
 

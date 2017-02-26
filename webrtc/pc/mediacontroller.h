@@ -23,10 +23,12 @@ class Call;
 class VoiceEngine;
 class RtcEventLog;
 
-// The MediaController currently owns shared state between media channels, but
-// in the future will create and own RtpSenders and RtpReceivers.
+// The MediaController currently owns shared state between media channels.
+// Abstract interface is defined here such that it can be faked/mocked for
+// tests, but no other real reason.
 class MediaControllerInterface {
  public:
+  // Will never return nullptr.
   static MediaControllerInterface* Create(
       const cricket::MediaConfig& config,
       rtc::Thread* worker_thread,

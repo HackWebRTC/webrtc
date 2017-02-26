@@ -1258,10 +1258,14 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
     case CA_ANSWER:
       ret = rtcp_mux_filter_.SetAnswer(enable, src);
       if (ret && rtcp_mux_filter_.IsActive()) {
-        // We activated RTCP mux, close down the RTCP transport.
+        // We permanently activated RTCP muxing; signal that we no longer need
+        // the RTCP transport.
+        std::string debug_name = transport_name_.empty()
+                                     ? rtp_packet_transport_->debug_name()
+                                     : transport_name_;
+        ;
         LOG(LS_INFO) << "Enabling rtcp-mux for " << content_name()
-                     << " by destroying RTCP transport for "
-                     << transport_name();
+                     << "; no longer need RTCP transport for " << debug_name;
         if (rtcp_packet_transport_) {
           SetTransport_n(true, nullptr, nullptr);
           SignalRtcpMuxFullyActive(transport_name_);

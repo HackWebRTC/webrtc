@@ -103,8 +103,6 @@ rtc_static_library("libjingle_peerconnection") {
     "mediastreamobserver.cc",
     "mediastreamobserver.h",
     "mediastreamtrack.h",
-    "ortcfactory.cc",
-    "ortcfactory.h",
     "peerconnection.cc",
     "peerconnection.h",
     "peerconnectionfactory.cc",
@@ -225,6 +223,38 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_source_set("pc_test_utils") {
+    testonly = true
+    sources = [
+      "test/fakeaudiocapturemodule.cc",
+      "test/fakeaudiocapturemodule.h",
+      "test/fakedatachannelprovider.h",
+      "test/fakeperiodicvideocapturer.h",
+      "test/fakertccertificategenerator.h",
+      "test/fakevideotrackrenderer.h",
+      "test/fakevideotracksource.h",
+      "test/mock_datachannel.h",
+      "test/mock_peerconnection.h",
+      "test/mock_webrtcsession.h",
+      "test/mockpeerconnectionobservers.h",
+      "test/peerconnectiontestwrapper.cc",
+      "test/peerconnectiontestwrapper.h",
+      "test/rtcstatsobtainer.h",
+      "test/testsdpstrings.h",
+    ]
+
+    deps = [
+      ":libjingle_peerconnection",
+      "../base:rtc_base_tests_utils",
+      "//testing/gmock",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   config("peerconnection_unittests_config") {
     # The warnings below are enabled by default. Since GN orders compiler flags
     # for a target before flags from configs, the only way to disable such
@@ -256,7 +286,6 @@ if (rtc_include_tests) {
       "localaudiosource_unittest.cc",
       "mediaconstraintsinterface_unittest.cc",
       "mediastream_unittest.cc",
-      "ortcfactory_unittest.cc",
       "peerconnection_unittest.cc",
       "peerconnectionendtoend_unittest.cc",
       "peerconnectionfactory_unittest.cc",
@@ -267,21 +296,7 @@ if (rtc_include_tests) {
       "rtpsenderreceiver_unittest.cc",
       "sctputils_unittest.cc",
       "statscollector_unittest.cc",
-      "test/fakeaudiocapturemodule.cc",
-      "test/fakeaudiocapturemodule.h",
       "test/fakeaudiocapturemodule_unittest.cc",
-      "test/fakedatachannelprovider.h",
-      "test/fakeperiodicvideocapturer.h",
-      "test/fakertccertificategenerator.h",
-      "test/fakevideotrackrenderer.h",
-      "test/fakevideotracksource.h",
-      "test/mock_datachannel.h",
-      "test/mock_peerconnection.h",
-      "test/mock_webrtcsession.h",
-      "test/mockpeerconnectionobservers.h",
-      "test/peerconnectiontestwrapper.cc",
-      "test/peerconnectiontestwrapper.h",
-      "test/rtcstatsobtainer.h",
       "test/testsdpstrings.h",
       "trackmediainfomap_unittest.cc",
       "videocapturertracksource_unittest.cc",
@@ -336,6 +351,7 @@ if (rtc_include_tests) {
 
     deps += [
       ":libjingle_peerconnection",
+      ":pc_test_utils",
       "..:webrtc_common",
       "../api:fakemetricsobserver",
       "../base:rtc_base_tests_utils",

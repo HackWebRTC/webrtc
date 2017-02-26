@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 The WebRTC Project Authors. All rights reserved.
+ *  Copyright 2017 The WebRTC Project Authors. All rights reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -30,8 +30,6 @@ struct SentPacket;
 
 class PacketTransportInternal : public sigslot::has_slots<> {
  public:
-  virtual ~PacketTransportInternal() {}
-
   // Identify the object for logging and debug purpose.
   virtual std::string debug_name() const = 0;
 
@@ -59,7 +57,7 @@ class PacketTransportInternal : public sigslot::has_slots<> {
   // supported by all transport types.
   virtual int SetOption(rtc::Socket::Option opt, int value) = 0;
 
-  // TODO(pthatcher): Once Chrome's MockPacketTransportInternal implements
+  // TODO(pthatcher): Once Chrome's MockPacketTransportInterface implements
   // this, remove the default implementation.
   virtual bool GetOption(rtc::Socket::Option opt, int* value) { return false; }
 

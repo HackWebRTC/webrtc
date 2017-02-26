@@ -68,7 +68,6 @@
 #define WEBRTC_API_PEERCONNECTIONINTERFACE_H_
 
 #include <memory>
-#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -901,7 +900,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   virtual rtc::scoped_refptr<MediaStreamInterface>
       CreateLocalMediaStream(const std::string& label) = 0;
 
-  // Creates a AudioSourceInterface.
+  // Creates an AudioSourceInterface.
   // |options| decides audio processing settings.
   virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const cricket::AudioOptions& options) = 0;

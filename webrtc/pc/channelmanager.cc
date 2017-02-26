@@ -213,14 +213,31 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
   return worker_thread_->Invoke<VoiceChannel*>(
       RTC_FROM_HERE,
       Bind(&ChannelManager::CreateVoiceChannel_w, this, media_controller,
-           rtp_transport, rtcp_transport, signaling_thread, content_name,
-           srtp_required, options));
+           rtp_transport, rtcp_transport, rtp_transport, rtcp_transport,
+           signaling_thread, content_name, srtp_required, options));
+}
+
+VoiceChannel* ChannelManager::CreateVoiceChannel(
+    webrtc::MediaControllerInterface* media_controller,
+    rtc::PacketTransportInternal* rtp_transport,
+    rtc::PacketTransportInternal* rtcp_transport,
+    rtc::Thread* signaling_thread,
+    const std::string& content_name,
+    bool srtp_required,
+    const AudioOptions& options) {
+  return worker_thread_->Invoke<VoiceChannel*>(
+      RTC_FROM_HERE,
+      Bind(&ChannelManager::CreateVoiceChannel_w, this, media_controller,
+           nullptr, nullptr, rtp_transport, rtcp_transport, signaling_thread,
+           content_name, srtp_required, options));
 }
 
 VoiceChannel* ChannelManager::CreateVoiceChannel_w(
     webrtc::MediaControllerInterface* media_controller,
-    DtlsTransportInternal* rtp_transport,
-    DtlsTransportInternal* rtcp_transport,
+    DtlsTransportInternal* rtp_dtls_transport,
+    DtlsTransportInternal* rtcp_dtls_transport,
+    rtc::PacketTransportInternal* rtp_packet_transport,
+    rtc::PacketTransportInternal* rtcp_packet_transport,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     bool srtp_required,
@@ -234,13 +251,14 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
   if (!media_channel)
     return nullptr;
 
-  VoiceChannel* voice_channel = new VoiceChannel(
-      worker_thread_, network_thread_, signaling_thread, media_engine_.get(),
-      media_channel, content_name, rtcp_transport == nullptr, srtp_required);
+  VoiceChannel* voice_channel =
+      new VoiceChannel(worker_thread_, network_thread_, signaling_thread,
+                       media_engine_.get(), media_channel, content_name,
+                       rtcp_packet_transport == nullptr, srtp_required);
   voice_channel->SetCryptoOptions(crypto_options_);
 
-  if (!voice_channel->Init_w(rtp_transport, rtcp_transport, rtp_transport,
-                             rtcp_transport)) {
+  if (!voice_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
+                             rtp_packet_transport, rtcp_packet_transport)) {
     delete voice_channel;
     return nullptr;
   }
@@ -282,14 +300,31 @@ VideoChannel* ChannelManager::CreateVideoChannel(
   return worker_thread_->Invoke<VideoChannel*>(
       RTC_FROM_HERE,
       Bind(&ChannelManager::CreateVideoChannel_w, this, media_controller,
-           rtp_transport, rtcp_transport, signaling_thread, content_name,
-           srtp_required, options));
+           rtp_transport, rtcp_transport, rtp_transport, rtcp_transport,
+           signaling_thread, content_name, srtp_required, options));
+}
+
+VideoChannel* ChannelManager::CreateVideoChannel(
+    webrtc::MediaControllerInterface* media_controller,
+    rtc::PacketTransportInternal* rtp_transport,
+    rtc::PacketTransportInternal* rtcp_transport,
+    rtc::Thread* signaling_thread,
+    const std::string& content_name,
+    bool srtp_required,
+    const VideoOptions& options) {
+  return worker_thread_->Invoke<VideoChannel*>(
+      RTC_FROM_HERE,
+      Bind(&ChannelManager::CreateVideoChannel_w, this, media_controller,
+           nullptr, nullptr, rtp_transport, rtcp_transport, signaling_thread,
+           content_name, srtp_required, options));
 }
 
 VideoChannel* ChannelManager::CreateVideoChannel_w(
     webrtc::MediaControllerInterface* media_controller,
-    DtlsTransportInternal* rtp_transport,
-    DtlsTransportInternal* rtcp_transport,
+    DtlsTransportInternal* rtp_dtls_transport,
+    DtlsTransportInternal* rtcp_dtls_transport,
+    rtc::PacketTransportInternal* rtp_packet_transport,
+    rtc::PacketTransportInternal* rtcp_packet_transport,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     bool srtp_required,
@@ -305,10 +340,10 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
 
   VideoChannel* video_channel = new VideoChannel(
       worker_thread_, network_thread_, signaling_thread, media_channel,
-      content_name, rtcp_transport == nullptr, srtp_required);
+      content_name, rtcp_packet_transport == nullptr, srtp_required);
   video_channel->SetCryptoOptions(crypto_options_);
-  if (!video_channel->Init_w(rtp_transport, rtcp_transport, rtp_transport,
-                             rtcp_transport)) {
+  if (!video_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
+                             rtp_packet_transport, rtcp_packet_transport)) {
     delete video_channel;
     return NULL;
   }

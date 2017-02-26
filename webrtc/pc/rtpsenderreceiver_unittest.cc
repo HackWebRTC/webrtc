@@ -59,7 +59,7 @@ class RtpSenderReceiverTest : public testing::Test,
  public:
   RtpSenderReceiverTest()
       :  // Create fake media engine/etc. so we can create channels to use to
-        // test RtpSenders/RtpReceivers.
+         // test RtpSenders/RtpReceivers.
         media_engine_(new cricket::FakeMediaEngine()),
         channel_manager_(
             std::unique_ptr<cricket::MediaEngineInterface>(media_engine_),
@@ -67,7 +67,7 @@ class RtpSenderReceiverTest : public testing::Test,
             rtc::Thread::Current()),
         fake_call_(Call::Config(&event_log_)),
         fake_media_controller_(&channel_manager_, &fake_call_),
-        stream_(MediaStream::Create(kStreamLabel1)) {
+        local_stream_(MediaStream::Create(kStreamLabel1)) {
     // Create channels to be used by the RtpSenders and RtpReceivers.
     channel_manager_.Init();
     bool srtp_required = true;
@@ -126,17 +126,17 @@ class RtpSenderReceiverTest : public testing::Test,
     rtc::scoped_refptr<VideoTrackSourceInterface> source(
         FakeVideoTrackSource::Create(is_screencast));
     video_track_ = VideoTrack::Create(kVideoTrackId, source);
-    EXPECT_TRUE(stream_->AddTrack(video_track_));
+    EXPECT_TRUE(local_stream_->AddTrack(video_track_));
   }
 
   void CreateAudioRtpSender() { CreateAudioRtpSender(nullptr); }
 
   void CreateAudioRtpSender(rtc::scoped_refptr<LocalAudioSource> source) {
     audio_track_ = AudioTrack::Create(kAudioTrackId, source);
-    EXPECT_TRUE(stream_->AddTrack(audio_track_));
+    EXPECT_TRUE(local_stream_->AddTrack(audio_track_));
     audio_rtp_sender_ =
-        new AudioRtpSender(stream_->GetAudioTracks()[0], stream_->label(),
-                           voice_channel_, nullptr);
+        new AudioRtpSender(local_stream_->GetAudioTracks()[0],
+                           local_stream_->label(), voice_channel_, nullptr);
     audio_rtp_sender_->SetSsrc(kAudioSsrc);
     audio_rtp_sender_->GetOnDestroyedSignal()->connect(
         this, &RtpSenderReceiverTest::OnAudioSenderDestroyed);
@@ -149,8 +149,9 @@ class RtpSenderReceiverTest : public testing::Test,
 
   void CreateVideoRtpSender(bool is_screencast) {
     AddVideoTrack(is_screencast);
-    video_rtp_sender_ = new VideoRtpSender(stream_->GetVideoTracks()[0],
-                                           stream_->label(), video_channel_);
+    video_rtp_sender_ =
+        new VideoRtpSender(local_stream_->GetVideoTracks()[0],
+                           local_stream_->label(), video_channel_);
     video_rtp_sender_->SetSsrc(kVideoSsrc);
     VerifyVideoChannelInput();
   }
@@ -166,19 +167,15 @@ class RtpSenderReceiverTest : public testing::Test,
   }
 
   void CreateAudioRtpReceiver() {
-    audio_track_ = AudioTrack::Create(
-        kAudioTrackId, RemoteAudioSource::Create(kAudioSsrc, NULL));
-    EXPECT_TRUE(stream_->AddTrack(audio_track_));
-    audio_rtp_receiver_ = new AudioRtpReceiver(stream_, kAudioTrackId,
-                                               kAudioSsrc, voice_channel_);
+    audio_rtp_receiver_ =
+        new AudioRtpReceiver(kAudioTrackId, kAudioSsrc, voice_channel_);
     audio_track_ = audio_rtp_receiver_->audio_track();
     VerifyVoiceChannelOutput();
   }
 
   void CreateVideoRtpReceiver() {
-    video_rtp_receiver_ =
-        new VideoRtpReceiver(stream_, kVideoTrackId, rtc::Thread::Current(),
-                             kVideoSsrc, video_channel_);
+    video_rtp_receiver_ = new VideoRtpReceiver(
+        kVideoTrackId, rtc::Thread::Current(), kVideoSsrc, video_channel_);
     video_track_ = video_rtp_receiver_->video_track();
     VerifyVideoChannelOutput();
   }
@@ -263,7 +260,7 @@ class RtpSenderReceiverTest : public testing::Test,
   rtc::scoped_refptr<VideoRtpSender> video_rtp_sender_;
   rtc::scoped_refptr<AudioRtpReceiver> audio_rtp_receiver_;
   rtc::scoped_refptr<VideoRtpReceiver> video_rtp_receiver_;
-  rtc::scoped_refptr<MediaStreamInterface> stream_;
+  rtc::scoped_refptr<MediaStreamInterface> local_stream_;
   rtc::scoped_refptr<VideoTrackInterface> video_track_;
   rtc::scoped_refptr<AudioTrackInterface> audio_track_;
   bool audio_sender_destroyed_signal_fired_ = false;
@@ -717,8 +714,9 @@ TEST_F(RtpSenderReceiverTest,
   // Setting detailed overrides the default non-screencast mode. This should be
   // applied even if the track is set on construction.
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
-  video_rtp_sender_ = new VideoRtpSender(stream_->GetVideoTracks()[0],
-                                         stream_->label(), video_channel_);
+  video_rtp_sender_ =
+      new VideoRtpSender(local_stream_->GetVideoTracks()[0],
+                         local_stream_->label(), video_channel_);
   video_track_->set_enabled(true);
 
   // Sender is not ready to send (no SSRC) so no option should have been set.

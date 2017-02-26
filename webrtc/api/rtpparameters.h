@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "webrtc/api/mediatypes.h"
+#include "webrtc/config.h"
 #include "webrtc/base/optional.h"
 
 namespace webrtc {
@@ -47,14 +48,13 @@ enum class FecMechanism {
 
 // Used in RtcpFeedback struct.
 enum class RtcpFeedbackType {
-  ACK,
   CCM,
   NACK,
   REMB,  // "goog-remb"
   TRANSPORT_CC,
 };
 
-// Used in RtcpFeedback struct when type is ACK, NACK or CCM.
+// Used in RtcpFeedback struct when type is NACK or CCM.
 enum class RtcpFeedbackMessageType {
   // Equivalent to {type: "nack", parameter: undefined} in ORTC.
   GENERIC_NACK,
@@ -76,13 +76,19 @@ enum class DegradationPreference {
 enum class PriorityType { VERY_LOW, LOW, MEDIUM, HIGH };
 
 struct RtcpFeedback {
-  RtcpFeedbackType type = RtcpFeedbackType::ACK;
+  RtcpFeedbackType type = RtcpFeedbackType::CCM;
 
   // Equivalent to ORTC "parameter" field with slight differences:
   // 1. It's an enum instead of a string.
   // 2. Generic NACK feedback is represented by a GENERIC_NACK message type,
   //    rather than an unset "parameter" value.
   rtc::Optional<RtcpFeedbackMessageType> message_type;
+
+  // Constructors for convenience.
+  RtcpFeedback() {}
+  explicit RtcpFeedback(RtcpFeedbackType type) : type(type) {}
+  RtcpFeedback(RtcpFeedbackType type, RtcpFeedbackMessageType message_type)
+      : type(type), message_type(message_type) {}
 
   bool operator==(const RtcpFeedback& o) const {
     return type == o.type && message_type == o.message_type;
@@ -126,7 +132,12 @@ struct RtpCodecCapability {
   std::vector<RtcpFeedback> rtcp_feedback;
 
   // Codec-specific parameters that must be signaled to the remote party.
+  //
   // Corresponds to "a=fmtp" parameters in SDP.
+  //
+  // Contrary to ORTC, these parameters are named using all lowercase strings.
+  // This helps make the mapping to SDP simpler, if an application is using
+  // SDP. Boolean values are represented by the string "1".
   std::unordered_map<std::string, std::string> parameters;
 
   // Codec-specific parameters that may optionally be signaled to the remote
@@ -184,6 +195,12 @@ struct RtpHeaderExtensionCapability {
   // TODO(deadbeef): Not implemented.
   bool preferred_encrypt = false;
 
+  // Constructors for convenience.
+  RtpHeaderExtensionCapability() = default;
+  explicit RtpHeaderExtensionCapability(const std::string& uri) : uri(uri) {}
+  RtpHeaderExtensionCapability(const std::string& uri, int preferred_id)
+      : uri(uri), preferred_id(preferred_id) {}
+
   bool operator==(const RtpHeaderExtensionCapability& o) const {
     return uri == o.uri && preferred_id == o.preferred_id &&
            preferred_encrypt == o.preferred_encrypt;
@@ -193,32 +210,22 @@ struct RtpHeaderExtensionCapability {
   }
 };
 
-// Used in RtpParameters; represents a specific configuration of a header
-// extension.
-struct RtpHeaderExtensionParameters {
-  // URI of this extension, as defined in RFC5285.
-  std::string uri;
-
-  // ID value that goes in the packet.
-  int id = 0;
-
-  // If true, the value in the header is encrypted.
-  // TODO(deadbeef): Not implemented.
-  bool encrypt = false;
-
-  bool operator==(const RtpHeaderExtensionParameters& o) const {
-    return uri == o.uri && id == o.id && encrypt == o.encrypt;
-  }
-  bool operator!=(const RtpHeaderExtensionParameters& o) const {
-    return !(*this == o);
-  }
-};
+// See webrtc/config.h. Has "uri" and "id" fields.
+// TODO(deadbeef): This is missing the "encrypt" flag, which is unimplemented.
+typedef RtpExtension RtpHeaderExtensionParameters;
 
 struct RtpFecParameters {
   // If unset, a value is chosen by the implementation.
+  // Works just like RtpEncodingParameters::ssrc.
   rtc::Optional<uint32_t> ssrc;
 
   FecMechanism mechanism = FecMechanism::RED;
+
+  // Constructors for convenience.
+  RtpFecParameters() = default;
+  explicit RtpFecParameters(FecMechanism mechanism) : mechanism(mechanism) {}
+  RtpFecParameters(FecMechanism mechanism, uint32_t ssrc)
+      : ssrc(ssrc), mechanism(mechanism) {}
 
   bool operator==(const RtpFecParameters& o) const {
     return ssrc == o.ssrc && mechanism == o.mechanism;
@@ -228,7 +235,12 @@ struct RtpFecParameters {
 
 struct RtpRtxParameters {
   // If unset, a value is chosen by the implementation.
+  // Works just like RtpEncodingParameters::ssrc.
   rtc::Optional<uint32_t> ssrc;
+
+  // Constructors for convenience.
+  RtpRtxParameters() = default;
+  explicit RtpRtxParameters(uint32_t ssrc) : ssrc(ssrc) {}
 
   bool operator==(const RtpRtxParameters& o) const { return ssrc == o.ssrc; }
   bool operator!=(const RtpRtxParameters& o) const { return !(*this == o); }
@@ -236,25 +248,35 @@ struct RtpRtxParameters {
 
 struct RtpEncodingParameters {
   // If unset, a value is chosen by the implementation.
+  //
+  // Note that the chosen value is NOT returned by GetParameters, because it
+  // may change due to an SSRC conflict, in which case the conflict is handled
+  // internally without any event. Another way of looking at this is that an
+  // unset SSRC acts as a "wildcard" SSRC.
   rtc::Optional<uint32_t> ssrc;
 
   // Can be used to reference a codec in the |codecs| member of the
   // RtpParameters that contains this RtpEncodingParameters. If unset, the
-  // implementation will choose the first possible codec.
-  // TODO(deadbeef): Not implemented.
+  // implementation will choose the first possible codec (if a sender), or
+  // prepare to receive any codec (for a receiver).
+  // TODO(deadbeef): Not implemented. Implementation of RtpSender will always
+  // choose the first codec from the list.
   rtc::Optional<int> codec_payload_type;
 
   // Specifies the FEC mechanism, if set.
-  // TODO(deadbeef): Not implemented.
+  // TODO(deadbeef): Not implemented. Current implementation will use whatever
+  // FEC codecs are available, including red+ulpfec.
   rtc::Optional<RtpFecParameters> fec;
 
   // Specifies the RTX parameters, if set.
-  // TODO(deadbeef): Not implemented.
+  // TODO(deadbeef): Not implemented with PeerConnection senders/receivers.
   rtc::Optional<RtpRtxParameters> rtx;
 
   // Only used for audio. If set, determines whether or not discontinuous
   // transmission will be used, if an available codec supports it. If not
   // set, the implementation default setting will be used.
+  // TODO(deadbeef): Not implemented. Current implementation will use a CN
+  // codec as long as it's present.
   rtc::Optional<DtxStatus> dtx;
 
   // The relative priority of this encoding.
@@ -264,7 +286,13 @@ struct RtpEncodingParameters {
   // If set, this represents the Transport Independent Application Specific
   // maximum bandwidth defined in RFC3890. If unset, there is no maximum
   // bitrate.
+  //
   // Just called "maxBitrate" in ORTC spec.
+  //
+  // TODO(deadbeef): With ORTC RtpSenders, this currently sets the total
+  // bandwidth for the entire bandwidth estimator (audio and video). This is
+  // just always how "b=AS" was handled, but it's not correct and should be
+  // fixed.
   rtc::Optional<int> max_bitrate_bps;
 
   // TODO(deadbeef): Not implemented.
@@ -281,7 +309,7 @@ struct RtpEncodingParameters {
   // For an RtpSender, set to true to cause this encoding to be sent, and false
   // for it not to be sent. For an RtpReceiver, set to true to cause the
   // encoding to be decoded, and false for it to be ignored.
-  // TODO(deadbeef): RtpReceiver part is not implemented.
+  // TODO(deadbeef): Not implemented for PeerConnection RtpReceivers.
   bool active = true;
 
   // Value to use for RID RTP header extension.
@@ -320,7 +348,7 @@ struct RtpCodecParameters {
   cricket::MediaType kind = cricket::MEDIA_TYPE_AUDIO;
 
   // Payload type used to identify this codec in RTP packets.
-  // This MUST always be present, and must be unique across all codecs using
+  // This must always be present, and must be unique across all codecs using
   // the same transport.
   int payload_type = 0;
 
@@ -329,7 +357,9 @@ struct RtpCodecParameters {
 
   // The number of audio channels used. Unset for video codecs. If unset for
   // audio, the implementation default is used.
-  // TODO(deadbeef): The "implementation default" part is unimplemented.
+  // TODO(deadbeef): The "implementation default" part isn't fully implemented.
+  // Only defaults to 1, even though some codecs (such as opus) should really
+  // default to 2.
   rtc::Optional<int> num_channels;
 
   // The maximum packetization time to be used by an RtpSender.
@@ -343,12 +373,18 @@ struct RtpCodecParameters {
   rtc::Optional<int> ptime;
 
   // Feedback mechanisms to be used for this codec.
-  // TODO(deadbeef): Not implemented.
+  // TODO(deadbeef): Not implemented with PeerConnection senders/receivers.
   std::vector<RtcpFeedback> rtcp_feedback;
 
   // Codec-specific parameters that must be signaled to the remote party.
+  //
   // Corresponds to "a=fmtp" parameters in SDP.
-  // TODO(deadbeef): Not implemented.
+  //
+  // Contrary to ORTC, these parameters are named using all lowercase strings.
+  // This helps make the mapping to SDP simpler, if an application is using
+  // SDP. Boolean values are represented by the string "1".
+  //
+  // TODO(deadbeef): Not implemented with PeerConnection senders/receivers.
   std::unordered_map<std::string, std::string> parameters;
 
   bool operator==(const RtpCodecParameters& o) const {
@@ -370,7 +406,9 @@ struct RtpCapabilities {
   // Supported RTP header extensions.
   std::vector<RtpHeaderExtensionCapability> header_extensions;
 
-  // Supported Forward Error Correction (FEC) mechanisms.
+  // Supported Forward Error Correction (FEC) mechanisms. Note that the RED,
+  // ulpfec and flexfec codecs used by these mechanisms will still appear in
+  // |codecs|.
   std::vector<FecMechanism> fec;
 
   bool operator==(const RtpCapabilities& o) const {
@@ -380,8 +418,8 @@ struct RtpCapabilities {
   bool operator!=(const RtpCapabilities& o) const { return !(*this == o); }
 };
 
-// Note that unlike in ORTC, an RtcpParameters is not included in
-// RtpParameters, because our API will include an additional "RtpTransport"
+// Note that unlike in ORTC, an RtcpParameters structure is not included in
+// RtpParameters, because our API includes an additional "RtpTransport"
 // abstraction on which RTCP parameters are set.
 struct RtpParameters {
   // Used when calling getParameters/setParameters with a PeerConnection
@@ -397,7 +435,7 @@ struct RtpParameters {
 
   std::vector<RtpCodecParameters> codecs;
 
-  // TODO(deadbeef): Not implemented.
+  // TODO(deadbeef): Not implemented with PeerConnection senders/receivers.
   std::vector<RtpHeaderExtensionParameters> header_extensions;
 
   std::vector<RtpEncodingParameters> encodings;

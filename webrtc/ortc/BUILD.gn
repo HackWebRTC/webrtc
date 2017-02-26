@@ -12,17 +12,68 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
+rtc_static_library("ortc") {
+  defines = []
+  sources = [
+    "ortcfactory.cc",
+    "ortcfactory.h",
+    "ortcrtpreceiveradapter.cc",
+    "ortcrtpreceiveradapter.h",
+    "ortcrtpsenderadapter.cc",
+    "ortcrtpsenderadapter.h",
+    "rtpparametersconversion.cc",
+    "rtpparametersconversion.h",
+    "rtptransportadapter.cc",
+    "rtptransportadapter.h",
+    "rtptransportcontrolleradapter.cc",
+    "rtptransportcontrolleradapter.h",
+  ]
+
+  # TODO(deadbeef): Create a separate target for the common things ORTC and
+  # PeerConnection code shares, so that ortc can depend on that instead of
+  # libjingle_peerconnection.
+  deps = [
+    "../pc:libjingle_peerconnection",
+  ]
+
+  public_deps = [
+    "../api:ortc_api",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 if (rtc_include_tests) {
   rtc_test("ortc_unittests") {
     testonly = true
 
     sources = [
-      "dummy_test.cc",
+      "ortcfactory_integrationtest.cc",
+      "ortcfactory_unittest.cc",
+      "ortcrtpreceiver_unittest.cc",
+      "ortcrtpsender_unittest.cc",
+      "rtpparametersconversion_unittest.cc",
+      "rtptransport_unittest.cc",
+      "rtptransportcontroller_unittest.cc",
+      "testrtpparameters.cc",
+      "testrtpparameters.h",
     ]
 
     deps = [
-      "../base:rtc_base_tests_main",
+      ":ortc",
+      "../base:rtc_base_tests_utils",
+      "../media:rtc_unittest_main",
+      "../pc:pc_test_utils",
+      "../system_wrappers:metrics_default",
     ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
 
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_support" ]

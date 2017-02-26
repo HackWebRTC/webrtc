@@ -224,7 +224,7 @@ class RTCErrorOr {
   // NOTE: Not explicit - we want to use RTCErrorOr<T> as a return type
   // so it is convenient and sensible to be able to do 'return T()'
   // when the return type is RTCErrorOr<T>.
-  RTCErrorOr(T value) : value_(std::move(value)) {}
+  RTCErrorOr(T&& value) : value_(std::move(value)) {}
 
   // Delete the copy constructor and assignment operator; there aren't any use
   // cases where you should need to copy an RTCErrorOr, as opposed to moving

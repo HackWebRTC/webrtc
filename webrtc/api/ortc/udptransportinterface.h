@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_API_UDPTRANSPORTINTERFACE_H_
-#define WEBRTC_API_UDPTRANSPORTINTERFACE_H_
+#ifndef WEBRTC_API_ORTC_UDPTRANSPORTINTERFACE_H_
+#define WEBRTC_API_ORTC_UDPTRANSPORTINTERFACE_H_
 
+#include "webrtc/api/ortc/packettransportinterface.h"
 #include "webrtc/api/proxy.h"
 #include "webrtc/base/socketaddress.h"
 
@@ -26,10 +27,8 @@ namespace webrtc {
 //
 // Calling SetRemoteAddress sets the destination of outgoing packets; without a
 // destination, packets can't be sent, but they can be received.
-class UdpTransportInterface {
+class UdpTransportInterface : virtual public PacketTransportInterface {
  public:
-  virtual ~UdpTransportInterface() {}
-
   // Get the address of the socket allocated for this transport.
   virtual rtc::SocketAddress GetLocalAddress() const = 0;
 
@@ -45,15 +44,6 @@ class UdpTransportInterface {
   virtual rtc::SocketAddress GetRemoteAddress() const = 0;
 };
 
-// TODO(deadbeef): Move this to .cc file and out of api/. What threads methods
-// are called on is an implementation detail.
-BEGIN_OWNED_PROXY_MAP(UdpTransport)
-  PROXY_WORKER_THREAD_DESTRUCTOR()
-  PROXY_WORKER_CONSTMETHOD0(rtc::SocketAddress, GetLocalAddress)
-  PROXY_WORKER_METHOD1(bool, SetRemoteAddress, const rtc::SocketAddress&)
-  PROXY_WORKER_CONSTMETHOD0(rtc::SocketAddress, GetRemoteAddress)
-END_PROXY_MAP()
-
 }  // namespace webrtc
 
-#endif  // WEBRTC_API_UDPTRANSPORTINTERFACE_H_
+#endif  // WEBRTC_API_ORTC_UDPTRANSPORTINTERFACE_H_

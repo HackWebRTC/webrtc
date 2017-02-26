@@ -96,6 +96,10 @@ struct RtpExtension {
   static const char* kPlayoutDelayUri;
   static const int kPlayoutDelayDefaultId;
 
+  // Inclusive min and max IDs for one-byte header extensions, per RFC5285.
+  static const int kMinId;
+  static const int kMaxId;
+
   std::string uri;
   int id;
 };

@@ -92,6 +92,10 @@ struct RtpTransceiverDirection {
       MediaContentDirection md);
 
   MediaContentDirection ToMediaContentDirection() const;
+
+  RtpTransceiverDirection Reversed() const {
+    return RtpTransceiverDirection(recv, send);
+  }
 };
 
 RtpTransceiverDirection

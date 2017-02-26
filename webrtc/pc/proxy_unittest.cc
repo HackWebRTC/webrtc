@@ -284,8 +284,9 @@ class OwnedProxyTest : public testing::Test {
  public:
   OwnedProxyTest()
       : foo_(new Foo()),
-        foo_proxy_(
-            FooProxy::Create(&signaling_thread_, &worker_thread_, foo_)) {
+        foo_proxy_(FooProxy::Create(&signaling_thread_,
+                                    &worker_thread_,
+                                    std::unique_ptr<FooInterface>(foo_))) {
     signaling_thread_.Start();
     worker_thread_.Start();
   }
