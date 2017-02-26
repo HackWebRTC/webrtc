@@ -110,8 +110,7 @@ def BuildWebRTC(output_dir, target_arch, flavor, build_type,
     gn_target_name = 'rtc_sdk_objc'
   elif build_type == 'framework':
     gn_target_name = 'rtc_sdk_framework_objc'
-    if not use_bitcode:
-      gn_args.append('enable_dsyms=true')
+    gn_args.append('enable_dsyms=true')
     gn_args.append('enable_stripping=true')
   else:
     raise ValueError('Build type "%s" is not supported.' % build_type)
@@ -178,32 +177,30 @@ def main():
     distutils.dir_util.copy_tree(
         os.path.join(lib_paths[0], SDK_FRAMEWORK_NAME),
         os.path.join(args.output_dir, SDK_FRAMEWORK_NAME))
+    try:
+      os.remove(os.path.join(args.output_dir, dylib_path))
+    except OSError:
+      pass
     logging.info('Merging framework slices.')
     dylib_paths = [os.path.join(path, dylib_path) for path in lib_paths]
     out_dylib_path = os.path.join(args.output_dir, dylib_path)
-    try:
-      os.remove(out_dylib_path)
-    except OSError:
-      pass
     cmd = ['lipo'] + dylib_paths + ['-create', '-output', out_dylib_path]
     _RunCommand(cmd)
 
     # Merge the dSYM slices.
-    lib_dsym_dir_path = os.path.join(lib_paths[0], 'WebRTC.dSYM')
-    if os.path.isdir(lib_dsym_dir_path):
-      distutils.dir_util.copy_tree(lib_dsym_dir_path,
-                                   os.path.join(args.output_dir, 'WebRTC.dSYM'))
-      logging.info('Merging dSYM slices.')
-      dsym_path = os.path.join('WebRTC.dSYM', 'Contents', 'Resources', 'DWARF',
-                               'WebRTC')
-      lib_dsym_paths = [os.path.join(path, dsym_path) for path in lib_paths]
-      out_dsym_path = os.path.join(args.output_dir, dsym_path)
-      try:
-        os.remove(out_dsym_path)
-      except OSError:
-        pass
-      cmd = ['lipo'] + lib_dsym_paths + ['-create', '-output', out_dsym_path]
-      _RunCommand(cmd)
+    dsym_path = os.path.join('WebRTC.dSYM', 'Contents', 'Resources', 'DWARF',
+                             'WebRTC')
+    distutils.dir_util.copy_tree(os.path.join(lib_paths[0], 'WebRTC.dSYM'),
+                                 os.path.join(args.output_dir, 'WebRTC.dSYM'))
+    try:
+      os.remove(os.path.join(args.output_dir, dsym_path))
+    except OSError:
+      pass
+    logging.info('Merging dSYM slices.')
+    dsym_paths = [os.path.join(path, dsym_path) for path in lib_paths]
+    out_dsym_path = os.path.join(args.output_dir, dsym_path)
+    cmd = ['lipo'] + dsym_paths + ['-create', '-output', out_dsym_path]
+    _RunCommand(cmd)
 
     # Modify the version number.
     # Format should be <Branch cut MXX>.<Hotfix #>.<Rev #>.
