@@ -17,10 +17,6 @@ vars = {
   # and whatever else without interference from each other.
   'boringssl_revision': '0f28691d3d3d2851079feeb9e3c6baaff99ee455',
   # Three lines of non-changing comments so that
-  # the commit queue can handle CLs rolling nss
-  # and whatever else without interference from each other.
-  'nss_revision': 'db89506ac363956b4b253db881219eb5d6246781',
-  # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling lss
   # and whatever else without interference from each other.
   'lss_revision': '3f6478ac95edf86cd3da300c2c0d34a438f5dbeb',
@@ -74,8 +70,6 @@ deps = {
     Var('chromium_git') + '/webm/libvpx.git' + '@' +  '4d4231352c8cefdae2e76b7bad4286ec21747c89',
   'src/third_party/libyuv':
     Var('chromium_git') + '/libyuv/libyuv.git' + '@' + 'b18fd21d3c27fce69b5c1ed44b89131dedc87284',
-  'src/third_party/nss':
-    Var('chromium_git') + '/chromium/deps/nss.git' + '@' + Var('nss_revision'),
   'src/third_party/openh264/src':
     Var('chromium_git') + '/external/github.com/cisco/openh264' + '@' + '0fd88df93c5dcaf858c57eb7892bd27763f0f0ac',
   'src/third_party/openmax_dl':
