@@ -198,7 +198,6 @@ function print_function_help() {
 
 function cleanup() {
   unset -f main
-  unset BUILD_DIR
 }
 
 # -----------------------------------------------------------------------------
