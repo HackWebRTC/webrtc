@@ -24,6 +24,7 @@ secondary_source = "//build/secondary/"
 check_targets = [
   "//webrtc/api/*",
   "//webrtc/audio/*",
+  "//webrtc/call/*",
   "//webrtc/modules/audio_coding/*",
   "//webrtc/modules/audio_conference_mixer/*",
   "//webrtc/modules/audio_device/*",
