@@ -578,7 +578,7 @@ size_t RTPSender::SendPadData(size_t bytes,
                                    pacing_info);
     }
 
-    if (!SendPacketToNetwork(padding_packet, options))
+    if (!SendPacketToNetwork(padding_packet, options, pacing_info))
       break;
 
     bytes_sent += padding_bytes_in_packet;
@@ -630,7 +630,8 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
 }
 
 bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
-                                    const PacketOptions& options) {
+                                    const PacketOptions& options,
+                                    const PacedPacketInfo& pacing_info) {
   int bytes_sent = -1;
   if (transport_) {
     UpdateRtpOverhead(packet);
@@ -639,7 +640,7 @@ bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
                      : -1;
     if (event_log_ && bytes_sent > 0) {
       event_log_->LogRtpHeader(kOutgoingPacket, MediaType::ANY, packet.data(),
-                               packet.size());
+                               packet.size(), pacing_info.probe_cluster_id);
     }
   }
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
@@ -760,7 +761,7 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
                        packet->Ssrc());
   }
 
-  if (!SendPacketToNetwork(*packet_to_send, options))
+  if (!SendPacketToNetwork(*packet_to_send, options, pacing_info))
     return false;
 
   {
@@ -890,7 +891,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   UpdateOnSendPacket(options.packet_id, packet->capture_time_ms(),
                      packet->Ssrc());
 
-  bool sent = SendPacketToNetwork(*packet, options);
+  bool sent = SendPacketToNetwork(*packet, options, PacedPacketInfo());
 
   if (sent) {
     {

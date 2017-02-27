@@ -457,6 +457,12 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         audio_network_adaptation_events_.push_back(ana_event);
         break;
       }
+      case ParsedRtcEventLog::BWE_PROBE_CLUSTER_CREATED_EVENT: {
+        break;
+      }
+      case ParsedRtcEventLog::BWE_PROBE_RESULT_EVENT: {
+        break;
+      }
       case ParsedRtcEventLog::UNKNOWN_EVENT: {
         break;
       }

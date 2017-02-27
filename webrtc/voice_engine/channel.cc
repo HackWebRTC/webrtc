@@ -108,9 +108,19 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
                     webrtc::MediaType media_type,
                     const uint8_t* header,
                     size_t packet_length) override {
+    LogRtpHeader(direction, media_type, header, packet_length,
+                 PacedPacketInfo::kNotAProbe);
+  }
+
+  void LogRtpHeader(webrtc::PacketDirection direction,
+                    webrtc::MediaType media_type,
+                    const uint8_t* header,
+                    size_t packet_length,
+                    int probe_cluster_id) override {
     rtc::CritScope lock(&crit_);
     if (event_log_) {
-      event_log_->LogRtpHeader(direction, media_type, header, packet_length);
+      event_log_->LogRtpHeader(direction, media_type, header, packet_length,
+                               probe_cluster_id);
     }
   }
 
@@ -156,6 +166,32 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
       event_log_->LogAudioNetworkAdaptation(config);
     }
   }
+
+  void LogProbeClusterCreated(int id,
+                              int bitrate_bps,
+                              int min_probes,
+                              int min_bytes) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogProbeClusterCreated(id, bitrate_bps, min_probes,
+                                         min_bytes);
+    }
+  };
+
+  void LogProbeResultSuccess(int id, int bitrate_bps) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogProbeResultSuccess(id, bitrate_bps);
+    }
+  };
+
+  void LogProbeResultFailure(int id,
+                             ProbeFailureReason failure_reason) override {
+    rtc::CritScope lock(&crit_);
+    if (event_log_) {
+      event_log_->LogProbeResultFailure(id, failure_reason);
+    }
+  };
 
   void SetEventLog(RtcEventLog* event_log) {
     rtc::CritScope lock(&crit_);

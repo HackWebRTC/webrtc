@@ -46,6 +46,13 @@ class MockRtcEventLog : public RtcEventLog {
                     const uint8_t* header,
                     size_t packet_length));
 
+  MOCK_METHOD5(LogRtpHeader,
+               void(PacketDirection direction,
+                    MediaType media_type,
+                    const uint8_t* header,
+                    size_t packet_length,
+                    int probe_cluster_id));
+
   MOCK_METHOD4(LogRtcpPacket,
                void(PacketDirection direction,
                     MediaType media_type,
@@ -64,6 +71,13 @@ class MockRtcEventLog : public RtcEventLog {
 
   MOCK_METHOD1(LogAudioNetworkAdaptation,
                void(const AudioNetworkAdaptor::EncoderRuntimeConfig& config));
+
+  MOCK_METHOD4(LogProbeClusterCreated,
+               void(int id, int bitrate_bps, int min_probes, int min_bytes));
+
+  MOCK_METHOD2(LogProbeResultSuccess, void(int id, int bitrate_bps));
+  MOCK_METHOD2(LogProbeResultFailure,
+               void(int id, ProbeFailureReason failure_reason));
 };
 
 }  // namespace webrtc

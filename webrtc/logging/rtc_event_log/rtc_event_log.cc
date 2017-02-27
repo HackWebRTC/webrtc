@@ -69,6 +69,11 @@ class RtcEventLogImpl final : public RtcEventLog {
                     MediaType media_type,
                     const uint8_t* header,
                     size_t packet_length) override;
+  void LogRtpHeader(PacketDirection direction,
+                    MediaType media_type,
+                    const uint8_t* header,
+                    size_t packet_length,
+                    int probe_cluster_id) override;
   void LogRtcpPacket(PacketDirection direction,
                      MediaType media_type,
                      const uint8_t* packet,
@@ -81,9 +86,19 @@ class RtcEventLogImpl final : public RtcEventLog {
                               BandwidthUsage detector_state) override;
   void LogAudioNetworkAdaptation(
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override;
+  void LogProbeClusterCreated(int id,
+                              int bitrate_bps,
+                              int min_probes,
+                              int min_bytes) override;
+  void LogProbeResultSuccess(int id, int bitrate_bps) override;
+  void LogProbeResultFailure(int id,
+                             ProbeFailureReason failure_reason) override;
 
  private:
   void StoreEvent(std::unique_ptr<rtclog::Event>* event);
+  void LogProbeResult(int id,
+                      rtclog::BweProbeResult::ResultType result,
+                      int bitrate_bps);
 
   // Message queue for passing control messages to the logging thread.
   SwapQueue<RtcEventLogHelperThread::ControlMessage> message_queue_;
@@ -143,6 +158,20 @@ rtclog::DelayBasedBweUpdate::DetectorState ConvertDetectorState(
   }
   RTC_NOTREACHED();
   return rtclog::DelayBasedBweUpdate::BWE_NORMAL;
+}
+
+rtclog::BweProbeResult::ResultType ConvertProbeResultType(
+    ProbeFailureReason failure_reason) {
+  switch (failure_reason) {
+    case kInvalidSendReceiveInterval:
+      return rtclog::BweProbeResult::INVALID_SEND_RECEIVE_INTERVAL;
+    case kInvalidSendReceiveRatio:
+      return rtclog::BweProbeResult::INVALID_SEND_RECEIVE_RATIO;
+    case kTimeout:
+      return rtclog::BweProbeResult::TIMEOUT;
+  }
+  RTC_NOTREACHED();
+  return rtclog::BweProbeResult::SUCCESS;
 }
 
 // The RTP and RTCP buffers reserve space for twice the expected number of
@@ -354,6 +383,15 @@ void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
                                    MediaType media_type,
                                    const uint8_t* header,
                                    size_t packet_length) {
+  LogRtpHeader(direction, media_type, header, packet_length,
+               PacedPacketInfo::kNotAProbe);
+}
+
+void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
+                                   MediaType media_type,
+                                   const uint8_t* header,
+                                   size_t packet_length,
+                                   int probe_cluster_id) {
   // Read header length (in bytes) from packet data.
   if (packet_length < 12u) {
     return;  // Don't read outside the packet.
@@ -377,6 +415,8 @@ void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
   rtp_event->mutable_rtp_packet()->set_type(ConvertMediaType(media_type));
   rtp_event->mutable_rtp_packet()->set_packet_length(packet_length);
   rtp_event->mutable_rtp_packet()->set_header(header, header_length);
+  if (probe_cluster_id != PacedPacketInfo::kNotAProbe)
+    rtp_event->mutable_rtp_packet()->set_probe_cluster_id(probe_cluster_id);
   StoreEvent(&rtp_event);
 }
 
@@ -483,6 +523,48 @@ void RtcEventLogImpl::LogAudioNetworkAdaptation(
     audio_network_adaptation->set_enable_dtx(*config.enable_dtx);
   if (config.num_channels)
     audio_network_adaptation->set_num_channels(*config.num_channels);
+  StoreEvent(&event);
+}
+
+void RtcEventLogImpl::LogProbeClusterCreated(int id,
+                                             int bitrate_bps,
+                                             int min_probes,
+                                             int min_bytes) {
+  std::unique_ptr<rtclog::Event> event(new rtclog::Event());
+  event->set_timestamp_us(rtc::TimeMicros());
+  event->set_type(rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT);
+
+  auto probe_cluster = event->mutable_probe_cluster();
+  probe_cluster->set_id(id);
+  probe_cluster->set_bitrate_bps(bitrate_bps);
+  probe_cluster->set_min_packets(min_probes);
+  probe_cluster->set_min_bytes(min_bytes);
+  StoreEvent(&event);
+}
+
+void RtcEventLogImpl::LogProbeResultSuccess(int id, int bitrate_bps) {
+  LogProbeResult(id, rtclog::BweProbeResult::SUCCESS, bitrate_bps);
+}
+
+void RtcEventLogImpl::LogProbeResultFailure(int id,
+                                            ProbeFailureReason failure_reason) {
+  rtclog::BweProbeResult::ResultType result =
+      ConvertProbeResultType(failure_reason);
+  LogProbeResult(id, result, -1);
+}
+
+void RtcEventLogImpl::LogProbeResult(int id,
+                                     rtclog::BweProbeResult::ResultType result,
+                                     int bitrate_bps) {
+  std::unique_ptr<rtclog::Event> event(new rtclog::Event());
+  event->set_timestamp_us(rtc::TimeMicros());
+  event->set_type(rtclog::Event::BWE_PROBE_RESULT_EVENT);
+
+  auto probe_result = event->mutable_probe_result();
+  probe_result->set_id(id);
+  probe_result->set_result(result);
+  if (result == rtclog::BweProbeResult::SUCCESS)
+    probe_result->set_bitrate_bps(bitrate_bps);
   StoreEvent(&event);
 }
 

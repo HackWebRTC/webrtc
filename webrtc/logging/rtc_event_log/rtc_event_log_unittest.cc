@@ -588,6 +588,148 @@ TEST(RtcEventLogTest, LogDelayBasedBweUpdateAndReadBack) {
   remove(temp_filename.c_str());
 }
 
+TEST(RtcEventLogTest, LogProbeClusterCreatedAndReadBack) {
+  Random prng(794613);
+
+  int bitrate_bps0 = prng.Rand(0, 10000000);
+  int bitrate_bps1 = prng.Rand(0, 10000000);
+  int bitrate_bps2 = prng.Rand(0, 10000000);
+  int min_probes0 = prng.Rand(0, 100);
+  int min_probes1 = prng.Rand(0, 100);
+  int min_probes2 = prng.Rand(0, 100);
+  int min_bytes0 = prng.Rand(0, 10000);
+  int min_bytes1 = prng.Rand(0, 10000);
+  int min_bytes2 = prng.Rand(0, 10000);
+
+  // Find the name of the current test, in order to use it as a temporary
+  // filename.
+  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+  const std::string temp_filename =
+      test::OutputPath() + test_info->test_case_name() + test_info->name();
+
+  rtc::ScopedFakeClock fake_clock;
+  fake_clock.SetTimeMicros(prng.Rand<uint32_t>());
+  std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
+
+  log_dumper->StartLogging(temp_filename, 10000000);
+  log_dumper->LogProbeClusterCreated(0, bitrate_bps0, min_probes0, min_bytes0);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogProbeClusterCreated(1, bitrate_bps1, min_probes1, min_bytes1);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogProbeClusterCreated(2, bitrate_bps2, min_probes2, min_bytes2);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->StopLogging();
+
+  // Read the generated file from disk.
+  ParsedRtcEventLog parsed_log;
+  ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
+
+  // Verify that what we read back from the event log is the same as
+  // what we wrote down.
+  EXPECT_EQ(5u, parsed_log.GetNumberOfEvents());
+  RtcEventLogTestHelper::VerifyLogStartEvent(parsed_log, 0);
+  RtcEventLogTestHelper::VerifyBweProbeCluster(parsed_log, 1, 0, bitrate_bps0,
+                                               min_probes0, min_bytes0);
+  RtcEventLogTestHelper::VerifyBweProbeCluster(parsed_log, 2, 1, bitrate_bps1,
+                                               min_probes1, min_bytes1);
+  RtcEventLogTestHelper::VerifyBweProbeCluster(parsed_log, 3, 2, bitrate_bps2,
+                                               min_probes2, min_bytes2);
+  RtcEventLogTestHelper::VerifyLogEndEvent(parsed_log, 4);
+
+  // Clean up temporary file - can be pretty slow.
+  remove(temp_filename.c_str());
+}
+
+TEST(RtcEventLogTest, LogProbeResultSuccessAndReadBack) {
+  Random prng(192837);
+
+  int bitrate_bps0 = prng.Rand(0, 10000000);
+  int bitrate_bps1 = prng.Rand(0, 10000000);
+  int bitrate_bps2 = prng.Rand(0, 10000000);
+
+  // Find the name of the current test, in order to use it as a temporary
+  // filename.
+  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+  const std::string temp_filename =
+      test::OutputPath() + test_info->test_case_name() + test_info->name();
+
+  rtc::ScopedFakeClock fake_clock;
+  fake_clock.SetTimeMicros(prng.Rand<uint32_t>());
+  std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
+
+  log_dumper->StartLogging(temp_filename, 10000000);
+  log_dumper->LogProbeResultSuccess(0, bitrate_bps0);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogProbeResultSuccess(1, bitrate_bps1);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogProbeResultSuccess(2, bitrate_bps2);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->StopLogging();
+
+  // Read the generated file from disk.
+  ParsedRtcEventLog parsed_log;
+  ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
+
+  // Verify that what we read back from the event log is the same as
+  // what we wrote down.
+  EXPECT_EQ(5u, parsed_log.GetNumberOfEvents());
+  RtcEventLogTestHelper::VerifyLogStartEvent(parsed_log, 0);
+  RtcEventLogTestHelper::VerifyProbeResultSuccess(parsed_log, 1, 0,
+                                                  bitrate_bps0);
+  RtcEventLogTestHelper::VerifyProbeResultSuccess(parsed_log, 2, 1,
+                                                  bitrate_bps1);
+  RtcEventLogTestHelper::VerifyProbeResultSuccess(parsed_log, 3, 2,
+                                                  bitrate_bps2);
+  RtcEventLogTestHelper::VerifyLogEndEvent(parsed_log, 4);
+
+  // Clean up temporary file - can be pretty slow.
+  remove(temp_filename.c_str());
+}
+
+TEST(RtcEventLogTest, LogProbeResultFailureAndReadBack) {
+  Random prng(192837);
+
+  // Find the name of the current test, in order to use it as a temporary
+  // filename.
+  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+  const std::string temp_filename =
+      test::OutputPath() + test_info->test_case_name() + test_info->name();
+
+  rtc::ScopedFakeClock fake_clock;
+  fake_clock.SetTimeMicros(prng.Rand<uint32_t>());
+  std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
+
+  log_dumper->StartLogging(temp_filename, 10000000);
+  log_dumper->LogProbeResultFailure(
+      0, ProbeFailureReason::kInvalidSendReceiveInterval);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogProbeResultFailure(
+      1, ProbeFailureReason::kInvalidSendReceiveRatio);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->LogProbeResultFailure(2, ProbeFailureReason::kTimeout);
+  fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
+  log_dumper->StopLogging();
+
+  // Read the generated file from disk.
+  ParsedRtcEventLog parsed_log;
+  ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
+
+  // Verify that what we read back from the event log is the same as
+  // what we wrote down.
+  EXPECT_EQ(5u, parsed_log.GetNumberOfEvents());
+  RtcEventLogTestHelper::VerifyLogStartEvent(parsed_log, 0);
+  RtcEventLogTestHelper::VerifyProbeResultFailure(
+      parsed_log, 1, 0, ProbeFailureReason::kInvalidSendReceiveInterval);
+  RtcEventLogTestHelper::VerifyProbeResultFailure(
+      parsed_log, 2, 1, ProbeFailureReason::kInvalidSendReceiveRatio);
+  RtcEventLogTestHelper::VerifyProbeResultFailure(parsed_log, 3, 2,
+                                                  ProbeFailureReason::kTimeout);
+  RtcEventLogTestHelper::VerifyLogEndEvent(parsed_log, 4);
+
+  // Clean up temporary file - can be pretty slow.
+  remove(temp_filename.c_str());
+}
+
 class ConfigReadWriteTest {
  public:
   ConfigReadWriteTest() : prng(987654321) {}

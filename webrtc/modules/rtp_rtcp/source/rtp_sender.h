@@ -230,7 +230,8 @@ class RTPSender {
       const RtpPacketToSend& packet);
 
   bool SendPacketToNetwork(const RtpPacketToSend& packet,
-                           const PacketOptions& options);
+                           const PacketOptions& options,
+                           const PacedPacketInfo& pacing_info);
 
   void UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms);
   void UpdateOnSendPacket(int packet_id,

@@ -56,6 +56,20 @@ BandwidthUsage GetRuntimeDetectorState(
   RTC_NOTREACHED();
   return kBwNormal;
 }
+
+rtclog::BweProbeResult::ResultType GetProbeResultType(
+    ProbeFailureReason failure_reason) {
+  switch (failure_reason) {
+    case kInvalidSendReceiveInterval:
+      return rtclog::BweProbeResult::INVALID_SEND_RECEIVE_INTERVAL;
+    case kInvalidSendReceiveRatio:
+      return rtclog::BweProbeResult::INVALID_SEND_RECEIVE_RATIO;
+    case kTimeout:
+      return rtclog::BweProbeResult::TIMEOUT;
+  }
+  RTC_NOTREACHED();
+  return rtclog::BweProbeResult::SUCCESS;
+}
 }  // namespace
 
 // Checks that the event has a timestamp, a type and exactly the data field
@@ -131,6 +145,18 @@ BandwidthUsage GetRuntimeDetectorState(
            << "Event of type " << type << " has "
            << (event.has_audio_network_adaptation() ? "" : "no ")
            << "audio network adaptation";
+  }
+  if ((type == rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT) !=
+      event.has_probe_cluster()) {
+    return ::testing::AssertionFailure()
+           << "Event of type " << type << " has "
+           << (event.has_probe_cluster() ? "" : "no ") << "bwe probe cluster";
+  }
+  if ((type == rtclog::Event::BWE_PROBE_RESULT_EVENT) !=
+      event.has_probe_result()) {
+    return ::testing::AssertionFailure()
+           << "Event of type " << type << " has "
+           << (event.has_probe_result() ? "" : "no ") << "bwe probe result";
   }
   return ::testing::AssertionSuccess();
 }
@@ -548,6 +574,69 @@ void RtcEventLogTestHelper::VerifyLogEndEvent(
   const rtclog::Event& event = parsed_log.events_[index];
   ASSERT_TRUE(IsValidBasicEvent(event));
   EXPECT_EQ(rtclog::Event::LOG_END, event.type());
+}
+
+void RtcEventLogTestHelper::VerifyBweProbeCluster(
+    const ParsedRtcEventLog& parsed_log,
+    size_t index,
+    uint32_t id,
+    uint32_t bitrate_bps,
+    uint32_t min_probes,
+    uint32_t min_bytes) {
+  const rtclog::Event& event = parsed_log.events_[index];
+  ASSERT_TRUE(IsValidBasicEvent(event));
+  EXPECT_EQ(rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT, event.type());
+
+  const rtclog::BweProbeCluster& bwe_event = event.probe_cluster();
+  ASSERT_TRUE(bwe_event.has_id());
+  EXPECT_EQ(id, bwe_event.id());
+  ASSERT_TRUE(bwe_event.has_bitrate_bps());
+  EXPECT_EQ(bitrate_bps, bwe_event.bitrate_bps());
+  ASSERT_TRUE(bwe_event.has_min_packets());
+  EXPECT_EQ(min_probes, bwe_event.min_packets());
+  ASSERT_TRUE(bwe_event.has_min_bytes());
+  EXPECT_EQ(min_bytes, bwe_event.min_bytes());
+
+  // TODO(philipel): Verify the parser when parsing has been implemented.
+}
+
+void RtcEventLogTestHelper::VerifyProbeResultSuccess(
+    const ParsedRtcEventLog& parsed_log,
+    size_t index,
+    uint32_t id,
+    uint32_t bitrate_bps) {
+  const rtclog::Event& event = parsed_log.events_[index];
+  ASSERT_TRUE(IsValidBasicEvent(event));
+  EXPECT_EQ(rtclog::Event::BWE_PROBE_RESULT_EVENT, event.type());
+
+  const rtclog::BweProbeResult& bwe_event = event.probe_result();
+  ASSERT_TRUE(bwe_event.has_id());
+  EXPECT_EQ(id, bwe_event.id());
+  ASSERT_TRUE(bwe_event.has_bitrate_bps());
+  EXPECT_EQ(bitrate_bps, bwe_event.bitrate_bps());
+  ASSERT_TRUE(bwe_event.has_result());
+  EXPECT_EQ(rtclog::BweProbeResult::SUCCESS, bwe_event.result());
+
+  // TODO(philipel): Verify the parser when parsing has been implemented.
+}
+
+void RtcEventLogTestHelper::VerifyProbeResultFailure(
+    const ParsedRtcEventLog& parsed_log,
+    size_t index,
+    uint32_t id,
+    ProbeFailureReason failure_reason) {
+  const rtclog::Event& event = parsed_log.events_[index];
+  ASSERT_TRUE(IsValidBasicEvent(event));
+  EXPECT_EQ(rtclog::Event::BWE_PROBE_RESULT_EVENT, event.type());
+
+  const rtclog::BweProbeResult& bwe_event = event.probe_result();
+  ASSERT_TRUE(bwe_event.has_id());
+  EXPECT_EQ(id, bwe_event.id());
+  ASSERT_TRUE(bwe_event.has_result());
+  EXPECT_EQ(GetProbeResultType(failure_reason), bwe_event.result());
+  ASSERT_FALSE(bwe_event.has_bitrate_bps());
+
+  // TODO(philipel): Verify the parser when parsing has been implemented.
 }
 
 }  // namespace webrtc

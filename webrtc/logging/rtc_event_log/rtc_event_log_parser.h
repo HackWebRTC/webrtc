@@ -48,7 +48,9 @@ class ParsedRtcEventLog {
     VIDEO_SENDER_CONFIG_EVENT = 9,
     AUDIO_RECEIVER_CONFIG_EVENT = 10,
     AUDIO_SENDER_CONFIG_EVENT = 11,
-    AUDIO_NETWORK_ADAPTATION_EVENT = 16
+    AUDIO_NETWORK_ADAPTATION_EVENT = 16,
+    BWE_PROBE_CLUSTER_CREATED_EVENT = 17,
+    BWE_PROBE_RESULT_EVENT = 18
   };
 
   // Reads an RtcEventLog file and returns true if parsing was successful.

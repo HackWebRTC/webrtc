@@ -83,6 +83,10 @@ ParsedRtcEventLog::EventType GetRuntimeEventType(
       return ParsedRtcEventLog::EventType::AUDIO_SENDER_CONFIG_EVENT;
     case rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT:
       return ParsedRtcEventLog::EventType::AUDIO_NETWORK_ADAPTATION_EVENT;
+    case rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT:
+      return ParsedRtcEventLog::EventType::BWE_PROBE_CLUSTER_CREATED_EVENT;
+    case rtclog::Event::BWE_PROBE_RESULT_EVENT:
+      return ParsedRtcEventLog::EventType::BWE_PROBE_RESULT_EVENT;
   }
   RTC_NOTREACHED();
   return ParsedRtcEventLog::EventType::UNKNOWN_EVENT;

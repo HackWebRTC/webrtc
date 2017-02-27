@@ -69,6 +69,23 @@ class RtcEventLogTestHelper {
                                   size_t index);
   static void VerifyLogEndEvent(const ParsedRtcEventLog& parsed_log,
                                 size_t index);
+
+  static void VerifyBweProbeCluster(const ParsedRtcEventLog& parsed_log,
+                                    size_t index,
+                                    uint32_t id,
+                                    uint32_t bitrate_bps,
+                                    uint32_t min_probes,
+                                    uint32_t min_bytes);
+
+  static void VerifyProbeResultSuccess(const ParsedRtcEventLog& parsed_log,
+                                       size_t index,
+                                       uint32_t id,
+                                       uint32_t bitrate_bps);
+
+  static void VerifyProbeResultFailure(const ParsedRtcEventLog& parsed_log,
+                                       size_t index,
+                                       uint32_t id,
+                                       ProbeFailureReason failure_reason);
 };
 
 }  // namespace webrtc

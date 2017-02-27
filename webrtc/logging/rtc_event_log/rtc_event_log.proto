@@ -38,6 +38,8 @@ message Event {
     AUDIO_RECEIVER_CONFIG_EVENT = 10;
     AUDIO_SENDER_CONFIG_EVENT = 11;
     AUDIO_NETWORK_ADAPTATION_EVENT = 16;
+    BWE_PROBE_CLUSTER_CREATED_EVENT = 17;
+    BWE_PROBE_RESULT_EVENT = 18;
   }
 
   // required - Indicates the type of this event
@@ -72,6 +74,12 @@ message Event {
 
   // optional - but required if type == AUDIO_NETWORK_ADAPTATION_EVENT
   optional AudioNetworkAdaptation audio_network_adaptation = 16;
+
+  // optional - but required if type == BWE_PROBE_CLUSTER_CREATED_EVENT
+  optional BweProbeCluster probe_cluster = 17;
+
+  // optional - but required if type == BWE_PROBE_RESULT_EVENT
+  optional BweProbeResult probe_result = 18;
 }
 
 message RtpPacket {
@@ -86,6 +94,9 @@ message RtpPacket {
 
   // required - The RTP header only.
   optional bytes header = 4;
+
+  // optional - The probe cluster id.
+  optional uint32 probe_cluster_id = 5;
 
   // Do not add code to log user payload data without a privacy review!
 }
@@ -270,4 +281,36 @@ message AudioNetworkAdaptation {
 
   // Number of audio channels that each encoded packet consists of.
   optional uint32 num_channels = 6;
+}
+
+message BweProbeCluster {
+  // required - The id of this probe cluster.
+  optional uint32 id = 1;
+
+  // required - The bitrate in bps that this probe cluster is meant to probe.
+  optional uint64 bitrate_bps = 2;
+
+  // required - The minimum number of packets used to probe the given bitrate.
+  optional uint32 min_packets = 3;
+
+  // required - The minimum number of bytes used to probe the given bitrate.
+  optional uint32 min_bytes = 4;
+}
+
+message BweProbeResult {
+  // required - The id of this probe cluster.
+  optional uint32 id = 1;
+
+  enum ResultType {
+    SUCCESS = 0;
+    INVALID_SEND_RECEIVE_INTERVAL = 1;
+    INVALID_SEND_RECEIVE_RATIO = 2;
+    TIMEOUT = 3;
+  }
+
+  // required - The result of this probing attempt.
+  optional ResultType result = 2;
+
+  // optional - but required if result == SUCCESS. The resulting bitrate in bps.
+  optional uint64 bitrate_bps = 3;
 }

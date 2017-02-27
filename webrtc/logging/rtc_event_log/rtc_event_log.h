@@ -36,6 +36,11 @@ class RtcEventLogImpl;
 enum class MediaType;
 
 enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
+enum ProbeFailureReason {
+  kInvalidSendReceiveInterval,
+  kInvalidSendReceiveRatio,
+  kTimeout
+};
 
 class RtcEventLog {
  public:
@@ -102,6 +107,14 @@ class RtcEventLog {
                             const uint8_t* header,
                             size_t packet_length) = 0;
 
+  // Same as above but used on the sender side to log packets that are part of
+  // a probe cluster.
+  virtual void LogRtpHeader(PacketDirection direction,
+                            MediaType media_type,
+                            const uint8_t* header,
+                            size_t packet_length,
+                            int probe_cluster_id) = 0;
+
   // Logs an incoming or outgoing RTCP packet.
   virtual void LogRtcpPacket(PacketDirection direction,
                              MediaType media_type,
@@ -123,6 +136,19 @@ class RtcEventLog {
   // Logs audio encoder re-configuration driven by audio network adaptor.
   virtual void LogAudioNetworkAdaptation(
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) = 0;
+
+  // Logs when a probe cluster is created.
+  virtual void LogProbeClusterCreated(int id,
+                                      int bitrate_bps,
+                                      int min_probes,
+                                      int min_bytes) = 0;
+
+  // Logs the result of a successful probing attempt.
+  virtual void LogProbeResultSuccess(int id, int bitrate_bps) = 0;
+
+  // Logs the result of an unsuccessful probing attempt.
+  virtual void LogProbeResultFailure(int id,
+                                     ProbeFailureReason failure_reason) = 0;
 
   // Reads an RtcEventLog file and returns true when reading was successful.
   // The result is stored in the given EventStream object.
@@ -157,6 +183,11 @@ class RtcEventLogNullImpl final : public RtcEventLog {
                     MediaType media_type,
                     const uint8_t* header,
                     size_t packet_length) override {}
+  void LogRtpHeader(PacketDirection direction,
+                    MediaType media_type,
+                    const uint8_t* header,
+                    size_t packet_length,
+                    int probe_cluster_id) override {}
   void LogRtcpPacket(PacketDirection direction,
                      MediaType media_type,
                      const uint8_t* packet,
@@ -169,6 +200,13 @@ class RtcEventLogNullImpl final : public RtcEventLog {
                               BandwidthUsage detector_state) override {}
   void LogAudioNetworkAdaptation(
       const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override {}
+  void LogProbeClusterCreated(int id,
+                              int bitrate_bps,
+                              int min_probes,
+                              int min_bytes) override{};
+  void LogProbeResultSuccess(int id, int bitrate_bps) override{};
+  void LogProbeResultFailure(int id,
+                             ProbeFailureReason failure_reason) override{};
 };
 
 }  // namespace webrtc
