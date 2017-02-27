@@ -1138,7 +1138,13 @@ TEST_F(ViEEncoderTest, DropsFramesAndScalesWhenBitrateIsTooLow) {
   vie_encoder_->Stop();
 }
 
-TEST_F(ViEEncoderTest, NrOfDroppedFramesLimited) {
+#if defined(MEMORY_SANITIZER)
+// Fails under MemorySanitizer: See http://crbug.com/webrtc/7232
+#define MAYBE_NrOfDroppedFramesLimited DISABLED_NrOfDroppedFramesLimited
+#else
+#define MAYBE_NrOfDroppedFramesLimited NrOfDroppedFramesLimited
+#endif
+TEST_F(ViEEncoderTest, MAYBE_NrOfDroppedFramesLimited) {
   // 1kbps. This can never be achieved.
   vie_encoder_->OnBitrateUpdated(1000, 0, 0);
   int frame_width = 640;
