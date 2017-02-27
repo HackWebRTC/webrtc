@@ -28,7 +28,7 @@ void RecentMaximum(const FftBuffer& X_buffer,
   }
 }
 
-constexpr float kHInitial = 10.f;
+constexpr float kHInitial = 100.f;
 constexpr int kUpdateCounterInitial = 300;
 
 }  // namespace

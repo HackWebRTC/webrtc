@@ -143,6 +143,7 @@ void EchoRemoverImpl::ProcessBlock(
   if (echo_path_variability.AudioPathChanged()) {
     subtractor_.HandleEchoPathChange(echo_path_variability);
     power_echo_model_.HandleEchoPathChange(echo_path_variability);
+    residual_echo_estimator_.HandleEchoPathChange(echo_path_variability);
   }
 
   std::array<float, kFftLengthBy2Plus1> Y2;

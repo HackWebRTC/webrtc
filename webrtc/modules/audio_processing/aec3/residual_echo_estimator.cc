@@ -20,15 +20,16 @@ namespace {
 
 constexpr float kSaturationLeakageFactor = 10.f;
 constexpr size_t kSaturationLeakageBlocks = 10;
+constexpr size_t kEchoPathChangeConvergenceBlocks = 3 * 250;
 
 // Estimates the residual echo power when there is no detection correlation
 // between the render and capture signals.
 void InfiniteErlPowerEstimate(
-    size_t active_render_counter,
+    size_t active_render_blocks,
     size_t blocks_since_last_saturation,
     const std::array<float, kFftLengthBy2Plus1>& S2_fallback,
     std::array<float, kFftLengthBy2Plus1>* R2) {
-  if (active_render_counter > 5 * 250) {
+  if (active_render_blocks > 5 * 250) {
     // After an amount of active render samples for which an echo should have
     // been detected in the capture signal if the ERL was not infinite, set the
     // residual echo to 0.
@@ -62,6 +63,7 @@ void GainBasedPowerEstimate(
     size_t external_delay,
     const FftBuffer& X_buffer,
     size_t blocks_since_last_saturation,
+    size_t active_render_blocks,
     const std::array<bool, kFftLengthBy2Plus1>& bands_with_reliable_filter,
     const std::array<float, kFftLengthBy2Plus1>& echo_path_gain,
     const std::array<float, kFftLengthBy2Plus1>& S2_fallback,
@@ -71,10 +73,17 @@ void GainBasedPowerEstimate(
   // Base the residual echo power on gain of the linear echo path estimate if
   // that is reliable, otherwise use the fallback echo path estimate. Add a
   // leakage factor when there is saturation.
-  for (size_t k = 0; k < R2->size(); ++k) {
-    (*R2)[k] = bands_with_reliable_filter[k] ? echo_path_gain[k] * X2[k]
-                                             : S2_fallback[k];
+  if (active_render_blocks > kEchoPathChangeConvergenceBlocks) {
+    for (size_t k = 0; k < R2->size(); ++k) {
+      (*R2)[k] = bands_with_reliable_filter[k] ? echo_path_gain[k] * X2[k]
+                                               : S2_fallback[k];
+    }
+  } else {
+    for (size_t k = 0; k < R2->size(); ++k) {
+      (*R2)[k] = S2_fallback[k];
+    }
   }
+
   if (blocks_since_last_saturation < kSaturationLeakageBlocks) {
     std::for_each(R2->begin(), R2->end(),
                   [](float& a) { a *= kSaturationLeakageFactor; });
@@ -145,7 +154,7 @@ void ErleBasedPowerEstimate(
 }  // namespace
 
 ResidualEchoEstimator::ResidualEchoEstimator() {
-  echo_path_gain_.fill(0.f);
+  echo_path_gain_.fill(100.f);
 }
 
 ResidualEchoEstimator::~ResidualEchoEstimator() = default;
@@ -169,6 +178,10 @@ void ResidualEchoEstimator::Estimate(
   if (linear_filter_based_delay) {
     std::copy(H2[*linear_filter_based_delay].begin(),
               H2[*linear_filter_based_delay].end(), echo_path_gain_.begin());
+    constexpr float kEchoPathGainHeadroom = 10.f;
+    std::for_each(
+        echo_path_gain_.begin(), echo_path_gain_.end(),
+        [kEchoPathGainHeadroom](float& a) { a *= kEchoPathGainHeadroom; });
   }
 
   // Counts the blocks since saturation.
@@ -176,11 +189,6 @@ void ResidualEchoEstimator::Estimate(
     blocks_since_last_saturation_ = 0;
   } else {
     ++blocks_since_last_saturation_;
-  }
-
-  // Counts the number of active render blocks that are in a row.
-  if (aec_state.ActiveRender()) {
-    ++active_render_counter_;
   }
 
   const auto& bands_with_reliable_filter = aec_state.BandsWithReliableFilter();
@@ -200,15 +208,24 @@ void ResidualEchoEstimator::Estimate(
     RTC_DCHECK(aec_state.ExternalDelay());
     GainBasedPowerEstimate(
         *aec_state.ExternalDelay(), X_buffer, blocks_since_last_saturation_,
-        bands_with_reliable_filter, echo_path_gain_, S2_fallback, R2);
+        aec_state.ActiveRenderBlocks(), bands_with_reliable_filter,
+        echo_path_gain_, S2_fallback, R2);
   } else if (aec_state.EchoLeakageDetected()) {
     // Residual echo power when an external residual echo detection algorithm
     // has deemed the echo canceller to leak echoes.
     HalfDuplexPowerEstimate(aec_state.ActiveRender(), Y2, R2);
   } else {
     // Residual echo power when none of the other cases are fulfilled.
-    InfiniteErlPowerEstimate(active_render_counter_,
+    InfiniteErlPowerEstimate(aec_state.ActiveRenderBlocks(),
                              blocks_since_last_saturation_, S2_fallback, R2);
+  }
+}
+
+void ResidualEchoEstimator::HandleEchoPathChange(
+    const EchoPathVariability& echo_path_variability) {
+  if (echo_path_variability.AudioPathChanged()) {
+    blocks_since_last_saturation_ = 0;
+    echo_path_gain_.fill(100.f);
   }
 }
 

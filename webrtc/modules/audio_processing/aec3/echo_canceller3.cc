@@ -260,7 +260,7 @@ bool EchoCanceller3::AnalyzeRender(AudioBuffer* render) {
 void EchoCanceller3::AnalyzeCapture(AudioBuffer* capture) {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   RTC_DCHECK(capture);
-  data_dumper_->DumpWav("aec3_capture_analyze_input", frame_length_,
+  data_dumper_->DumpWav("aec3_capture_analyze_input", capture->num_frames(),
                         capture->channels_f()[0], sample_rate_hz_, 1);
 
   saturated_microphone_signal_ = false;

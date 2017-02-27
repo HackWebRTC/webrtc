@@ -47,6 +47,10 @@ class AecState {
   // Returns whether the render signal is currently active.
   bool ActiveRender() const { return active_render_counter_ > 0; }
 
+  // Returns whether the number of active render blocks since an echo path
+  // change.
+  size_t ActiveRenderBlocks() const { return active_render_blocks_; }
+
   // Returns the ERLE.
   const std::array<float, kFftLengthBy2Plus1>& Erle() const {
     return erle_estimator_.Erle();
@@ -108,6 +112,7 @@ class AecState {
   ErleEstimator erle_estimator_;
   int echo_path_change_counter_;
   int active_render_counter_;
+  size_t active_render_blocks_ = 0;
   bool usable_linear_estimate_ = false;
   bool echo_leakage_detected_ = false;
   bool model_based_aec_feasible_ = false;

@@ -81,7 +81,7 @@ void AnalyzeFilter(
 constexpr int kActiveRenderCounterInitial = 50;
 constexpr int kActiveRenderCounterMax = 200;
 constexpr int kEchoPathChangeCounterInitial = 50;
-constexpr int kEchoPathChangeCounterMax = 200;
+constexpr int kEchoPathChangeCounterMax = 3 * 250;
 
 }  // namespace
 
@@ -119,6 +119,9 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
           : rtc::Optional<size_t>();
 
   const float x_energy = std::inner_product(x.begin(), x.end(), x.begin(), 0.f);
+
+  active_render_blocks_ =
+      echo_path_variability.AudioPathChanged() ? 0 : active_render_blocks_ + 1;
 
   echo_path_change_counter_ = echo_path_variability.AudioPathChanged()
                                   ? kEchoPathChangeCounterMax

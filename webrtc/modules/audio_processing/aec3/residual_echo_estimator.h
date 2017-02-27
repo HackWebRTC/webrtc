@@ -39,9 +39,10 @@ class ResidualEchoEstimator {
                 const std::array<float, kFftLengthBy2Plus1>& Y2,
                 std::array<float, kFftLengthBy2Plus1>* R2);
 
+  void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
+
  private:
   std::array<float, kFftLengthBy2Plus1> echo_path_gain_;
-  size_t active_render_counter_ = 0;
   size_t blocks_since_last_saturation_ = 1000;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ResidualEchoEstimator);
