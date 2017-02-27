@@ -1473,6 +1473,7 @@ TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       EXPECT_LE(length, kMaxRtpPacketSize);
+      rtc::CritScope cs(&lock_);
       if (++packets_sent_ < 100)
         return SEND_PACKET;
       observation_complete_.Set();
@@ -1491,7 +1492,10 @@ TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
       call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO,
                                         transport_overhead_);
       EXPECT_TRUE(Wait());
-      packets_sent_ = 0;
+      {
+        rtc::CritScope cs(&lock_);
+        packets_sent_ = 0;
+      }
       transport_overhead_ = 500;
       call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO,
                                         transport_overhead_);
@@ -1500,7 +1504,8 @@ TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
 
    private:
     Call* call_;
-    int packets_sent_;
+    rtc::CriticalSection lock_;
+    int packets_sent_ GUARDED_BY(lock_);
     int transport_overhead_;
     const size_t kMaxRtpPacketSize = 1000;
   } test;
