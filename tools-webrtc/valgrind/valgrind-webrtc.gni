@@ -17,6 +17,7 @@ import("valgrind.gni")
 valgrind_webrtc_dependencies = [
                                  "../../tools-webrtc/valgrind/gtest_exclude/modules_tests.gtest-memcheck.txt",
                                  "../../tools-webrtc/valgrind/gtest_exclude/modules_unittests.gtest-memcheck.txt",
+                                 "../../tools-webrtc/valgrind/gtest_exclude/ortc_unittests.gtest-memcheck.txt",
                                  "../../tools-webrtc/valgrind/gtest_exclude/peerconnection_unittests.gtest-memcheck.txt",
                                  "../../tools-webrtc/valgrind/gtest_exclude/rtc_media_unittests.gtest-memcheck.txt",
                                  "../../tools-webrtc/valgrind/gtest_exclude/rtc_media_unittests.gtest-memcheck_mac.txt",
