@@ -57,7 +57,10 @@ if (rtc_include_tests) {
     deps = [
       ":rtc_stats",
       ":rtc_stats_test_utils",
+      "../api:rtc_stats_api",
+      "../base:rtc_base_approved",
       "../base:rtc_base_tests_main",
+      "../base:rtc_base_tests_utils",
       "../system_wrappers:metrics_default",
       "//testing/gmock",
     ]
