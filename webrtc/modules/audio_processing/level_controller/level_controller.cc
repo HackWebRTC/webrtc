@@ -59,7 +59,7 @@ float FrameEnergy(const AudioBuffer& audio) {
 float PeakLevel(const AudioBuffer& audio) {
   float peak_level = 0.f;
   for (size_t k = 0; k < audio.num_channels(); ++k) {
-    auto channel_peak_level = std::max_element(
+    auto* channel_peak_level = std::max_element(
         audio.channels_const_f()[k],
         audio.channels_const_f()[k] + audio.num_frames(),
         [](float a, float b) { return std::abs(a) < std::abs(b); });

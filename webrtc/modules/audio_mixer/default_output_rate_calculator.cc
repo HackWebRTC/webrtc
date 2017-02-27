@@ -31,7 +31,7 @@ int DefaultOutputRateCalculator::CalculateOutputRate(
   static constexpr NativeRate native_rates[] = {
       NativeRate::kSampleRate8kHz, NativeRate::kSampleRate16kHz,
       NativeRate::kSampleRate32kHz, NativeRate::kSampleRate48kHz};
-  const auto rounded_up_index = std::lower_bound(
+  const auto* rounded_up_index = std::lower_bound(
       std::begin(native_rates), std::end(native_rates), maximal_frequency);
   RTC_DCHECK(rounded_up_index != std::end(native_rates));
   return *rounded_up_index;

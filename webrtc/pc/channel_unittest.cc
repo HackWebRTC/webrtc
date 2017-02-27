@@ -2195,7 +2195,13 @@ class VideoChannelDoubleThreadTest : public ChannelTest<VideoTraits> {
 };
 
 // VoiceChannelSingleThreadTest
-TEST_F(VoiceChannelSingleThreadTest, TestInit) {
+// Flaky on iOS Simualtor: bugs.webrtc.org/7247
+#if defined(WEBRTC_IOS)
+#define MAYBE_TestInit DISABLED_TestInit
+#else
+#define MAYBE_TestInit TestInit
+#endif
+TEST_F(VoiceChannelSingleThreadTest, MAYBE_TestInit) {
   Base::TestInit();
   EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
   EXPECT_TRUE(media_channel1_->dtmf_info_queue().empty());

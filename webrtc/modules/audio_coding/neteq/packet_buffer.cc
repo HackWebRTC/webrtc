@@ -43,8 +43,8 @@ class NewTimestampIsLarger {
 bool EqualSampleRates(uint8_t pt1,
                       uint8_t pt2,
                       const DecoderDatabase& decoder_database) {
-  auto di1 = decoder_database.GetDecoderInfo(pt1);
-  auto di2 = decoder_database.GetDecoderInfo(pt2);
+  auto* di1 = decoder_database.GetDecoderInfo(pt1);
+  auto* di2 = decoder_database.GetDecoderInfo(pt2);
   return di1 && di2 && di1->SampleRateHz() == di2->SampleRateHz();
 }
 }  // namespace
