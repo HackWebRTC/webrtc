@@ -260,7 +260,7 @@ class AudioTrackInterface : public MediaStreamTrackInterface {
   // virtual after it's implemented in chromium.
   virtual bool GetSignalLevel(int* level) { return false; }
 
-  // Get the audio processor used by the audio track. Return NULL if the track
+  // Get the audio processor used by the audio track. Return null if the track
   // does not have any processor.
   // TODO(deadbeef): Make the interface pure virtual.
   virtual rtc::scoped_refptr<AudioProcessorInterface> GetAudioProcessor() {

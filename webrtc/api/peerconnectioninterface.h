@@ -532,7 +532,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     return false;
   }
 
-  // Returns pointer to a DtmfSender on success. Otherwise returns NULL.
+  // Returns pointer to a DtmfSender on success. Otherwise returns null.
   //
   // This API is no longer part of the standard; instead DtmfSenders are
   // obtained from RtpSenders. Which is what the implementation does; it finds
@@ -922,8 +922,8 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   }
 
   // A video source creator that allows selection of resolution and frame rate.
-  // |constraints| decides video resolution and frame rate but can be NULL.
-  // In the NULL case, use the version above.
+  // |constraints| decides video resolution and frame rate but can be null.
+  // In the null case, use the version above.
   //
   // |constraints| is only used for the invocation of this method, and can
   // safely be destroyed afterwards.
@@ -952,7 +952,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
       const std::string& label,
       VideoTrackSourceInterface* source) = 0;
 
-  // Creates an new AudioTrack. At the moment |source| can be NULL.
+  // Creates an new AudioTrack. At the moment |source| can be null.
   virtual rtc::scoped_refptr<AudioTrackInterface>
       CreateAudioTrack(const std::string& label,
                        AudioSourceInterface* source) = 0;

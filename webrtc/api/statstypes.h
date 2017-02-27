@@ -415,7 +415,7 @@ class StatsCollection {
   StatsReport* FindOrAddNew(const StatsReport::Id& id);
   StatsReport* ReplaceOrAddNew(const StatsReport::Id& id);
 
-  // Looks for a report with the given |id|.  If one is not found, NULL
+  // Looks for a report with the given |id|.  If one is not found, null
   // will be returned.
   StatsReport* Find(const StatsReport::Id& id);
 

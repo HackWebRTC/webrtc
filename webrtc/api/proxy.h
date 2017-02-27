@@ -128,7 +128,7 @@ class SynchronousMethodCall
 
   void Invoke(const rtc::Location& posted_from, rtc::Thread* t) {
     if (t->IsCurrent()) {
-      proxy_->OnMessage(NULL);
+      proxy_->OnMessage(nullptr);
     } else {
       e_.reset(new rtc::Event(false, false));
       t->Post(posted_from, this, 0);
@@ -137,7 +137,10 @@ class SynchronousMethodCall
   }
 
  private:
-  void OnMessage(rtc::Message*) { proxy_->OnMessage(NULL); e_->Set(); }
+  void OnMessage(rtc::Message*) {
+    proxy_->OnMessage(nullptr);
+    e_->Set();
+  }
   std::unique_ptr<rtc::Event> e_;
   rtc::MessageHandler* proxy_;
 };

@@ -68,8 +68,8 @@ class IceCandidateInterface {
 };
 
 // Creates a IceCandidateInterface based on SDP string.
-// Returns NULL if the sdp string can't be parsed.
-// |error| may be NULL.
+// Returns null if the sdp string can't be parsed.
+// |error| may be null.
 IceCandidateInterface* CreateIceCandidate(const std::string& sdp_mid,
                                           int sdp_mline_index,
                                           const std::string& sdp,
@@ -141,8 +141,8 @@ class SessionDescriptionInterface {
 };
 
 // Creates a SessionDescriptionInterface based on the SDP string and the type.
-// Returns NULL if the sdp string can't be parsed or the type is unsupported.
-// |error| may be NULL.
+// Returns null if the sdp string can't be parsed or the type is unsupported.
+// |error| may be null.
 SessionDescriptionInterface* CreateSessionDescription(const std::string& type,
                                                       const std::string& sdp,
                                                       SdpParseError* error);

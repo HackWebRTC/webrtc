@@ -27,7 +27,7 @@ class Notifier : public T {
   }
 
   virtual void RegisterObserver(ObserverInterface* observer) {
-    RTC_DCHECK(observer != NULL);
+    RTC_DCHECK(observer != nullptr);
     observers_.push_back(observer);
   }
 
