@@ -138,17 +138,12 @@ void SuppressionFilter::ApplyGain(
     fft_.Ifft(E, &time_domain_high_band_noise);
 
     // Scale and apply the noise to the signals.
-    // TODO(peah): Ensure that the high bands are properly delayed.
-    constexpr int kNumBandsAveragingUpperGain = kFftLengthBy2 / 4;
-    constexpr float kOneByNumBandsAveragingUpperGain =
-        1.f / kNumBandsAveragingUpperGain;
+    RTC_DCHECK_LT(3, suppression_gain.size());
     float high_bands_gain =
-        std::accumulate(suppression_gain.end() - kNumBandsAveragingUpperGain,
-                        suppression_gain.end(), 0.f) *
-        kOneByNumBandsAveragingUpperGain;
+        *std::min_element(suppression_gain.begin() + 3, suppression_gain.end());
 
     float high_bands_noise_scaling =
-        0.4f * std::max(1.f - high_bands_gain * high_bands_gain, 0.f);
+        0.4f * std::max(1.f - high_bands_gain, 0.f);
 
     std::transform(
         (*e)[1].begin(), (*e)[1].end(), time_domain_high_band_noise.begin(),

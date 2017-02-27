@@ -21,6 +21,25 @@
 namespace webrtc {
 namespace {
 
+void GainPostProcessing(std::array<float, kFftLengthBy2Plus1>* gain_squared) {
+  // Limit the low frequency gains to avoid the impact of the high-pass filter
+  // on the lower-frequency gain influencing the overall achieved gain.
+  (*gain_squared)[1] = std::min((*gain_squared)[1], (*gain_squared)[2]);
+  (*gain_squared)[0] = (*gain_squared)[1];
+
+  // Limit the high frequency gains to avoid the impact of the anti-aliasing
+  // filter on the upper-frequency gains influencing the overall achieved
+  // gain. TODO(peah): Update this when new anti-aliasing filters are
+  // implemented.
+  constexpr size_t kAntiAliasingImpactLimit = 64 * 0.7f;
+  std::for_each(gain_squared->begin() + kAntiAliasingImpactLimit,
+                gain_squared->end(),
+                [gain_squared, kAntiAliasingImpactLimit](float& a) {
+                  a = std::min(a, (*gain_squared)[kAntiAliasingImpactLimit]);
+                });
+  (*gain_squared)[kFftLengthBy2] = (*gain_squared)[kFftLengthBy2Minus1];
+}
+
 constexpr int kNumIterations = 2;
 constexpr float kEchoMaskingMargin = 1.f / 10.f;
 constexpr float kBandMaskingFactor = 1.f / 2.f;
@@ -120,8 +139,9 @@ void ComputeGains_SSE2(
                                         : std::min(a, b * 2.f);
                    });
 
-    (*gain_squared)[0] = (*gain_squared)[1];
-    (*gain_squared)[kFftLengthBy2] = (*gain_squared)[kFftLengthBy2Minus1];
+    // Process the gains to avoid artefacts caused by gain realization in the
+    // filterbank and impact of external pre-processing of the signal.
+    GainPostProcessing(gain_squared);
   }
 
   std::copy(gain_squared->begin() + 1, gain_squared->end() - 1,
@@ -231,8 +251,9 @@ void ComputeGains(
                                         : std::min(a, b * 2.f);
                    });
 
-    (*gain_squared)[0] = (*gain_squared)[1];
-    (*gain_squared)[kFftLengthBy2] = (*gain_squared)[kFftLengthBy2Minus1];
+    // Process the gains to avoid artefacts caused by gain realization in the
+    // filterbank and impact of external pre-processing of the signal.
+    GainPostProcessing(gain_squared);
   }
 
   std::copy(gain_squared->begin() + 1, gain_squared->end() - 1,
