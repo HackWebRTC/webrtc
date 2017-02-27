@@ -866,6 +866,7 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
         candidate_pair_stats->state =
             IceCandidatePairStateToRTCStatsIceCandidatePairState(info.state);
         candidate_pair_stats->priority = info.priority;
+        candidate_pair_stats->nominated = info.nominated;
         // TODO(hbos): This writable is different than the spec. It goes to
         // false after a certain amount of time without a response passes.
         // crbug.com/633550

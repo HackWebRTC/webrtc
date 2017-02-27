@@ -1503,6 +1503,7 @@ ConnectionInfo Connection::stats() {
   stats_.key = this;
   stats_.state = state_;
   stats_.priority = priority();
+  stats_.nominated = nominated();
   return stats_;
 }
 

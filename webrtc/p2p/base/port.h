@@ -531,7 +531,14 @@ class Connection : public CandidatePairInterface,
   void set_nomination(uint32_t value) { nomination_ = value; }
 
   uint32_t remote_nomination() const { return remote_nomination_; }
-  bool nominated() const { return remote_nomination_ > 0; }
+  // One or several pairs may be nominated based on if Regular or Aggressive
+  // Nomination is used. https://tools.ietf.org/html/rfc5245#section-8
+  // |nominated| is defined both for the controlling or controlled agent based
+  // on if a nomination has been pinged or acknowledged. The controlled agent
+  // gets its |remote_nomination_| set when pinged by the controlling agent with
+  // a nomination value. The controlling agent gets its |acked_nomination_| set
+  // when receiving a response to a nominating ping.
+  bool nominated() const { return acked_nomination_ || remote_nomination_; }
   // Public for unit tests.
   void set_remote_nomination(uint32_t remote_nomination) {
     remote_nomination_ = remote_nomination;

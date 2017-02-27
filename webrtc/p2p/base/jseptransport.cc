@@ -60,7 +60,8 @@ ConnectionInfo::ConnectionInfo()
       recv_ping_responses(0),
       key(nullptr),
       state(IceCandidatePairState::WAITING),
-      priority(0) {}
+      priority(0),
+      nominated(false) {}
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc) {
   if (err_desc) {

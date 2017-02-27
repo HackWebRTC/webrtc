@@ -113,6 +113,8 @@ struct ConnectionInfo {
   IceCandidatePairState state;
   // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-priority
   uint64_t priority;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-nominated
+  bool nominated;
 };
 
 // Information about all the connections of a channel.

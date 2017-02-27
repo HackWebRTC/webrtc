@@ -1788,6 +1788,62 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_EQ(2U, retransmit_attr->value());
 }
 
+TEST_F(PortTest, TestNomination) {
+  std::unique_ptr<TestPort> lport(
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
+  std::unique_ptr<TestPort> rport(
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
+  lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  lport->SetIceTiebreaker(kTiebreaker1);
+  rport->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  rport->SetIceTiebreaker(kTiebreaker2);
+
+  lport->PrepareAddress();
+  rport->PrepareAddress();
+  ASSERT_FALSE(lport->Candidates().empty());
+  ASSERT_FALSE(rport->Candidates().empty());
+  Connection* lconn = lport->CreateConnection(rport->Candidates()[0],
+                                              Port::ORIGIN_MESSAGE);
+  Connection* rconn = rport->CreateConnection(lport->Candidates()[0],
+                                              Port::ORIGIN_MESSAGE);
+
+  // |lconn| is controlling, |rconn| is controlled.
+  uint32_t nomination = 1234;
+  lconn->set_nomination(nomination);
+
+  EXPECT_FALSE(lconn->nominated());
+  EXPECT_FALSE(rconn->nominated());
+  EXPECT_EQ(lconn->nominated(), lconn->stats().nominated);
+  EXPECT_EQ(rconn->nominated(), rconn->stats().nominated);
+
+  // Send ping (including the nomination value) from |lconn| to |rconn|. This
+  // should set the remote nomination of |rconn|.
+  lconn->Ping(0);
+  ASSERT_TRUE_WAIT(lport->last_stun_msg(), kDefaultTimeout);
+  ASSERT_TRUE(lport->last_stun_buf());
+  rconn->OnReadPacket(lport->last_stun_buf()->data<char>(),
+                      lport->last_stun_buf()->size(),
+                      rtc::PacketTime());
+  EXPECT_EQ(nomination, rconn->remote_nomination());
+  EXPECT_FALSE(lconn->nominated());
+  EXPECT_TRUE(rconn->nominated());
+  EXPECT_EQ(lconn->nominated(), lconn->stats().nominated);
+  EXPECT_EQ(rconn->nominated(), rconn->stats().nominated);
+
+  // This should result in an acknowledgment sent back from |rconn| to |lconn|,
+  // updating the acknowledged nomination of |lconn|.
+  ASSERT_TRUE_WAIT(rport->last_stun_msg(), kDefaultTimeout);
+  ASSERT_TRUE(rport->last_stun_buf());
+  lconn->OnReadPacket(rport->last_stun_buf()->data<char>(),
+                      rport->last_stun_buf()->size(),
+                      rtc::PacketTime());
+  EXPECT_EQ(nomination, lconn->acked_nomination());
+  EXPECT_TRUE(lconn->nominated());
+  EXPECT_TRUE(rconn->nominated());
+  EXPECT_EQ(lconn->nominated(), lconn->stats().nominated);
+  EXPECT_EQ(rconn->nominated(), rconn->stats().nominated);
+}
+
 TEST_F(PortTest, TestUseCandidateAttribute) {
   std::unique_ptr<TestPort> lport(
       CreateTestPort(kLocalAddr1, "lfrag", "lpass"));

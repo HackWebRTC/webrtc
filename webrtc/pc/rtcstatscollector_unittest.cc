@@ -1249,6 +1249,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   connection_info.sent_ping_responses = 1000;
   connection_info.state = cricket::IceCandidatePairState::IN_PROGRESS;
   connection_info.priority = 5555;
+  connection_info.nominated = false;
 
   cricket::TransportChannelStats transport_channel_stats;
   transport_channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
@@ -1289,6 +1290,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
       "RTCIceCandidate_" + remote_candidate->id();
   expected_pair.state = RTCStatsIceCandidatePairState::kInProgress;
   expected_pair.priority = 5555;
+  expected_pair.nominated = false;
   expected_pair.writable = true;
   expected_pair.bytes_sent = 42;
   expected_pair.bytes_received = 1234;
@@ -1301,6 +1303,22 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   // |expected_pair.available_[outgoing/incoming]_bitrate| should be undefined
   // because is is not the current pair.
 
+  ASSERT_TRUE(report->Get(expected_pair.id()));
+  EXPECT_EQ(
+      expected_pair,
+      report->Get(expected_pair.id())->cast_to<RTCIceCandidatePairStats>());
+  EXPECT_TRUE(report->Get(*expected_pair.transport_id));
+
+  // Set nominated and "GetStats" again.
+  session_stats.transport_stats["transport"]
+      .channel_stats[0]
+      .connection_infos[0]
+      .nominated = true;
+  EXPECT_CALL(*video_media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
+  collector_->ClearCachedStatsReport();
+  report = GetStatsReport();
+  expected_pair.nominated = true;
   ASSERT_TRUE(report->Get(expected_pair.id()));
   EXPECT_EQ(
       expected_pair,

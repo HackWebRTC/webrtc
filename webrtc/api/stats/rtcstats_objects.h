@@ -136,7 +136,6 @@ class RTCIceCandidatePairStats final : public RTCStats {
   // "RTCStatsMember<RTCStatsIceCandidatePairState>"?
   RTCStatsMember<std::string> state;
   RTCStatsMember<uint64_t> priority;
-  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<bool> nominated;
   // TODO(hbos): Collect this the way the spec describes it. We have a value for
   // it but it is not spec-compliant. https://bugs.webrtc.org/7062
