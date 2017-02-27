@@ -209,7 +209,7 @@ function cleanup() {
 # device to ensure that symbols are up-to-date.
 function perf_update() {
   copy_native_shared_library_to_symbol_cache
-  copy_kernal_symbols_from_device_to_symbol_cache
+  copy_kernel_symbols_from_device_to_symbol_cache
 }
 
 # Record stack frame based call graphs while using the application.
