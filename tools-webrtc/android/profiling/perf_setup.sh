@@ -127,15 +127,16 @@ function copy_simpleperf_to_device() {
     && perf_binary="/arm64/simpleperf" \
     || perf_binary="/arm/simpleperf"
   local simpleperf="${DEV_TMP_DIR}/simpleperf"
-  # Avoid copying to device if simpleperf already exists.
-  if [[ ! $(dev_ls "${simpleperf}") ]]; then
-    adb push "${SIMPLE_PERF_DIR}${perf_binary}" "${DEV_TMP_DIR}"
-    adb shell chmod a+x $simpleperf
-  fi
+  # Copy the simpleperf binary from local host to temp folder on device.
+  adb push "${SCRIPT_DIR}/simpleperf/bin/android${perf_binary}" \
+    "${DEV_TMP_DIR}" 1> /dev/null
+  adb shell chmod a+x $simpleperf
   # Enable profiling on the device.
   enable_profiling
   # Allows usage of running report commands on the device.
-  enable_report_symbols
+  if image_is_root; then
+    enable_report_symbols
+  fi
 }
 
 # Copy the recorded 'perf.data' file from the device to the current directory.
