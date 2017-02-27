@@ -143,9 +143,6 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
 }
 
 void RemoteBitrateEstimatorSingleStream::Process() {
-  if (TimeUntilNextProcess() > 0) {
-    return;
-  }
   {
     CriticalSectionScoped cs(crit_sect_.get());
     UpdateEstimate(clock_->TimeInMilliseconds());
@@ -157,11 +154,10 @@ int64_t RemoteBitrateEstimatorSingleStream::TimeUntilNextProcess() {
   if (last_process_time_ < 0) {
     return 0;
   }
-  {
-    CriticalSectionScoped cs_(crit_sect_.get());
-    return last_process_time_ + process_interval_ms_ -
-        clock_->TimeInMilliseconds();
-  }
+  CriticalSectionScoped cs_(crit_sect_.get());
+  RTC_DCHECK_GT(process_interval_ms_, 0);
+  return last_process_time_ + process_interval_ms_ -
+      clock_->TimeInMilliseconds();
 }
 
 void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
@@ -202,6 +198,7 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
   uint32_t target_bitrate = remote_rate->UpdateBandwidthEstimate(now_ms);
   if (remote_rate->ValidEstimate()) {
     process_interval_ms_ = remote_rate->GetFeedbackInterval();
+    RTC_DCHECK_GT(process_interval_ms_, 0);
     std::vector<uint32_t> ssrcs;
     GetSsrcs(&ssrcs);
     observer_->OnReceiveBitrateChanged(ssrcs, target_bitrate);
