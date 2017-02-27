@@ -80,6 +80,15 @@ TEST(TaskQueueTest, PostLambda) {
   EXPECT_TRUE(event.Wait(1000));
 }
 
+TEST(TaskQueueTest, PostDelayedZero) {
+  static const char kQueueName[] = "PostDelayedZero";
+  Event event(false, false);
+  TaskQueue queue(kQueueName);
+
+  queue.PostDelayedTask([&event]() { event.Set(); }, 0);
+  EXPECT_TRUE(event.Wait(1000));
+}
+
 TEST(TaskQueueTest, PostFromQueue) {
   static const char kQueueName[] = "PostFromQueue";
   Event event(false, false);
