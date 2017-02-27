@@ -404,9 +404,9 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
     const char* input_video = "foreman_cif";
     const int width = 352;
     const int height = 288;
-    generator_.reset(FrameGenerator::CreateFromYuvFile(
+    generator_ = FrameGenerator::CreateFromYuvFile(
         std::vector<std::string>(1, test::ResourcePath(input_video, "yuv")),
-        width, height, 1));
+        width, height, 1);
 
     codec_ = MakeVp8VideoCodec(width, height, 3);
     codec_.minBitrate = 10;

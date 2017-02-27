@@ -1343,9 +1343,9 @@ void VideoQualityTest::SetupScreenshareOrSVC() {
 
     if (params_.screenshare.scroll_duration == 0) {
       // Cycle image every slide_change_interval seconds.
-      frame_generator_.reset(test::FrameGenerator::CreateFromYuvFile(
+      frame_generator_ = test::FrameGenerator::CreateFromYuvFile(
           slides, kWidth, kHeight,
-          params_.screenshare.slide_change_interval * params_.video.fps));
+          params_.screenshare.slide_change_interval * params_.video.fps);
     } else {
       RTC_CHECK_LE(params_.video.width, kWidth);
       RTC_CHECK_LE(params_.video.height, kHeight);
@@ -1356,11 +1356,10 @@ void VideoQualityTest::SetupScreenshareOrSVC() {
       RTC_CHECK_LE(params_.screenshare.scroll_duration,
                    params_.screenshare.slide_change_interval);
 
-      frame_generator_.reset(
-          test::FrameGenerator::CreateScrollingInputFromYuvFiles(
-              clock_, slides, kWidth, kHeight, params_.video.width,
-              params_.video.height, params_.screenshare.scroll_duration * 1000,
-              kPauseDurationMs));
+      frame_generator_ = test::FrameGenerator::CreateScrollingInputFromYuvFiles(
+          clock_, slides, kWidth, kHeight, params_.video.width,
+          params_.video.height, params_.screenshare.scroll_duration * 1000,
+          kPauseDurationMs);
     }
   } else if (params_.ss.num_spatial_layers > 1) {  // For non-screenshare case.
     RTC_CHECK(params_.video.codec == "VP9");
@@ -1377,7 +1376,7 @@ void VideoQualityTest::SetupScreenshareOrSVC() {
 void VideoQualityTest::CreateCapturer() {
   if (params_.screenshare.enabled) {
     test::FrameGeneratorCapturer* frame_generator_capturer =
-        new test::FrameGeneratorCapturer(clock_, frame_generator_.release(),
+        new test::FrameGeneratorCapturer(clock_, std::move(frame_generator_),
                                          params_.video.fps);
     EXPECT_TRUE(frame_generator_capturer->Init());
     video_capturer_.reset(frame_generator_capturer);
@@ -1388,8 +1387,8 @@ void VideoQualityTest::CreateCapturer() {
       if (!video_capturer_) {
         // Failed to get actual camera, use chroma generator as backup.
         video_capturer_.reset(test::FrameGeneratorCapturer::Create(
-            params_.video.width, params_.video.height, params_.video.fps,
-            clock_));
+            static_cast<int>(params_.video.width),
+            static_cast<int>(params_.video.height), params_.video.fps, clock_));
       }
     } else {
       video_capturer_.reset(test::FrameGeneratorCapturer::CreateFromYuvFile(

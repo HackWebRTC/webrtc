@@ -41,8 +41,8 @@ class FrameGeneratorCapturer : public VideoCapturer {
     virtual ~SinkWantsObserver() {}
   };
 
-  static FrameGeneratorCapturer* Create(size_t width,
-                                        size_t height,
+  static FrameGeneratorCapturer* Create(int width,
+                                        int height,
                                         int target_fps,
                                         Clock* clock);
 
@@ -69,7 +69,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   int64_t first_frame_capture_time() const { return first_frame_capture_time_; }
 
   FrameGeneratorCapturer(Clock* clock,
-                         FrameGenerator* frame_generator,
+                         std::unique_ptr<FrameGenerator> frame_generator,
                          int target_fps);
   bool Init();
 

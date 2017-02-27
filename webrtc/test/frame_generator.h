@@ -10,6 +10,7 @@
 #ifndef WEBRTC_TEST_FRAME_GENERATOR_H_
 #define WEBRTC_TEST_FRAME_GENERATOR_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -47,8 +48,7 @@ class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
 
 class FrameGenerator {
  public:
-  FrameGenerator() {}
-  virtual ~FrameGenerator() {}
+  virtual ~FrameGenerator() = default;
 
   // Returns video frame that remains valid until next call.
   virtual VideoFrame* NextFrame() = 0;
@@ -58,17 +58,19 @@ class FrameGenerator {
     RTC_NOTREACHED();
   }
 
-  // Creates a test frame generator that creates fully saturated frames with
-  // varying U, V values over time.
-  static FrameGenerator* CreateChromaGenerator(size_t width, size_t height);
+  // Creates a frame generator that produces frames with small squares that
+  // move randomly towards the lower right corner.
+  static std::unique_ptr<FrameGenerator> CreateSquareGenerator(int width,
+                                                               int height);
 
   // Creates a frame generator that repeatedly plays a set of yuv files.
   // The frame_repeat_count determines how many times each frame is shown,
   // with 1 = show each frame once, etc.
-  static FrameGenerator* CreateFromYuvFile(std::vector<std::string> files,
-                                           size_t width,
-                                           size_t height,
-                                           int frame_repeat_count);
+  static std::unique_ptr<FrameGenerator> CreateFromYuvFile(
+      std::vector<std::string> files,
+      size_t width,
+      size_t height,
+      int frame_repeat_count);
 
   // Creates a frame generator which takes a set of yuv files (wrapping a
   // frame generator created by CreateFromYuvFile() above), but outputs frames
@@ -78,7 +80,7 @@ class FrameGenerator {
   // be scrolled top to bottom/left to right for scroll_tim_ms milliseconds.
   // After that the image will stay in place for pause_time_ms milliseconds,
   // and then this will be repeated with the next file from the input set.
-  static FrameGenerator* CreateScrollingInputFromYuvFiles(
+  static std::unique_ptr<FrameGenerator> CreateScrollingInputFromYuvFiles(
       Clock* clock,
       std::vector<std::string> filenames,
       size_t source_width,

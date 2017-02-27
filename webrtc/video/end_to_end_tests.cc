@@ -229,7 +229,7 @@ TEST_P(EndToEndTest, RendersSingleDelayedFrame) {
   // Create frames that are smaller than the send width/height, this is done to
   // check that the callbacks are done after processing video.
   std::unique_ptr<test::FrameGenerator> frame_generator(
-      test::FrameGenerator::CreateChromaGenerator(kWidth, kHeight));
+      test::FrameGenerator::CreateSquareGenerator(kWidth, kHeight));
   test::FrameForwarder frame_forwarder;
   video_send_stream_->SetSource(
       &frame_forwarder, VideoSendStream::DegradationPreference::kBalanced);
@@ -273,7 +273,7 @@ TEST_P(EndToEndTest, TransmitsFirstFrame) {
   Start();
 
   std::unique_ptr<test::FrameGenerator> frame_generator(
-      test::FrameGenerator::CreateChromaGenerator(kDefaultWidth,
+      test::FrameGenerator::CreateSquareGenerator(kDefaultWidth,
                                                   kDefaultHeight));
   test::FrameForwarder frame_forwarder;
   video_send_stream_->SetSource(
@@ -1669,11 +1669,7 @@ TEST_P(EndToEndTest, AssignsTransportSequenceNumbers) {
             drop_packet = true;
           }
 
-          size_t payload_length =
-              length - (header.headerLength + header.paddingLength);
-          if (payload_length == 0) {
-            padding_observed_ = true;
-          } else if (header.payloadType == kSendRtxPayloadType) {
+          if (header.payloadType == kSendRtxPayloadType) {
             uint16_t original_sequence_number =
                 ByteReader<uint16_t>::ReadBigEndian(&data[header.headerLength]);
             uint32_t original_ssrc =
@@ -1704,7 +1700,7 @@ TEST_P(EndToEndTest, AssignsTransportSequenceNumbers) {
     bool IsDone() {
       bool observed_types_ok =
           streams_observed_.size() == MultiStreamTest::kNumStreams &&
-          padding_observed_ && retransmit_observed_ && rtx_padding_observed_;
+          retransmit_observed_ && rtx_padding_observed_;
       if (!observed_types_ok)
         return false;
       // We should not have any gaps in the sequence number range.
@@ -1759,9 +1755,11 @@ TEST_P(EndToEndTest, AssignsTransportSequenceNumbers) {
       send_config->rtp.extensions.push_back(RtpExtension(
           RtpExtension::kTransportSequenceNumberUri, kExtensionId));
 
-      // Force some padding to be sent.
+      // Force some padding to be sent. Note that since we do send media
+      // packets we can not guarantee that a padding only packet is sent.
+      // Instead, padding will most likely be send as an RTX packet.
       const int kPaddingBitrateBps = 50000;
-      encoder_config->max_bitrate_bps = 1000000;
+      encoder_config->max_bitrate_bps = 200000;
       encoder_config->min_transmit_bitrate_bps =
           encoder_config->max_bitrate_bps + kPaddingBitrateBps;
 
@@ -1953,7 +1951,7 @@ TEST_P(EndToEndTest, ObserversEncodedFrames) {
   Start();
 
   std::unique_ptr<test::FrameGenerator> frame_generator(
-      test::FrameGenerator::CreateChromaGenerator(kDefaultWidth,
+      test::FrameGenerator::CreateSquareGenerator(kDefaultWidth,
                                                   kDefaultHeight));
   test::FrameForwarder forwarder;
   video_send_stream_->SetSource(
