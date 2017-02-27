@@ -577,11 +577,8 @@
 
 // Implementation detail: internal macro to create static category.
 #define INTERNAL_TRACE_EVENT_GET_CATEGORY_INFO(category) \
-    static const unsigned char* INTERNAL_TRACE_EVENT_UID(catstatic) = 0; \
-    if (!INTERNAL_TRACE_EVENT_UID(catstatic)) { \
-      INTERNAL_TRACE_EVENT_UID(catstatic) = \
-          TRACE_EVENT_API_GET_CATEGORY_ENABLED(category); \
-    }
+    static const unsigned char* INTERNAL_TRACE_EVENT_UID(catstatic) = \
+        TRACE_EVENT_API_GET_CATEGORY_ENABLED(category);
 
 // Implementation detail: internal macro to create static category and add
 // event if the category is enabled.
