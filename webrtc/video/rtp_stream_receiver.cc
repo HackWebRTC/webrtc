@@ -186,11 +186,11 @@ RtpStreamReceiver::RtpStreamReceiver(
 
   process_thread_->RegisterModule(rtp_rtcp_.get());
 
-  nack_module_.reset(
-      new NackModule(clock_, nack_sender, keyframe_request_sender));
-  if (config_.rtp.nack.rtp_history_ms == 0)
-    nack_module_->Stop();
-  process_thread_->RegisterModule(nack_module_.get());
+  if (config_.rtp.nack.rtp_history_ms != 0) {
+    nack_module_.reset(
+        new NackModule(clock_, nack_sender, keyframe_request_sender));
+    process_thread_->RegisterModule(nack_module_.get());
+  }
 
   packet_buffer_ = video_coding::PacketBuffer::Create(
       clock_, kPacketBufferStartSize, kPacketBufferMaxSixe, this);
@@ -198,9 +198,11 @@ RtpStreamReceiver::RtpStreamReceiver(
 }
 
 RtpStreamReceiver::~RtpStreamReceiver() {
-  process_thread_->DeRegisterModule(rtp_rtcp_.get());
+  if (nack_module_) {
+    process_thread_->DeRegisterModule(nack_module_.get());
+  }
 
-  process_thread_->DeRegisterModule(nack_module_.get());
+  process_thread_->DeRegisterModule(rtp_rtcp_.get());
 
   packet_router_->RemoveRtpModule(rtp_rtcp_.get());
   rtp_rtcp_->SetREMBStatus(false);
@@ -246,7 +248,8 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
   rtp_header_with_ntp.ntp_time_ms =
       ntp_estimator_.Estimate(rtp_header->header.timestamp);
   VCMPacket packet(payload_data, payload_size, rtp_header_with_ntp);
-  packet.timesNacked = nack_module_->OnReceivedPacket(packet);
+  packet.timesNacked =
+      nack_module_ ? nack_module_->OnReceivedPacket(packet) : -1;
 
   if (packet.codec == kVideoCodecH264) {
     // Only when we start to receive packets will we know what payload type
@@ -405,7 +408,8 @@ void RtpStreamReceiver::OnCompleteFrame(
 }
 
 void RtpStreamReceiver::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
-  nack_module_->UpdateRtt(max_rtt_ms);
+  if (nack_module_)
+    nack_module_->UpdateRtt(max_rtt_ms);
 }
 
 // TODO(nisse): Drop return value.
@@ -534,6 +538,9 @@ bool RtpStreamReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
 }
 
 void RtpStreamReceiver::FrameContinuous(uint16_t picture_id) {
+  if (!nack_module_)
+    return;
+
   int seq_num = -1;
   {
     rtc::CritScope lock(&last_seq_num_cs_);
