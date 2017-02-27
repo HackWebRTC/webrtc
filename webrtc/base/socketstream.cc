@@ -14,7 +14,7 @@
 
 namespace rtc {
 
-SocketStream::SocketStream(AsyncSocket* socket) : socket_(NULL) {
+SocketStream::SocketStream(AsyncSocket* socket) : socket_(nullptr) {
   Attach(socket);
 }
 
@@ -41,13 +41,13 @@ AsyncSocket* SocketStream::Detach() {
     socket_->SignalReadEvent.disconnect(this);
     socket_->SignalWriteEvent.disconnect(this);
     socket_->SignalCloseEvent.disconnect(this);
-    socket_ = NULL;
+    socket_ = nullptr;
   }
   return socket;
 }
 
 StreamState SocketStream::GetState() const {
-  RTC_DCHECK(socket_ != NULL);
+  RTC_DCHECK(socket_ != nullptr);
   switch (socket_->GetState()) {
     case Socket::CS_CONNECTED:
       return SS_OPEN;
@@ -61,7 +61,7 @@ StreamState SocketStream::GetState() const {
 
 StreamResult SocketStream::Read(void* buffer, size_t buffer_len,
                                 size_t* read, int* error) {
-  RTC_DCHECK(socket_ != NULL);
+  RTC_DCHECK(socket_ != nullptr);
   int result = socket_->Recv(buffer, buffer_len, nullptr);
   if (result < 0) {
     if (socket_->IsBlocking())
@@ -80,7 +80,7 @@ StreamResult SocketStream::Read(void* buffer, size_t buffer_len,
 
 StreamResult SocketStream::Write(const void* data, size_t data_len,
                                  size_t* written, int* error) {
-  RTC_DCHECK(socket_ != NULL);
+  RTC_DCHECK(socket_ != nullptr);
   int result = socket_->Send(data, data_len);
   if (result < 0) {
     if (socket_->IsBlocking())
@@ -95,7 +95,7 @@ StreamResult SocketStream::Write(const void* data, size_t data_len,
 }
 
 void SocketStream::Close() {
-  RTC_DCHECK(socket_ != NULL);
+  RTC_DCHECK(socket_ != nullptr);
   socket_->Close();
 }
 

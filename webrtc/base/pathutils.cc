@@ -43,7 +43,7 @@ const char DEFAULT_FOLDER_DELIM = '/';
 ///////////////////////////////////////////////////////////////////////////////
 
 bool Pathname::IsFolderDelimiter(char ch) {
-  return (NULL != ::strchr(FOLDER_DELIMS, ch));
+  return (nullptr != ::strchr(FOLDER_DELIMS, ch));
 }
 
 char Pathname::DefaultFolderDelimiter() {

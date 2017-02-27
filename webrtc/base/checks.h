@@ -163,13 +163,13 @@ std::string* MakeCheckOpString<std::string, std::string>(
   inline std::string* Check##name##Impl(const t1& v1, const t2& v2,          \
                                         const char* names) {                 \
     if (rtc::safe_cmp::name(v1, v2))                                         \
-      return NULL;                                                           \
+      return nullptr;                                                        \
     else                                                                     \
       return rtc::MakeCheckOpString(v1, v2, names);                          \
   }                                                                          \
   inline std::string* Check##name##Impl(int v1, int v2, const char* names) { \
     if (rtc::safe_cmp::name(v1, v2))                                         \
-      return NULL;                                                           \
+      return nullptr;                                                        \
     else                                                                     \
       return rtc::MakeCheckOpString(v1, v2, names);                          \
   }

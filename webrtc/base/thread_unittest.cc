@@ -243,7 +243,7 @@ TEST(ThreadTest, Names) {
   delete thread;
   thread = new Thread();
   // Name with no object parameter
-  EXPECT_TRUE(thread->SetName("No object", NULL));
+  EXPECT_TRUE(thread->SetName("No object", nullptr));
   EXPECT_TRUE(thread->Start());
   thread->Stop();
   delete thread;
@@ -292,7 +292,7 @@ TEST(ThreadTest, Invoke) {
 TEST(ThreadTest, TwoThreadsInvokeNoDeadlock) {
   AutoThread thread;
   Thread* current_thread = Thread::Current();
-  ASSERT_TRUE(current_thread != NULL);
+  ASSERT_TRUE(current_thread != nullptr);
 
   Thread other_thread;
   other_thread.Start();
@@ -443,7 +443,7 @@ class AsyncInvokeTest : public testing::Test {
   AsyncInvokeTest()
       : int_value_(0),
         invoke_started_(true, false),
-        expected_thread_(NULL) {}
+        expected_thread_(nullptr) {}
 
   int int_value_;
   Event invoke_started_;
@@ -788,7 +788,7 @@ class ComThreadTest : public testing::Test, public MessageHandler {
   ComThreadTest() : done_(false) {}
  protected:
   virtual void OnMessage(Message* message) {
-    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     // S_FALSE means the thread was already inited for a multithread apartment.
     EXPECT_EQ(S_FALSE, hr);
     if (SUCCEEDED(hr)) {

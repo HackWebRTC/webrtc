@@ -51,8 +51,8 @@ public:
   // the request document is a MemoryStream.  By handling this signal, the
   // document can be overridden, in which case the third signal argument should
   // be set to true.  In the case where the request body should be ignored,
-  // the document can be set to NULL.  Note that the transaction object is still
-  // owened by the HttpServer at this point.  
+  // the document can be set to null.  Note that the transaction object is still
+  // owened by the HttpServer at this point.
   sigslot::signal3<HttpServer*, HttpServerTransaction*, bool*>
     SignalHttpRequestHeader;
 

@@ -339,14 +339,14 @@ size_t Base64Escape(const unsigned char *src, size_t szsrc, char *dest,
 size_t Base64Unescape(const char *src, size_t szsrc, char *dest,
                       size_t szdest) {
   std::string unescaped;
-  EXPECT_TRUE(Base64::DecodeFromArray(src, szsrc, Base64::DO_LAX, &unescaped,
-                                      NULL));
+  EXPECT_TRUE(
+      Base64::DecodeFromArray(src, szsrc, Base64::DO_LAX, &unescaped, nullptr));
   memcpy(dest, unescaped.data(), min(unescaped.size(), szdest));
   return unescaped.size();
 }
 
 size_t Base64Unescape(const char *src, size_t szsrc, std::string *s) {
-  EXPECT_TRUE(Base64::DecodeFromArray(src, szsrc, Base64::DO_LAX, s, NULL));
+  EXPECT_TRUE(Base64::DecodeFromArray(src, szsrc, Base64::DO_LAX, s, nullptr));
   return s->size();
 }
 
@@ -995,5 +995,5 @@ TEST(Base64, GetNextBase64Char) {
   EXPECT_TRUE(Base64::GetNextBase64Char('/', &next_char));
   EXPECT_EQ('A', next_char);
   EXPECT_FALSE(Base64::GetNextBase64Char('&', &next_char));
-  EXPECT_FALSE(Base64::GetNextBase64Char('Z', NULL));
+  EXPECT_FALSE(Base64::GetNextBase64Char('Z', nullptr));
 }

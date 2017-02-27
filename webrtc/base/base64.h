@@ -83,7 +83,7 @@ class Base64 {
   }
   static inline std::string Decode(const std::string& data, DecodeFlags flags) {
     std::string result;
-    DecodeFromArray(data.data(), data.size(), flags, &result, NULL);
+    DecodeFromArray(data.data(), data.size(), flags, &result, nullptr);
     return result;
   }
   static inline bool Decode(const std::string& data,

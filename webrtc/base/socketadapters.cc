@@ -281,7 +281,7 @@ int AsyncHttpsProxySocket::Close() {
   state_ = PS_ERROR;
   dest_.Clear();
   delete context_;
-  context_ = NULL;
+  context_ = nullptr;
   return BufferedReadAdapter::Close();
 }
 

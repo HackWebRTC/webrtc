@@ -483,9 +483,9 @@ class PosixSignalDeliveryTest : public testing::Test {
   }
 
   void TearDown() {
-    ss_.reset(NULL);
+    ss_.reset(nullptr);
     signals_received_.clear();
-    signaled_thread_ = NULL;
+    signaled_thread_ = nullptr;
   }
 
   bool ExpectSignal(int signum) {
@@ -518,7 +518,7 @@ class PosixSignalDeliveryTest : public testing::Test {
 };
 
 std::vector<int> PosixSignalDeliveryTest::signals_received_;
-Thread *PosixSignalDeliveryTest::signaled_thread_ = NULL;
+Thread* PosixSignalDeliveryTest::signaled_thread_ = nullptr;
 
 // Test receiving a synchronous signal while not in Wait() and then entering
 // Wait() afterwards.
@@ -563,7 +563,7 @@ class RaiseSigTermRunnable : public Runnable {
     // be delivered to us.
     sigset_t mask;
     sigemptyset(&mask);
-    pthread_sigmask(SIG_SETMASK, &mask, NULL);
+    pthread_sigmask(SIG_SETMASK, &mask, nullptr);
 
     // Raise it.
     raise(SIGTERM);
@@ -578,7 +578,7 @@ TEST_F(PosixSignalDeliveryTest, SignalOnDifferentThread) {
   sigset_t mask;
   sigemptyset(&mask);
   sigaddset(&mask, SIGTERM);
-  EXPECT_EQ(0, pthread_sigmask(SIG_SETMASK, &mask, NULL));
+  EXPECT_EQ(0, pthread_sigmask(SIG_SETMASK, &mask, nullptr));
   // Start a new thread that raises it. It will have to be delivered to that
   // thread. Our implementation should safely handle it and dispatch
   // RecordSignal() on this thread.

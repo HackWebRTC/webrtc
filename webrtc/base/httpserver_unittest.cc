@@ -27,7 +27,7 @@ namespace {
     bool server_closed, connection_closed;
 
     HttpServerMonitor(HttpServer* server)
-    : transaction(NULL), server_closed(false), connection_closed(false) {
+        : transaction(nullptr), server_closed(false), connection_closed(false) {
       server->SignalCloseAllComplete.connect(this,
         &HttpServerMonitor::OnClosed);
       server->SignalHttpRequest.connect(this, &HttpServerMonitor::OnRequest);
@@ -44,7 +44,7 @@ namespace {
     }
     void OnRequestComplete(HttpServer*, HttpServerTransaction* t, int) {
       ASSERT_EQ(transaction, t);
-      transaction = NULL;
+      transaction = nullptr;
     }
     void OnClosed(HttpServer*) {
       server_closed = true;
@@ -78,7 +78,7 @@ TEST(HttpServer, DoesNotSignalCloseUnlessCloseAllIsCalled) {
   // Add an active client connection
   CreateClientConnection(server, monitor, true);
   // Simulate a response
-  ASSERT_TRUE(NULL != monitor.transaction);
+  ASSERT_TRUE(nullptr != monitor.transaction);
   server.Respond(monitor.transaction);
   EXPECT_FALSE(monitor.transaction);
   // Connection has closed, but no server close signal
@@ -107,7 +107,7 @@ TEST(HttpServer, SignalsCloseAfterGracefulCloseAll) {
   server.CloseAll(false);
   EXPECT_FALSE(monitor.server_closed);
   // Simulate a response
-  ASSERT_TRUE(NULL != monitor.transaction);
+  ASSERT_TRUE(nullptr != monitor.transaction);
   server.Respond(monitor.transaction);
   EXPECT_FALSE(monitor.transaction);
   // Connections have all closed

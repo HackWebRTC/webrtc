@@ -202,8 +202,8 @@ bool BitBuffer::ReadSignedExponentialGolomb(int32_t* val) {
 
 void BitBuffer::GetCurrentOffset(
     size_t* out_byte_offset, size_t* out_bit_offset) {
-  RTC_CHECK(out_byte_offset != NULL);
-  RTC_CHECK(out_bit_offset != NULL);
+  RTC_CHECK(out_byte_offset != nullptr);
+  RTC_CHECK(out_bit_offset != nullptr);
   *out_byte_offset = byte_offset_;
   *out_bit_offset = bit_offset_;
 }

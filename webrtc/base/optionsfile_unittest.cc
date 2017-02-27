@@ -47,7 +47,7 @@ class MAYBE_OptionsFileTest : public testing::Test {
  public:
   MAYBE_OptionsFileTest() {
     Pathname dir;
-    RTC_CHECK(Filesystem::GetTemporaryFolder(dir, true, NULL));
+    RTC_CHECK(Filesystem::GetTemporaryFolder(dir, true, nullptr));
     test_file_ = Filesystem::TempFilename(dir, ".testfile");
     OpenStore();
   }

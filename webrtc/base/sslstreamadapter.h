@@ -211,7 +211,7 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   //                        part of the RFC defining each exporter
   //                        usage (IN)
   // context/context_len -- a context to bind to for this connection;
-  //                        optional, can be NULL, 0 (IN)
+  //                        optional, can be null, 0 (IN)
   // use_context         -- whether to use the context value
   //                        (needed to distinguish no context from
   //                        zero-length ones).

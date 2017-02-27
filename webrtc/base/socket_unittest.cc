@@ -224,7 +224,7 @@ void SocketTest::ConnectInternal(const IPAddress& loopback) {
 
   // Ensure no pending server connections, since we haven't done anything yet.
   EXPECT_FALSE(sink.Check(server.get(), testing::SSE_READ));
-  EXPECT_TRUE(NULL == server->Accept(&accept_addr));
+  EXPECT_TRUE(nullptr == server->Accept(&accept_addr));
   EXPECT_TRUE(accept_addr.IsNil());
 
   // Attempt connect to listening socket.
@@ -335,7 +335,7 @@ void SocketTest::ConnectFailInternal(const IPAddress& loopback) {
 
   // Should be no pending server connections.
   EXPECT_FALSE(sink.Check(server.get(), testing::SSE_READ));
-  EXPECT_TRUE(NULL == server->Accept(&accept_addr));
+  EXPECT_TRUE(nullptr == server->Accept(&accept_addr));
   EXPECT_EQ(IPAddress(), accept_addr.ipaddr());
 }
 
@@ -376,7 +376,7 @@ void SocketTest::ConnectWithDnsLookupFailInternal(const IPAddress& loopback) {
   EXPECT_TRUE(client->GetRemoteAddress().IsNil());
   // Should be no pending server connections.
   EXPECT_FALSE(sink.Check(server.get(), testing::SSE_READ));
-  EXPECT_TRUE(NULL == server->Accept(&accept_addr));
+  EXPECT_TRUE(nullptr == server->Accept(&accept_addr));
   EXPECT_TRUE(accept_addr.IsNil());
 }
 

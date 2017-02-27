@@ -20,17 +20,16 @@ namespace rtc {
 
 TaskParent::TaskParent(Task* derived_instance, TaskParent *parent)
     : parent_(parent) {
-  RTC_DCHECK(derived_instance != NULL);
-  RTC_DCHECK(parent != NULL);
+  RTC_DCHECK(derived_instance != nullptr);
+  RTC_DCHECK(parent != nullptr);
   runner_ = parent->GetRunner();
   parent_->AddChild(derived_instance);
   Initialize();
 }
 
-TaskParent::TaskParent(TaskRunner *derived_instance)
-    : parent_(NULL),
-      runner_(derived_instance) {
-  RTC_DCHECK(derived_instance != NULL);
+TaskParent::TaskParent(TaskRunner* derived_instance)
+    : parent_(nullptr), runner_(derived_instance) {
+  RTC_DCHECK(derived_instance != nullptr);
   Initialize();
 }
 
@@ -48,7 +47,7 @@ void TaskParent::AddChild(Task *child) {
 
 #if RTC_DCHECK_IS_ON
 bool TaskParent::IsChildTask(Task *task) {
-  RTC_DCHECK(task != NULL);
+  RTC_DCHECK(task != nullptr);
   return task->parent_ == this && children_->find(task) != children_->end();
 }
 #endif

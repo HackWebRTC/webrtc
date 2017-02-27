@@ -78,7 +78,7 @@ class AsyncPacketSocket : public sigslot::has_slots<> {
   AsyncPacketSocket();
   ~AsyncPacketSocket() override;
 
-  // Returns current local address. Address may be set to NULL if the
+  // Returns current local address. Address may be set to null if the
   // socket is not bound yet (GetState() returns STATE_BINDING).
   virtual SocketAddress GetLocalAddress() const = 0;
 

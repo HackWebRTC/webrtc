@@ -23,7 +23,7 @@ namespace rtc {
 SSLFingerprint* SSLFingerprint::Create(
     const std::string& algorithm, const rtc::SSLIdentity* identity) {
   if (!identity) {
-    return NULL;
+    return nullptr;
   }
 
   return Create(algorithm, &(identity->certificate()));
@@ -36,7 +36,7 @@ SSLFingerprint* SSLFingerprint::Create(
   bool ret = cert->ComputeDigest(
       algorithm, digest_val, sizeof(digest_val), &digest_len);
   if (!ret) {
-    return NULL;
+    return nullptr;
   }
 
   return new SSLFingerprint(algorithm, digest_val, digest_len);
@@ -45,10 +45,10 @@ SSLFingerprint* SSLFingerprint::Create(
 SSLFingerprint* SSLFingerprint::CreateFromRfc4572(
     const std::string& algorithm, const std::string& fingerprint) {
   if (algorithm.empty() || !rtc::IsFips180DigestAlgorithm(algorithm))
-    return NULL;
+    return nullptr;
 
   if (fingerprint.empty())
-    return NULL;
+    return nullptr;
 
   size_t value_len;
   char value[rtc::MessageDigest::kMaxSize];
@@ -57,7 +57,7 @@ SSLFingerprint* SSLFingerprint::CreateFromRfc4572(
                                                    fingerprint.length(),
                                                    ':');
   if (!value_len)
-    return NULL;
+    return nullptr;
 
   return new SSLFingerprint(algorithm, reinterpret_cast<uint8_t*>(value),
                             value_len);

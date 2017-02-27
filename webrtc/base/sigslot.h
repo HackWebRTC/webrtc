@@ -216,13 +216,9 @@ namespace sigslot {
 	class multi_threaded_local
 	{
 	public:
-		multi_threaded_local()
-		{
-			pthread_mutex_init(&m_mutex, NULL);
-		}
-		multi_threaded_local(const multi_threaded_local&)
-		{
-			pthread_mutex_init(&m_mutex, NULL);
+		multi_threaded_local() { pthread_mutex_init(&m_mutex, nullptr); }
+		multi_threaded_local(const multi_threaded_local&) {
+			pthread_mutex_init(&m_mutex, nullptr);
 		}
 		~multi_threaded_local()
 		{

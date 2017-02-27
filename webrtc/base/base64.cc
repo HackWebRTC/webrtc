@@ -74,7 +74,7 @@ bool Base64::IsBase64Char(char ch) {
 }
 
 bool Base64::GetNextBase64Char(char ch, char* next_ch) {
-  if (next_ch == NULL) {
+  if (next_ch == nullptr) {
     return false;
   }
   const char* p = strchr(Base64Table, ch);
@@ -96,7 +96,7 @@ bool Base64::IsBase64Encoded(const std::string& str) {
 void Base64::EncodeFromArray(const void* data,
                              size_t len,
                              std::string* result) {
-  RTC_DCHECK(NULL != result);
+  RTC_DCHECK(nullptr != result);
   result->clear();
   result->resize(((len + 2) / 3) * 4);
   const unsigned char* byte_data = static_cast<const unsigned char*>(data);
@@ -224,7 +224,7 @@ bool Base64::DecodeFromArrayTemplate(const char* data,
                                      DecodeFlags flags,
                                      T* result,
                                      size_t* data_used) {
-  RTC_DCHECK(NULL != result);
+  RTC_DCHECK(nullptr != result);
   RTC_DCHECK(flags <= (DO_PARSE_MASK | DO_PAD_MASK | DO_TERM_MASK));
 
   const DecodeFlags parse_flags = flags & DO_PARSE_MASK;

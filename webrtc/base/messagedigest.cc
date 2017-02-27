@@ -34,7 +34,7 @@ MessageDigest* MessageDigestFactory::Create(const std::string& alg) {
   MessageDigest* digest = new OpenSSLDigest(alg);
   if (digest->Size() == 0) {  // invalid algorithm
     delete digest;
-    digest = NULL;
+    digest = nullptr;
   }
   return digest;
 }

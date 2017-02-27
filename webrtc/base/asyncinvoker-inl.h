@@ -68,7 +68,7 @@ class NotifyingAsyncClosureBase : public AsyncClosure,
     CritScope cs(&crit_);
     callback_ = callback;
   }
-  bool CallbackCanceled() const { return calling_thread_ == NULL; }
+  bool CallbackCanceled() const { return calling_thread_ == nullptr; }
 
  private:
   Location callback_posted_from_;

@@ -61,7 +61,7 @@ class ReadTask : public SharedExclusiveTask {
  private:
   virtual void OnMessage(Message* message) {
     RTC_CHECK(rtc::Thread::Current() == worker_thread_.get());
-    RTC_CHECK(message != NULL);
+    RTC_CHECK(message != nullptr);
     RTC_CHECK(message->message_id == kMsgRead);
 
     TypedMessageData<int*>* message_data =
@@ -73,7 +73,7 @@ class ReadTask : public SharedExclusiveTask {
       done_->Set();
     }
     delete message->pdata;
-    message->pdata = NULL;
+    message->pdata = nullptr;
   }
 };
 
@@ -91,7 +91,7 @@ class WriteTask : public SharedExclusiveTask {
  private:
   virtual void OnMessage(Message* message) {
     RTC_CHECK(rtc::Thread::Current() == worker_thread_.get());
-    RTC_CHECK(message != NULL);
+    RTC_CHECK(message != nullptr);
     RTC_CHECK(message->message_id == kMsgWrite);
 
     TypedMessageData<int>* message_data =
@@ -103,7 +103,7 @@ class WriteTask : public SharedExclusiveTask {
       done_->Set();
     }
     delete message->pdata;
-    message->pdata = NULL;
+    message->pdata = nullptr;
   }
 };
 

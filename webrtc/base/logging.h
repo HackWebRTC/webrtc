@@ -139,9 +139,12 @@ class LogSink {
 
 class LogMessage {
  public:
-  LogMessage(const char* file, int line, LoggingSeverity sev,
-             LogErrorContext err_ctx = ERRCTX_NONE, int err = 0,
-             const char* module = NULL);
+  LogMessage(const char* file,
+             int line,
+             LoggingSeverity sev,
+             LogErrorContext err_ctx = ERRCTX_NONE,
+             int err = 0,
+             const char* module = nullptr);
 
   LogMessage(const char* file,
              int line,
@@ -185,7 +188,7 @@ class LogMessage {
   //   GetLogToStream gets the severity for the specified stream, of if none
   //   is specified, the minimum stream severity.
   //   RemoveLogToStream removes the specified stream, without destroying it.
-  static int GetLogToStream(LogSink* stream = NULL);
+  static int GetLogToStream(LogSink* stream = nullptr);
   static void AddLogToStream(LogSink* stream, LoggingSeverity min_sev);
   static void RemoveLogToStream(LogSink* stream);
 
@@ -254,7 +257,7 @@ class LogMultilineState {
 };
 
 // When possible, pass optional state variable to track various data across
-// multiple calls to LogMultiline.  Otherwise, pass NULL.
+// multiple calls to LogMultiline.  Otherwise, pass null.
 void LogMultiline(LoggingSeverity level, const char* label, bool input,
                   const void* data, size_t len, bool hex_mode,
                   LogMultilineState* state);
@@ -351,9 +354,9 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
   (errno)
 #endif  // WEBRTC_WIN
 
-#define LOG_TAG(sev, tag) \
+#define LOG_TAG(sev, tag)        \
   LOG_SEVERITY_PRECONDITION(sev) \
-    rtc::LogMessage(NULL, 0, sev, tag).stream()
+  rtc::LogMessage(nullptr, 0, sev, tag).stream()
 
 #define PLOG(sev, err) \
   LOG_ERR_EX(sev, err)

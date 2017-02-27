@@ -85,7 +85,7 @@ class FilesystemInterface {
   virtual DirectoryIterator* IterateDirectory();
 
   // Opens a file. Returns an open StreamInterface if function succeeds.
-  // Otherwise, returns NULL.
+  // Otherwise, returns null.
   // TODO: Add an error param to indicate failure reason, similar to
   // FileStream::Open
   virtual FileStream *OpenFile(const Pathname &filename,

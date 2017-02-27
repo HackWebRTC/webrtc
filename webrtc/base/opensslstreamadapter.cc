@@ -86,70 +86,62 @@ struct SslCipherMapEntry {
 // (as available in OpenSSL if compiled with tracing enabled) or a similar
 // method.
 static const SslCipherMapEntry kSslCipherMap[] = {
-  // TLS v1.0 ciphersuites from RFC2246.
-  DEFINE_CIPHER_ENTRY_SSL3(RSA_RC4_128_SHA),
-  {SSL3_CK_RSA_DES_192_CBC3_SHA,
-      "TLS_RSA_WITH_3DES_EDE_CBC_SHA"},
+    // TLS v1.0 ciphersuites from RFC2246.
+    DEFINE_CIPHER_ENTRY_SSL3(RSA_RC4_128_SHA),
+    {SSL3_CK_RSA_DES_192_CBC3_SHA, "TLS_RSA_WITH_3DES_EDE_CBC_SHA"},
 
-  // AES ciphersuites from RFC3268.
-  {TLS1_CK_RSA_WITH_AES_128_SHA,
-      "TLS_RSA_WITH_AES_128_CBC_SHA"},
-  {TLS1_CK_DHE_RSA_WITH_AES_128_SHA,
-      "TLS_DHE_RSA_WITH_AES_128_CBC_SHA"},
-  {TLS1_CK_RSA_WITH_AES_256_SHA,
-      "TLS_RSA_WITH_AES_256_CBC_SHA"},
-  {TLS1_CK_DHE_RSA_WITH_AES_256_SHA,
-      "TLS_DHE_RSA_WITH_AES_256_CBC_SHA"},
+    // AES ciphersuites from RFC3268.
+    {TLS1_CK_RSA_WITH_AES_128_SHA, "TLS_RSA_WITH_AES_128_CBC_SHA"},
+    {TLS1_CK_DHE_RSA_WITH_AES_128_SHA, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA"},
+    {TLS1_CK_RSA_WITH_AES_256_SHA, "TLS_RSA_WITH_AES_256_CBC_SHA"},
+    {TLS1_CK_DHE_RSA_WITH_AES_256_SHA, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA"},
 
-  // ECC ciphersuites from RFC4492.
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_RC4_128_SHA),
-  {TLS1_CK_ECDHE_ECDSA_WITH_DES_192_CBC3_SHA,
-      "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA"},
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_AES_128_CBC_SHA),
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_AES_256_CBC_SHA),
+    // ECC ciphersuites from RFC4492.
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_RC4_128_SHA),
+    {TLS1_CK_ECDHE_ECDSA_WITH_DES_192_CBC3_SHA,
+     "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA"},
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_AES_128_CBC_SHA),
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_AES_256_CBC_SHA),
 
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_RC4_128_SHA),
-  {TLS1_CK_ECDHE_RSA_WITH_DES_192_CBC3_SHA,
-      "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA"},
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_128_CBC_SHA),
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_256_CBC_SHA),
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_RC4_128_SHA),
+    {TLS1_CK_ECDHE_RSA_WITH_DES_192_CBC3_SHA,
+     "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA"},
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_128_CBC_SHA),
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_256_CBC_SHA),
 
-  // TLS v1.2 ciphersuites.
-  {TLS1_CK_RSA_WITH_AES_128_SHA256,
-      "TLS_RSA_WITH_AES_128_CBC_SHA256"},
-  {TLS1_CK_RSA_WITH_AES_256_SHA256,
-      "TLS_RSA_WITH_AES_256_CBC_SHA256"},
-  {TLS1_CK_DHE_RSA_WITH_AES_128_SHA256,
-      "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256"},
-  {TLS1_CK_DHE_RSA_WITH_AES_256_SHA256,
-      "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256"},
+    // TLS v1.2 ciphersuites.
+    {TLS1_CK_RSA_WITH_AES_128_SHA256, "TLS_RSA_WITH_AES_128_CBC_SHA256"},
+    {TLS1_CK_RSA_WITH_AES_256_SHA256, "TLS_RSA_WITH_AES_256_CBC_SHA256"},
+    {TLS1_CK_DHE_RSA_WITH_AES_128_SHA256,
+     "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256"},
+    {TLS1_CK_DHE_RSA_WITH_AES_256_SHA256,
+     "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256"},
 
-  // TLS v1.2 GCM ciphersuites from RFC5288.
-  DEFINE_CIPHER_ENTRY_TLS1(RSA_WITH_AES_128_GCM_SHA256),
-  DEFINE_CIPHER_ENTRY_TLS1(RSA_WITH_AES_256_GCM_SHA384),
-  DEFINE_CIPHER_ENTRY_TLS1(DHE_RSA_WITH_AES_128_GCM_SHA256),
-  DEFINE_CIPHER_ENTRY_TLS1(DHE_RSA_WITH_AES_256_GCM_SHA384),
-  DEFINE_CIPHER_ENTRY_TLS1(DH_RSA_WITH_AES_128_GCM_SHA256),
-  DEFINE_CIPHER_ENTRY_TLS1(DH_RSA_WITH_AES_256_GCM_SHA384),
+    // TLS v1.2 GCM ciphersuites from RFC5288.
+    DEFINE_CIPHER_ENTRY_TLS1(RSA_WITH_AES_128_GCM_SHA256),
+    DEFINE_CIPHER_ENTRY_TLS1(RSA_WITH_AES_256_GCM_SHA384),
+    DEFINE_CIPHER_ENTRY_TLS1(DHE_RSA_WITH_AES_128_GCM_SHA256),
+    DEFINE_CIPHER_ENTRY_TLS1(DHE_RSA_WITH_AES_256_GCM_SHA384),
+    DEFINE_CIPHER_ENTRY_TLS1(DH_RSA_WITH_AES_128_GCM_SHA256),
+    DEFINE_CIPHER_ENTRY_TLS1(DH_RSA_WITH_AES_256_GCM_SHA384),
 
-  // ECDH HMAC based ciphersuites from RFC5289.
-  {TLS1_CK_ECDHE_ECDSA_WITH_AES_128_SHA256,
-      "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"},
-  {TLS1_CK_ECDHE_ECDSA_WITH_AES_256_SHA384,
-      "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384"},
-  {TLS1_CK_ECDHE_RSA_WITH_AES_128_SHA256,
-      "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"},
-  {TLS1_CK_ECDHE_RSA_WITH_AES_256_SHA384,
-      "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384"},
+    // ECDH HMAC based ciphersuites from RFC5289.
+    {TLS1_CK_ECDHE_ECDSA_WITH_AES_128_SHA256,
+     "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"},
+    {TLS1_CK_ECDHE_ECDSA_WITH_AES_256_SHA384,
+     "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384"},
+    {TLS1_CK_ECDHE_RSA_WITH_AES_128_SHA256,
+     "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"},
+    {TLS1_CK_ECDHE_RSA_WITH_AES_256_SHA384,
+     "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384"},
 
-  // ECDH GCM based ciphersuites from RFC5289.
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_AES_128_GCM_SHA256),
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_AES_256_GCM_SHA384),
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_128_GCM_SHA256),
-  DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_256_GCM_SHA384),
+    // ECDH GCM based ciphersuites from RFC5289.
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_AES_128_GCM_SHA256),
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_ECDSA_WITH_AES_256_GCM_SHA384),
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_128_GCM_SHA256),
+    DEFINE_CIPHER_ENTRY_TLS1(ECDHE_RSA_WITH_AES_256_GCM_SHA384),
 
-  {0, NULL}
-};
+    {0, nullptr}};
 #endif  // #ifndef OPENSSL_IS_BORINGSSL
 
 #if defined(_MSC_VER)
@@ -175,24 +167,16 @@ static int stream_free(BIO* data);
 
 // TODO(davidben): This should be const once BoringSSL is assumed.
 static BIO_METHOD methods_stream = {
-  BIO_TYPE_BIO,
-  "stream",
-  stream_write,
-  stream_read,
-  stream_puts,
-  0,
-  stream_ctrl,
-  stream_new,
-  stream_free,
-  NULL,
+    BIO_TYPE_BIO, "stream",   stream_write, stream_read, stream_puts, 0,
+    stream_ctrl,  stream_new, stream_free,  nullptr,
 };
 
 static BIO_METHOD* BIO_s_stream() { return(&methods_stream); }
 
 static BIO* BIO_new_stream(StreamInterface* stream) {
   BIO* ret = BIO_new(BIO_s_stream());
-  if (ret == NULL)
-    return NULL;
+  if (ret == nullptr)
+    return nullptr;
   ret->ptr = stream;
   return ret;
 }
@@ -208,7 +192,7 @@ static int stream_new(BIO* b) {
 }
 
 static int stream_free(BIO* b) {
-  if (b == NULL)
+  if (b == nullptr)
     return 0;
   return 1;
 }
@@ -283,8 +267,8 @@ OpenSSLStreamAdapter::OpenSSLStreamAdapter(StreamInterface* stream)
       role_(SSL_CLIENT),
       ssl_read_needs_write_(false),
       ssl_write_needs_read_(false),
-      ssl_(NULL),
-      ssl_ctx_(NULL),
+      ssl_(nullptr),
+      ssl_ctx_(nullptr),
       ssl_mode_(SSL_MODE_TLS),
       ssl_max_version_(SSL_PROTOCOL_TLS_12) {}
 
@@ -387,7 +371,7 @@ bool OpenSSLStreamAdapter::GetSslCipherSuite(int* cipher_suite) {
     return false;
 
   const SSL_CIPHER* current_cipher = SSL_get_current_cipher(ssl_);
-  if (current_cipher == NULL) {
+  if (current_cipher == nullptr) {
     return false;
   }
 
@@ -516,13 +500,13 @@ void OpenSSLStreamAdapter::SetMode(SSLMode mode) {
 }
 
 void OpenSSLStreamAdapter::SetMaxProtocolVersion(SSLProtocolVersion version) {
-  RTC_DCHECK(ssl_ctx_ == NULL);
+  RTC_DCHECK(ssl_ctx_ == nullptr);
   ssl_max_version_ = version;
 }
 
 void OpenSSLStreamAdapter::SetInitialRetransmissionTimeout(
     int timeout_ms) {
-  RTC_DCHECK(ssl_ctx_ == NULL);
+  RTC_DCHECK(ssl_ctx_ == nullptr);
   dtls_handshake_timeout_ms_ = timeout_ms;
 }
 
@@ -780,10 +764,10 @@ int OpenSSLStreamAdapter::BeginSSL() {
   // The underlying stream has opened.
   LOG(LS_INFO) << "BeginSSL with peer.";
 
-  BIO* bio = NULL;
+  BIO* bio = nullptr;
 
   // First set up the context.
-  RTC_DCHECK(ssl_ctx_ == NULL);
+  RTC_DCHECK(ssl_ctx_ == nullptr);
   ssl_ctx_ = SetupSSLContext();
   if (!ssl_ctx_)
     return -1;
@@ -820,7 +804,7 @@ int OpenSSLStreamAdapter::BeginSSL() {
   // commonly supported. BoringSSL doesn't need explicit configuration and has
   // a reasonable default set.
   EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-  if (ecdh == NULL)
+  if (ecdh == nullptr)
     return -1;
   SSL_set_options(ssl_, SSL_OP_SINGLE_ECDH_USE);
   SSL_set_tmp_ecdh(ssl_, ecdh);
@@ -935,11 +919,11 @@ void OpenSSLStreamAdapter::Cleanup(uint8_t alert) {
     }
 #endif
     SSL_free(ssl_);
-    ssl_ = NULL;
+    ssl_ = nullptr;
   }
   if (ssl_ctx_) {
     SSL_CTX_free(ssl_ctx_);
-    ssl_ctx_ = NULL;
+    ssl_ctx_ = nullptr;
   }
   identity_.reset();
   peer_certificate_.reset();
@@ -961,7 +945,7 @@ void OpenSSLStreamAdapter::OnMessage(Message* msg) {
 }
 
 SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
-  SSL_CTX *ctx = NULL;
+  SSL_CTX* ctx = nullptr;
 
 #ifdef OPENSSL_IS_BORINGSSL
     ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ?
@@ -1026,8 +1010,8 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   ctx = SSL_CTX_new(method);
 #endif  // OPENSSL_IS_BORINGSSL
 
-  if (ctx == NULL)
-    return NULL;
+  if (ctx == nullptr)
+    return nullptr;
 
 #ifdef OPENSSL_IS_BORINGSSL
   SSL_CTX_set_min_proto_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
@@ -1054,7 +1038,7 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
 
   if (identity_ && !identity_->ConfigureIdentity(ctx)) {
     SSL_CTX_free(ctx);
-    return NULL;
+    return nullptr;
   }
 
 #if !defined(NDEBUG)
@@ -1075,13 +1059,13 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   // remove HMAC-SHA256 and HMAC-SHA384 cipher suites, not GCM cipher suites
   // with SHA256 or SHA384 as the handshake hash.
   // This matches the list of SSLClientSocketOpenSSL in Chromium.
-  SSL_CTX_set_cipher_list(ctx,
-      "DEFAULT:!NULL:!aNULL:!SHA256:!SHA384:!aECDH:!AESGCM+AES256:!aPSK");
+  SSL_CTX_set_cipher_list(
+      ctx, "DEFAULT:!NULL:!aNULL:!SHA256:!SHA384:!aECDH:!AESGCM+AES256:!aPSK");
 
   if (!srtp_ciphers_.empty()) {
     if (SSL_CTX_set_tlsext_use_srtp(ctx, srtp_ciphers_.c_str())) {
       SSL_CTX_free(ctx);
-      return NULL;
+      return nullptr;
     }
   }
 

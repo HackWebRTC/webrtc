@@ -1118,15 +1118,15 @@ class EventDispatcher : public Dispatcher {
   }
 
   ~EventDispatcher() {
-    if (hev_ != NULL) {
+    if (hev_ != nullptr) {
       ss_->Remove(this);
       WSACloseEvent(hev_);
-      hev_ = NULL;
+      hev_ = nullptr;
     }
   }
 
   virtual void Signal() {
-    if (hev_ != NULL)
+    if (hev_ != nullptr)
       WSASetEvent(hev_);
   }
 
@@ -1268,7 +1268,7 @@ void PhysicalSocketServer::Remove(Dispatcher *pdispatcher) {
 bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
   // Calculate timing information
 
-  struct timeval *ptvWait = NULL;
+  struct timeval* ptvWait = nullptr;
   struct timeval tvWait;
   struct timeval tvStop;
   if (cmsWait != kForever) {
@@ -1278,7 +1278,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
     ptvWait = &tvWait;
 
     // Calculate when to return in a timeval
-    gettimeofday(&tvStop, NULL);
+    gettimeofday(&tvStop, nullptr);
     tvStop.tv_sec += tvWait.tv_sec;
     tvStop.tv_usec += tvWait.tv_usec;
     if (tvStop.tv_usec >= 1000000) {
@@ -1330,7 +1330,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
     // < 0 means error
     // 0 means timeout
     // > 0 means count of descriptors ready
-    int n = select(fdmax + 1, &fdsRead, &fdsWrite, NULL, ptvWait);
+    int n = select(fdmax + 1, &fdsRead, &fdsWrite, nullptr, ptvWait);
 
     // If error, return error.
     if (n < 0) {
@@ -1405,7 +1405,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
       ptvWait->tv_sec = 0;
       ptvWait->tv_usec = 0;
       struct timeval tvT;
-      gettimeofday(&tvT, NULL);
+      gettimeofday(&tvT, nullptr);
       if ((tvStop.tv_sec > tvT.tv_sec)
           || ((tvStop.tv_sec == tvT.tv_sec)
               && (tvStop.tv_usec > tvT.tv_usec))) {
@@ -1473,7 +1473,7 @@ bool PhysicalSocketServer::InstallSignal(int signum, void (*handler)(int)) {
 #else
   act.sa_flags = 0;
 #endif
-  if (sigaction(signum, &act, NULL) != 0) {
+  if (sigaction(signum, &act, nullptr) != 0) {
     LOG_ERR(LS_ERROR) << "Couldn't set sigaction";
     return false;
   }

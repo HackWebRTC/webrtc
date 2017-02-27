@@ -392,9 +392,10 @@ Network* NetworkManagerBase::GetNetworkFromAddress(
 }
 
 BasicNetworkManager::BasicNetworkManager()
-    : thread_(NULL), sent_first_update_(false), start_count_(0),
-      ignore_non_default_routes_(false) {
-}
+    : thread_(nullptr),
+      sent_first_update_(false),
+      start_count_(0),
+      ignore_non_default_routes_(false) {}
 
 BasicNetworkManager::~BasicNetworkManager() {
 }
@@ -420,8 +421,8 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
                                          NetworkList* networks) const {
   NetworkMap current_networks;
 
-  for (struct ifaddrs* cursor = interfaces;
-       cursor != NULL; cursor = cursor->ifa_next) {
+  for (struct ifaddrs* cursor = interfaces; cursor != nullptr;
+       cursor = cursor->ifa_next) {
     IPAddress prefix;
     IPAddress mask;
     InterfaceAddress ip;
@@ -518,7 +519,7 @@ unsigned int GetPrefix(PIP_ADAPTER_PREFIX prefixlist,
   unsigned int best_length = 0;
   while (prefixlist) {
     // Look for the longest matching prefix in the prefixlist.
-    if (prefixlist->Address.lpSockaddr == NULL ||
+    if (prefixlist->Address.lpSockaddr == nullptr ||
         prefixlist->Address.lpSockaddr->sa_family != ip.family()) {
       prefixlist = prefixlist->Next;
       continue;
@@ -660,7 +661,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 #if defined(WEBRTC_LINUX)
 bool IsDefaultRoute(const std::string& network_name) {
   FileStream fs;
-  if (!fs.Open("/proc/net/route", "r", NULL)) {
+  if (!fs.Open("/proc/net/route", "r", nullptr)) {
     LOG(LS_WARNING) << "Couldn't read /proc/net/route, skipping default "
                     << "route check (assuming everything is a default route).";
     return true;
@@ -711,7 +712,7 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
   // VMware Virtual Ethernet Adapter for VMnet1
   // but don't ignore any GUEST side adapters with a description like:
   // VMware Accelerated AMD PCNet Adapter #2
-  if (strstr(network.description().c_str(), "VMnet") != NULL) {
+  if (strstr(network.description().c_str(), "VMnet") != nullptr) {
     return true;
   }
 #endif

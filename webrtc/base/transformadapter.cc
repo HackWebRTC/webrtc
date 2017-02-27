@@ -175,7 +175,7 @@ TransformAdapter::Close() {
   if (!direction_read_ && (state_ == ST_PROCESSING)) {
     state_ = ST_FLUSHING;
     do {
-      Write(0, 0, NULL, NULL);
+      Write(0, 0, nullptr, nullptr);
     } while (state_ == ST_FLUSHING);
   }
   state_ = ST_COMPLETE;

@@ -43,7 +43,7 @@ Thread* Thread::Current() {
 
 #if defined(WEBRTC_POSIX)
 ThreadManager::ThreadManager() {
-  pthread_key_create(&key_, NULL);
+  pthread_key_create(&key_, nullptr);
 #ifndef NO_MAIN_THREAD_WRAPPING
   WrapCurrentThread();
 #endif
@@ -98,7 +98,7 @@ void ThreadManager::SetCurrentThread(Thread *thread) {
 
 Thread *ThreadManager::WrapCurrentThread() {
   Thread* result = CurrentThread();
-  if (NULL == result) {
+  if (nullptr == result) {
     result = new Thread();
     result->WrapCurrentWithThreadManager(this, true);
   }
@@ -134,7 +134,7 @@ Thread::Thread(SocketServer* ss)
     : MessageQueue(ss, false),
       running_(true, false),
 #if defined(WEBRTC_WIN)
-      thread_(NULL),
+      thread_(nullptr),
       thread_id_(0),
 #endif
       owned_(true),
@@ -147,7 +147,7 @@ Thread::Thread(std::unique_ptr<SocketServer> ss)
     : MessageQueue(std::move(ss), false),
       running_(true, false),
 #if defined(WEBRTC_WIN)
-      thread_(NULL),
+      thread_(nullptr),
       thread_id_(0),
 #endif
       owned_(true),
@@ -182,7 +182,7 @@ bool Thread::SleepMs(int milliseconds) {
   struct timespec ts;
   ts.tv_sec = milliseconds / 1000;
   ts.tv_nsec = (milliseconds % 1000) * 1000000;
-  int ret = nanosleep(&ts, NULL);
+  int ret = nanosleep(&ts, nullptr);
   if (ret != 0) {
     LOG_ERR(LS_WARNING) << "nanosleep() returning early";
     return false;
@@ -218,7 +218,7 @@ bool Thread::Start(Runnable* runnable) {
   init->thread = this;
   init->runnable = runnable;
 #if defined(WEBRTC_WIN)
-  thread_ = CreateThread(NULL, 0, PreRun, init, 0, &thread_id_);
+  thread_ = CreateThread(nullptr, 0, PreRun, init, 0, &thread_id_);
   if (thread_) {
     running_.Set();
   } else {
@@ -244,13 +244,13 @@ bool Thread::WrapCurrent() {
 
 void Thread::UnwrapCurrent() {
   // Clears the platform-specific thread-specific storage.
-  ThreadManager::Instance()->SetCurrentThread(NULL);
+  ThreadManager::Instance()->SetCurrentThread(nullptr);
 #if defined(WEBRTC_WIN)
-  if (thread_ != NULL) {
+  if (thread_ != nullptr) {
     if (!CloseHandle(thread_)) {
       LOG_GLE(LS_ERROR) << "When unwrapping thread, failed to close handle.";
     }
-    thread_ = NULL;
+    thread_ = nullptr;
   }
 #endif
   running_.Reset();
@@ -269,10 +269,10 @@ void Thread::Join() {
     }
 
 #if defined(WEBRTC_WIN)
-    RTC_DCHECK(thread_ != NULL);
+    RTC_DCHECK(thread_ != nullptr);
     WaitForSingleObject(thread_, INFINITE);
     CloseHandle(thread_);
-    thread_ = NULL;
+    thread_ = nullptr;
     thread_id_ = 0;
 #elif defined(WEBRTC_POSIX)
     void *pv;
@@ -360,7 +360,7 @@ void Thread::Send(const Location& posted_from,
 
   AutoThread thread;
   Thread *current_thread = Thread::Current();
-  RTC_DCHECK(current_thread != NULL);  // AutoThread ensures this
+  RTC_DCHECK(current_thread != nullptr);  // AutoThread ensures this
 
   bool ready = false;
   {
@@ -405,7 +405,7 @@ void Thread::Send(const Location& posted_from,
 }
 
 void Thread::ReceiveSends() {
-  ReceiveSendsFromThread(NULL);
+  ReceiveSendsFromThread(nullptr);
 }
 
 void Thread::ReceiveSendsFromThread(const Thread* source) {
@@ -432,7 +432,7 @@ void Thread::ReceiveSendsFromThread(const Thread* source) {
 bool Thread::PopSendMessageFromThread(const Thread* source, _SendMessage* msg) {
   for (std::list<_SendMessage>::iterator it = sendlist_.begin();
        it != sendlist_.end(); ++it) {
-    if (it->thread == source || source == NULL) {
+    if (it->thread == source || source == nullptr) {
       *msg = *it;
       sendlist_.erase(it);
       return true;
@@ -456,7 +456,7 @@ void Thread::Clear(MessageHandler* phandler,
 
   // Remove messages on sendlist_ with phandler
   // Object target cleared: remove from send list, wakeup/set ready
-  // if sender not NULL.
+  // if sender not null.
 
   std::list<_SendMessage>::iterator iter = sendlist_.begin();
   while (iter != sendlist_.end()) {
@@ -538,7 +538,7 @@ AutoThread::AutoThread() {
 AutoThread::~AutoThread() {
   Stop();
   if (ThreadManager::Instance()->CurrentThread() == this) {
-    ThreadManager::Instance()->SetCurrentThread(NULL);
+    ThreadManager::Instance()->SetCurrentThread(nullptr);
   }
 }
 
@@ -548,7 +548,7 @@ ComThread::~ComThread() {
 }
 
 void ComThread::Run() {
-  HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+  HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
   RTC_DCHECK(SUCCEEDED(hr));
   if (SUCCEEDED(hr)) {
     Thread::Run();

@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, false);
   if (FLAG_help) {
-    rtc::FlagList::Print(NULL, false);
+    rtc::FlagList::Print(nullptr, false);
     return 0;
   }
 

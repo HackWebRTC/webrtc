@@ -147,8 +147,8 @@ void NotifyingAsyncClosureBase::CancelCallback() {
   // destructor of the dying object here by waiting until the callback
   // is done triggering.
   CritScope cs(&crit_);
-  // calling_thread_ == NULL means do not trigger the callback.
-  calling_thread_ = NULL;
+  // calling_thread_ == nullptr means do not trigger the callback.
+  calling_thread_ = nullptr;
 }
 
 }  // namespace rtc

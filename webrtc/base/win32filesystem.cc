@@ -60,15 +60,15 @@ bool Win32Filesystem::CreateFolder(const Pathname &pathname) {
     }
   }
 
-  return (::CreateDirectory(path16.c_str(), NULL) != 0);
+  return (::CreateDirectory(path16.c_str(), nullptr) != 0);
 }
 
 FileStream *Win32Filesystem::OpenFile(const Pathname &filename,
                                       const std::string &mode) {
   FileStream *fs = new FileStream();
-  if (fs && !fs->Open(filename.pathname().c_str(), mode.c_str(), NULL)) {
+  if (fs && !fs->Open(filename.pathname().c_str(), mode.c_str(), nullptr)) {
     delete fs;
-    fs = NULL;
+    fs = nullptr;
   }
   return fs;
 }
@@ -105,7 +105,7 @@ bool Win32Filesystem::GetTemporaryFolder(Pathname &pathname, bool create,
     return false;
   pathname.clear();
   pathname.SetFolder(ToUtf8(buffer));
-  if (append != NULL) {
+  if (append != nullptr) {
     RTC_DCHECK(!append->empty());
     pathname.AppendFolder(*append);
   }
@@ -210,7 +210,7 @@ bool Win32Filesystem::GetFileTime(const Pathname& path, FileTimeType which,
 
 bool Win32Filesystem::GetAppPathname(Pathname* path) {
   TCHAR buffer[MAX_PATH + 1];
-  if (0 == ::GetModuleFileName(NULL, buffer, arraysize(buffer)))
+  if (0 == ::GetModuleFileName(nullptr, buffer, arraysize(buffer)))
     return false;
   path->SetPathname(ToUtf8(buffer));
   return true;

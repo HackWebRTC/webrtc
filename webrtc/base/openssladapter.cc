@@ -40,14 +40,14 @@
 
 #if defined(WEBRTC_WIN)
   #define MUTEX_TYPE HANDLE
-  #define MUTEX_SETUP(x) (x) = CreateMutex(NULL, FALSE, NULL)
-  #define MUTEX_CLEANUP(x) CloseHandle(x)
-  #define MUTEX_LOCK(x) WaitForSingleObject((x), INFINITE)
-  #define MUTEX_UNLOCK(x) ReleaseMutex(x)
-  #define THREAD_ID GetCurrentThreadId()
+#define MUTEX_SETUP(x) (x) = CreateMutex(nullptr, FALSE, nullptr)
+#define MUTEX_CLEANUP(x) CloseHandle(x)
+#define MUTEX_LOCK(x) WaitForSingleObject((x), INFINITE)
+#define MUTEX_UNLOCK(x) ReleaseMutex(x)
+#define THREAD_ID GetCurrentThreadId()
 #elif defined(WEBRTC_POSIX)
   #define MUTEX_TYPE pthread_mutex_t
-  #define MUTEX_SETUP(x) pthread_mutex_init(&(x), NULL)
+  #define MUTEX_SETUP(x) pthread_mutex_init(&(x), nullptr)
   #define MUTEX_CLEANUP(x) pthread_mutex_destroy(&(x))
   #define MUTEX_LOCK(x) pthread_mutex_lock(&(x))
   #define MUTEX_UNLOCK(x) pthread_mutex_unlock(&(x))
@@ -75,24 +75,16 @@ static int socket_free(BIO* data);
 
 // TODO(davidben): This should be const once BoringSSL is assumed.
 static BIO_METHOD methods_socket = {
-  BIO_TYPE_BIO,
-  "socket",
-  socket_write,
-  socket_read,
-  socket_puts,
-  0,
-  socket_ctrl,
-  socket_new,
-  socket_free,
-  NULL,
+    BIO_TYPE_BIO, "socket",   socket_write, socket_read, socket_puts, 0,
+    socket_ctrl,  socket_new, socket_free,  nullptr,
 };
 
 static BIO_METHOD* BIO_s_socket2() { return(&methods_socket); }
 
 static BIO* BIO_new_socket(rtc::AsyncSocket* socket) {
   BIO* ret = BIO_new(BIO_s_socket2());
-  if (ret == NULL) {
-          return NULL;
+  if (ret == nullptr) {
+    return nullptr;
   }
   ret->ptr = socket;
   return ret;
@@ -107,7 +99,7 @@ static int socket_new(BIO* b) {
 }
 
 static int socket_free(BIO* b) {
-  if (b == NULL)
+  if (b == nullptr)
     return 0;
   return 1;
 }
@@ -171,7 +163,7 @@ namespace rtc {
 #ifndef OPENSSL_IS_BORINGSSL
 
 // This array will store all of the mutexes available to OpenSSL.
-static MUTEX_TYPE* mutex_buf = NULL;
+static MUTEX_TYPE* mutex_buf = nullptr;
 
 static void locking_function(int mode, int n, const char * file, int line) {
   if (mode & CRYPTO_LOCK) {
@@ -191,7 +183,7 @@ static unsigned long id_function() {  // NOLINT
 static CRYPTO_dynlock_value* dyn_create_function(const char* file, int line) {
   CRYPTO_dynlock_value* value = new CRYPTO_dynlock_value;
   if (!value)
-    return NULL;
+    return nullptr;
   MUTEX_SETUP(value->mutex);
   return value;
 }
@@ -213,7 +205,7 @@ static void dyn_destroy_function(CRYPTO_dynlock_value* l,
 
 #endif  // #ifndef OPENSSL_IS_BORINGSSL
 
-VerificationCallback OpenSSLAdapter::custom_verify_callback_ = NULL;
+VerificationCallback OpenSSLAdapter::custom_verify_callback_ = nullptr;
 
 bool OpenSSLAdapter::InitializeSSL(VerificationCallback callback) {
   if (!InitializeSSLThread() || !SSL_library_init())
@@ -254,29 +246,29 @@ bool OpenSSLAdapter::CleanupSSL() {
 #ifndef OPENSSL_IS_BORINGSSL
   if (!mutex_buf)
     return false;
-  CRYPTO_set_id_callback(NULL);
-  CRYPTO_set_locking_callback(NULL);
-  CRYPTO_set_dynlock_create_callback(NULL);
-  CRYPTO_set_dynlock_lock_callback(NULL);
-  CRYPTO_set_dynlock_destroy_callback(NULL);
+  CRYPTO_set_id_callback(nullptr);
+  CRYPTO_set_locking_callback(nullptr);
+  CRYPTO_set_dynlock_create_callback(nullptr);
+  CRYPTO_set_dynlock_lock_callback(nullptr);
+  CRYPTO_set_dynlock_destroy_callback(nullptr);
   for (int i = 0; i < CRYPTO_num_locks(); ++i)
     MUTEX_CLEANUP(mutex_buf[i]);
   delete [] mutex_buf;
-  mutex_buf = NULL;
+  mutex_buf = nullptr;
 #endif  // #ifndef OPENSSL_IS_BORINGSSL
   return true;
 }
 
 OpenSSLAdapter::OpenSSLAdapter(AsyncSocket* socket)
-  : SSLAdapter(socket),
-    state_(SSL_NONE),
-    ssl_read_needs_write_(false),
-    ssl_write_needs_read_(false),
-    restartable_(false),
-    ssl_(NULL), ssl_ctx_(NULL),
-    ssl_mode_(SSL_MODE_TLS),
-    custom_verification_succeeded_(false) {
-}
+    : SSLAdapter(socket),
+      state_(SSL_NONE),
+      ssl_read_needs_write_(false),
+      ssl_write_needs_read_(false),
+      restartable_(false),
+      ssl_(nullptr),
+      ssl_ctx_(nullptr),
+      ssl_mode_(SSL_MODE_TLS),
+      custom_verification_succeeded_(false) {}
 
 OpenSSLAdapter::~OpenSSLAdapter() {
   Cleanup();
@@ -316,7 +308,7 @@ OpenSSLAdapter::BeginSSL() {
   RTC_DCHECK(state_ == SSL_CONNECTING);
 
   int err = 0;
-  BIO* bio = NULL;
+  BIO* bio = nullptr;
 
   // First set up the context
   if (!ssl_ctx_)
@@ -346,7 +338,7 @@ OpenSSLAdapter::BeginSSL() {
                      SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
   // the SSL object owns the bio now
-  bio = NULL;
+  bio = nullptr;
 
   // Do the connect
   err = ContinueSSL();
@@ -437,12 +429,12 @@ OpenSSLAdapter::Cleanup() {
 
   if (ssl_) {
     SSL_free(ssl_);
-    ssl_ = NULL;
+    ssl_ = nullptr;
   }
 
   if (ssl_ctx_) {
     SSL_CTX_free(ssl_ctx_);
-    ssl_ctx_ = NULL;
+    ssl_ctx_ = nullptr;
   }
 
   // Clear the DTLS timer
@@ -707,7 +699,7 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
 
   // Checking the return from SSL_get_peer_certificate here is not strictly
   // necessary.  With our setup, it is not possible for it to return
-  // NULL.  However, it is good form to check the return.
+  // null.  However, it is good form to check the return.
   X509* certificate = SSL_get_peer_certificate(ssl);
   if (!certificate)
     return false;
@@ -725,7 +717,7 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
     BIO_free(mem);
 
     char* cipher_description =
-      SSL_CIPHER_description(SSL_get_current_cipher(ssl), NULL, 128);
+        SSL_CIPHER_description(SSL_get_current_cipher(ssl), nullptr, 128);
     LOG(LS_INFO) << "Cipher: " << cipher_description;
     OPENSSL_free(cipher_description);
   }
@@ -755,10 +747,9 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
 
   char data[256];
   X509_NAME* subject;
-  if (!ok
-      && ((subject = X509_get_subject_name(certificate)) != NULL)
-      && (X509_NAME_get_text_by_NID(subject, NID_commonName,
-                                    data, sizeof(data)) > 0)) {
+  if (!ok && ((subject = X509_get_subject_name(certificate)) != nullptr) &&
+      (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data)) >
+       0)) {
     data[sizeof(data)-1] = 0;
     if (_stricmp(data, host) == 0)
       ok = true;
@@ -875,8 +866,8 @@ bool OpenSSLAdapter::ConfigureTrustedRootCertificates(SSL_CTX* ctx) {
   for (size_t i = 0; i < arraysize(kSSLCertCertificateList); i++) {
     const unsigned char* cert_buffer = kSSLCertCertificateList[i];
     size_t cert_buffer_len = kSSLCertCertificateSizeList[i];
-    X509* cert = d2i_X509(NULL, &cert_buffer,
-                          checked_cast<long>(cert_buffer_len));
+    X509* cert =
+        d2i_X509(nullptr, &cert_buffer, checked_cast<long>(cert_buffer_len));
     if (cert) {
       int return_value = X509_STORE_add_cert(SSL_CTX_get_cert_store(ctx), cert);
       if (return_value == 0) {
@@ -894,16 +885,16 @@ SSL_CTX*
 OpenSSLAdapter::SetupSSLContext() {
   SSL_CTX* ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ?
       DTLSv1_client_method() : TLSv1_client_method());
-  if (ctx == NULL) {
+  if (ctx == nullptr) {
     unsigned long error = ERR_get_error();  // NOLINT: type used by OpenSSL.
     LOG(LS_WARNING) << "SSL_CTX creation failed: "
                     << '"' << ERR_reason_error_string(error) << "\" "
                     << "(error=" << error << ')';
-    return NULL;
+    return nullptr;
   }
   if (!ConfigureTrustedRootCertificates(ctx)) {
     SSL_CTX_free(ctx);
-    return NULL;
+    return nullptr;
   }
 
 #if !defined(NDEBUG)

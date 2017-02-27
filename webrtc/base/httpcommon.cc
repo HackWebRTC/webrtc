@@ -341,7 +341,7 @@ bool HttpDateToSeconds(const std::string& date, time_t* seconds) {
      1,  2,  3,  4,  5,  6,  7,  8,  9,  10,  11,  12
   };
 
-  RTC_DCHECK(NULL != seconds);
+  RTC_DCHECK(nullptr != seconds);
   struct tm tval;
   memset(&tval, 0, sizeof(tval));
   char month[4], zone[6];
@@ -481,9 +481,9 @@ void HttpData::setContent(const std::string& content_type,
 
 void HttpData::setDocumentAndLength(StreamInterface* document) {
   // TODO: Consider calling Rewind() here?
-  RTC_DCHECK(!hasHeader(HH_CONTENT_LENGTH, NULL));
-  RTC_DCHECK(!hasHeader(HH_TRANSFER_ENCODING, NULL));
-  RTC_DCHECK(document != NULL);
+  RTC_DCHECK(!hasHeader(HH_CONTENT_LENGTH, nullptr));
+  RTC_DCHECK(!hasHeader(HH_TRANSFER_ENCODING, nullptr));
+  RTC_DCHECK(document != nullptr);
   this->document.reset(document);
   size_t content_length = 0;
   if (this->document->GetAvailable(&content_length)) {
@@ -719,7 +719,7 @@ HttpAuthResult HttpAuthenticate(
 {
   HttpAttributeList args;
   HttpParseAttributes(challenge, len, args);
-  HttpHasNthAttribute(args, 0, &auth_method, NULL);
+  HttpHasNthAttribute(args, 0, &auth_method, nullptr);
 
   if (context && (context->auth_method != auth_method))
     return HAR_IGNORE;
@@ -825,7 +825,7 @@ HttpAuthResult HttpAuthenticate(
 
 #if 0 // Requires funky windows versions
     DWORD len = MAX_SPN;
-    if (DsMakeSpn("HTTP", server.HostAsURIString().c_str(), NULL,
+    if (DsMakeSpn("HTTP", server.HostAsURIString().c_str(), nullptr,
                   server.port(),
                   0, &len, spn) != ERROR_SUCCESS) {
       LOG_F(WARNING) << "(Negotiate) - DsMakeSpn failed";
@@ -875,9 +875,9 @@ HttpAuthResult HttpAuthenticate(
       steps = neg->steps;
 
       std::string challenge, decoded_challenge;
-      if (HttpHasNthAttribute(args, 1, &challenge, NULL)
-          && Base64::Decode(challenge, Base64::DO_STRICT,
-                            &decoded_challenge, NULL)) {
+      if (HttpHasNthAttribute(args, 1, &challenge, nullptr) &&
+          Base64::Decode(challenge, Base64::DO_STRICT, &decoded_challenge,
+                         nullptr)) {
         SecBuffer in_sec;
         in_sec.pvBuffer   = const_cast<char *>(decoded_challenge.data());
         in_sec.cbBuffer   = static_cast<unsigned long>(decoded_challenge.size());

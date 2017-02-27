@@ -71,9 +71,13 @@ size_t UnpackAddressFromNAT(const char* buf, size_t buf_size,
 class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
  public:
   explicit NATSocket(NATInternalSocketFactory* sf, int family, int type)
-      : sf_(sf), family_(family), type_(type), connected_(false),
-        socket_(NULL), buf_(NULL), size_(0) {
-  }
+      : sf_(sf),
+        family_(family),
+        type_(type),
+        connected_(false),
+        socket_(nullptr),
+        buf_(nullptr),
+        size_(0) {}
 
   ~NATSocket() override {
     delete socket_;
@@ -104,7 +108,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
     } else {
       server_addr_.Clear();
       delete socket_;
-      socket_ = NULL;
+      socket_ = nullptr;
     }
 
     return result;
@@ -211,7 +215,7 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
         connected_ = false;
         remote_addr_ = SocketAddress();
         delete socket_;
-        socket_ = NULL;
+        socket_ = nullptr;
       }
     }
     return result;
@@ -339,8 +343,7 @@ AsyncSocket* NATSocketFactory::CreateInternalSocket(int family, int type,
 
 // NATSocketServer
 NATSocketServer::NATSocketServer(SocketServer* server)
-    : server_(server), msg_queue_(NULL) {
-}
+    : server_(server), msg_queue_(nullptr) {}
 
 NATSocketServer::Translator* NATSocketServer::GetTranslator(
     const SocketAddress& ext_ip) {
@@ -351,7 +354,7 @@ NATSocketServer::Translator* NATSocketServer::AddTranslator(
     const SocketAddress& ext_ip, const SocketAddress& int_ip, NATType type) {
   // Fail if a translator already exists with this extternal address.
   if (nats_.Get(ext_ip))
-    return NULL;
+    return nullptr;
 
   return nats_.Add(ext_ip, new Translator(this, type, int_ip, server_, ext_ip));
 }
@@ -392,7 +395,7 @@ void NATSocketServer::WakeUp() {
 
 AsyncSocket* NATSocketServer::CreateInternalSocket(int family, int type,
     const SocketAddress& local_addr, SocketAddress* nat_addr) {
-  AsyncSocket* socket = NULL;
+  AsyncSocket* socket = nullptr;
   Translator* nat = nats_.FindClient(local_addr);
   if (nat) {
     socket = nat->internal_factory()->CreateAsyncSocket(family, type);
@@ -430,7 +433,7 @@ NATSocketServer::Translator* NATSocketServer::Translator::AddTranslator(
     const SocketAddress& ext_ip, const SocketAddress& int_ip, NATType type) {
   // Fail if a translator already exists with this extternal address.
   if (nats_.Get(ext_ip))
-    return NULL;
+    return nullptr;
 
   AddClient(ext_ip);
   return nats_.Add(ext_ip,
@@ -477,7 +480,7 @@ NATSocketServer::TranslatorMap::~TranslatorMap() {
 NATSocketServer::Translator* NATSocketServer::TranslatorMap::Get(
     const SocketAddress& ext_ip) {
   TranslatorMap::iterator it = find(ext_ip);
-  return (it != end()) ? it->second : NULL;
+  return (it != end()) ? it->second : nullptr;
 }
 
 NATSocketServer::Translator* NATSocketServer::TranslatorMap::Add(
@@ -497,7 +500,7 @@ void NATSocketServer::TranslatorMap::Remove(
 
 NATSocketServer::Translator* NATSocketServer::TranslatorMap::FindClient(
     const SocketAddress& int_ip) {
-  Translator* nat = NULL;
+  Translator* nat = nullptr;
   for (TranslatorMap::iterator it = begin(); it != end() && !nat; ++it) {
     nat = it->second->FindClient(int_ip);
   }

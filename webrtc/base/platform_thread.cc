@@ -149,7 +149,7 @@ void PlatformThread::Start() {
   // See bug 2902 for background on STACK_SIZE_PARAM_IS_A_RESERVATION.
   // Set the reserved stack stack size to 1M, which is the default on Windows
   // and Linux.
-  thread_ = ::CreateThread(NULL, 1024 * 1024, &StartThread, this,
+  thread_ = ::CreateThread(nullptr, 1024 * 1024, &StartThread, this,
                            STACK_SIZE_PARAM_IS_A_RESERVATION, &thread_id_);
   RTC_CHECK(thread_) << "CreateThread failed";
   RTC_DCHECK(thread_id_);

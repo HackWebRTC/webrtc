@@ -176,7 +176,7 @@ HttpParser::ProcessLine(const char* line, size_t len, HttpError* error) {
 
   case ST_CHUNKSIZE:
     if (len > 0) {
-      char* ptr = NULL;
+      char* ptr = nullptr;
       data_size_ = strtoul(line, &ptr, 16);
       if (ptr != line + len) {
         *error = HE_PROTOCOL;
@@ -245,7 +245,7 @@ public:
   DocumentStream(HttpBase* base) : base_(base), error_(HE_DEFAULT) { }
 
   StreamState GetState() const override {
-    if (NULL == base_)
+    if (nullptr == base_)
       return SS_CLOSED;
     if (HM_RECV == base_->mode_)
       return SS_OPEN;
@@ -342,11 +342,11 @@ public:
   }
 
   HttpBase* Disconnect(HttpError error) {
-    RTC_DCHECK(NULL != base_);
-    RTC_DCHECK(NULL != base_->doc_stream_);
+    RTC_DCHECK(nullptr != base_);
+    RTC_DCHECK(nullptr != base_->doc_stream_);
     HttpBase* base = base_;
-    base_->doc_stream_ = NULL;
-    base_ = NULL;
+    base_->doc_stream_ = nullptr;
+    base_ = nullptr;
     error_ = error;
     return base;
   }
@@ -360,9 +360,12 @@ private:
 // HttpBase
 //////////////////////////////////////////////////////////////////////
 
-HttpBase::HttpBase() : mode_(HM_NONE), data_(NULL), notify_(NULL),
-                       http_stream_(NULL), doc_stream_(NULL) {
-}
+HttpBase::HttpBase()
+    : mode_(HM_NONE),
+      data_(nullptr),
+      notify_(nullptr),
+      http_stream_(nullptr),
+      doc_stream_(nullptr) {}
 
 HttpBase::~HttpBase() {
   RTC_DCHECK(HM_NONE == mode_);
@@ -370,12 +373,12 @@ HttpBase::~HttpBase() {
 
 bool
 HttpBase::isConnected() const {
-  return (http_stream_ != NULL) && (http_stream_->GetState() == SS_OPEN);
+  return (http_stream_ != nullptr) && (http_stream_->GetState() == SS_OPEN);
 }
 
 bool
 HttpBase::attach(StreamInterface* stream) {
-  if ((mode_ != HM_NONE) || (http_stream_ != NULL) || (stream == NULL)) {
+  if ((mode_ != HM_NONE) || (http_stream_ != nullptr) || (stream == nullptr)) {
     RTC_NOTREACHED();
     return false;
   }
@@ -389,10 +392,10 @@ StreamInterface*
 HttpBase::detach() {
   RTC_DCHECK(HM_NONE == mode_);
   if (mode_ != HM_NONE) {
-    return NULL;
+    return nullptr;
   }
   StreamInterface* stream = http_stream_;
-  http_stream_ = NULL;
+  http_stream_ = nullptr;
   if (stream) {
     stream->SignalEvent.disconnect(this);
   }
@@ -462,7 +465,7 @@ HttpBase::recv(HttpData* data) {
 void
 HttpBase::abort(HttpError err) {
   if (mode_ != HM_NONE) {
-    if (http_stream_ != NULL) {
+    if (http_stream_ != nullptr) {
       http_stream_->Close();
     }
     do_complete(err);
@@ -471,13 +474,13 @@ HttpBase::abort(HttpError err) {
 
 StreamInterface* HttpBase::GetDocumentStream() {
   if (doc_stream_)
-    return NULL;
+    return nullptr;
   doc_stream_ = new DocumentStream(this);
   return doc_stream_;
 }
 
 HttpError HttpBase::HandleStreamClose(int error) {
-  if (http_stream_ != NULL) {
+  if (http_stream_ != nullptr) {
     http_stream_->Close();
   }
   if (error == 0) {
@@ -497,7 +500,7 @@ HttpError HttpBase::HandleStreamClose(int error) {
 
 bool HttpBase::DoReceiveLoop(HttpError* error) {
   RTC_DCHECK(HM_RECV == mode_);
-  RTC_DCHECK(NULL != error);
+  RTC_DCHECK(nullptr != error);
 
   // Do to the latency between receiving read notifications from
   // pseudotcpchannel, we rely on repeated calls to read in order to acheive
@@ -737,7 +740,7 @@ HttpBase::do_complete(HttpError err) {
   if (data_ && data_->document) {
     data_->document->SignalEvent.disconnect(this);
   }
-  data_ = NULL;
+  data_ = nullptr;
   if ((HM_RECV == mode) && doc_stream_) {
     RTC_DCHECK(HE_NONE !=
                err);  // We should have Disconnected doc_stream_ already.
@@ -834,7 +837,7 @@ HttpBase::ProcessHeaderComplete(bool chunked, size_t& data_size,
   if (notify_) {
     *error = notify_->onHttpHeaderComplete(chunked, data_size);
     // The request must not be aborted as a result of this callback.
-    RTC_DCHECK(NULL != data_);
+    RTC_DCHECK(nullptr != data_);
   }
   if ((HE_NONE == *error) && data_->document) {
     data_->document->SignalEvent.connect(this, &HttpBase::OnDocumentEvent);

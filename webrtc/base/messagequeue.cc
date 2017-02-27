@@ -49,7 +49,7 @@ class SCOPED_LOCKABLE DebugNonReentrantCritScope {
 //------------------------------------------------------------------
 // MessageQueueManager
 
-MessageQueueManager* MessageQueueManager::instance_ = NULL;
+MessageQueueManager* MessageQueueManager::instance_ = nullptr;
 
 MessageQueueManager* MessageQueueManager::Instance() {
   // Note: This is not thread safe, but it is first called before threads are
@@ -60,7 +60,7 @@ MessageQueueManager* MessageQueueManager::Instance() {
 }
 
 bool MessageQueueManager::IsInitialized() {
-  return instance_ != NULL;
+  return instance_ != nullptr;
 }
 
 MessageQueueManager::MessageQueueManager() : locked_(false) {}
@@ -99,7 +99,7 @@ void MessageQueueManager::RemoveInternal(MessageQueue *message_queue) {
     destroy = message_queues_.empty();
   }
   if (destroy) {
-    instance_ = NULL;
+    instance_ = nullptr;
     delete this;
   }
 }
@@ -214,11 +214,11 @@ void MessageQueue::DoDestroy() {
   // is going away.
   SignalQueueDestroyed();
   MessageQueueManager::Remove(this);
-  Clear(NULL);
+  Clear(nullptr);
 
   SharedScope ss(&ss_lock_);
   if (ss_) {
-    ss_->SetMessageQueue(NULL);
+    ss_->SetMessageQueue(nullptr);
   }
 }
 
@@ -333,7 +333,7 @@ bool MessageQueue::Get(Message *pmsg, int cmsWait, bool process_io) {
       }
       // If this was a dispose message, delete it and skip it.
       if (MQID_DISPOSE == pmsg->message_id) {
-        RTC_DCHECK(NULL == pmsg->phandler);
+        RTC_DCHECK(nullptr == pmsg->phandler);
         delete pmsg->pdata;
         *pmsg = Message();
         continue;

@@ -30,7 +30,7 @@ namespace rtc {
 class OpenSSLKeyPair {
  public:
   explicit OpenSSLKeyPair(EVP_PKEY* pkey) : pkey_(pkey) {
-    RTC_DCHECK(pkey_ != NULL);
+    RTC_DCHECK(pkey_ != nullptr);
   }
 
   static OpenSSLKeyPair* Generate(const KeyParams& key_params);

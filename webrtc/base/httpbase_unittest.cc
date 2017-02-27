@@ -54,7 +54,7 @@ public:
     HttpMode mode;
     HttpError err;
   };
-  HttpBaseTest() : mem(NULL), obtain_stream(false), http_stream(NULL) { }
+  HttpBaseTest() : mem(nullptr), obtain_stream(false), http_stream(nullptr) {}
 
   virtual void SetUp() { }
   virtual void TearDown() {
@@ -189,27 +189,28 @@ void HttpBaseTest::ObtainDocumentStream() {
   LOG_F(LS_VERBOSE) << "Enter";
   EXPECT_FALSE(http_stream);
   http_stream = base.GetDocumentStream();
-  ASSERT_TRUE(NULL != http_stream);
+  ASSERT_TRUE(nullptr != http_stream);
   sink.Monitor(http_stream);
   LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::VerifyDocumentStreamIsOpening() {
   LOG_F(LS_VERBOSE) << "Enter";
-  ASSERT_TRUE(NULL != http_stream);
+  ASSERT_TRUE(nullptr != http_stream);
   EXPECT_EQ(0, sink.Events(http_stream));
   EXPECT_EQ(SS_OPENING, http_stream->GetState());
 
   size_t read = 0;
   char buffer[5] = { 0 };
-  EXPECT_EQ(SR_BLOCK, http_stream->Read(buffer, sizeof(buffer), &read, NULL));
+  EXPECT_EQ(SR_BLOCK,
+            http_stream->Read(buffer, sizeof(buffer), &read, nullptr));
   LOG_F(LS_VERBOSE) << "Exit";
 }
 
 void HttpBaseTest::VerifyDocumentStreamOpenEvent() {
   LOG_F(LS_VERBOSE) << "Enter";
 
-  ASSERT_TRUE(NULL != http_stream);
+  ASSERT_TRUE(nullptr != http_stream);
   EXPECT_EQ(SE_OPEN | SE_READ, sink.Events(http_stream));
   EXPECT_EQ(SS_OPEN, http_stream->GetState());
 
@@ -222,7 +223,7 @@ void HttpBaseTest::VerifyDocumentStreamOpenEvent() {
 void HttpBaseTest::ReadDocumentStreamData(const char* expected_data) {
   LOG_F(LS_VERBOSE) << "Enter";
 
-  ASSERT_TRUE(NULL != http_stream);
+  ASSERT_TRUE(nullptr != http_stream);
   EXPECT_EQ(SS_OPEN, http_stream->GetState());
 
   // Pump the HTTP I/O using Read, and verify the results.
@@ -233,7 +234,8 @@ void HttpBaseTest::ReadDocumentStreamData(const char* expected_data) {
     char buffer[5] = { 0 };
     size_t amt_to_read =
         std::min(expected_length - verified_length, sizeof(buffer));
-    EXPECT_EQ(SR_SUCCESS, http_stream->Read(buffer, amt_to_read, &read, NULL));
+    EXPECT_EQ(SR_SUCCESS,
+              http_stream->Read(buffer, amt_to_read, &read, nullptr));
     EXPECT_EQ(amt_to_read, read);
     EXPECT_TRUE(0 == memcmp(expected_data + verified_length, buffer, read));
     verified_length += read;
@@ -244,10 +246,10 @@ void HttpBaseTest::ReadDocumentStreamData(const char* expected_data) {
 void HttpBaseTest::VerifyDocumentStreamIsEOS() {
   LOG_F(LS_VERBOSE) << "Enter";
 
-  ASSERT_TRUE(NULL != http_stream);
+  ASSERT_TRUE(nullptr != http_stream);
   size_t read = 0;
   char buffer[5] = { 0 };
-  EXPECT_EQ(SR_EOS, http_stream->Read(buffer, sizeof(buffer), &read, NULL));
+  EXPECT_EQ(SR_EOS, http_stream->Read(buffer, sizeof(buffer), &read, nullptr));
   EXPECT_EQ(SS_CLOSED, http_stream->GetState());
 
   // When EOS is caused by Read, we don't expect SE_CLOSE
@@ -320,7 +322,7 @@ TEST_F(HttpBaseTest, SupportsSend) {
 
 TEST_F(HttpBaseTest, SupportsSendNoDocument) {
   // Queue response document
-  SetupDocument(NULL);
+  SetupDocument(nullptr);
 
   // Begin send
   base.send(&data);
@@ -475,7 +477,7 @@ TEST_F(HttpBaseTest, AllowsGetDocumentStreamWithEmptyDocumentBody) {
   VerifyDocumentContents("");
 
   // The document is still open, until we attempt to read
-  ASSERT_TRUE(NULL != http_stream);
+  ASSERT_TRUE(nullptr != http_stream);
   EXPECT_EQ(SS_OPEN, http_stream->GetState());
 
   // Attempt to read data, and discover EOS
@@ -511,7 +513,8 @@ TEST_F(HttpBaseTest, SignalsDocumentStreamCloseOnUnexpectedClose) {
   // Future reads give an error
   int error = 0;
   char buffer[5] = { 0 };
-  EXPECT_EQ(SR_ERROR, http_stream->Read(buffer, sizeof(buffer), NULL, &error));
+  EXPECT_EQ(SR_ERROR,
+            http_stream->Read(buffer, sizeof(buffer), nullptr, &error));
   EXPECT_EQ(HE_DISCONNECTED, error);
 
   // Document completed with error

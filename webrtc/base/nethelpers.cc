@@ -43,7 +43,7 @@ int ResolveHostname(const std::string& hostname, int family,
     return -1;
   }
   addresses->clear();
-  struct addrinfo* result = NULL;
+  struct addrinfo* result = nullptr;
   struct addrinfo hints = {0};
   hints.ai_family = family;
   // |family| here will almost always be AF_UNSPEC, because |family| comes from
@@ -64,7 +64,7 @@ int ResolveHostname(const std::string& hostname, int family,
   // https://android.googlesource.com/platform/bionic/+/
   // 7e0bfb511e85834d7c6cb9631206b62f82701d60/libc/netbsd/net/getaddrinfo.c#1657
   hints.ai_flags = AI_ADDRCONFIG;
-  int ret = getaddrinfo(hostname.c_str(), NULL, &hints, &result);
+  int ret = getaddrinfo(hostname.c_str(), nullptr, &hints, &result);
   if (ret != 0) {
     return ret;
   }
@@ -151,7 +151,7 @@ bool HasIPv6Enabled() {
   }
   DWORD protbuff_size = 4096;
   std::unique_ptr<char[]> protocols;
-  LPWSAPROTOCOL_INFOW protocol_infos = NULL;
+  LPWSAPROTOCOL_INFOW protocol_infos = nullptr;
   int requested_protocols[2] = {AF_INET6, 0};
 
   int err = 0;

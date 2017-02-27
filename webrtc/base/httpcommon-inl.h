@@ -53,7 +53,7 @@ void Url<CTYPE>::do_set_address(const CTYPE* val, size_t len) {
     host_.assign(val, colon - val);
     // Note: In every case, we're guaranteed that colon is followed by a null,
     // or non-numeric character.
-    port_ = static_cast<uint16_t>(::strtoul(colon + 1, NULL, 10));
+    port_ = static_cast<uint16_t>(::strtoul(colon + 1, nullptr, 10));
     // TODO: Consider checking for invalid data following port number.
   } else {
     host_.assign(val, len);

@@ -24,7 +24,7 @@ namespace rtc {
 ///////////////////////////////////////////////////////////////////////////////
 
 bool ToUtf8(const CFStringRef str16, std::string* str8) {
-  if ((NULL == str16) || (NULL == str8)) {
+  if ((nullptr == str16) || (nullptr == str8)) {
     return false;
   }
   size_t maxlen = CFStringGetMaximumSizeForEncoding(CFStringGetLength(str16),
@@ -39,14 +39,14 @@ bool ToUtf8(const CFStringRef str16, std::string* str8) {
 }
 
 bool ToUtf16(const std::string& str8, CFStringRef* str16) {
-  if (NULL == str16) {
+  if (nullptr == str16) {
     return false;
   }
   *str16 = CFStringCreateWithBytes(kCFAllocatorDefault,
                                    reinterpret_cast<const UInt8*>(str8.data()),
                                    str8.length(), kCFStringEncodingUTF8,
                                    false);
-  return NULL != *str16;
+  return nullptr != *str16;
 }
 
 void DecodeFourChar(UInt32 fc, std::string* out) {

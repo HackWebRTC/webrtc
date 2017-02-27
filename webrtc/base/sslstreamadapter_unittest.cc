@@ -225,10 +225,10 @@ class SSLStreamAdapterTestBase : public testing::Test,
         client_private_key_pem_(client_private_key_pem),
         client_key_type_(client_key_type),
         server_key_type_(server_key_type),
-        client_stream_(NULL),
-        server_stream_(NULL),
-        client_identity_(NULL),
-        server_identity_(NULL),
+        client_stream_(nullptr),
+        server_stream_(nullptr),
+        client_identity_(nullptr),
+        server_identity_(nullptr),
         delay_(0),
         mtu_(1460),
         loss_(0),
@@ -627,7 +627,7 @@ class SSLStreamAdapterTestTLS
     send_stream_.ReserveSize(size);
     for (int i = 0; i < size; ++i) {
       char ch = static_cast<char>(i);
-      send_stream_.Write(&ch, 1, NULL, NULL);
+      send_stream_.Write(&ch, 1, nullptr, nullptr);
     }
     send_stream_.Rewind();
 
@@ -660,7 +660,7 @@ class SSLStreamAdapterTestTLS
 
     for (;;) {
       send_stream_.GetPosition(&position);
-      if (send_stream_.Read(block, sizeof(block), &tosend, NULL) !=
+      if (send_stream_.Read(block, sizeof(block), &tosend, nullptr) !=
           rtc::SR_EOS) {
         rv = client_ssl_->Write(block, tosend, &sent, 0);
 
@@ -706,7 +706,7 @@ class SSLStreamAdapterTestTLS
       ASSERT_EQ(rtc::SR_SUCCESS, r);
       LOG(LS_VERBOSE) << "Read " << bread;
 
-      recv_stream_.Write(buffer, bread, NULL, NULL);
+      recv_stream_.Write(buffer, bread, nullptr, nullptr);
     }
   }
 
@@ -896,11 +896,11 @@ TEST_P(SSLStreamAdapterTestTLS, ReadWriteAfterClose) {
   size_t dummy;
 
   // It's an error to write after closed.
-  rv = client_ssl_->Write(block, sizeof(block), &dummy, NULL);
+  rv = client_ssl_->Write(block, sizeof(block), &dummy, nullptr);
   ASSERT_EQ(rtc::SR_ERROR, rv);
 
   // But after closed read gives you EOS.
-  rv = client_ssl_->Read(block, sizeof(block), &dummy, NULL);
+  rv = client_ssl_->Read(block, sizeof(block), &dummy, nullptr);
   ASSERT_EQ(rtc::SR_EOS, rv);
 };
 

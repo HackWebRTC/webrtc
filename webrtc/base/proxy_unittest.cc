@@ -31,16 +31,14 @@ static const SocketAddress kBogusProxyIntAddr("1.2.3.4", 999);
 // Sets up a virtual socket server and HTTPS/SOCKS5 proxy servers.
 class ProxyTest : public testing::Test {
  public:
-  ProxyTest() : ss_(new rtc::VirtualSocketServer(NULL)) {
+  ProxyTest() : ss_(new rtc::VirtualSocketServer(nullptr)) {
     Thread::Current()->set_socketserver(ss_.get());
     socks_.reset(new rtc::SocksProxyServer(
         ss_.get(), kSocksProxyIntAddr, ss_.get(), kSocksProxyExtAddr));
     https_.reset(new rtc::HttpListenServer());
     https_->Listen(kHttpsProxyIntAddr);
   }
-  ~ProxyTest() {
-    Thread::Current()->set_socketserver(NULL);
-  }
+  ~ProxyTest() { Thread::Current()->set_socketserver(nullptr); }
 
   rtc::SocketServer* ss() { return ss_.get(); }
 
@@ -65,7 +63,7 @@ TEST_F(ProxyTest, TestSocks5Connect) {
 
   rtc::AsyncTCPSocket* packet_socket = rtc::AsyncTCPSocket::Create(
       proxy_socket, SocketAddress(INADDR_ANY, 0), server.address());
-  EXPECT_TRUE(packet_socket != NULL);
+  EXPECT_TRUE(packet_socket != nullptr);
   rtc::TestClient client(packet_socket);
 
   EXPECT_EQ(Socket::CS_CONNECTING, proxy_socket->GetState());
@@ -73,6 +71,6 @@ TEST_F(ProxyTest, TestSocks5Connect) {
   EXPECT_EQ(Socket::CS_CONNECTED, proxy_socket->GetState());
   EXPECT_EQ(server.address(), client.remote_address());
   client.Send("foo", 3);
-  EXPECT_TRUE(client.CheckNextPacket("foo", 3, NULL));
+  EXPECT_TRUE(client.CheckNextPacket("foo", 3, nullptr));
   EXPECT_TRUE(client.CheckNoPacket());
 }

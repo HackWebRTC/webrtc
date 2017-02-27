@@ -39,7 +39,7 @@ namespace rtc {
 int set_ifname(struct ifaddrs* ifaddr, int interface) {
   char buf[IFNAMSIZ] = {0};
   char* name = if_indextoname(interface, buf);
-  if (name == NULL) {
+  if (name == nullptr) {
     return -1;
   }
   ifaddr->ifa_name = new char[strlen(name) + 1];
@@ -84,7 +84,7 @@ int set_addresses(struct ifaddrs* ifaddr, ifaddrmsg* msg, void* data,
 }
 
 int make_prefixes(struct ifaddrs* ifaddr, int family, int prefixlen) {
-  char* prefix = NULL;
+  char* prefix = nullptr;
   if (family == AF_INET) {
     sockaddr_in* mask = new sockaddr_in;
     mask->sin_family = AF_INET;
@@ -149,8 +149,8 @@ int getifaddrs(struct ifaddrs** result) {
     close(fd);
     return -1;
   }
-  struct ifaddrs* start = NULL;
-  struct ifaddrs* current = NULL;
+  struct ifaddrs* start = nullptr;
+  struct ifaddrs* current = nullptr;
   char buf[kMaxReadSize];
   ssize_t amount_read = recv(fd, &buf, kMaxReadSize, 0);
   while (amount_read > 0) {
@@ -187,7 +187,7 @@ int getifaddrs(struct ifaddrs** result) {
                 if (populate_ifaddrs(newest, address_msg, RTA_DATA(rta),
                                      RTA_PAYLOAD(rta)) != 0) {
                   freeifaddrs(start);
-                  *result = NULL;
+                  *result = nullptr;
                   return -1;
                 }
                 current = newest;
@@ -207,7 +207,7 @@ int getifaddrs(struct ifaddrs** result) {
 }
 
 void freeifaddrs(struct ifaddrs* addrs) {
-  struct ifaddrs* last = NULL;
+  struct ifaddrs* last = nullptr;
   struct ifaddrs* cursor = addrs;
   while (cursor) {
     delete[] cursor->ifa_name;

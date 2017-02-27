@@ -189,7 +189,7 @@ int64_t TmToSeconds(const std::tm& tm) {
 int64_t TimeUTCMicros() {
 #if defined(WEBRTC_POSIX)
   struct timeval time;
-  gettimeofday(&time, NULL);
+  gettimeofday(&time, nullptr);
   // Convert from second (1.0) and microsecond (1e-6).
   return (static_cast<int64_t>(time.tv_sec) * rtc::kNumMicrosecsPerSec +
           time.tv_usec);

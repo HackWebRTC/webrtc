@@ -32,8 +32,7 @@ template<class slot_policy = sigslot::single_threaded,
          class signal_policy = sigslot::single_threaded>
 class SigslotReceiver : public sigslot::has_slots<slot_policy> {
  public:
-  SigslotReceiver() : signal_(NULL), signal_count_(0) {
-  }
+  SigslotReceiver() : signal_(nullptr), signal_count_(0) {}
   ~SigslotReceiver() {
   }
 
@@ -47,7 +46,7 @@ class SigslotReceiver : public sigslot::has_slots<slot_policy> {
   void Disconnect() {
     if (!signal_) return;
     signal_->disconnect(this);
-    signal_ = NULL;
+    signal_ = nullptr;
   }
   void OnSignal() {
     ++signal_count_;

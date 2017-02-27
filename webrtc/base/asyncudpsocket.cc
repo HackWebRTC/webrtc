@@ -22,7 +22,7 @@ AsyncUDPSocket* AsyncUDPSocket::Create(
   std::unique_ptr<AsyncSocket> owned_socket(socket);
   if (socket->Bind(bind_address) < 0) {
     LOG(LS_ERROR) << "Bind() failed with error " << socket->GetError();
-    return NULL;
+    return nullptr;
   }
   return new AsyncUDPSocket(owned_socket.release());
 }
@@ -32,7 +32,7 @@ AsyncUDPSocket* AsyncUDPSocket::Create(SocketFactory* factory,
   AsyncSocket* socket =
       factory->CreateAsyncSocket(bind_address.family(), SOCK_DGRAM);
   if (!socket)
-    return NULL;
+    return nullptr;
   return Create(socket, bind_address);
 }
 

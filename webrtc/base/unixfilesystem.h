@@ -35,7 +35,7 @@ class UnixFilesystem : public FilesystemInterface {
 #endif
 
   // Opens a file. Returns an open StreamInterface if function succeeds.
-  // Otherwise, returns NULL.
+  // Otherwise, returns null.
   FileStream* OpenFile(const Pathname& filename,
                        const std::string& mode) override;
 

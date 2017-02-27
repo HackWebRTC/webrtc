@@ -157,8 +157,8 @@ struct Message {
   Message()
       : phandler(nullptr), message_id(0), pdata(nullptr), ts_sensitive(0) {}
   inline bool Match(MessageHandler* handler, uint32_t id) const {
-    return (handler == NULL || handler == phandler)
-           && (id == MQID_ANY || id == message_id);
+    return (handler == nullptr || handler == phandler) &&
+           (id == MQID_ANY || id == message_id);
   }
   Location posted_from;
   MessageHandler *phandler;
@@ -236,27 +236,27 @@ class MessageQueue {
   virtual void Post(const Location& posted_from,
                     MessageHandler* phandler,
                     uint32_t id = 0,
-                    MessageData* pdata = NULL,
+                    MessageData* pdata = nullptr,
                     bool time_sensitive = false);
   virtual void PostDelayed(const Location& posted_from,
                            int cmsDelay,
                            MessageHandler* phandler,
                            uint32_t id = 0,
-                           MessageData* pdata = NULL);
+                           MessageData* pdata = nullptr);
   virtual void PostAt(const Location& posted_from,
                       int64_t tstamp,
                       MessageHandler* phandler,
                       uint32_t id = 0,
-                      MessageData* pdata = NULL);
+                      MessageData* pdata = nullptr);
   // TODO(honghaiz): Remove this when all the dependencies are removed.
   virtual void PostAt(const Location& posted_from,
                       uint32_t tstamp,
                       MessageHandler* phandler,
                       uint32_t id = 0,
-                      MessageData* pdata = NULL);
+                      MessageData* pdata = nullptr);
   virtual void Clear(MessageHandler* phandler,
                      uint32_t id = MQID_ANY,
-                     MessageList* removed = NULL);
+                     MessageList* removed = nullptr);
   virtual void Dispatch(Message *pmsg);
   virtual void ReceiveSends();
 
@@ -272,7 +272,7 @@ class MessageQueue {
   // Internally posts a message which causes the doomed object to be deleted
   template<class T> void Dispose(T* doomed) {
     if (doomed) {
-      Post(RTC_FROM_HERE, NULL, MQID_DISPOSE, new DisposeData<T>(doomed));
+      Post(RTC_FROM_HERE, nullptr, MQID_DISPOSE, new DisposeData<T>(doomed));
     }
   }
 

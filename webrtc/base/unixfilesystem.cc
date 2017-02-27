@@ -63,10 +63,10 @@ void AppleAppName(rtc::Pathname* path);
 namespace rtc {
 
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_MAC)
-char* UnixFilesystem::app_temp_path_ = NULL;
+char* UnixFilesystem::app_temp_path_ = nullptr;
 #else
-char* UnixFilesystem::provided_app_data_folder_ = NULL;
-char* UnixFilesystem::provided_app_temp_folder_ = NULL;
+char* UnixFilesystem::provided_app_data_folder_ = nullptr;
+char* UnixFilesystem::provided_app_temp_folder_ = nullptr;
 
 void UnixFilesystem::SetAppDataFolder(const std::string& folder) {
   delete [] provided_app_data_folder_;
@@ -126,9 +126,9 @@ bool UnixFilesystem::CreateFolder(const Pathname &path) {
 FileStream *UnixFilesystem::OpenFile(const Pathname &filename,
                                      const std::string &mode) {
   FileStream *fs = new FileStream();
-  if (fs && !fs->Open(filename.pathname().c_str(), mode.c_str(), NULL)) {
+  if (fs && !fs->Open(filename.pathname().c_str(), mode.c_str(), nullptr)) {
     delete fs;
-    fs = NULL;
+    fs = nullptr;
   }
   return fs;
 }
@@ -157,7 +157,7 @@ bool UnixFilesystem::DeleteEmptyFolder(const Pathname &folder) {
 bool UnixFilesystem::GetTemporaryFolder(Pathname &pathname, bool create,
                                         const std::string *append) {
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  RTC_DCHECK(provided_app_temp_folder_ != NULL);
+  RTC_DCHECK(provided_app_temp_folder_ != nullptr);
   pathname.SetPathname(provided_app_temp_folder_, "");
 #else
   if (const char* tmpdir = getenv("TMPDIR")) {
@@ -238,8 +238,8 @@ bool UnixFilesystem::CopyFile(const Pathname &old_path,
     return false;
   }
 
-  while (source->Read(buf, sizeof(buf), &len, NULL) == SR_SUCCESS)
-    dest->Write(buf, len, NULL, NULL);
+  while (source->Read(buf, sizeof(buf), &len, nullptr) == SR_SUCCESS)
+    dest->Write(buf, len, nullptr, nullptr);
 
   delete source;
   delete dest;
@@ -248,7 +248,7 @@ bool UnixFilesystem::CopyFile(const Pathname &old_path,
 
 bool UnixFilesystem::IsTemporaryPath(const Pathname& pathname) {
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  RTC_DCHECK(provided_app_temp_folder_ != NULL);
+  RTC_DCHECK(provided_app_temp_folder_ != nullptr);
 #endif
 
   const char* const kTempPrefixes[] = {
@@ -315,13 +315,13 @@ bool UnixFilesystem::GetFileTime(const Pathname& path, FileTimeType which,
 
 bool UnixFilesystem::GetAppTempFolder(Pathname* path) {
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  RTC_DCHECK(provided_app_temp_folder_ != NULL);
+  RTC_DCHECK(provided_app_temp_folder_ != nullptr);
   path->SetPathname(provided_app_temp_folder_);
   return true;
 #else
   RTC_DCHECK(!application_name_.empty());
   // TODO: Consider whether we are worried about thread safety.
-  if (app_temp_path_ != NULL && strlen(app_temp_path_) > 0) {
+  if (app_temp_path_ != nullptr && strlen(app_temp_path_) > 0) {
     path->SetPathname(app_temp_path_);
     return true;
   }
@@ -348,7 +348,7 @@ char* UnixFilesystem::CopyString(const std::string& str) {
 
   char* buf = new char[size];
   if (!buf) {
-    return NULL;
+    return nullptr;
   }
 
   strcpyn(buf, size, str.c_str());
