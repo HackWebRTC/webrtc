@@ -218,7 +218,7 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
   // Calculate final output size.
   *out_width = *cropped_width / scale.denominator * scale.numerator;
   *out_height = *cropped_height / scale.denominator * scale.numerator;
-  RTC_DCHECK_EQ(0, *out_height % required_resolution_alignment_);
+  RTC_DCHECK_EQ(0, *out_width % required_resolution_alignment_);
   RTC_DCHECK_EQ(0, *out_height % required_resolution_alignment_);
 
   ++frames_out_;
