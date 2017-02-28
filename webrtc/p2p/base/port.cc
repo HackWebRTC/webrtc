@@ -1251,6 +1251,7 @@ void Connection::ReceivedPing() {
 }
 
 void Connection::ReceivedPingResponse(int rtt, const std::string& request_id) {
+  RTC_DCHECK_GE(rtt, 0);
   // We've already validated that this is a STUN binding response with
   // the correct local and remote username for this connection.
   // So if we're not already, become writable. We may be bringing a pruned
@@ -1263,6 +1264,10 @@ void Connection::ReceivedPingResponse(int rtt, const std::string& request_id) {
       iter->nomination > acked_nomination_) {
     acked_nomination_ = iter->nomination;
   }
+
+  total_round_trip_time_ms_ += rtt;
+  current_round_trip_time_ms_ = rtc::Optional<uint32_t>(
+      static_cast<uint32_t>(rtt));
 
   pings_since_last_response_.clear();
   last_ping_response_received_ = rtc::TimeMillis();
@@ -1504,6 +1509,8 @@ ConnectionInfo Connection::stats() {
   stats_.state = state_;
   stats_.priority = priority();
   stats_.nominated = nominated();
+  stats_.total_round_trip_time_ms = total_round_trip_time_ms_;
+  stats_.current_round_trip_time_ms = current_round_trip_time_ms_;
   return stats_;
 }
 

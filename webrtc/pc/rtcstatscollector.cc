@@ -875,11 +875,14 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
             static_cast<uint64_t>(info.sent_total_bytes);
         candidate_pair_stats->bytes_received =
             static_cast<uint64_t>(info.recv_total_bytes);
-        // TODO(hbos): The |info.rtt| measurement is smoothed. It shouldn't be
-        // smoothed according to the spec. crbug.com/633550. See
-        // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentrtt
-        candidate_pair_stats->current_round_trip_time =
-            static_cast<double>(info.rtt) / rtc::kNumMillisecsPerSec;
+        candidate_pair_stats->total_round_trip_time =
+            static_cast<double>(info.total_round_trip_time_ms) /
+            rtc::kNumMillisecsPerSec;
+        if (info.current_round_trip_time_ms) {
+          candidate_pair_stats->current_round_trip_time =
+              static_cast<double>(*info.current_round_trip_time_ms) /
+              rtc::kNumMillisecsPerSec;
+        }
         if (info.best_connection && video_media_info &&
             !video_media_info->bw_estimations.empty()) {
           // The bandwidth estimations we have are for the selected candidate

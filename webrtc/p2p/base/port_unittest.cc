@@ -222,6 +222,23 @@ class TestPort : public Port {
   int type_preference_ = 0;
 };
 
+static void SendPingAndReceiveResponse(
+    Connection* lconn, TestPort* lport, Connection* rconn, TestPort* rport,
+    rtc::ScopedFakeClock* clock, int64_t ms) {
+  lconn->Ping(rtc::TimeMillis());
+  ASSERT_TRUE_WAIT(lport->last_stun_msg(), kDefaultTimeout);
+  ASSERT_TRUE(lport->last_stun_buf());
+  rconn->OnReadPacket(lport->last_stun_buf()->data<char>(),
+                      lport->last_stun_buf()->size(),
+                      rtc::PacketTime());
+  clock->AdvanceTime(rtc::TimeDelta::FromMilliseconds(ms));
+  ASSERT_TRUE_WAIT(rport->last_stun_msg(), kDefaultTimeout);
+  ASSERT_TRUE(rport->last_stun_buf());
+  lconn->OnReadPacket(rport->last_stun_buf()->data<char>(),
+                      rport->last_stun_buf()->size(),
+                      rtc::PacketTime());
+}
+
 class TestChannel : public sigslot::has_slots<> {
  public:
   // Takes ownership of |p1| (but not |p2|).
@@ -1842,6 +1859,49 @@ TEST_F(PortTest, TestNomination) {
   EXPECT_TRUE(rconn->nominated());
   EXPECT_EQ(lconn->nominated(), lconn->stats().nominated);
   EXPECT_EQ(rconn->nominated(), rconn->stats().nominated);
+}
+
+TEST_F(PortTest, TestRoundTripTime) {
+  rtc::ScopedFakeClock clock;
+
+  std::unique_ptr<TestPort> lport(
+      CreateTestPort(kLocalAddr1, "lfrag", "lpass"));
+  std::unique_ptr<TestPort> rport(
+      CreateTestPort(kLocalAddr2, "rfrag", "rpass"));
+  lport->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  lport->SetIceTiebreaker(kTiebreaker1);
+  rport->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  rport->SetIceTiebreaker(kTiebreaker2);
+
+  lport->PrepareAddress();
+  rport->PrepareAddress();
+  ASSERT_FALSE(lport->Candidates().empty());
+  ASSERT_FALSE(rport->Candidates().empty());
+  Connection* lconn = lport->CreateConnection(rport->Candidates()[0],
+                                              Port::ORIGIN_MESSAGE);
+  Connection* rconn = rport->CreateConnection(lport->Candidates()[0],
+                                              Port::ORIGIN_MESSAGE);
+
+  EXPECT_EQ(0u, lconn->stats().total_round_trip_time_ms);
+  EXPECT_FALSE(lconn->stats().current_round_trip_time_ms);
+
+  SendPingAndReceiveResponse(
+      lconn, lport.get(), rconn, rport.get(), &clock, 10);
+  EXPECT_EQ(10u, lconn->stats().total_round_trip_time_ms);
+  ASSERT_TRUE(lconn->stats().current_round_trip_time_ms);
+  EXPECT_EQ(10u, *lconn->stats().current_round_trip_time_ms);
+
+  SendPingAndReceiveResponse(
+      lconn, lport.get(), rconn, rport.get(), &clock, 20);
+  EXPECT_EQ(30u, lconn->stats().total_round_trip_time_ms);
+  ASSERT_TRUE(lconn->stats().current_round_trip_time_ms);
+  EXPECT_EQ(20u, *lconn->stats().current_round_trip_time_ms);
+
+  SendPingAndReceiveResponse(
+      lconn, lport.get(), rconn, rport.get(), &clock, 30);
+  EXPECT_EQ(60u, lconn->stats().total_round_trip_time_ms);
+  ASSERT_TRUE(lconn->stats().current_round_trip_time_ms);
+  EXPECT_EQ(30u, *lconn->stats().current_round_trip_time_ms);
 }
 
 TEST_F(PortTest, TestUseCandidateAttribute) {

@@ -27,6 +27,7 @@
 #include "webrtc/base/asyncpacketsocket.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/network.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/proxyinfo.h"
 #include "webrtc/base/ratetracker.h"
 #include "webrtc/base/sigslot.h"
@@ -706,6 +707,10 @@ class Connection : public CandidatePairInterface,
   StunRequestManager requests_;
   int rtt_;
   int rtt_samples_ = 0;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-totalroundtriptime
+  uint64_t total_round_trip_time_ms_ = 0;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentroundtriptime
+  rtc::Optional<uint32_t> current_round_trip_time_ms_;
   int64_t last_ping_sent_;      // last time we sent a ping to the other side
   int64_t last_ping_received_;  // last time we received a ping from the other
                                 // side

@@ -61,7 +61,8 @@ ConnectionInfo::ConnectionInfo()
       key(nullptr),
       state(IceCandidatePairState::WAITING),
       priority(0),
-      nominated(false) {}
+      nominated(false),
+      total_round_trip_time_ms(0) {}
 
 bool BadTransportDescription(const std::string& desc, std::string* err_desc) {
   if (err_desc) {

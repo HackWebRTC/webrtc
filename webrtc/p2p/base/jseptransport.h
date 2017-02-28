@@ -115,6 +115,10 @@ struct ConnectionInfo {
   uint64_t priority;
   // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-nominated
   bool nominated;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-totalroundtriptime
+  uint64_t total_round_trip_time_ms;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentroundtriptime
+  rtc::Optional<uint32_t> current_round_trip_time_ms;
 };
 
 // Information about all the connections of a channel.

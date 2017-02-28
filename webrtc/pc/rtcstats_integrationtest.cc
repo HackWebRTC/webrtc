@@ -372,7 +372,8 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsUndefined(candidate_pair.readable);
     verifier.TestMemberIsNonNegative<uint64_t>(candidate_pair.bytes_sent);
     verifier.TestMemberIsNonNegative<uint64_t>(candidate_pair.bytes_received);
-    verifier.TestMemberIsUndefined(candidate_pair.total_round_trip_time);
+    verifier.TestMemberIsNonNegative<double>(
+        candidate_pair.total_round_trip_time);
     verifier.TestMemberIsNonNegative<double>(
         candidate_pair.current_round_trip_time);
     if (is_selected_pair) {

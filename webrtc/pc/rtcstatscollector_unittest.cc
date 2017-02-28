@@ -1241,7 +1241,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   connection_info.writable = true;
   connection_info.sent_total_bytes = 42;
   connection_info.recv_total_bytes = 1234;
-  connection_info.rtt = 1337;
+  connection_info.total_round_trip_time_ms = 0;
+  connection_info.current_round_trip_time_ms = rtc::Optional<uint32_t>();
   connection_info.recv_ping_requests = 2020;
   connection_info.sent_ping_requests_total = 2020;
   connection_info.sent_ping_requests_before_first_response = 2000;
@@ -1294,12 +1295,14 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   expected_pair.writable = true;
   expected_pair.bytes_sent = 42;
   expected_pair.bytes_received = 1234;
-  expected_pair.current_round_trip_time = 1.337;
+  expected_pair.total_round_trip_time = 0.0;
   expected_pair.requests_received = 2020;
   expected_pair.requests_sent = 2000;
   expected_pair.responses_received = 4321;
   expected_pair.responses_sent = 1000;
   expected_pair.consent_requests_sent = (2020 - 2000);
+  // |expected_pair.current_round_trip_time| should be undefined because the
+  // current RTT is not set.
   // |expected_pair.available_[outgoing/incoming]_bitrate| should be undefined
   // because is is not the current pair.
 
@@ -1319,6 +1322,24 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   collector_->ClearCachedStatsReport();
   report = GetStatsReport();
   expected_pair.nominated = true;
+  ASSERT_TRUE(report->Get(expected_pair.id()));
+  EXPECT_EQ(
+      expected_pair,
+      report->Get(expected_pair.id())->cast_to<RTCIceCandidatePairStats>());
+  EXPECT_TRUE(report->Get(*expected_pair.transport_id));
+
+  // Set round trip times and "GetStats" again.
+  session_stats.transport_stats["transport"].channel_stats[0]
+      .connection_infos[0].total_round_trip_time_ms = 7331;
+  session_stats.transport_stats["transport"].channel_stats[0]
+      .connection_infos[0].current_round_trip_time_ms =
+          rtc::Optional<uint32_t>(1337);
+  EXPECT_CALL(*video_media_channel, GetStats(_))
+      .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
+  collector_->ClearCachedStatsReport();
+  report = GetStatsReport();
+  expected_pair.total_round_trip_time = 7.331;
+  expected_pair.current_round_trip_time = 1.337;
   ASSERT_TRUE(report->Get(expected_pair.id()));
   EXPECT_EQ(
       expected_pair,

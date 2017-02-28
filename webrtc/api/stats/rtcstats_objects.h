@@ -144,14 +144,11 @@ class RTCIceCandidatePairStats final : public RTCStats {
   RTCStatsMember<bool> readable;
   RTCStatsMember<uint64_t> bytes_sent;
   RTCStatsMember<uint64_t> bytes_received;
-  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7062
   RTCStatsMember<double> total_round_trip_time;
-  // TODO(hbos): Collect this the way the spec describes it. We have a value for
-  // it but it is not spec-compliant. https://bugs.webrtc.org/7062
   RTCStatsMember<double> current_round_trip_time;
   RTCStatsMember<double> available_outgoing_bitrate;
   // TODO(hbos): Populate this value. It is wired up and collected the same way
-  // |VideoBwe.googAvailableReceiveBandwidth| is, but that value is always
+  // "VideoBwe.googAvailableReceiveBandwidth" is, but that value is always
   // undefined. https://bugs.webrtc.org/7062
   RTCStatsMember<double> available_incoming_bitrate;
   RTCStatsMember<uint64_t> requests_received;
