@@ -1057,8 +1057,9 @@ TEST_F(ViEEncoderTest, UMACpuLimitedResolutionInPercent) {
   }
 
   vie_encoder_->Stop();
-
+  vie_encoder_.reset();
   stats_proxy_.reset();
+
   EXPECT_EQ(1,
             metrics::NumSamples("WebRTC.Video.CpuLimitedResolutionInPercent"));
   EXPECT_EQ(
