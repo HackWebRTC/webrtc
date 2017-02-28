@@ -24,7 +24,7 @@ namespace {
 const char kFlexfecFieldTrialName[] = "WebRTC-FlexFEC-03";
 
 bool IsFlexfecFieldTrialEnabled() {
-  return webrtc::field_trial::FindFullName(kFlexfecFieldTrialName) == "Enabled";
+  return webrtc::field_trial::IsEnabled(kFlexfecFieldTrialName);
 }
 
 }  // namespace

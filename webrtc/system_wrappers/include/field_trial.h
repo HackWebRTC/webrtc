@@ -62,6 +62,10 @@ namespace field_trial {
 // Note: To keep things tidy append all the trial names with WebRTC.
 std::string FindFullName(const std::string& name);
 
+// Convenience method, returns true iff FindFullName(name) return a string that
+// starts with "Enabled".
+bool IsEnabled(const char* name);
+
 }  // namespace field_trial
 }  // namespace webrtc
 

@@ -167,7 +167,7 @@ void BweTest::RunFor(int64_t time_ms) {
   // TODO(holmer): Support different feedback intervals for different flows.
 
   // For quick perf tests ignore passed timeout
-  if (field_trial::FindFullName("WebRTC-QuickPerfTest") == "Enabled") {
+  if (field_trial::IsEnabled("WebRTC-QuickPerfTest")) {
     time_ms = kQuickTestTimeoutMs;
   }
   if (!uplink_.senders().empty()) {
@@ -380,7 +380,7 @@ void BweTest::RunFairnessTest(BandwidthEstimatorType bwe_type,
   PrintResults(capacity_kbps, total_utilization.GetBitrateStats(),
                flow_delay_ms, flow_throughput_kbps);
 
-  if (field_trial::FindFullName("WebRTC-QuickPerfTest") != "Enabled") {
+  if (field_trial::IsEnabled("WebRTC-QuickPerfTest")) {
     for (int i : all_flow_ids) {
       metric_recorders[i]->PlotThroughputHistogram(
           title, flow_name, static_cast<int>(num_media_flows), 0);

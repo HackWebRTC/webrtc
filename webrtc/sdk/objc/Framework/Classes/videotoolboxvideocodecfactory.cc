@@ -22,7 +22,7 @@ namespace {
 const char kHighProfileExperiment[] = "WebRTC-H264HighProfile";
 
 bool IsHighProfileEnabled() {
-  return field_trial::FindFullName(kHighProfileExperiment) == "Enabled";
+  return field_trial::IsEnabled(kHighProfileExperiment);
 }
 }
 

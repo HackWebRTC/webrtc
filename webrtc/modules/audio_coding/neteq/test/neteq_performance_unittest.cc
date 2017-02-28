@@ -22,7 +22,7 @@ TEST(NetEqPerformanceTest, Run) {
   const int kLossPeriod = 10;  // Drop every 10th packet.
   const double kDriftFactor = 0.1;
   int64_t runtime = webrtc::test::NetEqPerformanceTest::Run(
-      webrtc::field_trial::FindFullName("WebRTC-QuickPerfTest") == "Enabled"
+      webrtc::field_trial::IsEnabled("WebRTC-QuickPerfTest")
           ? kQuickSimulationTimeMs
           : kSimulationTimeMs,
       kLossPeriod, kDriftFactor);
@@ -40,7 +40,7 @@ TEST(NetEqPerformanceTest, RunClean) {
   const int kLossPeriod = 0;  // No losses.
   const double kDriftFactor = 0.0;  // No clock drift.
   int64_t runtime = webrtc::test::NetEqPerformanceTest::Run(
-      webrtc::field_trial::FindFullName("WebRTC-QuickPerfTest") == "Enabled"
+      webrtc::field_trial::IsEnabled("WebRTC-QuickPerfTest")
           ? kQuickSimulationTimeMs
           : kSimulationTimeMs,
       kLossPeriod, kDriftFactor);

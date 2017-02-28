@@ -982,8 +982,7 @@ RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
   capabilities.header_extensions.push_back(
       webrtc::RtpExtension(webrtc::RtpExtension::kAudioLevelUri,
                            webrtc::RtpExtension::kAudioLevelDefaultId));
-  if (webrtc::field_trial::FindFullName("WebRTC-Audio-SendSideBwe") ==
-      "Enabled") {
+  if (webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe")) {
     capabilities.header_extensions.push_back(webrtc::RtpExtension(
         webrtc::RtpExtension::kTransportSequenceNumberUri,
         webrtc::RtpExtension::kTransportSequenceNumberDefaultId));
@@ -1194,8 +1193,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       : voe_audio_transport_(voe_audio_transport),
         call_(call),
         config_(send_transport),
-        send_side_bwe_with_overhead_(webrtc::field_trial::FindFullName(
-            "WebRTC-SendSideBwe-WithOverhead") == "Enabled"),
+        send_side_bwe_with_overhead_(
+            webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
         max_send_bitrate_bps_(max_send_bitrate_bps),
         rtp_parameters_(CreateRtpParametersWithOneEncoding()) {
     RTC_DCHECK_GE(ch, 0);
@@ -1422,8 +1421,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       stream_ = nullptr;
     }
     RTC_DCHECK(!stream_);
-    if (webrtc::field_trial::FindFullName("WebRTC-Audio-SendSideBwe") ==
-        "Enabled") {
+    if (webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe")) {
       config_.min_bitrate_bps = kOpusMinBitrateBps;
       config_.max_bitrate_bps = kOpusBitrateFbBps;
       // TODO(mflodman): Keep testing this and set proper values.

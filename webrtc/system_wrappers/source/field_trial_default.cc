@@ -53,6 +53,10 @@ std::string FindFullName(const std::string& name) {
   return std::string();
 }
 
+bool IsEnabled(const char* name) {
+  return FindFullName(name).find("Enabled") == 0;
+}
+
 // Optionally initialize field trial from a string.
 void InitFieldTrialsFromString(const char* trials_string) {
   trials_init_string = trials_string;

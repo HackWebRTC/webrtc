@@ -1298,11 +1298,11 @@ webrtc::VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
 
 const std::vector<cricket::VideoCodec>&
 MediaCodecVideoEncoderFactory::supported_codecs() const {
-  if (webrtc::field_trial::FindFullName(kH264HighProfileFieldTrial) ==
-      "Enabled")
+  if (webrtc::field_trial::IsEnabled(kH264HighProfileFieldTrial)) {
     return supported_codecs_with_h264_hp_;
-  else
+  } else {
     return supported_codecs_;
+  }
 }
 
 void MediaCodecVideoEncoderFactory::DestroyVideoEncoder(

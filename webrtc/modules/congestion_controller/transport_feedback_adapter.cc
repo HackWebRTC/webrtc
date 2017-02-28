@@ -45,9 +45,8 @@ TransportFeedbackAdapter::TransportFeedbackAdapter(
     RtcEventLog* event_log,
     Clock* clock,
     BitrateController* bitrate_controller)
-    : send_side_bwe_with_overhead_(webrtc::field_trial::FindFullName(
-                                       "WebRTC-SendSideBwe-WithOverhead") ==
-                                   "Enabled"),
+    : send_side_bwe_with_overhead_(
+          webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       transport_overhead_bytes_per_packet_(0),
       send_time_history_(clock, kSendTimeHistoryWindowMs),
       event_log_(event_log),

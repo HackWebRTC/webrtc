@@ -57,8 +57,7 @@ const char kBweTrendlineFilterExperiment[] = "WebRTC-BweTrendlineFilter";
 const char kBweMedianSlopeFilterExperiment[] = "WebRTC-BweMedianSlopeFilter";
 
 bool BitrateEstimateExperimentIsEnabled() {
-  return webrtc::field_trial::FindFullName(kBitrateEstimateExperiment) ==
-         "Enabled";
+  return webrtc::field_trial::IsEnabled(kBitrateEstimateExperiment);
 }
 
 bool TrendlineFilterExperimentIsEnabled() {

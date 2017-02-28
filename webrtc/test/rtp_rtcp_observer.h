@@ -43,7 +43,7 @@ class RtpRtcpObserver {
   virtual ~RtpRtcpObserver() {}
 
   virtual bool Wait() {
-    if (field_trial::FindFullName("WebRTC-QuickPerfTest") == "Enabled") {
+    if (field_trial::IsEnabled("WebRTC-QuickPerfTest")) {
       observation_complete_.Wait(kShortTimeoutMs);
       return true;
     }

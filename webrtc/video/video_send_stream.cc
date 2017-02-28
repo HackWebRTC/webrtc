@@ -757,8 +757,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     const VideoSendStream::Config* config,
     int initial_encoder_max_bitrate,
     std::map<uint32_t, RtpState> suspended_ssrcs)
-    : send_side_bwe_with_overhead_(webrtc::field_trial::FindFullName(
-            "WebRTC-SendSideBwe-WithOverhead") == "Enabled"),
+    : send_side_bwe_with_overhead_(
+          webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       stats_proxy_(stats_proxy),
       config_(config),
       suspended_ssrcs_(std::move(suspended_ssrcs)),

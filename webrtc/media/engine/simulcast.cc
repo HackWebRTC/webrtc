@@ -299,8 +299,7 @@ bool ScreenshareLayerConfig::FromFieldTrialGroup(
 }
 
 bool UseSimulcastScreenshare() {
-  return webrtc::field_trial::FindFullName(
-             kSimulcastScreenshareFieldTrialName) == "Enabled";
+  return webrtc::field_trial::IsEnabled(kSimulcastScreenshareFieldTrialName);
 }
 
 }  // namespace cricket

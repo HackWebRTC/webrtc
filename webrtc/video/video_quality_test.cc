@@ -1441,8 +1441,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   // abort.
   VideoStream& selected_stream = params_.ss.streams[params_.ss.selected_stream];
 
-  bool is_quick_test_enabled =
-      field_trial::FindFullName("WebRTC-QuickPerfTest") == "Enabled";
+  bool is_quick_test_enabled = field_trial::IsEnabled("WebRTC-QuickPerfTest");
   VideoAnalyzer analyzer(
       &send_transport, params_.analyzer.test_label,
 

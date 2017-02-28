@@ -73,8 +73,8 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
       rampup_uma_stats_updated_(kNumUmaRampupMetrics, false),
       event_log_(event_log),
       last_rtc_event_log_ms_(-1),
-      in_timeout_experiment_(webrtc::field_trial::FindFullName(
-                                 "WebRTC-FeedbackTimeout") == "Enabled") {
+      in_timeout_experiment_(
+          webrtc::field_trial::IsEnabled("WebRTC-FeedbackTimeout")) {
   RTC_DCHECK(event_log);
 }
 

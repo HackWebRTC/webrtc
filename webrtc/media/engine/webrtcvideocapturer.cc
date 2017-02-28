@@ -230,12 +230,8 @@ void WebRtcVideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
   // calls, can't take lock.
   RTC_DCHECK(module_);
 
-  const std::string group_name =
-      webrtc::field_trial::FindFullName("WebRTC-CVO");
-
-  if (group_name == "Disabled") {
+  if (webrtc::field_trial::FindFullName("WebRTC-CVO").find("Disabled") == 0)
     return;
-  }
 
   VideoCapturer::OnSinkWantsChanged(wants);
   bool result = module_->SetApplyRotation(wants.rotation_applied);

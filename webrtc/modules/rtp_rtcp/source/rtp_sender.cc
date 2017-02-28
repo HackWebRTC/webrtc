@@ -124,8 +124,7 @@ RTPSender::RTPSender(
       retransmission_rate_limiter_(retransmission_rate_limiter),
       overhead_observer_(overhead_observer),
       send_side_bwe_with_overhead_(
-          webrtc::field_trial::FindFullName(
-              "WebRTC-SendSideBwe-WithOverhead") == "Enabled") {
+          webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {
   // This random initialization is not intended to be cryptographic strong.
   timestamp_offset_ = random_.Rand<uint32_t>();
   // Random start, 16 bits. Can't be 0.

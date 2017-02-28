@@ -51,8 +51,8 @@ void BitrateController::MakeDecision(
     // Current implementation of BitrateController can only work when
     // |metrics.target_audio_bitrate_bps| includes overhead is enabled. This is
     // currently governed by the following field trial.
-    RTC_DCHECK_EQ("Enabled", webrtc::field_trial::FindFullName(
-                                 "WebRTC-SendSideBwe-WithOverhead"));
+    RTC_DCHECK(
+        webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead"));
     if (config->frame_length_ms)
       frame_length_ms_ = *config->frame_length_ms;
     int overhead_rate_bps =
