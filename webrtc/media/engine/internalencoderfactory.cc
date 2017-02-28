@@ -21,10 +21,13 @@ namespace cricket {
 
 namespace {
 
-const char kFlexfecFieldTrialName[] = "WebRTC-FlexFEC-03";
-
-bool IsFlexfecFieldTrialEnabled() {
-  return webrtc::field_trial::IsEnabled(kFlexfecFieldTrialName);
+// If this field trial is enabled, the "flexfec-03" codec will be advertised
+// as being supported by the InternalEncoderFactory. This means that
+// "flexfec-03" will appear in the default local SDP, and we therefore need to
+// be ready to receive FlexFEC packets from the remote.
+bool IsFlexfecAdvertisedFieldTrialEnabled() {
+  return webrtc::field_trial::FindFullName("WebRTC-FlexFEC-03-Advertised") ==
+         "Enabled";
 }
 
 }  // namespace
@@ -46,7 +49,7 @@ InternalEncoderFactory::InternalEncoderFactory() {
   supported_codecs_.push_back(cricket::VideoCodec(kRedCodecName));
   supported_codecs_.push_back(cricket::VideoCodec(kUlpfecCodecName));
 
-  if (IsFlexfecFieldTrialEnabled()) {
+  if (IsFlexfecAdvertisedFieldTrialEnabled()) {
     cricket::VideoCodec flexfec_codec(kFlexfecCodecName);
     // This value is currently arbitrarily set to 10 seconds. (The unit
     // is microseconds.) This parameter MUST be present in the SDP, but

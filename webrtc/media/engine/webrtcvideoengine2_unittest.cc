@@ -781,7 +781,7 @@ TEST_F(WebRtcVideoEngine2Test,
 
   // FlexFEC is active with field trial.
   webrtc::test::ScopedFieldTrials override_field_trials_(
-      "WebRTC-FlexFEC-03/Enabled/");
+      "WebRTC-FlexFEC-03-Advertised/Enabled/");
   const std::vector<VideoCodec> codecs_after = engine_.codecs();
   EXPECT_NE(codecs_after.end(),
             std::find_if(codecs_after.begin(), codecs_after.end(), is_flexfec));
@@ -2400,7 +2400,9 @@ TEST_F(WebRtcVideoChannel2Test, FlexfecCodecWithSsrcNotExposedByDefault) {
 class WebRtcVideoChannel2FlexfecTest : public WebRtcVideoChannel2Test {
  public:
   WebRtcVideoChannel2FlexfecTest()
-      : WebRtcVideoChannel2Test("WebRTC-FlexFEC-03/Enabled/") {}
+      : WebRtcVideoChannel2Test(
+            "WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/") {
+  }
 };
 
 // TODO(brandtr): Merge into "non-field trial" test when FlexFEC is enabled

@@ -41,16 +41,11 @@
 namespace cricket {
 namespace {
 
-// Three things happen when the FlexFEC field trial is enabled:
-// 1) FlexFEC is exposed in the default codec list, eventually showing up
-//    in the default SDP. (See InternalEncoderFactory ctor.)
-// 2) FlexFEC send parameters are set in the VideoSendStream config.
-// 3) FlexFEC receive parameters are set in the FlexfecReceiveStream config,
-//    and the corresponding object is instantiated.
-const char kFlexfecFieldTrialName[] = "WebRTC-FlexFEC-03";
-
+// If this field trial is enabled, we will enable sending FlexFEC and disable
+// sending ULPFEC whenever the former has been negotiated. Receiving FlexFEC
+// is enabled whenever FlexFEC has been negotiated.
 bool IsFlexfecFieldTrialEnabled() {
-  return webrtc::field_trial::IsEnabled(kFlexfecFieldTrialName);
+  return webrtc::field_trial::FindFullName("WebRTC-FlexFEC-03") == "Enabled";
 }
 
 // Wrap cricket::WebRtcVideoEncoderFactory as a webrtc::VideoEncoderFactory.
@@ -1556,7 +1551,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
   sp.GetFidSsrcs(parameters_.config.rtp.ssrcs,
                  &parameters_.config.rtp.rtx.ssrcs);
 
-  // FlexFEC.
+  // FlexFEC SSRCs.
   // TODO(brandtr): This code needs to be generalized when we add support for
   // multistream protection.
   if (IsFlexfecFieldTrialEnabled()) {
@@ -1731,8 +1726,10 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
     parameters_.config.encoder_settings.internal_source = false;
   }
   parameters_.config.rtp.ulpfec = codec_settings.ulpfec;
-  parameters_.config.rtp.flexfec.payload_type =
-      codec_settings.flexfec_payload_type;
+  if (IsFlexfecFieldTrialEnabled()) {
+    parameters_.config.rtp.flexfec.payload_type =
+        codec_settings.flexfec_payload_type;
+  }
 
   // Set RTX payload type if RTX is enabled.
   if (!parameters_.config.rtp.rtx.ssrcs.empty()) {
@@ -2313,7 +2310,7 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
     call_->DestroyFlexfecReceiveStream(flexfec_stream_);
     flexfec_stream_ = nullptr;
   }
-  if (IsFlexfecFieldTrialEnabled() && flexfec_config_.IsCompleteAndEnabled()) {
+  if (flexfec_config_.IsCompleteAndEnabled()) {
     flexfec_stream_ = call_->CreateFlexfecReceiveStream(flexfec_config_);
     flexfec_stream_->Start();
   }

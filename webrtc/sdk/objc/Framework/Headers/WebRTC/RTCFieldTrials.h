@@ -15,6 +15,7 @@
 /** The only valid value for the following if set is kRTCFieldTrialEnabledValue. */
 RTC_EXTERN NSString * const kRTCFieldTrialAudioSendSideBweKey;
 RTC_EXTERN NSString * const kRTCFieldTrialSendSideBweWithOverheadKey;
+RTC_EXTERN NSString * const kRTCFieldTrialFlexFec03AdvertisedKey;
 RTC_EXTERN NSString * const kRTCFieldTrialFlexFec03Key;
 RTC_EXTERN NSString * const kRTCFieldTrialImprovedBitrateEstimateKey;
 RTC_EXTERN NSString * const kRTCFieldTrialH264HighProfileKey;

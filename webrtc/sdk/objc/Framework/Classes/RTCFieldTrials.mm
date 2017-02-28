@@ -18,6 +18,7 @@
 
 NSString * const kRTCFieldTrialAudioSendSideBweKey = @"WebRTC-Audio-SendSideBwe";
 NSString * const kRTCFieldTrialSendSideBweWithOverheadKey = @"WebRTC-SendSideBwe-WithOverhead";
+NSString * const kRTCFieldTrialFlexFec03AdvertisedKey = @"WebRTC-FlexFEC-03-Advertised";
 NSString * const kRTCFieldTrialFlexFec03Key = @"WebRTC-FlexFEC-03";
 NSString * const kRTCFieldTrialImprovedBitrateEstimateKey = @"WebRTC-ImprovedBitrateEstimate";
 NSString * const kRTCFieldTrialMedianSlopeFilterKey = @"WebRTC-BweMedianSlopeFilter";
