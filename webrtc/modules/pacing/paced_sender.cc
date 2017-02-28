@@ -255,6 +255,7 @@ PacedSender::PacedSender(Clock* clock, PacketSender* packet_sender)
       media_budget_(new paced_sender::IntervalBudget(0)),
       padding_budget_(new paced_sender::IntervalBudget(0)),
       prober_(new BitrateProber()),
+      probing_send_failure_(false),
       estimated_bitrate_bps_(0),
       min_send_bitrate_kbps_(0u),
       max_padding_bitrate_kbps_(0u),
@@ -374,7 +375,7 @@ int64_t PacedSender::TimeUntilNextProcess() {
   CriticalSectionScoped cs(critsect_.get());
   if (prober_->IsProbing()) {
     int64_t ret = prober_->TimeUntilNextProbe(clock_->TimeInMilliseconds());
-    if (ret >= 0)
+    if (ret > 0 || (ret == 0 && !probing_send_failure_))
       return ret;
   }
   int64_t elapsed_time_us = clock_->TimeInMicroseconds() - time_last_update_us_;
@@ -448,8 +449,11 @@ void PacedSender::Process() {
         bytes_sent += SendPadding(padding_needed, pacing_info);
     }
   }
-  if (is_probing && bytes_sent > 0)
-    prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
+  if (is_probing) {
+    probing_send_failure_ = bytes_sent == 0;
+    if (!probing_send_failure_)
+      prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
+  }
   alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
 }
 

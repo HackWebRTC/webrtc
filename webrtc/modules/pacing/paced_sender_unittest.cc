@@ -1046,5 +1046,32 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
   send_bucket_->Process();
 }
 
+TEST_F(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
+  uint32_t ssrc = 12346;
+  uint16_t sequence_number = 1234;
+  const size_t kPacketSize = kFirstClusterBps / (8000 / 10);
+
+  send_bucket_->SetSendBitrateLimits(kTargetBitrateBps, kTargetBitrateBps);
+  send_bucket_->SetProbingEnabled(true);
+  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
+                             sequence_number, clock_.TimeInMilliseconds(),
+                             kPacketSize, false);
+
+  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _))
+      .WillOnce(Return(true));
+  send_bucket_->Process();
+  EXPECT_EQ(10, send_bucket_->TimeUntilNextProcess());
+  clock_.AdvanceTimeMilliseconds(9);
+
+  EXPECT_CALL(callback_, TimeToSendPadding(_, _))
+      .Times(2)
+      .WillRepeatedly(Return(0));
+  send_bucket_->Process();
+  EXPECT_EQ(1, send_bucket_->TimeUntilNextProcess());
+  clock_.AdvanceTimeMilliseconds(1);
+  send_bucket_->Process();
+  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+}
+
 }  // namespace test
 }  // namespace webrtc

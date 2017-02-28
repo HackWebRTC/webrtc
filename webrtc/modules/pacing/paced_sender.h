@@ -169,6 +169,7 @@ class PacedSender : public Module, public RtpPacketSender {
       GUARDED_BY(critsect_);
 
   std::unique_ptr<BitrateProber> prober_ GUARDED_BY(critsect_);
+  bool probing_send_failure_;
   // Actual configured bitrates (media_budget_ may temporarily be higher in
   // order to meet pace time constraint).
   uint32_t estimated_bitrate_bps_ GUARDED_BY(critsect_);
