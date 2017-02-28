@@ -111,7 +111,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
  private:
   static bool DecodeThreadFunction(void* ptr);
-  void Decode();
+  bool Decode();
 
   rtc::ThreadChecker worker_thread_checker_;
   rtc::ThreadChecker module_process_thread_checker_;

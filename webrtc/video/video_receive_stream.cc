@@ -468,18 +468,17 @@ void VideoReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
 }
 
 bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
-  static_cast<VideoReceiveStream*>(ptr)->Decode();
-  return true;
+  return static_cast<VideoReceiveStream*>(ptr)->Decode();
 }
 
-void VideoReceiveStream::Decode() {
+bool VideoReceiveStream::Decode() {
   static const int kMaxWaitForFrameMs = 3000;
   std::unique_ptr<video_coding::FrameObject> frame;
   video_coding::FrameBuffer::ReturnReason res =
       frame_buffer_->NextFrame(kMaxWaitForFrameMs, &frame);
 
   if (res == video_coding::FrameBuffer::ReturnReason::kStopped)
-    return;
+    return false;
 
   if (frame) {
     if (video_receiver_.Decode(frame.get()) == VCM_OK)
@@ -489,6 +488,7 @@ void VideoReceiveStream::Decode() {
                     << " ms, requesting keyframe.";
     RequestKeyFrame();
   }
+  return true;
 }
 }  // namespace internal
 }  // namespace webrtc
