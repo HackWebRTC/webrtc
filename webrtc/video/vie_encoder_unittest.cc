@@ -1188,7 +1188,15 @@ TEST_F(ViEEncoderTest, InitialFrameDropOffWithMaintainResolutionPreference) {
   vie_encoder_->Stop();
 }
 
-TEST_F(ViEEncoderTest, InitialFrameDropOffWhenEncoderDisabledScaling) {
+// Disable for TSan v2, see https://crbug.com/webrtc/7260 for details.
+#if defined(THREAD_SANITIZER)
+#define MAYBE_InitialFrameDropOffWhenEncoderDisabledScaling \
+  DISABLED_InitialFrameDropOffWhenEncoderDisabledScaling
+#else
+#define MAYBE_InitialFrameDropOffWhenEncoderDisabledScaling \
+  InitialFrameDropOffWhenEncoderDisabledScaling
+#endif
+TEST_F(ViEEncoderTest, MAYBE_InitialFrameDropOffWhenEncoderDisabledScaling) {
   int frame_width = 640;
   int frame_height = 360;
   fake_encoder_.SetQualityScaling(false);
