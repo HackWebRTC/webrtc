@@ -132,8 +132,10 @@ public:
 
     virtual ~TransmitMixer();
 
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     // Periodic callback from the MonitorModule.
     void OnPeriodicProcess();
+#endif
 
     // FileCallback
     void PlayNotification(const int32_t id,
@@ -161,7 +163,11 @@ public:
   bool IsStereoChannelSwappingEnabled();
 
 protected:
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     TransmitMixer() : _monitorModule(this) {}
+#else
+    TransmitMixer() = default;
+#endif
 
 private:
     TransmitMixer(uint32_t instanceId);
@@ -194,7 +200,6 @@ private:
     ProcessThread* _processThreadPtr = nullptr;
 
     // owns
-    MonitorModule<TransmitMixer> _monitorModule;
     AudioFrame _audioFrame;
     PushResampler<int16_t> resampler_;  // ADM sample rate -> mixing rate
     std::unique_ptr<FilePlayer> file_player_;
@@ -212,11 +217,11 @@ private:
     rtc::CriticalSection _callbackCritSect;
 
 #if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+    MonitorModule<TransmitMixer> _monitorModule;
     webrtc::TypingDetection _typingDetection;
     bool _typingNoiseWarningPending = false;
     bool _typingNoiseDetected = false;
 #endif
-    bool _saturationWarning = false;
 
     int _instanceId = 0;
     bool _mixFileWithMicrophone = false;

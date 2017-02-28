@@ -26,14 +26,13 @@
 namespace webrtc {
 namespace voe {
 
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
 // TODO(ajm): The thread safety of this is dubious...
-void
-TransmitMixer::OnPeriodicProcess()
+void TransmitMixer::OnPeriodicProcess()
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::OnPeriodicProcess()");
 
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     bool send_typing_noise_warning = false;
     bool typing_noise_detected = false;
     {
@@ -64,32 +63,8 @@ TransmitMixer::OnPeriodicProcess()
             }
         }
     }
-#endif  // WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-
-    bool saturationWarning = false;
-    {
-      // Modify |_saturationWarning| under lock to avoid conflict with write op
-      // in ProcessAudio and also ensure that we don't hold the lock during the
-      // callback.
-      rtc::CritScope cs(&_critSect);
-      saturationWarning = _saturationWarning;
-      if (_saturationWarning)
-        _saturationWarning = false;
-    }
-
-    if (saturationWarning)
-    {
-        rtc::CritScope cs(&_callbackCritSect);
-        if (_voiceEngineObserverPtr)
-        {
-            WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                         "TransmitMixer::OnPeriodicProcess() =>"
-                         " CallbackOnError(VE_SATURATION_WARNING)");
-            _voiceEngineObserverPtr->CallbackOnError(-1, VE_SATURATION_WARNING);
-        }
-    }
 }
-
+#endif  // WEBRTC_VOICE_ENGINE_TYPING_DETECTION
 
 void TransmitMixer::PlayNotification(int32_t id,
                                      uint32_t durationMs)
@@ -176,12 +151,14 @@ TransmitMixer::Destroy(TransmitMixer*& mixer)
 }
 
 TransmitMixer::TransmitMixer(uint32_t instanceId) :
-    _monitorModule(this),
     // Avoid conflict with other channels by adding 1024 - 1026,
     // won't use as much as 1024 channels.
     _filePlayerId(instanceId + 1024),
     _fileRecorderId(instanceId + 1025),
     _fileCallRecorderId(instanceId + 1026),
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+    _monitorModule(this),
+#endif
     _instanceId(instanceId)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
@@ -192,10 +169,10 @@ TransmitMixer::~TransmitMixer()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::~TransmitMixer() - dtor");
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     if (_processThreadPtr)
-    {
         _processThreadPtr->DeRegisterModule(&_monitorModule);
-    }
+#endif
     {
         rtc::CritScope cs(&_critSect);
         if (file_recorder_) {
@@ -225,8 +202,9 @@ TransmitMixer::SetEngineInformation(ProcessThread& processThread,
     _engineStatisticsPtr = &engineStatistics;
     _channelManagerPtr = &channelManager;
 
+#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     _processThreadPtr->RegisterModule(&_monitorModule);
-
+#endif
     return 0;
 }
 
@@ -1077,10 +1055,6 @@ void TransmitMixer::ProcessAudio(int delay_ms, int clock_drift,
 
   // Store new capture level. Only updated when analog AGC is enabled.
   _captureLevel = agc->stream_analog_level();
-
-  rtc::CritScope cs(&_critSect);
-  // Triggers a callback in OnPeriodicProcess().
-  _saturationWarning |= agc->stream_is_saturated();
 }
 
 #if WEBRTC_VOICE_ENGINE_TYPING_DETECTION

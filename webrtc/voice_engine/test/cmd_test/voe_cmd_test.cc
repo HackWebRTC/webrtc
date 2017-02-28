@@ -81,8 +81,6 @@ void MyObserver::CallbackOnError(int channel, int err_code) {
     printf("  RUNTIME PLAY WARNING \n");
   } else if (err_code == VE_RUNTIME_REC_WARNING) {
     printf("  RUNTIME RECORD WARNING \n");
-  } else if (err_code == VE_SATURATION_WARNING) {
-    printf("  SATURATION WARNING \n");
   } else if (err_code == VE_RUNTIME_PLAY_ERROR) {
     printf("  RUNTIME PLAY ERROR \n");
   } else if (err_code == VE_RUNTIME_REC_ERROR) {
