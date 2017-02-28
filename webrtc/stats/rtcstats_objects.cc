@@ -72,10 +72,10 @@ RTCCertificateStats::~RTCCertificateStats() {
 
 WEBRTC_RTCSTATS_IMPL(RTCCodecStats, RTCStats, "codec",
     &payload_type,
-    &codec,
+    &mime_type,
     &clock_rate,
     &channels,
-    &parameters,
+    &sdp_fmtp_line,
     &implementation);
 
 RTCCodecStats::RTCCodecStats(
@@ -87,10 +87,10 @@ RTCCodecStats::RTCCodecStats(
     std::string&& id, int64_t timestamp_us)
     : RTCStats(std::move(id), timestamp_us),
       payload_type("payloadType"),
-      codec("codec"),
+      mime_type("mimeType"),
       clock_rate("clockRate"),
       channels("channels"),
-      parameters("parameters"),
+      sdp_fmtp_line("sdpFmtpLine"),
       implementation("implementation") {
 }
 
@@ -98,10 +98,10 @@ RTCCodecStats::RTCCodecStats(
     const RTCCodecStats& other)
     : RTCStats(other.id(), other.timestamp_us()),
       payload_type(other.payload_type),
-      codec(other.codec),
+      mime_type(other.mime_type),
       clock_rate(other.clock_rate),
       channels(other.channels),
-      parameters(other.parameters),
+      sdp_fmtp_line(other.sdp_fmtp_line),
       implementation(other.implementation) {
 }
 

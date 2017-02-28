@@ -334,10 +334,10 @@ class RTCStatsReportVerifier {
       const RTCCodecStats& codec) {
     RTCStatsVerifier verifier(report_, &codec);
     verifier.TestMemberIsDefined(codec.payload_type);
-    verifier.TestMemberIsDefined(codec.codec);
+    verifier.TestMemberIsDefined(codec.mime_type);
     verifier.TestMemberIsPositive<uint32_t>(codec.clock_rate);
     verifier.TestMemberIsUndefined(codec.channels);
-    verifier.TestMemberIsUndefined(codec.parameters);
+    verifier.TestMemberIsUndefined(codec.sdp_fmtp_line);
     verifier.TestMemberIsUndefined(codec.implementation);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }

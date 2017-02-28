@@ -177,7 +177,7 @@ std::unique_ptr<RTCCodecStats> CodecStatsFromRtpCodecParameters(
       RTCCodecStatsIDFromDirectionMediaAndPayload(inbound, audio, payload_type),
       timestamp_us));
   codec_stats->payload_type = payload_type;
-  codec_stats->codec = codec_params.mime_type();
+  codec_stats->mime_type = codec_params.mime_type();
   if (codec_params.clock_rate) {
     codec_stats->clock_rate = static_cast<uint32_t>(*codec_params.clock_rate);
   }
