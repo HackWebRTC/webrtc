@@ -306,9 +306,14 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
     ConfigureVideoEncoderSettings(const VideoCodec& codec);
-    AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec);
+    // If force_encoder_allocation is true, a new AllocatedEncoder is always
+    // created. If false, the allocated encoder may be reused, if the type
+    // matches.
+    AllocatedEncoder CreateVideoEncoder(const VideoCodec& codec,
+                                        bool force_encoder_allocation);
     void DestroyVideoEncoder(AllocatedEncoder* encoder);
-    void SetCodec(const VideoCodecSettings& codec);
+    void SetCodec(const VideoCodecSettings& codec,
+                  bool force_encoder_allocation);
     void RecreateWebRtcStream();
     webrtc::VideoEncoderConfig CreateVideoEncoderConfig(
         const VideoCodec& codec) const;

@@ -104,6 +104,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
 
   SendStatisticsProxy stats_proxy_;
   const VideoSendStream::Config config_;
+  const VideoEncoderConfig::ContentType content_type_;
   std::unique_ptr<VideoSendStreamImpl> send_stream_;
   std::unique_ptr<ViEEncoder> vie_encoder_;
 };

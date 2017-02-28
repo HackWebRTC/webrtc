@@ -196,10 +196,13 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
   }
 
   bool WaitForCreatedVideoEncoders(int num_encoders) {
-    while (created_video_encoder_event_.Wait(kEventTimeoutMs)) {
+    int64_t start_offset_ms = rtc::TimeMillis();
+    int64_t wait_time = kEventTimeoutMs;
+    do {
       if (GetNumCreatedEncoders() >= num_encoders)
         return true;
-    }
+      wait_time = kEventTimeoutMs - (rtc::TimeMillis() - start_offset_ms);
+    } while (wait_time > 0 && created_video_encoder_event_.Wait(wait_time));
     return false;
   }
 

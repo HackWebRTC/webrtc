@@ -1588,7 +1588,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
                                          ? webrtc::RtcpMode::kReducedSize
                                          : webrtc::RtcpMode::kCompound;
   if (codec_settings) {
-    SetCodec(*codec_settings);
+    bool force_encoder_allocation = false;
+    SetCodec(*codec_settings, force_encoder_allocation);
   }
 }
 
@@ -1612,6 +1613,18 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
   if (options_present) {
     VideoOptions old_options = parameters_.options;
     parameters_.options.SetAll(*options);
+    if (parameters_.options.is_screencast.value_or(false) !=
+            old_options.is_screencast.value_or(false) &&
+        parameters_.codec_settings) {
+      // If screen content settings change, we may need to recreate the codec
+      // instance so that the correct type is used.
+
+      bool force_encoder_allocation = true;
+      SetCodec(*parameters_.codec_settings, force_encoder_allocation);
+      // Mark screenshare parameter as being updated, then test for any other
+      // changes that may require codec reconfiguration.
+      old_options.is_screencast = options->is_screencast;
+    }
     if (parameters_.options != old_options) {
       ReconfigureEncoder();
     }
@@ -1645,10 +1658,11 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::GetSsrcs() const {
 
 WebRtcVideoChannel2::WebRtcVideoSendStream::AllocatedEncoder
 WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoder(
-    const VideoCodec& codec) {
+    const VideoCodec& codec,
+    bool force_encoder_allocation) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   // Do not re-create encoders of the same type.
-  if (codec == allocated_encoder_.codec &&
+  if (!force_encoder_allocation && codec == allocated_encoder_.codec &&
       allocated_encoder_.encoder != nullptr) {
     return allocated_encoder_;
   }
@@ -1695,12 +1709,14 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::DestroyVideoEncoder(
 }
 
 void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
-    const VideoCodecSettings& codec_settings) {
+    const VideoCodecSettings& codec_settings,
+    bool force_encoder_allocation) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   parameters_.encoder_config = CreateVideoEncoderConfig(codec_settings.codec);
   RTC_DCHECK_GT(parameters_.encoder_config.number_of_streams, 0);
 
-  AllocatedEncoder new_encoder = CreateVideoEncoder(codec_settings.codec);
+  AllocatedEncoder new_encoder =
+      CreateVideoEncoder(codec_settings.codec, force_encoder_allocation);
   parameters_.config.encoder_settings.encoder = new_encoder.encoder;
   parameters_.config.encoder_settings.full_overuse_time = new_encoder.external;
   parameters_.config.encoder_settings.payload_name = codec_settings.codec.name;
@@ -1767,10 +1783,12 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetSendParameters(
 
   // Set codecs and options.
   if (params.codec) {
-    SetCodec(*params.codec);
+    bool force_encoder_allocation = false;
+    SetCodec(*params.codec, force_encoder_allocation);
     recreate_stream = false;  // SetCodec has already recreated the stream.
   } else if (params.conference_mode && parameters_.codec_settings) {
-    SetCodec(*parameters_.codec_settings);
+    bool force_encoder_allocation = false;
+    SetCodec(*parameters_.codec_settings, force_encoder_allocation);
     recreate_stream = false;  // SetCodec has already recreated the stream.
   }
   if (recreate_stream) {

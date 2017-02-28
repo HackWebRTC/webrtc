@@ -1513,22 +1513,32 @@ TEST_F(VideoSendStreamTest, ChangingTransportOverhead) {
   RunBaseTest(&test);
 }
 
+// Test class takes takes as argument a switch selecting if type switch should
+// occur and a function pointer to reset the send stream. This is necessary
+// since you cannot change the content type of a VideoSendStream, you need to
+// recreate it. Stopping and recreating the stream can only be done on the main
+// thread and in the context of VideoSendStreamTest (not BaseTest).
+template <typename T>
 class MaxPaddingSetTest : public test::SendTest {
  public:
   static const uint32_t kMinTransmitBitrateBps = 400000;
   static const uint32_t kActualEncodeBitrateBps = 40000;
   static const uint32_t kMinPacketsToSend = 50;
 
-  explicit MaxPaddingSetTest(bool test_switch_content_type)
+  explicit MaxPaddingSetTest(bool test_switch_content_type, T* stream_reset_fun)
       : SendTest(test::CallTest::kDefaultTimeoutMs),
+        content_switch_event_(false, false),
         call_(nullptr),
         send_stream_(nullptr),
+        send_stream_config_(nullptr),
         packets_sent_(0),
-        running_without_padding_(test_switch_content_type) {}
+        running_without_padding_(test_switch_content_type),
+        stream_resetter_(stream_reset_fun) {}
 
   void OnVideoStreamsCreated(
       VideoSendStream* send_stream,
       const std::vector<VideoReceiveStream*>& receive_streams) override {
+    rtc::CritScope lock(&crit_);
     send_stream_ = send_stream;
   }
 
@@ -1537,7 +1547,7 @@ class MaxPaddingSetTest : public test::SendTest {
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
     RTC_DCHECK_EQ(1, encoder_config->number_of_streams);
-    if (running_without_padding_) {
+    if (RunningWithoutPadding()) {
       encoder_config->min_transmit_bitrate_bps = 0;
       encoder_config->content_type =
           VideoEncoderConfig::ContentType::kRealtimeVideo;
@@ -1545,6 +1555,7 @@ class MaxPaddingSetTest : public test::SendTest {
       encoder_config->min_transmit_bitrate_bps = kMinTransmitBitrateBps;
       encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     }
+    send_stream_config_ = send_config->Copy();
     encoder_config_ = encoder_config->Copy();
   }
 
@@ -1554,7 +1565,6 @@ class MaxPaddingSetTest : public test::SendTest {
 
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
     rtc::CritScope lock(&crit_);
-
     if (running_without_padding_)
       EXPECT_EQ(0, call_->GetStats().max_padding_bitrate_bps);
 
@@ -1566,11 +1576,12 @@ class MaxPaddingSetTest : public test::SendTest {
     if (running_without_padding_) {
       // We've sent kMinPacketsToSend packets with default configuration, switch
       // to enabling screen content and setting min transmit bitrate.
+      // Note that we need to recreate the stream if changing content type.
       packets_sent_ = 0;
       encoder_config_.min_transmit_bitrate_bps = kMinTransmitBitrateBps;
       encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
-      send_stream_->ReconfigureVideoEncoder(encoder_config_.Copy());
       running_without_padding_ = false;
+      content_switch_event_.Set();
       return SEND_PACKET;
     }
 
@@ -1582,25 +1593,57 @@ class MaxPaddingSetTest : public test::SendTest {
   }
 
   void PerformTest() override {
+    if (RunningWithoutPadding()) {
+      ASSERT_TRUE(
+          content_switch_event_.Wait(test::CallTest::kDefaultTimeoutMs));
+      rtc::CritScope lock(&crit_);
+      RTC_DCHECK(stream_resetter_);
+      (*stream_resetter_)(send_stream_config_, encoder_config_);
+    }
+
     ASSERT_TRUE(Wait()) << "Timed out waiting for a valid padding bitrate.";
   }
 
  private:
+  bool RunningWithoutPadding() const {
+    rtc::CritScope lock(&crit_);
+    return running_without_padding_;
+  }
+
   rtc::CriticalSection crit_;
+  rtc::Event content_switch_event_;
   Call* call_;
-  VideoSendStream* send_stream_;
+  VideoSendStream* send_stream_ GUARDED_BY(crit_);
+  VideoSendStream::Config send_stream_config_;
   VideoEncoderConfig encoder_config_;
   uint32_t packets_sent_ GUARDED_BY(crit_);
   bool running_without_padding_;
+  T* const stream_resetter_;
 };
 
 TEST_F(VideoSendStreamTest, RespectsMinTransmitBitrate) {
-  MaxPaddingSetTest test(false);
+  auto reset_fun = [](const VideoSendStream::Config& send_stream_config,
+                      const VideoEncoderConfig& encoder_config) {};
+  MaxPaddingSetTest<decltype(reset_fun)> test(false, &reset_fun);
   RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, RespectsMinTransmitBitrateAfterContentSwitch) {
-  MaxPaddingSetTest test(true);
+  // Function for removing and recreating the send stream with a new config.
+  auto reset_fun = [this](const VideoSendStream::Config& send_stream_config,
+                          const VideoEncoderConfig& encoder_config) {
+    Stop();
+    sender_call_->DestroyVideoSendStream(video_send_stream_);
+    video_send_config_ = send_stream_config.Copy();
+    video_encoder_config_ = encoder_config.Copy();
+    video_send_stream_ = sender_call_->CreateVideoSendStream(
+        video_send_config_.Copy(), video_encoder_config_.Copy());
+    video_send_stream_->SetSource(
+        frame_generator_capturer_.get(),
+        VideoSendStream::DegradationPreference::kMaintainResolution);
+    Start();
+  };
+  MaxPaddingSetTest<decltype(reset_fun)> test(true, &reset_fun);
   RunBaseTest(&test);
 }
 
@@ -2070,6 +2113,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder = this;
+      encoder_config->max_bitrate_bps = kFirstMaxBitrateBps;
       encoder_config_ = encoder_config->Copy();
     }
 
@@ -2084,10 +2128,10 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
                        size_t max_payload_size) override {
       if (num_initializations_ == 0) {
         // Verify default values.
-        EXPECT_EQ(kRealtimeVideo, config->mode);
+        EXPECT_EQ(kFirstMaxBitrateBps / 1000, config->maxBitrate);
       } else {
         // Verify that changed values are propagated.
-        EXPECT_EQ(kScreensharing, config->mode);
+        EXPECT_EQ(kSecondMaxBitrateBps / 1000, config->maxBitrate);
       }
       ++num_initializations_;
       init_encode_event_.Set();
@@ -2098,13 +2142,16 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
       EXPECT_TRUE(init_encode_event_.Wait(kDefaultTimeoutMs));
       EXPECT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
 
-      encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
+      encoder_config_.max_bitrate_bps = kSecondMaxBitrateBps;
       stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
       EXPECT_TRUE(init_encode_event_.Wait(kDefaultTimeoutMs));
       EXPECT_EQ(2u, num_initializations_)
           << "ReconfigureVideoEncoder did not reinitialize the encoder with "
              "new encoder settings.";
     }
+
+    const uint32_t kFirstMaxBitrateBps = 1000000;
+    const uint32_t kSecondMaxBitrateBps = 2000000;
 
     rtc::Event init_encode_event_;
     size_t num_initializations_;

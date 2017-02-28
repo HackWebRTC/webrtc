@@ -906,6 +906,68 @@ TEST_F(WebRtcVideoEngine2Test, StreamParamsIdPassedToDecoderFactory) {
   EXPECT_EQ(sp.id, params[0].receive_stream_id);
 }
 
+TEST_F(WebRtcVideoEngine2Test, RecreatesEncoderOnContentTypeChange) {
+  cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
+  encoder_factory.AddSupportedVideoCodecType("VP8");
+  std::unique_ptr<FakeCall> fake_call(
+      new FakeCall(webrtc::Call::Config(&event_log_)));
+  std::unique_ptr<VideoMediaChannel> channel(
+      SetUpForExternalEncoderFactory(&encoder_factory));
+  ASSERT_TRUE(
+      channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+  cricket::VideoCodec codec = GetEngineCodec("VP8");
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(codec);
+  channel->OnReadyToSend(true);
+  channel->SetSend(true);
+  ASSERT_TRUE(channel->SetSendParameters(parameters));
+
+  cricket::FakeVideoCapturer capturer;
+  VideoOptions options;
+  EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, &options, &capturer));
+
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  EXPECT_TRUE(capturer.CaptureFrame());
+  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(1));
+  EXPECT_EQ(webrtc::kRealtimeVideo,
+            encoder_factory.encoders().back()->GetCodecSettings().mode);
+
+  EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, &options, &capturer));
+  EXPECT_TRUE(capturer.CaptureFrame());
+  // No change in content type, keep current encoder.
+  EXPECT_EQ(1, encoder_factory.GetNumCreatedEncoders());
+
+  options.is_screencast.emplace(true);
+  EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, &options, &capturer));
+  EXPECT_TRUE(capturer.CaptureFrame());
+  // Change to screen content, recreate encoder. For the simulcast encoder
+  // adapter case, this will result in two calls since InitEncode triggers a
+  // a new instance.
+  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(2));
+  EXPECT_EQ(webrtc::kScreensharing,
+            encoder_factory.encoders().back()->GetCodecSettings().mode);
+
+  EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, &options, &capturer));
+  EXPECT_TRUE(capturer.CaptureFrame());
+  // Still screen content, no need to update encoder.
+  EXPECT_EQ(2, encoder_factory.GetNumCreatedEncoders());
+
+  options.is_screencast.emplace(false);
+  options.video_noise_reduction.emplace(false);
+  EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, &options, &capturer));
+  // Change back to regular video content, update encoder. Also change
+  // a non |is_screencast| option just to verify it doesn't affect recreation.
+  EXPECT_TRUE(capturer.CaptureFrame());
+  ASSERT_TRUE(encoder_factory.WaitForCreatedVideoEncoders(3));
+  EXPECT_EQ(webrtc::kRealtimeVideo,
+            encoder_factory.encoders().back()->GetCodecSettings().mode);
+
+  // Remove stream previously added to free the external encoder instance.
+  EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
+  EXPECT_EQ(0u, encoder_factory.encoders().size());
+}
+
 #define WEBRTC_BASE_TEST(test) \
   TEST_F(WebRtcVideoChannel2BaseTest, test) { Base::test(); }
 
@@ -1668,9 +1730,10 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   EXPECT_TRUE(
       channel_->SetVideoSend(last_ssrc_, true, &screencast_options, &capturer));
   EXPECT_TRUE(capturer.CaptureFrame());
-  // Send stream not recreated after option change.
-  ASSERT_EQ(send_stream, fake_call_->GetVideoSendStreams().front());
-  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
+  // Send stream recreated after option change.
+  ASSERT_EQ(2, fake_call_->GetNumCreatedSendStreams());
+  send_stream = fake_call_->GetVideoSendStreams().front();
+  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
 
   // Verify screencast settings.
   encoder_config = send_stream->GetEncoderConfig().Copy();
@@ -1684,57 +1747,6 @@ TEST_F(WebRtcVideoChannel2Test, UsesCorrectSettingsForScreencast) {
   EXPECT_EQ(capture_format_hd.height, streams.front().height);
   EXPECT_TRUE(streams[0].temporal_layer_thresholds_bps.empty());
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, nullptr));
-}
-
-TEST_F(WebRtcVideoChannel2Test, NoRecreateStreamForScreencast) {
-  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  ASSERT_TRUE(
-      channel_->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
-  EXPECT_TRUE(channel_->SetSend(true));
-
-  cricket::FakeVideoCapturer capturer;
-  EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, &capturer));
-  EXPECT_EQ(cricket::CS_RUNNING,
-            capturer.Start(capturer.GetSupportedFormats()->front()));
-  EXPECT_TRUE(capturer.CaptureFrame());
-
-  ASSERT_EQ(1, fake_call_->GetNumCreatedSendStreams());
-  FakeVideoSendStream* stream = fake_call_->GetVideoSendStreams().front();
-  webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
-  EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo,
-            encoder_config.content_type);
-
-  EXPECT_EQ(1, stream->GetNumberOfSwappedFrames());
-
-  /* Switch to screencast source. We expect a reconfigure of the
-   * encoder, but no change of the send stream. */
-  struct VideoOptions video_options;
-  video_options.is_screencast = rtc::Optional<bool>(true);
-  EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, &video_options, &capturer));
-
-  EXPECT_TRUE(capturer.CaptureFrame());
-  ASSERT_EQ(1, fake_call_->GetNumCreatedSendStreams());
-  ASSERT_EQ(stream, fake_call_->GetVideoSendStreams().front());
-  EXPECT_EQ(2, stream->GetNumberOfSwappedFrames());
-
-  encoder_config = stream->GetEncoderConfig().Copy();
-  EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kScreen,
-            encoder_config.content_type);
-
-  /* Switch back. */
-  video_options.is_screencast = rtc::Optional<bool>(false);
-  EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, &video_options, &capturer));
-
-  EXPECT_TRUE(capturer.CaptureFrame());
-  ASSERT_EQ(1, fake_call_->GetNumCreatedSendStreams());
-  ASSERT_EQ(stream, fake_call_->GetVideoSendStreams().front());
-  EXPECT_EQ(3, stream->GetNumberOfSwappedFrames());
-
-  encoder_config = stream->GetEncoderConfig().Copy();
-  EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo,
-            encoder_config.content_type);
-
-  EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, nullptr));
 }
 
 TEST_F(WebRtcVideoChannel2Test,
@@ -1910,7 +1922,7 @@ TEST_F(WebRtcVideoChannel2Test, SetIdenticalOptionsDoesntReconfigureEncoder) {
   EXPECT_EQ(1, send_stream->num_encoder_reconfigurations());
 
   // Change |options| and expect 2 reconfigurations.
-  options.is_screencast = rtc::Optional<bool>(true);
+  options.video_noise_reduction = rtc::Optional<bool>(true);
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
   EXPECT_EQ(2, send_stream->num_encoder_reconfigurations());
 
@@ -2204,15 +2216,24 @@ TEST_F(WebRtcVideoChannel2Test, PreviousAdaptationDoesNotApplyToScreenshare) {
   channel_->SetVideoSend(last_ssrc_, true /* enable */, &screenshare_options,
                          &screen_share);
   EXPECT_TRUE(screen_share.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
-  EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
+  ASSERT_EQ(2, fake_call_->GetNumCreatedSendStreams());
+  send_stream = fake_call_->GetVideoSendStreams().front();
+  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1284, send_stream->GetLastWidth());
   EXPECT_EQ(724, send_stream->GetLastHeight());
 
   // Switch back to the normal capturer. Expect the frame to be CPU adapted.
   channel_->SetVideoSend(last_ssrc_, true /* enable */, &camera_options,
                          &capturer);
+  send_stream = fake_call_->GetVideoSendStreams().front();
+  // We have a new fake send stream, so it doesn't remember the old sink wants.
+  // In practice, it will be populated from
+  // ViEEncoder::VideoSourceProxy::SetSource(), so simulate that here.
+  send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
-  EXPECT_EQ(4, send_stream->GetNumberOfSwappedFrames());
+  ASSERT_EQ(3, fake_call_->GetNumCreatedSendStreams());
+  send_stream = fake_call_->GetVideoSendStreams().front();
+  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
   EXPECT_EQ(1280 * 3 / 4, send_stream->GetLastWidth());
   EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
 
@@ -4170,25 +4191,26 @@ class WebRtcVideoChannel2SimulcastTest : public testing::Test {
                                bool screenshare,
                                bool conference_mode) {
     cricket::VideoSendParameters parameters;
-    VideoOptions options;
     parameters.codecs.push_back(codec);
     parameters.conference_mode = conference_mode;
-    if (screenshare) {
-      options.is_screencast = rtc::Optional<bool>(screenshare);
-    }
     ASSERT_TRUE(channel_->SetSendParameters(parameters));
 
     std::vector<uint32_t> ssrcs = MAKE_VECTOR(kSsrcs3);
     RTC_DCHECK(num_configured_streams <= ssrcs.size());
     ssrcs.resize(num_configured_streams);
 
-    FakeVideoSendStream* stream =
-        AddSendStream(CreateSimStreamParams("cname", ssrcs));
+    AddSendStream(CreateSimStreamParams("cname", ssrcs));
     // Send a full-size frame to trigger a stream reconfiguration to use all
     // expected simulcast layers.
     cricket::FakeVideoCapturer capturer;
+    VideoOptions options;
+    if (screenshare)
+      options.is_screencast = rtc::Optional<bool>(screenshare);
     EXPECT_TRUE(
         channel_->SetVideoSend(ssrcs.front(), true, &options, &capturer));
+    // Fetch the latest stream since SetVideoSend() may recreate it if the
+    // screen content setting is changed.
+    FakeVideoSendStream* stream = fake_call_.GetVideoSendStreams().front();
     EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(cricket::VideoFormat(
                                        capture_width, capture_height,
                                        cricket::VideoFormat::FpsToInterval(30),

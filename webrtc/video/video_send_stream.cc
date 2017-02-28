@@ -629,7 +629,8 @@ VideoSendStream::VideoSendStream(
       stats_proxy_(Clock::GetRealTimeClock(),
                    config,
                    encoder_config.content_type),
-      config_(std::move(config)) {
+      config_(std::move(config)),
+      content_type_(encoder_config.content_type) {
   vie_encoder_.reset(new ViEEncoder(
       num_cpu_cores, &stats_proxy_, config_.encoder_settings,
       config_.pre_encode_callback, config_.post_encode_callback));
@@ -692,6 +693,7 @@ void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {
   // TODO(perkj): Some test cases in VideoSendStreamTest call
   // ReconfigureVideoEncoder from the network thread.
   // RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTC_DCHECK(content_type_ == config.content_type);
   vie_encoder_->ConfigureEncoder(std::move(config), config_.rtp.max_packet_size,
                                  config_.rtp.nack.rtp_history_ms > 0);
 }
