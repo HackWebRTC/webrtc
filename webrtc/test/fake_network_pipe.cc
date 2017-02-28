@@ -23,6 +23,10 @@
 
 namespace webrtc {
 
+namespace {
+constexpr int64_t kDefaultProcessIntervalMs = 5;
+}
+
 FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  const FakeNetworkPipe::Config& config)
     : FakeNetworkPipe(clock, config, 1) {}
@@ -175,8 +179,6 @@ void FakeNetworkPipe::Process() {
             (*delay_link_.rbegin())->arrival_time() - packet->arrival_time();
       }
       packet->IncrementArrivalTime(arrival_time_jitter);
-      if (packet->arrival_time() < next_process_time_)
-        next_process_time_ = packet->arrival_time();
       delay_link_.insert(packet);
     }
 
@@ -201,13 +203,14 @@ void FakeNetworkPipe::Process() {
                                     packet->data_length(), PacketTime());
     delete packet;
   }
+
+  next_process_time_ = !delay_link_.empty()
+                           ? (*delay_link_.begin())->arrival_time()
+                           : time_now + kDefaultProcessIntervalMs;
 }
 
 int64_t FakeNetworkPipe::TimeUntilNextProcess() const {
   rtc::CritScope crit(&lock_);
-  const int64_t kDefaultProcessIntervalMs = 5;
-  if (capacity_link_.empty() || delay_link_.empty())
-    return kDefaultProcessIntervalMs;
   return std::max<int64_t>(next_process_time_ - clock_->TimeInMilliseconds(),
                            0);
 }
