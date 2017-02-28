@@ -143,16 +143,6 @@ rtc_static_library("video_coding_utility") {
 }
 
 rtc_static_library("webrtc_h264") {
-  # TODO(ehmaldonado): Remove (bugs.webrtc.org/6828)
-  # Errors on cyclic dependency if enabled:
-  #   //webrtc/call:call ->
-  #   //webrtc/video:video ->
-  #   //webrtc/modules/video_coding:video_coding ->
-  #   //webrtc/modules/video_coding:webrtc_h264 ->
-  #   //webrtc/media:rtc_media ->
-  #   //webrtc/call:call
-  check_includes = false
-
   sources = [
     "codecs/h264/h264.cc",
     "codecs/h264/include/h264.h",
@@ -167,6 +157,7 @@ rtc_static_library("webrtc_h264") {
   deps = [
     ":video_coding_utility",
     "../../base:rtc_base_approved",
+    "../../media:rtc_media_base",
     "../../system_wrappers",
   ]
 
