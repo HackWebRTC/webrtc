@@ -211,8 +211,6 @@ int64_t BitrateControllerImpl::TimeUntilNextProcess() {
 }
 
 void BitrateControllerImpl::Process() {
-  if (TimeUntilNextProcess() > 0)
-    return;
   {
     rtc::CritScope cs(&critsect_);
     bandwidth_estimation_.UpdateEstimate(clock_->TimeInMilliseconds());
