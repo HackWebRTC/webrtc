@@ -57,6 +57,7 @@ rtc_static_library("common_video") {
 
   deps = [
     "..:webrtc_common",
+    "../base:rtc_base",
     "../base:rtc_task_queue",
     "../system_wrappers",
   ]
@@ -119,6 +120,8 @@ if (rtc_include_tests) {
 
     deps = [
       ":common_video",
+      "../base:rtc_base",
+      "../base:rtc_base_approved",
       "../modules/video_capture:video_capture",
       "../system_wrappers:system_wrappers",
       "../test:test_main",
