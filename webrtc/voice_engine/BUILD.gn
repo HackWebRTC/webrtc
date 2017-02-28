@@ -84,7 +84,6 @@ rtc_static_library("voice_engine") {
     "include/voe_network.h",
     "include/voe_rtp_rtcp.h",
     "include/voe_volume_control.h",
-    "monitor_module.cc",
     "monitor_module.h",
     "output_mixer.cc",
     "output_mixer.h",

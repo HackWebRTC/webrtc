@@ -64,7 +64,7 @@ TransmitMixer::OnPeriodicProcess()
             }
         }
     }
-#endif
+#endif  // WEBRTC_VOICE_ENGINE_TYPING_DETECTION
 
     bool saturationWarning = false;
     {
@@ -176,6 +176,7 @@ TransmitMixer::Destroy(TransmitMixer*& mixer)
 }
 
 TransmitMixer::TransmitMixer(uint32_t instanceId) :
+    _monitorModule(this),
     // Avoid conflict with other channels by adding 1024 - 1026,
     // won't use as much as 1024 channels.
     _filePlayerId(instanceId + 1024),
@@ -191,7 +192,6 @@ TransmitMixer::~TransmitMixer()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::~TransmitMixer() - dtor");
-    _monitorModule.DeRegisterObserver();
     if (_processThreadPtr)
     {
         _processThreadPtr->DeRegisterModule(&_monitorModule);
@@ -226,7 +226,6 @@ TransmitMixer::SetEngineInformation(ProcessThread& processThread,
     _channelManagerPtr = &channelManager;
 
     _processThreadPtr->RegisterModule(&_monitorModule);
-    _monitorModule.RegisterObserver(*this);
 
     return 0;
 }

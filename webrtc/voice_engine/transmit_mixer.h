@@ -42,8 +42,7 @@ class ChannelManager;
 class MixedAudio;
 class Statistics;
 
-class TransmitMixer : public MonitorObserver,
-                      public FileCallback {
+class TransmitMixer : public FileCallback {
 public:
     static int32_t Create(TransmitMixer*& mixer, uint32_t instanceId);
 
@@ -133,9 +132,8 @@ public:
 
     virtual ~TransmitMixer();
 
-    // MonitorObserver
+    // Periodic callback from the MonitorModule.
     void OnPeriodicProcess();
-
 
     // FileCallback
     void PlayNotification(const int32_t id,
@@ -163,7 +161,7 @@ public:
   bool IsStereoChannelSwappingEnabled();
 
 protected:
-    TransmitMixer() = default;
+    TransmitMixer() : _monitorModule(this) {}
 
 private:
     TransmitMixer(uint32_t instanceId);
@@ -196,7 +194,7 @@ private:
     ProcessThread* _processThreadPtr = nullptr;
 
     // owns
-    MonitorModule _monitorModule;
+    MonitorModule<TransmitMixer> _monitorModule;
     AudioFrame _audioFrame;
     PushResampler<int16_t> resampler_;  // ADM sample rate -> mixing rate
     std::unique_ptr<FilePlayer> file_player_;
