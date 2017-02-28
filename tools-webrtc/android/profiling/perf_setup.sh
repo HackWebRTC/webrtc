@@ -11,7 +11,7 @@
 # Usage:
 #
 #   It is assumed that a release build of AppRTCMobile exists and has been
-#   installed on a rooted and attached Android device.
+#   installed on an Android device which supports USB debugging.
 #
 #   Source this script once from the WebRTC src/ directory and resolve any
 #   reported issues. Add relative path to build directory as parameter.
@@ -20,6 +20,9 @@
 #   Once all tests are passed, a list of available functions will be given.
 #   Use these functions to do the actual profiling and visualization of the
 #   results.
+#
+#   Note that, using a rooted device is recommended since it allows us to
+#   resolve kernel symbols (kallsyms) as well.
 #
 # Example usage:
 #
@@ -60,20 +63,10 @@ if [[ "$#" -eq 1 ]]; then
   fi
   BUILD_DIR="$1"
 else
-  unset BUILD_DIR
   error "Missing required parameter".
   usage
+  return 1
 fi
-
-# Helper method to simpify usage of the simpleperf binary on the device.
-function simpleperf_android() {
-  local simpleperf="${DEV_TMP_DIR}/simpleperf"
-  if [ ! -z  "$1" ]; then
-    adb shell "${simpleperf}" "$@"
-  else
-    adb shell $simpleperf --help
-  fi
-}
 
 # Full (relative) path to the libjingle_peerconnection_so.so file.
 function native_shared_lib_path() {
@@ -126,11 +119,12 @@ function copy_simpleperf_to_device() {
   [[ $(dev_arch) == "aarch64" ]] \
     && perf_binary="/arm64/simpleperf" \
     || perf_binary="/arm/simpleperf"
-  local simpleperf="${DEV_TMP_DIR}/simpleperf"
   # Copy the simpleperf binary from local host to temp folder on device.
   adb push "${SCRIPT_DIR}/simpleperf/bin/android${perf_binary}" \
     "${DEV_TMP_DIR}" 1> /dev/null
-  adb shell chmod a+x $simpleperf
+  # Copy simpleperf from temp folder to the application package.
+  adb shell run-as "${APP_NAME}" cp "${DEV_TMP_DIR}/simpleperf" .
+  adb shell run-as "${APP_NAME}" chmod a+x simpleperf
   # Enable profiling on the device.
   enable_profiling
   # Allows usage of running report commands on the device.
@@ -142,7 +136,8 @@ function copy_simpleperf_to_device() {
 # Copy the recorded 'perf.data' file from the device to the current directory.
 # TODO(henrika): add support for specifying the destination.
 function pull_perf_data_from_device() {
-  adb pull "${DEV_TMP_DIR}/perf.data" .
+  adb shell run-as "${APP_NAME}" cp perf.data /sdcard/perf.data
+  adb pull sdcard/perf.data .
 } 1> /dev/null
 
 
@@ -192,7 +187,7 @@ function print_function_help() {
   printf " perf_report_graph\n"
   printf " perf_report_graph_callee\n"
   printf " perf_update\n"
-  printf " perf_clean\n"
+  printf " perf_cleanup\n"
   printf " flame_graph\n"
   printf " plot_flame_graph\n"
 }
@@ -209,7 +204,9 @@ function cleanup() {
 # device to ensure that symbols are up-to-date.
 function perf_update() {
   copy_native_shared_library_to_symbol_cache
-  copy_kernel_symbols_from_device_to_symbol_cache
+  if image_is_root; then
+    copy_kernel_symbols_from_device_to_symbol_cache
+  fi
 }
 
 # Record stack frame based call graphs while using the application.
@@ -228,15 +225,12 @@ function perf_record() {
     fi
     local pid=$(find_app_pid "${APP_NAME}")
     echo "Profiling PID $pid for $duration seconds (media must be is active)..."
-    local output_file="${DEV_TMP_DIR}/perf.data"
-    simpleperf_android record \
+    adb shell run-as "${APP_NAME}" ./simpleperf record \
       --call-graph fp \
       -p "${pid}" \
-      -o $output_file \
       -f 1000 \
       --duration "${duration}" \
       --log error
-    app_stop "${APP_NAME}"
     # Copy profile results from device to current directory.
     pull_perf_data_from_device
     # Print out a summary report (load per thread).
@@ -247,7 +241,7 @@ function perf_record() {
     warning "AppRTCMobile must be active"
     app_start "${APP_NAME}"
     echo "Start media and then call perf_record again..."
-  fi 2> /dev/null
+  fi
 }
 
 # Analyze the profile report and show samples per threads.
@@ -309,10 +303,16 @@ function flame_graph() {
     file_name="$1"
     title="$2"
   fi
-  report_sample.py \
-    --symfs "${SYMBOL_DIR}" \
-    --kallsyms "${SYMBOL_DIR}/kallsyms" \
-    perf.data >out.perf
+  if image_is_not_root; then
+    report_sample.py \
+      --symfs "${SYMBOL_DIR}" \
+      perf.data >out.perf
+  else
+    report_sample.py \
+      --symfs "${SYMBOL_DIR}" \
+      --kallsyms "${SYMBOL_DIR}/kallsyms" \
+      perf.data >out.perf
+  fi
   stackcollapse-perf.pl out.perf >out.folded
   flamegraph.pl --title="${title}" out.folded >"${file_name}"
   rm out.perf
@@ -361,18 +361,11 @@ main() {
   fi
   ok "one device is connected via USB"
 
-  # Ensure that the device is rooted.
-  if image_is_not_root; then
-    error "device is not rooted"
-    return 1
-  fi
-  ok "device is rooted"
-
   # Restart adb with root permissions if needed.
-  if adb_has_no_root_permissions; then
+  if image_is_root && adb_has_no_root_permissions; then
     adb root
+    ok "adb is running as root"
   fi
-  ok "adbd is running as root"
 
   # Create an empty symbol cache in the tmp folder.
   # TODO(henrika): it might not be required to start from a clean cache.
