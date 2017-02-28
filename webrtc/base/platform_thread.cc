@@ -221,6 +221,9 @@ void PlatformThread::Run() {
     return;
   }
 // TODO(tommi): Delete the below.
+#if !defined(WEBRTC_MAC) && !defined(WEBRTC_WIN)
+  const struct timespec ts_null = {0};
+#endif
   do {
     // The interface contract of Start/Stop is that for a successful call to
     // Start, there should be at least one call to the run function.  So we
@@ -232,7 +235,11 @@ void PlatformThread::Run() {
     SleepEx(0, true);
   } while (!stop_);
 #else
+#if defined(WEBRTC_MAC)
     sched_yield();
+#else
+    nanosleep(&ts_null, nullptr);
+#endif
   } while (!AtomicOps::AcquireLoad(&stop_flag_));
 #endif  // defined(WEBRTC_WIN)
 }
