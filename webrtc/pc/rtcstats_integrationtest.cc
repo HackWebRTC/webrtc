@@ -616,9 +616,6 @@ class RTCStatsReportVerifier {
   rtc::scoped_refptr<const RTCStatsReport> report_;
 };
 
-// Disabled on Tsan due to:
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=7231
-#if !defined(THREAD_SANITIZER)
 #ifdef HAVE_SCTP
 TEST_F(RTCStatsIntegrationTest, GetStatsFromCaller) {
   StartCall();
@@ -647,7 +644,6 @@ TEST_F(RTCStatsIntegrationTest, GetsStatsWhileDestroyingPeerConnections) {
   EXPECT_TRUE(stats_obtainer->report());
 }
 #endif  // HAVE_SCTP
-#endif  // !defined(THREAD_SANITIZER)
 
 }  // namespace
 

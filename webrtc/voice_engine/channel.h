@@ -416,7 +416,8 @@ class Channel
                                 RTPExtensionType type,
                                 unsigned char id);
 
-  void UpdateOverheadForEncoder();
+  void UpdateOverheadForEncoder()
+      EXCLUSIVE_LOCKS_REQUIRED(overhead_per_packet_lock_);
 
   int GetRtpTimestampRateHz() const;
   int64_t GetRTT(bool allow_associate_channel) const;
@@ -497,8 +498,9 @@ class Channel
   uint32_t _lastLocalTimeStamp;
   int8_t _lastPayloadType;
   bool _includeAudioLevelIndication;
-  size_t transport_overhead_per_packet_;
-  size_t rtp_overhead_per_packet_;
+  size_t transport_overhead_per_packet_ GUARDED_BY(overhead_per_packet_lock_);
+  size_t rtp_overhead_per_packet_ GUARDED_BY(overhead_per_packet_lock_);
+  rtc::CriticalSection overhead_per_packet_lock_;
   // VoENetwork
   AudioFrame::SpeechType _outputSpeechType;
   // VoEVideoSync

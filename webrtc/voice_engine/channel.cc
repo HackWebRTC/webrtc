@@ -2779,20 +2779,24 @@ void Channel::SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
 }
 
 void Channel::UpdateOverheadForEncoder() {
+  size_t overhead_per_packet =
+      transport_overhead_per_packet_ + rtp_overhead_per_packet_;
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
     if (*encoder) {
-      (*encoder)->OnReceivedOverhead(transport_overhead_per_packet_ +
-                                     rtp_overhead_per_packet_);
+      (*encoder)->OnReceivedOverhead(overhead_per_packet);
     }
   });
 }
 
 void Channel::SetTransportOverhead(size_t transport_overhead_per_packet) {
+  rtc::CritScope cs(&overhead_per_packet_lock_);
   transport_overhead_per_packet_ = transport_overhead_per_packet;
   UpdateOverheadForEncoder();
 }
 
+// TODO(solenberg): Make AudioSendStream an OverheadObserver instead.
 void Channel::OnOverheadChanged(size_t overhead_bytes_per_packet) {
+  rtc::CritScope cs(&overhead_per_packet_lock_);
   rtp_overhead_per_packet_ = overhead_bytes_per_packet;
   UpdateOverheadForEncoder();
 }
