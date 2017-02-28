@@ -204,6 +204,7 @@ if (rtc_include_tests) {
       "send_statistics_proxy_unittest.cc",
       "stats_counter_unittest.cc",
       "stream_synchronization_unittest.cc",
+      "video_receive_stream_unittest.cc",
       "video_send_stream_tests.cc",
       "vie_encoder_unittest.cc",
       "vie_remb_unittest.cc",
