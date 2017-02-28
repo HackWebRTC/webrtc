@@ -58,7 +58,7 @@ class TestRtpFeedback : public NullRtpFeedback {
   explicit TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
   virtual ~TestRtpFeedback() {}
 
-  void OnIncomingSSRCChanged(const uint32_t ssrc) override {
+  void OnIncomingSSRCChanged(uint32_t ssrc) override {
     rtp_rtcp_->SetRemoteSSRC(ssrc);
   }
 

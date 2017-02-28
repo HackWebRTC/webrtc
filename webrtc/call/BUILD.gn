@@ -116,6 +116,7 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "../system_wrappers:metrics_default",
       "../test:direct_transport",
+      "../test:fake_audio_device",
       "../test:test_support",
       "../test:video_test_common",
       "../video",
