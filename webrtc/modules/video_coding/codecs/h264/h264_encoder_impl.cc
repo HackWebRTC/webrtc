@@ -377,17 +377,17 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   // Encoder can skip frames to save bandwidth in which case
   // |encoded_image_._length| == 0.
   if (encoded_image_._length > 0) {
+    // Parse QP.
+    h264_bitstream_parser_.ParseBitstream(encoded_image_._buffer,
+                                          encoded_image_._length);
+    h264_bitstream_parser_.GetLastSliceQp(&encoded_image_.qp_);
+
     // Deliver encoded image.
     CodecSpecificInfo codec_specific;
     codec_specific.codecType = kVideoCodecH264;
     codec_specific.codecSpecific.H264.packetization_mode = packetization_mode_;
     encoded_image_callback_->OnEncodedImage(encoded_image_, &codec_specific,
                                             &frag_header);
-
-    // Parse and report QP.
-    h264_bitstream_parser_.ParseBitstream(encoded_image_._buffer,
-                                          encoded_image_._length);
-    h264_bitstream_parser_.GetLastSliceQp(&encoded_image_.qp_);
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
