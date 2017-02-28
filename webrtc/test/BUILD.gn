@@ -333,22 +333,6 @@ rtc_source_set("direct_transport") {
   ]
 }
 
-rtc_source_set("fake_audio_device") {
-  testonly = true
-  sources = [
-    "fake_audio_device.cc",
-    "fake_audio_device.h",
-  ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-  deps = [
-    "../base:rtc_base_approved",
-    "../modules/audio_device:audio_device",
-  ]
-}
-
 rtc_source_set("test_common") {
   testonly = true
   sources = [
@@ -362,6 +346,8 @@ rtc_source_set("test_common") {
     "drifting_clock.h",
     "encoder_settings.cc",
     "encoder_settings.h",
+    "fake_audio_device.cc",
+    "fake_audio_device.h",
     "fake_decoder.cc",
     "fake_decoder.h",
     "fake_encoder.cc",
@@ -393,13 +379,13 @@ rtc_source_set("test_common") {
 
   deps = [
     ":direct_transport",
-    ":fake_audio_device",
     ":rtp_test_utils",
     ":test_support",
     "..:webrtc_common",
     "../audio",
     "../base:rtc_base_approved",
     "../call",
+    "../modules/audio_device:mock_audio_device",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing",
     "../video",

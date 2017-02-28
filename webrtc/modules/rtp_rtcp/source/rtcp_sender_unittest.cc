@@ -211,7 +211,7 @@ class TestTransport : public Transport,
     return true;
   }
   int OnReceivedPayloadData(const uint8_t* payload_data,
-                            size_t payload_size,
+                            const size_t payload_size,
                             const WebRtcRTPHeader* rtp_header) override {
     return 0;
   }
