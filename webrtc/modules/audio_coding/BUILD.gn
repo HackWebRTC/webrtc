@@ -1324,7 +1324,7 @@ if (rtc_include_tests) {
       sources = [
         "neteq/neteq_unittest.proto",
       ]
-      proto_out_dir = "webrtc/audio_coding/neteq"
+      proto_out_dir = "webrtc/modules/audio_coding/neteq"
     }
 
     rtc_static_library("rtc_event_log_source") {

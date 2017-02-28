@@ -41,7 +41,7 @@ RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/test/unittest.pb.h"
 #else
-#include "webrtc/modules/audio_processing/unittest.pb.h"
+#include "webrtc/modules/audio_processing/test/unittest.pb.h"
 #endif
 RTC_POP_IGNORING_WUNDEF()
 
