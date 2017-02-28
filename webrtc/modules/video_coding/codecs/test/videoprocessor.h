@@ -251,14 +251,20 @@ class VideoProcessorImpl : public VideoProcessor {
 
   webrtc::VideoEncoder* const encoder_;
   webrtc::VideoDecoder* const decoder_;
-  std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
+  const std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
+
+  // Adapters for the codec callbacks.
+  const std::unique_ptr<EncodedImageCallback> encode_callback_;
+  const std::unique_ptr<DecodedImageCallback> decode_callback_;
+
+  PacketManipulator* const packet_manipulator_;
+  const TestConfig& config_;
+
   // These (mandatory) file manipulators are used for, e.g., objective PSNR and
   // SSIM calculations at the end of a test run.
   FrameReader* const analysis_frame_reader_;
   FrameWriter* const analysis_frame_writer_;
-  PacketManipulator* const packet_manipulator_;
-  const TestConfig& config_;
-  Stats* stats_;
+
   // These (optional) file writers are used for persistently storing the output
   // of the coding pipeline at different stages: pre encode (source), post
   // encode (encoded), and post decode (decoded). The purpose is to give the
@@ -268,10 +274,6 @@ class VideoProcessorImpl : public VideoProcessor {
   FrameWriter* const source_frame_writer_;
   IvfFileWriter* const encoded_frame_writer_;
   FrameWriter* const decoded_frame_writer_;
-
-  // Adapters for the codec callbacks.
-  std::unique_ptr<EncodedImageCallback> encode_callback_;
-  std::unique_ptr<DecodedImageCallback> decode_callback_;
 
   // Keep track of the last successful frame, since we need to write that
   // when decoding fails.
@@ -285,12 +287,13 @@ class VideoProcessorImpl : public VideoProcessor {
   size_t encoded_frame_size_;
   FrameType encoded_frame_type_;
   int prev_time_stamp_;
-  int num_dropped_frames_;
-  int num_spatial_resizes_;
   int last_encoder_frame_width_;
   int last_encoder_frame_height_;
 
   // Statistics.
+  Stats* stats_;
+  int num_dropped_frames_;
+  int num_spatial_resizes_;
   double bit_rate_factor_;  // Multiply frame length with this to get bit rate.
   int64_t encode_start_ns_;
   int64_t decode_start_ns_;

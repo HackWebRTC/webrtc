@@ -31,6 +31,19 @@ namespace test {
 
 namespace {
 const int k90khzTimestampFrameDiff = 3000;  // Assuming 30 fps.
+
+std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
+    const TestConfig& config) {
+  std::unique_ptr<TemporalLayersFactory> tl_factory;
+  if (config.codec_settings->codecType == VideoCodecType::kVideoCodecVP8) {
+    tl_factory.reset(new TemporalLayersFactory());
+    config.codec_settings->VP8()->tl_factory = tl_factory.get();
+  }
+  return std::unique_ptr<VideoBitrateAllocator>(
+      VideoCodecInitializer::CreateBitrateAllocator(*config.codec_settings,
+                                                    std::move(tl_factory)));
+}
+
 }  // namespace
 
 const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
@@ -74,11 +87,13 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
                                        FrameWriter* decoded_frame_writer)
     : encoder_(encoder),
       decoder_(decoder),
-      analysis_frame_reader_(analysis_frame_reader),
-      analysis_frame_writer_(analysis_frame_writer),
+      bitrate_allocator_(CreateBitrateAllocator(config)),
+      encode_callback_(new VideoProcessorEncodeCompleteCallback(this)),
+      decode_callback_(new VideoProcessorDecodeCompleteCallback(this)),
       packet_manipulator_(packet_manipulator),
       config_(config),
-      stats_(stats),
+      analysis_frame_reader_(analysis_frame_reader),
+      analysis_frame_writer_(analysis_frame_writer),
       source_frame_writer_(source_frame_writer),
       encoded_frame_writer_(encoded_frame_writer),
       decoded_frame_writer_(decoded_frame_writer),
@@ -88,25 +103,19 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
       encoded_frame_size_(0),
       encoded_frame_type_(kVideoFrameKey),
       prev_time_stamp_(0),
-      num_dropped_frames_(0),
-      num_spatial_resizes_(0),
       last_encoder_frame_width_(0),
       last_encoder_frame_height_(0),
+      stats_(stats),
+      num_dropped_frames_(0),
+      num_spatial_resizes_(0),
       bit_rate_factor_(0.0),
       encode_start_ns_(0),
       decode_start_ns_(0) {
-  std::unique_ptr<TemporalLayersFactory> tl_factory;
-  if (config_.codec_settings->codecType == VideoCodecType::kVideoCodecVP8) {
-    tl_factory.reset(new TemporalLayersFactory());
-    config.codec_settings->VP8()->tl_factory = tl_factory.get();
-  }
-  bitrate_allocator_ = VideoCodecInitializer::CreateBitrateAllocator(
-      *config.codec_settings, std::move(tl_factory));
   RTC_DCHECK(encoder);
   RTC_DCHECK(decoder);
+  RTC_DCHECK(packet_manipulator);
   RTC_DCHECK(analysis_frame_reader);
   RTC_DCHECK(analysis_frame_writer);
-  RTC_DCHECK(packet_manipulator);
   RTC_DCHECK(stats);
 }
 
@@ -124,8 +133,6 @@ bool VideoProcessorImpl::Init() {
   last_encoder_frame_height_ = config_.codec_settings->height;
 
   // Setup required callbacks for the encoder/decoder.
-  encode_callback_.reset(new VideoProcessorEncodeCompleteCallback(this));
-  decode_callback_.reset(new VideoProcessorDecodeCompleteCallback(this));
   RTC_CHECK_EQ(encoder_->RegisterEncodeCompleteCallback(encode_callback_.get()),
                WEBRTC_VIDEO_CODEC_OK)
       << "Failed to register encode complete callback";
@@ -133,7 +140,7 @@ bool VideoProcessorImpl::Init() {
                WEBRTC_VIDEO_CODEC_OK)
       << "Failed to register decode complete callback";
 
-  // Init the encoder and decoder.
+  // Initialize the encoder and decoder.
   uint32_t num_cores =
       config_.use_single_core ? 1 : CpuInfo::DetectNumberOfCores();
   RTC_CHECK_EQ(
@@ -322,8 +329,8 @@ void VideoProcessorImpl::FrameEncoded(
 
   // Simulate packet loss.
   bool exclude_this_frame = false;
-  // Only keyframes can be excluded.
   if (encoded_image._frameType == kVideoFrameKey) {
+    // Only keyframes can be excluded.
     switch (config_.exclude_frame_types) {
       case kExcludeOnlyFirstKeyFrame:
         if (!first_key_frame_has_been_excluded_) {
