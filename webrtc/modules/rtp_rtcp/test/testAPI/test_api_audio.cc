@@ -70,11 +70,11 @@ class VerifyingAudioReceiver : public NullRtpData {
 
 class RTPCallback : public NullRtpFeedback {
  public:
-  int32_t OnInitializeDecoder(const int8_t payloadType,
+  int32_t OnInitializeDecoder(int8_t payloadType,
                               const char payloadName[RTP_PAYLOAD_NAME_SIZE],
-                              const int frequency,
-                              const size_t channels,
-                              const uint32_t rate) override {
+                              int frequency,
+                              size_t channels,
+                              uint32_t rate) override {
     EXPECT_EQ(0u, rate) << "The rate should be zero";
     return 0;
   }
