@@ -99,7 +99,8 @@ void AudioFrameOperations::StereoToMono(const int16_t* src_audio,
                                         size_t samples_per_channel,
                                         int16_t* dst_audio) {
   for (size_t i = 0; i < samples_per_channel; i++) {
-    dst_audio[i] = (src_audio[2 * i] + src_audio[2 * i + 1]) >> 1;
+    dst_audio[i] =
+        (static_cast<int32_t>(src_audio[2 * i]) + src_audio[2 * i + 1]) >> 1;
   }
 }
 
@@ -108,10 +109,96 @@ int AudioFrameOperations::StereoToMono(AudioFrame* frame) {
     return -1;
   }
 
+  RTC_DCHECK_LE(frame->samples_per_channel_ * 2,
+                AudioFrame::kMaxDataSizeSamples);
+
   StereoToMono(frame->data_, frame->samples_per_channel_, frame->data_);
   frame->num_channels_ = 1;
 
   return 0;
+}
+
+void AudioFrameOperations::QuadToStereo(const int16_t* src_audio,
+                                        size_t samples_per_channel,
+                                        int16_t* dst_audio) {
+  for (size_t i = 0; i < samples_per_channel; i++) {
+    dst_audio[i * 2] =
+        (static_cast<int32_t>(src_audio[4 * i]) + src_audio[4 * i + 1]) >> 1;
+    dst_audio[i * 2 + 1] =
+        (static_cast<int32_t>(src_audio[4 * i + 2]) + src_audio[4 * i + 3]) >>
+        1;
+  }
+}
+
+int AudioFrameOperations::QuadToStereo(AudioFrame* frame) {
+  if (frame->num_channels_ != 4) {
+    return -1;
+  }
+
+  RTC_DCHECK_LE(frame->samples_per_channel_ * 4,
+                AudioFrame::kMaxDataSizeSamples);
+
+  QuadToStereo(frame->data_, frame->samples_per_channel_, frame->data_);
+  frame->num_channels_ = 2;
+
+  return 0;
+}
+
+void AudioFrameOperations::QuadToMono(const int16_t* src_audio,
+                                      size_t samples_per_channel,
+                                      int16_t* dst_audio) {
+  for (size_t i = 0; i < samples_per_channel; i++) {
+    dst_audio[i] =
+        (static_cast<int32_t>(src_audio[4 * i]) + src_audio[4 * i + 1] +
+         src_audio[4 * i + 2] + src_audio[4 * i + 3]) >> 2;
+  }
+}
+
+int AudioFrameOperations::QuadToMono(AudioFrame* frame) {
+  if (frame->num_channels_ != 4) {
+    return -1;
+  }
+
+  RTC_DCHECK_LE(frame->samples_per_channel_ * 4,
+                AudioFrame::kMaxDataSizeSamples);
+
+  QuadToMono(frame->data_, frame->samples_per_channel_, frame->data_);
+  frame->num_channels_ = 1;
+
+  return 0;
+}
+
+void AudioFrameOperations::DownmixChannels(const int16_t* src_audio,
+                                           size_t src_channels,
+                                           size_t samples_per_channel,
+                                           size_t dst_channels,
+                                           int16_t* dst_audio) {
+  if (src_channels == 2 && dst_channels == 1) {
+    StereoToMono(src_audio, samples_per_channel, dst_audio);
+    return;
+  } else if (src_channels == 4 && dst_channels == 2) {
+    QuadToStereo(src_audio, samples_per_channel, dst_audio);
+    return;
+  } else if (src_channels == 4 && dst_channels == 1) {
+    QuadToMono(src_audio, samples_per_channel, dst_audio);
+    return;
+  }
+
+  RTC_NOTREACHED() << "src_channels: " << src_channels
+                   << ", dst_channels: " << dst_channels;
+}
+
+int AudioFrameOperations::DownmixChannels(size_t dst_channels,
+                                          AudioFrame* frame) {
+  if (frame->num_channels_ == 2 && dst_channels == 1) {
+    return StereoToMono(frame);
+  } else if (frame->num_channels_ == 4 && dst_channels == 2) {
+    return QuadToStereo(frame);
+  } else if (frame->num_channels_ == 4 && dst_channels == 1) {
+    return QuadToMono(frame);
+  }
+
+  return -1;
 }
 
 void AudioFrameOperations::SwapStereoChannels(AudioFrame* frame) {

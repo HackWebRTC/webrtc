@@ -41,14 +41,20 @@ void RemixAndResample(const int16_t* src_data,
                       AudioFrame* dst_frame) {
   const int16_t* audio_ptr = src_data;
   size_t audio_ptr_num_channels = num_channels;
-  int16_t mono_audio[AudioFrame::kMaxDataSizeSamples];
+  int16_t downsampled_audio[AudioFrame::kMaxDataSizeSamples];
 
   // Downmix before resampling.
-  if (num_channels == 2 && dst_frame->num_channels_ == 1) {
-    AudioFrameOperations::StereoToMono(src_data, samples_per_channel,
-                                       mono_audio);
-    audio_ptr = mono_audio;
-    audio_ptr_num_channels = 1;
+  if (num_channels > dst_frame->num_channels_) {
+    RTC_DCHECK(num_channels == 2 || num_channels == 4)
+        << "num_channels: " << num_channels;
+    RTC_DCHECK(dst_frame->num_channels_ == 1 || dst_frame->num_channels_ == 2)
+        << "dst_frame->num_channels_: " << dst_frame->num_channels_;
+
+    AudioFrameOperations::DownmixChannels(
+        src_data, num_channels, samples_per_channel, dst_frame->num_channels_,
+        downsampled_audio);
+    audio_ptr = downsampled_audio;
+    audio_ptr_num_channels = dst_frame->num_channels_;
   }
 
   if (resampler->InitializeIfNeeded(sample_rate_hz, dst_frame->sample_rate_hz_,
