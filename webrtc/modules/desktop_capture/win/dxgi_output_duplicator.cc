@@ -33,8 +33,8 @@ namespace {
 // Timeout for AcquireNextFrame() call.
 // DxgiDuplicatorController leverages external components to do the capture
 // scheduling. So here DxgiOutputDuplicator does not need to actively wait for a
-// new frame. 1 millisecond is the minimium value AcquireNextFrame() accepts.
-const int kAcquireTimeoutMs = 1;
+// new frame.
+const int kAcquireTimeoutMs = 0;
 
 DesktopRect RECTToDesktopRect(const RECT& rect) {
   return DesktopRect::MakeLTRB(rect.left, rect.top, rect.right, rect.bottom);
