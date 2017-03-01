@@ -21,6 +21,7 @@
 #include "webrtc/base/cpu_time.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/memory_usage.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/base/timeutils.h"
@@ -654,6 +655,8 @@ class VideoAnalyzer : public PacketReceiver,
         if (receive_stats.max_decode_ms > 0)
           decode_time_max_ms_.AddSample(receive_stats.max_decode_ms);
       }
+
+      memory_usage_.AddSample(rtc::GetProcessResidentSizeBytes());
     }
   }
 
@@ -766,6 +769,14 @@ class VideoAnalyzer : public PacketReceiver,
            test_label_.c_str(), dropped_frames_before_rendering_);
     printf("RESULT cpu_usage: %s = %lf %%\n", test_label_.c_str(),
            GetCpuUsagePercent());
+
+#if defined(WEBRTC_WIN)
+      // On Linux and Mac in Resident Set some unused pages may be counted.
+      // Therefore this metric will depend on order in which tests are run and
+      // will be flaky.
+    PrintResult("memory_usage", memory_usage_, " bytes");
+#endif
+
     //  Disable quality check for quick test, as quality checks may fail
     //  because too few samples were collected.
     if (!is_quick_test_enabled_) {
@@ -967,6 +978,8 @@ class VideoAnalyzer : public PacketReceiver,
   test::Statistics decode_time_ms_ GUARDED_BY(comparison_lock_);
   test::Statistics decode_time_max_ms_ GUARDED_BY(comparison_lock_);
   test::Statistics media_bitrate_bps_ GUARDED_BY(comparison_lock_);
+  test::Statistics memory_usage_ GUARDED_BY(comparison_lock_);
+
 
   const int frames_to_process_;
   int frames_recorded_;
