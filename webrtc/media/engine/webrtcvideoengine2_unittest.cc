@@ -906,7 +906,7 @@ TEST_F(WebRtcVideoEngine2Test, StreamParamsIdPassedToDecoderFactory) {
   EXPECT_EQ(sp.id, params[0].receive_stream_id);
 }
 
-TEST_F(WebRtcVideoEngine2Test, RecreatesEncoderOnContentTypeChange) {
+TEST_F(WebRtcVideoEngine2Test, DISABLED_RecreatesEncoderOnContentTypeChange) {
   cricket::FakeWebRtcVideoEncoderFactory encoder_factory;
   encoder_factory.AddSupportedVideoCodecType("VP8");
   std::unique_ptr<FakeCall> fake_call(
