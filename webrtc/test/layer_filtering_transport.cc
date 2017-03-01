@@ -26,12 +26,14 @@ LayerFilteringTransport::LayerFilteringTransport(
     uint8_t vp8_video_payload_type,
     uint8_t vp9_video_payload_type,
     int selected_tl,
-    int selected_sl)
+    int selected_sl,
+    const std::set<uint32_t> &excluded_ssrcs)
     : test::DirectTransport(config, send_call),
       vp8_video_payload_type_(vp8_video_payload_type),
       vp9_video_payload_type_(vp9_video_payload_type),
       selected_tl_(selected_tl),
       selected_sl_(selected_sl),
+      excluded_ssrcs_(std::move(excluded_ssrcs)),
       discarded_last_packet_(false) {}
 
 bool LayerFilteringTransport::DiscardedLastPacket() const {
@@ -81,7 +83,9 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
       } else if ((selected_tl_ >= 0 && temporal_idx != kNoTemporalIdx &&
                   temporal_idx > selected_tl_) ||
                  (selected_sl_ >= 0 && spatial_idx != kNoSpatialIdx &&
-                  spatial_idx > selected_sl_)) {
+                  spatial_idx > selected_sl_) ||
+                 excluded_ssrcs_.find(header.ssrc) !=
+                     excluded_ssrcs_.end()) {
         // Truncate packet to a padding packet.
         length = header.headerLength + 1;
         temp_buffer[0] |= (1 << 5);  // P = 1.
