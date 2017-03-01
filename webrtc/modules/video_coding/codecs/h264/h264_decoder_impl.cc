@@ -357,7 +357,14 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
                video_frame->video_frame_buffer()->DataV());
   video_frame->set_timestamp(input_image._timeStamp);
 
-  int32_t ret;
+  rtc::Optional<uint8_t> qp;
+  // TODO(sakal): Maybe it is possible to get QP directly from FFmpeg.
+  h264_bitstream_parser_.ParseBitstream(input_image._buffer,
+                                        input_image._length);
+  int qp_int;
+  if (h264_bitstream_parser_.GetLastSliceQp(&qp_int)) {
+    qp.emplace(qp_int);
+  }
 
   // The decoded image may be larger than what is supposed to be visible, see
   // |AVGetBuffer2|'s use of |avcodec_align_dimensions|. This crops the image
@@ -376,19 +383,17 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
         video_frame->rotation());
     // TODO(nisse): Timestamp and rotation are all zero here. Change decoder
     // interface to pass a VideoFrameBuffer instead of a VideoFrame?
-    ret = decoded_image_callback_->Decoded(cropped_frame);
+    decoded_image_callback_->Decoded(cropped_frame, rtc::Optional<int32_t>(),
+                                     qp);
   } else {
     // Return decoded frame.
-    ret = decoded_image_callback_->Decoded(*video_frame);
+    decoded_image_callback_->Decoded(*video_frame, rtc::Optional<int32_t>(),
+                                     qp);
   }
   // Stop referencing it, possibly freeing |video_frame|.
   av_frame_unref(av_frame_.get());
   video_frame = nullptr;
 
-  if (ret) {
-    LOG(LS_WARNING) << "DecodedImageCallback::Decoded returned " << ret;
-    return ret;
-  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
