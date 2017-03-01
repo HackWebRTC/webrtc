@@ -28,8 +28,9 @@ std::string MediaTypeToString(MediaType type) {
     case MEDIA_TYPE_DATA:
       return kMediaTypeData;
   }
-  // Not reachable; avoids compile warning.
   FATAL();
+  // Not reachable; avoids compile warning.
+  return "";
 }
 
 MediaType MediaTypeFromString(const std::string& type_str) {
@@ -39,9 +40,10 @@ MediaType MediaTypeFromString(const std::string& type_str) {
     return MEDIA_TYPE_VIDEO;
   } else if (type_str == kMediaTypeData) {
     return MEDIA_TYPE_DATA;
-  } else {
-    FATAL();
   }
+  FATAL();
+  // Not reachable; avoids compile warning.
+  return static_cast<MediaType>(-1);
 }
 
 }  // namespace cricket
