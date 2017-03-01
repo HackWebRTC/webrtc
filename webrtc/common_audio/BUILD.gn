@@ -46,7 +46,6 @@ rtc_static_library("common_audio") {
     "resampler/push_sinc_resampler.h",
     "resampler/resampler.cc",
     "resampler/sinc_resampler.cc",
-    "resampler/sinc_resampler.h",
     "smoothing_filter.cc",
     "smoothing_filter.h",
     "sparse_fir_filter.cc",
@@ -62,6 +61,10 @@ rtc_static_library("common_audio") {
   ]
 
   deps = [
+    ":sinc_resampler",
+    "..:webrtc_common",
+    "../base:gtest_prod",
+    "../base:rtc_base_approved",
     "../system_wrappers",
   ]
   public_deps = [
@@ -199,10 +202,33 @@ rtc_source_set("common_audio_c") {
   }
 
   public_configs = [ ":common_audio_config" ]
+  deps = [
+    "..:webrtc_common",
+    "../base:rtc_base_approved",
+    "../system_wrappers:system_wrappers",
+  ]
+}
+
+rtc_source_set("sinc_resampler") {
+  sources = [
+    "resampler/sinc_resampler.h",
+  ]
+  deps = [
+    "..:webrtc_common",
+    "../base:gtest_prod",
+    "../base:rtc_base_approved",
+    "../system_wrappers",
+  ]
 }
 
 if (current_cpu == "x86" || current_cpu == "x64") {
   rtc_static_library("common_audio_sse2") {
+    # TODO(kjellander): Remove (bugs.webrtc.org/6828)
+    # Enabling GN check triggers dependency cycle:
+    #   //webrtc/common_audio:common_audio ->
+    #   //webrtc/common_audio:common_audio_sse2 ->
+    #   //webrtc/common_audio:common_audio
+    check_includes = false
     sources = [
       "fir_filter_sse.cc",
       "resampler/sinc_resampler_sse.cc",
@@ -216,11 +242,20 @@ if (current_cpu == "x86" || current_cpu == "x64") {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
+    deps = [
+      ":sinc_resampler",
+    ]
   }
 }
 
 if (rtc_build_with_neon) {
   rtc_static_library("common_audio_neon") {
+    # TODO(kjellander): Remove (bugs.webrtc.org/6828)
+    # Enabling GN check triggers dependency cycle:
+    #   //webrtc/common_audio:common_audio ->
+    #   //webrtc/common_audio:common_audio_neon ->
+    #   //webrtc/common_audio:common_audio
+    check_includes = false
     sources = [
       "fir_filter_neon.cc",
       "resampler/sinc_resampler_neon.cc",
@@ -247,6 +282,10 @@ if (rtc_build_with_neon) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
+
+    deps = [
+      ":sinc_resampler",
+    ]
 
     public_deps = [
       ":common_audio_neon_c",
@@ -282,6 +321,10 @@ if (rtc_build_with_neon) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
+    deps = [
+      ":common_audio_c",
+      "../base:rtc_base_approved",
+    ]
   }
 }
 
@@ -335,6 +378,10 @@ if (rtc_include_tests) {
 
     deps = [
       ":common_audio",
+      ":sinc_resampler",
+      "..:webrtc_common",
+      "../base:rtc_base_approved",
+      "../system_wrappers",
       "../test:test_main",
       "//testing/gmock",
       "//testing/gtest",
