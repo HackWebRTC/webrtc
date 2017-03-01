@@ -18,7 +18,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_delay_estimator.h"
-#include "webrtc/system_wrappers/include/logging.h"
+#include "webrtc/modules/audio_processing/aec3/render_delay_controller_metrics.h"
 
 namespace webrtc {
 
@@ -81,6 +81,7 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   int echo_path_delay_samples_ = 0;
   size_t align_call_counter_ = 0;
   rtc::Optional<size_t> headroom_samples_;
+  RenderDelayControllerMetrics metrics_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderDelayControllerImpl);
 };
 
@@ -150,6 +151,8 @@ size_t RenderDelayControllerImpl::GetDelay(
   } else if (++blocks_since_last_delay_estimate_ > 250 * 20) {
     headroom_samples_ = rtc::Optional<size_t>();
   }
+
+  metrics_.Update(echo_path_delay_samples, delay_);
 
   data_dumper_->DumpRaw("aec3_render_delay_controller_delay", 1,
                         &echo_path_delay_samples_);

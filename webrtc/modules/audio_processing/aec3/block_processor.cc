@@ -13,9 +13,9 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
+#include "webrtc/modules/audio_processing/aec3/block_processor_metrics.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
-#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 namespace {
@@ -44,6 +44,7 @@ class BlockProcessorImpl final : public BlockProcessor {
   std::unique_ptr<RenderDelayBuffer> render_buffer_;
   std::unique_ptr<RenderDelayController> delay_controller_;
   std::unique_ptr<EchoRemover> echo_remover_;
+  BlockProcessorMetrics metrics_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(BlockProcessorImpl);
 };
 
@@ -88,8 +89,9 @@ void BlockProcessorImpl::ProcessCapture(
         delay_controller_->AlignmentHeadroomSamples(),
         EchoPathVariability(echo_path_gain_change, render_delay_change),
         capture_signal_saturation, render_block, capture_block);
+    metrics_.UpdateCapture(false);
   } else {
-    LOG(LS_INFO) << "AEC3 empty render buffer";
+    metrics_.UpdateCapture(true);
   }
 }
 
@@ -102,10 +104,10 @@ bool BlockProcessorImpl::BufferRender(std::vector<std::vector<float>>* block) {
       !delay_controller_->AnalyzeRender((*block)[0]);
   const bool render_buffer_overrun = !render_buffer_->Insert(block);
   if (delay_controller_overrun || render_buffer_overrun) {
-    LOG(LS_INFO) << "AEC3 buffer overrrun";
+    metrics_.UpdateRender(true);
     return false;
   }
-
+  metrics_.UpdateRender(false);
   return true;
 }
 

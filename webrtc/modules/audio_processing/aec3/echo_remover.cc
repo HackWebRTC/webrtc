@@ -21,6 +21,7 @@
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/aec3/comfort_noise_generator.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
+#include "webrtc/modules/audio_processing/aec3/echo_remover_metrics.h"
 #include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/fft_data.h"
 #include "webrtc/modules/audio_processing/aec3/output_selector.h"
@@ -90,6 +91,7 @@ class EchoRemoverImpl final : public EchoRemover {
   bool echo_leakage_detected_ = false;
   std::array<float, kBlockSize> x_old_;
   AecState aec_state_;
+  EchoRemoverMetrics metrics_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoRemoverImpl);
 };
@@ -208,6 +210,9 @@ void EchoRemoverImpl::ProcessBlock(
   suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(),
                             doubletalk ? 0.001f : 0.0001f, &G);
   suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G, y);
+
+  // Update the metrics.
+  metrics_.Update(aec_state_, cng_.NoiseSpectrum(), G);
 
   // Debug outputs for the purpose of development and analysis.
   data_dumper_->DumpRaw("aec3_N2", cng_.NoiseSpectrum());

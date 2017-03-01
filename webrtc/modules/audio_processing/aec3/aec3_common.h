@@ -26,6 +26,11 @@ namespace webrtc {
 
 enum class Aec3Optimization { kNone, kSse2 };
 
+constexpr int kMetricsReportingIntervalBlocks = 10 * 250;
+constexpr int kMetricsComputationBlocks = 9;
+constexpr int kMetricsCollectionBlocks =
+    kMetricsReportingIntervalBlocks - kMetricsComputationBlocks;
+
 constexpr size_t kFftLengthBy2 = 64;
 constexpr size_t kFftLengthBy2Plus1 = kFftLengthBy2 + 1;
 constexpr size_t kFftLengthBy2Minus1 = kFftLengthBy2 - 1;
