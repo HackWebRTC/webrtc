@@ -740,22 +740,27 @@ bool BaseChannel::SendPacket(bool rtcp,
       res = srtp_filter_.ProtectRtp(
           data, len, static_cast<int>(packet->capacity()), &len);
 #else
-      updated_options.packet_time_params.rtp_sendtime_extension_id =
-          rtp_abs_sendtime_extn_id_;
-      res = srtp_filter_.ProtectRtp(
-          data, len, static_cast<int>(packet->capacity()), &len,
-          &updated_options.packet_time_params.srtp_packet_index);
-      // If protection succeeds, let's get auth params from srtp.
-      if (res) {
-        uint8_t* auth_key = NULL;
-        int key_len;
-        res = srtp_filter_.GetRtpAuthParams(
-            &auth_key, &key_len,
-            &updated_options.packet_time_params.srtp_auth_tag_len);
+      if (!srtp_filter_.IsExternalAuthActive()) {
+        res = srtp_filter_.ProtectRtp(
+            data, len, static_cast<int>(packet->capacity()), &len);
+      } else {
+        updated_options.packet_time_params.rtp_sendtime_extension_id =
+            rtp_abs_sendtime_extn_id_;
+        res = srtp_filter_.ProtectRtp(
+            data, len, static_cast<int>(packet->capacity()), &len,
+            &updated_options.packet_time_params.srtp_packet_index);
+        // If protection succeeds, let's get auth params from srtp.
         if (res) {
-          updated_options.packet_time_params.srtp_auth_key.resize(key_len);
-          updated_options.packet_time_params.srtp_auth_key.assign(
-              auth_key, auth_key + key_len);
+          uint8_t* auth_key = NULL;
+          int key_len;
+          res = srtp_filter_.GetRtpAuthParams(
+              &auth_key, &key_len,
+              &updated_options.packet_time_params.srtp_auth_tag_len);
+          if (res) {
+            updated_options.packet_time_params.srtp_auth_key.resize(key_len);
+            updated_options.packet_time_params.srtp_auth_key.assign(
+                auth_key, auth_key + key_len);
+          }
         }
       }
 #endif

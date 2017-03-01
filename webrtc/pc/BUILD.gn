@@ -55,7 +55,7 @@ rtc_static_library("rtc_pc") {
     "../media",
   ]
 
-  if (build_with_chromium) {
+  if (rtc_enable_external_auth) {
     sources += [
       "externalhmac.cc",
       "externalhmac.h",

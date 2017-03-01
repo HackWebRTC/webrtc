@@ -101,14 +101,6 @@ bool ChannelManager::SetCryptoOptions_w(
     LOG(LS_WARNING) << "Not changing crypto options in existing channels.";
   }
   crypto_options_ = crypto_options;
-#if defined(ENABLE_EXTERNAL_AUTH)
-  if (crypto_options_.enable_gcm_crypto_suites) {
-    // TODO(jbauch): Re-enable once https://crbug.com/628400 is resolved.
-    crypto_options_.enable_gcm_crypto_suites = false;
-    LOG(LS_WARNING) << "GCM ciphers are not supported with " <<
-        "ENABLE_EXTERNAL_AUTH and will be disabled.";
-  }
-#endif
   return true;
 }
 
