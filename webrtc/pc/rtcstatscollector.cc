@@ -261,10 +261,6 @@ void SetOutboundRTPStreamStatsFromMediaSenderInfo(
       static_cast<uint32_t>(media_sender_info.packets_sent);
   outbound_stats->bytes_sent =
       static_cast<uint64_t>(media_sender_info.bytes_sent);
-  if (media_sender_info.rtt_ms >= 0) {
-    outbound_stats->round_trip_time = static_cast<double>(
-        media_sender_info.rtt_ms) / rtc::kNumMillisecsPerSec;
-  }
 }
 
 void SetOutboundRTPStreamStatsFromVoiceSenderInfo(

@@ -513,6 +513,7 @@ WEBRTC_RTCSTATS_IMPL(
     &packets_lost,
     &jitter,
     &fraction_lost,
+    &round_trip_time,
     &packets_discarded,
     &packets_repaired,
     &burst_packets_lost,
@@ -538,6 +539,7 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
       packets_lost("packetsLost"),
       jitter("jitter"),
       fraction_lost("fractionLost"),
+      round_trip_time("roundTripTime"),
       packets_discarded("packetsDiscarded"),
       packets_repaired("packetsRepaired"),
       burst_packets_lost("burstPacketsLost"),
@@ -559,6 +561,7 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
       packets_lost(other.packets_lost),
       jitter(other.jitter),
       fraction_lost(other.fraction_lost),
+      round_trip_time(other.round_trip_time),
       packets_discarded(other.packets_discarded),
       packets_repaired(other.packets_repaired),
       burst_packets_lost(other.burst_packets_lost),
@@ -580,7 +583,6 @@ WEBRTC_RTCSTATS_IMPL(
     &packets_sent,
     &bytes_sent,
     &target_bitrate,
-    &round_trip_time,
     &frames_encoded);
 
 RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
@@ -594,7 +596,6 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
       packets_sent("packetsSent"),
       bytes_sent("bytesSent"),
       target_bitrate("targetBitrate"),
-      round_trip_time("roundTripTime"),
       frames_encoded("framesEncoded") {
 }
 
@@ -604,7 +605,6 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
       packets_sent(other.packets_sent),
       bytes_sent(other.bytes_sent),
       target_bitrate(other.target_bitrate),
-      round_trip_time(other.round_trip_time),
       frames_encoded(other.frames_encoded) {
 }
 

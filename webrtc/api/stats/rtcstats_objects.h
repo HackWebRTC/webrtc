@@ -327,8 +327,8 @@ class RTCRTPStreamStats : public RTCStats {
 };
 
 // https://w3c.github.io/webrtc-stats/#inboundrtpstats-dict*
-// Tracking bug crbug.com/657855
-// TODO(hbos): Support the remote case |is_remote = true|. crbug.com/657855
+// TODO(hbos): Support the remote case |is_remote = true|.
+// https://bugs.webrtc.org/7065
 class RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -341,36 +341,38 @@ class RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<uint32_t> packets_received;
   RTCStatsMember<uint64_t> bytes_received;
   RTCStatsMember<uint32_t> packets_lost;
-  // TODO(hbos): Not collected in the "video" case by |RTCStatsCollector|.
-  // crbug.com/657855
+  // TODO(hbos): Collect and populate this value for both "audio" and "video",
+  // currently not collected for "video". https://bugs.webrtc.org/7065
   RTCStatsMember<double> jitter;
   RTCStatsMember<double> fraction_lost;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
+  RTCStatsMember<double> round_trip_time;
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<uint32_t> packets_discarded;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<uint32_t> packets_repaired;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<uint32_t> burst_packets_lost;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<uint32_t> burst_packets_discarded;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<uint32_t> burst_loss_count;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<uint32_t> burst_discard_count;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<double> burst_loss_rate;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<double> burst_discard_rate;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<double> gap_loss_rate;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657855
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<double> gap_discard_rate;
   RTCStatsMember<uint32_t> frames_decoded;
 };
 
 // https://w3c.github.io/webrtc-stats/#outboundrtpstats-dict*
-// Tracking bug crbug.com/657856
-// TODO(hbos): Support the remote case |is_remote = true|. crbug.com/657856
+// TODO(hbos): Support the remote case |is_remote = true|.
+// https://bugs.webrtc.org/7066
 class RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -382,9 +384,8 @@ class RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
 
   RTCStatsMember<uint32_t> packets_sent;
   RTCStatsMember<uint64_t> bytes_sent;
-  // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/657856
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7066
   RTCStatsMember<double> target_bitrate;
-  RTCStatsMember<double> round_trip_time;
   RTCStatsMember<uint32_t> frames_encoded;
 };
 

@@ -1959,7 +1959,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   voice_media_info.senders[0].local_stats[0].ssrc = 1;
   voice_media_info.senders[0].packets_sent = 2;
   voice_media_info.senders[0].bytes_sent = 3;
-  voice_media_info.senders[0].rtt_ms = -1;
   voice_media_info.senders[0].codec_payload_type = rtc::Optional<int>(42);
 
   RtpCodecParameters codec_parameters;
@@ -2005,21 +2004,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   expected_audio.codec_id = "RTCCodec_OutboundAudio_42";
   expected_audio.packets_sent = 2;
   expected_audio.bytes_sent = 3;
-  // |expected_audio.round_trip_time| should be undefined.
 
   ASSERT_TRUE(report->Get(expected_audio.id()));
   EXPECT_EQ(
       report->Get(expected_audio.id())->cast_to<RTCOutboundRTPStreamStats>(),
       expected_audio);
-
-  // Set previously undefined values and "GetStats" again.
-  voice_media_info.senders[0].rtt_ms = 4500;
-  expected_audio.round_trip_time = 4.5;
-
-  EXPECT_CALL(*voice_media_channel, GetStats(_))
-      .WillOnce(DoAll(SetArgPointee<0>(voice_media_info), Return(true)));
-  collector_->ClearCachedStatsReport();
-  report = GetStatsReport();
 
   ASSERT_TRUE(report->Get(expected_audio.id()));
   EXPECT_EQ(
@@ -2050,7 +2039,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].nacks_rcvd = 4;
   video_media_info.senders[0].packets_sent = 5;
   video_media_info.senders[0].bytes_sent = 6;
-  video_media_info.senders[0].rtt_ms = -1;
   video_media_info.senders[0].codec_payload_type = rtc::Optional<int>(42);
   video_media_info.senders[0].frames_encoded = 8;
   video_media_info.senders[0].qp_sum = rtc::Optional<uint64_t>();
@@ -2102,8 +2090,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.packets_sent = 5;
   expected_video.bytes_sent = 6;
   expected_video.frames_encoded = 8;
-  // |expected_video.round_trip_time| and |expected_video.qp_sum| should be
-  // undefined.
+  // |expected_video.qp_sum| should be undefined.
 
   ASSERT_TRUE(report->Get(expected_video.id()));
   EXPECT_EQ(
@@ -2111,9 +2098,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
       expected_video);
 
   // Set previously undefined values and "GetStats" again.
-  video_media_info.senders[0].rtt_ms = 7500;
   video_media_info.senders[0].qp_sum = rtc::Optional<uint64_t>(9);
-  expected_video.round_trip_time = 7.5;
   expected_video.qp_sum = 9;
 
   EXPECT_CALL(*video_media_channel, GetStats(_))

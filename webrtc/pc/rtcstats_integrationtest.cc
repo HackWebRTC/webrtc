@@ -553,6 +553,7 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsNonNegative<double>(inbound_stream.jitter);
     }
     verifier.TestMemberIsNonNegative<double>(inbound_stream.fraction_lost);
+    verifier.TestMemberIsUndefined(inbound_stream.round_trip_time);
     verifier.TestMemberIsUndefined(inbound_stream.packets_discarded);
     verifier.TestMemberIsUndefined(inbound_stream.packets_repaired);
     verifier.TestMemberIsUndefined(inbound_stream.burst_packets_lost);
@@ -585,8 +586,6 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsNonNegative<uint32_t>(outbound_stream.packets_sent);
     verifier.TestMemberIsNonNegative<uint64_t>(outbound_stream.bytes_sent);
     verifier.TestMemberIsUndefined(outbound_stream.target_bitrate);
-    // TODO(hbos): Defined in video but not audio case. Why? crbug.com/669877
-    verifier.MarkMemberTested(outbound_stream.round_trip_time, true);
     if (outbound_stream.media_type.is_defined() &&
         *outbound_stream.media_type == "video") {
       verifier.TestMemberIsDefined(outbound_stream.frames_encoded);
