@@ -11,7 +11,6 @@
 """WebRTC iOS FAT libraries build script.
 Each architecture is compiled separately before being merged together.
 By default, the library is created in out_ios_libs/. (Change with -o.)
-The headers will be copied to out_ios_libs/include.
 """
 
 import argparse
