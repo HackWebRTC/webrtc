@@ -40,11 +40,14 @@
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
+#include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/transmit_mixer.h"
 
 namespace cricket {
 namespace {
+
+constexpr size_t kMaxUnsignaledRecvStreams = 50;
 
 const int kDefaultTraceFilter = webrtc::kTraceNone | webrtc::kTraceTerseInfo |
                                 webrtc::kTraceWarning | webrtc::kTraceError |
@@ -2235,12 +2238,10 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     return false;
   }
 
-  // If the default receive stream was created with this ssrc, we unmark it as
-  // being the default stream, and possibly recreate the AudioReceiveStream, if
-  // sync_label has changed.
-  if (IsDefaultRecvStream(ssrc)) {
+  // If this stream was previously received unsignaled, we promote it, possibly
+  // recreating the AudioReceiveStream, if sync_label has changed.
+  if (MaybeDeregisterUnsignaledRecvStream(ssrc)) {
     recv_streams_[ssrc]->MaybeRecreateAudioReceiveStream(sp.sync_label);
-    default_recv_ssrc_ = -1;
     return true;
   }
 
@@ -2304,10 +2305,7 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
     return false;
   }
 
-  // Deregister default channel, if that's the one being destroyed.
-  if (IsDefaultRecvStream(ssrc)) {
-    default_recv_ssrc_ = -1;
-  }
+  MaybeDeregisterUnsignaledRecvStream(ssrc);
 
   const int channel = it->second->channel();
 
@@ -2367,21 +2365,21 @@ int WebRtcVoiceMediaChannel::GetOutputLevel() {
 
 bool WebRtcVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  std::vector<uint32_t> ssrcs(1, ssrc);
   if (ssrc == 0) {
     default_recv_volume_ = volume;
-    if (default_recv_ssrc_ == -1) {
-      return true;
+    ssrcs = unsignaled_recv_ssrcs_;
+  }
+  for (uint32_t ssrc : ssrcs) {
+    const auto it = recv_streams_.find(ssrc);
+    if (it == recv_streams_.end()) {
+      LOG(LS_WARNING) << "SetOutputVolume: no recv stream " << ssrc;
+      return false;
     }
-    ssrc = static_cast<uint32_t>(default_recv_ssrc_);
+    it->second->SetOutputVolume(volume);
+    LOG(LS_INFO) << "SetOutputVolume() to " << volume
+                 << " for recv stream with ssrc " << ssrc;
   }
-  const auto it = recv_streams_.find(ssrc);
-  if (it == recv_streams_.end()) {
-    LOG(LS_WARNING) << "SetOutputVolume: no recv stream" << ssrc;
-    return false;
-  }
-  it->second->SetOutputVolume(volume);
-  LOG(LS_INFO) << "SetOutputVolume() to " << volume
-               << " for recv stream with ssrc " << ssrc;
   return true;
 }
 
@@ -2432,35 +2430,53 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
     return;
   }
 
-  // Create a default receive stream for this unsignalled and previously not
-  // received ssrc. If there already is a default receive stream, delete it.
+  // Create an unsignaled receive stream for this previously not received ssrc.
+  // If there already is N unsignaled receive streams, delete the oldest.
   // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5208
   uint32_t ssrc = 0;
   if (!GetRtpSsrc(packet->cdata(), packet->size(), &ssrc)) {
     return;
   }
+  RTC_DCHECK(std::find(unsignaled_recv_ssrcs_.begin(),
+      unsignaled_recv_ssrcs_.end(), ssrc) == unsignaled_recv_ssrcs_.end());
 
+  // Add new stream.
   StreamParams sp;
   sp.ssrcs.push_back(ssrc);
-  LOG(LS_INFO) << "Creating default receive stream for SSRC=" << ssrc << ".";
+  LOG(LS_INFO) << "Creating unsignaled receive stream for SSRC=" << ssrc;
   if (!AddRecvStream(sp)) {
-    LOG(LS_WARNING) << "Could not create default receive stream.";
+    LOG(LS_WARNING) << "Could not create unsignaled receive stream.";
     return;
   }
-  if (default_recv_ssrc_ != -1) {
-    LOG(LS_INFO) << "Removing default receive stream with ssrc "
-                 << default_recv_ssrc_;
-    RTC_DCHECK_NE(ssrc, default_recv_ssrc_);
-    RemoveRecvStream(default_recv_ssrc_);
-  }
-  default_recv_ssrc_ = ssrc;
+  unsignaled_recv_ssrcs_.push_back(ssrc);
+  RTC_HISTOGRAM_COUNTS_LINEAR(
+      "WebRTC.Audio.NumOfUnsignaledStreams", unsignaled_recv_ssrcs_.size(), 1,
+      100, 101);
 
-  SetOutputVolume(default_recv_ssrc_, default_recv_volume_);
+  // Remove oldest unsignaled stream, if we have too many.
+  if (unsignaled_recv_ssrcs_.size() > kMaxUnsignaledRecvStreams) {
+    uint32_t remove_ssrc = unsignaled_recv_ssrcs_.front();
+    LOG(LS_INFO) << "Removing unsignaled receive stream with SSRC="
+                 << remove_ssrc;
+    RemoveRecvStream(remove_ssrc);
+  }
+  RTC_DCHECK_GE(kMaxUnsignaledRecvStreams, unsignaled_recv_ssrcs_.size());
+
+  SetOutputVolume(ssrc, default_recv_volume_);
+
+  // The default sink can only be attached to one stream at a time, so we hook
+  // it up to the *latest* unsignaled stream we've seen, in order to support the
+  // case where the SSRC of one unsignaled stream changes.
   if (default_sink_) {
+    for (uint32_t drop_ssrc : unsignaled_recv_ssrcs_) {
+      auto it = recv_streams_.find(drop_ssrc);
+      it->second->SetRawAudioSink(nullptr);
+    }
     std::unique_ptr<webrtc::AudioSinkInterface> proxy_sink(
         new ProxySink(default_sink_.get()));
-    SetRawAudioSink(default_recv_ssrc_, std::move(proxy_sink));
+    SetRawAudioSink(ssrc, std::move(proxy_sink));
   }
+
   delivery_result = call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
                                                      packet->cdata(),
                                                      packet->size(),
@@ -2625,17 +2641,17 @@ void WebRtcVoiceMediaChannel::SetRawAudioSink(
   LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::SetRawAudioSink: ssrc:" << ssrc
                   << " " << (sink ? "(ptr)" : "NULL");
   if (ssrc == 0) {
-    if (default_recv_ssrc_ != -1) {
+    if (!unsignaled_recv_ssrcs_.empty()) {
       std::unique_ptr<webrtc::AudioSinkInterface> proxy_sink(
           sink ? new ProxySink(sink.get()) : nullptr);
-      SetRawAudioSink(default_recv_ssrc_, std::move(proxy_sink));
+      SetRawAudioSink(unsignaled_recv_ssrcs_.back(), std::move(proxy_sink));
     }
     default_sink_ = std::move(sink);
     return;
   }
   const auto it = recv_streams_.find(ssrc);
   if (it == recv_streams_.end()) {
-    LOG(LS_WARNING) << "SetRawAudioSink: no recv stream" << ssrc;
+    LOG(LS_WARNING) << "SetRawAudioSink: no recv stream " << ssrc;
     return;
   }
   it->second->SetRawAudioSink(std::move(sink));
@@ -2663,6 +2679,19 @@ int WebRtcVoiceMediaChannel::GetSendChannelId(uint32_t ssrc) const {
     return it->second->channel();
   }
   return -1;
+}
+
+bool WebRtcVoiceMediaChannel::
+    MaybeDeregisterUnsignaledRecvStream(uint32_t ssrc) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  auto it = std::find(unsignaled_recv_ssrcs_.begin(),
+                      unsignaled_recv_ssrcs_.end(),
+                      ssrc);
+  if (it != unsignaled_recv_ssrcs_.end()) {
+    unsignaled_recv_ssrcs_.erase(it);
+    return true;
+  }
+  return false;
 }
 }  // namespace cricket
 
