@@ -91,6 +91,7 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "//testing/gtest",
       "//webrtc/test:test_renderer",
+      "//webrtc/test:video_test_common",
     ]
     if (!is_android) {
       deps += [ "../modules/video_capture:video_capture_internal_impl" ]

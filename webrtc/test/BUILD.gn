@@ -52,7 +52,6 @@ rtc_source_set("video_test_common") {
   }
 
   deps = [
-    ":video_test_support",
     "../common_video",
     "../modules/video_capture:video_capture_module",
   ]
@@ -292,10 +291,12 @@ rtc_test("test_support_unittests") {
   }
 
   deps += [
+    ":direct_transport",
     ":fileutils_unittests",
     ":test_common",
     ":test_main",
     ":video_test_common",
+    ":video_test_support",
     "../modules/video_capture",
     "//testing/gmock",
     "//testing/gtest",
@@ -396,6 +397,7 @@ rtc_source_set("test_common") {
     ":fake_audio_device",
     ":rtp_test_utils",
     ":test_support",
+    ":video_test_common",
     "..:webrtc_common",
     "../audio",
     "../base:rtc_base_approved",
@@ -475,7 +477,6 @@ rtc_source_set("test_renderer") {
 
   deps = [
     ":test_support",
-    ":video_test_common",
     "../modules/media_file",
     "//testing/gtest",
   ]
