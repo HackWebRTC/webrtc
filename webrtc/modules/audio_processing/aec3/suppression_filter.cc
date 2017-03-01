@@ -139,8 +139,8 @@ void SuppressionFilter::ApplyGain(
 
     // Scale and apply the noise to the signals.
     RTC_DCHECK_LT(3, suppression_gain.size());
-    float high_bands_gain =
-        *std::min_element(suppression_gain.begin() + 3, suppression_gain.end());
+    float high_bands_gain = *std::min_element(suppression_gain.begin() + 32,
+                                              suppression_gain.end());
 
     float high_bands_noise_scaling =
         0.4f * std::max(1.f - high_bands_gain, 0.f);

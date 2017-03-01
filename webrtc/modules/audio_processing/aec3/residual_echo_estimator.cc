@@ -29,7 +29,7 @@ void InfiniteErlPowerEstimate(
     size_t blocks_since_last_saturation,
     const std::array<float, kFftLengthBy2Plus1>& S2_fallback,
     std::array<float, kFftLengthBy2Plus1>* R2) {
-  if (active_render_blocks > 5 * 250) {
+  if (active_render_blocks > 20 * 250) {
     // After an amount of active render samples for which an echo should have
     // been detected in the capture signal if the ERL was not infinite, set the
     // residual echo to 0.
