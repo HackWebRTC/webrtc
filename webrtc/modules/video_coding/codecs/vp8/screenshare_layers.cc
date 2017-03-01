@@ -62,7 +62,7 @@ webrtc::TemporalLayers* ScreenshareTemporalLayersFactory::Create(
     tl = new webrtc::ScreenshareLayers(num_temporal_layers, rand(),
                                        webrtc::Clock::GetRealTimeClock());
   } else {
-    RealTimeTemporalLayersFactory rt_tl_factory;
+    TemporalLayersFactory rt_tl_factory;
     tl = rt_tl_factory.Create(simulcast_id, num_temporal_layers, rand());
   }
   if (listener_)
