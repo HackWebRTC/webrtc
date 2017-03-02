@@ -1271,6 +1271,16 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
         kSendRtxPayloadType;
     video_receive_configs_[i].rtp.transport_cc = params_.call.send_side_bwe;
     video_receive_configs_[i].rtp.remb = !params_.call.send_side_bwe;
+    // Force fake decoders on non-selected simulcast streams.
+    if (i != params_.ss.selected_stream) {
+      VideoReceiveStream::Decoder decoder;
+      decoder.decoder = new test::FakeDecoder();
+      decoder.payload_type = video_send_config_.encoder_settings.payload_type;
+      decoder.payload_name = video_send_config_.encoder_settings.payload_name;
+      video_receive_configs_[i].decoders.clear();
+      allocated_decoders_.emplace_back(decoder.decoder);
+      video_receive_configs_[i].decoders.push_back(decoder);
+    }
   }
 
   if (params_.video.flexfec) {
