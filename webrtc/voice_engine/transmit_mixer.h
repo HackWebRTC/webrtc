@@ -87,7 +87,8 @@ public:
 
     int8_t AudioLevel() const;
 
-    int16_t AudioLevelFullRange() const;
+    // 'virtual' to allow mocking.
+    virtual int16_t AudioLevelFullRange() const;
 
     bool IsRecordingCall();
 

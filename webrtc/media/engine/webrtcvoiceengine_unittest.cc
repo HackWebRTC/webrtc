@@ -63,8 +63,7 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
   explicit FakeVoEWrapper(cricket::FakeWebRtcVoiceEngine* engine)
       : cricket::VoEWrapper(engine,  // base
                             engine,  // codec
-                            engine,  // hw
-                            engine) {  // volume
+                            engine) {  // hw
   }
 };
 

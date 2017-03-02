@@ -237,7 +237,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 
   WebRtcVoiceEngine* engine() { return engine_; }
   int GetLastEngineError() { return engine()->GetLastEngineError(); }
-  int GetOutputLevel(int channel);
   void ChangePlayout(bool playout);
   int CreateVoEChannel();
   bool DeleteVoEChannel(int channel);

@@ -71,7 +71,6 @@ class RtcpRttStatsProxy;
 class RtpPacketSenderProxy;
 class Statistics;
 class TransportFeedbackProxy;
-class TransmitMixer;
 class TransportSequenceNumberProxy;
 class VoERtcpObserver;
 
@@ -155,7 +154,6 @@ class Channel
   int32_t Init();
   int32_t SetEngineInformation(Statistics& engineStatistics,
                                OutputMixer& outputMixer,
-                               TransmitMixer& transmitMixer,
                                ProcessThread& moduleProcessThread,
                                AudioDeviceModule& audioDeviceModule,
                                VoiceEngineObserver* voiceEngineObserver,
@@ -478,7 +476,6 @@ class Channel
   // uses
   Statistics* _engineStatisticsPtr;
   OutputMixer* _outputMixerPtr;
-  TransmitMixer* _transmitMixerPtr;
   ProcessThread* _moduleProcessThreadPtr;
   AudioDeviceModule* _audioDeviceModulePtr;
   VoiceEngineObserver* _voiceEngineObserverPtr;  // owned by base

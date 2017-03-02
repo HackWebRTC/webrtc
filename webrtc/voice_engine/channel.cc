@@ -39,7 +39,6 @@
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/output_mixer.h"
 #include "webrtc/voice_engine/statistics.h"
-#include "webrtc/voice_engine/transmit_mixer.h"
 #include "webrtc/voice_engine/utility.h"
 
 namespace webrtc {
@@ -908,7 +907,6 @@ Channel::Channel(int32_t channelId,
       capture_start_ntp_time_ms_(-1),
       _engineStatisticsPtr(NULL),
       _outputMixerPtr(NULL),
-      _transmitMixerPtr(NULL),
       _moduleProcessThreadPtr(NULL),
       _audioDeviceModulePtr(NULL),
       _voiceEngineObserverPtr(NULL),
@@ -1119,7 +1117,6 @@ int32_t Channel::Init() {
 
 int32_t Channel::SetEngineInformation(Statistics& engineStatistics,
                                       OutputMixer& outputMixer,
-                                      voe::TransmitMixer& transmitMixer,
                                       ProcessThread& moduleProcessThread,
                                       AudioDeviceModule& audioDeviceModule,
                                       VoiceEngineObserver* voiceEngineObserver,
@@ -1128,7 +1125,6 @@ int32_t Channel::SetEngineInformation(Statistics& engineStatistics,
                "Channel::SetEngineInformation()");
   _engineStatisticsPtr = &engineStatistics;
   _outputMixerPtr = &outputMixer;
-  _transmitMixerPtr = &transmitMixer,
   _moduleProcessThreadPtr = &moduleProcessThread;
   _audioDeviceModulePtr = &audioDeviceModule;
   _voiceEngineObserverPtr = voiceEngineObserver;

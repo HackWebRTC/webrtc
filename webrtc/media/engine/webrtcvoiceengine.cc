@@ -962,11 +962,12 @@ void WebRtcVoiceEngine::SetDefaultDevices() {
 #endif  // !WEBRTC_IOS
 }
 
+// TODO(solenberg): Remove, once AudioMonitor is gone.
 int WebRtcVoiceEngine::GetInputLevel() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  unsigned int ulevel;
-  return (voe_wrapper_->volume()->GetSpeechInputLevel(ulevel) != -1) ?
-      static_cast<int>(ulevel) : -1;
+  int8_t level = transmit_mixer()->AudioLevel();
+  RTC_DCHECK_LE(0, level);
+  return level;
 }
 
 const std::vector<AudioCodec>& WebRtcVoiceEngine::send_codecs() const {
@@ -1575,6 +1576,12 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(stream_);
     return stream_->GetStats();
+  }
+
+  int GetOutputLevel() const {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(stream_);
+    return stream_->GetOutputLevel();
   }
 
   int channel() const {
@@ -2341,12 +2348,13 @@ bool WebRtcVoiceMediaChannel::SetLocalSource(uint32_t ssrc,
   return true;
 }
 
+// TODO(solenberg): Remove, once AudioMonitor is gone.
 bool WebRtcVoiceMediaChannel::GetActiveStreams(
     AudioInfo::StreamList* actives) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   actives->clear();
   for (const auto& ch : recv_streams_) {
-    int level = GetOutputLevel(ch.second->channel());
+    int level = ch.second->GetOutputLevel();
     if (level > 0) {
       actives->push_back(std::make_pair(ch.first, level));
     }
@@ -2354,11 +2362,12 @@ bool WebRtcVoiceMediaChannel::GetActiveStreams(
   return true;
 }
 
+// TODO(solenberg): Remove, once AudioMonitor is gone.
 int WebRtcVoiceMediaChannel::GetOutputLevel() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   int highest = 0;
   for (const auto& ch : recv_streams_) {
-    highest = std::max(GetOutputLevel(ch.second->channel()), highest);
+    highest = std::max(ch.second->GetOutputLevel(), highest);
   }
   return highest;
 }
@@ -2655,12 +2664,6 @@ void WebRtcVoiceMediaChannel::SetRawAudioSink(
     return;
   }
   it->second->SetRawAudioSink(std::move(sink));
-}
-
-int WebRtcVoiceMediaChannel::GetOutputLevel(int channel) {
-  unsigned int ulevel = 0;
-  int ret = engine()->voe()->volume()->GetSpeechOutputLevel(channel, ulevel);
-  return (ret == 0) ? static_cast<int>(ulevel) : -1;
 }
 
 int WebRtcVoiceMediaChannel::GetReceiveChannelId(uint32_t ssrc) const {

@@ -26,6 +26,7 @@
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
 #include "webrtc/test/mock_voice_engine.h"
+#include "webrtc/voice_engine/transmit_mixer.h"
 
 namespace webrtc {
 namespace test {
@@ -46,7 +47,7 @@ const int kEchoDelayStdDev = -3;
 const int kEchoReturnLoss = -65;
 const int kEchoReturnLossEnhancement = 101;
 const float kResidualEchoLikelihood = -1.0f;
-const unsigned int kSpeechInputLevel = 96;
+const int32_t kSpeechInputLevel = 96;
 const CallStatistics kCallStats = {
     1345,  1678,  1901, 1234,  112, 13456, 17890, 1567, -1890, -1123};
 const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
@@ -61,6 +62,11 @@ class MockLimitObserver : public BitrateAllocator::LimitObserver {
   MOCK_METHOD2(OnAllocationLimitsChanged,
                void(uint32_t min_send_bitrate_bps,
                     uint32_t max_padding_bitrate_bps));
+};
+
+class MockTransmitMixer : public voe::TransmitMixer {
+ public:
+  MOCK_CONST_METHOD0(AudioLevelFullRange, int16_t());
 };
 
 struct ConfigHelper {
@@ -213,10 +219,13 @@ struct ConfigHelper {
         .WillRepeatedly(Return(report_blocks));
     EXPECT_CALL(*channel_proxy_, GetSendCodec(_))
         .WillRepeatedly(DoAll(SetArgPointee<0>(kIsacCodec), Return(true)));
-    EXPECT_CALL(voice_engine_, GetSpeechInputLevelFullRange(_))
-        .WillRepeatedly(DoAll(SetArgReferee<0>(kSpeechInputLevel), Return(0)));
+    EXPECT_CALL(voice_engine_, transmit_mixer())
+        .WillRepeatedly(Return(&transmit_mixer_));
     EXPECT_CALL(voice_engine_, audio_processing())
         .WillRepeatedly(Return(&audio_processing_));
+
+    EXPECT_CALL(transmit_mixer_, AudioLevelFullRange())
+        .WillRepeatedly(Return(kSpeechInputLevel));
 
     // We have to set the instantaneous value, the average, min and max. We only
     // care about the instantaneous value, so we set all to the same value.
@@ -241,6 +250,7 @@ struct ConfigHelper {
   testing::NiceMock<MockCongestionObserver> bitrate_observer_;
   testing::NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
   MockAudioProcessing audio_processing_;
+  MockTransmitMixer transmit_mixer_;
   AudioProcessing::AudioProcessingStatistics audio_processing_stats_;
   PacketRouter packet_router_;
   CongestionController congestion_controller_;

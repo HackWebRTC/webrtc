@@ -21,6 +21,10 @@
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
+namespace voe {
+class TransmitMixer;
+}  // namespace voe
+
 namespace test {
 
 // NOTE: This class inherits from VoiceEngineImpl so that its clients will be
@@ -122,6 +126,7 @@ class MockVoiceEngine : public VoiceEngineImpl {
           const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory));
   MOCK_METHOD0(audio_processing, AudioProcessing*());
   MOCK_METHOD0(audio_device_module, AudioDeviceModule*());
+  MOCK_METHOD0(transmit_mixer, voe::TransmitMixer*());
   MOCK_METHOD0(Terminate, int());
   MOCK_METHOD0(CreateChannel, int());
   MOCK_METHOD1(CreateChannel, int(const ChannelConfig& config));
@@ -288,23 +293,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD3(GetREDStatus,
                int(int channel, bool& enable, int& redPayloadtype));
   MOCK_METHOD3(SetNACKStatus, int(int channel, bool enable, int maxNoPackets));
-
-  // VoEVolumeControl
-  MOCK_METHOD1(SetSpeakerVolume, int(unsigned int volume));
-  MOCK_METHOD1(GetSpeakerVolume, int(unsigned int& volume));
-  MOCK_METHOD1(SetMicVolume, int(unsigned int volume));
-  MOCK_METHOD1(GetMicVolume, int(unsigned int& volume));
-  MOCK_METHOD2(SetInputMute, int(int channel, bool enable));
-  MOCK_METHOD2(GetInputMute, int(int channel, bool& enabled));
-  MOCK_METHOD1(GetSpeechInputLevel, int(unsigned int& level));
-  MOCK_METHOD2(GetSpeechOutputLevel, int(int channel, unsigned int& level));
-  MOCK_METHOD1(GetSpeechInputLevelFullRange, int(unsigned int& level));
-  MOCK_METHOD2(GetSpeechOutputLevelFullRange,
-               int(int channel, unsigned& level));
-  MOCK_METHOD2(SetChannelOutputVolumeScaling, int(int channel, float scaling));
-  MOCK_METHOD2(GetChannelOutputVolumeScaling, int(int channel, float& scaling));
-  MOCK_METHOD3(SetOutputVolumePan, int(int channel, float left, float right));
-  MOCK_METHOD3(GetOutputVolumePan, int(int channel, float& left, float& right));
 
  private:
   // TODO(ossu): I'm not particularly happy about keeping the decoder factory

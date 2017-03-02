@@ -42,6 +42,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_CONST_METHOD0(GetRemoteRTCPReportBlocks, std::vector<ReportBlock>());
   MOCK_CONST_METHOD0(GetNetworkStatistics, NetworkStatistics());
   MOCK_CONST_METHOD0(GetDecodingCallStatistics, AudioDecodingCallStats());
+  MOCK_CONST_METHOD0(GetSpeechOutputLevel, int32_t());
   MOCK_CONST_METHOD0(GetSpeechOutputLevelFullRange, int32_t());
   MOCK_CONST_METHOD0(GetDelayEstimate, uint32_t());
   MOCK_METHOD2(SetSendTelephoneEventPayloadType, bool(int payload_type,

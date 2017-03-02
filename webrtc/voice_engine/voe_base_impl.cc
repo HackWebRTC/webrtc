@@ -374,9 +374,8 @@ int VoEBaseImpl::CreateChannel(const ChannelConfig& config) {
 int VoEBaseImpl::InitializeChannel(voe::ChannelOwner* channel_owner) {
   if (channel_owner->channel()->SetEngineInformation(
           shared_->statistics(), *shared_->output_mixer(),
-          *shared_->transmit_mixer(), *shared_->process_thread(),
-          *shared_->audio_device(), voiceEngineObserverPtr_,
-          &callbackCritSect_) != 0) {
+          *shared_->process_thread(), *shared_->audio_device(),
+          voiceEngineObserverPtr_, &callbackCritSect_) != 0) {
     shared_->SetLastError(
         VE_CHANNEL_NOT_CREATED, kTraceError,
         "CreateChannel() failed to associate engine and channel."

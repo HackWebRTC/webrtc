@@ -73,6 +73,7 @@ class ChannelProxy {
   virtual std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const;
   virtual NetworkStatistics GetNetworkStatistics() const;
   virtual AudioDecodingCallStats GetDecodingCallStatistics() const;
+  virtual int32_t GetSpeechOutputLevel() const;
   virtual int32_t GetSpeechOutputLevelFullRange() const;
   virtual uint32_t GetDelayEstimate() const;
   virtual bool SetSendTelephoneEventPayloadType(int payload_type,

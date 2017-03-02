@@ -128,6 +128,14 @@ AudioDecodingCallStats ChannelProxy::GetDecodingCallStatistics() const {
   return stats;
 }
 
+int32_t ChannelProxy::GetSpeechOutputLevel() const {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  uint32_t level = 0;
+  int error = channel()->GetSpeechOutputLevel(level);
+  RTC_DCHECK_EQ(0, error);
+  return static_cast<int32_t>(level);
+}
+
 int32_t ChannelProxy::GetSpeechOutputLevelFullRange() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   uint32_t level = 0;

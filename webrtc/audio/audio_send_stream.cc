@@ -25,7 +25,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/include/voe_volume_control.h"
+#include "webrtc/voice_engine/transmit_mixer.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
@@ -193,16 +193,11 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
     }
   }
 
-  // Local speech level.
-  {
-    ScopedVoEInterface<VoEVolumeControl> volume(voice_engine());
-    unsigned int level = 0;
-    int error = volume->GetSpeechInputLevelFullRange(level);
-    RTC_DCHECK_EQ(0, error);
-    stats.audio_level = static_cast<int32_t>(level);
-  }
-
   ScopedVoEInterface<VoEBase> base(voice_engine());
+  RTC_DCHECK(base->transmit_mixer());
+  stats.audio_level = base->transmit_mixer()->AudioLevelFullRange();
+  RTC_DCHECK_LE(0, stats.audio_level);
+
   RTC_DCHECK(base->audio_processing());
   auto audio_processing_stats = base->audio_processing()->GetStatistics();
   stats.echo_delay_median_ms = audio_processing_stats.delay_median;

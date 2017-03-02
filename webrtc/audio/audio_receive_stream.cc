@@ -207,6 +207,11 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   return stats;
 }
 
+int AudioReceiveStream::GetOutputLevel() const {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  return channel_proxy_->GetSpeechOutputLevel();
+}
+
 void AudioReceiveStream::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   channel_proxy_->SetSink(std::move(sink));

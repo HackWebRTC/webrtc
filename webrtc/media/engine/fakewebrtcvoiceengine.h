@@ -60,8 +60,7 @@ static const int kOpusBandwidthFb = 20000;
 
 class FakeWebRtcVoiceEngine
     : public webrtc::VoEBase, public webrtc::VoECodec,
-      public webrtc::VoEHardware,
-      public webrtc::VoEVolumeControl {
+      public webrtc::VoEHardware {
  public:
   struct Channel {
     std::vector<webrtc::CodecInst> recv_codecs;
@@ -223,22 +222,6 @@ class FakeWebRtcVoiceEngine
   bool BuiltInAGCIsAvailable() const override { return false; }
   WEBRTC_STUB(EnableBuiltInNS, (bool enable));
   bool BuiltInNSIsAvailable() const override { return false; }
-
-  // webrtc::VoEVolumeControl
-  WEBRTC_STUB(SetSpeakerVolume, (unsigned int));
-  WEBRTC_STUB(GetSpeakerVolume, (unsigned int&));
-  WEBRTC_STUB(SetMicVolume, (unsigned int));
-  WEBRTC_STUB(GetMicVolume, (unsigned int&));
-  WEBRTC_STUB(SetInputMute, (int, bool));
-  WEBRTC_STUB(GetInputMute, (int, bool&));
-  WEBRTC_STUB(GetSpeechInputLevel, (unsigned int&));
-  WEBRTC_STUB(GetSpeechOutputLevel, (int, unsigned int&));
-  WEBRTC_STUB(GetSpeechInputLevelFullRange, (unsigned int&));
-  WEBRTC_STUB(GetSpeechOutputLevelFullRange, (int, unsigned int&));
-  WEBRTC_STUB(SetChannelOutputVolumeScaling, (int channel, float scale));
-  WEBRTC_STUB(GetChannelOutputVolumeScaling, (int channel, float& scale));
-  WEBRTC_STUB(SetOutputVolumePan, (int channel, float left, float right));
-  WEBRTC_STUB(GetOutputVolumePan, (int channel, float& left, float& right));
 
   size_t GetNetEqCapacity() const {
     auto ch = channels_.find(last_channel_);
