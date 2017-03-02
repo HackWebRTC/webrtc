@@ -41,6 +41,14 @@ public class MediaCodecVideoDecoder {
   private static final String TAG = "MediaCodecVideoDecoder";
   private static final long MAX_DECODE_TIME_MS = 200;
 
+  // TODO(magjed): Use MediaFormat constants when part of the public API.
+  private static final String FORMAT_KEY_STRIDE = "stride";
+  private static final String FORMAT_KEY_SLICE_HEIGHT = "slice-height";
+  private static final String FORMAT_KEY_CROP_LEFT = "crop-left";
+  private static final String FORMAT_KEY_CROP_RIGHT = "crop-right";
+  private static final String FORMAT_KEY_CROP_TOP = "crop-top";
+  private static final String FORMAT_KEY_CROP_BOTTOM = "crop-bottom";
+
   // Tracks webrtc::VideoCodecType.
   public enum VideoCodecType { VIDEO_CODEC_VP8, VIDEO_CODEC_VP9, VIDEO_CODEC_H264 }
 
@@ -596,14 +604,25 @@ public class MediaCodecVideoDecoder {
         case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
           MediaFormat format = mediaCodec.getOutputFormat();
           Logging.d(TAG, "Decoder format changed: " + format.toString());
-          int new_width = format.getInteger(MediaFormat.KEY_WIDTH);
-          int new_height = format.getInteger(MediaFormat.KEY_HEIGHT);
-          if (hasDecodedFirstFrame && (new_width != width || new_height != height)) {
-            throw new RuntimeException("Unexpected size change. Configured " + width + "*" + height
-                + ". New " + new_width + "*" + new_height);
+          final int newWidth;
+          final int newHeight;
+          if (format.containsKey(FORMAT_KEY_CROP_LEFT) && format.containsKey(FORMAT_KEY_CROP_RIGHT)
+              && format.containsKey(FORMAT_KEY_CROP_BOTTOM)
+              && format.containsKey(FORMAT_KEY_CROP_TOP)) {
+            newWidth = 1 + format.getInteger(FORMAT_KEY_CROP_RIGHT)
+                - format.getInteger(FORMAT_KEY_CROP_LEFT);
+            newHeight = 1 + format.getInteger(FORMAT_KEY_CROP_BOTTOM)
+                - format.getInteger(FORMAT_KEY_CROP_TOP);
+          } else {
+            newWidth = format.getInteger(MediaFormat.KEY_WIDTH);
+            newHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
           }
-          width = format.getInteger(MediaFormat.KEY_WIDTH);
-          height = format.getInteger(MediaFormat.KEY_HEIGHT);
+          if (hasDecodedFirstFrame && (newWidth != width || newHeight != height)) {
+            throw new RuntimeException("Unexpected size change. Configured " + width + "*" + height
+                + ". New " + newWidth + "*" + newHeight);
+          }
+          width = newWidth;
+          height = newHeight;
 
           if (!useSurface && format.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
             colorFormat = format.getInteger(MediaFormat.KEY_COLOR_FORMAT);
@@ -612,11 +631,11 @@ public class MediaCodecVideoDecoder {
               throw new IllegalStateException("Non supported color format: " + colorFormat);
             }
           }
-          if (format.containsKey("stride")) {
-            stride = format.getInteger("stride");
+          if (format.containsKey(FORMAT_KEY_STRIDE)) {
+            stride = format.getInteger(FORMAT_KEY_STRIDE);
           }
-          if (format.containsKey("slice-height")) {
-            sliceHeight = format.getInteger("slice-height");
+          if (format.containsKey(FORMAT_KEY_SLICE_HEIGHT)) {
+            sliceHeight = format.getInteger(FORMAT_KEY_SLICE_HEIGHT);
           }
           Logging.d(TAG, "Frame stride and slice height: " + stride + " x " + sliceHeight);
           stride = Math.max(width, stride);
