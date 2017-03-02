@@ -17,7 +17,12 @@ namespace rtc {
 namespace {
 // Function that does nothing, and reports success.
 bool NullRunFunctionDeprecated(void* obj) {
-  webrtc::SleepMs(0);  // Hand over timeslice, prevents busy looping.
+  webrtc::SleepMs(2);  // Hand over timeslice, prevents busy looping.
+  return true;
+}
+
+bool TooBusyRunFunction(void* obj) {
+  // Indentionally busy looping.
   return true;
 }
 
@@ -106,6 +111,18 @@ TEST(PlatformThreadTest, RunFunctionIsCalled) {
 
   // We expect the thread to have run at least once.
   EXPECT_TRUE(flag);
+}
+
+// This test is disabled since it will cause a crash.
+// There might be a way to implement this as a death test, but it looks like
+// a death test requires an expression to be checked but does not allow a
+// flag to be raised that says "some thread will crash after this point".
+// TODO(tommi): Look into ways to enable the test by default.
+TEST(PlatformThreadTest, DISABLED_TooBusyDeprecated) {
+  PlatformThread thread(&TooBusyRunFunction, nullptr, "BusyThread");
+  thread.Start();
+  webrtc::SleepMs(1000);
+  thread.Stop();
 }
 
 }  // rtc

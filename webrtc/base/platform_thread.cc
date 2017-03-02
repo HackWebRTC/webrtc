@@ -12,6 +12,7 @@
 
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/timeutils.h"
 
 #if defined(WEBRTC_LINUX)
 #include <sys/prctl.h>
@@ -220,25 +221,53 @@ void PlatformThread::Run() {
     run_function_(obj_);
     return;
   }
-// TODO(tommi): Delete the below.
-#if !defined(WEBRTC_MAC) && !defined(WEBRTC_WIN)
-  const struct timespec ts_null = {0};
+
+// TODO(tommi): Delete the rest of this function when looping isn't supported.
+#if RTC_DCHECK_IS_ON
+  // These constants control the busy loop detection algorithm below.
+  // |kMaxLoopCount| controls the limit for how many times we allow the loop
+  // to run within a period, before DCHECKing.
+  // |kPeriodToMeasureMs| controls how long that period is.
+  static const int kMaxLoopCount = 1000;
+  static const int kPeriodToMeasureMs = 100;
+  int64_t loop_stamps[kMaxLoopCount] = {};
+  int64_t sequence_nr = 0;
 #endif
+
   do {
     // The interface contract of Start/Stop is that for a successful call to
     // Start, there should be at least one call to the run function.  So we
     // call the function before checking |stop_|.
     if (!run_function_deprecated_(obj_))
       break;
+#if RTC_DCHECK_IS_ON
+    auto id = sequence_nr % kMaxLoopCount;
+    loop_stamps[id] = rtc::TimeMillis();
+    if (sequence_nr > kMaxLoopCount) {
+      auto compare_id = (id + 1) % kMaxLoopCount;
+      auto diff = loop_stamps[id] - loop_stamps[compare_id];
+      RTC_DCHECK_GE(diff, 0);
+      if (diff < kPeriodToMeasureMs) {
+        RTC_NOTREACHED() << "This thread is too busy: " << name_ << " " << diff
+                         << "ms sequence=" << sequence_nr << " "
+                         << loop_stamps[id] << " vs " << loop_stamps[compare_id]
+                         << ", " << id << " vs " << compare_id;
+      }
+    }
+    ++sequence_nr;
+#endif
 #if defined(WEBRTC_WIN)
     // Alertable sleep to permit RaiseFlag to run and update |stop_|.
     SleepEx(0, true);
   } while (!stop_);
 #else
-#if defined(WEBRTC_MAC)
-    sched_yield();
-#else
+#if defined(UNDEFINED_SANITIZER) || defined(WEBRTC_ANDROID)
+    // UBSAN and Android don't like |sched_yield()| that much.
+    static const struct timespec ts_null = {0};
     nanosleep(&ts_null, nullptr);
+#else  // !(defined(UNDEFINED_SANITIZER) || defined(WEBRTC_ANDROID))
+    // Mac and Linux show better performance with sched_yield.
+    sched_yield();
 #endif
   } while (!AtomicOps::AcquireLoad(&stop_flag_));
 #endif  // defined(WEBRTC_WIN)
