@@ -146,29 +146,26 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   if (qp != -1)
     RTC_HISTOGRAM_COUNTS_200("WebRTC.Video.Decoded.Vp8.Qp", qp);
 
-  // TODO(asapersson): DecoderTiming() is call periodically (each 1000ms) and
-  // not per frame. Change decode time to include every frame.
-  const int kMinRequiredDecodeSamples = 5;
-  int decode_ms = decode_time_counter_.Avg(kMinRequiredDecodeSamples);
+  int decode_ms = decode_time_counter_.Avg(kMinRequiredSamples);
   if (decode_ms != -1)
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.DecodeTimeInMs", decode_ms);
 
-  int jb_delay_ms = jitter_buffer_delay_counter_.Avg(kMinRequiredDecodeSamples);
+  int jb_delay_ms = jitter_buffer_delay_counter_.Avg(kMinRequiredSamples);
   if (jb_delay_ms != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.JitterBufferDelayInMs",
                                jb_delay_ms);
   }
 
-  int target_delay_ms = target_delay_counter_.Avg(kMinRequiredDecodeSamples);
+  int target_delay_ms = target_delay_counter_.Avg(kMinRequiredSamples);
   if (target_delay_ms != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.TargetDelayInMs", target_delay_ms);
   }
-  int current_delay_ms = current_delay_counter_.Avg(kMinRequiredDecodeSamples);
+  int current_delay_ms = current_delay_counter_.Avg(kMinRequiredSamples);
   if (current_delay_ms != -1) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.CurrentDelayInMs",
                                current_delay_ms);
   }
-  int delay_ms = delay_counter_.Avg(kMinRequiredDecodeSamples);
+  int delay_ms = delay_counter_.Avg(kMinRequiredSamples);
   if (delay_ms != -1)
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", delay_ms);
 
