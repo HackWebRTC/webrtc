@@ -517,14 +517,16 @@ TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForH264WithoutNackEnabled) {
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForVp8WithNackEnabled) {
+// Disabled as flaky, see https://crbug.com/webrtc/7285 for details.
+TEST_F(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp8WithNackEnabled) {
   std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
   UlpfecObserver test(false, true, true, true, "VP8", encoder.get());
   RunBaseTest(&test);
 }
 
 #if !defined(RTC_DISABLE_VP9)
-TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForVp9WithNackEnabled) {
+// Disabled as flaky, see https://crbug.com/webrtc/7285 for details.
+TEST_F(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp9WithNackEnabled) {
   std::unique_ptr<VideoEncoder> encoder(VP9Encoder::Create());
   UlpfecObserver test(false, true, true, true, "VP9", encoder.get());
   RunBaseTest(&test);
