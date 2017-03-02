@@ -195,7 +195,7 @@ bool TimeStretch::SpeechDetection(int32_t vec1_energy, int32_t vec2_energy,
   right_scale = std::max(0, right_scale);
   left_side = left_side >> right_scale;
   right_side =
-      rtc::checked_cast<int32_t>(peak_index) * (right_side >> right_scale);
+      rtc::dchecked_cast<int32_t>(peak_index) * (right_side >> right_scale);
 
   // Scale |left_side| properly before comparing with |right_side|.
   // (|scaling| is the scale factor before energy calculation, thus the scale

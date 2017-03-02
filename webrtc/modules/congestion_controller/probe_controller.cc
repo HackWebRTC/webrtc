@@ -229,7 +229,7 @@ void ProbeController::InitiateProbing(
       bitrate = max_probe_bitrate_bps;
       probe_further = false;
     }
-    pacer_->CreateProbeCluster(rtc::checked_cast<int>(bitrate));
+    pacer_->CreateProbeCluster(rtc::dchecked_cast<int>(bitrate));
   }
   time_last_probing_initiated_ms_ = now_ms;
   if (probe_further) {

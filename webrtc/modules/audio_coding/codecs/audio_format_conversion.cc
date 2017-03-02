@@ -34,7 +34,7 @@ CodecInst MakeCodecInst(int payload_type,
   strncpy(ci.plname, name, sizeof(ci.plname));
   ci.plname[sizeof(ci.plname) - 1] = '\0';
   ci.plfreq = sample_rate;
-  ci.channels = rtc::checked_cast<size_t>(num_channels);
+  ci.channels = rtc::dchecked_cast<size_t>(num_channels);
   return ci;
 }
 

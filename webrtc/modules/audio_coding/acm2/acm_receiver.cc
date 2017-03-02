@@ -162,7 +162,7 @@ int AcmReceiver::GetAudio(int desired_freq_hz,
     audio_frame->sample_rate_hz_ = desired_freq_hz;
     RTC_DCHECK_EQ(
         audio_frame->sample_rate_hz_,
-        rtc::checked_cast<int>(audio_frame->samples_per_channel_ * 100));
+        rtc::dchecked_cast<int>(audio_frame->samples_per_channel_ * 100));
     resampled_last_output_frame_ = true;
   } else {
     resampled_last_output_frame_ = false;
