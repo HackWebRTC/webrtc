@@ -31,10 +31,13 @@
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "webrtc/system_wrappers/include/clock.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace webrtc {
 namespace {
+
+const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Arm";
 
 enum { kVp8ErrorPropagationTh = 30 };
 enum { kVp832ByteAlign = 32 };
@@ -1006,7 +1009,9 @@ VP8DecoderImpl::VP8DecoderImpl()
       propagation_cnt_(-1),
       last_frame_width_(0),
       last_frame_height_(0),
-      key_frame_required_(true) {}
+      key_frame_required_(true),
+      use_postproc_arm_(webrtc::field_trial::FindFullName(
+                            kVp8PostProcArmFieldTrial) == "Enabled") {}
 
 VP8DecoderImpl::~VP8DecoderImpl() {
   inited_ = true;  // in order to do the actual release
@@ -1031,8 +1036,11 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   cfg.h = cfg.w = 0;  // set after decode
 
   vpx_codec_flags_t flags = 0;
-#if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
-  !defined(ANDROID)
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || defined(ANDROID)
+  if (use_postproc_arm_) {
+    flags = VPX_CODEC_USE_POSTPROC;
+  }
+#else
   flags = VPX_CODEC_USE_POSTPROC;
 #endif
 
@@ -1072,8 +1080,21 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-#if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
-  !defined(ANDROID)
+// Post process configurations.
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || defined(ANDROID)
+  if (use_postproc_arm_) {
+    vp8_postproc_cfg_t ppcfg;
+    ppcfg.post_proc_flag = VP8_MFQE;
+    // For low resolutions, use stronger deblocking filter and enable the
+    // deblock and demacroblocker.
+    int last_width_x_height = last_frame_width_ * last_frame_height_;
+    if (last_width_x_height > 0 && last_width_x_height <= 320 * 240) {
+      ppcfg.deblocking_level = 6;  // Only affects VP8_DEMACROBLOCK.
+      ppcfg.post_proc_flag |= VP8_DEBLOCK | VP8_DEMACROBLOCK;
+    }
+    vpx_codec_control(decoder_, VP8_SET_POSTPROC, &ppcfg);
+  }
+#else
   vp8_postproc_cfg_t ppcfg;
   // MFQE enabled to reduce key frame popping.
   ppcfg.post_proc_flag = VP8_MFQE | VP8_DEBLOCK;

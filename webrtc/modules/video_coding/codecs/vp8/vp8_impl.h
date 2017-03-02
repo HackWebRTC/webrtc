@@ -164,6 +164,7 @@ class VP8DecoderImpl : public VP8Decoder {
   int last_frame_width_;
   int last_frame_height_;
   bool key_frame_required_;
+  const bool use_postproc_arm_;
 };  // end of VP8DecoderImpl class
 }  // namespace webrtc
 
