@@ -26,9 +26,6 @@ class MetricsObserverInterface;
 
 namespace cricket {
 
-class IceTransportInternal;
-typedef IceTransportInternal IceTransportInternal2;
-
 // TODO(zhihuang): Replace this with
 // PeerConnectionInterface::IceConnectionState.
 enum class IceTransportState {
