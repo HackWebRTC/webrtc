@@ -1244,8 +1244,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   EXPECT_EQ(48000, send_codec_spec.codec_inst.rate);
   EXPECT_STREQ("ISAC", send_codec_spec.codec_inst.plname);
   EXPECT_NE(send_codec_spec.codec_inst.plfreq, send_codec_spec.cng_plfreq);
-  EXPECT_EQ(13, send_codec_spec.cng_payload_type);
-  EXPECT_EQ(webrtc::kFreq8000Hz, send_codec_spec.cng_plfreq);
+  EXPECT_EQ(-1, send_codec_spec.cng_payload_type);
   EXPECT_FALSE(channel_->CanInsertDtmf());
 }
 
@@ -2350,9 +2349,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithMultipleSendStreams) {
     const auto& send_codec_spec =
         call_.GetAudioSendStream(ssrc)->GetConfig().send_codec_spec;
     EXPECT_STREQ("PCMU", send_codec_spec.codec_inst.plname);
-    EXPECT_NE(send_codec_spec.codec_inst.plfreq, send_codec_spec.cng_plfreq);
-    EXPECT_EQ(97, send_codec_spec.cng_payload_type);
-    EXPECT_EQ(webrtc::kFreq16000Hz, send_codec_spec.cng_plfreq);
+    EXPECT_EQ(-1, send_codec_spec.cng_payload_type);
   }
 }
 

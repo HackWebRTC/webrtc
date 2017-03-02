@@ -1995,32 +1995,33 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 
     // Loop through the codecs list again to find the CN codec.
     // TODO(solenberg): Break out into a separate function?
-    for (const AudioCodec& codec : codecs) {
+    for (const AudioCodec& cn_codec : codecs) {
       // Ignore codecs we don't know about. The negotiation step should prevent
       // this, but double-check to be sure.
       webrtc::CodecInst voe_codec = {0};
-      if (!WebRtcVoiceEngine::ToCodecInst(codec, &voe_codec)) {
-        LOG(LS_WARNING) << "Unknown codec " << ToString(codec);
+      if (!WebRtcVoiceEngine::ToCodecInst(cn_codec, &voe_codec)) {
+        LOG(LS_WARNING) << "Unknown codec " << ToString(cn_codec);
         continue;
       }
 
-      if (IsCodec(codec, kCnCodecName)) {
+      if (IsCodec(cn_codec, kCnCodecName) &&
+          cn_codec.clockrate == codec->clockrate) {
         // Turn voice activity detection/comfort noise on if supported.
         // Set the wideband CN payload type appropriately.
         // (narrowband always uses the static payload type 13).
         int cng_plfreq = -1;
-        switch (codec.clockrate) {
+        switch (cn_codec.clockrate) {
           case 8000:
           case 16000:
           case 32000:
-            cng_plfreq = codec.clockrate;
+            cng_plfreq = cn_codec.clockrate;
             break;
           default:
-            LOG(LS_WARNING) << "CN frequency " << codec.clockrate
+            LOG(LS_WARNING) << "CN frequency " << cn_codec.clockrate
                             << " not supported.";
             continue;
         }
-        send_codec_spec.cng_payload_type = codec.id;
+        send_codec_spec.cng_payload_type = cn_codec.id;
         send_codec_spec.cng_plfreq = cng_plfreq;
         break;
       }
