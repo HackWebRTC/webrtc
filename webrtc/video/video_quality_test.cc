@@ -1438,26 +1438,21 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   call_config.bitrate_config = params.call.call_bitrate_config;
   CreateCalls(call_config, call_config);
 
-  VideoStream& selected_stream = params_.ss.streams[params_.ss.selected_stream];
+  test::LayerFilteringTransport send_transport(
+      params_.pipe, sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
+      params_.video.selected_tl, params_.ss.selected_sl);
+  test::DirectTransport recv_transport(params_.pipe, receiver_call_.get());
 
   std::string graph_title = params_.analyzer.graph_title;
   if (graph_title.empty())
     graph_title = VideoQualityTest::GenerateGraphTitle();
 
-  std::set<uint32_t> excluded_ssrcs;
-  for (size_t i = 0; i < params_.ss.streams.size(); i++) {
-    if (i != params_.ss.selected_stream) {
-      excluded_ssrcs.insert(kVideoSendSsrcs[i]);
-      excluded_ssrcs.insert(kSendRtxSsrcs[i]);
-    }
-  }
-
-  test::LayerFilteringTransport send_transport(
-      params_.pipe, sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
-      params_.video.selected_tl, params_.ss.selected_sl,
-      excluded_ssrcs);
-  test::DirectTransport recv_transport(params_.pipe, receiver_call_.get());
-
+  // In the case of different resolutions, the functions calculating PSNR and
+  // SSIM return -1.0, instead of a positive value as usual. VideoAnalyzer
+  // aborts if the average psnr/ssim are below the given threshold, which is
+  // 0.0 by default. Setting the thresholds to -1.1 prevents the unnecessary
+  // abort.
+  VideoStream& selected_stream = params_.ss.streams[params_.ss.selected_stream];
 
   bool is_quick_test_enabled = field_trial::IsEnabled("WebRTC-QuickPerfTest");
   VideoAnalyzer analyzer(
@@ -1589,8 +1584,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   // calls.
   test::LayerFilteringTransport transport(
       params.pipe, call.get(), kPayloadTypeVP8, kPayloadTypeVP9,
-      params.video.selected_tl, params_.ss.selected_sl,
-      std::set<uint32_t>());
+      params.video.selected_tl, params_.ss.selected_sl);
   // TODO(ivica): Use two calls to be able to merge with RunWithAnalyzer or at
   // least share as much code as possible. That way this test would also match
   // the full stack tests better.
@@ -1623,7 +1617,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     if (params_.audio.enabled && params_.audio.sync_video)
       video_receive_configs_[stream_id].sync_group = kSyncGroup;
 
-    SetupScreenshareOrSVC();
+    if (params_.screenshare.enabled)
+      SetupScreenshareOrSVC();
 
     video_send_stream_ = call->CreateVideoSendStream(
         video_send_config_.Copy(), video_encoder_config_.Copy());

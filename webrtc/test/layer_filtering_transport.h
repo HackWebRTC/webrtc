@@ -27,8 +27,7 @@ class LayerFilteringTransport : public test::DirectTransport {
                           uint8_t vp8_video_payload_type,
                           uint8_t vp9_video_payload_type,
                           int selected_tl,
-                          int selected_sl,
-                          const std::set<uint32_t> &excluded_ssrcs_);
+                          int selected_sl);
   bool DiscardedLastPacket() const;
   bool SendRtp(const uint8_t* data,
                size_t length,
@@ -42,7 +41,6 @@ class LayerFilteringTransport : public test::DirectTransport {
   // selected one. -1 to disable filtering.
   const int selected_tl_;
   const int selected_sl_;
-  const std::set<uint32_t> excluded_ssrcs_;
   bool discarded_last_packet_;
 };
 
