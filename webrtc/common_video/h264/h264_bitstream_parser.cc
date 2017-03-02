@@ -27,10 +27,10 @@ const int kMaxQpValue = 51;
 
 namespace webrtc {
 
-#define RETURN_ON_FAIL(x, res)          \
-  if (!(x)) {                           \
-    LOG_F(LS_WARNING) << "FAILED: " #x; \
-    return res;                         \
+#define RETURN_ON_FAIL(x, res)        \
+  if (!(x)) {                         \
+    LOG_F(LS_ERROR) << "FAILED: " #x; \
+    return res;                       \
   }
 
 #define RETURN_INV_ON_FAIL(x) RETURN_ON_FAIL(x, kInvalidStream)
@@ -64,11 +64,7 @@ H264BitstreamParser::Result H264BitstreamParser::ParseNonParameterSetNalu(
   RETURN_INV_ON_FAIL(slice_reader.ReadExponentialGolomb(&golomb_tmp));
   // slice_type: ue(v)
   uint32_t slice_type;
-  if (!slice_reader.ReadExponentialGolomb(&slice_type)) {
-    // This is a temporary logging to help diagnose the issue.
-    LOG_F(LS_WARNING) << "Failed to read slice type: " << nalu_type;
-    return kInvalidStream;
-  }
+  RETURN_INV_ON_FAIL(slice_reader.ReadExponentialGolomb(&slice_type));
   // slice_type's 5..9 range is used to indicate that all slices of a picture
   // have the same value of slice_type % 5, we don't care about that, so we map
   // to the corresponding 0..4 range.
