@@ -261,13 +261,11 @@ void PlatformThread::Run() {
     SleepEx(0, true);
   } while (!stop_);
 #else
-#if defined(UNDEFINED_SANITIZER) || defined(WEBRTC_ANDROID)
-    // UBSAN and Android don't like |sched_yield()| that much.
+#if defined(WEBRTC_MAC)
+    sched_yield();
+#else
     static const struct timespec ts_null = {0};
     nanosleep(&ts_null, nullptr);
-#else  // !(defined(UNDEFINED_SANITIZER) || defined(WEBRTC_ANDROID))
-    // Mac and Linux show better performance with sched_yield.
-    sched_yield();
 #endif
   } while (!AtomicOps::AcquireLoad(&stop_flag_));
 #endif  // defined(WEBRTC_WIN)
