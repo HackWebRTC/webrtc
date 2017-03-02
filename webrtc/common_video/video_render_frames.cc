@@ -67,8 +67,9 @@ int32_t VideoRenderFrames::AddFrame(VideoFrame&& new_frame) {
                  "%s: frame scheduled out of order, render_time=%u, latest=%u.",
                  __FUNCTION__, new_frame.render_time_ms(),
                  last_render_time_ms_);
-    // TODO(mflodman): Decide what to do when this happens.
-    // See bug: https://bugs.chromium.org/p/webrtc/issues/detail?id=7253
+    // For more details, see bug:
+    // https://bugs.chromium.org/p/webrtc/issues/detail?id=7253
+    return -1;
   }
 
   last_render_time_ms_ = new_frame.render_time_ms();
