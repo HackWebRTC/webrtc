@@ -21,16 +21,23 @@
 #include "webrtc/voice_engine/transport_feedback_packet_loss_tracker.h"
 
 using webrtc::rtcp::TransportFeedback;
-using testing::Return;
-using testing::StrictMock;
 
 namespace webrtc {
 
 namespace {
 
-// All tests are run multiple times with various baseline sequence number,
-// to weed out potential bugs with wrap-around handling.
-constexpr uint16_t kBases[] = {0x0000, 0x3456, 0xc032, 0xfffe};
+class TransportFeedbackPacketLossTrackerTest
+    : public ::testing::TestWithParam<uint16_t> {
+ public:
+  TransportFeedbackPacketLossTrackerTest() = default;
+  virtual ~TransportFeedbackPacketLossTrackerTest() = default;
+
+ protected:
+  uint16_t base_{GetParam()};
+
+ private:
+  RTC_DISALLOW_COPY_AND_ASSIGN(TransportFeedbackPacketLossTrackerTest);
+};
 
 void SendPackets(TransportFeedbackPacketLossTracker* tracker,
                  const std::vector<uint16_t>& seq_nums,
@@ -132,495 +139,455 @@ TEST(TransportFeedbackPacketLossTrackerTest, EmptyWindow) {
 }
 
 // A feedback received for an empty window has no effect.
-TEST(TransportFeedbackPacketLossTrackerTest, EmptyWindowFeedback) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(3, 3, 2);
+TEST_P(TransportFeedbackPacketLossTrackerTest, EmptyWindowFeedback) {
+  TransportFeedbackPacketLossTracker tracker(3, 3, 2);
 
-    // Feedback doesn't correspond to any packets - ignored.
-    AddTransportFeedbackAndValidate(&tracker, base, {true, false, true});
-    ValidatePacketLossStatistics(tracker,
-                                 rtc::Optional<float>(),
-                                 rtc::Optional<float>());
+  // Feedback doesn't correspond to any packets - ignored.
+  AddTransportFeedbackAndValidate(&tracker, base_, {true, false, true});
+  ValidatePacketLossStatistics(tracker,
+                               rtc::Optional<float>(),
+                               rtc::Optional<float>());
 
-    // After the packets are transmitted, acking them would have an effect.
-    SendPacketRange(&tracker, base, 3);
-    AddTransportFeedbackAndValidate(&tracker, base, {true, false, true});
-    ValidatePacketLossStatistics(tracker, 1.0f / 3.0f, 0.5f);
-  }
+  // After the packets are transmitted, acking them would have an effect.
+  SendPacketRange(&tracker, base_, 3);
+  AddTransportFeedbackAndValidate(&tracker, base_, {true, false, true});
+  ValidatePacketLossStatistics(tracker, 1.0f / 3.0f, 0.5f);
 }
 
 // Sanity check on partially filled window.
-TEST(TransportFeedbackPacketLossTrackerTest, PartiallyFilledWindow) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 5, 4);
+TEST_P(TransportFeedbackPacketLossTrackerTest, PartiallyFilledWindow) {
+  TransportFeedbackPacketLossTracker tracker(10, 5, 4);
 
-    // PLR unknown before minimum window size reached.
-    // RPLR unknown before minimum pairs reached.
-    // Expected window contents: [] -> [1001].
-    SendPacketRange(&tracker, base, 3);
-    AddTransportFeedbackAndValidate(&tracker, base, {true, false, false, true});
-    ValidatePacketLossStatistics(tracker,
-                                 rtc::Optional<float>(),
-                                 rtc::Optional<float>());
-  }
+  // PLR unknown before minimum window size reached.
+  // RPLR unknown before minimum pairs reached.
+  // Expected window contents: [] -> [1001].
+  SendPacketRange(&tracker, base_, 3);
+  AddTransportFeedbackAndValidate(&tracker, base_, {true, false, false, true});
+  ValidatePacketLossStatistics(tracker,
+                               rtc::Optional<float>(),
+                               rtc::Optional<float>());
 }
 
 // Sanity check on minimum filled window - PLR known, RPLR unknown.
-TEST(TransportFeedbackPacketLossTrackerTest, PlrMinimumFilledWindow) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 5, 5);
+TEST_P(TransportFeedbackPacketLossTrackerTest, PlrMinimumFilledWindow) {
+  TransportFeedbackPacketLossTracker tracker(10, 5, 5);
 
-    // PLR correctly calculated after minimum window size reached.
-    // RPLR not necessarily known at that time (not if min-pairs not reached).
-    // Expected window contents: [] -> [10011].
-    SendPacketRange(&tracker, base, 5);
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker,
-                                 rtc::Optional<float>(2.0f / 5.0f),
-                                 rtc::Optional<float>());
-  }
+  // PLR correctly calculated after minimum window size reached.
+  // RPLR not necessarily known at that time (not if min-pairs not reached).
+  // Expected window contents: [] -> [10011].
+  SendPacketRange(&tracker, base_, 5);
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, false, true, true});
+  ValidatePacketLossStatistics(tracker,
+                               rtc::Optional<float>(2.0f / 5.0f),
+                               rtc::Optional<float>());
 }
 
 // Sanity check on minimum filled window - PLR unknown, RPLR known.
-TEST(TransportFeedbackPacketLossTrackerTest, RplrMinimumFilledWindow) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 6, 4);
+TEST_P(TransportFeedbackPacketLossTrackerTest, RplrMinimumFilledWindow) {
+  TransportFeedbackPacketLossTracker tracker(10, 6, 4);
 
-    // RPLR correctly calculated after minimum pairs reached.
-    // PLR not necessarily known at that time (not if min window not reached).
-    // Expected window contents: [] -> [10011].
-    SendPacketRange(&tracker, base, 5);
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker,
-                                 rtc::Optional<float>(),
-                                 rtc::Optional<float>(1.0f / 4.0f));
-  }
+  // RPLR correctly calculated after minimum pairs reached.
+  // PLR not necessarily known at that time (not if min window not reached).
+  // Expected window contents: [] -> [10011].
+  SendPacketRange(&tracker, base_, 5);
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, false, true, true});
+  ValidatePacketLossStatistics(tracker,
+                               rtc::Optional<float>(),
+                               rtc::Optional<float>(1.0f / 4.0f));
 }
 
 // Additional reports update PLR and RPLR.
-TEST(TransportFeedbackPacketLossTrackerTest, ExtendWindow) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 5);
+TEST_P(TransportFeedbackPacketLossTrackerTest, ExtendWindow) {
+  TransportFeedbackPacketLossTracker tracker(20, 5, 5);
 
-    SendPacketRange(&tracker, base, 25);
+  SendPacketRange(&tracker, base_, 25);
 
-    // Expected window contents: [] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker,
-                                 rtc::Optional<float>(2.0f / 5.0f),
-                                 rtc::Optional<float>());
+  // Expected window contents: [] -> [10011].
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, false, true, true});
+  ValidatePacketLossStatistics(tracker,
+                               rtc::Optional<float>(2.0f / 5.0f),
+                               rtc::Optional<float>());
 
-    // Expected window contents: [10011] -> [1001110101].
-    AddTransportFeedbackAndValidate(&tracker, base + 5,
-                                    {true, false, true, false, true});
-    ValidatePacketLossStatistics(tracker, 4.0f / 10.0f, 3.0f / 9.0f);
+  // Expected window contents: [10011] -> [1001110101].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 5,
+                                  {true, false, true, false, true});
+  ValidatePacketLossStatistics(tracker, 4.0f / 10.0f, 3.0f / 9.0f);
 
-    // Expected window contents: [1001110101] -> [1001110101-GAP-10001].
-    AddTransportFeedbackAndValidate(&tracker, base + 20,
-                                    {true, false, false, false, true});
-    ValidatePacketLossStatistics(tracker, 7.0f / 15.0f, 4.0f / 13.0f);
-  }
+  // Expected window contents: [1001110101] -> [1001110101-GAP-10001].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 20,
+                                  {true, false, false, false, true});
+  ValidatePacketLossStatistics(tracker, 7.0f / 15.0f, 4.0f / 13.0f);
 }
 
 // Sanity - all packets correctly received.
-TEST(TransportFeedbackPacketLossTrackerTest, AllReceived) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 5, 4);
+TEST_P(TransportFeedbackPacketLossTrackerTest, AllReceived) {
+  TransportFeedbackPacketLossTracker tracker(10, 5, 4);
 
-    // Expected window contents: [] -> [11111].
-    SendPacketRange(&tracker, base, 5);
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, true, true, true, true});
-    ValidatePacketLossStatistics(tracker, 0.0f, 0.0f);
-  }
+  // Expected window contents: [] -> [11111].
+  SendPacketRange(&tracker, base_, 5);
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, true, true, true, true});
+  ValidatePacketLossStatistics(tracker, 0.0f, 0.0f);
 }
 
 // Sanity - all packets lost.
-TEST(TransportFeedbackPacketLossTrackerTest, AllLost) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 5, 4);
+TEST_P(TransportFeedbackPacketLossTrackerTest, AllLost) {
+  TransportFeedbackPacketLossTracker tracker(10, 5, 4);
 
-    // Expected window contents: [] -> [00000].
-    SendPacketRange(&tracker, base, 5);
-    // Note: Last acked packet (the received one) does not belong to the stream,
-    // and is only there to make sure the feedback message is legal.
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {false, false, false, false, false, true});
-    ValidatePacketLossStatistics(tracker, 1.0f, 0.0f);
-  }
+  // Expected window contents: [] -> [00000].
+  SendPacketRange(&tracker, base_, 5);
+  // Note: Last acked packet (the received one) does not belong to the stream,
+  // and is only there to make sure the feedback message is legal.
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {false, false, false, false, false, true});
+  ValidatePacketLossStatistics(tracker, 1.0f, 0.0f);
 }
 
 // Repeated reports are ignored.
-TEST(TransportFeedbackPacketLossTrackerTest, ReportRepetition) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 5, 4);
+TEST_P(TransportFeedbackPacketLossTrackerTest, ReportRepetition) {
+  TransportFeedbackPacketLossTracker tracker(10, 5, 4);
 
-    SendPacketRange(&tracker, base, 5);
+  SendPacketRange(&tracker, base_, 5);
 
-    // Expected window contents: [] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
+  // Expected window contents: [] -> [10011].
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, false, true, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
 
-    // Repeat entire previous feedback
-    // Expected window contents: [10011] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
-  }
+  // Repeat entire previous feedback
+  // Expected window contents: [10011] -> [10011].
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, false, true, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
 }
 
 // Report overlap.
-TEST(TransportFeedbackPacketLossTrackerTest, ReportOverlap) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 5, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, ReportOverlap) {
+  TransportFeedbackPacketLossTracker tracker(10, 5, 1);
 
-    SendPacketRange(&tracker, base, 15);
+  SendPacketRange(&tracker, base_, 15);
 
-    // Expected window contents: [] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
+  // Expected window contents: [] -> [10011].
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, false, true, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
 
-    // Expected window contents: [10011] -> [1001101].
-    AddTransportFeedbackAndValidate(&tracker, base + 3,
-                                    {true, true, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 6.0f);
-  }
+  // Expected window contents: [10011] -> [1001101].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 3,
+                                  {true, true, false, true});
+  ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 6.0f);
 }
 
 // Report conflict.
-TEST(TransportFeedbackPacketLossTrackerTest, ReportConflict) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 5, 4);
+TEST_P(TransportFeedbackPacketLossTrackerTest, ReportConflict) {
+  TransportFeedbackPacketLossTracker tracker(10, 5, 4);
 
-    SendPacketRange(&tracker, base, 15);
+  SendPacketRange(&tracker, base_, 15);
 
-    // Expected window contents: [] -> [01001].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {false, true, false, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 5.0f, 2.0f / 4.0f);
+  // Expected window contents: [] -> [01001].
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {false, true, false, false, true});
+  ValidatePacketLossStatistics(tracker, 3.0f / 5.0f, 2.0f / 4.0f);
 
-    // Expected window contents: [01001] -> [11101].
-    // While false->true will be applied, true -> false will be ignored.
-    AddTransportFeedbackAndValidate(&tracker, base, {true, false, true});
-    ValidatePacketLossStatistics(tracker, 1.0f / 5.0f, 1.0f / 4.0f);
-  }
+  // Expected window contents: [01001] -> [11101].
+  // While false->true will be applied, true -> false will be ignored.
+  AddTransportFeedbackAndValidate(&tracker, base_, {true, false, true});
+  ValidatePacketLossStatistics(tracker, 1.0f / 5.0f, 1.0f / 4.0f);
 }
 
 // Skipped packets treated as unknown (not lost).
-TEST(TransportFeedbackPacketLossTrackerTest, SkippedPackets) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 5, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, SkippedPackets) {
+  TransportFeedbackPacketLossTracker tracker(10, 5, 1);
 
-    SendPacketRange(&tracker, base, 200);
+  SendPacketRange(&tracker, base_, 200);
 
-    // Expected window contents: [] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
+  // Expected window contents: [] -> [10011].
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, false, true, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
 
-    // Expected window contents: [10011] -> [10011-GAP-101].
-    AddTransportFeedbackAndValidate(&tracker, base + 100, {true, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 8.0f, 2.0f / 6.0f);
-  }
+  // Expected window contents: [10011] -> [10011-GAP-101].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 100, {true, false, true});
+  ValidatePacketLossStatistics(tracker, 3.0f / 8.0f, 2.0f / 6.0f);
 }
 
 // The window retains information up to the configured max-window-size, but
 // starts discarding after that. (Sent packets are not counted.)
-TEST(TransportFeedbackPacketLossTrackerTest, MaxWindowSize) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 10, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, MaxWindowSize) {
+  TransportFeedbackPacketLossTracker tracker(10, 10, 1);
 
-    SendPacketRange(&tracker, base, 200);
+  SendPacketRange(&tracker, base_, 200);
 
-    // Up to max-window-size retained.
-    // Expected window contents: [] -> [1010100001].
-    AddTransportFeedbackAndValidate(
-        &tracker, base,
-        {true, false, true, false, true, false, false, false, false, true});
-    ValidatePacketLossStatistics(tracker, 6.0f / 10.0f, 3.0f / 9.0f);
+  // Up to max-window-size retained.
+  // Expected window contents: [] -> [1010100001].
+  AddTransportFeedbackAndValidate(
+      &tracker, base_,
+      {true, false, true, false, true, false, false, false, false, true});
+  ValidatePacketLossStatistics(tracker, 6.0f / 10.0f, 3.0f / 9.0f);
 
-    // After max-window-size, older entries discarded to accommodate newer ones.
-    // Expected window contents: [1010100001] -> [0000110111].
-    AddTransportFeedbackAndValidate(&tracker, base + 10,
-                                    {true, false, true, true, true});
-    ValidatePacketLossStatistics(tracker, 5.0f / 10.0f, 2.0f / 9.0f);
-  }
+  // After max-window-size, older entries discarded to accommodate newer ones.
+  // Expected window contents: [1010100001] -> [0000110111].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 10,
+                                  {true, false, true, true, true});
+  ValidatePacketLossStatistics(tracker, 5.0f / 10.0f, 2.0f / 9.0f);
 }
 
 // Inserting a feedback into the middle of a full window works correctly.
-TEST(TransportFeedbackPacketLossTrackerTest, InsertIntoMiddle) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 5, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, InsertIntoMiddle) {
+  TransportFeedbackPacketLossTracker tracker(10, 5, 1);
 
-    SendPacketRange(&tracker, base, 300);
+  SendPacketRange(&tracker, base_, 300);
 
-    // Expected window contents: [] -> [10101].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, true, false, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
+  // Expected window contents: [] -> [10101].
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, true, false, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
 
-    // Expected window contents: [10101] -> [10101-GAP-10001].
-    AddTransportFeedbackAndValidate(&tracker, base + 100,
-                                    {true, false, false, false, true});
-    ValidatePacketLossStatistics(tracker, 5.0f / 10.0f, 3.0f / 8.0f);
+  // Expected window contents: [10101] -> [10101-GAP-10001].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 100,
+                                  {true, false, false, false, true});
+  ValidatePacketLossStatistics(tracker, 5.0f / 10.0f, 3.0f / 8.0f);
 
-    // Insert into the middle of this full window - it discards the older data.
-    // Expected window contents: [10101-GAP-10001] -> [11111-GAP-10001].
-    AddTransportFeedbackAndValidate(&tracker, base + 50,
-                                    {true, true, true, true, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 10.0f, 1.0f / 8.0f);
-  }
+  // Insert into the middle of this full window - it discards the older data.
+  // Expected window contents: [10101-GAP-10001] -> [11111-GAP-10001].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 50,
+                                  {true, true, true, true, true});
+  ValidatePacketLossStatistics(tracker, 3.0f / 10.0f, 1.0f / 8.0f);
 }
 
 // Inserting feedback into the middle of a full window works correctly - can
 // complete two pairs.
-TEST(TransportFeedbackPacketLossTrackerTest, InsertionCompletesTwoPairs) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(15, 5, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, InsertionCompletesTwoPairs) {
+  TransportFeedbackPacketLossTracker tracker(15, 5, 1);
 
-    SendPacketRange(&tracker, base, 300);
+  SendPacketRange(&tracker, base_, 300);
 
-    // Expected window contents: [] -> [10111].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, true, true, true});
-    ValidatePacketLossStatistics(tracker, 1.0f / 5.0f, 1.0f / 4.0f);
+  // Expected window contents: [] -> [10111].
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, true, true, true});
+  ValidatePacketLossStatistics(tracker, 1.0f / 5.0f, 1.0f / 4.0f);
 
-    // Expected window contents: [10111] -> [10111-GAP-10101].
-    AddTransportFeedbackAndValidate(&tracker, base + 7,
-                                    {true, false, true, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 10.0f, 3.0f / 8.0f);
+  // Expected window contents: [10111] -> [10111-GAP-10101].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 7,
+                                  {true, false, true, false, true});
+  ValidatePacketLossStatistics(tracker, 3.0f / 10.0f, 3.0f / 8.0f);
 
-    // Insert in between, closing the gap completely.
-    // Expected window contents: [10111-GAP-10101] -> [101111010101].
-    AddTransportFeedbackAndValidate(&tracker, base + 5, {false, true});
-    ValidatePacketLossStatistics(tracker, 4.0f / 12.0f, 4.0f / 11.0f);
-  }
+  // Insert in between, closing the gap completely.
+  // Expected window contents: [10111-GAP-10101] -> [101111010101].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 5, {false, true});
+  ValidatePacketLossStatistics(tracker, 4.0f / 12.0f, 4.0f / 11.0f);
 }
 
 // The window can meaningfully hold up to 0x8000 SENT packets (of which only
 // up to max-window acked messages will be kept and regarded).
-TEST(TransportFeedbackPacketLossTrackerTest, SecondQuadrant) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, SecondQuadrant) {
+  TransportFeedbackPacketLossTracker tracker(20, 5, 1);
 
-    SendPacketRange(&tracker, base, 0x8000, false);
+  SendPacketRange(&tracker, base_, 0x8000, false);
 
-    // Expected window contents: [] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
+  // Expected window contents: [] -> [10011].
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, false, true, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
 
-    // Window *does* get updated with inputs from quadrant #2.
-    // Expected window contents: [10011] -> [100111].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x4321, {true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 6.0f, 1.0f / 4.0f);
+  // Window *does* get updated with inputs from quadrant #2.
+  // Expected window contents: [10011] -> [100111].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x4321, {true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 6.0f, 1.0f / 4.0f);
 
-    // Correct recognition of quadrant #2: up to, but not including, base +
-    // 0x8000
-    // Expected window contents: [100111] -> [1001111].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x7fff, {true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 7.0f, 1.0f / 4.0f);
-  }
+  // Correct recognition of quadrant #2: up to, but not including, base_ +
+  // 0x8000
+  // Expected window contents: [100111] -> [1001111].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x7fff, {true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 7.0f, 1.0f / 4.0f);
 }
 
 // After the base has moved due to insertion into the third quadrant, it is
 // still possible to get feedbacks in the middle of the window and obtain the
 // correct PLR and RPLR. Insertion into the middle before the max window size
 // has been achieved does not cause older packets to be dropped.
-TEST(TransportFeedbackPacketLossTrackerTest, InsertIntoMiddleAfterBaseMoved) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, InsertIntoMiddleAfterBaseMoved) {
+  TransportFeedbackPacketLossTracker tracker(20, 5, 1);
 
-    SendPacketRange(&tracker, base, 20);
-    SendPacketRange(&tracker, base + 0x5000, 20);
+  SendPacketRange(&tracker, base_, 20);
+  SendPacketRange(&tracker, base_ + 0x5000, 20);
 
-    // Expected window contents: [] -> [1001101].
-    AddTransportFeedbackAndValidate(
-        &tracker, base, {true, false, false, true, true, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 6.0f);
+  // Expected window contents: [] -> [1001101].
+  AddTransportFeedbackAndValidate(
+      &tracker, base_, {true, false, false, true, true, false, true});
+  ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 6.0f);
 
-    // Expected window contents: [1001101] -> [101-GAP-1001].
-    SendPacketRange(&tracker, base + 0x8000, 4);
-    AddTransportFeedbackAndValidate(&tracker, base + 0x8000,
-                                    {true, false, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 5.0f);
+  // Expected window contents: [1001101] -> [101-GAP-1001].
+  SendPacketRange(&tracker, base_ + 0x8000, 4);
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x8000,
+                                  {true, false, false, true});
+  ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 5.0f);
 
-    // Inserting into the middle still works after the base has shifted.
-    // Expected window contents:
-    // [101-GAP-1001] -> [101-GAP-100101-GAP-1001]
-    AddTransportFeedbackAndValidate(&tracker, base + 0x5000,
-                                    {true, false, false, true, false, true});
-    ValidatePacketLossStatistics(tracker, 6.0f / 13.0f, 4.0f / 10.0f);
+  // Inserting into the middle still works after the base has shifted.
+  // Expected window contents:
+  // [101-GAP-1001] -> [101-GAP-100101-GAP-1001]
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x5000,
+                                  {true, false, false, true, false, true});
+  ValidatePacketLossStatistics(tracker, 6.0f / 13.0f, 4.0f / 10.0f);
 
-    // The base can keep moving after inserting into the middle.
-    // Expected window contents:
-    // [101-GAP-100101-GAP-1001] -> [1-GAP-100101-GAP-100111].
-    SendPacketRange(&tracker, base + 0x8000 + 4, 2);
-    AddTransportFeedbackAndValidate(&tracker, base + 0x8000 + 4, {true, true});
-    ValidatePacketLossStatistics(tracker, 5.0f / 13.0f, 3.0f / 10.0f);
-  }
+  // The base can keep moving after inserting into the middle.
+  // Expected window contents:
+  // [101-GAP-100101-GAP-1001] -> [1-GAP-100101-GAP-100111].
+  SendPacketRange(&tracker, base_ + 0x8000 + 4, 2);
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x8000 + 4, {true, true});
+  ValidatePacketLossStatistics(tracker, 5.0f / 13.0f, 3.0f / 10.0f);
 }
 
 // After moving the base of the window, the max window size is still observed.
-TEST(TransportFeedbackPacketLossTrackerTest, MaxWindowObservedAfterBaseMoved) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(15, 10, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest,
+       MaxWindowObservedAfterBaseMoved) {
+  TransportFeedbackPacketLossTracker tracker(15, 10, 1);
 
-    // Expected window contents: [] -> [1001110101].
-    SendPacketRange(&tracker, base, 10);
-    AddTransportFeedbackAndValidate(
-        &tracker, base,
-        {true, false, false, true, true, true, false, true, false, true});
-    ValidatePacketLossStatistics(tracker, 4.0f / 10.0f, 3.0f / 9.0f);
+  // Expected window contents: [] -> [1001110101].
+  SendPacketRange(&tracker, base_, 10);
+  AddTransportFeedbackAndValidate(
+      &tracker, base_,
+      {true, false, false, true, true, true, false, true, false, true});
+  ValidatePacketLossStatistics(tracker, 4.0f / 10.0f, 3.0f / 9.0f);
 
-    // Create gap (on both sides).
-    SendPacketRange(&tracker, base + 0x4000, 20);
+  // Create gap (on both sides).
+  SendPacketRange(&tracker, base_ + 0x4000, 20);
 
-    // Expected window contents: [1001110101] -> [1110101-GAP-101].
-    SendPacketRange(&tracker, base + 0x8000, 3);
-    AddTransportFeedbackAndValidate(&tracker, base + 0x8000,
-                                    {true, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 10.0f, 3.0f / 8.0f);
+  // Expected window contents: [1001110101] -> [1110101-GAP-101].
+  SendPacketRange(&tracker, base_ + 0x8000, 3);
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x8000,
+                                  {true, false, true});
+  ValidatePacketLossStatistics(tracker, 3.0f / 10.0f, 3.0f / 8.0f);
 
-    // Push into middle until max window is reached. The gap is NOT completed.
-    // Expected window contents:
-    // [1110101-GAP-101] -> [1110101-GAP-10001-GAP-101]
-    AddTransportFeedbackAndValidate(&tracker, base + 0x4000 + 2,
-                                    {true, false, false, false, true});
-    ValidatePacketLossStatistics(tracker, 6.0f / 15.0f, 4.0f / 12.0f);
+  // Push into middle until max window is reached. The gap is NOT completed.
+  // Expected window contents:
+  // [1110101-GAP-101] -> [1110101-GAP-10001-GAP-101]
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x4000 + 2,
+                                  {true, false, false, false, true});
+  ValidatePacketLossStatistics(tracker, 6.0f / 15.0f, 4.0f / 12.0f);
 
-    // Pushing new packets into the middle would discard older packets.
-    // Expected window contents:
-    // [1110101-GAP-10001-GAP-101] -> [0101-GAP-10001101-GAP-101]
-    AddTransportFeedbackAndValidate(&tracker, base + 0x4000 + 2 + 5,
-                                    {true, false, true});
-    ValidatePacketLossStatistics(tracker, 7.0f / 15.0f, 5.0f / 12.0f);
-  }
+  // Pushing new packets into the middle would discard older packets.
+  // Expected window contents:
+  // [1110101-GAP-10001-GAP-101] -> [0101-GAP-10001101-GAP-101]
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x4000 + 2 + 5,
+                                  {true, false, true});
+  ValidatePacketLossStatistics(tracker, 7.0f / 15.0f, 5.0f / 12.0f);
 }
 
 // A packet with a new enough sequence number might shift enough old feedbacks
 // out  window, that we'd go back to an unknown PLR and RPLR.
-TEST(TransportFeedbackPacketLossTrackerTest, NewPacketMovesWindowBase) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 3);
+TEST_P(TransportFeedbackPacketLossTrackerTest, NewPacketMovesWindowBase) {
+  TransportFeedbackPacketLossTracker tracker(20, 5, 3);
 
-    SendPacketRange(&tracker, base, 50);
-    SendPacketRange(&tracker, base + 0x4000 - 1, 6);  // Gap
+  SendPacketRange(&tracker, base_, 50);
+  SendPacketRange(&tracker, base_ + 0x4000 - 1, 6);  // Gap
 
-    // Expected window contents: [] -> [1001110101].
-    AddTransportFeedbackAndValidate(
-        &tracker, base,
-        {true, false, false, true, true, true, false, true, false, true});
-    ValidatePacketLossStatistics(tracker, 4.0f / 10.0f, 3.0f / 9.0f);
+  // Expected window contents: [] -> [1001110101].
+  AddTransportFeedbackAndValidate(
+      &tracker, base_,
+      {true, false, false, true, true, true, false, true, false, true});
+  ValidatePacketLossStatistics(tracker, 4.0f / 10.0f, 3.0f / 9.0f);
 
-    // A new sent packet with a new enough sequence number could shift enough
-    // acked packets out of window, that we'd go back to an unknown PLR
-    // and RPLR. This *doesn't* // necessarily mean all of the old ones
-    // were discarded, though.
-    // Expected window contents: [1001110101] -> [01].
-    SendPacketRange(&tracker, base + 0x8006, 2);
-    ValidatePacketLossStatistics(tracker,
-                                 rtc::Optional<float>(),  // Still invalid.
-                                 rtc::Optional<float>());
+  // A new sent packet with a new enough sequence number could shift enough
+  // acked packets out of window, that we'd go back to an unknown PLR
+  // and RPLR. This *doesn't* // necessarily mean all of the old ones
+  // were discarded, though.
+  // Expected window contents: [1001110101] -> [01].
+  SendPacketRange(&tracker, base_ + 0x8006, 2);
+  ValidatePacketLossStatistics(tracker,
+                               rtc::Optional<float>(),  // Still invalid.
+                               rtc::Optional<float>());
 
-    // Even if those messages are acked, we'd still might be in unknown PLR
-    // and RPLR, because we might have shifted more packets out of the window
-    // than we have inserted.
-    // Expected window contents: [01] -> [01-GAP-11].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x8006, {true, true});
-    ValidatePacketLossStatistics(tracker,
-                                 rtc::Optional<float>(),  // Still invalid.
-                                 rtc::Optional<float>());
+  // Even if those messages are acked, we'd still might be in unknown PLR
+  // and RPLR, because we might have shifted more packets out of the window
+  // than we have inserted.
+  // Expected window contents: [01] -> [01-GAP-11].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x8006, {true, true});
+  ValidatePacketLossStatistics(tracker,
+                               rtc::Optional<float>(),  // Still invalid.
+                               rtc::Optional<float>());
 
-    // Inserting in the middle shows that though some of the elements were
-    // ejected, some were retained.
-    // Expected window contents: [01-GAP-11] -> [01-GAP-1001-GAP-11].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x4000,
-                                    {true, false, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 8.0f, 2.0f / 5.0f);
-  }
+  // Inserting in the middle shows that though some of the elements were
+  // ejected, some were retained.
+  // Expected window contents: [01-GAP-11] -> [01-GAP-1001-GAP-11].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x4000,
+                                  {true, false, false, true});
+  ValidatePacketLossStatistics(tracker, 3.0f / 8.0f, 2.0f / 5.0f);
 }
 
 // Sequence number gaps are not gaps in reception. However, gaps in reception
 // are still possible, if a packet which WAS sent on the stream is not acked.
-TEST(TransportFeedbackPacketLossTrackerTest, SanityGapsInSequenceNumbers) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, SanityGapsInSequenceNumbers) {
+  TransportFeedbackPacketLossTracker tracker(20, 5, 1);
 
-    SendPackets(&tracker, {static_cast<uint16_t>(base),
-                           static_cast<uint16_t>(base + 2),
-                           static_cast<uint16_t>(base + 4),
-                           static_cast<uint16_t>(base + 6),
-                           static_cast<uint16_t>(base + 8)});
+  SendPackets(&tracker, {static_cast<uint16_t>(base_),
+                         static_cast<uint16_t>(base_ + 2),
+                         static_cast<uint16_t>(base_ + 4),
+                         static_cast<uint16_t>(base_ + 6),
+                         static_cast<uint16_t>(base_ + 8)});
 
-    // Gaps in sequence numbers not considered as gaps in window, because  only
-    // those sequence numbers which were associated with the stream count.
-    // Expected window contents: [] -> [11011].
-    AddTransportFeedbackAndValidate(
-        // Note: Left packets belong to this stream, odd ones ignored.
-        &tracker, base, {true, false,
-                         true, false,
-                         false, false,
-                         true, false,
-                         true, true});
-    ValidatePacketLossStatistics(tracker, 1.0f / 5.0f, 1.0f / 4.0f);
+  // Gaps in sequence numbers not considered as gaps in window, because  only
+  // those sequence numbers which were associated with the stream count.
+  // Expected window contents: [] -> [11011].
+  AddTransportFeedbackAndValidate(
+      // Note: Left packets belong to this stream, odd ones ignored.
+      &tracker, base_, {true, false,
+                        true, false,
+                        false, false,
+                        true, false,
+                        true, true});
+  ValidatePacketLossStatistics(tracker, 1.0f / 5.0f, 1.0f / 4.0f);
 
-    // Create gap by sending [base + 10] but not acking it.
-    // Note: Acks for [base + 11] and [base + 13] ignored (other stream).
-    // Expected window contents: [11011] -> [11011-GAP-01].
-    SendPackets(&tracker, {static_cast<uint16_t>(base + 10),
-                           static_cast<uint16_t>(base + 12),
-                           static_cast<uint16_t>(base + 14)});
-    AddTransportFeedbackAndValidate(&tracker, base + 11,
-                                    {false, false, false, true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 7.0f, 2.0f / 5.0f);
-  }
+  // Create gap by sending [base + 10] but not acking it.
+  // Note: Acks for [base + 11] and [base + 13] ignored (other stream).
+  // Expected window contents: [11011] -> [11011-GAP-01].
+  SendPackets(&tracker, {static_cast<uint16_t>(base_ + 10),
+                         static_cast<uint16_t>(base_ + 12),
+                         static_cast<uint16_t>(base_ + 14)});
+  AddTransportFeedbackAndValidate(&tracker, base_ + 11,
+                                  {false, false, false, true, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 7.0f, 2.0f / 5.0f);
 }
 
 // Sending a packet which is less than 0x8000 away from the baseline does
 // not move the window.
-TEST(TransportFeedbackPacketLossTrackerTest, UnackedInWindowDoesNotMoveWindow) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(5, 3, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest,
+       UnackedInWindowDoesNotMoveWindow) {
+  TransportFeedbackPacketLossTracker tracker(5, 3, 1);
 
-    // Baseline - window has acked messages.
-    // Expected window contents: [] -> [10101].
-    SendPacketRange(&tracker, base, 5);
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, true, false, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
+  // Baseline - window has acked messages.
+  // Expected window contents: [] -> [10101].
+  SendPacketRange(&tracker, base_, 5);
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, true, false, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
 
-    // Test - window not moved.
-    // Expected window contents: [10101] -> [10101].
-    SendPackets(&tracker, {static_cast<uint16_t>(base + 0x7fff)});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
-  }
+  // Test - window not moved.
+  // Expected window contents: [10101] -> [10101].
+  SendPackets(&tracker, {static_cast<uint16_t>(base_ + 0x7fff)});
+  ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
 }
 
 // Sending a packet which is at least 0x8000 away from the baseline, but not
 // 0x8000 or more away from the newest packet in the window, moves the window,
 // but does not reset it.
-TEST(TransportFeedbackPacketLossTrackerTest, UnackedOutOfWindowMovesWindow) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(5, 3, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, UnackedOutOfWindowMovesWindow) {
+  TransportFeedbackPacketLossTracker tracker(5, 3, 1);
 
-    // Baseline - window has acked messages.
-    // Expected window contents: [] -> [10101].
-    SendPacketRange(&tracker, base, 5);
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, true, false, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
+  // Baseline - window has acked messages.
+  // Expected window contents: [] -> [10101].
+  SendPacketRange(&tracker, base_, 5);
+  AddTransportFeedbackAndValidate(&tracker, base_,
+                                  {true, false, true, false, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
 
-    // 0x8000 from baseline, but only 0x7ffc from newest - window moved.
-    // Expected window contents: [10101] -> [0101].
-    SendPackets(&tracker, {static_cast<uint16_t>(base + 0x8000)});
-    ValidatePacketLossStatistics(tracker, 2.0f / 4.0f, 2.0f / 3.0f);
-  }
+  // 0x8000 from baseline, but only 0x7ffc from newest - window moved.
+  // Expected window contents: [10101] -> [0101].
+  SendPackets(&tracker, {static_cast<uint16_t>(base_ + 0x8000)});
+  ValidatePacketLossStatistics(tracker, 2.0f / 4.0f, 2.0f / 3.0f);
 }
 
 // TODO(elad.alon): More tests possible here, but a CL is in the pipeline which
@@ -630,35 +597,41 @@ TEST(TransportFeedbackPacketLossTrackerTest, UnackedOutOfWindowMovesWindow) {
 
 // The window is reset by the sending of a packet which is 0x8000 or more
 // away from the newest packet.
-TEST(TransportFeedbackPacketLossTrackerTest, WindowResetAfterLongNoSend) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(10, 2, 1);
+TEST_P(TransportFeedbackPacketLossTrackerTest, WindowResetAfterLongNoSend) {
+  TransportFeedbackPacketLossTracker tracker(10, 2, 1);
 
-    // Baseline - window has acked messages.
-    // Expected window contents: [] -> [1-GAP-10101].
-    SendPacketRange(&tracker, base, 1);
-    SendPacketRange(&tracker, base + 0x7fff - 4, 5);
-    AddTransportFeedbackAndValidate(&tracker, base, {true});
-    AddTransportFeedbackAndValidate(&tracker, base + 0x7fff - 4,
-                                    {true, false, true, false, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 6.0f, 2.0f / 5.0f);
+  // Baseline - window has acked messages.
+  // Expected window contents: [] -> [1-GAP-10101].
+  SendPacketRange(&tracker, base_, 1);
+  SendPacketRange(&tracker, base_ + 0x7fff - 4, 5);
+  AddTransportFeedbackAndValidate(&tracker, base_, {true});
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x7fff - 4,
+                                  {true, false, true, false, true});
+  ValidatePacketLossStatistics(tracker, 2.0f / 6.0f, 2.0f / 5.0f);
 
-    // Sent packet too new - the entire window is reset.
-    // Expected window contents: [1-GAP-10101] -> [].
-    SendPacketRange(&tracker, base + 0x7fff + 0x8000, 1);
-    ValidatePacketLossStatistics(tracker,
-                                 rtc::Optional<float>(),
-                                 rtc::Optional<float>());
+  // Sent packet too new - the entire window is reset.
+  // Expected window contents: [1-GAP-10101] -> [].
+  SendPacketRange(&tracker, base_ + 0x7fff + 0x8000, 1);
+  ValidatePacketLossStatistics(tracker,
+                               rtc::Optional<float>(),
+                               rtc::Optional<float>());
 
-    // To show it was really reset, prove show that acking the sent packet
-    // still leaves us at unknown, because no acked (or unacked) packets were
-    // left in the window.
-    // Expected window contents: [] -> [1].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x7fff + 0x8000, {true});
-    ValidatePacketLossStatistics(tracker,
-                                 rtc::Optional<float>(),
-                                 rtc::Optional<float>());
-  }
+  // To show it was really reset, prove show that acking the sent packet
+  // still leaves us at unknown, because no acked (or unacked) packets were
+  // left in the window.
+  // Expected window contents: [] -> [1].
+  AddTransportFeedbackAndValidate(&tracker, base_ + 0x7fff + 0x8000, {true});
+  ValidatePacketLossStatistics(tracker,
+                               rtc::Optional<float>(),
+                               rtc::Optional<float>());
 }
+
+// All tests are run multiple times with various baseline sequence number,
+// to weed out potential bugs with wrap-around handling.
+constexpr uint16_t kBases[] = {0x0000, 0x3456, 0xc032, 0xfffe};
+
+INSTANTIATE_TEST_CASE_P(_,
+                        TransportFeedbackPacketLossTrackerTest,
+                        testing::ValuesIn(kBases));
 
 }  // namespace webrtc
