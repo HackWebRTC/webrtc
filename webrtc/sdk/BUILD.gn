@@ -94,6 +94,7 @@ if (is_ios || is_mac) {
 
   rtc_static_library("rtc_sdk_peerconnection_objc") {
     sources = [
+      "objc/Framework/Classes/Metal/RTCMTLNV12Renderer.h",
       "objc/Framework/Classes/RTCAVFoundationVideoCapturerInternal.h",
       "objc/Framework/Classes/RTCAVFoundationVideoCapturerInternal.mm",
       "objc/Framework/Classes/RTCAVFoundationVideoSource+Private.h",
@@ -257,6 +258,12 @@ if (is_ios || is_mac) {
         "objc/Framework/UnitTests/RTCSessionDescriptionTest.mm",
         "objc/Framework/UnitTests/avformatmappertests.mm",
       ]
+      if (is_ios) {
+        sources += [ "objc/Framework/UnitTests/RTCMTLVideoViewTests.mm" ]
+        if (current_cpu != "arm64") {
+          sources += [ "objc/Framework/Classes/Metal/RTCMTLVideoView.m" ]
+        }
+      }
       deps = [
         ":rtc_sdk_peerconnection_objc",
         "//third_party/ocmock",
