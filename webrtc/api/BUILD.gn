@@ -94,6 +94,7 @@ rtc_source_set("ortc_api") {
     "ortc/packettransportinterface.h",
     "ortc/rtptransportcontrollerinterface.h",
     "ortc/rtptransportinterface.h",
+    "ortc/srtptransportinterface.h",
     "ortc/udptransportinterface.h",
   ]
 

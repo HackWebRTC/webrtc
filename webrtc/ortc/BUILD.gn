@@ -58,6 +58,7 @@ if (rtc_include_tests) {
       "rtpparametersconversion_unittest.cc",
       "rtptransport_unittest.cc",
       "rtptransportcontroller_unittest.cc",
+      "srtptransport_unittest.cc",
       "testrtpparameters.cc",
       "testrtpparameters.h",
     ]

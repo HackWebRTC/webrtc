@@ -11,8 +11,8 @@
 #include "webrtc/ortc/rtptransportcontrolleradapter.h"
 
 #include <algorithm>  // For "remove", "find".
-#include <sstream>
 #include <set>
+#include <sstream>
 #include <unordered_map>
 #include <utility>  // For std::move.
 
@@ -130,6 +130,21 @@ RtpTransportControllerAdapter::CreateProxiedRtpTransport(
     PacketTransportInterface* rtcp) {
   auto result =
       RtpTransportAdapter::CreateProxied(rtcp_parameters, rtp, rtcp, this);
+  if (result.ok()) {
+    transport_proxies_.push_back(result.value().get());
+    transport_proxies_.back()->GetInternal()->SignalDestroyed.connect(
+        this, &RtpTransportControllerAdapter::OnRtpTransportDestroyed);
+  }
+  return result;
+}
+
+RTCErrorOr<std::unique_ptr<SrtpTransportInterface>>
+RtpTransportControllerAdapter::CreateProxiedSrtpTransport(
+    const RtcpParameters& rtcp_parameters,
+    PacketTransportInterface* rtp,
+    PacketTransportInterface* rtcp) {
+  auto result =
+      RtpTransportAdapter::CreateSrtpProxied(rtcp_parameters, rtp, rtcp, this);
   if (result.ok()) {
     transport_proxies_.push_back(result.value().get());
     transport_proxies_.back()->GetInternal()->SignalDestroyed.connect(
@@ -605,6 +620,11 @@ RTCError RtpTransportControllerAdapter::AttachAudioSender(
                          "RtpSender and RtpReceiver is not currently "
                          "supported.");
   }
+  RTCError err = MaybeSetCryptos(inner_transport, &local_audio_description_,
+                                 &remote_audio_description_);
+  if (!err.ok()) {
+    return err;
+  }
   // If setting new transport, extract its RTCP parameters and create voice
   // channel.
   if (!inner_audio_transport_) {
@@ -634,6 +654,11 @@ RTCError RtpTransportControllerAdapter::AttachVideoSender(
                          "Using different transports for the video "
                          "RtpSender and RtpReceiver is not currently "
                          "supported.");
+  }
+  RTCError err = MaybeSetCryptos(inner_transport, &local_video_description_,
+                                 &remote_video_description_);
+  if (!err.ok()) {
+    return err;
   }
   // If setting new transport, extract its RTCP parameters and create video
   // channel.
@@ -665,6 +690,11 @@ RTCError RtpTransportControllerAdapter::AttachAudioReceiver(
                          "RtpReceiver and RtpReceiver is not currently "
                          "supported.");
   }
+  RTCError err = MaybeSetCryptos(inner_transport, &local_audio_description_,
+                                 &remote_audio_description_);
+  if (!err.ok()) {
+    return err;
+  }
   // If setting new transport, extract its RTCP parameters and create voice
   // channel.
   if (!inner_audio_transport_) {
@@ -694,6 +724,11 @@ RTCError RtpTransportControllerAdapter::AttachVideoReceiver(
                          "Using different transports for the video "
                          "RtpReceiver and RtpReceiver is not currently "
                          "supported.");
+  }
+  RTCError err = MaybeSetCryptos(inner_transport, &local_video_description_,
+                                 &remote_video_description_);
+  if (!err.ok()) {
+    return err;
   }
   // If setting new transport, extract its RTCP parameters and create video
   // channel.
@@ -894,6 +929,27 @@ RtpTransportControllerAdapter::MakeSendStreamParamsVec(
   RTC_DCHECK_EQ(1u, result.value().size());
   result.value()[0].cname = cname;
   return result;
+}
+
+RTCError RtpTransportControllerAdapter::MaybeSetCryptos(
+    RtpTransportInterface* rtp_transport,
+    cricket::MediaContentDescription* local_description,
+    cricket::MediaContentDescription* remote_description) {
+  if (rtp_transport->GetInternal()->is_srtp_transport()) {
+    if (!rtp_transport->GetInternal()->send_key() ||
+        !rtp_transport->GetInternal()->receive_key()) {
+      LOG_AND_RETURN_ERROR(webrtc::RTCErrorType::UNSUPPORTED_PARAMETER,
+                           "The SRTP send key or receive key is not set.")
+    }
+    std::vector<cricket::CryptoParams> cryptos;
+    cryptos.push_back(*(rtp_transport->GetInternal()->receive_key()));
+    local_description->set_cryptos(cryptos);
+
+    cryptos.clear();
+    cryptos.push_back(*(rtp_transport->GetInternal()->send_key()));
+    remote_description->set_cryptos(cryptos);
+  }
+  return RTCError::OK();
 }
 
 }  // namespace webrtc

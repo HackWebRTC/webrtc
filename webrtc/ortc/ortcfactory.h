@@ -49,6 +49,12 @@ class OrtcFactory : public OrtcFactoryInterface {
       PacketTransportInterface* rtcp,
       RtpTransportControllerInterface* transport_controller) override;
 
+  RTCErrorOr<std::unique_ptr<SrtpTransportInterface>> CreateSrtpTransport(
+      const RtcpParameters& rtcp_parameters,
+      PacketTransportInterface* rtp,
+      PacketTransportInterface* rtcp,
+      RtpTransportControllerInterface* transport_controller) override;
+
   RtpCapabilities GetRtpSenderCapabilities(
       cricket::MediaType kind) const override;
 

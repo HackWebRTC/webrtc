@@ -16,18 +16,18 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/ortc/ortcrtpreceiverinterface.h"
+#include "webrtc/api/ortc/ortcrtpsenderinterface.h"
+#include "webrtc/api/ortc/rtptransportcontrollerinterface.h"
+#include "webrtc/api/ortc/srtptransportinterface.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/api/ortc/ortcrtpreceiverinterface.h"
-#include "webrtc/api/ortc/ortcrtpsenderinterface.h"
-#include "webrtc/api/ortc/rtptransportcontrollerinterface.h"
-#include "webrtc/api/ortc/rtptransportinterface.h"
+#include "webrtc/media/base/mediachannel.h"  // For MediaConfig.
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/pc/mediacontroller.h"
-#include "webrtc/media/base/mediachannel.h"  // For MediaConfig.
 
 namespace webrtc {
 
@@ -81,6 +81,12 @@ class RtpTransportControllerAdapter : public RtpTransportControllerInterface,
       const RtcpParameters& rtcp_parameters,
       PacketTransportInterface* rtp,
       PacketTransportInterface* rtcp);
+
+  RTCErrorOr<std::unique_ptr<SrtpTransportInterface>>
+  CreateProxiedSrtpTransport(const RtcpParameters& rtcp_parameters,
+                             PacketTransportInterface* rtp,
+                             PacketTransportInterface* rtcp);
+
   // |transport_proxy| needs to be a proxy to a transport because the
   // application may call GetTransport() on the returned sender or receiver,
   // and expects it to return a thread-safe transport proxy.
@@ -169,6 +175,13 @@ class RtpTransportControllerAdapter : public RtpTransportControllerInterface,
       std::vector<RtpEncodingParameters> encodings,
       const std::string& cname,
       const cricket::MediaContentDescription& description) const;
+
+  // If the |rtp_transport| is a SrtpTransport, set the cryptos of the
+  // audio/video content descriptions.
+  RTCError MaybeSetCryptos(
+      RtpTransportInterface* rtp_transport,
+      cricket::MediaContentDescription* local_description,
+      cricket::MediaContentDescription* remote_description);
 
   rtc::Thread* signaling_thread_;
   rtc::Thread* worker_thread_;

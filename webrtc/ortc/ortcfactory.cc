@@ -11,11 +11,11 @@
 #include "webrtc/ortc/ortcfactory.h"
 
 #include <sstream>
-#include <vector>
 #include <utility>  // For std::move.
+#include <vector>
 
-#include "webrtc/api/proxy.h"
 #include "webrtc/api/mediastreamtrackproxy.h"
+#include "webrtc/api/proxy.h"
 #include "webrtc/api/rtcerror.h"
 #include "webrtc/api/videosourceproxy.h"
 #include "webrtc/base/asyncpacketsocket.h"
@@ -33,9 +33,9 @@
 #include "webrtc/ortc/rtptransportcontrolleradapter.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/base/udptransport.h"
+#include "webrtc/pc/audiotrack.h"
 #include "webrtc/pc/channelmanager.h"
 #include "webrtc/pc/localaudiosource.h"
-#include "webrtc/pc/audiotrack.h"
 #include "webrtc/pc/videocapturertracksource.h"
 #include "webrtc/pc/videotrack.h"
 
@@ -78,6 +78,14 @@ PROXY_METHOD4(RTCErrorOr<std::unique_ptr<RtpTransportInterface>>,
               PacketTransportInterface*,
               PacketTransportInterface*,
               RtpTransportControllerInterface*)
+
+PROXY_METHOD4(RTCErrorOr<std::unique_ptr<SrtpTransportInterface>>,
+              CreateSrtpTransport,
+              const RtcpParameters&,
+              PacketTransportInterface*,
+              PacketTransportInterface*,
+              RtpTransportControllerInterface*)
+
 PROXY_CONSTMETHOD1(RtpCapabilities,
                    GetRtpSenderCapabilities,
                    cricket::MediaType)
@@ -239,6 +247,43 @@ OrtcFactory::CreateRtpTransport(
         controller->GetInternal()->CreateProxiedRtpTransport(copied_parameters,
                                                              rtp, rtcp);
     // If RtpTransport was successfully created, transfer ownership of
+    // |rtp_transport_controller|. Otherwise it will go out of scope and be
+    // deleted automatically.
+    if (transport_result.ok()) {
+      transport_result.value()
+          ->GetInternal()
+          ->TakeOwnershipOfRtpTransportController(std::move(controller));
+    }
+    return transport_result;
+  }
+}
+
+RTCErrorOr<std::unique_ptr<SrtpTransportInterface>>
+OrtcFactory::CreateSrtpTransport(
+    const RtcpParameters& rtcp_parameters,
+    PacketTransportInterface* rtp,
+    PacketTransportInterface* rtcp,
+    RtpTransportControllerInterface* transport_controller) {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
+  RtcpParameters copied_parameters = rtcp_parameters;
+  if (copied_parameters.cname.empty()) {
+    copied_parameters.cname = default_cname_;
+  }
+  if (transport_controller) {
+    return transport_controller->GetInternal()->CreateProxiedSrtpTransport(
+        copied_parameters, rtp, rtcp);
+  } else {
+    // If |transport_controller| is null, create one automatically, which the
+    // returned SrtpTransport will own.
+    auto controller_result = CreateRtpTransportController();
+    if (!controller_result.ok()) {
+      return controller_result.MoveError();
+    }
+    auto controller = controller_result.MoveValue();
+    auto transport_result =
+        controller->GetInternal()->CreateProxiedSrtpTransport(copied_parameters,
+                                                              rtp, rtcp);
+    // If SrtpTransport was successfully created, transfer ownership of
     // |rtp_transport_controller|. Otherwise it will go out of scope and be
     // deleted automatically.
     if (transport_result.ok()) {

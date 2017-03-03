@@ -82,6 +82,24 @@ TEST_F(OrtcFactoryTest, CreateRtpTransportWithAndWithoutMux) {
   EXPECT_TRUE(result.ok());
 }
 
+// Simple test for the successful cases of CreateSrtpTransport.
+TEST_F(OrtcFactoryTest, CreateSrtpTransport) {
+  rtc::FakePacketTransport rtp("rtp");
+  rtc::FakePacketTransport rtcp("rtcp");
+  // With muxed RTCP.
+  RtcpParameters rtcp_parameters;
+  rtcp_parameters.mux = true;
+  auto result = ortc_factory_->CreateSrtpTransport(rtcp_parameters, &rtp,
+                                                   nullptr, nullptr);
+  EXPECT_TRUE(result.ok());
+  result.MoveValue().reset();
+  // With non-muxed RTCP.
+  rtcp_parameters.mux = false;
+  result =
+      ortc_factory_->CreateSrtpTransport(rtcp_parameters, &rtp, &rtcp, nullptr);
+  EXPECT_TRUE(result.ok());
+}
+
 // If no CNAME is provided, one should be generated and returned by
 // GetRtpParameters.
 TEST_F(OrtcFactoryTest, CreateRtpTransportGeneratesCname) {
