@@ -32,7 +32,14 @@
 #   > plot_flame_graph
 #   > perf_cleanup
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+if [ -n "$ZSH_VERSION" ]; then
+  # Running inside zsh.
+  SCRIPT_PATH="${(%):-%N}"
+else
+  # Running inside something else (most likely bash).
+  SCRIPT_PATH="${BASH_SOURCE[0]}"
+fi
+SCRIPT_DIR="$(cd $(dirname "$SCRIPT_PATH") && pwd -P)"
 source "${SCRIPT_DIR}/utilities.sh"
 
 # Root directory for local symbol cache.
@@ -96,7 +103,7 @@ function arch_is_ok() {
 # which is used by simpleperf as base when searching for symbols.
 function copy_native_shared_library_to_symbol_cache() {
   local arm_lib="arm"
-  if [ "$(native_shared_lib_arch)" == "AArch64" ]; then
+  if [[ "$(native_shared_lib_arch)" == "AArch64" ]]; then
     arm_lib="arm64"
   fi
   for num in 1 2; do
@@ -355,7 +362,7 @@ main() {
   ok "adb tool is working"
 
   # Exactly one Android device must be connected.
-  if [[ ! one_device_connected ]]; then
+  if ! one_device_connected; then
     error "one device must be connected"
     return 1
   fi
