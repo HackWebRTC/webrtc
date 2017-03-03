@@ -213,10 +213,10 @@
       'gn', 'openh264_release_bot', 'x64'
     ],
     'perf_release_bot_x86': [
-      'gn', 'openh264', 'release', 'static', 'goma', 'x86'
+      'gn', 'openh264', 'release', 'goma', 'x86'
     ],
     'perf_release_bot_x64': [
-      'gn', 'openh264', 'release', 'static', 'goma', 'x64'
+      'gn', 'openh264', 'release', 'goma', 'x64'
     ],
     'libfuzzer_asan_release_bot_x64': [
       'libfuzzer', 'asan', 'optimize_for_fuzzing', 'openh264_release_bot', 'x64'
@@ -286,13 +286,13 @@
       'android', 'gn', 'debug_static_bot', 'x64'
     ],
     'android_asan_shared_release_bot_arm': [
-      'android', 'gn', 'asan', 'clang', 'shared', 'release_bot', 'arm'
+      'android', 'gn', 'asan', 'clang', 'release_bot', 'arm'
     ],
     'perf_android_release_bot_arm': [
-      'android', 'gn', 'release', 'static', 'goma', 'arm'
+      'android', 'gn', 'release', 'goma', 'arm'
     ],
     'perf_android_release_bot_arm64': [
-      'android', 'gn', 'release', 'static', 'goma', 'arm64'
+      'android', 'gn', 'release', 'goma', 'arm64'
     ],
 
     # This is used for tracking purposes; any bot that uses this config
@@ -334,11 +334,11 @@
     },
 
     'debug_bot': {
-      'mixins': ['debug', 'shared', 'goma'],
+      'mixins': ['debug', 'goma'],
     },
 
     'debug_static_bot': {
-      'mixins': ['debug', 'static', 'minimal_symbols', 'goma'],
+      'mixins': ['debug', 'minimal_symbols', 'goma'],
     },
 
     # This mixin is used to force configs that use it to fail. It
@@ -413,15 +413,7 @@
     },
 
     'release_bot': {
-      'mixins': ['release', 'static', 'dcheck_always_on', 'goma'],
-    },
-
-    'shared': {
-      'gn_args': 'is_component_build=true',
-    },
-
-    'static': {
-      'gn_args': 'is_component_build=false',
+      'mixins': ['release', 'dcheck_always_on', 'goma'],
     },
 
     'syzyasan': {
