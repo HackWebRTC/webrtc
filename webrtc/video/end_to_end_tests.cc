@@ -4025,7 +4025,8 @@ TEST_P(EndToEndTest, VerifyDefaultFlexfecReceiveConfigParameters) {
 }
 
 TEST_P(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
-  static const int kExtensionId = 8;
+  static constexpr int kExtensionId = 8;
+  static constexpr size_t kMinPacketsToWaitFor = 50;
   class TransportSequenceNumberTest : public test::EndToEndTest {
    public:
     TransportSequenceNumberTest()
@@ -4063,7 +4064,7 @@ TEST_P(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
       if (header.ssrc == kAudioSendSsrc)
         audio_observed_ = true;
       if (audio_observed_ && video_observed_ &&
-          received_packet_ids_.size() == 50) {
+          received_packet_ids_.size() >= kMinPacketsToWaitFor) {
         size_t packet_id_range =
             *received_packet_ids_.rbegin() - *received_packet_ids_.begin() + 1;
         EXPECT_EQ(received_packet_ids_.size(), packet_id_range);
@@ -4077,6 +4078,12 @@ TEST_P(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
                              "packets with transport sequence number.";
     }
 
+    void ExpectSuccessful() {
+      EXPECT_TRUE(video_observed_);
+      EXPECT_TRUE(audio_observed_);
+      EXPECT_GE(received_packet_ids_.size(), kMinPacketsToWaitFor);
+    }
+
    private:
     bool video_observed_;
     bool audio_observed_;
@@ -4085,6 +4092,9 @@ TEST_P(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
   } test;
 
   RunBaseTest(&test);
+  // Double check conditions for successful test to produce better error
+  // message when the test fail.
+  test.ExpectSuccessful();
 }
 
 class EndToEndLogTest : public EndToEndTest {
