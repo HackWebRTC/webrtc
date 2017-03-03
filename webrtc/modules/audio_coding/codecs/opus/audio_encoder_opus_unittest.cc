@@ -274,8 +274,6 @@ TEST(AudioEncoderOpusTest, SetReceiverFrameLengthRange) {
   EXPECT_THAT(states.encoder->supported_frame_lengths_ms(),
               ElementsAre(states.encoder->next_frame_length_ms()));
   states.encoder->SetReceiverFrameLengthRange(0, 12345);
-  EXPECT_THAT(states.encoder->supported_frame_lengths_ms(),
-              ElementsAre(20, 60));
   states.encoder->SetReceiverFrameLengthRange(21, 60);
   EXPECT_THAT(states.encoder->supported_frame_lengths_ms(), ElementsAre(60));
   states.encoder->SetReceiverFrameLengthRange(20, 59);
