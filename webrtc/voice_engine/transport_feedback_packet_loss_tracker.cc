@@ -19,9 +19,6 @@
 
 namespace {
 constexpr uint16_t kSeqNumHalf = 0x8000u;
-constexpr uint16_t kSeqNumQuarter = kSeqNumHalf / 2;
-constexpr size_t kMaxConsecutiveOldReports = 4;
-
 void UpdateCounter(size_t* counter, bool increment) {
   if (increment) {
     RTC_DCHECK_LT(*counter, std::numeric_limits<std::size_t>::max());
@@ -37,25 +34,25 @@ void UpdateCounter(size_t* counter, bool increment) {
 namespace webrtc {
 
 TransportFeedbackPacketLossTracker::TransportFeedbackPacketLossTracker(
-    size_t max_window_size,
-    size_t plr_min_num_packets,
-    size_t rplr_min_num_pairs)
-    : max_window_size_(max_window_size),
+    size_t max_acked_packets,
+    size_t plr_min_num_acked_packets,
+    size_t rplr_min_num_acked_pairs)
+    : max_acked_packets_(max_acked_packets),
       ref_packet_status_(packet_status_window_.begin()),
-      plr_state_(plr_min_num_packets),
-      rplr_state_(rplr_min_num_pairs) {
-  RTC_DCHECK_GT(plr_min_num_packets, 0);
-  RTC_DCHECK_GE(max_window_size, plr_min_num_packets);
-  RTC_DCHECK_LE(max_window_size, kSeqNumHalf);
-  RTC_DCHECK_GT(rplr_min_num_pairs, 0);
-  RTC_DCHECK_GT(max_window_size, rplr_min_num_pairs);
+      plr_state_(plr_min_num_acked_packets),
+      rplr_state_(rplr_min_num_acked_pairs) {
+  RTC_DCHECK_GT(plr_min_num_acked_packets, 0);
+  RTC_DCHECK_GE(max_acked_packets, plr_min_num_acked_packets);
+  RTC_DCHECK_LE(max_acked_packets, kSeqNumHalf);
+  RTC_DCHECK_GT(rplr_min_num_acked_pairs, 0);
+  RTC_DCHECK_GT(max_acked_packets, rplr_min_num_acked_pairs);
   Reset();
 }
 
 void TransportFeedbackPacketLossTracker::Reset() {
+  acked_packets_ = 0;
   plr_state_.Reset();
   rplr_state_.Reset();
-  num_consecutive_old_reports_ = 0;
   packet_status_window_.clear();
   ref_packet_status_ = packet_status_window_.begin();
 }
@@ -65,13 +62,33 @@ uint16_t TransportFeedbackPacketLossTracker::ReferenceSequenceNumber() const {
   return ref_packet_status_->first;
 }
 
-bool TransportFeedbackPacketLossTracker::IsOldSequenceNumber(
-    uint16_t seq_num) const {
-  if (packet_status_window_.empty()) {
-    return false;
+uint16_t TransportFeedbackPacketLossTracker::NewestSequenceNumber() const {
+  RTC_DCHECK(!packet_status_window_.empty());
+  return PreviousPacketStatus(packet_status_window_.end())->first;
+}
+
+void TransportFeedbackPacketLossTracker::OnPacketAdded(uint16_t seq_num) {
+  if (packet_status_window_.find(seq_num) != packet_status_window_.end() ||
+      (!packet_status_window_.empty() &&
+       ForwardDiff(seq_num, NewestSequenceNumber()) <= kSeqNumHalf)) {
+    // The only way for these two to happen is when the stream lies dormant for
+    // long enough for the sequence numbers to wrap. Everything in the window in
+    // such a case would be too old to use.
+    Reset();
   }
-  const uint16_t diff = ForwardDiff(ReferenceSequenceNumber(), seq_num);
-  return diff >= 3 * kSeqNumQuarter;
+
+  // Shift older packets out of window.
+  while (!packet_status_window_.empty() &&
+         ForwardDiff(ref_packet_status_->first, seq_num) >= kSeqNumHalf) {
+    RemoveOldestPacketStatus();
+  }
+
+  packet_status_window_.insert(packet_status_window_.end(),
+                               std::make_pair(seq_num, PacketStatus::Unacked));
+
+  if (packet_status_window_.size() == 1) {
+    ref_packet_status_ = packet_status_window_.cbegin();
+  }
 }
 
 void TransportFeedbackPacketLossTracker::OnReceivedTransportFeedback(
@@ -79,41 +96,16 @@ void TransportFeedbackPacketLossTracker::OnReceivedTransportFeedback(
   const auto& fb_vector = feedback.GetStatusVector();
   const uint16_t base_seq_num = feedback.GetBaseSequence();
 
-  if (IsOldSequenceNumber(base_seq_num)) {
-    ++num_consecutive_old_reports_;
-    if (num_consecutive_old_reports_ <= kMaxConsecutiveOldReports) {
-      // If the number consecutive old reports have not exceed a threshold, we
-      // consider this packet as a late arrival. We could consider adding it to
-      // |packet_status_window_|, but in current implementation, we simply
-      // ignore it.
-      return;
-    }
-    // If we see several consecutive older reports, we assume that we've not
-    // received reports for an exceedingly long time, and do a reset.
-    Reset();
-    RTC_DCHECK(!IsOldSequenceNumber(base_seq_num));
-  } else {
-    num_consecutive_old_reports_ = 0;
-  }
-
   uint16_t seq_num = base_seq_num;
   for (size_t i = 0; i < fb_vector.size(); ++i, ++seq_num) {
-    // Remove the oldest feedbacks so that the distance between the oldest and
-    // the packet to be added does not exceed or equal to half of total sequence
-    // numbers.
-    while (!packet_status_window_.empty() &&
-           ForwardDiff(ReferenceSequenceNumber(), seq_num) >= kSeqNumHalf) {
-      RemoveOldestPacketStatus();
-    }
+    const auto& it = packet_status_window_.find(seq_num);
 
-    const bool received =
-        fb_vector[i] !=
-        webrtc::rtcp::TransportFeedback::StatusSymbol::kNotReceived;
-    InsertPacketStatus(seq_num, received);
-
-    while (packet_status_window_.size() > max_window_size_) {
-      // Make sure that the window holds at most |max_window_size_| items.
-      RemoveOldestPacketStatus();
+    // Packets which aren't at least marked as unacked either do not belong to
+    // this media stream, or have been shifted out of window.
+    if (it != packet_status_window_.end()) {
+      const bool received = fb_vector[i] !=
+          webrtc::rtcp::TransportFeedback::StatusSymbol::kNotReceived;
+      RecordFeedback(it, received);
     }
   }
 }
@@ -128,25 +120,38 @@ TransportFeedbackPacketLossTracker::GetRecoverablePacketLossRate() const {
   return rplr_state_.GetMetric();
 }
 
-void TransportFeedbackPacketLossTracker::InsertPacketStatus(uint16_t seq_num,
-                                                            bool received) {
-  const auto& ret =
-      packet_status_window_.insert(std::make_pair(seq_num, received));
-  if (!ret.second) {
-    if (!ret.first->second && received) {
+void TransportFeedbackPacketLossTracker::RecordFeedback(
+    PacketStatusMap::iterator it,
+    bool received) {
+  if (it->second != PacketStatus::Unacked) {
+    // Normally, packets are sent (inserted into window as "unacked"), then we
+    // receive one feedback for them.
+    // But it is possible that a packet would receive two feedbacks. Then:
+    if (it->second == PacketStatus::Lost && received) {
       // If older status said that the packet was lost but newer one says it
       // is received, we take the newer one.
-      UpdateMetrics(ret.first, false);
-      ret.first->second = received;
+      UpdateMetrics(it, false);
+      it->second = PacketStatus::Unacked;  // For clarity; overwritten shortly.
     } else {
       // If the value is unchanged or if older status said that the packet was
       // received but the newer one says it is lost, we ignore it.
+      // The standard allows for previously-reported packets to carry
+      // no report when the reports overlap, which also looks like the
+      // packet is being reported as lost.
       return;
     }
   }
-  UpdateMetrics(ret.first, true);
-  if (packet_status_window_.size() == 1)
-    ref_packet_status_ = ret.first;
+
+  // Change from UNACKED to RECEIVED/LOST.
+  it->second = received ? PacketStatus::Received : PacketStatus::Lost;
+  UpdateMetrics(it, true);
+
+  // Remove packets from the beginning of the window until maximum-acked
+  // is observed again. Note that multiple sent-but-unacked packets might
+  // be removed before we reach the first acked (whether as received or as
+  // lost) packet.
+  while (acked_packets_ > max_acked_packets_)
+    RemoveOldestPacketStatus();
 }
 
 void TransportFeedbackPacketLossTracker::RemoveOldestPacketStatus() {
@@ -157,34 +162,54 @@ void TransportFeedbackPacketLossTracker::RemoveOldestPacketStatus() {
 }
 
 void TransportFeedbackPacketLossTracker::UpdateMetrics(
-    PacketStatusIterator it,
+    ConstPacketStatusIterator it,
     bool apply /* false = undo */) {
   RTC_DCHECK(it != packet_status_window_.end());
+  // Metrics are dependent on feedbacks from the other side. We don't want
+  // to update the metrics each time a packet is sent, except for the case
+  // when it shifts old sent-but-unacked-packets out of window.
+  RTC_DCHECK(!apply || it->second != PacketStatus::Unacked);
+
+  if (it->second != PacketStatus::Unacked) {
+    UpdateCounter(&acked_packets_, apply);
+  }
+
   UpdatePlr(it, apply);
   UpdateRplr(it, apply);
 }
 
 void TransportFeedbackPacketLossTracker::UpdatePlr(
-    PacketStatusIterator it,
+    ConstPacketStatusIterator it,
     bool apply /* false = undo */) {
-  // Record or undo reception status of currently handled packet.
-  if (it->second) {
-    UpdateCounter(&plr_state_.num_received_packets_, apply);
-  } else {
-    UpdateCounter(&plr_state_.num_lost_packets_, apply);
+  switch (it->second) {
+    case PacketStatus::Unacked:
+      return;
+    case PacketStatus::Received:
+      UpdateCounter(&plr_state_.num_received_packets_, apply);
+      break;
+    case PacketStatus::Lost:
+      UpdateCounter(&plr_state_.num_lost_packets_, apply);
+      break;
+    default:
+      RTC_NOTREACHED();
   }
 }
 
 void TransportFeedbackPacketLossTracker::UpdateRplr(
-    PacketStatusIterator it,
+    ConstPacketStatusIterator it,
     bool apply /* false = undo */) {
-  // Previous packet and current packet might compose a known pair.
-  // If so, the RPLR state needs to be updated accordingly.
+  if (it->second == PacketStatus::Unacked) {
+    // Unacked packets cannot compose a pair.
+    return;
+  }
+
+  // Previous packet and current packet might compose a pair.
   if (it != ref_packet_status_) {
     const auto& prev = PreviousPacketStatus(it);
-    if (prev->first == static_cast<uint16_t>(it->first - 1)) {
-      UpdateCounter(&rplr_state_.num_known_pairs_, apply);
-      if (!prev->second && it->second) {
+    if (prev->second != PacketStatus::Unacked) {
+      UpdateCounter(&rplr_state_.num_acked_pairs_, apply);
+      if (prev->second == PacketStatus::Lost &&
+          it->second == PacketStatus::Received) {
         UpdateCounter(
             &rplr_state_.num_recoverable_losses_, apply);
       }
@@ -192,20 +217,20 @@ void TransportFeedbackPacketLossTracker::UpdateRplr(
   }
 
   // Current packet and next packet might compose a pair.
-  // If so, the RPLR state needs to be updated accordingly.
   const auto& next = NextPacketStatus(it);
   if (next != packet_status_window_.end() &&
-      next->first == static_cast<uint16_t>(it->first + 1)) {
-    UpdateCounter(&rplr_state_.num_known_pairs_, apply);
-    if (!it->second && next->second) {
+      next->second != PacketStatus::Unacked) {
+    UpdateCounter(&rplr_state_.num_acked_pairs_, apply);
+    if (it->second == PacketStatus::Lost &&
+        next->second == PacketStatus::Received) {
       UpdateCounter(&rplr_state_.num_recoverable_losses_, apply);
     }
   }
 }
 
-TransportFeedbackPacketLossTracker::PacketStatusIterator
+TransportFeedbackPacketLossTracker::ConstPacketStatusIterator
 TransportFeedbackPacketLossTracker::PreviousPacketStatus(
-    PacketStatusIterator it) {
+    ConstPacketStatusIterator it) const {
   RTC_DCHECK(it != ref_packet_status_);
   if (it == packet_status_window_.end()) {
     // This is to make PreviousPacketStatus(packet_status_window_.end()) point
@@ -221,8 +246,9 @@ TransportFeedbackPacketLossTracker::PreviousPacketStatus(
   return --it;
 }
 
-TransportFeedbackPacketLossTracker::PacketStatusIterator
-TransportFeedbackPacketLossTracker::NextPacketStatus(PacketStatusIterator it) {
+TransportFeedbackPacketLossTracker::ConstPacketStatusIterator
+TransportFeedbackPacketLossTracker::NextPacketStatus(
+    ConstPacketStatusIterator it) const {
   RTC_DCHECK(it != packet_status_window_.end());
   ++it;
   if (it == packet_status_window_.end()) {
@@ -244,26 +270,35 @@ TransportFeedbackPacketLossTracker::NextPacketStatus(PacketStatusIterator it) {
 // error after long period, we can remove the fuzzer test, and move this method
 // to unit test.
 void TransportFeedbackPacketLossTracker::Validate() const {  // Testing only!
-  RTC_CHECK_LE(packet_status_window_.size(), max_window_size_);
-  RTC_CHECK_EQ(packet_status_window_.size(),
-               plr_state_.num_lost_packets_ + plr_state_.num_received_packets_);
+  RTC_CHECK_EQ(plr_state_.num_received_packets_ + plr_state_.num_lost_packets_,
+               acked_packets_);
+  RTC_CHECK_LE(acked_packets_, packet_status_window_.size());
+  RTC_CHECK_LE(acked_packets_, max_acked_packets_);
   RTC_CHECK_LE(rplr_state_.num_recoverable_losses_,
-               rplr_state_.num_known_pairs_);
-  RTC_CHECK_LE(rplr_state_.num_known_pairs_,
-               packet_status_window_.size() - 1);
+               rplr_state_.num_acked_pairs_);
+  RTC_CHECK_LE(rplr_state_.num_acked_pairs_, acked_packets_ - 1);
 
+  size_t unacked_packets = 0;
   size_t received_packets = 0;
   size_t lost_packets = 0;
-  size_t known_status_pairs = 0;
+  size_t acked_pairs = 0;
   size_t recoverable_losses = 0;
 
   if (!packet_status_window_.empty()) {
-    PacketStatusIterator it = ref_packet_status_;
+    ConstPacketStatusIterator it = ref_packet_status_;
     do {
-      if (it->second) {
-        ++received_packets;
-      } else {
-        ++lost_packets;
+      switch (it->second) {
+        case PacketStatus::Unacked:
+          ++unacked_packets;
+          break;
+        case PacketStatus::Received:
+          ++received_packets;
+          break;
+        case PacketStatus::Lost:
+          ++lost_packets;
+          break;
+        default:
+          RTC_NOTREACHED();
       }
 
       auto next = std::next(it);
@@ -271,9 +306,11 @@ void TransportFeedbackPacketLossTracker::Validate() const {  // Testing only!
         next = packet_status_window_.begin();
 
       if (next != ref_packet_status_ &&
-          next->first == static_cast<uint16_t>(it->first + 1)) {
-        ++known_status_pairs;
-        if (!it->second && next->second)
+          it->second != PacketStatus::Unacked &&
+          next->second != PacketStatus::Unacked) {
+        ++acked_pairs;
+        if (it->second == PacketStatus::Lost &&
+            next->second == PacketStatus::Received)
           ++recoverable_losses;
       }
 
@@ -286,14 +323,16 @@ void TransportFeedbackPacketLossTracker::Validate() const {  // Testing only!
 
   RTC_CHECK_EQ(plr_state_.num_received_packets_, received_packets);
   RTC_CHECK_EQ(plr_state_.num_lost_packets_, lost_packets);
-  RTC_CHECK_EQ(rplr_state_.num_known_pairs_, known_status_pairs);
+  RTC_CHECK_EQ(packet_status_window_.size(),
+               unacked_packets + received_packets + lost_packets);
+  RTC_CHECK_EQ(rplr_state_.num_acked_pairs_, acked_pairs);
   RTC_CHECK_EQ(rplr_state_.num_recoverable_losses_, recoverable_losses);
 }
 
 rtc::Optional<float>
 TransportFeedbackPacketLossTracker::PlrState::GetMetric() const {
   const size_t total = num_lost_packets_ + num_received_packets_;
-  if (total < min_num_packets_) {
+  if (total < min_num_acked_packets_) {
     return rtc::Optional<float>();
   } else {
     return rtc::Optional<float>(
@@ -303,11 +342,11 @@ TransportFeedbackPacketLossTracker::PlrState::GetMetric() const {
 
 rtc::Optional<float>
 TransportFeedbackPacketLossTracker::RplrState::GetMetric() const {
-  if (num_known_pairs_ < min_num_pairs_) {
+  if (num_acked_pairs_ < min_num_acked_pairs_) {
     return rtc::Optional<float>();
   } else {
     return rtc::Optional<float>(
-        static_cast<float>(num_recoverable_losses_) / num_known_pairs_);
+        static_cast<float>(num_recoverable_losses_) / num_acked_pairs_);
   }
 }
 

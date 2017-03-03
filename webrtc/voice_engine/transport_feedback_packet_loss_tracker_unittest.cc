@@ -10,6 +10,7 @@
 
 #include <limits>
 #include <memory>
+#include <numeric>
 #include <vector>
 
 #include "webrtc/base/checks.h"
@@ -27,11 +28,35 @@ namespace webrtc {
 
 namespace {
 
-constexpr size_t kMaxConsecutiveOldReports = 4;
-
 // All tests are run multiple times with various baseline sequence number,
 // to weed out potential bugs with wrap-around handling.
 constexpr uint16_t kBases[] = {0x0000, 0x3456, 0xc032, 0xfffe};
+
+void SendPackets(TransportFeedbackPacketLossTracker* tracker,
+                 const std::vector<uint16_t>& seq_nums,
+                 bool validate_all = true) {
+  for (uint16_t seq_num : seq_nums) {
+    tracker->OnPacketAdded(seq_num);
+    if (validate_all) {
+      tracker->Validate();
+    }
+  }
+
+  // We've either validated after each packet, or, for making sure the UT
+  // doesn't run too long, we might validate only at the end of the range.
+  if (!validate_all) {
+    tracker->Validate();
+  }
+}
+
+void SendPacketRange(TransportFeedbackPacketLossTracker* tracker,
+                     uint16_t first_seq_num,
+                     size_t num_of_seq_nums,
+                     bool validate_all = true) {
+  std::vector<uint16_t> seq_nums(num_of_seq_nums);
+  std::iota(seq_nums.begin(), seq_nums.end(), first_seq_num);
+  SendPackets(tracker, seq_nums, validate_all);
+}
 
 void AddTransportFeedbackAndValidate(
     TransportFeedbackPacketLossTracker* tracker,
@@ -98,7 +123,6 @@ void ValidatePacketLossStatistics(
 
 // Sanity check on an empty window.
 TEST(TransportFeedbackPacketLossTrackerTest, EmptyWindow) {
-  std::unique_ptr<TransportFeedback> feedback;
   TransportFeedbackPacketLossTracker tracker(10, 5, 5);
 
   // PLR and RPLR reported as unknown before reception of first feedback.
@@ -107,14 +131,33 @@ TEST(TransportFeedbackPacketLossTrackerTest, EmptyWindow) {
                                rtc::Optional<float>());
 }
 
+// A feedback received for an empty window has no effect.
+TEST(TransportFeedbackPacketLossTrackerTest, EmptyWindowFeedback) {
+  for (uint16_t base : kBases) {
+    TransportFeedbackPacketLossTracker tracker(3, 3, 2);
+
+    // Feedback doesn't correspond to any packets - ignored.
+    AddTransportFeedbackAndValidate(&tracker, base, {true, false, true});
+    ValidatePacketLossStatistics(tracker,
+                                 rtc::Optional<float>(),
+                                 rtc::Optional<float>());
+
+    // After the packets are transmitted, acking them would have an effect.
+    SendPacketRange(&tracker, base, 3);
+    AddTransportFeedbackAndValidate(&tracker, base, {true, false, true});
+    ValidatePacketLossStatistics(tracker, 1.0f / 3.0f, 0.5f);
+  }
+}
+
 // Sanity check on partially filled window.
-TEST(TransportFeedbackPacketLossTrackerTest, PlrPartiallyFilledWindow) {
+TEST(TransportFeedbackPacketLossTrackerTest, PartiallyFilledWindow) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(10, 5, 4);
 
     // PLR unknown before minimum window size reached.
     // RPLR unknown before minimum pairs reached.
     // Expected window contents: [] -> [1001].
+    SendPacketRange(&tracker, base, 3);
     AddTransportFeedbackAndValidate(&tracker, base, {true, false, false, true});
     ValidatePacketLossStatistics(tracker,
                                  rtc::Optional<float>(),
@@ -130,6 +173,7 @@ TEST(TransportFeedbackPacketLossTrackerTest, PlrMinimumFilledWindow) {
     // PLR correctly calculated after minimum window size reached.
     // RPLR not necessarily known at that time (not if min-pairs not reached).
     // Expected window contents: [] -> [10011].
+    SendPacketRange(&tracker, base, 5);
     AddTransportFeedbackAndValidate(&tracker, base,
                                     {true, false, false, true, true});
     ValidatePacketLossStatistics(tracker,
@@ -146,6 +190,7 @@ TEST(TransportFeedbackPacketLossTrackerTest, RplrMinimumFilledWindow) {
     // RPLR correctly calculated after minimum pairs reached.
     // PLR not necessarily known at that time (not if min window not reached).
     // Expected window contents: [] -> [10011].
+    SendPacketRange(&tracker, base, 5);
     AddTransportFeedbackAndValidate(&tracker, base,
                                     {true, false, false, true, true});
     ValidatePacketLossStatistics(tracker,
@@ -158,6 +203,8 @@ TEST(TransportFeedbackPacketLossTrackerTest, RplrMinimumFilledWindow) {
 TEST(TransportFeedbackPacketLossTrackerTest, ExtendWindow) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(20, 5, 5);
+
+    SendPacketRange(&tracker, base, 25);
 
     // Expected window contents: [] -> [10011].
     AddTransportFeedbackAndValidate(&tracker, base,
@@ -178,16 +225,31 @@ TEST(TransportFeedbackPacketLossTrackerTest, ExtendWindow) {
   }
 }
 
-// All packets correctly received.
+// Sanity - all packets correctly received.
 TEST(TransportFeedbackPacketLossTrackerTest, AllReceived) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(10, 5, 4);
 
-    // PLR and RPLR correctly calculated after minimum window size reached.
     // Expected window contents: [] -> [11111].
+    SendPacketRange(&tracker, base, 5);
     AddTransportFeedbackAndValidate(&tracker, base,
                                     {true, true, true, true, true});
     ValidatePacketLossStatistics(tracker, 0.0f, 0.0f);
+  }
+}
+
+// Sanity - all packets lost.
+TEST(TransportFeedbackPacketLossTrackerTest, AllLost) {
+  for (uint16_t base : kBases) {
+    TransportFeedbackPacketLossTracker tracker(10, 5, 4);
+
+    // Expected window contents: [] -> [00000].
+    SendPacketRange(&tracker, base, 5);
+    // Note: Last acked packet (the received one) does not belong to the stream,
+    // and is only there to make sure the feedback message is legal.
+    AddTransportFeedbackAndValidate(&tracker, base,
+                                    {false, false, false, false, false, true});
+    ValidatePacketLossStatistics(tracker, 1.0f, 0.0f);
   }
 }
 
@@ -195,6 +257,8 @@ TEST(TransportFeedbackPacketLossTrackerTest, AllReceived) {
 TEST(TransportFeedbackPacketLossTrackerTest, ReportRepetition) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(10, 5, 4);
+
+    SendPacketRange(&tracker, base, 5);
 
     // Expected window contents: [] -> [10011].
     AddTransportFeedbackAndValidate(&tracker, base,
@@ -214,6 +278,8 @@ TEST(TransportFeedbackPacketLossTrackerTest, ReportOverlap) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(10, 5, 1);
 
+    SendPacketRange(&tracker, base, 15);
+
     // Expected window contents: [] -> [10011].
     AddTransportFeedbackAndValidate(&tracker, base,
                                     {true, false, false, true, true});
@@ -230,6 +296,8 @@ TEST(TransportFeedbackPacketLossTrackerTest, ReportOverlap) {
 TEST(TransportFeedbackPacketLossTrackerTest, ReportConflict) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(10, 5, 4);
+
+    SendPacketRange(&tracker, base, 15);
 
     // Expected window contents: [] -> [01001].
     AddTransportFeedbackAndValidate(&tracker, base,
@@ -248,6 +316,8 @@ TEST(TransportFeedbackPacketLossTrackerTest, SkippedPackets) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(10, 5, 1);
 
+    SendPacketRange(&tracker, base, 200);
+
     // Expected window contents: [] -> [10011].
     AddTransportFeedbackAndValidate(&tracker, base,
                                     {true, false, false, true, true});
@@ -259,11 +329,13 @@ TEST(TransportFeedbackPacketLossTrackerTest, SkippedPackets) {
   }
 }
 
-// The window retain information up to the configured max-window-size, but
-// starts discarding after that.
+// The window retains information up to the configured max-window-size, but
+// starts discarding after that. (Sent packets are not counted.)
 TEST(TransportFeedbackPacketLossTrackerTest, MaxWindowSize) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(10, 10, 1);
+
+    SendPacketRange(&tracker, base, 200);
 
     // Up to max-window-size retained.
     // Expected window contents: [] -> [1010100001].
@@ -280,10 +352,12 @@ TEST(TransportFeedbackPacketLossTrackerTest, MaxWindowSize) {
   }
 }
 
-// Inserting into the middle of a full window works correctly.
+// Inserting a feedback into the middle of a full window works correctly.
 TEST(TransportFeedbackPacketLossTrackerTest, InsertIntoMiddle) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(10, 5, 1);
+
+    SendPacketRange(&tracker, base, 300);
 
     // Expected window contents: [] -> [10101].
     AddTransportFeedbackAndValidate(&tracker, base,
@@ -303,10 +377,13 @@ TEST(TransportFeedbackPacketLossTrackerTest, InsertIntoMiddle) {
   }
 }
 
-// Inserting into the middle of a full window works correctly.
+// Inserting feedback into the middle of a full window works correctly - can
+// complete two pairs.
 TEST(TransportFeedbackPacketLossTrackerTest, InsertionCompletesTwoPairs) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(15, 5, 1);
+
+    SendPacketRange(&tracker, base, 300);
 
     // Expected window contents: [] -> [10111].
     AddTransportFeedbackAndValidate(&tracker, base,
@@ -325,13 +402,13 @@ TEST(TransportFeedbackPacketLossTrackerTest, InsertionCompletesTwoPairs) {
   }
 }
 
-// Entries in the second quadrant treated like those in the first.
-// The sequence number is used in a looped manner. 0xFFFF is followed by 0x0000.
-// In many tests, we divide the circle of sequence number into 4 quadrants, and
-// verify the behavior of TransportFeedbackPacketLossTracker over them.
+// The window can meaningfully hold up to 0x8000 SENT packets (of which only
+// up to max-window acked messages will be kept and regarded).
 TEST(TransportFeedbackPacketLossTrackerTest, SecondQuadrant) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(20, 5, 1);
+
+    SendPacketRange(&tracker, base, 0x8000, false);
 
     // Expected window contents: [] -> [10011].
     AddTransportFeedbackAndValidate(&tracker, base,
@@ -351,48 +428,24 @@ TEST(TransportFeedbackPacketLossTrackerTest, SecondQuadrant) {
   }
 }
 
-// Insertion into the third quadrant moves the base of the window.
-TEST(TransportFeedbackPacketLossTrackerTest, ThirdQuadrantMovesBase) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
-
-    // Seed the test.
-    // Expected window contents: [] -> [1001101].
-    AddTransportFeedbackAndValidate(
-        &tracker, base, {true, false, false, true, true, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 6.0f);
-
-    // Quadrant #3 begins at base + 0x8000. It triggers moving the window so
-    // that
-    // at least one (oldest) report shifts out of window.
-    // Expected window contents: [1001101] -> [101-GAP-1001].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x8000,
-                                    {true, false, false, true});
-    ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 5.0f);
-
-    // The base can move more than once, because the minimum quadrant-1 packets
-    // were dropped out of the window, and some remain.
-    // Expected window contents: [101-GAP-1001] -> [1-GAP-100111].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x8000 + 4, {true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 7.0f, 1.0f / 5.0f);
-  }
-}
-
 // After the base has moved due to insertion into the third quadrant, it is
-// still possible to insert into the middle of the window and obtain the correct
-// PLR and RPLR. Insertion into the middle before the max window size has been
-// achieved does not cause older packets to be dropped.
-TEST(TransportFeedbackPacketLossTrackerTest, InsertIntoMiddleAfterBaseMove) {
+// still possible to get feedbacks in the middle of the window and obtain the
+// correct PLR and RPLR. Insertion into the middle before the max window size
+// has been achieved does not cause older packets to be dropped.
+TEST(TransportFeedbackPacketLossTrackerTest, InsertIntoMiddleAfterBaseMoved) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(20, 5, 1);
 
-    // Seed the test.
+    SendPacketRange(&tracker, base, 20);
+    SendPacketRange(&tracker, base + 0x5000, 20);
+
     // Expected window contents: [] -> [1001101].
     AddTransportFeedbackAndValidate(
         &tracker, base, {true, false, false, true, true, false, true});
     ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 6.0f);
 
     // Expected window contents: [1001101] -> [101-GAP-1001].
+    SendPacketRange(&tracker, base + 0x8000, 4);
     AddTransportFeedbackAndValidate(&tracker, base + 0x8000,
                                     {true, false, false, true});
     ValidatePacketLossStatistics(tracker, 3.0f / 7.0f, 2.0f / 5.0f);
@@ -407,48 +460,57 @@ TEST(TransportFeedbackPacketLossTrackerTest, InsertIntoMiddleAfterBaseMove) {
     // The base can keep moving after inserting into the middle.
     // Expected window contents:
     // [101-GAP-100101-GAP-1001] -> [1-GAP-100101-GAP-100111].
+    SendPacketRange(&tracker, base + 0x8000 + 4, 2);
     AddTransportFeedbackAndValidate(&tracker, base + 0x8000 + 4, {true, true});
     ValidatePacketLossStatistics(tracker, 5.0f / 13.0f, 3.0f / 10.0f);
   }
 }
 
 // After moving the base of the window, the max window size is still observed.
-TEST(TransportFeedbackPacketLossTrackerTest, ThirdQuadrantObservesMaxWindow) {
+TEST(TransportFeedbackPacketLossTrackerTest, MaxWindowObservedAfterBaseMoved) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(15, 10, 1);
 
     // Expected window contents: [] -> [1001110101].
+    SendPacketRange(&tracker, base, 10);
     AddTransportFeedbackAndValidate(
         &tracker, base,
         {true, false, false, true, true, true, false, true, false, true});
     ValidatePacketLossStatistics(tracker, 4.0f / 10.0f, 3.0f / 9.0f);
 
+    // Create gap (on both sides).
+    SendPacketRange(&tracker, base + 0x4000, 20);
+
     // Expected window contents: [1001110101] -> [1110101-GAP-101].
+    SendPacketRange(&tracker, base + 0x8000, 3);
     AddTransportFeedbackAndValidate(&tracker, base + 0x8000,
                                     {true, false, true});
     ValidatePacketLossStatistics(tracker, 3.0f / 10.0f, 3.0f / 8.0f);
 
-    // Push into middle until max window is reached.
+    // Push into middle until max window is reached. The gap is NOT completed.
     // Expected window contents:
     // [1110101-GAP-101] -> [1110101-GAP-10001-GAP-101]
-    AddTransportFeedbackAndValidate(&tracker, base + 0x4000,
+    AddTransportFeedbackAndValidate(&tracker, base + 0x4000 + 2,
                                     {true, false, false, false, true});
     ValidatePacketLossStatistics(tracker, 6.0f / 15.0f, 4.0f / 12.0f);
 
     // Pushing new packets into the middle would discard older packets.
     // Expected window contents:
     // [1110101-GAP-10001-GAP-101] -> [0101-GAP-10001101-GAP-101]
-    AddTransportFeedbackAndValidate(&tracker, base + 0x4000 + 5,
+    AddTransportFeedbackAndValidate(&tracker, base + 0x4000 + 2 + 5,
                                     {true, false, true});
     ValidatePacketLossStatistics(tracker, 7.0f / 15.0f, 5.0f / 12.0f);
   }
 }
 
-// A new feedback in quadrant #3 might shift enough old feedbacks out of window,
-// that we'd go back to an unknown PLR and RPLR.
-TEST(TransportFeedbackPacketLossTrackerTest, QuadrantThreeMovedBaseMinWindow) {
+// A packet with a new enough sequence number might shift enough old feedbacks
+// out  window, that we'd go back to an unknown PLR and RPLR.
+TEST(TransportFeedbackPacketLossTrackerTest, NewPacketMovesWindowBase) {
   for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
+    TransportFeedbackPacketLossTracker tracker(20, 5, 3);
+
+    SendPacketRange(&tracker, base, 50);
+    SendPacketRange(&tracker, base + 0x4000 - 1, 6);  // Gap
 
     // Expected window contents: [] -> [1001110101].
     AddTransportFeedbackAndValidate(
@@ -456,14 +518,24 @@ TEST(TransportFeedbackPacketLossTrackerTest, QuadrantThreeMovedBaseMinWindow) {
         {true, false, false, true, true, true, false, true, false, true});
     ValidatePacketLossStatistics(tracker, 4.0f / 10.0f, 3.0f / 9.0f);
 
-    // A new feedback in quadrant #3 might shift enough old feedbacks out of
-    // window, that we'd go back to an unknown PLR and RPLR. This *doesn't*
-    // necessarily mean all of the old ones were discarded, though.
-    // Expected window contents: [1001110101] -> [01-GAP-11].
+    // A new sent packet with a new enough sequence number could shift enough
+    // acked packets out of window, that we'd go back to an unknown PLR
+    // and RPLR. This *doesn't* // necessarily mean all of the old ones
+    // were discarded, though.
+    // Expected window contents: [1001110101] -> [01].
+    SendPacketRange(&tracker, base + 0x8006, 2);
+    ValidatePacketLossStatistics(tracker,
+                                 rtc::Optional<float>(),  // Still invalid.
+                                 rtc::Optional<float>());
+
+    // Even if those messages are acked, we'd still might be in unknown PLR
+    // and RPLR, because we might have shifted more packets out of the window
+    // than we have inserted.
+    // Expected window contents: [01] -> [01-GAP-11].
     AddTransportFeedbackAndValidate(&tracker, base + 0x8006, {true, true});
     ValidatePacketLossStatistics(tracker,
                                  rtc::Optional<float>(),  // Still invalid.
-                                 rtc::Optional<float>(1.0f / 2.0f));
+                                 rtc::Optional<float>());
 
     // Inserting in the middle shows that though some of the elements were
     // ejected, some were retained.
@@ -474,222 +546,118 @@ TEST(TransportFeedbackPacketLossTrackerTest, QuadrantThreeMovedBaseMinWindow) {
   }
 }
 
-// Quadrant four reports ignored for up to kMaxConsecutiveOldReports times.
-TEST(TransportFeedbackPacketLossTrackerTest, QuadrantFourInitiallyIgnored) {
+// Sequence number gaps are not gaps in reception. However, gaps in reception
+// are still possible, if a packet which WAS sent on the stream is not acked.
+TEST(TransportFeedbackPacketLossTrackerTest, SanityGapsInSequenceNumbers) {
   for (uint16_t base : kBases) {
     TransportFeedbackPacketLossTracker tracker(20, 5, 1);
 
-    // Expected window contents: [] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
+    SendPackets(&tracker, {static_cast<uint16_t>(base),
+                           static_cast<uint16_t>(base + 2),
+                           static_cast<uint16_t>(base + 4),
+                           static_cast<uint16_t>(base + 6),
+                           static_cast<uint16_t>(base + 8)});
 
-    // Feedbacks in quadrant #4 are discarded (up to kMaxConsecutiveOldReports
-    // consecutive reports).
-    // Expected window contents: [10011] -> [10011].
-    for (size_t i = 0; i < kMaxConsecutiveOldReports; i++) {
-      AddTransportFeedbackAndValidate(&tracker, base + 0xc000, {true, true});
-      ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
-    }
-  }
-}
-
-// Receiving a packet from quadrant #1 resets the counter for quadrant #4.
-TEST(TransportFeedbackPacketLossTrackerTest, QuadrantFourCounterResetByQ1) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
-
-    // Expected window contents: [] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-
-    // Feedbacks in quadrant #4 are discarded (up to kMaxConsecutiveOldReports
-    // consecutive reports).
-    // Expected window contents: [10011] -> [10011].
-    for (size_t i = 0; i < kMaxConsecutiveOldReports; i++) {
-      AddTransportFeedbackAndValidate(&tracker, base + 0xc000, {true, true});
-      ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
-    }
-
-    // If we receive a feedback in quadrant #1, the above counter is reset.
-    // Expected window contents: [10011] -> [100111].
-    AddTransportFeedbackAndValidate(&tracker, base + 5, {true});
-    for (size_t i = 0; i < kMaxConsecutiveOldReports; i++) {
-      // Note: though the feedback message reports three packets, it only gets
-      // counted once.
-      AddTransportFeedbackAndValidate(&tracker, base + 0xc000,
-                                      {true, false, true});
-      ValidatePacketLossStatistics(tracker, 2.0f / 6.0f, 1.0f / 5.0f);
-    }
-
-    // The same is true for reports which create a gap - they still reset.
-    // Expected window contents: [10011] -> [100111-GAP-01].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x00ff, {false, true});
-    for (size_t i = 0; i < kMaxConsecutiveOldReports; i++) {
-      // Note: though the feedback message reports three packets, it only gets
-      // counted once.
-      AddTransportFeedbackAndValidate(&tracker, base + 0xc000,
-                                      {true, false, true});
-      ValidatePacketLossStatistics(tracker, 3.0f / 8.0f, 2.0f / 6.0f);
-    }
-  }
-}
-
-// Receiving a packet from quadrant #2 resets the counter for quadrant #4.
-TEST(TransportFeedbackPacketLossTrackerTest, QuadrantFourCounterResetByQ2) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
-
-    // Expected window contents: [] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-
-    // Feedbacks in quadrant #4 are discarded (up to kMaxConsecutiveOldReports
-    // consecutive reports).
-    // Expected window contents: [10011] -> [10011].
-    for (size_t i = 0; i < kMaxConsecutiveOldReports; i++) {
-      AddTransportFeedbackAndValidate(&tracker, base + 0xc000, {true, true});
-      ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
-    }
-
-    // If we receive a feedback in quadrant #2, the above counter is reset.
-    // Expected window contents: [10011] -> [10011-GAP-11].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x400f, {true, true});
-    for (size_t i = 0; i < kMaxConsecutiveOldReports; i++) {
-      // Note: though the feedback message reports three packets, it only gets
-      // counted once.
-      AddTransportFeedbackAndValidate(&tracker, base + 0xc000,
-                                      {true, false, true});
-      ValidatePacketLossStatistics(tracker, 2.0f / 7.0f, 1.0f / 5.0f);
-    }
-  }
-}
-
-// Receiving a packet from quadrant #3 resets the counter for quadrant #4.
-TEST(TransportFeedbackPacketLossTrackerTest, QuadrantFourCounterResetByQ3) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
-
-    // Expected window contents: [] -> [1001110001].
+    // Gaps in sequence numbers not considered as gaps in window, because  only
+    // those sequence numbers which were associated with the stream count.
+    // Expected window contents: [] -> [11011].
     AddTransportFeedbackAndValidate(
-        &tracker, base,
-        {true, false, false, true, true, true, false, false, false, true});
+        // Note: Left packets belong to this stream, odd ones ignored.
+        &tracker, base, {true, false,
+                         true, false,
+                         false, false,
+                         true, false,
+                         true, true});
+    ValidatePacketLossStatistics(tracker, 1.0f / 5.0f, 1.0f / 4.0f);
 
-    // Feedbacks in quadrant #4 are discarded (up to kMaxConsecutiveOldReports
-    // consecutive reports).
-    // Expected window contents: [1001110001] -> [1001110001].
-    for (size_t i = 0; i < kMaxConsecutiveOldReports; i++) {
-      AddTransportFeedbackAndValidate(&tracker, base + 0xc000, {true, true});
-      ValidatePacketLossStatistics(tracker, 5.0f / 10.0f, 2.0f / 9.0f);
-    }
-
-    // If we receive a feedback in quadrant #1, the above counter is reset.
-    // Expected window contents: [1001110001] -> [1110001-GAP-111].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x8000,
-                                    {true, true, true});
-    for (size_t i = 0; i < kMaxConsecutiveOldReports; i++) {
-      // Note: though the feedback message reports three packets, it only gets
-      // counted once.
-      AddTransportFeedbackAndValidate(&tracker, base + 0xc000 + 10,
-                                      {true, false, true});
-      ValidatePacketLossStatistics(tracker, 3.0f / 10.0f, 1.0f / 8.0f);
-    }
+    // Create gap by sending [base + 10] but not acking it.
+    // Note: Acks for [base + 11] and [base + 13] ignored (other stream).
+    // Expected window contents: [11011] -> [11011-GAP-01].
+    SendPackets(&tracker, {static_cast<uint16_t>(base + 10),
+                           static_cast<uint16_t>(base + 12),
+                           static_cast<uint16_t>(base + 14)});
+    AddTransportFeedbackAndValidate(&tracker, base + 11,
+                                    {false, false, false, true, true});
+    ValidatePacketLossStatistics(tracker, 2.0f / 7.0f, 2.0f / 5.0f);
   }
 }
 
-// Quadrant four reports ignored for up to kMaxConsecutiveOldReports times.
-// After that, the window is reset.
-TEST(TransportFeedbackPacketLossTrackerTest, QuadrantFourReset) {
+// Sending a packet which is less than 0x8000 away from the baseline does
+// not move the window.
+TEST(TransportFeedbackPacketLossTrackerTest, UnackedInWindowDoesNotMoveWindow) {
   for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
+    TransportFeedbackPacketLossTracker tracker(5, 3, 1);
 
-    // Expected window contents: [] -> [1001110001].
-    AddTransportFeedbackAndValidate(
-        &tracker, base,
-        {true, false, false, true, true, true, false, false, false, true});
-
-    // Sanity
-    ValidatePacketLossStatistics(tracker, 5.0f / 10.0f, 2.0f / 9.0f);
-
-    // The first kMaxConsecutiveOldReports quadrant #4 reports are ignored.
-    // It doesn't matter that they consist of multiple packets - each report
-    // is only counted once.
-    for (size_t i = 0; i < kMaxConsecutiveOldReports; i++) {
-      // Expected window contents: [1001110001] -> [1001110001].
-      AddTransportFeedbackAndValidate(&tracker, base + 0xc000,
-                                      {true, true, false, true});
-      ValidatePacketLossStatistics(tracker, 5.0f / 10.0f, 2.0f / 9.0f);
-    }
-
-    // One additional feedback in quadrant #4 brings us over
-    // kMaxConsecutiveOldReports consecutive "old" reports, resetting the
-    // window.
-    // The new window is not completely empty - it's been seeded with the
-    // packets reported in the feedback that has triggered the reset.
-    // Note: The report doesn't have to be the same as the previous ones.
-    // Expected window contents: [1001110001] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base + 0xc000,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
-  }
-}
-
-// Feedbacks spanning multiple quadrant are treated correctly (Q1-Q2).
-TEST(TransportFeedbackPacketLossTrackerTest, MultiQuadrantQ1Q2) {
-  for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
-
-    // Expected window contents: [] -> [10011].
+    // Baseline - window has acked messages.
+    // Expected window contents: [] -> [10101].
+    SendPacketRange(&tracker, base, 5);
     AddTransportFeedbackAndValidate(&tracker, base,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
+                                    {true, false, true, false, true});
+    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
 
-    // A feedback with entries in both quadrant #1 and #2 gets both counted:
-    // Expected window contents: [10011] -> [10011-GAP-1001].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x3ffe,
-                                    {true, false, false, true});
-    ValidatePacketLossStatistics(tracker, 4.0f / 9.0f, 2.0f / 7.0f);
+    // Test - window not moved.
+    // Expected window contents: [10101] -> [10101].
+    SendPackets(&tracker, {static_cast<uint16_t>(base + 0x7fff)});
+    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
   }
 }
 
-// Feedbacks spanning multiple quadrant are treated correctly (Q2-Q3).
-TEST(TransportFeedbackPacketLossTrackerTest, MultiQuadrantQ2Q3) {
+// Sending a packet which is at least 0x8000 away from the baseline, but not
+// 0x8000 or more away from the newest packet in the window, moves the window,
+// but does not reset it.
+TEST(TransportFeedbackPacketLossTrackerTest, UnackedOutOfWindowMovesWindow) {
   for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
+    TransportFeedbackPacketLossTracker tracker(5, 3, 1);
 
-    // Expected window contents: [] -> [1001100001].
-    AddTransportFeedbackAndValidate(
-        &tracker, base,
-        {true, false, false, true, true, false, false, false, false, true});
-    ValidatePacketLossStatistics(tracker, 6.0f / 10.0f, 2.0f / 9.0f);
+    // Baseline - window has acked messages.
+    // Expected window contents: [] -> [10101].
+    SendPacketRange(&tracker, base, 5);
+    AddTransportFeedbackAndValidate(&tracker, base,
+                                    {true, false, true, false, true});
+    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
 
-    // A feedback with entries in both quadrant #2 and #3 gets both counted,
-    // but only those from #3 trigger throwing out old entries from quadrant #1:
-    // Expected window contents: [1001100001] -> [01100001-GAP-1001].
-    AddTransportFeedbackAndValidate(&tracker, base + 0x7ffe,
-                                    {true, false, false, true});
-    ValidatePacketLossStatistics(tracker, 7.0f / 12.0f, 3.0f / 10.0f);
+    // 0x8000 from baseline, but only 0x7ffc from newest - window moved.
+    // Expected window contents: [10101] -> [0101].
+    SendPackets(&tracker, {static_cast<uint16_t>(base + 0x8000)});
+    ValidatePacketLossStatistics(tracker, 2.0f / 4.0f, 2.0f / 3.0f);
   }
 }
 
-// Feedbacks spanning multiple quadrant are treated correctly (Q3-Q4).
-TEST(TransportFeedbackPacketLossTrackerTest, MultiQuadrantQ3Q4) {
+// TODO(elad.alon): More tests possible here, but a CL is in the pipeline which
+// significantly changes the entire class's operation (makes the window
+// time-based), so no sense in writing complicated UTs which will be replaced
+// very soon.
+
+// The window is reset by the sending of a packet which is 0x8000 or more
+// away from the newest packet.
+TEST(TransportFeedbackPacketLossTrackerTest, WindowResetAfterLongNoSend) {
   for (uint16_t base : kBases) {
-    TransportFeedbackPacketLossTracker tracker(20, 5, 1);
+    TransportFeedbackPacketLossTracker tracker(10, 2, 1);
 
-    // Expected window contents: [] -> [1001100001].
-    AddTransportFeedbackAndValidate(
-        &tracker, base,
-        {true, false, false, true, true, false, false, false, false, true});
-    ValidatePacketLossStatistics(tracker, 6.0f / 10.0f, 2.0f / 9.0f);
+    // Baseline - window has acked messages.
+    // Expected window contents: [] -> [1-GAP-10101].
+    SendPacketRange(&tracker, base, 1);
+    SendPacketRange(&tracker, base + 0x7fff - 4, 5);
+    AddTransportFeedbackAndValidate(&tracker, base, {true});
+    AddTransportFeedbackAndValidate(&tracker, base + 0x7fff - 4,
+                                    {true, false, true, false, true});
+    ValidatePacketLossStatistics(tracker, 2.0f / 6.0f, 2.0f / 5.0f);
 
-    // A feedback with entries in both quadrant #3 and #4 would have the entries
-    // from quadrant #3 shift enough quadrant #1 entries out of window, that
-    // by the time the #4 packets are examined, the moving baseline has made
-    // them into quadrant #3 packets.
-    // Expected window contents: [1001100001] -> [10011].
-    AddTransportFeedbackAndValidate(&tracker, base + 0xbfff,
-                                    {true, false, false, true, true});
-    ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 1.0f / 4.0f);
+    // Sent packet too new - the entire window is reset.
+    // Expected window contents: [1-GAP-10101] -> [].
+    SendPacketRange(&tracker, base + 0x7fff + 0x8000, 1);
+    ValidatePacketLossStatistics(tracker,
+                                 rtc::Optional<float>(),
+                                 rtc::Optional<float>());
+
+    // To show it was really reset, prove show that acking the sent packet
+    // still leaves us at unknown, because no acked (or unacked) packets were
+    // left in the window.
+    // Expected window contents: [] -> [1].
+    AddTransportFeedbackAndValidate(&tracker, base + 0x7fff + 0x8000, {true});
+    ValidatePacketLossStatistics(tracker,
+                                 rtc::Optional<float>(),
+                                 rtc::Optional<float>());
   }
 }
 
