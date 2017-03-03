@@ -33,7 +33,7 @@ class IdentityGenerator(NoiseGenerator):
   NAME = 'identity'
 
   def __init__(self):
-    super(IdentityGenerator, self).__init__()
+    NoiseGenerator.__init__(self)
 
 
 @NoiseGenerator.register_class
@@ -45,7 +45,7 @@ class WhiteNoiseGenerator(NoiseGenerator):
   NAME = 'white'
 
   def __init__(self):
-    super(WhiteNoiseGenerator, self).__init__()
+    NoiseGenerator.__init__(self)
 
 
 @NoiseGenerator.register_class
@@ -57,7 +57,7 @@ class NarrowBandNoiseGenerator(NoiseGenerator):
   NAME = 'narrow_band'
 
   def __init__(self):
-    super(NarrowBandNoiseGenerator, self).__init__()
+    NoiseGenerator.__init__(self)
 
 
 @NoiseGenerator.register_class
@@ -69,7 +69,7 @@ class EnvironmentalNoiseGenerator(NoiseGenerator):
   NAME = 'environmental'
 
   def __init__(self):
-    super(EnvironmentalNoiseGenerator, self).__init__()
+    NoiseGenerator.__init__(self)
 
 
 @NoiseGenerator.register_class
@@ -81,4 +81,4 @@ class EchoNoiseGenerator(NoiseGenerator):
   NAME = 'echo'
 
   def __init__(self):
-    super(EchoNoiseGenerator, self).__init__()
+    NoiseGenerator.__init__(self)

@@ -68,3 +68,22 @@ class AudioProcConfigFile(object):
   def save(cls, filepath, config):
     with open(filepath, 'w') as f:
       json.dump(config, f)
+
+
+class ScoreFile(object):
+  """
+  Data access class to save and load float scalar scores.
+  """
+
+  def __init__(self):
+    pass
+
+  @classmethod
+  def load(cls, filepath):
+    with open(filepath) as f:
+      return float(f.readline().strip())
+
+  @classmethod
+  def save(cls, filepath, score):
+    with open(filepath, 'w') as f:
+      f.write('{0:f}\n'.format(score))
