@@ -19,7 +19,6 @@
 #include "webrtc/p2p/base/port.h"
 #include "webrtc/p2p/base/portinterface.h"
 #include "webrtc/base/helpers.h"
-#include "webrtc/base/proxyinfo.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
 
@@ -366,13 +365,6 @@ class PortAllocator : public sigslot::has_slots<> {
   uint32_t flags() const { return flags_; }
   void set_flags(uint32_t flags) { flags_ = flags; }
 
-  const std::string& user_agent() const { return agent_; }
-  const rtc::ProxyInfo& proxy() const { return proxy_; }
-  void set_proxy(const std::string& agent, const rtc::ProxyInfo& proxy) {
-    agent_ = agent;
-    proxy_ = proxy;
-  }
-
   // Gets/Sets the port range to use when choosing client ports.
   int min_port() const { return min_port_; }
   int max_port() const { return max_port_; }
@@ -425,8 +417,6 @@ class PortAllocator : public sigslot::has_slots<> {
   }
 
   uint32_t flags_;
-  std::string agent_;
-  rtc::ProxyInfo proxy_;
   int min_port_;
   int max_port_;
   uint32_t step_delay_;

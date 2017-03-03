@@ -210,15 +210,7 @@ RelayPort::~RelayPort() {
 }
 
 void RelayPort::AddServerAddress(const ProtocolAddress& addr) {
-  // Since HTTP proxies usually only allow 443,
-  // let's up the priority on PROTO_SSLTCP
-  if (addr.proto == PROTO_SSLTCP &&
-      (proxy().type == rtc::PROXY_HTTPS ||
-       proxy().type == rtc::PROXY_UNKNOWN)) {
-    server_addr_.push_front(addr);
-  } else {
-    server_addr_.push_back(addr);
-  }
+  server_addr_.push_back(addr);
 }
 
 void RelayPort::AddExternalAddress(const ProtocolAddress& addr) {

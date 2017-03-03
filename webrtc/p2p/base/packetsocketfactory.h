@@ -13,6 +13,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/proxyinfo.h"
+#include "webrtc/base/socketaddress.h"
 
 namespace rtc {
 
