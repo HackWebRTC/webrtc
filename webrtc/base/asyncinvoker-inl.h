@@ -18,6 +18,7 @@
 #include "webrtc/base/messagehandler.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/thread_annotations.h"
 
 namespace rtc {
 
@@ -68,13 +69,16 @@ class NotifyingAsyncClosureBase : public AsyncClosure,
     CritScope cs(&crit_);
     callback_ = callback;
   }
-  bool CallbackCanceled() const { return calling_thread_ == nullptr; }
+  bool CallbackCanceled() const {
+    CritScope cs(&crit_);
+    return calling_thread_ == nullptr;
+  }
 
  private:
   Location callback_posted_from_;
-  Callback0<void> callback_;
   CriticalSection crit_;
-  Thread* calling_thread_;
+  Callback0<void> callback_ GUARDED_BY(crit_);
+  Thread* calling_thread_ GUARDED_BY(crit_);
 
   void CancelCallback();
 };
