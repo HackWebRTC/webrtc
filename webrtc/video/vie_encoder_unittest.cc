@@ -81,6 +81,16 @@ class ViEEncoderUnderTest : public ViEEncoder {
     ASSERT_TRUE(event.Wait(5000));
   }
 
+  // This is used as a synchronisation mechanism, to make sure that the
+  // encoder queue is not blocked before we start sending it frames.
+  void WaitUntilTaskQueueIsIdle() {
+    rtc::Event event(false, false);
+    encoder_queue()->PostTask([&event] {
+      event.Set();
+    });
+    ASSERT_TRUE(event.Wait(5000));
+  }
+
   void TriggerCpuOveruse() { PostTaskAndWait(true, AdaptReason::kCpu); }
 
   void TriggerCpuNormalUsage() { PostTaskAndWait(false, AdaptReason::kCpu); }
@@ -201,6 +211,7 @@ class ViEEncoderTest : public ::testing::Test {
     vie_encoder_->SetStartBitrate(kTargetBitrateBps);
     vie_encoder_->ConfigureEncoder(std::move(video_encoder_config),
                                    kMaxPayloadLength, nack_enabled);
+    vie_encoder_->WaitUntilTaskQueueIsIdle();
   }
 
   void ResetEncoder(const std::string& payload_name,
@@ -251,6 +262,7 @@ class ViEEncoderTest : public ::testing::Test {
     }
 
     VideoEncoder::ScalingSettings GetScalingSettings() const override {
+      rtc::CritScope lock(&local_crit_sect_);
       if (quality_scaling_)
         return VideoEncoder::ScalingSettings(true, 1, 2);
       return VideoEncoder::ScalingSettings(false);
@@ -265,7 +277,10 @@ class ViEEncoderTest : public ::testing::Test {
       EXPECT_EQ(ntp_time_ms_, ntp_time_ms);
     }
 
-    void SetQualityScaling(bool b) { quality_scaling_ = b; }
+    void SetQualityScaling(bool b) {
+      rtc::CritScope lock(&local_crit_sect_);
+      quality_scaling_ = b;
+    }
 
    private:
     int32_t Encode(const VideoFrame& input_image,
@@ -331,7 +346,7 @@ class ViEEncoderTest : public ::testing::Test {
       EXPECT_EQ(expected_width, width);
     }
 
-    void ExpectDroppedFrame() { EXPECT_FALSE(encoded_frame_event_.Wait(20)); }
+    void ExpectDroppedFrame() { EXPECT_FALSE(encoded_frame_event_.Wait(100)); }
 
     void SetExpectNoFrames() {
       rtc::CritScope lock(&crit_);
@@ -1139,13 +1154,7 @@ TEST_F(ViEEncoderTest, DropsFramesAndScalesWhenBitrateIsTooLow) {
   vie_encoder_->Stop();
 }
 
-#if defined(MEMORY_SANITIZER)
-// Fails under MemorySanitizer: See http://crbug.com/webrtc/7232
-#define MAYBE_NrOfDroppedFramesLimited DISABLED_NrOfDroppedFramesLimited
-#else
-#define MAYBE_NrOfDroppedFramesLimited NrOfDroppedFramesLimited
-#endif
-TEST_F(ViEEncoderTest, MAYBE_NrOfDroppedFramesLimited) {
+TEST_F(ViEEncoderTest, NrOfDroppedFramesLimited) {
   // 1kbps. This can never be achieved.
   vie_encoder_->OnBitrateUpdated(1000, 0, 0);
   int frame_width = 640;
@@ -1188,15 +1197,7 @@ TEST_F(ViEEncoderTest, InitialFrameDropOffWithMaintainResolutionPreference) {
   vie_encoder_->Stop();
 }
 
-// Disable for TSan v2, see https://crbug.com/webrtc/7260 for details.
-#if defined(THREAD_SANITIZER)
-#define MAYBE_InitialFrameDropOffWhenEncoderDisabledScaling \
-  DISABLED_InitialFrameDropOffWhenEncoderDisabledScaling
-#else
-#define MAYBE_InitialFrameDropOffWhenEncoderDisabledScaling \
-  InitialFrameDropOffWhenEncoderDisabledScaling
-#endif
-TEST_F(ViEEncoderTest, MAYBE_InitialFrameDropOffWhenEncoderDisabledScaling) {
+TEST_F(ViEEncoderTest, InitialFrameDropOffWhenEncoderDisabledScaling) {
   int frame_width = 640;
   int frame_height = 360;
   fake_encoder_.SetQualityScaling(false);
