@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/location.h"
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/modules/video_coding/frame_buffer.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
@@ -199,7 +200,7 @@ class ProcessThreadMock : public ProcessThread {
   MOCK_METHOD0(Start, void());
   MOCK_METHOD0(Stop, void());
   MOCK_METHOD1(WakeUp, void(Module* module));
-  MOCK_METHOD1(RegisterModule, void(Module* module));
+  MOCK_METHOD2(RegisterModule, void(Module* module, const rtc::Location&));
   MOCK_METHOD1(DeRegisterModule, void(Module* module));
   void PostTask(std::unique_ptr<rtc::QueuedTask> task) /*override*/ {}
 };

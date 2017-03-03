@@ -14,6 +14,7 @@
 
 #include "webrtc/audio/utility/audio_frame_operations.h"
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -203,7 +204,7 @@ TransmitMixer::SetEngineInformation(ProcessThread& processThread,
     _channelManagerPtr = &channelManager;
 
 #if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    _processThreadPtr->RegisterModule(&_monitorModule);
+    _processThreadPtr->RegisterModule(&_monitorModule, RTC_FROM_HERE);
 #endif
     return 0;
 }

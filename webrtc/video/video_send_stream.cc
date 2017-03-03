@@ -16,13 +16,14 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/common_types.h"
-#include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/file.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/base/weak_ptr.h"
+#include "webrtc/common_types.h"
+#include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
@@ -883,7 +884,7 @@ void VideoSendStreamImpl::RegisterProcessThread(
   module_process_thread_ = module_process_thread;
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    module_process_thread_->RegisterModule(rtp_rtcp);
+    module_process_thread_->RegisterModule(rtp_rtcp, RTC_FROM_HERE);
 }
 
 void VideoSendStreamImpl::DeRegisterProcessThread() {

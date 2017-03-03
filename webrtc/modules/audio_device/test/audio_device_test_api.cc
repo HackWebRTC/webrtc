@@ -14,15 +14,14 @@
 
 #include <memory>
 
-#include "webrtc/modules/audio_device/test/audio_device_test_defines.h"
-
-#include "webrtc/test/gtest.h"
-#include "webrtc/test/testsupport/fileutils.h"
-
+#include "webrtc/base/location.h"
 #include "webrtc/modules/audio_device/audio_device_config.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
+#include "webrtc/modules/audio_device/test/audio_device_test_defines.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/sleep.h"
+#include "webrtc/test/gtest.h"
+#include "webrtc/test/testsupport/fileutils.h"
 
 // Helper functions
 #if defined(ANDROID)
@@ -218,7 +217,7 @@ class AudioDeviceAPITest: public testing::Test {
       FAIL() << "Failed creating audio device object!";
     }
 
-    process_thread_->RegisterModule(audio_device_);
+    process_thread_->RegisterModule(audio_device_, RTC_FROM_HERE);
 
     AudioDeviceModule::AudioLayer audio_layer =
         AudioDeviceModule::kPlatformDefaultAudio;

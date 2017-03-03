@@ -330,6 +330,7 @@ if (rtc_include_tests) {
       deps = [
         ":audio_device",
         "../..:webrtc_common",
+        "../../base:rtc_base_approved",
         "../../system_wrappers",
         "../../test:test_main",
         "../../test:test_support",

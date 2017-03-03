@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
 #include "webrtc/config.h"
@@ -184,12 +185,12 @@ RtpStreamReceiver::RtpStreamReceiver(
   // Stats callback for CNAME changes.
   rtp_rtcp_->RegisterRtcpStatisticsCallback(receive_stats_proxy);
 
-  process_thread_->RegisterModule(rtp_rtcp_.get());
+  process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 
   if (config_.rtp.nack.rtp_history_ms != 0) {
     nack_module_.reset(
         new NackModule(clock_, nack_sender, keyframe_request_sender));
-    process_thread_->RegisterModule(nack_module_.get());
+    process_thread_->RegisterModule(nack_module_.get(), RTC_FROM_HERE);
   }
 
   packet_buffer_ = video_coding::PacketBuffer::Create(

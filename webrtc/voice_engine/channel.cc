@@ -18,6 +18,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/base/thread_checker.h"
@@ -1025,7 +1026,7 @@ int32_t Channel::Init() {
 
   // --- Add modules to process thread (for periodic schedulation)
 
-  _moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get());
+  _moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get(), RTC_FROM_HERE);
 
   // --- ACM initialization
 

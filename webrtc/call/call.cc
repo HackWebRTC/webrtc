@@ -23,6 +23,7 @@
 #include "webrtc/base/basictypes.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/task_queue.h"
@@ -355,11 +356,12 @@ Call::Call(const Call::Config& config)
       config_.bitrate_config.max_bitrate_bps);
 
   module_process_thread_->Start();
-  module_process_thread_->RegisterModule(call_stats_.get());
-  module_process_thread_->RegisterModule(congestion_controller_.get());
-  pacer_thread_->RegisterModule(congestion_controller_->pacer());
+  module_process_thread_->RegisterModule(call_stats_.get(), RTC_FROM_HERE);
+  module_process_thread_->RegisterModule(congestion_controller_.get(),
+                                         RTC_FROM_HERE);
+  pacer_thread_->RegisterModule(congestion_controller_->pacer(), RTC_FROM_HERE);
   pacer_thread_->RegisterModule(
-      congestion_controller_->GetRemoteBitrateEstimator(true));
+      congestion_controller_->GetRemoteBitrateEstimator(true), RTC_FROM_HERE);
   pacer_thread_->Start();
 }
 

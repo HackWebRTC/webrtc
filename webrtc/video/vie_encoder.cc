@@ -16,9 +16,10 @@
 
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/trace_event.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
@@ -329,7 +330,7 @@ void ViEEncoder::RegisterProcessThread(ProcessThread* module_process_thread) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(!module_process_thread_);
   module_process_thread_ = module_process_thread;
-  module_process_thread_->RegisterModule(&video_sender_);
+  module_process_thread_->RegisterModule(&video_sender_, RTC_FROM_HERE);
   module_process_thread_checker_.DetachFromThread();
 }
 

@@ -12,6 +12,7 @@
 
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/base/format_macros.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
@@ -213,7 +214,8 @@ int VoEBaseImpl::Init(
   // Register the ADM to the process thread, which will drive the error
   // callback mechanism
   if (shared_->process_thread()) {
-    shared_->process_thread()->RegisterModule(shared_->audio_device());
+    shared_->process_thread()->RegisterModule(shared_->audio_device(),
+                                              RTC_FROM_HERE);
   }
 
   bool available = false;

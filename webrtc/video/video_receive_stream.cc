@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
@@ -227,8 +228,8 @@ VideoReceiveStream::VideoReceiveStream(
   frame_buffer_.reset(new video_coding::FrameBuffer(
       clock_, jitter_estimator_.get(), timing_.get(), &stats_proxy_));
 
-  process_thread_->RegisterModule(&video_receiver_);
-  process_thread_->RegisterModule(&rtp_stream_sync_);
+  process_thread_->RegisterModule(&video_receiver_, RTC_FROM_HERE);
+  process_thread_->RegisterModule(&rtp_stream_sync_, RTC_FROM_HERE);
 }
 
 VideoReceiveStream::~VideoReceiveStream() {

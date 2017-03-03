@@ -11,6 +11,7 @@
 #include <memory>
 #include <utility>
 
+#include "webrtc/base/location.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/include/module.h"
@@ -93,7 +94,7 @@ TEST(ProcessThreadImpl, ProcessCall) {
       .WillRepeatedly(Return());
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
 
-  thread.RegisterModule(&module);
+  thread.RegisterModule(&module, RTC_FROM_HERE);
   EXPECT_EQ(kEventSignaled, event->Wait(kEventWaitTimeout));
 
   EXPECT_CALL(module, ProcessThreadAttached(nullptr)).Times(1);
@@ -114,7 +115,7 @@ TEST(ProcessThreadImpl, ProcessCall2) {
       .WillOnce(DoAll(SetEvent(event.get()), Return()))
       .WillRepeatedly(Return());
 
-  thread.RegisterModule(&module);
+  thread.RegisterModule(&module, RTC_FROM_HERE);
 
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
   thread.Start();
@@ -141,7 +142,7 @@ TEST(ProcessThreadImpl, Deregister) {
                       Return()))
       .WillRepeatedly(DoAll(Increment(&process_count), Return()));
 
-  thread.RegisterModule(&module);
+  thread.RegisterModule(&module, RTC_FROM_HERE);
 
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
   thread.Start();
@@ -183,7 +184,7 @@ void ProcessCallAfterAFewMs(int64_t milliseconds) {
       .WillRepeatedly(Return());
 
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
-  thread.RegisterModule(&module);
+  thread.RegisterModule(&module, RTC_FROM_HERE);
 
   // Add a buffer of 50ms due to slowness of some trybots
   // (e.g. win_drmemory_light)
@@ -244,7 +245,7 @@ TEST(ProcessThreadImpl, DISABLED_Process50Times) {
                             Return()));
 
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
-  thread.RegisterModule(&module);
+  thread.RegisterModule(&module, RTC_FROM_HERE);
 
   EXPECT_EQ(kEventTimeout, event->Wait(1000));
 
@@ -290,7 +291,7 @@ TEST(ProcessThreadImpl, WakeUp) {
       .WillRepeatedly(Return());
 
   EXPECT_CALL(module, ProcessThreadAttached(&thread)).Times(1);
-  thread.RegisterModule(&module);
+  thread.RegisterModule(&module, RTC_FROM_HERE);
 
   EXPECT_EQ(kEventSignaled, started->Wait(kEventWaitTimeout));
   thread.WakeUp(&module);

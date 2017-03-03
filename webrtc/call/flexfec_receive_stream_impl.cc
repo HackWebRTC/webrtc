@@ -13,6 +13,7 @@
 #include <string>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/receive_statistics.h"
@@ -140,7 +141,7 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
   rtp_rtcp_->SetSendingMediaStatus(false);
   rtp_rtcp_->SetRTCPStatus(config_.rtcp_mode);
   rtp_rtcp_->SetSSRC(config_.local_ssrc);
-  process_thread_->RegisterModule(rtp_rtcp_.get());
+  process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 }
 
 FlexfecReceiveStreamImpl::~FlexfecReceiveStreamImpl() {
