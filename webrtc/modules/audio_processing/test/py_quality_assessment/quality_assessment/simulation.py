@@ -9,6 +9,7 @@
 import logging
 import os
 
+from . import audioproc_wrapper
 from . import data_access
 from . import eval_scores
 from . import noise_generation
@@ -19,8 +20,9 @@ class ApmModuleSimulator(object):
   _EVAL_SCORE_WORKER_CLASSES = eval_scores.EvaluationScore.REGISTERED_CLASSES
 
   def __init__(self):
+    self._audioproc_wrapper = audioproc_wrapper.AudioProcWrapper()
+
     # TODO(alessio): instance when implementation is ready.
-    self._audioproc_wrapper = None
     self._evaluator = None
 
     self._base_output_path = None
