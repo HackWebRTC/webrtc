@@ -4025,8 +4025,7 @@ TEST_P(EndToEndTest, VerifyDefaultFlexfecReceiveConfigParameters) {
 }
 
 TEST_P(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
-  static constexpr int kExtensionId = 8;
-  static constexpr size_t kMinPacketsToWaitFor = 50;
+  static const int kExtensionId = 8;
   class TransportSequenceNumberTest : public test::EndToEndTest {
    public:
     TransportSequenceNumberTest()
@@ -4064,7 +4063,7 @@ TEST_P(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
       if (header.ssrc == kAudioSendSsrc)
         audio_observed_ = true;
       if (audio_observed_ && video_observed_ &&
-          received_packet_ids_.size() >= kMinPacketsToWaitFor) {
+          received_packet_ids_.size() == 50) {
         size_t packet_id_range =
             *received_packet_ids_.rbegin() - *received_packet_ids_.begin() + 1;
         EXPECT_EQ(received_packet_ids_.size(), packet_id_range);
@@ -4076,11 +4075,6 @@ TEST_P(EndToEndTest, TransportSeqNumOnAudioAndVideo) {
     void PerformTest() override {
       EXPECT_TRUE(Wait()) << "Timed out while waiting for audio and video "
                              "packets with transport sequence number.";
-      // Double check conditions for successfull test to produce better error
-      // message when this test fail.
-      EXPECT_TRUE(video_observed_);
-      EXPECT_TRUE(audio_observed_);
-      EXPECT_GE(received_packet_ids_.size(), kMinPacketsToWaitFor);
     }
 
    private:
