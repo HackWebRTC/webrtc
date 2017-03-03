@@ -102,7 +102,7 @@ TEST(TaskQueueTest, PostFromQueue) {
 TEST(TaskQueueTest, PostDelayed) {
   static const char kQueueName[] = "PostDelayed";
   Event event(false, false);
-  TaskQueue queue(kQueueName);
+  TaskQueue queue(kQueueName, TaskQueue::Priority::HIGH);
 
   uint32_t start = Time();
   queue.PostDelayedTask(Bind(&CheckCurrent, kQueueName, &event, &queue), 100);

@@ -66,6 +66,17 @@ ThreadPriority TaskQueuePriorityToThreadPriority(Priority priority) {
   }
   return kNormalPriority;
 }
+
+#if defined(_WIN64)
+DWORD GetTick() {
+  static const UINT kPeriod = 1;
+  bool high_res = (timeBeginPeriod(kPeriod) == TIMERR_NOERROR);
+  DWORD ret = timeGetTime();
+  if (high_res)
+    timeEndPeriod(kPeriod);
+  return ret;
+}
+#endif
 }  // namespace
 
 class TaskQueue::MultimediaTimer {
@@ -214,7 +225,7 @@ void TaskQueue::PostDelayedTask(std::unique_ptr<QueuedTask> task,
   // GetTickCount() returns a fairly coarse tick count (resolution or about 8ms)
   // so this compensation isn't that accurate, but since we have unused 32 bits
   // on Win64, we might as well use them.
-  wparam = (static_cast<WPARAM>(::GetTickCount()) << 32) | milliseconds;
+  wparam = (static_cast<WPARAM>(GetTick()) << 32) | milliseconds;
 #else
   wparam = milliseconds;
 #endif
@@ -325,7 +336,7 @@ bool TaskQueue::ProcessQueuedMessages(DelayedTasks* delayed_tasks,
           uint32_t milliseconds = msg.wParam & 0xFFFFFFFF;
 #if defined(_WIN64)
           // Subtract the time it took to queue the timer.
-          const DWORD now = GetTickCount();
+          const DWORD now = GetTick();
           DWORD post_time = now - (msg.wParam >> 32);
           milliseconds =
               post_time > milliseconds ? 0 : milliseconds - post_time;
