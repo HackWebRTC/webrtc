@@ -33,6 +33,10 @@ copy("lib") {
   testonly = true
   sources = [
     "quality_assessment/__init__.py",
+    "quality_assessment/data_access.py",
+    "quality_assessment/eval_scores.py",
+    "quality_assessment/noise_generation.py",
+    "quality_assessment/simulation.py",
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   outputs = [
@@ -46,7 +50,7 @@ copy("lib") {
 copy("apm_configs") {
   testonly = true
   sources = [
-    "quality_assessment/apm_configs/default.json",
+    "apm_configs/default.json",
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   outputs = [

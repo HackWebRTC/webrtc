@@ -8,7 +8,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 # Customize probing signals, noise sources and scores if needed.
-PROBING_SIGNALS=(py_quality_assessment/probing_signals/*.wav)
+PROBING_SIGNALS=(probing_signals/*.wav)
 NOISE_SOURCES=( \
     "identity" \
     "white" \
@@ -26,7 +26,7 @@ chmod +x apm_quality_assessment-gencfgs.py
 ./apm_quality_assessment-gencfgs.py
 
 # Customize APM configurations if needed.
-APM_CONFIGS=(py_quality_assessment/apm_configs/*.json)
+APM_CONFIGS=(apm_configs/*.json)
 
 # Add output path if missing.
 if [ ! -d ${OUTPUT_PATH} ]; then
@@ -56,6 +56,7 @@ done
 wait
 
 # Export results.
+chmod +x ./apm_quality_assessment-export.py
 ./apm_quality_assessment-export.py -o ${OUTPUT_PATH}
 
 # Show results in the browser.
