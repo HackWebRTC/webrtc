@@ -20,8 +20,11 @@
 #include <assert.h>
 
 #include "webrtc/base/checks.h"
-#include "webrtc/modules/audio_coding/acm2/acm_common_defs.h"
 #include "webrtc/system_wrappers/include/trace.h"
+
+#if ((defined WEBRTC_CODEC_ISAC) && (defined WEBRTC_CODEC_ISACFX))
+#error iSAC and iSACFX codecs cannot be enabled at the same time
+#endif
 
 namespace webrtc {
 
@@ -60,9 +63,9 @@ bool IsOpusRateValid(int rate) {
 
 const CodecInst ACMCodecDB::database_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-  {103, "ISAC", 16000, kIsacPacSize480, 1, kIsacWbDefaultRate},
+  {103, "ISAC", 16000, 480, 1, 32000},
 # if (defined(WEBRTC_CODEC_ISAC))
-  {104, "ISAC", 32000, kIsacPacSize960, 1, kIsacSwbDefaultRate},
+  {104, "ISAC", 32000, 960, 1, 56000},
 # endif
 #endif
   // Mono
@@ -118,9 +121,9 @@ const CodecInst ACMCodecDB::database_[] = {
 // Basic block samples, max number of channels that are supported.
 const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-    {2, {kIsacPacSize480, kIsacPacSize960}, 0, 1},
+    {2, {480, 960}, 0, 1},
 # if (defined(WEBRTC_CODEC_ISAC))
-    {1, {kIsacPacSize960}, 0, 1},
+    {1, {960}, 0, 1},
 # endif
 #endif
     // Mono

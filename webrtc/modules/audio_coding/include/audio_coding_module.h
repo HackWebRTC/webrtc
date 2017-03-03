@@ -20,6 +20,7 @@
 #include "webrtc/base/function_view.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/include/module.h"

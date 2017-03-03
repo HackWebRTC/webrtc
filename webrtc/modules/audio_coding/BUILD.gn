@@ -65,10 +65,6 @@ rtc_static_library("builtin_audio_decoder_factory_internal") {
 }
 
 rtc_static_library("rent_a_codec") {
-  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-  # Gives cyclic dependency with :neteq and :audio_coding if enabled.
-  check_includes = false
-
   sources = [
     "acm2/acm_codec_database.cc",
     "acm2/acm_codec_database.h",
@@ -79,6 +75,12 @@ rtc_static_library("rent_a_codec") {
            "../../api/audio_codecs:audio_codecs_api",
            "../..:webrtc_common",
            "../../base:rtc_base_approved",
+           "../../system_wrappers",
+           ":audio_coding_module_typedefs",
+           ":audio_encoder_interface",
+           ":isac_common",
+           ":isac_fix_c",
+           ":neteq_decoder_enum",
          ] + audio_codec_deps
   defines = audio_codec_defines
 }
@@ -90,9 +92,17 @@ config("audio_coding_config") {
   ]
 }
 
+rtc_source_set("audio_coding_module_typedefs") {
+  sources = [
+    "include/audio_coding_module_typedefs.h",
+  ]
+  deps = [
+    "../..:webrtc_common",
+  ]
+}
+
 rtc_static_library("audio_coding") {
   sources = [
-    "acm2/acm_common_defs.h",
     "acm2/acm_receiver.cc",
     "acm2/acm_receiver.h",
     "acm2/acm_resampler.cc",
@@ -103,7 +113,6 @@ rtc_static_library("audio_coding") {
     "acm2/codec_manager.cc",
     "acm2/codec_manager.h",
     "include/audio_coding_module.h",
-    "include/audio_coding_module_typedefs.h",
   ]
 
   defines = []
@@ -126,6 +135,8 @@ rtc_static_library("audio_coding") {
   deps = audio_coding_deps + [
            "../../api/audio_codecs:audio_codecs_api",
            "../../api/audio_codecs:builtin_audio_decoder_factory",
+           ":audio_coding_module_typedefs",
+           ":audio_encoder_interface",
            ":neteq",
            ":rent_a_codec",
            "../../base:rtc_base_approved",
@@ -927,11 +938,18 @@ rtc_static_library("audio_network_adaptor") {
   }
 }
 
-rtc_static_library("neteq") {
-  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-  # Cyclic dependency with :audio_coding if enabled.
-  check_includes = false
+rtc_source_set("neteq_decoder_enum") {
+  sources = [
+    "neteq/neteq_decoder_enum.cc",
+    "neteq/neteq_decoder_enum.h",
+  ]
+  deps = [
+    "../../api/audio_codecs:audio_codecs_api",
+    "../../base:rtc_base_approved",
+  ]
+}
 
+rtc_static_library("neteq") {
   sources = [
     "neteq/accelerate.cc",
     "neteq/accelerate.h",
@@ -1007,11 +1025,12 @@ rtc_static_library("neteq") {
   ]
 
   deps = [
+    ":audio_coding_module_typedefs",
     ":cng",
     ":g711",
     ":isac_fix",
+    ":neteq_decoder_enum",
     ":pcm16b",
-    ":rent_a_codec",
     "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
     "../../base:gtest_prod",
@@ -1133,6 +1152,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio_coding",
+      ":audio_coding_module_typedefs",
       ":audio_format_conversion",
       ":pcm16b_c",
       "../..:webrtc_common",
@@ -1228,6 +1248,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":audio_coding",
+      ":audio_coding_module_typedefs",
       ":audio_format_conversion",
       "../../:webrtc_common",
       "../../base:rtc_base_approved",
@@ -2036,6 +2057,7 @@ if (rtc_include_tests) {
       ":acm_receive_test",
       ":acm_send_test",
       ":audio_coding",
+      ":audio_coding_module_typedefs",
       ":audio_encoder_interface",
       ":audio_format_conversion",
       ":audio_network_adaptor",

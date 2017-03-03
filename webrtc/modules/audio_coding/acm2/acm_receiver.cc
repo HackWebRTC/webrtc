@@ -27,6 +27,7 @@
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/trace.h"
+#include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
 
 namespace webrtc {
 
@@ -199,7 +200,7 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
     return *ned;
   }();
   const rtc::Optional<SdpAudioFormat> new_format =
-      RentACodec::NetEqDecoderToSdpAudioFormat(neteq_decoder);
+      NetEqDecoderToSdpAudioFormat(neteq_decoder);
 
   rtc::CritScope lock(&crit_sect_);
 
