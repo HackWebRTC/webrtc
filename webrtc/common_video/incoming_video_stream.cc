@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "webrtc/base/timeutils.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common_video/video_render_frames.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/event_wrapper.h"
@@ -60,6 +61,7 @@ IncomingVideoStream::~IncomingVideoStream() {
 }
 
 void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
+  TRACE_EVENT0("webrtc", "IncomingVideoStream::OnFrame");
   RTC_CHECK_RUNS_SERIALIZED(&decoder_race_checker_);
   RTC_DCHECK(!incoming_render_queue_.IsCurrent());
   incoming_render_queue_.PostTask(
@@ -67,6 +69,7 @@ void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
 }
 
 void IncomingVideoStream::Dequeue() {
+  TRACE_EVENT0("webrtc", "IncomingVideoStream::Dequeue");
   RTC_DCHECK(incoming_render_queue_.IsCurrent());
   rtc::Optional<VideoFrame> frame_to_render = render_buffers_.FrameToRender();
   if (frame_to_render)

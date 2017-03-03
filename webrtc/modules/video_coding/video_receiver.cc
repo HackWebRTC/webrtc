@@ -325,8 +325,7 @@ int32_t VideoReceiver::RequestKeyFrame() {
 
 // Must be called from inside the receive side critical section.
 int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
-  TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", frame.TimeStamp(), "Decode",
-                          "type", frame.FrameType());
+  TRACE_EVENT0("webrtc", "VideoReceiver::Decode");
   // Change decoder if payload type has changed
   _decoder = _codecDataBase.GetDecoder(frame, &_decodedFrameCallback);
   if (_decoder == nullptr) {
@@ -356,7 +355,6 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
     rtc::CritScope cs(&process_crit_);
     _scheduleKeyRequest = true;
   }
-  TRACE_EVENT_ASYNC_END0("webrtc", "Video", frame.TimeStamp());
   return ret;
 }
 

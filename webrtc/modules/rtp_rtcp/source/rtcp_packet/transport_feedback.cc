@@ -14,6 +14,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
@@ -414,6 +415,7 @@ std::vector<int64_t> TransportFeedback::GetReceiveDeltasUs() const {
 bool TransportFeedback::Parse(const CommonHeader& packet) {
   RTC_DCHECK_EQ(packet.type(), kPacketType);
   RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
+  TRACE_EVENT0("webrtc", "TransportFeedback::Parse");
 
   if (packet.payload_size_bytes() < kMinPayloadSizeBytes) {
     LOG(LS_WARNING) << "Buffer too small (" << packet.payload_size_bytes()

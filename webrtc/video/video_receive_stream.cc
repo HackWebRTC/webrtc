@@ -20,6 +20,7 @@
 #include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
@@ -473,6 +474,7 @@ bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
 }
 
 bool VideoReceiveStream::Decode() {
+  TRACE_EVENT0("webrtc", "VideoReceiveStream::Decode");
   static const int kMaxWaitForFrameMs = 3000;
   std::unique_ptr<video_coding::FrameObject> frame;
   video_coding::FrameBuffer::ReturnReason res =

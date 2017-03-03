@@ -13,6 +13,7 @@
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/base/trace_event.h"
 
 #if defined(WEBRTC_LINUX)
 #include <sys/prctl.h>
@@ -235,6 +236,8 @@ void PlatformThread::Run() {
 #endif
 
   do {
+    TRACE_EVENT1("webrtc", "PlatformThread::Run", "name", name_.c_str());
+
     // The interface contract of Start/Stop is that for a successful call to
     // Start, there should be at least one call to the run function.  So we
     // call the function before checking |stop_|.
