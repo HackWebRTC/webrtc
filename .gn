@@ -44,11 +44,7 @@ check_targets = [
   "//webrtc/modules/video_processing/*",
   "//webrtc/modules/remote_bitrate_estimator/*",
   "//webrtc/stats/*",
-  "//webrtc/voice_engine",
-  "//webrtc/voice_engine:audio_coder",
-  "//webrtc/voice_engine:file_player",
-  "//webrtc/voice_engine:file_recorder",
-  "//webrtc/voice_engine:level_indicator",
+  "//webrtc/voice_engine/*",
 ]
 
 # These are the list of GN files that run exec_script. This whitelist exists

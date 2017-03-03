@@ -233,9 +233,12 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      ":voice_engine",
       "..:webrtc_common",
       "../api:transport_api",
+      "../base:rtc_base_approved",
       "../system_wrappers",
+      "../test:test_support",
       "//testing/gtest",
     ]
   }
@@ -243,7 +246,10 @@ if (rtc_include_tests) {
   rtc_test("voice_engine_unittests") {
     deps = [
       ":channel_transport",
+      ":file_player",
       ":voice_engine",
+      "../base:rtc_base_approved",
+      "../test:test_common",
       "//testing/gmock",
       "//testing/gtest",
       "//third_party/gflags",
@@ -255,8 +261,10 @@ if (rtc_include_tests) {
       "//webrtc/modules/media_file",
       "//webrtc/modules/rtp_rtcp",
       "//webrtc/modules/utility",
+      "//webrtc/modules/video_capture:video_capture",
       "//webrtc/system_wrappers",
       "//webrtc/test:test_main",
+      "//webrtc/test:video_test_common",
     ]
 
     if (is_android) {
@@ -306,9 +314,12 @@ if (rtc_include_tests) {
     deps = [
       ":channel_transport",
       ":voice_engine",
+      "..:webrtc_common",
+      "../base:rtc_base_approved",
       "//testing/gtest",
       "//third_party/gflags",
       "//webrtc/logging:rtc_event_log_api",
+      "//webrtc/modules/audio_processing",
       "//webrtc/system_wrappers",
       "//webrtc/system_wrappers:system_wrappers_default",
       "//webrtc/test:test_support",
@@ -331,6 +342,11 @@ if (rtc_include_tests) {
       deps = [
         ":channel_transport",
         ":voice_engine",
+        "..:webrtc_common",
+        "../base:rtc_base_approved",
+        "../modules/audio_device:audio_device",
+        "../modules/audio_processing:audio_processing",
+        "../modules/rtp_rtcp:rtp_rtcp",
         "//testing/gmock",
         "//testing/gtest",
         "//third_party/gflags",
@@ -378,7 +394,6 @@ if (rtc_include_tests) {
         "test/auto_test/voe_standard_test.cc",
         "test/auto_test/voe_standard_test.h",
         "test/auto_test/voe_test_defines.h",
-        "test/auto_test/voe_test_interface.h",
       ]
 
       if (!is_android) {
