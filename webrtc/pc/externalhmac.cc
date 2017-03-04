@@ -19,7 +19,7 @@
 #include "third_party/libsrtp/include/srtp.h"
 #endif // HAVE_SRTP
 
-#if defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
+#if defined(HAVE_SRTP)
 
 // Begin test case 0 */
 static const uint8_t kExternalHmacTestCase0Key[20] = {
@@ -151,4 +151,4 @@ srtp_err_status_t external_crypto_init() {
   return srtp_err_status_ok;
 }
 
-#endif  // defined(HAVE_SRTP) && defined(ENABLE_EXTERNAL_AUTH)
+#endif  // defined(HAVE_SRTP)

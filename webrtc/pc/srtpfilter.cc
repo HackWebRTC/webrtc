@@ -51,9 +51,7 @@ void ShutdownSrtp() {
 #endif
 }
 
-SrtpFilter::SrtpFilter()
-    : state_(ST_INIT),
-      signal_silent_time_in_ms_(0) {
+SrtpFilter::SrtpFilter() {
 }
 
 SrtpFilter::~SrtpFilter() {
@@ -226,7 +224,15 @@ bool SrtpFilter::GetSrtpOverhead(int* srtp_overhead) const {
   return true;
 }
 
-#if defined(ENABLE_EXTERNAL_AUTH)
+void SrtpFilter::EnableExternalAuth() {
+  RTC_DCHECK(!IsActive());
+  external_auth_enabled_ = true;
+}
+
+bool SrtpFilter::IsExternalAuthEnabled() const {
+  return external_auth_enabled_;
+}
+
 bool SrtpFilter::IsExternalAuthActive() const {
   if (!IsActive()) {
     LOG(LS_WARNING) << "Failed to check IsExternalAuthActive: SRTP not active";
@@ -236,7 +242,6 @@ bool SrtpFilter::IsExternalAuthActive() const {
   RTC_CHECK(send_session_);
   return send_session_->IsExternalAuthActive();
 }
-#endif
 
 void SrtpFilter::set_signal_silent_time(int signal_silent_time_in_ms) {
   signal_silent_time_in_ms_ = signal_silent_time_in_ms;
@@ -338,6 +343,9 @@ void SrtpFilter::CreateSrtpSessions() {
 
   send_session_->set_signal_silent_time(signal_silent_time_in_ms_);
   recv_session_->set_signal_silent_time(signal_silent_time_in_ms_);
+  if (external_auth_enabled_) {
+    send_session_->EnableExternalAuth();
+  }
 }
 
 bool SrtpFilter::NegotiateParams(const std::vector<CryptoParams>& answer_params,
@@ -599,7 +607,6 @@ bool SrtpSession::UnprotectRtcp(void* p, int in_len, int* out_len) {
 }
 
 bool SrtpSession::GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len) {
-#if defined(ENABLE_EXTERNAL_AUTH)
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(IsExternalAuthActive());
   if (!IsExternalAuthActive()) {
@@ -624,20 +631,24 @@ bool SrtpSession::GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len) {
   *key_len = external_hmac->key_length;
   *tag_len = rtp_auth_tag_len_;
   return true;
-#else
-  return false;
-#endif
 }
 
 int SrtpSession::GetSrtpOverhead() const {
   return rtp_auth_tag_len_;
 }
 
-#if defined(ENABLE_EXTERNAL_AUTH)
+void SrtpSession::EnableExternalAuth() {
+  RTC_DCHECK(!session_);
+  external_auth_enabled_ = true;
+}
+
+bool SrtpSession::IsExternalAuthEnabled() const {
+  return external_auth_enabled_;
+}
+
 bool SrtpSession::IsExternalAuthActive() const {
   return external_auth_active_;
 }
-#endif
 
 bool SrtpSession::GetSendStreamPacketIndex(void* p,
                                            int in_len,
@@ -719,13 +730,12 @@ bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
   // id EXTERNAL_HMAC_SHA1 in the policy structure.
   // We want to set this option only for rtp packets.
   // By default policy structure is initialized to HMAC_SHA1.
-#if defined(ENABLE_EXTERNAL_AUTH)
   // Enable external HMAC authentication only for outgoing streams and only
   // for cipher suites that support it (i.e. only non-GCM cipher suites).
-  if (type == ssrc_any_outbound && !rtc::IsGcmCryptoSuite(cs)) {
+  if (type == ssrc_any_outbound && IsExternalAuthEnabled() &&
+      !rtc::IsGcmCryptoSuite(cs)) {
     policy.rtp.auth_type = EXTERNAL_HMAC_SHA1;
   }
-#endif
   policy.next = nullptr;
 
   int err = srtp_create(&session_, &policy);
@@ -738,9 +748,7 @@ bool SrtpSession::SetKey(int type, int cs, const uint8_t* key, size_t len) {
   srtp_set_user_data(session_, this);
   rtp_auth_tag_len_ = policy.rtp.auth_tag_len;
   rtcp_auth_tag_len_ = policy.rtcp.auth_tag_len;
-#if defined(ENABLE_EXTERNAL_AUTH)
   external_auth_active_ = (policy.rtp.auth_type == EXTERNAL_HMAC_SHA1);
-#endif
   return true;
 }
 
@@ -760,13 +768,12 @@ bool SrtpSession::Init() {
       LOG(LS_ERROR) << "Failed to install SRTP event handler, err=" << err;
       return false;
     }
-#if defined(ENABLE_EXTERNAL_AUTH)
+
     err = external_crypto_init();
     if (err != srtp_err_status_ok) {
       LOG(LS_ERROR) << "Failed to initialize fake auth, err=" << err;
       return false;
     }
-#endif
     inited_ = true;
   }
 
