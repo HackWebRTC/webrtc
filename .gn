@@ -43,6 +43,8 @@ check_targets = [
   "//webrtc/modules/video_coding/*",
   "//webrtc/modules/video_processing/*",
   "//webrtc/modules/remote_bitrate_estimator/*",
+  "//webrtc/ortc/*",
+  "//webrtc/p2p/*",
   "//webrtc/stats/*",
   "//webrtc/voice_engine/*",
 ]

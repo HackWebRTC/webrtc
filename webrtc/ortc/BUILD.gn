@@ -33,7 +33,16 @@ rtc_static_library("ortc") {
   # PeerConnection code shares, so that ortc can depend on that instead of
   # libjingle_peerconnection.
   deps = [
+    "../base:rtc_base",
+    "../base:rtc_base_approved",
+    "../call:call_interfaces",
+    "../logging:rtc_event_log_api",
+    "../media:rtc_media",
+    "../media:rtc_media_base",
+    "../modules/audio_coding:builtin_audio_decoder_factory",
+    "../p2p:rtc_p2p",
     "../pc:libjingle_peerconnection",
+    "../pc:rtc_pc",
   ]
 
   public_deps = [
@@ -65,10 +74,16 @@ if (rtc_include_tests) {
 
     deps = [
       ":ortc",
+      "../base:rtc_base",
+      "../base:rtc_base_approved",
+      "../base:rtc_base_tests_main",
       "../base:rtc_base_tests_utils",
       "../media:rtc_unittest_main",
+      "../p2p:rtc_p2p",
+      "../p2p:rtc_p2p_test_utils",
       "../pc:pc_test_utils",
       "../system_wrappers:metrics_default",
+      "../test:test_support",
     ]
 
     if (!build_with_chromium && is_clang) {
