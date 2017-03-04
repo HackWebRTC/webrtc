@@ -38,8 +38,6 @@ rtc_static_library("rtc_pc") {
     "channelmanager.h",
     "currentspeakermonitor.cc",
     "currentspeakermonitor.h",
-    "externalhmac.cc",
-    "externalhmac.h",
     "mediamonitor.cc",
     "mediamonitor.h",
     "mediasession.cc",
@@ -57,6 +55,12 @@ rtc_static_library("rtc_pc") {
     "../media",
   ]
 
+  if (rtc_enable_external_auth) {
+    sources += [
+      "externalhmac.cc",
+      "externalhmac.h",
+    ]
+  }
   if (rtc_build_libsrtp) {
     deps += [ "//third_party/libsrtp" ]
   }
