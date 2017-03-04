@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '34e86af9f3ebe792b7681053eca4c08b27eca52d',
+  'chromium_revision': '3665df287a6774280935e96a466271ec4acbe9f9',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
