@@ -51,3 +51,14 @@ check_targets = [
 # to force additional review for new uses of exec_script, which is strongly
 # discouraged except for gypi_to_gn calls.
 exec_script_whitelist = build_dotfile_settings.exec_script_whitelist
+
+default_args = {
+  # Webrtc does not support component builds because we are not using the
+  # template "component" but we rely directly on "rtc_static_library" and
+  # "rtc_shared_library". This means that we cannot use the chromium default
+  # value for this argument.
+  # This also means that the user can override this value using --args or
+  # the args.gn file but this setting will be ignored because we don't support
+  # component builds.
+  is_component_build = false
+}
