@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '59566e8814c222a1388cd0ed4992595f12ee8bbb',
+  'chromium_revision': '775aa607056fbeeaa5a87494f6d61ffa75d22f36',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -46,7 +46,7 @@ deps = {
   'src/testing/gmock':
     Var('chromium_git') + '/external/googlemock.git' + '@' + '0421b6f358139f02e102c9c332ce19a33faf75be', # from svn revision 566
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '5f8a82ca8c0f4483e2a021788c83b2dffc156abf',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'fb47f919a4e2770ccd793f9f3700884e2e031a7f',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
