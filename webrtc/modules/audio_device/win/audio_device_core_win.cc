@@ -878,6 +878,7 @@ int32_t AudioDeviceWindowsCore::InitMicrophone()
         return -1;
     }
 
+    SAFE_RELEASE(_ptrCaptureVolume);
     ret = _ptrDeviceIn->Activate(__uuidof(IAudioEndpointVolume),
                                  CLSCTX_ALL,
                                  NULL,
@@ -2258,8 +2259,22 @@ int32_t AudioDeviceWindowsCore::InitPlayout()
             }
             else
             {
-                WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "nChannels=%d, nSamplesPerSec=%d is not supported",
-                    Wfx.nChannels, Wfx.nSamplesPerSec);
+                if (pWfxClosestMatch)
+                {
+                    LOG(INFO) << "nChannels=" << Wfx.nChannels <<
+                        ", nSamplesPerSec=" << Wfx.nSamplesPerSec <<
+                        " is not supported. Closest match: " <<
+                        "nChannels=" << pWfxClosestMatch->nChannels <<
+                        ", nSamplesPerSec=" << pWfxClosestMatch->nSamplesPerSec;
+                    CoTaskMemFree(pWfxClosestMatch);
+                    pWfxClosestMatch = NULL;
+                }
+                else
+                {
+                    LOG(INFO) << "nChannels=" << Wfx.nChannels <<
+                        ", nSamplesPerSec=" << Wfx.nSamplesPerSec <<
+                        " is not supported. No closest match.";
+                }
             }
         }
         if (hr == S_OK)
@@ -2330,15 +2345,6 @@ int32_t AudioDeviceWindowsCore::InitPlayout()
     if (FAILED(hr))
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "IAudioClient::Initialize() failed:");
-        if (pWfxClosestMatch != NULL)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "closest mix format: #channels=%d, samples/sec=%d, bits/sample=%d",
-                pWfxClosestMatch->nChannels, pWfxClosestMatch->nSamplesPerSec, pWfxClosestMatch->wBitsPerSample);
-        }
-        else
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "no format suggested");
-        }
     }
     EXIT_ON_ERROR(hr);
 
@@ -2600,8 +2606,22 @@ int32_t AudioDeviceWindowsCore::InitRecording()
             }
             else
             {
-                WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "nChannels=%d, nSamplesPerSec=%d is not supported",
-                    Wfx.Format.nChannels, Wfx.Format.nSamplesPerSec);
+                if (pWfxClosestMatch)
+                {
+                    LOG(INFO) << "nChannels=" << Wfx.Format.nChannels <<
+                        ", nSamplesPerSec=" << Wfx.Format.nSamplesPerSec <<
+                        " is not supported. Closest match: " <<
+                        "nChannels=" << pWfxClosestMatch->nChannels <<
+                        ", nSamplesPerSec=" << pWfxClosestMatch->nSamplesPerSec;
+                    CoTaskMemFree(pWfxClosestMatch);
+                    pWfxClosestMatch = NULL;
+                }
+                else
+                {
+                    LOG(INFO) << "nChannels=" << Wfx.Format.nChannels <<
+                        ", nSamplesPerSec=" << Wfx.Format.nSamplesPerSec <<
+                        " is not supported. No closest match.";
+                }
             }
         }
         if (hr == S_OK)
@@ -2644,15 +2664,6 @@ int32_t AudioDeviceWindowsCore::InitRecording()
     if (hr != S_OK)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "IAudioClient::Initialize() failed:");
-        if (pWfxClosestMatch != NULL)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "closest mix format: #channels=%d, samples/sec=%d, bits/sample=%d",
-                pWfxClosestMatch->nChannels, pWfxClosestMatch->nSamplesPerSec, pWfxClosestMatch->wBitsPerSample);
-        }
-        else
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "no format suggested");
-        }
     }
     EXIT_ON_ERROR(hr);
 
