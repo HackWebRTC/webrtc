@@ -78,8 +78,10 @@ class VideoQualityTest : public test::CallTest {
       // If empty, bitrates are generated in VP9Impl automatically.
       std::vector<SpatialLayer> spatial_layers;
     } ss;
-    int num_thumbnails;
   };
+  // (*) Set to -1.1 if generating graph data for simulcast or SVC and the
+  // selected stream/layer doesn't have the same resolution as the largest
+  // stream/layer (to ignore the PSNR and SSIM calculation errors).
 
   VideoQualityTest();
   void RunWithAnalyzer(const Params& params);
@@ -104,15 +106,11 @@ class VideoQualityTest : public test::CallTest {
 
   // Helper static methods.
   static VideoStream DefaultVideoStream(const Params& params);
-  static VideoStream DefaultThumbnailStream();
   static std::vector<int> ParseCSV(const std::string& str);
 
   // Helper methods for setting up the call.
   void CreateCapturer();
-  void SetupThumbnailCapturers(size_t num_thumbnail_streams);
   void SetupVideo(Transport* send_transport, Transport* recv_transport);
-  void SetupThumbnails(Transport* send_transport, Transport* recv_transport);
-  void DestroyThumbnailStreams();
   void SetupScreenshareOrSVC();
   void SetupAudio(int send_channel_id,
                   int receive_channel_id,
@@ -125,17 +123,9 @@ class VideoQualityTest : public test::CallTest {
 
   // We need a more general capturer than the FrameGeneratorCapturer.
   std::unique_ptr<test::VideoCapturer> video_capturer_;
-  std::vector<std::unique_ptr<test::VideoCapturer>> thumbnail_capturers_;
   std::unique_ptr<test::TraceToStderr> trace_to_stderr_;
   std::unique_ptr<test::FrameGenerator> frame_generator_;
   std::unique_ptr<VideoEncoder> video_encoder_;
-  std::vector<std::unique_ptr<VideoEncoder>> thumbnail_encoders_;
-  std::vector<VideoSendStream::Config> thumbnail_send_configs_;
-  std::vector<VideoEncoderConfig> thumbnail_encoder_configs_;
-  std::vector<VideoSendStream*> thumbnail_send_streams_;
-  std::vector<VideoReceiveStream::Config> thumbnail_receive_configs_;
-  std::vector<VideoReceiveStream*> thumbnail_receive_streams_;
-
   Clock* const clock_;
 
   int receive_logs_;
