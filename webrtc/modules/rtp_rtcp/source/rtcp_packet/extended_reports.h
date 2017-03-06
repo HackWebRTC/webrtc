@@ -48,7 +48,7 @@ class ExtendedReports : public RtcpPacket {
   const rtc::Optional<VoipMetric>& voip_metric() const {
     return voip_metric_block_;
   }
-  const rtc::Optional<TargetBitrate>& target_bitrate() {
+  const rtc::Optional<TargetBitrate>& target_bitrate() const {
     return target_bitrate_;
   }
 
