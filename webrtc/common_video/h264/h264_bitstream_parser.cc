@@ -283,6 +283,9 @@ void H264BitstreamParser::ParseSlice(const uint8_t* slice, size_t length) {
         LOG(LS_WARNING) << "Unable to parse PPS from H264 bitstream.";
       break;
     }
+    case H264::NaluType::kAud:
+    case H264::NaluType::kSei:
+      break;  // Ignore these nalus, as we don't care about their contents.
     default:
       Result res = ParseNonParameterSetNalu(slice, length, nalu_type);
       if (res != kOk)
