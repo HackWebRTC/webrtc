@@ -347,6 +347,7 @@ void CallTest::DestroyStreams() {
   if (video_send_stream_)
     sender_call_->DestroyVideoSendStream(video_send_stream_);
   video_send_stream_ = nullptr;
+
   for (VideoReceiveStream* video_recv_stream : video_receive_streams_)
     receiver_call_->DestroyVideoReceiveStream(video_recv_stream);
 
