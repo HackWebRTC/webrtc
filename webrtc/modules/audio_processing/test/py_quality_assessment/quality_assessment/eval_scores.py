@@ -10,6 +10,7 @@ import logging
 import os
 
 from .data_access import ScoreFile
+from .signal_processing import SignalProcessingUtils
 
 class EvaluationScore(object):
 
@@ -53,13 +54,13 @@ class EvaluationScore(object):
 
   def _load_reference_signal(self):
     assert self._reference_signal_filepath is not None
-    # TODO(alessio): load signal.
-    self._reference_signal = None
+    self._reference_signal = SignalProcessingUtils.load_wav(
+        self._reference_signal_filepath)
 
   def _load_tested_signal(self):
     assert self._tested_signal_filepath is not None
-    # TODO(alessio): load signal.
-    self._tested_signal = None
+    self._tested_signal = SignalProcessingUtils.load_wav(
+        self._tested_signal_filepath)
 
   def run(self, output_path):
     self._output_filepath = os.path.join(output_path, 'score-{}.txt'.format(
