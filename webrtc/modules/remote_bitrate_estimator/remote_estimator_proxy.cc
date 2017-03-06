@@ -45,13 +45,6 @@ RemoteEstimatorProxy::RemoteEstimatorProxy(Clock* clock,
 
 RemoteEstimatorProxy::~RemoteEstimatorProxy() {}
 
-void RemoteEstimatorProxy::IncomingPacketFeedbackVector(
-    const std::vector<PacketInfo>& packet_feedback_vector) {
-  rtc::CritScope cs(&lock_);
-  for (PacketInfo info : packet_feedback_vector)
-    OnPacketArrival(info.sequence_number, info.arrival_time_ms);
-}
-
 void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
                                           size_t payload_size,
                                           const RTPHeader& header) {

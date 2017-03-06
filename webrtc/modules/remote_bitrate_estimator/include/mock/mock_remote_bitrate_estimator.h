@@ -26,8 +26,6 @@ class MockRemoteBitrateObserver : public RemoteBitrateObserver {
 
 class MockRemoteBitrateEstimator : public RemoteBitrateEstimator {
  public:
-  MOCK_METHOD1(IncomingPacketFeedbackVector,
-               void(const std::vector<PacketInfo>&));
   MOCK_METHOD3(IncomingPacket, void(int64_t, size_t, const RTPHeader&));
   MOCK_METHOD1(RemoveStream, void(uint32_t));
   MOCK_CONST_METHOD2(LatestEstimate, bool(std::vector<uint32_t>*, uint32_t*));
