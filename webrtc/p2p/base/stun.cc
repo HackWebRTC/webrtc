@@ -49,13 +49,6 @@ StunMessage::StunMessage()
       length_(0),
       transaction_id_(EMPTY_TRANSACTION_ID) {
   RTC_DCHECK(IsValidTransactionId(transaction_id_));
-  attrs_ = new std::vector<StunAttribute*>();
-}
-
-StunMessage::~StunMessage() {
-  for (size_t i = 0; i < attrs_->size(); i++)
-    delete (*attrs_)[i];
-  delete attrs_;
 }
 
 bool StunMessage::IsLegacy() const {
@@ -77,7 +70,7 @@ void StunMessage::AddAttribute(StunAttribute* attr) {
   // Fail any attributes that aren't valid for this type of message.
   RTC_DCHECK_EQ(attr->value_type(), GetAttributeValueType(attr->type()));
 
-  attrs_->push_back(attr);
+  attrs_.emplace_back(attr);
   attr->SetOwner(this);
   size_t attr_length = attr->length();
   if (attr_length % 4 != 0) {
@@ -328,7 +321,7 @@ bool StunMessage::Read(ByteBufferReader* buf) {
   if (length_ != buf->Length())
     return false;
 
-  attrs_->resize(0);
+  attrs_.resize(0);
 
   size_t rest = buf->Length() - length_;
   while (buf->Length() > rest) {
@@ -350,8 +343,7 @@ bool StunMessage::Read(ByteBufferReader* buf) {
     } else {
       if (!attr->Read(buf))
         return false;
-      // TODO(honghaiz): Change |attrs_| to be a vector of unique_ptrs.
-      attrs_->push_back(attr.release());
+      attrs_.push_back(std::move(attr));
     }
   }
 
@@ -366,11 +358,12 @@ bool StunMessage::Write(ByteBufferWriter* buf) const {
     buf->WriteUInt32(kStunMagicCookie);
   buf->WriteString(transaction_id_);
 
-  for (size_t i = 0; i < attrs_->size(); ++i) {
-    buf->WriteUInt16((*attrs_)[i]->type());
-    buf->WriteUInt16(static_cast<uint16_t>((*attrs_)[i]->length()));
-    if (!(*attrs_)[i]->Write(buf))
+  for (const auto& attr : attrs_) {
+    buf->WriteUInt16(attr->type());
+    buf->WriteUInt16(static_cast<uint16_t>(attr->length()));
+    if (!attr->Write(buf)) {
       return false;
+    }
   }
 
   return true;
@@ -402,9 +395,10 @@ StunAttribute* StunMessage::CreateAttribute(int type, size_t length) /*const*/ {
 }
 
 const StunAttribute* StunMessage::GetAttribute(int type) const {
-  for (size_t i = 0; i < attrs_->size(); ++i) {
-    if ((*attrs_)[i]->type() == type)
-      return (*attrs_)[i];
+  for (const auto& attr : attrs_) {
+    if (attr->type() == type) {
+      return attr.get();
+    }
   }
   return NULL;
 }
