@@ -172,6 +172,9 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       media_channel_(media_channel),
       selected_candidate_pair_(nullptr) {
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
+#if defined(ENABLE_EXTERNAL_AUTH)
+  srtp_filter_.EnableExternalAuth();
+#endif
   LOG(LS_INFO) << "Created channel for " << content_name;
 }
 
