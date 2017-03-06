@@ -2973,22 +2973,11 @@ TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsRejectUnsupportedCodec) {
   EXPECT_FALSE(channel_->SetRecvParameters(parameters));
 }
 
-// TODO(pbos): Enable VP9 through external codec support
-TEST_F(WebRtcVideoChannel2Test,
-       DISABLED_SetRecvCodecsAcceptsMultipleVideoCodecs) {
+TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsAcceptsMultipleVideoCodecs) {
   cricket::VideoRecvParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("VP8"));
   parameters.codecs.push_back(GetEngineCodec("VP9"));
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-}
-
-TEST_F(WebRtcVideoChannel2Test,
-       DISABLED_SetRecvCodecsSetsFecForAllVideoCodecs) {
-  cricket::VideoRecvParameters parameters;
-  parameters.codecs.push_back(GetEngineCodec("VP8"));
-  parameters.codecs.push_back(GetEngineCodec("VP9"));
-  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-  FAIL();  // TODO(pbos): Verify that the FEC parameters are set for all codecs.
 }
 
 TEST_F(WebRtcVideoChannel2Test, SetRecvCodecsWithoutFecDisablesFec) {
