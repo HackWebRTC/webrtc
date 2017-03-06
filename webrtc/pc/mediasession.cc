@@ -39,13 +39,11 @@ void GetSupportedCryptoSuiteNames(void (*func)(const rtc::CryptoOptions&,
                                       std::vector<int>*),
                                   const rtc::CryptoOptions& crypto_options,
                                   std::vector<std::string>* names) {
-#ifdef HAVE_SRTP
   std::vector<int> crypto_suites;
   func(crypto_options, &crypto_suites);
   for (const auto crypto : crypto_suites) {
     names->push_back(rtc::SrtpCryptoSuiteToName(crypto));
   }
-#endif
 }
 }  // namespace
 
@@ -131,7 +129,6 @@ static bool CreateCryptoParams(int tag, const std::string& cipher,
   return true;
 }
 
-#ifdef HAVE_SRTP
 static bool AddCryptoParams(const std::string& cipher_suite,
                             CryptoParamsVec *out) {
   int size = static_cast<int>(out->size());
@@ -160,7 +157,6 @@ bool CreateMediaCryptos(const std::vector<std::string>& crypto_suites,
   AddMediaCryptos(cryptos, media);
   return true;
 }
-#endif
 
 const CryptoParamsVec* GetCryptos(const MediaContentDescription* media) {
   if (!media) {
@@ -185,14 +181,12 @@ bool FindMatchingCrypto(const CryptoParamsVec& cryptos,
 // For audio, HMAC 32 is prefered over HMAC 80 because of the low overhead.
 void GetSupportedAudioCryptoSuites(const rtc::CryptoOptions& crypto_options,
     std::vector<int>* crypto_suites) {
-#ifdef HAVE_SRTP
   if (crypto_options.enable_gcm_crypto_suites) {
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
   }
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_32);
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
-#endif
 }
 
 void GetSupportedAudioCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
@@ -225,13 +219,11 @@ void GetSupportedDataCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
 
 void GetDefaultSrtpCryptoSuites(const rtc::CryptoOptions& crypto_options,
     std::vector<int>* crypto_suites) {
-#ifdef HAVE_SRTP
   if (crypto_options.enable_gcm_crypto_suites) {
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
   }
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
-#endif
 }
 
 void GetDefaultSrtpCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
@@ -762,7 +754,6 @@ static bool CreateMediaContentOffer(
     return false;
   }
 
-#ifdef HAVE_SRTP
   if (secure_policy != SEC_DISABLED) {
     if (current_cryptos) {
       AddMediaCryptos(*current_cryptos, offer);
@@ -773,7 +764,6 @@ static bool CreateMediaContentOffer(
       }
     }
   }
-#endif
 
   if (secure_policy == SEC_REQUIRED && offer->cryptos().empty()) {
     return false;

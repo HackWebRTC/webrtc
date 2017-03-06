@@ -29,26 +29,11 @@
 
 namespace cricket {
 
-#ifndef HAVE_SRTP
-
-// This helper function is used on systems that don't (yet) have SRTP,
-// to log that the functions that require it won't do anything.
-namespace {
-bool SrtpNotAvailable(const char *func) {
-  LOG(LS_ERROR) << func << ": SRTP is not available on your system.";
-  return false;
-}
-}  // anonymous namespace
-
-#endif  // !HAVE_SRTP
-
 // NOTE: This is called from ChannelManager D'tor.
 void ShutdownSrtp() {
-#ifdef HAVE_SRTP
   // If srtp_dealloc is not executed then this will clear all existing sessions.
   // This should be called when application is shutting down.
   SrtpSession::Terminate();
-#endif
 }
 
 SrtpFilter::SrtpFilter() {
@@ -476,8 +461,6 @@ bool SrtpFilter::ParseKeyParams(const std::string& key_params,
 ///////////////////////////////////////////////////////////////////////////////
 // SrtpSession
 
-#ifdef HAVE_SRTP
-
 bool SrtpSession::inited_ = false;
 
 // This lock protects SrtpSession::inited_.
@@ -824,53 +807,8 @@ void SrtpSession::HandleEventThunk(srtp_event_data_t* ev) {
   }
 }
 
-#else   // !HAVE_SRTP
-
-// On some systems, SRTP is not (yet) available.
-
-SrtpSession::SrtpSession() {
-  LOG(WARNING) << "SRTP implementation is missing.";
-}
-
-SrtpSession::~SrtpSession() {
-}
-
-bool SrtpSession::SetSend(const std::string& cs, const uint8_t* key, int len) {
-  return SrtpNotAvailable(__FUNCTION__);
-}
-
-bool SrtpSession::SetRecv(const std::string& cs, const uint8_t* key, int len) {
-  return SrtpNotAvailable(__FUNCTION__);
-}
-
-bool SrtpSession::ProtectRtp(void* data, int in_len, int max_len,
-                             int* out_len) {
-  return SrtpNotAvailable(__FUNCTION__);
-}
-
-bool SrtpSession::ProtectRtcp(void* data, int in_len, int max_len,
-                              int* out_len) {
-  return SrtpNotAvailable(__FUNCTION__);
-}
-
-bool SrtpSession::UnprotectRtp(void* data, int in_len, int* out_len) {
-  return SrtpNotAvailable(__FUNCTION__);
-}
-
-bool SrtpSession::UnprotectRtcp(void* data, int in_len, int* out_len) {
-  return SrtpNotAvailable(__FUNCTION__);
-}
-
-void SrtpSession::set_signal_silent_time(uint32_t signal_silent_time) {
-  // Do nothing.
-}
-
-#endif  // HAVE_SRTP
-
 ///////////////////////////////////////////////////////////////////////////////
 // SrtpStat
-
-#ifdef HAVE_SRTP
 
 SrtpStat::SrtpStat()
     : signal_silent_time_(1000) {
@@ -938,36 +876,5 @@ void SrtpStat::HandleSrtpResult(const SrtpStat::FailureKey& key) {
     }
   }
 }
-
-#else   // !HAVE_SRTP
-
-// On some systems, SRTP is not (yet) available.
-
-SrtpStat::SrtpStat()
-    : signal_silent_time_(1000) {
-  LOG(WARNING) << "SRTP implementation is missing.";
-}
-
-void SrtpStat::AddProtectRtpResult(uint32_t ssrc, int result) {
-  SrtpNotAvailable(__FUNCTION__);
-}
-
-void SrtpStat::AddUnprotectRtpResult(uint32_t ssrc, int result) {
-  SrtpNotAvailable(__FUNCTION__);
-}
-
-void SrtpStat::AddProtectRtcpResult(int result) {
-  SrtpNotAvailable(__FUNCTION__);
-}
-
-void SrtpStat::AddUnprotectRtcpResult(int result) {
-  SrtpNotAvailable(__FUNCTION__);
-}
-
-void SrtpStat::HandleSrtpResult(const SrtpStat::FailureKey& key) {
-  SrtpNotAvailable(__FUNCTION__);
-}
-
-#endif  // HAVE_SRTP
 
 }  // namespace cricket

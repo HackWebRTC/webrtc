@@ -19,7 +19,7 @@ group("pc") {
 }
 
 config("rtc_pc_config") {
-  defines = [ "HAVE_SRTP" ]
+  defines = []
   if (rtc_enable_sctp) {
     defines += [ "HAVE_SCTP" ]
   }
