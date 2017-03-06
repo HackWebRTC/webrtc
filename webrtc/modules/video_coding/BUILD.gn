@@ -311,6 +311,8 @@ if (rtc_include_tests) {
       "codecs/test/predictive_packet_manipulator.h",
       "codecs/test/stats.cc",
       "codecs/test/stats.h",
+      "codecs/test/video_codec_test.cc",
+      "codecs/test/video_codec_test.h",
       "codecs/test/videoprocessor.cc",
       "codecs/test/videoprocessor.h",
     ]
@@ -328,6 +330,7 @@ if (rtc_include_tests) {
       "../../common_video:common_video",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
+      "../../test:video_test_common",
       "../../test:video_test_support",
     ]
   }
@@ -378,13 +381,16 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "codecs/h264/test/h264_impl_unittest.cc",
       "codecs/test/videoprocessor_integrationtest.cc",
       "codecs/vp8/test/vp8_impl_unittest.cc",
       "codecs/vp9/test/vp9_impl_unittest.cc",
     ]
 
     deps = [
+      ":video_codecs_test_framework",
       ":video_coding_videoprocessor_integration_test",
+      ":webrtc_h264",
       ":webrtc_vp8",
       ":webrtc_vp9",
       "../../api:video_frame_api",

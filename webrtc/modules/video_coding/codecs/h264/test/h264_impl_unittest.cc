@@ -9,27 +9,38 @@
  */
 
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
-#include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/test/video_codec_test.h"
 
 namespace webrtc {
 
-class TestVp9Impl : public VideoCodecTest {
+class TestH264Impl : public VideoCodecTest {
  protected:
-  VideoEncoder* CreateEncoder() override { return VP9Encoder::Create(); }
+  VideoEncoder* CreateEncoder() override {
+    return H264Encoder::Create(cricket::VideoCodec(cricket::kH264CodecName));
+  }
 
-  VideoDecoder* CreateDecoder() override { return VP9Decoder::Create(); }
+  VideoDecoder* CreateDecoder() override { return H264Decoder::Create(); }
 
   VideoCodec codec_settings() override {
     VideoCodec codec_inst;
-    codec_inst.codecType = webrtc::kVideoCodecVP9;
-    codec_inst.VP9()->numberOfTemporalLayers = 1;
-    codec_inst.VP9()->numberOfSpatialLayers = 1;
+    codec_inst.codecType = webrtc::kVideoCodecH264;
+    // If frame dropping is false, we get a warning that bitrate can't
+    // be controlled for RC_QUALITY_MODE; RC_BITRATE_MODE and RC_TIMESTAMP_MODE
+    codec_inst.H264()->frameDroppingOn = true;
     return codec_inst;
   }
 };
 
-TEST_F(TestVp9Impl, EncodeDecode) {
+#ifdef WEBRTC_VIDEOPROCESSOR_H264_TESTS
+#define MAYBE_EncodeDecode EncodeDecode
+#define MAYBE_DecodedQpEqualsEncodedQp DecodedQpEqualsEncodedQp
+#else
+#define MAYBE_EncodeDecode DISABLED_EncodeDecode
+#define MAYBE_DecodedQpEqualsEncodedQp DISABLED_DecodedQpEqualsEncodedQp
+#endif
+
+TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*input_frame_, nullptr, nullptr));
   EncodedImage encoded_frame;
@@ -45,7 +56,7 @@ TEST_F(TestVp9Impl, EncodeDecode) {
   EXPECT_GT(I420PSNR(input_frame_.get(), decoded_frame.get()), 36);
 }
 
-TEST_F(TestVp9Impl, DecodedQpEqualsEncodedQp) {
+TEST_F(TestH264Impl, MAYBE_DecodedQpEqualsEncodedQp) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*input_frame_, nullptr, nullptr));
   EncodedImage encoded_frame;
