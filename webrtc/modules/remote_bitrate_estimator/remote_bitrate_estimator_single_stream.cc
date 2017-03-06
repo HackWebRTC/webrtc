@@ -57,7 +57,6 @@ RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
       last_process_time_(-1),
       process_interval_ms_(kProcessIntervalMs),
       uma_recorded_(false) {
-  assert(observer_);
   LOG(LS_INFO) << "RemoteBitrateEstimatorSingleStream: Instantiating.";
 }
 
@@ -201,7 +200,8 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
     RTC_DCHECK_GT(process_interval_ms_, 0);
     std::vector<uint32_t> ssrcs;
     GetSsrcs(&ssrcs);
-    observer_->OnReceiveBitrateChanged(ssrcs, target_bitrate);
+    if (observer_)
+      observer_->OnReceiveBitrateChanged(ssrcs, target_bitrate);
   }
 }
 
