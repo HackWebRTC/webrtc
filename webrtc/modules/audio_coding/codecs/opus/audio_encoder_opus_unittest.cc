@@ -125,10 +125,12 @@ std::unique_ptr<test::AudioLoop> Create10msAudioBlocks(
   std::unique_ptr<test::AudioLoop> speech_data(new test::AudioLoop());
   int audio_samples_per_ms =
       rtc::CheckedDivExact(encoder->SampleRateHz(), 1000);
-  RTC_DCHECK(speech_data->Init(
-      file_name,
-      packet_size_ms * audio_samples_per_ms * encoder->num_channels_to_encode(),
-      10 * audio_samples_per_ms * encoder->num_channels_to_encode()));
+  if (!speech_data->Init(
+          file_name,
+          packet_size_ms * audio_samples_per_ms *
+              encoder->num_channels_to_encode(),
+          10 * audio_samples_per_ms * encoder->num_channels_to_encode()))
+    return nullptr;
   return speech_data;
 }
 
@@ -521,6 +523,7 @@ TEST(AudioEncoderOpusTest, EncodeAtMinBitrate) {
   constexpr int kNumPacketsToEncode = 2;
   auto audio_frames =
       Create10msAudioBlocks(states.encoder, kNumPacketsToEncode * 20);
+  ASSERT_TRUE(audio_frames) << "Create10msAudioBlocks failed";
   rtc::Buffer encoded;
   uint32_t rtp_timestamp = 12345;  // Just a number not important to this test.
 
