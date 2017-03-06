@@ -64,7 +64,7 @@ class SendSideBweReceiver : public BweReceiver {
 
  private:
   int64_t last_feedback_ms_;
-  std::vector<PacketInfo> packet_feedback_vector_;
+  std::vector<PacketFeedback> packet_feedback_vector_;
 };
 
 }  // namespace bwe

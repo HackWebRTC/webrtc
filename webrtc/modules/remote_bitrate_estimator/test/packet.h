@@ -128,18 +128,19 @@ class RembFeedback : public FeedbackPacket {
 class SendSideBweFeedback : public FeedbackPacket {
  public:
   typedef std::map<uint16_t, int64_t> ArrivalTimesMap;
-  SendSideBweFeedback(int flow_id,
-                      int64_t send_time_us,
-                      int64_t latest_send_time_ms,
-                      const std::vector<PacketInfo>& packet_feedback_vector);
+  SendSideBweFeedback(
+      int flow_id,
+      int64_t send_time_us,
+      int64_t latest_send_time_ms,
+      const std::vector<PacketFeedback>& packet_feedback_vector);
   virtual ~SendSideBweFeedback() {}
 
-  const std::vector<PacketInfo>& packet_feedback_vector() const {
+  const std::vector<PacketFeedback>& packet_feedback_vector() const {
     return packet_feedback_vector_;
   }
 
  private:
-  const std::vector<PacketInfo> packet_feedback_vector_;
+  const std::vector<PacketFeedback> packet_feedback_vector_;
 };
 
 class NadaFeedback : public FeedbackPacket {

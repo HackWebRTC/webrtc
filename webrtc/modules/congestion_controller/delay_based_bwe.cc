@@ -253,7 +253,7 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, Clock* clock)
 }
 
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
-    const std::vector<PacketInfo>& packet_feedback_vector) {
+    const std::vector<PacketFeedback>& packet_feedback_vector) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
   if (!uma_recorded_) {
     RTC_HISTOGRAM_ENUMERATION(kBweTypeHistogram,
@@ -263,11 +263,11 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
   }
   Result aggregated_result;
   bool delayed_feedback = true;
-  for (const auto& packet_info : packet_feedback_vector) {
-    if (packet_info.send_time_ms < 0)
+  for (const auto& packet_feedback : packet_feedback_vector) {
+    if (packet_feedback.send_time_ms < 0)
       continue;
     delayed_feedback = false;
-    Result result = IncomingPacketInfo(packet_info);
+    Result result = IncomingPacketFeedback(packet_feedback);
     if (result.updated)
       aggregated_result = result;
   }
@@ -301,11 +301,12 @@ DelayBasedBwe::Result DelayBasedBwe::OnLongFeedbackDelay(
   return result;
 }
 
-DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
-    const PacketInfo& info) {
+DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedback(
+    const PacketFeedback& packet_feedback) {
   int64_t now_ms = clock_->TimeInMilliseconds();
 
-  receiver_incoming_bitrate_.Update(info.arrival_time_ms, info.payload_size);
+  receiver_incoming_bitrate_.Update(packet_feedback.arrival_time_ms,
+                                    packet_feedback.payload_size);
   Result result;
   // Reset if the stream has timed out.
   if (last_seen_packet_ms_ == -1 ||
@@ -324,7 +325,8 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
 
   uint32_t send_time_24bits =
       static_cast<uint32_t>(
-          ((static_cast<uint64_t>(info.send_time_ms) << kAbsSendTimeFraction) +
+          ((static_cast<uint64_t>(packet_feedback.send_time_ms)
+            << kAbsSendTimeFraction) +
            500) /
           1000) &
       0x00FFFFFF;
@@ -335,33 +337,37 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
   uint32_t ts_delta = 0;
   int64_t t_delta = 0;
   int size_delta = 0;
-  if (inter_arrival_->ComputeDeltas(timestamp, info.arrival_time_ms, now_ms,
-                                    info.payload_size, &ts_delta, &t_delta,
-                                    &size_delta)) {
+  if (inter_arrival_->ComputeDeltas(timestamp, packet_feedback.arrival_time_ms,
+                                    now_ms, packet_feedback.payload_size,
+                                    &ts_delta, &t_delta, &size_delta)) {
     double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
     if (in_trendline_experiment_) {
-      trendline_estimator_->Update(t_delta, ts_delta_ms, info.arrival_time_ms);
+      trendline_estimator_->Update(t_delta, ts_delta_ms,
+                                   packet_feedback.arrival_time_ms);
       detector_.Detect(trendline_estimator_->trendline_slope(), ts_delta_ms,
                        trendline_estimator_->num_of_deltas(),
-                       info.arrival_time_ms);
+                       packet_feedback.arrival_time_ms);
     } else if (in_median_slope_experiment_) {
       median_slope_estimator_->Update(t_delta, ts_delta_ms,
-                                      info.arrival_time_ms);
+                                      packet_feedback.arrival_time_ms);
       detector_.Detect(median_slope_estimator_->trendline_slope(), ts_delta_ms,
                        median_slope_estimator_->num_of_deltas(),
-                       info.arrival_time_ms);
+                       packet_feedback.arrival_time_ms);
     } else {
       kalman_estimator_->Update(t_delta, ts_delta_ms, size_delta,
-                                detector_.State(), info.arrival_time_ms);
+                                detector_.State(),
+                                packet_feedback.arrival_time_ms);
       detector_.Detect(kalman_estimator_->offset(), ts_delta_ms,
                        kalman_estimator_->num_of_deltas(),
-                       info.arrival_time_ms);
+                       packet_feedback.arrival_time_ms);
     }
   }
 
   int probing_bps = 0;
-  if (info.pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe) {
-    probing_bps = probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(info);
+  if (packet_feedback.pacing_info.probe_cluster_id !=
+      PacedPacketInfo::kNotAProbe) {
+    probing_bps =
+        probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(packet_feedback);
   }
   rtc::Optional<uint32_t> acked_bitrate_bps =
       receiver_incoming_bitrate_.bitrate_bps();
@@ -370,23 +376,23 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketInfo(
     if (acked_bitrate_bps &&
         rate_control_.TimeToReduceFurther(now_ms, *acked_bitrate_bps)) {
       result.updated =
-          UpdateEstimate(info.arrival_time_ms, now_ms, acked_bitrate_bps,
-                         &result.target_bitrate_bps);
+          UpdateEstimate(packet_feedback.arrival_time_ms, now_ms,
+                         acked_bitrate_bps, &result.target_bitrate_bps);
     }
   } else if (probing_bps > 0) {
     // No overuse, but probing measured a bitrate.
-    rate_control_.SetEstimate(probing_bps, info.arrival_time_ms);
+    rate_control_.SetEstimate(probing_bps, packet_feedback.arrival_time_ms);
     result.probe = true;
     result.updated =
-        UpdateEstimate(info.arrival_time_ms, now_ms, acked_bitrate_bps,
-                       &result.target_bitrate_bps);
+        UpdateEstimate(packet_feedback.arrival_time_ms, now_ms,
+                       acked_bitrate_bps, &result.target_bitrate_bps);
   }
   if (!result.updated &&
       (last_update_ms_ == -1 ||
        now_ms - last_update_ms_ > rate_control_.GetFeedbackInterval())) {
     result.updated =
-        UpdateEstimate(info.arrival_time_ms, now_ms, acked_bitrate_bps,
-                       &result.target_bitrate_bps);
+        UpdateEstimate(packet_feedback.arrival_time_ms, now_ms,
+                       acked_bitrate_bps, &result.target_bitrate_bps);
   }
   if (result.updated) {
     last_update_ms_ = now_ms;

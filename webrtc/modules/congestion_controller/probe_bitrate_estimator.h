@@ -24,7 +24,7 @@ class ProbeBitrateEstimator {
 
   // Should be called for every probe packet we receive feedback about.
   // Returns the estimated bitrate if the probe completes a valid cluster.
-  int HandleProbeAndEstimateBitrate(const PacketInfo& packet_info);
+  int HandleProbeAndEstimateBitrate(const PacketFeedback& packet_feedback);
 
  private:
   struct AggregatedCluster {

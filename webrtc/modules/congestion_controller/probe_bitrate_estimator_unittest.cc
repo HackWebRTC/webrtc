@@ -31,10 +31,10 @@ class TestProbeBitrateEstimator : public ::testing::Test {
                          size_t size_bytes,
                          int64_t send_time_ms,
                          int64_t arrival_time_ms) {
-    PacketInfo info(arrival_time_ms, send_time_ms, 0, size_bytes,
-                    PacedPacketInfo(probe_cluster_id, -1, -1));
+    PacketFeedback packet_feedback(arrival_time_ms, send_time_ms, 0, size_bytes,
+                                   PacedPacketInfo(probe_cluster_id, -1, -1));
     measured_bps_ =
-        probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(info);
+        probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(packet_feedback);
   }
 
  protected:

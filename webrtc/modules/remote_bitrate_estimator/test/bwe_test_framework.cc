@@ -166,10 +166,9 @@ SendSideBweFeedback::SendSideBweFeedback(
     int flow_id,
     int64_t send_time_us,
     int64_t last_send_time_ms,
-    const std::vector<PacketInfo>& packet_feedback_vector)
+    const std::vector<PacketFeedback>& packet_feedback_vector)
     : FeedbackPacket(flow_id, send_time_us, last_send_time_ms),
-      packet_feedback_vector_(packet_feedback_vector) {
-}
+      packet_feedback_vector_(packet_feedback_vector) {}
 
 bool IsTimeSorted(const Packets& packets) {
   PacketsConstIt last_it = packets.begin();

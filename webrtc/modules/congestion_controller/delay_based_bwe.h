@@ -50,7 +50,7 @@ class DelayBasedBwe {
   virtual ~DelayBasedBwe() {}
 
   Result IncomingPacketFeedbackVector(
-      const std::vector<PacketInfo>& packet_feedback_vector);
+      const std::vector<PacketFeedback>& packet_feedback_vector);
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms);
   bool LatestEstimate(std::vector<uint32_t>* ssrcs,
                       uint32_t* bitrate_bps) const;
@@ -81,7 +81,7 @@ class DelayBasedBwe {
     const bool in_experiment_;
   };
 
-  Result IncomingPacketInfo(const PacketInfo& info);
+  Result IncomingPacketFeedback(const PacketFeedback& packet_feedback);
   Result OnLongFeedbackDelay(int64_t arrival_time_ms);
   // Updates the current remote rate estimate and returns true if a valid
   // estimate exists.

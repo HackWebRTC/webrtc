@@ -37,28 +37,28 @@ namespace webrtc {
 ProbeBitrateEstimator::ProbeBitrateEstimator() {}
 
 int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
-    const PacketInfo& packet_info) {
-  int cluster_id = packet_info.pacing_info.probe_cluster_id;
+    const PacketFeedback& packet_feedback) {
+  int cluster_id = packet_feedback.pacing_info.probe_cluster_id;
   RTC_DCHECK_NE(cluster_id, PacedPacketInfo::kNotAProbe);
 
-  EraseOldClusters(packet_info.arrival_time_ms - kMaxClusterHistoryMs);
+  EraseOldClusters(packet_feedback.arrival_time_ms - kMaxClusterHistoryMs);
 
-  int payload_size_bits = packet_info.payload_size * 8;
+  int payload_size_bits = packet_feedback.payload_size * 8;
   AggregatedCluster* cluster = &clusters_[cluster_id];
 
-  if (packet_info.send_time_ms < cluster->first_send_ms) {
-    cluster->first_send_ms = packet_info.send_time_ms;
+  if (packet_feedback.send_time_ms < cluster->first_send_ms) {
+    cluster->first_send_ms = packet_feedback.send_time_ms;
   }
-  if (packet_info.send_time_ms > cluster->last_send_ms) {
-    cluster->last_send_ms = packet_info.send_time_ms;
+  if (packet_feedback.send_time_ms > cluster->last_send_ms) {
+    cluster->last_send_ms = packet_feedback.send_time_ms;
     cluster->size_last_send = payload_size_bits;
   }
-  if (packet_info.arrival_time_ms < cluster->first_receive_ms) {
-    cluster->first_receive_ms = packet_info.arrival_time_ms;
+  if (packet_feedback.arrival_time_ms < cluster->first_receive_ms) {
+    cluster->first_receive_ms = packet_feedback.arrival_time_ms;
     cluster->size_first_receive = payload_size_bits;
   }
-  if (packet_info.arrival_time_ms > cluster->last_receive_ms) {
-    cluster->last_receive_ms = packet_info.arrival_time_ms;
+  if (packet_feedback.arrival_time_ms > cluster->last_receive_ms) {
+    cluster->last_receive_ms = packet_feedback.arrival_time_ms;
   }
   cluster->size_total += payload_size_bits;
   cluster->num_probes += 1;

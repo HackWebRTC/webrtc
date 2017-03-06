@@ -46,7 +46,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   // can get rid of the dependency on BitrateController. Requires changes
   // to the CongestionController interface.
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
-  std::vector<PacketInfo> GetTransportFeedbackVector() const override;
+  std::vector<PacketFeedback> GetTransportFeedbackVector() const override;
 
   // Implements CallStatsObserver.
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
@@ -58,7 +58,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   int64_t GetProbingIntervalMs() const;
 
  private:
-  std::vector<PacketInfo> GetPacketFeedbackVector(
+  std::vector<PacketFeedback> GetPacketFeedbackVector(
       const rtcp::TransportFeedback& feedback);
 
   const bool send_side_bwe_with_overhead_;
@@ -72,7 +72,7 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
   int64_t current_offset_ms_;
   int64_t last_timestamp_us_;
   BitrateController* const bitrate_controller_;
-  std::vector<PacketInfo> last_packet_feedback_vector_;
+  std::vector<PacketFeedback> last_packet_feedback_vector_;
 };
 
 }  // namespace webrtc

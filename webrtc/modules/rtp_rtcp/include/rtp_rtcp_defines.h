@@ -244,33 +244,33 @@ class RtcpBandwidthObserver {
   virtual ~RtcpBandwidthObserver() {}
 };
 
-struct PacketInfo {
-  PacketInfo(int64_t arrival_time_ms, uint16_t sequence_number)
-      : PacketInfo(-1,
-                   arrival_time_ms,
-                   -1,
-                   sequence_number,
-                   0,
-                   PacedPacketInfo()) {}
+struct PacketFeedback {
+  PacketFeedback(int64_t arrival_time_ms, uint16_t sequence_number)
+      : PacketFeedback(-1,
+                       arrival_time_ms,
+                       -1,
+                       sequence_number,
+                       0,
+                       PacedPacketInfo()) {}
 
-  PacketInfo(int64_t arrival_time_ms,
-             int64_t send_time_ms,
-             uint16_t sequence_number,
-             size_t payload_size,
-             const PacedPacketInfo& pacing_info)
-      : PacketInfo(-1,
-                   arrival_time_ms,
-                   send_time_ms,
-                   sequence_number,
-                   payload_size,
-                   pacing_info) {}
+  PacketFeedback(int64_t arrival_time_ms,
+                 int64_t send_time_ms,
+                 uint16_t sequence_number,
+                 size_t payload_size,
+                 const PacedPacketInfo& pacing_info)
+      : PacketFeedback(-1,
+                       arrival_time_ms,
+                       send_time_ms,
+                       sequence_number,
+                       payload_size,
+                       pacing_info) {}
 
-  PacketInfo(int64_t creation_time_ms,
-             int64_t arrival_time_ms,
-             int64_t send_time_ms,
-             uint16_t sequence_number,
-             size_t payload_size,
-             const PacedPacketInfo& pacing_info)
+  PacketFeedback(int64_t creation_time_ms,
+                 int64_t arrival_time_ms,
+                 int64_t send_time_ms,
+                 uint16_t sequence_number,
+                 size_t payload_size,
+                 const PacedPacketInfo& pacing_info)
       : creation_time_ms(creation_time_ms),
         arrival_time_ms(arrival_time_ms),
         send_time_ms(send_time_ms),
@@ -283,9 +283,9 @@ struct PacketInfo {
   // NOTE! The variable |creation_time_ms| is not used when testing equality.
   //       This is due to |creation_time_ms| only being used by SendTimeHistory
   //       for book-keeping, and is of no interest outside that class.
-  // TODO(philipel): Remove |creation_time_ms| from PacketInfo when cleaning up
-  //                 SendTimeHistory.
-  bool operator==(const PacketInfo& rhs) const {
+  // TODO(philipel): Remove |creation_time_ms| from PacketFeedback when cleaning
+  //                 up SendTimeHistory.
+  bool operator==(const PacketFeedback& rhs) const {
     return arrival_time_ms == rhs.arrival_time_ms &&
            send_time_ms == rhs.send_time_ms &&
            sequence_number == rhs.sequence_number &&
@@ -321,7 +321,7 @@ class TransportFeedbackObserver {
 
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
 
-  virtual std::vector<PacketInfo> GetTransportFeedbackVector() const = 0;
+  virtual std::vector<PacketFeedback> GetTransportFeedbackVector() const = 0;
 };
 
 class RtcpRttStats {

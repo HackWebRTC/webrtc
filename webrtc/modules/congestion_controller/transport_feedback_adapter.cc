@@ -30,9 +30,9 @@ const int64_t kBaseTimestampScaleFactor =
     rtcp::TransportFeedback::kDeltaScaleFactor * (1 << 8);
 const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);
 
-class PacketInfoComparator {
+class PacketFeedbackComparator {
  public:
-  inline bool operator()(const PacketInfo& lhs, const PacketInfo& rhs) {
+  inline bool operator()(const PacketFeedback& lhs, const PacketFeedback& rhs) {
     if (lhs.arrival_time_ms != rhs.arrival_time_ms)
       return lhs.arrival_time_ms < rhs.arrival_time_ms;
     if (lhs.send_time_ms != rhs.send_time_ms)
@@ -99,7 +99,7 @@ int64_t TransportFeedbackAdapter::GetProbingIntervalMs() const {
   return delay_based_bwe_->GetProbingIntervalMs();
 }
 
-std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
+std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
     const rtcp::TransportFeedback& feedback) {
   int64_t timestamp_us = feedback.GetBaseTimeUs();
   // Add timestamp deltas to a local time base selected on first packet arrival.
@@ -122,7 +122,7 @@ std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
   last_timestamp_us_ = timestamp_us;
 
   auto received_packets = feedback.GetReceivedPackets();
-  std::vector<PacketInfo> packet_feedback_vector;
+  std::vector<PacketFeedback> packet_feedback_vector;
   packet_feedback_vector.reserve(received_packets.size());
   if (received_packets.empty()) {
     LOG(LS_INFO) << "Empty transport feedback packet received.";
@@ -136,13 +136,13 @@ std::vector<PacketInfo> TransportFeedbackAdapter::GetPacketFeedbackVector(
     for (const auto& packet : feedback.GetReceivedPackets()) {
       offset_us += packet.delta_us();
       timestamp_ms = current_offset_ms_ + (offset_us / 1000);
-      PacketInfo info(timestamp_ms, packet.sequence_number());
-      if (!send_time_history_.GetInfo(&info, true))
+      PacketFeedback packet_feedback(timestamp_ms, packet.sequence_number());
+      if (!send_time_history_.GetFeedback(&packet_feedback, true))
         ++failed_lookups;
-      packet_feedback_vector.push_back(info);
+      packet_feedback_vector.push_back(packet_feedback);
     }
     std::sort(packet_feedback_vector.begin(), packet_feedback_vector.end(),
-              PacketInfoComparator());
+              PacketFeedbackComparator());
     if (failed_lookups > 0) {
       LOG(LS_WARNING) << "Failed to lookup send time for " << failed_lookups
                       << " packet" << (failed_lookups > 1 ? "s" : "")
@@ -165,8 +165,8 @@ void TransportFeedbackAdapter::OnTransportFeedback(
     bitrate_controller_->OnDelayBasedBweResult(result);
 }
 
-std::vector<PacketInfo> TransportFeedbackAdapter::GetTransportFeedbackVector()
-    const {
+std::vector<PacketFeedback>
+TransportFeedbackAdapter::GetTransportFeedbackVector() const {
   return last_packet_feedback_vector_;
 }
 

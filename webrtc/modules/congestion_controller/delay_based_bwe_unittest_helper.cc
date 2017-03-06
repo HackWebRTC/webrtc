@@ -47,7 +47,7 @@ RtpStream::RtpStream(int fps, int bitrate_bps)
 // previous frame, no frame will be generated. The frame is split into
 // packets.
 int64_t RtpStream::GenerateFrame(int64_t time_now_us,
-                                 std::vector<PacketInfo>* packets) {
+                                 std::vector<PacketFeedback>* packets) {
   if (time_now_us < next_rtp_time_) {
     return next_rtp_time_;
   }
@@ -57,7 +57,7 @@ int64_t RtpStream::GenerateFrame(int64_t time_now_us,
       std::max<size_t>((bits_per_frame + 4 * kMtu) / (8 * kMtu), 1u);
   size_t payload_size = (bits_per_frame + 4 * n_packets) / (8 * n_packets);
   for (size_t i = 0; i < n_packets; ++i) {
-    PacketInfo packet(-1, sequence_number_++);
+    PacketFeedback packet(-1, sequence_number_++);
     packet.send_time_ms = (time_now_us + kSendSideOffsetUs) / 1000;
     packet.payload_size = payload_size;
     packets->push_back(packet);
@@ -123,7 +123,7 @@ void StreamGenerator::SetBitrateBps(int bitrate_bps) {
 
 // TODO(holmer): Break out the channel simulation part from this class to make
 // it possible to simulate different types of channels.
-int64_t StreamGenerator::GenerateFrame(std::vector<PacketInfo>* packets,
+int64_t StreamGenerator::GenerateFrame(std::vector<PacketFeedback>* packets,
                                        int64_t time_now_us) {
   RTC_CHECK(packets != NULL);
   RTC_CHECK(packets->empty());
@@ -132,7 +132,7 @@ int64_t StreamGenerator::GenerateFrame(std::vector<PacketInfo>* packets,
       std::min_element(streams_.begin(), streams_.end(), RtpStream::Compare);
   (*it)->GenerateFrame(time_now_us, packets);
   int i = 0;
-  for (PacketInfo& packet : *packets) {
+  for (PacketFeedback& packet : *packets) {
     int capacity_bpus = capacity_ / 1000;
     int64_t required_network_time_us =
         (8 * 1000 * packet.payload_size + capacity_bpus / 2) / capacity_bpus;
@@ -177,9 +177,9 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
                                          size_t payload_size,
                                          const PacedPacketInfo& pacing_info) {
   RTC_CHECK_GE(arrival_time_ms + arrival_time_offset_ms_, 0);
-  PacketInfo packet(arrival_time_ms + arrival_time_offset_ms_, send_time_ms,
-                    sequence_number, payload_size, pacing_info);
-  std::vector<PacketInfo> packets;
+  PacketFeedback packet(arrival_time_ms + arrival_time_offset_ms_, send_time_ms,
+                        sequence_number, payload_size, pacing_info);
+  std::vector<PacketFeedback> packets;
   packets.push_back(packet);
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(packets);
@@ -199,7 +199,7 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
 bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
                                                 uint32_t bitrate_bps) {
   stream_generator_->SetBitrateBps(bitrate_bps);
-  std::vector<PacketInfo> packets;
+  std::vector<PacketFeedback> packets;
   int64_t next_time_us =
       stream_generator_->GenerateFrame(&packets, clock_.TimeInMicroseconds());
   if (packets.empty())

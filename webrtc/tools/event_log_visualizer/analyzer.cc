@@ -1055,11 +1055,11 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
         TransportFeedbackObserver* observer = cc.GetTransportFeedbackObserver();
         observer->OnTransportFeedback(*static_cast<rtcp::TransportFeedback*>(
             rtcp.packet.get()));
-        std::vector<PacketInfo> feedback =
+        std::vector<PacketFeedback> feedback =
             observer->GetTransportFeedbackVector();
         rtc::Optional<uint32_t> bitrate_bps;
         if (!feedback.empty()) {
-          for (const PacketInfo& packet : feedback)
+          for (const PacketFeedback& packet : feedback)
             acked_bitrate.Update(packet.payload_size, packet.arrival_time_ms);
           bitrate_bps = acked_bitrate.Rate(feedback.back().arrival_time_ms);
         }
@@ -1190,9 +1190,9 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
       if (rtcp.type == kRtcpTransportFeedback) {
         feedback_adapter.OnTransportFeedback(
             *static_cast<rtcp::TransportFeedback*>(rtcp.packet.get()));
-        std::vector<PacketInfo> feedback =
-          feedback_adapter.GetTransportFeedbackVector();
-        for (const PacketInfo& packet : feedback) {
+        std::vector<PacketFeedback> feedback =
+            feedback_adapter.GetTransportFeedbackVector();
+        for (const PacketFeedback& packet : feedback) {
           int64_t y = packet.arrival_time_ms - packet.send_time_ms;
           float x =
               static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /

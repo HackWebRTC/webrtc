@@ -19,7 +19,7 @@
 
 namespace webrtc {
 class Clock;
-struct PacketInfo;
+struct PacketFeedback;
 
 class SendTimeHistory {
  public:
@@ -37,16 +37,16 @@ class SendTimeHistory {
   // Return false if not found.
   bool OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
 
-  // Look up PacketInfo for a sent packet, based on the sequence number, and
+  // Look up PacketFeedback for a sent packet, based on the sequence number, and
   // populate all fields except for arrival_time. The packet parameter must
   // thus be non-null and have the sequence_number field set.
-  bool GetInfo(PacketInfo* packet_info, bool remove);
+  bool GetFeedback(PacketFeedback* packet_feedback, bool remove);
 
  private:
   Clock* const clock_;
   const int64_t packet_age_limit_ms_;
   SequenceNumberUnwrapper seq_num_unwrapper_;
-  std::map<int64_t, PacketInfo> history_;
+  std::map<int64_t, PacketFeedback> history_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendTimeHistory);
 };

@@ -55,9 +55,10 @@ void SendSideBweSender::GiveFeedback(const FeedbackPacket& feedback) {
       static_cast<const SendSideBweFeedback&>(feedback);
   if (fb.packet_feedback_vector().empty())
     return;
-  std::vector<PacketInfo> packet_feedback_vector(fb.packet_feedback_vector());
-  for (PacketInfo& packet_info : packet_feedback_vector) {
-    if (!send_time_history_.GetInfo(&packet_info, true)) {
+  std::vector<PacketFeedback> packet_feedback_vector(
+      fb.packet_feedback_vector());
+  for (PacketFeedback& packet_feedback : packet_feedback_vector) {
+    if (!send_time_history_.GetFeedback(&packet_feedback, true)) {
       int64_t now_ms = clock_->TimeInMilliseconds();
       if (now_ms - last_log_time_ms_ > 5000) {
         LOG(LS_WARNING) << "Ack arrived too late.";
@@ -143,9 +144,9 @@ SendSideBweReceiver::~SendSideBweReceiver() {
 void SendSideBweReceiver::ReceivePacket(int64_t arrival_time_ms,
                                         const MediaPacket& media_packet) {
   packet_feedback_vector_.push_back(
-      PacketInfo(-1, arrival_time_ms, media_packet.sender_timestamp_ms(),
-                 media_packet.header().sequenceNumber,
-                 media_packet.payload_size(), PacedPacketInfo()));
+      PacketFeedback(-1, arrival_time_ms, media_packet.sender_timestamp_ms(),
+                     media_packet.header().sequenceNumber,
+                     media_packet.payload_size(), PacedPacketInfo()));
 
   // Log received packet information.
   BweReceiver::ReceivePacket(arrival_time_ms, media_packet);

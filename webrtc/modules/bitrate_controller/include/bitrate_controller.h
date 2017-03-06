@@ -26,7 +26,6 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class RtcEventLog;
-struct PacketInfo;
 
 // Deprecated
 // TODO(perkj): Remove BitrateObserver when no implementations use it.
