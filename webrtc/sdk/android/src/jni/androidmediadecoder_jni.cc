@@ -726,10 +726,6 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
       j_color_format_field_);
   int width = GetIntField(jni, *j_media_codec_video_decoder_, j_width_field_);
   int height = GetIntField(jni, *j_media_codec_video_decoder_, j_height_field_);
-  int stride = GetIntField(jni, *j_media_codec_video_decoder_, j_stride_field_);
-  int slice_height = GetIntField(jni, *j_media_codec_video_decoder_,
-      j_slice_height_field_);
-  RTC_CHECK_GE(slice_height, height);
 
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> frame_buffer;
   int64_t presentation_timestamps_ms = 0;
@@ -767,6 +763,10 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   } else {
     // Extract data from Java ByteBuffer and create output yuv420 frame -
     // for non surface decoding only.
+    int stride =
+        GetIntField(jni, *j_media_codec_video_decoder_, j_stride_field_);
+    const int slice_height =
+        GetIntField(jni, *j_media_codec_video_decoder_, j_slice_height_field_);
     const int output_buffer_index = GetIntField(
         jni, j_decoder_output_buffer, j_info_index_field_);
     const int output_buffer_offset = GetIntField(
@@ -782,6 +782,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
 
     decode_time_ms = GetLongField(jni, j_decoder_output_buffer,
                                   j_byte_buffer_decode_time_ms_field_);
+    RTC_CHECK_GE(slice_height, height);
 
     if (output_buffer_size < width * height * 3 / 2) {
       ALOGE << "Insufficient output buffer size: " << output_buffer_size;
@@ -870,7 +871,6 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
   if (frames_decoded_ < frames_decoded_logged_) {
     ALOGD << "Decoder frame out # " << frames_decoded_ <<
         ". " << width << " x " << height <<
-        ". " << stride << " x " <<  slice_height <<
         ". Color: " << color_format <<
         ". TS: " << presentation_timestamps_ms <<
         ". DecTime: " << (int)decode_time_ms <<
