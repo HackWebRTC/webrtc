@@ -203,7 +203,7 @@ class PeerConnection : public PeerConnectionInterface,
                           VideoTrackInterface* video_track);
 
   // Implements IceObserver
-  void OnIceConnectionChange(IceConnectionState new_state) override;
+  void OnIceConnectionStateChange(IceConnectionState new_state) override;
   void OnIceGatheringChange(IceGatheringState new_state) override;
   void OnIceCandidate(const IceCandidateInterface* candidate) override;
   void OnIceCandidatesRemoved(

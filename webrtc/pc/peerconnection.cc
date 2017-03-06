@@ -1654,7 +1654,7 @@ void PeerConnection::DestroyReceiver(const std::string& track_id) {
   }
 }
 
-void PeerConnection::OnIceConnectionChange(
+void PeerConnection::OnIceConnectionStateChange(
     PeerConnectionInterface::IceConnectionState new_state) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
   // After transitioning to "closed", ignore any additional states from

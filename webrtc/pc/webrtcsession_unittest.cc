@@ -157,7 +157,7 @@ class MockIceObserver : public webrtc::IceObserver {
 
   virtual ~MockIceObserver() = default;
 
-  void OnIceConnectionChange(
+  void OnIceConnectionStateChange(
       PeerConnectionInterface::IceConnectionState new_state) override {
     ice_connection_state_ = new_state;
     ice_connection_state_history_.push_back(new_state);

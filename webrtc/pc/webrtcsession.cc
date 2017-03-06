@@ -1425,7 +1425,7 @@ void WebRtcSession::SetIceConnectionState(
              PeerConnectionInterface::kIceConnectionClosed);
   ice_connection_state_ = state;
   if (ice_observer_) {
-    ice_observer_->OnIceConnectionChange(ice_connection_state_);
+    ice_observer_->OnIceConnectionStateChange(ice_connection_state_);
   }
 }
 
