@@ -9,6 +9,7 @@
 import os
 
 from . import data_access
+from .signal_processing import SignalProcessingUtils
 
 class NoiseGenerator(object):
   """Abstract class responsible for the generation of noisy signals.
@@ -144,8 +145,7 @@ class IdentityGenerator(NoiseGenerator):
         output_path=output_path)
 
 
-# TODO(alessiob): remove comment when class implemented.
-# @NoiseGenerator.register_class
+@NoiseGenerator.register_class
 class WhiteNoiseGenerator(NoiseGenerator):
   """
   Additive white noise generator.
@@ -153,13 +153,63 @@ class WhiteNoiseGenerator(NoiseGenerator):
 
   NAME = 'white'
 
+  # Each pair indicates the clean vs. noisy and reference vs. noisy SNRs.
+  # Since the implementation below only changes the gain of the noise, the
+  # values indicate the noise-to-signal ratio. Therefore a higher value means
+  # larger amount of noise.
+  # The reference (second value of each pair) always has a lower amount of noise
+  # - i.e., the SNR is 10 dB higher.
+  _SNR_VALUE_PAIRS = [
+      [0, -10],  # Largest noise.
+      [-5, -15],
+      [-10, -20],
+      [-20, -30],  # Smallest noise.
+  ]
+
+  _NOISY_SIGNAL_FILENAME_TEMPLATE = 'noise_{0:d}_SNR.wav'
+
   def __init__(self):
     NoiseGenerator.__init__(self)
 
   def _generate(
       self, input_signal_filepath, input_noise_cache_path, base_output_path):
-    # TODO(alessiob): implement.
-    pass
+    # Load the input signal.
+    input_signal = SignalProcessingUtils.load_wav(input_signal_filepath)
+    input_signal = SignalProcessingUtils.normalize(input_signal)
+
+    # Create the noise track.
+    noise_signal = SignalProcessingUtils.generate_white_noise(input_signal)
+    noise_signal = SignalProcessingUtils.normalize(noise_signal)
+
+    # Create the noisy mixes (once for each unique SNR value).
+    noisy_mix_filepaths = {}
+    snr_values = set([snr for pair in self._SNR_VALUE_PAIRS for snr in pair])
+    for snr in snr_values:
+      noisy_signal_filepath = os.path.join(
+          input_noise_cache_path,
+          self._NOISY_SIGNAL_FILENAME_TEMPLATE.format(snr))
+
+      # Create and save if not done.
+      if not os.path.exists(noisy_signal_filepath):
+        # Create noisy signal.
+        noisy_signal = SignalProcessingUtils.mix_signals(
+            noise_signal, input_signal, snr)
+
+        # Save.
+        SignalProcessingUtils.save_wav(noisy_signal_filepath, noisy_signal)
+
+      # Add file to the collection of mixes.
+      noisy_mix_filepaths[snr] = noisy_signal_filepath
+
+    # Add all the noisy-reference signal pairs.
+    for snr_noisy, snr_refence in self._SNR_VALUE_PAIRS:
+      config_name = '{0:d}_{1:d}_SNR'.format(snr_noisy, snr_refence)
+      output_path = self._make_dir(base_output_path, config_name)
+      self._add_noise_reference_files_pair(
+          config_name=config_name,
+          noisy_signal_filepath=noisy_mix_filepaths[snr_noisy],
+          reference_signal_filepath=noisy_mix_filepaths[snr_refence],
+          output_path=output_path)
 
 
 # TODO(alessiob): remove comment when class implemented.
