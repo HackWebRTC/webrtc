@@ -7,6 +7,10 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("../webrtc.gni")
+if (is_android) {
+  import("//build/config/android/config.gni")
+  import("//build/config/android/rules.gni")
+}
 
 rtc_static_library("audio") {
   sources = [
@@ -77,6 +81,22 @@ if (rtc_include_tests) {
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  if (rtc_enable_protobuf) {
+    rtc_executable("low_bandwidth_audio_test") {
+      testonly = true
+
+      sources = [
+        "test/low_bandwidth_audio_test.cc",
+      ]
+
+      deps = []
+
+      if (is_android) {
+        deps += [ "//testing/android/native_test:native_test_support" ]
+      }
     }
   }
 }
