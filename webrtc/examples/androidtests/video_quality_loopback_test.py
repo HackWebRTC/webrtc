@@ -73,12 +73,12 @@ def main():
     _RunCommand(['gn', 'gen', build_dir_x86])
     _RunCommand(['ninja', '-C', build_dir_x86, 'frame_analyzer'])
 
-  toolchain_dir = os.path.join(SRC_DIR, 'tools-webrtc',
-      'video_quality_toolchain')
+  tools_dir = os.path.join(SRC_DIR, 'tools-webrtc')
+  toolchain_dir = os.path.join(tools_dir, 'video_quality_toolchain')
 
   # Download ffmpeg and zxing.
-  download_script = os.path.join(toolchain_dir, 'download.py')
-  _RunCommand([sys.executable, download_script])
+  download_script = os.path.join(tools_dir, 'download_tools.py')
+  _RunCommand([sys.executable, download_script, toolchain_dir])
 
   # Run the Espresso code.
   test_script = os.path.join(build_dir_android,
