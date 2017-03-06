@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 #include "webrtc/base/bitbuffer.h"
 #include "webrtc/base/checks.h"
@@ -74,8 +75,8 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
     rtc::Buffer* destination) {
   // Create temporary RBSP decoded buffer of the payload (exlcuding the
   // leading nalu type header byte (the SpsParser uses only the payload).
-  std::unique_ptr<rtc::Buffer> rbsp_buffer = H264::ParseRbsp(buffer, length);
-  rtc::BitBuffer source_buffer(rbsp_buffer->data(), rbsp_buffer->size());
+  std::vector<uint8_t> rbsp_buffer = H264::ParseRbsp(buffer, length);
+  rtc::BitBuffer source_buffer(rbsp_buffer.data(), rbsp_buffer.size());
   rtc::Optional<SpsParser::SpsState> sps_state =
       SpsParser::ParseSpsUpToVui(&source_buffer);
   if (!sps_state)
@@ -97,7 +98,7 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
   size_t byte_offset;
   size_t bit_offset;
   source_buffer.GetCurrentOffset(&byte_offset, &bit_offset);
-  memcpy(out_buffer.data(), rbsp_buffer->data(),
+  memcpy(out_buffer.data(), rbsp_buffer.data(),
          byte_offset + (bit_offset > 0 ? 1 : 0));  // OK to copy the last bits.
 
   // SpsParser will have read the vui_params_present flag, which we want to

@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "webrtc/base/bitbuffer.h"
-#include "webrtc/base/bytebuffer.h"
 #include "webrtc/base/checks.h"
 
 #include "webrtc/common_video/h264/h264_common.h"
@@ -46,13 +45,13 @@ H264BitstreamParser::Result H264BitstreamParser::ParseNonParameterSetNalu(
     return kInvalidStream;
 
   last_slice_qp_delta_ = rtc::Optional<int32_t>();
-  std::unique_ptr<rtc::Buffer> slice_rbsp(
-      H264::ParseRbsp(source, source_length));
-  if (slice_rbsp->size() < H264::kNaluTypeSize)
+  const std::vector<uint8_t> slice_rbsp =
+      H264::ParseRbsp(source, source_length);
+  if (slice_rbsp.size() < H264::kNaluTypeSize)
     return kInvalidStream;
 
-  rtc::BitBuffer slice_reader(slice_rbsp->data() + H264::kNaluTypeSize,
-                              slice_rbsp->size() - H264::kNaluTypeSize);
+  rtc::BitBuffer slice_reader(slice_rbsp.data() + H264::kNaluTypeSize,
+                              slice_rbsp.size() - H264::kNaluTypeSize);
   // Check to see if this is an IDR slice, which has an extra field to parse
   // out.
   bool is_idr = (source[0] & 0x0F) == H264::NaluType::kIdr;
