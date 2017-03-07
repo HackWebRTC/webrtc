@@ -29,11 +29,11 @@ class VideoQualityTest : public test::CallTest {
   struct Params {
     Params();
     ~Params();
-    struct {
+    struct CallConfig {
       bool send_side_bwe;
       Call::Config::BitrateConfig call_bitrate_config;
     } call;
-    struct {
+    struct Video {
       bool enabled;
       size_t width;
       size_t height;
@@ -51,16 +51,16 @@ class VideoQualityTest : public test::CallTest {
       std::string encoded_frame_base_path;
       std::string clip_name;
     } video;
-    struct {
+    struct Audio {
       bool enabled;
       bool sync_video;
     } audio;
-    struct {
+    struct Screenshare {
       bool enabled;
       int32_t slide_change_interval;
       int32_t scroll_duration;
     } screenshare;
-    struct {
+    struct Analyzer {
       std::string test_label;
       double avg_psnr_threshold;  // (*)
       double avg_ssim_threshold;  // (*)
@@ -70,7 +70,7 @@ class VideoQualityTest : public test::CallTest {
     } analyzer;
     FakeNetworkPipe::Config pipe;
     bool logs;
-    struct {  // Spatial scalability.
+    struct SS {                          // Spatial scalability.
       std::vector<VideoStream> streams;  // If empty, one stream is assumed.
       size_t selected_stream;
       int num_spatial_layers;
