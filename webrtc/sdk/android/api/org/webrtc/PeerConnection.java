@@ -161,6 +161,7 @@ public class PeerConnection {
     public boolean pruneTurnPorts;
     public boolean presumeWritableWhenFullyRelayed;
     public Integer iceCheckMinInterval;
+    public boolean disableIPv6OnWifi;
 
     public RTCConfiguration(List<IceServer> iceServers) {
       iceTransportsType = IceTransportsType.ALL;
@@ -179,6 +180,7 @@ public class PeerConnection {
       pruneTurnPorts = false;
       presumeWritableWhenFullyRelayed = false;
       iceCheckMinInterval = null;
+      disableIPv6OnWifi = false;
     }
   };
 

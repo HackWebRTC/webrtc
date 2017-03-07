@@ -610,6 +610,13 @@ void BasicPortAllocatorSession::DoAllocate() {
         continue;
       }
 
+      if (!(sequence_flags & PORTALLOCATOR_ENABLE_IPV6_ON_WIFI) &&
+          networks[i]->GetBestIP().family() == AF_INET6 &&
+          networks[i]->type() == rtc::ADAPTER_TYPE_WIFI) {
+        // Skip IPv6 Wi-Fi networks unless the flag's been set.
+        continue;
+      }
+
       // Disable phases that would only create ports equivalent to
       // ones that we have already made.
       DisableEquivalentPhases(networks[i], config, &sequence_flags);

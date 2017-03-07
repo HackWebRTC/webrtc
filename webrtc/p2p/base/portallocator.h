@@ -73,6 +73,9 @@ enum {
   // candidates. Doing so ensures that even if a cellular network type was not
   // detected initially, it would not be used if a Wi-Fi network is present.
   PORTALLOCATOR_DISABLE_COSTLY_NETWORKS = 0x2000,
+
+  // When specified, do not collect IPv6 ICE candidates on Wi-Fi.
+  PORTALLOCATOR_ENABLE_IPV6_ON_WIFI = 0x4000,
 };
 
 // Defines various reasons that have caused ICE regathering.

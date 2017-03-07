@@ -332,6 +332,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // experimental
     bool disable_ipv6 = false;
 
+    // If set to true, don't gather IPv6 ICE candidates on Wi-Fi.
+    // Only intended to be used on specific devices. Certain phones disable IPv6
+    // when the screen is turned off and it would be better to just disable the
+    // IPv6 ICE candidates on Wi-Fi in those cases.
+    bool disable_ipv6_on_wifi = false;
+
     // If set to true, use RTP data channels instead of SCTP.
     // TODO(deadbeef): Remove this. We no longer commit to supporting RTP data
     // channels, though some applications are still working on moving off of

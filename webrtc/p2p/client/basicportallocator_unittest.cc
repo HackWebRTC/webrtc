@@ -639,9 +639,9 @@ class BasicPortAllocatorTest : public FakeClockBase,
     AddTurnServers(kTurnUdpIntIPv6Addr, kTurnTcpIntIPv6Addr);
 
     allocator_->set_step_delay(kMinimumStepDelay);
-    allocator_->set_flags(allocator().flags() |
-                          PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                          PORTALLOCATOR_ENABLE_IPV6);
+    allocator_->set_flags(
+        allocator().flags() | PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+        PORTALLOCATOR_ENABLE_IPV6 | PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
     EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
     session_->StartGettingPorts();
     EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,

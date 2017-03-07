@@ -477,6 +477,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool prioritize_most_likely_ice_candidate_pairs;
     struct cricket::MediaConfig media_config;
     bool disable_ipv6;
+    bool disable_ipv6_on_wifi;
     bool enable_rtp_data_channel;
     bool enable_quic;
     rtc::Optional<int> screencast_min_bitrate;
@@ -509,6 +510,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          prioritize_most_likely_ice_candidate_pairs ==
              o.prioritize_most_likely_ice_candidate_pairs &&
          media_config == o.media_config && disable_ipv6 == o.disable_ipv6 &&
+         disable_ipv6_on_wifi == o.disable_ipv6_on_wifi &&
          enable_rtp_data_channel == o.enable_rtp_data_channel &&
          enable_quic == o.enable_quic &&
          screencast_min_bitrate == o.screencast_min_bitrate &&
@@ -2505,7 +2507,8 @@ bool PeerConnection::InitializePortAllocator_n(
   // enable BUNDLE here.
   int portallocator_flags = port_allocator_->flags();
   portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                         cricket::PORTALLOCATOR_ENABLE_IPV6;
+                         cricket::PORTALLOCATOR_ENABLE_IPV6 |
+                         cricket::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI;
   // If the disable-IPv6 flag was specified, we'll not override it
   // by experiment.
   if (configuration.disable_ipv6) {
@@ -2513,6 +2516,11 @@ bool PeerConnection::InitializePortAllocator_n(
   } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default")
                  .find("Disabled") == 0) {
     portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
+  }
+
+  if (configuration.disable_ipv6_on_wifi) {
+    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
+    LOG(LS_INFO) << "IPv6 candidates on Wi-Fi are disabled.";
   }
 
   if (configuration.tcp_candidate_policy == kTcpCandidatePolicyDisabled) {

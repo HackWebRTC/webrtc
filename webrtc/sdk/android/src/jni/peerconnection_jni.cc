@@ -1796,6 +1796,9 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
   jclass j_integer_class = jni->FindClass("java/lang/Integer");
   jmethodID int_value_id = GetMethodID(jni, j_integer_class, "intValue", "()I");
 
+  jfieldID j_disable_ipv6_on_wifi_id =
+      GetFieldID(jni, j_rtc_config_class, "disableIPv6OnWifi", "Z");
+
   rtc_config->type =
       JavaIceTransportsTypeToNativeType(jni, j_ice_transports_type);
   rtc_config->bundle_policy =
@@ -1832,6 +1835,8 @@ static void JavaRTCConfigurationToJsepRTCConfiguration(
     rtc_config->ice_check_min_interval =
         rtc::Optional<int>(ice_check_min_interval_value);
   }
+  rtc_config->disable_ipv6_on_wifi =
+      GetBooleanField(jni, j_rtc_config, j_disable_ipv6_on_wifi_id);
 }
 
 JOW(jlong, PeerConnectionFactory_nativeCreatePeerConnection)(
