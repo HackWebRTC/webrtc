@@ -165,4 +165,12 @@
   return @"Unknown";
 }
 
++ (double)currentDeviceSystemVersion {
+  return [self currentDevice].systemVersion.doubleValue;
+}
+
++ (BOOL)isIOS9OrLater {
+  return [self currentDeviceSystemVersion] >= 9.0;
+}
+
 @end

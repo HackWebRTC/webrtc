@@ -13,6 +13,7 @@
 #import <Foundation/Foundation.h>
 #if TARGET_OS_IPHONE
 #import <UIKit/UIKit.h>
+#import "WebRTC/UIDevice+RTCDevice.h"
 #endif
 
 #import "RTCDispatcher+Private.h"
@@ -232,21 +233,23 @@
   NSString *reasonString = nil;
 #if defined(__IPHONE_9_0) && defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && \
     __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
-  NSNumber *reason = notification.userInfo[AVCaptureSessionInterruptionReasonKey];
-  if (reason) {
-    switch (reason.intValue) {
-      case AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableInBackground:
-        reasonString = @"VideoDeviceNotAvailableInBackground";
-        break;
-      case AVCaptureSessionInterruptionReasonAudioDeviceInUseByAnotherClient:
-        reasonString = @"AudioDeviceInUseByAnotherClient";
-        break;
-      case AVCaptureSessionInterruptionReasonVideoDeviceInUseByAnotherClient:
-        reasonString = @"VideoDeviceInUseByAnotherClient";
-        break;
-      case AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableWithMultipleForegroundApps:
-        reasonString = @"VideoDeviceNotAvailableWithMultipleForegroundApps";
-        break;
+  if ([UIDevice isIOS9OrLater]) {
+    NSNumber *reason = notification.userInfo[AVCaptureSessionInterruptionReasonKey];
+    if (reason) {
+      switch (reason.intValue) {
+        case AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableInBackground:
+          reasonString = @"VideoDeviceNotAvailableInBackground";
+          break;
+        case AVCaptureSessionInterruptionReasonAudioDeviceInUseByAnotherClient:
+          reasonString = @"AudioDeviceInUseByAnotherClient";
+          break;
+        case AVCaptureSessionInterruptionReasonVideoDeviceInUseByAnotherClient:
+          reasonString = @"VideoDeviceInUseByAnotherClient";
+          break;
+        case AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableWithMultipleForegroundApps:
+          reasonString = @"VideoDeviceNotAvailableWithMultipleForegroundApps";
+          break;
+      }
     }
   }
 #endif
