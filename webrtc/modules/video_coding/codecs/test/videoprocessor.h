@@ -13,8 +13,10 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
@@ -175,6 +177,30 @@ class VideoProcessorImpl : public VideoProcessor {
   bool ProcessFrame(int frame_number) override;
 
  private:
+  // Container that holds per-frame information that needs to be stored between
+  // calls to Encode and Decode, as well as the corresponding callbacks. It is
+  // not directly used for statistics -- for that, test::FrameStatistic is used.
+  struct FrameInfo {
+    FrameInfo()
+        : timestamp(0),
+          encode_start_ns(0),
+          decode_start_ns(0),
+          encoded_frame_size(0),
+          encoded_frame_type(kVideoFrameDelta),
+          decoded_width(0),
+          decoded_height(0),
+          manipulated_length(0) {}
+
+    uint32_t timestamp;
+    int64_t encode_start_ns;
+    int64_t decode_start_ns;
+    size_t encoded_frame_size;
+    FrameType encoded_frame_type;
+    int decoded_width;
+    int decoded_height;
+    size_t manipulated_length;
+  };
+
   // Callback class required to implement according to the VideoEncoder API.
   class VideoProcessorEncodeCompleteCallback
       : public webrtc::EncodedImageCallback {
@@ -260,6 +286,7 @@ class VideoProcessorImpl : public VideoProcessor {
   // SSIM calculations at the end of a test run.
   FrameReader* const analysis_frame_reader_;
   FrameWriter* const analysis_frame_writer_;
+  const int num_frames_;
 
   // These (optional) file writers are used for persistently storing the output
   // of the coding pipeline at different stages: pre encode (source), post
@@ -271,28 +298,27 @@ class VideoProcessorImpl : public VideoProcessor {
   IvfFileWriter* const encoded_frame_writer_;
   FrameWriter* const decoded_frame_writer_;
 
-  // Keep track of the last successful frame, since we need to write that
-  // when decoding fails.
-  std::unique_ptr<uint8_t[]> last_successful_frame_buffer_;
-  // To keep track of if we have excluded the first key frame from packet loss.
-  bool first_key_frame_has_been_excluded_;
-  // To tell the decoder previous frame have been dropped due to packet loss.
-  bool last_frame_missing_;
-  // If Init() has executed successfully.
   bool initialized_;
-  size_t encoded_frame_size_;
-  FrameType encoded_frame_type_;
-  int prev_time_stamp_;
-  int last_encoder_frame_width_;
-  int last_encoder_frame_height_;
+
+  // Frame metadata for all frames that have been added through a call to
+  // ProcessFrames(). We need to store this metadata over the course of the
+  // test run, to support pipelining HW codecs.
+  std::vector<FrameInfo> frame_infos_;
+  int last_encoded_frame_num_;
+  int last_decoded_frame_num_;
+
+  // Keep track of if we have excluded the first key frame from packet loss.
+  bool first_key_frame_has_been_excluded_;
+
+  // Keep track of the last successfully decoded frame, since we write that
+  // frame to disk when decoding fails.
+  rtc::Buffer last_decoded_frame_buffer_;
 
   // Statistics.
   Stats* stats_;
   int num_dropped_frames_;
   int num_spatial_resizes_;
   double bit_rate_factor_;  // Multiply frame length with this to get bit rate.
-  int64_t encode_start_ns_;
-  int64_t decode_start_ns_;
 };
 
 }  // namespace test
