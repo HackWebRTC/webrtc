@@ -295,14 +295,11 @@ TEST_F(RtcpSenderTest, SendSr) {
   rtcp_sender_->SetSendingStatus(feedback_state, true);
   feedback_state.packets_sent = kPacketCount;
   feedback_state.media_bytes_sent = kOctetCount;
-  uint32_t ntp_secs;
-  uint32_t ntp_frac;
-  clock_.CurrentNtp(ntp_secs, ntp_frac);
+  NtpTime ntp = clock_.CurrentNtpTime();
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpSr));
   EXPECT_EQ(1, parser()->sender_report()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->sender_report()->sender_ssrc());
-  EXPECT_EQ(ntp_secs, parser()->sender_report()->ntp().seconds());
-  EXPECT_EQ(ntp_frac, parser()->sender_report()->ntp().fractions());
+  EXPECT_EQ(ntp, parser()->sender_report()->ntp());
   EXPECT_EQ(kPacketCount, parser()->sender_report()->sender_packet_count());
   EXPECT_EQ(kOctetCount, parser()->sender_report()->sender_octet_count());
   EXPECT_EQ(kStartRtpTimestamp + kRtpTimestamp,
@@ -640,17 +637,14 @@ TEST_F(RtcpSenderTest, SendXrWithRrtr) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
   EXPECT_EQ(0, rtcp_sender_->SetSendingStatus(feedback_state(), false));
   rtcp_sender_->SendRtcpXrReceiverReferenceTime(true);
-  uint32_t ntp_secs;
-  uint32_t ntp_frac;
-  clock_.CurrentNtp(ntp_secs, ntp_frac);
+  NtpTime ntp = clock_.CurrentNtpTime();
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport));
   EXPECT_EQ(1, parser()->xr()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
   EXPECT_FALSE(parser()->xr()->dlrr());
   EXPECT_FALSE(parser()->xr()->voip_metric());
   ASSERT_TRUE(parser()->xr()->rrtr());
-  EXPECT_EQ(ntp_secs, parser()->xr()->rrtr()->ntp().seconds());
-  EXPECT_EQ(ntp_frac, parser()->xr()->rrtr()->ntp().fractions());
+  EXPECT_EQ(ntp, parser()->xr()->rrtr()->ntp());
 }
 
 TEST_F(RtcpSenderTest, TestNoXrRrtrSentIfSending) {
