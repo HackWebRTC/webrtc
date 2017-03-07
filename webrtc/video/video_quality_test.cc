@@ -1515,6 +1515,7 @@ void VideoQualityTest::SetupThumbnailCapturers(size_t num_thumbnail_streams) {
     thumbnail_capturers_.emplace_back(test::FrameGeneratorCapturer::Create(
         static_cast<int>(thumbnail.width), static_cast<int>(thumbnail.height),
         thumbnail.max_framerate, clock_));
+    RTC_DCHECK(thumbnail_capturers_.back());
   }
 }
 

@@ -507,7 +507,15 @@ TEST_F(FullStackTest, LargeRoomVP8_5thumb) {
   RunTest(large_room);
 }
 
-TEST_F(FullStackTest, LargeRoomVP8_15thumb) {
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_WIN)
+// Fails on Android and win:
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=7301
+#define MAYBE_LargeRoomVP8_50thumb DISABLED_LargeRoomVP8_50thumb
+#else
+#define MAYBE_LargeRoomVP8_50thumb LargeRoomVP8_50thumb
+#endif
+
+TEST_F(FullStackTest, MAYBE_LargeRoomVP8_15thumb) {
   VideoQualityTest::Params large_room;
   large_room.call.send_side_bwe = true;
   large_room.video = kSimulcastVp8VideoHigh;
@@ -529,14 +537,6 @@ TEST_F(FullStackTest, LargeRoomVP8_15thumb) {
   large_room.ss = {streams, 2, 1, 0};
   RunTest(large_room);
 }
-
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_WIN)
-// Fails on Android and win:
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=7301
-#define MAYBE_LargeRoomVP8_50thumb DISABLED_LargeRoomVP8_50thumb
-#else
-#define MAYBE_LargeRoomVP8_50thumb LargeRoomVP8_50thumb
-#endif
 
 TEST_F(FullStackTest, MAYBE_LargeRoomVP8_50thumb) {
   VideoQualityTest::Params large_room;
