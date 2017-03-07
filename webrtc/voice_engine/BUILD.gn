@@ -308,33 +308,6 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_executable("voe_cmd_test") {
-    testonly = true
-
-    deps = [
-      ":channel_transport",
-      ":voice_engine",
-      "..:webrtc_common",
-      "../base:rtc_base_approved",
-      "//testing/gtest",
-      "//third_party/gflags",
-      "//webrtc/logging:rtc_event_log_api",
-      "//webrtc/modules/audio_processing",
-      "//webrtc/system_wrappers",
-      "//webrtc/system_wrappers:system_wrappers_default",
-      "//webrtc/test:test_support",
-    ]
-
-    sources = [
-      "test/cmd_test/voe_cmd_test.cc",
-    ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-  }
-
   if (!is_ios) {
     rtc_executable("voe_auto_test") {
       testonly = true

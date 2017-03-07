@@ -308,7 +308,6 @@ if (!build_with_chromium) {
         "video:screenshare_loopback",
         "video:video_loopback",
         "video:video_tests",
-        "voice_engine:voe_cmd_test",
         "voice_engine:voice_engine_unittests",
       ]
       if (is_android) {
