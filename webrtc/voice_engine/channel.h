@@ -27,12 +27,12 @@
 #include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/voice_engine/audio_level.h"
 #include "webrtc/voice_engine/file_player.h"
 #include "webrtc/voice_engine/file_recorder.h"
 #include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_network.h"
-#include "webrtc/voice_engine/level_indicator.h"
 #include "webrtc/voice_engine/shared_data.h"
 #include "webrtc/voice_engine/voice_engine_defines.h"
 

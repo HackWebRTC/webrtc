@@ -138,9 +138,9 @@ rtc_static_library("voice_engine") {
     "../modules/audio_coding",
   ]
   deps = [
+    ":audio_level",
     ":file_player",
     ":file_recorder",
-    ":level_indicator",
     "..:webrtc_common",
     "../api:audio_mixer_api",
     "../api:call_api",
@@ -165,10 +165,10 @@ rtc_static_library("voice_engine") {
   ]
 }
 
-rtc_static_library("level_indicator") {
+rtc_static_library("audio_level") {
   sources = [
-    "level_indicator.cc",
-    "level_indicator.h",
+    "audio_level.cc",
+    "audio_level.h",
   ]
 
   deps = [
