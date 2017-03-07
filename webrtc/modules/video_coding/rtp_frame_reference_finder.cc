@@ -334,8 +334,15 @@ void RtpFrameReferenceFinder::ManageFrameVp8(
       return;
     }
 
-    RTC_DCHECK((AheadOf<uint16_t, kPicIdLength>(frame->picture_id,
-                                               layer_info_it->second[layer])));
+    if (!(AheadOf<uint16_t, kPicIdLength>(frame->picture_id,
+                                          layer_info_it->second[layer]))) {
+      LOG(LS_WARNING) << "Frame with picture id " << frame->picture_id
+                      << " and packet range [" << frame->first_seq_num() << ", "
+                      << frame->last_seq_num() << "] already received, "
+                      << " dropping frame.";
+      return;
+    }
+
     ++frame->num_references;
     frame->references[layer] = layer_info_it->second[layer];
   }

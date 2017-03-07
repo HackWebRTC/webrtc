@@ -428,6 +428,27 @@ TEST_F(TestRtpFrameReferenceFinder, Vp8TemporalLayers_0) {
   CheckReferencesVp8(pid + 3, pid + 2);
 }
 
+TEST_F(TestRtpFrameReferenceFinder, Vp8DuplicateTl1Frames) {
+  uint16_t pid = Rand();
+  uint16_t sn = Rand();
+
+  InsertVp8(sn, sn, true, pid, 0, 0);
+  InsertVp8(sn + 1, sn + 1, false, pid + 1, 1, 0, true);
+  InsertVp8(sn + 2, sn + 2, false, pid + 2, 0, 1);
+  InsertVp8(sn + 3, sn + 3, false, pid + 3, 1, 1);
+  InsertVp8(sn + 3, sn + 3, false, pid + 3, 1, 1);
+  InsertVp8(sn + 4, sn + 4, false, pid + 4, 0, 2);
+  InsertVp8(sn + 5, sn + 5, false, pid + 5, 1, 2);
+
+  ASSERT_EQ(6UL, frames_from_callback_.size());
+  CheckReferencesVp8(pid);
+  CheckReferencesVp8(pid + 1, pid);
+  CheckReferencesVp8(pid + 2, pid);
+  CheckReferencesVp8(pid + 3, pid + 1, pid + 2);
+  CheckReferencesVp8(pid + 4, pid + 2);
+  CheckReferencesVp8(pid + 5, pid + 3, pid + 4);
+}
+
 // Test with 1 temporal layer.
 TEST_F(TestRtpFrameReferenceFinder, Vp8TemporalLayersReordering_0) {
   uint16_t pid = Rand();
