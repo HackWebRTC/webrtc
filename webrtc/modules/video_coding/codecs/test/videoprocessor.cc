@@ -44,6 +44,31 @@ std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
                                                     std::move(tl_factory)));
 }
 
+void PrintCodecSettings(const VideoCodec* config) {
+  printf("    Start bitrate    : %d kbps\n", config->startBitrate);
+  printf("    Width            : %d\n", config->width);
+  printf("    Height           : %d\n", config->height);
+  printf("    Codec type       : %s\n",
+         CodecTypeToPayloadName(config->codecType).value_or("Unknown"));
+  if (config->codecType == kVideoCodecVP8) {
+    printf("    Denoising        : %d\n", config->VP8().denoisingOn);
+    printf("    Error concealment: %d\n", config->VP8().errorConcealmentOn);
+    printf("    Frame dropping   : %d\n", config->VP8().frameDroppingOn);
+    printf("    Resilience       : %d\n", config->VP8().resilience);
+  } else if (config->codecType == kVideoCodecVP9) {
+    printf("    Denoising        : %d\n", config->VP9().denoisingOn);
+    printf("    Frame dropping   : %d\n", config->VP9().frameDroppingOn);
+    printf("    Resilience       : %d\n", config->VP9().resilience);
+  }
+}
+
+int GetElapsedTimeMicroseconds(int64_t start_ns, int64_t stop_ns) {
+  int64_t diff_us = (stop_ns - start_ns) / rtc::kNumNanosecsPerMicrosec;
+  RTC_DCHECK_GE(diff_us, std::numeric_limits<int>::min());
+  RTC_DCHECK_LE(diff_us, std::numeric_limits<int>::max());
+  return static_cast<int>(diff_us);
+}
+
 }  // namespace
 
 const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
@@ -159,30 +184,11 @@ bool VideoProcessorImpl::Init() {
     printf("  Total # of frames: %d\n",
            analysis_frame_reader_->NumberOfFrames());
     printf("  Codec settings:\n");
-    printf("    Start bitrate    : %d kbps\n",
-           config_.codec_settings->startBitrate);
-    printf("    Width            : %d\n", config_.codec_settings->width);
-    printf("    Height           : %d\n", config_.codec_settings->height);
-    printf("    Codec type       : %s\n",
-           CodecTypeToPayloadName(config_.codec_settings->codecType)
-               .value_or("Unknown"));
     printf("    Encoder implementation name: %s\n",
            encoder_->ImplementationName());
     printf("    Decoder implementation name: %s\n",
            decoder_->ImplementationName());
-    if (config_.codec_settings->codecType == kVideoCodecVP8) {
-      printf("    Denoising        : %d\n",
-             config_.codec_settings->VP8()->denoisingOn);
-      printf("    Error concealment: %d\n",
-             config_.codec_settings->VP8()->errorConcealmentOn);
-      printf("    Frame dropping   : %d\n",
-             config_.codec_settings->VP8()->frameDroppingOn);
-      printf("    Resilience       : %d\n",
-             config_.codec_settings->VP8()->resilience);
-    } else if (config_.codec_settings->codecType == kVideoCodecVP9) {
-      printf("    Resilience       : %d\n",
-             config_.codec_settings->VP9()->resilience);
-    }
+    PrintCodecSettings(config_.codec_settings);
   }
   initialized_ = true;
   return true;
@@ -461,14 +467,6 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
       RTC_CHECK(decoded_frame_writer_->WriteFrame(image_buffer.get()));
     }
   }
-}
-
-int VideoProcessorImpl::GetElapsedTimeMicroseconds(int64_t start,
-                                                   int64_t stop) {
-  int64_t encode_time = (stop - start) / rtc::kNumNanosecsPerMicrosec;
-  RTC_DCHECK_GE(encode_time, std::numeric_limits<int>::min());
-  RTC_DCHECK_LE(encode_time, std::numeric_limits<int>::max());
-  return static_cast<int>(encode_time);
 }
 
 }  // namespace test

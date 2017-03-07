@@ -230,10 +230,6 @@ class VideoProcessorImpl : public VideoProcessor {
   // Invoked by the callback when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);
 
-  // Used for getting a 32-bit integer representing time
-  // (checks the size is within signed 32-bit bounds before casting it)
-  int GetElapsedTimeMicroseconds(int64_t start, int64_t stop);
-
   // Updates the encoder with the target bit rate and the frame rate.
   void SetRates(int bit_rate, int frame_rate) override;
 
