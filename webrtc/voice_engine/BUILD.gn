@@ -179,73 +179,8 @@ rtc_static_library("level_indicator") {
 }
 
 if (rtc_include_tests) {
-  config("channel_transport_warnings_config") {
-    if (is_win) {
-      cflags = [ "/wd4302" ]  # cast truncation
-
-      if (is_clang) {
-        # GN orders flags on a target before flags from configs. The default
-        # config adds -Wall, and this flag have to be after -Wall -- so they need
-        # to come from a config and cannot be on the target directly.
-        cflags += [
-          "-Wno-parentheses-equality",
-          "-Wno-reorder",
-          "-Wno-tautological-constant-out-of-range-compare",
-
-          # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6268
-          # for -Wno-thread-safety-analysis
-          "-Wno-thread-safety-analysis",
-          "-Wno-unused-private-field",
-        ]
-      }
-    }
-  }
-
-  rtc_static_library("channel_transport") {
-    testonly = true
-    sources = [
-      "test/channel_transport/channel_transport.cc",
-      "test/channel_transport/channel_transport.h",
-      "test/channel_transport/traffic_control_win.cc",
-      "test/channel_transport/traffic_control_win.h",
-      "test/channel_transport/udp_socket2_manager_win.cc",
-      "test/channel_transport/udp_socket2_manager_win.h",
-      "test/channel_transport/udp_socket2_win.cc",
-      "test/channel_transport/udp_socket2_win.h",
-      "test/channel_transport/udp_socket_manager_posix.cc",
-      "test/channel_transport/udp_socket_manager_posix.h",
-      "test/channel_transport/udp_socket_manager_wrapper.cc",
-      "test/channel_transport/udp_socket_manager_wrapper.h",
-      "test/channel_transport/udp_socket_posix.cc",
-      "test/channel_transport/udp_socket_posix.h",
-      "test/channel_transport/udp_socket_wrapper.cc",
-      "test/channel_transport/udp_socket_wrapper.h",
-      "test/channel_transport/udp_transport.h",
-      "test/channel_transport/udp_transport_impl.cc",
-      "test/channel_transport/udp_transport_impl.h",
-    ]
-
-    configs += [ ":channel_transport_warnings_config" ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
-    deps = [
-      ":voice_engine",
-      "..:webrtc_common",
-      "../api:transport_api",
-      "../base:rtc_base_approved",
-      "../system_wrappers",
-      "../test:test_support",
-      "//testing/gtest",
-    ]
-  }
-
   rtc_test("voice_engine_unittests") {
     deps = [
-      ":channel_transport",
       ":file_player",
       ":voice_engine",
       "../base:rtc_base_approved",
@@ -275,9 +210,6 @@ if (rtc_include_tests) {
     sources = [
       "channel_unittest.cc",
       "file_player_unittests.cc",
-      "test/channel_transport/udp_socket_manager_unittest.cc",
-      "test/channel_transport/udp_socket_wrapper_unittest.cc",
-      "test/channel_transport/udp_transport_unittest.cc",
       "transport_feedback_packet_loss_tracker_unittest.cc",
       "utility_unittest.cc",
       "voe_audio_processing_unittest.cc",
@@ -313,7 +245,6 @@ if (rtc_include_tests) {
       testonly = true
 
       deps = [
-        ":channel_transport",
         ":voice_engine",
         "..:webrtc_common",
         "../base:rtc_base_approved",
