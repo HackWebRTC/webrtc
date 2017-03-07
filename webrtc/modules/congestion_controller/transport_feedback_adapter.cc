@@ -99,6 +99,11 @@ int64_t TransportFeedbackAdapter::GetProbingIntervalMs() const {
   return delay_based_bwe_->GetProbingIntervalMs();
 }
 
+void TransportFeedbackAdapter::ClearSendTimeHistory() {
+  rtc::CritScope cs(&lock_);
+  send_time_history_.Clear();
+}
+
 std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
     const rtcp::TransportFeedback& feedback) {
   int64_t timestamp_us = feedback.GetBaseTimeUs();

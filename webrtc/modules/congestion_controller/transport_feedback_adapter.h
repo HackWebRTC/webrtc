@@ -57,6 +57,8 @@ class TransportFeedbackAdapter : public TransportFeedbackObserver,
 
   int64_t GetProbingIntervalMs() const;
 
+  void ClearSendTimeHistory();
+
  private:
   std::vector<PacketFeedback> GetPacketFeedbackVector(
       const rtcp::TransportFeedback& feedback);

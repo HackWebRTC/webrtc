@@ -213,5 +213,27 @@ TEST_F(SendTimeHistoryTest, InterlievedGetAndRemove) {
   EXPECT_EQ(packets[2], packet3);
 }
 
+TEST_F(SendTimeHistoryTest, Clear) {
+  const uint16_t kSeqNo = 1;
+  const int64_t kTimestamp = 2;
+  const PacedPacketInfo kPacingInfo(0, 5, 1200);
+
+  PacketFeedback packets[] = {{0, kTimestamp, kSeqNo, 0, kPacingInfo},
+                          {0, kTimestamp + 1, kSeqNo + 1, 0, kPacingInfo}};
+
+  AddPacketWithSendTime(packets[0].sequence_number, packets[0].payload_size,
+                        packets[0].send_time_ms, kPacingInfo);
+  AddPacketWithSendTime(packets[1].sequence_number, packets[1].payload_size,
+                        packets[1].send_time_ms, kPacingInfo);
+  PacketFeedback info(0, 0, packets[0].sequence_number, 0, kPacingInfo);
+  EXPECT_TRUE(history_.GetFeedback(&info, true));
+  EXPECT_EQ(packets[0], info);
+
+  history_.Clear();
+
+  PacketFeedback info2(0, 0, packets[1].sequence_number, 0, kPacingInfo);
+  EXPECT_FALSE(history_.GetFeedback(&info2, true));
+}
+
 }  // namespace test
 }  // namespace webrtc

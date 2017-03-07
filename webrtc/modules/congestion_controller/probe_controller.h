@@ -37,6 +37,11 @@ class ProbeController {
   void SetEstimatedBitrate(int64_t bitrate_bps);
 
   void EnablePeriodicAlrProbing(bool enable);
+
+  // Resets the ProbeController to a state equivalent to as if it was just
+  // created EXCEPT for |enable_periodic_alr_probing_|.
+  void Reset();
+
   void Process();
 
  private:

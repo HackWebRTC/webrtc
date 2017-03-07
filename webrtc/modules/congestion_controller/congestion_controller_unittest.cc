@@ -59,6 +59,8 @@ class CongestionControllerTest : public ::testing::Test {
     // to be updated.
     EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps, _, _, _));
     EXPECT_CALL(*pacer_, SetEstimatedBitrate(kInitialBitrateBps));
+    EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 3));
+    EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 5));
     controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
   }
 
@@ -143,6 +145,7 @@ TEST_F(CongestionControllerTest, SignalNetworkState) {
 
 TEST_F(CongestionControllerTest, ResetBweAndBitrates) {
   int new_bitrate = 200000;
+  testing::Mock::VerifyAndClearExpectations(pacer_);
   EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
   EXPECT_CALL(*pacer_, SetEstimatedBitrate(new_bitrate));
   controller_->ResetBweAndBitrates(new_bitrate, -1, -1);
@@ -240,5 +243,15 @@ TEST_F(CongestionControllerTest, OnReceivedPacketWithAbsSendTime) {
   ASSERT_EQ(1u, ssrcs.size());
   EXPECT_EQ(header.ssrc, ssrcs[0]);
 }
+
+TEST_F(CongestionControllerTest, ProbeOnBweReset) {
+  testing::Mock::VerifyAndClearExpectations(pacer_);
+  EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 6));
+  EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 12));
+  EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 2, _, _, _));
+  controller_->ResetBweAndBitrates(2 * kInitialBitrateBps, 0,
+                                   20 * kInitialBitrateBps);
+}
+
 }  // namespace test
 }  // namespace webrtc

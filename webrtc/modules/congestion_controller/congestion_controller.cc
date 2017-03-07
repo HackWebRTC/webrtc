@@ -230,10 +230,14 @@ void CongestionController::ResetBweAndBitrates(int bitrate_bps,
   // no longer exposed outside CongestionController.
   remote_bitrate_estimator_.SetMinBitrate(min_bitrate_bps);
 
+  transport_feedback_adapter_.ClearSendTimeHistory();
   transport_feedback_adapter_.InitBwe();
   transport_feedback_adapter_.SetStartBitrate(bitrate_bps);
   transport_feedback_adapter_.SetMinBitrate(min_bitrate_bps);
-  // TODO(holmer): Trigger a new probe once mid-call probing is implemented.
+
+  probe_controller_->Reset();
+  probe_controller_->SetBitrates(min_bitrate_bps, bitrate_bps, max_bitrate_bps);
+
   MaybeTriggerOnNetworkChanged();
 }
 
