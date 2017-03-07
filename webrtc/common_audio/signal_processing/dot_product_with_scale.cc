@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
+#include "webrtc/common_audio/signal_processing/dot_product_with_scale.h"
+
+#include "webrtc/base/safe_conversions.h"
 
 int32_t WebRtcSpl_DotProductWithScale(const int16_t* vector1,
                                       const int16_t* vector2,
                                       size_t length,
                                       int scaling) {
-  int32_t sum = 0;
+  int64_t sum = 0;
   size_t i = 0;
 
   /* Unroll the loop to improve performance. */
@@ -28,5 +30,5 @@ int32_t WebRtcSpl_DotProductWithScale(const int16_t* vector1,
     sum += (vector1[i] * vector2[i]) >> scaling;
   }
 
-  return sum;
+  return rtc::saturated_cast<int32_t>(sum);
 }

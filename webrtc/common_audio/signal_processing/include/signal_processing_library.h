@@ -19,6 +19,7 @@
 #define WEBRTC_SPL_SIGNAL_PROCESSING_LIBRARY_H_
 
 #include <string.h>
+#include "webrtc/common_audio/signal_processing/dot_product_with_scale.h"
 #include "webrtc/typedefs.h"
 
 // Macros specific for the fixed point implementation
@@ -596,22 +597,6 @@ int32_t WebRtcSpl_DivW32HiLow(int32_t num, int16_t den_hi, int16_t den_low);
 int32_t WebRtcSpl_Energy(int16_t* vector,
                          size_t vector_length,
                          int* scale_factor);
-
-// Calculates the dot product between two (int16_t) vectors.
-//
-// Input:
-//      - vector1       : Vector 1
-//      - vector2       : Vector 2
-//      - vector_length : Number of samples used in the dot product
-//      - scaling       : The number of right bit shifts to apply on each term
-//                        during calculation to avoid overflow, i.e., the
-//                        output will be in Q(-|scaling|)
-//
-// Return value         : The dot product in Q(-scaling)
-int32_t WebRtcSpl_DotProductWithScale(const int16_t* vector1,
-                                      const int16_t* vector2,
-                                      size_t length,
-                                      int scaling);
 
 // Filter operations.
 size_t WebRtcSpl_FilterAR(const int16_t* ar_coef,
