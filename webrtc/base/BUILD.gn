@@ -348,6 +348,19 @@ config("rtc_base_warnings_config") {
   }
 }
 
+# TODO(nisse): This target is temporarily split out, to aid moving the
+# code over to Chrome. It should be deleted from webrtc soon.
+rtc_static_library("rtc_task_runner") {
+  sources = [
+    "task.cc",
+    "task.h",
+    "taskparent.cc",
+    "taskparent.h",
+    "taskrunner.cc",
+    "taskrunner.h",
+  ]
+}
+
 rtc_static_library("rtc_base") {
   cflags = []
   cflags_cc = []
@@ -848,6 +861,7 @@ if (rtc_include_tests) {
       "sigslot_unittest.cc",
       "sigslottester_unittest.cc",
       "stream_unittest.cc",
+      "task_unittest.cc",
       "testclient_unittest.cc",
       "thread_unittest.cc",
     ]
@@ -869,6 +883,7 @@ if (rtc_include_tests) {
     }
     deps = [
       ":rtc_base_tests_main",
+      ":rtc_task_runner",
     ]
     public_deps = [
       ":rtc_base",
