@@ -12,13 +12,8 @@
 
 #import "WebRTC/RTCVideoRenderer.h"
 
-// Check if metal is supported in WebRTC.
-// NOTE: Currently arm64 == Metal.
-#if defined(__aarch64__)
-#define RTC_SUPPORTS_METAL
-#endif
-
 NS_ASSUME_NONNULL_BEGIN
+RTC_EXPORT
 
 /**
  * RTCMTLVideoView is thin wrapper around MTKView.
@@ -27,8 +22,6 @@ NS_ASSUME_NONNULL_BEGIN
  * bounds using Metal.
  */
 NS_CLASS_AVAILABLE_IOS(9)
-
-RTC_EXPORT
 @interface RTCMTLVideoView : UIView <RTCVideoRenderer>
 
 @end

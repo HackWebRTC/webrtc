@@ -51,9 +51,9 @@
 #pragma mark - Private
 
 + (BOOL)isMetalAvailable {
-#if defined(RTC_SUPPORTS_METAL)
+#if defined(__OBJC__) && COREVIDEO_SUPPORTS_METAL
   return YES;
-#else
+#elif
   return NO;
 #endif
 }
