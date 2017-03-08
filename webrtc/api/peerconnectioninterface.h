@@ -518,9 +518,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // remote peer is notified.
   virtual void RemoveStream(MediaStreamInterface* stream) = 0;
 
-  // TODO(deadbeef): Make the following two methods pure virtual once
-  // implemented by all subclasses of PeerConnectionInterface.
-
   // Add a new MediaStreamTrack to be sent on this PeerConnection, and return
   // the newly created RtpSender.
   //
@@ -528,15 +525,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // with.
   virtual rtc::scoped_refptr<RtpSenderInterface> AddTrack(
       MediaStreamTrackInterface* track,
-      std::vector<MediaStreamInterface*> streams) {
-    return nullptr;
-  }
+      std::vector<MediaStreamInterface*> streams) = 0;
 
   // Remove an RtpSender from this PeerConnection.
   // Returns true on success.
-  virtual bool RemoveTrack(RtpSenderInterface* sender) {
-    return false;
-  }
+  virtual bool RemoveTrack(RtpSenderInterface* sender) = 0;
 
   // Returns pointer to a DtmfSender on success. Otherwise returns null.
   //
@@ -780,21 +773,15 @@ class PeerConnectionObserver {
   // pointer version.
 
   // Triggered when media is received on a new stream from remote peer.
-  virtual void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) {}
-  // Deprecated; please use the version that uses a scoped_refptr.
-  virtual void OnAddStream(MediaStreamInterface* stream) {}
+  virtual void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) = 0;
 
   // Triggered when a remote peer close a stream.
-  virtual void OnRemoveStream(rtc::scoped_refptr<MediaStreamInterface> stream) {
-  }
-  // Deprecated; please use the version that uses a scoped_refptr.
-  virtual void OnRemoveStream(MediaStreamInterface* stream) {}
+  virtual void OnRemoveStream(
+      rtc::scoped_refptr<MediaStreamInterface> stream) = 0;
 
   // Triggered when a remote peer opens a data channel.
   virtual void OnDataChannel(
-      rtc::scoped_refptr<DataChannelInterface> data_channel) {}
-  // Deprecated; please use the version that uses a scoped_refptr.
-  virtual void OnDataChannel(DataChannelInterface* data_channel) {}
+      rtc::scoped_refptr<DataChannelInterface> data_channel) = 0;
 
   // Triggered when renegotiation is needed. For example, an ICE restart
   // has begun.
