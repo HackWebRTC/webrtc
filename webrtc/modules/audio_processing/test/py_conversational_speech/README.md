@@ -26,12 +26,16 @@ IMPORTANT: **the whole code has not been landed yet.**
 For each end, there is a set of audio tracks, e.g., a1, a2 and a3 (speaker A)
 and b1, b2 (speaker B).
 The text file with the timing information may look like this:
-```  A a1 0
-  B b1 0
-  A a2 100
-  B b2 -200
-  A a3 0
-  A a4 0```
+
+```
+A a1 0
+B b1 0
+A a2 100
+B b2 -200
+A a3 0
+A a4 0
+```
+
 The first column indicates the speaker name, the second contains the audio track
 file names, and the third the offsets (in milliseconds) used to concatenate the
 chunks.
@@ -39,26 +43,32 @@ chunks.
 Assume that all the audio tracks in the example above are 1000 ms long.
 The tool will then generate two tracks (A and B) that look like this:
 
-```Track A:
+**Track A**
+```
   a1 (1000 ms)
   silence (1100 ms)
   a2 (1000 ms)
   silence (800 ms)
   a3 (1000 ms)
-  a4 (1000 ms)```
+  a4 (1000 ms)
+```
 
-```Track B:
+**Track B**
+```
   silence (1000 ms)
   b1 (1000 ms)
   silence (900 ms)
   b2 (1000 ms)
-  silence (2000 ms)```
+  silence (2000 ms)
+```
 
 The two tracks can be also visualized as follows (one characheter represents
 100 ms, "." is silence and "*" is speech).
 
-```t: 0         1        2        3        4        5        6 (s)
+```
+t: 0         1        2        3        4        5        6 (s)
 A: **********...........**********........********************
 B: ..........**********.........**********....................
                                 ^ 200 ms cross-talk
-        100 ms silence ^```
+        100 ms silence ^
+```
