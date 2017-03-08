@@ -66,37 +66,6 @@ class AudioProcessingTest : public AfterStreamingFixture {
     EXPECT_TRUE(ns_status);
     EXPECT_EQ(expected_ns_mode, ns_mode);
   }
-
-  void TryDetectingSilence() {
-    // Here, speech is running. Shut down speech.
-    EXPECT_EQ(0, voe_codec_->SetVADStatus(channel_, true));
-    EXPECT_EQ(0, voe_volume_control_->SetInputMute(channel_, true));
-    EXPECT_EQ(0, voe_file_->StopPlayingFileAsMicrophone(channel_));
-
-    // We should detect the silence after a short time.
-    Sleep(50);
-    for (int i = 0; i < 25; i++) {
-      EXPECT_EQ(0, voe_apm_->VoiceActivityIndicator(channel_));
-      Sleep(10);
-    }
-  }
-
-  void TryDetectingSpeechAfterSilence() {
-    // Re-enable speech.
-    RestartFakeMicrophone();
-    EXPECT_EQ(0, voe_codec_->SetVADStatus(channel_, false));
-    EXPECT_EQ(0, voe_volume_control_->SetInputMute(channel_, false));
-
-    // We should detect the speech after a short time.
-    for (int i = 0; i < 50; i++) {
-      if (voe_apm_->VoiceActivityIndicator(channel_) == 1) {
-        return;
-      }
-      Sleep(10);
-    }
-
-    ADD_FAILURE() << "Failed to detect speech within 500 ms.";
-  }
 };
 
 #if !defined(WEBRTC_IOS) && !defined(WEBRTC_ANDROID)
@@ -326,12 +295,6 @@ TEST_F(AudioProcessingTest, EcIsDisabledAndAecmIsDefaultEcMode) {
   EXPECT_EQ(0, voe_apm_->GetEcStatus(ec_enabled, ec_mode));
   EXPECT_FALSE(ec_enabled);
   EXPECT_EQ(webrtc::kEcAecm, ec_mode);
-}
-
-// Not needed anymore - API is unused.
-TEST_F(AudioProcessingTest, TestVoiceActivityDetection) {
-  TryDetectingSilence();
-  TryDetectingSpeechAfterSilence();
 }
 
 #endif  // WEBRTC_IOS || WEBRTC_ANDROID

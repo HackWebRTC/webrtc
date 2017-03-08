@@ -289,9 +289,6 @@ TransmitMixer::PrepareDemux(const void* audioSamples,
     TypingDetection(keyPressed);
 #endif
 
-    // --- Mute signal
-    AudioFrameOperations::Mute(&_audioFrame, _mute, _mute);
-
     // --- Mix with file (does not affect the mixing frequency)
     if (_filePlaying)
     {
@@ -892,21 +889,6 @@ void
 TransmitMixer::SetMixWithMicStatus(bool mix)
 {
     _mixFileWithMicrophone = mix;
-}
-
-int
-TransmitMixer::SetMute(bool enable)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "TransmitMixer::SetMute(enable=%d)", enable);
-    _mute = enable;
-    return 0;
-}
-
-bool
-TransmitMixer::Mute() const
-{
-    return _mute;
 }
 
 int8_t TransmitMixer::AudioLevel() const

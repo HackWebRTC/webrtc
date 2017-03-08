@@ -50,8 +50,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Network\n");
   if (_rtp_rtcp)
     TEST_LOG("  RTP_RTCP\n");
-  if (_volumeControl)
-    TEST_LOG("  VolumeControl\n");
   if (_apm)
     TEST_LOG("  AudioProcessing\n");
   ANL();
@@ -70,8 +68,6 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  Network\n");
   if (!_rtp_rtcp)
     TEST_LOG("  RTP_RTCP\n");
-  if (!_volumeControl)
-    TEST_LOG("  VolumeControl\n");
   if (!_apm)
     TEST_LOG("  AudioProcessing\n");
   ANL();

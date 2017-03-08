@@ -23,7 +23,6 @@
 #include "webrtc/voice_engine/voe_neteq_stats_impl.h"
 #include "webrtc/voice_engine/voe_network_impl.h"
 #include "webrtc/voice_engine/voe_rtp_rtcp_impl.h"
-#include "webrtc/voice_engine/voe_volume_control_impl.h"
 
 namespace webrtc {
 namespace voe {
@@ -39,7 +38,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
                         public VoENetEqStatsImpl,
                         public VoENetworkImpl,
                         public VoERTP_RTCPImpl,
-                        public VoEVolumeControlImpl,
                         public VoEBaseImpl {
  public:
   VoiceEngineImpl()
@@ -51,7 +49,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
         VoENetEqStatsImpl(this),
         VoENetworkImpl(this),
         VoERTP_RTCPImpl(this),
-        VoEVolumeControlImpl(this),
         VoEBaseImpl(this),
         _ref_count(0) {}
   ~VoiceEngineImpl() override { assert(_ref_count.Value() == 0); }

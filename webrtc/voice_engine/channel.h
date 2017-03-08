@@ -245,15 +245,11 @@ class Channel
 
   void SetMixWithMicStatus(bool mix);
 
-  // VoEVolumeControl
-  int GetSpeechOutputLevel(uint32_t& level) const;
-  int GetSpeechOutputLevelFullRange(uint32_t& level) const;
-  int SetInputMute(bool enable);
-  bool InputMute() const;
-  int SetOutputVolumePan(float left, float right);
-  int GetOutputVolumePan(float& left, float& right) const;
-  int SetChannelOutputVolumeScaling(float scaling);
-  int GetChannelOutputVolumeScaling(float& scaling) const;
+  // Muting, Volume and Level.
+  void SetInputMute(bool enable);
+  void SetChannelOutputVolumeScaling(float scaling);
+  int GetSpeechOutputLevel() const;
+  int GetSpeechOutputLevelFullRange() const;
 
   // VoENetEqStats
   int GetNetworkStatistics(NetworkStatistics& stats);
@@ -392,6 +388,7 @@ class Channel
   void OnIncomingFractionLoss(int fraction_lost);
 
  private:
+  bool InputMute() const;
   bool OnRtpPacketWithHeader(const uint8_t* received_packet,
                              size_t length,
                              RTPHeader *header);
@@ -483,14 +480,11 @@ class Channel
   Transport* _transportPtr;  // WebRtc socket or external transport
   RmsLevel rms_level_;
   int32_t _sendFrameType;  // Send data is voice, 1-voice, 0-otherwise
-  // VoEBase
-  bool _mixFileWithMicrophone;
-  // VoEVolumeControl
   bool input_mute_ GUARDED_BY(volume_settings_critsect_);
   bool previous_frame_muted_;  // Only accessed from PrepareEncodeAndSend().
-  float _panLeft GUARDED_BY(volume_settings_critsect_);
-  float _panRight GUARDED_BY(volume_settings_critsect_);
   float _outputGain GUARDED_BY(volume_settings_critsect_);
+  // VoEBase
+  bool _mixFileWithMicrophone;
   // VoeRTP_RTCP
   uint32_t _lastLocalTimeStamp;
   int8_t _lastPayloadType;

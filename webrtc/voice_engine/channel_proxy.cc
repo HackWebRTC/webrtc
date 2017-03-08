@@ -128,20 +128,14 @@ AudioDecodingCallStats ChannelProxy::GetDecodingCallStatistics() const {
   return stats;
 }
 
-int32_t ChannelProxy::GetSpeechOutputLevel() const {
+int ChannelProxy::GetSpeechOutputLevel() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  uint32_t level = 0;
-  int error = channel()->GetSpeechOutputLevel(level);
-  RTC_DCHECK_EQ(0, error);
-  return static_cast<int32_t>(level);
+  return channel()->GetSpeechOutputLevel();
 }
 
-int32_t ChannelProxy::GetSpeechOutputLevelFullRange() const {
+int ChannelProxy::GetSpeechOutputLevelFullRange() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  uint32_t level = 0;
-  int error = channel()->GetSpeechOutputLevelFullRange(level);
-  RTC_DCHECK_EQ(0, error);
-  return static_cast<int32_t>(level);
+  return channel()->GetSpeechOutputLevelFullRange();
 }
 
 uint32_t ChannelProxy::GetDelayEstimate() const {
@@ -186,8 +180,7 @@ void ChannelProxy::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
 
 void ChannelProxy::SetInputMute(bool muted) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int error = channel()->SetInputMute(muted);
-  RTC_DCHECK_EQ(0, error);
+  channel()->SetInputMute(muted);
 }
 
 void ChannelProxy::RegisterExternalTransport(Transport* transport) {
@@ -219,8 +212,7 @@ const rtc::scoped_refptr<AudioDecoderFactory>&
 
 void ChannelProxy::SetChannelOutputVolumeScaling(float scaling) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int error = channel()->SetChannelOutputVolumeScaling(scaling);
-  RTC_DCHECK_EQ(0, error);
+  channel()->SetChannelOutputVolumeScaling(scaling);
 }
 
 void ChannelProxy::SetRtcEventLog(RtcEventLog* event_log) {

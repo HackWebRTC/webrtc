@@ -667,35 +667,15 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
   }
 
   float output_gain = 1.0f;
-  float left_pan = 1.0f;
-  float right_pan = 1.0f;
   {
     rtc::CritScope cs(&volume_settings_critsect_);
     output_gain = _outputGain;
-    left_pan = _panLeft;
-    right_pan = _panRight;
   }
 
   // Output volume scaling
   if (output_gain < 0.99f || output_gain > 1.01f) {
+    // TODO(solenberg): Combine with mute state - this can cause clicks!
     AudioFrameOperations::ScaleWithSat(output_gain, *audioFrame);
-  }
-
-  // Scale left and/or right channel(s) if stereo and master balance is
-  // active
-
-  if (left_pan != 1.0f || right_pan != 1.0f) {
-    if (audioFrame->num_channels_ == 1) {
-      // Emulate stereo mode since panning is active.
-      // The mono signal is copied to both left and right channels here.
-      AudioFrameOperations::MonoToStereo(audioFrame);
-    }
-    // For true stereo mode (when we are receiving a stereo signal), no
-    // action is needed.
-
-    // Do the panning operation (the audio frame contains stereo at this
-    // stage)
-    AudioFrameOperations::Scale(left_pan, right_pan, *audioFrame);
   }
 
   // Mix decoded PCM output with file if file mixing is enabled
@@ -914,12 +894,10 @@ Channel::Channel(int32_t channelId,
       _callbackCritSectPtr(NULL),
       _transportPtr(NULL),
       _sendFrameType(0),
-      _mixFileWithMicrophone(false),
       input_mute_(false),
       previous_frame_muted_(false),
-      _panLeft(1.0f),
-      _panRight(1.0f),
       _outputGain(1.0f),
+      _mixFileWithMicrophone(false),
       _lastLocalTimeStamp(0),
       _lastPayloadType(0),
       _includeAudioLevelIndication(false),
@@ -2250,24 +2228,17 @@ void Channel::SetMixWithMicStatus(bool mix) {
   _mixFileWithMicrophone = mix;
 }
 
-int Channel::GetSpeechOutputLevel(uint32_t& level) const {
-  int8_t currentLevel = _outputAudioLevel.Level();
-  level = static_cast<int32_t>(currentLevel);
-  return 0;
+int Channel::GetSpeechOutputLevel() const {
+  return _outputAudioLevel.Level();
 }
 
-int Channel::GetSpeechOutputLevelFullRange(uint32_t& level) const {
-  int16_t currentLevel = _outputAudioLevel.LevelFullRange();
-  level = static_cast<int32_t>(currentLevel);
-  return 0;
+int Channel::GetSpeechOutputLevelFullRange() const {
+  return _outputAudioLevel.LevelFullRange();
 }
 
-int Channel::SetInputMute(bool enable) {
+void Channel::SetInputMute(bool enable) {
   rtc::CritScope cs(&volume_settings_critsect_);
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetMute(enable=%d)", enable);
   input_mute_ = enable;
-  return 0;
 }
 
 bool Channel::InputMute() const {
@@ -2275,34 +2246,9 @@ bool Channel::InputMute() const {
   return input_mute_;
 }
 
-int Channel::SetOutputVolumePan(float left, float right) {
+void Channel::SetChannelOutputVolumeScaling(float scaling) {
   rtc::CritScope cs(&volume_settings_critsect_);
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetOutputVolumePan()");
-  _panLeft = left;
-  _panRight = right;
-  return 0;
-}
-
-int Channel::GetOutputVolumePan(float& left, float& right) const {
-  rtc::CritScope cs(&volume_settings_critsect_);
-  left = _panLeft;
-  right = _panRight;
-  return 0;
-}
-
-int Channel::SetChannelOutputVolumeScaling(float scaling) {
-  rtc::CritScope cs(&volume_settings_critsect_);
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::SetChannelOutputVolumeScaling()");
   _outputGain = scaling;
-  return 0;
-}
-
-int Channel::GetChannelOutputVolumeScaling(float& scaling) const {
-  rtc::CritScope cs(&volume_settings_critsect_);
-  scaling = _outputGain;
-  return 0;
 }
 
 int Channel::SendTelephoneEventOutband(int event, int duration_ms) {

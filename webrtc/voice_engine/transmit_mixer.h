@@ -80,11 +80,7 @@ public:
 
     int32_t StopSend();
 
-    // VoEVolumeControl
-    int SetMute(bool enable);
-
-    bool Mute() const;
-
+    // TODO(solenberg): Remove, once AudioMonitor is gone.
     int8_t AudioLevel() const;
 
     // 'virtual' to allow mocking.
@@ -227,7 +223,6 @@ private:
     int _instanceId = 0;
     bool _mixFileWithMicrophone = false;
     uint32_t _captureLevel = 0;
-    bool _mute = false;
     bool stereo_codec_ = false;
     bool swap_stereo_channels_ = false;
 };

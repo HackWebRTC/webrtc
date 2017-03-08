@@ -24,7 +24,6 @@
 #include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
-#include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 
 // This convenient fixture sets up all voice engine interfaces automatically for
@@ -50,7 +49,6 @@ class BeforeInitializationFixture : public testing::Test {
   webrtc::VoiceEngine*        voice_engine_;
   webrtc::VoEBase*            voe_base_;
   webrtc::VoECodec*           voe_codec_;
-  webrtc::VoEVolumeControl*   voe_volume_control_;
   webrtc::VoERTP_RTCP*        voe_rtp_rtcp_;
   webrtc::VoEAudioProcessing* voe_apm_;
   webrtc::VoENetwork*         voe_network_;
