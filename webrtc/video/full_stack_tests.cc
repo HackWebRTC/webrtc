@@ -511,8 +511,10 @@ TEST_F(FullStackTest, LargeRoomVP8_5thumb) {
 // Fails on Android and win:
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=7301
 #define MAYBE_LargeRoomVP8_50thumb DISABLED_LargeRoomVP8_50thumb
+#define MAYBE_LargeRoomVP8_15thumb DISABLED_LargeRoomVP8_15thumb
 #else
 #define MAYBE_LargeRoomVP8_50thumb LargeRoomVP8_50thumb
+#define MAYBE_LargeRoomVP8_15thumb LargeRoomVP8_15thumb
 #endif
 
 TEST_F(FullStackTest, MAYBE_LargeRoomVP8_15thumb) {
