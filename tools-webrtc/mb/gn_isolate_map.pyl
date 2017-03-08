@@ -23,6 +23,10 @@
     "label": "//webrtc/examples:AppRTCMobileTest",
     "type": "additional_compile_target",
   },
+  "AppRTCMobileTestStubbedVideoIO": {
+    "label": "//webrtc/examples:AppRTCMobileTestStubbedVideoIO",
+    "type": "additional_compile_target",
+  },
   "android_junit_tests": {
     "label": "//webrtc:android_junit_tests",
     "type": "junit_test",
