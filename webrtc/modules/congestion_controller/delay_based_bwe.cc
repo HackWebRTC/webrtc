@@ -122,6 +122,28 @@ bool ReadMedianSlopeFilterExperimentParameters(size_t* window_size,
   *threshold_gain = kDefaultMedianSlopeThresholdGain;
   return false;
 }
+
+class PacketFeedbackComparator {
+ public:
+  inline bool operator()(const webrtc::PacketFeedback& lhs,
+                         const webrtc::PacketFeedback& rhs) {
+    if (lhs.arrival_time_ms != rhs.arrival_time_ms)
+      return lhs.arrival_time_ms < rhs.arrival_time_ms;
+    if (lhs.send_time_ms != rhs.send_time_ms)
+      return lhs.send_time_ms < rhs.send_time_ms;
+    return lhs.sequence_number < rhs.sequence_number;
+  }
+};
+
+void SortPacketFeedbackVector(const std::vector<webrtc::PacketFeedback>& input,
+                              std::vector<webrtc::PacketFeedback>* output) {
+  auto pred = [](const webrtc::PacketFeedback& packet_feedback) {
+    return packet_feedback.arrival_time_ms !=
+           webrtc::PacketFeedback::kNotReceived;
+  };
+  std::copy_if(input.begin(), input.end(), std::back_inserter(*output), pred);
+  std::sort(output->begin(), output->end(), PacketFeedbackComparator());
+}
 }  // namespace
 
 namespace webrtc {
@@ -255,6 +277,11 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, Clock* clock)
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
+
+  std::vector<PacketFeedback> sorted_packet_feedback_vector;
+  SortPacketFeedbackVector(packet_feedback_vector,
+                           &sorted_packet_feedback_vector);
+
   if (!uma_recorded_) {
     RTC_HISTOGRAM_ENUMERATION(kBweTypeHistogram,
                               BweNames::kSendSideTransportSeqNum,
@@ -263,7 +290,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
   }
   Result aggregated_result;
   bool delayed_feedback = true;
-  for (const auto& packet_feedback : packet_feedback_vector) {
+  for (const auto& packet_feedback : sorted_packet_feedback_vector) {
     if (packet_feedback.send_time_ms < 0)
       continue;
     delayed_feedback = false;
@@ -277,8 +304,8 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     consecutive_delayed_feedbacks_ = 0;
   }
   if (consecutive_delayed_feedbacks_ >= kMaxConsecutiveFailedLookups) {
-    aggregated_result =
-        OnLongFeedbackDelay(packet_feedback_vector.back().arrival_time_ms);
+    aggregated_result = OnLongFeedbackDelay(
+        sorted_packet_feedback_vector.back().arrival_time_ms);
     consecutive_delayed_feedbacks_ = 0;
   }
   return aggregated_result;

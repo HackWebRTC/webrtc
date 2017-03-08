@@ -279,6 +279,7 @@ struct PacketFeedback {
         pacing_info(pacing_info) {}
 
   static constexpr int kNotAProbe = -1;
+  static constexpr int64_t kNotReceived = -1;
 
   // NOTE! The variable |creation_time_ms| is not used when testing equality.
   //       This is due to |creation_time_ms| only being used by SendTimeHistory
@@ -295,7 +296,8 @@ struct PacketFeedback {
   // Time corresponding to when this object was created.
   int64_t creation_time_ms;
   // Time corresponding to when the packet was received. Timestamped with the
-  // receiver's clock.
+  // receiver's clock. For unreceived packet, the sentinel value kNotReceived
+  // is used.
   int64_t arrival_time_ms;
   // Time corresponding to when the packet was sent, timestamped with the
   // sender's clock.

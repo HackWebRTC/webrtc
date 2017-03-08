@@ -15,6 +15,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/mod_ops.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
@@ -29,17 +30,6 @@ const int64_t kSendTimeHistoryWindowMs = 60000;
 const int64_t kBaseTimestampScaleFactor =
     rtcp::TransportFeedback::kDeltaScaleFactor * (1 << 8);
 const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);
-
-class PacketFeedbackComparator {
- public:
-  inline bool operator()(const PacketFeedback& lhs, const PacketFeedback& rhs) {
-    if (lhs.arrival_time_ms != rhs.arrival_time_ms)
-      return lhs.arrival_time_ms < rhs.arrival_time_ms;
-    if (lhs.send_time_ms != rhs.send_time_ms)
-      return lhs.send_time_ms < rhs.send_time_ms;
-    return lhs.sequence_number < rhs.sequence_number;
-  }
-};
 
 TransportFeedbackAdapter::TransportFeedbackAdapter(
     RtcEventLog* event_log,
@@ -128,26 +118,48 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
 
   auto received_packets = feedback.GetReceivedPackets();
   std::vector<PacketFeedback> packet_feedback_vector;
-  packet_feedback_vector.reserve(received_packets.size());
   if (received_packets.empty()) {
     LOG(LS_INFO) << "Empty transport feedback packet received.";
     return packet_feedback_vector;
   }
+  const uint16_t last_sequence_number =
+      received_packets.back().sequence_number();
+  const size_t packet_count =
+      1 + ForwardDiff(feedback.GetBaseSequence(), last_sequence_number);
+  packet_feedback_vector.reserve(packet_count);
+  // feedback.GetStatusVector().size() is a less efficient way to reach what
+  // should be the same value.
+  RTC_DCHECK_EQ(packet_count, feedback.GetStatusVector().size());
+
   {
     rtc::CritScope cs(&lock_);
     size_t failed_lookups = 0;
     int64_t offset_us = 0;
     int64_t timestamp_ms = 0;
-    for (const auto& packet : feedback.GetReceivedPackets()) {
+    uint16_t seq_num = feedback.GetBaseSequence();
+    for (const auto& packet : received_packets) {
+      // Insert into the vector those unreceived packets which precede this
+      // iteration's received packet.
+      for (; seq_num != packet.sequence_number(); ++seq_num) {
+        PacketFeedback packet_feedback(PacketFeedback::kNotReceived, seq_num);
+        // Note: Element not removed from history because it might be reported
+        // as received by another feedback.
+        if (!send_time_history_.GetFeedback(&packet_feedback, false))
+          ++failed_lookups;
+        packet_feedback_vector.push_back(packet_feedback);
+      }
+
+      // Handle this iteration's received packet.
       offset_us += packet.delta_us();
       timestamp_ms = current_offset_ms_ + (offset_us / 1000);
       PacketFeedback packet_feedback(timestamp_ms, packet.sequence_number());
       if (!send_time_history_.GetFeedback(&packet_feedback, true))
         ++failed_lookups;
       packet_feedback_vector.push_back(packet_feedback);
+
+      ++seq_num;
     }
-    std::sort(packet_feedback_vector.begin(), packet_feedback_vector.end(),
-              PacketFeedbackComparator());
+
     if (failed_lookups > 0) {
       LOG(LS_WARNING) << "Failed to lookup send time for " << failed_lookups
                       << " packet" << (failed_lookups > 1 ? "s" : "")

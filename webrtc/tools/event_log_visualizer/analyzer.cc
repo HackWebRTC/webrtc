@@ -43,6 +43,26 @@ namespace plotting {
 
 namespace {
 
+class PacketFeedbackComparator {
+ public:
+  inline bool operator()(const webrtc::PacketFeedback& lhs,
+                         const webrtc::PacketFeedback& rhs) {
+    if (lhs.arrival_time_ms != rhs.arrival_time_ms)
+      return lhs.arrival_time_ms < rhs.arrival_time_ms;
+    if (lhs.send_time_ms != rhs.send_time_ms)
+      return lhs.send_time_ms < rhs.send_time_ms;
+    return lhs.sequence_number < rhs.sequence_number;
+  }
+};
+
+void SortPacketFeedbackVector(std::vector<PacketFeedback>* vec) {
+  auto pred = [](const PacketFeedback& packet_feedback) {
+    return packet_feedback.arrival_time_ms == PacketFeedback::kNotReceived;
+  };
+  vec->erase(std::remove_if(vec->begin(), vec->end(), pred), vec->end());
+  std::sort(vec->begin(), vec->end(), PacketFeedbackComparator());
+}
+
 std::string SsrcToString(uint32_t ssrc) {
   std::stringstream ss;
   ss << "SSRC " << ssrc;
@@ -1057,6 +1077,7 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
             rtcp.packet.get()));
         std::vector<PacketFeedback> feedback =
             observer->GetTransportFeedbackVector();
+        SortPacketFeedbackVector(&feedback);
         rtc::Optional<uint32_t> bitrate_bps;
         if (!feedback.empty()) {
           for (const PacketFeedback& packet : feedback)
@@ -1192,6 +1213,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
             *static_cast<rtcp::TransportFeedback*>(rtcp.packet.get()));
         std::vector<PacketFeedback> feedback =
             feedback_adapter.GetTransportFeedbackVector();
+        SortPacketFeedbackVector(&feedback);
         for (const PacketFeedback& packet : feedback) {
           int64_t y = packet.arrival_time_ms - packet.send_time_ms;
           float x =
