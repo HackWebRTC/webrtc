@@ -59,6 +59,8 @@ rtc_static_library("video_coding") {
     "packet_buffer.h",
     "protection_bitrate_calculator.cc",
     "protection_bitrate_calculator.h",
+    "qp_parser.cc",
+    "qp_parser.h",
     "receiver.cc",
     "receiver.h",
     "rtp_frame_reference_finder.cc",
@@ -105,10 +107,6 @@ rtc_static_library("video_coding") {
 }
 
 rtc_static_library("video_coding_utility") {
-  # TODO(ehmaldonado): Remove (bugs.webrtc.org/6828)
-  # Errors on cyclic dependency with :video_coding if enabled.
-  check_includes = false
-
   sources = [
     "utility/default_video_bitrate_allocator.cc",
     "utility/default_video_bitrate_allocator.h",
@@ -118,12 +116,8 @@ rtc_static_library("video_coding_utility") {
     "utility/ivf_file_writer.h",
     "utility/moving_average.cc",
     "utility/moving_average.h",
-    "utility/qp_parser.cc",
-    "utility/qp_parser.h",
     "utility/quality_scaler.cc",
     "utility/quality_scaler.h",
-    "utility/simulcast_rate_allocator.cc",
-    "utility/simulcast_rate_allocator.h",
     "utility/vp8_header_parser.cc",
     "utility/vp8_header_parser.h",
   ]
@@ -137,7 +131,9 @@ rtc_static_library("video_coding_utility") {
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
     "../../base:rtc_numerics",
+    "../../base:rtc_task_queue",
     "../../common_video",
+    "../../modules/rtp_rtcp:rtp_rtcp",
     "../../system_wrappers",
   ]
 }
@@ -213,6 +209,8 @@ rtc_static_library("webrtc_vp8") {
     "codecs/vp8/screenshare_layers.h",
     "codecs/vp8/simulcast_encoder_adapter.cc",
     "codecs/vp8/simulcast_encoder_adapter.h",
+    "codecs/vp8/simulcast_rate_allocator.cc",
+    "codecs/vp8/simulcast_rate_allocator.h",
     "codecs/vp8/temporal_layers.h",
     "codecs/vp8/vp8_impl.cc",
     "codecs/vp8/vp8_impl.h",
@@ -325,6 +323,7 @@ if (rtc_include_tests) {
     deps = [
       ":video_coding",
       ":video_coding_utility",
+      ":webrtc_vp8",
       "../..:webrtc_common",
       "../../base:rtc_base_approved",
       "../../common_video:common_video",

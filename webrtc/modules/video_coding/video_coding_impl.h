@@ -27,9 +27,9 @@
 #include "webrtc/modules/video_coding/generic_encoder.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/media_optimization.h"
+#include "webrtc/modules/video_coding/qp_parser.h"
 #include "webrtc/modules/video_coding/receiver.h"
 #include "webrtc/modules/video_coding/timing.h"
-#include "webrtc/modules/video_coding/utility/qp_parser.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
