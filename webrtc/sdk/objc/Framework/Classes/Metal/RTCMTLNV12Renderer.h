@@ -24,15 +24,6 @@
  * @param frame The frame to be rendered.
  */
 - (void)drawFrame:(RTCVideoFrame *)frame;
-
-/**
- * Sets the provided view as rendering destination if possible.
- *
- * If not possible method returns NO and callers of the method are responisble for performing
- * cleanups.
- */
-- (BOOL)addRenderingDestination:(__kindof UIView *)view;
-
 @end
 
 /**
@@ -40,4 +31,11 @@
  */
 @interface RTCMTLNV12Renderer : NSObject <RTCMTLRenderer>
 
+/**
+ * Sets the provided view as rendering destination if possible.
+ *
+ * If not possible method returns NO and callers of the method are responisble for performing
+ * cleanups.
+ */
+- (BOOL)addRenderingDestination:(__kindof MTKView *)view;
 @end
