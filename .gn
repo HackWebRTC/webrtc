@@ -28,6 +28,7 @@ check_targets = [
   "//webrtc/common_video/*",
   "//webrtc/common_audio/*",
   "//webrtc/examples/*",
+  "//webrtc/logging/*",
   "//webrtc/media/*",
   "//webrtc/modules/*",
   "//webrtc/stats/*",
