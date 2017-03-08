@@ -51,10 +51,6 @@ def _ParseArgs():
 
 
 def main():
-  print 'This test is currently disabled (https://bugs.webrtc.org/7185)'
-  return 0
-
-  # pylint: disable=W0101
   logging.basicConfig(level=logging.INFO)
 
   args = _ParseArgs()
