@@ -755,7 +755,11 @@ int main(int argc, char* argv[])
           /* Error check */
           if (err < 0 || declen < 0 || FL != static_cast<size_t>(declen)) {
             errtype=WebRtcIsacfix_GetErrorCode(ISAC_main_inst);
-            printf("\nError in decode_B/or getFrameLen: %d.\n", errtype);
+            printf(
+                "\nError %d in ReadFrameLen (%s), Decode (%s), with FL %zu and "
+                "declen %d.\n",
+                errtype, err < 0 ? "yes" : "no", declen < 0 ? "yes" : "no", FL,
+                declen);
           }
           prevFrameSize = static_cast<size_t>(declen/480);
 
