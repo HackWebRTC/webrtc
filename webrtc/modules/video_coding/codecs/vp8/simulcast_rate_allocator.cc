@@ -30,6 +30,7 @@ SimulcastRateAllocator::SimulcastRateAllocator(
 void SimulcastRateAllocator::OnTemporalLayersCreated(int simulcast_id,
                                                      TemporalLayers* layers) {
   RTC_DCHECK(temporal_layers_.find(simulcast_id) == temporal_layers_.end());
+  RTC_DCHECK(layers);
   temporal_layers_[simulcast_id] = layers;
 }
 

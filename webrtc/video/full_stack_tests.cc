@@ -9,6 +9,7 @@
  */
 #include <stdio.h>
 
+#include "webrtc/test/field_trial.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/video/video_quality_test.h"
 
@@ -305,6 +306,32 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL) {
   screenshare.screenshare = {true, 10};
   screenshare.analyzer = {"screenshare_slides", 0.0, 0.0,
                           kFullStackTestDurationSecs};
+  RunTest(screenshare);
+}
+
+TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
+  test::ScopedFieldTrials field_trial("WebRTC-SimulcastScreenshare/Enabled/");
+  VideoQualityTest::Params screenshare;
+  screenshare.call.send_side_bwe = true;
+  screenshare.screenshare = {true, 10};
+  screenshare.video = {true,    1850,  1110,  5, 800000, 2500000,
+                       2500000, false, "VP8", 3, 2,      400000,
+                       false,   false, "",    ""};
+  screenshare.analyzer = {"screenshare_slides_simulcast", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  VideoQualityTest::Params screenshare_params_high;
+  screenshare_params_high.video = {true,    1850,  1110,  5, 800000, 2500000,
+                                   2500000, false, "VP8", 3, 0,      400000,
+                                   false,   false, "",    ""};
+  VideoQualityTest::Params screenshare_params_low;
+  screenshare_params_low.video = {true,    1850,  1110,  5, 50000, 200000,
+                                  2000000, false, "VP8", 2, 0,     400000,
+                                  false,   false, "",    ""};
+
+  std::vector<VideoStream> streams = {
+      DefaultVideoStream(screenshare_params_low),
+      DefaultVideoStream(screenshare_params_high)};
+  screenshare.ss = {streams, 1, 1, 0};
   RunTest(screenshare);
 }
 

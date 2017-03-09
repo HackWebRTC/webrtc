@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <deque>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -34,6 +35,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp9/include/vp9.h"
 #include "webrtc/system_wrappers/include/cpu_info.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
@@ -141,8 +143,7 @@ class VideoAnalyzer : public PacketReceiver,
                 const std::string& graph_title,
                 uint32_t ssrc_to_analyze,
                 uint32_t rtx_ssrc_to_analyze,
-                uint32_t selected_stream_width,
-                uint32_t selected_stream_height,
+                size_t selected_stream,
                 int selected_sl,
                 int selected_tl,
                 bool is_quick_test_enabled)
@@ -156,8 +157,7 @@ class VideoAnalyzer : public PacketReceiver,
         graph_title_(graph_title),
         ssrc_to_analyze_(ssrc_to_analyze),
         rtx_ssrc_to_analyze_(rtx_ssrc_to_analyze),
-        selected_stream_width_(selected_stream_width),
-        selected_stream_height_(selected_stream_height),
+        selected_stream_(selected_stream),
         selected_sl_(selected_sl),
         selected_tl_(selected_tl),
         pre_encode_proxy_(this),
@@ -286,8 +286,7 @@ class VideoAnalyzer : public PacketReceiver,
   void PostEncodeFrameCallback(const EncodedFrame& encoded_frame) {
     rtc::CritScope lock(&crit_);
     if (!first_sent_timestamp_ &&
-        encoded_frame.encoded_width_ == selected_stream_width_ &&
-        encoded_frame.encoded_height_ == selected_stream_height_) {
+        encoded_frame.stream_id_ == selected_stream_) {
       first_sent_timestamp_ = rtc::Optional<uint32_t>(encoded_frame.timestamp_);
     }
   }
@@ -959,8 +958,7 @@ class VideoAnalyzer : public PacketReceiver,
   const std::string graph_title_;
   const uint32_t ssrc_to_analyze_;
   const uint32_t rtx_ssrc_to_analyze_;
-  const uint32_t selected_stream_width_;
-  const uint32_t selected_stream_height_;
+  const size_t selected_stream_;
   const int selected_sl_;
   const int selected_tl_;
   PreEncodeProxy pre_encode_proxy_;
@@ -1018,6 +1016,27 @@ class VideoAnalyzer : public PacketReceiver,
   rtc::Event comparison_available_event_;
   std::deque<FrameComparison> comparisons_ GUARDED_BY(comparison_lock_);
   rtc::Event done_;
+};
+
+class Vp8EncoderFactory : public VideoEncoderFactory {
+ public:
+  Vp8EncoderFactory() = default;
+  ~Vp8EncoderFactory() override { RTC_CHECK(live_encoders_.empty()); }
+
+  VideoEncoder* Create() override {
+    VideoEncoder* encoder = VP8Encoder::Create();
+    live_encoders_.insert(encoder);
+    return encoder;
+  }
+
+  void Destroy(VideoEncoder* encoder) override {
+    auto it = live_encoders_.find(encoder);
+    RTC_CHECK(it != live_encoders_.end());
+    live_encoders_.erase(it);
+    delete encoder;
+  }
+
+  std::set<VideoEncoder*> live_encoders_;
 };
 
 VideoQualityTest::VideoQualityTest()
@@ -1085,7 +1104,7 @@ void VideoQualityTest::CheckParams() {
     RTC_CHECK_GE(stream.min_bitrate_bps, 0);
     RTC_CHECK_GE(stream.target_bitrate_bps, stream.min_bitrate_bps);
     RTC_CHECK_GE(stream.max_bitrate_bps, stream.target_bitrate_bps);
-    RTC_CHECK_EQ(stream.temporal_layer_thresholds_bps.size(),
+    RTC_CHECK_LE(stream.temporal_layer_thresholds_bps.size(),
                  params_.video.num_temporal_layers - 1);
   }
   // TODO(ivica): Should we check if the sum of all streams/layers is equal to
@@ -1148,11 +1167,15 @@ VideoStream VideoQualityTest::DefaultVideoStream(const Params& params) {
   stream.target_bitrate_bps = params.video.target_bitrate_bps;
   stream.max_bitrate_bps = params.video.max_bitrate_bps;
   stream.max_qp = 52;
-  if (params.video.num_temporal_layers == 2) {
-    stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
-  } else if (params.video.num_temporal_layers == 3) {
-    stream.temporal_layer_thresholds_bps.push_back(stream.max_bitrate_bps / 4);
-    stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
+  if (params.video.num_temporal_layers > 1) {
+    RTC_CHECK_LE(params.video.num_temporal_layers, kMaxTemporalStreams);
+    if (params.video.codec == "VP8") {
+      for (int i = 0; i < params.video.num_temporal_layers - 1; ++i) {
+        stream.temporal_layer_thresholds_bps.push_back(static_cast<int>(
+            stream.target_bitrate_bps *
+            kVp8LayerRateAlloction[params.video.num_temporal_layers][i]));
+      }
+    }
   }
   return stream;
 }
@@ -1245,7 +1268,15 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     video_encoder_.reset(H264Encoder::Create(cricket::VideoCodec("H264")));
     payload_type = kPayloadTypeH264;
   } else if (params_.video.codec == "VP8") {
-    video_encoder_.reset(VP8Encoder::Create());
+    if (params_.screenshare.enabled && params_.ss.streams.size() > 1) {
+      // Simulcast screenshare needs a simulcast encoder adapter to work, since
+      // encoders usually can't natively do simulcast with different frame rates
+      // for the different layers.
+      video_encoder_.reset(
+          new SimulcastEncoderAdapter(new Vp8EncoderFactory()));
+    } else {
+      video_encoder_.reset(VP8Encoder::Create());
+    }
     payload_type = kPayloadTypeVP8;
   } else if (params_.video.codec == "VP9") {
     video_encoder_.reset(VP9Encoder::Create());
@@ -1580,8 +1611,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   if (graph_title.empty())
     graph_title = VideoQualityTest::GenerateGraphTitle();
 
-  VideoStream& selected_stream = params_.ss.streams[params_.ss.selected_stream];
-
   bool is_quick_test_enabled = field_trial::IsEnabled("WebRTC-QuickPerfTest");
   VideoAnalyzer analyzer(
       &send_transport, params_.analyzer.test_label,
@@ -1592,8 +1621,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       graph_data_output_file, graph_title,
       kVideoSendSsrcs[params_.ss.selected_stream],
       kSendRtxSsrcs[params_.ss.selected_stream],
-      static_cast<uint32_t>(selected_stream.width),
-      static_cast<uint32_t>(selected_stream.height), params.ss.selected_sl,
+      static_cast<size_t>(params_.ss.selected_stream), params.ss.selected_sl,
       params_.video.selected_tl, is_quick_test_enabled);
   analyzer.SetReceiver(receiver_call_->Receiver());
   send_transport.SetReceiver(&analyzer);
@@ -1863,6 +1891,7 @@ void VideoQualityTest::StartEncodedFrameLogs(VideoSendStream* stream) {
         10000000);
   }
 }
+
 void VideoQualityTest::StartEncodedFrameLogs(VideoReceiveStream* stream) {
   if (!params_.video.encoded_frame_base_path.empty()) {
     std::ostringstream str;
@@ -1873,5 +1902,4 @@ void VideoQualityTest::StartEncodedFrameLogs(VideoReceiveStream* stream) {
                                         10000000);
   }
 }
-
 }  // namespace webrtc

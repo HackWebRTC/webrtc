@@ -392,11 +392,14 @@ EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
   stats_proxy_.OnPreDecode(encoded_image, codec_specific_info);
+  size_t simulcast_idx = 0;
+  if (codec_specific_info->codecType == kVideoCodecVP8) {
+    simulcast_idx = codec_specific_info->codecSpecific.VP8.simulcastIdx;
+  }
   if (config_.pre_decode_callback) {
-    config_.pre_decode_callback->EncodedFrameCallback(
-        EncodedFrame(encoded_image._buffer, encoded_image._length,
-                     encoded_image._frameType, encoded_image._encodedWidth,
-                     encoded_image._encodedHeight, encoded_image._timeStamp));
+    config_.pre_decode_callback->EncodedFrameCallback(EncodedFrame(
+        encoded_image._buffer, encoded_image._length, encoded_image._frameType,
+        simulcast_idx, encoded_image._timeStamp));
   }
   {
     rtc::CritScope lock(&ivf_writer_lock_);

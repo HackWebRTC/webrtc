@@ -1032,11 +1032,14 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   // Encoded is called on whatever thread the real encoder implementation run
   // on. In the case of hardware encoders, there might be several encoders
   // running in parallel on different threads.
+  size_t simulcast_idx = 0;
+  if (codec_specific_info->codecType == kVideoCodecVP8) {
+    simulcast_idx = codec_specific_info->codecSpecific.VP8.simulcastIdx;
+  }
   if (config_->post_encode_callback) {
-    config_->post_encode_callback->EncodedFrameCallback(
-        EncodedFrame(encoded_image._buffer, encoded_image._length,
-                     encoded_image._frameType, encoded_image._encodedWidth,
-                     encoded_image._encodedHeight, encoded_image._timeStamp));
+    config_->post_encode_callback->EncodedFrameCallback(EncodedFrame(
+        encoded_image._buffer, encoded_image._length, encoded_image._frameType,
+        simulcast_idx, encoded_image._timeStamp));
   }
   {
     rtc::CritScope lock(&encoder_activity_crit_sect_);
