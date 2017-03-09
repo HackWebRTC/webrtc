@@ -86,8 +86,7 @@ AudioSendStream::AudioSendStream(
     }
   }
   channel_proxy_->RegisterSenderCongestionControlObjects(
-      congestion_controller->pacer(),
-      congestion_controller->GetTransportFeedbackObserver(), packet_router,
+      congestion_controller->pacer(), congestion_controller, packet_router,
       bandwidth_observer_.get());
   if (!SetupSendCodec()) {
     LOG(LS_ERROR) << "Failed to set up send codec state.";

@@ -62,6 +62,8 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "congestion_controller_unittest.cc",
+      "congestion_controller_unittests_helper.cc",
+      "congestion_controller_unittests_helper.h",
       "delay_based_bwe_unittest.cc",
       "delay_based_bwe_unittest_helper.cc",
       "delay_based_bwe_unittest_helper.h",

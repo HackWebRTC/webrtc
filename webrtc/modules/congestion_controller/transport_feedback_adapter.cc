@@ -10,17 +10,11 @@
 
 #include "webrtc/modules/congestion_controller/transport_feedback_adapter.h"
 
-#include <algorithm>
-#include <limits>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/mod_ops.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
-#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -31,26 +25,16 @@ const int64_t kBaseTimestampScaleFactor =
     rtcp::TransportFeedback::kDeltaScaleFactor * (1 << 8);
 const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);
 
-TransportFeedbackAdapter::TransportFeedbackAdapter(
-    RtcEventLog* event_log,
-    Clock* clock,
-    BitrateController* bitrate_controller)
+TransportFeedbackAdapter::TransportFeedbackAdapter(Clock* clock)
     : send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       transport_overhead_bytes_per_packet_(0),
       send_time_history_(clock, kSendTimeHistoryWindowMs),
-      event_log_(event_log),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
-      last_timestamp_us_(kNoTimestamp),
-      bitrate_controller_(bitrate_controller) {}
+      last_timestamp_us_(kNoTimestamp) {}
 
 TransportFeedbackAdapter::~TransportFeedbackAdapter() {}
-
-void TransportFeedbackAdapter::InitBwe() {
-  rtc::CritScope cs(&bwe_lock_);
-  delay_based_bwe_.reset(new DelayBasedBwe(event_log_, clock_));
-}
 
 void TransportFeedbackAdapter::AddPacket(uint16_t sequence_number,
                                          size_t length,
@@ -68,25 +52,10 @@ void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
   send_time_history_.OnSentPacket(sequence_number, send_time_ms);
 }
 
-void TransportFeedbackAdapter::SetStartBitrate(int start_bitrate_bps) {
-  rtc::CritScope cs(&bwe_lock_);
-  delay_based_bwe_->SetStartBitrate(start_bitrate_bps);
-}
-
-void TransportFeedbackAdapter::SetMinBitrate(int min_bitrate_bps) {
-  rtc::CritScope cs(&bwe_lock_);
-  delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
-}
-
 void TransportFeedbackAdapter::SetTransportOverhead(
     int transport_overhead_bytes_per_packet) {
   rtc::CritScope cs(&lock_);
   transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
-}
-
-int64_t TransportFeedbackAdapter::GetProbingIntervalMs() const {
-  rtc::CritScope cs(&bwe_lock_);
-  return delay_based_bwe_->GetProbingIntervalMs();
 }
 
 void TransportFeedbackAdapter::ClearSendTimeHistory() {
@@ -172,25 +141,10 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
 void TransportFeedbackAdapter::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
   last_packet_feedback_vector_ = GetPacketFeedbackVector(feedback);
-  DelayBasedBwe::Result result;
-  {
-    rtc::CritScope cs(&bwe_lock_);
-    result = delay_based_bwe_->IncomingPacketFeedbackVector(
-        last_packet_feedback_vector_);
-  }
-  if (result.updated)
-    bitrate_controller_->OnDelayBasedBweResult(result);
 }
 
 std::vector<PacketFeedback>
 TransportFeedbackAdapter::GetTransportFeedbackVector() const {
   return last_packet_feedback_vector_;
 }
-
-void TransportFeedbackAdapter::OnRttUpdate(int64_t avg_rtt_ms,
-                                           int64_t max_rtt_ms) {
-  rtc::CritScope cs(&bwe_lock_);
-  delay_based_bwe_->OnRttUpdate(avg_rtt_ms, max_rtt_ms);
-}
-
 }  // namespace webrtc

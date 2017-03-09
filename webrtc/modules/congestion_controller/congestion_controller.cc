@@ -160,6 +160,7 @@ CongestionController::CongestionController(
     std::unique_ptr<PacedSender> pacer)
     : clock_(clock),
       observer_(observer),
+      event_log_(event_log),
       packet_router_(packet_router),
       pacer_(std::move(pacer)),
       bitrate_controller_(
@@ -169,15 +170,16 @@ CongestionController::CongestionController(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
       remote_bitrate_estimator_(remote_bitrate_observer, clock_),
       remote_estimator_proxy_(clock_, packet_router_),
-      transport_feedback_adapter_(event_log, clock_, bitrate_controller_.get()),
+      transport_feedback_adapter_(clock_),
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       max_bitrate_bps_(0),
       last_reported_bitrate_bps_(0),
       last_reported_fraction_loss_(0),
       last_reported_rtt_(0),
-      network_state_(kNetworkUp) {
-  transport_feedback_adapter_.InitBwe();
-  transport_feedback_adapter_.SetMinBitrate(min_bitrate_bps_);
+      network_state_(kNetworkUp),
+      delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)) {
+  delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
+  worker_thread_checker_.DetachFromThread();
 }
 
 CongestionController::~CongestionController() {}
@@ -210,9 +212,12 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
 
   remote_bitrate_estimator_.SetMinBitrate(min_bitrate_bps);
   min_bitrate_bps_ = min_bitrate_bps;
-  if (start_bitrate_bps > 0)
-    transport_feedback_adapter_.SetStartBitrate(start_bitrate_bps);
-  transport_feedback_adapter_.SetMinBitrate(min_bitrate_bps_);
+  {
+    rtc::CritScope cs(&bwe_lock_);
+    if (start_bitrate_bps > 0)
+      delay_based_bwe_->SetStartBitrate(start_bitrate_bps);
+    delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
+  }
   MaybeTriggerOnNetworkChanged();
 }
 
@@ -231,9 +236,12 @@ void CongestionController::ResetBweAndBitrates(int bitrate_bps,
   remote_bitrate_estimator_.SetMinBitrate(min_bitrate_bps);
 
   transport_feedback_adapter_.ClearSendTimeHistory();
-  transport_feedback_adapter_.InitBwe();
-  transport_feedback_adapter_.SetStartBitrate(bitrate_bps);
-  transport_feedback_adapter_.SetMinBitrate(min_bitrate_bps);
+  {
+    rtc::CritScope cs(&bwe_lock_);
+    delay_based_bwe_.reset(new DelayBasedBwe(event_log_, clock_));
+    delay_based_bwe_->SetStartBitrate(bitrate_bps);
+    delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
+  }
 
   probe_controller_->Reset();
   probe_controller_->SetBitrates(min_bitrate_bps, bitrate_bps, max_bitrate_bps);
@@ -252,11 +260,6 @@ RemoteBitrateEstimator* CongestionController::GetRemoteBitrateEstimator(
   } else {
     return &remote_bitrate_estimator_;
   }
-}
-
-TransportFeedbackObserver*
-CongestionController::GetTransportFeedbackObserver() {
-  return &transport_feedback_adapter_;
 }
 
 RateLimiter* CongestionController::GetRetransmissionRateLimiter() {
@@ -286,7 +289,7 @@ void CongestionController::SignalNetworkState(NetworkState state) {
     pacer_->Pause();
   }
   {
-    rtc::CritScope cs(&critsect_);
+    rtc::CritScope cs(&network_state_lock_);
     network_state_ = state;
   }
   probe_controller_->OnNetworkStateChanged(state);
@@ -310,7 +313,10 @@ void CongestionController::OnSentPacket(const rtc::SentPacket& sent_packet) {
 
 void CongestionController::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   remote_bitrate_estimator_.OnRttUpdate(avg_rtt_ms, max_rtt_ms);
-  transport_feedback_adapter_.OnRttUpdate(avg_rtt_ms, max_rtt_ms);
+  {
+    rtc::CritScope cs(&bwe_lock_);
+    delay_based_bwe_->OnRttUpdate(avg_rtt_ms, max_rtt_ms);
+  }
 }
 
 int64_t CongestionController::TimeUntilNextProcess() {
@@ -323,6 +329,32 @@ void CongestionController::Process() {
   remote_bitrate_estimator_.Process();
   probe_controller_->Process();
   MaybeTriggerOnNetworkChanged();
+}
+
+void CongestionController::AddPacket(uint16_t sequence_number,
+                                     size_t length,
+                                     const PacedPacketInfo& pacing_info) {
+  transport_feedback_adapter_.AddPacket(sequence_number, length, pacing_info);
+}
+
+void CongestionController::OnTransportFeedback(
+    const rtcp::TransportFeedback& feedback) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  transport_feedback_adapter_.OnTransportFeedback(feedback);
+  DelayBasedBwe::Result result;
+  {
+    rtc::CritScope cs(&bwe_lock_);
+    result = delay_based_bwe_->IncomingPacketFeedbackVector(
+        transport_feedback_adapter_.GetTransportFeedbackVector());
+  }
+  if (result.updated)
+    bitrate_controller_->OnDelayBasedBweResult(result);
+}
+
+std::vector<PacketFeedback> CongestionController::GetTransportFeedbackVector()
+    const {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  return transport_feedback_adapter_.GetTransportFeedbackVector();
 }
 
 void CongestionController::MaybeTriggerOnNetworkChanged() {
@@ -345,9 +377,13 @@ void CongestionController::MaybeTriggerOnNetworkChanged() {
   bitrate_bps = IsNetworkDown() || IsSendQueueFull() ? 0 : bitrate_bps;
 
   if (HasNetworkParametersToReportChanged(bitrate_bps, fraction_loss, rtt)) {
-    observer_->OnNetworkChanged(
-        bitrate_bps, fraction_loss, rtt,
-        transport_feedback_adapter_.GetProbingIntervalMs());
+    int64_t probing_interval_ms;
+    {
+      rtc::CritScope cs(&bwe_lock_);
+      probing_interval_ms = delay_based_bwe_->GetProbingIntervalMs();
+    }
+    observer_->OnNetworkChanged(bitrate_bps, fraction_loss, rtt,
+                                probing_interval_ms);
     remote_estimator_proxy_.OnBitrateChanged(bitrate_bps);
   }
 }
@@ -356,7 +392,7 @@ bool CongestionController::HasNetworkParametersToReportChanged(
     uint32_t bitrate_bps,
     uint8_t fraction_loss,
     int64_t rtt) {
-  rtc::CritScope cs(&critsect_);
+  rtc::CritScope cs(&network_state_lock_);
   bool changed =
       last_reported_bitrate_bps_ != bitrate_bps ||
       (bitrate_bps > 0 && (last_reported_fraction_loss_ != fraction_loss ||
@@ -376,7 +412,7 @@ bool CongestionController::IsSendQueueFull() const {
 }
 
 bool CongestionController::IsNetworkDown() const {
-  rtc::CritScope cs(&critsect_);
+  rtc::CritScope cs(&network_state_lock_);
   return network_state_ == kNetworkDown;
 }
 

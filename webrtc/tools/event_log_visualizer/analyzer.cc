@@ -24,7 +24,6 @@
 #include "webrtc/call/audio_send_stream.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -1072,11 +1071,9 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
       const LoggedRtcpPacket& rtcp = *rtcp_iterator->second;
       if (rtcp.type == kRtcpTransportFeedback) {
-        TransportFeedbackObserver* observer = cc.GetTransportFeedbackObserver();
-        observer->OnTransportFeedback(*static_cast<rtcp::TransportFeedback*>(
-            rtcp.packet.get()));
-        std::vector<PacketFeedback> feedback =
-            observer->GetTransportFeedbackVector();
+        cc.OnTransportFeedback(
+            *static_cast<rtcp::TransportFeedback*>(rtcp.packet.get()));
+        std::vector<PacketFeedback> feedback = cc.GetTransportFeedbackVector();
         SortPacketFeedbackVector(&feedback);
         rtc::Optional<uint32_t> bitrate_bps;
         if (!feedback.empty()) {
@@ -1098,9 +1095,8 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
       const LoggedRtpPacket& rtp = *rtp_iterator->second;
       if (rtp.header.extension.hasTransportSequenceNumber) {
         RTC_DCHECK(rtp.header.extension.hasTransportSequenceNumber);
-        cc.GetTransportFeedbackObserver()->AddPacket(
-            rtp.header.extension.transportSequenceNumber, rtp.total_length,
-            PacedPacketInfo());
+        cc.AddPacket(rtp.header.extension.transportSequenceNumber,
+                     rtp.total_length, PacedPacketInfo());
         rtc::SentPacket sent_packet(
             rtp.header.extension.transportSequenceNumber, rtp.timestamp / 1000);
         cc.OnSentPacket(sent_packet);
@@ -1130,34 +1126,6 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
   plot->SetTitle("Simulated BWE behavior");
 }
 
-// TODO(holmer): Remove once TransportFeedbackAdapter no longer needs a
-// BitrateController.
-class NullBitrateController : public BitrateController {
- public:
-  ~NullBitrateController() override {}
-  RtcpBandwidthObserver* CreateRtcpBandwidthObserver() override {
-    return nullptr;
-  }
-  void SetStartBitrate(int start_bitrate_bps) override {}
-  void SetMinMaxBitrate(int min_bitrate_bps, int max_bitrate_bps) override {}
-  void SetBitrates(int start_bitrate_bps,
-                   int min_bitrate_bps,
-                   int max_bitrate_bps) override {}
-  void ResetBitrates(int bitrate_bps,
-                     int min_bitrate_bps,
-                     int max_bitrate_bps) override {}
-  void OnDelayBasedBweResult(const DelayBasedBwe::Result& result) override {}
-  bool AvailableBandwidth(uint32_t* bandwidth) const override { return false; }
-  void SetReservedBitrate(uint32_t reserved_bitrate_bps) override {}
-  bool GetNetworkParameters(uint32_t* bitrate,
-                            uint8_t* fraction_loss,
-                            int64_t* rtt) override {
-    return false;
-  }
-  int64_t TimeUntilNextProcess() override { return 0; }
-  void Process() override {}
-};
-
 void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   std::map<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
   std::map<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
@@ -1178,9 +1146,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   }
 
   SimulatedClock clock(0);
-  NullBitrateController null_controller;
-  TransportFeedbackAdapter feedback_adapter(nullptr, &clock, &null_controller);
-  feedback_adapter.InitBwe();
+  TransportFeedbackAdapter feedback_adapter(&clock);
 
   TimeSeries time_series;
   time_series.label = "Network Delay Change";

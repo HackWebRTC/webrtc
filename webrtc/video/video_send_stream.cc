@@ -789,7 +789,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           config_->send_transport,
           &encoder_feedback_,
           bandwidth_observer_.get(),
-          congestion_controller_->GetTransportFeedbackObserver(),
+          congestion_controller_,
           call_stats_->rtcp_rtt_stats(),
           congestion_controller_->pacer(),
           packet_router_,

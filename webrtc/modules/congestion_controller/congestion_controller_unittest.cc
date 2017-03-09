@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
+#include "webrtc/modules/congestion_controller/congestion_controller_unittests_helper.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
 #include "webrtc/modules/pacing/mock/mock_paced_sender.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/mock/mock_remote_bitrate_observer.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -27,6 +29,8 @@ using testing::SaveArg;
 using testing::StrictMock;
 
 namespace {
+const webrtc::PacedPacketInfo kPacingInfo0(0, 5, 2000);
+const webrtc::PacedPacketInfo kPacingInfo1(1, 8, 4000);
 
 // Helper to convert some time format to resolution used in absolute send time
 // header extension, rounded upwards. |t| is the time to convert, in some
@@ -43,7 +47,7 @@ namespace test {
 
 class CongestionControllerTest : public ::testing::Test {
  protected:
-  CongestionControllerTest() : clock_(123456) {}
+  CongestionControllerTest() : clock_(123456), target_bitrate_observer_(this) {}
   ~CongestionControllerTest() override {}
 
   void SetUp() override {
@@ -64,8 +68,74 @@ class CongestionControllerTest : public ::testing::Test {
     controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
   }
 
+  // Custom setup - use an observer that tracks the target bitrate, without
+  // prescribing on which iterations it must change (like a mock would).
+  void TargetBitrateTrackingSetup() {
+    std::unique_ptr<PacedSender> pacer(new NiceMock<MockPacedSender>());
+    controller_.reset(new CongestionController(
+        &clock_, &target_bitrate_observer_, &remote_bitrate_observer_,
+        &event_log_, &packet_router_, std::move(pacer)));
+    controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
+  }
+
+  void OnSentPacket(const PacketFeedback& packet_feedback) {
+    controller_->AddPacket(packet_feedback.sequence_number,
+                           packet_feedback.payload_size,
+                           packet_feedback.pacing_info);
+    controller_->OnSentPacket(rtc::SentPacket(packet_feedback.sequence_number,
+                                              packet_feedback.send_time_ms));
+  }
+
+  // Allows us to track the target bitrate, without prescribing the exact
+  // iterations when this would hapen, like a mock would.
+  class TargetBitrateObserver : public CongestionController::Observer {
+   public:
+    explicit TargetBitrateObserver(CongestionControllerTest* owner)
+        : owner_(owner) {}
+    ~TargetBitrateObserver() override = default;
+    void OnNetworkChanged(uint32_t bitrate_bps,
+                          uint8_t fraction_loss,  // 0 - 255.
+                          int64_t rtt_ms,
+                          int64_t probing_interval_ms) override {
+      owner_->target_bitrate_bps_ = rtc::Optional<uint32_t>(bitrate_bps);
+    }
+
+   private:
+    CongestionControllerTest* owner_;
+  };
+
+  void PacketTransmissionAndFeedbackBlock(uint16_t* seq_num,
+                                          int64_t runtime_ms,
+                                          int64_t delay) {
+    int64_t delay_buildup = 0;
+    int64_t start_time_ms = clock_.TimeInMilliseconds();
+    while (clock_.TimeInMilliseconds() - start_time_ms < runtime_ms) {
+      constexpr size_t kPayloadSize = 1000;
+      PacketFeedback packet(clock_.TimeInMilliseconds() + delay_buildup,
+                            clock_.TimeInMilliseconds(), *seq_num, kPayloadSize,
+                            PacedPacketInfo());
+      delay_buildup += delay;  // Delay has to increase, or it's just RTT.
+      OnSentPacket(packet);
+      // Create expected feedback and send into adapter.
+      std::unique_ptr<rtcp::TransportFeedback> feedback(
+          new rtcp::TransportFeedback());
+      feedback->SetBase(packet.sequence_number, packet.arrival_time_ms * 1000);
+      EXPECT_TRUE(feedback->AddReceivedPacket(packet.sequence_number,
+                                              packet.arrival_time_ms * 1000));
+      rtc::Buffer raw_packet = feedback->Build();
+      feedback = rtcp::TransportFeedback::ParseFrom(raw_packet.data(),
+                                                    raw_packet.size());
+      EXPECT_TRUE(feedback.get() != nullptr);
+      controller_->OnTransportFeedback(*feedback.get());
+      clock_.AdvanceTimeMilliseconds(50);
+      controller_->Process();
+      ++(*seq_num);
+    }
+  }
+
   SimulatedClock clock_;
   StrictMock<MockCongestionObserver> observer_;
+  TargetBitrateObserver target_bitrate_observer_;
   NiceMock<MockPacedSender>* pacer_;
   NiceMock<MockRemoteBitrateObserver> remote_bitrate_observer_;
   NiceMock<MockRtcEventLog> event_log_;
@@ -73,6 +143,8 @@ class CongestionControllerTest : public ::testing::Test {
   PacketRouter packet_router_;
   std::unique_ptr<CongestionController> controller_;
   const uint32_t kInitialBitrateBps = 60000;
+
+  rtc::Optional<uint32_t> target_bitrate_bps_;
 };
 
 TEST_F(CongestionControllerTest, OnNetworkChanged) {
@@ -253,5 +325,116 @@ TEST_F(CongestionControllerTest, ProbeOnBweReset) {
                                    20 * kInitialBitrateBps);
 }
 
+// Estimated bitrate reduced when the feedbacks arrive with such a long delay,
+// that the send-time-history no longer holds the feedbacked packets.
+TEST_F(CongestionControllerTest, LongFeedbackDelays) {
+  TargetBitrateTrackingSetup();
+
+  const int64_t kFeedbackTimeoutMs = 60001;
+  const int kMaxConsecutiveFailedLookups = 5;
+  for (int i = 0; i < kMaxConsecutiveFailedLookups; ++i) {
+    std::vector<PacketFeedback> packets;
+    packets.push_back(
+        PacketFeedback(i * 100, 2 * i * 100, 0, 1500, kPacingInfo0));
+    packets.push_back(
+        PacketFeedback(i * 100 + 10, 2 * i * 100 + 10, 1, 1500, kPacingInfo0));
+    packets.push_back(
+        PacketFeedback(i * 100 + 20, 2 * i * 100 + 20, 2, 1500, kPacingInfo0));
+    packets.push_back(
+        PacketFeedback(i * 100 + 30, 2 * i * 100 + 30, 3, 1500, kPacingInfo1));
+    packets.push_back(
+        PacketFeedback(i * 100 + 40, 2 * i * 100 + 40, 4, 1500, kPacingInfo1));
+
+    for (const PacketFeedback& packet : packets)
+      OnSentPacket(packet);
+
+    rtcp::TransportFeedback feedback;
+    feedback.SetBase(packets[0].sequence_number,
+                     packets[0].arrival_time_ms * 1000);
+
+    for (const PacketFeedback& packet : packets) {
+      EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
+                                             packet.arrival_time_ms * 1000));
+    }
+
+    feedback.Build();
+
+    clock_.AdvanceTimeMilliseconds(kFeedbackTimeoutMs);
+    PacketFeedback later_packet(kFeedbackTimeoutMs + i * 100 + 40,
+                                kFeedbackTimeoutMs + i * 200 + 40, 5, 1500,
+                                kPacingInfo1);
+    OnSentPacket(later_packet);
+
+    controller_->OnTransportFeedback(feedback);
+
+    // Check that packets have timed out.
+    for (PacketFeedback& packet : packets) {
+      packet.send_time_ms = -1;
+      packet.payload_size = 0;
+      packet.pacing_info = PacedPacketInfo();
+    }
+    ComparePacketFeedbackVectors(packets,
+                                 controller_->GetTransportFeedbackVector());
+  }
+
+  controller_->Process();
+
+  EXPECT_EQ(kInitialBitrateBps / 2, target_bitrate_bps_);
+
+  // Test with feedback that isn't late enough to time out.
+  {
+    std::vector<PacketFeedback> packets;
+    packets.push_back(PacketFeedback(100, 200, 0, 1500, kPacingInfo0));
+    packets.push_back(PacketFeedback(110, 210, 1, 1500, kPacingInfo0));
+    packets.push_back(PacketFeedback(120, 220, 2, 1500, kPacingInfo0));
+    packets.push_back(PacketFeedback(130, 230, 3, 1500, kPacingInfo1));
+    packets.push_back(PacketFeedback(140, 240, 4, 1500, kPacingInfo1));
+
+    for (const PacketFeedback& packet : packets)
+      OnSentPacket(packet);
+
+    rtcp::TransportFeedback feedback;
+    feedback.SetBase(packets[0].sequence_number,
+                     packets[0].arrival_time_ms * 1000);
+
+    for (const PacketFeedback& packet : packets) {
+      EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
+                                             packet.arrival_time_ms * 1000));
+    }
+
+    feedback.Build();
+
+    clock_.AdvanceTimeMilliseconds(kFeedbackTimeoutMs - 1);
+    PacketFeedback later_packet(kFeedbackTimeoutMs + 140,
+                                kFeedbackTimeoutMs + 240, 5, 1500,
+                                kPacingInfo1);
+    OnSentPacket(later_packet);
+
+    controller_->OnTransportFeedback(feedback);
+    ComparePacketFeedbackVectors(packets,
+                                 controller_->GetTransportFeedbackVector());
+  }
+}
+
+// Bandwidth estimation is updated when feedbacks are received.
+// Feedbacks which show an increasing delay cause the estimation to be reduced.
+TEST_F(CongestionControllerTest, UpdatesDelayBasedEstimate) {
+  TargetBitrateTrackingSetup();
+
+  const int64_t kRunTimeMs = 6000;
+  uint16_t seq_num = 0;
+
+  // The test must run and insert packets/feedback long enough that the
+  // BWE computes a valid estimate. This is first done in an environment which
+  // simulates no bandwidth limitation, and therefore not built-up delay.
+  PacketTransmissionAndFeedbackBlock(&seq_num, kRunTimeMs, 0);
+  ASSERT_TRUE(target_bitrate_bps_);
+
+  // Repeat, but this time with a building delay, and make sure that the
+  // estimation is adjusted downwards.
+  uint32_t bitrate_before_delay = *target_bitrate_bps_;
+  PacketTransmissionAndFeedbackBlock(&seq_num, kRunTimeMs, 50);
+  EXPECT_LT(*target_bitrate_bps_, bitrate_before_delay);
+}
 }  // namespace test
 }  // namespace webrtc

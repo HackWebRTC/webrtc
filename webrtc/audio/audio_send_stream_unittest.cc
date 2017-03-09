@@ -151,15 +151,13 @@ struct ConfigHelper {
           .Times(1);
       EXPECT_CALL(*channel_proxy_,
                   RegisterSenderCongestionControlObjects(
-                      congestion_controller_.pacer(),
-                      congestion_controller_.GetTransportFeedbackObserver(),
+                      congestion_controller_.pacer(), &congestion_controller_,
                       packet_router(), Ne(nullptr)))
           .Times(1);
     } else {
       EXPECT_CALL(*channel_proxy_,
                   RegisterSenderCongestionControlObjects(
-                      congestion_controller_.pacer(),
-                      congestion_controller_.GetTransportFeedbackObserver(),
+                      congestion_controller_.pacer(), &congestion_controller_,
                       packet_router(), Eq(nullptr)))
           .Times(1);
     }

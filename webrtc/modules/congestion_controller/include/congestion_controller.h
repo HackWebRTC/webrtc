@@ -16,12 +16,14 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/common_types.h"
+#include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/congestion_controller/transport_feedback_adapter.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/pacing/paced_sender.h"
+#include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_estimator_proxy.h"
 
 namespace rtc {
@@ -37,9 +39,10 @@ class RateLimiter;
 class RemoteBitrateEstimator;
 class RemoteBitrateObserver;
 class RtcEventLog;
-class TransportFeedbackObserver;
 
-class CongestionController : public CallStatsObserver, public Module {
+class CongestionController : public CallStatsObserver,
+                             public Module,
+                             public TransportFeedbackObserver {
  public:
   // Observer class for bitrate changes announced due to change in bandwidth
   // estimate or due to that the send pacer is full. Fraction loss and rtt is
@@ -91,7 +94,6 @@ class CongestionController : public CallStatsObserver, public Module {
   // TODO(nisse): Delete this accessor function. The pacer should be
   // internal to the congestion controller.
   virtual PacedSender* pacer() { return pacer_.get(); }
-  virtual TransportFeedbackObserver* GetTransportFeedbackObserver();
   RateLimiter* GetRetransmissionRateLimiter();
   void EnablePeriodicAlrProbing(bool enable);
 
@@ -116,6 +118,13 @@ class CongestionController : public CallStatsObserver, public Module {
   // Implements Module.
   int64_t TimeUntilNextProcess() override;
   void Process() override;
+
+  // Implements TransportFeedbackObserver.
+  void AddPacket(uint16_t sequence_number,
+                 size_t length,
+                 const PacedPacketInfo& pacing_info) override;
+  void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
+  std::vector<PacketFeedback> GetTransportFeedbackVector() const override;
 
  private:
   class WrappingBitrateEstimator : public RemoteBitrateEstimator {
@@ -165,6 +174,7 @@ class CongestionController : public CallStatsObserver, public Module {
                                            int64_t rtt);
   Clock* const clock_;
   Observer* const observer_;
+  RtcEventLog* const event_log_;
   PacketRouter* const packet_router_;
   const std::unique_ptr<PacedSender> pacer_;
   const std::unique_ptr<BitrateController> bitrate_controller_;
@@ -175,11 +185,15 @@ class CongestionController : public CallStatsObserver, public Module {
   TransportFeedbackAdapter transport_feedback_adapter_;
   int min_bitrate_bps_;
   int max_bitrate_bps_;
-  rtc::CriticalSection critsect_;
-  uint32_t last_reported_bitrate_bps_ GUARDED_BY(critsect_);
-  uint8_t last_reported_fraction_loss_ GUARDED_BY(critsect_);
-  int64_t last_reported_rtt_ GUARDED_BY(critsect_);
-  NetworkState network_state_ GUARDED_BY(critsect_);
+  rtc::CriticalSection network_state_lock_;
+  uint32_t last_reported_bitrate_bps_ GUARDED_BY(network_state_lock_);
+  uint8_t last_reported_fraction_loss_ GUARDED_BY(network_state_lock_);
+  int64_t last_reported_rtt_ GUARDED_BY(network_state_lock_);
+  NetworkState network_state_ GUARDED_BY(network_state_lock_);
+  rtc::CriticalSection bwe_lock_;
+  std::unique_ptr<DelayBasedBwe> delay_based_bwe_ GUARDED_BY(bwe_lock_);
+
+  rtc::ThreadChecker worker_thread_checker_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(CongestionController);
 };
