@@ -16,7 +16,8 @@
 
 namespace webrtc {
 
-SendTimeHistory::SendTimeHistory(Clock* clock, int64_t packet_age_limit_ms)
+SendTimeHistory::SendTimeHistory(const Clock* clock,
+                                 int64_t packet_age_limit_ms)
     : clock_(clock), packet_age_limit_ms_(packet_age_limit_ms) {}
 
 SendTimeHistory::~SendTimeHistory() {}

@@ -59,12 +59,12 @@ class CongestionController : public CallStatsObserver,
    protected:
     virtual ~Observer() {}
   };
-  CongestionController(Clock* clock,
+  CongestionController(const Clock* clock,
                        Observer* observer,
                        RemoteBitrateObserver* remote_bitrate_observer,
                        RtcEventLog* event_log,
                        PacketRouter* packet_router);
-  CongestionController(Clock* clock,
+  CongestionController(const Clock* clock,
                        Observer* observer,
                        RemoteBitrateObserver* remote_bitrate_observer,
                        RtcEventLog* event_log,
@@ -129,7 +129,8 @@ class CongestionController : public CallStatsObserver,
  private:
   class WrappingBitrateEstimator : public RemoteBitrateEstimator {
    public:
-    WrappingBitrateEstimator(RemoteBitrateObserver* observer, Clock* clock);
+    WrappingBitrateEstimator(RemoteBitrateObserver* observer,
+                             const Clock* clock);
 
     virtual ~WrappingBitrateEstimator() {}
 
@@ -155,7 +156,7 @@ class CongestionController : public CallStatsObserver,
         EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
     void PickEstimator() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
     RemoteBitrateObserver* observer_;
-    Clock* const clock_;
+    const Clock* const clock_;
     rtc::CriticalSection crit_sect_;
     std::unique_ptr<RemoteBitrateEstimator> rbe_;
     bool using_absolute_send_time_;
@@ -172,7 +173,7 @@ class CongestionController : public CallStatsObserver,
   bool HasNetworkParametersToReportChanged(uint32_t bitrate_bps,
                                            uint8_t fraction_loss,
                                            int64_t rtt);
-  Clock* const clock_;
+  const Clock* const clock_;
   Observer* const observer_;
   RtcEventLog* const event_log_;
   PacketRouter* const packet_router_;

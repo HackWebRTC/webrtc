@@ -46,7 +46,7 @@ class DelayBasedBwe {
     uint32_t target_bitrate_bps;
   };
 
-  DelayBasedBwe(RtcEventLog* event_log, Clock* clock);
+  DelayBasedBwe(RtcEventLog* event_log, const Clock* clock);
   virtual ~DelayBasedBwe() {}
 
   Result IncomingPacketFeedbackVector(
@@ -94,7 +94,7 @@ class DelayBasedBwe {
 
   rtc::ThreadChecker network_thread_;
   RtcEventLog* const event_log_;
-  Clock* const clock_;
+  const Clock* const clock_;
   std::unique_ptr<InterArrival> inter_arrival_;
   std::unique_ptr<OveruseEstimator> kalman_estimator_;
   std::unique_ptr<TrendlineEstimator> trendline_estimator_;

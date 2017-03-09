@@ -68,7 +68,7 @@ class PacedSender : public Module, public RtpPacketSender {
   // overshoots from the encoder.
   static const float kDefaultPaceMultiplier;
 
-  PacedSender(Clock* clock, PacketSender* packet_sender);
+  PacedSender(const Clock* clock, PacketSender* packet_sender);
 
   virtual ~PacedSender();
 
@@ -152,7 +152,7 @@ class PacedSender : public Module, public RtpPacketSender {
   size_t SendPadding(size_t padding_needed, const PacedPacketInfo& cluster_info)
       EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  Clock* const clock_;
+  const Clock* const clock_;
   PacketSender* const packet_sender_;
   std::unique_ptr<AlrDetector> alr_detector_ GUARDED_BY(critsect_);
 

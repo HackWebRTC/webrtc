@@ -48,7 +48,7 @@ static void ClampBitrates(int* bitrate_bps,
 }  // namespace
 
 CongestionController::WrappingBitrateEstimator::WrappingBitrateEstimator(
-    RemoteBitrateObserver* observer, Clock* clock)
+    RemoteBitrateObserver* observer, const Clock* clock)
     : observer_(observer),
       clock_(clock),
       rbe_(new RemoteBitrateEstimatorSingleStream(observer_, clock_)),
@@ -137,7 +137,7 @@ void CongestionController::WrappingBitrateEstimator::PickEstimator() {
 }
 
 CongestionController::CongestionController(
-    Clock* clock,
+    const Clock* clock,
     Observer* observer,
     RemoteBitrateObserver* remote_bitrate_observer,
     RtcEventLog* event_log,
@@ -152,7 +152,7 @@ CongestionController::CongestionController(
 }
 
 CongestionController::CongestionController(
-    Clock* clock,
+    const Clock* clock,
     Observer* observer,
     RemoteBitrateObserver* remote_bitrate_observer,
     RtcEventLog* event_log,

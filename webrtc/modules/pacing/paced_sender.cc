@@ -91,7 +91,7 @@ struct Comparator {
 // Class encapsulating a priority queue with some extensions.
 class PacketQueue {
  public:
-  explicit PacketQueue(Clock* clock)
+  explicit PacketQueue(const Clock* clock)
       : bytes_(0),
         clock_(clock),
         queue_time_sum_(0),
@@ -196,7 +196,7 @@ class PacketQueue {
   // Map<ssrc, std::set<seq_no> >, for checking duplicates.
   typedef std::map<uint32_t, std::set<uint16_t> > SsrcSeqNoMap;
   SsrcSeqNoMap dupe_map_;
-  Clock* const clock_;
+  const Clock* const clock_;
   int64_t queue_time_sum_;
   int64_t time_last_updated_;
 };
@@ -246,7 +246,7 @@ class IntervalBudget {
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
-PacedSender::PacedSender(Clock* clock, PacketSender* packet_sender)
+PacedSender::PacedSender(const Clock* clock, PacketSender* packet_sender)
     : clock_(clock),
       packet_sender_(packet_sender),
       alr_detector_(new AlrDetector()),

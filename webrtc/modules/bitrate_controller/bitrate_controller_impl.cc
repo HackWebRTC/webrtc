@@ -89,19 +89,19 @@ class BitrateControllerImpl::RtcpBandwidthObserverImpl
 };
 
 BitrateController* BitrateController::CreateBitrateController(
-    Clock* clock,
+    const Clock* clock,
     BitrateObserver* observer,
     RtcEventLog* event_log) {
   return new BitrateControllerImpl(clock, observer, event_log);
 }
 
 BitrateController* BitrateController::CreateBitrateController(
-    Clock* clock,
+    const Clock* clock,
     RtcEventLog* event_log) {
   return CreateBitrateController(clock, nullptr, event_log);
 }
 
-BitrateControllerImpl::BitrateControllerImpl(Clock* clock,
+BitrateControllerImpl::BitrateControllerImpl(const Clock* clock,
                                              BitrateObserver* observer,
                                              RtcEventLog* event_log)
     : clock_(clock),

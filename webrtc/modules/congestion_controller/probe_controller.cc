@@ -47,7 +47,7 @@ constexpr int kRepeatedProbeMinPercentage = 70;
 
 }  // namespace
 
-ProbeController::ProbeController(PacedSender* pacer, Clock* clock)
+ProbeController::ProbeController(PacedSender* pacer, const Clock* clock)
     : pacer_(pacer), clock_(clock), enable_periodic_alr_probing_(false) {
   Reset();
 }

@@ -27,7 +27,7 @@ class TransportFeedback;
 
 class TransportFeedbackAdapter {
  public:
-  explicit TransportFeedbackAdapter(Clock* clock);
+  explicit TransportFeedbackAdapter(const Clock* clock);
   virtual ~TransportFeedbackAdapter();
 
   void AddPacket(uint16_t sequence_number,

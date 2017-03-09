@@ -25,7 +25,7 @@ const int64_t kBaseTimestampScaleFactor =
     rtcp::TransportFeedback::kDeltaScaleFactor * (1 << 8);
 const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);
 
-TransportFeedbackAdapter::TransportFeedbackAdapter(Clock* clock)
+TransportFeedbackAdapter::TransportFeedbackAdapter(const Clock* clock)
     : send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       transport_overhead_bytes_per_packet_(0),

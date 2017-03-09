@@ -230,7 +230,7 @@ rtc::Optional<uint32_t> DelayBasedBwe::BitrateEstimator::bitrate_bps() const {
   return rtc::Optional<uint32_t>(bitrate_estimate_ * 1000);
 }
 
-DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, Clock* clock)
+DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
     : in_trendline_experiment_(TrendlineFilterExperimentIsEnabled()),
       in_median_slope_experiment_(MedianSlopeFilterExperimentIsEnabled()),
       event_log_(event_log),

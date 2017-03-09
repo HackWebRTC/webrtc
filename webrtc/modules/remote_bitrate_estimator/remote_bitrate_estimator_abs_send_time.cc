@@ -81,7 +81,7 @@ bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
 
   RemoteBitrateEstimatorAbsSendTime::RemoteBitrateEstimatorAbsSendTime(
       RemoteBitrateObserver* observer,
-      Clock* clock)
+      const Clock* clock)
       : clock_(clock),
         observer_(observer),
         inter_arrival_(),

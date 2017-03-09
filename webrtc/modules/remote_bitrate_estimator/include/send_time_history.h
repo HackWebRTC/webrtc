@@ -23,7 +23,7 @@ struct PacketFeedback;
 
 class SendTimeHistory {
  public:
-  SendTimeHistory(Clock* clock, int64_t packet_age_limit_ms);
+  SendTimeHistory(const Clock* clock, int64_t packet_age_limit_ms);
   ~SendTimeHistory();
 
   void Clear();
@@ -43,7 +43,7 @@ class SendTimeHistory {
   bool GetFeedback(PacketFeedback* packet_feedback, bool remove);
 
  private:
-  Clock* const clock_;
+  const Clock* const clock_;
   const int64_t packet_age_limit_ms_;
   SequenceNumberUnwrapper seq_num_unwrapper_;
   std::map<int64_t, PacketFeedback> history_;

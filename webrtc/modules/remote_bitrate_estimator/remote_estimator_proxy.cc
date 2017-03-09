@@ -33,7 +33,7 @@ const int RemoteEstimatorProxy::kDefaultSendIntervalMs = 100;
 static constexpr int64_t kMaxTimeMs =
     std::numeric_limits<int64_t>::max() / 1000;
 
-RemoteEstimatorProxy::RemoteEstimatorProxy(Clock* clock,
+RemoteEstimatorProxy::RemoteEstimatorProxy(const Clock* clock,
                                            PacketRouter* packet_router)
     : clock_(clock),
       packet_router_(packet_router),
