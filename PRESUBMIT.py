@@ -18,7 +18,6 @@ CPPLINT_DIRS = [
   'webrtc/api',
   'webrtc/audio',
   'webrtc/call',
-  'webrtc/common_audio',
   'webrtc/common_video',
   'webrtc/examples',
   'webrtc/modules/audio_mixer',

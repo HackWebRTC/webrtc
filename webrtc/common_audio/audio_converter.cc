@@ -107,8 +107,7 @@ class ResampleConverter : public AudioConverter {
 // converters must be provided.
 class CompositionConverter : public AudioConverter {
  public:
-  explicit CompositionConverter(
-    std::vector<std::unique_ptr<AudioConverter>> converters)
+  CompositionConverter(std::vector<std::unique_ptr<AudioConverter>> converters)
       : converters_(std::move(converters)) {
     RTC_CHECK_GE(converters_.size(), 2);
     // We need an intermediate buffer after every converter.

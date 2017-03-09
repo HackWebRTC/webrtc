@@ -52,7 +52,7 @@ int32_t AudioTransportProxy::RecordedDataIsAvailable(
     const int32_t clockDrift,
     const uint32_t currentMicLevel,
     const bool keyPressed,
-    uint32_t& newMicLevel) {  // NOLINT: to avoid changing APIs
+    uint32_t& newMicLevel) {
   // Pass call through to original audio transport instance.
   return voe_audio_transport_->RecordedDataIsAvailable(
       audioSamples, nSamples, nBytesPerSample, nChannels, samplesPerSec,

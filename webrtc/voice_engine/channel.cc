@@ -675,7 +675,7 @@ MixerParticipant::AudioFrameInfo Channel::GetAudioFrameWithMuted(
   // Output volume scaling
   if (output_gain < 0.99f || output_gain > 1.01f) {
     // TODO(solenberg): Combine with mute state - this can cause clicks!
-    AudioFrameOperations::ScaleWithSat(output_gain, audioFrame);
+    AudioFrameOperations::ScaleWithSat(output_gain, *audioFrame);
   }
 
   // Mix decoded PCM output with file if file mixing is enabled

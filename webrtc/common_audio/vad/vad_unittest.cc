@@ -52,8 +52,7 @@ bool VadTest::ValidRatesAndFrameLengths(int rate, size_t frame_length) {
   return false;
 }
 
-namespace webrtc {
-namespace test {
+namespace {
 
 TEST_F(VadTest, ApiTest) {
   // This API test runs through the APIs for all possible valid and invalid
@@ -153,5 +152,4 @@ TEST_F(VadTest, ValidRatesFrameLengths) {
 
 // TODO(bjornv): Add a process test, run on file.
 
-}  // namespace test
-}  // namespace webrtc
+}  // namespace

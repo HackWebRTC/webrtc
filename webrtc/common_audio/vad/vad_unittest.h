@@ -8,16 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H_
-#define WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H_
+#ifndef WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H
+#define WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H
 
 #include <stddef.h>  // size_t
 
 #include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
 
-namespace webrtc {
-namespace test {
+namespace {
 
 // Modes we support
 const int kModes[] = { 0, 1, 2, 3 };
@@ -33,8 +32,7 @@ const size_t kFrameLengths[] = { 80, 120, 160, 240, 320, 480, 640, 960,
     kMaxFrameLength };
 const size_t kFrameLengthsSize = sizeof(kFrameLengths) / sizeof(*kFrameLengths);
 
-}  // namespace test
-}  // namespace webrtc
+}  // namespace
 
 class VadTest : public ::testing::Test {
  protected:
@@ -46,4 +44,4 @@ class VadTest : public ::testing::Test {
   bool ValidRatesAndFrameLengths(int rate, size_t frame_length);
 };
 
-#endif  // WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H_
+#endif  // WEBRTC_COMMON_AUDIO_VAD_VAD_UNITTEST_H
