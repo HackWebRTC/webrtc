@@ -62,12 +62,12 @@ TEST(CpuTimeTest, TwoThreads) {
   // Therefore GetThreadCpuTime is not a wall clock.
   EXPECT_LE(thread_duration_nanos,
             kAllowedErrorMillisecs * kNumNanosecsPerMillisec);
-  // Total process time is twice working threads' CPU time.
+  // Total process time is at least twice working threads' CPU time.
   // Therefore process and thread times are correctly related.
-  EXPECT_NEAR(
+  EXPECT_GE(
       process_duration_nanos,
-      kWorkingThreads * kProcessingTimeMillisecs * kNumNanosecsPerMillisec,
-      kWorkingThreads * kAllowedErrorMillisecs * kNumNanosecsPerMillisec);
+      kWorkingThreads * (kProcessingTimeMillisecs - kAllowedErrorMillisecs)
+      * kNumNanosecsPerMillisec);
 }
 
 TEST(CpuTimeTest, Sleeping) {
