@@ -50,7 +50,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public Syncable {
  public:
   VideoReceiveStream(int num_cpu_cores,
-                     bool protected_by_flexfec,
                      PacketRouter* packet_router,
                      VideoReceiveStream::Config config,
                      ProcessThread* process_thread,
@@ -119,7 +118,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   TransportAdapter transport_adapter_;
   const VideoReceiveStream::Config config_;
   const int num_cpu_cores_;
-  const bool protected_by_flexfec_;
   ProcessThread* const process_thread_;
   Clock* const clock_;
 

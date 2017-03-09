@@ -147,6 +147,9 @@ class VideoReceiveStream {
       // SSRC for retransmissions.
       uint32_t rtx_ssrc = 0;
 
+      // Set if the stream is protected using FlexFEC.
+      bool protected_by_flexfec = false;
+
       // Map from video payload type (apt) -> RTX payload type (pt).
       // For RTX to be enabled, both an SSRC and this mapping are needed.
       std::map<int, int> rtx_payload_types;

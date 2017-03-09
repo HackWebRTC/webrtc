@@ -2310,12 +2310,18 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
     call_->DestroyFlexfecReceiveStream(flexfec_stream_);
     flexfec_stream_ = nullptr;
   }
-  if (flexfec_config_.IsCompleteAndEnabled()) {
+  const bool use_flexfec = flexfec_config_.IsCompleteAndEnabled();
+  // TODO(nisse): There are way too many copies here. And why isn't
+  // the argument to CreateVideoReceiveStream a const ref?
+  webrtc::VideoReceiveStream::Config config = config_.Copy();
+  config.rtp.protected_by_flexfec = use_flexfec;
+  stream_ = call_->CreateVideoReceiveStream(config.Copy());
+  stream_->Start();
+
+  if (use_flexfec) {
     flexfec_stream_ = call_->CreateFlexfecReceiveStream(flexfec_config_);
     flexfec_stream_->Start();
   }
-  stream_ = call_->CreateVideoReceiveStream(config_.Copy());
-  stream_->Start();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ClearDecoders(

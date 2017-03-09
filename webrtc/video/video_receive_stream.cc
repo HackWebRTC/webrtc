@@ -176,7 +176,6 @@ namespace internal {
 
 VideoReceiveStream::VideoReceiveStream(
     int num_cpu_cores,
-    bool protected_by_flexfec,
     PacketRouter* packet_router,
     VideoReceiveStream::Config config,
     ProcessThread* process_thread,
@@ -185,7 +184,6 @@ VideoReceiveStream::VideoReceiveStream(
     : transport_adapter_(config.rtcp_send_transport),
       config_(std::move(config)),
       num_cpu_cores_(num_cpu_cores),
-      protected_by_flexfec_(protected_by_flexfec),
       process_thread_(process_thread),
       clock_(Clock::GetRealTimeClock()),
       decode_thread_(DecodeThreadFunction, this, "DecodingThread"),
@@ -271,8 +269,8 @@ void VideoReceiveStream::Start() {
   if (decode_thread_.IsRunning())
     return;
 
-  bool protected_by_fec =
-      protected_by_flexfec_ || rtp_stream_receiver_.IsUlpfecEnabled();
+  bool protected_by_fec = config_.rtp.protected_by_flexfec ||
+                          rtp_stream_receiver_.IsUlpfecEnabled();
 
   frame_buffer_->Start();
   call_stats_->RegisterStatsObserver(&rtp_stream_receiver_);
