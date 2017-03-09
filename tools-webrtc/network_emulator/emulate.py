@@ -55,14 +55,14 @@ class NonStrippingEpilogOptionParser(optparse.OptionParser):
     return self.epilog
 
 
-def _get_external_ip():
+def _GetExternalIp():
   """Finds out the machine's external IP by connecting to google.com."""
   external_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   external_socket.connect(('google.com', 80))
   return external_socket.getsockname()[0]
 
 
-def _parse_args():
+def _ParseArgs():
   """Define and parse the command-line arguments."""
   presets_string = '\n'.join(str(p) for p in _PRESETS)
   parser = NonStrippingEpilogOptionParser(epilog=(
@@ -123,11 +123,11 @@ def _parse_args():
   except ValueError:
     parser.error('Invalid port range specified.')
 
-  _set_logger(options.verbose)
+  _InitLogging(options.verbose)
   return options
 
 
-def _set_logger(verbose):
+def _InitLogging(verbose):
   """Setup logging."""
   log_level = _DEFAULT_LOG_LEVEL
   if verbose:
@@ -135,8 +135,8 @@ def _set_logger(verbose):
   logging.basicConfig(level=log_level, format='%(message)s')
 
 
-def _main():
-  options = _parse_args()
+def main():
+  options = _ParseArgs()
 
   # Build a configuration object. Override any preset configuration settings if
   # a value of a setting was also given as a flag.
@@ -154,19 +154,19 @@ def _main():
   emulator = network_emulator.NetworkEmulator(connection_config,
                                               options.port_range)
   try:
-    emulator.check_permissions()
+    emulator.CheckPermissions()
   except network_emulator.NetworkEmulatorError as e:
     logging.error('Error: %s\n\nCause: %s', e.fail_msg, e.error)
     return -1
 
   if not options.target_ip:
-    external_ip = _get_external_ip()
+    external_ip = _GetExternalIp()
   else:
     external_ip = options.target_ip
 
   logging.info('Constraining traffic to/from IP: %s', external_ip)
   try:
-    emulator.emulate(external_ip)
+    emulator.Emulate(external_ip)
     logging.info('Started network emulation with the following configuration:\n'
                  '  Receive bandwidth: %s kbps (%s kB/s)\n'
                  '  Send bandwidth   : %s kbps (%s kB/s)\n'
@@ -184,7 +184,7 @@ def _main():
                  options.port_range[0], options.port_range[1])
     raw_input('Press Enter to abort Network Emulation...')
     logging.info('Flushing all Dummynet rules...')
-    network_emulator.cleanup()
+    network_emulator.Cleanup()
     logging.info('Completed Network Emulation.')
     return 0
   except network_emulator.NetworkEmulatorError as e:
@@ -192,4 +192,4 @@ def _main():
     return -2
 
 if __name__ == '__main__':
-  sys.exit(_main())
+  sys.exit(main())

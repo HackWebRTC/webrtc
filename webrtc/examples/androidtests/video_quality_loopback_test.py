@@ -89,10 +89,10 @@ def main():
 
   ffmpeg_path = os.path.join(toolchain_dir, 'linux', 'ffmpeg')
 
-  def convert_video(input_video, output_video):
+  def ConvertVideo(input_video, output_video):
     _RunCommand([ffmpeg_path, '-y', '-i', input_video, output_video])
 
-  convert_video(test_video, test_video_yuv)
+  ConvertVideo(test_video, test_video_yuv)
 
   reference_video = os.path.join(SRC_DIR,
       'resources', 'reference_video_640x360_30fps.y4m')
@@ -100,7 +100,7 @@ def main():
   reference_video_yuv = os.path.join(temp_dir,
       'reference_video_640x360_30fps.yuv')
 
-  convert_video(reference_video, reference_video_yuv)
+  ConvertVideo(reference_video, reference_video_yuv)
 
   # Run compare script.
   compare_script = os.path.join(SRC_DIR, 'webrtc', 'tools',

@@ -15,19 +15,16 @@ This file emits the list of reasons why a particular build needs to be clobbered
 import os
 import sys
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-checkout_root = os.path.abspath(os.path.join(script_dir, os.pardir))
-sys.path.insert(0, os.path.join(checkout_root, 'build'))
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+CHECKOUT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+sys.path.insert(0, os.path.join(CHECKOUT_ROOT, 'build'))
 import landmine_utils
 
 
-distributor = landmine_utils.distributor
-gyp_defines = landmine_utils.gyp_defines
-gyp_msvs_version = landmine_utils.gyp_msvs_version
-platform = landmine_utils.platform
+platform = landmine_utils.platform  # pylint: disable=invalid-name
 
 
-def print_landmines():
+def print_landmines():  # pylint: disable=invalid-name
   """
   ALL LANDMINES ARE EMITTED FROM HERE.
   """
@@ -54,7 +51,7 @@ def print_landmines():
     # is no longer the case.
     print 'Clobber due to iOS compile errors (crbug.com/694721)'
     print 'Clobber to unblock https://codereview.webrtc.org/2709573003'
-    print 'Clobber to fix https://codereview.webrtc.org/2709573003 after landing'
+    print 'Clobber to fix after https://codereview.webrtc.org/2709573003'
 
 
 def main():
