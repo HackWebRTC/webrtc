@@ -94,6 +94,9 @@ class CongestionController : public CallStatsObserver,
   // TODO(nisse): Delete this accessor function. The pacer should be
   // internal to the congestion controller.
   virtual PacedSender* pacer() { return pacer_.get(); }
+  virtual TransportFeedbackObserver* GetTransportFeedbackObserver() {
+    return this;
+  }
   RateLimiter* GetRetransmissionRateLimiter();
   void EnablePeriodicAlrProbing(bool enable);
 
