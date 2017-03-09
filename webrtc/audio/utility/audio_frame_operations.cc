@@ -280,32 +280,32 @@ void AudioFrameOperations::ApplyHalfGain(AudioFrame* frame) {
   }
 }
 
-int AudioFrameOperations::Scale(float left, float right, AudioFrame& frame) {
-  if (frame.num_channels_ != 2) {
+int AudioFrameOperations::Scale(float left, float right, AudioFrame* frame) {
+  if (frame->num_channels_ != 2) {
     return -1;
   }
 
-  for (size_t i = 0; i < frame.samples_per_channel_; i++) {
-    frame.data_[2 * i] = static_cast<int16_t>(left * frame.data_[2 * i]);
-    frame.data_[2 * i + 1] =
-        static_cast<int16_t>(right * frame.data_[2 * i + 1]);
+  for (size_t i = 0; i < frame->samples_per_channel_; i++) {
+    frame->data_[2 * i] = static_cast<int16_t>(left * frame->data_[2 * i]);
+    frame->data_[2 * i + 1] =
+        static_cast<int16_t>(right * frame->data_[2 * i + 1]);
   }
   return 0;
 }
 
-int AudioFrameOperations::ScaleWithSat(float scale, AudioFrame& frame) {
+int AudioFrameOperations::ScaleWithSat(float scale, AudioFrame* frame) {
   int32_t temp_data = 0;
 
   // Ensure that the output result is saturated [-32768, +32767].
-  for (size_t i = 0; i < frame.samples_per_channel_ * frame.num_channels_;
+  for (size_t i = 0; i < frame->samples_per_channel_ * frame->num_channels_;
        i++) {
-    temp_data = static_cast<int32_t>(scale * frame.data_[i]);
+    temp_data = static_cast<int32_t>(scale * frame->data_[i]);
     if (temp_data < -32768) {
-      frame.data_[i] = -32768;
+      frame->data_[i] = -32768;
     } else if (temp_data > 32767) {
-      frame.data_[i] = 32767;
+      frame->data_[i] = 32767;
     } else {
-      frame.data_[i] = static_cast<int16_t>(temp_data);
+      frame->data_[i] = static_cast<int16_t>(temp_data);
     }
   }
   return 0;
