@@ -426,20 +426,20 @@ TEST_F(AudioFrameOperationsTest, MuteEndStereoShort) {
 // TODO(andrew): should not allow negative scales.
 TEST_F(AudioFrameOperationsTest, DISABLED_ScaleFailsWithBadParameters) {
   frame_.num_channels_ = 1;
-  EXPECT_EQ(-1, AudioFrameOperations::Scale(1.0, 1.0, frame_));
+  EXPECT_EQ(-1, AudioFrameOperations::Scale(1.0, 1.0, &frame_));
 
   frame_.num_channels_ = 3;
-  EXPECT_EQ(-1, AudioFrameOperations::Scale(1.0, 1.0, frame_));
+  EXPECT_EQ(-1, AudioFrameOperations::Scale(1.0, 1.0, &frame_));
 
   frame_.num_channels_ = 2;
-  EXPECT_EQ(-1, AudioFrameOperations::Scale(-1.0, 1.0, frame_));
-  EXPECT_EQ(-1, AudioFrameOperations::Scale(1.0, -1.0, frame_));
+  EXPECT_EQ(-1, AudioFrameOperations::Scale(-1.0, 1.0, &frame_));
+  EXPECT_EQ(-1, AudioFrameOperations::Scale(1.0, -1.0, &frame_));
 }
 
 // TODO(andrew): fix the wraparound bug. We should always saturate.
 TEST_F(AudioFrameOperationsTest, DISABLED_ScaleDoesNotWrapAround) {
   SetFrameData(4000, -4000, &frame_);
-  EXPECT_EQ(0, AudioFrameOperations::Scale(10.0, 10.0, frame_));
+  EXPECT_EQ(0, AudioFrameOperations::Scale(10.0, 10.0, &frame_));
 
   AudioFrame clipped_frame;
   clipped_frame.samples_per_channel_ = 320;
@@ -450,7 +450,7 @@ TEST_F(AudioFrameOperationsTest, DISABLED_ScaleDoesNotWrapAround) {
 
 TEST_F(AudioFrameOperationsTest, ScaleSucceeds) {
   SetFrameData(1, -1, &frame_);
-  EXPECT_EQ(0, AudioFrameOperations::Scale(2.0, 3.0, frame_));
+  EXPECT_EQ(0, AudioFrameOperations::Scale(2.0, 3.0, &frame_));
 
   AudioFrame scaled_frame;
   scaled_frame.samples_per_channel_ = 320;
@@ -461,13 +461,13 @@ TEST_F(AudioFrameOperationsTest, ScaleSucceeds) {
 
 // TODO(andrew): should fail with a negative scale.
 TEST_F(AudioFrameOperationsTest, DISABLED_ScaleWithSatFailsWithBadParameters) {
-  EXPECT_EQ(-1, AudioFrameOperations::ScaleWithSat(-1.0, frame_));
+  EXPECT_EQ(-1, AudioFrameOperations::ScaleWithSat(-1.0, &frame_));
 }
 
 TEST_F(AudioFrameOperationsTest, ScaleWithSatDoesNotWrapAround) {
   frame_.num_channels_ = 1;
   SetFrameData(4000, &frame_);
-  EXPECT_EQ(0, AudioFrameOperations::ScaleWithSat(10.0, frame_));
+  EXPECT_EQ(0, AudioFrameOperations::ScaleWithSat(10.0, &frame_));
 
   AudioFrame clipped_frame;
   clipped_frame.samples_per_channel_ = 320;
@@ -476,7 +476,7 @@ TEST_F(AudioFrameOperationsTest, ScaleWithSatDoesNotWrapAround) {
   VerifyFramesAreEqual(clipped_frame, frame_);
 
   SetFrameData(-4000, &frame_);
-  EXPECT_EQ(0, AudioFrameOperations::ScaleWithSat(10.0, frame_));
+  EXPECT_EQ(0, AudioFrameOperations::ScaleWithSat(10.0, &frame_));
   SetFrameData(-32768, &clipped_frame);
   VerifyFramesAreEqual(clipped_frame, frame_);
 }
@@ -484,7 +484,7 @@ TEST_F(AudioFrameOperationsTest, ScaleWithSatDoesNotWrapAround) {
 TEST_F(AudioFrameOperationsTest, ScaleWithSatSucceeds) {
   frame_.num_channels_ = 1;
   SetFrameData(1, &frame_);
-  EXPECT_EQ(0, AudioFrameOperations::ScaleWithSat(2.0, frame_));
+  EXPECT_EQ(0, AudioFrameOperations::ScaleWithSat(2.0, &frame_));
 
   AudioFrame scaled_frame;
   scaled_frame.samples_per_channel_ = 320;
