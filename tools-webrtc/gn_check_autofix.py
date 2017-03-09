@@ -43,7 +43,7 @@ class TemporaryDirectory(object):
   def __enter__(self):
     return self._name
 
-  def __exit__(self, exc, value, _tb):
+  def __exit__(self, exc, value, tb):
     if self._name and not self._closed:
       shutil.rmtree(self._name)
       self._closed = True

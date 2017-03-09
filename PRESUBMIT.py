@@ -115,7 +115,7 @@ def _VerifyNativeApiHeadersListIsValid(input_api, output_api):
         non_existing_paths)]
   return []
 
-API_CHANGE_MSG = """
+api_change_msg = """
 You seem to be changing native API header files. Please make sure that you:
   1. Make compatible changes that don't break existing clients. Usually
      this is done by keeping the existing method signatures unchanged.
@@ -144,7 +144,7 @@ def _CheckNativeApiHeaderChanges(input_api, output_api):
           files.append(f)
 
   if files:
-    return [output_api.PresubmitNotifyResult(API_CHANGE_MSG, files)]
+    return [output_api.PresubmitNotifyResult(api_change_msg, files)]
   return []
 
 
@@ -189,7 +189,7 @@ def _CheckNoPragmaOnce(input_api, output_api):
   return []
 
 
-def _CheckNoFRIEND_TEST(input_api, output_api):  # pylint: disable=invalid-name
+def _CheckNoFRIEND_TEST(input_api, output_api):
   """Make sure that gtest's FRIEND_TEST() macro is not used, the
   FRIEND_TEST_ALL_PREFIXES() macro from testsupport/gtest_prod_util.h should be
   used instead since that allows for FLAKY_, FAILS_ and DISABLED_ prefixes."""
@@ -451,13 +451,13 @@ def _CheckJSONParseErrors(input_api, output_api):
 
 
 def _RunPythonTests(input_api, output_api):
-  def Join(*args):
+  def join(*args):
     return input_api.os_path.join(input_api.PresubmitLocalPath(), *args)
 
   test_directories = [
-      Join('webrtc', 'tools', 'py_event_log_analyzer')
+      join('webrtc', 'tools', 'py_event_log_analyzer')
   ] + [
-      root for root, _, files in os.walk(Join('tools-webrtc'))
+      root for root, _, files in os.walk(join('tools-webrtc'))
       if any(f.endswith('_test.py') for f in files)
   ]
 

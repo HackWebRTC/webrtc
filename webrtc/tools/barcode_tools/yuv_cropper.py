@@ -12,7 +12,7 @@ import os
 import sys
 
 
-def _CropOneFrame(yuv_file, output_file, component_sizes):
+def _crop_one_frame(yuv_file, output_file, component_sizes):
   """Crops one frame.
 
   This function crops one frame going through all the YUV planes and cropping
@@ -44,7 +44,7 @@ def _CropOneFrame(yuv_file, output_file, component_sizes):
   return True
 
 
-def CropFrames(yuv_file_name, output_file_name, width, height, crop_height):
+def crop_frames(yuv_file_name, output_file_name, width, height, crop_height):
   """Crops rows of pixels from the top of the YUV frames.
 
   This function goes through all the frames in a video and crops the crop_height
@@ -69,13 +69,13 @@ def CropFrames(yuv_file_name, output_file_name, width, height, crop_height):
 
   data_left = True
   while data_left:
-    data_left = _CropOneFrame(yuv_file, output_file, component_sizes)
+    data_left = _crop_one_frame(yuv_file, output_file, component_sizes)
 
   yuv_file.close()
   output_file.close()
 
 
-def _ParseArgs():
+def _parse_args():
   """Registers the command-line options."""
   usage = "usage: %prog [options]"
   parser = optparse.OptionParser(usage=usage)
@@ -101,7 +101,7 @@ def _ParseArgs():
   return options
 
 
-def main():
+def _main():
   """A tool to crop rows of pixels from the top part of a YUV file.
 
   A simple invocation will be:
@@ -109,17 +109,17 @@ def main():
   --yuv_file=<path_and_name_of_yuv_file>
   --output_yuv=<path and name_of_output_file>
   """
-  options = _ParseArgs()
+  options = _parse_args()
 
   if os.path.getsize(options.yuv_file) == 0:
     sys.stderr.write('Error: The YUV file you have passed has size 0. The '
                      'produced output will also have size 0.\n')
     return -1
 
-  CropFrames(options.yuv_file, options.output_file, options.width,
-             options.height, options.crop_height)
+  crop_frames(options.yuv_file, options.output_file, options.width,
+              options.height, options.crop_height)
   return 0
 
 
 if __name__ == '__main__':
-  sys.exit(main())
+  sys.exit(_main())

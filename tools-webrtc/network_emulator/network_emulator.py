@@ -53,20 +53,20 @@ class NetworkEmulator(object):
     self._port_range = port_range
     self._connection_config = connection_config
 
-  def Emulate(self, target_ip):
+  def emulate(self, target_ip):
     """Starts a network emulation by setting up Dummynet rules.
 
     Args:
         target_ip: The IP address of the interface that shall be that have the
             network constraints applied to it.
     """
-    receive_pipe_id = self._CreateDummynetPipe(
+    receive_pipe_id = self._create_dummynet_pipe(
         self._connection_config.receive_bw_kbps,
         self._connection_config.delay_ms,
         self._connection_config.packet_loss_percent,
         self._connection_config.queue_slots)
     logging.debug('Created receive pipe: %s', receive_pipe_id)
-    send_pipe_id = self._CreateDummynetPipe(
+    send_pipe_id = self._create_dummynet_pipe(
         self._connection_config.send_bw_kbps,
         self._connection_config.delay_ms,
         self._connection_config.packet_loss_percent,
@@ -74,15 +74,15 @@ class NetworkEmulator(object):
     logging.debug('Created send pipe: %s', send_pipe_id)
 
     # Adding the rules will start the emulation.
-    incoming_rule_id = self._CreateDummynetRule(receive_pipe_id, 'any',
-                                                target_ip, self._port_range)
+    incoming_rule_id = self._create_dummynet_rule(receive_pipe_id, 'any',
+                                                  target_ip, self._port_range)
     logging.debug('Created incoming rule: %s', incoming_rule_id)
-    outgoing_rule_id = self._CreateDummynetRule(send_pipe_id, target_ip,
-                                                'any', self._port_range)
+    outgoing_rule_id = self._create_dummynet_rule(send_pipe_id, target_ip,
+                                                  'any', self._port_range)
     logging.debug('Created outgoing rule: %s', outgoing_rule_id)
 
   @staticmethod
-  def CheckPermissions():
+  def check_permissions():
     """Checks if permissions are available to run Dummynet commands.
 
     Raises:
@@ -99,8 +99,8 @@ class NetworkEmulator(object):
         raise NetworkEmulatorError('You must run this script with administrator'
                                    ' privileges.')
 
-  def _CreateDummynetRule(self, pipe_id, from_address, to_address,
-                          port_range):
+  def _create_dummynet_rule(self, pipe_id, from_address, to_address,
+                            port_range):
     """Creates a network emulation rule and returns its ID.
 
     Args:
@@ -118,14 +118,14 @@ class NetworkEmulator(object):
     self._rule_counter += 100
     add_part = ['add', self._rule_counter, 'pipe', pipe_id,
                 'ip', 'from', from_address, 'to', to_address]
-    _RunIpfwCommand(add_part + ['src-port', '%s-%s' % port_range],
+    _run_ipfw_command(add_part + ['src-port', '%s-%s' % port_range],
                             'Failed to add Dummynet src-port rule.')
-    _RunIpfwCommand(add_part + ['dst-port', '%s-%s' % port_range],
+    _run_ipfw_command(add_part + ['dst-port', '%s-%s' % port_range],
                             'Failed to add Dummynet dst-port rule.')
     return self._rule_counter
 
-  def _CreateDummynetPipe(self, bandwidth_kbps, delay_ms, packet_loss_percent,
-                          queue_slots):
+  def _create_dummynet_pipe(self, bandwidth_kbps, delay_ms, packet_loss_percent,
+                            queue_slots):
     """Creates a Dummynet pipe and return its ID.
 
     Args:
@@ -146,21 +146,21 @@ class NetworkEmulator(object):
     if sys.platform.startswith('linux'):
       error_message += ('Make sure you have loaded the ipfw_mod.ko module to '
                         'your kernel (sudo insmod /path/to/ipfw_mod.ko).')
-    _RunIpfwCommand(cmd, error_message)
+    _run_ipfw_command(cmd, error_message)
     return self._pipe_counter
 
-def Cleanup():
+def cleanup():
   """Stops the network emulation by flushing all Dummynet rules.
 
   Notice that this will flush any rules that may have been created previously
   before starting the emulation.
   """
-  _RunIpfwCommand(['-f', 'flush'],
+  _run_ipfw_command(['-f', 'flush'],
                           'Failed to flush Dummynet rules!')
-  _RunIpfwCommand(['-f', 'pipe', 'flush'],
+  _run_ipfw_command(['-f', 'pipe', 'flush'],
                           'Failed to flush Dummynet pipes!')
 
-def _RunIpfwCommand(command, fail_msg=None):
+def _run_ipfw_command(command, fail_msg=None):
   """Executes a command and prefixes the appropriate command for
      Windows or Linux/UNIX.
 

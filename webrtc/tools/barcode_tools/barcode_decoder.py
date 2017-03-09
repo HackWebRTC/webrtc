@@ -21,7 +21,7 @@ import helper_functions
 sys.stderr = sys.stdout
 
 
-def ConvertYuvToPngFiles(yuv_file_name, yuv_frame_width, yuv_frame_height,
+def convert_yuv_to_png_files(yuv_file_name, yuv_frame_width, yuv_frame_height,
                              output_directory, ffmpeg_path):
   """Converts a YUV video file into PNG frames.
 
@@ -61,7 +61,7 @@ def ConvertYuvToPngFiles(yuv_file_name, yuv_frame_width, yuv_frame_height,
   return True
 
 
-def DecodeFrames(input_directory, zxing_path):
+def decode_frames(input_directory, zxing_path):
   """Decodes the barcodes overlaid in each frame.
 
   The function uses the Zxing command-line tool from the Zxing C++ distribution
@@ -85,11 +85,11 @@ def DecodeFrames(input_directory, zxing_path):
   print 'Decoding barcodes from PNG files with %s...' % zxing_path
   return helper_functions.perform_action_on_all_files(
       directory=input_directory, file_pattern='frame_',
-      file_extension='png', start_number=1, action=_DecodeBarcodeInFile,
+      file_extension='png', start_number=1, action=_decode_barcode_in_file,
       command_line_decoder=zxing_path)
 
 
-def _DecodeBarcodeInFile(file_name, command_line_decoder):
+def _decode_barcode_in_file(file_name, command_line_decoder):
   """Decodes the barcode in the upper left corner of a PNG file.
 
   Args:
@@ -116,7 +116,7 @@ def _DecodeBarcodeInFile(file_name, command_line_decoder):
   return True
 
 
-def _GenerateStatsFile(stats_file_name, input_directory='.'):
+def _generate_stats_file(stats_file_name, input_directory='.'):
   """Generate statistics file.
 
   The function generates a statistics file. The contents of the file are in the
@@ -128,7 +128,7 @@ def _GenerateStatsFile(stats_file_name, input_directory='.'):
   stats_file = open(stats_file_name, 'w')
 
   print 'Generating stats file: %s' % stats_file_name
-  for i in range(1, _CountFramesIn(input_directory=input_directory) + 1):
+  for i in range(1, _count_frames_in(input_directory=input_directory) + 1):
     frame_number = helper_functions.zero_pad(i)
     barcode_file_name = file_prefix + frame_number + '.txt'
     png_frame = file_prefix + frame_number + '.png'
@@ -136,10 +136,10 @@ def _GenerateStatsFile(stats_file_name, input_directory='.'):
     entry = 'frame_' + entry_frame_number + ' '
 
     if os.path.isfile(barcode_file_name):
-      barcode = _ReadBarcodeFromTextFile(barcode_file_name)
+      barcode = _read_barcode_from_text_file(barcode_file_name)
       os.remove(barcode_file_name)
 
-      if _CheckBarcode(barcode):
+      if _check_barcode(barcode):
         entry += (helper_functions.zero_pad(int(barcode[0:11])) + '\n')
       else:
         entry += 'Barcode error\n'  # Barcode is wrongly detected.
@@ -152,7 +152,7 @@ def _GenerateStatsFile(stats_file_name, input_directory='.'):
   stats_file.close()
 
 
-def _ReadBarcodeFromTextFile(barcode_file_name):
+def _read_barcode_from_text_file(barcode_file_name):
   """Reads the decoded barcode for a .txt file.
 
   Args:
@@ -166,7 +166,7 @@ def _ReadBarcodeFromTextFile(barcode_file_name):
   return barcode
 
 
-def _CheckBarcode(barcode):
+def _check_barcode(barcode):
   """Check weather the UPC-A barcode was decoded correctly.
 
   This function calculates the check digit of the provided barcode and compares
@@ -200,7 +200,7 @@ def _CheckBarcode(barcode):
   return dsum == int(barcode[11])
 
 
-def _CountFramesIn(input_directory='.'):
+def _count_frames_in(input_directory='.'):
   """Calculates the number of frames in the input directory.
 
   The function calculates the number of frames in the input directory. The
@@ -225,7 +225,7 @@ def _CountFramesIn(input_directory='.'):
   return num - 1
 
 
-def _ParseArgs():
+def _parse_args():
   """Registers the command-line options."""
   usage = "usage: %prog [options]"
   parser = optparse.OptionParser(usage=usage)
@@ -256,7 +256,7 @@ def _ParseArgs():
   return options
 
 
-def main():
+def _main():
   """The main function.
 
   A simple invocation is:
@@ -265,27 +265,27 @@ def main():
   --yuv_frame_width=640 --yuv_frame_height=480
   --stats_file=<path_and_name_to_stats_file>
   """
-  options = _ParseArgs()
+  options = _parse_args()
 
   # Convert the overlaid YUV video into a set of PNG frames.
-  if not ConvertYuvToPngFiles(options.yuv_file, options.yuv_frame_width,
-                              options.yuv_frame_height,
-                              output_directory=options.png_working_dir,
-                              ffmpeg_path=options.ffmpeg_path):
+  if not convert_yuv_to_png_files(options.yuv_file, options.yuv_frame_width,
+                                  options.yuv_frame_height,
+                                  output_directory=options.png_working_dir,
+                                  ffmpeg_path=options.ffmpeg_path):
     print 'An error occurred converting from YUV to PNG frames.'
     return -1
 
   # Decode the barcodes from the PNG frames.
-  if not DecodeFrames(input_directory=options.png_working_dir,
-                      zxing_path=options.zxing_path):
+  if not decode_frames(input_directory=options.png_working_dir,
+                       zxing_path=options.zxing_path):
     print 'An error occurred decoding barcodes from PNG frames.'
     return -2
 
   # Generate statistics file.
-  _GenerateStatsFile(options.stats_file,
-                     input_directory=options.png_working_dir)
+  _generate_stats_file(options.stats_file,
+                       input_directory=options.png_working_dir)
   print 'Completed barcode decoding.'
   return 0
 
 if __name__ == '__main__':
-  sys.exit(main())
+  sys.exit(_main())

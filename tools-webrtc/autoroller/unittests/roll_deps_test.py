@@ -49,7 +49,7 @@ class FakeCmd(object):
   def __init__(self):
     self.expectations = []
 
-  def AddExpectation(self, *args, **kwargs):
+  def add_expectation(self, *args, **kwargs):
     returns = kwargs.pop('_returns', None)
     self.expectations.append((args, kwargs, returns))
 
@@ -74,13 +74,13 @@ class TestRollChromiumRevision(unittest.TestCase):
     self._new_cr_depsfile = os.path.join(self._output_dir, 'DEPS.chromium.new')
 
     self.fake = FakeCmd()
-    self.old_run_command = getattr(roll_deps, '_RunCommand')
+    self.old_RunCommand = getattr(roll_deps, '_RunCommand')
     setattr(roll_deps, '_RunCommand', self.fake)
 
   def tearDown(self):
     shutil.rmtree(self._output_dir, ignore_errors=True)
     self.assertEqual(self.fake.expectations, [])
-    setattr(roll_deps, '_RunCommand', self.old_run_command)
+    setattr(roll_deps, '_RunCommand', self.old_RunCommand)
 
   def testUpdateDepsFile(self):
     new_rev = 'aaaaabbbbbcccccdddddeeeeefffff0000011111'
@@ -98,10 +98,10 @@ class TestRollChromiumRevision(unittest.TestCase):
     local_scope = ParseDepsDict(deps_contents)
     vars_dict = local_scope['vars']
 
-    def AssertVar(variable_name):
+    def assertVar(variable_name):
       self.assertEquals(vars_dict[variable_name], TEST_DATA_VARS[variable_name])
-    AssertVar('chromium_git')
-    AssertVar('chromium_revision')
+    assertVar('chromium_git')
+    assertVar('chromium_revision')
     self.assertEquals(len(local_scope['deps']), 3)
     self.assertEquals(len(local_scope['deps_os']), 1)
 
@@ -137,7 +137,7 @@ class TestRollChromiumRevision(unittest.TestCase):
 
 def _SetupGitLsRemoteCall(cmd_fake, url, revision):
   cmd = ['git', 'ls-remote', url, revision]
-  cmd_fake.AddExpectation(cmd, _returns=(revision, None))
+  cmd_fake.add_expectation(cmd, _returns=(revision, None))
 
 
 if __name__ == '__main__':

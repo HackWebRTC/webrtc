@@ -17,9 +17,9 @@ _DEFAULT_BARCODE_WIDTH = 352
 _DEFAULT_BARCODES_FILE = 'barcodes.yuv'
 
 
-def GenerateUpcaBarcodes(number_of_barcodes, barcode_width, barcode_height,
-                         output_directory='.',
-                         path_to_zxing='zxing-read-only'):
+def generate_upca_barcodes(number_of_barcodes, barcode_width, barcode_height,
+                           output_directory='.',
+                           path_to_zxing='zxing-read-only'):
   """Generates UPC-A barcodes.
 
   This function generates a number_of_barcodes UPC-A barcodes. The function
@@ -39,7 +39,7 @@ def GenerateUpcaBarcodes(number_of_barcodes, barcode_width, barcode_height,
     (bool): True if the conversion is successful.
   """
   base_file_name = os.path.join(output_directory, "barcode_")
-  jars = _FormJarsString(path_to_zxing)
+  jars = _form_jars_string(path_to_zxing)
   command_line_encoder = 'com.google.zxing.client.j2se.CommandLineEncoder'
   barcode_width = str(barcode_width)
   barcode_height = str(barcode_height)
@@ -64,7 +64,7 @@ def GenerateUpcaBarcodes(number_of_barcodes, barcode_width, barcode_height,
   return not errors
 
 
-def ConvertPngToYuvBarcodes(input_directory='.', output_directory='.'):
+def convert_png_to_yuv_barcodes(input_directory='.', output_directory='.'):
   """Converts PNG barcodes to YUV barcode images.
 
   This function reads all the PNG files from the input directory which are in
@@ -79,11 +79,11 @@ def ConvertPngToYuvBarcodes(input_directory='.', output_directory='.'):
     (bool): True if the conversion was without errors.
   """
   return helper_functions.perform_action_on_all_files(
-      input_directory, 'barcode_', 'png', 0, _ConvertToYuvAndDelete,
+      input_directory, 'barcode_', 'png', 0, _convert_to_yuv_and_delete,
       output_directory=output_directory, pattern='barcode_')
 
 
-def _ConvertToYuvAndDelete(output_directory, file_name, pattern):
+def _convert_to_yuv_and_delete(output_directory, file_name, pattern):
   """Converts a PNG file to a YUV file and deletes the PNG file.
 
   Args:
@@ -116,7 +116,7 @@ def _ConvertToYuvAndDelete(output_directory, file_name, pattern):
   return True
 
 
-def CombineYuvFramesIntoOneFile(output_file_name, input_directory='.'):
+def combine_yuv_frames_into_one_file(output_file_name, input_directory='.'):
   """Combines several YUV frames into one YUV video file.
 
   The function combines the YUV frames from input_directory into one YUV video
@@ -132,12 +132,12 @@ def CombineYuvFramesIntoOneFile(output_file_name, input_directory='.'):
   """
   output_file = open(output_file_name, "wb")
   success = helper_functions.perform_action_on_all_files(
-      input_directory, 'barcode_', 'yuv', 0, _AddToFileAndDelete,
+      input_directory, 'barcode_', 'yuv', 0, _add_to_file_and_delete,
       output_file=output_file)
   output_file.close()
   return success
 
-def _AddToFileAndDelete(output_file, file_name):
+def _add_to_file_and_delete(output_file, file_name):
   """Adds the contents of a file to a previously opened file.
 
   Args:
@@ -159,9 +159,9 @@ def _AddToFileAndDelete(output_file, file_name):
   return True
 
 
-def _OverlayBarcodeAndBaseFrames(barcodes_file, base_file, output_file,
-                                 barcodes_component_sizes,
-                                 base_component_sizes):
+def _overlay_barcode_and_base_frames(barcodes_file, base_file, output_file,
+                                     barcodes_component_sizes,
+                                     base_component_sizes):
   """Overlays the next YUV frame from a file with a barcode.
 
   Args:
@@ -201,8 +201,8 @@ def _OverlayBarcodeAndBaseFrames(barcodes_file, base_file, output_file,
   return True
 
 
-def OverlayYuvFiles(barcode_width, barcode_height, base_width, base_height,
-                    barcodes_file_name, base_file_name, output_file_name):
+def overlay_yuv_files(barcode_width, barcode_height, base_width, base_height,
+                      barcodes_file_name, base_file_name, output_file_name):
   """Overlays two YUV files starting from the upper left corner of both.
 
   Args:
@@ -230,17 +230,17 @@ def OverlayYuvFiles(barcode_width, barcode_height, base_width, base_height,
 
   data_left = True
   while data_left:
-    data_left = _OverlayBarcodeAndBaseFrames(barcodes_file, base_file,
-                                             output_file,
-                                             barcodes_component_sizes,
-                                             base_component_sizes)
+    data_left = _overlay_barcode_and_base_frames(barcodes_file, base_file,
+                                                 output_file,
+                                                 barcodes_component_sizes,
+                                                 base_component_sizes)
 
   barcodes_file.close()
   base_file.close()
   output_file.close()
 
 
-def CalculateFramesNumberFromYuv(yuv_width, yuv_height, file_name):
+def calculate_frames_number_from_yuv(yuv_width, yuv_height, file_name):
   """Calculates the number of frames of a YUV video.
 
   Args:
@@ -258,7 +258,7 @@ def CalculateFramesNumberFromYuv(yuv_width, yuv_height, file_name):
   return int(file_size/frame_size)  # Should be int anyway
 
 
-def _FormJarsString(path_to_zxing):
+def _form_jars_string(path_to_zxing):
   """Forms the the Zxing core and javase jars argument.
 
   Args:
@@ -273,7 +273,7 @@ def _FormJarsString(path_to_zxing):
     delimiter = ';'
   return javase_jar + delimiter + core_jar
 
-def _ParseArgs():
+def _parse_args():
   """Registers the command-line options."""
   usage = "usage: %prog [options]"
   parser = optparse.OptionParser(usage=usage)
@@ -320,7 +320,7 @@ def _ParseArgs():
   return options
 
 
-def main():
+def _main():
   """The main function.
 
   A simple invocation will be:
@@ -329,7 +329,7 @@ def main():
   --base_yuv=<path_and_name_of_base_file>
   --output_yuv=<path and name_of_output_file>
   """
-  options = _ParseArgs()
+  options = _parse_args()
   # The barcodes with will be different than the base frame width only if
   # explicitly specified at the command line.
   if options.barcode_width == _DEFAULT_BARCODE_WIDTH:
@@ -342,26 +342,26 @@ def main():
 
   # Calculate the number of barcodes - it is equal to the number of frames in
   # the base file.
-  number_of_barcodes = CalculateFramesNumberFromYuv(
+  number_of_barcodes = calculate_frames_number_from_yuv(
       options.base_frame_width, options.base_frame_height, options.base_yuv)
 
   script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
   zxing_dir = os.path.join(script_dir, 'third_party', 'zxing')
   # Generate barcodes - will generate them in PNG.
-  GenerateUpcaBarcodes(number_of_barcodes, options.barcode_width,
-                       options.barcode_height,
-                       output_directory=options.png_barcodes_output_dir,
-                       path_to_zxing=zxing_dir)
+  generate_upca_barcodes(number_of_barcodes, options.barcode_width,
+                         options.barcode_height,
+                         output_directory=options.png_barcodes_output_dir,
+                         path_to_zxing=zxing_dir)
   # Convert the PNG barcodes to to YUV format.
-  ConvertPngToYuvBarcodes(options.png_barcodes_input_dir,
-                          options.yuv_barcodes_output_dir)
+  convert_png_to_yuv_barcodes(options.png_barcodes_input_dir,
+                              options.yuv_barcodes_output_dir)
   # Combine the YUV barcodes into one YUV file.
-  CombineYuvFramesIntoOneFile(options.barcodes_yuv,
-                              input_directory=options.yuv_frames_input_dir)
+  combine_yuv_frames_into_one_file(options.barcodes_yuv,
+                                   input_directory=options.yuv_frames_input_dir)
   # Overlay the barcodes over the base file.
-  OverlayYuvFiles(options.barcode_width, options.barcode_height,
-                  options.base_frame_width, options.base_frame_height,
-                  options.barcodes_yuv, options.base_yuv, options.output_yuv)
+  overlay_yuv_files(options.barcode_width, options.barcode_height,
+                    options.base_frame_width, options.base_frame_height,
+                    options.barcodes_yuv, options.base_yuv, options.output_yuv)
 
   if not keep_barcodes_yuv_file:
     # Remove the temporary barcodes YUV file
@@ -369,4 +369,4 @@ def main():
 
 
 if __name__ == '__main__':
-  sys.exit(main())
+  sys.exit(_main())

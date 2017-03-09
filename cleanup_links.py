@@ -53,7 +53,7 @@ class WebRTCLinkSetup(object):
           del self._links_db[source]
 
 
-def _InitializeDatabase(filename):
+def _initialize_database(filename):
   links_database = shelve.open(filename)
   # Wipe the database if this version of the script ends up looking at a
   # newer (future) version of the links db, just to be sure.
@@ -89,7 +89,7 @@ def main():
   # The database file gets .db appended on some platforms.
   db_filenames = [LINKS_DB, LINKS_DB + '.db']
   if any(os.path.isfile(f) for f in db_filenames):
-    links_database = _InitializeDatabase(LINKS_DB)
+    links_database = _initialize_database(LINKS_DB)
     try:
       symlink_creator = WebRTCLinkSetup(links_database, options.dry_run)
       symlink_creator.CleanupLinks()
