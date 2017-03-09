@@ -19,9 +19,10 @@
 namespace webrtc {
 
 namespace {
-const PacedPacketInfo kPacingInfo0(0, 5, 2000);
-const PacedPacketInfo kPacingInfo1(1, 8, 4000);
-constexpr int kNumProbes = 5;
+constexpr int kNumProbesCluster0 = 5;
+constexpr int kNumProbesCluster1 = 8;
+const PacedPacketInfo kPacingInfo0(0, kNumProbesCluster0, 2000);
+const PacedPacketInfo kPacingInfo1(1, kNumProbesCluster1, 4000);
 }  // namespace
 
 TEST_F(DelayBasedBweTest, ProbeDetection) {
@@ -29,7 +30,7 @@ TEST_F(DelayBasedBweTest, ProbeDetection) {
   uint16_t seq_num = 0;
 
   // First burst sent at 8 * 1000 / 10 = 800 kbps.
-  for (int i = 0; i < kNumProbes; ++i) {
+  for (int i = 0; i < kNumProbesCluster0; ++i) {
     clock_.AdvanceTimeMilliseconds(10);
     now_ms = clock_.TimeInMilliseconds();
     IncomingFeedback(now_ms, now_ms, seq_num++, 1000, kPacingInfo0);
@@ -37,7 +38,7 @@ TEST_F(DelayBasedBweTest, ProbeDetection) {
   EXPECT_TRUE(bitrate_observer_.updated());
 
   // Second burst sent at 8 * 1000 / 5 = 1600 kbps.
-  for (int i = 0; i < kNumProbes; ++i) {
+  for (int i = 0; i < kNumProbesCluster1; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     now_ms = clock_.TimeInMilliseconds();
     IncomingFeedback(now_ms, now_ms, seq_num++, 1000, kPacingInfo1);
@@ -52,7 +53,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
   uint16_t seq_num = 0;
   // First burst sent at 8 * 1000 / 10 = 800 kbps, but with every other packet
   // not being paced which could mess things up.
-  for (int i = 0; i < kNumProbes; ++i) {
+  for (int i = 0; i < kNumProbesCluster0; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     now_ms = clock_.TimeInMilliseconds();
     IncomingFeedback(now_ms, now_ms, seq_num++, 1000, kPacingInfo0);
@@ -71,7 +72,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
   // First burst sent at 8 * 1000 / 10 = 800 kbps.
   // Arriving at 8 * 1000 / 5 = 1600 kbps.
   int64_t send_time_ms = 0;
-  for (int i = 0; i < kNumProbes; ++i) {
+  for (int i = 0; i < kNumProbesCluster0; ++i) {
     clock_.AdvanceTimeMilliseconds(1);
     send_time_ms += 10;
     now_ms = clock_.TimeInMilliseconds();
@@ -87,7 +88,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
   // First burst sent at 8 * 1000 / 5 = 1600 kbps.
   // Arriving at 8 * 1000 / 7 = 1142 kbps.
   int64_t send_time_ms = 0;
-  for (int i = 0; i < kNumProbes; ++i) {
+  for (int i = 0; i < kNumProbesCluster1; ++i) {
     clock_.AdvanceTimeMilliseconds(7);
     send_time_ms += 5;
     now_ms = clock_.TimeInMilliseconds();
@@ -104,7 +105,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
   // Burst sent at 8 * 1000 / 1 = 8000 kbps.
   // Arriving at 8 * 1000 / 2 = 4000 kbps.
   int64_t send_time_ms = 0;
-  for (int i = 0; i < kNumProbes; ++i) {
+  for (int i = 0; i < kNumProbesCluster1; ++i) {
     clock_.AdvanceTimeMilliseconds(2);
     send_time_ms += 1;
     now_ms = clock_.TimeInMilliseconds();

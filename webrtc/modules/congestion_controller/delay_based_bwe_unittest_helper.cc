@@ -264,7 +264,7 @@ void DelayBasedBweTest::InitialBehaviorTestHelper(
     uint32_t expected_converge_bitrate) {
   const int kFramerate = 50;  // 50 fps to avoid rounding errors.
   const int kFrameIntervalMs = 1000 / kFramerate;
-  const PacedPacketInfo kPacingInfo(0, 1, 100);
+  const PacedPacketInfo kPacingInfo(0, 5, 5000);
   uint32_t bitrate_bps = 0;
   int64_t send_time_ms = 0;
   uint16_t sequence_number = 0;
@@ -307,7 +307,7 @@ void DelayBasedBweTest::RateIncreaseReorderingTestHelper(
     uint32_t expected_bitrate_bps) {
   const int kFramerate = 50;  // 50 fps to avoid rounding errors.
   const int kFrameIntervalMs = 1000 / kFramerate;
-  const PacedPacketInfo kPacingInfo(0, 1, 100);
+  const PacedPacketInfo kPacingInfo(0, 5, 5000);
   int64_t send_time_ms = 0;
   uint16_t sequence_number = 0;
   // Inserting packets for five seconds to get a valid estimate.

@@ -16,8 +16,13 @@
 #include "webrtc/base/logging.h"
 
 namespace {
-// The minumum number of probes we need for a valid cluster.
-constexpr int kMinNumProbesValidCluster = 4;
+// The minumum number of probes we need to receive feedback about in percent
+// in order to have a valid estimate.
+constexpr int kMinReceivedProbesPercent = 80;
+
+// The minumum number of bytes we need to receive feedback about in percent
+// in order to have a valid estimate.
+constexpr int kMinReceivedBytesPercent = 80;
 
 // The maximum (receive rate)/(send rate) ratio for a valid estimate.
 constexpr float kValidRatio = 2.0f;
@@ -63,7 +68,14 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
   cluster->size_total += payload_size_bits;
   cluster->num_probes += 1;
 
-  if (cluster->num_probes < kMinNumProbesValidCluster)
+  RTC_DCHECK_GT(packet_feedback.pacing_info.probe_cluster_min_probes, 0);
+  RTC_DCHECK_GT(packet_feedback.pacing_info.probe_cluster_min_bytes, 0);
+
+  int min_probes = packet_feedback.pacing_info.probe_cluster_min_probes *
+                   kMinReceivedProbesPercent / 100;
+  int min_bytes = packet_feedback.pacing_info.probe_cluster_min_bytes *
+                  kMinReceivedBytesPercent / 100;
+  if (cluster->num_probes < min_probes || cluster->size_total < min_bytes * 8)
     return -1;
 
   float send_interval_ms = cluster->last_send_ms - cluster->first_send_ms;
