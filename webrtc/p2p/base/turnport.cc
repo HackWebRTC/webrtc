@@ -1195,7 +1195,7 @@ void TurnAllocateRequest::OnErrorResponse(StunMessage* response) {
 
 void TurnAllocateRequest::OnTimeout() {
   LOG_J(LS_WARNING, port_) << "TURN allocate request "
-                           << rtc::hex_encode(id()) << " timout";
+                           << rtc::hex_encode(id()) << " timeout";
   port_->OnAllocateRequestTimeout();
 }
 
