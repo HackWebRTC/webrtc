@@ -151,7 +151,7 @@
       'android_rel': 'android_release_bot_arm',
       'android_clang_dbg': 'android_clang_debug_bot_arm',
       'android_arm64_rel': 'android_release_bot_arm64',
-      'android_n6': 'android_debug_static_bot_arm',
+      'android_experimental': 'android_release_bot_arm',
 
       # Windows
       'win_compile_dbg': 'debug_bot_x86',
