@@ -239,10 +239,10 @@ static const NSInteger kMaxInflightBuffers = 1;
     dispatch_semaphore_signal(block_semaphore);
   }];
 
-  MTLRenderPassDescriptor *_renderPassDescriptor = _view.currentRenderPassDescriptor;
-  if (_renderPassDescriptor) {  // Valid drawable.
+  MTLRenderPassDescriptor *renderPassDescriptor = _view.currentRenderPassDescriptor;
+  if (renderPassDescriptor) {  // Valid drawable.
     id<MTLRenderCommandEncoder> renderEncoder =
-        [commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+        [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
     renderEncoder.label = renderEncoderLabel;
 
     // Set context state.
@@ -269,13 +269,13 @@ static const NSInteger kMaxInflightBuffers = 1;
 #pragma mark - RTCMTLRenderer
 
 - (void)drawFrame:(RTCVideoFrame *)frame {
-  [self setupTexturesForFrame:frame];
   @autoreleasepool {
-    [self render];
+    if ([self setupTexturesForFrame:frame])
+      [self render];
   }
 }
 
-- (void)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
+- (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
   CVPixelBufferRef pixelBuffer = frame.nativeHandle;
 
   id<MTLTexture> lumaTexture = nil;
@@ -313,7 +313,9 @@ static const NSInteger kMaxInflightBuffers = 1;
     _yTexture = lumaTexture;
     _CrCbTexture = chromaTexture;
     _offset = offsetForRotation((webrtc::VideoRotation)frame.rotation);
+    return YES;
   }
+  return NO;
 }
 
 @end
