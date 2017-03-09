@@ -393,6 +393,8 @@ rtc_static_library("rtc_base") {
     "asyncudpsocket.h",
     "crc32.cc",
     "crc32.h",
+    "cryptstring.cc",
+    "cryptstring.h",
     "filerotatingstream.cc",
     "filerotatingstream.h",
     "fileutils.cc",
