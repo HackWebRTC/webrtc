@@ -715,8 +715,10 @@ bool WebRtcVideoChannel2::GetChangedSendParameters(
 
   // Handle max bitrate.
   if (params.max_bandwidth_bps != send_params_.max_bandwidth_bps &&
-      params.max_bandwidth_bps >= 0) {
-    // 0 uncaps max bitrate (-1).
+      params.max_bandwidth_bps >= -1) {
+    // 0 or -1 uncaps max bitrate.
+    // TODO(pbos): Reconsider how 0 should be treated. It is not mentioned as a
+    // special value and might very well be used for stopping sending.
     changed_params->max_bandwidth_bps = rtc::Optional<int>(
         params.max_bandwidth_bps == 0 ? -1 : params.max_bandwidth_bps);
   }
@@ -760,6 +762,15 @@ bool WebRtcVideoChannel2::SetSendParameters(const VideoSendParameters& params) {
   }
 
   if (changed_params.codec || changed_params.max_bandwidth_bps) {
+    if (params.max_bandwidth_bps == -1) {
+      // Unset the global max bitrate (max_bitrate_bps) if max_bandwidth_bps is
+      // -1, which corresponds to no "b=AS" attribute in SDP. Note that the
+      // global max bitrate may be set below in GetBitrateConfigForCodec, from
+      // the codec max bitrate.
+      // TODO(pbos): This should be reconsidered (codec max bitrate should
+      // probably not affect global call max bitrate).
+      bitrate_config_.max_bitrate_bps = -1;
+    }
     if (send_codec_) {
       // TODO(holmer): Changing the codec parameters shouldn't necessarily mean
       // that we change the min/max of bandwidth estimation. Reevaluate this.

@@ -2728,8 +2728,8 @@ TEST_F(WebRtcVideoChannel2Test, SetMaxSendBandwidthShouldBeRemovable) {
   send_parameters_.max_bandwidth_bps = 300000;
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
-  // <= 0 means disable (infinite) max bitrate.
-  send_parameters_.max_bandwidth_bps = 0;
+  // -1 means to disable max bitrate (set infinite).
+  send_parameters_.max_bandwidth_bps = -1;
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   EXPECT_EQ(-1, fake_call_->GetConfig().bitrate_config.max_bitrate_bps)
       << "Setting zero max bitrate did not reset start bitrate.";
@@ -3867,8 +3867,7 @@ TEST_F(WebRtcVideoChannel2Test, CanSentMaxBitrateForExistingStream) {
   // - Audio: max_bandwidth_bps = 0 - fail the operation,
   //          max_bandwidth_bps = -1 - remove the bandwidth limit
   // - Video: max_bandwidth_bps = 0 - remove the bandwidth limit,
-  //          max_bandwidth_bps = -1 - do not change the previously set
-  //                                   limit.
+  //          max_bandwidth_bps = -1 - remove the bandwidth limit
 
   SetAndExpectMaxBitrate(1000, 0, 1000);
   SetAndExpectMaxBitrate(1000, 800, 800);
