@@ -28,6 +28,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/file.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
@@ -84,6 +85,12 @@ struct CodecParams {
 
   std::string filename;
   bool verbose_logging;
+
+  // In batch mode, the VideoProcessor is fed all the frames for processing
+  // before any metrics are calculated. This is useful for pipelining HW codecs,
+  // for which some calculated metrics otherwise would be incorrect. The
+  // downside with batch mode is that mid-test rate allocation is not supported.
+  bool batch_mode;
 };
 
 // Thresholds for the quality metrics.
@@ -342,7 +349,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Reset quantities after each encoder update, update the target
   // per-frame bandwidth.
-  void ResetRateControlMetrics(int num_frames) {
+  void ResetRateControlMetrics(int num_frames_to_hit_target) {
     for (int i = 0; i < num_temporal_layers_; i++) {
       num_frames_per_update_[i] = 0;
       sum_frame_size_mismatch_[i] = 0.0f;
@@ -364,35 +371,40 @@ class VideoProcessorIntegrationTest : public testing::Test {
     sum_encoded_frame_size_total_ = 0.0f;
     encoding_bitrate_total_ = 0.0f;
     perc_encoding_rate_mismatch_ = 0.0f;
-    num_frames_to_hit_target_ = num_frames;
+    num_frames_to_hit_target_ = num_frames_to_hit_target;
     encoding_rate_within_target_ = false;
     sum_key_frame_size_mismatch_ = 0.0;
     num_key_frames_ = 0;
   }
 
   // For every encoded frame, update the rate control metrics.
-  void UpdateRateControlMetrics(int frame_num, FrameType frame_type) {
-    float encoded_size_kbits = processor_->EncodedFrameSize() * 8.0f / 1000.0f;
+  void UpdateRateControlMetrics(int frame_number) {
+    RTC_CHECK_GE(frame_number, 0);
+    int tl_idx = TemporalLayerIndexForFrame(frame_number);
+    FrameType frame_type = processor_->EncodedFrameType(frame_number);
+    float encoded_size_kbits =
+        processor_->EncodedFrameSize(frame_number) * 8.0f / 1000.0f;
+
     // Update layer data.
     // Update rate mismatch relative to per-frame bandwidth for delta frames.
     if (frame_type == kVideoFrameDelta) {
       // TODO(marpan): Should we count dropped (zero size) frames in mismatch?
-      sum_frame_size_mismatch_[layer_] +=
-          fabs(encoded_size_kbits - per_frame_bandwidth_[layer_]) /
-          per_frame_bandwidth_[layer_];
+      sum_frame_size_mismatch_[tl_idx] +=
+          fabs(encoded_size_kbits - per_frame_bandwidth_[tl_idx]) /
+          per_frame_bandwidth_[tl_idx];
     } else {
-      float target_size = (frame_num == 1) ? target_size_key_frame_initial_
-                                           : target_size_key_frame_;
+      float target_size = (frame_number == 0) ? target_size_key_frame_initial_
+                                              : target_size_key_frame_;
       sum_key_frame_size_mismatch_ +=
           fabs(encoded_size_kbits - target_size) / target_size;
       num_key_frames_ += 1;
     }
-    sum_encoded_frame_size_[layer_] += encoded_size_kbits;
-    // Encoding bitrate per layer: from the start of the update/run to the
-    // current frame.
-    encoding_bitrate_[layer_] = sum_encoded_frame_size_[layer_] *
-                                frame_rate_layer_[layer_] /
-                                num_frames_per_update_[layer_];
+    sum_encoded_frame_size_[tl_idx] += encoded_size_kbits;
+    // Encoding bit rate per temporal layer: from the start of the update/run
+    // to the current frame.
+    encoding_bitrate_[tl_idx] = sum_encoded_frame_size_[tl_idx] *
+                                frame_rate_layer_[tl_idx] /
+                                num_frames_per_update_[tl_idx];
     // Total encoding rate: from the start of the update/run to current frame.
     sum_encoded_frame_size_total_ += encoded_size_kbits;
     encoding_bitrate_total_ =
@@ -475,40 +487,39 @@ class VideoProcessorIntegrationTest : public testing::Test {
     EXPECT_GT(ssim_result.min, quality_thresholds.min_min_ssim);
   }
 
-  // Layer index corresponding to frame number, for up to 3 layers.
-  int LayerIndexForFrame(int frame_number) {
-    int layer = -1;
+  // Temporal layer index corresponding to frame number, for up to 3 layers.
+  int TemporalLayerIndexForFrame(int frame_number) {
+    int tl_idx = -1;
     switch (num_temporal_layers_) {
       case 1:
-        layer = 0;
+        tl_idx = 0;
         break;
       case 2:
-        // layer 0:  0     2     4 ...
-        // layer 1:     1     3
-        layer = (frame_number % 2 == 0) ? 0 : 1;
+        // temporal layer 0:  0     2     4 ...
+        // temporal layer 1:     1     3
+        tl_idx = (frame_number % 2 == 0) ? 0 : 1;
         break;
       case 3:
-        // layer 0:  0            4            8 ...
-        // layer 1:        2            6
-        // layer 2:     1      3     5      7
+        // temporal layer 0:  0            4            8 ...
+        // temporal layer 1:        2            6
+        // temporal layer 2:     1      3     5      7
         if (frame_number % 4 == 0) {
-          layer = 0;
+          tl_idx = 0;
         } else if ((frame_number + 2) % 4 == 0) {
-          layer = 1;
+          tl_idx = 1;
         } else if ((frame_number + 1) % 2 == 0) {
-          layer = 2;
+          tl_idx = 2;
         }
         break;
       default:
         RTC_NOTREACHED();
         break;
     }
-
-    return layer;
+    return tl_idx;
   }
 
-  // Set the bitrate and frame rate per layer, for up to 3 layers.
-  void SetLayerRates() {
+  // Set the bit rate and frame rate per temporal layer, for up to 3 layers.
+  void SetTemporalLayerRates() {
     RTC_DCHECK_LE(num_temporal_layers_, kMaxNumTemporalLayers);
     for (int i = 0; i < num_temporal_layers_; i++) {
       float bit_rate_ratio =
@@ -541,54 +552,83 @@ class VideoProcessorIntegrationTest : public testing::Test {
     packet_loss_probability_ = process.packet_loss_probability;
     num_temporal_layers_ = process.num_temporal_layers;
     SetUpCodecConfig(process, visualization_params);
-    // Update the layers and the codec with the initial rates.
+    // Update the temporal layers and the codec with the initial rates.
     bit_rate_ = rate_profile.target_bit_rate[0];
     frame_rate_ = rate_profile.input_frame_rate[0];
-    SetLayerRates();
+    SetTemporalLayerRates();
     // Set the initial target size for key frame.
     target_size_key_frame_initial_ =
         0.5 * kInitialBufferSize * bit_rate_layer_[0];
     processor_->SetRates(bit_rate_, frame_rate_);
 
     // Process each frame, up to |num_frames|.
-    int num_frames = rate_profile.num_frames;
+    int frame_number = 0;
     int update_index = 0;
+    int num_frames = rate_profile.num_frames;
     ResetRateControlMetrics(
         rate_profile.frame_index_rate_update[update_index + 1]);
-    int frame_number = 0;
-    FrameType frame_type = kVideoFrameDelta;
-    while (processor_->ProcessFrame(frame_number) &&
-           frame_number < num_frames) {
-      // Get the layer index for the frame |frame_number|.
-      layer_ = LayerIndexForFrame(frame_number);
-      // Get the frame_type.
-      frame_type = processor_->EncodedFrameType();
-      // Counter for whole sequence run.
-      ++frame_number;
-      // Counters for each rate update.
-      ++num_frames_per_update_[layer_];
-      ++num_frames_total_;
-      UpdateRateControlMetrics(frame_number, frame_type);
-      // If we hit another/next update, verify stats for current state and
-      // update layers and codec with new rates.
-      if (frame_number ==
-          rate_profile.frame_index_rate_update[update_index + 1]) {
-        VerifyRateControlMetrics(update_index, rc_thresholds[update_index]);
-        // Update layer rates and the codec with new rates.
-        ++update_index;
-        bit_rate_ = rate_profile.target_bit_rate[update_index];
-        frame_rate_ = rate_profile.input_frame_rate[update_index];
-        SetLayerRates();
-        ResetRateControlMetrics(
-            rate_profile.frame_index_rate_update[update_index + 1]);
-        processor_->SetRates(bit_rate_, frame_rate_);
+
+    if (process.batch_mode) {
+      // In batch mode, we calculate the metrics for all frames after all frames
+      // have been sent for encoding.
+
+      // TODO(brandtr): Refactor "frame number accounting" so we don't have to
+      // call ProcessFrame num_frames+1 times here.
+      for (frame_number = 0; frame_number <= num_frames; ++frame_number) {
+        EXPECT_TRUE(processor_->ProcessFrame(frame_number));
       }
+
+      for (frame_number = 0; frame_number < num_frames; ++frame_number) {
+        ++num_frames_per_update_[TemporalLayerIndexForFrame(frame_number)];
+        ++num_frames_total_;
+        UpdateRateControlMetrics(frame_number);
+      }
+    } else {
+      // In online mode, we calculate the metrics for a given frame right after
+      // it has been sent for encoding.
+
+      if (process.hw_codec) {
+        LOG(LS_WARNING) << "HW codecs should mostly be run in batch mode, "
+                           "since they may be pipelining.";
+      }
+
+      while (frame_number < num_frames) {
+        EXPECT_TRUE(processor_->ProcessFrame(frame_number));
+
+        ++num_frames_per_update_[TemporalLayerIndexForFrame(frame_number)];
+        ++num_frames_total_;
+        UpdateRateControlMetrics(frame_number);
+
+        ++frame_number;
+
+        // If we hit another/next update, verify stats for current state and
+        // update layers and codec with new rates.
+        if (frame_number ==
+            rate_profile.frame_index_rate_update[update_index + 1]) {
+          VerifyRateControlMetrics(update_index, rc_thresholds[update_index]);
+
+          // Update layer rates and the codec with new rates.
+          ++update_index;
+          bit_rate_ = rate_profile.target_bit_rate[update_index];
+          frame_rate_ = rate_profile.input_frame_rate[update_index];
+          SetTemporalLayerRates();
+          ResetRateControlMetrics(
+              rate_profile.frame_index_rate_update[update_index + 1]);
+          processor_->SetRates(bit_rate_, frame_rate_);
+        }
+      }
+      // TODO(brandtr): Refactor "frame number accounting" so we don't have to
+      // call ProcessFrame one extra time here.
+      EXPECT_TRUE(processor_->ProcessFrame(frame_number));
     }
+
+    // Verify rate control metrics for all frames (if in batch mode), or for all
+    // frames since the last rate update (if not in batch mode).
     VerifyRateControlMetrics(update_index, rc_thresholds[update_index]);
     EXPECT_EQ(num_frames, frame_number);
     EXPECT_EQ(num_frames + 1, static_cast<int>(stats_.stats_.size()));
 
-    // Release encoder and decoder to make sure they have finished processing:
+    // Release encoder and decoder to make sure they have finished processing.
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Release());
 
@@ -601,7 +641,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
       source_frame_writer_->Close();
     }
     if (encoded_frame_writer_) {
-      encoded_frame_writer_->Close();
+      EXPECT_TRUE(encoded_frame_writer_->Close());
     }
     if (decoded_frame_writer_) {
       decoded_frame_writer_->Close();
@@ -640,7 +680,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
                              int width,
                              int height,
                              const std::string& filename,
-                             bool verbose_logging) {
+                             bool verbose_logging,
+                             bool batch_mode) {
     process_settings->codec_type = codec_type;
     process_settings->hw_codec = hw_codec;
     process_settings->use_single_core = use_single_core;
@@ -655,6 +696,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     process_settings->height = height;
     process_settings->filename = filename;
     process_settings->verbose_logging = verbose_logging;
+    process_settings->batch_mode = batch_mode;
   }
 
   static void SetCodecParams(CodecParams* process_settings,
@@ -672,7 +714,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
                    packet_loss_probability, key_frame_interval,
                    num_temporal_layers, error_concealment_on, denoising_on,
                    frame_dropper_on, spatial_resize_on, kCifWidth, kCifHeight,
-                   kFilenameForemanCif, false /* verbose_logging */);
+                   kFilenameForemanCif, false /* verbose_logging */,
+                   false /* batch_mode */);
   }
 
   static void SetQualityThresholds(QualityThresholds* quality_thresholds,
@@ -756,7 +799,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
   bool encoding_rate_within_target_;
   int bit_rate_;
   int frame_rate_;
-  int layer_;
   float target_size_key_frame_initial_;
   float target_size_key_frame_;
   float sum_key_frame_size_mismatch_;

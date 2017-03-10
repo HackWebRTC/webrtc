@@ -218,16 +218,14 @@ void VideoProcessorImpl::SetRates(int bit_rate, int frame_rate) {
   num_spatial_resizes_ = 0;
 }
 
-// TODO(brandtr): Update implementation of EncodedFrameSize and EncodedFrameType
-// to support batch processing in the caller.
-size_t VideoProcessorImpl::EncodedFrameSize() {
-  RTC_DCHECK(!frame_infos_.empty());
-  return frame_infos_.back().encoded_frame_size;
+size_t VideoProcessorImpl::EncodedFrameSize(int frame_number) {
+  RTC_DCHECK_LT(frame_number, frame_infos_.size());
+  return frame_infos_[frame_number].encoded_frame_size;
 }
 
-FrameType VideoProcessorImpl::EncodedFrameType() {
-  RTC_DCHECK(!frame_infos_.empty());
-  return frame_infos_.back().encoded_frame_type;
+FrameType VideoProcessorImpl::EncodedFrameType(int frame_number) {
+  RTC_DCHECK_LT(frame_number, frame_infos_.size());
+  return frame_infos_[frame_number].encoded_frame_type;
 }
 
 int VideoProcessorImpl::NumberDroppedFrames() {

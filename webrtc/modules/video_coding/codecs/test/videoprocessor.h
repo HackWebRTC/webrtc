@@ -148,10 +148,10 @@ class VideoProcessor {
 
   // Return the size of the encoded frame in bytes. Dropped frames by the
   // encoder are regarded as zero size.
-  virtual size_t EncodedFrameSize() = 0;
+  virtual size_t EncodedFrameSize(int frame_number) = 0;
 
   // Return the encoded frame type (key or delta).
-  virtual FrameType EncodedFrameType() = 0;
+  virtual FrameType EncodedFrameType(int frame_number) = 0;
 
   // Return the number of dropped frames.
   virtual int NumberDroppedFrames() = 0;
@@ -260,10 +260,10 @@ class VideoProcessorImpl : public VideoProcessor {
   void SetRates(int bit_rate, int frame_rate) override;
 
   // Return the size of the encoded frame in bytes.
-  size_t EncodedFrameSize() override;
+  size_t EncodedFrameSize(int frame_number) override;
 
   // Return the encoded frame type (key or delta).
-  FrameType EncodedFrameType() override;
+  FrameType EncodedFrameType(int frame_number) override;
 
   // Return the number of dropped frames.
   int NumberDroppedFrames() override;

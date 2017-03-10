@@ -25,6 +25,9 @@ const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
 const bool kHwCodec = false;
 const bool kUseSingleCore = true;
 
+// Test settings.
+const bool kBatchMode = true;
+
 // Packet loss probability [0.0, 1.0].
 const float kPacketLoss = 0.0f;
 
@@ -61,12 +64,12 @@ class PlotVideoProcessorIntegrationTest
     rate_profile.num_frames = kNumFramesLong;
     // Codec/network settings.
     CodecParams process_settings;
-    SetCodecParams(&process_settings, codec_type_, kHwCodec, kUseSingleCore,
-                   kPacketLoss,
-                   -1,  // key_frame_interval
-                   1,   // num_temporal_layers
-                   kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
-                   kSpatialResizeOn, width, height, filename, kVerboseLogging);
+    SetCodecParams(
+        &process_settings, codec_type_, kHwCodec, kUseSingleCore, kPacketLoss,
+        -1,  // key_frame_interval
+        1,   // num_temporal_layers
+        kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
+        width, height, filename, kVerboseLogging, kBatchMode);
     // Thresholds for expected quality (PSNR avg, PSNR min, SSIM avg, SSIM min).
     QualityThresholds quality_thresholds;
     SetQualityThresholds(&quality_thresholds, 15.0, 10.0, 0.2, 0.1);
