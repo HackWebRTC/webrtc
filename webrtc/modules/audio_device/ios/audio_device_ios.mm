@@ -13,6 +13,8 @@
 
 #include "webrtc/modules/audio_device/ios/audio_device_ios.h"
 
+#include <cmath>
+
 #include "webrtc/base/atomicops.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
