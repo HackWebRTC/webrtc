@@ -98,7 +98,7 @@ class DisplayStreamManager {
         CFRunLoopSourceRef source =
             CGDisplayStreamGetRunLoopSource(wrapper.stream);
         CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source,
-                              kCFRunLoopDefaultMode);
+                              kCFRunLoopCommonModes);
         CGDisplayStreamStop(wrapper.stream);
       }
     }
@@ -976,7 +976,7 @@ bool ScreenCapturerMac::RegisterRefreshAndMoveHandlers() {
 
       CFRunLoopSourceRef source =
           CGDisplayStreamGetRunLoopSource(display_stream);
-      CFRunLoopAddSource(CFRunLoopGetCurrent(), source, kCFRunLoopDefaultMode);
+      CFRunLoopAddSource(CFRunLoopGetCurrent(), source, kCFRunLoopCommonModes);
       display_stream_manager_->SaveStream(unique_id, display_stream);
     }
   }
