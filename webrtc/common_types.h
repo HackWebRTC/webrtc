@@ -637,7 +637,7 @@ class VideoCodec {
   unsigned int minBitrate;     // kilobits/sec.
   unsigned int targetBitrate;  // kilobits/sec.
 
-  unsigned char maxFramerate;
+  uint32_t maxFramerate;
 
   unsigned int qpMax;
   unsigned char numberOfSimulcastStreams;

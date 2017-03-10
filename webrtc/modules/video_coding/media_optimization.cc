@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/video_coding/media_optimization.h"
 
+#include <limits>
+
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/utility/frame_dropper.h"
 #include "webrtc/system_wrappers/include/clock.h"
@@ -129,7 +131,9 @@ uint32_t MediaOptimization::InputFrameRate() {
 
 uint32_t MediaOptimization::InputFrameRateInternal() {
   ProcessIncomingFrameRate(clock_->TimeInMilliseconds());
-  return uint32_t(incoming_frame_rate_ + 0.5f);
+  uint32_t framerate = static_cast<uint32_t>(std::min<float>(
+      std::numeric_limits<uint32_t>::max(), incoming_frame_rate_ + 0.5f));
+  return framerate;
 }
 
 uint32_t MediaOptimization::SentFrameRate() {
