@@ -169,6 +169,9 @@ void BasicPortAllocator::OnIceRegathering(PortAllocatorSession* session,
 }
 
 BasicPortAllocator::~BasicPortAllocator() {
+  // Our created port allocator sessions depend on us, so destroy our remaining
+  // pooled sessions before anything else.
+  DiscardCandidatePool();
 }
 
 PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(

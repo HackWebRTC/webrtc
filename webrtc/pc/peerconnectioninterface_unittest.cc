@@ -2277,6 +2277,43 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
 }
 
+// Test that after setting an answer, extra pooled sessions are discarded. The
+// ICE candidate pool is only intended to be used for the first offer/answer.
+TEST_F(PeerConnectionInterfaceTest,
+       ExtraPooledSessionsDiscardedAfterApplyingAnswer) {
+  CreatePeerConnection();
+
+  // Set a larger-than-necessary size.
+  PeerConnectionInterface::RTCConfiguration config;
+  config.ice_candidate_pool_size = 4;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+
+  // Do offer/answer.
+  CreateOfferAsRemoteDescription();
+  CreateAnswerAsLocalDescription();
+
+  // Expect no pooled sessions to be left.
+  const cricket::PortAllocatorSession* session =
+      port_allocator_->GetPooledSession();
+  EXPECT_EQ(nullptr, session);
+}
+
+// After Close is called, pooled candidates should be discarded so as to not
+// waste network resources.
+TEST_F(PeerConnectionInterfaceTest, PooledSessionsDiscardedAfterClose) {
+  CreatePeerConnection();
+
+  PeerConnectionInterface::RTCConfiguration config;
+  config.ice_candidate_pool_size = 3;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+  pc_->Close();
+
+  // Expect no pooled sessions to be left.
+  const cricket::PortAllocatorSession* session =
+      port_allocator_->GetPooledSession();
+  EXPECT_EQ(nullptr, session);
+}
+
 // Test that SetConfiguration returns an invalid modification error if
 // modifying a field in the configuration that isn't allowed to be modified.
 TEST_F(PeerConnectionInterfaceTest,

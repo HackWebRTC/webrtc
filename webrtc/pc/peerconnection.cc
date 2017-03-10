@@ -1261,10 +1261,24 @@ void PeerConnection::SetLocalDescription(
   signaling_thread()->Post(RTC_FROM_HERE, this,
                            MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
 
+  // According to JSEP, after setLocalDescription, changing the candidate pool
+  // size is not allowed, and changing the set of ICE servers will not result
+  // in new candidates being gathered.
+  port_allocator_->FreezeCandidatePool();
+
   // MaybeStartGathering needs to be called after posting
   // MSG_SET_SESSIONDESCRIPTION_SUCCESS, so that we don't signal any candidates
   // before signaling that SetLocalDescription completed.
   session_->MaybeStartGathering();
+
+  if (desc->type() == SessionDescriptionInterface::kAnswer) {
+    // TODO(deadbeef): We already had to hop to the network thread for
+    // MaybeStartGathering...
+    network_thread()->Invoke<void>(
+        RTC_FROM_HERE,
+        rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
+                  port_allocator_.get()));
+  }
 }
 
 void PeerConnection::SetRemoteDescription(
@@ -1372,6 +1386,15 @@ void PeerConnection::SetRemoteDescription(
   SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
   signaling_thread()->Post(RTC_FROM_HERE, this,
                            MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
+
+  if (desc->type() == SessionDescriptionInterface::kAnswer) {
+    // TODO(deadbeef): We already had to hop to the network thread for
+    // MaybeStartGathering...
+    network_thread()->Invoke<void>(
+        RTC_FROM_HERE,
+        rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
+                  port_allocator_.get()));
+  }
 }
 
 PeerConnectionInterface::RTCConfiguration PeerConnection::GetConfiguration() {
@@ -1537,6 +1560,10 @@ void PeerConnection::Close() {
 
   session_->Close();
   event_log_.reset();
+  network_thread()->Invoke<void>(
+      RTC_FROM_HERE,
+      rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
+                port_allocator_.get()));
 }
 
 void PeerConnection::OnSessionStateChange(WebRtcSession* /*session*/,

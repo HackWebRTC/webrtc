@@ -169,15 +169,6 @@ TEST_F(PortAllocatorTest, SetConfigurationDestroysPooledSessions) {
   EXPECT_EQ(1, GetAllPooledSessionsReturnCount());
 }
 
-// Test that after the pool starts to be drained, changing the pool size is not
-// allowed.
-TEST_F(PortAllocatorTest, CantChangePoolSizeAfterTakePooledSession) {
-  SetConfigurationWithPoolSize(1);
-  TakePooledSession();
-  SetConfigurationWithPoolSizeExpectFailure(2);
-  SetConfigurationWithPoolSizeExpectFailure(0);
-}
-
 // According to JSEP, existing pooled sessions should be destroyed and new
 // ones created when the ICE servers change.
 TEST_F(PortAllocatorTest,
@@ -202,6 +193,31 @@ TEST_F(PortAllocatorTest,
   EXPECT_EQ(turn_servers_2, session_1->turn_servers());
   EXPECT_EQ(stun_servers_2, session_2->stun_servers());
   EXPECT_EQ(turn_servers_2, session_2->turn_servers());
+  EXPECT_EQ(0, GetAllPooledSessionsReturnCount());
+}
+
+// According to JSEP, after SetLocalDescription, setting different ICE servers
+// will not cause the pool to be refilled. This is implemented by the
+// PeerConnection calling FreezeCandidatePool when a local description is set.
+TEST_F(PortAllocatorTest,
+       SetConfigurationDoesNotRecreatePooledSessionsAfterFreezeCandidatePool) {
+  cricket::ServerAddresses stun_servers_1 = {stun_server_1};
+  std::vector<cricket::RelayServerConfig> turn_servers_1 = {turn_server_1};
+  allocator_->SetConfiguration(stun_servers_1, turn_servers_1, 1, false);
+  EXPECT_EQ(stun_servers_1, allocator_->stun_servers());
+  EXPECT_EQ(turn_servers_1, allocator_->turn_servers());
+
+  // Update with a different set of servers, but first freeze the pool.
+  allocator_->FreezeCandidatePool();
+  cricket::ServerAddresses stun_servers_2 = {stun_server_2};
+  std::vector<cricket::RelayServerConfig> turn_servers_2 = {turn_server_2};
+  allocator_->SetConfiguration(stun_servers_2, turn_servers_2, 2, false);
+  EXPECT_EQ(stun_servers_2, allocator_->stun_servers());
+  EXPECT_EQ(turn_servers_2, allocator_->turn_servers());
+  auto session = TakePooledSession();
+  ASSERT_NE(nullptr, session.get());
+  EXPECT_EQ(stun_servers_1, session->stun_servers());
+  EXPECT_EQ(turn_servers_1, session->turn_servers());
   EXPECT_EQ(0, GetAllPooledSessionsReturnCount());
 }
 
@@ -246,4 +262,12 @@ TEST_F(PortAllocatorTest, TakePooledSessionUpdatesCandidateFilter) {
   EXPECT_EQ(cricket::CF_ALL, peeked_session->candidate_filter());
   auto session = TakePooledSession();
   EXPECT_EQ(cricket::CF_RELAY, session->candidate_filter());
+}
+
+// Verify that after DiscardCandidatePool, TakePooledSession doesn't return
+// anything.
+TEST_F(PortAllocatorTest, DiscardCandidatePool) {
+  SetConfigurationWithPoolSize(1);
+  allocator_->DiscardCandidatePool();
+  EXPECT_EQ(0, GetAllPooledSessionsReturnCount());
 }
