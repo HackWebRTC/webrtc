@@ -10,16 +10,44 @@
 
 #include "webrtc/test/frame_generator_capturer.h"
 
+#include <utility>
+#include <vector>
+
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/event_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
 namespace test {
+
+class FrameGeneratorCapturer::InsertFrameTask : public rtc::QueuedTask {
+ public:
+  // Repeats in |repeat_interval_ms|. One-time if |repeat_interval_ms| == 0.
+  InsertFrameTask(
+      webrtc::test::FrameGeneratorCapturer* frame_generator_capturer,
+      uint32_t repeat_interval_ms)
+      : frame_generator_capturer_(frame_generator_capturer),
+        repeat_interval_ms_(repeat_interval_ms) {}
+
+ private:
+  bool Run() override {
+    if (repeat_interval_ms_ > 0) {
+      rtc::TaskQueue::Current()->PostDelayedTask(
+          std::unique_ptr<rtc::QueuedTask>(this),
+          repeat_interval_ms_);
+    }
+    frame_generator_capturer_->InsertFrame();
+    // Task should be deleted only if it's not repeating.
+    return repeat_interval_ms_ == 0;
+  }
+
+  webrtc::test::FrameGeneratorCapturer* const frame_generator_capturer_;
+  const uint32_t repeat_interval_ms_;
+};
 
 FrameGeneratorCapturer* FrameGeneratorCapturer::Create(int width,
                                                        int height,
@@ -61,8 +89,7 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(
       sending_(false),
       sink_(nullptr),
       sink_wants_observer_(nullptr),
-      tick_(EventTimerWrapper::Create()),
-      thread_(FrameGeneratorCapturer::Run, this, "FrameGeneratorCapturer"),
+      task_queue_("FrameGeneratorQueue", rtc::TaskQueue::Priority::HIGH),
       frame_generator_(std::move(frame_generator)),
       target_fps_(target_fps),
       first_frame_capture_time_(-1) {
@@ -72,8 +99,6 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(
 
 FrameGeneratorCapturer::~FrameGeneratorCapturer() {
   Stop();
-
-  thread_.Stop();
 }
 
 void FrameGeneratorCapturer::SetFakeRotation(VideoRotation rotation) {
@@ -87,15 +112,11 @@ bool FrameGeneratorCapturer::Init() {
   if (frame_generator_.get() == NULL)
     return false;
 
-  if (!tick_->StartTimer(true, 1000 / target_fps_))
-    return false;
-  thread_.Start();
-  thread_.SetPriority(rtc::kHighPriority);
-  return true;
-}
+  task_queue_.PostDelayedTask(
+      std::unique_ptr<rtc::QueuedTask>(
+          new InsertFrameTask(this, 1000 / target_fps_)),
+          1000 / target_fps_);
 
-bool FrameGeneratorCapturer::Run(void* obj) {
-  static_cast<FrameGeneratorCapturer*>(obj)->InsertFrame();
   return true;
 }
 
@@ -113,7 +134,6 @@ void FrameGeneratorCapturer::InsertFrame() {
         sink_->OnFrame(*frame);
     }
   }
-  tick_->Wait(WEBRTC_EVENT_INFINITE);
 }
 
 void FrameGeneratorCapturer::Start() {
@@ -155,7 +175,11 @@ void FrameGeneratorCapturer::RemoveSink(
 }
 
 void FrameGeneratorCapturer::ForceFrame() {
-  tick_->Set();
+  // One-time non-repeating task,
+  // therefore repeat_interval_ms is 0 in InsertFrameTask()
+  task_queue_.PostTask(
+      std::unique_ptr<rtc::QueuedTask>(new InsertFrameTask(this, 0)));
 }
-}  // test
-}  // webrtc
+
+}  // namespace test
+}  // namespace webrtc

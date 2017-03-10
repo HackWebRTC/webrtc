@@ -476,7 +476,7 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
     LoadObserver()
         : SendTest(kLongTimeoutMs),
           expect_lower_resolution_wants_(true),
-          encoder_(Clock::GetRealTimeClock(), 35 /* delay_ms */) {}
+          encoder_(Clock::GetRealTimeClock(), 40 /* delay_ms */) {}
 
     void OnFrameGeneratorCapturerCreated(
         test::FrameGeneratorCapturer* frame_generator_capturer) override {
