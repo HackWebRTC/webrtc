@@ -13,6 +13,7 @@
 
 #include <math.h>
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -93,12 +94,12 @@ struct CodecParams {
   bool batch_mode;
 };
 
-// Thresholds for the quality metrics.
+// Thresholds for the quality metrics. Defaults are maximally minimal.
 struct QualityThresholds {
-  double min_avg_psnr;
-  double min_min_psnr;
-  double min_avg_ssim;
-  double min_min_ssim;
+  double min_avg_psnr = std::numeric_limits<double>::min();
+  double min_min_psnr = std::numeric_limits<double>::min();
+  double min_avg_ssim = 0;
+  double min_min_ssim = 0;
 };
 
 // The sequence of bit rate and frame rate changes for the encoder, the frame
@@ -122,8 +123,8 @@ struct RateControlThresholds {
   int max_delta_frame_size_mismatch;
   int max_encoding_rate_mismatch;
   int max_time_hit_target;
-  int num_spatial_resizes;
-  int num_key_frames;
+  int num_spatial_resizes;  // Set to -1 to disable check.
+  int num_key_frames;       // Set to -1 to disable check.
 };
 
 // Should video files be saved persistently to disk for post-run visualization?
@@ -474,8 +475,12 @@ class VideoProcessorIntegrationTest : public testing::Test {
     printf("\n");
     EXPECT_LE(num_frames_to_hit_target_, rc_expected.max_time_hit_target);
     EXPECT_LE(num_dropped_frames, rc_expected.max_num_dropped_frames);
-    EXPECT_EQ(rc_expected.num_spatial_resizes, num_resize_actions);
-    EXPECT_EQ(rc_expected.num_key_frames, num_key_frames_);
+    if (rc_expected.num_spatial_resizes >= 0) {
+      EXPECT_EQ(rc_expected.num_spatial_resizes, num_resize_actions);
+    }
+    if (rc_expected.num_key_frames >= 0) {
+      EXPECT_EQ(rc_expected.num_key_frames, num_key_frames_);
+    }
   }
 
   void VerifyQuality(const test::QualityMetricsResult& psnr_result,
@@ -541,6 +546,10 @@ class VideoProcessorIntegrationTest : public testing::Test {
   }
 
   // Processes all frames in the clip and verifies the result.
+  // TODO(brandtr): Change the second last argument to be a
+  // const std::vector<RateControlThresholds>&, so we can ensure that the user
+  // does not expect us to do mid-clip rate updates when we are not able to,
+  // e.g., when we are operating in batch mode.
   void ProcessFramesAndVerify(QualityThresholds quality_thresholds,
                               RateProfile rate_profile,
                               CodecParams process,
