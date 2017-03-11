@@ -145,16 +145,6 @@ public:
 
     void RecordFileEnded(const int32_t id);
 
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    // Typing detection
-    int TimeSinceLastTyping(int &seconds);
-    int SetTypingDetectionParameters(int timeWindow,
-                                     int costPerTyping,
-                                     int reportingThreshold,
-                                     int penaltyDecay,
-                                     int typeEventDelay);
-#endif
-
   // Virtual to allow mocking.
   virtual void EnableStereoChannelSwapping(bool enable);
   bool IsStereoChannelSwappingEnabled();

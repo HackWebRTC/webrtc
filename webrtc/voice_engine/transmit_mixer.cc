@@ -1065,33 +1065,6 @@ void TransmitMixer::TypingDetection(bool keyPressed)
 }
 #endif
 
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-int TransmitMixer::TimeSinceLastTyping(int &seconds)
-{
-    // We check in VoEAudioProcessingImpl that this is only called when
-    // typing detection is active.
-    seconds = _typingDetection.TimeSinceLastDetectionInSeconds();
-    return 0;
-}
-#endif
-
-#if WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-int TransmitMixer::SetTypingDetectionParameters(int timeWindow,
-                                                int costPerTyping,
-                                                int reportingThreshold,
-                                                int penaltyDecay,
-                                                int typeEventDelay)
-{
-    _typingDetection.SetParameters(timeWindow,
-                                   costPerTyping,
-                                   reportingThreshold,
-                                   penaltyDecay,
-                                   typeEventDelay,
-                                   0);
-    return 0;
-}
-#endif
-
 void TransmitMixer::EnableStereoChannelSwapping(bool enable) {
   swap_stereo_channels_ = enable;
 }

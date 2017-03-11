@@ -30,7 +30,6 @@
 #include "webrtc/voice_engine/audio_level.h"
 #include "webrtc/voice_engine/file_player.h"
 #include "webrtc/voice_engine/file_recorder.h"
-#include "webrtc/voice_engine/include/voe_audio_processing.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/shared_data.h"
@@ -134,7 +133,6 @@ class Channel
       public Transport,
       public AudioPacketizationCallback,  // receive encoded packets from the
                                           // ACM
-      public ACMVADCallback,              // receive voice activity from the ACM
       public MixerParticipant,  // supplies output mixer with audio frames
       public OverheadObserver {
  public:
@@ -265,9 +263,6 @@ class Channel
   int SendTelephoneEventOutband(int event, int duration_ms);
   int SetSendTelephoneEventPayloadType(int payload_type, int payload_frequency);
 
-  // VoEAudioProcessingImpl
-  int VoiceActivityIndicator(int& activity);
-
   // VoERTP_RTCP
   int SetLocalSSRC(unsigned int ssrc);
   int GetLocalSSRC(unsigned int& ssrc);
@@ -306,9 +301,6 @@ class Channel
                    const uint8_t* payloadData,
                    size_t payloadSize,
                    const RTPFragmentationHeader* fragmentation) override;
-
-  // From ACMVADCallback in the ACM
-  int32_t InFrameType(FrameType frame_type) override;
 
   // From RtpData in the RTP/RTCP module
   int32_t OnReceivedPayloadData(const uint8_t* payloadData,
@@ -456,6 +448,8 @@ class Channel
 
   // Timestamp of the audio pulled from NetEq.
   rtc::Optional<uint32_t> jitter_buffer_playout_timestamp_;
+
+  rtc::CriticalSection video_sync_lock_;
   uint32_t playout_timestamp_rtp_ GUARDED_BY(video_sync_lock_);
   uint32_t playout_delay_ms_ GUARDED_BY(video_sync_lock_);
   uint16_t send_sequence_number_;
@@ -479,7 +473,6 @@ class Channel
   rtc::CriticalSection* _callbackCritSectPtr;    // owned by base
   Transport* _transportPtr;  // WebRtc socket or external transport
   RmsLevel rms_level_;
-  int32_t _sendFrameType;  // Send data is voice, 1-voice, 0-otherwise
   bool input_mute_ GUARDED_BY(volume_settings_critsect_);
   bool previous_frame_muted_;  // Only accessed from PrepareEncodeAndSend().
   float _outputGain GUARDED_BY(volume_settings_critsect_);
@@ -494,9 +487,7 @@ class Channel
   rtc::CriticalSection overhead_per_packet_lock_;
   // VoENetwork
   AudioFrame::SpeechType _outputSpeechType;
-  // VoEVideoSync
-  rtc::CriticalSection video_sync_lock_;
-  // VoEAudioProcessing
+  // DTX.
   bool restored_packet_in_use_;
   // RtcpBandwidthObserver
   std::unique_ptr<VoERtcpObserver> rtcp_observer_;

@@ -16,7 +16,6 @@
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/voice_engine/voe_base_impl.h"
-#include "webrtc/voice_engine/voe_audio_processing_impl.h"
 #include "webrtc/voice_engine/voe_codec_impl.h"
 #include "webrtc/voice_engine/voe_file_impl.h"
 #include "webrtc/voice_engine/voe_hardware_impl.h"
@@ -31,7 +30,6 @@ class ChannelProxy;
 
 class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
                         public VoiceEngine,
-                        public VoEAudioProcessingImpl,
                         public VoECodecImpl,
                         public VoEFileImpl,
                         public VoEHardwareImpl,
@@ -42,7 +40,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
  public:
   VoiceEngineImpl()
       : SharedData(),
-        VoEAudioProcessingImpl(this),
         VoECodecImpl(this),
         VoEFileImpl(this),
         VoEHardwareImpl(this),

@@ -446,15 +446,6 @@ int32_t Channel::SendData(FrameType frameType,
   return 0;
 }
 
-int32_t Channel::InFrameType(FrameType frame_type) {
-  WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::InFrameType(frame_type=%d)", frame_type);
-
-  rtc::CritScope cs(&_callbackCritSect);
-  _sendFrameType = (frame_type == kAudioFrameSpeech);
-  return 0;
-}
-
 bool Channel::SendRtp(const uint8_t* data,
                       size_t len,
                       const PacketOptions& options) {
@@ -893,7 +884,6 @@ Channel::Channel(int32_t channelId,
       _voiceEngineObserverPtr(NULL),
       _callbackCritSectPtr(NULL),
       _transportPtr(NULL),
-      _sendFrameType(0),
       input_mute_(false),
       previous_frame_muted_(false),
       _outputGain(1.0f),
@@ -1026,10 +1016,7 @@ int32_t Channel::Init() {
   // RTCP is enabled by default.
   _rtpRtcpModule->SetRTCPStatus(RtcpMode::kCompound);
   // --- Register all permanent callbacks
-  const bool fail = (audio_coding_->RegisterTransportCallback(this) == -1) ||
-                    (audio_coding_->RegisterVADCallback(this) == -1);
-
-  if (fail) {
+  if (audio_coding_->RegisterTransportCallback(this) == -1) {
     _engineStatisticsPtr->SetLastError(
         VE_CANNOT_INIT_CHANNEL, kTraceError,
         "Channel::Init() callbacks not registered");
@@ -2291,11 +2278,6 @@ int Channel::SetSendTelephoneEventPayloadType(int payload_type,
       return -1;
     }
   }
-  return 0;
-}
-
-int Channel::VoiceActivityIndicator(int& activity) {
-  activity = _sendFrameType;
   return 0;
 }
 
