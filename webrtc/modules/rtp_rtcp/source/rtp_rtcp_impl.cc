@@ -259,10 +259,6 @@ int32_t ModuleRtpRtcpImpl::DeRegisterSendPayload(const int8_t payload_type) {
   return rtp_sender_.DeRegisterSendPayload(payload_type);
 }
 
-int8_t ModuleRtpRtcpImpl::SendPayloadType() const {
-  return rtp_sender_.SendPayloadType();
-}
-
 uint32_t ModuleRtpRtcpImpl::StartTimestamp() const {
   return rtp_sender_.TimestampOffset();
 }
@@ -322,7 +318,7 @@ RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
   rtp_sender_.GetDataCounters(&rtp_stats, &rtx_stats);
 
   RTCPSender::FeedbackState state;
-  state.send_payload_type = SendPayloadType();
+  state.send_payload_type = rtp_sender_.SendPayloadType();
   state.packets_sent = rtp_stats.transmitted.packets +
                        rtx_stats.transmitted.packets;
   state.media_bytes_sent = rtp_stats.transmitted.payload_bytes +
