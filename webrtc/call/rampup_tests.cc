@@ -356,13 +356,8 @@ void RampUpTester::TriggerTestDone() {
   }
 
   if (report_perf_stats_) {
-    ReportResult("ramp-up-total-packets-sent", total_packets_sent, "packets");
-    ReportResult("ramp-up-total-sent", total_sent, "bytes");
     ReportResult("ramp-up-media-sent", media_sent, "bytes");
     ReportResult("ramp-up-padding-sent", padding_sent, "bytes");
-    ReportResult("ramp-up-rtx-total-packets-sent", rtx_total_packets_sent,
-                 "packets");
-    ReportResult("ramp-up-rtx-total-sent", rtx_total_sent, "bytes");
     ReportResult("ramp-up-rtx-media-sent", rtx_media_sent, "bytes");
     ReportResult("ramp-up-rtx-padding-sent", rtx_padding_sent, "bytes");
     if (ramp_up_finished_ms_ >= 0) {
@@ -600,7 +595,7 @@ TEST_F(RampUpTest, UpDownUpAudioVideoTransportSequenceNumberRtx) {
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(3, 1, 0, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
-                          false, loss_rates, true);
+                          false, loss_rates, false);
   RunBaseTest(&test);
 }
 
@@ -608,7 +603,7 @@ TEST_F(RampUpTest, UpDownUpAudioTransportSequenceNumberRtx) {
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(0, 1, 0, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
-                          false, loss_rates, true);
+                          false, loss_rates, false);
   RunBaseTest(&test);
 }
 
@@ -620,7 +615,7 @@ TEST_F(RampUpTest, TOffsetSimulcastRedRtx) {
 
 TEST_F(RampUpTest, AbsSendTime) {
   RampUpTester test(1, 0, 0, 0, 0, RtpExtension::kAbsSendTimeUri, false, false,
-                    true);
+                    false);
   RunBaseTest(&test);
 }
 
@@ -632,13 +627,13 @@ TEST_F(RampUpTest, AbsSendTimeSimulcastRedRtx) {
 
 TEST_F(RampUpTest, TransportSequenceNumber) {
   RampUpTester test(1, 0, 0, 0, 0, RtpExtension::kTransportSequenceNumberUri,
-                    false, false, true);
+                    false, false, false);
   RunBaseTest(&test);
 }
 
 TEST_F(RampUpTest, TransportSequenceNumberSimulcast) {
   RampUpTester test(3, 0, 0, 0, 0, RtpExtension::kTransportSequenceNumberUri,
-                    false, false, true);
+                    false, false, false);
   RunBaseTest(&test);
 }
 

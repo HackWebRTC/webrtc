@@ -744,30 +744,18 @@ class VideoAnalyzer : public PacketReceiver,
     rtc::CritScope crit(&comparison_lock_);
     PrintResult("psnr", psnr_, " dB");
     PrintResult("ssim", ssim_, " score");
-    PrintResult("sender_time", sender_time_, " ms");
-    PrintResult("receiver_time", receiver_time_, " ms");
     PrintResult("total_delay_incl_network", end_to_end_, " ms");
     PrintResult("time_between_rendered_frames", rendered_delta_, " ms");
-    PrintResult("encoded_frame_size", encoded_frame_size_, " bytes");
     PrintResult("encode_frame_rate", encode_frame_rate_, " fps");
     PrintResult("encode_time", encode_time_ms_, " ms");
-    PrintResult("encode_usage_percent", encode_usage_percent_, " percent");
     PrintResult("media_bitrate", media_bitrate_bps_, " bps");
-
-    printf("RESULT actual_bitrate: %s = %.6lf bps\n", test_label_.c_str(),
-           GetAverageMediaBitrateBps());
 
     if (receive_stream_ != nullptr) {
       PrintResult("decode_time", decode_time_ms_, " ms");
-      PrintResult("decode_time_max", decode_time_max_ms_, " ms");
     }
 
     printf("RESULT dropped_frames: %s = %d frames\n", test_label_.c_str(),
            dropped_frames_);
-    printf("RESULT dropped_frames_before_first_encode: %s = %d frames\n",
-           test_label_.c_str(), dropped_frames_before_first_encode_);
-    printf("RESULT dropped_frames_before_rendering: %s = %d frames\n",
-           test_label_.c_str(), dropped_frames_before_rendering_);
     printf("RESULT cpu_usage: %s = %lf %%\n", test_label_.c_str(),
            GetCpuUsagePercent());
 
