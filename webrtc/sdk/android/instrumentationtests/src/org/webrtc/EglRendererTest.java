@@ -307,4 +307,15 @@ public class EglRendererTest {
     // Check the frame listener hasn't triggered.
     assertFalse(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
   }
+
+  @Test
+  @SmallTest
+  public void testFrameListenersWhilePaused() throws Exception {
+    // Test that frame listeners receive frames while renderer is paused.
+    eglRenderer.pauseVideo();
+    eglRenderer.addFrameListener(testFrameListener, 1f /* scaleFactor */);
+    feedFrame(0);
+    assertTrue(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
+    checkBitmapContent(testFrameListener.resetAndGetBitmap(), 0);
+  }
 }

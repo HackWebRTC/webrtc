@@ -95,8 +95,6 @@ public class EglRenderer implements VideoRenderer.Callbacks {
   private EglBase eglBase;
   private final RendererCommon.YuvUploader yuvUploader = new RendererCommon.YuvUploader();
   private RendererCommon.GlDrawer drawer;
-  // Texture ids for YUV frames. Allocated on first arrival of a YUV frame.
-  private int[] yuvTextures = null;
 
   // Pending frame to render. Serves as a queue with size 1. Synchronized on |frameLock|.
   private final Object frameLock = new Object();
@@ -239,10 +237,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
             drawer.release();
             drawer = null;
           }
-          if (yuvTextures != null) {
-            GLES20.glDeleteTextures(3, yuvTextures, 0);
-            yuvTextures = null;
-          }
+          yuvUploader.release();
           if (bitmapTextureFramebuffer != null) {
             bitmapTextureFramebuffer.release();
             bitmapTextureFramebuffer = null;
@@ -364,33 +359,31 @@ public class EglRenderer implements VideoRenderer.Callbacks {
    * Register a callback to be invoked when a new video frame has been received. This version uses
    * the drawer of the EglRenderer that was passed in init.
    *
-   * @param listener The callback to be invoked.
+   * @param listener The callback to be invoked. The callback will be invoked on the render thread.
+   *                 It should be lightweight and must not call removeFrameListener.
    * @param scale    The scale of the Bitmap passed to the callback, or 0 if no Bitmap is
    *                 required.
    */
   public void addFrameListener(final FrameListener listener, final float scale) {
-    postToRenderThread(new Runnable() {
-      @Override
-      public void run() {
-        frameListeners.add(new FrameListenerAndParams(listener, scale, drawer));
-      }
-    });
+    addFrameListener(listener, scale, null);
   }
 
   /**
    * Register a callback to be invoked when a new video frame has been received.
    *
-   * @param listener The callback to be invoked.
+   * @param listener The callback to be invoked. The callback will be invoked on the render thread.
+   *                 It should be lightweight and must not call removeFrameListener.
    * @param scale    The scale of the Bitmap passed to the callback, or 0 if no Bitmap is
    *                 required.
-   * @param drawer   Custom drawer to use for this frame listener.
+   * @param drawer   Custom drawer to use for this frame listener or null to use the default one.
    */
   public void addFrameListener(
-      final FrameListener listener, final float scale, final RendererCommon.GlDrawer drawer) {
+      final FrameListener listener, final float scale, final RendererCommon.GlDrawer drawerParam) {
     postToRenderThread(new Runnable() {
       @Override
       public void run() {
-        frameListeners.add(new FrameListenerAndParams(listener, scale, drawer));
+        final RendererCommon.GlDrawer listenerDrawer = drawerParam == null ? drawer : drawerParam;
+        frameListeners.add(new FrameListenerAndParams(listener, scale, listenerDrawer));
       }
     });
   }
@@ -403,6 +396,9 @@ public class EglRenderer implements VideoRenderer.Callbacks {
    * @param runnable The callback to remove.
    */
   public void removeFrameListener(final FrameListener listener) {
+    if (Thread.currentThread() == renderThreadHandler.getLooper().getThread()) {
+      throw new RuntimeException("removeFrameListener must not be called on the render thread.");
+    }
     final CountDownLatch latch = new CountDownLatch(1);
     postToRenderThread(new Runnable() {
       @Override
@@ -431,20 +427,6 @@ public class EglRenderer implements VideoRenderer.Callbacks {
         logD("Dropping frame - Not initialized or already released.");
         VideoRenderer.renderFrameDone(frame);
         return;
-      }
-      // Check if fps reduction is active.
-      synchronized (fpsReductionLock) {
-        if (minRenderPeriodNs > 0) {
-          final long currentTimeNs = System.nanoTime();
-          if (currentTimeNs < nextFrameTimeNs) {
-            logD("Dropping frame - fps reduction is active.");
-            VideoRenderer.renderFrameDone(frame);
-            return;
-          }
-          nextFrameTimeNs += minRenderPeriodNs;
-          // The time for the next frame should always be in the future.
-          nextFrameTimeNs = Math.max(nextFrameTimeNs, currentTimeNs);
-        }
       }
       synchronized (frameLock) {
         dropOldFrame = (pendingFrame != null);
@@ -543,6 +525,28 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       VideoRenderer.renderFrameDone(frame);
       return;
     }
+    // Check if fps reduction is active.
+    final boolean shouldRenderFrame;
+    synchronized (fpsReductionLock) {
+      if (minRenderPeriodNs == Long.MAX_VALUE) {
+        // Rendering is paused.
+        shouldRenderFrame = false;
+      } else if (minRenderPeriodNs <= 0) {
+        // FPS reduction is disabled.
+        shouldRenderFrame = true;
+      } else {
+        final long currentTimeNs = System.nanoTime();
+        if (currentTimeNs < nextFrameTimeNs) {
+          logD("Skipping frame rendering - fps reduction is active.");
+          shouldRenderFrame = false;
+        } else {
+          nextFrameTimeNs += minRenderPeriodNs;
+          // The time for the next frame should always be in the future.
+          nextFrameTimeNs = Math.max(nextFrameTimeNs, currentTimeNs);
+          shouldRenderFrame = true;
+        }
+      }
+    }
 
     final long startTimeNs = System.nanoTime();
     final float[] texMatrix =
@@ -575,55 +579,61 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       drawMatrix = RendererCommon.multiplyMatrices(texMatrix, layoutMatrix);
     }
 
-    GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
-    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+    boolean shouldUploadYuvTextures = false;
     if (frame.yuvFrame) {
-      // Make sure YUV textures are allocated.
-      if (yuvTextures == null) {
-        yuvTextures = new int[3];
-        for (int i = 0; i < 3; i++) {
-          yuvTextures[i] = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
+      shouldUploadYuvTextures = shouldRenderFrame;
+      // Check if there are frame listeners that we want to render a bitmap for regardless of if the
+      // frame was rendered. This is the case when there are frameListeners with scale != 0f.
+      if (!shouldUploadYuvTextures) {
+        for (FrameListenerAndParams listenerAndParams : frameListeners) {
+          if (listenerAndParams.scale != 0f) {
+            shouldUploadYuvTextures = true;
+            break;
+          }
         }
       }
+    }
+    final int[] yuvTextures = shouldUploadYuvTextures
+        ? yuvUploader.uploadYuvData(frame.width, frame.height, frame.yuvStrides, frame.yuvPlanes)
+        : null;
 
-      yuvUploader.uploadYuvData(
-          yuvTextures, frame.width, frame.height, frame.yuvStrides, frame.yuvPlanes);
-      drawer.drawYuv(yuvTextures, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
-          eglBase.surfaceWidth(), eglBase.surfaceHeight());
-    } else {
-      drawer.drawOes(frame.textureId, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
-          eglBase.surfaceWidth(), eglBase.surfaceHeight());
+    if (shouldRenderFrame) {
+      GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
+      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+      if (frame.yuvFrame) {
+        drawer.drawYuv(yuvTextures, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
+            eglBase.surfaceWidth(), eglBase.surfaceHeight());
+      } else {
+        drawer.drawOes(frame.textureId, drawMatrix, drawnFrameWidth, drawnFrameHeight, 0, 0,
+            eglBase.surfaceWidth(), eglBase.surfaceHeight());
+      }
+
+      final long swapBuffersStartTimeNs = System.nanoTime();
+      eglBase.swapBuffers();
+
+      final long currentTimeNs = System.nanoTime();
+      synchronized (statisticsLock) {
+        ++framesRendered;
+        renderTimeNs += (currentTimeNs - startTimeNs);
+        renderSwapBufferTimeNs += (currentTimeNs - swapBuffersStartTimeNs);
+      }
     }
 
-    final long swapBuffersStartTimeNs = System.nanoTime();
-    eglBase.swapBuffers();
-
-    final long currentTimeNs = System.nanoTime();
-    synchronized (statisticsLock) {
-      ++framesRendered;
-      renderTimeNs += (currentTimeNs - startTimeNs);
-      renderSwapBufferTimeNs += (currentTimeNs - swapBuffersStartTimeNs);
-    }
-
-    notifyCallbacks(frame, texMatrix);
+    notifyCallbacks(frame, yuvTextures, texMatrix);
     VideoRenderer.renderFrameDone(frame);
   }
 
-  private void notifyCallbacks(VideoRenderer.I420Frame frame, float[] texMatrix) {
-    // Make temporary copy of callback list to avoid ConcurrentModificationException, in case
-    // callbacks call addFramelistener or removeFrameListener.
-    final ArrayList<FrameListenerAndParams> tmpList;
+  private void notifyCallbacks(
+      VideoRenderer.I420Frame frame, int[] yuvTextures, float[] texMatrix) {
     if (frameListeners.isEmpty())
       return;
-    tmpList = new ArrayList<>(frameListeners);
-    frameListeners.clear();
 
     final float[] bitmapMatrix = RendererCommon.multiplyMatrices(
         RendererCommon.multiplyMatrices(texMatrix,
             mirror ? RendererCommon.horizontalFlipMatrix() : RendererCommon.identityMatrix()),
         RendererCommon.verticalFlipMatrix());
 
-    for (FrameListenerAndParams listenerAndParams : tmpList) {
+    for (FrameListenerAndParams listenerAndParams : frameListeners) {
       final int scaledWidth = (int) (listenerAndParams.scale * frame.rotatedWidth());
       final int scaledHeight = (int) (listenerAndParams.scale * frame.rotatedHeight());
 
@@ -663,6 +673,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       bitmap.copyPixelsFromBuffer(bitmapBuffer);
       listenerAndParams.listener.onFrame(bitmap);
     }
+    frameListeners.clear();
   }
 
   private String averageTimeAsString(long sumTimeNs, int count) {
