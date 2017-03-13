@@ -36,6 +36,8 @@ using testing::StrictMock;
 
 namespace {
 
+constexpr uint32_t kMaxUnsignaledRecvStreams = 1;
+
 const cricket::AudioCodec kPcmuCodec(0, "PCMU", 8000, 64000, 1);
 const cricket::AudioCodec kIsacCodec(103, "ISAC", 16000, 32000, 1);
 const cricket::AudioCodec kOpusCodec(111, "opus", 48000, 64000, 2);
@@ -2784,10 +2786,8 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvMultipleUnsignaled) {
   unsigned char packet[sizeof(kPcmuFrame)];
   memcpy(packet, kPcmuFrame, sizeof(kPcmuFrame));
 
-  constexpr uint32_t kMaxUnsignaledCount = 50;
-
   // Note that SSRC = 0 is not supported.
-  for (uint32_t ssrc = 1; ssrc < (1 + kMaxUnsignaledCount); ++ssrc) {
+  for (uint32_t ssrc = 1; ssrc < (1 + kMaxUnsignaledRecvStreams); ++ssrc) {
     rtc::SetBE32(&packet[8], ssrc);
     DeliverPacket(packet, sizeof(packet));
 
@@ -2798,11 +2798,11 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvMultipleUnsignaled) {
   }
 
   // Sending on the same SSRCs again should not create new streams.
-  for (uint32_t ssrc = 1; ssrc < (1 + kMaxUnsignaledCount); ++ssrc) {
+  for (uint32_t ssrc = 1; ssrc < (1 + kMaxUnsignaledRecvStreams); ++ssrc) {
     rtc::SetBE32(&packet[8], ssrc);
     DeliverPacket(packet, sizeof(packet));
 
-    EXPECT_EQ(kMaxUnsignaledCount, call_.GetAudioReceiveStreams().size());
+    EXPECT_EQ(kMaxUnsignaledRecvStreams, call_.GetAudioReceiveStreams().size());
     EXPECT_EQ(2, GetRecvStream(ssrc).received_packets());
     EXPECT_TRUE(GetRecvStream(ssrc).VerifyLastPacket(packet, sizeof(packet)));
   }
@@ -2813,16 +2813,16 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvMultipleUnsignaled) {
   DeliverPacket(packet, sizeof(packet));
 
   const auto& streams = call_.GetAudioReceiveStreams();
-  EXPECT_EQ(kMaxUnsignaledCount, streams.size());
+  EXPECT_EQ(kMaxUnsignaledRecvStreams, streams.size());
   size_t i = 0;
-  for (uint32_t ssrc = 2; ssrc < (1 + kMaxUnsignaledCount); ++ssrc, ++i) {
+  for (uint32_t ssrc = 2; ssrc < (1 + kMaxUnsignaledRecvStreams); ++ssrc, ++i) {
     EXPECT_EQ(ssrc, streams[i]->GetConfig().rtp.remote_ssrc);
     EXPECT_EQ(2, streams[i]->received_packets());
   }
   EXPECT_EQ(kAnotherSsrc, streams[i]->GetConfig().rtp.remote_ssrc);
   EXPECT_EQ(1, streams[i]->received_packets());
   // Sanity check that we've checked all streams.
-  EXPECT_EQ(kMaxUnsignaledCount, (i + 1));
+  EXPECT_EQ(kMaxUnsignaledRecvStreams, (i + 1));
 }
 
 // Test that a default channel is created even after a signaled stream has been
@@ -3302,12 +3302,16 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOutputVolumeUnsignaledRecvStream) {
 
   // Setting gain with SSRC=0 should affect all unsignaled streams.
   EXPECT_TRUE(channel_->SetOutputVolume(kSsrc0, 3));
-  EXPECT_DOUBLE_EQ(3, GetRecvStream(kSsrc1).gain());
+  if (kMaxUnsignaledRecvStreams > 1) {
+    EXPECT_DOUBLE_EQ(3, GetRecvStream(kSsrc1).gain());
+  }
   EXPECT_DOUBLE_EQ(3, GetRecvStream(kSsrcX).gain());
 
   // Setting gain on an individual stream affects only that.
   EXPECT_TRUE(channel_->SetOutputVolume(kSsrcX, 4));
-  EXPECT_DOUBLE_EQ(3, GetRecvStream(kSsrc1).gain());
+  if (kMaxUnsignaledRecvStreams > 1) {
+    EXPECT_DOUBLE_EQ(3, GetRecvStream(kSsrc1).gain());
+  }
   EXPECT_DOUBLE_EQ(4, GetRecvStream(kSsrcX).gain());
 }
 
@@ -3494,24 +3498,34 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRawAudioSinkUnsignaledRecvStream) {
   memcpy(pcmuFrame2, kPcmuFrame, sizeof(kPcmuFrame));
   rtc::SetBE32(&pcmuFrame2[8], kSsrcX);
   DeliverPacket(pcmuFrame2, sizeof(pcmuFrame2));
-  EXPECT_EQ(nullptr, GetRecvStream(kSsrc1).sink());
+  if (kMaxUnsignaledRecvStreams > 1) {
+    EXPECT_EQ(nullptr, GetRecvStream(kSsrc1).sink());
+  }
   EXPECT_NE(nullptr, GetRecvStream(kSsrcX).sink());
 
   // Reset the default sink - the second unsignaled stream should lose it.
   channel_->SetRawAudioSink(kSsrc0, nullptr);
-  EXPECT_EQ(nullptr, GetRecvStream(kSsrc1).sink());
+  if (kMaxUnsignaledRecvStreams > 1) {
+    EXPECT_EQ(nullptr, GetRecvStream(kSsrc1).sink());
+  }
   EXPECT_EQ(nullptr, GetRecvStream(kSsrcX).sink());
 
   // Try setting the default sink while two streams exists.
   channel_->SetRawAudioSink(kSsrc0, std::move(fake_sink_3));
-  EXPECT_EQ(nullptr, GetRecvStream(kSsrc1).sink());
+  if (kMaxUnsignaledRecvStreams > 1) {
+    EXPECT_EQ(nullptr, GetRecvStream(kSsrc1).sink());
+  }
   EXPECT_NE(nullptr, GetRecvStream(kSsrcX).sink());
 
   // Try setting the sink for the first unsignaled stream using its known SSRC.
   channel_->SetRawAudioSink(kSsrc1, std::move(fake_sink_4));
-  EXPECT_NE(nullptr, GetRecvStream(kSsrc1).sink());
+  if (kMaxUnsignaledRecvStreams > 1) {
+    EXPECT_NE(nullptr, GetRecvStream(kSsrc1).sink());
+  }
   EXPECT_NE(nullptr, GetRecvStream(kSsrcX).sink());
-  EXPECT_NE(GetRecvStream(kSsrc1).sink(), GetRecvStream(kSsrcX).sink());
+  if (kMaxUnsignaledRecvStreams > 1) {
+    EXPECT_NE(GetRecvStream(kSsrc1).sink(), GetRecvStream(kSsrcX).sink());
+  }
 }
 
 // Test that, just like the video channel, the voice channel communicates the

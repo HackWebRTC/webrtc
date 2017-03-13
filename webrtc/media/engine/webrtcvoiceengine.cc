@@ -47,7 +47,7 @@
 namespace cricket {
 namespace {
 
-constexpr size_t kMaxUnsignaledRecvStreams = 50;
+constexpr size_t kMaxUnsignaledRecvStreams = 1;
 
 const int kDefaultTraceFilter = webrtc::kTraceNone | webrtc::kTraceTerseInfo |
                                 webrtc::kTraceWarning | webrtc::kTraceError |
