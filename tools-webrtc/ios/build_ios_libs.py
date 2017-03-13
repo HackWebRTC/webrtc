@@ -204,6 +204,15 @@ def main():
       cmd = ['lipo'] + lib_dsym_paths + ['-create', '-output', out_dsym_path]
       _RunCommand(cmd)
 
+    # Generate the license file.
+    license_script_path = os.path.join(SCRIPT_DIR, 'generate_licenses.py')
+    ninja_dirs = [os.path.join(args.output_dir, arch + '_libs')
+                  for arch in architectures]
+    gn_target_full_name = '//webrtc/sdk:rtc_sdk_framework_objc'
+    cmd = [sys.executable, license_script_path, gn_target_full_name,
+           os.path.join(args.output_dir, SDK_FRAMEWORK_NAME)] + ninja_dirs
+    _RunCommand(cmd)
+
     # Modify the version number.
     # Format should be <Branch cut MXX>.<Hotfix #>.<Rev #>.
     # e.g. 55.0.14986 means branch cut 55, no hotfixes, and revision 14986.

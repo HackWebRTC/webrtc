@@ -14,10 +14,10 @@ import sys
 
 import argparse
 import cgi
-import fnmatch
 import os
 import re
 import textwrap
+import subprocess
 
 
 LIB_TO_LICENSES_DICT = {
@@ -25,79 +25,57 @@ LIB_TO_LICENSES_DICT = {
     'expat': ['third_party/expat/files/COPYING'],
     'jsoncpp': ['third_party/jsoncpp/LICENSE'],
     'opus': ['third_party/opus/src/COPYING'],
-    'protobuf_lite': ['third_party/protobuf/LICENSE'],
-    'srtp': ['third_party/libsrtp/srtp/LICENSE'],
-    'usrsctplib': ['third_party/usrsctp/LICENSE'],
+    'protobuf': ['third_party/protobuf/LICENSE'],
+    'libsrtp': ['third_party/libsrtp/LICENSE'],
+    'usrsctp': ['third_party/usrsctp/LICENSE'],
     'webrtc': ['webrtc/LICENSE', 'webrtc/LICENSE_THIRD_PARTY'],
-    'vpx': ['third_party/libvpx/source/libvpx/LICENSE'],
-    'yuv': ['third_party/libyuv/LICENSE'],
+    'libvpx': ['third_party/libvpx/source/libvpx/LICENSE'],
+    'libyuv': ['third_party/libyuv/LICENSE'],
 }
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
-CHECKOUT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir,
-                                             os.pardir))
-TALK_ROOT = os.path.join(CHECKOUT_ROOT, 'talk')
+CHECKOUT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 WEBRTC_ROOT = os.path.join(CHECKOUT_ROOT, 'webrtc')
 
-
-def GetWebRTCGypFilePaths():
-  gyp_filepaths = []
-  search_roots = [TALK_ROOT, WEBRTC_ROOT]
-  for search_root in search_roots:
-    for root, _, filenames in os.walk(search_root):
-      for filename in fnmatch.filter(filenames, '*.gyp*'):
-        gyp_filepaths.append(os.path.join(root, filename))
-  return gyp_filepaths
-
-
-def GetWebRTCTargetNames():
-  gyp_filepaths = GetWebRTCGypFilePaths()
-  target_names = []
-  for gyp_filepath in gyp_filepaths:
-    with open(gyp_filepath, 'r') as gyp_file:
-      for line in gyp_file:
-        match = re.search(r'\'target_name\'.*\'(\w+)\'', line)
-        if match:
-          target_name = match.group(1)
-          target_names.append(target_name)
-  return target_names
+def GetThirdPartyLibraries(buildfile_dir, target_name):
+  def extractLibName(s):
+    # Sample input:
+    # ["   //third_party/usrsctp:usrsctp", "    //webrtc:webrtc_common"]
+    # Sample output:
+    # ["usrsctp"]
+    return re.sub(r'\(.*\)', '', s).strip().split(os.path.sep)[-1].split(':')[0]
+  output = subprocess.check_output(
+    ["gn", "desc", buildfile_dir, target_name, '--all']) .split(os.linesep)
+  return [extractLibName(x) for x in output if re.search(r'third_party', x)]
 
 
 class LicenseBuilder(object):
 
-  def __init__(self):
-    self.webrtc_target_names = GetWebRTCTargetNames()
+  def __init__(self, buildfile_dirs, target_name):
+    self.buildfile_dirs = buildfile_dirs
+    self.target_name = target_name
 
-  def IsWebRTCLib(self, lib_name):
-    alternate_lib_name = 'lib' + lib_name
-    return (lib_name in self.webrtc_target_names or
-            alternate_lib_name in self.webrtc_target_names)
+  def GenerateLicenseText(self, output_dir):
+    # Get a list of third_party libs from gn. For fat libraries we must consider
+    # all architectures, hence the multiple buildfile directories.
+    # The `sum` function flattens the 2d list.
+    third_party_libs = sum([GetThirdPartyLibraries(buildfile, self.target_name)
+                            for buildfile in self.buildfile_dirs], [])
 
-  def GenerateLicenseText(self, static_lib_dir, output_dir):
-    # Get a list of libs from the files without their prefix and extension.
-    static_libs = []
-    for static_lib in os.listdir(static_lib_dir):
-      # Skip non libraries.
-      if not (static_lib.endswith('.a') and static_lib.startswith('lib')):
-        continue
-      # Extract library name.
-      static_libs.append(static_lib[3:-2])
-
-    # Generate amalgamated list of libraries. Mostly this just collapses the
-    # various WebRTC libs names into just 'webrtc'. Will exit with error if a
+    # Generate amalgamated list of libraries. Will exit with error if a
     # lib is unrecognized.
     license_libs = set()
-    for static_lib in static_libs:
-      license_lib = 'webrtc' if self.IsWebRTCLib(static_lib) else static_lib
-      license_path = LIB_TO_LICENSES_DICT.get(license_lib)
+    for static_lib in third_party_libs:
+      license_path = LIB_TO_LICENSES_DICT.get(static_lib)
+      if static_lib == 'yasm':
+        # yasm is a build-time dep only, and doesn't need a license.
+        continue
       if license_path is None:
-        print 'Missing license path for lib: %s' % license_lib
+        print 'Missing license path for lib: %s' % static_lib
         return 1
-      license_libs.add(license_lib)
+      license_libs.add(static_lib)
 
     # Put webrtc at the front of the list.
-    assert 'webrtc' in license_libs
-    license_libs.remove('webrtc')
     license_libs = sorted(license_libs)
     license_libs.insert(0, 'webrtc')
 
@@ -136,10 +114,12 @@ class LicenseBuilder(object):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Generate WebRTC LICENSE.html')
-  parser.add_argument('static_lib_dir',
-                      help='Directory with built static libraries.')
+  parser.add_argument('target_name',
+                      help='Name of the GN target to generate a license for')
   parser.add_argument('output_dir',
                       help='Directory to output LICENSE.html to.')
+  parser.add_argument('buildfile_dirs', nargs="+",
+                      help='Directories containing gn generated ninja files')
   args = parser.parse_args()
-  builder = LicenseBuilder()
-  sys.exit(builder.GenerateLicenseText(args.static_lib_dir, args.output_dir))
+  builder = LicenseBuilder(args.buildfile_dirs, args.target_name)
+  sys.exit(builder.GenerateLicenseText(args.output_dir))
