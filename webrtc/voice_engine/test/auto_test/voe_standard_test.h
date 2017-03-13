@@ -33,14 +33,12 @@ class SubAPIManager {
       _codec(false),
       _file(false),
       _hardware(false),
-      _netEqStats(false),
       _network(false),
       _rtp_rtcp(false),
       _apm(false) {
       _codec = true;
       _file = true;
       _hardware = true;
-      _netEqStats = true;
       _network = true;
       _rtp_rtcp = true;
       _apm = true;
@@ -51,7 +49,7 @@ class SubAPIManager {
  private:
   bool _base, _codec;
   bool _file, _hardware;
-  bool _netEqStats, _network, _rtp_rtcp, _apm;
+  bool _network, _rtp_rtcp, _apm;
 };
 
 }  // namespace voetest

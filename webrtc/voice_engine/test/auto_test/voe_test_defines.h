@@ -20,11 +20,8 @@
 #define _TEST_RTP_RTCP_
 #define _TEST_HARDWARE_
 #define _TEST_CODEC_
-#define _TEST_VOLUME_
-#define _TEST_AUDIO_PROCESSING_
 #define _TEST_FILE_
 #define _TEST_NETWORK_
-#define _TEST_NETEQ_STATS_
 
 #define TESTED_AUDIO_LAYER kAudioPlatformDefault
 //#define TESTED_AUDIO_LAYER kAudioLinuxPulse

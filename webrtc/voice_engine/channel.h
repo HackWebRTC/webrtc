@@ -249,17 +249,17 @@ class Channel
   int GetSpeechOutputLevel() const;
   int GetSpeechOutputLevelFullRange() const;
 
-  // VoENetEqStats
+  // Stats.
   int GetNetworkStatistics(NetworkStatistics& stats);
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
 
-  // Audio+Video Sync
+  // Audio+Video Sync.
   uint32_t GetDelayEstimate() const;
   int SetMinimumPlayoutDelay(int delayMs);
   int GetPlayoutTimestamp(unsigned int& timestamp);
   int GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const;
 
-  // DTMF
+  // DTMF.
   int SendTelephoneEventOutband(int event, int duration_ms);
   int SetSendTelephoneEventPayloadType(int payload_type, int payload_frequency);
 

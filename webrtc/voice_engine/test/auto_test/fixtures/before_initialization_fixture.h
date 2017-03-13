@@ -20,7 +20,6 @@
 #include "webrtc/voice_engine/include/voe_errors.h"
 #include "webrtc/voice_engine/include/voe_file.h"
 #include "webrtc/voice_engine/include/voe_hardware.h"
-#include "webrtc/voice_engine/include/voe_neteq_stats.h"
 #include "webrtc/voice_engine/include/voe_network.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
@@ -52,7 +51,6 @@ class BeforeInitializationFixture : public testing::Test {
   webrtc::VoENetwork*         voe_network_;
   webrtc::VoEFile*            voe_file_;
   webrtc::VoEHardware*        voe_hardware_;
-  webrtc::VoENetEqStats*      voe_neteq_stats_;
 };
 
 #endif  // SRC_VOICE_ENGINE_MAIN_TEST_AUTO_TEST_STANDARD_TEST_BASE_H_

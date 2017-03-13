@@ -196,12 +196,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_CONST_METHOD0(BuiltInNSIsAvailable, bool());
   MOCK_METHOD1(EnableBuiltInNS, int(bool enable));
 
-  // VoENetEqStats
-  MOCK_METHOD2(GetNetworkStatistics,
-               int(int channel, NetworkStatistics& stats));
-  MOCK_CONST_METHOD2(GetDecodingCallStatistics,
-                     int(int channel, AudioDecodingCallStats* stats));
-
   // VoENetwork
   MOCK_METHOD2(RegisterExternalTransport,
                int(int channel, Transport& transport));
