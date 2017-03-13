@@ -140,11 +140,6 @@ class EventLogAnalyzer {
 
   std::string GetStreamName(StreamId) const;
 
-  void FillAudioEncoderTimeSeries(
-      Plot* plot,
-      rtc::FunctionView<rtc::Optional<float>(
-          const AudioNetworkAdaptationEvent& ana_event)> get_y) const;
-
   const ParsedRtcEventLog& parsed_log_;
 
   // A list of SSRCs we are interested in analysing.
