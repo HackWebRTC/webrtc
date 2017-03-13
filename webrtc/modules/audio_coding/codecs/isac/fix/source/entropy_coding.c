@@ -234,8 +234,7 @@ static void CalcInvArSpec(const int16_t *ARCoefQ12,
     for (n = 0; n < FRAMESAMPLES/8; n++) {
       const int64_t p =
           (WebRtcIsacfix_kCos[k][n] * (int64_t)CorrQ11[k + 1] + 2) >> 2;
-      RTC_DCHECK_EQ(p, (int32_t)p);  // p fits in 32 bits
-      CurveQ16[n] += (int32_t)p;
+      CurveQ16[n] += WebRtcSpl_SatW64ToW32(p);
     }
   }
 
