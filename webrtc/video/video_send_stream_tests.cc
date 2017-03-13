@@ -1535,7 +1535,9 @@ class MaxPaddingSetTest : public test::SendTest {
         send_stream_config_(nullptr),
         packets_sent_(0),
         running_without_padding_(test_switch_content_type),
-        stream_resetter_(stream_reset_fun) {}
+        stream_resetter_(stream_reset_fun) {
+    RTC_DCHECK(stream_resetter_);
+  }
 
   void OnVideoStreamsCreated(
       VideoSendStream* send_stream,
@@ -1598,8 +1600,6 @@ class MaxPaddingSetTest : public test::SendTest {
     if (RunningWithoutPadding()) {
       ASSERT_TRUE(
           content_switch_event_.Wait(test::CallTest::kDefaultTimeoutMs));
-      rtc::CritScope lock(&crit_);
-      RTC_DCHECK(stream_resetter_);
       (*stream_resetter_)(send_stream_config_, encoder_config_);
     }
 
