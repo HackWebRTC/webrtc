@@ -14,6 +14,7 @@
 #include <string.h>
 #include <time.h>
 #include <algorithm>
+#include <string>
 
 // NOTE(ajm): Path provided by gyp.
 #include "libyuv/scale.h"    // NOLINT
@@ -38,6 +39,7 @@ namespace webrtc {
 namespace {
 
 const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Arm";
+const char kVp8GfBoostFieldTrial[] = "WebRTC-VP8-GfBoost";
 
 enum { kVp8ErrorPropagationTh = 30 };
 enum { kVp832ByteAlign = 32 };
@@ -104,6 +106,20 @@ int NumStreamsDisabled(const std::vector<bool>& streams) {
   }
   return num_disabled;
 }
+
+bool GetGfBoostPercentageFromFieldTrialGroup(int* boost_percentage) {
+  std::string group = webrtc::field_trial::FindFullName(kVp8GfBoostFieldTrial);
+  if (group.empty())
+    return false;
+
+  if (sscanf(group.c_str(), "Enabled-%d", boost_percentage) != 1)
+    return false;
+
+  if (*boost_percentage < 0 || *boost_percentage > 100)
+    return false;
+
+  return true;
+}
 }  // namespace
 
 VP8Encoder* VP8Encoder::Create() {
@@ -126,6 +142,7 @@ VP8EncoderImpl::VP8EncoderImpl()
       token_partitions_(VP8_ONE_TOKENPARTITION),
       down_scale_requested_(false),
       down_scale_bitrate_(0),
+      use_gf_boost_(webrtc::field_trial::IsEnabled(kVp8GfBoostFieldTrial)),
       key_frame_request_(kMaxSimulcastStreams, false) {
   uint32_t seed = rtc::Time32();
   srand(seed);
@@ -634,6 +651,14 @@ int VP8EncoderImpl::InitAndSetControlSettings() {
     // rate control (drop frames on large target bitrate overshoot)
     vpx_codec_control(&(encoders_[i]), VP8E_SET_SCREEN_CONTENT_MODE,
                       codec_.mode == kScreensharing ? 2 : 0);
+    // Apply boost on golden frames (has only effect when resilience is off).
+    if (use_gf_boost_ && codec_.VP8()->resilience == kResilienceOff) {
+      int gf_boost_percent;
+      if (GetGfBoostPercentageFromFieldTrialGroup(&gf_boost_percent)) {
+        vpx_codec_control(&(encoders_[i]), VP8E_SET_GF_CBR_BOOST_PCT,
+                          gf_boost_percent);
+      }
+    }
   }
   inited_ = true;
   return WEBRTC_VIDEO_CODEC_OK;

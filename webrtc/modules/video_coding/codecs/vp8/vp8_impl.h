@@ -107,6 +107,7 @@ class VP8EncoderImpl : public VP8Encoder {
   std::vector<TemporalLayers*> temporal_layers_;
   bool down_scale_requested_;
   uint32_t down_scale_bitrate_;
+  const bool use_gf_boost_;
   std::vector<uint16_t> picture_id_;
   std::vector<int> last_key_frame_picture_id_;
   std::vector<bool> key_frame_request_;
