@@ -19,19 +19,16 @@ namespace webrtc {
 // A structured representation of an SDP session description.
 class SessionDescription {
  public:
-  SessionDescription(std::string session_id, std::string session_version)
-      : session_id_(std::move(session_id)),
-        session_version_(std::move(session_version)) {}
+  SessionDescription(int64_t session_id, std::string session_version)
+      : session_id_(session_id), session_version_(std::move(session_version)) {}
 
   // https://tools.ietf.org/html/rfc4566#section-5.2
   // o=<username> <sess-id> <sess-version> <nettype> <addrtype>
   //   <unicast-address>
   // session_id_ is the "sess-id" field.
   // session_version_ is the "sess-version" field.
-  const std::string& session_id() const { return session_id_; }
-  void set_session_id(std::string session_id) {
-    session_id_ = std::move(session_id);
-  }
+  int64_t session_id() { return session_id_; }
+  void set_session_id(int64_t session_id) { session_id_ = session_id; }
 
   const std::string& session_version() const { return session_version_; }
   void set_session_version(std::string session_version) {
@@ -39,7 +36,7 @@ class SessionDescription {
   }
 
  private:
-  std::string session_id_;
+  int64_t session_id_;
   std::string session_version_;
 };
 

@@ -16,8 +16,8 @@ namespace webrtc {
 class SessionDescriptionTest : public testing::Test {};
 
 TEST_F(SessionDescriptionTest, CreateSessionDescription) {
-  SessionDescription s("a", "0");
-  EXPECT_EQ("a", s.session_id());
+  SessionDescription s(-1, "0");
+  EXPECT_EQ(-1, s.session_id());
   EXPECT_EQ("0", s.session_version());
 }
 }
