@@ -1155,15 +1155,12 @@ VideoStream VideoQualityTest::DefaultVideoStream(const Params& params) {
   stream.target_bitrate_bps = params.video.target_bitrate_bps;
   stream.max_bitrate_bps = params.video.max_bitrate_bps;
   stream.max_qp = 52;
-  if (params.video.num_temporal_layers > 1) {
-    RTC_CHECK_LE(params.video.num_temporal_layers, kMaxTemporalStreams);
-    if (params.video.codec == "VP8") {
-      for (int i = 0; i < params.video.num_temporal_layers - 1; ++i) {
-        stream.temporal_layer_thresholds_bps.push_back(static_cast<int>(
-            stream.target_bitrate_bps *
-            kVp8LayerRateAlloction[params.video.num_temporal_layers][i]));
-      }
-    }
+  // TODO(sprang): Can we make this less of a hack?
+  if (params.video.num_temporal_layers == 2) {
+    stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
+  } else if (params.video.num_temporal_layers == 3) {
+    stream.temporal_layer_thresholds_bps.push_back(stream.max_bitrate_bps / 4);
+    stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
   }
   return stream;
 }
