@@ -50,6 +50,9 @@ def _ParseArgs():
       help='Architectures to build. Defaults to %(default)s.')
   parser.add_argument('-c', '--clean', action='store_true', default=False,
       help='Removes the previously generated build output, if any.')
+  parser.add_argument('-p', '--purify', action='store_true', default=False,
+      help='Purifies the previously generated build output by '
+           'removing the temporary results used when (re)building.')
   parser.add_argument('-o', '--output-dir', default=SDK_OUTPUT_DIR,
       help='Specifies a directory to output the build artifacts to. '
            'If specified together with -c, deletes the dir.')
@@ -76,6 +79,15 @@ def _CleanArtifacts(output_dir):
   if os.path.isdir(output_dir):
     logging.info('Deleting %s', output_dir)
     shutil.rmtree(output_dir)
+
+
+def _CleanTemporary(output_dir, architectures):
+  if os.path.isdir(output_dir):
+    logging.info('Removing temporary build files.')
+    for arch in architectures:
+      arch_lib_path = os.path.join(output_dir, arch + '_libs')
+      if os.path.isdir(arch_lib_path):
+        shutil.rmtree(arch_lib_path)
 
 
 def BuildWebRTC(output_dir, target_arch, flavor, build_type,
@@ -146,6 +158,11 @@ def main():
     return 0
 
   architectures = list(args.arch)
+
+  if args.purify:
+    _CleanTemporary(args.output_dir, architectures)
+    return 0
+
   # Ignoring x86 except for static libraries for now because of a GN build issue
   # where the generated dynamic framework has the wrong architectures.
   if 'x86' in architectures and args.build_type != 'static_only':
