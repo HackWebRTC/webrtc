@@ -644,7 +644,7 @@ TEST_P(OpusTest, OpusDurationEstimation) {
 }
 
 TEST_P(OpusTest, OpusDecodeRepacketized) {
-  const int kPackets = 6;
+  constexpr size_t kPackets = 6;
 
   PrepareSpeechData(channels_, 20, 20 * kPackets);
 
@@ -668,14 +668,26 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
       new int16_t[kPackets * kOpus20msFrameSamples * channels_]);
   OpusRepacketizer* rp = opus_repacketizer_create();
 
-  for (int idx = 0; idx < kPackets; idx++) {
+  size_t num_packets = 0;
+  constexpr size_t kMaxCycles = 100;
+  for (size_t idx = 0; idx < kMaxCycles; ++idx) {
     auto speech_block = speech_data_.GetNextBlock();
     encoded_bytes_ =
         WebRtcOpus_Encode(opus_encoder_, speech_block.data(),
                           rtc::CheckedDivExact(speech_block.size(), channels_),
                           kMaxBytes, bitstream_);
-    EXPECT_EQ(OPUS_OK, opus_repacketizer_cat(rp, bitstream_, encoded_bytes_));
+    if (opus_repacketizer_cat(rp, bitstream_, encoded_bytes_) == OPUS_OK) {
+      ++num_packets;
+      if (num_packets == kPackets) {
+        break;
+      }
+    } else {
+      // Opus repacketizer cannot guarantee a success. We try again if it fails.
+      opus_repacketizer_init(rp);
+      num_packets = 0;
+    }
   }
+  EXPECT_EQ(kPackets, num_packets);
 
   encoded_bytes_ = opus_repacketizer_out(rp, bitstream_, kMaxBytes);
 
