@@ -175,9 +175,6 @@ class VideoReceiver : public Module {
   // Called on the decoder thread when thread is exiting.
   void DecodingStopped();
 
-  int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const;
-  VideoCodecType ReceiveCodec() const;
-
   int32_t IncomingPacket(const uint8_t* incomingPayload,
                          size_t payloadLength,
                          const WebRtcRTPHeader& rtpInfo);

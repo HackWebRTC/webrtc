@@ -220,14 +220,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_.Decode(maxWaitTimeMs);
   }
 
-  int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const override {
-    return receiver_.ReceiveCodec(currentReceiveCodec);
-  }
-
-  VideoCodecType ReceiveCodec() const override {
-    return receiver_.ReceiveCodec();
-  }
-
   int32_t IncomingPacket(const uint8_t* incomingPayload,
                          size_t payloadLength,
                          const WebRtcRTPHeader& rtpInfo) override {

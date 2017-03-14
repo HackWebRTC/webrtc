@@ -449,22 +449,6 @@ bool VCMCodecDataBase::DeregisterReceiveCodec(uint8_t payload_type) {
   return true;
 }
 
-bool VCMCodecDataBase::ReceiveCodec(VideoCodec* current_receive_codec) const {
-  RTC_DCHECK(current_receive_codec);
-  if (!ptr_decoder_) {
-    return false;
-  }
-  memcpy(current_receive_codec, &receive_codec_, sizeof(VideoCodec));
-  return true;
-}
-
-VideoCodecType VCMCodecDataBase::ReceiveCodec() const {
-  if (!ptr_decoder_) {
-    return kVideoCodecUnknown;
-  }
-  return receive_codec_.codecType;
-}
-
 VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
     const VCMEncodedFrame& frame,
     VCMDecodedFrameCallback* decoded_frame_callback) {

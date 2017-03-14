@@ -369,26 +369,6 @@ int32_t VideoReceiver::RegisterReceiveCodec(const VideoCodec* receiveCodec,
   return 0;
 }
 
-// Get current received codec
-// TODO(tommi): See if there are any actual callers to this method.
-// Neither me nor Stefan could find callers. If we can remove it, threading
-// will be simpler.
-int32_t VideoReceiver::ReceiveCodec(VideoCodec* currentReceiveCodec) const {
-  rtc::CritScope cs(&receive_crit_);
-  if (currentReceiveCodec == nullptr) {
-    return VCM_PARAMETER_ERROR;
-  }
-  return _codecDataBase.ReceiveCodec(currentReceiveCodec) ? 0 : -1;
-}
-
-// Get current received codec
-// TODO(tommi): See if there are any actual callers to this method.
-// If not, it will make threading simpler.
-VideoCodecType VideoReceiver::ReceiveCodec() const {
-  rtc::CritScope cs(&receive_crit_);
-  return _codecDataBase.ReceiveCodec();
-}
-
 // Incoming packet from network parsed and ready for decode, non blocking.
 int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
                                       size_t payloadLength,

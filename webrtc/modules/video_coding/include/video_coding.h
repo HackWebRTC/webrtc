@@ -360,22 +360,6 @@ class VideoCodingModule : public Module {
   //                     < 0,    on error.
   virtual int32_t Decode(uint16_t maxWaitTimeMs = 200) = 0;
 
-  // API to get the codec which is currently used for decoding by the module.
-  //
-  // Input:
-  //      - currentReceiveCodec      : Settings for the codec to be registered.
-  //
-  // Return value      : VCM_OK, on success.
-  //                     < 0,    on error.
-  virtual int32_t ReceiveCodec(VideoCodec* currentReceiveCodec) const = 0;
-
-  // API to get the codec type currently used for decoding by the module.
-  //
-  // Return value      : codecy type,            on success.
-  //                     kVideoCodecUnknown, on error or if no receive codec is
-  //                     registered
-  virtual VideoCodecType ReceiveCodec() const = 0;
-
   // Insert a parsed packet into the receiver side of the module. Will be placed
   // in the
   // jitter buffer waiting for the frame to become complete. Returns as soon as
