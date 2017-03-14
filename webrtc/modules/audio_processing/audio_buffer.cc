@@ -61,7 +61,8 @@ AudioBuffer::AudioBuffer(size_t input_num_frames,
     reference_copied_(false),
     activity_(AudioFrame::kVadUnknown),
     keyboard_data_(NULL),
-    data_(new IFChannelBuffer(proc_num_frames_, num_proc_channels_)) {
+    data_(new IFChannelBuffer(proc_num_frames_, num_proc_channels_)),
+    output_buffer_(new IFChannelBuffer(output_num_frames_, num_channels_)) {
   RTC_DCHECK_GT(input_num_frames_, 0);
   RTC_DCHECK_GT(proc_num_frames_, 0);
   RTC_DCHECK_GT(output_num_frames_, 0);
@@ -416,7 +417,7 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   }
 }
 
-void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) {
+void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
   frame->vad_activity_ = activity_;
   if (!data_changed) {
     return;
@@ -428,10 +429,6 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) {
   // Resample if necessary.
   IFChannelBuffer* data_ptr = data_.get();
   if (proc_num_frames_ != output_num_frames_) {
-    if (!output_buffer_) {
-      output_buffer_.reset(
-          new IFChannelBuffer(output_num_frames_, num_channels_));
-    }
     for (size_t i = 0; i < num_channels_; ++i) {
       output_resamplers_[i]->Resample(
           data_->fbuf()->channels()[i], proc_num_frames_,
