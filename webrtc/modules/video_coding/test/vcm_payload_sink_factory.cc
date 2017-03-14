@@ -10,10 +10,10 @@
 
 #include "webrtc/modules/video_coding/test/vcm_payload_sink_factory.h"
 
-#include <assert.h>
-
 #include <algorithm>
+#include <utility>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/video_coding/test/test_util.h"
@@ -28,22 +28,21 @@ class VcmPayloadSinkFactory::VcmPayloadSink : public PayloadSinkInterface,
  public:
   VcmPayloadSink(VcmPayloadSinkFactory* factory,
                  RtpStreamInterface* stream,
-                 std::unique_ptr<VideoCodingModule>* vcm,
-                 std::unique_ptr<FileOutputFrameReceiver>* frame_receiver)
-      : factory_(factory), stream_(stream), vcm_(), frame_receiver_() {
-    assert(factory);
-    assert(stream);
-    assert(vcm);
-    assert(vcm->get());
-    assert(frame_receiver);
-    assert(frame_receiver->get());
-    vcm_.swap(*vcm);
-    frame_receiver_.swap(*frame_receiver);
+                 std::unique_ptr<VideoCodingModule> vcm,
+                 std::unique_ptr<FileOutputFrameReceiver> frame_receiver)
+      : factory_(factory),
+        stream_(stream),
+        vcm_(std::move(vcm)),
+        frame_receiver_(std::move(frame_receiver)) {
+    RTC_DCHECK(factory);
+    RTC_DCHECK(stream);
+    RTC_DCHECK(vcm_);
+    RTC_DCHECK(frame_receiver_);
     vcm_->RegisterPacketRequestCallback(this);
     vcm_->RegisterReceiveCallback(frame_receiver_.get());
   }
 
-  virtual ~VcmPayloadSink() { factory_->Remove(this); }
+  ~VcmPayloadSink() override { factory_->Remove(this); }
 
   // PayloadSinkInterface
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,
@@ -86,8 +85,8 @@ class VcmPayloadSinkFactory::VcmPayloadSink : public PayloadSinkInterface,
   }
 
  private:
-  VcmPayloadSinkFactory* factory_;
-  RtpStreamInterface* stream_;
+  VcmPayloadSinkFactory* const factory_;
+  RtpStreamInterface* const stream_;
   std::unique_ptr<VideoCodingModule> vcm_;
   std::unique_ptr<FileOutputFrameReceiver> frame_receiver_;
 
@@ -112,17 +111,17 @@ VcmPayloadSinkFactory::VcmPayloadSinkFactory(
       null_event_factory_(new NullEventFactory()),
       crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       sinks_() {
-  assert(clock);
-  assert(crit_sect_.get());
+  RTC_DCHECK(clock);
+  RTC_DCHECK(crit_sect_.get());
 }
 
 VcmPayloadSinkFactory::~VcmPayloadSinkFactory() {
-  assert(sinks_.empty());
+  RTC_DCHECK(sinks_.empty());
 }
 
 PayloadSinkInterface* VcmPayloadSinkFactory::Create(
     RtpStreamInterface* stream) {
-  assert(stream);
+  RTC_DCHECK(stream);
   CriticalSectionScoped cs(crit_sect_.get());
 
   std::unique_ptr<VideoCodingModule> vcm(
@@ -152,8 +151,8 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
 
   std::unique_ptr<FileOutputFrameReceiver> frame_receiver(
       new FileOutputFrameReceiver(base_out_filename_, stream->ssrc()));
-  std::unique_ptr<VcmPayloadSink> sink(
-      new VcmPayloadSink(this, stream, &vcm, &frame_receiver));
+  std::unique_ptr<VcmPayloadSink> sink(new VcmPayloadSink(
+      this, stream, std::move(vcm), std::move(frame_receiver)));
 
   sinks_.push_back(sink.get());
   return sink.release();
@@ -161,7 +160,7 @@ PayloadSinkInterface* VcmPayloadSinkFactory::Create(
 
 int VcmPayloadSinkFactory::DecodeAndProcessAll(bool decode_dual_frame) {
   CriticalSectionScoped cs(crit_sect_.get());
-  assert(clock_);
+  RTC_DCHECK(clock_);
   bool should_decode = (clock_->TimeInMilliseconds() % 5) == 0;
   for (Sinks::iterator it = sinks_.begin(); it != sinks_.end(); ++it) {
     if ((*it)->DecodeAndProcess(should_decode, decode_dual_frame) < 0) {
@@ -192,10 +191,10 @@ bool VcmPayloadSinkFactory::DecodeAll() {
 }
 
 void VcmPayloadSinkFactory::Remove(VcmPayloadSink* sink) {
-  assert(sink);
+  RTC_DCHECK(sink);
   CriticalSectionScoped cs(crit_sect_.get());
   Sinks::iterator it = std::find(sinks_.begin(), sinks_.end(), sink);
-  assert(it != sinks_.end());
+  RTC_DCHECK(it != sinks_.end());
   sinks_.erase(it);
 }
 

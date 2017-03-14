@@ -10,8 +10,6 @@
 
 #include "webrtc/modules/video_coding/codec_database.h"
 
-#include <assert.h>
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
@@ -79,7 +77,7 @@ VCMDecoderMapItem::VCMDecoderMapItem(VideoCodec* settings,
     : settings(settings),
       number_of_cores(number_of_cores),
       require_key_frame(require_key_frame) {
-  assert(number_of_cores >= 0);
+  RTC_DCHECK_GE(number_of_cores, 0);
 }
 
 VCMExtDecoderMapItem::VCMExtDecoderMapItem(
@@ -280,7 +278,7 @@ VideoCodecType VCMCodecDataBase::SendCodec() const {
 
 bool VCMCodecDataBase::DeregisterExternalEncoder(uint8_t payload_type,
                                                  bool* was_send_codec) {
-  assert(was_send_codec);
+  RTC_DCHECK(was_send_codec);
   *was_send_codec = false;
   if (encoder_payload_type_ != payload_type) {
     return false;
@@ -452,7 +450,7 @@ bool VCMCodecDataBase::DeregisterReceiveCodec(uint8_t payload_type) {
 }
 
 bool VCMCodecDataBase::ReceiveCodec(VideoCodec* current_receive_codec) const {
-  assert(current_receive_codec);
+  RTC_DCHECK(current_receive_codec);
   if (!ptr_decoder_) {
     return false;
   }
@@ -470,6 +468,7 @@ VideoCodecType VCMCodecDataBase::ReceiveCodec() const {
 VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
     const VCMEncodedFrame& frame,
     VCMDecodedFrameCallback* decoded_frame_callback) {
+  RTC_DCHECK(decoded_frame_callback->UserReceiveCallback());
   uint8_t payload_type = frame.PayloadType();
   if (payload_type == receive_codec_.plType || payload_type == 0) {
     return ptr_decoder_;
@@ -485,8 +484,7 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
     return nullptr;
   }
   VCMReceiveCallback* callback = decoded_frame_callback->UserReceiveCallback();
-  if (callback)
-    callback->OnIncomingPayloadType(receive_codec_.plType);
+  callback->OnIncomingPayloadType(receive_codec_.plType);
   if (ptr_decoder_->RegisterDecodeCompleteCallback(decoded_frame_callback) <
       0) {
     ReleaseDecoder(ptr_decoder_);
@@ -499,7 +497,7 @@ VCMGenericDecoder* VCMCodecDataBase::GetDecoder(
 
 void VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const {
   if (decoder) {
-    assert(decoder->_decoder);
+    RTC_DCHECK(decoder->_decoder);
     decoder->Release();
     if (!decoder->External()) {
       delete decoder->_decoder;
@@ -524,7 +522,7 @@ VCMGenericDecoder* VCMCodecDataBase::CreateAndInitDecoder(
   uint8_t payload_type = frame.PayloadType();
   LOG(LS_INFO) << "Initializing decoder with payload type '"
                << static_cast<int>(payload_type) << "'.";
-  assert(new_codec);
+  RTC_DCHECK(new_codec);
   const VCMDecoderMapItem* decoder_item = FindDecoderItem(payload_type);
   if (!decoder_item) {
     LOG(LS_ERROR) << "Can't find a decoder associated with payload type: "

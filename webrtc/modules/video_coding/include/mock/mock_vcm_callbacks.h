@@ -29,6 +29,17 @@ class MockPacketRequestCallback : public VCMPacketRequestCallback {
                int32_t(const uint16_t* sequenceNumbers, uint16_t length));
 };
 
+class MockVCMReceiveCallback : public VCMReceiveCallback {
+ public:
+  MockVCMReceiveCallback() {}
+  virtual ~MockVCMReceiveCallback() {}
+
+  MOCK_METHOD2(FrameToRender, int32_t(VideoFrame&, rtc::Optional<uint8_t>));
+  MOCK_METHOD1(ReceivedDecodedReferenceFrame, int32_t(const uint64_t));
+  MOCK_METHOD1(OnIncomingPayloadType, void(int));
+  MOCK_METHOD1(OnDecoderImplementationName, void(const char*));
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_CODING_INCLUDE_MOCK_MOCK_VCM_CALLBACKS_H_

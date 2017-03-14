@@ -41,7 +41,6 @@ VideoReceiver::VideoReceiver(Clock* clock,
       _receiveStatsCallback(nullptr),
       _decoderTimingCallback(nullptr),
       _packetRequestCallback(nullptr),
-      _decoder(nullptr),
       _frameFromFile(),
       _scheduleKeyRequest(false),
       drop_frames_until_keyframe_(false),
@@ -168,6 +167,11 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
 // ready for rendering.
 int32_t VideoReceiver::RegisterReceiveCallback(
     VCMReceiveCallback* receiveCallback) {
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  // TODO(tommi): Callback may be null, but only after the decoder thread has
+  // been stopped. Use the signal we now get that tells us when the decoder
+  // thread isn't running, to DCHECK that the method is never called while it
+  // is. Once we're confident, we can remove the lock.
   rtc::CritScope cs(&receive_crit_);
   _decodedFrameCallback.SetUserReceiveCallback(receiveCallback);
   return VCM_OK;
@@ -175,6 +179,7 @@ int32_t VideoReceiver::RegisterReceiveCallback(
 
 int32_t VideoReceiver::RegisterReceiveStatisticsCallback(
     VCMReceiveStatisticsCallback* receiveStats) {
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
   rtc::CritScope cs(&process_crit_);
   _receiver.RegisterStatsCallback(receiveStats);
   _receiveStatsCallback = receiveStats;
@@ -183,6 +188,7 @@ int32_t VideoReceiver::RegisterReceiveStatisticsCallback(
 
 int32_t VideoReceiver::RegisterDecoderTimingCallback(
     VCMDecoderTimingCallback* decoderTiming) {
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
   rtc::CritScope cs(&process_crit_);
   _decoderTimingCallback = decoderTiming;
   return VCM_OK;
@@ -191,10 +197,11 @@ int32_t VideoReceiver::RegisterDecoderTimingCallback(
 // Register an externally defined decoder object.
 void VideoReceiver::RegisterExternalDecoder(VideoDecoder* externalDecoder,
                                             uint8_t payloadType) {
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  // TODO(tommi): This method must be called when the decoder thread is not
+  // running.  Do we need a lock in that case?
   rtc::CritScope cs(&receive_crit_);
   if (externalDecoder == nullptr) {
-    // Make sure the VCM updates the decoder next time it decodes.
-    _decoder = nullptr;
     RTC_CHECK(_codecDataBase.DeregisterExternalDecoder(payloadType));
     return;
   }
@@ -217,6 +224,7 @@ int32_t VideoReceiver::RegisterPacketRequestCallback(
 }
 
 void VideoReceiver::TriggerDecoderShutdown() {
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
   _receiver.TriggerDecoderShutdown();
 }
 
@@ -225,6 +233,7 @@ void VideoReceiver::TriggerDecoderShutdown() {
 int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   bool prefer_late_decoding = false;
   {
+    // TODO(tommi): Chances are that this lock isn't required.
     rtc::CritScope cs(&receive_crit_);
     prefer_late_decoding = _codecDataBase.PrefersLateDecoding();
   }
@@ -292,6 +301,11 @@ int32_t VideoReceiver::Decode(const webrtc::VCMEncodedFrame* frame) {
   return Decode(*frame);
 }
 
+void VideoReceiver::DecodingStopped() {
+  // No further calls to Decode() will be made after this point.
+  // TODO(tommi): Make use of this to clarify and check threading model.
+}
+
 int32_t VideoReceiver::RequestSliceLossIndication(
     const uint64_t pictureID) const {
   TRACE_EVENT1("webrtc", "RequestSLI", "picture_id", pictureID);
@@ -327,12 +341,13 @@ int32_t VideoReceiver::RequestKeyFrame() {
 int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
   TRACE_EVENT0("webrtc", "VideoReceiver::Decode");
   // Change decoder if payload type has changed
-  _decoder = _codecDataBase.GetDecoder(frame, &_decodedFrameCallback);
-  if (_decoder == nullptr) {
+  VCMGenericDecoder* decoder =
+      _codecDataBase.GetDecoder(frame, &_decodedFrameCallback);
+  if (decoder == nullptr) {
     return VCM_NO_CODEC_REGISTERED;
   }
   // Decode a frame
-  int32_t ret = _decoder->Decode(frame, clock_->TimeInMilliseconds());
+  int32_t ret = decoder->Decode(frame, clock_->TimeInMilliseconds());
 
   // Check for failed decoding, run frame type request callback if needed.
   bool request_key_frame = false;
@@ -362,6 +377,10 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
 int32_t VideoReceiver::RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                             int32_t numberOfCores,
                                             bool requireKeyFrame) {
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  // TODO(tommi): This method must only be called when the decoder thread
+  // is not running. Do we need a lock? If not, it looks like we might not need
+  // a lock at all for |_codecDataBase|.
   rtc::CritScope cs(&receive_crit_);
   if (receiveCodec == nullptr) {
     return VCM_PARAMETER_ERROR;
@@ -374,6 +393,9 @@ int32_t VideoReceiver::RegisterReceiveCodec(const VideoCodec* receiveCodec,
 }
 
 // Get current received codec
+// TODO(tommi): See if there are any actual callers to this method.
+// Neither me nor Stefan could find callers. If we can remove it, threading
+// will be simpler.
 int32_t VideoReceiver::ReceiveCodec(VideoCodec* currentReceiveCodec) const {
   rtc::CritScope cs(&receive_crit_);
   if (currentReceiveCodec == nullptr) {
@@ -383,6 +405,8 @@ int32_t VideoReceiver::ReceiveCodec(VideoCodec* currentReceiveCodec) const {
 }
 
 // Get current received codec
+// TODO(tommi): See if there are any actual callers to this method.
+// If not, it will make threading simpler.
 VideoCodecType VideoReceiver::ReceiveCodec() const {
   rtc::CritScope cs(&receive_crit_);
   return _codecDataBase.ReceiveCodec();

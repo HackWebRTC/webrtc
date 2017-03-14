@@ -20,14 +20,15 @@
 
 namespace webrtc {
 
-using ::testing::Return;
 using ::testing::_;
-using ::testing::ElementsAre;
 using ::testing::AllOf;
+using ::testing::AnyNumber;
 using ::testing::Args;
+using ::testing::ElementsAre;
 using ::testing::Field;
-using ::testing::Pointee;
 using ::testing::NiceMock;
+using ::testing::Pointee;
+using ::testing::Return;
 using ::testing::Sequence;
 
 class VCMRobustnessTest : public ::testing::Test {
@@ -47,6 +48,13 @@ class VCMRobustnessTest : public ::testing::Test {
     VideoCodingModule::Codec(kVideoCodecVP8, &video_codec_);
     ASSERT_EQ(VCM_OK, vcm_->RegisterReceiveCodec(&video_codec_, 1));
     vcm_->RegisterExternalDecoder(&decoder_, video_codec_.plType);
+
+    // Since we call Decode, we need to provide a valid receive callback.
+    // However, for the purposes of these tests, we ignore the callbacks.
+    EXPECT_CALL(receive_callback_, OnIncomingPayloadType(_)).Times(AnyNumber());
+    EXPECT_CALL(receive_callback_, OnDecoderImplementationName(_))
+        .Times(AnyNumber());
+    vcm_->RegisterReceiveCallback(&receive_callback_);
   }
 
   virtual void TearDown() { vcm_.reset(); }
@@ -72,6 +80,7 @@ class VCMRobustnessTest : public ::testing::Test {
   }
 
   std::unique_ptr<VideoCodingModule> vcm_;
+  MockVCMReceiveCallback receive_callback_;
   VideoCodec video_codec_;
   MockVCMFrameTypeCallback frame_type_callback_;
   MockPacketRequestCallback request_callback_;

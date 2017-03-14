@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -98,8 +99,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   int64_t TimeUntilNextProcess() override {
     int64_t sender_time = sender_.TimeUntilNextProcess();
     int64_t receiver_time = receiver_.TimeUntilNextProcess();
-    assert(sender_time >= 0);
-    assert(receiver_time >= 0);
+    RTC_DCHECK_GE(sender_time, 0);
+    RTC_DCHECK_GE(receiver_time, 0);
     return VCM_MIN(sender_time, receiver_time);
   }
 
@@ -190,6 +191,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   int32_t RegisterReceiveCallback(
       VCMReceiveCallback* receiveCallback) override {
+    RTC_DCHECK(construction_thread_.CalledOnValidThread());
     return receiver_.RegisterReceiveCallback(receiveCallback);
   }
 
@@ -210,6 +212,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   int32_t RegisterPacketRequestCallback(
       VCMPacketRequestCallback* callback) override {
+    RTC_DCHECK(construction_thread_.CalledOnValidThread());
     return receiver_.RegisterPacketRequestCallback(callback);
   }
 
@@ -277,6 +280,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   void TriggerDecoderShutdown() override { receiver_.TriggerDecoderShutdown(); }
 
  private:
+  rtc::ThreadChecker construction_thread_;
   EncodedImageCallbackWrapper post_encode_callback_;
   vcm::VideoSender sender_;
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_;
@@ -316,8 +320,8 @@ VideoCodingModule* VideoCodingModule::Create(
     EventFactory* event_factory,
     NackSender* nack_sender,
     KeyFrameRequestSender* keyframe_request_sender) {
-  assert(clock);
-  assert(event_factory);
+  RTC_DCHECK(clock);
+  RTC_DCHECK(event_factory);
   return new VideoCodingModuleImpl(clock, event_factory, nack_sender,
                                    keyframe_request_sender, nullptr);
 }

@@ -488,8 +488,10 @@ bool VideoReceiveStream::Decode() {
   video_coding::FrameBuffer::ReturnReason res =
       frame_buffer_->NextFrame(kMaxWaitForFrameMs, &frame);
 
-  if (res == video_coding::FrameBuffer::ReturnReason::kStopped)
+  if (res == video_coding::FrameBuffer::ReturnReason::kStopped) {
+    video_receiver_.DecodingStopped();
     return false;
+  }
 
   if (frame) {
     if (video_receiver_.Decode(frame.get()) == VCM_OK)

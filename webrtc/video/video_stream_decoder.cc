@@ -61,6 +61,10 @@ VideoStreamDecoder::VideoStreamDecoder(
 }
 
 VideoStreamDecoder::~VideoStreamDecoder() {
+  // Note: There's an assumption at this point that the decoder thread is
+  // *not* running. If it was, then there could be a race for each of these
+  // callbacks.
+
   // Unset all the callback pointers that we set in the ctor.
   video_receiver_->RegisterPacketRequestCallback(nullptr);
   video_receiver_->RegisterDecoderTimingCallback(nullptr);

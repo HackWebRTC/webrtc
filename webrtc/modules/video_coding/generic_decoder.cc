@@ -20,25 +20,26 @@ namespace webrtc {
 
 VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming* timing,
                                                  Clock* clock)
-    : _critSect(CriticalSectionWrapper::CreateCriticalSection()),
-      _clock(clock),
-      _receiveCallback(NULL),
+    : _clock(clock),
       _timing(timing),
       _timestampMap(kDecoderFrameMemoryLength),
       _lastReceivedPictureID(0) {}
 
 VCMDecodedFrameCallback::~VCMDecodedFrameCallback() {
-  delete _critSect;
 }
 
 void VCMDecodedFrameCallback::SetUserReceiveCallback(
     VCMReceiveCallback* receiveCallback) {
-  CriticalSectionScoped cs(_critSect);
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  RTC_DCHECK((!_receiveCallback && receiveCallback) ||
+             (_receiveCallback && !receiveCallback));
   _receiveCallback = receiveCallback;
 }
 
 VCMReceiveCallback* VCMDecodedFrameCallback::UserReceiveCallback() {
-  CriticalSectionScoped cs(_critSect);
+  // Called on the decode thread via VCMCodecDataBase::GetDecoder.
+  // The callback must always have been set before this happens.
+  RTC_DCHECK(_receiveCallback);
   return _receiveCallback;
 }
 
@@ -58,16 +59,15 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
 void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                                       rtc::Optional<int32_t> decode_time_ms,
                                       rtc::Optional<uint8_t> qp) {
+  RTC_DCHECK(_receiveCallback) << "Callback must not be null at this point";
   TRACE_EVENT_INSTANT1("webrtc", "VCMDecodedFrameCallback::Decoded",
                        "timestamp", decodedImage.timestamp());
   // TODO(holmer): We should improve this so that we can handle multiple
   // callbacks from one call to Decode().
   VCMFrameInformation* frameInfo;
-  VCMReceiveCallback* callback;
   {
-    CriticalSectionScoped cs(_critSect);
+    rtc::CritScope cs(&lock_);
     frameInfo = _timestampMap.Pop(decodedImage.timestamp());
-    callback = _receiveCallback;
   }
 
   if (frameInfo == NULL) {
@@ -87,22 +87,12 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   decodedImage.set_timestamp_us(
       frameInfo->renderTimeMs * rtc::kNumMicrosecsPerMillisec);
   decodedImage.set_rotation(frameInfo->rotation);
-  // TODO(sakal): Investigate why callback is NULL sometimes and replace if
-  // statement with a DCHECK.
-  if (callback) {
-    callback->FrameToRender(decodedImage, qp);
-  } else {
-    LOG(LS_WARNING) << "No callback, dropping frame.";
-  }
+  _receiveCallback->FrameToRender(decodedImage, qp);
 }
 
 int32_t VCMDecodedFrameCallback::ReceivedDecodedReferenceFrame(
     const uint64_t pictureId) {
-  CriticalSectionScoped cs(_critSect);
-  if (_receiveCallback != NULL) {
-    return _receiveCallback->ReceivedDecodedReferenceFrame(pictureId);
-  }
-  return -1;
+  return _receiveCallback->ReceivedDecodedReferenceFrame(pictureId);
 }
 
 int32_t VCMDecodedFrameCallback::ReceivedDecodedFrame(
@@ -117,19 +107,17 @@ uint64_t VCMDecodedFrameCallback::LastReceivedPictureID() const {
 
 void VCMDecodedFrameCallback::OnDecoderImplementationName(
     const char* implementation_name) {
-  CriticalSectionScoped cs(_critSect);
-  if (_receiveCallback)
-    _receiveCallback->OnDecoderImplementationName(implementation_name);
+  _receiveCallback->OnDecoderImplementationName(implementation_name);
 }
 
 void VCMDecodedFrameCallback::Map(uint32_t timestamp,
                                   VCMFrameInformation* frameInfo) {
-  CriticalSectionScoped cs(_critSect);
+  rtc::CritScope cs(&lock_);
   _timestampMap.Add(timestamp, frameInfo);
 }
 
 int32_t VCMDecodedFrameCallback::Pop(uint32_t timestamp) {
-  CriticalSectionScoped cs(_critSect);
+  rtc::CritScope cs(&lock_);
   if (_timestampMap.Pop(timestamp) == NULL) {
     return VCM_GENERAL_ERROR;
   }
