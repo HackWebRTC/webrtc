@@ -21,7 +21,7 @@
 #include "Shlwapi.h"
 #include "WinDef.h"
 
-#include "webrtc/system_wrappers/include/utf_util_win.h"
+#include "webrtc/base/win32.h"
 #define GET_CURRENT_DIR _getcwd
 #else
 #include <unistd.h>
@@ -183,9 +183,9 @@ std::string WorkingDir() {
 std::string TempFilename(const std::string &dir, const std::string &prefix) {
 #ifdef WIN32
   wchar_t filename[MAX_PATH];
-  if (::GetTempFileName(ToUtf16(dir).c_str(),
-                        ToUtf16(prefix).c_str(), 0, filename) != 0)
-    return ToUtf8(filename);
+  if (::GetTempFileName(rtc::ToUtf16(dir).c_str(),
+                        rtc::ToUtf16(prefix).c_str(), 0, filename) != 0)
+    return rtc::ToUtf8(filename);
   assert(false);
   return "";
 #else

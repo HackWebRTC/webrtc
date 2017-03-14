@@ -35,7 +35,6 @@ rtc_static_library("system_wrappers") {
     "include/stringize_macros.h",
     "include/timestamp_extrapolator.h",
     "include/trace.h",
-    "include/utf_util_win.h",
     "source/aligned_malloc.cc",
     "source/atomic32_win.cc",
     "source/clock.cc",
