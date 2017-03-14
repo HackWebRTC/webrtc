@@ -299,8 +299,10 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
 }
 
 void CallTest::CreateFakeAudioDevices() {
-  fake_send_audio_device_.reset(new FakeAudioDevice(1.f, 48000, 256));
-  fake_recv_audio_device_.reset(new FakeAudioDevice(1.f, 48000, 256));
+  fake_send_audio_device_.reset(new FakeAudioDevice(
+      FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000), nullptr, 1.f));
+  fake_recv_audio_device_.reset(new FakeAudioDevice(
+      nullptr, FakeAudioDevice::CreateDiscardRenderer(48000), 1.f));
 }
 
 void CallTest::CreateVideoStreams() {
