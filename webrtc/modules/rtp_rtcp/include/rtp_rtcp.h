@@ -313,13 +313,6 @@ class RtpRtcp : public Module {
   virtual int32_t SendCompoundRTCP(
       const std::set<RTCPPacketType>& rtcp_packet_types) = 0;
 
-  // Notifies the sender about good state of the RTP receiver.
-  virtual int32_t SendRTCPReferencePictureSelection(uint64_t picture_id) = 0;
-
-  // Send a RTCP Slice Loss Indication (SLI).
-  //   |picture_id| - 6 least significant bits of picture_id.
-  virtual int32_t SendRTCPSliceLossIndication(uint8_t picture_id) = 0;
-
   // Returns statistics of the amount of data sent.
   // Returns -1 on failure else 0.
   virtual int32_t DataCountersRTP(size_t* bytes_sent,

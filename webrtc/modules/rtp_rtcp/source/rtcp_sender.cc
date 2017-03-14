@@ -30,10 +30,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/remb.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rpsi.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
@@ -129,18 +127,15 @@ class RTCPSender::RtcpContext {
   RtcpContext(const FeedbackState& feedback_state,
               int32_t nack_size,
               const uint16_t* nack_list,
-              uint64_t picture_id,
               NtpTime now)
       : feedback_state_(feedback_state),
         nack_size_(nack_size),
         nack_list_(nack_list),
-        picture_id_(picture_id),
         now_(now) {}
 
   const FeedbackState& feedback_state_;
   const int32_t nack_size_;
   const uint16_t* nack_list_;
-  const uint64_t picture_id_;
   const NtpTime now_;
 };
 
@@ -190,8 +185,6 @@ RTCPSender::RTCPSender(
   builders_[kRtcpSdes] = &RTCPSender::BuildSDES;
   builders_[kRtcpPli] = &RTCPSender::BuildPLI;
   builders_[kRtcpFir] = &RTCPSender::BuildFIR;
-  builders_[kRtcpSli] = &RTCPSender::BuildSLI;
-  builders_[kRtcpRpsi] = &RTCPSender::BuildRPSI;
   builders_[kRtcpRemb] = &RTCPSender::BuildREMB;
   builders_[kRtcpBye] = &RTCPSender::BuildBYE;
   builders_[kRtcpApp] = &RTCPSender::BuildAPP;
@@ -516,49 +509,6 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildFIR(const RtcpContext& ctx) {
   return std::unique_ptr<rtcp::RtcpPacket>(fir);
 }
 
-/*
-    0                   1                   2                   3
-    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |            First        |        Number           | PictureID |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-*/
-std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSLI(const RtcpContext& ctx) {
-  rtcp::Sli* sli = new rtcp::Sli();
-  sli->SetSenderSsrc(ssrc_);
-  sli->SetMediaSsrc(remote_ssrc_);
-  // Crop picture id to 6 least significant bits.
-  sli->AddPictureId(ctx.picture_id_ & 0x3F);
-
-  return std::unique_ptr<rtcp::RtcpPacket>(sli);
-}
-
-/*
-    0                   1                   2                   3
-    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |      PB       |0| Payload Type|    Native RPSI bit string     |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |   defined per codec          ...                | Padding (0) |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-*/
-/*
-*    Note: not generic made for VP8
-*/
-std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildRPSI(
-    const RtcpContext& ctx) {
-  if (ctx.feedback_state_.send_payload_type == 0xFF)
-    return nullptr;
-
-  rtcp::Rpsi* rpsi = new rtcp::Rpsi();
-  rpsi->SetSenderSsrc(ssrc_);
-  rpsi->SetMediaSsrc(remote_ssrc_);
-  rpsi->SetPayloadType(ctx.feedback_state_.send_payload_type);
-  rpsi->SetPictureId(ctx.picture_id_);
-
-  return std::unique_ptr<rtcp::RtcpPacket>(rpsi);
-}
-
 std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildREMB(
     const RtcpContext& ctx) {
   rtcp::Remb* remb = new rtcp::Remb();
@@ -736,19 +686,17 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildExtendedReports(
 int32_t RTCPSender::SendRTCP(const FeedbackState& feedback_state,
                              RTCPPacketType packetType,
                              int32_t nack_size,
-                             const uint16_t* nack_list,
-                             uint64_t pictureID) {
+                             const uint16_t* nack_list) {
   return SendCompoundRTCP(
       feedback_state, std::set<RTCPPacketType>(&packetType, &packetType + 1),
-      nack_size, nack_list, pictureID);
+      nack_size, nack_list);
 }
 
 int32_t RTCPSender::SendCompoundRTCP(
     const FeedbackState& feedback_state,
     const std::set<RTCPPacketType>& packet_types,
     int32_t nack_size,
-    const uint16_t* nack_list,
-    uint64_t pictureID) {
+    const uint16_t* nack_list) {
   PacketContainer container(transport_, event_log_);
   size_t max_packet_size;
 
@@ -782,7 +730,7 @@ int32_t RTCPSender::SendCompoundRTCP(
       packet_type_counter_.first_packet_time_ms = clock_->TimeInMilliseconds();
 
     // We need to send our NTP even if we haven't received any reports.
-    RtcpContext context(feedback_state, nack_size, nack_list, pictureID,
+    RtcpContext context(feedback_state, nack_size, nack_list,
                         clock_->CurrentNtpTime());
 
     PrepareReport(feedback_state);

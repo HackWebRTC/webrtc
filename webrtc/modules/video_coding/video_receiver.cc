@@ -306,22 +306,6 @@ void VideoReceiver::DecodingStopped() {
   // TODO(tommi): Make use of this to clarify and check threading model.
 }
 
-int32_t VideoReceiver::RequestSliceLossIndication(
-    const uint64_t pictureID) const {
-  TRACE_EVENT1("webrtc", "RequestSLI", "picture_id", pictureID);
-  rtc::CritScope cs(&process_crit_);
-  if (_frameTypeCallback != nullptr) {
-    const int32_t ret =
-        _frameTypeCallback->SliceLossIndicationRequest(pictureID);
-    if (ret < 0) {
-      return ret;
-    }
-  } else {
-    return VCM_MISSING_CALLBACK;
-  }
-  return VCM_OK;
-}
-
 int32_t VideoReceiver::RequestKeyFrame() {
   TRACE_EVENT0("webrtc", "RequestKeyFrame");
   rtc::CritScope cs(&process_crit_);
@@ -352,16 +336,9 @@ int32_t VideoReceiver::Decode(const VCMEncodedFrame& frame) {
   // Check for failed decoding, run frame type request callback if needed.
   bool request_key_frame = false;
   if (ret < 0) {
-    if (ret == VCM_ERROR_REQUEST_SLI) {
-      return RequestSliceLossIndication(
-          _decodedFrameCallback.LastReceivedPictureID() + 1);
-    } else {
-      request_key_frame = true;
-    }
-  } else if (ret == VCM_REQUEST_SLI) {
-    ret = RequestSliceLossIndication(
-        _decodedFrameCallback.LastReceivedPictureID() + 1);
+    request_key_frame = true;
   }
+
   if (!frame.Complete() || frame.MissingFrame()) {
     request_key_frame = true;
     ret = VCM_OK;

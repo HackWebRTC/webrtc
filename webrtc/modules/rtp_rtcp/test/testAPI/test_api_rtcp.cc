@@ -191,11 +191,6 @@ class RtpRtcpRtcpTest : public ::testing::Test {
   RateLimiter retransmission_rate_limiter_;
 };
 
-TEST_F(RtpRtcpRtcpTest, RTCP_PLI_RPSI) {
-  EXPECT_EQ(0, module1->SendRTCPReferencePictureSelection(kTestPictureId));
-  EXPECT_EQ(0, module1->SendRTCPSliceLossIndication(kSliPictureId));
-}
-
 TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
   uint32_t testOfCSRC[webrtc::kRtpCsrcSize];
   EXPECT_EQ(2, rtp_receiver2_->CSRCs(testOfCSRC));

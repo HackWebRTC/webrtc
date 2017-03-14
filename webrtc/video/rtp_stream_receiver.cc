@@ -362,12 +362,6 @@ int32_t RtpStreamReceiver::RequestKeyFrame() {
   return rtp_rtcp_->RequestKeyFrame();
 }
 
-int32_t RtpStreamReceiver::SliceLossIndicationRequest(
-    const uint64_t picture_id) {
-  return rtp_rtcp_->SendRTCPSliceLossIndication(
-      static_cast<uint8_t>(picture_id));
-}
-
 bool RtpStreamReceiver::IsUlpfecEnabled() const {
   return config_.rtp.ulpfec.ulpfec_payload_type != -1;
 }

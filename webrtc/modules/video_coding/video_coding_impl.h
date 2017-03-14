@@ -207,7 +207,6 @@ class VideoReceiver : public Module {
   int32_t Decode(const webrtc::VCMEncodedFrame& frame)
       EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
   int32_t RequestKeyFrame();
-  int32_t RequestSliceLossIndication(const uint64_t pictureID) const;
 
  private:
   rtc::ThreadChecker construction_thread_;

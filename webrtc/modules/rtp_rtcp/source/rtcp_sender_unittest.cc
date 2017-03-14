@@ -472,35 +472,6 @@ TEST_F(RtcpSenderTest, SendPli) {
   EXPECT_EQ(kRemoteSsrc, parser()->pli()->media_ssrc());
 }
 
-TEST_F(RtcpSenderTest, SendRpsi) {
-  const uint64_t kPictureId = 0x41;
-  const int8_t kPayloadType = 100;
-  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
-  RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
-  feedback_state.send_payload_type = kPayloadType;
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpRpsi, 0, nullptr,
-                                      kPictureId));
-  EXPECT_EQ(1, parser()->rpsi()->num_packets());
-  EXPECT_EQ(kPayloadType, parser()->rpsi()->payload_type());
-  EXPECT_EQ(kPictureId, parser()->rpsi()->picture_id());
-}
-
-TEST_F(RtcpSenderTest, SendSli) {
-  const uint16_t kFirstMb = 0;
-  const uint16_t kNumberOfMb = 0x1FFF;
-  const uint8_t kPictureId = 60;
-  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSli, 0, nullptr,
-                                      kPictureId));
-  EXPECT_EQ(1, parser()->sli()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser()->sli()->sender_ssrc());
-  EXPECT_EQ(kRemoteSsrc, parser()->sli()->media_ssrc());
-  EXPECT_EQ(1U, parser()->sli()->macroblocks().size());
-  EXPECT_EQ(kFirstMb, parser()->sli()->macroblocks()[0].first());
-  EXPECT_EQ(kNumberOfMb, parser()->sli()->macroblocks()[0].number());
-  EXPECT_EQ(kPictureId, parser()->sli()->macroblocks()[0].picture_id());
-}
-
 TEST_F(RtcpSenderTest, SendNack) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
   const uint16_t kList[] = {0, 1, 16};

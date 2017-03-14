@@ -24,7 +24,6 @@ namespace webrtc {
 
 // Error codes
 #define VCM_FRAME_NOT_READY 3
-#define VCM_REQUEST_SLI 2
 #define VCM_MISSING_CALLBACK 1
 #define VCM_OK 0
 #define VCM_GENERAL_ERROR -1
@@ -38,7 +37,6 @@ namespace webrtc {
 #define VCM_JITTER_BUFFER_ERROR -9
 #define VCM_OLD_PACKET_ERROR -10
 #define VCM_NO_FRAME_DECODED -11
-#define VCM_ERROR_REQUEST_SLI -12
 #define VCM_NOT_IMPLEMENTED -20
 
 enum { kDefaultStartBitrateKbps = 300 };
@@ -141,9 +139,6 @@ class VCMProtectionCallback {
 class VCMFrameTypeCallback {
  public:
   virtual int32_t RequestKeyFrame() = 0;
-  virtual int32_t SliceLossIndicationRequest(const uint64_t pictureId) {
-    return -1;
-  }
 
  protected:
   virtual ~VCMFrameTypeCallback() {}

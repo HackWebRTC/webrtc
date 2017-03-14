@@ -112,14 +112,12 @@ class RTCPSender {
   int32_t SendRTCP(const FeedbackState& feedback_state,
                    RTCPPacketType packetType,
                    int32_t nackSize = 0,
-                   const uint16_t* nackList = 0,
-                   uint64_t pictureID = 0);
+                   const uint16_t* nackList = 0);
 
   int32_t SendCompoundRTCP(const FeedbackState& feedback_state,
                            const std::set<RTCPPacketType>& packetTypes,
                            int32_t nackSize = 0,
-                           const uint16_t* nackList = 0,
-                           uint64_t pictureID = 0);
+                           const uint16_t* nackList = 0);
 
   bool REMB() const;
 
@@ -185,10 +183,6 @@ class RTCPSender {
   std::unique_ptr<rtcp::RtcpPacket> BuildBYE(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   std::unique_ptr<rtcp::RtcpPacket> BuildFIR(const RtcpContext& context)
-      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  std::unique_ptr<rtcp::RtcpPacket> BuildSLI(const RtcpContext& context)
-      EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
-  std::unique_ptr<rtcp::RtcpPacket> BuildRPSI(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   std::unique_ptr<rtcp::RtcpPacket> BuildNACK(const RtcpContext& context)
       EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);

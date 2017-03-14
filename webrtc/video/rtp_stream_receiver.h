@@ -117,7 +117,6 @@ class RtpStreamReceiver : public RtpData,
 
   // Implements VCMFrameTypeCallback.
   int32_t RequestKeyFrame() override;
-  int32_t SliceLossIndicationRequest(const uint64_t picture_id) override;
 
   bool IsUlpfecEnabled() const;
   bool IsRetransmissionsEnabled() const;

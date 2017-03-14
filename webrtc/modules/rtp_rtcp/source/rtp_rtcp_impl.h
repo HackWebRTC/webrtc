@@ -269,8 +269,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   // Video part.
 
-  int32_t SendRTCPSliceLossIndication(uint8_t picture_id) override;
-
   // Set method for requesting a new key frame.
   int32_t SetKeyFrameRequestMethod(KeyFrameRequestMethod method) override;
 
@@ -292,9 +290,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                    uint32_t* video_rate,
                    uint32_t* fec_rate,
                    uint32_t* nackRate) const override;
-
-  // Good state of RTP receiver inform sender.
-  int32_t SendRTCPReferencePictureSelection(uint64_t picture_id) override;
 
   void RegisterSendChannelRtpStatisticsCallback(
       StreamDataCountersCallback* callback) override;

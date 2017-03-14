@@ -20,7 +20,6 @@ namespace webrtc {
 class MockVCMFrameTypeCallback : public VCMFrameTypeCallback {
  public:
   MOCK_METHOD0(RequestKeyFrame, int32_t());
-  MOCK_METHOD1(SliceLossIndicationRequest, int32_t(const uint64_t pictureId));
 };
 
 class MockPacketRequestCallback : public VCMPacketRequestCallback {
