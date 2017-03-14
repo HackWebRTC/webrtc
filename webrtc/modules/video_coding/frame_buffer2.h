@@ -149,7 +149,7 @@ class FrameBuffer {
 
   rtc::CriticalSection crit_;
   Clock* const clock_;
-  rtc::Event new_countinuous_frame_event_;
+  rtc::Event new_continuous_frame_event_;
   VCMJitterEstimator* const jitter_estimator_ GUARDED_BY(crit_);
   VCMTiming* const timing_ GUARDED_BY(crit_);
   VCMInterFrameDelay inter_frame_delay_ GUARDED_BY(crit_);
@@ -159,7 +159,7 @@ class FrameBuffer {
   FrameMap::iterator next_frame_it_ GUARDED_BY(crit_);
   int num_frames_history_ GUARDED_BY(crit_);
   int num_frames_buffered_ GUARDED_BY(crit_);
-  bool stopped_ GUARDED_BY(crit_);
+  volatile int stopped_;
   VCMVideoProtection protection_mode_ GUARDED_BY(crit_);
   VCMReceiveStatisticsCallback* const stats_callback_;
 
