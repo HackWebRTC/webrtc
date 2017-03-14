@@ -448,6 +448,7 @@ size_t AudioEncoderOpus::SufficientOutputBufferSize() const {
 bool AudioEncoderOpus::RecreateEncoderInstance(const Config& config) {
   if (!config.IsOk())
     return false;
+  config_ = config;
   if (inst_)
     RTC_CHECK_EQ(0, WebRtcOpus_EncoderFree(inst_));
   input_buffer_.clear();
@@ -474,7 +475,6 @@ bool AudioEncoderOpus::RecreateEncoderInstance(const Config& config) {
   RTC_CHECK_EQ(0,
                WebRtcOpus_SetPacketLossRate(
                    inst_, static_cast<int32_t>(packet_loss_rate_ * 100 + .5)));
-  config_ = config;
 
   num_channels_to_encode_ = NumChannels();
   next_frame_length_ms_ = config_.frame_size_ms;
