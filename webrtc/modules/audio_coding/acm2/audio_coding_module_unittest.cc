@@ -1426,8 +1426,8 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_Ilbc_30ms) {
 TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 1, 9, 320, 160));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "7d759436f2533582950d148b5161a36c",
-          "7d759436f2533582950d148b5161a36c", "android_arm32_audio",
+          "e99c89be49a46325d03c0d990c292d68",
+          "e99c89be49a46325d03c0d990c292d68", "android_arm32_audio",
           "android_arm64_audio"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "fc68a87e1380614e658087cb35d5ca10",
@@ -1446,8 +1446,8 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_20ms) {
 TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 2, 119, 320, 160));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "7190ee718ab3d80eca181e5f7140c210",
-          "7190ee718ab3d80eca181e5f7140c210", "android_arm32_audio",
+          "e280aed283e499d37091b481ca094807",
+          "e280aed283e499d37091b481ca094807", "android_arm32_audio",
           "android_arm64_audio"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "66516152eeaa1e650ad94ff85f668dac",

@@ -594,9 +594,27 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     return packet;
   }());
 
-  bool update_sample_rate_and_channels = false;
+  bool update_sample_rate_and_channels = first_packet_ ||
+    (rtp_header.header.ssrc != ssrc_);
+
+  if (update_sample_rate_and_channels) {
+    // Reset timestamp scaling.
+    timestamp_scaler_->Reset();
+  }
+
+  if (!decoder_database_->IsRed(rtp_header.header.payloadType)) {
+    // Scale timestamp to internal domain (only for some codecs).
+    timestamp_scaler_->ToInternal(&packet_list);
+  }
+
+  // Store these for later use, since the first packet may very well disappear
+  // before we need these values.
+  uint32_t main_timestamp = packet_list.front().timestamp;
+  uint8_t main_payload_type = packet_list.front().payload_type;
+  uint16_t main_sequence_number = packet_list.front().sequence_number;
+
   // Reinitialize NetEq if it's needed (changed SSRC or first call).
-  if ((rtp_header.header.ssrc != ssrc_) || first_packet_) {
+  if (update_sample_rate_and_channels) {
     // Note: |first_packet_| will be cleared further down in this method, once
     // the packet has been successfully inserted into the packet buffer.
 
@@ -610,17 +628,10 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
     ssrc_ = rtp_header.header.ssrc;
 
     // Update audio buffer timestamp.
-    sync_buffer_->IncreaseEndTimestamp(rtp_header.header.timestamp -
-                                       timestamp_);
+    sync_buffer_->IncreaseEndTimestamp(main_timestamp - timestamp_);
 
     // Update codecs.
-    timestamp_ = rtp_header.header.timestamp;
-
-    // Reset timestamp scaling.
-    timestamp_scaler_->Reset();
-
-    // Trigger an update of sampling rate and the number of channels.
-    update_sample_rate_and_channels = true;
+    timestamp_ = main_timestamp;
   }
 
   // Update RTCP statistics, only for regular packets.
@@ -652,14 +663,15 @@ int NetEqImpl::InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
   }
 
   RTC_DCHECK(!packet_list.empty());
-  // Store these for later use, since the first packet may very well disappear
-  // before we need these values.
-  const uint32_t main_timestamp = packet_list.front().timestamp;
-  const uint8_t main_payload_type = packet_list.front().payload_type;
-  const uint16_t main_sequence_number = packet_list.front().sequence_number;
 
-  // Scale timestamp to internal domain (only for some codecs).
-  timestamp_scaler_->ToInternal(&packet_list);
+  // Update main_timestamp, if new packets appear in the list
+  // after RED splitting.
+  if (decoder_database_->IsRed(rtp_header.header.payloadType)) {
+    timestamp_scaler_->ToInternal(&packet_list);
+    main_timestamp = packet_list.front().timestamp;
+    main_payload_type = packet_list.front().payload_type;
+    main_sequence_number = packet_list.front().sequence_number;
+  }
 
   // Process DTMF payloads. Cycle through the list of packets, and pick out any
   // DTMF payloads found.
