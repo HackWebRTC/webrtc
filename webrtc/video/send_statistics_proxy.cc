@@ -17,6 +17,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/trace_event.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
@@ -426,6 +427,8 @@ void SendStatisticsProxy::OnEncoderStatsUpdate(uint32_t framerate,
   rtc::CritScope lock(&crit_);
   stats_.encode_frame_rate = framerate;
   stats_.media_bitrate_bps = bitrate;
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.FrameRateSent",
+      "frame_rate", framerate, "ssrc", rtp_config_.ssrcs[0]);
 }
 
 void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
@@ -436,6 +439,12 @@ void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
   encode_time_.Apply(1.0f, encode_time_ms);
   stats_.avg_encode_time_ms = round(encode_time_.filtered());
   stats_.encode_usage_percent = metrics.encode_usage_percent;
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.EncodeTimeInMs",
+      "encode_time_ms", stats_.avg_encode_time_ms,
+      "ssrc", rtp_config_.ssrcs[0]);
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.EncodeUsagePercent",
+      "encode_usage_percent", stats_.encode_usage_percent,
+      "ssrc", rtp_config_.ssrcs[0]);
 }
 
 void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
@@ -643,6 +652,11 @@ void SendStatisticsProxy::OnSendEncodedImage(
   uma_container_->max_sent_height_per_timestamp_ =
       std::max(uma_container_->max_sent_height_per_timestamp_,
                static_cast<int>(encoded_image._encodedHeight));
+
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.SentWidthInPixels",
+      "frame_width", encoded_image._encodedWidth, "ssrc", ssrc);
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.SentHeightInPixels",
+      "frame_height", encoded_image._encodedHeight, "ssrc", ssrc);
 }
 
 int SendStatisticsProxy::GetSendFrameRate() const {
@@ -657,6 +671,10 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   uma_container_->input_width_counter_.Add(width);
   uma_container_->input_height_counter_.Add(height);
   uma_container_->cpu_limited_frame_counter_.Add(stats_.cpu_limited_resolution);
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.InputFrameRate",
+      "frame_rate", round(
+          uma_container_->input_frame_rate_tracker_.ComputeRate()),
+      "ssrc", rtp_config_.ssrcs[0]);
 }
 
 void SendStatisticsProxy::SetResolutionRestrictionStats(
@@ -680,6 +698,7 @@ void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(
   rtc::CritScope lock(&crit_);
   stats_.cpu_limited_resolution = cpu_restricted_resolution;
   ++stats_.number_of_cpu_adapt_changes;
+  TRACE_EVENT_INSTANT0("webrtc_stats", "WebRTC.Video.AdaptationChanges");
 }
 
 void SendStatisticsProxy::OnQualityRestrictedResolutionChanged(
@@ -700,6 +719,13 @@ void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
   stats->rtcp_packet_type_counts = packet_counter;
   if (uma_container_->first_rtcp_stats_time_ms_ == -1)
     uma_container_->first_rtcp_stats_time_ms_ = clock_->TimeInMilliseconds();
+
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.FirPacketsReceived",
+      "fir_packets_received", packet_counter.fir_packets, "ssrc", ssrc);
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.NackPacketsReceived",
+      "nack_packets_received", packet_counter.nack_packets, "ssrc", ssrc);
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.PliPacketsReceived",
+      "pli_packets_received", packet_counter.pli_packets, "ssrc", ssrc);
 }
 
 void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
@@ -711,6 +737,9 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
 
   stats->rtcp_stats = statistics;
   uma_container_->report_block_stats_.Store(statistics, 0, ssrc);
+
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.SentPacketsLost",
+      "packets_lost", statistics.cumulative_lost, "ssrc", ssrc);
 }
 
 void SendStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {}
@@ -745,6 +774,9 @@ void SendStatisticsProxy::DataCountersUpdated(
   } else {
     uma_container_->media_byte_counter_.Set(counters.MediaPayloadBytes(), ssrc);
   }
+
+  TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.SentPackets",
+      "packets_sent", counters.transmitted.packets, "ssrc", ssrc);
 }
 
 void SendStatisticsProxy::Notify(uint32_t total_bitrate_bps,
