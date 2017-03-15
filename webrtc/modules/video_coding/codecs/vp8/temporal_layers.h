@@ -77,18 +77,6 @@ class ScreenshareTemporalLayersFactory : public webrtc::TemporalLayersFactory {
                                  uint8_t initial_tl0_pic_idx) const override;
 };
 
-// Factory for a temporal layers strategy that adaptively changes the number of
-// layers based on input frame rate so that the base layer has an acceptable
-// frame rate. See realtime_temporal_layers.cc
-class RealTimeTemporalLayersFactory : public TemporalLayersFactory {
- public:
-  RealTimeTemporalLayersFactory() {}
-  ~RealTimeTemporalLayersFactory() override {}
-  TemporalLayers* Create(int simulcast_id,
-                         int num_temporal_layers,
-                         uint8_t initial_tl0_pic_idx) const override;
-};
-
 class TemporalLayersListener {
  public:
   TemporalLayersListener() {}

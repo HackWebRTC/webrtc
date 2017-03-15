@@ -488,51 +488,6 @@ TEST_F(TestVideoSenderWithVp8, MAYBE_FixedTemporalLayersStrategy) {
   }
 }
 
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-#define MAYBE_RealTimeTemporalLayersStrategy \
-  DISABLED_RealTimeTemporalLayersStrategy
-#else
-#define MAYBE_RealTimeTemporalLayersStrategy RealTimeTemporalLayersStrategy
-#endif
-TEST_F(TestVideoSenderWithVp8, MAYBE_RealTimeTemporalLayersStrategy) {
-  VideoCodec codec = MakeVp8VideoCodec(352, 288, 3);
-  codec.minBitrate = 10;
-  codec.startBitrate = codec_bitrate_kbps_;
-  codec.maxBitrate = codec_bitrate_kbps_;
-
-  TemporalLayersFactory* tl_factory = new RealTimeTemporalLayersFactory();
-  rate_allocator_.reset(new SimulcastRateAllocator(
-      codec, std::unique_ptr<TemporalLayersFactory>(tl_factory)));
-  codec.VP8()->tl_factory = tl_factory;
-
-  EXPECT_EQ(0, sender_->RegisterSendCodec(&codec, 1, 1200));
-
-  const int low_b = codec_bitrate_kbps_ * 0.4;
-  const int mid_b = codec_bitrate_kbps_ * 0.6;
-  const int high_b = codec_bitrate_kbps_;
-
-  {
-    Vp8StreamInfo expected = {{7.5, 15.0, 30.0}, {low_b, mid_b, high_b}};
-    EXPECT_THAT(SimulateWithFramerate(30.0), MatchesVp8StreamInfo(expected));
-  }
-  {
-    Vp8StreamInfo expected = {{5.0, 10.0, 20.0}, {low_b, mid_b, high_b}};
-    EXPECT_THAT(SimulateWithFramerate(20.0), MatchesVp8StreamInfo(expected));
-  }
-  {
-    Vp8StreamInfo expected = {{7.5, 15.0, 15.0}, {mid_b, high_b, high_b}};
-    EXPECT_THAT(SimulateWithFramerate(15.0), MatchesVp8StreamInfo(expected));
-  }
-  {
-    Vp8StreamInfo expected = {{5.0, 10.0, 10.0}, {mid_b, high_b, high_b}};
-    EXPECT_THAT(SimulateWithFramerate(10.0), MatchesVp8StreamInfo(expected));
-  }
-  {
-    // TODO(andresp): Find out why this fails with framerate = 7.5
-    Vp8StreamInfo expected = {{7.0, 7.0, 7.0}, {high_b, high_b, high_b}};
-    EXPECT_THAT(SimulateWithFramerate(7.0), MatchesVp8StreamInfo(expected));
-  }
-}
 }  // namespace
 }  // namespace vcm
 }  // namespace webrtc
