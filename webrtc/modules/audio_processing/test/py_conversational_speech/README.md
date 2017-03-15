@@ -1,7 +1,7 @@
-# Conversational Speech generator tool
+#Conversational Speech generator tool
 
-Tool to generate multiple-end audio tracks to simulate conversational speech
-with two or more participants.
+Python tool to generate multiple-end audio tracks to simulate conversational
+speech with two or more participants.
 
 The input to the tool is a directory containing a number of audio tracks and
 a text file indicating how to time the sequence of speech turns (see the Example
@@ -21,7 +21,7 @@ and silence in the conversation.
 
 IMPORTANT: **the whole code has not been landed yet.**
 
-### Example
+###Example
 
 For each end, there is a set of audio tracks, e.g., a1, a2 and a3 (speaker A)
 and b1, b2 (speaker B).
