@@ -43,7 +43,7 @@ class TransportFeedbackAdapter {
 
   void SetTransportOverhead(int transport_overhead_bytes_per_packet);
 
-  void ClearSendTimeHistory();
+  void SetNetworkIds(uint16_t local_id, uint16_t remote_id);
 
  private:
   std::vector<PacketFeedback> GetPacketFeedbackVector(
@@ -57,6 +57,8 @@ class TransportFeedbackAdapter {
   int64_t current_offset_ms_;
   int64_t last_timestamp_us_;
   std::vector<PacketFeedback> last_packet_feedback_vector_;
+  uint16_t local_net_id_;
+  uint16_t remote_net_id_;
 };
 
 }  // namespace webrtc

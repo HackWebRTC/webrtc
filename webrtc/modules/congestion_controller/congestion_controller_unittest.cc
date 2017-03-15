@@ -215,12 +215,14 @@ TEST_F(CongestionControllerTest, SignalNetworkState) {
   controller_->SignalNetworkState(kNetworkDown);
 }
 
-TEST_F(CongestionControllerTest, ResetBweAndBitrates) {
+TEST_F(CongestionControllerTest, OnNetworkRouteChanged) {
   int new_bitrate = 200000;
   testing::Mock::VerifyAndClearExpectations(pacer_);
   EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
   EXPECT_CALL(*pacer_, SetEstimatedBitrate(new_bitrate));
-  controller_->ResetBweAndBitrates(new_bitrate, -1, -1);
+  rtc::NetworkRoute route;
+  route.local_network_id = 1;
+  controller_->OnNetworkRouteChanged(route, new_bitrate, -1, -1);
 
   // If the bitrate is reset to -1, the new starting bitrate will be
   // the minimum default bitrate kMinBitrateBps.
@@ -229,7 +231,8 @@ TEST_F(CongestionControllerTest, ResetBweAndBitrates) {
       OnNetworkChanged(congestion_controller::GetMinBitrateBps(), _, _, _));
   EXPECT_CALL(*pacer_,
               SetEstimatedBitrate(congestion_controller::GetMinBitrateBps()));
-  controller_->ResetBweAndBitrates(-1, -1, -1);
+  route.local_network_id = 2;
+  controller_->OnNetworkRouteChanged(route, -1, -1, -1);
 }
 
 TEST_F(CongestionControllerTest,
@@ -316,13 +319,15 @@ TEST_F(CongestionControllerTest, OnReceivedPacketWithAbsSendTime) {
   EXPECT_EQ(header.ssrc, ssrcs[0]);
 }
 
-TEST_F(CongestionControllerTest, ProbeOnBweReset) {
+TEST_F(CongestionControllerTest, ProbeOnRouteChange) {
   testing::Mock::VerifyAndClearExpectations(pacer_);
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 6));
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 12));
   EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 2, _, _, _));
-  controller_->ResetBweAndBitrates(2 * kInitialBitrateBps, 0,
-                                   20 * kInitialBitrateBps);
+  rtc::NetworkRoute route;
+  route.local_network_id = 1;
+  controller_->OnNetworkRouteChanged(route, 2 * kInitialBitrateBps, 0,
+                                     20 * kInitialBitrateBps);
 }
 
 // Estimated bitrate reduced when the feedbacks arrive with such a long delay,

@@ -251,6 +251,8 @@ struct PacketFeedback {
                        -1,
                        sequence_number,
                        0,
+                       0,
+                       0,
                        PacedPacketInfo()) {}
 
   PacketFeedback(int64_t arrival_time_ms,
@@ -263,6 +265,23 @@ struct PacketFeedback {
                        send_time_ms,
                        sequence_number,
                        payload_size,
+                       0,
+                       0,
+                       pacing_info) {}
+
+  PacketFeedback(int64_t creation_time_ms,
+                 uint16_t sequence_number,
+                 size_t payload_size,
+                 uint16_t local_net_id,
+                 uint16_t remote_net_id,
+                 const PacedPacketInfo& pacing_info)
+      : PacketFeedback(creation_time_ms,
+                       -1,
+                       -1,
+                       sequence_number,
+                       payload_size,
+                       local_net_id,
+                       remote_net_id,
                        pacing_info) {}
 
   PacketFeedback(int64_t creation_time_ms,
@@ -270,12 +289,16 @@ struct PacketFeedback {
                  int64_t send_time_ms,
                  uint16_t sequence_number,
                  size_t payload_size,
+                 uint16_t local_net_id,
+                 uint16_t remote_net_id,
                  const PacedPacketInfo& pacing_info)
       : creation_time_ms(creation_time_ms),
         arrival_time_ms(arrival_time_ms),
         send_time_ms(send_time_ms),
         sequence_number(sequence_number),
         payload_size(payload_size),
+        local_net_id(local_net_id),
+        remote_net_id(remote_net_id),
         pacing_info(pacing_info) {}
 
   static constexpr int kNotAProbe = -1;
@@ -307,6 +330,9 @@ struct PacketFeedback {
   uint16_t sequence_number;
   // Size of the packet excluding RTP headers.
   size_t payload_size;
+  // The network route ids that this packet is associated with.
+  uint16_t local_net_id;
+  uint16_t remote_net_id;
   // Pacing information about this packet.
   PacedPacketInfo pacing_info;
 };

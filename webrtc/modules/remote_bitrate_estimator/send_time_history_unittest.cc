@@ -36,13 +36,31 @@ class SendTimeHistoryTest : public ::testing::Test {
                              size_t length,
                              int64_t send_time_ms,
                              const PacedPacketInfo& pacing_info) {
-    history_.AddAndRemoveOld(sequence_number, length, pacing_info);
+    PacketFeedback packet(clock_.TimeInMilliseconds(), sequence_number, length,
+                          0, 0, pacing_info);
+    history_.AddAndRemoveOld(packet);
     history_.OnSentPacket(sequence_number, send_time_ms);
   }
 
   webrtc::SimulatedClock clock_;
   SendTimeHistory history_;
 };
+
+TEST_F(SendTimeHistoryTest, SaveAndRestoreNetworkId) {
+  const PacedPacketInfo kPacingInfo(0, 5, 1200);
+  uint16_t sequence_number = 0;
+  int64_t now_ms = clock_.TimeInMilliseconds();
+  for (int i = 1; i < 5; ++i) {
+    PacketFeedback packet(now_ms, sequence_number++, 1000, i, i - 1,
+                          kPacingInfo);
+    history_.AddAndRemoveOld(packet);
+    history_.OnSentPacket(sequence_number, now_ms);
+    PacketFeedback restored(now_ms, sequence_number);
+    EXPECT_TRUE(history_.GetFeedback(&restored, sequence_number));
+    EXPECT_EQ(packet.local_net_id, restored.local_net_id);
+    EXPECT_EQ(packet.remote_net_id, restored.remote_net_id);
+  }
+}
 
 TEST_F(SendTimeHistoryTest, AddRemoveOne) {
   const uint16_t kSeqNo = 10;
@@ -97,9 +115,10 @@ TEST_F(SendTimeHistoryTest, AddThenRemoveOutOfOrder) {
         static_cast<uint16_t>(i), kPacketSize, PacedPacketInfo()));
   }
   for (size_t i = 0; i < num_items; ++i) {
-    history_.AddAndRemoveOld(sent_packets[i].sequence_number,
-                             sent_packets[i].payload_size,
-                             PacedPacketInfo(1, 2, 200));
+    PacketFeedback packet = sent_packets[i];
+    packet.arrival_time_ms = -1;
+    packet.send_time_ms = -1;
+    history_.AddAndRemoveOld(packet);
   }
   for (size_t i = 0; i < num_items; ++i)
     history_.OnSentPacket(sent_packets[i].sequence_number,
@@ -212,28 +231,5 @@ TEST_F(SendTimeHistoryTest, InterlievedGetAndRemove) {
   EXPECT_TRUE(history_.GetFeedback(&packet3, true));
   EXPECT_EQ(packets[2], packet3);
 }
-
-TEST_F(SendTimeHistoryTest, Clear) {
-  const uint16_t kSeqNo = 1;
-  const int64_t kTimestamp = 2;
-  const PacedPacketInfo kPacingInfo(0, 5, 1200);
-
-  PacketFeedback packets[] = {{0, kTimestamp, kSeqNo, 0, kPacingInfo},
-                          {0, kTimestamp + 1, kSeqNo + 1, 0, kPacingInfo}};
-
-  AddPacketWithSendTime(packets[0].sequence_number, packets[0].payload_size,
-                        packets[0].send_time_ms, kPacingInfo);
-  AddPacketWithSendTime(packets[1].sequence_number, packets[1].payload_size,
-                        packets[1].send_time_ms, kPacingInfo);
-  PacketFeedback info(0, 0, packets[0].sequence_number, 0, kPacingInfo);
-  EXPECT_TRUE(history_.GetFeedback(&info, true));
-  EXPECT_EQ(packets[0], info);
-
-  history_.Clear();
-
-  PacketFeedback info2(0, 0, packets[1].sequence_number, 0, kPacingInfo);
-  EXPECT_FALSE(history_.GetFeedback(&info2, true));
-}
-
 }  // namespace test
 }  // namespace webrtc

@@ -111,9 +111,10 @@ void SendSideBweSender::OnPacketsSent(const Packets& packets) {
       MediaPacket* media_packet = static_cast<MediaPacket*>(packet);
       // TODO(philipel): Add probe_cluster_id to Packet class in order
       //                 to create tests for probing using cluster ids.
-      send_time_history_.AddAndRemoveOld(media_packet->header().sequenceNumber,
-                                         media_packet->payload_size(),
-                                         PacedPacketInfo());
+      PacketFeedback packet_feedback(
+          clock_->TimeInMilliseconds(), media_packet->header().sequenceNumber,
+          media_packet->payload_size(), 0, 0, PacedPacketInfo());
+      send_time_history_.AddAndRemoveOld(packet_feedback);
       send_time_history_.OnSentPacket(media_packet->header().sequenceNumber,
                                       media_packet->sender_timestamp_ms());
     }
@@ -146,7 +147,7 @@ void SendSideBweReceiver::ReceivePacket(int64_t arrival_time_ms,
   packet_feedback_vector_.push_back(
       PacketFeedback(-1, arrival_time_ms, media_packet.sender_timestamp_ms(),
                      media_packet.header().sequenceNumber,
-                     media_packet.payload_size(), PacedPacketInfo()));
+                     media_packet.payload_size(), 0, 0, PacedPacketInfo()));
 
   // Log received packet information.
   BweReceiver::ReceivePacket(arrival_time_ms, media_packet);

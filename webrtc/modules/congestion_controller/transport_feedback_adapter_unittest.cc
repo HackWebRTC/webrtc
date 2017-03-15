@@ -250,7 +250,8 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
       rtcp::TransportFeedback::kDeltaScaleFactor *
       std::numeric_limits<int16_t>::min();
 
-  PacketFeedback packet_feedback(100, 200, 0, 1500, true, PacedPacketInfo());
+  PacketFeedback packet_feedback(100, 200, 0, 1500, true, 0, 0,
+                                 PacedPacketInfo());
   sent_packets.push_back(packet_feedback);
 
   packet_feedback.send_time_ms += kSmallDeltaUs / 1000;

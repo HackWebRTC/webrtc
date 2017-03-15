@@ -970,8 +970,8 @@ void Call::OnNetworkRouteChanged(const std::string& transport_name,
                  << " bps,  max: " << config_.bitrate_config.start_bitrate_bps
                  << " bps.";
     RTC_DCHECK_GT(config_.bitrate_config.start_bitrate_bps, 0);
-    congestion_controller_->ResetBweAndBitrates(
-        config_.bitrate_config.start_bitrate_bps,
+    congestion_controller_->OnNetworkRouteChanged(
+        network_route, config_.bitrate_config.start_bitrate_bps,
         config_.bitrate_config.min_bitrate_bps,
         config_.bitrate_config.max_bitrate_bps);
   }

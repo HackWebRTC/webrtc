@@ -22,13 +22,7 @@ SendTimeHistory::SendTimeHistory(const Clock* clock,
 
 SendTimeHistory::~SendTimeHistory() {}
 
-void SendTimeHistory::Clear() {
-  history_.clear();
-}
-
-void SendTimeHistory::AddAndRemoveOld(uint16_t sequence_number,
-                                      size_t payload_size,
-                                      const PacedPacketInfo& pacing_info) {
+void SendTimeHistory::AddAndRemoveOld(const PacketFeedback& packet) {
   int64_t now_ms = clock_->TimeInMilliseconds();
   // Remove old.
   while (!history_.empty() &&
@@ -39,14 +33,8 @@ void SendTimeHistory::AddAndRemoveOld(uint16_t sequence_number,
   }
 
   // Add new.
-  int64_t unwrapped_seq_num = seq_num_unwrapper_.Unwrap(sequence_number);
-  int64_t creation_time_ms = now_ms;
-  constexpr int64_t kNoArrivalTimeMs = -1;  // Arrival time is ignored.
-  constexpr int64_t kNoSendTimeMs = -1;     // Send time is set by OnSentPacket.
-  history_.insert(std::make_pair(
-      unwrapped_seq_num,
-      PacketFeedback(creation_time_ms, kNoArrivalTimeMs, kNoSendTimeMs,
-                     sequence_number, payload_size, pacing_info)));
+  int64_t unwrapped_seq_num = seq_num_unwrapper_.Unwrap(packet.sequence_number);
+  history_.insert(std::make_pair(unwrapped_seq_num, packet));
 }
 
 bool SendTimeHistory::OnSentPacket(uint16_t sequence_number,

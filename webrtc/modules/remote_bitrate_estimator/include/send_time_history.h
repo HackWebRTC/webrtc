@@ -26,12 +26,8 @@ class SendTimeHistory {
   SendTimeHistory(const Clock* clock, int64_t packet_age_limit_ms);
   ~SendTimeHistory();
 
-  void Clear();
-
   // Cleanup old entries, then add new packet info with provided parameters.
-  void AddAndRemoveOld(uint16_t sequence_number,
-                       size_t payload_size,
-                       const PacedPacketInfo& pacing_info);
+  void AddAndRemoveOld(const PacketFeedback& packet);
 
   // Updates packet info identified by |sequence_number| with |send_time_ms|.
   // Return false if not found.

@@ -32,7 +32,9 @@ TransportFeedbackAdapter::TransportFeedbackAdapter(const Clock* clock)
       send_time_history_(clock, kSendTimeHistoryWindowMs),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
-      last_timestamp_us_(kNoTimestamp) {}
+      last_timestamp_us_(kNoTimestamp),
+      local_net_id_(0),
+      remote_net_id_(0) {}
 
 TransportFeedbackAdapter::~TransportFeedbackAdapter() {}
 
@@ -43,7 +45,10 @@ void TransportFeedbackAdapter::AddPacket(uint16_t sequence_number,
   if (send_side_bwe_with_overhead_) {
     length += transport_overhead_bytes_per_packet_;
   }
-  send_time_history_.AddAndRemoveOld(sequence_number, length, pacing_info);
+  const int64_t creation_time_ms = clock_->TimeInMilliseconds();
+  send_time_history_.AddAndRemoveOld(
+      PacketFeedback(creation_time_ms, sequence_number, length, local_net_id_,
+                     remote_net_id_, pacing_info));
 }
 
 void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
@@ -58,9 +63,11 @@ void TransportFeedbackAdapter::SetTransportOverhead(
   transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
 }
 
-void TransportFeedbackAdapter::ClearSendTimeHistory() {
+void TransportFeedbackAdapter::SetNetworkIds(uint16_t local_id,
+                                             uint16_t remote_id) {
   rtc::CritScope cs(&lock_);
-  send_time_history_.Clear();
+  local_net_id_ = local_id;
+  remote_net_id_ = remote_id;
 }
 
 std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
@@ -115,7 +122,10 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
         // as received by another feedback.
         if (!send_time_history_.GetFeedback(&packet_feedback, false))
           ++failed_lookups;
-        packet_feedback_vector.push_back(packet_feedback);
+        if (packet_feedback.local_net_id == local_net_id_ &&
+            packet_feedback.remote_net_id == remote_net_id_) {
+          packet_feedback_vector.push_back(packet_feedback);
+        }
       }
 
       // Handle this iteration's received packet.
@@ -124,7 +134,10 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
       PacketFeedback packet_feedback(timestamp_ms, packet.sequence_number());
       if (!send_time_history_.GetFeedback(&packet_feedback, true))
         ++failed_lookups;
-      packet_feedback_vector.push_back(packet_feedback);
+      if (packet_feedback.local_net_id == local_net_id_ &&
+          packet_feedback.remote_net_id == remote_net_id_) {
+        packet_feedback_vector.push_back(packet_feedback);
+      }
 
       ++seq_num;
     }

@@ -221,9 +221,13 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
   MaybeTriggerOnNetworkChanged();
 }
 
-void CongestionController::ResetBweAndBitrates(int bitrate_bps,
-                                               int min_bitrate_bps,
-                                               int max_bitrate_bps) {
+// TODO(holmer): Split this up and use SetBweBitrates in combination with
+// OnNetworkRouteChanged.
+void CongestionController::OnNetworkRouteChanged(
+    const rtc::NetworkRoute& network_route,
+    int bitrate_bps,
+    int min_bitrate_bps,
+    int max_bitrate_bps) {
   ClampBitrates(&bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
   // TODO(honghaiz): Recreate this object once the bitrate controller is
   // no longer exposed outside CongestionController.
@@ -235,7 +239,8 @@ void CongestionController::ResetBweAndBitrates(int bitrate_bps,
   // no longer exposed outside CongestionController.
   remote_bitrate_estimator_.SetMinBitrate(min_bitrate_bps);
 
-  transport_feedback_adapter_.ClearSendTimeHistory();
+  transport_feedback_adapter_.SetNetworkIds(network_route.local_network_id,
+                                            network_route.remote_network_id);
   {
     rtc::CritScope cs(&bwe_lock_);
     delay_based_bwe_.reset(new DelayBasedBwe(event_log_, clock_));

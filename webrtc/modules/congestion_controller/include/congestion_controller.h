@@ -16,6 +16,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/networkroute.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
@@ -81,9 +82,10 @@ class CongestionController : public CallStatsObserver,
                               int max_bitrate_bps);
   // Resets both the BWE state and the bitrate estimator. Note the first
   // argument is the bitrate_bps.
-  virtual void ResetBweAndBitrates(int bitrate_bps,
-                                   int min_bitrate_bps,
-                                   int max_bitrate_bps);
+  virtual void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
+                                     int bitrate_bps,
+                                     int min_bitrate_bps,
+                                     int max_bitrate_bps);
   virtual void SignalNetworkState(NetworkState state);
   virtual void SetTransportOverhead(size_t transport_overhead_bytes_per_packet);
 
