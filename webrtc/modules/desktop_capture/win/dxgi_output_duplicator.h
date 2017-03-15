@@ -128,7 +128,7 @@ class DxgiOutputDuplicator {
   std::unique_ptr<SharedDesktopFrame> last_frame_;
   DesktopVector last_frame_offset_;
 
-  int64_t num_frames_captured_;
+  int64_t num_frames_captured_ = 0;
 };
 
 }  // namespace webrtc
