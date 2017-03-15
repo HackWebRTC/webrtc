@@ -634,7 +634,9 @@ TEST_F(PacedSenderTest, Pause) {
 
   for (int i = 0; i < 10; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
-    EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
+    // TimeUntilNextProcess must not return 0 when paused.  If it does,
+    // we risk running a busy loop, so ideally it should return a large value.
+    EXPECT_GE(send_bucket_->TimeUntilNextProcess(), 1000);
     send_bucket_->Process();
   }
 

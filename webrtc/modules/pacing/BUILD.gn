@@ -26,10 +26,11 @@ rtc_static_library("pacing") {
   }
 
   deps = [
-    "../..:webrtc_common",
+    "../../:webrtc_common",
     "../../base:rtc_base_approved",
     "../../system_wrappers",
     "../rtp_rtcp",
+    "../utility",
   ]
 }
 

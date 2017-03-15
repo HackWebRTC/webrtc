@@ -21,6 +21,7 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/pacing/alr_detector.h"
 #include "webrtc/modules/pacing/bitrate_prober.h"
+#include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
@@ -275,14 +276,26 @@ void PacedSender::CreateProbeCluster(int bitrate_bps) {
 
 void PacedSender::Pause() {
   LOG(LS_INFO) << "PacedSender paused.";
-  CriticalSectionScoped cs(critsect_.get());
-  paused_ = true;
+  {
+    CriticalSectionScoped cs(critsect_.get());
+    paused_ = true;
+  }
+  // Tell the process thread to call our TimeUntilNextProcess() method to get
+  // a new (longer) estimate for when to call Process().
+  if (process_thread_)
+    process_thread_->WakeUp(this);
 }
 
 void PacedSender::Resume() {
   LOG(LS_INFO) << "PacedSender resumed.";
-  CriticalSectionScoped cs(critsect_.get());
-  paused_ = false;
+  {
+    CriticalSectionScoped cs(critsect_.get());
+    paused_ = false;
+  }
+  // Tell the process thread to call our TimeUntilNextProcess() method to
+  // refresh the estimate for when to call Process().
+  if (process_thread_)
+    process_thread_->WakeUp(this);
 }
 
 void PacedSender::SetProbingEnabled(bool enabled) {
@@ -373,6 +386,9 @@ int64_t PacedSender::AverageQueueTimeMs() {
 
 int64_t PacedSender::TimeUntilNextProcess() {
   CriticalSectionScoped cs(critsect_.get());
+  if (paused_)
+    return 1000 * 60 * 60;
+
   if (prober_->IsProbing()) {
     int64_t ret = prober_->TimeUntilNextProbe(clock_->TimeInMilliseconds());
     if (ret > 0 || (ret == 0 && !probing_send_failure_))
@@ -455,6 +471,11 @@ void PacedSender::Process() {
       prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
   }
   alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
+}
+
+void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
+  LOG(LS_INFO) << "ProcessThreadAttached 0x" << std::hex << process_thread;
+  process_thread_ = process_thread;
 }
 
 bool PacedSender::SendPacket(const paced_sender::Packet& packet,
