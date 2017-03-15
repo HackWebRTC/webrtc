@@ -13,6 +13,7 @@
 
 #include <list>
 #include <memory>
+#include <queue>
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_BUILD_LIBEVENT)
 #include <dispatch/dispatch.h>
@@ -274,6 +275,7 @@ class LOCKABLE TaskQueue {
   QueueContext* const context_;
 #elif defined(WEBRTC_WIN)
   class ThreadState;
+  void RunPendingTasks();
   static void ThreadMain(void* context);
 
   class WorkerThread : public PlatformThread {
@@ -289,6 +291,9 @@ class LOCKABLE TaskQueue {
     }
   };
   WorkerThread thread_;
+  rtc::CriticalSection pending_lock_;
+  std::queue<std::unique_ptr<QueuedTask>> pending_ GUARDED_BY(pending_lock_);
+  HANDLE in_queue_;
 #else
 #error not supported.
 #endif
