@@ -150,4 +150,24 @@ TEST_F(FileUtilsTest, GetFileSizeNonExistingFile) {
   ASSERT_EQ(0u, webrtc::test::GetFileSize("non-existing-file.tmp"));
 }
 
+TEST_F(FileUtilsTest, DirExists) {
+  // Check that an existing directory is recognized as such.
+  ASSERT_TRUE(webrtc::test::DirExists(webrtc::test::OutputPath()))
+      << "Existing directory not found";
+
+  // Check that a non-existing directory is recognized as such.
+  std::string directory = "direxists-unittest-non_existing-dir";
+  ASSERT_FALSE(webrtc::test::DirExists(directory))
+      << "Non-existing directory found";
+
+  // Check that an existing file is not recognized as an existing directory.
+  std::string temp_filename = webrtc::test::TempFilename(
+      webrtc::test::OutputPath(), "TempFilenameTest");
+  ASSERT_TRUE(webrtc::test::FileExists(temp_filename))
+      << "Couldn't find file: " << temp_filename;
+  ASSERT_FALSE(webrtc::test::DirExists(temp_filename))
+      << "Existing file recognized as existing directory";
+  remove(temp_filename.c_str());
+}
+
 }  // namespace webrtc

@@ -106,6 +106,12 @@ bool FileExists(const std::string& file_name) {
   return stat(file_name.c_str(), &file_info) == 0;
 }
 
+bool DirExists(const std::string& directory_name) {
+  struct stat directory_info = {0};
+  return stat(directory_name.c_str(), &directory_info) == 0 && S_ISDIR(
+      directory_info.st_mode);
+}
+
 #ifdef WEBRTC_ANDROID
 
 std::string ProjectRootPath() {

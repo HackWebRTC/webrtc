@@ -74,6 +74,9 @@ bool CreateDir(const std::string& directory_name);
 // Checks if a file exists.
 bool FileExists(const std::string& file_name);
 
+// Checks if a directory exists.
+bool DirExists(const std::string& directory_name);
+
 // File size of the supplied file in bytes. Will return 0 if the file is
 // empty or if the file does not exist/is readable.
 size_t GetFileSize(const std::string& filename);
