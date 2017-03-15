@@ -59,8 +59,7 @@ static const int kOpusBandwidthFb = 20000;
 #define WEBRTC_FUNC(method, args) int method args override
 
 class FakeWebRtcVoiceEngine
-    : public webrtc::VoEBase, public webrtc::VoECodec,
-      public webrtc::VoEHardware {
+    : public webrtc::VoEBase, public webrtc::VoECodec {
  public:
   struct Channel {
     std::vector<webrtc::CodecInst> recv_codecs;
@@ -202,26 +201,6 @@ class FakeWebRtcVoiceEngine
   WEBRTC_STUB(GetFECStatus, (int channel, bool& enable));
   WEBRTC_STUB(SetOpusMaxPlaybackRate, (int channel, int frequency_hz));
   WEBRTC_STUB(SetOpusDtx, (int channel, bool enable_dtx));
-
-  // webrtc::VoEHardware
-  WEBRTC_STUB(GetNumOfRecordingDevices, (int& num));
-  WEBRTC_STUB(GetNumOfPlayoutDevices, (int& num));
-  WEBRTC_STUB(GetRecordingDeviceName, (int i, char* name, char* guid));
-  WEBRTC_STUB(GetPlayoutDeviceName, (int i, char* name, char* guid));
-  WEBRTC_STUB(SetRecordingDevice, (int, webrtc::StereoChannel));
-  WEBRTC_STUB(SetPlayoutDevice, (int));
-  WEBRTC_STUB(SetAudioDeviceLayer, (webrtc::AudioLayers));
-  WEBRTC_STUB(GetAudioDeviceLayer, (webrtc::AudioLayers&));
-  WEBRTC_STUB(SetRecordingSampleRate, (unsigned int samples_per_sec));
-  WEBRTC_STUB_CONST(RecordingSampleRate, (unsigned int* samples_per_sec));
-  WEBRTC_STUB(SetPlayoutSampleRate, (unsigned int samples_per_sec));
-  WEBRTC_STUB_CONST(PlayoutSampleRate, (unsigned int* samples_per_sec));
-  WEBRTC_STUB(EnableBuiltInAEC, (bool enable));
-  bool BuiltInAECIsAvailable() const override { return false; }
-  WEBRTC_STUB(EnableBuiltInAGC, (bool enable));
-  bool BuiltInAGCIsAvailable() const override { return false; }
-  WEBRTC_STUB(EnableBuiltInNS, (bool enable));
-  bool BuiltInNSIsAvailable() const override { return false; }
 
   size_t GetNetEqCapacity() const {
     auto ch = channels_.find(last_channel_);

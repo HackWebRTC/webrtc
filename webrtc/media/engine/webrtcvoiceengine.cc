@@ -32,6 +32,7 @@
 #include "webrtc/media/base/audiosource.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/streamparams.h"
+#include "webrtc/media/engine/adm_helpers.h"
 #include "webrtc/media/engine/apm_helpers.h"
 #include "webrtc/media/engine/payload_type_mapper.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
@@ -54,18 +55,6 @@ const int kDefaultTraceFilter = webrtc::kTraceNone | webrtc::kTraceTerseInfo |
                                 webrtc::kTraceCritical;
 const int kElevatedTraceFilter = kDefaultTraceFilter | webrtc::kTraceStateInfo |
                                  webrtc::kTraceInfo;
-
-// On Windows Vista and newer, Microsoft introduced the concept of "Default
-// Communications Device". This means that there are two types of default
-// devices (old Wave Audio style default and Default Communications Device).
-//
-// On Windows systems which only support Wave Audio style default, uses either
-// -1 or 0 to select the default device.
-#ifdef WIN32
-const int kDefaultAudioDeviceId = -1;
-#elif !defined(WEBRTC_IOS)
-const int kDefaultAudioDeviceId = 0;
-#endif
 
 constexpr int kNackRtpHistoryMs = 5000;
 
@@ -655,7 +644,12 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     RTC_DCHECK(error);
   }
 
-  SetDefaultDevices();
+  // Set default audio devices.
+#if !defined(WEBRTC_IOS)
+  webrtc::adm_helpers::SetRecordingDevice(adm_);
+  apm()->Initialize();
+  webrtc::adm_helpers::SetPlayoutDevice(adm_);
+#endif  // !WEBRTC_IOS
 }
 
 WebRtcVoiceEngine::~WebRtcVoiceEngine() {
@@ -932,34 +926,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
   }
   return true;
-}
-
-void WebRtcVoiceEngine::SetDefaultDevices() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-#if !defined(WEBRTC_IOS)
-  int in_id = kDefaultAudioDeviceId;
-  int out_id = kDefaultAudioDeviceId;
-  LOG(LS_INFO) << "Setting microphone to (id=" << in_id
-               << ") and speaker to (id=" << out_id << ")";
-
-  bool ret = true;
-  if (voe_wrapper_->hw()->SetRecordingDevice(in_id) == -1) {
-    LOG_RTCERR1(SetRecordingDevice, in_id);
-    ret = false;
-  }
-
-  apm()->Initialize();
-
-  if (voe_wrapper_->hw()->SetPlayoutDevice(out_id) == -1) {
-    LOG_RTCERR1(SetPlayoutDevice, out_id);
-    ret = false;
-  }
-
-  if (ret) {
-    LOG(LS_INFO) << "Set microphone to (id=" << in_id
-                 << ") and speaker to (id=" << out_id << ")";
-  }
-#endif  // !WEBRTC_IOS
 }
 
 // TODO(solenberg): Remove, once AudioMonitor is gone.

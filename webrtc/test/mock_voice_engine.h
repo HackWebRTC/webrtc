@@ -175,29 +175,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
                int(OutStream* stream, CodecInst* compression));
   MOCK_METHOD0(StopRecordingMicrophone, int());
 
-  // VoEHardware
-  MOCK_METHOD1(GetNumOfRecordingDevices, int(int& devices));
-  MOCK_METHOD1(GetNumOfPlayoutDevices, int(int& devices));
-  MOCK_METHOD3(GetRecordingDeviceName,
-               int(int index, char strNameUTF8[128], char strGuidUTF8[128]));
-  MOCK_METHOD3(GetPlayoutDeviceName,
-               int(int index, char strNameUTF8[128], char strGuidUTF8[128]));
-  MOCK_METHOD2(SetRecordingDevice,
-               int(int index, StereoChannel recordingChannel));
-  MOCK_METHOD1(SetPlayoutDevice, int(int index));
-  MOCK_METHOD1(SetAudioDeviceLayer, int(AudioLayers audioLayer));
-  MOCK_METHOD1(GetAudioDeviceLayer, int(AudioLayers& audioLayer));
-  MOCK_METHOD1(SetRecordingSampleRate, int(unsigned int samples_per_sec));
-  MOCK_CONST_METHOD1(RecordingSampleRate, int(unsigned int* samples_per_sec));
-  MOCK_METHOD1(SetPlayoutSampleRate, int(unsigned int samples_per_sec));
-  MOCK_CONST_METHOD1(PlayoutSampleRate, int(unsigned int* samples_per_sec));
-  MOCK_CONST_METHOD0(BuiltInAECIsAvailable, bool());
-  MOCK_METHOD1(EnableBuiltInAEC, int(bool enable));
-  MOCK_CONST_METHOD0(BuiltInAGCIsAvailable, bool());
-  MOCK_METHOD1(EnableBuiltInAGC, int(bool enable));
-  MOCK_CONST_METHOD0(BuiltInNSIsAvailable, bool());
-  MOCK_METHOD1(EnableBuiltInNS, int(bool enable));
-
   // VoENetwork
   MOCK_METHOD2(RegisterExternalTransport,
                int(int channel, Transport& transport));

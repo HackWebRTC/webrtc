@@ -64,8 +64,7 @@ class FakeVoEWrapper : public cricket::VoEWrapper {
  public:
   explicit FakeVoEWrapper(cricket::FakeWebRtcVoiceEngine* engine)
       : cricket::VoEWrapper(engine,  // base
-                            engine,  // codec
-                            engine) {  // hw
+                            engine) {  // codec
   }
 };
 
@@ -76,17 +75,50 @@ class MockTransmitMixer : public webrtc::voe::TransmitMixer {
 
   MOCK_METHOD1(EnableStereoChannelSwapping, void(bool enable));
 };
+
+void AdmSetupExpectations(webrtc::test::MockAudioDeviceModule* adm) {
+  RTC_DCHECK(adm);
+  EXPECT_CALL(*adm, AddRef()).WillOnce(Return(0));
+  EXPECT_CALL(*adm, Release()).WillOnce(Return(0));
+#if !defined(WEBRTC_IOS)
+  EXPECT_CALL(*adm, Recording()).WillOnce(Return(false));
+  EXPECT_CALL(*adm, SetRecordingChannel(webrtc::AudioDeviceModule::
+      ChannelType::kChannelBoth)).WillOnce(Return(0));
+#if defined(WEBRTC_WIN)
+  EXPECT_CALL(*adm, SetRecordingDevice(
+      testing::Matcher<webrtc::AudioDeviceModule::WindowsDeviceType>(
+          webrtc::AudioDeviceModule::kDefaultCommunicationDevice)))
+              .WillOnce(Return(0));
+#else
+  EXPECT_CALL(*adm, SetRecordingDevice(0)).WillOnce(Return(0));
+#endif  // #if defined(WEBRTC_WIN)
+  EXPECT_CALL(*adm, InitMicrophone()).WillOnce(Return(0));
+  EXPECT_CALL(*adm, StereoRecordingIsAvailable(testing::_)).WillOnce(Return(0));
+  EXPECT_CALL(*adm, SetStereoRecording(false)).WillOnce(Return(0));
+  EXPECT_CALL(*adm, Playing()).WillOnce(Return(false));
+#if defined(WEBRTC_WIN)
+  EXPECT_CALL(*adm, SetPlayoutDevice(
+      testing::Matcher<webrtc::AudioDeviceModule::WindowsDeviceType>(
+          webrtc::AudioDeviceModule::kDefaultCommunicationDevice)))
+              .WillOnce(Return(0));
+#else
+  EXPECT_CALL(*adm, SetPlayoutDevice(0)).WillOnce(Return(0));
+#endif  // #if defined(WEBRTC_WIN)
+  EXPECT_CALL(*adm, InitSpeaker()).WillOnce(Return(0));
+  EXPECT_CALL(*adm, StereoPlayoutIsAvailable(testing::_)).WillOnce(Return(0));
+  EXPECT_CALL(*adm, SetStereoPlayout(false)).WillOnce(Return(0));
+#endif  // #if !defined(WEBRTC_IOS)
+  EXPECT_CALL(*adm, BuiltInAECIsAvailable()).WillOnce(Return(false));
+  EXPECT_CALL(*adm, BuiltInAGCIsAvailable()).WillOnce(Return(false));
+  EXPECT_CALL(*adm, BuiltInNSIsAvailable()).WillOnce(Return(false));
+  EXPECT_CALL(*adm, SetAGC(true)).WillOnce(Return(0));
+}
 }  // namespace
 
 // Tests that our stub library "works".
 TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
   StrictMock<webrtc::test::MockAudioDeviceModule> adm;
-  EXPECT_CALL(adm, AddRef()).WillOnce(Return(0));
-  EXPECT_CALL(adm, Release()).WillOnce(Return(0));
-  EXPECT_CALL(adm, BuiltInAECIsAvailable()).WillOnce(Return(false));
-  EXPECT_CALL(adm, BuiltInAGCIsAvailable()).WillOnce(Return(false));
-  EXPECT_CALL(adm, BuiltInNSIsAvailable()).WillOnce(Return(false));
-  EXPECT_CALL(adm, SetAGC(true)).WillOnce(Return(0));
+  AdmSetupExpectations(&adm);
   StrictMock<webrtc::test::MockAudioProcessing> apm;
   EXPECT_CALL(apm, ApplyConfig(testing::_));
   EXPECT_CALL(apm, SetExtraOptions(testing::_));
@@ -123,12 +155,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
         call_(webrtc::Call::Config(&event_log_)), voe_(&apm_, &transmit_mixer_),
         override_field_trials_(field_trials) {
     // AudioDeviceModule.
-    EXPECT_CALL(adm_, AddRef()).WillOnce(Return(0));
-    EXPECT_CALL(adm_, Release()).WillOnce(Return(0));
-    EXPECT_CALL(adm_, BuiltInAECIsAvailable()).WillOnce(Return(false));
-    EXPECT_CALL(adm_, BuiltInAGCIsAvailable()).WillOnce(Return(false));
-    EXPECT_CALL(adm_, BuiltInNSIsAvailable()).WillOnce(Return(false));
-    EXPECT_CALL(adm_, SetAGC(true)).WillOnce(Return(0));
+    AdmSetupExpectations(&adm_);
     // AudioProcessing.
     EXPECT_CALL(apm_, ApplyConfig(testing::_));
     EXPECT_CALL(apm_, SetExtraOptions(testing::_));

@@ -121,6 +121,8 @@ rtc_static_library("rtc_media") {
   libs = []
   deps = []
   sources = [
+    "engine/adm_helpers.cc",
+    "engine/adm_helpers.h",
     "engine/apm_helpers.cc",
     "engine/apm_helpers.h",
     "engine/internaldecoderfactory.cc",
