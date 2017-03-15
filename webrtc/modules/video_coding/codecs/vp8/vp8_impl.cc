@@ -417,9 +417,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
       configurations_[0].g_error_resilient = 0;
       break;
     case kResilientStream:
-      configurations_[0].g_error_resilient = 1;  // TODO(holmer): Replace with
-      // VPX_ERROR_RESILIENT_DEFAULT when we
-      // drop support for libvpx 9.6.0.
+      configurations_[0].g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT;
       break;
     case kResilientFrames:
       return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;  // Not supported
