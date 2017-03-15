@@ -159,7 +159,7 @@ class FrameBuffer {
   FrameMap::iterator next_frame_it_ GUARDED_BY(crit_);
   int num_frames_history_ GUARDED_BY(crit_);
   int num_frames_buffered_ GUARDED_BY(crit_);
-  volatile int stopped_;
+  bool stopped_ GUARDED_BY(crit_);
   VCMVideoProtection protection_mode_ GUARDED_BY(crit_);
   VCMReceiveStatisticsCallback* const stats_callback_;
 

@@ -14,7 +14,6 @@
 #include <cstring>
 #include <queue>
 
-#include "webrtc/base/atomicops.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
@@ -48,7 +47,7 @@ FrameBuffer::FrameBuffer(Clock* clock,
       last_continuous_frame_it_(frames_.end()),
       num_frames_history_(0),
       num_frames_buffered_(0),
-      stopped_(0),
+      stopped_(false),
       protection_mode_(kProtectionNack),
       stats_callback_(stats_callback) {}
 
@@ -61,16 +60,18 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
   int64_t latest_return_time_ms =
       clock_->TimeInMilliseconds() + max_wait_time_ms;
   int64_t wait_ms = max_wait_time_ms;
+  int64_t now_ms = 0;
 
   do {
-    if (rtc::AtomicOps::AcquireLoad(&stopped_))
-      return kStopped;
-
-    int64_t now_ms = clock_->TimeInMilliseconds();
-    wait_ms = max_wait_time_ms;
+    now_ms = clock_->TimeInMilliseconds();
     {
       rtc::CritScope lock(&crit_);
       new_continuous_frame_event_.Reset();
+      if (stopped_)
+        return kStopped;
+
+      wait_ms = max_wait_time_ms;
+
       // Need to hold |crit_| in order to use |frames_|, therefore we
       // set it here in the loop instead of outside the loop in order to not
       // acquire the lock unnecesserily.
@@ -118,32 +119,34 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     wait_ms = std::max<int64_t>(wait_ms, 0);
   } while (new_continuous_frame_event_.Wait(wait_ms));
 
-  rtc::CritScope lock(&crit_);
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  if (next_frame_it_ != frames_.end()) {
-    std::unique_ptr<FrameObject> frame =
-        std::move(next_frame_it_->second.frame);
+  {
+    rtc::CritScope lock(&crit_);
+    now_ms = clock_->TimeInMilliseconds();
+    if (next_frame_it_ != frames_.end()) {
+      std::unique_ptr<FrameObject> frame =
+          std::move(next_frame_it_->second.frame);
 
-    if (!frame->delayed_by_retransmission()) {
-      int64_t frame_delay;
+      if (!frame->delayed_by_retransmission()) {
+        int64_t frame_delay;
 
-      if (inter_frame_delay_.CalculateDelay(frame->timestamp, &frame_delay,
-                                            frame->ReceivedTime())) {
-        jitter_estimator_->UpdateEstimate(frame_delay, frame->size());
+        if (inter_frame_delay_.CalculateDelay(frame->timestamp, &frame_delay,
+                                              frame->ReceivedTime())) {
+          jitter_estimator_->UpdateEstimate(frame_delay, frame->size());
+        }
+
+        float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
+        timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
+        timing_->UpdateCurrentDelay(frame->RenderTime(), now_ms);
       }
 
-      float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
-      timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
-      timing_->UpdateCurrentDelay(frame->RenderTime(), now_ms);
+      UpdateJitterDelay();
+
+      PropagateDecodability(next_frame_it_->second);
+      AdvanceLastDecodedFrame(next_frame_it_);
+      last_decoded_frame_timestamp_ = frame->timestamp;
+      *frame_out = std::move(frame);
+      return kFrameFound;
     }
-
-    UpdateJitterDelay();
-
-    PropagateDecodability(next_frame_it_->second);
-    AdvanceLastDecodedFrame(next_frame_it_);
-    last_decoded_frame_timestamp_ = frame->timestamp;
-    *frame_out = std::move(frame);
-    return kFrameFound;
   }
 
   if (latest_return_time_ms - now_ms > 0) {
@@ -163,40 +166,28 @@ void FrameBuffer::SetProtectionMode(VCMVideoProtection mode) {
   protection_mode_ = mode;
 }
 
-// Start() and Stop() must be called on the same thread.
-// The value of stopped_ can only be changed on this thread.
 void FrameBuffer::Start() {
   TRACE_EVENT0("webrtc", "FrameBuffer::Start");
-  rtc::AtomicOps::ReleaseStore(&stopped_, 0);
+  rtc::CritScope lock(&crit_);
+  stopped_ = false;
 }
 
 void FrameBuffer::Stop() {
   TRACE_EVENT0("webrtc", "FrameBuffer::Stop");
-  // TODO(tommi,philipel): Previously, we grabbed the |crit_| lock when decoding
-  // was being stopped. On Android, with captured frames being delivered on the
-  // decoder thread, this consistently caused the 'busy loop' checks in the
-  // PlatformThread to trigger on "VoiceProcessThread", "ModuleProcessThread"
-  // and occasionally on "PacerThread".
-  // Look into what was going on and why |Stop()| wasn't able to grab the lock
-  // and stop the FrameBuffer while that happened.
-  // See bug: https://bugs.chromium.org/p/webrtc/issues/detail?id=7331
-  rtc::AtomicOps::Increment(&stopped_);
+  rtc::CritScope lock(&crit_);
+  stopped_ = true;
   new_continuous_frame_event_.Set();
 }
 
 int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   TRACE_EVENT0("webrtc", "FrameBuffer::InsertFrame");
   RTC_DCHECK(frame);
-
-  if (rtc::AtomicOps::AcquireLoad(&stopped_))
-    return -1;
-
   if (stats_callback_)
     stats_callback_->OnCompleteFrame(frame->num_references == 0, frame->size());
-
   FrameKey key(frame->picture_id, frame->spatial_layer);
 
   rtc::CritScope lock(&crit_);
+
   int last_continuous_picture_id =
       last_continuous_frame_it_ == frames_.end()
           ? -1
