@@ -572,9 +572,7 @@ void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
       continue;
     }
 
-    TimeSeries time_series;
-    time_series.label = GetStreamName(stream_id);
-    time_series.style = BAR_GRAPH;
+    TimeSeries time_series(GetStreamName(stream_id), BAR_GRAPH);
     ProcessPoints<LoggedRtpPacket>(
         [](const LoggedRtpPacket& packet) -> rtc::Optional<float> {
           return rtc::Optional<float>(packet.total_length);
@@ -608,10 +606,8 @@ void EventLogAnalyzer::CreateAccumulatedPacketsTimeSeries(
       continue;
     }
 
-    TimeSeries time_series;
-    time_series.label = label_prefix + " " + GetStreamName(stream_id);
-    time_series.style = LINE_STEP_GRAPH;
-
+    std::string label = label_prefix + " " + GetStreamName(stream_id);
+    TimeSeries time_series(label, LINE_STEP_GRAPH);
     for (size_t i = 0; i < packet_stream.size(); i++) {
       float x = static_cast<float>(packet_stream[i].timestamp - begin_time_) /
                 1000000;
@@ -722,9 +718,7 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
       continue;
     }
 
-    TimeSeries time_series;
-    time_series.label = GetStreamName(stream_id);
-    time_series.style = BAR_GRAPH;
+    TimeSeries time_series(GetStreamName(stream_id), BAR_GRAPH);
     ProcessPairs<LoggedRtpPacket, float>(
         [](const LoggedRtpPacket& old_packet,
            const LoggedRtpPacket& new_packet) {
@@ -754,9 +748,7 @@ void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
       continue;
     }
 
-    TimeSeries time_series;
-    time_series.label = GetStreamName(stream_id);
-    time_series.style = LINE_DOT_GRAPH;
+    TimeSeries time_series(GetStreamName(stream_id), LINE_DOT_GRAPH);
     const uint64_t kWindowUs = 1000000;
     const uint64_t kStep = 1000000;
     SequenceNumberUnwrapper unwrapper_;
@@ -814,17 +806,15 @@ void EventLogAnalyzer::CreateDelayChangeGraph(Plot* plot) {
       continue;
     }
 
-    TimeSeries capture_time_data;
-    capture_time_data.label = GetStreamName(stream_id) + " capture-time";
-    capture_time_data.style = BAR_GRAPH;
+    TimeSeries capture_time_data(GetStreamName(stream_id) + " capture-time",
+                                 BAR_GRAPH);
     ProcessPairs<LoggedRtpPacket, double>(NetworkDelayDiff_CaptureTime,
                                           packet_stream, begin_time_,
                                           &capture_time_data);
     plot->series_list_.push_back(std::move(capture_time_data));
 
-    TimeSeries send_time_data;
-    send_time_data.label = GetStreamName(stream_id) + " abs-send-time";
-    send_time_data.style = BAR_GRAPH;
+    TimeSeries send_time_data(GetStreamName(stream_id) + " abs-send-time",
+                              BAR_GRAPH);
     ProcessPairs<LoggedRtpPacket, double>(NetworkDelayDiff_AbsSendTime,
                                           packet_stream, begin_time_,
                                           &send_time_data);
@@ -849,17 +839,15 @@ void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
       continue;
     }
 
-    TimeSeries capture_time_data;
-    capture_time_data.label = GetStreamName(stream_id) + " capture-time";
-    capture_time_data.style = LINE_GRAPH;
+    TimeSeries capture_time_data(GetStreamName(stream_id) + " capture-time",
+                                 LINE_GRAPH);
     AccumulatePairs<LoggedRtpPacket, double>(NetworkDelayDiff_CaptureTime,
                                              packet_stream, begin_time_,
                                              &capture_time_data);
     plot->series_list_.push_back(std::move(capture_time_data));
 
-    TimeSeries send_time_data;
-    send_time_data.label = GetStreamName(stream_id) + " abs-send-time";
-    send_time_data.style = LINE_GRAPH;
+    TimeSeries send_time_data(GetStreamName(stream_id) + " abs-send-time",
+                              LINE_GRAPH);
     AccumulatePairs<LoggedRtpPacket, double>(NetworkDelayDiff_AbsSendTime,
                                              packet_stream, begin_time_,
                                              &send_time_data);
@@ -874,14 +862,13 @@ void EventLogAnalyzer::CreateAccumulatedDelayChangeGraph(Plot* plot) {
 
 // Plot the fraction of packets lost (as perceived by the loss-based BWE).
 void EventLogAnalyzer::CreateFractionLossGraph(Plot* plot) {
-  plot->series_list_.push_back(TimeSeries());
+  TimeSeries* time_series =
+      plot->AddTimeSeries("Fraction lost", LINE_DOT_GRAPH);
   for (auto& bwe_update : bwe_loss_updates_) {
     float x = static_cast<float>(bwe_update.timestamp - begin_time_) / 1000000;
     float y = static_cast<float>(bwe_update.fraction_loss) / 255 * 100;
-    plot->series_list_.back().points.emplace_back(x, y);
+    time_series->points.emplace_back(x, y);
   }
-  plot->series_list_.back().label = "Fraction lost";
-  plot->series_list_.back().style = LINE_DOT_GRAPH;
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 10, "Percent lost packets", kBottomMargin,
@@ -921,7 +908,7 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
   size_t bytes_in_window = 0;
 
   // Calculate a moving average of the bitrate and store in a TimeSeries.
-  plot->series_list_.push_back(TimeSeries());
+  TimeSeries* time_series = plot->AddTimeSeries("Bitrate", LINE_GRAPH);
   for (uint64_t time = begin_time_; time < end_time_ + step_; time += step_) {
     while (window_index_end < packets.size() &&
            packets[window_index_end].timestamp < time) {
@@ -938,28 +925,19 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
         static_cast<float>(window_duration_) / 1000000;
     float x = static_cast<float>(time - begin_time_) / 1000000;
     float y = bytes_in_window * 8 / window_duration_in_seconds / 1000;
-    plot->series_list_.back().points.push_back(TimeSeriesPoint(x, y));
+    time_series->points.emplace_back(x, y);
   }
-
-  // Set labels.
-  if (desired_direction == webrtc::PacketDirection::kIncomingPacket) {
-    plot->series_list_.back().label = "Incoming bitrate";
-  } else if (desired_direction == webrtc::PacketDirection::kOutgoingPacket) {
-    plot->series_list_.back().label = "Outgoing bitrate";
-  }
-  plot->series_list_.back().style = LINE_GRAPH;
 
   // Overlay the send-side bandwidth estimate over the outgoing bitrate.
   if (desired_direction == kOutgoingPacket) {
-    plot->series_list_.push_back(TimeSeries());
+    TimeSeries* time_series =
+        plot->AddTimeSeries("Loss-based estimate", LINE_STEP_GRAPH);
     for (auto& bwe_update : bwe_loss_updates_) {
       float x =
           static_cast<float>(bwe_update.timestamp - begin_time_) / 1000000;
       float y = static_cast<float>(bwe_update.new_bitrate) / 1000;
-      plot->series_list_.back().points.emplace_back(x, y);
+      time_series->points.emplace_back(x, y);
     }
-    plot->series_list_.back().label = "Loss-based estimate";
-    plot->series_list_.back().style = LINE_STEP_GRAPH;
   }
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Bitrate (kbps)", kBottomMargin, kTopMargin);
@@ -983,9 +961,7 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
       continue;
     }
 
-    TimeSeries time_series;
-    time_series.label = GetStreamName(stream_id);
-    time_series.style = LINE_GRAPH;
+    TimeSeries time_series(GetStreamName(stream_id), LINE_GRAPH);
     MovingAverage<LoggedRtpPacket, double>(
         [](const LoggedRtpPacket& packet) {
           return rtc::Optional<double>(packet.total_length * 8.0 / 1000.0);
@@ -1033,12 +1009,8 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
   static const uint32_t kDefaultStartBitrateBps = 300000;
   cc.SetBweBitrates(0, kDefaultStartBitrateBps, -1);
 
-  TimeSeries time_series;
-  time_series.label = "Delay-based estimate";
-  time_series.style = LINE_DOT_GRAPH;
-  TimeSeries acked_time_series;
-  acked_time_series.label = "Acked bitrate";
-  acked_time_series.style = LINE_DOT_GRAPH;
+  TimeSeries time_series("Delay-based estimate", LINE_DOT_GRAPH);
+  TimeSeries acked_time_series("Acked bitrate", LINE_DOT_GRAPH);
 
   auto rtp_iterator = outgoing_rtp.begin();
   auto rtcp_iterator = incoming_rtcp.begin();
@@ -1151,9 +1123,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   SimulatedClock clock(0);
   TransportFeedbackAdapter feedback_adapter(&clock);
 
-  TimeSeries time_series;
-  time_series.label = "Network Delay Change";
-  time_series.style = LINE_DOT_GRAPH;
+  TimeSeries time_series("Network Delay Change", LINE_DOT_GRAPH);
   int64_t estimated_base_delay_ms = std::numeric_limits<int64_t>::max();
 
   auto rtp_iterator = outgoing_rtp.begin();
@@ -1254,9 +1224,8 @@ void EventLogAnalyzer::CreateTimestampGraph(Plot* plot) {
     StreamId stream_id = kv.first;
 
     {
-      TimeSeries timestamp_data;
-      timestamp_data.label = GetStreamName(stream_id) + " capture-time";
-      timestamp_data.style = LINE_DOT_GRAPH;
+      TimeSeries timestamp_data(GetStreamName(stream_id) + " capture-time",
+                                LINE_DOT_GRAPH);
       for (LoggedRtpPacket packet : rtp_packets) {
         float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
         float y = packet.header.timestamp;
@@ -1269,9 +1238,8 @@ void EventLogAnalyzer::CreateTimestampGraph(Plot* plot) {
       auto kv = rtcp_packets_.find(stream_id);
       if (kv != rtcp_packets_.end()) {
         const auto& packets = kv->second;
-        TimeSeries timestamp_data;
-        timestamp_data.label = GetStreamName(stream_id) + " rtcp capture-time";
-        timestamp_data.style = LINE_DOT_GRAPH;
+        TimeSeries timestamp_data(
+            GetStreamName(stream_id) + " rtcp capture-time", LINE_DOT_GRAPH);
         for (const LoggedRtcpPacket& rtcp : packets) {
           if (rtcp.type != kRtcpSr)
             continue;
@@ -1292,9 +1260,8 @@ void EventLogAnalyzer::CreateTimestampGraph(Plot* plot) {
 }
 
 void EventLogAnalyzer::CreateAudioEncoderTargetBitrateGraph(Plot* plot) {
-  plot->series_list_.push_back(TimeSeries());
-  plot->series_list_.back().style = LINE_DOT_GRAPH;
-  plot->series_list_.back().label = "Audio encoder target bitrate";
+  TimeSeries* time_series =
+      plot->AddTimeSeries("Audio encoder target bitrate", LINE_DOT_GRAPH);
   ProcessPoints<AudioNetworkAdaptationEvent>(
       [](const AudioNetworkAdaptationEvent& ana_event) -> rtc::Optional<float> {
         if (ana_event.config.bitrate_bps)
@@ -1302,17 +1269,15 @@ void EventLogAnalyzer::CreateAudioEncoderTargetBitrateGraph(Plot* plot) {
               static_cast<float>(*ana_event.config.bitrate_bps));
         return rtc::Optional<float>();
       },
-      audio_network_adaptation_events_, begin_time_,
-      &plot->series_list_.back());
+      audio_network_adaptation_events_, begin_time_, time_series);
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Bitrate (bps)", kBottomMargin, kTopMargin);
   plot->SetTitle("Reported audio encoder target bitrate");
 }
 
 void EventLogAnalyzer::CreateAudioEncoderFrameLengthGraph(Plot* plot) {
-  plot->series_list_.push_back(TimeSeries());
-  plot->series_list_.back().style = LINE_DOT_GRAPH;
-  plot->series_list_.back().label = "Audio encoder frame length";
+  TimeSeries* time_series =
+      plot->AddTimeSeries("Audio encoder frame length", LINE_DOT_GRAPH);
   ProcessPoints<AudioNetworkAdaptationEvent>(
       [](const AudioNetworkAdaptationEvent& ana_event) {
         if (ana_event.config.frame_length_ms)
@@ -1320,8 +1285,7 @@ void EventLogAnalyzer::CreateAudioEncoderFrameLengthGraph(Plot* plot) {
               static_cast<float>(*ana_event.config.frame_length_ms));
         return rtc::Optional<float>();
       },
-      audio_network_adaptation_events_, begin_time_,
-      &plot->series_list_.back());
+      audio_network_adaptation_events_, begin_time_, time_series);
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Frame length (ms)", kBottomMargin, kTopMargin);
   plot->SetTitle("Reported audio encoder frame length");
@@ -1329,9 +1293,8 @@ void EventLogAnalyzer::CreateAudioEncoderFrameLengthGraph(Plot* plot) {
 
 void EventLogAnalyzer::CreateAudioEncoderUplinkPacketLossFractionGraph(
     Plot* plot) {
-  plot->series_list_.push_back(TimeSeries());
-  plot->series_list_.back().style = LINE_DOT_GRAPH;
-  plot->series_list_.back().label = "Audio encoder uplink packet loss fraction";
+  TimeSeries* time_series = plot->AddTimeSeries(
+      "Audio encoder uplink packet loss fraction", LINE_DOT_GRAPH);
   ProcessPoints<AudioNetworkAdaptationEvent>(
       [](const AudioNetworkAdaptationEvent& ana_event) {
         if (ana_event.config.uplink_packet_loss_fraction)
@@ -1339,8 +1302,7 @@ void EventLogAnalyzer::CreateAudioEncoderUplinkPacketLossFractionGraph(
               *ana_event.config.uplink_packet_loss_fraction));
         return rtc::Optional<float>();
       },
-      audio_network_adaptation_events_, begin_time_,
-      &plot->series_list_.back());
+      audio_network_adaptation_events_, begin_time_, time_series);
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 10, "Percent lost packets", kBottomMargin,
                           kTopMargin);
@@ -1348,9 +1310,8 @@ void EventLogAnalyzer::CreateAudioEncoderUplinkPacketLossFractionGraph(
 }
 
 void EventLogAnalyzer::CreateAudioEncoderEnableFecGraph(Plot* plot) {
-  plot->series_list_.push_back(TimeSeries());
-  plot->series_list_.back().style = LINE_DOT_GRAPH;
-  plot->series_list_.back().label = "Audio encoder FEC";
+  TimeSeries* time_series =
+      plot->AddTimeSeries("Audio encoder FEC", LINE_DOT_GRAPH);
   ProcessPoints<AudioNetworkAdaptationEvent>(
       [](const AudioNetworkAdaptationEvent& ana_event) {
         if (ana_event.config.enable_fec)
@@ -1358,17 +1319,15 @@ void EventLogAnalyzer::CreateAudioEncoderEnableFecGraph(Plot* plot) {
               static_cast<float>(*ana_event.config.enable_fec));
         return rtc::Optional<float>();
       },
-      audio_network_adaptation_events_, begin_time_,
-      &plot->series_list_.back());
+      audio_network_adaptation_events_, begin_time_, time_series);
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "FEC (false/true)", kBottomMargin, kTopMargin);
   plot->SetTitle("Reported audio encoder FEC");
 }
 
 void EventLogAnalyzer::CreateAudioEncoderEnableDtxGraph(Plot* plot) {
-  plot->series_list_.push_back(TimeSeries());
-  plot->series_list_.back().style = LINE_DOT_GRAPH;
-  plot->series_list_.back().label = "Audio encoder DTX";
+  TimeSeries* time_series =
+      plot->AddTimeSeries("Audio encoder DTX", LINE_DOT_GRAPH);
   ProcessPoints<AudioNetworkAdaptationEvent>(
       [](const AudioNetworkAdaptationEvent& ana_event) {
         if (ana_event.config.enable_dtx)
@@ -1376,17 +1335,15 @@ void EventLogAnalyzer::CreateAudioEncoderEnableDtxGraph(Plot* plot) {
               static_cast<float>(*ana_event.config.enable_dtx));
         return rtc::Optional<float>();
       },
-      audio_network_adaptation_events_, begin_time_,
-      &plot->series_list_.back());
+      audio_network_adaptation_events_, begin_time_, time_series);
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "DTX (false/true)", kBottomMargin, kTopMargin);
   plot->SetTitle("Reported audio encoder DTX");
 }
 
 void EventLogAnalyzer::CreateAudioEncoderNumChannelsGraph(Plot* plot) {
-  plot->series_list_.push_back(TimeSeries());
-  plot->series_list_.back().style = LINE_DOT_GRAPH;
-  plot->series_list_.back().label = "Audio encoder number of channels";
+  TimeSeries* time_series =
+      plot->AddTimeSeries("Audio encoder number of channels", LINE_DOT_GRAPH);
   ProcessPoints<AudioNetworkAdaptationEvent>(
       [](const AudioNetworkAdaptationEvent& ana_event) {
         if (ana_event.config.num_channels)
@@ -1394,8 +1351,7 @@ void EventLogAnalyzer::CreateAudioEncoderNumChannelsGraph(Plot* plot) {
               static_cast<float>(*ana_event.config.num_channels));
         return rtc::Optional<float>();
       },
-      audio_network_adaptation_events_, begin_time_,
-      &plot->series_list_.back());
+      audio_network_adaptation_events_, begin_time_, time_series);
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Number of channels (1 (mono)/2 (stereo))",
                           kBottomMargin, kTopMargin);

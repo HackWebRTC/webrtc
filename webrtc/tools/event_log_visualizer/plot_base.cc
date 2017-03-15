@@ -71,5 +71,15 @@ void Plot::SetTitle(std::string title) {
   title_ = title;
 }
 
+TimeSeries* Plot::AddTimeSeries(const char* label, PlotStyle style) {
+  series_list_.emplace_back(label, style);
+  return &series_list_.back();
+}
+
+TimeSeries* Plot::AddTimeSeries(const std::string& label, PlotStyle style) {
+  series_list_.emplace_back(label, style);
+  return &series_list_.back();
+}
+
 }  // namespace plotting
 }  // namespace webrtc

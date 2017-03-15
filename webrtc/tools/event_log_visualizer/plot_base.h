@@ -28,6 +28,10 @@ struct TimeSeriesPoint {
 
 struct TimeSeries {
   TimeSeries() = default;
+  TimeSeries(const char* label, PlotStyle style)
+      : label(label), style(style), points() {}
+  TimeSeries(const std::string& label, PlotStyle style)
+      : label(label), style(style), points() {}
   TimeSeries(TimeSeries&& other)
       : label(std::move(other.label)),
         style(other.style),
@@ -96,6 +100,10 @@ class Plot {
 
   // Sets the title of the plot.
   void SetTitle(std::string title);
+
+  // Add a new TimeSeries to the plot.
+  TimeSeries* AddTimeSeries(const char* label, PlotStyle style);
+  TimeSeries* AddTimeSeries(const std::string& label, PlotStyle style);
 
   std::vector<TimeSeries> series_list_;
 
