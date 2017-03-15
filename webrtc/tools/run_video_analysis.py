@@ -14,9 +14,27 @@ import sys
 import time
 import glob
 import re
+import shutil
 
 # Used to time-stamp output files and directories
 CURRENT_TIME = time.strftime("%d_%m_%Y-%H:%M:%S")
+
+
+class Error(Exception):
+  pass
+
+
+class FfmpegError(Error):
+  pass
+
+
+class MagewellError(Error):
+  pass
+
+
+class CompareVideosError(Error):
+  pass
+
 
 def _ParseArgs():
   """Registers the command-line options."""
@@ -111,7 +129,8 @@ def CreateRecordingDirs(options):
 
   Args:
     options(object): Contains all the provided command line options.
-  Return:
+
+  Returns:
     record_paths(dict): key: value pair with reference and test file
         absolute paths.
   """
@@ -147,9 +166,12 @@ def RestartMagewellDevices(ref_video_device, test_video_device):
   This is due to Magewell capture devices have proven to be unstable after the
   first recording attempt.
 
-  Args:
+  Args :
     ref_video_device(string): reference recording device path.
     test_video_device(string): test recording device path
+
+  Raises:
+    MagewellError: If no magewell devices are found.
   """
 
   # Get the dev/videoN device name from the command line arguments.
@@ -166,7 +188,6 @@ def RestartMagewellDevices(ref_video_device, test_video_device):
   # Figure out the USB bus and port ID for each device.
   ref_magewell_path = str(ref_magewell_device).split('/')
   for directory in ref_magewell_path:
-
     # Find the folder with pattern "N-N", e.g. "4-3" or \
     # "[USB bus ID]-[USB port]"
     if re.match(r'^\d-\d$', directory):
@@ -174,17 +195,18 @@ def RestartMagewellDevices(ref_video_device, test_video_device):
 
   test_magewell_path = str(test_magewell_device).split('/')
   for directory in test_magewell_path:
-
     # Find the folder with pattern "N-N", e.g. "4-3" or \
     # "[USB bus ID]-[USB port]"
     if re.match(r'^\d-\d$', directory):
       magewell_usb_ports.append(directory)
 
-  print '\nResetting USB ports where magewell devices are connected...'
-
-  # Use the USB bus and port ID (e.g. 4-3) to unbind and bind the USB devices
-  # (i.e. soft eject and insert).
-  try:
+  # Abort early if no devices are found.
+  if len(magewell_usb_ports) == 0:
+    raise MagewellError('No magewell devices found.')
+  else:
+    print '\nResetting USB ports where magewell devices are connected...'
+    # Use the USB bus and port ID (e.g. 4-3) to unbind and bind the USB devices
+    # (i.e. soft eject and insert).
     for usb_port in magewell_usb_ports:
       echo_cmd = ['echo', usb_port]
       unbind_cmd = ['sudo', 'tee', '/sys/bus/usb/drivers/usb/unbind']
@@ -195,38 +217,38 @@ def RestartMagewellDevices(ref_video_device, test_video_device):
       echo_unbind = subprocess.Popen(echo_cmd, stdout=subprocess.PIPE)
       unbind = subprocess.Popen(unbind_cmd, stdin=echo_unbind.stdout)
       echo_unbind.stdout.close()
-      unbind.communicate()
       unbind.wait()
 
       echo_bind = subprocess.Popen(echo_cmd, stdout=subprocess.PIPE)
       bind = subprocess.Popen(bind_cmd, stdin=echo_bind.stdout)
       echo_bind.stdout.close()
-      bind.communicate()
       bind.wait()
-  except OSError as e:
-    print 'Error while resetting magewell devices: ' + e
-    raise
-
-  print 'Reset done!\n'
+  if bind.returncode == 0:
+    print 'Reset done!\n'
 
 
-def StartRecording(options, record_paths):
+def StartRecording(options, ref_file_location, test_file_location):
   """Starts recording from the two specified video devices.
 
   Args:
     options(object): Contains all the provided command line options.
     record_paths(dict): key: value pair with reference and test file
         absolute paths.
+
+  Returns:
+    recording_files_and_time(dict): key: value pair with the path to cropped
+        test and reference video files.
+
+  Raises:
+    FfmpegError: If the ffmpeg command fails.
   """
   ref_file_name = '%s_%s_ref.%s' % (options.app_name, CURRENT_TIME,
     options.video_container)
-  ref_file_location = os.path.join(record_paths['ref_rec_location'],
-      ref_file_name)
+  ref_file = os.path.join(ref_file_location, ref_file_name)
 
   test_file_name = '%s_%s_test.%s' % (options.app_name, CURRENT_TIME,
     options.video_container)
-  test_file_location = os.path.join(record_paths['test_rec_location'],
-      test_file_name)
+  test_file = os.path.join(test_file_location, test_file_name)
 
   # Reference video recorder command line.
   ref_cmd = [
@@ -240,7 +262,7 @@ def StartRecording(options, record_paths):
     '-s', options.frame_width + 'x' + options.frame_height,
     '-t', options.ref_duration,
     '-framerate', options.framerate,
-    ref_file_location
+    ref_file
   ]
 
   # Test video recorder command line.
@@ -255,7 +277,7 @@ def StartRecording(options, record_paths):
     '-s', options.frame_width + 'x' + options.frame_height,
     '-t', options.test_duration,
     '-framerate', options.framerate,
-    test_file_location
+    test_file
   ]
   print 'Trying to record from reference recorder...'
   ref_recorder = subprocess.Popen(ref_cmd, stderr=sys.stderr)
@@ -270,19 +292,17 @@ def StartRecording(options, record_paths):
   ref_recorder.wait()
 
   # ffmpeg does not abort when it fails, need to check return code.
-  assert ref_recorder.returncode == 0, (
-    'Ref recording failed, check ffmpeg output and device: %s'
-    % options.ref_video_device)
-  assert test_recorder.returncode == 0, (
-    'Test recording failed, check ffmpeg output and device: %s'
-    % options.test_video_device)
-
-  print 'Ref file recorded to: ' + os.path.abspath(ref_file_location)
-  print 'Test file recorded to: ' + os.path.abspath(test_file_location)
-  print 'Recording done!\n'
-  return FlipAndCropRecordings(options, test_file_name,
-    record_paths['test_rec_location'], ref_file_name,
-    record_paths['ref_rec_location'])
+  if ref_recorder.returncode != 0 or test_recorder.returncode != 0:
+    # Cleanup recording directories.
+    shutil.rmtree(ref_file_location)
+    shutil.rmtree(test_file_location)
+    raise FfmpegError('Recording failed, check ffmpeg output.')
+  else:
+    print 'Ref file recorded to: ' + os.path.abspath(ref_file)
+    print 'Test file recorded to: ' + os.path.abspath(test_file)
+    print 'Recording done!\n'
+    return FlipAndCropRecordings(options, test_file_name, test_file_location,
+        ref_file_name, ref_file_location)
 
 
 def FlipAndCropRecordings(options, test_file_name, test_file_location,
@@ -298,9 +318,13 @@ def FlipAndCropRecordings(options, test_file_name, test_file_location,
     test_file_location(string): Path to the test video file recording.
     ref_file_name(string): Name of the reference video file recording.
     ref_file_location(string): Path to the reference video file recording.
-  Return:
+
+  Returns:
     recording_files_and_time(dict): key: value pair with the path to cropped
         test and reference video files.
+
+  Raises:
+    FfmpegError: If the ffmpeg command fails.
   """
   print 'Trying to crop videos...'
 
@@ -336,11 +360,17 @@ def FlipAndCropRecordings(options, test_file_name, test_file_location,
 
   ref_crop = subprocess.Popen(ref_video_crop_cmd)
   ref_crop.wait()
-  print 'Ref file cropped to: ' + cropped_ref_file
+  test_crop = subprocess.Popen(test_video_crop_cmd)
+  test_crop.wait()
 
-  try:
-    test_crop = subprocess.Popen(test_video_crop_cmd)
-    test_crop.wait()
+  # ffmpeg does not abort when it fails, need to check return code.
+  if ref_crop.returncode != 0 or test_crop.returncode != 0:
+    # Cleanup recording directories.
+    shutil.rmtree(ref_file_location)
+    shutil.rmtree(test_file_location)
+    raise FfmpegError('Cropping failed, check ffmpeg output.')
+  else:
+    print 'Ref file cropped to: ' + cropped_ref_file
     print 'Test file cropped to: ' + cropped_test_file
     print 'Cropping done!\n'
 
@@ -349,14 +379,10 @@ def FlipAndCropRecordings(options, test_file_name, test_file_location,
       'cropped_test_file' : cropped_test_file,
       'cropped_ref_file' : cropped_ref_file
     }
-
     return cropped_recordings
-  except subprocess.CalledProcessError as e:
-    print 'Something went wrong during cropping: ' + e
-    raise
 
 
-def CompareVideos(options, recording_result):
+def CompareVideos(options, cropped_ref_file, cropped_test_file):
   """Runs the compare_video.py script from src/webrtc/tools using the file path.
 
   Uses the path from recording_result and writes the output to a file named
@@ -365,21 +391,22 @@ def CompareVideos(options, recording_result):
 
   Args:
     options(object): Contains all the provided command line options.
-    recording_files_and_time(dict): key: value pair with the path to cropped
-    test and reference video files
+    cropped_ref_file(string): Path to cropped reference video file.
+    cropped_test_file(string): Path to cropped test video file.
+
+  Raises:
+    CompareVideosError: If compare_videos.py fails.
   """
   print 'Starting comparison...'
   print 'Grab a coffee, this might take a few minutes...'
-  cropped_ref_file = recording_result['cropped_ref_file']
-  cropped_test_file = recording_result['cropped_test_file']
   compare_videos_script = os.path.abspath(options.compare_videos_script)
   rec_path = os.path.abspath(os.path.join(
-    os.path.dirname(recording_result['cropped_ref_file'])))
+    os.path.dirname(cropped_test_file)))
   result_file_name = os.path.join(rec_path, '%s_%s_result.txt') % (
     options.app_name, CURRENT_TIME)
 
-  # Find the crop dimensions (950 and 420) in the ref crop parameter string:
-  # 'hflip, crop=950:420:130:56'
+  # Find the crop dimensions (e.g. 950 and 420) in the ref crop parameter
+  # string: 'hflip, crop=950:420:130:56'
   for param in options.ref_crop_parameters.split('crop'):
     if param[0] == '=':
       crop_width = param.split(':')[0].split('=')[1]
@@ -401,15 +428,14 @@ def CompareVideos(options, recording_result):
     '--yuv_frame_width', crop_width
   ]
 
-  try:
-    with open(result_file_name, 'w') as f:
-      compare_video_recordings = subprocess.Popen(compare_cmd, stdout=f)
-      compare_video_recordings.wait()
-      print 'Result recorded to: ' + os.path.abspath(result_file_name)
-      print 'Comparison done!'
-  except subprocess.CalledProcessError as e:
-    print 'Something went wrong when trying to compare videos: ' + e
-    raise
+  with open(result_file_name, 'w') as f:
+    compare_video_recordings = subprocess.Popen(compare_cmd, stdout=f)
+    compare_video_recordings.wait()
+  if compare_video_recordings.returncode != 0:
+    raise CompareVideosError('Failed to perform comparison.')
+  else:
+    print 'Result recorded to: ' + os.path.abspath(result_file_name)
+    print 'Comparison done!'
 
 
 def main():
@@ -442,11 +468,13 @@ def main():
   options = _ParseArgs()
   RestartMagewellDevices(options.ref_video_device, options.test_video_device)
   record_paths = CreateRecordingDirs(options)
-  recording_result = StartRecording(options, record_paths)
+  recording_result = StartRecording(options, record_paths['ref_rec_location'],
+                                    record_paths['test_rec_location'])
 
   # Do not require compare_video.py script to run, no metrics will be generated.
   if options.compare_videos_script:
-    CompareVideos(options, recording_result)
+    CompareVideos(options, recording_result['cropped_ref_file'],
+                  recording_result['cropped_test_file'])
   else:
     print ('Skipping compare videos step due to compare_videos flag were not '
            'passed.')
