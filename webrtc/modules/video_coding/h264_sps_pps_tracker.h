@@ -42,8 +42,6 @@ class H264SpsPpsTracker {
 
   struct SpsInfo {
     size_t size = 0;
-    int width = -1;
-    int height = -1;
     std::unique_ptr<uint8_t[]> data;
   };
 

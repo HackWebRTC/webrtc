@@ -45,7 +45,6 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
   bool insert_packet = codec_header.nalus_length == 0 ? true : false;
 
   int pps_id = -1;
-  int sps_id = -1;
   size_t required_size = 0;
   for (size_t i = 0; i < codec_header.nalus_length; ++i) {
     const NaluInfo& nalu = codec_header.nalus[i];
@@ -56,8 +55,6 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
         sps_data_[nalu.sps_id].data.reset(new uint8_t[nalu.size]);
         memcpy(sps_data_[nalu.sps_id].data.get(), data + nalu.offset,
                nalu.size);
-        sps_data_[nalu.sps_id].width = packet->width;
-        sps_data_[nalu.sps_id].height = packet->height;
         break;
       }
       case H264::NaluType::kPps: {
@@ -86,8 +83,7 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
             return kRequestKeyframe;
           }
 
-          sps_id = pps->second.sps_id;
-          auto sps = sps_data_.find(sps_id);
+          auto sps = sps_data_.find(pps->second.sps_id);
           if (sps == sps_data_.end()) {
             LOG(LS_WARNING) << "No SPS with id << "
                             << pps_data_[nalu.pps_id].sps_id << " received";
@@ -181,8 +177,6 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
     memcpy(insert_at, data, data_size);
   }
 
-  packet->width = sps_data_[sps_id].width;
-  packet->height = sps_data_[sps_id].height;
   packet->dataPtr = buffer;
   packet->sizeBytes = required_size;
   return kInsert;
@@ -228,8 +222,6 @@ void H264SpsPpsTracker::InsertSpsPpsNalus(const std::vector<uint8_t>& sps,
 
   SpsInfo sps_info;
   sps_info.size = sps.size();
-  sps_info.width = parsed_sps->width;
-  sps_info.height = parsed_sps->height;
   uint8_t* sps_data = new uint8_t[sps_info.size];
   memcpy(sps_data, sps.data(), sps_info.size);
   sps_info.data.reset(sps_data);
