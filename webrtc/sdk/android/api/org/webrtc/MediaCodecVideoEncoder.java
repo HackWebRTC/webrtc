@@ -454,6 +454,7 @@ public class MediaCodecVideoEncoder {
       this.type = type;
       if (mediaCodec == null) {
         Logging.e(TAG, "Can not create media encoder");
+        release();
         return false;
       }
       mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -471,6 +472,7 @@ public class MediaCodecVideoEncoder {
 
     } catch (IllegalStateException e) {
       Logging.e(TAG, "initEncode failed", e);
+      release();
       return false;
     }
     return true;
@@ -544,36 +546,47 @@ public class MediaCodecVideoEncoder {
     Logging.d(TAG, "Java releaseEncoder");
     checkOnMediaCodecThread();
 
-    // Run Mediacodec stop() and release() on separate thread since sometime
-    // Mediacodec.stop() may hang.
-    final CountDownLatch releaseDone = new CountDownLatch(1);
+    class CaughtException {
+      Exception e;
+    }
+    final CaughtException caughtException = new CaughtException();
+    boolean stopHung = false;
 
-    Runnable runMediaCodecRelease = new Runnable() {
-      @Override
-      public void run() {
-        try {
+    if (mediaCodec != null) {
+      // Run Mediacodec stop() and release() on separate thread since sometime
+      // Mediacodec.stop() may hang.
+      final CountDownLatch releaseDone = new CountDownLatch(1);
+
+      Runnable runMediaCodecRelease = new Runnable() {
+        @Override
+        public void run() {
           Logging.d(TAG, "Java releaseEncoder on release thread");
-          mediaCodec.stop();
-          mediaCodec.release();
+          try {
+            mediaCodec.stop();
+          } catch (Exception e) {
+            Logging.e(TAG, "Media encoder stop failed", e);
+          }
+          try {
+            mediaCodec.release();
+          } catch (Exception e) {
+            Logging.e(TAG, "Media encoder release failed", e);
+            caughtException.e = e;
+          }
           Logging.d(TAG, "Java releaseEncoder on release thread done");
-        } catch (Exception e) {
-          Logging.e(TAG, "Media encoder release failed", e);
-        }
-        releaseDone.countDown();
-      }
-    };
-    new Thread(runMediaCodecRelease).start();
 
-    if (!ThreadUtils.awaitUninterruptibly(releaseDone, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
-      Logging.e(TAG, "Media encoder release timeout");
-      codecErrors++;
-      if (errorCallback != null) {
-        Logging.e(TAG, "Invoke codec error callback. Errors: " + codecErrors);
-        errorCallback.onMediaCodecVideoEncoderCriticalError(codecErrors);
+          releaseDone.countDown();
+        }
+      };
+      new Thread(runMediaCodecRelease).start();
+
+      if (!ThreadUtils.awaitUninterruptibly(releaseDone, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
+        Logging.e(TAG, "Media encoder release timeout");
+        stopHung = true;
       }
+
+      mediaCodec = null;
     }
 
-    mediaCodec = null;
     mediaCodecThread = null;
     if (drawer != null) {
       drawer.release();
@@ -588,6 +601,25 @@ public class MediaCodecVideoEncoder {
       inputSurface = null;
     }
     runningInstance = null;
+
+    if (stopHung) {
+      codecErrors++;
+      if (errorCallback != null) {
+        Logging.e(TAG, "Invoke codec error callback. Errors: " + codecErrors);
+        errorCallback.onMediaCodecVideoEncoderCriticalError(codecErrors);
+      }
+      throw new RuntimeException("Media encoder release timeout.");
+    }
+
+    // Re-throw any runtime exception caught inside the other thread. Since this is an invoke, add
+    // stack trace for the waiting thread as well.
+    if (caughtException.e != null) {
+      final RuntimeException runtimeException = new RuntimeException(caughtException.e);
+      runtimeException.setStackTrace(ThreadUtils.concatStackTraces(
+          caughtException.e.getStackTrace(), runtimeException.getStackTrace()));
+      throw runtimeException;
+    }
+
     Logging.d(TAG, "Java releaseEncoder done");
   }
 

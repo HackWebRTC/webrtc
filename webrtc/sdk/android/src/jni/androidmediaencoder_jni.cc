@@ -456,6 +456,11 @@ bool MediaCodecVideoEncoder::EncodeTask::Run() {
   // about it and let the next app-called API method reveal the borkedness.
   encoder_->DeliverPendingOutputs(jni);
 
+  if (!encoder_) {
+    // Encoder can be destroyed in DeliverPendingOutputs.
+    return true;
+  }
+
   // Call log statistics here so it's called even if no frames are being
   // delivered.
   encoder_->LogStatistics(false);
@@ -545,8 +550,6 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   gof_idx_ = 0;
   last_frame_received_ms_ = -1;
   frames_received_since_last_key_ = kMinKeyFrameInterval;
-  weak_factory_.reset(new rtc::WeakPtrFactory<MediaCodecVideoEncoder>(this));
-  encode_task_.reset(new EncodeTask(weak_factory_->GetWeakPtr()));
 
   // We enforce no extra stride/padding in the format creation step.
   jobject j_video_codec_enum = JavaEnumFromIndexAndClassName(
@@ -620,6 +623,9 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
 #endif
     inited_ = true;
   }
+  weak_factory_.reset(new rtc::WeakPtrFactory<MediaCodecVideoEncoder>(this));
+  encode_task_.reset(new EncodeTask(weak_factory_->GetWeakPtr()));
+
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -884,6 +890,8 @@ int32_t MediaCodecVideoEncoder::Release() {
   ALOGD << "EncoderRelease: Frames received: " << frames_received_
         << ". Encoded: " << frames_encoded_
         << ". Dropped: " << frames_dropped_media_encoder_;
+  encode_task_.reset(nullptr);
+  weak_factory_.reset(nullptr);
   ScopedLocalRefFrame local_ref_frame(jni);
   for (size_t i = 0; i < input_buffers_.size(); ++i)
     jni->DeleteGlobalRef(input_buffers_[i]);
@@ -901,8 +909,6 @@ int32_t MediaCodecVideoEncoder::Release() {
     inited_ = false;
   }
   use_surface_ = false;
-  encode_task_.reset(nullptr);
-  weak_factory_.reset(nullptr);
   ALOGD << "EncoderRelease done.";
   return WEBRTC_VIDEO_CODEC_OK;
 }
