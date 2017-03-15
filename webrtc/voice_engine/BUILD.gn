@@ -78,7 +78,6 @@ rtc_static_library("voice_engine") {
     "include/voe_codec.h",
     "include/voe_errors.h",
     "include/voe_file.h",
-    "include/voe_hardware.h",
     "include/voe_network.h",
     "include/voe_rtp_rtcp.h",
     "monitor_module.h",
@@ -100,8 +99,6 @@ rtc_static_library("voice_engine") {
     "voe_codec_impl.h",
     "voe_file_impl.cc",
     "voe_file_impl.h",
-    "voe_hardware_impl.cc",
-    "voe_hardware_impl.h",
     "voe_network_impl.cc",
     "voe_network_impl.h",
     "voe_rtp_rtcp_impl.cc",
@@ -272,8 +269,6 @@ if (rtc_include_tests) {
         "test/auto_test/standard/dtmf_test.cc",
         "test/auto_test/standard/file_before_streaming_test.cc",
         "test/auto_test/standard/file_test.cc",
-        "test/auto_test/standard/hardware_before_initializing_test.cc",
-        "test/auto_test/standard/hardware_test.cc",
         "test/auto_test/standard/mixing_test.cc",
         "test/auto_test/standard/rtp_rtcp_before_streaming_test.cc",
         "test/auto_test/standard/rtp_rtcp_extensions.cc",
@@ -284,12 +279,6 @@ if (rtc_include_tests) {
         "test/auto_test/voe_standard_test.h",
         "test/auto_test/voe_test_defines.h",
       ]
-
-      if (!is_android) {
-        # Some tests are not supported on android yet, exclude these tests.
-        sources +=
-            [ "test/auto_test/standard/hardware_before_streaming_test.cc" ]
-      }
 
       defines = []
 

@@ -46,12 +46,6 @@ public:
     OutputMixer* output_mixer() { return _outputMixerPtr; }
     rtc::CriticalSection* crit_sec() { return &_apiCritPtr; }
     ProcessThread* process_thread() { return _moduleProcessThreadPtr.get(); }
-    AudioDeviceModule::AudioLayer audio_device_layer() const {
-      return _audioDeviceLayer;
-    }
-    void set_audio_device_layer(AudioDeviceModule::AudioLayer layer) {
-      _audioDeviceLayer = layer;
-    }
 
     int NumOfSendingChannels();
     int NumOfPlayingChannels();
@@ -72,8 +66,6 @@ protected:
     TransmitMixer* _transmitMixerPtr;
     std::unique_ptr<AudioProcessing> audioproc_;
     std::unique_ptr<ProcessThread> _moduleProcessThreadPtr;
-
-    AudioDeviceModule::AudioLayer _audioDeviceLayer;
 
     SharedData();
     virtual ~SharedData();

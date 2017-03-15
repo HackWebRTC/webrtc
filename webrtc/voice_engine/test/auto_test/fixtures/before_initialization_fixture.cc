@@ -21,7 +21,6 @@ BeforeInitializationFixture::BeforeInitializationFixture()
   voe_rtp_rtcp_ = webrtc::VoERTP_RTCP::GetInterface(voice_engine_);
   voe_network_ = webrtc::VoENetwork::GetInterface(voice_engine_);
   voe_file_ = webrtc::VoEFile::GetInterface(voice_engine_);
-  voe_hardware_ = webrtc::VoEHardware::GetInterface(voice_engine_);
 }
 
 BeforeInitializationFixture::~BeforeInitializationFixture() {
@@ -30,7 +29,6 @@ BeforeInitializationFixture::~BeforeInitializationFixture() {
   voe_rtp_rtcp_->Release();
   voe_network_->Release();
   voe_file_->Release();
-  voe_hardware_->Release();
 
   EXPECT_TRUE(webrtc::VoiceEngine::Delete(voice_engine_));
 }

@@ -40,7 +40,6 @@ SharedData::SharedData()
                                                 _engineStatistics,
                                                 _channelManager);
     }
-    _audioDeviceLayer = AudioDeviceModule::kPlatformDefaultAudio;
 }
 
 SharedData::~SharedData()
