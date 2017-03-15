@@ -288,20 +288,35 @@ bool DxgiOutputDuplicator::DoDetectUpdatedRegion(
   dirty_rects_count = buff_size / sizeof(RECT);
 
   while (move_rects_count > 0) {
-    updated_region->AddRect(
-        RotateRect(DesktopRect::MakeXYWH(move_rects->SourcePoint.x,
-                                         move_rects->SourcePoint.y,
-                                         move_rects->DestinationRect.right -
-                                             move_rects->DestinationRect.left,
-                                         move_rects->DestinationRect.bottom -
-                                             move_rects->DestinationRect.top),
-                   unrotated_size_, rotation_));
-    updated_region->AddRect(
-        RotateRect(DesktopRect::MakeLTRB(move_rects->DestinationRect.left,
-                                         move_rects->DestinationRect.top,
-                                         move_rects->DestinationRect.right,
-                                         move_rects->DestinationRect.bottom),
-                   unrotated_size_, rotation_));
+    // DirectX capturer API may randomly return unmoved move_rects, which should
+    // be skipped to avoid unnecessary wasting of differing and encoding
+    // resources.
+    // By using testing application it2me_standalone_host_main, this check
+    // reduces average capture time by 0.375% (4.07 -> 4.055), and average
+    // encode time by 0.313% (8.042 -> 8.016) without other impacts.
+    if (move_rects->SourcePoint.x != move_rects->DestinationRect.left ||
+        move_rects->SourcePoint.y != move_rects->DestinationRect.top) {
+      updated_region->AddRect(
+          RotateRect(DesktopRect::MakeXYWH(move_rects->SourcePoint.x,
+                                           move_rects->SourcePoint.y,
+                                           move_rects->DestinationRect.right -
+                                               move_rects->DestinationRect.left,
+                                           move_rects->DestinationRect.bottom -
+                                               move_rects->DestinationRect.top),
+                     unrotated_size_, rotation_));
+      updated_region->AddRect(
+          RotateRect(DesktopRect::MakeLTRB(move_rects->DestinationRect.left,
+                                           move_rects->DestinationRect.top,
+                                           move_rects->DestinationRect.right,
+                                           move_rects->DestinationRect.bottom),
+                     unrotated_size_, rotation_));
+    } else {
+      LOG(LS_INFO) << "Unmoved move_rect detected, ["
+                   << move_rects->DestinationRect.left << ", "
+                   << move_rects->DestinationRect.top << "] - ["
+                   << move_rects->DestinationRect.right << ", "
+                   << move_rects->DestinationRect.bottom << "].";
+    }
     move_rects++;
     move_rects_count--;
   }
