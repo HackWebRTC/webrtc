@@ -379,8 +379,17 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(files, ['base_unittests'])
     self.assertEqual(command, [
         './../../build/android/test_wrapper/logdog_wrapper.py',
-        '--target', 'base_unittests',
-        '--logdog-bin-cmd', '../../bin/logdog_butler',
+        '--logdog-bin-cmd', './../../bin/logdog_butler',
+        '--project', 'chromium',
+        '--service-account-json',
+        '/creds/service_accounts/service-account-luci-logdog-publisher.json',
+        '--prefix', 'android/swarming/logcats/${SWARMING_TASK_ID}',
+        '--source', '${ISOLATED_OUTDIR}/logcats',
+        '--name', 'unified_logcats',
+        'bin/run_base_unittests',
+        '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
+        '--target-devices-file', '${SWARMING_BOT_FILE}',
+        '-v',
     ])
 
   def test_gn_gen_swarming_android_junit_test(self):
@@ -410,8 +419,16 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(files, ['base_unittests'])
     self.assertEqual(command, [
         './../../build/android/test_wrapper/logdog_wrapper.py',
-        '--target', 'base_unittests',
-        '--logdog-bin-cmd', '../../bin/logdog_butler',
+        '--logdog-bin-cmd', './../../bin/logdog_butler',
+        '--project', 'chromium',
+        '--service-account-json',
+        '/creds/service_accounts/service-account-luci-logdog-publisher.json',
+        '--prefix', 'android/swarming/logcats/${SWARMING_TASK_ID}',
+        '--source', '${ISOLATED_OUTDIR}/logcats',
+        '--name', 'unified_logcats',
+        'bin/run_base_unittests',
+        '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
+        '-v',
     ])
 
   def test_gn_gen_non_parallel_console_test_launcher(self):
