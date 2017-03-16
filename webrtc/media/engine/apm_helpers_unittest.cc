@@ -123,25 +123,21 @@ TEST(ApmHelpersTest, AgcStatus_EnableDisable) {
   TestHelper helper;
   GainControl* gc = helper.apm()->gain_control();
 #if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
-  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), false,
-                            kAgcFixedDigital);
+  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), false);
   EXPECT_FALSE(gc->is_enabled());
   EXPECT_EQ(GainControl::kFixedDigital, gc->mode());
 
-  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), true,
-                            kAgcFixedDigital);
+  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), true);
   EXPECT_TRUE(gc->is_enabled());
   EXPECT_EQ(GainControl::kFixedDigital, gc->mode());
 #else
   EXPECT_CALL(*helper.adm(), SetAGC(false)).WillOnce(testing::Return(0));
-  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), false,
-                            kAgcAdaptiveAnalog);
+  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), false);
   EXPECT_FALSE(gc->is_enabled());
   EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
 
   EXPECT_CALL(*helper.adm(), SetAGC(true)).WillOnce(testing::Return(0));
-  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), true,
-                            kAgcAdaptiveAnalog);
+  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), true);
   EXPECT_TRUE(gc->is_enabled());
   EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
 #endif

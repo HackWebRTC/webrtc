@@ -410,68 +410,6 @@ struct AudioDecodingCallStats {
   int decoded_muted_output;  // Number of calls returning a muted state output.
 };
 
-// Type of Noise Suppression.
-enum NsModes {
-  kNsUnchanged = 0,   // previously set mode
-  kNsDefault,         // platform default
-  kNsConference,      // conferencing default
-  kNsLowSuppression,  // lowest suppression
-  kNsModerateSuppression,
-  kNsHighSuppression,
-  kNsVeryHighSuppression,  // highest suppression
-};
-
-// Type of Automatic Gain Control.
-enum AgcModes {
-  kAgcUnchanged = 0,  // previously set mode
-  kAgcDefault,        // platform default
-  // adaptive mode for use when analog volume control exists (e.g. for
-  // PC softphone)
-  kAgcAdaptiveAnalog,
-  // scaling takes place in the digital domain (e.g. for conference servers
-  // and embedded devices)
-  kAgcAdaptiveDigital,
-  // can be used on embedded devices where the capture signal level
-  // is predictable
-  kAgcFixedDigital
-};
-
-// Type of Echo Control.
-enum EcModes {
-  kEcUnchanged = 0,  // previously set mode
-  kEcDefault,        // platform default
-  kEcConference,     // conferencing default (aggressive AEC)
-  kEcAec,            // Acoustic Echo Cancellation
-  kEcAecm,           // AEC mobile
-};
-
-// Mode of AECM.
-enum AecmModes {
-  kAecmQuietEarpieceOrHeadset = 0,
-  // Quiet earpiece or headset use
-  kAecmEarpiece,         // most earpiece use
-  kAecmLoudEarpiece,     // Loud earpiece or quiet speakerphone use
-  kAecmSpeakerphone,     // most speakerphone use (default)
-  kAecmLoudSpeakerphone  // Loud speakerphone
-};
-
-// AGC configuration parameters
-struct AgcConfig {
-  unsigned short targetLeveldBOv;
-  unsigned short digitalCompressionGaindB;
-  bool limiterEnable;
-};
-
-enum StereoChannel { kStereoLeft = 0, kStereoRight, kStereoBoth };
-
-// Audio device layers
-enum AudioLayers {
-  kAudioPlatformDefault = 0,
-  kAudioWindowsCore = 2,
-  kAudioLinuxAlsa = 3,
-  kAudioLinuxPulse = 4
-};
-
 // ==================================================================
 // Video specific types
 // ==================================================================

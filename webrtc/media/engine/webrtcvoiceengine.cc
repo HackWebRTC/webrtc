@@ -681,7 +681,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 
   // kEcConference is AEC with high suppression.
   webrtc::EcModes ec_mode = webrtc::kEcConference;
-  webrtc::AgcModes agc_mode = webrtc::kAgcAdaptiveAnalog;
   if (options.aecm_generate_comfort_noise) {
     LOG(LS_VERBOSE) << "Comfort noise explicitly set to "
                     << *options.aecm_generate_comfort_noise
@@ -700,9 +699,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
 #endif
 
 #if defined(WEBRTC_IOS) || defined(ANDROID)
-  // Set the AGC mode for iOS as well despite disabling it above, to avoid
-  // unsupported configuration errors from webrtc.
-  agc_mode = webrtc::kAgcFixedDigital;
   options.typing_detection = rtc::Optional<bool>(false);
   options.experimental_agc = rtc::Optional<bool>(false);
   options.extended_filter_aec = rtc::Optional<bool>(false);
@@ -770,8 +766,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         LOG(LS_INFO) << "Disabling AGC since built-in AGC will be used instead";
       }
     }
-    webrtc::apm_helpers::SetAgcStatus(
-        apm(), adm(), *options.auto_gain_control, agc_mode);
+    webrtc::apm_helpers::SetAgcStatus(apm(), adm(), *options.auto_gain_control);
   }
 
   if (options.tx_agc_target_dbov || options.tx_agc_digital_compression_gain ||
