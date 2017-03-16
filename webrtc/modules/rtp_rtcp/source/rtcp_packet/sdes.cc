@@ -20,6 +20,7 @@
 namespace webrtc {
 namespace rtcp {
 constexpr uint8_t Sdes::kPacketType;
+constexpr size_t Sdes::kMaxNumberOfChunks;
 // Source Description (SDES) (RFC 3550).
 //
 //         0                   1                   2                   3

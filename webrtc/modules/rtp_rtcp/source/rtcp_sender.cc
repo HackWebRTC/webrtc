@@ -327,7 +327,10 @@ int32_t RTCPSender::AddMixedCNAME(uint32_t SSRC, const char* c_name) {
   RTC_DCHECK(c_name);
   RTC_DCHECK_LT(strlen(c_name), RTCP_CNAME_SIZE);
   rtc::CritScope lock(&critical_section_rtcp_sender_);
-  if (csrc_cnames_.size() >= kRtpCsrcSize)
+  // One spot is reserved for ssrc_/cname_.
+  // TODO(danilchap): Add support for more than 30 contributes by sending
+  // several sdes packets.
+  if (csrc_cnames_.size() >= rtcp::Sdes::kMaxNumberOfChunks - 1)
     return -1;
 
   csrc_cnames_[SSRC] = c_name;
@@ -463,8 +466,8 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSDES(
   rtcp::Sdes* sdes = new rtcp::Sdes();
   sdes->AddCName(ssrc_, cname_);
 
-  for (const auto it : csrc_cnames_)
-    sdes->AddCName(it.first, it.second);
+  for (const auto& it : csrc_cnames_)
+    RTC_CHECK(sdes->AddCName(it.first, it.second));
 
   return std::unique_ptr<rtcp::RtcpPacket>(sdes);
 }

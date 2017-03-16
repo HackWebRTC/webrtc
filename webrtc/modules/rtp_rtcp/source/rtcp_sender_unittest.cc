@@ -387,6 +387,19 @@ TEST_F(RtcpSenderTest, SendSdes) {
   EXPECT_EQ("alice@host", parser()->sdes()->chunks()[0].cname);
 }
 
+TEST_F(RtcpSenderTest, SendSdesWithMaxChunks) {
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
+  EXPECT_EQ(0, rtcp_sender_->SetCNAME("alice@host"));
+  const char cname[] = "smith@host";
+  for (size_t i = 0; i < 30; ++i) {
+    const uint32_t csrc = 0x1234 + i;
+    EXPECT_EQ(0, rtcp_sender_->AddMixedCNAME(csrc, cname));
+  }
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpSdes));
+  EXPECT_EQ(1, parser()->sdes()->num_packets());
+  EXPECT_EQ(31U, parser()->sdes()->chunks().size());
+}
+
 TEST_F(RtcpSenderTest, SdesIncludedInCompoundPacket) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
   EXPECT_EQ(0, rtcp_sender_->SetCNAME("alice@host"));
