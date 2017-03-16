@@ -318,15 +318,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   const Clock* clock() const { return clock_; }
 
-  // TODO(nisse): Demote all member variables to private, as soon as
-  // downstream code is updated to use the above accessor methods.
-  RTPSender rtp_sender_;
-
-  RTCPSender rtcp_sender_;
-  RTCPReceiver rtcp_receiver_;
-
-  const Clock* const clock_;
-
  private:
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, Rtt);
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImplTest, RttForReceiverOnly);
@@ -337,6 +328,12 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   int64_t rtt_ms() const;
 
   bool TimeToSendFullNackList(int64_t now) const;
+
+  RTPSender rtp_sender_;
+  RTCPSender rtcp_sender_;
+  RTCPReceiver rtcp_receiver_;
+
+  const Clock* const clock_;
 
   const bool audio_;
   int64_t last_process_time_;
