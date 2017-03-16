@@ -1616,10 +1616,14 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
         metrics.echo_return_loss_enhancement);
     stats.residual_echo_return_loss.Set(metrics.residual_echo_return_loss);
   }
-  stats.residual_echo_likelihood =
-      private_submodules_->residual_echo_detector->echo_likelihood();
-  stats.residual_echo_likelihood_recent_max =
-      private_submodules_->residual_echo_detector->echo_likelihood_recent_max();
+  {
+    rtc::CritScope cs_capture(&crit_capture_);
+    stats.residual_echo_likelihood =
+        private_submodules_->residual_echo_detector->echo_likelihood();
+    stats.residual_echo_likelihood_recent_max =
+        private_submodules_->residual_echo_detector
+            ->echo_likelihood_recent_max();
+  }
   public_submodules_->echo_cancellation->GetDelayMetrics(
       &stats.delay_median, &stats.delay_standard_deviation,
       &stats.fraction_poor_delays);
