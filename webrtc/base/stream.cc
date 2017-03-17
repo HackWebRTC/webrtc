@@ -238,61 +238,6 @@ void StreamAdapterInterface::OnEvent(StreamInterface* stream,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// StreamTap
-///////////////////////////////////////////////////////////////////////////////
-
-StreamTap::StreamTap(StreamInterface* stream, StreamInterface* tap)
-    : StreamAdapterInterface(stream), tap_(), tap_result_(SR_SUCCESS),
-        tap_error_(0) {
-  AttachTap(tap);
-}
-
-StreamTap::~StreamTap() = default;
-
-void StreamTap::AttachTap(StreamInterface* tap) {
-  tap_.reset(tap);
-}
-
-StreamInterface* StreamTap::DetachTap() {
-  return tap_.release();
-}
-
-StreamResult StreamTap::GetTapResult(int* error) {
-  if (error) {
-    *error = tap_error_;
-  }
-  return tap_result_;
-}
-
-StreamResult StreamTap::Read(void* buffer, size_t buffer_len,
-                             size_t* read, int* error) {
-  size_t backup_read;
-  if (!read) {
-    read = &backup_read;
-  }
-  StreamResult res = StreamAdapterInterface::Read(buffer, buffer_len,
-                                                  read, error);
-  if ((res == SR_SUCCESS) && (tap_result_ == SR_SUCCESS)) {
-    tap_result_ = tap_->WriteAll(buffer, *read, nullptr, &tap_error_);
-  }
-  return res;
-}
-
-StreamResult StreamTap::Write(const void* data, size_t data_len,
-                              size_t* written, int* error) {
-  size_t backup_written;
-  if (!written) {
-    written = &backup_written;
-  }
-  StreamResult res = StreamAdapterInterface::Write(data, data_len,
-                                                   written, error);
-  if ((res == SR_SUCCESS) && (tap_result_ == SR_SUCCESS)) {
-    tap_result_ = tap_->WriteAll(data, *written, nullptr, &tap_error_);
-  }
-  return res;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // NullStream
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -662,24 +607,6 @@ StreamResult MemoryStream::DoReserve(size_t size, int* error) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-ExternalMemoryStream::ExternalMemoryStream() {
-}
-
-ExternalMemoryStream::ExternalMemoryStream(void* data, size_t length) {
-  SetData(data, length);
-}
-
-ExternalMemoryStream::~ExternalMemoryStream() {
-}
-
-void ExternalMemoryStream::SetData(void* data, size_t length) {
-  data_length_ = buffer_length_ = length;
-  buffer_ = static_cast<char*>(data);
-  seek_position_ = 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // FifoBuffer
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -894,66 +821,6 @@ StreamResult FifoBuffer::WriteOffsetLocked(const void* buffer,
   return SR_SUCCESS;
 }
 
-
-
-///////////////////////////////////////////////////////////////////////////////
-// LoggingAdapter
-///////////////////////////////////////////////////////////////////////////////
-
-LoggingAdapter::LoggingAdapter(StreamInterface* stream, LoggingSeverity level,
-                               const std::string& label, bool hex_mode)
-    : StreamAdapterInterface(stream), level_(level), hex_mode_(hex_mode) {
-  set_label(label);
-}
-
-void LoggingAdapter::set_label(const std::string& label) {
-  label_.assign("[");
-  label_.append(label);
-  label_.append("]");
-}
-
-StreamResult LoggingAdapter::Read(void* buffer, size_t buffer_len,
-                                  size_t* read, int* error) {
-  size_t local_read; if (!read) read = &local_read;
-  StreamResult result = StreamAdapterInterface::Read(buffer, buffer_len, read,
-                                                     error);
-  if (result == SR_SUCCESS) {
-    LogMultiline(level_, label_.c_str(), true, buffer, *read, hex_mode_, &lms_);
-  }
-  return result;
-}
-
-StreamResult LoggingAdapter::Write(const void* data, size_t data_len,
-                                   size_t* written, int* error) {
-  size_t local_written;
-  if (!written) written = &local_written;
-  StreamResult result = StreamAdapterInterface::Write(data, data_len, written,
-                                                      error);
-  if (result == SR_SUCCESS) {
-    LogMultiline(level_, label_.c_str(), false, data, *written, hex_mode_,
-                 &lms_);
-  }
-  return result;
-}
-
-void LoggingAdapter::Close() {
-  LogMultiline(level_, label_.c_str(), false, nullptr, 0, hex_mode_, &lms_);
-  LogMultiline(level_, label_.c_str(), true, nullptr, 0, hex_mode_, &lms_);
-  LOG_V(level_) << label_ << " Closed locally";
-  StreamAdapterInterface::Close();
-}
-
-void LoggingAdapter::OnEvent(StreamInterface* stream, int events, int err) {
-  if (events & SE_OPEN) {
-    LOG_V(level_) << label_ << " Open";
-  } else if (events & SE_CLOSE) {
-    LogMultiline(level_, label_.c_str(), false, nullptr, 0, hex_mode_, &lms_);
-    LogMultiline(level_, label_.c_str(), true, nullptr, 0, hex_mode_, &lms_);
-    LOG_V(level_) << label_ << " Closed with error: " << err;
-  }
-  StreamAdapterInterface::OnEvent(stream, events, err);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // StringStream - Reads/Writes to an external std::string
 ///////////////////////////////////////////////////////////////////////////////
@@ -1030,31 +897,6 @@ bool StringStream::ReserveSize(size_t size) {
     return false;
   str_.reserve(size);
   return true;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// StreamReference
-///////////////////////////////////////////////////////////////////////////////
-
-StreamReference::StreamReference(StreamInterface* stream)
-    : StreamAdapterInterface(stream, false) {
-  // owner set to false so the destructor does not free the stream.
-  stream_ref_count_ = new StreamRefCount(stream);
-}
-
-StreamInterface* StreamReference::NewReference() {
-  stream_ref_count_->AddReference();
-  return new StreamReference(stream_ref_count_, stream());
-}
-
-StreamReference::~StreamReference() {
-  stream_ref_count_->Release();
-}
-
-StreamReference::StreamReference(StreamRefCount* stream_ref_count,
-                                 StreamInterface* stream)
-    : StreamAdapterInterface(stream, false),
-      stream_ref_count_(stream_ref_count) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
