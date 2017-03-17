@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/modules/include/module.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -194,7 +195,6 @@ class MockRtpRtcp : public RtpRtcp {
                     const FecProtectionParams& key_params));
   MOCK_METHOD1(SetKeyFrameRequestMethod, int32_t(KeyFrameRequestMethod method));
   MOCK_METHOD0(RequestKeyFrame, int32_t());
-  MOCK_METHOD0(TimeUntilNextProcess, int64_t());
   MOCK_METHOD0(Process, void());
   MOCK_METHOD1(RegisterSendFrameCountObserver, void(FrameCountObserver*));
   MOCK_CONST_METHOD0(GetSendFrameCountObserver, FrameCountObserver*(void));
@@ -205,6 +205,12 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetVideoBitrateAllocation, void(const BitrateAllocation&));
   // Members.
   unsigned int remote_ssrc_;
+
+ private:
+  // Mocking this method is currently not required and having a default
+  // implementation like MOCK_METHOD0(TimeUntilNextProcess, int64_t())
+  // can be dangerous since it can cause a tight loop on a process thread.
+  virtual int64_t TimeUntilNextProcess() { return 0xffffffff; }
 };
 
 }  // namespace webrtc
