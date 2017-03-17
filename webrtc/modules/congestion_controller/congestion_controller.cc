@@ -346,11 +346,14 @@ void CongestionController::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   transport_feedback_adapter_.OnTransportFeedback(feedback);
+  std::vector<PacketFeedback> feedback_vector =
+      transport_feedback_adapter_.GetTransportFeedbackVector();
+  if (feedback_vector.empty())
+    return;
   DelayBasedBwe::Result result;
   {
     rtc::CritScope cs(&bwe_lock_);
-    result = delay_based_bwe_->IncomingPacketFeedbackVector(
-        transport_feedback_adapter_.GetTransportFeedbackVector());
+    result = delay_based_bwe_->IncomingPacketFeedbackVector(feedback_vector);
   }
   if (result.updated)
     bitrate_controller_->OnDelayBasedBweResult(result);

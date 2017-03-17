@@ -235,6 +235,49 @@ TEST_F(CongestionControllerTest, OnNetworkRouteChanged) {
   controller_->OnNetworkRouteChanged(route, -1, -1, -1);
 }
 
+TEST_F(CongestionControllerTest, OldFeedback) {
+  int new_bitrate = 200000;
+  testing::Mock::VerifyAndClearExpectations(pacer_);
+  EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
+  EXPECT_CALL(*pacer_, SetEstimatedBitrate(new_bitrate));
+
+  // Send a few packets on the first network route.
+  std::vector<PacketFeedback> packets;
+  packets.push_back(PacketFeedback(0, 0, 0, 1500, kPacingInfo0));
+  packets.push_back(PacketFeedback(10, 10, 1, 1500, kPacingInfo0));
+  packets.push_back(PacketFeedback(20, 20, 2, 1500, kPacingInfo0));
+  packets.push_back(PacketFeedback(30, 30, 3, 1500, kPacingInfo1));
+  packets.push_back(PacketFeedback(40, 40, 4, 1500, kPacingInfo1));
+
+  for (const PacketFeedback& packet : packets)
+    OnSentPacket(packet);
+
+  // Change route and then insert a number of feedback packets.
+  rtc::NetworkRoute route;
+  route.local_network_id = 1;
+  controller_->OnNetworkRouteChanged(route, new_bitrate, -1, -1);
+
+  for (const PacketFeedback& packet : packets) {
+    rtcp::TransportFeedback feedback;
+    feedback.SetBase(packet.sequence_number, packet.arrival_time_ms * 1000);
+
+    EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
+                                           packet.arrival_time_ms * 1000));
+    feedback.Build();
+    controller_->OnTransportFeedback(feedback);
+  }
+
+  // If the bitrate is reset to -1, the new starting bitrate will be
+  // the minimum default bitrate kMinBitrateBps.
+  EXPECT_CALL(
+      observer_,
+      OnNetworkChanged(congestion_controller::GetMinBitrateBps(), _, _, _));
+  EXPECT_CALL(*pacer_,
+              SetEstimatedBitrate(congestion_controller::GetMinBitrateBps()));
+  route.local_network_id = 2;
+  controller_->OnNetworkRouteChanged(route, -1, -1, -1);
+}
+
 TEST_F(CongestionControllerTest,
        SignalNetworkStateAndQueueIsFullAndEstimateChange) {
   // Send queue is full

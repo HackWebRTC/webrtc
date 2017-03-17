@@ -277,6 +277,7 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
+  RTC_DCHECK(!packet_feedback_vector.empty());
 
   std::vector<PacketFeedback> sorted_packet_feedback_vector;
   SortPacketFeedbackVector(packet_feedback_vector,
