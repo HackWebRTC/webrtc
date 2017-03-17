@@ -194,7 +194,7 @@ std::string VideoSendStream::Config::Rtp::ToString() const {
     if (i != flexfec.protected_media_ssrcs.size() - 1)
       ss << ", ";
   }
-  ss << ']';
+  ss << "]}";
 
   ss << ", rtx: " << rtx.ToString();
   ss << ", c_name: " << c_name;
@@ -416,7 +416,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   BitrateAllocator* const bitrate_allocator_;
   VieRemb* const remb_;
 
-  // TODO(brandtr): Consider moving this to a new FlexfecSendStream class.
+  // TODO(brandtr): Move ownership to PayloadRouter.
   std::unique_ptr<FlexfecSender> flexfec_sender_;
 
   rtc::CriticalSection ivf_writers_crit_;

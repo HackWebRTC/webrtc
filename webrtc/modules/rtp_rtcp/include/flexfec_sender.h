@@ -30,7 +30,7 @@ namespace webrtc {
 class RtpPacketToSend;
 
 // Note that this class is not thread safe, and thus requires external
-// synchronization.
+// synchronization. Currently, this is done using the lock in PayloadRouter.
 
 class FlexfecSender {
  public:
