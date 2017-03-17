@@ -14,7 +14,6 @@
 
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/internal_defines.h"
-#include "webrtc/modules/video_coding/test/test_util.h"
 #include "webrtc/modules/video_coding/timing.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/trace.h"
