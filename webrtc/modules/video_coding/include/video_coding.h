@@ -394,12 +394,6 @@ class VideoCodingModule : public Module {
   //                     < 0,               on error.
   virtual int32_t Delay() const = 0;
 
-  // Returns the number of packets discarded by the jitter buffer due to being
-  // too late. This can include duplicated packets which arrived after the
-  // frame was sent to the decoder. Therefore packets which were prematurely
-  // NACKed will be counted.
-  virtual uint32_t DiscardedPackets() const = 0;
-
   // Robustness APIs
 
   // Set the receiver robustness mode. The mode decides how the receiver

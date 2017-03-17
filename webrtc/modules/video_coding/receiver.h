@@ -68,7 +68,6 @@ class VCMReceiver {
                                     bool prefer_late_decoding);
   void ReleaseFrame(VCMEncodedFrame* frame);
   void ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate);
-  uint32_t DiscardedPackets() const;
 
   // NACK.
   void SetNackMode(VCMNackMode nackMode,

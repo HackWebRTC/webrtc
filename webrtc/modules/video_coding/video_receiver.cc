@@ -411,10 +411,6 @@ int32_t VideoReceiver::Delay() const {
   return _timing->TargetVideoDelay();
 }
 
-uint32_t VideoReceiver::DiscardedPackets() const {
-  return _receiver.DiscardedPackets();
-}
-
 int VideoReceiver::SetReceiverRobustnessMode(
     ReceiverRobustness robustnessMode,
     VCMDecodeErrorMode decode_error_mode) {

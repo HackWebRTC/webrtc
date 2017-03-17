@@ -239,10 +239,6 @@ void VCMReceiver::ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate) {
   jitter_buffer_.IncomingRateStatistics(framerate, bitrate);
 }
 
-uint32_t VCMReceiver::DiscardedPackets() const {
-  return jitter_buffer_.num_discarded_packets();
-}
-
 void VCMReceiver::SetNackMode(VCMNackMode nackMode,
                               int64_t low_rtt_nack_threshold_ms,
                               int64_t high_rtt_nack_threshold_ms) {

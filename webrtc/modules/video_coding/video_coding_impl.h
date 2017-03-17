@@ -179,7 +179,6 @@ class VideoReceiver : public Module {
   int32_t SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs);
   int32_t SetRenderDelay(uint32_t timeMS);
   int32_t Delay() const;
-  uint32_t DiscardedPackets() const;
 
   int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                 VCMDecodeErrorMode errorMode);

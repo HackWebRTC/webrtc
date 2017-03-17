@@ -231,10 +231,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   int32_t Delay() const override { return receiver_.Delay(); }
 
-  uint32_t DiscardedPackets() const override {
-    return receiver_.DiscardedPackets();
-  }
-
   int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                 VCMDecodeErrorMode errorMode) override {
     return receiver_.SetReceiverRobustnessMode(robustnessMode, errorMode);
