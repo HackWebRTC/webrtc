@@ -122,6 +122,7 @@ rtc_source_set("fileutils") {
     sources += [ "testsupport/iosfileutils.mm" ]
     configs += [ "//build/config/compiler:enable_arc" ]
   }
+  visibility = [ ":*" ]
 }
 
 rtc_source_set("video_test_support") {

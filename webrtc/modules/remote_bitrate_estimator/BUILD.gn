@@ -134,7 +134,7 @@ if (rtc_include_tests) {
       ":bwe_simulator_lib",
       ":remote_bitrate_estimator",
       "../../base:rtc_base_approved",
-      "../../test:fileutils",
+      "../../test:test_support",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

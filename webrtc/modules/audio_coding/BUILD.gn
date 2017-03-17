@@ -1159,7 +1159,6 @@ if (rtc_include_tests) {
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
-      "../../test:fileutils",
       "../../test:test_support",
     ]
     defines = audio_coding_defines
