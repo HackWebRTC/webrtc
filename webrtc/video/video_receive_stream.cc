@@ -310,14 +310,7 @@ void VideoReceiveStream::Start() {
   call_stats_->RegisterStatsObserver(video_stream_decoder_.get());
   // Start the decode thread
   decode_thread_.Start();
-#if !defined(WEBRTC_ANDROID)
-  // On android, the decoding happens on a different thread and frames
-  // are delivered on that thread (that in itself needs to be fixed).
-  // In any event, the actual decoding work is higher priority than the
-  // |decode_thread_| on Android, so we only raise the deocode priority on
-  // platforms other than Android.
   decode_thread_.SetPriority(rtc::kHighestPriority);
-#endif
   rtp_stream_receiver_.StartReceive();
 }
 
