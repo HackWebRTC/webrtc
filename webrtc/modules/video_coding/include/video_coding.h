@@ -311,18 +311,6 @@ class VideoCodingModule : public Module {
   virtual int32_t RegisterReceiveStatisticsCallback(
       VCMReceiveStatisticsCallback* receiveStats) = 0;
 
-  // Register a decoder timing callback which will be called to deliver
-  // information about the timing of the decoder in the receiving side of the
-  // VCM, for instance the current and maximum frame decode latency.
-  //
-  // Input:
-  //      - decoderTiming  : The callback object to register.
-  //
-  // Return value      : VCM_OK, on success.
-  //                     < 0,    on error.
-  virtual int32_t RegisterDecoderTimingCallback(
-      VCMDecoderTimingCallback* decoderTiming) = 0;
-
   // Register a frame type request callback. This callback will be called when
   // the
   // module needs to request specific frame types from the send side.

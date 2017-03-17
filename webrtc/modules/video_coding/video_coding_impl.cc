@@ -200,11 +200,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_.RegisterReceiveStatisticsCallback(receiveStats);
   }
 
-  int32_t RegisterDecoderTimingCallback(
-      VCMDecoderTimingCallback* decoderTiming) override {
-    return receiver_.RegisterDecoderTimingCallback(decoderTiming);
-  }
-
   int32_t RegisterFrameTypeCallback(
       VCMFrameTypeCallback* frameTypeCallback) override {
     return receiver_.RegisterFrameTypeCallback(frameTypeCallback);

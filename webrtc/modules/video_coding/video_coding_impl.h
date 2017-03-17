@@ -163,8 +163,6 @@ class VideoReceiver : public Module {
   int32_t RegisterReceiveCallback(VCMReceiveCallback* receiveCallback);
   int32_t RegisterReceiveStatisticsCallback(
       VCMReceiveStatisticsCallback* receiveStats);
-  int32_t RegisterDecoderTimingCallback(
-      VCMDecoderTimingCallback* decoderTiming);
   int32_t RegisterFrameTypeCallback(VCMFrameTypeCallback* frameTypeCallback);
   int32_t RegisterPacketRequestCallback(VCMPacketRequestCallback* callback);
 
@@ -215,7 +213,6 @@ class VideoReceiver : public Module {
   VCMDecodedFrameCallback _decodedFrameCallback;
   VCMFrameTypeCallback* _frameTypeCallback GUARDED_BY(process_crit_);
   VCMReceiveStatisticsCallback* _receiveStatsCallback GUARDED_BY(process_crit_);
-  VCMDecoderTimingCallback* _decoderTimingCallback GUARDED_BY(process_crit_);
   VCMPacketRequestCallback* _packetRequestCallback GUARDED_BY(process_crit_);
 
   VCMFrameBuffer _frameFromFile;

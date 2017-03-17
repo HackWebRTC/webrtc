@@ -39,7 +39,6 @@ VideoReceiver::VideoReceiver(Clock* clock,
       _decodedFrameCallback(_timing, clock_),
       _frameTypeCallback(nullptr),
       _receiveStatsCallback(nullptr),
-      _decoderTimingCallback(nullptr),
       _packetRequestCallback(nullptr),
       _frameFromFile(),
       _scheduleKeyRequest(false),
@@ -183,14 +182,6 @@ int32_t VideoReceiver::RegisterReceiveStatisticsCallback(
   rtc::CritScope cs(&process_crit_);
   _receiver.RegisterStatsCallback(receiveStats);
   _receiveStatsCallback = receiveStats;
-  return VCM_OK;
-}
-
-int32_t VideoReceiver::RegisterDecoderTimingCallback(
-    VCMDecoderTimingCallback* decoderTiming) {
-  RTC_DCHECK(construction_thread_.CalledOnValidThread());
-  rtc::CritScope cs(&process_crit_);
-  _decoderTimingCallback = decoderTiming;
   return VCM_OK;
 }
 

@@ -46,7 +46,6 @@ VideoStreamDecoder::VideoStreamDecoder(
   video_receiver_->RegisterReceiveCallback(this);
   video_receiver_->RegisterFrameTypeCallback(vcm_frame_type_callback);
   video_receiver_->RegisterReceiveStatisticsCallback(this);
-  video_receiver_->RegisterDecoderTimingCallback(this);
 
   VCMVideoProtection video_protection =
       enable_nack ? (enable_fec ? kProtectionNackFEC : kProtectionNack)
@@ -67,7 +66,6 @@ VideoStreamDecoder::~VideoStreamDecoder() {
 
   // Unset all the callback pointers that we set in the ctor.
   video_receiver_->RegisterPacketRequestCallback(nullptr);
-  video_receiver_->RegisterDecoderTimingCallback(nullptr);
   video_receiver_->RegisterReceiveStatisticsCallback(nullptr);
   video_receiver_->RegisterFrameTypeCallback(nullptr);
   video_receiver_->RegisterReceiveCallback(nullptr);
@@ -112,14 +110,6 @@ void VideoStreamDecoder::OnDiscardedPacketsUpdated(int discarded_packets) {
 void VideoStreamDecoder::OnFrameCountsUpdated(const FrameCounts& frame_counts) {
   receive_stats_callback_->OnFrameCountsUpdated(frame_counts);
 }
-
-void VideoStreamDecoder::OnDecoderTiming(int decode_ms,
-                                         int max_decode_ms,
-                                         int current_delay_ms,
-                                         int target_delay_ms,
-                                         int jitter_buffer_ms,
-                                         int min_playout_delay_ms,
-                                         int render_delay_ms) {}
 
 void VideoStreamDecoder::OnFrameBufferTimingsUpdated(int decode_ms,
                                                      int max_decode_ms,
