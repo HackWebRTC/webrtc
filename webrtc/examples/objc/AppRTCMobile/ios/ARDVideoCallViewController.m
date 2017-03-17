@@ -44,9 +44,11 @@
       shouldUseLevelControl:(BOOL)shouldUseLevelControl
                    delegate:(id<ARDVideoCallViewControllerDelegate>)delegate {
   if (self = [super init]) {
-    _delegate = delegate;
-    _client = [[ARDAppClient alloc] initWithDelegate:self];
     ARDSettingsModel *settingsModel = [[ARDSettingsModel alloc] init];
+    NSString* videoCodec = [settingsModel currentVideoCodecSettingFromStore];
+    _delegate = delegate;
+    _client = [[ARDAppClient alloc] initWithDelegate:self
+                                    preferVideoCodec:videoCodec];
     RTCMediaConstraints *cameraConstraints = [[RTCMediaConstraints alloc]
         initWithMandatoryConstraints:nil
                  optionalConstraints:[settingsModel

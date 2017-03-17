@@ -100,6 +100,7 @@ static int const kKbpsMultiplier = 1000;
   ARDTimerProxy *_statsTimer;
   RTCMediaConstraints *_cameraConstraints;
   NSNumber *_maxBitrate;
+  NSString *_videoCodec;
 }
 
 @synthesize shouldGetStats = _shouldGetStats;
@@ -128,13 +129,15 @@ static int const kKbpsMultiplier = 1000;
 @synthesize shouldUseLevelControl = _shouldUseLevelControl;
 
 - (instancetype)init {
-  return [self initWithDelegate:nil];
+  return [self initWithDelegate:nil preferVideoCodec:@"H264"];
 }
 
-- (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate {
+- (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate
+                preferVideoCodec:(NSString *)codec {
   if (self = [super init]) {
     _roomServerClient = [[ARDAppEngineClient alloc] init];
     _delegate = delegate;
+    _videoCodec = codec;
     NSURL *turnRequestURL = [NSURL URLWithString:kARDIceServerRequestUrl];
     _turnClient = [[ARDTURNClient alloc] initWithURL:turnRequestURL];
     [self configure];
@@ -452,12 +455,12 @@ static int const kKbpsMultiplier = 1000;
       [_delegate appClient:self didError:sdpError];
       return;
     }
-    // Prefer H264 if available.
-    RTCSessionDescription *sdpPreferringH264 =
+    // Prefer codec from settings if available.
+    RTCSessionDescription *sdpPreferringCodec =
         [ARDSDPUtils descriptionForDescription:sdp
-                           preferredVideoCodec:@"H264"];
+                           preferredVideoCodec:_videoCodec];
     __weak ARDAppClient *weakSelf = self;
-    [_peerConnection setLocalDescription:sdpPreferringH264
+    [_peerConnection setLocalDescription:sdpPreferringCodec
                        completionHandler:^(NSError *error) {
       ARDAppClient *strongSelf = weakSelf;
       [strongSelf peerConnection:strongSelf.peerConnection
@@ -465,7 +468,7 @@ static int const kKbpsMultiplier = 1000;
     }];
     ARDSessionDescriptionMessage *message =
         [[ARDSessionDescriptionMessage alloc]
-            initWithDescription:sdpPreferringH264];
+            initWithDescription:sdpPreferringCodec];
     [self sendSignalingMessage:message];
     [self setMaxBitrateForPeerConnectionVideoSender];
   });
@@ -606,12 +609,12 @@ static int const kKbpsMultiplier = 1000;
       ARDSessionDescriptionMessage *sdpMessage =
           (ARDSessionDescriptionMessage *)message;
       RTCSessionDescription *description = sdpMessage.sessionDescription;
-      // Prefer H264 if available.
-      RTCSessionDescription *sdpPreferringH264 =
+      // Prefer codec from settings if available.
+      RTCSessionDescription *sdpPreferringCodec =
           [ARDSDPUtils descriptionForDescription:description
-                             preferredVideoCodec:@"H264"];
+                             preferredVideoCodec:_videoCodec];
       __weak ARDAppClient *weakSelf = self;
-      [_peerConnection setRemoteDescription:sdpPreferringH264
+      [_peerConnection setRemoteDescription:sdpPreferringCodec
                           completionHandler:^(NSError *error) {
         ARDAppClient *strongSelf = weakSelf;
         [strongSelf peerConnection:strongSelf.peerConnection

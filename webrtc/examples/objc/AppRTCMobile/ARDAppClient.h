@@ -60,7 +60,8 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 @property(nonatomic, weak) id<ARDAppClientDelegate> delegate;
 // Convenience constructor since all expected use cases will need a delegate
 // in order to receive remote tracks.
-- (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate;
+- (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate
+                preferVideoCodec:(NSString*)codec;
 
 // Sets camera constraints.
 - (void)setCameraConstraints:(RTCMediaConstraints *)mediaConstraints;

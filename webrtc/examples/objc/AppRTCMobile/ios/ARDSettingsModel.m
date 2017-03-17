@@ -17,6 +17,10 @@ static NSArray<NSString *> *videoResolutionsStaticValues() {
   return @[ @"640x480", @"960x540", @"1280x720" ];
 }
 
+static NSArray<NSString *> *videoCodecsStaticValues() {
+  return @[ @"H264", @"VP8", @"VP9" ];
+}
+
 @interface ARDSettingsModel () {
   ARDSettingsStore *_settingsStore;
 }
@@ -43,6 +47,27 @@ static NSArray<NSString *> *videoResolutionsStaticValues() {
     return NO;
   }
   [[self settingsStore] setVideoResolutionConstraints:constraint];
+  return YES;
+}
+
+- (NSArray<NSString *> *)availableVideoCodecs {
+  return videoCodecsStaticValues();
+}
+
+- (NSString *)currentVideoCodecSettingFromStore {
+  NSString *videoCodec = [[self settingsStore] videoCodec];
+  if (!videoCodec) {
+    videoCodec = [self defaultVideoCodecSetting];
+    [[self settingsStore] setVideoCodec:videoCodec];
+  }
+  return videoCodec;
+}
+
+- (BOOL)storeVideoCodecSetting:(NSString *)videoCodec {
+  if (![[self availableVideoCodecs] containsObject:videoCodec]) {
+    return NO;
+  }
+  [[self settingsStore] setVideoCodec:videoCodec];
   return YES;
 }
 
@@ -90,6 +115,10 @@ static NSArray<NSString *> *videoResolutionsStaticValues() {
     return nil;
   }
   return components[index];
+}
+
+- (NSString *)defaultVideoCodecSetting {
+  return videoCodecsStaticValues()[0];
 }
 
 #pragma mark - Conversion to RTCMediaConstraints

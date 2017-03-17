@@ -49,6 +49,26 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)storeVideoResoultionConstraint:(NSString *)constraint;
 
 /**
+ * Returns array of available video codecs.
+ */
+- (NSArray<NSString *> *)availableVideoCodecs;
+
+/**
+ * Returns current video codec setting from store if present.
+ */
+- (NSString *)currentVideoCodecSettingFromStore;
+
+/**
+ * Stores the provided video codec setting into the store.
+ *
+ * If the provided constraint is not part of the available video codecs
+ * the store operation will not be executed and NO will be returned.
+ * @param video codec settings the string to be stored.
+ * @return YES/NO depending on success.
+ */
+- (BOOL)storeVideoCodecSetting:(NSString *)videoCodec;
+
+/**
  * Converts the current media constraints from store into dictionary with RTCMediaConstraints
  * values.
  *

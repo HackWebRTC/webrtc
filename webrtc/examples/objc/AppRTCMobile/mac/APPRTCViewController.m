@@ -369,7 +369,8 @@ static NSUInteger const kBottomViewHeight = 200;
   }
 
   [_client disconnect];
-  ARDAppClient *client = [[ARDAppClient alloc] initWithDelegate:self];
+  ARDAppClient *client = [[ARDAppClient alloc] initWithDelegate:self
+                                               preferVideoCodec:@"H264"];
   [client connectToRoomWithId:roomId
                    isLoopback:isLoopback
                   isAudioOnly:NO

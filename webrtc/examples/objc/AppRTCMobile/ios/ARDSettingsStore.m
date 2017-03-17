@@ -11,6 +11,7 @@
 #import "ARDSettingsStore.h"
 
 static NSString *const kMediaConstraintsKey = @"rtc_video_resolution_media_constraints_key";
+static NSString *const kVideoCodecKey = @"rtc_video_codec_key";
 static NSString *const kBitrateKey = @"rtc_max_bitrate_key";
 
 NS_ASSUME_NONNULL_BEGIN
@@ -35,6 +36,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setVideoResolutionConstraints:(NSString *)constraintsString {
   [self.storage setObject:constraintsString forKey:kMediaConstraintsKey];
+  [self.storage synchronize];
+}
+
+- (NSString *)videoCodec {
+  return [self.storage objectForKey:kVideoCodecKey];
+}
+
+- (void)setVideoCodec:(NSString *)videoCodec {
+  [self.storage setObject:videoCodec forKey:kVideoCodecKey];
   [self.storage synchronize];
 }
 

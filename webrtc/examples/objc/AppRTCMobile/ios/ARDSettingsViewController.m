@@ -15,7 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_ENUM(int, ARDSettingsSections) {
   ARDSettingsSectionMediaConstraints = 0,
-  ARDSettingsSectionBitRate
+  ARDSettingsSectionVideoCodec,
+  ARDSettingsSectionBitRate,
 };
 
 @interface ARDSettingsViewController () <UITextFieldDelegate> {
@@ -43,15 +44,28 @@ typedef NS_ENUM(int, ARDSettingsSections) {
   [self addDoneBarButton];
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+  [super viewWillAppear:animated];
+  [self addCheckmarkInSection:ARDSettingsSectionMediaConstraints
+                    withArray:[self mediaConstraintsArray]
+                    selecting:[_settingsModel currentVideoResoultionConstraintFromStore]];
+  [self addCheckmarkInSection:ARDSettingsSectionVideoCodec
+                    withArray:[self videoCodecArray]
+                    selecting:[_settingsModel currentVideoCodecSettingFromStore]];
+}
+
 - (void)viewDidAppear:(BOOL)animated {
   [super viewDidAppear:animated];
-  [self selectCurrentlyStoredOrDefaultMediaConstraints];
 }
 
 #pragma mark - Data source
 
 - (NSArray<NSString *> *)mediaConstraintsArray {
   return _settingsModel.availableVideoResoultionsMediaConstraints;
+}
+
+- (NSArray<NSString *> *)videoCodecArray {
+  return _settingsModel.availableVideoCodecs;
 }
 
 #pragma mark -
@@ -64,16 +78,14 @@ typedef NS_ENUM(int, ARDSettingsSections) {
   self.navigationItem.leftBarButtonItem = barItem;
 }
 
-- (void)selectCurrentlyStoredOrDefaultMediaConstraints {
-  NSString *currentSelection = [_settingsModel currentVideoResoultionConstraintFromStore];
-
-  NSUInteger indexOfSelection = [[self mediaConstraintsArray] indexOfObject:currentSelection];
-  NSIndexPath *pathToBeSelected = [NSIndexPath indexPathForRow:indexOfSelection inSection:0];
-  [self.tableView selectRowAtIndexPath:pathToBeSelected
-                              animated:NO
-                        scrollPosition:UITableViewScrollPositionNone];
-  // Manully invoke the delegate method because the previous invocation will not.
-  [self tableView:self.tableView didSelectRowAtIndexPath:pathToBeSelected];
+- (void)addCheckmarkInSection:(int)section
+                    withArray:(NSArray<NSString*>*) array
+                    selecting:(NSString*)selection {
+  NSUInteger indexOfSelection = [array indexOfObject:selection];
+  NSIndexPath *pathToBeDecorated = [NSIndexPath indexPathForRow:indexOfSelection
+                                                      inSection:section];
+  UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:pathToBeDecorated];
+  cell.accessoryType = UITableViewCellAccessoryCheckmark;
 }
 
 #pragma mark - Dismissal of view controller
@@ -85,75 +97,84 @@ typedef NS_ENUM(int, ARDSettingsSections) {
 #pragma mark - Table view data source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-  return 2;
+  return 3;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-  if ([self sectionIsMediaConstraints:section]) {
-    return self.mediaConstraintsArray.count;
+  switch (section) {
+    case ARDSettingsSectionMediaConstraints:
+      return self.mediaConstraintsArray.count;
+    case ARDSettingsSectionVideoCodec:
+      return self.videoCodecArray.count;
+    default:
+      return 1;
   }
-
-  return 1;
 }
 
-#pragma mark - Index path helpers
+#pragma mark - Table view delegate helpers
 
-- (BOOL)sectionIsMediaConstraints:(int)section {
-  return section == ARDSettingsSectionMediaConstraints;
+- (void)removeAllAccessories:(UITableView *)tableView
+                   inSection:(int)section
+{
+  for (int i = 0; i < [tableView numberOfRowsInSection:section]; i++) {
+    NSIndexPath *rowPath = [NSIndexPath indexPathForRow:i inSection:section];
+    UITableViewCell *cell = [tableView cellForRowAtIndexPath:rowPath];
+    cell.accessoryType = UITableViewCellAccessoryNone;
+  }
 }
 
-- (BOOL)sectionIsBitrate:(int)section {
-  return section == ARDSettingsSectionBitRate;
-}
-
-- (BOOL)indexPathIsMediaConstraints:(NSIndexPath *)indexPath {
-  return [self sectionIsMediaConstraints:indexPath.section];
-}
-
-- (BOOL)indexPathIsBitrate:(NSIndexPath *)indexPath {
-  return [self sectionIsBitrate:indexPath.section];
+- (void)tableView:(UITableView *)tableView
+updateListSelectionAtIndexPath:(NSIndexPath *)indexPath
+        inSection:(int)section {
+  [self removeAllAccessories:tableView inSection:section];
+  UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+  cell.accessoryType = UITableViewCellAccessoryCheckmark;
+  [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 #pragma mark - Table view delegate
 
 - (nullable NSString *)tableView:(UITableView *)tableView
          titleForHeaderInSection:(NSInteger)section {
-  if ([self sectionIsMediaConstraints:section]) {
-    return @"Media constraints";
+  switch (section) {
+    case ARDSettingsSectionMediaConstraints:
+      return @"Media constraints";
+    case ARDSettingsSectionVideoCodec:
+      return @"Video codec";
+    case ARDSettingsSectionBitRate:
+      return @"Maximum bitrate";
+    default:
+      return @"";
   }
-
-  if ([self sectionIsBitrate:section]) {
-    return @"Maximum bitrate";
-  }
-
-  return @"";
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView
          cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-  if ([self indexPathIsMediaConstraints:indexPath]) {
-    return [self mediaConstraintsTableViewCellForTableView:tableView atIndexPath:indexPath];
-  }
+  switch (indexPath.section) {
+    case ARDSettingsSectionMediaConstraints:
+      return [self mediaConstraintsTableViewCellForTableView:tableView atIndexPath:indexPath];
 
-  if ([self indexPathIsBitrate:indexPath]) {
-    return [self bitrateTableViewCellForTableView:tableView atIndexPath:indexPath];
-  }
+    case ARDSettingsSectionVideoCodec:
+      return [self videoCodecTableViewCellForTableView:tableView atIndexPath:indexPath];
 
-  return [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
-                                reuseIdentifier:@"identifier"];
-}
+    case ARDSettingsSectionBitRate:
+      return [self bitrateTableViewCellForTableView:tableView atIndexPath:indexPath];
 
-- (nullable NSIndexPath *)tableView:(UITableView *)tableView
-           willSelectRowAtIndexPath:(nonnull NSIndexPath *)indexPath {
-  if ([self indexPathIsMediaConstraints:indexPath]) {
-    return [self tableView:tableView willDeselectMediaConstraintsRowAtIndexPath:indexPath];
+    default:
+      return [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                    reuseIdentifier:@"identifier"];
   }
-  return indexPath;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-  if ([self indexPathIsMediaConstraints:indexPath]) {
-    [self tableView:tableView didSelectMediaConstraintsCellAtIndexPath:indexPath];
+  switch (indexPath.section) {
+    case ARDSettingsSectionMediaConstraints:
+      [self tableView:tableView didSelectMediaConstraintsCellAtIndexPath:indexPath];
+      break;
+
+    case ARDSettingsSectionVideoCodec:
+      [self tableView:tableView didSelectVideoCodecCellAtIndexPath:indexPath];
+      break;
   }
 }
 
@@ -173,19 +194,37 @@ typedef NS_ENUM(int, ARDSettingsSections) {
 
 - (void)tableView:(UITableView *)tableView
     didSelectMediaConstraintsCellAtIndexPath:(NSIndexPath *)indexPath {
-  UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-  cell.accessoryType = UITableViewCellAccessoryCheckmark;
+  [self tableView:tableView
+    updateListSelectionAtIndexPath:indexPath
+        inSection:ARDSettingsSectionMediaConstraints];
 
   NSString *mediaConstraintsString = self.mediaConstraintsArray[indexPath.row];
   [_settingsModel storeVideoResoultionConstraint:mediaConstraintsString];
 }
 
-- (NSIndexPath *)tableView:(UITableView *)tableView
-    willDeselectMediaConstraintsRowAtIndexPath:(NSIndexPath *)indexPath {
-  NSIndexPath *oldSelection = [tableView indexPathForSelectedRow];
-  UITableViewCell *cell = [tableView cellForRowAtIndexPath:oldSelection];
-  cell.accessoryType = UITableViewCellAccessoryNone;
-  return indexPath;
+#pragma mark - Table view delegate(Video Codec)
+
+- (UITableViewCell *)videoCodecTableViewCellForTableView:(UITableView *)tableView
+                                             atIndexPath:(NSIndexPath *)indexPath {
+  NSString *dequeueIdentifier = @"ARDSettingsVideoCodecCellIdentifier";
+  UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:dequeueIdentifier];
+  if (!cell) {
+    cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
+                                  reuseIdentifier:dequeueIdentifier];
+  }
+  cell.textLabel.text = self.videoCodecArray[indexPath.row];
+
+  return cell;
+}
+
+- (void)tableView:(UITableView *)tableView
+    didSelectVideoCodecCellAtIndexPath:(NSIndexPath *)indexPath {
+  [self tableView:tableView
+    updateListSelectionAtIndexPath:indexPath
+        inSection:ARDSettingsSectionVideoCodec];
+
+  NSString *videoCodec = self.videoCodecArray[indexPath.row];
+  [_settingsModel storeVideoCodecSetting:videoCodec];
 }
 
 #pragma mark - Table view delegate(Bitrate)
