@@ -80,6 +80,8 @@
 // Put after a variable that might not be used, to prevent compiler warnings:
 //   int result ATTRIBUTE_UNUSED = DoSomething();
 //   assert(result == 17);
+// Deprecated since it only works with GCC & clang. See RTC_UNUSED below.
+// TODO(terelius): Remove.
 #ifndef ATTRIBUTE_UNUSED
 #if defined(__GNUC__) || defined(__clang__)
 #define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
@@ -108,5 +110,15 @@
 #define NO_RETURN
 #endif
 #endif
+
+// Prevent the compiler from warning about an unused variable. For example:
+//   int result = DoSomething();
+//   assert(result == 17);
+//   RTC_UNUSED(result);
+// Note: In most cases it is better to remove the unused variable rather than
+// suppressing the compiler warning.
+#ifndef RTC_UNUSED
+#define RTC_UNUSED(x) static_cast<void>(x)
+#endif  // RTC_UNUSED
 
 #endif  // WEBRTC_TYPEDEFS_H_
