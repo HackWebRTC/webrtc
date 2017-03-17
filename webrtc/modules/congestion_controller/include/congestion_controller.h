@@ -189,14 +189,13 @@ class CongestionController : public CallStatsObserver,
   WrappingBitrateEstimator remote_bitrate_estimator_;
   RemoteEstimatorProxy remote_estimator_proxy_;
   TransportFeedbackAdapter transport_feedback_adapter_;
-  int min_bitrate_bps_;
-  int max_bitrate_bps_;
   rtc::CriticalSection network_state_lock_;
   uint32_t last_reported_bitrate_bps_ GUARDED_BY(network_state_lock_);
   uint8_t last_reported_fraction_loss_ GUARDED_BY(network_state_lock_);
   int64_t last_reported_rtt_ GUARDED_BY(network_state_lock_);
   NetworkState network_state_ GUARDED_BY(network_state_lock_);
   rtc::CriticalSection bwe_lock_;
+  int min_bitrate_bps_ GUARDED_BY(bwe_lock_);
   std::unique_ptr<DelayBasedBwe> delay_based_bwe_ GUARDED_BY(bwe_lock_);
 
   rtc::ThreadChecker worker_thread_checker_;

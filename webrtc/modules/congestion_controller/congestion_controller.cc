@@ -171,12 +171,11 @@ CongestionController::CongestionController(
       remote_bitrate_estimator_(remote_bitrate_observer, clock_),
       remote_estimator_proxy_(clock_, packet_router_),
       transport_feedback_adapter_(clock_),
-      min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
-      max_bitrate_bps_(0),
       last_reported_bitrate_bps_(0),
       last_reported_fraction_loss_(0),
       last_reported_rtt_(0),
       network_state_(kNetworkUp),
+      min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       delay_based_bwe_(new DelayBasedBwe(event_log_, clock_)) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
   worker_thread_checker_.DetachFromThread();
@@ -208,14 +207,13 @@ void CongestionController::SetBweBitrates(int min_bitrate_bps,
 
   probe_controller_->SetBitrates(min_bitrate_bps, start_bitrate_bps,
                                  max_bitrate_bps);
-  max_bitrate_bps_ = max_bitrate_bps;
 
   remote_bitrate_estimator_.SetMinBitrate(min_bitrate_bps);
-  min_bitrate_bps_ = min_bitrate_bps;
   {
     rtc::CritScope cs(&bwe_lock_);
     if (start_bitrate_bps > 0)
       delay_based_bwe_->SetStartBitrate(start_bitrate_bps);
+    min_bitrate_bps_ = min_bitrate_bps;
     delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
   }
   MaybeTriggerOnNetworkChanged();
@@ -233,8 +231,6 @@ void CongestionController::OnNetworkRouteChanged(
   // no longer exposed outside CongestionController.
   bitrate_controller_->ResetBitrates(bitrate_bps, min_bitrate_bps,
                                      max_bitrate_bps);
-  min_bitrate_bps_ = min_bitrate_bps;
-  max_bitrate_bps_ = max_bitrate_bps;
   // TODO(honghaiz): Recreate this object once the remote bitrate estimator is
   // no longer exposed outside CongestionController.
   remote_bitrate_estimator_.SetMinBitrate(min_bitrate_bps);
@@ -243,9 +239,10 @@ void CongestionController::OnNetworkRouteChanged(
                                             network_route.remote_network_id);
   {
     rtc::CritScope cs(&bwe_lock_);
+    min_bitrate_bps_ = min_bitrate_bps;
     delay_based_bwe_.reset(new DelayBasedBwe(event_log_, clock_));
     delay_based_bwe_->SetStartBitrate(bitrate_bps);
-    delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
+    delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
   }
 
   probe_controller_->Reset();
