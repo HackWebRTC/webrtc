@@ -275,6 +275,9 @@ if (rtc_include_tests) {
       "../utility:utility",
       "//testing/gmock",
     ]
+    if (is_linux) {
+      sources += [ "audio_device_unittest.cc" ]
+    }
     if (is_android) {
       # Need to disable error due to the line in
       # base/android/jni_android.h triggering it:
