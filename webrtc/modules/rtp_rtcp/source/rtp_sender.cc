@@ -276,14 +276,10 @@ int32_t RTPSender::DeRegisterSendPayload(int8_t payload_type) {
   return 0;
 }
 
+// TODO(nisse): Delete this method, only used internally and by test code.
 void RTPSender::SetSendPayloadType(int8_t payload_type) {
   rtc::CritScope lock(&send_critsect_);
   payload_type_ = payload_type;
-}
-
-int8_t RTPSender::SendPayloadType() const {
-  rtc::CritScope lock(&send_critsect_);
-  return payload_type_;
 }
 
 void RTPSender::SetMaxRtpPacketSize(size_t max_packet_size) {

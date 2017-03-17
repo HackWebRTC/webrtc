@@ -60,7 +60,6 @@ class RTCPSender {
   struct FeedbackState {
     FeedbackState();
 
-    uint8_t send_payload_type;
     uint32_t packets_sent;
     size_t media_bytes_sent;
     uint32_t send_bitrate;

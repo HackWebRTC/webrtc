@@ -318,7 +318,6 @@ RTCPSender::FeedbackState ModuleRtpRtcpImpl::GetFeedbackState() {
   rtp_sender_.GetDataCounters(&rtp_stats, &rtx_stats);
 
   RTCPSender::FeedbackState state;
-  state.send_payload_type = rtp_sender_.SendPayloadType();
   state.packets_sent = rtp_stats.transmitted.packets +
                        rtx_stats.transmitted.packets;
   state.media_bytes_sent = rtp_stats.transmitted.payload_bytes +

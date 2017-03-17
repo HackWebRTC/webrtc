@@ -84,8 +84,6 @@ class RTPSender {
 
   void SetSendPayloadType(int8_t payload_type);
 
-  int8_t SendPayloadType() const;
-
   void SetSendingMediaStatus(bool enabled);
   bool SendingMedia() const;
 

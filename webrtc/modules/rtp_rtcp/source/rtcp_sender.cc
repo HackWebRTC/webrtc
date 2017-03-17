@@ -77,8 +77,7 @@ std::string NACKStringBuilder::GetResult() {
 }
 
 RTCPSender::FeedbackState::FeedbackState()
-    : send_payload_type(0),
-      packets_sent(0),
+    : packets_sent(0),
       media_bytes_sent(0),
       send_bitrate(0),
       last_rr_ntp_secs(0),
