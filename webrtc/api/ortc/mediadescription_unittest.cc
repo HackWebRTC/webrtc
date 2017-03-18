@@ -19,4 +19,12 @@ TEST_F(MediaDescriptionTest, CreateMediaDescription) {
   MediaDescription m("a");
   EXPECT_EQ("a", m.mid());
 }
+
+TEST_F(MediaDescriptionTest, AddSdesParam) {
+  MediaDescription m("a");
+  m.sdes_params().push_back(cricket::CryptoParams());
+  const std::vector<cricket::CryptoParams>& params = m.sdes_params();
+  EXPECT_EQ(1u, params.size());
 }
+
+}  // namespace webrtc

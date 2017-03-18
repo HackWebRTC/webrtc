@@ -13,8 +13,10 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "webrtc/base/optional.h"
+#include "webrtc/media/base/cryptoparams.h"
 
 namespace webrtc {
 
@@ -32,8 +34,18 @@ class MediaDescription {
   rtc::Optional<std::string> mid() const { return mid_; }
   void set_mid(std::string mid) { mid_.emplace(std::move(mid)); }
 
+  // Security keys and parameters for this media stream. Can be used to
+  // negotiate parameters for SRTP.
+  // https://tools.ietf.org/html/rfc4568#page-5
+  std::vector<cricket::CryptoParams>& sdes_params() { return sdes_params_; }
+  const std::vector<cricket::CryptoParams>& sdes_params() const {
+    return sdes_params_;
+  }
+
  private:
   rtc::Optional<std::string> mid_;
+
+  std::vector<cricket::CryptoParams> sdes_params_;
 };
 
 }  // namespace webrtc
