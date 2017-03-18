@@ -12,7 +12,7 @@
 
 #include "gflags/gflags.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/modules/audio_processing/test/conversational_speech/settings.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/config.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -28,7 +28,7 @@ auto file_exists = [](const char* c, const std::string& filepath) {
 };
 
 const char kUsageDescription[] =
-    "Usage: convspeech_gen\n"
+    "Usage: conversational_speech_generator\n"
     "          -i <path/to/source/audiotracks>\n"
     "          -t <path/to/timing_file.txt>\n"
     "          -o <output/path>\n"
@@ -49,13 +49,13 @@ int main(int argc, char* argv[]) {
   google::SetUsageMessage(kUsageDescription);
   google::ParseCommandLineFlags(&argc, &argv, true);
 
-  ConvSpeechGeneratorSettings settings(FLAGS_i, FLAGS_t, FLAGS_o);
+  conversational_speech::Config config(FLAGS_i, FLAGS_t, FLAGS_o);
 
   // TODO(alessiob): remove line below once debugged.
   rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
-  LOG(LS_VERBOSE) << "i = " << settings.audiotracks_path();
-  LOG(LS_VERBOSE) << "t = " << settings.timing_filepath();
-  LOG(LS_VERBOSE) << "o = " << settings.output_path();
+  LOG(LS_VERBOSE) << "i = " << config.audiotracks_path();
+  LOG(LS_VERBOSE) << "t = " << config.timing_filepath();
+  LOG(LS_VERBOSE) << "o = " << config.output_path();
 
   return 0;
 }

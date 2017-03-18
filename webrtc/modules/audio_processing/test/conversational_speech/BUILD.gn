@@ -6,26 +6,50 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../../../../webrtc.gni")
+import("//webrtc/webrtc.gni")
 
 group("conversational_speech") {
   testonly = true
   deps = [
-    ":convspeech_gen",
+    ":conversational_speech_generator",
+    ":conversational_speech_generator_unittest",
   ]
 }
 
-rtc_executable("convspeech_gen") {
+rtc_executable("conversational_speech_generator") {
   testonly = true
   sources = [
-    "convspeech_gen.cc",
-    "settings.cc",
-    "settings.h",
+    "generator.cc",
   ]
   deps = [
+    ":lib",
     "//third_party/gflags",
     "//webrtc/base:rtc_base_approved",
     "//webrtc/test:test_support",
+  ]
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+}  # bin
+
+rtc_static_library("lib") {
+  testonly = true
+  sources = [
+    "config.cc",
+    "config.h",
+  ]
+  deps = []
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+}  # lib
+
+rtc_test("conversational_speech_generator_unittest") {
+  testonly = true
+  deps = [
+    ":lib",
+    "//testing/gtest",
+    "//webrtc//base:rtc_base_tests_main",
+    "//webrtc/test:test_support",
+  ]
+  sources = [
+    "generator_unittest.cc",
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }

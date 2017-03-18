@@ -8,18 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_SETTINGS_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_SETTINGS_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_CONFIG_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_CONFIG_H_
 
 #include <string>
 
 namespace webrtc {
 namespace test {
+namespace conversational_speech {
 
-struct ConvSpeechGeneratorSettings {
-  ConvSpeechGeneratorSettings(const std::string& audiotracks_path,
-                              const std::string& timing_filepath,
-                              const std::string& output_path)
+struct Config {
+  Config(const std::string& audiotracks_path,
+         const std::string& timing_filepath,
+         const std::string& output_path)
       : audiotracks_path_(audiotracks_path),
         timing_filepath_(timing_filepath),
         output_path_(output_path) {}
@@ -33,7 +34,8 @@ struct ConvSpeechGeneratorSettings {
   const std::string output_path_;
 };
 
+}  // namespace conversational_speech
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_SETTINGS_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_CONFIG_H_

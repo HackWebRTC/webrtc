@@ -8,22 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_processing/test/conversational_speech/settings.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/config.h"
 
 namespace webrtc {
 namespace test {
+namespace conversational_speech {
 
-const std::string& ConvSpeechGeneratorSettings::audiotracks_path() const {
+const std::string& Config::audiotracks_path() const {
   return audiotracks_path_;
 }
 
-const std::string& ConvSpeechGeneratorSettings::timing_filepath() const {
+const std::string& Config::timing_filepath() const {
   return timing_filepath_;
 }
 
-const std::string& ConvSpeechGeneratorSettings::output_path() const {
+const std::string& Config::output_path() const {
   return output_path_;
 }
 
+}  // namespace conversational_speech
 }  // namespace test
 }  // namespace webrtc
