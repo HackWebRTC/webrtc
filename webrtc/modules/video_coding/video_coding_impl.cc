@@ -276,37 +276,14 @@ void VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec) {
   VCMCodecDataBase::Codec(codecType, codec);
 }
 
-// Create method for the new jitter buffer.
-VideoCodingModule* VideoCodingModule::Create(
-    Clock* clock,
-    VCMQMSettingsCallback* qm_settings_callback,
-    NackSender* nack_sender,
-    KeyFrameRequestSender* keyframe_request_sender,
-    EncodedImageCallback* pre_decode_image_callback) {
-  return new VideoCodingModuleImpl(clock, nullptr, nack_sender,
-                                   keyframe_request_sender,
-                                   pre_decode_image_callback);
-}
-
-// Create method for current interface, will be removed when the
+// DEPRECATED.  Create method for current interface, will be removed when the
 // new jitter buffer is in place.
 VideoCodingModule* VideoCodingModule::Create(Clock* clock,
                                              EventFactory* event_factory) {
-  return VideoCodingModule::Create(clock, event_factory,
-                                   nullptr,   // NackSender
-                                   nullptr);  // KeyframeRequestSender
-}
-
-// Create method for the new jitter buffer.
-VideoCodingModule* VideoCodingModule::Create(
-    Clock* clock,
-    EventFactory* event_factory,
-    NackSender* nack_sender,
-    KeyFrameRequestSender* keyframe_request_sender) {
   RTC_DCHECK(clock);
   RTC_DCHECK(event_factory);
-  return new VideoCodingModuleImpl(clock, event_factory, nack_sender,
-                                   keyframe_request_sender, nullptr);
+  return new VideoCodingModuleImpl(clock, event_factory, nullptr, nullptr,
+                                   nullptr);
 }
 
 }  // namespace webrtc

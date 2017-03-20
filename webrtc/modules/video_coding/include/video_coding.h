@@ -71,22 +71,8 @@ class VideoCodingModule : public Module {
  public:
   enum SenderNackMode { kNackNone, kNackAll, kNackSelective };
 
-  enum ReceiverRobustness { kNone, kHardNack, kSoftNack, kReferenceSelection };
-
+  // DEPRECATED.
   static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
-
-  static VideoCodingModule* Create(
-      Clock* clock,
-      VCMQMSettingsCallback* qm_settings_callback,
-      NackSender* nack_sender,
-      KeyFrameRequestSender* keyframe_request_sender,
-      EncodedImageCallback* pre_decode_image_callback);
-
-  static VideoCodingModule* Create(
-      Clock* clock,
-      EventFactory* event_factory,
-      NackSender* nack_sender,
-      KeyFrameRequestSender* keyframe_request_sender);
 
   // Get supported codec settings using codec type
   //
@@ -396,11 +382,11 @@ class VideoCodingModule : public Module {
 
   // Robustness APIs
 
+  // DEPRECATED.
   // Set the receiver robustness mode. The mode decides how the receiver
-  // responds to losses in the stream. The type of counter-measure (soft or
-  // hard NACK, dual decoder, RPS, etc.) is selected through the
-  // robustnessMode parameter. The errorMode parameter decides if it is
-  // allowed to display frames corrupted by losses. Note that not all
+  // responds to losses in the stream. The type of counter-measure is selected
+  // through the robustnessMode parameter. The errorMode parameter decides if it
+  // is allowed to display frames corrupted by losses. Note that not all
   // combinations of the two parameters are feasible. An error will be
   // returned for invalid combinations.
   // Input:
@@ -409,6 +395,7 @@ class VideoCodingModule : public Module {
   //
   // Return value      : VCM_OK, on success;
   //                     < 0, on error.
+  enum ReceiverRobustness { kNone, kHardNack };
   virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                         VCMDecodeErrorMode errorMode) = 0;
 

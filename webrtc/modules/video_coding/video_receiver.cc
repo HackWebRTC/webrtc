@@ -129,8 +129,7 @@ int32_t VideoReceiver::SetReceiveChannelParameters(int64_t rtt) {
 
 // Enable or disable a video protection method.
 // Note: This API should be deprecated, as it does not offer a distinction
-// between the protection method and decoding with or without errors. If such a
-// behavior is desired, use the following API: SetReceiverRobustnessMode.
+// between the protection method and decoding with or without errors.
 int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
                                           bool enable) {
   // By default, do not decode with errors.
@@ -412,8 +411,11 @@ int32_t VideoReceiver::Delay() const {
 }
 
 int VideoReceiver::SetReceiverRobustnessMode(
-    ReceiverRobustness robustnessMode,
+    VideoCodingModule::ReceiverRobustness robustnessMode,
     VCMDecodeErrorMode decode_error_mode) {
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  // TODO(tommi): This method must only be called when the decoder thread
+  // is not running and we don't need to hold this lock.
   rtc::CritScope cs(&receive_crit_);
   switch (robustnessMode) {
     case VideoCodingModule::kNone:
@@ -423,27 +425,9 @@ int VideoReceiver::SetReceiverRobustnessMode(
       // Always wait for retransmissions (except when decoding with errors).
       _receiver.SetNackMode(kNack, -1, -1);
       break;
-    case VideoCodingModule::kSoftNack:
-#if 1
-      assert(false);  // TODO(hlundin): Not completed.
-      return VCM_NOT_IMPLEMENTED;
-#else
-      // Enable hybrid NACK/FEC. Always wait for retransmissions and don't add
-      // extra delay when RTT is above kLowRttNackMs.
-      _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs, -1);
-      break;
-#endif
-    case VideoCodingModule::kReferenceSelection:
-#if 1
-      assert(false);  // TODO(hlundin): Not completed.
-      return VCM_NOT_IMPLEMENTED;
-#else
-      if (decode_error_mode == kNoErrors) {
-        return VCM_PARAMETER_ERROR;
-      }
-      _receiver.SetNackMode(kNoNack, -1, -1);
-      break;
-#endif
+    default:
+      RTC_NOTREACHED();
+      return VCM_PARAMETER_ERROR;
   }
   _receiver.SetDecodeErrorMode(decode_error_mode);
   return VCM_OK;

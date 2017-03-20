@@ -144,8 +144,6 @@ class VideoSender : public Module {
 
 class VideoReceiver : public Module {
  public:
-  typedef VideoCodingModule::ReceiverRobustness ReceiverRobustness;
-
   VideoReceiver(Clock* clock,
                 EventFactory* event_factory,
                 EncodedImageCallback* pre_decode_image_callback,
@@ -180,8 +178,11 @@ class VideoReceiver : public Module {
   int32_t SetRenderDelay(uint32_t timeMS);
   int32_t Delay() const;
 
-  int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
-                                VCMDecodeErrorMode errorMode);
+  // DEPRECATED.
+  int SetReceiverRobustnessMode(
+      VideoCodingModule::ReceiverRobustness robustnessMode,
+      VCMDecodeErrorMode errorMode);
+
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,
                        int max_incomplete_time_ms);

@@ -512,7 +512,6 @@ if (rtc_include_tests) {
       "utility/quality_scaler_unittest.cc",
       "utility/simulcast_rate_allocator_unittest.cc",
       "video_codec_initializer_unittest.cc",
-      "video_coding_robustness_unittest.cc",
       "video_packet_buffer_unittest.cc",
       "video_receiver_unittest.cc",
       "video_sender_unittest.cc",
