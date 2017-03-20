@@ -576,14 +576,13 @@ TEST_F(EndToEndTest, ReceivesNackAndRetransmitsAudio) {
   RunBaseTest(&test);
 }
 
-// Disabled due to flakyness, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=7047.
-TEST_F(EndToEndTest, DISABLED_ReceivesUlpfec) {
+TEST_F(EndToEndTest, ReceivesUlpfec) {
   class UlpfecRenderObserver : public test::EndToEndTest,
                                public rtc::VideoSinkInterface<VideoFrame> {
    public:
     UlpfecRenderObserver()
         : EndToEndTest(kDefaultTimeoutMs),
+          encoder_(VP8Encoder::Create()),
           random_(0xcafef00d1),
           num_packets_sent_(0) {}
 
@@ -593,7 +592,7 @@ TEST_F(EndToEndTest, DISABLED_ReceivesUlpfec) {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-      EXPECT_TRUE(header.payloadType == kFakeVideoSendPayloadType ||
+      EXPECT_TRUE(header.payloadType == kVideoSendPayloadType ||
                   header.payloadType == kRedPayloadType)
           << "Unknown payload type received.";
       EXPECT_EQ(kVideoSendSsrcs[0], header.ssrc) << "Unknown SSRC received.";
@@ -604,12 +603,12 @@ TEST_F(EndToEndTest, DISABLED_ReceivesUlpfec) {
         encapsulated_payload_type =
             static_cast<int>(packet[header.headerLength]);
 
-        EXPECT_TRUE(encapsulated_payload_type == kFakeVideoSendPayloadType ||
+        EXPECT_TRUE(encapsulated_payload_type == kVideoSendPayloadType ||
                     encapsulated_payload_type == kUlpfecPayloadType)
             << "Unknown encapsulated payload type received.";
       }
 
-      // To reduce test flakiness, always let ULPFEC packets through.
+      // To minimize test flakiness, always let ULPFEC packets through.
       if (encapsulated_payload_type == kUlpfecPayloadType) {
         return SEND_PACKET;
       }
@@ -617,11 +616,10 @@ TEST_F(EndToEndTest, DISABLED_ReceivesUlpfec) {
       // Simulate 5% video packet loss after rampup period. Record the
       // corresponding timestamps that were dropped.
       if (num_packets_sent_++ > 100 && random_.Rand(1, 100) <= 5) {
-        if (encapsulated_payload_type == kFakeVideoSendPayloadType) {
+        if (encapsulated_payload_type == kVideoSendPayloadType) {
           dropped_sequence_numbers_.insert(header.sequenceNumber);
           dropped_timestamps_.insert(header.timestamp);
         }
-
         return DROP_PACKET;
       }
 
@@ -642,15 +640,23 @@ TEST_F(EndToEndTest, DISABLED_ReceivesUlpfec) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                       test::kTransportSequenceNumberExtensionId));
+      // Use VP8 instead of FAKE, since the latter does not have PictureID
+      // in the packetization headers.
+      send_config->encoder_settings.encoder = encoder_.get();
+      send_config->encoder_settings.payload_name = "VP8";
+      send_config->encoder_settings.payload_type = kVideoSendPayloadType;
+      VideoReceiveStream::Decoder decoder =
+          test::CreateMatchingDecoder(send_config->encoder_settings);
+      decoder_.reset(decoder.decoder);
+      (*receive_configs)[0].decoders.clear();
+      (*receive_configs)[0].decoders.push_back(decoder);
+
+      // Enable ULPFEC over RED.
       send_config->rtp.ulpfec.red_payload_type = kRedPayloadType;
       send_config->rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
-
-      (*receive_configs)[0].rtp.transport_cc = true;
       (*receive_configs)[0].rtp.ulpfec.red_payload_type = kRedPayloadType;
       (*receive_configs)[0].rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
+
       (*receive_configs)[0].renderer = this;
     }
 
@@ -660,11 +666,13 @@ TEST_F(EndToEndTest, DISABLED_ReceivesUlpfec) {
     }
 
     rtc::CriticalSection crit_;
+    std::unique_ptr<VideoEncoder> encoder_;
+    std::unique_ptr<VideoDecoder> decoder_;
     std::set<uint32_t> dropped_sequence_numbers_ GUARDED_BY(crit_);
     // Several packets can have the same timestamp.
     std::multiset<uint32_t> dropped_timestamps_ GUARDED_BY(crit_);
     Random random_;
-    int num_packets_sent_;
+    int num_packets_sent_ GUARDED_BY(crit_);
   } test;
 
   RunBaseTest(&test);
@@ -793,12 +801,7 @@ class FlexfecRenderObserver : public test::EndToEndTest,
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
-    send_config->rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                     test::kTransportSequenceNumberExtensionId));
-
     (*receive_configs)[0].rtp.local_ssrc = kVideoLocalSsrc;
-    (*receive_configs)[0].rtp.transport_cc = true;
     (*receive_configs)[0].renderer = this;
 
     if (enable_nack_) {
