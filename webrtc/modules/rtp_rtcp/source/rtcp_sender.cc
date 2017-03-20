@@ -295,6 +295,11 @@ void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
   }
 }
 
+uint32_t RTCPSender::SSRC() const {
+  rtc::CritScope lock(&critical_section_rtcp_sender_);
+  return ssrc_;
+}
+
 void RTCPSender::SetSSRC(uint32_t ssrc) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
 

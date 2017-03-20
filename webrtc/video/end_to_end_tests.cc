@@ -2121,7 +2121,6 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
       rtp_rtcp_->SetRemoteSSRC((*receive_configs)[0].rtp.remote_ssrc);
       rtp_rtcp_->SetSSRC((*receive_configs)[0].rtp.local_ssrc);
       rtp_rtcp_->SetREMBStatus(true);
-      rtp_rtcp_->SetSendingStatus(true);
       rtp_rtcp_->SetRTCPStatus(RtcpMode::kReducedSize);
     }
 

@@ -73,8 +73,6 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.transport_feedback_callback = nullptr;
 
   std::unique_ptr<RtpRtcp> rtp_rtcp(RtpRtcp::CreateRtpRtcp(configuration));
-  rtp_rtcp->SetSendingStatus(false);
-  rtp_rtcp->SetSendingMediaStatus(false);
   rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
 
   return rtp_rtcp;

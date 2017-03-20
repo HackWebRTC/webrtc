@@ -96,6 +96,8 @@ class RTCPSender {
 
   void SetLastRtpTime(uint32_t rtp_timestamp, int64_t capture_time_ms);
 
+  uint32_t SSRC() const;
+
   void SetSSRC(uint32_t ssrc);
 
   void SetRemoteSSRC(uint32_t ssrc);

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
 
+#include <memory>
 #include <set>
 #include <utility>
 #include <vector>
@@ -307,8 +308,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
  protected:
   bool UpdateRTCPReceiveInformationTimers();
 
-  RTPSender* rtp_sender() { return &rtp_sender_; }
-  const RTPSender* rtp_sender() const { return &rtp_sender_; }
+  RTPSender* rtp_sender() { return rtp_sender_.get(); }
+  const RTPSender* rtp_sender() const { return rtp_sender_.get(); }
 
   RTCPSender* rtcp_sender() { return &rtcp_sender_; }
   const RTCPSender* rtcp_sender() const { return &rtcp_sender_; }
@@ -329,7 +330,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   bool TimeToSendFullNackList(int64_t now) const;
 
-  RTPSender rtp_sender_;
+  std::unique_ptr<RTPSender> rtp_sender_;
   RTCPSender rtcp_sender_;
   RTCPReceiver rtcp_receiver_;
 
