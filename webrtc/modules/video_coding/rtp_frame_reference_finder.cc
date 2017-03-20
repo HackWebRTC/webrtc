@@ -676,11 +676,14 @@ bool RtpFrameReferenceFinder::Vp9PidTl0Fix(const RtpFrameObject& frame,
     vp9_fix_jump_timestamp_ = frame.timestamp;
     gof_info_.clear();
 
-    vp9_fix_tl0_pic_idx_offset_ =
-        ForwardDiff<uint8_t>(*tl0_pic_idx, vp9_fix_last_tl0_pic_idx_);
-    vp9_fix_tl0_pic_idx_offset_ += kMaxGofSaved;
-    fixed_tl0 = Add<kTl0PicIdLength>(*tl0_pic_idx, vp9_fix_tl0_pic_idx_offset_);
-    vp9_fix_last_tl0_pic_idx_ = fixed_tl0;
+    if (fixed_tl0 != kNoTl0PicIdx) {
+      vp9_fix_tl0_pic_idx_offset_ =
+          ForwardDiff<uint8_t>(*tl0_pic_idx, vp9_fix_last_tl0_pic_idx_);
+      vp9_fix_tl0_pic_idx_offset_ += kMaxGofSaved;
+      fixed_tl0 =
+          Add<kTl0PicIdLength>(*tl0_pic_idx, vp9_fix_tl0_pic_idx_offset_);
+      vp9_fix_last_tl0_pic_idx_ = fixed_tl0;
+    }
   }
 
   // Update |vp9_fix_last_picture_id_| with the most recent picture id.
