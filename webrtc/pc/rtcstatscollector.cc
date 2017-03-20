@@ -1235,9 +1235,8 @@ void RTCStatsCollector::OnDataChannelClosed(DataChannel* channel) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   // Only channels that have been fully opened (and have increased the
   // |data_channels_opened_| counter) increase the closed counter.
-  if (internal_record_.opened_data_channels.find(
-          reinterpret_cast<uintptr_t>(channel)) !=
-      internal_record_.opened_data_channels.end()) {
+  if (internal_record_.opened_data_channels.erase(
+          reinterpret_cast<uintptr_t>(channel))) {
     ++internal_record_.data_channels_closed;
   }
 }

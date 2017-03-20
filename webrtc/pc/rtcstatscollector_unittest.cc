@@ -1463,6 +1463,39 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
               report->Get("RTCPeerConnection")->cast_to<
                   RTCPeerConnectionStats>());
   }
+
+  // Re-opening a data channel (or opening a new data channel that is re-using
+  // the same address in memory) should increase the opened count.
+  dummy_channel_b->SignalOpened(dummy_channel_b.get());
+
+  {
+    collector_->ClearCachedStatsReport();
+    rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+    RTCPeerConnectionStats expected("RTCPeerConnection",
+                                    report->timestamp_us());
+    expected.data_channels_opened = 3;
+    expected.data_channels_closed = 1;
+    ASSERT_TRUE(report->Get("RTCPeerConnection"));
+    EXPECT_EQ(expected,
+              report->Get("RTCPeerConnection")->cast_to<
+                  RTCPeerConnectionStats>());
+  }
+
+  dummy_channel_a->SignalClosed(dummy_channel_a.get());
+  dummy_channel_b->SignalClosed(dummy_channel_b.get());
+
+  {
+    collector_->ClearCachedStatsReport();
+    rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+    RTCPeerConnectionStats expected("RTCPeerConnection",
+                                    report->timestamp_us());
+    expected.data_channels_opened = 3;
+    expected.data_channels_closed = 3;
+    ASSERT_TRUE(report->Get("RTCPeerConnection"));
+    EXPECT_EQ(expected,
+              report->Get("RTCPeerConnection")->cast_to<
+                  RTCPeerConnectionStats>());
+  }
 }
 
 TEST_F(RTCStatsCollectorTest,
