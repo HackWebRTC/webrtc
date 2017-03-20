@@ -269,7 +269,6 @@ if (rtc_include_tests) {
         "test/auto_test/standard/dtmf_test.cc",
         "test/auto_test/standard/file_before_streaming_test.cc",
         "test/auto_test/standard/file_test.cc",
-        "test/auto_test/standard/mixing_test.cc",
         "test/auto_test/standard/rtp_rtcp_before_streaming_test.cc",
         "test/auto_test/standard/rtp_rtcp_extensions.cc",
         "test/auto_test/standard/rtp_rtcp_test.cc",
