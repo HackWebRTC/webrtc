@@ -78,6 +78,10 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
     ]
+    if (rtc_enable_protobuf) {
+      deps += [ ":low_bandwidth_audio_test" ]
+    }
+
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
