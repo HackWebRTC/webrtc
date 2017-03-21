@@ -20,7 +20,7 @@
 #include "webrtc/call/bitrate_allocator.h"
 
 namespace webrtc {
-class CongestionController;
+class SendSideCongestionController;
 class VoiceEngine;
 class RtcEventLog;
 class RtcpBandwidthObserver;
@@ -39,7 +39,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                   rtc::TaskQueue* worker_queue,
                   PacketRouter* packet_router,
-                  CongestionController* congestion_controller,
+                  SendSideCongestionController* send_side_cc,
                   BitrateAllocator* bitrate_allocator,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats);
@@ -77,7 +77,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
 
   BitrateAllocator* const bitrate_allocator_;
-  CongestionController* const congestion_controller_;
+  SendSideCongestionController* const send_side_cc_;
   std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);

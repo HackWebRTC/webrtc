@@ -33,7 +33,7 @@ namespace webrtc {
 
 class BitrateAllocator;
 class CallStats;
-class CongestionController;
+class SendSideCongestionController;
 class IvfFileWriter;
 class PacketRouter;
 class ProcessThread;
@@ -54,7 +54,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
                   ProcessThread* module_process_thread,
                   rtc::TaskQueue* worker_queue,
                   CallStats* call_stats,
-                  CongestionController* congestion_controller,
+                  SendSideCongestionController* congestion_controller,
                   PacketRouter* packet_router,
                   BitrateAllocator* bitrate_allocator,
                   SendDelayStats* send_delay_stats,

@@ -18,8 +18,8 @@
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
-#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
+#include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "webrtc/test/gtest.h"
@@ -72,11 +72,10 @@ struct ConfigHelper {
   explicit ConfigHelper(bool audio_bwe_enabled)
       : simulated_clock_(123456),
         stream_config_(nullptr),
-        congestion_controller_(&simulated_clock_,
-                               &bitrate_observer_,
-                               nullptr,
-                               &event_log_,
-                               &packet_router_),
+        send_side_cc_(&simulated_clock_,
+                      &bitrate_observer_,
+                      &event_log_,
+                      &packet_router_),
         bitrate_allocator_(&limit_observer_),
         worker_queue_("ConfigHelper_worker_queue") {
     using testing::Invoke;
@@ -126,9 +125,7 @@ struct ConfigHelper {
   rtc::scoped_refptr<AudioState> audio_state() { return audio_state_; }
   MockVoEChannelProxy* channel_proxy() { return channel_proxy_; }
   PacketRouter* packet_router() { return &packet_router_; }
-  CongestionController* congestion_controller() {
-    return &congestion_controller_;
-  }
+  SendSideCongestionController* send_side_cc() { return &send_side_cc_; }
   BitrateAllocator* bitrate_allocator() { return &bitrate_allocator_; }
   rtc::TaskQueue* worker_queue() { return &worker_queue_; }
   RtcEventLog* event_log() { return &event_log_; }
@@ -149,16 +146,14 @@ struct ConfigHelper {
       EXPECT_CALL(*channel_proxy_,
                   EnableSendTransportSequenceNumber(kTransportSequenceNumberId))
           .Times(1);
-      EXPECT_CALL(*channel_proxy_,
-                  RegisterSenderCongestionControlObjects(
-                      congestion_controller_.pacer(), &congestion_controller_,
-                      packet_router(), Ne(nullptr)))
+      EXPECT_CALL(*channel_proxy_, RegisterSenderCongestionControlObjects(
+                                       send_side_cc_.pacer(), &send_side_cc_,
+                                       packet_router(), Ne(nullptr)))
           .Times(1);
     } else {
-      EXPECT_CALL(*channel_proxy_,
-                  RegisterSenderCongestionControlObjects(
-                      congestion_controller_.pacer(), &congestion_controller_,
-                      packet_router(), Eq(nullptr)))
+      EXPECT_CALL(*channel_proxy_, RegisterSenderCongestionControlObjects(
+                                       send_side_cc_.pacer(), &send_side_cc_,
+                                       packet_router(), Eq(nullptr)))
           .Times(1);
     }
     EXPECT_CALL(*channel_proxy_, ResetCongestionControlObjects()).Times(1);
@@ -249,7 +244,7 @@ struct ConfigHelper {
   MockTransmitMixer transmit_mixer_;
   AudioProcessing::AudioProcessingStatistics audio_processing_stats_;
   PacketRouter packet_router_;
-  CongestionController congestion_controller_;
+  SendSideCongestionController send_side_cc_;
   MockRtcEventLog event_log_;
   MockRtcpRttStats rtcp_rtt_stats_;
   testing::NiceMock<MockLimitObserver> limit_observer_;
@@ -296,16 +291,16 @@ TEST(AudioSendStreamTest, ConstructDestruct) {
   ConfigHelper helper(false);
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
 }
 
 TEST(AudioSendStreamTest, SendTelephoneEvent) {
   ConfigHelper helper(false);
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
   helper.SetupMockForSendTelephoneEvent();
   EXPECT_TRUE(send_stream.SendTelephoneEvent(kTelephoneEventPayloadType,
       kTelephoneEventPayloadFrequency, kTelephoneEventCode,
@@ -316,8 +311,8 @@ TEST(AudioSendStreamTest, SetMuted) {
   ConfigHelper helper(false);
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
   EXPECT_CALL(*helper.channel_proxy(), SetInputMute(true));
   send_stream.SetMuted(true);
 }
@@ -326,24 +321,24 @@ TEST(AudioSendStreamTest, AudioBweCorrectObjectsOnChannelProxy) {
   ConfigHelper helper(true);
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
 }
 
 TEST(AudioSendStreamTest, NoAudioBweCorrectObjectsOnChannelProxy) {
   ConfigHelper helper(false);
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
 }
 
 TEST(AudioSendStreamTest, GetStats) {
   ConfigHelper helper(false);
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
   helper.SetupMockForGetStats();
   AudioSendStream::Stats stats = send_stream.GetStats();
   EXPECT_EQ(kSsrc, stats.local_ssrc);
@@ -373,8 +368,8 @@ TEST(AudioSendStreamTest, GetStatsTypingNoiseDetected) {
   ConfigHelper helper(false);
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
   helper.SetupMockForGetStats();
   EXPECT_FALSE(send_stream.GetStats().typing_noise_detected);
 
@@ -427,8 +422,8 @@ TEST(AudioSendStreamTest, SendCodecAppliesConfigParams) {
       EnableAudioNetworkAdaptor(*stream_config.audio_network_adaptor_config));
   internal::AudioSendStream send_stream(
       stream_config, helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
 }
 
 // VAD is applied when codec is mono and the CNG frequency matches the codec
@@ -444,16 +439,16 @@ TEST(AudioSendStreamTest, SendCodecCanApplyVad) {
       .WillOnce(Return(true));
   internal::AudioSendStream send_stream(
       stream_config, helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
 }
 
 TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
   ConfigHelper helper(false);
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
   EXPECT_CALL(*helper.channel_proxy(),
               SetBitrate(helper.config().max_bitrate_bps, _));
   send_stream.OnBitrateUpdated(helper.config().max_bitrate_bps + 5000, 0.0, 50,
@@ -464,8 +459,8 @@ TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
   ConfigHelper helper(false);
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
-      helper.packet_router(), helper.congestion_controller(),
-      helper.bitrate_allocator(), helper.event_log(), helper.rtcp_rtt_stats());
+      helper.packet_router(), helper.send_side_cc(), helper.bitrate_allocator(),
+      helper.event_log(), helper.rtcp_rtt_stats());
   EXPECT_CALL(*helper.channel_proxy(), SetBitrate(_, 5000));
   send_stream.OnBitrateUpdated(50000, 0.0, 50, 5000);
 }

@@ -25,7 +25,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/congestion_controller/include/congestion_controller.h"
+#include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
@@ -325,7 +325,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   VideoSendStreamImpl(SendStatisticsProxy* stats_proxy,
                       rtc::TaskQueue* worker_queue,
                       CallStats* call_stats,
-                      CongestionController* congestion_controller,
+                      SendSideCongestionController* send_side_cc,
                       PacketRouter* packet_router,
                       BitrateAllocator* bitrate_allocator,
                       SendDelayStats* send_delay_stats,
@@ -411,7 +411,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       GUARDED_BY(encoder_activity_crit_sect_);
 
   CallStats* const call_stats_;
-  CongestionController* const congestion_controller_;
+  SendSideCongestionController* const send_side_cc_;
   PacketRouter* const packet_router_;
   BitrateAllocator* const bitrate_allocator_;
   VieRemb* const remb_;
@@ -460,7 +460,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
                    ViEEncoder* vie_encoder,
                    ProcessThread* module_process_thread,
                    CallStats* call_stats,
-                   CongestionController* congestion_controller,
+                   SendSideCongestionController* send_side_cc,
                    PacketRouter* packet_router,
                    BitrateAllocator* bitrate_allocator,
                    SendDelayStats* send_delay_stats,
@@ -474,7 +474,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         stats_proxy_(stats_proxy),
         vie_encoder_(vie_encoder),
         call_stats_(call_stats),
-        congestion_controller_(congestion_controller),
+        send_side_cc_(send_side_cc),
         packet_router_(packet_router),
         bitrate_allocator_(bitrate_allocator),
         send_delay_stats_(send_delay_stats),
@@ -489,10 +489,10 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
  private:
   bool Run() override {
     send_stream_->reset(new VideoSendStreamImpl(
-        stats_proxy_, rtc::TaskQueue::Current(), call_stats_,
-        congestion_controller_, packet_router_, bitrate_allocator_,
-        send_delay_stats_, remb_, vie_encoder_, event_log_, config_,
-        initial_encoder_max_bitrate_, std::move(suspended_ssrcs_)));
+        stats_proxy_, rtc::TaskQueue::Current(), call_stats_, send_side_cc_,
+        packet_router_, bitrate_allocator_, send_delay_stats_, remb_,
+        vie_encoder_, event_log_, config_, initial_encoder_max_bitrate_,
+        std::move(suspended_ssrcs_)));
     return true;
   }
 
@@ -501,7 +501,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   SendStatisticsProxy* const stats_proxy_;
   ViEEncoder* const vie_encoder_;
   CallStats* const call_stats_;
-  CongestionController* const congestion_controller_;
+  SendSideCongestionController* const send_side_cc_;
   PacketRouter* const packet_router_;
   BitrateAllocator* const bitrate_allocator_;
   SendDelayStats* const send_delay_stats_;
@@ -616,7 +616,7 @@ VideoSendStream::VideoSendStream(
     ProcessThread* module_process_thread,
     rtc::TaskQueue* worker_queue,
     CallStats* call_stats,
-    CongestionController* congestion_controller,
+    SendSideCongestionController* send_side_cc,
     PacketRouter* packet_router,
     BitrateAllocator* bitrate_allocator,
     SendDelayStats* send_delay_stats,
@@ -637,7 +637,7 @@ VideoSendStream::VideoSendStream(
       config_.pre_encode_callback, config_.post_encode_callback));
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
       &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
-      module_process_thread, call_stats, congestion_controller, packet_router,
+      module_process_thread, call_stats, send_side_cc, packet_router,
       bitrate_allocator, send_delay_stats, remb, event_log, &config_,
       encoder_config.max_bitrate_bps, suspended_ssrcs)));
 
@@ -750,7 +750,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     SendStatisticsProxy* stats_proxy,
     rtc::TaskQueue* worker_queue,
     CallStats* call_stats,
-    CongestionController* congestion_controller,
+    SendSideCongestionController* send_side_cc,
     PacketRouter* packet_router,
     BitrateAllocator* bitrate_allocator,
     SendDelayStats* send_delay_stats,
@@ -769,7 +769,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       worker_queue_(worker_queue),
       check_encoder_activity_task_(nullptr),
       call_stats_(call_stats),
-      congestion_controller_(congestion_controller),
+      send_side_cc_(send_side_cc),
       packet_router_(packet_router),
       bitrate_allocator_(bitrate_allocator),
       remb_(remb),
@@ -783,23 +783,23 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                         config_->rtp.ssrcs,
                         vie_encoder),
       protection_bitrate_calculator_(Clock::GetRealTimeClock(), this),
-      bandwidth_observer_(congestion_controller_->GetBitrateController()
-                              ->CreateRtcpBandwidthObserver()),
-      rtp_rtcp_modules_(CreateRtpRtcpModules(
-          config_->send_transport,
-          &encoder_feedback_,
-          bandwidth_observer_.get(),
-          congestion_controller_,
-          call_stats_->rtcp_rtt_stats(),
-          congestion_controller_->pacer(),
-          packet_router_,
-          flexfec_sender_.get(),
-          stats_proxy_,
-          send_delay_stats,
-          event_log,
-          congestion_controller_->GetRetransmissionRateLimiter(),
-          this,
-          config_->rtp.ssrcs.size())),
+      bandwidth_observer_(
+          send_side_cc_->GetBitrateController()->CreateRtcpBandwidthObserver()),
+      rtp_rtcp_modules_(
+          CreateRtpRtcpModules(config_->send_transport,
+                               &encoder_feedback_,
+                               bandwidth_observer_.get(),
+                               send_side_cc_,
+                               call_stats_->rtcp_rtt_stats(),
+                               send_side_cc_->pacer(),
+                               packet_router_,
+                               flexfec_sender_.get(),
+                               stats_proxy_,
+                               send_delay_stats,
+                               event_log,
+                               send_side_cc_->GetRetransmissionRateLimiter(),
+                               this,
+                               config_->rtp.ssrcs.size())),
       payload_router_(rtp_rtcp_modules_,
                       config_->encoder_settings.payload_type),
       weak_ptr_factory_(this),
@@ -812,10 +812,10 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 
   RTC_DCHECK(!config_->rtp.ssrcs.empty());
   RTC_DCHECK(call_stats_);
-  RTC_DCHECK(congestion_controller_);
+  RTC_DCHECK(send_side_cc_);
   RTC_DCHECK(remb_);
 
-  congestion_controller_->EnablePeriodicAlrProbing(
+  send_side_cc_->EnablePeriodicAlrProbing(
       config_->periodic_alr_bandwidth_probing);
 
   // RTP/RTCP initialization.
@@ -1334,8 +1334,7 @@ void VideoSendStreamImpl::SetTransportOverhead(
 
   transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
 
-  congestion_controller_->SetTransportOverhead(
-      transport_overhead_bytes_per_packet_);
+  send_side_cc_->SetTransportOverhead(transport_overhead_bytes_per_packet_);
 
   size_t rtp_packet_size =
       std::min(config_->rtp.max_packet_size,
