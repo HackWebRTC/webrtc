@@ -15,6 +15,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/mod_ops.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 
 namespace {
@@ -97,23 +98,17 @@ void TransportFeedbackPacketLossTracker::OnPacketAdded(uint16_t seq_num,
   }
 }
 
-void TransportFeedbackPacketLossTracker::OnReceivedTransportFeedback(
-    const rtcp::TransportFeedback& feedback) {
-  const auto& status_vector = feedback.GetStatusVector();
-  const uint16_t base_seq_num = feedback.GetBaseSequence();
-
-  uint16_t seq_num = base_seq_num;
-  for (size_t i = 0; i < status_vector.size(); ++i, ++seq_num) {
-    const auto& it = packet_status_window_.find(seq_num);
+void TransportFeedbackPacketLossTracker::OnNewTransportFeedbackVector(
+    const std::vector<PacketFeedback>& packet_feedback_vector) {
+  for (const PacketFeedback& packet : packet_feedback_vector) {
+    const auto& it = packet_status_window_.find(packet.sequence_number);
 
     // Packets which aren't at least marked as unacked either do not belong to
     // this media stream, or have been shifted out of window.
     if (it == packet_status_window_.end())
       continue;
 
-    const bool lost =
-        status_vector[i] ==
-        webrtc::rtcp::TransportFeedback::StatusSymbol::kNotReceived;
+    const bool lost = packet.arrival_time_ms == PacketFeedback::kNotReceived;
     const PacketStatus packet_status =
         lost ? PacketStatus::Lost : PacketStatus::Received;
 

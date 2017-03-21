@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -28,8 +29,6 @@ constexpr int64_t kDefaultMaxWindowSizeMs = 500 * kDefaultSendIntervalMs;
 
 class TransportFeedbackPacketLossTrackerTest
     : public ::testing::TestWithParam<uint16_t> {
-  using TransportFeedback = webrtc::rtcp::TransportFeedback;
-
  public:
   TransportFeedbackPacketLossTrackerTest() = default;
   virtual ~TransportFeedbackPacketLossTrackerTest() = default;
@@ -75,28 +74,19 @@ class TransportFeedbackPacketLossTrackerTest
       TransportFeedbackPacketLossTracker* tracker,
       uint16_t base_sequence_num,
       const std::vector<bool>& reception_status_vec) {
-    const int64_t kBaseTimeUs = 1234;  // Irrelevant to this test.
-    TransportFeedback test_feedback;
-    test_feedback.SetBase(base_sequence_num, kBaseTimeUs);
-    uint16_t sequence_num = base_sequence_num;
-    for (bool status : reception_status_vec) {
-      if (status)
-        test_feedback.AddReceivedPacket(sequence_num, kBaseTimeUs);
-      ++sequence_num;
+    // Any positive integer signals reception. kNotReceived signals loss.
+    // Other values are just illegal.
+    constexpr int64_t kArrivalTimeMs = 1234;
+
+    std::vector<PacketFeedback> packet_feedback_vector;
+    uint16_t seq_num = base_sequence_num;
+    for (bool received : reception_status_vec) {
+      packet_feedback_vector.emplace_back(PacketFeedback(
+          received ? kArrivalTimeMs : PacketFeedback::kNotReceived, seq_num));
+      ++seq_num;
     }
 
-    // TransportFeedback imposes some limitations on what constitutes a legal
-    // status vector. For instance, the vector cannot terminate in a lost
-    // packet. Make sure all limitations are abided by.
-    RTC_CHECK_EQ(base_sequence_num, test_feedback.GetBaseSequence());
-    const auto& vec = test_feedback.GetStatusVector();
-    RTC_CHECK_EQ(reception_status_vec.size(), vec.size());
-    for (size_t i = 0; i < reception_status_vec.size(); i++) {
-      RTC_CHECK_EQ(reception_status_vec[i],
-                   vec[i] != TransportFeedback::StatusSymbol::kNotReceived);
-    }
-
-    tracker->OnReceivedTransportFeedback(test_feedback);
+    tracker->OnNewTransportFeedbackVector(packet_feedback_vector);
     tracker->Validate();
   }
 

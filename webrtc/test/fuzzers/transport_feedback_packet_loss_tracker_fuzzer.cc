@@ -11,6 +11,7 @@
 #include <algorithm>
 
 #include "webrtc/base/array_view.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/voice_engine/transport_feedback_packet_loss_tracker.h"
@@ -47,22 +48,24 @@ class TransportFeedbackGenerator {
   explicit TransportFeedbackGenerator(const uint8_t** data, size_t* size)
       : data_(data), size_(size) {}
 
-  bool GetNextTransportFeedback(rtcp::TransportFeedback* feedback) {
-    uint16_t base_seq_num = 0;
-    if (!ReadData<uint16_t>(&base_seq_num)) {
-      return false;
-    }
-    constexpr int64_t kBaseTimeUs = 1234;  // Irrelevant to this test.
-    feedback->SetBase(base_seq_num, kBaseTimeUs);
+  bool GetNextTransportFeedbackVector(
+      std::vector<PacketFeedback>* feedback_vector) {
+    RTC_CHECK(feedback_vector->empty());
 
     uint16_t remaining_packets = 0;
-    if (!ReadData<uint16_t>(&remaining_packets))
+    if (!ReadData<uint16_t>(&remaining_packets)) {
       return false;
-    // Range is [0x00001 : 0x10000], but we keep it 0x0000 to 0xffff for now,
-    // and add the last status as RECEIVED. That is because of a limitation
-    // that says that the last status cannot be LOST.
+    }
 
-    uint16_t seq_num = base_seq_num;
+    if (remaining_packets == 0) {
+      return true;
+    }
+
+    uint16_t seq_num;
+    if (!ReadData<uint16_t>(&seq_num)) {  // Fuzz base sequence number.
+      return false;
+    }
+
     while (remaining_packets > 0) {
       uint8_t status_byte = 0;
       if (!ReadData<uint8_t>(&status_byte)) {
@@ -70,17 +73,17 @@ class TransportFeedbackGenerator {
       }
       // Each status byte contains 8 statuses.
       for (size_t i = 0; i < 8 && remaining_packets > 0; ++i) {
+        // Any positive integer signals reception. kNotReceived signals loss.
+        // Other values are just illegal.
+        constexpr int64_t kArrivalTimeMs = 1234;
+
         const bool received = (status_byte & (0x01 << i));
-        if (received) {
-          feedback->AddReceivedPacket(seq_num, kBaseTimeUs);
-        }
-        ++seq_num;
+        feedback_vector->emplace_back(PacketFeedback(
+            received ? kArrivalTimeMs : PacketFeedback::kNotReceived,
+            seq_num++));
         --remaining_packets;
       }
     }
-
-    // As mentioned above, all feedbacks must report with a received packet.
-    feedback->AddReceivedPacket(seq_num, kBaseTimeUs);
 
     return true;
   }
@@ -236,12 +239,13 @@ bool FuzzTransportFeedbackBlock(
   TransportFeedbackGenerator feedback_generator(data, size);
 
   for (size_t i = 0; i < feedbacks_num; i++) {
-    rtcp::TransportFeedback feedback;
-    bool may_continue = feedback_generator.GetNextTransportFeedback(&feedback);
+    std::vector<PacketFeedback> feedback_vector;
+    bool may_continue =
+        feedback_generator.GetNextTransportFeedbackVector(&feedback_vector);
     if (!may_continue) {
       return false;
     }
-    tracker->OnReceivedTransportFeedback(feedback);
+    tracker->OnNewTransportFeedbackVector(feedback_vector);
     tracker->Validate();
   }
 

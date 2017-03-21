@@ -22,6 +22,8 @@ namespace rtcp {
 class TransportFeedback;
 }
 
+struct PacketFeedback;
+
 class TransportFeedbackPacketLossTracker final {
  public:
   // * We count up to |max_window_size_ms| from the sent
@@ -36,7 +38,8 @@ class TransportFeedbackPacketLossTracker final {
 
   void OnPacketAdded(uint16_t seq_num, int64_t send_time_ms);
 
-  void OnReceivedTransportFeedback(const rtcp::TransportFeedback& feedback);
+  void OnNewTransportFeedbackVector(
+      const std::vector<PacketFeedback>& packet_feedbacks_vector);
 
   // Returns the packet loss rate, if the window has enough packet statuses to
   // reliably compute it. Otherwise, returns empty.
