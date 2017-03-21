@@ -17,6 +17,7 @@
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
@@ -150,6 +151,7 @@ class Channel
           uint32_t instanceId,
           const VoEBase::ChannelConfig& config);
   int32_t Init();
+  void Terminate();
   int32_t SetEngineInformation(Statistics& engineStatistics,
                                OutputMixer& outputMixer,
                                ProcessThread& moduleProcessThread,
@@ -504,6 +506,8 @@ class Channel
 
   // TODO(ossu): Remove once GetAudioDecoderFactory() is no longer needed.
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
+
+  rtc::ThreadChecker construction_thread_;
 };
 
 }  // namespace voe

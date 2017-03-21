@@ -21,7 +21,6 @@
 #include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/rate_limiter.h"
-#include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
@@ -935,50 +934,12 @@ Channel::Channel(int32_t channelId,
 }
 
 Channel::~Channel() {
-  rtp_receive_statistics_->RegisterRtcpStatisticsCallback(NULL);
-  WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::~Channel() - dtor");
-
-  StopSend();
-  StopPlayout();
-
-  {
-    rtc::CritScope cs(&_fileCritSect);
-    if (input_file_player_) {
-      input_file_player_->RegisterModuleFileCallback(NULL);
-      input_file_player_->StopPlayingFile();
-    }
-    if (output_file_player_) {
-      output_file_player_->RegisterModuleFileCallback(NULL);
-      output_file_player_->StopPlayingFile();
-    }
-    if (output_file_recorder_) {
-      output_file_recorder_->RegisterModuleFileCallback(NULL);
-      output_file_recorder_->StopRecording();
-    }
-  }
-
-  // The order to safely shutdown modules in a channel is:
-  // 1. De-register callbacks in modules
-  // 2. De-register modules in process thread
-  // 3. Destroy modules
-  if (audio_coding_->RegisterTransportCallback(NULL) == -1) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "~Channel() failed to de-register transport callback"
-                 " (Audio coding module)");
-  }
-  if (audio_coding_->RegisterVADCallback(NULL) == -1) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "~Channel() failed to de-register VAD callback"
-                 " (Audio coding module)");
-  }
-  // De-register modules in process thread
-  _moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get());
-
-  // End of modules shutdown
+  RTC_DCHECK(!channel_state_.Get().sending);
+  RTC_DCHECK(!channel_state_.Get().playing);
 }
 
 int32_t Channel::Init() {
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Init()");
 
@@ -1079,6 +1040,56 @@ int32_t Channel::Init() {
   }
 
   return 0;
+}
+
+void Channel::Terminate() {
+  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  // Must be called on the same thread as Init().
+  WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
+               "Channel::Terminate");
+
+  rtp_receive_statistics_->RegisterRtcpStatisticsCallback(NULL);
+
+  StopSend();
+  StopPlayout();
+
+  {
+    rtc::CritScope cs(&_fileCritSect);
+    if (input_file_player_) {
+      input_file_player_->RegisterModuleFileCallback(NULL);
+      input_file_player_->StopPlayingFile();
+    }
+    if (output_file_player_) {
+      output_file_player_->RegisterModuleFileCallback(NULL);
+      output_file_player_->StopPlayingFile();
+    }
+    if (output_file_recorder_) {
+      output_file_recorder_->RegisterModuleFileCallback(NULL);
+      output_file_recorder_->StopRecording();
+    }
+  }
+
+  // The order to safely shutdown modules in a channel is:
+  // 1. De-register callbacks in modules
+  // 2. De-register modules in process thread
+  // 3. Destroy modules
+  if (audio_coding_->RegisterTransportCallback(NULL) == -1) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
+                 "Terminate() failed to de-register transport callback"
+                 " (Audio coding module)");
+  }
+
+  if (audio_coding_->RegisterVADCallback(NULL) == -1) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
+                 "Terminate() failed to de-register VAD callback"
+                 " (Audio coding module)");
+  }
+
+  // De-register modules in process thread
+  if (_moduleProcessThreadPtr)
+    _moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get());
+
+  // End of modules shutdown
 }
 
 int32_t Channel::SetEngineInformation(Statistics& engineStatistics,
