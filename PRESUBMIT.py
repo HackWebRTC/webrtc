@@ -255,9 +255,7 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
 
   if cpplint._cpplint_state.error_count > 0:
     if input_api.is_committing:
-      # TODO(kjellander): Change back to PresubmitError below when we're
-      # confident with the lint settings.
-      res_type = output_api.PresubmitPromptWarning
+      res_type = output_api.PresubmitError
     else:
       res_type = output_api.PresubmitPromptWarning
     result = [res_type('Changelist failed cpplint.py check.')]

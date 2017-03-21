@@ -180,7 +180,7 @@ enum BandwidthEstimatorType {
   kTcpEstimator
 };
 
-const std::string bwe_names[] = {"Null", "NADA", "REMB", "GCC", "TCP"};
+const char* const bwe_names[] = {"Null", "NADA", "REMB", "GCC", "TCP"};
 
 int64_t GetAbsSendTimeInMs(uint32_t abs_send_time);
 
