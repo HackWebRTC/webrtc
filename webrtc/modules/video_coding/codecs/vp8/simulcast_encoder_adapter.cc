@@ -75,9 +75,6 @@ int VerifyCodec(const webrtc::VideoCodec* inst) {
   if (inst->width <= 1 || inst->height <= 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (inst->VP8().feedbackModeOn && inst->numberOfSimulcastStreams > 1) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-  }
   if (inst->VP8().automaticResizeOn && inst->numberOfSimulcastStreams > 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }

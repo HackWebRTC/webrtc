@@ -80,10 +80,6 @@ TEST_F(TestSimulcastEncoderAdapter, TestSwitchingToOneOddStream) {
   TestVp8Simulcast::TestSwitchingToOneOddStream();
 }
 
-TEST_F(TestSimulcastEncoderAdapter, TestRPSIEncodeDecode) {
-  TestVp8Simulcast::TestRPSIEncodeDecode();
-}
-
 TEST_F(TestSimulcastEncoderAdapter, TestStrideEncodeDecode) {
   TestVp8Simulcast::TestStrideEncodeDecode();
 }
@@ -94,10 +90,6 @@ TEST_F(TestSimulcastEncoderAdapter, TestSaptioTemporalLayers333PatternEncoder) {
 
 TEST_F(TestSimulcastEncoderAdapter, TestSpatioTemporalLayers321PatternEncoder) {
   TestVp8Simulcast::TestSpatioTemporalLayers321PatternEncoder();
-}
-
-TEST_F(TestSimulcastEncoderAdapter, DISABLED_TestRPSIEncoder) {
-  TestVp8Simulcast::TestRPSIEncoder();
 }
 
 class MockVideoEncoder : public VideoEncoder {
@@ -301,7 +293,6 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
     EXPECT_EQ(ref.maxFramerate, target.maxFramerate);
     EXPECT_EQ(ref.VP8().pictureLossIndicationOn,
               target.VP8().pictureLossIndicationOn);
-    EXPECT_EQ(ref.VP8().feedbackModeOn, target.VP8().feedbackModeOn);
     EXPECT_EQ(ref.VP8().complexity, target.VP8().complexity);
     EXPECT_EQ(ref.VP8().resilience, target.VP8().resilience);
     EXPECT_EQ(ref.VP8().numberOfTemporalLayers,

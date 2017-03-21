@@ -27,7 +27,6 @@
 #include "webrtc/common_video/include/i420_buffer_pool.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
-#include "webrtc/modules/video_coding/codecs/vp8/reference_picture_selection.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/video_frame.h"
 
@@ -97,13 +96,11 @@ class VP8EncoderImpl : public VP8Encoder {
   VideoCodec codec_;
   bool inited_;
   int64_t timestamp_;
-  bool feedback_mode_;
   int qp_max_;
   int cpu_speed_default_;
   int number_of_cores_;
   uint32_t rc_max_intra_target_;
   int token_partitions_;
-  ReferencePictureSelection rps_;
   std::vector<TemporalLayers*> temporal_layers_;
   bool down_scale_requested_;
   uint32_t down_scale_bitrate_;
@@ -156,7 +153,6 @@ class VP8DecoderImpl : public VP8Decoder {
   I420BufferPool buffer_pool_;
   DecodedImageCallback* decode_complete_callback_;
   bool inited_;
-  bool feedback_mode_;
   vpx_codec_ctx_t* decoder_;
   VideoCodec codec_;
   int image_format_;

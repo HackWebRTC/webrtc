@@ -461,7 +461,9 @@ enum VP8ResilienceMode {
 class TemporalLayersFactory;
 // VP8 specific
 struct VideoCodecVP8 {
+  // TODO(nisse): Unused, delete?
   bool pictureLossIndicationOn;
+  // TODO(nisse): Delete, as soon as downstream applications are updated.
   bool feedbackModeOn;
   VideoCodecComplexity complexity;
   VP8ResilienceMode resilience;

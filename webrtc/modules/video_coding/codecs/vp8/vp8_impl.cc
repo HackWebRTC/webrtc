@@ -134,7 +134,6 @@ VP8EncoderImpl::VP8EncoderImpl()
     : encoded_complete_callback_(nullptr),
       inited_(false),
       timestamp_(0),
-      feedback_mode_(false),
       qp_max_(56),  // Setting for max quantizer.
       cpu_speed_default_(-6),
       number_of_cores_(0),
@@ -350,8 +349,6 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
 
   SetupTemporalLayers(number_of_streams, num_temporal_layers, *inst);
 
-  feedback_mode_ = inst->VP8().feedbackModeOn;
-
   number_of_cores_ = number_of_cores;
   timestamp_ = 0;
   codec_ = *inst;
@@ -452,11 +449,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   // Set the maximum target size of any key-frame.
   rc_max_intra_target_ = MaxIntraTarget(configurations_[0].rc_buf_optimal_sz);
 
-  if (feedback_mode_) {
-    // Disable periodic key frames if we get feedback from the decoder
-    // through SLI and RPSI.
-    configurations_[0].kf_mode = VPX_KF_DISABLED;
-  } else if (inst->VP8().keyFrameInterval > 0) {
+  if (inst->VP8().keyFrameInterval > 0) {
     configurations_[0].kf_mode = VPX_KF_AUTO;
     configurations_[0].kf_max_dist = inst->VP8().keyFrameInterval;
   } else {
@@ -540,7 +533,6 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
     temporal_layers_[stream_idx]->UpdateConfiguration(&configurations_[i]);
   }
 
-  rps_.Init();
   return InitAndSetControlSettings();
 }
 
@@ -770,47 +762,8 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
       flags[i] = VPX_EFLAG_FORCE_KF;
     }
     std::fill(key_frame_request_.begin(), key_frame_request_.end(), false);
-  } else if (codec_specific_info &&
-             codec_specific_info->codecType == kVideoCodecVP8) {
-    if (feedback_mode_) {
-      // Handle RPSI and SLI messages and set up the appropriate encode flags.
-      bool sendRefresh = false;
-      if (codec_specific_info->codecSpecific.VP8.hasReceivedRPSI) {
-        rps_.ReceivedRPSI(codec_specific_info->codecSpecific.VP8.pictureIdRPSI);
-      }
-      if (codec_specific_info->codecSpecific.VP8.hasReceivedSLI) {
-        sendRefresh = rps_.ReceivedSLI(frame.timestamp());
-      }
-      for (size_t i = 0; i < encoders_.size(); ++i) {
-        flags[i] = rps_.EncodeFlags(picture_id_[i], sendRefresh,
-                                    frame.timestamp());
-      }
-    } else {
-      if (codec_specific_info->codecSpecific.VP8.hasReceivedRPSI) {
-        // Is this our last key frame? If not ignore.
-        // |picture_id_| is defined per spatial stream/layer, so check that
-        // |RPSI| matches the last key frame from any of the spatial streams.
-        // If so, then all spatial streams for this encoding will predict from
-        // its long-term reference (last key frame).
-        int RPSI = codec_specific_info->codecSpecific.VP8.pictureIdRPSI;
-        for (size_t i = 0; i < encoders_.size(); ++i) {
-          if (last_key_frame_picture_id_[i] == RPSI) {
-            // Request for a long term reference frame.
-            // Note 1: overwrites any temporal settings.
-            // Note 2: VP8_EFLAG_NO_UPD_ENTROPY is not needed as that flag is
-            //         set by error_resilient mode.
-            for (size_t j = 0; j < encoders_.size(); ++j) {
-              flags[j] = VP8_EFLAG_NO_UPD_ARF;
-              flags[j] |= VP8_EFLAG_NO_REF_GF;
-              flags[j] |= VP8_EFLAG_NO_REF_LAST;
-            }
-            only_predict_from_key_frame = true;
-            break;
-          }
-        }
-      }
-    }
   }
+
   // Set the encoder frame flags and temporal layer_id for each spatial stream.
   // Note that |temporal_layers_| are defined starting from lowest resolution at
   // position 0 to highest resolution at position |encoders_.size() - 1|,
@@ -960,7 +913,6 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
         // check if encoded frame is a key frame
         if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
           encoded_images_[encoder_idx]._frameType = kVideoFrameKey;
-          rps_.EncodedKeyFrame(picture_id_[stream_idx]);
         }
         PopulateCodecSpecific(&codec_specific, *pkt, stream_idx,
                               input_image.timestamp(),
@@ -1011,7 +963,6 @@ VideoEncoder::ScalingSettings VP8EncoderImpl::GetScalingSettings() const {
 }
 
 int VP8EncoderImpl::SetChannelParameters(uint32_t packetLoss, int64_t rtt) {
-  rps_.SetRtt(rtt);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -1025,7 +976,6 @@ VP8DecoderImpl::VP8DecoderImpl()
     : buffer_pool_(false, 300 /* max_number_of_buffers*/),
       decode_complete_callback_(NULL),
       inited_(false),
-      feedback_mode_(false),
       decoder_(NULL),
       image_format_(VPX_IMG_FMT_NONE),
       ref_frame_(NULL),
@@ -1049,9 +999,6 @@ int VP8DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   if (decoder_ == NULL) {
     decoder_ = new vpx_codec_ctx_t;
     memset(decoder_, 0, sizeof(*decoder_));
-  }
-  if (inst && inst->codecType == kVideoCodecVP8) {
-    feedback_mode_ = inst->VP8().feedbackModeOn;
   }
   vpx_codec_dec_cfg_t cfg;
   // Setting number of threads to a constant value (1)
@@ -1141,21 +1088,18 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
   }
-  // Restrict error propagation using key frame requests. Disabled when
-  // the feedback mode is enabled (RPS).
+  // Restrict error propagation using key frame requests.
   // Reset on a key frame refresh.
-  if (!feedback_mode_) {
-    if (input_image._frameType == kVideoFrameKey &&
-        input_image._completeFrame) {
+  if (input_image._frameType == kVideoFrameKey &&
+      input_image._completeFrame) {
       propagation_cnt_ = -1;
       // Start count on first loss.
-    } else if ((!input_image._completeFrame || missing_frames) &&
-               propagation_cnt_ == -1) {
-      propagation_cnt_ = 0;
-    }
-    if (propagation_cnt_ >= 0) {
-      propagation_cnt_++;
-    }
+  } else if ((!input_image._completeFrame || missing_frames) &&
+             propagation_cnt_ == -1) {
+    propagation_cnt_ = 0;
+  }
+  if (propagation_cnt_ >= 0) {
+    propagation_cnt_++;
   }
 
   vpx_codec_iter_t iter = NULL;
@@ -1199,48 +1143,6 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
     if (ret < 0 && propagation_cnt_ > 0)
       propagation_cnt_ = 0;
     return ret;
-  }
-  if (feedback_mode_) {
-    // Whenever we receive an incomplete key frame all reference buffers will
-    // be corrupt. If that happens we must request new key frames until we
-    // decode a complete key frame.
-    if (input_image._frameType == kVideoFrameKey && !input_image._completeFrame)
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    // Check for reference updates and last reference buffer corruption and
-    // signal successful reference propagation or frame corruption to the
-    // encoder.
-    int reference_updates = 0;
-    if (vpx_codec_control(decoder_, VP8D_GET_LAST_REF_UPDATES,
-                          &reference_updates)) {
-      // Reset to avoid requesting key frames too often.
-      if (propagation_cnt_ > 0) {
-        propagation_cnt_ = 0;
-      }
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-    int corrupted = 0;
-    if (vpx_codec_control(decoder_, VP8D_GET_FRAME_CORRUPTED, &corrupted)) {
-      // Reset to avoid requesting key frames too often.
-      if (propagation_cnt_ > 0)
-        propagation_cnt_ = 0;
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-    int16_t picture_id = -1;
-    if (codec_specific_info) {
-      picture_id = codec_specific_info->codecSpecific.VP8.pictureId;
-    }
-    if (picture_id > -1) {
-      if (((reference_updates & VP8_GOLD_FRAME) ||
-           (reference_updates & VP8_ALTR_FRAME)) &&
-          !corrupted) {
-        decode_complete_callback_->ReceivedDecodedReferenceFrame(picture_id);
-      }
-      decode_complete_callback_->ReceivedDecodedFrame(picture_id);
-    }
-    if (corrupted) {
-      // we can decode but with artifacts
-      return WEBRTC_VIDEO_CODEC_REQUEST_SLI;
-    }
   }
   // Check Vs. threshold
   if (propagation_cnt_ > kVp8ErrorPropagationTh) {

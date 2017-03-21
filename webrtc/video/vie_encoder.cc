@@ -608,20 +608,6 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
 
   overuse_detector_.FrameCaptured(video_frame, time_when_posted_us);
 
-  if (codec_type_ == webrtc::kVideoCodecVP8) {
-    webrtc::CodecSpecificInfo codec_specific_info;
-    codec_specific_info.codecType = webrtc::kVideoCodecVP8;
-
-    codec_specific_info.codecSpecific.VP8.hasReceivedRPSI = has_received_rpsi_;
-    codec_specific_info.codecSpecific.VP8.hasReceivedSLI = has_received_sli_;
-    codec_specific_info.codecSpecific.VP8.pictureIdRPSI = picture_id_rpsi_;
-    codec_specific_info.codecSpecific.VP8.pictureIdSLI = picture_id_sli_;
-    has_received_sli_ = false;
-    has_received_rpsi_ = false;
-
-    video_sender_.AddVideoFrame(video_frame, &codec_specific_info);
-    return;
-  }
   video_sender_.AddVideoFrame(video_frame, nullptr);
 }
 
@@ -672,6 +658,7 @@ void ViEEncoder::SendStatistics(uint32_t bit_rate, uint32_t frame_rate) {
   stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate);
 }
 
+// TODO(nisse): Delete.
 void ViEEncoder::OnReceivedSLI(uint8_t picture_id) {
   if (!encoder_queue_.IsCurrent()) {
     encoder_queue_.PostTask([this, picture_id] { OnReceivedSLI(picture_id); });
@@ -682,6 +669,7 @@ void ViEEncoder::OnReceivedSLI(uint8_t picture_id) {
   has_received_sli_ = true;
 }
 
+// TODO(nisse): Delete.
 void ViEEncoder::OnReceivedRPSI(uint64_t picture_id) {
   if (!encoder_queue_.IsCurrent()) {
     encoder_queue_.PostTask([this, picture_id] { OnReceivedRPSI(picture_id); });
