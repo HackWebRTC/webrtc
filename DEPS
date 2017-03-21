@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '23fea388a2229a0a72123e75d63cb37e9712eee1',
+  'chromium_revision': '9796a271448f237118bbc54316c664a678ada68b',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -23,7 +23,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'faf60eb37f8b9828eddb30c8397b333eb1d89204',
+  'catapult_revision': '7b2dc0f0d46756afbd7d972fccd29f6e31c7b385',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -36,17 +36,17 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + '4915ce5849db734b519d3e8ec405d57a38587f69',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + 'b30ab5d97562139e25b61d847a898885a6555034',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '72004d5fb07002e58048ddc8e04f9c7461c6613c',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + 'e6b510a9daf822bbe9f922c200c58150803d2fd8',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '6496d3abcf51c9e3cd5735be54341d7a873a283d',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + '90254b4c88e102a74404254621990cee92b19230',
   'src/testing/gtest':
     Var('chromium_git') + '/external/github.com/google/googletest.git' + '@' + '6f8a66431cb592dad629028a50b3dd418a408c87',
   'src/testing/gmock':
     Var('chromium_git') + '/external/googlemock.git' + '@' + '0421b6f358139f02e102c9c332ce19a33faf75be', # from svn revision 566
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '7d6de94aa1dca50298c6e3ecc1e2e31dc80c5d7e',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '642287a3927968bdbe0b6b72e1ec6472d295a719',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -79,7 +79,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'fc7a3fd1cf87f52b6d68b39a8b716247b90e2319',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + 'a4c0abd4a028d582e1b18fdf8e7b2686dce367eb',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'e7079f0e0e14108ab0dba58728ff219637458563',
    'src/tools/swarming_client':
@@ -113,13 +113,13 @@ deps_os = {
     'src/third_party/requests/src':
       Var('chromium_git') + '/external/github.com/kennethreitz/requests.git' + '@' + 'f172b30356d821d180fa4ecfa3e71c7274a32de4',
     'src/third_party/robolectric/robolectric':
-      Var('chromium_git') + '/external/robolectric.git' + '@' + 'e38b49a12fdfa17a94f0382cc8ffaf69132fd09b',
+      Var('chromium_git') + '/external/robolectric.git' + '@' + '5244ef6a3a6aada84a7f4f270f253b760019c14c',
     'src/third_party/ub-uiautomator/lib':
       Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + 'ae47da68e7c783b22c65a5de5454ea9d4c8b9436',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + '30b5fc08535e148765cb71bea9557ca187ed277e',
   },
   'unix': {
     'src/third_party/lss':
@@ -325,6 +325,16 @@ hooks = [
                'download',
                '-b', 'chromium-sqlite4java',
                '-l', 'third_party/sqlite4java'
+    ],
+  },
+  {
+    'name': 'xstream',
+    'pattern': '.',
+    'action': ['python',
+               'src/build/android/update_deps/update_third_party_deps.py',
+               'download',
+               '-b', 'chromium-robolectric',
+               '-l', 'third_party/xstream'
     ],
   },
   {
