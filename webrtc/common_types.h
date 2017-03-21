@@ -463,8 +463,6 @@ class TemporalLayersFactory;
 struct VideoCodecVP8 {
   // TODO(nisse): Unused, delete?
   bool pictureLossIndicationOn;
-  // TODO(nisse): Delete, as soon as downstream applications are updated.
-  bool feedbackModeOn;
   VideoCodecComplexity complexity;
   VP8ResilienceMode resilience;
   unsigned char numberOfTemporalLayers;

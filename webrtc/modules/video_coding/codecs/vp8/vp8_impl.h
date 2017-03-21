@@ -92,6 +92,8 @@ class VP8EncoderImpl : public VP8Encoder {
 
   uint32_t MaxIntraTarget(uint32_t optimal_buffer_size);
 
+  const bool use_gf_boost_;
+
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;
   bool inited_;
@@ -100,11 +102,7 @@ class VP8EncoderImpl : public VP8Encoder {
   int cpu_speed_default_;
   int number_of_cores_;
   uint32_t rc_max_intra_target_;
-  int token_partitions_;
   std::vector<TemporalLayers*> temporal_layers_;
-  bool down_scale_requested_;
-  uint32_t down_scale_bitrate_;
-  const bool use_gf_boost_;
   std::vector<uint16_t> picture_id_;
   std::vector<int> last_key_frame_picture_id_;
   std::vector<bool> key_frame_request_;
@@ -115,7 +113,7 @@ class VP8EncoderImpl : public VP8Encoder {
   std::vector<vpx_codec_ctx_t> encoders_;
   std::vector<vpx_codec_enc_cfg_t> configurations_;
   std::vector<vpx_rational_t> downsampling_factors_;
-};  // end of VP8EncoderImpl class
+};
 
 class VP8DecoderImpl : public VP8Decoder {
  public:
@@ -137,32 +135,22 @@ class VP8DecoderImpl : public VP8Decoder {
   const char* ImplementationName() const override;
 
  private:
-  // Copy reference image from this _decoder to the _decoder in copyTo. Set
-  // which frame type to copy in _refFrame->frame_type before the call to
-  // this function.
-  int CopyReference(VP8DecoderImpl* copy);
-
-  int DecodePartitions(const EncodedImage& input_image,
-                       const RTPFragmentationHeader* fragmentation);
-
   int ReturnFrame(const vpx_image_t* img,
                   uint32_t timeStamp,
                   int64_t ntp_time_ms,
                   int qp);
 
+  const bool use_postproc_arm_;
+
   I420BufferPool buffer_pool_;
   DecodedImageCallback* decode_complete_callback_;
   bool inited_;
   vpx_codec_ctx_t* decoder_;
-  VideoCodec codec_;
-  int image_format_;
-  vpx_ref_frame_t* ref_frame_;
   int propagation_cnt_;
   int last_frame_width_;
   int last_frame_height_;
   bool key_frame_required_;
-  const bool use_postproc_arm_;
-};  // end of VP8DecoderImpl class
+};
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_VP8_IMPL_H_
