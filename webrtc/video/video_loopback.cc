@@ -205,6 +205,8 @@ DEFINE_bool(audio, false, "Add audio stream");
 DEFINE_bool(audio_video_sync, false, "Sync audio and video stream (no effect if"
     " audio is false)");
 
+DEFINE_bool(audio_dtx, false, "Enable audio DTX (no effect if audio is false)");
+
 DEFINE_bool(video, true, "Add video stream");
 
 DEFINE_string(
@@ -258,7 +260,8 @@ void Loopback() {
                   flags::FLAGS_use_flexfec,
                   flags::EncodedFramePath(),
                   flags::Clip()};
-  params.audio = {flags::FLAGS_audio, flags::FLAGS_audio_video_sync};
+  params.audio = {flags::FLAGS_audio, flags::FLAGS_audio_video_sync,
+      flags::FLAGS_audio_dtx};
   params.screenshare.enabled = false;
   params.analyzer = {"video", 0.0, 0.0, flags::DurationSecs(),
       flags::OutputFilename(), flags::GraphTitle()};

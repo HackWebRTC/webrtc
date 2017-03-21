@@ -1034,7 +1034,7 @@ VideoQualityTest::Params::Params()
     : call({false, Call::Config::BitrateConfig()}),
       video({false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
              false, "", ""}),
-      audio({false, false}),
+      audio({false, false, false}),
       screenshare({false, 10, 0}),
       analyzer({"", 0.0, 0.0, 0, "", ""}),
       pipe(),
@@ -1710,7 +1710,7 @@ void VideoQualityTest::SetupAudio(int send_channel_id,
   }
   audio_send_config_.send_codec_spec.codec_inst =
       CodecInst{120, "OPUS", 48000, 960, 2, 64000};
-
+  audio_send_config_.send_codec_spec.enable_opus_dtx = params_.audio.dtx;
   audio_send_stream_ = call->CreateAudioSendStream(audio_send_config_);
 
   AudioReceiveStream::Config audio_config;

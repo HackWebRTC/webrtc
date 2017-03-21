@@ -55,6 +55,7 @@ class VideoQualityTest : public test::CallTest {
     struct Audio {
       bool enabled;
       bool sync_video;
+      bool dtx;
     } audio;
     struct Screenshare {
       bool enabled;

@@ -248,7 +248,6 @@ void Loopback() {
                   false,  // FlexFEC disabled.
                   flags::EncodedFramePath(),
                   ""};
-  params.audio = {false, false};
   params.screenshare = {true, flags::SlideChangeInterval(),
       flags::ScrollDuration()};
   params.analyzer = {"screenshare", 0.0, 0.0, flags::DurationSecs(),
