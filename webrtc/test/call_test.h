@@ -150,6 +150,7 @@ class CallTest : public ::testing::Test {
 
 class BaseTest : public RtpRtcpObserver {
  public:
+  BaseTest();
   explicit BaseTest(unsigned int timeout_ms);
   virtual ~BaseTest();
 
@@ -205,6 +206,7 @@ class SendTest : public BaseTest {
 
 class EndToEndTest : public BaseTest {
  public:
+  EndToEndTest();
   explicit EndToEndTest(unsigned int timeout_ms);
 
   bool ShouldCreateReceivers() const override;

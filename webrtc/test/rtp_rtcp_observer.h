@@ -67,6 +67,7 @@ class RtpRtcpObserver {
   }
 
  protected:
+  RtpRtcpObserver() : RtpRtcpObserver(0) {}
   explicit RtpRtcpObserver(int event_timeout_ms)
       : observation_complete_(false, false),
         parser_(RtpHeaderParser::Create()),

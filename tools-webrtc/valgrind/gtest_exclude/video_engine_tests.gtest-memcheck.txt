@@ -3,6 +3,8 @@ EndToEndTest.CanSwitchToUseAllSsrcs
 EndToEndTest.SendsAndReceivesVP9
 TestWithNewVideoJitterBuffer/EndToEndTest.SendsAndReceivesH264/*
 VideoSendStreamTest.VP9FlexMode
+EndToEndTest.InitialProbing
+EndToEndTest.TriggerMidCallProbing
 # Times out due to using a real VP8 encoder.
 *EndToEndTest.VerifyHistogramStatsWithRed*
 

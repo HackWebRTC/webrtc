@@ -419,6 +419,8 @@ const uint32_t CallTest::kReceiverLocalVideoSsrc = 0x123456;
 const uint32_t CallTest::kReceiverLocalAudioSsrc = 0x1234567;
 const int CallTest::kNackRtpHistoryMs = 1000;
 
+BaseTest::BaseTest() {}
+
 BaseTest::BaseTest(unsigned int timeout_ms) : RtpRtcpObserver(timeout_ms) {
 }
 
@@ -495,6 +497,8 @@ SendTest::SendTest(unsigned int timeout_ms) : BaseTest(timeout_ms) {
 bool SendTest::ShouldCreateReceivers() const {
   return false;
 }
+
+EndToEndTest::EndToEndTest() {}
 
 EndToEndTest::EndToEndTest(unsigned int timeout_ms) : BaseTest(timeout_ms) {
 }

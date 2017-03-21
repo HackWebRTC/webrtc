@@ -2198,6 +2198,111 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
   RunBaseTest(&test);
 }
 
+class ProbingTest : public test::EndToEndTest {
+ public:
+  explicit ProbingTest(int start_bitrate_bps)
+      : clock_(Clock::GetRealTimeClock()),
+        start_bitrate_bps_(start_bitrate_bps),
+        state_(0),
+        sender_call_(nullptr) {}
+
+  ~ProbingTest() {}
+
+  Call::Config GetSenderCallConfig() override {
+    Call::Config config(&event_log_);
+    config.bitrate_config.start_bitrate_bps = start_bitrate_bps_;
+    return config;
+  }
+
+  void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+    sender_call_ = sender_call;
+  }
+
+ protected:
+  Clock* const clock_;
+  const int start_bitrate_bps_;
+  int state_;
+  Call* sender_call_;
+};
+
+TEST_F(EndToEndTest, InitialProbing) {
+  class InitialProbingTest : public ProbingTest {
+   public:
+    InitialProbingTest() : ProbingTest(300000) {}
+
+    void PerformTest() override {
+      int64_t start_time_ms = clock_->TimeInMilliseconds();
+      do {
+        if (clock_->TimeInMilliseconds() - start_time_ms > kTimeoutMs) {
+          ADD_FAILURE() << "Timed out while waiting for initial probing.";
+          break;
+        }
+
+        Call::Stats stats = sender_call_->GetStats();
+        // Initial probing is done with a x3 and x6 multiplier of the start
+        // bitrate, so a x4 multiplier is a high enough threshold.
+        if (stats.send_bandwidth_bps > 4 * 300000)
+          break;
+      } while (!observation_complete_.Wait(20));
+    }
+
+   private:
+    const int kTimeoutMs = 1000;
+  } test;
+
+  RunBaseTest(&test);
+}
+
+TEST_F(EndToEndTest, TriggerMidCallProbing) {
+  class TriggerMidCallProbingTest : public ProbingTest {
+   public:
+    TriggerMidCallProbingTest() : ProbingTest(300000) {}
+
+    void PerformTest() override {
+      int64_t start_time_ms = clock_->TimeInMilliseconds();
+      do {
+        if (clock_->TimeInMilliseconds() - start_time_ms > kTimeoutMs) {
+          ADD_FAILURE() << "Timed out while waiting for mid-call probing.";
+          break;
+        }
+
+        Call::Stats stats = sender_call_->GetStats();
+
+        switch (state_) {
+          case 0:
+            if (stats.send_bandwidth_bps > 5 * 300000) {
+              Call::Config::BitrateConfig bitrate_config;
+              bitrate_config.max_bitrate_bps = 100000;
+              sender_call_->SetBitrateConfig(bitrate_config);
+              ++state_;
+            }
+            break;
+          case 1:
+            if (stats.send_bandwidth_bps < 110000) {
+              Call::Config::BitrateConfig bitrate_config;
+              bitrate_config.max_bitrate_bps = 2500000;
+              sender_call_->SetBitrateConfig(bitrate_config);
+              ++state_;
+            }
+            break;
+          case 2:
+            // During high cpu load the pacer will not be able to pace packets
+            // at the correct speed, but if we go from 110 to 1250 kbps
+            // in 5 seconds then it is due to probing.
+            if (stats.send_bandwidth_bps > 1250000)
+              observation_complete_.Set();
+            break;
+        }
+      } while (!observation_complete_.Wait(20));
+    }
+
+   private:
+    const int kTimeoutMs = 5000;
+  } test;
+
+  RunBaseTest(&test);
+}
+
 TEST_F(EndToEndTest, VerifyNackStats) {
   static const int kPacketNumberToDrop = 200;
   class NackObserver : public test::EndToEndTest {
