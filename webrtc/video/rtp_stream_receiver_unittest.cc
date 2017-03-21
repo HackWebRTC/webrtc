@@ -296,4 +296,39 @@ TEST_F(RtpStreamReceiverTest, OutOfBandFmtpSpsPps) {
                                               &idr_packet);
 }
 
+TEST_F(RtpStreamReceiverTest, PaddingInMediaStream) {
+  WebRtcRTPHeader header = GetDefaultPacket();
+  std::vector<uint8_t> data;
+  data.insert(data.end(), {1, 2, 3});
+  header.header.payloadType = 99;
+  header.type.Video.is_first_packet_in_frame = true;
+  header.header.sequenceNumber = 2;
+  header.header.markerBit = true;
+  header.frameType = kVideoFrameKey;
+  header.type.Video.codec = kRtpVideoGeneric;
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
+                                                           data.size());
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
+  rtp_stream_receiver_->OnReceivedPayloadData(data.data(), data.size(),
+                                              &header);
+
+  header.header.sequenceNumber = 3;
+  rtp_stream_receiver_->OnReceivedPayloadData(nullptr, 0, &header);
+
+  header.frameType = kVideoFrameDelta;
+  header.header.sequenceNumber = 4;
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
+  rtp_stream_receiver_->OnReceivedPayloadData(data.data(), data.size(),
+                                              &header);
+
+  header.header.sequenceNumber = 6;
+  rtp_stream_receiver_->OnReceivedPayloadData(data.data(), data.size(),
+                                              &header);
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
+  header.header.sequenceNumber = 5;
+  rtp_stream_receiver_->OnReceivedPayloadData(nullptr, 0, &header);
+}
+
 }  // namespace webrtc

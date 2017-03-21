@@ -250,6 +250,14 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
   packet.timesNacked =
       nack_module_ ? nack_module_->OnReceivedPacket(packet) : -1;
 
+  // In the case of a video stream without picture ids and no rtx the
+  // RtpFrameReferenceFinder will need to know about padding to
+  // correctly calculate frame references.
+  if (packet.sizeBytes == 0) {
+    reference_finder_->PaddingReceived(packet.seqNum);
+    return 0;
+  }
+
   if (packet.codec == kVideoCodecH264) {
     // Only when we start to receive packets will we know what payload type
     // that will be used. When we know the payload type insert the correct
