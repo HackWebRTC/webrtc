@@ -1,5 +1,6 @@
 include_rules = [
   "+webrtc/base",
+  "+webrtc/media",
   "+webrtc/system_wrappers",
   "+third_party/libyuv",
 ]
