@@ -16,15 +16,12 @@
 #include <algorithm>
 #include <list>
 #include <map>
-#include <string>
-#include <utility>
 
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/numerics/exp_filter.h"
 #include "webrtc/common_video/include/frame_callback.h"
-#include "webrtc/system_wrappers/include/field_trial.h"
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <mach/mach.h>
@@ -119,7 +116,7 @@ class OveruseFrameDetector::SendProcessingUsage {
         filtered_frame_diff_ms_(new rtc::ExpFilter(kWeightFactorFrameDiff)) {
     Reset();
   }
-  virtual ~SendProcessingUsage() {}
+  ~SendProcessingUsage() {}
 
   void Reset() {
     count_ = 0;
@@ -142,7 +139,7 @@ class OveruseFrameDetector::SendProcessingUsage {
     filtered_processing_ms_->Apply(exp, processing_ms);
   }
 
-  virtual int Value() {
+  int Value() const {
     if (count_ < static_cast<uint32_t>(options_.min_frame_samples)) {
       return static_cast<int>(InitialUsageInPercent() + 0.5f);
     }
@@ -173,90 +170,6 @@ class OveruseFrameDetector::SendProcessingUsage {
   std::unique_ptr<rtc::ExpFilter> filtered_processing_ms_;
   std::unique_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
 };
-
-// Class used for manual testing of overuse, enabled via field trial flag.
-class OveruseFrameDetector::OverdoseInjector
-    : public OveruseFrameDetector::SendProcessingUsage {
- public:
-  OverdoseInjector(const CpuOveruseOptions& options,
-                   int64_t overuse_period_ms,
-                   int64_t normal_period_ms)
-      : OveruseFrameDetector::SendProcessingUsage(options),
-        overuse_period_ms_(overuse_period_ms),
-        normal_period_ms_(normal_period_ms),
-        is_overusing_(false),
-        last_toggling_ms_(-1) {
-    RTC_DCHECK_GT(overuse_period_ms, 0);
-    RTC_DCHECK_GT(normal_period_ms, 0);
-    LOG(LS_INFO) << "Simulating overuse with intervals " << normal_period_ms
-                 << "ms normal mode, " << overuse_period_ms
-                 << "ms overuse mode.";
-  }
-
-  ~OverdoseInjector() override {}
-
-  int Value() override {
-    int64_t now_ms = rtc::TimeMillis();
-    if (last_toggling_ms_ == -1) {
-      last_toggling_ms_ = now_ms;
-    } else {
-      int64_t toggle_time_ms =
-          last_toggling_ms_ +
-          (is_overusing_ ? overuse_period_ms_ : normal_period_ms_);
-      if (now_ms > toggle_time_ms) {
-        is_overusing_ = !is_overusing_;
-        last_toggling_ms_ = now_ms;
-        if (is_overusing_) {
-          LOG(LS_INFO) << "Simulating CPU overuse.";
-        } else {
-          LOG(LS_INFO) << "Disabling CPU overuse simulation.";
-        }
-      }
-    }
-
-    if (is_overusing_)
-      return 250;  // 250% should be enough for anyone.
-
-    return SendProcessingUsage::Value();
-  }
-
- private:
-  const int64_t overuse_period_ms_;
-  const int64_t normal_period_ms_;
-  bool is_overusing_;
-  int64_t last_toggling_ms_;
-};
-
-std::unique_ptr<OveruseFrameDetector::SendProcessingUsage>
-OveruseFrameDetector::CreateSendProcessingUsage(
-    const CpuOveruseOptions& options) {
-  std::unique_ptr<SendProcessingUsage> instance;
-  std::string toggling_interval =
-      field_trial::FindFullName("WebRTC-ForceSimulatedOveruseIntervalMs");
-  if (!toggling_interval.empty()) {
-    int overuse_period_ms = 0;
-    int normal_period_ms = 0;
-    if (sscanf(toggling_interval.c_str(), "%d-%d", &overuse_period_ms,
-               &normal_period_ms) == 2) {
-      if (overuse_period_ms > 0 && normal_period_ms > 0) {
-        instance.reset(
-            new OverdoseInjector(options, overuse_period_ms, normal_period_ms));
-      } else {
-        LOG(LS_WARNING) << "Invalid (non-positive) overuse / normal periods: "
-                        << overuse_period_ms << " / " << normal_period_ms;
-      }
-    } else {
-      LOG(LS_WARNING) << "Malformed toggling interval: " << toggling_interval;
-    }
-  }
-
-  if (!instance) {
-    // No valid overuse simulation parameters set, use normal usage class.
-    instance.reset(new SendProcessingUsage(options));
-  }
-
-  return instance;
-}
 
 class OveruseFrameDetector::CheckOveruseTask : public rtc::QueuedTask {
  public:
@@ -309,7 +222,7 @@ OveruseFrameDetector::OveruseFrameDetector(
       last_rampup_time_ms_(-1),
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs),
-      usage_(CreateSendProcessingUsage(options)) {
+      usage_(new SendProcessingUsage(options)) {
   task_checker_.Detach();
 }
 
@@ -407,9 +320,8 @@ void OveruseFrameDetector::FrameSent(uint32_t timestamp,
   while (!frame_timing_.empty()) {
     FrameTiming timing = frame_timing_.front();
     if (time_sent_in_us - timing.capture_us <
-        kEncodingTimeMeasureWindowMs * rtc::kNumMicrosecsPerMillisec) {
+        kEncodingTimeMeasureWindowMs * rtc::kNumMicrosecsPerMillisec)
       break;
-    }
     if (timing.last_send_us != -1) {
       int encode_duration_us =
           static_cast<int>(timing.last_send_us - timing.capture_us);
@@ -484,7 +396,6 @@ void OveruseFrameDetector::CheckForOveruse() {
 
 bool OveruseFrameDetector::IsOverusing(const CpuOveruseMetrics& metrics) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-
   if (metrics.encode_usage_percent >=
       options_.high_encode_usage_threshold_percent) {
     ++checks_above_threshold_;

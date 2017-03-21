@@ -10,8 +10,6 @@
 #ifndef WEBRTC_TEST_VCM_CAPTURER_H_
 #define WEBRTC_TEST_VCM_CAPTURER_H_
 
-#include <memory>
-
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/common_types.h"

@@ -2115,8 +2115,8 @@ TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
 
   // Trigger overuse.
   rtc::VideoSinkWants wants;
-  wants.max_pixel_count =
-      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1;
+  wants.max_pixel_count = rtc::Optional<int>(
+      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1);
   send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
   EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
@@ -2124,8 +2124,8 @@ TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
   EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
 
   // Trigger overuse again.
-  wants.max_pixel_count =
-      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1;
+  wants.max_pixel_count = rtc::Optional<int>(
+      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1);
   send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
   EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
@@ -2143,7 +2143,7 @@ TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
       send_stream->GetLastWidth() * send_stream->GetLastHeight();
   // Cap the max to 4x the pixel count (assuming max 1/2 x 1/2 scale downs)
   // of the current stream, so we don't take too large steps.
-  wants.max_pixel_count = current_pixel_count * 4;
+  wants.max_pixel_count = rtc::Optional<int>(current_pixel_count * 4);
   // Default step down is 3/5 pixel count, so go up by 5/3.
   wants.target_pixel_count = rtc::Optional<int>((current_pixel_count * 5) / 3);
   send_stream->InjectVideoSinkWants(wants);
@@ -2155,7 +2155,7 @@ TEST_F(WebRtcVideoChannel2Test, AdaptsOnOveruseAndChangeResolution) {
   // Trigger underuse again, should go back up to full resolution.
   current_pixel_count =
       send_stream->GetLastWidth() * send_stream->GetLastHeight();
-  wants.max_pixel_count = current_pixel_count * 4;
+  wants.max_pixel_count = rtc::Optional<int>(current_pixel_count * 4);
   wants.target_pixel_count = rtc::Optional<int>((current_pixel_count * 5) / 3);
   send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724, cricket::FOURCC_I420));
@@ -2199,8 +2199,8 @@ TEST_F(WebRtcVideoChannel2Test, PreviousAdaptationDoesNotApplyToScreenshare) {
 
   // Trigger overuse.
   rtc::VideoSinkWants wants;
-  wants.max_pixel_count =
-      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1;
+  wants.max_pixel_count = rtc::Optional<int>(
+      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1);
   send_stream->InjectVideoSinkWants(wants);
   EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720, cricket::FOURCC_I420));
   EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
@@ -2242,7 +2242,6 @@ TEST_F(WebRtcVideoChannel2Test, PreviousAdaptationDoesNotApplyToScreenshare) {
 
 void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
                                                 bool is_screenshare) {
-  const int kDefaultFps = 30;
   cricket::VideoCodec codec = GetEngineCodec("VP8");
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(codec);
@@ -2264,17 +2263,14 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
   options.is_screencast = rtc::Optional<bool>(is_screenshare);
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
   cricket::VideoFormat capture_format = capturer.GetSupportedFormats()->front();
-  capture_format.interval = rtc::kNumNanosecsPerSec / kDefaultFps;
   EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(capture_format));
 
   EXPECT_TRUE(channel_->SetSend(true));
 
   FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
 
-  if (!enable_overuse) {
+  if (!enable_overuse || is_screenshare) {
     EXPECT_FALSE(send_stream->resolution_scaling_enabled());
-    EXPECT_FALSE(send_stream->framerate_scaling_enabled());
-    EXPECT_EQ(is_screenshare, send_stream->framerate_scaling_enabled());
 
     EXPECT_TRUE(capturer.CaptureFrame());
     EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
@@ -2286,59 +2282,33 @@ void WebRtcVideoChannel2Test::TestCpuAdaptation(bool enable_overuse,
     return;
   }
 
-  if (is_screenshare) {
-    EXPECT_FALSE(send_stream->resolution_scaling_enabled());
-    EXPECT_TRUE(send_stream->framerate_scaling_enabled());
-  } else {
-    EXPECT_TRUE(send_stream->resolution_scaling_enabled());
-    EXPECT_FALSE(send_stream->framerate_scaling_enabled());
-  }
-
+  EXPECT_TRUE(send_stream->resolution_scaling_enabled());
   // Trigger overuse.
   ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
 
   rtc::VideoSinkWants wants;
-  if (is_screenshare) {
-    wants.max_framerate_fps = (kDefaultFps * 2) / 3;
-  } else {
-    wants.max_pixel_count = capture_format.width * capture_format.height - 1;
-  }
+  wants.max_pixel_count =
+      rtc::Optional<int>(capture_format.width * capture_format.height - 1);
   send_stream->InjectVideoSinkWants(wants);
 
-  for (int i = 0; i < kDefaultFps; ++i)
-    EXPECT_TRUE(capturer.CaptureFrame());
+  EXPECT_TRUE(capturer.CaptureFrame());
+  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
 
-  if (is_screenshare) {
-    // Drops every third frame.
-    EXPECT_EQ(kDefaultFps * 2 / 3, send_stream->GetNumberOfSwappedFrames());
-    EXPECT_EQ(send_stream->GetLastWidth(), capture_format.width);
-    EXPECT_EQ(send_stream->GetLastHeight(), capture_format.height);
-  } else {
-    EXPECT_EQ(kDefaultFps, send_stream->GetNumberOfSwappedFrames());
-    EXPECT_LT(send_stream->GetLastWidth(), capture_format.width);
-    EXPECT_LT(send_stream->GetLastHeight(), capture_format.height);
-  }
+  EXPECT_TRUE(capturer.CaptureFrame());
+  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
+
+  EXPECT_LT(send_stream->GetLastWidth(), capture_format.width);
+  EXPECT_LT(send_stream->GetLastHeight(), capture_format.height);
 
   // Trigger underuse which should go back to normal resolution.
   int last_pixel_count =
       send_stream->GetLastWidth() * send_stream->GetLastHeight();
-  if (is_screenshare) {
-    wants.max_framerate_fps = kDefaultFps;
-  } else {
-    wants.max_pixel_count = last_pixel_count * 4;
-    wants.target_pixel_count.emplace((last_pixel_count * 5) / 3);
-  }
+  wants.max_pixel_count = rtc::Optional<int>(last_pixel_count * 4);
+  wants.target_pixel_count = rtc::Optional<int>((last_pixel_count * 5) / 3);
   send_stream->InjectVideoSinkWants(wants);
 
-  for (int i = 0; i < kDefaultFps; ++i)
-    EXPECT_TRUE(capturer.CaptureFrame());
-
-  if (is_screenshare) {
-    EXPECT_EQ(kDefaultFps + (kDefaultFps * 2 / 3),
-              send_stream->GetNumberOfSwappedFrames());
-  } else {
-    EXPECT_EQ(kDefaultFps * 2, send_stream->GetNumberOfSwappedFrames());
-  }
+  EXPECT_TRUE(capturer.CaptureFrame());
+  EXPECT_EQ(3, send_stream->GetNumberOfSwappedFrames());
 
   EXPECT_EQ(capture_format.width, send_stream->GetLastWidth());
   EXPECT_EQ(capture_format.height, send_stream->GetLastHeight());

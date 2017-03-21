@@ -146,7 +146,7 @@ class VideoQualityTest : public test::CallTest {
   int send_logs_;
 
   VideoSendStream::DegradationPreference degradation_preference_ =
-      VideoSendStream::DegradationPreference::kMaintainFramerate;
+      VideoSendStream::DegradationPreference::kBalanced;
   Params params_;
 };
 

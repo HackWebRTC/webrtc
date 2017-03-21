@@ -81,8 +81,8 @@ bool AdaptedVideoTrackSource::apply_rotation() {
 void AdaptedVideoTrackSource::OnSinkWantsChanged(
     const rtc::VideoSinkWants& wants) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  video_adapter_.OnResolutionFramerateRequest(
-      wants.target_pixel_count, wants.max_pixel_count, wants.max_framerate_fps);
+  video_adapter_.OnResolutionRequest(wants.target_pixel_count,
+                                     wants.max_pixel_count);
 }
 
 bool AdaptedVideoTrackSource::AdaptFrame(int width,

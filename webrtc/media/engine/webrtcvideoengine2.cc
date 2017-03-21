@@ -38,10 +38,9 @@
 #include "webrtc/video_decoder.h"
 #include "webrtc/video_encoder.h"
 
-using DegradationPreference = webrtc::VideoSendStream::DegradationPreference;
-
 namespace cricket {
 namespace {
+
 // If this field trial is enabled, we will enable sending FlexFEC and disable
 // sending ULPFEC whenever the former has been negotiated. Receiving FlexFEC
 // is enabled whenever FlexFEC has been negotiated.
@@ -1638,33 +1637,24 @@ bool WebRtcVideoChannel2::WebRtcVideoSendStream::SetVideoSend(
   }
 
   if (source_ && stream_) {
-    stream_->SetSource(nullptr, DegradationPreference::kDegradationDisabled);
+    stream_->SetSource(
+        nullptr, webrtc::VideoSendStream::DegradationPreference::kBalanced);
   }
   // Switch to the new source.
   source_ = source;
   if (source && stream_) {
-    stream_->SetSource(this, GetDegradationPreference());
+    // Do not adapt resolution for screen content as this will likely
+    // result in blurry and unreadable text.
+    // |this| acts like a VideoSource to make sure SinkWants are handled on the
+    // correct thread.
+    stream_->SetSource(
+        this, enable_cpu_overuse_detection_ &&
+                      !parameters_.options.is_screencast.value_or(false)
+                  ? webrtc::VideoSendStream::DegradationPreference::kBalanced
+                  : webrtc::VideoSendStream::DegradationPreference::
+                        kMaintainResolution);
   }
   return true;
-}
-
-webrtc::VideoSendStream::DegradationPreference
-WebRtcVideoChannel2::WebRtcVideoSendStream::GetDegradationPreference() const {
-  // Do not adapt resolution for screen content as this will likely
-  // result in blurry and unreadable text.
-  // |this| acts like a VideoSource to make sure SinkWants are handled on the
-  // correct thread.
-  DegradationPreference degradation_preference;
-  if (!enable_cpu_overuse_detection_) {
-    degradation_preference = DegradationPreference::kDegradationDisabled;
-  } else {
-    if (parameters_.options.is_screencast.value_or(false)) {
-      degradation_preference = DegradationPreference::kMaintainResolution;
-    } else {
-      degradation_preference = DegradationPreference::kMaintainFramerate;
-    }
-  }
-  return degradation_preference;
 }
 
 const std::vector<uint32_t>&
@@ -2104,7 +2094,16 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::RecreateWebRtcStream() {
   parameters_.encoder_config.encoder_specific_settings = NULL;
 
   if (source_) {
-    stream_->SetSource(this, GetDegradationPreference());
+    // Do not adapt resolution for screen content as this will likely result in
+    // blurry and unreadable text.
+    // |this| acts like a VideoSource to make sure SinkWants are handled on the
+    // correct thread.
+    stream_->SetSource(
+        this, enable_cpu_overuse_detection_ &&
+                      !parameters_.options.is_screencast.value_or(false)
+                  ? webrtc::VideoSendStream::DegradationPreference::kBalanced
+                  : webrtc::VideoSendStream::DegradationPreference::
+                        kMaintainResolution);
   }
 
   // Call stream_->Start() if necessary conditions are met.

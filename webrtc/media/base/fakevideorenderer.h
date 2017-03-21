@@ -12,7 +12,6 @@
 #define WEBRTC_MEDIA_BASE_FAKEVIDEORENDERER_H_
 
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/media/base/videosinkinterface.h"
 

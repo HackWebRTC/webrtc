@@ -106,8 +106,7 @@ VideoAdapter::VideoAdapter(int required_resolution_alignment)
       previous_height_(0),
       required_resolution_alignment_(required_resolution_alignment),
       resolution_request_target_pixel_count_(std::numeric_limits<int>::max()),
-      resolution_request_max_pixel_count_(std::numeric_limits<int>::max()),
-      max_framerate_request_(std::numeric_limits<int>::max()) {}
+      resolution_request_max_pixel_count_(std::numeric_limits<int>::max()) {}
 
 VideoAdapter::VideoAdapter() : VideoAdapter(1) {}
 
@@ -115,34 +114,21 @@ VideoAdapter::~VideoAdapter() {}
 
 bool VideoAdapter::KeepFrame(int64_t in_timestamp_ns) {
   rtc::CritScope cs(&critical_section_);
-  if (max_framerate_request_ <= 0)
-    return false;
-
-  int64_t frame_interval_ns =
-      requested_format_ ? requested_format_->interval : 0;
-
-  // If |max_framerate_request_| is not set, it will default to maxint, which
-  // will lead to a frame_interval_ns rounded to 0.
-  frame_interval_ns = std::max<int64_t>(
-      frame_interval_ns, rtc::kNumNanosecsPerSec / max_framerate_request_);
-
-  if (frame_interval_ns <= 0) {
-    // Frame rate throttling not enabled.
+  if (!requested_format_ || requested_format_->interval == 0)
     return true;
-  }
 
   if (next_frame_timestamp_ns_) {
     // Time until next frame should be outputted.
     const int64_t time_until_next_frame_ns =
         (*next_frame_timestamp_ns_ - in_timestamp_ns);
 
-    // Continue if timestamp is within expected range.
-    if (std::abs(time_until_next_frame_ns) < 2 * frame_interval_ns) {
+    // Continue if timestamp is withing expected range.
+    if (std::abs(time_until_next_frame_ns) < 2 * requested_format_->interval) {
       // Drop if a frame shouldn't be outputted yet.
       if (time_until_next_frame_ns > 0)
         return false;
       // Time to output new frame.
-      *next_frame_timestamp_ns_ += frame_interval_ns;
+      *next_frame_timestamp_ns_ += requested_format_->interval;
       return true;
     }
   }
@@ -151,7 +137,7 @@ bool VideoAdapter::KeepFrame(int64_t in_timestamp_ns) {
   // reset. Set first timestamp target to just half the interval to prefer
   // keeping frames in case of jitter.
   next_frame_timestamp_ns_ =
-      rtc::Optional<int64_t>(in_timestamp_ns + frame_interval_ns / 2);
+      rtc::Optional<int64_t>(in_timestamp_ns + requested_format_->interval / 2);
   return true;
 }
 
@@ -263,15 +249,14 @@ void VideoAdapter::OnOutputFormatRequest(const VideoFormat& format) {
   next_frame_timestamp_ns_ = rtc::Optional<int64_t>();
 }
 
-void VideoAdapter::OnResolutionFramerateRequest(
+void VideoAdapter::OnResolutionRequest(
     const rtc::Optional<int>& target_pixel_count,
-    int max_pixel_count,
-    int max_framerate_fps) {
+    const rtc::Optional<int>& max_pixel_count) {
   rtc::CritScope cs(&critical_section_);
-  resolution_request_max_pixel_count_ = max_pixel_count;
+  resolution_request_max_pixel_count_ =
+      max_pixel_count.value_or(std::numeric_limits<int>::max());
   resolution_request_target_pixel_count_ =
       target_pixel_count.value_or(resolution_request_max_pixel_count_);
-  max_framerate_request_ = max_framerate_fps;
 }
 
 }  // namespace cricket
