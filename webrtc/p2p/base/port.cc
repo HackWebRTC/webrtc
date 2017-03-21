@@ -88,7 +88,7 @@ const int64_t kForgetPacketAfter = 30000;  // 30 seconds
 
 namespace cricket {
 
-// TODO(ronghuawu): Use "host", "srflx", "prflx" and "relay". But this requires
+// TODO(ronghuawu): Use "local", "srflx", "prflx" and "relay". But this requires
 // the signaling part be updated correspondingly as well.
 const char LOCAL_PORT_TYPE[] = "local";
 const char STUN_PORT_TYPE[] = "stun";

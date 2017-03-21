@@ -309,6 +309,16 @@ class MediaContentDescription : public ContentDescription {
   }
   int buffered_mode_latency() const { return buffered_mode_latency_; }
 
+  // https://tools.ietf.org/html/rfc4566#section-5.7
+  // May be present at the media or session level of SDP. If present at both
+  // levels, the media-level attribute overwrites the session-level one.
+  void set_connection_address(const rtc::SocketAddress& address) {
+    connection_address_ = address;
+  }
+  const rtc::SocketAddress& connection_address() const {
+    return connection_address_;
+  }
+
  protected:
   bool rtcp_mux_ = false;
   bool rtcp_reduced_size_ = false;
@@ -324,6 +334,7 @@ class MediaContentDescription : public ContentDescription {
   bool partial_ = false;
   int buffered_mode_latency_ = kBufferedModeDisabled;
   MediaContentDirection direction_ = MD_SENDRECV;
+  rtc::SocketAddress connection_address_;
 };
 
 template <class C>

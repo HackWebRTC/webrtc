@@ -2168,7 +2168,7 @@ TEST_F(WebRtcSessionTest, TestAddAndRemoveRemoteCandidates) {
   SendAudioVideoStream1();
 
   cricket::Candidate candidate(1, "udp", rtc::SocketAddress("1.1.1.1", 5000), 0,
-                               "", "", "host", 0, "");
+                               "", "", "local", 0, "");
   candidate.set_transport_name("audio");
   JsepIceCandidate ice_candidate1(kMediaContentName0, 0, candidate);
 
@@ -3077,6 +3077,7 @@ TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
   candidate0.set_address(rtc::SocketAddress("1.1.1.1", 5000));
   candidate0.set_component(1);
   candidate0.set_protocol("udp");
+  candidate0.set_type("local");
   JsepIceCandidate ice_candidate0(kMediaContentName0, kMediaContentIndex0,
                                   candidate0);
   EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate0));
@@ -3086,6 +3087,7 @@ TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
   candidate1.set_address(rtc::SocketAddress("1.1.1.1", 6000));
   candidate1.set_component(1);
   candidate1.set_protocol("udp");
+  candidate1.set_type("local");
   JsepIceCandidate ice_candidate1(kMediaContentName1, kMediaContentIndex1,
                                   candidate1);
   EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate1));
@@ -3095,6 +3097,7 @@ TEST_F(WebRtcSessionTest, TestIgnoreCandidatesForUnusedTransportWhenBundling) {
   candidate2.set_address(rtc::SocketAddress("1.1.1.1", 5001));
   candidate2.set_component(1);
   candidate2.set_protocol("udp");
+  candidate2.set_type("local");
   JsepIceCandidate ice_candidate2(kMediaContentName0, kMediaContentIndex0,
                                   candidate2);
   EXPECT_TRUE(session_->ProcessIceMessage(&ice_candidate2));
