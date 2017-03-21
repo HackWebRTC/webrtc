@@ -23,6 +23,9 @@ namespace webrtc {
 
 namespace {
 
+constexpr int64_t kDefaultSendIntervalMs = 10;
+constexpr int64_t kDefaultMaxWindowSizeMs = 500 * kDefaultSendIntervalMs;
+
 class TransportFeedbackPacketLossTrackerTest
     : public ::testing::TestWithParam<uint16_t> {
   using TransportFeedback = webrtc::rtcp::TransportFeedback;
@@ -141,7 +144,7 @@ class TransportFeedbackPacketLossTrackerTest
 
 // Sanity check on an empty window.
 TEST_P(TransportFeedbackPacketLossTrackerTest, EmptyWindow) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 5);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 5);
 
   // PLR and RPLR reported as unknown before reception of first feedback.
   ValidatePacketLossStatistics(tracker,
@@ -151,7 +154,7 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, EmptyWindow) {
 
 // A feedback received for an empty window has no effect.
 TEST_P(TransportFeedbackPacketLossTrackerTest, EmptyWindowFeedback) {
-  TransportFeedbackPacketLossTracker tracker(5000, 3, 2);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 3, 2);
 
   // Feedback doesn't correspond to any packets - ignored.
   AddTransportFeedbackAndValidate(&tracker, base_, {true, false, true});
@@ -160,19 +163,19 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, EmptyWindowFeedback) {
                                rtc::Optional<float>());
 
   // After the packets are transmitted, acking them would have an effect.
-  SendPackets(&tracker, base_, 3, 10);
+  SendPackets(&tracker, base_, 3, kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_, {true, false, true});
   ValidatePacketLossStatistics(tracker, 1.0f / 3.0f, 0.5f);
 }
 
 // Sanity check on partially filled window.
 TEST_P(TransportFeedbackPacketLossTrackerTest, PartiallyFilledWindow) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 4);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 4);
 
   // PLR unknown before minimum window size reached.
   // RPLR unknown before minimum pairs reached.
   // Expected window contents: [] -> [1001].
-  SendPackets(&tracker, base_, 3, 10);
+  SendPackets(&tracker, base_, 3, kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_, {true, false, false, true});
   ValidatePacketLossStatistics(tracker,
                                rtc::Optional<float>(),
@@ -181,12 +184,12 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, PartiallyFilledWindow) {
 
 // Sanity check on minimum filled window - PLR known, RPLR unknown.
 TEST_P(TransportFeedbackPacketLossTrackerTest, PlrMinimumFilledWindow) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 5);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 5);
 
   // PLR correctly calculated after minimum window size reached.
   // RPLR not necessarily known at that time (not if min-pairs not reached).
   // Expected window contents: [] -> [10011].
-  SendPackets(&tracker, base_, 5, 10);
+  SendPackets(&tracker, base_, 5, kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_,
                                   {true, false, false, true, true});
   ValidatePacketLossStatistics(tracker,
@@ -196,12 +199,12 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, PlrMinimumFilledWindow) {
 
 // Sanity check on minimum filled window - PLR unknown, RPLR known.
 TEST_P(TransportFeedbackPacketLossTrackerTest, RplrMinimumFilledWindow) {
-  TransportFeedbackPacketLossTracker tracker(5000, 6, 4);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 6, 4);
 
   // RPLR correctly calculated after minimum pairs reached.
   // PLR not necessarily known at that time (not if min window not reached).
   // Expected window contents: [] -> [10011].
-  SendPackets(&tracker, base_, 5, 10);
+  SendPackets(&tracker, base_, 5, kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_,
                                   {true, false, false, true, true});
   ValidatePacketLossStatistics(tracker,
@@ -212,7 +215,7 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, RplrMinimumFilledWindow) {
 // If packets are sent close enough together that the clock reading for both
 // is the same, that's handled properly.
 TEST_P(TransportFeedbackPacketLossTrackerTest, SameSentTime) {
-  TransportFeedbackPacketLossTracker tracker(5000, 3, 2);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 3, 2);
 
   // Expected window contents: [] -> [101].
   SendPackets(&tracker, base_, 3, 0);  // Note: time interval = 0ms.
@@ -223,9 +226,9 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, SameSentTime) {
 
 // Additional reports update PLR and RPLR.
 TEST_P(TransportFeedbackPacketLossTrackerTest, ExtendWindow) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 5);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 5);
 
-  SendPackets(&tracker, base_, 25, 10);
+  SendPackets(&tracker, base_, 25, kDefaultSendIntervalMs);
 
   // Expected window contents: [] -> [10011].
   AddTransportFeedbackAndValidate(&tracker, base_,
@@ -247,13 +250,11 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, ExtendWindow) {
 
 // Correct calculation with different packet lengths.
 TEST_P(TransportFeedbackPacketLossTrackerTest, DifferentSentIntervals) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 4);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 4);
 
-  int64_t now_ms = 0;
   int64_t frames[] = {20, 60, 120, 20, 60};
   for (size_t i = 0; i < sizeof(frames) / sizeof(frames[0]); i++) {
-    tracker.OnPacketAdded(static_cast<uint16_t>(base_ + i), now_ms);
-    now_ms += frames[i];
+    SendPackets(&tracker, {static_cast<uint16_t>(base_ + i)}, frames[i]);
   }
 
   // Expected window contents: [] -> [10011].
@@ -266,11 +267,11 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, DifferentSentIntervals) {
 // window size. The oldest packets get shifted out of window to make room
 // for the newer ones.
 TEST_P(TransportFeedbackPacketLossTrackerTest, MaxWindowSize) {
-  TransportFeedbackPacketLossTracker tracker(40, 5, 1);
+  TransportFeedbackPacketLossTracker tracker(4 * kDefaultSendIntervalMs, 5, 1);
 
-  SendPackets(&tracker, base_, 6, 10, true);
+  SendPackets(&tracker, base_, 6, kDefaultSendIntervalMs, true);
 
-  // Up to the maximum time-span retained (first + 4 * 10ms).
+  // Up to the maximum time-span retained (first + 4 * kDefaultSendIntervalMs).
   // Expected window contents: [] -> [01001].
   AddTransportFeedbackAndValidate(&tracker, base_,
                                   {false, true, false, false, true});
@@ -285,10 +286,10 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, MaxWindowSize) {
 
 // All packets received.
 TEST_P(TransportFeedbackPacketLossTrackerTest, AllReceived) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 4);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 4);
 
   // Expected window contents: [] -> [11111].
-  SendPackets(&tracker, base_, 5, 10);
+  SendPackets(&tracker, base_, 5, kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_,
                                   {true, true, true, true, true});
   ValidatePacketLossStatistics(tracker, 0.0f, 0.0f);
@@ -296,12 +297,12 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, AllReceived) {
 
 // All packets lost.
 TEST_P(TransportFeedbackPacketLossTrackerTest, AllLost) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 4);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 4);
 
   // Note: The last packet in the feedback does not belong to the stream.
   // It's only there because we're not allowed to end a feedback with a loss.
   // Expected window contents: [] -> [00000].
-  SendPackets(&tracker, base_, 5, 10);
+  SendPackets(&tracker, base_, 5, kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_,
                                   {false, false, false, false, false, true});
   ValidatePacketLossStatistics(tracker, 1.0f, 0.0f);
@@ -309,9 +310,9 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, AllLost) {
 
 // Repeated reports are ignored.
 TEST_P(TransportFeedbackPacketLossTrackerTest, ReportRepetition) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 4);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 4);
 
-  SendPackets(&tracker, base_, 5, 10);
+  SendPackets(&tracker, base_, 5, kDefaultSendIntervalMs);
 
   // Expected window contents: [] -> [10011].
   AddTransportFeedbackAndValidate(&tracker, base_,
@@ -327,9 +328,9 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, ReportRepetition) {
 
 // Report overlap.
 TEST_P(TransportFeedbackPacketLossTrackerTest, ReportOverlap) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 1);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 1);
 
-  SendPackets(&tracker, base_, 15, 10);
+  SendPackets(&tracker, base_, 15, kDefaultSendIntervalMs);
 
   // Expected window contents: [] -> [10011].
   AddTransportFeedbackAndValidate(&tracker, base_,
@@ -344,7 +345,7 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, ReportOverlap) {
 
 // Report conflict.
 TEST_P(TransportFeedbackPacketLossTrackerTest, ReportConflict) {
-  TransportFeedbackPacketLossTracker tracker(5000, 5, 4);
+  TransportFeedbackPacketLossTracker tracker(kDefaultMaxWindowSizeMs, 5, 4);
 
   SendPackets(&tracker, base_, 15, 10);
 
@@ -361,9 +362,10 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, ReportConflict) {
 
 // Skipped packets treated as unknown (not lost).
 TEST_P(TransportFeedbackPacketLossTrackerTest, SkippedPackets) {
-  TransportFeedbackPacketLossTracker tracker(200 * 10, 5, 1);
+  TransportFeedbackPacketLossTracker tracker(200 * kDefaultSendIntervalMs, 5,
+                                             1);
 
-  SendPackets(&tracker, base_, 200, 10);
+  SendPackets(&tracker, base_, 200, kDefaultSendIntervalMs);
 
   // Expected window contents: [] -> [10011].
   AddTransportFeedbackAndValidate(&tracker, base_,
@@ -416,9 +418,10 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, MovedWindowRetainsRelevantInfo) {
 // Inserting feedback into the middle of a window works correctly - can
 // complete two pairs.
 TEST_P(TransportFeedbackPacketLossTrackerTest, InsertionCompletesTwoPairs) {
-  TransportFeedbackPacketLossTracker tracker(1500, 5, 1);
+  TransportFeedbackPacketLossTracker tracker(150 * kDefaultSendIntervalMs, 5,
+                                             1);
 
-  SendPackets(&tracker, base_, 15, 10);
+  SendPackets(&tracker, base_, 15, kDefaultSendIntervalMs);
 
   // Expected window contents: [] -> [10111].
   AddTransportFeedbackAndValidate(&tracker, base_,
@@ -439,7 +442,7 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, InsertionCompletesTwoPairs) {
 // Sequence number gaps are not gaps in reception. However, gaps in reception
 // are still possible, if a packet which WAS sent on the stream is not acked.
 TEST_P(TransportFeedbackPacketLossTrackerTest, SanityGapsInSequenceNumbers) {
-  TransportFeedbackPacketLossTracker tracker(500, 5, 1);
+  TransportFeedbackPacketLossTracker tracker(50 * kDefaultSendIntervalMs, 5, 1);
 
   SendPackets(&tracker,
               {static_cast<uint16_t>(base_),
@@ -447,7 +450,7 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, SanityGapsInSequenceNumbers) {
                static_cast<uint16_t>(base_ + 4),
                static_cast<uint16_t>(base_ + 6),
                static_cast<uint16_t>(base_ + 8)},
-              10);
+              kDefaultSendIntervalMs);
 
   // Gaps in sequence numbers not considered as gaps in window, because  only
   // those sequence numbers which were associated with the stream count.
@@ -468,7 +471,7 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, SanityGapsInSequenceNumbers) {
               {static_cast<uint16_t>(base_ + 10),
                static_cast<uint16_t>(base_ + 12),
                static_cast<uint16_t>(base_ + 14)},
-              10);
+              kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_ + 11,
                                   {false, false, false, true, true});
   ValidatePacketLossStatistics(tracker, 2.0f / 7.0f, 2.0f / 5.0f);
@@ -537,17 +540,18 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, TimeDifferenceMaximumObserved) {
 }
 
 TEST_P(TransportFeedbackPacketLossTrackerTest, RepeatedSeqNumResetsWindow) {
-  TransportFeedbackPacketLossTracker tracker(500, 2, 1);
+  TransportFeedbackPacketLossTracker tracker(50 * kDefaultSendIntervalMs, 2, 1);
 
   // Baseline - window has acked messages.
   // Expected window contents: [] -> [01101].
-  SendPackets(&tracker, base_, 5, 10);
+  SendPackets(&tracker, base_, 5, kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_,
                                   {false, true, true, false, true});
   ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
 
   // A reset occurs.
-  SendPackets(&tracker, static_cast<uint16_t>(base_ + 2), 1, 10);
+  SendPackets(&tracker, {static_cast<uint16_t>(base_ + 2)},
+              kDefaultSendIntervalMs);
   ValidatePacketLossStatistics(tracker,
                                rtc::Optional<float>(),
                                rtc::Optional<float>());
@@ -557,17 +561,18 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, RepeatedSeqNumResetsWindow) {
 // away from the newest packet acked/unacked packet.
 TEST_P(TransportFeedbackPacketLossTrackerTest,
        SendAfterLongSuspensionResetsWindow) {
-  TransportFeedbackPacketLossTracker tracker(500, 2, 1);
+  TransportFeedbackPacketLossTracker tracker(50 * kDefaultSendIntervalMs, 2, 1);
 
   // Baseline - window has acked messages.
   // Expected window contents: [] -> [01101].
-  SendPackets(&tracker, base_, 5, 10);
+  SendPackets(&tracker, base_, 5, kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_,
                                   {false, true, true, false, true});
   ValidatePacketLossStatistics(tracker, 2.0f / 5.0f, 2.0f / 4.0f);
 
   // A reset occurs.
-  SendPackets(&tracker, static_cast<uint16_t>(base_ + 5 + 0x8000), 1, 10);
+  SendPackets(&tracker, {static_cast<uint16_t>(base_ + 5 + 0x8000)},
+              kDefaultSendIntervalMs);
   ValidatePacketLossStatistics(tracker,
                                rtc::Optional<float>(),
                                rtc::Optional<float>());
