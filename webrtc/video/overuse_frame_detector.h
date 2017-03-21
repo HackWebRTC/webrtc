@@ -87,6 +87,7 @@ class OveruseFrameDetector {
   void CheckForOveruse();  // Protected for test purposes.
 
  private:
+  class OverdoseInjector;
   class SendProcessingUsage;
   class CheckOveruseTask;
   struct FrameTiming {
@@ -109,6 +110,9 @@ class OveruseFrameDetector {
   bool FrameSizeChanged(int num_pixels) const;
 
   void ResetAll(int num_pixels);
+
+  static std::unique_ptr<SendProcessingUsage> CreateSendProcessingUsage(
+      const CpuOveruseOptions& options);
 
   rtc::SequencedTaskChecker task_checker_;
   // Owned by the task queue from where StartCheckForOveruse is called.

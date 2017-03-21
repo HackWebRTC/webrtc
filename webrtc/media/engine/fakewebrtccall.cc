@@ -108,6 +108,7 @@ FakeVideoSendStream::FakeVideoSendStream(
       config_(std::move(config)),
       codec_settings_set_(false),
       resolution_scaling_enabled_(false),
+      framerate_scaling_enabled_(false),
       source_(nullptr),
       num_swapped_frames_(0) {
   RTC_DCHECK(config.encoder_settings.encoder != NULL);
@@ -252,9 +253,24 @@ void FakeVideoSendStream::SetSource(
   if (source_)
     source_->RemoveSink(this);
   source_ = source;
-  resolution_scaling_enabled_ =
-      degradation_preference !=
-      webrtc::VideoSendStream::DegradationPreference::kMaintainResolution;
+  switch (degradation_preference) {
+    case DegradationPreference::kMaintainFramerate:
+      resolution_scaling_enabled_ = true;
+      framerate_scaling_enabled_ = false;
+      break;
+    case DegradationPreference::kMaintainResolution:
+      resolution_scaling_enabled_ = false;
+      framerate_scaling_enabled_ = true;
+      break;
+    case DegradationPreference::kBalanced:
+      resolution_scaling_enabled_ = true;
+      framerate_scaling_enabled_ = true;
+      break;
+    case DegradationPreference::kDegradationDisabled:
+      resolution_scaling_enabled_ = false;
+      framerate_scaling_enabled_ = false;
+      break;
+  }
   if (source)
     source->AddOrUpdateSink(this, resolution_scaling_enabled_
                                       ? sink_wants_
@@ -333,7 +349,9 @@ FakeCall::FakeCall(const webrtc::Call::Config& config)
       audio_network_state_(webrtc::kNetworkUp),
       video_network_state_(webrtc::kNetworkUp),
       num_created_send_streams_(0),
-      num_created_receive_streams_(0) {}
+      num_created_receive_streams_(0),
+      audio_transport_overhead_(0),
+      video_transport_overhead_(0) {}
 
 FakeCall::~FakeCall() {
   EXPECT_EQ(0u, video_send_streams_.size());

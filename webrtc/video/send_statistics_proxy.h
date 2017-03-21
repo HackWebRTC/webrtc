@@ -50,7 +50,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                       VideoEncoderConfig::ContentType content_type);
   virtual ~SendStatisticsProxy();
 
-  VideoSendStream::Stats GetStats();
+  virtual VideoSendStream::Stats GetStats();
 
   virtual void OnSendEncodedImage(const EncodedImage& encoded_image,
                                   const CodecSpecificInfo* codec_info);
