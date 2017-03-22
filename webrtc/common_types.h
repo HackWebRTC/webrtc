@@ -434,7 +434,6 @@ enum RawVideoType {
 };
 
 // Video codec
-enum { kConfigParameterSize = 128 };
 enum { kPayloadNameSize = 32 };
 enum { kMaxSimulcastStreams = 4 };
 enum { kMaxSpatialLayers = 5 };
