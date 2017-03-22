@@ -137,7 +137,6 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
   result->set_capture_time_ms(
       (rtc::TimeNanos() - capture_start_time_nanos) /
       rtc::kNumNanosecsPerMillisec);
-  result->set_capturer_id(DesktopCapturerId::kScreenCapturerWinDirectx);
   callback_->OnCaptureResult(Result::SUCCESS, std::move(result));
 }
 

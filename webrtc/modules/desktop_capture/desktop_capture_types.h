@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 
-#include "webrtc/media/base/videocommon.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -36,14 +35,6 @@ typedef intptr_t ScreenId;
 const ScreenId kFullDesktopScreenId = -1;
 
 const ScreenId kInvalidScreenId = -2;
-
-// An integer to attach to each DesktopFrame to differentiate the generator of
-// the frame.
-namespace DesktopCapturerId {
-  constexpr uint32_t kUnknown = 0;
-  constexpr uint32_t kScreenCapturerWinGdi = FOURCC('G', 'D', 'I', ' ');
-  constexpr uint32_t kScreenCapturerWinDirectx = FOURCC('D', 'X', 'G', 'I');
-}  // namespace DesktopCapturerId
 
 }  // namespace webrtc
 

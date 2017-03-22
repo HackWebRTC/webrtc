@@ -94,7 +94,6 @@ void ScreenCapturerWinGdi::CaptureFrame() {
   frame->set_capture_time_ms(
       (rtc::TimeNanos() - capture_start_time_nanos) /
       rtc::kNumNanosecsPerMillisec);
-  frame->set_capturer_id(DesktopCapturerId::kScreenCapturerWinGdi);
   callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 }
 
