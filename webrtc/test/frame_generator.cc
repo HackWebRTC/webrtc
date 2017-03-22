@@ -83,18 +83,20 @@ class SquareGenerator : public FrameGenerator {
     void Draw(const rtc::scoped_refptr<I420Buffer>& buffer) {
       x_ = (x_ + random_generator_.Rand(0, 4)) % (buffer->width() - length_);
       y_ = (y_ + random_generator_.Rand(0, 4)) % (buffer->height() - length_);
-      for (int x = x_; x < x_ + length_; ++x) {
         for (int y = y_; y < y_ + length_; ++y) {
-          uint8_t* pos_y = (buffer->MutableDataY() + x + y * buffer->StrideY());
-          *pos_y = yuv_y_;
-          uint8_t* pos_u =
-              (buffer->MutableDataU() + x / 2 + y / 2 * buffer->StrideU());
-          *pos_u = yuv_u_;
-          uint8_t* pos_v =
-              (buffer->MutableDataV() + x / 2 + y / 2 * buffer->StrideV());
-          *pos_v = yuv_v_;
+          uint8_t* pos_y =
+              (buffer->MutableDataY() + x_ + y * buffer->StrideY());
+          memset(pos_y, yuv_y_, length_);
         }
-      }
+
+        for (int y = y_; y < y_ + length_; y = y + 2) {
+          uint8_t* pos_u =
+              (buffer->MutableDataU() + x_ / 2 + y / 2 * buffer->StrideU());
+          memset(pos_u, yuv_u_, length_ / 2);
+          uint8_t* pos_v =
+              (buffer->MutableDataV() + x_ / 2 + y / 2 * buffer->StrideV());
+          memset(pos_v, yuv_v_, length_ / 2);
+        }
     }
 
    private:
