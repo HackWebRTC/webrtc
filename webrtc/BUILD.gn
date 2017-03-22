@@ -296,6 +296,7 @@ if (!build_with_chromium) {
         "modules:modules_unittests",
         "modules/audio_coding:audio_coding_tests",
         "modules/audio_processing:audio_processing_tests",
+        "modules/remote_bitrate_estimator:bwe_simulations_tests",
         "modules/rtp_rtcp:test_packet_masks_metrics",
         "modules/video_capture:video_capture_internal_impl",
         "modules/video_coding:plot_videoprocessor_integrationtest",
