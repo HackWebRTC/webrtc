@@ -279,10 +279,6 @@ ViEEncoder::ViEEncoder(uint32_t number_of_cores,
       nack_enabled_(false),
       last_observed_bitrate_bps_(0),
       encoder_paused_and_dropped_frame_(false),
-      has_received_sli_(false),
-      picture_id_sli_(0),
-      has_received_rpsi_(false),
-      picture_id_rpsi_(0),
       clock_(Clock::GetRealTimeClock()),
       scale_counter_(kScaleReasonSize, 0),
       degradation_preference_(DegradationPreference::kMaintainResolution),
@@ -662,28 +658,6 @@ void ViEEncoder::OnDroppedFrame() {
 void ViEEncoder::SendStatistics(uint32_t bit_rate, uint32_t frame_rate) {
   RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
   stats_proxy_->OnEncoderStatsUpdate(frame_rate, bit_rate);
-}
-
-// TODO(nisse): Delete.
-void ViEEncoder::OnReceivedSLI(uint8_t picture_id) {
-  if (!encoder_queue_.IsCurrent()) {
-    encoder_queue_.PostTask([this, picture_id] { OnReceivedSLI(picture_id); });
-    return;
-  }
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  picture_id_sli_ = picture_id;
-  has_received_sli_ = true;
-}
-
-// TODO(nisse): Delete.
-void ViEEncoder::OnReceivedRPSI(uint64_t picture_id) {
-  if (!encoder_queue_.IsCurrent()) {
-    encoder_queue_.PostTask([this, picture_id] { OnReceivedRPSI(picture_id); });
-    return;
-  }
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  picture_id_rpsi_ = picture_id;
-  has_received_rpsi_ = true;
 }
 
 void ViEEncoder::OnReceivedIntraFrameRequest(size_t stream_index) {

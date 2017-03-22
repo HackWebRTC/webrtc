@@ -26,10 +26,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rapid_resync_request.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/remb.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rpsi.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sli.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbn.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/tmmbr.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
@@ -264,28 +262,6 @@ void PrintPsFeedback(const webrtc::rtcp::CommonHeader& rtcp_block,
       std::cout << log_timestamp << "\t"
                 << "RTCP_PLI" << StreamInfo(direction, media_type)
                 << "\tssrc=" << pli.sender_ssrc() << std::endl;
-      break;
-    }
-    case webrtc::rtcp::Sli::kFeedbackMessageType: {
-      webrtc::rtcp::Sli sli;
-      if (!sli.Parse(rtcp_block))
-        return;
-      if (ExcludePacket(direction, media_type, sli.sender_ssrc()))
-        return;
-      std::cout << log_timestamp << "\t"
-                << "RTCP_SLI" << StreamInfo(direction, media_type)
-                << "\tssrc=" << sli.sender_ssrc() << std::endl;
-      break;
-    }
-    case webrtc::rtcp::Rpsi::kFeedbackMessageType: {
-      webrtc::rtcp::Rpsi rpsi;
-      if (!rpsi.Parse(rtcp_block))
-        return;
-      if (ExcludePacket(direction, media_type, rpsi.sender_ssrc()))
-        return;
-      std::cout << log_timestamp << "\t"
-                << "RTCP_RPSI" << StreamInfo(direction, media_type)
-                << "\tssrc=" << rpsi.sender_ssrc() << std::endl;
       break;
     }
     case webrtc::rtcp::Fir::kFeedbackMessageType: {

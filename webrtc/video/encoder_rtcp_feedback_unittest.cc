@@ -31,8 +31,6 @@ class MockVieEncoder : public ViEEncoder {
   ~MockVieEncoder() { Stop(); }
 
   MOCK_METHOD1(OnReceivedIntraFrameRequest, void(size_t));
-  MOCK_METHOD1(OnReceivedSLI, void(uint8_t picture_id));
-  MOCK_METHOD1(OnReceivedRPSI, void(uint64_t picture_id));
 };
 
 class VieKeyRequestTest : public ::testing::Test {
@@ -60,14 +58,6 @@ class VieKeyRequestTest : public ::testing::Test {
 TEST_F(VieKeyRequestTest, CreateAndTriggerRequests) {
   EXPECT_CALL(encoder_, OnReceivedIntraFrameRequest(0)).Times(1);
   encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
-
-  const uint8_t sli_picture_id = 3;
-  EXPECT_CALL(encoder_, OnReceivedSLI(sli_picture_id)).Times(1);
-  encoder_rtcp_feedback_.OnReceivedSLI(kSsrc, sli_picture_id);
-
-  const uint64_t rpsi_picture_id = 9;
-  EXPECT_CALL(encoder_, OnReceivedRPSI(rpsi_picture_id)).Times(1);
-  encoder_rtcp_feedback_.OnReceivedRPSI(kSsrc, rpsi_picture_id);
 }
 
 TEST_F(VieKeyRequestTest, TooManyOnReceivedIntraFrameRequest) {

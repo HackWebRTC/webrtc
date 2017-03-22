@@ -25,9 +25,6 @@
 namespace webrtc {
 namespace {
 
-const uint64_t kTestPictureId = 12345678;
-const uint8_t kSliPictureId = 156;
-
 class RtcpCallback : public RtcpIntraFrameObserver {
  public:
   void SetModule(RtpRtcp* module) {
@@ -38,14 +35,6 @@ class RtcpCallback : public RtcpIntraFrameObserver {
   virtual void OnLipSyncUpdate(const int32_t id,
                                const int32_t audioVideoOffset) {}
   virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) {}
-  virtual void OnReceivedSLI(uint32_t ssrc,
-                             uint8_t pictureId) {
-    EXPECT_EQ(kSliPictureId & 0x3f, pictureId);
-  }
-  virtual void OnReceivedRPSI(uint32_t ssrc,
-                              uint64_t pictureId) {
-    EXPECT_EQ(kTestPictureId, pictureId);
-  }
 
  private:
   RtpRtcp* _rtpRtcpModule;

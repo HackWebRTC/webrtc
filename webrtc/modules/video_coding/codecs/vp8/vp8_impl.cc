@@ -708,10 +708,6 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
       }
     }
   }
-  // The flag modification below (due to forced key frame, RPS, etc.,) for now
-  // will be the same for all encoders/spatial layers.
-  // TODO(marpan/holmer): Allow for key frame request to be set per encoder.
-  bool only_predict_from_key_frame = false;
   if (send_key_frame) {
     // Adapt the size of the key frame when in screenshare with 1 temporal
     // layer.
@@ -770,7 +766,7 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
     return WEBRTC_VIDEO_CODEC_ERROR;
   timestamp_ += duration;
   // Examines frame timestamps only.
-  return GetEncodedPartitions(frame, only_predict_from_key_frame);
+  return GetEncodedPartitions(frame);
 }
 
 // TODO(pbos): Make sure this works for properly for >1 encoders.
@@ -805,8 +801,7 @@ void VP8EncoderImpl::PopulateCodecSpecific(
     CodecSpecificInfo* codec_specific,
     const vpx_codec_cx_pkt_t& pkt,
     int stream_idx,
-    uint32_t timestamp,
-    bool only_predicting_from_key_frame) {
+    uint32_t timestamp) {
   assert(codec_specific != NULL);
   codec_specific->codecType = kVideoCodecVP8;
   codec_specific->codec_name = ImplementationName();
@@ -819,16 +814,14 @@ void VP8EncoderImpl::PopulateCodecSpecific(
   vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
   vp8Info->nonReference =
       (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) ? true : false;
-  bool base_layer_sync_point = (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ||
-                               only_predicting_from_key_frame;
+  bool base_layer_sync_point = pkt.data.frame.flags & VPX_FRAME_IS_KEY;
   temporal_layers_[stream_idx]->PopulateCodecSpecific(base_layer_sync_point,
                                                       vp8Info, timestamp);
   // Prepare next.
   picture_id_[stream_idx] = (picture_id_[stream_idx] + 1) & 0x7FFF;
 }
 
-int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
-                                         bool only_predicting_from_key_frame) {
+int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image) {
   int bw_resolutions_disabled =
       (encoders_.size() > 1) ? NumStreamsDisabled(send_stream_) : -1;
 
@@ -879,8 +872,7 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image,
           encoded_images_[encoder_idx]._frameType = kVideoFrameKey;
         }
         PopulateCodecSpecific(&codec_specific, *pkt, stream_idx,
-                              input_image.timestamp(),
-                              only_predicting_from_key_frame);
+                              input_image.timestamp());
         break;
       }
     }

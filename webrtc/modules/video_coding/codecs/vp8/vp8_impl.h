@@ -81,11 +81,9 @@ class VP8EncoderImpl : public VP8Encoder {
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              const vpx_codec_cx_pkt& pkt,
                              int stream_idx,
-                             uint32_t timestamp,
-                             bool only_predicting_from_key_frame);
+                             uint32_t timestamp);
 
-  int GetEncodedPartitions(const VideoFrame& input_image,
-                           bool only_predicting_from_key_frame);
+  int GetEncodedPartitions(const VideoFrame& input_image);
 
   // Set the stream state for stream |stream_idx|.
   void SetStreamState(bool send_stream, int stream_idx);
