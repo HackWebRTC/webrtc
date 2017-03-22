@@ -9,7 +9,6 @@
 
 #include "webrtc/modules/video_coding/codecs/vp8/default_temporal_layers.h"
 
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,26 +25,175 @@
 
 namespace webrtc {
 
+TemporalReferences::TemporalReferences(TemporalBufferUsage last,
+                                       TemporalBufferUsage golden,
+                                       TemporalBufferUsage arf)
+    : TemporalReferences(last, golden, arf, false, false) {}
+
+TemporalReferences::TemporalReferences(TemporalBufferUsage last,
+                                       TemporalBufferUsage golden,
+                                       TemporalBufferUsage arf,
+                                       int extra_flags)
+    : TemporalReferences(last,
+                         golden,
+                         arf,
+                         (extra_flags & kLayerSync) != 0,
+                         (extra_flags & kFreezeEntropy) != 0) {}
+
+TemporalReferences::TemporalReferences(TemporalBufferUsage last,
+                                       TemporalBufferUsage golden,
+                                       TemporalBufferUsage arf,
+                                       bool layer_sync,
+                                       bool freeze_entropy)
+    : reference_last((last & kReference) != 0),
+      update_last((last & kUpdate) != 0),
+      reference_golden((golden & kReference) != 0),
+      update_golden((golden & kUpdate) != 0),
+      reference_arf((arf & kReference) != 0),
+      update_arf((arf & kUpdate) != 0),
+      layer_sync(layer_sync),
+      freeze_entropy(freeze_entropy) {}
+
+namespace {
+
+std::vector<unsigned int> GetTemporalIds(size_t num_layers) {
+  switch (num_layers) {
+    case 1:
+      // Temporal layer structure (single layer):
+      // 0 0 0 0 ...
+      return {0};
+    case 2:
+      // Temporal layer structure:
+      //   1   1 ...
+      // 0   0   ...
+      return {0, 1};
+    case 3:
+      // Temporal layer structure:
+      //   2   2   2   2 ...
+      //     1       1   ...
+      // 0       0       ...
+      return {0, 2, 1, 2};
+    case 4:
+      // Temporal layer structure:
+      //   3   3   3   3   3   3   3   3 ...
+      //     2       2       2       2   ...
+      //         1               1       ...
+      // 0               0               ...
+      return {0, 3, 2, 3, 1, 3, 2, 3};
+    default:
+      RTC_NOTREACHED();
+      break;
+  }
+  RTC_NOTREACHED();
+  return {0};
+}
+
+std::vector<TemporalReferences> GetTemporalPattern(
+    size_t num_layers) {
+  // For indexing in the patterns described below (which temporal layers they
+  // belong to), see the diagram above.
+  // Layer sync is done similarly for all patterns (except single stream) and
+  // happens every 8 frames:
+  // TL1 layer syncs by periodically by only referencing TL0 ('last'), but still
+  // updating 'golden', so it can be used as a reference by future TL1 frames.
+  // TL2 layer syncs just before TL1 by only depending on TL0 (and not depending
+  // on TL1's buffer before TL1 has layer synced).
+  // TODO(pbos): Consider cyclically updating 'arf' (and 'golden' for 1TL) for
+  // the base layer in 1-3TL instead of 'last' periodically on long intervals,
+  // so that if scene changes occur (user walks between rooms or rotates webcam)
+  // the 'arf' (or 'golden' respectively) is not stuck on a no-longer relevant
+  // keyframe.
+  switch (num_layers) {
+    case 1:
+      // All frames reference all buffers and the 'last' buffer is updated.
+      return {TemporalReferences(kReferenceAndUpdate, kReference, kReference)};
+    case 2:
+      // All layers can reference but not update the 'alt' buffer, this means
+      // that the 'alt' buffer reference is effectively the last keyframe.
+      // TL0 also references and updates the 'last' buffer.
+      // TL1 also references 'last' and references and updates 'golden'.
+      return {TemporalReferences(kReferenceAndUpdate, kUpdate, kReference),
+              TemporalReferences(kReference, kUpdate, kReference, kLayerSync),
+              TemporalReferences(kReferenceAndUpdate, kNone, kReference),
+              TemporalReferences(kReference, kReferenceAndUpdate, kReference),
+              TemporalReferences(kReferenceAndUpdate, kNone, kReference),
+              TemporalReferences(kReference, kReferenceAndUpdate, kReference),
+              TemporalReferences(kReferenceAndUpdate, kNone, kReference),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kFreezeEntropy)};
+    case 3:
+      // All layers can reference but not update the 'alt' buffer, this means
+      // that the 'alt' buffer reference is effectively the last keyframe.
+      // TL0 also references and updates the 'last' buffer.
+      // TL1 also references 'last' and references and updates 'golden'.
+      // TL2 references both 'last' and 'golden' but updates no buffer.
+      return {TemporalReferences(kReferenceAndUpdate, kUpdate, kReference),
+              TemporalReferences(kReference, kNone, kReference,
+                                 kLayerSync | kFreezeEntropy),
+              TemporalReferences(kReference, kUpdate, kReference, kLayerSync),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kFreezeEntropy),
+              TemporalReferences(kReferenceAndUpdate, kNone, kReference),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kFreezeEntropy),
+              TemporalReferences(kReference, kReferenceAndUpdate, kReference),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kFreezeEntropy)};
+    case 4:
+      // TL0 references and updates only the 'last' buffer.
+      // TL1 references 'last' and updates and references 'golden'.
+      // TL2 references 'last' and 'golden', and references and updates 'arf'.
+      // TL3 references all buffers but update none of them.
+      return {TemporalReferences(kReferenceAndUpdate, kNone, kNone),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kLayerSync | kFreezeEntropy),
+              TemporalReferences(kReference, kNone, kUpdate, kLayerSync),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kLayerSync | kFreezeEntropy),
+              TemporalReferences(kReference, kUpdate, kNone, kLayerSync),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kLayerSync | kFreezeEntropy),
+              TemporalReferences(kReference, kReference, kReferenceAndUpdate),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kLayerSync | kFreezeEntropy),
+              TemporalReferences(kReferenceAndUpdate, kNone, kNone),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kLayerSync | kFreezeEntropy),
+              TemporalReferences(kReference, kReference, kReferenceAndUpdate),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kLayerSync | kFreezeEntropy),
+              TemporalReferences(kReference, kReferenceAndUpdate, kNone),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kLayerSync | kFreezeEntropy),
+              TemporalReferences(kReference, kReference, kReferenceAndUpdate),
+              TemporalReferences(kReference, kReference, kReference,
+                                 kLayerSync | kFreezeEntropy)};
+    default:
+      RTC_NOTREACHED();
+      break;
+  }
+  RTC_NOTREACHED();
+  return {TemporalReferences(kNone, kNone, kNone)};
+}
+
+}  // namespace
+
 DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers,
                                              uint8_t initial_tl0_pic_idx)
-    : number_of_temporal_layers_(number_of_temporal_layers),
-      temporal_ids_length_(0),
-      temporal_pattern_length_(0),
+    : num_layers_(std::max(1, number_of_temporal_layers)),
+      temporal_ids_(GetTemporalIds(num_layers_)),
+      temporal_pattern_(GetTemporalPattern(num_layers_)),
       tl0_pic_idx_(initial_tl0_pic_idx),
       pattern_idx_(255),
       timestamp_(0),
       last_base_layer_sync_(false) {
   RTC_CHECK_GE(kMaxTemporalStreams, number_of_temporal_layers);
   RTC_CHECK_GE(number_of_temporal_layers, 0);
-  memset(temporal_ids_, 0, sizeof(temporal_ids_));
-  memset(temporal_pattern_, 0, sizeof(temporal_pattern_));
+  RTC_CHECK_LE(number_of_temporal_layers, 4);
 }
 
 int DefaultTemporalLayers::CurrentLayerId() const {
-  assert(temporal_ids_length_ > 0);
-  int index = pattern_idx_ % temporal_ids_length_;
-  assert(index >= 0);
-  return temporal_ids_[index];
+  return temporal_ids_[pattern_idx_ % temporal_ids_.size()];
 }
 
 std::vector<uint32_t> DefaultTemporalLayers::OnRatesUpdated(
@@ -53,17 +201,16 @@ std::vector<uint32_t> DefaultTemporalLayers::OnRatesUpdated(
     int max_bitrate_kbps,
     int framerate) {
   std::vector<uint32_t> bitrates;
-  const int num_layers = std::max(1, number_of_temporal_layers_);
-  for (int i = 0; i < num_layers; ++i) {
+  for (size_t i = 0; i < num_layers_; ++i) {
     float layer_bitrate =
-        bitrate_kbps * kVp8LayerRateAlloction[num_layers - 1][i];
+        bitrate_kbps * kVp8LayerRateAlloction[num_layers_ - 1][i];
     bitrates.push_back(static_cast<uint32_t>(layer_bitrate + 0.5));
   }
   new_bitrates_kbps_ = rtc::Optional<std::vector<uint32_t>>(bitrates);
 
   // Allocation table is of aggregates, transform to individual rates.
   uint32_t sum = 0;
-  for (int i = 0; i < num_layers; ++i) {
+  for (size_t i = 0; i < num_layers_; ++i) {
     uint32_t layer_bitrate = bitrates[i];
     RTC_DCHECK_LE(sum, bitrates[i]);
     bitrates[i] -= sum;
@@ -83,119 +230,16 @@ bool DefaultTemporalLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
   if (!new_bitrates_kbps_)
     return false;
 
-  switch (number_of_temporal_layers_) {
-    case 0:
-      FALLTHROUGH();
-    case 1:
-      temporal_ids_length_ = 1;
-      temporal_ids_[0] = 0;
-      cfg->ts_number_layers = number_of_temporal_layers_;
-      cfg->ts_periodicity = temporal_ids_length_;
-      cfg->ts_target_bitrate[0] = (*new_bitrates_kbps_)[0];
-      cfg->ts_rate_decimator[0] = 1;
-      memcpy(cfg->ts_layer_id, temporal_ids_,
-             sizeof(unsigned int) * temporal_ids_length_);
-      temporal_pattern_length_ = 1;
-      temporal_pattern_[0] = kTemporalUpdateLastRefAll;
-      break;
-    case 2:
-      temporal_ids_length_ = 2;
-      temporal_ids_[0] = 0;
-      temporal_ids_[1] = 1;
-      cfg->ts_number_layers = number_of_temporal_layers_;
-      cfg->ts_periodicity = temporal_ids_length_;
-      // Split stream 60% 40%.
-      // Bitrate API for VP8 is the agregated bitrate for all lower layers.
-      cfg->ts_target_bitrate[0] = (*new_bitrates_kbps_)[0];
-      cfg->ts_target_bitrate[1] = (*new_bitrates_kbps_)[1];
-      cfg->ts_rate_decimator[0] = 2;
-      cfg->ts_rate_decimator[1] = 1;
-      memcpy(cfg->ts_layer_id, temporal_ids_,
-             sizeof(unsigned int) * temporal_ids_length_);
-      temporal_pattern_length_ = 8;
-      temporal_pattern_[0] = kTemporalUpdateLastAndGoldenRefAltRef;
-      temporal_pattern_[1] = kTemporalUpdateGoldenWithoutDependencyRefAltRef;
-      temporal_pattern_[2] = kTemporalUpdateLastRefAltRef;
-      temporal_pattern_[3] = kTemporalUpdateGoldenRefAltRef;
-      temporal_pattern_[4] = kTemporalUpdateLastRefAltRef;
-      temporal_pattern_[5] = kTemporalUpdateGoldenRefAltRef;
-      temporal_pattern_[6] = kTemporalUpdateLastRefAltRef;
-      temporal_pattern_[7] = kTemporalUpdateNone;
-      break;
-    case 3:
-      temporal_ids_length_ = 4;
-      temporal_ids_[0] = 0;
-      temporal_ids_[1] = 2;
-      temporal_ids_[2] = 1;
-      temporal_ids_[3] = 2;
-      cfg->ts_number_layers = number_of_temporal_layers_;
-      cfg->ts_periodicity = temporal_ids_length_;
-      // Split stream 40% 20% 40%.
-      // Bitrate API for VP8 is the agregated bitrate for all lower layers.
-      cfg->ts_target_bitrate[0] = (*new_bitrates_kbps_)[0];
-      cfg->ts_target_bitrate[1] = (*new_bitrates_kbps_)[1];
-      cfg->ts_target_bitrate[2] = (*new_bitrates_kbps_)[2];
-      cfg->ts_rate_decimator[0] = 4;
-      cfg->ts_rate_decimator[1] = 2;
-      cfg->ts_rate_decimator[2] = 1;
-      memcpy(cfg->ts_layer_id, temporal_ids_,
-             sizeof(unsigned int) * temporal_ids_length_);
-      temporal_pattern_length_ = 8;
-      temporal_pattern_[0] = kTemporalUpdateLastAndGoldenRefAltRef;
-      temporal_pattern_[1] = kTemporalUpdateNoneNoRefGoldenRefAltRef;
-      temporal_pattern_[2] = kTemporalUpdateGoldenWithoutDependencyRefAltRef;
-      temporal_pattern_[3] = kTemporalUpdateNone;
-      temporal_pattern_[4] = kTemporalUpdateLastRefAltRef;
-      temporal_pattern_[5] = kTemporalUpdateNone;
-      temporal_pattern_[6] = kTemporalUpdateGoldenRefAltRef;
-      temporal_pattern_[7] = kTemporalUpdateNone;
-      break;
-    case 4:
-      temporal_ids_length_ = 8;
-      temporal_ids_[0] = 0;
-      temporal_ids_[1] = 3;
-      temporal_ids_[2] = 2;
-      temporal_ids_[3] = 3;
-      temporal_ids_[4] = 1;
-      temporal_ids_[5] = 3;
-      temporal_ids_[6] = 2;
-      temporal_ids_[7] = 3;
-      // Split stream 25% 15% 20% 40%.
-      // Bitrate API for VP8 is the agregated bitrate for all lower layers.
-      cfg->ts_number_layers = 4;
-      cfg->ts_periodicity = temporal_ids_length_;
-      cfg->ts_target_bitrate[0] = (*new_bitrates_kbps_)[0];
-      cfg->ts_target_bitrate[1] = (*new_bitrates_kbps_)[1];
-      cfg->ts_target_bitrate[2] = (*new_bitrates_kbps_)[2];
-      cfg->ts_target_bitrate[3] = (*new_bitrates_kbps_)[3];
-      cfg->ts_rate_decimator[0] = 8;
-      cfg->ts_rate_decimator[1] = 4;
-      cfg->ts_rate_decimator[2] = 2;
-      cfg->ts_rate_decimator[3] = 1;
-      memcpy(cfg->ts_layer_id, temporal_ids_,
-             sizeof(unsigned int) * temporal_ids_length_);
-      temporal_pattern_length_ = 16;
-      temporal_pattern_[0] = kTemporalUpdateLast;
-      temporal_pattern_[1] = kTemporalUpdateNone;
-      temporal_pattern_[2] = kTemporalUpdateAltrefWithoutDependency;
-      temporal_pattern_[3] = kTemporalUpdateNone;
-      temporal_pattern_[4] = kTemporalUpdateGoldenWithoutDependency;
-      temporal_pattern_[5] = kTemporalUpdateNone;
-      temporal_pattern_[6] = kTemporalUpdateAltref;
-      temporal_pattern_[7] = kTemporalUpdateNone;
-      temporal_pattern_[8] = kTemporalUpdateLast;
-      temporal_pattern_[9] = kTemporalUpdateNone;
-      temporal_pattern_[10] = kTemporalUpdateAltref;
-      temporal_pattern_[11] = kTemporalUpdateNone;
-      temporal_pattern_[12] = kTemporalUpdateGolden;
-      temporal_pattern_[13] = kTemporalUpdateNone;
-      temporal_pattern_[14] = kTemporalUpdateAltref;
-      temporal_pattern_[15] = kTemporalUpdateNone;
-      break;
-    default:
-      RTC_NOTREACHED();
-      return false;
+  for (size_t i = 0; i < num_layers_; ++i) {
+    cfg->ts_target_bitrate[i] = (*new_bitrates_kbps_)[i];
+    // ..., 4, 2, 1
+    cfg->ts_rate_decimator[i] = 1 << (num_layers_ - i - 1);
   }
+
+  cfg->ts_number_layers = num_layers_;
+  cfg->ts_periodicity = temporal_ids_.size();
+  memcpy(cfg->ts_layer_id, &temporal_ids_[0],
+         sizeof(unsigned int) * temporal_ids_.size());
 
   new_bitrates_kbps_ = rtc::Optional<std::vector<uint32_t>>();
 
@@ -203,77 +247,29 @@ bool DefaultTemporalLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
 }
 
 int DefaultTemporalLayers::EncodeFlags(uint32_t timestamp) {
-  assert(number_of_temporal_layers_ > 0);
-  assert(kMaxTemporalPattern >= temporal_pattern_length_);
-  assert(0 < temporal_pattern_length_);
+  RTC_DCHECK_GT(num_layers_, 0);
+  RTC_DCHECK_LT(0, temporal_pattern_.size());
   int flags = 0;
-  int patternIdx = ++pattern_idx_ % temporal_pattern_length_;
-  assert(kMaxTemporalPattern >= patternIdx);
-  switch (temporal_pattern_[patternIdx]) {
-    case kTemporalUpdateLast:
-      flags |= VP8_EFLAG_NO_UPD_GF;
-      flags |= VP8_EFLAG_NO_UPD_ARF;
-      flags |= VP8_EFLAG_NO_REF_GF;
-      flags |= VP8_EFLAG_NO_REF_ARF;
-      break;
-    case kTemporalUpdateGoldenWithoutDependency:
-      flags |= VP8_EFLAG_NO_REF_GF;
-      // Deliberately no break here.
-      FALLTHROUGH();
-    case kTemporalUpdateGolden:
-      flags |= VP8_EFLAG_NO_REF_ARF;
-      flags |= VP8_EFLAG_NO_UPD_ARF;
-      flags |= VP8_EFLAG_NO_UPD_LAST;
-      break;
-    case kTemporalUpdateAltrefWithoutDependency:
-      flags |= VP8_EFLAG_NO_REF_ARF;
-      flags |= VP8_EFLAG_NO_REF_GF;
-      // Deliberately no break here.
-      FALLTHROUGH();
-    case kTemporalUpdateAltref:
-      flags |= VP8_EFLAG_NO_UPD_GF;
-      flags |= VP8_EFLAG_NO_UPD_LAST;
-      break;
-    case kTemporalUpdateNoneNoRefAltref:
-      flags |= VP8_EFLAG_NO_REF_ARF;
-      // Deliberately no break here.
-      FALLTHROUGH();
-    case kTemporalUpdateNone:
-      flags |= VP8_EFLAG_NO_UPD_GF;
-      flags |= VP8_EFLAG_NO_UPD_ARF;
-      flags |= VP8_EFLAG_NO_UPD_LAST;
-      flags |= VP8_EFLAG_NO_UPD_ENTROPY;
-      break;
-    case kTemporalUpdateNoneNoRefGoldenRefAltRef:
-      flags |= VP8_EFLAG_NO_REF_GF;
-      flags |= VP8_EFLAG_NO_UPD_GF;
-      flags |= VP8_EFLAG_NO_UPD_ARF;
-      flags |= VP8_EFLAG_NO_UPD_LAST;
-      flags |= VP8_EFLAG_NO_UPD_ENTROPY;
-      break;
-    case kTemporalUpdateGoldenWithoutDependencyRefAltRef:
-      flags |= VP8_EFLAG_NO_REF_GF;
-      flags |= VP8_EFLAG_NO_UPD_ARF;
-      flags |= VP8_EFLAG_NO_UPD_LAST;
-      break;
-    case kTemporalUpdateLastRefAltRef:
-      flags |= VP8_EFLAG_NO_UPD_GF;
-      flags |= VP8_EFLAG_NO_UPD_ARF;
-      flags |= VP8_EFLAG_NO_REF_GF;
-      break;
-    case kTemporalUpdateGoldenRefAltRef:
-      flags |= VP8_EFLAG_NO_UPD_ARF;
-      flags |= VP8_EFLAG_NO_UPD_LAST;
-      break;
-    case kTemporalUpdateLastAndGoldenRefAltRef:
-      flags |= VP8_EFLAG_NO_UPD_ARF;
-      flags |= VP8_EFLAG_NO_REF_GF;
-      break;
-    case kTemporalUpdateLastRefAll:
-      flags |= VP8_EFLAG_NO_UPD_ARF;
-      flags |= VP8_EFLAG_NO_UPD_GF;
-      break;
-  }
+  // TODO(pbos): Move pattern-update out of EncodeFlags. It's not obvious that
+  // EncodeFlags() is non-const.
+  const TemporalReferences& references =
+      temporal_pattern_[++pattern_idx_ % temporal_pattern_.size()];
+
+  if (!references.reference_last)
+    flags |= VP8_EFLAG_NO_REF_LAST;
+  if (!references.update_last)
+    flags |= VP8_EFLAG_NO_UPD_LAST;
+  if (!references.reference_golden)
+    flags |= VP8_EFLAG_NO_REF_GF;
+  if (!references.update_golden)
+    flags |= VP8_EFLAG_NO_UPD_GF;
+  if (!references.reference_arf)
+    flags |= VP8_EFLAG_NO_REF_ARF;
+  if (!references.update_arf)
+    flags |= VP8_EFLAG_NO_UPD_ARF;
+  if (references.freeze_entropy)
+    flags |= VP8_EFLAG_NO_UPD_ENTROPY;
+
   return flags;
 }
 
@@ -281,10 +277,9 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
     bool base_layer_sync,
     CodecSpecificInfoVP8* vp8_info,
     uint32_t timestamp) {
-  assert(number_of_temporal_layers_ > 0);
-  assert(0 < temporal_ids_length_);
+  RTC_DCHECK_GT(num_layers_, 0);
 
-  if (number_of_temporal_layers_ == 1) {
+  if (num_layers_ == 1) {
     vp8_info->temporalIdx = kNoTemporalIdx;
     vp8_info->layerSync = false;
     vp8_info->tl0PicIdx = kNoTl0PicIdx;
@@ -295,19 +290,9 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
     } else {
       vp8_info->temporalIdx = CurrentLayerId();
       TemporalReferences temporal_reference =
-          temporal_pattern_[pattern_idx_ % temporal_pattern_length_];
+          temporal_pattern_[pattern_idx_ % temporal_pattern_.size()];
 
-      if (temporal_reference == kTemporalUpdateAltrefWithoutDependency ||
-          temporal_reference == kTemporalUpdateGoldenWithoutDependency ||
-          temporal_reference ==
-              kTemporalUpdateGoldenWithoutDependencyRefAltRef ||
-          temporal_reference == kTemporalUpdateNoneNoRefGoldenRefAltRef ||
-          (temporal_reference == kTemporalUpdateNone &&
-           number_of_temporal_layers_ == 4)) {
-        vp8_info->layerSync = true;
-      } else {
-        vp8_info->layerSync = false;
-      }
+      vp8_info->layerSync = temporal_reference.layer_sync;
     }
     if (last_base_layer_sync_ && vp8_info->temporalIdx != 0) {
       // Regardless of pattern the frame after a base layer sync will always
