@@ -26,8 +26,8 @@ DesktopFrame::DesktopFrame(DesktopSize size,
       shared_memory_(shared_memory),
       size_(size),
       stride_(stride),
-      capture_time_ms_(0) {
-}
+      capture_time_ms_(0),
+      capturer_id_(DesktopCapturerId::kUnknown) {}
 
 DesktopFrame::~DesktopFrame() {}
 
