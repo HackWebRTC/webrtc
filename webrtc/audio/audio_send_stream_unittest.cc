@@ -18,7 +18,7 @@
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_processing/include/mock_audio_processing.h"
-#include "webrtc/modules/congestion_controller/include/mock/mock_congestion_controller.h"
+#include "webrtc/modules/congestion_controller/include/mock/mock_congestion_observer.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
