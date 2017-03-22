@@ -35,8 +35,12 @@ rtc_static_library("lib") {
   sources = [
     "config.cc",
     "config.h",
+    "timing.cc",
+    "timing.h",
   ]
-  deps = []
+  deps = [
+    "//webrtc/base:rtc_base_approved",
+  ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }  # lib
 
