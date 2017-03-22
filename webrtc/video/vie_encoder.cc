@@ -463,7 +463,16 @@ void ViEEncoder::ConfigureQualityScaler() {
   const auto scaling_settings = settings_.encoder->GetScalingSettings();
   const bool degradation_preference_allows_scaling =
       degradation_preference_ != DegradationPreference::kMaintainResolution;
-  if (degradation_preference_allows_scaling && scaling_settings.enabled) {
+
+  stats_proxy_->SetResolutionRestrictionStats(
+      degradation_preference_allows_scaling, scale_counter_[kCpu] > 0,
+      scale_counter_[kQuality]);
+
+  if (degradation_preference_allows_scaling &&
+      scaling_settings.enabled) {
+    // Abort if quality scaler has already been configured.
+    if (quality_scaler_.get() != nullptr)
+      return;
     // Drop frames and scale down until desired quality is achieved.
     if (scaling_settings.thresholds) {
       quality_scaler_.reset(
@@ -475,9 +484,6 @@ void ViEEncoder::ConfigureQualityScaler() {
     quality_scaler_.reset(nullptr);
     initial_rampup_ = kMaxInitialFramedrop;
   }
-  stats_proxy_->SetResolutionRestrictionStats(
-      degradation_preference_allows_scaling, scale_counter_[kCpu] > 0,
-      scale_counter_[kQuality]);
 }
 
 void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
