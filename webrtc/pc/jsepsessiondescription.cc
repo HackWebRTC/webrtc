@@ -59,7 +59,7 @@ static int GetCandidatePreferenceFromType(const std::string& type) {
   } else if (type == cricket::RELAY_PORT_TYPE) {
     preference = kPreferenceRelayed;
   } else {
-    RTC_NOTREACHED();
+    preference = kPreferenceUnknown;
   }
   return preference;
 }
