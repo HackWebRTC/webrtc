@@ -50,6 +50,9 @@ void CallTest::RunBaseTest(BaseTest* test) {
   RTC_DCHECK(num_video_streams_ > 0 || num_audio_streams_ > 0);
   Call::Config send_config(test->GetSenderCallConfig());
   if (num_audio_streams_ > 0) {
+    CreateFakeAudioDevices(test->CreateCapturer(), test->CreateRenderer());
+    test->OnFakeAudioDevicesCreated(fake_send_audio_device_.get(),
+                                    fake_recv_audio_device_.get());
     CreateVoiceEngines();
     AudioState::Config audio_state_config;
     audio_state_config.voice_engine = voe_send_.voice_engine;
@@ -132,6 +135,8 @@ void CallTest::RunBaseTest(BaseTest* test) {
   DestroyCalls();
   if (num_audio_streams_ > 0)
     DestroyVoiceEngines();
+
+  test->OnTestFinished();
 }
 
 void CallTest::Start() {
@@ -298,11 +303,13 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
       VideoSendStream::DegradationPreference::kBalanced);
 }
 
-void CallTest::CreateFakeAudioDevices() {
+void CallTest::CreateFakeAudioDevices(
+    std::unique_ptr<FakeAudioDevice::Capturer> capturer,
+    std::unique_ptr<FakeAudioDevice::Renderer> renderer) {
   fake_send_audio_device_.reset(new FakeAudioDevice(
-      FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000), nullptr, 1.f));
+      std::move(capturer), nullptr, 1.f));
   fake_recv_audio_device_.reset(new FakeAudioDevice(
-      nullptr, FakeAudioDevice::CreateDiscardRenderer(48000), 1.f));
+      nullptr, std::move(renderer), 1.f));
 }
 
 void CallTest::CreateVideoStreams() {
@@ -361,7 +368,6 @@ void CallTest::DestroyStreams() {
 }
 
 void CallTest::CreateVoiceEngines() {
-  CreateFakeAudioDevices();
   voe_send_.voice_engine = VoiceEngine::Create();
   voe_send_.base = VoEBase::GetInterface(voe_send_.voice_engine);
   EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(), nullptr,
@@ -427,6 +433,18 @@ BaseTest::BaseTest(unsigned int timeout_ms) : RtpRtcpObserver(timeout_ms) {
 BaseTest::~BaseTest() {
 }
 
+std::unique_ptr<FakeAudioDevice::Capturer> BaseTest::CreateCapturer() {
+  return FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000);
+}
+
+std::unique_ptr<FakeAudioDevice::Renderer> BaseTest::CreateRenderer() {
+  return FakeAudioDevice::CreateDiscardRenderer(48000);
+}
+
+void BaseTest::OnFakeAudioDevicesCreated(FakeAudioDevice* send_audio_device,
+                                         FakeAudioDevice* recv_audio_device) {
+}
+
 Call::Config BaseTest::GetSenderCallConfig() {
   return Call::Config(&event_log_);
 }
@@ -489,6 +507,9 @@ void BaseTest::OnFlexfecStreamsCreated(
 
 void BaseTest::OnFrameGeneratorCapturerCreated(
     FrameGeneratorCapturer* frame_generator_capturer) {
+}
+
+void BaseTest::OnTestFinished() {
 }
 
 SendTest::SendTest(unsigned int timeout_ms) : BaseTest(timeout_ms) {

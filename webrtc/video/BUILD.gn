@@ -93,9 +93,6 @@ if (rtc_include_tests) {
       "//webrtc/test:test_renderer",
       "//webrtc/test:video_test_common",
     ]
-    if (!is_android) {
-      deps += [ "../modules/video_capture:video_capture_internal_impl" ]
-    }
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -178,9 +175,6 @@ if (rtc_include_tests) {
       "../test:test_renderer",
       "//third_party/gflags",
     ]
-    if (!is_android) {
-      deps += [ "../modules/video_capture:video_capture_internal_impl" ]
-    }
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]

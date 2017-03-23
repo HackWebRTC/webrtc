@@ -111,6 +111,69 @@ class WavFileWriter final : public test::FakeAudioDevice::Renderer {
   WavWriter wav_writer_;
 };
 
+class BoundedWavFileWriter : public test::FakeAudioDevice::Renderer {
+ public:
+  BoundedWavFileWriter(std::string filename, int sampling_frequency_in_hz)
+      : sampling_frequency_in_hz_(sampling_frequency_in_hz),
+        wav_writer_(filename, sampling_frequency_in_hz, 1),
+        silent_audio_(test::FakeAudioDevice::SamplesPerFrame(
+            sampling_frequency_in_hz), 0),
+        started_writing_(false),
+        trailing_zeros_(0) {}
+
+  int SamplingFrequency() const override {
+    return sampling_frequency_in_hz_;
+  }
+
+  bool Render(rtc::ArrayView<const int16_t> data) override {
+    const int16_t kAmplitudeThreshold = 5;
+
+    const int16_t* begin = data.begin();
+    const int16_t* end = data.end();
+    if (!started_writing_) {
+      // Cut off silence at the beginning.
+      while (begin < end) {
+        if (std::abs(*begin) > kAmplitudeThreshold) {
+          started_writing_ = true;
+          break;
+        }
+        ++begin;
+      }
+    }
+    if (started_writing_) {
+      // Cut off silence at the end.
+      while (begin < end) {
+        if (*(end - 1) != 0) {
+          break;
+        }
+        --end;
+      }
+      if (begin < end) {
+        // If it turns out that the silence was not final, need to write all the
+        // skipped zeros and continue writing audio.
+        while (trailing_zeros_ > 0) {
+          const size_t zeros_to_write = std::min(trailing_zeros_,
+                                                 silent_audio_.size());
+          wav_writer_.WriteSamples(silent_audio_.data(), zeros_to_write);
+          trailing_zeros_ -= zeros_to_write;
+        }
+        wav_writer_.WriteSamples(begin, end - begin);
+      }
+      // Save the number of zeros we skipped in case this needs to be restored.
+      trailing_zeros_ += data.end() - end;
+    }
+    return true;
+  }
+
+ private:
+  int sampling_frequency_in_hz_;
+  WavWriter wav_writer_;
+  std::vector<int16_t> silent_audio_;
+  bool started_writing_;
+  size_t trailing_zeros_;
+};
+
+
 class DiscardRenderer final : public test::FakeAudioDevice::Renderer {
  public:
   explicit DiscardRenderer(int sampling_frequency_in_hz)
@@ -159,6 +222,13 @@ std::unique_ptr<FakeAudioDevice::Renderer> FakeAudioDevice::CreateWavFileWriter(
     std::string filename, int sampling_frequency_in_hz) {
   return std::unique_ptr<FakeAudioDevice::Renderer>(
       new WavFileWriter(filename, sampling_frequency_in_hz));
+}
+
+std::unique_ptr<FakeAudioDevice::Renderer>
+    FakeAudioDevice::CreateBoundedWavFileWriter(
+        std::string filename, int sampling_frequency_in_hz) {
+  return std::unique_ptr<FakeAudioDevice::Renderer>(
+      new BoundedWavFileWriter(filename, sampling_frequency_in_hz));
 }
 
 std::unique_ptr<FakeAudioDevice::Renderer>

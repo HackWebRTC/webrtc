@@ -89,6 +89,12 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
   static std::unique_ptr<Renderer> CreateWavFileWriter(
       std::string filename, int sampling_frequency_in_hz);
 
+  // Returns a Renderer instance that writes its data to a WAV file, cutting
+  // off silence at the beginning (not necessarily perfect silence, see
+  // kAmplitudeThreshold) and at the end (only actual 0 samples in this case).
+  static std::unique_ptr<Renderer> CreateBoundedWavFileWriter(
+      std::string filename, int sampling_frequency_in_hz);
+
   // Returns a Renderer instance that does nothing with the audio data.
   static std::unique_ptr<Renderer> CreateDiscardRenderer(
       int sampling_frequency_in_hz);

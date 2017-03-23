@@ -83,7 +83,9 @@ class CallTest : public ::testing::Test {
                                              int width,
                                              int height);
   void CreateFrameGeneratorCapturer(int framerate, int width, int height);
-  void CreateFakeAudioDevices();
+  void CreateFakeAudioDevices(
+      std::unique_ptr<FakeAudioDevice::Capturer> capturer,
+      std::unique_ptr<FakeAudioDevice::Renderer> renderer);
 
   void CreateVideoStreams();
   void CreateAudioStreams();
@@ -161,6 +163,11 @@ class BaseTest : public RtpRtcpObserver {
   virtual size_t GetNumAudioStreams() const;
   virtual size_t GetNumFlexfecStreams() const;
 
+  virtual std::unique_ptr<FakeAudioDevice::Capturer> CreateCapturer();
+  virtual std::unique_ptr<FakeAudioDevice::Renderer> CreateRenderer();
+  virtual void OnFakeAudioDevicesCreated(FakeAudioDevice* send_audio_device,
+                                         FakeAudioDevice* recv_audio_device);
+
   virtual Call::Config GetSenderCallConfig();
   virtual Call::Config GetReceiverCallConfig();
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
@@ -193,6 +200,8 @@ class BaseTest : public RtpRtcpObserver {
 
   virtual void OnFrameGeneratorCapturerCreated(
       FrameGeneratorCapturer* frame_generator_capturer);
+
+  virtual void OnTestFinished();
 
   webrtc::RtcEventLogNullImpl event_log_;
 };

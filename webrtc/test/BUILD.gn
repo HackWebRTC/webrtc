@@ -255,6 +255,7 @@ if (is_ios) {
 rtc_test("test_support_unittests") {
   deps = []
   sources = [
+    "fake_audio_device_unittest.cc",
     "fake_network_pipe_unittest.cc",
     "frame_generator_unittest.cc",
     "rtp_file_reader_unittest.cc",
@@ -409,6 +410,9 @@ rtc_source_set("test_common") {
     "//testing/gmock",
     "//testing/gtest",
   ]
+  if (!is_android) {
+    deps += [ "../modules/video_capture:video_capture_internal_impl" ]
+  }
 }
 
 config("test_renderer_exported_config") {

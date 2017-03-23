@@ -94,12 +94,28 @@ if (rtc_include_tests) {
 
       sources = [
         "test/low_bandwidth_audio_test.cc",
+        "test/low_bandwidth_audio_test.h",
       ]
 
-      deps = []
-
+      deps = [
+        "../common_audio",
+        "../system_wrappers",
+        "../test:fake_audio_device",
+        "../test:run_test",
+        "../test:test_common",
+        "../test:test_main",
+      ]
       if (is_android) {
-        deps += [ "//testing/android/native_test:native_test_support" ]
+        deps += [ "//testing/android/native_test:native_test_native_code" ]
+      }
+
+      data = [
+        "//resources/voice_engine/audio_tiny16.wav",
+      ]
+
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163)
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
     }
   }
