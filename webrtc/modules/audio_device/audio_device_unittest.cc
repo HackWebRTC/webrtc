@@ -206,8 +206,10 @@ class AudioDeviceTest : public ::testing::Test {
         AudioDeviceModule::Create(0, AudioDeviceModule::kPlatformDefaultAudio);
     EXPECT_NE(audio_device_.get(), nullptr);
     AudioDeviceModule::AudioLayer audio_layer;
-    EXPECT_EQ(0, audio_device_->ActiveAudioLayer(&audio_layer));
-    if (audio_layer == AudioDeviceModule::kLinuxAlsaAudio) {
+    int got_platform_audio_layer =
+        audio_device_->ActiveAudioLayer(&audio_layer);
+    if (got_platform_audio_layer != 0 ||
+        audio_layer == AudioDeviceModule::kLinuxAlsaAudio) {
       requirements_satisfied_ = false;
     }
     if (requirements_satisfied_) {
