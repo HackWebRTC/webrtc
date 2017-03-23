@@ -112,6 +112,8 @@ QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   RTC_DCHECK(observer_ != nullptr);
   check_qp_task_ = new CheckQPTask(this);
+  LOG(LS_INFO) << "QP thresholds: low: " << thresholds_.low
+               << ", high: " << thresholds_.high;
 }
 
 QualityScaler::~QualityScaler() {
@@ -140,7 +142,6 @@ void QualityScaler::CheckQP() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   // Should be set through InitEncode -> Should be set by now.
   RTC_DCHECK_GE(thresholds_.low, 0);
-  LOG(LS_INFO) << "Checking if average QP exceeds threshold";
   // Check if we should scale down due to high frame drop.
   const rtc::Optional<int> drop_rate = framedrop_percent_.GetAverage();
   if (drop_rate && *drop_rate >= kFramedropPercentThreshold) {
@@ -150,27 +151,28 @@ void QualityScaler::CheckQP() {
 
   // Check if we should scale up or down based on QP.
   const rtc::Optional<int> avg_qp = average_qp_.GetAverage();
-  if (avg_qp && *avg_qp > thresholds_.high) {
-    ReportQPHigh();
-    return;
-  }
-  if (avg_qp && *avg_qp <= thresholds_.low) {
-    // QP has been low. We want to try a higher resolution.
-    ReportQPLow();
-    return;
+  if (avg_qp) {
+    LOG(LS_INFO) << "Checking average QP " << *avg_qp;
+    if (*avg_qp > thresholds_.high) {
+      ReportQPHigh();
+      return;
+    }
+    if (*avg_qp <= thresholds_.low) {
+      // QP has been low. We want to try a higher resolution.
+      ReportQPLow();
+      return;
+    }
   }
 }
 
 void QualityScaler::ReportQPLow() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  LOG(LS_INFO) << "QP has been low, asking for higher resolution.";
   ClearSamples();
   observer_->AdaptUp(AdaptationObserverInterface::AdaptReason::kQuality);
 }
 
 void QualityScaler::ReportQPHigh() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  LOG(LS_INFO) << "QP has been high , asking for lower resolution.";
   ClearSamples();
   observer_->AdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
   // If we've scaled down, wait longer before scaling up again.

@@ -86,6 +86,7 @@ namespace {
 const size_t kFrameDiffThresholdMs = 350;
 const int kMinKeyFrameInterval = 6;
 const char kH264HighProfileFieldTrial[] = "WebRTC-H264HighProfile";
+const char kCustomQPThresholdsFieldTrial[] = "WebRTC-CustomQPThresholds";
 }  // namespace
 
 // MediaCodecVideoEncoder is a webrtc::VideoEncoder implementation that uses
@@ -179,6 +180,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
 
   // Displays encoder statistics.
   void LogStatistics(bool force_log);
+
+  VideoCodecType GetCodecType() const;
 
 #if RTC_DCHECK_IS_ON
   // Mutex for protecting inited_. It is only used for correctness checking on
@@ -384,8 +387,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   // Factory should guard against other codecs being used with us.
-  const VideoCodecType codec_type = webrtc::PayloadNameToCodecType(codec_.name)
-                                        .value_or(webrtc::kVideoCodecUnknown);
+  const VideoCodecType codec_type = GetCodecType();
   RTC_CHECK(codec_settings->codecType == codec_type)
       << "Unsupported codec " << codec_settings->codecType << " for "
       << codec_type;
@@ -498,6 +500,11 @@ int32_t MediaCodecVideoEncoder::ProcessHWErrorOnEncode() {
                                : WEBRTC_VIDEO_CODEC_ERROR;
 }
 
+VideoCodecType MediaCodecVideoEncoder::GetCodecType() const {
+  return webrtc::PayloadNameToCodecType(codec_.name)
+      .value_or(webrtc::kVideoCodecUnknown);
+}
+
 int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
                                                    int height,
                                                    int kbps,
@@ -511,8 +518,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
-  const VideoCodecType codec_type = webrtc::PayloadNameToCodecType(codec_.name)
-                                        .value_or(webrtc::kVideoCodecUnknown);
+  const VideoCodecType codec_type = GetCodecType();
   ALOGD << "InitEncodeInternal Type: " << (int)codec_type << ", " << width
         << " x " << height << ". Bitrate: " << kbps << " kbps. Fps: " << fps;
   if (kbps == 0) {
@@ -1022,9 +1028,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     }
 
     // Callback - return encoded frame.
-    const VideoCodecType codec_type =
-        webrtc::PayloadNameToCodecType(codec_.name)
-            .value_or(webrtc::kVideoCodecUnknown);
+    const VideoCodecType codec_type = GetCodecType();
     webrtc::EncodedImageCallback::Result callback_result(
         webrtc::EncodedImageCallback::Result::OK);
     if (callback_) {
@@ -1186,6 +1190,33 @@ void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
 
 webrtc::VideoEncoder::ScalingSettings
 MediaCodecVideoEncoder::GetScalingSettings() const {
+  if (webrtc::field_trial::IsEnabled(kCustomQPThresholdsFieldTrial)) {
+    const VideoCodecType codec_type = GetCodecType();
+    std::string experiment_string =
+        webrtc::field_trial::FindFullName(kCustomQPThresholdsFieldTrial);
+    ALOGD << "QP custom thresholds: " << experiment_string << " for codec "
+          << codec_type;
+    int low_vp8_qp_threshold;
+    int high_vp8_qp_threshold;
+    int low_h264_qp_threshold;
+    int high_h264_qp_threshold;
+    int parsed_values = sscanf(experiment_string.c_str(), "Enabled-%u,%u,%u,%u",
+                               &low_vp8_qp_threshold, &high_vp8_qp_threshold,
+                               &low_h264_qp_threshold, &high_h264_qp_threshold);
+    if (parsed_values == 4) {
+      RTC_CHECK_GT(high_vp8_qp_threshold, low_vp8_qp_threshold);
+      RTC_CHECK_GT(low_vp8_qp_threshold, 0);
+      RTC_CHECK_GT(high_h264_qp_threshold, low_h264_qp_threshold);
+      RTC_CHECK_GT(low_h264_qp_threshold, 0);
+      if (codec_type == kVideoCodecVP8) {
+        return VideoEncoder::ScalingSettings(scale_, low_vp8_qp_threshold,
+                                             high_vp8_qp_threshold);
+      } else if (codec_type == kVideoCodecH264) {
+        return VideoEncoder::ScalingSettings(scale_, low_h264_qp_threshold,
+                                             high_h264_qp_threshold);
+      }
+    }
+  }
   return VideoEncoder::ScalingSettings(scale_);
 }
 
