@@ -310,6 +310,38 @@ class StreamAdapterInterface : public StreamInterface,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+// StreamTap is a non-modifying, pass-through adapter, which copies all data
+// in either direction to the tap.  Note that errors or blocking on writing to
+// the tap will prevent further tap writes from occurring.
+///////////////////////////////////////////////////////////////////////////////
+
+class StreamTap : public StreamAdapterInterface {
+ public:
+  explicit StreamTap(StreamInterface* stream, StreamInterface* tap);
+  ~StreamTap() override;
+
+  void AttachTap(StreamInterface* tap);
+  StreamInterface* DetachTap();
+  StreamResult GetTapResult(int* error);
+
+  // StreamAdapterInterface Interface
+  StreamResult Read(void* buffer,
+                    size_t buffer_len,
+                    size_t* read,
+                    int* error) override;
+  StreamResult Write(const void* data,
+                     size_t data_len,
+                     size_t* written,
+                     int* error) override;
+
+ private:
+  std::unique_ptr<StreamInterface> tap_;
+  StreamResult tap_result_;
+  int tap_error_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamTap);
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // NullStream gives errors on read, and silently discards all written data.
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -448,6 +480,18 @@ class MemoryStream : public MemoryStreamBase {
   char* buffer_alloc_;
 };
 
+// ExternalMemoryStream adapts an external memory buffer, so writes which would
+// extend past the end of the buffer will return end-of-stream.
+
+class ExternalMemoryStream : public MemoryStreamBase {
+ public:
+  ExternalMemoryStream();
+  ExternalMemoryStream(void* data, size_t length);
+  ~ExternalMemoryStream() override;
+
+  void SetData(void* data, size_t length);
+};
+
 // FifoBuffer allows for efficient, thread-safe buffering of data between
 // writer and reader. As the data can wrap around the end of the buffer,
 // MemoryStreamBase can't help us here.
@@ -526,6 +570,37 @@ class FifoBuffer : public StreamInterface {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+
+class LoggingAdapter : public StreamAdapterInterface {
+ public:
+  LoggingAdapter(StreamInterface* stream, LoggingSeverity level,
+                 const std::string& label, bool hex_mode = false);
+
+  void set_label(const std::string& label);
+
+  StreamResult Read(void* buffer,
+                    size_t buffer_len,
+                    size_t* read,
+                    int* error) override;
+  StreamResult Write(const void* data,
+                     size_t data_len,
+                     size_t* written,
+                     int* error) override;
+  void Close() override;
+
+ protected:
+  void OnEvent(StreamInterface* stream, int events, int err) override;
+
+ private:
+  LoggingSeverity level_;
+  std::string label_;
+  bool hex_mode_;
+  LogMultilineState lms_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(LoggingAdapter);
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // StringStream - Reads/Writes to an external std::string
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -554,6 +629,66 @@ class StringStream : public StreamInterface {
   std::string& str_;
   size_t read_pos_;
   bool read_only_;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// StreamReference - A reference counting stream adapter
+///////////////////////////////////////////////////////////////////////////////
+
+// Keep in mind that the streams and adapters defined in this file are
+// not thread-safe, so this has limited uses.
+
+// A StreamRefCount holds the reference count and a pointer to the
+// wrapped stream. It deletes the wrapped stream when there are no
+// more references. We can then have multiple StreamReference
+// instances pointing to one StreamRefCount, all wrapping the same
+// stream.
+
+class StreamReference : public StreamAdapterInterface {
+  class StreamRefCount;
+ public:
+  // Constructor for the first reference to a stream
+  // Note: get more references through NewReference(). Use this
+  // constructor only once on a given stream.
+  explicit StreamReference(StreamInterface* stream);
+  StreamInterface* GetStream() { return stream(); }
+  StreamInterface* NewReference();
+  ~StreamReference() override;
+
+ private:
+  class StreamRefCount {
+   public:
+    explicit StreamRefCount(StreamInterface* stream)
+        : stream_(stream), ref_count_(1) {
+    }
+    void AddReference() {
+      CritScope lock(&cs_);
+      ++ref_count_;
+    }
+    void Release() {
+      int ref_count;
+      {  // Atomic ops would have been a better fit here.
+        CritScope lock(&cs_);
+        ref_count = --ref_count_;
+      }
+      if (ref_count == 0) {
+        delete stream_;
+        delete this;
+      }
+    }
+   private:
+    StreamInterface* stream_;
+    int ref_count_;
+    CriticalSection cs_;
+    RTC_DISALLOW_COPY_AND_ASSIGN(StreamRefCount);
+  };
+
+  // Constructor for adding references
+  explicit StreamReference(StreamRefCount* stream_ref_count,
+                           StreamInterface* stream);
+
+  StreamRefCount* stream_ref_count_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(StreamReference);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

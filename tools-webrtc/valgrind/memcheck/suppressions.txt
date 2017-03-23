@@ -32,6 +32,14 @@
 # webrtc stuff
 
 {
+   bug_6784
+   Memcheck:Leak
+   fun:_Znw*
+   fun:_ZN3rtc10HttpServer16HandleConnectionEPNS_15StreamInterfaceE
+   fun:_ZN3rtc12_GLOBAL__N_122CreateClientConnectionERNS_10HttpServerERNS0_17HttpServerMonitorEb
+   fun:_ZN3rtc47HttpServer_SignalsCloseAfterForcedCloseAll_Test8TestBodyEv
+}
+{
    bug_6773_3
    Memcheck:Uninitialized
    fun:vfprintf
@@ -153,6 +161,13 @@
    fun:BIO_new
    fun:BIO_new_mem_buf
    fun:_ZN9rtc15OpenSSLIdentity14FromPEMStringsERKSsS2_
+}
+{
+   SignalsCloseAfterForcedCloseAll
+   Memcheck:Leak
+   fun:_Znw*
+   fun:_ZN3rtc10HttpServer10Connection12BeginProcessEPNS_15StreamInterfaceE
+   ...
 }
 {
    SignalsCloseAfterForcedCloseAll2
@@ -467,6 +482,21 @@
    Memcheck:Leak
    fun:_Znw*
    fun:_ZN6webrtc51AudioEncoderCopyRedDeathTest_NullSpeechEncoder_Test8TestBodyEv
+}
+{
+   bug_5988
+   Memcheck:Leak
+   fun:_Znw*
+   fun:_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_EN3rtc5ilessESaIS2_EE15_M_insert_equalIS2_EESt17_Rb_tree_iteratorIS2_EOT_
+   fun:_ZN3rtc8HttpData12changeHeaderERKSsS2_NS0_13HeaderCombineE
+   fun:_ZN3rtc16HttpResponseData9set_errorEj
+   fun:_ZN3rtc12_GLOBAL__N_117HttpServerMonitor9OnRequestEPNS_10HttpServerEPNS_21HttpServerTransactionE
+   fun:_ZN3rtc10HttpServer10Connection14onHttpCompleteENS_8HttpModeENS_9HttpErrorE
+   fun:_ZN3rtc8HttpBase10OnCompleteENS_9HttpErrorE
+   fun:_ZN3rtc8HttpBase17OnHttpStreamEventEPNS_15StreamInterfaceEii
+   fun:_ZN7testing12StreamSource11QueueStringEPKc
+   fun:_ZN3rtc12_GLOBAL__N_122CreateClientConnectionERNS_10HttpServerERNS0_17HttpServerMonitorEb
+   fun:_ZN3rtc47HttpServer_SignalsCloseAfterForcedCloseAll_Test8TestBodyEv
 }
 {
    bug_5989

@@ -49,6 +49,12 @@ char kLSanDefaultSuppressions[] =
 // pre-existing leaks.
 
 // rtc_unittest
+// https://code.google.com/p/webrtc/issues/detail?id=3827 for details.
+"leak:rtc::unstarted_task_test_DoNotDeleteTask2_Test::TestBody\n"
+"leak:rtc::HttpServer::HandleConnection\n"
+"leak:rtc::HttpServer::Connection::onHttpHeaderComplete\n"
+"leak:rtc::HttpResponseData::set_success\n"
+"leak:rtc::HttpData::changeHeader\n"
 // https://code.google.com/p/webrtc/issues/detail?id=4149 for details.
 "leak:StartDNSLookup\n"
 // https://code.google.com/p/webrtc/issues/detail?id=2527
