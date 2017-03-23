@@ -212,7 +212,7 @@ TEST_F(TestPacketBuffer, ExpandBufferOverflow) {
 
   for (int i = 0; i < kMaxSize; ++i)
     EXPECT_TRUE(Insert(seq_num + i, kKeyFrame, kFirst, kLast));
-  EXPECT_FALSE(Insert(seq_num + kMaxSize + 1, kKeyFrame, kFirst, kLast));
+  EXPECT_TRUE(Insert(seq_num + kMaxSize + 1, kKeyFrame, kFirst, kLast));
 }
 
 TEST_F(TestPacketBuffer, OnePacketOneFrame) {
@@ -465,7 +465,7 @@ TEST_F(TestPacketBuffer, DontLeakPayloadData) {
   EXPECT_FALSE(Insert(1, kKeyFrame, kFirst, kNotLast, 5, data3));
 
   // Expect to free data4 upon insertion (packet buffer is full).
-  EXPECT_FALSE(Insert(2 + kMaxSize, kKeyFrame, kFirst, kNotLast, 5, data4));
+  EXPECT_TRUE(Insert(2 + kMaxSize, kKeyFrame, kFirst, kNotLast, 5, data4));
 }
 
 TEST_F(TestPacketBuffer, ContinuousSeqNumDoubleMarkerBit) {

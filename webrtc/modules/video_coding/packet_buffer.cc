@@ -148,7 +148,8 @@ void PacketBuffer::Clear() {
 bool PacketBuffer::ExpandBufferSize() {
   if (size_ == max_size_) {
     LOG(LS_WARNING) << "PacketBuffer is already at max size (" << max_size_
-                    << "), failed to increase size.";
+                    << "), failed to increase size. Clearing PacketBuffer.";
+    Clear();
     return false;
   }
 
