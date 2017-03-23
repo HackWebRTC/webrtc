@@ -62,11 +62,6 @@ class UnixFilesystem : public FilesystemInterface {
   // Returns true if function succeeds.
   bool MoveFile(const Pathname& old_path, const Pathname& new_path) override;
 
-  // This copies a file from old_path to _new_path where "file" can be a plain
-  // file or directory, which will be copied recursively.
-  // Returns true if function succeeds
-  bool CopyFile(const Pathname& old_path, const Pathname& new_path) override;
-
   // Returns true if a pathname is a directory
   bool IsFolder(const Pathname& pathname) override;
 

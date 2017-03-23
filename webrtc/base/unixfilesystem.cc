@@ -204,12 +204,7 @@ bool UnixFilesystem::MoveFile(const Pathname &old_path,
   LOG(LS_VERBOSE) << "Moving " << old_path.pathname()
                   << " to " << new_path.pathname();
   if (rename(old_path.pathname().c_str(), new_path.pathname().c_str()) != 0) {
-    if (errno != EXDEV)
-      return false;
-    if (!CopyFile(old_path, new_path))
-      return false;
-    if (!DeleteFile(old_path))
-      return false;
+    return false;
   }
   return true;
 }
@@ -219,31 +214,6 @@ bool UnixFilesystem::IsFolder(const Pathname &path) {
   if (stat(path.pathname().c_str(), &st) < 0)
     return false;
   return S_ISDIR(st.st_mode);
-}
-
-bool UnixFilesystem::CopyFile(const Pathname &old_path,
-                              const Pathname &new_path) {
-  LOG(LS_VERBOSE) << "Copying " << old_path.pathname()
-                  << " to " << new_path.pathname();
-  char buf[256];
-  size_t len;
-
-  StreamInterface *source = OpenFile(old_path, "rb");
-  if (!source)
-    return false;
-
-  StreamInterface *dest = OpenFile(new_path, "wb");
-  if (!dest) {
-    delete source;
-    return false;
-  }
-
-  while (source->Read(buf, sizeof(buf), &len, nullptr) == SR_SUCCESS)
-    dest->Write(buf, len, nullptr, nullptr);
-
-  delete source;
-  delete dest;
-  return true;
 }
 
 bool UnixFilesystem::IsTemporaryPath(const Pathname& pathname) {

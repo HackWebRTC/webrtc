@@ -160,12 +160,6 @@ bool Win32Filesystem::IsAbsent(const Pathname& path) {
   return (ERROR_FILE_NOT_FOUND == err || ERROR_PATH_NOT_FOUND == err);
 }
 
-bool Win32Filesystem::CopyFile(const Pathname &old_path,
-                               const Pathname &new_path) {
-  return ::CopyFile(ToUtf16(old_path.pathname()).c_str(),
-                    ToUtf16(new_path.pathname()).c_str(), TRUE) != 0;
-}
-
 bool Win32Filesystem::IsTemporaryPath(const Pathname& pathname) {
   TCHAR buffer[MAX_PATH + 1];
   if (!::GetTempPath(arraysize(buffer), buffer))

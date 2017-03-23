@@ -41,10 +41,6 @@ class Win32Filesystem : public FilesystemInterface {
   // Returns true if the file is successfully moved
   virtual bool MoveFile(const Pathname &old_path, const Pathname &new_path);
   
-  // This copies a file from old_path to _new_path
-  // Returns true if function succeeds
-  virtual bool CopyFile(const Pathname &old_path, const Pathname &new_path);
-
   // Returns true if a pathname is a directory
   virtual bool IsFolder(const Pathname& pathname);
   

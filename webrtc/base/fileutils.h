@@ -118,14 +118,7 @@ class FilesystemInterface {
   // This moves a file from old_path to new_path, where "old_path" is a
   // plain file. This DCHECKs and returns false if old_path points to a
   // directory, and returns true if the function succeeds.
-  // If the new path is on a different volume than the old path, this function
-  // will attempt to copy and, if that succeeds, delete the old path.
   virtual bool MoveFile(const Pathname &old_path, const Pathname &new_path) = 0;
-
-  // This copies a file from old_path to new_path. This method DCHECKs and
-  // returns false if old_path is a folder, and returns true if the copy
-  // succeeds.
-  virtual bool CopyFile(const Pathname &old_path, const Pathname &new_path) = 0;
 
   // Returns true if pathname refers to a directory
   virtual bool IsFolder(const Pathname& pathname) = 0;
@@ -228,10 +221,6 @@ class Filesystem {
 
   static bool MoveFile(const Pathname &old_path, const Pathname &new_path) {
     return EnsureDefaultFilesystem()->MoveFile(old_path, new_path);
-  }
-
-  static bool CopyFile(const Pathname &old_path, const Pathname &new_path) {
-    return EnsureDefaultFilesystem()->CopyFile(old_path, new_path);
   }
 
   static bool IsFolder(const Pathname& pathname) {
