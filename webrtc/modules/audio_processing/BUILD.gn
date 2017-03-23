@@ -530,6 +530,7 @@ if (rtc_include_tests) {
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
       "../audio_coding:neteq_unittest_tools",
+      "test/conversational_speech:unittest",
       "//testing/gmock",
       "//testing/gtest",
     ]
