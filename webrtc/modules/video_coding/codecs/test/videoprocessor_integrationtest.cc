@@ -157,7 +157,7 @@ TEST_F(VideoProcessorIntegrationTest,
   RateControlThresholds rc_thresholds[3];
   SetRateControlThresholds(rc_thresholds, 0, 38, 50, 75, 15, 45, 0, 1);
   SetRateControlThresholds(rc_thresholds, 1, 10, 0, 40, 10, 30, 0, 0);
-  SetRateControlThresholds(rc_thresholds, 2, 5, 0, 30, 5, 20, 0, 0);
+  SetRateControlThresholds(rc_thresholds, 2, 5, 0, 30, 5, 25, 0, 0);
   ProcessFramesAndVerify(quality_thresholds, rate_profile, process_settings,
                          rc_thresholds, nullptr /* visualization_params */);
 }
