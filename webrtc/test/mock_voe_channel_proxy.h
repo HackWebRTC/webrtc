@@ -88,6 +88,8 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD2(SetSendCNPayloadType,
                bool(int type, PayloadFrequencies frequency));
   MOCK_METHOD1(OnTwccBasedUplinkPacketLossRate, void(float packet_loss_rate));
+  MOCK_METHOD1(OnRecoverableUplinkPacketLossRate,
+               void(float recoverable_packet_loss_rate));
 };
 }  // namespace test
 }  // namespace webrtc

@@ -384,6 +384,8 @@ class Channel
   // from RTCP-XR.
   void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate);
 
+  void OnRecoverableUplinkPacketLossRate(float recoverable_packet_loss_rate);
+
  private:
   void OnUplinkPacketLossRate(float packet_loss_rate);
 

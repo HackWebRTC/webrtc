@@ -1314,6 +1314,16 @@ void Channel::OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) {
   });
 }
 
+void Channel::OnRecoverableUplinkPacketLossRate(
+    float recoverable_packet_loss_rate) {
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder) {
+      (*encoder)->OnReceivedUplinkRecoverablePacketLossFraction(
+          recoverable_packet_loss_rate);
+    }
+  });
+}
+
 void Channel::OnUplinkPacketLossRate(float packet_loss_rate) {
   if (use_twcc_plr_for_ana_)
     return;

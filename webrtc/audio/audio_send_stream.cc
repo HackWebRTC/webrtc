@@ -277,16 +277,21 @@ void AudioSendStream::OnPacketFeedbackVector(
   // TODO(elad.alon): This fails in UT; fix and uncomment.
   // RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   rtc::Optional<float> plr;
+  rtc::Optional<float> rplr;
   {
     rtc::CritScope lock(&packet_loss_tracker_cs_);
     packet_loss_tracker_.OnPacketFeedbackVector(packet_feedback_vector);
     plr = packet_loss_tracker_.GetPacketLossRate();
+    rplr = packet_loss_tracker_.GetRecoverablePacketLossRate();
   }
-  // TODO(elad.alon): If PLR goes back to unknown, no indication is given that
+  // TODO(elad.alon): If R/PLR go back to unknown, no indication is given that
   // the previously sent value is no longer relevant. This will be taken care
   // of with some refactoring which is now being done.
   if (plr) {
     channel_proxy_->OnTwccBasedUplinkPacketLossRate(*plr);
+  }
+  if (rplr) {
+    channel_proxy_->OnRecoverableUplinkPacketLossRate(*rplr);
   }
 }
 

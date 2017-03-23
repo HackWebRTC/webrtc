@@ -26,6 +26,8 @@ class AudioNetworkAdaptor {
     ~EncoderRuntimeConfig();
     rtc::Optional<int> bitrate_bps;
     rtc::Optional<int> frame_length_ms;
+    // Note: This is what we tell the encoder. It doesn't have to reflect
+    // the actual NetworkMetrics; it's subject to our decision.
     rtc::Optional<float> uplink_packet_loss_fraction;
     rtc::Optional<bool> enable_fec;
     rtc::Optional<bool> enable_dtx;
@@ -42,6 +44,9 @@ class AudioNetworkAdaptor {
 
   virtual void SetUplinkPacketLossFraction(
       float uplink_packet_loss_fraction) = 0;
+
+  virtual void SetUplinkRecoverablePacketLossFraction(
+      float uplink_recoverable_packet_loss_fraction) = 0;
 
   virtual void SetRtt(int rtt_ms) = 0;
 

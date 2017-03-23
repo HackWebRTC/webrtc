@@ -81,6 +81,7 @@ class ControllerManagerImpl final : public ControllerManager {
   // Scoring point is a subset of NetworkMetrics that is used for comparing the
   // significance of controllers.
   struct ScoringPoint {
+    // TODO(elad.alon): Do we want to experiment with RPLR-based scoring?
     ScoringPoint(int uplink_bandwidth_bps, float uplink_packet_loss_fraction);
 
     // Calculate the normalized [0,1] distance between two scoring points.

@@ -117,6 +117,8 @@ class ChannelProxy {
   virtual bool SetSendCodec(const CodecInst& codec_inst);
   virtual bool SetSendCNPayloadType(int type, PayloadFrequencies frequency);
   virtual void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate);
+  virtual void OnRecoverableUplinkPacketLossRate(
+      float recoverable_packet_loss_rate);
 
  private:
   Channel* channel() const;

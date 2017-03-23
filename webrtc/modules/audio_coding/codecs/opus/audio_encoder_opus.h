@@ -114,6 +114,8 @@ class AudioEncoderOpus final : public AudioEncoder {
   void DisableAudioNetworkAdaptor() override;
   void OnReceivedUplinkPacketLossFraction(
       float uplink_packet_loss_fraction) override;
+  void OnReceivedUplinkRecoverablePacketLossFraction(
+      float uplink_recoverable_packet_loss_fraction) override;
   void OnReceivedUplinkBandwidth(
       int target_audio_bitrate_bps,
       rtc::Optional<int64_t> probing_interval_ms) override;

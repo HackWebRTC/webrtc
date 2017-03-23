@@ -175,6 +175,12 @@ class AudioEncoder {
   virtual void OnReceivedUplinkPacketLossFraction(
       float uplink_packet_loss_fraction);
 
+  // Provides 1st-order-FEC-recoverable uplink packet loss rate to this encoder
+  // to allow it to adapt.
+  // |uplink_recoverable_packet_loss_fraction| is in the range [0.0, 1.0].
+  virtual void OnReceivedUplinkRecoverablePacketLossFraction(
+      float uplink_recoverable_packet_loss_fraction);
+
   // Provides target audio bitrate to this encoder to allow it to adapt.
   virtual void OnReceivedTargetAudioBitrate(int target_bps);
 
