@@ -1135,6 +1135,8 @@ class MetaBuildWrapper(object):
           '--tsan=%d' % tsan,
       ]
 
+    cmdline += isolate_map[target].get('args', [])
+
     return cmdline, extra_files
 
   def ToAbsPath(self, build_path, *comps):

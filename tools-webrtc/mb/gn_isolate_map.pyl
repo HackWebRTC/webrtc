@@ -49,7 +49,10 @@
   },
   "low_bandwidth_audio_test": {
     "label": "//webrtc/audio:low_bandwidth_audio_test",
-    "type": "console_test_launcher",
+    "type": "non_parallel_console_test_launcher",
+    "args": [
+      "--quick",
+    ],
   },
   "modules_tests": {
     "label": "//webrtc/modules:modules_tests",
