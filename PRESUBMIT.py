@@ -409,13 +409,18 @@ def _CheckUnwantedDependencies(input_api, output_api):
   results = []
   if error_descriptions:
     results.append(output_api.PresubmitError(
-        'You added one or more #includes that violate checkdeps rules.',
+        'You added one or more #includes that violate checkdeps rules.\n'
+        'Check that the DEPS files in these locations contain valid rules.\n'
+        'See https://cs.chromium.org/chromium/src/buildtools/checkdeps/ for '
+        'more details about checkdeps.',
         error_descriptions))
   if warning_descriptions:
     results.append(output_api.PresubmitPromptOrNotify(
         'You added one or more #includes of files that are temporarily\n'
         'allowed but being removed. Can you avoid introducing the\n'
-        '#include? See relevant DEPS file(s) for details and contacts.',
+        '#include? See relevant DEPS file(s) for details and contacts.\n'
+        'See https://cs.chromium.org/chromium/src/buildtools/checkdeps/ for '
+        'more details about checkdeps.',
         warning_descriptions))
   return results
 
