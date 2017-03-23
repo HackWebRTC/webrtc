@@ -13,24 +13,34 @@ import subprocess
 import sys
 
 
-# Directories that will be scanned by cpplint by the presubmit script.
-CPPLINT_DIRS = [
-  'webrtc/api',
-  'webrtc/audio',
-  'webrtc/call',
-  'webrtc/common_audio',
-  'webrtc/common_video',
-  'webrtc/examples',
-  'webrtc/modules/audio_mixer',
-  'webrtc/modules/bitrate_controller',
-  'webrtc/modules/congestion_controller',
-  'webrtc/modules/pacing',
-  'webrtc/modules/remote_bitrate_estimator',
-  'webrtc/modules/rtp_rtcp',
-  'webrtc/modules/video_coding',
-  'webrtc/modules/video_processing',
-  'webrtc/tools',
-  'webrtc/video',
+# Files and directories that are *skipped* by cpplint in the presubmit script.
+CPPLINT_BLACKLIST = [
+  'tools-webrtc',
+  'webrtc/base',
+  'webrtc/examples/objc',
+  'webrtc/media',
+  'webrtc/modules/audio_coding',
+  'webrtc/modules/audio_conference_mixer',
+  'webrtc/modules/audio_device',
+  'webrtc/modules/audio_processing',
+  'webrtc/modules/desktop_capture',
+  'webrtc/modules/include/module_common_types.h',
+  'webrtc/modules/media_file',
+  'webrtc/modules/utility',
+  'webrtc/modules/video_capture',
+  'webrtc/p2p',
+  'webrtc/pc',
+  'webrtc/sdk/android/src/jni',
+  'webrtc/sdk/objc',
+  'webrtc/system_wrappers',
+  'webrtc/test',
+  'webrtc/voice_engine',
+  'webrtc/call.h',
+  'webrtc/common_types.h',
+  'webrtc/common_types.cc',
+  'webrtc/video_decoder.h',
+  'webrtc/video_encoder.h',
+  'webrtc/video_send_stream.h',
 ]
 
 # These filters will always be removed, even if the caller specifies a filter
@@ -209,17 +219,17 @@ def _CheckNoFRIEND_TEST(input_api, output_api):
       'use FRIEND_TEST_ALL_PREFIXES() instead.\n' + '\n'.join(problems))]
 
 
-def _IsLintWhitelisted(whitelist_dirs, file_path):
-  """ Checks if a file is whitelisted for lint check."""
-  for path in whitelist_dirs:
-    if os.path.dirname(file_path).startswith(path):
+def _IsLintBlacklisted(blacklist_paths, file_path):
+  """ Checks if a file is blacklisted for lint check."""
+  for path in blacklist_paths:
+    if file_path == path or os.path.dirname(file_path).startswith(path):
       return True
   return False
 
 
 def _CheckApprovedFilesLintClean(input_api, output_api,
                                  source_file_filter=None):
-  """Checks that all new or whitelisted .cc and .h files pass cpplint.py.
+  """Checks that all new or non-blacklisted .cc and .h files pass cpplint.py.
   This check is based on _CheckChangeLintsClean in
   depot_tools/presubmit_canned_checks.py but has less filters and only checks
   added files."""
@@ -235,19 +245,20 @@ def _CheckApprovedFilesLintClean(input_api, output_api,
   lint_filters.extend(BLACKLIST_LINT_FILTERS)
   cpplint._SetFilters(','.join(lint_filters))
 
-  # Create a platform independent whitelist for the CPPLINT_DIRS.
-  whitelist_dirs = [input_api.os_path.join(*path.split('/'))
-                    for path in CPPLINT_DIRS]
+  # Create a platform independent blacklist for cpplint.
+  blacklist_paths = [input_api.os_path.join(*path.split('/'))
+                     for path in CPPLINT_BLACKLIST]
 
   # Use the strictest verbosity level for cpplint.py (level 1) which is the
-  # default when running cpplint.py from command line.
-  # To make it possible to work with not-yet-converted code, we're only applying
-  # it to new (or moved/renamed) files and files listed in LINT_FOLDERS.
+  # default when running cpplint.py from command line. To make it possible to
+  # work with not-yet-converted code, we're only applying it to new (or
+  # moved/renamed) files and files not listed in CPPLINT_BLACKLIST.
   verbosity_level = 1
   files = []
   for f in input_api.AffectedSourceFiles(source_file_filter):
     # Note that moved/renamed files also count as added.
-    if f.Action() == 'A' or _IsLintWhitelisted(whitelist_dirs, f.LocalPath()):
+    if f.Action() == 'A' or not _IsLintBlacklisted(blacklist_paths,
+                                                   f.LocalPath()):
       files.append(f.AbsoluteLocalPath())
 
   for file_name in files:
