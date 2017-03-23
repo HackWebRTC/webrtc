@@ -367,6 +367,11 @@ bool ChannelProxy::SetSendCNPayloadType(int type,
   return channel()->SetSendCNPayloadType(type, frequency) == 0;
 }
 
+void ChannelProxy::OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  channel()->OnTwccBasedUplinkPacketLossRate(packet_loss_rate);
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();

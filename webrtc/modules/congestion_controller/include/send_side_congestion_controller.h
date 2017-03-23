@@ -67,6 +67,9 @@ class SendSideCongestionController : public CallStatsObserver,
                                std::unique_ptr<PacedSender> pacer);
   virtual ~SendSideCongestionController();
 
+  void RegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
+  void DeRegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
+
   virtual void SetBweBitrates(int min_bitrate_bps,
                               int start_bitrate_bps,
                               int max_bitrate_bps);
@@ -111,7 +114,8 @@ class SendSideCongestionController : public CallStatsObserver,
   void Process() override;
 
   // Implements TransportFeedbackObserver.
-  void AddPacket(uint16_t sequence_number,
+  void AddPacket(uint32_t ssrc,
+                 uint16_t sequence_number,
                  size_t length,
                  const PacedPacketInfo& pacing_info) override;
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;

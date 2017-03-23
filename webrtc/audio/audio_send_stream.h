@@ -12,12 +12,15 @@
 #define WEBRTC_AUDIO_AUDIO_SEND_STREAM_H_
 
 #include <memory>
+#include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call/audio_send_stream.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/call/bitrate_allocator.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/voice_engine/transport_feedback_packet_loss_tracker.h"
 
 namespace webrtc {
 class SendSideCongestionController;
@@ -33,7 +36,8 @@ class ChannelProxy;
 
 namespace internal {
 class AudioSendStream final : public webrtc::AudioSendStream,
-                              public webrtc::BitrateAllocatorObserver {
+                              public webrtc::BitrateAllocatorObserver,
+                              public webrtc::PacketFeedbackObserver {
  public:
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
@@ -62,6 +66,11 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                             int64_t rtt,
                             int64_t probing_interval_ms) override;
 
+  // From PacketFeedbackObserver.
+  void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override;
+  void OnPacketFeedbackVector(
+      const std::vector<PacketFeedback>& packet_feedback_vector) override;
+
   const webrtc::AudioSendStream::Config& config() const;
   void SetTransportOverhead(int transport_overhead_per_packet);
 
@@ -70,7 +79,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   bool SetupSendCodec();
 
-  rtc::ThreadChecker thread_checker_;
+  rtc::ThreadChecker worker_thread_checker_;
+  rtc::ThreadChecker pacer_thread_checker_;
   rtc::TaskQueue* worker_queue_;
   const webrtc::AudioSendStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
@@ -79,6 +89,10 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   BitrateAllocator* const bitrate_allocator_;
   SendSideCongestionController* const send_side_cc_;
   std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
+
+  rtc::CriticalSection packet_loss_tracker_cs_;
+  TransportFeedbackPacketLossTracker packet_loss_tracker_
+      GUARDED_BY(&packet_loss_tracker_cs_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };

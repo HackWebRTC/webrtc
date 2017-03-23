@@ -79,7 +79,8 @@ class CongestionControllerTest : public ::testing::Test {
   }
 
   void OnSentPacket(const PacketFeedback& packet_feedback) {
-    controller_->AddPacket(packet_feedback.sequence_number,
+    constexpr uint32_t ssrc = 0;
+    controller_->AddPacket(ssrc, packet_feedback.sequence_number,
                            packet_feedback.payload_size,
                            packet_feedback.pacing_info);
     controller_->OnSentPacket(rtc::SentPacket(packet_feedback.sequence_number,

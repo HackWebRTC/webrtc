@@ -246,13 +246,14 @@ class TransportFeedbackProxy : public TransportFeedbackObserver {
   }
 
   // Implements TransportFeedbackObserver.
-  void AddPacket(uint16_t sequence_number,
+  void AddPacket(uint32_t ssrc,
+                 uint16_t sequence_number,
                  size_t length,
                  const PacedPacketInfo& pacing_info) override {
     RTC_DCHECK(pacer_thread_.CalledOnValidThread());
     rtc::CritScope lock(&crit_);
     if (feedback_observer_)
-      feedback_observer_->AddPacket(sequence_number, length, pacing_info);
+      feedback_observer_->AddPacket(ssrc, sequence_number, length, pacing_info);
   }
 
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override {
@@ -395,7 +396,7 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
           (fraction_lost_aggregate + total_number_of_packets / 2) /
           total_number_of_packets;
     }
-    owner_->OnIncomingFractionLoss(weighted_fraction_lost);
+    owner_->OnUplinkPacketLossRate(weighted_fraction_lost / 255.0f);
   }
 
  private:
@@ -902,7 +903,9 @@ Channel::Channel(int32_t channelId,
       rtp_packet_sender_proxy_(new RtpPacketSenderProxy()),
       retransmission_rate_limiter_(new RateLimiter(Clock::GetRealTimeClock(),
                                                    kMaxRetransmissionWindowMs)),
-      decoder_factory_(config.acm_config.decoder_factory) {
+      decoder_factory_(config.acm_config.decoder_factory),
+      // TODO(elad.alon): Subsequent CL experiments with PLR source.
+      use_twcc_plr_for_ana_(false) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Channel() - ctor");
   AudioCodingModule::Config acm_config(config.acm_config);
@@ -1301,10 +1304,23 @@ void Channel::SetBitRate(int bitrate_bps, int64_t probing_interval_ms) {
   retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
 }
 
-void Channel::OnIncomingFractionLoss(int fraction_lost) {
+void Channel::OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) {
+  if (!use_twcc_plr_for_ana_)
+    return;
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
-    if (*encoder)
-      (*encoder)->OnReceivedUplinkPacketLossFraction(fraction_lost / 255.0f);
+    if (*encoder) {
+      (*encoder)->OnReceivedUplinkPacketLossFraction(packet_loss_rate);
+    }
+  });
+}
+
+void Channel::OnUplinkPacketLossRate(float packet_loss_rate) {
+  if (use_twcc_plr_for_ana_)
+    return;
+  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
+    if (*encoder) {
+      (*encoder)->OnReceivedUplinkPacketLossFraction(packet_loss_rate);
+    }
   });
 }
 

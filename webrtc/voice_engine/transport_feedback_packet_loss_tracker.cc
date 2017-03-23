@@ -98,7 +98,7 @@ void TransportFeedbackPacketLossTracker::OnPacketAdded(uint16_t seq_num,
   }
 }
 
-void TransportFeedbackPacketLossTracker::OnNewTransportFeedbackVector(
+void TransportFeedbackPacketLossTracker::OnPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
   for (const PacketFeedback& packet : packet_feedback_vector) {
     const auto& it = packet_status_window_.find(packet.sequence_number);

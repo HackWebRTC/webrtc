@@ -1070,7 +1070,8 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
       const LoggedRtpPacket& rtp = *rtp_iterator->second;
       if (rtp.header.extension.hasTransportSequenceNumber) {
         RTC_DCHECK(rtp.header.extension.hasTransportSequenceNumber);
-        cc.AddPacket(rtp.header.extension.transportSequenceNumber,
+        cc.AddPacket(rtp.header.ssrc,
+                     rtp.header.extension.transportSequenceNumber,
                      rtp.total_length, PacedPacketInfo());
         rtc::SentPacket sent_packet(
             rtp.header.extension.transportSequenceNumber, rtp.timestamp / 1000);
@@ -1169,7 +1170,8 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
       const LoggedRtpPacket& rtp = *rtp_iterator->second;
       if (rtp.header.extension.hasTransportSequenceNumber) {
         RTC_DCHECK(rtp.header.extension.hasTransportSequenceNumber);
-        feedback_adapter.AddPacket(rtp.header.extension.transportSequenceNumber,
+        feedback_adapter.AddPacket(rtp.header.ssrc,
+                                   rtp.header.extension.transportSequenceNumber,
                                    rtp.total_length, PacedPacketInfo());
         feedback_adapter.OnSentPacket(
             rtp.header.extension.transportSequenceNumber, rtp.timestamp / 1000);

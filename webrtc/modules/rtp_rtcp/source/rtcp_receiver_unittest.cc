@@ -73,8 +73,9 @@ class MockRtcpCallbackImpl : public RtcpStatisticsCallback {
 
 class MockTransportFeedbackObserver : public TransportFeedbackObserver {
  public:
-  MOCK_METHOD2(AddPacket, void(uint16_t, size_t));
-  MOCK_METHOD3(AddPacket, void(uint16_t, size_t, const PacedPacketInfo&));
+  MOCK_METHOD3(AddPacket, void(uint32_t, uint16_t, size_t));
+  MOCK_METHOD4(AddPacket,
+               void(uint32_t, uint16_t, size_t, const PacedPacketInfo&));
   MOCK_METHOD1(OnTransportFeedback, void(const rtcp::TransportFeedback&));
   MOCK_CONST_METHOD0(GetTransportFeedbackVector, std::vector<PacketFeedback>());
 };

@@ -36,19 +36,49 @@ TransportFeedbackAdapter::TransportFeedbackAdapter(const Clock* clock)
       local_net_id_(0),
       remote_net_id_(0) {}
 
-TransportFeedbackAdapter::~TransportFeedbackAdapter() {}
+TransportFeedbackAdapter::~TransportFeedbackAdapter() {
+  RTC_DCHECK(observers_.empty());
+}
 
-void TransportFeedbackAdapter::AddPacket(uint16_t sequence_number,
+void TransportFeedbackAdapter::RegisterPacketFeedbackObserver(
+    PacketFeedbackObserver* observer) {
+  rtc::CritScope cs(&observers_lock_);
+  RTC_DCHECK(observer);
+  RTC_DCHECK(std::find(observers_.begin(), observers_.end(), observer) ==
+             observers_.end());
+  observers_.push_back(observer);
+}
+
+void TransportFeedbackAdapter::DeRegisterPacketFeedbackObserver(
+    PacketFeedbackObserver* observer) {
+  rtc::CritScope cs(&observers_lock_);
+  RTC_DCHECK(observer);
+  const auto it = std::find(observers_.begin(), observers_.end(), observer);
+  RTC_DCHECK(it != observers_.end());
+  observers_.erase(it);
+}
+
+void TransportFeedbackAdapter::AddPacket(uint32_t ssrc,
+                                         uint16_t sequence_number,
                                          size_t length,
                                          const PacedPacketInfo& pacing_info) {
-  rtc::CritScope cs(&lock_);
-  if (send_side_bwe_with_overhead_) {
-    length += transport_overhead_bytes_per_packet_;
+  {
+    rtc::CritScope cs(&lock_);
+    if (send_side_bwe_with_overhead_) {
+      length += transport_overhead_bytes_per_packet_;
+    }
+    const int64_t creation_time_ms = clock_->TimeInMilliseconds();
+    send_time_history_.AddAndRemoveOld(
+        PacketFeedback(creation_time_ms, sequence_number, length, local_net_id_,
+                       remote_net_id_, pacing_info));
   }
-  const int64_t creation_time_ms = clock_->TimeInMilliseconds();
-  send_time_history_.AddAndRemoveOld(
-      PacketFeedback(creation_time_ms, sequence_number, length, local_net_id_,
-                     remote_net_id_, pacing_info));
+
+  {
+    rtc::CritScope cs(&observers_lock_);
+    for (auto observer : observers_) {
+      observer->OnPacketAdded(ssrc, sequence_number);
+    }
+  }
 }
 
 void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
@@ -154,6 +184,12 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
 void TransportFeedbackAdapter::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
   last_packet_feedback_vector_ = GetPacketFeedbackVector(feedback);
+  {
+    rtc::CritScope cs(&observers_lock_);
+    for (auto observer : observers_) {
+      observer->OnPacketFeedbackVector(last_packet_feedback_vector_);
+    }
+  }
 }
 
 std::vector<PacketFeedback>

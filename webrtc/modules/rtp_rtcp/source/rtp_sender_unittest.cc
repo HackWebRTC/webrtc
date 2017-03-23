@@ -126,7 +126,8 @@ class MockSendPacketObserver : public SendPacketObserver {
 
 class MockTransportFeedbackObserver : public TransportFeedbackObserver {
  public:
-  MOCK_METHOD3(AddPacket, void(uint16_t, size_t, const PacedPacketInfo&));
+  MOCK_METHOD4(AddPacket,
+               void(uint32_t, uint16_t, size_t, const PacedPacketInfo&));
   MOCK_METHOD1(OnTransportFeedback, void(const rtcp::TransportFeedback&));
   MOCK_CONST_METHOD0(GetTransportFeedbackVector, std::vector<PacketFeedback>());
 };
@@ -355,7 +356,7 @@ TEST_F(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
       .Times(1);
   EXPECT_CALL(
       feedback_observer_,
-      AddPacket(kTransportSequenceNumber,
+      AddPacket(rtp_sender_->SSRC(), kTransportSequenceNumber,
                 sizeof(kPayloadData) + kGenericHeaderLength, PacedPacketInfo()))
       .Times(1);
 
@@ -406,7 +407,7 @@ TEST_F(RtpSenderTest, SendsPacketsWithTransportSequenceNumber) {
       .Times(1);
   EXPECT_CALL(
       feedback_observer_,
-      AddPacket(kTransportSequenceNumber,
+      AddPacket(rtp_sender_->SSRC(), kTransportSequenceNumber,
                 sizeof(kPayloadData) + kGenericHeaderLength, PacedPacketInfo()))
       .Times(1);
 
@@ -1487,7 +1488,7 @@ TEST_F(RtpSenderTest, AddOverheadToTransportFeedbackObserver) {
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
       .WillOnce(testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(feedback_observer_,
-              AddPacket(kTransportSequenceNumber,
+              AddPacket(rtp_sender_->SSRC(), kTransportSequenceNumber,
                         sizeof(kPayloadData) + kGenericHeaderLength +
                             kRtpOverheadBytesPerPacket,
                         PacedPacketInfo()))

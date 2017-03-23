@@ -119,7 +119,8 @@ class CongestionController : public CallStatsObserver,
   void Process() override;
 
   // Implements TransportFeedbackObserver.
-  void AddPacket(uint16_t sequence_number,
+  void AddPacket(uint32_t ssrc,
+                 uint16_t sequence_number,
                  size_t length,
                  const PacedPacketInfo& pacing_info) override;
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;

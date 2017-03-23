@@ -87,6 +87,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(SetSendCodec, bool(const CodecInst& codec_inst));
   MOCK_METHOD2(SetSendCNPayloadType,
                bool(int type, PayloadFrequencies frequency));
+  MOCK_METHOD1(OnTwccBasedUplinkPacketLossRate, void(float packet_loss_rate));
 };
 }  // namespace test
 }  // namespace webrtc

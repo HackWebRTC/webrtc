@@ -342,13 +342,23 @@ class TransportFeedbackObserver {
   virtual ~TransportFeedbackObserver() {}
 
   // Note: Transport-wide sequence number as sequence number.
-  virtual void AddPacket(uint16_t sequence_number,
+  virtual void AddPacket(uint32_t ssrc,
+                         uint16_t sequence_number,
                          size_t length,
                          const PacedPacketInfo& pacing_info) = 0;
 
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
 
   virtual std::vector<PacketFeedback> GetTransportFeedbackVector() const = 0;
+};
+
+class PacketFeedbackObserver {
+ public:
+  virtual ~PacketFeedbackObserver() = default;
+
+  virtual void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) = 0;
+  virtual void OnPacketFeedbackVector(
+      const std::vector<PacketFeedback>& packet_feedback_vector) = 0;
 };
 
 class RtcpRttStats {

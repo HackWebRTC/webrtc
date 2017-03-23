@@ -378,10 +378,15 @@ class Channel
   // From OverheadObserver in the RTP/RTCP module
   void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
 
- protected:
-  void OnIncomingFractionLoss(int fraction_lost);
+  // The existence of this function alongside OnUplinkPacketLossRate is
+  // a compromise. We want the encoder to be agnostic of the PLR source, but
+  // we also don't want it to receive conflicting information from TWCC and
+  // from RTCP-XR.
+  void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate);
 
  private:
+  void OnUplinkPacketLossRate(float packet_loss_rate);
+
   bool InputMute() const;
   bool OnRtpPacketWithHeader(const uint8_t* received_packet,
                              size_t length,
@@ -508,6 +513,8 @@ class Channel
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
   rtc::ThreadChecker construction_thread_;
+
+  const bool use_twcc_plr_for_ana_;
 };
 
 }  // namespace voe

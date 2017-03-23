@@ -245,7 +245,7 @@ bool FuzzTransportFeedbackBlock(
     if (!may_continue) {
       return false;
     }
-    tracker->OnNewTransportFeedbackVector(feedback_vector);
+    tracker->OnPacketFeedbackVector(feedback_vector);
     tracker->Validate();
   }
 

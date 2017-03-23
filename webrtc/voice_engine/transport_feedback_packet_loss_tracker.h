@@ -38,7 +38,7 @@ class TransportFeedbackPacketLossTracker final {
 
   void OnPacketAdded(uint16_t seq_num, int64_t send_time_ms);
 
-  void OnNewTransportFeedbackVector(
+  void OnPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedbacks_vector);
 
   // Returns the packet loss rate, if the window has enough packet statuses to

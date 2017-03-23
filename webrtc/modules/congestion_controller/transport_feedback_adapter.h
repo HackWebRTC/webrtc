@@ -21,6 +21,8 @@
 
 namespace webrtc {
 
+class PacketFeedbackObserver;
+
 namespace rtcp {
 class TransportFeedback;
 }  // namespace rtcp
@@ -30,7 +32,11 @@ class TransportFeedbackAdapter {
   explicit TransportFeedbackAdapter(const Clock* clock);
   virtual ~TransportFeedbackAdapter();
 
-  void AddPacket(uint16_t sequence_number,
+  void RegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
+  void DeRegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
+
+  void AddPacket(uint32_t ssrc,
+                 uint16_t sequence_number,
                  size_t length,
                  const PacedPacketInfo& pacing_info);
   void OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
@@ -57,8 +63,11 @@ class TransportFeedbackAdapter {
   int64_t current_offset_ms_;
   int64_t last_timestamp_us_;
   std::vector<PacketFeedback> last_packet_feedback_vector_;
-  uint16_t local_net_id_;
-  uint16_t remote_net_id_;
+  uint16_t local_net_id_ GUARDED_BY(&lock_);
+  uint16_t remote_net_id_ GUARDED_BY(&lock_);
+
+  rtc::CriticalSection observers_lock_;
+  std::vector<PacketFeedbackObserver*> observers_ GUARDED_BY(&observers_lock_);
 };
 
 }  // namespace webrtc

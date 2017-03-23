@@ -106,10 +106,11 @@ void CongestionController::Process() {
   receive_side_cc_.Process();
 }
 
-void CongestionController::AddPacket(uint16_t sequence_number,
+void CongestionController::AddPacket(uint32_t ssrc,
+                                     uint16_t sequence_number,
                                      size_t length,
                                      const PacedPacketInfo& pacing_info) {
-  send_side_cc_.AddPacket(sequence_number, length, pacing_info);
+  send_side_cc_.AddPacket(ssrc, sequence_number, length, pacing_info);
 }
 
 void CongestionController::OnTransportFeedback(

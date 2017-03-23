@@ -83,6 +83,16 @@ SendSideCongestionController::SendSideCongestionController(
 
 SendSideCongestionController::~SendSideCongestionController() {}
 
+void SendSideCongestionController::RegisterPacketFeedbackObserver(
+    PacketFeedbackObserver* observer) {
+  transport_feedback_adapter_.RegisterPacketFeedbackObserver(observer);
+}
+
+void SendSideCongestionController::DeRegisterPacketFeedbackObserver(
+    PacketFeedbackObserver* observer) {
+  transport_feedback_adapter_.DeRegisterPacketFeedbackObserver(observer);
+}
+
 void SendSideCongestionController::SetBweBitrates(int min_bitrate_bps,
                                                   int start_bitrate_bps,
                                                   int max_bitrate_bps) {
@@ -203,10 +213,12 @@ void SendSideCongestionController::Process() {
 }
 
 void SendSideCongestionController::AddPacket(
+    uint32_t ssrc,
     uint16_t sequence_number,
     size_t length,
     const PacedPacketInfo& pacing_info) {
-  transport_feedback_adapter_.AddPacket(sequence_number, length, pacing_info);
+  transport_feedback_adapter_.AddPacket(ssrc, sequence_number, length,
+                                        pacing_info);
 }
 
 void SendSideCongestionController::OnTransportFeedback(

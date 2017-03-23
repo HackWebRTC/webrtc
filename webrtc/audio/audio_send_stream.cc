@@ -19,6 +19,7 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/task_queue.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
@@ -40,6 +41,11 @@ bool IsCodec(const webrtc::CodecInst& codec, const char* ref_name) {
 }  // namespace
 
 namespace internal {
+// TODO(elad.alon): Subsequent CL will make these values experiment-dependent.
+constexpr size_t kPacketLossTrackerMaxWindowSizeMs = 15000;
+constexpr size_t kPacketLossRateMinNumAckedPackets = 50;
+constexpr size_t kRecoverablePacketLossRateMinNumAckedPairs = 40;
+
 AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
@@ -53,7 +59,10 @@ AudioSendStream::AudioSendStream(
       config_(config),
       audio_state_(audio_state),
       bitrate_allocator_(bitrate_allocator),
-      send_side_cc_(send_side_cc) {
+      send_side_cc_(send_side_cc),
+      packet_loss_tracker_(kPacketLossTrackerMaxWindowSizeMs,
+                           kPacketLossRateMinNumAckedPackets,
+                           kRecoverablePacketLossRateMinNumAckedPairs) {
   LOG(LS_INFO) << "AudioSendStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
@@ -72,6 +81,7 @@ AudioSendStream::AudioSendStream(
                                 config_.rtp.nack.rtp_history_ms / 20);
 
   channel_proxy_->RegisterExternalTransport(config.send_transport);
+  send_side_cc_->RegisterPacketFeedbackObserver(this);
 
   for (const auto& extension : config.rtp.extensions) {
     if (extension.uri == RtpExtension::kAudioLevelUri) {
@@ -91,11 +101,14 @@ AudioSendStream::AudioSendStream(
   if (!SetupSendCodec()) {
     LOG(LS_ERROR) << "Failed to set up send codec state.";
   }
+
+  pacer_thread_checker_.DetachFromThread();
 }
 
 AudioSendStream::~AudioSendStream() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "~AudioSendStream: " << config_.ToString();
+  send_side_cc_->DeRegisterPacketFeedbackObserver(this);
   channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
@@ -103,7 +116,7 @@ AudioSendStream::~AudioSendStream() {
 }
 
 void AudioSendStream::Start() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (config_.min_bitrate_bps != -1 && config_.max_bitrate_bps != -1) {
     RTC_DCHECK_GE(config_.max_bitrate_bps, config_.min_bitrate_bps);
     rtc::Event thread_sync_event(false /* manual_reset */, false);
@@ -123,7 +136,7 @@ void AudioSendStream::Start() {
 }
 
 void AudioSendStream::Stop() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   rtc::Event thread_sync_event(false /* manual_reset */, false);
   worker_queue_->PostTask([this, &thread_sync_event] {
     bitrate_allocator_->RemoveObserver(this);
@@ -141,19 +154,19 @@ void AudioSendStream::Stop() {
 bool AudioSendStream::SendTelephoneEvent(int payload_type,
                                          int payload_frequency, int event,
                                          int duration_ms) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   return channel_proxy_->SetSendTelephoneEventPayloadType(payload_type,
                                                           payload_frequency) &&
          channel_proxy_->SendTelephoneEventOutband(event, duration_ms);
 }
 
 void AudioSendStream::SetMuted(bool muted) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel_proxy_->SetInputMute(muted);
 }
 
 webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   webrtc::AudioSendStream::Stats stats;
   stats.local_ssrc = config_.rtp.ssrc;
 
@@ -217,14 +230,14 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
 }
 
 void AudioSendStream::SignalNetworkState(NetworkState state) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 }
 
 bool AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // TODO(solenberg): Tests call this function on a network thread, libjingle
   // calls on the worker thread. We should move towards always using a network
   // thread. Then this check can be enabled.
-  // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
+  // RTC_DCHECK(!worker_thread_checker_.CalledOnValidThread());
   return channel_proxy_->ReceivedRTCPPacket(packet, length);
 }
 
@@ -247,13 +260,43 @@ uint32_t AudioSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
   return 0;
 }
 
+void AudioSendStream::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {
+  RTC_DCHECK(pacer_thread_checker_.CalledOnValidThread());
+  // Only packets that belong to this stream are of interest.
+  if (ssrc == config_.rtp.ssrc) {
+    rtc::CritScope lock(&packet_loss_tracker_cs_);
+    // TODO(elad.alon): This function call could potentially reset the window,
+    // setting both PLR and RPLR to unknown. Consider (during upcoming
+    // refactoring) passing an indication of such an event.
+    packet_loss_tracker_.OnPacketAdded(seq_num, rtc::TimeMillis());
+  }
+}
+
+void AudioSendStream::OnPacketFeedbackVector(
+    const std::vector<PacketFeedback>& packet_feedback_vector) {
+  // TODO(elad.alon): This fails in UT; fix and uncomment.
+  // RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  rtc::Optional<float> plr;
+  {
+    rtc::CritScope lock(&packet_loss_tracker_cs_);
+    packet_loss_tracker_.OnPacketFeedbackVector(packet_feedback_vector);
+    plr = packet_loss_tracker_.GetPacketLossRate();
+  }
+  // TODO(elad.alon): If PLR goes back to unknown, no indication is given that
+  // the previously sent value is no longer relevant. This will be taken care
+  // of with some refactoring which is now being done.
+  if (plr) {
+    channel_proxy_->OnTwccBasedUplinkPacketLossRate(*plr);
+  }
+}
+
 const webrtc::AudioSendStream::Config& AudioSendStream::config() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   return config_;
 }
 
 void AudioSendStream::SetTransportOverhead(int transport_overhead_per_packet) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   send_side_cc_->SetTransportOverhead(transport_overhead_per_packet);
   channel_proxy_->SetTransportOverhead(transport_overhead_per_packet);
 }

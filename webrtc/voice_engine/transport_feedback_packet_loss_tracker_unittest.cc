@@ -86,7 +86,7 @@ class TransportFeedbackPacketLossTrackerTest
       ++seq_num;
     }
 
-    tracker->OnNewTransportFeedbackVector(packet_feedback_vector);
+    tracker->OnPacketFeedbackVector(packet_feedback_vector);
     tracker->Validate();
   }
 

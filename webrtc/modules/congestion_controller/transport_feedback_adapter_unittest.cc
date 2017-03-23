@@ -38,6 +38,13 @@ const PacedPacketInfo kPacingInfo4(4, 22, 10000);
 
 namespace test {
 
+class MockPacketFeedbackObserver : public webrtc::PacketFeedbackObserver {
+ public:
+  MOCK_METHOD2(OnPacketAdded, void(uint32_t ssrc, uint16_t seq_num));
+  MOCK_METHOD1(OnPacketFeedbackVector,
+               void(const std::vector<PacketFeedback>& packet_feedback_vector));
+};
+
 class TransportFeedbackAdapterTest : public ::testing::Test {
  public:
   TransportFeedbackAdapterTest() : clock_(0) {}
@@ -58,16 +65,74 @@ class TransportFeedbackAdapterTest : public ::testing::Test {
                                     int64_t now_ms) {}
 
   void OnSentPacket(const PacketFeedback& packet_feedback) {
-    adapter_->AddPacket(packet_feedback.sequence_number,
+    adapter_->AddPacket(kSsrc, packet_feedback.sequence_number,
                         packet_feedback.payload_size,
                         packet_feedback.pacing_info);
     adapter_->OnSentPacket(packet_feedback.sequence_number,
                            packet_feedback.send_time_ms);
   }
 
+  static constexpr uint32_t kSsrc = 8492;
+
   SimulatedClock clock_;
   std::unique_ptr<TransportFeedbackAdapter> adapter_;
 };
+
+TEST_F(TransportFeedbackAdapterTest, ObserverSanity) {
+  MockPacketFeedbackObserver mock;
+  adapter_->RegisterPacketFeedbackObserver(&mock);
+
+  const std::vector<PacketFeedback> packets = {
+      PacketFeedback(100, 200, 0, 1000, kPacingInfo0),
+      PacketFeedback(110, 210, 1, 2000, kPacingInfo0),
+      PacketFeedback(120, 220, 2, 3000, kPacingInfo0)
+  };
+
+  rtcp::TransportFeedback feedback;
+  feedback.SetBase(packets[0].sequence_number,
+                   packets[0].arrival_time_ms * 1000);
+
+  for (const PacketFeedback& packet : packets) {
+    EXPECT_CALL(mock, OnPacketAdded(kSsrc, packet.sequence_number)).Times(1);
+    OnSentPacket(packet);
+    EXPECT_TRUE(feedback.AddReceivedPacket(packet.sequence_number,
+                                           packet.arrival_time_ms * 1000));
+  }
+
+  EXPECT_CALL(mock, OnPacketFeedbackVector(_)).Times(1);
+  adapter_->OnTransportFeedback(feedback);
+
+  adapter_->DeRegisterPacketFeedbackObserver(&mock);
+
+  // After deregistration, the observer no longers gets indications.
+  EXPECT_CALL(mock, OnPacketAdded(_, _)).Times(0);
+  const PacketFeedback new_packet(130, 230, 3, 4000, kPacingInfo0);
+  OnSentPacket(new_packet);
+
+  rtcp::TransportFeedback second_feedback;
+  second_feedback.SetBase(new_packet.sequence_number,
+                          new_packet.arrival_time_ms * 1000);
+  EXPECT_TRUE(feedback.AddReceivedPacket(new_packet.sequence_number,
+                                         new_packet.arrival_time_ms * 1000));
+  EXPECT_CALL(mock, OnPacketFeedbackVector(_)).Times(0);
+  adapter_->OnTransportFeedback(second_feedback);
+}
+
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST_F(TransportFeedbackAdapterTest, ObserverDoubleRegistrationDeathTest) {
+  MockPacketFeedbackObserver mock;
+  adapter_->RegisterPacketFeedbackObserver(&mock);
+  EXPECT_DEATH(adapter_->RegisterPacketFeedbackObserver(&mock), "");
+  adapter_->DeRegisterPacketFeedbackObserver(&mock);
+}
+
+TEST_F(TransportFeedbackAdapterTest, ObserverMissingDeRegistrationDeathTest) {
+  MockPacketFeedbackObserver mock;
+  adapter_->RegisterPacketFeedbackObserver(&mock);
+  EXPECT_DEATH(adapter_.reset(), "");
+  adapter_->DeRegisterPacketFeedbackObserver(&mock);
+}
+#endif
 
 TEST_F(TransportFeedbackAdapterTest, AdaptsFeedbackAndPopulatesSendTimes) {
   std::vector<PacketFeedback> packets;
