@@ -121,11 +121,16 @@ RTPPayloadRegistry::~RTPPayloadRegistry() = default;
 
 int32_t RTPPayloadRegistry::RegisterReceivePayload(const CodecInst& audio_codec,
                                                    bool* created_new_payload) {
+  rtc::CritScope cs(&crit_sect_);
+
+#if RTC_DCHECK_IS_ON
+  RTC_DCHECK(!used_for_video_);
+  used_for_audio_ = true;
+#endif
+
   *created_new_payload = false;
   if (!IsPayloadTypeValid(audio_codec.pltype))
     return -1;
-
-  rtc::CritScope cs(&crit_sect_);
 
   auto it = payload_type_map_.find(audio_codec.pltype);
   if (it != payload_type_map_.end()) {
@@ -154,10 +159,15 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(const CodecInst& audio_codec,
 
 int32_t RTPPayloadRegistry::RegisterReceivePayload(
     const VideoCodec& video_codec) {
+  rtc::CritScope cs(&crit_sect_);
+
+#if RTC_DCHECK_IS_ON
+  RTC_DCHECK(!used_for_audio_);
+  used_for_video_ = true;
+#endif
+
   if (!IsPayloadTypeValid(video_codec.plType))
     return -1;
-
-  rtc::CritScope cs(&crit_sect_);
 
   auto it = payload_type_map_.find(video_codec.plType);
   if (it != payload_type_map_.end()) {
