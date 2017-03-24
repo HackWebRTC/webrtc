@@ -3151,7 +3151,13 @@ TEST_F(VideoSendStreamTest, Vp9NonFlexModeSmallResolution) {
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, Vp9FlexModeRefCount) {
+#if defined(WEBRTC_ANDROID)
+// Crashes on Android; bugs.webrtc.org/7401
+#define MAYBE_Vp9FlexModeRefCount DISABLED_Vp9FlexModeRefCount
+#else
+#define MAYBE_Vp9FlexModeRefCount Vp9FlexModeRefCount
+#endif
+TEST_F(VideoSendStreamTest, MAYBE_Vp9FlexModeRefCount) {
   class FlexibleMode : public Vp9HeaderObserver {
     void ModifyVideoConfigsHook(
         VideoSendStream::Config* send_config,
