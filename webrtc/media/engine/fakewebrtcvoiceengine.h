@@ -117,8 +117,6 @@ class FakeWebRtcVoiceEngine
       return -1;
     }
     Channel* ch = new Channel();
-    auto db = webrtc::acm2::RentACodec::Database();
-    ch->recv_codecs.assign(db.begin(), db.end());
     ch->neteq_capacity = config.acm_config.neteq_config.max_packets_in_buffer;
     ch->neteq_fast_accelerate =
         config.acm_config.neteq_config.enable_fast_accelerate;

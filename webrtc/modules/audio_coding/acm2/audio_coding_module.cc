@@ -121,6 +121,8 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Get current playout frequency.
   int PlayoutFrequency() const override;
 
+  void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs) override;
+
   bool RegisterReceiveCodec(int rtp_payload_type,
                             const SdpAudioFormat& audio_format) override;
 
@@ -316,16 +318,6 @@ void UpdateCodecTypeHistogram(size_t codec_type) {
       "WebRTC.Audio.Encoder.CodecType", static_cast<int>(codec_type),
       static_cast<int>(
           webrtc::AudioEncoder::CodecType::kMaxLoggedAudioCodecTypes));
-}
-
-// TODO(turajs): the same functionality is used in NetEq. If both classes
-// need them, make it a static function in ACMCodecDB.
-bool IsCodecRED(const CodecInst& codec) {
-  return (STR_CASE_CMP(codec.plname, "RED") == 0);
-}
-
-bool IsCodecCN(const CodecInst& codec) {
-  return (STR_CASE_CMP(codec.plname, "CN") == 0);
 }
 
 // Stereo-to-mono can be used as in-place.
@@ -956,19 +948,6 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
   receiver_.SetMaximumDelay(0);
   receiver_.FlushBuffers();
 
-  // Register RED and CN.
-  auto db = acm2::RentACodec::Database();
-  for (size_t i = 0; i < db.size(); i++) {
-    if (IsCodecRED(db[i]) || IsCodecCN(db[i])) {
-      if (receiver_.AddCodec(static_cast<int>(i),
-                             static_cast<uint8_t>(db[i].pltype), 1,
-                             db[i].plfreq, nullptr, db[i].plname) < 0) {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, id_,
-                     "Cannot register master codec.");
-        return -1;
-      }
-    }
-  }
   receiver_initialized_ = true;
   return 0;
 }
@@ -985,6 +964,12 @@ int AudioCodingModuleImpl::PlayoutFrequency() const {
   WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceAudioCoding, id_,
                "PlayoutFrequency()");
   return receiver_.last_output_sample_rate_hz();
+}
+
+void AudioCodingModuleImpl::SetReceiveCodecs(
+    const std::map<int, SdpAudioFormat>& codecs) {
+  rtc::CritScope lock(&acm_crit_sect_);
+  receiver_.SetCodecs(codecs);
 }
 
 bool AudioCodingModuleImpl::RegisterReceiveCodec(

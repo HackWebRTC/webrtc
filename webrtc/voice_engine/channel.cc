@@ -987,9 +987,10 @@ int32_t Channel::Init() {
     return -1;
   }
 
-  // --- Register all supported codecs to the receiving side of the
-  // RTP/RTCP module
+  return 0;
+}
 
+void Channel::RegisterLegacyCodecs() {
   CodecInst codec;
   const uint8_t nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
 
@@ -1041,8 +1042,6 @@ int32_t Channel::Init() {
       }
     }
   }
-
-  return 0;
 }
 
 void Channel::Terminate() {
@@ -1358,6 +1357,11 @@ int32_t Channel::GetVADStatus(bool& enabledVAD,
   mode = params->vad_mode;
   disabledDTX = !params->use_cng;
   return 0;
+}
+
+void Channel::SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs) {
+  rtp_payload_registry_->SetAudioReceivePayloads(codecs);
+  audio_coding_->SetReceiveCodecs(codecs);
 }
 
 int32_t Channel::SetRecPayloadType(const CodecInst& codec) {

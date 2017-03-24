@@ -157,6 +157,9 @@ class NetEq {
   // Returns kOK on success, or kFail in case of an error.
   virtual int GetAudio(AudioFrame* audio_frame, bool* muted) = 0;
 
+  // Replaces the current set of decoders with the given one.
+  virtual void SetCodecs(const std::map<int, SdpAudioFormat>& codecs) = 0;
+
   // Associates |rtp_payload_type| with |codec| and |codec_name|, and stores the
   // information in the codec database. Returns 0 on success, -1 on failure.
   // The name is only used to provide information back to the caller about the

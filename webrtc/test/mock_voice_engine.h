@@ -52,6 +52,11 @@ class MockVoiceEngine : public VoiceEngineImpl {
               new testing::NiceMock<webrtc::test::MockVoEChannelProxy>();
           EXPECT_CALL(*proxy, GetAudioDecoderFactory())
               .WillRepeatedly(testing::ReturnRef(decoder_factory_));
+          EXPECT_CALL(*proxy, SetReceiveCodecs(testing::_))
+              .WillRepeatedly(testing::Invoke(
+                  [](const std::map<int, SdpAudioFormat>& codecs) {
+                    EXPECT_THAT(codecs, testing::IsEmpty());
+                  }));
           return proxy;
         }));
 
