@@ -47,7 +47,7 @@ constexpr uint8_t ByteMaskString(char c, const char (&str)[9]) {
 // either 0 or 1.
 class BitPattern {
  public:
-  constexpr BitPattern(const char (&str)[9])
+  explicit constexpr BitPattern(const char (&str)[9])
       : mask_(~ByteMaskString('x', str)),
         masked_value_(ByteMaskString('1', str)) {}
 
