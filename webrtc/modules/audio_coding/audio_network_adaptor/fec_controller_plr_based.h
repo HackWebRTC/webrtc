@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_FEC_CONTROLLER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_FEC_CONTROLLER_H_
+#ifndef WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_FEC_CONTROLLER_PLR_BASED_H_
+#define WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_FEC_CONTROLLER_PLR_BASED_H_
 
 #include <memory>
 
@@ -19,7 +19,7 @@
 
 namespace webrtc {
 
-class FecController final : public Controller {
+class FecControllerPlrBased final : public Controller {
  public:
   struct Config {
     struct Threshold {
@@ -65,12 +65,12 @@ class FecController final : public Controller {
   };
 
   // Dependency injection for testing.
-  FecController(const Config& config,
-                std::unique_ptr<SmoothingFilter> smoothing_filter);
+  FecControllerPlrBased(const Config& config,
+                        std::unique_ptr<SmoothingFilter> smoothing_filter);
 
-  explicit FecController(const Config& config);
+  explicit FecControllerPlrBased(const Config& config);
 
-  ~FecController() override;
+  ~FecControllerPlrBased() override;
 
   void UpdateNetworkMetrics(const NetworkMetrics& network_metrics) override;
 
@@ -99,9 +99,9 @@ class FecController final : public Controller {
   const ThresholdInfo fec_enabling_threshold_info_;
   const ThresholdInfo fec_disabling_threshold_info_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(FecController);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FecControllerPlrBased);
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_FEC_CONTROLLER_H_
+#endif  // WEBRTC_MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_FEC_CONTROLLER_PLR_BASED_H_
