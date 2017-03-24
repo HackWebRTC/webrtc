@@ -17,6 +17,28 @@
 
 namespace webrtc {
 
+namespace {
+// TODO(elad.alon): Subsequent CL experiments with PLR source.
+constexpr bool kUseTwccPlrForAna = false;
+
+class NullSmoothingFilter final : public SmoothingFilter {
+ public:
+  void AddSample(float sample) override {
+    last_sample_ = rtc::Optional<float>(sample);
+  }
+
+  rtc::Optional<float> GetAverage() override { return last_sample_; }
+
+  bool SetTimeConstantMs(int time_constant_ms) override {
+    RTC_NOTREACHED();
+    return false;
+  }
+
+ private:
+  rtc::Optional<float> last_sample_;
+};
+}
+
 FecControllerPlrBased::Config::Threshold::Threshold(
     int low_bandwidth_bps,
     float low_bandwidth_packet_loss,
@@ -63,9 +85,11 @@ FecControllerPlrBased::FecControllerPlrBased(
 FecControllerPlrBased::FecControllerPlrBased(const Config& config)
     : FecControllerPlrBased(
           config,
-          std::unique_ptr<SmoothingFilter>(
-              new SmoothingFilterImpl(config.time_constant_ms, config.clock))) {
-}
+          kUseTwccPlrForAna
+              ? std::unique_ptr<NullSmoothingFilter>(new NullSmoothingFilter())
+              : std::unique_ptr<SmoothingFilter>(
+                    new SmoothingFilterImpl(config.time_constant_ms,
+                                            config.clock))) {}
 
 FecControllerPlrBased::~FecControllerPlrBased() = default;
 
