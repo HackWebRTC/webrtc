@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <map>
 #include <string>
 #include <vector>
 
@@ -112,11 +111,6 @@ struct ConfigHelper {
               .Times(1)
               .After(expect_set);
           EXPECT_CALL(*channel_proxy_, DisassociateSendChannel()).Times(1);
-          EXPECT_CALL(*channel_proxy_, SetReceiveCodecs(_))
-              .WillRepeatedly(
-                  Invoke([](const std::map<int, SdpAudioFormat>& codecs) {
-                    EXPECT_THAT(codecs, testing::IsEmpty());
-                  }));
           return channel_proxy_;
         }));
     stream_config_.voe_channel_id = kChannelId;

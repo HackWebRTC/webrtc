@@ -251,12 +251,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 
   WebRtcVoiceEngine* const engine_ = nullptr;
   std::vector<AudioCodec> send_codecs_;
-
-  // TODO(kwiberg): decoder_map_ and recv_codecs_ store the exact same
-  // information, in slightly different formats. Eliminate recv_codecs_.
-  std::map<int, webrtc::SdpAudioFormat> decoder_map_;
   std::vector<AudioCodec> recv_codecs_;
-
   int max_send_bitrate_bps_ = 0;
   AudioOptions options_;
   rtc::Optional<int> dtmf_payload_type_;

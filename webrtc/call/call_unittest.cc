@@ -9,7 +9,6 @@
  */
 
 #include <list>
-#include <map>
 #include <memory>
 
 #include "webrtc/call/audio_state.h"
@@ -142,11 +141,6 @@ TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_RecvFirst) {
             new testing::NiceMock<test::MockVoEChannelProxy>();
         EXPECT_CALL(*channel_proxy, GetAudioDecoderFactory())
             .WillRepeatedly(testing::ReturnRef(decoder_factory));
-        EXPECT_CALL(*channel_proxy, SetReceiveCodecs(testing::_))
-            .WillRepeatedly(testing::Invoke(
-                [](const std::map<int, SdpAudioFormat>& codecs) {
-                  EXPECT_THAT(codecs, testing::IsEmpty());
-                }));
         // If being called for the send channel, save a pointer to the channel
         // proxy for later.
         if (channel_id == kRecvChannelId) {
@@ -194,11 +188,6 @@ TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_SendFirst) {
             new testing::NiceMock<test::MockVoEChannelProxy>();
         EXPECT_CALL(*channel_proxy, GetAudioDecoderFactory())
             .WillRepeatedly(testing::ReturnRef(decoder_factory));
-        EXPECT_CALL(*channel_proxy, SetReceiveCodecs(testing::_))
-            .WillRepeatedly(testing::Invoke(
-                [](const std::map<int, SdpAudioFormat>& codecs) {
-                  EXPECT_THAT(codecs, testing::IsEmpty());
-                }));
         // If being called for the send channel, save a pointer to the channel
         // proxy for later.
         if (channel_id == kRecvChannelId) {

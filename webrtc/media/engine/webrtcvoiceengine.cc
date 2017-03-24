@@ -132,6 +132,13 @@ std::string ToString(const AudioCodec& codec) {
   return ss.str();
 }
 
+std::string ToString(const webrtc::CodecInst& codec) {
+  std::stringstream ss;
+  ss << codec.plname << "/" << codec.plfreq << "/" << codec.channels
+     << " (" << codec.pltype << ")";
+  return ss.str();
+}
+
 bool IsCodec(const AudioCodec& codec, const char* ref_name) {
   return (_stricmp(codec.name.c_str(), ref_name) == 0);
 }
@@ -1459,8 +1466,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
       const std::vector<webrtc::RtpExtension>& extensions,
       webrtc::Call* call,
       webrtc::Transport* rtcp_send_transport,
-      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
-      const std::map<int, webrtc::SdpAudioFormat>& decoder_map)
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory)
       : call_(call), config_() {
     RTC_DCHECK_GE(ch, 0);
     RTC_DCHECK(call);
@@ -1473,7 +1479,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     config_.voe_channel_id = ch;
     config_.sync_group = sync_group;
     config_.decoder_factory = decoder_factory;
-    config_.decoder_map = decoder_map;
     RecreateAudioReceiveStream();
   }
 
@@ -1862,9 +1867,8 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     ChangePlayout(false);
   }
 
-  decoder_map_ = std::move(decoder_map);
   for (auto& kv : recv_streams_) {
-    kv.second->RecreateAudioReceiveStream(decoder_map_);
+    kv.second->RecreateAudioReceiveStream(decoder_map);
   }
   recv_codecs_ = codecs;
 
@@ -2221,12 +2225,38 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
     return false;
   }
 
+  // Turn off all supported codecs.
+  // TODO(solenberg): Remove once "no codecs" is the default state of a stream.
+  for (webrtc::CodecInst voe_codec : webrtc::acm2::RentACodec::Database()) {
+    voe_codec.pltype = -1;
+    if (engine()->voe()->codec()->SetRecPayloadType(channel, voe_codec) == -1) {
+      LOG_RTCERR2(SetRecPayloadType, channel, ToString(voe_codec));
+      DeleteVoEChannel(channel);
+      return false;
+    }
+  }
+
+  // Only enable those configured for this channel.
+  for (const auto& codec : recv_codecs_) {
+    webrtc::CodecInst voe_codec = {0};
+    if (WebRtcVoiceEngine::ToCodecInst(codec, &voe_codec)) {
+      voe_codec.pltype = codec.id;
+      if (engine()->voe()->codec()->SetRecPayloadType(
+          channel, voe_codec) == -1) {
+        LOG_RTCERR2(SetRecPayloadType, channel, ToString(voe_codec));
+        DeleteVoEChannel(channel);
+        return false;
+      }
+    }
+  }
+
   recv_streams_.insert(std::make_pair(
-      ssrc,
-      new WebRtcAudioReceiveStream(
-          channel, ssrc, receiver_reports_ssrc_, recv_transport_cc_enabled_,
-          recv_nack_enabled_, sp.sync_label, recv_rtp_extensions_, call_, this,
-          engine()->decoder_factory_, decoder_map_)));
+      ssrc, new WebRtcAudioReceiveStream(channel, ssrc, receiver_reports_ssrc_,
+                                         recv_transport_cc_enabled_,
+                                         recv_nack_enabled_,
+                                         sp.sync_label, recv_rtp_extensions_,
+                                         call_, this,
+                                         engine()->decoder_factory_)));
   recv_streams_[ssrc]->SetPlayout(playout_);
 
   return true;

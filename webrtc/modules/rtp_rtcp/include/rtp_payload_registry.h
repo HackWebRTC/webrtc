@@ -15,7 +15,6 @@
 #include <memory>
 #include <set>
 
-#include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/deprecation.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
@@ -44,10 +43,6 @@ class RTPPayloadRegistry {
 
   // TODO(magjed): Split RTPPayloadRegistry into separate Audio and Video class
   // and simplify the code. http://crbug/webrtc/6743.
-
-  // Replace all audio receive payload types with the given map.
-  void SetAudioReceivePayloads(std::map<int, SdpAudioFormat> codecs);
-
   int32_t RegisterReceivePayload(const CodecInst& audio_codec,
                                  bool* created_new_payload_type);
   int32_t RegisterReceivePayload(const VideoCodec& video_codec);

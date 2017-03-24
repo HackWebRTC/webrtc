@@ -8,9 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/test/auto_test/fixtures/after_initialization_fixture.h"
-#include "webrtc/voice_engine/voice_engine_impl.h"
 
 class CodecBeforeStreamingTest : public AfterInitializationFixture {
  protected:
@@ -21,9 +19,6 @@ class CodecBeforeStreamingTest : public AfterInitializationFixture {
     codec_instance_.pacsize = 480;
 
     channel_ = voe_base_->CreateChannel();
-    static_cast<webrtc::VoiceEngineImpl*>(voice_engine_)
-        ->GetChannelProxy(channel_)
-        ->RegisterLegacyCodecs();
   }
 
   void TearDown() {

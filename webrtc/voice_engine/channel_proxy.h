@@ -82,7 +82,6 @@ class ChannelProxy {
   virtual void SetBitrate(int bitrate_bps, int64_t probing_interval_ms);
   virtual void SetRecPayloadType(int payload_type,
                                  const SdpAudioFormat& format);
-  virtual void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs);
   virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink);
   virtual void SetInputMute(bool muted);
   virtual void RegisterExternalTransport(Transport* transport);
@@ -120,7 +119,6 @@ class ChannelProxy {
   virtual void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate);
   virtual void OnRecoverableUplinkPacketLossRate(
       float recoverable_packet_loss_rate);
-  virtual void RegisterLegacyCodecs();
 
  private:
   Channel* channel() const;

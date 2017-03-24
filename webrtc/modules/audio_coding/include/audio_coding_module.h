@@ -485,10 +485,6 @@ class AudioCodingModule {
   //
   virtual int32_t PlayoutFrequency() const = 0;
 
-  // Replace any existing decoders with the given payload type -> decoder map.
-  virtual void SetReceiveCodecs(
-      const std::map<int, SdpAudioFormat>& codecs) = 0;
-
   // Registers a decoder for the given payload type. Returns true iff
   // successful.
   virtual bool RegisterReceiveCodec(int rtp_payload_type,

@@ -31,7 +31,6 @@
 #include "webrtc/test/gtest.h"
 #include "webrtc/voice_engine/transmit_mixer.h"
 
-using testing::ContainerEq;
 using testing::Return;
 using testing::StrictMock;
 
@@ -796,12 +795,26 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecs) {
   parameters.codecs[2].id = 126;
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
   EXPECT_TRUE(AddRecvStream(kSsrcX));
-  EXPECT_THAT(GetRecvStreamConfig(kSsrcX).decoder_map,
-              (ContainerEq<std::map<int, webrtc::SdpAudioFormat>>(
-                  {{0, {"PCMU", 8000, 1}},
-                   {106, {"ISAC", 16000, 1}},
-                   {126, {"telephone-event", 8000, 1}},
-                   {107, {"telephone-event", 32000, 1}}})));
+  int channel_num = voe_.GetLastChannel();
+
+  webrtc::CodecInst gcodec;
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "ISAC");
+  gcodec.plfreq = 16000;
+  gcodec.channels = 1;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num, gcodec));
+  EXPECT_EQ(106, gcodec.pltype);
+  EXPECT_STREQ("ISAC", gcodec.plname);
+
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "telephone-event");
+  gcodec.plfreq = 8000;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num, gcodec));
+  EXPECT_EQ(126, gcodec.pltype);
+  EXPECT_STREQ("telephone-event", gcodec.plname);
+
+  gcodec.plfreq = 32000;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num, gcodec));
+  EXPECT_EQ(107, gcodec.pltype);
+  EXPECT_STREQ("telephone-event", gcodec.plname);
 }
 
 // Test that we fail to set an unknown inbound codec.
@@ -832,11 +845,16 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsWithOpusNoStereo) {
   parameters.codecs.push_back(kOpusCodec);
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
   EXPECT_TRUE(AddRecvStream(kSsrcX));
-  EXPECT_THAT(GetRecvStreamConfig(kSsrcX).decoder_map,
-              (ContainerEq<std::map<int, webrtc::SdpAudioFormat>>(
-                  {{0, {"PCMU", 8000, 1}},
-                   {103, {"ISAC", 16000, 1}},
-                   {111, {"opus", 48000, 2}}})));
+  int channel_num = voe_.GetLastChannel();
+  webrtc::CodecInst opus;
+  cricket::WebRtcVoiceEngine::ToCodecInst(kOpusCodec, &opus);
+  // Even without stereo parameters, recv codecs still specify channels = 2.
+  EXPECT_EQ(2, opus.channels);
+  EXPECT_EQ(111, opus.pltype);
+  EXPECT_STREQ("opus", opus.plname);
+  opus.pltype = 0;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num, opus));
+  EXPECT_EQ(111, opus.pltype);
 }
 
 // Test that we can decode OPUS with stereo = 0.
@@ -849,11 +867,16 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsWithOpus0Stereo) {
   parameters.codecs[2].params["stereo"] = "0";
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
   EXPECT_TRUE(AddRecvStream(kSsrcX));
-  EXPECT_THAT(GetRecvStreamConfig(kSsrcX).decoder_map,
-              (ContainerEq<std::map<int, webrtc::SdpAudioFormat>>(
-                  {{0, {"PCMU", 8000, 1}},
-                   {103, {"ISAC", 16000, 1}},
-                   {111, {"opus", 48000, 2, {{"stereo", "0"}}}}})));
+  int channel_num2 = voe_.GetLastChannel();
+  webrtc::CodecInst opus;
+  cricket::WebRtcVoiceEngine::ToCodecInst(kOpusCodec, &opus);
+  // Even when stereo is off, recv codecs still specify channels = 2.
+  EXPECT_EQ(2, opus.channels);
+  EXPECT_EQ(111, opus.pltype);
+  EXPECT_STREQ("opus", opus.plname);
+  opus.pltype = 0;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, opus));
+  EXPECT_EQ(111, opus.pltype);
 }
 
 // Test that we can decode OPUS with stereo = 1.
@@ -866,11 +889,15 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsWithOpus1Stereo) {
   parameters.codecs[2].params["stereo"] = "1";
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
   EXPECT_TRUE(AddRecvStream(kSsrcX));
-  EXPECT_THAT(GetRecvStreamConfig(kSsrcX).decoder_map,
-              (ContainerEq<std::map<int, webrtc::SdpAudioFormat>>(
-                  {{0, {"PCMU", 8000, 1}},
-                   {103, {"ISAC", 16000, 1}},
-                   {111, {"opus", 48000, 2, {{"stereo", "1"}}}}})));
+  int channel_num2 = voe_.GetLastChannel();
+  webrtc::CodecInst opus;
+  cricket::WebRtcVoiceEngine::ToCodecInst(kOpusCodec, &opus);
+  EXPECT_EQ(2, opus.channels);
+  EXPECT_EQ(111, opus.pltype);
+  EXPECT_STREQ("opus", opus.plname);
+  opus.pltype = 0;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, opus));
+  EXPECT_EQ(111, opus.pltype);
 }
 
 // Test that changes to recv codecs are applied to all streams.
@@ -884,15 +911,28 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsWithMultipleStreams) {
   parameters.codecs[0].id = 106;  // collide with existing CN 32k
   parameters.codecs[2].id = 126;
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
-  for (const auto& ssrc : {kSsrcX, kSsrcY}) {
-    EXPECT_TRUE(AddRecvStream(ssrc));
-    EXPECT_THAT(GetRecvStreamConfig(ssrc).decoder_map,
-                (ContainerEq<std::map<int, webrtc::SdpAudioFormat>>(
-                    {{0, {"PCMU", 8000, 1}},
-                     {106, {"ISAC", 16000, 1}},
-                     {126, {"telephone-event", 8000, 1}},
-                     {107, {"telephone-event", 32000, 1}}})));
-  }
+  EXPECT_TRUE(AddRecvStream(kSsrcX));
+  int channel_num2 = voe_.GetLastChannel();
+
+  webrtc::CodecInst gcodec;
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "ISAC");
+  gcodec.plfreq = 16000;
+  gcodec.channels = 1;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
+  EXPECT_EQ(106, gcodec.pltype);
+  EXPECT_STREQ("ISAC", gcodec.plname);
+
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "telephone-event");
+  gcodec.plfreq = 8000;
+  gcodec.channels = 1;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
+  EXPECT_EQ(126, gcodec.pltype);
+  EXPECT_STREQ("telephone-event", gcodec.plname);
+
+  gcodec.plfreq = 32000;
+  EXPECT_EQ(0, voe_.GetRecPayloadType(channel_num2, gcodec));
+  EXPECT_EQ(107, gcodec.pltype);
+  EXPECT_STREQ("telephone-event", gcodec.plname);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsAfterAddingStreams) {
@@ -2921,9 +2961,12 @@ TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamUnsupportedCodec) {
   parameters.codecs.push_back(kPcmuCodec);
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
   EXPECT_TRUE(AddRecvStream(kSsrcX));
-  EXPECT_THAT(GetRecvStreamConfig(kSsrcX).decoder_map,
-              (ContainerEq<std::map<int, webrtc::SdpAudioFormat>>(
-                  {{0, {"PCMU", 8000, 1}}, {103, {"ISAC", 16000, 1}}})));
+  int channel_num2 = voe_.GetLastChannel();
+  webrtc::CodecInst gcodec;
+  rtc::strcpyn(gcodec.plname, arraysize(gcodec.plname), "opus");
+  gcodec.plfreq = 48000;
+  gcodec.channels = 2;
+  EXPECT_EQ(-1, voe_.GetRecPayloadType(channel_num2, gcodec));
 }
 
 // Test that we properly clean up any streams that were added, even if

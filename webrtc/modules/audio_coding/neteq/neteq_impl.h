@@ -111,8 +111,6 @@ class NetEqImpl : public webrtc::NetEq {
 
   int GetAudio(AudioFrame* audio_frame, bool* muted) override;
 
-  void SetCodecs(const std::map<int, SdpAudioFormat>& codecs) override;
-
   int RegisterPayloadType(NetEqDecoder codec,
                           const std::string& codec_name,
                           uint8_t rtp_payload_type) override;

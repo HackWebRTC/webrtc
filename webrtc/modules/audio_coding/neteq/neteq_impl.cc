@@ -212,15 +212,6 @@ int NetEqImpl::GetAudio(AudioFrame* audio_frame, bool* muted) {
   return kOK;
 }
 
-void NetEqImpl::SetCodecs(const std::map<int, SdpAudioFormat>& codecs) {
-  rtc::CritScope lock(&crit_sect_);
-  const std::vector<int> changed_payload_types =
-      decoder_database_->SetCodecs(codecs);
-  for (const int pt : changed_payload_types) {
-    packet_buffer_->DiscardPacketsWithPayloadType(pt);
-  }
-}
-
 int NetEqImpl::RegisterPayloadType(NetEqDecoder codec,
                                    const std::string& name,
                                    uint8_t rtp_payload_type) {

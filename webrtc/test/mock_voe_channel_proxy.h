@@ -87,8 +87,6 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(SetSendCodec, bool(const CodecInst& codec_inst));
   MOCK_METHOD2(SetSendCNPayloadType,
                bool(int type, PayloadFrequencies frequency));
-  MOCK_METHOD1(SetReceiveCodecs,
-               void(const std::map<int, SdpAudioFormat>& codecs));
   MOCK_METHOD1(OnTwccBasedUplinkPacketLossRate, void(float packet_loss_rate));
   MOCK_METHOD1(OnRecoverableUplinkPacketLossRate,
                void(float recoverable_packet_loss_rate));
