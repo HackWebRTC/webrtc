@@ -172,7 +172,8 @@ class MockIceObserver : public webrtc::IceObserver {
   }
 
   // Found a new candidate.
-  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
+  void OnIceCandidate(
+      std::unique_ptr<webrtc::IceCandidateInterface> candidate) override {
     switch (candidate->sdp_mline_index()) {
       case kMediaContentIndex0:
         mline_0_candidates_.push_back(candidate->candidate());

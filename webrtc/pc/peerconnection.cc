@@ -1702,12 +1702,13 @@ void PeerConnection::OnIceGatheringChange(
   observer_->OnIceGatheringChange(ice_gathering_state_);
 }
 
-void PeerConnection::OnIceCandidate(const IceCandidateInterface* candidate) {
+void PeerConnection::OnIceCandidate(
+    std::unique_ptr<IceCandidateInterface> candidate) {
   RTC_DCHECK(signaling_thread()->IsCurrent());
   if (IsClosed()) {
     return;
   }
-  observer_->OnIceCandidate(candidate);
+  observer_->OnIceCandidate(candidate.get());
 }
 
 void PeerConnection::OnIceCandidatesRemoved(

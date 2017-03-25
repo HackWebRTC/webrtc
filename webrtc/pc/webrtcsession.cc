@@ -1502,12 +1502,13 @@ void WebRtcSession::OnTransportControllerCandidatesGathered(
   for (cricket::Candidates::const_iterator citer = candidates.begin();
        citer != candidates.end(); ++citer) {
     // Use transport_name as the candidate media id.
-    JsepIceCandidate candidate(transport_name, sdp_mline_index, *citer);
-    if (ice_observer_) {
-      ice_observer_->OnIceCandidate(&candidate);
-    }
+    std::unique_ptr<JsepIceCandidate> candidate(
+        new JsepIceCandidate(transport_name, sdp_mline_index, *citer));
     if (local_description()) {
-      mutable_local_description()->AddCandidate(&candidate);
+      mutable_local_description()->AddCandidate(candidate.get());
+    }
+    if (ice_observer_) {
+      ice_observer_->OnIceCandidate(std::move(candidate));
     }
   }
 }

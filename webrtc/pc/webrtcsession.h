@@ -88,7 +88,8 @@ class IceObserver {
   virtual void OnIceGatheringChange(
       PeerConnectionInterface::IceGatheringState new_state) {}
   // New Ice candidate have been found.
-  virtual void OnIceCandidate(const IceCandidateInterface* candidate) = 0;
+  virtual void OnIceCandidate(
+      std::unique_ptr<IceCandidateInterface> candidate) = 0;
 
   // Some local ICE candidates have been removed.
   virtual void OnIceCandidatesRemoved(

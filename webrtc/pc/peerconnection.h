@@ -205,7 +205,8 @@ class PeerConnection : public PeerConnectionInterface,
   // Implements IceObserver
   void OnIceConnectionStateChange(IceConnectionState new_state) override;
   void OnIceGatheringChange(IceGatheringState new_state) override;
-  void OnIceCandidate(const IceCandidateInterface* candidate) override;
+  void OnIceCandidate(
+      std::unique_ptr<IceCandidateInterface> candidate) override;
   void OnIceCandidatesRemoved(
       const std::vector<cricket::Candidate>& candidates) override;
   void OnIceConnectionReceivingChange(bool receiving) override;
