@@ -55,6 +55,7 @@ class RtpReceiver;
 class RTPReceiverAudio;
 class RtpPacketReceived;
 class RtpRtcp;
+class RtpTransportControllerSendInterface;
 class TelephoneEventHandler;
 class VoERTPObserver;
 class VoiceEngineObserver;
@@ -275,9 +276,7 @@ class Channel
   void EnableReceiveTransportSequenceNumber(int id);
 
   void RegisterSenderCongestionControlObjects(
-      RtpPacketSender* rtp_packet_sender,
-      TransportFeedbackObserver* transport_feedback_observer,
-      PacketRouter* packet_router,
+      RtpTransportControllerSendInterface* transport,
       RtcpBandwidthObserver* bandwidth_observer);
   void RegisterReceiverCongestionControlObjects(PacketRouter* packet_router);
   void ResetCongestionControlObjects();

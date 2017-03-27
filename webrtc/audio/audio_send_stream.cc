@@ -20,6 +20,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/call/rtp_transport_controller_send.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
@@ -50,8 +51,7 @@ AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     rtc::TaskQueue* worker_queue,
-    PacketRouter* packet_router,
-    SendSideCongestionController* send_side_cc,
+    RtpTransportControllerSendInterface* transport,
     BitrateAllocator* bitrate_allocator,
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats)
@@ -59,14 +59,15 @@ AudioSendStream::AudioSendStream(
       config_(config),
       audio_state_(audio_state),
       bitrate_allocator_(bitrate_allocator),
-      send_side_cc_(send_side_cc),
+      transport_(transport),
       packet_loss_tracker_(kPacketLossTrackerMaxWindowSizeMs,
                            kPacketLossRateMinNumAckedPackets,
                            kRecoverablePacketLossRateMinNumAckedPairs) {
   LOG(LS_INFO) << "AudioSendStream: " << config_.ToString();
   RTC_DCHECK_NE(config_.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
-  RTC_DCHECK(send_side_cc);
+  RTC_DCHECK(transport);
+  RTC_DCHECK(transport->send_side_cc());
 
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
   channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
@@ -81,23 +82,23 @@ AudioSendStream::AudioSendStream(
                                 config_.rtp.nack.rtp_history_ms / 20);
 
   channel_proxy_->RegisterExternalTransport(config.send_transport);
-  send_side_cc_->RegisterPacketFeedbackObserver(this);
+  transport_->send_side_cc()->RegisterPacketFeedbackObserver(this);
 
   for (const auto& extension : config.rtp.extensions) {
     if (extension.uri == RtpExtension::kAudioLevelUri) {
       channel_proxy_->SetSendAudioLevelIndicationStatus(true, extension.id);
     } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       channel_proxy_->EnableSendTransportSequenceNumber(extension.id);
-      send_side_cc->EnablePeriodicAlrProbing(true);
-      bandwidth_observer_.reset(
-          send_side_cc->GetBitrateController()->CreateRtcpBandwidthObserver());
+      transport->send_side_cc()->EnablePeriodicAlrProbing(true);
+      bandwidth_observer_.reset(transport->send_side_cc()
+                                    ->GetBitrateController()
+                                    ->CreateRtcpBandwidthObserver());
     } else {
       RTC_NOTREACHED() << "Registering unsupported RTP extension.";
     }
   }
   channel_proxy_->RegisterSenderCongestionControlObjects(
-      send_side_cc->pacer(), send_side_cc, packet_router,
-      bandwidth_observer_.get());
+      transport, bandwidth_observer_.get());
   if (!SetupSendCodec()) {
     LOG(LS_ERROR) << "Failed to set up send codec state.";
   }
@@ -108,7 +109,7 @@ AudioSendStream::AudioSendStream(
 AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   LOG(LS_INFO) << "~AudioSendStream: " << config_.ToString();
-  send_side_cc_->DeRegisterPacketFeedbackObserver(this);
+  transport_->send_side_cc()->DeRegisterPacketFeedbackObserver(this);
   channel_proxy_->DeRegisterExternalTransport();
   channel_proxy_->ResetCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
@@ -302,7 +303,8 @@ const webrtc::AudioSendStream::Config& AudioSendStream::config() const {
 
 void AudioSendStream::SetTransportOverhead(int transport_overhead_per_packet) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  send_side_cc_->SetTransportOverhead(transport_overhead_per_packet);
+  transport_->send_side_cc()->SetTransportOverhead(
+      transport_overhead_per_packet);
   channel_proxy_->SetTransportOverhead(transport_overhead_per_packet);
 }
 

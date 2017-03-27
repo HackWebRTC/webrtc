@@ -22,6 +22,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/base/timeutils.h"
+#include "webrtc/call/rtp_transport_controller_send.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"
@@ -2371,10 +2372,13 @@ void Channel::EnableReceiveTransportSequenceNumber(int id) {
 }
 
 void Channel::RegisterSenderCongestionControlObjects(
-    RtpPacketSender* rtp_packet_sender,
-    TransportFeedbackObserver* transport_feedback_observer,
-    PacketRouter* packet_router,
+    RtpTransportControllerSendInterface* transport,
     RtcpBandwidthObserver* bandwidth_observer) {
+  RtpPacketSender* rtp_packet_sender = transport->packet_sender();
+  TransportFeedbackObserver* transport_feedback_observer =
+      transport->transport_feedback_observer();
+  PacketRouter* packet_router = transport->packet_router();
+
   RTC_DCHECK(rtp_packet_sender);
   RTC_DCHECK(transport_feedback_observer);
   RTC_DCHECK(packet_router && !packet_router_);

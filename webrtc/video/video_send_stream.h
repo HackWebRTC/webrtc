@@ -22,7 +22,6 @@
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/protection_bitrate_calculator.h"
 #include "webrtc/video/encoder_rtcp_feedback.h"
-#include "webrtc/video/payload_router.h"
 #include "webrtc/video/send_delay_stats.h"
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/vie_encoder.h"
@@ -31,15 +30,14 @@
 
 namespace webrtc {
 
-class BitrateAllocator;
 class CallStats;
 class SendSideCongestionController;
 class IvfFileWriter;
-class PacketRouter;
 class ProcessThread;
 class RtpRtcp;
-class VieRemb;
+class RtpTransportControllerSendInterface;
 class RtcEventLog;
+class VieRemb;
 
 namespace internal {
 
@@ -54,8 +52,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
                   ProcessThread* module_process_thread,
                   rtc::TaskQueue* worker_queue,
                   CallStats* call_stats,
-                  SendSideCongestionController* congestion_controller,
-                  PacketRouter* packet_router,
+                  RtpTransportControllerSendInterface* transport,
                   BitrateAllocator* bitrate_allocator,
                   SendDelayStats* send_delay_stats,
                   VieRemb* remb,

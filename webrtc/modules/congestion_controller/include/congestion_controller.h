@@ -88,8 +88,11 @@ class CongestionController : public CallStatsObserver,
       bool send_side_bwe);
   virtual int64_t GetPacerQueuingDelayMs() const;
   // TODO(nisse): Delete this accessor function. The pacer should be
-  // internal to the congestion controller.
+  // internal to the congestion controller. Currently needed by Call,
+  // to register the pacer module on the right thread.
   virtual PacedSender* pacer() { return send_side_cc_.pacer(); }
+  // TODO(nisse): Delete this method, as soon as downstream projects
+  // are updated.
   virtual TransportFeedbackObserver* GetTransportFeedbackObserver() {
     return this;
   }

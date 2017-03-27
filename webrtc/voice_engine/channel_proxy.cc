@@ -15,6 +15,7 @@
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/call/rtp_transport_controller_send.h"
 #include "webrtc/voice_engine/channel.h"
 
 namespace webrtc {
@@ -76,14 +77,11 @@ void ChannelProxy::EnableReceiveTransportSequenceNumber(int id) {
 }
 
 void ChannelProxy::RegisterSenderCongestionControlObjects(
-    RtpPacketSender* rtp_packet_sender,
-    TransportFeedbackObserver* transport_feedback_observer,
-    PacketRouter* packet_router,
+    RtpTransportControllerSendInterface* transport,
     RtcpBandwidthObserver* bandwidth_observer) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  channel()->RegisterSenderCongestionControlObjects(
-      rtp_packet_sender, transport_feedback_observer, packet_router,
-      bandwidth_observer);
+  channel()->RegisterSenderCongestionControlObjects(transport,
+                                                    bandwidth_observer);
 }
 
 void ChannelProxy::RegisterReceiverCongestionControlObjects(

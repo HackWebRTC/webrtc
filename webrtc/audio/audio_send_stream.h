@@ -23,12 +23,11 @@
 #include "webrtc/voice_engine/transport_feedback_packet_loss_tracker.h"
 
 namespace webrtc {
-class SendSideCongestionController;
 class VoiceEngine;
 class RtcEventLog;
 class RtcpBandwidthObserver;
 class RtcpRttStats;
-class PacketRouter;
+class RtpTransportControllerSendInterface;
 
 namespace voe {
 class ChannelProxy;
@@ -42,8 +41,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                   rtc::TaskQueue* worker_queue,
-                  PacketRouter* packet_router,
-                  SendSideCongestionController* send_side_cc,
+                  RtpTransportControllerSendInterface* transport,
                   BitrateAllocator* bitrate_allocator,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats);
@@ -87,7 +85,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
 
   BitrateAllocator* const bitrate_allocator_;
-  SendSideCongestionController* const send_side_cc_;
+  RtpTransportControllerSendInterface* const transport_;
   std::unique_ptr<RtcpBandwidthObserver> bandwidth_observer_;
 
   rtc::CriticalSection packet_loss_tracker_cs_;

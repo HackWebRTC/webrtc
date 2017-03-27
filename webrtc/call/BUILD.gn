@@ -16,6 +16,7 @@ rtc_source_set("call_interfaces") {
     "audio_state.h",
     "call.h",
     "flexfec_receive_stream.h",
+    "rtp_transport_controller_send.h",
     "syncable.cc",
     "syncable.h",
   ]

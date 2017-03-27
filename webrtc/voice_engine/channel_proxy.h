@@ -33,6 +33,7 @@ class RtpPacketSender;
 class RtpPacketReceived;
 class RtpReceiver;
 class RtpRtcp;
+class RtpTransportControllerSendInterface;
 class Transport;
 class TransportFeedbackObserver;
 
@@ -62,9 +63,7 @@ class ChannelProxy {
   virtual void EnableSendTransportSequenceNumber(int id);
   virtual void EnableReceiveTransportSequenceNumber(int id);
   virtual void RegisterSenderCongestionControlObjects(
-      RtpPacketSender* rtp_packet_sender,
-      TransportFeedbackObserver* transport_feedback_observer,
-      PacketRouter* packet_router,
+      RtpTransportControllerSendInterface* transport,
       RtcpBandwidthObserver* bandwidth_observer);
   virtual void RegisterReceiverCongestionControlObjects(
       PacketRouter* packet_router);
