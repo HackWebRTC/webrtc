@@ -1172,6 +1172,29 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAndGetRtpSendParameters) {
   EXPECT_EQ(initial_params, channel_->GetRtpSendParameters(kSsrcX));
 }
 
+// Test that max_bitrate_bps in send stream config gets updated correctly when
+// SetRtpSendParameters is called.
+TEST_F(WebRtcVoiceEngineTestFake, SetRtpSendParameterUpdatesMaxBitrate) {
+  webrtc::test::ScopedFieldTrials override_field_trials(
+      "WebRTC-Audio-SendSideBwe/Enabled/");
+  EXPECT_TRUE(SetupSendStream());
+  cricket::AudioSendParameters send_parameters;
+  send_parameters.codecs.push_back(kOpusCodec);
+  SetSendParameters(send_parameters);
+
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpSendParameters(kSsrcX);
+  // Expect empty on parameters.encodings[0].max_bitrate_bps;
+  EXPECT_FALSE(rtp_parameters.encodings[0].max_bitrate_bps);
+
+  constexpr int kMaxBitrateBps = 6000;
+  rtp_parameters.encodings[0].max_bitrate_bps =
+      rtc::Optional<int>(kMaxBitrateBps);
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
+
+  const int max_bitrate = GetSendStreamConfig(kSsrcX).max_bitrate_bps;
+  EXPECT_EQ(max_bitrate, kMaxBitrateBps);
+}
+
 // Test that GetRtpReceiveParameters returns the currently configured codecs.
 TEST_F(WebRtcVoiceEngineTestFake, GetRtpReceiveParametersCodecs) {
   EXPECT_TRUE(SetupRecvStream());
@@ -2585,13 +2608,12 @@ TEST_F(WebRtcVoiceEngineWithSendSideBweWithOverheadTest, MinAndMaxBitrate) {
   constexpr int kOpusMaxPtimeMs = WEBRTC_OPUS_SUPPORT_120MS_PTIME ? 120 : 60;
   constexpr int kMinOverheadBps =
       kOverheadPerPacket * 8 * 1000 / kOpusMaxPtimeMs;
-  constexpr int kMaxOverheadBps = kOverheadPerPacket * 8 * 1000 / 10;
 
   constexpr int kOpusMinBitrateBps = 6000;
   EXPECT_EQ(kOpusMinBitrateBps + kMinOverheadBps,
             GetSendStreamConfig(kSsrcX).min_bitrate_bps);
   constexpr int kOpusBitrateFbBps = 32000;
-  EXPECT_EQ(kOpusBitrateFbBps + kMaxOverheadBps,
+  EXPECT_EQ(kOpusBitrateFbBps + kMinOverheadBps,
             GetSendStreamConfig(kSsrcX).max_bitrate_bps);
 
   parameters.options.audio_network_adaptor = rtc::Optional<bool>(true);
@@ -2601,13 +2623,40 @@ TEST_F(WebRtcVoiceEngineWithSendSideBweWithOverheadTest, MinAndMaxBitrate) {
 
   constexpr int kMinOverheadWithAnaBps =
       kOverheadPerPacket * 8 * 1000 / kOpusMaxPtimeMs;
-  constexpr int kMaxOverheadWithAnaBps = kOverheadPerPacket * 8 * 1000 / 20;
 
   EXPECT_EQ(kOpusMinBitrateBps + kMinOverheadWithAnaBps,
             GetSendStreamConfig(kSsrcX).min_bitrate_bps);
 
-  EXPECT_EQ(kOpusBitrateFbBps + kMaxOverheadWithAnaBps,
+  EXPECT_EQ(kOpusBitrateFbBps + kMinOverheadWithAnaBps,
             GetSendStreamConfig(kSsrcX).max_bitrate_bps);
+}
+
+// This test is similar to
+// WebRtcVoiceEngineTestFake.SetRtpSendParameterUpdatesMaxBitrate but with an
+// additional field trial.
+TEST_F(WebRtcVoiceEngineWithSendSideBweWithOverheadTest,
+       SetRtpSendParameterUpdatesMaxBitrate) {
+  EXPECT_TRUE(SetupSendStream());
+  cricket::AudioSendParameters send_parameters;
+  send_parameters.codecs.push_back(kOpusCodec);
+  SetSendParameters(send_parameters);
+
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpSendParameters(kSsrcX);
+  // Expect empty on parameters.encodings[0].max_bitrate_bps;
+  EXPECT_FALSE(rtp_parameters.encodings[0].max_bitrate_bps);
+
+  constexpr int kMaxBitrateBps = 6000;
+  rtp_parameters.encodings[0].max_bitrate_bps =
+      rtc::Optional<int>(kMaxBitrateBps);
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
+
+  const int max_bitrate = GetSendStreamConfig(kSsrcX).max_bitrate_bps;
+#if WEBRTC_OPUS_SUPPORT_120MS_PTIME
+  constexpr int kMinOverhead = 3333;
+#else
+  constexpr int kMinOverhead = 6666;
+#endif
+  EXPECT_EQ(max_bitrate, kMaxBitrateBps + kMinOverhead);
 }
 
 // Test that we can set the outgoing SSRC properly.
