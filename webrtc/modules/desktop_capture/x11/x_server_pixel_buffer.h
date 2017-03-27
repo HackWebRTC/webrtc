@@ -58,6 +58,8 @@ class XServerPixelBuffer {
   bool CaptureRect(const DesktopRect& rect, DesktopFrame* frame);
 
  private:
+  void ReleaseSharedMemorySegment();
+
   void InitShm(const XWindowAttributes& attributes);
   bool InitPixmaps(int depth);
 

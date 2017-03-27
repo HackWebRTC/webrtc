@@ -68,7 +68,7 @@ XServerPixelBuffer::~XServerPixelBuffer() {
 void XServerPixelBuffer::Release() {
   if (x_image_) {
     XDestroyImage(x_image_);
-    x_image_ = NULL;
+    x_image_ = nullptr;
   }
   if (shm_pixmap_) {
     XFreePixmap(display_, shm_pixmap_);
@@ -76,17 +76,23 @@ void XServerPixelBuffer::Release() {
   }
   if (shm_gc_) {
     XFreeGC(display_, shm_gc_);
-    shm_gc_ = NULL;
+    shm_gc_ = nullptr;
   }
-  if (shm_segment_info_) {
-    if (shm_segment_info_->shmaddr != reinterpret_cast<char*>(-1))
-      shmdt(shm_segment_info_->shmaddr);
-    if (shm_segment_info_->shmid != -1)
-      shmctl(shm_segment_info_->shmid, IPC_RMID, 0);
-    delete shm_segment_info_;
-    shm_segment_info_ = NULL;
-  }
+
+  ReleaseSharedMemorySegment();
+
   window_ = 0;
+}
+
+void XServerPixelBuffer::ReleaseSharedMemorySegment() {
+  if (!shm_segment_info_)
+    return;
+  if (shm_segment_info_->shmaddr != nullptr)
+    shmdt(shm_segment_info_->shmaddr);
+  if (shm_segment_info_->shmid != -1)
+    shmctl(shm_segment_info_->shmid, IPC_RMID, 0);
+  delete shm_segment_info_;
+  shm_segment_info_ = nullptr;
 }
 
 bool XServerPixelBuffer::Init(Display* display, Window window) {
@@ -123,19 +129,21 @@ void XServerPixelBuffer::InitShm(const XWindowAttributes& attributes) {
   bool using_shm = false;
   shm_segment_info_ = new XShmSegmentInfo;
   shm_segment_info_->shmid = -1;
-  shm_segment_info_->shmaddr = reinterpret_cast<char*>(-1);
+  shm_segment_info_->shmaddr = nullptr;
   shm_segment_info_->readOnly = False;
   x_image_ = XShmCreateImage(display_, default_visual, default_depth, ZPixmap,
                              0, shm_segment_info_, window_size_.width(),
                              window_size_.height());
   if (x_image_) {
-    shm_segment_info_->shmid = shmget(
-        IPC_PRIVATE, x_image_->bytes_per_line * x_image_->height,
-        IPC_CREAT | 0600);
+    shm_segment_info_->shmid =
+        shmget(IPC_PRIVATE, x_image_->bytes_per_line * x_image_->height,
+               IPC_CREAT | 0600);
     if (shm_segment_info_->shmid != -1) {
-      shm_segment_info_->shmaddr = x_image_->data =
-          reinterpret_cast<char*>(shmat(shm_segment_info_->shmid, 0, 0));
-      if (x_image_->data != reinterpret_cast<char*>(-1)) {
+      void* shmat_result = shmat(shm_segment_info_->shmid, 0, 0);
+      if (shmat_result != reinterpret_cast<void*>(-1)) {
+        shm_segment_info_->shmaddr = reinterpret_cast<char*>(shmat_result);
+        x_image_->data = shm_segment_info_->shmaddr;
+
         XErrorTrap error_trap(display_);
         using_shm = XShmAttach(display_, shm_segment_info_);
         XSync(display_, False);
@@ -154,7 +162,7 @@ void XServerPixelBuffer::InitShm(const XWindowAttributes& attributes) {
 
   if (!using_shm) {
     LOG(LS_WARNING) << "Not using shared memory. Performance may be degraded.";
-    Release();
+    ReleaseSharedMemorySegment();
     return;
   }
 
