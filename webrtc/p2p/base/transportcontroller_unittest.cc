@@ -272,13 +272,42 @@ TEST_F(TransportControllerTest, TestIceRoleConflict) {
 }
 
 TEST_F(TransportControllerTest, TestGetSslRole) {
-  FakeDtlsTransport* transport = CreateFakeDtlsTransport("audio", 1);
-  ASSERT_NE(nullptr, transport);
-  ASSERT_TRUE(transport->SetSslRole(rtc::SSL_CLIENT));
   rtc::SSLRole role;
-  EXPECT_FALSE(transport_controller_->GetSslRole("video", &role));
+  CreateFakeDtlsTransport("audio", 1);
+
+  // Should return false before role has been negotiated.
+  EXPECT_FALSE(transport_controller_->GetSslRole("audio", &role));
+
+  // To negotiate an SSL role, need to set a local certificate, and
+  // local/remote transport descriptions with DTLS info.
+  rtc::scoped_refptr<rtc::RTCCertificate> certificate =
+      rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
+          rtc::SSLIdentity::Generate("testing", rtc::KT_ECDSA)));
+  std::unique_ptr<rtc::SSLFingerprint> fingerprint(
+      rtc::SSLFingerprint::CreateFromCertificate(certificate));
+  transport_controller_->SetLocalCertificate(certificate);
+
+  // Set the same fingerprint on both sides since the remote fingerprint
+  // doesn't really matter for this test.
+  TransportDescription local_desc(std::vector<std::string>(), kIceUfrag1,
+                                  kIcePwd1, ICEMODE_FULL,
+                                  CONNECTIONROLE_ACTPASS, fingerprint.get());
+  TransportDescription remote_desc(std::vector<std::string>(), kIceUfrag2,
+                                   kIcePwd2, ICEMODE_FULL,
+                                   CONNECTIONROLE_ACTIVE, fingerprint.get());
+  std::string err;
+  EXPECT_TRUE(transport_controller_->SetLocalTransportDescription(
+      "audio", local_desc, cricket::CA_OFFER, &err));
+  EXPECT_TRUE(transport_controller_->SetRemoteTransportDescription(
+      "audio", remote_desc, cricket::CA_ANSWER, &err));
+
+  // Finally we can get the role. Should be "server" since the remote
+  // endpoint's role was "active".
   EXPECT_TRUE(transport_controller_->GetSslRole("audio", &role));
-  EXPECT_EQ(rtc::SSL_CLIENT, role);
+  EXPECT_EQ(rtc::SSL_SERVER, role);
+
+  // Lastly, test that GetSslRole returns false for a nonexistent transport.
+  EXPECT_FALSE(transport_controller_->GetSslRole("video", &role));
 }
 
 TEST_F(TransportControllerTest, TestSetAndGetLocalCertificate) {

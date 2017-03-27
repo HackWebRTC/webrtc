@@ -521,7 +521,11 @@ bool TransportController::GetSslRole_n(const std::string& transport_name,
   if (!t) {
     return false;
   }
-  t->GetSslRole(role);
+  rtc::Optional<rtc::SSLRole> current_role = t->GetSslRole();
+  if (!current_role) {
+    return false;
+  }
+  *role = *current_role;
   return true;
 }
 

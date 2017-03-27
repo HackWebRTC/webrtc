@@ -818,12 +818,8 @@ TEST_F(DtlsTransportChannelTest, TestTransferDtlsAnswererIsPassive) {
 TEST_F(DtlsTransportChannelTest, TestDtlsSetupWithLegacyAsAnswerer) {
   PrepareDtls(true, true, rtc::KT_DEFAULT);
   NegotiateWithLegacy();
-  rtc::SSLRole channel1_role;
-  rtc::SSLRole channel2_role;
-  client1_.transport()->GetSslRole(&channel1_role);
-  client2_.transport()->GetSslRole(&channel2_role);
-  EXPECT_EQ(rtc::SSL_SERVER, channel1_role);
-  EXPECT_EQ(rtc::SSL_CLIENT, channel2_role);
+  EXPECT_EQ(rtc::SSL_SERVER, *client1_.transport()->GetSslRole());
+  EXPECT_EQ(rtc::SSL_CLIENT, *client2_.transport()->GetSslRole());
 }
 
 // Testing re offer/answer after the session is estbalished. Roles will be
