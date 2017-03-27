@@ -94,10 +94,7 @@ AudioReceiveStream::AudioReceiveStream(
                channel_proxy_->GetAudioDecoderFactory());
 
   channel_proxy_->RegisterExternalTransport(config.rtcp_send_transport);
-
-  for (const auto& kv : config.decoder_map) {
-    channel_proxy_->SetRecPayloadType(kv.first, kv.second);
-  }
+  channel_proxy_->SetReceiveCodecs(config.decoder_map);
 
   for (const auto& extension : config.rtp.extensions) {
     if (extension.uri == RtpExtension::kAudioLevelUri) {

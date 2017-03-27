@@ -179,6 +179,10 @@ int AcmReceiver::GetAudio(int desired_freq_hz,
   return 0;
 }
 
+void AcmReceiver::SetCodecs(const std::map<int, SdpAudioFormat>& codecs) {
+  neteq_->SetCodecs(codecs);
+}
+
 int32_t AcmReceiver::AddCodec(int acm_codec_id,
                               uint8_t payload_type,
                               size_t channels,

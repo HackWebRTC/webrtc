@@ -988,16 +988,50 @@ int32_t Channel::Init() {
     return -1;
   }
 
-  // --- Register all supported codecs to the receiving side of the
-  // RTP/RTCP module
-
-  CodecInst codec;
-  const uint8_t nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
-
+  // Register a default set of send codecs.
+  const int nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
   for (int idx = 0; idx < nSupportedCodecs; idx++) {
+    CodecInst codec;
+    RTC_CHECK_EQ(0, audio_coding_->Codec(idx, &codec));
+
+    // Ensure that PCMU is used as default send codec.
+    if (STR_CASE_CMP(codec.plname, "PCMU") == 0 && codec.channels == 1) {
+      SetSendCodec(codec);
+    }
+
+    // Register default PT for 'telephone-event'
+    if (STR_CASE_CMP(codec.plname, "telephone-event") == 0) {
+      if (_rtpRtcpModule->RegisterSendPayload(codec) == -1) {
+        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
+                     "Channel::Init() failed to register outband "
+                     "'telephone-event' (%d/%d) correctly",
+                     codec.pltype, codec.plfreq);
+      }
+    }
+
+    if (STR_CASE_CMP(codec.plname, "CN") == 0) {
+      if (!codec_manager_.RegisterEncoder(codec) ||
+          !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get()) ||
+          _rtpRtcpModule->RegisterSendPayload(codec) == -1) {
+        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
+                     "Channel::Init() failed to register CN (%d/%d) "
+                     "correctly - 1",
+                     codec.pltype, codec.plfreq);
+      }
+    }
+  }
+
+  return 0;
+}
+
+void Channel::RegisterLegacyReceiveCodecs() {
+  const int nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
+  for (int idx = 0; idx < nSupportedCodecs; idx++) {
+    CodecInst codec;
+    RTC_CHECK_EQ(0, audio_coding_->Codec(idx, &codec));
+
     // Open up the RTP/RTCP receiver for all supported codecs
-    if ((audio_coding_->Codec(idx, &codec) == -1) ||
-        (rtp_receiver_->RegisterReceivePayload(codec) == -1)) {
+    if (rtp_receiver_->RegisterReceivePayload(codec) == -1) {
       WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                    "Channel::Init() unable to register %s "
                    "(%d/%d/%" PRIuS "/%d) to RTP/RTCP receiver",
@@ -1012,29 +1046,20 @@ int32_t Channel::Init() {
                    codec.rate);
     }
 
-    // Ensure that PCMU is used as default codec on the sending side
-    if (!STR_CASE_CMP(codec.plname, "PCMU") && (codec.channels == 1)) {
-      SetSendCodec(codec);
-    }
-
-    // Register default PT for outband 'telephone-event'
-    if (!STR_CASE_CMP(codec.plname, "telephone-event")) {
-      if (_rtpRtcpModule->RegisterSendPayload(codec) == -1 ||
-          !audio_coding_->RegisterReceiveCodec(codec.pltype,
+    // Register default PT for 'telephone-event'
+    if (STR_CASE_CMP(codec.plname, "telephone-event") == 0) {
+      if (!audio_coding_->RegisterReceiveCodec(codec.pltype,
                                                CodecInstToSdp(codec))) {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                     "Channel::Init() failed to register outband "
+                     "Channel::Init() failed to register inband "
                      "'telephone-event' (%d/%d) correctly",
                      codec.pltype, codec.plfreq);
       }
     }
 
-    if (!STR_CASE_CMP(codec.plname, "CN")) {
-      if (!codec_manager_.RegisterEncoder(codec) ||
-          !codec_manager_.MakeEncoder(&rent_a_codec_, audio_coding_.get()) ||
-          !audio_coding_->RegisterReceiveCodec(codec.pltype,
-                                               CodecInstToSdp(codec)) ||
-          _rtpRtcpModule->RegisterSendPayload(codec) == -1) {
+    if (STR_CASE_CMP(codec.plname, "CN") == 0) {
+      if (!audio_coding_->RegisterReceiveCodec(codec.pltype,
+                                               CodecInstToSdp(codec))) {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
                      "Channel::Init() failed to register CN (%d/%d) "
                      "correctly - 1",
@@ -1042,8 +1067,6 @@ int32_t Channel::Init() {
       }
     }
   }
-
-  return 0;
 }
 
 void Channel::Terminate() {
@@ -1359,6 +1382,11 @@ int32_t Channel::GetVADStatus(bool& enabledVAD,
   mode = params->vad_mode;
   disabledDTX = !params->use_cng;
   return 0;
+}
+
+void Channel::SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs) {
+  rtp_payload_registry_->SetAudioReceivePayloads(codecs);
+  audio_coding_->SetReceiveCodecs(codecs);
 }
 
 int32_t Channel::SetRecPayloadType(const CodecInst& codec) {

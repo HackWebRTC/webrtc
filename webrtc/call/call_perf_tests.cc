@@ -241,6 +241,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   audio_recv_config.voe_channel_id = recv_channel_id;
   audio_recv_config.sync_group = kSyncGroup;
   audio_recv_config.decoder_factory = decoder_factory_;
+  audio_recv_config.decoder_map = {{103, {"ISAC", 16000, 1}}};
 
   AudioReceiveStream* audio_receive_stream;
 

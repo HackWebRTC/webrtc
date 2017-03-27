@@ -152,6 +152,7 @@ class Channel
           uint32_t instanceId,
           const VoEBase::ChannelConfig& config);
   int32_t Init();
+  void RegisterLegacyReceiveCodecs();
   void Terminate();
   int32_t SetEngineInformation(Statistics& engineStatistics,
                                OutputMixer& outputMixer,
@@ -168,6 +169,8 @@ class Channel
   // ADM. Once Channel creation is moved into Audio{Send,Receive}Stream this can
   // go.
   const rtc::scoped_refptr<AudioDecoderFactory>& GetAudioDecoderFactory() const;
+
+  void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs);
 
   // API methods
 

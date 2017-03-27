@@ -168,6 +168,7 @@ rtc_static_library("rtp_rtcp") {
   deps = [
     "../..:webrtc_common",
     "../../api:transport_api",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:gtest_prod",
     "../../base:rtc_base_approved",
     "../../base:rtc_task_queue",
@@ -175,6 +176,7 @@ rtc_static_library("rtp_rtcp") {
     "../../common_video",
     "../../logging:rtc_event_log_api",
     "../../system_wrappers",
+    "../audio_coding:audio_format_conversion",
     "../remote_bitrate_estimator",
   ]
 

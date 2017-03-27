@@ -171,6 +171,12 @@ void ChannelProxy::SetRecPayloadType(int payload_type,
   RTC_DCHECK_EQ(0, result);
 }
 
+void ChannelProxy::SetReceiveCodecs(
+    const std::map<int, SdpAudioFormat>& codecs) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  channel()->SetReceiveCodecs(codecs);
+}
+
 void ChannelProxy::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel()->SetSink(std::move(sink));
@@ -375,6 +381,11 @@ void ChannelProxy::OnRecoverableUplinkPacketLossRate(
   // TODO(elad.alon): This fails in UT; fix and uncomment.
   // RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel()->OnRecoverableUplinkPacketLossRate(recoverable_packet_loss_rate);
+}
+
+void ChannelProxy::RegisterLegacyReceiveCodecs() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  channel()->RegisterLegacyReceiveCodecs();
 }
 
 Channel* ChannelProxy::channel() const {
