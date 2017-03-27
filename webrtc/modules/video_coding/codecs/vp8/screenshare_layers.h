@@ -26,9 +26,6 @@ class ScreenshareLayers : public TemporalLayers {
  public:
   static const double kMaxTL0FpsReduction;
   static const double kAcceptableTargetOvershoot;
-  static const int kTl0Flags;
-  static const int kTl1Flags;
-  static const int kTl1SyncFlags;
   static const int kMaxFrameIntervalMs;
 
   ScreenshareLayers(int num_temporal_layers,
@@ -38,7 +35,7 @@ class ScreenshareLayers : public TemporalLayers {
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
   // and/or update the reference buffers.
-  int EncodeFlags(uint32_t timestamp) override;
+  TemporalReferences UpdateLayerConfig(uint32_t timestamp) override;
 
   // Update state based on new bitrate target and incoming framerate.
   // Returns the bitrate allocation for the active temporal layers.
@@ -54,7 +51,7 @@ class ScreenshareLayers : public TemporalLayers {
                              CodecSpecificInfoVP8* vp8_info,
                              uint32_t timestamp) override;
 
-  void FrameEncoded(unsigned int size, uint32_t timestamp, int qp) override;
+  void FrameEncoded(unsigned int size, int qp) override;
 
   int CurrentLayerId() const override;
 

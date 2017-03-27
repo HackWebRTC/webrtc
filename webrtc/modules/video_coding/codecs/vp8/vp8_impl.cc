@@ -812,11 +812,9 @@ void VP8EncoderImpl::PopulateCodecSpecific(
   }
   vp8Info->simulcastIdx = stream_idx;
   vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
-  vp8Info->nonReference =
-      (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) ? true : false;
-  bool base_layer_sync_point = pkt.data.frame.flags & VPX_FRAME_IS_KEY;
-  temporal_layers_[stream_idx]->PopulateCodecSpecific(base_layer_sync_point,
-                                                      vp8Info, timestamp);
+  vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) != 0;
+  temporal_layers_[stream_idx]->PopulateCodecSpecific(
+      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) != 0, vp8Info, timestamp);
   // Prepare next.
   picture_id_[stream_idx] = (picture_id_[stream_idx] + 1) & 0x7FFF;
 }
@@ -884,8 +882,7 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image) {
     int qp = -1;
     vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER_64, &qp);
     temporal_layers_[stream_idx]->FrameEncoded(
-        encoded_images_[encoder_idx]._length,
-        encoded_images_[encoder_idx]._timeStamp, qp);
+        encoded_images_[encoder_idx]._length, qp);
     if (send_stream_[stream_idx]) {
       if (encoded_images_[encoder_idx]._length > 0) {
         TRACE_COUNTER_ID1("webrtc", "EncodedFrameSize", encoder_idx,

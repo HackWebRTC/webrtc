@@ -32,23 +32,6 @@ const double ScreenshareLayers::kAcceptableTargetOvershoot = 2.0;
 
 constexpr int ScreenshareLayers::kMaxNumTemporalLayers;
 
-// Since this is TL0 we only allow updating and predicting from the LAST
-// reference frame.
-const int ScreenshareLayers::kTl0Flags =
-    VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_REF_GF |
-    VP8_EFLAG_NO_REF_ARF;
-
-// Allow predicting from both TL0 and TL1.
-const int ScreenshareLayers::kTl1Flags =
-    VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST;
-
-// Allow predicting from only TL0 to allow participants to switch to the high
-// bitrate stream. This means predicting only from the LAST reference frame, but
-// only updating GF to not corrupt TL0.
-const int ScreenshareLayers::kTl1SyncFlags =
-    VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_UPD_ARF |
-    VP8_EFLAG_NO_UPD_LAST;
-
 // Always emit a frame with certain interval, even if bitrate targets have
 // been exceeded.
 const int ScreenshareLayers::kMaxFrameIntervalMs = 2000;
@@ -100,24 +83,27 @@ int ScreenshareLayers::CurrentLayerId() const {
   return 0;
 }
 
-int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
+TemporalReferences ScreenshareLayers::UpdateLayerConfig(uint32_t timestamp) {
   if (number_of_temporal_layers_ <= 1) {
     // No flags needed for 1 layer screenshare.
-    return 0;
+    // TODO(pbos): Consider updating only last, and not all buffers.
+    return TemporalReferences(kReferenceAndUpdate, kReferenceAndUpdate,
+                              kReferenceAndUpdate);
   }
 
   const int64_t now_ms = clock_->TimeInMilliseconds();
   if (target_framerate_.value_or(0) > 0 &&
       encode_framerate_.Rate(now_ms).value_or(0) > *target_framerate_) {
     // Max framerate exceeded, drop frame.
-    return -1;
+    return TemporalReferences(kNone, kNone, kNone);
   }
 
   if (stats_.first_frame_time_ms_ == -1)
     stats_.first_frame_time_ms_ = now_ms;
 
   int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(timestamp);
-  int flags = 0;
+  enum TemporalLayerState { kDrop, kTl0, kTl1, kTl1Sync };
+  enum TemporalLayerState layer_state = kDrop;
   if (active_layer_ == -1 ||
       layers_[active_layer_].state != TemporalLayer::State::kDropped) {
     if (last_emitted_tl0_timestamp_ != -1 &&
@@ -142,23 +128,22 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
 
   switch (active_layer_) {
     case 0:
-      flags = kTl0Flags;
+      layer_state = kTl0;
       last_emitted_tl0_timestamp_ = unwrapped_timestamp;
       break;
     case 1:
       if (TimeToSync(unwrapped_timestamp)) {
         last_sync_timestamp_ = unwrapped_timestamp;
-        flags = kTl1SyncFlags;
+        layer_state = kTl1Sync;
       } else {
-        flags = kTl1Flags;
+        layer_state = kTl1;
       }
       break;
     case -1:
-      flags = -1;
+      layer_state = kDrop;
       ++stats_.num_dropped_frames_;
       break;
     default:
-      flags = -1;
       RTC_NOTREACHED();
   }
 
@@ -172,7 +157,25 @@ int ScreenshareLayers::EncodeFlags(uint32_t timestamp) {
   layers_[0].UpdateDebt(ts_diff / 90);
   layers_[1].UpdateDebt(ts_diff / 90);
   last_timestamp_ = timestamp;
-  return flags;
+  // TODO(pbos): Consider referencing but not updating the 'alt' buffer for all
+  // layers.
+  switch (layer_state) {
+    case kDrop:
+      return TemporalReferences(kNone, kNone, kNone);
+    case kTl0:
+      // TL0 only references and updates 'last'.
+      return TemporalReferences(kReferenceAndUpdate, kNone, kNone);
+    case kTl1:
+      // TL1 references both 'last' and 'golden' but only updates 'golden'.
+      return TemporalReferences(kReference, kReferenceAndUpdate, kNone);
+    case kTl1Sync:
+      // Predict from only TL0 to allow participants to switch to the high
+      // bitrate stream. Updates 'golden' so that TL1 can continue to refer to
+      // and update 'golden' from this point on.
+      return TemporalReferences(kReference, kUpdate, kNone, kLayerSync);
+  }
+  RTC_NOTREACHED();
+  return TemporalReferences(kNone, kNone, kNone);
 }
 
 std::vector<uint32_t> ScreenshareLayers::OnRatesUpdated(int bitrate_kbps,
@@ -208,9 +211,7 @@ std::vector<uint32_t> ScreenshareLayers::OnRatesUpdated(int bitrate_kbps,
   return allocation;
 }
 
-void ScreenshareLayers::FrameEncoded(unsigned int size,
-                                     uint32_t timestamp,
-                                     int qp) {
+void ScreenshareLayers::FrameEncoded(unsigned int size, int qp) {
   if (size > 0)
     encode_framerate_.Update(1, clock_->TimeInMilliseconds());
 
@@ -245,7 +246,7 @@ void ScreenshareLayers::FrameEncoded(unsigned int size,
   }
 }
 
-void ScreenshareLayers::PopulateCodecSpecific(bool base_layer_sync,
+void ScreenshareLayers::PopulateCodecSpecific(bool frame_is_keyframe,
                                               CodecSpecificInfoVP8* vp8_info,
                                               uint32_t timestamp) {
   int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(timestamp);
@@ -256,7 +257,7 @@ void ScreenshareLayers::PopulateCodecSpecific(bool base_layer_sync,
   } else {
     RTC_DCHECK_NE(-1, active_layer_);
     vp8_info->temporalIdx = active_layer_;
-    if (base_layer_sync) {
+    if (frame_is_keyframe) {
       vp8_info->temporalIdx = 0;
       last_sync_timestamp_ = unwrapped_timestamp;
     } else if (last_base_layer_sync_ && vp8_info->temporalIdx != 0) {
@@ -269,7 +270,7 @@ void ScreenshareLayers::PopulateCodecSpecific(bool base_layer_sync,
     if (vp8_info->temporalIdx == 0) {
       tl0_pic_idx_++;
     }
-    last_base_layer_sync_ = base_layer_sync;
+    last_base_layer_sync_ = frame_is_keyframe;
     vp8_info->tl0PicIdx = tl0_pic_idx_;
   }
 }

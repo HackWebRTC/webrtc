@@ -24,6 +24,43 @@ namespace webrtc {
 
 struct CodecSpecificInfoVP8;
 
+enum TemporalBufferFlags {
+  kNone = 0,
+  kReference = 1,
+  kUpdate = 2,
+  kReferenceAndUpdate = kReference | kUpdate,
+};
+
+enum TemporalFlags { kLayerSync = 1, kFreezeEntropy = 2 };
+
+struct TemporalReferences {
+  TemporalReferences(TemporalBufferFlags last,
+                     TemporalBufferFlags golden,
+                     TemporalBufferFlags arf);
+  TemporalReferences(TemporalBufferFlags last,
+                     TemporalBufferFlags golden,
+                     TemporalBufferFlags arf,
+                     int extra_flags);
+
+  const bool drop_frame;
+  const TemporalBufferFlags last_buffer_flags;
+  const TemporalBufferFlags golden_buffer_flags;
+  const TemporalBufferFlags arf_buffer_flags;
+
+  // TODO(pbos): Consider breaking these out of here and returning only a
+  // pattern index that needs to be returned to fill CodecSpecificInfoVP8 or
+  // EncodeFlags.
+  const bool layer_sync;
+  const bool freeze_entropy;
+
+ private:
+  TemporalReferences(TemporalBufferFlags last,
+                     TemporalBufferFlags golden,
+                     TemporalBufferFlags arf,
+                     bool layer_sync,
+                     bool freeze_entropy);
+};
+
 class TemporalLayers {
  public:
   // Factory for TemporalLayer strategy. Default behavior is a fixed pattern
@@ -32,7 +69,9 @@ class TemporalLayers {
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
   // and/or update the reference buffers.
-  virtual int EncodeFlags(uint32_t timestamp) = 0;
+  virtual TemporalReferences UpdateLayerConfig(uint32_t timestamp) = 0;
+
+  int EncodeFlags(uint32_t timestamp);
 
   // Update state based on new bitrate target and incoming framerate.
   // Returns the bitrate allocation for the active temporal layers.
@@ -44,11 +83,11 @@ class TemporalLayers {
   // Returns true iff the configuration was actually modified.
   virtual bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) = 0;
 
-  virtual void PopulateCodecSpecific(bool base_layer_sync,
+  virtual void PopulateCodecSpecific(bool is_keyframe,
                                      CodecSpecificInfoVP8* vp8_info,
                                      uint32_t timestamp) = 0;
 
-  virtual void FrameEncoded(unsigned int size, uint32_t timestamp, int qp) = 0;
+  virtual void FrameEncoded(unsigned int size, int qp) = 0;
 
   virtual int CurrentLayerId() const = 0;
 };

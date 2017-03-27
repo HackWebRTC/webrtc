@@ -25,14 +25,14 @@
 
 namespace webrtc {
 
-TemporalReferences::TemporalReferences(TemporalBufferUsage last,
-                                       TemporalBufferUsage golden,
-                                       TemporalBufferUsage arf)
+TemporalReferences::TemporalReferences(TemporalBufferFlags last,
+                                       TemporalBufferFlags golden,
+                                       TemporalBufferFlags arf)
     : TemporalReferences(last, golden, arf, false, false) {}
 
-TemporalReferences::TemporalReferences(TemporalBufferUsage last,
-                                       TemporalBufferUsage golden,
-                                       TemporalBufferUsage arf,
+TemporalReferences::TemporalReferences(TemporalBufferFlags last,
+                                       TemporalBufferFlags golden,
+                                       TemporalBufferFlags arf,
                                        int extra_flags)
     : TemporalReferences(last,
                          golden,
@@ -40,17 +40,15 @@ TemporalReferences::TemporalReferences(TemporalBufferUsage last,
                          (extra_flags & kLayerSync) != 0,
                          (extra_flags & kFreezeEntropy) != 0) {}
 
-TemporalReferences::TemporalReferences(TemporalBufferUsage last,
-                                       TemporalBufferUsage golden,
-                                       TemporalBufferUsage arf,
+TemporalReferences::TemporalReferences(TemporalBufferFlags last,
+                                       TemporalBufferFlags golden,
+                                       TemporalBufferFlags arf,
                                        bool layer_sync,
                                        bool freeze_entropy)
-    : reference_last((last & kReference) != 0),
-      update_last((last & kUpdate) != 0),
-      reference_golden((golden & kReference) != 0),
-      update_golden((golden & kUpdate) != 0),
-      reference_arf((arf & kReference) != 0),
-      update_arf((arf & kUpdate) != 0),
+    : drop_frame(last == kNone && golden == kNone && arf == kNone),
+      last_buffer_flags(last),
+      golden_buffer_flags(golden),
+      arf_buffer_flags(arf),
       layer_sync(layer_sync),
       freeze_entropy(freeze_entropy) {}
 
@@ -246,26 +244,32 @@ bool DefaultTemporalLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
   return true;
 }
 
-int DefaultTemporalLayers::EncodeFlags(uint32_t timestamp) {
+// TODO(pbos): Name method so that it's obvious that it updates state.
+TemporalReferences DefaultTemporalLayers::UpdateLayerConfig(
+    uint32_t timestamp) {
   RTC_DCHECK_GT(num_layers_, 0);
   RTC_DCHECK_LT(0, temporal_pattern_.size());
-  int flags = 0;
-  // TODO(pbos): Move pattern-update out of EncodeFlags. It's not obvious that
-  // EncodeFlags() is non-const.
-  const TemporalReferences& references =
-      temporal_pattern_[++pattern_idx_ % temporal_pattern_.size()];
+  return temporal_pattern_[++pattern_idx_ % temporal_pattern_.size()];
+}
 
-  if (!references.reference_last)
+int TemporalLayers::EncodeFlags(uint32_t timestamp) {
+  TemporalReferences references = UpdateLayerConfig(timestamp);
+  if (references.drop_frame)
+    return -1;
+
+  int flags = 0;
+
+  if ((references.last_buffer_flags & kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_LAST;
-  if (!references.update_last)
+  if ((references.last_buffer_flags & kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_LAST;
-  if (!references.reference_golden)
+  if ((references.golden_buffer_flags & kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_GF;
-  if (!references.update_golden)
+  if ((references.golden_buffer_flags & kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_GF;
-  if (!references.reference_arf)
+  if ((references.arf_buffer_flags & kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_ARF;
-  if (!references.update_arf)
+  if ((references.arf_buffer_flags & kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_ARF;
   if (references.freeze_entropy)
     flags |= VP8_EFLAG_NO_UPD_ENTROPY;
@@ -274,7 +278,7 @@ int DefaultTemporalLayers::EncodeFlags(uint32_t timestamp) {
 }
 
 void DefaultTemporalLayers::PopulateCodecSpecific(
-    bool base_layer_sync,
+    bool frame_is_keyframe,
     CodecSpecificInfoVP8* vp8_info,
     uint32_t timestamp) {
   RTC_DCHECK_GT(num_layers_, 0);
@@ -284,7 +288,7 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
     vp8_info->layerSync = false;
     vp8_info->tl0PicIdx = kNoTl0PicIdx;
   } else {
-    if (base_layer_sync) {
+    if (frame_is_keyframe) {
       vp8_info->temporalIdx = 0;
       vp8_info->layerSync = true;
     } else {
@@ -303,7 +307,7 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
       timestamp_ = timestamp;
       tl0_pic_idx_++;
     }
-    last_base_layer_sync_ = base_layer_sync;
+    last_base_layer_sync_ = frame_is_keyframe;
     vp8_info->tl0PicIdx = tl0_pic_idx_;
   }
 }
