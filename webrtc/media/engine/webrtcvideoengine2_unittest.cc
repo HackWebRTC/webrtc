@@ -1971,8 +1971,8 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
 
   webrtc::VideoCodecVP9 vp9_settings;
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
-  EXPECT_FALSE(vp9_settings.denoisingOn)
-      << "VP9 denoising should be off by default.";
+  EXPECT_TRUE(vp9_settings.denoisingOn)
+      << "VP9 denoising should be on by default.";
 
   stream = SetDenoisingOption(last_ssrc_, &capturer, false);
 

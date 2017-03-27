@@ -409,7 +409,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
       vp9_settings.numberOfSpatialLayers = GetDefaultVp9SpatialLayers();
     }
     // VP9 denoising is disabled by default.
-    vp9_settings.denoisingOn = codec_default_denoising ? false : denoising;
+    vp9_settings.denoisingOn = codec_default_denoising ? true : denoising;
     vp9_settings.frameDroppingOn = frame_dropping;
     return new rtc::RefCountedObject<
         webrtc::VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
