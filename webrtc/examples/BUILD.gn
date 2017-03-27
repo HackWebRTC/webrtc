@@ -534,6 +534,7 @@ if (is_linux || is_win) {
         "peerconnection/client/linux/main_wnd.cc",
         "peerconnection/client/linux/main_wnd.h",
       ]
+      cflags = [ "-Wno-deprecated-declarations" ]
       libs = [
         "X11",
         "Xcomposite",
