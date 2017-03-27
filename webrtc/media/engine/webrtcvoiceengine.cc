@@ -1638,14 +1638,6 @@ bool WebRtcVoiceMediaChannel::SetSendParameters(
     return false;
   }
 
-  if (params.max_bandwidth_bps >= 0) {
-    // Note that max_bandwidth_bps intentionally takes priority over the
-    // bitrate config for the codec.
-    bitrate_config_.max_bitrate_bps =
-        params.max_bandwidth_bps == 0 ? -1 : params.max_bandwidth_bps;
-  }
-  call_->SetBitrateConfig(bitrate_config_);
-
   if (!ValidateRtpExtensions(params.extensions)) {
     return false;
   }
@@ -1917,6 +1909,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   // parameters.
   // TODO(solenberg): Refactor this logic once we create AudioEncoders here.
   webrtc::AudioSendStream::Config::SendCodecSpec send_codec_spec;
+  webrtc::Call::Config::BitrateConfig bitrate_config;
   {
     send_codec_spec.nack_enabled = send_codec_spec_.nack_enabled;
 
@@ -1930,7 +1923,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
 
     send_codec_spec.transport_cc_enabled = HasTransportCc(*codec);
     send_codec_spec.nack_enabled = HasNack(*codec);
-    bitrate_config_ = GetBitrateConfigForCodec(*codec);
+    bitrate_config = GetBitrateConfigForCodec(*codec);
 
     // For Opus as the send codec, we are to determine inband FEC, maximum
     // playback rate, and opus internal dtx.
@@ -2007,8 +2000,9 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
   } else {
     // If the codec isn't changing, set the start bitrate to -1 which means
     // "unchanged" so that BWE isn't affected.
-    bitrate_config_.start_bitrate_bps = -1;
+    bitrate_config.start_bitrate_bps = -1;
   }
+  call_->SetBitrateConfig(bitrate_config);
 
   // Check if the transport cc feedback or NACK status has changed on the
   // preferred send codec, and in that case reconfigure all receive streams.
