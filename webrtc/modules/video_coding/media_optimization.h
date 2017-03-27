@@ -101,7 +101,7 @@ class MediaOptimization {
   uint32_t SentFrameRateInternal() EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
   // Protect all members.
-  std::unique_ptr<CriticalSectionWrapper> crit_sect_;
+  rtc::CriticalSection crit_sect_;
 
   Clock* clock_ GUARDED_BY(crit_sect_);
   int32_t max_bit_rate_ GUARDED_BY(crit_sect_);

@@ -21,7 +21,6 @@
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class EventTimerWrapper;
 
 namespace test {

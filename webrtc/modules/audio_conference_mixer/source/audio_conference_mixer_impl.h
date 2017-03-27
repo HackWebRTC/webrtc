@@ -148,8 +148,8 @@ private:
 
     bool LimitMixedAudio(AudioFrame* mixedAudio) const;
 
-    const rtc::CriticalSection _crit;
-    const rtc::CriticalSection _cbCrit;
+    rtc::CriticalSection _crit;
+    rtc::CriticalSection _cbCrit;
 
     int32_t _id;
 

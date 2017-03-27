@@ -50,21 +50,19 @@ namespace {
 // a register method all the way down to the function calling it.
 class EncodedImageCallbackWrapper : public EncodedImageCallback {
  public:
-  EncodedImageCallbackWrapper()
-      : cs_(CriticalSectionWrapper::CreateCriticalSection()),
-        callback_(nullptr) {}
+  EncodedImageCallbackWrapper() : callback_(nullptr) {}
 
   virtual ~EncodedImageCallbackWrapper() {}
 
   void Register(EncodedImageCallback* callback) {
-    CriticalSectionScoped cs(cs_.get());
+    rtc::CritScope lock(&cs_);
     callback_ = callback;
   }
 
   virtual Result OnEncodedImage(const EncodedImage& encoded_image,
                                 const CodecSpecificInfo* codec_specific_info,
                                 const RTPFragmentationHeader* fragmentation) {
-    CriticalSectionScoped cs(cs_.get());
+    rtc::CritScope lock(&cs_);
     if (callback_) {
       return callback_->OnEncodedImage(encoded_image, codec_specific_info,
                                        fragmentation);
@@ -73,7 +71,7 @@ class EncodedImageCallbackWrapper : public EncodedImageCallback {
   }
 
  private:
-  std::unique_ptr<CriticalSectionWrapper> cs_;
+  rtc::CriticalSection cs_;
   EncodedImageCallback* callback_ GUARDED_BY(cs_);
 };
 

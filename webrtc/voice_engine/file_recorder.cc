@@ -32,8 +32,6 @@ enum { MAX_AUDIO_BUFFER_IN_SAMPLES = 60 * 32 };
 enum { MAX_AUDIO_BUFFER_IN_BYTES = MAX_AUDIO_BUFFER_IN_SAMPLES * 2 };
 enum { kMaxAudioBufferQueueLength = 100 };
 
-class CriticalSectionWrapper;
-
 class FileRecorderImpl : public FileRecorder {
  public:
   FileRecorderImpl(uint32_t instanceID, FileFormats fileFormat);

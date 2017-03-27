@@ -14,10 +14,10 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/video_coding/jitter_buffer.h"
 #include "webrtc/modules/video_coding/packet.h"
 #include "webrtc/modules/video_coding/timing.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/include/video_coding_defines.h"
 
@@ -91,7 +91,7 @@ class VCMReceiver {
   void TriggerDecoderShutdown();
 
  private:
-  CriticalSectionWrapper* crit_sect_;
+  rtc::CriticalSection crit_sect_;
   Clock* const clock_;
   VCMJitterBuffer jitter_buffer_;
   VCMTiming* timing_;

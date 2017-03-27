@@ -24,7 +24,6 @@
 namespace webrtc {
 
 class Clock;
-class CriticalSectionWrapper;
 class PacketReceiver;
 
 class NetworkPacket {
