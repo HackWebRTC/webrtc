@@ -576,36 +576,32 @@ int RelayEntry::SendTo(const void* data, size_t size,
   RelayMessage request;
   request.SetType(STUN_SEND_REQUEST);
 
-  StunByteStringAttribute* magic_cookie_attr =
+  auto magic_cookie_attr =
       StunAttribute::CreateByteString(STUN_ATTR_MAGIC_COOKIE);
   magic_cookie_attr->CopyBytes(TURN_MAGIC_COOKIE_VALUE,
                                sizeof(TURN_MAGIC_COOKIE_VALUE));
-  request.AddAttribute(magic_cookie_attr);
+  request.AddAttribute(std::move(magic_cookie_attr));
 
-  StunByteStringAttribute* username_attr =
-      StunAttribute::CreateByteString(STUN_ATTR_USERNAME);
+  auto username_attr = StunAttribute::CreateByteString(STUN_ATTR_USERNAME);
   username_attr->CopyBytes(port_->username_fragment().c_str(),
                            port_->username_fragment().size());
-  request.AddAttribute(username_attr);
+  request.AddAttribute(std::move(username_attr));
 
-  StunAddressAttribute* addr_attr =
-      StunAttribute::CreateAddress(STUN_ATTR_DESTINATION_ADDRESS);
+  auto addr_attr = StunAttribute::CreateAddress(STUN_ATTR_DESTINATION_ADDRESS);
   addr_attr->SetIP(addr.ipaddr());
   addr_attr->SetPort(addr.port());
-  request.AddAttribute(addr_attr);
+  request.AddAttribute(std::move(addr_attr));
 
   // Attempt to lock
   if (ext_addr_ == addr) {
-    StunUInt32Attribute* options_attr =
-      StunAttribute::CreateUInt32(STUN_ATTR_OPTIONS);
+    auto options_attr = StunAttribute::CreateUInt32(STUN_ATTR_OPTIONS);
     options_attr->SetValue(0x1);
-    request.AddAttribute(options_attr);
+    request.AddAttribute(std::move(options_attr));
   }
 
-  StunByteStringAttribute* data_attr =
-      StunAttribute::CreateByteString(STUN_ATTR_DATA);
+  auto data_attr = StunAttribute::CreateByteString(STUN_ATTR_DATA);
   data_attr->CopyBytes(data, size);
-  request.AddAttribute(data_attr);
+  request.AddAttribute(std::move(data_attr));
 
   // TODO: compute the HMAC.
 
@@ -787,12 +783,11 @@ AllocateRequest::AllocateRequest(RelayEntry* entry,
 void AllocateRequest::Prepare(StunMessage* request) {
   request->SetType(STUN_ALLOCATE_REQUEST);
 
-  StunByteStringAttribute* username_attr =
-      StunAttribute::CreateByteString(STUN_ATTR_USERNAME);
+  auto username_attr = StunAttribute::CreateByteString(STUN_ATTR_USERNAME);
   username_attr->CopyBytes(
       entry_->port()->username_fragment().c_str(),
       entry_->port()->username_fragment().size());
-  request->AddAttribute(username_attr);
+  request->AddAttribute(std::move(username_attr));
 }
 
 void AllocateRequest::OnSent() {

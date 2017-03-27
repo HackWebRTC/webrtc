@@ -13,8 +13,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "webrtc/p2p/base/common.h"
-#include "webrtc/p2p/base/portallocator.h"
 #include "webrtc/base/base64.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/crc32.h"
@@ -22,8 +20,11 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/messagedigest.h"
 #include "webrtc/base/network.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/stringutils.h"
+#include "webrtc/p2p/base/common.h"
+#include "webrtc/p2p/base/portallocator.h"
 
 namespace {
 
@@ -598,7 +599,7 @@ void Port::SendBindingResponse(StunMessage* request,
   if (retransmit_attr) {
     // Inherit the incoming retransmit value in the response so the other side
     // can see our view of lost pings.
-    response.AddAttribute(new StunUInt32Attribute(
+    response.AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
         STUN_ATTR_RETRANSMIT_COUNT, retransmit_attr->value()));
 
     if (retransmit_attr->value() > CONNECTION_WRITE_CONNECT_FAILURES) {
@@ -608,8 +609,8 @@ void Port::SendBindingResponse(StunMessage* request,
     }
   }
 
-  response.AddAttribute(
-      new StunXorAddressAttribute(STUN_ATTR_XOR_MAPPED_ADDRESS, addr));
+  response.AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
+      STUN_ATTR_XOR_MAPPED_ADDRESS, addr));
   response.AddMessageIntegrity(password_);
   response.AddFingerprint();
 
@@ -651,10 +652,10 @@ void Port::SendBindingErrorResponse(StunMessage* request,
 
   // When doing GICE, we need to write out the error code incorrectly to
   // maintain backwards compatiblility.
-  StunErrorCodeAttribute* error_attr = StunAttribute::CreateErrorCode();
+  auto error_attr = StunAttribute::CreateErrorCode();
   error_attr->SetCode(error_code);
   error_attr->SetReason(reason);
-  response.AddAttribute(error_attr);
+  response.AddAttribute(std::move(error_attr));
 
   // Per Section 10.1.2, certain error cases don't get a MESSAGE-INTEGRITY,
   // because we don't have enough information to determine the shared secret.
@@ -783,37 +784,37 @@ class ConnectionRequest : public StunRequest {
     connection_->port()->CreateStunUsername(
         connection_->remote_candidate().username(), &username);
     request->AddAttribute(
-        new StunByteStringAttribute(STUN_ATTR_USERNAME, username));
+        rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_USERNAME, username));
 
     // connection_ already holds this ping, so subtract one from count.
     if (connection_->port()->send_retransmit_count_attribute()) {
-      request->AddAttribute(new StunUInt32Attribute(
+      request->AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
           STUN_ATTR_RETRANSMIT_COUNT,
           static_cast<uint32_t>(connection_->pings_since_last_response_.size() -
                                 1)));
     }
     uint32_t network_info = connection_->port()->Network()->id();
     network_info = (network_info << 16) | connection_->port()->network_cost();
-    request->AddAttribute(
-        new StunUInt32Attribute(STUN_ATTR_NETWORK_INFO, network_info));
+    request->AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
+        STUN_ATTR_NETWORK_INFO, network_info));
 
     // Adding ICE_CONTROLLED or ICE_CONTROLLING attribute based on the role.
     if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLING) {
-      request->AddAttribute(new StunUInt64Attribute(
+      request->AddAttribute(rtc::MakeUnique<StunUInt64Attribute>(
           STUN_ATTR_ICE_CONTROLLING, connection_->port()->IceTiebreaker()));
       // We should have either USE_CANDIDATE attribute or ICE_NOMINATION
       // attribute but not both. That was enforced in p2ptransportchannel.
       if (connection_->use_candidate_attr()) {
-        request->AddAttribute(new StunByteStringAttribute(
-            STUN_ATTR_USE_CANDIDATE));
+        request->AddAttribute(
+            rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_USE_CANDIDATE));
       }
       if (connection_->nomination() &&
           connection_->nomination() != connection_->acked_nomination()) {
-        request->AddAttribute(new StunUInt32Attribute(
+        request->AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
             STUN_ATTR_NOMINATION, connection_->nomination()));
       }
     } else if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLED) {
-      request->AddAttribute(new StunUInt64Attribute(
+      request->AddAttribute(rtc::MakeUnique<StunUInt64Attribute>(
           STUN_ATTR_ICE_CONTROLLED, connection_->port()->IceTiebreaker()));
     } else {
       RTC_NOTREACHED();
@@ -832,8 +833,8 @@ class ConnectionRequest : public StunRequest {
     uint32_t prflx_priority =
         type_preference << 24 |
         (connection_->local_candidate().priority() & 0x00FFFFFF);
-    request->AddAttribute(
-        new StunUInt32Attribute(STUN_ATTR_PRIORITY, prflx_priority));
+    request->AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
+        STUN_ATTR_PRIORITY, prflx_priority));
 
     // Adding Message Integrity attribute.
     request->AddMessageIntegrity(connection_->remote_candidate().password());

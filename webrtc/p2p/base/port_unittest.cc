@@ -10,15 +10,6 @@
 
 #include <memory>
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/jseptransport.h"
-#include "webrtc/p2p/base/relayport.h"
-#include "webrtc/p2p/base/stunport.h"
-#include "webrtc/p2p/base/tcpport.h"
-#include "webrtc/p2p/base/testrelayserver.h"
-#include "webrtc/p2p/base/teststunserver.h"
-#include "webrtc/p2p/base/testturnserver.h"
-#include "webrtc/p2p/base/turnport.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/crc32.h"
@@ -28,11 +19,21 @@
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/natsocketfactory.h"
 #include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
+#include "webrtc/p2p/base/jseptransport.h"
+#include "webrtc/p2p/base/relayport.h"
+#include "webrtc/p2p/base/stunport.h"
+#include "webrtc/p2p/base/tcpport.h"
+#include "webrtc/p2p/base/testrelayserver.h"
+#include "webrtc/p2p/base/teststunserver.h"
+#include "webrtc/p2p/base/testturnserver.h"
+#include "webrtc/p2p/base/turnport.h"
 
 using rtc::AsyncPacketSocket;
 using rtc::Buffer;
@@ -760,7 +761,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
                                             const std::string& username) {
     IceMessage* msg = CreateStunMessage(type);
     msg->AddAttribute(
-        new StunByteStringAttribute(STUN_ATTR_USERNAME, username));
+        rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_USERNAME, username));
     return msg;
   }
   TestPort* CreateTestPort(const rtc::SocketAddress& addr,
@@ -1403,11 +1404,11 @@ TEST_F(PortTest, TestLoopbackCall) {
       CreateStunMessage(STUN_BINDING_REQUEST));
   const StunByteStringAttribute* username_attr = msg->GetByteString(
       STUN_ATTR_USERNAME);
-  modified_req->AddAttribute(new StunByteStringAttribute(
+  modified_req->AddAttribute(rtc::MakeUnique<StunByteStringAttribute>(
       STUN_ATTR_USERNAME, username_attr->GetString()));
   // To make sure we receive error response, adding tiebreaker less than
   // what's present in request.
-  modified_req->AddAttribute(new StunUInt64Attribute(
+  modified_req->AddAttribute(rtc::MakeUnique<StunUInt64Attribute>(
       STUN_ATTR_ICE_CONTROLLING, kTiebreaker1 - 1));
   modified_req->AddMessageIntegrity("lpass");
   modified_req->AddFingerprint();
@@ -2060,8 +2061,8 @@ TEST_F(PortTest, TestHandleStunMessage) {
 
   // BINDING-RESPONSE without username, with MESSAGE-INTEGRITY and FINGERPRINT.
   in_msg.reset(CreateStunMessage(STUN_BINDING_RESPONSE));
-  in_msg->AddAttribute(
-      new StunXorAddressAttribute(STUN_ATTR_XOR_MAPPED_ADDRESS, kLocalAddr2));
+  in_msg->AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
+      STUN_ATTR_XOR_MAPPED_ADDRESS, kLocalAddr2));
   in_msg->AddMessageIntegrity("rpass");
   in_msg->AddFingerprint();
   WriteStunMessage(in_msg.get(), buf.get());
@@ -2072,8 +2073,9 @@ TEST_F(PortTest, TestHandleStunMessage) {
 
   // BINDING-ERROR-RESPONSE without username, with error, M-I, and FINGERPRINT.
   in_msg.reset(CreateStunMessage(STUN_BINDING_ERROR_RESPONSE));
-  in_msg->AddAttribute(new StunErrorCodeAttribute(STUN_ATTR_ERROR_CODE,
-      STUN_ERROR_SERVER_ERROR, STUN_ERROR_REASON_SERVER_ERROR));
+  in_msg->AddAttribute(rtc::MakeUnique<StunErrorCodeAttribute>(
+      STUN_ATTR_ERROR_CODE, STUN_ERROR_SERVER_ERROR,
+      STUN_ERROR_REASON_SERVER_ERROR));
   in_msg->AddFingerprint();
   WriteStunMessage(in_msg.get(), buf.get());
   EXPECT_TRUE(port->GetStunMessage(buf->Data(), buf->Length(), addr, &out_msg,
@@ -2223,8 +2225,8 @@ TEST_F(PortTest, TestHandleStunMessageBadFingerprint) {
 
   // Valid BINDING-RESPONSE, except no FINGERPRINT.
   in_msg.reset(CreateStunMessage(STUN_BINDING_RESPONSE));
-  in_msg->AddAttribute(
-      new StunXorAddressAttribute(STUN_ATTR_XOR_MAPPED_ADDRESS, kLocalAddr2));
+  in_msg->AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
+      STUN_ATTR_XOR_MAPPED_ADDRESS, kLocalAddr2));
   in_msg->AddMessageIntegrity("rpass");
   WriteStunMessage(in_msg.get(), buf.get());
   EXPECT_FALSE(port->GetStunMessage(buf->Data(), buf->Length(), addr, &out_msg,
@@ -2241,8 +2243,9 @@ TEST_F(PortTest, TestHandleStunMessageBadFingerprint) {
 
   // Valid BINDING-ERROR-RESPONSE, except no FINGERPRINT.
   in_msg.reset(CreateStunMessage(STUN_BINDING_ERROR_RESPONSE));
-  in_msg->AddAttribute(new StunErrorCodeAttribute(STUN_ATTR_ERROR_CODE,
-      STUN_ERROR_SERVER_ERROR, STUN_ERROR_REASON_SERVER_ERROR));
+  in_msg->AddAttribute(rtc::MakeUnique<StunErrorCodeAttribute>(
+      STUN_ATTR_ERROR_CODE, STUN_ERROR_SERVER_ERROR,
+      STUN_ERROR_REASON_SERVER_ERROR));
   in_msg->AddMessageIntegrity("rpass");
   WriteStunMessage(in_msg.get(), buf.get());
   EXPECT_FALSE(port->GetStunMessage(buf->Data(), buf->Length(), addr, &out_msg,
