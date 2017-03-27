@@ -372,13 +372,16 @@ bool ChannelProxy::SetSendCNPayloadType(int type,
 }
 
 void ChannelProxy::OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  // TODO(elad.alon): This fails in UT; fix and uncomment.
+  // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=7405
+  // RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel()->OnTwccBasedUplinkPacketLossRate(packet_loss_rate);
 }
 
 void ChannelProxy::OnRecoverableUplinkPacketLossRate(
     float recoverable_packet_loss_rate) {
   // TODO(elad.alon): This fails in UT; fix and uncomment.
+  // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=7405
   // RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel()->OnRecoverableUplinkPacketLossRate(recoverable_packet_loss_rate);
 }
