@@ -4,3 +4,7 @@ BasedOnStyle: Chromium
 ---
 Language: Java
 BasedOnStyle: Google
+---
+Language: ObjC
+ColumnLimit: 100
+BasedOnStyle: Google
