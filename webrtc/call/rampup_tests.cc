@@ -92,7 +92,6 @@ void RampUpTester::OnVideoStreamsCreated(
 test::PacketTransport* RampUpTester::CreateSendTransport(Call* sender_call) {
   send_transport_ = new test::PacketTransport(sender_call, this,
                                               test::PacketTransport::kSender,
-                                              MediaType::AUDIO,
                                               forward_transport_config_);
   return send_transport_;
 }

@@ -18,11 +18,11 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/platform_thread.h"
-#include "webrtc/call/call.h"
 #include "webrtc/test/fake_network_pipe.h"
 
 namespace webrtc {
 
+class Call;
 class Clock;
 class PacketReceiver;
 
@@ -30,17 +30,8 @@ namespace test {
 
 class DirectTransport : public Transport {
  public:
-  DirectTransport(Call* send_call, MediaType media_type);
-  DirectTransport(const FakeNetworkPipe::Config& config, Call* send_call,
-                  MediaType media_type);
-  // These deprecated variants always use MediaType::VIDEO.
-  RTC_DEPRECATED explicit DirectTransport(Call* send_call)
-      : DirectTransport(send_call, MediaType::VIDEO) {}
-
-  RTC_DEPRECATED DirectTransport(const FakeNetworkPipe::Config& config,
-                                 Call* send_call)
-      : DirectTransport(config, send_call, MediaType::VIDEO) {}
-
+  explicit DirectTransport(Call* send_call);
+  DirectTransport(const FakeNetworkPipe::Config& config, Call* send_call);
   ~DirectTransport();
 
   void SetConfig(const FakeNetworkPipe::Config& config);

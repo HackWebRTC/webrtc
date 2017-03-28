@@ -15,17 +15,17 @@
 namespace webrtc {
 namespace test {
 
-DirectTransport::DirectTransport(Call* send_call, MediaType media_type)
-    : DirectTransport(FakeNetworkPipe::Config(), send_call, media_type) {}
+DirectTransport::DirectTransport(Call* send_call)
+    : DirectTransport(FakeNetworkPipe::Config(), send_call) {}
 
 DirectTransport::DirectTransport(const FakeNetworkPipe::Config& config,
-                                 Call* send_call, MediaType media_type)
+                                 Call* send_call)
     : send_call_(send_call),
       packet_event_(false, false),
       thread_(NetworkProcess, this, "NetworkProcess"),
       clock_(Clock::GetRealTimeClock()),
       shutting_down_(false),
-      fake_network_(clock_, config, media_type) {
+      fake_network_(clock_, config) {
   thread_.Start();
   if (send_call_) {
     send_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);

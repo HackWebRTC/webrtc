@@ -25,7 +25,6 @@ namespace webrtc {
 
 class Clock;
 class PacketReceiver;
-enum class MediaType;
 
 class NetworkPacket {
  public:
@@ -83,10 +82,9 @@ class FakeNetworkPipe {
     int avg_burst_loss_length = -1;
   };
 
-  FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config,
-                  MediaType media_type);
+  FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config);
   FakeNetworkPipe(Clock* clock,
-                  const FakeNetworkPipe::Config& config, MediaType media_type,
+                  const FakeNetworkPipe::Config& config,
                   uint64_t seed);
   ~FakeNetworkPipe();
 
@@ -112,7 +110,6 @@ class FakeNetworkPipe {
 
  private:
   Clock* const clock_;
-  const MediaType media_type_;
   rtc::CriticalSection lock_;
   PacketReceiver* packet_receiver_;
   std::queue<NetworkPacket*> capacity_link_;

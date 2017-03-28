@@ -1590,8 +1590,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   test::LayerFilteringTransport send_transport(
       params_.pipe, sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
       params_.video.selected_tl, params_.ss.selected_sl);
-  test::DirectTransport recv_transport(
-      params_.pipe, receiver_call_.get(), MediaType::VIDEO);
+  test::DirectTransport recv_transport(params_.pipe, receiver_call_.get());
 
   std::string graph_title = params_.analyzer.graph_title;
   if (graph_title.empty())

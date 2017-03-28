@@ -439,8 +439,7 @@ class UlpfecObserver : public test::EndToEndTest {
     config.loss_percent = 5;
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(sender_call, this,
-                                     test::PacketTransport::kSender,
-                                     MediaType::VIDEO, config);
+                                     test::PacketTransport::kSender, config);
   }
 
   void ModifyVideoConfigs(
@@ -595,8 +594,7 @@ class FlexfecObserver : public test::EndToEndTest {
     config.loss_percent = 5;
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(sender_call, this,
-                                     test::PacketTransport::kSender,
-                                     MediaType::VIDEO, config);
+                                     test::PacketTransport::kSender, config);
   }
 
   void ModifyVideoConfigs(
@@ -1265,8 +1263,7 @@ TEST_F(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
       config.link_capacity_kbps = kCapacityKbps;
       config.queue_delay_ms = kNetworkDelayMs;
       return new test::PacketTransport(sender_call, this,
-                                       test::PacketTransport::kSender,
-                                       MediaType::VIDEO, config);
+                                       test::PacketTransport::kSender, config);
     }
 
     void ModifyVideoConfigs(
