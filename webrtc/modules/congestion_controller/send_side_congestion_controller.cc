@@ -53,8 +53,8 @@ SendSideCongestionController::SendSideCongestionController(
           clock,
           observer,
           event_log,
-          std::unique_ptr<PacedSender>(
-              new PacedSender(clock, packet_router, event_log))) {}
+          std::unique_ptr<PacedSender>(new PacedSender(clock, packet_router))) {
+}
 
 SendSideCongestionController::SendSideCongestionController(
     const Clock* clock,

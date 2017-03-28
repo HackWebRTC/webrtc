@@ -31,7 +31,6 @@ rtc_static_library("pacing") {
     "../../system_wrappers",
     "../rtp_rtcp",
     "../utility",
-    "//webrtc/logging:rtc_event_log_api",
   ]
 }
 
