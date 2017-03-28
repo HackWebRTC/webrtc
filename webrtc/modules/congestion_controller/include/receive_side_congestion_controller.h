@@ -46,7 +46,6 @@ class ReceiveSideCongestionController : public CallStatsObserver,
   virtual const RemoteBitrateEstimator* GetRemoteBitrateEstimator(
       bool send_side_bwe) const;
 
-  // TODO(nisse): Called by CongestionController, but not otherwise wired up.
   // Implements CallStatsObserver.
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 

@@ -392,6 +392,7 @@ Call::Call(const Call::Config& config,
       config_.bitrate_config.min_bitrate_bps,
       config_.bitrate_config.start_bitrate_bps,
       config_.bitrate_config.max_bitrate_bps);
+  call_stats_->RegisterStatsObserver(&receive_side_cc_);
   call_stats_->RegisterStatsObserver(transport_send_->send_side_cc());
 
   module_process_thread_->Start();
@@ -426,6 +427,7 @@ Call::~Call() {
   module_process_thread_->DeRegisterModule(&receive_side_cc_);
   module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();
+  call_stats_->DeregisterStatsObserver(&receive_side_cc_);
   call_stats_->DeregisterStatsObserver(transport_send_->send_side_cc());
 
   // Only update histograms after process threads have been shut down, so that
