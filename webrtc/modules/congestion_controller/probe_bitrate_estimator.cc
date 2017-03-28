@@ -14,6 +14,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 
 namespace {
 // The minumum number of probes we need to receive feedback about in percent
@@ -39,7 +40,8 @@ constexpr int kMaxProbeIntervalMs = 1000;
 
 namespace webrtc {
 
-ProbeBitrateEstimator::ProbeBitrateEstimator() {}
+ProbeBitrateEstimator::ProbeBitrateEstimator(RtcEventLog* event_log)
+    : event_log_(event_log) {}
 
 int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
     const PacketFeedback& packet_feedback) {
@@ -88,6 +90,10 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                  << " [cluster id: " << cluster_id
                  << "] [send interval: " << send_interval_ms << " ms]"
                  << " [receive interval: " << receive_interval_ms << " ms]";
+    if (event_log_) {
+      event_log_->LogProbeResultFailure(cluster_id,
+                                        kInvalidSendReceiveInterval);
+    }
     return -1;
   }
   // Since the |send_interval_ms| does not include the time it takes to actually
@@ -116,6 +122,8 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                  << " [ratio: " << receive_bps / 1000 << " / "
                  << send_bps / 1000 << " = " << ratio << " > kValidRatio ("
                  << kValidRatio << ")]";
+    if (event_log_)
+      event_log_->LogProbeResultFailure(cluster_id, kInvalidSendReceiveRatio);
     return -1;
   }
   LOG(LS_INFO) << "Probing successful"
@@ -125,7 +133,10 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                << " [receive: " << receive_size << " bytes / "
                << receive_interval_ms << " ms = " << receive_bps / 1000
                << " kb/s]";
-  return std::min(send_bps, receive_bps);
+  float res = std::min(send_bps, receive_bps);
+  if (event_log_)
+    event_log_->LogProbeResultSuccess(cluster_id, res);
+  return res;
 }
 
 void ProbeBitrateEstimator::EraseOldClusters(int64_t timestamp_ms) {

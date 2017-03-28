@@ -243,6 +243,7 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       last_update_ms_(-1),
       last_seen_packet_ms_(-1),
       uma_recorded_(false),
+      probe_bitrate_estimator_(event_log),
       trendline_window_size_(kDefaultTrendlineWindowSize),
       trendline_smoothing_coeff_(kDefaultTrendlineSmoothingCoeff),
       trendline_threshold_gain_(kDefaultTrendlineThresholdGain),

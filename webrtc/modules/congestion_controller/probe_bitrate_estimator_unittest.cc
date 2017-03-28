@@ -27,7 +27,7 @@ constexpr int kDefaultMinBytes = 5000;
 
 class TestProbeBitrateEstimator : public ::testing::Test {
  public:
-  TestProbeBitrateEstimator() : probe_bitrate_estimator_() {}
+  TestProbeBitrateEstimator() : probe_bitrate_estimator_(nullptr) {}
 
   // TODO(philipel): Use PacedPacketInfo when ProbeBitrateEstimator is rewritten
   //                 to use that information.
