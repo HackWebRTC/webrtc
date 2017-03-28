@@ -13,7 +13,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "webrtc/base/array_view.h"
 #include "webrtc/base/stringencode.h"
 
 namespace webrtc {

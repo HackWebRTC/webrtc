@@ -33,11 +33,21 @@ rtc_static_library("lib") {
   sources = [
     "config.cc",
     "config.h",
+    "multiend_call.cc",
+    "multiend_call.h",
     "timing.cc",
     "timing.h",
+    "wavreader_abstract_factory.h",
+    "wavreader_adaptor.cc",
+    "wavreader_adaptor.h",
+    "wavreader_factory.cc",
+    "wavreader_factory.h",
+    "wavreader_interface.h",
   ]
   deps = [
+    "//webrtc:webrtc_common",
     "//webrtc/base:rtc_base_approved",
+    "//webrtc/common_audio",
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }
@@ -46,11 +56,15 @@ rtc_source_set("unittest") {
   testonly = true
   sources = [
     "generator_unittest.cc",
+    "mock_wavreader.h",
+    "mock_wavreader_factory.cc",
+    "mock_wavreader_factory.h",
   ]
   deps = [
     ":lib",
     "//testing/gmock",
     "//testing/gtest",
+    "//webrtc:webrtc_common",
     "//webrtc/test:test_support",
   ]
 }

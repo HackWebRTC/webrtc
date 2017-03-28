@@ -8,11 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cstdio>
+#include <stdio.h>
 #include <memory>
 
 #include "webrtc/modules/audio_processing/test/conversational_speech/config.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/mock_wavreader_factory.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/multiend_call.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/timing.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -22,7 +25,10 @@ namespace {
 
 using conversational_speech::LoadTiming;
 using conversational_speech::SaveTiming;
+using conversational_speech::MockWavReaderFactory;
+using conversational_speech::MultiEndCall;
 using conversational_speech::Turn;
+using conversational_speech::WavReaderAbstractFactory;
 
 const char* const audiotracks_path = "/path/to/audiotracks";
 const char* const timing_filepath = "/path/to/timing_file.txt";
@@ -34,7 +40,7 @@ const std::vector<Turn> expected_timing = {
     {"A", "a2", 100},
     {"B", "b2", -200},
     {"A", "a3", 0},
-    {"A", "a4", 0},
+    {"A", "a3", 0},
 };
 const std::size_t kNumberOfTurns = expected_timing.size();
 
@@ -48,11 +54,6 @@ TEST(ConversationalSpeechTest, Settings) {
   EXPECT_EQ(audiotracks_path, config.audiotracks_path());
   EXPECT_EQ(timing_filepath, config.timing_filepath());
   EXPECT_EQ(output_path, config.output_path());
-}
-
-TEST(ConversationalSpeechTest, ExpectedTimingSize) {
-  // Check the expected timing size.
-  EXPECT_EQ(kNumberOfTurns, 6u);
 }
 
 TEST(ConversationalSpeechTest, TimingSaveLoad) {
@@ -73,6 +74,22 @@ TEST(ConversationalSpeechTest, TimingSaveLoad) {
     EXPECT_EQ(expected_timing[index], actual_timing[index])
         << "turn #" << index << " not matching";
   }
+}
+
+TEST(ConversationalSpeechTest, MultiEndCallCreate) {
+  auto mock_wavreader_factory = std::unique_ptr<MockWavReaderFactory>(
+      new MockWavReaderFactory());
+
+  // There are 5 unique audio tracks to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(testing::_)).Times(5);
+
+  // Inject the mock wav reader factory.
+  conversational_speech::MultiEndCall multiend_call(
+      expected_timing, audiotracks_path, std::move(mock_wavreader_factory));
+
+  // Test.
+  EXPECT_EQ(2u, multiend_call.speaker_names().size());
+  EXPECT_EQ(5u, multiend_call.audiotrack_readers().size());
 }
 
 }  // namespace test
