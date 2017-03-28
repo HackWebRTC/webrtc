@@ -11,7 +11,11 @@
 #import "RTCVideoSource+Private.h"
 
 #include "webrtc/base/checks.h"
+#include "webrtc/sdk/objc/Framework/Classes/objcvideotracksource.h"
 
+// TODO(magjed): Refactor this class and target ObjcVideoTrackSource only once
+// RTCAVFoundationVideoSource is gone. See http://crbug/webrtc/7177 for more
+// info.
 @implementation RTCVideoSource {
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> _nativeVideoSource;
 }
@@ -36,6 +40,15 @@
 - (NSString *)description {
   NSString *stateString = [[self class] stringForState:self.state];
   return [NSString stringWithFormat:@"RTCVideoSource( %p ): %@", self, stateString];
+}
+
+- (void)capturer:(RTCVideoCapturer *)capturer didCaptureVideoFrame:(RTCVideoFrame *)frame {
+  static_cast<webrtc::ObjcVideoTrackSource *>(_nativeVideoSource.get())->OnCapturedFrame(frame);
+}
+
+- (void)adaptOutputFormatToWidth:(int)width height:(int)height fps:(int)fps {
+  static_cast<webrtc::ObjcVideoTrackSource *>(_nativeVideoSource.get())
+      ->OnOutputFormatRequest(width, height, fps);
 }
 
 #pragma mark - Private

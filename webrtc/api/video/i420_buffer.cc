@@ -180,8 +180,7 @@ void* I420Buffer::native_handle() const {
 }
 
 rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::NativeToI420Buffer() {
-  RTC_NOTREACHED();
-  return nullptr;
+  return this;
 }
 
 uint8_t* I420Buffer::MutableDataY() {

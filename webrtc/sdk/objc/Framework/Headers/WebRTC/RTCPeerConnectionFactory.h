@@ -46,6 +46,8 @@ RTC_EXPORT
 - (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
     (nullable RTCMediaConstraints *)constraints;
 
+- (RTCVideoSource *)videoSource;
+
 /** Initialize an RTCVideoTrack with a source and an id. */
 - (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source
                                 trackId:(NSString *)trackId;

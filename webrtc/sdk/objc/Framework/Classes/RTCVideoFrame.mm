@@ -113,4 +113,8 @@
   return self;
 }
 
+- (rtc::scoped_refptr<webrtc::VideoFrameBuffer>)videoBuffer {
+  return _videoBuffer;
+}
+
 @end

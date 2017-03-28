@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RTCVideoFrame ()
 
+@property(nonatomic, readonly) rtc::scoped_refptr<webrtc::VideoFrameBuffer> videoBuffer;
+
 - (instancetype)initWithVideoBuffer:
                     (rtc::scoped_refptr<webrtc::VideoFrameBuffer>)videoBuffer
                            rotation:(RTCVideoRotation)rotation
