@@ -16,6 +16,7 @@
 #import "WebRTC/RTCVideoTrack.h"
 
 #import "ARDAppClient.h"
+#import "ARDSettingsModel.h"
 
 static NSUInteger const kContentWidth = 900;
 static NSUInteger const kRoomFieldWidth = 200;
@@ -369,9 +370,9 @@ static NSUInteger const kBottomViewHeight = 200;
   }
 
   [_client disconnect];
-  ARDAppClient *client = [[ARDAppClient alloc] initWithDelegate:self
-                                               preferVideoCodec:@"H264"];
+  ARDAppClient* client = [[ARDAppClient alloc] initWithDelegate:self];
   [client connectToRoomWithId:roomId
+                     settings:[[ARDSettingsModel alloc] init]  // Use default settings.
                    isLoopback:isLoopback
                   isAudioOnly:NO
             shouldMakeAecDump:NO

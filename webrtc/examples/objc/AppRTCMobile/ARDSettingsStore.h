@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface ARDSettingsStore : NSObject
 
-@property(nonatomic) NSString* videoCodec;
+@property(nonatomic) NSString *videoCodec;
 
 /**
  * Returns current video resolution media constraint string stored in the store.

@@ -45,17 +45,10 @@
                    delegate:(id<ARDVideoCallViewControllerDelegate>)delegate {
   if (self = [super init]) {
     ARDSettingsModel *settingsModel = [[ARDSettingsModel alloc] init];
-    NSString* videoCodec = [settingsModel currentVideoCodecSettingFromStore];
     _delegate = delegate;
-    _client = [[ARDAppClient alloc] initWithDelegate:self
-                                    preferVideoCodec:videoCodec];
-    RTCMediaConstraints *cameraConstraints = [[RTCMediaConstraints alloc]
-        initWithMandatoryConstraints:nil
-                 optionalConstraints:[settingsModel
-                                         currentMediaConstraintFromStoreAsRTCDictionary]];
-    [_client setMaxBitrate:[settingsModel currentMaxBitrateSettingFromStore]];
-    [_client setCameraConstraints:cameraConstraints];
+    _client = [[ARDAppClient alloc] initWithDelegate:self];
     [_client connectToRoomWithId:room
+                        settings:settingsModel
                       isLoopback:isLoopback
                      isAudioOnly:isAudioOnly
                shouldMakeAecDump:shouldMakeAecDump

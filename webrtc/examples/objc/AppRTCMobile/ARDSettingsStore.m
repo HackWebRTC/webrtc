@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface ARDSettingsStore () {
   NSUserDefaults *_storage;
 }
-@property(nonatomic, strong) NSUserDefaults *storage;
+@property(nonatomic, strong, readonly) NSUserDefaults *storage;
 @end
 
 @implementation ARDSettingsStore

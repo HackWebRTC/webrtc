@@ -22,6 +22,7 @@
 #import "ARDJoinResponse+Internal.h"
 #import "ARDMessageResponse+Internal.h"
 #import "ARDSDPUtils.h"
+#import "ARDSettingsModel.h"
 
 @interface ARDAppClientTest : XCTestCase
 @end
@@ -209,11 +210,13 @@
 
   // Kick off connection.
   [caller connectToRoomWithId:roomId
+                     settings:[[ARDSettingsModel alloc] init]
                    isLoopback:NO
                   isAudioOnly:NO
             shouldMakeAecDump:NO
         shouldUseLevelControl:NO];
   [answerer connectToRoomWithId:roomId
+                       settings:[[ARDSettingsModel alloc] init]
                      isLoopback:NO
                     isAudioOnly:NO
               shouldMakeAecDump:NO
@@ -250,6 +253,7 @@
 
   // Kick off connection.
   [caller connectToRoomWithId:roomId
+                     settings:[[ARDSettingsModel alloc] init]
                    isLoopback:NO
                   isAudioOnly:NO
             shouldMakeAecDump:NO

@@ -23,11 +23,12 @@
 #import "WebRTC/RTCTracing.h"
 
 #import "ARDAppEngineClient.h"
-#import "ARDTURNClient+Internal.h"
 #import "ARDJoinResponse.h"
 #import "ARDMessageResponse.h"
 #import "ARDSDPUtils.h"
+#import "ARDSettingsModel.h"
 #import "ARDSignalingMessage.h"
+#import "ARDTURNClient+Internal.h"
 #import "ARDUtilities.h"
 #import "ARDWebSocketChannel.h"
 #import "RTCIceCandidate+JSON.h"
@@ -98,9 +99,7 @@ static int const kKbpsMultiplier = 1000;
 @implementation ARDAppClient {
   RTCFileLogger *_fileLogger;
   ARDTimerProxy *_statsTimer;
-  RTCMediaConstraints *_cameraConstraints;
-  NSNumber *_maxBitrate;
-  NSString *_videoCodec;
+  ARDSettingsModel *_settings;
 }
 
 @synthesize shouldGetStats = _shouldGetStats;
@@ -129,15 +128,13 @@ static int const kKbpsMultiplier = 1000;
 @synthesize shouldUseLevelControl = _shouldUseLevelControl;
 
 - (instancetype)init {
-  return [self initWithDelegate:nil preferVideoCodec:@"H264"];
+  return [self initWithDelegate:nil];
 }
 
-- (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate
-                preferVideoCodec:(NSString *)codec {
+- (instancetype)initWithDelegate:(id<ARDAppClientDelegate>)delegate {
   if (self = [super init]) {
     _roomServerClient = [[ARDAppEngineClient alloc] init];
     _delegate = delegate;
-    _videoCodec = codec;
     NSURL *turnRequestURL = [NSURL URLWithString:kARDIceServerRequestUrl];
     _turnClient = [[ARDTURNClient alloc] initWithURL:turnRequestURL];
     [self configure];
@@ -213,12 +210,14 @@ static int const kKbpsMultiplier = 1000;
 }
 
 - (void)connectToRoomWithId:(NSString *)roomId
+                   settings:(ARDSettingsModel *)settings
                  isLoopback:(BOOL)isLoopback
                 isAudioOnly:(BOOL)isAudioOnly
           shouldMakeAecDump:(BOOL)shouldMakeAecDump
       shouldUseLevelControl:(BOOL)shouldUseLevelControl {
   NSParameterAssert(roomId.length);
   NSParameterAssert(_state == kARDAppClientStateDisconnected);
+  _settings = settings;
   _isLoopback = isLoopback;
   _isAudioOnly = isAudioOnly;
   _shouldMakeAecDump = shouldMakeAecDump;
@@ -317,14 +316,6 @@ static int const kKbpsMultiplier = 1000;
     RTCStopInternalCapture();
   }
 #endif
-}
-
-- (void)setCameraConstraints:(RTCMediaConstraints *)mediaConstraints {
-  _cameraConstraints = mediaConstraints;
-}
-
-- (void)setMaxBitrate:(NSNumber *)maxBitrate {
-  _maxBitrate = maxBitrate;
 }
 
 #pragma mark - ARDSignalingChannelDelegate
@@ -458,7 +449,7 @@ static int const kKbpsMultiplier = 1000;
     // Prefer codec from settings if available.
     RTCSessionDescription *sdpPreferringCodec =
         [ARDSDPUtils descriptionForDescription:sdp
-                           preferredVideoCodec:_videoCodec];
+                           preferredVideoCodec:[_settings currentVideoCodecSettingFromStore]];
     __weak ARDAppClient *weakSelf = self;
     [_peerConnection setLocalDescription:sdpPreferringCodec
                        completionHandler:^(NSError *error) {
@@ -612,7 +603,7 @@ static int const kKbpsMultiplier = 1000;
       // Prefer codec from settings if available.
       RTCSessionDescription *sdpPreferringCodec =
           [ARDSDPUtils descriptionForDescription:description
-                             preferredVideoCodec:_videoCodec];
+                             preferredVideoCodec:[_settings currentVideoCodecSettingFromStore]];
       __weak ARDAppClient *weakSelf = self;
       [_peerConnection setRemoteDescription:sdpPreferringCodec
                           completionHandler:^(NSError *error) {
@@ -688,7 +679,7 @@ static int const kKbpsMultiplier = 1000;
   for (RTCRtpSender *sender in _peerConnection.senders) {
     if (sender.track != nil) {
       if ([sender.track.kind isEqualToString:kARDVideoTrackKind]) {
-        [self setMaxBitrate:_maxBitrate forVideoSender:sender];
+        [self setMaxBitrate:[_settings currentMaxBitrateSettingFromStore] forVideoSender:sender];
       }
     }
   }
@@ -774,7 +765,10 @@ static int const kKbpsMultiplier = 1000;
 }
 
 - (RTCMediaConstraints *)cameraConstraints {
-  return _cameraConstraints;
+  RTCMediaConstraints *cameraConstraints = [[RTCMediaConstraints alloc]
+      initWithMandatoryConstraints:nil
+               optionalConstraints:[_settings currentMediaConstraintFromStoreAsRTCDictionary]];
+  return cameraConstraints;
 }
 
 - (RTCMediaConstraints *)defaultAnswerConstraints {
