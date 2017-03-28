@@ -14,13 +14,11 @@
 #include <utility>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 namespace {
-// TODO(elad.alon): Subsequent CL experiments with PLR source.
-constexpr bool kUseTwccPlrForAna = false;
-
 class NullSmoothingFilter final : public SmoothingFilter {
  public:
   void AddSample(float sample) override {
@@ -85,7 +83,7 @@ FecControllerPlrBased::FecControllerPlrBased(
 FecControllerPlrBased::FecControllerPlrBased(const Config& config)
     : FecControllerPlrBased(
           config,
-          kUseTwccPlrForAna
+          webrtc::field_trial::FindFullName("UseTwccPlrForAna") == "Enabled"
               ? std::unique_ptr<NullSmoothingFilter>(new NullSmoothingFilter())
               : std::unique_ptr<SmoothingFilter>(
                     new SmoothingFilterImpl(config.time_constant_ms,

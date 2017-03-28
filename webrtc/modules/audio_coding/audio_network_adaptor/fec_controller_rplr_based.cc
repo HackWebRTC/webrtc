@@ -31,14 +31,10 @@ FecControllerRplrBased::Config::Threshold::Threshold(
 
 FecControllerRplrBased::Config::Config(bool initial_fec_enabled,
                                        const Threshold& fec_enabling_threshold,
-                                       const Threshold& fec_disabling_threshold,
-                                       int time_constant_ms,
-                                       const Clock* clock)
+                                       const Threshold& fec_disabling_threshold)
     : initial_fec_enabled(initial_fec_enabled),
       fec_enabling_threshold(fec_enabling_threshold),
-      fec_disabling_threshold(fec_disabling_threshold),
-      time_constant_ms(time_constant_ms),
-      clock(clock) {}
+      fec_disabling_threshold(fec_disabling_threshold) {}
 
 FecControllerRplrBased::FecControllerRplrBased(const Config& config)
     : config_(config),

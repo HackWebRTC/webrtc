@@ -68,10 +68,10 @@ std::unique_ptr<FecControllerRplrBased> CreateFecControllerRplrBased(
           Threshold(
               kEnablingBandwidthLow, kEnablingRecoverablePacketLossAtLowBw,
               kEnablingBandwidthHigh, kEnablingRecoverablePacketLossAtHighBw),
-          Threshold(
-              kDisablingBandwidthLow, kDisablingRecoverablePacketLossAtLowBw,
-              kDisablingBandwidthHigh, kDisablingRecoverablePacketLossAtHighBw),
-          0, nullptr)));
+          Threshold(kDisablingBandwidthLow,
+                    kDisablingRecoverablePacketLossAtLowBw,
+                    kDisablingBandwidthHigh,
+                    kDisablingRecoverablePacketLossAtHighBw))));
 }
 
 void UpdateNetworkMetrics(
@@ -372,8 +372,7 @@ TEST(FecControllerRplrBasedTest, CheckBehaviorOnSpecialCurves) {
                 kEnablingBandwidthHigh, kEnablingRecoverablePacketLossAtHighBw),
       Threshold(kDisablingBandwidthLow, kDisablingRecoverablePacketLossAtLowBw,
                 kDisablingBandwidthHigh,
-                kDisablingRecoverablePacketLossAtHighBw),
-      0, nullptr));
+                kDisablingRecoverablePacketLossAtHighBw)));
 
   UpdateNetworkMetrics(&controller,
                        rtc::Optional<int>(kDisablingBandwidthLow - 1),
@@ -412,10 +411,10 @@ TEST(FecControllerRplrBasedDeathTest, InvalidConfig) {
           Threshold(
               kDisablingBandwidthLow - 1, kEnablingRecoverablePacketLossAtLowBw,
               kEnablingBandwidthHigh, kEnablingRecoverablePacketLossAtHighBw),
-          Threshold(
-              kDisablingBandwidthLow, kDisablingRecoverablePacketLossAtLowBw,
-              kDisablingBandwidthHigh, kDisablingRecoverablePacketLossAtHighBw),
-          0, nullptr)),
+          Threshold(kDisablingBandwidthLow,
+                    kDisablingRecoverablePacketLossAtLowBw,
+                    kDisablingBandwidthHigh,
+                    kDisablingRecoverablePacketLossAtHighBw))),
       "Check failed");
 }
 #endif

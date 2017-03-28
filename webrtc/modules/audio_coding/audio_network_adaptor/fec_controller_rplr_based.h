@@ -15,7 +15,6 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
-#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -58,14 +57,10 @@ class FecControllerRplrBased final : public Controller {
     //             |-----------------> bandwidth
     Config(bool initial_fec_enabled,
            const Threshold& fec_enabling_threshold,
-           const Threshold& fec_disabling_threshold,
-           int time_constant_ms,
-           const Clock* clock);
+           const Threshold& fec_disabling_threshold);
     bool initial_fec_enabled;
     Threshold fec_enabling_threshold;
     Threshold fec_disabling_threshold;
-    int time_constant_ms;
-    const Clock* clock;
   };
 
   explicit FecControllerRplrBased(const Config& config);

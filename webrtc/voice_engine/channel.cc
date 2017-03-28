@@ -36,6 +36,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/utility/include/process_thread.h"
+#include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 #include "webrtc/voice_engine/output_mixer.h"
@@ -905,8 +906,8 @@ Channel::Channel(int32_t channelId,
       retransmission_rate_limiter_(new RateLimiter(Clock::GetRealTimeClock(),
                                                    kMaxRetransmissionWindowMs)),
       decoder_factory_(config.acm_config.decoder_factory),
-      // TODO(elad.alon): Subsequent CL experiments with PLR source.
-      use_twcc_plr_for_ana_(false) {
+      use_twcc_plr_for_ana_(
+          webrtc::field_trial::FindFullName("UseTwccPlrForAna") == "Enabled") {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::Channel() - ctor");
   AudioCodingModule::Config acm_config(config.acm_config);
