@@ -27,6 +27,7 @@ class BitrateProber;
 class Clock;
 class CriticalSectionWrapper;
 class ProbeClusterCreatedObserver;
+class RtcEventLog;
 
 namespace paced_sender {
 class IntervalBudget;
@@ -68,7 +69,9 @@ class PacedSender : public Module, public RtpPacketSender {
   // overshoots from the encoder.
   static const float kDefaultPaceMultiplier;
 
-  PacedSender(const Clock* clock, PacketSender* packet_sender);
+  PacedSender(const Clock* clock,
+              PacketSender* packet_sender,
+              RtcEventLog* event_log);
 
   virtual ~PacedSender();
 

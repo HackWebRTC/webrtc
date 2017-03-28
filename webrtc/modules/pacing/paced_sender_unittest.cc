@@ -106,7 +106,7 @@ class PacedSenderTest : public ::testing::Test {
   PacedSenderTest() : clock_(123456) {
     srand(0);
     // Need to initialize PacedSender after we initialize clock.
-    send_bucket_.reset(new PacedSender(&clock_, &callback_));
+    send_bucket_.reset(new PacedSender(&clock_, &callback_, nullptr));
     send_bucket_->CreateProbeCluster(kFirstClusterBps);
     send_bucket_->CreateProbeCluster(kSecondClusterBps);
     // Default to bitrate probing disabled for testing purposes. Probing tests
@@ -410,7 +410,7 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   const int kTimeStep = 5;
   const int64_t kBitrateWindow = 10000;
   PacedSenderPadding callback;
-  send_bucket_.reset(new PacedSender(&clock_, &callback));
+  send_bucket_.reset(new PacedSender(&clock_, &callback, nullptr));
   send_bucket_->SetProbingEnabled(false);
   send_bucket_->SetEstimatedBitrate(kTargetBitrateBps);
 
@@ -805,7 +805,7 @@ TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
   uint16_t sequence_number = 1234;
 
   PacedSenderProbing packet_sender;
-  send_bucket_.reset(new PacedSender(&clock_, &packet_sender));
+  send_bucket_.reset(new PacedSender(&clock_, &packet_sender, nullptr));
   send_bucket_->CreateProbeCluster(kFirstClusterBps);
   send_bucket_->CreateProbeCluster(kSecondClusterBps);
   send_bucket_->SetEstimatedBitrate(kInitialBitrateBps);
@@ -851,7 +851,7 @@ TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
   uint16_t sequence_number = 1234;
 
   PacedSenderProbing packet_sender;
-  send_bucket_.reset(new PacedSender(&clock_, &packet_sender));
+  send_bucket_.reset(new PacedSender(&clock_, &packet_sender, nullptr));
   send_bucket_->CreateProbeCluster(kFirstClusterBps);
   send_bucket_->SetEstimatedBitrate(kInitialBitrateBps);
 
