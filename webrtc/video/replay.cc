@@ -283,8 +283,8 @@ void RtpReplay() {
     if (!rtp_reader->NextPacket(&packet))
       break;
     ++num_packets;
-    switch (call->Receiver()->DeliverPacket(webrtc::MediaType::ANY, packet.data,
-                                            packet.length, PacketTime())) {
+    switch (call->Receiver()->DeliverPacket(
+        webrtc::MediaType::VIDEO, packet.data, packet.length, PacketTime())) {
       case PacketReceiver::DELIVERY_OK:
         break;
       case PacketReceiver::DELIVERY_UNKNOWN_SSRC: {

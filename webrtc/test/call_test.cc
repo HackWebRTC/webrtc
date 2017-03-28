@@ -458,11 +458,13 @@ void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {
 
 test::PacketTransport* BaseTest::CreateSendTransport(Call* sender_call) {
   return new PacketTransport(sender_call, this, test::PacketTransport::kSender,
+                             MediaType::VIDEO,
                              FakeNetworkPipe::Config());
 }
 
 test::PacketTransport* BaseTest::CreateReceiveTransport() {
   return new PacketTransport(nullptr, this, test::PacketTransport::kReceiver,
+                             MediaType::VIDEO,
                              FakeNetworkPipe::Config());
 }
 

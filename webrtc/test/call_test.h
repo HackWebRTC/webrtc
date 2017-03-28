@@ -172,6 +172,7 @@ class BaseTest : public RtpRtcpObserver {
   virtual Call::Config GetReceiverCallConfig();
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
 
+  // The default implementation creates MediaType::VIDEO transports.
   virtual test::PacketTransport* CreateSendTransport(Call* sender_call);
   virtual test::PacketTransport* CreateReceiveTransport();
 

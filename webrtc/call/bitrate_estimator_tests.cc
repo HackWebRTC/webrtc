@@ -108,9 +108,11 @@ class BitrateEstimatorTest : public test::CallTest {
     receiver_call_.reset(Call::Create(config));
     sender_call_.reset(Call::Create(config));
 
-    send_transport_.reset(new test::DirectTransport(sender_call_.get()));
+    send_transport_.reset(
+        new test::DirectTransport(sender_call_.get(), MediaType::VIDEO));
     send_transport_->SetReceiver(receiver_call_->Receiver());
-    receive_transport_.reset(new test::DirectTransport(receiver_call_.get()));
+    receive_transport_.reset(
+        new test::DirectTransport(receiver_call_.get(), MediaType::VIDEO));
     receive_transport_->SetReceiver(sender_call_->Receiver());
 
     video_send_config_ = VideoSendStream::Config(send_transport_.get());

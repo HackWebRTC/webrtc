@@ -96,7 +96,7 @@ TEST_F(FakeNetworkPipeTest, CapacityTest) {
   config.queue_length_packets = 20;
   config.link_capacity_kbps = 80;
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, config));
+      new FakeNetworkPipe(&fake_clock_, config, MediaType::VIDEO));
   pipe->SetReceiver(receiver_.get());
 
   // Add 10 packets of 1000 bytes, = 80 kb, and verify it takes one second to
@@ -110,22 +110,22 @@ TEST_F(FakeNetworkPipeTest, CapacityTest) {
                                          kPacketSize);
 
   // Time haven't increased yet, so we souldn't get any packets.
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(0);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(0);
   pipe->Process();
 
   // Advance enough time to release one packet.
   fake_clock_.AdvanceTimeMilliseconds(kPacketTimeMs);
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(1);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(1);
   pipe->Process();
 
   // Release all but one packet
   fake_clock_.AdvanceTimeMilliseconds(9 * kPacketTimeMs - 1);
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(8);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(8);
   pipe->Process();
 
   // And the last one.
   fake_clock_.AdvanceTimeMilliseconds(1);
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(1);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(1);
   pipe->Process();
 }
 
@@ -136,7 +136,7 @@ TEST_F(FakeNetworkPipeTest, ExtraDelayTest) {
   config.queue_delay_ms = 100;
   config.link_capacity_kbps = 80;
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, config));
+      new FakeNetworkPipe(&fake_clock_, config, MediaType::AUDIO));
   pipe->SetReceiver(receiver_.get());
 
   const int kNumPackets = 2;
@@ -149,17 +149,17 @@ TEST_F(FakeNetworkPipeTest, ExtraDelayTest) {
 
   // Increase more than kPacketTimeMs, but not more than the extra delay.
   fake_clock_.AdvanceTimeMilliseconds(kPacketTimeMs);
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(0);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::AUDIO, _, _, _)).Times(0);
   pipe->Process();
 
   // Advance the network delay to get the first packet.
   fake_clock_.AdvanceTimeMilliseconds(config.queue_delay_ms);
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(1);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::AUDIO, _, _, _)).Times(1);
   pipe->Process();
 
   // Advance one more kPacketTimeMs to get the last packet.
   fake_clock_.AdvanceTimeMilliseconds(kPacketTimeMs);
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(1);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::AUDIO, _, _, _)).Times(1);
   pipe->Process();
 }
 
@@ -170,7 +170,7 @@ TEST_F(FakeNetworkPipeTest, QueueLengthTest) {
   config.queue_length_packets = 2;
   config.link_capacity_kbps = 80;
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, config));
+      new FakeNetworkPipe(&fake_clock_, config, MediaType::VIDEO));
   pipe->SetReceiver(receiver_.get());
 
   const int kPacketSize = 1000;
@@ -183,7 +183,7 @@ TEST_F(FakeNetworkPipeTest, QueueLengthTest) {
   // Increase time enough to deliver all three packets, verify only two are
   // delivered.
   fake_clock_.AdvanceTimeMilliseconds(3 * kPacketTimeMs);
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(2);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(2);
   pipe->Process();
 }
 
@@ -194,7 +194,7 @@ TEST_F(FakeNetworkPipeTest, StatisticsTest) {
   config.queue_delay_ms = 20;
   config.link_capacity_kbps = 80;
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, config));
+      new FakeNetworkPipe(&fake_clock_, config, MediaType::VIDEO));
   pipe->SetReceiver(receiver_.get());
 
   const int kPacketSize = 1000;
@@ -206,7 +206,7 @@ TEST_F(FakeNetworkPipeTest, StatisticsTest) {
   fake_clock_.AdvanceTimeMilliseconds(3 * kPacketTimeMs +
                                       config.queue_delay_ms);
 
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(2);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(2);
   pipe->Process();
 
   // Packet 1: kPacketTimeMs + config.queue_delay_ms,
@@ -224,7 +224,7 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithEmptyPipeTest) {
   config.queue_length_packets = 20;
   config.link_capacity_kbps = 80;
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, config));
+      new FakeNetworkPipe(&fake_clock_, config, MediaType::VIDEO));
   pipe->SetReceiver(receiver_.get());
 
   // Add 10 packets of 1000 bytes, = 80 kb, and verify it takes one second to
@@ -237,13 +237,13 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithEmptyPipeTest) {
   int packet_time_ms = PacketTimeMs(config.link_capacity_kbps, kPacketSize);
 
   // Time hasn't increased yet, so we souldn't get any packets.
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(0);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(0);
   pipe->Process();
 
   // Advance time in steps to release one packet at a time.
   for (int i = 0; i < kNumPackets; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(packet_time_ms);
-    EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(1);
+    EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(1);
     pipe->Process();
   }
 
@@ -259,20 +259,20 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithEmptyPipeTest) {
   packet_time_ms = PacketTimeMs(config.link_capacity_kbps, kPacketSize);
 
   // Time hasn't increased yet, so we souldn't get any packets.
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(0);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(0);
   pipe->Process();
 
   // Advance time in steps to release one packet at a time.
   for (int i = 0; i < kNumPackets; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(packet_time_ms);
-    EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(1);
+    EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(1);
     pipe->Process();
   }
 
   // Check that all the packets were sent.
   EXPECT_EQ(static_cast<size_t>(2 * kNumPackets), pipe->sent_packets());
   fake_clock_.AdvanceTimeMilliseconds(pipe->TimeUntilNextProcess());
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(0);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::VIDEO, _, _, _)).Times(0);
   pipe->Process();
 }
 
@@ -283,7 +283,7 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithPacketsInPipeTest) {
   config.queue_length_packets = 20;
   config.link_capacity_kbps = 80;
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, config));
+      new FakeNetworkPipe(&fake_clock_, config, MediaType::AUDIO));
   pipe->SetReceiver(receiver_.get());
 
   // Add 10 packets of 1000 bytes, = 80 kb.
@@ -306,27 +306,27 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithPacketsInPipeTest) {
   int packet_time_2_ms = PacketTimeMs(config.link_capacity_kbps, kPacketSize);
 
   // Time hasn't increased yet, so we souldn't get any packets.
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(0);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::AUDIO, _, _, _)).Times(0);
   pipe->Process();
 
   // Advance time in steps to release one packet at a time.
   for (int i = 0; i < kNumPackets; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(packet_time_1_ms);
-    EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(1);
+    EXPECT_CALL(*receiver_, DeliverPacket(MediaType::AUDIO, _, _, _)).Times(1);
     pipe->Process();
   }
 
   // Advance time in steps to release one packet at a time.
   for (int i = 0; i < kNumPackets; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(packet_time_2_ms);
-    EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(1);
+    EXPECT_CALL(*receiver_, DeliverPacket(MediaType::AUDIO, _, _, _)).Times(1);
     pipe->Process();
   }
 
   // Check that all the packets were sent.
   EXPECT_EQ(static_cast<size_t>(2 * kNumPackets), pipe->sent_packets());
   fake_clock_.AdvanceTimeMilliseconds(pipe->TimeUntilNextProcess());
-  EXPECT_CALL(*receiver_, DeliverPacket(_, _, _, _)).Times(0);
+  EXPECT_CALL(*receiver_, DeliverPacket(MediaType::AUDIO, _, _, _)).Times(0);
   pipe->Process();
 }
 
@@ -338,7 +338,7 @@ TEST_F(FakeNetworkPipeTest, DisallowReorderingThenAllowReordering) {
   config.queue_delay_ms = 100;
   config.delay_standard_deviation_ms = 10;
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, config));
+      new FakeNetworkPipe(&fake_clock_, config, MediaType::VIDEO));
   ReorderTestReceiver* receiver = new ReorderTestReceiver();
   receiver_.reset(receiver);
   pipe->SetReceiver(receiver_.get());
@@ -390,7 +390,7 @@ TEST_F(FakeNetworkPipeTest, BurstLoss) {
   config.loss_percent = kLossPercent;
   config.avg_burst_loss_length = kAvgBurstLength;
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, config));
+      new FakeNetworkPipe(&fake_clock_, config, MediaType::VIDEO));
   ReorderTestReceiver* receiver = new ReorderTestReceiver();
   receiver_.reset(receiver);
   pipe->SetReceiver(receiver_.get());
