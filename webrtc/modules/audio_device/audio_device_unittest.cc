@@ -229,9 +229,11 @@ class AudioDeviceTest : public ::testing::Test {
       EXPECT_EQ(0, audio_device_->InitMicrophone());
       EXPECT_EQ(0, audio_device_->StereoPlayoutIsAvailable(&stereo_playout_));
       EXPECT_EQ(0, audio_device_->SetStereoPlayout(stereo_playout_));
-      EXPECT_EQ(0,
-                audio_device_->StereoRecordingIsAvailable(&stereo_recording_));
-      EXPECT_EQ(0, audio_device_->SetStereoRecording(stereo_recording_));
+      // Avoid asking for input stereo support and always record in mono
+      // since asking can cause issues in combination with remote desktop.
+      // See https://bugs.chromium.org/p/webrtc/issues/detail?id=7397 for
+      // details.
+      EXPECT_EQ(0, audio_device_->SetStereoRecording(false));
       EXPECT_EQ(0, audio_device_->SetAGC(false));
       EXPECT_FALSE(audio_device_->AGC());
     }
@@ -283,7 +285,6 @@ class AudioDeviceTest : public ::testing::Test {
   rtc::Event event_;
   rtc::scoped_refptr<AudioDeviceModule> audio_device_;
   bool stereo_playout_ = false;
-  bool stereo_recording_ = false;
 };
 
 // Uses the test fixture to create, initialize and destruct the ADM.
