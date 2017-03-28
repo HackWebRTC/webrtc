@@ -247,7 +247,9 @@ class IntervalBudget {
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
-PacedSender::PacedSender(const Clock* clock, PacketSender* packet_sender)
+PacedSender::PacedSender(const Clock* clock,
+                         PacketSender* packet_sender,
+                         RtcEventLog* event_log)
     : clock_(clock),
       packet_sender_(packet_sender),
       alr_detector_(new AlrDetector()),
@@ -255,7 +257,7 @@ PacedSender::PacedSender(const Clock* clock, PacketSender* packet_sender)
       paused_(false),
       media_budget_(new paced_sender::IntervalBudget(0)),
       padding_budget_(new paced_sender::IntervalBudget(0)),
-      prober_(new BitrateProber()),
+      prober_(new BitrateProber(event_log)),
       probing_send_failure_(false),
       estimated_bitrate_bps_(0),
       min_send_bitrate_kbps_(0u),
