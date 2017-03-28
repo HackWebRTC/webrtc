@@ -96,8 +96,6 @@ const rtc::DiffServCodePoint kAudioDscpValue = rtc::DSCP_EF;
 // Constants from voice_engine_defines.h.
 const int kMinTelephoneEventCode = 0;           // RFC4733 (Section 2.3.1)
 const int kMaxTelephoneEventCode = 255;
-const int kMinTelephoneEventDuration = 100;
-const int kMaxTelephoneEventDuration = 60000;   // Actual limit is 2^16
 
 const int kMinPayloadType = 0;
 const int kMaxPayloadType = 127;
@@ -2354,11 +2352,6 @@ bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc, int event,
   if (event < kMinTelephoneEventCode ||
       event > kMaxTelephoneEventCode) {
     LOG(LS_WARNING) << "DTMF event code " << event << " out of range.";
-    return false;
-  }
-  if (duration < kMinTelephoneEventDuration ||
-      duration > kMaxTelephoneEventDuration) {
-    LOG(LS_WARNING) << "DTMF event duration " << duration << " out of range.";
     return false;
   }
   RTC_DCHECK_NE(-1, dtmf_payload_freq_);
