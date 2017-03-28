@@ -25,6 +25,9 @@
 
 static NSString *const barButtonImageString = @"ic_settings_black_24dp.png";
 
+// Launch argument to be passed to indicate that the app should start loopback immediatly
+static NSString *const loopbackLaunchProcessArgument = @"loopback";
+
 @interface ARDMainViewController () <
     ARDMainViewDelegate,
     ARDVideoCallViewControllerDelegate,
@@ -35,6 +38,19 @@ static NSString *const barButtonImageString = @"ic_settings_black_24dp.png";
   ARDMainView *_mainView;
   AVAudioPlayer *_audioPlayer;
   BOOL _useManualAudio;
+}
+
+- (void)viewDidLoad {
+  [super viewDidLoad];
+  if ([[[NSProcessInfo processInfo] arguments] containsObject:loopbackLaunchProcessArgument]) {
+    [self mainView:nil
+                 didInputRoom:@""
+                   isLoopback:YES
+                  isAudioOnly:NO
+            shouldMakeAecDump:NO
+        shouldUseLevelControl:NO
+               useManualAudio:NO];
+  }
 }
 
 - (void)loadView {
@@ -66,6 +82,12 @@ static NSString *const barButtonImageString = @"ic_settings_black_24dp.png";
   self.navigationItem.rightBarButtonItem = settingsButton;
 }
 
++ (NSString *)loopbackRoomString {
+  NSString *loopbackRoomString =
+      [[NSUUID UUID].UUIDString stringByReplacingOccurrencesOfString:@"-" withString:@""];
+  return loopbackRoomString;
+}
+
 #pragma mark - ARDMainViewDelegate
 
 - (void)mainView:(ARDMainView *)mainView
@@ -76,8 +98,13 @@ static NSString *const barButtonImageString = @"ic_settings_black_24dp.png";
     shouldUseLevelControl:(BOOL)shouldUseLevelControl
            useManualAudio:(BOOL)useManualAudio {
   if (!room.length) {
-    [self showAlertWithMessage:@"Missing room name."];
-    return;
+    if (isLoopback) {
+      // If this is a loopback call, allow a generated room name.
+      room = [[self class] loopbackRoomString];
+    } else {
+      [self showAlertWithMessage:@"Missing room name."];
+      return;
+    }
   }
   // Trim whitespaces.
   NSCharacterSet *whitespaceSet = [NSCharacterSet whitespaceCharacterSet];

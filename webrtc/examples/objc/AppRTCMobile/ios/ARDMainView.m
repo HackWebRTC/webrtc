@@ -304,19 +304,13 @@ static CGFloat const kCallControlMargin = 8;
 }
 
 - (void)onStartCall:(id)sender {
-  NSString *room = _roomText.roomText;
-  // If this is a loopback call, allow a generated room name.
-  if (!room.length && _loopbackSwitch.isOn) {
-    room = [[NSUUID UUID] UUIDString];
-  }
-  room = [room stringByReplacingOccurrencesOfString:@"-" withString:@""];
   [_delegate mainView:self
-                didInputRoom:room
-                  isLoopback:_loopbackSwitch.isOn
-                 isAudioOnly:_audioOnlySwitch.isOn
-           shouldMakeAecDump:_aecdumpSwitch.isOn
-       shouldUseLevelControl:_levelControlSwitch.isOn
-              useManualAudio:_useManualAudioSwitch.isOn];
+               didInputRoom:_roomText.roomText
+                 isLoopback:_loopbackSwitch.isOn
+                isAudioOnly:_audioOnlySwitch.isOn
+          shouldMakeAecDump:_aecdumpSwitch.isOn
+      shouldUseLevelControl:_levelControlSwitch.isOn
+             useManualAudio:_useManualAudioSwitch.isOn];
 }
 
 @end
