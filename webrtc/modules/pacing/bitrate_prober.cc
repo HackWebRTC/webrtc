@@ -14,7 +14,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 
 namespace webrtc {
@@ -46,13 +45,10 @@ constexpr int64_t kProbeClusterTimeoutMs = 5000;
 
 }  // namespace
 
-BitrateProber::BitrateProber() : BitrateProber(nullptr) {}
-
-BitrateProber::BitrateProber(RtcEventLog* event_log)
+BitrateProber::BitrateProber()
     : probing_state_(ProbingState::kDisabled),
       next_probe_time_ms_(-1),
-      next_cluster_id_(0),
-      event_log_(event_log) {
+      next_cluster_id_(0) {
   SetEnabled(true);
 }
 
@@ -99,11 +95,6 @@ void BitrateProber::CreateProbeCluster(int bitrate_bps, int64_t now_ms) {
   cluster.pace_info.send_bitrate_bps = bitrate_bps;
   cluster.pace_info.probe_cluster_id = next_cluster_id_++;
   clusters_.push(cluster);
-  if (event_log_)
-    event_log_->LogProbeClusterCreated(
-        cluster.pace_info.probe_cluster_id, cluster.pace_info.send_bitrate_bps,
-        cluster.pace_info.probe_cluster_min_probes,
-        cluster.pace_info.probe_cluster_min_bytes);
 
   LOG(LS_INFO) << "Probe cluster (bitrate:min bytes:min packets): ("
                << cluster.pace_info.send_bitrate_bps << ":"
