@@ -64,8 +64,7 @@ constexpr int kRtpHistoryMs = 5000;
 class FakeVoEWrapper : public cricket::VoEWrapper {
  public:
   explicit FakeVoEWrapper(cricket::FakeWebRtcVoiceEngine* engine)
-      : cricket::VoEWrapper(engine,  // base
-                            engine) {  // codec
+      : cricket::VoEWrapper(engine) {
   }
 };
 

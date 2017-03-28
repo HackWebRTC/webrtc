@@ -75,25 +75,19 @@ class scoped_voe_ptr {
 class VoEWrapper {
  public:
   VoEWrapper()
-      : engine_(webrtc::VoiceEngine::Create()),
-        base_(engine_), codec_(engine_) {
+      : engine_(webrtc::VoiceEngine::Create()), base_(engine_) {
   }
-  VoEWrapper(webrtc::VoEBase* base,
-             webrtc::VoECodec* codec)
-      : engine_(NULL),
-        base_(base),
-        codec_(codec) {
+  VoEWrapper(webrtc::VoEBase* base)
+      : engine_(NULL), base_(base) {
   }
   ~VoEWrapper() {}
   webrtc::VoiceEngine* engine() const { return engine_.get(); }
   webrtc::VoEBase* base() const { return base_.get(); }
-  webrtc::VoECodec* codec() const { return codec_.get(); }
   int error() { return base_->LastError(); }
 
  private:
   scoped_voe_engine engine_;
   scoped_voe_ptr<webrtc::VoEBase> base_;
-  scoped_voe_ptr<webrtc::VoECodec> codec_;
 };
 }  // namespace cricket
 
