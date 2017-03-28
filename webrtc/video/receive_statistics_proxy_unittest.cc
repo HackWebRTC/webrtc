@@ -124,7 +124,6 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsOnCompleteFrame) {
   statistics_proxy_->OnCompleteFrame(true, kFrameSizeBytes);
   VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(1, stats.network_frame_rate);
-  EXPECT_EQ(kFrameSizeBytes * 8, stats.total_bitrate_bps);
   EXPECT_EQ(1, stats.frame_counts.key_frames);
   EXPECT_EQ(0, stats.frame_counts.delta_frames);
 }

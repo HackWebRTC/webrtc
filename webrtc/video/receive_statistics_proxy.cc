@@ -73,10 +73,10 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       renders_fps_estimator_(1000, 1000),
       render_fps_tracker_(100, 10u),
       render_pixel_tracker_(100, 10u),
+      total_byte_tracker_(100, 10u),  // bucket_interval_ms, bucket_count
       freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
       first_report_block_time_ms_(-1),
-      avg_rtt_ms_(0),
-      frame_window_accumulated_bytes_(0) {
+      avg_rtt_ms_(0) {
   stats_.ssrc = config_.rtp.remote_ssrc;
   // TODO(brandtr): Replace |rtx_stats_| with a single instance of
   // StreamDataCounters.
@@ -312,25 +312,23 @@ void ReceiveStatisticsProxy::QualitySample() {
   }
 }
 
-void ReceiveStatisticsProxy::UpdateFrameAndBitrate(int64_t now_ms) const {
+void ReceiveStatisticsProxy::UpdateFramerate(int64_t now_ms) const {
   int64_t old_frames_ms = now_ms - kRateStatisticsWindowSizeMs;
   while (!frame_window_.empty() &&
          frame_window_.begin()->first < old_frames_ms) {
-    frame_window_accumulated_bytes_ -= frame_window_.begin()->second;
     frame_window_.erase(frame_window_.begin());
   }
 
   size_t framerate =
       (frame_window_.size() * 1000 + 500) / kRateStatisticsWindowSizeMs;
-  size_t bitrate_bps =
-      frame_window_accumulated_bytes_ * 8000 / kRateStatisticsWindowSizeMs;
   stats_.network_frame_rate = static_cast<int>(framerate);
-  stats_.total_bitrate_bps = static_cast<int>(bitrate_bps);
 }
 
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   rtc::CritScope lock(&crit_);
-  UpdateFrameAndBitrate(clock_->TimeInMilliseconds());
+  UpdateFramerate(clock_->TimeInMilliseconds());
+  stats_.total_bitrate_bps =
+      static_cast<int>(total_byte_tracker_.ComputeRate() * 8);
   return stats_;
 }
 
@@ -412,17 +410,25 @@ void ReceiveStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {
 void ReceiveStatisticsProxy::DataCountersUpdated(
     const webrtc::StreamDataCounters& counters,
     uint32_t ssrc) {
+  size_t last_total_bytes = 0;
+  size_t total_bytes = 0;
   rtc::CritScope lock(&crit_);
   if (ssrc == stats_.ssrc) {
+    last_total_bytes = stats_.rtp_stats.transmitted.TotalBytes();
+    total_bytes = counters.transmitted.TotalBytes();
     stats_.rtp_stats = counters;
   } else {
     auto it = rtx_stats_.find(ssrc);
     if (it != rtx_stats_.end()) {
+      last_total_bytes = it->second.transmitted.TotalBytes();
+      total_bytes = counters.transmitted.TotalBytes();
       it->second = counters;
     } else {
       RTC_NOTREACHED() << "Unexpected stream ssrc: " << ssrc;
     }
   }
+  if (total_bytes > last_total_bytes)
+    total_byte_tracker_.AddSamples(total_bytes - last_total_bytes);
 }
 
 void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp) {
@@ -502,9 +508,8 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
     ++stats_.frame_counts.delta_frames;
 
   int64_t now_ms = clock_->TimeInMilliseconds();
-  frame_window_accumulated_bytes_ += size_bytes;
   frame_window_.insert(std::make_pair(now_ms, size_bytes));
-  UpdateFrameAndBitrate(now_ms);
+  UpdateFramerate(now_ms);
 }
 
 void ReceiveStatisticsProxy::OnFrameCountsUpdated(
