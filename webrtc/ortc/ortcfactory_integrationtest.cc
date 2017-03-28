@@ -346,6 +346,10 @@ class OrtcFactoryIntegrationTest : public testing::Test {
   int rendered_video_frames2_ = 0;
 };
 
+// Disable for TSan v2, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=7366 for details.
+#if !defined(THREAD_SANITIZER)
+
 // Very basic end-to-end test with a single pair of audio RTP sender and
 // receiver.
 //
@@ -674,5 +678,7 @@ TEST_F(OrtcFactoryIntegrationTest,
 
 // TODO(deadbeef): End-to-end test for simulcast, once that's supported by this
 // API.
+
+#endif  // if !defined(THREAD_SANITIZER)
 
 }  // namespace webrtc
