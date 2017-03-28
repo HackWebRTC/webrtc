@@ -17,10 +17,6 @@
 
 namespace webrtc {
 
-using ::testing::NiceMock;
-using ::testing::Return;
-using ::testing::_;
-
 namespace {
 
 // The test uses the following settings:
