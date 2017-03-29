@@ -17,42 +17,17 @@
 
 namespace webrtc {
 
-FecControllerRplrBased::Config::Threshold::Threshold(
-    int low_bandwidth_bps,
-    float low_bandwidth_recoverable_packet_loss,
-    int high_bandwidth_bps,
-    float high_bandwidth_recoverable_packet_loss)
-    : low_bandwidth_bps(low_bandwidth_bps),
-      low_bandwidth_recoverable_packet_loss(
-          low_bandwidth_recoverable_packet_loss),
-      high_bandwidth_bps(high_bandwidth_bps),
-      high_bandwidth_recoverable_packet_loss(
-          high_bandwidth_recoverable_packet_loss) {}
-
-FecControllerRplrBased::Config::Config(bool initial_fec_enabled,
-                                       const Threshold& fec_enabling_threshold,
-                                       const Threshold& fec_disabling_threshold)
+FecControllerRplrBased::Config::Config(
+    bool initial_fec_enabled,
+    const ThresholdCurve& fec_enabling_threshold,
+    const ThresholdCurve& fec_disabling_threshold)
     : initial_fec_enabled(initial_fec_enabled),
       fec_enabling_threshold(fec_enabling_threshold),
       fec_disabling_threshold(fec_disabling_threshold) {}
 
 FecControllerRplrBased::FecControllerRplrBased(const Config& config)
-    : config_(config),
-      fec_enabled_(config.initial_fec_enabled),
-      fec_enabling_threshold_info_(config_.fec_enabling_threshold),
-      fec_disabling_threshold_info_(config_.fec_disabling_threshold) {
-  RTC_DCHECK_LE(fec_enabling_threshold_info_.slope, 0);
-  RTC_DCHECK_LE(fec_enabling_threshold_info_.slope, 0);
-  RTC_DCHECK_LE(
-      GetPacketLossThreshold(config_.fec_enabling_threshold.low_bandwidth_bps,
-                             config_.fec_disabling_threshold,
-                             fec_disabling_threshold_info_),
-      config_.fec_enabling_threshold.low_bandwidth_recoverable_packet_loss);
-  RTC_DCHECK_LE(
-      GetPacketLossThreshold(config_.fec_enabling_threshold.high_bandwidth_bps,
-                             config_.fec_disabling_threshold,
-                             fec_disabling_threshold_info_),
-      config_.fec_enabling_threshold.high_bandwidth_recoverable_packet_loss);
+    : config_(config), fec_enabled_(config.initial_fec_enabled) {
+  RTC_DCHECK(config_.fec_disabling_threshold <= config_.fec_enabling_threshold);
 }
 
 FecControllerRplrBased::~FecControllerRplrBased() = default;
@@ -79,44 +54,14 @@ void FecControllerRplrBased::MakeDecision(
       uplink_recoverable_packet_loss_ ? *uplink_recoverable_packet_loss_ : 0.0);
 }
 
-FecControllerRplrBased::ThresholdInfo::ThresholdInfo(
-    const Config::Threshold& threshold) {
-  int bandwidth_diff_bps =
-      threshold.high_bandwidth_bps - threshold.low_bandwidth_bps;
-  float recoverable_packet_loss_diff =
-      threshold.high_bandwidth_recoverable_packet_loss -
-      threshold.low_bandwidth_recoverable_packet_loss;
-  slope = bandwidth_diff_bps == 0
-              ? 0.0
-              : recoverable_packet_loss_diff / bandwidth_diff_bps;
-  offset = threshold.low_bandwidth_recoverable_packet_loss -
-           slope * threshold.low_bandwidth_bps;
-}
-
-float FecControllerRplrBased::GetPacketLossThreshold(
-    int bandwidth_bps,
-    const Config::Threshold& threshold,
-    const ThresholdInfo& threshold_info) const {
-  if (bandwidth_bps < threshold.low_bandwidth_bps) {
-    return std::numeric_limits<float>::max();
-  } else if (bandwidth_bps >= threshold.high_bandwidth_bps) {
-    return threshold.high_bandwidth_recoverable_packet_loss;
-  } else {
-    float rc = threshold_info.offset + threshold_info.slope * bandwidth_bps;
-    RTC_DCHECK_LE(rc, threshold.low_bandwidth_recoverable_packet_loss);
-    RTC_DCHECK_GE(rc, threshold.high_bandwidth_recoverable_packet_loss);
-    return rc;
-  }
-}
-
 bool FecControllerRplrBased::FecEnablingDecision() const {
   if (!uplink_bandwidth_bps_ || !uplink_recoverable_packet_loss_) {
     return false;
   } else {
-    return *uplink_recoverable_packet_loss_ >=
-           GetPacketLossThreshold(*uplink_bandwidth_bps_,
-                                  config_.fec_enabling_threshold,
-                                  fec_enabling_threshold_info_);
+    // Enable when above the curve or exactly on it.
+    return !config_.fec_enabling_threshold.IsBelowCurve(
+        {static_cast<float>(*uplink_bandwidth_bps_),
+         *uplink_recoverable_packet_loss_});
   }
 }
 
@@ -124,10 +69,10 @@ bool FecControllerRplrBased::FecDisablingDecision() const {
   if (!uplink_bandwidth_bps_ || !uplink_recoverable_packet_loss_) {
     return false;
   } else {
-    return *uplink_recoverable_packet_loss_ <=
-           GetPacketLossThreshold(*uplink_bandwidth_bps_,
-                                  config_.fec_disabling_threshold,
-                                  fec_disabling_threshold_info_);
+    // Disable when below the curve or exactly on it.
+    return !config_.fec_disabling_threshold.IsAboveCurve(
+        {static_cast<float>(*uplink_bandwidth_bps_),
+         *uplink_recoverable_packet_loss_});
   }
 }
 

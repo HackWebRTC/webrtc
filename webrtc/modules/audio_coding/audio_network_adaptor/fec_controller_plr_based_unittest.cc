@@ -56,14 +56,13 @@ FecControllerPlrBasedTestStates CreateFecControllerPlrBased(
   std::unique_ptr<MockSmoothingFilter> mock_smoothing_filter(
       new NiceMock<MockSmoothingFilter>());
   states.packet_loss_smoother = mock_smoothing_filter.get();
-  using Threshold = FecControllerPlrBased::Config::Threshold;
   states.controller.reset(new FecControllerPlrBased(
       FecControllerPlrBased::Config(
           initial_fec_enabled,
-          Threshold(kEnablingBandwidthLow, kEnablingPacketLossAtLowBw,
-                    kEnablingBandwidthHigh, kEnablingPacketLossAtHighBw),
-          Threshold(kDisablingBandwidthLow, kDisablingPacketLossAtLowBw,
-                    kDisablingBandwidthHigh, kDisablingPacketLossAtHighBw),
+          ThresholdCurve(kEnablingBandwidthLow, kEnablingPacketLossAtLowBw,
+                         kEnablingBandwidthHigh, kEnablingPacketLossAtHighBw),
+          ThresholdCurve(kDisablingBandwidthLow, kDisablingPacketLossAtLowBw,
+                         kDisablingBandwidthHigh, kDisablingPacketLossAtHighBw),
           0, nullptr),
       std::move(mock_smoothing_filter)));
   return states;
@@ -313,14 +312,13 @@ TEST(FecControllerPlrBasedTest, CheckBehaviorOnSpecialCurves) {
   std::unique_ptr<MockSmoothingFilter> mock_smoothing_filter(
       new NiceMock<MockSmoothingFilter>());
   states.packet_loss_smoother = mock_smoothing_filter.get();
-  using Threshold = FecControllerPlrBased::Config::Threshold;
   states.controller.reset(new FecControllerPlrBased(
       FecControllerPlrBased::Config(
           true,
-          Threshold(kEnablingBandwidthLow, kEnablingPacketLossAtLowBw,
-                    kEnablingBandwidthHigh, kEnablingPacketLossAtHighBw),
-          Threshold(kDisablingBandwidthLow, kDisablingPacketLossAtLowBw,
-                    kDisablingBandwidthHigh, kDisablingPacketLossAtHighBw),
+          ThresholdCurve(kEnablingBandwidthLow, kEnablingPacketLossAtLowBw,
+                         kEnablingBandwidthHigh, kEnablingPacketLossAtHighBw),
+          ThresholdCurve(kDisablingBandwidthLow, kDisablingPacketLossAtLowBw,
+                         kDisablingBandwidthHigh, kDisablingPacketLossAtHighBw),
           0, nullptr),
       std::move(mock_smoothing_filter)));
 
@@ -353,15 +351,16 @@ TEST(FecControllerPlrBasedDeathTest, InvalidConfig) {
   std::unique_ptr<MockSmoothingFilter> mock_smoothing_filter(
       new NiceMock<MockSmoothingFilter>());
   states.packet_loss_smoother = mock_smoothing_filter.get();
-  using Threshold = FecControllerPlrBased::Config::Threshold;
   EXPECT_DEATH(
       states.controller.reset(new FecControllerPlrBased(
           FecControllerPlrBased::Config(
               true,
-              Threshold(kDisablingBandwidthLow - 1, kEnablingPacketLossAtLowBw,
-                        kEnablingBandwidthHigh, kEnablingPacketLossAtHighBw),
-              Threshold(kDisablingBandwidthLow, kDisablingPacketLossAtLowBw,
-                        kDisablingBandwidthHigh, kDisablingPacketLossAtHighBw),
+              ThresholdCurve(kDisablingBandwidthLow - 1,
+                             kEnablingPacketLossAtLowBw, kEnablingBandwidthHigh,
+                             kEnablingPacketLossAtHighBw),
+              ThresholdCurve(
+                  kDisablingBandwidthLow, kDisablingPacketLossAtLowBw,
+                  kDisablingBandwidthHigh, kDisablingPacketLossAtHighBw),
               0, nullptr),
           std::move(mock_smoothing_filter))),
       "Check failed");

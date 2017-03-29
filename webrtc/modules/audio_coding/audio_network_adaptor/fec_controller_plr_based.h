@@ -16,32 +16,13 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_audio/smoothing_filter.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/util/threshold_curve.h"
 
 namespace webrtc {
 
 class FecControllerPlrBased final : public Controller {
  public:
   struct Config {
-    struct Threshold {
-      // Threshold defines a curve in the bandwidth/packet-loss domain. The
-      // curve is characterized by the two conjunction points: A and B.
-      //
-      // packet ^  |
-      //  loss  | A|
-      //        |   \        A: (low_bandwidth_bps, low_bandwidth_packet_loss)
-      //        |    \       B: (high_bandwidth_bps, high_bandwidth_packet_loss)
-      //        |    B\________
-      //        |---------------> bandwidth
-      Threshold(int low_bandwidth_bps,
-                float low_bandwidth_packet_loss,
-                int high_bandwidth_bps,
-                float high_bandwidth_packet_loss);
-      int low_bandwidth_bps;
-      float low_bandwidth_packet_loss;
-      int high_bandwidth_bps;
-      float high_bandwidth_packet_loss;
-    };
-
     // |fec_enabling_threshold| defines a curve, above which FEC should be
     // enabled. |fec_disabling_threshold| defines a curve, under which FEC
     // should be disabled. See below
@@ -53,13 +34,13 @@ class FecControllerPlrBased final : public Controller {
     //             | OFF  \_________ fec_disabling_threshold
     //             |-----------------> bandwidth
     Config(bool initial_fec_enabled,
-           const Threshold& fec_enabling_threshold,
-           const Threshold& fec_disabling_threshold,
+           const ThresholdCurve& fec_enabling_threshold,
+           const ThresholdCurve& fec_disabling_threshold,
            int time_constant_ms,
            const Clock* clock);
     bool initial_fec_enabled;
-    Threshold fec_enabling_threshold;
-    Threshold fec_disabling_threshold;
+    ThresholdCurve fec_enabling_threshold;
+    ThresholdCurve fec_disabling_threshold;
     int time_constant_ms;
     const Clock* clock;
   };
@@ -77,17 +58,6 @@ class FecControllerPlrBased final : public Controller {
   void MakeDecision(AudioNetworkAdaptor::EncoderRuntimeConfig* config) override;
 
  private:
-  // Characterize Threshold with packet_loss = slope * bandwidth + offset.
-  struct ThresholdInfo {
-    explicit ThresholdInfo(const Config::Threshold& threshold);
-    float slope;
-    float offset;
-  };
-
-  float GetPacketLossThreshold(int bandwidth_bps,
-                               const Config::Threshold& threshold,
-                               const ThresholdInfo& threshold_info) const;
-
   bool FecEnablingDecision(const rtc::Optional<float>& packet_loss) const;
   bool FecDisablingDecision(const rtc::Optional<float>& packet_loss) const;
 
@@ -95,9 +65,6 @@ class FecControllerPlrBased final : public Controller {
   bool fec_enabled_;
   rtc::Optional<int> uplink_bandwidth_bps_;
   const std::unique_ptr<SmoothingFilter> packet_loss_smoother_;
-
-  const ThresholdInfo fec_enabling_threshold_info_;
-  const ThresholdInfo fec_disabling_threshold_info_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FecControllerPlrBased);
 };

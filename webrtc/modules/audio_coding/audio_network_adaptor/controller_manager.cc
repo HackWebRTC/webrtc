@@ -20,6 +20,7 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_rplr_based.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/frame_length_controller.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/util/threshold_curve.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 #ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
@@ -61,16 +62,14 @@ std::unique_ptr<FecControllerPlrBased> CreateFecControllerPlrBased(
   return std::unique_ptr<FecControllerPlrBased>(
       new FecControllerPlrBased(FecControllerPlrBased::Config(
           initial_fec_enabled,
-          FecControllerPlrBased::Config::Threshold(
-              fec_enabling_threshold.low_bandwidth_bps(),
-              fec_enabling_threshold.low_bandwidth_packet_loss(),
-              fec_enabling_threshold.high_bandwidth_bps(),
-              fec_enabling_threshold.high_bandwidth_packet_loss()),
-          FecControllerPlrBased::Config::Threshold(
-              fec_disabling_threshold.low_bandwidth_bps(),
-              fec_disabling_threshold.low_bandwidth_packet_loss(),
-              fec_disabling_threshold.high_bandwidth_bps(),
-              fec_disabling_threshold.high_bandwidth_packet_loss()),
+          ThresholdCurve(fec_enabling_threshold.low_bandwidth_bps(),
+                         fec_enabling_threshold.low_bandwidth_packet_loss(),
+                         fec_enabling_threshold.high_bandwidth_bps(),
+                         fec_enabling_threshold.high_bandwidth_packet_loss()),
+          ThresholdCurve(fec_disabling_threshold.low_bandwidth_bps(),
+                         fec_disabling_threshold.low_bandwidth_packet_loss(),
+                         fec_disabling_threshold.high_bandwidth_bps(),
+                         fec_disabling_threshold.high_bandwidth_packet_loss()),
           config.time_constant_ms(), clock)));
 }
 
@@ -98,12 +97,12 @@ std::unique_ptr<FecControllerRplrBased> CreateFecControllerRplrBased(
   return std::unique_ptr<FecControllerRplrBased>(
       new FecControllerRplrBased(FecControllerRplrBased::Config(
           initial_fec_enabled,
-          FecControllerRplrBased::Config::Threshold(
+          ThresholdCurve(
               fec_enabling_threshold.low_bandwidth_bps(),
               fec_enabling_threshold.low_bandwidth_recoverable_packet_loss(),
               fec_enabling_threshold.high_bandwidth_bps(),
               fec_enabling_threshold.high_bandwidth_recoverable_packet_loss()),
-          FecControllerRplrBased::Config::Threshold(
+          ThresholdCurve(
               fec_disabling_threshold.low_bandwidth_bps(),
               fec_disabling_threshold.low_bandwidth_recoverable_packet_loss(),
               fec_disabling_threshold.high_bandwidth_bps(),

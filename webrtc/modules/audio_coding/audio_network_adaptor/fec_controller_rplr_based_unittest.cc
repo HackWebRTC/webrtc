@@ -57,17 +57,16 @@ rtc::Optional<float> GetRandomProbabilityOrUnknown() {
 
 std::unique_ptr<FecControllerRplrBased> CreateFecControllerRplrBased(
     bool initial_fec_enabled) {
-  using Threshold = FecControllerRplrBased::Config::Threshold;
   return std::unique_ptr<FecControllerRplrBased>(
       new FecControllerRplrBased(FecControllerRplrBased::Config(
           initial_fec_enabled,
-          Threshold(
+          ThresholdCurve(
               kEnablingBandwidthLow, kEnablingRecoverablePacketLossAtLowBw,
               kEnablingBandwidthHigh, kEnablingRecoverablePacketLossAtHighBw),
-          Threshold(kDisablingBandwidthLow,
-                    kDisablingRecoverablePacketLossAtLowBw,
-                    kDisablingBandwidthHigh,
-                    kDisablingRecoverablePacketLossAtHighBw))));
+          ThresholdCurve(kDisablingBandwidthLow,
+                         kDisablingRecoverablePacketLossAtLowBw,
+                         kDisablingBandwidthHigh,
+                         kDisablingRecoverablePacketLossAtHighBw))));
 }
 
 void UpdateNetworkMetrics(
@@ -361,14 +360,14 @@ TEST(FecControllerRplrBasedTest, CheckBehaviorOnSpecialCurves) {
   constexpr int kEnablingBandwidthHigh = kEnablingBandwidthLow;
   constexpr float kDisablingRecoverablePacketLossAtLowBw =
       kDisablingRecoverablePacketLossAtHighBw;
-  using Threshold = FecControllerRplrBased::Config::Threshold;
   FecControllerRplrBased controller(FecControllerRplrBased::Config(
       true,
-      Threshold(kEnablingBandwidthLow, kEnablingRecoverablePacketLossAtLowBw,
-                kEnablingBandwidthHigh, kEnablingRecoverablePacketLossAtHighBw),
-      Threshold(kDisablingBandwidthLow, kDisablingRecoverablePacketLossAtLowBw,
-                kDisablingBandwidthHigh,
-                kDisablingRecoverablePacketLossAtHighBw)));
+      ThresholdCurve(
+          kEnablingBandwidthLow, kEnablingRecoverablePacketLossAtLowBw,
+          kEnablingBandwidthHigh, kEnablingRecoverablePacketLossAtHighBw),
+      ThresholdCurve(
+          kDisablingBandwidthLow, kDisablingRecoverablePacketLossAtLowBw,
+          kDisablingBandwidthHigh, kDisablingRecoverablePacketLossAtHighBw)));
 
   UpdateNetworkMetrics(&controller,
                        rtc::Optional<int>(kDisablingBandwidthLow - 1),
@@ -400,17 +399,16 @@ TEST(FecControllerRplrBasedTest, CheckBehaviorOnSpecialCurves) {
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST(FecControllerRplrBasedDeathTest, InvalidConfig) {
-  using Threshold = FecControllerRplrBased::Config::Threshold;
   EXPECT_DEATH(
       FecControllerRplrBased controller(FecControllerRplrBased::Config(
           true,
-          Threshold(
+          ThresholdCurve(
               kDisablingBandwidthLow - 1, kEnablingRecoverablePacketLossAtLowBw,
               kEnablingBandwidthHigh, kEnablingRecoverablePacketLossAtHighBw),
-          Threshold(kDisablingBandwidthLow,
-                    kDisablingRecoverablePacketLossAtLowBw,
-                    kDisablingBandwidthHigh,
-                    kDisablingRecoverablePacketLossAtHighBw))),
+          ThresholdCurve(kDisablingBandwidthLow,
+                         kDisablingRecoverablePacketLossAtLowBw,
+                         kDisablingBandwidthHigh,
+                         kDisablingRecoverablePacketLossAtHighBw))),
       "Check failed");
 }
 #endif

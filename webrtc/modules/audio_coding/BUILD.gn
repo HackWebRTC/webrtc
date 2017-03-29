@@ -916,6 +916,7 @@ rtc_static_library("audio_network_adaptor") {
     "audio_network_adaptor/frame_length_controller.cc",
     "audio_network_adaptor/frame_length_controller.h",
     "audio_network_adaptor/include/audio_network_adaptor.h",
+    "audio_network_adaptor/util/threshold_curve.h",
   ]
 
   deps = [
@@ -1995,6 +1996,7 @@ if (rtc_include_tests) {
       "audio_network_adaptor/frame_length_controller_unittest.cc",
       "audio_network_adaptor/mock/mock_controller.h",
       "audio_network_adaptor/mock/mock_controller_manager.h",
+      "audio_network_adaptor/util/threshold_curve_unittest.cc",
       "codecs/builtin_audio_decoder_factory_unittest.cc",
       "codecs/cng/audio_encoder_cng_unittest.cc",
       "codecs/cng/cng_unittest.cc",
