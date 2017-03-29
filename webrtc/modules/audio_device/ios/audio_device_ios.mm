@@ -326,11 +326,13 @@ int AudioDeviceIOS::GetRecordAudioParameters(AudioParameters* params) const {
 
 void AudioDeviceIOS::OnInterruptionBegin() {
   RTC_DCHECK(thread_);
+  LOGI() << "OnInterruptionBegin";
   thread_->Post(RTC_FROM_HERE, this, kMessageTypeInterruptionBegin);
 }
 
 void AudioDeviceIOS::OnInterruptionEnd() {
   RTC_DCHECK(thread_);
+  LOGI() << "OnInterruptionEnd";
   thread_->Post(RTC_FROM_HERE, this, kMessageTypeInterruptionEnd);
 }
 
@@ -468,6 +470,8 @@ void AudioDeviceIOS::OnMessage(rtc::Message *msg) {
 void AudioDeviceIOS::HandleInterruptionBegin() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
+  RTCLog(@"Interruption begin. IsInterrupted changed from %d to 1.",
+         is_interrupted_);
   if (audio_unit_ &&
       audio_unit_->GetState() == VoiceProcessingAudioUnit::kStarted) {
     RTCLog(@"Stopping the audio unit due to interruption begin.");
@@ -481,8 +485,9 @@ void AudioDeviceIOS::HandleInterruptionBegin() {
 void AudioDeviceIOS::HandleInterruptionEnd() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
+  RTCLog(@"Interruption ended. IsInterrupted changed from %d to 0. "
+         "Updating audio unit state.", is_interrupted_);
   is_interrupted_ = false;
-  RTCLog(@"Interruption ended. Updating audio unit state.");
   UpdateAudioUnit([RTCAudioSession sharedInstance].canPlayOrRecord);
 }
 
