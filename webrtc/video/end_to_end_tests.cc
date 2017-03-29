@@ -56,6 +56,14 @@
 #include "webrtc/video/transport_adapter.h"
 #include "webrtc/video_encoder.h"
 
+#if defined(MEMORY_SANITIZER)
+// Flaky under MemorySanitizer, see
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=7419
+#define MAYBE_InitialProbing DISABLED_InitialProbing
+#else
+#define MAYBE_InitialProbing InitialProbing
+#endif
+
 namespace webrtc {
 
 static const int kSilenceTimeoutMs = 2000;
@@ -2225,7 +2233,7 @@ class ProbingTest : public test::EndToEndTest {
   Call* sender_call_;
 };
 
-TEST_F(EndToEndTest, InitialProbing) {
+TEST_F(EndToEndTest, MAYBE_InitialProbing) {
   class InitialProbingTest : public ProbingTest {
    public:
     InitialProbingTest() : ProbingTest(300000) {}
