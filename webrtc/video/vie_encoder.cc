@@ -434,7 +434,7 @@ void ViEEncoder::ReconfigureEncoder() {
                      static_cast<uint32_t>(max_data_payload_length_)) == VCM_OK;
   if (!success) {
     LOG(LS_ERROR) << "Failed to configure encoder.";
-    RTC_DCHECK(success);
+    rate_allocator_.reset();
   }
 
   video_sender_.UpdateChannelParemeters(rate_allocator_.get(),
@@ -444,7 +444,9 @@ void ViEEncoder::ReconfigureEncoder() {
   if (framerate == 0)
     framerate = codec.maxFramerate;
   stats_proxy_->OnEncoderReconfigured(
-      encoder_config_, rate_allocator_->GetPreferredBitrateBps(framerate));
+      encoder_config_, rate_allocator_.get()
+                           ? rate_allocator_->GetPreferredBitrateBps(framerate)
+                           : codec.maxBitrate);
 
   pending_encoder_reconfiguration_ = false;
 

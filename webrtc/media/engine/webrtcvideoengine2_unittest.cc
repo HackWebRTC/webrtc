@@ -4360,4 +4360,12 @@ TEST_F(WebRtcVideoChannel2SimulcastTest, SetSendCodecsForSimulcastScreenshare) {
                           true);
 }
 
+TEST_F(WebRtcVideoChannel2SimulcastTest,
+       NoSimulcastScreenshareWithoutConference) {
+  webrtc::test::ScopedFieldTrials override_field_trials_(
+      "WebRTC-SimulcastScreenshare/Enabled/");
+  VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 1, true,
+                          false);
+}
+
 }  // namespace cricket

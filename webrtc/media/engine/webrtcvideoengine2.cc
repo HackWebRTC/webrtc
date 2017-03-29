@@ -1883,7 +1883,8 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   // configure a single stream.
   encoder_config.number_of_streams = parameters_.config.rtp.ssrcs.size();
   if (IsCodecBlacklistedForSimulcast(codec.name) ||
-      (is_screencast && !UseSimulcastScreenshare())) {
+      (is_screencast &&
+       (!UseSimulcastScreenshare() || !parameters_.conference_mode))) {
     encoder_config.number_of_streams = 1;
   }
 
@@ -1912,7 +1913,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::CreateVideoEncoderConfig(
 void WebRtcVideoChannel2::WebRtcVideoSendStream::ReconfigureEncoder() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   if (!stream_) {
-    // The webrtc::VideoSendStream |stream_|has not yet been created but other
+    // The webrtc::VideoSendStream |stream_| has not yet been created but other
     // parameters has changed.
     return;
   }

@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
 #include <limits>
 #include <utility>
 
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/media/base/videoadapter.h"
+#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "webrtc/system_wrappers/include/metrics_default.h"
 #include "webrtc/system_wrappers/include/sleep.h"
@@ -282,6 +284,11 @@ class ViEEncoderTest : public ::testing::Test {
       quality_scaling_ = b;
     }
 
+    void ForceInitEncodeFailure(bool force_failure) {
+      rtc::CritScope lock(&local_crit_sect_);
+      force_init_encode_failed_ = force_failure;
+    }
+
    private:
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
@@ -307,14 +314,39 @@ class ViEEncoderTest : public ::testing::Test {
       return result;
     }
 
+    int32_t InitEncode(const VideoCodec* config,
+                       int32_t number_of_cores,
+                       size_t max_payload_size) override {
+      int res =
+          FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
+      rtc::CritScope lock(&local_crit_sect_);
+      if (config->codecType == kVideoCodecVP8 && config->VP8().tl_factory) {
+        // Simulate setting up temporal layers, in order to validate the life
+        // cycle of these objects.
+        int num_streams = std::max<int>(1, config->numberOfSimulcastStreams);
+        int num_temporal_layers =
+            std::max<int>(1, config->VP8().numberOfTemporalLayers);
+        for (int i = 0; i < num_streams; ++i) {
+          allocated_temporal_layers_.emplace_back(
+              config->VP8().tl_factory->Create(i, num_temporal_layers, 42));
+        }
+      }
+      if (force_init_encode_failed_)
+        return -1;
+      return res;
+    }
+
     rtc::CriticalSection local_crit_sect_;
-    bool block_next_encode_ = false;
+    bool block_next_encode_ GUARDED_BY(local_crit_sect_) = false;
     rtc::Event continue_encode_event_;
-    uint32_t timestamp_ = 0;
-    int64_t ntp_time_ms_ = 0;
-    int last_input_width_ = 0;
-    int last_input_height_ = 0;
-    bool quality_scaling_ = true;
+    uint32_t timestamp_ GUARDED_BY(local_crit_sect_) = 0;
+    int64_t ntp_time_ms_ GUARDED_BY(local_crit_sect_) = 0;
+    int last_input_width_ GUARDED_BY(local_crit_sect_) = 0;
+    int last_input_height_ GUARDED_BY(local_crit_sect_) = 0;
+    bool quality_scaling_ GUARDED_BY(local_crit_sect_) = true;
+    std::vector<std::unique_ptr<TemporalLayers>> allocated_temporal_layers_
+        GUARDED_BY(local_crit_sect_);
+    bool force_init_encode_failed_ GUARDED_BY(local_crit_sect_) = false;
   };
 
   class TestSink : public ViEEncoder::EncoderSink {
@@ -1241,6 +1273,18 @@ TEST_F(ViEEncoderTest, AdaptsResolutionOnOveruse) {
       CreateFrame(3, kFrameWidth, kFrameHeight));
   sink_.WaitForEncodedFrame(kFrameWidth, kFrameHeight);
 
+  vie_encoder_->Stop();
+}
+
+TEST_F(ViEEncoderTest, FailingInitEncodeDoesntCauseCrash) {
+  fake_encoder_.ForceInitEncodeFailure(true);
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+  ResetEncoder("VP8", 2, 1, true);
+  const int kFrameWidth = 1280;
+  const int kFrameHeight = 720;
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, kFrameWidth, kFrameHeight));
+  sink_.ExpectDroppedFrame();
   vie_encoder_->Stop();
 }
 }  // namespace webrtc
