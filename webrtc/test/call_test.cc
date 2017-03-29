@@ -264,6 +264,7 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
     audio_config.voe_channel_id = voe_recv_.channel_id;
     audio_config.rtp.remote_ssrc = audio_send_config_.rtp.ssrc;
     audio_config.decoder_factory = decoder_factory_;
+    audio_config.decoder_map = {{120, {"opus", 48000, 2}}};
     audio_receive_configs_.push_back(audio_config);
   }
 
