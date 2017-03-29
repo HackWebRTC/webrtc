@@ -219,6 +219,10 @@ bool DxgiOutputDuplicator::Duplicate(Context* context,
       target->CopyPixelsFrom(*last_frame_, it.rect().top_left(), it.rect());
     }
     target->mutable_updated_region()->AddRegion(updated_region);
+  } else {
+    // If we were at the very first frame, and capturing failed, the
+    // context->updated_region should be kept unchanged for next attempt.
+    context->updated_region.Swap(&updated_region);
   }
   // If AcquireNextFrame() failed with timeout error, we do not need to release
   // the frame.
