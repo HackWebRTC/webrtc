@@ -141,8 +141,10 @@ void AudioMixerImpl::Mix(size_t number_of_channels,
 
   {
     rtc::CritScope lock(&crit_);
+    const size_t number_of_streams = audio_source_list_.size();
     frame_combiner_.Combine(GetAudioFromSources(), number_of_channels,
-                            OutputFrequency(), audio_frame_for_mixing);
+                            OutputFrequency(), number_of_streams,
+                            audio_frame_for_mixing);
   }
 
   return;
