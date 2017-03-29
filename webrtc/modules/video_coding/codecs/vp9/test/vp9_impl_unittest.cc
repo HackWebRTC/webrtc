@@ -29,7 +29,12 @@ class TestVp9Impl : public VideoCodecTest {
   }
 };
 
+// Disabled on ios as flake, see https://crbug.com/webrtc/7057
+#if defined(WEBRTC_IOS)
+TEST_F(TestVp9Impl, DISABLED_EncodeDecode) {
+#else
 TEST_F(TestVp9Impl, EncodeDecode) {
+#endif
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*input_frame_, nullptr, nullptr));
   EncodedImage encoded_frame;
