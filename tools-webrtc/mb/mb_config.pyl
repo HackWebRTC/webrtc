@@ -191,13 +191,13 @@
       'gn', 'gcc', 'release_bot', 'x64'
     ],
     'debug_bot_arm': [
-      'gn', 'openh264_release_bot', 'arm'
+      'gn', 'openh264_debug_bot', 'arm'
     ],
     'release_bot_arm': [
       'gn', 'openh264_release_bot', 'arm'
     ],
     'debug_bot_arm64': [
-      'gn', 'openh264_release_bot', 'arm64'
+      'gn', 'openh264_debug_bot', 'arm64'
     ],
     'release_bot_arm64': [
       'gn', 'openh264_release_bot', 'arm64'
