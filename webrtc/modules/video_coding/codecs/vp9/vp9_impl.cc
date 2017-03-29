@@ -449,6 +449,9 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   // The number tile columns will be capped by the encoder based on image size
   // (minimum width of tile column is 256 pixels, maximum is 4096).
   vpx_codec_control(encoder_, VP9E_SET_TILE_COLUMNS, (config_->g_threads >> 1));
+
+  // Turn on row-based multithreading.
+  vpx_codec_control(encoder_, VP9E_SET_ROW_MT, 1);
 #if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
   !defined(ANDROID)
   // Note denoiser is still off by default until further testing/optimization,
