@@ -275,7 +275,7 @@ if (rtc_include_tests) {
       "../utility:utility",
       "//testing/gmock",
     ]
-    if (is_linux) {
+    if (is_linux || is_mac || is_win) {
       sources += [ "audio_device_unittest.cc" ]
     }
     if (is_android) {
