@@ -37,9 +37,12 @@
       # Linux
       'Linux32 Debug': 'debug_bot_x86',
       'Linux32 Release': 'release_bot_x86',
-      'Linux32 ARM': 'release_bot_arm',
+      'Linux32 Debug (ARM)': 'debug_bot_arm',
+      'Linux32 Release (ARM)': 'release_bot_arm',
       'Linux64 Debug': 'debug_bot_x64',
       'Linux64 Release': 'release_bot_x64',
+      'Linux64 Debug (ARM)': 'debug_bot_arm64',
+      'Linux64 Release (ARM)': 'release_bot_arm64',
       'Linux Asan': 'asan_lsan_clang_release_bot_x64',
       'Linux Memcheck': 'memcheck_release_bot_x64',
       'Linux MSan': 'msan_clang_release_bot_x64',
@@ -91,6 +94,8 @@
       'Mac (swarming)': 'release_bot_x64',
 
       # Linux
+      # TODO(kjellander): Remove when bugs.webrtc.org/7090 is fixed.
+      'Linux32 Debug (ARM)': 'debug_bot_arm',
       'Linux64 GCC': 'gcc_release_bot_x64',
       'Linux (swarming)': 'release_bot_x64',
 
@@ -126,9 +131,12 @@
       'linux_compile_rel': 'release_bot_x64',
       'linux_dbg': 'debug_bot_x64',
       'linux_rel': 'release_bot_x64',
+      'linux_arm64_dbg': 'debug_bot_arm64',
+      'linux_arm64_rel': 'release_bot_arm64',
       'linux32_dbg': 'debug_bot_x86',
       'linux32_rel': 'release_bot_x86',
-      'linux_arm': 'release_bot_arm',
+      'linux32_arm_dbg': 'debug_bot_arm',
+      'linux32_arm_rel': 'release_bot_arm',
       'linux_asan': 'asan_lsan_clang_release_bot_x64',
       'linux_memcheck': 'memcheck_release_bot_x64',
       'linux_msan': 'msan_clang_release_bot_x64',
@@ -182,8 +190,17 @@
     'gcc_release_bot_x64': [
       'gn', 'gcc', 'release_bot', 'x64'
     ],
+    'debug_bot_arm': [
+      'gn', 'openh264_release_bot', 'arm'
+    ],
     'release_bot_arm': [
       'gn', 'openh264_release_bot', 'arm'
+    ],
+    'debug_bot_arm64': [
+      'gn', 'openh264_release_bot', 'arm64'
+    ],
+    'release_bot_arm64': [
+      'gn', 'openh264_release_bot', 'arm64'
     ],
     'asan_lsan_clang_release_bot_x64': [
       'gn', 'asan', 'lsan', 'clang', 'openh264_release_bot', 'x64'
