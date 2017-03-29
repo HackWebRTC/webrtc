@@ -96,8 +96,9 @@ class Packet {
   bool ReserveExtension();
 
   // Reserve size_bytes for payload. Returns nullptr on failure.
+  uint8_t* SetPayloadSize(size_t size_bytes);
+  // Same as SetPayloadSize but doesn't guarantee to keep current payload.
   uint8_t* AllocatePayload(size_t size_bytes);
-  void SetPayloadSize(size_t size_bytes);
   bool SetPadding(uint8_t size_bytes, Random* random);
 
  protected:

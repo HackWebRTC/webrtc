@@ -125,7 +125,7 @@ TEST(RtpPacketTest, SetReservedExtensionsAfterPayload) {
   RtpPacketToSend packet(&extensions);
 
   EXPECT_TRUE(packet.ReserveExtension<TransmissionOffset>());
-  packet.AllocatePayload(kPayloadSize);
+  packet.SetPayloadSize(kPayloadSize);
   // Can't set extension after payload.
   EXPECT_FALSE(packet.SetExtension<AudioLevel>(kVoiceActive, kAudioLevel));
   // Unless reserved.
@@ -154,7 +154,7 @@ TEST(RtpPacketTest, CreateUnalignedPadding) {
   packet.SetSequenceNumber(kSeqNum);
   packet.SetTimestamp(kTimestamp);
   packet.SetSsrc(kSsrc);
-  packet.AllocatePayload(kPayloadSize);
+  packet.SetPayloadSize(kPayloadSize);
   Random r(0x123456789);
 
   EXPECT_LT(packet.size(), packet.capacity());

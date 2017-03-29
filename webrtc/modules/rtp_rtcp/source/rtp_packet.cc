@@ -274,24 +274,21 @@ void Packet::SetCsrcs(const std::vector<uint32_t>& csrcs) {
 }
 
 uint8_t* Packet::AllocatePayload(size_t size_bytes) {
+  // Reset payload size to 0. If CopyOnWrite buffer_ was shared, this will cause
+  // reallocation and memcpy. Keeping just header reduces memcpy size.
+  SetPayloadSize(0);
+  return SetPayloadSize(size_bytes);
+}
+
+uint8_t* Packet::SetPayloadSize(size_t size_bytes) {
   RTC_DCHECK_EQ(padding_size_, 0);
   if (payload_offset_ + size_bytes > capacity()) {
     LOG(LS_WARNING) << "Cannot set payload, not enough space in buffer.";
     return nullptr;
   }
-  // Reset payload size to 0. If CopyOnWrite buffer_ was shared, this will cause
-  // reallocation and memcpy. Setting size to just headers reduces memcpy size.
-  buffer_.SetSize(payload_offset_);
   payload_size_ = size_bytes;
   buffer_.SetSize(payload_offset_ + payload_size_);
   return WriteAt(payload_offset_);
-}
-
-void Packet::SetPayloadSize(size_t size_bytes) {
-  RTC_DCHECK_EQ(padding_size_, 0);
-  RTC_DCHECK_LE(size_bytes, payload_size_);
-  payload_size_ = size_bytes;
-  buffer_.SetSize(payload_offset_ + payload_size_);
 }
 
 bool Packet::SetPadding(uint8_t size_bytes, Random* random) {
