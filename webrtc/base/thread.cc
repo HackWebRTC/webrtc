@@ -24,11 +24,6 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 
-#if defined(WEBRTC_MAC)
-#include "webrtc/base/maccocoathreadhelper.h"
-#include "webrtc/base/scoped_autorelease_pool.h"
-#endif
-
 namespace rtc {
 
 ThreadManager* ThreadManager::Instance() {
@@ -42,28 +37,19 @@ Thread* Thread::Current() {
 }
 
 #if defined(WEBRTC_POSIX)
+#if !defined(WEBRTC_MAC)
 ThreadManager::ThreadManager() {
   pthread_key_create(&key_, nullptr);
 #ifndef NO_MAIN_THREAD_WRAPPING
   WrapCurrentThread();
 #endif
-#if defined(WEBRTC_MAC)
-  // This is necessary to alert the cocoa runtime of the fact that
-  // we are running in a multithreaded environment.
-  InitCocoaMultiThreading();
-#endif
 }
 
 ThreadManager::~ThreadManager() {
-#if defined(WEBRTC_MAC)
-  // This is called during exit, at which point apparently no NSAutoreleasePools
-  // are available; but we might still need them to do cleanup (or we get the
-  // "no autoreleasepool in place, just leaking" warning when exiting).
-  ScopedAutoreleasePool pool;
-#endif
   UnwrapCurrentThread();
   pthread_key_delete(key_);
 }
+#endif
 
 Thread *ThreadManager::CurrentThread() {
   return static_cast<Thread *>(pthread_getspecific(key_));
@@ -112,11 +98,6 @@ void ThreadManager::UnwrapCurrentThread() {
     delete t;
   }
 }
-
-struct ThreadInit {
-  Thread* thread;
-  Runnable* runnable;
-};
 
 Thread::ScopedDisallowBlockingCalls::ScopedDisallowBlockingCalls()
   : thread_(Thread::Current()),
@@ -298,6 +279,7 @@ void Thread::AssertBlockingIsAllowedOnCurrentThread() {
 }
 
 // static
+#if !defined(WEBRTC_MAC)
 #if defined(WEBRTC_WIN)
 DWORD WINAPI Thread::PreRun(LPVOID pv) {
 #else
@@ -306,10 +288,6 @@ void* Thread::PreRun(void* pv) {
   ThreadInit* init = static_cast<ThreadInit*>(pv);
   ThreadManager::Instance()->SetCurrentThread(init->thread);
   rtc::SetCurrentThreadName(init->thread->name_.c_str());
-#if defined(WEBRTC_MAC)
-  // Make sure the new thread has an autoreleasepool
-  ScopedAutoreleasePool pool;
-#endif
   if (init->runnable) {
     init->runnable->Run(init->thread);
   } else {
@@ -322,6 +300,7 @@ void* Thread::PreRun(void* pv) {
   return nullptr;
 #endif
 }
+#endif
 
 void Thread::Run() {
   ProcessMessages(kForever);
@@ -478,18 +457,14 @@ void Thread::Clear(MessageHandler* phandler,
   MessageQueue::Clear(phandler, id, removed);
 }
 
+#if !defined(WEBRTC_MAC)
+// Note that these methods have a separate implementation for mac and ios
+// defined in webrtc/base/thread_darwin.mm.
 bool Thread::ProcessMessages(int cmsLoop) {
   int64_t msEnd = (kForever == cmsLoop) ? 0 : TimeAfter(cmsLoop);
   int cmsNext = cmsLoop;
 
   while (true) {
-#if defined(WEBRTC_MAC)
-    // see: http://developer.apple.com/library/mac/#documentation/Cocoa/Reference/Foundation/Classes/NSAutoreleasePool_Class/Reference/Reference.html
-    // Each thread is supposed to have an autorelease pool. Also for event loops
-    // like this, autorelease pool needs to be created and drained/released
-    // for each cycle.
-    ScopedAutoreleasePool pool;
-#endif
     Message msg;
     if (!Get(&msg, cmsNext))
       return !IsQuitting();
@@ -502,6 +477,7 @@ bool Thread::ProcessMessages(int cmsLoop) {
     }
   }
 }
+#endif
 
 bool Thread::WrapCurrentWithThreadManager(ThreadManager* thread_manager,
                                           bool need_synchronize_access) {

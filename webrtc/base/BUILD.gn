@@ -544,11 +544,8 @@ rtc_static_library("rtc_base") {
 
   if (is_ios || is_mac) {
     sources += [
-      "maccocoathreadhelper.h",
-      "maccocoathreadhelper.mm",
       "macifaddrs_converter.cc",
-      "scoped_autorelease_pool.h",
-      "scoped_autorelease_pool.mm",
+      "thread_darwin.mm",
     ]
   }
 

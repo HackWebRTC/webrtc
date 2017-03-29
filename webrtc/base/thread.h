@@ -238,6 +238,11 @@ class LOCKABLE Thread : public MessageQueue {
   friend class ScopedDisallowBlockingCalls;
 
  private:
+  struct ThreadInit {
+    Thread* thread;
+    Runnable* runnable;
+  };
+
 #if defined(WEBRTC_WIN)
   static DWORD WINAPI PreRun(LPVOID context);
 #else
