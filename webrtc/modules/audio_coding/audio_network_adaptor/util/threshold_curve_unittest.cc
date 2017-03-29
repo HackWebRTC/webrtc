@@ -13,6 +13,27 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/util/threshold_curve.h"
 #include "webrtc/test/gtest.h"
 
+// A threshold curve divides 2D space into three domains - below, on and above
+// the threshold curve.
+// The curve is defined by two points. Those points, P1 and P2, are ordered so
+// that (P1.x <= P2.x && P1.y >= P2.y).
+// The part of the curve which is between the two points is hereon referred
+// to as the "segment".
+// A "ray" extends from P1 directly upwards into infinity; that's the "vertical
+// ray". Likewise, a "horizontal ray" extends from P2 directly rightwards.
+//
+//  ^   |                         //
+//  |   | vertical ray            //
+//  |   |                         //
+//  |   |                         //
+//  | P1|                         //
+//  |    \                        //
+//  |     \ segment               //
+//  |      \                      //
+//  |       \    horizontal ray   //
+//  |     P2 ------------------   //
+//  *---------------------------> //
+
 namespace webrtc {
 
 namespace {
@@ -28,7 +49,10 @@ void CheckRelativePosition(const ThresholdCurve& curve,
 }
 }  // namespace
 
-TEST(ThresholdCurveTest, PointPosition) {
+// Test that the curve correctly reports the below/above position of points,
+// when the curve is a "normal" one - P1 and P2 are different in both their
+// X and Y values.
+TEST(ThresholdCurveTest, PointPositionToCommonCurve) {
   // The points (P1-P2) define the curve.           //
   // All other points are above/below/on the curve. //
   //                                                //
@@ -117,7 +141,9 @@ TEST(ThresholdCurveTest, PointPosition) {
   }
 }
 
-TEST(ThresholdCurveTest, CurvePointsOnHorizontalLine) {
+// Test that the curve correctly reports the below/above position of points,
+// when the curve is defined by two points with the same Y value.
+TEST(ThresholdCurveTest, PointPositionToCurveWithHorizaontalSegment) {
   // The points (P1-P2) define the curve.
   // All other points are above/below/on the curve.
   //
@@ -180,7 +206,9 @@ TEST(ThresholdCurveTest, CurvePointsOnHorizontalLine) {
   }
 }
 
-TEST(ThresholdCurveTest, CurvePointsOnVerticalLine) {
+// Test that the curve correctly reports the below/above position of points,
+// when the curve is defined by two points with the same X value.
+TEST(ThresholdCurveTest, PointPositionToCurveWithVerticalSegment) {
   // The points (P1-P2) define the curve.
   // All other points are above/below/on the curve.
   //
@@ -249,7 +277,9 @@ TEST(ThresholdCurveTest, CurvePointsOnVerticalLine) {
   }
 }
 
-TEST(ThresholdCurveTest, SinglePointCurve) {
+// Test that the curve correctly reports the below/above position of points,
+// when the curve is defined by two points which are identical.
+TEST(ThresholdCurveTest, PointPositionCurveWithNullSegment) {
   // The points (P1-P2) define the curve.
   // All other points are above/below/on the curve.
   //
@@ -290,7 +320,9 @@ TEST(ThresholdCurveTest, SinglePointCurve) {
   }
 }
 
-TEST(ThresholdCurveTest, TwoCurvesSameProjection) {
+// Test that the relative position of two curves is computed correctly when
+// the two curves have the same projection on the X-axis.
+TEST(ThresholdCurveTest, TwoCurvesSegmentHasSameProjectionAxisX) {
   //  ^                        //
   //  | C1 + C2                //
   //  |  |                     //
@@ -316,7 +348,10 @@ TEST(ThresholdCurveTest, TwoCurvesSameProjection) {
   EXPECT_FALSE(c2_curve <= c1_curve);
 }
 
-TEST(ThresholdCurveTest, HigherCurveProjectionWithinLowerProjection) {
+// Test that the relative position of two curves is computed correctly when
+// the higher curve's projection on the X-axis is a strict subset of the
+// lower curve's projection on the X-axis (on both ends).
+TEST(ThresholdCurveTest, TwoCurvesSegmentOfHigherSubsetProjectionAxisX) {
   //  ^                       //
   //  | C1    C2              //
   //  |  |    |               //
@@ -343,7 +378,43 @@ TEST(ThresholdCurveTest, HigherCurveProjectionWithinLowerProjection) {
   EXPECT_FALSE(c2_curve <= c1_curve);
 }
 
-TEST(ThresholdCurveTest, SecondCurvePointsOnFirstCurveExtensions) {
+// Test that the relative position of two curves is computed correctly when
+// the higher curve's right point is above lower curve's horizontal ray (meaning
+// the higher curve's projection on the X-axis extends further right than
+// the lower curve's).
+TEST(ThresholdCurveTest,
+     TwoCurvesRightPointOfHigherCurveAboveHorizontalRayOfLower) {
+  //  ^                        //
+  //  | C1 + C2                //
+  //  |  |                     //
+  //  |  |\                    //
+  //  |  | \                   //
+  //  |  |  \                  //
+  //  |  |   \                 //
+  //  |  |    \                //
+  //  |   \    \               //
+  //  |    \    \              //
+  //  |     \    \             //
+  //  |      \    ----- C2     //
+  //  |       --------- C1     //
+  //  *--------------------->  //
+
+  constexpr ThresholdCurve::Point c1_left{5, 10};
+  constexpr ThresholdCurve::Point c1_right{10, 5};
+  const ThresholdCurve c1_curve(c1_left, c1_right);
+
+  constexpr ThresholdCurve::Point c2_left{c1_left.x, c1_left.y + 1};
+  constexpr ThresholdCurve::Point c2_right{c1_right.x + 1, c1_right.y + 1};
+  const ThresholdCurve c2_curve(c2_left, c2_right);
+
+  EXPECT_TRUE(c1_curve <= c2_curve);
+  EXPECT_FALSE(c2_curve <= c1_curve);
+}
+
+// Test that the relative position of two curves is computed correctly when
+// the higher curve's points are on the lower curve's rays (left point on the
+// veritcal ray, right point on the horizontal ray).
+TEST(ThresholdCurveTest, TwoCurvesPointsOfHigherOnRaysOfLower) {
   //  ^
   //  | C1 + C2               //
   //  |  |                    //
@@ -369,7 +440,9 @@ TEST(ThresholdCurveTest, SecondCurvePointsOnFirstCurveExtensions) {
   EXPECT_FALSE(c2_curve <= c1_curve);
 }
 
-TEST(ThresholdCurveTest, SecondCurveCrossesLeftExtension) {
+// Test that the relative position of two curves is computed correctly when
+// the second curve's segment intersects the first curve's vertical ray.
+TEST(ThresholdCurveTest, SecondCurveCrossesVerticalRayOfFirstCurve) {
   //  ^                       //
   //  | C2 C1                 //
   //  |  | |                  //
@@ -396,7 +469,9 @@ TEST(ThresholdCurveTest, SecondCurveCrossesLeftExtension) {
   EXPECT_FALSE(c2_curve <= c1_curve);
 }
 
-TEST(ThresholdCurveTest, SecondCurveCrossesRightExtension) {
+// Test that the relative position of two curves is computed correctly when
+// the second curve's segment intersects the first curve's horizontal ray.
+TEST(ThresholdCurveTest, SecondCurveCrossesHorizontalRayOfFirstCurve) {
   //  ^                      //
   //  | C1 +  C2             //
   //  |  |                   //
@@ -422,7 +497,9 @@ TEST(ThresholdCurveTest, SecondCurveCrossesRightExtension) {
   EXPECT_FALSE(c2_curve <= c1_curve);
 }
 
-TEST(ThresholdCurveTest, SecondCurveCrossesFirstCurveBetweenPoints) {
+// Test that the relative position of two curves is computed correctly when
+// the second curve's segment intersects the first curve's segment.
+TEST(ThresholdCurveTest, TwoCurvesWithCrossingSegments) {
   //  ^                           //
   //  | C2 C1                     //
   //  | |  |                      //
@@ -458,34 +535,8 @@ TEST(ThresholdCurveTest, SecondCurveCrossesFirstCurveBetweenPoints) {
   EXPECT_FALSE(c2_curve <= c1_curve);
 }
 
-TEST(ThresholdCurveTest, SecondCurveRightPointAboveFirstRightExtension) {
-  //  ^                        //
-  //  | C1 + C2                //
-  //  |  |                     //
-  //  |  |\                    //
-  //  |  | \                   //
-  //  |  |  \                  //
-  //  |  |   \                 //
-  //  |  |    \                //
-  //  |   \    \               //
-  //  |    \    \              //
-  //  |     \    \             //
-  //  |      \    ----- C2     //
-  //  |       --------- C1     //
-  //  *--------------------->  //
-
-  constexpr ThresholdCurve::Point c1_left{5, 10};
-  constexpr ThresholdCurve::Point c1_right{10, 5};
-  const ThresholdCurve c1_curve(c1_left, c1_right);
-
-  constexpr ThresholdCurve::Point c2_left{c1_left.x, c1_left.y + 1};
-  constexpr ThresholdCurve::Point c2_right{c1_right.x + 1, c1_right.y + 1};
-  const ThresholdCurve c2_curve(c2_left, c2_right);
-
-  EXPECT_TRUE(c1_curve <= c2_curve);
-  EXPECT_FALSE(c2_curve <= c1_curve);
-}
-
+// Test that the relative position of two curves is computed correctly when
+// both curves are identical.
 TEST(ThresholdCurveTest, IdenticalCurves) {
   //  ^                       //
   //  |  C1 + C2              //
@@ -507,7 +558,11 @@ TEST(ThresholdCurveTest, IdenticalCurves) {
   EXPECT_TRUE(c2_curve <= c1_curve);
 }
 
-TEST(ThresholdCurveTest, AlmostIdenticalCurvesSecondContinuesOnOtherLeftSide) {
+// Test that the relative position of two curves is computed correctly when
+// they are "nearly identical" - the first curve's segment is contained within
+// the second curve's segment, but the second curve's segment extends further
+// to the left (which also produces separate vertical rays for the curves).
+TEST(ThresholdCurveTest, NearlyIdenticalCurvesSecondContinuesOnOtherLeftSide) {
   //  ^                       //
   //  | C2 C1                 //
   //  |  | |                  //
@@ -532,7 +587,11 @@ TEST(ThresholdCurveTest, AlmostIdenticalCurvesSecondContinuesOnOtherLeftSide) {
   EXPECT_TRUE(c2_curve <= c1_curve);
 }
 
-TEST(ThresholdCurveTest, AlmostIdenticalCurvesSecondContinuesOnOtherRightSide) {
+// Test that the relative position of two curves is computed correctly when
+// they are "nearly identical" - the first curve's segment is contained within
+// the second curve's segment, but the second curve's segment extends further
+// to the right (which also produces separate horizontal rays for the curves).
+TEST(ThresholdCurveTest, NearlyIdenticalCurvesSecondContinuesOnOtherRightSide) {
   //  ^                       //
   //  | C1 + C2               //
   //  |  |                    //
@@ -558,17 +617,13 @@ TEST(ThresholdCurveTest, AlmostIdenticalCurvesSecondContinuesOnOtherRightSide) {
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+// The higher-left point must be given as the first point, and the lower-right
+// point must be given as the second.
+// This necessarily produces a non-positive slope.
 TEST(ThresholdCurveTest, WrongOrderPoints) {
   std::unique_ptr<ThresholdCurve> curve;
   constexpr ThresholdCurve::Point left{5, 10};
   constexpr ThresholdCurve::Point right{10, 5};
-  EXPECT_DEATH(curve.reset(new ThresholdCurve(right, left)), "");
-}
-
-TEST(ThresholdCurveTest, SlopeMustBeNonPositive) {
-  std::unique_ptr<ThresholdCurve> curve;
-  constexpr ThresholdCurve::Point left{5, 5};
-  constexpr ThresholdCurve::Point right{10, 10};
   EXPECT_DEATH(curve.reset(new ThresholdCurve(right, left)), "");
 }
 #endif
