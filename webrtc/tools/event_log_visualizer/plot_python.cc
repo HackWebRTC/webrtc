@@ -75,6 +75,11 @@ void PythonPlot::Draw() {
             "plt.plot(x%zu[1:], y%zu[:-1], color=rgb_colors[%zu], "
             "label=\'%s\')\n",
             i, i, i, series_list_[i].label.c_str());
+      } else if (series_list_[i].style == DOT_GRAPH) {
+        printf(
+            "plt.plot(x%zu, y%zu, color=rgb_colors[%zu], label=\'%s\', "
+            "marker='.', ls=' ')\n",
+            i, i, i, series_list_[i].label.c_str());
       } else {
         printf("raise Exception(\"Unknown graph type\")\n");
       }

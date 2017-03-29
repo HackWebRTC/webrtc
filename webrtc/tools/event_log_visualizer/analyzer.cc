@@ -477,9 +477,12 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         break;
       }
       case ParsedRtcEventLog::BWE_PROBE_CLUSTER_CREATED_EVENT: {
+        bwe_probe_cluster_created_events_.push_back(
+            parsed_log_.GetBweProbeClusterCreated(i));
         break;
       }
       case ParsedRtcEventLog::BWE_PROBE_RESULT_EVENT: {
+        bwe_probe_result_events_.push_back(parsed_log_.GetBweProbeResult(i));
         break;
       }
       case ParsedRtcEventLog::UNKNOWN_EVENT: {
@@ -938,7 +941,26 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
       float y = static_cast<float>(bwe_update.new_bitrate) / 1000;
       time_series->points.emplace_back(x, y);
     }
+
+    TimeSeries* created_series =
+        plot->AddTimeSeries("Probe cluster created.", DOT_GRAPH);
+    for (auto& cluster : bwe_probe_cluster_created_events_) {
+      float x = static_cast<float>(cluster.timestamp - begin_time_) / 1000000;
+      float y = static_cast<float>(cluster.bitrate_bps) / 1000;
+      created_series->points.emplace_back(x, y);
+    }
+
+    TimeSeries* result_series =
+        plot->AddTimeSeries("Probing results.", DOT_GRAPH);
+    for (auto& result : bwe_probe_result_events_) {
+      if (result.bitrate_bps) {
+        float x = static_cast<float>(result.timestamp - begin_time_) / 1000000;
+        float y = static_cast<float>(*result.bitrate_bps) / 1000;
+        result_series->points.emplace_back(x, y);
+      }
+    }
   }
+
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Bitrate (kbps)", kBottomMargin, kTopMargin);
   if (desired_direction == webrtc::PacketDirection::kIncomingPacket) {

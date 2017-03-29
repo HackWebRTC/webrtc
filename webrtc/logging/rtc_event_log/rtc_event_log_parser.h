@@ -35,6 +35,21 @@ class ParsedRtcEventLog {
   friend class RtcEventLogTestHelper;
 
  public:
+  struct BweProbeClusterCreatedEvent {
+    uint64_t timestamp;
+    uint32_t id;
+    uint64_t bitrate_bps;
+    uint32_t min_packets;
+    uint32_t min_bytes;
+  };
+
+  struct BweProbeResultEvent {
+    uint64_t timestamp;
+    uint32_t id;
+    rtc::Optional<uint64_t> bitrate_bps;
+    rtc::Optional<ProbeFailureReason> failure_reason;
+  };
+
   enum EventType {
     UNKNOWN_EVENT = 0,
     LOG_START = 1,
@@ -141,6 +156,11 @@ class ParsedRtcEventLog {
   void GetAudioNetworkAdaptation(
       size_t index,
       AudioNetworkAdaptor::EncoderRuntimeConfig* config) const;
+
+  ParsedRtcEventLog::BweProbeClusterCreatedEvent GetBweProbeClusterCreated(
+      size_t index) const;
+
+  ParsedRtcEventLog::BweProbeResultEvent GetBweProbeResult(size_t index) const;
 
  private:
   std::vector<rtclog::Event> events_;

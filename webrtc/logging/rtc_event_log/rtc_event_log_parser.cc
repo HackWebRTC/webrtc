@@ -534,4 +534,58 @@ void ParsedRtcEventLog::GetAudioNetworkAdaptation(
         rtc::Optional<float>(ana_event.uplink_packet_loss_fraction());
 }
 
+ParsedRtcEventLog::BweProbeClusterCreatedEvent
+ParsedRtcEventLog::GetBweProbeClusterCreated(size_t index) const {
+  RTC_CHECK_LT(index, GetNumberOfEvents());
+  const rtclog::Event& event = events_[index];
+  RTC_CHECK(event.has_type());
+  RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT);
+  RTC_CHECK(event.has_probe_cluster());
+  const rtclog::BweProbeCluster& pcc_event = event.probe_cluster();
+  BweProbeClusterCreatedEvent res;
+  res.timestamp = GetTimestamp(index);
+  RTC_CHECK(pcc_event.has_id());
+  res.id = pcc_event.id();
+  RTC_CHECK(pcc_event.has_bitrate_bps());
+  res.bitrate_bps = pcc_event.bitrate_bps();
+  RTC_CHECK(pcc_event.has_min_packets());
+  res.min_packets = pcc_event.min_packets();
+  RTC_CHECK(pcc_event.has_min_bytes());
+  res.min_bytes = pcc_event.min_bytes();
+  return res;
+}
+
+ParsedRtcEventLog::BweProbeResultEvent ParsedRtcEventLog::GetBweProbeResult(
+    size_t index) const {
+  RTC_CHECK_LT(index, GetNumberOfEvents());
+  const rtclog::Event& event = events_[index];
+  RTC_CHECK(event.has_type());
+  RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PROBE_RESULT_EVENT);
+  RTC_CHECK(event.has_probe_result());
+  const rtclog::BweProbeResult& pr_event = event.probe_result();
+  BweProbeResultEvent res;
+  res.timestamp = GetTimestamp(index);
+  RTC_CHECK(pr_event.has_id());
+  res.id = pr_event.id();
+
+  RTC_CHECK(pr_event.has_result());
+  if (pr_event.result() == rtclog::BweProbeResult::SUCCESS) {
+    RTC_CHECK(pr_event.has_bitrate_bps());
+    res.bitrate_bps = rtc::Optional<uint64_t>(pr_event.bitrate_bps());
+  } else if (pr_event.result() ==
+             rtclog::BweProbeResult::INVALID_SEND_RECEIVE_INTERVAL) {
+    res.failure_reason =
+        rtc::Optional<ProbeFailureReason>(kInvalidSendReceiveInterval);
+  } else if (pr_event.result() ==
+             rtclog::BweProbeResult::INVALID_SEND_RECEIVE_RATIO) {
+    res.failure_reason =
+        rtc::Optional<ProbeFailureReason>(kInvalidSendReceiveRatio);
+  } else if (pr_event.result() == rtclog::BweProbeResult::TIMEOUT) {
+    res.failure_reason = rtc::Optional<ProbeFailureReason>(kTimeout);
+  } else {
+    RTC_NOTREACHED();
+  }
+
+  return res;
+}
 }  // namespace webrtc
