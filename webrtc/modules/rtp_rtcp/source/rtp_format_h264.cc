@@ -551,9 +551,7 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
       case H264::NaluType::kEndOfSequence:
       case H264::NaluType::kEndOfStream:
       case H264::NaluType::kFiller:
-        break;
       case H264::NaluType::kSei:
-        parsed_payload->frame_type = kVideoFrameKey;
         break;
       case H264::NaluType::kStapA:
       case H264::NaluType::kFuA:
