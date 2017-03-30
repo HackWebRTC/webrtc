@@ -52,13 +52,8 @@ constexpr double kDefaultMedianSlopeThresholdGain = 4.0;
 
 constexpr int kMaxConsecutiveFailedLookups = 5;
 
-const char kBitrateEstimateExperiment[] = "WebRTC-ImprovedBitrateEstimate";
 const char kBweTrendlineFilterExperiment[] = "WebRTC-BweTrendlineFilter";
 const char kBweMedianSlopeFilterExperiment[] = "WebRTC-BweMedianSlopeFilter";
-
-bool BitrateEstimateExperimentIsEnabled() {
-  return webrtc::field_trial::IsEnabled(kBitrateEstimateExperiment);
-}
 
 bool TrendlineFilterExperimentIsEnabled() {
   std::string experiment_string =
@@ -153,19 +148,9 @@ DelayBasedBwe::BitrateEstimator::BitrateEstimator()
       current_win_ms_(0),
       prev_time_ms_(-1),
       bitrate_estimate_(-1.0f),
-      bitrate_estimate_var_(50.0f),
-      old_estimator_(kBitrateWindowMs, 8000),
-      in_experiment_(BitrateEstimateExperimentIsEnabled()) {}
+      bitrate_estimate_var_(50.0f) {}
 
 void DelayBasedBwe::BitrateEstimator::Update(int64_t now_ms, int bytes) {
-  if (!in_experiment_) {
-    old_estimator_.Update(bytes, now_ms);
-    rtc::Optional<uint32_t> rate = old_estimator_.Rate(now_ms);
-    bitrate_estimate_ = -1.0f;
-    if (rate)
-      bitrate_estimate_ = *rate / 1000.0f;
-    return;
-  }
   int rate_window_ms = kRateWindowMs;
   // We use a larger window at the beginning to get a more stable sample that
   // we can use to initialize the estimate.

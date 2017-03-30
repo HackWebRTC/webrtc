@@ -17,7 +17,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/congestion_controller/median_slope_estimator.h"
 #include "webrtc/modules/congestion_controller/probe_bitrate_estimator.h"
@@ -77,8 +76,6 @@ class DelayBasedBwe {
     int64_t prev_time_ms_;
     float bitrate_estimate_;
     float bitrate_estimate_var_;
-    RateStatistics old_estimator_;
-    const bool in_experiment_;
   };
 
   Result IncomingPacketFeedback(const PacketFeedback& packet_feedback);

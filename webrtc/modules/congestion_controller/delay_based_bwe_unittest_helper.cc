@@ -411,7 +411,7 @@ void DelayBasedBweTest::CapacityDropTestHelper(
   uint32_t bitrate_bps = SteadyStateRun(
       kDefaultSsrc, steady_state_time * kFramerate, kStartBitrate,
       kMinExpectedBitrate, kMaxExpectedBitrate, kInitialCapacityBps);
-  EXPECT_NEAR(kInitialCapacityBps, bitrate_bps, 130000u);
+  EXPECT_NEAR(kInitialCapacityBps, bitrate_bps, 150000u);
   bitrate_observer_.Reset();
 
   // Add an offset to make sure the BWE can handle it.
