@@ -199,7 +199,6 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
                               *j_media_codec_video_decoder_class_,
                               "<init>",
                               "()V"))) {
-  ScopedLocalRefFrame local_ref_frame(jni);
   codec_thread_->SetName("MediaCodecVideoDecoder", NULL);
   RTC_CHECK(codec_thread_->Start()) << "Failed to start MediaCodecVideoDecoder";
 
@@ -1014,8 +1013,9 @@ webrtc::VideoDecoder* MediaCodecVideoDecoderFactory::CreateVideoDecoder(
   for (VideoCodecType codec_type : supported_codec_types_) {
     if (codec_type == type) {
       ALOGD << "Create HW video decoder for type " << (int)type;
-      return new MediaCodecVideoDecoder(AttachCurrentThreadIfNeeded(), type,
-                                        egl_context_);
+      JNIEnv* jni = AttachCurrentThreadIfNeeded();
+      ScopedLocalRefFrame local_ref_frame(jni);
+      return new MediaCodecVideoDecoder(jni, type, egl_context_);
     }
   }
   ALOGW << "Can not find HW video decoder for type " << (int)type;
