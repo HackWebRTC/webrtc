@@ -35,7 +35,7 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
     // tolerance on Y values. Some unit tests produce Y values close
     // to 16 rather than close to zero, for supposedly black frames.
     // Largest value observed is 34, e.g., running
-    // P2PTestConductor.LocalP2PTest16To9 (peerconnection_unittests).
+    // PeerConnectionIntegrationTest.SendAndReceive16To9AspectRatio.
     black_frame_ = CheckFrameColorYuv(0, 48, 128, 128, 128, 128, &frame);
     // Treat unexpected frame size as error.
     ++num_rendered_frames_;

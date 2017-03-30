@@ -39,8 +39,8 @@ class MockCreateSessionDescriptionObserver
   }
   bool called() const { return called_; }
   bool result() const { return result_; }
-  SessionDescriptionInterface* release_desc() {
-    return desc_.release();
+  std::unique_ptr<SessionDescriptionInterface> MoveDescription() {
+    return std::move(desc_);
   }
 
  private:

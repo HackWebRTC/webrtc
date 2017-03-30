@@ -732,6 +732,8 @@ class PeerConnectionInterfaceTest : public testing::Test {
         new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
     port_allocator_ = port_allocator.get();
 
+    // Create certificate generator unless DTLS constraint is explicitly set to
+    // false.
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
     bool dtls;
     if (FindConstraint(constraints,
@@ -850,7 +852,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
       pc_->CreateAnswer(observer, constraints);
     }
     EXPECT_EQ_WAIT(true, observer->called(), kTimeout);
-    desc->reset(observer->release_desc());
+    *desc = observer->MoveDescription();
     return observer->result();
   }
 
@@ -1647,6 +1649,18 @@ TEST_F(PeerConnectionInterfaceTest, RemoveTrackAfterAddStream) {
   const cricket::MediaContentDescription* video_desc =
       cricket::GetFirstVideoContentDescription(offer->description());
   EXPECT_TRUE(video_desc == nullptr);
+}
+
+// Verify that CreateDtmfSender only succeeds if called with a valid local
+// track. Other aspects of DtmfSenders are tested in
+// peerconnection_integrationtest.cc.
+TEST_F(PeerConnectionInterfaceTest, CreateDtmfSenderWithInvalidParams) {
+  CreatePeerConnection();
+  AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
+  EXPECT_EQ(nullptr, pc_->CreateDtmfSender(nullptr));
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> non_localtrack(
+      pc_factory_->CreateAudioTrack("dummy_track", nullptr));
+  EXPECT_EQ(nullptr, pc_->CreateDtmfSender(non_localtrack));
 }
 
 // Test creating a sender with a stream ID, and ensure the ID is populated
@@ -3148,6 +3162,128 @@ TEST_F(PeerConnectionInterfaceTest,
   int64_t max_size_bytes = 1024;
   EXPECT_FALSE(pc_->StartRtcEventLog(file, max_size_bytes));
   pc_->StopRtcEventLog();
+}
+
+// Test that ICE renomination isn't offered if it's not enabled in the PC's
+// RTCConfiguration.
+TEST_F(PeerConnectionInterfaceTest, IceRenominationNotOffered) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.enable_ice_renomination = false;
+  CreatePeerConnection(config, nullptr);
+  AddVoiceStream("foo");
+
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  cricket::SessionDescription* desc = offer->description();
+  EXPECT_EQ(1u, desc->transport_infos().size());
+  EXPECT_FALSE(
+      desc->transport_infos()[0].description.GetIceParameters().renomination);
+}
+
+// Test that the ICE renomination option is present in generated offers/answers
+// if it's enabled in the PC's RTCConfiguration.
+TEST_F(PeerConnectionInterfaceTest, IceRenominationOptionInOfferAndAnswer) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.enable_ice_renomination = true;
+  CreatePeerConnection(config, nullptr);
+  AddVoiceStream("foo");
+
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  cricket::SessionDescription* desc = offer->description();
+  EXPECT_EQ(1u, desc->transport_infos().size());
+  EXPECT_TRUE(
+      desc->transport_infos()[0].description.GetIceParameters().renomination);
+
+  // Set the offer as a remote description, then create an answer and ensure it
+  // has the renomination flag too.
+  EXPECT_TRUE(DoSetRemoteDescription(offer.release()));
+  std::unique_ptr<SessionDescriptionInterface> answer;
+  ASSERT_TRUE(DoCreateAnswer(&answer, nullptr));
+  desc = answer->description();
+  EXPECT_EQ(1u, desc->transport_infos().size());
+  EXPECT_TRUE(
+      desc->transport_infos()[0].description.GetIceParameters().renomination);
+}
+
+// Test that if CreateOffer is called with the deprecated "offer to receive
+// audio/video" constraints, they're processed and result in an offer with
+// audio/video sections just as if RTCOfferAnswerOptions had been used.
+TEST_F(PeerConnectionInterfaceTest, CreateOfferWithOfferToReceiveConstraints) {
+  CreatePeerConnection();
+
+  FakeConstraints constraints;
+  constraints.SetMandatoryReceiveAudio(true);
+  constraints.SetMandatoryReceiveVideo(true);
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
+
+  cricket::SessionDescription* desc = offer->description();
+  const cricket::ContentInfo* audio = cricket::GetFirstAudioContent(desc);
+  const cricket::ContentInfo* video = cricket::GetFirstVideoContent(desc);
+  ASSERT_NE(nullptr, audio);
+  ASSERT_NE(nullptr, video);
+  EXPECT_FALSE(audio->rejected);
+  EXPECT_FALSE(video->rejected);
+}
+
+// Test that if CreateAnswer is called with the deprecated "offer to receive
+// audio/video" constraints, they're processed and can be used to reject an
+// offered m= section just as can be done with RTCOfferAnswerOptions;
+TEST_F(PeerConnectionInterfaceTest, CreateAnswerWithOfferToReceiveConstraints) {
+  CreatePeerConnection();
+
+  // First, create an offer with audio/video and apply it as a remote
+  // description.
+  FakeConstraints constraints;
+  constraints.SetMandatoryReceiveAudio(true);
+  constraints.SetMandatoryReceiveVideo(true);
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
+  EXPECT_TRUE(DoSetRemoteDescription(offer.release()));
+
+  // Now create answer that rejects audio/video.
+  constraints.SetMandatoryReceiveAudio(false);
+  constraints.SetMandatoryReceiveVideo(false);
+  std::unique_ptr<SessionDescriptionInterface> answer;
+  ASSERT_TRUE(DoCreateAnswer(&answer, &constraints));
+
+  cricket::SessionDescription* desc = answer->description();
+  const cricket::ContentInfo* audio = cricket::GetFirstAudioContent(desc);
+  const cricket::ContentInfo* video = cricket::GetFirstVideoContent(desc);
+  ASSERT_NE(nullptr, audio);
+  ASSERT_NE(nullptr, video);
+  EXPECT_TRUE(audio->rejected);
+  EXPECT_TRUE(video->rejected);
+}
+
+#ifdef HAVE_SCTP
+#define MAYBE_DataChannelOnlyOfferWithMaxBundlePolicy \
+  DataChannelOnlyOfferWithMaxBundlePolicy
+#else
+#define MAYBE_DataChannelOnlyOfferWithMaxBundlePolicy \
+  DISABLED_DataChannelOnlyOfferWithMaxBundlePolicy
+#endif
+
+// Test that negotiation can succeed with a data channel only, and with the max
+// bundle policy. Previously there was a bug that prevented this.
+TEST_F(PeerConnectionInterfaceTest,
+       MAYBE_DataChannelOnlyOfferWithMaxBundlePolicy) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  CreatePeerConnection(config, nullptr);
+
+  // First, create an offer with only a data channel and apply it as a remote
+  // description.
+  pc_->CreateDataChannel("test", nullptr);
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  EXPECT_TRUE(DoSetRemoteDescription(offer.release()));
+
+  // Create and set answer as well.
+  std::unique_ptr<SessionDescriptionInterface> answer;
+  ASSERT_TRUE(DoCreateAnswer(&answer, nullptr));
+  EXPECT_TRUE(DoSetLocalDescription(answer.release()));
 }
 
 class PeerConnectionMediaConfigTest : public testing::Test {

@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/pc/iceserverparsing.h"
 #include "webrtc/pc/peerconnectionfactory.h"
 #include "webrtc/pc/rtcstatscollector.h"
 #include "webrtc/pc/rtpreceiver.h"
@@ -52,14 +53,6 @@ bool ExtractMediaSessionOptions(
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=5617
 bool ParseConstraintsForAnswer(const MediaConstraintsInterface* constraints,
                                cricket::MediaSessionOptions* session_options);
-
-// Parses the URLs for each server in |servers| to build |stun_servers| and
-// |turn_servers|. Can return SYNTAX_ERROR if the URL is malformed, or
-// INVALID_PARAMETER if a TURN server is missing |username| or |password|.
-RTCErrorType ParseIceServers(
-    const PeerConnectionInterface::IceServers& servers,
-    cricket::ServerAddresses* stun_servers,
-    std::vector<cricket::RelayServerConfig>* turn_servers);
 
 // PeerConnection implements the PeerConnectionInterface interface.
 // It uses WebRtcSession to implement the PeerConnection functionality.

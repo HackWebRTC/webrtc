@@ -648,12 +648,14 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
                             const MediaConstraintsInterface* constraints) {}
 
   // Sets the local session description.
-  // JsepInterface takes the ownership of |desc| even if it fails.
+  // The PeerConnection takes the ownership of |desc| even if it fails.
   // The |observer| callback will be called when done.
+  // TODO(deadbeef): Change |desc| to be a unique_ptr, to make it clear
+  // that this method always takes ownership of it.
   virtual void SetLocalDescription(SetSessionDescriptionObserver* observer,
                                    SessionDescriptionInterface* desc) = 0;
   // Sets the remote session description.
-  // JsepInterface takes the ownership of |desc| even if it fails.
+  // The PeerConnection takes the ownership of |desc| even if it fails.
   // The |observer| callback will be called when done.
   virtual void SetRemoteDescription(SetSessionDescriptionObserver* observer,
                                     SessionDescriptionInterface* desc) = 0;
