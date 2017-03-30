@@ -25,7 +25,6 @@ static const int kExpectedHighVideoBitrateBps = 80000;
 static const int kExpectedHighAudioBitrateBps = 30000;
 static const int kLowBandwidthLimitBps = 20000;
 static const int kExpectedLowBitrateBps = 20000;
-static const int kUnlimitedCapacityBps = 10000000;
 
 std::vector<uint32_t> GenerateSsrcs(size_t num_streams, uint32_t ssrc_offset) {
   std::vector<uint32_t> ssrcs;
@@ -418,9 +417,8 @@ RampUpDownUpTester::RampUpDownUpTester(size_t num_video_streams,
                    rtx,
                    red,
                    report_perf_stats),
-      link_rates_({GetExpectedHighBitrate() / 1000,
-                   kLowBandwidthLimitBps / 1000, kUnlimitedCapacityBps / 1000,
-                   0}),
+      link_rates_({GetHighLinkCapacity(), kLowBandwidthLimitBps / 1000,
+                   GetHighLinkCapacity(), 0}),
       test_state_(kFirstRampup),
       next_state_(kTransitionToNextState),
       state_start_ms_(clock_->TimeInMilliseconds()),
@@ -488,6 +486,10 @@ int RampUpDownUpTester::GetExpectedHighBitrate() const {
   if (num_video_streams_ > 0)
     expected_bitrate_bps += kExpectedHighVideoBitrateBps;
   return expected_bitrate_bps;
+}
+
+int RampUpDownUpTester::GetHighLinkCapacity() const {
+  return 4 * GetExpectedHighBitrate() / (3 * 1000);
 }
 
 size_t RampUpDownUpTester::GetFecBytes() const {
