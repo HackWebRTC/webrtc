@@ -1221,6 +1221,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                                                 const PacketTime& packet_time) {
   TRACE_EVENT0("webrtc", "Call::DeliverRtp");
 
+  RTC_DCHECK(media_type == MediaType::AUDIO || media_type == MediaType::VIDEO);
+
   ReadLockScoped read_lock(*receive_crit_);
   // TODO(nisse): We should parse the RTP header only here, and pass
   // on parsed_packet to the receive streams.
@@ -1234,7 +1236,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
 
   uint32_t ssrc = parsed_packet->Ssrc();
 
-  if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
+  if (media_type == MediaType::AUDIO) {
     auto it = audio_receive_ssrcs_.find(ssrc);
     if (it != audio_receive_ssrcs_.end()) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
@@ -1244,7 +1246,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
       return DELIVERY_OK;
     }
   }
-  if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
+  if (media_type == MediaType::VIDEO) {
     auto it = video_receive_ssrcs_.find(ssrc);
     if (it != video_receive_ssrcs_.end()) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
@@ -1260,7 +1262,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
       return DELIVERY_OK;
     }
   }
-  if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
+  if (media_type == MediaType::VIDEO) {
     received_bytes_per_second_counter_.Add(static_cast<int>(length));
     // TODO(brandtr): Update here when FlexFEC supports protecting audio.
     received_video_bytes_per_second_counter_.Add(static_cast<int>(length));
@@ -1320,10 +1322,7 @@ void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
     return;
   }
   // For audio, we only support send side BWE.
-  // TODO(nisse): Tests passes MediaType::ANY, see
-  // FakeNetworkPipe::Process. We need to treat that as video. Tests
-  // should be fixed to use the same MediaType as the production code.
-  if (media_type != MediaType::AUDIO ||
+  if (media_type == MediaType::VIDEO ||
       (use_send_side_bwe && header.extension.hasTransportSequenceNumber)) {
     receive_side_cc_.OnReceivedPacket(
         packet.arrival_time_ms(), packet.payload_size() + packet.padding_size(),

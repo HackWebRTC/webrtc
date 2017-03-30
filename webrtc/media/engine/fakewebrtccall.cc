@@ -520,19 +520,20 @@ FakeCall::DeliveryStatus FakeCall::DeliverPacket(
     size_t length,
     const webrtc::PacketTime& packet_time) {
   EXPECT_GE(length, 12u);
+  RTC_DCHECK(media_type == webrtc::MediaType::AUDIO ||
+             media_type == webrtc::MediaType::VIDEO);
+
   uint32_t ssrc;
   if (!GetRtpSsrc(packet, length, &ssrc))
     return DELIVERY_PACKET_ERROR;
 
-  if (media_type == webrtc::MediaType::ANY ||
-      media_type == webrtc::MediaType::VIDEO) {
+  if (media_type == webrtc::MediaType::VIDEO) {
     for (auto receiver : video_receive_streams_) {
       if (receiver->GetConfig().rtp.remote_ssrc == ssrc)
         return DELIVERY_OK;
     }
   }
-  if (media_type == webrtc::MediaType::ANY ||
-      media_type == webrtc::MediaType::AUDIO) {
+  if (media_type == webrtc::MediaType::AUDIO) {
     for (auto receiver : audio_receive_streams_) {
       if (receiver->GetConfig().rtp.remote_ssrc == ssrc) {
         receiver->DeliverRtp(packet, length, packet_time);

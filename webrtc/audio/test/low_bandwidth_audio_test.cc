@@ -80,12 +80,14 @@ test::PacketTransport* AudioQualityTest::CreateSendTransport(
     Call* sender_call) {
   return new test::PacketTransport(
       sender_call, this, test::PacketTransport::kSender,
+      MediaType::AUDIO,
       GetNetworkPipeConfig());
 }
 
 test::PacketTransport* AudioQualityTest::CreateReceiveTransport() {
   return new test::PacketTransport(nullptr, this,
-      test::PacketTransport::kReceiver, GetNetworkPipeConfig());
+      test::PacketTransport::kReceiver, MediaType::AUDIO,
+      GetNetworkPipeConfig());
 }
 
 void AudioQualityTest::ModifyAudioConfigs(

@@ -28,13 +28,16 @@ constexpr int64_t kDefaultProcessIntervalMs = 5;
 }
 
 FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
-                                 const FakeNetworkPipe::Config& config)
-    : FakeNetworkPipe(clock, config, 1) {}
+                                 const FakeNetworkPipe::Config& config,
+                                 MediaType media_type)
+    : FakeNetworkPipe(clock, config, media_type, 1) {}
 
 FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  const FakeNetworkPipe::Config& config,
+                                 MediaType media_type,
                                  uint64_t seed)
     : clock_(clock),
+      media_type_(media_type),
       packet_receiver_(NULL),
       random_(seed),
       config_(),
@@ -199,7 +202,7 @@ void FakeNetworkPipe::Process() {
   while (!packets_to_deliver.empty()) {
     NetworkPacket* packet = packets_to_deliver.front();
     packets_to_deliver.pop();
-    packet_receiver_->DeliverPacket(MediaType::ANY, packet->data(),
+    packet_receiver_->DeliverPacket(media_type_, packet->data(),
                                     packet->data_length(), PacketTime());
     delete packet;
   }

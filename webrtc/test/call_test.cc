@@ -26,6 +26,29 @@ namespace {
 const int kVideoRotationRtpExtensionId = 4;
 }
 
+void CallTest::PayloadDemuxer::SetReceiver(PacketReceiver* receiver) {
+  receiver_ = receiver;
+}
+
+PacketReceiver::DeliveryStatus CallTest::PayloadDemuxer::DeliverPacket(
+    MediaType media_type,
+    const uint8_t* packet,
+    size_t length,
+    const PacketTime& packet_time) {
+  if (media_type == MediaType::ANY) {
+    // This simplistic demux logic will not make much sense for RTCP
+    // packets, but it seems that doesn't matter.
+    RTC_CHECK_GE(length, 2);
+    uint8_t pt = packet[1] & 0x7f;
+    if (pt == kFakeVideoSendPayloadType || pt == kFlexfecPayloadType) {
+      media_type = MediaType::VIDEO;
+    } else {
+      media_type = MediaType::AUDIO;
+    }
+  }
+  return receiver_->DeliverPacket(media_type, packet, length, packet_time);
+}
+
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
       video_send_config_(nullptr),
@@ -75,8 +98,20 @@ void CallTest::RunBaseTest(BaseTest* test) {
   send_transport_.reset(test->CreateSendTransport(sender_call_.get()));
 
   if (test->ShouldCreateReceivers()) {
-    send_transport_->SetReceiver(receiver_call_->Receiver());
-    receive_transport_->SetReceiver(sender_call_->Receiver());
+    // For tests using only video or only audio, we rely on each test
+    // configuring the underlying FakeNetworkPipe with the right media
+    // type. But for tests sending both video and audio over the same
+    // FakeNetworkPipe, we need to "demux", i.e., setting the
+    // MediaType based on RTP payload type.
+    if (num_video_streams_ > 0 && num_audio_streams_ > 0) {
+      receive_demuxer_.SetReceiver(receiver_call_->Receiver());
+      send_transport_->SetReceiver(&receive_demuxer_);
+      send_demuxer_.SetReceiver(sender_call_->Receiver());
+      receive_transport_->SetReceiver(&send_demuxer_);
+    } else {
+      send_transport_->SetReceiver(receiver_call_->Receiver());
+      receive_transport_->SetReceiver(sender_call_->Receiver());
+    }
     if (num_video_streams_ > 0)
       receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
     if (num_audio_streams_ > 0)
@@ -459,11 +494,13 @@ void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {
 
 test::PacketTransport* BaseTest::CreateSendTransport(Call* sender_call) {
   return new PacketTransport(sender_call, this, test::PacketTransport::kSender,
+                             MediaType::VIDEO,
                              FakeNetworkPipe::Config());
 }
 
 test::PacketTransport* BaseTest::CreateReceiveTransport() {
   return new PacketTransport(nullptr, this, test::PacketTransport::kReceiver,
+                             MediaType::VIDEO,
                              FakeNetworkPipe::Config());
 }
 

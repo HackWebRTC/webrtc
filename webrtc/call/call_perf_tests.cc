@@ -193,6 +193,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   audio_net_config.loss_percent = 5;
   test::PacketTransport audio_send_transport(sender_call_.get(), &observer,
                                              test::PacketTransport::kSender,
+                                             MediaType::AUDIO,
                                              audio_net_config);
   MediaTypePacketReceiver audio_receiver(receiver_call_->Receiver(),
                                          MediaType::AUDIO);
@@ -200,6 +201,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   test::PacketTransport video_send_transport(sender_call_.get(), &observer,
                                              test::PacketTransport::kSender,
+                                             MediaType::VIDEO,
                                              FakeNetworkPipe::Config());
   MediaTypePacketReceiver video_receiver(receiver_call_->Receiver(),
                                          MediaType::VIDEO);
@@ -207,6 +209,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   test::PacketTransport receive_transport(
       receiver_call_.get(), &observer, test::PacketTransport::kReceiver,
+      MediaType::VIDEO,
       FakeNetworkPipe::Config());
   receive_transport.SetReceiver(sender_call_->Receiver());
 
@@ -343,12 +346,14 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
    private:
     test::PacketTransport* CreateSendTransport(Call* sender_call) override {
       return new test::PacketTransport(
-          sender_call, this, test::PacketTransport::kSender, net_config_);
+          sender_call, this, test::PacketTransport::kSender, MediaType::VIDEO,
+          net_config_);
     }
 
     test::PacketTransport* CreateReceiveTransport() override {
       return new test::PacketTransport(
-          nullptr, this, test::PacketTransport::kReceiver, net_config_);
+          nullptr, this, test::PacketTransport::kReceiver, MediaType::VIDEO,
+          net_config_);
     }
 
     void OnFrame(const VideoFrame& video_frame) override {

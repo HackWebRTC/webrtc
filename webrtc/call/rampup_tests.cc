@@ -89,11 +89,32 @@ void RampUpTester::OnVideoStreamsCreated(
   send_stream_ = send_stream;
 }
 
+MediaType RampUpTester::SelectMediaType() {
+  if (num_video_streams_ > 0) {
+    if (num_audio_streams_ > 0) {
+      // Rely on call to set media type from payload type.
+      return MediaType::ANY;
+    } else {
+      return MediaType::VIDEO;
+    }
+  } else {
+    return MediaType::AUDIO;
+  }
+}
+
 test::PacketTransport* RampUpTester::CreateSendTransport(Call* sender_call) {
   send_transport_ = new test::PacketTransport(sender_call, this,
                                               test::PacketTransport::kSender,
+                                              SelectMediaType(),
                                               forward_transport_config_);
   return send_transport_;
+}
+
+test::PacketTransport* RampUpTester::CreateReceiveTransport() {
+  return new test::PacketTransport(nullptr, this,
+                                   test::PacketTransport::kReceiver,
+                                   SelectMediaType(),
+                                   FakeNetworkPipe::Config());
 }
 
 size_t RampUpTester::GetNumVideoStreams() const {

@@ -210,8 +210,10 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
 
   CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
 
-  test::DirectTransport sender_transport(sender_call_.get());
-  test::DirectTransport receiver_transport(receiver_call_.get());
+  test::DirectTransport sender_transport(
+      sender_call_.get(), MediaType::VIDEO);
+  test::DirectTransport receiver_transport(
+      receiver_call_.get(), MediaType::VIDEO);
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -257,8 +259,10 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
 
   CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
 
-  test::DirectTransport sender_transport(sender_call_.get());
-  test::DirectTransport receiver_transport(receiver_call_.get());
+  test::DirectTransport sender_transport(
+      sender_call_.get(), MediaType::VIDEO);
+  test::DirectTransport receiver_transport(
+      receiver_call_.get(), MediaType::VIDEO);
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -529,6 +533,7 @@ TEST_F(EndToEndTest, ReceivesNackAndRetransmitsAudio) {
     test::PacketTransport* CreateReceiveTransport() override {
       test::PacketTransport* receive_transport = new test::PacketTransport(
           nullptr, this, test::PacketTransport::kReceiver,
+          MediaType::AUDIO,
           FakeNetworkPipe::Config());
       receive_transport_ = receive_transport;
       return receive_transport;
@@ -790,7 +795,8 @@ class FlexfecRenderObserver : public test::EndToEndTest,
     FakeNetworkPipe::Config config;
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(sender_call, this,
-                                     test::PacketTransport::kSender, config);
+                                     test::PacketTransport::kSender,
+                                     MediaType::VIDEO, config);
   }
 
   void OnFrame(const VideoFrame& video_frame) override {
@@ -969,7 +975,8 @@ TEST_F(EndToEndTest, ReceivedUlpfecPacketsNotNacked) {
       FakeNetworkPipe::Config config;
       config.queue_delay_ms = kNetworkDelayMs;
       return new test::PacketTransport(sender_call, this,
-                                       test::PacketTransport::kSender, config);
+                                       test::PacketTransport::kSender,
+                                       MediaType::VIDEO, config);
     }
 
     // TODO(holmer): Investigate why we don't send FEC packets when the bitrate
@@ -1311,8 +1318,10 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
 
   CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
 
-  test::DirectTransport send_transport(sender_call_.get());
-  test::DirectTransport receive_transport(receiver_call_.get());
+  test::DirectTransport send_transport(
+      sender_call_.get(), MediaType::VIDEO);
+  test::DirectTransport receive_transport(
+      receiver_call_.get(), MediaType::VIDEO);
   PacketInputObserver input_observer(receiver_call_->Receiver());
   send_transport.SetReceiver(&input_observer);
   receive_transport.SetReceiver(sender_call_->Receiver());
@@ -1539,10 +1548,10 @@ class MultiStreamTest {
                                    VideoReceiveStream::Config* receive_config) {
   }
   virtual test::DirectTransport* CreateSendTransport(Call* sender_call) {
-    return new test::DirectTransport(sender_call);
+    return new test::DirectTransport(sender_call, MediaType::VIDEO);
   }
   virtual test::DirectTransport* CreateReceiveTransport(Call* receiver_call) {
-    return new test::DirectTransport(receiver_call);
+    return new test::DirectTransport(receiver_call, MediaType::VIDEO);
   }
 };
 
@@ -1621,7 +1630,7 @@ TEST_F(EndToEndTest, AssignsTransportSequenceNumbers) {
     RtpExtensionHeaderObserver(Call* sender_call,
                                const uint32_t& first_media_ssrc,
                                const std::map<uint32_t, uint32_t>& ssrc_map)
-        : DirectTransport(sender_call),
+        : DirectTransport(sender_call, MediaType::VIDEO),
           done_(false, false),
           parser_(RtpHeaderParser::Create()),
           first_media_ssrc_(first_media_ssrc),
@@ -1937,8 +1946,10 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
 
   CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
 
-  test::DirectTransport sender_transport(sender_call_.get());
-  test::DirectTransport receiver_transport(receiver_call_.get());
+  test::DirectTransport sender_transport(
+      sender_call_.get(), MediaType::VIDEO);
+  test::DirectTransport receiver_transport(
+      receiver_call_.get(), MediaType::VIDEO);
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -2102,6 +2113,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
     test::PacketTransport* CreateReceiveTransport() override {
       receive_transport_ = new test::PacketTransport(
           nullptr, this, test::PacketTransport::kReceiver,
+          MediaType::VIDEO,
           FakeNetworkPipe::Config());
       return receive_transport_;
     }
@@ -3065,7 +3077,8 @@ TEST_F(EndToEndTest, GetStats) {
       FakeNetworkPipe::Config network_config;
       network_config.loss_percent = 5;
       return new test::PacketTransport(
-          sender_call, this, test::PacketTransport::kSender, network_config);
+          sender_call, this, test::PacketTransport::kSender, MediaType::VIDEO,
+          network_config);
     }
 
     Call::Config GetSenderCallConfig() override {
@@ -3619,9 +3632,11 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
 
   test::PacketTransport send_transport(sender_call_.get(), &observer,
                                        test::PacketTransport::kSender,
+                                       MediaType::VIDEO,
                                        FakeNetworkPipe::Config());
   test::PacketTransport receive_transport(nullptr, &observer,
                                           test::PacketTransport::kReceiver,
+                                          MediaType::VIDEO,
                                           FakeNetworkPipe::Config());
   send_transport.SetReceiver(receiver_call_->Receiver());
   receive_transport.SetReceiver(sender_call_->Receiver());
@@ -3914,9 +3929,11 @@ TEST_F(EndToEndTest, CallReportsRttForSender) {
 
   FakeNetworkPipe::Config config;
   config.queue_delay_ms = kSendDelayMs;
-  test::DirectTransport sender_transport(config, sender_call_.get());
+  test::DirectTransport sender_transport(
+      config, sender_call_.get(), MediaType::VIDEO);
   config.queue_delay_ms = kReceiveDelayMs;
-  test::DirectTransport receiver_transport(config, receiver_call_.get());
+  test::DirectTransport receiver_transport(
+      config, receiver_call_.get(), MediaType::VIDEO);
   sender_transport.SetReceiver(receiver_call_->Receiver());
   receiver_transport.SetReceiver(sender_call_->Receiver());
 
@@ -3978,7 +3995,7 @@ void EndToEndTest::VerifyNewVideoReceiveStreamsRespectNetworkState(
   CreateCalls(config, config);
   receiver_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
 
-  test::DirectTransport sender_transport(sender_call_.get());
+  test::DirectTransport sender_transport(sender_call_.get(), MediaType::VIDEO);
   sender_transport.SetReceiver(receiver_call_->Receiver());
   CreateSendConfig(1, 0, 0, &sender_transport);
   CreateMatchingReceiveConfigs(transport);

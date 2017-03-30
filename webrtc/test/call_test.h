@@ -59,6 +59,23 @@ class CallTest : public ::testing::Test {
   static const int kNackRtpHistoryMs;
 
  protected:
+  // Needed for tests sending both audio and video on the same
+  // FakeNetworkPipe. We then need to set correct MediaType based on
+  // packet payload type, before passing the packet on to Call.
+  class PayloadDemuxer : public PacketReceiver {
+   public:
+    PayloadDemuxer() = default;
+
+    void SetReceiver(PacketReceiver* receiver);
+    DeliveryStatus DeliverPacket(MediaType media_type,
+                                 const uint8_t* packet,
+                                 size_t length,
+                                 const PacketTime& packet_time) override;
+
+   private:
+    PacketReceiver* receiver_ = nullptr;
+  };
+
   // RunBaseTest overwrites the audio_state and the voice_engine of the send and
   // receive Call configs to simplify test code and avoid having old VoiceEngine
   // APIs in the tests.
@@ -124,6 +141,9 @@ class CallTest : public ::testing::Test {
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
   test::FakeVideoRenderer fake_renderer_;
 
+  PayloadDemuxer receive_demuxer_;
+  PayloadDemuxer send_demuxer_;
+
  private:
   // TODO(holmer): Remove once VoiceEngine is fully refactored to the new API.
   // These methods are used to set up legacy voice engines and channels which is
@@ -172,6 +192,7 @@ class BaseTest : public RtpRtcpObserver {
   virtual Call::Config GetReceiverCallConfig();
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
 
+  // The default implementation creates MediaType::VIDEO transports.
   virtual test::PacketTransport* CreateSendTransport(Call* sender_call);
   virtual test::PacketTransport* CreateReceiveTransport();
 
