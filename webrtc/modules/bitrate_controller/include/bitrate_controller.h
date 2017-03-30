@@ -24,7 +24,6 @@
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class RtcEventLog;
 
 // Deprecated
