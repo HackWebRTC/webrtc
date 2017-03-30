@@ -61,6 +61,7 @@ def print_landmines():
            'landing (changing rtc_executable -> rtc_test on iOS)')
     print ('Clobber to fix https://codereview.webrtc.org/2767383005 before'
            'landing (changing rtc_executable -> rtc_test on iOS)')
+    print 'Another landmine for low_bandwidth_audio_test (webrtc:7430)'
 
 
 def main():
