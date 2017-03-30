@@ -14,10 +14,10 @@
 #include <list>
 #include <memory>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
 #include "webrtc/modules/video_coding/media_opt_util.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 
 namespace webrtc {
 

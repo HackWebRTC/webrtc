@@ -17,8 +17,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call/call.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/test/call_test.h"
 #include "webrtc/test/direct_transport.h"
 #include "webrtc/test/encoder_settings.h"

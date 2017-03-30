@@ -37,7 +37,6 @@
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/timestamp_extrapolator.h"
-#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/video/receive_statistics_proxy.h"
 #include "webrtc/video/vie_remb.h"
 

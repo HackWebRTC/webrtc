@@ -16,7 +16,6 @@
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/utility/include/process_thread.h"
-#include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
 

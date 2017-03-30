@@ -10,6 +10,8 @@
 
 #include "webrtc/modules/audio_device/linux/latebindingsymboltable_linux.h"
 
+#include "webrtc/system_wrappers/include/trace.h"
+
 #ifdef WEBRTC_LINUX
 #include <dlfcn.h>
 #endif

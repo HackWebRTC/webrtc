@@ -16,7 +16,6 @@
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/critical_section_wrapper.h"
-#include "webrtc/system_wrappers/include/trace.h"
 #include "webrtc/system_wrappers/source/condition_variable_event_win.h"
 #include "webrtc/test/gtest.h"
 

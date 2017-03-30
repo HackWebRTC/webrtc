@@ -16,7 +16,6 @@
 #include <string.h>
 
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/system_wrappers/include/trace.h"
 
 // This file provides macros for creating "symbol table" classes to simplify the
 // dynamic loading of symbols from DLLs. Currently the implementation only
@@ -81,8 +80,6 @@ class LateBindingSymbolTable {
     if (undefined_symbols_) {
       // We do not attempt to load again because repeated attempts are not
       // likely to succeed and DLL loading is costly.
-      //WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
-      //           "We know there are undefined symbols");
       return false;
     }
     handle_ = InternalLoadDll(kDllName);
