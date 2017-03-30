@@ -208,14 +208,17 @@ class WebRtcAudioEffects {
     assertTrue(aec == null);
     assertTrue(ns == null);
 
-    // Add logging of supported effects but filter out "VoIP effects", i.e.,
-    // AEC, AEC and NS.
-    for (Descriptor d : AudioEffect.queryEffects()) {
-      if (effectTypeIsVoIP(d.type) || DEBUG) {
-        Logging.d(TAG, "name: " + d.name + ", "
-                + "mode: " + d.connectMode + ", "
-                + "implementor: " + d.implementor + ", "
-                + "UUID: " + d.uuid);
+    if (DEBUG) {
+      // Add logging of supported effects but filter out "VoIP effects", i.e.,
+      // AEC, AEC and NS. Avoid calling AudioEffect.queryEffects() unless the
+      // DEBUG flag is set since we have seen crashes in this API.
+      for (Descriptor d : AudioEffect.queryEffects()) {
+        if (effectTypeIsVoIP(d.type)) {
+          Logging.d(TAG, "name: " + d.name + ", "
+                  + "mode: " + d.connectMode + ", "
+                  + "implementor: " + d.implementor + ", "
+                  + "UUID: " + d.uuid);
+        }
       }
     }
 
