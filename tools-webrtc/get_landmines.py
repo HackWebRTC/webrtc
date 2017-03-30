@@ -59,6 +59,8 @@ def print_landmines():
     print 'Clobber to fix https://codereview.webrtc.org/2709573003 after landing'
     print ('Clobber to fix https://codereview.webrtc.org/2767383005 before'
            'landing (changing rtc_executable -> rtc_test on iOS)')
+    print ('Clobber to fix https://codereview.webrtc.org/2767383005 before'
+           'landing (changing rtc_executable -> rtc_test on iOS)')
 
 
 def main():
