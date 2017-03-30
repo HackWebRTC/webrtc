@@ -2273,7 +2273,13 @@ TEST_F(EndToEndTest, MAYBE_InitialProbing) {
   RunBaseTest(&test);
 }
 
+// Fails on Linux MSan: bugs.webrtc.org/7428
+#if defined(MEMORY_SANITIZER)
+TEST_F(EndToEndTest, DISABLED_TriggerMidCallProbing) {
+#else
 TEST_F(EndToEndTest, TriggerMidCallProbing) {
+#endif
+
   class TriggerMidCallProbingTest : public ProbingTest {
    public:
     TriggerMidCallProbingTest() : ProbingTest(300000) {}
