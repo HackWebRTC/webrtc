@@ -149,8 +149,9 @@ void VideoCapturer::OnSinkWantsChanged(const rtc::VideoSinkWants& wants) {
   apply_rotation_ = wants.rotation_applied;
 
   if (video_adapter()) {
-    video_adapter()->OnResolutionRequest(wants.target_pixel_count,
-                                         wants.max_pixel_count);
+    video_adapter()->OnResolutionFramerateRequest(wants.target_pixel_count,
+                                                  wants.max_pixel_count,
+                                                  wants.max_framerate_fps);
   }
 }
 

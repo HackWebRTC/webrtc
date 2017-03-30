@@ -477,13 +477,16 @@ TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkJitter) {
 }
 
 TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
+  // Set fake encoder delay to 150% (3/2) of time limit when simulating overuse.
+  const int kOveruseFrameIntervalMs = (3 * 1000) / (2 * kDefaultFramerate);
+
   class LoadObserver : public test::SendTest,
                        public test::FrameGeneratorCapturer::SinkWantsObserver {
    public:
     LoadObserver()
         : SendTest(kLongTimeoutMs),
-          expect_lower_resolution_wants_(true),
-          encoder_(Clock::GetRealTimeClock(), 60 /* delay_ms */) {}
+          test_phase_(TestPhase::kStart),
+          encoder_(Clock::GetRealTimeClock(), kOveruseFrameIntervalMs) {}
 
     void OnFrameGeneratorCapturerCreated(
         test::FrameGeneratorCapturer* frame_generator_capturer) override {
@@ -494,24 +497,44 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
 
     // OnSinkWantsChanged is called when FrameGeneratorCapturer::AddOrUpdateSink
     // is called.
+    // TODO(sprang): Add integration test for maintain-framerate mode?
     void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* sink,
                             const rtc::VideoSinkWants& wants) override {
       // First expect CPU overuse. Then expect CPU underuse when the encoder
       // delay has been decreased.
-      if (wants.target_pixel_count &&
-          *wants.target_pixel_count <
-              wants.max_pixel_count.value_or(std::numeric_limits<int>::max())) {
-        // On adapting up, ViEEncoder::VideoSourceProxy will set the target
-        // pixel count to a step up from the current and the max value to
-        // something higher than the target.
-        EXPECT_FALSE(expect_lower_resolution_wants_);
-        observation_complete_.Set();
-      } else if (wants.max_pixel_count) {
-        // On adapting down, ViEEncoder::VideoSourceProxy will set only the max
-        // pixel count, leaving the target unset.
-        EXPECT_TRUE(expect_lower_resolution_wants_);
-        expect_lower_resolution_wants_ = false;
-        encoder_.SetDelay(2);
+      switch (test_phase_) {
+        case TestPhase::kStart:
+          if (wants.max_pixel_count < std::numeric_limits<int>::max()) {
+            // On adapting down, ViEEncoder::VideoSourceProxy will set only the
+            // max pixel count, leaving the target unset.
+            test_phase_ = TestPhase::kAdaptedDown;
+            encoder_.SetDelay(2);
+          } else {
+            ADD_FAILURE() << "Got unexpected adaptation request, max res = "
+                          << wants.max_pixel_count << ", target res = "
+                          << wants.target_pixel_count.value_or(-1)
+                          << ", max fps = " << wants.max_framerate_fps;
+          }
+          break;
+        case TestPhase::kAdaptedDown:
+          // On adapting up, the adaptation counter will again be at zero, and
+          // so all constraints will be reset.
+          if (wants.max_pixel_count == std::numeric_limits<int>::max() &&
+              !wants.target_pixel_count) {
+            test_phase_ = TestPhase::kAdaptedUp;
+            observation_complete_.Set();
+          } else {
+            ADD_FAILURE() << "Got unexpected adaptation request, max res = "
+                          << wants.max_pixel_count << ", target res = "
+                          << wants.target_pixel_count.value_or(-1)
+                          << ", max fps = " << wants.max_framerate_fps;
+          }
+          break;
+        case TestPhase::kAdaptedUp:
+          ADD_FAILURE() << "Got unexpected adaptation request, max res = "
+                        << wants.max_pixel_count << ", target res = "
+                        << wants.target_pixel_count.value_or(-1)
+                        << ", max fps = " << wants.max_framerate_fps;
       }
     }
 
@@ -526,7 +549,7 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
       EXPECT_TRUE(Wait()) << "Timed out before receiving an overuse callback.";
     }
 
-    bool expect_lower_resolution_wants_;
+    enum class TestPhase { kStart, kAdaptedDown, kAdaptedUp } test_phase_;
     test::DelayedEncoder encoder_;
   } test;
 

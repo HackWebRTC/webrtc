@@ -172,7 +172,7 @@ class BitrateEstimatorTest : public test::CallTest {
           Clock::GetRealTimeClock()));
       send_stream_->SetSource(
           frame_generator_capturer_.get(),
-          VideoSendStream::DegradationPreference::kBalanced);
+          VideoSendStream::DegradationPreference::kMaintainFramerate);
       send_stream_->Start();
       frame_generator_capturer_->Start();
 

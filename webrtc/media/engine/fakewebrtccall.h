@@ -138,6 +138,7 @@ class FakeVideoSendStream final
   bool resolution_scaling_enabled() const {
     return resolution_scaling_enabled_;
   }
+  bool framerate_scaling_enabled() const { return framerate_scaling_enabled_; }
   void InjectVideoSinkWants(const rtc::VideoSinkWants& wants);
 
   rtc::VideoSourceInterface<webrtc::VideoFrame>* source() const {
@@ -169,6 +170,7 @@ class FakeVideoSendStream final
     webrtc::VideoCodecVP9 vp9;
   } vpx_settings_;
   bool resolution_scaling_enabled_;
+  bool framerate_scaling_enabled_;
   rtc::VideoSourceInterface<webrtc::VideoFrame>* source_;
   int num_swapped_frames_;
   rtc::Optional<webrtc::VideoFrame> last_frame_;
