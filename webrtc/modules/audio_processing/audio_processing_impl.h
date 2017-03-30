@@ -13,13 +13,13 @@
 
 #include <list>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/function_view.h"
 #include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/base/ignore_wundef.h"
+#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/base/swap_queue.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
@@ -29,7 +29,7 @@
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
-// Files generated at build-time by the protobuf compiler.
+// *.pb.h files are generated at build-time by the protobuf compiler.
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/modules/audio_processing/debug.pb.h"
@@ -200,10 +200,10 @@ class AudioProcessingImpl : public AudioProcessing {
     ApmDebugDumpThreadState();
     ~ApmDebugDumpThreadState();
     std::unique_ptr<audioproc::Event> event_msg;  // Protobuf message.
-    std::string event_str;  // Memory for protobuf serialization.
+    ProtoString event_str;  // Memory for protobuf serialization.
 
     // Serialized string of last saved APM configuration.
-    std::string last_serialized_config;
+    ProtoString last_serialized_config;
   };
 
   struct ApmDebugDumpState {

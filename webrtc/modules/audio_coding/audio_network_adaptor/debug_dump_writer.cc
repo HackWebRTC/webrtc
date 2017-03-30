@@ -12,6 +12,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/ignore_wundef.h"
+#include "webrtc/base/protobuf_utils.h"
 
 #ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
 RTC_PUSH_IGNORING_WUNDEF()
@@ -34,7 +35,7 @@ using audio_network_adaptor::debug_dump::EncoderRuntimeConfig;
 
 void DumpEventToFile(const Event& event, FileWrapper* dump_file) {
   RTC_CHECK(dump_file->is_open());
-  std::string dump_data;
+  ProtoString dump_data;
   event.SerializeToString(&dump_data);
   int32_t size = event.ByteSize();
   dump_file->Write(&size, sizeof(size));

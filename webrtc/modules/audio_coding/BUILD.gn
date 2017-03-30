@@ -74,6 +74,7 @@ rtc_static_library("rent_a_codec") {
   deps = [
            "../../api/audio_codecs:audio_codecs_api",
            "../..:webrtc_common",
+           "../../base:protobuf_utils",
            "../../base:rtc_base_approved",
            "../../system_wrappers",
            ":audio_coding_module_typedefs",
@@ -82,6 +83,7 @@ rtc_static_library("rent_a_codec") {
            ":isac_fix_c",
            ":neteq_decoder_enum",
          ] + audio_codec_deps
+
   defines = audio_codec_defines
 }
 
@@ -828,6 +830,7 @@ rtc_static_library("webrtc_opus") {
     ":audio_network_adaptor",
     "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../base:protobuf_utils",
     "../../base:rtc_base_approved",
     "../../base:rtc_numerics",
     "../../common_audio",
@@ -921,6 +924,7 @@ rtc_static_library("audio_network_adaptor") {
 
   deps = [
     "../..:webrtc_common",
+    "../../base:protobuf_utils",
     "../../base:rtc_base_approved",
     "../../common_audio",
     "../../logging:rtc_event_log_api",
@@ -1188,10 +1192,12 @@ if (rtc_include_tests) {
       ":neteq_unittest_tools",
       ":webrtc_opus",
       "../..:webrtc_common",
+      "../../base:protobuf_utils",
       "../../base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:test_support",
     ]
+
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -1326,6 +1332,7 @@ if (rtc_include_tests) {
       ":neteq",
       ":neteq_unittest_tools",
       "../../api/audio_codecs:audio_codecs_api",
+      "../../base:protobuf_utils",
       "../../common_audio",
       "../../test:test_main",
       "//testing/gtest",
@@ -2082,6 +2089,7 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../api/audio_codecs:audio_codecs_api",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
+      "../../base:protobuf_utils",
       "../../base:rtc_base",
       "../../base:rtc_base_approved",
       "../../base:rtc_base_tests_utils",
