@@ -255,12 +255,18 @@ static NSString *const loopbackLaunchProcessArgument = @"loopback";
 }
 
 - (void)showAlertWithMessage:(NSString*)message {
-  UIAlertView* alertView = [[UIAlertView alloc] initWithTitle:nil
-                                                      message:message
-                                                     delegate:nil
-                                            cancelButtonTitle:@"OK"
-                                            otherButtonTitles:nil];
-  [alertView show];
+  UIAlertController *alert =
+      [UIAlertController alertControllerWithTitle:nil
+                                          message:message
+                                   preferredStyle:UIAlertControllerStyleAlert];
+
+  UIAlertAction *defaultAction = [UIAlertAction actionWithTitle:@"OK"
+                                                          style:UIAlertActionStyleDefault
+                                                        handler:^(UIAlertAction *action){
+                                                        }];
+
+  [alert addAction:defaultAction];
+  [self presentViewController:alert animated:YES completion:nil];
 }
 
 @end

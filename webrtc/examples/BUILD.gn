@@ -150,23 +150,6 @@ if (is_android) {
 }
 
 if (is_ios || (is_mac && target_cpu != "x86")) {
-  config("warnings_config") {
-    # GN orders flags on a target before flags from configs. The default config
-    # adds these flags so to cancel them out they need to come from a config and
-    # cannot be on the target directly.
-    if (is_ios) {
-      # Suppress compiler warnings about deprecated that triggered
-      # when moving from ios_deployment_target 7.0 to 9.0.
-      # See webrtc:5549 for more details.
-      cflags = [ "-Wno-deprecated-declarations" ]
-      cflags_objc = [
-        # Enabled for cflags_objc in build/config/compiler/BUILD.gn.
-        # See webrtc:6520.
-        "-Wno-objc-missing-property-synthesis",
-      ]
-    }
-  }
-
   config("apprtc_common_config") {
     include_dirs = [ "objc/AppRTCMobile/common" ]
   }
@@ -177,10 +160,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCMobile/common/ARDUtilities.h",
       "objc/AppRTCMobile/common/ARDUtilities.m",
     ]
-    configs += [
-      ":warnings_config",
-      "//build/config/compiler:enable_arc",
-    ]
+    configs += [ "//build/config/compiler:enable_arc" ]
     public_configs = [ ":apprtc_common_config" ]
 
     deps = [
@@ -245,10 +225,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCMobile/RTCSessionDescription+JSON.h",
       "objc/AppRTCMobile/RTCSessionDescription+JSON.m",
     ]
-    configs += [
-      "//build/config/compiler:enable_arc",
-      ":warnings_config",
-    ]
+    configs += [ "//build/config/compiler:enable_arc" ]
     public_configs = [ ":apprtc_signaling_config" ]
     deps = [
       ":apprtc_common",
@@ -281,10 +258,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objc/AppRTCMobile/ios/UIImage+ARDUtilities.h",
         "objc/AppRTCMobile/ios/UIImage+ARDUtilities.m",
       ]
-      configs += [
-        "//build/config/compiler:enable_arc",
-        ":warnings_config",
-      ]
+      configs += [ "//build/config/compiler:enable_arc" ]
 
       deps = [
         ":apprtc_common",
