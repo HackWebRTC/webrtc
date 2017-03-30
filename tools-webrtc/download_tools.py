@@ -20,6 +20,8 @@ import sys
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Needed to properly resolve PATH and executable extensions on Windows.
+USE_SHELL = sys.platform == 'win32'
 
 
 def main(directories):
@@ -37,7 +39,7 @@ def main(directories):
       path,
     ]
     print 'Downloading precompiled tools...'
-    subprocess.check_call(cmd)
+    subprocess.check_call(cmd, shell=USE_SHELL)
 
 
 if __name__ == '__main__':

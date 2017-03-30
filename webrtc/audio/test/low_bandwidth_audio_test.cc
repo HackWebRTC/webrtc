@@ -13,7 +13,6 @@
 #include "webrtc/audio/test/low_bandwidth_audio_test.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/test/run_test.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -109,7 +108,7 @@ void AudioQualityTest::OnTestFinished() {
 
   // Output information about the input and output audio files so that further
   // processing can be done by an external process.
-  printf("TEST %s %s:%s\n", test_info->name(),
+  printf("TEST %s %s %s\n", test_info->name(),
          AudioInputFile().c_str(), AudioOutputFile().c_str());
 }
 

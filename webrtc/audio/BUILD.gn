@@ -78,9 +78,6 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
     ]
-    if (rtc_enable_protobuf) {
-      deps += [ ":low_bandwidth_audio_test" ]
-    }
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -89,7 +86,7 @@ if (rtc_include_tests) {
   }
 
   if (rtc_enable_protobuf) {
-    rtc_executable("low_bandwidth_audio_test") {
+    rtc_test("low_bandwidth_audio_test") {
       testonly = true
 
       sources = [
@@ -101,7 +98,6 @@ if (rtc_include_tests) {
         "../common_audio",
         "../system_wrappers",
         "../test:fake_audio_device",
-        "../test:run_test",
         "../test:test_common",
         "../test:test_main",
       ]
