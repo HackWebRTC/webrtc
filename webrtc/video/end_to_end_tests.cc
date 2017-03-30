@@ -2248,29 +2248,40 @@ class ProbingTest : public test::EndToEndTest {
 TEST_F(EndToEndTest, MAYBE_InitialProbing) {
   class InitialProbingTest : public ProbingTest {
    public:
-    InitialProbingTest() : ProbingTest(300000) {}
+    explicit InitialProbingTest(bool* success)
+        : ProbingTest(300000), success_(success) {}
 
     void PerformTest() override {
       int64_t start_time_ms = clock_->TimeInMilliseconds();
       do {
-        if (clock_->TimeInMilliseconds() - start_time_ms > kTimeoutMs) {
-          ADD_FAILURE() << "Timed out while waiting for initial probing.";
+        if (clock_->TimeInMilliseconds() - start_time_ms > kTimeoutMs)
           break;
-        }
 
         Call::Stats stats = sender_call_->GetStats();
         // Initial probing is done with a x3 and x6 multiplier of the start
         // bitrate, so a x4 multiplier is a high enough threshold.
-        if (stats.send_bandwidth_bps > 4 * 300000)
+        if (stats.send_bandwidth_bps > 4 * 300000) {
+          *success_ = true;
           break;
+        }
       } while (!observation_complete_.Wait(20));
     }
 
    private:
     const int kTimeoutMs = 1000;
-  } test;
+    bool* const success_;
+  };
 
-  RunBaseTest(&test);
+  bool success;
+  const int kMaxAttempts = 3;
+  for (int i = 0; i < kMaxAttempts; ++i) {
+    InitialProbingTest test(&success);
+    RunBaseTest(&test);
+    if (success)
+      return;
+  }
+  RTC_DCHECK(success) << "Failed to perform mid initial probing ("
+                      << kMaxAttempts << " attempts).";
 }
 
 // Fails on Linux MSan: bugs.webrtc.org/7428
@@ -2282,15 +2293,15 @@ TEST_F(EndToEndTest, TriggerMidCallProbing) {
 
   class TriggerMidCallProbingTest : public ProbingTest {
    public:
-    TriggerMidCallProbingTest() : ProbingTest(300000) {}
+    explicit TriggerMidCallProbingTest(bool* success)
+        : ProbingTest(300000), success_(success) {}
 
     void PerformTest() override {
+      *success_ = false;
       int64_t start_time_ms = clock_->TimeInMilliseconds();
       do {
-        if (clock_->TimeInMilliseconds() - start_time_ms > kTimeoutMs) {
-          ADD_FAILURE() << "Timed out while waiting for mid-call probing.";
+        if (clock_->TimeInMilliseconds() - start_time_ms > kTimeoutMs)
           break;
-        }
 
         Call::Stats stats = sender_call_->GetStats();
 
@@ -2315,8 +2326,10 @@ TEST_F(EndToEndTest, TriggerMidCallProbing) {
             // During high cpu load the pacer will not be able to pace packets
             // at the correct speed, but if we go from 110 to 1250 kbps
             // in 5 seconds then it is due to probing.
-            if (stats.send_bandwidth_bps > 1250000)
+            if (stats.send_bandwidth_bps > 1250000) {
+              *success_ = true;
               observation_complete_.Set();
+            }
             break;
         }
       } while (!observation_complete_.Wait(20));
@@ -2324,9 +2337,19 @@ TEST_F(EndToEndTest, TriggerMidCallProbing) {
 
    private:
     const int kTimeoutMs = 5000;
-  } test;
+    bool* const success_;
+  };
 
-  RunBaseTest(&test);
+  bool success;
+  const int kMaxAttempts = 3;
+  for (int i = 0; i < kMaxAttempts; ++i) {
+    TriggerMidCallProbingTest test(&success);
+    RunBaseTest(&test);
+    if (success)
+      return;
+  }
+  RTC_DCHECK(success) << "Failed to perform mid call probing (" << kMaxAttempts
+                      << " attempts).";
 }
 
 TEST_F(EndToEndTest, VerifyNackStats) {

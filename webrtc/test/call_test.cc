@@ -267,8 +267,8 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
 }
 
 void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
-  RTC_DCHECK(video_receive_configs_.empty());
-  RTC_DCHECK(allocated_decoders_.empty());
+  video_receive_configs_.clear();
+  allocated_decoders_.clear();
   if (num_video_streams_ > 0) {
     RTC_DCHECK(!video_send_config_.rtp.ssrcs.empty());
     VideoReceiveStream::Config video_config(rtcp_send_transport);
