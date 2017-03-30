@@ -214,21 +214,12 @@ class VideoSendStream {
 
   // Based on the spec in
   // https://w3c.github.io/webrtc-pc/#idl-def-rtcdegradationpreference.
-  // These options are enforced on a best-effort basis. For instance, all of
-  // these options may suffer some frame drops in order to avoid queuing.
-  // TODO(sprang): Look into possibility of more strictly enforcing the
-  // maintain-framerate option.
   enum class DegradationPreference {
-    // Don't take any actions based on over-utilization signals.
-    kDegradationDisabled,
-    // On over-use, request lost resolution, possibly causing down-scaling.
     kMaintainResolution,
-    // On over-use, request lower frame rate, possible causing frame drops.
-    kMaintainFramerate,
-    // Try to strike a "pleasing" balance between frame rate or resolution.
+    // TODO(perkj): Implement kMaintainFrameRate. kBalanced will drop frames
+    // if the encoder overshoots or the encoder can not encode fast enough.
     kBalanced,
   };
-
   virtual void SetSource(
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
       const DegradationPreference& degradation_preference) = 0;

@@ -77,7 +77,6 @@ class FrameGeneratorCapturer : public VideoCapturer {
 
   void InsertFrame();
   static bool Run(void* obj);
-  int GetCurrentConfiguredFramerate();
 
   Clock* const clock_;
   bool sending_;
@@ -87,8 +86,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   rtc::CriticalSection lock_;
   std::unique_ptr<FrameGenerator> frame_generator_;
 
-  int target_fps_ GUARDED_BY(&lock_);
-  rtc::Optional<int> wanted_fps_ GUARDED_BY(&lock_);
+  int target_fps_;
   VideoRotation fake_rotation_ = kVideoRotation_0;
 
   int64_t first_frame_capture_time_;

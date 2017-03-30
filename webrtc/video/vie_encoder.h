@@ -11,7 +11,6 @@
 #ifndef WEBRTC_VIDEO_VIE_ENCODER_H_
 #define WEBRTC_VIDEO_VIE_ENCODER_H_
 
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -63,9 +62,7 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   };
 
   // Downscale resolution at most 2 times for CPU reasons.
-  static const int kMaxCpuResolutionDowngrades = 2;
-  // Downscale framerate at most 4 times.
-  static const int kMaxCpuFramerateDowngrades = 4;
+  static const int kMaxCpuDowngrades = 2;
 
   ViEEncoder(uint32_t number_of_cores,
              SendStatisticsProxy* stats_proxy,
@@ -175,11 +172,6 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void TraceFrameDropStart();
   void TraceFrameDropEnd();
 
-  const std::vector<int>& GetScaleCounters()
-      EXCLUSIVE_LOCKS_REQUIRED(&encoder_queue_);
-  void IncrementScaleCounter(int reason, int delta)
-      EXCLUSIVE_LOCKS_REQUIRED(&encoder_queue_);
-
   rtc::Event shutdown_event_;
 
   const uint32_t number_of_cores_;
@@ -218,11 +210,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   bool encoder_paused_and_dropped_frame_ ACCESS_ON(&encoder_queue_);
   Clock* const clock_;
   // Counters used for deciding if the video resolution is currently
-  // restricted, and if so, why, on a per degradation preference basis.
-  // TODO(sprang): Replace this with a state holding a relative overuse measure
-  // instead, that can be translated into suitable down-scale or fps limit.
-  std::map<const VideoSendStream::DegradationPreference, std::vector<int>>
-      scale_counters_ ACCESS_ON(&encoder_queue_);
+  // restricted, and if so, why.
+  std::vector<int> scale_counter_ ACCESS_ON(&encoder_queue_);
   // Set depending on degradation preferences
   VideoSendStream::DegradationPreference degradation_preference_
       ACCESS_ON(&encoder_queue_);
@@ -230,8 +219,6 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   struct AdaptationRequest {
     // The pixel count produced by the source at the time of the adaptation.
     int input_pixel_count_;
-    // Framerate received from the source at the time of the adaptation.
-    int framerate_fps_;
     // Indicates if request was to adapt up or down.
     enum class Mode { kAdaptUp, kAdaptDown } mode_;
   };

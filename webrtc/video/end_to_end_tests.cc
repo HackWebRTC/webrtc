@@ -231,8 +231,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
       test::FrameGenerator::CreateSquareGenerator(kWidth, kHeight));
   test::FrameForwarder frame_forwarder;
   video_send_stream_->SetSource(
-      &frame_forwarder,
-      VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &frame_forwarder, VideoSendStream::DegradationPreference::kBalanced);
 
   frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
   EXPECT_TRUE(renderer.Wait())
@@ -279,8 +278,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
                                                   kDefaultHeight));
   test::FrameForwarder frame_forwarder;
   video_send_stream_->SetSource(
-      &frame_forwarder,
-      VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &frame_forwarder, VideoSendStream::DegradationPreference::kBalanced);
   frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
 
   EXPECT_TRUE(renderer.Wait())
@@ -1519,7 +1517,7 @@ class MultiStreamTest {
           width, height, 30, Clock::GetRealTimeClock());
       send_streams[i]->SetSource(
           frame_generators[i],
-          VideoSendStream::DegradationPreference::kMaintainFramerate);
+          VideoSendStream::DegradationPreference::kBalanced);
       frame_generators[i]->Start();
     }
 
@@ -1968,7 +1966,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
                                                   kDefaultHeight));
   test::FrameForwarder forwarder;
   video_send_stream_->SetSource(
-      &forwarder, VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &forwarder, VideoSendStream::DegradationPreference::kBalanced);
   forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
 
   EXPECT_TRUE(post_encode_observer.Wait())
