@@ -59,10 +59,11 @@ class ScreenCapturerWinDirectx : public DesktopCapturer {
   // Returns desktop size of selected screen.
   DesktopSize SelectedDesktopSize() const;
 
+  // TODO(zijiehe): Merge |frames_| and |contexts_| into a single object.
   ScreenCaptureFrameQueue<SharedDesktopFrame> frames_;
+  ScreenCaptureFrameQueue<DxgiDuplicatorController::Context> contexts_;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
   Callback* callback_ = nullptr;
-  DxgiDuplicatorController::Context context_;
   SourceId current_screen_id_ = kFullDesktopScreenId;
   ResolutionChangeDetector resolution_change_detector_;
 

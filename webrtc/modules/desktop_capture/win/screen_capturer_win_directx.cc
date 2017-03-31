@@ -15,6 +15,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/screen_capture_utils.h"
@@ -106,10 +107,15 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
     }
     frames_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(std::move(new_frame)));
   }
+  contexts_.MoveToNextFrame();
+  if (!contexts_.current_frame()) {
+    contexts_.ReplaceCurrentFrame(
+        rtc::MakeUnique<DxgiDuplicatorController::Context>());
+  }
 
   if (current_screen_id_ == kFullDesktopScreenId) {
     if (!DxgiDuplicatorController::Instance()->Duplicate(
-            &context_, frames_.current_frame())) {
+            contexts_.current_frame(), frames_.current_frame())) {
       // Screen size may be changed, so we need to reset the frames.
       frames_.Reset();
       resolution_change_detector_.Reset();
@@ -118,7 +124,8 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
     }
   } else {
     if (!DxgiDuplicatorController::Instance()->DuplicateMonitor(
-            &context_, current_screen_id_, frames_.current_frame())) {
+            contexts_.current_frame(), current_screen_id_,
+            frames_.current_frame())) {
       // Screen size may be changed, so we need to reset the frames.
       frames_.Reset();
       resolution_change_detector_.Reset();
@@ -158,14 +165,14 @@ bool ScreenCapturerWinDirectx::SelectSource(SourceId id) {
   // frames only when a Duplicate() function call returns false.
   if (id == kFullDesktopScreenId) {
     current_screen_id_ = id;
-    context_.Reset();
+    contexts_.Reset();
     return true;
   }
 
   int screen_count = DxgiDuplicatorController::Instance()->ScreenCount();
   if (id >= 0 && id < screen_count) {
     current_screen_id_ = id;
-    context_.Reset();
+    contexts_.Reset();
     return true;
   }
   return false;
