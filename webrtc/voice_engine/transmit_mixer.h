@@ -32,7 +32,6 @@
 #endif
 
 namespace webrtc {
-
 class AudioProcessing;
 class ProcessThread;
 
@@ -64,16 +63,7 @@ public:
                          uint16_t currentMicLevel,
                          bool keyPressed);
 
-
-    int32_t DemuxAndMix();
-    // Used by the Chrome to pass the recording data to the specific VoE
-    // channels for demux.
-    void DemuxAndMix(const int voe_channels[], size_t number_of_voe_channels);
-
-    int32_t EncodeAndSend();
-    // Used by the Chrome to pass the recording data to the specific VoE
-    // channels for encoding and sending to the network.
-    void EncodeAndSend(const int voe_channels[], size_t number_of_voe_channels);
+    void ProcessAndEncodeAudio();
 
     // Must be called on the same thread as PrepareDemux().
     uint32_t CaptureLevel() const;

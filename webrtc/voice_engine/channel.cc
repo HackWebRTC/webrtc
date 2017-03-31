@@ -21,6 +21,8 @@
 #include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/rate_limiter.h"
+#include "webrtc/base/task_queue.h"
+#include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call/rtp_transport_controller_send.h"
 #include "webrtc/config.h"
@@ -409,12 +411,32 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
   RtcpBandwidthObserver* bandwidth_observer_ GUARDED_BY(crit_);
 };
 
+class Channel::ProcessAndEncodeAudioTask : public rtc::QueuedTask {
+ public:
+  ProcessAndEncodeAudioTask(std::unique_ptr<AudioFrame> audio_frame,
+                            Channel* channel)
+      : audio_frame_(std::move(audio_frame)), channel_(channel) {
+    RTC_DCHECK(channel_);
+  }
+
+ private:
+  bool Run() override {
+    RTC_DCHECK_RUN_ON(channel_->encoder_queue_);
+    channel_->ProcessAndEncodeAudioOnTaskQueue(audio_frame_.get());
+    return true;
+  }
+
+  std::unique_ptr<AudioFrame> audio_frame_;
+  Channel* const channel_;
+};
+
 int32_t Channel::SendData(FrameType frameType,
                           uint8_t payloadType,
                           uint32_t timeStamp,
                           const uint8_t* payloadData,
                           size_t payloadSize,
                           const RTPFragmentationHeader* fragmentation) {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
   WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SendData(frameType=%u, payloadType=%u, timeStamp=%u,"
                " payloadSize=%" PRIuS ", fragmentation=0x%x)",
@@ -441,9 +463,6 @@ int32_t Channel::SendData(FrameType frameType,
         "Channel::SendData() failed to send data to RTP/RTCP module");
     return -1;
   }
-
-  _lastLocalTimeStamp = timeStamp;
-  _lastPayloadType = payloadType;
 
   return 0;
 }
@@ -779,11 +798,10 @@ int32_t Channel::NeededFrequency(int32_t id) const {
   return (highestNeeded);
 }
 
-int32_t Channel::CreateChannel(
-    Channel*& channel,
-    int32_t channelId,
-    uint32_t instanceId,
-    const VoEBase::ChannelConfig& config) {
+int32_t Channel::CreateChannel(Channel*& channel,
+                               int32_t channelId,
+                               uint32_t instanceId,
+                               const VoEBase::ChannelConfig& config) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(instanceId, channelId),
                "Channel::CreateChannel(channelId=%d, instanceId=%d)", channelId,
                instanceId);
@@ -890,8 +908,6 @@ Channel::Channel(int32_t channelId,
       previous_frame_muted_(false),
       _outputGain(1.0f),
       _mixFileWithMicrophone(false),
-      _lastLocalTimeStamp(0),
-      _lastPayloadType(0),
       _includeAudioLevelIndication(false),
       transport_overhead_per_packet_(0),
       rtp_overhead_per_packet_(0),
@@ -1125,7 +1141,10 @@ int32_t Channel::SetEngineInformation(Statistics& engineStatistics,
                                       ProcessThread& moduleProcessThread,
                                       AudioDeviceModule& audioDeviceModule,
                                       VoiceEngineObserver* voiceEngineObserver,
-                                      rtc::CriticalSection* callbackCritSect) {
+                                      rtc::CriticalSection* callbackCritSect,
+                                      rtc::TaskQueue* encoder_queue) {
+  RTC_DCHECK(encoder_queue);
+  RTC_DCHECK(!encoder_queue_);
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::SetEngineInformation()");
   _engineStatisticsPtr = &engineStatistics;
@@ -1134,11 +1153,7 @@ int32_t Channel::SetEngineInformation(Statistics& engineStatistics,
   _audioDeviceModulePtr = &audioDeviceModule;
   _voiceEngineObserverPtr = voiceEngineObserver;
   _callbackCritSectPtr = callbackCritSect;
-  return 0;
-}
-
-int32_t Channel::UpdateLocalTimeStamp() {
-  _timeStamp += static_cast<uint32_t>(_audioFrame.samples_per_channel_);
+  encoder_queue_ = encoder_queue;
   return 0;
 }
 
@@ -1222,13 +1237,24 @@ int32_t Channel::StartSend() {
   return 0;
 }
 
-int32_t Channel::StopSend() {
+void Channel::StopSend() {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::StopSend()");
   if (!channel_state_.Get().sending) {
-    return 0;
+    return;
   }
   channel_state_.SetSending(false);
+
+  // Post a task to the encoder thread which sets an event when the task is
+  // executed. We know that no more encoding tasks will be added to the task
+  // queue for this channel since sending is now deactivated. It means that,
+  // if we wait for the event to bet set, we know that no more pending tasks
+  // exists and it is therfore guaranteed that the task queue will never try
+  // to acccess and invalid channel object.
+  RTC_DCHECK(encoder_queue_);
+  rtc::Event flush(false, false);
+  encoder_queue_->PostTask([&flush]() { flush.Set(); });
+  flush.Wait(rtc::Event::kForever);
 
   // Store the sequence number to be able to pick up the same sequence for
   // the next StartSend(). This is needed for restarting device, otherwise
@@ -1246,8 +1272,6 @@ int32_t Channel::StopSend() {
         "StartSend() RTP/RTCP failed to stop sending");
   }
   _rtpRtcpModule->SetSendingMediaStatus(false);
-
-  return 0;
 }
 
 int32_t Channel::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
@@ -2648,90 +2672,73 @@ int Channel::ResendPackets(const uint16_t* sequence_numbers, int length) {
   return _rtpRtcpModule->SendNACK(sequence_numbers, length);
 }
 
-uint32_t Channel::Demultiplex(const AudioFrame& audioFrame) {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::Demultiplex()");
-  _audioFrame.CopyFrom(audioFrame);
-  _audioFrame.id_ = _channelId;
-  return 0;
+void Channel::ProcessAndEncodeAudio(const AudioFrame& audio_input) {
+  RTC_DCHECK(channel_state_.Get().sending);
+  std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());
+  // TODO(henrika): try to avoid copying by moving ownership of audio frame
+  // either into pool of frames or into the task itself.
+  audio_frame->CopyFrom(audio_input);
+  audio_frame->id_ = ChannelId();
+  encoder_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(
+      new ProcessAndEncodeAudioTask(std::move(audio_frame), this)));
 }
 
-void Channel::Demultiplex(const int16_t* audio_data,
-                          int sample_rate,
-                          size_t number_of_frames,
-                          size_t number_of_channels) {
+void Channel::ProcessAndEncodeAudio(const int16_t* audio_data,
+                                    int sample_rate,
+                                    size_t number_of_frames,
+                                    size_t number_of_channels) {
+  RTC_DCHECK(channel_state_.Get().sending);
   CodecInst codec;
   GetSendCodec(codec);
-
-  // Never upsample or upmix the capture signal here. This should be done at the
-  // end of the send chain.
-  _audioFrame.sample_rate_hz_ = std::min(codec.plfreq, sample_rate);
-  _audioFrame.num_channels_ = std::min(number_of_channels, codec.channels);
+  std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());
+  audio_frame->id_ = ChannelId();
+  audio_frame->sample_rate_hz_ = std::min(codec.plfreq, sample_rate);
+  audio_frame->num_channels_ = std::min(number_of_channels, codec.channels);
   RemixAndResample(audio_data, number_of_frames, number_of_channels,
-                   sample_rate, &input_resampler_, &_audioFrame);
+                   sample_rate, &input_resampler_, audio_frame.get());
+  encoder_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(
+      new ProcessAndEncodeAudioTask(std::move(audio_frame), this)));
 }
 
-uint32_t Channel::PrepareEncodeAndSend(int mixingFrequency) {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::PrepareEncodeAndSend()");
-
-  if (_audioFrame.samples_per_channel_ == 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::PrepareEncodeAndSend() invalid audio frame");
-    return 0xFFFFFFFF;
-  }
+void Channel::ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input) {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
+  RTC_DCHECK_GT(audio_input->samples_per_channel_, 0);
+  RTC_DCHECK_LE(audio_input->num_channels_, 2);
+  RTC_DCHECK_EQ(audio_input->id_, ChannelId());
 
   if (channel_state_.Get().input_file_playing) {
-    MixOrReplaceAudioWithFile(mixingFrequency);
+    MixOrReplaceAudioWithFile(audio_input);
   }
 
-  bool is_muted = InputMute();  // Cache locally as InputMute() takes a lock.
-  AudioFrameOperations::Mute(&_audioFrame, previous_frame_muted_, is_muted);
+  bool is_muted = InputMute();
+  AudioFrameOperations::Mute(audio_input, previous_frame_muted_, is_muted);
 
   if (_includeAudioLevelIndication) {
     size_t length =
-        _audioFrame.samples_per_channel_ * _audioFrame.num_channels_;
-    RTC_CHECK_LE(length, sizeof(_audioFrame.data_));
+        audio_input->samples_per_channel_ * audio_input->num_channels_;
+    RTC_CHECK_LE(length, sizeof(audio_input->data_));
     if (is_muted && previous_frame_muted_) {
       rms_level_.AnalyzeMuted(length);
     } else {
       rms_level_.Analyze(
-          rtc::ArrayView<const int16_t>(_audioFrame.data_, length));
+          rtc::ArrayView<const int16_t>(audio_input->data_, length));
     }
   }
   previous_frame_muted_ = is_muted;
 
-  return 0;
-}
-
-uint32_t Channel::EncodeAndSend() {
-  WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, _channelId),
-               "Channel::EncodeAndSend()");
-
-  assert(_audioFrame.num_channels_ <= 2);
-  if (_audioFrame.samples_per_channel_ == 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::EncodeAndSend() invalid audio frame");
-    return 0xFFFFFFFF;
-  }
-
-  _audioFrame.id_ = _channelId;
-
-  // --- Add 10ms of raw (PCM) audio data to the encoder @ 32kHz.
+  // Add 10ms of raw (PCM) audio data to the encoder @ 32kHz.
 
   // The ACM resamples internally.
-  _audioFrame.timestamp_ = _timeStamp;
+  audio_input->timestamp_ = _timeStamp;
   // This call will trigger AudioPacketizationCallback::SendData if encoding
   // is done and payload is ready for packetization and transmission.
   // Otherwise, it will return without invoking the callback.
-  if (audio_coding_->Add10MsData((AudioFrame&)_audioFrame) < 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::EncodeAndSend() ACM encoding failed");
-    return 0xFFFFFFFF;
+  if (audio_coding_->Add10MsData(*audio_input) < 0) {
+    LOG(LS_ERROR) << "ACM::Add10MsData() failed for channel " << _channelId;
+    return;
   }
 
-  _timeStamp += static_cast<uint32_t>(_audioFrame.samples_per_channel_);
-  return 0;
+  _timeStamp += static_cast<uint32_t>(audio_input->samples_per_channel_);
 }
 
 void Channel::set_associate_send_channel(const ChannelOwner& channel) {
@@ -2840,10 +2847,11 @@ int Channel::GetRtpRtcp(RtpRtcp** rtpRtcpModule,
 
 // TODO(andrew): refactor Mix functions here and in transmit_mixer.cc to use
 // a shared helper.
-int32_t Channel::MixOrReplaceAudioWithFile(int mixingFrequency) {
+int32_t Channel::MixOrReplaceAudioWithFile(AudioFrame* audio_input) {
+  RTC_DCHECK_RUN_ON(encoder_queue_);
   std::unique_ptr<int16_t[]> fileBuffer(new int16_t[640]);
   size_t fileSamples(0);
-
+  const int mixingFrequency = audio_input->sample_rate_hz_;
   {
     rtc::CritScope cs(&_fileCritSect);
 
@@ -2868,18 +2876,18 @@ int32_t Channel::MixOrReplaceAudioWithFile(int mixingFrequency) {
     }
   }
 
-  assert(_audioFrame.samples_per_channel_ == fileSamples);
+  RTC_DCHECK_EQ(audio_input->samples_per_channel_, fileSamples);
 
   if (_mixFileWithMicrophone) {
     // Currently file stream is always mono.
     // TODO(xians): Change the code when FilePlayer supports real stereo.
-    MixWithSat(_audioFrame.data_, _audioFrame.num_channels_, fileBuffer.get(),
+    MixWithSat(audio_input->data_, audio_input->num_channels_, fileBuffer.get(),
                1, fileSamples);
   } else {
     // Replace ACM audio with file.
     // Currently file stream is always mono.
     // TODO(xians): Change the code when FilePlayer supports real stereo.
-    _audioFrame.UpdateFrame(
+    audio_input->UpdateFrame(
         _channelId, 0xFFFFFFFF, fileBuffer.get(), fileSamples, mixingFrequency,
         AudioFrame::kNormalSpeech, AudioFrame::kVadUnknown, 1);
   }
