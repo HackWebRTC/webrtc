@@ -12,6 +12,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <string>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -35,6 +37,10 @@ const int64_t kFeedbackIntervalMs = 1500;
 const int64_t kFeedbackTimeoutIntervals = 3;
 const int64_t kTimeoutIntervalMs = 1000;
 
+const float kDefaultLowLossThreshold = 0.02f;
+const float kDefaultHighLossThreshold = 0.1f;
+const int kDefaultBitrateThresholdKbps = 0;
+
 struct UmaRampUpMetric {
   const char* metric_name;
   int bitrate_kbps;
@@ -47,6 +53,52 @@ const UmaRampUpMetric kUmaRampupMetrics[] = {
 const size_t kNumUmaRampupMetrics =
     sizeof(kUmaRampupMetrics) / sizeof(kUmaRampupMetrics[0]);
 
+const char kBweLosExperiment[] = "WebRTC-BweLossExperiment";
+
+bool BweLossExperimentIsEnabled() {
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kBweLosExperiment);
+  // The experiment is enabled iff the field trial string begins with "Enabled".
+  return experiment_string.find("Enabled") == 0;
+}
+
+bool ReadBweLossExperimentParameters(float* low_loss_threshold,
+                                     float* high_loss_threshold,
+                                     uint32_t* bitrate_threshold_kbps) {
+  RTC_DCHECK(low_loss_threshold);
+  RTC_DCHECK(high_loss_threshold);
+  RTC_DCHECK(bitrate_threshold_kbps);
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kBweLosExperiment);
+  int parsed_values =
+      sscanf(experiment_string.c_str(), "Enabled-%f,%f,%u", low_loss_threshold,
+             high_loss_threshold, bitrate_threshold_kbps);
+  if (parsed_values == 3) {
+    RTC_CHECK_GT(*low_loss_threshold, 0.0f)
+        << "Loss threshold must be greater than 0.";
+    RTC_CHECK_LE(*low_loss_threshold, 1.0f)
+        << "Loss threshold must be less than or equal to 1.";
+    RTC_CHECK_GT(*high_loss_threshold, 0.0f)
+        << "Loss threshold must be greater than 0.";
+    RTC_CHECK_LE(*high_loss_threshold, 1.0f)
+        << "Loss threshold must be less than or equal to 1.";
+    RTC_CHECK_LE(*low_loss_threshold, *high_loss_threshold)
+        << "The low loss threshold must be less than or equal to the high loss "
+           "threshold.";
+    RTC_CHECK_GE(*bitrate_threshold_kbps, 0)
+        << "Bitrate threshold can't be negative.";
+    RTC_CHECK_LT(*bitrate_threshold_kbps,
+                 std::numeric_limits<int>::max() / 1000)
+        << "Bitrate must be smaller enough to avoid overflows.";
+    return true;
+  }
+  LOG(LS_WARNING) << "Failed to parse parameters for BweLossExperiment "
+                     "experiment from field trial string. Using default.";
+  *low_loss_threshold = kDefaultLowLossThreshold;
+  *high_loss_threshold = kDefaultHighLossThreshold;
+  *bitrate_threshold_kbps = kDefaultBitrateThresholdKbps;
+  return false;
+}
 }  // namespace
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
@@ -74,8 +126,22 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
       event_log_(event_log),
       last_rtc_event_log_ms_(-1),
       in_timeout_experiment_(
-          webrtc::field_trial::IsEnabled("WebRTC-FeedbackTimeout")) {
+          webrtc::field_trial::IsEnabled("WebRTC-FeedbackTimeout")),
+      low_loss_threshold_(kDefaultLowLossThreshold),
+      high_loss_threshold_(kDefaultHighLossThreshold),
+      bitrate_threshold_bps_(1000 * kDefaultBitrateThresholdKbps) {
   RTC_DCHECK(event_log);
+  if (BweLossExperimentIsEnabled()) {
+    uint32_t bitrate_threshold_kbps;
+    if (ReadBweLossExperimentParameters(&low_loss_threshold_,
+                                        &high_loss_threshold_,
+                                        &bitrate_threshold_kbps)) {
+      LOG(LS_INFO) << "Enabled BweLossExperiment with parameters "
+                   << low_loss_threshold_ << ", " << high_loss_threshold_
+                   << ", " << bitrate_threshold_kbps;
+      bitrate_threshold_bps_ = bitrate_threshold_kbps * 1000;
+    }
+  }
 }
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
@@ -229,7 +295,12 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
   int64_t time_since_packet_report_ms = now_ms - last_packet_report_ms_;
   int64_t time_since_feedback_ms = now_ms - last_feedback_ms_;
   if (time_since_packet_report_ms < 1.2 * kFeedbackIntervalMs) {
-    if (last_fraction_loss_ <= 5) {
+    // We only care about loss above a given bitrate threshold.
+    float loss = last_fraction_loss_ / 256.0f;
+    // We only make decisions based on loss when the bitrate is above a
+    // threshold. This is a crude way of handling loss which is uncorrelated
+    // to congestion.
+    if (bitrate_ < bitrate_threshold_bps_ || loss <= low_loss_threshold_) {
       // Loss < 2%: Increase rate by 8% of the min bitrate in the last
       // kBweIncreaseIntervalMs.
       // Note that by remembering the bitrate over the last second one can
@@ -247,23 +318,25 @@ void SendSideBandwidthEstimation::UpdateEstimate(int64_t now_ms) {
       // (gives a little extra increase at low rates, negligible at higher
       // rates).
       bitrate_ += 1000;
-    } else if (last_fraction_loss_ <= 26) {
-      // Loss between 2% - 10%: Do nothing.
-    } else {
-      // Loss > 10%: Limit the rate decreases to once a kBweDecreaseIntervalMs
-      // + rtt.
-      if (!has_decreased_since_last_fraction_loss_ &&
-          (now_ms - time_last_decrease_ms_) >=
-              (kBweDecreaseIntervalMs + last_round_trip_time_ms_)) {
-        time_last_decrease_ms_ = now_ms;
+    } else if (bitrate_ > bitrate_threshold_bps_) {
+      if (loss <= high_loss_threshold_) {
+        // Loss between 2% - 10%: Do nothing.
+      } else {
+        // Loss > 10%: Limit the rate decreases to once a kBweDecreaseIntervalMs
+        // + rtt.
+        if (!has_decreased_since_last_fraction_loss_ &&
+            (now_ms - time_last_decrease_ms_) >=
+                (kBweDecreaseIntervalMs + last_round_trip_time_ms_)) {
+          time_last_decrease_ms_ = now_ms;
 
-        // Reduce rate:
-        //   newRate = rate * (1 - 0.5*lossRate);
-        //   where packetLoss = 256*lossRate;
-        bitrate_ = static_cast<uint32_t>(
-            (bitrate_ * static_cast<double>(512 - last_fraction_loss_)) /
-            512.0);
-        has_decreased_since_last_fraction_loss_ = true;
+          // Reduce rate:
+          //   newRate = rate * (1 - 0.5*lossRate);
+          //   where packetLoss = 256*lossRate;
+          bitrate_ = static_cast<uint32_t>(
+              (bitrate_ * static_cast<double>(512 - last_fraction_loss_)) /
+              512.0);
+          has_decreased_since_last_fraction_loss_ = true;
+        }
       }
     }
   } else if (time_since_feedback_ms >

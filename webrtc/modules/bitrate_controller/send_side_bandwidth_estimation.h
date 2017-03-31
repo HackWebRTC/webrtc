@@ -99,6 +99,9 @@ class SendSideBandwidthEstimation {
   RtcEventLog* event_log_;
   int64_t last_rtc_event_log_ms_;
   bool in_timeout_experiment_;
+  float low_loss_threshold_;
+  float high_loss_threshold_;
+  uint32_t bitrate_threshold_bps_;
 };
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
