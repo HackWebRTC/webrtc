@@ -283,6 +283,9 @@ rtc_static_library("rtc_base_approved") {
       }
     }
   }
+  if (is_nacl) {
+    deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
+  }
 }
 
 config("enable_libevent_config") {
