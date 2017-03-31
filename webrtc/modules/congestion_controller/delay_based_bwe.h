@@ -17,6 +17,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/rate_statistics.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/congestion_controller/median_slope_estimator.h"
 #include "webrtc/modules/congestion_controller/probe_bitrate_estimator.h"
@@ -76,6 +77,8 @@ class DelayBasedBwe {
     int64_t prev_time_ms_;
     float bitrate_estimate_;
     float bitrate_estimate_var_;
+    RateStatistics old_estimator_;
+    const bool in_experiment_;
   };
 
   Result IncomingPacketFeedback(const PacketFeedback& packet_feedback);
@@ -86,12 +89,16 @@ class DelayBasedBwe {
                       int64_t now_ms,
                       rtc::Optional<uint32_t> acked_bitrate_bps,
                       uint32_t* target_bitrate_bps);
+  const bool in_trendline_experiment_;
+  const bool in_median_slope_experiment_;
 
   rtc::ThreadChecker network_thread_;
   RtcEventLog* const event_log_;
   const Clock* const clock_;
   std::unique_ptr<InterArrival> inter_arrival_;
+  std::unique_ptr<OveruseEstimator> kalman_estimator_;
   std::unique_ptr<TrendlineEstimator> trendline_estimator_;
+  std::unique_ptr<MedianSlopeEstimator> median_slope_estimator_;
   OveruseDetector detector_;
   BitrateEstimator receiver_incoming_bitrate_;
   int64_t last_update_ms_;
@@ -103,6 +110,8 @@ class DelayBasedBwe {
   double trendline_smoothing_coeff_;
   double trendline_threshold_gain_;
   ProbingIntervalEstimator probing_interval_estimator_;
+  size_t median_slope_window_size_;
+  double median_slope_threshold_gain_;
   int consecutive_delayed_feedbacks_;
   uint32_t last_logged_bitrate_;
   BandwidthUsage last_logged_state_;
