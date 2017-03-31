@@ -214,12 +214,19 @@ if (is_ios || is_mac) {
 
     if (is_mac) {
       sources += [
+        "objc/Framework/Classes/Metal/RTCMTLI420Renderer.h",
+        "objc/Framework/Classes/Metal/RTCMTLI420Renderer.mm",
+        "objc/Framework/Classes/Metal/RTCMTLNSVideoView.m",
         "objc/Framework/Classes/RTCNSGLVideoView.m",
+        "objc/Framework/Headers/WebRTC/RTCMTLNSVideoView.h",
         "objc/Framework/Headers/WebRTC/RTCNSGLVideoView.h",
       ]
       libs = [
+        "CoreVideo.framework",
         "CoreMedia.framework",
         "OpenGL.framework",
+        "Metal.framework",
+        "MetalKit.framework",
       ]
     }
 
