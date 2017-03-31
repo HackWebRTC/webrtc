@@ -228,7 +228,6 @@ private:
         kCodecL16_8Khz,
         kCodecL16_16kHz,
         kCodecL16_32Khz,
-        kCodecL16_48Khz,
         kCodecPcmu,
         kCodecPcma,
         kCodecIlbc20Ms,

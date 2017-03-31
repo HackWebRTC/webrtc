@@ -132,7 +132,6 @@ int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
 
         switch(_fileFormat)
         {
-            case kFileFormatPcm48kHzFile:
             case kFileFormatPcm32kHzFile:
             case kFileFormatPcm16kHzFile:
             case kFileFormatPcm8kHzFile:
@@ -480,7 +479,6 @@ int32_t MediaFileImpl::StartPlayingStream(
         case kFileFormatPcm8kHzFile:
         case kFileFormatPcm16kHzFile:
         case kFileFormatPcm32kHzFile:
-        case kFileFormatPcm48kHzFile:
         {
             // ValidFileFormat() called in the beginneing of this function
             // prevents codecInst from being NULL here.
@@ -633,7 +631,6 @@ int32_t MediaFileImpl::IncomingAudioData(
                 case kFileFormatPcm8kHzFile:
                 case kFileFormatPcm16kHzFile:
                 case kFileFormatPcm32kHzFile:
-                case kFileFormatPcm48kHzFile:
                     bytesWritten = _ptrFileUtilityObj->WritePCMData(
                         *_ptrOutStream,
                         buffer,
@@ -848,15 +845,13 @@ int32_t MediaFileImpl::StartRecordingAudioStream(
         }
         case kFileFormatPcm8kHzFile:
         case kFileFormatPcm16kHzFile:
-        case kFileFormatPcm32kHzFile:
-        case kFileFormatPcm48kHzFile:
         {
             if(!ValidFrequency(codecInst.plfreq) ||
                _ptrFileUtilityObj->InitPCMWriting(stream, codecInst.plfreq) ==
                -1)
             {
                 WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Failed to initialize PCM file!");
+                             "Failed to initialize 8 or 16KHz PCM file!");
                 delete _ptrFileUtilityObj;
                 _ptrFileUtilityObj = NULL;
                 return -1;
@@ -1075,8 +1070,7 @@ bool MediaFileImpl::ValidFileFormat(const FileFormats format,
         if(format == kFileFormatPreencodedFile ||
            format == kFileFormatPcm8kHzFile    ||
            format == kFileFormatPcm16kHzFile   ||
-           format == kFileFormatPcm32kHzFile   ||
-           format == kFileFormatPcm48kHzFile)
+           format == kFileFormatPcm32kHzFile)
         {
             WEBRTC_TRACE(kTraceError, kTraceFile, -1,
                          "Codec info required for file format specified!");
@@ -1121,12 +1115,12 @@ bool MediaFileImpl::ValidFilePositions(const uint32_t startPointMs,
 
 bool MediaFileImpl::ValidFrequency(const uint32_t frequency)
 {
-    if((frequency == 8000) || (frequency == 16000)|| (frequency == 32000) || (frequency == 48000))
+    if((frequency == 8000) || (frequency == 16000)|| (frequency == 32000))
     {
         return true;
     }
     WEBRTC_TRACE(kTraceError, kTraceFile, -1,
-                 "Frequency should be 8000, 16000, 32000, or 48000 (Hz)");
+                 "Frequency should be 8000, 16000 or 32000 (Hz)");
     return false;
 }
 }  // namespace webrtc

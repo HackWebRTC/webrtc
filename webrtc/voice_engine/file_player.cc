@@ -100,7 +100,7 @@ int32_t FilePlayerImpl::Frequency() const {
   } else if (_codec.plfreq == 44000) {
     return 32000;
   } else if (_codec.plfreq == 48000) {
-    return 48000;
+    return 32000;
   } else {
     return _codec.plfreq;
   }
@@ -220,18 +220,16 @@ int32_t FilePlayerImpl::StartPlayingFile(const char* fileName,
       codecInstL16.rate = 128000;
       codecInstL16.plfreq = 8000;
       codecInstL16.pacsize = 80;
+
     } else if (_fileFormat == kFileFormatPcm16kHzFile) {
       codecInstL16.rate = 256000;
       codecInstL16.plfreq = 16000;
       codecInstL16.pacsize = 160;
+
     } else if (_fileFormat == kFileFormatPcm32kHzFile) {
       codecInstL16.rate = 512000;
       codecInstL16.plfreq = 32000;
-      codecInstL16.pacsize = 320;
-    } else if (_fileFormat == kFileFormatPcm48kHzFile) {
-      codecInstL16.rate = 768000;
-      codecInstL16.plfreq = 48000;
-      codecInstL16.pacsize = 480;
+      codecInstL16.pacsize = 160;
     } else {
       LOG(LS_ERROR) << "StartPlayingFile() sample frequency not "
                     << "supported for PCM format.";
@@ -279,8 +277,7 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream* sourceStream,
                                          const CodecInst* codecInst) {
   if (_fileFormat == kFileFormatPcm16kHzFile ||
       _fileFormat == kFileFormatPcm32kHzFile ||
-      _fileFormat == kFileFormatPcm8kHzFile ||
-      _fileFormat == kFileFormatPcm48kHzFile) {
+      _fileFormat == kFileFormatPcm8kHzFile) {
     CodecInst codecInstL16;
     strncpy(codecInstL16.plname, "L16", 32);
     codecInstL16.pltype = 93;
@@ -290,18 +287,16 @@ int32_t FilePlayerImpl::StartPlayingFile(InStream* sourceStream,
       codecInstL16.rate = 128000;
       codecInstL16.plfreq = 8000;
       codecInstL16.pacsize = 80;
+
     } else if (_fileFormat == kFileFormatPcm16kHzFile) {
       codecInstL16.rate = 256000;
       codecInstL16.plfreq = 16000;
       codecInstL16.pacsize = 160;
+
     } else if (_fileFormat == kFileFormatPcm32kHzFile) {
       codecInstL16.rate = 512000;
       codecInstL16.plfreq = 32000;
-      codecInstL16.pacsize = 320;
-    } else if (_fileFormat == kFileFormatPcm48kHzFile) {
-      codecInstL16.rate = 768000;
-      codecInstL16.plfreq = 48000;
-      codecInstL16.pacsize = 480;
+      codecInstL16.pacsize = 160;
     } else {
       LOG(LS_ERROR) << "StartPlayingFile() sample frequency not "
                     << "supported for PCM format.";
@@ -384,7 +379,6 @@ std::unique_ptr<FilePlayer> FilePlayer::CreateFilePlayer(
     case kFileFormatPcm16kHzFile:
     case kFileFormatPcm8kHzFile:
     case kFileFormatPcm32kHzFile:
-    case kFileFormatPcm48kHzFile:
       // audio formats
       return std::unique_ptr<FilePlayer>(
           new FilePlayerImpl(instanceID, fileFormat));
