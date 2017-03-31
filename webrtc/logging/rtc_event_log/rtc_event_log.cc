@@ -16,7 +16,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/event.h"
-#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/base/swap_queue.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timeutils.h"
@@ -38,7 +37,7 @@
 #include "webrtc/system_wrappers/include/logging.h"
 
 #ifdef ENABLE_RTC_EVENT_LOG
-// *.pb.h files are generated at build-time by the protobuf compiler.
+// Files generated at build-time by the protobuf compiler.
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
 #else
@@ -584,7 +583,7 @@ bool RtcEventLog::ParseRtcEventLog(const std::string& file_name,
   if (!dump_file->OpenFile(file_name.c_str(), true)) {
     return false;
   }
-  ProtoString dump_buffer;
+  std::string dump_buffer;
   while ((bytes_read = dump_file->Read(tmp_buffer, sizeof(tmp_buffer))) > 0) {
     dump_buffer.append(tmp_buffer, bytes_read);
   }

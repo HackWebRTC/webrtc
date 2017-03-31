@@ -202,7 +202,6 @@ if (rtc_enable_protobuf) {
     }
     defines = [ "ENABLE_RTC_EVENT_LOG" ]
     deps = [
-      "../base:protobuf_utils",
       "../call:call_interfaces",
       "../logging:rtc_event_log_impl",
       "../logging:rtc_event_log_parser",
@@ -239,7 +238,6 @@ if (rtc_include_tests) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":event_log_visualizer_utils",
-        "../base:protobuf_utils",
         "../test:field_trial",
         "//third_party/gflags",
       ]
@@ -331,7 +329,6 @@ if (rtc_include_tests) {
         "$root_build_dir/{{source_file_part}}",
       ]
       deps = [
-        "../base:protobuf_utils",
         "../logging:rtc_event_log_proto",
       ]
     }

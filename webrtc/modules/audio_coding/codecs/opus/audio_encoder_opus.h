@@ -18,7 +18,6 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/common_audio/smoothing_filter.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
@@ -157,7 +156,7 @@ class AudioEncoderOpus final : public AudioEncoder {
 
   void ApplyAudioNetworkAdaptor();
   std::unique_ptr<AudioNetworkAdaptor> DefaultAudioNetworkAdaptorCreator(
-      const ProtoString& config_string,
+      const std::string& config_string,
       RtcEventLog* event_log,
       const Clock* clock) const;
 

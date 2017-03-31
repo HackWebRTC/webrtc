@@ -79,17 +79,6 @@ if (!rtc_build_ssl) {
   }
 }
 
-source_set("protobuf_utils") {
-  sources = [
-    "protobuf_utils.h",
-  ]
-  if (rtc_enable_protobuf) {
-    public_deps = [
-      "//third_party/protobuf:protobuf_lite",
-    ]
-  }
-}
-
 # The subset of rtc_base approved for use outside of libjingle.
 rtc_static_library("rtc_base_approved") {
   defines = []

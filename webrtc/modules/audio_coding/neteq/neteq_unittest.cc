@@ -25,7 +25,6 @@
 #include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/sha1digest.h"
 #include "webrtc/base/stringencode.h"
-#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/tools/audio_loop.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
@@ -195,7 +194,7 @@ void ResultSink::AddResult(const NetEqNetworkStatistics& stats_raw) {
   neteq_unittest::NetEqNetworkStatistics stats;
   Convert(stats_raw, &stats);
 
-  ProtoString stats_string;
+  std::string stats_string;
   ASSERT_TRUE(stats.SerializeToString(&stats_string));
   AddMessage(output_fp_, digest_.get(), stats_string);
 #else
@@ -208,7 +207,7 @@ void ResultSink::AddResult(const RtcpStatistics& stats_raw) {
   neteq_unittest::RtcpStatistics stats;
   Convert(stats_raw, &stats);
 
-  ProtoString stats_string;
+  std::string stats_string;
   ASSERT_TRUE(stats.SerializeToString(&stats_string));
   AddMessage(output_fp_, digest_.get(), stats_string);
 #else

@@ -20,7 +20,6 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -128,8 +127,8 @@ std::pair<uint64_t, bool> ParseVarInt(std::istream& stream) {
 
 void GetHeaderExtensions(
     std::vector<RtpExtension>* header_extensions,
-    const RepeatedPtrField<rtclog::RtpHeaderExtension>&
-    proto_header_extensions) {
+    const google::protobuf::RepeatedPtrField<rtclog::RtpHeaderExtension>&
+        proto_header_extensions) {
   header_extensions->clear();
   for (auto& p : proto_header_extensions) {
     RTC_CHECK(p.has_name());

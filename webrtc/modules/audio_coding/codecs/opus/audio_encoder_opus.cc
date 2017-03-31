@@ -16,7 +16,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/numerics/exp_filter.h"
-#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/base/safe_conversions.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_types.h"
@@ -193,7 +192,7 @@ AudioEncoderOpus::AudioEncoderOpus(
       audio_network_adaptor_creator_(
           audio_network_adaptor_creator
               ? std::move(audio_network_adaptor_creator)
-              : [this](const ProtoString& config_string,
+              : [this](const std::string& config_string,
                        RtcEventLog* event_log,
                        const Clock* clock) {
                   return DefaultAudioNetworkAdaptorCreator(config_string,
@@ -549,7 +548,7 @@ void AudioEncoderOpus::ApplyAudioNetworkAdaptor() {
 
 std::unique_ptr<AudioNetworkAdaptor>
 AudioEncoderOpus::DefaultAudioNetworkAdaptorCreator(
-    const ProtoString& config_string,
+    const std::string& config_string,
     RtcEventLog* event_log,
     const Clock* clock) const {
   AudioNetworkAdaptorImpl::Config config;

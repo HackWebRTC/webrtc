@@ -232,7 +232,6 @@ rtc_static_library("audio_processing") {
     "../..:webrtc_common",
     "../../audio/utility:audio_frame_operations",
     "../../base:gtest_prod",
-    "../../base:protobuf_utils",
     "../audio_coding:isac",
   ]
   public_deps = [
@@ -525,7 +524,6 @@ if (rtc_include_tests) {
       ":audioproc_test_utils",
       "../..:webrtc_common",
       "../../base:gtest_prod",
-      "../../base:protobuf_utils",
       "../../base:rtc_base",
       "../../base:rtc_base_approved",
       "../../common_audio:common_audio",
@@ -658,10 +656,8 @@ if (rtc_include_tests) {
     deps = [
       ":audio_processing",
       ":audioproc_test_utils",
-      "../../base:protobuf_utils",
       "//testing/gtest",
     ]
-
     if (rtc_enable_intelligibility_enhancer) {
       defines = [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
     } else {
@@ -682,7 +678,6 @@ if (rtc_include_tests) {
         ":audioproc_protobuf_utils",
         ":audioproc_test_utils",
         "../..:webrtc_common",
-        "../../base:protobuf_utils",
         "../../base:rtc_base_approved",
         "../../common_audio",
         "../../system_wrappers:system_wrappers_default",
@@ -707,7 +702,6 @@ if (rtc_include_tests) {
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",
         ":audioproc_test_utils",
-        "../../base:protobuf_utils",
         "../../base:rtc_base_approved",
         "../../common_audio:common_audio",
         "../../system_wrappers",
@@ -823,7 +817,6 @@ if (rtc_include_tests) {
       deps = [
         ":audioproc_debug_proto",
         "../..:webrtc_common",
-        "../../base:protobuf_utils",
         "../../base:rtc_base_approved",
       ]
     }
