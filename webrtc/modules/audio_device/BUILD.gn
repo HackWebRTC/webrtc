@@ -19,14 +19,6 @@ config("audio_device_config") {
     "include",
     "dummy",  # Contains dummy audio device implementations.
   ]
-  if (is_ios) {
-    # GN orders flags on a target before flags from configs. In order to be able
-    # suppress the -Wthread-safety-analysis warning, it has come from a config
-    # and can't be on the target directly.
-    # TODO(tkchin): Remove after fixing
-    # https://bugs.chromium.org/p/webrtc/issues/detail?id=5748
-    cflags = [ "-Wno-thread-safety-analysis" ]
-  }
 }
 
 config("audio_device_warnings_config") {

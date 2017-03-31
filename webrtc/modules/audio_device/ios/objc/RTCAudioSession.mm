@@ -193,6 +193,9 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   }
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wthread-safety-analysis"
+
 - (void)lockForConfiguration {
   _crit.Enter();
   rtc::AtomicOps::Increment(&_lockRecursionCount);
@@ -209,6 +212,8 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
     _crit.Leave();
   }
 }
+
+#pragma clang diagnostic pop
 
 #pragma mark - AVAudioSession proxy methods
 
