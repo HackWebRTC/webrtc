@@ -677,20 +677,15 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
       "ssrc", rtp_config_.ssrcs[0]);
 }
 
-void SendStatisticsProxy::SetResolutionRestrictionStats(
-    bool scaling_enabled,
-    bool cpu_restricted,
-    int num_quality_downscales) {
+void SendStatisticsProxy::SetCpuScalingStats(bool cpu_restricted_resolution) {
   rtc::CritScope lock(&crit_);
-  if (scaling_enabled) {
-    quality_downscales_ = num_quality_downscales;
-    stats_.bw_limited_resolution = quality_downscales_ > 0;
-    stats_.cpu_limited_resolution = cpu_restricted;
-  } else {
-    stats_.bw_limited_resolution = false;
-    stats_.cpu_limited_resolution = false;
-    quality_downscales_ = -1;
-  }
+  stats_.cpu_limited_resolution = cpu_restricted_resolution;
+}
+
+void SendStatisticsProxy::SetQualityScalingStats(int num_quality_downscales) {
+  rtc::CritScope lock(&crit_);
+  quality_downscales_ = num_quality_downscales;
+  stats_.bw_limited_resolution = quality_downscales_ > 0;
 }
 
 void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(

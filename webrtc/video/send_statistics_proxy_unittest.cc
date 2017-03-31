@@ -367,6 +367,24 @@ TEST_F(SendStatisticsProxyTest, OnSendEncodedImageWithoutQpQpSumWontExist) {
   EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
 }
 
+TEST_F(SendStatisticsProxyTest, SetCpuScalingUpdatesStats) {
+  EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  statistics_proxy_->SetCpuScalingStats(true);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  statistics_proxy_->SetCpuScalingStats(false);
+  EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_resolution);
+}
+
+TEST_F(SendStatisticsProxyTest, SetQualityScalingUpdatesStats) {
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  statistics_proxy_->SetQualityScalingStats(-1);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  statistics_proxy_->SetQualityScalingStats(0);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  statistics_proxy_->SetQualityScalingStats(1);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+}
+
 TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
@@ -779,9 +797,9 @@ TEST_F(SendStatisticsProxyTest,
 
 TEST_F(SendStatisticsProxyTest,
        QualityLimitedHistogramsNotUpdatedWhenDisabled) {
+  const int kNumDownscales = -1;
   EncodedImage encoded_image;
-  statistics_proxy_->SetResolutionRestrictionStats(false /* scaling_enabled */,
-                                                   0, 0);
+  statistics_proxy_->SetQualityScalingStats(kNumDownscales);
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, &kDefaultCodecInfo);
 

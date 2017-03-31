@@ -461,13 +461,15 @@ void ViEEncoder::ConfigureQualityScaler() {
   const auto scaling_settings = settings_.encoder->GetScalingSettings();
   const bool degradation_preference_allows_scaling =
       degradation_preference_ != DegradationPreference::kMaintainResolution;
+  const bool quality_scaling_allowed =
+      degradation_preference_allows_scaling && scaling_settings.enabled;
 
-  stats_proxy_->SetResolutionRestrictionStats(
-      degradation_preference_allows_scaling, scale_counter_[kCpu] > 0,
-      scale_counter_[kQuality]);
+  stats_proxy_->SetCpuScalingStats(
+      degradation_preference_allows_scaling ? scale_counter_[kCpu] > 0 : false);
+  stats_proxy_->SetQualityScalingStats(
+      quality_scaling_allowed ? scale_counter_[kQuality] : -1);
 
-  if (degradation_preference_allows_scaling &&
-      scaling_settings.enabled) {
+  if (quality_scaling_allowed) {
     // Abort if quality scaler has already been configured.
     if (quality_scaler_.get() != nullptr)
       return;

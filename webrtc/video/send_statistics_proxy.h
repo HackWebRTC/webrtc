@@ -59,9 +59,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
   void OnCpuRestrictedResolutionChanged(bool cpu_restricted_resolution);
   void OnQualityRestrictedResolutionChanged(int num_quality_downscales);
-  void SetResolutionRestrictionStats(bool scaling_enabled,
-                                     bool cpu_restricted,
-                                     int num_quality_downscales);
+  void SetCpuScalingStats(bool cpu_restricted_resolution);
+  void SetQualityScalingStats(int num_quality_downscales);  // -1: disabled.
 
   void OnEncoderStatsUpdate(uint32_t framerate, uint32_t bitrate);
   void OnSuspendChange(bool is_suspended);
