@@ -90,9 +90,14 @@ void ChannelProxy::RegisterReceiverCongestionControlObjects(
   channel()->RegisterReceiverCongestionControlObjects(packet_router);
 }
 
-void ChannelProxy::ResetCongestionControlObjects() {
+void ChannelProxy::ResetSenderCongestionControlObjects() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  channel()->ResetCongestionControlObjects();
+  channel()->ResetSenderCongestionControlObjects();
+}
+
+void ChannelProxy::ResetReceiverCongestionControlObjects() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  channel()->ResetReceiverCongestionControlObjects();
 }
 
 CallStatistics ChannelProxy::GetRTCPStatistics() const {

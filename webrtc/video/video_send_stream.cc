@@ -816,7 +816,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   // when sending padding, with the hope that the packet rate will be smaller,
   // and that it's more important to protect than the lower layers.
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
-    transport->packet_router()->AddRtpModule(rtp_rtcp);
+    transport->packet_router()->AddSendRtpModule(rtp_rtcp);
 
   for (size_t i = 0; i < config_->rtp.extensions.size(); ++i) {
     const std::string& extension = config_->rtp.extensions[i].uri;
@@ -895,7 +895,7 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
   remb_->RemoveRembSender(rtp_rtcp_modules_[0]);
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
-    transport_->packet_router()->RemoveRtpModule(rtp_rtcp);
+    transport_->packet_router()->RemoveSendRtpModule(rtp_rtcp);
     delete rtp_rtcp;
   }
 }

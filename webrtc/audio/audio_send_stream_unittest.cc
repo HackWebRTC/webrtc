@@ -176,7 +176,8 @@ struct ConfigHelper {
                                        &fake_transport_, Eq(nullptr)))
           .Times(1);
     }
-    EXPECT_CALL(*channel_proxy_, ResetCongestionControlObjects()).Times(1);
+    EXPECT_CALL(*channel_proxy_, ResetSenderCongestionControlObjects())
+        .Times(1);
     EXPECT_CALL(*channel_proxy_, RegisterExternalTransport(nullptr)).Times(1);
     EXPECT_CALL(*channel_proxy_, DeRegisterExternalTransport()).Times(1);
     EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::NotNull())).Times(1);

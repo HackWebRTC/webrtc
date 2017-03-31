@@ -97,7 +97,7 @@ struct ConfigHelper {
           EXPECT_CALL(*channel_proxy_,
               RegisterReceiverCongestionControlObjects(&packet_router_))
                   .Times(1);
-          EXPECT_CALL(*channel_proxy_, ResetCongestionControlObjects())
+          EXPECT_CALL(*channel_proxy_, ResetReceiverCongestionControlObjects())
               .Times(1);
           EXPECT_CALL(*channel_proxy_, RegisterExternalTransport(nullptr))
               .Times(1);

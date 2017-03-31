@@ -282,8 +282,8 @@ class Channel
       RtpTransportControllerSendInterface* transport,
       RtcpBandwidthObserver* bandwidth_observer);
   void RegisterReceiverCongestionControlObjects(PacketRouter* packet_router);
-  void ResetCongestionControlObjects();
-
+  void ResetSenderCongestionControlObjects();
+  void ResetReceiverCongestionControlObjects();
   void SetRTCPStatus(bool enable);
   int GetRTCPStatus(bool& enabled);
   int SetRTCP_CNAME(const char cName[256]);

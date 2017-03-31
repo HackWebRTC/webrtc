@@ -67,7 +67,8 @@ class ChannelProxy {
       RtcpBandwidthObserver* bandwidth_observer);
   virtual void RegisterReceiverCongestionControlObjects(
       PacketRouter* packet_router);
-  virtual void ResetCongestionControlObjects();
+  virtual void ResetSenderCongestionControlObjects();
+  virtual void ResetReceiverCongestionControlObjects();
   virtual CallStatistics GetRTCPStatistics() const;
   virtual std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const;
   virtual NetworkStatistics GetNetworkStatistics() const;

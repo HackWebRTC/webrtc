@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_PACING_PACKET_ROUTER_H_
 
 #include <list>
+#include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/criticalsection.h"
@@ -28,16 +29,29 @@ namespace rtcp {
 class TransportFeedback;
 }  // namespace rtcp
 
-// PacketRouter routes outgoing data to the correct sending RTP module, based
-// on the simulcast layer in RTPVideoHeader.
+// PacketRouter keeps track of rtp send modules to support the pacer.
+// In addition, it handles feedback messages, which are sent on a send
+// module if possible (sender report), otherwise on receive module
+// (receiver report). For the latter case, we also keep track of the
+// receive modules.
 class PacketRouter : public PacedSender::PacketSender,
                      public TransportSequenceNumberAllocator {
  public:
   PacketRouter();
   virtual ~PacketRouter();
 
-  void AddRtpModule(RtpRtcp* rtp_module);
-  void RemoveRtpModule(RtpRtcp* rtp_module);
+  // TODO(nisse): Delete, as soon as downstream app is updated.
+  RTC_DEPRECATED void AddRtpModule(RtpRtcp* rtp_module) {
+    AddReceiveRtpModule(rtp_module);
+  }
+  RTC_DEPRECATED void RemoveRtpModule(RtpRtcp* rtp_module) {
+    RemoveReceiveRtpModule(rtp_module);
+  }
+  void AddSendRtpModule(RtpRtcp* rtp_module);
+  void RemoveSendRtpModule(RtpRtcp* rtp_module);
+
+  void AddReceiveRtpModule(RtpRtcp* rtp_module);
+  void RemoveReceiveRtpModule(RtpRtcp* rtp_module);
 
   // Implements PacedSender::Callback.
   bool TimeToSendPacket(uint32_t ssrc,
@@ -58,7 +72,8 @@ class PacketRouter : public PacedSender::PacketSender,
  private:
   rtc::ThreadChecker pacer_thread_checker_;
   rtc::CriticalSection modules_crit_;
-  std::list<RtpRtcp*> rtp_modules_ GUARDED_BY(modules_crit_);
+  std::list<RtpRtcp*> rtp_send_modules_ GUARDED_BY(modules_crit_);
+  std::vector<RtpRtcp*> rtp_receive_modules_ GUARDED_BY(modules_crit_);
 
   volatile int transport_seq_;
 

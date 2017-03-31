@@ -39,8 +39,8 @@ class PacketRouterTest : public ::testing::Test {
 TEST_F(PacketRouterTest, TimeToSendPacket) {
   MockRtpRtcp rtp_1;
   MockRtpRtcp rtp_2;
-  packet_router_->AddRtpModule(&rtp_1);
-  packet_router_->AddRtpModule(&rtp_2);
+  packet_router_->AddSendRtpModule(&rtp_1);
+  packet_router_->AddSendRtpModule(&rtp_2);
 
   const uint16_t kSsrc1 = 1234;
   uint16_t sequence_number = 17;
@@ -98,7 +98,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
       kSsrc1 + kSsrc2, sequence_number, timestamp, retransmission,
       PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
 
-  packet_router_->RemoveRtpModule(&rtp_1);
+  packet_router_->RemoveSendRtpModule(&rtp_1);
 
   // rtp_1 has been removed, try sending a packet on that ssrc and make sure
   // it is dropped as expected by not expecting any calls to rtp_1.
@@ -110,7 +110,7 @@ TEST_F(PacketRouterTest, TimeToSendPacket) {
       PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
                       kProbeMinBytes)));
 
-  packet_router_->RemoveRtpModule(&rtp_2);
+  packet_router_->RemoveSendRtpModule(&rtp_2);
 }
 
 TEST_F(PacketRouterTest, TimeToSendPadding) {
@@ -124,8 +124,8 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
   // rtp_2 will be prioritized for padding.
   EXPECT_CALL(rtp_2, RtxSendStatus()).WillOnce(Return(kRtxRedundantPayloads));
   EXPECT_CALL(rtp_2, SSRC()).WillRepeatedly(Return(kSsrc2));
-  packet_router_->AddRtpModule(&rtp_1);
-  packet_router_->AddRtpModule(&rtp_2);
+  packet_router_->AddSendRtpModule(&rtp_1);
+  packet_router_->AddSendRtpModule(&rtp_2);
 
   // Default configuration, sending padding on all modules sending media,
   // ordered by priority (based on rtx mode).
@@ -191,7 +191,7 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
                 PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
                                 kProbeMinBytes)));
 
-  packet_router_->RemoveRtpModule(&rtp_1);
+  packet_router_->RemoveSendRtpModule(&rtp_1);
 
   // rtp_1 has been removed, try sending padding and make sure rtp_1 isn't asked
   // to send by not expecting any calls. Instead verify rtp_2 is called.
@@ -204,12 +204,12 @@ TEST_F(PacketRouterTest, TimeToSendPadding) {
                 PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
                                 kProbeMinBytes)));
 
-  packet_router_->RemoveRtpModule(&rtp_2);
+  packet_router_->RemoveSendRtpModule(&rtp_2);
 }
 
 TEST_F(PacketRouterTest, SenderOnlyFunctionsRespectSendingMedia) {
   MockRtpRtcp rtp;
-  packet_router_->AddRtpModule(&rtp);
+  packet_router_->AddSendRtpModule(&rtp);
   static const uint16_t kSsrc = 1234;
   EXPECT_CALL(rtp, SSRC()).WillRepeatedly(Return(kSsrc));
   EXPECT_CALL(rtp, SendingMedia()).WillRepeatedly(Return(false));
@@ -226,7 +226,7 @@ TEST_F(PacketRouterTest, SenderOnlyFunctionsRespectSendingMedia) {
                 200, PacedPacketInfo(PacedPacketInfo::kNotAProbe,
                                      kProbeMinBytes, kProbeMinBytes)));
 
-  packet_router_->RemoveRtpModule(&rtp);
+  packet_router_->RemoveSendRtpModule(&rtp);
 }
 
 TEST_F(PacketRouterTest, AllocateSequenceNumbers) {
@@ -245,15 +245,15 @@ TEST_F(PacketRouterTest, AllocateSequenceNumbers) {
 TEST_F(PacketRouterTest, SendFeedback) {
   MockRtpRtcp rtp_1;
   MockRtpRtcp rtp_2;
-  packet_router_->AddRtpModule(&rtp_1);
-  packet_router_->AddRtpModule(&rtp_2);
+  packet_router_->AddSendRtpModule(&rtp_1);
+  packet_router_->AddReceiveRtpModule(&rtp_2);
 
   rtcp::TransportFeedback feedback;
   EXPECT_CALL(rtp_1, SendFeedbackPacket(_)).Times(1);
   packet_router_->SendFeedback(&feedback);
-  packet_router_->RemoveRtpModule(&rtp_1);
+  packet_router_->RemoveSendRtpModule(&rtp_1);
   EXPECT_CALL(rtp_2, SendFeedbackPacket(_)).Times(1);
   packet_router_->SendFeedback(&feedback);
-  packet_router_->RemoveRtpModule(&rtp_2);
+  packet_router_->RemoveReceiveRtpModule(&rtp_2);
 }
 }  // namespace webrtc

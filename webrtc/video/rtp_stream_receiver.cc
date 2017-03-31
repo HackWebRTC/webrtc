@@ -115,7 +115,7 @@ RtpStreamReceiver::RtpStreamReceiver(
       complete_frame_callback_(complete_frame_callback),
       keyframe_request_sender_(keyframe_request_sender),
       timing_(timing) {
-  packet_router_->AddRtpModule(rtp_rtcp_.get());
+  packet_router_->AddReceiveRtpModule(rtp_rtcp_.get());
   rtp_receive_statistics_->RegisterRtpStatisticsCallback(receive_stats_proxy);
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(receive_stats_proxy);
 
@@ -202,7 +202,7 @@ RtpStreamReceiver::~RtpStreamReceiver() {
 
   process_thread_->DeRegisterModule(rtp_rtcp_.get());
 
-  packet_router_->RemoveRtpModule(rtp_rtcp_.get());
+  packet_router_->RemoveReceiveRtpModule(rtp_rtcp_.get());
   rtp_rtcp_->SetREMBStatus(false);
   if (config_.rtp.remb) {
     remb_->RemoveReceiveChannel(rtp_rtcp_.get());

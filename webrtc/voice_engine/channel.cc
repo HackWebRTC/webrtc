@@ -2441,26 +2441,32 @@ void Channel::RegisterSenderCongestionControlObjects(
   seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
   rtp_packet_sender_proxy_->SetPacketSender(rtp_packet_sender);
   _rtpRtcpModule->SetStorePacketsStatus(true, 600);
-  packet_router->AddRtpModule(_rtpRtcpModule.get());
+  packet_router->AddSendRtpModule(_rtpRtcpModule.get());
   packet_router_ = packet_router;
 }
 
 void Channel::RegisterReceiverCongestionControlObjects(
     PacketRouter* packet_router) {
   RTC_DCHECK(packet_router && !packet_router_);
-  packet_router->AddRtpModule(_rtpRtcpModule.get());
+  packet_router->AddReceiveRtpModule(_rtpRtcpModule.get());
   packet_router_ = packet_router;
 }
 
-void Channel::ResetCongestionControlObjects() {
+void Channel::ResetSenderCongestionControlObjects() {
   RTC_DCHECK(packet_router_);
   _rtpRtcpModule->SetStorePacketsStatus(false, 600);
   rtcp_observer_->SetBandwidthObserver(nullptr);
   feedback_observer_proxy_->SetTransportFeedbackObserver(nullptr);
   seq_num_allocator_proxy_->SetSequenceNumberAllocator(nullptr);
-  packet_router_->RemoveRtpModule(_rtpRtcpModule.get());
+  packet_router_->RemoveSendRtpModule(_rtpRtcpModule.get());
   packet_router_ = nullptr;
   rtp_packet_sender_proxy_->SetPacketSender(nullptr);
+}
+
+void Channel::ResetReceiverCongestionControlObjects() {
+  RTC_DCHECK(packet_router_);
+  packet_router_->RemoveReceiveRtpModule(_rtpRtcpModule.get());
+  packet_router_ = nullptr;
 }
 
 void Channel::SetRTCPStatus(bool enable) {

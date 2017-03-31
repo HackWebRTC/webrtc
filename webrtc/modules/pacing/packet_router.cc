@@ -23,27 +23,43 @@ PacketRouter::PacketRouter() : transport_seq_(0) {
 }
 
 PacketRouter::~PacketRouter() {
-  RTC_DCHECK(rtp_modules_.empty());
+  RTC_DCHECK(rtp_send_modules_.empty());
+  RTC_DCHECK(rtp_receive_modules_.empty());
 }
 
-void PacketRouter::AddRtpModule(RtpRtcp* rtp_module) {
+void PacketRouter::AddSendRtpModule(RtpRtcp* rtp_module) {
   rtc::CritScope cs(&modules_crit_);
-  RTC_DCHECK(std::find(rtp_modules_.begin(), rtp_modules_.end(), rtp_module) ==
-             rtp_modules_.end());
+  RTC_DCHECK(std::find(rtp_send_modules_.begin(), rtp_send_modules_.end(),
+                       rtp_module) == rtp_send_modules_.end());
   // Put modules which can use regular payload packets (over rtx) instead of
   // padding first as it's less of a waste
   if ((rtp_module->RtxSendStatus() & kRtxRedundantPayloads) > 0) {
-    rtp_modules_.push_front(rtp_module);
+    rtp_send_modules_.push_front(rtp_module);
   } else {
-    rtp_modules_.push_back(rtp_module);
+    rtp_send_modules_.push_back(rtp_module);
   }
 }
 
-void PacketRouter::RemoveRtpModule(RtpRtcp* rtp_module) {
+void PacketRouter::RemoveSendRtpModule(RtpRtcp* rtp_module) {
   rtc::CritScope cs(&modules_crit_);
-  RTC_DCHECK(std::find(rtp_modules_.begin(), rtp_modules_.end(), rtp_module) !=
-             rtp_modules_.end());
-  rtp_modules_.remove(rtp_module);
+  RTC_DCHECK(std::find(rtp_send_modules_.begin(), rtp_send_modules_.end(),
+                       rtp_module) != rtp_send_modules_.end());
+  rtp_send_modules_.remove(rtp_module);
+}
+
+void PacketRouter::AddReceiveRtpModule(RtpRtcp* rtp_module) {
+  rtc::CritScope cs(&modules_crit_);
+  RTC_DCHECK(std::find(rtp_receive_modules_.begin(), rtp_receive_modules_.end(),
+                       rtp_module) == rtp_receive_modules_.end());
+  rtp_receive_modules_.push_back(rtp_module);
+}
+
+void PacketRouter::RemoveReceiveRtpModule(RtpRtcp* rtp_module) {
+  rtc::CritScope cs(&modules_crit_);
+  const auto& it = std::find(rtp_receive_modules_.begin(),
+                             rtp_receive_modules_.end(), rtp_module);
+  RTC_DCHECK(it != rtp_receive_modules_.end());
+  rtp_receive_modules_.erase(it);
 }
 
 bool PacketRouter::TimeToSendPacket(uint32_t ssrc,
@@ -53,7 +69,7 @@ bool PacketRouter::TimeToSendPacket(uint32_t ssrc,
                                     const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(pacer_thread_checker_.CalledOnValidThread());
   rtc::CritScope cs(&modules_crit_);
-  for (auto* rtp_module : rtp_modules_) {
+  for (auto* rtp_module : rtp_send_modules_) {
     if (!rtp_module->SendingMedia())
       continue;
     if (ssrc == rtp_module->SSRC() || ssrc == rtp_module->FlexfecSsrc()) {
@@ -71,7 +87,7 @@ size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,
   size_t total_bytes_sent = 0;
   rtc::CritScope cs(&modules_crit_);
   // Rtp modules are ordered by which stream can most benefit from padding.
-  for (RtpRtcp* module : rtp_modules_) {
+  for (RtpRtcp* module : rtp_send_modules_) {
     if (module->SendingMedia() && module->HasBweExtensions()) {
       size_t bytes_sent = module->TimeToSendPadding(
           bytes_to_send - total_bytes_sent, pacing_info);
@@ -106,8 +122,15 @@ uint16_t PacketRouter::AllocateSequenceNumber() {
 }
 
 bool PacketRouter::SendFeedback(rtcp::TransportFeedback* packet) {
+  RTC_DCHECK(pacer_thread_checker_.CalledOnValidThread());
   rtc::CritScope cs(&modules_crit_);
-  for (auto* rtp_module : rtp_modules_) {
+  // Prefer send modules.
+  for (auto* rtp_module : rtp_send_modules_) {
+    packet->SetSenderSsrc(rtp_module->SSRC());
+    if (rtp_module->SendFeedbackPacket(*packet))
+      return true;
+  }
+  for (auto* rtp_module : rtp_receive_modules_) {
     packet->SetSenderSsrc(rtp_module->SSRC());
     if (rtp_module->SendFeedbackPacket(*packet))
       return true;

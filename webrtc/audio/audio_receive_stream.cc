@@ -117,7 +117,7 @@ AudioReceiveStream::~AudioReceiveStream() {
   }
   channel_proxy_->DisassociateSendChannel();
   channel_proxy_->DeRegisterExternalTransport();
-  channel_proxy_->ResetCongestionControlObjects();
+  channel_proxy_->ResetReceiverCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
 }
 

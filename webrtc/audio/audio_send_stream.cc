@@ -111,7 +111,7 @@ AudioSendStream::~AudioSendStream() {
   LOG(LS_INFO) << "~AudioSendStream: " << config_.ToString();
   transport_->send_side_cc()->DeRegisterPacketFeedbackObserver(this);
   channel_proxy_->DeRegisterExternalTransport();
-  channel_proxy_->ResetCongestionControlObjects();
+  channel_proxy_->ResetSenderCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
   channel_proxy_->SetRtcpRttStats(nullptr);
 }
