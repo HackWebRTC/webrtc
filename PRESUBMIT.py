@@ -487,26 +487,6 @@ def _RunPythonTests(input_api, output_api):
   return input_api.RunTests(tests, parallel=True)
 
 
-def _CheckUsageOfGoogleProtobufNamespace(input_api, output_api):
-  """Checks that the namespace google::protobuf has not been used."""
-  files = []
-  pattern = input_api.re.compile(r'google::protobuf')
-  proto_utils_path = os.path.join('webrtc', 'base', 'protobuf_utils.h')
-  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
-    if f.LocalPath() in [proto_utils_path, 'PRESUBMIT.py']:
-      continue
-    contents = input_api.ReadFile(f)
-    if pattern.search(contents):
-      files.append(f)
-
-  if files:
-    return [output_api.PresubmitError(
-        'Please avoid to use namespace `google::protobuf` directly.\n'
-        'Add a using directive in `%s` and include that header instead.'
-        % proto_utils_path, files)]
-  return []
-
-
 def _CommonChecks(input_api, output_api):
   """Checks common to both upload and commit."""
   results = []
@@ -575,7 +555,6 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckUnwantedDependencies(input_api, output_api))
   results.extend(_CheckJSONParseErrors(input_api, output_api))
   results.extend(_RunPythonTests(input_api, output_api))
-  results.extend(_CheckUsageOfGoogleProtobufNamespace(input_api, output_api))
   return results
 
 
