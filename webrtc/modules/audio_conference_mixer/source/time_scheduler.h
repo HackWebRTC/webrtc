@@ -17,7 +17,6 @@
 #define WEBRTC_MODULES_AUDIO_CONFERENCE_MIXER_SOURCE_TIME_SCHEDULER_H_
 
 namespace webrtc {
-class CriticalSectionWrapper;
 
 class TimeScheduler {
 public:

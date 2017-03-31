@@ -16,19 +16,17 @@
 
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/api/video/video_frame.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_capture/video_capture.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/gtest.h"
 
-using webrtc::CriticalSectionWrapper;
-using webrtc::CriticalSectionScoped;
 using webrtc::SleepMs;
 using webrtc::VideoCaptureCapability;
 using webrtc::VideoCaptureFactory;
@@ -61,8 +59,7 @@ static const int kTestFramerate = 30;
 class TestVideoCaptureCallback
     : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
-  TestVideoCaptureCallback()
-      : capture_cs_(CriticalSectionWrapper::CreateCriticalSection()),
+  TestVideoCaptureCallback() :
         last_render_time_ms_(0),
         incoming_frames_(0),
         timing_warnings_(0),
@@ -74,7 +71,7 @@ class TestVideoCaptureCallback
   }
 
   void OnFrame(const webrtc::VideoFrame& videoFrame) override {
-    CriticalSectionScoped cs(capture_cs_.get());
+    rtc::CritScope cs(&capture_cs_);
     int height = videoFrame.height();
     int width = videoFrame.width();
 #if defined(ANDROID) && ANDROID
@@ -107,38 +104,38 @@ class TestVideoCaptureCallback
   }
 
   void SetExpectedCapability(VideoCaptureCapability capability) {
-    CriticalSectionScoped cs(capture_cs_.get());
+    rtc::CritScope cs(&capture_cs_);
     capability_= capability;
     incoming_frames_ = 0;
     last_render_time_ms_ = 0;
   }
   int incoming_frames() {
-    CriticalSectionScoped cs(capture_cs_.get());
+    rtc::CritScope cs(&capture_cs_);
     return incoming_frames_;
   }
 
   int timing_warnings() {
-    CriticalSectionScoped cs(capture_cs_.get());
+    rtc::CritScope cs(&capture_cs_);
     return timing_warnings_;
   }
   VideoCaptureCapability capability() {
-    CriticalSectionScoped cs(capture_cs_.get());
+    rtc::CritScope cs(&capture_cs_);
     return capability_;
   }
 
   bool CompareLastFrame(const webrtc::VideoFrame& frame) {
-    CriticalSectionScoped cs(capture_cs_.get());
+    rtc::CritScope cs(&capture_cs_);
     return webrtc::test::FrameBufsEqual(last_frame_,
                                         frame.video_frame_buffer());
   }
 
   void SetExpectedCaptureRotation(webrtc::VideoRotation rotation) {
-    CriticalSectionScoped cs(capture_cs_.get());
+    rtc::CritScope cs(&capture_cs_);
     rotate_frame_ = rotation;
   }
 
  private:
-  std::unique_ptr<CriticalSectionWrapper> capture_cs_;
+  rtc::CriticalSection capture_cs_;
   VideoCaptureCapability capability_;
   int64_t last_render_time_ms_;
   int incoming_frames_;

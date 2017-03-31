@@ -21,7 +21,6 @@
 #include "webrtc/base/race_checker.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
 
 namespace media_optimization {
 class MediaOptimization;

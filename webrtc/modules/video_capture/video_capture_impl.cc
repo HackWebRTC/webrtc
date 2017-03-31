@@ -20,7 +20,6 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
@@ -81,7 +80,6 @@ int32_t VideoCaptureImpl::RotationInDegrees(VideoRotation rotation,
 
 VideoCaptureImpl::VideoCaptureImpl()
     : _deviceUniqueId(NULL),
-      _apiCs(*CriticalSectionWrapper::CreateCriticalSection()),
       _requestedCapability(),
       _lastProcessTimeNanos(rtc::TimeNanos()),
       _lastFrameRateCallbackTimeNanos(rtc::TimeNanos()),
@@ -99,20 +97,18 @@ VideoCaptureImpl::VideoCaptureImpl()
 VideoCaptureImpl::~VideoCaptureImpl()
 {
     DeRegisterCaptureDataCallback();
-    delete &_apiCs;
-
     if (_deviceUniqueId)
         delete[] _deviceUniqueId;
 }
 
 void VideoCaptureImpl::RegisterCaptureDataCallback(
     rtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
-    CriticalSectionScoped cs(&_apiCs);
+    rtc::CritScope cs(&_apiCs);
     _dataCallBack = dataCallBack;
 }
 
 void VideoCaptureImpl::DeRegisterCaptureDataCallback() {
-    CriticalSectionScoped cs(&_apiCs);
+    rtc::CritScope cs(&_apiCs);
     _dataCallBack = NULL;
 }
 int32_t VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame) {
@@ -131,7 +127,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
     const VideoCaptureCapability& frameInfo,
     int64_t captureTime/*=0*/)
 {
-    CriticalSectionScoped cs(&_apiCs);
+    rtc::CritScope cs(&_apiCs);
 
     const int32_t width = frameInfo.width;
     const int32_t height = frameInfo.height;
@@ -196,7 +192,7 @@ int32_t VideoCaptureImpl::IncomingFrame(
 }
 
 int32_t VideoCaptureImpl::SetCaptureRotation(VideoRotation rotation) {
-  CriticalSectionScoped cs(&_apiCs);
+  rtc::CritScope cs(&_apiCs);
   _rotateFrame = rotation;
   return 0;
 }

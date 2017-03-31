@@ -20,7 +20,6 @@
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/overuse_estimator.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/typedefs.h"
 
@@ -53,7 +52,6 @@ RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
       last_valid_incoming_bitrate_(0),
       remote_rate_(new AimdRateControl()),
       observer_(observer),
-      crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
       last_process_time_(-1),
       process_interval_ms_(kProcessIntervalMs),
       uma_recorded_(false) {
@@ -83,7 +81,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
   uint32_t rtp_timestamp = header.timestamp +
       header.extension.transmissionTimeOffset;
   int64_t now_ms = clock_->TimeInMilliseconds();
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   SsrcOveruseEstimatorMap::iterator it = overuse_detectors_.find(ssrc);
   if (it == overuse_detectors_.end()) {
     // This is a new SSRC. Adding to map.
@@ -143,7 +141,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
 
 void RemoteBitrateEstimatorSingleStream::Process() {
   {
-    CriticalSectionScoped cs(crit_sect_.get());
+    rtc::CritScope cs(&crit_sect_);
     UpdateEstimate(clock_->TimeInMilliseconds());
   }
   last_process_time_ = clock_->TimeInMilliseconds();
@@ -153,7 +151,7 @@ int64_t RemoteBitrateEstimatorSingleStream::TimeUntilNextProcess() {
   if (last_process_time_ < 0) {
     return 0;
   }
-  CriticalSectionScoped cs_(crit_sect_.get());
+  rtc::CritScope cs_(&crit_sect_);
   RTC_DCHECK_GT(process_interval_ms_, 0);
   return last_process_time_ + process_interval_ms_ -
       clock_->TimeInMilliseconds();
@@ -207,12 +205,12 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
 
 void RemoteBitrateEstimatorSingleStream::OnRttUpdate(int64_t avg_rtt_ms,
                                                      int64_t max_rtt_ms) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   GetRemoteRate()->SetRtt(avg_rtt_ms);
 }
 
 void RemoteBitrateEstimatorSingleStream::RemoveStream(unsigned int ssrc) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   SsrcOveruseEstimatorMap::iterator it = overuse_detectors_.find(ssrc);
   if (it != overuse_detectors_.end()) {
     delete it->second;
@@ -223,7 +221,7 @@ void RemoteBitrateEstimatorSingleStream::RemoveStream(unsigned int ssrc) {
 bool RemoteBitrateEstimatorSingleStream::LatestEstimate(
     std::vector<uint32_t>* ssrcs,
     uint32_t* bitrate_bps) const {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   assert(bitrate_bps);
   if (!remote_rate_->ValidEstimate()) {
     return false;
@@ -254,7 +252,7 @@ AimdRateControl* RemoteBitrateEstimatorSingleStream::GetRemoteRate() {
 }
 
 void RemoteBitrateEstimatorSingleStream::SetMinBitrate(int min_bitrate_bps) {
-  CriticalSectionScoped cs(crit_sect_.get());
+  rtc::CritScope cs(&crit_sect_);
   remote_rate_->SetMinBitrate(min_bitrate_bps);
 }
 

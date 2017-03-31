@@ -24,7 +24,6 @@
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/modules/video_capture/linux/video_capture_linux.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
 #include "webrtc/system_wrappers/include/trace.h"
 
 namespace webrtc {
@@ -42,7 +41,6 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
 
 VideoCaptureModuleV4L2::VideoCaptureModuleV4L2()
     : VideoCaptureImpl(),
-      _captureCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _deviceId(-1),
       _deviceFd(-1),
       _buffersAllocatedByDevice(-1),
@@ -107,10 +105,6 @@ int32_t VideoCaptureModuleV4L2::Init(const char* deviceUniqueIdUTF8)
 VideoCaptureModuleV4L2::~VideoCaptureModuleV4L2()
 {
     StopCapture();
-    if (_captureCritSect)
-    {
-        delete _captureCritSect;
-    }
     if (_deviceFd != -1)
       close(_deviceFd);
 }
@@ -132,7 +126,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
         }
     }
 
-    CriticalSectionScoped cs(_captureCritSect);
+    rtc::CritScope cs(&_captureCritSect);
     //first open /dev/video device
     char device[20];
     sprintf(device, "/dev/video%d", (int) _deviceId);
@@ -303,7 +297,7 @@ int32_t VideoCaptureModuleV4L2::StopCapture()
         _captureThread.reset();
     }
 
-    CriticalSectionScoped cs(_captureCritSect);
+    rtc::CritScope cs(&_captureCritSect);
     if (_captureStarted)
     {
         _captureStarted = false;
@@ -410,7 +404,7 @@ bool VideoCaptureModuleV4L2::CaptureProcess()
     fd_set rSet;
     struct timeval timeout;
 
-    _captureCritSect->Enter();
+    rtc::CritScope cs(&_captureCritSect);
 
     FD_ZERO(&rSet);
     FD_SET(_deviceFd, &rSet);
@@ -421,19 +415,16 @@ bool VideoCaptureModuleV4L2::CaptureProcess()
     if (retVal < 0 && errno != EINTR) // continue if interrupted
     {
         // select failed
-        _captureCritSect->Leave();
         return false;
     }
     else if (retVal == 0)
     {
         // select timed out
-        _captureCritSect->Leave();
         return true;
     }
     else if (!FD_ISSET(_deviceFd, &rSet))
     {
         // not event on camera handle
-        _captureCritSect->Leave();
         return true;
     }
 
@@ -450,7 +441,6 @@ bool VideoCaptureModuleV4L2::CaptureProcess()
             {
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, 0,
                            "could not sync on a buffer on device %s", strerror(errno));
-                _captureCritSect->Leave();
                 return true;
             }
         }
@@ -469,7 +459,6 @@ bool VideoCaptureModuleV4L2::CaptureProcess()
                        "Failed to enqueue capture buffer");
         }
     }
-    _captureCritSect->Leave();
     usleep(0);
     return true;
 }
