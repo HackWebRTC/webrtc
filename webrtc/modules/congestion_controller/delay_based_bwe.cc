@@ -42,86 +42,12 @@ constexpr int kInitialRateWindowMs = 500;
 constexpr int kRateWindowMs = 150;
 
 // Parameters for linear least squares fit of regression line to noisy data.
-constexpr size_t kDefaultTrendlineWindowSize = 15;
+constexpr size_t kDefaultTrendlineWindowSize = 20;
 constexpr double kDefaultTrendlineSmoothingCoeff = 0.9;
 constexpr double kDefaultTrendlineThresholdGain = 4.0;
 
-// Parameters for Theil-Sen robust fitting of line to noisy data.
-constexpr size_t kDefaultMedianSlopeWindowSize = 20;
-constexpr double kDefaultMedianSlopeThresholdGain = 4.0;
-
 constexpr int kMaxConsecutiveFailedLookups = 5;
 
-const char kBitrateEstimateExperiment[] = "WebRTC-ImprovedBitrateEstimate";
-const char kBweTrendlineFilterExperiment[] = "WebRTC-BweTrendlineFilter";
-const char kBweMedianSlopeFilterExperiment[] = "WebRTC-BweMedianSlopeFilter";
-
-bool BitrateEstimateExperimentIsEnabled() {
-  return webrtc::field_trial::IsEnabled(kBitrateEstimateExperiment);
-}
-
-bool TrendlineFilterExperimentIsEnabled() {
-  std::string experiment_string =
-      webrtc::field_trial::FindFullName(kBweTrendlineFilterExperiment);
-  // The experiment is enabled iff the field trial string begins with "Enabled".
-  return experiment_string.find("Enabled") == 0;
-}
-
-bool MedianSlopeFilterExperimentIsEnabled() {
-  std::string experiment_string =
-      webrtc::field_trial::FindFullName(kBweMedianSlopeFilterExperiment);
-  // The experiment is enabled iff the field trial string begins with "Enabled".
-  return experiment_string.find("Enabled") == 0;
-}
-
-bool ReadTrendlineFilterExperimentParameters(size_t* window_size,
-                                             double* smoothing_coef,
-                                             double* threshold_gain) {
-  RTC_DCHECK(TrendlineFilterExperimentIsEnabled());
-  RTC_DCHECK(!MedianSlopeFilterExperimentIsEnabled());
-  RTC_DCHECK(window_size != nullptr);
-  RTC_DCHECK(smoothing_coef != nullptr);
-  RTC_DCHECK(threshold_gain != nullptr);
-  std::string experiment_string =
-      webrtc::field_trial::FindFullName(kBweTrendlineFilterExperiment);
-  int parsed_values = sscanf(experiment_string.c_str(), "Enabled-%zu,%lf,%lf",
-                             window_size, smoothing_coef, threshold_gain);
-  if (parsed_values == 3) {
-    RTC_CHECK_GT(*window_size, 1) << "Need at least 2 points to fit a line.";
-    RTC_CHECK(0 <= *smoothing_coef && *smoothing_coef <= 1)
-        << "Coefficient needs to be between 0 and 1 for weighted average.";
-    RTC_CHECK_GT(*threshold_gain, 0) << "Threshold gain needs to be positive.";
-    return true;
-  }
-  LOG(LS_WARNING) << "Failed to parse parameters for BweTrendlineFilter "
-                     "experiment from field trial string. Using default.";
-  *window_size = kDefaultTrendlineWindowSize;
-  *smoothing_coef = kDefaultTrendlineSmoothingCoeff;
-  *threshold_gain = kDefaultTrendlineThresholdGain;
-  return false;
-}
-
-bool ReadMedianSlopeFilterExperimentParameters(size_t* window_size,
-                                               double* threshold_gain) {
-  RTC_DCHECK(!TrendlineFilterExperimentIsEnabled());
-  RTC_DCHECK(MedianSlopeFilterExperimentIsEnabled());
-  RTC_DCHECK(window_size != nullptr);
-  RTC_DCHECK(threshold_gain != nullptr);
-  std::string experiment_string =
-      webrtc::field_trial::FindFullName(kBweMedianSlopeFilterExperiment);
-  int parsed_values = sscanf(experiment_string.c_str(), "Enabled-%zu,%lf",
-                             window_size, threshold_gain);
-  if (parsed_values == 2) {
-    RTC_CHECK_GT(*window_size, 1) << "Need at least 2 points to fit a line.";
-    RTC_CHECK_GT(*threshold_gain, 0) << "Threshold gain needs to be positive.";
-    return true;
-  }
-  LOG(LS_WARNING) << "Failed to parse parameters for BweMedianSlopeFilter "
-                     "experiment from field trial string. Using default.";
-  *window_size = kDefaultMedianSlopeWindowSize;
-  *threshold_gain = kDefaultMedianSlopeThresholdGain;
-  return false;
-}
 
 class PacketFeedbackComparator {
  public:
@@ -153,19 +79,9 @@ DelayBasedBwe::BitrateEstimator::BitrateEstimator()
       current_win_ms_(0),
       prev_time_ms_(-1),
       bitrate_estimate_(-1.0f),
-      bitrate_estimate_var_(50.0f),
-      old_estimator_(kBitrateWindowMs, 8000),
-      in_experiment_(BitrateEstimateExperimentIsEnabled()) {}
+      bitrate_estimate_var_(50.0f) {}
 
 void DelayBasedBwe::BitrateEstimator::Update(int64_t now_ms, int bytes) {
-  if (!in_experiment_) {
-    old_estimator_.Update(bytes, now_ms);
-    rtc::Optional<uint32_t> rate = old_estimator_.Rate(now_ms);
-    bitrate_estimate_ = -1.0f;
-    if (rate)
-      bitrate_estimate_ = *rate / 1000.0f;
-    return;
-  }
   int rate_window_ms = kRateWindowMs;
   // We use a larger window at the beginning to get a more stable sample that
   // we can use to initialize the estimate.
@@ -231,12 +147,9 @@ rtc::Optional<uint32_t> DelayBasedBwe::BitrateEstimator::bitrate_bps() const {
 }
 
 DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
-    : in_trendline_experiment_(TrendlineFilterExperimentIsEnabled()),
-      in_median_slope_experiment_(MedianSlopeFilterExperimentIsEnabled()),
-      event_log_(event_log),
+    : event_log_(event_log),
       clock_(clock),
       inter_arrival_(),
-      kalman_estimator_(),
       trendline_estimator_(),
       detector_(),
       receiver_incoming_bitrate_(),
@@ -248,29 +161,10 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       trendline_smoothing_coeff_(kDefaultTrendlineSmoothingCoeff),
       trendline_threshold_gain_(kDefaultTrendlineThresholdGain),
       probing_interval_estimator_(&rate_control_),
-      median_slope_window_size_(kDefaultMedianSlopeWindowSize),
-      median_slope_threshold_gain_(kDefaultMedianSlopeThresholdGain),
       consecutive_delayed_feedbacks_(0),
       last_logged_bitrate_(0),
       last_logged_state_(kBwNormal) {
-  if (in_trendline_experiment_) {
-    ReadTrendlineFilterExperimentParameters(&trendline_window_size_,
-                                            &trendline_smoothing_coeff_,
-                                            &trendline_threshold_gain_);
-    LOG(LS_INFO) << "Trendline filter experiment enabled with parameters "
-                 << trendline_window_size_ << ',' << trendline_smoothing_coeff_
-                 << ',' << trendline_threshold_gain_;
-  }
-  if (in_median_slope_experiment_) {
-    ReadMedianSlopeFilterExperimentParameters(&median_slope_window_size_,
-                                              &median_slope_threshold_gain_);
-    LOG(LS_INFO) << "Median-slope filter experiment enabled with parameters "
-                 << median_slope_window_size_ << ','
-                 << median_slope_threshold_gain_;
-  }
-  if (!in_trendline_experiment_ && !in_median_slope_experiment_) {
-    LOG(LS_INFO) << "No overuse experiment enabled. Using Kalman filter.";
-  }
+  LOG(LS_INFO) << "Using Trendline filter for delay change estimation.";
 
   network_thread_.DetachFromThread();
 }
@@ -343,12 +237,9 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedback(
     inter_arrival_.reset(
         new InterArrival((kTimestampGroupLengthMs << kInterArrivalShift) / 1000,
                          kTimestampToMs, true));
-    kalman_estimator_.reset(new OveruseEstimator(OverUseDetectorOptions()));
     trendline_estimator_.reset(new TrendlineEstimator(
         trendline_window_size_, trendline_smoothing_coeff_,
         trendline_threshold_gain_));
-    median_slope_estimator_.reset(new MedianSlopeEstimator(
-        median_slope_window_size_, median_slope_threshold_gain_));
   }
   last_seen_packet_ms_ = now_ms;
 
@@ -370,26 +261,11 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedback(
                                     now_ms, packet_feedback.payload_size,
                                     &ts_delta, &t_delta, &size_delta)) {
     double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
-    if (in_trendline_experiment_) {
-      trendline_estimator_->Update(t_delta, ts_delta_ms,
-                                   packet_feedback.arrival_time_ms);
-      detector_.Detect(trendline_estimator_->trendline_slope(), ts_delta_ms,
-                       trendline_estimator_->num_of_deltas(),
-                       packet_feedback.arrival_time_ms);
-    } else if (in_median_slope_experiment_) {
-      median_slope_estimator_->Update(t_delta, ts_delta_ms,
-                                      packet_feedback.arrival_time_ms);
-      detector_.Detect(median_slope_estimator_->trendline_slope(), ts_delta_ms,
-                       median_slope_estimator_->num_of_deltas(),
-                       packet_feedback.arrival_time_ms);
-    } else {
-      kalman_estimator_->Update(t_delta, ts_delta_ms, size_delta,
-                                detector_.State(),
-                                packet_feedback.arrival_time_ms);
-      detector_.Detect(kalman_estimator_->offset(), ts_delta_ms,
-                       kalman_estimator_->num_of_deltas(),
-                       packet_feedback.arrival_time_ms);
-    }
+    trendline_estimator_->Update(t_delta, ts_delta_ms,
+                                 packet_feedback.arrival_time_ms);
+    detector_.Detect(trendline_estimator_->trendline_slope(), ts_delta_ms,
+                     trendline_estimator_->num_of_deltas(),
+                     packet_feedback.arrival_time_ms);
   }
 
   int probing_bps = 0;
