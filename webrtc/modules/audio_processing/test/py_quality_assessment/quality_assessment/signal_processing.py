@@ -8,6 +8,7 @@
 
 import array
 import logging
+import os
 import sys
 
 try:
@@ -29,9 +30,7 @@ except ImportError:
   logging.critical('Cannot import the third-party Python package scipy')
   sys.exit(1)
 
-
-class SignalProcessingException(Exception):
-  pass
+from . import exceptions
 
 
 class SignalProcessingUtils(object):
@@ -46,6 +45,9 @@ class SignalProcessingUtils(object):
     Return:
       AudioSegment instance.
     """
+    if not os.path.exists(filepath):
+      logging.error('cannot find the <%s> audio track file', filepath)
+      raise exceptions.FileNotFoundError()
     return pydub.AudioSegment.from_file(
         filepath, format='wav', channels=channels)
 
@@ -175,10 +177,12 @@ class SignalProcessingUtils(object):
     noise_power = float(noise.dBFS)
     if signal_power == -np.Inf:
       logging.error('signal has -Inf power, cannot mix')
-      raise SignalProcessingException('cannot mix a signal with -Inf power')
+      raise exceptions.SignalProcessingException(
+          'cannot mix a signal with -Inf power')
     if noise_power == -np.Inf:
       logging.error('noise has -Inf power, cannot mix')
-      raise SignalProcessingException('cannot mix a signal with -Inf power')
+      raise exceptions.SignalProcessingException(
+          'cannot mix a signal with -Inf power')
 
     # Pad signal (if necessary). If noise is the shortest, the AudioSegment
     # overlay() method implictly pads noise. Hence, the only case to handle

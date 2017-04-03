@@ -32,6 +32,7 @@ except ImportError:
   sys.exit(1)
 
 from . import data_access
+from . import exceptions
 from . import signal_processing
 
 class NoiseGenerator(object):
@@ -319,7 +320,7 @@ class EnvironmentalNoiseGenerator(NoiseGenerator):
           self._NOISE_TRACKS_PATH, noise_track_filename)
       if not os.path.exists(noise_track_filepath):
         logging.error('cannot find the <%s> noise track', noise_track_filename)
-        continue
+        raise exceptions.FileNotFoundError()
 
       noise_signal = signal_processing.SignalProcessingUtils.load_wav(
           noise_track_filepath)

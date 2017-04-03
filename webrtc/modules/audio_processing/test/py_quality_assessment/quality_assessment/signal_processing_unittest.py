@@ -14,6 +14,7 @@ import unittest
 import numpy as np
 import pydub
 
+from . import exceptions
 from . import signal_processing
 
 
@@ -65,10 +66,10 @@ class TestSignalProcessing(unittest.TestCase):
     signal = signal_processing.SignalProcessingUtils.generate_white_noise(
         silence)
 
-    with self.assertRaises(signal_processing.SignalProcessingException):
+    with self.assertRaises(exceptions.SignalProcessingException):
       _ = signal_processing.SignalProcessingUtils.mix_signals(
           signal, silence, 0.0)
 
-    with self.assertRaises(signal_processing.SignalProcessingException):
+    with self.assertRaises(exceptions.SignalProcessingException):
       _ = signal_processing.SignalProcessingUtils.mix_signals(
           silence, signal, 0.0)

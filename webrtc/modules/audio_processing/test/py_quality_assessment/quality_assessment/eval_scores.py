@@ -11,8 +11,11 @@
 
 import logging
 import os
+import re
+import subprocess
 
 from . import data_access
+from . import exceptions
 from . import signal_processing
 
 
@@ -123,12 +126,62 @@ class PolqaScore(EvaluationScore):
   """
 
   NAME = 'polqa'
+  _BIN_FILENAME = 'PolqaOem64'
 
   def __init__(self, polqa_tool_path):
     EvaluationScore.__init__(self)
+
+    # Path to the POLQA directory with binary and license files.
     self._polqa_tool_path = polqa_tool_path
 
+    # POLQA binary file path.
+    self._polqa_bin_filepath = os.path.join(
+        self._polqa_tool_path, self._BIN_FILENAME)
+    if not os.path.exists(self._polqa_bin_filepath):
+      logging.error('cannot find POLQA tool binary file')
+      raise exceptions.FileNotFoundError()
+
   def _run(self, output_path):
-    # TODO(alessio): implement.
-    self._score = 0.0
+    polqa_out_filepath = os.path.join(output_path, 'polqa.out')
+    if os.path.exists(polqa_out_filepath):
+      os.unlink(polqa_out_filepath)
+
+    args = [
+        self._polqa_bin_filepath, '-t', '-q', '-Overwrite',
+        '-Ref', self._reference_signal_filepath,
+        '-Test', self._tested_signal_filepath,
+        '-LC', 'NB',
+        '-Out', polqa_out_filepath,
+    ]
+    logging.debug(' '.join(args))
+    subprocess.call(args, cwd=self._polqa_tool_path)
+
+    # Parse POLQA tool output and extract the score.
+    polqa_output = self._parse_output_file(polqa_out_filepath)
+    self._score = float(polqa_output['PolqaScore'])
+
     self._save_score()
+
+  @classmethod
+  def _parse_output_file(cls, polqa_out_filepath):
+    """
+    Parse the POLQA tool output formatted as a table ('-t' option).
+    """
+    data = []
+    with open(polqa_out_filepath) as f:
+      for line in f:
+        line = line.strip()
+        if len(line) == 0 or line.startswith('*'):
+          # Ignore comments.
+          continue
+        # Read fields.
+        data.append(re.split(r'\t+', line))
+
+    # Two rows expected (header and values).
+    assert len(data) == 2, 'Cannot parse POLQA output'
+    number_of_fields = len(data[0])
+    assert number_of_fields == len(data[1])
+
+    # Build and return a dictionary with field names (header) as keys and the
+    # corresponding field values as values.
+    return {data[0][index]: data[1][index] for index in range(number_of_fields)}

@@ -14,7 +14,7 @@ import logging
 import os
 import subprocess
 
-from .data_access import AudioProcConfigFile
+from . import data_access
 
 
 class AudioProcWrapper(object):
@@ -57,7 +57,7 @@ class AudioProcWrapper(object):
       return
 
     # Load configuration.
-    self._config = AudioProcConfigFile.load(config_filepath)
+    self._config = data_access.AudioProcConfigFile.load(config_filepath)
 
     # Set remaining parametrs.
     self._config['-i'] = self._input_signal_filepath
