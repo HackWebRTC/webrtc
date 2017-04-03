@@ -107,8 +107,9 @@ class AudioLevelScore(EvaluationScore):
     EvaluationScore.__init__(self)
 
   def _run(self, output_path):
-    # TODO(alessio): implement.
-    self._score = 0.0
+    self._load_reference_signal()
+    self._load_tested_signal()
+    self._score = self._tested_signal.dBFS - self._reference_signal.dBFS
     self._save_score()
 
 
