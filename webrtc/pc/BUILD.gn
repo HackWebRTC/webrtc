@@ -145,6 +145,7 @@ rtc_static_library("libjingle_peerconnection") {
     ":rtc_pc",
     "../api:call_api",
     "../api:rtc_stats_api",
+    "../api/video_codecs:video_codecs_api",
     "../call",
     "../media",
     "../stats",

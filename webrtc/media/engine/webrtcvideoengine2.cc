@@ -17,6 +17,8 @@
 #include <utility>
 
 #include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/api/video_codecs/video_decoder.h"
+#include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/base/copyonwritebuffer.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
@@ -35,8 +37,6 @@
 #include "webrtc/media/engine/webrtcvoiceengine.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_encoder_adapter.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
-#include "webrtc/video_decoder.h"
-#include "webrtc/video_encoder.h"
 
 using DegradationPreference = webrtc::VideoSendStream::DegradationPreference;
 

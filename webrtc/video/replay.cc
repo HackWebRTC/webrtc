@@ -15,6 +15,7 @@
 #include <sstream>
 
 #include "gflags/gflags.h"
+#include "webrtc/api/video_codecs/video_decoder.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -32,7 +33,6 @@
 #include "webrtc/test/video_capturer.h"
 #include "webrtc/test/video_renderer.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_decoder.h"
 
 namespace webrtc {
 namespace flags {

@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/file.h"
@@ -54,7 +55,6 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/test/testsupport/perf_test.h"
 #include "webrtc/video/transport_adapter.h"
-#include "webrtc/video_encoder.h"
 
 #if defined(MEMORY_SANITIZER)
 // Flaky under MemorySanitizer, see

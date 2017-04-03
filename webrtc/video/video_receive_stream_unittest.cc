@@ -13,6 +13,7 @@
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/gmock.h"
 
+#include "webrtc/api/video_codecs/video_decoder.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/media/base/fakevideorenderer.h"
@@ -24,7 +25,6 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/field_trial.h"
-#include "webrtc/video_decoder.h"
 
 using testing::_;
 using testing::Invoke;

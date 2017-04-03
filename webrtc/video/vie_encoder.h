@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "webrtc/api/video/video_rotation.h"
+#include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/sequenced_task_checker.h"
@@ -31,7 +32,6 @@
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video/overuse_frame_detector.h"
-#include "webrtc/video_encoder.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
