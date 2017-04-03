@@ -65,6 +65,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (webrtc::PeerConnectionInterface::RTCConfiguration *)
     createNativeConfiguration;
 
+- (instancetype)initWithNativeConfiguration:
+    (const webrtc::PeerConnectionInterface::RTCConfiguration *)config NS_DESIGNATED_INITIALIZER;
+
 @end
 
 NS_ASSUME_NONNULL_END

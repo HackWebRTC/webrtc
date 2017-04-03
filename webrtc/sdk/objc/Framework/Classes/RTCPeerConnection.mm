@@ -288,6 +288,12 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
   return _peerConnection->SetConfiguration(*config);
 }
 
+- (RTCConfiguration *)configuration {
+  webrtc::PeerConnectionInterface::RTCConfiguration config =
+    _peerConnection->GetConfiguration();
+  return [[RTCConfiguration alloc] initWithNativeConfiguration:&config];
+}
+
 - (void)close {
   _peerConnection->Close();
 }
