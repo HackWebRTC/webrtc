@@ -50,7 +50,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                       VideoEncoderConfig::ContentType content_type);
   virtual ~SendStatisticsProxy();
 
-  VideoSendStream::Stats GetStats();
+  virtual VideoSendStream::Stats GetStats();
 
   virtual void OnSendEncodedImage(const EncodedImage& encoded_image,
                                   const CodecSpecificInfo* codec_info);
@@ -211,6 +211,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     TargetRateUpdates target_rate_updates_;
     ReportBlockStats report_block_stats_;
     const VideoSendStream::Stats start_stats_;
+
     std::map<int, QpCounters>
         qp_counters_;  // QP counters mapped by spatial idx.
   };

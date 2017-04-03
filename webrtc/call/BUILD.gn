@@ -123,6 +123,7 @@ if (rtc_include_tests) {
       "../video",
       "../voice_engine",
       "//testing/gtest",
+      "//webrtc/test:field_trial",
       "//webrtc/test:test_common",
     ]
     if (!build_with_chromium && is_clang) {

@@ -1943,7 +1943,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   video_send_stream_->Start();
   test::FrameForwarder forwarder;
   video_send_stream_->SetSource(
-      &forwarder, VideoSendStream::DegradationPreference::kBalanced);
+      &forwarder, VideoSendStream::DegradationPreference::kMaintainFramerate);
   for (size_t i = 0; i < input_frames.size(); i++) {
     forwarder.IncomingCapturedFrame(input_frames[i]);
     // Wait until the output frame is received before sending the next input
@@ -1952,7 +1952,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   }
   video_send_stream_->Stop();
   video_send_stream_->SetSource(
-      nullptr, VideoSendStream::DegradationPreference::kBalanced);
+      nullptr, VideoSendStream::DegradationPreference::kMaintainFramerate);
 
   // Test if the input and output frames are the same. render_time_ms and
   // timestamp are not compared because capturer sets those values.
@@ -3201,7 +3201,7 @@ void VideoSendStreamTest::TestRequestSourceRotateVideo(
   CreateVideoStreams();
   test::FrameForwarder forwarder;
   video_send_stream_->SetSource(
-      &forwarder, VideoSendStream::DegradationPreference::kBalanced);
+      &forwarder, VideoSendStream::DegradationPreference::kMaintainFramerate);
 
   EXPECT_TRUE(forwarder.sink_wants().rotation_applied !=
               support_orientation_ext);
