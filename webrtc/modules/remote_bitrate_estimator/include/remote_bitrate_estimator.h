@@ -34,7 +34,6 @@ class RemoteBitrateObserver {
   // incoming streams.
   virtual void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                        uint32_t bitrate) = 0;
-  virtual void OnProbeBitrate(uint32_t bitrate) {}
 
   virtual ~RemoteBitrateObserver() {}
 };
