@@ -16,10 +16,10 @@
 #include <map>
 #include <memory>
 
-#include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/common_video/include/video_bitrate_allocator.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/video_encoder.h"
 
 namespace webrtc {
 

@@ -13,7 +13,6 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/stringutils.h"
@@ -31,6 +30,7 @@
 #include "webrtc/media/engine/webrtcvideoengine2.h"
 #include "webrtc/media/engine/webrtcvoiceengine.h"
 #include "webrtc/test/field_trial.h"
+#include "webrtc/video_encoder.h"
 
 using webrtc::RtpExtension;
 
@@ -3803,6 +3803,7 @@ TEST_F(WebRtcVideoChannel2Test, RedRtxPacketDoesntCreateUnsignalledStream) {
 // The first unsignalled SSRC received will create a default receive stream.
 // Any different unsignalled SSRC received will replace the default.
 TEST_F(WebRtcVideoChannel2Test, ReceiveDifferentUnsignaledSsrc) {
+
   // Allow receiving VP8, VP9, H264 (if enabled).
   cricket::VideoRecvParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("VP8"));

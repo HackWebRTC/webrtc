@@ -13,12 +13,12 @@
 
 #include <memory>
 
-#include "webrtc/api/video_codecs/video_decoder.h"
-#include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/test/gtest.h"
+#include "webrtc/video_decoder.h"
+#include "webrtc/video_encoder.h"
 
 namespace webrtc {
 

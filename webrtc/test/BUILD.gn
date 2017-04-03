@@ -403,7 +403,6 @@ rtc_source_set("test_common") {
     ":test_support",
     ":video_test_common",
     "..:webrtc_common",
-    "../api/video_codecs:video_codecs_api",
     "../audio",
     "../base:rtc_base_approved",
     "../call",

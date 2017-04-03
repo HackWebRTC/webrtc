@@ -16,8 +16,6 @@ import sys
 # Files and directories that are *skipped* by cpplint in the presubmit script.
 CPPLINT_BLACKLIST = [
   'tools-webrtc',
-  'webrtc/api/video_codecs/video_decoder.h',
-  'webrtc/api/video_codecs/video_encoder.h',
   'webrtc/base',
   'webrtc/examples/objc',
   'webrtc/media',
@@ -40,6 +38,8 @@ CPPLINT_BLACKLIST = [
   'webrtc/call.h',
   'webrtc/common_types.h',
   'webrtc/common_types.cc',
+  'webrtc/video_decoder.h',
+  'webrtc/video_encoder.h',
   'webrtc/video_send_stream.h',
 ]
 
