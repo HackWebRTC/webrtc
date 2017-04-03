@@ -41,6 +41,8 @@ copy("lib") {
     "quality_assessment/eval_scores_unittest.py",
     "quality_assessment/evaluation.py",
     "quality_assessment/exceptions.py",
+    "quality_assessment/export.py",
+    "quality_assessment/noise_gen_factory.py",
     "quality_assessment/noise_generation.py",
     "quality_assessment/noise_generation_factory.py",
     "quality_assessment/noise_generation_unittest.py",
