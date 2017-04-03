@@ -191,8 +191,7 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
   const RateControlInput input(bw_state,
                                incoming_bitrate_.Rate(now_ms),
                                mean_noise_var);
-  remote_rate->Update(&input, now_ms);
-  uint32_t target_bitrate = remote_rate->UpdateBandwidthEstimate(now_ms);
+  uint32_t target_bitrate = remote_rate->Update(&input, now_ms);
   if (remote_rate->ValidEstimate()) {
     process_interval_ms_ = remote_rate->GetFeedbackInterval();
     RTC_DCHECK_GT(process_interval_ms_, 0);

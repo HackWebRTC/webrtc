@@ -35,8 +35,6 @@ AimdRateControl::AimdRateControl()
       rate_control_state_(kRcHold),
       rate_control_region_(kRcMaxUnknown),
       time_last_bitrate_change_(-1),
-      current_input_(kBwNormal, rtc::Optional<uint32_t>(), 1.0),
-      updated_(false),
       time_first_incoming_estimate_(-1),
       bitrate_is_initialized_(false),
       beta_(0.85f),
@@ -90,18 +88,12 @@ uint32_t AimdRateControl::LatestEstimate() const {
   return current_bitrate_bps_;
 }
 
-uint32_t AimdRateControl::UpdateBandwidthEstimate(int64_t now_ms) {
-  current_bitrate_bps_ = ChangeBitrate(
-      current_bitrate_bps_,
-      current_input_.incoming_bitrate.value_or(current_bitrate_bps_), now_ms);
-  return current_bitrate_bps_;
-}
-
 void AimdRateControl::SetRtt(int64_t rtt) {
   rtt_ = rtt;
 }
 
-void AimdRateControl::Update(const RateControlInput* input, int64_t now_ms) {
+uint32_t AimdRateControl::Update(const RateControlInput* input,
+                                 int64_t now_ms) {
   RTC_CHECK(input);
 
   // Set the initial bit rate value to what we're receiving the first half
@@ -119,19 +111,11 @@ void AimdRateControl::Update(const RateControlInput* input, int64_t now_ms) {
     }
   }
 
-  if (updated_ && current_input_.bw_state == kBwOverusing) {
-    // Only update delay factor and incoming bit rate. We always want to react
-    // on an over-use.
-    current_input_.noise_var = input->noise_var;
-    current_input_.incoming_bitrate = input->incoming_bitrate;
-  } else {
-    updated_ = true;
-    current_input_ = *input;
-  }
+  current_bitrate_bps_ = ChangeBitrate(current_bitrate_bps_, *input, now_ms);
+  return current_bitrate_bps_;
 }
 
 void AimdRateControl::SetEstimate(int bitrate_bps, int64_t now_ms) {
-  updated_ = true;
   bitrate_is_initialized_ = true;
   current_bitrate_bps_ = ClampBitrate(bitrate_bps, bitrate_bps);
   time_last_bitrate_change_ = now_ms;
@@ -155,18 +139,18 @@ rtc::Optional<int> AimdRateControl::GetLastBitrateDecreaseBps() const {
 }
 
 uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
-                                        uint32_t incoming_bitrate_bps,
+                                        const RateControlInput& input,
                                         int64_t now_ms) {
-  if (!updated_) {
-    return current_bitrate_bps_;
-  }
+  uint32_t incoming_bitrate_bps =
+      input.incoming_bitrate.value_or(current_bitrate_bps_);
+
   // An over-use should always trigger us to reduce the bitrate, even though
   // we have not yet established our first estimate. By acting on the over-use,
   // we will end up with a valid estimate.
-  if (!bitrate_is_initialized_ && current_input_.bw_state != kBwOverusing)
+  if (!bitrate_is_initialized_ && input.bw_state != kBwOverusing)
     return current_bitrate_bps_;
-  updated_ = false;
-  ChangeState(current_input_, now_ms);
+
+  ChangeState(input, now_ms);
   // Calculated here because it's used in multiple places.
   const float incoming_bitrate_kbps = incoming_bitrate_bps / 1000.0f;
   // Calculate the max bit rate std dev given the normalized
@@ -224,7 +208,7 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
 
       UpdateMaxBitRateEstimate(incoming_bitrate_kbps);
       // Stay on hold until the pipes are cleared.
-      ChangeState(kRcHold);
+      rate_control_state_ = kRcHold;
       time_last_bitrate_change_ = now_ms;
       break;
 
@@ -294,20 +278,20 @@ void AimdRateControl::UpdateMaxBitRateEstimate(float incoming_bitrate_kbps) {
 
 void AimdRateControl::ChangeState(const RateControlInput& input,
                                   int64_t now_ms) {
-  switch (current_input_.bw_state) {
+  switch (input.bw_state) {
     case kBwNormal:
       if (rate_control_state_ == kRcHold) {
         time_last_bitrate_change_ = now_ms;
-        ChangeState(kRcIncrease);
+        rate_control_state_ = kRcIncrease;
       }
       break;
     case kBwOverusing:
       if (rate_control_state_ != kRcDecrease) {
-        ChangeState(kRcDecrease);
+        rate_control_state_ = kRcDecrease;
       }
       break;
     case kBwUnderusing:
-      ChangeState(kRcHold);
+      rate_control_state_ = kRcHold;
       break;
     default:
       assert(false);
@@ -318,7 +302,4 @@ void AimdRateControl::ChangeRegion(RateControlRegion region) {
   rate_control_region_ = region;
 }
 
-void AimdRateControl::ChangeState(RateControlState new_state) {
-  rate_control_state_ = new_state;
-}
 }  // namespace webrtc

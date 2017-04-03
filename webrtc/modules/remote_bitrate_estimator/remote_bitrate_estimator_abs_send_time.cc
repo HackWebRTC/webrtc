@@ -332,8 +332,7 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
       const RateControlInput input(detector_.State(),
                                    incoming_bitrate_.Rate(arrival_time_ms),
                                    estimator_->var_noise());
-      remote_rate_.Update(&input, now_ms);
-      target_bitrate_bps = remote_rate_.UpdateBandwidthEstimate(now_ms);
+      target_bitrate_bps = remote_rate_.Update(&input, now_ms);
       update_estimate = remote_rate_.ValidEstimate();
       ssrcs = Keys(ssrcs_);
     }

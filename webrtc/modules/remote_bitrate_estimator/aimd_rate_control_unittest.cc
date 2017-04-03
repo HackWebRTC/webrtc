@@ -37,7 +37,6 @@ void UpdateRateControl(const AimdRateControlStates& states,
   RateControlInput input(bandwidth_usage, rtc::Optional<uint32_t>(bitrate),
                          now_ms);
   states.aimd_rate_control->Update(&input, now_ms);
-  states.aimd_rate_control->UpdateBandwidthEstimate(now_ms);
 }
 
 }  // namespace
