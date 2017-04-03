@@ -6,11 +6,15 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+"""Evaluation score abstract class and implementations.
+"""
+
 import logging
 import os
 
-from .data_access import ScoreFile
-from .signal_processing import SignalProcessingUtils
+from . import data_access
+from . import signal_processing
+
 
 class EvaluationScore(object):
 
@@ -27,10 +31,12 @@ class EvaluationScore(object):
 
   @classmethod
   def register_class(cls, class_to_register):
-    """
+    """Register an EvaluationScore implementation.
+
     Decorator to automatically register the classes that extend EvaluationScore.
     """
     cls.REGISTERED_CLASSES[class_to_register.NAME] = class_to_register
+    return class_to_register
 
   @property
   def output_filepath(self):
@@ -41,28 +47,28 @@ class EvaluationScore(object):
     return self._score
 
   def set_reference_signal_filepath(self, filepath):
-    """
-    Set the path to the audio track used as reference signal.
+    """ Set the path to the audio track used as reference signal.
     """
     self._reference_signal_filepath = filepath
 
   def set_tested_signal_filepath(self, filepath):
-    """
-    Set the path to the audio track used as test signal.
+    """ Set the path to the audio track used as test signal.
     """
     self._tested_signal_filepath = filepath
 
   def _load_reference_signal(self):
     assert self._reference_signal_filepath is not None
-    self._reference_signal = SignalProcessingUtils.load_wav(
+    self._reference_signal = signal_processing.SignalProcessingUtils.load_wav(
         self._reference_signal_filepath)
 
   def _load_tested_signal(self):
     assert self._tested_signal_filepath is not None
-    self._tested_signal = SignalProcessingUtils.load_wav(
+    self._tested_signal = signal_processing.SignalProcessingUtils.load_wav(
         self._tested_signal_filepath)
 
   def run(self, output_path):
+    """Extracts the score for the set input-reference pair.
+    """
     self._output_filepath = os.path.join(output_path, 'score-{}.txt'.format(
         self.NAME))
     try:
@@ -79,16 +85,15 @@ class EvaluationScore(object):
     raise NotImplementedError()
 
   def _load_score(self):
-    return ScoreFile.load(self._output_filepath)
+    return data_access.ScoreFile.load(self._output_filepath)
 
   def _save_score(self):
-    return ScoreFile.save(self._output_filepath, self._score)
+    return data_access.ScoreFile.save(self._output_filepath, self._score)
 
 
 @EvaluationScore.register_class
 class AudioLevelScore(EvaluationScore):
-  """
-  Compute the difference between the average audio level of the tested and
+  """Compute the difference between the average audio level of the tested and
   the reference signals.
 
   Unit: dB
@@ -109,8 +114,7 @@ class AudioLevelScore(EvaluationScore):
 
 @EvaluationScore.register_class
 class PolqaScore(EvaluationScore):
-  """
-  Compute the POLQA score.
+  """Compute the POLQA score.
 
   Unit: MOS
   Ideal: 4.5
@@ -119,8 +123,9 @@ class PolqaScore(EvaluationScore):
 
   NAME = 'polqa'
 
-  def __init__(self):
+  def __init__(self, polqa_tool_path):
     EvaluationScore.__init__(self)
+    self._polqa_tool_path = polqa_tool_path
 
   def _run(self, output_path):
     # TODO(alessio): implement.

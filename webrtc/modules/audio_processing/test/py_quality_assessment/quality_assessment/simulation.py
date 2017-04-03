@@ -6,24 +6,42 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+"""APM module simulator.
+"""
+
 import logging
 import os
 
 from . import audioproc_wrapper
 from . import data_access
 from . import eval_scores
+from . import eval_scores_factory
 from . import evaluation
 from . import noise_generation
+from . import noise_generation_factory
+
 
 class ApmModuleSimulator(object):
+  """APM module simulator class.
+  """
 
   _NOISE_GENERATOR_CLASSES = noise_generation.NoiseGenerator.REGISTERED_CLASSES
   _EVAL_SCORE_WORKER_CLASSES = eval_scores.EvaluationScore.REGISTERED_CLASSES
 
-  def __init__(self):
+  def __init__(self, aechen_ir_database_path, polqa_tool_path):
+    # Init.
     self._audioproc_wrapper = audioproc_wrapper.AudioProcWrapper()
     self._evaluator = evaluation.ApmModuleEvaluator()
 
+    # Instance factory objects.
+    self._noise_generator_factory = (
+        noise_generation_factory.NoiseGeneratorFactory(
+            aechen_ir_database_path=aechen_ir_database_path))
+    self._evaluation_score_factory = (
+        eval_scores_factory.EvaluationScoreWorkerFactory(
+            polqa_tool_path=polqa_tool_path))
+
+    # Properties for each run.
     self._base_output_path = None
     self._noise_generators = None
     self._evaluation_score_workers = None
@@ -38,12 +56,15 @@ class ApmModuleSimulator(object):
     self._base_output_path = os.path.abspath(output_dir)
 
     # Instance noise generators.
-    self._noise_generators = [
-        self._NOISE_GENERATOR_CLASSES[name]() for name in noise_generator_names]
+    self._noise_generators = [self._noise_generator_factory.GetInstance(
+        noise_generator_class=self._NOISE_GENERATOR_CLASSES[name]) for name in (
+            noise_generator_names)]
 
     # Instance evaluation score workers.
     self._evaluation_score_workers = [
-        self._EVAL_SCORE_WORKER_CLASSES[name]() for name in eval_score_names]
+        self._evaluation_score_factory.GetInstance(
+            evaluation_score_class=self._EVAL_SCORE_WORKER_CLASSES[name]) for (
+                name) in eval_score_names]
 
     # Set APM configuration file paths.
     self._config_filepaths = self._get_paths_collection(config_filepaths)

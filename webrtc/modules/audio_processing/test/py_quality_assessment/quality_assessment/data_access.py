@@ -6,12 +6,18 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+"""Data access utility functions and classes.
+"""
+
 import json
 import os
 
+
 def make_directory(path):
-  """
-  Recursively make a directory without rising exceptions if it already exists.
+  """Recursively make a directory without rising exceptions if already existing.
+
+  Args:
+    path: path to the directory to be created.
   """
   if os.path.exists(path):
     return
@@ -19,8 +25,7 @@ def make_directory(path):
 
 
 class Metadata(object):
-  """
-  Data access class to save and load metadata.
+  """Data access class to save and load metadata.
   """
 
   def __init__(self):
@@ -30,8 +35,12 @@ class Metadata(object):
 
   @classmethod
   def load_audio_in_ref_paths(cls, metadata_path):
-    """
-    Metadata loader for input and reference audio track paths.
+    """Metadata loader for input and reference audio track paths.
+
+    Args:
+      metadata_path: path to the directory containing the metadata file.
+
+    Returns: pair of metadata file paths for the input and output audio tracks.
     """
     metadata_filepath = os.path.join(metadata_path, cls._AUDIO_IN_REF_FILENAME)
     with open(metadata_filepath) as f:
@@ -42,8 +51,7 @@ class Metadata(object):
   @classmethod
   def save_audio_in_ref_paths(cls, output_path, audio_in_filepath,
                               audio_ref_filepath):
-    """
-    Metadata saver for input and reference audio track paths.
+    """Metadata saver for input and reference audio track paths.
     """
     output_filepath = os.path.join(output_path, cls._AUDIO_IN_REF_FILENAME)
     with open(output_filepath, 'w') as f:
@@ -51,9 +59,9 @@ class Metadata(object):
 
 
 class AudioProcConfigFile(object):
-  """
-  Data access class to save and load audioproc_f argument lists to control
-  the APM flags.
+  """Data access to load/save audioproc_f argument lists.
+
+  The arguments stored in the config files are used to control the APM flags.
   """
 
   def __init__(self):
@@ -71,8 +79,7 @@ class AudioProcConfigFile(object):
 
 
 class ScoreFile(object):
-  """
-  Data access class to save and load float scalar scores.
+  """Data access class to save and load float scalar scores.
   """
 
   def __init__(self):

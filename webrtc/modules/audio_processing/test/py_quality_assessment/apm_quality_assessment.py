@@ -63,6 +63,12 @@ def _instance_arguments_parser():
                             'are saved'),
                       default='output')
 
+  parser.add_argument('--polqa_path', required=True,
+                      help='path to the POLQA tool')
+
+  parser.add_argument('--air_db_path', required=True,
+                      help='path to the Aechen IR database')
+
   return parser
 
 
@@ -73,7 +79,9 @@ def main():
   parser = _instance_arguments_parser()
   args = parser.parse_args()
 
-  simulator = simulation.ApmModuleSimulator()
+  simulator = simulation.ApmModuleSimulator(
+      aechen_ir_database_path=args.air_db_path,
+      polqa_tool_path=args.polqa_path)
   simulator.run(
       config_filepaths=args.config_files,
       input_filepaths=args.input_files,

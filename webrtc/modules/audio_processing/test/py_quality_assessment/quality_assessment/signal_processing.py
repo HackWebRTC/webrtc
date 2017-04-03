@@ -8,11 +8,27 @@
 
 import array
 import logging
+import sys
 
-import numpy as np
-import pydub
-import pydub.generators
-import scipy.signal
+try:
+  import numpy as np
+except ImportError:
+  logging.critical('Cannot import the third-party Python package numpy')
+  sys.exit(1)
+
+try:
+  import pydub
+  import pydub.generators
+except ImportError:
+  logging.critical('Cannot import the third-party Python package pydub')
+  sys.exit(1)
+
+try:
+  import scipy.signal
+except ImportError:
+  logging.critical('Cannot import the third-party Python package scipy')
+  sys.exit(1)
+
 
 class SignalProcessingException(Exception):
   pass
@@ -25,7 +41,8 @@ class SignalProcessingUtils(object):
 
   @classmethod
   def load_wav(cls, filepath, channels=1):
-    """
+    """Load wav file.
+
     Return:
       AudioSegment instance.
     """
@@ -34,7 +51,8 @@ class SignalProcessingUtils(object):
 
   @classmethod
   def save_wav(cls, output_filepath, signal):
-    """
+    """Save wav file.
+
     Args:
       output_filepath: string, output file path.
       signal: AudioSegment instance.
@@ -43,8 +61,7 @@ class SignalProcessingUtils(object):
 
   @classmethod
   def count_samples(cls, signal):
-    """
-    Number of samples per channel.
+    """Number of samples per channel.
 
     Args:
       signal: AudioSegment instance.
@@ -56,7 +73,8 @@ class SignalProcessingUtils(object):
 
   @classmethod
   def generate_white_noise(cls, signal):
-    """
+    """Generate white noise.
+
     Generate white noise with the same duration and in the same format as a
     given signal.
 
@@ -75,6 +93,8 @@ class SignalProcessingUtils(object):
 
   @classmethod
   def apply_impulse_response(cls, signal, impulse_response):
+    """Apply an impulse response to a signal.
+    """
     # Get samples.
     assert signal.channels == 1, (
         'multiple-channel recordings not supported')
@@ -128,7 +148,8 @@ class SignalProcessingUtils(object):
   @classmethod
   def mix_signals(cls, signal, noise, target_snr=0.0,
                   bln_pad_shortest=False):
-    """
+    """Mix two signals with a target SNR.
+
     Mix two signals up to a desired SNR by scaling noise (noise).
     If the target SNR is +/- infinite, a copy of signal/noise is returned.
 

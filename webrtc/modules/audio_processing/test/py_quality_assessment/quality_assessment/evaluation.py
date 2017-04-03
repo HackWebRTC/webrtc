@@ -6,7 +6,11 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+"""Evaluator of the APM module.
+"""
+
 import logging
+
 
 class ApmModuleEvaluator(object):
 
@@ -16,6 +20,10 @@ class ApmModuleEvaluator(object):
   @classmethod
   def run(cls, evaluation_score_workers, apm_output_filepath,
           reference_input_filepath, output_path):
+    """Runs the evaluation.
+
+    Iterates over the given evaluation score workers.
+    """
     # Init.
     scores = {}
 

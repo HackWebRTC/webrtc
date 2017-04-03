@@ -6,12 +6,16 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+"""Unit tests for the signal_processing module.
+"""
+
 import unittest
 
 import numpy as np
 import pydub
 
 from . import signal_processing
+
 
 class TestSignalProcessing(unittest.TestCase):
 

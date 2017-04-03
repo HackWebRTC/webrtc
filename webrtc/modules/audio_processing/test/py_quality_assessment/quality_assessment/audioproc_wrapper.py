@@ -6,6 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+"""Class implementing a wrapper for audioproc_f.
+"""
+
 import cProfile
 import logging
 import os
@@ -13,7 +16,10 @@ import subprocess
 
 from .data_access import AudioProcConfigFile
 
+
 class AudioProcWrapper(object):
+  """Wrapper for audioproc_f.
+  """
 
   OUTPUT_FILENAME = 'output.wav'
   _AUDIOPROC_F_BIN_PATH = os.path.abspath('audioproc_f')
@@ -31,6 +37,14 @@ class AudioProcWrapper(object):
     return self._output_signal_filepath
 
   def run(self, config_filepath, input_filepath, output_path):
+    """Run audioproc_f.
+
+    Args:
+      config_filepath: path to the configuration file specifing the arguments
+                       for audioproc_f.
+      input_filepath: path to the audio track input file.
+      output_path: path of the audio track output file.
+    """
     # Init.
     self._input_signal_filepath = input_filepath
     self._output_signal_filepath = os.path.join(
