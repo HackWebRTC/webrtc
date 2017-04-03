@@ -12,10 +12,11 @@ copy("py_quality_assessment") {
   testonly = true
   sources = [
     "README.md",
-    "apm_quality_assessment-export.py",
-    "apm_quality_assessment-gencfgs.py",
     "apm_quality_assessment.py",
     "apm_quality_assessment.sh",
+    "apm_quality_assessment_export.py",
+    "apm_quality_assessment_gencfgs.py",
+    "apm_quality_assessment_unittest.py",
   ]
   outputs = [
     "$root_build_dir/py_quality_assessment/{{source_file_part}}",
@@ -36,9 +37,12 @@ copy("lib") {
     "quality_assessment/audioproc_wrapper.py",
     "quality_assessment/data_access.py",
     "quality_assessment/eval_scores.py",
+    "quality_assessment/eval_scores_unittest.py",
     "quality_assessment/evaluation.py",
     "quality_assessment/noise_generation.py",
+    "quality_assessment/noise_generation_unittest.py",
     "quality_assessment/signal_processing.py",
+    "quality_assessment/signal_processing_unittest.py",
     "quality_assessment/simulation.py",
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.

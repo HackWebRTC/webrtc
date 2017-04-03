@@ -22,8 +22,8 @@ SCORES=( \
 OUTPUT_PATH=output
 
 # Generate standard APM config files.
-chmod +x apm_quality_assessment-gencfgs.py
-./apm_quality_assessment-gencfgs.py
+chmod +x apm_quality_assessment_gencfgs.py
+./apm_quality_assessment_gencfgs.py
 
 # Customize APM configurations if needed.
 APM_CONFIGS=(apm_configs/*.json)
@@ -56,8 +56,8 @@ done
 wait
 
 # Export results.
-chmod +x ./apm_quality_assessment-export.py
-./apm_quality_assessment-export.py -o ${OUTPUT_PATH}
+chmod +x ./apm_quality_assessment_export.py
+./apm_quality_assessment_export.py -o ${OUTPUT_PATH}
 
 # Show results in the browser.
 RESULTS_FILE="$(realpath ${OUTPUT_PATH}/results.html)"
