@@ -22,7 +22,7 @@ class AudioProcWrapper(object):
   """
 
   OUTPUT_FILENAME = 'output.wav'
-  _AUDIOPROC_F_BIN_PATH = os.path.abspath('audioproc_f')
+  _AUDIOPROC_F_BIN_PATH = os.path.abspath('../audioproc_f')
 
   def __init__(self):
     self._config = None

@@ -120,8 +120,38 @@ class ApmModuleSimulator(object):
     noise generators. It iterates over the noise generator internal
     configurations.
     """
-    # TODO(alessio): implement.
-    pass
+    # Generate pairs of noisy input and reference signal files.
+    noise_generator.generate(
+        input_signal_filepath=input_filepath,
+        input_noise_cache_path=input_noise_cache_path,
+        base_output_path=output_path)
+
+    # For each input-reference pair, simulate a call and evaluate.
+    for noise_generator_config_name in noise_generator.config_names:
+      logging.info(' - noise config: <%s>', noise_generator_config_name)
+
+      # APM input and output signal paths.
+      noisy_signal_filepath = noise_generator.noisy_signal_filepaths[
+          noise_generator_config_name]
+      evaluation_output_path = noise_generator.output_paths[
+          noise_generator_config_name]
+
+      # Simulate a call using the audio processing module.
+      self._audioproc_wrapper.run(
+          config_filepath=config_filepath,
+          input_filepath=noisy_signal_filepath,
+          output_path=evaluation_output_path)
+
+      # Reference signal path for the evaluation step.
+      reference_signal_filepath = noise_generator.reference_signal_filepaths[
+          noise_generator_config_name]
+
+      # Evaluate.
+      self._evaluator.run(
+          evaluation_score_workers=self._evaluation_score_workers,
+          apm_output_filepath=self._audioproc_wrapper.output_filepath,
+          reference_input_filepath=reference_signal_filepath,
+          output_path=evaluation_output_path)
 
   @classmethod
   def _get_paths_collection(cls, filepaths):
