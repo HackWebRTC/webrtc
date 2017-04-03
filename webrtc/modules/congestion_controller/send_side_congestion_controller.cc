@@ -93,6 +93,19 @@ void SendSideCongestionController::DeRegisterPacketFeedbackObserver(
   transport_feedback_adapter_.DeRegisterPacketFeedbackObserver(observer);
 }
 
+void SendSideCongestionController::RegisterNetworkObserver(Observer* observer) {
+  rtc::CritScope cs(&observer_lock_);
+  RTC_DCHECK(observer_ == nullptr);
+  observer_ = observer;
+}
+
+void SendSideCongestionController::DeRegisterNetworkObserver(
+    Observer* observer) {
+  rtc::CritScope cs(&observer_lock_);
+  RTC_DCHECK_EQ(observer_, observer);
+  observer_ = nullptr;
+}
+
 void SendSideCongestionController::SetBweBitrates(int min_bitrate_bps,
                                                   int start_bitrate_bps,
                                                   int max_bitrate_bps) {
@@ -245,11 +258,6 @@ SendSideCongestionController::GetTransportFeedbackVector() const {
 }
 
 void SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
-  // TODO(perkj): |observer_| can be nullptr if the ctor that accepts a
-  // BitrateObserver is used. Remove this check once the ctor is removed.
-  if (!observer_)
-    return;
-
   uint32_t bitrate_bps;
   uint8_t fraction_loss;
   int64_t rtt;
@@ -269,8 +277,13 @@ void SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
       rtc::CritScope cs(&bwe_lock_);
       probing_interval_ms = delay_based_bwe_->GetProbingIntervalMs();
     }
-    observer_->OnNetworkChanged(bitrate_bps, fraction_loss, rtt,
-                                probing_interval_ms);
+    {
+      rtc::CritScope cs(&observer_lock_);
+      if (observer_) {
+        observer_->OnNetworkChanged(bitrate_bps, fraction_loss, rtt,
+                                    probing_interval_ms);
+      }
+    }
   }
 }
 

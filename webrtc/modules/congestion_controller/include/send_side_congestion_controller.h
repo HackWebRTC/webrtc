@@ -57,6 +57,7 @@ class SendSideCongestionController : public CallStatsObserver,
    protected:
     virtual ~Observer() {}
   };
+  // TODO(nisse): Consider deleting the |observer| argument to constructors.
   SendSideCongestionController(const Clock* clock,
                                Observer* observer,
                                RtcEventLog* event_log,
@@ -69,6 +70,10 @@ class SendSideCongestionController : public CallStatsObserver,
 
   void RegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
   void DeRegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
+
+  // Currently, there can be at most one observer.
+  void RegisterNetworkObserver(Observer* observer);
+  void DeRegisterNetworkObserver(Observer* observer);
 
   virtual void SetBweBitrates(int min_bitrate_bps,
                               int start_bitrate_bps,
@@ -130,7 +135,8 @@ class SendSideCongestionController : public CallStatsObserver,
                                            uint8_t fraction_loss,
                                            int64_t rtt);
   const Clock* const clock_;
-  Observer* const observer_;
+  rtc::CriticalSection observer_lock_;
+  Observer* observer_ GUARDED_BY(observer_lock_);
   RtcEventLog* const event_log_;
   const std::unique_ptr<PacedSender> pacer_;
   const std::unique_ptr<BitrateController> bitrate_controller_;
