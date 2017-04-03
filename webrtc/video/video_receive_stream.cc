@@ -21,6 +21,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
@@ -142,15 +143,8 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 
   codec.plType = decoder.payload_type;
   strncpy(codec.plName, decoder.payload_name.c_str(), sizeof(codec.plName));
-  if (decoder.payload_name == "VP8") {
-    codec.codecType = kVideoCodecVP8;
-  } else if (decoder.payload_name == "VP9") {
-    codec.codecType = kVideoCodecVP9;
-  } else if (decoder.payload_name == "H264") {
-    codec.codecType = kVideoCodecH264;
-  } else {
-    codec.codecType = kVideoCodecGeneric;
-  }
+  codec.codecType =
+      PayloadNameToCodecType(decoder.payload_name).value_or(kVideoCodecGeneric);
 
   if (codec.codecType == kVideoCodecVP8) {
     *(codec.VP8()) = VideoEncoder::GetDefaultVp8Settings();

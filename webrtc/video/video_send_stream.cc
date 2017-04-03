@@ -263,9 +263,14 @@ std::string VideoSendStream::StreamStats::ToString() const {
 namespace {
 
 bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
-  if (payload_name == "VP8" || payload_name == "VP9")
+  rtc::Optional<VideoCodecType> codecType =
+      PayloadNameToCodecType(payload_name);
+  if (codecType &&
+      (*codecType == kVideoCodecVP8 || *codecType == kVideoCodecVP9)) {
     return true;
-  RTC_DCHECK(payload_name == "H264" || payload_name == "FAKE")
+  }
+  RTC_DCHECK((codecType && *codecType == kVideoCodecH264) ||
+             payload_name == "FAKE")
       << "unknown payload_name " << payload_name;
   return false;
 }

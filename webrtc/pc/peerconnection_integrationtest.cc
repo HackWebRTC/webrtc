@@ -245,7 +245,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     received_sdp_munger_ = munger;
   }
 
-  // Siimlar to the above, but this is run on SDP immediately after it's
+  // Similar to the above, but this is run on SDP immediately after it's
   // generated.
   void SetGeneratedSdpMunger(
       std::function<void(cricket::SessionDescription*)> munger) {
@@ -2699,6 +2699,60 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndConnectionTimeWithTurnTurnPair) {
   // the stack.
   delete SetCallerPcWrapperAndReturnCurrent(nullptr);
   delete SetCalleePcWrapperAndReturnCurrent(nullptr);
+}
+
+// Test that audio and video flow end-to-end when codec names don't use the
+// expected casing, given that they're supposed to be case insensitive. To test
+// this, all but one codec is removed from each media description, and its
+// casing is changed.
+//
+// In the past, this has regressed and caused crashes/black video, due to the
+// fact that code at some layers was doing case-insensitive comparisons and
+// code at other layers was not.
+TEST_F(PeerConnectionIntegrationTest, CodecNamesAreCaseInsensitive) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoMediaStream();
+  callee()->AddAudioVideoMediaStream();
+
+  // Remove all but one audio/video codec (opus and VP8), and change the
+  // casing of the caller's generated offer.
+  caller()->SetGeneratedSdpMunger([](cricket::SessionDescription* description) {
+    cricket::AudioContentDescription* audio =
+        GetFirstAudioContentDescription(description);
+    ASSERT_NE(nullptr, audio);
+    auto audio_codecs = audio->codecs();
+    audio_codecs.erase(std::remove_if(audio_codecs.begin(), audio_codecs.end(),
+                                      [](const cricket::AudioCodec& codec) {
+                                        return codec.name != "opus";
+                                      }),
+                       audio_codecs.end());
+    ASSERT_EQ(1u, audio_codecs.size());
+    audio_codecs[0].name = "OpUs";
+    audio->set_codecs(audio_codecs);
+
+    cricket::VideoContentDescription* video =
+        GetFirstVideoContentDescription(description);
+    ASSERT_NE(nullptr, video);
+    auto video_codecs = video->codecs();
+    video_codecs.erase(std::remove_if(video_codecs.begin(), video_codecs.end(),
+                                      [](const cricket::VideoCodec& codec) {
+                                        return codec.name != "VP8";
+                                      }),
+                       video_codecs.end());
+    ASSERT_EQ(1u, video_codecs.size());
+    video_codecs[0].name = "vP8";
+    video->set_codecs(video_codecs);
+  });
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Verify frames are still received end-to-end.
+  ExpectNewFramesReceivedWithWait(
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kMaxWaitForFramesMs);
 }
 
 }  // namespace

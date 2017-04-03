@@ -18,6 +18,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
@@ -50,14 +51,20 @@ const char* GetUmaPrefix(VideoEncoderConfig::ContentType content_type) {
 
 HistogramCodecType PayloadNameToHistogramCodecType(
     const std::string& payload_name) {
-  if (payload_name == "VP8") {
-    return kVideoVp8;
-  } else if (payload_name == "VP9") {
-    return kVideoVp9;
-  } else if (payload_name == "H264") {
-    return kVideoH264;
-  } else {
+  rtc::Optional<VideoCodecType> codecType =
+      PayloadNameToCodecType(payload_name);
+  if (!codecType) {
     return kVideoUnknown;
+  }
+  switch (*codecType) {
+    case kVideoCodecVP8:
+      return kVideoVp8;
+    case kVideoCodecVP9:
+      return kVideoVp9;
+    case kVideoCodecH264:
+      return kVideoH264;
+    default:
+      return kVideoUnknown;
   }
 }
 
