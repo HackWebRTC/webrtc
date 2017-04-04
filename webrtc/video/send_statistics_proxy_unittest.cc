@@ -385,6 +385,40 @@ TEST_F(SendStatisticsProxyTest, SetQualityScalingUpdatesStats) {
   EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
 }
 
+TEST_F(SendStatisticsProxyTest, GetStatsReportsCpuResolutionChanges) {
+  EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_EQ(0, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
+
+  statistics_proxy_->OnCpuRestrictedResolutionChanged(true);
+  EXPECT_TRUE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_EQ(1, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
+
+  statistics_proxy_->OnCpuRestrictedResolutionChanged(false);
+  EXPECT_FALSE(statistics_proxy_->GetStats().cpu_limited_resolution);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_cpu_adapt_changes);
+}
+
+TEST_F(SendStatisticsProxyTest, GetStatsReportsQualityResolutionChanges) {
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_EQ(0, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+
+  statistics_proxy_->OnQualityRestrictedResolutionChanged(1);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_EQ(1, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+
+  statistics_proxy_->OnQualityRestrictedResolutionChanged(2);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_EQ(2, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+
+  statistics_proxy_->OnQualityRestrictedResolutionChanged(1);
+  EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_EQ(3, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+
+  statistics_proxy_->OnQualityRestrictedResolutionChanged(0);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
+  EXPECT_EQ(4, statistics_proxy_->GetStats().number_of_quality_adapt_changes);
+}
+
 TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnIncomingFrame(kWidth, kHeight);

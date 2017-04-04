@@ -706,6 +706,7 @@ void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(
 void SendStatisticsProxy::OnQualityRestrictedResolutionChanged(
     int num_quality_downscales) {
   rtc::CritScope lock(&crit_);
+  ++stats_.number_of_quality_adapt_changes;
   quality_downscales_ = num_quality_downscales;
   stats_.bw_limited_resolution = quality_downscales_ > 0;
 }

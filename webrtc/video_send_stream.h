@@ -70,8 +70,9 @@ class VideoSendStream {
     bool bw_limited_resolution = false;
     bool cpu_limited_resolution = false;
     // Total number of times resolution as been requested to be changed due to
-    // CPU adaptation.
+    // CPU/quality adaptation.
     int number_of_cpu_adapt_changes = 0;
+    int number_of_quality_adapt_changes = 0;
     std::map<uint32_t, StreamStats> substreams;
   };
 
