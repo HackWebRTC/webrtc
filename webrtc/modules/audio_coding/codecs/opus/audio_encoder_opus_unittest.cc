@@ -176,10 +176,10 @@ TEST(AudioEncoderOpusTest, ToggleDtx) {
   auto states = CreateCodec(2);
   // Enable DTX
   EXPECT_TRUE(states.encoder->SetDtx(true));
-  // Verify that the mode is still kAudio.
-  EXPECT_EQ(AudioEncoderOpus::kAudio, states.encoder->application());
+  EXPECT_TRUE(states.encoder->GetDtx());
   // Turn off DTX.
   EXPECT_TRUE(states.encoder->SetDtx(false));
+  EXPECT_FALSE(states.encoder->GetDtx());
 }
 
 TEST(AudioEncoderOpusTest,
