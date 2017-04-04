@@ -39,6 +39,7 @@ static const int kHighH264QpThreshold = 37;
 // bitstream range of [0, 127] and not the user-level range of [0,63].
 static const int kLowVp8QpThreshold = 29;
 static const int kHighVp8QpThreshold = 95;
+static const int kMinFramesNeededToScale = 2 * 30;
 
 static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
     VideoCodecType codec_type) {
@@ -142,6 +143,12 @@ void QualityScaler::CheckQP() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   // Should be set through InitEncode -> Should be set by now.
   RTC_DCHECK_GE(thresholds_.low, 0);
+
+  // If we have not observed at least this many frames we can't
+  // make a good scaling decision.
+  if (framedrop_percent_.size() < kMinFramesNeededToScale)
+    return;
+
   // Check if we should scale down due to high frame drop.
   const rtc::Optional<int> drop_rate = framedrop_percent_.GetAverage();
   if (drop_rate && *drop_rate >= kFramedropPercentThreshold) {
