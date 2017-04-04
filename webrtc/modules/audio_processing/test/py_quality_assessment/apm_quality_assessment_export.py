@@ -146,10 +146,10 @@ def main():
     }
 
   # Export.
-  exporter = export.HtmlExport(
-      output_path=args.output_dir,
-      output_filename=_GetOutputFilename(args.filename_suffix))
-  output_filepath = exporter.export(scores)
+  output_filepath = os.path.join(args.output_dir, _GetOutputFilename(
+      args.filename_suffix))
+  exporter = export.HtmlExport(output_filepath)
+  exporter.export(scores)
 
   logging.info('output file successfully written in %s', output_filepath)
   sys.exit(0)

@@ -35,6 +35,7 @@ from . import data_access
 from . import exceptions
 from . import signal_processing
 
+
 class NoiseGenerator(object):
   """Abstract class responsible for the generation of noisy signals.
 
