@@ -68,6 +68,13 @@ class VideoDecoder {
                          const CodecSpecificInfo* codec_specific_info = NULL,
                          int64_t render_time_ms = -1) = 0;
 
+#if defined(WEBRTC_ANDROID)
+  // This is a temporary remedy while the Android capture implementation is
+  // being changed to deliver frames on the decoder thread without polling.
+  // See https://bugs.chromium.org/p/webrtc/issues/detail?id=7361
+  virtual void PollDecodedFrames() {}
+#endif
+
   virtual int32_t RegisterDecodeCompleteCallback(
       DecodedImageCallback* callback) = 0;
 

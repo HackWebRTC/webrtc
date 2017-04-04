@@ -138,6 +138,14 @@ bool VideoDecoderSoftwareFallbackWrapper::PrefersLateDecoding() const {
   return decoder_->PrefersLateDecoding();
 }
 
+#if defined(WEBRTC_ANDROID)
+void VideoDecoderSoftwareFallbackWrapper::PollDecodedFrames() {
+  if (fallback_decoder_)
+    return fallback_decoder_->PollDecodedFrames();
+  return decoder_->PollDecodedFrames();
+}
+#endif
+
 const char* VideoDecoderSoftwareFallbackWrapper::ImplementationName() const {
   if (fallback_decoder_)
     return fallback_implementation_name_.c_str();
