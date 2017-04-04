@@ -11,8 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_GENERIC_DECODER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_GENERIC_DECODER_H_
 
-#include <memory>
-
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_coding/encoded_frame.h"
@@ -37,7 +36,6 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
  public:
   VCMDecodedFrameCallback(VCMTiming* timing, Clock* clock);
   ~VCMDecodedFrameCallback() override;
-
   void SetUserReceiveCallback(VCMReceiveCallback* receiveCallback);
   VCMReceiveCallback* UserReceiveCallback();
 
@@ -57,7 +55,7 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
 
  private:
   rtc::ThreadChecker construction_thread_;
-  rtc::ThreadChecker decoder_thread_;
+  // Protect |_timestampMap|.
   Clock* const _clock;
   // This callback must be set before the decoder thread starts running
   // and must only be unset when external threads (e.g decoder thread)
@@ -65,12 +63,15 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
   // while there are more than one threads involved, it must be set
   // from the same thread, and therfore a lock is not required to access it.
   VCMReceiveCallback* _receiveCallback = nullptr;
-  VCMTiming* _timing ACCESS_ON(decoder_thread_);
-  VCMTimestampMap _timestampMap ACCESS_ON(decoder_thread_);
-  uint64_t _lastReceivedPictureID ACCESS_ON(decoder_thread_);
+  VCMTiming* _timing;
+  rtc::CriticalSection lock_;
+  VCMTimestampMap _timestampMap GUARDED_BY(lock_);
+  uint64_t _lastReceivedPictureID;
 };
 
 class VCMGenericDecoder {
+  friend class VCMCodecDataBase;
+
  public:
   explicit VCMGenericDecoder(VideoDecoder* decoder, bool isExternal = false);
   ~VCMGenericDecoder();
@@ -88,30 +89,26 @@ class VCMGenericDecoder {
   int32_t Decode(const VCMEncodedFrame& inputFrame, int64_t nowMs);
 
   /**
+  * Free the decoder memory
+  */
+  int32_t Release();
+
+  /**
   * Set decode callback. Deregistering while decoding is illegal.
   */
   int32_t RegisterDecodeCompleteCallback(VCMDecodedFrameCallback* callback);
 
+  bool External() const;
   bool PrefersLateDecoding() const;
 
-#if defined(WEBRTC_ANDROID)
-  // See https://bugs.chromium.org/p/webrtc/issues/detail?id=7361
-  void PollDecodedFrames();
-#endif
-
-  bool IsSameDecoder(VideoDecoder* decoder) const {
-    return decoder_.get() == decoder;
-  }
-
  private:
-  rtc::ThreadChecker decoder_thread_;
-  VCMDecodedFrameCallback* _callback ACCESS_ON(decoder_thread_);
-  VCMFrameInformation _frameInfos[kDecoderFrameMemoryLength] ACCESS_ON(
-      decoder_thread_);
-  uint32_t _nextFrameInfoIdx ACCESS_ON(decoder_thread_);
-  std::unique_ptr<VideoDecoder> decoder_;
-  VideoCodecType _codecType ACCESS_ON(decoder_thread_);
-  const bool _isExternal;
+  VCMDecodedFrameCallback* _callback;
+  VCMFrameInformation _frameInfos[kDecoderFrameMemoryLength];
+  uint32_t _nextFrameInfoIdx;
+  VideoDecoder* const _decoder;
+  VideoCodecType _codecType;
+  bool _isExternal;
+  bool _keyFrameDecoded;
 };
 
 }  // namespace webrtc

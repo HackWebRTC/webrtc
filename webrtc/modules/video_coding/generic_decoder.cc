@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/video_coding/generic_decoder.h"
-
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/video_coding/include/video_coding.h"
+#include "webrtc/modules/video_coding/generic_decoder.h"
 #include "webrtc/modules/video_coding/internal_defines.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
@@ -24,12 +23,9 @@ VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming* timing,
     : _clock(clock),
       _timing(timing),
       _timestampMap(kDecoderFrameMemoryLength),
-      _lastReceivedPictureID(0) {
-  decoder_thread_.DetachFromThread();
-}
+      _lastReceivedPictureID(0) {}
 
 VCMDecodedFrameCallback::~VCMDecodedFrameCallback() {
-  RTC_DCHECK(construction_thread_.CalledOnValidThread());
 }
 
 void VCMDecodedFrameCallback::SetUserReceiveCallback(
@@ -41,7 +37,6 @@ void VCMDecodedFrameCallback::SetUserReceiveCallback(
 }
 
 VCMReceiveCallback* VCMDecodedFrameCallback::UserReceiveCallback() {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
   // Called on the decode thread via VCMCodecDataBase::GetDecoder.
   // The callback must always have been set before this happens.
   RTC_DCHECK(_receiveCallback);
@@ -64,14 +59,16 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
 void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                                       rtc::Optional<int32_t> decode_time_ms,
                                       rtc::Optional<uint8_t> qp) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
   RTC_DCHECK(_receiveCallback) << "Callback must not be null at this point";
-
   TRACE_EVENT_INSTANT1("webrtc", "VCMDecodedFrameCallback::Decoded",
                        "timestamp", decodedImage.timestamp());
   // TODO(holmer): We should improve this so that we can handle multiple
   // callbacks from one call to Decode().
-  VCMFrameInformation* frameInfo = _timestampMap.Pop(decodedImage.timestamp());
+  VCMFrameInformation* frameInfo;
+  {
+    rtc::CritScope cs(&lock_);
+    frameInfo = _timestampMap.Pop(decodedImage.timestamp());
+  }
 
   if (frameInfo == NULL) {
     LOG(LS_WARNING) << "Too many frames backed up in the decoder, dropping "
@@ -95,115 +92,101 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
 
 int32_t VCMDecodedFrameCallback::ReceivedDecodedReferenceFrame(
     const uint64_t pictureId) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
   return _receiveCallback->ReceivedDecodedReferenceFrame(pictureId);
 }
 
 int32_t VCMDecodedFrameCallback::ReceivedDecodedFrame(
     const uint64_t pictureId) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
   _lastReceivedPictureID = pictureId;
   return 0;
 }
 
 uint64_t VCMDecodedFrameCallback::LastReceivedPictureID() const {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
   return _lastReceivedPictureID;
 }
 
 void VCMDecodedFrameCallback::OnDecoderImplementationName(
     const char* implementation_name) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
   _receiveCallback->OnDecoderImplementationName(implementation_name);
 }
 
 void VCMDecodedFrameCallback::Map(uint32_t timestamp,
                                   VCMFrameInformation* frameInfo) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
+  rtc::CritScope cs(&lock_);
   _timestampMap.Add(timestamp, frameInfo);
 }
 
 int32_t VCMDecodedFrameCallback::Pop(uint32_t timestamp) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
-  return _timestampMap.Pop(timestamp) == nullptr ? VCM_GENERAL_ERROR : VCM_OK;
+  rtc::CritScope cs(&lock_);
+  if (_timestampMap.Pop(timestamp) == NULL) {
+    return VCM_GENERAL_ERROR;
+  }
+  return VCM_OK;
 }
 
 VCMGenericDecoder::VCMGenericDecoder(VideoDecoder* decoder, bool isExternal)
     : _callback(NULL),
       _frameInfos(),
       _nextFrameInfoIdx(0),
-      decoder_(decoder),
+      _decoder(decoder),
       _codecType(kVideoCodecUnknown),
-      _isExternal(isExternal) {}
+      _isExternal(isExternal),
+      _keyFrameDecoded(false) {}
 
-VCMGenericDecoder::~VCMGenericDecoder() {
-  decoder_->Release();
-  if (_isExternal)
-    decoder_.release();
-
-  RTC_DCHECK(_isExternal || !decoder_);
-}
+VCMGenericDecoder::~VCMGenericDecoder() {}
 
 int32_t VCMGenericDecoder::InitDecode(const VideoCodec* settings,
                                       int32_t numberOfCores) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
   TRACE_EVENT0("webrtc", "VCMGenericDecoder::InitDecode");
   _codecType = settings->codecType;
 
-  return decoder_->InitDecode(settings, numberOfCores);
+  return _decoder->InitDecode(settings, numberOfCores);
 }
 
 int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
-  TRACE_EVENT2("webrtc", "VCMGenericDecoder::Decode", "timestamp",
-               frame.EncodedImage()._timeStamp, "decoder",
-               decoder_->ImplementationName());
-  _frameInfos[_nextFrameInfoIdx].decodeStartTimeMs = nowMs;
-  _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
-  _frameInfos[_nextFrameInfoIdx].rotation = frame.rotation();
-  _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
+    TRACE_EVENT1("webrtc", "VCMGenericDecoder::Decode", "timestamp",
+                 frame.EncodedImage()._timeStamp);
+    _frameInfos[_nextFrameInfoIdx].decodeStartTimeMs = nowMs;
+    _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
+    _frameInfos[_nextFrameInfoIdx].rotation = frame.rotation();
+    _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
 
-  _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
-  const RTPFragmentationHeader dummy_header;
-  int32_t ret = decoder_->Decode(frame.EncodedImage(), frame.MissingFrame(),
-                                 &dummy_header, frame.CodecSpecific(),
-                                 frame.RenderTimeMs());
+    _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
+    const RTPFragmentationHeader dummy_header;
+    int32_t ret = _decoder->Decode(frame.EncodedImage(), frame.MissingFrame(),
+                                   &dummy_header,
+                                   frame.CodecSpecific(), frame.RenderTimeMs());
 
-  // TODO(tommi): Necessary every time?
-  // Maybe this should be the first thing the function does, and only the first
-  // time around?
-  _callback->OnDecoderImplementationName(decoder_->ImplementationName());
-
-  if (ret != WEBRTC_VIDEO_CODEC_OK) {
+    _callback->OnDecoderImplementationName(_decoder->ImplementationName());
     if (ret < WEBRTC_VIDEO_CODEC_OK) {
-      LOG(LS_WARNING) << "Failed to decode frame with timestamp "
-                      << frame.TimeStamp() << ", error code: " << ret;
+        LOG(LS_WARNING) << "Failed to decode frame with timestamp "
+                        << frame.TimeStamp() << ", error code: " << ret;
+        _callback->Pop(frame.TimeStamp());
+        return ret;
+    } else if (ret == WEBRTC_VIDEO_CODEC_NO_OUTPUT ||
+               ret == WEBRTC_VIDEO_CODEC_REQUEST_SLI) {
+        // No output
+        _callback->Pop(frame.TimeStamp());
     }
-    // We pop the frame for all non-'OK', failure or success codes such as
-    // WEBRTC_VIDEO_CODEC_NO_OUTPUT and WEBRTC_VIDEO_CODEC_REQUEST_SLI.
-    _callback->Pop(frame.TimeStamp());
-  }
+    return ret;
+}
 
-  return ret;
+int32_t VCMGenericDecoder::Release() {
+  return _decoder->Release();
 }
 
 int32_t VCMGenericDecoder::RegisterDecodeCompleteCallback(
     VCMDecodedFrameCallback* callback) {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
   _callback = callback;
-  return decoder_->RegisterDecodeCompleteCallback(callback);
+  return _decoder->RegisterDecodeCompleteCallback(callback);
+}
+
+bool VCMGenericDecoder::External() const {
+  return _isExternal;
 }
 
 bool VCMGenericDecoder::PrefersLateDecoding() const {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
-  return decoder_->PrefersLateDecoding();
+  return _decoder->PrefersLateDecoding();
 }
-
-#if defined(WEBRTC_ANDROID)
-void VCMGenericDecoder::PollDecodedFrames() {
-  RTC_DCHECK_RUN_ON(&decoder_thread_);
-  decoder_->PollDecodedFrames();
-}
-#endif
 
 }  // namespace webrtc

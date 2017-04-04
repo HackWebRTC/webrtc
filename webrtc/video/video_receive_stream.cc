@@ -20,7 +20,6 @@
 #include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/optional.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
@@ -169,21 +168,19 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 
 namespace internal {
 
-VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
-                                       PacketRouter* packet_router,
-                                       VideoReceiveStream::Config config,
-                                       ProcessThread* process_thread,
-                                       CallStats* call_stats,
-                                       VieRemb* remb)
+VideoReceiveStream::VideoReceiveStream(
+    int num_cpu_cores,
+    PacketRouter* packet_router,
+    VideoReceiveStream::Config config,
+    ProcessThread* process_thread,
+    CallStats* call_stats,
+    VieRemb* remb)
     : transport_adapter_(config.rtcp_send_transport),
       config_(std::move(config)),
       num_cpu_cores_(num_cpu_cores),
       process_thread_(process_thread),
       clock_(Clock::GetRealTimeClock()),
-      decode_thread_(&DecodeThreadFunction,
-                     this,
-                     "DecodingThread",
-                     rtc::kHighestPriority),
+      decode_thread_(DecodeThreadFunction, this, "DecodingThread"),
       call_stats_(call_stats),
       timing_(new VCMTiming(clock_)),
       video_receiver_(clock_, nullptr, this, timing_.get(), this, this),
@@ -224,6 +221,7 @@ VideoReceiveStream::VideoReceiveStream(int num_cpu_cores,
   frame_buffer_.reset(new video_coding::FrameBuffer(
       clock_, jitter_estimator_.get(), timing_.get(), &stats_proxy_));
 
+  process_thread_->RegisterModule(&video_receiver_, RTC_FROM_HERE);
   process_thread_->RegisterModule(&rtp_stream_sync_, RTC_FROM_HERE);
 }
 
@@ -233,12 +231,14 @@ VideoReceiveStream::~VideoReceiveStream() {
   Stop();
 
   process_thread_->DeRegisterModule(&rtp_stream_sync_);
+  process_thread_->DeRegisterModule(&video_receiver_);
 }
 
 void VideoReceiveStream::SignalNetworkState(NetworkState state) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtp_stream_receiver_.SignalNetworkState(state);
 }
+
 
 bool VideoReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return rtp_stream_receiver_.DeliverRtcp(packet, length);
@@ -302,31 +302,25 @@ void VideoReceiveStream::Start() {
       &stats_proxy_, renderer));
   // Register the channel to receive stats updates.
   call_stats_->RegisterStatsObserver(video_stream_decoder_.get());
-
-  video_receiver_.DecoderThreadStarting();
-  process_thread_->RegisterModule(&video_receiver_, RTC_FROM_HERE);
-
   // Start the decode thread
   decode_thread_.Start();
+  decode_thread_.SetPriority(rtc::kHighestPriority);
   rtp_stream_receiver_.StartReceive();
 }
 
 void VideoReceiveStream::Stop() {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtp_stream_receiver_.StopReceive();
+  // TriggerDecoderShutdown will release any waiting decoder thread and make it
+  // stop immediately, instead of waiting for a timeout. Needs to be called
+  // before joining the decoder thread thread.
+  video_receiver_.TriggerDecoderShutdown();
 
   frame_buffer_->Stop();
   call_stats_->DeregisterStatsObserver(&rtp_stream_receiver_);
-  process_thread_->DeRegisterModule(&video_receiver_);
 
   if (decode_thread_.IsRunning()) {
-    // TriggerDecoderShutdown will release any waiting decoder thread and make
-    // it stop immediately, instead of waiting for a timeout. Needs to be called
-    // before joining the decoder thread thread.
-    video_receiver_.TriggerDecoderShutdown();
-
     decode_thread_.Stop();
-    video_receiver_.DecoderThreadStopped();
     // Deregister external decoders so they are no longer running during
     // destruction. This effectively stops the VCM since the decoder thread is
     // stopped, the VCM is deregistered and no asynchronous decoder threads are
@@ -470,48 +464,30 @@ void VideoReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
   video_receiver_.SetMinimumPlayoutDelay(delay_ms);
 }
 
-void VideoReceiveStream::DecodeThreadFunction(void* ptr) {
-  while (static_cast<VideoReceiveStream*>(ptr)->Decode()) {
-  }
+bool VideoReceiveStream::DecodeThreadFunction(void* ptr) {
+  return static_cast<VideoReceiveStream*>(ptr)->Decode();
 }
 
 bool VideoReceiveStream::Decode() {
   TRACE_EVENT0("webrtc", "VideoReceiveStream::Decode");
   static const int kMaxWaitForFrameMs = 3000;
   std::unique_ptr<video_coding::FrameObject> frame;
+  video_coding::FrameBuffer::ReturnReason res =
+      frame_buffer_->NextFrame(kMaxWaitForFrameMs, &frame);
 
-  video_coding::FrameBuffer::ReturnReason res;
-#if defined(WEBRTC_ANDROID)
-  // This is a temporary workaround for video capture on Android in order to
-  // deliver asynchronously delivered frames, on the decoder thread.
-  // More details here:
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=7361
-  static const int kPollIntervalMs = 10;
-  int time_remaining = kMaxWaitForFrameMs;
-  do {
-    res = frame_buffer_->NextFrame(kPollIntervalMs, &frame);
-    if (res != video_coding::FrameBuffer::ReturnReason::kTimeout)
-      break;
-    time_remaining -= kPollIntervalMs;
-    video_receiver_.PollDecodedFrames();
-  } while (time_remaining > 0);
-#else
-  res = frame_buffer_->NextFrame(kMaxWaitForFrameMs, &frame);
-#endif
-
-  if (res == video_coding::FrameBuffer::ReturnReason::kStopped)
+  if (res == video_coding::FrameBuffer::ReturnReason::kStopped) {
+    video_receiver_.DecodingStopped();
     return false;
+  }
 
   if (frame) {
     if (video_receiver_.Decode(frame.get()) == VCM_OK)
       rtp_stream_receiver_.FrameDecoded(frame->picture_id);
   } else {
-    RTC_DCHECK_EQ(res, video_coding::FrameBuffer::ReturnReason::kTimeout);
     LOG(LS_WARNING) << "No decodable frame in " << kMaxWaitForFrameMs
                     << " ms, requesting keyframe.";
     RequestKeyFrame();
   }
-
   return true;
 }
 }  // namespace internal

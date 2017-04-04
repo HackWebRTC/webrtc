@@ -109,7 +109,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void SetMinimumPlayoutDelay(int delay_ms) override;
 
  private:
-  static void DecodeThreadFunction(void* ptr);
+  static bool DecodeThreadFunction(void* ptr);
   bool Decode();
 
   rtc::ThreadChecker worker_thread_checker_;
