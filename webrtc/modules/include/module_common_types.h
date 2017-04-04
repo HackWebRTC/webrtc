@@ -279,9 +279,16 @@ class CallStatsObserver {
  */
 class AudioFrame {
  public:
-  // Stereo, 32 kHz, 60 ms (2 * 32 * 60)
+  // Using constexpr here causes linker errors unless the variable also has an
+  // out-of-class definition, which is impractical in this header-only class.
+  // (This makes no sense because it compiles as an enum value, which we most
+  // certainly cannot take the address of, just fine.) C++17 introduces inline
+  // variables which should allow us to switch to constexpr and keep this a
+  // header-only class.
   enum : size_t {
-    kMaxDataSizeSamples = 3840
+    // Stereo, 32 kHz, 60 ms (2 * 32 * 60)
+    kMaxDataSizeSamples = 3840,
+    kMaxDataSizeBytes = kMaxDataSizeSamples * sizeof(int16_t),
   };
 
   enum VADActivity {
@@ -309,6 +316,11 @@ class AudioFrame {
                    size_t num_channels = 1);
 
   void CopyFrom(const AudioFrame& src);
+
+  // TODO(yujo): upcoming API update. Currently, both of these just return
+  // data_.
+  const int16_t* data() const;
+  int16_t* mutable_data();
 
   // These methods are deprecated. Use the functions in
   // webrtc/audio/utility instead. These methods will exists for a
@@ -399,6 +411,14 @@ inline void AudioFrame::CopyFrom(const AudioFrame& src) {
   const size_t length = samples_per_channel_ * num_channels_;
   assert(length <= kMaxDataSizeSamples);
   memcpy(data_, src.data_, sizeof(int16_t) * length);
+}
+
+inline const int16_t* AudioFrame::data() const {
+  return data_;
+}
+
+inline int16_t* AudioFrame::mutable_data() {
+  return data_;
 }
 
 inline void AudioFrame::Mute() {
