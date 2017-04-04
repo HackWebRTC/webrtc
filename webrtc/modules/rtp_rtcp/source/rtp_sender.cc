@@ -186,20 +186,7 @@ uint32_t RTPSender::NackOverheadRate() const {
 int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
                                               uint8_t id) {
   rtc::CritScope lock(&send_critsect_);
-  switch (type) {
-    case kRtpExtensionVideoRotation:
-    case kRtpExtensionPlayoutDelay:
-    case kRtpExtensionTransmissionTimeOffset:
-    case kRtpExtensionAbsoluteSendTime:
-    case kRtpExtensionAudioLevel:
-    case kRtpExtensionTransportSequenceNumber:
-      return rtp_header_extension_map_.Register(type, id);
-    case kRtpExtensionNone:
-    case kRtpExtensionNumberOfExtensions:
-      LOG(LS_ERROR) << "Invalid RTP extension type for registration.";
-      return -1;
-  }
-  return -1;
+  return rtp_header_extension_map_.RegisterByType(id, type) ? 0 : -1;
 }
 
 bool RTPSender::IsRtpHeaderExtensionRegistered(RTPExtensionType type) const {
