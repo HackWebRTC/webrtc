@@ -58,3 +58,33 @@ table tbody tr td .value{
   padding: 1px;
   font-size: 0.8em;
 }
+
+.inspector{
+  background-color: #FFF;
+  border: 3px solid #000;
+  display: block;
+  padding: 0.5em;
+  position: fixed;
+  right: 1em;
+  top: 1em;
+}
+
+.inspector .property{
+  margin-bottom: 1em;
+}
+
+.inspector .property .name{
+  font-weight: bold;
+}
+
+.inspector .property .value{
+  padding-left: 0.5em;
+}
+
+.inspector .buttons{
+  margin-top: 1em;
+}
+
+.inspector .buttons button{
+  margin: 0 0.25em;
+}

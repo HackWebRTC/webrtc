@@ -46,6 +46,7 @@ copy("lib") {
     "quality_assessment/noise_generation_factory.py",
     "quality_assessment/noise_generation_unittest.py",
     "quality_assessment/results.css",
+    "quality_assessment/results.js",
     "quality_assessment/signal_processing.py",
     "quality_assessment/signal_processing_unittest.py",
     "quality_assessment/simulation.py",

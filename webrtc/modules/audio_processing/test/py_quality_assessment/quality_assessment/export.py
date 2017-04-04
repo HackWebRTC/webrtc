@@ -18,7 +18,11 @@ class HtmlExport(object):
 
   # CSS file parameters.
   _CSS_FILEPATH = os.path.join(_PATH, 'results.css')
-  _INLINE_CSS = True
+  _INLINE_CSS = False
+
+  # JS file parameters.
+  _JS_FILEPATH = os.path.join(_PATH, 'results.js')
+  _INLINE_JS = False
 
   _NEW_LINE = '\n'
 
@@ -43,7 +47,7 @@ class HtmlExport(object):
     html = (
         '<html>' +
         self._build_header() +
-        '<body>' +
+        '<body onload="initialize()">' +
         '<h1>Results from {}</h1>'.format(self._output_filepath) +
         self._NEW_LINE.join(tables) +
         '</body>' +
@@ -58,18 +62,33 @@ class HtmlExport(object):
     """
     html = ['<head>', '<title>Results</title>']
 
+    # Function to append the lines of a text file to html.
+    def _embed_file(filepath):
+      with open(filepath) as f:
+        for l in f:
+          html.append(l.strip())
+
     # CSS.
     if self._INLINE_CSS:
       # Embed.
       html.append('<style>')
-      with open(self._CSS_FILEPATH) as f:
-        for l in f:
-          html.append(l.strip())
+      _embed_file(self._CSS_FILEPATH)
       html.append('</style>')
     else:
       # Link.
       html.append('<link rel="stylesheet" type="text/css" '
                   'href="file://{}?">'.format(self._CSS_FILEPATH))
+
+    # Javascript.
+    if self._INLINE_JS:
+      # Embed.
+      html.append('<script>')
+      _embed_file(self._JS_FILEPATH)
+      html.append('</script>')
+    else:
+      # Link.
+      html.append('<script src="file://{}?"></script>'.format(
+          self._JS_FILEPATH))
 
     html.append('</head>')
 

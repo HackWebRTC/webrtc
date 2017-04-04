@@ -134,8 +134,8 @@ def main():
     score_path, _ = os.path.split(score_filepath)
     audio_in_filepath, audio_ref_filepath = (
         data_access.Metadata.load_audio_in_ref_paths(score_path))
-    audio_out_filepath = os.path.join(
-        score_path, audioproc_wrapper.AudioProcWrapper.OUTPUT_FILENAME)
+    audio_out_filepath = os.path.abspath(os.path.join(
+        score_path, audioproc_wrapper.AudioProcWrapper.OUTPUT_FILENAME))
 
     # Add the score to the nested dictionary.
     scores[score_name][config_name][input_name][noise_name][noise_params] = {
