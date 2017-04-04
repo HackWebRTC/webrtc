@@ -291,7 +291,7 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
 - (RTCConfiguration *)configuration {
   webrtc::PeerConnectionInterface::RTCConfiguration config =
     _peerConnection->GetConfiguration();
-  return [[RTCConfiguration alloc] initWithNativeConfiguration:&config];
+  return [[RTCConfiguration alloc] initWithNativeConfiguration:config];
 }
 
 - (void)close {

@@ -43,46 +43,45 @@
   // Copy defaults.
   webrtc::PeerConnectionInterface::RTCConfiguration config(
     webrtc::PeerConnectionInterface::RTCConfigurationType::kAggressive);
-  return [self initWithNativeConfiguration:&config];
+  return [self initWithNativeConfiguration:config];
 }
 
 - (instancetype)initWithNativeConfiguration:
-    (const webrtc::PeerConnectionInterface::RTCConfiguration *)config {
-  NSParameterAssert(config);
+    (const webrtc::PeerConnectionInterface::RTCConfiguration &)config {
   if (self = [super init]) {
     NSMutableArray *iceServers = [NSMutableArray array];
-    for (const webrtc::PeerConnectionInterface::IceServer& server : config->servers) {
+    for (const webrtc::PeerConnectionInterface::IceServer& server : config.servers) {
       RTCIceServer *iceServer = [[RTCIceServer alloc] initWithNativeServer:server];
       [iceServers addObject:iceServer];
     }
     _iceServers = iceServers;
     _iceTransportPolicy =
-        [[self class] transportPolicyForTransportsType:config->type];
+        [[self class] transportPolicyForTransportsType:config.type];
     _bundlePolicy =
-        [[self class] bundlePolicyForNativePolicy:config->bundle_policy];
+        [[self class] bundlePolicyForNativePolicy:config.bundle_policy];
     _rtcpMuxPolicy =
-        [[self class] rtcpMuxPolicyForNativePolicy:config->rtcp_mux_policy];
+        [[self class] rtcpMuxPolicyForNativePolicy:config.rtcp_mux_policy];
     _tcpCandidatePolicy = [[self class] tcpCandidatePolicyForNativePolicy:
-        config->tcp_candidate_policy];
+        config.tcp_candidate_policy];
     _candidateNetworkPolicy = [[self class]
-        candidateNetworkPolicyForNativePolicy:config->candidate_network_policy];
+        candidateNetworkPolicyForNativePolicy:config.candidate_network_policy];
     webrtc::PeerConnectionInterface::ContinualGatheringPolicy nativePolicy =
-    config->continual_gathering_policy;
+    config.continual_gathering_policy;
     _continualGatheringPolicy =
         [[self class] continualGatheringPolicyForNativePolicy:nativePolicy];
-    _audioJitterBufferMaxPackets = config->audio_jitter_buffer_max_packets;
-    _audioJitterBufferFastAccelerate = config->audio_jitter_buffer_fast_accelerate;
-    _iceConnectionReceivingTimeout = config->ice_connection_receiving_timeout;
+    _audioJitterBufferMaxPackets = config.audio_jitter_buffer_max_packets;
+    _audioJitterBufferFastAccelerate = config.audio_jitter_buffer_fast_accelerate;
+    _iceConnectionReceivingTimeout = config.ice_connection_receiving_timeout;
     _iceBackupCandidatePairPingInterval =
-        config->ice_backup_candidate_pair_ping_interval;
+        config.ice_backup_candidate_pair_ping_interval;
     _keyType = RTCEncryptionKeyTypeECDSA;
-    _iceCandidatePoolSize = config->ice_candidate_pool_size;
-    _shouldPruneTurnPorts = config->prune_turn_ports;
+    _iceCandidatePoolSize = config.ice_candidate_pool_size;
+    _shouldPruneTurnPorts = config.prune_turn_ports;
     _shouldPresumeWritableWhenFullyRelayed =
-        config->presume_writable_when_fully_relayed;
-    if (config->ice_check_min_interval) {
+        config.presume_writable_when_fully_relayed;
+    if (config.ice_check_min_interval) {
       _iceCheckMinInterval =
-          [NSNumber numberWithInt:*config->ice_check_min_interval];
+          [NSNumber numberWithInt:*config.ice_check_min_interval];
     }
   }
   return self;

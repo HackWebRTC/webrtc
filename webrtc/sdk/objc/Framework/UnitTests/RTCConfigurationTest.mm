@@ -99,7 +99,8 @@
 
   webrtc::PeerConnectionInterface::RTCConfiguration *nativeConfig =
       [config createNativeConfiguration];
-  RTCConfiguration *newConfig = [[RTCConfiguration alloc] initWithNativeConfiguration:nativeConfig];
+  RTCConfiguration *newConfig = [[RTCConfiguration alloc]
+      initWithNativeConfiguration:*nativeConfig];
   EXPECT_EQ([config.iceServers count], newConfig.iceServers.count);
   RTCIceServer *newServer = newConfig.iceServers[0];
   RTCIceServer *origServer = config.iceServers[0];
