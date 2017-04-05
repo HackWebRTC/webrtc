@@ -59,7 +59,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
   void OnCpuRestrictedResolutionChanged(bool cpu_restricted_resolution);
   void OnQualityRestrictedResolutionChanged(int num_quality_downscales);
-  void SetCpuScalingStats(bool cpu_restricted_resolution);
+  void SetCpuScalingStats(int num_cpu_downscales);  // -1: disabled.
   void SetQualityScalingStats(int num_quality_downscales);  // -1: disabled.
 
   void OnEncoderStatsUpdate(uint32_t framerate, uint32_t bitrate);
@@ -144,10 +144,17 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     bool last_paused_or_resumed;
     int64_t last_ms;
   };
+  struct StatsTimer {
+    void Start(int64_t now_ms);
+    void Stop(int64_t now_ms);
+    void Restart(int64_t now_ms);
+    int64_t start_ms = -1;
+    int64_t total_ms = 0;
+  };
   struct QpCounters {
-    SampleCounter vp8;   // QP range: 0-127
-    SampleCounter vp9;   // QP range: 0-255
-    SampleCounter h264;  // QP range: 0-51
+    SampleCounter vp8;   // QP range: 0-127.
+    SampleCounter vp9;   // QP range: 0-255.
+    SampleCounter h264;  // QP range: 0-51.
   };
   void PurgeOldStats() EXCLUSIVE_LOCKS_REQUIRED(crit_);
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
@@ -207,6 +214,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     RateAccCounter fec_byte_counter_;
     int64_t first_rtcp_stats_time_ms_;
     int64_t first_rtp_stats_time_ms_;
+    StatsTimer cpu_scaling_timer_;
+    StatsTimer quality_scaling_timer_;
     BoolSampleCounter paused_time_counter_;
     TargetRateUpdates target_rate_updates_;
     ReportBlockStats report_block_stats_;

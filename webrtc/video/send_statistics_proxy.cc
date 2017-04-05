@@ -293,6 +293,24 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     }
   }
 
+  quality_scaling_timer_.Stop(clock_->TimeInMilliseconds());
+  int64_t elapsed_sec = quality_scaling_timer_.total_ms / 1000;
+  if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
+    int quality_changes = current_stats.number_of_quality_adapt_changes -
+                          start_stats_.number_of_quality_adapt_changes;
+    RTC_HISTOGRAMS_COUNTS_100(kIndex,
+                              uma_prefix_ + "AdaptChangesPerMinute.Quality",
+                              quality_changes * 60 / elapsed_sec);
+  }
+  cpu_scaling_timer_.Stop(clock_->TimeInMilliseconds());
+  elapsed_sec = cpu_scaling_timer_.total_ms / 1000;
+  if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
+    int cpu_changes = current_stats.number_of_cpu_adapt_changes -
+                      start_stats_.number_of_cpu_adapt_changes;
+    RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "AdaptChangesPerMinute.Cpu",
+                              cpu_changes * 60 / elapsed_sec);
+  }
+
   if (first_rtcp_stats_time_ms_ != -1) {
     int64_t elapsed_sec =
         (clock_->TimeInMilliseconds() - first_rtcp_stats_time_ms_) / 1000;
@@ -684,15 +702,29 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
       "ssrc", rtp_config_.ssrcs[0]);
 }
 
-void SendStatisticsProxy::SetCpuScalingStats(bool cpu_restricted_resolution) {
+void SendStatisticsProxy::SetCpuScalingStats(int num_cpu_downscales) {
   rtc::CritScope lock(&crit_);
-  stats_.cpu_limited_resolution = cpu_restricted_resolution;
+  stats_.cpu_limited_resolution = num_cpu_downscales > 0;
+
+  if (num_cpu_downscales >= 0) {
+    // Scaling enabled.
+    uma_container_->cpu_scaling_timer_.Start(clock_->TimeInMilliseconds());
+  } else {
+    uma_container_->cpu_scaling_timer_.Stop(clock_->TimeInMilliseconds());
+  }
 }
 
 void SendStatisticsProxy::SetQualityScalingStats(int num_quality_downscales) {
   rtc::CritScope lock(&crit_);
   quality_downscales_ = num_quality_downscales;
   stats_.bw_limited_resolution = quality_downscales_ > 0;
+
+  if (num_quality_downscales >= 0) {
+    // Scaling enabled.
+    uma_container_->quality_scaling_timer_.Start(clock_->TimeInMilliseconds());
+  } else {
+    uma_container_->quality_scaling_timer_.Stop(clock_->TimeInMilliseconds());
+  }
 }
 
 void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(
@@ -700,7 +732,7 @@ void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(
   rtc::CritScope lock(&crit_);
   stats_.cpu_limited_resolution = cpu_restricted_resolution;
   ++stats_.number_of_cpu_adapt_changes;
-  TRACE_EVENT_INSTANT0("webrtc_stats", "WebRTC.Video.AdaptationChanges");
+  TRACE_EVENT_INSTANT0("webrtc_stats", "WebRTC.Video.CpuAdaptationChanges");
 }
 
 void SendStatisticsProxy::OnQualityRestrictedResolutionChanged(
@@ -761,8 +793,12 @@ void SendStatisticsProxy::DataCountersUpdated(
   }
 
   stats->rtp_stats = counters;
-  if (uma_container_->first_rtp_stats_time_ms_ == -1)
-    uma_container_->first_rtp_stats_time_ms_ = clock_->TimeInMilliseconds();
+  if (uma_container_->first_rtp_stats_time_ms_ == -1) {
+    int64_t now_ms = clock_->TimeInMilliseconds();
+    uma_container_->first_rtp_stats_time_ms_ = now_ms;
+    uma_container_->cpu_scaling_timer_.Restart(now_ms);
+    uma_container_->quality_scaling_timer_.Restart(now_ms);
+  }
 
   uma_container_->total_byte_counter_.Set(counters.transmitted.TotalBytes(),
                                           ssrc);
@@ -816,6 +852,24 @@ void SendStatisticsProxy::SendSideDelayUpdated(int avg_delay_ms,
 
   uma_container_->delay_counter_.Add(avg_delay_ms);
   uma_container_->max_delay_counter_.Add(max_delay_ms);
+}
+
+void SendStatisticsProxy::StatsTimer::Start(int64_t now_ms) {
+  if (start_ms == -1)
+    start_ms = now_ms;
+}
+
+void SendStatisticsProxy::StatsTimer::Stop(int64_t now_ms) {
+  if (start_ms != -1) {
+    total_ms += now_ms - start_ms;
+    start_ms = -1;
+  }
+}
+
+void SendStatisticsProxy::StatsTimer::Restart(int64_t now_ms) {
+  total_ms = 0;
+  if (start_ms != -1)
+    start_ms = now_ms;
 }
 
 void SendStatisticsProxy::SampleCounter::Add(int sample) {

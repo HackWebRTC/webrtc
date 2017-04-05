@@ -541,7 +541,7 @@ void ViEEncoder::ConfigureQualityScaler() {
 
   const std::vector<int>& scale_counters = GetScaleCounters();
   stats_proxy_->SetCpuScalingStats(
-      degradation_preference_allows_scaling ? scale_counters[kCpu] > 0 : false);
+      degradation_preference_allows_scaling ? scale_counters[kCpu] : -1);
   stats_proxy_->SetQualityScalingStats(
       quality_scaling_allowed ? scale_counters[kQuality] : -1);
 
