@@ -492,15 +492,28 @@ Call::Config BaseTest::GetReceiverCallConfig() {
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {
 }
 
+MediaType BaseTest::SelectMediaType() {
+  if (GetNumVideoStreams() > 0) {
+    if (GetNumAudioStreams() > 0) {
+      // Relies on PayloadDemuxer to set media type from payload type.
+      return MediaType::ANY;
+    } else {
+      return MediaType::VIDEO;
+    }
+  } else {
+    return MediaType::AUDIO;
+  }
+}
+
 test::PacketTransport* BaseTest::CreateSendTransport(Call* sender_call) {
   return new PacketTransport(sender_call, this, test::PacketTransport::kSender,
-                             MediaType::VIDEO,
+                             SelectMediaType(),
                              FakeNetworkPipe::Config());
 }
 
 test::PacketTransport* BaseTest::CreateReceiveTransport() {
   return new PacketTransport(nullptr, this, test::PacketTransport::kReceiver,
-                             MediaType::VIDEO,
+                             SelectMediaType(),
                              FakeNetworkPipe::Config());
 }
 
