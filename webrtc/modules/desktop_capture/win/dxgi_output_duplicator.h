@@ -36,8 +36,8 @@ class DxgiOutputDuplicator {
  public:
   struct Context {
     // The updated region DxgiOutputDuplicator::DetectUpdatedRegion() output
-    // during last Duplicate() function call. It's a DesktopRegion translated by
-    // offset of each DxgiOutputDuplicator instance.
+    // during last Duplicate() function call. It's always relative to the
+    // (0, 0).
     DesktopRegion updated_region;
   };
 
@@ -80,11 +80,9 @@ class DxgiOutputDuplicator {
   int64_t num_frames_captured() const;
 
  private:
-  // Detects updated region translated by offset from IDXGIOutput1. This
-  // function will set the |updated_region| as entire DesktopRect starts from
-  // offset if it failed to execute Windows APIs.
+  // Calls DoDetectUpdatedRegion(). If it fails, this function sets the
+  // |updated_region| as entire UntranslatedDesktopRect().
   void DetectUpdatedRegion(const DXGI_OUTDUPL_FRAME_INFO& frame_info,
-                           DesktopVector offset,
                            DesktopRegion* updated_region);
 
   // Returns untranslated updated region, which are directly returned by Windows
@@ -98,13 +96,20 @@ class DxgiOutputDuplicator {
   // Returns false if system does not support IDXGIOutputDuplication.
   bool DuplicateOutput();
 
-  // Returns a DesktopRect with the same size of desktop_size_, but translated
+  // Returns a DesktopRect with the same size of desktop_size(), but translated
   // by offset.
-  DesktopRect TranslatedDesktopRect(DesktopVector offset);
+  DesktopRect GetTranslatedDesktopRect(DesktopVector offset) const;
+
+  // Returns a DesktopRect with the same size of desktop_size(), but starts from
+  // (0, 0).
+  DesktopRect GetUntranslatedDesktopRect() const;
 
   // Spreads changes from |context| to other registered Context(s) in
   // contexts_.
   void SpreadContextChange(const Context* const context);
+
+  // Returns the size of desktop rectangle current instance representing.
+  DesktopSize desktop_size() const;
 
   const D3dDevice device_;
   const Microsoft::WRL::ComPtr<IDXGIOutput1> output_;
