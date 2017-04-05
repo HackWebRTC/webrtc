@@ -39,7 +39,7 @@ class Logger(object):
     self.log_level = DISPLAY_LEVEL
     self.messages_left = messages_left
 
-  def log(self, build_file_path, line_number, target_name, source_file,
+  def Log(self, build_file_path, line_number, target_name, source_file,
           subpackage):
     if self.messages_left is not None:
       if not self.messages_left:
@@ -91,7 +91,7 @@ def _CheckBuildFile(build_file_path, packages, logger):
         line_number = subpackages_match.group('line_number')
         if subpackage:
           found_violations = True
-          logger.log(build_file_path, line_number, target_name, source_file,
+          logger.Log(build_file_path, line_number, target_name, source_file,
                      subpackage)
 
   return found_violations

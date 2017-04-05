@@ -30,7 +30,7 @@ class Logger(object):
     self.messages = []
     self.test_dir = test_dir
 
-  def log(self, build_file_path, line_number, target_name, source_file,
+  def Log(self, build_file_path, line_number, target_name, source_file,
           subpackage):
     build_file_path = os.path.relpath(build_file_path, self.test_dir)
     build_file_path = build_file_path.replace(os.path.sep, '/')
@@ -48,19 +48,19 @@ class UnitTest(unittest.TestCase):
     expected_messages = ReadPylFile(os.path.join(test_dir, 'expected.pyl'))
     self.assertListEqual(sorted(expected_messages), sorted(logger.messages))
 
-  def test_no_errors(self):
+  def testNoErrors(self):
     self.RunTest(os.path.join(TESTDATA_DIR, 'no_errors'))
 
-  def test_multiple_errors_single_target(self):
+  def testMultipleErrorsSingleTarget(self):
     self.RunTest(os.path.join(TESTDATA_DIR, 'multiple_errors_single_target'))
 
-  def test_multiple_errors_multiple_targets(self):
+  def testMultipleErrorsMultipleTargets(self):
     self.RunTest(os.path.join(TESTDATA_DIR, 'multiple_errors_multiple_targets'))
 
-  def test_common_prefix(self):
+  def testCommonPrefix(self):
     self.RunTest(os.path.join(TESTDATA_DIR, 'common_prefix'))
 
-  def test_all_build_files(self):
+  def testAllBuildFiles(self):
     self.RunTest(os.path.join(TESTDATA_DIR, 'all_build_files'), True)
 
 
