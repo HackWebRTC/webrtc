@@ -15,7 +15,6 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/modules/include/module.h"
-#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 namespace {

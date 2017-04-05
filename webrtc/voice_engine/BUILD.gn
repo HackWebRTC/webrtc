@@ -35,9 +35,9 @@ rtc_static_library("file_player") {
   deps = [
     ":audio_coder",
     "..:webrtc_common",
+    "../base:rtc_base_approved",
     "../common_audio",
     "../modules/media_file",
-    "../system_wrappers",
   ]
 
   if (!build_with_chromium && is_clang) {

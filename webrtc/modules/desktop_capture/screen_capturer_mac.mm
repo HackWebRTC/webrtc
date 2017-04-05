@@ -23,6 +23,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/macutils.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/modules/desktop_capture/desktop_capturer.h"
@@ -36,7 +37,6 @@
 #include "webrtc/modules/desktop_capture/screen_capture_frame_queue.h"
 #include "webrtc/modules/desktop_capture/screen_capturer_helper.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
-#include "webrtc/system_wrappers/include/logging.h"
 
 // Once Chrome no longer supports OSX 10.8, everything within this
 // preprocessor block can be removed. https://crbug.com/579255

@@ -13,6 +13,7 @@
 #include <stdlib.h>
 
 #include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
@@ -20,7 +21,6 @@
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/modules/video_capture/video_capture_config.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 namespace videocapturemodule {

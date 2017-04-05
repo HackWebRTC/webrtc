@@ -16,7 +16,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 namespace {

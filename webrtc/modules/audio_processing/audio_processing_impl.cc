@@ -13,6 +13,7 @@
 #include <algorithm>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_audio/audio_converter.h"
@@ -41,7 +42,6 @@
 #include "webrtc/modules/audio_processing/voice_detection_impl.h"
 #include "webrtc/modules/include/module_common_types.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
-#include "webrtc/system_wrappers/include/logging.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
