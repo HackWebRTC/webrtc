@@ -48,6 +48,7 @@ rtc_static_library("command_line_parser") {
   ]
   deps = [
     "../base:gtest_prod",
+    "../base:rtc_base_approved",
   ]
 }
 
@@ -141,6 +142,7 @@ rtc_static_library("frame_editing_lib") {
   }
 
   deps = [
+    "..:webrtc_common",
     "../common_video",
   ]
 }
@@ -202,6 +204,7 @@ if (rtc_enable_protobuf) {
     }
     defines = [ "ENABLE_RTC_EVENT_LOG" ]
     deps = [
+      "../base:rtc_base_approved",
       "../call:call_interfaces",
       "../logging:rtc_event_log_impl",
       "../logging:rtc_event_log_parser",
@@ -258,6 +261,7 @@ if (rtc_include_tests) {
     deps = [
       "../modules/audio_processing",
       "../system_wrappers:metrics_default",
+      "../test:test_support",
       "//build/win:default_exe_manifest",
       "//testing/gtest",
       "//third_party/gflags",
