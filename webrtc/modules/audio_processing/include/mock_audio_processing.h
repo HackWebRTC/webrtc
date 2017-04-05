@@ -206,6 +206,8 @@ class MockAudioProcessing : public AudioProcessing {
     return voice_detection_.get();
   }
 
+  MOCK_CONST_METHOD0(GetConfig, AudioProcessing::Config());
+
  private:
   std::unique_ptr<MockEchoCancellation> echo_cancellation_;
   std::unique_ptr<MockEchoControlMobile> echo_control_mobile_;

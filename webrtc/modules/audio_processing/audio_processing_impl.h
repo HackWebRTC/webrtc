@@ -134,9 +134,9 @@ class AudioProcessingImpl : public AudioProcessing {
   NoiseSuppression* noise_suppression() const override;
   VoiceDetection* voice_detection() const override;
 
-  // TODO(peah): Remove these two methods once the new API allows that.
+  // TODO(peah): Remove MutateConfig once the new API allows that.
   void MutateConfig(rtc::FunctionView<void(AudioProcessing::Config*)> mutator);
-  AudioProcessing::Config GetConfig() const;
+  AudioProcessing::Config GetConfig() const override;
 
  protected:
   // Overridden in a mock.

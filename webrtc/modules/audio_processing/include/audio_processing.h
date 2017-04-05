@@ -559,6 +559,11 @@ class AudioProcessing {
   virtual NoiseSuppression* noise_suppression() const = 0;
   virtual VoiceDetection* voice_detection() const = 0;
 
+  // Returns the last applied configuration.
+  // TODO(henrik.lundin) Make this method pure virtual when downstream
+  // dependencies have been fixed.
+  virtual AudioProcessing::Config GetConfig() const;
+
   enum Error {
     // Fatal errors.
     kNoError = 0,

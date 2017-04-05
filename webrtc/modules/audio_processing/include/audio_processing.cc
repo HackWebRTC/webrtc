@@ -31,5 +31,8 @@ Beamforming::Beamforming(bool enabled,
 
 Beamforming::~Beamforming() {}
 
+AudioProcessing::Config AudioProcessing::GetConfig() const {
+  return AudioProcessing::Config();
+}
 
 }  // namespace webrtc
