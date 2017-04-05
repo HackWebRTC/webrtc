@@ -19,15 +19,17 @@ from . import signal_processing
 
 
 class TestSignalProcessing(unittest.TestCase):
+  """Unit tests for the signal_processing module.
+  """
 
   def testMixSignals(self):
     # Generate a template signal with which white noise can be generated.
     silence = pydub.AudioSegment.silent(duration=1000, frame_rate=48000)
 
     # Generate two distinct AudioSegment instances with 1 second of white noise.
-    signal = signal_processing.SignalProcessingUtils.generate_white_noise(
+    signal = signal_processing.SignalProcessingUtils.GenerateWhiteNoise(
         silence)
-    noise = signal_processing.SignalProcessingUtils.generate_white_noise(
+    noise = signal_processing.SignalProcessingUtils.GenerateWhiteNoise(
         silence)
 
     # Extract samples.
@@ -35,7 +37,7 @@ class TestSignalProcessing(unittest.TestCase):
     noise_samples = noise.get_array_of_samples()
 
     # Test target SNR -Inf (noise expected).
-    mix_neg_inf = signal_processing.SignalProcessingUtils.mix_signals(
+    mix_neg_inf = signal_processing.SignalProcessingUtils.MixSignals(
         signal, noise, -np.Inf)
     self.assertTrue(len(noise), len(mix_neg_inf))  # Check duration.
     mix_neg_inf_samples = mix_neg_inf.get_array_of_samples()
@@ -43,7 +45,7 @@ class TestSignalProcessing(unittest.TestCase):
         all([x == y for x, y in zip(noise_samples, mix_neg_inf_samples)]))
 
     # Test target SNR 0.0 (different data expected).
-    mix_0 = signal_processing.SignalProcessingUtils.mix_signals(
+    mix_0 = signal_processing.SignalProcessingUtils.MixSignals(
         signal, noise, 0.0)
     self.assertTrue(len(signal), len(mix_0))  # Check duration.
     self.assertTrue(len(noise), len(mix_0))
@@ -54,7 +56,7 @@ class TestSignalProcessing(unittest.TestCase):
         any([x != y for x, y in zip(noise_samples, mix_0_samples)]))
 
     # Test target SNR +Inf (signal expected).
-    mix_pos_inf = signal_processing.SignalProcessingUtils.mix_signals(
+    mix_pos_inf = signal_processing.SignalProcessingUtils.MixSignals(
         signal, noise, np.Inf)
     self.assertTrue(len(signal), len(mix_pos_inf))  # Check duration.
     mix_pos_inf_samples = mix_pos_inf.get_array_of_samples()
@@ -63,13 +65,13 @@ class TestSignalProcessing(unittest.TestCase):
 
   def testMixSignalsMinInfPower(self):
     silence = pydub.AudioSegment.silent(duration=1000, frame_rate=48000)
-    signal = signal_processing.SignalProcessingUtils.generate_white_noise(
+    signal = signal_processing.SignalProcessingUtils.GenerateWhiteNoise(
         silence)
 
     with self.assertRaises(exceptions.SignalProcessingException):
-      _ = signal_processing.SignalProcessingUtils.mix_signals(
+      _ = signal_processing.SignalProcessingUtils.MixSignals(
           signal, silence, 0.0)
 
     with self.assertRaises(exceptions.SignalProcessingException):
-      _ = signal_processing.SignalProcessingUtils.mix_signals(
+      _ = signal_processing.SignalProcessingUtils.MixSignals(
           silence, signal, 0.0)

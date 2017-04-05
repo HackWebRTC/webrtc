@@ -20,6 +20,8 @@ from . import signal_processing
 
 
 class TestNoiseGen(unittest.TestCase):
+  """Unit tests for the noise_generation module.
+  """
 
   def setUp(self):
     """Create temporary folders."""
@@ -54,7 +56,7 @@ class TestNoiseGen(unittest.TestCase):
     self.assertTrue(os.path.exists(input_signal_filepath))
 
     # Load input signal.
-    input_signal = signal_processing.SignalProcessingUtils.load_wav(
+    input_signal = signal_processing.SignalProcessingUtils.LoadWav(
         input_signal_filepath)
 
     # Try each registered noise generator.
@@ -72,7 +74,7 @@ class TestNoiseGen(unittest.TestCase):
           registered_classes[noise_generator_name])
 
       # Generate the noisy input - reference pairs.
-      noise_generator.generate(
+      noise_generator.Generate(
           input_signal_filepath=input_signal_filepath,
           input_noise_cache_path=self._input_noise_cache_path,
           base_output_path=self._base_output_path)
@@ -92,7 +94,7 @@ class TestNoiseGen(unittest.TestCase):
     self.assertEqual(number_of_pairs,
                      len(noise_generator.noisy_signal_filepaths))
     self.assertEqual(number_of_pairs,
-                     len(noise_generator.output_paths))
+                     len(noise_generator.apm_output_paths))
     self.assertEqual(number_of_pairs,
                      len(noise_generator.reference_signal_filepaths))
 
@@ -108,30 +110,30 @@ class TestNoiseGen(unittest.TestCase):
       input_signal: AudioSegment instance.
     """
     input_signal_length = (
-        signal_processing.SignalProcessingUtils.count_samples(input_signal))
+        signal_processing.SignalProcessingUtils.CountSamples(input_signal))
 
     # Iterate over the noisy signal - reference pairs.
     for noise_config_name in noise_generator.config_names:
       # Load the noisy input file.
       noisy_signal_filepath = noise_generator.noisy_signal_filepaths[
           noise_config_name]
-      noisy_signal = signal_processing.SignalProcessingUtils.load_wav(
+      noisy_signal = signal_processing.SignalProcessingUtils.LoadWav(
           noisy_signal_filepath)
 
       # Check noisy input signal length.
       noisy_signal_length = (
-          signal_processing.SignalProcessingUtils.count_samples(noisy_signal))
+          signal_processing.SignalProcessingUtils.CountSamples(noisy_signal))
       self.assertGreaterEqual(noisy_signal_length, input_signal_length)
 
       # Load the reference file.
       reference_signal_filepath = (
           noise_generator.reference_signal_filepaths[noise_config_name])
-      reference_signal = signal_processing.SignalProcessingUtils.load_wav(
+      reference_signal = signal_processing.SignalProcessingUtils.LoadWav(
           reference_signal_filepath)
 
       # Check noisy input signal length.
       reference_signal_length = (
-          signal_processing.SignalProcessingUtils.count_samples(
+          signal_processing.SignalProcessingUtils.CountSamples(
               reference_signal))
       self.assertGreaterEqual(reference_signal_length, input_signal_length)
 
@@ -143,5 +145,5 @@ class TestNoiseGen(unittest.TestCase):
     """
     # Iterate over the noisy signal - reference pairs.
     for noise_config_name in noise_generator.config_names:
-      output_path = noise_generator.output_paths[noise_config_name]
+      output_path = noise_generator.apm_output_paths[noise_config_name]
       self.assertTrue(os.path.exists(output_path))

@@ -12,8 +12,15 @@ reference one used for evaluation.
  - OS: Linux
  - Python 2.7
  - Python libraries: numpy, scipy, pydub (0.17.0+)
-   - `$ sudo apt install python-numpy python-scipy`
-   - `$ sudo pip install pydub`
+ - It is recommended that a dedicated Python environment is used
+   - install `virtualenv`
+   - `$ sudo apt-get install python-virtualenv`
+   - setup a new Python environment (e.g., `my_env`)
+   - `$ cd ~ && virtualenv my_env`
+   - activate the new Python environment
+   - `$ source ~/my_env/bin/activate`
+   - add dependcies via `pip`
+   - `(my_env)$ pip install numpy pydub scipy`
  - PolqaOem64 (see http://www.polqa.info/)
     - Tested with POLQA Library v1.180 / P863 v2.400
  - Aachen Impulse Response (AIR) Database

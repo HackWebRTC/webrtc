@@ -32,7 +32,10 @@ _EVAL_SCORE_WORKER_NAMES = _EVAL_SCORE_WORKER_CLASSES.keys()
 
 _DEFAULT_CONFIG_FILE = 'apm_configs/default.json'
 
-def _instance_arguments_parser():
+
+def _InstanceArgumentsParser():
+  """Arguments parser factory.
+  """
   parser = argparse.ArgumentParser(description=(
       'Perform APM module quality assessment on one or more input files using '
       'one or more audioproc_f configuration files and one or more noise '
@@ -76,13 +79,13 @@ def main():
   # TODO(alessiob): level = logging.INFO once debugged.
   logging.basicConfig(level=logging.DEBUG)
 
-  parser = _instance_arguments_parser()
+  parser = _InstanceArgumentsParser()
   args = parser.parse_args()
 
   simulator = simulation.ApmModuleSimulator(
       aechen_ir_database_path=args.air_db_path,
       polqa_tool_path=args.polqa_path)
-  simulator.run(
+  simulator.Run(
       config_filepaths=args.config_files,
       input_filepaths=args.input_files,
       noise_generator_names=args.noise_generators,

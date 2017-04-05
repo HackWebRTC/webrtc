@@ -33,10 +33,15 @@ class EvaluationScore(object):
     self._score = None
 
   @classmethod
-  def register_class(cls, class_to_register):
-    """Register an EvaluationScore implementation.
+  def RegisterClass(cls, class_to_register):
+    """Registers an EvaluationScore implementation.
 
     Decorator to automatically register the classes that extend EvaluationScore.
+    Example usage:
+
+    @EvaluationScore.RegisterClass
+    class AudioLevelScore(EvaluationScore):
+      pass
     """
     cls.REGISTERED_CLASSES[class_to_register.NAME] = class_to_register
     return class_to_register
@@ -49,54 +54,66 @@ class EvaluationScore(object):
   def score(self):
     return self._score
 
-  def set_reference_signal_filepath(self, filepath):
-    """ Set the path to the audio track used as reference signal.
+  def SetReferenceSignalFilepath(self, filepath):
+    """ Sets the path to the audio track used as reference signal.
+
+    Args:
+      filepath: path to the reference audio track.
     """
     self._reference_signal_filepath = filepath
 
-  def set_tested_signal_filepath(self, filepath):
-    """ Set the path to the audio track used as test signal.
+  def SetTestedSignalFilepath(self, filepath):
+    """ Sets the path to the audio track used as test signal.
+
+    Args:
+      filepath: path to the test audio track.
     """
     self._tested_signal_filepath = filepath
 
-  def _load_reference_signal(self):
-    assert self._reference_signal_filepath is not None
-    self._reference_signal = signal_processing.SignalProcessingUtils.load_wav(
-        self._reference_signal_filepath)
-
-  def _load_tested_signal(self):
-    assert self._tested_signal_filepath is not None
-    self._tested_signal = signal_processing.SignalProcessingUtils.load_wav(
-        self._tested_signal_filepath)
-
-  def run(self, output_path):
+  def Run(self, output_path):
     """Extracts the score for the set input-reference pair.
+
+    Args:
+      output_path: path to the directory where the output is written.
     """
     self._output_filepath = os.path.join(output_path, 'score-{}.txt'.format(
         self.NAME))
     try:
       # If the score has already been computed, load.
-      self._load_score()
+      self._LoadScore()
       logging.debug('score found and loaded')
     except IOError:
       # Compute the score.
       logging.debug('score not found, compute')
-      self._run(output_path)
+      self._Run(output_path)
 
-  def _run(self, output_path):
+  def _Run(self, output_path):
     # Abstract method.
     raise NotImplementedError()
 
-  def _load_score(self):
-    return data_access.ScoreFile.load(self._output_filepath)
+  def _LoadReferenceSignal(self):
+    assert self._reference_signal_filepath is not None
+    self._reference_signal = signal_processing.SignalProcessingUtils.LoadWav(
+        self._reference_signal_filepath)
 
-  def _save_score(self):
-    return data_access.ScoreFile.save(self._output_filepath, self._score)
+  def _LoadTestedSignal(self):
+    assert self._tested_signal_filepath is not None
+    self._tested_signal = signal_processing.SignalProcessingUtils.LoadWav(
+        self._tested_signal_filepath)
 
 
-@EvaluationScore.register_class
+  def _LoadScore(self):
+    return data_access.ScoreFile.Load(self._output_filepath)
+
+  def _SaveScore(self):
+    return data_access.ScoreFile.Save(self._output_filepath, self._score)
+
+
+@EvaluationScore.RegisterClass
 class AudioLevelScore(EvaluationScore):
-  """Compute the difference between the average audio level of the tested and
+  """Audio level score.
+
+  Defined as the difference between the average audio level of the tested and
   the reference signals.
 
   Unit: dB
@@ -109,16 +126,18 @@ class AudioLevelScore(EvaluationScore):
   def __init__(self):
     EvaluationScore.__init__(self)
 
-  def _run(self, output_path):
-    self._load_reference_signal()
-    self._load_tested_signal()
+  def _Run(self, output_path):
+    self._LoadReferenceSignal()
+    self._LoadTestedSignal()
     self._score = self._tested_signal.dBFS - self._reference_signal.dBFS
-    self._save_score()
+    self._SaveScore()
 
 
-@EvaluationScore.register_class
+@EvaluationScore.RegisterClass
 class PolqaScore(EvaluationScore):
-  """Compute the POLQA score.
+  """POLQA score.
+
+  See http://www.polqa.info/.
 
   Unit: MOS
   Ideal: 4.5
@@ -141,7 +160,7 @@ class PolqaScore(EvaluationScore):
       logging.error('cannot find POLQA tool binary file')
       raise exceptions.FileNotFoundError()
 
-  def _run(self, output_path):
+  def _Run(self, output_path):
     polqa_out_filepath = os.path.join(output_path, 'polqa.out')
     if os.path.exists(polqa_out_filepath):
       os.unlink(polqa_out_filepath)
@@ -157,15 +176,21 @@ class PolqaScore(EvaluationScore):
     subprocess.call(args, cwd=self._polqa_tool_path)
 
     # Parse POLQA tool output and extract the score.
-    polqa_output = self._parse_output_file(polqa_out_filepath)
+    polqa_output = self._ParseOutputFile(polqa_out_filepath)
     self._score = float(polqa_output['PolqaScore'])
 
-    self._save_score()
+    self._SaveScore()
 
   @classmethod
-  def _parse_output_file(cls, polqa_out_filepath):
+  def _ParseOutputFile(cls, polqa_out_filepath):
     """
-    Parse the POLQA tool output formatted as a table ('-t' option).
+    Parses the POLQA tool output formatted as a table ('-t' option).
+
+    Args:
+      polqa_out_filepath: path to the POLQA tool output file.
+
+    Returns:
+      A dict.
     """
     data = []
     with open(polqa_out_filepath) as f:

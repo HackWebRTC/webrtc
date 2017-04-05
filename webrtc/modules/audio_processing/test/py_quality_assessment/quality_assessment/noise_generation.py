@@ -47,23 +47,34 @@ class NoiseGenerator(object):
   signal.
 
   A noise generator generates one or more input-reference pairs.
+
+  TODO(alessiob): Rename from NoiseGenerator to InputReferencePairGenerator.
   """
 
   NAME = None
   REGISTERED_CLASSES = {}
 
   def __init__(self):
-    # Input
+    # Init dictionaries with one entry for each noise generator configuration
+    # (e.g., different SNRs).
+    # Noisy audio track files (stored separately in a cache folder).
     self._noisy_signal_filepaths = None
-    self._output_paths = None
+    # Path to be used for the APM simulation output files.
+    self._apm_output_paths = None
+    # Reference audio track files (stored separately in a cache folder).
     self._reference_signal_filepaths = None
-    self.clear()
+    self.Clear()
 
   @classmethod
-  def register_class(cls, class_to_register):
-    """Register an NoiseGenerator implementation.
+  def RegisterClass(cls, class_to_register):
+    """Registers an NoiseGenerator implementation.
 
     Decorator to automatically register the classes that extend NoiseGenerator.
+    Example usage:
+
+    @NoiseGenerator.RegisterClass
+    class IdentityGenerator(NoiseGenerator):
+      pass
     """
     cls.REGISTERED_CLASSES[class_to_register.NAME] = class_to_register
     return class_to_register
@@ -77,37 +88,44 @@ class NoiseGenerator(object):
     return self._noisy_signal_filepaths
 
   @property
-  def output_paths(self):
-    return self._output_paths
+  def apm_output_paths(self):
+    return self._apm_output_paths
 
   @property
   def reference_signal_filepaths(self):
     return self._reference_signal_filepaths
 
-  def generate(
+  def Generate(
       self, input_signal_filepath, input_noise_cache_path, base_output_path):
-    """Generate a set of noisy input and reference audiotrack file pairs.
+    """Generates a set of noisy input and reference audiotrack file pairs.
 
-    This method initializes an empty set of pairs and calls the _generate()
+    This method initializes an empty set of pairs and calls the _Generate()
     method implemented in a concrete class.
+
+    Args:
+      input_signal_filepath: path to the clean input audio track file.
+      input_noise_cache_path: path to the cache of noisy audio track files.
+      base_output_path: base path where output is written.
     """
-    self.clear()
-    return self._generate(
+    self.Clear()
+    self._Generate(
         input_signal_filepath, input_noise_cache_path, base_output_path)
 
-  def clear(self):
+  def Clear(self):
+    """Clears the generated output path dictionaries.
+    """
     self._noisy_signal_filepaths = {}
-    self._output_paths = {}
+    self._apm_output_paths = {}
     self._reference_signal_filepaths = {}
 
-  def _generate(
+  def _Generate(
       self, input_signal_filepath, input_noise_cache_path, base_output_path):
-    """This is an abstract method to be implemented in each concrete class.
+    """Abstract method to be implemented in each concrete class.
     """
     raise NotImplementedError()
 
-  def _add_noise_snr_pairs(self, base_output_path, noisy_mix_filepaths,
-                           snr_value_pairs):
+  def _AddNoiseSnrPairs(self, base_output_path, noisy_mix_filepaths,
+                        snr_value_pairs):
     """Adds noisy-reference signal pairs.
 
     Args:
@@ -120,8 +138,8 @@ class NoiseGenerator(object):
       for snr_noisy, snr_refence in snr_value_pairs:
         config_name = '{0}_{1:d}_{2:d}_SNR'.format(
             noise_track_name, snr_noisy, snr_refence)
-        output_path = self._make_dir(base_output_path, config_name)
-        self._add_noise_reference_files_pair(
+        output_path = self._MakeDir(base_output_path, config_name)
+        self._AddNoiseReferenceFilesPair(
             config_name=config_name,
             noisy_signal_filepath=noisy_mix_filepaths[
                 noise_track_name][snr_noisy],
@@ -129,30 +147,38 @@ class NoiseGenerator(object):
                 noise_track_name][snr_refence],
             output_path=output_path)
 
-  def _add_noise_reference_files_pair(self, config_name, noisy_signal_filepath,
-                                      reference_signal_filepath, output_path):
+  def _AddNoiseReferenceFilesPair(self, config_name, noisy_signal_filepath,
+                                  reference_signal_filepath, output_path):
+    """Adds one noisy-reference signal pair.
+
+    Args:
+      config_name: name of the APM configuration.
+      noisy_signal_filepath: path to noisy audio track file.
+      reference_signal_filepath: path to reference audio track file.
+      output_path: APM output path.
+    """
     assert config_name not in self._noisy_signal_filepaths
     self._noisy_signal_filepaths[config_name] = os.path.abspath(
         noisy_signal_filepath)
-    self._output_paths[config_name] = os.path.abspath(output_path)
+    self._apm_output_paths[config_name] = os.path.abspath(output_path)
     self._reference_signal_filepaths[config_name] = os.path.abspath(
         reference_signal_filepath)
 
     # Save noisy and reference file paths.
-    data_access.Metadata.save_audio_in_ref_paths(
+    data_access.Metadata.SaveAudioInRefPaths(
         output_path=output_path,
         audio_in_filepath=self._noisy_signal_filepaths[config_name],
         audio_ref_filepath=self._reference_signal_filepaths[config_name])
 
   @classmethod
-  def _make_dir(cls, base_output_path, noise_generator_config_name):
+  def _MakeDir(cls, base_output_path, noise_generator_config_name):
     output_path = os.path.join(base_output_path, noise_generator_config_name)
-    data_access.make_directory(output_path)
+    data_access.MakeDirectory(output_path)
     return output_path
 
 
 # Identity generator.
-@NoiseGenerator.register_class
+@NoiseGenerator.RegisterClass
 class IdentityGenerator(NoiseGenerator):
   """Generator that adds no noise.
 
@@ -164,18 +190,18 @@ class IdentityGenerator(NoiseGenerator):
   def __init__(self):
     NoiseGenerator.__init__(self)
 
-  def _generate(
+  def _Generate(
       self, input_signal_filepath, input_noise_cache_path, base_output_path):
     CONFIG_NAME = 'default'
-    output_path = self._make_dir(base_output_path, CONFIG_NAME)
-    self._add_noise_reference_files_pair(
+    output_path = self._MakeDir(base_output_path, CONFIG_NAME)
+    self._AddNoiseReferenceFilesPair(
         config_name=CONFIG_NAME,
         noisy_signal_filepath=input_signal_filepath,
         reference_signal_filepath=input_signal_filepath,
         output_path=output_path)
 
 
-@NoiseGenerator.register_class
+@NoiseGenerator.RegisterClass
 class WhiteNoiseGenerator(NoiseGenerator):
   """Additive white noise generator.
   """
@@ -197,18 +223,18 @@ class WhiteNoiseGenerator(NoiseGenerator):
   def __init__(self):
     NoiseGenerator.__init__(self)
 
-  def _generate(
+  def _Generate(
       self, input_signal_filepath, input_noise_cache_path, base_output_path):
     # Load the input signal.
-    input_signal = signal_processing.SignalProcessingUtils.load_wav(
+    input_signal = signal_processing.SignalProcessingUtils.LoadWav(
         input_signal_filepath)
-    input_signal = signal_processing.SignalProcessingUtils.normalize(
+    input_signal = signal_processing.SignalProcessingUtils.Normalize(
       input_signal)
 
     # Create the noise track.
-    noise_signal = signal_processing.SignalProcessingUtils.generate_white_noise(
+    noise_signal = signal_processing.SignalProcessingUtils.GenerateWhiteNoise(
         input_signal)
-    noise_signal = signal_processing.SignalProcessingUtils.normalize(
+    noise_signal = signal_processing.SignalProcessingUtils.Normalize(
         noise_signal)
 
     # Create the noisy mixes (once for each unique SNR value).
@@ -222,11 +248,11 @@ class WhiteNoiseGenerator(NoiseGenerator):
       # Create and save if not done.
       if not os.path.exists(noisy_signal_filepath):
         # Create noisy signal.
-        noisy_signal = signal_processing.SignalProcessingUtils.mix_signals(
+        noisy_signal = signal_processing.SignalProcessingUtils.MixSignals(
             input_signal, noise_signal, snr)
 
         # Save.
-        signal_processing.SignalProcessingUtils.save_wav(
+        signal_processing.SignalProcessingUtils.SaveWav(
             noisy_signal_filepath, noisy_signal)
 
       # Add file to the collection of mixes.
@@ -235,8 +261,8 @@ class WhiteNoiseGenerator(NoiseGenerator):
     # Add all the noisy-reference signal pairs.
     for snr_noisy, snr_refence in self._SNR_VALUE_PAIRS:
       config_name = '{0:d}_{1:d}_SNR'.format(snr_noisy, snr_refence)
-      output_path = self._make_dir(base_output_path, config_name)
-      self._add_noise_reference_files_pair(
+      output_path = self._MakeDir(base_output_path, config_name)
+      self._AddNoiseReferenceFilesPair(
           config_name=config_name,
           noisy_signal_filepath=noisy_mix_filepaths[snr_noisy],
           reference_signal_filepath=noisy_mix_filepaths[snr_refence],
@@ -244,7 +270,7 @@ class WhiteNoiseGenerator(NoiseGenerator):
 
 
 # TODO(alessiob): remove comment when class implemented.
-# @NoiseGenerator.register_class
+# @NoiseGenerator.RegisterClass
 class NarrowBandNoiseGenerator(NoiseGenerator):
   """Additive narrow-band noise generator.
   """
@@ -254,13 +280,13 @@ class NarrowBandNoiseGenerator(NoiseGenerator):
   def __init__(self):
     NoiseGenerator.__init__(self)
 
-  def _generate(
+  def _Generate(
       self, input_signal_filepath, input_noise_cache_path, base_output_path):
     # TODO(alessiob): implement.
     pass
 
 
-@NoiseGenerator.register_class
+@NoiseGenerator.RegisterClass
 class EnvironmentalNoiseGenerator(NoiseGenerator):
   """Additive environmental noise generator.
   """
@@ -290,27 +316,22 @@ class EnvironmentalNoiseGenerator(NoiseGenerator):
   def __init__(self):
     NoiseGenerator.__init__(self)
 
-  def _generate(
+  def _Generate(
       self, input_signal_filepath, input_noise_cache_path, base_output_path):
-    """Generate environmental noise.
+    """Generates environmental noise.
 
-    For each noise track and pair of SNR values, the following 2 audio tracks
+    For each noise track and pair of SNR values, the following two audio tracks
     are created: the noisy signal and the reference signal. The former is
     obtained by mixing the (clean) input signal to the corresponding noise
     track enforcing the target SNR.
-
-    Args:
-      input_signal_filepath: (clean) input signal file path.
-      input_noise_cache_path: path for the cached noise track files.
-      base_output_path: base output path.
     """
     # Init.
     snr_values = set([snr for pair in self._SNR_VALUE_PAIRS for snr in pair])
 
     # Load the input signal.
-    input_signal = signal_processing.SignalProcessingUtils.load_wav(
+    input_signal = signal_processing.SignalProcessingUtils.LoadWav(
         input_signal_filepath)
-    input_signal = signal_processing.SignalProcessingUtils.normalize(
+    input_signal = signal_processing.SignalProcessingUtils.Normalize(
         input_signal)
 
     noisy_mix_filepaths = {}
@@ -323,9 +344,9 @@ class EnvironmentalNoiseGenerator(NoiseGenerator):
         logging.error('cannot find the <%s> noise track', noise_track_filename)
         raise exceptions.FileNotFoundError()
 
-      noise_signal = signal_processing.SignalProcessingUtils.load_wav(
+      noise_signal = signal_processing.SignalProcessingUtils.LoadWav(
           noise_track_filepath)
-      noise_signal = signal_processing.SignalProcessingUtils.normalize(
+      noise_signal = signal_processing.SignalProcessingUtils.Normalize(
           noise_signal)
 
       # Create the noisy mixes (once for each unique SNR value).
@@ -338,24 +359,26 @@ class EnvironmentalNoiseGenerator(NoiseGenerator):
         # Create and save if not done.
         if not os.path.exists(noisy_signal_filepath):
           # Create noisy signal.
-          noisy_signal = signal_processing.SignalProcessingUtils.mix_signals(
+          noisy_signal = signal_processing.SignalProcessingUtils.MixSignals(
               input_signal, noise_signal, snr)
 
           # Save.
-          signal_processing.SignalProcessingUtils.save_wav(
+          signal_processing.SignalProcessingUtils.SaveWav(
               noisy_signal_filepath, noisy_signal)
 
         # Add file to the collection of mixes.
         noisy_mix_filepaths[noise_track_name][snr] = noisy_signal_filepath
 
     # Add all the noise-SNR pairs.
-    self._add_noise_snr_pairs(
+    self._AddNoiseSnrPairs(
         base_output_path, noisy_mix_filepaths, self._SNR_VALUE_PAIRS)
 
 
-@NoiseGenerator.register_class
+@NoiseGenerator.RegisterClass
 class EchoNoiseGenerator(NoiseGenerator):
   """Echo noise generator.
+
+  TODO(alessiob): Rename from echo to reverberation.
   """
 
   NAME = 'echo'
@@ -381,7 +404,7 @@ class EchoNoiseGenerator(NoiseGenerator):
     NoiseGenerator.__init__(self)
     self._aechen_ir_database_path = aechen_ir_database_path
 
-  def _generate(
+  def _Generate(
       self, input_signal_filepath, input_noise_cache_path, base_output_path):
     """Generates echo noise.
 
@@ -390,17 +413,12 @@ class EchoNoiseGenerator(NoiseGenerator):
     created: the noisy signal and the reference signal. The former is
     obtained by mixing the (clean) input signal to the corresponding noise
     track enforcing the target SNR.
-
-    Args:
-      input_signal_filepath: (clean) input signal file path.
-      input_noise_cache_path: path for the cached noise track files.
-      base_output_path: base output path.
     """
     # Init.
     snr_values = set([snr for pair in self._SNR_VALUE_PAIRS for snr in pair])
 
     # Load the input signal.
-    input_signal = signal_processing.SignalProcessingUtils.load_wav(
+    input_signal = signal_processing.SignalProcessingUtils.LoadWav(
         input_signal_filepath)
 
     noisy_mix_filepaths = {}
@@ -412,14 +430,14 @@ class EchoNoiseGenerator(NoiseGenerator):
       noise_signal = None
       try:
         # Load noise track.
-        noise_signal = signal_processing.SignalProcessingUtils.load_wav(
+        noise_signal = signal_processing.SignalProcessingUtils.LoadWav(
             noise_track_filepath)
       except IOError:  # File not found.
         # Generate noise track by applying the impulse response.
         impulse_response_filepath = os.path.join(
             self._aechen_ir_database_path,
             self._IMPULSE_RESPONSES[impulse_response_name])
-        noise_signal = self._generate_noise_track(
+        noise_signal = self._GenerateNoiseTrack(
             noise_track_filepath, input_signal, impulse_response_filepath)
       assert noise_signal is not None
 
@@ -434,21 +452,21 @@ class EchoNoiseGenerator(NoiseGenerator):
         # Create and save if not done.
         if not os.path.exists(noisy_signal_filepath):
           # Create noisy signal.
-          noisy_signal = signal_processing.SignalProcessingUtils.mix_signals(
+          noisy_signal = signal_processing.SignalProcessingUtils.MixSignals(
               input_signal, noise_signal, snr, bln_pad_shortest=True)
 
           # Save.
-          signal_processing.SignalProcessingUtils.save_wav(
+          signal_processing.SignalProcessingUtils.SaveWav(
               noisy_signal_filepath, noisy_signal)
 
         # Add file to the collection of mixes.
         noisy_mix_filepaths[impulse_response_name][snr] = noisy_signal_filepath
 
     # Add all the noise-SNR pairs.
-    self._add_noise_snr_pairs(base_output_path, noisy_mix_filepaths,
-                              self._SNR_VALUE_PAIRS)
+    self._AddNoiseSnrPairs(base_output_path, noisy_mix_filepaths,
+                           self._SNR_VALUE_PAIRS)
 
-  def _generate_noise_track(self, noise_track_filepath, input_signal,
+  def _GenerateNoiseTrack(self, noise_track_filepath, input_signal,
                             impulse_response_filepath):
     """Generates noise track.
 
@@ -459,6 +477,9 @@ class EchoNoiseGenerator(NoiseGenerator):
       noise_track_filepath: output file path for the noise track.
       input_signal: (clean) input signal samples.
       impulse_response_filepath: impulse response file path.
+
+    Returns:
+      AudioSegment instance.
     """
     # Load impulse response.
     data = scipy.io.loadmat(impulse_response_filepath)
@@ -470,11 +491,11 @@ class EchoNoiseGenerator(NoiseGenerator):
 
     # Apply impulse response.
     processed_signal = (
-        signal_processing.SignalProcessingUtils.apply_impulse_response(
+        signal_processing.SignalProcessingUtils.ApplyImpulseResponse(
             input_signal, impulse_response))
 
     # Save.
-    signal_processing.SignalProcessingUtils.save_wav(
+    signal_processing.SignalProcessingUtils.SaveWav(
         noise_track_filepath, processed_signal)
 
     return processed_signal

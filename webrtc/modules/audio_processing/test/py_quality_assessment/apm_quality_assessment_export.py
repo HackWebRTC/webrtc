@@ -29,7 +29,10 @@ RE_INPUT_NAME = re.compile(r'input-(.+)')
 RE_NOISE_NAME = re.compile(r'noise-(.+)')
 RE_SCORE_NAME = re.compile(r'score-(.+)\.txt')
 
+
 def _InstanceArgumentsParser():
+  """Arguments parser factory.
+  """
   parser = argparse.ArgumentParser(description=(
       'Exports pre-computed APM module quality assessment results into HTML '
       'tables.'))
@@ -61,8 +64,15 @@ def _InstanceArgumentsParser():
 
 
 def _GetScoreDescriptors(score_filepath):
-  """
-  Extract a score descriptors from the score file path.
+  """Extracts a score descriptor from the given score file path.
+
+  Args:
+    score_filepath: path to the score file.
+
+  Returns:
+    A tuple of strings (APM configuration name, input audio track name,
+    noise generator name, noise generator parameters name, evaluation score
+    name).
   """
   config_name, input_name, noise_name, noise_params, score_name = (
       score_filepath.split(os.sep)[-5:])
@@ -74,10 +84,21 @@ def _GetScoreDescriptors(score_filepath):
 
 
 def _ExcludeScore(config_name, input_name, noise_name, score_name, args):
-  """
+  """Decides whether excluding a score.
+
   Given a score descriptor, encoded in config_name, input_name, noise_name, and
   score_name, use the corresponding regular expressions to determine if the
   score should be excluded.
+
+  Args:
+    config_name: APM configuration name.
+    input_name: input audio track name.
+    noise_name: noise generator name.
+    score_name: evaluation score name.
+    args: parsed arguments.
+
+  Returns:
+    A boolean.
   """
   value_regexpr_pairs = [
       (config_name, args.config_names),
@@ -96,9 +117,14 @@ def _ExcludeScore(config_name, input_name, noise_name, score_name, args):
   return False
 
 
-def _GetOutputFilename(filename_suffix):
-  """
-  Build the filename for the exported file.
+def _BuildOutputFilename(filename_suffix):
+  """Builds the filename for the exported file.
+
+  Args:
+    filename_suffix: suffix for the output file name.
+
+  Returns:
+    A string.
   """
   if filename_suffix is None:
     return 'results.html'
@@ -133,23 +159,23 @@ def main():
     # Get metadata.
     score_path, _ = os.path.split(score_filepath)
     audio_in_filepath, audio_ref_filepath = (
-        data_access.Metadata.load_audio_in_ref_paths(score_path))
+        data_access.Metadata.LoadAudioInRefPaths(score_path))
     audio_out_filepath = os.path.abspath(os.path.join(
         score_path, audioproc_wrapper.AudioProcWrapper.OUTPUT_FILENAME))
 
     # Add the score to the nested dictionary.
     scores[score_name][config_name][input_name][noise_name][noise_params] = {
-        'score': data_access.ScoreFile.load(score_filepath),
+        'score': data_access.ScoreFile.Load(score_filepath),
         'audio_in_filepath': audio_in_filepath,
         'audio_out_filepath': audio_out_filepath,
         'audio_ref_filepath': audio_ref_filepath,
     }
 
   # Export.
-  output_filepath = os.path.join(args.output_dir, _GetOutputFilename(
+  output_filepath = os.path.join(args.output_dir, _BuildOutputFilename(
       args.filename_suffix))
   exporter = export.HtmlExport(output_filepath)
-  exporter.export(scores)
+  exporter.Export(scores)
 
   logging.info('output file successfully written in %s', output_filepath)
   sys.exit(0)

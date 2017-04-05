@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-"""Unit tests for the evaluation scores.
+"""Unit tests for the eval_scores module.
 """
 
 import unittest
@@ -15,6 +15,8 @@ from . import eval_scores
 
 
 class TestEvalScores(unittest.TestCase):
+  """Unit tests for the eval_scores module.
+  """
 
   def test_registered_classes(self):
     # Check that there is at least one registered evaluation score worker.

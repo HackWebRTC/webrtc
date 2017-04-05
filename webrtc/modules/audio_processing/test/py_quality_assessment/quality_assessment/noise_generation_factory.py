@@ -17,9 +17,9 @@ from . import noise_generation
 class NoiseGeneratorFactory(object):
   """Factory class used to instantiate noise generator workers.
 
-     It can be used by instanciating a factory, passing parameters to the
-     constructor. These parameters are used to instantiate noise generator
-     workers.
+  It can be used by instanciating a factory, passing parameters to the
+  constructor. These parameters are used to instantiate noise generator
+  workers.
   """
 
   def __init__(self, aechen_ir_database_path):
@@ -27,6 +27,9 @@ class NoiseGeneratorFactory(object):
 
   def GetInstance(self, noise_generator_class):
     """Creates an NoiseGenerator instance given a class object.
+
+    Args:
+      noise_generator_class: NoiseGenerator class object (not an instance).
     """
     logging.debug(
         'factory producing a %s noise generator', noise_generator_class)

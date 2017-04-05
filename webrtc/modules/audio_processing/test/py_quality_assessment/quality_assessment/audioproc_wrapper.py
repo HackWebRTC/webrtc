@@ -36,7 +36,7 @@ class AudioProcWrapper(object):
   def output_filepath(self):
     return self._output_signal_filepath
 
-  def run(self, config_filepath, input_filepath, output_path):
+  def Run(self, config_filepath, input_filepath, output_path):
     """Run audioproc_f.
 
     Args:
@@ -57,7 +57,7 @@ class AudioProcWrapper(object):
       return
 
     # Load configuration.
-    self._config = data_access.AudioProcConfigFile.load(config_filepath)
+    self._config = data_access.AudioProcConfigFile.Load(config_filepath)
 
     # Set remaining parametrs.
     self._config['-i'] = self._input_signal_filepath

@@ -11,8 +11,12 @@
 
 
 class FileNotFoundError(Exception):
+  """File not found exeception.
+  """
   pass
 
 
 class SignalProcessingException(Exception):
+  """Signal processing exeception.
+  """
   pass

@@ -13,8 +13,8 @@ import json
 import os
 
 
-def make_directory(path):
-  """Recursively make a directory without rising exceptions if already existing.
+def MakeDirectory(path):
+  """Makes a directory recursively without rising exceptions if existing.
 
   Args:
     path: path to the directory to be created.
@@ -34,13 +34,14 @@ class Metadata(object):
   _AUDIO_IN_REF_FILENAME = 'audio_in_ref.txt'
 
   @classmethod
-  def load_audio_in_ref_paths(cls, metadata_path):
-    """Metadata loader for input and reference audio track paths.
+  def LoadAudioInRefPaths(cls, metadata_path):
+    """Loads the input and the reference audio track paths.
 
     Args:
       metadata_path: path to the directory containing the metadata file.
 
-    Returns: pair of metadata file paths for the input and output audio tracks.
+    Returns:
+      Pair of metadata file paths for the input and output audio tracks.
     """
     metadata_filepath = os.path.join(metadata_path, cls._AUDIO_IN_REF_FILENAME)
     with open(metadata_filepath) as f:
@@ -49,9 +50,14 @@ class Metadata(object):
     return audio_in_filepath, audio_ref_filepath
 
   @classmethod
-  def save_audio_in_ref_paths(cls, output_path, audio_in_filepath,
+  def SaveAudioInRefPaths(cls, output_path, audio_in_filepath,
                               audio_ref_filepath):
-    """Metadata saver for input and reference audio track paths.
+    """Saves the input and the reference audio track paths.
+
+    Args:
+      output_path: path to the directory containing the metadata file.
+      audio_in_filepath: path to the input audio track file.
+      audio_ref_filepath: path to the reference audio track file.
     """
     output_filepath = os.path.join(output_path, cls._AUDIO_IN_REF_FILENAME)
     with open(output_filepath, 'w') as f:
@@ -68,12 +74,26 @@ class AudioProcConfigFile(object):
     pass
 
   @classmethod
-  def load(cls, filepath):
+  def Load(cls, filepath):
+    """Loads a configuration file for audioproc_f.
+
+    Args:
+      filepath: path to the configuration file.
+
+    Returns:
+      A dict containing the configuration.
+    """
     with open(filepath) as f:
       return json.load(f)
 
   @classmethod
-  def save(cls, filepath, config):
+  def Save(cls, filepath, config):
+    """Saves a configuration file for audioproc_f.
+
+    Args:
+      filepath: path to the configuration file.
+      config: a dict containing the configuration.
+    """
     with open(filepath, 'w') as f:
       json.dump(config, f)
 
@@ -86,11 +106,25 @@ class ScoreFile(object):
     pass
 
   @classmethod
-  def load(cls, filepath):
+  def Load(cls, filepath):
+    """Loads a score from file.
+
+    Args:
+      filepath: path to the score file.
+
+    Returns:
+      A float encoding the score.
+    """
     with open(filepath) as f:
       return float(f.readline().strip())
 
   @classmethod
-  def save(cls, filepath, score):
+  def Save(cls, filepath, score):
+    """Saves a score into a file.
+
+    Args:
+      filepath: path to the score file.
+      score: float encoding the score.
+    """
     with open(filepath, 'w') as f:
       f.write('{0:f}\n'.format(score))

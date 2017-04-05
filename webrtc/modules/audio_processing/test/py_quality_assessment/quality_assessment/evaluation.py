@@ -13,28 +13,39 @@ import logging
 
 
 class ApmModuleEvaluator(object):
+  """APM evaluator class.
+  """
 
   def __init__(self):
     pass
 
   @classmethod
-  def run(cls, evaluation_score_workers, apm_output_filepath,
+  def Run(cls, evaluation_score_workers, apm_output_filepath,
           reference_input_filepath, output_path):
     """Runs the evaluation.
 
     Iterates over the given evaluation score workers.
+
+    Args:
+      evaluation_score_workers: list of EvaluationScore instances.
+      apm_output_filepath: path to the audio track file with the APM output.
+      reference_input_filepath: path to the reference audio track file.
+      output_path: output path.
+
+    Returns:
+      A dict of evaluation score name and score pairs.
     """
     # Init.
     scores = {}
 
     for evaluation_score_worker in evaluation_score_workers:
       logging.info('   computing <%s> score', evaluation_score_worker.NAME)
-      evaluation_score_worker.set_reference_signal_filepath(
+      evaluation_score_worker.SetReferenceSignalFilepath(
           reference_input_filepath)
-      evaluation_score_worker.set_tested_signal_filepath(
+      evaluation_score_worker.SetTestedSignalFilepath(
           apm_output_filepath)
 
-      evaluation_score_worker.run(output_path)
+      evaluation_score_worker.Run(output_path)
       scores[evaluation_score_worker.NAME] = evaluation_score_worker.score
 
     return scores

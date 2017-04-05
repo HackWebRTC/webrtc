@@ -17,8 +17,7 @@ from . import eval_scores
 class EvaluationScoreWorkerFactory(object):
   """Factory class used to instantiate evaluation score workers.
 
-  It can be used by instanciating a factory, passing parameters to the
-  constructor. These parameters are used to instantiate evaluation score
+  The ctor gets the parametrs that are used to instatiate the evaluation score
   workers.
   """
 
@@ -27,6 +26,9 @@ class EvaluationScoreWorkerFactory(object):
 
   def GetInstance(self, evaluation_score_class):
     """Creates an EvaluationScore instance given a class object.
+
+    Args:
+      evaluation_score_class: EvaluationScore class object (not an instance).
     """
     logging.debug(
         'factory producing a %s evaluation score', evaluation_score_class)

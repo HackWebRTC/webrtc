@@ -48,10 +48,18 @@ class ApmModuleSimulator(object):
     self._config_filepaths = None
     self._input_filepaths = None
 
-  def run(self, config_filepaths, input_filepaths, noise_generator_names,
+  def Run(self, config_filepaths, input_filepaths, noise_generator_names,
           eval_score_names, output_dir):
-    """
+    """Runs the APM simulation.
+
     Initializes paths and required instances, then runs all the simulations.
+
+    Args:
+      config_filepaths: set of APM configuration files to test.
+      input_filepaths: set of input audio track files to test.
+      noise_generator_names: set of noise generator names to test.
+      eval_score_names: set of evaluation score names to test.
+      output_dir: base path to the output directory for wav files and outcomes.
     """
     self._base_output_path = os.path.abspath(output_dir)
 
@@ -67,15 +75,16 @@ class ApmModuleSimulator(object):
                 name) in eval_score_names]
 
     # Set APM configuration file paths.
-    self._config_filepaths = self._get_paths_collection(config_filepaths)
+    self._config_filepaths = self._CreatePathsCollection(config_filepaths)
 
     # Set probing signal file paths.
-    self._input_filepaths = self._get_paths_collection(input_filepaths)
+    self._input_filepaths = self._CreatePathsCollection(input_filepaths)
 
-    self._simulate_all()
+    self._SimulateAll()
 
-  def _simulate_all(self):
-    """
+  def _SimulateAll(self):
+    """Runs all the simulations.
+
     Iterates over the combinations of APM configurations, probing signals, and
     noise generators.
     """
@@ -98,7 +107,7 @@ class ApmModuleSimulator(object):
               self._base_output_path,
               '_cache',
               'input_{}-noise_{}'.format(input_name, noise_generator.NAME))
-          data_access.make_directory(input_noise_cache_path)
+          data_access.MakeDirectory(input_noise_cache_path)
           logging.debug('input-noise cache path: <%s>', input_noise_cache_path)
 
           # Full output path.
@@ -107,21 +116,29 @@ class ApmModuleSimulator(object):
               'cfg-{}'.format(config_name),
               'input-{}'.format(input_name),
               'noise-{}'.format(noise_generator.NAME))
-          data_access.make_directory(output_path)
+          data_access.MakeDirectory(output_path)
           logging.debug('output path: <%s>', output_path)
 
-          self._simulate(noise_generator, input_filepath,
+          self._Simulate(noise_generator, input_filepath,
                          input_noise_cache_path, output_path, config_filepath)
 
-  def _simulate(self, noise_generator, input_filepath, input_noise_cache_path,
+  def _Simulate(self, noise_generator, input_filepath, input_noise_cache_path,
                 output_path, config_filepath):
-    """
-    Simulates a given combination of APM configurations, probing signals, and
-    noise generators. It iterates over the noise generator internal
+    """Runs a single set of simulation.
+
+    Simulates a given combination of APM configuration, probing signal, and
+    noise generator. It iterates over the noise generator internal
     configurations.
+
+    Args:
+      noise_generator: NoiseGenerator instance.
+      input_filepath: input audio track file to test.
+      input_noise_cache_path: path for the noisy audio track files.
+      output_path: base output path for the noise generator.
+      config_filepath: APM configuration file to test.
     """
     # Generate pairs of noisy input and reference signal files.
-    noise_generator.generate(
+    noise_generator.Generate(
         input_signal_filepath=input_filepath,
         input_noise_cache_path=input_noise_cache_path,
         base_output_path=output_path)
@@ -133,11 +150,11 @@ class ApmModuleSimulator(object):
       # APM input and output signal paths.
       noisy_signal_filepath = noise_generator.noisy_signal_filepaths[
           noise_generator_config_name]
-      evaluation_output_path = noise_generator.output_paths[
+      evaluation_output_path = noise_generator.apm_output_paths[
           noise_generator_config_name]
 
       # Simulate a call using the audio processing module.
-      self._audioproc_wrapper.run(
+      self._audioproc_wrapper.Run(
           config_filepath=config_filepath,
           input_filepath=noisy_signal_filepath,
           output_path=evaluation_output_path)
@@ -147,18 +164,25 @@ class ApmModuleSimulator(object):
           noise_generator_config_name]
 
       # Evaluate.
-      self._evaluator.run(
+      self._evaluator.Run(
           evaluation_score_workers=self._evaluation_score_workers,
           apm_output_filepath=self._audioproc_wrapper.output_filepath,
           reference_input_filepath=reference_signal_filepath,
           output_path=evaluation_output_path)
 
   @classmethod
-  def _get_paths_collection(cls, filepaths):
-    """
-    Given a list of file paths, makes a collection with one pair for each item
-    in the list where the key is the file name without extension and the value
-    is the path.
+  def _CreatePathsCollection(cls, filepaths):
+    """Creates a collection of file paths.
+
+    Given a list of file paths, makes a collection with one item for each file
+    path. The value is absolute path, the key is the file name without
+    extenstion.
+
+    Args:
+      filepaths: list of file paths.
+
+    Returns:
+      A dict.
     """
     filepaths_collection = {}
     for filepath in filepaths:

@@ -12,6 +12,8 @@ import re
 
 
 class HtmlExport(object):
+  """HTML exporter class for APM quality scores.
+  """
 
   # Path to CSS and JS files.
   _PATH = os.path.dirname(os.path.realpath(__file__))
@@ -31,9 +33,8 @@ class HtmlExport(object):
     self._noise_params = None
     self._output_filepath = output_filepath
 
-  def export(self, scores):
-    """
-    Export the scores into an HTML file.
+  def Export(self, scores):
+    """Exports the scores into an HTML file.
 
     Args:
       scores: nested dictionary containing the scores.
@@ -41,29 +42,33 @@ class HtmlExport(object):
     # Generate one table for each evaluation score.
     tables = []
     for score_name in sorted(scores.keys()):
-      tables.append(self._build_score_table(score_name, scores[score_name]))
+      tables.append(self._BuildScoreTable(score_name, scores[score_name]))
 
     # Create the html file.
     html = (
         '<html>' +
-        self._build_header() +
+        self._BuildHeader() +
         '<body onload="initialize()">' +
         '<h1>Results from {}</h1>'.format(self._output_filepath) +
         self._NEW_LINE.join(tables) +
         '</body>' +
         '</html>')
 
-    self._save(self._output_filepath, html)
+    self._Save(self._output_filepath, html)
 
-  def _build_header(self):
-    """
-    HTML file header with page title and either embedded or linked CSS and JS
+  def _BuildHeader(self):
+    """Builds the <head> section of the HTML file.
+
+    The header contains the page title and either embedded or linked CSS and JS
     files.
+
+    Returns:
+      A string with <head>...</head> HTML.
     """
     html = ['<head>', '<title>Results</title>']
 
     # Function to append the lines of a text file to html.
-    def _embed_file(filepath):
+    def EmbedFile(filepath):
       with open(filepath) as f:
         for l in f:
           html.append(l.strip())
@@ -72,7 +77,7 @@ class HtmlExport(object):
     if self._INLINE_CSS:
       # Embed.
       html.append('<style>')
-      _embed_file(self._CSS_FILEPATH)
+      EmbedFile(self._CSS_FILEPATH)
       html.append('</style>')
     else:
       # Link.
@@ -83,7 +88,7 @@ class HtmlExport(object):
     if self._INLINE_JS:
       # Embed.
       html.append('<script>')
-      _embed_file(self._JS_FILEPATH)
+      EmbedFile(self._JS_FILEPATH)
       html.append('</script>')
     else:
       # Link.
@@ -94,54 +99,88 @@ class HtmlExport(object):
 
     return self._NEW_LINE.join(html)
 
-  def _build_score_table(self, score_name, scores):
-    """
-    Generate a table for a specific evaluation score (e.g., POLQA).
+  def _BuildScoreTable(self, score_name, scores):
+    """Builds a table for a specific evaluation score (e.g., POLQA).
+
+    Args:
+      score_name: name of the score.
+      scores: nested dictionary of scores.
+
+    Returns:
+      A string with <table>...</table> HTML.
     """
     config_names = sorted(scores.keys())
     input_names = sorted(scores[config_names[0]].keys())
-    rows = [self._table_row(
+    rows = [self._BuildTableRow(
         score_name, config_name, scores[config_name], input_names) for (
             config_name) in config_names]
 
     html = (
         '<table celpadding="0" cellspacing="0">' +
         '<thead><tr>{}</tr></thead>'.format(
-            self._table_header(score_name, input_names)) +
+            self._BuildTableHeader(score_name, input_names)) +
         '<tbody>' +
         '<tr>' + '</tr><tr>'.join(rows) + '</tr>' +
         '</tbody>' +
-        '</table>' + self._legend())
+        '</table>' + self._BuildLegend())
 
     return html
 
-  def _table_header(self, score_name, input_names):
-    """
-    Generate a table header with the name of the evaluation score in the first
-    column and then one column for each probing signal.
+  def _BuildTableHeader(self, score_name, input_names):
+    """Builds the cells of a table header.
+
+    A table header starts with a cell containing the name of the evaluation
+    score, and then it includes one column for each probing signal.
+
+    Args:
+      score_name: name of the score.
+      input_names: list of probing signal names.
+
+    Returns:
+      A string with a list of <th>...</th> HTML elements.
     """
     html = (
-        '<th>{}</th>'.format(self._format_name(score_name)) +
+        '<th>{}</th>'.format(self._FormatName(score_name)) +
         '<th>' + '</th><th>'.join(
-          [self._format_name(name) for name in input_names]) + '</th>')
+          [self._FormatName(name) for name in input_names]) + '</th>')
     return html
 
-  def _table_row(self, score_name, config_name, scores, input_names):
+  def _BuildTableRow(self, score_name, config_name, scores, input_names):
+    """Builds the cells of a table row.
+
+    A table row starts with the name of the APM configuration file, and then it
+    includes one column for each probing singal.
+
+    Args:
+      score_name: name of the score.
+      config_name: name of the APM configuration.
+      scores: nested dictionary of scores.
+      input_names: list of probing signal names.
+
+    Returns:
+      A string with a list of <td>...</td> HTML elements.
     """
-    Generate a table body row with the name of the APM configuration file in the
-    first column and then one column for each probing singal.
-    """
-    cells = [self._table_cell(
+    cells = [self._BuildTableCell(
         scores[input_name], score_name, config_name, input_name) for (
             input_name) in input_names]
-    html = ('<td>{}</td>'.format(self._format_name(config_name)) +
+    html = ('<td>{}</td>'.format(self._FormatName(config_name)) +
             '<td>' + '</td><td>'.join(cells) + '</td>')
     return html
 
-  def _table_cell(self, scores, score_name, config_name, input_name):
-    """
-    Generate a table cell content with all the scores for the current evaluation
-    score, APM configuration, and probing signal.
+  def _BuildTableCell(self, scores, score_name, config_name, input_name):
+    """Builds the inner content of a table cell.
+
+    A table cell includes all the scores computed for a specific evaluation
+    score (e.g., POLQA), APM configuration (e.g., default), and probing signal.
+
+    Args:
+      scores: dictionary of score data.
+      score_name: name of the score.
+      config_name: name of the APM configuration.
+      input_name: name of the probing signal.
+
+    Returns:
+      A string with the HTML of a table body cell.
     """
     # Init noise generator names and noise parameters cache (if not done).
     if self._noise_names is None:
@@ -195,9 +234,13 @@ class HtmlExport(object):
 
     return html
 
-  def _legend(self):
-    """
-    Generate the legend for each noise generator name and parameters pair.
+  def _BuildLegend(self):
+    """Builds the legend.
+
+    The legend details noise generator name and parameter pairs.
+
+    Returns:
+      A string with a <div class="legend">...</div> HTML element.
     """
     items = []
     for name_index, noise_name in enumerate(self._noise_names):
@@ -213,10 +256,24 @@ class HtmlExport(object):
     return html
 
   @classmethod
-  def _save(cls, output_filepath, html):
+  def _Save(cls, output_filepath, html):
+    """Writes the HTML file.
+
+    Args:
+      output_filepath: output file path.
+      html: string with the HTML content.
+    """
     with open(output_filepath, 'w') as f:
       f.write(html)
 
   @classmethod
-  def _format_name(cls, name):
+  def _FormatName(cls, name):
+    """Formats a name.
+
+    Args:
+      name: a string.
+
+    Returns:
+      A copy of name in which underscores and dashes are replaced with a space.
+    """
     return re.sub(r'[_\-]', ' ', name)

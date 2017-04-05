@@ -18,8 +18,10 @@ import quality_assessment.data_access as data_access
 
 OUTPUT_PATH = os.path.abspath('apm_configs')
 
-def _generate_default_overridden(config_override):
-  """
+
+def _GenerateDefaultOverridden(config_override):
+  """Generates one or more APM overriden configurations.
+
   For each item in config_override, it overrides the default configuration and
   writes a new APM configuration file.
 
@@ -39,8 +41,11 @@ def _generate_default_overridden(config_override):
   settings.use_ns = rtc::Optional<bool>(true);
   settings.use_ts = rtc::Optional<bool>(true);
   settings.use_vad = rtc::Optional<bool>(true);
-  """
 
+  Args:
+    config_override: dict of APM configuration file names as keys; the values
+                     are dict instances encoding the audioproc_f flags.
+  """
   for config_filename in config_override:
     config = config_override[config_filename]
     config['-all_default'] = None
@@ -49,14 +54,12 @@ def _generate_default_overridden(config_override):
         config_filename))
     logging.debug('config file <%s> | %s', config_filepath, config)
 
-    data_access.AudioProcConfigFile.save(config_filepath, config)
+    data_access.AudioProcConfigFile.Save(config_filepath, config)
     logging.info('config file created: <%s>', config_filepath)
 
 
-def generate_all_default_but_one():
-  """
-  Generate configurations in which all the default flags are used but one (one
-  flag at a time is excluded).
+def _GenerateAllDefaultButOne():
+  """Disables the flags enabled by default one-by-one.
   """
   CONFIG_SETS = {
       'no_AEC': {'-aec': 0,},
@@ -67,14 +70,11 @@ def generate_all_default_but_one():
       'no_transient_suppressor': {'-ts': 0,},
       'no_vad': {'-vad': 0,},
   }
+  _GenerateDefaultOverridden(CONFIG_SETS)
 
-  return _generate_default_overridden(CONFIG_SETS)
 
-
-def generate_all_default_plus_one():
-  """
-  Generate configuratoins in which all the default flags are used and each
-  unused flag is added one at a time.
+def _GenerateAllDefaultPlusOne():
+  """Enables the flags disabled by default one-by-one.
   """
   CONFIG_SETS = {
       'with_AECM': {'-aec': 0, '-aecm': 1,},  # AEC and AECM are exclusive.
@@ -87,14 +87,13 @@ def generate_all_default_plus_one():
       'with_LC': {'-lc': 1,},
       'with_refined_adaptive_filter': {'-refined_adaptive_filter': 1,},
   }
-
-  return _generate_default_overridden(CONFIG_SETS)
+  _GenerateDefaultOverridden(CONFIG_SETS)
 
 
 def main():
   logging.basicConfig(level=logging.INFO)
-  generate_all_default_plus_one()
-  generate_all_default_but_one()
+  _GenerateAllDefaultPlusOne()
+  _GenerateAllDefaultButOne()
 
 
 if __name__ == '__main__':

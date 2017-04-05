@@ -6,6 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+"""Signal processing utility module.
+"""
+
 import array
 import logging
 import os
@@ -34,15 +37,21 @@ from . import exceptions
 
 
 class SignalProcessingUtils(object):
+  """Collection of signal processing utilities.
+  """
 
   def __init__(self):
     pass
 
   @classmethod
-  def load_wav(cls, filepath, channels=1):
-    """Load wav file.
+  def LoadWav(cls, filepath, channels=1):
+    """Loads wav file.
 
-    Return:
+    Args:
+      filepath: path to the wav audio track file to load.
+      channels: number of channels (downmixing to mono by default).
+
+    Returns:
       AudioSegment instance.
     """
     if not os.path.exists(filepath):
@@ -52,21 +61,24 @@ class SignalProcessingUtils(object):
         filepath, format='wav', channels=channels)
 
   @classmethod
-  def save_wav(cls, output_filepath, signal):
-    """Save wav file.
+  def SaveWav(cls, output_filepath, signal):
+    """Saves wav file.
 
     Args:
-      output_filepath: string, output file path.
+      output_filepath: path to the wav audio track file to save.
       signal: AudioSegment instance.
     """
     return signal.export(output_filepath, format='wav')
 
   @classmethod
-  def count_samples(cls, signal):
+  def CountSamples(cls, signal):
     """Number of samples per channel.
 
     Args:
       signal: AudioSegment instance.
+
+    Returns:
+      An integer.
     """
     number_of_samples = len(signal.get_array_of_samples())
     assert signal.channels > 0
@@ -74,10 +86,10 @@ class SignalProcessingUtils(object):
     return number_of_samples / signal.channels
 
   @classmethod
-  def generate_white_noise(cls, signal):
-    """Generate white noise.
+  def GenerateWhiteNoise(cls, signal):
+    """Generates white noise.
 
-    Generate white noise with the same duration and in the same format as a
+    White noise is generated with the same duration and in the same format as a
     given signal.
 
     Args:
@@ -94,8 +106,15 @@ class SignalProcessingUtils(object):
         volume=0.0)
 
   @classmethod
-  def apply_impulse_response(cls, signal, impulse_response):
-    """Apply an impulse response to a signal.
+  def ApplyImpulseResponse(cls, signal, impulse_response):
+    """Applies an impulse response to a signal.
+
+    Args:
+      signal: AudioSegment instance.
+      impulse_response: list or numpy vector of float values.
+
+    Returns:
+      AudioSegment instance.
     """
     # Get samples.
     assert signal.channels == 1, (
@@ -133,11 +152,27 @@ class SignalProcessingUtils(object):
     return convolved_signal
 
   @classmethod
-  def normalize(cls, signal):
+  def Normalize(cls, signal):
+    """Normalizes a signal.
+
+    Args:
+      signal: AudioSegment instance.
+
+    Returns:
+      An AudioSegment instance.
+    """
     return signal.apply_gain(-signal.max_dBFS)
 
   @classmethod
-  def copy(cls, signal):
+  def Copy(cls, signal):
+    """Makes a copy os a signal.
+
+    Args:
+      signal: AudioSegment instance.
+
+    Returns:
+      An AudioSegment instance.
+    """
     return pydub.AudioSegment(
         data=signal.get_array_of_samples(),
         metadata={
@@ -148,11 +183,10 @@ class SignalProcessingUtils(object):
         })
 
   @classmethod
-  def mix_signals(cls, signal, noise, target_snr=0.0,
-                  bln_pad_shortest=False):
-    """Mix two signals with a target SNR.
+  def MixSignals(cls, signal, noise, target_snr=0.0, bln_pad_shortest=False):
+    """Mixes two signals with a target SNR.
 
-    Mix two signals up to a desired SNR by scaling noise (noise).
+    Mix two signals with a desired SNR by scaling noise (noise).
     If the target SNR is +/- infinite, a copy of signal/noise is returned.
 
     Args:
@@ -161,16 +195,19 @@ class SignalProcessingUtils(object):
       target_snr: float, numpy.Inf or -numpy.Inf (dB).
       bln_pad_shortest: if True, it pads the shortest signal with silence at the
                         end.
+
+    Returns:
+      An AudioSegment instance.
     """
     # Handle infinite target SNR.
     if target_snr == -np.Inf:
       # Return a copy of noise.
       logging.warning('SNR = -Inf, returning noise')
-      return cls.copy(noise)
+      return cls.Copy(noise)
     elif target_snr == np.Inf:
       # Return a copy of signal.
       logging.warning('SNR = +Inf, returning signal')
-      return cls.copy(signal)
+      return cls.Copy(signal)
 
     # Check signal and noise power.
     signal_power = float(signal.dBFS)
@@ -208,4 +245,4 @@ class SignalProcessingUtils(object):
 
     # Mix signals using the target SNR.
     gain_db = signal_power - noise_power - target_snr
-    return cls.normalize(signal.overlay(noise.apply_gain(gain_db)))
+    return cls.Normalize(signal.overlay(noise.apply_gain(gain_db)))

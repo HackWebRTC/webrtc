@@ -6,11 +6,16 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+"""Unit tests for the apm_quality_assessment module.
+"""
+
 import unittest
 
 import apm_quality_assessment
 
 class TestSimulationScript(unittest.TestCase):
+  """Unit tests for the apm_quality_assessment module.
+  """
 
   def test_main(self):
     # Exit with error code if no arguments are passed.
