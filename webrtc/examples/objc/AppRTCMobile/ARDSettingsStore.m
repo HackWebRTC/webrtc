@@ -10,7 +10,7 @@
 
 #import "ARDSettingsStore.h"
 
-static NSString *const kMediaConstraintsKey = @"rtc_video_resolution_media_constraints_key";
+static NSString *const kVideoResolutionKey = @"rtc_video_resolution_key";
 static NSString *const kVideoCodecKey = @"rtc_video_codec_key";
 static NSString *const kBitrateKey = @"rtc_max_bitrate_key";
 
@@ -30,12 +30,12 @@ NS_ASSUME_NONNULL_BEGIN
   return _storage;
 }
 
-- (nullable NSString *)videoResolutionConstraints {
-  return [self.storage objectForKey:kMediaConstraintsKey];
+- (NSString *)videoResolution {
+  return [self.storage objectForKey:kVideoResolutionKey];
 }
 
-- (void)setVideoResolutionConstraints:(NSString *)constraintsString {
-  [self.storage setObject:constraintsString forKey:kMediaConstraintsKey];
+- (void)setVideoResolution:(NSString *)resolution {
+  [self.storage setObject:resolution forKey:kVideoResolutionKey];
   [self.storage synchronize];
 }
 

@@ -12,6 +12,7 @@
 
 #import "WebRTC/RTCAVFoundationVideoSource.h"
 #import "WebRTC/RTCAudioTrack.h"
+#import "WebRTC/RTCCameraVideoCapturer.h"
 #import "WebRTC/RTCConfiguration.h"
 #import "WebRTC/RTCFileLogger.h"
 #import "WebRTC/RTCIceServer.h"
@@ -21,6 +22,7 @@
 #import "WebRTC/RTCPeerConnectionFactory.h"
 #import "WebRTC/RTCRtpSender.h"
 #import "WebRTC/RTCTracing.h"
+#import "WebRTC/RTCVideoTrack.h"
 
 #import "ARDAppEngineClient.h"
 #import "ARDJoinResponse.h"
@@ -100,6 +102,7 @@ static int const kKbpsMultiplier = 1000;
   RTCFileLogger *_fileLogger;
   ARDTimerProxy *_statsTimer;
   ARDSettingsModel *_settings;
+  RTCVideoTrack *_localVideoTrack;
 }
 
 @synthesize shouldGetStats = _shouldGetStats;
@@ -305,6 +308,7 @@ static int const kKbpsMultiplier = 1000;
   _isInitiator = NO;
   _hasReceivedSdp = NO;
   _messageQueue = [NSMutableArray array];
+  _localVideoTrack = nil;
 #if defined(WEBRTC_IOS)
   [_factory stopAecDump];
   [_peerConnection stopRtcEventLog];
@@ -666,10 +670,10 @@ static int const kKbpsMultiplier = 1000;
   RTCRtpSender *sender =
       [_peerConnection senderWithKind:kRTCMediaStreamTrackKindVideo
                              streamId:kARDMediaStreamId];
-  RTCVideoTrack *track = [self createLocalVideoTrack];
-  if (track) {
-    sender.track = track;
-    [_delegate appClient:self didReceiveLocalVideoTrack:track];
+  _localVideoTrack = [self createLocalVideoTrack];
+  if (_localVideoTrack) {
+    sender.track = _localVideoTrack;
+    [_delegate appClient:self didReceiveLocalVideoTrack:_localVideoTrack];
   }
 
   return sender;
@@ -716,10 +720,9 @@ static int const kKbpsMultiplier = 1000;
   // trying to open a local stream.
 #if !TARGET_IPHONE_SIMULATOR
   if (!_isAudioOnly) {
-    RTCMediaConstraints *cameraConstraints =
-        [self cameraConstraints];
-    RTCAVFoundationVideoSource *source =
-        [_factory avFoundationVideoSourceWithConstraints:cameraConstraints];
+    RTCVideoSource *source = [_factory videoSource];
+    RTCCameraVideoCapturer *capturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:source];
+    [_delegate appClient:self didCreateLocalCapturer:capturer];
     localVideoTrack =
         [_factory videoTrackWithSource:source
                                trackId:kARDVideoTrackId];
@@ -762,13 +765,6 @@ static int const kKbpsMultiplier = 1000;
        [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatoryConstraints
                                              optionalConstraints:nil];
    return constraints;
-}
-
-- (RTCMediaConstraints *)cameraConstraints {
-  RTCMediaConstraints *cameraConstraints = [[RTCMediaConstraints alloc]
-      initWithMandatoryConstraints:nil
-               optionalConstraints:[_settings currentMediaConstraintFromStoreAsRTCDictionary]];
-  return cameraConstraints;
 }
 
 - (RTCMediaConstraints *)defaultAnswerConstraints {

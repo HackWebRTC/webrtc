@@ -10,6 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "WebRTC/RTCCameraVideoCapturer.h"
 #import "WebRTC/RTCPeerConnection.h"
 #import "WebRTC/RTCVideoTrack.h"
 
@@ -35,6 +36,9 @@ typedef NS_ENUM(NSInteger, ARDAppClientState) {
 
 - (void)appClient:(ARDAppClient *)client
     didChangeConnectionState:(RTCIceConnectionState)state;
+
+- (void)appClient:(ARDAppClient *)client
+    didCreateLocalCapturer:(RTCCameraVideoCapturer *)localCapturer;
 
 - (void)appClient:(ARDAppClient *)client
     didReceiveLocalVideoTrack:(RTCVideoTrack *)localVideoTrack;

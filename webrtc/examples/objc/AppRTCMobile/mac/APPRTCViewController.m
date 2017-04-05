@@ -17,6 +17,7 @@
 #import "WebRTC/RTCVideoTrack.h"
 
 #import "ARDAppClient.h"
+#import "ARDCaptureController.h"
 #import "ARDSettingsModel.h"
 
 static NSUInteger const kContentWidth = 900;
@@ -299,6 +300,7 @@ static NSUInteger const kBottomViewHeight = 200;
   ARDAppClient* _client;
   RTCVideoTrack* _localVideoTrack;
   RTCVideoTrack* _remoteVideoTrack;
+  ARDCaptureController* _captureController;
 }
 
 - (void)dealloc {
@@ -353,6 +355,14 @@ static NSUInteger const kBottomViewHeight = 200;
     didChangeConnectionState:(RTCIceConnectionState)state {
 }
 
+- (void)appClient:(ARDAppClient*)client
+    didCreateLocalCapturer:(RTCCameraVideoCapturer*)localCapturer {
+  _captureController =
+      [[ARDCaptureController alloc] initWithCapturer:localCapturer
+                                            settings:[[ARDSettingsModel alloc] init]];
+  [_captureController startCapture];
+}
+
 - (void)appClient:(ARDAppClient *)client
     didReceiveLocalVideoTrack:(RTCVideoTrack *)localVideoTrack {
   _localVideoTrack = localVideoTrack;
@@ -386,7 +396,7 @@ static NSUInteger const kBottomViewHeight = 200;
     return;
   }
 
-  [_client disconnect];
+  [self disconnect];
   ARDAppClient* client = [[ARDAppClient alloc] initWithDelegate:self];
   [client connectToRoomWithId:roomId
                      settings:[[ARDSettingsModel alloc] init]  // Use default settings.
@@ -420,6 +430,8 @@ static NSUInteger const kBottomViewHeight = 200;
 
 - (void)disconnect {
   [self resetUI];
+  [_captureController stopCapture];
+  _captureController = nil;
   [_client disconnect];
 }
 

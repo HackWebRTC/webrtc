@@ -28,25 +28,25 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
 
 @implementation ARDSettingsModel
 
-- (NSArray<NSString *> *)availableVideoResoultionsMediaConstraints {
+- (NSArray<NSString *> *)availableVideoResolutions {
   return videoResolutionsStaticValues();
 }
 
-- (NSString *)currentVideoResoultionConstraintFromStore {
-  NSString *constraint = [[self settingsStore] videoResolutionConstraints];
-  if (!constraint) {
-    constraint = [self defaultVideoResolutionMediaConstraint];
+- (NSString *)currentVideoResolutionSettingFromStore {
+  NSString *resolution = [[self settingsStore] videoResolution];
+  if (!resolution) {
+    resolution = [self defaultVideoResolutionSetting];
     // To ensure consistency add the default to the store.
-    [[self settingsStore] setVideoResolutionConstraints:constraint];
+    [[self settingsStore] setVideoResolution:resolution];
   }
-  return constraint;
+  return resolution;
 }
 
-- (BOOL)storeVideoResoultionConstraint:(NSString *)constraint {
-  if (![[self availableVideoResoultionsMediaConstraints] containsObject:constraint]) {
+- (BOOL)storeVideoResolutionSetting:(NSString *)resolution {
+  if (![[self availableVideoResolutions] containsObject:resolution]) {
     return NO;
   }
-  [[self settingsStore] setVideoResolutionConstraints:constraint];
+  [[self settingsStore] setVideoResolution:resolution];
   return YES;
 }
 
@@ -88,53 +88,36 @@ static NSArray<NSString *> *videoCodecsStaticValues() {
   return _settingsStore;
 }
 
-- (nullable NSString *)currentVideoResolutionWidthFromStore {
-  NSString *mediaConstraintFromStore = [self currentVideoResoultionConstraintFromStore];
+- (int)currentVideoResolutionWidthFromStore {
+  NSString *resolution = [self currentVideoResolutionSettingFromStore];
 
-  return [self videoResolutionComponentAtIndex:0 inConstraintsString:mediaConstraintFromStore];
+  return [self videoResolutionComponentAtIndex:0 inString:resolution];
 }
 
-- (nullable NSString *)currentVideoResolutionHeightFromStore {
-  NSString *mediaConstraintFromStore = [self currentVideoResoultionConstraintFromStore];
-  return [self videoResolutionComponentAtIndex:1 inConstraintsString:mediaConstraintFromStore];
+- (int)currentVideoResolutionHeightFromStore {
+  NSString *resolution = [self currentVideoResolutionSettingFromStore];
+  return [self videoResolutionComponentAtIndex:1 inString:resolution];
 }
 
 #pragma mark -
 
-- (NSString *)defaultVideoResolutionMediaConstraint {
+- (NSString *)defaultVideoResolutionSetting {
   return videoResolutionsStaticValues()[0];
 }
 
-- (nullable NSString *)videoResolutionComponentAtIndex:(int)index
-                                   inConstraintsString:(NSString *)constraint {
+- (int)videoResolutionComponentAtIndex:(int)index inString:(NSString *)resolution {
   if (index != 0 && index != 1) {
-    return nil;
+    return 0;
   }
-  NSArray *components = [constraint componentsSeparatedByString:@"x"];
+  NSArray<NSString *> *components = [resolution componentsSeparatedByString:@"x"];
   if (components.count != 2) {
-    return nil;
+    return 0;
   }
-  return components[index];
+  return components[index].intValue;
 }
 
 - (NSString *)defaultVideoCodecSetting {
   return videoCodecsStaticValues()[0];
-}
-
-#pragma mark - Conversion to RTCMediaConstraints
-
-- (nullable NSDictionary *)currentMediaConstraintFromStoreAsRTCDictionary {
-  NSDictionary *mediaConstraintsDictionary = nil;
-
-  NSString *widthConstraint = [self currentVideoResolutionWidthFromStore];
-  NSString *heightConstraint = [self currentVideoResolutionHeightFromStore];
-  if (widthConstraint && heightConstraint) {
-    mediaConstraintsDictionary = @{
-      kRTCMediaConstraintsMinWidth : widthConstraint,
-      kRTCMediaConstraintsMinHeight : heightConstraint
-    };
-  }
-  return mediaConstraintsDictionary;
 }
 
 @end

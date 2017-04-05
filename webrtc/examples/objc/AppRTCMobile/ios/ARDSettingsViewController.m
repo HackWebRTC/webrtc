@@ -14,7 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_ENUM(int, ARDSettingsSections) {
-  ARDSettingsSectionMediaConstraints = 0,
+  ARDSettingsSectionVideoResolution = 0,
   ARDSettingsSectionVideoCodec,
   ARDSettingsSectionBitRate,
 };
@@ -46,9 +46,9 @@ typedef NS_ENUM(int, ARDSettingsSections) {
 
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
-  [self addCheckmarkInSection:ARDSettingsSectionMediaConstraints
-                    withArray:[self mediaConstraintsArray]
-                    selecting:[_settingsModel currentVideoResoultionConstraintFromStore]];
+  [self addCheckmarkInSection:ARDSettingsSectionVideoResolution
+                    withArray:[self videoResolutionArray]
+                    selecting:[_settingsModel currentVideoResolutionSettingFromStore]];
   [self addCheckmarkInSection:ARDSettingsSectionVideoCodec
                     withArray:[self videoCodecArray]
                     selecting:[_settingsModel currentVideoCodecSettingFromStore]];
@@ -60,8 +60,8 @@ typedef NS_ENUM(int, ARDSettingsSections) {
 
 #pragma mark - Data source
 
-- (NSArray<NSString *> *)mediaConstraintsArray {
-  return _settingsModel.availableVideoResoultionsMediaConstraints;
+- (NSArray<NSString *> *)videoResolutionArray {
+  return _settingsModel.availableVideoResolutions;
 }
 
 - (NSArray<NSString *> *)videoCodecArray {
@@ -102,8 +102,8 @@ typedef NS_ENUM(int, ARDSettingsSections) {
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
   switch (section) {
-    case ARDSettingsSectionMediaConstraints:
-      return self.mediaConstraintsArray.count;
+    case ARDSettingsSectionVideoResolution:
+      return self.videoResolutionArray.count;
     case ARDSettingsSectionVideoCodec:
       return self.videoCodecArray.count;
     default:
@@ -137,8 +137,8 @@ updateListSelectionAtIndexPath:(NSIndexPath *)indexPath
 - (nullable NSString *)tableView:(UITableView *)tableView
          titleForHeaderInSection:(NSInteger)section {
   switch (section) {
-    case ARDSettingsSectionMediaConstraints:
-      return @"Media constraints";
+    case ARDSettingsSectionVideoResolution:
+      return @"Video resolution";
     case ARDSettingsSectionVideoCodec:
       return @"Video codec";
     case ARDSettingsSectionBitRate:
@@ -151,8 +151,8 @@ updateListSelectionAtIndexPath:(NSIndexPath *)indexPath
 - (UITableViewCell *)tableView:(UITableView *)tableView
          cellForRowAtIndexPath:(NSIndexPath *)indexPath {
   switch (indexPath.section) {
-    case ARDSettingsSectionMediaConstraints:
-      return [self mediaConstraintsTableViewCellForTableView:tableView atIndexPath:indexPath];
+    case ARDSettingsSectionVideoResolution:
+      return [self videoResolutionTableViewCellForTableView:tableView atIndexPath:indexPath];
 
     case ARDSettingsSectionVideoCodec:
       return [self videoCodecTableViewCellForTableView:tableView atIndexPath:indexPath];
@@ -168,8 +168,8 @@ updateListSelectionAtIndexPath:(NSIndexPath *)indexPath
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
   switch (indexPath.section) {
-    case ARDSettingsSectionMediaConstraints:
-      [self tableView:tableView didSelectMediaConstraintsCellAtIndexPath:indexPath];
+    case ARDSettingsSectionVideoResolution:
+      [self tableView:tableView disSelectVideoResolutionAtIndex:indexPath];
       break;
 
     case ARDSettingsSectionVideoCodec:
@@ -178,28 +178,28 @@ updateListSelectionAtIndexPath:(NSIndexPath *)indexPath
   }
 }
 
-#pragma mark - Table view delegate(Media Constraints)
+#pragma mark - Table view delegate(Video Resolution)
 
-- (UITableViewCell *)mediaConstraintsTableViewCellForTableView:(UITableView *)tableView
-                                                   atIndexPath:(NSIndexPath *)indexPath {
-  NSString *dequeueIdentifier = @"ARDSettingsMediaConstraintsViewCellIdentifier";
+- (UITableViewCell *)videoResolutionTableViewCellForTableView:(UITableView *)tableView
+                                                  atIndexPath:(NSIndexPath *)indexPath {
+  NSString *dequeueIdentifier = @"ARDSettingsVideoResolutionViewCellIdentifier";
   UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:dequeueIdentifier];
   if (!cell) {
     cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault
                                   reuseIdentifier:dequeueIdentifier];
   }
-  cell.textLabel.text = self.mediaConstraintsArray[indexPath.row];
+  cell.textLabel.text = self.videoResolutionArray[indexPath.row];
   return cell;
 }
 
 - (void)tableView:(UITableView *)tableView
-    didSelectMediaConstraintsCellAtIndexPath:(NSIndexPath *)indexPath {
+    disSelectVideoResolutionAtIndex:(NSIndexPath *)indexPath {
   [self tableView:tableView
-    updateListSelectionAtIndexPath:indexPath
-        inSection:ARDSettingsSectionMediaConstraints];
+      updateListSelectionAtIndexPath:indexPath
+                           inSection:ARDSettingsSectionVideoResolution];
 
-  NSString *mediaConstraintsString = self.mediaConstraintsArray[indexPath.row];
-  [_settingsModel storeVideoResoultionConstraint:mediaConstraintsString];
+  NSString *videoResolution = self.videoResolutionArray[indexPath.row];
+  [_settingsModel storeVideoResolutionSetting:videoResolution];
 }
 
 #pragma mark - Table view delegate(Video Codec)

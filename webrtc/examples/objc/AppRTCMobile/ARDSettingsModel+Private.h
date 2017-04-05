@@ -16,7 +16,5 @@
 NS_ASSUME_NONNULL_BEGIN
 @interface ARDSettingsModel ()
 - (ARDSettingsStore *)settingsStore;
-- (nullable NSString *)currentVideoResolutionWidthFromStore;
-- (nullable NSString *)currentVideoResolutionHeightFromStore;
 @end
 NS_ASSUME_NONNULL_END

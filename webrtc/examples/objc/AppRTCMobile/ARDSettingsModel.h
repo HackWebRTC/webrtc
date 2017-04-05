@@ -14,12 +14,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Model class for user defined settings.
  *
- * Currently used for streaming media constraints and bitrate only.
- * In future audio media constraints support can be added as well.
- * Offers list of avaliable video resolutions that can construct streaming media constraint.
- * Exposes methods for reading and storing media constraints from persistent store.
- * Also translates current user defined media constraint into RTCMediaConstraints
- * dictionary.
+ * Handles storing the settings and provides default values if setting is not
+ * set. Also provides list of available options for different settings. Stores
+ * for example video codec, video resolution and maximum bitrate.
  */
 @interface ARDSettingsModel : NSObject
 
@@ -29,24 +26,26 @@ NS_ASSUME_NONNULL_BEGIN
  * The capture resolutions are represented as strings in the following format
  * [width]x[height]
  */
-- (NSArray<NSString *> *)availableVideoResoultionsMediaConstraints;
+- (NSArray<NSString *> *)availableVideoResolutions;
 
 /**
- * Returns current video resolution media constraint string.
- * If no constraint is in store, default value of 640x480 is returned.
+ * Returns current video resolution string.
+ * If no resolution is in store, default value of 640x480 is returned.
  * When defaulting to value, the default is saved in store for consistency reasons.
  */
-- (NSString *)currentVideoResoultionConstraintFromStore;
+- (NSString *)currentVideoResolutionSettingFromStore;
+- (int)currentVideoResolutionWidthFromStore;
+- (int)currentVideoResolutionHeightFromStore;
 
 /**
- * Stores the provided video resolution media constraint string into the store.
+ * Stores the provided video resolution string into the store.
  *
- * If the provided constraint is no part of the available video resolutions
+ * If the provided resolution is no part of the available video resolutions
  * the store operation will not be executed and NO will be returned.
- * @param constraint the string to be stored.
+ * @param resolution the string to be stored.
  * @return YES/NO depending on success.
  */
-- (BOOL)storeVideoResoultionConstraint:(NSString *)constraint;
+- (BOOL)storeVideoResolutionSetting:(NSString *)resolution;
 
 /**
  * Returns array of available video codecs.
@@ -61,20 +60,12 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Stores the provided video codec setting into the store.
  *
- * If the provided constraint is not part of the available video codecs
+ * If the provided video codec is not part of the available video codecs
  * the store operation will not be executed and NO will be returned.
  * @param video codec settings the string to be stored.
  * @return YES/NO depending on success.
  */
 - (BOOL)storeVideoCodecSetting:(NSString *)videoCodec;
-
-/**
- * Converts the current media constraints from store into dictionary with RTCMediaConstraints
- * values.
- *
- * @return NSDictionary with RTC width and height parameters
- */
-- (nullable NSDictionary *)currentMediaConstraintFromStoreAsRTCDictionary;
 
 /**
  * Returns current max bitrate setting from store if present.
