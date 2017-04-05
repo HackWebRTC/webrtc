@@ -171,7 +171,6 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/SurfaceTextureHelper.java",
     "api/org/webrtc/SurfaceViewRenderer.java",
     "api/org/webrtc/VideoCapturer.java",
-    "api/org/webrtc/VideoCapturerAndroid.java",
     "api/org/webrtc/VideoFileRenderer.java",
     "api/org/webrtc/VideoRenderer.java",
     "api/org/webrtc/VideoSource.java",
