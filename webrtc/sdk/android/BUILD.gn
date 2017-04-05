@@ -147,7 +147,6 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/GlShader.java",
     "api/org/webrtc/GlTextureFrameBuffer.java",
     "api/org/webrtc/GlUtil.java",
-    "api/org/webrtc/Histogram.java",
     "api/org/webrtc/IceCandidate.java",
     "api/org/webrtc/MediaCodecVideoDecoder.java",
     "api/org/webrtc/MediaCodecVideoEncoder.java",
@@ -179,6 +178,7 @@ android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/Camera2Session.java",
     "src/java/org/webrtc/CameraCapturer.java",
     "src/java/org/webrtc/CameraSession.java",
+    "src/java/org/webrtc/Histogram.java",
     "src/java/org/webrtc/YuvConverter.java",
   ]
 
