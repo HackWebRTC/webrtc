@@ -101,7 +101,7 @@ AecState::~AecState() = default;
 void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                           filter_frequency_response,
                       const rtc::Optional<size_t>& external_delay_samples,
-                      const FftBuffer& X_buffer,
+                      const RenderBuffer& X_buffer,
                       const std::array<float, kFftLengthBy2Plus1>& E2_main,
                       const std::array<float, kFftLengthBy2Plus1>& E2_shadow,
                       const std::array<float, kFftLengthBy2Plus1>& Y2,

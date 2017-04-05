@@ -61,7 +61,7 @@ void HalfDuplexPowerEstimate(bool active_render,
 // Estimates the residual echo power based on gains.
 void GainBasedPowerEstimate(
     size_t external_delay,
-    const FftBuffer& X_buffer,
+    const RenderBuffer& X_buffer,
     size_t blocks_since_last_saturation,
     size_t active_render_blocks,
     const std::array<bool, kFftLengthBy2Plus1>& bands_with_reliable_filter,
@@ -93,7 +93,7 @@ void GainBasedPowerEstimate(
 // Estimates the residual echo power based on the linear echo path.
 void ErleBasedPowerEstimate(
     bool headset_detected,
-    const FftBuffer& X_buffer,
+    const RenderBuffer& X_buffer,
     bool using_subtractor_output,
     size_t linear_filter_based_delay,
     size_t blocks_since_last_saturation,
@@ -162,7 +162,7 @@ ResidualEchoEstimator::~ResidualEchoEstimator() = default;
 void ResidualEchoEstimator::Estimate(
     bool using_subtractor_output,
     const AecState& aec_state,
-    const FftBuffer& X_buffer,
+    const RenderBuffer& X_buffer,
     const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
     const std::array<float, kFftLengthBy2Plus1>& E2_main,
     const std::array<float, kFftLengthBy2Plus1>& E2_shadow,

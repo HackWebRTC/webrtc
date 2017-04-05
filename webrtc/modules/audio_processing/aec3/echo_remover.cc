@@ -22,10 +22,10 @@
 #include "webrtc/modules/audio_processing/aec3/comfort_noise_generator.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
 #include "webrtc/modules/audio_processing/aec3/echo_remover_metrics.h"
-#include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/fft_data.h"
 #include "webrtc/modules/audio_processing/aec3/output_selector.h"
 #include "webrtc/modules/audio_processing/aec3/power_echo_model.h"
+#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/residual_echo_estimator.h"
 #include "webrtc/modules/audio_processing/aec3/subtractor.h"
@@ -60,11 +60,11 @@ class EchoRemoverImpl final : public EchoRemover {
   // Removes the echo from a block of samples from the capture signal. The
   // supplied render signal is assumed to be pre-aligned with the capture
   // signal.
-  void ProcessBlock(
+  void ProcessCapture(
       const rtc::Optional<size_t>& external_echo_path_delay_estimate,
       const EchoPathVariability& echo_path_variability,
       bool capture_signal_saturation,
-      const std::vector<std::vector<float>>& render,
+      const RenderBuffer& render_buffer,
       std::vector<std::vector<float>>* capture) override;
 
   // Updates the status on whether echo leakage is detected in the output of the
@@ -84,12 +84,11 @@ class EchoRemoverImpl final : public EchoRemover {
   ComfortNoiseGenerator cng_;
   SuppressionFilter suppression_filter_;
   PowerEchoModel power_echo_model_;
-  FftBuffer X_buffer_;
+  RenderBuffer X_buffer_;
   RenderSignalAnalyzer render_signal_analyzer_;
   OutputSelector output_selector_;
   ResidualEchoEstimator residual_echo_estimator_;
   bool echo_leakage_detected_ = false;
-  std::array<float, kBlockSize> x_old_;
   AecState aec_state_;
   EchoRemoverMetrics metrics_;
 
@@ -109,22 +108,22 @@ EchoRemoverImpl::EchoRemoverImpl(int sample_rate_hz)
       cng_(optimization_),
       suppression_filter_(sample_rate_hz_),
       X_buffer_(optimization_,
+                NumBandsForRate(sample_rate_hz_),
                 std::max(subtractor_.MinFarendBufferLength(),
                          power_echo_model_.MinFarendBufferLength()),
                 subtractor_.NumBlocksInRenderSums()) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
-  x_old_.fill(0.f);
 }
 
 EchoRemoverImpl::~EchoRemoverImpl() = default;
 
-void EchoRemoverImpl::ProcessBlock(
+void EchoRemoverImpl::ProcessCapture(
     const rtc::Optional<size_t>& echo_path_delay_samples,
     const EchoPathVariability& echo_path_variability,
     bool capture_signal_saturation,
-    const std::vector<std::vector<float>>& render,
+    const RenderBuffer& render_buffer,
     std::vector<std::vector<float>>* capture) {
-  const std::vector<std::vector<float>>& x = render;
+  const std::vector<std::vector<float>>& x = render_buffer.MostRecentBlock();
   std::vector<std::vector<float>>* y = capture;
 
   RTC_DCHECK(y);
@@ -144,7 +143,6 @@ void EchoRemoverImpl::ProcessBlock(
 
   if (echo_path_variability.AudioPathChanged()) {
     subtractor_.HandleEchoPathChange(echo_path_variability);
-    power_echo_model_.HandleEchoPathChange(echo_path_variability);
     residual_echo_estimator_.HandleEchoPathChange(echo_path_variability);
   }
 
@@ -153,7 +151,6 @@ void EchoRemoverImpl::ProcessBlock(
   std::array<float, kFftLengthBy2Plus1> R2;
   std::array<float, kFftLengthBy2Plus1> S2_linear;
   std::array<float, kFftLengthBy2Plus1> G;
-  FftData X;
   FftData Y;
   FftData comfort_noise;
   FftData high_band_comfort_noise;
@@ -164,15 +161,11 @@ void EchoRemoverImpl::ProcessBlock(
   auto& e_main = subtractor_output.e_main;
   auto& e_shadow = subtractor_output.e_shadow;
 
-  // Update the render signal buffer.
-  fft_.PaddedFft(x0, x_old_, &X);
-  X_buffer_.Insert(X);
-
   // Analyze the render signal.
-  render_signal_analyzer_.Update(X_buffer_, aec_state_.FilterDelay());
+  render_signal_analyzer_.Update(render_buffer, aec_state_.FilterDelay());
 
   // Perform linear echo cancellation.
-  subtractor_.Process(X_buffer_, y0, render_signal_analyzer_,
+  subtractor_.Process(render_buffer, y0, render_signal_analyzer_,
                       aec_state_.SaturatedCapture(), &subtractor_output);
 
   // Compute spectra.
@@ -182,11 +175,13 @@ void EchoRemoverImpl::ProcessBlock(
 
   // Update the AEC state information.
   aec_state_.Update(subtractor_.FilterFrequencyResponse(),
-                    echo_path_delay_samples, X_buffer_, E2_main, E2_shadow, Y2,
-                    x0, echo_path_variability, echo_leakage_detected_);
+                    echo_path_delay_samples, render_buffer, E2_main, E2_shadow,
+                    Y2, x0, echo_path_variability, echo_leakage_detected_);
 
   // Use the power model to estimate the echo.
-  power_echo_model_.EstimateEcho(X_buffer_, Y2, aec_state_, &S2_power);
+  // TODO(peah): Remove in upcoming CL.
+  // power_echo_model_.EstimateEcho(render_buffer, Y2, aec_state_, &S2_power);
+  S2_power.fill(0.f);
 
   // Choose the linear output.
   output_selector_.FormLinearOutput(e_main, y0);
@@ -196,7 +191,7 @@ void EchoRemoverImpl::ProcessBlock(
 
   // Estimate the residual echo power.
   residual_echo_estimator_.Estimate(
-      output_selector_.UseSubtractorOutput(), aec_state_, X_buffer_,
+      output_selector_.UseSubtractorOutput(), aec_state_, render_buffer,
       subtractor_.FilterFrequencyResponse(), E2_main, E2_shadow, S2_linear,
       S2_power, Y2, &R2);
 

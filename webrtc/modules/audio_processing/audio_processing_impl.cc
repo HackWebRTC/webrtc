@@ -569,7 +569,8 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
           submodule_states_.RenderMultiBandSubModulesActive());
   // TODO(aluebs): Remove this restriction once we figure out why the 3-band
   // splitting filter degrades the AEC performance.
-  if (render_processing_rate > kSampleRate32kHz) {
+  if (render_processing_rate > kSampleRate32kHz &&
+      !config_.echo_canceller3.enabled) {
     render_processing_rate = submodule_states_.RenderMultiBandProcessingActive()
                                  ? kSampleRate32kHz
                                  : kSampleRate16kHz;
@@ -1440,9 +1441,7 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
   QueueRenderAudio(render_buffer);
   // TODO(peah): Perform the queueing ínside QueueRenderAudiuo().
   if (private_submodules_->echo_canceller3) {
-    if (!private_submodules_->echo_canceller3->AnalyzeRender(render_buffer)) {
-      // TODO(peah): Lock and empty render queue, and try again.
-    }
+    private_submodules_->echo_canceller3->AnalyzeRender(render_buffer);
   }
 
   if (submodule_states_.RenderMultiBandProcessingActive() &&

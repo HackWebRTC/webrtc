@@ -146,12 +146,6 @@ void MatchedFilterCore(size_t x_start_index,
 
 }  // namespace aec3
 
-MatchedFilter::IndexedBuffer::IndexedBuffer(size_t size) : data(size, 0.f) {
-  RTC_DCHECK_EQ(0, size % kSubBlockSize);
-}
-
-MatchedFilter::IndexedBuffer::~IndexedBuffer() = default;
-
 MatchedFilter::MatchedFilter(ApmDataDumper* data_dumper,
                              Aec3Optimization optimization,
                              size_t window_size_sub_blocks,
@@ -162,51 +156,51 @@ MatchedFilter::MatchedFilter(ApmDataDumper* data_dumper,
       filter_intra_lag_shift_(alignment_shift_sub_blocks * kSubBlockSize),
       filters_(num_matched_filters,
                std::vector<float>(window_size_sub_blocks * kSubBlockSize, 0.f)),
-      lag_estimates_(num_matched_filters),
-      x_buffer_(kSubBlockSize *
-                (alignment_shift_sub_blocks * num_matched_filters +
-                 window_size_sub_blocks +
-                 1)) {
+      lag_estimates_(num_matched_filters) {
   RTC_DCHECK(data_dumper);
-  RTC_DCHECK_EQ(0, x_buffer_.data.size() % kSubBlockSize);
   RTC_DCHECK_LT(0, window_size_sub_blocks);
 }
 
 MatchedFilter::~MatchedFilter() = default;
 
-void MatchedFilter::Update(const std::array<float, kSubBlockSize>& render,
+void MatchedFilter::Reset() {
+  for (auto& f : filters_) {
+    std::fill(f.begin(), f.end(), 0.f);
+  }
+
+  for (auto& l : lag_estimates_) {
+    l = MatchedFilter::LagEstimate();
+  }
+}
+
+void MatchedFilter::Update(const DownsampledRenderBuffer& render_buffer,
                            const std::array<float, kSubBlockSize>& capture) {
-  const std::array<float, kSubBlockSize>& x = render;
   const std::array<float, kSubBlockSize>& y = capture;
 
   const float x2_sum_threshold = filters_[0].size() * 150.f * 150.f;
-
-  // Insert the new subblock into x_buffer.
-  x_buffer_.index = (x_buffer_.index - kSubBlockSize + x_buffer_.data.size()) %
-                    x_buffer_.data.size();
-  RTC_DCHECK_LE(kSubBlockSize, x_buffer_.data.size() - x_buffer_.index);
-  std::copy(x.rbegin(), x.rend(), x_buffer_.data.begin() + x_buffer_.index);
 
   // Apply all matched filters.
   size_t alignment_shift = 0;
   for (size_t n = 0; n < filters_.size(); ++n) {
     float error_sum = 0.f;
     bool filters_updated = false;
+
     size_t x_start_index =
-        (x_buffer_.index + alignment_shift + kSubBlockSize - 1) %
-        x_buffer_.data.size();
+        (render_buffer.position + alignment_shift + kSubBlockSize - 1) %
+        render_buffer.buffer.size();
 
     switch (optimization_) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)
       case Aec3Optimization::kSse2:
         aec3::MatchedFilterCore_SSE2(x_start_index, x2_sum_threshold,
-                                     x_buffer_.data, y, filters_[n],
+                                     render_buffer.buffer, y, filters_[n],
                                      &filters_updated, &error_sum);
         break;
 #endif
       default:
-        aec3::MatchedFilterCore(x_start_index, x2_sum_threshold, x_buffer_.data,
-                                y, filters_[n], &filters_updated, &error_sum);
+        aec3::MatchedFilterCore(x_start_index, x2_sum_threshold,
+                                render_buffer.buffer, y, filters_[n],
+                                &filters_updated, &error_sum);
     }
 
     // Compute anchor for the matched filter error.

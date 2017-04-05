@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <functional>
 
+#include "webrtc/base/checks.h"
+
 namespace webrtc {
 namespace {
 

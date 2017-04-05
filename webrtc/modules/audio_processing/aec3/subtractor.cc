@@ -69,14 +69,14 @@ void Subtractor::HandleEchoPathChange(
   }
 }
 
-void Subtractor::Process(const FftBuffer& render_buffer,
+void Subtractor::Process(const RenderBuffer& render_buffer,
                          const rtc::ArrayView<const float> capture,
                          const RenderSignalAnalyzer& render_signal_analyzer,
                          bool saturation,
                          SubtractorOutput* output) {
   RTC_DCHECK_EQ(kBlockSize, capture.size());
   rtc::ArrayView<const float> y = capture;
-  const FftBuffer& X_buffer = render_buffer;
+  const RenderBuffer& X_buffer = render_buffer;
   FftData& E_main = output->E_main;
   FftData& E_shadow = output->E_shadow;
   std::array<float, kBlockSize>& e_main = output->e_main;

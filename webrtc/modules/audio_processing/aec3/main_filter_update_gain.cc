@@ -41,7 +41,7 @@ void MainFilterUpdateGain::HandleEchoPathChange() {
 }
 
 void MainFilterUpdateGain::Compute(
-    const FftBuffer& render_buffer,
+    const RenderBuffer& render_buffer,
     const RenderSignalAnalyzer& render_signal_analyzer,
     const SubtractorOutput& subtractor_output,
     const AdaptiveFirFilter& filter,
@@ -49,7 +49,7 @@ void MainFilterUpdateGain::Compute(
     FftData* gain_fft) {
   RTC_DCHECK(gain_fft);
   // Introducing shorter notation to improve readability.
-  const FftBuffer& X_buffer = render_buffer;
+  const RenderBuffer& X_buffer = render_buffer;
   const FftData& E_main = subtractor_output.E_main;
   const auto& E2_main = subtractor_output.E2_main;
   const auto& E2_shadow = subtractor_output.E2_shadow;

@@ -31,6 +31,8 @@ constexpr int kMetricsComputationBlocks = 9;
 constexpr int kMetricsCollectionBlocks =
     kMetricsReportingIntervalBlocks - kMetricsComputationBlocks;
 
+constexpr int kAdaptiveFilterLength = 12;
+
 constexpr size_t kFftLengthBy2 = 64;
 constexpr size_t kFftLengthBy2Plus1 = kFftLengthBy2 + 1;
 constexpr size_t kFftLengthBy2Minus1 = kFftLengthBy2 - 1;
@@ -42,6 +44,22 @@ constexpr size_t kSubFrameLength = 80;
 constexpr size_t kBlockSize = kFftLengthBy2;
 constexpr size_t kExtendedBlockSize = 2 * kFftLengthBy2;
 constexpr size_t kSubBlockSize = 16;
+
+constexpr size_t kNumMatchedFilters = 4;
+constexpr size_t kMatchedFilterWindowSizeSubBlocks = 32;
+constexpr size_t kMatchedFilterAlignmentShiftSizeSubBlocks =
+    kMatchedFilterWindowSizeSubBlocks * 3 / 4;
+constexpr size_t kDownsampledRenderBufferSize =
+    kSubBlockSize *
+    (kMatchedFilterAlignmentShiftSizeSubBlocks * kNumMatchedFilters +
+     kMatchedFilterWindowSizeSubBlocks +
+     1);
+
+constexpr size_t kRenderDelayBufferSize =
+    (3 * kDownsampledRenderBufferSize) / (4 * kSubBlockSize);
+
+constexpr size_t kMaxApiCallsJitterBlocks = 10;
+constexpr size_t kRenderTransferQueueSize = kMaxApiCallsJitterBlocks / 2;
 
 constexpr size_t NumBandsForRate(int sample_rate_hz) {
   return static_cast<size_t>(sample_rate_hz == 8000 ? 1

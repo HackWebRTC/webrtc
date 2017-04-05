@@ -19,28 +19,28 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
-#include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/fft_data.h"
+#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 
 namespace webrtc {
 namespace aec3 {
 // Adapts the filter partitions.
-void AdaptPartitions(const FftBuffer& X_buffer,
+void AdaptPartitions(const RenderBuffer& X_buffer,
                      const FftData& G,
                      rtc::ArrayView<FftData> H);
 #if defined(WEBRTC_ARCH_X86_FAMILY)
-void AdaptPartitions_SSE2(const FftBuffer& X_buffer,
+void AdaptPartitions_SSE2(const RenderBuffer& X_buffer,
                           const FftData& G,
                           rtc::ArrayView<FftData> H);
 #endif
 
 // Produces the filter output.
-void ApplyFilter(const FftBuffer& X_buffer,
+void ApplyFilter(const RenderBuffer& X_buffer,
                  rtc::ArrayView<const FftData> H,
                  FftData* S);
 #if defined(WEBRTC_ARCH_X86_FAMILY)
-void ApplyFilter_SSE2(const FftBuffer& X_buffer,
+void ApplyFilter_SSE2(const RenderBuffer& X_buffer,
                       rtc::ArrayView<const FftData> H,
                       FftData* S);
 #endif
@@ -58,10 +58,10 @@ class AdaptiveFirFilter {
   ~AdaptiveFirFilter();
 
   // Produces the output of the filter.
-  void Filter(const FftBuffer& X_buffer, FftData* S) const;
+  void Filter(const RenderBuffer& X_buffer, FftData* S) const;
 
   // Adapts the filter.
-  void Adapt(const FftBuffer& X_buffer, const FftData& G);
+  void Adapt(const RenderBuffer& X_buffer, const FftData& G);
 
   // Receives reports that known echo path changes have occured and adjusts
   // the filter adaptation accordingly.

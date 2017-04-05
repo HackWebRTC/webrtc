@@ -20,8 +20,8 @@
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
-#include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/main_filter_update_gain.h"
+#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/shadow_filter_update_gain.h"
 #include "webrtc/modules/audio_processing/aec3/subtractor_output.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
@@ -36,7 +36,7 @@ class Subtractor {
   ~Subtractor();
 
   // Performs the echo subtraction.
-  void Process(const FftBuffer& render_buffer,
+  void Process(const RenderBuffer& render_buffer,
                const rtc::ArrayView<const float> capture,
                const RenderSignalAnalyzer& render_signal_analyzer,
                bool saturation,

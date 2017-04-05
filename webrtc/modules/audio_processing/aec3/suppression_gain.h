@@ -15,7 +15,6 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
 
 namespace webrtc {
 namespace aec3 {

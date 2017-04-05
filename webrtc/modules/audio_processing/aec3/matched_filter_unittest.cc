@@ -20,6 +20,8 @@
 
 #include "webrtc/base/random.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
+#include "webrtc/modules/audio_processing/aec3/decimator_by_4.h"
+#include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 #include "webrtc/modules/audio_processing/test/echo_canceller_test_tools.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
@@ -87,23 +89,31 @@ TEST(MatchedFilter, TestOptimizations) {
 // delayed signals.
 TEST(MatchedFilter, LagEstimation) {
   Random random_generator(42U);
-  std::array<float, kSubBlockSize> render;
-  std::array<float, kSubBlockSize> capture;
-  render.fill(0.f);
+  std::vector<std::vector<float>> render(3,
+                                         std::vector<float>(kBlockSize, 0.f));
+  std::array<float, kBlockSize> capture;
   capture.fill(0.f);
   ApmDataDumper data_dumper(0);
   for (size_t delay_samples : {5, 64, 150, 200, 800, 1000}) {
     SCOPED_TRACE(ProduceDebugText(delay_samples));
-    DelayBuffer<float> signal_delay_buffer(delay_samples);
+    DecimatorBy4 capture_decimator;
+    DelayBuffer<float> signal_delay_buffer(4 * delay_samples);
     MatchedFilter filter(&data_dumper, DetectOptimization(),
                          kWindowSizeSubBlocks, kNumMatchedFilters,
                          kAlignmentShiftSubBlocks);
+    std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
+        RenderDelayBuffer::Create(3));
 
     // Analyze the correlation between render and capture.
     for (size_t k = 0; k < (100 + delay_samples / kSubBlockSize); ++k) {
-      RandomizeSampleVector(&random_generator, render);
-      signal_delay_buffer.Delay(render, capture);
-      filter.Update(render, capture);
+      RandomizeSampleVector(&random_generator, render[0]);
+      signal_delay_buffer.Delay(render[0], capture);
+      render_delay_buffer->Insert(render);
+      render_delay_buffer->UpdateBuffers();
+      std::array<float, kSubBlockSize> downsampled_capture;
+      capture_decimator.Decimate(capture, downsampled_capture);
+      filter.Update(render_delay_buffer->GetDownsampledRenderBuffer(),
+                    downsampled_capture);
     }
 
     // Obtain the lag estimates.
@@ -151,19 +161,22 @@ TEST(MatchedFilter, LagEstimation) {
 // estimates for uncorrelated render and capture signals.
 TEST(MatchedFilter, LagNotReliableForUncorrelatedRenderAndCapture) {
   Random random_generator(42U);
-  std::array<float, kSubBlockSize> render;
+  std::vector<std::vector<float>> render(3,
+                                         std::vector<float>(kBlockSize, 0.f));
   std::array<float, kSubBlockSize> capture;
-  render.fill(0.f);
   capture.fill(0.f);
   ApmDataDumper data_dumper(0);
+  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
+      RenderDelayBuffer::Create(3));
   MatchedFilter filter(&data_dumper, DetectOptimization(), kWindowSizeSubBlocks,
                        kNumMatchedFilters, kAlignmentShiftSubBlocks);
 
   // Analyze the correlation between render and capture.
   for (size_t k = 0; k < 100; ++k) {
-    RandomizeSampleVector(&random_generator, render);
+    RandomizeSampleVector(&random_generator, render[0]);
     RandomizeSampleVector(&random_generator, capture);
-    filter.Update(render, capture);
+    render_delay_buffer->Insert(render);
+    filter.Update(render_delay_buffer->GetDownsampledRenderBuffer(), capture);
   }
 
   // Obtain the lag estimates.
@@ -180,22 +193,28 @@ TEST(MatchedFilter, LagNotReliableForUncorrelatedRenderAndCapture) {
 // render signals of low level.
 TEST(MatchedFilter, LagNotUpdatedForLowLevelRender) {
   Random random_generator(42U);
-  std::array<float, kSubBlockSize> render;
-  std::array<float, kSubBlockSize> capture;
-  render.fill(0.f);
+  std::vector<std::vector<float>> render(3,
+                                         std::vector<float>(kBlockSize, 0.f));
+  std::array<float, kBlockSize> capture;
   capture.fill(0.f);
   ApmDataDumper data_dumper(0);
   MatchedFilter filter(&data_dumper, DetectOptimization(), kWindowSizeSubBlocks,
                        kNumMatchedFilters, kAlignmentShiftSubBlocks);
+  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
+      RenderDelayBuffer::Create(3));
+  DecimatorBy4 capture_decimator;
 
   // Analyze the correlation between render and capture.
   for (size_t k = 0; k < 100; ++k) {
-    RandomizeSampleVector(&random_generator, render);
-    for (auto& render_k : render) {
+    RandomizeSampleVector(&random_generator, render[0]);
+    for (auto& render_k : render[0]) {
       render_k *= 149.f / 32767.f;
     }
-    std::copy(render.begin(), render.end(), capture.begin());
-    filter.Update(render, capture);
+    std::copy(render[0].begin(), render[0].end(), capture.begin());
+    std::array<float, kSubBlockSize> downsampled_capture;
+    capture_decimator.Decimate(capture, downsampled_capture);
+    filter.Update(render_delay_buffer->GetDownsampledRenderBuffer(),
+                  downsampled_capture);
   }
 
   // Obtain the lag estimates.

@@ -18,7 +18,7 @@
 namespace webrtc {
 
 void ShadowFilterUpdateGain::Compute(
-    const FftBuffer& X_buffer,
+    const RenderBuffer& X_buffer,
     const RenderSignalAnalyzer& render_signal_analyzer,
     const FftData& E_shadow,
     size_t size_partitions,

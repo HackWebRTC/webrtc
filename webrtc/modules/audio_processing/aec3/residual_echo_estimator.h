@@ -19,7 +19,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
-#include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
+#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 
 namespace webrtc {
 
@@ -30,7 +30,7 @@ class ResidualEchoEstimator {
 
   void Estimate(bool using_subtractor_output,
                 const AecState& aec_state,
-                const FftBuffer& X_buffer,
+                const RenderBuffer& X_buffer,
                 const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
                 const std::array<float, kFftLengthBy2Plus1>& E2_main,
                 const std::array<float, kFftLengthBy2Plus1>& E2_shadow,

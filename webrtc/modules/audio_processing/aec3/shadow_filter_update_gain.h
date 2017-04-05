@@ -13,7 +13,7 @@
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
-#include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
+#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/render_signal_analyzer.h"
 
 namespace webrtc {
@@ -22,7 +22,7 @@ namespace webrtc {
 class ShadowFilterUpdateGain {
  public:
   // Computes the gain.
-  void Compute(const FftBuffer& X_buffer,
+  void Compute(const RenderBuffer& X_buffer,
                const RenderSignalAnalyzer& render_signal_analyzer,
                const FftData& E_shadow,
                size_t size_partitions,

@@ -71,7 +71,7 @@ void ResetFilter(rtc::ArrayView<FftData> H) {
 namespace aec3 {
 
 // Adapts the filter partitions as H(t+1)=H(t)+G(t)*conj(X(t)).
-void AdaptPartitions(const FftBuffer& X_buffer,
+void AdaptPartitions(const RenderBuffer& X_buffer,
                      const FftData& G,
                      rtc::ArrayView<FftData> H) {
   rtc::ArrayView<const FftData> X_buffer_data = X_buffer.Buffer();
@@ -89,7 +89,7 @@ void AdaptPartitions(const FftBuffer& X_buffer,
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 // Adapts the filter partitions. (SSE2 variant)
-void AdaptPartitions_SSE2(const FftBuffer& X_buffer,
+void AdaptPartitions_SSE2(const RenderBuffer& X_buffer,
                           const FftData& G,
                           rtc::ArrayView<FftData> H) {
   rtc::ArrayView<const FftData> X_buffer_data = X_buffer.Buffer();
@@ -151,7 +151,7 @@ void AdaptPartitions_SSE2(const FftBuffer& X_buffer,
 #endif
 
 // Produces the filter output.
-void ApplyFilter(const FftBuffer& X_buffer,
+void ApplyFilter(const RenderBuffer& X_buffer,
                  rtc::ArrayView<const FftData> H,
                  FftData* S) {
   S->re.fill(0.f);
@@ -171,7 +171,7 @@ void ApplyFilter(const FftBuffer& X_buffer,
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 // Produces the filter output (SSE2 variant).
-void ApplyFilter_SSE2(const FftBuffer& X_buffer,
+void ApplyFilter_SSE2(const RenderBuffer& X_buffer,
                       rtc::ArrayView<const FftData> H,
                       FftData* S) {
   S->re.fill(0.f);
@@ -267,7 +267,7 @@ void AdaptiveFirFilter::HandleEchoPathChange() {
   }
 }
 
-void AdaptiveFirFilter::Filter(const FftBuffer& X_buffer, FftData* S) const {
+void AdaptiveFirFilter::Filter(const RenderBuffer& X_buffer, FftData* S) const {
   RTC_DCHECK(S);
   switch (optimization_) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)
@@ -280,7 +280,7 @@ void AdaptiveFirFilter::Filter(const FftBuffer& X_buffer, FftData* S) const {
   }
 }
 
-void AdaptiveFirFilter::Adapt(const FftBuffer& X_buffer, const FftData& G) {
+void AdaptiveFirFilter::Adapt(const RenderBuffer& X_buffer, const FftData& G) {
   // Adapt the filter.
   switch (optimization_) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)

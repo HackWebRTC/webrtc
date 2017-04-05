@@ -10,9 +10,10 @@
 
 #include "webrtc/modules/audio_processing/aec3/suppression_gain.h"
 
-#include "webrtc/typedefs.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/system_wrappers/include/cpu_features_wrapper.h"
 #include "webrtc/test/gtest.h"
+#include "webrtc/typedefs.h"
 
 namespace webrtc {
 namespace aec3 {

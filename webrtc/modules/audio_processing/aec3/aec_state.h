@@ -20,9 +20,9 @@
 #include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
-#include "webrtc/modules/audio_processing/aec3/erle_estimator.h"
 #include "webrtc/modules/audio_processing/aec3/erl_estimator.h"
-#include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
+#include "webrtc/modules/audio_processing/aec3/erle_estimator.h"
+#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 
 namespace webrtc {
 
@@ -97,7 +97,7 @@ class AecState {
   void Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                   filter_frequency_response,
               const rtc::Optional<size_t>& external_delay_samples,
-              const FftBuffer& X_buffer,
+              const RenderBuffer& X_buffer,
               const std::array<float, kFftLengthBy2Plus1>& E2_main,
               const std::array<float, kFftLengthBy2Plus1>& E2_shadow,
               const std::array<float, kFftLengthBy2Plus1>& Y2,

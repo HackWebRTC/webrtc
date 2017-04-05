@@ -18,6 +18,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
+#include "webrtc/modules/audio_processing/aec3/downsampled_render_buffer.h"
 
 namespace webrtc {
 namespace aec3 {
@@ -73,9 +74,12 @@ class MatchedFilter {
 
   ~MatchedFilter();
 
-  // Updates the correlation with the values in render and capture.
-  void Update(const std::array<float, kSubBlockSize>& render,
+  // Updates the correlation with the values in the capture buffer.
+  void Update(const DownsampledRenderBuffer& render_buffer,
               const std::array<float, kSubBlockSize>& capture);
+
+  // Resets the matched filter.
+  void Reset();
 
   // Returns the current lag estimates.
   rtc::ArrayView<const MatchedFilter::LagEstimate> GetLagEstimates() const {
@@ -86,22 +90,11 @@ class MatchedFilter {
   size_t NumLagEstimates() const { return filters_.size(); }
 
  private:
-  // Provides buffer with a related index.
-  struct IndexedBuffer {
-    explicit IndexedBuffer(size_t size);
-    ~IndexedBuffer();
-
-    std::vector<float> data;
-    int index = 0;
-    RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(IndexedBuffer);
-  };
-
   ApmDataDumper* const data_dumper_;
   const Aec3Optimization optimization_;
   const size_t filter_intra_lag_shift_;
   std::vector<std::vector<float>> filters_;
   std::vector<LagEstimate> lag_estimates_;
-  IndexedBuffer x_buffer_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MatchedFilter);
 };

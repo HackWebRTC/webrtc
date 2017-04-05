@@ -18,7 +18,7 @@ namespace webrtc {
 namespace {
 
 // Computes the spectral power over that last 20 frames.
-void RecentMaximum(const FftBuffer& X_buffer,
+void RecentMaximum(const RenderBuffer& X_buffer,
                    std::array<float, kFftLengthBy2Plus1>* R2) {
   R2->fill(0.f);
   for (size_t j = 0; j < 20; ++j) {
@@ -47,13 +47,13 @@ void PowerEchoModel::HandleEchoPathChange(
 }
 
 void PowerEchoModel::EstimateEcho(
-    const FftBuffer& render_buffer,
+    const RenderBuffer& render_buffer,
     const std::array<float, kFftLengthBy2Plus1>& capture_spectrum,
     const AecState& aec_state,
     std::array<float, kFftLengthBy2Plus1>* echo_spectrum) {
   RTC_DCHECK(echo_spectrum);
 
-  const FftBuffer& X_buffer = render_buffer;
+  const RenderBuffer& X_buffer = render_buffer;
   const auto& Y2 = capture_spectrum;
   std::array<float, kFftLengthBy2Plus1>* S2 = echo_spectrum;
 

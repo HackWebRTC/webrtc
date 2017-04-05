@@ -93,7 +93,7 @@ void AecDumpBasedSimulator::PrepareProcessStreamCall(
                  static_cast<size_t>(msg.input_channel_size()));
 
     // Populate input buffer.
-    for (int i = 0; i < msg.input_channel_size(); ++i) {
+    for (size_t i = 0; i < in_buf_->num_channels(); ++i) {
       RTC_CHECK_EQ(in_buf_->num_frames() * sizeof(*in_buf_->channels()[i]),
                    msg.input_channel(i).size());
       std::memcpy(in_buf_->channels()[i], msg.input_channel(i).data(),

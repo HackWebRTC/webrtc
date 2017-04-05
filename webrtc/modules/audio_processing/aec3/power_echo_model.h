@@ -18,7 +18,7 @@
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
 #include "webrtc/modules/audio_processing/aec3/echo_path_variability.h"
-#include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
+#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 
 namespace webrtc {
 
@@ -34,7 +34,7 @@ class PowerEchoModel {
 
   // Updates the echo model and estimates the echo spectrum.
   void EstimateEcho(
-      const FftBuffer& render_buffer,
+      const RenderBuffer& render_buffer,
       const std::array<float, kFftLengthBy2Plus1>& capture_spectrum,
       const AecState& aec_state,
       std::array<float, kFftLengthBy2Plus1>* echo_spectrum);

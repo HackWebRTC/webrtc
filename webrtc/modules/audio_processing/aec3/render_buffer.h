@@ -8,31 +8,41 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_FFT_BUFFER_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_FFT_BUFFER_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_RENDER_BUFFER_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_RENDER_BUFFER_H_
 
 #include <memory>
 #include <vector>
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/modules/audio_processing/aec3/aec3_fft.h"
 #include "webrtc/modules/audio_processing/aec3/fft_data.h"
 
 namespace webrtc {
 
-// Provides a circular buffer for 128 point real-valued FFT data.
-class FftBuffer {
+// Provides a buffer of the render data for the echo remover.
+class RenderBuffer {
  public:
-  // The constructor takes as parameters the size of the buffer, as well as a
-  // vector containing the number of FFTs that will be included in the spectral
-  // sums in the call to SpectralSum.
-  FftBuffer(Aec3Optimization optimization,
-            size_t size,
-            const std::vector<size_t> num_ffts_for_spectral_sums);
-  ~FftBuffer();
+  // The constructor takes, besides from the other parameters, a vector
+  // containing the number of FFTs that will be included in the spectral sums in
+  // the call to SpectralSum.
+  RenderBuffer(Aec3Optimization optimization,
+               size_t num_bands,
+               size_t size,
+               const std::vector<size_t> num_ffts_for_spectral_sums);
+  ~RenderBuffer();
 
-  // Insert an FFT into the buffer.
-  void Insert(const FftData& fft);
+  // Clears the buffer.
+  void Clear();
+
+  // Insert a block into the buffer.
+  void Insert(const std::vector<std::vector<float>>& block);
+
+  // Gets the last inserted block.
+  const std::vector<std::vector<float>>& MostRecentBlock() const {
+    return last_block_;
+  }
 
   // Get the spectrum from one of the FFTs in the buffer
   const std::array<float, kFftLengthBy2Plus1>& Spectrum(
@@ -61,10 +71,11 @@ class FftBuffer {
   size_t spectral_sums_length_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> spectral_sums_;
   size_t position_ = 0;
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FftBuffer);
+  std::vector<std::vector<float>> last_block_;
+  const Aec3Fft fft_;
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderBuffer);
 };
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_FFT_BUFFER_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_RENDER_BUFFER_H_
