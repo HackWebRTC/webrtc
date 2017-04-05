@@ -129,6 +129,7 @@ rtc_static_library("video_coding_utility") {
 
   deps = [
     "../..:webrtc_common",
+    "../../api/video_codecs:video_codecs_api",
     "../../base:rtc_base_approved",
     "../../base:rtc_numerics",
     "../../base:rtc_task_queue",
@@ -224,6 +225,7 @@ rtc_static_library("webrtc_vp8") {
   deps = [
     ":video_coding_utility",
     "../..:webrtc_common",
+    "../../api/video_codecs:video_codecs_api",
     "../../base:rtc_base_approved",
     "../../common_video",
     "../../system_wrappers",
@@ -322,6 +324,7 @@ if (rtc_include_tests) {
       ":video_coding_utility",
       ":webrtc_vp8",
       "../..:webrtc_common",
+      "../../api/video_codecs:video_codecs_api",
       "../../base:rtc_base_approved",
       "../../common_video:common_video",
       "../../system_wrappers:system_wrappers",
@@ -528,6 +531,7 @@ if (rtc_include_tests) {
       ":webrtc_vp9",
       "../..:webrtc_common",
       "../../api:video_frame_api",
+      "../../api/video_codecs:video_codecs_api",
       "../../base:rtc_base",
       "../../base:rtc_base_approved",
       "../../base:rtc_task_queue",

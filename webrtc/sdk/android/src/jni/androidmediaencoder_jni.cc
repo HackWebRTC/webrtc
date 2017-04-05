@@ -13,15 +13,15 @@
 #include "webrtc/sdk/android/src/jni/androidmediaencoder_jni.h"
 
 #include <algorithm>
-#include <memory>
 #include <list>
+#include <memory>
+#include <string>
+#include <utility>
 
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
 #include "third_party/libyuv/include/libyuv/video_common.h"
-#include "webrtc/sdk/android/src/jni/androidmediacodeccommon.h"
-#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
-#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -38,9 +38,11 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
+#include "webrtc/sdk/android/src/jni/androidmediacodeccommon.h"
+#include "webrtc/sdk/android/src/jni/classreferenceholder.h"
+#include "webrtc/sdk/android/src/jni/native_handle_impl.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/logcat_trace_context.h"
-#include "webrtc/video_encoder.h"
 
 using rtc::Bind;
 using rtc::Thread;
@@ -123,7 +125,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
  private:
   class EncodeTask : public rtc::QueuedTask {
    public:
-    EncodeTask(rtc::WeakPtr<MediaCodecVideoEncoder> encoder);
+    explicit EncodeTask(rtc::WeakPtr<MediaCodecVideoEncoder> encoder);
     bool Run() override;
 
    private:
@@ -234,7 +236,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
   int64_t stat_start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
   int current_bytes_;  // Encoded bytes in the current statistics interval.
-  int current_acc_qp_; // Accumulated QP in the current statistics interval.
+  int current_acc_qp_;  // Accumulated QP in the current statistics interval.
   int current_encoding_time_ms_;  // Overall encoding time in the current second
   int64_t last_input_timestamp_ms_;  // Timestamp of last received yuv frame.
   int64_t last_output_timestamp_ms_;  // Timestamp of last encoded frame.
@@ -259,10 +261,10 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
     const webrtc::VideoRotation rotation;
   };
   std::list<InputFrameInfo> input_frame_infos_;
-  int32_t output_timestamp_;      // Last output frame timestamp from
-                                  // |input_frame_infos_|.
-  int64_t output_render_time_ms_; // Last output frame render time from
-                                  // |input_frame_infos_|.
+  int32_t output_timestamp_;       // Last output frame timestamp from
+                                   // |input_frame_infos_|.
+  int64_t output_render_time_ms_;  // Last output frame render time from
+                                   // |input_frame_infos_|.
   webrtc::VideoRotation output_rotation_;  // Last output frame rotation from
                                            // |input_frame_infos_|.
   // Frame size in bytes fed to MediaCodec.
@@ -276,8 +278,8 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
   webrtc::H264BitstreamParser h264_bitstream_parser_;
 
   // VP9 variables to populate codec specific structure.
-  webrtc::GofInfoVP9 gof_; // Contains each frame's temporal information for
-                           // non-flexible VP9 mode.
+  webrtc::GofInfoVP9 gof_;  // Contains each frame's temporal information for
+                            // non-flexible VP9 mode.
   uint8_t tl0_pic_idx_;
   size_t gof_idx_;
 
@@ -519,8 +521,9 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   ScopedLocalRefFrame local_ref_frame(jni);
 
   const VideoCodecType codec_type = GetCodecType();
-  ALOGD << "InitEncodeInternal Type: " << (int)codec_type << ", " << width
-        << " x " << height << ". Bitrate: " << kbps << " kbps. Fps: " << fps;
+  ALOGD << "InitEncodeInternal Type: " << static_cast<int>(codec_type) << ", "
+        << width << " x " << height << ". Bitrate: " << kbps
+        << " kbps. Fps: " << fps;
   if (kbps == 0) {
     kbps = last_set_bitrate_kbps_;
   }
@@ -550,9 +553,10 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   input_frame_infos_.clear();
   drop_next_input_frame_ = false;
   use_surface_ = use_surface;
-  picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
+  // TODO(ilnik): Use rand_r() instead to avoid LINT warnings below.
+  picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;  // NOLINT
   gof_.SetGofInfoVP9(webrtc::TemporalStructureMode::kTemporalStructureMode1);
-  tl0_pic_idx_ = static_cast<uint8_t>(rand());
+  tl0_pic_idx_ = static_cast<uint8_t>(rand());  // NOLINT
   gof_idx_ = 0;
   last_frame_received_ms_ = -1;
   frames_received_since_last_key_ = kMinKeyFrameInterval;
@@ -676,7 +680,7 @@ int32_t MediaCodecVideoEncoder::Encode(
   }
   if (frames_encoded_ < kMaxEncodedLogFrames) {
     ALOGD << "Encoder frame in # " << (frames_received_ - 1)
-          << ". TS: " << (int)(current_timestamp_us_ / 1000)
+          << ". TS: " << static_cast<int>(current_timestamp_us_ / 1000)
           << ". Q: " << input_frame_infos_.size() << ". Fps: " << last_set_fps_
           << ". Kbps: " << last_set_bitrate_kbps_;
   }
@@ -696,7 +700,7 @@ int32_t MediaCodecVideoEncoder::Encode(
   if (input_frame_infos_.size() > MAX_ENCODER_Q_SIZE) {
     ALOGD << "Already " << input_frame_infos_.size()
           << " frames in the queue, dropping"
-          << ". TS: " << (int)(current_timestamp_us_ / 1000)
+          << ". TS: " << static_cast<int>(current_timestamp_us_ / 1000)
           << ". Fps: " << last_set_fps_
           << ". Consecutive drops: " << consecutive_full_queue_frame_drops_;
     current_timestamp_us_ += rtc::kNumMicrosecsPerSec / last_set_fps_;
@@ -1139,14 +1143,13 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       frame_encoding_time_ms = rtc::TimeMillis() - encoding_start_time_ms;
     }
     if (frames_encoded_ < kMaxEncodedLogFrames) {
-      int current_latency =
-          (int)(last_input_timestamp_ms_ - last_output_timestamp_ms_);
-      ALOGD << "Encoder frame out # " << frames_encoded_ <<
-          ". Key: " << key_frame <<
-          ". Size: " << payload_size <<
-          ". TS: " << (int)last_output_timestamp_ms_ <<
-          ". Latency: " << current_latency <<
-          ". EncTime: " << frame_encoding_time_ms;
+      int current_latency = static_cast<int>(last_input_timestamp_ms_ -
+                                             last_output_timestamp_ms_);
+      ALOGD << "Encoder frame out # " << frames_encoded_
+            << ". Key: " << key_frame << ". Size: " << payload_size
+            << ". TS: " << static_cast<int>(last_output_timestamp_ms_)
+            << ". Latency: " << current_latency
+            << ". EncTime: " << frame_encoding_time_ms;
     }
 
     // Calculate and print encoding statistics - every 3 seconds.
