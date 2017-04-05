@@ -46,6 +46,8 @@ rtc_static_library("rtc_pc") {
     "mediasession.h",
     "rtcpmuxfilter.cc",
     "rtcpmuxfilter.h",
+    "rtptransport.cc",
+    "rtptransport.h",
     "srtpfilter.cc",
     "srtpfilter.h",
     "voicechannel.h",

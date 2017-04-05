@@ -39,6 +39,7 @@
 #include "webrtc/pc/mediamonitor.h"
 #include "webrtc/pc/mediasession.h"
 #include "webrtc/pc/rtcpmuxfilter.h"
+#include "webrtc/pc/rtptransport.h"
 #include "webrtc/pc/srtpfilter.h"
 
 namespace webrtc {
@@ -398,17 +399,13 @@ class BaseChannel
 
   // Won't be set when using raw packet transports. SDP-specific thing.
   std::string transport_name_;
-  // True if RTCP-multiplexing is required. In other words, no standalone RTCP
-  // transport will ever be used for this channel.
-  const bool rtcp_mux_required_;
 
   // Separate DTLS/non-DTLS pointers to support using BaseChannel without DTLS.
   // Temporary measure until more refactoring is done.
   // If non-null, "X_dtls_transport_" will always equal "X_packet_transport_".
   DtlsTransportInternal* rtp_dtls_transport_ = nullptr;
   DtlsTransportInternal* rtcp_dtls_transport_ = nullptr;
-  rtc::PacketTransportInternal* rtp_packet_transport_ = nullptr;
-  rtc::PacketTransportInternal* rtcp_packet_transport_ = nullptr;
+  webrtc::RtpTransport rtp_transport_;
   std::vector<std::pair<rtc::Socket::Option, int> > socket_options_;
   std::vector<std::pair<rtc::Socket::Option, int> > rtcp_socket_options_;
   SrtpFilter srtp_filter_;
