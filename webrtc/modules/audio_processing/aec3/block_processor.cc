@@ -101,33 +101,33 @@ void BlockProcessorImpl::ProcessCapture(
     // been a render buffer overrun as the buffer alignment may be noncausal.
     delay_controller_->Reset();
     render_buffer_->Reset();
-  } else {
-    // Update the render buffers with new render data, filling the buffers with
-    // empty blocks when there is no render data available.
-    render_buffer_underrun = !render_buffer_->UpdateBuffers();
-
-    // Compute and and apply the render delay required to achieve proper signal
-    // alignment.
-    const size_t old_delay = render_buffer_->Delay();
-    const size_t new_delay = delay_controller_->GetDelay(
-        render_buffer_->GetDownsampledRenderBuffer(), (*capture_block)[0]);
-    render_buffer_->SetDelay(new_delay);
-    const size_t achieved_delay = render_buffer_->Delay();
-
-    // Inform the delay controller of the actually set delay to allow it to
-    // properly react to a non-feasible delay.
-    delay_controller_->SetDelay(achieved_delay);
-
-    // Remove the echo from the capture signal.
-    echo_remover_->ProcessCapture(
-        delay_controller_->AlignmentHeadroomSamples(),
-        EchoPathVariability(echo_path_gain_change,
-                            old_delay != achieved_delay ||
-                                old_delay != new_delay ||
-                                render_buffer_overrun_occurred_),
-        capture_signal_saturation, render_buffer_->GetRenderBuffer(),
-        capture_block);
   }
+
+  // Update the render buffers with new render data, filling the buffers with
+  // empty blocks when there is no render data available.
+  render_buffer_underrun = !render_buffer_->UpdateBuffers();
+
+  // Compute and and apply the render delay required to achieve proper signal
+  // alignment.
+  const size_t old_delay = render_buffer_->Delay();
+  const size_t new_delay = delay_controller_->GetDelay(
+      render_buffer_->GetDownsampledRenderBuffer(), (*capture_block)[0]);
+  render_buffer_->SetDelay(new_delay);
+  const size_t achieved_delay = render_buffer_->Delay();
+
+  // Inform the delay controller of the actually set delay to allow it to
+  // properly react to a non-feasible delay.
+  delay_controller_->SetDelay(achieved_delay);
+
+  // Remove the echo from the capture signal.
+  echo_remover_->ProcessCapture(
+      delay_controller_->AlignmentHeadroomSamples(),
+      EchoPathVariability(echo_path_gain_change,
+                          old_delay != achieved_delay ||
+                              old_delay != new_delay ||
+                              render_buffer_overrun_occurred_),
+      capture_signal_saturation, render_buffer_->GetRenderBuffer(),
+      capture_block);
 
   // Update the metrics.
   metrics_.UpdateCapture(render_buffer_underrun);

@@ -124,6 +124,11 @@ void RenderDelayBufferImpl::Reset() {
   downsampled_render_buffer_.buffer.fill(0.f);
   fft_buffer_.Clear();
   api_call_jitter_buffer_.Reset();
+  for (auto& c : buffer_) {
+    for (auto& b : c) {
+      std::fill(b.begin(), b.end(), 0.f);
+    }
+  }
 }
 
 bool RenderDelayBufferImpl::Insert(
