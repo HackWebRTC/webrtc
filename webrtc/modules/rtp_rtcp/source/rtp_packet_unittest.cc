@@ -358,7 +358,7 @@ TEST(RtpPacketTest, ParseWithoutExtensionManager) {
   int32_t time_offset = 0;
   auto raw_extension = packet.GetRawExtension(kTransmissionOffsetExtensionId);
   EXPECT_EQ(raw_extension.size(), TransmissionOffset::kValueSizeBytes);
-  EXPECT_TRUE(TransmissionOffset::Parse(raw_extension.data(), &time_offset));
+  EXPECT_TRUE(TransmissionOffset::Parse(raw_extension, &time_offset));
 
   EXPECT_EQ(time_offset, kTimeOffset);
 }

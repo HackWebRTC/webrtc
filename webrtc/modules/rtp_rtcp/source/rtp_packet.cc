@@ -533,27 +533,17 @@ bool Packet::ParseBuffer(const uint8_t* buffer, size_t size) {
   return true;
 }
 
-bool Packet::FindExtension(ExtensionType type,
-                           uint8_t length,
-                           uint16_t* offset) const {
-  RTC_DCHECK(offset);
+rtc::ArrayView<const uint8_t> Packet::FindExtension(ExtensionType type) const {
   for (const ExtensionInfo& extension : extension_entries_) {
     if (extension.type == type) {
       if (extension.length == 0) {
         // Extension is registered but not set.
-        return false;
+        return nullptr;
       }
-      if (length != extension.length) {
-        LOG(LS_WARNING) << "Length mismatch for extension '" << type
-                        << "': expected " << static_cast<int>(length)
-                        << ", received " << static_cast<int>(extension.length);
-        return false;
-      }
-      *offset = extension.offset;
-      return true;
+      return rtc::MakeArrayView(data() + extension.offset, extension.length);
     }
   }
-  return false;
+  return nullptr;
 }
 
 rtc::ArrayView<uint8_t> Packet::AllocateExtension(ExtensionType type,

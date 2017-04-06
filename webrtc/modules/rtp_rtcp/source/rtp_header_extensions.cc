@@ -35,8 +35,11 @@ constexpr RTPExtensionType AbsoluteSendTime::kId;
 constexpr uint8_t AbsoluteSendTime::kValueSizeBytes;
 constexpr const char* AbsoluteSendTime::kUri;
 
-bool AbsoluteSendTime::Parse(const uint8_t* data, uint32_t* time_24bits) {
-  *time_24bits = ByteReader<uint32_t, 3>::ReadBigEndian(data);
+bool AbsoluteSendTime::Parse(rtc::ArrayView<const uint8_t> data,
+                             uint32_t* time_24bits) {
+  if (data.size() != 3)
+    return false;
+  *time_24bits = ByteReader<uint32_t, 3>::ReadBigEndian(data.data());
   return true;
 }
 
@@ -61,9 +64,11 @@ constexpr RTPExtensionType AudioLevel::kId;
 constexpr uint8_t AudioLevel::kValueSizeBytes;
 constexpr const char* AudioLevel::kUri;
 
-bool AudioLevel::Parse(const uint8_t* data,
+bool AudioLevel::Parse(rtc::ArrayView<const uint8_t> data,
                        bool* voice_activity,
                        uint8_t* audio_level) {
+  if (data.size() != 1)
+    return false;
   *voice_activity = (data[0] & 0x80) != 0;
   *audio_level = data[0] & 0x7F;
   return true;
@@ -97,8 +102,11 @@ constexpr RTPExtensionType TransmissionOffset::kId;
 constexpr uint8_t TransmissionOffset::kValueSizeBytes;
 constexpr const char* TransmissionOffset::kUri;
 
-bool TransmissionOffset::Parse(const uint8_t* data, int32_t* rtp_time) {
-  *rtp_time = ByteReader<int32_t, 3>::ReadBigEndian(data);
+bool TransmissionOffset::Parse(rtc::ArrayView<const uint8_t> data,
+                               int32_t* rtp_time) {
+  if (data.size() != 3)
+    return false;
+  *rtp_time = ByteReader<int32_t, 3>::ReadBigEndian(data.data());
   return true;
 }
 
@@ -117,8 +125,11 @@ constexpr RTPExtensionType TransportSequenceNumber::kId;
 constexpr uint8_t TransportSequenceNumber::kValueSizeBytes;
 constexpr const char* TransportSequenceNumber::kUri;
 
-bool TransportSequenceNumber::Parse(const uint8_t* data, uint16_t* value) {
-  *value = ByteReader<uint16_t>::ReadBigEndian(data);
+bool TransportSequenceNumber::Parse(rtc::ArrayView<const uint8_t> data,
+                                    uint16_t* value) {
+  if (data.size() != 2)
+    return false;
+  *value = ByteReader<uint16_t>::ReadBigEndian(data.data());
   return true;
 }
 
@@ -142,7 +153,10 @@ constexpr RTPExtensionType VideoOrientation::kId;
 constexpr uint8_t VideoOrientation::kValueSizeBytes;
 constexpr const char* VideoOrientation::kUri;
 
-bool VideoOrientation::Parse(const uint8_t* data, VideoRotation* rotation) {
+bool VideoOrientation::Parse(rtc::ArrayView<const uint8_t> data,
+                             VideoRotation* rotation) {
+  if (data.size() != 1)
+    return false;
   *rotation = ConvertCVOByteToVideoRotation(data[0]);
   return true;
 }
@@ -152,7 +166,10 @@ bool VideoOrientation::Write(uint8_t* data, VideoRotation rotation) {
   return true;
 }
 
-bool VideoOrientation::Parse(const uint8_t* data, uint8_t* value) {
+bool VideoOrientation::Parse(rtc::ArrayView<const uint8_t> data,
+                             uint8_t* value) {
+  if (data.size() != 1)
+    return false;
   *value = data[0];
   return true;
 }
@@ -171,10 +188,12 @@ constexpr RTPExtensionType PlayoutDelayLimits::kId;
 constexpr uint8_t PlayoutDelayLimits::kValueSizeBytes;
 constexpr const char* PlayoutDelayLimits::kUri;
 
-bool PlayoutDelayLimits::Parse(const uint8_t* data,
+bool PlayoutDelayLimits::Parse(rtc::ArrayView<const uint8_t> data,
                                PlayoutDelay* playout_delay) {
   RTC_DCHECK(playout_delay);
-  uint32_t raw = ByteReader<uint32_t, 3>::ReadBigEndian(data);
+  if (data.size() != 3)
+    return false;
+  uint32_t raw = ByteReader<uint32_t, 3>::ReadBigEndian(data.data());
   uint16_t min_raw = (raw >> 12);
   uint16_t max_raw = (raw & 0xfff);
   if (min_raw > max_raw)

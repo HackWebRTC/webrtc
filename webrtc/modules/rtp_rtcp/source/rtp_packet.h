@@ -142,13 +142,9 @@ class Packet {
   // but does not touch packet own buffer, leaving packet in invalid state.
   bool ParseBuffer(const uint8_t* buffer, size_t size);
 
-  // Find an extension based on the type field of the parameter.
-  // If found, length field would be validated, the offset field will be set
-  // and true returned,
-  // otherwise the parameter will be unchanged and false is returned.
-  bool FindExtension(ExtensionType type,
-                     uint8_t length,
-                     uint16_t* offset) const;
+  // Find an extension |type|.
+  // Returns view of the raw extension or empty view on failure.
+  rtc::ArrayView<const uint8_t> FindExtension(ExtensionType type) const;
 
   // Find or allocate an extension |type|. Returns view of size |length|
   // to write raw extension to or an empty view on failure.
@@ -174,16 +170,15 @@ class Packet {
 
 template <typename Extension>
 bool Packet::HasExtension() const {
-  uint16_t offset = 0;
-  return FindExtension(Extension::kId, Extension::kValueSizeBytes, &offset);
+  return !FindExtension(Extension::kId).empty();
 }
 
 template <typename Extension, typename... Values>
 bool Packet::GetExtension(Values... values) const {
-  uint16_t offset = 0;
-  if (!FindExtension(Extension::kId, Extension::kValueSizeBytes, &offset))
+  auto raw = FindExtension(Extension::kId);
+  if (raw.empty())
     return false;
-  return Extension::Parse(data() + offset, values...);
+  return Extension::Parse(raw, values...);
 }
 
 template <typename Extension, typename... Values>
