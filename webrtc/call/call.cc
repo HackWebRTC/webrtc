@@ -92,37 +92,34 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
  public:
   RtpTransportControllerSend(Clock* clock, webrtc::RtcEventLog* event_log);
 
-  void InitCongestionControl(SendSideCongestionController::Observer* observer);
+  void RegisterNetworkObserver(
+      SendSideCongestionController::Observer* observer);
+
+  // Implements RtpTransportControllerSendInterface
   PacketRouter* packet_router() override { return &packet_router_; }
   SendSideCongestionController* send_side_cc() override {
-    return send_side_cc_.get();
+    return &send_side_cc_;
   }
   TransportFeedbackObserver* transport_feedback_observer() override {
-    return send_side_cc_.get();
+    return &send_side_cc_;
   }
-  RtpPacketSender* packet_sender() override { return send_side_cc_->pacer(); }
+  RtpPacketSender* packet_sender() override { return send_side_cc_.pacer(); }
 
  private:
-  Clock* const clock_;
-  webrtc::RtcEventLog* const event_log_;
   PacketRouter packet_router_;
-  // Construction delayed until InitCongestionControl, since the
-  // CongestionController wants its observer as a construction time
-  // argument, and setting it later seems non-trivial.
-  std::unique_ptr<SendSideCongestionController> send_side_cc_;
+  SendSideCongestionController send_side_cc_;
 };
 
 RtpTransportControllerSend::RtpTransportControllerSend(
     Clock* clock,
     webrtc::RtcEventLog* event_log)
-    : clock_(clock), event_log_(event_log) {}
+    : send_side_cc_(clock, nullptr /* observer */, event_log, &packet_router_) {
+}
 
-void RtpTransportControllerSend::InitCongestionControl(
+void RtpTransportControllerSend::RegisterNetworkObserver(
     SendSideCongestionController::Observer* observer) {
   // Must be called only once.
-  RTC_CHECK(!send_side_cc_);
-  send_side_cc_.reset(new SendSideCongestionController(
-      clock_, observer, event_log_, &packet_router_));
+  send_side_cc_.RegisterNetworkObserver(observer);
 }
 
 }  // namespace
@@ -310,7 +307,7 @@ class Call : public webrtc::Call,
 
   std::map<std::string, rtc::NetworkRoute> network_routes_;
 
-  std::unique_ptr<RtpTransportControllerSend> transport_send_;
+  std::unique_ptr<RtpTransportControllerSendInterface> transport_send_;
   VieRemb remb_;
   ReceiveSideCongestionController receive_side_cc_;
   const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
@@ -369,9 +366,8 @@ Call::Call(const Call::Config& config,
       configured_max_padding_bitrate_bps_(0),
       estimated_send_bitrate_kbps_counter_(clock_, nullptr, true),
       pacer_bitrate_kbps_counter_(clock_, nullptr, true),
-      transport_send_(std::move(transport_send)),
       remb_(clock_),
-      receive_side_cc_(clock_, &remb_, transport_send_->packet_router()),
+      receive_side_cc_(clock_, &remb_, transport_send->packet_router()),
       video_send_delay_stats_(new SendDelayStats(clock_)),
       start_ms_(clock_->TimeInMilliseconds()),
       worker_queue_("call_worker_queue") {
@@ -385,7 +381,8 @@ Call::Call(const Call::Config& config,
                   config.bitrate_config.start_bitrate_bps);
   }
   Trace::CreateTrace();
-  transport_send_->InitCongestionControl(this);
+  transport_send->RegisterNetworkObserver(this);
+  transport_send_ = std::move(transport_send);
   transport_send_->send_side_cc()->SignalNetworkState(kNetworkDown);
   transport_send_->send_side_cc()->SetBweBitrates(
       config_.bitrate_config.min_bitrate_bps,
