@@ -35,6 +35,7 @@
 #include "webrtc/modules/audio_coding/neteq/tools/constant_pcm_packet_source.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/output_audio_file.h"
+#include "webrtc/modules/audio_coding/neteq/tools/output_wav_file.h"
 #include "webrtc/modules/audio_coding/neteq/tools/packet.h"
 #include "webrtc/modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "webrtc/modules/include/module_common_types.h"
@@ -954,8 +955,8 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
             ->current_test_info()
             ->test_case_name() +
         "_" + ::testing::UnitTest::GetInstance()->current_test_info()->name() +
-        "_output.pcm";
-    test::OutputAudioFile output_file(output_file_name);
+        "_output.wav";
+    test::OutputWavFile output_file(output_file_name, output_freq_hz);
     test::AudioSinkFork output(&checksum, &output_file);
 
     test::AcmReceiveTestOldApi test(
@@ -1170,11 +1171,11 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
             ->current_test_info()
             ->test_case_name() +
         "_" + ::testing::UnitTest::GetInstance()->current_test_info()->name() +
-        "_output.pcm";
-    test::OutputAudioFile output_file(output_file_name);
+        "_output.wav";
+    const int kOutputFreqHz = 8000;
+    test::OutputWavFile output_file(output_file_name, kOutputFreqHz);
     // Have the output audio sent both to file and to the checksum calculator.
     test::AudioSinkFork output(&audio_checksum, &output_file);
-    const int kOutputFreqHz = 8000;
     test::AcmReceiveTestOldApi receive_test(this, &output, kOutputFreqHz,
                                             expected_channels,
                                             CreateBuiltinAudioDecoderFactory());
