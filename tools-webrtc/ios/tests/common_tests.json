@@ -23,10 +23,16 @@
       "app": "rtc_pc_unittests"
     },
     {
+      "app": "rtc_stats_unittests"
+    },
+    {
       "app": "system_wrappers_unittests"
     },
     {
       "app": "test_support_unittests"
+    },
+    {
+      "app": "tools_unittests"
     },
     {
       "app": "voice_engine_unittests"
