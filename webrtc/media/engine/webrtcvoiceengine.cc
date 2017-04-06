@@ -1091,12 +1091,12 @@ AudioCodecs WebRtcVoiceEngine::CollectRecvCodecs() const {
     rtc::Optional<AudioCodec> opt_codec = map_format(spec.format, nullptr);
     if (opt_codec) {
       AudioCodec& codec = *opt_codec;
-      if (spec.supports_network_adaption) {
+      if (spec.info.supports_network_adaption) {
         codec.AddFeedbackParam(
             FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
       }
 
-      if (spec.allow_comfort_noise) {
+      if (spec.info.allow_comfort_noise) {
         // Generate a CN entry if the decoder allows it and we support the
         // clockrate.
         auto cn = generate_cn.find(spec.format.clockrate_hz);

@@ -17,7 +17,9 @@ rtc_static_library("audio_coder") {
     "..:webrtc_common",
     "../api/audio_codecs:builtin_audio_decoder_factory",
     "../modules/audio_coding",
+    "../modules/audio_coding:audio_encoder_factory_interface",
     "../modules/audio_coding:audio_format_conversion",
+    "../modules/audio_coding:builtin_audio_encoder_factory",
     "../modules/audio_coding:rent_a_codec",
   ]
 

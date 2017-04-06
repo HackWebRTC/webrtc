@@ -10,8 +10,12 @@
 
 #include "webrtc/modules/audio_coding/codecs/g722/audio_encoder_g722.h"
 
+#include <algorithm>
+
 #include <limits>
 #include "webrtc/base/checks.h"
+#include "webrtc/base/safe_conversions.h"
+#include "webrtc/base/string_to_number.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/g722/g722_interface.h"
 
@@ -26,6 +30,22 @@ AudioEncoderG722::Config CreateConfig(const CodecInst& codec_inst) {
   config.num_channels = codec_inst.channels;
   config.frame_size_ms = codec_inst.pacsize / 16;
   config.payload_type = codec_inst.pltype;
+  return config;
+}
+
+AudioEncoderG722::Config CreateConfig(int payload_type,
+                                      const SdpAudioFormat& format) {
+  AudioEncoderG722::Config config;
+  config.payload_type = payload_type;
+  config.num_channels = format.num_channels;
+  auto ptime_iter = format.parameters.find("ptime");
+  if (ptime_iter != format.parameters.end()) {
+    auto ptime = rtc::StringToNumber<int>(ptime_iter->second);
+    if (ptime && *ptime > 0) {
+      const int whole_packets = *ptime / 10;
+      config.frame_size_ms = std::max(10, std::min(whole_packets * 10, 60));
+    }
+  }
   return config;
 }
 
@@ -58,7 +78,23 @@ AudioEncoderG722::AudioEncoderG722(const Config& config)
 AudioEncoderG722::AudioEncoderG722(const CodecInst& codec_inst)
     : AudioEncoderG722(CreateConfig(codec_inst)) {}
 
+AudioEncoderG722::AudioEncoderG722(int payload_type,
+                                   const SdpAudioFormat& format)
+    : AudioEncoderG722(CreateConfig(payload_type, format)) {}
+
 AudioEncoderG722::~AudioEncoderG722() = default;
+
+rtc::Optional<AudioCodecInfo> AudioEncoderG722::QueryAudioEncoder(
+    const SdpAudioFormat& format) {
+  if (STR_CASE_CMP(format.name.c_str(), GetPayloadName()) == 0) {
+    Config config = CreateConfig(0, format);
+    if (format.clockrate_hz == 8000 && config.IsOk()) {
+      return rtc::Optional<AudioCodecInfo>(
+          {rtc::dchecked_cast<int>(kSampleRateHz), config.num_channels, 64000});
+    }
+  }
+  return rtc::Optional<AudioCodecInfo>();
+}
 
 int AudioEncoderG722::SampleRateHz() const {
   return kSampleRateHz;

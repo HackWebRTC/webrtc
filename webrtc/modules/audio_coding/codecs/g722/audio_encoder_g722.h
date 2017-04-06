@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
@@ -34,7 +35,12 @@ class AudioEncoderG722 final : public AudioEncoder {
 
   explicit AudioEncoderG722(const Config& config);
   explicit AudioEncoderG722(const CodecInst& codec_inst);
+  AudioEncoderG722(int payload_type, const SdpAudioFormat& format);
   ~AudioEncoderG722() override;
+
+  static constexpr const char* GetPayloadName() { return "G722"; }
+  static rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
+      const SdpAudioFormat& format);
 
   int SampleRateHz() const override;
   size_t NumChannels() const override;

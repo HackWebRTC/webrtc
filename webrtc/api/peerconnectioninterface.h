@@ -91,6 +91,9 @@
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocapturer.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder_factory.h"
+// TODO(ossu): Remove this once downstream projects have been updated.
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/p2p/base/portallocator.h"
 
 namespace rtc {
@@ -985,14 +988,6 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   PeerConnectionFactoryInterface() {}
   ~PeerConnectionFactoryInterface() {} // NOLINT
 };
-
-// TODO(ossu): Remove these and define a real builtin audio encoder factory
-// instead.
-class AudioEncoderFactory : public rtc::RefCountInterface {};
-inline rtc::scoped_refptr<AudioEncoderFactory>
-CreateBuiltinAudioEncoderFactory() {
-  return nullptr;
-}
 
 // Create a new instance of PeerConnectionFactoryInterface.
 //

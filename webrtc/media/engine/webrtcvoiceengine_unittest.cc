@@ -3781,18 +3781,21 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
 
 TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
   std::vector<webrtc::AudioCodecSpec> specs;
-  webrtc::AudioCodecSpec spec1({"codec1", 48000, 2, {{"param1", "value1"}}});
-  spec1.allow_comfort_noise = false;
-  spec1.supports_network_adaption = true;
+  webrtc::AudioCodecSpec spec1{{"codec1", 48000, 2, {{"param1", "value1"}}},
+                               {48000, 2, 16000, 10000, 20000}};
+  spec1.info.allow_comfort_noise = false;
+  spec1.info.supports_network_adaption = true;
   specs.push_back(spec1);
-  webrtc::AudioCodecSpec spec2({"codec2", 32000, 1});
-  spec2.allow_comfort_noise = false;
+  webrtc::AudioCodecSpec spec2{{"codec2", 32000, 1}, {32000, 1, 32000}};
+  spec2.info.allow_comfort_noise = false;
   specs.push_back(spec2);
-  specs.push_back(webrtc::AudioCodecSpec({"codec3", 16000, 1,
-                                          {{"param1", "value1b"},
-                                           {"param2", "value2"}}}));
-  specs.push_back(webrtc::AudioCodecSpec({"codec4", 8000, 1}));
-  specs.push_back(webrtc::AudioCodecSpec({"codec5", 8000, 2}));
+  specs.push_back(webrtc::AudioCodecSpec{
+      {"codec3", 16000, 1, {{"param1", "value1b"}, {"param2", "value2"}}},
+      {16000, 1, 13300}});
+  specs.push_back(
+      webrtc::AudioCodecSpec{{"codec4", 8000, 1}, {8000, 1, 64000}});
+  specs.push_back(
+      webrtc::AudioCodecSpec{{"codec5", 8000, 2}, {8000, 1, 64000}});
 
   rtc::scoped_refptr<webrtc::MockAudioDecoderFactory> mock_factory =
       new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>;

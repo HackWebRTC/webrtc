@@ -611,8 +611,8 @@ void TestOpusSetTargetBitrates(AudioEncoder* audio_encoder) {
   EXPECT_EQ(6000, SetAndGetTargetBitrate(audio_encoder, 5999));
   EXPECT_EQ(6000, SetAndGetTargetBitrate(audio_encoder, 6000));
   EXPECT_EQ(32000, SetAndGetTargetBitrate(audio_encoder, 32000));
-  EXPECT_EQ(512000, SetAndGetTargetBitrate(audio_encoder, 512000));
-  EXPECT_EQ(512000, SetAndGetTargetBitrate(audio_encoder, 513000));
+  EXPECT_EQ(510000, SetAndGetTargetBitrate(audio_encoder, 510000));
+  EXPECT_EQ(510000, SetAndGetTargetBitrate(audio_encoder, 511000));
 }
 }  // namespace
 

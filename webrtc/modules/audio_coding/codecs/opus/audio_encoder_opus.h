@@ -16,12 +16,13 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/common_audio/smoothing_filter.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
-#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 
 namespace webrtc {
 
@@ -50,7 +51,8 @@ class AudioEncoderOpus final : public AudioEncoder {
     // current bitrate is above or below complexity_threshold_bps.
     rtc::Optional<int> GetNewComplexity() const;
 
-    int frame_size_ms = 20;
+    static constexpr int kDefaultFrameSizeMs = 20;
+    int frame_size_ms = kDefaultFrameSizeMs;
     size_t num_channels = 1;
     int payload_type = 120;
     ApplicationMode application = kVoip;
@@ -79,6 +81,9 @@ class AudioEncoderOpus final : public AudioEncoder {
 #endif
   };
 
+  static Config CreateConfig(int payload_type, const SdpAudioFormat& format);
+  static Config CreateConfig(const CodecInst& codec_inst);
+
   using AudioNetworkAdaptorCreator =
       std::function<std::unique_ptr<AudioNetworkAdaptor>(const std::string&,
                                                          RtcEventLog*,
@@ -89,8 +94,13 @@ class AudioEncoderOpus final : public AudioEncoder {
       std::unique_ptr<SmoothingFilter> bitrate_smoother = nullptr);
 
   explicit AudioEncoderOpus(const CodecInst& codec_inst);
-
+  AudioEncoderOpus(int payload_type, const SdpAudioFormat& format);
   ~AudioEncoderOpus() override;
+
+  // Static interface for use by BuiltinAudioEncoderFactory.
+  static constexpr const char* GetPayloadName() { return "opus"; }
+  static rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
+      const SdpAudioFormat& format);
 
   int SampleRateHz() const override;
   size_t NumChannels() const override;

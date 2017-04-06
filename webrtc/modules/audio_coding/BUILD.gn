@@ -51,6 +51,33 @@ rtc_static_library("audio_format_conversion") {
   ]
 }
 
+rtc_source_set("audio_encoder_factory_interface") {
+  sources = [
+    "codecs/audio_encoder_factory.h",
+  ]
+  deps = [
+    ":audio_encoder_interface",
+    "../../api/audio_codecs:audio_codecs_api",
+    "../../base:rtc_base_approved",
+  ]
+}
+
+rtc_static_library("builtin_audio_encoder_factory") {
+  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
+  # Errors on cyclic dependency with :isac_fix if enabled.
+  check_includes = false
+  sources = [
+    "codecs/builtin_audio_encoder_factory.cc",
+    "codecs/builtin_audio_encoder_factory.h",
+  ]
+  deps = [
+           "../..:webrtc_common",
+           "../../base:rtc_base_approved",
+           ":audio_encoder_factory_interface",
+         ] + audio_codec_deps
+  defines = audio_codec_defines
+}
+
 rtc_static_library("builtin_audio_decoder_factory_internal") {
   sources = [
     "codecs/builtin_audio_decoder_factory_internal.cc",
@@ -491,6 +518,7 @@ rtc_static_library("isac_common") {
   deps = [
     ":audio_encoder_interface",
     "../..:webrtc_common",
+    "../../api/audio_codecs:audio_codecs_api",
     "../../base:rtc_base_approved",
   ]
 }
@@ -1998,6 +2026,7 @@ if (rtc_include_tests) {
       "audio_network_adaptor/mock/mock_controller_manager.h",
       "audio_network_adaptor/util/threshold_curve_unittest.cc",
       "codecs/builtin_audio_decoder_factory_unittest.cc",
+      "codecs/builtin_audio_encoder_factory_unittest.cc",
       "codecs/cng/audio_encoder_cng_unittest.cc",
       "codecs/cng/cng_unittest.cc",
       "codecs/ilbc/ilbc_unittest.cc",
@@ -2065,6 +2094,7 @@ if (rtc_include_tests) {
       ":audio_encoder_interface",
       ":audio_format_conversion",
       ":audio_network_adaptor",
+      ":builtin_audio_encoder_factory",
       ":cng",
       ":g711",
       ":ilbc",

@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_AUDIO_ENCODER_ILBC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_AUDIO_ENCODER_ILBC_H_
 
+#include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/ilbc.h"
@@ -32,7 +33,12 @@ class AudioEncoderIlbc final : public AudioEncoder {
 
   explicit AudioEncoderIlbc(const Config& config);
   explicit AudioEncoderIlbc(const CodecInst& codec_inst);
+  AudioEncoderIlbc(int payload_type, const SdpAudioFormat& format);
   ~AudioEncoderIlbc() override;
+
+  static constexpr const char* GetPayloadName() { return "ilbc"; }
+  static rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
+      const SdpAudioFormat& format);
 
   int SampleRateHz() const override;
   size_t NumChannels() const override;
