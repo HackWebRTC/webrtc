@@ -22,6 +22,14 @@ namespace test {
 
 class MockVoEChannelProxy : public voe::ChannelProxy {
  public:
+  // GTest doesn't like move-only types, like std::unique_ptr
+  bool SetEncoder(int payload_type,
+                  std::unique_ptr<AudioEncoder> encoder) {
+    return SetEncoderForMock(payload_type, &encoder);
+  }
+  MOCK_METHOD2(SetEncoderForMock,
+               bool(int payload_type,
+                    std::unique_ptr<AudioEncoder>* encoder));
   MOCK_METHOD1(SetRTCPStatus, void(bool enable));
   MOCK_METHOD1(SetLocalSSRC, void(uint32_t ssrc));
   MOCK_METHOD1(SetRTCP_CNAME, void(const std::string& c_name));

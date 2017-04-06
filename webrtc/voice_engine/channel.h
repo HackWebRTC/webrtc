@@ -23,6 +23,7 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 #include "webrtc/modules/audio_processing/rms_level.h"
@@ -171,6 +172,9 @@ class Channel
   const rtc::scoped_refptr<AudioDecoderFactory>& GetAudioDecoderFactory() const;
 
   void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs);
+
+  // Send using this encoder, with this payload type.
+  bool SetEncoder(int payload_type, std::unique_ptr<AudioEncoder> encoder);
 
   // API methods
 

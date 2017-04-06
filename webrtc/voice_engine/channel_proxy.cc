@@ -30,6 +30,12 @@ ChannelProxy::ChannelProxy(const ChannelOwner& channel_owner) :
 
 ChannelProxy::~ChannelProxy() {}
 
+bool ChannelProxy::SetEncoder(int payload_type,
+                              std::unique_ptr<AudioEncoder> encoder) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  return channel()->SetEncoder(payload_type, std::move(encoder));
+}
+
 void ChannelProxy::SetRTCPStatus(bool enable) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel()->SetRTCPStatus(enable);

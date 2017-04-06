@@ -15,6 +15,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/race_checker.h"
 #include "webrtc/base/thread_checker.h"
+#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 
@@ -53,6 +54,9 @@ class ChannelProxy {
   ChannelProxy();
   explicit ChannelProxy(const ChannelOwner& channel_owner);
   virtual ~ChannelProxy();
+
+  virtual bool SetEncoder(int payload_type,
+                          std::unique_ptr<AudioEncoder> encoder);
 
   virtual void SetRTCPStatus(bool enable);
   virtual void SetLocalSSRC(uint32_t ssrc);

@@ -1274,6 +1274,38 @@ void Channel::StopSend() {
   _rtpRtcpModule->SetSendingMediaStatus(false);
 }
 
+bool Channel::SetEncoder(int payload_type,
+                         std::unique_ptr<AudioEncoder> encoder) {
+  RTC_DCHECK_GE(payload_type, 0);
+  RTC_DCHECK_LE(payload_type, 127);
+  // TODO(ossu): Make a CodecInst up for now. It seems like very little of this
+  // information is actually used, possibly only payload type and clock rate.
+  CodecInst lies;
+  lies.pltype = payload_type;
+  strncpy(lies.plname, "audio", sizeof(lies.plname));
+  lies.plname[sizeof(lies.plname) - 1] = 0;
+  // Seems unclear if it should be clock rate or sample rate. CodecInst
+  // supposedly carries the sample rate, but only clock rate seems sensible to
+  // send to the RTP/RTCP module.
+  lies.plfreq = encoder->RtpTimestampRateHz();
+  lies.pacsize = 0;
+  lies.channels = encoder->NumChannels();
+  lies.rate = 0;
+
+  if (_rtpRtcpModule->RegisterSendPayload(lies) != 0) {
+    _rtpRtcpModule->DeRegisterSendPayload(payload_type);
+    if (_rtpRtcpModule->RegisterSendPayload(lies) != 0) {
+      WEBRTC_TRACE(
+          kTraceError, kTraceVoice, VoEId(_instanceId, _channelId),
+          "SetEncoder() failed to register codec to RTP/RTCP module");
+      return false;
+    }
+  }
+
+  audio_coding_->SetEncoder(std::move(encoder));
+  return true;
+}
+
 int32_t Channel::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
   WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
                "Channel::RegisterVoiceEngineObserver()");
