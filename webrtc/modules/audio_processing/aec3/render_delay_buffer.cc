@@ -15,11 +15,11 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 #include "webrtc/modules/audio_processing/aec3/block_processor.h"
 #include "webrtc/modules/audio_processing/aec3/decimator_by_4.h"
 #include "webrtc/modules/audio_processing/aec3/fft_data.h"
-#include "webrtc/system_wrappers/include/logging.h"
 
 namespace webrtc {
 namespace {

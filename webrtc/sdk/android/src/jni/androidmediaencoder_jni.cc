@@ -42,7 +42,6 @@
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
-#include "webrtc/system_wrappers/include/logcat_trace_context.h"
 
 using rtc::Bind;
 using rtc::Thread;
