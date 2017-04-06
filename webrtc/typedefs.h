@@ -65,17 +65,18 @@
 
 // Annotate a function indicating the caller must examine the return value.
 // Use like:
-//   int foo() WARN_UNUSED_RESULT;
-// To explicitly ignore a result, see |ignore_result()| in <base/macros.h>.
-// TODO(ajm): Hack to avoid multiple definitions until the base/ of webrtc and
-// libjingle are merged.
-#if !defined(WARN_UNUSED_RESULT)
-#if defined(__GNUC__) || defined(__clang__)
-#define WARN_UNUSED_RESULT __attribute__ ((__warn_unused_result__))
+//   int foo() RTC_WARN_UNUSED_RESULT;
+// To explicitly ignore a result, cast to void.
+// TODO(kwiberg): Remove when we can use [[nodiscard]] from C++17.
+#if defined(__clang__)
+#define RTC_WARN_UNUSED_RESULT __attribute__((__warn_unused_result__))
+#elif defined(__GNUC__)
+// gcc has a __warn_unused_result__ attribute, but you can't quiet it by
+// casting to void, so we don't use it.
+#define RTC_WARN_UNUSED_RESULT
 #else
-#define WARN_UNUSED_RESULT
+#define RTC_WARN_UNUSED_RESULT
 #endif
-#endif  // WARN_UNUSED_RESULT
 
 // Put after a variable that might not be used, to prevent compiler warnings:
 //   int result ATTRIBUTE_UNUSED = DoSomething();
