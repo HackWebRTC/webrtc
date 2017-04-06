@@ -26,8 +26,7 @@ RenderBuffer::RenderBuffer(Aec3Optimization optimization,
       spectrum_buffer_(num_partitions, std::array<float, kFftLengthBy2Plus1>()),
       spectral_sums_(num_ffts_for_spectral_sums.size(),
                      std::array<float, kFftLengthBy2Plus1>()),
-      last_block_(num_bands, std::vector<float>(kBlockSize, 0.f)),
-      fft_() {
+      last_block_(num_bands, std::vector<float>(kBlockSize, 0.f)) {
   // Current implementation only allows a maximum of one spectral sum lengths.
   RTC_DCHECK_EQ(1, num_ffts_for_spectral_sums.size());
   spectral_sums_length_ = num_ffts_for_spectral_sums[0];
