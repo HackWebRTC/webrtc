@@ -399,8 +399,7 @@ const VideoQualityTest::Params::Video kSimulcastVp8VideoLow = {
     false, false,  "",     "ConferenceMotion_1280_720_50"};
 
 #if !defined(RTC_DISABLE_VP9)
-// Disabled due to crashes, see bugs.webrtc.org/7401.
-TEST_F(FullStackTest, DISABLED_ScreenshareSlidesVP9_2SL) {
+TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
   VideoQualityTest::Params screenshare;
   screenshare.call.send_side_bwe = true;
   screenshare.video = {true, 1850, 1110, 5, 50000, 200000, 2000000, false,
