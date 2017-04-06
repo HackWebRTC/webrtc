@@ -127,7 +127,7 @@ public class PeerConnectionFactory {
     long nativeAndroidVideoTrackSource =
         nativeCreateVideoSource(nativeFactory, eglContext, capturer.isScreencast());
     VideoCapturer.CapturerObserver capturerObserver =
-        new VideoCapturer.AndroidVideoTrackSourceObserver(nativeAndroidVideoTrackSource);
+        new AndroidVideoTrackSourceObserver(nativeAndroidVideoTrackSource);
     nativeInitializeVideoCapturer(
         nativeFactory, capturer, nativeAndroidVideoTrackSource, capturerObserver);
     return new VideoSource(nativeAndroidVideoTrackSource);
