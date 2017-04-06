@@ -26,9 +26,6 @@
       "app": "rtc_stats_unittests"
     },
     {
-      "app": "rtc_unittests"
-    },
-    {
       "app": "system_wrappers_unittests"
     },
     {
