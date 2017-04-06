@@ -10,9 +10,14 @@
 
 #include <cstring>
 
+#include "webrtc/base/array_view.h"
+#include "webrtc/base/buffer.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/race_checker.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/audio_device/audio_device_impl.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/modules/audio_device/include/mock_audio_transport.h"
@@ -29,6 +34,14 @@ using ::testing::NotNull;
 
 namespace webrtc {
 namespace {
+
+// #define ENABLE_DEBUG_PRINTF
+#ifdef ENABLE_DEBUG_PRINTF
+#define PRINTD(...) fprintf(stderr, __VA_ARGS__);
+#else
+#define PRINTD(...) ((void)0)
+#endif
+#define PRINT(...) fprintf(stderr, __VA_ARGS__);
 
 // Don't run these tests in combination with sanitizers.
 #if !defined(ADDRESS_SANITIZER) && !defined(MEMORY_SANITIZER)
@@ -48,9 +61,13 @@ namespace {
 
 // Number of callbacks (input or output) the tests waits for before we set
 // an event indicating that the test was OK.
-static const size_t kNumCallbacks = 10;
+static constexpr size_t kNumCallbacks = 10;
 // Max amount of time we wait for an event to be set while counting callbacks.
-static const int kTestTimeOutInMilliseconds = 10 * 1000;
+static constexpr int kTestTimeOutInMilliseconds = 10 * 1000;
+// Average number of audio callbacks per second assuming 10ms packet size.
+static constexpr size_t kNumCallbacksPerSecond = 100;
+// Run the full-duplex test during this time (unit is in seconds).
+static constexpr int kFullDuplexTimeInSec = 5;
 
 enum class TransportType {
   kInvalid,
@@ -58,7 +75,88 @@ enum class TransportType {
   kRecord,
   kPlayAndRecord,
 };
+
+// Interface for processing the audio stream. Real implementations can e.g.
+// run audio in loopback, read audio from a file or perform latency
+// measurements.
+class AudioStream {
+ public:
+  virtual void Write(rtc::ArrayView<const int16_t> source, size_t channels) = 0;
+  virtual void Read(rtc::ArrayView<int16_t> destination, size_t channels) = 0;
+
+  virtual ~AudioStream() = default;
+};
+
 }  // namespace
+
+// Simple first in first out (FIFO) class that wraps a list of 16-bit audio
+// buffers of fixed size and allows Write and Read operations. The idea is to
+// store recorded audio buffers (using Write) and then read (using Read) these
+// stored buffers with as short delay as possible when the audio layer needs
+// data to play out. The number of buffers in the FIFO will stabilize under
+// normal conditions since there will be a balance between Write and Read calls.
+// The container is a std::list container and access is protected with a lock
+// since both sides (playout and recording) are driven by its own thread.
+// Note that, we know by design that the size of the audio buffer will not
+// change over time and that both sides will use the same size.
+class FifoAudioStream : public AudioStream {
+ public:
+  void Write(rtc::ArrayView<const int16_t> source, size_t channels) override {
+    EXPECT_EQ(channels, 1u);
+    RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+    const size_t size = [&] {
+      rtc::CritScope lock(&lock_);
+      fifo_.push_back(Buffer16(source.data(), source.size()));
+      return fifo_.size();
+    }();
+    if (size > max_size_) {
+      max_size_ = size;
+    }
+    // Add marker once per second to signal that audio is active.
+    if (write_count_++ % 100 == 0) {
+      PRINT(".");
+    }
+    written_elements_ += size;
+  }
+
+  void Read(rtc::ArrayView<int16_t> destination, size_t channels) override {
+    EXPECT_EQ(channels, 1u);
+    rtc::CritScope lock(&lock_);
+    if (fifo_.empty()) {
+      std::fill(destination.begin(), destination.end(), 0);
+    } else {
+      const Buffer16& buffer = fifo_.front();
+      RTC_CHECK_EQ(buffer.size(), destination.size());
+      std::copy(buffer.begin(), buffer.end(), destination.begin());
+      fifo_.pop_front();
+    }
+  }
+
+  size_t size() const {
+    rtc::CritScope lock(&lock_);
+    return fifo_.size();
+  }
+
+  size_t max_size() const {
+    RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+    return max_size_;
+  }
+
+  size_t average_size() const {
+    RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+    return 0.5 + static_cast<float>(written_elements_ / write_count_);
+  }
+
+  using Buffer16 = rtc::BufferT<int16_t>;
+
+  rtc::CriticalSection lock_;
+  rtc::RaceChecker race_checker_;
+
+  std::list<Buffer16> fifo_ GUARDED_BY(lock_);
+  size_t write_count_ GUARDED_BY(race_checker_) = 0;
+  size_t max_size_ GUARDED_BY(race_checker_) = 0;
+  size_t written_elements_ GUARDED_BY(race_checker_) = 0;
+};
 
 // Mocks the AudioTransport object and proxies actions for the two callbacks
 // (RecordedDataIsAvailable and NeedMorePlayData) to different implementations
@@ -72,8 +170,11 @@ class MockAudioTransport : public test::MockAudioTransport {
   // implementation where the number of callbacks is counted and an event
   // is set after a certain number of callbacks. Audio parameters are also
   // checked.
-  void HandleCallbacks(rtc::Event* event, int num_callbacks) {
+  void HandleCallbacks(rtc::Event* event,
+                       AudioStream* audio_stream,
+                       int num_callbacks) {
     event_ = event;
+    audio_stream_ = audio_stream;
     num_callbacks_ = num_callbacks;
     if (play_mode()) {
       ON_CALL(*this, NeedMorePlayData(_, _, _, _, _, _, _, _))
@@ -114,6 +215,13 @@ class MockAudioTransport : public test::MockAudioTransport {
                 record_parameters_.frames_per_10ms_buffer());
     }
     rec_count_++;
+    // Write audio data to audio stream object if one has been injected.
+    if (audio_stream_) {
+      audio_stream_->Write(
+          rtc::MakeArrayView(static_cast<const int16_t*>(audio_buffer),
+                             samples_per_channel * channels),
+          channels);
+    }
     // Signal the event after given amount of callbacks.
     if (ReceivedEnoughCallbacks()) {
       event_->Set();
@@ -147,9 +255,17 @@ class MockAudioTransport : public test::MockAudioTransport {
     }
     play_count_++;
     samples_per_channel_out = samples_per_channel;
-    // Fill the audio buffer with zeros to avoid disturbing audio.
-    const size_t num_bytes = samples_per_channel * bytes_per_frame;
-    std::memset(audio_buffer, 0, num_bytes);
+    // Read audio data from audio stream object if one has been injected.
+    if (audio_stream_) {
+      audio_stream_->Read(
+          rtc::MakeArrayView(static_cast<int16_t*>(audio_buffer),
+                             samples_per_channel * channels),
+          channels);
+    } else {
+      // Fill the audio buffer with zeros to avoid disturbing audio.
+      const size_t num_bytes = samples_per_channel * bytes_per_frame;
+      std::memset(audio_buffer, 0, num_bytes);
+    }
     // Signal the event after given amount of callbacks.
     if (ReceivedEnoughCallbacks()) {
       event_->Set();
@@ -186,6 +302,7 @@ class MockAudioTransport : public test::MockAudioTransport {
  private:
   TransportType type_ = TransportType::kInvalid;
   rtc::Event* event_ = nullptr;
+  AudioStream* audio_stream_ = nullptr;
   size_t num_callbacks_ = 0;
   size_t play_count_ = 0;
   size_t rec_count_ = 0;
@@ -324,7 +441,7 @@ TEST_F(AudioDeviceTest, StartStopRecording) {
 TEST_F(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   MockAudioTransport mock(TransportType::kPlay);
-  mock.HandleCallbacks(event(), kNumCallbacks);
+  mock.HandleCallbacks(event(), nullptr, kNumCallbacks);
   EXPECT_CALL(mock, NeedMorePlayData(_, _, _, _, NotNull(), _, _, _))
       .Times(AtLeast(kNumCallbacks));
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
@@ -338,7 +455,7 @@ TEST_F(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
 TEST_F(AudioDeviceTest, StartRecordingVerifyCallbacks) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   MockAudioTransport mock(TransportType::kRecord);
-  mock.HandleCallbacks(event(), kNumCallbacks);
+  mock.HandleCallbacks(event(), nullptr, kNumCallbacks);
   EXPECT_CALL(mock, RecordedDataIsAvailable(NotNull(), _, _, _, _, Ge(0u), 0, _,
                                             false, _))
       .Times(AtLeast(kNumCallbacks));
@@ -353,7 +470,7 @@ TEST_F(AudioDeviceTest, StartRecordingVerifyCallbacks) {
 TEST_F(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   MockAudioTransport mock(TransportType::kPlayAndRecord);
-  mock.HandleCallbacks(event(), kNumCallbacks);
+  mock.HandleCallbacks(event(), nullptr, kNumCallbacks);
   EXPECT_CALL(mock, NeedMorePlayData(_, _, _, _, NotNull(), _, _, _))
       .Times(AtLeast(kNumCallbacks));
   EXPECT_CALL(mock, RecordedDataIsAvailable(NotNull(), _, _, _, _, Ge(0u), 0, _,
@@ -365,6 +482,43 @@ TEST_F(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
   event()->Wait(kTestTimeOutInMilliseconds);
   StopRecording();
   StopPlayout();
+}
+
+// Start playout and recording and store recorded data in an intermediate FIFO
+// buffer from which the playout side then reads its samples in the same order
+// as they were stored. Under ideal circumstances, a callback sequence would
+// look like: ...+-+-+-+-+-+-+-..., where '+' means 'packet recorded' and '-'
+// means 'packet played'. Under such conditions, the FIFO would contain max 1,
+// with an average somewhere in (0,1) depending on how long the packets are
+// buffered. However, under more realistic conditions, the size
+// of the FIFO will vary more due to an unbalance between the two sides.
+// This test tries to verify that the device maintains a balanced callback-
+// sequence by running in loopback for a few seconds while measuring the size
+// (max and average) of the FIFO. The size of the FIFO is increased by the
+// recording side and decreased by the playout side.
+TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  NiceMock<MockAudioTransport> mock(TransportType::kPlayAndRecord);
+  FifoAudioStream audio_stream;
+  mock.HandleCallbacks(event(), &audio_stream,
+                       kFullDuplexTimeInSec * kNumCallbacksPerSecond);
+  EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
+  // Run both sides in mono to make the loopback packet handling less complex.
+  // The test works for stereo as well; the only requirement is that both sides
+  // use the same configuration.
+  EXPECT_EQ(0, audio_device()->SetStereoPlayout(false));
+  EXPECT_EQ(0, audio_device()->SetStereoRecording(false));
+  StartPlayout();
+  StartRecording();
+  event()->Wait(
+      std::max(kTestTimeOutInMilliseconds, 1000 * kFullDuplexTimeInSec));
+  StopRecording();
+  StopPlayout();
+  // This thresholds is set rather high to accommodate differences in hardware
+  // in several devices. The main idea is to capture cases where a very large
+  // latency is built up.
+  EXPECT_LE(audio_stream.average_size(), 5u);
+  PRINT("\n");
 }
 
 }  // namespace webrtc
