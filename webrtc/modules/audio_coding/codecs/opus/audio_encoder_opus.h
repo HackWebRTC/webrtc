@@ -56,6 +56,7 @@ class AudioEncoderOpus final : public AudioEncoder {
     ApplicationMode application = kVoip;
     rtc::Optional<int> bitrate_bps;  // Unset means to use default value.
     bool fec_enabled = false;
+    bool cbr_enabled = false;
     int max_playback_rate_hz = 48000;
     int complexity = kDefaultComplexity;
     // This value may change in the struct's constructor.
