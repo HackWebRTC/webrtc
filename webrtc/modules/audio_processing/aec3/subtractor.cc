@@ -20,11 +20,11 @@ namespace webrtc {
 
 namespace {
 
-void ComputeError(const Aec3Fft& fft,
-                  const FftData& S,
-                  rtc::ArrayView<const float> y,
-                  std::array<float, kBlockSize>* e,
-                  FftData* E) {
+void PredictionError(const Aec3Fft& fft,
+                     const FftData& S,
+                     rtc::ArrayView<const float> y,
+                     std::array<float, kBlockSize>* e,
+                     FftData* E) {
   std::array<float, kFftLength> s;
   fft.Ifft(S, &s);
   constexpr float kScale = 1.0f / kFftLengthBy2;
@@ -37,24 +37,13 @@ void ComputeError(const Aec3Fft& fft,
 }
 }  // namespace
 
-std::vector<size_t> Subtractor::NumBlocksInRenderSums() const {
-  if (kMainFilterSizePartitions != kShadowFilterSizePartitions) {
-    return {kMainFilterSizePartitions, kShadowFilterSizePartitions};
-  } else {
-    return {kMainFilterSizePartitions};
-  }
-}
-
 Subtractor::Subtractor(ApmDataDumper* data_dumper,
                        Aec3Optimization optimization)
     : fft_(),
       data_dumper_(data_dumper),
       optimization_(optimization),
-      main_filter_(kMainFilterSizePartitions, true, optimization, data_dumper_),
-      shadow_filter_(kShadowFilterSizePartitions,
-                     false,
-                     optimization,
-                     data_dumper_) {
+      main_filter_(kAdaptiveFilterLength, optimization, data_dumper_),
+      shadow_filter_(kAdaptiveFilterLength, optimization, data_dumper_) {
   RTC_DCHECK(data_dumper_);
 }
 
@@ -72,42 +61,43 @@ void Subtractor::HandleEchoPathChange(
 void Subtractor::Process(const RenderBuffer& render_buffer,
                          const rtc::ArrayView<const float> capture,
                          const RenderSignalAnalyzer& render_signal_analyzer,
-                         bool saturation,
+                         const AecState& aec_state,
                          SubtractorOutput* output) {
   RTC_DCHECK_EQ(kBlockSize, capture.size());
   rtc::ArrayView<const float> y = capture;
-  const RenderBuffer& X_buffer = render_buffer;
   FftData& E_main = output->E_main;
-  FftData& E_shadow = output->E_shadow;
+  FftData E_shadow;
   std::array<float, kBlockSize>& e_main = output->e_main;
   std::array<float, kBlockSize>& e_shadow = output->e_shadow;
 
   FftData S;
   FftData& G = S;
 
-  // Form and analyze the output of the main filter.
-  main_filter_.Filter(X_buffer, &S);
-  ComputeError(fft_, S, y, &e_main, &E_main);
+  // Form the output of the main filter.
+  main_filter_.Filter(render_buffer, &S);
+  PredictionError(fft_, S, y, &e_main, &E_main);
 
-  // Form and analyze the output of the shadow filter.
-  shadow_filter_.Filter(X_buffer, &S);
-  ComputeError(fft_, S, y, &e_shadow, &E_shadow);
+  // Form the output of the shadow filter.
+  shadow_filter_.Filter(render_buffer, &S);
+  PredictionError(fft_, S, y, &e_shadow, &E_shadow);
 
   // Compute spectra for future use.
   E_main.Spectrum(optimization_, &output->E2_main);
   E_shadow.Spectrum(optimization_, &output->E2_shadow);
 
   // Update the main filter.
-  G_main_.Compute(X_buffer, render_signal_analyzer, *output, main_filter_,
-                  saturation, &G);
-  main_filter_.Adapt(X_buffer, G);
+  G_main_.Compute(render_buffer, render_signal_analyzer, *output, main_filter_,
+                  aec_state.SaturatedCapture(), &G);
+  main_filter_.Adapt(render_buffer, G);
   data_dumper_->DumpRaw("aec3_subtractor_G_main", G.re);
   data_dumper_->DumpRaw("aec3_subtractor_G_main", G.im);
 
   // Update the shadow filter.
-  G_shadow_.Compute(X_buffer, render_signal_analyzer, E_shadow,
-                    shadow_filter_.SizePartitions(), saturation, &G);
-  shadow_filter_.Adapt(X_buffer, G);
+  G_shadow_.Compute(render_buffer, render_signal_analyzer, E_shadow,
+                    shadow_filter_.SizePartitions(),
+                    aec_state.SaturatedCapture(), &G);
+  shadow_filter_.Adapt(render_buffer, G);
+
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.re);
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.im);
 

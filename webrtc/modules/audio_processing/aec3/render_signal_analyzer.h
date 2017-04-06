@@ -28,7 +28,7 @@ class RenderSignalAnalyzer {
   ~RenderSignalAnalyzer();
 
   // Updates the render signal analysis with the most recent render signal.
-  void Update(const RenderBuffer& X_buffer,
+  void Update(const RenderBuffer& render_buffer,
               const rtc::Optional<size_t>& delay_partitions);
 
   // Returns true if the render signal is poorly exciting.

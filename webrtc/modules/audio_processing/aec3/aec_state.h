@@ -40,16 +40,8 @@ class AecState {
   // Returns whether there has been echo leakage detected.
   bool EchoLeakageDetected() const { return echo_leakage_detected_; }
 
-  // Returns whether it is possible at all to use the model based echo removal
-  // functionalities.
-  bool ModelBasedAecFeasible() const { return model_based_aec_feasible_; }
-
   // Returns whether the render signal is currently active.
-  bool ActiveRender() const { return active_render_counter_ > 0; }
-
-  // Returns whether the number of active render blocks since an echo path
-  // change.
-  size_t ActiveRenderBlocks() const { return active_render_blocks_; }
+  bool ActiveRender() const { return active_render_blocks_ > 200; }
 
   // Returns the ERLE.
   const std::array<float, kFftLengthBy2Plus1>& Erle() const {
@@ -67,23 +59,11 @@ class AecState {
   // Returns the externally provided delay.
   rtc::Optional<size_t> ExternalDelay() const { return external_delay_; }
 
-  // Returns the bands where the linear filter is reliable.
-  const std::array<bool, kFftLengthBy2Plus1>& BandsWithReliableFilter() const {
-    return bands_with_reliable_filter_;
-  }
-
-  // Reports whether the filter is poorly aligned.
-  bool PoorlyAlignedFilter() const {
-    return FilterDelay() ? *FilterDelay() > 0.75f * filter_length_ : false;
-  }
-
-  // Returns the strength of the filter.
-  const std::array<float, kFftLengthBy2Plus1>& FilterEstimateStrength() const {
-    return filter_estimate_strength_;
-  }
-
   // Returns whether the capture signal is saturated.
   bool SaturatedCapture() const { return capture_signal_saturation_; }
+
+  // Returns whether the echo signal is saturated.
+  bool SaturatedEcho() const { return echo_saturation_; }
 
   // Updates the capture signal saturation.
   void UpdateCaptureSaturation(bool capture_signal_saturation) {
@@ -93,16 +73,17 @@ class AecState {
   // Returns whether a probable headset setup has been detected.
   bool HeadsetDetected() const { return headset_detected_; }
 
+  // Takes appropriate action at an echo path change.
+  void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
+
   // Updates the aec state.
   void Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
-                  filter_frequency_response,
+                  adaptive_filter_frequency_response,
               const rtc::Optional<size_t>& external_delay_samples,
-              const RenderBuffer& X_buffer,
+              const RenderBuffer& render_buffer,
               const std::array<float, kFftLengthBy2Plus1>& E2_main,
-              const std::array<float, kFftLengthBy2Plus1>& E2_shadow,
               const std::array<float, kFftLengthBy2Plus1>& Y2,
               rtc::ArrayView<const float> x,
-              const EchoPathVariability& echo_path_variability,
               bool echo_leakage_detected);
 
  private:
@@ -111,18 +92,16 @@ class AecState {
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
   int echo_path_change_counter_;
-  int active_render_counter_;
   size_t active_render_blocks_ = 0;
   bool usable_linear_estimate_ = false;
   bool echo_leakage_detected_ = false;
-  bool model_based_aec_feasible_ = false;
   bool capture_signal_saturation_ = false;
+  bool echo_saturation_ = false;
   bool headset_detected_ = false;
+  float previous_max_sample_ = 0.f;
   rtc::Optional<size_t> filter_delay_;
   rtc::Optional<size_t> external_delay_;
-  std::array<bool, kFftLengthBy2Plus1> bands_with_reliable_filter_;
-  std::array<float, kFftLengthBy2Plus1> filter_estimate_strength_;
-  size_t filter_length_;
+  size_t blocks_since_last_saturation_ = 1000;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
 };

@@ -26,21 +26,21 @@
 namespace webrtc {
 namespace aec3 {
 // Adapts the filter partitions.
-void AdaptPartitions(const RenderBuffer& X_buffer,
+void AdaptPartitions(const RenderBuffer& render_buffer,
                      const FftData& G,
                      rtc::ArrayView<FftData> H);
 #if defined(WEBRTC_ARCH_X86_FAMILY)
-void AdaptPartitions_SSE2(const RenderBuffer& X_buffer,
+void AdaptPartitions_SSE2(const RenderBuffer& render_buffer,
                           const FftData& G,
                           rtc::ArrayView<FftData> H);
 #endif
 
 // Produces the filter output.
-void ApplyFilter(const RenderBuffer& X_buffer,
+void ApplyFilter(const RenderBuffer& render_buffer,
                  rtc::ArrayView<const FftData> H,
                  FftData* S);
 #if defined(WEBRTC_ARCH_X86_FAMILY)
-void ApplyFilter_SSE2(const RenderBuffer& X_buffer,
+void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
                       rtc::ArrayView<const FftData> H,
                       FftData* S);
 #endif
@@ -51,17 +51,16 @@ void ApplyFilter_SSE2(const RenderBuffer& X_buffer,
 class AdaptiveFirFilter {
  public:
   AdaptiveFirFilter(size_t size_partitions,
-                    bool use_filter_statistics,
                     Aec3Optimization optimization,
                     ApmDataDumper* data_dumper);
 
   ~AdaptiveFirFilter();
 
   // Produces the output of the filter.
-  void Filter(const RenderBuffer& X_buffer, FftData* S) const;
+  void Filter(const RenderBuffer& render_buffer, FftData* S) const;
 
   // Adapts the filter.
-  void Adapt(const RenderBuffer& X_buffer, const FftData& G);
+  void Adapt(const RenderBuffer& render_buffer, const FftData& G);
 
   // Receives reports that known echo path changes have occured and adjusts
   // the filter adaptation accordingly.
@@ -70,25 +69,13 @@ class AdaptiveFirFilter {
   // Returns the filter size.
   size_t SizePartitions() const { return H_.size(); }
 
-  // Returns the filter based echo return loss. This method can only be used if
-  // the usage of filter statistics has been specified during the creation of
-  // the adaptive filter.
-  const std::array<float, kFftLengthBy2Plus1>& Erl() const {
-    RTC_DCHECK(erl_) << "The filter must be created with use_filter_statistics "
-                        "set to true in order to be able to call retrieve the "
-                        "ERL.";
-    return *erl_;
-  }
+  // Returns the filter based echo return loss.
+  const std::array<float, kFftLengthBy2Plus1>& Erl() const { return erl_; }
 
-  // Returns the frequency responses for the filter partitions. This method can
-  // only be used if the usage of filter statistics has been specified during
-  // the creation of the adaptive filter.
+  // Returns the frequency responses for the filter partitions.
   const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   FilterFrequencyResponse() const {
-    RTC_DCHECK(H2_) << "The filter must be created with use_filter_statistics "
-                       "set to true in order to be able to call retrieve the "
-                       "filter frequency responde.";
-    return *H2_;
+    return H2_;
   }
 
   void DumpFilter(const char* name) {
@@ -103,8 +90,8 @@ class AdaptiveFirFilter {
   const Aec3Fft fft_;
   const Aec3Optimization optimization_;
   std::vector<FftData> H_;
-  std::unique_ptr<std::vector<std::array<float, kFftLengthBy2Plus1>>> H2_;
-  std::unique_ptr<std::array<float, kFftLengthBy2Plus1>> erl_;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> H2_;
+  std::array<float, kFftLengthBy2Plus1> erl_;
   size_t partition_to_constrain_ = 0;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AdaptiveFirFilter);

@@ -74,6 +74,7 @@ void SuppressionFilter::ApplyGain(
     const FftData& comfort_noise,
     const FftData& comfort_noise_high_band,
     const std::array<float, kFftLengthBy2Plus1>& suppression_gain,
+    float high_bands_gain,
     std::vector<std::vector<float>>* e) {
   RTC_DCHECK(e);
   RTC_DCHECK_EQ(e->size(), NumBandsForRate(sample_rate_hz_));
@@ -138,11 +139,7 @@ void SuppressionFilter::ApplyGain(
     fft_.Ifft(E, &time_domain_high_band_noise);
 
     // Scale and apply the noise to the signals.
-    RTC_DCHECK_LT(3, suppression_gain.size());
-    float high_bands_gain = *std::min_element(suppression_gain.begin() + 32,
-                                              suppression_gain.end());
-
-    float high_bands_noise_scaling =
+    const float high_bands_noise_scaling =
         0.4f * std::max(1.f - high_bands_gain, 0.f);
 
     std::transform(

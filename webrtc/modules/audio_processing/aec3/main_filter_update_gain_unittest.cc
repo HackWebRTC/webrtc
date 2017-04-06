@@ -10,9 +10,6 @@
 
 #include "webrtc/modules/audio_processing/aec3/main_filter_update_gain.h"
 
-// TODO(peah): Reactivate once the next CL has landed.
-#if 0
-
 #include <algorithm>
 #include <numeric>
 #include <string>
@@ -20,7 +17,7 @@
 #include "webrtc/base/random.h"
 #include "webrtc/modules/audio_processing/aec3/adaptive_fir_filter.h"
 #include "webrtc/modules/audio_processing/aec3/aec_state.h"
-#include "webrtc/modules/audio_processing/aec3/fft_buffer.h"
+#include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/render_signal_analyzer.h"
 #include "webrtc/modules/audio_processing/aec3/shadow_filter_update_gain.h"
 #include "webrtc/modules/audio_processing/aec3/subtractor_output.h"
@@ -42,31 +39,30 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                          std::array<float, kBlockSize>* y_last_block,
                          FftData* G_last_block) {
   ApmDataDumper data_dumper(42);
-  AdaptiveFirFilter main_filter(9, true, DetectOptimization(), &data_dumper);
-  AdaptiveFirFilter shadow_filter(9, true, DetectOptimization(), &data_dumper);
+  AdaptiveFirFilter main_filter(9, DetectOptimization(), &data_dumper);
+  AdaptiveFirFilter shadow_filter(9, DetectOptimization(), &data_dumper);
   Aec3Fft fft;
-  FftBuffer X_buffer(Aec3Optimization::kNone, main_filter.SizePartitions(),
-                     std::vector<size_t>(1, main_filter.SizePartitions()));
+  RenderBuffer render_buffer(
+      Aec3Optimization::kNone, 3, main_filter.SizePartitions(),
+      std::vector<size_t>(1, main_filter.SizePartitions()));
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
   ShadowFilterUpdateGain shadow_gain;
   MainFilterUpdateGain main_gain;
   Random random_generator(42U);
-  std::vector<float> x(kBlockSize, 0.f);
+  std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
   AecState aec_state;
   RenderSignalAnalyzer render_signal_analyzer;
-  FftData X;
   std::array<float, kFftLength> s;
   FftData S;
   FftData G;
   SubtractorOutput output;
   output.Reset();
   FftData& E_main = output.E_main;
-  FftData& E_shadow = output.E_shadow;
+  FftData E_shadow;
   std::array<float, kFftLengthBy2Plus1> Y2;
   std::array<float, kFftLengthBy2Plus1>& E2_main = output.E2_main;
-  std::array<float, kFftLengthBy2Plus1>& E2_shadow = output.E2_shadow;
   std::array<float, kBlockSize>& e_main = output.e_main;
   std::array<float, kBlockSize>& e_shadow = output.e_shadow;
   Y2.fill(0.f);
@@ -89,17 +85,16 @@ void RunFilterUpdateTest(int num_blocks_to_process,
 
     // Create the render signal.
     if (use_silent_render_in_second_half && k > num_blocks_to_process / 2) {
-      std::fill(x.begin(), x.end(), 0.f);
+      std::fill(x[0].begin(), x[0].end(), 0.f);
     } else {
-      RandomizeSampleVector(&random_generator, x);
+      RandomizeSampleVector(&random_generator, x[0]);
     }
-    delay_buffer.Delay(x, y);
-    fft.PaddedFft(x, x_old, &X);
-    X_buffer.Insert(X);
-    render_signal_analyzer.Update(X_buffer, aec_state.FilterDelay());
+    delay_buffer.Delay(x[0], y);
+    render_buffer.Insert(x);
+    render_signal_analyzer.Update(render_buffer, aec_state.FilterDelay());
 
     // Apply the main filter.
-    main_filter.Filter(X_buffer, &S);
+    main_filter.Filter(render_buffer, &S);
     fft.Ifft(S, &s);
     std::transform(y.begin(), y.end(), s.begin() + kFftLengthBy2,
                    e_main.begin(),
@@ -110,7 +105,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     fft.ZeroPaddedFft(e_main, &E_main);
 
     // Apply the shadow filter.
-    shadow_filter.Filter(X_buffer, &S);
+    shadow_filter.Filter(render_buffer, &S);
     fft.Ifft(S, &s);
     std::transform(y.begin(), y.end(), s.begin() + kFftLengthBy2,
                    e_shadow.begin(),
@@ -125,19 +120,20 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     E_shadow.Spectrum(Aec3Optimization::kNone, &output.E2_shadow);
 
     // Adapt the shadow filter.
-    shadow_gain.Compute(X_buffer, render_signal_analyzer, E_shadow,
+    shadow_gain.Compute(render_buffer, render_signal_analyzer, E_shadow,
                         shadow_filter.SizePartitions(), saturation, &G);
-    shadow_filter.Adapt(X_buffer, G);
+    shadow_filter.Adapt(render_buffer, G);
 
     // Adapt the main filter
-    main_gain.Compute(X_buffer, render_signal_analyzer, output, main_filter,
-                      saturation, &G);
-    main_filter.Adapt(X_buffer, G);
+    main_gain.Compute(render_buffer, render_signal_analyzer, output,
+                      main_filter, saturation, &G);
+    main_filter.Adapt(render_buffer, G);
 
     // Update the delay.
+    aec_state.HandleEchoPathChange(EchoPathVariability(false, false));
     aec_state.Update(main_filter.FilterFrequencyResponse(),
-                     rtc::Optional<size_t>(), X_buffer, E2_main, E2_shadow, Y2,
-                     x, EchoPathVariability(false, false), false);
+                     rtc::Optional<size_t>(), render_buffer, E2_main, Y2, x[0],
+                     false);
   }
 
   std::copy(e_main.begin(), e_main.end(), e_last_block->begin());
@@ -159,14 +155,16 @@ std::string ProduceDebugText(size_t delay) {
 // Verifies that the check for non-null output gain parameter works.
 TEST(MainFilterUpdateGain, NullDataOutputGain) {
   ApmDataDumper data_dumper(42);
-  AdaptiveFirFilter filter(9, true, DetectOptimization(), &data_dumper);
-  FftBuffer X_buffer(Aec3Optimization::kNone, filter.SizePartitions(),
-                     std::vector<size_t>(1, filter.SizePartitions()));
+  AdaptiveFirFilter filter(9, DetectOptimization(), &data_dumper);
+  RenderBuffer render_buffer(Aec3Optimization::kNone, 3,
+                             filter.SizePartitions(),
+                             std::vector<size_t>(1, filter.SizePartitions()));
   RenderSignalAnalyzer analyzer;
   SubtractorOutput output;
   MainFilterUpdateGain gain;
-  EXPECT_DEATH(gain.Compute(X_buffer, analyzer, output, filter, false, nullptr),
-               "");
+  EXPECT_DEATH(
+      gain.Compute(render_buffer, analyzer, output, filter, false, nullptr),
+      "");
 }
 
 #endif
@@ -288,5 +286,3 @@ TEST(MainFilterUpdateGain, EchoPathChangeBehavior) {
 }
 
 }  // namespace webrtc
-
-#endif

@@ -59,42 +59,35 @@ void UpdateErlEstimator(
   }
 }
 
-// Resets the filter.
-void ResetFilter(rtc::ArrayView<FftData> H) {
-  for (auto& H_j : H) {
-    H_j.Clear();
-  }
-}
-
 }  // namespace
 
 namespace aec3 {
 
 // Adapts the filter partitions as H(t+1)=H(t)+G(t)*conj(X(t)).
-void AdaptPartitions(const RenderBuffer& X_buffer,
+void AdaptPartitions(const RenderBuffer& render_buffer,
                      const FftData& G,
                      rtc::ArrayView<FftData> H) {
-  rtc::ArrayView<const FftData> X_buffer_data = X_buffer.Buffer();
-  size_t index = X_buffer.Position();
+  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
+  size_t index = render_buffer.Position();
   for (auto& H_j : H) {
-    const FftData& X = X_buffer_data[index];
+    const FftData& X = render_buffer_data[index];
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
       H_j.re[k] += X.re[k] * G.re[k] + X.im[k] * G.im[k];
       H_j.im[k] += X.re[k] * G.im[k] - X.im[k] * G.re[k];
     }
 
-    index = index < (X_buffer_data.size() - 1) ? index + 1 : 0;
+    index = index < (render_buffer_data.size() - 1) ? index + 1 : 0;
   }
 }
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 // Adapts the filter partitions. (SSE2 variant)
-void AdaptPartitions_SSE2(const RenderBuffer& X_buffer,
+void AdaptPartitions_SSE2(const RenderBuffer& render_buffer,
                           const FftData& G,
                           rtc::ArrayView<FftData> H) {
-  rtc::ArrayView<const FftData> X_buffer_data = X_buffer.Buffer();
+  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
   const int lim1 =
-      std::min(X_buffer_data.size() - X_buffer.Position(), H.size());
+      std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();
   constexpr int kNumFourBinBands = kFftLengthBy2 / 4;
   FftData* H_j;
@@ -106,7 +99,7 @@ void AdaptPartitions_SSE2(const RenderBuffer& X_buffer,
     const __m128 G_im = _mm_loadu_ps(&G.im[k]);
 
     H_j = &H[0];
-    X = &X_buffer_data[X_buffer.Position()];
+    X = &render_buffer_data[render_buffer.Position()];
     limit = lim1;
     j = 0;
     do {
@@ -127,13 +120,13 @@ void AdaptPartitions_SSE2(const RenderBuffer& X_buffer,
         _mm_storeu_ps(&H_j->im[k], h);
       }
 
-      X = &X_buffer_data[0];
+      X = &render_buffer_data[0];
       limit = lim2;
     } while (j < lim2);
   }
 
   H_j = &H[0];
-  X = &X_buffer_data[X_buffer.Position()];
+  X = &render_buffer_data[render_buffer.Position()];
   limit = lim1;
   j = 0;
   do {
@@ -144,46 +137,47 @@ void AdaptPartitions_SSE2(const RenderBuffer& X_buffer,
                                 X->im[kFftLengthBy2] * G.re[kFftLengthBy2];
     }
 
-    X = &X_buffer_data[0];
+    X = &render_buffer_data[0];
     limit = lim2;
   } while (j < lim2);
 }
 #endif
 
 // Produces the filter output.
-void ApplyFilter(const RenderBuffer& X_buffer,
+void ApplyFilter(const RenderBuffer& render_buffer,
                  rtc::ArrayView<const FftData> H,
                  FftData* S) {
   S->re.fill(0.f);
   S->im.fill(0.f);
 
-  rtc::ArrayView<const FftData> X_buffer_data = X_buffer.Buffer();
-  size_t index = X_buffer.Position();
+  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
+  size_t index = render_buffer.Position();
   for (auto& H_j : H) {
-    const FftData& X = X_buffer_data[index];
+    const FftData& X = render_buffer_data[index];
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
       S->re[k] += X.re[k] * H_j.re[k] - X.im[k] * H_j.im[k];
       S->im[k] += X.re[k] * H_j.im[k] + X.im[k] * H_j.re[k];
     }
-    index = index < (X_buffer_data.size() - 1) ? index + 1 : 0;
+    index = index < (render_buffer_data.size() - 1) ? index + 1 : 0;
   }
 }
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 // Produces the filter output (SSE2 variant).
-void ApplyFilter_SSE2(const RenderBuffer& X_buffer,
+void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
                       rtc::ArrayView<const FftData> H,
                       FftData* S) {
+  RTC_DCHECK_GE(H.size(), H.size() - 1);
   S->re.fill(0.f);
   S->im.fill(0.f);
 
-  rtc::ArrayView<const FftData> X_buffer_data = X_buffer.Buffer();
+  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
   const int lim1 =
-      std::min(X_buffer_data.size() - X_buffer.Position(), H.size());
+      std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();
   constexpr int kNumFourBinBands = kFftLengthBy2 / 4;
   const FftData* H_j = &H[0];
-  const FftData* X = &X_buffer_data[X_buffer.Position()];
+  const FftData* X = &render_buffer_data[render_buffer.Position()];
 
   int j = 0;
   int limit = lim1;
@@ -209,11 +203,11 @@ void ApplyFilter_SSE2(const RenderBuffer& X_buffer,
       }
     }
     limit = lim2;
-    X = &X_buffer_data[0];
+    X = &render_buffer_data[0];
   } while (j < lim2);
 
   H_j = &H[0];
-  X = &X_buffer_data[X_buffer.Position()];
+  X = &render_buffer_data[render_buffer.Position()];
   j = 0;
   limit = lim1;
   do {
@@ -224,7 +218,7 @@ void ApplyFilter_SSE2(const RenderBuffer& X_buffer,
                               X->im[kFftLengthBy2] * H_j->re[kFftLengthBy2];
     }
     limit = lim2;
-    X = &X_buffer_data[0];
+    X = &render_buffer_data[0];
   } while (j < lim2);
 }
 #endif
@@ -232,64 +226,61 @@ void ApplyFilter_SSE2(const RenderBuffer& X_buffer,
 }  // namespace aec3
 
 AdaptiveFirFilter::AdaptiveFirFilter(size_t size_partitions,
-                                     bool use_filter_statistics,
                                      Aec3Optimization optimization,
                                      ApmDataDumper* data_dumper)
     : data_dumper_(data_dumper),
       fft_(),
       optimization_(optimization),
-      H_(size_partitions) {
+      H_(size_partitions),
+      H2_(size_partitions, std::array<float, kFftLengthBy2Plus1>()) {
   RTC_DCHECK(data_dumper_);
-  ResetFilter(H_);
 
-  if (use_filter_statistics) {
-    H2_.reset(new std::vector<std::array<float, kFftLengthBy2Plus1>>(
-        size_partitions, std::array<float, kFftLengthBy2Plus1>()));
-    for (auto H2_k : *H2_) {
-      H2_k.fill(0.f);
-    }
-
-    erl_.reset(new std::array<float, kFftLengthBy2Plus1>());
-    erl_->fill(0.f);
+  for (auto& H_j : H_) {
+    H_j.Clear();
   }
+  for (auto& H2_k : H2_) {
+    H2_k.fill(0.f);
+  }
+  erl_.fill(0.f);
 }
 
 AdaptiveFirFilter::~AdaptiveFirFilter() = default;
 
 void AdaptiveFirFilter::HandleEchoPathChange() {
-  ResetFilter(H_);
-  if (H2_) {
-    for (auto H2_k : *H2_) {
-      H2_k.fill(0.f);
-    }
-    RTC_DCHECK(erl_);
-    erl_->fill(0.f);
+  for (auto& H_j : H_) {
+    H_j.Clear();
   }
+  for (auto& H2_k : H2_) {
+    H2_k.fill(0.f);
+  }
+  erl_.fill(0.f);
 }
 
-void AdaptiveFirFilter::Filter(const RenderBuffer& X_buffer, FftData* S) const {
+void AdaptiveFirFilter::Filter(const RenderBuffer& render_buffer,
+                               FftData* S) const {
   RTC_DCHECK(S);
   switch (optimization_) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)
     case Aec3Optimization::kSse2:
-      aec3::ApplyFilter_SSE2(X_buffer, H_, S);
+      aec3::ApplyFilter_SSE2(render_buffer, H_, S);
       break;
 #endif
     default:
-      aec3::ApplyFilter(X_buffer, H_, S);
+      aec3::ApplyFilter(render_buffer, H_, S);
   }
 }
 
-void AdaptiveFirFilter::Adapt(const RenderBuffer& X_buffer, const FftData& G) {
+void AdaptiveFirFilter::Adapt(const RenderBuffer& render_buffer,
+                              const FftData& G) {
   // Adapt the filter.
   switch (optimization_) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)
     case Aec3Optimization::kSse2:
-      aec3::AdaptPartitions_SSE2(X_buffer, G, H_);
+      aec3::AdaptPartitions_SSE2(render_buffer, G, H_);
       break;
 #endif
     default:
-      aec3::AdaptPartitions(X_buffer, G, H_);
+      aec3::AdaptPartitions(render_buffer, G, H_);
   }
 
   // Constrain the filter partitions in a cyclic manner.
@@ -298,13 +289,9 @@ void AdaptiveFirFilter::Adapt(const RenderBuffer& X_buffer, const FftData& G) {
                                 ? partition_to_constrain_ + 1
                                 : 0;
 
-  // Optionally update the frequency response and echo return loss for the
-  // filter.
-  if (H2_) {
-    RTC_DCHECK(erl_);
-    UpdateFrequencyResponse(H_, H2_.get());
-    UpdateErlEstimator(*H2_, erl_.get());
-  }
+  // Update the frequency response and echo return loss for the filter.
+  UpdateFrequencyResponse(H_, &H2_);
+  UpdateErlEstimator(H2_, &erl_);
 }
 
 }  // namespace webrtc

@@ -22,7 +22,7 @@ namespace webrtc {
 class ShadowFilterUpdateGain {
  public:
   // Computes the gain.
-  void Compute(const RenderBuffer& X_buffer,
+  void Compute(const RenderBuffer& render_buffer,
                const RenderSignalAnalyzer& render_signal_analyzer,
                const FftData& E_shadow,
                size_t size_partitions,

@@ -9,6 +9,7 @@
  */
 #include "webrtc/modules/audio_processing/aec3/echo_remover.h"
 
+#include <math.h>
 #include <algorithm>
 #include <memory>
 #include <numeric>
@@ -24,7 +25,6 @@
 #include "webrtc/modules/audio_processing/aec3/echo_remover_metrics.h"
 #include "webrtc/modules/audio_processing/aec3/fft_data.h"
 #include "webrtc/modules/audio_processing/aec3/output_selector.h"
-#include "webrtc/modules/audio_processing/aec3/power_echo_model.h"
 #include "webrtc/modules/audio_processing/aec3/render_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/render_delay_buffer.h"
 #include "webrtc/modules/audio_processing/aec3/residual_echo_estimator.h"
@@ -44,11 +44,6 @@ void LinearEchoPower(const FftData& E,
     (*S2)[k] = (Y.re[k] - E.re[k]) * (Y.re[k] - E.re[k]) +
                (Y.im[k] - E.im[k]) * (Y.im[k] - E.im[k]);
   }
-}
-
-float BlockPower(const std::array<float, kBlockSize> x) {
-  return std::accumulate(x.begin(), x.end(), 0.f,
-                         [](float a, float b) -> float { return a + b * b; });
 }
 
 // Class for removing the echo from the capture signal.
@@ -83,8 +78,6 @@ class EchoRemoverImpl final : public EchoRemover {
   SuppressionGain suppression_gain_;
   ComfortNoiseGenerator cng_;
   SuppressionFilter suppression_filter_;
-  PowerEchoModel power_echo_model_;
-  RenderBuffer X_buffer_;
   RenderSignalAnalyzer render_signal_analyzer_;
   OutputSelector output_selector_;
   ResidualEchoEstimator residual_echo_estimator_;
@@ -106,12 +99,7 @@ EchoRemoverImpl::EchoRemoverImpl(int sample_rate_hz)
       subtractor_(data_dumper_.get(), optimization_),
       suppression_gain_(optimization_),
       cng_(optimization_),
-      suppression_filter_(sample_rate_hz_),
-      X_buffer_(optimization_,
-                NumBandsForRate(sample_rate_hz_),
-                std::max(subtractor_.MinFarendBufferLength(),
-                         power_echo_model_.MinFarendBufferLength()),
-                subtractor_.NumBlocksInRenderSums()) {
+      suppression_filter_(sample_rate_hz_) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
 }
 
@@ -134,23 +122,23 @@ void EchoRemoverImpl::ProcessCapture(
   const std::vector<float>& x0 = x[0];
   std::vector<float>& y0 = (*y)[0];
 
-  data_dumper_->DumpWav("aec3_processblock_capture_input", kBlockSize, &y0[0],
+  data_dumper_->DumpWav("aec3_echo_remover_capture_input", kBlockSize, &y0[0],
                         LowestBandRate(sample_rate_hz_), 1);
-  data_dumper_->DumpWav("aec3_processblock_render_input", kBlockSize, &x0[0],
+  data_dumper_->DumpWav("aec3_echo_remover_render_input", kBlockSize, &x0[0],
                         LowestBandRate(sample_rate_hz_), 1);
 
   aec_state_.UpdateCaptureSaturation(capture_signal_saturation);
 
   if (echo_path_variability.AudioPathChanged()) {
     subtractor_.HandleEchoPathChange(echo_path_variability);
-    residual_echo_estimator_.HandleEchoPathChange(echo_path_variability);
+    aec_state_.HandleEchoPathChange(echo_path_variability);
   }
 
   std::array<float, kFftLengthBy2Plus1> Y2;
-  std::array<float, kFftLengthBy2Plus1> S2_power;
   std::array<float, kFftLengthBy2Plus1> R2;
   std::array<float, kFftLengthBy2Plus1> S2_linear;
   std::array<float, kFftLengthBy2Plus1> G;
+  float high_bands_gain;
   FftData Y;
   FftData comfort_noise;
   FftData high_band_comfort_noise;
@@ -159,14 +147,13 @@ void EchoRemoverImpl::ProcessCapture(
   auto& E2_main = subtractor_output.E2_main;
   auto& E2_shadow = subtractor_output.E2_shadow;
   auto& e_main = subtractor_output.e_main;
-  auto& e_shadow = subtractor_output.e_shadow;
 
   // Analyze the render signal.
   render_signal_analyzer_.Update(render_buffer, aec_state_.FilterDelay());
 
   // Perform linear echo cancellation.
-  subtractor_.Process(render_buffer, y0, render_signal_analyzer_,
-                      aec_state_.SaturatedCapture(), &subtractor_output);
+  subtractor_.Process(render_buffer, y0, render_signal_analyzer_, aec_state_,
+                      &subtractor_output);
 
   // Compute spectra.
   fft_.ZeroPaddedFft(y0, &Y);
@@ -175,36 +162,29 @@ void EchoRemoverImpl::ProcessCapture(
 
   // Update the AEC state information.
   aec_state_.Update(subtractor_.FilterFrequencyResponse(),
-                    echo_path_delay_samples, render_buffer, E2_main, E2_shadow,
-                    Y2, x0, echo_path_variability, echo_leakage_detected_);
-
-  // Use the power model to estimate the echo.
-  // TODO(peah): Remove in upcoming CL.
-  // power_echo_model_.EstimateEcho(render_buffer, Y2, aec_state_, &S2_power);
-  S2_power.fill(0.f);
+                    echo_path_delay_samples, render_buffer, E2_main, Y2, x0,
+                    echo_leakage_detected_);
 
   // Choose the linear output.
-  output_selector_.FormLinearOutput(e_main, y0);
+  output_selector_.FormLinearOutput(!aec_state_.HeadsetDetected(), e_main, y0);
   data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0],
                         LowestBandRate(sample_rate_hz_), 1);
   const auto& E2 = output_selector_.UseSubtractorOutput() ? E2_main : Y2;
 
   // Estimate the residual echo power.
-  residual_echo_estimator_.Estimate(
-      output_selector_.UseSubtractorOutput(), aec_state_, render_buffer,
-      subtractor_.FilterFrequencyResponse(), E2_main, E2_shadow, S2_linear,
-      S2_power, Y2, &R2);
+  residual_echo_estimator_.Estimate(output_selector_.UseSubtractorOutput(),
+                                    aec_state_, render_buffer, S2_linear, Y2,
+                                    &R2);
 
   // Estimate the comfort noise.
   cng_.Compute(aec_state_, Y2, &comfort_noise, &high_band_comfort_noise);
 
-  // Detect basic doubletalk.
-  const bool doubletalk = BlockPower(e_shadow) < BlockPower(e_main);
-
   // A choose and apply echo suppression gain.
   suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(),
-                            doubletalk ? 0.001f : 0.0001f, &G);
-  suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G, y);
+                            aec_state_.SaturatedEcho(), x, y->size(),
+                            &high_bands_gain, &G);
+  suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
+                                high_bands_gain, y);
 
   // Update the metrics.
   metrics_.Update(aec_state_, cng_.NoiseSpectrum(), G);
@@ -217,21 +197,16 @@ void EchoRemoverImpl::ProcessCapture(
                         LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpRaw("aec3_using_subtractor_output",
                         output_selector_.UseSubtractorOutput() ? 1 : 0);
-  data_dumper_->DumpRaw("aec3_doubletalk", doubletalk ? 1 : 0);
   data_dumper_->DumpRaw("aec3_E2", E2);
   data_dumper_->DumpRaw("aec3_E2_main", E2_main);
   data_dumper_->DumpRaw("aec3_E2_shadow", E2_shadow);
   data_dumper_->DumpRaw("aec3_S2_linear", S2_linear);
-  data_dumper_->DumpRaw("aec3_S2_power", S2_power);
   data_dumper_->DumpRaw("aec3_Y2", Y2);
+  data_dumper_->DumpRaw("aec3_X2", render_buffer.Spectrum(0));
   data_dumper_->DumpRaw("aec3_R2", R2);
   data_dumper_->DumpRaw("aec3_erle", aec_state_.Erle());
   data_dumper_->DumpRaw("aec3_erl", aec_state_.Erl());
-  data_dumper_->DumpRaw("aec3_reliable_filter_bands",
-                        aec_state_.BandsWithReliableFilter());
   data_dumper_->DumpRaw("aec3_active_render", aec_state_.ActiveRender());
-  data_dumper_->DumpRaw("aec3_model_based_aec_feasible",
-                        aec_state_.ModelBasedAecFeasible());
   data_dumper_->DumpRaw("aec3_usable_linear_estimate",
                         aec_state_.UsableLinearEstimate());
   data_dumper_->DumpRaw(

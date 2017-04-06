@@ -17,6 +17,7 @@
 #include <math.h>
 #include <algorithm>
 #include <functional>
+#include <numeric>
 
 #include "webrtc/base/checks.h"
 
@@ -33,9 +34,9 @@ void GainPostProcessing(std::array<float, kFftLengthBy2Plus1>* gain_squared) {
   // filter on the upper-frequency gains influencing the overall achieved
   // gain. TODO(peah): Update this when new anti-aliasing filters are
   // implemented.
-  constexpr size_t kAntiAliasingImpactLimit = 64 * 0.7f;
+  constexpr size_t kAntiAliasingImpactLimit = (64 * 2000) / 8000;
   std::for_each(gain_squared->begin() + kAntiAliasingImpactLimit,
-                gain_squared->end(),
+                gain_squared->end() - 1,
                 [gain_squared, kAntiAliasingImpactLimit](float& a) {
                   a = std::min(a, (*gain_squared)[kAntiAliasingImpactLimit]);
                 });
@@ -43,8 +44,8 @@ void GainPostProcessing(std::array<float, kFftLengthBy2Plus1>* gain_squared) {
 }
 
 constexpr int kNumIterations = 2;
-constexpr float kEchoMaskingMargin = 1.f / 10.f;
-constexpr float kBandMaskingFactor = 1.f / 2.f;
+constexpr float kEchoMaskingMargin = 1.f / 20.f;
+constexpr float kBandMaskingFactor = 1.f / 10.f;
 constexpr float kTimeMaskingFactor = 1.f / 10.f;
 
 }  // namespace
@@ -137,8 +138,8 @@ void ComputeGains_SSE2(
     std::transform(gain_squared->begin() + 1, gain_squared->end() - 1,
                    previous_gain_squared->begin(), gain_squared->begin() + 1,
                    [](float a, float b) {
-                     return b < 0.0001f ? std::min(a, 0.0001f)
-                                        : std::min(a, b * 2.f);
+                     return b < 0.001f ? std::min(a, 0.001f)
+                                       : std::min(a, b * 2.f);
                    });
 
     // Process the gains to avoid artefacts caused by gain realization in the
@@ -249,8 +250,8 @@ void ComputeGains(
     std::transform(gain_squared->begin() + 1, gain_squared->end() - 1,
                    previous_gain_squared->begin(), gain_squared->begin() + 1,
                    [](float a, float b) {
-                     return b < 0.0001f ? std::min(a, 0.0001f)
-                                        : std::min(a, b * 2.f);
+                     return b < 0.001f ? std::min(a, 0.001f)
+                                       : std::min(a, b * 2.f);
                    });
 
     // Process the gains to avoid artefacts caused by gain realization in the
@@ -274,6 +275,43 @@ void ComputeGains(
 
 }  // namespace aec3
 
+// Computes an upper bound on the gain to apply for high frequencies.
+float HighFrequencyGainBound(bool saturated_echo,
+                             const std::vector<std::vector<float>>& render) {
+  if (render.size() == 1) {
+    return 1.f;
+  }
+
+  // Always attenuate the upper bands when there is saturated echo.
+  if (saturated_echo) {
+    return 0.001f;
+  }
+
+  // Compute the upper and lower band energies.
+  float low_band_energy =
+      std::accumulate(render[0].begin(), render[0].end(), 0.f,
+                      [](float a, float b) -> float { return a + b * b; });
+  float high_band_energies = 0.f;
+  for (size_t k = 1; k < render.size(); ++k) {
+    high_band_energies = std::max(
+        high_band_energies,
+        std::accumulate(render[k].begin(), render[k].end(), 0.f,
+                        [](float a, float b) -> float { return a + b * b; }));
+  }
+
+  // If there is more power in the lower frequencies than the upper frequencies,
+  // or if the power in upper frequencies  is low, do not bound the gain in the
+  // upper bands.
+  if (high_band_energies < low_band_energy ||
+      high_band_energies < kSubBlockSize * 10.f * 10.f) {
+    return 1.f;
+  }
+
+  // In all other cases, bound the gain for upper frequencies.
+  RTC_DCHECK_LE(low_band_energy, high_band_energies);
+  return 0.01f * sqrtf(low_band_energy / high_band_energies);
+}
+
 SuppressionGain::SuppressionGain(Aec3Optimization optimization)
     : optimization_(optimization) {
   previous_gain_squared_.fill(1.f);
@@ -284,21 +322,41 @@ void SuppressionGain::GetGain(
     const std::array<float, kFftLengthBy2Plus1>& nearend_power,
     const std::array<float, kFftLengthBy2Plus1>& residual_echo_power,
     const std::array<float, kFftLengthBy2Plus1>& comfort_noise_power,
-    float strong_nearend_margin,
-    std::array<float, kFftLengthBy2Plus1>* gain) {
-  RTC_DCHECK(gain);
+    bool saturated_echo,
+    const std::vector<std::vector<float>>& render,
+    size_t num_capture_bands,
+    float* high_bands_gain,
+    std::array<float, kFftLengthBy2Plus1>* low_band_gain) {
+  RTC_DCHECK(high_bands_gain);
+  RTC_DCHECK(low_band_gain);
+
+  // Choose margin to use.
+  const float margin = saturated_echo ? 0.001f : 0.01f;
   switch (optimization_) {
 #if defined(WEBRTC_ARCH_X86_FAMILY)
     case Aec3Optimization::kSse2:
-      aec3::ComputeGains_SSE2(nearend_power, residual_echo_power,
-                              comfort_noise_power, strong_nearend_margin,
-                              &previous_gain_squared_, &previous_masker_, gain);
+      aec3::ComputeGains_SSE2(
+          nearend_power, residual_echo_power, comfort_noise_power, margin,
+          &previous_gain_squared_, &previous_masker_, low_band_gain);
       break;
 #endif
     default:
       aec3::ComputeGains(nearend_power, residual_echo_power,
-                         comfort_noise_power, strong_nearend_margin,
-                         &previous_gain_squared_, &previous_masker_, gain);
+                         comfort_noise_power, margin, &previous_gain_squared_,
+                         &previous_masker_, low_band_gain);
+  }
+
+  if (num_capture_bands > 1) {
+    // Compute the gain for upper frequencies.
+    const float min_high_band_gain =
+        HighFrequencyGainBound(saturated_echo, render);
+    *high_bands_gain =
+        *std::min_element(low_band_gain->begin() + 32, low_band_gain->end());
+
+    *high_bands_gain = std::min(*high_bands_gain, min_high_band_gain);
+
+  } else {
+    *high_bands_gain = 1.f;
   }
 }
 

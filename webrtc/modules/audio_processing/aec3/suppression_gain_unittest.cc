@@ -25,9 +25,16 @@ TEST(SuppressionGain, NullOutputGains) {
   std::array<float, kFftLengthBy2Plus1> E2;
   std::array<float, kFftLengthBy2Plus1> R2;
   std::array<float, kFftLengthBy2Plus1> N2;
-  EXPECT_DEATH(
-      SuppressionGain(DetectOptimization()).GetGain(E2, R2, N2, 0.1f, nullptr),
-      "");
+  E2.fill(0.f);
+  R2.fill(0.f);
+  N2.fill(0.f);
+  float high_bands_gain;
+  EXPECT_DEATH(SuppressionGain(DetectOptimization())
+                   .GetGain(E2, R2, N2, false,
+                            std::vector<std::vector<float>>(
+                                3, std::vector<float>(kBlockSize, 0.f)),
+                            1, &high_bands_gain, nullptr),
+               "");
 }
 
 #endif
@@ -109,17 +116,19 @@ TEST(SuppressionGain, TestOptimizations) {
 // Does a sanity check that the gains are correctly computed.
 TEST(SuppressionGain, BasicGainComputation) {
   SuppressionGain suppression_gain(DetectOptimization());
+  float high_bands_gain;
   std::array<float, kFftLengthBy2Plus1> E2;
   std::array<float, kFftLengthBy2Plus1> R2;
   std::array<float, kFftLengthBy2Plus1> N2;
   std::array<float, kFftLengthBy2Plus1> g;
+  std::vector<std::vector<float>> x(1, std::vector<float>(kBlockSize, 0.f));
 
   // Ensure that a strong noise is detected to mask any echoes.
   E2.fill(10.f);
   R2.fill(0.1f);
   N2.fill(100.f);
   for (int k = 0; k < 10; ++k) {
-    suppression_gain.GetGain(E2, R2, N2, 0.1f, &g);
+    suppression_gain.GetGain(E2, R2, N2, false, x, 1, &high_bands_gain, &g);
   }
   std::for_each(g.begin(), g.end(),
                 [](float a) { EXPECT_NEAR(1.f, a, 0.001); });
@@ -129,7 +138,7 @@ TEST(SuppressionGain, BasicGainComputation) {
   R2.fill(0.1f);
   N2.fill(0.f);
   for (int k = 0; k < 10; ++k) {
-    suppression_gain.GetGain(E2, R2, N2, 0.1f, &g);
+    suppression_gain.GetGain(E2, R2, N2, false, x, 1, &high_bands_gain, &g);
   }
   std::for_each(g.begin(), g.end(),
                 [](float a) { EXPECT_NEAR(1.f, a, 0.001); });
@@ -139,7 +148,7 @@ TEST(SuppressionGain, BasicGainComputation) {
   R2.fill(100.f);
   N2.fill(0.f);
   for (int k = 0; k < 10; ++k) {
-    suppression_gain.GetGain(E2, R2, N2, 0.1f, &g);
+    suppression_gain.GetGain(E2, R2, N2, false, x, 1, &high_bands_gain, &g);
   }
   std::for_each(g.begin(), g.end(),
                 [](float a) { EXPECT_NEAR(0.f, a, 0.001); });

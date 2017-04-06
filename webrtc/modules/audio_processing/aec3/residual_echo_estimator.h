@@ -30,20 +30,14 @@ class ResidualEchoEstimator {
 
   void Estimate(bool using_subtractor_output,
                 const AecState& aec_state,
-                const RenderBuffer& X_buffer,
-                const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
-                const std::array<float, kFftLengthBy2Plus1>& E2_main,
-                const std::array<float, kFftLengthBy2Plus1>& E2_shadow,
+                const RenderBuffer& render_buffer,
                 const std::array<float, kFftLengthBy2Plus1>& S2_linear,
-                const std::array<float, kFftLengthBy2Plus1>& S2_fallback,
                 const std::array<float, kFftLengthBy2Plus1>& Y2,
                 std::array<float, kFftLengthBy2Plus1>* R2);
 
-  void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
-
  private:
-  std::array<float, kFftLengthBy2Plus1> echo_path_gain_;
-  size_t blocks_since_last_saturation_ = 1000;
+  std::array<float, kFftLengthBy2Plus1> R2_old_;
+  std::array<int, kFftLengthBy2Plus1> R2_hold_counter_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ResidualEchoEstimator);
 };

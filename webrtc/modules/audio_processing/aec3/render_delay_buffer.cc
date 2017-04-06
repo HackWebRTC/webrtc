@@ -102,10 +102,11 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
 
 RenderDelayBufferImpl::RenderDelayBufferImpl(size_t num_bands)
     : optimization_(DetectOptimization()),
-      fft_buffer_(optimization_,
-                  num_bands,
-                  std::max(30, kAdaptiveFilterLength),
-                  std::vector<size_t>(1, kAdaptiveFilterLength)),
+      fft_buffer_(
+          optimization_,
+          num_bands,
+          std::max(kResidualEchoPowerRenderWindowSize, kAdaptiveFilterLength),
+          std::vector<size_t>(1, kAdaptiveFilterLength)),
       api_call_jitter_buffer_(num_bands) {
   buffer_.fill(std::vector<std::vector<float>>(
       num_bands, std::vector<float>(kBlockSize, 0.f)));
@@ -175,23 +176,19 @@ void RenderDelayBufferImpl::SetDelay(size_t delay) {
   // If there is a new delay set, clear the fft buffer.
   fft_buffer_.Clear();
 
-  const size_t max_delay = buffer_.size() - 1;
-  if (max_delay < delay) {
+  if ((buffer_.size() - 1) < delay) {
     // If the desired delay is larger than the delay buffer, shorten the delay
     // buffer size to achieve the desired alignment with the available buffer
     // size.
-    const size_t delay_decrease = delay - max_delay;
-    RTC_DCHECK_LT(delay_decrease, buffer_.size());
-
     downsampled_render_buffer_.position =
-        (downsampled_render_buffer_.position + kSubBlockSize * delay_decrease) %
+        (downsampled_render_buffer_.position +
+         kSubBlockSize * (delay - (buffer_.size() - 1))) %
         downsampled_render_buffer_.buffer.size();
 
     last_insert_index_ =
-        (last_insert_index_ + buffer_.size() - delay_decrease) % buffer_.size();
-
-    RTC_DCHECK_EQ(max_delay, delay_ - delay_decrease);
-    delay_ = max_delay;
+        (last_insert_index_ - (delay - (buffer_.size() - 1)) + buffer_.size()) %
+        buffer_.size();
+    delay_ = buffer_.size() - 1;
   } else {
     delay_ = delay;
   }
