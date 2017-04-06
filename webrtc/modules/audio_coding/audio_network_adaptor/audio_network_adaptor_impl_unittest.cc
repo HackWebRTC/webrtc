@@ -182,7 +182,7 @@ TEST(AudioNetworkAdaptorImplTest,
      DumpEncoderRuntimeConfigIsCalledOnGetEncoderRuntimeConfig) {
   auto states = CreateAudioNetworkAdaptor();
 
-  AudioNetworkAdaptor::EncoderRuntimeConfig config;
+  AudioEncoderRuntimeConfig config;
   config.bitrate_bps = rtc::Optional<int>(32000);
   config.enable_fec = rtc::Optional<bool>(true);
 
@@ -255,7 +255,7 @@ TEST(AudioNetworkAdaptorImplTest,
 TEST(AudioNetworkAdaptorImplTest, LogRuntimeConfigOnGetEncoderRuntimeConfig) {
   auto states = CreateAudioNetworkAdaptor();
 
-  AudioNetworkAdaptor::EncoderRuntimeConfig config;
+  AudioEncoderRuntimeConfig config;
   config.bitrate_bps = rtc::Optional<int>(32000);
   config.enable_fec = rtc::Optional<bool>(true);
 

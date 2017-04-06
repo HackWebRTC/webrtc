@@ -17,7 +17,6 @@
 #include "webrtc/base/platform_file.h"
 #include "webrtc/call/audio_receive_stream.h"
 #include "webrtc/call/audio_send_stream.h"
-#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -32,6 +31,7 @@ class EventStream;
 
 class Clock;
 class RtcEventLogImpl;
+struct AudioEncoderRuntimeConfig;
 
 enum class MediaType;
 
@@ -135,7 +135,7 @@ class RtcEventLog {
 
   // Logs audio encoder re-configuration driven by audio network adaptor.
   virtual void LogAudioNetworkAdaptation(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config) = 0;
+      const AudioEncoderRuntimeConfig& config) = 0;
 
   // Logs when a probe cluster is created.
   virtual void LogProbeClusterCreated(int id,
@@ -199,7 +199,7 @@ class RtcEventLogNullImpl final : public RtcEventLog {
   void LogDelayBasedBweUpdate(int32_t bitrate_bps,
                               BandwidthUsage detector_state) override {}
   void LogAudioNetworkAdaptation(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override {}
+      const AudioEncoderRuntimeConfig& config) override {}
   void LogProbeClusterCreated(int id,
                               int bitrate_bps,
                               int min_probes,

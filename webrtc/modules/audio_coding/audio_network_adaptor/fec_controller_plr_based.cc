@@ -79,8 +79,7 @@ void FecControllerPlrBased::UpdateNetworkMetrics(
   }
 }
 
-void FecControllerPlrBased::MakeDecision(
-    AudioNetworkAdaptor::EncoderRuntimeConfig* config) {
+void FecControllerPlrBased::MakeDecision(AudioEncoderRuntimeConfig* config) {
   RTC_DCHECK(!config->enable_fec);
   RTC_DCHECK(!config->uplink_packet_loss_fraction);
 

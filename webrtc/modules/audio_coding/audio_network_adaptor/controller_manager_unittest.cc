@@ -299,10 +299,10 @@ void CheckControllersOrder(const std::vector<Controller*>& controllers,
   ASSERT_EQ(expected_types.size(), controllers.size());
 
   // We also check that the controllers follow the initial settings.
-  AudioNetworkAdaptor::EncoderRuntimeConfig encoder_config;
+  AudioEncoderRuntimeConfig encoder_config;
 
   for (size_t i = 0; i < controllers.size(); ++i) {
-    AudioNetworkAdaptor::EncoderRuntimeConfig encoder_config;
+    AudioEncoderRuntimeConfig encoder_config;
     // We check the order of |controllers| by judging their decisions.
     controllers[i]->MakeDecision(&encoder_config);
 

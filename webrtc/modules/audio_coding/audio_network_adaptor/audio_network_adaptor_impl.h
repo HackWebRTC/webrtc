@@ -54,7 +54,7 @@ class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
 
   void SetOverhead(size_t overhead_bytes_per_packet) override;
 
-  EncoderRuntimeConfig GetEncoderRuntimeConfig() override;
+  AudioEncoderRuntimeConfig GetEncoderRuntimeConfig() override;
 
   void StartDebugDump(FILE* file_handle) override;
 

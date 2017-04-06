@@ -47,7 +47,7 @@ class FecControllerRplrBased final : public Controller {
 
   void UpdateNetworkMetrics(const NetworkMetrics& network_metrics) override;
 
-  void MakeDecision(AudioNetworkAdaptor::EncoderRuntimeConfig* config) override;
+  void MakeDecision(AudioEncoderRuntimeConfig* config) override;
 
  private:
   bool FecEnablingDecision() const;

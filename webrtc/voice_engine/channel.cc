@@ -163,7 +163,7 @@ class RtcEventLogProxy final : public webrtc::RtcEventLog {
   }
 
   void LogAudioNetworkAdaptation(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override {
+      const AudioEncoderRuntimeConfig& config) override {
     rtc::CritScope lock(&crit_);
     if (event_log_) {
       event_log_->LogAudioNetworkAdaptation(config);

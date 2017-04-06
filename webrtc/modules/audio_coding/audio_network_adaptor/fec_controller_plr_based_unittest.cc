@@ -96,7 +96,7 @@ void UpdateNetworkMetrics(FecControllerPlrBasedTestStates* states,
 void CheckDecision(FecControllerPlrBasedTestStates* states,
                    bool expected_enable_fec,
                    float expected_uplink_packet_loss_fraction) {
-  AudioNetworkAdaptor::EncoderRuntimeConfig config;
+  AudioEncoderRuntimeConfig config;
   states->controller->MakeDecision(&config);
   EXPECT_EQ(rtc::Optional<bool>(expected_enable_fec), config.enable_fec);
   EXPECT_EQ(rtc::Optional<float>(expected_uplink_packet_loss_fraction),

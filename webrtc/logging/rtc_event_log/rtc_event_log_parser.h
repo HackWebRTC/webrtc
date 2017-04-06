@@ -151,11 +151,10 @@ class ParsedRtcEventLog {
                               BandwidthUsage* detector_state) const;
 
   // Reads a audio network adaptation event to a (non-NULL)
-  // AudioNetworkAdaptor::EncoderRuntimeConfig struct. Only the fields that are
+  // AudioEncoderRuntimeConfig struct. Only the fields that are
   // stored in the protobuf will be written.
-  void GetAudioNetworkAdaptation(
-      size_t index,
-      AudioNetworkAdaptor::EncoderRuntimeConfig* config) const;
+  void GetAudioNetworkAdaptation(size_t index,
+                                 AudioEncoderRuntimeConfig* config) const;
 
   ParsedRtcEventLog::BweProbeClusterCreatedEvent GetBweProbeClusterCreated(
       size_t index) const;

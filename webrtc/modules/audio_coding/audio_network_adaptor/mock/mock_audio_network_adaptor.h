@@ -35,7 +35,7 @@ class MockAudioNetworkAdaptor : public AudioNetworkAdaptor {
 
   MOCK_METHOD1(SetOverhead, void(size_t overhead_bytes_per_packet));
 
-  MOCK_METHOD0(GetEncoderRuntimeConfig, EncoderRuntimeConfig());
+  MOCK_METHOD0(GetEncoderRuntimeConfig, AudioEncoderRuntimeConfig());
 
   MOCK_METHOD1(StartDebugDump, void(FILE* file_handle));
 

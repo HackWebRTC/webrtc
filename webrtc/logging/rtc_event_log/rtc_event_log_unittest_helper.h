@@ -63,7 +63,7 @@ class RtcEventLogTestHelper {
   static void VerifyAudioNetworkAdaptation(
       const ParsedRtcEventLog& parsed_log,
       size_t index,
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config);
+      const AudioEncoderRuntimeConfig& config);
 
   static void VerifyLogStartEvent(const ParsedRtcEventLog& parsed_log,
                                   size_t index);

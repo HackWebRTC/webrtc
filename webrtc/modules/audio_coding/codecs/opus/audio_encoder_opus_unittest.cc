@@ -87,14 +87,14 @@ AudioEncoderOpusStates CreateCodec(size_t num_channels) {
   return states;
 }
 
-AudioNetworkAdaptor::EncoderRuntimeConfig CreateEncoderRuntimeConfig() {
+AudioEncoderRuntimeConfig CreateEncoderRuntimeConfig() {
   constexpr int kBitrate = 40000;
   constexpr int kFrameLength = 60;
   constexpr bool kEnableFec = true;
   constexpr bool kEnableDtx = false;
   constexpr size_t kNumChannels = 1;
   constexpr float kPacketLossFraction = 0.1f;
-  AudioNetworkAdaptor::EncoderRuntimeConfig config;
+  AudioEncoderRuntimeConfig config;
   config.bitrate_bps = rtc::Optional<int>(kBitrate);
   config.frame_length_ms = rtc::Optional<int>(kFrameLength);
   config.enable_fec = rtc::Optional<bool>(kEnableFec);
@@ -105,9 +105,8 @@ AudioNetworkAdaptor::EncoderRuntimeConfig CreateEncoderRuntimeConfig() {
   return config;
 }
 
-void CheckEncoderRuntimeConfig(
-    const AudioEncoderOpus* encoder,
-    const AudioNetworkAdaptor::EncoderRuntimeConfig& config) {
+void CheckEncoderRuntimeConfig(const AudioEncoderOpus* encoder,
+                               const AudioEncoderRuntimeConfig& config) {
   EXPECT_EQ(*config.bitrate_bps, encoder->GetTargetBitrate());
   EXPECT_EQ(*config.frame_length_ms, encoder->next_frame_length_ms());
   EXPECT_EQ(*config.enable_fec, encoder->fec_enabled());
@@ -472,7 +471,7 @@ TEST(AudioEncoderOpusTest, EmptyConfigDoesNotAffectEncoderSettings) {
   states.encoder->EnableAudioNetworkAdaptor("", nullptr, nullptr);
 
   auto config = CreateEncoderRuntimeConfig();
-  AudioNetworkAdaptor::EncoderRuntimeConfig empty_config;
+  AudioEncoderRuntimeConfig empty_config;
 
   EXPECT_CALL(**states.mock_audio_network_adaptor, GetEncoderRuntimeConfig())
       .WillOnce(Return(config))

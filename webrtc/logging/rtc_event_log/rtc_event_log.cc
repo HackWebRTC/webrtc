@@ -22,6 +22,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_helper_thread.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/app.h"
@@ -29,8 +30,8 @@
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
-#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/psfb.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sdes.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
@@ -85,7 +86,7 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogDelayBasedBweUpdate(int32_t bitrate_bps,
                               BandwidthUsage detector_state) override;
   void LogAudioNetworkAdaptation(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config) override;
+      const AudioEncoderRuntimeConfig& config) override;
   void LogProbeClusterCreated(int id,
                               int bitrate_bps,
                               int min_probes,
@@ -504,7 +505,7 @@ void RtcEventLogImpl::LogDelayBasedBweUpdate(int32_t bitrate_bps,
 }
 
 void RtcEventLogImpl::LogAudioNetworkAdaptation(
-    const AudioNetworkAdaptor::EncoderRuntimeConfig& config) {
+    const AudioEncoderRuntimeConfig& config) {
   std::unique_ptr<rtclog::Event> event(new rtclog::Event());
   event->set_timestamp_us(rtc::TimeMicros());
   event->set_type(rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT);

@@ -49,9 +49,8 @@ class DebugDumpWriterImpl final : public DebugDumpWriter {
   explicit DebugDumpWriterImpl(FILE* file_handle);
   ~DebugDumpWriterImpl() override = default;
 
-  void DumpEncoderRuntimeConfig(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config,
-      int64_t timestamp) override;
+  void DumpEncoderRuntimeConfig(const AudioEncoderRuntimeConfig& config,
+                                int64_t timestamp) override;
 
   void DumpNetworkMetrics(const Controller::NetworkMetrics& metrics,
                           int64_t timestamp) override;
@@ -104,7 +103,7 @@ void DebugDumpWriterImpl::DumpNetworkMetrics(
 }
 
 void DebugDumpWriterImpl::DumpEncoderRuntimeConfig(
-    const AudioNetworkAdaptor::EncoderRuntimeConfig& config,
+    const AudioEncoderRuntimeConfig& config,
     int64_t timestamp) {
 #ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
   Event event;

@@ -35,8 +35,7 @@ class Controller {
   // indicates an update on the corresponding network metric.
   virtual void UpdateNetworkMetrics(const NetworkMetrics& network_metrics) = 0;
 
-  virtual void MakeDecision(
-      AudioNetworkAdaptor::EncoderRuntimeConfig* config) = 0;
+  virtual void MakeDecision(AudioEncoderRuntimeConfig* config) = 0;
 };
 
 }  // namespace webrtc

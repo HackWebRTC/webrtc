@@ -22,6 +22,7 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_unittest_helper.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
@@ -227,10 +228,9 @@ void GenerateAudioSendConfig(uint32_t extensions_bitvector,
   }
 }
 
-void GenerateAudioNetworkAdaptation(
-    uint32_t extensions_bitvector,
-    AudioNetworkAdaptor::EncoderRuntimeConfig* config,
-    Random* prng) {
+void GenerateAudioNetworkAdaptation(uint32_t extensions_bitvector,
+                                    AudioEncoderRuntimeConfig* config,
+                                    Random* prng) {
   config->bitrate_bps = rtc::Optional<int>(prng->Rand(0, 3000000));
   config->enable_fec = rtc::Optional<bool>(prng->Rand<bool>());
   config->enable_dtx = rtc::Optional<bool>(prng->Rand<bool>());
@@ -859,7 +859,7 @@ class AudioNetworkAdaptationReadWriteTest : public ConfigReadWriteTest {
     RtcEventLogTestHelper::VerifyAudioNetworkAdaptation(parsed_log, index,
                                                         config);
   }
-  AudioNetworkAdaptor::EncoderRuntimeConfig config;
+  AudioEncoderRuntimeConfig config;
 };
 
 TEST(RtcEventLogTest, LogAudioReceiveConfig) {

@@ -112,9 +112,8 @@ void AudioNetworkAdaptorImpl::SetOverhead(size_t overhead_bytes_per_packet) {
   UpdateNetworkMetrics(network_metrics);
 }
 
-AudioNetworkAdaptor::EncoderRuntimeConfig
-AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
-  EncoderRuntimeConfig config;
+AudioEncoderRuntimeConfig AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
+  AudioEncoderRuntimeConfig config;
   for (auto& controller :
        controller_manager_->GetSortedControllers(last_metrics_))
     controller->MakeDecision(&config);

@@ -14,6 +14,7 @@
 #include <string>
 
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/test/gmock.h"
 
 namespace webrtc {
@@ -70,7 +71,7 @@ class MockRtcEventLog : public RtcEventLog {
                void(int32_t bitrate_bps, BandwidthUsage detector_state));
 
   MOCK_METHOD1(LogAudioNetworkAdaptation,
-               void(const AudioNetworkAdaptor::EncoderRuntimeConfig& config));
+               void(const AudioEncoderRuntimeConfig& config));
 
   MOCK_METHOD4(LogProbeClusterCreated,
                void(int id, int bitrate_bps, int min_probes, int min_bytes));

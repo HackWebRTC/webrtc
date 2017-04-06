@@ -27,9 +27,8 @@ class DebugDumpWriter {
 
   virtual ~DebugDumpWriter() = default;
 
-  virtual void DumpEncoderRuntimeConfig(
-      const AudioNetworkAdaptor::EncoderRuntimeConfig& config,
-      int64_t timestamp) = 0;
+  virtual void DumpEncoderRuntimeConfig(const AudioEncoderRuntimeConfig& config,
+                                        int64_t timestamp) = 0;
 
   virtual void DumpNetworkMetrics(const Controller::NetworkMetrics& metrics,
                                   int64_t timestamp) = 0;

@@ -22,6 +22,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -511,7 +512,7 @@ void ParsedRtcEventLog::GetDelayBasedBweUpdate(
 
 void ParsedRtcEventLog::GetAudioNetworkAdaptation(
     size_t index,
-    AudioNetworkAdaptor::EncoderRuntimeConfig* config) const {
+    AudioEncoderRuntimeConfig* config) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());

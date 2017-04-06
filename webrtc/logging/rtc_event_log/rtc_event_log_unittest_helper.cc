@@ -15,6 +15,7 @@
 #include <string>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -548,8 +549,8 @@ void RtcEventLogTestHelper::VerifyBweDelayEvent(
 void RtcEventLogTestHelper::VerifyAudioNetworkAdaptation(
     const ParsedRtcEventLog& parsed_log,
     size_t index,
-    const AudioNetworkAdaptor::EncoderRuntimeConfig& config) {
-  AudioNetworkAdaptor::EncoderRuntimeConfig parsed_config;
+    const AudioEncoderRuntimeConfig& config) {
+  AudioEncoderRuntimeConfig parsed_config;
   parsed_log.GetAudioNetworkAdaptation(index, &parsed_config);
   EXPECT_EQ(config.bitrate_bps, parsed_config.bitrate_bps);
   EXPECT_EQ(config.enable_dtx, parsed_config.enable_dtx);

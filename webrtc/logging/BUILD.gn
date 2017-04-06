@@ -87,6 +87,7 @@ if (rtc_enable_protobuf) {
       ":rtc_event_log_proto",
       "..:webrtc_common",
       "../call:call_interfaces",
+      "../modules/audio_coding:audio_network_adaptor",
       "../modules/rtp_rtcp:rtp_rtcp",
       "../system_wrappers",
     ]
@@ -114,6 +115,7 @@ if (rtc_enable_protobuf) {
         "../base:rtc_base_approved",
         "../base:rtc_base_tests_utils",
         "../call",
+        "../modules/audio_coding:audio_network_adaptor",
         "../modules/rtp_rtcp",
         "../system_wrappers:metrics_default",
         "../test:test_support",

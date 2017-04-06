@@ -113,7 +113,7 @@ void UpdateNetworkMetrics(
 void CheckDecision(FecControllerRplrBased* controller,
                    bool expected_enable_fec,
                    float expected_uplink_packet_loss_fraction) {
-  AudioNetworkAdaptor::EncoderRuntimeConfig config;
+  AudioEncoderRuntimeConfig config;
   controller->MakeDecision(&config);
 
   // Less compact than comparing optionals, but yields more readable errors.
