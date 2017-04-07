@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller.h"
 
 namespace webrtc {
@@ -49,7 +50,7 @@ class ControllerManagerImpl final : public ControllerManager {
   };
 
   static std::unique_ptr<ControllerManager> Create(
-      const std::string& config_string,
+      const ProtoString& config_string,
       size_t num_encoder_channels,
       rtc::ArrayView<const int> encoder_frame_lengths_ms,
       int min_encoder_bitrate_bps,

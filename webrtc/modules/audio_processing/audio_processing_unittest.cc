@@ -20,6 +20,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/base/ignore_wundef.h"
+#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/common_audio/include/audio_util.h"
 #include "webrtc/common_audio/resampler/include/push_resampler.h"
 #include "webrtc/common_audio/resampler/push_sinc_resampler.h"
@@ -58,7 +59,7 @@ namespace {
 // file. This is the typical case. When the file should be updated, it can
 // be set to true with the command-line switch --write_ref_data.
 bool write_ref_data = false;
-const google::protobuf::int32 kChannels[] = {1, 2};
+const int32_t kChannels[] = {1, 2};
 const int kSampleRates[] = {8000, 16000, 32000, 48000};
 
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
@@ -230,7 +231,7 @@ void WriteStatsMessage(const AudioProcessing::Statistic& output,
 #endif
 
 void OpenFileAndWriteMessage(const std::string filename,
-                             const ::google::protobuf::MessageLite& msg) {
+                             const MessageLite& msg) {
   FILE* file = fopen(filename.c_str(), "wb");
   ASSERT_TRUE(file != NULL);
 
@@ -299,8 +300,7 @@ void ClearTempFiles() {
     remove(kv.second.c_str());
 }
 
-void OpenFileAndReadMessage(std::string filename,
-                            ::google::protobuf::MessageLite* msg) {
+void OpenFileAndReadMessage(std::string filename, MessageLite* msg) {
   FILE* file = fopen(filename.c_str(), "rb");
   ASSERT_TRUE(file != NULL);
   ReadMessageFromFile(file, msg);

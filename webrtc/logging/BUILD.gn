@@ -51,6 +51,7 @@ rtc_static_library("rtc_event_log_impl") {
   deps = [
     ":rtc_event_log_api",
     "..:webrtc_common",
+    "../base:protobuf_utils",
     "../base:rtc_base_approved",
     "../call:call_interfaces",
     "../modules/audio_coding:audio_network_adaptor",
@@ -97,6 +98,7 @@ if (rtc_enable_protobuf) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
     deps = [
+      "../base:protobuf_utils",
       "../base:rtc_base_approved",
     ]
   }

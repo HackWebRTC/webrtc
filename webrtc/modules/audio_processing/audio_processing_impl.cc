@@ -1878,11 +1878,11 @@ int AudioProcessingImpl::WriteInitMessage() {
   audioproc::Init* msg = debug_dump_.capture.event_msg->mutable_init();
   msg->set_sample_rate(formats_.api_format.input_stream().sample_rate_hz());
 
-  msg->set_num_input_channels(static_cast<google::protobuf::int32>(
+  msg->set_num_input_channels(static_cast<int32_t>(
       formats_.api_format.input_stream().num_channels()));
-  msg->set_num_output_channels(static_cast<google::protobuf::int32>(
+  msg->set_num_output_channels(static_cast<int32_t>(
       formats_.api_format.output_stream().num_channels()));
-  msg->set_num_reverse_channels(static_cast<google::protobuf::int32>(
+  msg->set_num_reverse_channels(static_cast<int32_t>(
       formats_.api_format.reverse_input_stream().num_channels()));
   msg->set_reverse_sample_rate(
       formats_.api_format.reverse_input_stream().sample_rate_hz());
@@ -1952,7 +1952,7 @@ int AudioProcessingImpl::WriteConfigMessage(bool forced) {
   }
   config.set_experiments_description(experiments_description);
 
-  std::string serialized_config = config.SerializeAsString();
+  ProtoString serialized_config = config.SerializeAsString();
   if (!forced &&
       debug_dump_.capture.last_serialized_config == serialized_config) {
     return kNoError;

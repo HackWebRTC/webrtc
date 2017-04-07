@@ -13,7 +13,6 @@
 
 #include <limits>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -21,12 +20,13 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/platform_thread.h"
+#include "webrtc/base/protobuf_utils.h"
 #include "webrtc/base/swap_queue.h"
 #include "webrtc/logging/rtc_event_log/ringbuffer.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 #ifdef ENABLE_RTC_EVENT_LOG
-// Files generated at build-time by the protobuf compiler.
+// *.ph.h files are generated at build-time by the protobuf compiler.
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/webrtc/logging/rtc_event_log/rtc_event_log.pb.h"
@@ -112,7 +112,7 @@ class RtcEventLogHelperThread final {
   std::unique_ptr<rtclog::Event> most_recent_event_;
 
   // Temporary space for serializing profobuf data.
-  std::string output_string_;
+  ProtoString output_string_;
 
   rtc::Event wake_periodically_;
   rtc::Event wake_from_hibernation_;
