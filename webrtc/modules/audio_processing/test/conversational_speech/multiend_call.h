@@ -11,10 +11,13 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_MULTIEND_CALL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_MULTIEND_CALL_H_
 
+#include <stddef.h>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "webrtc/base/array_view.h"
 #include "webrtc/base/constructormagic.h"
@@ -28,6 +31,20 @@ namespace conversational_speech {
 
 class MultiEndCall {
  public:
+  struct SpeakingTurn {
+    // Constructor required in order to use std::vector::emplace_back().
+    SpeakingTurn(std::string new_speaker_name,
+                 std::string new_audiotrack_file_name,
+                 size_t new_begin, size_t new_end)
+        : speaker_name(std::move(new_speaker_name)),
+          audiotrack_file_name(std::move(new_audiotrack_file_name)),
+          begin(new_begin), end(new_end) {}
+    std::string speaker_name;
+    std::string audiotrack_file_name;
+    size_t begin;
+    size_t end;
+  };
+
   MultiEndCall(
       rtc::ArrayView<const Turn> timing, const std::string& audiotracks_path,
       std::unique_ptr<WavReaderAbstractFactory> wavreader_abstract_factory);
@@ -36,16 +53,20 @@ class MultiEndCall {
   const std::set<std::string>& speaker_names() const;
   const std::map<std::string, std::unique_ptr<WavReaderInterface>>&
       audiotrack_readers() const;
+  bool valid() const;
+  size_t total_duration_samples() const;
+  const std::vector<SpeakingTurn>& speaking_turns() const;
 
  private:
-  // Find unique speaker names.
+  // Finds unique speaker names.
   void FindSpeakerNames();
 
-  // Create one WavReader instance for each unique audiotrack.
+  // Creates one WavReader instance for each unique audiotrack.
   void CreateAudioTrackReaders();
 
-  // Check the speaking turns timing.
-  void CheckTiming();
+  // Validates the speaking turns timing information. Accepts cross-talk, but
+  // only up to 2 speakers. Rejects unordered turns and self cross-talk.
+  bool CheckTiming();
 
   rtc::ArrayView<const Turn> timing_;
   const std::string& audiotracks_path_;
@@ -53,6 +74,9 @@ class MultiEndCall {
   std::set<std::string> speaker_names_;
   std::map<std::string, std::unique_ptr<WavReaderInterface>>
       audiotrack_readers_;
+  bool valid_;
+  size_t total_duration_samples_;
+  std::vector<SpeakingTurn> speaking_turns_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(MultiEndCall);
 };

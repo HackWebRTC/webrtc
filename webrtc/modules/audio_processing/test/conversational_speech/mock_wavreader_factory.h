@@ -11,6 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_MOCK_WAVREADER_FACTORY_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_MOCK_WAVREADER_FACTORY_H_
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -24,15 +25,28 @@ namespace conversational_speech {
 
 class MockWavReaderFactory : public WavReaderAbstractFactory {
  public:
-  MockWavReaderFactory();
-  // TODO(alessiob): add ctor that gets map string->(sr, #samples, #channels).
+  struct Params{
+    int sample_rate;
+    size_t num_channels;
+    size_t num_samples;
+  };
+
+  MockWavReaderFactory(const Params& default_params,
+                       const std::map<std::string, const Params>& params);
+  explicit MockWavReaderFactory(const Params& default_params);
   ~MockWavReaderFactory();
 
-  // TODO(alessiob): use ON_CALL to return MockWavReader with desired params.
   MOCK_CONST_METHOD1(Create, std::unique_ptr<WavReaderInterface>(
       const std::string&));
 
-  // TODO(alessiob): add const ref to map (see ctor to add).
+ private:
+  // Creates a MockWavReader instance using the parameters in
+  // audiotrack_names_params_ if the entry corresponding to filepath exists,
+  // otherwise creates a MockWavReader instance using the default parameters.
+  std::unique_ptr<WavReaderInterface> CreateMock(const std::string& filepath);
+
+  const Params& default_params_;
+  std::map<std::string, const Params> audiotrack_names_params_;
 };
 
 }  // namespace conversational_speech

@@ -8,9 +8,36 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+// This file consists of unit tests for webrtc::test::conversational_speech
+// members. Part of them focus on accepting or rejecting different
+// conversational speech setups. A setup is defined by a set of audio tracks and
+// timing information).
+// The docstring at the beginning of each TEST_F(ConversationalSpeechTest,
+// MultiEndCallSetup*) function looks like the drawing below and indicates which
+// setup is tested.
+//
+//    Accept:
+//    A 0****.....
+//    B .....1****
+//
+// The drawing indicates the following:
+// - the illustrated setup should be accepted,
+// - there are two speakers (namely, A and B),
+// - A is the first speaking, B is the second one,
+// - each character after the speaker's letter indicates a time unit (e.g., 100
+//   ms),
+// - "*" indicates speaking, "." listening,
+// - numbers indicate the turn index in std::vector<Turn>.
+//
+// Note that the same speaker can appear in multiple lines in order to depict
+// cases in which there are wrong offsets leading to self cross-talk (which is
+// rejected).
+
 #include <stdio.h>
+#include <map>
 #include <memory>
 
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/config.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/mock_wavreader_factory.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/multiend_call.h"
@@ -44,9 +71,38 @@ const std::vector<Turn> expected_timing = {
 };
 const std::size_t kNumberOfTurns = expected_timing.size();
 
+// Default arguments for MockWavReaderFactory ctor.
+// Fake audio track parameters.
+constexpr int kDefaultSampleRate = 48000;
+const std::map<std::string, const MockWavReaderFactory::Params>
+    kDefaultMockWavReaderFactoryParamsMap = {
+  {"t300", {kDefaultSampleRate, 1u, 14400u}},  // 0.3 seconds.
+  {"t500", {kDefaultSampleRate, 1u, 24000u}},  // 0.5 seconds.
+  {"t1000", {kDefaultSampleRate, 1u, 48000u}},  // 1.0 seconds.
+};
+const MockWavReaderFactory::Params& kDefaultMockWavReaderFactoryParams =
+    kDefaultMockWavReaderFactoryParamsMap.at("t500");
+
+std::unique_ptr<MockWavReaderFactory> CreateMockWavReaderFactory() {
+  return std::unique_ptr<MockWavReaderFactory>(
+      new MockWavReaderFactory(kDefaultMockWavReaderFactoryParams,
+                               kDefaultMockWavReaderFactoryParamsMap));
+}
+
 }  // namespace
 
-TEST(ConversationalSpeechTest, Settings) {
+using testing::_;
+
+// TODO(alessiob): Remove fixture once conversational_speech fully implemented
+// and replace TEST_F with TEST.
+class ConversationalSpeechTest : public testing::Test {
+ public:
+  ConversationalSpeechTest() {
+    rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
+  }
+};
+
+TEST_F(ConversationalSpeechTest, Settings) {
   const conversational_speech::Config config(
       audiotracks_path, timing_filepath, output_path);
 
@@ -56,7 +112,7 @@ TEST(ConversationalSpeechTest, Settings) {
   EXPECT_EQ(output_path, config.output_path());
 }
 
-TEST(ConversationalSpeechTest, TimingSaveLoad) {
+TEST_F(ConversationalSpeechTest, TimingSaveLoad) {
   // Save test timing.
   const std::string temporary_filepath = webrtc::test::TempFilename(
       webrtc::test::OutputPath(), "TempTimingTestFile");
@@ -76,20 +132,359 @@ TEST(ConversationalSpeechTest, TimingSaveLoad) {
   }
 }
 
-TEST(ConversationalSpeechTest, MultiEndCallCreate) {
-  auto mock_wavreader_factory = std::unique_ptr<MockWavReaderFactory>(
-      new MockWavReaderFactory());
+TEST_F(ConversationalSpeechTest, MultiEndCallCreate) {
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
 
   // There are 5 unique audio tracks to read.
-  EXPECT_CALL(*mock_wavreader_factory, Create(testing::_)).Times(5);
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(5);
 
   // Inject the mock wav reader factory.
   conversational_speech::MultiEndCall multiend_call(
       expected_timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_TRUE(multiend_call.valid());
 
   // Test.
   EXPECT_EQ(2u, multiend_call.speaker_names().size());
   EXPECT_EQ(5u, multiend_call.audiotrack_readers().size());
+  EXPECT_EQ(6u, multiend_call.speaking_turns().size());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupFirstOffsetNegative) {
+  const std::vector<Turn> timing = {
+      {"A", "t500", -100},
+      {"B", "t500", 0},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There is one unique audio track to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(1);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_FALSE(multiend_call.valid());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupSimple) {
+  // Accept:
+  // A 0****.....
+  // B .....1****
+  constexpr std::size_t expected_duration = kDefaultSampleRate;
+  const std::vector<Turn> timing = {
+      {"A", "t500", 0},
+      {"B", "t500", 0},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There is one unique audio track to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(1);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_TRUE(multiend_call.valid());
+
+  // Test.
+  EXPECT_EQ(2u, multiend_call.speaker_names().size());
+  EXPECT_EQ(1u, multiend_call.audiotrack_readers().size());
+  EXPECT_EQ(2u, multiend_call.speaking_turns().size());
+  EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupPause) {
+  // Accept:
+  // A 0****.......
+  // B .......1****
+  constexpr std::size_t expected_duration = kDefaultSampleRate * 1.2;
+  const std::vector<Turn> timing = {
+      {"A", "t500", 0},
+      {"B", "t500", 200},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There is one unique audio track to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(1);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_TRUE(multiend_call.valid());
+
+  // Test.
+  EXPECT_EQ(2u, multiend_call.speaker_names().size());
+  EXPECT_EQ(1u, multiend_call.audiotrack_readers().size());
+  EXPECT_EQ(2u, multiend_call.speaking_turns().size());
+  EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalk) {
+  // Accept:
+  // A 0****....
+  // B ....1****
+  constexpr std::size_t expected_duration = kDefaultSampleRate * 0.9;
+  const std::vector<Turn> timing = {
+      {"A", "t500", 0},
+      {"B", "t500", -100},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There is one unique audio track to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(1);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_TRUE(multiend_call.valid());
+
+  // Test.
+  EXPECT_EQ(2u, multiend_call.speaker_names().size());
+  EXPECT_EQ(1u, multiend_call.audiotrack_readers().size());
+  EXPECT_EQ(2u, multiend_call.speaking_turns().size());
+  EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupInvalidOrder) {
+  // Reject:
+  // A ..0****
+  // B .1****.  The n-th turn cannot start before the (n-1)-th one.
+  const std::vector<Turn> timing = {
+      {"A", "t500", 200},
+      {"B", "t500", -600},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There is one unique audio track to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(1);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_FALSE(multiend_call.valid());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkThree) {
+  // Accept:
+  // A 0****2****...
+  // B ...1*********
+  constexpr std::size_t expected_duration = kDefaultSampleRate * 1.3;
+  const std::vector<Turn> timing = {
+      {"A", "t500", 0},
+      {"B", "t1000", -200},
+      {"A", "t500", -800},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There are two unique audio tracks to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(2);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_TRUE(multiend_call.valid());
+
+  // Test.
+  EXPECT_EQ(2u, multiend_call.speaker_names().size());
+  EXPECT_EQ(2u, multiend_call.audiotrack_readers().size());
+  EXPECT_EQ(3u, multiend_call.speaking_turns().size());
+  EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupSelfCrossTalkNearInvalid) {
+  // Reject:
+  // A 0****......
+  // A ...1****...
+  // B ......2****
+  //      ^  Turn #1 overlaps with #0 which is from the same speaker.
+  const std::vector<Turn> timing = {
+      {"A", "t500", 0},
+      {"A", "t500", -200},
+      {"B", "t500", -200},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There is one unique audio track to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(1);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_FALSE(multiend_call.valid());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupSelfCrossTalkFarInvalid) {
+  // Reject:
+  // A 0*********
+  // B 1**.......
+  // C ...2**....
+  // A ......3**.
+  //         ^  Turn #3 overlaps with #0 which is from the same speaker.
+  const std::vector<Turn> timing = {
+      {"A", "t1000", 0},
+      {"B", "t300", -1000},
+      {"C", "t300", 0},
+      {"A", "t300", 0},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There are two unique audio tracks to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(2);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_FALSE(multiend_call.valid());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleValid) {
+  // Accept:
+  // A 0*********..
+  // B ..1****.....
+  // C .......2****
+  constexpr std::size_t expected_duration = kDefaultSampleRate * 1.2;
+  const std::vector<Turn> timing = {
+      {"A", "t1000", 0},
+      {"B", "t500", -800},
+      {"C", "t500", 0},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There are two unique audio tracks to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(2);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_TRUE(multiend_call.valid());
+
+  // Test.
+  EXPECT_EQ(3u, multiend_call.speaker_names().size());
+  EXPECT_EQ(2u, multiend_call.audiotrack_readers().size());
+  EXPECT_EQ(3u, multiend_call.speaking_turns().size());
+  EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleInvalid) {
+  // Reject:
+  // A 0*********
+  // B ..1****...
+  // C ....2****.
+  //       ^  Turn #2 overlaps both with #0 and #1 (cross-talk with 3+ speakers
+  //          not permitted).
+  const std::vector<Turn> timing = {
+      {"A", "t1000", 0},
+      {"B", "t500", -800},
+      {"C", "t500", -300},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There are two unique audio tracks to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(2);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_FALSE(multiend_call.valid());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkMiddleAndPause) {
+  // Accept:
+  // A 0*********..
+  // B .2****......
+  // C .......3****
+  constexpr std::size_t expected_duration = kDefaultSampleRate * 1.2;
+  const std::vector<Turn> timing = {
+      {"A", "t1000", 0},
+      {"B", "t500", -900},
+      {"C", "t500", 100},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There are two unique audio tracks to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(2);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_TRUE(multiend_call.valid());
+
+  // Test.
+  EXPECT_EQ(3u, multiend_call.speaker_names().size());
+  EXPECT_EQ(2u, multiend_call.audiotrack_readers().size());
+  EXPECT_EQ(3u, multiend_call.speaking_turns().size());
+  EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupCrossTalkFullOverlapValid) {
+  // Accept:
+  // A 0****
+  // B 1****
+  const std::vector<Turn> timing = {
+      {"A", "t500", 0},
+      {"B", "t500", -500},
+  };
+  auto mock_wavreader_factory = CreateMockWavReaderFactory();
+
+  // There is one unique audio track to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(1);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_TRUE(multiend_call.valid());
+
+  // Test.
+  EXPECT_EQ(2u, multiend_call.speaker_names().size());
+  EXPECT_EQ(1u, multiend_call.audiotrack_readers().size());
+  EXPECT_EQ(2u, multiend_call.speaking_turns().size());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupLongSequence) {
+  // Accept:
+  // A 0****....3****.5**.
+  // B .....1****...4**...
+  // C ......2**.......6**..
+  constexpr std::size_t expected_duration = kDefaultSampleRate * 1.9;
+  const std::vector<Turn> timing = {
+      {"A", "t500", 0},
+      {"B", "t500", 0},
+      {"C", "t300", -400},
+      {"A", "t500", 0},
+      {"B", "t300", -100},
+      {"A", "t300", -100},
+      {"C", "t300", -200},
+  };
+  auto mock_wavreader_factory = std::unique_ptr<MockWavReaderFactory>(
+      new MockWavReaderFactory(kDefaultMockWavReaderFactoryParams,
+                               kDefaultMockWavReaderFactoryParamsMap));
+
+  // There are two unique audio tracks to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(2);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_TRUE(multiend_call.valid());
+
+  // Test.
+  EXPECT_EQ(3u, multiend_call.speaker_names().size());
+  EXPECT_EQ(2u, multiend_call.audiotrack_readers().size());
+  EXPECT_EQ(7u, multiend_call.speaking_turns().size());
+  EXPECT_EQ(expected_duration, multiend_call.total_duration_samples());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallSetupLongSequenceInvalid) {
+  // Reject:
+  // A 0****....3****.6**
+  // B .....1****...4**..
+  // C ......2**.....5**..
+  //                 ^ Turns #4, #5 and #6 overlapping (cross-talk with 3+
+  //                   speakers not permitted).
+  const std::vector<Turn> timing = {
+      {"A", "t500", 0},
+      {"B", "t500", 0},
+      {"C", "t300", -400},
+      {"A", "t500", 0},
+      {"B", "t300", -100},
+      {"A", "t300", -200},
+      {"C", "t300", -200},
+  };
+  auto mock_wavreader_factory = std::unique_ptr<MockWavReaderFactory>(
+      new MockWavReaderFactory(kDefaultMockWavReaderFactoryParams,
+                               kDefaultMockWavReaderFactoryParamsMap));
+
+  // There are two unique audio tracks to read.
+  EXPECT_CALL(*mock_wavreader_factory, Create(_)).Times(2);
+
+  conversational_speech::MultiEndCall multiend_call(
+      timing, audiotracks_path, std::move(mock_wavreader_factory));
+  EXPECT_FALSE(multiend_call.valid());
 }
 
 }  // namespace test

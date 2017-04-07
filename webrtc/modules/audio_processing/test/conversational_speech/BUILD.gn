@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("//webrtc/webrtc.gni")
+import("../../../../../webrtc/webrtc.gni")
 
 group("conversational_speech") {
   testonly = true
@@ -22,9 +22,9 @@ rtc_executable("conversational_speech_generator") {
   ]
   deps = [
     ":lib",
+    "../../../../../webrtc/base:rtc_base_approved",
+    "../../../../../webrtc/test:test_support",
     "//third_party/gflags",
-    "//webrtc/base:rtc_base_approved",
-    "//webrtc/test:test_support",
   ]
 }
 
@@ -45,9 +45,9 @@ rtc_static_library("lib") {
     "wavreader_interface.h",
   ]
   deps = [
-    "//webrtc:webrtc_common",
-    "//webrtc/base:rtc_base_approved",
-    "//webrtc/common_audio",
+    "../../../../../webrtc:webrtc_common",
+    "../../../../../webrtc/base:rtc_base_approved",
+    "../../../../../webrtc/common_audio",
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }
@@ -56,15 +56,17 @@ rtc_source_set("unittest") {
   testonly = true
   sources = [
     "generator_unittest.cc",
+    "mock_wavreader.cc",
     "mock_wavreader.h",
     "mock_wavreader_factory.cc",
     "mock_wavreader_factory.h",
   ]
   deps = [
     ":lib",
+    "../../../../../webrtc:webrtc_common",
+    "../../../../../webrtc/base:rtc_base_approved",
+    "../../../../../webrtc/test:test_support",
     "//testing/gmock",
     "//testing/gtest",
-    "//webrtc:webrtc_common",
-    "//webrtc/test:test_support",
   ]
 }

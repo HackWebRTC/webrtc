@@ -24,17 +24,13 @@ namespace conversational_speech {
 
 class MockWavReader : public WavReaderInterface {
  public:
-  MockWavReader(
-      int sample_rate, size_t num_channels, size_t num_samples)
-          : sample_rate_(sample_rate), num_channels_(num_channels),
-            num_samples_(num_samples) {}
-  ~MockWavReader() = default;
+  MockWavReader(int sample_rate, size_t num_channels, size_t num_samples);
+  ~MockWavReader();
 
-  // TOOD(alessiob): use ON_CALL to return random samples.
+  // TODO(alessiob): use ON_CALL to return random samples.
   MOCK_METHOD2(ReadFloatSamples, size_t(size_t, float*));
   MOCK_METHOD2(ReadInt16Samples, size_t(size_t, int16_t*));
 
-  // TOOD(alessiob): use ON_CALL to return properties.
   MOCK_CONST_METHOD0(sample_rate, int());
   MOCK_CONST_METHOD0(num_channels, size_t());
   MOCK_CONST_METHOD0(num_samples, size_t());
