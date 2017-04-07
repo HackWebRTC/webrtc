@@ -88,6 +88,8 @@ class AudioRtpReceiver : public ObserverInterface,
   // Should call SetChannel(nullptr) before |channel| is destroyed.
   void SetChannel(cricket::VoiceChannel* channel);
 
+  std::vector<RtpSource> GetSources() const override;
+
  private:
   void Reconfigure();
   void OnFirstPacketReceived(cricket::BaseChannel* channel);

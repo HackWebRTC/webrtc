@@ -167,6 +167,7 @@ rtc_static_library("rtp_rtcp") {
 
   deps = [
     "../..:webrtc_common",
+    "../../api:libjingle_peerconnection_api",
     "../../api:transport_api",
     "../../api/audio_codecs:audio_codecs_api",
     "../../base:gtest_prod",
@@ -274,6 +275,7 @@ if (rtc_include_tests) {
       "source/rtp_packet_history_unittest.cc",
       "source/rtp_packet_unittest.cc",
       "source/rtp_payload_registry_unittest.cc",
+      "source/rtp_receiver_unittest.cc",
       "source/rtp_rtcp_impl_unittest.cc",
       "source/rtp_sender_unittest.cc",
       "source/rtp_utility_unittest.cc",

@@ -13,9 +13,9 @@
 
 #include <string>
 
+#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/voice_engine/channel_proxy.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {
 namespace test {
@@ -99,6 +99,7 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(OnTwccBasedUplinkPacketLossRate, void(float packet_loss_rate));
   MOCK_METHOD1(OnRecoverableUplinkPacketLossRate,
                void(float recoverable_packet_loss_rate));
+  MOCK_CONST_METHOD0(GetSources, std::vector<RtpSource>());
 };
 }  // namespace test
 }  // namespace webrtc

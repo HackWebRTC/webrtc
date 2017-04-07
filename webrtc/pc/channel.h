@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "webrtc/api/call/audio_sink.h"
+#include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/asyncudpsocket.h"
 #include "webrtc/base/criticalsection.h"
@@ -488,6 +489,8 @@ class VoiceChannel : public BaseChannel {
   // Get statistics about the current media session.
   bool GetStats(VoiceMediaInfo* stats);
 
+  std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const;
+
   // Monitoring functions
   sigslot::signal2<VoiceChannel*, const std::vector<ConnectionInfo>&>
       SignalConnectionMonitor;
@@ -529,7 +532,6 @@ class VoiceChannel : public BaseChannel {
   void HandleEarlyMediaTimeout();
   bool InsertDtmf_w(uint32_t ssrc, int event, int duration);
   bool SetOutputVolume_w(uint32_t ssrc, double volume);
-  bool GetStats_w(VoiceMediaInfo* stats);
 
   void OnMessage(rtc::Message* pmsg) override;
   void GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const override;

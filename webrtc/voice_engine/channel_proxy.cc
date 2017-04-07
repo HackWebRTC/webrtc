@@ -402,6 +402,11 @@ void ChannelProxy::RegisterLegacyReceiveCodecs() {
   channel()->RegisterLegacyReceiveCodecs();
 }
 
+std::vector<RtpSource> ChannelProxy::GetSources() const {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  return channel()->GetSources();
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();
