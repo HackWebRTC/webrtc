@@ -560,9 +560,7 @@ class AudioProcessing {
   virtual VoiceDetection* voice_detection() const = 0;
 
   // Returns the last applied configuration.
-  // TODO(henrik.lundin) Make this method pure virtual when downstream
-  // dependencies have been fixed.
-  virtual AudioProcessing::Config GetConfig() const;
+  virtual AudioProcessing::Config GetConfig() const = 0;
 
   enum Error {
     // Fatal errors.
