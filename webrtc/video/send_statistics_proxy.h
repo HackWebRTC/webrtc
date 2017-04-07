@@ -170,7 +170,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   uint32_t last_sent_frame_timestamp_ GUARDED_BY(crit_);
   std::map<uint32_t, StatsUpdateTimes> update_times_ GUARDED_BY(crit_);
   rtc::ExpFilter encode_time_ GUARDED_BY(crit_);
-  int quality_downscales_ GUARDED_BY(crit_) = 0;
+  int quality_downscales_ GUARDED_BY(crit_);
+  int cpu_downscales_ GUARDED_BY(crit_);
 
   // Contains stats used for UMA histograms. These stats will be reset if
   // content type changes between real-time video and screenshare, since these

@@ -788,7 +788,7 @@ TEST_F(ViEEncoderTest, SinkWantsStoredByDegradationPreference) {
   sink_.WaitForEncodedFrame(frame_timestamp);
   frame_timestamp += kFrameIntervalMs;
 
-  // Default degradation preference in maintain-framerate, so will lower max
+  // Default degradation preference is maintain-framerate, so will lower max
   // wanted resolution.
   EXPECT_FALSE(video_source_.sink_wants().target_pixel_count);
   EXPECT_LT(video_source_.sink_wants().max_pixel_count,
@@ -1112,8 +1112,8 @@ TEST_F(ViEEncoderTest, QualityAdaptationStatsAreResetWhenScalerIsDisabled) {
 TEST_F(ViEEncoderTest, StatsTracksAdaptationStatsWhenSwitchingSource) {
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  int kWidth = 1280;
-  int kHeight = 720;
+  const int kWidth = 1280;
+  const int kHeight = 720;
   int sequence = 1;
 
   video_source_.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
@@ -1404,7 +1404,7 @@ TEST_F(ViEEncoderTest, DropsFramesAndScalesWhenBitrateIsTooLow) {
   sink_.ExpectDroppedFrame();
 
   // Expect the sink_wants to specify a scaled frame.
-  EXPECT_LT(video_source_.sink_wants().max_pixel_count, 1000 * 1000);
+  EXPECT_LT(video_source_.sink_wants().max_pixel_count, kWidth * kHeight);
 
   int last_pixel_count = video_source_.sink_wants().max_pixel_count;
 

@@ -89,6 +89,8 @@ SendStatisticsProxy::SendStatisticsProxy(
       start_ms_(clock->TimeInMilliseconds()),
       last_sent_frame_timestamp_(0),
       encode_time_(kEncodeTimeWeigthFactor),
+      quality_downscales_(-1),
+      cpu_downscales_(-1),
       uma_container_(
           new UmaSamplesContainer(GetUmaPrefix(content_type_), stats_, clock)) {
 }
@@ -293,22 +295,25 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     }
   }
 
-  quality_scaling_timer_.Stop(clock_->TimeInMilliseconds());
-  int64_t elapsed_sec = quality_scaling_timer_.total_ms / 1000;
-  if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
-    int quality_changes = current_stats.number_of_quality_adapt_changes -
-                          start_stats_.number_of_quality_adapt_changes;
-    RTC_HISTOGRAMS_COUNTS_100(kIndex,
-                              uma_prefix_ + "AdaptChangesPerMinute.Quality",
-                              quality_changes * 60 / elapsed_sec);
-  }
-  cpu_scaling_timer_.Stop(clock_->TimeInMilliseconds());
-  elapsed_sec = cpu_scaling_timer_.total_ms / 1000;
-  if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
-    int cpu_changes = current_stats.number_of_cpu_adapt_changes -
-                      start_stats_.number_of_cpu_adapt_changes;
-    RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "AdaptChangesPerMinute.Cpu",
-                              cpu_changes * 60 / elapsed_sec);
+  if (first_rtp_stats_time_ms_ != -1) {
+    quality_scaling_timer_.Stop(clock_->TimeInMilliseconds());
+    int64_t elapsed_sec = quality_scaling_timer_.total_ms / 1000;
+    if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
+      int quality_changes = current_stats.number_of_quality_adapt_changes -
+                            start_stats_.number_of_quality_adapt_changes;
+      RTC_HISTOGRAMS_COUNTS_100(kIndex,
+                                uma_prefix_ + "AdaptChangesPerMinute.Quality",
+                                quality_changes * 60 / elapsed_sec);
+    }
+    cpu_scaling_timer_.Stop(clock_->TimeInMilliseconds());
+    elapsed_sec = cpu_scaling_timer_.total_ms / 1000;
+    if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
+      int cpu_changes = current_stats.number_of_cpu_adapt_changes -
+                        start_stats_.number_of_cpu_adapt_changes;
+      RTC_HISTOGRAMS_COUNTS_100(kIndex,
+                                uma_prefix_ + "AdaptChangesPerMinute.Cpu",
+                                cpu_changes * 60 / elapsed_sec);
+    }
   }
 
   if (first_rtcp_stats_time_ms_ != -1) {
@@ -473,6 +478,7 @@ void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
 }
 
 void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
+  int64_t now_ms = clock_->TimeInMilliseconds();
   rtc::CritScope lock(&crit_);
   stats_.suspended = is_suspended;
   if (is_suspended) {
@@ -488,7 +494,15 @@ void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
     uma_container_->padding_byte_counter_.ProcessAndPauseForDuration(kMinMs);
     uma_container_->retransmit_byte_counter_.ProcessAndPauseForDuration(kMinMs);
     uma_container_->fec_byte_counter_.ProcessAndPauseForDuration(kMinMs);
+    // Stop adaptation stats.
+    uma_container_->cpu_scaling_timer_.Stop(now_ms);
+    uma_container_->quality_scaling_timer_.Stop(now_ms);
   } else {
+    // Start adaptation stats if scaling is enabled.
+    if (cpu_downscales_ >= 0)
+      uma_container_->cpu_scaling_timer_.Start(now_ms);
+    if (quality_downscales_ >= 0)
+      uma_container_->quality_scaling_timer_.Start(now_ms);
     // Stop pause explicitly for stats that may be zero/not updated for some
     // time.
     uma_container_->rtx_byte_counter_.ProcessAndStopPause();
@@ -704,14 +718,16 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
 
 void SendStatisticsProxy::SetCpuScalingStats(int num_cpu_downscales) {
   rtc::CritScope lock(&crit_);
+  cpu_downscales_ = num_cpu_downscales;
   stats_.cpu_limited_resolution = num_cpu_downscales > 0;
 
   if (num_cpu_downscales >= 0) {
     // Scaling enabled.
-    uma_container_->cpu_scaling_timer_.Start(clock_->TimeInMilliseconds());
-  } else {
-    uma_container_->cpu_scaling_timer_.Stop(clock_->TimeInMilliseconds());
+    if (!stats_.suspended)
+      uma_container_->cpu_scaling_timer_.Start(clock_->TimeInMilliseconds());
+    return;
   }
+  uma_container_->cpu_scaling_timer_.Stop(clock_->TimeInMilliseconds());
 }
 
 void SendStatisticsProxy::SetQualityScalingStats(int num_quality_downscales) {
@@ -721,10 +737,13 @@ void SendStatisticsProxy::SetQualityScalingStats(int num_quality_downscales) {
 
   if (num_quality_downscales >= 0) {
     // Scaling enabled.
-    uma_container_->quality_scaling_timer_.Start(clock_->TimeInMilliseconds());
-  } else {
-    uma_container_->quality_scaling_timer_.Stop(clock_->TimeInMilliseconds());
+    if (!stats_.suspended) {
+      uma_container_->quality_scaling_timer_.Start(
+          clock_->TimeInMilliseconds());
+    }
+    return;
   }
+  uma_container_->quality_scaling_timer_.Stop(clock_->TimeInMilliseconds());
 }
 
 void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(
