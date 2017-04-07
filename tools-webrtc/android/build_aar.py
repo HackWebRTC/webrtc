@@ -34,7 +34,7 @@ import tempfile
 import zipfile
 
 
-DEFAULT_ARCHS = ['armeabi-v7a', 'x86']
+DEFAULT_ARCHS = ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64']
 NEEDED_SO_FILES = ['libjingle_peerconnection_so.so']
 JAR_FILE = 'lib.java/webrtc/sdk/android/libwebrtc.jar'
 MANIFEST_FILE = 'webrtc/sdk/android/AndroidManifest.xml'
@@ -92,8 +92,12 @@ def _GetTargetCpu(arch):
   """Returns target_cpu for the GN build with the given architecture."""
   if arch in ['armeabi', 'armeabi-v7a']:
     return 'arm'
+  elif arch == 'arm64-v8a':
+    return 'arm64'
   elif arch == 'x86':
     return 'x86'
+  elif arch == 'x86_64':
+    return 'x64'
   else:
     raise Exception('Unknown arch: ' + arch)
 
@@ -104,7 +108,7 @@ def _GetArmVersion(arch):
     return 6
   elif arch == 'armeabi-v7a':
     return 7
-  elif arch == 'x86':
+  elif arch in ['arm64-v8a', 'x86', 'x86_64']:
     return None
   else:
     raise Exception('Unknown arch: ' + arch)
