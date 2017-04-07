@@ -122,7 +122,7 @@ TEST_F(VideoProcessorIntegrationTest, ProcessNoLossChangeBitRateVP9) {
   SetQualityThresholds(&quality_thresholds, 35.5, 30.0, 0.90, 0.85);
   // Thresholds for rate control.
   RateControlThresholds rc_thresholds[3];
-  SetRateControlThresholds(rc_thresholds, 0, 0, 30, 20, 20, 30, 0, 1);
+  SetRateControlThresholds(rc_thresholds, 0, 0, 30, 20, 20, 35, 0, 1);
   SetRateControlThresholds(rc_thresholds, 1, 2, 0, 20, 20, 60, 0, 0);
   SetRateControlThresholds(rc_thresholds, 2, 0, 0, 25, 20, 40, 0, 0);
   ProcessFramesAndVerify(quality_thresholds, rate_profile, process_settings,
@@ -155,8 +155,8 @@ TEST_F(VideoProcessorIntegrationTest,
   SetQualityThresholds(&quality_thresholds, 31.5, 18.0, 0.80, 0.43);
   // Thresholds for rate control.
   RateControlThresholds rc_thresholds[3];
-  SetRateControlThresholds(rc_thresholds, 0, 38, 50, 75, 15, 45, 0, 1);
-  SetRateControlThresholds(rc_thresholds, 1, 10, 0, 40, 10, 30, 0, 0);
+  SetRateControlThresholds(rc_thresholds, 0, 45, 50, 95, 15, 45, 0, 1);
+  SetRateControlThresholds(rc_thresholds, 1, 20, 0, 50, 10, 30, 0, 0);
   SetRateControlThresholds(rc_thresholds, 2, 5, 0, 30, 5, 25, 0, 0);
   ProcessFramesAndVerify(quality_thresholds, rate_profile, process_settings,
                          rc_thresholds, nullptr /* visualization_params */);
