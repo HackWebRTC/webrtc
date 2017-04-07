@@ -562,11 +562,17 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
   capture_nonlocked_.capture_processing_format =
       StreamConfig(capture_processing_rate);
 
-  int render_processing_rate = FindNativeProcessRateToUse(
-      std::min(formats_.api_format.reverse_input_stream().sample_rate_hz(),
-               formats_.api_format.reverse_output_stream().sample_rate_hz()),
-      submodule_states_.CaptureMultiBandSubModulesActive() ||
-          submodule_states_.RenderMultiBandSubModulesActive());
+  int render_processing_rate;
+  if (!config_.echo_canceller3.enabled) {
+    render_processing_rate = FindNativeProcessRateToUse(
+        std::min(formats_.api_format.reverse_input_stream().sample_rate_hz(),
+                 formats_.api_format.reverse_output_stream().sample_rate_hz()),
+        submodule_states_.CaptureMultiBandSubModulesActive() ||
+            submodule_states_.RenderMultiBandSubModulesActive());
+  } else {
+    render_processing_rate = capture_processing_rate;
+  }
+
   // TODO(aluebs): Remove this restriction once we figure out why the 3-band
   // splitting filter degrades the AEC performance.
   if (render_processing_rate > kSampleRate32kHz &&
@@ -575,6 +581,7 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
                                  ? kSampleRate32kHz
                                  : kSampleRate16kHz;
   }
+
   // If the forward sample rate is 8 kHz, the render stream is also processed
   // at this rate.
   if (capture_nonlocked_.capture_processing_format.sample_rate_hz() ==

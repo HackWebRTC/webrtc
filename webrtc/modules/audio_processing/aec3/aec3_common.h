@@ -68,6 +68,7 @@ constexpr size_t kRenderTransferQueueSize = kMaxApiCallsJitterBlocks / 2;
 static_assert(2 * kRenderTransferQueueSize >= kMaxApiCallsJitterBlocks,
               "Requirement to ensure buffer overflow detection");
 
+// TODO(peah): Integrate this with how it is done inside audio_processing_impl.
 constexpr size_t NumBandsForRate(int sample_rate_hz) {
   return static_cast<size_t>(sample_rate_hz == 8000 ? 1
                                                     : sample_rate_hz / 16000);
