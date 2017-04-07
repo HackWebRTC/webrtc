@@ -76,6 +76,10 @@ class AecState {
   // Takes appropriate action at an echo path change.
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
 
+  // Returns the decay factor for the echo reverberation.
+  // TODO(peah): Make this adaptive.
+  float ReverbDecayFactor() const { return 0.f; }
+
   // Updates the aec state.
   void Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                   adaptive_filter_frequency_response,

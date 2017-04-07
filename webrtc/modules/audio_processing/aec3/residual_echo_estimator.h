@@ -36,8 +36,37 @@ class ResidualEchoEstimator {
                 std::array<float, kFftLengthBy2Plus1>* R2);
 
  private:
+  // Resets the state.
+  void Reset();
+
+  // Estimates the residual echo power based on the echo return loss enhancement
+  // (ERLE) and the linear power estimate.
+  void LinearEstimate(const std::array<float, kFftLengthBy2Plus1>& S2_linear,
+                      const std::array<float, kFftLengthBy2Plus1>& erle,
+                      size_t delay,
+                      std::array<float, kFftLengthBy2Plus1>* R2);
+
+  // Estimates the residual echo power based on the estimate of the echo path
+  // gain.
+  void NonLinearEstimate(const std::array<float, kFftLengthBy2Plus1>& X2,
+                         const std::array<float, kFftLengthBy2Plus1>& Y2,
+                         std::array<float, kFftLengthBy2Plus1>* R2);
+
+  // Adds the estimated unmodelled echo power to the residual echo power
+  // estimate.
+  void AddEchoReverb(const std::array<float, kFftLengthBy2Plus1>& S2,
+                     bool saturated_echo,
+                     size_t delay,
+                     float reverb_decay_factor,
+                     std::array<float, kFftLengthBy2Plus1>* R2);
+
   std::array<float, kFftLengthBy2Plus1> R2_old_;
   std::array<int, kFftLengthBy2Plus1> R2_hold_counter_;
+  std::array<float, kFftLengthBy2Plus1> R2_reverb_;
+  int S2_old_index_ = 0;
+  std::array<std::array<float, kFftLengthBy2Plus1>, kAdaptiveFilterLength>
+      S2_old_;
+  bool headset_detected_cached_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ResidualEchoEstimator);
 };
