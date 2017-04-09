@@ -147,7 +147,7 @@ struct TransportDescription {
   void AddOption(const std::string& option) {
     transport_options.push_back(option);
   }
-  bool secure() const { return identity_fingerprint != NULL; }
+  bool secure() const { return identity_fingerprint != nullptr; }
 
   IceParameters GetIceParameters() {
     return IceParameters(ice_ufrag, ice_pwd, HasOption(ICE_RENOMINATION_STR));
