@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 
+#include "webrtc/base/array_view.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
@@ -24,13 +25,13 @@ class WavReaderInterface {
   virtual ~WavReaderInterface() = default;
 
   // Returns the number of samples read.
-  virtual size_t ReadFloatSamples(size_t num_samples, float* samples) = 0;
-  virtual size_t ReadInt16Samples(size_t num_samples, int16_t* samples) = 0;
+  virtual size_t ReadFloatSamples(rtc::ArrayView<float> samples) = 0;
+  virtual size_t ReadInt16Samples(rtc::ArrayView<int16_t> samples) = 0;
 
   // Getters.
-  virtual int sample_rate() const = 0;
-  virtual size_t num_channels() const = 0;
-  virtual size_t num_samples() const = 0;
+  virtual int SampleRate() const = 0;
+  virtual size_t NumChannels() const = 0;
+  virtual size_t NumSamples() const = 0;
 };
 
 }  // namespace conversational_speech

@@ -33,15 +33,22 @@
 // cases in which there are wrong offsets leading to self cross-talk (which is
 // rejected).
 
+// MSVC++ requires this to be set before any other includes to get M_PI.
+#define _USE_MATH_DEFINES
+
 #include <stdio.h>
+#include <cmath>
 #include <map>
 #include <memory>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/base/pathutils.h"
+#include "webrtc/common_audio/wav_file.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/config.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/mock_wavreader_factory.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/multiend_call.h"
 #include "webrtc/modules/audio_processing/test/conversational_speech/timing.h"
+#include "webrtc/modules/audio_processing/test/conversational_speech/wavreader_factory.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -55,7 +62,7 @@ using conversational_speech::SaveTiming;
 using conversational_speech::MockWavReaderFactory;
 using conversational_speech::MultiEndCall;
 using conversational_speech::Turn;
-using conversational_speech::WavReaderAbstractFactory;
+using conversational_speech::WavReaderFactory;
 
 const char* const audiotracks_path = "/path/to/audiotracks";
 const char* const timing_filepath = "/path/to/timing_file.txt";
@@ -87,6 +94,23 @@ std::unique_ptr<MockWavReaderFactory> CreateMockWavReaderFactory() {
   return std::unique_ptr<MockWavReaderFactory>(
       new MockWavReaderFactory(kDefaultMockWavReaderFactoryParams,
                                kDefaultMockWavReaderFactoryParamsMap));
+}
+
+void CreateSineWavFile(const std::string& filepath,
+                       const MockWavReaderFactory::Params& params,
+                       float frequency = 440.0f) {
+  // Create samples.
+  constexpr double two_pi = 2.0 * M_PI;
+  std::vector<int16_t> samples(params.num_samples);
+  for (std::size_t i = 0; i < params.num_samples; ++i) {
+    // TODO(alessiob): the produced tone is not pure, improve.
+    samples[i] = std::lround(32767.0f * std::sin(
+        two_pi * i * frequency / params.sample_rate));
+  }
+
+  // Write samples.
+  WavWriter wav_writer(filepath, params.sample_rate, params.num_channels);
+  wav_writer.WriteSamples(samples.data(), params.num_samples);
 }
 
 }  // namespace
@@ -485,6 +509,35 @@ TEST_F(ConversationalSpeechTest, MultiEndCallSetupLongSequenceInvalid) {
   conversational_speech::MultiEndCall multiend_call(
       timing, audiotracks_path, std::move(mock_wavreader_factory));
   EXPECT_FALSE(multiend_call.valid());
+}
+
+TEST_F(ConversationalSpeechTest, MultiEndCallWavReaderAdaptorSine) {
+  // Parameters with which wav files are created.
+  constexpr int duration_seconds = 5;
+  const int sample_rates[] = {8000, 11025, 16000, 22050, 32000, 44100, 48000};
+
+  for (int sample_rate : sample_rates) {
+    const rtc::Pathname temp_filename(
+        OutputPath(), "TempSineWavFile_" + std::to_string(sample_rate)
+            + ".wav");
+
+    // Write wav file.
+    const std::size_t num_samples = duration_seconds * sample_rate;
+    MockWavReaderFactory::Params params = {sample_rate, 1u, num_samples};
+    CreateSineWavFile(temp_filename.pathname(), params);
+    LOG(LS_VERBOSE) << "wav file @" << sample_rate << " Hz created ("
+        << num_samples << " samples)";
+
+    // Load wav file and check if params match.
+    WavReaderFactory wav_reader_factory;
+    auto wav_reader = wav_reader_factory.Create(temp_filename.pathname());
+    EXPECT_EQ(sample_rate, wav_reader->SampleRate());
+    EXPECT_EQ(1u, wav_reader->NumChannels());
+    EXPECT_EQ(num_samples, wav_reader->NumSamples());
+
+    // Clean up.
+    remove(temp_filename.pathname().c_str());
+  }
 }
 
 }  // namespace test

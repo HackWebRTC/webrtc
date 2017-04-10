@@ -120,9 +120,9 @@ bool MultiEndCall::CheckTiming() {
 
     // Begin and end timestamps for the current turn.
     int offset_samples = millisecond_to_samples(
-        turn.offset, it->second->sample_rate());
-    size_t begin_timestamp = last_turn.end + offset_samples;
-    size_t end_timestamp = begin_timestamp + it->second->num_samples();
+        turn.offset, it->second->SampleRate());
+    std::size_t begin_timestamp = last_turn.end + offset_samples;
+    std::size_t end_timestamp = begin_timestamp + it->second->NumSamples();
     LOG(LS_INFO) << "turn #" << turn_index << " " << begin_timestamp
         << "-" << end_timestamp << " ms";
 
