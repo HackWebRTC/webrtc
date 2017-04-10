@@ -12,13 +12,10 @@
 #define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_PAYLOAD_REGISTRY_H_
 
 #include <map>
-#include <memory>
 #include <set>
 
 #include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/base/criticalsection.h"
-#include "webrtc/base/deprecation.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_utility.h"
 
 namespace webrtc {
@@ -26,21 +23,10 @@ namespace webrtc {
 struct CodecInst;
 class VideoCodec;
 
-// TODO(magjed): Remove once external code is updated.
-class RTPPayloadStrategy {
- public:
-  static RTPPayloadStrategy* CreateStrategy(bool handling_audio) {
-    return nullptr;
-  }
-};
-
 class RTPPayloadRegistry {
  public:
   RTPPayloadRegistry();
   ~RTPPayloadRegistry();
-  // TODO(magjed): Remove once external code is updated.
-  explicit RTPPayloadRegistry(RTPPayloadStrategy* rtp_payload_strategy)
-      : RTPPayloadRegistry() {}
 
   // TODO(magjed): Split RTPPayloadRegistry into separate Audio and Video class
   // and simplify the code. http://crbug/webrtc/6743.
@@ -118,8 +104,6 @@ class RTPPayloadRegistry {
     rtc::CritScope cs(&crit_sect_);
     return last_received_media_payload_type_;
   }
-
-  RTC_DEPRECATED void set_use_rtx_payload_mapping_on_restore(bool val) {}
 
  private:
   // Prunes the payload type map of the specific payload type, if it exists.
