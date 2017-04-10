@@ -195,10 +195,7 @@ void EchoCanceller3::RenderWriter::Insert(AudioBuffer* input) {
     render_highpass_filter_->Process(render_queue_input_frame_[0]);
   }
 
-  // TODO(peah): Change this two-step static cast once the CL for handling the
-  // bug causing this to fail in cc has landed.
-  bool result = render_transfer_queue_->Insert(&render_queue_input_frame_);
-  static_cast<void>(result);
+  static_cast<void>(render_transfer_queue_->Insert(&render_queue_input_frame_));
 }
 
 int EchoCanceller3::instance_count_ = 0;
