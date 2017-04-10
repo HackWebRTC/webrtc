@@ -1584,8 +1584,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
         << "!";
   }
 
-  webrtc::RtcEventLogNullImpl event_log;
-  Call::Config call_config(&event_log_);
+  Call::Config call_config(event_log_.get());
   call_config.bitrate_config = params.call.call_bitrate_config;
   CreateCalls(call_config, call_config);
 
@@ -1736,8 +1735,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   // TODO(ivica): Remove bitrate_config and use the default Call::Config(), to
   // match the full stack tests.
-  webrtc::RtcEventLogNullImpl event_log;
-  Call::Config call_config(&event_log_);
+  Call::Config call_config(event_log_.get());
   call_config.bitrate_config = params_.call.call_bitrate_config;
 
   ::VoiceEngineState voe;

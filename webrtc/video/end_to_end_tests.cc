@@ -141,7 +141,7 @@ class EndToEndTest : public test::CallTest {
 };
 
 TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
-  CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
+  CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, 0, &transport);
@@ -156,7 +156,7 @@ TEST_F(EndToEndTest, ReceiverCanBeStartedTwice) {
 }
 
 TEST_F(EndToEndTest, ReceiverCanBeStoppedTwice) {
-  CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
+  CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, 0, &transport);
@@ -171,7 +171,7 @@ TEST_F(EndToEndTest, ReceiverCanBeStoppedTwice) {
 }
 
 TEST_F(EndToEndTest, ReceiverCanBeStoppedAndRestarted) {
-  CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
+  CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, 0, &transport);
@@ -208,7 +208,7 @@ TEST_F(EndToEndTest, RendersSingleDelayedFrame) {
     rtc::Event event_;
   } renderer;
 
-  CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
+  CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
   test::DirectTransport sender_transport(
       sender_call_.get(), MediaType::VIDEO);
@@ -258,7 +258,7 @@ TEST_F(EndToEndTest, TransmitsFirstFrame) {
     rtc::Event event_;
   } renderer;
 
-  CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
+  CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
   test::DirectTransport sender_transport(
       sender_call_.get(), MediaType::VIDEO);
@@ -984,7 +984,7 @@ TEST_F(EndToEndTest, ReceivedUlpfecPacketsNotNacked) {
     // TODO(holmer): Investigate why we don't send FEC packets when the bitrate
     // is 10 kbps.
     Call::Config GetSenderCallConfig() override {
-      Call::Config config(&event_log_);
+      Call::Config config(event_log_.get());
       const int kMinBitrateBps = 30000;
       config.bitrate_config.min_bitrate_bps = kMinBitrateBps;
       return config;
@@ -1318,7 +1318,7 @@ TEST_F(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
     rtc::Event delivered_packet_;
   };
 
-  CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
+  CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
   test::DirectTransport send_transport(
       sender_call_.get(), MediaType::VIDEO);
@@ -1946,7 +1946,7 @@ TEST_F(EndToEndTest, ObserversEncodedFrames) {
   EncodedFrameTestObserver post_encode_observer;
   EncodedFrameTestObserver pre_decode_observer;
 
-  CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
+  CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
   test::DirectTransport sender_transport(
       sender_call_.get(), MediaType::VIDEO);
@@ -2121,7 +2121,7 @@ TEST_F(EndToEndTest, RembWithSendSideBwe) {
     }
 
     Call::Config GetSenderCallConfig() override {
-      Call::Config config(&event_log_);
+      Call::Config config(event_log_.get());
       // Set a high start bitrate to reduce the test completion time.
       config.bitrate_config.start_bitrate_bps = remb_bitrate_bps_;
       return config;
@@ -2231,7 +2231,7 @@ class ProbingTest : public test::EndToEndTest {
   ~ProbingTest() {}
 
   Call::Config GetSenderCallConfig() override {
-    Call::Config config(&event_log_);
+    Call::Config config(event_log_.get());
     config.bitrate_config.start_bitrate_bps = start_bitrate_bps_;
     return config;
   }
@@ -3658,7 +3658,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     std::map<uint32_t, bool> ssrc_observed_ GUARDED_BY(crit_);
   } observer(use_rtx);
 
-  Call::Config config(&event_log_);
+  Call::Config config(event_log_.get());
   CreateCalls(config, config);
 
   test::PacketTransport send_transport(sender_call_.get(), &observer,
@@ -3956,7 +3956,7 @@ TEST_F(EndToEndTest, RespectsNetworkState) {
 TEST_F(EndToEndTest, CallReportsRttForSender) {
   static const int kSendDelayMs = 30;
   static const int kReceiveDelayMs = 70;
-  CreateCalls(Call::Config(&event_log_), Call::Config(&event_log_));
+  CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
   FakeNetworkPipe::Config config;
   config.queue_delay_ms = kSendDelayMs;
@@ -4003,7 +4003,7 @@ void EndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
     MediaType network_to_bring_up,
     VideoEncoder* encoder,
     Transport* transport) {
-  CreateSenderCall(Call::Config(&event_log_));
+  CreateSenderCall(Call::Config(event_log_.get()));
   sender_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
 
   CreateSendConfig(1, 0, 0, transport);
@@ -4022,7 +4022,7 @@ void EndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
 void EndToEndTest::VerifyNewVideoReceiveStreamsRespectNetworkState(
     MediaType network_to_bring_up,
     Transport* transport) {
-  Call::Config config(&event_log_);
+  Call::Config config(event_log_.get());
   CreateCalls(config, config);
   receiver_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
 

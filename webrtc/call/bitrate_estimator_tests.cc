@@ -102,7 +102,7 @@ class BitrateEstimatorTest : public test::CallTest {
   virtual ~BitrateEstimatorTest() { EXPECT_TRUE(streams_.empty()); }
 
   virtual void SetUp() {
-    Call::Config config(&event_log_);
+    Call::Config config(event_log_.get());
     receiver_call_.reset(Call::Create(config));
     sender_call_.reset(Call::Create(config));
 

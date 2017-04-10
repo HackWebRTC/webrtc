@@ -51,6 +51,7 @@ PacketReceiver::DeliveryStatus CallTest::PayloadDemuxer::DeliverPacket(
 
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
+      event_log_(RtcEventLog::CreateNull()),
       video_send_config_(nullptr),
       video_send_stream_(nullptr),
       audio_send_config_(nullptr),
@@ -461,10 +462,10 @@ const uint32_t CallTest::kReceiverLocalVideoSsrc = 0x123456;
 const uint32_t CallTest::kReceiverLocalAudioSsrc = 0x1234567;
 const int CallTest::kNackRtpHistoryMs = 1000;
 
-BaseTest::BaseTest() {}
+BaseTest::BaseTest() : event_log_(RtcEventLog::CreateNull()) {}
 
-BaseTest::BaseTest(unsigned int timeout_ms) : RtpRtcpObserver(timeout_ms) {
-}
+BaseTest::BaseTest(unsigned int timeout_ms)
+    : RtpRtcpObserver(timeout_ms), event_log_(RtcEventLog::CreateNull()) {}
 
 BaseTest::~BaseTest() {
 }
@@ -482,11 +483,11 @@ void BaseTest::OnFakeAudioDevicesCreated(FakeAudioDevice* send_audio_device,
 }
 
 Call::Config BaseTest::GetSenderCallConfig() {
-  return Call::Config(&event_log_);
+  return Call::Config(event_log_.get());
 }
 
 Call::Config BaseTest::GetReceiverCallConfig() {
-  return Call::Config(&event_log_);
+  return Call::Config(event_log_.get());
 }
 
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {

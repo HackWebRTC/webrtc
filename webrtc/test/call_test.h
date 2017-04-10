@@ -114,7 +114,7 @@ class CallTest : public ::testing::Test {
 
   Clock* const clock_;
 
-  webrtc::RtcEventLogNullImpl event_log_;
+  std::unique_ptr<webrtc::RtcEventLog> event_log_;
   std::unique_ptr<Call> sender_call_;
   std::unique_ptr<PacketTransport> send_transport_;
   VideoSendStream::Config video_send_config_;
@@ -227,7 +227,7 @@ class BaseTest : public RtpRtcpObserver {
 
   virtual void OnTestFinished();
 
-  webrtc::RtcEventLogNullImpl event_log_;
+  std::unique_ptr<webrtc::RtcEventLog> event_log_;
 };
 
 class SendTest : public BaseTest {

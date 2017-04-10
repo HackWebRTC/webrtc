@@ -158,9 +158,9 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   AudioState::Config send_audio_state_config;
   send_audio_state_config.voice_engine = voice_engine;
   send_audio_state_config.audio_mixer = AudioMixerImpl::Create();
-  Call::Config sender_config(&event_log_);
+  Call::Config sender_config(event_log_.get());
   sender_config.audio_state = AudioState::Create(send_audio_state_config);
-  Call::Config receiver_config(&event_log_);
+  Call::Config receiver_config(event_log_.get());
   receiver_config.audio_state = sender_config.audio_state;
   CreateCalls(sender_config, receiver_config);
 
@@ -719,7 +719,7 @@ TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
 
     Call::Config GetSenderCallConfig() override {
       Call::Config config = EndToEndTest::GetSenderCallConfig();
-      config.event_log = &event_log_;
+      config.event_log = event_log_.get();
       config.bitrate_config.start_bitrate_bps = kInitialBitrateKbps * 1000;
       return config;
     }
