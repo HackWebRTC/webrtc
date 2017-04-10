@@ -374,7 +374,7 @@ Call::Call(const Call::Config& config,
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
   RTC_DCHECK(config.event_log != nullptr);
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
-  RTC_DCHECK_GT(config.bitrate_config.start_bitrate_bps,
+  RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
                 config.bitrate_config.min_bitrate_bps);
   if (config.bitrate_config.max_bitrate_bps != -1) {
     RTC_DCHECK_GE(config.bitrate_config.max_bitrate_bps,

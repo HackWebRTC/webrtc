@@ -246,6 +246,12 @@ uint32_t AudioSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
                                            uint8_t fraction_loss,
                                            int64_t rtt,
                                            int64_t probing_interval_ms) {
+  // A send stream may be allocated a bitrate of zero if the allocator decides
+  // to disable it. For now we ignore this decision and keep sending on min
+  // bitrate.
+  if (bitrate_bps == 0) {
+    bitrate_bps = config_.min_bitrate_bps;
+  }
   RTC_DCHECK_GE(bitrate_bps,
                 static_cast<uint32_t>(config_.min_bitrate_bps));
   // The bitrate allocator might allocate an higher than max configured bitrate
