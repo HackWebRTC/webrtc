@@ -325,10 +325,20 @@ void SuppressionGain::GetGain(
     bool saturated_echo,
     const std::vector<std::vector<float>>& render,
     size_t num_capture_bands,
+    bool force_zero_gain,
     float* high_bands_gain,
     std::array<float, kFftLengthBy2Plus1>* low_band_gain) {
   RTC_DCHECK(high_bands_gain);
   RTC_DCHECK(low_band_gain);
+
+  if (force_zero_gain) {
+    previous_gain_squared_.fill(0.f);
+    std::copy(comfort_noise_power.begin() + 1, comfort_noise_power.end() - 1,
+              previous_masker_.begin());
+    low_band_gain->fill(0.f);
+    *high_bands_gain = 0.f;
+    return;
+  }
 
   // Choose margin to use.
   const float margin = saturated_echo ? 0.001f : 0.01f;

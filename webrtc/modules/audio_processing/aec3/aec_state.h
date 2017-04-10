@@ -80,6 +80,9 @@ class AecState {
   // TODO(peah): Make this adaptive.
   float ReverbDecayFactor() const { return 0.f; }
 
+  // Returns whether the echo suppression gain should be forced to zero.
+  bool ForcedZeroGain() const { return force_zero_gain_; }
+
   // Updates the aec state.
   void Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                   adaptive_filter_frequency_response,
@@ -103,6 +106,8 @@ class AecState {
   bool echo_saturation_ = false;
   bool headset_detected_ = false;
   float previous_max_sample_ = 0.f;
+  bool force_zero_gain_ = false;
+  size_t force_zero_gain_counter_ = 0;
   rtc::Optional<size_t> filter_delay_;
   rtc::Optional<size_t> external_delay_;
   size_t blocks_since_last_saturation_ = 1000;

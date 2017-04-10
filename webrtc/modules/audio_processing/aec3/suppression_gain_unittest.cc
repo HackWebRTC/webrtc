@@ -33,7 +33,7 @@ TEST(SuppressionGain, NullOutputGains) {
                    .GetGain(E2, R2, N2, false,
                             std::vector<std::vector<float>>(
                                 3, std::vector<float>(kBlockSize, 0.f)),
-                            1, &high_bands_gain, nullptr),
+                            1, false, &high_bands_gain, nullptr),
                "");
 }
 
@@ -128,7 +128,8 @@ TEST(SuppressionGain, BasicGainComputation) {
   R2.fill(0.1f);
   N2.fill(100.f);
   for (int k = 0; k < 10; ++k) {
-    suppression_gain.GetGain(E2, R2, N2, false, x, 1, &high_bands_gain, &g);
+    suppression_gain.GetGain(E2, R2, N2, false, x, 1, false, &high_bands_gain,
+                             &g);
   }
   std::for_each(g.begin(), g.end(),
                 [](float a) { EXPECT_NEAR(1.f, a, 0.001); });
@@ -138,7 +139,8 @@ TEST(SuppressionGain, BasicGainComputation) {
   R2.fill(0.1f);
   N2.fill(0.f);
   for (int k = 0; k < 10; ++k) {
-    suppression_gain.GetGain(E2, R2, N2, false, x, 1, &high_bands_gain, &g);
+    suppression_gain.GetGain(E2, R2, N2, false, x, 1, false, &high_bands_gain,
+                             &g);
   }
   std::for_each(g.begin(), g.end(),
                 [](float a) { EXPECT_NEAR(1.f, a, 0.001); });
@@ -148,10 +150,16 @@ TEST(SuppressionGain, BasicGainComputation) {
   R2.fill(100.f);
   N2.fill(0.f);
   for (int k = 0; k < 10; ++k) {
-    suppression_gain.GetGain(E2, R2, N2, false, x, 1, &high_bands_gain, &g);
+    suppression_gain.GetGain(E2, R2, N2, false, x, 1, false, &high_bands_gain,
+                             &g);
   }
   std::for_each(g.begin(), g.end(),
                 [](float a) { EXPECT_NEAR(0.f, a, 0.001); });
+
+  // Verify the functionality for forcing a zero gain.
+  suppression_gain.GetGain(E2, R2, N2, false, x, 1, true, &high_bands_gain, &g);
+  std::for_each(g.begin(), g.end(), [](float a) { EXPECT_FLOAT_EQ(0.f, a); });
+  EXPECT_FLOAT_EQ(0.f, high_bands_gain);
 }
 
 }  // namespace aec3

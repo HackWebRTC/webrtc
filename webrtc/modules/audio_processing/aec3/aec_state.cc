@@ -97,6 +97,11 @@ void AecState::HandleEchoPathChange(
     echo_saturation_ = false;
     headset_detected_ = false;
     previous_max_sample_ = 0.f;
+
+    if (echo_path_variability.delay_change) {
+      force_zero_gain_counter_ = 0;
+      force_zero_gain_ = true;
+    }
   }
 }
 
@@ -116,6 +121,12 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   const bool active_render_block = x_energy > 10000.f * kFftLengthBy2;
   active_render_blocks_ += active_render_block ? 1 : 0;
   --echo_path_change_counter_;
+
+  // Force zero echo suppression gain after an echo path change to allow at
+  // least some render data to be collected in order to avoid an initial echo
+  // burst.
+  constexpr size_t kZeroGainBlocksAfterChange = kNumBlocksPerSecond / 5;
+  force_zero_gain_ = (++force_zero_gain_counter_) < kZeroGainBlocksAfterChange;
 
   // Estimate delays.
   filter_delay_ = EstimateFilterDelay(adaptive_filter_frequency_response);

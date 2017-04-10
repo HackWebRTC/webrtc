@@ -52,6 +52,7 @@ class SuppressionGain {
                bool saturated_echo,
                const std::vector<std::vector<float>>& render,
                size_t num_capture_bands,
+               bool force_zero_gain,
                float* high_bands_gain,
                std::array<float, kFftLengthBy2Plus1>* low_band_gain);
 
