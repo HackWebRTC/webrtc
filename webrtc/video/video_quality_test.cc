@@ -54,6 +54,7 @@ constexpr int kSendStatsPollingIntervalMs = 1000;
 constexpr int kPayloadTypeH264 = 122;
 constexpr int kPayloadTypeVP8 = 123;
 constexpr int kPayloadTypeVP9 = 124;
+
 constexpr size_t kMaxComparisons = 10;
 constexpr char kSyncGroup[] = "av_sync";
 constexpr int kOpusMinBitrateBps = 6000;
@@ -1030,7 +1031,18 @@ class Vp8EncoderFactory : public VideoEncoderFactory {
 };
 
 VideoQualityTest::VideoQualityTest()
-    : clock_(Clock::GetRealTimeClock()), receive_logs_(0), send_logs_(0) {}
+    : clock_(Clock::GetRealTimeClock()), receive_logs_(0), send_logs_(0) {
+  payload_type_map_ = test::CallTest::payload_type_map_;
+  RTC_DCHECK(payload_type_map_.find(kPayloadTypeH264) ==
+             payload_type_map_.end());
+  RTC_DCHECK(payload_type_map_.find(kPayloadTypeVP8) ==
+             payload_type_map_.end());
+  RTC_DCHECK(payload_type_map_.find(kPayloadTypeVP9) ==
+             payload_type_map_.end());
+  payload_type_map_[kPayloadTypeH264] = webrtc::MediaType::VIDEO;
+  payload_type_map_[kPayloadTypeVP8] = webrtc::MediaType::VIDEO;
+  payload_type_map_[kPayloadTypeVP9] = webrtc::MediaType::VIDEO;
+}
 
 VideoQualityTest::Params::Params()
     : call({false, Call::Config::BitrateConfig()}),
@@ -1590,9 +1602,10 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
   test::LayerFilteringTransport send_transport(
       params_.pipe, sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
-      params_.video.selected_tl, params_.ss.selected_sl);
-  test::DirectTransport recv_transport(
-      params_.pipe, receiver_call_.get(), MediaType::VIDEO);
+      params_.video.selected_tl, params_.ss.selected_sl, payload_type_map_);
+
+  test::DirectTransport recv_transport(params_.pipe, receiver_call_.get(),
+                                       payload_type_map_);
 
   std::string graph_title = params_.analyzer.graph_title;
   if (graph_title.empty())
@@ -1711,7 +1724,7 @@ void VideoQualityTest::SetupAudio(int send_channel_id,
     audio_send_config_.max_bitrate_bps = kOpusBitrateFbBps;
   }
   audio_send_config_.send_codec_spec.codec_inst =
-      CodecInst{120, "OPUS", 48000, 960, 2, 64000};
+      CodecInst{kAudioSendPayloadType, "OPUS", 48000, 960, 2, 64000};
   audio_send_config_.send_codec_spec.enable_opus_dtx = params_.audio.dtx;
   audio_send_stream_ = call->CreateAudioSendStream(audio_send_config_);
 
@@ -1723,6 +1736,7 @@ void VideoQualityTest::SetupAudio(int send_channel_id,
   audio_config.rtp.transport_cc = params_.call.send_side_bwe;
   audio_config.rtp.extensions = audio_send_config_.rtp.extensions;
   audio_config.decoder_factory = decoder_factory_;
+  audio_config.decoder_map = {{kAudioSendPayloadType, {"OPUS", 48000, 2}}};
   if (params_.video.enabled && params_.audio.sync_video)
     audio_config.sync_group = kSyncGroup;
 
@@ -1753,7 +1767,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   // calls.
   test::LayerFilteringTransport transport(
       params.pipe, call.get(), kPayloadTypeVP8, kPayloadTypeVP9,
-      params.video.selected_tl, params_.ss.selected_sl);
+      params.video.selected_tl, params_.ss.selected_sl, payload_type_map_);
+
   // TODO(ivica): Use two calls to be able to merge with RunWithAnalyzer or at
   // least share as much code as possible. That way this test would also match
   // the full stack tests better.

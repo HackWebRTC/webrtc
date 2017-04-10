@@ -30,16 +30,42 @@ namespace test {
 
 class DirectTransport : public Transport {
  public:
-  DirectTransport(Call* send_call, MediaType media_type);
-  DirectTransport(const FakeNetworkPipe::Config& config, Call* send_call,
-                  MediaType media_type);
+  DirectTransport(Call* send_call,
+                  const std::map<uint8_t, MediaType>& payload_type_map);
+  DirectTransport(const FakeNetworkPipe::Config& config,
+                  Call* send_call,
+                  const std::map<uint8_t, MediaType>& payload_type_map);
+  DirectTransport(const FakeNetworkPipe::Config& config,
+                  Call* send_call,
+                  std::unique_ptr<Demuxer> demuxer);
+
+  // These deprecated variants always use ForceDemuxer.
+  RTC_DEPRECATED DirectTransport(Call* send_call, MediaType media_type)
+      : DirectTransport(
+            FakeNetworkPipe::Config(),
+            send_call,
+            std::unique_ptr<Demuxer>(new ForceDemuxer(media_type))) {}
+  RTC_DEPRECATED DirectTransport(const FakeNetworkPipe::Config& config,
+                                 Call* send_call,
+                                 MediaType media_type)
+      : DirectTransport(
+            config,
+            send_call,
+            std::unique_ptr<Demuxer>(new ForceDemuxer(media_type))) {}
+
   // These deprecated variants always use MediaType::VIDEO.
   RTC_DEPRECATED explicit DirectTransport(Call* send_call)
-      : DirectTransport(send_call, MediaType::VIDEO) {}
+      : DirectTransport(
+            FakeNetworkPipe::Config(),
+            send_call,
+            std::unique_ptr<Demuxer>(new ForceDemuxer(MediaType::VIDEO))) {}
 
   RTC_DEPRECATED DirectTransport(const FakeNetworkPipe::Config& config,
                                  Call* send_call)
-      : DirectTransport(config, send_call, MediaType::VIDEO) {}
+      : DirectTransport(
+            config,
+            send_call,
+            std::unique_ptr<Demuxer>(new ForceDemuxer(MediaType::VIDEO))) {}
 
   ~DirectTransport();
 
@@ -57,6 +83,21 @@ class DirectTransport : public Transport {
   int GetAverageDelayMs();
 
  private:
+  // TODO(minyue): remove when the deprecated ctors of DirectTransport that
+  // create ForceDemuxer are removed.
+  class ForceDemuxer : public Demuxer {
+   public:
+    explicit ForceDemuxer(MediaType media_type);
+    void SetReceiver(PacketReceiver* receiver) override;
+    void DeliverPacket(const NetworkPacket* packet,
+                       const PacketTime& packet_time) override;
+
+   private:
+    const MediaType media_type_;
+    PacketReceiver* packet_receiver_;
+    RTC_DISALLOW_COPY_AND_ASSIGN(ForceDemuxer);
+  };
+
   static bool NetworkProcess(void* transport);
   bool SendPackets();
 

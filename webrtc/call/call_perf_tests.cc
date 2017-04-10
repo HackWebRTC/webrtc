@@ -191,26 +191,37 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   FakeNetworkPipe::Config audio_net_config;
   audio_net_config.queue_delay_ms = 500;
   audio_net_config.loss_percent = 5;
+
+  std::map<uint8_t, MediaType> audio_pt_map;
+  std::map<uint8_t, MediaType> video_pt_map;
+  std::copy_if(std::begin(payload_type_map_), std::end(payload_type_map_),
+               std::inserter(audio_pt_map, audio_pt_map.end()),
+               [](const std::pair<const uint8_t, MediaType>& pair) {
+                 return pair.second == MediaType::AUDIO;
+               });
+  std::copy_if(std::begin(payload_type_map_), std::end(payload_type_map_),
+               std::inserter(video_pt_map, video_pt_map.end()),
+               [](const std::pair<const uint8_t, MediaType>& pair) {
+                 return pair.second == MediaType::VIDEO;
+               });
+
   test::PacketTransport audio_send_transport(sender_call_.get(), &observer,
                                              test::PacketTransport::kSender,
-                                             MediaType::AUDIO,
-                                             audio_net_config);
+                                             audio_pt_map, audio_net_config);
   MediaTypePacketReceiver audio_receiver(receiver_call_->Receiver(),
                                          MediaType::AUDIO);
   audio_send_transport.SetReceiver(&audio_receiver);
 
-  test::PacketTransport video_send_transport(sender_call_.get(), &observer,
-                                             test::PacketTransport::kSender,
-                                             MediaType::VIDEO,
-                                             FakeNetworkPipe::Config());
+  test::PacketTransport video_send_transport(
+      sender_call_.get(), &observer, test::PacketTransport::kSender,
+      video_pt_map, FakeNetworkPipe::Config());
   MediaTypePacketReceiver video_receiver(receiver_call_->Receiver(),
                                          MediaType::VIDEO);
   video_send_transport.SetReceiver(&video_receiver);
 
   test::PacketTransport receive_transport(
       receiver_call_.get(), &observer, test::PacketTransport::kReceiver,
-      MediaType::VIDEO,
-      FakeNetworkPipe::Config());
+      payload_type_map_, FakeNetworkPipe::Config());
   receive_transport.SetReceiver(sender_call_->Receiver());
 
   test::FakeDecoder fake_decoder;
@@ -222,7 +233,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   audio_send_config.voe_channel_id = send_channel_id;
   audio_send_config.rtp.ssrc = kAudioSendSsrc;
   audio_send_config.send_codec_spec.codec_inst =
-      CodecInst{103, "ISAC", 16000, 480, 1, 32000};
+      CodecInst{kAudioSendPayloadType, "ISAC", 16000, 480, 1, 32000};
   AudioSendStream* audio_send_stream =
       sender_call_->CreateAudioSendStream(audio_send_config);
 
@@ -244,7 +255,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   audio_recv_config.voe_channel_id = recv_channel_id;
   audio_recv_config.sync_group = kSyncGroup;
   audio_recv_config.decoder_factory = decoder_factory_;
-  audio_recv_config.decoder_map = {{103, {"ISAC", 16000, 1}}};
+  audio_recv_config.decoder_map = {{kAudioSendPayloadType, {"ISAC", 16000, 1}}};
 
   AudioReceiveStream* audio_receive_stream;
 
@@ -345,15 +356,15 @@ void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
 
    private:
     test::PacketTransport* CreateSendTransport(Call* sender_call) override {
-      return new test::PacketTransport(
-          sender_call, this, test::PacketTransport::kSender, MediaType::VIDEO,
-          net_config_);
+      return new test::PacketTransport(sender_call, this,
+                                       test::PacketTransport::kSender,
+                                       payload_type_map_, net_config_);
     }
 
     test::PacketTransport* CreateReceiveTransport() override {
-      return new test::PacketTransport(
-          nullptr, this, test::PacketTransport::kReceiver, MediaType::VIDEO,
-          net_config_);
+      return new test::PacketTransport(nullptr, this,
+                                       test::PacketTransport::kReceiver,
+                                       payload_type_map_, net_config_);
     }
 
     void OnFrame(const VideoFrame& video_frame) override {

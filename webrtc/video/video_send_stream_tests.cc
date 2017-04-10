@@ -438,9 +438,9 @@ class UlpfecObserver : public test::EndToEndTest {
     FakeNetworkPipe::Config config;
     config.loss_percent = 5;
     config.queue_delay_ms = kNetworkDelayMs;
-    return new test::PacketTransport(sender_call, this,
-                                     test::PacketTransport::kSender,
-                                     MediaType::VIDEO, config);
+    return new test::PacketTransport(
+        sender_call, this, test::PacketTransport::kSender,
+        VideoSendStreamTest::payload_type_map_, config);
   }
 
   void ModifyVideoConfigs(
@@ -594,9 +594,9 @@ class FlexfecObserver : public test::EndToEndTest {
     FakeNetworkPipe::Config config;
     config.loss_percent = 5;
     config.queue_delay_ms = kNetworkDelayMs;
-    return new test::PacketTransport(sender_call, this,
-                                     test::PacketTransport::kSender,
-                                     MediaType::VIDEO, config);
+    return new test::PacketTransport(
+        sender_call, this, test::PacketTransport::kSender,
+        VideoSendStreamTest::payload_type_map_, config);
   }
 
   void ModifyVideoConfigs(
@@ -1266,7 +1266,7 @@ TEST_F(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
       config.queue_delay_ms = kNetworkDelayMs;
       return new test::PacketTransport(sender_call, this,
                                        test::PacketTransport::kSender,
-                                       MediaType::VIDEO, config);
+                                       payload_type_map_, config);
     }
 
     void ModifyVideoConfigs(
@@ -2749,7 +2749,7 @@ class Vp9HeaderObserver : public test::SendTest {
   virtual void InspectHeader(const RTPVideoHeaderVP9& vp9) = 0;
 
  private:
-  const int kVp9PayloadType = 105;
+  const int kVp9PayloadType = test::CallTest::kVideoSendPayloadType;
 
   class VideoStreamFactory
       : public VideoEncoderConfig::VideoStreamFactoryInterface {

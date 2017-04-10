@@ -20,12 +20,9 @@ namespace {
 // Wait half a second between stopping sending and stopping receiving audio.
 constexpr int kExtraRecordTimeMs = 500;
 
-// Large bitrate by default.
-const webrtc::CodecInst kDefaultCodec{120, "OPUS", 48000, 960, 2, 64000};
-
 // The best that can be done with PESQ.
 constexpr int kAudioFileBitRate = 16000;
-}
+}  // namespace
 
 namespace webrtc {
 namespace test {
@@ -79,20 +76,20 @@ test::PacketTransport* AudioQualityTest::CreateSendTransport(
     Call* sender_call) {
   return new test::PacketTransport(
       sender_call, this, test::PacketTransport::kSender,
-      MediaType::AUDIO,
-      GetNetworkPipeConfig());
+      test::CallTest::payload_type_map_, GetNetworkPipeConfig());
 }
 
 test::PacketTransport* AudioQualityTest::CreateReceiveTransport() {
-  return new test::PacketTransport(nullptr, this,
-      test::PacketTransport::kReceiver, MediaType::AUDIO,
-      GetNetworkPipeConfig());
+  return new test::PacketTransport(
+      nullptr, this, test::PacketTransport::kReceiver,
+      test::CallTest::payload_type_map_, GetNetworkPipeConfig());
 }
 
 void AudioQualityTest::ModifyAudioConfigs(
   AudioSendStream::Config* send_config,
   std::vector<AudioReceiveStream::Config>* receive_configs) {
-  send_config->send_codec_spec.codec_inst = kDefaultCodec;
+  send_config->send_codec_spec.codec_inst = webrtc::CodecInst{
+      test::CallTest::kAudioSendPayloadType, "OPUS", 48000, 960, 2, 64000};
 }
 
 void AudioQualityTest::PerformTest() {
@@ -125,12 +122,12 @@ class Mobile2GNetworkTest : public AudioQualityTest {
   void ModifyAudioConfigs(AudioSendStream::Config* send_config,
       std::vector<AudioReceiveStream::Config>* receive_configs) override {
     send_config->send_codec_spec.codec_inst = CodecInst{
-        120,     // pltype
-        "OPUS",  // plname
-        48000,   // plfreq
-        2880,    // pacsize
-        1,       // channels
-        6000     // rate bits/sec
+        test::CallTest::kAudioSendPayloadType,  // pltype
+        "OPUS",                                 // plname
+        48000,                                  // plfreq
+        2880,                                   // pacsize
+        1,                                      // channels
+        6000                                    // rate bits/sec
     };
   }
 

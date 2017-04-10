@@ -26,29 +26,6 @@ namespace {
 const int kVideoRotationRtpExtensionId = 4;
 }
 
-void CallTest::PayloadDemuxer::SetReceiver(PacketReceiver* receiver) {
-  receiver_ = receiver;
-}
-
-PacketReceiver::DeliveryStatus CallTest::PayloadDemuxer::DeliverPacket(
-    MediaType media_type,
-    const uint8_t* packet,
-    size_t length,
-    const PacketTime& packet_time) {
-  if (media_type == MediaType::ANY) {
-    // This simplistic demux logic will not make much sense for RTCP
-    // packets, but it seems that doesn't matter.
-    RTC_CHECK_GE(length, 2);
-    uint8_t pt = packet[1] & 0x7f;
-    if (pt == kFakeVideoSendPayloadType || pt == kFlexfecPayloadType) {
-      media_type = MediaType::VIDEO;
-    } else {
-      media_type = MediaType::AUDIO;
-    }
-  }
-  return receiver_->DeliverPacket(media_type, packet, length, packet_time);
-}
-
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
       event_log_(RtcEventLog::CreateNull()),
@@ -99,20 +76,8 @@ void CallTest::RunBaseTest(BaseTest* test) {
   send_transport_.reset(test->CreateSendTransport(sender_call_.get()));
 
   if (test->ShouldCreateReceivers()) {
-    // For tests using only video or only audio, we rely on each test
-    // configuring the underlying FakeNetworkPipe with the right media
-    // type. But for tests sending both video and audio over the same
-    // FakeNetworkPipe, we need to "demux", i.e., setting the
-    // MediaType based on RTP payload type.
-    if (num_video_streams_ > 0 && num_audio_streams_ > 0) {
-      receive_demuxer_.SetReceiver(receiver_call_->Receiver());
-      send_transport_->SetReceiver(&receive_demuxer_);
-      send_demuxer_.SetReceiver(sender_call_->Receiver());
-      receive_transport_->SetReceiver(&send_demuxer_);
-    } else {
-      send_transport_->SetReceiver(receiver_call_->Receiver());
-      receive_transport_->SetReceiver(sender_call_->Receiver());
-    }
+    send_transport_->SetReceiver(receiver_call_->Receiver());
+    receive_transport_->SetReceiver(sender_call_->Receiver());
     if (num_video_streams_ > 0)
       receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
     if (num_audio_streams_ > 0)
@@ -300,7 +265,7 @@ void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
     audio_config.voe_channel_id = voe_recv_.channel_id;
     audio_config.rtp.remote_ssrc = audio_send_config_.rtp.ssrc;
     audio_config.decoder_factory = decoder_factory_;
-    audio_config.decoder_map = {{120, {"opus", 48000, 2}}};
+    audio_config.decoder_map = {{kAudioSendPayloadType, {"opus", 48000, 2}}};
     audio_receive_configs_.push_back(audio_config);
   }
 
@@ -462,6 +427,16 @@ const uint32_t CallTest::kReceiverLocalVideoSsrc = 0x123456;
 const uint32_t CallTest::kReceiverLocalAudioSsrc = 0x1234567;
 const int CallTest::kNackRtpHistoryMs = 1000;
 
+const std::map<uint8_t, MediaType> CallTest::payload_type_map_ = {
+    {CallTest::kVideoSendPayloadType, MediaType::VIDEO},
+    {CallTest::kFakeVideoSendPayloadType, MediaType::VIDEO},
+    {CallTest::kSendRtxPayloadType, MediaType::VIDEO},
+    {CallTest::kRedPayloadType, MediaType::VIDEO},
+    {CallTest::kRtxRedPayloadType, MediaType::VIDEO},
+    {CallTest::kUlpfecPayloadType, MediaType::VIDEO},
+    {CallTest::kFlexfecPayloadType, MediaType::VIDEO},
+    {CallTest::kAudioSendPayloadType, MediaType::AUDIO}};
+
 BaseTest::BaseTest() : event_log_(RtcEventLog::CreateNull()) {}
 
 BaseTest::BaseTest(unsigned int timeout_ms)
@@ -493,28 +468,15 @@ Call::Config BaseTest::GetReceiverCallConfig() {
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {
 }
 
-MediaType BaseTest::SelectMediaType() {
-  if (GetNumVideoStreams() > 0) {
-    if (GetNumAudioStreams() > 0) {
-      // Relies on PayloadDemuxer to set media type from payload type.
-      return MediaType::ANY;
-    } else {
-      return MediaType::VIDEO;
-    }
-  } else {
-    return MediaType::AUDIO;
-  }
-}
-
 test::PacketTransport* BaseTest::CreateSendTransport(Call* sender_call) {
   return new PacketTransport(sender_call, this, test::PacketTransport::kSender,
-                             SelectMediaType(),
+                             CallTest::payload_type_map_,
                              FakeNetworkPipe::Config());
 }
 
 test::PacketTransport* BaseTest::CreateReceiveTransport() {
   return new PacketTransport(nullptr, this, test::PacketTransport::kReceiver,
-                             SelectMediaType(),
+                             CallTest::payload_type_map_,
                              FakeNetworkPipe::Config());
 }
 

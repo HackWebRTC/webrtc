@@ -10,6 +10,7 @@
 #ifndef WEBRTC_VIDEO_VIDEO_QUALITY_TEST_H_
 #define WEBRTC_VIDEO_VIDEO_QUALITY_TEST_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -96,6 +97,8 @@ class VideoQualityTest : public test::CallTest {
       const std::vector<std::string>& sl_descriptors);
 
  protected:
+  std::map<uint8_t, webrtc::MediaType> payload_type_map_;
+
   // No-op implementation to be able to instantiate this class from non-TEST_F
   // locations.
   void TestBody() override;
