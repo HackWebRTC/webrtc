@@ -214,9 +214,8 @@ class ViEEncoder::VideoSourceProxy {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
     if (!IsResolutionScalingEnabledLocked()) {
-      // This can happen since |degradation_preference_| is set on
-      // libjingle's worker thread but the adaptation is done on the encoder
-      // task queue.
+      // This can happen since |degradation_preference_| is set on libjingle's
+      // worker thread but the adaptation is done on the encoder task queue.
       return;
     }
     // The input video frame size will have a resolution with less than or
@@ -235,9 +234,8 @@ class ViEEncoder::VideoSourceProxy {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
     if (!IsFramerateScalingEnabledLocked()) {
-      // This can happen since |degradation_preference_| is set on
-      // libjingle's worker thread but the adaptation is done on the encoder
-      // task queue.
+      // This can happen since |degradation_preference_| is set on libjingle's
+      // worker thread but the adaptation is done on the encoder task queue.
       return;
     }
     // The input video frame rate will be scaled down to 2/3 of input fps,
@@ -252,9 +250,8 @@ class ViEEncoder::VideoSourceProxy {
   void RequestHigherResolutionThan(int pixel_count) {
     rtc::CritScope lock(&crit_);
     if (!IsResolutionScalingEnabledLocked()) {
-      // This can happen since |degradation_preference_| is set on
-      // libjingle's worker thread but the adaptation is done on the encoder
-      // task queue.
+      // This can happen since |degradation_preference_| is set on libjingle's
+      // worker thread but the adaptation is done on the encoder task queue.
       return;
     }
 
@@ -281,9 +278,8 @@ class ViEEncoder::VideoSourceProxy {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
     if (!IsFramerateScalingEnabledLocked()) {
-      // This can happen since |degradation_preference_| is set on
-      // libjingle's worker thread but the adaptation is done on the encoder
-      // task queue.
+      // This can happen since |degradation_preference_| is set on libjingle's
+      // worker thread but the adaptation is done on the encoder task queue.
       return;
     }
     if (framerate_fps == std::numeric_limits<int>::max()) {
