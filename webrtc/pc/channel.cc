@@ -23,7 +23,6 @@
 #include "webrtc/base/trace_event.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/media/base/rtputils.h"
-#include "webrtc/media/engine/webrtcvoiceengine.h"
 #include "webrtc/p2p/base/packettransportinternal.h"
 #include "webrtc/pc/channelmanager.h"
 
@@ -1675,13 +1674,6 @@ bool VoiceChannel::SetRtpReceiveParameters_w(uint32_t ssrc,
 bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {
   return InvokeOnWorker(RTC_FROM_HERE, Bind(&VoiceMediaChannel::GetStats,
                                             media_channel(), stats));
-}
-
-std::vector<webrtc::RtpSource> VoiceChannel::GetSources(uint32_t ssrc) const {
-  return worker_thread()->Invoke<std::vector<webrtc::RtpSource>>(
-      RTC_FROM_HERE,
-      Bind(&WebRtcVoiceMediaChannel::GetSources,
-           static_cast<WebRtcVoiceMediaChannel*>(media_channel()), ssrc));
 }
 
 void VoiceChannel::StartMediaMonitor(int cms) {

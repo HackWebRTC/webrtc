@@ -12,7 +12,6 @@
 #define WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 
 #include "webrtc/api/audio/audio_mixer.h"
-#include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/race_checker.h"
 #include "webrtc/base/thread_checker.h"
@@ -126,7 +125,6 @@ class ChannelProxy {
   virtual void OnRecoverableUplinkPacketLossRate(
       float recoverable_packet_loss_rate);
   virtual void RegisterLegacyReceiveCodecs();
-  virtual std::vector<webrtc::RtpSource> GetSources() const;
 
  private:
   Channel* channel() const;

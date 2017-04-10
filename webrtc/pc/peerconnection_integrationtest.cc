@@ -2755,24 +2755,6 @@ TEST_F(PeerConnectionIntegrationTest, CodecNamesAreCaseInsensitive) {
       kMaxWaitForFramesMs);
 }
 
-TEST_F(PeerConnectionIntegrationTest, GetSources) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
-  ConnectFakeSignaling();
-  caller()->AddAudioOnlyMediaStream();
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  // Wait for one audio frame received by callee.
-  ExpectNewFramesReceivedWithWait(0, 0, 1, 0, kMaxWaitForFramesMs);
-  ASSERT_GT(callee()->pc()->GetReceivers().size(), 0u);
-  auto receiver = callee()->pc()->GetReceivers()[0];
-  ASSERT_EQ(receiver->media_type(), cricket::MEDIA_TYPE_AUDIO);
-
-  auto contributing_sources = receiver->GetSources();
-  ASSERT_GT(receiver->GetParameters().encodings.size(), 0u);
-  EXPECT_EQ(receiver->GetParameters().encodings[0].ssrc,
-            contributing_sources[0].source_id());
-}
-
 }  // namespace
 
 #endif  // if !defined(THREAD_SANITIZER)

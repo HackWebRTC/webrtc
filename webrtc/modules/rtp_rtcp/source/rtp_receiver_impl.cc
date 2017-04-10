@@ -15,9 +15,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <set>
-#include <vector>
-
 #include "webrtc/base/logging.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
@@ -27,9 +24,6 @@
 namespace webrtc {
 
 using RtpUtility::Payload;
-
-// Only return the sources in the last 10 seconds.
-const int64_t kGetSourcesTimeoutMs = 10000;
 
 RtpReceiver* RtpReceiver::CreateVideoReceiver(
     Clock* clock,
@@ -59,10 +53,11 @@ RtpReceiver* RtpReceiver::CreateAudioReceiver(
       RTPReceiverStrategy::CreateAudioStrategy(incoming_payload_callback));
 }
 
-RtpReceiverImpl::RtpReceiverImpl(Clock* clock,
-                                 RtpFeedback* incoming_messages_callback,
-                                 RTPPayloadRegistry* rtp_payload_registry,
-                                 RTPReceiverStrategy* rtp_media_receiver)
+RtpReceiverImpl::RtpReceiverImpl(
+    Clock* clock,
+    RtpFeedback* incoming_messages_callback,
+    RTPPayloadRegistry* rtp_payload_registry,
+    RTPReceiverStrategy* rtp_media_receiver)
     : clock_(clock),
       rtp_payload_registry_(rtp_payload_registry),
       rtp_media_receiver_(rtp_media_receiver),
@@ -165,8 +160,6 @@ bool RtpReceiverImpl::IncomingRtpPacket(
   webrtc_rtp_header.header = rtp_header;
   CheckCSRC(webrtc_rtp_header);
 
-  UpdateSources();
-
   size_t payload_data_length = payload_length - rtp_header.paddingLength;
 
   bool is_first_packet_in_frame = false;
@@ -208,45 +201,6 @@ bool RtpReceiverImpl::IncomingRtpPacket(
 
 TelephoneEventHandler* RtpReceiverImpl::GetTelephoneEventHandler() {
   return rtp_media_receiver_->GetTelephoneEventHandler();
-}
-
-std::vector<RtpSource> RtpReceiverImpl::GetSources() const {
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  std::vector<RtpSource> sources;
-
-  {
-    rtc::CritScope lock(&critical_section_rtp_receiver_);
-
-    RTC_DCHECK(std::is_sorted(ssrc_sources_.begin(), ssrc_sources_.end(),
-                              [](const RtpSource& lhs, const RtpSource& rhs) {
-                                return lhs.timestamp_ms() < rhs.timestamp_ms();
-                              }));
-    RTC_DCHECK(std::is_sorted(csrc_sources_.begin(), csrc_sources_.end(),
-                              [](const RtpSource& lhs, const RtpSource& rhs) {
-                                return lhs.timestamp_ms() < rhs.timestamp_ms();
-                              }));
-
-    std::set<uint32_t> selected_ssrcs;
-    for (auto rit = ssrc_sources_.rbegin(); rit != ssrc_sources_.rend();
-         ++rit) {
-      if ((now_ms - rit->timestamp_ms()) > kGetSourcesTimeoutMs) {
-        break;
-      }
-      if (selected_ssrcs.insert(rit->source_id()).second) {
-        sources.push_back(*rit);
-      }
-    }
-
-    for (auto rit = csrc_sources_.rbegin(); rit != csrc_sources_.rend();
-         ++rit) {
-      if ((now_ms - rit->timestamp_ms()) > kGetSourcesTimeoutMs) {
-        break;
-      }
-      sources.push_back(*rit);
-    }
-  }  // End critsect.
-
-  return sources;
 }
 
 bool RtpReceiverImpl::Timestamp(uint32_t* timestamp) const {
@@ -505,56 +459,6 @@ void RtpReceiverImpl::CheckCSRC(const WebRtcRTPHeader& rtp_header) {
       cb_rtp_feedback_->OnIncomingCSRCChanged(0, false);
     }
   }
-}
-
-void RtpReceiverImpl::UpdateSources() {
-  rtc::CritScope lock(&critical_section_rtp_receiver_);
-  int64_t now_ms = clock_->TimeInMilliseconds();
-
-  for (size_t i = 0; i < num_csrcs_; ++i) {
-    auto map_it = iterator_by_csrc_.find(current_remote_csrc_[i]);
-    if (map_it == iterator_by_csrc_.end()) {
-      // If it is a new CSRC, append a new object to the end of the list.
-      csrc_sources_.emplace_back(now_ms, current_remote_csrc_[i],
-                                 RtpSourceType::CSRC);
-    } else {
-      // If it is an existing CSRC, move the object to the end of the list.
-      map_it->second->update_timestamp_ms(now_ms);
-      csrc_sources_.splice(csrc_sources_.end(), csrc_sources_, map_it->second);
-    }
-    // Update the unordered_map.
-    iterator_by_csrc_[current_remote_csrc_[i]] = std::prev(csrc_sources_.end());
-  }
-
-  // If this is the first packet or the SSRC is changed, insert a new
-  // contributing source that uses the SSRC.
-  if (ssrc_sources_.empty() || ssrc_sources_.rbegin()->source_id() != ssrc_) {
-    ssrc_sources_.emplace_back(now_ms, ssrc_, RtpSourceType::SSRC);
-  } else {
-    ssrc_sources_.rbegin()->update_timestamp_ms(now_ms);
-  }
-
-  RemoveOutdatedSources(now_ms);
-}
-
-void RtpReceiverImpl::RemoveOutdatedSources(int64_t now_ms) {
-  std::list<RtpSource>::iterator it;
-  for (it = csrc_sources_.begin(); it != csrc_sources_.end(); ++it) {
-    if ((now_ms - it->timestamp_ms()) <= kGetSourcesTimeoutMs) {
-      break;
-    }
-    iterator_by_csrc_.erase(it->source_id());
-  }
-  csrc_sources_.erase(csrc_sources_.begin(), it);
-
-  std::vector<RtpSource>::iterator vec_it;
-  for (vec_it = ssrc_sources_.begin(); vec_it != ssrc_sources_.end();
-       ++vec_it) {
-    if ((now_ms - vec_it->timestamp_ms()) <= kGetSourcesTimeoutMs) {
-      break;
-    }
-  }
-  ssrc_sources_.erase(ssrc_sources_.begin(), vec_it);
 }
 
 }  // namespace webrtc

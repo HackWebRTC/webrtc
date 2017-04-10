@@ -1581,12 +1581,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     playout_ = playout;
   }
 
-  std::vector<webrtc::RtpSource> GetSources() {
-    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RTC_DCHECK(stream_);
-    return stream_->GetSources();
-  }
-
  private:
   void RecreateAudioReceiveStream() {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
@@ -2604,15 +2598,6 @@ void WebRtcVoiceMediaChannel::SetRawAudioSink(
     return;
   }
   it->second->SetRawAudioSink(std::move(sink));
-}
-
-std::vector<webrtc::RtpSource> WebRtcVoiceMediaChannel::GetSources(
-    uint32_t ssrc) const {
-  auto it = recv_streams_.find(ssrc);
-  RTC_DCHECK(it != recv_streams_.end())
-      << "Attempting to get contributing sources for SSRC:" << ssrc
-      << " which doesn't exist.";
-  return it->second->GetSources();
 }
 
 int WebRtcVoiceMediaChannel::GetReceiveChannelId(uint32_t ssrc) const {

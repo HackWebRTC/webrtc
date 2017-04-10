@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/networkroute.h"
@@ -210,8 +209,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   void SetRawAudioSink(
       uint32_t ssrc,
       std::unique_ptr<webrtc::AudioSinkInterface> sink) override;
-
-  std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const;
 
   // implements Transport interface
   bool SendRtp(const uint8_t* data,

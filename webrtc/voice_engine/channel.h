@@ -29,7 +29,6 @@
 #include "webrtc/modules/audio_processing/rms_level.h"
 #include "webrtc/modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/voice_engine/audio_level.h"
 #include "webrtc/voice_engine/file_player.h"
@@ -54,6 +53,7 @@ class ReceiveStatistics;
 class RemoteNtpTimeEstimator;
 class RtcEventLog;
 class RTPPayloadRegistry;
+class RtpReceiver;
 class RTPReceiverAudio;
 class RtpPacketReceived;
 class RtpRtcp;
@@ -402,10 +402,6 @@ class Channel
   void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate);
 
   void OnRecoverableUplinkPacketLossRate(float recoverable_packet_loss_rate);
-
-  std::vector<RtpSource> GetSources() const {
-    return rtp_receiver_->GetSources();
-  }
 
  private:
   class ProcessAndEncodeAudioTask;

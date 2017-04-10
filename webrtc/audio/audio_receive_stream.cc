@@ -219,11 +219,6 @@ void AudioReceiveStream::SetGain(float gain) {
   channel_proxy_->SetChannelOutputVolumeScaling(gain);
 }
 
-std::vector<RtpSource> AudioReceiveStream::GetSources() const {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  return channel_proxy_->GetSources();
-}
-
 AudioMixer::Source::AudioFrameInfo AudioReceiveStream::GetAudioFrameWithInfo(
     int sample_rate_hz,
     AudioFrame* audio_frame) {

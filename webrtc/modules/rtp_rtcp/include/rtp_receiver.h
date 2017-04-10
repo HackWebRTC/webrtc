@@ -11,9 +11,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RECEIVER_H_
 #define WEBRTC_MODULES_RTP_RTCP_INCLUDE_RTP_RECEIVER_H_
 
-#include <vector>
-
-#include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/typedefs.h"
 
@@ -92,8 +89,6 @@ class RtpReceiver {
 
   // Returns the current energy of the RTP stream received.
   virtual int32_t Energy(uint8_t array_of_energy[kRtpCsrcSize]) const = 0;
-
-  virtual std::vector<RtpSource> GetSources() const = 0;
 };
 }  // namespace webrtc
 

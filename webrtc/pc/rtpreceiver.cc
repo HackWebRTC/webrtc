@@ -97,10 +97,6 @@ void AudioRtpReceiver::Stop() {
   stopped_ = true;
 }
 
-std::vector<RtpSource> AudioRtpReceiver::GetSources() const {
-  return channel_->GetSources(ssrc_);
-}
-
 void AudioRtpReceiver::Reconfigure() {
   RTC_DCHECK(!stopped_);
   if (!channel_) {
