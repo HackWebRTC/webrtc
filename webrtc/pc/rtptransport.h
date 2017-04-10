@@ -11,6 +11,8 @@
 #ifndef WEBRTC_PC_RTPTRANSPORT_H_
 #define WEBRTC_PC_RTPTRANSPORT_H_
 
+#include "webrtc/api/ortc/rtptransportinterface.h"
+
 namespace rtc {
 
 class PacketTransportInternal;
@@ -19,7 +21,7 @@ class PacketTransportInternal;
 
 namespace webrtc {
 
-class RtpTransport {
+class RtpTransport : public RtpTransportInterface {
  public:
   RtpTransport(const RtpTransport&) = delete;
   RtpTransport& operator=(const RtpTransport&) = delete;
@@ -32,24 +34,33 @@ class RtpTransport {
   rtc::PacketTransportInternal* rtp_packet_transport() const {
     return rtp_packet_transport_;
   }
-  void set_rtp_packet_transport(rtc::PacketTransportInternal* rtp) {
-    rtp_packet_transport_ = rtp;
-  }
+  void set_rtp_packet_transport(rtc::PacketTransportInternal* rtp);
 
   rtc::PacketTransportInternal* rtcp_packet_transport() const {
     return rtcp_packet_transport_;
   }
   void set_rtcp_packet_transport(rtc::PacketTransportInternal* rtcp);
 
+  PacketTransportInterface* GetRtpPacketTransport() const override;
+  PacketTransportInterface* GetRtcpPacketTransport() const override;
+
+  // TODO(zstein): Use these RtcpParameters for configuration elsewhere.
+  RTCError SetRtcpParameters(const RtcpParameters& parameters) override;
+  RtcpParameters GetRtcpParameters() const override;
+
+ protected:
+  // TODO(zstein): Remove this when we remove RtpTransportAdapter.
+  RtpTransportAdapter* GetInternal() override;
+
  private:
   // True if RTCP-multiplexing is required. rtcp_packet_transport_ should
   // always be null in this case.
   const bool rtcp_mux_required_;
 
-  // TODO(zstein): Revisit ownership here - transports are currently owned by
-  // TransportController
   rtc::PacketTransportInternal* rtp_packet_transport_ = nullptr;
   rtc::PacketTransportInternal* rtcp_packet_transport_ = nullptr;
+
+  RtcpParameters rtcp_parameters_;
 };
 
 }  // namespace webrtc
