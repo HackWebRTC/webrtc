@@ -366,6 +366,8 @@ class AudioProcessingImpl : public AudioProcessing {
     // tracked by the capture_audio_.
     StreamConfig capture_processing_format;
     int split_rate;
+    int previous_agc_level;
+    bool echo_path_gain_change;
   } capture_ GUARDED_BY(crit_capture_);
 
   struct ApmCaptureNonLockedState {

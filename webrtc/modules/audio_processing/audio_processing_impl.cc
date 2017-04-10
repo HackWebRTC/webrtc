@@ -1145,6 +1145,10 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (private_submodules_->echo_canceller3) {
+    const int new_agc_level = gain_control()->stream_analog_level();
+    capture_.echo_path_gain_change =
+        (capture_.previous_agc_level != new_agc_level);
+    capture_.previous_agc_level = new_agc_level;
     private_submodules_->echo_canceller3->AnalyzeCapture(capture_buffer);
   }
 
@@ -1193,7 +1197,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (private_submodules_->echo_canceller3) {
-    private_submodules_->echo_canceller3->ProcessCapture(capture_buffer, false);
+    private_submodules_->echo_canceller3->ProcessCapture(
+        capture_buffer, capture_.echo_path_gain_change);
   } else {
     RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessCaptureAudio(
         capture_buffer, stream_delay_ms()));
@@ -1993,7 +1998,9 @@ AudioProcessingImpl::ApmCaptureState::ApmCaptureState(
       array_geometry(array_geometry),
       target_direction(target_direction),
       capture_processing_format(kSampleRate16kHz),
-      split_rate(kSampleRate16kHz) {}
+      split_rate(kSampleRate16kHz),
+      previous_agc_level(0),
+      echo_path_gain_change(false) {}
 
 AudioProcessingImpl::ApmCaptureState::~ApmCaptureState() = default;
 
