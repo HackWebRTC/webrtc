@@ -279,12 +279,16 @@ void Packet::SetCsrcs(const std::vector<uint32_t>& csrcs) {
 }
 
 bool Packet::HasRawExtension(int id) const {
+  if (id == ExtensionManager::kInvalidId)
+    return false;
   RTC_DCHECK_GE(id, kMinExtensionId);
   RTC_DCHECK_LE(id, kMaxExtensionId);
   return extension_entries_[id - 1].offset != 0;
 }
 
 rtc::ArrayView<const uint8_t> Packet::GetRawExtension(int id) const {
+  if (id == ExtensionManager::kInvalidId)
+    return nullptr;
   RTC_DCHECK_GE(id, kMinExtensionId);
   RTC_DCHECK_LE(id, kMaxExtensionId);
   const ExtensionInfo& extension = extension_entries_[id - 1];
@@ -303,6 +307,8 @@ bool Packet::SetRawExtension(int id, rtc::ArrayView<const uint8_t> data) {
 }
 
 rtc::ArrayView<uint8_t> Packet::AllocateRawExtension(int id, size_t length) {
+  if (id == ExtensionManager::kInvalidId)
+    return nullptr;
   RTC_DCHECK_GE(id, kMinExtensionId);
   RTC_DCHECK_LE(id, kMaxExtensionId);
   RTC_DCHECK_GE(length, 1);

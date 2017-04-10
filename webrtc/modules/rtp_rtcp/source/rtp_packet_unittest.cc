@@ -16,11 +16,12 @@
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 
-using testing::ElementsAreArray;
-using testing::make_tuple;
-
 namespace webrtc {
 namespace {
+using ::testing::ElementsAreArray;
+using ::testing::IsEmpty;
+using ::testing::make_tuple;
+
 constexpr int8_t kPayloadType = 100;
 constexpr uint32_t kSsrc = 0x12345678;
 constexpr uint16_t kSeqNum = 88;
@@ -361,6 +362,23 @@ TEST(RtpPacketTest, ParseWithoutExtensionManager) {
   EXPECT_TRUE(TransmissionOffset::Parse(raw_extension, &time_offset));
 
   EXPECT_EQ(time_offset, kTimeOffset);
+}
+
+TEST(RtpPacketTest, RawExtensionFunctionsAcceptZeroIdAndReturnFalse) {
+  RtpPacketReceived::ExtensionManager extensions;
+  RtpPacketReceived packet(&extensions);
+  // Use ExtensionManager to set kInvalidId to 0 to demonstrate natural way for
+  // using zero value as a parameter to Packet::*RawExtension functions.
+  const int kInvalidId = extensions.GetId(TransmissionOffset::kId);
+  ASSERT_EQ(kInvalidId, 0);
+
+  ASSERT_TRUE(packet.Parse(kPacket, sizeof(kPacket)));
+
+  EXPECT_FALSE(packet.HasRawExtension(kInvalidId));
+  EXPECT_THAT(packet.GetRawExtension(kInvalidId), IsEmpty());
+  const uint8_t kExtension[] = {'e', 'x', 't'};
+  EXPECT_FALSE(packet.SetRawExtension(kInvalidId, kExtension));
+  EXPECT_THAT(packet.AllocateRawExtension(kInvalidId, 3), IsEmpty());
 }
 
 }  // namespace webrtc
