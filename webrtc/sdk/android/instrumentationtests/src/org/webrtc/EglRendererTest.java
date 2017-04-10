@@ -103,8 +103,8 @@ public class EglRendererTest {
 
   @Before
   public void setUp() throws Exception {
-    PeerConnectionFactory.initializeAndroidGlobals(InstrumentationRegistry.getTargetContext(),
-        true /* initializeAudio */, true /* initializeVideo */, true /* videoHwAcceleration */);
+    PeerConnectionFactory.initializeAndroidGlobals(
+        InstrumentationRegistry.getTargetContext(), true /* videoHwAcceleration */);
     eglRenderer = new EglRenderer("TestRenderer: ");
     eglRenderer.init(null /* sharedContext */, EglBase.CONFIG_RGBA, new GlRectDrawer());
     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);

@@ -326,8 +326,7 @@ class CameraVideoCapturerTestFixtures {
   private TestObjectFactory testObjectFactory;
 
   CameraVideoCapturerTestFixtures(TestObjectFactory testObjectFactory) {
-    PeerConnectionFactory.initializeAndroidGlobals(
-        testObjectFactory.getAppContext(), true, true, true);
+    PeerConnectionFactory.initializeAndroidGlobals(testObjectFactory.getAppContext(), true);
 
     this.peerConnectionFactory = new PeerConnectionFactory(null /* options */);
     this.testObjectFactory = testObjectFactory;

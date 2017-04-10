@@ -50,16 +50,18 @@ public class PeerConnectionFactory {
     public boolean disableNetworkMonitor;
   }
 
-  // |context| is an android.content.Context object, but we keep it untyped here
-  // to allow building on non-Android platforms.
-  // Callers may specify either |initializeAudio| or |initializeVideo| as false
-  // to skip initializing the respective engine (and avoid the need for the
-  // respective permissions).
-  // |renderEGLContext| can be provided to suport HW video decoding to
-  // texture and will be used to create a shared EGL context on video
-  // decoding thread.
-  public static native boolean initializeAndroidGlobals(Object context, boolean initializeAudio,
-      boolean initializeVideo, boolean videoHwAcceleration);
+  // Must be called at least once before creating a PeerConnectionFactory
+  // (for example, at application startup time).
+  public static native void initializeAndroidGlobals(
+      android.content.Context context, boolean videoHwAcceleration);
+
+  // Older signature of initializeAndroidGlobals. The extra parameters are now meaningless.
+  @Deprecated
+  public static boolean initializeAndroidGlobals(android.content.Context context,
+      boolean initializeAudio, boolean initializeVideo, boolean videoHwAcceleration) {
+    initializeAndroidGlobals(context, videoHwAcceleration);
+    return true;
+  }
 
   // Field trial initialization. Must be called before PeerConnectionFactory
   // is created.
@@ -90,6 +92,8 @@ public class PeerConnectionFactory {
     this(null);
   }
 
+  // Note: initializeAndroidGlobals must be called at least once before
+  // constructing a PeerConnectionFactory.
   public PeerConnectionFactory(Options options) {
     nativeFactory = nativeCreatePeerConnectionFactory(options);
     if (nativeFactory == 0) {

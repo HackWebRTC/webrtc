@@ -48,8 +48,7 @@ public class PeerConnectionTest {
 
   @Before
   public void setUp() {
-    assertTrue(PeerConnectionFactory.initializeAndroidGlobals(
-        InstrumentationRegistry.getContext(), true, true, true));
+    PeerConnectionFactory.initializeAndroidGlobals(InstrumentationRegistry.getContext(), true);
   }
 
   private static class ObserverExpectations

@@ -25,7 +25,7 @@ RTC_POP_IGNORING_WUNDEF()
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/ssladapter.h"
-#include "webrtc/voice_engine/include/voe_base.h"
+#include "webrtc/modules/utility/include/jvm_android.h"
 
 namespace webrtc {
 
@@ -45,7 +45,7 @@ void EnsureInitializedOnce() {
 
   RTC_CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
 
-  webrtc::VoiceEngine::SetAndroidObjects(jvm, context);
+  webrtc::JVM::Initialize(jvm, context);
 }
 
 }  // anonymous namespace

@@ -63,6 +63,7 @@
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
+#include "webrtc/modules/utility/include/jvm_android.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/pc/webrtcsdp.h"
 #include "webrtc/sdk/android/src/jni/androidmediadecoder_jni.h"
@@ -1131,25 +1132,19 @@ JOW(jlong, PeerConnectionFactory_nativeCreateObserver)(
   return (jlong)new PCOJava(jni, j_observer);
 }
 
-JOW(jboolean, PeerConnectionFactory_initializeAndroidGlobals)
+JOW(void, PeerConnectionFactory_initializeAndroidGlobals)
 (JNIEnv* jni,
  jclass,
  jobject context,
- jboolean initialize_audio,
- jboolean initialize_video,
  jboolean video_hw_acceleration) {
-  bool failure = false;
   video_hw_acceleration_enabled = video_hw_acceleration;
   AndroidNetworkMonitor::SetAndroidContext(jni, context);
   if (!factory_static_initialized) {
     RTC_DCHECK(j_application_context == nullptr);
     j_application_context = NewGlobalRef(jni, context);
-
-    if (initialize_audio)
-      failure |= webrtc::VoiceEngine::SetAndroidObjects(GetJVM(), context);
+    webrtc::JVM::Initialize(GetJVM(), context);
     factory_static_initialized = true;
   }
-  return !failure;
 }
 
 JOW(void, PeerConnectionFactory_initializeFieldTrials)(
