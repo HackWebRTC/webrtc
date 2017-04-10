@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_AUDIO_DECODER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_AUDIO_DECODER_H_
+#ifndef WEBRTC_TEST_MOCK_AUDIO_DECODER_H_
+#define WEBRTC_TEST_MOCK_AUDIO_DECODER_H_
 
 #include "webrtc/api/audio_codecs/audio_decoder.h"
 #include "webrtc/test/gmock.h"
@@ -26,8 +26,8 @@ class MockAudioDecoder : public AudioDecoder {
   MOCK_CONST_METHOD0(HasDecodePlc, bool());
   MOCK_METHOD2(DecodePlc, size_t(size_t, int16_t*));
   MOCK_METHOD0(Reset, void());
-  MOCK_METHOD5(IncomingPacket, int(const uint8_t*, size_t, uint16_t, uint32_t,
-                                   uint32_t));
+  MOCK_METHOD5(IncomingPacket,
+               int(const uint8_t*, size_t, uint16_t, uint32_t, uint32_t));
   MOCK_METHOD0(ErrorCode, int());
   MOCK_CONST_METHOD2(PacketDuration, int(const uint8_t*, size_t));
   MOCK_CONST_METHOD0(Channels, size_t());
@@ -35,4 +35,4 @@ class MockAudioDecoder : public AudioDecoder {
 };
 
 }  // namespace webrtc
-#endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_AUDIO_DECODER_H_
+#endif  // WEBRTC_TEST_MOCK_AUDIO_DECODER_H_

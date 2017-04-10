@@ -86,6 +86,7 @@ if (rtc_include_tests) {
       "../modules/pacing",
       "../modules/rtp_rtcp",
       "../system_wrappers",
+      "../test:audio_codec_mocks",
       "../test:direct_transport",
       "../test:test_common",
       "../test:test_support",

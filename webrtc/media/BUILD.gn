@@ -454,6 +454,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:webrtc_vp8",
       "../p2p:rtc_p2p_unittests",
       "../system_wrappers:metrics_default",
+      "../test:audio_codec_mocks",
       "../test:test_support",
       "../voice_engine:voice_engine",
     ]

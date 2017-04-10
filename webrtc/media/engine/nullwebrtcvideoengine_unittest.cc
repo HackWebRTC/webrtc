@@ -10,8 +10,8 @@
 
 #include "webrtc/media/engine/nullwebrtcvideoengine.h"
 #include "webrtc/media/engine/webrtcvoiceengine.h"
-#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_decoder_factory.h"
 #include "webrtc/test/gtest.h"
+#include "webrtc/test/mock_audio_decoder_factory.h"
 
 namespace cricket {
 
