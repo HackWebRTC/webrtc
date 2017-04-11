@@ -77,8 +77,12 @@ class VCMEncodedFrame : protected EncodedImage {
   */
   VideoRotation rotation() const { return rotation_; }
   /**
-  *   True if this frame is complete, false otherwise
-  */
+   *  Get video content type
+   */
+  VideoContentType contentType() const { return content_type_; }
+  /**
+   *   True if this frame is complete, false otherwise
+   */
   bool Complete() const { return _completeFrame; }
   /**
   *   True if there's a frame missing before this frame

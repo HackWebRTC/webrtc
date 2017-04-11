@@ -79,6 +79,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   // (HEVC)).
   rotation_ = last_packet->video_header.rotation;
   _rotation_set = true;
+  content_type_ = last_packet->video_header.content_type;
 }
 
 RtpFrameObject::~RtpFrameObject() {
