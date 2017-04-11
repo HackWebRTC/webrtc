@@ -54,10 +54,6 @@ typedef NS_ENUM(int, ARDSettingsSections) {
                     selecting:[_settingsModel currentVideoCodecSettingFromStore]];
 }
 
-- (void)viewDidAppear:(BOOL)animated {
-  [super viewDidAppear:animated];
-}
-
 #pragma mark - Data source
 
 - (NSArray<NSString *> *)videoResolutionArray {

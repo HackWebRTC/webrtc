@@ -53,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray<NSString *> *)availableVideoCodecs;
 
 /**
- * Returns current video codec setting from store if present.
+ * Returns current video codec setting from store if present or default (H264) otherwise.
  */
 - (NSString *)currentVideoCodecSettingFromStore;
 
