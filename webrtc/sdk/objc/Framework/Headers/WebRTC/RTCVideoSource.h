@@ -18,12 +18,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 RTC_EXPORT
 
-@interface RTCVideoSource : RTCMediaSource<RTCVideoCapturerDelegate>
+@interface RTCVideoSource : RTCMediaSource <RTCVideoCapturerDelegate>
 
 - (instancetype)init NS_UNAVAILABLE;
-
-// RTCVideoCapturerDelegate protocol implementation.
-- (void)capturer:(RTCVideoCapturer*)capturer didCaptureVideoFrame:(RTCVideoFrame*)frame;
 
 /**
  * Calling this function will cause frames to be scaled down to the

@@ -10,19 +10,16 @@
 
 #import "WebRTC/RTCVideoCapturer.h"
 
-@implementation RTCVideoCapturer {
-  __weak id<RTCVideoCapturerDelegate> _delegate;
-}
+@implementation RTCVideoCapturer
+
+@synthesize delegate = _delegate;
 
 - (instancetype)initWithDelegate:(id<RTCVideoCapturerDelegate>)delegate {
+  NSAssert(delegate != nil, @"delegate cannot be nil");
   if (self = [super init]) {
     _delegate = delegate;
   }
   return self;
-}
-
-- (id<RTCVideoCapturerDelegate>)delegate {
-  return _delegate;
 }
 
 @end

@@ -89,9 +89,9 @@
 }
 
 - (RTCVideoSource *)videoSource {
-  rtc::scoped_refptr<webrtc::ObjcVideoTrackSource> objc_video_track_source(
+  rtc::scoped_refptr<webrtc::ObjcVideoTrackSource> objcVideoTrackSource(
       new rtc::RefCountedObject<webrtc::ObjcVideoTrackSource>());
-  return [[RTCVideoSource alloc] initWithNativeVideoSource:objc_video_track_source];
+  return [[RTCVideoSource alloc] initWithNativeVideoSource:objcVideoTrackSource];
 }
 
 - (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source

@@ -11,10 +11,11 @@
 #ifndef WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_OBJCVIDEOTRACKSOURCE_H_
 #define WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_OBJCVIDEOTRACKSOURCE_H_
 
-#import <WebRTC/RTCVideoFrame.h>
-
+#include "WebRTC/RTCMacros.h"
 #include "webrtc/base/timestampaligner.h"
 #include "webrtc/media/base/adaptedvideotracksource.h"
+
+RTC_FWD_DECL_OBJC_CLASS(RTCVideoFrame);
 
 namespace webrtc {
 
