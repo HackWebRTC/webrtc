@@ -208,8 +208,6 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
     video_send_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kTransportSequenceNumberUri,
                      kTransportSequenceNumberExtensionId));
-    video_send_config_.rtp.extensions.push_back(RtpExtension(
-        RtpExtension::kVideoContentTypeUri, kVideoContentTypeExtensionId));
     FillEncoderConfiguration(num_video_streams, &video_encoder_config_);
 
     for (size_t i = 0; i < num_video_streams; ++i)

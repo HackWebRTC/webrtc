@@ -3852,7 +3852,7 @@ TEST_F(WebRtcVideoChannel2Test, ReceiveDifferentUnsignaledSsrc) {
   EXPECT_EQ(rtpHeader.ssrc, recv_stream->GetConfig().rtp.remote_ssrc);
   // Verify that the receive stream sinks to a renderer.
   webrtc::VideoFrame video_frame2(CreateBlackFrameBuffer(4, 4), 200, 0,
-                                  webrtc::kVideoRotation_0);
+                                 webrtc::kVideoRotation_0);
   recv_stream->InjectFrame(video_frame2);
   EXPECT_EQ(2, renderer.num_rendered_frames());
 
@@ -3869,7 +3869,7 @@ TEST_F(WebRtcVideoChannel2Test, ReceiveDifferentUnsignaledSsrc) {
   EXPECT_EQ(rtpHeader.ssrc, recv_stream->GetConfig().rtp.remote_ssrc);
   // Verify that the receive stream sinks to a renderer.
   webrtc::VideoFrame video_frame3(CreateBlackFrameBuffer(4, 4), 300, 0,
-                                  webrtc::kVideoRotation_0);
+                                 webrtc::kVideoRotation_0);
   recv_stream->InjectFrame(video_frame3);
   EXPECT_EQ(3, renderer.num_rendered_frames());
 #endif

@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "webrtc/api/video/video_content_type.h"
 #include "webrtc/api/video/video_rotation.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/optional.h"
@@ -716,11 +715,6 @@ struct RTPHeaderExtension {
   // ts_126114v120700p.pdf
   bool hasVideoRotation;
   VideoRotation videoRotation;
-
-  // TODO(ilnik): Refactor this and one above to be rtc::Optional() and remove
-  // a corresponding bool flag.
-  bool hasVideoContentType;
-  VideoContentType videoContentType;
 
   PlayoutDelay playout_delay = {-1, -1};
 };
