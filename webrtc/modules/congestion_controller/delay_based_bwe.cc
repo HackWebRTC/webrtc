@@ -163,7 +163,7 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       probing_interval_estimator_(&rate_control_),
       consecutive_delayed_feedbacks_(0),
       last_logged_bitrate_(0),
-      last_logged_state_(kBwNormal) {
+      last_logged_state_(BandwidthUsage::kBwNormal) {
   LOG(LS_INFO) << "Using Trendline filter for delay change estimation.";
 
   network_thread_.DetachFromThread();
@@ -277,7 +277,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedback(
   rtc::Optional<uint32_t> acked_bitrate_bps =
       receiver_incoming_bitrate_.bitrate_bps();
   // Currently overusing the bandwidth.
-  if (detector_.State() == kBwOverusing) {
+  if (detector_.State() == BandwidthUsage::kBwOverusing) {
     if (acked_bitrate_bps &&
         rate_control_.TimeToReduceFurther(now_ms, *acked_bitrate_bps)) {
       result.updated =

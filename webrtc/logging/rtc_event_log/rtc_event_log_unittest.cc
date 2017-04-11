@@ -23,6 +23,7 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log_parser.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_unittest_helper.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
@@ -560,11 +561,11 @@ TEST(RtcEventLogTest, LogDelayBasedBweUpdateAndReadBack) {
   std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create());
   log_dumper->StartLogging(temp_filename, 10000000);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
-  log_dumper->LogDelayBasedBweUpdate(bitrate1, kBwNormal);
+  log_dumper->LogDelayBasedBweUpdate(bitrate1, BandwidthUsage::kBwNormal);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
-  log_dumper->LogDelayBasedBweUpdate(bitrate2, kBwOverusing);
+  log_dumper->LogDelayBasedBweUpdate(bitrate2, BandwidthUsage::kBwOverusing);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
-  log_dumper->LogDelayBasedBweUpdate(bitrate3, kBwUnderusing);
+  log_dumper->LogDelayBasedBweUpdate(bitrate3, BandwidthUsage::kBwUnderusing);
   fake_clock.AdvanceTimeMicros(prng.Rand(1, 1000));
   log_dumper->StopLogging();
 
@@ -577,11 +578,11 @@ TEST(RtcEventLogTest, LogDelayBasedBweUpdateAndReadBack) {
   EXPECT_EQ(5u, parsed_log.GetNumberOfEvents());
   RtcEventLogTestHelper::VerifyLogStartEvent(parsed_log, 0);
   RtcEventLogTestHelper::VerifyBweDelayEvent(parsed_log, 1, bitrate1,
-                                             kBwNormal);
+                                             BandwidthUsage::kBwNormal);
   RtcEventLogTestHelper::VerifyBweDelayEvent(parsed_log, 2, bitrate2,
-                                             kBwOverusing);
+                                             BandwidthUsage::kBwOverusing);
   RtcEventLogTestHelper::VerifyBweDelayEvent(parsed_log, 3, bitrate3,
-                                             kBwUnderusing);
+                                             BandwidthUsage::kBwUnderusing);
   RtcEventLogTestHelper::VerifyLogEndEvent(parsed_log, 4);
 
   // Clean up temporary file - can be pretty slow.

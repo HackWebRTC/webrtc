@@ -17,7 +17,6 @@
 #include "webrtc/base/platform_file.h"
 #include "webrtc/call/audio_receive_stream.h"
 #include "webrtc/call/audio_send_stream.h"
-#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
 
@@ -34,6 +33,7 @@ class RtcEventLogImpl;
 struct AudioEncoderRuntimeConfig;
 
 enum class MediaType;
+enum class BandwidthUsage;
 
 enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
 enum ProbeFailureReason {

@@ -315,7 +315,7 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
       if (last_update_ms_ == -1 ||
           now_ms - last_update_ms_ > remote_rate_.GetFeedbackInterval()) {
         update_estimate = true;
-      } else if (detector_.State() == kBwOverusing) {
+      } else if (detector_.State() == BandwidthUsage::kBwOverusing) {
         rtc::Optional<uint32_t> incoming_rate =
             incoming_bitrate_.Rate(arrival_time_ms);
         if (incoming_rate &&

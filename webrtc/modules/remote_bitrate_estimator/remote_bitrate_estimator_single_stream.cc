@@ -125,11 +125,11 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
                                timestamp_delta_ms,
                                estimator->estimator.num_of_deltas(), now_ms);
   }
-  if (estimator->detector.State() == kBwOverusing) {
+  if (estimator->detector.State() == BandwidthUsage::kBwOverusing) {
     rtc::Optional<uint32_t> incoming_bitrate_bps =
         incoming_bitrate_.Rate(now_ms);
     if (incoming_bitrate_bps &&
-        (prior_state != kBwOverusing ||
+        (prior_state != BandwidthUsage::kBwOverusing ||
          GetRemoteRate()->TimeToReduceFurther(now_ms, *incoming_bitrate_bps))) {
       // The first overuse should immediately trigger a new estimate.
       // We also have to update the estimate immediately if we are overusing
@@ -158,7 +158,7 @@ int64_t RemoteBitrateEstimatorSingleStream::TimeUntilNextProcess() {
 }
 
 void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
-  BandwidthUsage bw_state = kBwNormal;
+  BandwidthUsage bw_state = BandwidthUsage::kBwNormal;
   double sum_var_noise = 0.0;
   SsrcOveruseEstimatorMap::iterator it = overuse_detectors_.begin();
   while (it != overuse_detectors_.end()) {

@@ -77,7 +77,7 @@ TEST(AimdRateControlTest, GetLastBitrateDecrease) {
   constexpr int kBitrate = 300000;
   states.aimd_rate_control->SetEstimate(
       kBitrate, states.simulated_clock->TimeInMilliseconds());
-  UpdateRateControl(states, kBwOverusing, kBitrate - 2000,
+  UpdateRateControl(states, BandwidthUsage::kBwOverusing, kBitrate - 2000,
                     states.simulated_clock->TimeInMilliseconds());
   EXPECT_EQ(rtc::Optional<int>(46700),
             states.aimd_rate_control->GetLastBitrateDecreaseBps());
@@ -90,7 +90,7 @@ TEST(AimdRateControlTest, BweLimitedByAckedBitrate) {
       kAckedBitrate, states.simulated_clock->TimeInMilliseconds());
   while (states.simulated_clock->TimeInMilliseconds() - kClockInitialTime <
          20000) {
-    UpdateRateControl(states, kBwNormal, kAckedBitrate,
+    UpdateRateControl(states, BandwidthUsage::kBwNormal, kAckedBitrate,
                       states.simulated_clock->TimeInMilliseconds());
     states.simulated_clock->AdvanceTimeMilliseconds(100);
   }
@@ -106,7 +106,7 @@ TEST(AimdRateControlTest, BweNotLimitedByDecreasingAckedBitrate) {
       kAckedBitrate, states.simulated_clock->TimeInMilliseconds());
   while (states.simulated_clock->TimeInMilliseconds() - kClockInitialTime <
          20000) {
-    UpdateRateControl(states, kBwNormal, kAckedBitrate,
+    UpdateRateControl(states, BandwidthUsage::kBwNormal, kAckedBitrate,
                       states.simulated_clock->TimeInMilliseconds());
     states.simulated_clock->AdvanceTimeMilliseconds(100);
   }
@@ -114,7 +114,7 @@ TEST(AimdRateControlTest, BweNotLimitedByDecreasingAckedBitrate) {
   // If the acked bitrate decreases the BWE shouldn't be reduced to 1.5x
   // what's being acked, but also shouldn't get to increase more.
   uint32_t prev_estimate = states.aimd_rate_control->LatestEstimate();
-  UpdateRateControl(states, kBwNormal, kAckedBitrate / 2,
+  UpdateRateControl(states, BandwidthUsage::kBwNormal, kAckedBitrate / 2,
                     states.simulated_clock->TimeInMilliseconds());
   uint32_t new_estimate = states.aimd_rate_control->LatestEstimate();
   EXPECT_NEAR(new_estimate, static_cast<uint32_t>(1.5 * kAckedBitrate + 10000),

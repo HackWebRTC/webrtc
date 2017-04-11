@@ -16,6 +16,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
@@ -48,14 +49,14 @@ BandwidthUsage GetRuntimeDetectorState(
     rtclog::DelayBasedBweUpdate::DetectorState detector_state) {
   switch (detector_state) {
     case rtclog::DelayBasedBweUpdate::BWE_NORMAL:
-      return kBwNormal;
+      return BandwidthUsage::kBwNormal;
     case rtclog::DelayBasedBweUpdate::BWE_UNDERUSING:
-      return kBwUnderusing;
+      return BandwidthUsage::kBwUnderusing;
     case rtclog::DelayBasedBweUpdate::BWE_OVERUSING:
-      return kBwOverusing;
+      return BandwidthUsage::kBwOverusing;
   }
   RTC_NOTREACHED();
-  return kBwNormal;
+  return BandwidthUsage::kBwNormal;
 }
 
 rtclog::BweProbeResult::ResultType GetProbeResultType(

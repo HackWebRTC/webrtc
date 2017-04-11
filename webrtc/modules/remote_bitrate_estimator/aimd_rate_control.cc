@@ -147,7 +147,8 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
   // An over-use should always trigger us to reduce the bitrate, even though
   // we have not yet established our first estimate. By acting on the over-use,
   // we will end up with a valid estimate.
-  if (!bitrate_is_initialized_ && input.bw_state != kBwOverusing)
+  if (!bitrate_is_initialized_ &&
+      input.bw_state != BandwidthUsage::kBwOverusing)
     return current_bitrate_bps_;
 
   ChangeState(input, now_ms);
@@ -279,18 +280,18 @@ void AimdRateControl::UpdateMaxBitRateEstimate(float incoming_bitrate_kbps) {
 void AimdRateControl::ChangeState(const RateControlInput& input,
                                   int64_t now_ms) {
   switch (input.bw_state) {
-    case kBwNormal:
+    case BandwidthUsage::kBwNormal:
       if (rate_control_state_ == kRcHold) {
         time_last_bitrate_change_ = now_ms;
         rate_control_state_ = kRcIncrease;
       }
       break;
-    case kBwOverusing:
+    case BandwidthUsage::kBwOverusing:
       if (rate_control_state_ != kRcDecrease) {
         rate_control_state_ = kRcDecrease;
       }
       break;
-    case kBwUnderusing:
+    case BandwidthUsage::kBwUnderusing:
       rate_control_state_ = kRcHold;
       break;
     default:

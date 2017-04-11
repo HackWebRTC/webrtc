@@ -24,6 +24,7 @@
 #include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -97,14 +98,14 @@ BandwidthUsage GetRuntimeDetectorState(
     rtclog::DelayBasedBweUpdate::DetectorState detector_state) {
   switch (detector_state) {
     case rtclog::DelayBasedBweUpdate::BWE_NORMAL:
-      return kBwNormal;
+      return BandwidthUsage::kBwNormal;
     case rtclog::DelayBasedBweUpdate::BWE_UNDERUSING:
-      return kBwUnderusing;
+      return BandwidthUsage::kBwUnderusing;
     case rtclog::DelayBasedBweUpdate::BWE_OVERUSING:
-      return kBwOverusing;
+      return BandwidthUsage::kBwOverusing;
   }
   RTC_NOTREACHED();
-  return kBwNormal;
+  return BandwidthUsage::kBwNormal;
 }
 
 std::pair<uint64_t, bool> ParseVarInt(std::istream& stream) {
