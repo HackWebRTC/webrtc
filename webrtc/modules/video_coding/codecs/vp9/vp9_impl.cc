@@ -706,6 +706,9 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     encoded_image_._timeStamp = input_image_->timestamp();
     encoded_image_.capture_time_ms_ = input_image_->render_time_ms();
     encoded_image_.rotation_ = input_image_->rotation();
+    encoded_image_.content_type_ = (codec_.mode == kScreensharing)
+                                       ? VideoContentType::SCREENSHARE
+                                       : VideoContentType::UNSPECIFIED;
     encoded_image_._encodedHeight = raw_->d_h;
     encoded_image_._encodedWidth = raw_->d_w;
     int qp = -1;

@@ -215,4 +215,33 @@ bool PlayoutDelayLimits::Write(uint8_t* data,
   return true;
 }
 
+// Video Content Type.
+//
+// E.g. default video or screenshare.
+//
+//    0                   1
+//    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |  ID   | len=0 | Content type  |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+constexpr RTPExtensionType VideoContentTypeExtension::kId;
+constexpr uint8_t VideoContentTypeExtension::kValueSizeBytes;
+constexpr const char* VideoContentTypeExtension::kUri;
+
+bool VideoContentTypeExtension::Parse(rtc::ArrayView<const uint8_t> data,
+                                      VideoContentType* content_type) {
+  if (data.size() == 1 &&
+      data[0] < static_cast<uint8_t>(VideoContentType::TOTAL_CONTENT_TYPES)) {
+    *content_type = static_cast<VideoContentType>(data[0]);
+    return true;
+  }
+  return false;
+}
+
+bool VideoContentTypeExtension::Write(uint8_t* data,
+                                      VideoContentType content_type) {
+  data[0] = static_cast<uint8_t>(content_type);
+  return true;
+}
+
 }  // namespace webrtc

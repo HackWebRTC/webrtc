@@ -57,6 +57,7 @@ class EncodedImage {
   size_t _length;
   size_t _size;
   VideoRotation rotation_ = kVideoRotation_0;
+  VideoContentType content_type_ = VideoContentType::UNSPECIFIED;
   bool _completeFrame = false;
   AdaptReason adapt_reason_;
   int qp_ = -1;  // Quantizer value.

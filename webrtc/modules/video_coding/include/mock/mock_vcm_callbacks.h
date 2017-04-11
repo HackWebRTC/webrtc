@@ -33,7 +33,10 @@ class MockVCMReceiveCallback : public VCMReceiveCallback {
   MockVCMReceiveCallback() {}
   virtual ~MockVCMReceiveCallback() {}
 
-  MOCK_METHOD2(FrameToRender, int32_t(VideoFrame&, rtc::Optional<uint8_t>));
+  // TODO(ilnik): Remove using ... once deprecation is done.
+  using VCMReceiveCallback::FrameToRender;
+  MOCK_METHOD3(FrameToRender,
+               int32_t(VideoFrame&, rtc::Optional<uint8_t>, VideoContentType));
   MOCK_METHOD1(ReceivedDecodedReferenceFrame, int32_t(const uint64_t));
   MOCK_METHOD1(OnIncomingPayloadType, void(int));
   MOCK_METHOD1(OnDecoderImplementationName, void(const char*));
