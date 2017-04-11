@@ -85,10 +85,6 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         PlayoutDelay playout;
         packet.GetExtension<PlayoutDelayLimits>(&playout);
         break;
-      case kRtpExtensionVideoContentType:
-        VideoContentType content_type;
-        packet.GetExtension<VideoContentTypeExtension>(&content_type);
-        break;
     }
   }
 }

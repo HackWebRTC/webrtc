@@ -324,12 +324,6 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
           current_rotation != kVideoRotation_0)
         rtp_header->SetExtension<VideoOrientation>(current_rotation);
       last_rotation_ = current_rotation;
-      // Report content type only for key frames.
-      if (frame_type == kVideoFrameKey &&
-          video_header->content_type != VideoContentType::UNSPECIFIED) {
-        rtp_header->SetExtension<VideoContentTypeExtension>(
-            video_header->content_type);
-      }
     }
 
     // FEC settings.

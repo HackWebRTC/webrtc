@@ -87,7 +87,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   decodedImage.set_timestamp_us(
       frameInfo->renderTimeMs * rtc::kNumMicrosecsPerMillisec);
   decodedImage.set_rotation(frameInfo->rotation);
-  _receiveCallback->FrameToRender(decodedImage, qp, frameInfo->content_type);
+  _receiveCallback->FrameToRender(decodedImage, qp);
 }
 
 int32_t VCMDecodedFrameCallback::ReceivedDecodedReferenceFrame(
@@ -131,8 +131,7 @@ VCMGenericDecoder::VCMGenericDecoder(VideoDecoder* decoder, bool isExternal)
       _decoder(decoder),
       _codecType(kVideoCodecUnknown),
       _isExternal(isExternal),
-      _keyFrameDecoded(false),
-      _last_keyframe_content_type(VideoContentType::UNSPECIFIED) {}
+      _keyFrameDecoded(false) {}
 
 VCMGenericDecoder::~VCMGenericDecoder() {}
 
@@ -150,15 +149,6 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
     _frameInfos[_nextFrameInfoIdx].decodeStartTimeMs = nowMs;
     _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
     _frameInfos[_nextFrameInfoIdx].rotation = frame.rotation();
-    // Set correctly only for key frames. Thus, use latest key frame
-    // content type. If the corresponding key frame was lost, decode will fail
-    // and content type will be ignored.
-    if (frame.FrameType() == kVideoFrameKey) {
-      _frameInfos[_nextFrameInfoIdx].content_type = frame.contentType();
-      _last_keyframe_content_type = frame.contentType();
-    } else {
-      _frameInfos[_nextFrameInfoIdx].content_type = _last_keyframe_content_type;
-    }
     _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
 
     _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;

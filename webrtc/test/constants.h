@@ -15,6 +15,5 @@ extern const int kTOffsetExtensionId;
 extern const int kAbsSendTimeExtensionId;
 extern const int kTransportSequenceNumberExtensionId;
 extern const int kVideoRotationExtensionId;
-extern const int kVideoContentTypeExtensionId;
 }  // namespace test
 }  // namespace webrtc

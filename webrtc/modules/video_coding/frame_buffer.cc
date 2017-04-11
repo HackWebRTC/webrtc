@@ -163,7 +163,6 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
     RTC_DCHECK(!_rotation_set);
     rotation_ = packet.video_header.rotation;
     _rotation_set = true;
-    content_type_ = packet.video_header.content_type;
   }
 
   if (packet.is_first_packet_in_frame) {

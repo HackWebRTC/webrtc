@@ -129,7 +129,6 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
   if (codec_specific_info)
     CopyCodecSpecific(codec_specific_info, &rtp_video_header);
   rtp_video_header.rotation = encoded_image.rotation_;
-  rtp_video_header.content_type = encoded_image.content_type_;
   rtp_video_header.playout_delay = encoded_image.playout_delay_;
 
   int stream_index = rtp_video_header.simulcastIdx;
