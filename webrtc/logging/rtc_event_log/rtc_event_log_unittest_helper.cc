@@ -539,12 +539,10 @@ void RtcEventLogTestHelper::VerifyBweDelayEvent(
             GetRuntimeDetectorState(bwe_event.detector_state()));
 
   // Check consistency of the parser.
-  int32_t parsed_bitrate;
-  BandwidthUsage parsed_detector_state;
-  parsed_log.GetDelayBasedBweUpdate(index, &parsed_bitrate,
-                                    &parsed_detector_state);
-  EXPECT_EQ(bitrate, parsed_bitrate);
-  EXPECT_EQ(detector_state, parsed_detector_state);
+  ParsedRtcEventLog::BweDelayBasedUpdate res =
+      parsed_log.GetDelayBasedBweUpdate(index);
+  EXPECT_EQ(res.bitrate_bps, bitrate);
+  EXPECT_EQ(res.detector_state, detector_state);
 }
 
 void RtcEventLogTestHelper::VerifyAudioNetworkAdaptation(

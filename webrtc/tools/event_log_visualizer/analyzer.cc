@@ -467,6 +467,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         break;
       }
       case ParsedRtcEventLog::DELAY_BASED_BWE_UPDATE: {
+        bwe_delay_updates_.push_back(parsed_log_.GetDelayBasedBweUpdate(i));
         break;
       }
       case ParsedRtcEventLog::AUDIO_NETWORK_ADAPTATION_EVENT: {
@@ -933,13 +934,22 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
 
   // Overlay the send-side bandwidth estimate over the outgoing bitrate.
   if (desired_direction == kOutgoingPacket) {
-    TimeSeries* time_series =
+    TimeSeries* loss_series =
         plot->AddTimeSeries("Loss-based estimate", LINE_STEP_GRAPH);
-    for (auto& bwe_update : bwe_loss_updates_) {
+    for (auto& loss_update : bwe_loss_updates_) {
       float x =
-          static_cast<float>(bwe_update.timestamp - begin_time_) / 1000000;
-      float y = static_cast<float>(bwe_update.new_bitrate) / 1000;
-      time_series->points.emplace_back(x, y);
+          static_cast<float>(loss_update.timestamp - begin_time_) / 1000000;
+      float y = static_cast<float>(loss_update.new_bitrate) / 1000;
+      loss_series->points.emplace_back(x, y);
+    }
+
+    TimeSeries* delay_series =
+        plot->AddTimeSeries("Delay-based estimate", LINE_STEP_GRAPH);
+    for (auto& delay_update : bwe_delay_updates_) {
+      float x =
+          static_cast<float>(delay_update.timestamp - begin_time_) / 1000000;
+      float y = static_cast<float>(delay_update.bitrate_bps) / 1000;
+      delay_series->points.emplace_back(x, y);
     }
 
     TimeSeries* created_series =

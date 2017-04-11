@@ -50,6 +50,12 @@ class ParsedRtcEventLog {
     rtc::Optional<ProbeFailureReason> failure_reason;
   };
 
+  struct BweDelayBasedUpdate {
+    uint64_t timestamp;
+    int32_t bitrate_bps;
+    BandwidthUsage detector_state;
+  };
+
   enum EventType {
     UNKNOWN_EVENT = 0,
     LOG_START = 1,
@@ -146,9 +152,7 @@ class ParsedRtcEventLog {
   // and stores the values in the corresponding output parameters. Each output
   // parameter can be set to nullptr if that
   // value isn't needed.
-  void GetDelayBasedBweUpdate(size_t index,
-                              int32_t* bitrate_bps,
-                              BandwidthUsage* detector_state) const;
+  BweDelayBasedUpdate GetDelayBasedBweUpdate(size_t index) const;
 
   // Reads a audio network adaptation event to a (non-NULL)
   // AudioEncoderRuntimeConfig struct. Only the fields that are

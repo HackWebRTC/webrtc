@@ -173,6 +173,8 @@ class EventLogAnalyzer {
 
   std::vector<ParsedRtcEventLog::BweProbeResultEvent> bwe_probe_result_events_;
 
+  std::vector<ParsedRtcEventLog::BweDelayBasedUpdate> bwe_delay_updates_;
+
   // Window and step size used for calculating moving averages, e.g. bitrate.
   // The generated data points will be |step_| microseconds apart.
   // Only events occuring at most |window_duration_| microseconds before the

@@ -491,10 +491,8 @@ void ParsedRtcEventLog::GetLossBasedBweUpdate(size_t index,
   }
 }
 
-void ParsedRtcEventLog::GetDelayBasedBweUpdate(
-    size_t index,
-    int32_t* bitrate_bps,
-    BandwidthUsage* detector_state) const {
+ParsedRtcEventLog::BweDelayBasedUpdate
+ParsedRtcEventLog::GetDelayBasedBweUpdate(size_t index) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
   RTC_CHECK(event.has_type());
@@ -502,14 +500,14 @@ void ParsedRtcEventLog::GetDelayBasedBweUpdate(
   RTC_CHECK(event.has_delay_based_bwe_update());
   const rtclog::DelayBasedBweUpdate& delay_event =
       event.delay_based_bwe_update();
+
+  BweDelayBasedUpdate res;
+  res.timestamp = GetTimestamp(index);
   RTC_CHECK(delay_event.has_bitrate_bps());
-  if (bitrate_bps != nullptr) {
-    *bitrate_bps = delay_event.bitrate_bps();
-  }
+  res.bitrate_bps = delay_event.bitrate_bps();
   RTC_CHECK(delay_event.has_detector_state());
-  if (detector_state != nullptr) {
-    *detector_state = GetRuntimeDetectorState(delay_event.detector_state());
-  }
+  res.detector_state = GetRuntimeDetectorState(delay_event.detector_state());
+  return res;
 }
 
 void ParsedRtcEventLog::GetAudioNetworkAdaptation(
