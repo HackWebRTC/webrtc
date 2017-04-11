@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// This file defines six functions:
+// This file defines six constexpr functions:
 //
 //   rtc::safe_cmp::Eq  // ==
 //   rtc::safe_cmp::Ne  // !=
@@ -70,7 +70,7 @@ struct LargerInt
                         : 0> {};
 
 template <typename T>
-inline typename std::make_unsigned<T>::type MakeUnsigned(T a) {
+constexpr typename std::make_unsigned<T>::type MakeUnsigned(T a) {
   return static_cast<typename std::make_unsigned<T>::type>(a);
 }
 
@@ -80,7 +80,7 @@ template <typename Op,
           typename T2,
           typename std::enable_if<std::is_signed<T1>::value ==
                                   std::is_signed<T2>::value>::type* = nullptr>
-inline bool Cmp(T1 a, T2 b) {
+constexpr bool Cmp(T1 a, T2 b) {
   return Op::Op(a, b);
 }
 
@@ -92,7 +92,7 @@ template <typename Op,
           typename std::enable_if<std::is_signed<T1>::value &&
                                   std::is_unsigned<T2>::value &&
                                   LargerInt<T2, T1>::value>::type* = nullptr>
-inline bool Cmp(T1 a, T2 b) {
+constexpr bool Cmp(T1 a, T2 b) {
   return Op::Op(a, static_cast<typename LargerInt<T2, T1>::type>(b));
 }
 
@@ -104,7 +104,7 @@ template <typename Op,
           typename std::enable_if<std::is_unsigned<T1>::value &&
                                   std::is_signed<T2>::value &&
                                   LargerInt<T1, T2>::value>::type* = nullptr>
-inline bool Cmp(T1 a, T2 b) {
+constexpr bool Cmp(T1 a, T2 b) {
   return Op::Op(static_cast<typename LargerInt<T1, T2>::type>(a), b);
 }
 
@@ -116,7 +116,7 @@ template <typename Op,
           typename std::enable_if<std::is_signed<T1>::value &&
                                   std::is_unsigned<T2>::value &&
                                   !LargerInt<T2, T1>::value>::type* = nullptr>
-inline bool Cmp(T1 a, T2 b) {
+constexpr bool Cmp(T1 a, T2 b) {
   return a < 0 ? Op::Op(-1, 0) : Op::Op(safe_cmp_impl::MakeUnsigned(a), b);
 }
 
@@ -128,7 +128,7 @@ template <typename Op,
           typename std::enable_if<std::is_unsigned<T1>::value &&
                                   std::is_signed<T2>::value &&
                                   !LargerInt<T1, T2>::value>::type* = nullptr>
-inline bool Cmp(T1 a, T2 b) {
+constexpr bool Cmp(T1 a, T2 b) {
   return b < 0 ? Op::Op(0, -1) : Op::Op(a, safe_cmp_impl::MakeUnsigned(b));
 }
 
@@ -149,19 +149,21 @@ RTC_SAFECMP_MAKE_OP(GeOp, >=)
 
 }  // namespace safe_cmp_impl
 
-#define RTC_SAFECMP_MAKE_FUN(name)                                           \
-  template <typename T1, typename T2,                                        \
-            typename std::enable_if<IsIntlike<T1>::value &&                  \
-                                    IsIntlike<T2>::value>::type* = nullptr>  \
-  inline bool name(T1 a, T2 b) {                                             \
-    /* Unary plus here turns enums into real integral types. */              \
-    return safe_cmp_impl::Cmp<safe_cmp_impl::name##Op>(+a, +b);              \
-  }                                                                          \
-  template <typename T1, typename T2,                                        \
-            typename std::enable_if<!IsIntlike<T1>::value ||                 \
-                                    !IsIntlike<T2>::value>::type* = nullptr> \
-  inline bool name(T1&& a, T2&& b) {                                         \
-    return safe_cmp_impl::name##Op::Op(a, b);                                \
+#define RTC_SAFECMP_MAKE_FUN(name)                                            \
+  template <typename T1, typename T2>                                         \
+  constexpr                                                                   \
+      typename std::enable_if<IsIntlike<T1>::value && IsIntlike<T2>::value,   \
+                              bool>::type                                     \
+      name(T1 a, T2 b) {                                                      \
+    /* Unary plus here turns enums into real integral types. */               \
+    return safe_cmp_impl::Cmp<safe_cmp_impl::name##Op>(+a, +b);               \
+  }                                                                           \
+  template <typename T1, typename T2>                                         \
+  constexpr                                                                   \
+      typename std::enable_if<!IsIntlike<T1>::value || !IsIntlike<T2>::value, \
+                              bool>::type                                     \
+      name(const T1& a, const T2& b) {                                        \
+    return safe_cmp_impl::name##Op::Op(a, b);                                 \
   }
 RTC_SAFECMP_MAKE_FUN(Eq)
 RTC_SAFECMP_MAKE_FUN(Ne)
