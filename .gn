@@ -31,6 +31,7 @@ check_targets = [
   "//webrtc/logging/*",
   "//webrtc/media/*",
   "//webrtc/modules/*",
+  "//webrtc/ortc/*",
   "//webrtc/stats/*",
   "//webrtc/tools/*",
   "//webrtc/voice_engine/*",
