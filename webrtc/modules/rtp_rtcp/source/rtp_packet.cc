@@ -169,9 +169,6 @@ void Packet::GetHeader(RTPHeader* header) const {
       &header->extension.voiceActivity, &header->extension.audioLevel);
   header->extension.hasVideoRotation =
       GetExtension<VideoOrientation>(&header->extension.videoRotation);
-  header->extension.hasVideoContentType =
-      GetExtension<VideoContentTypeExtension>(
-          &header->extension.videoContentType);
 }
 
 size_t Packet::headers_size() const {

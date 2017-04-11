@@ -85,7 +85,6 @@ class H264VideoToolboxEncoder : public H264Encoder {
   uint32_t encoder_bitrate_bps_;
   int32_t width_;
   int32_t height_;
-  VideoCodecMode mode_;
   const CFStringRef profile_;
 
   H264BitstreamParser h264_bitstream_parser_;

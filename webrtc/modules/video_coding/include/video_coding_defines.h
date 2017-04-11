@@ -61,17 +61,8 @@ struct VCMFrameCount {
 // rendered.
 class VCMReceiveCallback {
  public:
-  // TODO(ilnik): Once deprecation is complete, change this to pure virtual.
   virtual int32_t FrameToRender(VideoFrame& videoFrame,  // NOLINT
-                                rtc::Optional<uint8_t> qp,
-                                VideoContentType /*content_type*/) {
-    return FrameToRender(videoFrame, qp);
-  }
-  // DEPRECATED. Use the other overloaded version.
-  virtual int32_t FrameToRender(VideoFrame& videoFrame,  // NOLINT
-                                rtc::Optional<uint8_t> qp) {
-    return -1;
-  }
+                                rtc::Optional<uint8_t> qp) = 0;
   virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId) {
     return -1;
   }

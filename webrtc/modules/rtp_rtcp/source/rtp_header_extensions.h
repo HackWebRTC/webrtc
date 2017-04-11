@@ -12,7 +12,6 @@
 
 #include <stdint.h>
 
-#include "webrtc/api/video/video_content_type.h"
 #include "webrtc/api/video/video_rotation.h"
 #include "webrtc/base/array_view.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -97,18 +96,6 @@ class PlayoutDelayLimits {
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     PlayoutDelay* playout_delay);
   static bool Write(uint8_t* data, const PlayoutDelay& playout_delay);
-};
-
-class VideoContentTypeExtension {
- public:
-  static constexpr RTPExtensionType kId = kRtpExtensionVideoContentType;
-  static constexpr uint8_t kValueSizeBytes = 1;
-  static constexpr const char* kUri =
-      "http://www.webrtc.org/experiments/rtp-hdrext/video-content-type";
-
-  static bool Parse(rtc::ArrayView<const uint8_t> data,
-                    VideoContentType* content_type);
-  static bool Write(uint8_t* data, VideoContentType content_type);
 };
 
 }  // namespace webrtc

@@ -1042,10 +1042,6 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       image->_timeStamp = output_timestamp_;
       image->capture_time_ms_ = output_render_time_ms_;
       image->rotation_ = output_rotation_;
-      image->content_type_ =
-          (codec_mode_ == webrtc::VideoCodecMode::kScreensharing)
-              ? webrtc::VideoContentType::SCREENSHARE
-              : webrtc::VideoContentType::UNSPECIFIED;
       image->_frameType =
           (key_frame ? webrtc::kVideoFrameKey : webrtc::kVideoFrameDelta);
       image->_completeFrame = true;

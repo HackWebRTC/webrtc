@@ -76,10 +76,10 @@ VideoStreamDecoder::~VideoStreamDecoder() {
 // thread may have held the lock when calling VideoDecoder::Decode, Reset, or
 // Release. Acquiring the same lock in the path of decode callback can deadlock.
 int32_t VideoStreamDecoder::FrameToRender(VideoFrame& video_frame,
-                                          rtc::Optional<uint8_t> qp,
-                                          VideoContentType content_type) {
-  receive_stats_callback_->OnDecodedFrame(qp, content_type);
+                                          rtc::Optional<uint8_t> qp) {
+  receive_stats_callback_->OnDecodedFrame(qp);
   incoming_video_stream_->OnFrame(video_frame);
+
   return 0;
 }
 
