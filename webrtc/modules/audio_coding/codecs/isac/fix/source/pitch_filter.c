@@ -59,8 +59,8 @@ void WebRtcIsacfix_PitchFilter(int16_t* indatQQ, // Q10 if type is 1 or 4,
   const int16_t* fracoeffQQ = NULL;
 
   // Assumptions in ARM assembly for WebRtcIsacfix_PitchFilterCoreARM().
-  COMPILE_ASSERT(PITCH_FRACORDER == 9);
-  COMPILE_ASSERT(PITCH_DAMPORDER == 5);
+  RTC_COMPILE_ASSERT(PITCH_FRACORDER == 9);
+  RTC_COMPILE_ASSERT(PITCH_DAMPORDER == 5);
 
   // Set up buffer and states.
   memcpy(ubufQQ, pfp->ubufQQ, sizeof(pfp->ubufQQ));

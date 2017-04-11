@@ -277,7 +277,7 @@ static void FilterFrame(const double* in_data, PitchFiltstr* filter_state,
   /* Copy states to local variables. */
   memcpy(filter_parameters.buffer, filter_state->ubuf,
          sizeof(filter_state->ubuf));
-  COMPILE_ASSERT(sizeof(filter_parameters.buffer) >=
+  RTC_COMPILE_ASSERT(sizeof(filter_parameters.buffer) >=
                  sizeof(filter_state->ubuf));
   memset(filter_parameters.buffer +
              sizeof(filter_state->ubuf) / sizeof(filter_state->ubuf[0]),

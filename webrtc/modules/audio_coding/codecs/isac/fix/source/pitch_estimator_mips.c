@@ -33,7 +33,7 @@ void WebRtcIsacfix_PCorr2Q32(const int16_t* in, int32_t* logcorQ8) {
     const int16_t* tmp_in = in;
     int32_t tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8;
     n = PITCH_CORR_LEN2;
-    COMPILE_ASSERT(PITCH_CORR_LEN2 % 4 == 0);
+    RTC_COMPILE_ASSERT(PITCH_CORR_LEN2 % 4 == 0);
     __asm __volatile (
       ".set       push                                          \n\t"
       ".set       noreorder                                     \n\t"
