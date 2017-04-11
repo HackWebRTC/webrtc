@@ -441,11 +441,16 @@ class UnitTest(unittest.TestCase):
 
     self.assertEqual(files, [
         '../../testing/test_env.py',
+        '../../third_party/gtest-parallel/gtest-parallel',
+        '../../tools-webrtc/gtest-parallel-wrapper.py',
         'base_unittests',
     ])
     self.assertEqual(command, [
         '../../testing/test_env.py',
+        '../../tools-webrtc/gtest-parallel-wrapper.py',
+        '--output_dir=${ISOLATED_OUTDIR}/test_logs',
         './base_unittests',
+        '--workers=1',
         '--',
         '--asan=0',
         '--msan=0',

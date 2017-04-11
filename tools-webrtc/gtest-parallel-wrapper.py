@@ -59,6 +59,11 @@ def main():
 
   parser = argparse.ArgumentParser()
   parser.add_argument('--isolated-script-test-output', type=str, default=None)
+
+  # TODO(ehmaldonado): Implement this flag instead of just "eating" it.
+  parser.add_argument('--isolated-script-test-chartjson-output', type=str,
+                      default=None)
+
   parser.add_argument('--output_dir', type=str, default=None)
   parser.add_argument('--timeout', type=int, default=None)
 

@@ -1087,9 +1087,7 @@ class MetaBuildWrapper(object):
           '--test',
       ]
 
-      gtest_parallel = (test_type != 'non_parallel_console_test_launcher' and
-                        not memcheck)
-      if gtest_parallel:
+      if not memcheck:
         extra_files += [
             '../../third_party/gtest-parallel/gtest-parallel',
             '../../tools-webrtc/gtest-parallel-wrapper.py',
@@ -1111,17 +1109,19 @@ class MetaBuildWrapper(object):
 
       cmdline = (['../../testing/xvfb.py'] if xvfb else
                  ['../../testing/test_env.py'])
-      if memcheck:
-        cmdline += memcheck_cmdline
-      elif gtest_parallel:
-        cmdline += gtest_parallel_wrapper
-      cmdline += [
-          executable,
+      cmdline += memcheck_cmdline if memcheck else gtest_parallel_wrapper
+      cmdline.append(executable)
+      if test_type == 'non_parallel_console_test_launcher' and not memcheck:
+        # Still use the gtest-parallel-wrapper.py script since we need it to
+        # run tests on swarming, but don't execute tests in parallel.
+        cmdline.append('--workers=1')
+
+      cmdline.extend([
           '--',
           '--asan=%d' % asan,
           '--msan=%d' % msan,
           '--tsan=%d' % tsan,
-      ]
+      ])
 
     cmdline += isolate_map[target].get('args', [])
 
