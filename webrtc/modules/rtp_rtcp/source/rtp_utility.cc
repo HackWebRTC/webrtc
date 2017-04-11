@@ -254,6 +254,10 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
   header->extension.playout_delay.min_ms = -1;
   header->extension.playout_delay.max_ms = -1;
 
+  // May not be present in packet.
+  header->extension.hasVideoContentType = false;
+  header->extension.videoContentType = VideoContentType::UNSPECIFIED;
+
   if (X) {
     /* RTP header extension, RFC 3550.
      0                   1                   2                   3
@@ -444,6 +448,25 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
               min_playout_delay * PlayoutDelayLimits::kGranularityMs;
           header->extension.playout_delay.max_ms =
               max_playout_delay * PlayoutDelayLimits::kGranularityMs;
+          break;
+        }
+        case kRtpExtensionVideoContentType: {
+          if (len != 0) {
+            LOG(LS_WARNING) << "Incorrect video content type len: " << len;
+            return;
+          }
+          //    0                   1
+          //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+          //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+          //   |  ID   | len=0 | Content type  |
+          //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+          if (ptr[0] <
+              static_cast<uint8_t>(VideoContentType::TOTAL_CONTENT_TYPES)) {
+            header->extension.hasVideoContentType = true;
+            header->extension.videoContentType =
+                static_cast<VideoContentType>(ptr[0]);
+          }
           break;
         }
         case kRtpExtensionNone:

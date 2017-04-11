@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,16 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/test/constants.h"
+#ifndef WEBRTC_API_VIDEO_VIDEO_CONTENT_TYPE_H_
+#define WEBRTC_API_VIDEO_VIDEO_CONTENT_TYPE_H_
+
+#include <stdint.h>
 
 namespace webrtc {
-namespace test {
 
-const int kTOffsetExtensionId = 6;
-const int kAbsSendTimeExtensionId = 7;
-const int kTransportSequenceNumberExtensionId = 8;
-const int kVideoRotationExtensionId = 9;
-const int kVideoContentTypeExtensionId = 10;
+enum class VideoContentType : uint8_t {
+  UNSPECIFIED = 0,
+  SCREENSHARE = 1,
+  TOTAL_CONTENT_TYPES  // Must be the last value in the enum.
+};
 
-}  // namespace test
 }  // namespace webrtc
+
+#endif  // WEBRTC_API_VIDEO_VIDEO_CONTENT_TYPE_H_

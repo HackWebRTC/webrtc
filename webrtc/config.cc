@@ -64,6 +64,10 @@ const char* RtpExtension::kTransportSequenceNumberUri =
     "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
 const int RtpExtension::kTransportSequenceNumberDefaultId = 5;
 
+const char* RtpExtension::kVideoContentTypeUri =
+    "http://www.webrtc.org/experiments/rtp-hdrext/video-content-type";
+const int RtpExtension::kVideoContentTypeDefaultId = 6;
+
 // This extension allows applications to adaptively limit the playout delay
 // on frames as per the current needs. For example, a gaming application
 // has very different needs on end-to-end delay compared to a video-conference
@@ -85,7 +89,8 @@ bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
          uri == webrtc::RtpExtension::kAbsSendTimeUri ||
          uri == webrtc::RtpExtension::kVideoRotationUri ||
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
-         uri == webrtc::RtpExtension::kPlayoutDelayUri;
+         uri == webrtc::RtpExtension::kPlayoutDelayUri ||
+         uri == webrtc::RtpExtension::kVideoContentTypeUri;
 }
 
 VideoStream::VideoStream()

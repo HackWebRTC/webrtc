@@ -74,9 +74,12 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       render_fps_tracker_(100, 10u),
       render_pixel_tracker_(100, 10u),
       total_byte_tracker_(100, 10u),  // bucket_interval_ms, bucket_count
+      e2e_delay_max_ms_video_(-1),
+      e2e_delay_max_ms_screenshare_(-1),
       freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
       first_report_block_time_ms_(-1),
-      avg_rtt_ms_(0) {
+      avg_rtt_ms_(0),
+      last_content_type_(VideoContentType::UNSPECIFIED) {
   stats_.ssrc = config_.rtp.remote_ssrc;
   // TODO(brandtr): Replace |rtx_stats_| with a single instance of
   // StreamDataCounters.
@@ -169,9 +172,30 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   if (delay_ms != -1)
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", delay_ms);
 
-  int e2e_delay_ms = e2e_delay_counter_.Avg(kMinRequiredSamples);
-  if (e2e_delay_ms != -1)
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.EndToEndDelayInMs", e2e_delay_ms);
+  int e2e_delay_ms_video = e2e_delay_counter_video_.Avg(kMinRequiredSamples);
+  if (e2e_delay_ms_video != -1) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.EndToEndDelayInMs",
+                               e2e_delay_ms_video);
+  }
+
+  int e2e_delay_ms_screenshare =
+      e2e_delay_counter_screenshare_.Avg(kMinRequiredSamples);
+  if (e2e_delay_ms_screenshare != -1) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.Screenshare.EndToEndDelayInMs",
+                               e2e_delay_ms_screenshare);
+  }
+
+  int e2e_delay_max_ms_video = e2e_delay_max_ms_video_;
+  if (e2e_delay_max_ms_video != -1) {
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.EndToEndDelayMaxInMs",
+                                e2e_delay_max_ms_video);
+  }
+
+  int e2e_delay_max_ms_screenshare = e2e_delay_max_ms_screenshare_;
+  if (e2e_delay_max_ms_screenshare != -1) {
+    RTC_HISTOGRAM_COUNTS_100000("WebRTC.Video.Screenshare.EndToEndDelayMaxInMs",
+                                e2e_delay_max_ms_screenshare);
+  }
 
   StreamDataCounters rtp = stats_.rtp_stats;
   StreamDataCounters rtx;
@@ -431,7 +455,8 @@ void ReceiveStatisticsProxy::DataCountersUpdated(
     total_byte_tracker_.AddSamples(total_bytes - last_total_bytes);
 }
 
-void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp) {
+void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
+                                            VideoContentType content_type) {
   uint64_t now = clock_->TimeInMilliseconds();
 
   rtc::CritScope lock(&crit_);
@@ -451,6 +476,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp) {
         << "QP sum was already set and no QP was given for a frame.";
     stats_.qp_sum = rtc::Optional<uint64_t>();
   }
+  last_content_type_ = content_type;
   decode_fps_estimator_.Update(1, now);
   stats_.decode_frame_rate = decode_fps_estimator_.Rate(now).value_or(0);
 }
@@ -475,8 +501,16 @@ void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
 
   if (frame.ntp_time_ms() > 0) {
     int64_t delay_ms = clock_->CurrentNtpInMilliseconds() - frame.ntp_time_ms();
-    if (delay_ms >= 0)
-      e2e_delay_counter_.Add(delay_ms);
+    if (delay_ms >= 0) {
+      if (last_content_type_ == VideoContentType::SCREENSHARE) {
+        e2e_delay_max_ms_screenshare_ =
+            std::max(delay_ms, e2e_delay_max_ms_screenshare_);
+        e2e_delay_counter_screenshare_.Add(delay_ms);
+      } else {
+        e2e_delay_max_ms_video_ = std::max(delay_ms, e2e_delay_max_ms_video_);
+        e2e_delay_counter_video_.Add(delay_ms);
+      }
+    }
   }
 }
 

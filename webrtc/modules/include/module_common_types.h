@@ -58,6 +58,8 @@ struct RTPVideoHeader {
 
   PlayoutDelay playout_delay;
 
+  VideoContentType content_type;
+
   union {
     bool is_first_packet_in_frame;
     RTC_DEPRECATED bool isFirstPacket;  // first packet in frame
@@ -87,7 +89,7 @@ class RTPFragmentationHeader {
         fragmentationOffset(NULL),
         fragmentationLength(NULL),
         fragmentationTimeDiff(NULL),
-        fragmentationPlType(NULL) {};
+        fragmentationPlType(NULL) {}
 
   ~RTPFragmentationHeader() {
     delete[] fragmentationOffset;
