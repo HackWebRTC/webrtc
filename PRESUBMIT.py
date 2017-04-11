@@ -471,6 +471,7 @@ def _RunPythonTests(input_api, output_api):
 
   test_directories = [
       Join('webrtc', 'tools', 'py_event_log_analyzer'),
+      Join('webrtc', 'tools'),
       Join('webrtc', 'audio', 'test', 'unittests'),
   ] + [
       root for root, _, files in os.walk(Join('tools-webrtc'))
