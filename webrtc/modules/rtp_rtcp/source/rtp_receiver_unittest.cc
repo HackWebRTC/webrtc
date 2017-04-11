@@ -16,15 +16,29 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_impl.h"
+#include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
+namespace {
+
+using ::testing::UnorderedElementsAre;
 
 const uint32_t kTestRate = 64000u;
 const uint8_t kTestPayload[] = {'t', 'e', 's', 't'};
 const uint8_t kPcmuPayloadType = 96;
 const int64_t kGetSourcesTimeoutMs = 10000;
-const int kSourceListsSize = 20;
+const uint32_t kSsrc1 = 123;
+const uint32_t kSsrc2 = 124;
+const uint32_t kCsrc1 = 111;
+const uint32_t kCsrc2 = 222;
+const bool kInOrder = true;
+
+static uint32_t rtp_timestamp(int64_t time_ms) {
+  return static_cast<uint32_t>(time_ms * kTestRate / 1000);
+}
+
+}  // namespace
 
 class RtpReceiverTest : public ::testing::Test {
  protected:
@@ -64,61 +78,48 @@ class RtpReceiverTest : public ::testing::Test {
 };
 
 TEST_F(RtpReceiverTest, GetSources) {
+  int64_t now_ms = fake_clock_.TimeInMilliseconds();
+
   RTPHeader header;
   header.payloadType = kPcmuPayloadType;
-  header.ssrc = 1;
-  header.timestamp = fake_clock_.TimeInMilliseconds();
+  header.ssrc = kSsrc1;
+  header.timestamp = rtp_timestamp(now_ms);
   header.numCSRCs = 2;
-  header.arrOfCSRCs[0] = 111;
-  header.arrOfCSRCs[1] = 222;
+  header.arrOfCSRCs[0] = kCsrc1;
+  header.arrOfCSRCs[1] = kCsrc2;
   PayloadUnion payload_specific = {AudioPayload()};
-  bool in_order = false;
-  RtpSource source(0, 0, RtpSourceType::SSRC);
 
-  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, kTestPayload, 4,
-                                               payload_specific, in_order));
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
   auto sources = rtp_receiver_->GetSources();
   // One SSRC source and two CSRC sources.
-  ASSERT_EQ(3u, sources.size());
-  ASSERT_TRUE(FindSourceByIdAndType(sources, 1u, RtpSourceType::SSRC, &source));
-  EXPECT_EQ(fake_clock_.TimeInMilliseconds(), source.timestamp_ms());
-  ASSERT_TRUE(
-      FindSourceByIdAndType(sources, 222u, RtpSourceType::CSRC, &source));
-  EXPECT_EQ(fake_clock_.TimeInMilliseconds(), source.timestamp_ms());
-  ASSERT_TRUE(
-      FindSourceByIdAndType(sources, 111u, RtpSourceType::CSRC, &source));
-  EXPECT_EQ(fake_clock_.TimeInMilliseconds(), source.timestamp_ms());
+  EXPECT_THAT(sources, UnorderedElementsAre(
+                           RtpSource(now_ms, kSsrc1, RtpSourceType::SSRC),
+                           RtpSource(now_ms, kCsrc1, RtpSourceType::CSRC),
+                           RtpSource(now_ms, kCsrc2, RtpSourceType::CSRC)));
 
   // Advance the fake clock and the method is expected to return the
   // contributing source object with same source id and updated timestamp.
   fake_clock_.AdvanceTimeMilliseconds(1);
-  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, kTestPayload, 4,
-                                               payload_specific, in_order));
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
   sources = rtp_receiver_->GetSources();
-  ASSERT_EQ(3u, sources.size());
-  ASSERT_TRUE(FindSourceByIdAndType(sources, 1u, RtpSourceType::SSRC, &source));
-  EXPECT_EQ(fake_clock_.TimeInMilliseconds(), source.timestamp_ms());
-  ASSERT_TRUE(
-      FindSourceByIdAndType(sources, 222u, RtpSourceType::CSRC, &source));
-  EXPECT_EQ(fake_clock_.TimeInMilliseconds(), source.timestamp_ms());
-  ASSERT_TRUE(
-      FindSourceByIdAndType(sources, 111u, RtpSourceType::CSRC, &source));
-  EXPECT_EQ(fake_clock_.TimeInMilliseconds(), source.timestamp_ms());
+  now_ms = fake_clock_.TimeInMilliseconds();
+  EXPECT_THAT(sources, UnorderedElementsAre(
+                           RtpSource(now_ms, kSsrc1, RtpSourceType::SSRC),
+                           RtpSource(now_ms, kCsrc1, RtpSourceType::CSRC),
+                           RtpSource(now_ms, kCsrc2, RtpSourceType::CSRC)));
 
   // Test the edge case that the sources are still there just before the
   // timeout.
-  int64_t prev_timestamp = fake_clock_.TimeInMilliseconds();
+  int64_t prev_time_ms = fake_clock_.TimeInMilliseconds();
   fake_clock_.AdvanceTimeMilliseconds(kGetSourcesTimeoutMs);
   sources = rtp_receiver_->GetSources();
-  ASSERT_EQ(3u, sources.size());
-  ASSERT_TRUE(FindSourceByIdAndType(sources, 1u, RtpSourceType::SSRC, &source));
-  EXPECT_EQ(prev_timestamp, source.timestamp_ms());
-  ASSERT_TRUE(
-      FindSourceByIdAndType(sources, 222u, RtpSourceType::CSRC, &source));
-  EXPECT_EQ(prev_timestamp, source.timestamp_ms());
-  ASSERT_TRUE(
-      FindSourceByIdAndType(sources, 111u, RtpSourceType::CSRC, &source));
-  EXPECT_EQ(prev_timestamp, source.timestamp_ms());
+  EXPECT_THAT(sources,
+              UnorderedElementsAre(
+                  RtpSource(prev_time_ms, kSsrc1, RtpSourceType::SSRC),
+                  RtpSource(prev_time_ms, kCsrc1, RtpSourceType::CSRC),
+                  RtpSource(prev_time_ms, kCsrc2, RtpSourceType::CSRC)));
 
   // Time out.
   fake_clock_.AdvanceTimeMilliseconds(1);
@@ -129,129 +130,123 @@ TEST_F(RtpReceiverTest, GetSources) {
 
 // Test the case that the SSRC is changed.
 TEST_F(RtpReceiverTest, GetSourcesChangeSSRC) {
-  int64_t prev_time = -1;
-  int64_t cur_time = fake_clock_.TimeInMilliseconds();
+  int64_t prev_time_ms = -1;
+  int64_t now_ms = fake_clock_.TimeInMilliseconds();
+
   RTPHeader header;
   header.payloadType = kPcmuPayloadType;
-  header.ssrc = 1;
-  header.timestamp = cur_time;
+  header.ssrc = kSsrc1;
+  header.timestamp = rtp_timestamp(now_ms);
   PayloadUnion payload_specific = {AudioPayload()};
-  bool in_order = false;
-  RtpSource source(0, 0, RtpSourceType::SSRC);
 
-  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, kTestPayload, 4,
-                                               payload_specific, in_order));
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
   auto sources = rtp_receiver_->GetSources();
-  ASSERT_EQ(1u, sources.size());
-  EXPECT_EQ(1u, sources[0].source_id());
-  EXPECT_EQ(cur_time, sources[0].timestamp_ms());
+  EXPECT_THAT(sources, UnorderedElementsAre(
+                           RtpSource(now_ms, kSsrc1, RtpSourceType::SSRC)));
 
   // The SSRC is changed and the old SSRC is expected to be returned.
   fake_clock_.AdvanceTimeMilliseconds(100);
-  prev_time = cur_time;
-  cur_time = fake_clock_.TimeInMilliseconds();
-  header.ssrc = 2;
-  header.timestamp = cur_time;
-  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, kTestPayload, 4,
-                                               payload_specific, in_order));
+  prev_time_ms = now_ms;
+  now_ms = fake_clock_.TimeInMilliseconds();
+  header.ssrc = kSsrc2;
+  header.timestamp = rtp_timestamp(now_ms);
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
   sources = rtp_receiver_->GetSources();
-  ASSERT_EQ(2u, sources.size());
-  ASSERT_TRUE(FindSourceByIdAndType(sources, 2u, RtpSourceType::SSRC, &source));
-  EXPECT_EQ(cur_time, source.timestamp_ms());
-  ASSERT_TRUE(FindSourceByIdAndType(sources, 1u, RtpSourceType::SSRC, &source));
-  EXPECT_EQ(prev_time, source.timestamp_ms());
+  EXPECT_THAT(sources, UnorderedElementsAre(
+                           RtpSource(prev_time_ms, kSsrc1, RtpSourceType::SSRC),
+                           RtpSource(now_ms, kSsrc2, RtpSourceType::SSRC)));
 
   // The SSRC is changed again and happen to be changed back to 1. No
   // duplication is expected.
   fake_clock_.AdvanceTimeMilliseconds(100);
-  header.ssrc = 1;
-  header.timestamp = cur_time;
-  prev_time = cur_time;
-  cur_time = fake_clock_.TimeInMilliseconds();
-  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, kTestPayload, 4,
-                                               payload_specific, in_order));
+  header.ssrc = kSsrc1;
+  header.timestamp = rtp_timestamp(now_ms);
+  prev_time_ms = now_ms;
+  now_ms = fake_clock_.TimeInMilliseconds();
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
   sources = rtp_receiver_->GetSources();
-  ASSERT_EQ(2u, sources.size());
-  ASSERT_TRUE(FindSourceByIdAndType(sources, 1u, RtpSourceType::SSRC, &source));
-  EXPECT_EQ(cur_time, source.timestamp_ms());
-  ASSERT_TRUE(FindSourceByIdAndType(sources, 2u, RtpSourceType::SSRC, &source));
-  EXPECT_EQ(prev_time, source.timestamp_ms());
+  EXPECT_THAT(sources, UnorderedElementsAre(
+                           RtpSource(prev_time_ms, kSsrc2, RtpSourceType::SSRC),
+                           RtpSource(now_ms, kSsrc1, RtpSourceType::SSRC)));
 
   // Old SSRC source timeout.
   fake_clock_.AdvanceTimeMilliseconds(kGetSourcesTimeoutMs);
-  cur_time = fake_clock_.TimeInMilliseconds();
-  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, kTestPayload, 4,
-                                               payload_specific, in_order));
+  now_ms = fake_clock_.TimeInMilliseconds();
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
   sources = rtp_receiver_->GetSources();
-  ASSERT_EQ(1u, sources.size());
-  EXPECT_EQ(1u, sources[0].source_id());
-  EXPECT_EQ(cur_time, sources[0].timestamp_ms());
-  EXPECT_EQ(RtpSourceType::SSRC, sources[0].source_type());
+  EXPECT_THAT(sources, UnorderedElementsAre(
+                           RtpSource(now_ms, kSsrc1, RtpSourceType::SSRC)));
 }
 
 TEST_F(RtpReceiverTest, GetSourcesRemoveOutdatedSource) {
-  int64_t timestamp = fake_clock_.TimeInMilliseconds();
-  bool in_order = false;
+  int64_t now_ms = fake_clock_.TimeInMilliseconds();
+
   RTPHeader header;
   header.payloadType = kPcmuPayloadType;
-  header.timestamp = timestamp;
+  header.timestamp = rtp_timestamp(now_ms);
   PayloadUnion payload_specific = {AudioPayload()};
   header.numCSRCs = 1;
-  RtpSource source(0, 0, RtpSourceType::SSRC);
+  size_t kSourceListSize = 20;
 
-  for (size_t i = 0; i < kSourceListsSize; ++i) {
+  for (size_t i = 0; i < kSourceListSize; ++i) {
     header.ssrc = i;
     header.arrOfCSRCs[0] = (i + 1);
-    EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, kTestPayload, 4,
-                                                 payload_specific, in_order));
+    EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, kTestPayload,
+                                                 sizeof(kTestPayload),
+                                                 payload_specific, !kInOrder));
   }
 
+  RtpSource source(0, 0, RtpSourceType::SSRC);
   auto sources = rtp_receiver_->GetSources();
-  // Expect |kSourceListsSize| SSRC sources and |kSourceListsSize| CSRC sources.
-  ASSERT_TRUE(sources.size() == 2 * kSourceListsSize);
-  for (size_t i = 0; i < kSourceListsSize; ++i) {
+  // Expect |kSourceListSize| SSRC sources and |kSourceListSize| CSRC sources.
+  ASSERT_EQ(2 * kSourceListSize, sources.size());
+  for (size_t i = 0; i < kSourceListSize; ++i) {
     // The SSRC source IDs are expected to be 19, 18, 17 ... 0
     ASSERT_TRUE(
         FindSourceByIdAndType(sources, i, RtpSourceType::SSRC, &source));
-    EXPECT_EQ(timestamp, source.timestamp_ms());
+    EXPECT_EQ(now_ms, source.timestamp_ms());
 
     // The CSRC source IDs are expected to be 20, 19, 18 ... 1
     ASSERT_TRUE(
         FindSourceByIdAndType(sources, (i + 1), RtpSourceType::CSRC, &source));
-    EXPECT_EQ(timestamp, source.timestamp_ms());
+    EXPECT_EQ(now_ms, source.timestamp_ms());
   }
 
   fake_clock_.AdvanceTimeMilliseconds(kGetSourcesTimeoutMs);
-  for (size_t i = 0; i < kSourceListsSize; ++i) {
+  for (size_t i = 0; i < kSourceListSize; ++i) {
     // The SSRC source IDs are expected to be 19, 18, 17 ... 0
     ASSERT_TRUE(
         FindSourceByIdAndType(sources, i, RtpSourceType::SSRC, &source));
-    EXPECT_EQ(timestamp, source.timestamp_ms());
+    EXPECT_EQ(now_ms, source.timestamp_ms());
 
     // The CSRC source IDs are expected to be 20, 19, 18 ... 1
     ASSERT_TRUE(
         FindSourceByIdAndType(sources, (i + 1), RtpSourceType::CSRC, &source));
-    EXPECT_EQ(timestamp, source.timestamp_ms());
+    EXPECT_EQ(now_ms, source.timestamp_ms());
   }
 
   // Timeout. All the existing objects are out of date and are expected to be
   // removed.
   fake_clock_.AdvanceTimeMilliseconds(1);
-  header.ssrc = 111;
-  header.arrOfCSRCs[0] = 222;
-  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(header, kTestPayload, 4,
-                                               payload_specific, in_order));
+  header.ssrc = kSsrc1;
+  header.arrOfCSRCs[0] = kCsrc1;
+  EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
+      header, kTestPayload, sizeof(kTestPayload), payload_specific, !kInOrder));
   auto rtp_receiver_impl = static_cast<RtpReceiverImpl*>(rtp_receiver_.get());
   auto ssrc_sources = rtp_receiver_impl->ssrc_sources_for_testing();
   ASSERT_EQ(1u, ssrc_sources.size());
-  EXPECT_EQ(111u, ssrc_sources.begin()->source_id());
+  EXPECT_EQ(kSsrc1, ssrc_sources.begin()->source_id());
   EXPECT_EQ(RtpSourceType::SSRC, ssrc_sources.begin()->source_type());
   EXPECT_EQ(fake_clock_.TimeInMilliseconds(),
             ssrc_sources.begin()->timestamp_ms());
 
   auto csrc_sources = rtp_receiver_impl->csrc_sources_for_testing();
   ASSERT_EQ(1u, csrc_sources.size());
-  EXPECT_EQ(222u, csrc_sources.begin()->source_id());
+  EXPECT_EQ(kCsrc1, csrc_sources.begin()->source_id());
   EXPECT_EQ(RtpSourceType::CSRC, csrc_sources.begin()->source_type());
   EXPECT_EQ(fake_clock_.TimeInMilliseconds(),
             csrc_sources.begin()->timestamp_ms());

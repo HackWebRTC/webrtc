@@ -211,41 +211,36 @@ TelephoneEventHandler* RtpReceiverImpl::GetTelephoneEventHandler() {
 }
 
 std::vector<RtpSource> RtpReceiverImpl::GetSources() const {
+  rtc::CritScope lock(&critical_section_rtp_receiver_);
+
   int64_t now_ms = clock_->TimeInMilliseconds();
   std::vector<RtpSource> sources;
 
-  {
-    rtc::CritScope lock(&critical_section_rtp_receiver_);
+  RTC_DCHECK(std::is_sorted(ssrc_sources_.begin(), ssrc_sources_.end(),
+                            [](const RtpSource& lhs, const RtpSource& rhs) {
+                              return lhs.timestamp_ms() < rhs.timestamp_ms();
+                            }));
+  RTC_DCHECK(std::is_sorted(csrc_sources_.begin(), csrc_sources_.end(),
+                            [](const RtpSource& lhs, const RtpSource& rhs) {
+                              return lhs.timestamp_ms() < rhs.timestamp_ms();
+                            }));
 
-    RTC_DCHECK(std::is_sorted(ssrc_sources_.begin(), ssrc_sources_.end(),
-                              [](const RtpSource& lhs, const RtpSource& rhs) {
-                                return lhs.timestamp_ms() < rhs.timestamp_ms();
-                              }));
-    RTC_DCHECK(std::is_sorted(csrc_sources_.begin(), csrc_sources_.end(),
-                              [](const RtpSource& lhs, const RtpSource& rhs) {
-                                return lhs.timestamp_ms() < rhs.timestamp_ms();
-                              }));
-
-    std::set<uint32_t> selected_ssrcs;
-    for (auto rit = ssrc_sources_.rbegin(); rit != ssrc_sources_.rend();
-         ++rit) {
-      if ((now_ms - rit->timestamp_ms()) > kGetSourcesTimeoutMs) {
-        break;
-      }
-      if (selected_ssrcs.insert(rit->source_id()).second) {
-        sources.push_back(*rit);
-      }
+  std::set<uint32_t> selected_ssrcs;
+  for (auto rit = ssrc_sources_.rbegin(); rit != ssrc_sources_.rend(); ++rit) {
+    if ((now_ms - rit->timestamp_ms()) > kGetSourcesTimeoutMs) {
+      break;
     }
-
-    for (auto rit = csrc_sources_.rbegin(); rit != csrc_sources_.rend();
-         ++rit) {
-      if ((now_ms - rit->timestamp_ms()) > kGetSourcesTimeoutMs) {
-        break;
-      }
+    if (selected_ssrcs.insert(rit->source_id()).second) {
       sources.push_back(*rit);
     }
-  }  // End critsect.
+  }
 
+  for (auto rit = csrc_sources_.rbegin(); rit != csrc_sources_.rend(); ++rit) {
+    if ((now_ms - rit->timestamp_ms()) > kGetSourcesTimeoutMs) {
+      break;
+    }
+    sources.push_back(*rit);
+  }
   return sources;
 }
 

@@ -55,6 +55,11 @@ class RtpSource {
   // TODO(zhihuang): Implement this to return real audio level.
   rtc::Optional<int8_t> audio_level() const { return rtc::Optional<int8_t>(); }
 
+  bool operator==(const RtpSource& o) const {
+    return timestamp_ms_ == o.timestamp_ms() && source_id_ == o.source_id() &&
+           source_type_ == o.source_type();
+  }
+
  private:
   int64_t timestamp_ms_;
   uint32_t source_id_;
