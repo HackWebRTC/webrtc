@@ -29,8 +29,8 @@ class HtmlExport(object):
   _NEW_LINE = '\n'
 
   def __init__(self, output_filepath):
-    self._noise_names = None
-    self._noise_params = None
+    self._test_data_generator_names = None
+    self._test_data_generator_params = None
     self._output_filepath = output_filepath
 
   def Export(self, scores):
@@ -182,18 +182,20 @@ class HtmlExport(object):
     Returns:
       A string with the HTML of a table body cell.
     """
-    # Init noise generator names and noise parameters cache (if not done).
-    if self._noise_names is None:
-      self._noise_names = sorted(scores.keys())
-      self._noise_params = {noise_name: sorted(scores[noise_name].keys()) for (
-          noise_name) in self._noise_names}
+    # Init test data generator names and parameters cache (if not done).
+    if self._test_data_generator_names is None:
+      self._test_data_generator_names = sorted(scores.keys())
+      self._test_data_generator_params = {test_data_generator_name: sorted(
+          scores[test_data_generator_name].keys()) for (
+              test_data_generator_name) in self._test_data_generator_names}
 
-    # For each noisy input (that is a pair of noise generator name and noise
+    # For each noisy input (that is a pair of test data generator and
     # generator parameters), add an item with the score and its metadata.
     items = []
-    for name_index, noise_name in enumerate(self._noise_names):
-      for params_index, noise_params in enumerate(
-          self._noise_params[noise_name]):
+    for name_index, test_data_generator_name in enumerate(
+        self._test_data_generator_names):
+      for params_index, test_data_generator_params in enumerate(
+          self._test_data_generator_params[test_data_generator_name]):
 
         # Init.
         score_value = '?'
@@ -201,29 +203,29 @@ class HtmlExport(object):
 
         # Extract score value and its metadata.
         try:
-          data = scores[noise_name][noise_params]
+          data = scores[test_data_generator_name][test_data_generator_params]
           score_value = '{0:f}'.format(data['score'])
           metadata = (
-              '<input type="hidden" name="noise_name" value="{}"/>'
-              '<input type="hidden" name="noise_params" value="{}"/>'
+              '<input type="hidden" name="gen_name" value="{}"/>'
+              '<input type="hidden" name="gen_params" value="{}"/>'
               '<input type="hidden" name="audio_in" value="file://{}"/>'
               '<input type="hidden" name="audio_out" value="file://{}"/>'
               '<input type="hidden" name="audio_ref" value="file://{}"/>'
           ).format(
-              noise_name,
-              noise_params,
+              test_data_generator_name,
+              test_data_generator_params,
               data['audio_in_filepath'],
               data['audio_out_filepath'],
               data['audio_ref_filepath'])
         except TypeError:
           logging.warning(
               'missing score found: <score:%s> <config:%s> <input:%s> '
-              '<noise:%s> <params:%s>', score_name, config_name, input_name,
-              noise_name, noise_params)
+              '<generator:%s> <params:%s>', score_name, config_name, input_name,
+              test_data_generator_name, test_data_generator_params)
 
         # Add the score.
         items.append(
-            '<div class="noise-desc">[{0:d}, {1:d}]{2}</div>'
+            '<div class="test-data-gen-desc">[{0:d}, {1:d}]{2}</div>'
             '<div class="value">{3}</div>'.format(
                 name_index, params_index, metadata, score_value))
 
@@ -237,18 +239,20 @@ class HtmlExport(object):
   def _BuildLegend(self):
     """Builds the legend.
 
-    The legend details noise generator name and parameter pairs.
+    The legend details test data generator name and parameter pairs.
 
     Returns:
       A string with a <div class="legend">...</div> HTML element.
     """
     items = []
-    for name_index, noise_name in enumerate(self._noise_names):
-      for params_index, noise_params in enumerate(
-          self._noise_params[noise_name]):
-        items.append('<div class="noise-desc">[{0:d}, {1:d}]</div>: {2} noise, '
-                     '{3}'.format(name_index, params_index, noise_name,
-                                  noise_params))
+    for name_index, test_data_generator_name in enumerate(
+        self._test_data_generator_names):
+      for params_index, test_data_generator_params in enumerate(
+          self._test_data_generator_params[test_data_generator_name]):
+        items.append(
+            '<div class="test-data-gen-desc">[{0:d}, {1:d}]</div>: {2}, '
+            '{3}'.format(name_index, params_index, test_data_generator_name,
+                         test_data_generator_params))
     html = (
         '<div class="legend"><div>' +
         '</div><div>'.join(items) + '</div></div>')

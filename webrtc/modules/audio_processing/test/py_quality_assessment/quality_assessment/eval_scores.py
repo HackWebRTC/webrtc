@@ -71,7 +71,7 @@ class EvaluationScore(object):
     self._tested_signal_filepath = filepath
 
   def Run(self, output_path):
-    """Extracts the score for the set input-reference pair.
+    """Extracts the score for the set test data pair.
 
     Args:
       output_path: path to the directory where the output is written.

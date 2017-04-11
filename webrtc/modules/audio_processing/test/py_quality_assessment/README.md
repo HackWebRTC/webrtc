@@ -46,11 +46,11 @@ reference one used for evaluation.
    - `out/Default/py_quality_assessment/noise_tracks` (*1, *2)
 
 (*1) You can use custom files as long as they are mono tracks sampled at 48kHz
-     encoded in the 16 bit signed format (it is recommended that the tracks are
-     converted and exported with Audacity).
+encoded in the 16 bit signed format (it is recommended that the tracks are
+converted and exported with Audacity).
 
-(*2) Adapt `EnvironmentalNoiseGenerator._NOISE_TRACKS` accordingly in
-     `out/Default/py_quality_assessment/quality_assessment/noise_generation.py`.
+(*2) Adapt `EnvironmentalNoiseTestDataGenerator._NOISE_TRACKS` accordingly in
+`out/Default/py_quality_assessment/quality_assessment/test_data_generation.py`.
 
 ## Usage (scores computation)
 
@@ -72,7 +72,7 @@ export separate reports. In this case, you can use the
  - Use regular expressions to select/filter out scores by
     - APM configurations: `--config_names, -c`
     - probing signals: `--input_names, -i`
-    - noise generators: `--noise_generators, -n`
+    - test data generators: `--test_data_generators, -t`
     - scores: `--eval_scores, -e`
  - Assign a suffix to the report name using `-f <suffix>`
 

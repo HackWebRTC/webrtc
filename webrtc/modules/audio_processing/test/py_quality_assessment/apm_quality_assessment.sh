@@ -31,13 +31,13 @@ else
   exit 1
 fi
 
-# Customize probing signals, noise sources and scores if needed.
+# Customize probing signals, test data generators and scores if needed.
 PROBING_SIGNALS=(probing_signals/*.wav)
-NOISE_SOURCES=( \
+TEST_DATA_GENERATORS=( \
     "identity" \
-    "white" \
-    "environmental" \
-    "echo" \
+    "white_noise" \
+    "environmental_noise" \
+    "reverberation" \
 )
 SCORES=( \
     "polqa" \
@@ -57,22 +57,22 @@ if [ ! -d ${OUTPUT_PATH} ]; then
   mkdir ${OUTPUT_PATH}
 fi
 
-# Start one process for each "probing signal"-"noise source" pair.
+# Start one process for each "probing signal"-"test data source" pair.
 chmod +x apm_quality_assessment.py
 for probing_signal_filepath in "${PROBING_SIGNALS[@]}" ; do
   probing_signal_name="$(basename $probing_signal_filepath)"
   probing_signal_name="${probing_signal_name%.*}"
-  for noise_source_name in "${NOISE_SOURCES[@]}" ; do
+  for test_data_gen_name in "${TEST_DATA_GENERATORS[@]}" ; do
     LOG_FILE="${OUTPUT_PATH}/apm_qa-${probing_signal_name}-"`
-             `"${noise_source_name}.log"
-    echo "Starting ${probing_signal_name} ${noise_source_name} "`
+             `"${test_data_gen_name}.log"
+    echo "Starting ${probing_signal_name} ${test_data_gen_name} "`
          `"(see ${LOG_FILE})"
     ./apm_quality_assessment.py \
         --polqa_path ${POLQA_PATH}\
         --air_db_path ${AECHEN_IR_DATABASE_PATH}\
         -i ${probing_signal_filepath} \
         -o ${OUTPUT_PATH} \
-        -n ${noise_source_name} \
+        -t ${test_data_gen_name} \
         -c "${APM_CONFIGS[@]}" \
         -e "${SCORES[@]}" > $LOG_FILE 2>&1 &
   done

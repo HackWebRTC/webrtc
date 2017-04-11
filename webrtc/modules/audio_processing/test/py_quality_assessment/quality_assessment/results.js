@@ -13,8 +13,8 @@
 function Inspector() {
   this.audioPlayer_ = new Audio();
   this.inspectorNode_ = document.createElement('div');
-  this.divNoiseGenerator_ = document.createElement('div');
-  this.divNoiseParameters_ = document.createElement('div');
+  this.divTestDataGeneratorName_ = document.createElement('div');
+  this.divTestDataGenParameters_ = document.createElement('div');
   this.buttonPlayAudioIn_ = document.createElement('button');
   this.buttonPlayAudioOut_ = document.createElement('button');
   this.buttonPlayAudioRef_ = document.createElement('button');
@@ -79,15 +79,15 @@ Inspector.prototype.openInspector = function(target) {
   this.selectedItem_ = target;
   this.selectedItem_.classList.add('selected');
 
-  var target = this.selectedItem_.querySelector('.noise-desc');
-  var noiseName = target.querySelector('input[name=noise_name]').value;
-  var noiseParams = target.querySelector('input[name=noise_params]').value;
+  var target = this.selectedItem_.querySelector('.test-data-gen-desc');
+  var testDataGenName = target.querySelector('input[name=gen_name]').value;
+  var testDataGenParams = target.querySelector('input[name=gen_params]').value;
   var audioIn = target.querySelector('input[name=audio_in]').value;
   var audioOut = target.querySelector('input[name=audio_out]').value;
   var audioRef = target.querySelector('input[name=audio_ref]').value;
 
-  this.divNoiseGenerator_.innerHTML = noiseName;
-  this.divNoiseParameters_.innerHTML = noiseParams;
+  this.divTestDataGeneratorName_.innerHTML = testDataGenName;
+  this.divTestDataGenParameters_.innerHTML = testDataGenParams;
 
   this.audioInUrl_ = audioIn;
   this.audioOutUrl_ = audioOut;
@@ -143,13 +143,14 @@ Inspector.prototype.buildInspector_ = function() {
   var self = this;
 
   this.inspectorNode_.setAttribute('class', 'inspector');
-  this.inspectorNode_.innerHTML = '<div class="property noise-generator">' +
-                                     '<div class="name">noise generator</div>' +
-                                   '</div>' +
-                                   '<div class="property noise-parmas">' +
-                                     '<div class="name">parameters</div>' +
-                                   '</div>' +
-                                   '<div class="buttons"></div>';
+  this.inspectorNode_.innerHTML =
+      '<div class="property test-data-gen-name">' +
+         '<div class="name">test data generator</div>' +
+      '</div>' +
+      '<div class="property test-data-gen-parmas">' +
+         '<div class="name">parameters</div>' +
+      '</div>' +
+      '<div class="buttons"></div>';
 
   // Add value nodes.
   function addValueNode(node, parent_selector) {
@@ -158,8 +159,8 @@ Inspector.prototype.buildInspector_ = function() {
     var parentNode = self.inspectorNode_.querySelector(parent_selector);
     parentNode.appendChild(node);
   }
-  addValueNode(this.divNoiseGenerator_, 'div.noise-generator');
-  addValueNode(this.divNoiseParameters_, 'div.noise-parmas');
+  addValueNode(this.divTestDataGeneratorName_, 'div.test-data-gen-name');
+  addValueNode(this.divTestDataGenParameters_, 'div.test-data-gen-parmas');
 
   // Add buttons.
   var buttonsNode = this.inspectorNode_.querySelector('div.buttons');

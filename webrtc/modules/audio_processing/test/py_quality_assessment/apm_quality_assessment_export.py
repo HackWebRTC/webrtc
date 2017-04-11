@@ -26,7 +26,7 @@ import quality_assessment.export as export
 # Regular expressions used to derive score descriptors from file paths.
 RE_CONFIG_NAME = re.compile(r'cfg-(.+)')
 RE_INPUT_NAME = re.compile(r'input-(.+)')
-RE_NOISE_NAME = re.compile(r'noise-(.+)')
+RE_TEST_DATA_GEN_NAME = re.compile(r'gen-(.+)')
 RE_SCORE_NAME = re.compile(r'score-(.+)\.txt')
 
 
@@ -52,9 +52,9 @@ def _InstanceArgumentsParser():
                       help=('regular expression to filter the probing signal '
                             'names'))
 
-  parser.add_argument('-n', '--noise_generators', type=re.compile,
-                      help=('regular expression to filter the noise generator '
-                            'names'))
+  parser.add_argument('-t', '--test_data_generators', type=re.compile,
+                      help=('regular expression to filter the test data '
+                            'generator names'))
 
   parser.add_argument('-e', '--eval_scores', type=re.compile,
                       help=('regular expression to filter the evaluation score '
@@ -71,29 +71,32 @@ def _GetScoreDescriptors(score_filepath):
 
   Returns:
     A tuple of strings (APM configuration name, input audio track name,
-    noise generator name, noise generator parameters name, evaluation score
-    name).
+    test data generator name, test data generator parameters name,
+    evaluation score name).
   """
-  config_name, input_name, noise_name, noise_params, score_name = (
-      score_filepath.split(os.sep)[-5:])
+  (config_name, input_name, test_data_gen_name, test_data_gen_params,
+      score_name) = score_filepath.split(os.sep)[-5:]
   config_name = RE_CONFIG_NAME.match(config_name).groups(0)[0]
   input_name = RE_INPUT_NAME.match(input_name).groups(0)[0]
-  noise_name = RE_NOISE_NAME.match(noise_name).groups(0)[0]
+  test_data_gen_name = RE_TEST_DATA_GEN_NAME.match(
+      test_data_gen_name).groups(0)[0]
   score_name = RE_SCORE_NAME.match(score_name).groups(0)[0]
-  return config_name, input_name, noise_name, noise_params, score_name
+  return (config_name, input_name, test_data_gen_name, test_data_gen_params,
+          score_name)
 
 
-def _ExcludeScore(config_name, input_name, noise_name, score_name, args):
+def _ExcludeScore(config_name, input_name, test_data_gen_name, score_name,
+                  args):
   """Decides whether excluding a score.
 
-  Given a score descriptor, encoded in config_name, input_name, noise_name, and
-  score_name, use the corresponding regular expressions to determine if the
-  score should be excluded.
+  Given a score descriptor, encoded in config_name, input_name,
+  test_data_gen_name and score_name, use the corresponding regular expressions
+  to determine if the score should be excluded.
 
   Args:
     config_name: APM configuration name.
     input_name: input audio track name.
-    noise_name: noise generator name.
+    test_data_gen_name: test data generator name.
     score_name: evaluation score name.
     args: parsed arguments.
 
@@ -103,7 +106,7 @@ def _ExcludeScore(config_name, input_name, noise_name, score_name, args):
   value_regexpr_pairs = [
       (config_name, args.config_names),
       (input_name, args.input_names),
-      (noise_name, args.noise_generators),
+      (test_data_gen_name, args.test_data_generators),
       (score_name, args.eval_scores),
   ]
 
@@ -143,32 +146,34 @@ def main():
 
   # Find score files in the output path.
   src_path = os.path.join(
-      args.output_dir, 'cfg-*', 'input-*', 'noise-*', '*', 'score-*.txt')
+      args.output_dir, 'cfg-*', 'input-*', 'gen-*', '*', 'score-*.txt')
   logging.debug(src_path)
   for score_filepath in glob.iglob(src_path):
     # Extract score descriptors from the path.
-    config_name, input_name, noise_name, noise_params, score_name = (
-        _GetScoreDescriptors(score_filepath))
+    (config_name, input_name, test_data_gen_name, test_data_gen_params,
+        score_name) = _GetScoreDescriptors(score_filepath)
 
     # Ignore the score if required.
-    if _ExcludeScore(config_name, input_name, noise_name, score_name, args):
+    if _ExcludeScore(
+        config_name, input_name, test_data_gen_name, score_name, args):
       logging.info('ignored score: %s %s %s %s',
-                   config_name, input_name, noise_name, score_name)
+                   config_name, input_name, test_data_gen_name, score_name)
       continue
 
     # Get metadata.
     score_path, _ = os.path.split(score_filepath)
     audio_in_filepath, audio_ref_filepath = (
-        data_access.Metadata.LoadAudioInRefPaths(score_path))
+        data_access.Metadata.LoadAudioTestDataPaths(score_path))
     audio_out_filepath = os.path.abspath(os.path.join(
         score_path, audioproc_wrapper.AudioProcWrapper.OUTPUT_FILENAME))
 
     # Add the score to the nested dictionary.
-    scores[score_name][config_name][input_name][noise_name][noise_params] = {
-        'score': data_access.ScoreFile.Load(score_filepath),
-        'audio_in_filepath': audio_in_filepath,
-        'audio_out_filepath': audio_out_filepath,
-        'audio_ref_filepath': audio_ref_filepath,
+    scores[score_name][config_name][input_name][test_data_gen_name][
+        test_data_gen_params] = {
+            'score': data_access.ScoreFile.Load(score_filepath),
+            'audio_in_filepath': audio_in_filepath,
+            'audio_out_filepath': audio_out_filepath,
+            'audio_ref_filepath': audio_ref_filepath,
     }
 
   # Export.

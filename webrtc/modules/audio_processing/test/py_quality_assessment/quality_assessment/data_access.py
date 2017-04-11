@@ -31,26 +31,27 @@ class Metadata(object):
   def __init__(self):
     pass
 
-  _AUDIO_IN_REF_FILENAME = 'audio_in_ref.txt'
+  _AUDIO_TEST_DATA_FILENAME = 'audio_test_data.txt'
 
   @classmethod
-  def LoadAudioInRefPaths(cls, metadata_path):
+  def LoadAudioTestDataPaths(cls, metadata_path):
     """Loads the input and the reference audio track paths.
 
     Args:
       metadata_path: path to the directory containing the metadata file.
 
     Returns:
-      Pair of metadata file paths for the input and output audio tracks.
+      Tuple with the paths to the input and output audio tracks.
     """
-    metadata_filepath = os.path.join(metadata_path, cls._AUDIO_IN_REF_FILENAME)
+    metadata_filepath = os.path.join(
+        metadata_path, cls._AUDIO_TEST_DATA_FILENAME)
     with open(metadata_filepath) as f:
       audio_in_filepath = f.readline().strip()
       audio_ref_filepath = f.readline().strip()
     return audio_in_filepath, audio_ref_filepath
 
   @classmethod
-  def SaveAudioInRefPaths(cls, output_path, audio_in_filepath,
+  def SaveAudioTestDataPaths(cls, output_path, audio_in_filepath,
                               audio_ref_filepath):
     """Saves the input and the reference audio track paths.
 
@@ -59,7 +60,7 @@ class Metadata(object):
       audio_in_filepath: path to the input audio track file.
       audio_ref_filepath: path to the reference audio track file.
     """
-    output_filepath = os.path.join(output_path, cls._AUDIO_IN_REF_FILENAME)
+    output_filepath = os.path.join(output_path, cls._AUDIO_TEST_DATA_FILENAME)
     with open(output_filepath, 'w') as f:
       f.write('{}\n{}\n'.format(audio_in_filepath, audio_ref_filepath))
 

@@ -8,7 +8,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 """Perform APM module quality assessment on one or more input files using one or
-   more audioproc_f configuration files and one or more noise generators.
+   more audioproc_f configuration files and one or more test data generators.
 
 Usage: apm_quality_assessment.py -i audio1.wav [audio2.wav ...]
                                  -c cfg1.json [cfg2.json ...]
@@ -22,11 +22,12 @@ import logging
 import sys
 
 import quality_assessment.eval_scores as eval_scores
-import quality_assessment.noise_generation as noise_generation
+import quality_assessment.test_data_generation as test_data_generation
 import quality_assessment.simulation as simulation
 
-_NOISE_GENERATOR_CLASSES = noise_generation.NoiseGenerator.REGISTERED_CLASSES
-_NOISE_GENERATORS_NAMES = _NOISE_GENERATOR_CLASSES.keys()
+_TEST_DATA_GENERATOR_CLASSES = (
+    test_data_generation.TestDataGenerator.REGISTERED_CLASSES)
+_TEST_DATA_GENERATORS_NAMES = _TEST_DATA_GENERATOR_CLASSES.keys()
 _EVAL_SCORE_WORKER_CLASSES = eval_scores.EvaluationScore.REGISTERED_CLASSES
 _EVAL_SCORE_WORKER_NAMES = _EVAL_SCORE_WORKER_CLASSES.keys()
 
@@ -38,8 +39,8 @@ def _InstanceArgumentsParser():
   """
   parser = argparse.ArgumentParser(description=(
       'Perform APM module quality assessment on one or more input files using '
-      'one or more audioproc_f configuration files and one or more noise '
-      'generators.'))
+      'one or more audioproc_f configuration files and one or more '
+      'test data generators.'))
 
   parser.add_argument('-c', '--config_files', nargs='+', required=False,
                       help=('path to the configuration files defining the '
@@ -50,10 +51,10 @@ def _InstanceArgumentsParser():
   parser.add_argument('-i', '--input_files', nargs='+', required=True,
                       help='path to the input wav files (one or more)')
 
-  parser.add_argument('-n', '--noise_generators', nargs='+', required=False,
-                      help='custom list of noise generators to use',
-                      choices=_NOISE_GENERATORS_NAMES,
-                      default=_NOISE_GENERATORS_NAMES)
+  parser.add_argument('-t', '--test_data_generators', nargs='+', required=False,
+                      help='custom list of test data generators to use',
+                      choices=_TEST_DATA_GENERATORS_NAMES,
+                      default=_TEST_DATA_GENERATORS_NAMES)
 
   parser.add_argument('-e', '--eval_scores', nargs='+', required=False,
                       help='custom list of evaluation scores to use',
@@ -88,7 +89,7 @@ def main():
   simulator.Run(
       config_filepaths=args.config_files,
       input_filepaths=args.input_files,
-      noise_generator_names=args.noise_generators,
+      test_data_generator_names=args.test_data_generators,
       eval_score_names=args.eval_scores,
       output_dir=args.output_dir)
 
