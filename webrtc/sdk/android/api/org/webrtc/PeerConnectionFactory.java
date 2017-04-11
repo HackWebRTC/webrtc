@@ -57,9 +57,9 @@ public class PeerConnectionFactory {
 
   // Older signature of initializeAndroidGlobals. The extra parameters are now meaningless.
   @Deprecated
-  public static boolean initializeAndroidGlobals(android.content.Context context,
-      boolean initializeAudio, boolean initializeVideo, boolean videoHwAcceleration) {
-    initializeAndroidGlobals(context, videoHwAcceleration);
+  public static boolean initializeAndroidGlobals(Object context, boolean initializeAudio,
+      boolean initializeVideo, boolean videoHwAcceleration) {
+    initializeAndroidGlobals((android.content.Context) context, videoHwAcceleration);
     return true;
   }
 
