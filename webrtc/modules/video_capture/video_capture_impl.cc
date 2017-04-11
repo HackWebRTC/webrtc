@@ -32,9 +32,8 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
   return implementation;
 }
 
-const char* VideoCaptureImpl::CurrentDeviceName() const
-{
-    return _deviceUniqueId;
+const char* VideoCaptureImpl::CurrentDeviceName() const {
+  return _deviceUniqueId;
 }
 
 // static
@@ -136,14 +135,13 @@ int32_t VideoCaptureImpl::IncomingFrame(
 
     // Not encoded, convert to I420.
     const VideoType commonVideoType =
-              RawVideoTypeToCommonVideoVideoType(frameInfo.rawType);
+        RawVideoTypeToCommonVideoVideoType(frameInfo.rawType);
 
     if (frameInfo.rawType != kVideoMJPEG &&
-        CalcBufferSize(commonVideoType, width,
-                       abs(height)) != videoFrameLength)
-    {
-        LOG(LS_ERROR) << "Wrong incoming frame length.";
-        return -1;
+        CalcBufferSize(commonVideoType, width, abs(height)) !=
+            videoFrameLength) {
+      LOG(LS_ERROR) << "Wrong incoming frame length.";
+      return -1;
     }
 
     int stride_y = width;
@@ -174,16 +172,14 @@ int32_t VideoCaptureImpl::IncomingFrame(
         commonVideoType, videoFrame, 0, 0,  // No cropping
         width, height, videoFrameLength,
         apply_rotation ? _rotateFrame : kVideoRotation_0, buffer.get());
-    if (conversionResult < 0)
-    {
+    if (conversionResult < 0) {
       LOG(LS_ERROR) << "Failed to convert capture frame from type "
                     << frameInfo.rawType << "to I420.";
-        return -1;
+      return -1;
     }
 
-    VideoFrame captureFrame(
-        buffer, 0, rtc::TimeMillis(),
-        !apply_rotation ? _rotateFrame : kVideoRotation_0);
+    VideoFrame captureFrame(buffer, 0, rtc::TimeMillis(),
+                            !apply_rotation ? _rotateFrame : kVideoRotation_0);
     captureFrame.set_ntp_time_ms(captureTime);
 
     DeliverCapturedFrame(captureFrame);
@@ -205,52 +201,40 @@ bool VideoCaptureImpl::SetApplyRotation(bool enable) {
   return true;
 }
 
-void VideoCaptureImpl::UpdateFrameCount()
-{
-  if (_incomingFrameTimesNanos[0] / rtc::kNumNanosecsPerMicrosec == 0)
-    {
-        // first no shift
+void VideoCaptureImpl::UpdateFrameCount() {
+  if (_incomingFrameTimesNanos[0] / rtc::kNumNanosecsPerMicrosec == 0) {
+    // first no shift
+  } else {
+    // shift
+    for (int i = (kFrameRateCountHistorySize - 2); i >= 0; --i) {
+      _incomingFrameTimesNanos[i + 1] = _incomingFrameTimesNanos[i];
     }
-    else
-    {
-        // shift
-        for (int i = (kFrameRateCountHistorySize - 2); i >= 0; i--)
-        {
-            _incomingFrameTimesNanos[i + 1] = _incomingFrameTimesNanos[i];
-        }
-    }
-    _incomingFrameTimesNanos[0] = rtc::TimeNanos();
+  }
+  _incomingFrameTimesNanos[0] = rtc::TimeNanos();
 }
 
-uint32_t VideoCaptureImpl::CalculateFrameRate(int64_t now_ns)
-{
-    int32_t num = 0;
-    int32_t nrOfFrames = 0;
-    for (num = 1; num < (kFrameRateCountHistorySize - 1); num++)
-    {
-        if (_incomingFrameTimesNanos[num] <= 0 ||
-            (now_ns - _incomingFrameTimesNanos[num]) /
-            rtc::kNumNanosecsPerMillisec >
-                kFrameRateHistoryWindowMs) // don't use data older than 2sec
-        {
-            break;
-        }
-        else
-        {
-            nrOfFrames++;
-        }
+uint32_t VideoCaptureImpl::CalculateFrameRate(int64_t now_ns) {
+  int32_t num = 0;
+  int32_t nrOfFrames = 0;
+  for (num = 1; num < (kFrameRateCountHistorySize - 1); ++num) {
+    if (_incomingFrameTimesNanos[num] <= 0 ||
+        (now_ns - _incomingFrameTimesNanos[num]) /
+                rtc::kNumNanosecsPerMillisec >
+            kFrameRateHistoryWindowMs) {  // don't use data older than 2sec
+      break;
+    } else {
+      nrOfFrames++;
     }
-    if (num > 1)
-    {
-        int64_t diff = (now_ns - _incomingFrameTimesNanos[num - 1]) /
-                       rtc::kNumNanosecsPerMillisec;
-        if (diff > 0)
-        {
-            return uint32_t((nrOfFrames * 1000.0f / diff) + 0.5f);
-        }
+  }
+  if (num > 1) {
+    int64_t diff = (now_ns - _incomingFrameTimesNanos[num - 1]) /
+                   rtc::kNumNanosecsPerMillisec;
+    if (diff > 0) {
+      return uint32_t((nrOfFrames * 1000.0f / diff) + 0.5f);
     }
+  }
 
-    return nrOfFrames;
+  return nrOfFrames;
 }
 }  // namespace videocapturemodule
 }  // namespace webrtc

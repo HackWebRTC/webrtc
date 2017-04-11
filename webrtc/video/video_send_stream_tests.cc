@@ -291,6 +291,43 @@ TEST_F(VideoSendStreamTest, SupportsVideoRotation) {
   RunBaseTest(&test);
 }
 
+TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
+  class VideoRotationObserver : public test::SendTest {
+   public:
+    VideoRotationObserver() : SendTest(kDefaultTimeoutMs) {
+      EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
+          kRtpExtensionVideoContentType, test::kVideoContentTypeExtensionId));
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      RTPHeader header;
+      EXPECT_TRUE(parser_->Parse(packet, length, &header));
+      EXPECT_TRUE(header.extension.hasVideoContentType);
+      EXPECT_EQ(VideoContentType::SCREENSHARE,
+                header.extension.videoContentType);
+      observation_complete_.Set();
+      return SEND_PACKET;
+    }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      send_config->rtp.extensions.clear();
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kVideoContentTypeUri,
+                       test::kVideoContentTypeExtensionId));
+      encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
+    }
+
+    void PerformTest() override {
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for single RTP packet.";
+    }
+  } test;
+
+  RunBaseTest(&test);
+}
+
 class FakeReceiveStatistics : public NullReceiveStatistics {
  public:
   FakeReceiveStatistics(uint32_t send_ssrc,

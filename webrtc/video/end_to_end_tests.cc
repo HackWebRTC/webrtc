@@ -2652,7 +2652,8 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.CurrentDelayInMs"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.OnewayDelayInMs"));
 
-  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.EndToEndDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "EndToEndDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples(video_prefix + "EndToEndDelayMaxInMs"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.RenderSqrtPixelsPerSecond"));
 
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "EncodeTimeInMs"));
@@ -2690,6 +2691,118 @@ void EndToEndTest::VerifyHistogramStats(bool use_rtx,
             metrics::NumSamples("WebRTC.Video.FecBitrateReceivedInKbps"));
   EXPECT_EQ(num_red_samples,
             metrics::NumSamples("WebRTC.Video.ReceivedFecPacketsInPercent"));
+}
+
+TEST_F(EndToEndTest, ContentTypeSwitches) {
+  class StatsObserver : public test::BaseTest,
+                        public rtc::VideoSinkInterface<VideoFrame> {
+   public:
+    StatsObserver() : BaseTest(kLongTimeoutMs), num_frames_received_(0) {}
+
+    bool ShouldCreateReceivers() const override { return true; }
+
+    void OnFrame(const VideoFrame& video_frame) override {
+      // The RTT is needed to estimate |ntp_time_ms| which is used by
+      // end-to-end delay stats. Therefore, start counting received frames once
+      // |ntp_time_ms| is valid.
+      if (video_frame.ntp_time_ms() > 0 &&
+          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() >=
+              video_frame.ntp_time_ms()) {
+        rtc::CritScope lock(&crit_);
+        ++num_frames_received_;
+      }
+    }
+
+    Action OnSendRtp(const uint8_t* packet, size_t length) override {
+      if (MinNumberOfFramesReceived())
+        observation_complete_.Set();
+      return SEND_PACKET;
+    }
+
+    bool MinNumberOfFramesReceived() const {
+      const int kMinRequiredHistogramSamples = 200;
+      rtc::CritScope lock(&crit_);
+      return num_frames_received_ > kMinRequiredHistogramSamples;
+    }
+
+    // May be called several times.
+    void PerformTest() override {
+      EXPECT_TRUE(Wait()) << "Timed out waiting for enough packets.";
+      // Reset frame counter so next PerformTest() call will do something.
+      {
+        rtc::CritScope lock(&crit_);
+        num_frames_received_ = 0;
+      }
+    }
+
+    rtc::CriticalSection crit_;
+    int num_frames_received_ GUARDED_BY(&crit_);
+  } test;
+
+  metrics::Reset();
+
+  Call::Config send_config(test.GetSenderCallConfig());
+  CreateSenderCall(send_config);
+  Call::Config recv_config(test.GetReceiverCallConfig());
+  CreateReceiverCall(recv_config);
+  receive_transport_.reset(test.CreateReceiveTransport());
+  send_transport_.reset(test.CreateSendTransport(sender_call_.get()));
+  send_transport_->SetReceiver(receiver_call_->Receiver());
+  receive_transport_->SetReceiver(sender_call_->Receiver());
+  receiver_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+  CreateSendConfig(1, 0, 0, send_transport_.get());
+  CreateMatchingReceiveConfigs(receive_transport_.get());
+
+  // Modify send and receive configs.
+  video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+  video_receive_configs_[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+  video_receive_configs_[0].renderer = &test;
+  // RTT needed for RemoteNtpTimeEstimator for the receive stream.
+  video_receive_configs_[0].rtp.rtcp_xr.receiver_reference_time_report = true;
+  // Start with realtime video.
+  video_encoder_config_.content_type =
+      VideoEncoderConfig::ContentType::kRealtimeVideo;
+  // Second encoder config for the second part of the test uses screenshare
+  VideoEncoderConfig encoder_config_with_screenshare_ =
+      video_encoder_config_.Copy();
+  encoder_config_with_screenshare_.content_type =
+      VideoEncoderConfig::ContentType::kScreen;
+
+  CreateVideoStreams();
+  CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
+                               kDefaultHeight);
+  Start();
+
+  test.PerformTest();
+
+  // Replace old send stream.
+  sender_call_->DestroyVideoSendStream(video_send_stream_);
+  video_send_stream_ = sender_call_->CreateVideoSendStream(
+      video_send_config_.Copy(), encoder_config_with_screenshare_.Copy());
+  video_send_stream_->SetSource(
+      frame_generator_capturer_.get(),
+      VideoSendStream::DegradationPreference::kBalanced);
+  video_send_stream_->Start();
+
+  // Continue to run test but now with screenshare.
+  test.PerformTest();
+
+  send_transport_->StopSending();
+  receive_transport_->StopSending();
+  Stop();
+  DestroyStreams();
+  DestroyCalls();
+  // Delete the call for Call stats to be reported.
+  sender_call_.reset();
+  receiver_call_.reset();
+
+  // Verify that stats have been updated for both screenshare and video.
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.EndToEndDelayInMs"));
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.Screenshare.EndToEndDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.EndToEndDelayMaxInMs"));
+  EXPECT_EQ(
+      1, metrics::NumSamples("WebRTC.Video.Screenshare.EndToEndDelayMaxInMs"));
 }
 
 TEST_F(EndToEndTest, VerifyHistogramStatsWithRtx) {

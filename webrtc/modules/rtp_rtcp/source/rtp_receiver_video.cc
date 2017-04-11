@@ -90,11 +90,17 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
   rtp_header->frameType = parsed_payload.frame_type;
   rtp_header->type = parsed_payload.type;
   rtp_header->type.Video.rotation = kVideoRotation_0;
+  rtp_header->type.Video.content_type = VideoContentType::UNSPECIFIED;
 
   // Retrieve the video rotation information.
   if (rtp_header->header.extension.hasVideoRotation) {
     rtp_header->type.Video.rotation =
         rtp_header->header.extension.videoRotation;
+  }
+
+  if (rtp_header->header.extension.hasVideoContentType) {
+    rtp_header->type.Video.content_type =
+        rtp_header->header.extension.videoContentType;
   }
 
   rtp_header->type.Video.playout_delay =

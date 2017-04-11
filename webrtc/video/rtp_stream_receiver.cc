@@ -502,6 +502,10 @@ void RtpStreamReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
   if (header.extension.hasVideoRotation) {
     rtp_header.type.Video.rotation = header.extension.videoRotation;
   }
+  rtp_header.type.Video.content_type = VideoContentType::UNSPECIFIED;
+  if (header.extension.hasVideoContentType) {
+    rtp_header.type.Video.content_type = header.extension.videoContentType;
+  }
   rtp_header.type.Video.playout_delay = header.extension.playout_delay;
 
   OnReceivedPayloadData(nullptr, 0, &rtp_header);

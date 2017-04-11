@@ -1301,6 +1301,8 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     video_send_config_.rtp.extensions.push_back(RtpExtension(
         RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
   }
+  video_send_config_.rtp.extensions.push_back(RtpExtension(
+      RtpExtension::kVideoContentTypeUri, test::kVideoContentTypeExtensionId));
 
   video_encoder_config_.min_transmit_bitrate_bps =
       params_.video.min_transmit_bps;
@@ -1328,6 +1330,8 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
         kSendRtxPayloadType;
     video_receive_configs_[i].rtp.transport_cc = params_.call.send_side_bwe;
     video_receive_configs_[i].rtp.remb = !params_.call.send_side_bwe;
+    // Enable RTT calculation so NTP time estimator will work.
+    video_receive_configs_[i].rtp.rtcp_xr.receiver_reference_time_report = true;
     // Force fake decoders on non-selected simulcast streams.
     if (i != params_.ss.selected_stream) {
       VideoReceiveStream::Decoder decoder;
