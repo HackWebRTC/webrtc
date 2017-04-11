@@ -74,7 +74,7 @@ TEST(MatchedFilter, TestOptimizations) {
       EXPECT_NEAR(error_sum, error_sum_SSE2, error_sum / 100000.f);
 
       for (size_t j = 0; j < h.size(); ++j) {
-        EXPECT_NEAR(h[j], h_SSE2[j], 0.001f);
+        EXPECT_NEAR(h[j], h_SSE2[j], 0.00001f);
       }
 
       x_index = (x_index + kSubBlockSize) % x.size();
