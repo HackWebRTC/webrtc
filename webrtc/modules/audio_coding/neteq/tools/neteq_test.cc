@@ -70,7 +70,7 @@ int64_t NetEqTest::Run() {
       std::unique_ptr<NetEqInput::PacketData> packet_data = input_->PopPacket();
       RTC_CHECK(packet_data);
       int error = neteq_->InsertPacket(
-          packet_data->header.header,
+          packet_data->header,
           rtc::ArrayView<const uint8_t>(packet_data->payload),
           static_cast<uint32_t>(packet_data->time_ms * sample_rate_hz_ / 1000));
       if (error != NetEq::kOK && error_callback_) {

@@ -380,7 +380,7 @@ int NetEqQualityTest::Transmit() {
   if (payload_size_bytes_ > 0) {
     if (!PacketLost()) {
       int ret = neteq_->InsertPacket(
-          rtp_header_.header,
+          rtp_header_,
           rtc::ArrayView<const uint8_t>(payload_.data(), payload_size_bytes_),
           packet_input_time_ms * in_sampling_khz_);
       if (ret != NetEq::kOK)

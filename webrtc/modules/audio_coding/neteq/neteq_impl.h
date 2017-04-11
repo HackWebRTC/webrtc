@@ -105,7 +105,7 @@ class NetEqImpl : public webrtc::NetEq {
   // of the time when the packet was received, and should be measured with
   // the same tick rate as the RTP timestamp of the current payload.
   // Returns 0 on success, -1 on failure.
-  int InsertPacket(const RTPHeader& rtp_header,
+  int InsertPacket(const WebRtcRTPHeader& rtp_header,
                    rtc::ArrayView<const uint8_t> payload,
                    uint32_t receive_timestamp) override;
 
@@ -222,7 +222,7 @@ class NetEqImpl : public webrtc::NetEq {
   // Inserts a new packet into NetEq. This is used by the InsertPacket method
   // above. Returns 0 on success, otherwise an error code.
   // TODO(hlundin): Merge this with InsertPacket above?
-  int InsertPacketInternal(const RTPHeader& rtp_header,
+  int InsertPacketInternal(const WebRtcRTPHeader& rtp_header,
                            rtc::ArrayView<const uint8_t> payload,
                            uint32_t receive_timestamp)
       EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);

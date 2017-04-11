@@ -26,6 +26,7 @@ namespace webrtc {
 
 // Forward declarations.
 class AudioFrame;
+struct WebRtcRTPHeader;
 class AudioDecoderFactory;
 
 struct NetEqNetworkStatistics {
@@ -140,7 +141,7 @@ class NetEq {
   // of the time when the packet was received, and should be measured with
   // the same tick rate as the RTP timestamp of the current payload.
   // Returns 0 on success, -1 on failure.
-  virtual int InsertPacket(const RTPHeader& rtp_header,
+  virtual int InsertPacket(const WebRtcRTPHeader& rtp_header,
                            rtc::ArrayView<const uint8_t> payload,
                            uint32_t receive_timestamp) = 0;
 
