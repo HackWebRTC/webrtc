@@ -378,6 +378,7 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
     RTCLogError(@"Failed to create front camera input: %@", error.localizedDescription);
     return;
   }
+  [_captureSession beginConfiguration];
   for (AVCaptureDeviceInput *oldInput in [_captureSession.inputs copy]) {
     [_captureSession removeInput:oldInput];
   }
@@ -385,8 +386,8 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
     [_captureSession addInput:input];
   } else {
     RTCLogError(@"Cannot add camera as an input to the session.");
-    return;
   }
+  [_captureSession commitConfiguration];
 }
 
 - (void)updateOrientation {
