@@ -72,7 +72,7 @@ rtc::Optional<size_t> EstimateFilterDelay(
 }
 
 constexpr int kEchoPathChangeCounterInitial = kNumBlocksPerSecond / 5;
-constexpr int kEchoPathChangeCounterMax = 3 * kNumBlocksPerSecond;
+constexpr int kEchoPathChangeCounterMax = 2 * kNumBlocksPerSecond;
 
 }  // namespace
 
@@ -90,17 +90,19 @@ void AecState::HandleEchoPathChange(
   if (echo_path_variability.AudioPathChanged()) {
     blocks_since_last_saturation_ = 0;
     active_render_blocks_ = 0;
-    echo_path_change_counter_ = kEchoPathChangeCounterMax;
     usable_linear_estimate_ = false;
     echo_leakage_detected_ = false;
     capture_signal_saturation_ = false;
     echo_saturation_ = false;
-    headset_detected_ = false;
     previous_max_sample_ = 0.f;
 
     if (echo_path_variability.delay_change) {
       force_zero_gain_counter_ = 0;
       force_zero_gain_ = true;
+      echo_path_change_counter_ = kEchoPathChangeCounterMax;
+    }
+    if (echo_path_variability.gain_change) {
+      echo_path_change_counter_ = kEchoPathChangeCounterInitial;
     }
   }
 }

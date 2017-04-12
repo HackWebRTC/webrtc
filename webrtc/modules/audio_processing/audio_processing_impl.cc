@@ -10,6 +10,7 @@
 
 #include "webrtc/modules/audio_processing/audio_processing_impl.h"
 
+#include <math.h>
 #include <algorithm>
 
 #include "webrtc/base/checks.h"
@@ -1147,7 +1148,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   if (private_submodules_->echo_canceller3) {
     const int new_agc_level = gain_control()->stream_analog_level();
     capture_.echo_path_gain_change =
-        (capture_.previous_agc_level != new_agc_level);
+        abs(capture_.previous_agc_level - new_agc_level) > 5;
     capture_.previous_agc_level = new_agc_level;
     private_submodules_->echo_canceller3->AnalyzeCapture(capture_buffer);
   }
