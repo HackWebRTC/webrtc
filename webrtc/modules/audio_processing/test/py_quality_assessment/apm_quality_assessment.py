@@ -19,9 +19,12 @@ Usage: apm_quality_assessment.py -i audio1.wav [audio2.wav ...]
 
 import argparse
 import logging
+import os
 import sys
 
+import quality_assessment.audioproc_wrapper as audioproc_wrapper
 import quality_assessment.eval_scores as eval_scores
+import quality_assessment.evaluation as evaluation
 import quality_assessment.test_data_generation as test_data_generation
 import quality_assessment.simulation as simulation
 
@@ -32,6 +35,8 @@ _EVAL_SCORE_WORKER_CLASSES = eval_scores.EvaluationScore.REGISTERED_CLASSES
 _EVAL_SCORE_WORKER_NAMES = _EVAL_SCORE_WORKER_CLASSES.keys()
 
 _DEFAULT_CONFIG_FILE = 'apm_configs/default.json'
+
+_POLQA_BIN_NAME = 'PolqaOem64'
 
 
 def _InstanceArgumentsParser():
@@ -85,7 +90,9 @@ def main():
 
   simulator = simulation.ApmModuleSimulator(
       aechen_ir_database_path=args.air_db_path,
-      polqa_tool_path=args.polqa_path)
+      polqa_tool_bin_path=os.path.join(args.polqa_path, _POLQA_BIN_NAME),
+      ap_wrapper=audioproc_wrapper.AudioProcWrapper(),
+      evaluator=evaluation.ApmModuleEvaluator())
   simulator.Run(
       config_filepaths=args.config_files,
       input_filepaths=args.input_files,

@@ -145,20 +145,18 @@ class PolqaScore(EvaluationScore):
   """
 
   NAME = 'polqa'
-  _BIN_FILENAME = 'PolqaOem64'
 
-  def __init__(self, polqa_tool_path):
+  def __init__(self, polqa_bin_filepath):
     EvaluationScore.__init__(self)
 
-    # Path to the POLQA directory with binary and license files.
-    self._polqa_tool_path = polqa_tool_path
-
     # POLQA binary file path.
-    self._polqa_bin_filepath = os.path.join(
-        self._polqa_tool_path, self._BIN_FILENAME)
+    self._polqa_bin_filepath = polqa_bin_filepath
     if not os.path.exists(self._polqa_bin_filepath):
       logging.error('cannot find POLQA tool binary file')
       raise exceptions.FileNotFoundError()
+
+    # Path to the POLQA directory with binary and license files.
+    self._polqa_tool_path, _ = os.path.split(self._polqa_bin_filepath)
 
   def _Run(self, output_path):
     polqa_out_filepath = os.path.join(output_path, 'polqa.out')

@@ -12,11 +12,9 @@
 import logging
 import os
 
-from . import audioproc_wrapper
 from . import data_access
 from . import eval_scores
 from . import eval_scores_factory
-from . import evaluation
 from . import test_data_generation
 from . import test_data_generation_factory
 
@@ -29,10 +27,11 @@ class ApmModuleSimulator(object):
       test_data_generation.TestDataGenerator.REGISTERED_CLASSES)
   _EVAL_SCORE_WORKER_CLASSES = eval_scores.EvaluationScore.REGISTERED_CLASSES
 
-  def __init__(self, aechen_ir_database_path, polqa_tool_path):
+  def __init__(self, aechen_ir_database_path, polqa_tool_bin_path,
+               ap_wrapper, evaluator):
     # Init.
-    self._audioproc_wrapper = audioproc_wrapper.AudioProcWrapper()
-    self._evaluator = evaluation.ApmModuleEvaluator()
+    self._audioproc_wrapper = ap_wrapper
+    self._evaluator = evaluator
 
     # Instance factory objects.
     self._test_data_generator_factory = (
@@ -40,7 +39,7 @@ class ApmModuleSimulator(object):
             aechen_ir_database_path=aechen_ir_database_path))
     self._evaluation_score_factory = (
         eval_scores_factory.EvaluationScoreWorkerFactory(
-            polqa_tool_path=polqa_tool_path))
+            polqa_tool_bin_path=polqa_tool_bin_path))
 
     # Properties for each run.
     self._base_output_path = None
