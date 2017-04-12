@@ -1505,12 +1505,13 @@ void VideoQualityTest::SetupScreenshareOrSVC() {
     // Setup frame generator.
     const size_t kWidth = 1850;
     const size_t kHeight = 1110;
-    std::vector<std::string> slides;
-    slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
-    slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
-    slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
-    slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
-
+    std::vector<std::string> slides = params_.screenshare.slides;
+    if (slides.size() == 0) {
+      slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
+      slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
+      slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
+      slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
+    }
     if (params_.screenshare.scroll_duration == 0) {
       // Cycle image every slide_change_interval seconds.
       frame_generator_ = test::FrameGenerator::CreateFromYuvFile(

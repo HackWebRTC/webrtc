@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "gflags/gflags.h"
+#include "webrtc/base/stringencode.h"
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/run_test.h"
@@ -214,6 +215,16 @@ int ScrollDuration() {
   return static_cast<int>(FLAGS_scroll_duration);
 }
 
+DEFINE_string(slides,
+              "",
+              "Comma-separated list of *.yuv files to display as slides.");
+std::vector<std::string> Slides() {
+  std::vector<std::string> slides;
+  std::string slides_list = FLAGS_slides;
+  rtc::tokenize(slides_list, ',', &slides);
+  return slides;
+}
+
 }  // namespace flags
 
 void Loopback() {
@@ -249,7 +260,7 @@ void Loopback() {
                   flags::EncodedFramePath(),
                   ""};
   params.screenshare = {true, flags::SlideChangeInterval(),
-      flags::ScrollDuration()};
+                        flags::ScrollDuration(), flags::Slides()};
   params.analyzer = {"screenshare", 0.0, 0.0, flags::DurationSecs(),
       flags::OutputFilename(), flags::GraphTitle()};
   params.pipe = pipe_config;

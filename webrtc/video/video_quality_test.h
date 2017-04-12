@@ -62,6 +62,7 @@ class VideoQualityTest : public test::CallTest {
       bool enabled;
       int32_t slide_change_interval;
       int32_t scroll_duration;
+      std::vector<std::string> slides;
     } screenshare;
     struct Analyzer {
       std::string test_label;
