@@ -36,16 +36,42 @@ void Constrain(const Aec3Fft& fft, FftData* H) {
   fft.Fft(&h, H);
 }
 
+}  // namespace
+
+namespace aec3 {
+
 // Computes and stores the frequency response of the filter.
 void UpdateFrequencyResponse(
     rtc::ArrayView<const FftData> H,
     std::vector<std::array<float, kFftLengthBy2Plus1>>* H2) {
+  RTC_DCHECK_EQ(H.size(), H2->size());
   for (size_t k = 0; k < H.size(); ++k) {
     std::transform(H[k].re.begin(), H[k].re.end(), H[k].im.begin(),
                    (*H2)[k].begin(),
                    [](float a, float b) { return a * a + b * b; });
   }
 }
+
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+// Computes and stores the frequency response of the filter.
+void UpdateFrequencyResponse_SSE2(
+    rtc::ArrayView<const FftData> H,
+    std::vector<std::array<float, kFftLengthBy2Plus1>>* H2) {
+  RTC_DCHECK_EQ(H.size(), H2->size());
+  for (size_t k = 0; k < H.size(); ++k) {
+    for (size_t j = 0; j < kFftLengthBy2; j += 4) {
+      const __m128 re = _mm_loadu_ps(&H[k].re[j]);
+      const __m128 re2 = _mm_mul_ps(re, re);
+      const __m128 im = _mm_loadu_ps(&H[k].im[j]);
+      const __m128 im2 = _mm_mul_ps(im, im);
+      const __m128 H2_k_j = _mm_add_ps(re2, im2);
+      _mm_storeu_ps(&(*H2)[k][j], H2_k_j);
+    }
+    (*H2)[k][kFftLengthBy2] = H[k].re[kFftLengthBy2] * H[k].re[kFftLengthBy2] +
+                              H[k].im[kFftLengthBy2] * H[k].im[kFftLengthBy2];
+  }
+}
+#endif
 
 // Computes and stores the echo return loss estimate of the filter, which is the
 // sum of the partition frequency responses.
@@ -59,9 +85,24 @@ void UpdateErlEstimator(
   }
 }
 
-}  // namespace
-
-namespace aec3 {
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+// Computes and stores the echo return loss estimate of the filter, which is the
+// sum of the partition frequency responses.
+void UpdateErlEstimator_SSE2(
+    const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
+    std::array<float, kFftLengthBy2Plus1>* erl) {
+  erl->fill(0.f);
+  for (auto& H2_j : H2) {
+    for (size_t k = 0; k < kFftLengthBy2; k += 4) {
+      const __m128 H2_j_k = _mm_loadu_ps(&H2_j[k]);
+      __m128 erl_k = _mm_loadu_ps(&(*erl)[k]);
+      erl_k = _mm_add_ps(erl_k, H2_j_k);
+      _mm_storeu_ps(&(*erl)[k], erl_k);
+    }
+    (*erl)[kFftLengthBy2] += H2_j[kFftLengthBy2];
+  }
+}
+#endif
 
 // Adapts the filter partitions as H(t+1)=H(t)+G(t)*conj(X(t)).
 void AdaptPartitions(const RenderBuffer& render_buffer,
@@ -290,8 +331,17 @@ void AdaptiveFirFilter::Adapt(const RenderBuffer& render_buffer,
                                 : 0;
 
   // Update the frequency response and echo return loss for the filter.
-  UpdateFrequencyResponse(H_, &H2_);
-  UpdateErlEstimator(H2_, &erl_);
+  switch (optimization_) {
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+    case Aec3Optimization::kSse2:
+      aec3::UpdateFrequencyResponse_SSE2(H_, &H2_);
+      aec3::UpdateErlEstimator_SSE2(H2_, &erl_);
+      break;
+#endif
+    default:
+      aec3::UpdateFrequencyResponse(H_, &H2_);
+      aec3::UpdateErlEstimator(H2_, &erl_);
+  }
 }
 
 }  // namespace webrtc

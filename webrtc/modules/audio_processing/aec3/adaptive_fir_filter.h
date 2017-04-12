@@ -25,6 +25,27 @@
 
 namespace webrtc {
 namespace aec3 {
+// Computes and stores the frequency response of the filter.
+void UpdateFrequencyResponse(
+    rtc::ArrayView<const FftData> H,
+    std::vector<std::array<float, kFftLengthBy2Plus1>>* H2);
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+void UpdateFrequencyResponse_SSE2(
+    rtc::ArrayView<const FftData> H,
+    std::vector<std::array<float, kFftLengthBy2Plus1>>* H2);
+#endif
+
+// Computes and stores the echo return loss estimate of the filter, which is the
+// sum of the partition frequency responses.
+void UpdateErlEstimator(
+    const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
+    std::array<float, kFftLengthBy2Plus1>* erl);
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+void UpdateErlEstimator_SSE2(
+    const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
+    std::array<float, kFftLengthBy2Plus1>* erl);
+#endif
+
 // Adapts the filter partitions.
 void AdaptPartitions(const RenderBuffer& render_buffer,
                      const FftData& G,

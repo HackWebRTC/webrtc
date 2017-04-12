@@ -42,9 +42,9 @@ std::string ProduceDebugText(size_t delay) {
 }  // namespace
 
 #if defined(WEBRTC_ARCH_X86_FAMILY)
-// Verifies that the optimized methods are bitexact to their reference
-// counterparts.
-TEST(AdaptiveFirFilter, TestOptimizations) {
+// Verifies that the optimized methods for filter adaptation are bitexact to
+// their reference counterparts.
+TEST(AdaptiveFirFilter, FilterAdaptationOptimizations) {
   bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
   if (use_sse2) {
     RenderBuffer render_buffer(Aec3Optimization::kNone, 3, 12,
@@ -89,6 +89,59 @@ TEST(AdaptiveFirFilter, TestOptimizations) {
           EXPECT_FLOAT_EQ(H_C[k].im[j], H_SSE2[k].im[j]);
         }
       }
+    }
+  }
+}
+
+// Verifies that the optimized method for frequency response computation is
+// bitexact to the reference counterpart.
+TEST(AdaptiveFirFilter, UpdateFrequencyResponseOptimization) {
+  bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
+  if (use_sse2) {
+    const size_t kNumPartitions = 12;
+    std::vector<FftData> H(kNumPartitions);
+    std::vector<std::array<float, kFftLengthBy2Plus1>> H2(kNumPartitions);
+    std::vector<std::array<float, kFftLengthBy2Plus1>> H2_SSE2(kNumPartitions);
+
+    for (size_t j = 0; j < H.size(); ++j) {
+      for (size_t k = 0; k < H[j].re.size(); ++k) {
+        H[j].re[k] = k + j / 3.f;
+        H[j].im[k] = j + k / 7.f;
+      }
+    }
+
+    UpdateFrequencyResponse(H, &H2);
+    UpdateFrequencyResponse_SSE2(H, &H2_SSE2);
+
+    for (size_t j = 0; j < H2.size(); ++j) {
+      for (size_t k = 0; k < H[j].re.size(); ++k) {
+        EXPECT_FLOAT_EQ(H2[j][k], H2_SSE2[j][k]);
+      }
+    }
+  }
+}
+
+// Verifies that the optimized method for echo return loss computation is
+// bitexact to the reference counterpart.
+TEST(AdaptiveFirFilter, UpdateErlOptimization) {
+  bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
+  if (use_sse2) {
+    const size_t kNumPartitions = 12;
+    std::vector<std::array<float, kFftLengthBy2Plus1>> H2(kNumPartitions);
+    std::array<float, kFftLengthBy2Plus1> erl;
+    std::array<float, kFftLengthBy2Plus1> erl_SSE2;
+
+    for (size_t j = 0; j < H2.size(); ++j) {
+      for (size_t k = 0; k < H2[j].size(); ++k) {
+        H2[j][k] = k + j / 3.f;
+      }
+    }
+
+    UpdateErlEstimator(H2, &erl);
+    UpdateErlEstimator_SSE2(H2, &erl_SSE2);
+
+    for (size_t j = 0; j < erl.size(); ++j) {
+      EXPECT_FLOAT_EQ(erl[j], erl_SSE2[j]);
     }
   }
 }
