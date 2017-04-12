@@ -61,7 +61,7 @@ def _GenerateDefaultOverridden(config_override):
 def _GenerateAllDefaultButOne():
   """Disables the flags enabled by default one-by-one.
   """
-  CONFIG_SETS = {
+  config_sets = {
       'no_AEC': {'-aec': 0,},
       'no_AGC': {'-agc': 0,},
       'no_HP_filter': {'-hpf': 0,},
@@ -70,13 +70,13 @@ def _GenerateAllDefaultButOne():
       'no_transient_suppressor': {'-ts': 0,},
       'no_vad': {'-vad': 0,},
   }
-  _GenerateDefaultOverridden(CONFIG_SETS)
+  _GenerateDefaultOverridden(config_sets)
 
 
 def _GenerateAllDefaultPlusOne():
   """Enables the flags disabled by default one-by-one.
   """
-  CONFIG_SETS = {
+  config_sets = {
       'with_AECM': {'-aec': 0, '-aecm': 1,},  # AEC and AECM are exclusive.
       'with_AGC_limiter': {'-agc_limiter': 1,},
       'with_AEC_delay_agnostic': {'-delay_agnostic': 1,},
@@ -87,7 +87,7 @@ def _GenerateAllDefaultPlusOne():
       'with_LC': {'-lc': 1,},
       'with_refined_adaptive_filter': {'-refined_adaptive_filter': 1,},
   }
-  _GenerateDefaultOverridden(CONFIG_SETS)
+  _GenerateDefaultOverridden(config_sets)
 
 
 def main():

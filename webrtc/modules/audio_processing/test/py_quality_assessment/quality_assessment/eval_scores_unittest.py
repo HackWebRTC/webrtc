@@ -51,7 +51,7 @@ class TestEvalScores(unittest.TestCase):
     """Recursively delete temporary folder."""
     shutil.rmtree(self._output_path)
 
-  def test_registered_classes(self):
+  def testRegisteredClasses(self):
     # Preliminary check.
     self.assertTrue(os.path.exists(self._output_path))
 

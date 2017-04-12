@@ -19,13 +19,13 @@ import low_bandwidth_audio_test
 
 
 class TestExtractTestRuns(unittest.TestCase):
-  def _testLog(self, log, *expected):
+  def _TestLog(self, log, *expected):
     self.assertEqual(
         tuple(low_bandwidth_audio_test.ExtractTestRuns(log.splitlines(True))),
         expected)
 
   def testLinux(self):
-    self._testLog(LINUX_LOG,
+    self._TestLog(LINUX_LOG,
         (None, 'GoodNetworkHighBitrate',
          '/webrtc/src/resources/voice_engine/audio_tiny16.wav',
          '/webrtc/src/out/LowBandwidth_GoodNetworkHighBitrate.wav'),
@@ -34,7 +34,7 @@ class TestExtractTestRuns(unittest.TestCase):
          '/webrtc/src/out/LowBandwidth_Mobile2GNetwork.wav'))
 
   def testAndroid(self):
-    self._testLog(ANDROID_LOG,
+    self._TestLog(ANDROID_LOG,
         ('ddfa6149', 'Mobile2GNetwork',
          '/sdcard/chromium_tests_root/resources/voice_engine/audio_tiny16.wav',
          '/sdcard/chromium_tests_root/LowBandwidth_Mobile2GNetwork.wav'),

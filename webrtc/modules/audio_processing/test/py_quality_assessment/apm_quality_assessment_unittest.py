@@ -17,7 +17,7 @@ class TestSimulationScript(unittest.TestCase):
   """Unit tests for the apm_quality_assessment module.
   """
 
-  def test_main(self):
+  def testMain(self):
     # Exit with error code if no arguments are passed.
     with self.assertRaises(SystemExit) as cm:
       apm_quality_assessment.main()

@@ -191,10 +191,10 @@ class IdentityTestDataGenerator(TestDataGenerator):
 
   def _Generate(
       self, input_signal_filepath, input_noise_cache_path, base_output_path):
-    CONFIG_NAME = 'default'
-    output_path = self._MakeDir(base_output_path, CONFIG_NAME)
+    config_name = 'default'
+    output_path = self._MakeDir(base_output_path, config_name)
     self._AddNoiseReferenceFilesPair(
-        config_name=CONFIG_NAME,
+        config_name=config_name,
         noisy_signal_filepath=input_signal_filepath,
         reference_signal_filepath=input_signal_filepath,
         output_path=output_path)

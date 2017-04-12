@@ -8,6 +8,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+# pylint: disable=invalid-name
 """
 This script acts as an interface between the Chromium infrastructure and
 gtest-parallel, renaming options and translating environment variables into
@@ -43,7 +44,7 @@ import subprocess
 import sys
 
 
-def cat_files(file_list, output_file):
+def CatFiles(file_list, output_file):
   with open(output_file, 'w') as output_file:
     for filename in file_list:
       with open(filename) as input_file:
@@ -127,7 +128,7 @@ def main():
       continue
     logs = [os.path.join(logs_dir, log) for log in os.listdir(logs_dir)]
     log_file = os.path.join(options.output_dir, '%s-tests.log' % test_status)
-    cat_files(logs, log_file)
+    CatFiles(logs, log_file)
     os.rmdir(logs_dir)
 
   return exit_code

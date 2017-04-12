@@ -61,16 +61,16 @@ import subprocess
 import sys
 
 # Flags from YCM's default config.
-_default_flags = [
+_DEFAULT_FLAGS = [
   '-DUSE_CLANG_COMPLETER',
   '-std=c++11',
   '-x',
   'c++',
 ]
 
-_header_alternates = ('.cc', '.cpp', '.c', '.mm', '.m')
+_HEADER_ALTERNATES = ('.cc', '.cpp', '.c', '.mm', '.m')
 
-_extension_flags = {
+_EXTENSION_FLAGS = {
   '.m': ['-x', 'objective-c'],
   '.mm': ['-x', 'objective-c++'],
 }
@@ -302,7 +302,7 @@ def GetClangOptionsFromNinjaForFilename(webrtc_root, filename):
 
   basename, extension = os.path.splitext(filename)
   if extension == '.h':
-    candidates = [basename + ext for ext in _header_alternates]
+    candidates = [basename + ext for ext in _HEADER_ALTERNATES]
   else:
     candidates = [filename]
 
@@ -314,7 +314,7 @@ def GetClangOptionsFromNinjaForFilename(webrtc_root, filename):
       buildable_extension = os.path.splitext(candidate)[1]
       break
 
-  additional_flags += _extension_flags.get(buildable_extension, [])
+  additional_flags += _EXTENSION_FLAGS.get(buildable_extension, [])
 
   if not clang_line:
     # If ninja didn't know about filename or it's companion files, then try a
@@ -349,7 +349,7 @@ def FlagsForFile(filename):
   # determine the flags again.
   should_cache_flags_for_file = bool(clang_flags)
 
-  final_flags = _default_flags + clang_flags
+  final_flags = _DEFAULT_FLAGS + clang_flags
 
   return {
     'flags': final_flags,

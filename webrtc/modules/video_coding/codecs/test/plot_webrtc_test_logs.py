@@ -116,16 +116,16 @@ def ParseSetting(filename, setting):
 
   settings = []
 
-  f = open(filename)
+  settings_file = open(filename)
   while True:
-    line = f.readline()
+    line = settings_file.readline()
     if not line:
       break
     if re.search(r'%s' % EVENT_START, line):
       # Parse event.
       parsed = {}
       while True:
-        line = f.readline()
+        line = settings_file.readline()
         if not line:
           break
         if re.search(r'%s' % EVENT_END, line):
@@ -136,9 +136,9 @@ def ParseSetting(filename, setting):
               settings.append(s)
           break
 
-        TryFindMetric(parsed, line, f)
+        TryFindMetric(parsed, line, settings_file)
 
-  f.close()
+  settings_file.close()
   return settings
 
 
@@ -181,16 +181,16 @@ def ParseMetrics(filename, setting1, setting2):
   metrics = {}
 
   # Parse events.
-  f = open(filename)
+  settings_file = open(filename)
   while True:
-    line = f.readline()
+    line = settings_file.readline()
     if not line:
       break
     if re.search(r'%s' % EVENT_START, line):
       # Parse event.
       parsed = {}
       while True:
-        line = f.readline()
+        line = settings_file.readline()
         if not line:
           break
         if re.search(r'%s' % EVENT_END, line):
@@ -209,13 +209,13 @@ def ParseMetrics(filename, setting1, setting2):
 
           break
 
-        TryFindMetric(parsed, line, f)
+        TryFindMetric(parsed, line, settings_file)
 
-  f.close()
+  settings_file.close()
   return metrics
 
 
-def TryFindMetric(parsed, line, f):
+def TryFindMetric(parsed, line, settings_file):
   for metric in METRICS_TO_PARSE:
     name = metric[0]
     label = metric[1]
@@ -224,13 +224,13 @@ def TryFindMetric(parsed, line, f):
       if not found:
         # TODO(asapersson): Change format.
         # Try find min, max, average stats.
-        found, minimum = GetMetric("Min", f.readline())
+        found, minimum = GetMetric("Min", settings_file.readline())
         if not found:
           return
-        found, maximum = GetMetric("Max", f.readline())
+        found, maximum = GetMetric("Max", settings_file.readline())
         if not found:
           return
-        found, average = GetMetric("Average", f.readline())
+        found, average = GetMetric("Average", settings_file.readline())
         if not found:
           return
 

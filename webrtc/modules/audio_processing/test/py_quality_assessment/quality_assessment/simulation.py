@@ -145,15 +145,14 @@ class ApmModuleSimulator(object):
         base_output_path=output_path)
 
     # For each test data pair, simulate a call and evaluate.
-    for test_data_generators_config_name in test_data_generators.config_names:
-      logging.info(' - test data generator config: <%s>',
-                   test_data_generators_config_name)
+    for config_name in test_data_generators.config_names:
+      logging.info(' - test data generator config: <%s>', config_name)
 
       # APM input and output signal paths.
       noisy_signal_filepath = test_data_generators.noisy_signal_filepaths[
-          test_data_generators_config_name]
+          config_name]
       evaluation_output_path = test_data_generators.apm_output_paths[
-          test_data_generators_config_name]
+          config_name]
 
       # Simulate a call using the audio processing module.
       self._audioproc_wrapper.Run(
@@ -164,7 +163,7 @@ class ApmModuleSimulator(object):
       # Reference signal path for the evaluation step.
       reference_signal_filepath = (
           test_data_generators.reference_signal_filepaths[
-              test_data_generators_config_name])
+              config_name])
 
       # Evaluate.
       self._evaluator.Run(

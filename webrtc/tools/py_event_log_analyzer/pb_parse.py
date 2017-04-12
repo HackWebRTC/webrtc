@@ -32,7 +32,7 @@ class DataPoint(object):
     self.marker_bit = (first2header_bytes & 0b10000000) >> 7
 
 
-def parse_protobuf(file_path):
+def ParseProtobuf(file_path):
   """Parses RTC event log from protobuf file.
 
   Args:

@@ -37,16 +37,18 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 CHECKOUT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 WEBRTC_ROOT = os.path.join(CHECKOUT_ROOT, 'webrtc')
 
+
 def GetThirdPartyLibraries(buildfile_dir, target_name):
-  def extractLibName(s):
+  def ExtractLibName(string_list):
     # Sample input:
     # ["   //third_party/usrsctp:usrsctp", "    //webrtc:webrtc_common"]
     # Sample output:
     # ["usrsctp"]
-    return re.sub(r'\(.*\)', '', s).strip().split(os.path.sep)[-1].split(':')[0]
+    return re.sub(r'\(.*\)', '', string_list).strip().split(
+        os.path.sep)[-1].split(':')[0]
   output = subprocess.check_output(
     ["gn", "desc", buildfile_dir, target_name, '--all']) .split(os.linesep)
-  return [extractLibName(x) for x in output if re.search(r'third_party', x)]
+  return [ExtractLibName(x) for x in output if re.search(r'third_party', x)]
 
 
 class LicenseBuilder(object):
@@ -112,7 +114,7 @@ class LicenseBuilder(object):
     return 0
 
 
-if __name__ == '__main__':
+def main():
   parser = argparse.ArgumentParser(description='Generate WebRTC LICENSE.html')
   parser.add_argument('target_name',
                       help='Name of the GN target to generate a license for')
@@ -123,3 +125,7 @@ if __name__ == '__main__':
   args = parser.parse_args()
   builder = LicenseBuilder(args.buildfile_dirs, args.target_name)
   sys.exit(builder.GenerateLicenseText(args.output_dir))
+
+
+if __name__ == '__main__':
+  main()

@@ -53,7 +53,8 @@ def print_landmines():  # pylint: disable=invalid-name
     # is no longer the case.
     print 'Clobber due to iOS compile errors (crbug.com/694721)'
     print 'Clobber to unblock https://codereview.webrtc.org/2709573003'
-    print 'Clobber to fix https://codereview.webrtc.org/2709573003 after landing'
+    print ('Clobber to fix https://codereview.webrtc.org/2709573003 after '
+           'landing')
     print ('Clobber to fix https://codereview.webrtc.org/2767383005 before'
            'landing (changing rtc_executable -> rtc_test on iOS)')
     print ('Clobber to fix https://codereview.webrtc.org/2767383005 before'
