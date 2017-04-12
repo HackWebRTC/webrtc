@@ -100,6 +100,7 @@ if (rtc_include_tests) {
         "../test:fake_audio_device",
         "../test:test_common",
         "../test:test_main",
+        "//third_party/gflags",
       ]
       if (is_android) {
         deps += [ "//testing/android/native_test:native_test_native_code" ]
@@ -107,6 +108,7 @@ if (rtc_include_tests) {
 
       data = [
         "//resources/voice_engine/audio_tiny16.wav",
+        "//resources/voice_engine/audio_tiny48.wav",
       ]
 
       if (!build_with_chromium && is_clang) {

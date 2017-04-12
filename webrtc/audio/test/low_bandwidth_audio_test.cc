@@ -10,18 +10,26 @@
 
 #include <algorithm>
 
+#include "gflags/gflags.h"
 #include "webrtc/audio/test/low_bandwidth_audio_test.h"
 #include "webrtc/common_audio/wav_file.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
+
+DEFINE_int32(sample_rate_hz, 16000,
+             "Sample rate (Hz) of the produced audio files.");
+
 namespace {
+
 // Wait half a second between stopping sending and stopping receiving audio.
 constexpr int kExtraRecordTimeMs = 500;
 
-// The best that can be done with PESQ.
-constexpr int kAudioFileBitRate = 16000;
+std::string FileSampleRateSuffix() {
+  return std::to_string(FLAGS_sample_rate_hz / 1000);
+}
+
 }  // namespace
 
 namespace webrtc {
@@ -41,14 +49,15 @@ size_t AudioQualityTest::GetNumFlexfecStreams() const {
 }
 
 std::string AudioQualityTest::AudioInputFile() {
-  return test::ResourcePath("voice_engine/audio_tiny16", "wav");
+  return test::ResourcePath("voice_engine/audio_tiny" + FileSampleRateSuffix(),
+                            "wav");
 }
 
 std::string AudioQualityTest::AudioOutputFile() {
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
-  return webrtc::test::OutputPath() +
-      "LowBandwidth_" + test_info->name() + ".wav";
+  return webrtc::test::OutputPath() + "LowBandwidth_" + test_info->name() +
+      "_" + FileSampleRateSuffix() + ".wav";
 }
 
 std::unique_ptr<test::FakeAudioDevice::Capturer>
@@ -59,7 +68,7 @@ std::unique_ptr<test::FakeAudioDevice::Capturer>
 std::unique_ptr<test::FakeAudioDevice::Renderer>
     AudioQualityTest::CreateRenderer() {
   return test::FakeAudioDevice::CreateBoundedWavFileWriter(
-      AudioOutputFile(), kAudioFileBitRate);
+      AudioOutputFile(), FLAGS_sample_rate_hz);
 }
 
 void AudioQualityTest::OnFakeAudioDevicesCreated(

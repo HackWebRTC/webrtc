@@ -15,6 +15,7 @@ output files will be performed.
 """
 
 import argparse
+import collections
 import logging
 import os
 import re
@@ -59,13 +60,14 @@ def _DownloadTools():
   tools_dir = os.path.join(SRC_DIR, 'tools-webrtc')
   toolchain_dir = os.path.join(tools_dir, 'audio_quality')
 
-  # Download pesq.
+  # Download PESQ and POLQA.
   download_script = os.path.join(tools_dir, 'download_tools.py')
   command = [sys.executable, download_script, toolchain_dir]
   subprocess.check_call(_LogCommand(command))
 
   pesq_path = os.path.join(toolchain_dir, _GetPlatform(), 'pesq')
-  return pesq_path
+  polqa_path = os.path.join(toolchain_dir, _GetPlatform(), 'PolqaOem64')
+  return pesq_path, polqa_path
 
 
 def ExtractTestRuns(lines, echo=False):
@@ -108,13 +110,74 @@ def _GetFile(file_path, out_dir, move=False,
   return out_file_path
 
 
+def _RunPesq(executable_path, reference_file, degraded_file,
+             sample_rate_hz=16000):
+  directory = os.path.dirname(reference_file)
+  assert os.path.dirname(degraded_file) == directory
+
+  # Analyze audio.
+  command = [executable_path, '+%d' % sample_rate_hz,
+             os.path.basename(reference_file),
+             os.path.basename(degraded_file)]
+  # Need to provide paths in the current directory due to a bug in PESQ:
+  # On Mac, for some 'path/to/file.wav', if 'file.wav' is longer than
+  # 'path/to', PESQ crashes.
+  out = subprocess.check_output(_LogCommand(command),
+                                cwd=directory, stderr=subprocess.STDOUT)
+
+  # Find the scores in stdout of PESQ.
+  match = re.search(
+      r'Prediction \(Raw MOS, MOS-LQO\):\s+=\s+([\d.]+)\s+([\d.]+)', out)
+  if match:
+    raw_mos, _ = match.groups()
+
+    return {'pesq_mos': (raw_mos, 'score')}
+  else:
+    logging.error('PESQ: %s', out.splitlines()[-1])
+    return {}
+
+
+def _RunPolqa(executable_path, reference_file, degraded_file):
+  # Analyze audio.
+  command = [executable_path, '-q', '-LC', 'NB',
+             '-Ref', reference_file, '-Test', degraded_file]
+  try:
+    process = subprocess.Popen(_LogCommand(command),
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  except OSError as e:
+    if e.errno == os.errno.ENOENT:
+      logging.warning('POLQA executable missing, skipping test.')
+      return {}
+    else:
+      raise
+  out, err = process.communicate()
+
+  # Find the scores in stdout of POLQA.
+  match = re.search(r'\bMOS-LQO:\s+([\d.]+)', out)
+
+  if process.returncode != 0 or not match:
+    if process.returncode == 2:
+      logging.warning('%s (2)', err.strip())
+      logging.warning('POLQA license error, skipping test.')
+    else:
+      logging.error('%s (%d)', err.strip(), process.returncode)
+    return {}
+
+  mos_lqo, = match.groups()
+  return {'polqa_mos_lqo': (mos_lqo, 'score')}
+
+
+Analyzer = collections.namedtuple('Analyzer', ['func', 'executable',
+                                               'sample_rate_hz'])
+
+
 def main():
   # pylint: disable=W0101
   logging.basicConfig(level=logging.INFO)
 
   args = _ParseArgs()
 
-  pesq_path = _DownloadTools()
+  pesq_path, polqa_path = _DownloadTools()
 
   out_dir = os.path.join(args.build_dir, '..')
   if args.android:
@@ -123,51 +186,44 @@ def main():
   else:
     test_command = [os.path.join(args.build_dir, 'low_bandwidth_audio_test')]
 
-  # Start the test executable that produces audio files.
-  test_process = subprocess.Popen(_LogCommand(test_command),
-                                  stdout=subprocess.PIPE)
+  analyzers = [Analyzer(_RunPesq, pesq_path, 16000)]
+  # Check if POLQA can run at all, or skip the 48 kHz tests entirely.
+  example_path = os.path.join(SRC_DIR, 'resources',
+                              'voice_engine', 'audio_tiny48.wav')
+  if _RunPolqa(polqa_path, example_path, example_path):
+    analyzers.append(Analyzer(_RunPolqa, polqa_path, 48000))
 
-  try:
-    lines = iter(test_process.stdout.readline, '')
-    for result in ExtractTestRuns(lines, echo=True):
-      (android_device, test_name, reference_file, degraded_file) = result
+  for analyzer in analyzers:
+    # Start the test executable that produces audio files.
+    test_process = subprocess.Popen(
+        _LogCommand(test_command + ['--sample_rate_hz=%d' %
+                                    analyzer.sample_rate_hz]),
+        stdout=subprocess.PIPE)
+    try:
+      lines = iter(test_process.stdout.readline, '')
+      for result in ExtractTestRuns(lines, echo=True):
+        (android_device, test_name, reference_file, degraded_file) = result
 
-      adb_prefix = (args.adb_path,)
-      if android_device:
-        adb_prefix += ('-s', android_device)
+        adb_prefix = (args.adb_path,)
+        if android_device:
+          adb_prefix += ('-s', android_device)
 
-      reference_file = _GetFile(reference_file, out_dir,
-                                android=args.android, adb_prefix=adb_prefix)
-      degraded_file = _GetFile(degraded_file, out_dir, move=True,
-                               android=args.android, adb_prefix=adb_prefix)
+        reference_file = _GetFile(reference_file, out_dir,
+                                  android=args.android, adb_prefix=adb_prefix)
+        degraded_file = _GetFile(degraded_file, out_dir, move=True,
+                                 android=args.android, adb_prefix=adb_prefix)
 
-      # Analyze audio.
-      pesq_command = [pesq_path, '+16000',
-                      os.path.basename(reference_file),
-                      os.path.basename(degraded_file)]
-      # Need to provide paths in the current directory due to a bug in PESQ:
-      # On Mac, for some 'path/to/file.wav', if 'file.wav' is longer than
-      # 'path/to', PESQ crashes.
-      pesq_output = subprocess.check_output(_LogCommand(pesq_command),
-                                            cwd=out_dir)
+        analyzer_results = analyzer.func(analyzer.executable,
+                                         reference_file, degraded_file)
+        for metric, (value, units) in analyzer_results.items():
+          # Output a result for the perf dashboard.
+          print 'RESULT %s: %s= %s %s' % (metric, test_name, value, units)
 
-      # Find the scores in stdout of pesq.
-      match = re.search(
-          r'Prediction \(Raw MOS, MOS-LQO\):\s+=\s+([\d.]+)\s+([\d.]+)',
-          pesq_output)
-      if match:
-        raw_mos, _ = match.groups()
-
-        # Output a result for the perf dashboard.
-        print 'RESULT pesq_mos: %s= %s score' % (test_name, raw_mos)
-      else:
-        logging.error('PESQ: %s', pesq_output.splitlines()[-1])
-
-      if args.remove:
-        os.remove(reference_file)
-        os.remove(degraded_file)
-  finally:
-    test_process.terminate()
+        if args.remove:
+          os.remove(reference_file)
+          os.remove(degraded_file)
+    finally:
+      test_process.terminate()
 
   return test_process.wait()
 
