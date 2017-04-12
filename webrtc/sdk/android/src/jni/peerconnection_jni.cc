@@ -1194,6 +1194,13 @@ JOW(void, PeerConnectionFactory_shutdownInternalTracer)(JNIEnv* jni, jclass) {
   rtc::tracing::ShutdownInternalTracer();
 }
 
+JOW(void, AudioTrack_nativeSetVolume)
+(JNIEnv*, jclass, jlong j_p, jdouble volume) {
+  rtc::scoped_refptr<AudioSourceInterface> source(
+      reinterpret_cast<AudioTrackInterface*>(j_p)->GetSource());
+  source->SetVolume(volume);
+}
+
 // Helper struct for working around the fact that CreatePeerConnectionFactory()
 // comes in two flavors: either entirely automagical (constructing its own
 // threads and deleting them on teardown, but no external codec factory support)
