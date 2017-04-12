@@ -18,30 +18,6 @@
 #include "webrtc/modules/audio_processing/aec3/aec3_common.h"
 
 namespace webrtc {
-namespace aec3 {
-#if defined(WEBRTC_ARCH_X86_FAMILY)
-
-void ComputeGains_SSE2(
-    const std::array<float, kFftLengthBy2Plus1>& nearend_power,
-    const std::array<float, kFftLengthBy2Plus1>& residual_echo_power,
-    const std::array<float, kFftLengthBy2Plus1>& comfort_noise_power,
-    float strong_nearend_margin,
-    std::array<float, kFftLengthBy2 - 1>* previous_gain_squared,
-    std::array<float, kFftLengthBy2 - 1>* previous_masker,
-    std::array<float, kFftLengthBy2Plus1>* gain);
-
-#endif
-
-void ComputeGains(
-    const std::array<float, kFftLengthBy2Plus1>& nearend_power,
-    const std::array<float, kFftLengthBy2Plus1>& residual_echo_power,
-    const std::array<float, kFftLengthBy2Plus1>& comfort_noise_power,
-    float strong_nearend_margin,
-    std::array<float, kFftLengthBy2 - 1>* previous_gain_squared,
-    std::array<float, kFftLengthBy2 - 1>* previous_masker,
-    std::array<float, kFftLengthBy2Plus1>* gain);
-
-}  // namespace aec3
 
 class SuppressionGain {
  public:
