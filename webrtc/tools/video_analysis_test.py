@@ -56,5 +56,14 @@ class RunVideoAnalysisTest(unittest.TestCase):
     self.assertEqual(FindUsbPortForV4lDevices('video0', 'video1'), long_usb_ids)
 
 
+  def testFindUSBPortForV4lDevicesNoDevice(self):
+    noDeviceFound = ('')
+    V4lDevice = ('/sys/bus/usb/devices/usb1/1-1/driver/3-2/3-2.1:1.0/'
+                  'video4linux/video1')
+    self.setGlobPath(noDeviceFound, V4lDevice)
+    empty_list = []
+    self.assertEqual(FindUsbPortForV4lDevices('video0', 'video1'), empty_list)
+
+
 if __name__ == "__main__":
   unittest.main()

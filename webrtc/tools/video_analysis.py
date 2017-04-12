@@ -184,18 +184,23 @@ def FindUsbPortForV4lDevices(ref_video_device, test_video_device):
 
   # Split on the driver folder first since we are only interested in the
   # folders thereafter.
-  ref_path = str(v4l_ref_device).split('driver')[1].split('/')
-  test_path = str(v4l_test_device).split('driver')[1].split('/')
-  paths.append(ref_path)
-  paths.append(test_path)
+  try:
+    ref_path = str(v4l_ref_device).split('driver')[1].split('/')
+    test_path = str(v4l_test_device).split('driver')[1].split('/')
+  except IndexError:
+    print 'Could not find one or both of the specified recording devices.'
+  else:
+    paths.append(ref_path)
+    paths.append(test_path)
 
-  for path in paths:
-    for usb_id in path:
-      # Look for : separator and then use the first element in the list.
-      # E.g 3-3.1:1.0 split on : and [0] becomes 3-3.1 which can be used
-      # for bind/unbind.
-      if ':' in usb_id:
-        usb_ports.append(usb_id.split(':')[0])
+    for path in paths:
+      for usb_id in path:
+        # Look for : separator and then use the first element in the list.
+        # E.g 3-3.1:1.0 split on : and [0] becomes 3-3.1 which can be used
+        # for bind/unbind.
+        if ':' in usb_id:
+          usb_ports.append(usb_id.split(':')[0])
+
   return usb_ports
 
 
@@ -448,13 +453,15 @@ def CompareVideos(options, cropped_ref_file, cropped_test_file):
   ]
 
   with open(result_file_name, 'w') as f:
-    compare_video_recordings = subprocess.Popen(compare_cmd, stdout=f)
-    compare_video_recordings.wait()
-  if compare_video_recordings.returncode != 0:
-    raise CompareVideosError('Failed to perform comparison.')
-  else:
-    print 'Result recorded to: ' + os.path.abspath(result_file_name)
-    print 'Comparison done!'
+    try:
+      compare_video_recordings = subprocess.check_output(compare_cmd)
+      f.write(compare_video_recordings)
+    except subprocess.CalledProcessError as error:
+      raise CompareVideosError('Failed to perform comparison: %s' % error)
+    else:
+      print 'Result recorded to: %s' % os.path.abspath(result_file_name)
+      print 'Comparison done!'
+      return compare_video_recordings
 
 
 def main():
