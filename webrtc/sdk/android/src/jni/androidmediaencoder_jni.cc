@@ -375,7 +375,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
     ALOGW << "MediaCodecVideoEncoder ctor failed.";
     ProcessHWError(true /* reset_if_fallback_unavailable */);
   }
-  srand(time(NULL));
+  srand(rtc::Time32());
 }
 
 int32_t MediaCodecVideoEncoder::InitEncode(
