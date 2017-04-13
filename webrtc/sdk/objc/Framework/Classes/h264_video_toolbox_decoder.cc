@@ -24,7 +24,8 @@
 #include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
 #include "webrtc/video_frame.h"
 
-namespace internal {
+namespace webrtc {
+namespace {
 
 static const int64_t kMsPerSec = 1000;
 
@@ -40,9 +41,9 @@ inline CFDictionaryRef CreateCFDictionary(CFTypeRef* keys,
 // Struct that we pass to the decoder per frame to decode. We receive it again
 // in the decoder callback.
 struct FrameDecodeParams {
-  FrameDecodeParams(webrtc::DecodedImageCallback* cb, int64_t ts)
+  FrameDecodeParams(DecodedImageCallback* cb, int64_t ts)
       : callback(cb), timestamp(ts) {}
-  webrtc::DecodedImageCallback* callback;
+  DecodedImageCallback* callback;
   int64_t timestamp;
 };
 
@@ -62,17 +63,15 @@ void VTDecompressionOutputCallback(void* decoder,
     return;
   }
   // TODO(tkchin): Handle CVO properly.
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
-      new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(image_buffer);
-  webrtc::VideoFrame decoded_frame(buffer, decode_params->timestamp,
-                                   CMTimeGetSeconds(timestamp) * kMsPerSec,
-                                   webrtc::kVideoRotation_0);
+  rtc::scoped_refptr<VideoFrameBuffer> buffer =
+      new rtc::RefCountedObject<CoreVideoFrameBuffer>(image_buffer);
+  VideoFrame decoded_frame(buffer, decode_params->timestamp,
+                           CMTimeGetSeconds(timestamp) * kMsPerSec,
+                           kVideoRotation_0);
   decode_params->callback->Decoded(decoded_frame);
 }
 
-}  // namespace internal
-
-namespace webrtc {
+}  // namespace
 
 H264VideoToolboxDecoder::H264VideoToolboxDecoder()
     : callback_(nullptr),
@@ -140,9 +139,9 @@ int H264VideoToolboxDecoder::Decode(
   RTC_DCHECK(sample_buffer);
   VTDecodeFrameFlags decode_flags =
       kVTDecodeFrame_EnableAsynchronousDecompression;
-  std::unique_ptr<internal::FrameDecodeParams> frame_decode_params;
+  std::unique_ptr<FrameDecodeParams> frame_decode_params;
   frame_decode_params.reset(
-      new internal::FrameDecodeParams(callback_, input_image._timeStamp));
+      new FrameDecodeParams(callback_, input_image._timeStamp));
   OSStatus status = VTDecompressionSessionDecodeFrame(
       decompression_session_, sample_buffer, decode_flags,
       frame_decode_params.release(), nullptr);
@@ -152,7 +151,7 @@ int H264VideoToolboxDecoder::Decode(
   if (status == kVTInvalidSessionErr &&
       ResetDecompressionSession() == WEBRTC_VIDEO_CODEC_OK) {
     frame_decode_params.reset(
-        new internal::FrameDecodeParams(callback_, input_image._timeStamp));
+        new FrameDecodeParams(callback_, input_image._timeStamp));
     status = VTDecompressionSessionDecodeFrame(
         decompression_session_, sample_buffer, decode_flags,
         frame_decode_params.release(), nullptr);
@@ -208,15 +207,14 @@ int H264VideoToolboxDecoder::ResetDecompressionSession() {
     kCVPixelBufferIOSurfacePropertiesKey,
     kCVPixelBufferPixelFormatTypeKey
   };
-  CFDictionaryRef io_surface_value =
-      internal::CreateCFDictionary(nullptr, nullptr, 0);
+  CFDictionaryRef io_surface_value = CreateCFDictionary(nullptr, nullptr, 0);
   int64_t nv12type = kCVPixelFormatType_420YpCbCr8BiPlanarFullRange;
   CFNumberRef pixel_format =
       CFNumberCreate(nullptr, kCFNumberLongType, &nv12type);
   CFTypeRef values[attributes_size] = {kCFBooleanTrue, io_surface_value,
                                        pixel_format};
   CFDictionaryRef attributes =
-      internal::CreateCFDictionary(keys, values, attributes_size);
+      CreateCFDictionary(keys, values, attributes_size);
   if (io_surface_value) {
     CFRelease(io_surface_value);
     io_surface_value = nullptr;
@@ -226,7 +224,7 @@ int H264VideoToolboxDecoder::ResetDecompressionSession() {
     pixel_format = nullptr;
   }
   VTDecompressionOutputCallbackRecord record = {
-      internal::VTDecompressionOutputCallback, this,
+      VTDecompressionOutputCallback, this,
   };
   OSStatus status =
       VTDecompressionSessionCreate(nullptr, video_format_, nullptr, attributes,
