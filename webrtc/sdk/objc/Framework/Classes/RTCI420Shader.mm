@@ -13,6 +13,7 @@
 #include <vector>
 
 #import "RTCShader+Private.h"
+#import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
 
 #include "webrtc/base/optional.h"
@@ -77,6 +78,7 @@ static const char kI420FragmentShaderSource[] =
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     if (![self setupI420Program] || ![self setupTextures] ||
         !RTCSetupVerticesForProgram(_i420Program, &_vertexBuffer, &_vertexArray)) {
+      RTCLog(@"Failed to initialize RTCI420Shader.");
       self = nil;
     }
   }

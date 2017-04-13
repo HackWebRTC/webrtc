@@ -12,7 +12,8 @@
 
 #import <GLKit/GLKit.h>
 
-#import "RTCOpenGLVideoRenderer.h"
+#import "RTCShader+Private.h"
+#import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
 
 // RTCDisplayLinkTimer wraps a CADisplayLink and is set to fire every two screen
@@ -88,7 +89,6 @@
 // from the display link callback so atomicity is required.
 @property(atomic, strong) RTCVideoFrame *videoFrame;
 @property(nonatomic, readonly) GLKView *glkView;
-@property(nonatomic, readonly) RTCOpenGLVideoRenderer *glRenderer;
 @end
 
 @implementation RTCEAGLVideoView {
@@ -97,12 +97,14 @@
   // This flag should only be set and read on the main thread (e.g. by
   // setNeedsDisplay)
   BOOL _isDirty;
+  id<RTCShader> _i420Shader;
+  id<RTCShader> _nv12Shader;
+  RTCVideoFrame *_lastDrawnFrame;
 }
 
 @synthesize delegate = _delegate;
 @synthesize videoFrame = _videoFrame;
 @synthesize glkView = _glkView;
-@synthesize glRenderer = _glRenderer;
 
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
@@ -125,7 +127,6 @@
     glContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
   }
   _glContext = glContext;
-  _glRenderer = [[RTCOpenGLVideoRenderer alloc] initWithContext:_glContext];
 
   // GLKView manages a framebuffer for us.
   _glkView = [[GLKView alloc] initWithFrame:CGRectZero
@@ -200,7 +201,29 @@
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect {
   // The renderer will draw the frame to the framebuffer corresponding to the
   // one used by |view|.
-  [_glRenderer drawFrame:self.videoFrame];
+  RTCVideoFrame *frame = self.videoFrame;
+  if (!frame || frame == _lastDrawnFrame) {
+    return;
+  }
+  [self ensureGLContext];
+  glClear(GL_COLOR_BUFFER_BIT);
+  id<RTCShader> shader = nil;
+  if (frame.nativeHandle) {
+    if (!_nv12Shader) {
+      _nv12Shader = [[RTCNativeNV12Shader alloc] initWithContext:_glContext];
+    }
+    shader = _nv12Shader;
+  } else {
+    if (!_i420Shader) {
+      _i420Shader = [[RTCI420Shader alloc] initWithContext:_glContext];
+    }
+    shader = _i420Shader;
+  }
+  if (shader && [shader drawFrame:frame]) {
+    _lastDrawnFrame = frame;
+  } else {
+    RTCLog(@"Failed to draw frame.");
+  }
 }
 
 #pragma mark - RTCVideoRenderer
@@ -223,7 +246,7 @@
 - (void)displayLinkTimerDidFire {
   // Don't render unless video frame have changed or the view content
   // has explicitly been marked dirty.
-  if (!_isDirty && _glRenderer.lastDrawnFrame == self.videoFrame) {
+  if (!_isDirty && _lastDrawnFrame == self.videoFrame) {
     return;
   }
 
@@ -242,7 +265,8 @@
 
 - (void)setupGL {
   self.videoFrame = nil;
-  [_glRenderer setupGL];
+  [self ensureGLContext];
+  glDisable(GL_DITHER);
   _timer.isPaused = NO;
 }
 
@@ -250,7 +274,9 @@
   self.videoFrame = nil;
   _timer.isPaused = YES;
   [_glkView deleteDrawable];
-  [_glRenderer teardownGL];
+  [self ensureGLContext];
+  _i420Shader = nil;
+  _nv12Shader = nil;
 }
 
 - (void)didBecomeActive {
@@ -259,6 +285,13 @@
 
 - (void)willResignActive {
   [self teardownGL];
+}
+
+- (void)ensureGLContext {
+  NSAssert(_glContext, @"context shouldn't be nil");
+  if ([EAGLContext currentContext] != _glContext) {
+    [EAGLContext setCurrentContext:_glContext];
+  }
 }
 
 @end

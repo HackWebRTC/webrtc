@@ -17,6 +17,7 @@
 #import <CoreVideo/CVOpenGLESTextureCache.h>
 
 #import "RTCShader+Private.h"
+#import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
 
 #include "webrtc/base/checks.h"
@@ -56,6 +57,7 @@ static const char kNV12FragmentShaderSource[] =
   if (self = [super init]) {
     if (![self setupNV12Program] || ![self setupTextureCacheWithContext:context] ||
         !RTCSetupVerticesForProgram(_nv12Program, &_vertexBuffer, nullptr)) {
+      RTCLog(@"Failed to initialize RTCNativeNV12Shader.");
       self = nil;
     }
   }

@@ -19,8 +19,6 @@
 #import <OpenGL/gl3.h>
 #endif
 
-#include "webrtc/api/video/video_rotation.h"
-
 RTC_EXTERN const char kRTCVertexShaderSource[];
 
 RTC_EXTERN GLuint RTCCreateShader(GLenum type, const GLchar *source);

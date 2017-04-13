@@ -126,8 +126,6 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/RTCMediaStreamTrack+Private.h",
       "objc/Framework/Classes/RTCMediaStreamTrack.mm",
       "objc/Framework/Classes/RTCOpenGLDefines.h",
-      "objc/Framework/Classes/RTCOpenGLVideoRenderer.h",
-      "objc/Framework/Classes/RTCOpenGLVideoRenderer.mm",
       "objc/Framework/Classes/RTCPeerConnection+DataChannel.mm",
       "objc/Framework/Classes/RTCPeerConnection+Private.h",
       "objc/Framework/Classes/RTCPeerConnection+Stats.mm",

@@ -14,17 +14,20 @@
 
 #import "WebRTC/RTCNSGLVideoView.h"
 
+#import <AppKit/NSOpenGL.h>
 #import <CoreVideo/CVDisplayLink.h>
 #import <OpenGL/gl3.h>
 
-#import "RTCOpenGLVideoRenderer.h"
+#import "RTCShader+Private.h"
+#import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
 
 @interface RTCNSGLVideoView ()
 // |videoFrame| is set when we receive a frame from a worker thread and is read
 // from the display link callback so atomicity is required.
 @property(atomic, strong) RTCVideoFrame *videoFrame;
-@property(atomic, strong) RTCOpenGLVideoRenderer *glRenderer;
+@property(atomic, strong) id<RTCShader> i420Shader;
+
 - (void)drawFrame;
 @end
 
@@ -41,11 +44,12 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
 
 @implementation RTCNSGLVideoView {
   CVDisplayLinkRef _displayLink;
+  RTCVideoFrame *_lastDrawnFrame;
 }
 
 @synthesize delegate = _delegate;
 @synthesize videoFrame = _videoFrame;
-@synthesize glRenderer = _glRenderer;
+@synthesize i420Shader = _i420Shader;
 
 - (void)dealloc {
   [self teardownDisplayLink];
@@ -74,17 +78,14 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
 
 - (void)prepareOpenGL {
   [super prepareOpenGL];
-  if (!self.glRenderer) {
-    self.glRenderer =
-        [[RTCOpenGLVideoRenderer alloc] initWithContext:[self openGLContext]];
-  }
-  [self.glRenderer setupGL];
+  [self ensureGLContext];
+  glDisable(GL_DITHER);
   [self setupDisplayLink];
 }
 
 - (void)clearGLContext {
-  [self.glRenderer teardownGL];
-  self.glRenderer = nil;
+  [self ensureGLContext];
+  self.i420Shader = nil;
   [super clearGLContext];
 }
 
@@ -104,14 +105,30 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
 #pragma mark - Private
 
 - (void)drawFrame {
-  RTCVideoFrame *videoFrame = self.videoFrame;
-  if (self.glRenderer.lastDrawnFrame != videoFrame) {
-    // This method may be called from CVDisplayLink callback which isn't on the
-    // main thread so we have to lock the GL context before drawing.
-    CGLLockContext([[self openGLContext] CGLContextObj]);
-    [self.glRenderer drawFrame:videoFrame];
-    CGLUnlockContext([[self openGLContext] CGLContextObj]);
+  RTCVideoFrame *frame = self.videoFrame;
+  if (!frame || frame == _lastDrawnFrame) {
+    return;
   }
+  // This method may be called from CVDisplayLink callback which isn't on the
+  // main thread so we have to lock the GL context before drawing.
+  NSOpenGLContext *context = [self openGLContext];
+  CGLLockContext([context CGLContextObj]);
+
+  [self ensureGLContext];
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  // Rendering native CVPixelBuffer is not supported on OS X.
+  frame = [frame newI420VideoFrame];
+  if (!self.i420Shader) {
+    self.i420Shader = [[RTCI420Shader alloc] initWithContext:context];
+  }
+  if (self.i420Shader && [self.i420Shader drawFrame:frame]) {
+    [context flushBuffer];
+    _lastDrawnFrame = frame;
+  } else {
+    RTCLog(@"Failed to draw frame.");
+  }
+  CGLUnlockContext([context CGLContextObj]);
 }
 
 - (void)setupDisplayLink {
@@ -141,6 +158,14 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
   }
   CVDisplayLinkRelease(_displayLink);
   _displayLink = NULL;
+}
+
+- (void)ensureGLContext {
+  NSOpenGLContext* context = [self openGLContext];
+  NSAssert(context, @"context shouldn't be nil");
+  if ([NSOpenGLContext currentContext] != context) {
+    [context makeCurrentContext];
+  }
 }
 
 @end
