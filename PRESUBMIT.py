@@ -526,6 +526,7 @@ def _CommonChecks(input_api, output_api):
       black_list=(r'^base[\\\/].*\.py$',
                   r'^build[\\\/].*\.py$',
                   r'^buildtools[\\\/].*\.py$',
+                  r'^infra[\\\/].*\.py$',
                   r'^ios[\\\/].*\.py$',
                   r'^out.*[\\\/].*\.py$',
                   r'^testing[\\\/].*\.py$',
@@ -535,10 +536,6 @@ def _CommonChecks(input_api, output_api):
                   r'^tools-webrtc[\\\/]mb[\\\/].*\.py$',
                   r'^tools-webrtc[\\\/]valgrind[\\\/].*\.py$',
                   r'^xcodebuild.*[\\\/].*\.py$',),
-      disabled_warnings=['F0401',  # Failed to import x
-                         'E0611',  # No package y in x
-                         'W0232',  # Class has no __init__ method
-                        ],
       pylintrc='pylintrc'))
 
   # TODO(nisse): talk/ is no more, so make below checks simpler?

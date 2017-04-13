@@ -10,4 +10,5 @@ per-file *.py=kjellander@webrtc.org
 per-file AUTHORS=*
 per-file BUILD.gn=kjellander@webrtc.org
 per-file DEPS=*
+per-file pylintrc=kjellander@webrtc.org
 per-file WATCHLISTS=*
