@@ -36,7 +36,6 @@ group("tools") {
       public_deps += [
         ":event_log_visualizer",
         ":rtp_analyzer",
-        "network_tester",
       ]
     }
   }
@@ -311,10 +310,6 @@ if (rtc_include_tests) {
       "../test:test_main",
       "//testing/gtest",
     ]
-
-    if (rtc_enable_protobuf) {
-      deps += [ "network_tester:network_tester_unittests" ]
-    }
 
     data = tools_unittests_resources
     if (is_android) {
