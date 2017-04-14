@@ -217,6 +217,10 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     return client;
   }
 
+  webrtc::PeerConnectionFactoryInterface* pc_factory() const {
+    return peer_connection_factory_.get();
+  }
+
   webrtc::PeerConnectionInterface* pc() const { return peer_connection_.get(); }
 
   // If a signaling message receiver is set (via ConnectFakeSignaling), this
@@ -2771,6 +2775,38 @@ TEST_F(PeerConnectionIntegrationTest, GetSources) {
   ASSERT_GT(receiver->GetParameters().encodings.size(), 0u);
   EXPECT_EQ(receiver->GetParameters().encodings[0].ssrc,
             contributing_sources[0].source_id());
+}
+
+// Test that if a track is removed and added again with a different stream ID,
+// the new stream ID is successfully communicated in SDP and media continues to
+// flow end-to-end.
+TEST_F(PeerConnectionIntegrationTest, RemoveAndAddTrackWithNewStreamId) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+
+  rtc::scoped_refptr<MediaStreamInterface> stream_1 =
+      caller()->pc_factory()->CreateLocalMediaStream("stream_1");
+  rtc::scoped_refptr<MediaStreamInterface> stream_2 =
+      caller()->pc_factory()->CreateLocalMediaStream("stream_2");
+
+  // Add track using stream 1, do offer/answer.
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> track =
+      caller()->CreateLocalAudioTrack();
+  rtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
+      caller()->pc()->AddTrack(track, {stream_1.get()});
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  // Wait for one audio frame to be received by the callee.
+  ExpectNewFramesReceivedWithWait(0, 0, 1, 0, kMaxWaitForFramesMs);
+
+  // Remove the sender, and create a new one with the new stream.
+  caller()->pc()->RemoveTrack(sender);
+  sender = caller()->pc()->AddTrack(track, {stream_2.get()});
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  // Wait for additional audio frames to be received by the callee.
+  ExpectNewFramesReceivedWithWait(0, 0, kDefaultExpectedAudioFrameCount, 0,
+                                  kMaxWaitForFramesMs);
 }
 
 }  // namespace

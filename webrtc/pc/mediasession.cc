@@ -448,8 +448,7 @@ static bool AddStreamParams(MediaType media_type,
     if (stream_it->type != media_type)
       continue;  // Wrong media type.
 
-    const StreamParams* param =
-        GetStreamByIds(*current_streams, "", stream_it->id);
+    StreamParams* param = GetStreamByIds(*current_streams, "", stream_it->id);
     // groupid is empty for StreamParams generated using
     // MediaSessionDescriptionFactory.
     if (!param) {
@@ -500,6 +499,10 @@ static bool AddStreamParams(MediaType media_type,
       // This is necessary so that we can use the CNAME for other media types.
       current_streams->push_back(stream_param);
     } else {
+      // Use existing generated SSRCs/groups, but update the sync_label if
+      // necessary. This may be needed if a MediaStreamTrack was moved from one
+      // MediaStream to another.
+      param->sync_label = stream_it->sync_label;
       content_description->AddStream(*param);
     }
   }
