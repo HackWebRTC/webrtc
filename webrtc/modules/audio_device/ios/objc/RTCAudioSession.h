@@ -76,6 +76,21 @@ RTC_EXPORT
 
 @end
 
+/** This is a protocol used to inform RTCAudioSession when the audio session
+ *  activation state has changed outside of RTCAudioSession. The current known use
+ *  case of this is when CallKit activates the audio session for the application
+ */
+RTC_EXPORT
+@protocol RTCAudioSessionActivationDelegate <NSObject>
+
+/** Called when the audio session is activated outside of the app by iOS. */
+- (void)audioSessionDidActivate:(AVAudioSession *)session;
+
+/** Called when the audio session is deactivated outside of the app by iOS. */
+- (void)audioSessionDidDeactivate:(AVAudioSession *)session;
+
+@end
+
 /** Proxy class for AVAudioSession that adds a locking mechanism similar to
  *  AVCaptureDevice. This is used to that interleaving configurations between
  *  WebRTC and the application layer are avoided.
@@ -84,7 +99,7 @@ RTC_EXPORT
  *  activated only once. See |setActive:error:|.
  */
 RTC_EXPORT
-@interface RTCAudioSession : NSObject
+@interface RTCAudioSession : NSObject <RTCAudioSessionActivationDelegate>
 
 /** Convenience property to access the AVAudioSession singleton. Callers should
  *  not call setters on AVAudioSession directly, but other method invocations
@@ -199,7 +214,6 @@ RTC_EXPORT
                      error:(NSError **)outError;
 - (BOOL)setOutputDataSource:(AVAudioSessionDataSourceDescription *)dataSource
                       error:(NSError **)outError;
-
 @end
 
 @interface RTCAudioSession (Configuration)

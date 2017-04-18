@@ -787,6 +787,22 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   }
 }
 
+- (void)audioSessionDidActivate:(AVAudioSession *)session {
+  if (_session != session) {
+    RTCLogError(@"audioSessionDidActivate called on different AVAudioSession");
+  }
+  [self incrementActivationCount];
+  self.isActive = YES;
+}
+
+- (void)audioSessionDidDeactivate:(AVAudioSession *)session {
+  if (_session != session) {
+    RTCLogError(@"audioSessionDidDeactivate called on different AVAudioSession");
+  }
+  self.isActive = NO;
+  [self decrementActivationCount];
+}
+
 - (void)notifyDidBeginInterruption {
   for (auto delegate : self.delegates) {
     SEL sel = @selector(audioSessionDidBeginInterruption:);

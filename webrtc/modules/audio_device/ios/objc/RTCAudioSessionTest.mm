@@ -176,6 +176,15 @@
   EXPECT_EQ(0u, session.delegates.size());
 }
 
+- (void)testAudioSessionActivation {
+  RTCAudioSession *audioSession = [RTCAudioSession sharedInstance];
+  EXPECT_EQ(0, audioSession.activationCount);
+  [audioSession audioSessionDidActivate:[AVAudioSession sharedInstance]];
+  EXPECT_EQ(1, audioSession.activationCount);
+  [audioSession audioSessionDidDeactivate:[AVAudioSession sharedInstance]];
+  EXPECT_EQ(0, audioSession.activationCount);
+}
+
 @end
 
 namespace webrtc {
@@ -214,5 +223,11 @@ TEST_F(AudioSessionTest, RemoveDelegateOnDealloc) {
   RTCAudioSessionTest *test = [[RTCAudioSessionTest alloc] init];
   [test testRemoveDelegateOnDealloc];
 }
+
+TEST_F(AudioSessionTest, AudioSessionActivation) {
+  RTCAudioSessionTest *test = [[RTCAudioSessionTest alloc] init];
+  [test testAudioSessionActivation];
+}
+
 
 }  // namespace webrtc
