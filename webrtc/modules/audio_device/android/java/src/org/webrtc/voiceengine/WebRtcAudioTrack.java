@@ -12,6 +12,7 @@ package org.webrtc.voiceengine;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -199,8 +200,20 @@ public class WebRtcAudioTrack {
       // Create an AudioTrack object and initialize its associated audio buffer.
       // The size of this buffer determines how long an AudioTrack can play
       // before running out of data.
-      audioTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRate, channelConfig,
-          AudioFormat.ENCODING_PCM_16BIT, minBufferSizeInBytes, AudioTrack.MODE_STREAM);
+      if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
+        // If we are on API level 21 or higher, it is possible to use a special AudioTrack
+        // constructor that uses AudioAttributes and AudioFormat as input. It allows us to
+        // supersede the notion of stream types for defining the behavior of audio playback,
+        // and to allow certain platforms or routing policies to use this information for more
+        // refined volume or routing decisions.
+        audioTrack = createAudioTrackOnLollipopOrHigher(
+            sampleRate, channelConfig, minBufferSizeInBytes);
+      } else {
+        // Use default constructor for API levels below 21.
+        // Note that, this constructor will be deprecated in API level O (25).
+        audioTrack = new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRate, channelConfig,
+            AudioFormat.ENCODING_PCM_16BIT, minBufferSizeInBytes, AudioTrack.MODE_STREAM);
+      }
     } catch (IllegalArgumentException e) {
       Logging.d(TAG, e.getMessage());
       releaseAudioResources();
@@ -282,6 +295,37 @@ public class WebRtcAudioTrack {
             + "sample rate: " + audioTrack.getSampleRate() + ", "
             // Gain (>=1.0) expressed as linear multiplier on sample values.
             + "max gain: " + audioTrack.getMaxVolume());
+  }
+
+  // Creates and AudioTrack instance using AudioAttributes and AudioFormat as input.
+  // It allows certain platforms or routing policies to use this information for more
+  // refined volume or routing decisions.
+  @TargetApi(21)
+  private AudioTrack createAudioTrackOnLollipopOrHigher(
+    int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
+    Logging.d(TAG, "createAudioTrackOnLollipopOrHigher");
+    // TODO(henrika): use setPerformanceMode(int) with PERFORMANCE_MODE_LOW_LATENCY to control
+    // performance when Android O is supported. Add some logging in the mean time.
+    final int nativeOutputSampleRate =
+        AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_VOICE_CALL);
+    Logging.d(TAG, "nativeOutputSampleRate: " + nativeOutputSampleRate);
+    if (sampleRateInHz != nativeOutputSampleRate) {
+      Logging.w(TAG, "Unable to use fast mode since requested sample rate is not native");
+    }
+    // Create an audio track where the audio usage is for VoIP and the content type is speech.
+    return new AudioTrack(
+        new AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build(),
+        new AudioFormat.Builder()
+          .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+          .setSampleRate(sampleRateInHz)
+          .setChannelMask(channelConfig)
+          .build(),
+        bufferSizeInBytes,
+        AudioTrack.MODE_STREAM,
+        AudioManager.AUDIO_SESSION_ID_GENERATE);
   }
 
   @TargetApi(24)
