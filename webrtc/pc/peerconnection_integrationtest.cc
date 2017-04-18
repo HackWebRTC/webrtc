@@ -106,6 +106,17 @@ PeerConnectionInterface::RTCOfferAnswerOptions IceRestartOfferAnswerOptions() {
   return options;
 }
 
+// Remove all stream information (SSRCs, track IDs, etc.) and "msid-semantic"
+// attribute from received SDP, simulating a legacy endpoint.
+void RemoveSsrcsAndMsids(cricket::SessionDescription* desc) {
+  for (ContentInfo& content : desc->contents()) {
+    MediaContentDescription* media_desc =
+        static_cast<MediaContentDescription*>(content.description);
+    media_desc->mutable_streams().clear();
+  }
+  desc->set_msid_supported(false);
+}
+
 class SignalingMessageReceiver {
  public:
   virtual void ReceiveSdpMessage(const std::string& type,
@@ -408,7 +419,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   // Returns a MockStatsObserver in a state after stats gathering finished,
   // which can be used to access the gathered stats.
-  rtc::scoped_refptr<MockStatsObserver> GetStatsForTrack(
+  rtc::scoped_refptr<MockStatsObserver> OldGetStatsForTrack(
       webrtc::MediaStreamTrackInterface* track) {
     rtc::scoped_refptr<MockStatsObserver> observer(
         new rtc::RefCountedObject<MockStatsObserver>());
@@ -419,8 +430,18 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   }
 
   // Version that doesn't take a track "filter", and gathers all stats.
-  rtc::scoped_refptr<MockStatsObserver> GetStats() {
-    return GetStatsForTrack(nullptr);
+  rtc::scoped_refptr<MockStatsObserver> OldGetStats() {
+    return OldGetStatsForTrack(nullptr);
+  }
+
+  // Synchronously gets stats and returns them. If it times out, fails the test
+  // and returns null.
+  rtc::scoped_refptr<const webrtc::RTCStatsReport> NewGetStats() {
+    rtc::scoped_refptr<webrtc::MockRTCStatsCollectorCallback> callback(
+        new rtc::RefCountedObject<webrtc::MockRTCStatsCollectorCallback>());
+    peer_connection_->GetStats(callback);
+    EXPECT_TRUE_WAIT(callback->called(), kDefaultTimeout);
+    return callback->report();
   }
 
   int rendered_width() {
@@ -1099,7 +1120,7 @@ class PeerConnectionIntegrationTest : public testing::Test {
     caller()->CreateAndSetAndSignalOffer();
     ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
     EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(expected_cipher_suite),
-                   caller()->GetStats()->SrtpCipher(), kDefaultTimeout);
+                   caller()->OldGetStats()->SrtpCipher(), kDefaultTimeout);
     EXPECT_EQ(
         1, caller_observer->GetEnumCounter(webrtc::kEnumCounterAudioSrtpCipher,
                                            expected_cipher_suite));
@@ -1701,16 +1722,8 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithoutSsrcOrMsidSignaling) {
   // Add audio and video, testing that packets can be demuxed on payload type.
   caller()->AddAudioVideoMediaStream();
   callee()->AddAudioVideoMediaStream();
-  // Remove all stream information (SSRCs, track IDs, etc.) and "msid-semantic"
-  // attribute from received SDP, simulating a legacy endpoint.
-  callee()->SetReceivedSdpMunger([](cricket::SessionDescription* desc) {
-    for (ContentInfo& content : desc->contents()) {
-      MediaContentDescription* media_desc =
-          static_cast<MediaContentDescription*>(content.description);
-      media_desc->mutable_streams().clear();
-    }
-    desc->set_msid_supported(false);
-  });
+  // Remove SSRCs and MSIDs from the received offer SDP.
+  callee()->SetReceivedSdpMunger(RemoveSsrcsAndMsids);
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   ExpectNewFramesReceivedWithWait(
@@ -1787,7 +1800,7 @@ TEST_F(PeerConnectionIntegrationTest,
 // Test that we can receive the audio output level from a remote audio track.
 // TODO(deadbeef): Use a fake audio source and verify that the output level is
 // exactly what the source on the other side was configured with.
-TEST_F(PeerConnectionIntegrationTest, GetAudioOutputLevelStats) {
+TEST_F(PeerConnectionIntegrationTest, GetAudioOutputLevelStatsWithOldStatsApi) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   // Just add an audio track.
@@ -1798,14 +1811,14 @@ TEST_F(PeerConnectionIntegrationTest, GetAudioOutputLevelStats) {
 
   // Get the audio output level stats. Note that the level is not available
   // until an RTCP packet has been received.
-  EXPECT_TRUE_WAIT(callee()->GetStats()->AudioOutputLevel() > 0,
+  EXPECT_TRUE_WAIT(callee()->OldGetStats()->AudioOutputLevel() > 0,
                    kMaxWaitForFramesMs);
 }
 
 // Test that an audio input level is reported.
 // TODO(deadbeef): Use a fake audio source and verify that the input level is
 // exactly what the source was configured with.
-TEST_F(PeerConnectionIntegrationTest, GetAudioInputLevelStats) {
+TEST_F(PeerConnectionIntegrationTest, GetAudioInputLevelStatsWithOldStatsApi) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   // Just add an audio track.
@@ -1816,12 +1829,12 @@ TEST_F(PeerConnectionIntegrationTest, GetAudioInputLevelStats) {
 
   // Get the audio input level stats. The level should be available very
   // soon after the test starts.
-  EXPECT_TRUE_WAIT(caller()->GetStats()->AudioInputLevel() > 0,
+  EXPECT_TRUE_WAIT(caller()->OldGetStats()->AudioInputLevel() > 0,
                    kMaxWaitForStatsMs);
 }
 
 // Test that we can get incoming byte counts from both audio and video tracks.
-TEST_F(PeerConnectionIntegrationTest, GetBytesReceivedStats) {
+TEST_F(PeerConnectionIntegrationTest, GetBytesReceivedStatsWithOldStatsApi) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddAudioVideoMediaStream();
@@ -1847,12 +1860,14 @@ TEST_F(PeerConnectionIntegrationTest, GetBytesReceivedStats) {
 
   // We received frames, so we definitely should have nonzero "received bytes"
   // stats at this point.
-  EXPECT_GT(callee()->GetStatsForTrack(remote_audio_track)->BytesReceived(), 0);
-  EXPECT_GT(callee()->GetStatsForTrack(remote_video_track)->BytesReceived(), 0);
+  EXPECT_GT(callee()->OldGetStatsForTrack(remote_audio_track)->BytesReceived(),
+            0);
+  EXPECT_GT(callee()->OldGetStatsForTrack(remote_video_track)->BytesReceived(),
+            0);
 }
 
 // Test that we can get outgoing byte counts from both audio and video tracks.
-TEST_F(PeerConnectionIntegrationTest, GetBytesSentStats) {
+TEST_F(PeerConnectionIntegrationTest, GetBytesSentStatsWithOldStatsApi) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   auto audio_track = caller()->CreateLocalAudioTrack();
@@ -1869,8 +1884,38 @@ TEST_F(PeerConnectionIntegrationTest, GetBytesSentStats) {
 
   // The callee received frames, so we definitely should have nonzero "sent
   // bytes" stats at this point.
-  EXPECT_GT(caller()->GetStatsForTrack(audio_track)->BytesSent(), 0);
-  EXPECT_GT(caller()->GetStatsForTrack(video_track)->BytesSent(), 0);
+  EXPECT_GT(caller()->OldGetStatsForTrack(audio_track)->BytesSent(), 0);
+  EXPECT_GT(caller()->OldGetStatsForTrack(video_track)->BytesSent(), 0);
+}
+
+// Test that we can get stats (using the new stats implemnetation) for
+// unsignaled streams. Meaning when SSRCs/MSIDs aren't signaled explicitly in
+// SDP.
+TEST_F(PeerConnectionIntegrationTest,
+       GetStatsForUnsignaledStreamWithNewStatsApi) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioOnlyMediaStream();
+  // Remove SSRCs and MSIDs from the received offer SDP.
+  callee()->SetReceivedSdpMunger(RemoveSsrcsAndMsids);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  // Wait for one audio frame to be received by the callee.
+  ExpectNewFramesReceivedWithWait(0, 0, 1, 0, kMaxWaitForFramesMs);
+
+  // We received a frame, so we should have nonzero "bytes received" stats for
+  // the unsignaled stream, if stats are working for it.
+  rtc::scoped_refptr<const webrtc::RTCStatsReport> report =
+      callee()->NewGetStats();
+  ASSERT_NE(nullptr, report);
+  auto inbound_stream_stats =
+      report->GetStatsOfType<webrtc::RTCInboundRTPStreamStats>();
+  ASSERT_EQ(1U, inbound_stream_stats.size());
+  ASSERT_TRUE(inbound_stream_stats[0]->bytes_received.is_defined());
+  ASSERT_GT(*inbound_stream_stats[0]->bytes_received, 0U);
+  // TODO(deadbeef): Test that track_id is defined. This is not currently
+  // working since SSRCs are used to match RtpReceivers (and their tracks) with
+  // received stream stats in TrackMediaInfoMap.
 }
 
 // Test that DTLS 1.0 is used if both sides only support DTLS 1.0.
@@ -1908,10 +1953,10 @@ TEST_F(PeerConnectionIntegrationTest, Dtls10CipherStatsAndUmaMetrics) {
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   EXPECT_TRUE_WAIT(rtc::SSLStreamAdapter::IsAcceptableCipher(
-                       caller()->GetStats()->DtlsCipher(), rtc::KT_DEFAULT),
+                       caller()->OldGetStats()->DtlsCipher(), rtc::KT_DEFAULT),
                    kDefaultTimeout);
   EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(kDefaultSrtpCryptoSuite),
-                 caller()->GetStats()->SrtpCipher(), kDefaultTimeout);
+                 caller()->OldGetStats()->SrtpCipher(), kDefaultTimeout);
   EXPECT_EQ(1,
             caller_observer->GetEnumCounter(webrtc::kEnumCounterAudioSrtpCipher,
                                             kDefaultSrtpCryptoSuite));
@@ -1933,10 +1978,10 @@ TEST_F(PeerConnectionIntegrationTest, Dtls12CipherStatsAndUmaMetrics) {
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   EXPECT_TRUE_WAIT(rtc::SSLStreamAdapter::IsAcceptableCipher(
-                       caller()->GetStats()->DtlsCipher(), rtc::KT_DEFAULT),
+                       caller()->OldGetStats()->DtlsCipher(), rtc::KT_DEFAULT),
                    kDefaultTimeout);
   EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(kDefaultSrtpCryptoSuite),
-                 caller()->GetStats()->SrtpCipher(), kDefaultTimeout);
+                 caller()->OldGetStats()->SrtpCipher(), kDefaultTimeout);
   EXPECT_EQ(1,
             caller_observer->GetEnumCounter(webrtc::kEnumCounterAudioSrtpCipher,
                                             kDefaultSrtpCryptoSuite));
@@ -2765,7 +2810,7 @@ TEST_F(PeerConnectionIntegrationTest, GetSources) {
   caller()->AddAudioOnlyMediaStream();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  // Wait for one audio frame received by callee.
+  // Wait for one audio frame to be received by the callee.
   ExpectNewFramesReceivedWithWait(0, 0, 1, 0, kMaxWaitForFramesMs);
   ASSERT_GT(callee()->pc()->GetReceivers().size(), 0u);
   auto receiver = callee()->pc()->GetReceivers()[0];

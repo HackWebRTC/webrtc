@@ -225,6 +225,25 @@ class MockStatsObserver : public webrtc::StatsObserver {
   } stats_;
 };
 
+// Helper class that just stores the report from the callback.
+class MockRTCStatsCollectorCallback : public webrtc::RTCStatsCollectorCallback {
+ public:
+  rtc::scoped_refptr<const RTCStatsReport> report() { return report_; }
+
+  bool called() const { return called_; }
+
+ protected:
+  void OnStatsDelivered(
+      const rtc::scoped_refptr<const RTCStatsReport>& report) override {
+    report_ = report;
+    called_ = true;
+  }
+
+ private:
+  bool called_ = false;
+  rtc::scoped_refptr<const RTCStatsReport> report_;
+};
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_PC_TEST_MOCKPEERCONNECTIONOBSERVERS_H_
