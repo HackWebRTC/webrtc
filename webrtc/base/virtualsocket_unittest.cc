@@ -27,6 +27,13 @@
 
 using namespace rtc;
 
+using webrtc::testing::SSE_CLOSE;
+using webrtc::testing::SSE_ERROR;
+using webrtc::testing::SSE_OPEN;
+using webrtc::testing::SSE_READ;
+using webrtc::testing::SSE_WRITE;
+using webrtc::testing::StreamSink;
+
 // Sends at a constant rate but with random packet sizes.
 struct Sender : public MessageHandler {
   Sender(Thread* th, AsyncSocket* s, uint32_t rt)
@@ -239,7 +246,7 @@ class VirtualSocketServerTest : public testing::Test {
 
   // initial_addr should be made from either INADDR_ANY or in6addr_any.
   void ConnectTest(const SocketAddress& initial_addr) {
-    testing::StreamSink sink;
+    StreamSink sink;
     SocketAddress accept_addr;
     const SocketAddress kEmptyAddr =
         EmptySocketAddressWithFamily(initial_addr.family());
@@ -262,7 +269,7 @@ class VirtualSocketServerTest : public testing::Test {
     EXPECT_EQ(server->GetState(), AsyncSocket::CS_CONNECTING);
 
     // No pending server connections
-    EXPECT_FALSE(sink.Check(server, testing::SSE_READ));
+    EXPECT_FALSE(sink.Check(server, SSE_READ));
     EXPECT_TRUE(nullptr == server->Accept(&accept_addr));
     EXPECT_EQ(AF_UNSPEC, accept_addr.family());
 
@@ -274,18 +281,18 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Client is connecting
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CONNECTING);
-    EXPECT_FALSE(sink.Check(client, testing::SSE_OPEN));
-    EXPECT_FALSE(sink.Check(client, testing::SSE_CLOSE));
+    EXPECT_FALSE(sink.Check(client, SSE_OPEN));
+    EXPECT_FALSE(sink.Check(client, SSE_CLOSE));
 
     ss_->ProcessMessagesUntilIdle();
 
     // Client still connecting
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CONNECTING);
-    EXPECT_FALSE(sink.Check(client, testing::SSE_OPEN));
-    EXPECT_FALSE(sink.Check(client, testing::SSE_CLOSE));
+    EXPECT_FALSE(sink.Check(client, SSE_OPEN));
+    EXPECT_FALSE(sink.Check(client, SSE_CLOSE));
 
     // Server has pending connection
-    EXPECT_TRUE(sink.Check(server, testing::SSE_READ));
+    EXPECT_TRUE(sink.Check(server, SSE_READ));
     Socket* accepted = server->Accept(&accept_addr);
     EXPECT_TRUE(nullptr != accepted);
     EXPECT_NE(accept_addr, kEmptyAddr);
@@ -299,14 +306,14 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Client has connected
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CONNECTED);
-    EXPECT_TRUE(sink.Check(client, testing::SSE_OPEN));
-    EXPECT_FALSE(sink.Check(client, testing::SSE_CLOSE));
+    EXPECT_TRUE(sink.Check(client, SSE_OPEN));
+    EXPECT_FALSE(sink.Check(client, SSE_CLOSE));
     EXPECT_EQ(client->GetRemoteAddress(), server->GetLocalAddress());
     EXPECT_EQ(client->GetRemoteAddress(), accepted->GetLocalAddress());
   }
 
   void ConnectToNonListenerTest(const SocketAddress& initial_addr) {
-    testing::StreamSink sink;
+    StreamSink sink;
     SocketAddress accept_addr;
     const SocketAddress nil_addr;
     const SocketAddress empty_addr =
@@ -329,19 +336,19 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->ProcessMessagesUntilIdle();
 
     // No pending server connections
-    EXPECT_FALSE(sink.Check(server, testing::SSE_READ));
+    EXPECT_FALSE(sink.Check(server, SSE_READ));
     EXPECT_TRUE(nullptr == server->Accept(&accept_addr));
     EXPECT_EQ(accept_addr, nil_addr);
 
     // Connection failed
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CLOSED);
-    EXPECT_FALSE(sink.Check(client, testing::SSE_OPEN));
-    EXPECT_TRUE(sink.Check(client, testing::SSE_ERROR));
+    EXPECT_FALSE(sink.Check(client, SSE_OPEN));
+    EXPECT_TRUE(sink.Check(client, SSE_ERROR));
     EXPECT_EQ(client->GetRemoteAddress(), nil_addr);
   }
 
   void CloseDuringConnectTest(const SocketAddress& initial_addr) {
-    testing::StreamSink sink;
+    StreamSink sink;
     SocketAddress accept_addr;
     const SocketAddress empty_addr =
         EmptySocketAddressWithFamily(initial_addr.family());
@@ -362,14 +369,14 @@ class VirtualSocketServerTest : public testing::Test {
     EXPECT_EQ(0, client->Connect(server->GetLocalAddress()));
 
     // Server close before socket enters accept queue
-    EXPECT_FALSE(sink.Check(server.get(), testing::SSE_READ));
+    EXPECT_FALSE(sink.Check(server.get(), SSE_READ));
     server->Close();
 
     ss_->ProcessMessagesUntilIdle();
 
     // Result: connection failed
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CLOSED);
-    EXPECT_TRUE(sink.Check(client.get(), testing::SSE_ERROR));
+    EXPECT_TRUE(sink.Check(client.get(), SSE_ERROR));
 
     server.reset(ss_->CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     sink.Monitor(server.get());
@@ -384,14 +391,14 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->ProcessMessagesUntilIdle();
 
     // Server close while socket is in accept queue
-    EXPECT_TRUE(sink.Check(server.get(), testing::SSE_READ));
+    EXPECT_TRUE(sink.Check(server.get(), SSE_READ));
     server->Close();
 
     ss_->ProcessMessagesUntilIdle();
 
     // Result: connection failed
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CLOSED);
-    EXPECT_TRUE(sink.Check(client.get(), testing::SSE_ERROR));
+    EXPECT_TRUE(sink.Check(client.get(), SSE_ERROR));
 
     // New server
     server.reset(ss_->CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
@@ -407,7 +414,7 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->ProcessMessagesUntilIdle();
 
     // Server accepts connection
-    EXPECT_TRUE(sink.Check(server.get(), testing::SSE_READ));
+    EXPECT_TRUE(sink.Check(server.get(), SSE_READ));
     std::unique_ptr<AsyncSocket> accepted(server->Accept(&accept_addr));
     ASSERT_TRUE(nullptr != accepted.get());
     sink.Monitor(accepted.get());
@@ -423,12 +430,12 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Result: accepted socket closes
     EXPECT_EQ(accepted->GetState(), AsyncSocket::CS_CLOSED);
-    EXPECT_TRUE(sink.Check(accepted.get(), testing::SSE_CLOSE));
-    EXPECT_FALSE(sink.Check(client.get(), testing::SSE_CLOSE));
+    EXPECT_TRUE(sink.Check(accepted.get(), SSE_CLOSE));
+    EXPECT_FALSE(sink.Check(client.get(), SSE_CLOSE));
   }
 
   void CloseTest(const SocketAddress& initial_addr) {
-    testing::StreamSink sink;
+    StreamSink sink;
     const SocketAddress kEmptyAddr;
 
     // Create clients
@@ -448,11 +455,11 @@ class VirtualSocketServerTest : public testing::Test {
 
     ss_->ProcessMessagesUntilIdle();
 
-    EXPECT_TRUE(sink.Check(a, testing::SSE_OPEN));
+    EXPECT_TRUE(sink.Check(a, SSE_OPEN));
     EXPECT_EQ(a->GetState(), AsyncSocket::CS_CONNECTED);
     EXPECT_EQ(a->GetRemoteAddress(), b->GetLocalAddress());
 
-    EXPECT_TRUE(sink.Check(b.get(), testing::SSE_OPEN));
+    EXPECT_TRUE(sink.Check(b.get(), SSE_OPEN));
     EXPECT_EQ(b->GetState(), AsyncSocket::CS_CONNECTED);
     EXPECT_EQ(b->GetRemoteAddress(), a->GetLocalAddress());
 
@@ -463,21 +470,21 @@ class VirtualSocketServerTest : public testing::Test {
     ss_->ProcessMessagesUntilIdle();
 
     char buffer[10];
-    EXPECT_FALSE(sink.Check(b.get(), testing::SSE_READ));
+    EXPECT_FALSE(sink.Check(b.get(), SSE_READ));
     EXPECT_EQ(-1, b->Recv(buffer, 10, nullptr));
 
-    EXPECT_TRUE(sink.Check(a, testing::SSE_CLOSE));
+    EXPECT_TRUE(sink.Check(a, SSE_CLOSE));
     EXPECT_EQ(a->GetState(), AsyncSocket::CS_CLOSED);
     EXPECT_EQ(a->GetRemoteAddress(), kEmptyAddr);
 
     // No signal for Closer
-    EXPECT_FALSE(sink.Check(b.get(), testing::SSE_CLOSE));
+    EXPECT_FALSE(sink.Check(b.get(), SSE_CLOSE));
     EXPECT_EQ(b->GetState(), AsyncSocket::CS_CLOSED);
     EXPECT_EQ(b->GetRemoteAddress(), kEmptyAddr);
   }
 
   void TcpSendTest(const SocketAddress& initial_addr) {
-    testing::StreamSink sink;
+    StreamSink sink;
     const SocketAddress kEmptyAddr;
 
     // Connect two sockets
@@ -513,8 +520,8 @@ class VirtualSocketServerTest : public testing::Test {
     send_pos += result;
 
     ss_->ProcessMessagesUntilIdle();
-    EXPECT_FALSE(sink.Check(a, testing::SSE_WRITE));
-    EXPECT_TRUE(sink.Check(b, testing::SSE_READ));
+    EXPECT_FALSE(sink.Check(a, SSE_WRITE));
+    EXPECT_TRUE(sink.Check(b, SSE_READ));
 
     // Receive buffer is already filled, fill send buffer again
     result = a->Send(send_buffer + send_pos, kDataSize - send_pos);
@@ -522,8 +529,8 @@ class VirtualSocketServerTest : public testing::Test {
     send_pos += result;
 
     ss_->ProcessMessagesUntilIdle();
-    EXPECT_FALSE(sink.Check(a, testing::SSE_WRITE));
-    EXPECT_FALSE(sink.Check(b, testing::SSE_READ));
+    EXPECT_FALSE(sink.Check(a, SSE_WRITE));
+    EXPECT_FALSE(sink.Check(b, SSE_READ));
 
     // No more room in send or receive buffer
     result = a->Send(send_buffer + send_pos, kDataSize - send_pos);
@@ -536,8 +543,8 @@ class VirtualSocketServerTest : public testing::Test {
     recv_pos += result;
 
     ss_->ProcessMessagesUntilIdle();
-    EXPECT_TRUE(sink.Check(a, testing::SSE_WRITE));
-    EXPECT_TRUE(sink.Check(b, testing::SSE_READ));
+    EXPECT_TRUE(sink.Check(a, SSE_WRITE));
+    EXPECT_TRUE(sink.Check(b, SSE_READ));
 
     // Room for more on the sending side
     result = a->Send(send_buffer + send_pos, kDataSize - send_pos);
@@ -556,7 +563,7 @@ class VirtualSocketServerTest : public testing::Test {
     }
 
     ss_->ProcessMessagesUntilIdle();
-    EXPECT_TRUE(sink.Check(b, testing::SSE_READ));
+    EXPECT_TRUE(sink.Check(b, SSE_READ));
 
     // Continue to empty the recv buffer
     while (true) {
@@ -575,7 +582,7 @@ class VirtualSocketServerTest : public testing::Test {
     send_pos += result;
 
     ss_->ProcessMessagesUntilIdle();
-    EXPECT_TRUE(sink.Check(b, testing::SSE_READ));
+    EXPECT_TRUE(sink.Check(b, SSE_READ));
 
     // Receive the last of the data
     while (true) {
@@ -589,7 +596,7 @@ class VirtualSocketServerTest : public testing::Test {
     }
 
     ss_->ProcessMessagesUntilIdle();
-    EXPECT_FALSE(sink.Check(b, testing::SSE_READ));
+    EXPECT_FALSE(sink.Check(b, SSE_READ));
 
     // The received data matches the sent data
     EXPECT_EQ(kDataSize, send_pos);
@@ -741,7 +748,7 @@ class VirtualSocketServerTest : public testing::Test {
   void CrossFamilyConnectionTest(const SocketAddress& client_addr,
                                  const SocketAddress& server_addr,
                                  bool shouldSucceed) {
-    testing::StreamSink sink;
+    StreamSink sink;
     SocketAddress accept_address;
     const SocketAddress kEmptyAddr;
 
@@ -764,23 +771,23 @@ class VirtualSocketServerTest : public testing::Test {
     if (shouldSucceed) {
       EXPECT_EQ(0, client->Connect(server->GetLocalAddress()));
       ss_->ProcessMessagesUntilIdle();
-      EXPECT_TRUE(sink.Check(server, testing::SSE_READ));
+      EXPECT_TRUE(sink.Check(server, SSE_READ));
       Socket* accepted = server->Accept(&accept_address);
       EXPECT_TRUE(nullptr != accepted);
       EXPECT_NE(kEmptyAddr, accept_address);
       ss_->ProcessMessagesUntilIdle();
-      EXPECT_TRUE(sink.Check(client, testing::SSE_OPEN));
+      EXPECT_TRUE(sink.Check(client, SSE_OPEN));
       EXPECT_EQ(client->GetRemoteAddress(), server->GetLocalAddress());
     } else {
       // Check that the connection failed.
       EXPECT_EQ(-1, client->Connect(server->GetLocalAddress()));
       ss_->ProcessMessagesUntilIdle();
 
-      EXPECT_FALSE(sink.Check(server, testing::SSE_READ));
+      EXPECT_FALSE(sink.Check(server, SSE_READ));
       EXPECT_TRUE(nullptr == server->Accept(&accept_address));
       EXPECT_EQ(accept_address, kEmptyAddr);
       EXPECT_EQ(client->GetState(), AsyncSocket::CS_CLOSED);
-      EXPECT_FALSE(sink.Check(client, testing::SSE_OPEN));
+      EXPECT_FALSE(sink.Check(client, SSE_OPEN));
       EXPECT_EQ(client->GetRemoteAddress(), kEmptyAddr);
     }
   }
@@ -1040,7 +1047,7 @@ TEST_F(VirtualSocketServerTest, SetSendingBlockedWithTcpSocket) {
   ss_->set_send_buffer_capacity(kBufferSize);
   ss_->set_recv_buffer_capacity(kBufferSize);
 
-  testing::StreamSink sink;
+  StreamSink sink;
   AsyncSocket* socket1 =
       ss_->CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_STREAM);
   AsyncSocket* socket2 =
@@ -1061,22 +1068,22 @@ TEST_F(VirtualSocketServerTest, SetSendingBlockedWithTcpSocket) {
   ss_->SetSendingBlocked(true);
   EXPECT_EQ(static_cast<int>(kBufferSize), socket1->Send(data, kBufferSize));
   ss_->ProcessMessagesUntilIdle();
-  EXPECT_FALSE(sink.Check(socket1, testing::SSE_WRITE));
-  EXPECT_FALSE(sink.Check(socket2, testing::SSE_READ));
+  EXPECT_FALSE(sink.Check(socket1, SSE_WRITE));
+  EXPECT_FALSE(sink.Check(socket2, SSE_READ));
   EXPECT_FALSE(socket1->IsBlocking());
 
   // Since the send buffer is full, next Send will result in EWOULDBLOCK.
   EXPECT_EQ(-1, socket1->Send(data, kBufferSize));
-  EXPECT_FALSE(sink.Check(socket1, testing::SSE_WRITE));
-  EXPECT_FALSE(sink.Check(socket2, testing::SSE_READ));
+  EXPECT_FALSE(sink.Check(socket1, SSE_WRITE));
+  EXPECT_FALSE(sink.Check(socket2, SSE_READ));
   EXPECT_TRUE(socket1->IsBlocking());
 
   // When sending is unblocked, the buffered data should be sent and
   // SignalWriteEvent should fire.
   ss_->SetSendingBlocked(false);
   ss_->ProcessMessagesUntilIdle();
-  EXPECT_TRUE(sink.Check(socket1, testing::SSE_WRITE));
-  EXPECT_TRUE(sink.Check(socket2, testing::SSE_READ));
+  EXPECT_TRUE(sink.Check(socket1, SSE_WRITE));
+  EXPECT_TRUE(sink.Check(socket2, SSE_READ));
 }
 
 TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {

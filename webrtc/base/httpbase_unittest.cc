@@ -106,13 +106,13 @@ public:
   HttpResponseData data;
 
   // The source of http data, and source events
-  testing::StreamSource src;
+  webrtc::testing::StreamSource src;
   std::vector<Event> events;
 
   // Document stream, and stream events
   bool obtain_stream;
   StreamInterface* http_stream;
-  testing::StreamSink sink;
+  webrtc::testing::StreamSink sink;
 };
 
 void HttpBaseTest::SetupSource(const char* http_data) {
@@ -508,7 +508,7 @@ TEST_F(HttpBaseTest, SignalsDocumentStreamCloseOnUnexpectedClose) {
   src.SetState(SS_CLOSED);
 
   // Observe error event on document stream
-  EXPECT_EQ(testing::SSE_ERROR, sink.Events(http_stream));
+  EXPECT_EQ(webrtc::testing::SSE_ERROR, sink.Events(http_stream));
 
   // Future reads give an error
   int error = 0;

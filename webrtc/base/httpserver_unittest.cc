@@ -12,7 +12,7 @@
 #include "webrtc/base/httpserver.h"
 #include "webrtc/base/testutils.h"
 
-using namespace testing;
+using namespace webrtc::testing;
 
 namespace rtc {
 
