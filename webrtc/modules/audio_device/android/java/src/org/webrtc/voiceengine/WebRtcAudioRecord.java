@@ -60,9 +60,14 @@ public class WebRtcAudioRecord {
   private byte[] emptyBytes;
 
   // Audio recording error handler functions.
+  public enum AudioRecordStartErrorCode {
+    AUDIO_RECORD_START_EXCEPTION,
+    AUDIO_RECORD_START_STATE_MISMATCH,
+  }
+
   public static interface WebRtcAudioRecordErrorCallback {
     void onWebRtcAudioRecordInitError(String errorMessage);
-    void onWebRtcAudioRecordStartError(String errorMessage);
+    void onWebRtcAudioRecordStartError(AudioRecordStartErrorCode errorCode, String errorMessage);
     void onWebRtcAudioRecordError(String errorMessage);
   }
 
@@ -227,11 +232,14 @@ public class WebRtcAudioRecord {
     try {
       audioRecord.startRecording();
     } catch (IllegalStateException e) {
-      reportWebRtcAudioRecordStartError("AudioRecord.startRecording failed: " + e.getMessage());
+      reportWebRtcAudioRecordStartError(AudioRecordStartErrorCode.AUDIO_RECORD_START_EXCEPTION,
+          "AudioRecord.startRecording failed: " + e.getMessage());
       return false;
     }
     if (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
-      reportWebRtcAudioRecordStartError("AudioRecord.startRecording failed - incorrect state :"
+      reportWebRtcAudioRecordStartError(
+          AudioRecordStartErrorCode.AUDIO_RECORD_START_STATE_MISMATCH,
+          "AudioRecord.startRecording failed - incorrect state :"
           + audioRecord.getRecordingState());
       return false;
     }
@@ -308,10 +316,11 @@ public class WebRtcAudioRecord {
     }
   }
 
-  private void reportWebRtcAudioRecordStartError(String errorMessage) {
-    Logging.e(TAG, "Start recording error: " + errorMessage);
+  private void reportWebRtcAudioRecordStartError(
+      AudioRecordStartErrorCode errorCode, String errorMessage) {
+    Logging.e(TAG, "Start recording error: " + errorCode + ". " + errorMessage);
     if (errorCallback != null) {
-      errorCallback.onWebRtcAudioRecordStartError(errorMessage);
+      errorCallback.onWebRtcAudioRecordStartError(errorCode, errorMessage);
     }
   }
 

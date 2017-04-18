@@ -56,6 +56,7 @@ import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.voiceengine.WebRtcAudioManager;
 import org.webrtc.voiceengine.WebRtcAudioRecord;
+import org.webrtc.voiceengine.WebRtcAudioRecord.AudioRecordStartErrorCode;
 import org.webrtc.voiceengine.WebRtcAudioRecord.WebRtcAudioRecordErrorCallback;
 import org.webrtc.voiceengine.WebRtcAudioUtils;
 
@@ -458,8 +459,9 @@ public class PeerConnectionClient {
       }
 
       @Override
-      public void onWebRtcAudioRecordStartError(String errorMessage) {
-        Log.e(TAG, "onWebRtcAudioRecordStartError: " + errorMessage);
+      public void onWebRtcAudioRecordStartError(
+          AudioRecordStartErrorCode errorCode, String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioRecordStartError: " + errorCode + ". " + errorMessage);
         reportError(errorMessage);
       }
 
