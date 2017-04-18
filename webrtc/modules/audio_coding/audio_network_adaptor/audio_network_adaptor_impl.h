@@ -19,7 +19,6 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/event_log_writer.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
-#include "webrtc/system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -31,7 +30,6 @@ class AudioNetworkAdaptorImpl final : public AudioNetworkAdaptor {
     Config();
     ~Config();
     RtcEventLog* event_log;
-    const Clock* clock;
   };
 
   AudioNetworkAdaptorImpl(

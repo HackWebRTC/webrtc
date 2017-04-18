@@ -63,7 +63,7 @@ FecControllerPlrBasedTestStates CreateFecControllerPlrBased(
                          kEnablingBandwidthHigh, kEnablingPacketLossAtHighBw),
           ThresholdCurve(kDisablingBandwidthLow, kDisablingPacketLossAtLowBw,
                          kDisablingBandwidthHigh, kDisablingPacketLossAtHighBw),
-          0, nullptr),
+          0),
       std::move(mock_smoothing_filter)));
   return states;
 }
@@ -319,7 +319,7 @@ TEST(FecControllerPlrBasedTest, CheckBehaviorOnSpecialCurves) {
                          kEnablingBandwidthHigh, kEnablingPacketLossAtHighBw),
           ThresholdCurve(kDisablingBandwidthLow, kDisablingPacketLossAtLowBw,
                          kDisablingBandwidthHigh, kDisablingPacketLossAtHighBw),
-          0, nullptr),
+          0),
       std::move(mock_smoothing_filter)));
 
   UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthLow - 1),
@@ -361,7 +361,7 @@ TEST(FecControllerPlrBasedDeathTest, InvalidConfig) {
               ThresholdCurve(
                   kDisablingBandwidthLow, kDisablingPacketLossAtLowBw,
                   kDisablingBandwidthHigh, kDisablingPacketLossAtHighBw),
-              0, nullptr),
+              0),
           std::move(mock_smoothing_filter))),
       "Check failed");
 }

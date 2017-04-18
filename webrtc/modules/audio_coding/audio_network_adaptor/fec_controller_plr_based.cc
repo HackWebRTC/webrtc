@@ -41,13 +41,11 @@ FecControllerPlrBased::Config::Config(
     bool initial_fec_enabled,
     const ThresholdCurve& fec_enabling_threshold,
     const ThresholdCurve& fec_disabling_threshold,
-    int time_constant_ms,
-    const Clock* clock)
+    int time_constant_ms)
     : initial_fec_enabled(initial_fec_enabled),
       fec_enabling_threshold(fec_enabling_threshold),
       fec_disabling_threshold(fec_disabling_threshold),
-      time_constant_ms(time_constant_ms),
-      clock(clock) {}
+      time_constant_ms(time_constant_ms) {}
 
 FecControllerPlrBased::FecControllerPlrBased(
     const Config& config,
@@ -64,8 +62,7 @@ FecControllerPlrBased::FecControllerPlrBased(const Config& config)
           webrtc::field_trial::FindFullName("UseTwccPlrForAna") == "Enabled"
               ? std::unique_ptr<NullSmoothingFilter>(new NullSmoothingFilter())
               : std::unique_ptr<SmoothingFilter>(
-                    new SmoothingFilterImpl(config.time_constant_ms,
-                                            config.clock))) {}
+                    new SmoothingFilterImpl(config.time_constant_ms))) {}
 
 FecControllerPlrBased::~FecControllerPlrBased() = default;
 

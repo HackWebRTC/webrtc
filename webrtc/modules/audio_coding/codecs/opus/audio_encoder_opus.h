@@ -69,7 +69,6 @@ class AudioEncoderOpus final : public AudioEncoder {
     int complexity_threshold_window_bps = 1500;
     bool dtx_enabled = false;
     std::vector<int> supported_frame_lengths_ms;
-    const Clock* clock = Clock::GetRealTimeClock();
     int uplink_bandwidth_update_interval_ms = 200;
 
    private:
@@ -87,8 +86,7 @@ class AudioEncoderOpus final : public AudioEncoder {
 
   using AudioNetworkAdaptorCreator =
       std::function<std::unique_ptr<AudioNetworkAdaptor>(const std::string&,
-                                                         RtcEventLog*,
-                                                         const Clock*)>;
+                                                         RtcEventLog*)>;
   AudioEncoderOpus(
       const Config& config,
       AudioNetworkAdaptorCreator&& audio_network_adaptor_creator = nullptr,
@@ -121,8 +119,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   bool SetApplication(Application application) override;
   void SetMaxPlaybackRate(int frequency_hz) override;
   bool EnableAudioNetworkAdaptor(const std::string& config_string,
-                                 RtcEventLog* event_log,
-                                 const Clock* clock) override;
+                                 RtcEventLog* event_log) override;
   void DisableAudioNetworkAdaptor() override;
   void OnReceivedUplinkPacketLossFraction(
       float uplink_packet_loss_fraction) override;
@@ -169,8 +166,7 @@ class AudioEncoderOpus final : public AudioEncoder {
   void ApplyAudioNetworkAdaptor();
   std::unique_ptr<AudioNetworkAdaptor> DefaultAudioNetworkAdaptorCreator(
       const ProtoString& config_string,
-      RtcEventLog* event_log,
-      const Clock* clock) const;
+      RtcEventLog* event_log) const;
 
   void MaybeUpdateUplinkBandwidth();
 

@@ -36,13 +36,11 @@ class FecControllerPlrBased final : public Controller {
     Config(bool initial_fec_enabled,
            const ThresholdCurve& fec_enabling_threshold,
            const ThresholdCurve& fec_disabling_threshold,
-           int time_constant_ms,
-           const Clock* clock);
+           int time_constant_ms);
     bool initial_fec_enabled;
     ThresholdCurve fec_enabling_threshold;
     ThresholdCurve fec_disabling_threshold;
     int time_constant_ms;
-    const Clock* clock;
   };
 
   // Dependency injection for testing.

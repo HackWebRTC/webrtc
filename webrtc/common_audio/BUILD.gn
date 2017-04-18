@@ -396,6 +396,7 @@ if (rtc_include_tests) {
       ":sinc_resampler",
       "..:webrtc_common",
       "../base:rtc_base_approved",
+      "../base:rtc_base_tests_utils",
       "../system_wrappers",
       "../test:test_main",
       "//testing/gmock",

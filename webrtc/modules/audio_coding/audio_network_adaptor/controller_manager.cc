@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "webrtc/base/ignore_wundef.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/bitrate_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/channel_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/dtx_controller.h"
@@ -21,7 +22,6 @@
 #include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_rplr_based.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/frame_length_controller.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/util/threshold_curve.h"
-#include "webrtc/system_wrappers/include/clock.h"
 
 #ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
 RTC_PUSH_IGNORING_WUNDEF()
@@ -41,8 +41,7 @@ namespace {
 
 std::unique_ptr<FecControllerPlrBased> CreateFecControllerPlrBased(
     const audio_network_adaptor::config::FecController& config,
-    bool initial_fec_enabled,
-    const Clock* clock) {
+    bool initial_fec_enabled) {
   RTC_CHECK(config.has_fec_enabling_threshold());
   RTC_CHECK(config.has_fec_disabling_threshold());
   RTC_CHECK(config.has_time_constant_ms());
@@ -70,7 +69,7 @@ std::unique_ptr<FecControllerPlrBased> CreateFecControllerPlrBased(
                          fec_disabling_threshold.low_bandwidth_packet_loss(),
                          fec_disabling_threshold.high_bandwidth_bps(),
                          fec_disabling_threshold.high_bandwidth_packet_loss()),
-          config.time_constant_ms(), clock)));
+          config.time_constant_ms())));
 }
 
 std::unique_ptr<FecControllerRplrBased> CreateFecControllerRplrBased(
@@ -186,11 +185,9 @@ std::unique_ptr<BitrateController> CreateBitrateController(
 }  // namespace
 
 ControllerManagerImpl::Config::Config(int min_reordering_time_ms,
-                                      float min_reordering_squared_distance,
-                                      const Clock* clock)
+                                      float min_reordering_squared_distance)
     : min_reordering_time_ms(min_reordering_time_ms),
-      min_reordering_squared_distance(min_reordering_squared_distance),
-      clock(clock) {}
+      min_reordering_squared_distance(min_reordering_squared_distance) {}
 
 ControllerManagerImpl::Config::~Config() = default;
 
@@ -203,8 +200,7 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
     int initial_frame_length_ms,
     int initial_bitrate_bps,
     bool initial_fec_enabled,
-    bool initial_dtx_enabled,
-    const Clock* clock) {
+    bool initial_dtx_enabled) {
 #ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
   audio_network_adaptor::config::ControllerManager controller_manager_config;
   controller_manager_config.ParseFromString(config_string);
@@ -218,7 +214,7 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
     switch (controller_config.controller_case()) {
       case audio_network_adaptor::config::Controller::kFecController:
         controller = CreateFecControllerPlrBased(
-            controller_config.fec_controller(), initial_fec_enabled, clock);
+            controller_config.fec_controller(), initial_fec_enabled);
         break;
       case audio_network_adaptor::config::Controller::kFecControllerRplrBased:
         controller = CreateFecControllerRplrBased(
@@ -262,7 +258,7 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
   return std::unique_ptr<ControllerManagerImpl>(new ControllerManagerImpl(
       ControllerManagerImpl::Config(
           controller_manager_config.min_reordering_time_ms(),
-          controller_manager_config.min_reordering_squared_distance(), clock),
+          controller_manager_config.min_reordering_squared_distance()),
       std::move(controllers), chracteristic_points));
 #else
   RTC_NOTREACHED();
@@ -299,7 +295,7 @@ ControllerManagerImpl::~ControllerManagerImpl() = default;
 
 std::vector<Controller*> ControllerManagerImpl::GetSortedControllers(
     const Controller::NetworkMetrics& metrics) {
-  int64_t now_ms = config_.clock->TimeInMilliseconds();
+  int64_t now_ms = rtc::TimeMillis();
 
   if (!metrics.uplink_bandwidth_bps || !metrics.uplink_packet_loss_fraction)
     return sorted_controllers_;

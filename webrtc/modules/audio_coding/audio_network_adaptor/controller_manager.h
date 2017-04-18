@@ -21,8 +21,6 @@
 
 namespace webrtc {
 
-class Clock;
-
 class ControllerManager {
  public:
   virtual ~ControllerManager() = default;
@@ -37,16 +35,13 @@ class ControllerManager {
 class ControllerManagerImpl final : public ControllerManager {
  public:
   struct Config {
-    Config(int min_reordering_time_ms,
-           float min_reordering_squared_distance,
-           const Clock* clock);
+    Config(int min_reordering_time_ms, float min_reordering_squared_distance);
     ~Config();
     // Least time since last reordering for a new reordering to be made.
     int min_reordering_time_ms;
     // Least squared distance from last scoring point for a new reordering to be
     // made.
     float min_reordering_squared_distance;
-    const Clock* clock;
   };
 
   static std::unique_ptr<ControllerManager> Create(
@@ -58,8 +53,7 @@ class ControllerManagerImpl final : public ControllerManager {
       int initial_frame_length_ms,
       int initial_bitrate_bps,
       bool initial_fec_enabled,
-      bool initial_dtx_enabled,
-      const Clock* clock);
+      bool initial_dtx_enabled);
 
   explicit ControllerManagerImpl(const Config& config);
 

@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "webrtc/base/logging.h"
+#include "webrtc/base/timeutils.h"
 
 namespace webrtc {
 
@@ -22,8 +23,7 @@ constexpr float kEventLogMinBitrateChangeFraction = 0.25;
 constexpr float kEventLogMinPacketLossChangeFraction = 0.5;
 }  // namespace
 
-AudioNetworkAdaptorImpl::Config::Config()
-    : event_log(nullptr), clock(nullptr){};
+AudioNetworkAdaptorImpl::Config::Config() : event_log(nullptr){};
 
 AudioNetworkAdaptorImpl::Config::~Config() = default;
 
@@ -119,8 +119,7 @@ AudioEncoderRuntimeConfig AudioNetworkAdaptorImpl::GetEncoderRuntimeConfig() {
     controller->MakeDecision(&config);
 
   if (debug_dump_writer_)
-    debug_dump_writer_->DumpEncoderRuntimeConfig(
-        config, config_.clock->TimeInMilliseconds());
+    debug_dump_writer_->DumpEncoderRuntimeConfig(config, rtc::TimeMillis());
 
   if (event_log_writer_)
     event_log_writer_->MaybeLogEncoderConfig(config);
@@ -138,8 +137,7 @@ void AudioNetworkAdaptorImpl::StopDebugDump() {
 
 void AudioNetworkAdaptorImpl::DumpNetworkMetrics() {
   if (debug_dump_writer_)
-    debug_dump_writer_->DumpNetworkMetrics(last_metrics_,
-                                           config_.clock->TimeInMilliseconds());
+    debug_dump_writer_->DumpNetworkMetrics(last_metrics_, rtc::TimeMillis());
 }
 
 void AudioNetworkAdaptorImpl::UpdateNetworkMetrics(

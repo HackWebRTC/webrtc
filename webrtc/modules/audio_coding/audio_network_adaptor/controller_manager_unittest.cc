@@ -10,11 +10,11 @@
 
 #include <utility>
 
+#include "webrtc/base/fakeclock.h"
 #include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/protobuf_utils.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"
-#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/test/gtest.h"
 
 #ifdef WEBRTC_AUDIO_NETWORK_ADAPTOR_DEBUG_DUMP
@@ -47,12 +47,9 @@ constexpr int kMaxUplinkBandwidthBps = 120000;
 constexpr int kMinBandwithChangeBps =
     (kMaxUplinkBandwidthBps - kMinUplinkBandwidthBps) / kFactor;
 
-constexpr int64_t kClockInitialTime = 123456789;
-
 struct ControllerManagerStates {
   std::unique_ptr<ControllerManager> controller_manager;
   std::vector<MockController*> mock_controllers;
-  std::unique_ptr<SimulatedClock> simulated_clock;
 };
 
 ControllerManagerStates CreateControllerManager() {
@@ -75,11 +72,9 @@ ControllerManagerStates CreateControllerManager() {
       std::make_pair(kChracteristicBandwithBps[1],
                      kChracteristicPacketLossFraction[1]);
 
-  states.simulated_clock.reset(new SimulatedClock(kClockInitialTime));
   states.controller_manager.reset(new ControllerManagerImpl(
       ControllerManagerImpl::Config(kMinReorderingTimeMs,
-                                    kMinReorderingSquareDistance,
-                                    states.simulated_clock.get()),
+                                    kMinReorderingSquareDistance),
       std::move(controllers), chracteristic_points));
   return states;
 }
@@ -147,12 +142,14 @@ TEST(ControllerManagerTest, ControllersWithCharPointDependOnNetworkMetrics) {
 }
 
 TEST(ControllerManagerTest, DoNotReorderBeforeMinReordingTime) {
+  rtc::ScopedFakeClock fake_clock;
   auto states = CreateControllerManager();
   CheckControllersOrder(
       &states, rtc::Optional<int>(kChracteristicBandwithBps[0]),
       rtc::Optional<float>(kChracteristicPacketLossFraction[0]),
       {kNumControllers - 2, kNumControllers - 1, 0, 1});
-  states.simulated_clock->AdvanceTimeMilliseconds(kMinReorderingTimeMs - 1);
+  fake_clock.AdvanceTime(
+      rtc::TimeDelta::FromMilliseconds(kMinReorderingTimeMs - 1));
   // Move uplink bandwidth and packet loss fraction to the other controller's
   // characteristic point, which would cause controller manager to reorder the
   // controllers if time had reached min reordering time.
@@ -163,6 +160,7 @@ TEST(ControllerManagerTest, DoNotReorderBeforeMinReordingTime) {
 }
 
 TEST(ControllerManagerTest, ReorderBeyondMinReordingTimeAndMinDistance) {
+  rtc::ScopedFakeClock fake_clock;
   auto states = CreateControllerManager();
   constexpr int kBandwidthBps =
       (kChracteristicBandwithBps[0] + kChracteristicBandwithBps[1]) / 2;
@@ -174,7 +172,8 @@ TEST(ControllerManagerTest, ReorderBeyondMinReordingTimeAndMinDistance) {
   CheckControllersOrder(&states, rtc::Optional<int>(kBandwidthBps),
                         rtc::Optional<float>(kPacketLossFraction),
                         {kNumControllers - 2, kNumControllers - 1, 0, 1});
-  states.simulated_clock->AdvanceTimeMilliseconds(kMinReorderingTimeMs);
+  fake_clock.AdvanceTime(
+      rtc::TimeDelta::FromMilliseconds(kMinReorderingTimeMs));
   // Then let network metrics move a little towards the other controller.
   CheckControllersOrder(
       &states, rtc::Optional<int>(kBandwidthBps - kMinBandwithChangeBps - 1),
@@ -183,6 +182,7 @@ TEST(ControllerManagerTest, ReorderBeyondMinReordingTimeAndMinDistance) {
 }
 
 TEST(ControllerManagerTest, DoNotReorderIfNetworkMetricsChangeTooSmall) {
+  rtc::ScopedFakeClock fake_clock;
   auto states = CreateControllerManager();
   constexpr int kBandwidthBps =
       (kChracteristicBandwithBps[0] + kChracteristicBandwithBps[1]) / 2;
@@ -194,7 +194,8 @@ TEST(ControllerManagerTest, DoNotReorderIfNetworkMetricsChangeTooSmall) {
   CheckControllersOrder(&states, rtc::Optional<int>(kBandwidthBps),
                         rtc::Optional<float>(kPacketLossFraction),
                         {kNumControllers - 2, kNumControllers - 1, 0, 1});
-  states.simulated_clock->AdvanceTimeMilliseconds(kMinReorderingTimeMs);
+  fake_clock.AdvanceTime(
+      rtc::TimeDelta::FromMilliseconds(kMinReorderingTimeMs));
   // Then let network metrics move a little towards the other controller.
   CheckControllersOrder(
       &states, rtc::Optional<int>(kBandwidthBps - kMinBandwithChangeBps + 1),
@@ -276,14 +277,12 @@ constexpr int kMinBitrateBps = 6000;
 ControllerManagerStates CreateControllerManager(
     const ProtoString& config_string) {
   ControllerManagerStates states;
-  states.simulated_clock.reset(new SimulatedClock(kClockInitialTime));
   constexpr size_t kNumEncoderChannels = 2;
   const std::vector<int> encoder_frame_lengths_ms = {20, 60};
   states.controller_manager = ControllerManagerImpl::Create(
       config_string, kNumEncoderChannels, encoder_frame_lengths_ms,
       kMinBitrateBps, kIntialChannelsToEncode, kInitialFrameLengthMs,
-      kInitialBitrateBps, kInitialFecEnabled, kInitialDtxEnabled,
-      states.simulated_clock.get());
+      kInitialBitrateBps, kInitialFecEnabled, kInitialDtxEnabled);
   return states;
 }
 
@@ -361,6 +360,7 @@ TEST(ControllerManagerTest, CreateFromConfigStringAndCheckDefaultOrder) {
 }
 
 TEST(ControllerManagerTest, CreateFromConfigStringAndCheckReordering) {
+  rtc::ScopedFakeClock fake_clock;
   audio_network_adaptor::config::ControllerManager config;
   config.set_min_reordering_time_ms(kMinReorderingTimeMs);
   config.set_min_reordering_squared_distance(kMinReorderingSquareDistance);
@@ -399,7 +399,8 @@ TEST(ControllerManagerTest, CreateFromConfigStringAndCheckReordering) {
       rtc::Optional<int>(kChracteristicBandwithBps[1]);
   metrics.uplink_packet_loss_fraction =
       rtc::Optional<float>(kChracteristicPacketLossFraction[1]);
-  states.simulated_clock->AdvanceTimeMilliseconds(kMinReorderingTimeMs - 1);
+  fake_clock.AdvanceTime(
+      rtc::TimeDelta::FromMilliseconds(kMinReorderingTimeMs - 1));
   controllers = states.controller_manager->GetSortedControllers(metrics);
   // Should not reorder since min reordering time is not met.
   CheckControllersOrder(controllers,
@@ -408,7 +409,7 @@ TEST(ControllerManagerTest, CreateFromConfigStringAndCheckReordering) {
                             ControllerType::CHANNEL, ControllerType::DTX,
                             ControllerType::BIT_RATE});
 
-  states.simulated_clock->AdvanceTimeMilliseconds(1);
+  fake_clock.AdvanceTime(rtc::TimeDelta::FromMilliseconds(1));
   controllers = states.controller_manager->GetSortedControllers(metrics);
   // Reorder now.
   CheckControllersOrder(controllers,
