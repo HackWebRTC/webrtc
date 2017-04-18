@@ -265,8 +265,16 @@ public class PeerConnection {
     return Collections.unmodifiableList(receivers);
   }
 
+  // Older, non-standard implementation of getStats.
+  @Deprecated
   public boolean getStats(StatsObserver observer, MediaStreamTrack track) {
-    return nativeGetStats(observer, (track == null) ? 0 : track.nativeTrack);
+    return nativeOldGetStats(observer, (track == null) ? 0 : track.nativeTrack);
+  }
+
+  // Gets stats using the new stats collection API, see webrtc/api/stats/. These
+  // will replace old stats collection API when the new API has matured enough.
+  public void getStats(RTCStatsCollectorCallback callback) {
+    nativeNewGetStats(callback);
   }
 
   // Starts recording an RTC event log. Ownership of the file is transfered to
@@ -328,7 +336,9 @@ public class PeerConnection {
 
   private native void nativeRemoveLocalStream(long nativeStream);
 
-  private native boolean nativeGetStats(StatsObserver observer, long nativeTrack);
+  private native boolean nativeOldGetStats(StatsObserver observer, long nativeTrack);
+
+  private native void nativeNewGetStats(RTCStatsCollectorCallback callback);
 
   private native RtpSender nativeCreateSender(String kind, String stream_id);
 

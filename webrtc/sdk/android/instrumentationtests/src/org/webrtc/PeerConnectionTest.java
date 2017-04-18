@@ -53,7 +53,7 @@ public class PeerConnectionTest {
 
   private static class ObserverExpectations
       implements PeerConnection.Observer, VideoRenderer.Callbacks, DataChannel.Observer,
-                 StatsObserver, RtpReceiver.Observer {
+                 StatsObserver, RTCStatsCollectorCallback, RtpReceiver.Observer {
     private final String name;
     private int expectedIceCandidates = 0;
     private int expectedErrors = 0;
@@ -77,7 +77,8 @@ public class PeerConnectionTest {
     private LinkedList<DataChannel.State> expectedStateChanges =
         new LinkedList<DataChannel.State>();
     private LinkedList<String> expectedRemoteDataChannelLabels = new LinkedList<String>();
-    private int expectedStatsCallbacks = 0;
+    private int expectedOldStatsCallbacks = 0;
+    private int expectedNewStatsCallbacks = 0;
     private LinkedList<StatsReport[]> gotStatsReports = new LinkedList<StatsReport[]>();
     private final HashSet<MediaStream> gotRemoteStreams = new HashSet<MediaStream>();
     private int expectedFirstAudioPacket = 0;
@@ -270,12 +271,21 @@ public class PeerConnectionTest {
       expectedStateChanges.add(state);
     }
 
+    // Old getStats callback.
     @Override
     public synchronized void onComplete(StatsReport[] reports) {
-      if (--expectedStatsCallbacks < 0) {
+      if (--expectedOldStatsCallbacks < 0) {
         throw new RuntimeException("Unexpected stats report: " + reports);
       }
       gotStatsReports.add(reports);
+    }
+
+    // New getStats callback.
+    @Override
+    public synchronized void onStatsDelivered(RTCStatsReport report) {
+      if (--expectedNewStatsCallbacks < 0) {
+        throw new RuntimeException("Unexpected stats report: " + report);
+      }
     }
 
     @Override
@@ -295,8 +305,12 @@ public class PeerConnectionTest {
       expectedFirstVideoPacket = 1;
     }
 
-    public synchronized void expectStatsCallback() {
-      ++expectedStatsCallbacks;
+    public synchronized void expectOldStatsCallback() {
+      ++expectedOldStatsCallbacks;
+    }
+
+    public synchronized void expectNewStatsCallback() {
+      ++expectedNewStatsCallbacks;
     }
 
     public synchronized LinkedList<StatsReport[]> takeStatsReports() {
@@ -348,8 +362,11 @@ public class PeerConnectionTest {
         stillWaitingForExpectations.add(
             "expectedRemoteDataChannelLabels: " + expectedRemoteDataChannelLabels.size());
       }
-      if (expectedStatsCallbacks != 0) {
-        stillWaitingForExpectations.add("expectedStatsCallbacks: " + expectedStatsCallbacks);
+      if (expectedOldStatsCallbacks != 0) {
+        stillWaitingForExpectations.add("expectedOldStatsCallbacks: " + expectedOldStatsCallbacks);
+      }
+      if (expectedNewStatsCallbacks != 0) {
+        stillWaitingForExpectations.add("expectedNewStatsCallbacks: " + expectedNewStatsCallbacks);
       }
       if (expectedFirstAudioPacket > 0) {
         stillWaitingForExpectations.add("expectedFirstAudioPacket: " + expectedFirstAudioPacket);
@@ -1035,14 +1052,25 @@ public class PeerConnectionTest {
       expectations.dataChannel.unregisterObserver();
       expectations.dataChannel.dispose();
     }
-    expectations.expectStatsCallback();
+
+    // Call getStats (old implementation) before shutting down PC.
+    expectations.expectOldStatsCallback();
     assertTrue(pc.getStats(expectations, null));
     assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+
+    // Call the new getStats implementation as well.
+    expectations.expectNewStatsCallback();
+    pc.getStats(expectations);
+    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+
     expectations.expectIceConnectionChange(IceConnectionState.CLOSED);
     expectations.expectSignalingChange(SignalingState.CLOSED);
     pc.close();
     assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
-    expectations.expectStatsCallback();
+
+    // Call getStats (old implementation) after calling close(). Should still
+    // work.
+    expectations.expectOldStatsCallback();
     assertTrue(pc.getStats(expectations, null));
     assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
 

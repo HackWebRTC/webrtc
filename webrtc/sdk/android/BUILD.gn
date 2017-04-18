@@ -42,6 +42,8 @@ rtc_static_library("libjingle_peerconnection_jni") {
     "src/jni/native_handle_impl.cc",
     "src/jni/native_handle_impl.h",
     "src/jni/peerconnection_jni.cc",
+    "src/jni/rtcstatscollectorcallbackwrapper.cc",
+    "src/jni/rtcstatscollectorcallbackwrapper.h",
     "src/jni/surfacetexturehelper_jni.cc",
     "src/jni/surfacetexturehelper_jni.h",
   ]
@@ -159,6 +161,9 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/PeerConnection.java",
     "api/org/webrtc/PeerConnectionFactory.java",
     "api/org/webrtc/RendererCommon.java",
+    "api/org/webrtc/RTCStats.java",
+    "api/org/webrtc/RTCStatsCollectorCallback.java",
+    "api/org/webrtc/RTCStatsReport.java",
     "api/org/webrtc/RtpParameters.java",
     "api/org/webrtc/RtpReceiver.java",
     "api/org/webrtc/RtpSender.java",

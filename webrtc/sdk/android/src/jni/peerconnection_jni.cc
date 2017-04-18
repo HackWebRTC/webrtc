@@ -73,6 +73,7 @@
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
+#include "webrtc/sdk/android/src/jni/rtcstatscollectorcallbackwrapper.h"
 #include "webrtc/system_wrappers/include/field_trial_default.h"
 #include "webrtc/system_wrappers/include/logcat_trace_context.h"
 #include "webrtc/system_wrappers/include/trace.h"
@@ -2123,14 +2124,22 @@ JOW(jobject, PeerConnection_nativeGetReceivers)(JNIEnv* jni, jobject j_pc) {
   return j_receivers;
 }
 
-JOW(bool, PeerConnection_nativeGetStats)(
-    JNIEnv* jni, jobject j_pc, jobject j_observer, jlong native_track) {
+JOW(bool, PeerConnection_nativeOldGetStats)
+(JNIEnv* jni, jobject j_pc, jobject j_observer, jlong native_track) {
   rtc::scoped_refptr<StatsObserverWrapper> observer(
       new rtc::RefCountedObject<StatsObserverWrapper>(jni, j_observer));
   return ExtractNativePC(jni, j_pc)->GetStats(
       observer,
       reinterpret_cast<MediaStreamTrackInterface*>(native_track),
       PeerConnectionInterface::kStatsOutputLevelStandard);
+}
+
+JOW(void, PeerConnection_nativeNewGetStats)
+(JNIEnv* jni, jobject j_pc, jobject j_callback) {
+  rtc::scoped_refptr<RTCStatsCollectorCallbackWrapper> callback(
+      new rtc::RefCountedObject<RTCStatsCollectorCallbackWrapper>(jni,
+                                                                  j_callback));
+  ExtractNativePC(jni, j_pc)->GetStats(callback);
 }
 
 JOW(bool, PeerConnection_nativeStartRtcEventLog)(
