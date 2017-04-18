@@ -240,8 +240,6 @@ void SendSideCongestionController::OnTransportFeedback(
   transport_feedback_adapter_.OnTransportFeedback(feedback);
   std::vector<PacketFeedback> feedback_vector =
       transport_feedback_adapter_.GetTransportFeedbackVector();
-  if (feedback_vector.empty())
-    return;
   DelayBasedBwe::Result result;
   {
     rtc::CritScope cs(&bwe_lock_);

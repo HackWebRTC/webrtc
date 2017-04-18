@@ -25,6 +25,20 @@ const PacedPacketInfo kPacingInfo0(0, kNumProbesCluster0, 2000);
 const PacedPacketInfo kPacingInfo1(1, kNumProbesCluster1, 4000);
 }  // namespace
 
+TEST_F(DelayBasedBweTest, NoCrashEmptyFeedback) {
+  std::vector<PacketFeedback> packet_feedback_vector;
+  bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector);
+}
+
+TEST_F(DelayBasedBweTest, NoCrashOnlyLostFeedback) {
+  std::vector<PacketFeedback> packet_feedback_vector;
+  packet_feedback_vector.push_back(
+      PacketFeedback(-1, -1, 0, 1500, PacedPacketInfo()));
+  packet_feedback_vector.push_back(
+      PacketFeedback(-1, -1, 1, 1500, PacedPacketInfo()));
+  bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector);
+}
+
 TEST_F(DelayBasedBweTest, ProbeDetection) {
   int64_t now_ms = clock_.TimeInMilliseconds();
   uint16_t seq_num = 0;

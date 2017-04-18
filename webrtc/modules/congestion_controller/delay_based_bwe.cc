@@ -172,11 +172,17 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
-  RTC_DCHECK(!packet_feedback_vector.empty());
 
   std::vector<PacketFeedback> sorted_packet_feedback_vector;
   SortPacketFeedbackVector(packet_feedback_vector,
                            &sorted_packet_feedback_vector);
+  // TOOD(holmer): An empty feedback vector here likely means that
+  // all acks were too late and that the send time history had
+  // timed out. We should reduce the rate when this occurs.
+  if (sorted_packet_feedback_vector.empty()) {
+    LOG(LS_WARNING) << "Very late feedback received.";
+    return DelayBasedBwe::Result();
+  }
 
   if (!uma_recorded_) {
     RTC_HISTOGRAM_ENUMERATION(kBweTypeHistogram,
