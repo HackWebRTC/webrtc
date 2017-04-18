@@ -2726,7 +2726,8 @@ TEST_F(EndToEndTest, MAYBE_ContentTypeSwitches) {
     }
 
     bool MinNumberOfFramesReceived() const {
-      const int kMinRequiredHistogramSamples = 200;
+      // Have some room for frames with wrong content type during switch.
+      const int kMinRequiredHistogramSamples = 200+50;
       rtc::CritScope lock(&crit_);
       return num_frames_received_ > kMinRequiredHistogramSamples;
     }
