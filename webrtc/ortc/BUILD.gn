@@ -78,8 +78,8 @@ if (rtc_include_tests) {
       "../base:rtc_base_approved",
       "../base:rtc_base_tests_utils",
       "../media:rtc_unittest_main",
+      "../p2p:p2p_test_utils",
       "../p2p:rtc_p2p",
-      "../p2p:rtc_p2p_unittests",
       "../pc:pc_test_utils",
       "../system_wrappers:metrics_default",
     ]

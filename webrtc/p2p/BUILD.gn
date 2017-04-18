@@ -142,18 +142,37 @@ rtc_static_library("rtc_p2p") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("rtc_p2p_unittests") {
+  rtc_source_set("p2p_test_utils") {
     testonly = true
     sources = [
-      "base/asyncstuntcpsocket_unittest.cc",
-      "base/dtlstransportchannel_unittest.cc",
       "base/fakedtlstransport.h",
       "base/fakeicetransport.h",
       "base/fakepackettransport.h",
       "base/fakeportallocator.h",
       "base/faketransportcontroller.h",
-      "base/jseptransport_unittest.cc",
       "base/mockicetransport.h",
+      "base/testrelayserver.h",
+      "base/teststunserver.h",
+      "base/testturnserver.h",
+    ]
+
+    deps = [
+      ":rtc_p2p",
+      "//testing/gmock",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  rtc_source_set("rtc_p2p_unittests") {
+    testonly = true
+    sources = [
+      "base/asyncstuntcpsocket_unittest.cc",
+      "base/dtlstransportchannel_unittest.cc",
+      "base/jseptransport_unittest.cc",
       "base/p2ptransportchannel_unittest.cc",
       "base/packetlossestimator_unittest.cc",
       "base/port_unittest.cc",
@@ -166,9 +185,6 @@ if (rtc_include_tests) {
       "base/stunrequest_unittest.cc",
       "base/stunserver_unittest.cc",
       "base/tcpport_unittest.cc",
-      "base/testrelayserver.h",
-      "base/teststunserver.h",
-      "base/testturnserver.h",
       "base/transportcontroller_unittest.cc",
       "base/transportdescriptionfactory_unittest.cc",
       "base/turnport_unittest.cc",
@@ -186,6 +202,7 @@ if (rtc_include_tests) {
       ]
     }
     deps = [
+      ":p2p_test_utils",
       ":rtc_p2p",
       "../api:fakemetricsobserver",
       "//testing/gmock",
