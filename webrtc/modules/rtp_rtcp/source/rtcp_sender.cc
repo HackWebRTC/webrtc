@@ -244,6 +244,10 @@ bool RTCPSender::REMB() const {
 void RTCPSender::SetREMBStatus(bool enable) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
   remb_enabled_ = enable;
+  if (!enable) {
+    // Stop sending remb each report until it is reenabled and remb data set.
+    ConsumeFlag(kRtcpRemb, true);
+  }
 }
 
 void RTCPSender::SetREMBData(uint32_t bitrate,

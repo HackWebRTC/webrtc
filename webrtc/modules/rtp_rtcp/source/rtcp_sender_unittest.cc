@@ -498,11 +498,33 @@ TEST_F(RtcpSenderTest, SendNack) {
 }
 
 TEST_F(RtcpSenderTest, RembStatus) {
+  const uint64_t kBitrate = 261011;
+  const std::vector<uint32_t> kSsrcs = {kRemoteSsrc, kRemoteSsrc + 1};
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
+
   EXPECT_FALSE(rtcp_sender_->REMB());
+  rtcp_sender_->SendRTCP(feedback_state(), kRtcpRr);
+  ASSERT_EQ(1, parser()->receiver_report()->num_packets());
+  EXPECT_EQ(0, parser()->remb()->num_packets());
+
   rtcp_sender_->SetREMBStatus(true);
   EXPECT_TRUE(rtcp_sender_->REMB());
+  rtcp_sender_->SetREMBData(kBitrate, kSsrcs);
+  rtcp_sender_->SendRTCP(feedback_state(), kRtcpRr);
+  ASSERT_EQ(2, parser()->receiver_report()->num_packets());
+  EXPECT_EQ(1, parser()->remb()->num_packets());
+
+  // Sending another report sends remb again, even if no new remb data was set.
+  rtcp_sender_->SendRTCP(feedback_state(), kRtcpRr);
+  ASSERT_EQ(3, parser()->receiver_report()->num_packets());
+  EXPECT_EQ(2, parser()->remb()->num_packets());
+
+  // Turn off remb. rtcp_sender no longer should send it.
   rtcp_sender_->SetREMBStatus(false);
   EXPECT_FALSE(rtcp_sender_->REMB());
+  rtcp_sender_->SendRTCP(feedback_state(), kRtcpRr);
+  ASSERT_EQ(4, parser()->receiver_report()->num_packets());
+  EXPECT_EQ(2, parser()->remb()->num_packets());
 }
 
 TEST_F(RtcpSenderTest, SendRemb) {
