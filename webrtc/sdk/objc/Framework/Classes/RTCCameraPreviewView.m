@@ -11,6 +11,7 @@
 #import "WebRTC/RTCCameraPreviewView.h"
 
 #import <AVFoundation/AVFoundation.h>
+#import <UIKit/UIKit.h>
 
 #import "RTCDispatcher+Private.h"
 
@@ -32,6 +33,37 @@
                                block:^{
     previewLayer.session = captureSession;
   }];
+}
+
+- (void)layoutSubviews {
+  [super layoutSubviews];
+
+  // Update the video orientation based on the device orientation.
+  [self setCorrectVideoOrientation];
+}
+
+- (void)setCorrectVideoOrientation {
+  // Get current device orientation.
+  UIDeviceOrientation deviceOrientation = [UIDevice currentDevice].orientation;
+  AVCaptureVideoPreviewLayer *previewLayer = [self previewLayer];
+
+  // First check if we are allowed to set the video orientation.
+  if (previewLayer.connection.isVideoOrientationSupported) {
+    // Set the video orientation based on device orientation.
+    if (deviceOrientation == UIInterfaceOrientationPortraitUpsideDown) {
+      previewLayer.connection.videoOrientation =
+          AVCaptureVideoOrientationPortraitUpsideDown;
+    } else if (deviceOrientation == UIInterfaceOrientationLandscapeRight) {
+      previewLayer.connection.videoOrientation =
+          AVCaptureVideoOrientationLandscapeRight;
+    } else if (deviceOrientation == UIInterfaceOrientationLandscapeLeft) {
+      previewLayer.connection.videoOrientation =
+          AVCaptureVideoOrientationLandscapeLeft;
+    } else {
+      previewLayer.connection.videoOrientation =
+          AVCaptureVideoOrientationPortrait;
+    }
+  }
 }
 
 #pragma mark - Private
