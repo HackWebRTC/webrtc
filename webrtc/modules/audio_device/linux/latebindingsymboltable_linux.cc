@@ -16,10 +16,8 @@
 #include <dlfcn.h>
 #endif
 
-// TODO(grunell): Either put inside webrtc namespace or use webrtc:: instead.
-using namespace webrtc;
-
-namespace webrtc_adm_linux {
+namespace webrtc {
+namespace adm_linux {
 
 inline static const char *GetDllError() {
 #ifdef WEBRTC_LINUX
@@ -107,4 +105,5 @@ bool InternalLoadSymbols(DllHandle handle,
   return true;
 }
 
-}  // namespace webrtc_adm_linux
+}  // namespace adm_linux
+}  // namespace webrtc
