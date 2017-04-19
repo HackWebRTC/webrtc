@@ -83,7 +83,7 @@ void RemoteEstimatorProxy::Process() {
     rtcp::TransportFeedback feedback_packet;
     if (BuildFeedbackPacket(&feedback_packet)) {
       RTC_DCHECK(packet_router_ != nullptr);
-      packet_router_->SendFeedback(&feedback_packet);
+      packet_router_->SendTransportFeedback(&feedback_packet);
     } else {
       more_to_build = false;
     }

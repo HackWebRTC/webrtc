@@ -38,7 +38,6 @@
 #include "webrtc/system_wrappers/include/metrics.h"
 #include "webrtc/system_wrappers/include/timestamp_extrapolator.h"
 #include "webrtc/video/receive_statistics_proxy.h"
-#include "webrtc/video/vie_remb.h"
 
 namespace webrtc {
 
@@ -83,7 +82,6 @@ RtpStreamReceiver::RtpStreamReceiver(
     Transport* transport,
     RtcpRttStats* rtt_stats,
     PacketRouter* packet_router,
-    VieRemb* remb,
     const VideoReceiveStream::Config* config,
     ReceiveStatisticsProxy* receive_stats_proxy,
     ProcessThread* process_thread,
@@ -94,7 +92,6 @@ RtpStreamReceiver::RtpStreamReceiver(
     : clock_(Clock::GetRealTimeClock()),
       config_(*config),
       packet_router_(packet_router),
-      remb_(remb),
       process_thread_(process_thread),
       ntp_estimator_(clock_),
       rtp_header_parser_(RtpHeaderParser::Create()),
@@ -130,10 +127,6 @@ RtpStreamReceiver::RtpStreamReceiver(
   rtp_rtcp_->SetRTCPStatus(config_.rtp.rtcp_mode);
   rtp_rtcp_->SetSSRC(config_.rtp.local_ssrc);
   rtp_rtcp_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
-  if (config_.rtp.remb) {
-    rtp_rtcp_->SetREMBStatus(true);
-    remb_->AddReceiveChannel(rtp_rtcp_.get());
-  }
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
     EnableReceiveRtpHeaderExtension(config_.rtp.extensions[i].uri,
@@ -203,10 +196,6 @@ RtpStreamReceiver::~RtpStreamReceiver() {
   process_thread_->DeRegisterModule(rtp_rtcp_.get());
 
   packet_router_->RemoveReceiveRtpModule(rtp_rtcp_.get());
-  rtp_rtcp_->SetREMBStatus(false);
-  if (config_.rtp.remb) {
-    remb_->RemoveReceiveChannel(rtp_rtcp_.get());
-  }
   UpdateHistograms();
 }
 

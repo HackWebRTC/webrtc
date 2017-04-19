@@ -37,7 +37,6 @@ class ProcessThread;
 class RtpRtcp;
 class RtpTransportControllerSendInterface;
 class RtcEventLog;
-class VieRemb;
 
 namespace internal {
 
@@ -55,7 +54,6 @@ class VideoSendStream : public webrtc::VideoSendStream {
                   RtpTransportControllerSendInterface* transport,
                   BitrateAllocator* bitrate_allocator,
                   SendDelayStats* send_delay_stats,
-                  VieRemb* remb,
                   RtcEventLog* event_log,
                   VideoSendStream::Config config,
                   VideoEncoderConfig encoder_config,

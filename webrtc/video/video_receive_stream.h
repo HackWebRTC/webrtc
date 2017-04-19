@@ -35,7 +35,6 @@ class CallStats;
 class IvfFileWriter;
 class ProcessThread;
 class RTPFragmentationHeader;
-class VieRemb;
 class VCMTiming;
 class VCMJitterEstimator;
 
@@ -53,8 +52,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      PacketRouter* packet_router,
                      VideoReceiveStream::Config config,
                      ProcessThread* process_thread,
-                     CallStats* call_stats,
-                     VieRemb* remb);
+                     CallStats* call_stats);
   ~VideoReceiveStream() override;
 
   const Config& config() const { return config_; }

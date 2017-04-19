@@ -56,7 +56,6 @@
 #include "webrtc/video/stats_counter.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/video/video_send_stream.h"
-#include "webrtc/video/vie_remb.h"
 
 namespace webrtc {
 
@@ -308,7 +307,6 @@ class Call : public webrtc::Call,
   std::map<std::string, rtc::NetworkRoute> network_routes_;
 
   std::unique_ptr<RtpTransportControllerSendInterface> transport_send_;
-  VieRemb remb_;
   ReceiveSideCongestionController receive_side_cc_;
   const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
   const int64_t start_ms_;
@@ -366,8 +364,7 @@ Call::Call(const Call::Config& config,
       configured_max_padding_bitrate_bps_(0),
       estimated_send_bitrate_kbps_counter_(clock_, nullptr, true),
       pacer_bitrate_kbps_counter_(clock_, nullptr, true),
-      remb_(clock_),
-      receive_side_cc_(clock_, &remb_, transport_send->packet_router()),
+      receive_side_cc_(clock_, transport_send->packet_router()),
       video_send_delay_stats_(new SendDelayStats(clock_)),
       start_ms_(clock_->TimeInMilliseconds()),
       worker_queue_("call_worker_queue") {
@@ -405,7 +402,6 @@ Call::Call(const Call::Config& config,
 }
 
 Call::~Call() {
-  RTC_DCHECK(!remb_.InUse());
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
 
   RTC_CHECK(audio_send_ssrcs_.empty());
@@ -664,7 +660,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), &worker_queue_,
       call_stats_.get(), transport_send_.get(), bitrate_allocator_.get(),
-      video_send_delay_stats_.get(), &remb_, event_log_, std::move(config),
+      video_send_delay_stats_.get(), event_log_, std::move(config),
       std::move(encoder_config), suspended_video_send_ssrcs_);
 
   {
@@ -721,10 +717,10 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
 
-  VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      num_cpu_cores_, transport_send_->packet_router(),
-      std::move(configuration), module_process_thread_.get(), call_stats_.get(),
-      &remb_);
+  VideoReceiveStream* receive_stream =
+      new VideoReceiveStream(num_cpu_cores_, transport_send_->packet_router(),
+                             std::move(configuration),
+                             module_process_thread_.get(), call_stats_.get());
 
   const webrtc::VideoReceiveStream::Config& config = receive_stream->config();
   ReceiveRtpConfig receive_config(config.rtp.extensions,

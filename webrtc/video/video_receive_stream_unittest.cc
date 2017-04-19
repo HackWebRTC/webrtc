@@ -93,8 +93,7 @@ class VideoReceiveStreamTest : public testing::Test {
 
     video_receive_stream_.reset(new webrtc::internal::VideoReceiveStream(
         kDefaultNumCpuCores,
-        &packet_router_, config_.Copy(), process_thread_.get(), &call_stats_,
-        nullptr));  // remb
+        &packet_router_, config_.Copy(), process_thread_.get(), &call_stats_));
   }
 
  protected:

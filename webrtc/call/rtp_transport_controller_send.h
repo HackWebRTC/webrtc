@@ -18,7 +18,6 @@ class PacketRouter;
 class RtpPacketSender;
 class SendSideCongestionController;
 class TransportFeedbackObserver;
-class VieRemb;
 
 // An RtpTransportController should own everything related to the RTP
 // transport to/from a remote endpoint. We should have separate

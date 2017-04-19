@@ -20,6 +20,7 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/common_types.h"
 #include "webrtc/modules/pacing/paced_sender.h"
+#include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -35,7 +36,8 @@ class TransportFeedback;
 // (receiver report). For the latter case, we also keep track of the
 // receive modules.
 class PacketRouter : public PacedSender::PacketSender,
-                     public TransportSequenceNumberAllocator {
+                     public TransportSequenceNumberAllocator,
+                     public RemoteBitrateObserver {
  public:
   PacketRouter();
   virtual ~PacketRouter();
@@ -66,14 +68,33 @@ class PacketRouter : public PacedSender::PacketSender,
   void SetTransportWideSequenceNumber(uint16_t sequence_number);
   uint16_t AllocateSequenceNumber() override;
 
+  // Called every time there is a new bitrate estimate for a receive channel
+  // group. This call will trigger a new RTCP REMB packet if the bitrate
+  // estimate has decreased or if no RTCP REMB packet has been sent for
+  // a certain time interval.
+  // Implements RtpReceiveBitrateUpdate.
+  void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
+                               uint32_t bitrate_bps) override;
+
+  // Send REMB feedback.
+  virtual bool SendRemb(uint32_t bitrate_bps,
+                        const std::vector<uint32_t>& ssrcs);
+
   // Send transport feedback packet to send-side.
-  virtual bool SendFeedback(rtcp::TransportFeedback* packet);
+  virtual bool SendTransportFeedback(rtcp::TransportFeedback* packet);
 
  private:
   rtc::ThreadChecker pacer_thread_checker_;
   rtc::CriticalSection modules_crit_;
   std::list<RtpRtcp*> rtp_send_modules_ GUARDED_BY(modules_crit_);
   std::vector<RtpRtcp*> rtp_receive_modules_ GUARDED_BY(modules_crit_);
+
+  rtc::CriticalSection remb_crit_;
+  // The last time a REMB was sent.
+  int64_t last_remb_time_ms_ GUARDED_BY(remb_crit_);
+  uint32_t last_send_bitrate_bps_ GUARDED_BY(remb_crit_);
+  // The last bitrate update.
+  uint32_t bitrate_bps_ GUARDED_BY(remb_crit_);
 
   volatile int transport_seq_;
 

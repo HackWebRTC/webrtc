@@ -173,8 +173,7 @@ VideoReceiveStream::VideoReceiveStream(
     PacketRouter* packet_router,
     VideoReceiveStream::Config config,
     ProcessThread* process_thread,
-    CallStats* call_stats,
-    VieRemb* remb)
+    CallStats* call_stats)
     : transport_adapter_(config.rtcp_send_transport),
       config_(std::move(config)),
       num_cpu_cores_(num_cpu_cores),
@@ -188,7 +187,6 @@ VideoReceiveStream::VideoReceiveStream(
       rtp_stream_receiver_(&transport_adapter_,
                            call_stats_->rtcp_rtt_stats(),
                            packet_router,
-                           remb,
                            &config_,
                            &stats_proxy_,
                            process_thread_,

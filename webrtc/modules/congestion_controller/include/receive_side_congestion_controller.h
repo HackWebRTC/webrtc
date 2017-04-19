@@ -32,7 +32,6 @@ class ReceiveSideCongestionController : public CallStatsObserver,
  public:
   ReceiveSideCongestionController(
       const Clock* clock,
-      RemoteBitrateObserver* remote_bitrate_observer,
       PacketRouter* packet_router);
 
   virtual ~ReceiveSideCongestionController() {}

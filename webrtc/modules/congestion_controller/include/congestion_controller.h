@@ -51,11 +51,11 @@ class CongestionController : public CallStatsObserver,
 
   CongestionController(const Clock* clock,
                        Observer* observer,
-                       RemoteBitrateObserver* remote_bitrate_observer,
+                       RemoteBitrateObserver* /* remote_bitrate_observer */,
                        RtcEventLog* event_log,
                        PacketRouter* packet_router)
       : send_side_cc_(clock, observer, event_log, packet_router),
-        receive_side_cc_(clock, remote_bitrate_observer, packet_router) {}
+        receive_side_cc_(clock, packet_router) {}
   CongestionController(const Clock* clock,
                        Observer* observer,
                        RemoteBitrateObserver* remote_bitrate_observer,
@@ -63,7 +63,7 @@ class CongestionController : public CallStatsObserver,
                        PacketRouter* packet_router,
                        std::unique_ptr<PacedSender> pacer)
       : send_side_cc_(clock, observer, event_log, std::move(pacer)),
-        receive_side_cc_(clock, remote_bitrate_observer, packet_router) {}
+        receive_side_cc_(clock, packet_router) {}
 
   virtual ~CongestionController() {}
 

@@ -11,6 +11,7 @@
 #include "webrtc/modules/congestion_controller/include/receive_side_congestion_controller.h"
 
 #include "webrtc/base/logging.h"
+#include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "webrtc/modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 
@@ -115,9 +116,8 @@ void ReceiveSideCongestionController::WrappingBitrateEstimator::
 
 ReceiveSideCongestionController::ReceiveSideCongestionController(
     const Clock* clock,
-    RemoteBitrateObserver* remote_bitrate_observer,
     PacketRouter* packet_router)
-    : remote_bitrate_estimator_(remote_bitrate_observer, clock),
+    : remote_bitrate_estimator_(packet_router, clock),
       remote_estimator_proxy_(clock, packet_router) {}
 
 void ReceiveSideCongestionController::OnReceivedPacket(

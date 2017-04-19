@@ -34,7 +34,6 @@
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/payload_router.h"
-#include "webrtc/video/vie_remb.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
@@ -334,7 +333,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                       RtpTransportControllerSendInterface* transport,
                       BitrateAllocator* bitrate_allocator,
                       SendDelayStats* send_delay_stats,
-                      VieRemb* remb,
                       ViEEncoder* vie_encoder,
                       RtcEventLog* event_log,
                       const VideoSendStream::Config* config,
@@ -418,7 +416,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   CallStats* const call_stats_;
   RtpTransportControllerSendInterface* const transport_;
   BitrateAllocator* const bitrate_allocator_;
-  VieRemb* const remb_;
 
   // TODO(brandtr): Move ownership to PayloadRouter.
   std::unique_ptr<FlexfecSender> flexfec_sender_;
@@ -467,7 +464,6 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
                    RtpTransportControllerSendInterface* transport,
                    BitrateAllocator* bitrate_allocator,
                    SendDelayStats* send_delay_stats,
-                   VieRemb* remb,
                    RtcEventLog* event_log,
                    const VideoSendStream::Config* config,
                    int initial_encoder_max_bitrate,
@@ -480,7 +476,6 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         transport_(transport),
         bitrate_allocator_(bitrate_allocator),
         send_delay_stats_(send_delay_stats),
-        remb_(remb),
         event_log_(event_log),
         config_(config),
         initial_encoder_max_bitrate_(initial_encoder_max_bitrate),
@@ -492,7 +487,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   bool Run() override {
     send_stream_->reset(new VideoSendStreamImpl(
         stats_proxy_, rtc::TaskQueue::Current(), call_stats_, transport_,
-        bitrate_allocator_, send_delay_stats_, remb_, vie_encoder_, event_log_,
+        bitrate_allocator_, send_delay_stats_, vie_encoder_, event_log_,
         config_, initial_encoder_max_bitrate_, std::move(suspended_ssrcs_)));
     return true;
   }
@@ -505,7 +500,6 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   RtpTransportControllerSendInterface* const transport_;
   BitrateAllocator* const bitrate_allocator_;
   SendDelayStats* const send_delay_stats_;
-  VieRemb* const remb_;
   RtcEventLog* const event_log_;
   const VideoSendStream::Config* config_;
   int initial_encoder_max_bitrate_;
@@ -619,7 +613,6 @@ VideoSendStream::VideoSendStream(
     RtpTransportControllerSendInterface* transport,
     BitrateAllocator* bitrate_allocator,
     SendDelayStats* send_delay_stats,
-    VieRemb* remb,
     RtcEventLog* event_log,
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config,
@@ -637,7 +630,7 @@ VideoSendStream::VideoSendStream(
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
       &send_stream_, &thread_sync_event_, &stats_proxy_, vie_encoder_.get(),
       module_process_thread, call_stats, transport, bitrate_allocator,
-      send_delay_stats, remb, event_log, &config_,
+      send_delay_stats, event_log, &config_,
       encoder_config.max_bitrate_bps, suspended_ssrcs)));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
@@ -752,7 +745,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     RtpTransportControllerSendInterface* transport,
     BitrateAllocator* bitrate_allocator,
     SendDelayStats* send_delay_stats,
-    VieRemb* remb,
     ViEEncoder* vie_encoder,
     RtcEventLog* event_log,
     const VideoSendStream::Config* config,
@@ -769,7 +761,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       call_stats_(call_stats),
       transport_(transport),
       bitrate_allocator_(bitrate_allocator),
-      remb_(remb),
       flexfec_sender_(MaybeCreateFlexfecSender(*config_)),
       max_padding_bitrate_(0),
       encoder_min_bitrate_bps_(0),
@@ -808,7 +799,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 
   RTC_DCHECK(!config_->rtp.ssrcs.empty());
   RTC_DCHECK(call_stats_);
-  RTC_DCHECK(remb_);
   RTC_DCHECK(transport_);
   RTC_DCHECK(transport_->send_side_cc());
 
@@ -835,9 +825,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                           StringToRtpExtensionType(extension), id));
     }
   }
-
-  remb_->AddRembSender(rtp_rtcp_modules_[0]);
-  rtp_rtcp_modules_[0]->SetREMBStatus(true);
 
   ConfigureProtection();
   ConfigureSsrcs();
@@ -895,9 +882,6 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
   RTC_DCHECK(!payload_router_.IsActive())
       << "VideoSendStreamImpl::Stop not called";
   LOG(LS_INFO) << "~VideoSendStreamInternal: " << config_->ToString();
-
-  rtp_rtcp_modules_[0]->SetREMBStatus(false);
-  remb_->RemoveRembSender(rtp_rtcp_modules_[0]);
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     transport_->packet_router()->RemoveSendRtpModule(rtp_rtcp);

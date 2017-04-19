@@ -46,8 +46,6 @@ rtc_static_library("video") {
     "video_stream_decoder.h",
     "vie_encoder.cc",
     "vie_encoder.h",
-    "vie_remb.cc",
-    "vie_remb.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -204,7 +202,6 @@ if (rtc_include_tests) {
       "video_receive_stream_unittest.cc",
       "video_send_stream_tests.cc",
       "vie_encoder_unittest.cc",
-      "vie_remb_unittest.cc",
     ]
     deps = [
       ":video",

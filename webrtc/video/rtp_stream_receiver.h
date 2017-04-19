@@ -50,7 +50,6 @@ class RtpReceiver;
 class Transport;
 class UlpfecReceiver;
 class VCMTiming;
-class VieRemb;
 
 namespace vcm {
 class VideoReceiver;
@@ -68,7 +67,6 @@ class RtpStreamReceiver : public RtpData,
       Transport* transport,
       RtcpRttStats* rtt_stats,
       PacketRouter* packet_router,
-      VieRemb* remb,
       const VideoReceiveStream::Config* config,
       ReceiveStatisticsProxy* receive_stats_proxy,
       ProcessThread* process_thread,
@@ -160,7 +158,6 @@ class RtpStreamReceiver : public RtpData,
   // Ownership of this object lies with VideoReceiveStream, which owns |this|.
   const VideoReceiveStream::Config& config_;
   PacketRouter* const packet_router_;
-  VieRemb* const remb_;
   ProcessThread* const process_thread_;
 
   RemoteNtpTimeEstimator ntp_estimator_;

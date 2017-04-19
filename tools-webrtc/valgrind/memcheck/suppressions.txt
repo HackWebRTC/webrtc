@@ -311,19 +311,6 @@
    fun:WebRtcNetEQ_GetSpeechOutputType
    ...
 }
-{
-   vfprintf
-   Memcheck:Uninitialized
-   fun:vfprintf
-   fun:vsnprintf
-   fun:snprintf
-   ...
-   fun:_ZNK7testing8internal18FunctionMockerBaseIFbRKN6webrtc4rtcp17TransportFeedbackEEE32UntypedDescribeUninterestingCallEPKvPSo
-   fun:_ZN7testing8internal25UntypedFunctionMockerBase17UntypedInvokeWithEPKv
-   fun:_ZN6webrtc11MockRtpRtcp18SendFeedbackPacketERKNS_4rtcp17TransportFeedbackE
-   fun:_ZN6webrtc12PacketRouter12SendFeedbackEPNS_4rtcp17TransportFeedbackE
-   fun:_ZN6webrtc34PacketRouterTest_SendFeedback_Test8TestBodyEv
-}
 
 
 #-----------------------------------------------------------------------
