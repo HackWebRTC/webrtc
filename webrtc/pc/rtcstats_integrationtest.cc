@@ -11,6 +11,7 @@
 #include <set>
 #include <vector>
 
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/stats/rtcstats_objects.h"
@@ -52,8 +53,12 @@ class RTCStatsIntegrationTest : public testing::Test {
     PeerConnectionInterface::IceServer ice_server;
     ice_server.uri = "stun:1.1.1.1:3478";
     config.servers.push_back(ice_server);
-    EXPECT_TRUE(caller_->CreatePc(nullptr, config));
-    EXPECT_TRUE(callee_->CreatePc(nullptr, config));
+    EXPECT_TRUE(caller_->CreatePc(nullptr, config,
+                                  CreateBuiltinAudioEncoderFactory(),
+                                  CreateBuiltinAudioDecoderFactory()));
+    EXPECT_TRUE(callee_->CreatePc(nullptr, config,
+                                  CreateBuiltinAudioEncoderFactory(),
+                                  CreateBuiltinAudioDecoderFactory()));
     PeerConnectionTestWrapper::Connect(caller_.get(), callee_.get());
 
     // Get user media for audio and video
