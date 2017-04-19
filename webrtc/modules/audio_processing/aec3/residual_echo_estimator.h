@@ -48,7 +48,8 @@ class ResidualEchoEstimator {
 
   // Estimates the residual echo power based on the estimate of the echo path
   // gain.
-  void NonLinearEstimate(const std::array<float, kFftLengthBy2Plus1>& X2,
+  void NonLinearEstimate(float echo_path_gain,
+                         const std::array<float, kFftLengthBy2Plus1>& X2,
                          const std::array<float, kFftLengthBy2Plus1>& Y2,
                          std::array<float, kFftLengthBy2Plus1>* R2);
 
@@ -66,7 +67,8 @@ class ResidualEchoEstimator {
   int S2_old_index_ = 0;
   std::array<std::array<float, kFftLengthBy2Plus1>, kAdaptiveFilterLength>
       S2_old_;
-  bool headset_detected_cached_ = false;
+  std::array<float, kFftLengthBy2Plus1> X2_noise_floor_;
+  std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ResidualEchoEstimator);
 };

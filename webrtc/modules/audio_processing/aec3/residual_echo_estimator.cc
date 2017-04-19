@@ -40,6 +40,43 @@ void EchoGeneratingPower(const RenderBuffer& render_buffer,
   });
 }
 
+constexpr int kNoiseFloorCounterMax = 50;
+constexpr float kNoiseFloorMin = 10.f * 10.f * 128.f * 128.f;
+
+// Updates estimate for the power of the stationary noise component in the
+// render signal.
+void RenderNoisePower(
+    const RenderBuffer& render_buffer,
+    std::array<float, kFftLengthBy2Plus1>* X2_noise_floor,
+    std::array<int, kFftLengthBy2Plus1>* X2_noise_floor_counter) {
+  RTC_DCHECK(X2_noise_floor);
+  RTC_DCHECK(X2_noise_floor_counter);
+
+  const auto render_power = render_buffer.Spectrum(0);
+  RTC_DCHECK_EQ(X2_noise_floor->size(), render_power.size());
+  RTC_DCHECK_EQ(X2_noise_floor_counter->size(), render_power.size());
+
+  // Estimate the stationary noise power in a minimum statistics manner.
+  for (size_t k = 0; k < render_power.size(); ++k) {
+    // Decrease rapidly.
+    if (render_power[k] < (*X2_noise_floor)[k]) {
+      (*X2_noise_floor)[k] = render_power[k];
+      (*X2_noise_floor_counter)[k] = 0;
+    } else {
+      // Increase in a delayed, leaky manner.
+      if ((*X2_noise_floor_counter)[k] >= kNoiseFloorCounterMax) {
+        (*X2_noise_floor)[k] =
+            std::max((*X2_noise_floor)[k] * 1.1f, kNoiseFloorMin);
+      } else {
+        ++(*X2_noise_floor_counter)[k];
+      }
+    }
+  }
+}
+
+// Assume a minimum echo path gain of -33 dB for headsets.
+constexpr float kHeadsetEchoPathGain = 0.0005f;
+
 }  // namespace
 
 ResidualEchoEstimator::ResidualEchoEstimator() {
@@ -57,28 +94,19 @@ void ResidualEchoEstimator::Estimate(
     std::array<float, kFftLengthBy2Plus1>* R2) {
   RTC_DCHECK(R2);
 
-  // Return zero residual echo power when a headset is detected.
-  if (aec_state.HeadsetDetected()) {
-    if (!headset_detected_cached_) {
-      Reset();
-      headset_detected_cached_ = true;
-    }
-    R2->fill(0.f);
-    return;
-  } else {
-    headset_detected_cached_ = false;
-  }
-
   const rtc::Optional<size_t> delay =
       aec_state.FilterDelay()
           ? aec_state.FilterDelay()
           : (aec_state.ExternalDelay() ? aec_state.ExternalDelay()
                                        : rtc::Optional<size_t>());
 
+  // Estimate the power of the stationary noise in the render signal.
+  RenderNoisePower(render_buffer, &X2_noise_floor_, &X2_noise_floor_counter_);
+
   // Estimate the residual echo power.
   const bool use_linear_echo_power =
       aec_state.UsableLinearEstimate() && using_subtractor_output;
-  if (use_linear_echo_power) {
+  if (use_linear_echo_power && !aec_state.HeadsetDetected()) {
     RTC_DCHECK(aec_state.FilterDelay());
     const int filter_delay = *aec_state.FilterDelay();
     LinearEstimate(S2_linear, aec_state.Erle(), filter_delay, R2);
@@ -102,7 +130,15 @@ void ResidualEchoEstimator::Estimate(
                           kResidualEchoPowerRenderWindowSize - 1, &X2);
     }
 
-    NonLinearEstimate(X2, Y2, R2);
+    // Subtract the stationary noise power to avoid stationary noise causing
+    // excessive echo suppression.
+    std::transform(
+        X2.begin(), X2.end(), X2_noise_floor_.begin(), X2.begin(),
+        [](float a, float b) { return std::max(0.f, a - 10.f * b); });
+
+    NonLinearEstimate(
+        aec_state.HeadsetDetected() ? kHeadsetEchoPathGain : kFixedEchoPathGain,
+        X2, Y2, R2);
     AddEchoReverb(*R2, aec_state.SaturatedEcho(),
                   std::min(static_cast<size_t>(kAdaptiveFilterLength),
                            delay.value_or(kAdaptiveFilterLength)),
@@ -119,6 +155,8 @@ void ResidualEchoEstimator::Estimate(
 }
 
 void ResidualEchoEstimator::Reset() {
+  X2_noise_floor_counter_.fill(kNoiseFloorCounterMax);
+  X2_noise_floor_.fill(kNoiseFloorMin);
   R2_reverb_.fill(0.f);
   R2_old_.fill(0.f);
   R2_hold_counter_.fill(0.f);
@@ -141,14 +179,13 @@ void ResidualEchoEstimator::LinearEstimate(
 }
 
 void ResidualEchoEstimator::NonLinearEstimate(
+    float echo_path_gain,
     const std::array<float, kFftLengthBy2Plus1>& X2,
     const std::array<float, kFftLengthBy2Plus1>& Y2,
     std::array<float, kFftLengthBy2Plus1>* R2) {
   // Compute preliminary residual echo.
-  // TODO(peah): Try to make this adaptive. Currently the gain is hardcoded to
-  // 20 dB.
   std::transform(X2.begin(), X2.end(), R2->begin(),
-                 [](float a) { return a * kFixedEchoPathGain; });
+                 [echo_path_gain](float a) { return a * echo_path_gain; });
 
   for (size_t k = 0; k < R2->size(); ++k) {
     // Update hold counter.

@@ -41,7 +41,8 @@ class AecState {
   bool EchoLeakageDetected() const { return echo_leakage_detected_; }
 
   // Returns whether the render signal is currently active.
-  bool ActiveRender() const { return active_render_blocks_ > 200; }
+  // TODO(peah): Deprecate this in an upcoming CL.
+  bool ActiveRender() const { return blocks_with_filter_adaptation_ > 200; }
 
   // Returns the ERLE.
   const std::array<float, kFftLengthBy2Plus1>& Erle() const {
@@ -99,7 +100,7 @@ class AecState {
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
   int echo_path_change_counter_;
-  size_t active_render_blocks_ = 0;
+  size_t blocks_with_filter_adaptation_ = 0;
   bool usable_linear_estimate_ = false;
   bool echo_leakage_detected_ = false;
   bool capture_signal_saturation_ = false;
@@ -107,6 +108,7 @@ class AecState {
   bool headset_detected_ = false;
   float previous_max_sample_ = 0.f;
   bool force_zero_gain_ = false;
+  bool render_received_ = false;
   size_t force_zero_gain_counter_ = 0;
   rtc::Optional<size_t> filter_delay_;
   rtc::Optional<size_t> external_delay_;

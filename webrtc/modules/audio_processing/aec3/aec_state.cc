@@ -22,7 +22,7 @@
 namespace webrtc {
 namespace {
 
-constexpr size_t kEchoPathChangeConvergenceBlocks = 4 * kNumBlocksPerSecond;
+constexpr size_t kEchoPathChangeConvergenceBlocks = 2 * kNumBlocksPerSecond;
 constexpr size_t kSaturationLeakageBlocks = 20;
 
 // Computes delay of the adaptive filter.
@@ -89,7 +89,6 @@ void AecState::HandleEchoPathChange(
     const EchoPathVariability& echo_path_variability) {
   if (echo_path_variability.AudioPathChanged()) {
     blocks_since_last_saturation_ = 0;
-    active_render_blocks_ = 0;
     usable_linear_estimate_ = false;
     echo_leakage_detected_ = false;
     capture_signal_saturation_ = false;
@@ -98,6 +97,8 @@ void AecState::HandleEchoPathChange(
 
     if (echo_path_variability.delay_change) {
       force_zero_gain_counter_ = 0;
+      blocks_with_filter_adaptation_ = 0;
+      render_received_ = false;
       force_zero_gain_ = true;
       echo_path_change_counter_ = kEchoPathChangeCounterMax;
     }
@@ -121,7 +122,11 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   // Update counters.
   const float x_energy = std::inner_product(x.begin(), x.end(), x.begin(), 0.f);
   const bool active_render_block = x_energy > 10000.f * kFftLengthBy2;
-  active_render_blocks_ += active_render_block ? 1 : 0;
+  if (active_render_block) {
+    render_received_ = true;
+  }
+  blocks_with_filter_adaptation_ +=
+      (active_render_block && (!SaturatedCapture()) ? 1 : 0);
   --echo_path_change_counter_;
 
   // Force zero echo suppression gain after an echo path change to allow at
@@ -145,6 +150,8 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   }
 
   // Detect and flag echo saturation.
+  // TODO(peah): Add the delay in this computation to ensure that the render and
+  // capture signals are properly aligned.
   RTC_DCHECK_LT(0, x.size());
   const float max_sample = fabs(*std::max_element(
       x.begin(), x.end(), [](float a, float b) { return a * a < b * b; }));
@@ -160,14 +167,17 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   // Flag whether the linear filter estimate is usable.
   usable_linear_estimate_ =
       (!echo_saturation_) &&
-      active_render_blocks_ > kEchoPathChangeConvergenceBlocks &&
+      (!render_received_ ||
+       blocks_with_filter_adaptation_ > kEchoPathChangeConvergenceBlocks) &&
       filter_delay_ && echo_path_change_counter_ <= 0;
 
   // After an amount of active render samples for which an echo should have been
   // detected in the capture signal if the ERL was not infinite, flag that a
   // headset is used.
-  headset_detected_ = !external_delay_ && !filter_delay_ &&
-                      active_render_blocks_ >= kEchoPathChangeConvergenceBlocks;
+  headset_detected_ =
+      !external_delay_ && !filter_delay_ &&
+      (!render_received_ ||
+       blocks_with_filter_adaptation_ >= kEchoPathChangeConvergenceBlocks);
 }
 
 }  // namespace webrtc
