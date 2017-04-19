@@ -709,7 +709,10 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   uma_container_->input_fps_counter_.Add(1);
   uma_container_->input_width_counter_.Add(width);
   uma_container_->input_height_counter_.Add(height);
-  uma_container_->cpu_limited_frame_counter_.Add(stats_.cpu_limited_resolution);
+  if (cpu_downscales_ >= 0) {
+    uma_container_->cpu_limited_frame_counter_.Add(
+        stats_.cpu_limited_resolution);
+  }
   TRACE_EVENT_INSTANT2("webrtc_stats", "WebRTC.Video.InputFrameRate",
       "frame_rate", round(
           uma_container_->input_frame_rate_tracker_.ComputeRate()),

@@ -841,7 +841,22 @@ TEST_F(SendStatisticsProxyTest, SentFpsHistogramExcludesSuspendedTime) {
   EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.SentFramesPerSecond", kFps));
 }
 
-TEST_F(SendStatisticsProxyTest, CpuLimitedResolutionUpdated) {
+TEST_F(SendStatisticsProxyTest, CpuLimitedHistogramNotUpdatedWhenDisabled) {
+  const int kNumDownscales = -1;
+  statistics_proxy_->SetQualityScalingStats(kNumDownscales);
+
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
+    statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
+
+  statistics_proxy_.reset();
+  EXPECT_EQ(0,
+            metrics::NumSamples("WebRTC.Video.CpuLimitedResolutionInPercent"));
+}
+
+TEST_F(SendStatisticsProxyTest, CpuLimitedHistogramUpdated) {
+  const int kNumDownscales = 0;
+  statistics_proxy_->SetCpuScalingStats(kNumDownscales);
+
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnIncomingFrame(kWidth, kHeight);
 

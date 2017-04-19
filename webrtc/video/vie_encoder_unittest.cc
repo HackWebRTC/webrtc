@@ -1425,9 +1425,8 @@ TEST_F(ViEEncoderTest, DoesNotScaleBelowSetLimit) {
   vie_encoder_->Stop();
 }
 
-TEST_F(ViEEncoderTest, UMACpuLimitedResolutionInPercent) {
+TEST_F(ViEEncoderTest, CpuLimitedHistogramIsReported) {
   vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-
   const int kWidth = 640;
   const int kHeight = 360;
 
@@ -1452,6 +1451,28 @@ TEST_F(ViEEncoderTest, UMACpuLimitedResolutionInPercent) {
             metrics::NumSamples("WebRTC.Video.CpuLimitedResolutionInPercent"));
   EXPECT_EQ(
       1, metrics::NumEvents("WebRTC.Video.CpuLimitedResolutionInPercent", 50));
+}
+
+TEST_F(ViEEncoderTest, CpuLimitedHistogramIsNotReportedForDisabledDegradation) {
+  vie_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+  const int kWidth = 640;
+  const int kHeight = 360;
+
+  vie_encoder_->SetSource(
+      &video_source_,
+      VideoSendStream::DegradationPreference::kDegradationDisabled);
+
+  for (int i = 1; i <= SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
+    video_source_.IncomingCapturedFrame(CreateFrame(i, kWidth, kHeight));
+    sink_.WaitForEncodedFrame(i);
+  }
+
+  vie_encoder_->Stop();
+  vie_encoder_.reset();
+  stats_proxy_.reset();
+
+  EXPECT_EQ(0,
+            metrics::NumSamples("WebRTC.Video.CpuLimitedResolutionInPercent"));
 }
 
 TEST_F(ViEEncoderTest, CallsBitrateObserver) {
