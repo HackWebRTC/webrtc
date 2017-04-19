@@ -33,6 +33,7 @@ void PythonPlot::Draw() {
     printf("rgb_colors = [colorsys.hls_to_rgb(*hls) for hls in hls_colors]\n");
 
     for (size_t i = 0; i < series_list_.size(); i++) {
+      printf("\n# === Series: %s ===\n", series_list_[i].label.c_str());
       // List x coordinates
       printf("x%zu = [", i);
       if (series_list_[i].points.size() > 0)
