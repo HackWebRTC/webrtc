@@ -24,7 +24,7 @@ namespace webrtc {
 class AimdRateControl {
  public:
   AimdRateControl();
-  virtual ~AimdRateControl();
+  ~AimdRateControl();
 
   // Returns true if there is a valid estimate of the incoming bitrate, false
   // otherwise.
@@ -43,11 +43,10 @@ class AimdRateControl {
   uint32_t Update(const RateControlInput* input, int64_t now_ms);
   void SetEstimate(int bitrate_bps, int64_t now_ms);
 
-  // Returns the increase rate which is used when used bandwidth is near the
-  // maximal available bandwidth.
-  virtual int GetNearMaxIncreaseRateBps() const;
-
-  virtual rtc::Optional<int> GetLastBitrateDecreaseBps() const;
+  // Returns the increase rate when used bandwidth is near the link capacity.
+  int GetNearMaxIncreaseRateBps() const;
+  // Returns the expected time between overuse signals (assuming steady state).
+  int GetExpectedBandwidthPeriodMs() const;
 
  private:
   // Update the target bitrate according based on, among other things,

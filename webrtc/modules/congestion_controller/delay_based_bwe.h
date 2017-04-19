@@ -20,7 +20,6 @@
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/congestion_controller/median_slope_estimator.h"
 #include "webrtc/modules/congestion_controller/probe_bitrate_estimator.h"
-#include "webrtc/modules/congestion_controller/probing_interval_estimator.h"
 #include "webrtc/modules/congestion_controller/trendline_estimator.h"
 #include "webrtc/modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -55,7 +54,7 @@ class DelayBasedBwe {
                       uint32_t* bitrate_bps) const;
   void SetStartBitrate(int start_bitrate_bps);
   void SetMinBitrate(int min_bitrate_bps);
-  int64_t GetProbingIntervalMs() const;
+  int64_t GetExpectedBwePeriodMs() const;
 
  private:
   // Computes a bayesian estimate of the throughput given acks containing
@@ -102,7 +101,6 @@ class DelayBasedBwe {
   size_t trendline_window_size_;
   double trendline_smoothing_coeff_;
   double trendline_threshold_gain_;
-  ProbingIntervalEstimator probing_interval_estimator_;
   int consecutive_delayed_feedbacks_;
   uint32_t last_logged_bitrate_;
   BandwidthUsage last_logged_state_;

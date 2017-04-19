@@ -126,16 +126,27 @@ int AimdRateControl::GetNearMaxIncreaseRateBps() const {
   double bits_per_frame = static_cast<double>(current_bitrate_bps_) / 30.0;
   double packets_per_frame = std::ceil(bits_per_frame / (8.0 * 1200.0));
   double avg_packet_size_bits = bits_per_frame / packets_per_frame;
+
   // Approximate the over-use estimator delay to 100 ms.
   const int64_t response_time = in_experiment_ ? (rtt_ + 100) * 2 : rtt_ + 100;
-
   constexpr double kMinIncreaseRateBps = 4000;
   return static_cast<int>(std::max(
       kMinIncreaseRateBps, (avg_packet_size_bits * 1000) / response_time));
 }
 
-rtc::Optional<int> AimdRateControl::GetLastBitrateDecreaseBps() const {
-  return last_decrease_;
+int AimdRateControl::GetExpectedBandwidthPeriodMs() const {
+  constexpr int kMinIntervalMs = 2000;
+  constexpr int kDefaultIntervalMs = 3000;
+  constexpr int kMaxIntervalMs = 50000;
+
+  int increase_rate = GetNearMaxIncreaseRateBps();
+  if (!last_decrease_)
+    return kDefaultIntervalMs;
+
+  return std::min(kMaxIntervalMs,
+                  std::max<int>(1000 * static_cast<int64_t>(*last_decrease_) /
+                                    increase_rate,
+                                kMinIntervalMs));
 }
 
 uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
@@ -183,7 +194,6 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
       break;
 
     case kRcDecrease:
-      bitrate_is_initialized_ = true;
       // Set bit rate to something slightly lower than max
       // to get rid of any self-induced delay.
       new_bitrate_bps =
@@ -198,7 +208,8 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
       }
       ChangeRegion(kRcNearMax);
 
-      if (incoming_bitrate_bps < current_bitrate_bps_) {
+      if (bitrate_is_initialized_ &&
+          incoming_bitrate_bps < current_bitrate_bps_) {
         last_decrease_ =
             rtc::Optional<int>(current_bitrate_bps_ - new_bitrate_bps);
       }
@@ -207,6 +218,7 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
         avg_max_bitrate_kbps_ = -1.0f;
       }
 
+      bitrate_is_initialized_ = true;
       UpdateMaxBitRateEstimate(incoming_bitrate_kbps);
       // Stay on hold until the pipes are cleared.
       rate_control_state_ = kRcHold;

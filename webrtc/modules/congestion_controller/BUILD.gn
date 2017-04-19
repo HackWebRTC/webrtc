@@ -22,8 +22,6 @@ rtc_static_library("congestion_controller") {
     "probe_bitrate_estimator.h",
     "probe_controller.cc",
     "probe_controller.h",
-    "probing_interval_estimator.cc",
-    "probing_interval_estimator.h",
     "receive_side_congestion_controller.cc",
     "send_side_congestion_controller.cc",
     "transport_feedback_adapter.cc",
@@ -74,7 +72,6 @@ if (rtc_include_tests) {
       "median_slope_estimator_unittest.cc",
       "probe_bitrate_estimator_unittest.cc",
       "probe_controller_unittest.cc",
-      "probing_interval_estimator_unittest.cc",
       "transport_feedback_adapter_unittest.cc",
       "trendline_estimator_unittest.cc",
     ]

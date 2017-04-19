@@ -160,7 +160,6 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       trendline_window_size_(kDefaultTrendlineWindowSize),
       trendline_smoothing_coeff_(kDefaultTrendlineSmoothingCoeff),
       trendline_threshold_gain_(kDefaultTrendlineThresholdGain),
-      probing_interval_estimator_(&rate_control_),
       consecutive_delayed_feedbacks_(0),
       last_logged_bitrate_(0),
       last_logged_state_(BandwidthUsage::kBwNormal) {
@@ -363,7 +362,7 @@ void DelayBasedBwe::SetMinBitrate(int min_bitrate_bps) {
   rate_control_.SetMinBitrate(min_bitrate_bps);
 }
 
-int64_t DelayBasedBwe::GetProbingIntervalMs() const {
-  return probing_interval_estimator_.GetIntervalMs();
+int64_t DelayBasedBwe::GetExpectedBwePeriodMs() const {
+  return rate_control_.GetExpectedBandwidthPeriodMs();
 }
 }  // namespace webrtc

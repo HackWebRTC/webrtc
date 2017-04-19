@@ -273,7 +273,7 @@ void SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
     int64_t probing_interval_ms;
     {
       rtc::CritScope cs(&bwe_lock_);
-      probing_interval_ms = delay_based_bwe_->GetProbingIntervalMs();
+      probing_interval_ms = delay_based_bwe_->GetExpectedBwePeriodMs();
     }
     {
       rtc::CritScope cs(&observer_lock_);
