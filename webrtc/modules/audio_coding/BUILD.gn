@@ -1577,6 +1577,7 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../api/audio_codecs:audio_codecs_api",
       "../../base:rtc_base_approved",
+      "../../base:rtc_base_tests_utils",
       "../../common_audio",
       "../../test:rtp_test_utils",
       "../rtp_rtcp",

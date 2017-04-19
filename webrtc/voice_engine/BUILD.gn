@@ -181,6 +181,7 @@ if (rtc_include_tests) {
       ":file_player",
       ":voice_engine",
       "../base:rtc_base_approved",
+      "../base:rtc_base_tests_utils",
       "../test:test_common",
       "//testing/gmock",
       "//testing/gtest",
