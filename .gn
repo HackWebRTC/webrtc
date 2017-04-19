@@ -34,6 +34,7 @@ check_targets = [
   "//webrtc/ortc/*",
   "//webrtc/stats/*",
   "//webrtc/tools/*",
+  "//webrtc/test/*",
   "//webrtc/voice_engine/*",
 ]
 
