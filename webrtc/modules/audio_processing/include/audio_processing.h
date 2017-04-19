@@ -429,7 +429,7 @@ class AudioProcessing {
   //     t_render is the time the first sample of the same frame is rendered by
   //     the audio hardware.
   //   - t_capture is the time the first sample of a frame is captured by the
-  //     audio hardware and t_pull is the time the same frame is passed to
+  //     audio hardware and t_process is the time the same frame is passed to
   //     ProcessStream().
   virtual int set_stream_delay_ms(int delay) = 0;
   virtual int stream_delay_ms() const = 0;
