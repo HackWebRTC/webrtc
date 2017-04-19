@@ -40,6 +40,8 @@ constexpr ExtensionInfo kExtensions[] = {
     CreateExtensionInfo<TransportSequenceNumber>(),
     CreateExtensionInfo<PlayoutDelayLimits>(),
     CreateExtensionInfo<VideoContentTypeExtension>(),
+    CreateExtensionInfo<RtpStreamId>(),
+    CreateExtensionInfo<RepairedRtpStreamId>(),
 };
 
 // Because of kRtpExtensionNone, NumberOfExtension is 1 bigger than the actual

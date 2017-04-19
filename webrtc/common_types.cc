@@ -10,8 +10,9 @@
 
 #include "webrtc/common_types.h"
 
-#include <limits>
 #include <string.h>
+#include <limits>
+#include <type_traits>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/stringutils.h"
@@ -19,6 +20,20 @@
 namespace webrtc {
 
 StreamDataCounters::StreamDataCounters() : first_packet_time_ms(-1) {}
+
+constexpr size_t StreamId::kMaxSize;
+
+void StreamId::Set(const char* data, size_t size) {
+  // If |data| contains \0, the stream id size might become less than |size|.
+  RTC_DCHECK_LE(size, kMaxSize);
+  memcpy(value_, data, size);
+  if (size < kMaxSize)
+    value_[size] = 0;
+}
+
+// StreamId is used as member of RTPHeader that is sometimes copied with memcpy
+// and thus assume trivial destructibility.
+static_assert(std::is_trivially_destructible<StreamId>::value, "");
 
 RTPHeaderExtension::RTPHeaderExtension()
     : hasTransmissionTimeOffset(false),

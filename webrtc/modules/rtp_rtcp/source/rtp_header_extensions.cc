@@ -244,4 +244,44 @@ bool VideoContentTypeExtension::Write(uint8_t* data,
   return true;
 }
 
+// RtpStreamId.
+constexpr RTPExtensionType RtpStreamId::kId;
+constexpr uint8_t RtpStreamId::kValueSizeBytes;
+constexpr const char* RtpStreamId::kUri;
+
+bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, StreamId* rsid) {
+  if (data.empty() || data[0] == 0)  // Valid rsid can't be empty.
+    return false;
+  rsid->Set(data);
+  RTC_DCHECK(!rsid->empty());
+  return true;
+}
+
+bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, std::string* rsid) {
+  if (data.empty() || data[0] == 0)  // Valid rsid can't be empty.
+    return false;
+  const char* str = reinterpret_cast<const char*>(data.data());
+  // If there is a \0 character in the middle of the |data|, treat it as end of
+  // the string. Well-formed rsid shouldn't contain it.
+  rsid->assign(str, strnlen(str, data.size()));
+  RTC_DCHECK(!rsid->empty());
+  return true;
+}
+
+// RepairedRtpStreamId.
+constexpr RTPExtensionType RepairedRtpStreamId::kId;
+constexpr uint8_t RepairedRtpStreamId::kValueSizeBytes;
+constexpr const char* RepairedRtpStreamId::kUri;
+
+// RtpStreamId and RepairedRtpStreamId use the same format to store rsid.
+bool RepairedRtpStreamId::Parse(rtc::ArrayView<const uint8_t> data,
+                                StreamId* rsid) {
+  return RtpStreamId::Parse(data, rsid);
+}
+
+bool RepairedRtpStreamId::Parse(rtc::ArrayView<const uint8_t> data,
+                                std::string* rsid) {
+  return RtpStreamId::Parse(data, rsid);
+}
+
 }  // namespace webrtc

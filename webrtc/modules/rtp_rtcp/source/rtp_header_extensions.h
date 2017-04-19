@@ -11,6 +11,7 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSIONS_H_
 
 #include <stdint.h>
+#include <string>
 
 #include "webrtc/api/video/video_content_type.h"
 #include "webrtc/api/video/video_rotation.h"
@@ -109,6 +110,32 @@ class VideoContentTypeExtension {
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     VideoContentType* content_type);
   static bool Write(uint8_t* data, VideoContentType content_type);
+};
+
+class RtpStreamId {
+ public:
+  static constexpr RTPExtensionType kId = kRtpExtensionRtpStreamId;
+  // TODO(danilchap): Implement write support of dynamic size extension that
+  // allows to remove the ValueSize constant.
+  static constexpr uint8_t kValueSizeBytes = 1;
+  static constexpr const char* kUri =
+      "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
+
+  static bool Parse(rtc::ArrayView<const uint8_t> data, StreamId* rid);
+  static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* rid);
+};
+
+class RepairedRtpStreamId {
+ public:
+  static constexpr RTPExtensionType kId = kRtpExtensionRepairedRtpStreamId;
+  // TODO(danilchap): Implement write support of dynamic size extension that
+  // allows to remove the ValueSize constant.
+  static constexpr uint8_t kValueSizeBytes = 1;
+  static constexpr const char* kUri =
+      "urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id";
+
+  static bool Parse(rtc::ArrayView<const uint8_t> data, StreamId* rid);
+  static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* rid);
 };
 
 }  // namespace webrtc

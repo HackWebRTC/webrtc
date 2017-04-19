@@ -469,6 +469,15 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           }
           break;
         }
+        case kRtpExtensionRtpStreamId: {
+          header->extension.stream_id.Set(rtc::MakeArrayView(ptr, len + 1));
+          break;
+        }
+        case kRtpExtensionRepairedRtpStreamId: {
+          header->extension.repaired_stream_id.Set(
+              rtc::MakeArrayView(ptr, len + 1));
+          break;
+        }
         case kRtpExtensionNone:
         case kRtpExtensionNumberOfExtensions: {
           RTC_NOTREACHED() << "Invalid extension type: " << type;

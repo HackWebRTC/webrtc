@@ -172,6 +172,8 @@ void Packet::GetHeader(RTPHeader* header) const {
   header->extension.hasVideoContentType =
       GetExtension<VideoContentTypeExtension>(
           &header->extension.videoContentType);
+  GetExtension<RtpStreamId>(&header->extension.stream_id);
+  GetExtension<RepairedRtpStreamId>(&header->extension.repaired_stream_id);
 }
 
 size_t Packet::headers_size() const {
