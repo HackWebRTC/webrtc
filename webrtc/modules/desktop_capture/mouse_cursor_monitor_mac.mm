@@ -36,7 +36,7 @@ namespace {
 // setting.
 NSImage* PaintInCurrentContext(NSImage* source) {
   NSSize size = [source size];
-  NSImage* new_image = [[NSImage alloc] initWithSize:size];
+  NSImage* new_image = [[[NSImage alloc] initWithSize:size] autorelease];
   [new_image lockFocus];
   NSRect frame = NSMakeRect(0, 0, size.width, size.height);
   [source drawInRect:frame

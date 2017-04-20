@@ -192,6 +192,8 @@ rtc_static_library("audio_device") {
           "ios/voice_processing_audio_unit.h",
           "ios/voice_processing_audio_unit.mm",
         ]
+        configs += [ "//build/config/compiler:enable_arc" ]
+
         libs = [
           "AudioToolbox.framework",
           "AVFoundation.framework",
@@ -289,6 +291,7 @@ if (rtc_include_tests) {
     }
     if (is_ios) {
       sources += [ "ios/objc/RTCAudioSessionTest.mm" ]
+      configs += [ "//build/config/compiler:enable_arc" ]
       if (target_cpu != "x64") {
         sources += [ "ios/audio_device_unittest_ios.cc" ]
       }

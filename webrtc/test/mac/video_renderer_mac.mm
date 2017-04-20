@@ -43,6 +43,11 @@
   return self;
 }
 
+- (void)dealloc {
+  [window_ release];
+  [super dealloc];
+}
+
 - (void)createWindow:(NSObject *)ignored {
   NSInteger xOrigin = nextXOrigin_;
   NSRect screenFrame = [[NSScreen mainScreen] frame];
@@ -66,8 +71,8 @@
                                             defer:NO];
 
   NSRect viewFrame = NSMakeRect(0, 0, width_, height_);
-  NSOpenGLView *view = [[NSOpenGLView alloc] initWithFrame:viewFrame
-                                                pixelFormat:nil];
+  NSOpenGLView *view = [[[NSOpenGLView alloc] initWithFrame:viewFrame
+                                                pixelFormat:nil] autorelease];
   context_ = [view openGLContext];
 
   [[window_ contentView] addSubview:view];
@@ -100,6 +105,7 @@ MacRenderer::MacRenderer()
 
 MacRenderer::~MacRenderer() {
   GlRenderer::Destroy();
+  [window_ release];
 }
 
 bool MacRenderer::Init(const char* window_title, int width, int height) {

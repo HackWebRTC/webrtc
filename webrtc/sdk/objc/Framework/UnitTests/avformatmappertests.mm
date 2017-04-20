@@ -97,6 +97,7 @@ static cricket::VideoFormat expectedFormat =
     CFRelease(_format);
     _format = nil;
   }
+  [super dealloc];
 }
 
 // Redefinition of AVCaptureDevice methods we want to mock.
