@@ -497,5 +497,24 @@ TEST_F(TestFrameBuffer2, StatsCallback) {
   CheckFrame(0, pid, 0);
 }
 
+TEST_F(TestFrameBuffer2, ForwardJumps) {
+  EXPECT_EQ(5453, InsertFrame(5453, 0, 1, false));
+  ExtractFrame();
+  EXPECT_EQ(5454, InsertFrame(5454, 0, 1, false, 5453));
+  ExtractFrame();
+  EXPECT_EQ(15670, InsertFrame(15670, 0, 1, false));
+  ExtractFrame();
+  EXPECT_EQ(29804, InsertFrame(29804, 0, 1, false));
+  ExtractFrame();
+  EXPECT_EQ(29805, InsertFrame(29805, 0, 1, false, 29804));
+  ExtractFrame();
+  EXPECT_EQ(29806, InsertFrame(29806, 0, 1, false, 29805));
+  ExtractFrame();
+  EXPECT_EQ(33819, InsertFrame(33819, 0, 1, false));
+  ExtractFrame();
+  EXPECT_EQ(41248, InsertFrame(41248, 0, 1, false));
+  ExtractFrame();
+}
+
 }  // namespace video_coding
 }  // namespace webrtc
