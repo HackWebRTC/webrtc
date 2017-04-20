@@ -1014,8 +1014,8 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(
 }
 
 void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
-  std::map<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
-  std::map<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
+  std::multimap<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
+  std::multimap<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
 
   for (const auto& kv : rtp_packets_) {
     if (kv.first.GetDirection() == PacketDirection::kOutgoingPacket) {
@@ -1136,8 +1136,8 @@ void EventLogAnalyzer::CreateBweSimulationGraph(Plot* plot) {
 }
 
 void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
-  std::map<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
-  std::map<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
+  std::multimap<uint64_t, const LoggedRtpPacket*> outgoing_rtp;
+  std::multimap<uint64_t, const LoggedRtcpPacket*> incoming_rtcp;
 
   for (const auto& kv : rtp_packets_) {
     if (kv.first.GetDirection() == PacketDirection::kOutgoingPacket) {
