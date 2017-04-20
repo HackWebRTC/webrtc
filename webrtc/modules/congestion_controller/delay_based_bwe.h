@@ -77,13 +77,15 @@ class DelayBasedBwe {
     float bitrate_estimate_var_;
   };
 
-  Result IncomingPacketFeedback(const PacketFeedback& packet_feedback);
+  void IncomingPacketFeedback(const PacketFeedback& packet_feedback);
   Result OnLongFeedbackDelay(int64_t arrival_time_ms);
+
+  Result MaybeUpdateEstimate(bool overusing);
   // Updates the current remote rate estimate and returns true if a valid
   // estimate exists.
-  bool UpdateEstimate(int64_t packet_arrival_time_ms,
-                      int64_t now_ms,
+  bool UpdateEstimate(int64_t now_ms,
                       rtc::Optional<uint32_t> acked_bitrate_bps,
+                      bool overusing,
                       uint32_t* target_bitrate_bps);
 
   rtc::ThreadChecker network_thread_;
@@ -93,7 +95,6 @@ class DelayBasedBwe {
   std::unique_ptr<TrendlineEstimator> trendline_estimator_;
   OveruseDetector detector_;
   BitrateEstimator receiver_incoming_bitrate_;
-  int64_t last_update_ms_;
   int64_t last_seen_packet_ms_;
   bool uma_recorded_;
   AimdRateControl rate_control_;

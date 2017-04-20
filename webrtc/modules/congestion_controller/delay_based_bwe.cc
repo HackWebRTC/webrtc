@@ -153,7 +153,6 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       trendline_estimator_(),
       detector_(),
       receiver_incoming_bitrate_(),
-      last_update_ms_(-1),
       last_seen_packet_ms_(-1),
       uma_recorded_(false),
       probe_bitrate_estimator_(event_log),
@@ -189,27 +188,27 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
                               BweNames::kBweNamesMax);
     uma_recorded_ = true;
   }
-  Result aggregated_result;
+  bool overusing = false;
   bool delayed_feedback = true;
   for (const auto& packet_feedback : sorted_packet_feedback_vector) {
     if (packet_feedback.send_time_ms < 0)
       continue;
     delayed_feedback = false;
-    Result result = IncomingPacketFeedback(packet_feedback);
-    if (result.updated)
-      aggregated_result = result;
+    IncomingPacketFeedback(packet_feedback);
+    overusing |= detector_.State() == BandwidthUsage::kBwOverusing;
   }
   if (delayed_feedback) {
     ++consecutive_delayed_feedbacks_;
+    if (consecutive_delayed_feedbacks_ >= kMaxConsecutiveFailedLookups) {
+      consecutive_delayed_feedbacks_ = 0;
+      return OnLongFeedbackDelay(
+          sorted_packet_feedback_vector.back().arrival_time_ms);
+    }
   } else {
     consecutive_delayed_feedbacks_ = 0;
+    return MaybeUpdateEstimate(overusing);
   }
-  if (consecutive_delayed_feedbacks_ >= kMaxConsecutiveFailedLookups) {
-    aggregated_result = OnLongFeedbackDelay(
-        sorted_packet_feedback_vector.back().arrival_time_ms);
-    consecutive_delayed_feedbacks_ = 0;
-  }
-  return aggregated_result;
+  return Result();
 }
 
 DelayBasedBwe::Result DelayBasedBwe::OnLongFeedbackDelay(
@@ -229,7 +228,7 @@ DelayBasedBwe::Result DelayBasedBwe::OnLongFeedbackDelay(
   return result;
 }
 
-DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedback(
+void DelayBasedBwe::IncomingPacketFeedback(
     const PacketFeedback& packet_feedback) {
   int64_t now_ms = clock_->TimeInMilliseconds();
 
@@ -272,40 +271,36 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedback(
                      trendline_estimator_->num_of_deltas(),
                      packet_feedback.arrival_time_ms);
   }
-
-  int probing_bps = 0;
   if (packet_feedback.pacing_info.probe_cluster_id !=
       PacedPacketInfo::kNotAProbe) {
-    probing_bps =
-        probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(packet_feedback);
+    probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(packet_feedback);
   }
+}
+
+DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(bool overusing) {
+  Result result;
+  int64_t now_ms = clock_->TimeInMilliseconds();
+
   rtc::Optional<uint32_t> acked_bitrate_bps =
       receiver_incoming_bitrate_.bitrate_bps();
+  rtc::Optional<int> probe_bitrate_bps =
+      probe_bitrate_estimator_.FetchAndResetLastEstimatedBitrateBps();
   // Currently overusing the bandwidth.
-  if (detector_.State() == BandwidthUsage::kBwOverusing) {
+  if (overusing) {
     if (acked_bitrate_bps &&
         rate_control_.TimeToReduceFurther(now_ms, *acked_bitrate_bps)) {
-      result.updated =
-          UpdateEstimate(packet_feedback.arrival_time_ms, now_ms,
-                         acked_bitrate_bps, &result.target_bitrate_bps);
+      result.updated = UpdateEstimate(now_ms, acked_bitrate_bps, overusing,
+                                      &result.target_bitrate_bps);
     }
-  } else if (probing_bps > 0) {
-    // No overuse, but probing measured a bitrate.
-    rate_control_.SetEstimate(probing_bps, packet_feedback.arrival_time_ms);
-    result.probe = true;
-    result.updated =
-        UpdateEstimate(packet_feedback.arrival_time_ms, now_ms,
-                       acked_bitrate_bps, &result.target_bitrate_bps);
-  }
-  if (!result.updated &&
-      (last_update_ms_ == -1 ||
-       now_ms - last_update_ms_ > rate_control_.GetFeedbackInterval())) {
-    result.updated =
-        UpdateEstimate(packet_feedback.arrival_time_ms, now_ms,
-                       acked_bitrate_bps, &result.target_bitrate_bps);
+  } else {
+    if (probe_bitrate_bps) {
+      rate_control_.SetEstimate(*probe_bitrate_bps, now_ms);
+      result.probe = true;
+    }
+    result.updated = UpdateEstimate(now_ms, acked_bitrate_bps, overusing,
+                                    &result.target_bitrate_bps);
   }
   if (result.updated) {
-    last_update_ms_ = now_ms;
     BWE_TEST_LOGGING_PLOT(1, "target_bitrate_bps", now_ms,
                           result.target_bitrate_bps);
     if (event_log_ && (result.target_bitrate_bps != last_logged_bitrate_ ||
@@ -316,17 +311,18 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedback(
       last_logged_state_ = detector_.State();
     }
   }
-
   return result;
 }
 
-bool DelayBasedBwe::UpdateEstimate(int64_t arrival_time_ms,
-                                   int64_t now_ms,
+bool DelayBasedBwe::UpdateEstimate(int64_t now_ms,
                                    rtc::Optional<uint32_t> acked_bitrate_bps,
+                                   bool overusing,
                                    uint32_t* target_bitrate_bps) {
   // TODO(terelius): RateControlInput::noise_var is deprecated and will be
   // removed. In the meantime, we set it to zero.
-  const RateControlInput input(detector_.State(), acked_bitrate_bps, 0);
+  const RateControlInput input(
+      overusing ? BandwidthUsage::kBwOverusing : detector_.State(),
+      acked_bitrate_bps, 0);
   *target_bitrate_bps = rate_control_.Update(&input, now_ms);
   return rate_control_.ValidEstimate();
 }

@@ -140,18 +140,18 @@ TEST_F(DelayBasedBweTest, GetExpectedBwePeriodMs) {
 }
 
 TEST_F(DelayBasedBweTest, InitialBehavior) {
-  InitialBehaviorTestHelper(674840);
+  InitialBehaviorTestHelper(730000);
 }
 
 TEST_F(DelayBasedBweTest, RateIncreaseReordering) {
-  RateIncreaseReorderingTestHelper(674840);
+  RateIncreaseReorderingTestHelper(730000);
 }
 TEST_F(DelayBasedBweTest, RateIncreaseRtpTimestamps) {
-  RateIncreaseRtpTimestampsTestHelper(1288);
+  RateIncreaseRtpTimestampsTestHelper(627);
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropOneStream) {
-  CapacityDropTestHelper(1, false, 333, 0);
+  CapacityDropTestHelper(1, false, 300, 0);
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropPosOffsetChange) {
@@ -159,12 +159,13 @@ TEST_F(DelayBasedBweTest, CapacityDropPosOffsetChange) {
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropNegOffsetChange) {
-  CapacityDropTestHelper(1, false, 867, -30000);
+  CapacityDropTestHelper(1, false, 933, -30000);
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropOneStreamWrap) {
   CapacityDropTestHelper(1, true, 333, 0);
 }
+
 TEST_F(DelayBasedBweTest, TestTimestampGrouping) {
   TestTimestampGroupingTestHelper();
 }

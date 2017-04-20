@@ -27,6 +27,8 @@ class ProbeBitrateEstimator {
   // Returns the estimated bitrate if the probe completes a valid cluster.
   int HandleProbeAndEstimateBitrate(const PacketFeedback& packet_feedback);
 
+  rtc::Optional<int> FetchAndResetLastEstimatedBitrateBps();
+
  private:
   struct AggregatedCluster {
     int num_probes = 0;
@@ -44,6 +46,7 @@ class ProbeBitrateEstimator {
 
   std::map<int, AggregatedCluster> clusters_;
   RtcEventLog* const event_log_;
+  rtc::Optional<int> estimated_bitrate_bps_;
 };
 
 }  // namespace webrtc
