@@ -134,13 +134,12 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                  << freq_offset_stats.ToString();
   }
 
-  if (stats_.frame_counts.key_frames > 0 ||
-      stats_.frame_counts.delta_frames > 0) {
-    float num_key_frames = stats_.frame_counts.key_frames;
-    float num_total_frames =
-        stats_.frame_counts.key_frames + stats_.frame_counts.delta_frames;
+  int num_total_frames =
+      stats_.frame_counts.key_frames + stats_.frame_counts.delta_frames;
+  if (num_total_frames >= kMinRequiredSamples) {
+    int num_key_frames = stats_.frame_counts.key_frames;
     int key_frames_permille =
-        (num_key_frames * 1000.0f / num_total_frames + 0.5f);
+        (num_key_frames * 1000 + num_total_frames / 2) / num_total_frames;
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.KeyFramesReceivedInPermille",
                               key_frames_permille);
   }

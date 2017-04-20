@@ -402,4 +402,114 @@ TEST_F(ReceiveStatisticsProxyTest, Vp8QpHistogramIsNotUpdatedIfNoQpValue) {
   EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.Decoded.Vp8.Qp"));
 }
 
+TEST_F(ReceiveStatisticsProxyTest,
+       KeyFrameHistogramNotUpdatedForTooFewSamples) {
+  const bool kIsKeyFrame = false;
+  const int kFrameSizeBytes = 1000;
+
+  for (int i = 0; i < kMinRequiredSamples - 1; ++i)
+    statistics_proxy_->OnCompleteFrame(kIsKeyFrame, kFrameSizeBytes);
+
+  EXPECT_EQ(0, statistics_proxy_->GetStats().frame_counts.key_frames);
+  EXPECT_EQ(kMinRequiredSamples - 1,
+            statistics_proxy_->GetStats().frame_counts.delta_frames);
+
+  statistics_proxy_.reset();
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.KeyFramesReceivedInPermille"));
+}
+
+TEST_F(ReceiveStatisticsProxyTest,
+       KeyFrameHistogramUpdatedForMinRequiredSamples) {
+  const bool kIsKeyFrame = false;
+  const int kFrameSizeBytes = 1000;
+
+  for (int i = 0; i < kMinRequiredSamples; ++i)
+    statistics_proxy_->OnCompleteFrame(kIsKeyFrame, kFrameSizeBytes);
+
+  EXPECT_EQ(0, statistics_proxy_->GetStats().frame_counts.key_frames);
+  EXPECT_EQ(kMinRequiredSamples,
+            statistics_proxy_->GetStats().frame_counts.delta_frames);
+
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.KeyFramesReceivedInPermille"));
+  EXPECT_EQ(1,
+            metrics::NumEvents("WebRTC.Video.KeyFramesReceivedInPermille", 0));
+}
+
+TEST_F(ReceiveStatisticsProxyTest, KeyFrameHistogramIsUpdated) {
+  const int kFrameSizeBytes = 1000;
+
+  for (int i = 0; i < kMinRequiredSamples; ++i)
+    statistics_proxy_->OnCompleteFrame(true, kFrameSizeBytes);
+
+  for (int i = 0; i < kMinRequiredSamples; ++i)
+    statistics_proxy_->OnCompleteFrame(false, kFrameSizeBytes);
+
+  EXPECT_EQ(kMinRequiredSamples,
+            statistics_proxy_->GetStats().frame_counts.key_frames);
+  EXPECT_EQ(kMinRequiredSamples,
+            statistics_proxy_->GetStats().frame_counts.delta_frames);
+
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.KeyFramesReceivedInPermille"));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.KeyFramesReceivedInPermille", 500));
+}
+
+TEST_F(ReceiveStatisticsProxyTest, TimingHistogramsNotUpdatedForTooFewSamples) {
+  const int kDecodeMs = 1;
+  const int kMaxDecodeMs = 2;
+  const int kCurrentDelayMs = 3;
+  const int kTargetDelayMs = 4;
+  const int kJitterBufferMs = 5;
+  const int kMinPlayoutDelayMs = 6;
+  const int kRenderDelayMs = 7;
+
+  for (int i = 0; i < kMinRequiredSamples - 1; ++i) {
+    statistics_proxy_->OnFrameBufferTimingsUpdated(
+        kDecodeMs, kMaxDecodeMs, kCurrentDelayMs, kTargetDelayMs,
+        kJitterBufferMs, kMinPlayoutDelayMs, kRenderDelayMs);
+  }
+
+  statistics_proxy_.reset();
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.DecodeTimeInMs"));
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.JitterBufferDelayInMs"));
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.TargetDelayInMs"));
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.CurrentDelayInMs"));
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.OnewayDelayInMs"));
+}
+
+TEST_F(ReceiveStatisticsProxyTest, TimingHistogramsAreUpdated) {
+  const int kDecodeMs = 1;
+  const int kMaxDecodeMs = 2;
+  const int kCurrentDelayMs = 3;
+  const int kTargetDelayMs = 4;
+  const int kJitterBufferMs = 5;
+  const int kMinPlayoutDelayMs = 6;
+  const int kRenderDelayMs = 7;
+
+  for (int i = 0; i < kMinRequiredSamples; ++i) {
+    statistics_proxy_->OnFrameBufferTimingsUpdated(
+        kDecodeMs, kMaxDecodeMs, kCurrentDelayMs, kTargetDelayMs,
+        kJitterBufferMs, kMinPlayoutDelayMs, kRenderDelayMs);
+  }
+
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DecodeTimeInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.JitterBufferDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.TargetDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.CurrentDelayInMs"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.OnewayDelayInMs"));
+
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.DecodeTimeInMs", kDecodeMs));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.JitterBufferDelayInMs",
+                                  kJitterBufferMs));
+  EXPECT_EQ(1,
+            metrics::NumEvents("WebRTC.Video.TargetDelayInMs", kTargetDelayMs));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.CurrentDelayInMs", kCurrentDelayMs));
+  EXPECT_EQ(1,
+            metrics::NumEvents("WebRTC.Video.OnewayDelayInMs", kTargetDelayMs));
+}
+
 }  // namespace webrtc
