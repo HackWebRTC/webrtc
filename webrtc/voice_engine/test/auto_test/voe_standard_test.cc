@@ -27,8 +27,7 @@ DEFINE_bool(automated, false,
             "If true, we'll run the automated tests we have in noninteractive "
             "mode.");
 
-using namespace webrtc;
-
+namespace webrtc {
 namespace voetest {
 
 int dummy = 0;  // Dummy used in different functions to avoid warnings
@@ -67,11 +66,8 @@ void SubAPIManager::DisplayStatus() const {
     TEST_LOG("  AudioProcessing\n");
   ANL();
 }
-}  // namespace voetest
 
 int RunInManualMode() {
-  using namespace voetest;
-
   SubAPIManager api_manager;
   api_manager.DisplayStatus();
 
@@ -97,24 +93,23 @@ int RunInManualMode() {
   }
 }
 
-// ----------------------------------------------------------------------------
-//                                       main
-// ----------------------------------------------------------------------------
+}  // namespace voetest
+}  // namespace webrtc
 
 #if !defined(WEBRTC_IOS)
 int main(int argc, char** argv) {
   // This function and RunInAutomatedMode is defined in automated_mode.cc
   // to avoid macro clashes with googletest (for instance ASSERT_TRUE).
-  InitializeGoogleTest(&argc, argv);
+  webrtc::voetest::InitializeGoogleTest(&argc, argv);
   // AllowCommandLineParsing allows us to ignore flags passed on to us by
   // Chromium build bots without having to explicitly disable them.
   google::AllowCommandLineReparsing();
   google::ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_automated) {
-    return RunInAutomatedMode();
+    return webrtc::voetest::RunInAutomatedMode();
   }
 
-  return RunInManualMode();
+  return webrtc::voetest::RunInManualMode();
 }
 #endif //#if !defined(WEBRTC_IOS)

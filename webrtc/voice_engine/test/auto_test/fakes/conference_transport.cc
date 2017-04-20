@@ -18,25 +18,27 @@
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/voice_engine_impl.h"
 
-namespace {
-  static const unsigned int kReflectorSsrc = 0x0000;
-  static const unsigned int kLocalSsrc = 0x0001;
-  static const unsigned int kFirstRemoteSsrc = 0x0002;
-  static const webrtc::CodecInst kCodecInst =
-      {120, "opus", 48000, 960, 2, 64000};
-  static const int kAudioLevelHeaderId = 1;
-
-  static unsigned int ParseRtcpSsrc(const void* data, size_t len) {
-    const size_t ssrc_pos = 4;
-    unsigned int ssrc = 0;
-    if (len >= (ssrc_pos + sizeof(ssrc))) {
-      ssrc = rtc::GetBE32(static_cast<const char*>(data) + ssrc_pos);
-    }
-    return ssrc;
-  }
-}  // namespace
-
+namespace webrtc {
 namespace voetest {
+
+namespace {
+
+static const unsigned int kReflectorSsrc = 0x0000;
+static const unsigned int kLocalSsrc = 0x0001;
+static const unsigned int kFirstRemoteSsrc = 0x0002;
+static const webrtc::CodecInst kCodecInst = {120, "opus", 48000, 960, 2, 64000};
+static const int kAudioLevelHeaderId = 1;
+
+static unsigned int ParseRtcpSsrc(const void* data, size_t len) {
+  const size_t ssrc_pos = 4;
+  unsigned int ssrc = 0;
+  if (len >= (ssrc_pos + sizeof(ssrc))) {
+    ssrc = rtc::GetBE32(static_cast<const char*>(data) + ssrc_pos);
+  }
+  return ssrc;
+}
+
+}  // namespace
 
 ConferenceTransport::ConferenceTransport()
     : packet_event_(webrtc::EventWrapper::Create()),
@@ -297,4 +299,6 @@ bool ConferenceTransport::GetReceiverStatistics(unsigned int id,
   EXPECT_EQ(0, local_rtp_rtcp_->GetRTCPStatistics(dst, *stats));
   return true;
 }
+
 }  // namespace voetest
+}  // namespace webrtc

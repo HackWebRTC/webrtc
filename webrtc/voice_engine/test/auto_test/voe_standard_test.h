@@ -18,12 +18,9 @@
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/test/auto_test/voe_test_common.h"
 
-#if defined(WEBRTC_ANDROID)
-extern char mobileLogMsg[640];
-#endif
-
 DECLARE_bool(include_timing_dependent_tests);
 
+namespace webrtc {
 namespace voetest {
 
 class SubAPIManager {
@@ -53,5 +50,6 @@ class SubAPIManager {
 };
 
 }  // namespace voetest
+}  // namespace webrtc
 
 #endif // WEBRTC_VOICE_ENGINE_VOE_STANDARD_TEST_H
