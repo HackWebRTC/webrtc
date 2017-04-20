@@ -136,6 +136,25 @@ class PacedSenderTest : public ::testing::Test {
   std::unique_ptr<PacedSender> send_bucket_;
 };
 
+TEST_F(PacedSenderTest, FirstSentPacketTimeIsSet) {
+  uint16_t sequence_number = 1234;
+  const uint32_t kSsrc = 12345;
+  const size_t kSizeBytes = 250;
+  const size_t kPacketToSend = 3;
+  const int64_t kStartMs = clock_.TimeInMilliseconds();
+
+  // No packet sent.
+  EXPECT_EQ(-1, send_bucket_->FirstSentPacketTimeMs());
+
+  for (size_t i = 0; i < kPacketToSend; ++i) {
+    SendAndExpectPacket(PacedSender::kNormalPriority, kSsrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), kSizeBytes, false);
+    send_bucket_->Process();
+    clock_.AdvanceTimeMilliseconds(send_bucket_->TimeUntilNextProcess());
+  }
+  EXPECT_EQ(kStartMs, send_bucket_->FirstSentPacketTimeMs());
+}
+
 TEST_F(PacedSenderTest, QueuePacket) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;

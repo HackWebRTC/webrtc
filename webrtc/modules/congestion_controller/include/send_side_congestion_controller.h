@@ -88,6 +88,7 @@ class SendSideCongestionController : public CallStatsObserver,
 
   virtual BitrateController* GetBitrateController() const;
   virtual int64_t GetPacerQueuingDelayMs() const;
+  virtual int64_t GetFirstPacketTimeMs() const;
   // TODO(nisse): Delete this accessor function. The pacer should be
   // internal to the congestion controller.
   virtual PacedSender* pacer() { return pacer_.get(); }

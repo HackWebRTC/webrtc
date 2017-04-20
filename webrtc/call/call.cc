@@ -216,7 +216,8 @@ class Call : public webrtc::Call,
                                                   const PacketTime& packet_time)
       SHARED_LOCKS_REQUIRED(receive_crit_);
 
-  void UpdateSendHistograms() EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
+  void UpdateSendHistograms(int64_t first_sent_packet_ms)
+      EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
   void UpdateReceiveHistograms();
   void UpdateHistograms();
   void UpdateAggregateNetworkState();
@@ -290,7 +291,6 @@ class Call : public webrtc::Call,
   // The following members are only accessed (exclusively) from one thread and
   // from the destructor, and therefore doesn't need any explicit
   // synchronization.
-  int64_t first_packet_sent_ms_;
   RateCounter received_bytes_per_second_counter_;
   RateCounter received_audio_bytes_per_second_counter_;
   RateCounter received_video_bytes_per_second_counter_;
@@ -355,7 +355,6 @@ Call::Call(const Call::Config& config,
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
       event_log_(config.event_log),
-      first_packet_sent_ms_(-1),
       received_bytes_per_second_counter_(clock_, nullptr, true),
       received_audio_bytes_per_second_counter_(clock_, nullptr, true),
       received_video_bytes_per_second_counter_(clock_, nullptr, true),
@@ -422,11 +421,13 @@ Call::~Call() {
   call_stats_->DeregisterStatsObserver(&receive_side_cc_);
   call_stats_->DeregisterStatsObserver(transport_send_->send_side_cc());
 
+  int64_t first_sent_packet_ms =
+      transport_send_->send_side_cc()->GetFirstPacketTimeMs();
   // Only update histograms after process threads have been shut down, so that
   // they won't try to concurrently update stats.
   {
     rtc::CritScope lock(&bitrate_crit_);
-    UpdateSendHistograms();
+    UpdateSendHistograms(first_sent_packet_ms);
   }
   UpdateReceiveHistograms();
   UpdateHistograms();
@@ -463,11 +464,11 @@ void Call::UpdateHistograms() {
       (clock_->TimeInMilliseconds() - start_ms_) / 1000);
 }
 
-void Call::UpdateSendHistograms() {
-  if (first_packet_sent_ms_ == -1)
+void Call::UpdateSendHistograms(int64_t first_sent_packet_ms) {
+  if (first_sent_packet_ms == -1)
     return;
   int64_t elapsed_sec =
-      (clock_->TimeInMilliseconds() - first_packet_sent_ms_) / 1000;
+      (clock_->TimeInMilliseconds() - first_sent_packet_ms) / 1000;
   if (elapsed_sec < metrics::kMinRunTimeInSeconds)
     return;
   const int kMinRequiredPeriodicSamples = 5;
@@ -1047,8 +1048,6 @@ void Call::UpdateAggregateNetworkState() {
 }
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
-  if (first_packet_sent_ms_ == -1)
-    first_packet_sent_ms_ = clock_->TimeInMilliseconds();
   video_send_delay_stats_->OnSentPacket(sent_packet.packet_id,
                                         clock_->TimeInMilliseconds());
   transport_send_->send_side_cc()->OnSentPacket(sent_packet);

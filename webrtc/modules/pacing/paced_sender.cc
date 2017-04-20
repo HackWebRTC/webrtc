@@ -262,6 +262,7 @@ PacedSender::PacedSender(const Clock* clock,
       max_padding_bitrate_kbps_(0u),
       pacing_bitrate_kbps_(0),
       time_last_update_us_(clock->TimeInMicroseconds()),
+      first_sent_packet_ms_(-1),
       packets_(new paced_sender::PacketQueue(clock)),
       packet_counter_(0) {
   UpdateBudgetWithElapsedTime(kMinPacketLimitMs);
@@ -368,6 +369,11 @@ size_t PacedSender::QueueSizePackets() const {
   return packets_->SizeInPackets();
 }
 
+int64_t PacedSender::FirstSentPacketTimeMs() const {
+  rtc::CritScope cs(&critsect_);
+  return first_sent_packet_ms_;
+}
+
 int64_t PacedSender::QueueInMs() const {
   rtc::CritScope cs(&critsect_);
 
@@ -442,6 +448,8 @@ void PacedSender::Process() {
 
     if (SendPacket(packet, pacing_info)) {
       // Send succeeded, remove it from the queue.
+      if (first_sent_packet_ms_ == -1)
+        first_sent_packet_ms_ = clock_->TimeInMilliseconds();
       bytes_sent += packet.bytes;
       packets_->FinalizePop(packet);
       if (is_probing && bytes_sent > recommended_probe_size)

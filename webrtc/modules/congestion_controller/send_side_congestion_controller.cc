@@ -177,6 +177,10 @@ int64_t SendSideCongestionController::GetPacerQueuingDelayMs() const {
   return IsNetworkDown() ? 0 : pacer_->QueueInMs();
 }
 
+int64_t SendSideCongestionController::GetFirstPacketTimeMs() const {
+  return pacer_->FirstSentPacketTimeMs();
+}
+
 void SendSideCongestionController::SignalNetworkState(NetworkState state) {
   LOG(LS_INFO) << "SignalNetworkState "
                << (state == kNetworkUp ? "Up" : "Down");

@@ -119,6 +119,10 @@ class PacedSender : public Module, public RtpPacketSender {
 
   virtual size_t QueueSizePackets() const;
 
+  // Returns the time when the first packet was sent, or -1 if no packet is
+  // sent.
+  virtual int64_t FirstSentPacketTimeMs() const;
+
   // Returns the number of milliseconds it will take to send the current
   // packets in the queue, given the current size and bitrate, ignoring prio.
   virtual int64_t ExpectedQueueTimeMs() const;
@@ -184,6 +188,7 @@ class PacedSender : public Module, public RtpPacketSender {
   uint32_t pacing_bitrate_kbps_ GUARDED_BY(critsect_);
 
   int64_t time_last_update_us_ GUARDED_BY(critsect_);
+  int64_t first_sent_packet_ms_ GUARDED_BY(critsect_);
 
   std::unique_ptr<paced_sender::PacketQueue> packets_ GUARDED_BY(critsect_);
   uint64_t packet_counter_;
