@@ -26,6 +26,7 @@
 #include "webrtc/modules/desktop_capture/desktop_frame_rotation.h"
 #include "webrtc/modules/desktop_capture/shared_desktop_frame.h"
 #include "webrtc/modules/desktop_capture/win/d3d_device.h"
+#include "webrtc/modules/desktop_capture/win/dxgi_context.h"
 #include "webrtc/modules/desktop_capture/win/dxgi_texture.h"
 
 namespace webrtc {
@@ -34,12 +35,7 @@ namespace webrtc {
 // video card. None of functions in this class is thread-safe.
 class DxgiOutputDuplicator {
  public:
-  struct Context {
-    // The updated region DxgiOutputDuplicator::DetectUpdatedRegion() output
-    // during last Duplicate() function call. It's always relative to the
-    // (0, 0).
-    DesktopRegion updated_region;
-  };
+  using Context = DxgiOutputContext;
 
   // Creates an instance of DxgiOutputDuplicator from a D3dDevice and one of its
   // IDXGIOutput1. Caller must maintain the lifetime of device, to make sure it

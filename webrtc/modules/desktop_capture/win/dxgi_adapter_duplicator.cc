@@ -31,10 +31,6 @@ bool IsValidRect(const RECT& rect) {
 
 }  // namespace
 
-DxgiAdapterDuplicator::Context::Context() = default;
-DxgiAdapterDuplicator::Context::Context(const Context& other) = default;
-DxgiAdapterDuplicator::Context::~Context() = default;
-
 DxgiAdapterDuplicator::DxgiAdapterDuplicator(const D3dDevice& device)
     : device_(device) {}
 DxgiAdapterDuplicator::DxgiAdapterDuplicator(DxgiAdapterDuplicator&&) = default;
