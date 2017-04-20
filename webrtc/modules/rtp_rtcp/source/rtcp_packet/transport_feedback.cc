@@ -376,39 +376,8 @@ uint16_t TransportFeedback::GetBaseSequence() const {
   return base_seq_no_;
 }
 
-std::vector<TransportFeedback::StatusSymbol>
-TransportFeedback::GetStatusVector() const {
-  std::vector<TransportFeedback::StatusSymbol> symbols;
-  uint16_t seq_no = GetBaseSequence();
-  for (const auto& packet : packets_) {
-    for (; seq_no != packet.sequence_number(); ++seq_no)
-      symbols.push_back(StatusSymbol::kNotReceived);
-    if (packet.delta_ticks() >= 0x00 && packet.delta_ticks() <= 0xff) {
-      symbols.push_back(StatusSymbol::kReceivedSmallDelta);
-    } else {
-      symbols.push_back(StatusSymbol::kReceivedLargeDelta);
-    }
-    ++seq_no;
-  }
-  return symbols;
-}
-
-std::vector<int16_t> TransportFeedback::GetReceiveDeltas() const {
-  std::vector<int16_t> deltas;
-  for (const auto& packet : packets_)
-    deltas.push_back(packet.delta_ticks());
-  return deltas;
-}
-
 int64_t TransportFeedback::GetBaseTimeUs() const {
   return static_cast<int64_t>(base_time_ticks_) * kBaseScaleFactor;
-}
-
-std::vector<int64_t> TransportFeedback::GetReceiveDeltasUs() const {
-  std::vector<int64_t> us_deltas;
-  for (const auto& packet : packets_)
-    us_deltas.push_back(packet.delta_us());
-  return us_deltas;
 }
 
 // De-serialize packet.

@@ -122,20 +122,12 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
   }
   last_timestamp_us_ = timestamp_us;
 
-  auto received_packets = feedback.GetReceivedPackets();
   std::vector<PacketFeedback> packet_feedback_vector;
-  if (received_packets.empty()) {
+  if (feedback.GetPacketStatusCount() == 0) {
     LOG(LS_INFO) << "Empty transport feedback packet received.";
     return packet_feedback_vector;
   }
-  const uint16_t last_sequence_number =
-      received_packets.back().sequence_number();
-  const size_t packet_count =
-      1 + ForwardDiff(feedback.GetBaseSequence(), last_sequence_number);
-  packet_feedback_vector.reserve(packet_count);
-  // feedback.GetStatusVector().size() is a less efficient way to reach what
-  // should be the same value.
-  RTC_DCHECK_EQ(packet_count, feedback.GetStatusVector().size());
+  packet_feedback_vector.reserve(feedback.GetPacketStatusCount());
 
   {
     rtc::CritScope cs(&lock_);
@@ -143,7 +135,7 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
     int64_t offset_us = 0;
     int64_t timestamp_ms = 0;
     uint16_t seq_num = feedback.GetBaseSequence();
-    for (const auto& packet : received_packets) {
+    for (const auto& packet : feedback.GetReceivedPackets()) {
       // Insert into the vector those unreceived packets which precede this
       // iteration's received packet.
       for (; seq_num != packet.sequence_number(); ++seq_num) {
