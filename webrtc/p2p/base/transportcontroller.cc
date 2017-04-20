@@ -602,7 +602,11 @@ bool TransportController::SetLocalTransportDescription_n(
   if (redetermine_role_on_ice_restart_ && transport->local_description() &&
       IceCredentialsChanged(transport->local_description()->ice_ufrag,
                             transport->local_description()->ice_pwd,
-                            tdesc.ice_ufrag, tdesc.ice_pwd)) {
+                            tdesc.ice_ufrag, tdesc.ice_pwd) &&
+      // Don't change the ICE role if the remote endpoint is ICE lite; we
+      // should always be controlling in that case.
+      (!transport->remote_description() ||
+       transport->remote_description()->ice_mode != ICEMODE_LITE)) {
     IceRole new_ice_role =
         (action == CA_OFFER) ? ICEROLE_CONTROLLING : ICEROLE_CONTROLLED;
     SetIceRole(new_ice_role);
