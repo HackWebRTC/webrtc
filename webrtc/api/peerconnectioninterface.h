@@ -753,6 +753,10 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
   // Terminates all media, closes the transports, and in general releases any
   // resources used by the PeerConnection. This is an irreversible operation.
+  //
+  // Note that after this method completes, the PeerConnection will no longer
+  // use the PeerConnectionObserver interface passed in on construction, and
+  // thus the observer object can be safely destroyed.
   virtual void Close() = 0;
 
  protected:
@@ -880,6 +884,15 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 
   virtual void SetOptions(const Options& options) = 0;
 
+  // |allocator| and |cert_generator| may be null, in which case default
+  // implementations will be used.
+  //
+  // |observer| must not be null.
+  //
+  // Note that this method does not take ownership of |observer|; it's the
+  // responsibility of the caller to delete it. It can be safely deleted after
+  // Close has been called on the returned PeerConnection, which ensures no
+  // more observer callbacks will be invoked.
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       std::unique_ptr<cricket::PortAllocator> allocator,
