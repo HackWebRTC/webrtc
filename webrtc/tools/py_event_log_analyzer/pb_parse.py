@@ -10,7 +10,7 @@
 
 from __future__ import division
 import struct
-import pyproto.webrtc.call.rtc_event_log_pb2 as rtc_pb
+import pyproto.webrtc.logging.rtc_event_log.rtc_event_log_pb2 as rtc_pb
 
 
 class DataPoint(object):
