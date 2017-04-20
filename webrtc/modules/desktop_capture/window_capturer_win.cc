@@ -252,12 +252,12 @@ void WindowCapturerWin::CaptureFrame() {
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));
 
-  if (!result) {
+  if (result) {
+    callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
+  } else {
     LOG(LS_ERROR) << "Both PrintWindow() and BitBlt() failed.";
-    frame.reset();
+    callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
   }
-
-  callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 }
 
 }  // namespace
