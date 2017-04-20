@@ -21,10 +21,12 @@ namespace webrtc {
 
 TEST(NetworkTesterTest, ServerClient) {
   TestController client(
-      0, 0, webrtc::test::ResourcePath("network_tester/client_config", "dat"));
+      0, 0, webrtc::test::ResourcePath("network_tester/client_config", "dat"),
+      webrtc::test::OutputPath() + "client_packet_log.dat");
   TestController server(
       9090, 9090,
-      webrtc::test::ResourcePath("network_tester/server_config", "dat"));
+      webrtc::test::ResourcePath("network_tester/server_config", "dat"),
+      webrtc::test::OutputPath() + "server_packet_log.dat");
   client.SendConnectTo("127.0.0.1", 9090);
   EXPECT_TRUE_WAIT(server.IsTestDone() && client.IsTestDone(), 2000);
 }

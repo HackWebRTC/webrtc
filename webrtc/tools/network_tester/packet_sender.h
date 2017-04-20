@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/constructormagic.h"
 #include "webrtc/base/ignore_wundef.h"
 #include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/base/task_queue.h"

@@ -14,8 +14,10 @@ namespace webrtc {
 
 TestController::TestController(int min_port,
                                int max_port,
-                               const std::string& config_file_path)
+                               const std::string& config_file_path,
+                               const std::string& log_file_path)
     : config_file_path_(config_file_path),
+      packet_logger_(log_file_path),
       local_test_done_(false),
       remote_test_done_(false) {
   RTC_DCHECK_RUN_ON(&test_controller_thread_checker_);
@@ -104,7 +106,7 @@ void TestController::OnReadPacket(rtc::AsyncPacketSocket* socket,
     case NetworkTesterPacket::TEST_DATA: {
       packet.set_arrival_timestamp(packet_time.timestamp);
       packet.set_packet_size(len);
-      // log packet
+      packet_logger_.LogPacket(packet);
       break;
     }
     case NetworkTesterPacket::TEST_DONE: {

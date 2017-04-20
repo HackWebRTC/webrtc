@@ -28,6 +28,8 @@ if (rtc_enable_protobuf) {
     sources = [
       "config_reader.cc",
       "config_reader.h",
+      "packet_logger.cc",
+      "packet_logger.h",
       "packet_sender.cc",
       "packet_sender.h",
       "test_controller.cc",
@@ -39,6 +41,7 @@ if (rtc_enable_protobuf) {
     deps = [
       ":network_tester_config_proto",
       ":network_tester_packet_proto",
+      "../../base:protobuf_utils",
       "../../base:rtc_task_queue",
       "../../p2p",
     ]
@@ -87,6 +90,21 @@ if (rtc_enable_protobuf) {
     ]
 
     data = network_tester_unittests_resources
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  rtc_executable("network_tester_server") {
+    sources = [
+      "server.cc",
+    ]
+
+    deps = [
+      ":network_tester",
+    ]
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
