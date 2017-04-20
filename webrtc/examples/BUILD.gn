@@ -160,7 +160,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCMobile/common/ARDUtilities.h",
       "objc/AppRTCMobile/common/ARDUtilities.m",
     ]
-    configs += [ "//build/config/compiler:enable_arc" ]
     public_configs = [ ":apprtc_common_config" ]
 
     deps = [
@@ -227,7 +226,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCMobile/RTCSessionDescription+JSON.h",
       "objc/AppRTCMobile/RTCSessionDescription+JSON.m",
     ]
-    configs += [ "//build/config/compiler:enable_arc" ]
     public_configs = [ ":apprtc_signaling_config" ]
     deps = [
       ":apprtc_common",
@@ -260,7 +258,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objc/AppRTCMobile/ios/UIImage+ARDUtilities.h",
         "objc/AppRTCMobile/ios/UIImage+ARDUtilities.m",
       ]
-      configs += [ "//build/config/compiler:enable_arc" ]
 
       deps = [
         ":apprtc_common",
@@ -337,10 +334,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objc/AppRTCMobile/mac/APPRTCViewController.h",
         "objc/AppRTCMobile/mac/APPRTCViewController.m",
       ]
-      configs += [
-        "//webrtc:common_objc",
-        "//build/config/compiler:enable_arc",
-      ]
+      configs += [ "//webrtc:common_objc" ]
       deps = [
         ":apprtc_common",
         ":apprtc_signaling",
@@ -394,10 +388,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCMobile/third_party/SocketRocket/SRWebSocket.h",
       "objc/AppRTCMobile/third_party/SocketRocket/SRWebSocket.m",
     ]
-    configs += [
-      "//build/config/compiler:enable_arc",
-      ":socketrocket_warning_config",
-    ]
+    configs += [ ":socketrocket_warning_config" ]
     public_configs = [ ":socketrocket_include_config" ]
 
     libs = [
@@ -430,7 +421,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
           "//build/config/ios:xctest",
           "//third_party/ocmock",
         ]
-        configs += [ "//build/config/compiler:enable_arc" ]
       }
 
       rtc_ios_xctest_test("apprtcmobile_tests") {

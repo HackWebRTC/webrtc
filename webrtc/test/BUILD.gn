@@ -128,7 +128,6 @@ rtc_source_set("fileutils") {
   ]
   if (is_ios) {
     sources += [ "testsupport/iosfileutils.mm" ]
-    configs += [ "//build/config/compiler:enable_arc" ]
   }
   visibility = [ ":*" ]
   deps = [

@@ -31,10 +31,7 @@ if (is_ios || is_mac) {
     deps = [
       "../base:rtc_base",
     ]
-    configs += [
-      "..:common_objc",
-      "//build/config/compiler:enable_arc",
-    ]
+    configs += [ "..:common_objc" ]
     public_configs = [ ":rtc_sdk_common_objc_config" ]
     sources = [
       "objc/Framework/Classes/NSString+StdString.h",
@@ -230,10 +227,7 @@ if (is_ios || is_mac) {
       ]
     }
 
-    configs += [
-      "..:common_objc",
-      "//build/config/compiler:enable_arc",
-    ]
+    configs += [ "..:common_objc" ]
 
     public_configs = [ ":rtc_sdk_common_objc_config" ]
 
@@ -373,10 +367,7 @@ if (is_ios || is_mac) {
         "VideoToolbox.framework",
       ]
 
-      configs += [
-        "..:common_objc",
-        "//build/config/compiler:enable_arc",
-      ]
+      configs += [ "..:common_objc" ]
 
       public_configs = [ ":rtc_sdk_common_objc_config" ]
 
@@ -406,10 +397,7 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/h264_video_toolbox_nalu.h",
     ]
 
-    configs += [
-      "//webrtc:common_objc",
-      "//build/config/compiler:enable_arc",
-    ]
+    configs += [ "//webrtc:common_objc" ]
 
     deps = [
       ":rtc_sdk_common_objc",
