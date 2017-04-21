@@ -186,7 +186,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
           // caused trouble on some weird devices.
           if (sharedContext == null) {
             logD("EglBase10.create context");
-            eglBase = new EglBase10(null /* sharedContext */, configAttributes);
+            eglBase = EglBase.createEgl10(configAttributes);
           } else {
             logD("EglBase.create shared context");
             eglBase = EglBase.create(sharedContext, configAttributes);
