@@ -34,9 +34,12 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
             rtc::Thread::Current(),
             nullptr,
             std::unique_ptr<cricket::TransportController>(
-                new cricket::TransportController(rtc::Thread::Current(),
-                                                 rtc::Thread::Current(),
-                                                 nullptr)),
+                new cricket::TransportController(
+                    rtc::Thread::Current(),
+                    rtc::Thread::Current(),
+                    nullptr,
+                    /*redetermine_role_on_ice_restart=*/true,
+                    rtc::CryptoOptions())),
             std::unique_ptr<cricket::SctpTransportInternalFactory>()) {}
   MOCK_METHOD0(voice_channel, cricket::VoiceChannel*());
   MOCK_METHOD0(video_channel, cricket::VideoChannel*());

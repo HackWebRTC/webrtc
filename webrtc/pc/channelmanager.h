@@ -146,10 +146,6 @@ class ChannelManager {
   // engines will start offering an RTX codec. Must be called before Init().
   bool SetVideoRtxEnabled(bool enable);
 
-  // Define crypto options to set on newly created channels. Doesn't change
-  // options on already created channels.
-  bool SetCryptoOptions(const rtc::CryptoOptions& crypto_options);
-
   // Starts/stops the local microphone and enables polling of the input level.
   bool capturing() const { return capturing_; }
 
@@ -175,7 +171,6 @@ class ChannelManager {
   bool InitMediaEngine_w();
   void DestructorDeletes_w();
   void Terminate_w();
-  bool SetCryptoOptions_w(const rtc::CryptoOptions& crypto_options);
   VoiceChannel* CreateVoiceChannel_w(
       webrtc::MediaControllerInterface* media_controller,
       DtlsTransportInternal* rtp_dtls_transport,

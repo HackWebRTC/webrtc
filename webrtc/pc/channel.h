@@ -203,8 +203,6 @@ class BaseChannel
 
   virtual cricket::MediaType media_type() = 0;
 
-  bool SetCryptoOptions(const rtc::CryptoOptions& crypto_options);
-
   // This function returns true if we require SRTP for call setup.
   bool srtp_required_for_testing() const { return srtp_required_; }
 
@@ -306,8 +304,6 @@ class BaseChannel
   // |rtcp_channel| indicates whether to set up the RTP or RTCP filter.
   bool SetupDtlsSrtp_n(bool rtcp);
   void MaybeSetupDtlsSrtp_n();
-  // Set the DTLS-SRTP cipher policy on this channel as appropriate.
-  bool SetDtlsSrtpCryptoSuites_n(DtlsTransportInternal* transport, bool rtcp);
 
   // Should be called whenever the conditions for
   // IsReadyToReceiveMedia/IsReadyToSendMedia are satisfied (or unsatisfied).
@@ -359,13 +355,7 @@ class BaseChannel
   // From MessageHandler
   void OnMessage(rtc::Message* pmsg) override;
 
-  const rtc::CryptoOptions& crypto_options() const {
-    return crypto_options_;
-  }
-
   // Handled in derived classes
-  // Get the SRTP crypto suites to use for RTP media
-  virtual void GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const = 0;
   virtual void OnConnectionMonitorUpdate(ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) = 0;
 
@@ -419,7 +409,6 @@ class BaseChannel
   bool has_received_packet_ = false;
   bool dtls_keyed_ = false;
   const bool srtp_required_ = true;
-  rtc::CryptoOptions crypto_options_;
   int rtp_abs_sendtime_extn_id_ = -1;
 
   // MediaChannel related members that should be accessed from the worker
@@ -534,7 +523,6 @@ class VoiceChannel : public BaseChannel {
   bool SetOutputVolume_w(uint32_t ssrc, double volume);
 
   void OnMessage(rtc::Message* pmsg) override;
-  void GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const override;
   void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) override;
@@ -617,7 +605,6 @@ class VideoChannel : public BaseChannel {
                                  webrtc::RtpParameters parameters);
 
   void OnMessage(rtc::Message* pmsg) override;
-  void GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const override;
   void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) override;
@@ -726,7 +713,6 @@ class RtpDataChannel : public BaseChannel {
   void UpdateMediaSendRecvState_w() override;
 
   void OnMessage(rtc::Message* pmsg) override;
-  void GetSrtpCryptoSuites_n(std::vector<int>* crypto_suites) const override;
   void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) override;

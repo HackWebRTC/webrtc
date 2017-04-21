@@ -2069,6 +2069,28 @@ TEST_F(PeerConnectionIntegrationTest,
                                     expected_cipher_suite);
 }
 
+// Verify that media can be transmitted end-to-end when GCM crypto suites are
+// enabled. Note that the above tests, such as GcmCipherUsedWhenGcmSupported,
+// only verify that a GCM cipher is negotiated, and not necessarily that SRTP
+// works with it.
+TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithGcmCipher) {
+  PeerConnectionFactory::Options gcm_options;
+  gcm_options.crypto_options.enable_gcm_crypto_suites = true;
+  ASSERT_TRUE(
+      CreatePeerConnectionWrappersWithOptions(gcm_options, gcm_options));
+  ConnectFakeSignaling();
+  // Do normal offer/answer and wait for some frames to be received in each
+  // direction.
+  caller()->AddAudioVideoMediaStream();
+  callee()->AddAudioVideoMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ExpectNewFramesReceivedWithWait(
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kMaxWaitForFramesMs);
+}
+
 // This test sets up a call between two parties with audio, video and an RTP
 // data channel.
 TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithRtpDataChannel) {
@@ -2383,6 +2405,34 @@ TEST_F(PeerConnectionIntegrationTest, AddSctpDataChannelInSubsequentOffer) {
   callee()->data_channel()->Send(DataBuffer(data));
   EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
                  kDefaultTimeout);
+}
+
+// Set up a connection initially just using SCTP data channels, later upgrading
+// to audio/video, ensuring frames are received end-to-end. Effectively the
+// inverse of the test above.
+// This was broken in M57; see https://crbug.com/711243
+TEST_F(PeerConnectionIntegrationTest, SctpDataChannelToAudioVideoUpgrade) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  // Do initial offer/answer with just data channel.
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  // Wait until data can be sent over the data channel.
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  ASSERT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Do subsequent offer/answer with two-way audio and video. Audio and video
+  // should end up bundled on the DTLS/ICE transport already used for data.
+  caller()->AddAudioVideoMediaStream();
+  callee()->AddAudioVideoMediaStream();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ExpectNewFramesReceivedWithWait(
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kMaxWaitForFramesMs);
 }
 
 #endif  // HAVE_SCTP

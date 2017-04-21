@@ -420,16 +420,18 @@ class WebRtcSessionTest
   // otherwise one will be generated using the |cert_generator|.
   void Init(
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
+      PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy,
+      const rtc::CryptoOptions& crypto_options) {
     ASSERT_TRUE(session_.get() == NULL);
     fake_sctp_transport_factory_ = new FakeSctpTransportFactory();
     session_.reset(new WebRtcSessionForTest(
         media_controller_.get(), rtc::Thread::Current(), rtc::Thread::Current(),
         rtc::Thread::Current(), allocator_.get(), &observer_,
         std::unique_ptr<cricket::TransportController>(
-            new cricket::TransportController(rtc::Thread::Current(),
-                                             rtc::Thread::Current(),
-                                             allocator_.get())),
+            new cricket::TransportController(
+                rtc::Thread::Current(), rtc::Thread::Current(),
+                allocator_.get(),
+                /*redetermine_role_on_ice_restart=*/true, crypto_options)),
         std::unique_ptr<FakeSctpTransportFactory>(
             fake_sctp_transport_factory_)));
     session_->SignalDataChannelOpenMessage.connect(
@@ -444,6 +446,7 @@ class WebRtcSessionTest
     EXPECT_TRUE(session_->Initialize(options_, std::move(cert_generator),
                                      configuration_));
     session_->set_metrics_observer(metrics_observer_);
+    crypto_options_ = crypto_options;
   }
 
   void OnDataChannelOpenMessage(const std::string& label,
@@ -453,11 +456,8 @@ class WebRtcSessionTest
   }
 
   void Init() {
-    Init(nullptr, PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
-  }
-
-  void Init(PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
-    Init(nullptr, rtcp_mux_policy);
+    Init(nullptr, PeerConnectionInterface::kRtcpMuxPolicyNegotiate,
+         rtc::CryptoOptions());
   }
 
   void InitWithBundlePolicy(
@@ -469,7 +469,12 @@ class WebRtcSessionTest
   void InitWithRtcpMuxPolicy(
       PeerConnectionInterface::RtcpMuxPolicy rtcp_mux_policy) {
     PeerConnectionInterface::RTCConfiguration configuration;
-    Init(rtcp_mux_policy);
+    Init(nullptr, rtcp_mux_policy, rtc::CryptoOptions());
+  }
+
+  void InitWithCryptoOptions(const rtc::CryptoOptions& crypto_options) {
+    Init(nullptr, PeerConnectionInterface::kRtcpMuxPolicyNegotiate,
+         crypto_options);
   }
 
   // Successfully init with DTLS; with a certificate generated and supplied or
@@ -486,7 +491,8 @@ class WebRtcSessionTest
       RTC_CHECK(false);
     }
     Init(std::move(cert_generator),
-         PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
+         PeerConnectionInterface::kRtcpMuxPolicyNegotiate,
+         rtc::CryptoOptions());
   }
 
   // Init with DTLS with a store that will fail to generate a certificate.
@@ -495,15 +501,14 @@ class WebRtcSessionTest
         new FakeRTCCertificateGenerator());
     cert_generator->set_should_fail(true);
     Init(std::move(cert_generator),
-         PeerConnectionInterface::kRtcpMuxPolicyNegotiate);
+         PeerConnectionInterface::kRtcpMuxPolicyNegotiate,
+         rtc::CryptoOptions());
   }
 
   void InitWithGcm() {
     rtc::CryptoOptions crypto_options;
     crypto_options.enable_gcm_crypto_suites = true;
-    channel_manager_->SetCryptoOptions(crypto_options);
-    with_gcm_ = true;
-    Init();
+    InitWithCryptoOptions(crypto_options);
   }
 
   void SendAudioVideoStream1() {
@@ -599,9 +604,7 @@ class WebRtcSessionTest
       session_options->data_channel_type = cricket::DCT_QUIC;
     }
 
-    if (with_gcm_) {
-      session_options->crypto_options.enable_gcm_crypto_suites = true;
-    }
+    session_options->crypto_options = crypto_options_;
   }
 
   void GetOptionsForAnswer(cricket::MediaSessionOptions* session_options) {
@@ -618,9 +621,7 @@ class WebRtcSessionTest
       session_options->data_channel_type = session_->data_channel_type();
     }
 
-    if (with_gcm_) {
-      session_options->crypto_options.enable_gcm_crypto_suites = true;
-    }
+    session_options->crypto_options = crypto_options_;
   }
 
   // Creates a local offer and applies it. Starts ICE.
@@ -1542,7 +1543,7 @@ class WebRtcSessionTest
   // Last values received from data channel creation signal.
   std::string last_data_channel_label_;
   InternalDataChannelInit last_data_channel_config_;
-  bool with_gcm_ = false;
+  rtc::CryptoOptions crypto_options_;
 };
 
 TEST_P(WebRtcSessionTest, TestInitializeWithDtls) {
@@ -3370,7 +3371,7 @@ TEST_F(WebRtcSessionTest, TestAddChannelToConnectedBundle) {
   configuration_.bundle_policy =
       PeerConnectionInterface::kBundlePolicyMaxBundle;
   options_.disable_encryption = true;
-  Init(PeerConnectionInterface::kRtcpMuxPolicyRequire);
+  InitWithRtcpMuxPolicy(PeerConnectionInterface::kRtcpMuxPolicyRequire);
 
   // Negotiate an audio channel with MAX_BUNDLE enabled.
   SendAudioOnlyStream2();

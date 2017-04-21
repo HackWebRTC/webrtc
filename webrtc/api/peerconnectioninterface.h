@@ -882,6 +882,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
     rtc::CryptoOptions crypto_options;
   };
 
+  // Set the options to be used for subsequently created PeerConnections.
   virtual void SetOptions(const Options& options) = 0;
 
   // |allocator| and |cert_generator| may be null, in which case default

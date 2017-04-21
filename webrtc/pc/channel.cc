@@ -242,14 +242,6 @@ bool BaseChannel::InitNetwork_n(
   SetTransports_n(rtp_dtls_transport, rtcp_dtls_transport, rtp_packet_transport,
                   rtcp_packet_transport);
 
-  if (rtp_dtls_transport_ &&
-      !SetDtlsSrtpCryptoSuites_n(rtp_dtls_transport_, false)) {
-    return false;
-  }
-  if (rtcp_dtls_transport_ &&
-      !SetDtlsSrtpCryptoSuites_n(rtcp_dtls_transport_, true)) {
-    return false;
-  }
   if (rtp_transport_.rtcp_mux_required()) {
     rtcp_mux_filter_.SetActive();
   }
@@ -588,11 +580,6 @@ int BaseChannel::SetOption_n(SocketType type,
       break;
   }
   return transport ? transport->SetOption(opt, value) : -1;
-}
-
-bool BaseChannel::SetCryptoOptions(const rtc::CryptoOptions& crypto_options) {
-  crypto_options_ = crypto_options;
-  return true;
 }
 
 void BaseChannel::OnWritableState(rtc::PacketTransportInternal* transport) {
@@ -1019,19 +1006,6 @@ void BaseChannel::SignalDtlsSrtpSetupFailure_n(bool rtcp) {
 void BaseChannel::SignalDtlsSrtpSetupFailure_s(bool rtcp) {
   RTC_DCHECK(signaling_thread() == rtc::Thread::Current());
   SignalDtlsSrtpSetupFailure(this, rtcp);
-}
-
-bool BaseChannel::SetDtlsSrtpCryptoSuites_n(DtlsTransportInternal* transport,
-                                            bool rtcp) {
-  std::vector<int> crypto_suites;
-  // We always use the default SRTP crypto suites for RTCP, but we may use
-  // different crypto suites for RTP depending on the media type.
-  if (!rtcp) {
-    GetSrtpCryptoSuites_n(&crypto_suites);
-  } else {
-    GetDefaultSrtpCryptoSuites(crypto_options(), &crypto_suites);
-  }
-  return transport->SetSrtpCryptoSuites(crypto_suites);
 }
 
 bool BaseChannel::ShouldSetupDtlsSrtp_n() const {
@@ -1956,11 +1930,6 @@ void VoiceChannel::OnAudioMonitorUpdate(AudioMonitor* monitor,
   SignalAudioMonitor(this, info);
 }
 
-void VoiceChannel::GetSrtpCryptoSuites_n(
-    std::vector<int>* crypto_suites) const {
-  GetSupportedAudioCryptoSuites(crypto_options(), crypto_suites);
-}
-
 VideoChannel::VideoChannel(rtc::Thread* worker_thread,
                            rtc::Thread* network_thread,
                            rtc::Thread* signaling_thread,
@@ -2210,11 +2179,6 @@ void VideoChannel::OnMediaMonitorUpdate(
     VideoMediaChannel* media_channel, const VideoMediaInfo &info) {
   RTC_DCHECK(media_channel == this->media_channel());
   SignalMediaMonitor(this, info);
-}
-
-void VideoChannel::GetSrtpCryptoSuites_n(
-    std::vector<int>* crypto_suites) const {
-  GetSupportedVideoCryptoSuites(crypto_options(), crypto_suites);
 }
 
 RtpDataChannel::RtpDataChannel(rtc::Thread* worker_thread,
@@ -2485,11 +2449,6 @@ void RtpDataChannel::OnDataChannelReadyToSend(bool writable) {
   // that the transport channel is ready.
   signaling_thread()->Post(RTC_FROM_HERE, this, MSG_READYTOSENDDATA,
                            new DataChannelReadyToSendMessageData(writable));
-}
-
-void RtpDataChannel::GetSrtpCryptoSuites_n(
-    std::vector<int>* crypto_suites) const {
-  GetSupportedDataCryptoSuites(crypto_options(), crypto_suites);
 }
 
 }  // namespace cricket

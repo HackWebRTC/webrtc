@@ -88,22 +88,6 @@ bool ChannelManager::SetVideoRtxEnabled(bool enable) {
   }
 }
 
-bool ChannelManager::SetCryptoOptions(
-    const rtc::CryptoOptions& crypto_options) {
-  return worker_thread_->Invoke<bool>(RTC_FROM_HERE, Bind(
-      &ChannelManager::SetCryptoOptions_w, this, crypto_options));
-}
-
-bool ChannelManager::SetCryptoOptions_w(
-    const rtc::CryptoOptions& crypto_options) {
-  if (!video_channels_.empty() || !voice_channels_.empty() ||
-      !data_channels_.empty()) {
-    LOG(LS_WARNING) << "Not changing crypto options in existing channels.";
-  }
-  crypto_options_ = crypto_options;
-  return true;
-}
-
 void ChannelManager::GetSupportedAudioSendCodecs(
     std::vector<AudioCodec>* codecs) const {
   *codecs = media_engine_->audio_send_codecs();
@@ -247,7 +231,6 @@ VoiceChannel* ChannelManager::CreateVoiceChannel_w(
       new VoiceChannel(worker_thread_, network_thread_, signaling_thread,
                        media_engine_.get(), media_channel, content_name,
                        rtcp_packet_transport == nullptr, srtp_required);
-  voice_channel->SetCryptoOptions(crypto_options_);
 
   if (!voice_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
                              rtp_packet_transport, rtcp_packet_transport)) {
@@ -333,7 +316,6 @@ VideoChannel* ChannelManager::CreateVideoChannel_w(
   VideoChannel* video_channel = new VideoChannel(
       worker_thread_, network_thread_, signaling_thread, media_channel,
       content_name, rtcp_packet_transport == nullptr, srtp_required);
-  video_channel->SetCryptoOptions(crypto_options_);
   if (!video_channel->Init_w(rtp_dtls_transport, rtcp_dtls_transport,
                              rtp_packet_transport, rtcp_packet_transport)) {
     delete video_channel;
@@ -402,7 +384,6 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel_w(
   RtpDataChannel* data_channel = new RtpDataChannel(
       worker_thread_, network_thread_, signaling_thread, media_channel,
       content_name, rtcp_transport == nullptr, srtp_required);
-  data_channel->SetCryptoOptions(crypto_options_);
   if (!data_channel->Init_w(rtp_transport, rtcp_transport, rtp_transport,
                             rtcp_transport)) {
     LOG(LS_WARNING) << "Failed to init data channel.";

@@ -35,10 +35,10 @@
 namespace {
 const char kInline[] = "inline:";
 
-void GetSupportedCryptoSuiteNames(void (*func)(const rtc::CryptoOptions&,
-                                      std::vector<int>*),
-                                  const rtc::CryptoOptions& crypto_options,
-                                  std::vector<std::string>* names) {
+void GetSupportedSdesCryptoSuiteNames(void (*func)(const rtc::CryptoOptions&,
+                                                   std::vector<int>*),
+                                      const rtc::CryptoOptions& crypto_options,
+                                      std::vector<std::string>* names) {
   std::vector<int> crypto_suites;
   func(crypto_options, &crypto_suites);
   for (const auto crypto : crypto_suites) {
@@ -179,8 +179,8 @@ bool FindMatchingCrypto(const CryptoParamsVec& cryptos,
 }
 
 // For audio, HMAC 32 is prefered over HMAC 80 because of the low overhead.
-void GetSupportedAudioCryptoSuites(const rtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites) {
+void GetSupportedAudioSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
+                                       std::vector<int>* crypto_suites) {
   if (crypto_options.enable_gcm_crypto_suites) {
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
@@ -189,36 +189,15 @@ void GetSupportedAudioCryptoSuites(const rtc::CryptoOptions& crypto_options,
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
 }
 
-void GetSupportedAudioCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
+void GetSupportedAudioSdesCryptoSuiteNames(
+    const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names) {
-  GetSupportedCryptoSuiteNames(GetSupportedAudioCryptoSuites,
-                               crypto_options, crypto_suite_names);
+  GetSupportedSdesCryptoSuiteNames(GetSupportedAudioSdesCryptoSuites,
+                                   crypto_options, crypto_suite_names);
 }
 
-void GetSupportedVideoCryptoSuites(const rtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites) {
-  GetDefaultSrtpCryptoSuites(crypto_options, crypto_suites);
-}
-
-void GetSupportedVideoCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
-    std::vector<std::string>* crypto_suite_names) {
-  GetSupportedCryptoSuiteNames(GetSupportedVideoCryptoSuites,
-                               crypto_options, crypto_suite_names);
-}
-
-void GetSupportedDataCryptoSuites(const rtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites) {
-  GetDefaultSrtpCryptoSuites(crypto_options, crypto_suites);
-}
-
-void GetSupportedDataCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
-    std::vector<std::string>* crypto_suite_names) {
-  GetSupportedCryptoSuiteNames(GetSupportedDataCryptoSuites,
-                               crypto_options, crypto_suite_names);
-}
-
-void GetDefaultSrtpCryptoSuites(const rtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites) {
+void GetSupportedVideoSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
+                                       std::vector<int>* crypto_suites) {
   if (crypto_options.enable_gcm_crypto_suites) {
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
@@ -226,10 +205,27 @@ void GetDefaultSrtpCryptoSuites(const rtc::CryptoOptions& crypto_options,
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
 }
 
-void GetDefaultSrtpCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
+void GetSupportedVideoSdesCryptoSuiteNames(
+    const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names) {
-  GetSupportedCryptoSuiteNames(GetDefaultSrtpCryptoSuites,
-                               crypto_options, crypto_suite_names);
+  GetSupportedSdesCryptoSuiteNames(GetSupportedVideoSdesCryptoSuites,
+                                   crypto_options, crypto_suite_names);
+}
+
+void GetSupportedDataSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
+                                      std::vector<int>* crypto_suites) {
+  if (crypto_options.enable_gcm_crypto_suites) {
+    crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
+    crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
+  }
+  crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
+}
+
+void GetSupportedDataSdesCryptoSuiteNames(
+    const rtc::CryptoOptions& crypto_options,
+    std::vector<std::string>* crypto_suite_names) {
+  GetSupportedSdesCryptoSuiteNames(GetSupportedDataSdesCryptoSuites,
+                                   crypto_options, crypto_suite_names);
 }
 
 // Support any GCM cipher (if enabled through options). For video support only
@@ -1678,7 +1674,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
 
   std::unique_ptr<AudioContentDescription> audio(new AudioContentDescription());
   std::vector<std::string> crypto_suites;
-  GetSupportedAudioCryptoSuiteNames(options.crypto_options, &crypto_suites);
+  GetSupportedAudioSdesCryptoSuiteNames(options.crypto_options, &crypto_suites);
   if (!CreateMediaContentOffer(
           options,
           audio_codecs,
@@ -1728,7 +1724,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
 
   std::unique_ptr<VideoContentDescription> video(new VideoContentDescription());
   std::vector<std::string> crypto_suites;
-  GetSupportedVideoCryptoSuiteNames(options.crypto_options, &crypto_suites);
+  GetSupportedVideoSdesCryptoSuiteNames(options.crypto_options, &crypto_suites);
   if (!CreateMediaContentOffer(
           options,
           video_codecs,
@@ -1804,7 +1800,8 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     data->set_protocol(
         secure_transport ? kMediaProtocolDtlsSctp : kMediaProtocolSctp);
   } else {
-    GetSupportedDataCryptoSuiteNames(options.crypto_options, &crypto_suites);
+    GetSupportedDataSdesCryptoSuiteNames(options.crypto_options,
+                                         &crypto_suites);
   }
 
   if (!CreateMediaContentOffer(

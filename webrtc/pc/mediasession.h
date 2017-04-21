@@ -613,21 +613,21 @@ VideoContentDescription* GetFirstVideoContentDescription(
 DataContentDescription* GetFirstDataContentDescription(
     SessionDescription* sdesc);
 
-void GetSupportedAudioCryptoSuites(const rtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
-void GetSupportedVideoCryptoSuites(const rtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
-void GetSupportedDataCryptoSuites(const rtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
-void GetDefaultSrtpCryptoSuites(const rtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
-void GetSupportedAudioCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
+// Helper functions to return crypto suites used for SDES.
+void GetSupportedAudioSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
+                                       std::vector<int>* crypto_suites);
+void GetSupportedVideoSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
+                                       std::vector<int>* crypto_suites);
+void GetSupportedDataSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
+                                      std::vector<int>* crypto_suites);
+void GetSupportedAudioSdesCryptoSuiteNames(
+    const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
-void GetSupportedVideoCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
+void GetSupportedVideoSdesCryptoSuiteNames(
+    const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
-void GetSupportedDataCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
-    std::vector<std::string>* crypto_suite_names);
-void GetDefaultSrtpCryptoSuiteNames(const rtc::CryptoOptions& crypto_options,
+void GetSupportedDataSdesCryptoSuiteNames(
+    const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
 
 }  // namespace cricket

@@ -65,22 +65,17 @@ class TransportController::ChannelPair {
   RTC_DISALLOW_COPY_AND_ASSIGN(ChannelPair);
 };
 
-TransportController::TransportController(rtc::Thread* signaling_thread,
-                                         rtc::Thread* network_thread,
-                                         PortAllocator* port_allocator,
-                                         bool redetermine_role_on_ice_restart)
+TransportController::TransportController(
+    rtc::Thread* signaling_thread,
+    rtc::Thread* network_thread,
+    PortAllocator* port_allocator,
+    bool redetermine_role_on_ice_restart,
+    const rtc::CryptoOptions& crypto_options)
     : signaling_thread_(signaling_thread),
       network_thread_(network_thread),
       port_allocator_(port_allocator),
-      redetermine_role_on_ice_restart_(redetermine_role_on_ice_restart) {}
-
-TransportController::TransportController(rtc::Thread* signaling_thread,
-                                         rtc::Thread* network_thread,
-                                         PortAllocator* port_allocator)
-    : TransportController(signaling_thread,
-                          network_thread,
-                          port_allocator,
-                          true) {}
+      redetermine_role_on_ice_restart_(redetermine_role_on_ice_restart),
+      crypto_options_(crypto_options) {}
 
 TransportController::~TransportController() {
   // Channel destructors may try to send packets, so this needs to happen on
@@ -362,7 +357,7 @@ DtlsTransportInternal* TransportController::CreateDtlsTransportChannel_n(
     const std::string&,
     int,
     IceTransportInternal* ice) {
-  DtlsTransport* dtls = new DtlsTransport(ice);
+  DtlsTransport* dtls = new DtlsTransport(ice, crypto_options_);
   dtls->SetSslMaxProtocolVersion(ssl_max_version_);
   return dtls;
 }

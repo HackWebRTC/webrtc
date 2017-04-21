@@ -219,7 +219,6 @@ bool PeerConnectionFactory::Initialize() {
       std::move(media_engine), worker_thread_, network_thread_));
 
   channel_manager_->SetVideoRtxEnabled(true);
-  channel_manager_->SetCryptoOptions(options_.crypto_options);
   if (!channel_manager_->Init()) {
     return false;
   }
@@ -229,9 +228,6 @@ bool PeerConnectionFactory::Initialize() {
 
 void PeerConnectionFactory::SetOptions(const Options& options) {
   options_ = options;
-  if (channel_manager_) {
-    channel_manager_->SetCryptoOptions(options.crypto_options);
-  }
 }
 
 rtc::scoped_refptr<AudioSourceInterface>
@@ -370,9 +366,9 @@ cricket::TransportController* PeerConnectionFactory::CreateTransportController(
     cricket::PortAllocator* port_allocator,
     bool redetermine_role_on_ice_restart) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  return new cricket::TransportController(signaling_thread_, network_thread_,
-                                          port_allocator,
-                                          redetermine_role_on_ice_restart);
+  return new cricket::TransportController(
+      signaling_thread_, network_thread_, port_allocator,
+      redetermine_role_on_ice_restart, options_.crypto_options);
 }
 
 rtc::Thread* PeerConnectionFactory::signaling_thread() {
