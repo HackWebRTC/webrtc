@@ -85,3 +85,58 @@ TEST_F(TCPPortTest, TestTCPPortWithLocalhostAddress) {
       lport->CreateConnection(rport->Candidates()[0], Port::ORIGIN_MESSAGE);
   EXPECT_TRUE_WAIT(conn->connected(), kTimeout);
 }
+
+class SentPacketCounter : public sigslot::has_slots<> {
+ public:
+  SentPacketCounter(TCPPort* p) {
+    p->SignalSentPacket.connect(this, &SentPacketCounter::OnSentPacket);
+  }
+
+  int sent_packets() const { return sent_packets_; }
+
+ private:
+  void OnSentPacket(const rtc::SentPacket&) { ++sent_packets_; }
+
+  int sent_packets_ = 0;
+};
+
+// Test that SignalSentPacket is fired when a packet is successfully sent, for
+// both TCP client and server sockets.
+TEST_F(TCPPortTest, SignalSentPacket) {
+  std::unique_ptr<TCPPort> client(CreateTCPPort(kLocalAddr));
+  std::unique_ptr<TCPPort> server(CreateTCPPort(kRemoteAddr));
+  client->SetIceRole(cricket::ICEROLE_CONTROLLING);
+  server->SetIceRole(cricket::ICEROLE_CONTROLLED);
+  client->PrepareAddress();
+  server->PrepareAddress();
+
+  Connection* client_conn =
+      client->CreateConnection(server->Candidates()[0], Port::ORIGIN_MESSAGE);
+  ASSERT_NE(nullptr, client_conn);
+  ASSERT_TRUE_WAIT(client_conn->connected(), kTimeout);
+
+  // Need to get the port of the actual outgoing socket, not the server socket..
+  cricket::Candidate client_candidate = client->Candidates()[0];
+  client_candidate.set_address(static_cast<cricket::TCPConnection*>(client_conn)
+                                   ->socket()
+                                   ->GetLocalAddress());
+  Connection* server_conn =
+      server->CreateConnection(client_candidate, Port::ORIGIN_THIS_PORT);
+  ASSERT_NE(nullptr, server_conn);
+  ASSERT_TRUE_WAIT(server_conn->connected(), kTimeout);
+
+  client_conn->Ping(rtc::TimeMillis());
+  server_conn->Ping(rtc::TimeMillis());
+  ASSERT_TRUE_WAIT(client_conn->writable(), kTimeout);
+  ASSERT_TRUE_WAIT(server_conn->writable(), kTimeout);
+
+  SentPacketCounter client_counter(client.get());
+  SentPacketCounter server_counter(server.get());
+  static const char kData[] = "hello";
+  for (int i = 0; i < 10; ++i) {
+    client_conn->Send(&kData, sizeof(kData), rtc::PacketOptions());
+    server_conn->Send(&kData, sizeof(kData), rtc::PacketOptions());
+  }
+  EXPECT_EQ_WAIT(10, client_counter.sent_packets(), kTimeout);
+  EXPECT_EQ_WAIT(10, server_counter.sent_packets(), kTimeout);
+}

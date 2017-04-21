@@ -157,10 +157,19 @@ Connection* TCPPort::CreateConnection(const Candidate& address,
   TCPConnection* conn = NULL;
   if (rtc::AsyncPacketSocket* socket =
       GetIncoming(address.address(), true)) {
+    // Incoming connection; we already created a socket and connected signals,
+    // so we need to hand off the "read packet" responsibility to
+    // TCPConnection.
     socket->SignalReadPacket.disconnect(this);
     conn = new TCPConnection(this, address, socket);
   } else {
+    // Outgoing connection, which will create a new socket for which we still
+    // need to connect SignalReadyToSend and SignalSentPacket.
     conn = new TCPConnection(this, address);
+    if (conn->socket()) {
+      conn->socket()->SignalReadyToSend.connect(this, &TCPPort::OnReadyToSend);
+      conn->socket()->SignalSentPacket.connect(this, &TCPPort::OnSentPacket);
+    }
   }
   AddOrReplaceConnection(conn);
   return conn;
