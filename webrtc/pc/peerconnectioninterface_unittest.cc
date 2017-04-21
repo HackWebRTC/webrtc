@@ -3165,6 +3165,31 @@ TEST_F(PeerConnectionInterfaceTest,
   pc_->StopRtcEventLog();
 }
 
+// Test that generated offers/answers include "ice-option:trickle".
+TEST_F(PeerConnectionInterfaceTest, OffersAndAnswersHaveTrickleIceOption) {
+  CreatePeerConnection();
+
+  // First, create an offer with audio/video.
+  FakeConstraints constraints;
+  constraints.SetMandatoryReceiveAudio(true);
+  constraints.SetMandatoryReceiveVideo(true);
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, &constraints));
+  cricket::SessionDescription* desc = offer->description();
+  ASSERT_EQ(2u, desc->transport_infos().size());
+  EXPECT_TRUE(desc->transport_infos()[0].description.HasOption("trickle"));
+  EXPECT_TRUE(desc->transport_infos()[1].description.HasOption("trickle"));
+
+  // Apply the offer as a remote description, then create an answer.
+  EXPECT_TRUE(DoSetRemoteDescription(offer.release()));
+  std::unique_ptr<SessionDescriptionInterface> answer;
+  ASSERT_TRUE(DoCreateAnswer(&answer, &constraints));
+  desc = answer->description();
+  ASSERT_EQ(2u, desc->transport_infos().size());
+  EXPECT_TRUE(desc->transport_infos()[0].description.HasOption("trickle"));
+  EXPECT_TRUE(desc->transport_infos()[1].description.HasOption("trickle"));
+}
+
 // Test that ICE renomination isn't offered if it's not enabled in the PC's
 // RTCConfiguration.
 TEST_F(PeerConnectionInterfaceTest, IceRenominationNotOffered) {

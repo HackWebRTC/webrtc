@@ -262,8 +262,8 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
   bool GetIceRenomination(const TransportInfo* transport_info) {
     const std::vector<std::string>& ice_options =
         transport_info->description.transport_options;
-    auto iter = std::find(ice_options.begin(), ice_options.end(),
-                          cricket::ICE_RENOMINATION_STR);
+    auto iter =
+        std::find(ice_options.begin(), ice_options.end(), "renomination");
     return iter != ice_options.end();
   }
 

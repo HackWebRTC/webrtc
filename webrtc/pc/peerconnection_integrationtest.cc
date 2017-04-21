@@ -2508,17 +2508,17 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithIceRenomination) {
   const cricket::SessionDescription* desc =
       caller()->pc()->local_description()->description();
   for (const cricket::TransportInfo& info : desc->transport_infos()) {
-    ASSERT_NE(info.description.transport_options.end(),
-              std::find(info.description.transport_options.begin(),
-                        info.description.transport_options.end(),
-                        cricket::ICE_RENOMINATION_STR));
+    ASSERT_NE(
+        info.description.transport_options.end(),
+        std::find(info.description.transport_options.begin(),
+                  info.description.transport_options.end(), "renomination"));
   }
   desc = callee()->pc()->local_description()->description();
   for (const cricket::TransportInfo& info : desc->transport_infos()) {
-    ASSERT_NE(info.description.transport_options.end(),
-              std::find(info.description.transport_options.begin(),
-                        info.description.transport_options.end(),
-                        cricket::ICE_RENOMINATION_STR));
+    ASSERT_NE(
+        info.description.transport_options.end(),
+        std::find(info.description.transport_options.begin(),
+                  info.description.transport_options.end(), "renomination"));
   }
   ExpectNewFramesReceivedWithWait(
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
