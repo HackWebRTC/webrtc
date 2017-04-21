@@ -18,13 +18,10 @@ rtc_static_library("system_wrappers") {
     "include/aligned_malloc.h",
     "include/atomic32.h",
     "include/clock.h",
-    "include/cpu_features_wrapper.h",
     "include/cpu_info.h",
     "include/event_wrapper.h",
-    "include/field_trial.h",
     "include/file_wrapper.h",
     "include/fix_interlocked_exchange_pointer_win.h",
-    "include/metrics.h",
     "include/ntp_time.h",
     "include/rtp_to_ntp_estimator.h",
     "include/rw_lock_wrapper.h",
@@ -63,6 +60,11 @@ rtc_static_library("system_wrappers") {
   libs = []
   deps = [
     "..:webrtc_common",
+  ]
+  public_deps = [
+    ":cpu_features_api",
+    ":field_trial_api",
+    ":metrics_api",
   ]
 
   if (is_android) {
@@ -104,6 +106,11 @@ rtc_static_library("system_wrappers") {
     libs += [ "winmm.lib" ]
 
     cflags = [ "/wd4334" ]  # Ignore warning on shift operator promotion.
+
+    # Windows needs //webrtc/base:rtc_base due to include of webrtc/base/win32.h
+    # in source/clock.cc.
+    # TODO(kjellander): Remove (bugs.webrtc.org/6828)
+    deps += [ "../base:rtc_base" ]
   }
 
   if (is_win && is_clang) {
@@ -114,10 +121,38 @@ rtc_static_library("system_wrappers") {
   deps += [ "../base:rtc_base_approved" ]
 }
 
+rtc_source_set("cpu_features_api") {
+  sources = [
+    "include/cpu_features_wrapper.h",
+  ]
+  deps = [
+    "..:webrtc_common",
+  ]
+}
+
+rtc_source_set("field_trial_api") {
+  sources = [
+    "include/field_trial.h",
+  ]
+}
+
+rtc_source_set("metrics_api") {
+  sources = [
+    "include/metrics.h",
+  ]
+  deps = [
+    "..:webrtc_common",
+    "../base:rtc_base_approved",
+  ]
+}
+
 rtc_static_library("field_trial_default") {
   sources = [
     "include/field_trial_default.h",
     "source/field_trial_default.cc",
+  ]
+  deps = [
+    ":field_trial_api",
   ]
 }
 
@@ -125,6 +160,10 @@ rtc_static_library("metrics_default") {
   sources = [
     "include/metrics_default.h",
     "source/metrics_default.cc",
+  ]
+  deps = [
+    ":metrics_api",
+    "../base:rtc_base_approved",
   ]
 }
 
@@ -153,6 +192,9 @@ if (is_linux) {
     sources = [
       "source/cpu_features_linux.c",
     ]
+    deps = [
+      ":cpu_features_api",
+    ]
   }
 }
 
@@ -179,6 +221,8 @@ if (rtc_include_tests) {
     deps = [
       ":metrics_default",
       ":system_wrappers",
+      "..:webrtc_common",
+      "../base:rtc_base_approved",
       "../test:test_main",
       "//testing/gtest",
     ]

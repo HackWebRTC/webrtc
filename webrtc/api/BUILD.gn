@@ -35,7 +35,9 @@ rtc_source_set("call_api") {
 }
 
 rtc_static_library("libjingle_peerconnection_api") {
-  check_includes = false  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
+  # Cannot have GN check enabled since that would introduce dependency cycles
+  # TODO(kjellander): Remove (bugs.webrtc.org/7504)
+  check_includes = false
   cflags = []
   sources = [
     "datachannel.h",
@@ -82,7 +84,18 @@ rtc_static_library("libjingle_peerconnection_api") {
 
   deps = [
     ":rtc_stats_api",
+    "..:webrtc_common",
+    "../base:rtc_base",
+    "../base:rtc_base_approved",
+    "audio_codecs:audio_codecs_api",
   ]
+
+  # This is needed until bugs.webrtc.org/7504 is removed so this target can
+  # properly depend on ../media:rtc_media_base
+  # TODO(kjellander): Remove this dependency.
+  if (is_nacl) {
+    deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
+  }
 }
 
 rtc_source_set("ortc_api") {

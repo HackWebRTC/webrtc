@@ -85,7 +85,10 @@ rtc_static_library("rtc_p2p") {
   defines = []
 
   deps = [
+    "../api:libjingle_peerconnection_api",
+    "../api:ortc_api",
     "../base:rtc_base",
+    "../system_wrappers:field_trial_api",
   ]
 
   if (rtc_build_expat) {
@@ -145,6 +148,7 @@ if (rtc_include_tests) {
   rtc_source_set("p2p_test_utils") {
     testonly = true
     sources = [
+      "base/fakecandidatepair.h",
       "base/fakedtlstransport.h",
       "base/fakeicetransport.h",
       "base/fakepackettransport.h",
@@ -155,16 +159,15 @@ if (rtc_include_tests) {
       "base/teststunserver.h",
       "base/testturnserver.h",
     ]
-
     deps = [
       ":rtc_p2p",
+      "../api:ortc_api",
+      "../base:rtc_base",
+      "../base:rtc_base_approved",
+      "../base:rtc_base_tests_utils",
+      "../test:test_support",
       "//testing/gmock",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("rtc_p2p_unittests") {
@@ -205,6 +208,11 @@ if (rtc_include_tests) {
       ":p2p_test_utils",
       ":rtc_p2p",
       "../api:fakemetricsobserver",
+      "../api:ortc_api",
+      "../base:rtc_base",
+      "../base:rtc_base_approved",
+      "../base:rtc_base_tests_utils",
+      "../test:test_support",
       "//testing/gmock",
       "//testing/gtest",
     ]
@@ -228,6 +236,7 @@ rtc_static_library("libstunprober") {
   }
 
   deps = [
+    ":rtc_p2p",
     "..:webrtc_common",
     "../base:rtc_base",
   ]
@@ -241,6 +250,10 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":libstunprober",
+      ":p2p_test_utils",
+      ":rtc_p2p",
+      "../base:rtc_base",
+      "../base:rtc_base_tests_utils",
       "//testing/gmock",
       "//testing/gtest",
     ]

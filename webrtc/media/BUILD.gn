@@ -107,6 +107,10 @@ rtc_static_library("rtc_media_base") {
     "../common_video:common_video",
     "../p2p",
   ]
+
+  if (is_nacl) {
+    deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
+  }
 }
 
 rtc_static_library("rtc_media") {
