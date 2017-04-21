@@ -210,24 +210,26 @@ class ViEEncoder::VideoSourceProxy {
     return wants;
   }
 
-  void RequestResolutionLowerThan(int pixel_count) {
+  bool RequestResolutionLowerThan(int pixel_count) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
     if (!IsResolutionScalingEnabledLocked()) {
       // This can happen since |degradation_preference_| is set on libjingle's
       // worker thread but the adaptation is done on the encoder task queue.
-      return;
+      return false;
     }
     // The input video frame size will have a resolution with less than or
     // equal to |max_pixel_count| depending on how the source can scale the
     // input frame size.
     const int pixels_wanted = (pixel_count * 3) / 5;
     if (pixels_wanted < kMinPixelsPerFrame)
-      return;
+      return false;
+
     sink_wants_.max_pixel_count = pixels_wanted;
     sink_wants_.target_pixel_count = rtc::Optional<int>();
     if (source_)
       source_->AddOrUpdateSink(vie_encoder_, GetActiveSinkWants());
+    return true;
   }
 
   void RequestFramerateLowerThan(int framerate_fps) {
@@ -833,30 +835,20 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
       return;
   }
 
-  last_adaptation_request_.emplace(adaptation_request);
-  const std::vector<int>& scale_counter = GetScaleCounters();
-
-  switch (reason) {
-    case kQuality:
-      stats_proxy_->OnQualityRestrictedResolutionChanged(scale_counter[reason] +
-                                                         1);
-      break;
-    case kCpu:
-      if (scale_counter[reason] >= max_downgrades)
-        return;
-      // Update stats accordingly.
-      stats_proxy_->OnCpuRestrictedResolutionChanged(true);
-      break;
+  if (reason == kCpu) {
+    const int cpu_scale_counter = GetScaleCounters()[reason];
+    if (cpu_scale_counter >= max_downgrades)
+      return;
   }
-
-  IncrementScaleCounter(reason, 1);
 
   switch (degradation_preference_) {
     case VideoSendStream::DegradationPreference::kBalanced:
       FALLTHROUGH();
     case VideoSendStream::DegradationPreference::kMaintainFramerate:
-      source_proxy_->RequestResolutionLowerThan(
-          adaptation_request.input_pixel_count_);
+      if (!source_proxy_->RequestResolutionLowerThan(
+              adaptation_request.input_pixel_count_)) {
+        return;
+      }
       LOG(LS_INFO) << "Scaling down resolution.";
       break;
     case VideoSendStream::DegradationPreference::kMaintainResolution:
@@ -868,8 +860,24 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
       RTC_NOTREACHED();
   }
 
+  last_adaptation_request_.emplace(adaptation_request);
+
+  IncrementScaleCounter(reason, 1);
+
+  // Update stats.
+  const std::vector<int>& scale_counters = GetScaleCounters();
+  switch (reason) {
+    case kQuality:
+      stats_proxy_->OnQualityRestrictedResolutionChanged(
+          scale_counters[reason]);
+      break;
+    case kCpu:
+      stats_proxy_->OnCpuRestrictedResolutionChanged(true);
+      break;
+  }
+
   for (size_t i = 0; i < kScaleReasonSize; ++i) {
-    LOG(LS_INFO) << "Scaled " << GetScaleCounters()[i]
+    LOG(LS_INFO) << "Scaled " << scale_counters[i]
                  << " times for reason: " << (i ? "cpu" : "quality");
   }
 }
@@ -908,27 +916,15 @@ void ViEEncoder::AdaptUp(AdaptReason reason) {
       return;
   }
 
-  last_adaptation_request_.emplace(adaptation_request);
-
-  switch (reason) {
-    case kQuality:
-      stats_proxy_->OnQualityRestrictedResolutionChanged(scale_counter - 1);
-      break;
-    case kCpu:
-      // Update stats accordingly.
-      stats_proxy_->OnCpuRestrictedResolutionChanged(scale_counter > 1);
-      break;
-  }
-
   // Decrease counter of how many times we have scaled down, for this
   // degradation preference mode and reason.
   IncrementScaleCounter(reason, -1);
 
   // Get a sum of how many times have scaled down, in total, for this
   // degradation preference mode. If it is 0, remove any restraints.
-  const std::vector<int>& current_scale_counters = GetScaleCounters();
-  const int scale_sum = std::accumulate(current_scale_counters.begin(),
-                                        current_scale_counters.end(), 0);
+  const std::vector<int>& scale_counters = GetScaleCounters();
+  const int scale_sum =
+      std::accumulate(scale_counters.begin(), scale_counters.end(), 0);
   switch (degradation_preference_) {
     case VideoSendStream::DegradationPreference::kBalanced:
       FALLTHROUGH();
@@ -958,8 +954,22 @@ void ViEEncoder::AdaptUp(AdaptReason reason) {
       RTC_NOTREACHED();
   }
 
+  last_adaptation_request_.emplace(adaptation_request);
+
+  // Update stats.
+  switch (reason) {
+    case kQuality:
+      stats_proxy_->OnQualityRestrictedResolutionChanged(
+          scale_counters[reason]);
+      break;
+    case kCpu:
+      stats_proxy_->OnCpuRestrictedResolutionChanged(scale_counters[reason] >
+                                                     0);
+      break;
+  }
+
   for (size_t i = 0; i < kScaleReasonSize; ++i) {
-    LOG(LS_INFO) << "Scaled " << current_scale_counters[i]
+    LOG(LS_INFO) << "Scaled " << scale_counters[i]
                  << " times for reason: " << (i ? "cpu" : "quality");
   }
 }
