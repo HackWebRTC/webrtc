@@ -81,7 +81,6 @@ config("libjingle_peerconnection_warnings_config") {
 }
 
 rtc_static_library("libjingle_peerconnection") {
-  check_includes = false  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
   cflags = []
   sources = [
     "audiotrack.cc",

@@ -10,7 +10,10 @@
 
 #import "WebRTC/RTCMetricsSampleInfo.h"
 
-#include "webrtc/system_wrappers/include/metrics_default.h"
+// Adding 'nogncheck' to disable the gn include headers check.
+// We don't want to depend on 'system_wrappers:metrics_default' because
+// clients should be able to provide their own implementation.
+#include "webrtc/system_wrappers/include/metrics_default.h"  // nogncheck
 
 NS_ASSUME_NONNULL_BEGIN
 

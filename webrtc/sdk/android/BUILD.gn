@@ -69,6 +69,19 @@ rtc_static_library("libjingle_peerconnection_jni") {
   }
 
   deps = [
+    "../..:webrtc_common",
+    "../../api:video_frame_api",
+    "../../api/video_codecs:video_codecs_api",
+    "../../base:rtc_base",
+    "../../base:rtc_base_approved",
+    "../../base:rtc_task_queue",
+    "../../common_video:common_video",
+    "../../media:rtc_media",
+    "../../media:rtc_media_base",
+    "../../modules/utility:utility",
+    "../../modules/video_coding:video_coding_utility",
+    "../../system_wrappers:system_wrappers",
+    "../../voice_engine:voice_engine",
     "//webrtc/pc:libjingle_peerconnection",
   ]
 
@@ -91,6 +104,8 @@ rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
   configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
 
   deps = [
+    ":libjingle_peerconnection_jni",
+    "../../system_wrappers",
     "//webrtc/pc:libjingle_peerconnection",
     "//webrtc/system_wrappers:field_trial_default",
     "//webrtc/system_wrappers:metrics_default",
@@ -108,6 +123,7 @@ rtc_shared_library("libjingle_peerconnection_so") {
   deps = [
     ":libjingle_peerconnection_jni",
     ":libjingle_peerconnection_metrics_default_jni",
+    "../../base:rtc_base",
     "//webrtc/pc:libjingle_peerconnection",
   ]
   output_extension = "so"

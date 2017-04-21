@@ -33,6 +33,7 @@ check_targets = [
   "//webrtc/media/*",
   "//webrtc/modules/*",
   "//webrtc/ortc/*",
+  "//webrtc/sdk/*",
   "//webrtc/stats/*",
   "//webrtc/tools/*",
   "//webrtc/test/*",

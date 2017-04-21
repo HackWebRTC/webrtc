@@ -5,4 +5,5 @@ include_rules = [
   "+webrtc/modules/utility/include/jvm_android.h",
   "+webrtc/modules/video_coding/utility/vp8_header_parser.h",
   "+webrtc/pc",
+  "+webrtc/system_wrappers/include/field_trial_default.h",
 ]

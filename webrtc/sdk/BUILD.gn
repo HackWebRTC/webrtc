@@ -28,14 +28,6 @@ if (is_ios || is_mac) {
   }
 
   rtc_static_library("rtc_sdk_common_objc") {
-    deps = [
-      "../base:rtc_base",
-    ]
-    configs += [
-      "..:common_objc",
-      "//build/config/compiler:enable_arc",
-    ]
-    public_configs = [ ":rtc_sdk_common_objc_config" ]
     sources = [
       "objc/Framework/Classes/NSString+StdString.h",
       "objc/Framework/Classes/NSString+StdString.mm",
@@ -58,6 +50,14 @@ if (is_ios || is_mac) {
       "objc/Framework/Headers/WebRTC/RTCSSLAdapter.h",
       "objc/Framework/Headers/WebRTC/RTCTracing.h",
     ]
+    configs += [
+      "..:common_objc",
+      "//build/config/compiler:enable_arc",
+    ]
+    public_configs = [ ":rtc_sdk_common_objc_config" ]
+    deps = [
+      "../base:rtc_base",
+    ]
     if (is_ios) {
       sources += [
         "objc/Framework/Classes/RTCCameraPreviewView.m",
@@ -73,6 +73,7 @@ if (is_ios || is_mac) {
           "objc/Framework/Classes/Metal/RTCMTLNV12Renderer.mm",
           "objc/Framework/Classes/Metal/RTCMTLVideoView.m",
         ]
+        deps += [ "../api:video_frame_api" ]
       }
 
       libs = [ "AVFoundation.framework" ]
@@ -194,8 +195,22 @@ if (is_ios || is_mac) {
       "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
     ]
 
+    configs += [
+      "..:common_objc",
+      "//build/config/compiler:enable_arc",
+    ]
+
+    public_configs = [ ":rtc_sdk_common_objc_config" ]
+
     deps = [
       ":webrtc_h264_video_toolbox",
+      "../api:video_frame_api",
+      "../base:rtc_base",
+      "../base:rtc_base_approved",
+      "../common_video",
+      "../media:rtc_media",
+      "../media:rtc_media_base",
+      "../system_wrappers",
     ]
 
     if (is_ios) {
@@ -229,13 +244,6 @@ if (is_ios || is_mac) {
         "MetalKit.framework",
       ]
     }
-
-    configs += [
-      "..:common_objc",
-      "//build/config/compiler:enable_arc",
-    ]
-
-    public_configs = [ ":rtc_sdk_common_objc_config" ]
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -276,11 +284,6 @@ if (is_ios || is_mac) {
           sources += [ "objc/Framework/Classes/Metal/RTCMTLVideoView.m" ]
         }
       }
-      deps = [
-        ":rtc_sdk_peerconnection_objc",
-        "//third_party/ocmock",
-        "//webrtc/system_wrappers:system_wrappers_default",
-      ]
 
       # TODO(tkchin): Cleanup this warning.
       cflags = [ "-Wno-objc-property-no-attribute" ]
@@ -291,6 +294,13 @@ if (is_ios || is_mac) {
       ldflags = [ "-ObjC" ]
 
       defines = [ "GTEST_RELATIVE_PATH" ]
+      deps = [
+        ":rtc_sdk_peerconnection_objc",
+        "../base:rtc_base_tests_utils",
+        "//third_party/ocmock",
+        "//webrtc/system_wrappers:system_wrappers_default",
+      ]
+
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -358,6 +368,13 @@ if (is_ios || is_mac) {
         "@rpath/$output_name.framework/$output_name",
       ]
 
+      configs += [
+        "..:common_objc",
+        "//build/config/compiler:enable_arc",
+      ]
+
+      public_configs = [ ":rtc_sdk_common_objc_config" ]
+
       deps = [
         ":rtc_sdk_peerconnection_objc",
         "../system_wrappers:field_trial_default",
@@ -372,13 +389,6 @@ if (is_ios || is_mac) {
         "GLKit.framework",
         "VideoToolbox.framework",
       ]
-
-      configs += [
-        "..:common_objc",
-        "//build/config/compiler:enable_arc",
-      ]
-
-      public_configs = [ ":rtc_sdk_common_objc_config" ]
 
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163)
@@ -413,6 +423,13 @@ if (is_ios || is_mac) {
 
     deps = [
       ":rtc_sdk_common_objc",
+      "../api:video_frame_api",
+      "../base:rtc_base_approved",
+      "../common_video",
+      "../media:rtc_media_base",
+      "../modules/video_coding:video_coding_utility",
+      "../modules/video_coding:webrtc_h264",
+      "../system_wrappers",
     ]
 
     libs = [
