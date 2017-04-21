@@ -295,6 +295,7 @@ if (rtc_include_tests) {
       if (target_cpu != "x64") {
         sources += [ "ios/audio_device_unittest_ios.cc" ]
       }
+      deps += [ "//third_party/ocmock" ]
     }
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

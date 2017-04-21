@@ -751,19 +751,24 @@ void AudioDeviceIOS::UpdateAudioUnit(bool can_play_or_record) {
   }
 }
 
-void AudioDeviceIOS::ConfigureAudioSession() {
+bool AudioDeviceIOS::ConfigureAudioSession() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTCLog(@"Configuring audio session.");
   if (has_configured_session_) {
     RTCLogWarning(@"Audio session already configured.");
-    return;
+    return false;
   }
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
   [session lockForConfiguration];
-  [session configureWebRTCSession:nil];
+  bool success = [session configureWebRTCSession:nil];
   [session unlockForConfiguration];
-  has_configured_session_ = true;
-  RTCLog(@"Configured audio session.");
+  if (success) {
+    has_configured_session_ = true;
+    RTCLog(@"Configured audio session.");
+  } else {
+    RTCLog(@"Failed to configure audio session.");
+  }
+  return success;
 }
 
 void AudioDeviceIOS::UnconfigureAudioSession() {

@@ -9,11 +9,13 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <OCMock/OCMock.h>
 
 #include "webrtc/test/gtest.h"
 
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
+#import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
 
 @interface RTCAudioSessionTestDelegate : NSObject <RTCAudioSessionDelegate>
 @end
@@ -185,6 +187,65 @@
   EXPECT_EQ(0, audioSession.activationCount);
 }
 
+// Hack - fixes OCMVerify link error
+// Link error is: Undefined symbols for architecture i386:
+// "OCMMakeLocation(objc_object*, char const*, int)", referenced from:
+// -[RTCAudioSessionTest testConfigureWebRTCSession] in RTCAudioSessionTest.o
+// ld: symbol(s) not found for architecture i386
+// REASON: https://github.com/erikdoe/ocmock/issues/238
+OCMLocation *OCMMakeLocation(id testCase, const char *fileCString, int line){
+  return [OCMLocation locationWithTestCase:testCase
+                                      file:[NSString stringWithUTF8String:fileCString]
+                                      line:line];
+}
+
+- (void)testConfigureWebRTCSession {
+  NSError *error = nil;
+
+  void (^setActiveBlock)(NSInvocation *invocation) = ^(NSInvocation *invocation) {
+    __autoreleasing NSError **retError;
+    [invocation getArgument:&retError atIndex:4];
+    *retError = [NSError errorWithDomain:@"AVAudioSession"
+                                    code:AVAudioSessionErrorInsufficientPriority
+                                userInfo:nil];
+    BOOL failure = NO;
+    [invocation setReturnValue:&failure];
+  };
+
+  id mockAVAudioSession = OCMPartialMock([AVAudioSession sharedInstance]);
+  OCMStub([[mockAVAudioSession ignoringNonObjectArgs]
+      setActive:YES withOptions:0 error:((NSError __autoreleasing **)[OCMArg anyPointer])]).
+      andDo(setActiveBlock);
+
+  id mockAudioSession = OCMPartialMock([RTCAudioSession sharedInstance]);
+  OCMStub([mockAudioSession session]).andReturn(mockAVAudioSession);
+
+  RTCAudioSession *audioSession = mockAudioSession;
+  EXPECT_EQ(0, audioSession.activationCount);
+  [audioSession lockForConfiguration];
+  EXPECT_TRUE([audioSession checkLock:nil]);
+  // configureWebRTCSession is forced to fail in the above mock interface,
+  // so activationCount should remain 0
+  OCMExpect([[mockAVAudioSession ignoringNonObjectArgs]
+      setActive:YES withOptions:0 error:((NSError __autoreleasing **)[OCMArg anyPointer])]).
+      andDo(setActiveBlock);
+  OCMExpect([mockAudioSession session]).andReturn(mockAVAudioSession);
+  EXPECT_FALSE([audioSession configureWebRTCSession:&error]);
+  EXPECT_EQ(0, audioSession.activationCount);
+
+  id session = audioSession.session;
+  EXPECT_EQ(session, mockAVAudioSession);
+  EXPECT_EQ(NO, [mockAVAudioSession setActive:YES withOptions:0 error:&error]);
+  [audioSession unlockForConfiguration];
+
+  OCMVerify([mockAudioSession session]);
+  OCMVerify([[mockAVAudioSession ignoringNonObjectArgs] setActive:YES withOptions:0 error:&error]);
+  OCMVerify([[mockAVAudioSession ignoringNonObjectArgs] setActive:NO withOptions:0 error:&error]);
+
+  [mockAVAudioSession stopMocking];
+  [mockAudioSession stopMocking];
+}
+
 @end
 
 namespace webrtc {
@@ -229,5 +290,9 @@ TEST_F(AudioSessionTest, AudioSessionActivation) {
   [test testAudioSessionActivation];
 }
 
+TEST_F(AudioSessionTest, ConfigureWebRTCSession) {
+  RTCAudioSessionTest *test = [[RTCAudioSessionTest alloc] init];
+  [test testConfigureWebRTCSession];
+}
 
 }  // namespace webrtc

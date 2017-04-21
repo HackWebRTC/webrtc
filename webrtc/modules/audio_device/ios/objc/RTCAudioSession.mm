@@ -688,7 +688,7 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   if (![self setConfiguration:webRTCConfig active:YES error:&error]) {
     RTCLogError(@"Failed to set WebRTC audio configuration: %@",
                 error.localizedDescription);
-    [self unconfigureWebRTCSession:nil];
+    // Do not call setActive:NO if setActive:YES failed.
     if (outError) {
       *outError = error;
     }

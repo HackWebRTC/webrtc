@@ -206,7 +206,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   void UpdateAudioUnit(bool can_play_or_record);
 
   // Configures the audio session for WebRTC.
-  void ConfigureAudioSession();
+  bool ConfigureAudioSession();
   // Unconfigures the audio session.
   void UnconfigureAudioSession();
 
