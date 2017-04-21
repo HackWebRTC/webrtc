@@ -83,6 +83,9 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
   rtc::VideoSinkInterface<webrtc::VideoFrame>* GetDefaultSink() const;
   void SetDefaultSink(VideoMediaChannel* channel,
                       rtc::VideoSinkInterface<webrtc::VideoFrame>* sink);
+
+  uint32_t default_recv_ssrc() const { return default_recv_ssrc_; }
+
   virtual ~DefaultUnsignalledSsrcHandler() = default;
 
  private:

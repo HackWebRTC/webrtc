@@ -865,20 +865,33 @@ bool WebRtcVideoChannel2::SetRtpSendParameters(
 
 webrtc::RtpParameters WebRtcVideoChannel2::GetRtpReceiveParameters(
     uint32_t ssrc) const {
+  webrtc::RtpParameters rtp_params;
   rtc::CritScope stream_lock(&stream_crit_);
-  auto it = receive_streams_.find(ssrc);
-  if (it == receive_streams_.end()) {
-    LOG(LS_WARNING) << "Attempting to get RTP receive parameters for stream "
-                    << "with ssrc " << ssrc << " which doesn't exist.";
-    return webrtc::RtpParameters();
+  // SSRC of 0 represents an unsignaled receive stream.
+  if (ssrc == 0) {
+    if (!default_unsignalled_ssrc_handler_.GetDefaultSink()) {
+      LOG(LS_WARNING) << "Attempting to get RTP parameters for the default, "
+                         "unsignaled video receive stream, but not yet "
+                         "configured to receive such a stream.";
+      return rtp_params;
+    }
+    rtp_params.encodings.emplace_back();
+  } else {
+    auto it = receive_streams_.find(ssrc);
+    if (it == receive_streams_.end()) {
+      LOG(LS_WARNING) << "Attempting to get RTP receive parameters for stream "
+                      << "with SSRC " << ssrc << " which doesn't exist.";
+      return webrtc::RtpParameters();
+    }
+    // TODO(deadbeef): Return stream-specific parameters, beyond just SSRC.
+    rtp_params.encodings.emplace_back();
+    rtp_params.encodings[0].ssrc = it->second->GetFirstPrimarySsrc();
   }
 
-  // TODO(deadbeef): Return stream-specific parameters.
-  webrtc::RtpParameters rtp_params = CreateRtpParametersWithOneEncoding();
+  // Add codecs, which any stream is prepared to receive.
   for (const VideoCodec& codec : recv_params_.codecs) {
     rtp_params.codecs.push_back(codec.ToCodecParameters());
   }
-  rtp_params.encodings[0].ssrc = it->second->GetFirstPrimarySsrc();
   return rtp_params;
 }
 
@@ -887,11 +900,22 @@ bool WebRtcVideoChannel2::SetRtpReceiveParameters(
     const webrtc::RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel2::SetRtpReceiveParameters");
   rtc::CritScope stream_lock(&stream_crit_);
-  auto it = receive_streams_.find(ssrc);
-  if (it == receive_streams_.end()) {
-    LOG(LS_ERROR) << "Attempting to set RTP receive parameters for stream "
-                  << "with ssrc " << ssrc << " which doesn't exist.";
-    return false;
+
+  // SSRC of 0 represents an unsignaled receive stream.
+  if (ssrc == 0) {
+    if (!default_unsignalled_ssrc_handler_.GetDefaultSink()) {
+      LOG(LS_WARNING) << "Attempting to set RTP parameters for the default, "
+                         "unsignaled video receive stream, but not yet "
+                         "configured to receive such a stream.";
+      return false;
+    }
+  } else {
+    auto it = receive_streams_.find(ssrc);
+    if (it == receive_streams_.end()) {
+      LOG(LS_WARNING) << "Attempting to set RTP receive parameters for stream "
+                      << "with SSRC " << ssrc << " which doesn't exist.";
+      return false;
+    }
   }
 
   webrtc::RtpParameters current_parameters = GetRtpReceiveParameters(ssrc);

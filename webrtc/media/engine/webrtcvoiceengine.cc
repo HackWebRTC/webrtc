@@ -1755,19 +1755,31 @@ bool WebRtcVoiceMediaChannel::SetRtpSendParameters(
 webrtc::RtpParameters WebRtcVoiceMediaChannel::GetRtpReceiveParameters(
     uint32_t ssrc) const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  auto it = recv_streams_.find(ssrc);
-  if (it == recv_streams_.end()) {
-    LOG(LS_WARNING) << "Attempting to get RTP receive parameters for stream "
-                    << "with ssrc " << ssrc << " which doesn't exist.";
-    return webrtc::RtpParameters();
+  webrtc::RtpParameters rtp_params;
+  // SSRC of 0 represents the default receive stream.
+  if (ssrc == 0) {
+    if (!default_sink_) {
+      LOG(LS_WARNING) << "Attempting to get RTP parameters for the default, "
+                         "unsignaled audio receive stream, but not yet "
+                         "configured to receive such a stream.";
+      return rtp_params;
+    }
+    rtp_params.encodings.emplace_back();
+  } else {
+    auto it = recv_streams_.find(ssrc);
+    if (it == recv_streams_.end()) {
+      LOG(LS_WARNING) << "Attempting to get RTP receive parameters for stream "
+                      << "with ssrc " << ssrc << " which doesn't exist.";
+      return webrtc::RtpParameters();
+    }
+    rtp_params.encodings.emplace_back();
+    // TODO(deadbeef): Return stream-specific parameters.
+    rtp_params.encodings[0].ssrc = rtc::Optional<uint32_t>(ssrc);
   }
 
-  // TODO(deadbeef): Return stream-specific parameters.
-  webrtc::RtpParameters rtp_params = CreateRtpParametersWithOneEncoding();
   for (const AudioCodec& codec : recv_codecs_) {
     rtp_params.codecs.push_back(codec.ToCodecParameters());
   }
-  rtp_params.encodings[0].ssrc = rtc::Optional<uint32_t>(ssrc);
   return rtp_params;
 }
 
@@ -1775,11 +1787,21 @@ bool WebRtcVoiceMediaChannel::SetRtpReceiveParameters(
     uint32_t ssrc,
     const webrtc::RtpParameters& parameters) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  auto it = recv_streams_.find(ssrc);
-  if (it == recv_streams_.end()) {
-    LOG(LS_WARNING) << "Attempting to set RTP receive parameters for stream "
-                    << "with ssrc " << ssrc << " which doesn't exist.";
-    return false;
+  // SSRC of 0 represents the default receive stream.
+  if (ssrc == 0) {
+    if (!default_sink_) {
+      LOG(LS_WARNING) << "Attempting to set RTP parameters for the default, "
+                         "unsignaled audio receive stream, but not yet "
+                         "configured to receive such a stream.";
+      return false;
+    }
+  } else {
+    auto it = recv_streams_.find(ssrc);
+    if (it == recv_streams_.end()) {
+      LOG(LS_WARNING) << "Attempting to set RTP receive parameters for stream "
+                      << "with ssrc " << ssrc << " which doesn't exist.";
+      return false;
+    }
   }
 
   webrtc::RtpParameters current_parameters = GetRtpReceiveParameters(ssrc);
@@ -2320,6 +2342,7 @@ int WebRtcVoiceMediaChannel::GetOutputLevel() {
 bool WebRtcVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   std::vector<uint32_t> ssrcs(1, ssrc);
+  // SSRC of 0 represents the default receive stream.
   if (ssrc == 0) {
     default_recv_volume_ = volume;
     ssrcs = unsignaled_recv_ssrcs_;

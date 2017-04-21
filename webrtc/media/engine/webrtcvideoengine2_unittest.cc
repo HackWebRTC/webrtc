@@ -4136,6 +4136,49 @@ TEST_F(WebRtcVideoChannel2Test, SetAndGetRtpReceiveParameters) {
   EXPECT_EQ(initial_params, channel_->GetRtpReceiveParameters(last_ssrc_));
 }
 
+// Test that GetRtpReceiveParameters returns parameters correctly when SSRCs
+// aren't signaled. It should always return an empty "RtpEncodingParameters",
+// even after a packet is received and the unsignaled SSRC is known.
+TEST_F(WebRtcVideoChannel2Test, GetRtpReceiveParametersWithUnsignaledSsrc) {
+  // Call necessary methods to configure receiving a default stream as
+  // soon as it arrives.
+  cricket::VideoRecvParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  parameters.codecs.push_back(GetEngineCodec("VP9"));
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+
+  // Call GetRtpReceiveParameters before configured to receive an unsignaled
+  // stream. Should return nothing.
+  EXPECT_EQ(webrtc::RtpParameters(), channel_->GetRtpReceiveParameters(0));
+
+  // Set a sink for an unsignaled stream.
+  cricket::FakeVideoRenderer renderer;
+  // Value of "0" means "unsignaled stream".
+  EXPECT_TRUE(channel_->SetSink(0, &renderer));
+
+  // Call GetRtpReceiveParameters before the SSRC is known. Value of "0"
+  // in this method means "unsignaled stream".
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpReceiveParameters(0);
+  ASSERT_EQ(1u, rtp_parameters.encodings.size());
+  EXPECT_FALSE(rtp_parameters.encodings[0].ssrc);
+
+  // Receive VP8 packet.
+  uint8_t data[kMinRtpPacketLen];
+  cricket::RtpHeader rtpHeader;
+  rtpHeader.payload_type = GetEngineCodec("VP8").id;
+  rtpHeader.seq_num = rtpHeader.timestamp = 0;
+  rtpHeader.ssrc = kIncomingUnsignalledSsrc;
+  cricket::SetRtpHeader(data, sizeof(data), rtpHeader);
+  rtc::CopyOnWriteBuffer packet(data, sizeof(data));
+  rtc::PacketTime packet_time;
+  channel_->OnPacketReceived(&packet, packet_time);
+
+  // The |ssrc| member should still be unset.
+  rtp_parameters = channel_->GetRtpReceiveParameters(0);
+  ASSERT_EQ(1u, rtp_parameters.encodings.size());
+  EXPECT_FALSE(rtp_parameters.encodings[0].ssrc);
+}
+
 void WebRtcVideoChannel2Test::TestReceiverLocalSsrcConfiguration(
     bool receiver_first) {
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));

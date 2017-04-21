@@ -1238,6 +1238,43 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAndGetRtpReceiveParameters) {
   EXPECT_EQ(initial_params, channel_->GetRtpReceiveParameters(kSsrcX));
 }
 
+// Test that GetRtpReceiveParameters returns parameters correctly when SSRCs
+// aren't signaled. It should return an empty "RtpEncodingParameters" when
+// configured to receive an unsignaled stream and no packets have been received
+// yet, and start returning the SSRC once a packet has been received.
+TEST_F(WebRtcVoiceEngineTestFake, GetRtpReceiveParametersWithUnsignaledSsrc) {
+  ASSERT_TRUE(SetupChannel());
+  // Call necessary methods to configure receiving a default stream as
+  // soon as it arrives.
+  cricket::AudioRecvParameters parameters;
+  parameters.codecs.push_back(kIsacCodec);
+  parameters.codecs.push_back(kPcmuCodec);
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+
+  // Call GetRtpReceiveParameters before configured to receive an unsignaled
+  // stream. Should return nothing.
+  EXPECT_EQ(webrtc::RtpParameters(), channel_->GetRtpReceiveParameters(0));
+
+  // Set a sink for an unsignaled stream.
+  std::unique_ptr<FakeAudioSink> fake_sink(new FakeAudioSink());
+  // Value of "0" means "unsignaled stream".
+  channel_->SetRawAudioSink(0, std::move(fake_sink));
+
+  // Call GetRtpReceiveParameters before the SSRC is known. Value of "0"
+  // in this method means "unsignaled stream".
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpReceiveParameters(0);
+  ASSERT_EQ(1u, rtp_parameters.encodings.size());
+  EXPECT_FALSE(rtp_parameters.encodings[0].ssrc);
+
+  // Receive PCMU packet (SSRC=1).
+  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+
+  // The |ssrc| member should still be unset.
+  rtp_parameters = channel_->GetRtpReceiveParameters(0);
+  ASSERT_EQ(1u, rtp_parameters.encodings.size());
+  EXPECT_FALSE(rtp_parameters.encodings[0].ssrc);
+}
+
 // Test that we apply codecs properly.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   EXPECT_TRUE(SetupSendStream());

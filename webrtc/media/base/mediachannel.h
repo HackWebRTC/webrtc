@@ -973,6 +973,11 @@ class VoiceMediaChannel : public MediaChannel {
   virtual bool SetRtpSendParameters(
       uint32_t ssrc,
       const webrtc::RtpParameters& parameters) = 0;
+  // Get the receive parameters for the incoming stream identified by |ssrc|.
+  // If |ssrc| is 0, retrieve the receive parameters for the default receive
+  // stream, which is used when SSRCs are not signaled. Note that calling with
+  // an |ssrc| of 0 will return encoding parameters with an unset |ssrc|
+  // member.
   virtual webrtc::RtpParameters GetRtpReceiveParameters(
       uint32_t ssrc) const = 0;
   virtual bool SetRtpReceiveParameters(
@@ -1053,6 +1058,11 @@ class VideoMediaChannel : public MediaChannel {
   virtual bool SetRtpSendParameters(
       uint32_t ssrc,
       const webrtc::RtpParameters& parameters) = 0;
+  // Get the receive parameters for the incoming stream identified by |ssrc|.
+  // If |ssrc| is 0, retrieve the receive parameters for the default receive
+  // stream, which is used when SSRCs are not signaled. Note that calling with
+  // an |ssrc| of 0 will return encoding parameters with an unset |ssrc|
+  // member.
   virtual webrtc::RtpParameters GetRtpReceiveParameters(
       uint32_t ssrc) const = 0;
   virtual bool SetRtpReceiveParameters(
@@ -1070,7 +1080,7 @@ class VideoMediaChannel : public MediaChannel {
       const VideoOptions* options,
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source) = 0;
   // Sets the sink object to be used for the specified stream.
-  // If SSRC is 0, the renderer is used for the 'default' stream.
+  // If SSRC is 0, the sink is used for the 'default' stream.
   virtual bool SetSink(uint32_t ssrc,
                        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) = 0;
   // Gets quality stats for the channel.
