@@ -145,11 +145,8 @@ int Normal::Process(const int16_t* input,
              ((1 << 14) - win_up_Q14) * expanded[channel_ix][i] + (1 << 13)) >>
             14;
       }
-      if (fs_hz_ == 48000) {
-        RTC_DCHECK_EQ(win_up_Q14, (1 << 14) - 16);
-      } else {
-        RTC_DCHECK_EQ(win_up_Q14, 1 << 14);
-      }
+      RTC_DCHECK_GT(win_up_Q14,
+                    (1 << 14) - 32);  // Worst case rouding is a length of 34
     }
   } else if (last_mode == kModeRfc3389Cng) {
     RTC_DCHECK_EQ(output->Channels(), 1);  // Not adapted for multi-channel yet.
@@ -187,11 +184,8 @@ int Normal::Process(const int16_t* input,
            ((1 << 14) - win_up_Q14) * cng_output[i] + (1 << 13)) >>
           14;
     }
-    if (fs_hz_ == 48000) {
-      RTC_DCHECK_EQ(win_up_Q14, (1 << 14) - 16);
-    } else {
-      RTC_DCHECK_EQ(win_up_Q14, 1 << 14);
-    }
+    RTC_DCHECK_GT(win_up_Q14,
+                  (1 << 14) - 32);  // Worst case rouding is a length of 34
   } else if (external_mute_factor_array[0] < 16384) {
     // Previous was neither of Expand, FadeToBGN or RFC3389_CNG, but we are
     // still ramping up from previous muting.
