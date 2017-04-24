@@ -112,13 +112,18 @@ webrtc_fuzzer_test("ulpfec_header_reader_fuzzer") {
 }
 
 webrtc_fuzzer_test("ulpfec_generator_fuzzer") {
+  check_includes = false  # TODO(mbonadei): see bugs.webrtc.org/7515
   sources = [
     "ulpfec_generator_fuzzer.cc",
   ]
   deps = [
+    # Removing rtp_rtcp_unittests from the dep list because it causes problems
+    # in chromium (chromium has rtc_include_tests set to false so these targets
+    # does not exist).
     "../../base:rtc_base_approved",
     "../../modules/rtp_rtcp",
-    "../../modules/rtp_rtcp:rtp_rtcp_unittests",
+
+    # "../../modules/rtp_rtcp:rtp_rtcp_unittests",
   ]
 }
 
@@ -271,15 +276,21 @@ webrtc_fuzzer_test("turn_unwrap_fuzzer") {
 }
 
 webrtc_fuzzer_test("neteq_rtp_fuzzer") {
+  check_includes = false  # TODO(mbonadei): see bugs.webrtc.org/7515
   sources = [
     "neteq_rtp_fuzzer.cc",
   ]
   deps = [
+    # Removing rtc_base_tests_utils and neteq_unittest_tools from the dep list
+    # because they cause problems in chromium (chromium has rtc_include_tests
+    # set to false so these targets does not exist).
     "../../base:rtc_base_approved",
-    "../../base:rtc_base_tests_utils",
+
+    # "../../base:rtc_base_tests_utils",
     "../../modules/audio_coding:neteq",
     "../../modules/audio_coding:neteq_test_minimal",
-    "../../modules/audio_coding:neteq_unittest_tools",
+
+    # "../../modules/audio_coding:neteq_unittest_tools",
     "../../modules/audio_coding:pcm16b",
     "../../modules/rtp_rtcp",
   ]
