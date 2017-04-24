@@ -139,7 +139,7 @@ public class RoomParametersFetcher {
         }
       }
       // Request TURN servers.
-      if (!isTurnPresent) {
+      if (!isTurnPresent && roomJson.has("ice_server_url")) {
         LinkedList<PeerConnection.IceServer> turnServers =
             requestTurnServers(roomJson.getString("ice_server_url"));
         for (PeerConnection.IceServer turnServer : turnServers) {

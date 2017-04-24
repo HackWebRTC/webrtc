@@ -38,39 +38,41 @@ import org.junit.runner.RunWith;
  */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
-public class ConnectActivityStubbedInputOutputTest {
-  private static final String TAG = "ConnectActivityStubbedInputOutputTest";
+public class CallActivityStubbedInputOutputTest {
+  private static final String TAG = "CallActivityStubbedInputOutputTest";
 
   @Rule
-  public ActivityTestRule<ConnectActivity> rule =
-      new ActivityTestRule<ConnectActivity>(ConnectActivity.class) {
-        @Override
-        protected Intent getActivityIntent() {
-          Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-          Intent intent = new Intent("android.intent.action.VIEW", Uri.parse("https://appr.tc"),
-              context, ConnectActivity.class);
+  public ActivityTestRule<CallActivity> rule = new ActivityTestRule<CallActivity>(
+      CallActivity.class) {
+    @Override
+    protected Intent getActivityIntent() {
+      Context context = InstrumentationRegistry.getContext();
+      Intent intent = new Intent("android.intent.action.VIEW", Uri.parse("http://localhost:9999"));
 
-          intent.putExtra(CallActivity.EXTRA_USE_VALUES_FROM_INTENT, true);
+      intent.putExtra(CallActivity.EXTRA_USE_VALUES_FROM_INTENT, true);
 
-          intent.putExtra(CallActivity.EXTRA_LOOPBACK, true);
-          intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, "OPUS");
-          intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, "VP8");
-          intent.putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, false);
-          intent.putExtra(CallActivity.EXTRA_CAMERA2, false);
-          intent.putExtra(CallActivity.EXTRA_ROOMID, UUID.randomUUID().toString().substring(0, 8));
+      intent.putExtra(CallActivity.EXTRA_LOOPBACK, true);
+      intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, "OPUS");
+      intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, "VP8");
+      intent.putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, false);
+      intent.putExtra(CallActivity.EXTRA_CAMERA2, false);
+      intent.putExtra(CallActivity.EXTRA_ROOMID, UUID.randomUUID().toString().substring(0, 8));
+      // TODO false for wstls to disable https, should be option later or if URL is http
+      intent.putExtra(CallActivity.EXTRA_URLPARAMETERS,
+          "wstls=false?debug=loopback?ts=?wshpp=http://localhost:8089");
 
-          intent.putExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA,
-              Environment.getExternalStorageDirectory().getAbsolutePath()
-                  + "/chromium_tests_root/resources/reference_video_640x360_30fps.y4m");
+      intent.putExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA,
+          Environment.getExternalStorageDirectory().getAbsolutePath()
+              + "/chromium_tests_root/resources/reference_video_640x360_30fps.y4m");
 
-          intent.putExtra(CallActivity.EXTRA_SAVE_REMOTE_VIDEO_TO_FILE,
-              Environment.getExternalStorageDirectory().getAbsolutePath() + "/output.y4m");
-          intent.putExtra(CallActivity.EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_WIDTH, 640);
-          intent.putExtra(CallActivity.EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_HEIGHT, 360);
+      intent.putExtra(CallActivity.EXTRA_SAVE_REMOTE_VIDEO_TO_FILE,
+          Environment.getExternalStorageDirectory().getAbsolutePath() + "/output.y4m");
+      intent.putExtra(CallActivity.EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_WIDTH, 640);
+      intent.putExtra(CallActivity.EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_HEIGHT, 360);
 
-          return intent;
-        }
-      };
+      return intent;
+    }
+  };
 
   @Test
   public void testLoopback() throws InterruptedException {
@@ -78,7 +80,7 @@ public class ConnectActivityStubbedInputOutputTest {
     IdlingPolicies.setMasterPolicyTimeout(240000, TimeUnit.MILLISECONDS);
 
     // During the time we sleep it will record video.
-    Thread.sleep(10000);
+    Thread.sleep(8000);
 
     // Click on hang-up button.
     onView(withId(R.id.button_call_disconnect)).perform(click());

@@ -81,6 +81,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   }
 
   public static final String EXTRA_ROOMID = "org.appspot.apprtc.ROOMID";
+  public static final String EXTRA_URLPARAMETERS = "org.appspot.apprtc.URLPARAMETERS";
   public static final String EXTRA_LOOPBACK = "org.appspot.apprtc.LOOPBACK";
   public static final String EXTRA_VIDEO_CALL = "org.appspot.apprtc.VIDEO_CALL";
   public static final String EXTRA_SCREENCAPTURE = "org.appspot.apprtc.SCREENCAPTURE";
@@ -337,7 +338,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       appRtcClient = new DirectRTCClient(this);
     }
     // Create connection parameters.
-    roomConnectionParameters = new RoomConnectionParameters(roomUri.toString(), roomId, loopback);
+    String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
+    roomConnectionParameters =
+        new RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters);
 
     // Create CPU monitor
     cpuMonitor = new CpuMonitor(this);

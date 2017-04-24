@@ -129,7 +129,7 @@ if (is_android) {
     apk_name = "AppRTCMobileTestStubbedVideoIO"
     android_manifest = "androidtests/AndroidManifest.xml"
 
-    java_files = [ "androidtests/src/org/appspot/apprtc/test/ConnectActivityStubbedInputOutputTest.java" ]
+    java_files = [ "androidtests/src/org/appspot/apprtc/test/CallActivityStubbedInputOutputTest.java" ]
 
     apk_under_test = ":AppRTCMobile"
 

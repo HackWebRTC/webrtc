@@ -19,22 +19,55 @@ It assumes you have a Android device plugged in.
 """
 
 import argparse
+import atexit
 import logging
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir,
                                         os.pardir))
+WEBRTC_DEPS_INSTRUCTIONS = """Please add a solution to your .gclient file like
+this and run gclient sync:
+{
+  "name": "webrtc.DEPS",
+  "url": "https://chromium.googlesource.com/chromium/deps/webrtc/webrtc.DEPS",
+},
+"""
+
+
+class Error(Exception):
+  pass
+
+
+class VideoQualityTestError(Error):
+  pass
 
 
 def _RunCommand(argv, cwd=SRC_DIR, **kwargs):
   logging.info('Running %r', argv)
   subprocess.check_call(argv, cwd=cwd, **kwargs)
+
+
+def _RunCommandWithOutput(argv, cwd=SRC_DIR, **kwargs):
+  logging.info('Running %r', argv)
+  return subprocess.check_output(argv, cwd=cwd, **kwargs)
+
+
+def _RunBackgroundCommand(argv, cwd=SRC_DIR):
+  logging.info('Running %r', argv)
+  process = subprocess.Popen(argv, cwd=cwd)
+  atexit.register(process.terminate)
+  time.sleep(0.5)
+  status = process.poll()
+  if status:  # is not None or 0
+    raise subprocess.CalledProcessError(status, argv)
+  return process
 
 
 def _ParseArgs():
@@ -45,6 +78,7 @@ def _ParseArgs():
       help='The path to the build directory for building locally.')
   parser.add_argument('--temp_dir',
       help='A temporary directory to put the output.')
+  parser.add_argument('--adb-path', help='Path to adb binary.', default='adb')
 
   args = parser.parse_args()
   return args
@@ -58,6 +92,7 @@ def main():
   build_dir_android = args.build_dir_android
   build_dir_x86 = args.build_dir_x86
   temp_dir = args.temp_dir
+  adb_path = args.adb_path
   if not temp_dir:
     temp_dir = tempfile.mkdtemp()
   else:
@@ -76,14 +111,49 @@ def main():
   download_script = os.path.join(tools_dir, 'download_tools.py')
   _RunCommand([sys.executable, download_script, toolchain_dir])
 
+  # Select an Android device in case multiple are connected
+  for line in _RunCommandWithOutput([adb_path, 'devices']).splitlines():
+    if line.endswith('\tdevice'):
+      android_device = line.split('\t')[0]
+      break
+  else:
+    raise VideoQualityTestError('Cannot find any connected Android device.')
+
+  # Start AppRTC Server
+  dev_appserver = os.path.join(SRC_DIR, 'out', 'apprtc', 'google_appengine',
+                               'dev_appserver.py')
+  if not os.path.isfile(dev_appserver):
+    raise VideoQualityTestError('Cannot find %s.\n%s' %
+                                (dev_appserver, WEBRTC_DEPS_INSTRUCTIONS))
+  appengine_dir = os.path.join(SRC_DIR, 'out', 'apprtc', 'out', 'app_engine')
+  _RunBackgroundCommand(['python', dev_appserver, appengine_dir,
+                         '--port=9999', '--admin_port=9998',
+                         '--skip_sdk_update_check', '--clear_datastore=yes'])
+
+  # Start Collider
+  collider_path = os.path.join(SRC_DIR, 'out', 'go-workspace', 'bin',
+      'collidermain')
+  if not os.path.isfile(collider_path):
+    raise VideoQualityTestError('Cannot find %s.\n%s' %
+                                (collider_path, WEBRTC_DEPS_INSTRUCTIONS))
+  _RunBackgroundCommand([collider_path, '-tls=false',
+                         '-port=8089', '-room-server=http://localhost:9999'])
+
+  # Start adb reverse forwarder
+  reverseforwarder_path = os.path.join(
+      SRC_DIR, 'build', 'android', 'adb_reverse_forwarder.py')
+  _RunBackgroundCommand([reverseforwarder_path, '--device', android_device,
+                         '9999', '9999', '8089', '8089'])
+
   # Run the Espresso code.
   test_script = os.path.join(build_dir_android,
       'bin', 'run_AppRTCMobileTestStubbedVideoIO')
-  _RunCommand([sys.executable, test_script])
+  _RunCommand([test_script, '--device', android_device])
 
   # Pull the output video.
   test_video = os.path.join(temp_dir, 'test_video.y4m')
-  _RunCommand(['adb', 'pull', '/sdcard/output.y4m', test_video])
+  _RunCommand([adb_path, '-s', android_device,
+               'pull', '/sdcard/output.y4m', test_video])
 
   test_video_yuv = os.path.join(temp_dir, 'test_video.yuv')
 
@@ -103,8 +173,7 @@ def main():
   ConvertVideo(reference_video, reference_video_yuv)
 
   # Run compare script.
-  compare_script = os.path.join(SRC_DIR, 'webrtc', 'tools',
-      'compare_videos.py')
+  compare_script = os.path.join(SRC_DIR, 'webrtc', 'tools', 'compare_videos.py')
   zxing_path = os.path.join(toolchain_dir, 'linux', 'zxing')
 
   # The frame_analyzer binary should be built for local computer and not for

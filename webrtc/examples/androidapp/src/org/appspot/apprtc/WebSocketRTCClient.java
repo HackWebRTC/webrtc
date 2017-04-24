@@ -131,7 +131,11 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelEvents 
 
   // Helper functions to get connection, post message and leave message URLs
   private String getConnectionUrl(RoomConnectionParameters connectionParameters) {
-    return connectionParameters.roomUrl + "/" + ROOM_JOIN + "/" + connectionParameters.roomId;
+    String url = connectionParameters.roomUrl + "/" + ROOM_JOIN + "/" + connectionParameters.roomId;
+    if (connectionParameters.urlParameters != null) {
+      url += "?" + connectionParameters.urlParameters;
+    }
+    return url;
   }
 
   private String getMessageUrl(
