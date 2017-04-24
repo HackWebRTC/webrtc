@@ -210,8 +210,8 @@ class NetEqExternalVsInternalDecoderTest : public NetEqExternalDecoderUnitTest,
                     rtc::ArrayView<const uint8_t> payload,
                     uint32_t receive_timestamp) override {
     // Insert packet in internal decoder.
-    ASSERT_EQ(NetEq::kOK, neteq_internal_->InsertPacket(rtp_header, payload,
-                                                        receive_timestamp));
+    ASSERT_EQ(NetEq::kOK, neteq_internal_->InsertPacket(
+                              rtp_header.header, payload, receive_timestamp));
 
     // Insert packet in external decoder instance.
     NetEqExternalDecoderUnitTest::InsertPacket(rtp_header, payload,
