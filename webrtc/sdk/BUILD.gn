@@ -50,14 +50,12 @@ if (is_ios || is_mac) {
       "objc/Framework/Headers/WebRTC/RTCSSLAdapter.h",
       "objc/Framework/Headers/WebRTC/RTCTracing.h",
     ]
-    configs += [
-      "..:common_objc",
-      "//build/config/compiler:enable_arc",
-    ]
-    public_configs = [ ":rtc_sdk_common_objc_config" ]
     deps = [
       "../base:rtc_base",
     ]
+    configs += [ "..:common_objc" ]
+
+    public_configs = [ ":rtc_sdk_common_objc_config" ]
     if (is_ios) {
       sources += [
         "objc/Framework/Classes/RTCCameraPreviewView.m",
@@ -195,13 +193,6 @@ if (is_ios || is_mac) {
       "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
     ]
 
-    configs += [
-      "..:common_objc",
-      "//build/config/compiler:enable_arc",
-    ]
-
-    public_configs = [ ":rtc_sdk_common_objc_config" ]
-
     deps = [
       ":webrtc_h264_video_toolbox",
       "../api:video_frame_api",
@@ -244,6 +235,10 @@ if (is_ios || is_mac) {
         "MetalKit.framework",
       ]
     }
+
+    configs += [ "..:common_objc" ]
+
+    public_configs = [ ":rtc_sdk_common_objc_config" ]
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -368,13 +363,6 @@ if (is_ios || is_mac) {
         "@rpath/$output_name.framework/$output_name",
       ]
 
-      configs += [
-        "..:common_objc",
-        "//build/config/compiler:enable_arc",
-      ]
-
-      public_configs = [ ":rtc_sdk_common_objc_config" ]
-
       deps = [
         ":rtc_sdk_peerconnection_objc",
         "../system_wrappers:field_trial_default",
@@ -389,6 +377,10 @@ if (is_ios || is_mac) {
         "GLKit.framework",
         "VideoToolbox.framework",
       ]
+
+      configs += [ "..:common_objc" ]
+
+      public_configs = [ ":rtc_sdk_common_objc_config" ]
 
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163)
@@ -416,10 +408,7 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/h264_video_toolbox_nalu.h",
     ]
 
-    configs += [
-      "//webrtc:common_objc",
-      "//build/config/compiler:enable_arc",
-    ]
+    configs += [ "//webrtc:common_objc" ]
 
     deps = [
       ":rtc_sdk_common_objc",

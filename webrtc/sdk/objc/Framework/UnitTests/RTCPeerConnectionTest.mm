@@ -53,11 +53,13 @@
   RTCMediaConstraints *contraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{}
       optionalConstraints:nil];
   RTCPeerConnectionFactory *factory = [[RTCPeerConnectionFactory alloc] init];
-  RTCPeerConnection *peerConnection = [factory peerConnectionWithConfiguration:config
-      constraints:contraints delegate:nil];
 
-  RTCConfiguration *newConfig = peerConnection.configuration;
-
+  RTCConfiguration *newConfig;
+  @autoreleasepool {
+    RTCPeerConnection *peerConnection =
+        [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
+    newConfig = peerConnection.configuration;
+  }
   EXPECT_EQ([config.iceServers count], [newConfig.iceServers count]);
   RTCIceServer *newServer = newConfig.iceServers[0];
   RTCIceServer *origServer = config.iceServers[0];
