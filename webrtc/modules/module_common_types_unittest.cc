@@ -119,11 +119,11 @@ TEST(SequenceNumberUnwrapper, Limits) {
   EXPECT_EQ(0, unwrapper.Unwrap(0));
   EXPECT_EQ(0x8000, unwrapper.Unwrap(0x8000));
   // Delta is exactly 0x8000 but current is lower than input, wrap backwards.
-  EXPECT_EQ(0x0, unwrapper.Unwrap(0x0000));
+  EXPECT_EQ(0, unwrapper.Unwrap(0));
 
   EXPECT_EQ(0x8000, unwrapper.Unwrap(0x8000));
   EXPECT_EQ(0xFFFF, unwrapper.Unwrap(0xFFFF));
-  EXPECT_EQ(0x10000, unwrapper.Unwrap(0x0000));
+  EXPECT_EQ(0x10000, unwrapper.Unwrap(0));
   EXPECT_EQ(0xFFFF, unwrapper.Unwrap(0xFFFF));
   EXPECT_EQ(0x8000, unwrapper.Unwrap(0x8000));
   EXPECT_EQ(0, unwrapper.Unwrap(0));
@@ -169,6 +169,55 @@ TEST(SequenceNumberUnwrapper, BackwardWraps) {
   for (; seq >= 0; --seq) {
     int64_t unwrapped = unwrapper.Unwrap(static_cast<uint16_t>(seq & 0xFFFF));
     EXPECT_EQ(seq, unwrapped);
+  }
+}
+
+TEST(TimestampUnwrapper, Limits) {
+  TimestampUnwrapper unwrapper;
+
+  EXPECT_EQ(0, unwrapper.Unwrap(0));
+  EXPECT_EQ(0x80000000, unwrapper.Unwrap(0x80000000));
+  // Delta is exactly 0x80000000 but current is lower than input, wrap
+  // backwards.
+  EXPECT_EQ(0, unwrapper.Unwrap(0));
+
+  EXPECT_EQ(0x80000000, unwrapper.Unwrap(0x80000000));
+  EXPECT_EQ(0xFFFFFFFF, unwrapper.Unwrap(0xFFFFFFFF));
+  EXPECT_EQ(0x100000000, unwrapper.Unwrap(0x00000000));
+  EXPECT_EQ(0xFFFFFFFF, unwrapper.Unwrap(0xFFFFFFFF));
+  EXPECT_EQ(0x80000000, unwrapper.Unwrap(0x80000000));
+  EXPECT_EQ(0, unwrapper.Unwrap(0));
+
+  // Don't allow negative values.
+  EXPECT_EQ(0xFFFFFFFF, unwrapper.Unwrap(0xFFFFFFFF));
+}
+
+TEST(TimestampUnwrapper, ForwardWraps) {
+  int64_t ts = 0;
+  TimestampUnwrapper unwrapper;
+
+  const int64_t kMaxIncrease = 0x80000000 - 1;
+  const int kNumWraps = 4;
+  for (int i = 0; i < kNumWraps * 2; ++i) {
+    int64_t unwrapped =
+        unwrapper.Unwrap(static_cast<uint32_t>(ts & 0xFFFFFFFF));
+    EXPECT_EQ(ts, unwrapped);
+    ts += kMaxIncrease;
+  }
+}
+
+TEST(TimestampUnwrapper, BackwardWraps) {
+  TimestampUnwrapper unwrapper;
+
+  const int64_t kMaxDecrease = 0x80000000 - 1;
+  const int kNumWraps = 4;
+  int64_t ts = kNumWraps * 2 * kMaxDecrease;
+  unwrapper.UpdateLast(ts);
+  for (int i = 0; i <= kNumWraps * 2; ++i) {
+    int64_t unwrapped =
+        unwrapper.Unwrap(static_cast<uint32_t>(ts & 0xFFFFFFFF));
+    EXPECT_EQ(ts, unwrapped);
+    ts -= kMaxDecrease;
   }
 }
 
