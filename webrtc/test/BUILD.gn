@@ -53,13 +53,9 @@ rtc_source_set("video_test_common") {
   }
 
   deps = [
-    "..:webrtc_common",
-    "../base:rtc_base_approved",
-    "../base:rtc_task_queue",
     "../common_video",
     "../media:rtc_media_base",
     "../modules/video_capture:video_capture_module",
-    "../system_wrappers",
   ]
 }
 
@@ -81,7 +77,6 @@ rtc_source_set("rtp_test_utils") {
 
   deps = [
     "..:webrtc_common",
-    "../base:rtc_base_approved",
     "../modules/rtp_rtcp",
     "//testing/gtest",
   ]
@@ -112,7 +107,6 @@ rtc_source_set("test_main") {
   ]
   deps = [
     ":field_trial",
-    "../base:rtc_base_approved",
     "../system_wrappers:metrics_default",
     "//testing/gmock",
     "//testing/gtest",
@@ -130,16 +124,6 @@ rtc_source_set("fileutils") {
     sources += [ "testsupport/iosfileutils.mm" ]
   }
   visibility = [ ":*" ]
-  deps = [
-    "..:webrtc_common",
-    "../base:rtc_base_approved",
-  ]
-  if (is_ios) {
-    deps += [ "../sdk:rtc_sdk_common_objc" ]
-  }
-  if (is_win) {
-    deps += [ "../base:rtc_base" ]
-  }
 }
 
 rtc_source_set("video_test_support") {
@@ -158,9 +142,6 @@ rtc_source_set("video_test_support") {
   ]
 
   deps = [
-    ":test_support",
-    ":video_test_common",
-    "..:webrtc_common",
     "../base:rtc_base_approved",
     "../common_video",
     "../system_wrappers",
@@ -209,7 +190,6 @@ rtc_source_set("test_support") {
   ]
 
   deps = [
-    "..:webrtc_common",
     "../base:gtest_prod",
     "../base:rtc_base_approved",
     "../common_video",
@@ -315,20 +295,12 @@ rtc_test("test_support_unittests") {
 
   deps += [
     ":direct_transport",
-    ":fake_audio_device",
     ":fileutils_unittests",
-    ":rtp_test_utils",
     ":test_common",
     ":test_main",
     ":video_test_common",
     ":video_test_support",
-    "../api:video_frame_api",
-    "../base:rtc_base_approved",
-    "../call:call_interfaces",
-    "../common_audio",
-    "../modules/rtp_rtcp",
     "../modules/video_capture",
-    "../system_wrappers",
     "//testing/gmock",
     "//testing/gtest",
     "//third_party/gflags",
@@ -341,7 +313,6 @@ rtc_source_set("fileutils_unittests") {
   ]
   deps = [
     ":fileutils",
-    ":test_support",
     "//testing/gmock",
     "//testing/gtest",
   ]
@@ -360,12 +331,9 @@ rtc_source_set("direct_transport") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
   deps = [
-    "..:webrtc_common",
     "../api:transport_api",
     "../base:rtc_base_approved",
     "../call",
-    "../modules/rtp_rtcp",
-    "../system_wrappers",
   ]
 }
 
@@ -380,11 +348,8 @@ rtc_source_set("fake_audio_device") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
   deps = [
-    "..:webrtc_common",
     "../base:rtc_base_approved",
-    "../common_audio",
-    "../modules/audio_device",
-    "../system_wrappers",
+    "../modules/audio_device:audio_device",
   ]
 }
 
@@ -437,25 +402,13 @@ rtc_source_set("test_common") {
     ":test_support",
     ":video_test_common",
     "..:webrtc_common",
-    "../api:transport_api",
-    "../api:video_frame_api",
-    "../api/audio_codecs:builtin_audio_decoder_factory",
     "../api/video_codecs:video_codecs_api",
     "../audio",
     "../base:rtc_base_approved",
-    "../base:rtc_task_queue",
     "../call",
-    "../logging:rtc_event_log_api",
-    "../modules/audio_device:mock_audio_device",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing",
-    "../modules/rtp_rtcp:rtp_rtcp",
-    "../modules/video_coding:webrtc_h264",
-    "../modules/video_coding:webrtc_vp8",
-    "../modules/video_coding:webrtc_vp9",
-    "../system_wrappers",
     "../video",
-    "../voice_engine",
     "//testing/gmock",
     "//testing/gtest",
   ]
@@ -531,9 +484,6 @@ rtc_source_set("test_renderer") {
 
   deps = [
     ":test_support",
-    "..:webrtc_common",
-    "../base:rtc_base_approved",
-    "../common_video",
     "../modules/media_file",
     "//testing/gtest",
   ]
@@ -544,11 +494,5 @@ rtc_source_set("audio_codec_mocks") {
   sources = [
     "mock_audio_decoder.h",
     "mock_audio_decoder_factory.h",
-  ]
-  deps = [
-    ":test_support",
-    "../api/audio_codecs:audio_codecs_api",
-    "../api/audio_codecs:builtin_audio_decoder_factory",
-    "../base:rtc_base_approved",
   ]
 }
