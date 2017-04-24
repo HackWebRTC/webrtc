@@ -48,6 +48,8 @@ def print_landmines():  # pylint: disable=invalid-name
     print 'Clobber due to Win 64-bit Debug linking error (crbug.com/668961)'
     print ('Clobber due to Win Clang Debug linking errors in '
            'https://codereview.webrtc.org/2786603002')
+    print ('Clobber due to Win Debug linking errors in '
+           'https://codereview.webrtc.org/2832063003/')
   if platform() == 'mac':
     # platform == 'ios' doesn't work since it assumes GYP_DEFINES is set, which
     # is no longer the case.
