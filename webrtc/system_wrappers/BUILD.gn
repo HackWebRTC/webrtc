@@ -27,6 +27,7 @@ rtc_static_library("system_wrappers") {
     "include/rw_lock_wrapper.h",
     "include/sleep.h",
     "include/static_instance.h",
+    "include/stringize_macros.h",
     "include/timestamp_extrapolator.h",
     "include/trace.h",
     "source/aligned_malloc.cc",
@@ -210,6 +211,7 @@ if (rtc_include_tests) {
       "source/metrics_unittest.cc",
       "source/ntp_time_unittest.cc",
       "source/rtp_to_ntp_estimator_unittest.cc",
+      "source/stringize_macros_unittest.cc",
     ]
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 

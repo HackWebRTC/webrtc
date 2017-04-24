@@ -92,10 +92,6 @@ source_set("protobuf_utils") {
 
 # The subset of rtc_base approved for use outside of libjingle.
 rtc_static_library("rtc_base_approved") {
-  # TODO(kjellander): Remove (bugs.webrtc.org/7480)
-  # Enabling GN check triggers a cyclic dependency caused by rate_limiter.cc:
-  #   :rtc_base_approved -> //webrtc/system_wrappers -> :rtc_base_approved
-  check_includes = false
   defines = []
   libs = []
   deps = []
@@ -140,6 +136,8 @@ rtc_static_library("rtc_base_approved") {
     "location.h",
     "md5.cc",
     "md5.h",
+    "md5digest.cc",
+    "md5digest.h",
     "mod_ops.h",
     "onetimeevent.h",
     "optional.cc",
@@ -173,7 +171,6 @@ rtc_static_library("rtc_base_approved") {
     "string_to_number.h",
     "stringencode.cc",
     "stringencode.h",
-    "stringize_macros.h",
     "stringutils.cc",
     "stringutils.h",
     "swap_queue.h",
@@ -679,11 +676,7 @@ if (rtc_include_tests) {
     ]
     public_configs = [ ":rtc_base_tests_utils_exported_config" ]
     deps = [
-      ":rtc_base",
-      ":rtc_base_approved",
       ":rtc_base_tests_utils",
-      "../test:field_trial",
-      "../test:test_support",
     ]
     public_deps = [
       "//testing/gmock",
@@ -712,8 +705,6 @@ if (rtc_include_tests) {
       "gunit.h",
       "httpserver.cc",
       "httpserver.h",
-      "md5digest.cc",
-      "md5digest.h",
       "memory_usage.cc",
       "memory_usage.h",
       "natserver.cc",
@@ -764,9 +755,6 @@ if (rtc_include_tests) {
     deps = [
       ":rtc_base",
       ":rtc_base_tests_main",
-      ":rtc_base_tests_utils",
-      "../system_wrappers:system_wrappers",
-      "../test:test_support",
       "//testing/gtest",
     ]
     if (is_win) {
@@ -813,7 +801,6 @@ if (rtc_include_tests) {
       "safe_compare_unittest.cc",
       "string_to_number_unittest.cc",
       "stringencode_unittest.cc",
-      "stringize_macros_unittest.cc",
       "stringutils_unittest.cc",
       "swap_queue_unittest.cc",
       "thread_annotations_unittest.cc",
@@ -822,13 +809,8 @@ if (rtc_include_tests) {
       "timeutils_unittest.cc",
     ]
     deps = [
-      ":rtc_base",
       ":rtc_base_approved",
       ":rtc_base_tests_main",
-      ":rtc_base_tests_utils",
-      ":rtc_task_queue",
-      "../system_wrappers:system_wrappers",
-      "../test:test_support",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -845,9 +827,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtc_base_tests_main",
-      ":rtc_base_tests_utils",
       ":rtc_task_queue",
-      "../test:test_support",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -862,10 +842,8 @@ if (rtc_include_tests) {
       "numerics/percentile_filter_unittest.cc",
     ]
     deps = [
-      ":rtc_base_approved",
       ":rtc_base_tests_main",
       ":rtc_numerics",
-      "../test:test_support",
     ]
   }
 
@@ -924,8 +902,6 @@ if (rtc_include_tests) {
     }
     deps = [
       ":rtc_base_tests_main",
-      ":rtc_base_tests_utils",
-      "../test:test_support",
     ]
     public_deps = [
       ":rtc_base",
