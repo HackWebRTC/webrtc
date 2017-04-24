@@ -87,7 +87,7 @@ class FuzzRtpInput : public NetEqInput {
 
   rtc::Optional<RTPHeader> NextHeader() const override {
     RTC_DCHECK(packet_);
-    return rtc::Optional<RTPHeader>(packet_->header.header);
+    return rtc::Optional<RTPHeader>(packet_->header);
   }
 
  private:
@@ -99,17 +99,17 @@ class FuzzRtpInput : public NetEqInput {
     }
     RTC_DCHECK(packet_);
     const size_t start_ix = data_ix_;
-    packet_->header.header.payloadType =
+    packet_->header.payloadType =
         ByteReader<uint8_t>::ReadLittleEndian(&data_[data_ix_]);
-    packet_->header.header.payloadType &= 0x7F;
+    packet_->header.payloadType &= 0x7F;
     data_ix_ += sizeof(uint8_t);
-    packet_->header.header.sequenceNumber =
+    packet_->header.sequenceNumber =
         ByteReader<uint16_t>::ReadLittleEndian(&data_[data_ix_]);
     data_ix_ += sizeof(uint16_t);
-    packet_->header.header.timestamp =
+    packet_->header.timestamp =
         ByteReader<uint32_t>::ReadLittleEndian(&data_[data_ix_]);
     data_ix_ += sizeof(uint32_t);
-    packet_->header.header.ssrc =
+    packet_->header.ssrc =
         ByteReader<uint32_t>::ReadLittleEndian(&data_[data_ix_]);
     data_ix_ += sizeof(uint32_t);
     RTC_CHECK_EQ(data_ix_ - start_ix, kNumBytesToFuzz);

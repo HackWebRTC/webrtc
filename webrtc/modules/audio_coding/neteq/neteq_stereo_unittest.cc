@@ -16,6 +16,7 @@
 #include <list>
 
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "webrtc/modules/audio_coding/neteq/include/neteq.h"
 #include "webrtc/modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -197,14 +198,14 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
       while (time_now >= next_arrival_time) {
         // Insert packet in mono instance.
         ASSERT_EQ(NetEq::kOK,
-                  neteq_mono_->InsertPacket(rtp_header_mono_.header,
+                  neteq_mono_->InsertPacket(rtp_header_mono_,
                                             rtc::ArrayView<const uint8_t>(
                                                 encoded_, payload_size_bytes_),
                                             next_arrival_time));
         // Insert packet in multi-channel instance.
         ASSERT_EQ(NetEq::kOK,
                   neteq_->InsertPacket(
-                      rtp_header_.header,
+                      rtp_header_,
                       rtc::ArrayView<const uint8_t>(encoded_multi_channel_,
                                                     multi_payload_size_bytes_),
                       next_arrival_time));
@@ -253,8 +254,8 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
   uint8_t* encoded_multi_channel_;
   AudioFrame output_;
   AudioFrame output_multi_channel_;
-  WebRtcRTPHeader rtp_header_mono_;
-  WebRtcRTPHeader rtp_header_;
+  RTPHeader rtp_header_mono_;
+  RTPHeader rtp_header_;
   size_t payload_size_bytes_;
   size_t multi_payload_size_bytes_;
   int last_send_time_;

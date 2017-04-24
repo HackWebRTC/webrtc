@@ -70,12 +70,12 @@ void NetEqReplacementInput::ReplacePacket() {
 
   RTC_DCHECK(packet_);
 
-  RTC_CHECK_EQ(forbidden_types_.count(packet_->header.header.payloadType), 0)
-      << "Payload type " << static_cast<int>(packet_->header.header.payloadType)
+  RTC_CHECK_EQ(forbidden_types_.count(packet_->header.payloadType), 0)
+      << "Payload type " << static_cast<int>(packet_->header.payloadType)
       << " is forbidden.";
 
   // Check if this packet is comfort noise.
-  if (comfort_noise_types_.count(packet_->header.header.payloadType) != 0) {
+  if (comfort_noise_types_.count(packet_->header.payloadType) != 0) {
     // If CNG, simply insert a zero-energy one-byte payload.
     uint8_t cng_payload[1] = {127};  // Max attenuation of CNG.
     packet_->payload.SetData(cng_payload);
@@ -86,17 +86,17 @@ void NetEqReplacementInput::ReplacePacket() {
   RTC_DCHECK(next_hdr);
   uint8_t payload[12];
   uint32_t input_frame_size_timestamps = last_frame_size_timestamps_;
-  if (next_hdr->sequenceNumber == packet_->header.header.sequenceNumber + 1) {
+  if (next_hdr->sequenceNumber == packet_->header.sequenceNumber + 1) {
     // Packets are in order.
     input_frame_size_timestamps =
-        next_hdr->timestamp - packet_->header.header.timestamp;
+        next_hdr->timestamp - packet_->header.timestamp;
     last_frame_size_timestamps_ = input_frame_size_timestamps;
   }
-  FakeDecodeFromFile::PrepareEncoded(packet_->header.header.timestamp,
+  FakeDecodeFromFile::PrepareEncoded(packet_->header.timestamp,
                                      input_frame_size_timestamps,
                                      packet_->payload.size(), payload);
   packet_->payload.SetData(payload);
-  packet_->header.header.payloadType = replacement_payload_type_;
+  packet_->header.payloadType = replacement_payload_type_;
   return;
 }
 

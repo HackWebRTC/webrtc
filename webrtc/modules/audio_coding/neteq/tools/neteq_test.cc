@@ -22,15 +22,15 @@ void DefaultNetEqTestErrorCallback::OnInsertPacketError(
     const NetEqInput::PacketData& packet) {
   if (error_code == NetEq::kUnknownRtpPayloadType) {
     std::cerr << "RTP Payload type "
-              << static_cast<int>(packet.header.header.payloadType)
-              << " is unknown." << std::endl;
+              << static_cast<int>(packet.header.payloadType) << " is unknown."
+              << std::endl;
   } else {
     std::cerr << "InsertPacket returned error code " << error_code << std::endl;
     std::cerr << "Header data:" << std::endl;
-    std::cerr << "  PT = " << static_cast<int>(packet.header.header.payloadType)
+    std::cerr << "  PT = " << static_cast<int>(packet.header.payloadType)
               << std::endl;
-    std::cerr << "  SN = " << packet.header.header.sequenceNumber << std::endl;
-    std::cerr << "  TS = " << packet.header.header.timestamp << std::endl;
+    std::cerr << "  SN = " << packet.header.sequenceNumber << std::endl;
+    std::cerr << "  TS = " << packet.header.timestamp << std::endl;
   }
   FATAL();
 }
@@ -70,7 +70,7 @@ int64_t NetEqTest::Run() {
       std::unique_ptr<NetEqInput::PacketData> packet_data = input_->PopPacket();
       RTC_CHECK(packet_data);
       int error = neteq_->InsertPacket(
-          packet_data->header.header,
+          packet_data->header,
           rtc::ArrayView<const uint8_t>(packet_data->payload),
           static_cast<uint32_t>(packet_data->time_ms * sample_rate_hz_ / 1000));
       if (error != NetEq::kOK && error_callback_) {
