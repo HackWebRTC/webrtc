@@ -49,6 +49,13 @@ bool IsFlexfecFieldTrialEnabled() {
   return webrtc::field_trial::FindFullName("WebRTC-FlexFEC-03") == "Enabled";
 }
 
+// If this field trial is enabled, we will report VideoContentType RTP extension
+// in capabilities (thus, it will end up in the default SDP and extension will
+// be sent for all key-frames).
+bool IsVideoContentTypeExtensionFieldTrialEnabled() {
+  return webrtc::field_trial::IsEnabled("WebRTC-VideoContentTypeExtension");
+}
+
 // Wrap cricket::WebRtcVideoEncoderFactory as a webrtc::VideoEncoderFactory.
 class EncoderFactoryAdapter : public webrtc::VideoEncoderFactory {
  public:
@@ -503,6 +510,11 @@ RtpCapabilities WebRtcVideoEngine2::GetCapabilities() const {
   capabilities.header_extensions.push_back(
       webrtc::RtpExtension(webrtc::RtpExtension::kPlayoutDelayUri,
                            webrtc::RtpExtension::kPlayoutDelayDefaultId));
+  if (IsVideoContentTypeExtensionFieldTrialEnabled()) {
+    capabilities.header_extensions.push_back(
+        webrtc::RtpExtension(webrtc::RtpExtension::kVideoContentTypeUri,
+                             webrtc::RtpExtension::kVideoContentTypeDefaultId));
+  }
   return capabilities;
 }
 
