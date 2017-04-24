@@ -78,7 +78,6 @@ declare_args() {
   rtc_enable_sctp = true
 
   # Disable these to not build components which can be externally provided.
-  rtc_build_expat = true
   rtc_build_json = true
   rtc_build_libjpeg = true
   rtc_build_libsrtp = true

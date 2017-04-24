@@ -517,15 +517,13 @@ if (is_linux || is_win) {
       "//webrtc/api:video_frame_api",
       "//webrtc/base:rtc_base",
       "//webrtc/base:rtc_base_approved",
+      "//webrtc/base:rtc_json",
       "//webrtc/media:rtc_media",
       "//webrtc/modules/video_capture:video_capture_module",
       "//webrtc/pc:libjingle_peerconnection",
       "//webrtc/system_wrappers:field_trial_default",
       "//webrtc/system_wrappers:metrics_default",
     ]
-    if (rtc_build_json) {
-      deps += [ "//third_party/jsoncpp" ]
-    }
   }
 
   rtc_executable("peerconnection_server") {

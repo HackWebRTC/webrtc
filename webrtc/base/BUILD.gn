@@ -368,6 +368,25 @@ config("rtc_base_warnings_config") {
   }
 }
 
+rtc_source_set("rtc_json") {
+  defines = []
+  sources = [
+    "json.cc",
+    "json.h",
+  ]
+  if (rtc_build_json) {
+    public_deps = [
+      "//third_party/jsoncpp",
+    ]
+  } else {
+    include_dirs = [ "$rtc_jsoncpp_root" ]
+
+    # When defined changes the include path for json.h to where it is
+    # expected to be when building json outside of the standalone build.
+    defines += [ "WEBRTC_EXTERNAL_JSON" ]
+  }
+}
+
 rtc_static_library("rtc_base") {
   cflags = []
   cflags_cc = []
@@ -503,8 +522,6 @@ rtc_static_library("rtc_base") {
     configs += [ ":rtc_base_warnings_config" ]
     sources += [
       "callback.h",
-      "json.cc",
-      "json.h",
       "logsinks.cc",
       "logsinks.h",
       "mathutils.h",
@@ -529,16 +546,6 @@ rtc_static_library("rtc_base") {
         "win32socketserver.cc",
         "win32socketserver.h",
       ]
-    }
-
-    if (rtc_build_json) {
-      deps += [ "//third_party/jsoncpp" ]
-    } else {
-      include_dirs = [ "$rtc_jsoncpp_root" ]
-
-      # When defined changes the include path for json.h to where it is
-      # expected to be when building json outside of the standalone build.
-      defines += [ "WEBRTC_EXTERNAL_JSON" ]
     }
   }  # !build_with_chromium
 

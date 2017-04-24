@@ -91,13 +91,6 @@ rtc_static_library("rtc_p2p") {
     "../system_wrappers:field_trial_api",
   ]
 
-  if (rtc_build_expat) {
-    deps += [ "//third_party/expat" ]
-    public_deps = [
-      "//third_party/expat",
-    ]
-  }
-
   public_configs = [ ":rtc_p2p_inherited_config" ]
 
   if (build_with_chromium) {
