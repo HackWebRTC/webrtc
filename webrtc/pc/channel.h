@@ -183,16 +183,8 @@ class BaseChannel
 
   bool NeedsRtcpTransport();
 
-  // Made public for easier testing.
-  //
-  // Updates "ready to send" for an individual channel, and informs the media
-  // channel that the transport is ready to send if each channel (in use) is
-  // ready to send. This is more specific than just "writable"; it means the
-  // last send didn't return ENOTCONN.
-  //
-  // This should be called whenever a channel's ready-to-send state changes,
-  // or when RTCP muxing becomes active/inactive.
-  void SetTransportChannelReadyToSend(bool rtcp, bool ready);
+  // From RtpTransport - public for testing only
+  void OnTransportReadyToSend(bool ready);
 
   // Only public for unit tests.  Otherwise, consider protected.
   int SetOption(SocketType type, rtc::Socket::Option o, int val)
@@ -261,7 +253,6 @@ class BaseChannel
                             size_t len,
                             const rtc::PacketTime& packet_time,
                             int flags);
-  void OnReadyToSend(rtc::PacketTransportInternal* transport);
 
   void OnDtlsState(DtlsTransportInternal* transport, DtlsTransportState state);
 
@@ -391,6 +382,8 @@ class BaseChannel
   // Won't be set when using raw packet transports. SDP-specific thing.
   std::string transport_name_;
 
+  const bool rtcp_mux_required_;
+
   // Separate DTLS/non-DTLS pointers to support using BaseChannel without DTLS.
   // Temporary measure until more refactoring is done.
   // If non-null, "X_dtls_transport_" will always equal "X_packet_transport_".
@@ -402,8 +395,6 @@ class BaseChannel
   SrtpFilter srtp_filter_;
   RtcpMuxFilter rtcp_mux_filter_;
   BundleFilter bundle_filter_;
-  bool rtp_ready_to_send_ = false;
-  bool rtcp_ready_to_send_ = false;
   bool writable_ = false;
   bool was_ever_writable_ = false;
   bool has_received_packet_ = false;

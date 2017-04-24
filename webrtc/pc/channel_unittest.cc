@@ -1844,52 +1844,20 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(Terminate());
   }
 
-  void TestOnReadyToSend() {
+  void TestOnTransportReadyToSend() {
     CreateChannels(0, 0);
-    cricket::FakeDtlsTransport* rtp = fake_rtp_dtls_transport1_.get();
-    cricket::FakeDtlsTransport* rtcp = fake_rtcp_dtls_transport1_.get();
     EXPECT_FALSE(media_channel1_->ready_to_send());
 
-    network_thread_->Invoke<void>(RTC_FROM_HERE,
-                                  [rtp] { rtp->SignalReadyToSend(rtp); });
-    WaitForThreads();
-    EXPECT_FALSE(media_channel1_->ready_to_send());
-
-    network_thread_->Invoke<void>(RTC_FROM_HERE,
-                                  [rtcp] { rtcp->SignalReadyToSend(rtcp); });
-    WaitForThreads();
-    // MediaChannel::OnReadyToSend only be called when both rtp and rtcp
-    // channel are ready to send.
-    EXPECT_TRUE(media_channel1_->ready_to_send());
-
-    // rtp channel becomes not ready to send will be propagated to mediachannel
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      channel1_->SetTransportChannelReadyToSend(false, false);
-    });
-    WaitForThreads();
-    EXPECT_FALSE(media_channel1_->ready_to_send());
-
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      channel1_->SetTransportChannelReadyToSend(false, true);
-    });
+    channel1_->OnTransportReadyToSend(true);
     WaitForThreads();
     EXPECT_TRUE(media_channel1_->ready_to_send());
 
-    // rtcp channel becomes not ready to send will be propagated to mediachannel
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      channel1_->SetTransportChannelReadyToSend(true, false);
-    });
+    channel1_->OnTransportReadyToSend(false);
     WaitForThreads();
     EXPECT_FALSE(media_channel1_->ready_to_send());
-
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      channel1_->SetTransportChannelReadyToSend(true, true);
-    });
-    WaitForThreads();
-    EXPECT_TRUE(media_channel1_->ready_to_send());
   }
 
-  void TestOnReadyToSendWithRtcpMux() {
+  void TestOnTransportReadyToSendWithRtcpMux() {
     CreateChannels(0, 0);
     typename T::Content content;
     CreateContent(0, kPcmuCodec, kH264Codec, &content);
@@ -1908,9 +1876,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     WaitForThreads();
     EXPECT_TRUE(media_channel1_->ready_to_send());
 
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      channel1_->SetTransportChannelReadyToSend(false, false);
-    });
+    // TODO(zstein): Find a way to test this without making
+    // OnTransportReadyToSend public.
+    network_thread_->Invoke<void>(
+        RTC_FROM_HERE, [this] { channel1_->OnTransportReadyToSend(false); });
     WaitForThreads();
     EXPECT_FALSE(media_channel1_->ready_to_send());
   }
@@ -2390,12 +2359,12 @@ TEST_F(VoiceChannelSingleThreadTest, TestSrtpError) {
   Base::TestSrtpError(kAudioPts[0]);
 }
 
-TEST_F(VoiceChannelSingleThreadTest, TestOnReadyToSend) {
-  Base::TestOnReadyToSend();
+TEST_F(VoiceChannelSingleThreadTest, TestOnTransportReadyToSend) {
+  Base::TestOnTransportReadyToSend();
 }
 
-TEST_F(VoiceChannelSingleThreadTest, TestOnReadyToSendWithRtcpMux) {
-  Base::TestOnReadyToSendWithRtcpMux();
+TEST_F(VoiceChannelSingleThreadTest, TestOnTransportReadyToSendWithRtcpMux) {
+  Base::TestOnTransportReadyToSendWithRtcpMux();
 }
 
 // Test that we can scale the output volume properly for 1:1 calls.
@@ -2711,12 +2680,12 @@ TEST_F(VoiceChannelDoubleThreadTest, TestSrtpError) {
   Base::TestSrtpError(kAudioPts[0]);
 }
 
-TEST_F(VoiceChannelDoubleThreadTest, TestOnReadyToSend) {
-  Base::TestOnReadyToSend();
+TEST_F(VoiceChannelDoubleThreadTest, TestOnTransportReadyToSend) {
+  Base::TestOnTransportReadyToSend();
 }
 
-TEST_F(VoiceChannelDoubleThreadTest, TestOnReadyToSendWithRtcpMux) {
-  Base::TestOnReadyToSendWithRtcpMux();
+TEST_F(VoiceChannelDoubleThreadTest, TestOnTransportReadyToSendWithRtcpMux) {
+  Base::TestOnTransportReadyToSendWithRtcpMux();
 }
 
 // Test that we can scale the output volume properly for 1:1 calls.
@@ -3024,12 +2993,12 @@ TEST_F(VideoChannelSingleThreadTest, TestSrtpError) {
   Base::TestSrtpError(kVideoPts[0]);
 }
 
-TEST_F(VideoChannelSingleThreadTest, TestOnReadyToSend) {
-  Base::TestOnReadyToSend();
+TEST_F(VideoChannelSingleThreadTest, TestOnTransportReadyToSend) {
+  Base::TestOnTransportReadyToSend();
 }
 
-TEST_F(VideoChannelSingleThreadTest, TestOnReadyToSendWithRtcpMux) {
-  Base::TestOnReadyToSendWithRtcpMux();
+TEST_F(VideoChannelSingleThreadTest, TestOnTransportReadyToSendWithRtcpMux) {
+  Base::TestOnTransportReadyToSendWithRtcpMux();
 }
 
 TEST_F(VideoChannelSingleThreadTest, DefaultMaxBitrateIsUnlimited) {
@@ -3259,12 +3228,12 @@ TEST_F(VideoChannelDoubleThreadTest, TestSrtpError) {
   Base::TestSrtpError(kVideoPts[0]);
 }
 
-TEST_F(VideoChannelDoubleThreadTest, TestOnReadyToSend) {
-  Base::TestOnReadyToSend();
+TEST_F(VideoChannelDoubleThreadTest, TestOnTransportReadyToSend) {
+  Base::TestOnTransportReadyToSend();
 }
 
-TEST_F(VideoChannelDoubleThreadTest, TestOnReadyToSendWithRtcpMux) {
-  Base::TestOnReadyToSendWithRtcpMux();
+TEST_F(VideoChannelDoubleThreadTest, TestOnTransportReadyToSendWithRtcpMux) {
+  Base::TestOnTransportReadyToSendWithRtcpMux();
 }
 
 TEST_F(VideoChannelDoubleThreadTest, DefaultMaxBitrateIsUnlimited) {
@@ -3411,12 +3380,12 @@ TEST_F(RtpDataChannelSingleThreadTest, TestCallTeardownRtcpMux) {
   Base::TestCallTeardownRtcpMux();
 }
 
-TEST_F(RtpDataChannelSingleThreadTest, TestOnReadyToSend) {
-  Base::TestOnReadyToSend();
+TEST_F(RtpDataChannelSingleThreadTest, TestOnTransportReadyToSend) {
+  Base::TestOnTransportReadyToSend();
 }
 
-TEST_F(RtpDataChannelSingleThreadTest, TestOnReadyToSendWithRtcpMux) {
-  Base::TestOnReadyToSendWithRtcpMux();
+TEST_F(RtpDataChannelSingleThreadTest, TestOnTransportReadyToSendWithRtcpMux) {
+  Base::TestOnTransportReadyToSendWithRtcpMux();
 }
 
 TEST_F(RtpDataChannelSingleThreadTest, SendRtpToRtp) {
@@ -3543,12 +3512,12 @@ TEST_F(RtpDataChannelDoubleThreadTest, TestCallTeardownRtcpMux) {
   Base::TestCallTeardownRtcpMux();
 }
 
-TEST_F(RtpDataChannelDoubleThreadTest, TestOnReadyToSend) {
-  Base::TestOnReadyToSend();
+TEST_F(RtpDataChannelDoubleThreadTest, TestOnTransportReadyToSend) {
+  Base::TestOnTransportReadyToSend();
 }
 
-TEST_F(RtpDataChannelDoubleThreadTest, TestOnReadyToSendWithRtcpMux) {
-  Base::TestOnReadyToSendWithRtcpMux();
+TEST_F(RtpDataChannelDoubleThreadTest, TestOnTransportReadyToSendWithRtcpMux) {
+  Base::TestOnTransportReadyToSendWithRtcpMux();
 }
 
 TEST_F(RtpDataChannelDoubleThreadTest, SendRtpToRtp) {

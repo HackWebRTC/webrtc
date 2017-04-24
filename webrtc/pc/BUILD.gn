@@ -190,6 +190,7 @@ if (rtc_include_tests) {
       "currentspeakermonitor_unittest.cc",
       "mediasession_unittest.cc",
       "rtcpmuxfilter_unittest.cc",
+      "rtptransport_unittest.cc",
       "srtpfilter_unittest.cc",
     ]
 

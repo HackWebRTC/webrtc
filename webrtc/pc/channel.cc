@@ -168,6 +168,7 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       network_thread_(network_thread),
       signaling_thread_(signaling_thread),
       content_name_(content_name),
+      rtcp_mux_required_(rtcp_mux_required),
       rtp_transport_(rtcp_mux_required),
       srtp_required_(srtp_required),
       media_channel_(media_channel),
@@ -176,6 +177,8 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
 #if defined(ENABLE_EXTERNAL_AUTH)
   srtp_filter_.EnableExternalAuth();
 #endif
+  rtp_transport_.SignalReadyToSend.connect(
+      this, &BaseChannel::OnTransportReadyToSend);
   LOG(LS_INFO) << "Created channel for " << content_name;
 }
 
@@ -242,7 +245,7 @@ bool BaseChannel::InitNetwork_n(
   SetTransports_n(rtp_dtls_transport, rtcp_dtls_transport, rtp_packet_transport,
                   rtcp_packet_transport);
 
-  if (rtp_transport_.rtcp_mux_required()) {
+  if (rtcp_mux_required_) {
     rtcp_mux_filter_.SetActive();
   }
   return true;
@@ -335,19 +338,6 @@ void BaseChannel::SetTransports_n(
   // Update aggregate writable/ready-to-send state between RTP and RTCP upon
   // setting new transport channels.
   UpdateWritableState_n();
-  // We can only update ready-to-send after updating writability.
-  //
-  // On setting a new channel, assume it's ready to send if it's writable,
-  // because we have no way of knowing otherwise (the channel doesn't give us
-  // "was last send successful?").
-  //
-  // This won't always be accurate (the last SendPacket call from another
-  // BaseChannel could have resulted in an error), but even so, we'll just
-  // encounter the error again and update "ready to send" accordingly.
-  SetTransportChannelReadyToSend(
-      false, rtp_packet_transport && rtp_packet_transport->writable());
-  SetTransportChannelReadyToSend(
-      true, rtcp_packet_transport && rtcp_packet_transport->writable());
 }
 
 void BaseChannel::SetTransport_n(
@@ -374,9 +364,9 @@ void BaseChannel::SetTransport_n(
   }
 
   if (rtcp) {
-    rtp_transport_.set_rtcp_packet_transport(new_packet_transport);
+    rtp_transport_.SetRtcpPacketTransport(new_packet_transport);
   } else {
-    rtp_transport_.set_rtp_packet_transport(new_packet_transport);
+    rtp_transport_.SetRtpPacketTransport(new_packet_transport);
   }
   old_dtls_transport = new_dtls_transport;
 
@@ -390,6 +380,7 @@ void BaseChannel::SetTransport_n(
         << "Setting RTCP for DTLS/SRTP after SrtpFilter is active "
         << "should never happen.";
   }
+
   if (new_dtls_transport) {
     ConnectToDtlsTransport(new_dtls_transport);
   } else {
@@ -404,9 +395,9 @@ void BaseChannel::SetTransport_n(
 void BaseChannel::ConnectToDtlsTransport(DtlsTransportInternal* transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
+  // TODO(zstein): de-dup with ConnectToPacketTransport
   transport->SignalWritableState.connect(this, &BaseChannel::OnWritableState);
   transport->SignalReadPacket.connect(this, &BaseChannel::OnPacketRead);
-  transport->SignalReadyToSend.connect(this, &BaseChannel::OnReadyToSend);
   transport->SignalDtlsState.connect(this, &BaseChannel::OnDtlsState);
   transport->SignalSentPacket.connect(this, &BaseChannel::SignalSentPacket_n);
   transport->ice_transport()->SignalSelectedCandidatePairChanged.connect(
@@ -421,7 +412,6 @@ void BaseChannel::DisconnectFromDtlsTransport(
 
   transport->SignalWritableState.disconnect(this);
   transport->SignalReadPacket.disconnect(this);
-  transport->SignalReadyToSend.disconnect(this);
   transport->SignalDtlsState.disconnect(this);
   transport->SignalSentPacket.disconnect(this);
   transport->ice_transport()->SignalSelectedCandidatePairChanged.disconnect(
@@ -433,7 +423,6 @@ void BaseChannel::ConnectToPacketTransport(
   RTC_DCHECK_RUN_ON(network_thread_);
   transport->SignalWritableState.connect(this, &BaseChannel::OnWritableState);
   transport->SignalReadPacket.connect(this, &BaseChannel::OnPacketRead);
-  transport->SignalReadyToSend.connect(this, &BaseChannel::OnReadyToSend);
   transport->SignalSentPacket.connect(this, &BaseChannel::SignalSentPacket_n);
 }
 
@@ -442,7 +431,6 @@ void BaseChannel::DisconnectFromPacketTransport(
   RTC_DCHECK_RUN_ON(network_thread_);
   transport->SignalWritableState.disconnect(this);
   transport->SignalReadPacket.disconnect(this);
-  transport->SignalReadyToSend.disconnect(this);
   transport->SignalSentPacket.disconnect(this);
 }
 
@@ -522,8 +510,7 @@ bool BaseChannel::GetConnectionStats(ConnectionInfos* infos) {
 bool BaseChannel::NeedsRtcpTransport() {
   // If this BaseChannel doesn't require RTCP mux and we haven't fully
   // negotiated RTCP mux, we need an RTCP transport.
-  return !rtp_transport_.rtcp_mux_required() &&
-         !rtcp_mux_filter_.IsFullyActive();
+  return !rtcp_mux_required_ && !rtcp_mux_filter_.IsFullyActive();
 }
 
 bool BaseChannel::IsReadyToReceiveMedia_w() const {
@@ -605,13 +592,6 @@ void BaseChannel::OnPacketRead(rtc::PacketTransportInternal* transport,
   HandlePacket(rtcp, &packet, packet_time);
 }
 
-void BaseChannel::OnReadyToSend(rtc::PacketTransportInternal* transport) {
-  RTC_DCHECK(transport == rtp_transport_.rtp_packet_transport() ||
-             transport == rtp_transport_.rtcp_packet_transport());
-  SetTransportChannelReadyToSend(
-      transport == rtp_transport_.rtcp_packet_transport(), true);
-}
-
 void BaseChannel::OnDtlsState(DtlsTransportInternal* transport,
                               DtlsTransportState state) {
   if (!ShouldSetupDtlsSrtp_n()) {
@@ -655,22 +635,10 @@ void BaseChannel::OnSelectedCandidatePairChanged(
            network_route));
 }
 
-void BaseChannel::SetTransportChannelReadyToSend(bool rtcp, bool ready) {
-  RTC_DCHECK(network_thread_->IsCurrent());
-  if (rtcp) {
-    rtcp_ready_to_send_ = ready;
-  } else {
-    rtp_ready_to_send_ = ready;
-  }
-
-  bool ready_to_send =
-      (rtp_ready_to_send_ &&
-       // In the case of rtcp mux |rtcp_packet_transport_| will be null.
-       (rtcp_ready_to_send_ || !rtp_transport_.rtcp_packet_transport()));
-
+void BaseChannel::OnTransportReadyToSend(bool ready) {
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_,
-      Bind(&MediaChannel::OnReadyToSend, media_channel_, ready_to_send));
+      Bind(&MediaChannel::OnReadyToSend, media_channel_, ready));
 }
 
 bool BaseChannel::PacketIsRtcp(const rtc::PacketTransportInternal* transport,
@@ -705,11 +673,7 @@ bool BaseChannel::SendPacket(bool rtcp,
   // packet before doing anything. (We might get RTCP packets that we don't
   // intend to send.) If we've negotiated RTCP mux, send RTCP over the RTP
   // transport.
-  rtc::PacketTransportInternal* transport =
-      (!rtcp || rtcp_mux_filter_.IsActive())
-          ? rtp_transport_.rtp_packet_transport()
-          : rtp_transport_.rtcp_packet_transport();
-  if (!transport || !transport->writable()) {
+  if (!rtp_transport_.IsWritable(rtcp)) {
     return false;
   }
 
@@ -805,16 +769,7 @@ bool BaseChannel::SendPacket(bool rtcp,
 
   // Bon voyage.
   int flags = (secure() && secure_dtls()) ? PF_SRTP_BYPASS : PF_NORMAL;
-  int ret = transport->SendPacket(packet->data<char>(), packet->size(),
-                                  updated_options, flags);
-  if (ret != static_cast<int>(packet->size())) {
-    if (transport->GetError() == ENOTCONN) {
-      LOG(LS_WARNING) << "Got ENOTCONN from transport.";
-      SetTransportChannelReadyToSend(rtcp, false);
-    }
-    return false;
-  }
-  return true;
+  return rtp_transport_.SendPacket(rtcp, packet, updated_options, flags);
 }
 
 bool BaseChannel::WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) {
@@ -1233,7 +1188,7 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
                                std::string* error_desc) {
   // Provide a more specific error message for the RTCP mux "require" policy
   // case.
-  if (rtp_transport_.rtcp_mux_required() && !enable) {
+  if (rtcp_mux_required_ && !enable) {
     SafeSetError(
         "rtcpMuxPolicy is 'require', but media description does not "
         "contain 'a=rtcp-mux'.",
@@ -1267,7 +1222,6 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
           SignalRtcpMuxFullyActive(transport_name_);
         }
         UpdateWritableState_n();
-        SetTransportChannelReadyToSend(true, false);
       }
       break;
     case CA_UPDATE:
@@ -1281,6 +1235,7 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
     SafeSetError("Failed to setup RTCP mux filter.", error_desc);
     return false;
   }
+  rtp_transport_.SetRtcpMuxEnabled(rtcp_mux_filter_.IsActive());
   // |rtcp_mux_filter_| can be active if |action| is CA_PRANSWER or
   // CA_ANSWER, but we only want to tear down the RTCP transport if we received
   // a final answer.
