@@ -24,7 +24,7 @@
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/call/rtp_transport_controller_send.h"
+#include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_coding/codecs/audio_format_conversion.h"

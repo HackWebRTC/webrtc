@@ -20,7 +20,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/call/rtp_transport_controller_send.h"
+#include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"

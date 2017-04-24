@@ -11,46 +11,39 @@
 #ifndef WEBRTC_CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 #define WEBRTC_CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 
+#include "webrtc/base/constructormagic.h"
+#include "webrtc/call/rtp_transport_controller_send_interface.h"
+#include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
+
 namespace webrtc {
+class Clock;
+class RtcEventLog;
 
-class Module;
-class PacketRouter;
-class RtpPacketSender;
-class SendSideCongestionController;
-class TransportFeedbackObserver;
-
-// An RtpTransportController should own everything related to the RTP
-// transport to/from a remote endpoint. We should have separate
-// interfaces for send and receive side, even if they are implemented
-// by the same class. This is an ongoing refactoring project. At some
-// point, this class should be promoted to a public api under
-// webrtc/api/rtp/.
-//
-// For a start, this object is just a collection of the objects needed
-// by the VideoSendStream constructor. The plan is to move ownership
-// of all RTP-related objects here, and add methods to create per-ssrc
-// objects which would then be passed to VideoSendStream. Eventually,
-// direct accessors like packet_router() should be removed.
-//
-// This should also have a reference to the underlying
-// webrtc::Transport(s). Currently, webrtc::Transport is implemented by
-// WebRtcVideoChannel2 and WebRtcVoiceMediaChannel, and owned by
-// WebrtcSession. Video and audio always uses different transport
-// objects, even in the common case where they are bundled over the
-// same underlying transport.
-//
-// Extracting the logic of the webrtc::Transport from BaseChannel and
-// subclasses into a separate class seems to be a prerequesite for
-// moving the transport here.
-class RtpTransportControllerSendInterface {
+// TODO(nisse): When we get the underlying transports here, we should
+// have one object implementing RtpTransportControllerSendInterface
+// per transport, sharing the same congestion controller.
+class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
  public:
-  virtual ~RtpTransportControllerSendInterface() {}
-  virtual PacketRouter* packet_router() = 0;
-  // Currently returning the same pointer, but with different types.
-  virtual SendSideCongestionController* send_side_cc() = 0;
-  virtual TransportFeedbackObserver* transport_feedback_observer() = 0;
+  RtpTransportControllerSend(Clock* clock, webrtc::RtcEventLog* event_log);
 
-  virtual RtpPacketSender* packet_sender() = 0;
+  void RegisterNetworkObserver(
+      SendSideCongestionController::Observer* observer);
+
+  // Implements RtpTransportControllerSendInterface
+  PacketRouter* packet_router() override { return &packet_router_; }
+  SendSideCongestionController* send_side_cc() override {
+    return &send_side_cc_;
+  }
+  TransportFeedbackObserver* transport_feedback_observer() override {
+    return &send_side_cc_;
+  }
+  RtpPacketSender* packet_sender() override { return send_side_cc_.pacer(); }
+
+ private:
+  PacketRouter packet_router_;
+  SendSideCongestionController send_side_cc_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpTransportControllerSend);
 };
 
 }  // namespace webrtc

@@ -15,7 +15,7 @@
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
 #include "webrtc/base/task_queue.h"
-#include "webrtc/call/rtp_transport_controller_send.h"
+#include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_processing/include/mock_audio_processing.h"

@@ -38,7 +38,6 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/receive_side_congestion_controller.h"
-#include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
 #include "webrtc/modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -85,40 +84,6 @@ bool UseSendSideBwe(const AudioReceiveStream::Config& config) {
 
 bool UseSendSideBwe(const FlexfecReceiveStream::Config& config) {
   return UseSendSideBwe(config.rtp_header_extensions, config.transport_cc);
-}
-
-class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
- public:
-  RtpTransportControllerSend(Clock* clock, webrtc::RtcEventLog* event_log);
-
-  void RegisterNetworkObserver(
-      SendSideCongestionController::Observer* observer);
-
-  // Implements RtpTransportControllerSendInterface
-  PacketRouter* packet_router() override { return &packet_router_; }
-  SendSideCongestionController* send_side_cc() override {
-    return &send_side_cc_;
-  }
-  TransportFeedbackObserver* transport_feedback_observer() override {
-    return &send_side_cc_;
-  }
-  RtpPacketSender* packet_sender() override { return send_side_cc_.pacer(); }
-
- private:
-  PacketRouter packet_router_;
-  SendSideCongestionController send_side_cc_;
-};
-
-RtpTransportControllerSend::RtpTransportControllerSend(
-    Clock* clock,
-    webrtc::RtcEventLog* event_log)
-    : send_side_cc_(clock, nullptr /* observer */, event_log, &packet_router_) {
-}
-
-void RtpTransportControllerSend::RegisterNetworkObserver(
-    SendSideCongestionController::Observer* observer) {
-  // Must be called only once.
-  send_side_cc_.RegisterNetworkObserver(observer);
 }
 
 }  // namespace

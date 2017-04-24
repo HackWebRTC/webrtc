@@ -15,7 +15,7 @@
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/call/rtp_transport_controller_send.h"
+#include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/voice_engine/channel.h"
 
 namespace webrtc {
