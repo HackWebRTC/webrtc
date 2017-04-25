@@ -29,8 +29,6 @@ namespace webrtc {
 class AudioProcessing;
 class RtcEventLog;
 
-const char* Version();
-
 enum class MediaType {
   ANY,
   AUDIO,
