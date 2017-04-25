@@ -210,8 +210,9 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection",
       ":rtc_pc",
+      "../base:rtc_base_tests_main",
       "../base:rtc_base_tests_utils",
-      "../media:rtc_unittest_main",
+      "../media:rtc_media_tests_utils",
       "../system_wrappers:metrics_default",
     ]
 
@@ -356,8 +357,9 @@ if (rtc_include_tests) {
       ":pc_test_utils",
       "..:webrtc_common",
       "../api:fakemetricsobserver",
+      "../base:rtc_base_tests_main",
       "../base:rtc_base_tests_utils",
-      "../media:rtc_unittest_main",
+      "../media:rtc_media_tests_utils",
       "../pc:rtc_pc",
       "../system_wrappers:metrics_default",
       "//testing/gmock",
