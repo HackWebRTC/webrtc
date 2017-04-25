@@ -15,6 +15,7 @@
 #include <cmath>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/safe_minmax.h"
 
 #include "webrtc/modules/remote_bitrate_estimator/overuse_detector.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -250,8 +251,8 @@ uint32_t AimdRateControl::MultiplicativeRateIncrease(
     int64_t now_ms, int64_t last_ms, uint32_t current_bitrate_bps) const {
   double alpha = 1.08;
   if (last_ms > -1) {
-    int time_since_last_update_ms = std::min(static_cast<int>(now_ms - last_ms),
-                                             1000);
+    auto time_since_last_update_ms =
+        rtc::SafeMin<int64_t>(now_ms - last_ms, 1000);
     alpha = pow(alpha,  time_since_last_update_ms / 1000.0);
   }
   uint32_t multiplicative_increase_bps = std::max(

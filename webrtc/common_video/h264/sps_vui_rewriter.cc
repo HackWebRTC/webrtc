@@ -18,6 +18,7 @@
 #include "webrtc/base/bitbuffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/safe_minmax.h"
 
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/common_video/h264/sps_parser.h"
@@ -351,8 +352,7 @@ bool CopyRemainingBits(rtc::BitBuffer* source,
     COPY_BITS(source, destination, bits_tmp, misaligned_bits);
   }
   while (source->RemainingBitCount() > 0) {
-    size_t count = std::min(static_cast<size_t>(32u),
-                            static_cast<size_t>(source->RemainingBitCount()));
+    auto count = rtc::SafeMin<size_t>(32u, source->RemainingBitCount());
     COPY_BITS(source, destination, bits_tmp, count);
   }
   // TODO(noahric): The last byte could be all zeroes now, which we should just
