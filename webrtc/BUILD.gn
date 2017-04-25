@@ -257,7 +257,7 @@ if (!build_with_chromium) {
       "pc",
       "sdk",
       "stats",
-      "system_wrappers",
+      "system_wrappers:system_wrappers_default",
       "video",
       "voice_engine",
     ]
