@@ -192,6 +192,25 @@ rtc_static_library("rtp_rtcp") {
   }
 }
 
+rtc_source_set("fec_test_helper") {
+  testonly = true
+  sources = [
+    "source/fec_test_helper.cc",
+    "source/fec_test_helper.h",
+  ]
+  deps = [
+    ":rtp_rtcp",
+    "../../base:rtc_base_approved",
+  ]
+
+  # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
+  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 if (rtc_include_tests) {
   rtc_executable("test_packet_masks_metrics") {
     testonly = true
@@ -210,6 +229,13 @@ if (rtc_include_tests) {
 
   rtc_source_set("rtp_rtcp_modules_tests") {
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc/modules:modules_tests" ]
+    }
     sources = [
       "test/testFec/test_fec.cc",
     ]
@@ -224,13 +250,29 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("rtp_rtcp_unittests") {
+  rtc_source_set("mock_rtp_rtcp") {
     testonly = true
     sources = [
       "mocks/mock_rtp_rtcp.h",
+    ]
+    deps = [
+      ":rtp_rtcp",
+      "../../base:rtc_base_approved",
+      "../../test:test_support",
+    ]
+  }
+
+  rtc_source_set("rtp_rtcp_unittests") {
+    testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc/modules:modules_unittests" ]
+    }
+    sources = [
       "source/byte_io_unittest.cc",
-      "source/fec_test_helper.cc",
-      "source/fec_test_helper.h",
       "source/flexfec_header_reader_writer_unittest.cc",
       "source/flexfec_receiver_unittest.cc",
       "source/flexfec_sender_unittest.cc",
@@ -291,6 +333,8 @@ if (rtc_include_tests) {
       "test/testAPI/test_api_video.cc",
     ]
     deps = [
+      ":fec_test_helper",
+      ":mock_rtp_rtcp",
       ":rtp_rtcp",
       "../..:webrtc_common",
       "../../api:transport_api",

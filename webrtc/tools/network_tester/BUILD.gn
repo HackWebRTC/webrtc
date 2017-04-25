@@ -68,11 +68,18 @@ if (rtc_enable_protobuf) {
   }
 
   rtc_source_set("network_tester_unittests") {
+    testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc/tools:tools_unittests" ]
+    }
     sources = [
       "network_tester_unittest.cc",
     ]
 
-    testonly = true
     deps = [
       ":network_tester",
       "//testing/gtest",

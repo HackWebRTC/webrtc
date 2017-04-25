@@ -485,6 +485,13 @@ if (rtc_include_tests) {
 
   rtc_source_set("audio_processing_unittests") {
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc/modules:modules_unittests" ]
+    }
     sources = [
       "aec/echo_cancellation_unittest.cc",
       "aec/system_delay_unittest.cc",
@@ -651,6 +658,13 @@ if (rtc_include_tests) {
     #  //webrtc/modules:_modules_unittests__library
     check_includes = false
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc:webrtc_perf_tests" ]
+    }
     sources = [
       "audio_processing_performance_unittest.cc",
       "level_controller/level_controller_complexity_unittest.cc",

@@ -742,6 +742,13 @@ if (rtc_include_tests) {
 
   rtc_source_set("rtc_base_nonparallel_tests") {
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc:webrtc_nonparallel_tests" ]
+    }
     sources = [
       "cpu_time_unittest.cc",
       "filerotatingstream_unittest.cc",
@@ -769,6 +776,13 @@ if (rtc_include_tests) {
 
   rtc_source_set("rtc_base_approved_unittests") {
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc:rtc_unittests" ]
+    }
     sources = [
       "array_view_unittest.cc",
       "atomicops_unittest.cc",
@@ -820,6 +834,13 @@ if (rtc_include_tests) {
 
   rtc_source_set("rtc_task_queue_unittests") {
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc:rtc_unittests" ]
+    }
     sources = [
       "sequenced_task_checker_unittest.cc",
       "task_queue_unittest.cc",
@@ -837,6 +858,13 @@ if (rtc_include_tests) {
 
   rtc_source_set("rtc_numerics_unittests") {
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc:rtc_unittests" ]
+    }
     sources = [
       "numerics/exp_filter_unittest.cc",
       "numerics/percentile_filter_unittest.cc",
@@ -854,6 +882,13 @@ if (rtc_include_tests) {
   }
   rtc_source_set("rtc_base_unittests") {
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc:rtc_unittests" ]
+    }
     sources = [
       "callback_unittest.cc",
       "crc32_unittest.cc",

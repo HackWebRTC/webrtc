@@ -308,6 +308,7 @@ rtc_test("test_support_unittests") {
 }
 rtc_source_set("fileutils_unittests") {
   testonly = true
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "testsupport/fileutils_unittest.cc",
   ]

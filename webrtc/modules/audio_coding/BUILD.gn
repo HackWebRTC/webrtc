@@ -1168,6 +1168,13 @@ if (rtc_include_tests) {
 
   rtc_source_set("audio_coding_modules_tests") {
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc/modules:modules_tests" ]
+    }
     sources = [
       "test/APITest.cc",
       "test/Channel.cc",
@@ -1212,6 +1219,13 @@ if (rtc_include_tests) {
 
   rtc_source_set("audio_coding_perf_tests") {
     testonly = true
+
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc:webrtc_perf_tests" ]
+    }
     sources = [
       "codecs/opus/opus_complexity_unittest.cc",
       "neteq/test/neteq_performance_unittest.cc",
@@ -2015,6 +2029,12 @@ if (rtc_include_tests) {
   rtc_source_set("audio_coding_unittests") {
     testonly = true
 
+    # Skip restricting visibility on mobile platforms since the tests on those
+    # gets additional generated targets which would require many lines here to
+    # cover (which would be confusing to read and hard to maintain).
+    if (!is_android && !is_ios) {
+      visibility = [ "//webrtc/modules:modules_unittests" ]
+    }
     sources = [
       "acm2/acm_receiver_unittest.cc",
       "acm2/audio_coding_module_unittest.cc",

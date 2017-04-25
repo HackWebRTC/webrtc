@@ -282,7 +282,6 @@ if (!build_with_chromium) {
         ":video_engine_tests",
         ":webrtc_nonparallel_tests",
         ":webrtc_perf_tests",
-        "api:rtc_api_unittests",
         "base:rtc_base_tests_utils",
         "common_audio:common_audio_unittests",
         "common_video:common_video_unittests",
@@ -303,7 +302,6 @@ if (!build_with_chromium) {
         "test",
         "video:screenshare_loopback",
         "video:video_loopback",
-        "video:video_tests",
         "voice_engine:voice_engine_unittests",
       ]
       if (is_android) {
@@ -475,7 +473,6 @@ if (rtc_include_tests) {
       "modules/remote_bitrate_estimator:remote_bitrate_estimator_perf_tests",
       "test:test_main",
       "video:video_full_stack_tests",
-      "video:video_quality_test",
     ]
 
     data = webrtc_perf_tests_resources
