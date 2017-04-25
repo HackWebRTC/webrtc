@@ -184,7 +184,7 @@
   # This is the list of configs that you can pass to mb; each config
   # represents a particular combination of gn args that we must support.
   # A given config *may* be platform-specific but is not necessarily so (i.e.,
-  #  we might have mac, win, and linux bots all using the 'release_bot' config).
+  # we might have mac, win, and linux bots all using the 'release_bot' config).
   'configs': {
     # Linux, Mac and Windows
     'gcc_release_bot_x64': [
@@ -236,7 +236,8 @@
       'gn', 'openh264', 'release', 'goma', 'x64'
     ],
     'libfuzzer_asan_release_bot_x64': [
-      'libfuzzer', 'asan', 'optimize_for_fuzzing', 'openh264_release_bot', 'x64'
+      'libfuzzer', 'asan', 'optimize_for_fuzzing', 'openh264_release_bot',
+      'x64', 'no_rtc_tests'
     ],
     'memcheck_release_bot_x64': [
       'memcheck', 'gn', 'openh264_release_bot', 'x64'
@@ -407,6 +408,10 @@
     'msan': {
       'gn_args': ('is_msan=true msan_track_origins=2 '
                   'use_prebuilt_instrumented_libraries=true'),
+    },
+
+    'no_rtc_tests': {
+      'gn_args': 'rtc_include_tests=false',
     },
 
     'openh264': {
