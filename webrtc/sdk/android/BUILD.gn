@@ -157,8 +157,6 @@ android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/DataChannel.java",
     "api/org/webrtc/DtmfSender.java",
     "api/org/webrtc/EglBase.java",
-    "api/org/webrtc/EglBase10.java",
-    "api/org/webrtc/EglBase14.java",
     "api/org/webrtc/EglRenderer.java",
     "api/org/webrtc/FileVideoCapturer.java",
     "api/org/webrtc/GlRectDrawer.java",
@@ -200,6 +198,8 @@ android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/Camera2Session.java",
     "src/java/org/webrtc/CameraCapturer.java",
     "src/java/org/webrtc/CameraSession.java",
+    "src/java/org/webrtc/EglBase10.java",
+    "src/java/org/webrtc/EglBase14.java",
     "src/java/org/webrtc/Histogram.java",
     "src/java/org/webrtc/YuvConverter.java",
   ]

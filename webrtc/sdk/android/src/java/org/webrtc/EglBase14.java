@@ -25,7 +25,7 @@ import android.view.Surface;
  * and an EGLSurface.
  */
 @TargetApi(18)
-public final class EglBase14 extends EglBase {
+class EglBase14 extends EglBase {
   private static final String TAG = "EglBase14";
   private static final int EGLExt_SDK_VERSION = android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
   private static final int CURRENT_SDK_VERSION = android.os.Build.VERSION.SDK_INT;
@@ -37,8 +37,9 @@ public final class EglBase14 extends EglBase {
   // EGL 1.4 is supported from API 17. But EGLExt that is used for setting presentation
   // time stamp on a surface is supported from 18 so we require 18.
   public static boolean isEGL14Supported() {
-    Logging.d(TAG, "SDK version: " + CURRENT_SDK_VERSION + ". isEGL14Supported: "
-            + (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION));
+    Logging.d(TAG,
+        "SDK version: " + CURRENT_SDK_VERSION
+            + ". isEGL14Supported: " + (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION));
     return (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION);
   }
 
