@@ -413,12 +413,6 @@ TEST(ThreadTest, SetNameOnSignalQueueDestroyed) {
   Thread* thread2 = new AutoThread();
   SetNameOnSignalQueueDestroyedTester tester2(thread2);
   delete thread2;
-
-#if defined(WEBRTC_WIN)
-  Thread* thread3 = new ComThread();
-  SetNameOnSignalQueueDestroyedTester tester3(thread3);
-  delete thread3;
-#endif
 }
 
 class AsyncInvokeTest : public testing::Test {
@@ -781,29 +775,3 @@ TEST_F(GuardedAsyncInvokeTest, FlushWithIds) {
   EXPECT_FALSE(flag1.get());
   EXPECT_TRUE(flag2.get());
 }
-
-#if defined(WEBRTC_WIN)
-class ComThreadTest : public testing::Test, public MessageHandler {
- public:
-  ComThreadTest() : done_(false) {}
- protected:
-  virtual void OnMessage(Message* message) {
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    // S_FALSE means the thread was already inited for a multithread apartment.
-    EXPECT_EQ(S_FALSE, hr);
-    if (SUCCEEDED(hr)) {
-      CoUninitialize();
-    }
-    done_ = true;
-  }
-  bool done_;
-};
-
-TEST_F(ComThreadTest, ComInited) {
-  Thread* thread = new ComThread();
-  EXPECT_TRUE(thread->Start());
-  thread->Post(RTC_FROM_HERE, this, 0);
-  EXPECT_TRUE_WAIT(done_, 1000);
-  delete thread;
-}
-#endif

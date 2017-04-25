@@ -306,21 +306,6 @@ class AutoThread : public Thread {
   RTC_DISALLOW_COPY_AND_ASSIGN(AutoThread);
 };
 
-// Win32 extension for threads that need to use COM
-#if defined(WEBRTC_WIN)
-class ComThread : public Thread {
- public:
-  ComThread() {}
-  ~ComThread() override;
-
- protected:
-  void Run() override;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(ComThread);
-};
-#endif
-
 // Provides an easy way to install/uninstall a socketserver on a thread.
 class SocketServerScope {
  public:

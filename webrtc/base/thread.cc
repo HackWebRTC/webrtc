@@ -518,21 +518,4 @@ AutoThread::~AutoThread() {
   }
 }
 
-#if defined(WEBRTC_WIN)
-ComThread::~ComThread() {
-  Stop();
-}
-
-void ComThread::Run() {
-  HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-  RTC_DCHECK(SUCCEEDED(hr));
-  if (SUCCEEDED(hr)) {
-    Thread::Run();
-    CoUninitialize();
-  } else {
-    LOG(LS_ERROR) << "CoInitialize failed, hr=" << hr;
-  }
-}
-#endif
-
 }  // namespace rtc
