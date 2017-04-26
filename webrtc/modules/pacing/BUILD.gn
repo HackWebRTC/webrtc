@@ -26,6 +26,7 @@ rtc_static_library("pacing") {
   }
 
   deps = [
+    "..:module_api",
     "../../:webrtc_common",
     "../../base:rtc_base_approved",
     "../../logging:rtc_event_log_api",

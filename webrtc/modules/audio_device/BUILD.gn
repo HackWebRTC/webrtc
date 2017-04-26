@@ -49,6 +49,7 @@ rtc_static_library("audio_device") {
   public_configs = [ ":audio_device_config" ]
 
   deps = [
+    "..:module_api",
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
     "../../base:rtc_task_queue",

@@ -26,6 +26,7 @@ rtc_static_library("video_capture_module") {
   ]
 
   deps = [
+    "..:module_api",
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
     "../../common_video",

@@ -94,6 +94,7 @@ rtc_static_library("video_coding") {
     ":webrtc_i420",
     ":webrtc_vp8",
     ":webrtc_vp9",
+    "..:module_api",
     "../..:video_stream_api",
     "../..:webrtc_common",
     "../../base:rtc_base",
@@ -129,6 +130,7 @@ rtc_static_library("video_coding_utility") {
   }
 
   deps = [
+    "..:module_api",
     "../..:webrtc_common",
     "../../api/video_codecs:video_codecs_api",
     "../../base:rtc_base_approved",
@@ -225,6 +227,7 @@ rtc_static_library("webrtc_vp8") {
 
   deps = [
     ":video_coding_utility",
+    "..:module_api",
     "../..:webrtc_common",
     "../../api/video_codecs:video_codecs_api",
     "../../base:rtc_base_approved",
@@ -260,6 +263,7 @@ rtc_static_library("webrtc_vp9") {
 
   deps = [
     ":video_coding_utility",
+    "..:module_api",
     "../../base:rtc_base_approved",
     "../../common_video",
     "../../system_wrappers",
@@ -543,6 +547,7 @@ if (rtc_include_tests) {
       ":webrtc_h264",
       ":webrtc_vp8",
       ":webrtc_vp9",
+      "..:module_api",
       "../..:webrtc_common",
       "../../api:video_frame_api",
       "../../api/video_codecs:video_codecs_api",

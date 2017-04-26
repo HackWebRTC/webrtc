@@ -156,6 +156,7 @@ rtc_source_set("audio_mixer_api") {
 
   deps = [
     "../base:rtc_base_approved",
+    "../modules:module_api",
   ]
 }
 

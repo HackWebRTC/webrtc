@@ -230,6 +230,7 @@ rtc_static_library("audio_processing") {
 
   defines = []
   deps = [
+    "..:module_api",
     "../..:webrtc_common",
     "../../audio/utility:audio_frame_operations",
     "../../base:gtest_prod",
@@ -531,6 +532,7 @@ if (rtc_include_tests) {
     deps = [
       ":audio_processing",
       ":audioproc_test_utils",
+      "..:module_api",
       "../..:webrtc_common",
       "../../base:gtest_prod",
       "../../base:protobuf_utils",
@@ -749,6 +751,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":audio_processing",
+      "..:module_api",
       "../../base:rtc_base_approved",
       "../../common_audio",
       "../../system_wrappers:system_wrappers",
@@ -764,6 +767,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio_processing",
+      "..:module_api",
       "../..:webrtc_common",
       "../../common_audio:common_audio",
       "../../system_wrappers:metrics_default",

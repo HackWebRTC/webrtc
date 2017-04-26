@@ -210,6 +210,7 @@ if (rtc_enable_protobuf) {
       "../call:call_interfaces",
       "../logging:rtc_event_log_impl",
       "../logging:rtc_event_log_parser",
+      "../modules:module_api",
       "../modules/audio_coding:ana_debug_dump_proto",
 
       # TODO(kwiberg): Remove this dependency.
@@ -261,6 +262,7 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      "../modules:module_api",
       "../modules/audio_processing",
       "../system_wrappers:metrics_default",
       "../test:test_support",
