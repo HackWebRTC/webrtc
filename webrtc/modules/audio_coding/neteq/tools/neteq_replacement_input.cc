@@ -85,13 +85,18 @@ void NetEqReplacementInput::ReplacePacket() {
   rtc::Optional<RTPHeader> next_hdr = source_->NextHeader();
   RTC_DCHECK(next_hdr);
   uint8_t payload[12];
+  RTC_DCHECK_LE(last_frame_size_timestamps_, 120 * 48);
   uint32_t input_frame_size_timestamps = last_frame_size_timestamps_;
-  if (next_hdr->sequenceNumber == packet_->header.sequenceNumber + 1) {
-    // Packets are in order.
-    input_frame_size_timestamps =
-        next_hdr->timestamp - packet_->header.timestamp;
+  const uint32_t timestamp_diff =
+      next_hdr->timestamp - packet_->header.timestamp;
+  if (next_hdr->sequenceNumber == packet_->header.sequenceNumber + 1 &&
+      timestamp_diff <= 120 * 48) {
+    // Packets are in order and the timestamp diff is less than 5760 samples.
+    // Accept the timestamp diff as a valid frame size.
+    input_frame_size_timestamps = timestamp_diff;
     last_frame_size_timestamps_ = input_frame_size_timestamps;
   }
+  RTC_DCHECK_LE(input_frame_size_timestamps, 120 * 48);
   FakeDecodeFromFile::PrepareEncoded(packet_->header.timestamp,
                                      input_frame_size_timestamps,
                                      packet_->payload.size(), payload);
