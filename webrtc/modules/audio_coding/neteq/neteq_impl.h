@@ -139,7 +139,7 @@ class NetEqImpl : public webrtc::NetEq {
 
   int SetTargetDelay() override;
 
-  int TargetDelay() override;
+  int TargetDelayMs() override;
 
   int CurrentDelayMs() const override;
 
@@ -206,6 +206,10 @@ class NetEqImpl : public webrtc::NetEq {
   void DisableNack() override;
 
   std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms) const override;
+
+  std::vector<uint32_t> LastDecodedTimestamps() const override;
+
+  int SyncBufferSizeMs() const override;
 
   // This accessor method is only intended for testing purposes.
   const SyncBuffer* sync_buffer_for_test() const;
@@ -414,6 +418,7 @@ class NetEqImpl : public webrtc::NetEq {
       AudioFrame::kVadPassive;
   std::unique_ptr<TickTimer::Stopwatch> generated_noise_stopwatch_
       GUARDED_BY(crit_sect_);
+  std::vector<uint32_t> last_decoded_timestamps_ GUARDED_BY(crit_sect_);
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);

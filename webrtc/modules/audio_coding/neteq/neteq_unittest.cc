@@ -270,8 +270,6 @@ class NetEqDecodingTest : public ::testing::Test {
 
   void DuplicateCng();
 
-  rtc::Optional<uint32_t> PlayoutTimestamp();
-
   NetEq* neteq_;
   NetEq::Config config_;
   std::unique_ptr<test::RtpFileSource> rtp_source_;
@@ -644,7 +642,7 @@ void NetEqDecodingTest::LongCngWithClockDrift(double drift_factor,
   }
 
   EXPECT_EQ(AudioFrame::kNormalSpeech, out_frame_.speech_type_);
-  rtc::Optional<uint32_t> playout_timestamp = PlayoutTimestamp();
+  rtc::Optional<uint32_t> playout_timestamp = neteq_->GetPlayoutTimestamp();
   ASSERT_TRUE(playout_timestamp);
   int32_t delay_before = timestamp - *playout_timestamp;
 
@@ -736,7 +734,7 @@ void NetEqDecodingTest::LongCngWithClockDrift(double drift_factor,
   // Check that the speech starts again within reasonable time.
   double time_until_speech_returns_ms = t_ms - speech_restart_time_ms;
   EXPECT_LT(time_until_speech_returns_ms, max_time_to_speech_ms);
-  playout_timestamp = PlayoutTimestamp();
+  playout_timestamp = neteq_->GetPlayoutTimestamp();
   ASSERT_TRUE(playout_timestamp);
   int32_t delay_after = timestamp - *playout_timestamp;
   // Compare delay before and after, and make sure it differs less than 20 ms.
@@ -1128,7 +1126,7 @@ void NetEqDecodingTest::WrapTest(uint16_t start_seq_no,
     ASSERT_EQ(1u, output.num_channels_);
 
     // Expect delay (in samples) to be less than 2 packets.
-    rtc::Optional<uint32_t> playout_timestamp = PlayoutTimestamp();
+    rtc::Optional<uint32_t> playout_timestamp = neteq_->GetPlayoutTimestamp();
     ASSERT_TRUE(playout_timestamp);
     EXPECT_LE(timestamp - *playout_timestamp,
               static_cast<uint32_t>(kSamples * 2));
@@ -1207,7 +1205,8 @@ void NetEqDecodingTest::DuplicateCng() {
   ASSERT_EQ(0, neteq_->GetAudio(&out_frame_, &muted));
   ASSERT_EQ(kBlockSize16kHz, out_frame_.samples_per_channel_);
   EXPECT_EQ(AudioFrame::kCNG, out_frame_.speech_type_);
-  EXPECT_FALSE(PlayoutTimestamp());  // Returns empty value during CNG.
+  EXPECT_FALSE(
+      neteq_->GetPlayoutTimestamp());  // Returns empty value during CNG.
   EXPECT_EQ(timestamp - algorithmic_delay_samples,
             out_frame_.timestamp_ + out_frame_.samples_per_channel_);
 
@@ -1223,7 +1222,8 @@ void NetEqDecodingTest::DuplicateCng() {
     ASSERT_EQ(0, neteq_->GetAudio(&out_frame_, &muted));
     ASSERT_EQ(kBlockSize16kHz, out_frame_.samples_per_channel_);
     EXPECT_EQ(AudioFrame::kCNG, out_frame_.speech_type_);
-    EXPECT_FALSE(PlayoutTimestamp());  // Returns empty value during CNG.
+    EXPECT_FALSE(
+        neteq_->GetPlayoutTimestamp());  // Returns empty value during CNG.
     EXPECT_EQ(timestamp - algorithmic_delay_samples,
               out_frame_.timestamp_ + out_frame_.samples_per_channel_);
   }
@@ -1238,14 +1238,10 @@ void NetEqDecodingTest::DuplicateCng() {
   ASSERT_EQ(0, neteq_->GetAudio(&out_frame_, &muted));
   ASSERT_EQ(kBlockSize16kHz, out_frame_.samples_per_channel_);
   EXPECT_EQ(AudioFrame::kNormalSpeech, out_frame_.speech_type_);
-  rtc::Optional<uint32_t> playout_timestamp = PlayoutTimestamp();
+  rtc::Optional<uint32_t> playout_timestamp = neteq_->GetPlayoutTimestamp();
   ASSERT_TRUE(playout_timestamp);
   EXPECT_EQ(timestamp + kSamples - algorithmic_delay_samples,
             *playout_timestamp);
-}
-
-rtc::Optional<uint32_t> NetEqDecodingTest::PlayoutTimestamp() {
-  return neteq_->GetPlayoutTimestamp();
 }
 
 TEST_F(NetEqDecodingTest, DiscardDuplicateCng) { DuplicateCng(); }
@@ -1588,6 +1584,67 @@ TEST_F(NetEqDecodingTestTwoInstances, CompareMutedStateOnOff) {
     }
   }
   EXPECT_FALSE(muted);
+}
+
+TEST_F(NetEqDecodingTest, LastDecodedTimestampsEmpty) {
+  EXPECT_TRUE(neteq_->LastDecodedTimestamps().empty());
+
+  // Pull out data once.
+  AudioFrame output;
+  bool muted;
+  ASSERT_EQ(0, neteq_->GetAudio(&output, &muted));
+
+  EXPECT_TRUE(neteq_->LastDecodedTimestamps().empty());
+}
+
+TEST_F(NetEqDecodingTest, LastDecodedTimestampsOneDecoded) {
+  // Insert one packet with PCM16b WB data (this is what PopulateRtpInfo does by
+  // default). Make the length 10 ms.
+  constexpr size_t kPayloadSamples = 16 * 10;
+  constexpr size_t kPayloadBytes = 2 * kPayloadSamples;
+  uint8_t payload[kPayloadBytes] = {0};
+
+  RTPHeader rtp_info;
+  constexpr uint32_t kRtpTimestamp = 0x1234;
+  PopulateRtpInfo(0, kRtpTimestamp, &rtp_info);
+  EXPECT_EQ(0, neteq_->InsertPacket(rtp_info, payload, 0));
+
+  // Pull out data once.
+  AudioFrame output;
+  bool muted;
+  ASSERT_EQ(0, neteq_->GetAudio(&output, &muted));
+
+  EXPECT_EQ(std::vector<uint32_t>({kRtpTimestamp}),
+            neteq_->LastDecodedTimestamps());
+
+  // Nothing decoded on the second call.
+  ASSERT_EQ(0, neteq_->GetAudio(&output, &muted));
+  EXPECT_TRUE(neteq_->LastDecodedTimestamps().empty());
+}
+
+TEST_F(NetEqDecodingTest, LastDecodedTimestampsTwoDecoded) {
+  // Insert two packets with PCM16b WB data (this is what PopulateRtpInfo does
+  // by default). Make the length 5 ms so that NetEq must decode them both in
+  // the same GetAudio call.
+  constexpr size_t kPayloadSamples = 16 * 5;
+  constexpr size_t kPayloadBytes = 2 * kPayloadSamples;
+  uint8_t payload[kPayloadBytes] = {0};
+
+  RTPHeader rtp_info;
+  constexpr uint32_t kRtpTimestamp1 = 0x1234;
+  PopulateRtpInfo(0, kRtpTimestamp1, &rtp_info);
+  EXPECT_EQ(0, neteq_->InsertPacket(rtp_info, payload, 0));
+  constexpr uint32_t kRtpTimestamp2 = kRtpTimestamp1 + kPayloadSamples;
+  PopulateRtpInfo(1, kRtpTimestamp2, &rtp_info);
+  EXPECT_EQ(0, neteq_->InsertPacket(rtp_info, payload, 0));
+
+  // Pull out data once.
+  AudioFrame output;
+  bool muted;
+  ASSERT_EQ(0, neteq_->GetAudio(&output, &muted));
+
+  EXPECT_EQ(std::vector<uint32_t>({kRtpTimestamp1, kRtpTimestamp2}),
+            neteq_->LastDecodedTimestamps());
 }
 
 }  // namespace webrtc

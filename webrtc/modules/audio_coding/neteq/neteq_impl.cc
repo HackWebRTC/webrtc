@@ -364,8 +364,14 @@ int NetEqImpl::SetTargetDelay() {
   return kNotImplemented;
 }
 
-int NetEqImpl::TargetDelay() {
-  return kNotImplemented;
+int NetEqImpl::TargetDelayMs() {
+  rtc::CritScope lock(&crit_sect_);
+  RTC_DCHECK(delay_manager_.get());
+  // The value from TargetLevel() is in number of packets, represented in Q8.
+  const size_t target_delay_samples =
+      (delay_manager_->TargetLevel() * decoder_frame_length_) >> 8;
+  return static_cast<int>(target_delay_samples) /
+         rtc::CheckedDivExact(fs_hz_, 1000);
 }
 
 int NetEqImpl::CurrentDelayMs() const {
@@ -567,6 +573,17 @@ std::vector<uint16_t> NetEqImpl::GetNackList(int64_t round_trip_time_ms) const {
   }
   RTC_DCHECK(nack_.get());
   return nack_->GetNackList(round_trip_time_ms);
+}
+
+std::vector<uint32_t> NetEqImpl::LastDecodedTimestamps() const {
+  rtc::CritScope lock(&crit_sect_);
+  return last_decoded_timestamps_;
+}
+
+int NetEqImpl::SyncBufferSizeMs() const {
+  rtc::CritScope lock(&crit_sect_);
+  return rtc::dchecked_cast<int>(sync_buffer_->FutureLength() /
+                                 rtc::CheckedDivExact(fs_hz_, 1000));
 }
 
 const SyncBuffer* NetEqImpl::sync_buffer_for_test() const {
@@ -873,6 +890,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
   Operations operation;
   bool play_dtmf;
   *muted = false;
+  last_decoded_timestamps_.clear();
   tick_timer_->Increment();
   stats_.IncreaseCounter(output_size_samples_, fs_hz_);
 
@@ -1498,6 +1516,8 @@ int NetEqImpl::DecodeCng(AudioDecoder* decoder, int* decoded_length,
 int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
                           AudioDecoder* decoder, int* decoded_length,
                           AudioDecoder::SpeechType* speech_type) {
+  RTC_DCHECK(last_decoded_timestamps_.empty());
+
   // Do decoding.
   while (
       !packet_list->empty() &&
@@ -1514,6 +1534,7 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
     auto opt_result = packet_list->front().frame->Decode(
         rtc::ArrayView<int16_t>(&decoded_buffer_[*decoded_length],
                                 decoded_buffer_length_ - *decoded_length));
+    last_decoded_timestamps_.push_back(packet_list->front().timestamp);
     packet_list->pop_front();
     if (opt_result) {
       const auto& result = *opt_result;

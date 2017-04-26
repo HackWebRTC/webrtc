@@ -1271,6 +1271,19 @@ TEST_F(NetEqImplTest, TickTimerIncrement) {
   EXPECT_EQ(1u, tick_timer_->ticks());
 }
 
+TEST_F(NetEqImplTest, TargetDelayMs) {
+  UseNoMocks();
+  use_mock_delay_manager_ = true;
+  CreateInstance();
+  // Let the dummy target delay be 17 packets.
+  constexpr int kTargetLevelPacketsQ8 = 17 << 8;
+  EXPECT_CALL(*mock_delay_manager_, TargetLevel())
+      .WillOnce(Return(kTargetLevelPacketsQ8));
+  // Default packet size before any packet has been decoded is 30 ms, so we are
+  // expecting 17 * 30 = 510 ms target delay.
+  EXPECT_EQ(17 * 30, neteq_->TargetDelayMs());
+}
+
 class Decoder120ms : public AudioDecoder {
  public:
   Decoder120ms(int sample_rate_hz, SpeechType speech_type)

@@ -14,6 +14,7 @@
 #include <string.h>  // Provide access to size_t.
 
 #include <string>
+#include <vector>
 
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
@@ -211,8 +212,9 @@ class NetEq {
   // Not implemented.
   virtual int SetTargetDelay() = 0;
 
-  // Not implemented.
-  virtual int TargetDelay() = 0;
+  // Returns the current target delay in ms. This includes any extra delay
+  // requested through SetMinimumDelay.
+  virtual int TargetDelayMs() = 0;
 
   // Returns the current total delay (packet buffer and sync buffer) in ms.
   virtual int CurrentDelayMs() const = 0;
@@ -301,6 +303,16 @@ class NetEq {
   // retransmitted, given an estimate of the round-trip time in milliseconds.
   virtual std::vector<uint16_t> GetNackList(
       int64_t round_trip_time_ms) const = 0;
+
+  // Returns a vector containing the timestamps of the packets that were decoded
+  // in the last GetAudio call. If no packets were decoded in the last call, the
+  // vector is empty.
+  // Mainly intended for testing.
+  virtual std::vector<uint32_t> LastDecodedTimestamps() const = 0;
+
+  // Returns the length of the audio yet to play in the sync buffer.
+  // Mainly intended for testing.
+  virtual int SyncBufferSizeMs() const = 0;
 
  protected:
   NetEq() {}
