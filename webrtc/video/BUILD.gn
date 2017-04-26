@@ -54,6 +54,7 @@ rtc_static_library("video") {
   }
 
   deps = [
+    "..:video_stream_api",
     "..:webrtc_common",
     "../api:transport_api",
     "../api/video_codecs:video_codecs_api",
@@ -249,6 +250,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video",
+      "..:video_stream_api",
       "../api:video_frame_api",
       "../api/video_codecs:video_codecs_api",
       "../base:rtc_base_approved",

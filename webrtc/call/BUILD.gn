@@ -21,6 +21,7 @@ rtc_source_set("call_interfaces") {
     "syncable.h",
   ]
   deps = [
+    "..:video_stream_api",
     "..:webrtc_common",
     "../api:audio_mixer_api",
     "../api:libjingle_peerconnection_api",

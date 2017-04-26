@@ -267,6 +267,7 @@ if (rtc_include_tests) {
     include_dirs = []
     public_deps = []
     deps = [
+      "..:video_stream_api",
       "../modules/audio_coding:rent_a_codec",
       "../modules/audio_processing:audio_processing",
       "../p2p:rtc_p2p",

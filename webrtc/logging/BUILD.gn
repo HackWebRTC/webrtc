@@ -27,6 +27,7 @@ rtc_source_set("rtc_event_log_api") {
     "rtc_event_log/rtc_event_log.h",
   ]
   deps = [
+    "..:video_stream_api",
     "../base:rtc_base_approved",
     "../call:call_interfaces",
   ]
@@ -94,6 +95,7 @@ if (rtc_enable_protobuf) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
     deps = [
+      "..:video_stream_api",
       "../base:protobuf_utils",
       "../base:rtc_base_approved",
     ]

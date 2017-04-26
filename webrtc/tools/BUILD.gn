@@ -205,6 +205,7 @@ if (rtc_enable_protobuf) {
     }
     defines = [ "ENABLE_RTC_EVENT_LOG" ]
     deps = [
+      "..:video_stream_api",
       "../base:rtc_base_approved",
       "../call:call_interfaces",
       "../logging:rtc_event_log_impl",

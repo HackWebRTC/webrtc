@@ -224,6 +224,13 @@ config("common_objc") {
   libs = [ "Foundation.framework" ]
 }
 
+rtc_source_set("video_stream_api") {
+  sources = [
+    "video_receive_stream.h",
+    "video_send_stream.h",
+  ]
+}
+
 if (!build_with_chromium) {
   # Target to build all the WebRTC production code.
   rtc_static_library("webrtc") {
