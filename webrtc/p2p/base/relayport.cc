@@ -824,7 +824,7 @@ void AllocateRequest::OnResponse(StunMessage* response) {
 void AllocateRequest::OnErrorResponse(StunMessage* response) {
   const StunErrorCodeAttribute* attr = response->GetErrorCode();
   if (!attr) {
-    LOG(INFO) << "Bad allocate response error code";
+    LOG(LS_ERROR) << "Missing allocate response error code.";
   } else {
     LOG(INFO) << "Allocate error response:"
               << " code=" << attr->code()

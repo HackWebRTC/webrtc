@@ -1411,12 +1411,7 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
 
 void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
                                                   StunMessage* response) {
-  const StunErrorCodeAttribute* error_attr = response->GetErrorCode();
-  int error_code = STUN_ERROR_GLOBAL_FAILURE;
-  if (error_attr) {
-    error_code = error_attr->code();
-  }
-
+  int error_code = response->GetErrorCodeValue();
   LOG_J(LS_INFO, this) << "Received STUN error response"
                        << " id=" << rtc::hex_encode(request->id())
                        << " code=" << error_code

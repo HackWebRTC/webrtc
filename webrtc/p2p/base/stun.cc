@@ -115,6 +115,11 @@ const StunErrorCodeAttribute* StunMessage::GetErrorCode() const {
       GetAttribute(STUN_ATTR_ERROR_CODE));
 }
 
+int StunMessage::GetErrorCodeValue() const {
+  const StunErrorCodeAttribute* error_attribute = GetErrorCode();
+  return error_attribute ? error_attribute->code() : STUN_ERROR_GLOBAL_FAILURE;
+}
+
 const StunUInt16ListAttribute* StunMessage::GetUnknownAttributes() const {
   return static_cast<const StunUInt16ListAttribute*>(
       GetAttribute(STUN_ATTR_UNKNOWN_ATTRIBUTES));
