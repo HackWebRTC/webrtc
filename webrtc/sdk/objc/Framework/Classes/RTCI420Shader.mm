@@ -10,21 +10,12 @@
 
 #import "RTCShader.h"
 
-#include <vector>
-
+#import "RTCI420TextureCache.h"
 #import "RTCShader+Private.h"
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
 
 #include "webrtc/base/optional.h"
-
-// |kNumTextures| must not exceed 8, which is the limit in OpenGLES2. Two sets
-// of 3 textures are used here, one for each of the Y, U and V planes. Having
-// two sets alleviates CPU blockage in the event that the GPU is asked to render
-// to a texture that is already in use.
-static const GLsizei kNumTextureSets = 2;
-static const GLsizei kNumTexturesPerSet = 3;
-static const GLsizei kNumTextures = kNumTexturesPerSet * kNumTextureSets;
 
 // Fragment shader converts YUV values from input textures into a final RGB
 // pixel. The conversion formula is from http://www.fourcc.org/fccyvrgb.php.
@@ -50,10 +41,8 @@ static const char kI420FragmentShaderSource[] =
   "  }\n";
 
 @implementation RTCI420Shader {
-  BOOL _hasUnpackRowLength;
-  GLint _currentTextureSet;
+  RTCI420TextureCache* textureCache;
   // Handles for OpenGL constructs.
-  GLuint _textures[kNumTextures];
   GLuint _i420Program;
   GLuint _vertexArray;
   GLuint _vertexBuffer;
@@ -63,20 +52,13 @@ static const char kI420FragmentShaderSource[] =
   // Store current rotation and only upload new vertex data when rotation
   // changes.
   rtc::Optional<RTCVideoRotation> _currentRotation;
-  // Used to create a non-padded plane for GPU upload when we receive padded
-  // frames.
-  std::vector<uint8_t> _planeBuffer;
 }
 
 - (instancetype)initWithContext:(GlContextType *)context {
   if (self = [super init]) {
-#if TARGET_OS_IPHONE
-    _hasUnpackRowLength = (context.API == kEAGLRenderingAPIOpenGLES3);
-#else
-    _hasUnpackRowLength = YES;
-#endif
+    textureCache = [[RTCI420TextureCache alloc] initWithContext:context];
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    if (![self setupI420Program] || ![self setupTextures] ||
+    if (![self setupI420Program] ||
         !RTCSetupVerticesForProgram(_i420Program, &_vertexBuffer, &_vertexArray)) {
       RTCLog(@"Failed to initialize RTCI420Shader.");
       self = nil;
@@ -87,7 +69,6 @@ static const char kI420FragmentShaderSource[] =
 
 - (void)dealloc {
   glDeleteProgram(_i420Program);
-  glDeleteTextures(kNumTextures, _textures);
   glDeleteBuffers(1, &_vertexBuffer);
   glDeleteVertexArrays(1, &_vertexArray);
 }
@@ -104,27 +85,27 @@ static const char kI420FragmentShaderSource[] =
   return (_ySampler >= 0 && _uSampler >= 0 && _vSampler >= 0);
 }
 
-- (BOOL)setupTextures {
-  glGenTextures(kNumTextures, _textures);
-  // Set parameters for each of the textures we created.
-  for (GLsizei i = 0; i < kNumTextures; i++) {
-    glBindTexture(GL_TEXTURE_2D, _textures[i]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  }
-  return YES;
-}
-
 - (BOOL)drawFrame:(RTCVideoFrame*)frame {
   glUseProgram(_i420Program);
-  if (![self updateTextureDataForFrame:frame]) {
-    return NO;
-  }
+
+  [textureCache uploadFrameToTextures:frame];
+
 #if !TARGET_OS_IPHONE
   glBindVertexArray(_vertexArray);
 #endif
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textureCache.yTexture);
+  glUniform1i(_ySampler, 0);
+
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, textureCache.uTexture);
+  glUniform1i(_uSampler, 1);
+
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, textureCache.vTexture);
+  glUniform1i(_vSampler, 2);
+
   glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
   if (!_currentRotation || frame.rotation != *_currentRotation) {
     _currentRotation = rtc::Optional<RTCVideoRotation>(frame.rotation);
@@ -132,92 +113,6 @@ static const char kI420FragmentShaderSource[] =
   }
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-  return YES;
-}
-
-- (void)uploadPlane:(const uint8_t *)plane
-            sampler:(GLint)sampler
-             offset:(GLint)offset
-              width:(size_t)width
-             height:(size_t)height
-             stride:(int32_t)stride {
-  glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + offset));
-  glBindTexture(GL_TEXTURE_2D, _textures[offset]);
-
-  // When setting texture sampler uniforms, the texture index is used not
-  // the texture handle.
-  glUniform1i(sampler, offset);
-  const uint8_t *uploadPlane = plane;
-  if ((size_t)stride != width) {
-   if (_hasUnpackRowLength) {
-      // GLES3 allows us to specify stride.
-      glPixelStorei(GL_UNPACK_ROW_LENGTH, stride);
-      glTexImage2D(GL_TEXTURE_2D,
-                   0,
-                   RTC_PIXEL_FORMAT,
-                   static_cast<GLsizei>(width),
-                   static_cast<GLsizei>(height),
-                   0,
-                   RTC_PIXEL_FORMAT,
-                   GL_UNSIGNED_BYTE,
-                   uploadPlane);
-      glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-      return;
-    } else {
-      // Make an unpadded copy and upload that instead. Quick profiling showed
-      // that this is faster than uploading row by row using glTexSubImage2D.
-      uint8_t *unpaddedPlane = _planeBuffer.data();
-      for (size_t y = 0; y < height; ++y) {
-        memcpy(unpaddedPlane + y * width, plane + y * stride, width);
-      }
-      uploadPlane = unpaddedPlane;
-    }
-  }
-  glTexImage2D(GL_TEXTURE_2D,
-               0,
-               RTC_PIXEL_FORMAT,
-               static_cast<GLsizei>(width),
-               static_cast<GLsizei>(height),
-               0,
-               RTC_PIXEL_FORMAT,
-               GL_UNSIGNED_BYTE,
-               uploadPlane);
-}
-
-- (BOOL)updateTextureDataForFrame:(RTCVideoFrame *)frame {
-  GLint textureOffset = _currentTextureSet * 3;
-  NSAssert(textureOffset + 3 <= kNumTextures, @"invalid offset");
-
-  const int chromaWidth = (frame.width + 1) / 2;
-  const int chromaHeight = (frame.height + 1) / 2;
-  if (frame.strideY != frame.width ||
-      frame.strideU != chromaWidth ||
-      frame.strideV != chromaWidth) {
-    _planeBuffer.resize(frame.width * frame.height);
-  }
-
-  [self uploadPlane:frame.dataY
-            sampler:_ySampler
-             offset:textureOffset
-              width:frame.width
-             height:frame.height
-             stride:frame.strideY];
-
-  [self uploadPlane:frame.dataU
-            sampler:_uSampler
-             offset:textureOffset + 1
-              width:chromaWidth
-             height:chromaHeight
-             stride:frame.strideU];
-
-  [self uploadPlane:frame.dataV
-            sampler:_vSampler
-             offset:textureOffset + 2
-              width:chromaWidth
-             height:chromaHeight
-             stride:frame.strideV];
-
-  _currentTextureSet = (_currentTextureSet + 1) % kNumTextureSets;
   return YES;
 }
 

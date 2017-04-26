@@ -110,6 +110,8 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/RTCDataChannelConfiguration+Private.h",
       "objc/Framework/Classes/RTCDataChannelConfiguration.mm",
       "objc/Framework/Classes/RTCI420Shader.mm",
+      "objc/Framework/Classes/RTCI420TextureCache.h",
+      "objc/Framework/Classes/RTCI420TextureCache.mm",
       "objc/Framework/Classes/RTCIceCandidate+Private.h",
       "objc/Framework/Classes/RTCIceCandidate.mm",
       "objc/Framework/Classes/RTCIceServer+Private.h",
