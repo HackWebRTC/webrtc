@@ -92,10 +92,6 @@ source_set("protobuf_utils") {
 
 # The subset of rtc_base approved for use outside of libjingle.
 rtc_static_library("rtc_base_approved") {
-  # TODO(kjellander): Remove (bugs.webrtc.org/7480)
-  # Enabling GN check triggers a cyclic dependency caused by rate_limiter.cc:
-  #   :rtc_base_approved -> //webrtc/system_wrappers -> :rtc_base_approved
-  check_includes = false
   defines = []
   libs = []
   deps = []
@@ -140,6 +136,8 @@ rtc_static_library("rtc_base_approved") {
     "location.h",
     "md5.cc",
     "md5.h",
+    "md5digest.cc",
+    "md5digest.h",
     "mod_ops.h",
     "onetimeevent.h",
     "optional.cc",
@@ -174,7 +172,6 @@ rtc_static_library("rtc_base_approved") {
     "string_to_number.h",
     "stringencode.cc",
     "stringencode.h",
-    "stringize_macros.h",
     "stringutils.cc",
     "stringutils.h",
     "swap_queue.h",
@@ -658,74 +655,21 @@ rtc_source_set("gtest_prod") {
   ]
 }
 
-config("rtc_base_tests_utils_exported_config") {
-  defines = [ "GTEST_RELATIVE_PATH" ]
-}
-
-config("rtc_base_tests_utils_warnings_config") {
-  if (is_win && is_clang) {
-    cflags = [
-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6270
-      "-Wno-reorder",
-      "-Wno-sign-compare",
-    ]
-  }
-}
-
-rtc_source_set("rtc_base_tests_utils") {
-  testonly = true
-  sources = [
-    # Also use this as a convenient dumping ground for misc files that are
-    # included by multiple targets below.
-    "cpu_time.cc",
-    "cpu_time.h",
-    "fakeclock.cc",
-    "fakeclock.h",
-    "fakenetwork.h",
-    "fakesslidentity.h",
-    "firewallsocketserver.cc",
-    "firewallsocketserver.h",
-    "gunit.h",
-    "httpserver.cc",
-    "httpserver.h",
-    "md5digest.cc",
-    "md5digest.h",
-    "memory_usage.cc",
-    "memory_usage.h",
-    "natserver.cc",
-    "natserver.h",
-    "natsocketfactory.cc",
-    "natsocketfactory.h",
-    "nattypes.cc",
-    "nattypes.h",
-    "proxyserver.cc",
-    "proxyserver.h",
-    "sigslottester.h",
-    "sigslottester.h.pump",
-    "testbase64.h",
-    "testechoserver.h",
-    "testutils.h",
-    "timedelta.h",
-  ]
-  configs += [ ":rtc_base_tests_utils_warnings_config" ]
-  public_configs = [ ":rtc_base_tests_utils_exported_config" ]
-  deps = [
-    ":rtc_base",
-    "../test:field_trial",
-    "../test:test_support",
-  ]
-  public_deps = [
-    "//testing/gmock",
-    "//testing/gtest",
-  ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
 if (rtc_include_tests) {
+  config("rtc_base_tests_utils_exported_config") {
+    defines = [ "GTEST_RELATIVE_PATH" ]
+  }
+
+  config("rtc_base_tests_utils_warnings_config") {
+    if (is_win && is_clang) {
+      cflags = [
+        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6270
+        "-Wno-reorder",
+        "-Wno-sign-compare",
+      ]
+    }
+  }
+
   rtc_source_set("rtc_base_tests_main") {
     testonly = true
     sources = [
@@ -733,9 +677,56 @@ if (rtc_include_tests) {
     ]
     public_configs = [ ":rtc_base_tests_utils_exported_config" ]
     deps = [
-      ":rtc_base",
-      ":rtc_base_approved",
       ":rtc_base_tests_utils",
+    ]
+    public_deps = [
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
+  rtc_source_set("rtc_base_tests_utils") {
+    testonly = true
+    sources = [
+      # Also use this as a convenient dumping ground for misc files that are
+      # included by multiple targets below.
+      "cpu_time.cc",
+      "cpu_time.h",
+      "fakeclock.cc",
+      "fakeclock.h",
+      "fakenetwork.h",
+      "fakesslidentity.h",
+      "firewallsocketserver.cc",
+      "firewallsocketserver.h",
+      "gunit.h",
+      "httpserver.cc",
+      "httpserver.h",
+      "memory_usage.cc",
+      "memory_usage.h",
+      "natserver.cc",
+      "natserver.h",
+      "natsocketfactory.cc",
+      "natsocketfactory.h",
+      "nattypes.cc",
+      "nattypes.h",
+      "proxyserver.cc",
+      "proxyserver.h",
+      "sigslottester.h",
+      "sigslottester.h.pump",
+      "testbase64.h",
+      "testechoserver.h",
+      "testutils.h",
+      "timedelta.h",
+    ]
+    configs += [ ":rtc_base_tests_utils_warnings_config" ]
+    public_configs = [ ":rtc_base_tests_utils_exported_config" ]
+    deps = [
+      ":rtc_base",
       "../test:field_trial",
       "../test:test_support",
     ]
@@ -772,9 +763,6 @@ if (rtc_include_tests) {
     deps = [
       ":rtc_base",
       ":rtc_base_tests_main",
-      ":rtc_base_tests_utils",
-      "../system_wrappers:system_wrappers",
-      "../test:test_support",
       "//testing/gtest",
     ]
     if (is_win) {
@@ -829,7 +817,6 @@ if (rtc_include_tests) {
       "safe_minmax_unittest.cc",
       "string_to_number_unittest.cc",
       "stringencode_unittest.cc",
-      "stringize_macros_unittest.cc",
       "stringutils_unittest.cc",
       "swap_queue_unittest.cc",
       "thread_annotations_unittest.cc",
@@ -838,13 +825,8 @@ if (rtc_include_tests) {
       "timeutils_unittest.cc",
     ]
     deps = [
-      ":rtc_base",
       ":rtc_base_approved",
       ":rtc_base_tests_main",
-      ":rtc_base_tests_utils",
-      ":rtc_task_queue",
-      "../system_wrappers:system_wrappers",
-      "../test:test_support",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -868,9 +850,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtc_base_tests_main",
-      ":rtc_base_tests_utils",
       ":rtc_task_queue",
-      "../test:test_support",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -892,10 +872,8 @@ if (rtc_include_tests) {
       "numerics/percentile_filter_unittest.cc",
     ]
     deps = [
-      ":rtc_base_approved",
       ":rtc_base_tests_main",
       ":rtc_numerics",
-      "../test:test_support",
     ]
   }
 
@@ -961,8 +939,6 @@ if (rtc_include_tests) {
     }
     deps = [
       ":rtc_base_tests_main",
-      ":rtc_base_tests_utils",
-      "../test:test_support",
     ]
     public_deps = [
       ":rtc_base",
