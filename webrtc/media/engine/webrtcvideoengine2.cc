@@ -43,10 +43,12 @@ using DegradationPreference = webrtc::VideoSendStream::DegradationPreference;
 namespace cricket {
 namespace {
 // If this field trial is enabled, we will enable sending FlexFEC and disable
-// sending ULPFEC whenever the former has been negotiated. Receiving FlexFEC
-// is enabled whenever FlexFEC has been negotiated.
+// sending ULPFEC whenever the former has been negotiated.
+// FlexFEC can only be negotiated when the "flexfec-03" SDP codec is enabled,
+// which is done by enabling the "WebRTC-FlexFEC-03-Advertised" field trial; see
+// internalencoderfactory.cc.
 bool IsFlexfecFieldTrialEnabled() {
-  return webrtc::field_trial::FindFullName("WebRTC-FlexFEC-03") == "Enabled";
+  return webrtc::field_trial::IsEnabled("WebRTC-FlexFEC-03");
 }
 
 // If this field trial is enabled, we will report VideoContentType RTP extension
