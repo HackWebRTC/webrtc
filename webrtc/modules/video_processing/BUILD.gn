@@ -26,6 +26,7 @@ rtc_static_library("video_processing") {
 
   deps = [
     ":denoiser_filter",
+    "..:module_api",
     "../../base:rtc_base_approved",
     "../../common_audio",
     "../../common_video",
@@ -50,6 +51,9 @@ rtc_source_set("denoiser_filter") {
   # Neon implementations below.
   sources = [
     "util/denoiser_filter.h",
+  ]
+  deps = [
+    "..:module_api",
   ]
 }
 
