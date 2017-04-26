@@ -16,7 +16,6 @@ rtc_static_library("audio_coder") {
   deps = [
     "..:webrtc_common",
     "../api/audio_codecs:builtin_audio_decoder_factory",
-    "../modules:module_api",
     "../modules/audio_coding",
     "../modules/audio_coding:audio_encoder_factory_interface",
     "../modules/audio_coding:audio_format_conversion",
@@ -40,7 +39,6 @@ rtc_static_library("file_player") {
     "..:webrtc_common",
     "../base:rtc_base_approved",
     "../common_audio",
-    "../modules:module_api",
     "../modules/media_file",
   ]
 
@@ -60,7 +58,6 @@ rtc_static_library("file_recorder") {
     "..:webrtc_common",
     "../base:rtc_base_approved",
     "../common_audio",
-    "../modules:module_api",
     "../modules/media_file:media_file",
     "../system_wrappers",
   ]
@@ -144,7 +141,6 @@ rtc_static_library("voice_engine") {
     "../audio/utility:audio_frame_operations",
     "../base:rtc_base_approved",
     "../base:rtc_task_queue",
-    "../modules:module_api",
 
     # TODO(nisse): Delete when declaration of RtpTransportController
     # and related interfaces move to api/.
@@ -176,7 +172,6 @@ rtc_static_library("audio_level") {
     "..:webrtc_common",
     "../base:rtc_base_approved",
     "../common_audio",
-    "../modules:module_api",
   ]
 }
 
@@ -186,7 +181,6 @@ if (rtc_include_tests) {
       ":file_player",
       ":voice_engine",
       "../base:rtc_base_approved",
-      "../modules:module_api",
       "../test:test_common",
       "//testing/gmock",
       "//testing/gtest",
@@ -250,7 +244,6 @@ if (rtc_include_tests) {
         ":voice_engine",
         "..:webrtc_common",
         "../base:rtc_base_approved",
-        "../modules:module_api",
         "../modules/audio_device:audio_device",
         "../modules/audio_processing:audio_processing",
         "../modules/rtp_rtcp:rtp_rtcp",

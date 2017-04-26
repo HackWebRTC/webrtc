@@ -59,7 +59,6 @@ rtc_static_library("common_video") {
     "..:webrtc_common",
     "../base:rtc_base",
     "../base:rtc_task_queue",
-    "../modules:module_api",
     "../system_wrappers",
   ]
   public_deps = [

@@ -109,7 +109,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":remote_bitrate_estimator",
-      "..:module_api",
       "../..:webrtc_common",
       "../../base:gtest_prod",
       "../../base:rtc_base",

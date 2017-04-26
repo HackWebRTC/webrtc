@@ -166,7 +166,6 @@ rtc_static_library("rtp_rtcp") {
   }
 
   deps = [
-    "..:module_api",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
     "../../api:transport_api",
@@ -201,7 +200,6 @@ rtc_source_set("fec_test_helper") {
   ]
   deps = [
     ":rtp_rtcp",
-    "..:module_api",
     "../../base:rtc_base_approved",
   ]
 
@@ -259,7 +257,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtp_rtcp",
-      "..:module_api",
       "../../base:rtc_base_approved",
       "../../test:test_support",
     ]
@@ -339,7 +336,6 @@ if (rtc_include_tests) {
       ":fec_test_helper",
       ":mock_rtp_rtcp",
       ":rtp_rtcp",
-      "..:module_api",
       "../..:webrtc_common",
       "../../api:transport_api",
       "../../base:rtc_base_approved",

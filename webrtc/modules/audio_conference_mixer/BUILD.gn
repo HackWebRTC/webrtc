@@ -39,7 +39,6 @@ rtc_static_library("audio_conference_mixer") {
   }
 
   deps = [
-    "..:module_api",
     "../..:webrtc_common",
     "../../audio/utility:audio_frame_operations",
     "../../base:rtc_base_approved",

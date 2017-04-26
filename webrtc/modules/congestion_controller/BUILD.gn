@@ -45,7 +45,6 @@ rtc_static_library("congestion_controller") {
   }
 
   deps = [
-    "..:module_api",
     "../..:webrtc_common",
     "../../base:rtc_base",
     "../../base:rtc_base_approved",
