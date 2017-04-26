@@ -31,23 +31,32 @@ ThreadManager* ThreadManager::Instance() {
   return &thread_manager;
 }
 
+ThreadManager::~ThreadManager() {
+  // By above RTC_DEFINE_STATIC_LOCAL.
+  RTC_NOTREACHED() << "ThreadManager should never be destructed.";
+}
+
 // static
 Thread* Thread::Current() {
-  return ThreadManager::Instance()->CurrentThread();
+  ThreadManager* manager = ThreadManager::Instance();
+  Thread* thread = manager->CurrentThread();
+
+#ifndef NO_MAIN_THREAD_WRAPPING
+  // Only autowrap the thread which instantiated the ThreadManager.
+  if (!thread && manager->IsMainThread()) {
+    thread = new Thread();
+    thread->WrapCurrentWithThreadManager(manager, true);
+  }
+#endif
+
+  return thread;
 }
 
 #if defined(WEBRTC_POSIX)
 #if !defined(WEBRTC_MAC)
 ThreadManager::ThreadManager() {
+  main_thread_ref_ = CurrentThreadRef();
   pthread_key_create(&key_, nullptr);
-#ifndef NO_MAIN_THREAD_WRAPPING
-  WrapCurrentThread();
-#endif
-}
-
-ThreadManager::~ThreadManager() {
-  UnwrapCurrentThread();
-  pthread_key_delete(key_);
 }
 #endif
 
@@ -62,15 +71,8 @@ void ThreadManager::SetCurrentThread(Thread *thread) {
 
 #if defined(WEBRTC_WIN)
 ThreadManager::ThreadManager() {
+  main_thread_ref_ = CurrentThreadRef();
   key_ = TlsAlloc();
-#ifndef NO_MAIN_THREAD_WRAPPING
-  WrapCurrentThread();
-#endif
-}
-
-ThreadManager::~ThreadManager() {
-  UnwrapCurrentThread();
-  TlsFree(key_);
 }
 
 Thread *ThreadManager::CurrentThread() {
@@ -97,6 +99,10 @@ void ThreadManager::UnwrapCurrentThread() {
     t->UnwrapCurrent();
     delete t;
   }
+}
+
+bool ThreadManager::IsMainThread() {
+  return IsThreadRefEqual(CurrentThreadRef(), main_thread_ref_);
 }
 
 Thread::ScopedDisallowBlockingCalls::ScopedDisallowBlockingCalls()
@@ -140,6 +146,10 @@ Thread::Thread(std::unique_ptr<SocketServer> ss)
 Thread::~Thread() {
   Stop();
   DoDestroy();
+}
+
+bool Thread::IsCurrent() const {
+  return ThreadManager::Instance()->CurrentThread() == this;
 }
 
 std::unique_ptr<Thread> Thread::CreateWithSocketServer() {

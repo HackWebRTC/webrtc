@@ -39,20 +39,11 @@ void InitCocoaMultiThreading() {
 namespace rtc {
 
 ThreadManager::ThreadManager() {
+  main_thread_ref_ = CurrentThreadRef();
   pthread_key_create(&key_, nullptr);
-#ifndef NO_MAIN_THREAD_WRAPPING
-  WrapCurrentThread();
-#endif
   // This is necessary to alert the cocoa runtime of the fact that
   // we are running in a multithreaded environment.
   InitCocoaMultiThreading();
-}
-
-ThreadManager::~ThreadManager() {
-  @autoreleasepool {
-    UnwrapCurrentThread();
-    pthread_key_delete(key_);
-  }
 }
 
 // static
