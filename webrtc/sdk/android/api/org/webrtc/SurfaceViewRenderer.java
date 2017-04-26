@@ -41,6 +41,7 @@ public class SurfaceViewRenderer
   private RendererCommon.RendererEvents rendererEvents;
 
   private final Object layoutLock = new Object();
+  private boolean isRenderingPaused = false;
   private boolean isFirstFrameRendered;
   private int rotatedFrameWidth;
   private int rotatedFrameHeight;
@@ -177,14 +178,23 @@ public class SurfaceViewRenderer
    *            reduction.
    */
   public void setFpsReduction(float fps) {
+    synchronized (layoutLock) {
+      isRenderingPaused = fps == 0f;
+    }
     eglRenderer.setFpsReduction(fps);
   }
 
   public void disableFpsReduction() {
+    synchronized (layoutLock) {
+      isRenderingPaused = false;
+    }
     eglRenderer.disableFpsReduction();
   }
 
   public void pauseVideo() {
+    synchronized (layoutLock) {
+      isRenderingPaused = true;
+    }
     eglRenderer.pauseVideo();
   }
 
@@ -295,6 +305,9 @@ public class SurfaceViewRenderer
   // Update frame dimensions and report any changes to |rendererEvents|.
   private void updateFrameDimensionsAndReportEvents(VideoRenderer.I420Frame frame) {
     synchronized (layoutLock) {
+      if (isRenderingPaused) {
+        return;
+      }
       if (!isFirstFrameRendered) {
         isFirstFrameRendered = true;
         logD("Reporting first rendered frame.");
