@@ -916,8 +916,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRecvCodecsWhilePlaying) {
   channel_->SetPlayout(true);
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 
-  // Changing the payload type of a codec should fail.
-  parameters.codecs[0].id = 127;
+  // Remapping a payload type to a different codec should fail.
+  parameters.codecs[0] = kOpusCodec;
+  parameters.codecs[0].id = kIsacCodec.id;
   EXPECT_FALSE(channel_->SetRecvParameters(parameters));
   EXPECT_TRUE(GetRecvStream(kSsrcX).started());
 }
@@ -937,6 +938,18 @@ TEST_F(WebRtcVoiceEngineTestFake, AddRecvCodecsWhilePlaying) {
   webrtc::CodecInst gcodec;
   EXPECT_TRUE(cricket::WebRtcVoiceEngine::ToCodecInst(kOpusCodec, &gcodec));
   EXPECT_EQ(kOpusCodec.id, gcodec.pltype);
+}
+
+// Test that we accept adding the same codec with a different payload type.
+// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5847
+TEST_F(WebRtcVoiceEngineTestFake, ChangeRecvCodecPayloadType) {
+  EXPECT_TRUE(SetupRecvStream());
+  cricket::AudioRecvParameters parameters;
+  parameters.codecs.push_back(kIsacCodec);
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
+
+  ++parameters.codecs[0].id;
+  EXPECT_TRUE(channel_->SetRecvParameters(parameters));
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetSendBandwidthAuto) {

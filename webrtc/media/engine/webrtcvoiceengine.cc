@@ -1515,20 +1515,10 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     RecreateAudioReceiveStream();
   }
 
-  // Set a new payload type -> decoder map. The new map must be a superset of
-  // the old one.
+  // Set a new payload type -> decoder map.
   void RecreateAudioReceiveStream(
       const std::map<int, webrtc::SdpAudioFormat>& decoder_map) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RTC_DCHECK([&] {
-      for (const auto& item : config_.decoder_map) {
-        auto it = decoder_map.find(item.first);
-        if (it == decoder_map.end() || *it != item) {
-          return false;  // The old map isn't a subset of the new map.
-        }
-      }
-      return true;
-    }());
     config_.decoder_map = decoder_map;
     RecreateAudioReceiveStream();
   }
@@ -1851,42 +1841,49 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     return false;
   }
 
-  std::vector<AudioCodec> new_codecs;
-  // Find all new codecs. We allow adding new codecs but don't allow changing
-  // the payload type of codecs that is already configured since we might
-  // already be receiving packets with that payload type.
-  for (const AudioCodec& codec : codecs) {
-    AudioCodec old_codec;
-    // TODO(solenberg): This isn't strictly correct. It should be possible to
-    // add an additional payload type for a codec. That would result in a new
-    // decoder object being allocated. What shouldn't work is to remove a PT
-    // mapping that was previously configured.
-    if (FindCodec(recv_codecs_, codec, &old_codec)) {
-      if (old_codec.id != codec.id) {
-        LOG(LS_ERROR) << codec.name << " payload type changed.";
-        return false;
-      }
-    } else {
-      new_codecs.push_back(codec);
-    }
-  }
-  if (new_codecs.empty()) {
-    // There are no new codecs to configure. Already configured codecs are
-    // never removed.
-    return true;
-  }
-
   // Create a payload type -> SdpAudioFormat map with all the decoders. Fail
   // unless the factory claims to support all decoders.
   std::map<int, webrtc::SdpAudioFormat> decoder_map;
   for (const AudioCodec& codec : codecs) {
+    // Log a warning if a codec's payload type is changing. This used to be
+    // treated as an error. It's abnormal, but not really illegal.
+    AudioCodec old_codec;
+    if (FindCodec(recv_codecs_, codec, &old_codec) &&
+        old_codec.id != codec.id) {
+      LOG(LS_WARNING) << codec.name << " mapped to a second payload type ("
+                      << codec.id << ", was already mapped to " << old_codec.id
+                      << ")";
+    }
     auto format = AudioCodecToSdpAudioFormat(codec);
     if (!IsCodec(codec, "cn") && !IsCodec(codec, "telephone-event") &&
         !engine()->decoder_factory_->IsSupportedDecoder(format)) {
       LOG(LS_ERROR) << "Unsupported codec: " << format;
       return false;
     }
+    // We allow adding new codecs but don't allow changing the payload type of
+    // codecs that are already configured since we might already be receiving
+    // packets with that payload type. See RFC3264, Section 8.3.2.
+    // TODO(deadbeef): Also need to check for clashes with previously mapped
+    // payload types, and not just currently mapped ones. For example, this
+    // should be illegal:
+    // 1. {100: opus/48000/2, 101: ISAC/16000}
+    // 2. {100: opus/48000/2}
+    // 3. {100: opus/48000/2, 101: ISAC/32000}
+    // Though this check really should happen at a higher level, since this
+    // conflict could happen between audio and video codecs.
+    auto existing = decoder_map_.find(codec.id);
+    if (existing != decoder_map_.end() && !existing->second.Matches(format)) {
+      LOG(LS_ERROR) << "Attempting to use payload type " << codec.id << " for "
+                    << codec.name << ", but it is already used for "
+                    << existing->second.name;
+      return false;
+    }
     decoder_map.insert({codec.id, std::move(format)});
+  }
+
+  if (decoder_map == decoder_map_) {
+    // There's nothing new to configure.
+    return true;
   }
 
   if (playout_) {

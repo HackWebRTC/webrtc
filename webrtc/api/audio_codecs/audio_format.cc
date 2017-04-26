@@ -45,6 +45,11 @@ SdpAudioFormat::SdpAudioFormat(const std::string& name,
       num_channels(num_channels),
       parameters(param) {}
 
+bool SdpAudioFormat::Matches(const SdpAudioFormat& o) const {
+  return STR_CASE_CMP(name.c_str(), o.name.c_str()) == 0 &&
+         clockrate_hz == o.clockrate_hz && num_channels == o.num_channels;
+}
+
 SdpAudioFormat::~SdpAudioFormat() = default;
 SdpAudioFormat& SdpAudioFormat::operator=(const SdpAudioFormat&) = default;
 SdpAudioFormat& SdpAudioFormat::operator=(SdpAudioFormat&&) = default;
