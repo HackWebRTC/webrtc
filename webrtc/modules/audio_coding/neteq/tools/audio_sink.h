@@ -56,6 +56,16 @@ class AudioSinkFork : public AudioSink {
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioSinkFork);
 };
 
+// An AudioSink implementation that does nothing.
+class VoidAudioSink : public AudioSink {
+ public:
+  VoidAudioSink() = default;
+  bool WriteArray(const int16_t* audio, size_t num_samples) override;
+
+ private:
+  RTC_DISALLOW_COPY_AND_ASSIGN(VoidAudioSink);
+};
+
 }  // namespace test
 }  // namespace webrtc
 #endif  // WEBRTC_MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_SINK_H_
