@@ -59,7 +59,7 @@ public class CallActivityStubbedInputOutputTest {
       intent.putExtra(CallActivity.EXTRA_ROOMID, UUID.randomUUID().toString().substring(0, 8));
       // TODO false for wstls to disable https, should be option later or if URL is http
       intent.putExtra(CallActivity.EXTRA_URLPARAMETERS,
-          "wstls=false?debug=loopback?ts=?wshpp=http://localhost:8089");
+          "debug=loopback&ts=&wshpp=localhost:8089&wstls=false");
 
       intent.putExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA,
           Environment.getExternalStorageDirectory().getAbsolutePath()
