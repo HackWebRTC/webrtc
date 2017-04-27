@@ -10,12 +10,7 @@
 
 #import "RTCShader.h"
 
-// Native CVPixelBufferRef rendering is only supported on iPhone because it
-// depends on CVOpenGLESTextureCacheCreate.
-#if TARGET_OS_IPHONE
-
-#import <CoreVideo/CVOpenGLESTextureCache.h>
-
+#import "RTCNV12TextureCache.h"
 #import "RTCShader+Private.h"
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
@@ -47,7 +42,7 @@ static const char kNV12FragmentShaderSource[] =
   GLuint _nv12Program;
   GLint _ySampler;
   GLint _uvSampler;
-  CVOpenGLESTextureCacheRef _textureCache;
+  RTCNV12TextureCache *_textureCache;
   // Store current rotation and only upload new vertex data when rotation
   // changes.
   rtc::Optional<RTCVideoRotation> _currentRotation;
@@ -55,7 +50,8 @@ static const char kNV12FragmentShaderSource[] =
 
 - (instancetype)initWithContext:(GlContextType *)context {
   if (self = [super init]) {
-    if (![self setupNV12Program] || ![self setupTextureCacheWithContext:context] ||
+    _textureCache = [[RTCNV12TextureCache alloc] initWithContext:context];
+    if (!_textureCache || ![self setupNV12Program] ||
         !RTCSetupVerticesForProgram(_nv12Program, &_vertexBuffer, nullptr)) {
       RTCLog(@"Failed to initialize RTCNativeNV12Shader.");
       self = nil;
@@ -67,10 +63,6 @@ static const char kNV12FragmentShaderSource[] =
 - (void)dealloc {
   glDeleteProgram(_nv12Program);
   glDeleteBuffers(1, &_vertexBuffer);
-  if (_textureCache) {
-    CFRelease(_textureCache);
-    _textureCache = nullptr;
-  }
 }
 
 - (BOOL)setupNV12Program {
@@ -84,75 +76,21 @@ static const char kNV12FragmentShaderSource[] =
   return (_ySampler >= 0 && _uvSampler >= 0);
 }
 
-- (BOOL)setupTextureCacheWithContext:(GlContextType *)context {
-  CVReturn ret = CVOpenGLESTextureCacheCreate(
-      kCFAllocatorDefault, NULL,
-#if COREVIDEO_USE_EAGLCONTEXT_CLASS_IN_API
-      context,
-#else
-      (__bridge void *)context,
-#endif
-      NULL, &_textureCache);
-  return ret == kCVReturnSuccess;
-}
-
 - (BOOL)drawFrame:(RTCVideoFrame *)frame {
-  CVPixelBufferRef pixelBuffer = frame.nativeHandle;
-  RTC_CHECK(pixelBuffer);
   glUseProgram(_nv12Program);
-  const OSType pixelFormat = CVPixelBufferGetPixelFormatType(pixelBuffer);
-  RTC_CHECK(pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange ||
-            pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange)
-      << "Unsupported native pixel format: " << pixelFormat;
+  if (![_textureCache uploadFrameToTextures:frame]) {
+    return NO;
+  }
 
   // Y-plane.
-  const int lumaWidth = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0);
-  const int lumaHeight = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0);
-
-  CVOpenGLESTextureRef lumaTexture = nullptr;
   glActiveTexture(GL_TEXTURE0);
   glUniform1i(_ySampler, 0);
-  CVReturn ret = CVOpenGLESTextureCacheCreateTextureFromImage(
-      kCFAllocatorDefault, _textureCache, pixelBuffer, NULL, GL_TEXTURE_2D,
-      RTC_PIXEL_FORMAT, lumaWidth, lumaHeight, RTC_PIXEL_FORMAT,
-      GL_UNSIGNED_BYTE, 0, &lumaTexture);
-  if (ret != kCVReturnSuccess) {
-    CFRelease(lumaTexture);
-    return NO;
-  }
-
-  RTC_CHECK_EQ(static_cast<GLenum>(GL_TEXTURE_2D),
-               CVOpenGLESTextureGetTarget(lumaTexture));
-  glBindTexture(GL_TEXTURE_2D, CVOpenGLESTextureGetName(lumaTexture));
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glBindTexture(GL_TEXTURE_2D, _textureCache.yTexture);
 
   // UV-plane.
-  const int chromaWidth = CVPixelBufferGetWidthOfPlane(pixelBuffer, 1);
-  const int chromeHeight = CVPixelBufferGetHeightOfPlane(pixelBuffer, 1);
-
-  CVOpenGLESTextureRef chromaTexture = nullptr;
   glActiveTexture(GL_TEXTURE1);
   glUniform1i(_uvSampler, 1);
-  ret = CVOpenGLESTextureCacheCreateTextureFromImage(
-      kCFAllocatorDefault, _textureCache, pixelBuffer, NULL, GL_TEXTURE_2D,
-      GL_LUMINANCE_ALPHA, chromaWidth, chromeHeight, GL_LUMINANCE_ALPHA,
-      GL_UNSIGNED_BYTE, 1, &chromaTexture);
-  if (ret != kCVReturnSuccess) {
-    CFRelease(chromaTexture);
-    CFRelease(lumaTexture);
-    return NO;
-  }
-
-  RTC_CHECK_EQ(static_cast<GLenum>(GL_TEXTURE_2D),
-               CVOpenGLESTextureGetTarget(chromaTexture));
-  glBindTexture(GL_TEXTURE_2D, CVOpenGLESTextureGetName(chromaTexture));
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glBindTexture(GL_TEXTURE_2D, _textureCache.uvTexture);
 
   glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
   if (!_currentRotation || frame.rotation != *_currentRotation) {
@@ -161,11 +99,9 @@ static const char kNV12FragmentShaderSource[] =
   }
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-  CFRelease(chromaTexture);
-  CFRelease(lumaTexture);
+  [_textureCache releaseTextures];
 
   return YES;
 }
 
 @end
-#endif  // TARGET_OS_IPHONE

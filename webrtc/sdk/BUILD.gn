@@ -209,6 +209,8 @@ if (is_ios || is_mac) {
     if (is_ios) {
       sources += [
         "objc/Framework/Classes/RTCEAGLVideoView.m",
+        "objc/Framework/Classes/RTCNV12TextureCache.h",
+        "objc/Framework/Classes/RTCNV12TextureCache.m",
         "objc/Framework/Classes/RTCNativeNV12Shader.mm",
         "objc/Framework/Headers/WebRTC/RTCEAGLVideoView.h",
       ]
