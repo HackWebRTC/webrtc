@@ -30,6 +30,9 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD2(SetEncoderForMock,
                bool(int payload_type,
                     std::unique_ptr<AudioEncoder>* encoder));
+  MOCK_METHOD1(
+      ModifyEncoder,
+      void(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier));
   MOCK_METHOD1(SetRTCPStatus, void(bool enable));
   MOCK_METHOD1(SetLocalSSRC, void(uint32_t ssrc));
   MOCK_METHOD1(SetRTCP_CNAME, void(const std::string& c_name));
@@ -68,11 +71,6 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(SetChannelOutputVolumeScaling, void(float scaling));
   MOCK_METHOD1(SetRtcEventLog, void(RtcEventLog* event_log));
   MOCK_METHOD1(SetRtcpRttStats, void(RtcpRttStats* rtcp_rtt_stats));
-  MOCK_METHOD1(EnableAudioNetworkAdaptor,
-               void(const std::string& config_string));
-  MOCK_METHOD0(DisableAudioNetworkAdaptor, void());
-  MOCK_METHOD2(SetReceiverFrameLengthRange,
-               void(int min_frame_length_ms, int max_frame_length_ms));
   MOCK_METHOD2(GetAudioFrameWithInfo,
       AudioMixer::Source::AudioFrameInfo(int sample_rate_hz,
                                          AudioFrame* audio_frame));
@@ -86,14 +84,6 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_CONST_METHOD0(GetPlayoutTimestamp, uint32_t());
   MOCK_METHOD1(SetMinimumPlayoutDelay, void(int delay_ms));
   MOCK_CONST_METHOD1(GetRecCodec, bool(CodecInst* codec_inst));
-  MOCK_CONST_METHOD1(GetSendCodec, bool(CodecInst* codec_inst));
-  MOCK_METHOD1(SetVADStatus, bool(bool enable));
-  MOCK_METHOD1(SetCodecFECStatus, bool(bool enable));
-  MOCK_METHOD1(SetOpusDtx, bool(bool enable));
-  MOCK_METHOD1(SetOpusMaxPlaybackRate, bool(int frequency_hz));
-  MOCK_METHOD1(SetSendCodec, bool(const CodecInst& codec_inst));
-  MOCK_METHOD2(SetSendCNPayloadType,
-               bool(int type, PayloadFrequencies frequency));
   MOCK_METHOD1(SetReceiveCodecs,
                void(const std::map<int, SdpAudioFormat>& codecs));
   MOCK_METHOD1(OnTwccBasedUplinkPacketLossRate, void(float packet_loss_rate));

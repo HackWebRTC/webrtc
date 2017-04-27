@@ -105,6 +105,8 @@ rtc_static_library("rtc_media_base") {
     "../base:rtc_base_approved",
     "../call:call_interfaces",
     "../common_video:common_video",
+    "../modules/audio_coding:audio_encoder_factory_interface",
+    "../modules/audio_coding:builtin_audio_encoder_factory",
     "../p2p",
   ]
 

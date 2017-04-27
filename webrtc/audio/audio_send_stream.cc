@@ -11,16 +11,20 @@
 #include "webrtc/audio/audio_send_stream.h"
 
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
 #include "webrtc/audio/scoped_voe_interface.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/event.h"
+#include "webrtc/base/function_view.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call/rtp_transport_controller_send_interface.h"
+#include "webrtc/modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
@@ -32,20 +36,21 @@
 
 namespace webrtc {
 
-namespace {
-
-constexpr char kOpusCodecName[] = "opus";
-
-bool IsCodec(const webrtc::CodecInst& codec, const char* ref_name) {
-  return (STR_CASE_CMP(codec.plname, ref_name) == 0);
-}
-}  // namespace
-
 namespace internal {
 // TODO(elad.alon): Subsequent CL will make these values experiment-dependent.
 constexpr size_t kPacketLossTrackerMaxWindowSizeMs = 15000;
 constexpr size_t kPacketLossRateMinNumAckedPackets = 50;
 constexpr size_t kRecoverablePacketLossRateMinNumAckedPairs = 40;
+
+namespace {
+void CallEncoder(const std::unique_ptr<voe::ChannelProxy>& channel_proxy,
+                 rtc::FunctionView<void(AudioEncoder*)> lambda) {
+  channel_proxy->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder_ptr) {
+    RTC_DCHECK(encoder_ptr);
+    lambda(encoder_ptr->get());
+  });
+}
+}  // namespace
 
 AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
@@ -56,52 +61,28 @@ AudioSendStream::AudioSendStream(
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats)
     : worker_queue_(worker_queue),
-      config_(config),
+      config_(Config(nullptr)),
       audio_state_(audio_state),
+      event_log_(event_log),
       bitrate_allocator_(bitrate_allocator),
       transport_(transport),
       packet_loss_tracker_(kPacketLossTrackerMaxWindowSizeMs,
                            kPacketLossRateMinNumAckedPackets,
                            kRecoverablePacketLossRateMinNumAckedPairs) {
-  LOG(LS_INFO) << "AudioSendStream: " << config_.ToString();
-  RTC_DCHECK_NE(config_.voe_channel_id, -1);
+  LOG(LS_INFO) << "AudioSendStream: " << config.ToString();
+  RTC_DCHECK_NE(config.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
   RTC_DCHECK(transport);
   RTC_DCHECK(transport->send_side_cc());
 
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
-  channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
-  channel_proxy_->SetRtcEventLog(event_log);
+  channel_proxy_ = voe_impl->GetChannelProxy(config.voe_channel_id);
+  channel_proxy_->SetRtcEventLog(event_log_);
   channel_proxy_->SetRtcpRttStats(rtcp_rtt_stats);
   channel_proxy_->SetRTCPStatus(true);
-  channel_proxy_->SetLocalSSRC(config.rtp.ssrc);
-  channel_proxy_->SetRTCP_CNAME(config.rtp.c_name);
-  // TODO(solenberg): Config NACK history window (which is a packet count),
-  // using the actual packet size for the configured codec.
-  channel_proxy_->SetNACKStatus(config_.rtp.nack.rtp_history_ms != 0,
-                                config_.rtp.nack.rtp_history_ms / 20);
-
-  channel_proxy_->RegisterExternalTransport(config.send_transport);
   transport_->send_side_cc()->RegisterPacketFeedbackObserver(this);
 
-  for (const auto& extension : config.rtp.extensions) {
-    if (extension.uri == RtpExtension::kAudioLevelUri) {
-      channel_proxy_->SetSendAudioLevelIndicationStatus(true, extension.id);
-    } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
-      channel_proxy_->EnableSendTransportSequenceNumber(extension.id);
-      transport->send_side_cc()->EnablePeriodicAlrProbing(true);
-      bandwidth_observer_.reset(transport->send_side_cc()
-                                    ->GetBitrateController()
-                                    ->CreateRtcpBandwidthObserver());
-    } else {
-      RTC_NOTREACHED() << "Registering unsupported RTP extension.";
-    }
-  }
-  channel_proxy_->RegisterSenderCongestionControlObjects(
-      transport, bandwidth_observer_.get());
-  if (!SetupSendCodec()) {
-    LOG(LS_ERROR) << "Failed to set up send codec state.";
-  }
+  ConfigureStream(this, config, true);
 
   pacer_thread_checker_.DetachFromThread();
 }
@@ -116,17 +97,102 @@ AudioSendStream::~AudioSendStream() {
   channel_proxy_->SetRtcpRttStats(nullptr);
 }
 
+void AudioSendStream::Reconfigure(
+    const webrtc::AudioSendStream::Config& new_config) {
+  ConfigureStream(this, new_config, false);
+}
+
+void AudioSendStream::ConfigureStream(
+    webrtc::internal::AudioSendStream* stream,
+    const webrtc::AudioSendStream::Config& new_config,
+    bool first_time) {
+  LOG(LS_INFO) << "AudioSendStream::Configuring: " << new_config.ToString();
+  const auto& channel_proxy = stream->channel_proxy_;
+  const auto& old_config = stream->config_;
+
+  if (first_time || old_config.rtp.ssrc != new_config.rtp.ssrc) {
+    channel_proxy->SetLocalSSRC(new_config.rtp.ssrc);
+  }
+  if (first_time || old_config.rtp.c_name != new_config.rtp.c_name) {
+    channel_proxy->SetRTCP_CNAME(new_config.rtp.c_name);
+  }
+  // TODO(solenberg): Config NACK history window (which is a packet count),
+  // using the actual packet size for the configured codec.
+  if (first_time || old_config.rtp.nack.rtp_history_ms !=
+                        new_config.rtp.nack.rtp_history_ms) {
+    channel_proxy->SetNACKStatus(new_config.rtp.nack.rtp_history_ms != 0,
+                                 new_config.rtp.nack.rtp_history_ms / 20);
+  }
+
+  if (first_time ||
+      new_config.send_transport != old_config.send_transport) {
+    if (old_config.send_transport) {
+      channel_proxy->DeRegisterExternalTransport();
+    }
+
+    channel_proxy->RegisterExternalTransport(new_config.send_transport);
+  }
+
+  // RFC 5285: Each distinct extension MUST have a unique ID. The value 0 is
+  // reserved for padding and MUST NOT be used as a local identifier.
+  // So it should be safe to use 0 here to indicate "not configured".
+  struct ExtensionIds {
+    int audio_level = 0;
+    int transport_sequence_number = 0;
+  };
+
+  auto find_extension_ids = [](const std::vector<RtpExtension>& extensions) {
+    ExtensionIds ids;
+    for (const auto& extension : extensions) {
+      if (extension.uri == RtpExtension::kAudioLevelUri) {
+        ids.audio_level = extension.id;
+      } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
+        ids.transport_sequence_number = extension.id;
+      }
+    }
+    return ids;
+  };
+
+  const ExtensionIds old_ids = find_extension_ids(old_config.rtp.extensions);
+  const ExtensionIds new_ids = find_extension_ids(new_config.rtp.extensions);
+  // Audio level indication
+  if (first_time || new_ids.audio_level != old_ids.audio_level) {
+    channel_proxy->SetSendAudioLevelIndicationStatus(new_ids.audio_level != 0,
+                                                     new_ids.audio_level);
+  }
+  // Transport sequence number
+  if (first_time ||
+      new_ids.transport_sequence_number != old_ids.transport_sequence_number) {
+    if (old_ids.transport_sequence_number) {
+      channel_proxy->ResetSenderCongestionControlObjects();
+      stream->bandwidth_observer_.reset();
+    }
+
+    if (new_ids.transport_sequence_number != 0) {
+      channel_proxy->EnableSendTransportSequenceNumber(
+          new_ids.transport_sequence_number);
+      stream->transport_->send_side_cc()->EnablePeriodicAlrProbing(true);
+      stream->bandwidth_observer_.reset(stream->transport_->send_side_cc()
+                                            ->GetBitrateController()
+                                            ->CreateRtcpBandwidthObserver());
+    }
+
+    channel_proxy->RegisterSenderCongestionControlObjects(
+        stream->transport_, stream->bandwidth_observer_.get());
+  }
+
+  if (!ReconfigureSendCodec(stream, new_config)) {
+    LOG(LS_ERROR) << "Failed to set up send codec state.";
+  }
+
+  ReconfigureBitrateObserver(stream, new_config);
+  stream->config_ = new_config;
+}
+
 void AudioSendStream::Start() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   if (config_.min_bitrate_bps != -1 && config_.max_bitrate_bps != -1) {
-    RTC_DCHECK_GE(config_.max_bitrate_bps, config_.min_bitrate_bps);
-    rtc::Event thread_sync_event(false /* manual_reset */, false);
-    worker_queue_->PostTask([this, &thread_sync_event] {
-      bitrate_allocator_->AddObserver(this, config_.min_bitrate_bps,
-                                      config_.max_bitrate_bps, 0, true);
-      thread_sync_event.Set();
-    });
-    thread_sync_event.Wait(rtc::Event::kForever);
+    ConfigureBitrateObserver(config_.min_bitrate_bps, config_.max_bitrate_bps);
   }
 
   ScopedVoEInterface<VoEBase> base(voice_engine());
@@ -138,12 +204,7 @@ void AudioSendStream::Start() {
 
 void AudioSendStream::Stop() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  rtc::Event thread_sync_event(false /* manual_reset */, false);
-  worker_queue_->PostTask([this, &thread_sync_event] {
-    bitrate_allocator_->RemoveObserver(this);
-    thread_sync_event.Set();
-  });
-  thread_sync_event.Wait(rtc::Event::kForever);
+  RemoveBitrateObserver();
 
   ScopedVoEInterface<VoEBase> base(voice_engine());
   int error = base->StopSend(config_.voe_channel_id);
@@ -183,11 +244,10 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
   //                  implementation.
   stats.aec_quality_min = -1;
 
-  webrtc::CodecInst codec_inst = {0};
-  if (channel_proxy_->GetSendCodec(&codec_inst)) {
-    RTC_DCHECK_NE(codec_inst.pltype, -1);
-    stats.codec_name = codec_inst.plname;
-    stats.codec_payload_type = rtc::Optional<int>(codec_inst.pltype);
+  if (config_.send_codec_spec) {
+    const auto& spec = *config_.send_codec_spec;
+    stats.codec_name = spec.format.name;
+    stats.codec_payload_type = rtc::Optional<int>(spec.payload_type);
 
     // Get data from the last remote RTCP report.
     for (const auto& block : channel_proxy_->GetRemoteRTCPReportBlocks()) {
@@ -196,10 +256,10 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats() const {
         stats.packets_lost = block.cumulative_num_packets_lost;
         stats.fraction_lost = Q8ToFloat(block.fraction_lost);
         stats.ext_seqnum = block.extended_highest_sequence_number;
-        // Convert samples to milliseconds.
-        if (codec_inst.plfreq / 1000 > 0) {
+        // Convert timestamps to milliseconds.
+        if (spec.format.clockrate_hz / 1000 > 0) {
           stats.jitter_ms =
-              block.interarrival_jitter / (codec_inst.plfreq / 1000);
+              block.interarrival_jitter / (spec.format.clockrate_hz / 1000);
         }
         break;
       }
@@ -324,115 +384,192 @@ VoiceEngine* AudioSendStream::voice_engine() const {
 }
 
 // Apply current codec settings to a single voe::Channel used for sending.
-bool AudioSendStream::SetupSendCodec() {
-  // Disable VAD and FEC unless we know the other side wants them.
-  channel_proxy_->SetVADStatus(false);
-  channel_proxy_->SetCodecFECStatus(false);
+bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
+                                     const Config& new_config) {
+  RTC_DCHECK(new_config.send_codec_spec);
+  const auto& spec = *new_config.send_codec_spec;
+  std::unique_ptr<AudioEncoder> encoder =
+      new_config.encoder_factory->MakeAudioEncoder(spec.payload_type,
+                                                   spec.format);
 
-  // We disable audio network adaptor here. This will on one hand make sure that
-  // audio network adaptor is disabled by default, and on the other allow audio
-  // network adaptor to be reconfigured, since SetReceiverFrameLengthRange can
-  // be only called when audio network adaptor is disabled.
-  channel_proxy_->DisableAudioNetworkAdaptor();
-
-  const auto& send_codec_spec = config_.send_codec_spec;
-
-  // We set the codec first, since the below extra configuration is only applied
-  // to the "current" codec.
-
-  // If codec is already configured, we do not it again.
-  // TODO(minyue): check if this check is really needed, or can we move it into
-  // |codec->SetSendCodec|.
-  webrtc::CodecInst current_codec = {0};
-  if (!channel_proxy_->GetSendCodec(&current_codec) ||
-      (send_codec_spec.codec_inst != current_codec)) {
-    if (!channel_proxy_->SetSendCodec(send_codec_spec.codec_inst)) {
-      LOG(LS_WARNING) << "SetSendCodec() failed.";
-      return false;
-    }
+  if (!encoder) {
+    LOG(LS_ERROR) << "Unable to create encoder for " << spec.format;
+    return false;
+  }
+  // If a bitrate has been specified for the codec, use it over the
+  // codec's default.
+  if (spec.target_bitrate_bps) {
+    encoder->OnReceivedTargetAudioBitrate(*spec.target_bitrate_bps);
   }
 
-  // Codec internal FEC. Treat any failure as fatal internal error.
-  if (send_codec_spec.enable_codec_fec) {
-    if (!channel_proxy_->SetCodecFECStatus(true)) {
-      LOG(LS_WARNING) << "SetCodecFECStatus() failed.";
-      return false;
-    }
-  }
-
-  // DTX and maxplaybackrate are only set if current codec is Opus.
-  if (IsCodec(send_codec_spec.codec_inst, kOpusCodecName)) {
-    if (!channel_proxy_->SetOpusDtx(send_codec_spec.enable_opus_dtx)) {
-      LOG(LS_WARNING) << "SetOpusDtx() failed.";
-      return false;
-    }
-
-    // If opus_max_playback_rate <= 0, the default maximum playback rate
-    // (48 kHz) will be used.
-    if (send_codec_spec.opus_max_playback_rate > 0) {
-      if (!channel_proxy_->SetOpusMaxPlaybackRate(
-              send_codec_spec.opus_max_playback_rate)) {
-        LOG(LS_WARNING) << "SetOpusMaxPlaybackRate() failed.";
-        return false;
-      }
-    }
-
-    if (config_.audio_network_adaptor_config) {
-      // Audio network adaptor is only allowed for Opus currently.
-      // |SetReceiverFrameLengthRange| needs to be called before
-      // |EnableAudioNetworkAdaptor|.
-      channel_proxy_->SetReceiverFrameLengthRange(send_codec_spec.min_ptime_ms,
-                                                  send_codec_spec.max_ptime_ms);
-      channel_proxy_->EnableAudioNetworkAdaptor(
-          *config_.audio_network_adaptor_config);
+  // Enable ANA if configured (currently only used by Opus).
+  if (new_config.audio_network_adaptor_config) {
+    if (encoder->EnableAudioNetworkAdaptor(
+            *new_config.audio_network_adaptor_config, stream->event_log_)) {
       LOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
-                   << config_.rtp.ssrc;
+                   << new_config.rtp.ssrc;
+    } else {
+      RTC_NOTREACHED();
     }
   }
 
-  // Set the CN payloadtype and the VAD status.
-  if (send_codec_spec.cng_payload_type != -1) {
-    // The CN payload type for 8000 Hz clockrate is fixed at 13.
-    if (send_codec_spec.cng_plfreq != 8000) {
-      webrtc::PayloadFrequencies cn_freq;
-      switch (send_codec_spec.cng_plfreq) {
-        case 16000:
-          cn_freq = webrtc::kFreq16000Hz;
-          break;
-        case 32000:
-          cn_freq = webrtc::kFreq32000Hz;
-          break;
-        default:
-          RTC_NOTREACHED();
-          return false;
-      }
-      if (!channel_proxy_->SetSendCNPayloadType(
-          send_codec_spec.cng_payload_type, cn_freq)) {
-        LOG(LS_WARNING) << "SetSendCNPayloadType() failed.";
-        // TODO(ajm): This failure condition will be removed from VoE.
-        // Restore the return here when we update to a new enough webrtc.
-        //
-        // Not returning false because the SetSendCNPayloadType will fail if
-        // the channel is already sending.
-        // This can happen if the remote description is applied twice, for
-        // example in the case of ROAP on top of JSEP, where both side will
-        // send the offer.
-      }
-    }
-
-    // Only turn on VAD if we have a CN payload type that matches the
-    // clockrate for the codec we are going to use.
-    if (send_codec_spec.cng_plfreq == send_codec_spec.codec_inst.plfreq &&
-        send_codec_spec.codec_inst.channels == 1) {
-      // TODO(minyue): If CN frequency == 48000 Hz is allowed, consider the
-      // interaction between VAD and Opus FEC.
-      if (!channel_proxy_->SetVADStatus(true)) {
-        LOG(LS_WARNING) << "SetVADStatus() failed.";
-        return false;
-      }
-    }
+  // Wrap the encoder in a an AudioEncoderCNG, if VAD is enabled.
+  if (spec.cng_payload_type) {
+    AudioEncoderCng::Config cng_config;
+    cng_config.num_channels = encoder->NumChannels();
+    cng_config.payload_type = *spec.cng_payload_type;
+    cng_config.speech_encoder = std::move(encoder);
+    cng_config.vad_mode = Vad::kVadNormal;
+    encoder.reset(new AudioEncoderCng(std::move(cng_config)));
   }
+
+  stream->channel_proxy_->SetEncoder(new_config.send_codec_spec->payload_type,
+                                     std::move(encoder));
   return true;
+}
+
+bool AudioSendStream::ReconfigureSendCodec(AudioSendStream* stream,
+                                           const Config& new_config) {
+  const auto& old_config = stream->config_;
+  if (new_config.send_codec_spec == old_config.send_codec_spec) {
+    return true;
+  }
+
+  // If we have no encoder, or the format or payload type's changed, create a
+  // new encoder.
+  if (!old_config.send_codec_spec ||
+      new_config.send_codec_spec->format !=
+          old_config.send_codec_spec->format ||
+      new_config.send_codec_spec->payload_type !=
+          old_config.send_codec_spec->payload_type) {
+    return SetupSendCodec(stream, new_config);
+  }
+
+  // Should never move a stream from fully configured to unconfigured.
+  RTC_CHECK(new_config.send_codec_spec);
+
+  const rtc::Optional<int>& new_target_bitrate_bps =
+      new_config.send_codec_spec->target_bitrate_bps;
+  // If a bitrate has been specified for the codec, use it over the
+  // codec's default.
+  if (new_target_bitrate_bps &&
+      new_target_bitrate_bps !=
+          old_config.send_codec_spec->target_bitrate_bps) {
+    CallEncoder(stream->channel_proxy_, [&](AudioEncoder* encoder) {
+      encoder->OnReceivedTargetAudioBitrate(*new_target_bitrate_bps);
+    });
+  }
+
+  ReconfigureANA(stream, new_config);
+  ReconfigureCNG(stream, new_config);
+
+  return true;
+}
+
+void AudioSendStream::ReconfigureANA(AudioSendStream* stream,
+                                     const Config& new_config) {
+  if (new_config.audio_network_adaptor_config ==
+      stream->config_.audio_network_adaptor_config) {
+    return;
+  }
+  if (new_config.audio_network_adaptor_config) {
+    CallEncoder(stream->channel_proxy_, [&](AudioEncoder* encoder) {
+      if (encoder->EnableAudioNetworkAdaptor(
+              *new_config.audio_network_adaptor_config, stream->event_log_)) {
+        LOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
+                     << new_config.rtp.ssrc;
+      } else {
+        RTC_NOTREACHED();
+      }
+    });
+  } else {
+    CallEncoder(stream->channel_proxy_, [&](AudioEncoder* encoder) {
+      encoder->DisableAudioNetworkAdaptor();
+    });
+    LOG(LS_INFO) << "Audio network adaptor disabled on SSRC "
+                 << new_config.rtp.ssrc;
+  }
+}
+
+void AudioSendStream::ReconfigureCNG(AudioSendStream* stream,
+                                     const Config& new_config) {
+  if (new_config.send_codec_spec->cng_payload_type ==
+      stream->config_.send_codec_spec->cng_payload_type) {
+    return;
+  }
+
+  // Wrap or unwrap the encoder in an AudioEncoderCNG.
+  stream->channel_proxy_->ModifyEncoder(
+      [&](std::unique_ptr<AudioEncoder>* encoder_ptr) {
+        std::unique_ptr<AudioEncoder> old_encoder(std::move(*encoder_ptr));
+        auto sub_encoders = old_encoder->ReclaimContainedEncoders();
+        if (!sub_encoders.empty()) {
+          // Replace enc with its sub encoder. We need to put the sub
+          // encoder in a temporary first, since otherwise the old value
+          // of enc would be destroyed before the new value got assigned,
+          // which would be bad since the new value is a part of the old
+          // value.
+          auto tmp = std::move(sub_encoders[0]);
+          old_encoder = std::move(tmp);
+        }
+        if (new_config.send_codec_spec->cng_payload_type) {
+          AudioEncoderCng::Config config;
+          config.speech_encoder = std::move(old_encoder);
+          config.num_channels = config.speech_encoder->NumChannels();
+          config.payload_type = *new_config.send_codec_spec->cng_payload_type;
+          config.vad_mode = Vad::kVadNormal;
+          encoder_ptr->reset(new AudioEncoderCng(std::move(config)));
+        } else {
+          *encoder_ptr = std::move(old_encoder);
+        }
+      });
+}
+
+void AudioSendStream::ReconfigureBitrateObserver(
+    AudioSendStream* stream,
+    const webrtc::AudioSendStream::Config& new_config) {
+  // Since the Config's default is for both of these to be -1, this test will
+  // allow us to configure the bitrate observer if the new config has bitrate
+  // limits set, but would only have us call RemoveBitrateObserver if we were
+  // previously configured with bitrate limits.
+  if (stream->config_.min_bitrate_bps == new_config.min_bitrate_bps &&
+      stream->config_.max_bitrate_bps == new_config.max_bitrate_bps) {
+    return;
+  }
+
+  if (new_config.min_bitrate_bps != -1 && new_config.max_bitrate_bps != -1) {
+    stream->ConfigureBitrateObserver(new_config.min_bitrate_bps,
+                                     new_config.max_bitrate_bps);
+  } else {
+    stream->RemoveBitrateObserver();
+  }
+}
+
+void AudioSendStream::ConfigureBitrateObserver(int min_bitrate_bps,
+                                               int max_bitrate_bps) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_GE(max_bitrate_bps, min_bitrate_bps);
+  rtc::Event thread_sync_event(false /* manual_reset */, false);
+  worker_queue_->PostTask([&] {
+    // We may get a callback immediately as the observer is registered, so make
+    // sure the bitrate limits in config_ are up-to-date.
+    config_.min_bitrate_bps = min_bitrate_bps;
+    config_.max_bitrate_bps = max_bitrate_bps;
+    bitrate_allocator_->AddObserver(this, min_bitrate_bps, max_bitrate_bps, 0,
+                                    true);
+    thread_sync_event.Set();
+  });
+  thread_sync_event.Wait(rtc::Event::kForever);
+}
+
+void AudioSendStream::RemoveBitrateObserver() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  rtc::Event thread_sync_event(false /* manual_reset */, false);
+  worker_queue_->PostTask([this, &thread_sync_event] {
+    bitrate_allocator_->RemoveObserver(this);
+    thread_sync_event.Set();
+  });
+  thread_sync_event.Wait(rtc::Event::kForever);
 }
 
 }  // namespace internal

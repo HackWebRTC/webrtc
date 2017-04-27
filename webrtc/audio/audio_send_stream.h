@@ -48,6 +48,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   ~AudioSendStream() override;
 
   // webrtc::AudioSendStream implementation.
+  void Reconfigure(const webrtc::AudioSendStream::Config& config) override;
+
   void Start() override;
   void Stop() override;
   bool SendTelephoneEvent(int payload_type, int payload_frequency, int event,
@@ -75,14 +77,29 @@ class AudioSendStream final : public webrtc::AudioSendStream,
  private:
   VoiceEngine* voice_engine() const;
 
-  bool SetupSendCodec();
+  // These are all static to make it less likely that (the old) config_ is
+  // accessed unintentionally.
+  static void ConfigureStream(AudioSendStream* stream,
+                              const Config& new_config,
+                              bool first_time);
+  static bool SetupSendCodec(AudioSendStream* stream, const Config& new_config);
+  static bool ReconfigureSendCodec(AudioSendStream* stream,
+                                   const Config& new_config);
+  static void ReconfigureANA(AudioSendStream* stream, const Config& new_config);
+  static void ReconfigureCNG(AudioSendStream* stream, const Config& new_config);
+  static void ReconfigureBitrateObserver(AudioSendStream* stream,
+                                         const Config& new_config);
+
+  void ConfigureBitrateObserver(int min_bitrate_bps, int max_bitrate_bps);
+  void RemoveBitrateObserver();
 
   rtc::ThreadChecker worker_thread_checker_;
   rtc::ThreadChecker pacer_thread_checker_;
   rtc::TaskQueue* worker_queue_;
-  const webrtc::AudioSendStream::Config config_;
+  webrtc::AudioSendStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
+  RtcEventLog* const event_log_;
 
   BitrateAllocator* const bitrate_allocator_;
   RtpTransportControllerSendInterface* const transport_;

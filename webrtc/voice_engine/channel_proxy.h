@@ -58,6 +58,8 @@ class ChannelProxy {
 
   virtual bool SetEncoder(int payload_type,
                           std::unique_ptr<AudioEncoder> encoder);
+  virtual void ModifyEncoder(
+      rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier);
 
   virtual void SetRTCPStatus(bool enable);
   virtual void SetLocalSSRC(uint32_t ssrc);
@@ -98,10 +100,6 @@ class ChannelProxy {
       GetAudioDecoderFactory() const;
   virtual void SetChannelOutputVolumeScaling(float scaling);
   virtual void SetRtcEventLog(RtcEventLog* event_log);
-  virtual void EnableAudioNetworkAdaptor(const std::string& config_string);
-  virtual void DisableAudioNetworkAdaptor();
-  virtual void SetReceiverFrameLengthRange(int min_frame_length_ms,
-                                           int max_frame_length_ms);
   virtual AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
       int sample_rate_hz,
       AudioFrame* audio_frame);
@@ -115,13 +113,6 @@ class ChannelProxy {
   virtual void SetMinimumPlayoutDelay(int delay_ms);
   virtual void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
   virtual bool GetRecCodec(CodecInst* codec_inst) const;
-  virtual bool GetSendCodec(CodecInst* codec_inst) const;
-  virtual bool SetVADStatus(bool enable);
-  virtual bool SetCodecFECStatus(bool enable);
-  virtual bool SetOpusDtx(bool enable);
-  virtual bool SetOpusMaxPlaybackRate(int frequency_hz);
-  virtual bool SetSendCodec(const CodecInst& codec_inst);
-  virtual bool SetSendCNPayloadType(int type, PayloadFrequencies frequency);
   virtual void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate);
   virtual void OnRecoverableUplinkPacketLossRate(
       float recoverable_packet_loss_rate);

@@ -55,6 +55,8 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
 
  private:
   // webrtc::AudioSendStream implementation.
+  void Reconfigure(const webrtc::AudioSendStream::Config& config) override;
+
   void Start() override { sending_ = true; }
   void Stop() override { sending_ = false; }
 

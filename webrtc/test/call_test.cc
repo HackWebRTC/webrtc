@@ -15,6 +15,7 @@
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/config.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/voice_engine/include/voe_base.h"
@@ -38,6 +39,7 @@ CallTest::CallTest()
       num_audio_streams_(0),
       num_flexfec_streams_(0),
       decoder_factory_(CreateBuiltinAudioDecoderFactory()),
+      encoder_factory_(CreateBuiltinAudioEncoderFactory()),
       fake_send_audio_device_(nullptr),
       fake_recv_audio_device_(nullptr) {}
 
@@ -222,8 +224,10 @@ void CallTest::CreateSendConfig(size_t num_video_streams,
     audio_send_config_ = AudioSendStream::Config(send_transport);
     audio_send_config_.voe_channel_id = voe_send_.channel_id;
     audio_send_config_.rtp.ssrc = kAudioSendSsrc;
-    audio_send_config_.send_codec_spec.codec_inst =
-        CodecInst{kAudioSendPayloadType, "OPUS", 48000, 960, 2, 64000};
+    audio_send_config_.send_codec_spec =
+        rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
+            {kAudioSendPayloadType, {"OPUS", 48000, 2, {{"stereo", "1"}}}});
+    audio_send_config_.encoder_factory = encoder_factory_;
   }
 
   // TODO(brandtr): Update this when we support multistream protection.

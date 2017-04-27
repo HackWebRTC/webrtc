@@ -19,6 +19,7 @@
 #include "webrtc/call/call.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -232,8 +233,10 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   AudioSendStream::Config audio_send_config(&audio_send_transport);
   audio_send_config.voe_channel_id = send_channel_id;
   audio_send_config.rtp.ssrc = kAudioSendSsrc;
-  audio_send_config.send_codec_spec.codec_inst =
-      CodecInst{kAudioSendPayloadType, "ISAC", 16000, 480, 1, 32000};
+  audio_send_config.send_codec_spec =
+      rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
+          {kAudioSendPayloadType, {"ISAC", 16000, 1}});
+  audio_send_config.encoder_factory = CreateBuiltinAudioEncoderFactory();
   AudioSendStream* audio_send_stream =
       sender_call_->CreateAudioSendStream(audio_send_config);
 

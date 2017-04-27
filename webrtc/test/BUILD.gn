@@ -407,6 +407,7 @@ rtc_source_set("test_common") {
     "../audio",
     "../base:rtc_base_approved",
     "../call",
+    "../modules/audio_coding:builtin_audio_encoder_factory",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing",
     "../video",

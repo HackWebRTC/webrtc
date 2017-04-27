@@ -26,6 +26,11 @@ FakeAudioSendStream::FakeAudioSendStream(
   RTC_DCHECK(config.voe_channel_id != -1);
 }
 
+void FakeAudioSendStream::Reconfigure(
+    const webrtc::AudioSendStream::Config& config) {
+  config_ = config;
+}
+
 const webrtc::AudioSendStream::Config&
     FakeAudioSendStream::GetConfig() const {
   return config_;

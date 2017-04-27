@@ -175,6 +175,8 @@ class Channel
 
   // Send using this encoder, with this payload type.
   bool SetEncoder(int payload_type, std::unique_ptr<AudioEncoder> encoder);
+  void ModifyEncoder(
+      rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier);
 
   // API methods
 

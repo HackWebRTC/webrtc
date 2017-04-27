@@ -1728,9 +1728,13 @@ void VideoQualityTest::SetupAudio(int send_channel_id,
     audio_send_config_.min_bitrate_bps = kOpusMinBitrateBps;
     audio_send_config_.max_bitrate_bps = kOpusBitrateFbBps;
   }
-  audio_send_config_.send_codec_spec.codec_inst =
-      CodecInst{kAudioSendPayloadType, "OPUS", 48000, 960, 2, 64000};
-  audio_send_config_.send_codec_spec.enable_opus_dtx = params_.audio.dtx;
+  audio_send_config_.send_codec_spec =
+      rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
+          {kAudioSendPayloadType,
+           {"OPUS", 48000, 2,
+            {{"usedtx", (params_.audio.dtx ? "1" : "0")},
+              {"stereo", "1"}}}});
+
   audio_send_stream_ = call->CreateAudioSendStream(audio_send_config_);
 
   AudioReceiveStream::Config audio_config;

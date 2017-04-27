@@ -97,8 +97,12 @@ test::PacketTransport* AudioQualityTest::CreateReceiveTransport() {
 void AudioQualityTest::ModifyAudioConfigs(
   AudioSendStream::Config* send_config,
   std::vector<AudioReceiveStream::Config>* receive_configs) {
-  send_config->send_codec_spec.codec_inst = webrtc::CodecInst{
-      test::CallTest::kAudioSendPayloadType, "OPUS", 48000, 960, 2, 64000};
+  // Large bitrate by default.
+  const webrtc::SdpAudioFormat kDefaultFormat("OPUS", 48000, 2,
+                                              {{"stereo", "1"}});
+  send_config->send_codec_spec =
+      rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
+          {test::CallTest::kAudioSendPayloadType, kDefaultFormat});
 }
 
 void AudioQualityTest::PerformTest() {
@@ -130,14 +134,15 @@ TEST_F(LowBandwidthAudioTest, GoodNetworkHighBitrate) {
 class Mobile2GNetworkTest : public AudioQualityTest {
   void ModifyAudioConfigs(AudioSendStream::Config* send_config,
       std::vector<AudioReceiveStream::Config>* receive_configs) override {
-    send_config->send_codec_spec.codec_inst = CodecInst{
-        test::CallTest::kAudioSendPayloadType,  // pltype
-        "OPUS",                                 // plname
-        48000,                                  // plfreq
-        2880,                                   // pacsize
-        1,                                      // channels
-        6000                                    // rate bits/sec
-    };
+    send_config->send_codec_spec =
+        rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
+            {test::CallTest::kAudioSendPayloadType,
+             {"OPUS",
+              48000,
+              2,
+              {{"maxaveragebitrate", "6000"},
+               {"ptime", "60"},
+               {"stereo", "1"}}}});
   }
 
   FakeNetworkPipe::Config GetNetworkPipeConfig() override {

@@ -1303,7 +1303,13 @@ bool Channel::SetEncoder(int payload_type,
   }
 
   audio_coding_->SetEncoder(std::move(encoder));
+  codec_manager_.UnsetCodecInst();
   return true;
+}
+
+void Channel::ModifyEncoder(
+    rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
+  audio_coding_->ModifyEncoder(modifier);
 }
 
 int32_t Channel::RegisterVoiceEngineObserver(VoiceEngineObserver& observer) {
@@ -1337,9 +1343,16 @@ int32_t Channel::DeRegisterVoiceEngineObserver() {
 }
 
 int32_t Channel::GetSendCodec(CodecInst& codec) {
-  auto send_codec = codec_manager_.GetCodecInst();
-  if (send_codec) {
-    codec = *send_codec;
+  {
+    const CodecInst* send_codec = codec_manager_.GetCodecInst();
+    if (send_codec) {
+      codec = *send_codec;
+      return 0;
+    }
+  }
+  rtc::Optional<CodecInst> acm_send_codec = audio_coding_->SendCodec();
+  if (acm_send_codec) {
+    codec = *acm_send_codec;
     return 0;
   }
   return -1;

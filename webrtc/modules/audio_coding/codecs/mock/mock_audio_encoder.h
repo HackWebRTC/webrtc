@@ -47,6 +47,10 @@ class MockAudioEncoder : public AudioEncoder {
   MOCK_METHOD1(OnReceivedUplinkPacketLossFraction,
                void(float uplink_packet_loss_fraction));
 
+  MOCK_METHOD2(EnableAudioNetworkAdaptor,
+               bool(const std::string& config_string,
+                    RtcEventLog* event_log));
+
   // Note, we explicitly chose not to create a mock for the Encode method.
   MOCK_METHOD3(EncodeImpl,
                EncodedInfo(uint32_t timestamp,
