@@ -141,8 +141,35 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
       }
 
       UpdateJitterDelay();
-
       PropagateDecodability(next_frame_it_->second);
+
+      // Sanity check for RTP timestamp monotonicity.
+      if (last_decoded_frame_it_ != frames_.end()) {
+        const FrameKey& last_decoded_frame_key = last_decoded_frame_it_->first;
+        const FrameKey& frame_key = next_frame_it_->first;
+
+        const bool frame_is_higher_spatial_layer_of_last_decoded_frame =
+            last_decoded_frame_timestamp_ == frame->timestamp &&
+            last_decoded_frame_key.picture_id == frame_key.picture_id &&
+            last_decoded_frame_key.spatial_layer < frame_key.spatial_layer;
+
+        if (AheadOrAt(last_decoded_frame_timestamp_, frame->timestamp) &&
+            !frame_is_higher_spatial_layer_of_last_decoded_frame) {
+          // TODO(brandtr): Consider clearing the entire buffer when we hit
+          // these conditions.
+          LOG(LS_WARNING) << "Frame with (timestamp:picture_id:spatial_id) ("
+                          << frame->timestamp << ":" << frame->picture_id << ":"
+                          << static_cast<int>(frame->spatial_layer) << ")"
+                          << " sent to decoder after frame with"
+                          << " (timestamp:picture_id:spatial_id) ("
+                          << last_decoded_frame_timestamp_ << ":"
+                          << last_decoded_frame_key.picture_id << ":"
+                          << static_cast<int>(
+                                 last_decoded_frame_key.spatial_layer)
+                          << ").";
+        }
+      }
+
       AdvanceLastDecodedFrame(next_frame_it_);
       last_decoded_frame_timestamp_ = frame->timestamp;
       *frame_out = std::move(frame);
