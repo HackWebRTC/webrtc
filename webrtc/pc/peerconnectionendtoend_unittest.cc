@@ -290,7 +290,7 @@ TEST_F(PeerConnectionEndToEndTest, CallWithLegacySdp) {
 // "OPEN" and transfer data.
 TEST_F(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
   CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
-            webrtc::CreateBuiltinAudioDecoderFactory());
+            webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
   rtc::scoped_refptr<DataChannelInterface> caller_dc(
@@ -315,7 +315,7 @@ TEST_F(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
 // "OPEN" and transfer data.
 TEST_F(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
   CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
-            webrtc::CreateBuiltinAudioDecoderFactory());
+            webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
 
@@ -347,7 +347,7 @@ TEST_F(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
 // Verifies that DataChannel IDs are even/odd based on the DTLS roles.
 TEST_F(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
   CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
-            webrtc::CreateBuiltinAudioDecoderFactory());
+            webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
   rtc::scoped_refptr<DataChannelInterface> caller_dc_1(
@@ -375,7 +375,7 @@ TEST_F(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
 TEST_F(PeerConnectionEndToEndTest,
        MessageTransferBetweenTwoPairsOfDataChannels) {
   CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
-            webrtc::CreateBuiltinAudioDecoderFactory());
+            webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
 
@@ -497,7 +497,7 @@ TEST_F(PeerConnectionEndToEndTest, MessageTransferBetweenQuicDataChannels) {
 TEST_F(PeerConnectionEndToEndTest,
        DISABLED_DataChannelFromOpenWorksAfterClose) {
   CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
-            webrtc::CreateBuiltinAudioDecoderFactory());
+            webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
   rtc::scoped_refptr<DataChannelInterface> caller_dc(
@@ -524,7 +524,7 @@ TEST_F(PeerConnectionEndToEndTest,
 // See: https://code.google.com/p/chromium/issues/detail?id=565048
 TEST_F(PeerConnectionEndToEndTest, CloseDataChannelRemotelyWhileNotReferenced) {
   CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
-            webrtc::CreateBuiltinAudioDecoderFactory());
+            webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
   rtc::scoped_refptr<DataChannelInterface> caller_dc(
