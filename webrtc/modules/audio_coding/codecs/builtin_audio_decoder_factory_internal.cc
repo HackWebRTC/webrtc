@@ -192,11 +192,11 @@ class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
       specs.push_back({std::move(opus_format), opus_info});
 #endif
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-      specs.push_back(AudioCodecSpec{{"isac", 16000, 1},
+      specs.push_back(AudioCodecSpec{{"ISAC", 16000, 1},
                                      {16000, 1, 32000, 10000, 56000}});
 #endif
 #if (defined(WEBRTC_CODEC_ISAC))
-      specs.push_back(AudioCodecSpec{{"isac", 32000, 1},
+      specs.push_back(AudioCodecSpec{{"ISAC", 32000, 1},
                                      {32000, 1, 56000, 10000, 56000}});
 #endif
 #ifdef WEBRTC_CODEC_G722
@@ -204,7 +204,7 @@ class BuiltinAudioDecoderFactory : public AudioDecoderFactory {
                                      {16000, 1, 64000}});
 #endif
 #ifdef WEBRTC_CODEC_ILBC
-      specs.push_back(AudioCodecSpec{{"iLBC", 8000, 1},
+      specs.push_back(AudioCodecSpec{{"ILBC", 8000, 1},
                                      {8000, 1, 13300}});
 #endif
       specs.push_back(AudioCodecSpec{{"PCMU", 8000, 1},

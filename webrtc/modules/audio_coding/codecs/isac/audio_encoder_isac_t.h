@@ -59,7 +59,7 @@ class AudioEncoderIsacT final : public AudioEncoder {
   AudioEncoderIsacT(int payload_type, const SdpAudioFormat& format);
   ~AudioEncoderIsacT() override;
 
-  static constexpr const char* GetPayloadName() { return "isac"; }
+  static constexpr const char* GetPayloadName() { return "ISAC"; }
   static rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
       const SdpAudioFormat& format);
 

@@ -87,10 +87,10 @@ class BuiltinAudioEncoderFactory : public AudioEncoderFactory {
   std::vector<AudioCodecSpec> GetSupportedEncoders() override {
     static const SdpAudioFormat desired_encoders[] = {
         {"opus", 48000, 2, {{"minptime", "10"}, {"useinbandfec", "1"}}},
-        {"isac", 16000, 1},
-        {"isac", 32000, 1},
+        {"ISAC", 16000, 1},
+        {"ISAC", 32000, 1},
         {"G722", 8000, 1},
-        {"iLBC", 8000, 1},
+        {"ILBC", 8000, 1},
         {"PCMU", 8000, 1},
         {"PCMA", 8000, 1},
     };

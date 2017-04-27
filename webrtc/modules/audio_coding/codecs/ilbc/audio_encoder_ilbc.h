@@ -36,7 +36,7 @@ class AudioEncoderIlbc final : public AudioEncoder {
   AudioEncoderIlbc(int payload_type, const SdpAudioFormat& format);
   ~AudioEncoderIlbc() override;
 
-  static constexpr const char* GetPayloadName() { return "ilbc"; }
+  static constexpr const char* GetPayloadName() { return "ILBC"; }
   static rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
       const SdpAudioFormat& format);
 
