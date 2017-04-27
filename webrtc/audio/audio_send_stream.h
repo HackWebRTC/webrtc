@@ -93,6 +93,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   void ConfigureBitrateObserver(int min_bitrate_bps, int max_bitrate_bps);
   void RemoveBitrateObserver();
 
+  void RegisterCngPayloadType(int payload_type, int clockrate_hz);
+
   rtc::ThreadChecker worker_thread_checker_;
   rtc::ThreadChecker pacer_thread_checker_;
   rtc::TaskQueue* worker_queue_;

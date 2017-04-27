@@ -28,7 +28,7 @@
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/transmit_mixer.h"
@@ -421,6 +421,10 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
     cng_config.speech_encoder = std::move(encoder);
     cng_config.vad_mode = Vad::kVadNormal;
     encoder.reset(new AudioEncoderCng(std::move(cng_config)));
+
+    stream->RegisterCngPayloadType(
+        *spec.cng_payload_type,
+        new_config.send_codec_spec->format.clockrate_hz);
   }
 
   stream->channel_proxy_->SetEncoder(new_config.send_codec_spec->payload_type,
@@ -498,6 +502,14 @@ void AudioSendStream::ReconfigureCNG(AudioSendStream* stream,
     return;
   }
 
+  // Register the CNG payload type if it's been added, don't do anything if CNG
+  // is removed. Payload types must not be redefined.
+  if (new_config.send_codec_spec->cng_payload_type) {
+    stream->RegisterCngPayloadType(
+        *new_config.send_codec_spec->cng_payload_type,
+        new_config.send_codec_spec->format.clockrate_hz);
+  }
+
   // Wrap or unwrap the encoder in an AudioEncoderCNG.
   stream->channel_proxy_->ModifyEncoder(
       [&](std::unique_ptr<AudioEncoder>* encoder_ptr) {
@@ -571,6 +583,22 @@ void AudioSendStream::RemoveBitrateObserver() {
   });
   thread_sync_event.Wait(rtc::Event::kForever);
 }
+
+void AudioSendStream::RegisterCngPayloadType(int payload_type,
+                                             int clockrate_hz) {
+  RtpRtcp* rtpRtcpModule = nullptr;
+  RtpReceiver* rtpReceiver = nullptr;  // Unused, but required for call.
+  channel_proxy_->GetRtpRtcp(&rtpRtcpModule, &rtpReceiver);
+  const CodecInst codec = {payload_type, "CN", clockrate_hz, 0, 1, 0};
+  if (rtpRtcpModule->RegisterSendPayload(codec) != 0) {
+    rtpRtcpModule->DeRegisterSendPayload(codec.pltype);
+    if (rtpRtcpModule->RegisterSendPayload(codec) != 0) {
+      LOG(LS_ERROR) << "RegisterCngPayloadType() failed to register CN to "
+                       "RTP/RTCP module";
+    }
+  }
+}
+
 
 }  // namespace internal
 }  // namespace webrtc

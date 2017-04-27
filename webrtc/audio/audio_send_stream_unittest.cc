@@ -25,6 +25,7 @@
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_observer.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
+#include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_voe_channel_proxy.h"
@@ -217,6 +218,12 @@ struct ConfigHelper {
   void SetupDefaultChannelProxy(bool audio_bwe_enabled) {
     using testing::StrEq;
     channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
+    EXPECT_CALL(*channel_proxy_, GetRtpRtcp(_, _))
+        .WillRepeatedly(Invoke(
+            [this](RtpRtcp** rtp_rtcp_module, RtpReceiver** rtp_receiver) {
+              *rtp_rtcp_module = &this->rtp_rtcp_;
+              *rtp_receiver = nullptr;  // Not deemed necessary for tests yet.
+            }));
     EXPECT_CALL(*channel_proxy_, SetRTCPStatus(true)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
@@ -321,6 +328,7 @@ struct ConfigHelper {
   AudioProcessing::AudioProcessingStatistics audio_processing_stats_;
   FakeRtpTransportController fake_transport_;
   MockRtcEventLog event_log_;
+  MockRtpRtcp rtp_rtcp_;
   MockRtcpRttStats rtcp_rtt_stats_;
   testing::NiceMock<MockLimitObserver> limit_observer_;
   BitrateAllocator bitrate_allocator_;
