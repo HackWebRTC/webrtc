@@ -10,11 +10,8 @@
 
 package org.webrtc;
 
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-
 import android.content.Context;
-
-import java.util.List;
+import android.media.MediaRecorder;
 
 public class Camera1Capturer extends CameraCapturer {
   private final boolean captureToTexture;
@@ -29,8 +26,11 @@ public class Camera1Capturer extends CameraCapturer {
   @Override
   protected void createCameraSession(CameraSession.CreateSessionCallback createSessionCallback,
       CameraSession.Events events, Context applicationContext,
-      SurfaceTextureHelper surfaceTextureHelper, String cameraName, int width, int height,
-      int framerate) {
+      SurfaceTextureHelper surfaceTextureHelper, MediaRecorder mediaRecorder, String cameraName,
+      int width, int height, int framerate) {
+    if (mediaRecorder != null) {
+      throw new RuntimeException("MediaRecoder is not supported for camera 1.");
+    }
     Camera1Session.create(createSessionCallback, events, captureToTexture, applicationContext,
         surfaceTextureHelper, Camera1Enumerator.getCameraIndex(cameraName), width, height,
         framerate);
