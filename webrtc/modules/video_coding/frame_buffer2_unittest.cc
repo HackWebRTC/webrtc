@@ -516,5 +516,11 @@ TEST_F(TestFrameBuffer2, ForwardJumps) {
   ExtractFrame();
 }
 
+TEST_F(TestFrameBuffer2, DuplicateFrames) {
+  EXPECT_EQ(22256, InsertFrame(22256, 0, 1, false));
+  ExtractFrame();
+  EXPECT_EQ(22256, InsertFrame(22256, 0, 1, false));
+}
+
 }  // namespace video_coding
 }  // namespace webrtc

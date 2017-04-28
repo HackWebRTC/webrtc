@@ -237,7 +237,7 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   }
 
   if (last_decoded_frame_it_ != frames_.end() &&
-      key < last_decoded_frame_it_->first) {
+      key <= last_decoded_frame_it_->first) {
     if (AheadOf(frame->timestamp, last_decoded_frame_timestamp_) &&
         frame->num_references == 0) {
       // If this frame has a newer timestamp but an earlier picture id then we
