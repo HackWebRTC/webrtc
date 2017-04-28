@@ -22,7 +22,6 @@ rtc_source_set("video_codecs_api") {
     # TODO(ilnik): Add dependency on webrtc/video_frame.h when it will have it's
     # own build target.
 
-    "..:video_frame_api",
     "../..:webrtc_common",
     "../../base:rtc_base_approved",
   ]

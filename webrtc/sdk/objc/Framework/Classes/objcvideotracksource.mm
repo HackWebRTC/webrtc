@@ -12,7 +12,6 @@
 
 #import "RTCVideoFrame+Private.h"
 
-#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/common_video/include/corevideo_frame_buffer.h"
 
 namespace webrtc {
@@ -61,7 +60,7 @@ void ObjcVideoTrackSource::OnCapturedFrame(RTCVideoFrame* frame) {
   // not critical here.
   webrtc::VideoRotation rotation = static_cast<webrtc::VideoRotation>(frame.rotation);
   if (apply_rotation() && rotation != kVideoRotation_0) {
-    buffer = I420Buffer::Rotate(*buffer->NativeToI420Buffer(), rotation);
+    buffer = I420Buffer::Rotate(buffer->NativeToI420Buffer(), rotation);
     rotation = kVideoRotation_0;
   }
 

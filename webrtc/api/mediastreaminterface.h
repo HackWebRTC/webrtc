@@ -23,6 +23,10 @@
 #include <vector>
 
 #include "webrtc/api/video/video_frame.h"
+// TODO(nisse): Transition hack, Chrome expects that including this
+// file declares I420Buffer. Delete after users of I420Buffer are
+// fixed to include the new header.
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/refcount.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/optional.h"

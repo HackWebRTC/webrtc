@@ -12,7 +12,6 @@
 #include <string.h>
 
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/test/fake_texture_frame.h"
@@ -287,6 +286,22 @@ TEST_P(TestI420BufferRotate, Rotates) {
 }
 
 INSTANTIATE_TEST_CASE_P(Rotate, TestI420BufferRotate,
+                        ::testing::Values(kVideoRotation_0,
+                                          kVideoRotation_90,
+                                          kVideoRotation_180,
+                                          kVideoRotation_270));
+
+class TestI420BufferRotateOld
+    : public ::testing::TestWithParam<webrtc::VideoRotation> {};
+
+TEST_P(TestI420BufferRotateOld, Rotates) {
+  rtc::scoped_refptr<VideoFrameBuffer> buffer = CreateGradient(640, 480);
+  rtc::scoped_refptr<VideoFrameBuffer> rotated_buffer =
+      I420Buffer::Rotate(buffer, GetParam());
+  CheckRotate(640, 480, GetParam(), *rotated_buffer);
+}
+
+INSTANTIATE_TEST_CASE_P(Rotate, TestI420BufferRotateOld,
                         ::testing::Values(kVideoRotation_0,
                                           kVideoRotation_90,
                                           kVideoRotation_180,
