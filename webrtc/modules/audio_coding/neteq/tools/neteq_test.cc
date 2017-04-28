@@ -26,12 +26,8 @@ void DefaultNetEqTestErrorCallback::OnInsertPacketError(
               << std::endl;
   } else {
     std::cerr << "InsertPacket returned error code " << error_code << std::endl;
-    std::cerr << "Header data:" << std::endl;
-    std::cerr << "  PT = " << static_cast<int>(packet.header.payloadType)
-              << std::endl;
-    std::cerr << "  SN = " << packet.header.sequenceNumber << std::endl;
-    std::cerr << "  TS = " << packet.header.timestamp << std::endl;
   }
+  std::cerr << "Packet data: " << packet.ToString() << std::endl;
   FATAL();
 }
 

@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
 
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/optional.h"
@@ -27,6 +28,8 @@ namespace test {
 class NetEqInput {
  public:
   struct PacketData {
+    std::string ToString() const;
+
     RTPHeader header;
     rtc::Buffer payload;
     double time_ms;

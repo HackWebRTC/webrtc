@@ -1111,6 +1111,7 @@ rtc_source_set("neteq_tools_minimal") {
     "neteq/tools/audio_sink.h",
     "neteq/tools/encode_neteq_input.cc",
     "neteq/tools/encode_neteq_input.h",
+    "neteq/tools/neteq_input.cc",
     "neteq/tools/neteq_input.h",
     "neteq/tools/neteq_test.cc",
     "neteq/tools/neteq_test.h",
