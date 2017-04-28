@@ -368,7 +368,7 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
       delete[] encoded_images_[i]._buffer;
     }
     encoded_images_[i]._size =
-        CalcBufferSize(kI420, codec_.width, codec_.height);
+        CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
     encoded_images_[i]._buffer = new uint8_t[encoded_images_[i]._size];
     encoded_images_[i]._completeFrame = true;
   }

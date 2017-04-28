@@ -416,23 +416,25 @@ struct AudioDecodingCallStats {
 // Video specific types
 // ==================================================================
 
-// Raw video types
-enum RawVideoType {
-  kVideoI420 = 0,
-  kVideoYV12 = 1,
-  kVideoYUY2 = 2,
-  kVideoUYVY = 3,
-  kVideoIYUV = 4,
-  kVideoARGB = 5,
-  kVideoRGB24 = 6,
-  kVideoRGB565 = 7,
-  kVideoARGB4444 = 8,
-  kVideoARGB1555 = 9,
-  kVideoMJPEG = 10,
-  kVideoNV12 = 11,
-  kVideoNV21 = 12,
-  kVideoBGRA = 13,
-  kVideoUnknown = 99
+// TODO(nisse): Delete, and switch to fourcc values everywhere?
+// Supported video types.
+enum class VideoType {
+  kUnknown,
+  kI420,
+  kIYUV,
+  kRGB24,
+  kABGR,
+  kARGB,
+  kARGB4444,
+  kRGB565,
+  kARGB1555,
+  kYUY2,
+  kYV12,
+  kUYVY,
+  kMJPEG,
+  kNV21,
+  kNV12,
+  kBGRA,
 };
 
 // Video codec

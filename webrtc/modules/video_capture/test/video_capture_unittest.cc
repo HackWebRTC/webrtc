@@ -212,7 +212,7 @@ TEST_F(VideoCaptureTest, MAYBE_CreateDelete) {
     capability.width = kTestWidth;
     capability.height = kTestHeight;
     capability.maxFPS = kTestFramerate;
-    capability.rawType = webrtc::kVideoUnknown;
+    capability.videoType = webrtc::VideoType::kUnknown;
 #endif
     capture_observer.SetExpectedCapability(capability);
     ASSERT_NO_FATAL_FAILURE(StartCapture(module.get(), capability));
@@ -319,7 +319,7 @@ TEST_F(VideoCaptureTest, DISABLED_TestTwoCameras) {
   capability1.width = kTestWidth;
   capability1.height = kTestHeight;
   capability1.maxFPS = kTestFramerate;
-  capability1.rawType = webrtc::kVideoUnknown;
+  capability1.videoType = webrtc::VideoType::kUnknown;
 #endif
   capture_observer1.SetExpectedCapability(capability1);
 
@@ -336,7 +336,7 @@ TEST_F(VideoCaptureTest, DISABLED_TestTwoCameras) {
   capability2.width = kTestWidth;
   capability2.height = kTestHeight;
   capability2.maxFPS = kTestFramerate;
-  capability2.rawType = webrtc::kVideoUnknown;
+  capability2.videoType = webrtc::VideoType::kUnknown;
 #endif
   capture_observer2.SetExpectedCapability(capability2);
 
@@ -358,7 +358,7 @@ class VideoCaptureExternalTest : public testing::Test {
     VideoCaptureCapability capability;
     capability.width = kTestWidth;
     capability.height = kTestHeight;
-    capability.rawType = webrtc::kVideoYV12;
+    capability.videoType = webrtc::VideoType::kYV12;
     capability.maxFPS = kTestFramerate;
     capture_callback_.SetExpectedCapability(capability);
 
@@ -390,9 +390,8 @@ class VideoCaptureExternalTest : public testing::Test {
 
 // Test input of external video frames.
 TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
-  size_t length = webrtc::CalcBufferSize(webrtc::kI420,
-                                         test_frame_->width(),
-                                         test_frame_->height());
+  size_t length = webrtc::CalcBufferSize(
+      webrtc::VideoType::kI420, test_frame_->width(), test_frame_->height());
   std::unique_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
   webrtc::ExtractBuffer(*test_frame_, length, test_buffer.get());
   EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),
@@ -402,9 +401,8 @@ TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
 
 TEST_F(VideoCaptureExternalTest, Rotation) {
   EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kVideoRotation_0));
-  size_t length = webrtc::CalcBufferSize(webrtc::kI420,
-                                         test_frame_->width(),
-                                         test_frame_->height());
+  size_t length = webrtc::CalcBufferSize(
+      webrtc::VideoType::kI420, test_frame_->width(), test_frame_->height());
   std::unique_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
   webrtc::ExtractBuffer(*test_frame_, length, test_buffer.get());
   EXPECT_EQ(0, capture_input_interface_->IncomingFrame(test_buffer.get(),

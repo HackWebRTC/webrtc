@@ -284,7 +284,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (encoded_image_._buffer != NULL) {
     delete[] encoded_image_._buffer;
   }
-  encoded_image_._size = CalcBufferSize(kI420, codec_.width, codec_.height);
+  encoded_image_._size =
+      CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_._completeFrame = true;
   // Creating a wrapper to the image - setting image data to NULL. Actual

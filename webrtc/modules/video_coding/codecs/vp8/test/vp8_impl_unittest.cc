@@ -198,7 +198,7 @@ class TestVp8Impl : public ::testing::Test {
     int64_t startTime = rtc::TimeMillis();
     while (rtc::TimeMillis() - startTime < kMaxWaitDecTimeMs) {
       if (decode_complete_callback_->DecodeComplete()) {
-        return CalcBufferSize(kI420, decoded_frame_->width(),
+        return CalcBufferSize(VideoType::kI420, decoded_frame_->width(),
                               decoded_frame_->height());
       }
     }

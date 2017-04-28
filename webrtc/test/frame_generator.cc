@@ -129,7 +129,7 @@ class YuvFileGenerator : public FrameGenerator {
         files_(files),
         width_(width),
         height_(height),
-        frame_size_(CalcBufferSize(kI420,
+        frame_size_(CalcBufferSize(VideoType::kI420,
                                    static_cast<int>(width_),
                                    static_cast<int>(height_))),
         frame_buffer_(new uint8_t[frame_size_]),

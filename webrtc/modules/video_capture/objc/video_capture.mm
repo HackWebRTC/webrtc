@@ -100,6 +100,6 @@ bool VideoCaptureIos::CaptureStarted() {
 
 int32_t VideoCaptureIos::CaptureSettings(VideoCaptureCapability& settings) {
   settings = capability_;
-  settings.rawType = kVideoNV12;
+  settings.videoType = VideoType::kNV12;
   return 0;
 }

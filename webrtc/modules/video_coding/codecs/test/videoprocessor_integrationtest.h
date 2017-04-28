@@ -248,7 +248,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
         test::OutputPath(), "videoprocessor_integrationtest");
 
     config_.frame_length_in_bytes =
-        CalcBufferSize(kI420, process.width, process.height);
+        CalcBufferSize(VideoType::kI420, process.width, process.height);
     config_.verbose = process.verbose_logging;
     config_.use_single_core = process.use_single_core;
     // Key frame interval and packet loss are set for each test.

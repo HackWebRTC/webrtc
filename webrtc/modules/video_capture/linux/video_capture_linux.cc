@@ -48,10 +48,8 @@ VideoCaptureModuleV4L2::VideoCaptureModuleV4L2()
       _currentHeight(-1),
       _currentFrameRate(-1),
       _captureStarted(false),
-      _captureVideoType(kVideoI420),
-      _pool(NULL)
-{
-}
+      _captureVideoType(VideoType::kI420),
+      _pool(NULL) {}
 
 int32_t VideoCaptureModuleV4L2::Init(const char* deviceUniqueIdUTF8)
 {
@@ -114,11 +112,10 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
 {
     if (_captureStarted)
     {
-        if (capability.width == _currentWidth &&
-            capability.height == _currentHeight &&
-            _captureVideoType == capability.rawType)
-        {
-            return 0;
+      if (capability.width == _currentWidth &&
+          capability.height == _currentHeight &&
+          _captureVideoType == capability.videoType) {
+        return 0;
         }
         else
         {
@@ -201,14 +198,14 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
     video_fmt.fmt.pix.pixelformat = fmts[fmtsIdx];
 
     if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUYV)
-        _captureVideoType = kVideoYUY2;
+      _captureVideoType = VideoType::kYUY2;
     else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUV420)
-        _captureVideoType = kVideoI420;
+      _captureVideoType = VideoType::kI420;
     else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_UYVY)
-        _captureVideoType = kVideoUYVY;
+      _captureVideoType = VideoType::kUYVY;
     else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG ||
              video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG)
-        _captureVideoType = kVideoMJPEG;
+      _captureVideoType = VideoType::kMJPEG;
 
     //set format and frame size now
     if (ioctl(_deviceFd, VIDIOC_S_FMT, &video_fmt) < 0)
@@ -252,7 +249,7 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
     // If driver doesn't support framerate control, need to hardcode.
     // Hardcoding the value based on the frame size.
     if (!driver_framerate_support) {
-      if(_currentWidth >= 800 && _captureVideoType != kVideoMJPEG) {
+      if (_currentWidth >= 800 && _captureVideoType != VideoType::kMJPEG) {
         _currentFrameRate = 15;
       } else {
         _currentFrameRate = 30;
@@ -447,7 +444,7 @@ bool VideoCaptureModuleV4L2::CaptureProcess()
         VideoCaptureCapability frameInfo;
         frameInfo.width = _currentWidth;
         frameInfo.height = _currentHeight;
-        frameInfo.rawType = _captureVideoType;
+        frameInfo.videoType = _captureVideoType;
 
         // convert to to I420 if needed
         IncomingFrame((unsigned char*) _pool[buf.index].start,
@@ -468,7 +465,7 @@ int32_t VideoCaptureModuleV4L2::CaptureSettings(VideoCaptureCapability& settings
     settings.width = _currentWidth;
     settings.height = _currentHeight;
     settings.maxFPS = _currentFrameRate;
-    settings.rawType=_captureVideoType;
+    settings.videoType = _captureVideoType;
 
     return 0;
 }

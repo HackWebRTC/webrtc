@@ -21,69 +21,33 @@
 
 namespace webrtc {
 
-VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
-  switch (type) {
-    case kVideoI420:
-      return kI420;
-    case kVideoIYUV:
-      return kIYUV;
-    case kVideoRGB24:
-      return kRGB24;
-    case kVideoARGB:
-      return kARGB;
-    case kVideoARGB4444:
-      return kARGB4444;
-    case kVideoRGB565:
-      return kRGB565;
-    case kVideoARGB1555:
-      return kARGB1555;
-    case kVideoYUY2:
-      return kYUY2;
-    case kVideoYV12:
-      return kYV12;
-    case kVideoUYVY:
-      return kUYVY;
-    case kVideoNV21:
-      return kNV21;
-    case kVideoNV12:
-      return kNV12;
-    case kVideoBGRA:
-      return kBGRA;
-    case kVideoMJPEG:
-      return kMJPG;
-    default:
-      RTC_NOTREACHED();
-  }
-  return kUnknown;
-}
-
 size_t CalcBufferSize(VideoType type, int width, int height) {
   RTC_DCHECK_GE(width, 0);
   RTC_DCHECK_GE(height, 0);
   size_t buffer_size = 0;
   switch (type) {
-    case kI420:
-    case kNV12:
-    case kNV21:
-    case kIYUV:
-    case kYV12: {
+    case VideoType::kI420:
+    case VideoType::kNV12:
+    case VideoType::kNV21:
+    case VideoType::kIYUV:
+    case VideoType::kYV12: {
       int half_width = (width + 1) >> 1;
       int half_height = (height + 1) >> 1;
       buffer_size = width * height + half_width * half_height * 2;
       break;
     }
-    case kARGB4444:
-    case kRGB565:
-    case kARGB1555:
-    case kYUY2:
-    case kUYVY:
+    case VideoType::kARGB4444:
+    case VideoType::kRGB565:
+    case VideoType::kARGB1555:
+    case VideoType::kYUY2:
+    case VideoType::kUYVY:
       buffer_size = width * height * 2;
       break;
-    case kRGB24:
+    case VideoType::kRGB24:
       buffer_size = width * height * 3;
       break;
-    case kBGRA:
-    case kARGB:
+    case VideoType::kBGRA:
+    case VideoType::kARGB:
       buffer_size = width * height * 4;
       break;
     default:
@@ -141,7 +105,7 @@ int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
     return -1;
   int width = input_frame->width();
   int height = input_frame->height();
-  size_t length = CalcBufferSize(kI420, width, height);
+  size_t length = CalcBufferSize(VideoType::kI420, width, height);
   if (size < length) {
      return -1;
   }
@@ -207,36 +171,36 @@ libyuv::RotationMode ConvertRotationMode(VideoRotation rotation) {
 
 int ConvertVideoType(VideoType video_type) {
   switch (video_type) {
-    case kUnknown:
+    case VideoType::kUnknown:
       return libyuv::FOURCC_ANY;
-    case  kI420:
+    case VideoType::kI420:
       return libyuv::FOURCC_I420;
-    case kIYUV:  // same as KYV12
-    case kYV12:
+    case VideoType::kIYUV:  // same as VideoType::kYV12
+    case VideoType::kYV12:
       return libyuv::FOURCC_YV12;
-    case kRGB24:
+    case VideoType::kRGB24:
       return libyuv::FOURCC_24BG;
-    case kABGR:
+    case VideoType::kABGR:
       return libyuv::FOURCC_ABGR;
-    case kRGB565:
+    case VideoType::kRGB565:
       return libyuv::FOURCC_RGBP;
-    case kYUY2:
+    case VideoType::kYUY2:
       return libyuv::FOURCC_YUY2;
-    case kUYVY:
+    case VideoType::kUYVY:
       return libyuv::FOURCC_UYVY;
-    case kMJPG:
+    case VideoType::kMJPEG:
       return libyuv::FOURCC_MJPG;
-    case kNV21:
+    case VideoType::kNV21:
       return libyuv::FOURCC_NV21;
-    case kNV12:
+    case VideoType::kNV12:
       return libyuv::FOURCC_NV12;
-    case kARGB:
+    case VideoType::kARGB:
       return libyuv::FOURCC_ARGB;
-    case kBGRA:
+    case VideoType::kBGRA:
       return libyuv::FOURCC_BGRA;
-    case kARGB4444:
+    case VideoType::kARGB4444:
       return libyuv::FOURCC_R444;
-    case kARGB1555:
+    case VideoType::kARGB1555:
       return libyuv::FOURCC_RGBO;
   }
   RTC_NOTREACHED();

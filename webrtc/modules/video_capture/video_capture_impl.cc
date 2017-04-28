@@ -89,7 +89,7 @@ VideoCaptureImpl::VideoCaptureImpl()
     _requestedCapability.width = kDefaultWidth;
     _requestedCapability.height = kDefaultHeight;
     _requestedCapability.maxFPS = 30;
-    _requestedCapability.rawType = kVideoI420;
+    _requestedCapability.videoType = VideoType::kI420;
     memset(_incomingFrameTimesNanos, 0, sizeof(_incomingFrameTimesNanos));
 }
 
@@ -134,11 +134,8 @@ int32_t VideoCaptureImpl::IncomingFrame(
     TRACE_EVENT1("webrtc", "VC::IncomingFrame", "capture_time", captureTime);
 
     // Not encoded, convert to I420.
-    const VideoType commonVideoType =
-        RawVideoTypeToCommonVideoVideoType(frameInfo.rawType);
-
-    if (frameInfo.rawType != kVideoMJPEG &&
-        CalcBufferSize(commonVideoType, width, abs(height)) !=
+    if (frameInfo.videoType != VideoType::kMJPEG &&
+        CalcBufferSize(frameInfo.videoType, width, abs(height)) !=
             videoFrameLength) {
       LOG(LS_ERROR) << "Wrong incoming frame length.";
       return -1;
@@ -169,12 +166,12 @@ int32_t VideoCaptureImpl::IncomingFrame(
     rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
         target_width, abs(target_height), stride_y, stride_uv, stride_uv);
     const int conversionResult = ConvertToI420(
-        commonVideoType, videoFrame, 0, 0,  // No cropping
+        frameInfo.videoType, videoFrame, 0, 0,  // No cropping
         width, height, videoFrameLength,
         apply_rotation ? _rotateFrame : kVideoRotation_0, buffer.get());
     if (conversionResult < 0) {
       LOG(LS_ERROR) << "Failed to convert capture frame from type "
-                    << frameInfo.rawType << "to I420.";
+                    << static_cast<int>(frameInfo.videoType) << "to I420.";
       return -1;
     }
 

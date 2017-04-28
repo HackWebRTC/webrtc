@@ -53,7 +53,7 @@ private:
     int32_t _currentHeight;
     int32_t _currentFrameRate;
     bool _captureStarted;
-    RawVideoType _captureVideoType;
+    VideoType _captureVideoType;
     struct Buffer
     {
         void *start;

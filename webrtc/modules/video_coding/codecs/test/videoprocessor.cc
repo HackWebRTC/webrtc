@@ -251,7 +251,8 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
   }
 
   if (source_frame_writer_) {
-    size_t length = CalcBufferSize(kI420, buffer->width(), buffer->height());
+    size_t length =
+        CalcBufferSize(VideoType::kI420, buffer->width(), buffer->height());
     rtc::Buffer extracted_buffer(length);
     int extracted_length =
         ExtractBuffer(buffer, length, extracted_buffer.data());
@@ -467,14 +468,15 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
       scaled_buffer->ScaleFrom(*image.video_frame_buffer());
     }
 
-    size_t length =
-        CalcBufferSize(kI420, scaled_buffer->width(), scaled_buffer->height());
+    size_t length = CalcBufferSize(VideoType::kI420, scaled_buffer->width(),
+                                   scaled_buffer->height());
     extracted_buffer.SetSize(length);
     extracted_length =
         ExtractBuffer(scaled_buffer, length, extracted_buffer.data());
   } else {
     // No resize.
-    size_t length = CalcBufferSize(kI420, image.width(), image.height());
+    size_t length =
+        CalcBufferSize(VideoType::kI420, image.width(), image.height());
     extracted_buffer.SetSize(length);
     if (image.video_frame_buffer()->native_handle()) {
       extracted_length =

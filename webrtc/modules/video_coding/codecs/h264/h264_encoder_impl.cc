@@ -107,8 +107,8 @@ static void RtpFragmentize(EncodedImage* encoded_image,
     // should be more than enough to hold any encoded data of future frames of
     // the same size (avoiding possible future reallocation due to variations in
     // required size).
-    encoded_image->_size =
-        CalcBufferSize(kI420, frame_buffer.width(), frame_buffer.height());
+    encoded_image->_size = CalcBufferSize(
+        VideoType::kI420, frame_buffer.width(), frame_buffer.height());
     if (encoded_image->_size < required_size) {
       // Encoded data > unencoded data. Allocate required bytes.
       LOG(LS_WARNING) << "Encoding produced more bytes than the original image "
@@ -254,8 +254,8 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
                                &video_format);
 
   // Initialize encoded image. Default buffer size: size of unencoded data.
-  encoded_image_._size =
-      CalcBufferSize(kI420, codec_settings->width, codec_settings->height);
+  encoded_image_._size = CalcBufferSize(VideoType::kI420, codec_settings->width,
+                                        codec_settings->height);
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_buffer_.reset(encoded_image_._buffer);
   encoded_image_._completeFrame = true;

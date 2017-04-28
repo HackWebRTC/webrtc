@@ -19,39 +19,19 @@
 #include <vector>
 
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/common_types.h"  // RawVideoTypes.
+#include "webrtc/common_types.h"  // VideoTypes.
 #include "webrtc/typedefs.h"
 
 namespace webrtc {
 
 class I420Buffer;
 
-// Supported video types.
-enum VideoType {
-  kUnknown,
-  kI420,
-  kIYUV,
-  kRGB24,
-  kABGR,
-  kARGB,
-  kARGB4444,
-  kRGB565,
-  kARGB1555,
-  kYUY2,
-  kYV12,
-  kUYVY,
-  kMJPG,
-  kNV21,
-  kNV12,
-  kBGRA,
-};
-
 // This is the max PSNR value our algorithms can return.
 const double kPerfectPSNR = 48.0f;
 
-// Conversion between the RawVideoType and the LibYuv videoType.
-// TODO(wu): Consolidate types into one type throughout WebRtc.
-VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type);
+// TODO(nisse): Some downstream apps call CalcBufferSize with
+// ::webrtc::kI420 as the first argument. Delete after they are updated.
+const VideoType kI420 = VideoType::kI420;
 
 // Calculate the required buffer size.
 // Input:
