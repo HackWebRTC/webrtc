@@ -16,7 +16,6 @@
 #endif  // WEBRTC_WIN
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/fileutils.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/pathutils.h"
 #include "webrtc/base/stringutils.h"
