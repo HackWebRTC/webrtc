@@ -583,6 +583,12 @@ TEST(AudioEncoderOpusTest, TestConfigFromParams) {
   config = CreateConfigWithParameters({{"usedtx", "1"}});
   EXPECT_TRUE(config.dtx_enabled);
 
+  config = CreateConfigWithParameters({{"cbr", "0"}});
+  EXPECT_FALSE(config.cbr_enabled);
+
+  config = CreateConfigWithParameters({{"cbr", "1"}});
+  EXPECT_TRUE(config.cbr_enabled);
+
   config = CreateConfigWithParameters({{"maxplaybackrate", "12345"}});
   EXPECT_EQ(12345, config.max_playback_rate_hz);
 
@@ -631,6 +637,9 @@ TEST(AudioEncoderOpusTest, TestConfigFromInvalidParams) {
   EXPECT_EQ(default_config.fec_enabled, config.fec_enabled);
 
   config = CreateConfigWithParameters({{"usedtx", "invalid"}});
+  EXPECT_EQ(default_config.dtx_enabled, config.dtx_enabled);
+
+  config = CreateConfigWithParameters({{"cbr", "invalid"}});
   EXPECT_EQ(default_config.dtx_enabled, config.dtx_enabled);
 
   config = CreateConfigWithParameters({{"maxplaybackrate", "0"}});

@@ -256,6 +256,7 @@ AudioEncoderOpus::Config AudioEncoderOpus::CreateConfig(
   config.max_playback_rate_hz = GetMaxPlaybackRate(format);
   config.fec_enabled = (GetFormatParameter(format, "useinbandfec") == "1");
   config.dtx_enabled = (GetFormatParameter(format, "usedtx") == "1");
+  config.cbr_enabled = (GetFormatParameter(format, "cbr") == "1");
   config.bitrate_bps = rtc::Optional<int>(
       CalculateBitrate(config.max_playback_rate_hz, config.num_channels,
                        GetFormatParameter(format, "maxaveragebitrate")));
@@ -653,7 +654,11 @@ bool AudioEncoderOpus::RecreateEncoderInstance(const Config& config) {
   RTC_CHECK_EQ(0,
                WebRtcOpus_SetPacketLossRate(
                    inst_, static_cast<int32_t>(packet_loss_rate_ * 100 + .5)));
-
+  if (config.cbr_enabled) {
+    RTC_CHECK_EQ(0, WebRtcOpus_EnableCbr(inst_));
+  } else {
+    RTC_CHECK_EQ(0, WebRtcOpus_DisableCbr(inst_));
+  }
   num_channels_to_encode_ = NumChannels();
   next_frame_length_ms_ = config_.frame_size_ms;
   return true;
