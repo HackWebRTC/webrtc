@@ -216,7 +216,6 @@ static NSUInteger const kBottomViewHeight = 200;
   [_scrollView setDocumentView:_logView];
   [self addSubview:_scrollView];
 
-
 // NOTE (daniela): Ignoring Clang diagonstic here.
 // We're performing run time check to make sure class is available on runtime.
 // If not we're providing sensible default.

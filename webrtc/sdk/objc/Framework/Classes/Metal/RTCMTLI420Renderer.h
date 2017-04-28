@@ -9,34 +9,9 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <MetalKit/MTKView.h>
 
-#import "WebRTC/RTCVideoFrame.h"
+#import "RTCMTLRenderer.h"
 
-/**
- * Protocol defining ability to render RTCVideoFrame in Metal enabled views.
- */
-@protocol RTCMTLRenderer <NSObject>
-
-/**
- * Method to be implemented to perform actual rendering of the provided frame.
- *
- * @param frame The frame to be rendered.
- */
-- (void)drawFrame:(RTCVideoFrame *)frame;
-@end
-
-NS_AVAILABLE_MAC(10.11)
-/**
- * Implementation of RTCMTLRenderer protocol for rendering native nv12 video frames.
- */
-@interface RTCMTLI420Renderer : NSObject <RTCMTLRenderer>
-
-/**
- * Sets the provided view as rendering destination if possible.
- *
- * If not possible method returns NO and callers of the method are responisble for performing
- * cleanups.
- */
-- (BOOL)addRenderingDestination:(__kindof MTKView *)view;
+NS_AVAILABLE(10_11, 9_0)
+@interface RTCMTLI420Renderer : RTCMTLRenderer
 @end

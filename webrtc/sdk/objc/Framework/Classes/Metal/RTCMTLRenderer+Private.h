@@ -8,10 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import <Cocoa/Cocoa.h>
-#import "WebRTC/RTCVideoRenderer.h"
+#import <Metal/Metal.h>
+#import "RTCMTLRenderer.h"
 
-NS_AVAILABLE_MAC(10.11)
-@interface RTCMTLNSVideoView : NSView<RTCVideoRenderer>
-
+NS_ASSUME_NONNULL_BEGIN
+@interface RTCMTLRenderer (Private)
+- (nullable id<MTLDevice>)currentMetalDevice;
+- (NSString *)shaderSource;
+- (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame;
+- (void)uploadTexturesToRenderEncoder:(id<MTLRenderCommandEncoder>)renderEncoder;
 @end
+NS_ASSUME_NONNULL_END

@@ -50,12 +50,14 @@ if (is_ios || is_mac) {
       "objc/Framework/Headers/WebRTC/RTCSSLAdapter.h",
       "objc/Framework/Headers/WebRTC/RTCTracing.h",
     ]
+
     deps = [
       "../base:rtc_base",
     ]
     configs += [ "..:common_objc" ]
 
     public_configs = [ ":rtc_sdk_common_objc_config" ]
+
     if (is_ios) {
       sources += [
         "objc/Framework/Classes/RTCCameraPreviewView.m",
@@ -65,23 +67,37 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h",
         "objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h",
       ]
-      if (current_cpu == "arm64") {
+    }
+
+    if (is_mac || (is_ios && current_cpu == "arm64")) {
+      sources += [
+        "objc/Framework/Classes/Metal/RTCMTLI420Renderer.h",
+        "objc/Framework/Classes/Metal/RTCMTLI420Renderer.mm",
+        "objc/Framework/Classes/Metal/RTCMTLRenderer+Private.h",
+        "objc/Framework/Classes/Metal/RTCMTLRenderer.h",
+        "objc/Framework/Classes/Metal/RTCMTLRenderer.mm",
+      ]
+      deps += [ "../api:video_frame_api" ]
+
+      if (is_ios) {
         sources += [
           "objc/Framework/Classes/Metal/RTCMTLNV12Renderer.h",
           "objc/Framework/Classes/Metal/RTCMTLNV12Renderer.mm",
           "objc/Framework/Classes/Metal/RTCMTLVideoView.m",
         ]
-        deps += [ "../api:video_frame_api" ]
       }
+      if (is_mac) {
+        sources += [ "objc/Framework/Classes/Metal/RTCMTLNSVideoView.m" ]
+      }
+    }
 
-      libs = [ "AVFoundation.framework" ]
-      if (current_cpu == "arm64") {
-        libs += [
-          "CoreVideo.framework",
-          "Metal.framework",
-          "MetalKit.framework",
-        ]
-      }
+    libs = [ "AVFoundation.framework" ]
+    if (is_mac || (is_ios && current_cpu == "arm64")) {
+      libs += [
+        "CoreVideo.framework",
+        "Metal.framework",
+        "MetalKit.framework",
+      ]
     }
     if (!build_with_chromium) {
       sources += [
@@ -224,9 +240,6 @@ if (is_ios || is_mac) {
 
     if (is_mac) {
       sources += [
-        "objc/Framework/Classes/Metal/RTCMTLI420Renderer.h",
-        "objc/Framework/Classes/Metal/RTCMTLI420Renderer.mm",
-        "objc/Framework/Classes/Metal/RTCMTLNSVideoView.m",
         "objc/Framework/Classes/RTCNSGLVideoView.m",
         "objc/Framework/Headers/WebRTC/RTCMTLNSVideoView.h",
         "objc/Framework/Headers/WebRTC/RTCNSGLVideoView.h",
