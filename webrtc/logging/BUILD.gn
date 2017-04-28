@@ -175,4 +175,23 @@ if (rtc_enable_protobuf) {
       }
     }
   }
+  if (rtc_include_tests) {
+    rtc_executable("rtc_event_log2stats") {
+      testonly = true
+      sources = [
+        "rtc_event_log/rtc_event_log2stats.cc",
+      ]
+      deps = [
+        ":rtc_event_log_api",
+        ":rtc_event_log_impl",
+        ":rtc_event_log_proto",
+        "../base:rtc_base_approved",
+        "//third_party/gflags",
+      ]
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
+  }
 }
