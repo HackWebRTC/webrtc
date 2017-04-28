@@ -80,7 +80,8 @@ public class PeerConnectionClient {
   private static final String AUDIO_CODEC_OPUS = "opus";
   private static final String AUDIO_CODEC_ISAC = "ISAC";
   private static final String VIDEO_CODEC_PARAM_START_BITRATE = "x-google-start-bitrate";
-  private static final String VIDEO_FLEXFEC_FIELDTRIAL = "WebRTC-FlexFEC-03/Enabled/";
+  private static final String VIDEO_FLEXFEC_FIELDTRIAL =
+      "WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/";
   private static final String VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL = "WebRTC-IntelVP8/Enabled/";
   private static final String VIDEO_H264_HIGH_PROFILE_FIELDTRIAL =
       "WebRTC-H264HighProfile/Enabled/";
