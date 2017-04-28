@@ -158,7 +158,9 @@ class DxgiDuplicatorController {
   // The minimum GetNumFramesCaptured() returned by |duplicators_|.
   int64_t GetNumFramesCaptured() const;
 
-  // Returns a DesktopSize to cover entire |desktop_rect_|.
+  // Returns a DesktopSize to cover entire desktop_rect. This may be different
+  // than desktop_rect().size(), since top-left of the screen does not need to
+  // be started from (0, 0).
   DesktopSize desktop_size() const;
 
   // Returns the size of one screen. |id| should be >= 0. If system does not
@@ -178,12 +180,6 @@ class DxgiDuplicatorController {
   // According to http://crbug.com/682112, dxgi capturer returns a black frame
   // during first several capture attempts.
   bool EnsureFrameCaptured(Context* context, SharedDesktopFrame* target);
-
-  // Moves |desktop_rect_| and all underlying |duplicators_|, putting top left
-  // corner of the desktop at (0, 0). This is necessary because DXGI_OUTPUT_DESC
-  // may return negative coordinates. Called from DoInitialize() after all
-  // DxgiAdapterDuplicator and DxgiOutputDuplicator instances are initialized.
-  void TranslateRect();
 
   // This lock must be locked whenever accessing any of the following objects.
   rtc::CriticalSection lock_;

@@ -71,10 +71,6 @@ class DxgiAdapterDuplicator {
   // The minimum num_frames_captured() returned by |duplicators_|.
   int64_t GetNumFramesCaptured() const;
 
-  // Moves |desktop_rect_| and all underlying |duplicators_|. See
-  // DxgiDuplicatorController::TranslateRect().
-  void TranslateRect(const DesktopVector& position);
-
  private:
   bool DoInitialize();
 

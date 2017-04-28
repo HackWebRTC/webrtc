@@ -75,9 +75,6 @@ class DxgiOutputDuplicator {
   // How many frames have been captured by this DxigOutputDuplicator.
   int64_t num_frames_captured() const;
 
-  // Moves |desktop_rect_|. See DxgiDuplicatorController::TranslateRect().
-  void TranslateRect(const DesktopVector& position);
-
  private:
   // Calls DoDetectUpdatedRegion(). If it fails, this function sets the
   // |updated_region| as entire UntranslatedDesktopRect().
@@ -112,7 +109,7 @@ class DxgiOutputDuplicator {
 
   const D3dDevice device_;
   const Microsoft::WRL::ComPtr<IDXGIOutput1> output_;
-  DesktopRect desktop_rect_;
+  const DesktopRect desktop_rect_;
   Microsoft::WRL::ComPtr<IDXGIOutputDuplication> duplication_;
   DXGI_OUTDUPL_DESC desc_;
   std::vector<uint8_t> metadata_;
