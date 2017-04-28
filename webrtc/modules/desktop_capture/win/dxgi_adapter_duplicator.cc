@@ -25,8 +25,7 @@ using Microsoft::WRL::ComPtr;
 namespace {
 
 bool IsValidRect(const RECT& rect) {
-  return rect.left >= 0 && rect.top >= 0 && rect.right > rect.left &&
-         rect.bottom > rect.top;
+  return rect.right > rect.left && rect.bottom > rect.top;
 }
 
 }  // namespace
@@ -151,6 +150,14 @@ int64_t DxgiAdapterDuplicator::GetNumFramesCaptured() const {
   }
 
   return min;
+}
+
+void DxgiAdapterDuplicator::TranslateRect(const DesktopVector& position) {
+  desktop_rect_.Translate(position);
+  RTC_DCHECK(desktop_rect_.left() >= 0 && desktop_rect_.top() >= 0);
+  for (auto& duplicator : duplicators_) {
+    duplicator.TranslateRect(position);
+  }
 }
 
 }  // namespace webrtc

@@ -193,6 +193,7 @@ bool DxgiDuplicatorController::DoInitialize() {
                                 std::max(left.right(), right.right()),
                                 std::max(left.bottom(), right.bottom()));
     }
+    TranslateRect();
   }
 
   HDC hdc = GetDC(nullptr);
@@ -295,7 +296,7 @@ int64_t DxgiDuplicatorController::GetNumFramesCaptured() const {
 }
 
 DesktopSize DxgiDuplicatorController::desktop_size() const {
-  return DesktopSize(desktop_rect_.right(), desktop_rect_.bottom());
+  return desktop_rect_.size();
 }
 
 DesktopRect DxgiDuplicatorController::ScreenRect(int id) const {
@@ -376,6 +377,15 @@ bool DxgiDuplicatorController::EnsureFrameCaptured(Context* context,
     }
   }
   return true;
+}
+
+void DxgiDuplicatorController::TranslateRect() {
+  const DesktopVector position =
+      DesktopVector().subtract(desktop_rect_.top_left());
+  desktop_rect_.Translate(position);
+  for (auto& duplicator : duplicators_) {
+    duplicator.TranslateRect(position);
+  }
 }
 
 }  // namespace webrtc
