@@ -258,7 +258,7 @@ webrtc_fuzzer_test("neteq_rtp_fuzzer") {
   ]
   deps = [
     "../../modules/audio_coding:neteq",
-    "../../modules/audio_coding:neteq_test_minimal",
+    "../../modules/audio_coding:neteq_tools_minimal",
     "../../modules/audio_coding:pcm16b",
     "../../modules/rtp_rtcp",
   ]
