@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"

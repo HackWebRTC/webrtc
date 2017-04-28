@@ -160,7 +160,7 @@ void AVFoundationVideoCapturer::CaptureSampleBuffer(
   // Applying rotation is only supported for legacy reasons and performance is
   // not critical here.
   if (apply_rotation() && rotation != kVideoRotation_0) {
-    buffer = I420Buffer::Rotate(buffer->NativeToI420Buffer(),
+    buffer = I420Buffer::Rotate(*buffer->NativeToI420Buffer(),
                                 rotation);
     if (rotation == kVideoRotation_90 || rotation == kVideoRotation_270) {
       std::swap(captured_width, captured_height);
