@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '321e67522e27a9b535ff9d9a51e7c2a4b90b9b01',
+  'chromium_revision': 'beff0a104dbf869114f66db3efc2d52094050971',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -34,9 +34,9 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '3ec90df7cfb29595524e156ab0ace08d7bf42ba9',
+    Var('chromium_git') + '/chromium/src/base' + '@' + '868273e4a5426a233e3a3dfd1119cee481af0367',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '853f22fc61f50c5749279c3c51cca22e4bb91e8b',
+    Var('chromium_git') + '/chromium/src/build' + '@' + 'e198cab40966bb1bce92bab128f90c2cd9735730',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '98f00fa10dbad2cdbb2e297a66c3d6d5bc3994f3',
   'src/testing':
@@ -46,7 +46,7 @@ deps = {
   'src/testing/gmock':
     Var('chromium_git') + '/external/googlemock.git' + '@' + '0421b6f358139f02e102c9c332ce19a33faf75be', # from svn revision 566
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '959b0bd5194b41dbdd5b42a1770ffc294c5a62fd',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '0d2943879eaafe03a2b0984dd76b58fe6c711749',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -91,7 +91,7 @@ deps = {
   'src/third_party/gflags/src':
     Var('chromium_git') + '/external/github.com/gflags/gflags' + '@' + '03bebcb065c83beff83d50ae025a55a4bf94dfca',
   'src/third_party/gtest-parallel':
-    Var('chromium_git') + '/external/github.com/google/gtest-parallel' + '@' + '5af9d383bcf7e4e4ba10ee1a75b415599341ae2a',
+    Var('chromium_git') + '/external/github.com/google/gtest-parallel' + '@' + 'c9bb1c9e8aa44238b59fc5a65fb01a7bee04257b',
 }
 
 deps_os = {
