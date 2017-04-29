@@ -394,8 +394,7 @@ namespace sigslot {
 	protected:
 		typedef std::list< _opaque_connection > connections_list;
 
-		_signal_base() : _signal_base_interface(&_signal_base::do_slot_disconnect, &_signal_base::do_slot_duplicate),
-    m_current_iterator(m_connected_slots.end())
+		_signal_base() : _signal_base_interface(&_signal_base::do_slot_disconnect, &_signal_base::do_slot_duplicate)
 		{
 		}
 
@@ -408,8 +407,7 @@ namespace sigslot {
 		_signal_base& operator= (_signal_base const& that);
 
 	public:
-		_signal_base(const _signal_base& o) : _signal_base_interface(&_signal_base::do_slot_disconnect, &_signal_base::do_slot_duplicate),
-   m_current_iterator(m_connected_slots.end()) {
+		_signal_base(const _signal_base& o) : _signal_base_interface(&_signal_base::do_slot_disconnect, &_signal_base::do_slot_duplicate) {
 			lock_block<mt_policy> lock(this);
       for (const auto& connection : o.m_connected_slots)
 			{
@@ -462,14 +460,7 @@ namespace sigslot {
 			{
 				if(it->getdest() == pclass)
 				{
-          // If we're currently using this iterator,
-          // don't erase it and invalidate it yet; set a
-          // flag to do so afterwards.
-          if (m_current_iterator == it) {
-            m_erase_current_iterator = true;
-          } else {
-            m_connected_slots.erase(it);
-          }
+					m_connected_slots.erase(it);
 					pclass->signal_disconnect(static_cast< _signal_base_interface* >(this));
 					return;
 				}
@@ -493,15 +484,8 @@ namespace sigslot {
 
 				if(it->getdest() == pslot)
 				{
-                                  // If we're currently using this iterator,
-                                  // don't erase it and invalidate it yet; set a
-                                  // flag to do so afterwards.
-                                  if (self->m_current_iterator == it) {
-                                    self->m_erase_current_iterator = true;
-                                  } else {
-                                    self->m_connected_slots.erase(it);
-                                  }
-                                }
+					self->m_connected_slots.erase(it);
+				}
 
 				it = itNext;
 			}
@@ -527,12 +511,7 @@ namespace sigslot {
 
 	protected:
 		connections_list m_connected_slots;
-
-                // Used to handle a slot being disconnected while a signal is
-                // firing (iterating m_connected_slots).
-                connections_list::iterator m_current_iterator;
-                bool m_erase_current_iterator = false;
-        };
+	};
 
 	template<class mt_policy = SIGSLOT_DEFAULT_MT_POLICY>
 	class has_slots : public has_slots_interface, public mt_policy
@@ -626,22 +605,16 @@ namespace sigslot {
 		void emit(Args... args)
 		{
 			lock_block<mt_policy> lock(this);
-                        this->m_current_iterator =
-                            this->m_connected_slots.begin();
-                        while (this->m_current_iterator !=
-                               this->m_connected_slots.end()) {
-                          _opaque_connection const& conn =
-                              *this->m_current_iterator;
-                          conn.emit<Args...>(args...);
-                          if (this->m_erase_current_iterator) {
-                            this->m_current_iterator =
-                                this->m_connected_slots.erase(
-                                    this->m_current_iterator);
-                            this->m_erase_current_iterator = false;
-                          } else {
-                            ++(this->m_current_iterator);
-                          }
-                        }
+			typename connections_list::const_iterator it = this->m_connected_slots.begin();
+			typename connections_list::const_iterator itEnd = this->m_connected_slots.end();
+
+			while(it != itEnd)
+			{
+				_opaque_connection const& conn = *it;
+				++it;
+
+				conn.emit<Args...>(args...);
+			}
 		}
 
 		void operator()(Args... args)
