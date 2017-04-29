@@ -407,15 +407,12 @@ namespace sigslot {
 		_signal_base& operator= (_signal_base const& that);
 
 	public:
-		_signal_base(const _signal_base& s) : _signal_base_interface(&_signal_base::do_slot_disconnect, &_signal_base::do_slot_duplicate) {
+		_signal_base(const _signal_base& o) : _signal_base_interface(&_signal_base::do_slot_disconnect, &_signal_base::do_slot_duplicate) {
 			lock_block<mt_policy> lock(this);
-			connections_list::const_iterator it = m_connected_slots.begin();
-			connections_list::const_iterator itEnd = m_connected_slots.end();
-			while(it != itEnd)
+      for (const auto& connection : o.m_connected_slots)
 			{
-				it->getdest()->signal_connect(this);
-				m_connected_slots.push_back(*it);
-				++it;
+				connection.getdest()->signal_connect(this);
+				m_connected_slots.push_back(connection);
 			}
 		}
 
@@ -528,13 +525,21 @@ namespace sigslot {
 		{
 		}
 
+		has_slots(has_slots const& o) : has_slots_interface(&has_slots::do_signal_connect, &has_slots::do_signal_disconnect, &has_slots::do_disconnect_all)
+    {
+			lock_block<mt_policy> lock(this);
+      for (auto* sender : o.m_senders) {
+        sender->slot_duplicate(&o, this);
+        m_senders.insert(sender);
+      }
+    }
+
 		~has_slots()
 		{
 			this->disconnect_all();
 		}
 
 	private:
-		has_slots(has_slots const&);
 		has_slots& operator= (has_slots const&);
 
 		static void do_signal_connect(has_slots_interface* p, _signal_base_interface* sender)

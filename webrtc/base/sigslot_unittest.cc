@@ -36,6 +36,10 @@ class SigslotReceiver : public sigslot::has_slots<slot_policy> {
   ~SigslotReceiver() {
   }
 
+  // Provide copy constructor so that tests can exercise the has_slots copy
+  // constructor.
+  SigslotReceiver(const SigslotReceiver&) = default;
+
   void Connect(sigslot::signal0<signal_policy>* signal) {
     if (!signal) return;
     Disconnect();
@@ -222,7 +226,7 @@ TEST_F(SigslotMTLockTest, LockSanity) {
 }
 
 // Destroy signal and slot in different orders.
-TEST(DestructionOrder, SignalFirst) {
+TEST(SigslotDestructionOrder, SignalFirst) {
   sigslot::signal0<>* signal = new sigslot::signal0<>;
   SigslotReceiver<>* receiver = new SigslotReceiver<>();
   receiver->Connect(signal);
@@ -232,7 +236,7 @@ TEST(DestructionOrder, SignalFirst) {
   delete receiver;
 }
 
-TEST(DestructionOrder, SlotFirst) {
+TEST(SigslotDestructionOrder, SlotFirst) {
   sigslot::signal0<>* signal = new sigslot::signal0<>;
   SigslotReceiver<>* receiver = new SigslotReceiver<>();
   receiver->Connect(signal);
@@ -242,4 +246,29 @@ TEST(DestructionOrder, SlotFirst) {
   delete receiver;
   (*signal)();
   delete signal;
+}
+
+// Test that if a signal is copied, its slot connections are copied as well.
+TEST(SigslotTest, CopyConnectedSignal) {
+  sigslot::signal<> signal;
+  SigslotReceiver<> receiver;
+  receiver.Connect(&signal);
+
+  // Fire the copied signal, expecting the receiver to be notified.
+  sigslot::signal<> copied_signal(signal);
+  copied_signal();
+  EXPECT_EQ(1, receiver.signal_count());
+}
+
+// Test that if a slot is copied, its signal connections are copied as well.
+TEST(SigslotTest, CopyConnectedSlot) {
+  sigslot::signal<> signal;
+  SigslotReceiver<> receiver;
+  receiver.Connect(&signal);
+
+  // Fire the signal after copying the receiver, expecting the copied receiver
+  // to be notified.
+  SigslotReceiver<> copied_receiver(receiver);
+  signal();
+  EXPECT_EQ(1, copied_receiver.signal_count());
 }
