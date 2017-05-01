@@ -3,3 +3,6 @@
 PhysicalSocketTest.TestUdpReadyToSendIPv4
 PhysicalSocketTest.TestUdpIPv4
 PhysicalSocketTest.TestSocketRecvTimestampIPv4
+# Relies on actual CPU timing, so can be flaky on memcheck.
+CpuTimeTest.TwoThreads
+CpuTimeTest.Sleeping
