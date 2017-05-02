@@ -131,6 +131,30 @@ VP8Decoder* VP8Decoder::Create() {
   return new VP8DecoderImpl();
 }
 
+vpx_enc_frame_flags_t VP8EncoderImpl::EncodeFlags(
+    TemporalReferences references) {
+  RTC_DCHECK(!references.drop_frame);
+
+  vpx_enc_frame_flags_t flags = 0;
+
+  if ((references.last_buffer_flags & kReference) == 0)
+    flags |= VP8_EFLAG_NO_REF_LAST;
+  if ((references.last_buffer_flags & kUpdate) == 0)
+    flags |= VP8_EFLAG_NO_UPD_LAST;
+  if ((references.golden_buffer_flags & kReference) == 0)
+    flags |= VP8_EFLAG_NO_REF_GF;
+  if ((references.golden_buffer_flags & kUpdate) == 0)
+    flags |= VP8_EFLAG_NO_UPD_GF;
+  if ((references.arf_buffer_flags & kReference) == 0)
+    flags |= VP8_EFLAG_NO_REF_ARF;
+  if ((references.arf_buffer_flags & kUpdate) == 0)
+    flags |= VP8_EFLAG_NO_UPD_ARF;
+  if (references.freeze_entropy)
+    flags |= VP8_EFLAG_NO_UPD_ENTROPY;
+
+  return flags;
+}
+
 VP8EncoderImpl::VP8EncoderImpl()
     : use_gf_boost_(webrtc::field_trial::IsEnabled(kVp8GfBoostFieldTrial)),
       encoded_complete_callback_(nullptr),
@@ -682,12 +706,14 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   }
   vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
-    int ret = temporal_layers_[i]->EncodeFlags(frame.timestamp());
-    if (ret < 0) {
+    TemporalReferences tl_config =
+        temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
+
+    if (tl_config.drop_frame) {
       // Drop this frame.
       return WEBRTC_VIDEO_CODEC_OK;
     }
-    flags[i] = ret;
+    flags[i] = EncodeFlags(tl_config);
   }
   bool send_key_frame = false;
   for (size_t i = 0; i < key_frame_request_.size() && i < send_stream_.size();

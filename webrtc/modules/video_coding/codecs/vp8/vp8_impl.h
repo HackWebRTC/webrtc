@@ -25,8 +25,9 @@
 
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/common_video/include/i420_buffer_pool.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
+#include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/video_frame.h"
 
@@ -60,6 +61,8 @@ class VP8EncoderImpl : public VP8Encoder {
   ScalingSettings GetScalingSettings() const override;
 
   const char* ImplementationName() const override;
+
+  static vpx_enc_frame_flags_t EncodeFlags(TemporalReferences references);
 
  private:
   void SetupTemporalLayers(int num_streams,

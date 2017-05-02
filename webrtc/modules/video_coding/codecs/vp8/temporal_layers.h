@@ -71,8 +71,6 @@ class TemporalLayers {
   // and/or update the reference buffers.
   virtual TemporalReferences UpdateLayerConfig(uint32_t timestamp) = 0;
 
-  int EncodeFlags(uint32_t timestamp);
-
   // Update state based on new bitrate target and incoming framerate.
   // Returns the bitrate allocation for the active temporal layers.
   virtual std::vector<uint32_t> OnRatesUpdated(int bitrate_kbps,

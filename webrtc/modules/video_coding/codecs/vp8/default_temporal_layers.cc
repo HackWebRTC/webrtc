@@ -252,31 +252,6 @@ TemporalReferences DefaultTemporalLayers::UpdateLayerConfig(
   return temporal_pattern_[++pattern_idx_ % temporal_pattern_.size()];
 }
 
-int TemporalLayers::EncodeFlags(uint32_t timestamp) {
-  TemporalReferences references = UpdateLayerConfig(timestamp);
-  if (references.drop_frame)
-    return -1;
-
-  int flags = 0;
-
-  if ((references.last_buffer_flags & kReference) == 0)
-    flags |= VP8_EFLAG_NO_REF_LAST;
-  if ((references.last_buffer_flags & kUpdate) == 0)
-    flags |= VP8_EFLAG_NO_UPD_LAST;
-  if ((references.golden_buffer_flags & kReference) == 0)
-    flags |= VP8_EFLAG_NO_REF_GF;
-  if ((references.golden_buffer_flags & kUpdate) == 0)
-    flags |= VP8_EFLAG_NO_UPD_GF;
-  if ((references.arf_buffer_flags & kReference) == 0)
-    flags |= VP8_EFLAG_NO_REF_ARF;
-  if ((references.arf_buffer_flags & kUpdate) == 0)
-    flags |= VP8_EFLAG_NO_UPD_ARF;
-  if (references.freeze_entropy)
-    flags |= VP8_EFLAG_NO_UPD_ENTROPY;
-
-  return flags;
-}
-
 void DefaultTemporalLayers::PopulateCodecSpecific(
     bool frame_is_keyframe,
     CodecSpecificInfoVP8* vp8_info,
