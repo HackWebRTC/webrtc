@@ -102,7 +102,6 @@ class VP8EncoderImpl : public VP8Encoder {
   uint32_t rc_max_intra_target_;
   std::vector<TemporalLayers*> temporal_layers_;
   std::vector<uint16_t> picture_id_;
-  std::vector<int> last_key_frame_picture_id_;
   std::vector<bool> key_frame_request_;
   std::vector<bool> send_stream_;
   std::vector<int> cpu_speed_;

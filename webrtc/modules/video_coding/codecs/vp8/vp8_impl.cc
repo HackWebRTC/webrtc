@@ -169,7 +169,6 @@ VP8EncoderImpl::VP8EncoderImpl()
   srand(seed);
 
   picture_id_.reserve(kMaxSimulcastStreams);
-  last_key_frame_picture_id_.reserve(kMaxSimulcastStreams);
   temporal_layers_.reserve(kMaxSimulcastStreams);
   raw_images_.reserve(kMaxSimulcastStreams);
   encoded_images_.reserve(kMaxSimulcastStreams);
@@ -359,7 +358,6 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   picture_id_.resize(number_of_streams);
-  last_key_frame_picture_id_.resize(number_of_streams);
   encoded_images_.resize(number_of_streams);
   encoders_.resize(number_of_streams);
   configurations_.resize(number_of_streams);
@@ -386,7 +384,6 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
   for (int i = 0; i < number_of_streams; ++i) {
     // Random start, 16 bits is enough.
     picture_id_[i] = static_cast<uint16_t>(rand()) & 0x7FFF;  // NOLINT
-    last_key_frame_picture_id_[i] = -1;
     // allocate memory for encoded image
     if (encoded_images_[i]._buffer != NULL) {
       delete[] encoded_images_[i]._buffer;
@@ -803,9 +800,6 @@ void VP8EncoderImpl::PopulateCodecSpecific(
   codec_specific->codec_name = ImplementationName();
   CodecSpecificInfoVP8* vp8Info = &(codec_specific->codecSpecific.VP8);
   vp8Info->pictureId = picture_id_[stream_idx];
-  if (pkt.data.frame.flags & VPX_FRAME_IS_KEY) {
-    last_key_frame_picture_id_[stream_idx] = picture_id_[stream_idx];
-  }
   vp8Info->simulcastIdx = stream_idx;
   vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
   vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) != 0;
