@@ -8,13 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/mock/mock_audio_encoder.h"
+#include "webrtc/test/mock_audio_encoder.h"
 
 namespace webrtc {
 
+MockAudioEncoder::MockAudioEncoder() = default;
+MockAudioEncoder::~MockAudioEncoder() {
+  Die();
+}
+
 MockAudioEncoder::FakeEncoding::FakeEncoding(
     const AudioEncoder::EncodedInfo& info)
-    : info_(info) { }
+    : info_(info) {}
 
 MockAudioEncoder::FakeEncoding::FakeEncoding(size_t encoded_bytes) {
   info_.encoded_bytes = encoded_bytes;
@@ -28,10 +33,12 @@ AudioEncoder::EncodedInfo MockAudioEncoder::FakeEncoding::operator()(
   return info_;
 }
 
+MockAudioEncoder::CopyEncoding::~CopyEncoding() = default;
+
 MockAudioEncoder::CopyEncoding::CopyEncoding(
     AudioEncoder::EncodedInfo info,
     rtc::ArrayView<const uint8_t> payload)
-    : info_(info), payload_(payload) { }
+    : info_(info), payload_(payload) {}
 
 MockAudioEncoder::CopyEncoding::CopyEncoding(
     rtc::ArrayView<const uint8_t> payload)

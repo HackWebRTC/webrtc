@@ -14,6 +14,8 @@
 #include <utility>  // For std::move.
 #include <vector>
 
+#include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/api/mediastreamtrackproxy.h"
 #include "webrtc/api/proxy.h"
 #include "webrtc/api/rtcerror.h"
@@ -25,7 +27,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/mediaconstants.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_decoder_factory.h"
 #include "webrtc/ortc/ortcrtpreceiveradapter.h"
 #include "webrtc/ortc/ortcrtpsenderadapter.h"
 #include "webrtc/ortc/rtpparametersconversion.h"
@@ -168,6 +169,7 @@ OrtcFactory::OrtcFactory(rtc::Thread* network_thread,
       socket_factory_(socket_factory),
       adm_(adm),
       null_event_log_(RtcEventLog::CreateNull()),
+      audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
       audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()) {
   if (!rtc::CreateRandomString(kDefaultRtcpCnameLength, &default_cname_)) {
     LOG(LS_ERROR) << "Failed to generate CNAME?";
@@ -542,8 +544,9 @@ OrtcFactory::CreateMediaEngine_w() {
   // Note that |adm_| may be null, in which case the platform-specific default
   // AudioDeviceModule will be used.
   return std::unique_ptr<cricket::MediaEngineInterface>(
-      cricket::WebRtcMediaEngineFactory::Create(adm_, audio_decoder_factory_,
-                                                nullptr, nullptr, nullptr));
+      cricket::WebRtcMediaEngineFactory::Create(adm_, audio_encoder_factory_,
+                                                audio_decoder_factory_, nullptr,
+                                                nullptr, nullptr));
 }
 
 }  // namespace webrtc

@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "webrtc/api/audio/audio_mixer.h"
+#include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/call/audio_sink.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
@@ -23,7 +24,6 @@
 #include "webrtc/common_types.h"
 #include "webrtc/modules/audio_coding/acm2/codec_manager.h"
 #include "webrtc/modules/audio_coding/acm2/rent_a_codec.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_conference_mixer/include/audio_conference_mixer_defines.h"
 #include "webrtc/modules/audio_processing/rms_level.h"

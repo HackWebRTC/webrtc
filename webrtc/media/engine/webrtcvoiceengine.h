@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/audio_codecs/audio_encoder_factory.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/base/buffer.h"
 #include "webrtc/base/constructormagic.h"
@@ -29,7 +30,6 @@
 #include "webrtc/media/engine/apm_helpers.h"
 #include "webrtc/media/engine/webrtccommon.h"
 #include "webrtc/media/engine/webrtcvoe.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder_factory.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/pc/channel.h"
 
@@ -54,11 +54,13 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
  public:
   WebRtcVoiceEngine(
       webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
       rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
   // Dependency injection for testing.
   WebRtcVoiceEngine(
       webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
       rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
       VoEWrapper* voe_wrapper);

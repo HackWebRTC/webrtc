@@ -12,11 +12,11 @@
 #define WEBRTC_VOICE_ENGINE_CHANNEL_PROXY_H_
 
 #include "webrtc/api/audio/audio_mixer.h"
+#include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/rtpreceiverinterface.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/race_checker.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/voice_engine/channel_manager.h"
 #include "webrtc/voice_engine/include/voe_rtp_rtcp.h"
 

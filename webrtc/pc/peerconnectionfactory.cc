@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/mediastreamproxy.h"
 #include "webrtc/api/mediastreamtrackproxy.h"
@@ -24,7 +25,6 @@
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/modules/audio_device/include/audio_device.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 #include "webrtc/p2p/client/basicportallocator.h"
@@ -139,7 +139,7 @@ PeerConnectionFactory::PeerConnectionFactory(
       network_thread_(rtc::Thread::CreateWithSocketServer().release()),
       worker_thread_(rtc::Thread::Create().release()),
       signaling_thread_(rtc::Thread::Current()),
-      // TODO(ossu): Take care of audio_encoder_factory (see bug 5806).
+      audio_encoder_factory_(audio_encoder_factory),
       audio_decoder_factory_(audio_decoder_factory) {
   if (!signaling_thread_) {
     signaling_thread_ = rtc::ThreadManager::Instance()->WrapCurrentThread();
@@ -165,7 +165,7 @@ PeerConnectionFactory::PeerConnectionFactory(
       worker_thread_(worker_thread),
       signaling_thread_(signaling_thread),
       default_adm_(default_adm),
-      // TODO(ossu): Take care of audio_encoder_factory (see bug 5806).
+      audio_encoder_factory_(audio_encoder_factory),
       audio_decoder_factory_(audio_decoder_factory),
       video_encoder_factory_(video_encoder_factory),
       video_decoder_factory_(video_decoder_factory),
@@ -391,7 +391,8 @@ PeerConnectionFactory::CreateMediaEngine_w() {
   RTC_DCHECK(worker_thread_ == rtc::Thread::Current());
   return std::unique_ptr<cricket::MediaEngineInterface>(
       cricket::WebRtcMediaEngineFactory::Create(
-          default_adm_.get(), audio_decoder_factory_,
+          default_adm_.get(), audio_encoder_factory_,
+          audio_decoder_factory_,
           video_encoder_factory_.get(), video_decoder_factory_.get(),
           external_audio_mixer_));
 }

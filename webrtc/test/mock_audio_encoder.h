@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_MOCK_MOCK_AUDIO_ENCODER_H_
-#define WEBRTC_MODULES_AUDIO_CODING_CODECS_MOCK_MOCK_AUDIO_ENCODER_H_
+#ifndef WEBRTC_TEST_MOCK_AUDIO_ENCODER_H_
+#define WEBRTC_TEST_MOCK_AUDIO_ENCODER_H_
 
 #include <string>
 
+#include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/base/array_view.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/test/gmock.h"
 
 namespace webrtc {
@@ -25,7 +25,8 @@ class MockAudioEncoder : public AudioEncoder {
   // methods don't use any override declarations, and we want to avoid
   // warnings from -Winconsistent-missing-override. See
   // http://crbug.com/428099.
-  ~MockAudioEncoder() /* override */ { Die(); }
+  MockAudioEncoder();
+  ~MockAudioEncoder();
   MOCK_METHOD0(Die, void());
   MOCK_METHOD1(Mark, void(std::string desc));
   MOCK_CONST_METHOD0(SampleRateHz, int());
@@ -48,8 +49,7 @@ class MockAudioEncoder : public AudioEncoder {
                void(float uplink_packet_loss_fraction));
 
   MOCK_METHOD2(EnableAudioNetworkAdaptor,
-               bool(const std::string& config_string,
-                    RtcEventLog* event_log));
+               bool(const std::string& config_string, RtcEventLog* event_log));
 
   // Note, we explicitly chose not to create a mock for the Encode method.
   MOCK_METHOD3(EncodeImpl,
@@ -77,6 +77,8 @@ class MockAudioEncoder : public AudioEncoder {
 
   class CopyEncoding {
    public:
+    ~CopyEncoding();
+
     // Creates a functor that will return |info| and append the data in the
     // payload to the buffer given as input to it. Up to info.encoded_bytes are
     // appended - make sure the payload is big enough!  Since it uses an
@@ -102,4 +104,4 @@ class MockAudioEncoder : public AudioEncoder {
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_MOCK_MOCK_AUDIO_ENCODER_H_
+#endif  // WEBRTC_TEST_MOCK_AUDIO_ENCODER_H_

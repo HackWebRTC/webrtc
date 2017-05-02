@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_encoder_factory.h"
+#include "webrtc/modules/audio_coding/codecs/builtin_audio_encoder_factory_internal.h"
 
 #include <memory>
 #include <vector>
@@ -25,10 +25,10 @@
 #include "webrtc/modules/audio_coding/codecs/ilbc/audio_encoder_ilbc.h"
 #endif
 #ifdef WEBRTC_CODEC_ISACFX
-#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"
+#include "webrtc/modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"  // nogncheck
 #endif
 #ifdef WEBRTC_CODEC_ISAC
-#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
+#include "webrtc/modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"  // nogncheck
 #endif
 #ifdef WEBRTC_CODEC_OPUS
 #include "webrtc/modules/audio_coding/codecs/opus/audio_encoder_opus.h"
@@ -135,7 +135,8 @@ class BuiltinAudioEncoderFactory : public AudioEncoderFactory {
   }
 };
 
-rtc::scoped_refptr<AudioEncoderFactory> CreateBuiltinAudioEncoderFactory() {
+rtc::scoped_refptr<AudioEncoderFactory>
+CreateBuiltinAudioEncoderFactoryInternal() {
   return rtc::scoped_refptr<AudioEncoderFactory>(
       new rtc::RefCountedObject<BuiltinAudioEncoderFactory>());
 }

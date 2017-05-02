@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_AUDIO_ENCODER_ILBC_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_ILBC_AUDIO_ENCODER_ILBC_H_
 
+#include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/base/constructormagic.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/ilbc/ilbc.h"
 
 namespace webrtc {

@@ -37,7 +37,6 @@
 #include "webrtc/media/engine/payload_type_mapper.h"
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvoe.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
@@ -211,20 +210,26 @@ rtc::Optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
 
 WebRtcVoiceEngine::WebRtcVoiceEngine(
     webrtc::AudioDeviceModule* adm,
+    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer)
-    : WebRtcVoiceEngine(adm, decoder_factory, audio_mixer, new VoEWrapper()) {
+    : WebRtcVoiceEngine(adm,
+                        encoder_factory,
+                        decoder_factory,
+                        audio_mixer,
+                        new VoEWrapper()) {
   audio_state_ =
       webrtc::AudioState::Create(MakeAudioStateConfig(voe(), audio_mixer));
 }
 
 WebRtcVoiceEngine::WebRtcVoiceEngine(
     webrtc::AudioDeviceModule* adm,
+    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
     VoEWrapper* voe_wrapper)
     : adm_(adm),
-      encoder_factory_(webrtc::CreateBuiltinAudioEncoderFactory()),
+      encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
       voe_wrapper_(voe_wrapper) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
@@ -234,7 +239,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
 
   signal_thread_checker_.DetachFromThread();
 
-  // Load our audio codec list.
+  // Load our audio codec lists.
   LOG(LS_INFO) << "Supported send codecs in order of preference:";
   send_codecs_ = CollectCodecs(encoder_factory_->GetSupportedEncoders());
   for (const AudioCodec& codec : send_codecs_) {

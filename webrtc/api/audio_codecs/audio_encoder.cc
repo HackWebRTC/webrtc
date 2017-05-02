@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
+#include "webrtc/api/audio_codecs/audio_encoder.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/trace_event.h"
@@ -63,7 +63,9 @@ void AudioEncoder::SetMaxPlaybackRate(int frequency_hz) {}
 void AudioEncoder::SetTargetBitrate(int target_bps) {}
 
 rtc::ArrayView<std::unique_ptr<AudioEncoder>>
-AudioEncoder::ReclaimContainedEncoders() { return nullptr; }
+AudioEncoder::ReclaimContainedEncoders() {
+  return nullptr;
+}
 
 bool AudioEncoder::EnableAudioNetworkAdaptor(const std::string& config_string,
                                              RtcEventLog* event_log) {

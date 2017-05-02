@@ -16,13 +16,13 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/audio_codecs/audio_encoder.h"
 #include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/protobuf_utils.h"
 #include "webrtc/common_audio/smoothing_filter.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder.h"
 #include "webrtc/modules/audio_coding/codecs/opus/opus_interface.h"
 
 namespace webrtc {

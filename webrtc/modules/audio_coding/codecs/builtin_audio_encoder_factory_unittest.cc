@@ -12,7 +12,7 @@
 #include <memory>
 #include <vector>
 
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_encoder_factory.h"
+#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 

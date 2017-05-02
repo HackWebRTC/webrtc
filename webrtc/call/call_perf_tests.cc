@@ -13,13 +13,13 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/call/call.h"
 #include "webrtc/config.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
-#include "webrtc/modules/audio_coding/codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/modules/audio_coding/include/audio_coding_module.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"

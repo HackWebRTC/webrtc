@@ -56,6 +56,25 @@ class WebRtcMediaEngineFactory {
       WebRtcVideoEncoderFactory* video_encoder_factory,
       WebRtcVideoDecoderFactory* video_decoder_factory,
       rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
+
+  static MediaEngineInterface* Create(
+      webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
+          audio_encoder_factory,
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+          audio_decoder_factory,
+      WebRtcVideoEncoderFactory* video_encoder_factory,
+      WebRtcVideoDecoderFactory* video_decoder_factory);
+
+  static MediaEngineInterface* Create(
+      webrtc::AudioDeviceModule* adm,
+      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
+          audio_encoder_factory,
+      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
+          audio_decoder_factory,
+      WebRtcVideoEncoderFactory* video_encoder_factory,
+      WebRtcVideoDecoderFactory* video_decoder_factory,
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
 };
 
 // Verify that extension IDs are within 1-byte extension range and are not

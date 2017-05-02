@@ -431,11 +431,11 @@ rtc_source_set("test_common") {
     ":test_support",
     ":video_test_common",
     "..:webrtc_common",
+    "../api/audio_codecs:builtin_audio_encoder_factory",
     "../api/video_codecs:video_codecs_api",
     "../audio",
     "../base:rtc_base_approved",
     "../call",
-    "../modules/audio_coding:builtin_audio_encoder_factory",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing",
     "../video",
@@ -524,5 +524,13 @@ rtc_source_set("audio_codec_mocks") {
   sources = [
     "mock_audio_decoder.h",
     "mock_audio_decoder_factory.h",
+    "mock_audio_encoder.cc",
+    "mock_audio_encoder.h",
+    "mock_audio_encoder_factory.h",
+  ]
+
+  deps = [
+    "../api/audio_codecs:audio_codecs_api",
+    "//testing/gmock",
   ]
 }

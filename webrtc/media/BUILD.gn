@@ -100,12 +100,11 @@ rtc_static_library("rtc_media_base") {
     "../api:libjingle_peerconnection_api",
     "../api:video_frame_api",
     "../api/audio_codecs:audio_codecs_api",
+    "../api/audio_codecs:builtin_audio_encoder_factory",
     "../base:rtc_base",
     "../base:rtc_base_approved",
     "../call:call_interfaces",
     "../common_video:common_video",
-    "../modules/audio_coding:audio_encoder_factory_interface",
-    "../modules/audio_coding:builtin_audio_encoder_factory",
     "../p2p",
   ]
 
@@ -444,6 +443,7 @@ if (rtc_include_tests) {
       ":rtc_media_tests_utils",
       "../api:video_frame_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
+      "../api/audio_codecs:builtin_audio_encoder_factory",
       "../api/video_codecs:video_codecs_api",
       "../audio",
       "../base:rtc_base",

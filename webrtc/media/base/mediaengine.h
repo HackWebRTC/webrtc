@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "webrtc/api/audio_codecs/audio_decoder_factory.h"
+#include "webrtc/api/audio_codecs/audio_encoder_factory.h"
 #include "webrtc/api/rtpparameters.h"
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/sigslotrepeater.h"
@@ -112,10 +113,13 @@ template<class VOICE, class VIDEO>
 class CompositeMediaEngine : public MediaEngineInterface {
  public:
   CompositeMediaEngine(webrtc::AudioDeviceModule* adm,
+                       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
+                           audio_encoder_factory,
                        const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
                            audio_decoder_factory,
                        rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer)
-      : voice_(adm, audio_decoder_factory, audio_mixer) {}
+      : voice_(adm, audio_encoder_factory, audio_decoder_factory, audio_mixer) {
+  }
   virtual ~CompositeMediaEngine() {}
   virtual bool Init() {
     video_.Init();

@@ -15,11 +15,11 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/audio_codecs/audio_encoder_factory.h"
 #include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/api/call/transport.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/config.h"
-#include "webrtc/modules/audio_coding/codecs/audio_encoder_factory.h"
 #include "webrtc/typedefs.h"
 
 namespace webrtc {

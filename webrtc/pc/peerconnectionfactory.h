@@ -134,6 +134,7 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   Options options_;
   // External Audio device used for audio playback.
   rtc::scoped_refptr<AudioDeviceModule> default_adm_;
+  rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory_;
   rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
   // External Video encoder factory. This can be NULL if the client has not

@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/byteorder.h"
 #include "webrtc/base/safe_conversions.h"
@@ -29,6 +30,7 @@
 #include "webrtc/test/field_trial.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_audio_decoder_factory.h"
+#include "webrtc/test/mock_audio_encoder_factory.h"
 #include "webrtc/voice_engine/transmit_mixer.h"
 
 using testing::ContainerEq;
@@ -129,7 +131,8 @@ TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
   EXPECT_FALSE(voe.IsInited());
   {
     cricket::WebRtcVoiceEngine engine(
-        &adm, webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr,
+        &adm, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
+        webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr,
         new FakeVoEWrapper(&voe));
     EXPECT_TRUE(voe.IsInited());
   }
@@ -174,12 +177,14 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_CALL(apm_gc_, set_target_level_dbfs(1)).WillOnce(Return(0));
     EXPECT_CALL(apm_gc_, set_compression_gain_db(5)).WillRepeatedly(Return(0));
     EXPECT_CALL(apm_gc_, enable_limiter(true)).WillRepeatedly(Return(0));
-    // TODO(kwiberg): We should use a mock AudioDecoderFactory, but a bunch of
+    // TODO(kwiberg): We should use mock factories here, but a bunch of
     // the tests here probe the specific set of codecs provided by the builtin
-    // factory. Those tests should probably be moved elsewhere.
-    engine_.reset(new cricket::WebRtcVoiceEngine(
-        &adm_, webrtc::CreateBuiltinAudioDecoderFactory(), nullptr,
-        new FakeVoEWrapper(&voe_)));
+    // factories. Those tests should probably be moved elsewhere.
+    auto encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
+    auto decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
+    engine_.reset(new cricket::WebRtcVoiceEngine(&adm_, encoder_factory,
+                                                 decoder_factory, nullptr,
+                                                 new FakeVoEWrapper(&voe_)));
     send_parameters_.codecs.push_back(kPcmuCodec);
     recv_parameters_.codecs.push_back(kPcmuCodec);
     // Default Options.
@@ -3254,7 +3259,8 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   // If the VoiceEngine wants to gather available codecs early, that's fine but
   // we never want it to create a decoder at this stage.
   cricket::WebRtcVoiceEngine engine(
-      nullptr, webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
+      nullptr, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
+      webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
   webrtc::RtcEventLogNullImpl event_log;
   std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config(&event_log)));
@@ -3274,7 +3280,8 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
   EXPECT_CALL(adm, TimeUntilNextProcess()).WillRepeatedly(Return(100));
   {
     cricket::WebRtcVoiceEngine engine(
-        &adm, webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
+        &adm, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
+        webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
     webrtc::RtcEventLogNullImpl event_log;
     std::unique_ptr<webrtc::Call> call(
         webrtc::Call::Create(webrtc::Call::Config(&event_log)));
@@ -3290,7 +3297,8 @@ TEST(WebRtcVoiceEngineTest, HasCorrectPayloadTypeMapping) {
   // TODO(ossu): Why are the payload types of codecs with non-static payload
   // type assignments checked here? It shouldn't really matter.
   cricket::WebRtcVoiceEngine engine(
-      nullptr, webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
+      nullptr, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
+      webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
   for (const cricket::AudioCodec& codec : engine.send_codecs()) {
     auto is_codec = [&codec](const char* name, int clockrate = 0) {
       return STR_CASE_CMP(codec.name.c_str(), name) == 0 &&
@@ -3330,7 +3338,8 @@ TEST(WebRtcVoiceEngineTest, HasCorrectPayloadTypeMapping) {
 // Tests that VoE supports at least 32 channels
 TEST(WebRtcVoiceEngineTest, Has32Channels) {
   cricket::WebRtcVoiceEngine engine(
-      nullptr, webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
+      nullptr, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
+      webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr);
   webrtc::RtcEventLogNullImpl event_log;
   std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config(&event_log)));
@@ -3363,7 +3372,8 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
   // SetRecvParameters returns true.
   // I think it will become clear once audio decoder injection is completed.
   cricket::WebRtcVoiceEngine engine(
-      nullptr, webrtc::CreateBuiltinAudioDecoderFactory(), nullptr);
+      nullptr, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
+      webrtc::CreateBuiltinAudioDecoderFactory(), nullptr);
   webrtc::RtcEventLogNullImpl event_log;
   std::unique_ptr<webrtc::Call> call(
       webrtc::Call::Create(webrtc::Call::Config(&event_log)));
@@ -3392,12 +3402,15 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
   specs.push_back(
       webrtc::AudioCodecSpec{{"codec5", 8000, 2}, {8000, 1, 64000}});
 
-  rtc::scoped_refptr<webrtc::MockAudioDecoderFactory> mock_factory =
+  rtc::scoped_refptr<webrtc::MockAudioEncoderFactory> unused_encoder_factory =
+      webrtc::MockAudioEncoderFactory::CreateUnusedFactory();
+  rtc::scoped_refptr<webrtc::MockAudioDecoderFactory> mock_decoder_factory =
       new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>;
-  EXPECT_CALL(*mock_factory.get(), GetSupportedDecoders())
+  EXPECT_CALL(*mock_decoder_factory.get(), GetSupportedDecoders())
       .WillOnce(Return(specs));
 
-  cricket::WebRtcVoiceEngine engine(nullptr, mock_factory, nullptr);
+  cricket::WebRtcVoiceEngine engine(nullptr, unused_encoder_factory,
+                                    mock_decoder_factory, nullptr);
   auto codecs = engine.recv_codecs();
   EXPECT_EQ(11, codecs.size());
 
