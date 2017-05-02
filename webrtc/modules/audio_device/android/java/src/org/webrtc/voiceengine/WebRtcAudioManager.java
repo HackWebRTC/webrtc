@@ -229,8 +229,7 @@ public class WebRtcAudioManager {
 
   // Returns true if low-latency audio output is supported.
   private boolean isLowLatencyOutputSupported() {
-    return isOpenSLESSupported()
-        && context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_LOW_LATENCY);
+    return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_LOW_LATENCY);
   }
 
   // Returns true if low-latency audio input is supported.
@@ -339,12 +338,6 @@ public class WebRtcAudioManager {
     return AudioRecord.getMinBufferSize(
                sampleRateInHz, channelConfig, AudioFormat.ENCODING_PCM_16BIT)
         / bytesPerFrame;
-  }
-
-  // Returns true if OpenSL ES audio is supported.
-  private static boolean isOpenSLESSupported() {
-    // Check for API level 9 or higher, to confirm use of OpenSL ES.
-    return WebRtcAudioUtils.runningOnGingerBreadOrHigher();
   }
 
   // Helper method which throws an exception  when an assertion has failed.

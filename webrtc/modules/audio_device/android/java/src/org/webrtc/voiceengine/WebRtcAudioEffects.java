@@ -10,8 +10,6 @@
 
 package org.webrtc.voiceengine;
 
-import org.webrtc.Logging;
-
 import android.annotation.TargetApi;
 import android.media.audiofx.AcousticEchoCanceler;
 import android.media.audiofx.AudioEffect;
@@ -19,9 +17,9 @@ import android.media.audiofx.AudioEffect.Descriptor;
 import android.media.audiofx.AutomaticGainControl;
 import android.media.audiofx.NoiseSuppressor;
 import android.os.Build;
-
 import java.util.List;
 import java.util.UUID;
+import org.webrtc.Logging;
 
 // This class wraps control of three different platform effects. Supported
 // effects are: AcousticEchoCanceler (AEC) and NoiseSuppressor (NS).
@@ -63,7 +61,7 @@ class WebRtcAudioEffects {
     // Note: we're using isAcousticEchoCancelerEffectAvailable() instead of
     // AcousticEchoCanceler.isAvailable() to avoid the expensive getEffects()
     // OS API call.
-    return WebRtcAudioUtils.runningOnJellyBeanOrHigher() && isAcousticEchoCancelerEffectAvailable();
+    return isAcousticEchoCancelerEffectAvailable();
   }
 
   // Checks if the device implements Noise Suppression (NS).
@@ -72,7 +70,7 @@ class WebRtcAudioEffects {
     // Note: we're using isNoiseSuppressorEffectAvailable() instead of
     // NoiseSuppressor.isAvailable() to avoid the expensive getEffects()
     // OS API call.
-    return WebRtcAudioUtils.runningOnJellyBeanOrHigher() && isNoiseSuppressorEffectAvailable();
+    return isNoiseSuppressorEffectAvailable();
   }
 
   // Returns true if the device is blacklisted for HW AEC usage.
@@ -153,11 +151,6 @@ class WebRtcAudioEffects {
   }
 
   static WebRtcAudioEffects create() {
-    // Return null if VoIP effects (AEC, AGC and NS) are not supported.
-    if (!WebRtcAudioUtils.runningOnJellyBeanOrHigher()) {
-      Logging.w(TAG, "API level 16 or higher is required!");
-      return null;
-    }
     return new WebRtcAudioEffects();
   }
 

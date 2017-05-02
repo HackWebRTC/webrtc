@@ -10,16 +10,14 @@
 
 package org.webrtc.voiceengine;
 
-import org.webrtc.Logging;
-
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Process;
-
 import java.lang.Thread;
 import java.util.Arrays;
 import java.util.List;
+import org.webrtc.Logging;
 
 public final class WebRtcAudioUtils {
   private static final String TAG = "WebRtcAudioUtils";
@@ -127,16 +125,6 @@ public final class WebRtcAudioUtils {
 
   public static List<String> getBlackListedModelsForNsUsage() {
     return Arrays.asList(WebRtcAudioUtils.BLACKLISTED_NS_MODELS);
-  }
-
-  public static boolean runningOnGingerBreadOrHigher() {
-    // November 2010: Android 2.3, API Level 9.
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD;
-  }
-
-  public static boolean runningOnJellyBeanOrHigher() {
-    // June 2012: Android 4.1. API Level 16.
-    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN;
   }
 
   public static boolean runningOnJellyBeanMR1OrHigher() {
