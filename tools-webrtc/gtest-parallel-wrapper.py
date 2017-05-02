@@ -61,10 +61,15 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--isolated-script-test-output', type=str, default=None)
 
-  # TODO(ehmaldonado): Implement this flag instead of just "eating" it.
+  # We don't need to implement this flag, and possibly can't, since it's
+  # intended for results of Telemetry tests. See
+  # https://chromium.googlesource.com/external/github.com/catapult-project/catapult/+/HEAD/dashboard/docs/data-format.md
   parser.add_argument('--isolated-script-test-chartjson-output', type=str,
                       default=None)
 
+  # TODO(ehmaldonado): Figure out a way to avoid duplicating the flags in
+  # gtest-parallel.
+  parser.add_argument('--gtest_color', type=str, default='auto')
   parser.add_argument('--output_dir', type=str, default=None)
   parser.add_argument('--timeout', type=int, default=None)
 
@@ -89,6 +94,8 @@ def main():
       gtest_total_shards,
       '--shard_index',
       gtest_shard_index,
+      '--gtest_color',
+      options.gtest_color,
   ]
 
   # --isolated-script-test-output is used to upload results to the flakiness
@@ -122,14 +129,15 @@ def main():
 
   exit_code = subprocess.call(command, env=test_env, cwd=os.getcwd())
 
-  for test_status in 'passed', 'failed', 'interrupted':
-    logs_dir = os.path.join(options.output_dir, test_status)
-    if not os.path.isdir(logs_dir):
-      continue
-    logs = [os.path.join(logs_dir, log) for log in os.listdir(logs_dir)]
-    log_file = os.path.join(options.output_dir, '%s-tests.log' % test_status)
-    CatFiles(logs, log_file)
-    os.rmdir(logs_dir)
+  if options.output_dir:
+    for test_status in 'passed', 'failed', 'interrupted':
+      logs_dir = os.path.join(options.output_dir, test_status)
+      if not os.path.isdir(logs_dir):
+        continue
+      logs = [os.path.join(logs_dir, log) for log in os.listdir(logs_dir)]
+      log_file = os.path.join(options.output_dir, '%s-tests.log' % test_status)
+      CatFiles(logs, log_file)
+      os.rmdir(logs_dir)
 
   return exit_code
 

@@ -1096,6 +1096,7 @@ class MetaBuildWrapper(object):
         output_dir = '${ISOLATED_OUTDIR}' + sep + 'test_logs'
         gtest_parallel_wrapper = [
             '../../tools-webrtc/gtest-parallel-wrapper.py',
+            '--gtest_color=no',
             '--output_dir=%s' % output_dir,
         ]
 
