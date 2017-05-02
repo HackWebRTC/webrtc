@@ -48,6 +48,13 @@ constexpr double kDefaultTrendlineThresholdGain = 4.0;
 
 constexpr int kMaxConsecutiveFailedLookups = 5;
 
+const char kBweSparseUpdateExperiment[] = "WebRTC-BweSparseUpdateExperiment";
+
+bool BweSparseUpdateExperimentIsEnabled() {
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kBweSparseUpdateExperiment);
+  return experiment_string == "Enabled";
+}
 
 class PacketFeedbackComparator {
  public:
@@ -161,9 +168,9 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       trendline_threshold_gain_(kDefaultTrendlineThresholdGain),
       consecutive_delayed_feedbacks_(0),
       last_logged_bitrate_(0),
-      last_logged_state_(BandwidthUsage::kBwNormal) {
+      last_logged_state_(BandwidthUsage::kBwNormal),
+      in_sparse_update_experiment_(BweSparseUpdateExperimentIsEnabled()) {
   LOG(LS_INFO) << "Using Trendline filter for delay change estimation.";
-
   network_thread_.DetachFromThread();
 }
 
@@ -195,8 +202,11 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
       continue;
     delayed_feedback = false;
     IncomingPacketFeedback(packet_feedback);
-    overusing |= detector_.State() == BandwidthUsage::kBwOverusing;
+    if (!in_sparse_update_experiment_)
+      overusing |= (detector_.State() == BandwidthUsage::kBwOverusing);
   }
+  if (in_sparse_update_experiment_)
+    overusing = (detector_.State() == BandwidthUsage::kBwOverusing);
   if (delayed_feedback) {
     ++consecutive_delayed_feedbacks_;
     if (consecutive_delayed_feedbacks_ >= kMaxConsecutiveFailedLookups) {
