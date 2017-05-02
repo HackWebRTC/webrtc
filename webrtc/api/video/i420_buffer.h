@@ -53,6 +53,9 @@ class I420Buffer : public VideoFrameBuffer {
   // are resolved in a better way. Or in the mean time, use SetBlack.
   void InitializeData();
 
+  // TODO(nisse): Deprecated, use static method instead.
+  void SetToBlack() { SetBlack(this); }
+
   int width() const override;
   int height() const override;
   const uint8_t* DataY() const override;
@@ -84,6 +87,14 @@ class I420Buffer : public VideoFrameBuffer {
 
   // Scale all of |src| to the size of |this| buffer, with no cropping.
   void ScaleFrom(const VideoFrameBuffer& src);
+
+  // TODO(nisse): Deprecated, delete once downstream applications are updated.
+  // Returns a rotated versions of |src|. Native buffers are not
+  // supported. The reason this function doesn't return an I420Buffer,
+  // is that it returns |src| unchanged in case |rotation| is zero.
+  static rtc::scoped_refptr<VideoFrameBuffer> Rotate(
+      rtc::scoped_refptr<VideoFrameBuffer> src,
+      VideoRotation rotation);
 
  protected:
   I420Buffer(int width, int height);
