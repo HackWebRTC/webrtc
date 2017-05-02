@@ -144,6 +144,9 @@ class AsyncInvoker : public MessageHandler {
   // behavior is desired, call Flush() before destroying this object.
   void Flush(Thread* thread, uint32_t id = MQID_ANY);
 
+  // Signaled when this object is destructed.
+  sigslot::signal0<> SignalInvokerDestroyed;
+
  private:
   void OnMessage(Message* msg) override;
   void DoInvoke(const Location& posted_from,

@@ -20,6 +20,7 @@ AsyncInvoker::AsyncInvoker() : invocation_complete_(false, false) {}
 
 AsyncInvoker::~AsyncInvoker() {
   destroying_ = true;
+  SignalInvokerDestroyed();
   // Messages for this need to be cleared *before* our destructor is complete.
   MessageQueueManager::Clear(this);
   // And we need to wait for any invocations that are still in progress on
@@ -125,9 +126,8 @@ NotifyingAsyncClosureBase::NotifyingAsyncClosureBase(
       calling_thread_(calling_thread) {
   calling_thread->SignalQueueDestroyed.connect(
       this, &NotifyingAsyncClosureBase::CancelCallback);
-  // Note: We don't need to listen for the invoker being destroyed, because it
-  // will wait for this closure to be destroyed (and pending_invocations_ to go
-  // to 0) before its destructor completes.
+  invoker->SignalInvokerDestroyed.connect(
+      this, &NotifyingAsyncClosureBase::CancelCallback);
 }
 
 NotifyingAsyncClosureBase::~NotifyingAsyncClosureBase() {
