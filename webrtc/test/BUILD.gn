@@ -314,8 +314,10 @@ rtc_source_set("fileutils") {
     "testsupport/fileutils.cc",
     "testsupport/fileutils.h",
   ]
+  deps = []
   if (is_ios) {
     sources += [ "testsupport/iosfileutils.mm" ]
+    deps += [ "../sdk:rtc_sdk_helpers_objc" ]
   }
   visibility = [ ":*" ]
 }
