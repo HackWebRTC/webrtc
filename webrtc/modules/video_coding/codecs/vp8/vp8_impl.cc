@@ -648,9 +648,7 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
 
   rtc::scoped_refptr<VideoFrameBuffer> input_image = frame.video_frame_buffer();
   // Since we are extracting raw pointers from |input_image| to
-  // |raw_images_[0]|, the resolution of these frames must match. Note that
-  // |input_image| might be scaled from |frame|. In that case, the resolution of
-  // |raw_images_[0]| should have been updated in UpdateCodecFrameSize.
+  // |raw_images_[0]|, the resolution of these frames must match.
   RTC_DCHECK_EQ(input_image->width(), raw_images_[0].d_w);
   RTC_DCHECK_EQ(input_image->height(), raw_images_[0].d_h);
 
@@ -767,34 +765,6 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   timestamp_ += duration;
   // Examines frame timestamps only.
   return GetEncodedPartitions(frame);
-}
-
-// TODO(pbos): Make sure this works for properly for >1 encoders.
-int VP8EncoderImpl::UpdateCodecFrameSize(int width, int height) {
-  codec_.width = width;
-  codec_.height = height;
-  if (codec_.numberOfSimulcastStreams <= 1) {
-    // For now scaling is only used for single-layer streams.
-    codec_.simulcastStream[0].width = width;
-    codec_.simulcastStream[0].height = height;
-  }
-  // Update the cpu_speed setting for resolution change.
-  vpx_codec_control(&(encoders_[0]), VP8E_SET_CPUUSED,
-                    SetCpuSpeed(codec_.width, codec_.height));
-  raw_images_[0].w = codec_.width;
-  raw_images_[0].h = codec_.height;
-  raw_images_[0].d_w = codec_.width;
-  raw_images_[0].d_h = codec_.height;
-  vpx_img_set_rect(&raw_images_[0], 0, 0, codec_.width, codec_.height);
-
-  // Update encoder context for new frame size.
-  // Change of frame size will automatically trigger a key frame.
-  configurations_[0].g_w = codec_.width;
-  configurations_[0].g_h = codec_.height;
-  if (vpx_codec_enc_config_set(&encoders_[0], &configurations_[0])) {
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 void VP8EncoderImpl::PopulateCodecSpecific(

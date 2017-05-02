@@ -75,9 +75,6 @@ class VP8EncoderImpl : public VP8Encoder {
   // Call encoder initialize function and set control settings.
   int InitAndSetControlSettings();
 
-  // Update frame size for codec.
-  int UpdateCodecFrameSize(int width, int height);
-
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              const vpx_codec_cx_pkt& pkt,
                              int stream_idx,
