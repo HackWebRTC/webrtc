@@ -288,6 +288,7 @@ if (is_ios || is_mac) {
         visibility = [ "//webrtc:rtc_unittests" ]
       }
       sources = [
+        "objc/Framework/UnitTests/RTCCameraVideoCapturerTests.mm",
         "objc/Framework/UnitTests/RTCConfigurationTest.mm",
         "objc/Framework/UnitTests/RTCDataChannelConfigurationTest.mm",
         "objc/Framework/UnitTests/RTCIceCandidateTest.mm",
