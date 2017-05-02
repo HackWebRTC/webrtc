@@ -12,12 +12,13 @@
 
 #include <memory>
 
-#include "webrtc/sdk/android/src/jni/jni_helpers.h"
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/keep_ref_until_done.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/sdk/android/src/jni/jni_helpers.h"
 
 using webrtc::NativeHandleBuffer;
 
@@ -142,6 +143,10 @@ AndroidTextureBuffer::NativeToI420Buffer() {
   //
   // TODO(nisse): Use an I420BufferPool. We then need to extend that
   // class, and I420Buffer, to support our memory layout.
+  // TODO(nisse): Depending on
+  // system_wrappers/include/aligned_malloc.h violate current DEPS
+  // rules. We get away for now only because it is indirectly included
+  // by i420_buffer.h
   std::unique_ptr<uint8_t, webrtc::AlignedFreeDeleter> yuv_data(
       static_cast<uint8_t*>(webrtc::AlignedMalloc(size, kBufferAlignment)));
   // See YuvConverter.java for the required layout.
