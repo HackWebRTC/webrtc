@@ -909,11 +909,13 @@ class VideoAnalyzer : public PacketReceiver,
       // Frames from the capturer does not have a rtp timestamp.
       // Create one so it can be used for comparison.
       RTC_DCHECK_EQ(0, video_frame.timestamp());
+      if (copy.ntp_time_ms() == 0)
+        copy.set_ntp_time_ms(rtc::TimeMillis());
       copy.set_timestamp(copy.ntp_time_ms() * 90);
       analyzer_->AddCapturedFrameForComparison(copy);
       rtc::CritScope lock(&crit_);
       if (send_stream_input_)
-        send_stream_input_->OnFrame(video_frame);
+        send_stream_input_->OnFrame(copy);
     }
 
     // Called when |send_stream_.SetSource()| is called.
