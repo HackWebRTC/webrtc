@@ -241,7 +241,6 @@ if (!build_with_chromium) {
       # TODO(ossu): Keep this here until donwstream projects have updated.
       # http://bugs.webrtc.org/6716
       "call.h",
-      "config.h",
     ]
     complete_static_lib = true
     defines = []
