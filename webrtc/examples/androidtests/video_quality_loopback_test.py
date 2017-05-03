@@ -85,10 +85,6 @@ def _ParseArgs():
 
 
 def main():
-  # Disabled, see bugs.webrtc.org/7548
-  if True:
-    return 0
-
   logging.basicConfig(level=logging.INFO)
 
   args = _ParseArgs()
