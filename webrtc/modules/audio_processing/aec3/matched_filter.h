@@ -23,19 +23,6 @@
 namespace webrtc {
 namespace aec3 {
 
-#if defined(WEBRTC_HAS_NEON)
-
-// Filter core for the matched filter that is optimized for NEON.
-void MatchedFilterCore_NEON(size_t x_start_index,
-                            float x2_sum_threshold,
-                            rtc::ArrayView<const float> x,
-                            rtc::ArrayView<const float> y,
-                            rtc::ArrayView<float> h,
-                            bool* filters_updated,
-                            float* error_sum);
-
-#endif
-
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 
 // Filter core for the matched filter that is optimized for SSE2.

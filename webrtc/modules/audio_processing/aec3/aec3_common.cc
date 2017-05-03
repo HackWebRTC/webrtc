@@ -21,11 +21,6 @@ Aec3Optimization DetectOptimization() {
     return Aec3Optimization::kSse2;
   }
 #endif
-
-#if defined(WEBRTC_HAS_NEON)
-  return Aec3Optimization::kNeon;
-#endif
-
   return Aec3Optimization::kNone;
 }
 

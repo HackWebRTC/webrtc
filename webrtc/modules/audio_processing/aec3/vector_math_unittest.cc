@@ -18,65 +18,6 @@
 
 namespace webrtc {
 
-#if defined(WEBRTC_HAS_NEON)
-
-TEST(VectorMath, Sqrt) {
-  std::array<float, kFftLengthBy2Plus1> x;
-  std::array<float, kFftLengthBy2Plus1> z;
-  std::array<float, kFftLengthBy2Plus1> z_neon;
-
-  for (size_t k = 0; k < x.size(); ++k) {
-    x[k] = (2.f / 3.f) * k;
-  }
-
-  std::copy(x.begin(), x.end(), z.begin());
-  aec3::VectorMath(Aec3Optimization::kNone).Sqrt(z);
-  std::copy(x.begin(), x.end(), z_neon.begin());
-  aec3::VectorMath(Aec3Optimization::kNeon).Sqrt(z_neon);
-  for (size_t k = 0; k < z.size(); ++k) {
-    EXPECT_NEAR(z[k], z_neon[k], 0.0001f);
-    EXPECT_NEAR(sqrtf(x[k]), z_neon[k], 0.0001f);
-  }
-}
-
-TEST(VectorMath, Multiply) {
-  std::array<float, kFftLengthBy2Plus1> x;
-  std::array<float, kFftLengthBy2Plus1> y;
-  std::array<float, kFftLengthBy2Plus1> z;
-  std::array<float, kFftLengthBy2Plus1> z_neon;
-
-  for (size_t k = 0; k < x.size(); ++k) {
-    x[k] = k;
-    y[k] = (2.f / 3.f) * k;
-  }
-
-  aec3::VectorMath(Aec3Optimization::kNone).Multiply(x, y, z);
-  aec3::VectorMath(Aec3Optimization::kNeon).Multiply(x, y, z_neon);
-  for (size_t k = 0; k < z.size(); ++k) {
-    EXPECT_FLOAT_EQ(z[k], z_neon[k]);
-    EXPECT_FLOAT_EQ(x[k] * y[k], z_neon[k]);
-  }
-}
-
-TEST(VectorMath, Accumulate) {
-  std::array<float, kFftLengthBy2Plus1> x;
-  std::array<float, kFftLengthBy2Plus1> z;
-  std::array<float, kFftLengthBy2Plus1> z_neon;
-
-  for (size_t k = 0; k < x.size(); ++k) {
-    x[k] = k;
-    z[k] = z_neon[k] = 2.f * k;
-  }
-
-  aec3::VectorMath(Aec3Optimization::kNone).Accumulate(x, z);
-  aec3::VectorMath(Aec3Optimization::kNeon).Accumulate(x, z_neon);
-  for (size_t k = 0; k < z.size(); ++k) {
-    EXPECT_FLOAT_EQ(z[k], z_neon[k]);
-    EXPECT_FLOAT_EQ(x[k] + 2.f * x[k], z_neon[k]);
-  }
-}
-#endif
-
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 
 TEST(VectorMath, Sqrt) {

@@ -29,11 +29,6 @@ namespace aec3 {
 void UpdateFrequencyResponse(
     rtc::ArrayView<const FftData> H,
     std::vector<std::array<float, kFftLengthBy2Plus1>>* H2);
-#if defined(WEBRTC_HAS_NEON)
-void UpdateFrequencyResponse_NEON(
-    rtc::ArrayView<const FftData> H,
-    std::vector<std::array<float, kFftLengthBy2Plus1>>* H2);
-#endif
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 void UpdateFrequencyResponse_SSE2(
     rtc::ArrayView<const FftData> H,
@@ -45,11 +40,6 @@ void UpdateFrequencyResponse_SSE2(
 void UpdateErlEstimator(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
     std::array<float, kFftLengthBy2Plus1>* erl);
-#if defined(WEBRTC_HAS_NEON)
-void UpdateErlEstimator_NEON(
-    const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
-    std::array<float, kFftLengthBy2Plus1>* erl);
-#endif
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 void UpdateErlEstimator_SSE2(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>& H2,
@@ -60,11 +50,6 @@ void UpdateErlEstimator_SSE2(
 void AdaptPartitions(const RenderBuffer& render_buffer,
                      const FftData& G,
                      rtc::ArrayView<FftData> H);
-#if defined(WEBRTC_HAS_NEON)
-void AdaptPartitions_NEON(const RenderBuffer& render_buffer,
-                          const FftData& G,
-                          rtc::ArrayView<FftData> H);
-#endif
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 void AdaptPartitions_SSE2(const RenderBuffer& render_buffer,
                           const FftData& G,
@@ -75,11 +60,6 @@ void AdaptPartitions_SSE2(const RenderBuffer& render_buffer,
 void ApplyFilter(const RenderBuffer& render_buffer,
                  rtc::ArrayView<const FftData> H,
                  FftData* S);
-#if defined(WEBRTC_HAS_NEON)
-void ApplyFilter_NEON(const RenderBuffer& render_buffer,
-                      rtc::ArrayView<const FftData> H,
-                      FftData* S);
-#endif
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
                       rtc::ArrayView<const FftData> H,

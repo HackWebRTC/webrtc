@@ -12,9 +12,6 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC3_VECTOR_MATH_H_
 
 #include "webrtc/typedefs.h"
-#if defined(WEBRTC_HAS_NEON)
-#include <arm_neon.h>
-#endif
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include <emmintrin.h>
 #endif
@@ -56,51 +53,6 @@ class VectorMath {
         }
       } break;
 #endif
-#if defined(WEBRTC_HAS_NEON)
-      case Aec3Optimization::kNeon: {
-        const int x_size = static_cast<int>(x.size());
-        const int vector_limit = x_size >> 2;
-
-        int j = 0;
-        for (; j < vector_limit * 4; j += 4) {
-          float32x4_t g = vld1q_f32(&x[j]);
-#if !defined(WEBRTC_ARCH_ARM64)
-          float32x4_t y = vrsqrteq_f32(g);
-
-          // Code to handle sqrt(0).
-          // If the input to sqrtf() is zero, a zero will be returned.
-          // If the input to vrsqrteq_f32() is zero, positive infinity is
-          // returned.
-          const uint32x4_t vec_p_inf = vdupq_n_u32(0x7F800000);
-          // check for divide by zero
-          const uint32x4_t div_by_zero =
-              vceqq_u32(vec_p_inf, vreinterpretq_u32_f32(y));
-          // zero out the positive infinity results
-          y = vreinterpretq_f32_u32(
-              vandq_u32(vmvnq_u32(div_by_zero), vreinterpretq_u32_f32(y)));
-          // from arm documentation
-          // The Newton-Raphson iteration:
-          //     y[n+1] = y[n] * (3 - d * (y[n] * y[n])) / 2)
-          // converges to (1/√d) if y0 is the result of VRSQRTE applied to d.
-          //
-          // Note: The precision did not improve after 2 iterations.
-          for (int i = 0; i < 2; i++) {
-            y = vmulq_f32(vrsqrtsq_f32(vmulq_f32(y, y), g), y);
-          }
-          // sqrt(g) = g * 1/sqrt(g)
-          g = vmulq_f32(g, y);
-#else
-          g = vsqrtq_f32(g);
-#endif
-          vst1q_f32(&x[j], g);
-        }
-
-        for (; j < x_size; ++j) {
-          x[j] = sqrtf(x[j]);
-        }
-      }
-#endif
-      break;
       default:
         std::for_each(x.begin(), x.end(), [](float& a) { a = sqrtf(a); });
     }
@@ -131,24 +83,6 @@ class VectorMath {
         }
       } break;
 #endif
-#if defined(WEBRTC_HAS_NEON)
-      case Aec3Optimization::kNeon: {
-        const int x_size = static_cast<int>(x.size());
-        const int vector_limit = x_size >> 2;
-
-        int j = 0;
-        for (; j < vector_limit * 4; j += 4) {
-          const float32x4_t x_j = vld1q_f32(&x[j]);
-          const float32x4_t y_j = vld1q_f32(&y[j]);
-          const float32x4_t z_j = vmulq_f32(x_j, y_j);
-          vst1q_f32(&z[j], z_j);
-        }
-
-        for (; j < x_size; ++j) {
-          z[j] = x[j] * y[j];
-        }
-      } break;
-#endif
       default:
         std::transform(x.begin(), x.end(), y.begin(), z.begin(),
                        std::multiplies<float>());
@@ -170,24 +104,6 @@ class VectorMath {
           __m128 z_j = _mm_loadu_ps(&z[j]);
           z_j = _mm_add_ps(x_j, z_j);
           _mm_storeu_ps(&z[j], z_j);
-        }
-
-        for (; j < x_size; ++j) {
-          z[j] += x[j];
-        }
-      } break;
-#endif
-#if defined(WEBRTC_HAS_NEON)
-      case Aec3Optimization::kNeon: {
-        const int x_size = static_cast<int>(x.size());
-        const int vector_limit = x_size >> 2;
-
-        int j = 0;
-        for (; j < vector_limit * 4; j += 4) {
-          const float32x4_t x_j = vld1q_f32(&x[j]);
-          float32x4_t z_j = vld1q_f32(&z[j]);
-          z_j = vaddq_f32(z_j, x_j);
-          vst1q_f32(&z[j], z_j);
         }
 
         for (; j < x_size; ++j) {
