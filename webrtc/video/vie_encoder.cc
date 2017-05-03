@@ -483,8 +483,8 @@ void ViEEncoder::ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
   if (last_frame_info_) {
     ReconfigureEncoder();
   } else if (settings_.internal_source) {
-    last_frame_info_ = rtc::Optional<VideoFrameInfo>(
-        VideoFrameInfo(176, 144, kVideoRotation_0, false));
+    last_frame_info_ =
+        rtc::Optional<VideoFrameInfo>(VideoFrameInfo(176, 144, false));
     ReconfigureEncoder();
   }
 }
@@ -653,16 +653,13 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
 
   if (!last_frame_info_ || video_frame.width() != last_frame_info_->width ||
       video_frame.height() != last_frame_info_->height ||
-      video_frame.rotation() != last_frame_info_->rotation ||
       video_frame.is_texture() != last_frame_info_->is_texture) {
     pending_encoder_reconfiguration_ = true;
-    last_frame_info_ = rtc::Optional<VideoFrameInfo>(
-        VideoFrameInfo(video_frame.width(), video_frame.height(),
-                       video_frame.rotation(), video_frame.is_texture()));
+    last_frame_info_ = rtc::Optional<VideoFrameInfo>(VideoFrameInfo(
+        video_frame.width(), video_frame.height(), video_frame.is_texture()));
     LOG(LS_INFO) << "Video frame parameters changed: dimensions="
                  << last_frame_info_->width << "x" << last_frame_info_->height
-                 << ", rotation=" << last_frame_info_->rotation
-                 << ", texture=" << last_frame_info_->is_texture;
+                 << ", texture=" << last_frame_info_->is_texture << ".";
   }
 
   if (initial_rampup_ < kMaxInitialFramedrop &&

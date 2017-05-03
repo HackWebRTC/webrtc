@@ -66,6 +66,25 @@ TEST_F(TestVp9Impl, EncodeDecode) {
   EXPECT_GT(I420PSNR(input_frame_.get(), decoded_frame.get()), 36);
 }
 
+// We only test the encoder here, since the decoded frame rotation is set based
+// on the CVO RTP header extension in VCMDecodedFrameCallback::Decoded.
+// TODO(brandtr): Consider passing through the rotation flag through the decoder
+// in the same way as done in the encoder.
+TEST_F(TestVp9Impl, EncodedRotationEqualsInputRotation) {
+  input_frame_->set_rotation(kVideoRotation_0);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*input_frame_, nullptr, nullptr));
+  EncodedImage encoded_frame;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame));
+  EXPECT_EQ(kVideoRotation_0, encoded_frame.rotation_);
+
+  input_frame_->set_rotation(kVideoRotation_90);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*input_frame_, nullptr, nullptr));
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame));
+  EXPECT_EQ(kVideoRotation_90, encoded_frame.rotation_);
+}
+
 TEST_F(TestVp9Impl, DecodedQpEqualsEncodedQp) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*input_frame_, nullptr, nullptr));
