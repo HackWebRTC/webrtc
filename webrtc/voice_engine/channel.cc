@@ -1217,7 +1217,11 @@ int32_t Channel::StartSend() {
     return 0;
   }
   channel_state_.SetSending(true);
-
+  {
+    // It is now OK to start posting tasks to the encoder task queue.
+    rtc::CritScope cs(&encoder_queue_lock_);
+    encoder_queue_is_active_ = true;
+  }
   // Resume the previous sequence number which was reset by StopSend(). This
   // needs to be done before |sending| is set to true on the RTP/RTCP module.
   if (send_sequence_number_) {
@@ -1252,8 +1256,15 @@ void Channel::StopSend() {
   // exists and it is therfore guaranteed that the task queue will never try
   // to acccess and invalid channel object.
   RTC_DCHECK(encoder_queue_);
+
   rtc::Event flush(false, false);
-  encoder_queue_->PostTask([&flush]() { flush.Set(); });
+  {
+    // Clear |encoder_queue_is_active_| under lock to prevent any other tasks
+    // than this final "flush task" to be posted on the queue.
+    rtc::CritScope cs(&encoder_queue_lock_);
+    encoder_queue_is_active_ = false;
+    encoder_queue_->PostTask([&flush]() { flush.Set(); });
+  }
   flush.Wait(rtc::Event::kForever);
 
   // Store the sequence number to be able to pick up the same sequence for
@@ -2724,7 +2735,11 @@ int Channel::ResendPackets(const uint16_t* sequence_numbers, int length) {
 }
 
 void Channel::ProcessAndEncodeAudio(const AudioFrame& audio_input) {
-  RTC_DCHECK(channel_state_.Get().sending);
+  // Avoid posting any new tasks if sending was already stopped in StopSend().
+  rtc::CritScope cs(&encoder_queue_lock_);
+  if (!encoder_queue_is_active_) {
+    return;
+  }
   std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());
   // TODO(henrika): try to avoid copying by moving ownership of audio frame
   // either into pool of frames or into the task itself.
@@ -2738,7 +2753,11 @@ void Channel::ProcessAndEncodeAudio(const int16_t* audio_data,
                                     int sample_rate,
                                     size_t number_of_frames,
                                     size_t number_of_channels) {
-  RTC_DCHECK(channel_state_.Get().sending);
+  // Avoid posting as new task if sending was already stopped in StopSend().
+  rtc::CritScope cs(&encoder_queue_lock_);
+  if (!encoder_queue_is_active_) {
+    return;
+  }
   CodecInst codec;
   GetSendCodec(codec);
   std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());

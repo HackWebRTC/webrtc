@@ -546,6 +546,10 @@ class Channel
 
   const bool use_twcc_plr_for_ana_;
 
+  rtc::CriticalSection encoder_queue_lock_;
+
+  bool encoder_queue_is_active_ GUARDED_BY(encoder_queue_lock_) = false;
+
   rtc::TaskQueue* encoder_queue_ = nullptr;
 };
 
