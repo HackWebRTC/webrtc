@@ -50,6 +50,19 @@ public class WebRtcAudioTrack {
   private static volatile boolean speakerMute = false;
   private byte[] emptyBytes;
 
+  public static interface WebRtcAudioTrackErrorCallback {
+    void onWebRtcAudioTrackInitError(String errorMessage);
+    void onWebRtcAudioTrackStartError(String errorMessage);
+    void onWebRtcAudioTrackError(String errorMessage);
+  }
+
+  private static WebRtcAudioTrackErrorCallback errorCallback = null;
+
+  public static void setErrorCallback(WebRtcAudioTrackErrorCallback errorCallback) {
+    Logging.d(TAG, "Set error callback");
+    WebRtcAudioTrack.errorCallback = errorCallback;
+  }
+
   /**
    * Audio thread which keeps calling AudioTrack.write() to stream audio.
    * Data is periodically acquired from the native WebRTC layer using the
@@ -76,7 +89,7 @@ public class WebRtcAudioTrack {
         audioTrack.play();
         assertTrue(audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING);
       } catch (IllegalStateException e) {
-        Logging.e(TAG, "AudioTrack.play failed: " + e.getMessage());
+        reportWebRtcAudioTrackStartError("AudioTrack.play failed: " + e.getMessage());
         releaseAudioResources();
         return;
       }
@@ -109,6 +122,7 @@ public class WebRtcAudioTrack {
           Logging.e(TAG, "AudioTrack.write failed: " + bytesWritten);
           if (bytesWritten == AudioTrack.ERROR_INVALID_OPERATION) {
             keepAlive = false;
+            reportWebRtcAudioTrackError("AudioTrack.write failed: " + bytesWritten);
           }
         }
         // The byte buffer must be rewinded since byteBuffer.position() is
@@ -186,14 +200,14 @@ public class WebRtcAudioTrack {
     // reports of "getMinBufferSize(): error querying hardware". Hence, it
     // can happen that |minBufferSizeInBytes| contains an invalid value.
     if (minBufferSizeInBytes < byteBuffer.capacity()) {
-      Logging.e(TAG, "AudioTrack.getMinBufferSize returns an invalid value.");
+      reportWebRtcAudioTrackInitError("AudioTrack.getMinBufferSize returns an invalid value.");
       return false;
     }
 
     // Ensure that prevision audio session was stopped correctly before trying
     // to create a new AudioTrack.
     if (audioTrack != null) {
-      Logging.e(TAG, "Conflict with existing AudioTrack.");
+      reportWebRtcAudioTrackInitError("Conflict with existing AudioTrack.");
       return false;
     }
     try {
@@ -215,7 +229,7 @@ public class WebRtcAudioTrack {
             AudioFormat.ENCODING_PCM_16BIT, minBufferSizeInBytes, AudioTrack.MODE_STREAM);
       }
     } catch (IllegalArgumentException e) {
-      Logging.d(TAG, e.getMessage());
+      reportWebRtcAudioTrackInitError(e.getMessage());
       releaseAudioResources();
       return false;
     }
@@ -224,7 +238,7 @@ public class WebRtcAudioTrack {
     // initialized upon creation. Seems to be the case e.g. when the maximum
     // number of globally available audio tracks is exceeded.
     if (audioTrack == null || audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
-      Logging.e(TAG, "Initialization of audio track failed.");
+      reportWebRtcAudioTrackInitError("Initialization of audio track failed.");
       releaseAudioResources();
       return false;
     }
@@ -238,7 +252,7 @@ public class WebRtcAudioTrack {
     assertTrue(audioTrack != null);
     assertTrue(audioThread == null);
     if (audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
-      Logging.e(TAG, "AudioTrack instance is not successfully initialized.");
+      reportWebRtcAudioTrackStartError("AudioTrack instance is not successfully initialized.");
       return false;
     }
     audioThread = new AudioTrackThread("AudioTrackJavaThread");
@@ -384,4 +398,26 @@ public class WebRtcAudioTrack {
       audioTrack = null;
     }
   }
+
+  private void reportWebRtcAudioTrackInitError(String errorMessage) {
+    Logging.e(TAG, "Init error: " + errorMessage);
+    if (errorCallback != null) {
+      errorCallback.onWebRtcAudioTrackInitError(errorMessage);
+    }
+  }
+
+  private void reportWebRtcAudioTrackStartError(String errorMessage) {
+    Logging.e(TAG, "Start error: " + errorMessage);
+    if (errorCallback != null) {
+      errorCallback.onWebRtcAudioTrackStartError(errorMessage);
+    }
+  }
+
+  private void reportWebRtcAudioTrackError(String errorMessage) {
+    Logging.e(TAG, "Run-time playback error: " + errorMessage);
+    if (errorCallback != null) {
+      errorCallback.onWebRtcAudioTrackError(errorMessage);
+    }
+  }
+
 }
