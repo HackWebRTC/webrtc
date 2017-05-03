@@ -73,6 +73,14 @@ rtc_static_library("common_video") {
     # Need to add a directory normally exported by libyuv.
     include_dirs += [ "$rtc_libyuv_dir/include" ]
   }
+
+  if (is_ios || is_mac) {
+    sources += [
+      "corevideo_frame_buffer.cc",
+      "include/corevideo_frame_buffer.h",
+    ]
+    libs = [ "CoreVideo.framework" ]
+  }
 }
 
 if (rtc_include_tests) {

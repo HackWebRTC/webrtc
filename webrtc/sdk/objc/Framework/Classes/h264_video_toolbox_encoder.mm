@@ -23,7 +23,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
-#include "webrtc/sdk/objc/Framework/Classes/corevideo_frame_buffer.h"
+#include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
 #include "webrtc/system_wrappers/include/clock.h"
 

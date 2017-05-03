@@ -20,7 +20,7 @@
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/sdk/objc/Framework/Classes/corevideo_frame_buffer.h"
+#include "webrtc/common_video/include/corevideo_frame_buffer.h"
 #include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
 #include "webrtc/video_frame.h"
 

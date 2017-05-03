@@ -367,9 +367,6 @@ void NV12Scale(std::vector<uint8_t>* tmp_buffer,
                        dst_chroma_width, dst_chroma_height);
 }
 
-NV12ToI420Scaler::NV12ToI420Scaler() = default;
-NV12ToI420Scaler::~NV12ToI420Scaler() = default;
-
 void NV12ToI420Scaler::NV12ToI420Scale(
     const uint8_t* src_y, int src_stride_y,
     const uint8_t* src_uv, int src_stride_uv,

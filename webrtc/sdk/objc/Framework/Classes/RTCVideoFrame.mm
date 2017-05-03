@@ -10,7 +10,7 @@
 
 #import "RTCVideoFrame+Private.h"
 
-#include "webrtc/sdk/objc/Framework/Classes/corevideo_frame_buffer.h"
+#include "webrtc/common_video/include/corevideo_frame_buffer.h"
 
 @implementation RTCVideoFrame {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> _videoBuffer;
