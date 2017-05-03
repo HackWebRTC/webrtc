@@ -24,7 +24,7 @@ namespace webrtc {
 #define ALIGN16_END __attribute__((aligned(16)))
 #endif
 
-enum class Aec3Optimization { kNone, kSse2 };
+enum class Aec3Optimization { kNone, kSse2, kNeon };
 
 constexpr int kNumBlocksPerSecond = 250;
 
