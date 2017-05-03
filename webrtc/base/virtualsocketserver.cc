@@ -27,7 +27,7 @@
 
 namespace rtc {
 #if defined(WEBRTC_WIN)
-const in_addr kInitialNextIPv4 = { {0x01, 0, 0, 0} };
+const in_addr kInitialNextIPv4 = { { { 0x01, 0, 0, 0 } } };
 #else
 // This value is entirely arbitrary, hence the lack of concern about endianness.
 const in_addr kInitialNextIPv4 = { 0x01000000 };
