@@ -503,6 +503,8 @@ rtc_static_library("rtc_base") {
     "stream.h",
     "thread.cc",
     "thread.h",
+    "virtualsocketserver.cc",
+    "virtualsocketserver.h",
   ]
 
   # TODO(henrike): issue 3307, make rtc_base build with the Chromium default
@@ -535,8 +537,6 @@ rtc_static_library("rtc_base") {
       "testclient.h",
       "transformadapter.cc",
       "transformadapter.h",
-      "virtualsocketserver.cc",
-      "virtualsocketserver.h",
       "window.h",
     ]
 
