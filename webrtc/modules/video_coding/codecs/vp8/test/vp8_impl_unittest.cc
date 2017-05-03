@@ -83,6 +83,7 @@ Vp8UnitTestEncodeCompleteCallback::OnEncodedImage(
   encoded_frame_->_timeStamp = encoded_frame._timeStamp;
   encoded_frame_->_frameType = encoded_frame._frameType;
   encoded_frame_->_completeFrame = encoded_frame._completeFrame;
+  encoded_frame_->rotation_ = encoded_frame.rotation_;
   encoded_frame_->qp_ = encoded_frame.qp_;
   codec_specific_info_->codecType = codec_specific_info->codecType;
   // Skip |codec_name|, to avoid allocating.
@@ -271,6 +272,26 @@ TEST_F(TestVp8Impl, EncoderParameterTest) {
   // Calls before InitDecode().
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Release());
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->InitDecode(&codec_settings_, 1));
+}
+
+// We only test the encoder here, since the decoded frame rotation is set based
+// on the CVO RTP header extension in VCMDecodedFrameCallback::Decoded.
+// TODO(brandtr): Consider passing through the rotation flag through the decoder
+// in the same way as done in the encoder.
+TEST_F(TestVp8Impl, EncodedRotationEqualsInputRotation) {
+  SetUpEncodeDecode();
+
+  input_frame_->set_rotation(kVideoRotation_0);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*input_frame_, nullptr, nullptr));
+  WaitForEncodedFrame();
+  EXPECT_EQ(kVideoRotation_0, encoded_frame_.rotation_);
+
+  input_frame_->set_rotation(kVideoRotation_90);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*input_frame_, nullptr, nullptr));
+  WaitForEncodedFrame();
+  EXPECT_EQ(kVideoRotation_90, encoded_frame_.rotation_);
 }
 
 TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {

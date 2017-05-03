@@ -133,15 +133,12 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
    public:
     VideoFrameInfo(int width,
                    int height,
-                   VideoRotation rotation,
                    bool is_texture)
         : width(width),
           height(height),
-          rotation(rotation),
           is_texture(is_texture) {}
     int width;
     int height;
-    VideoRotation rotation;
     bool is_texture;
     int pixel_count() const { return width * height; }
   };
