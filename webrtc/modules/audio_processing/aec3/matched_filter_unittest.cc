@@ -43,10 +43,47 @@ constexpr size_t kNumMatchedFilters = 4;
 
 }  // namespace
 
-#if defined(WEBRTC_ARCH_X86_FAMILY)
-// Verifies that the optimized methods are bitexact to their reference
+#if defined(WEBRTC_HAS_NEON)
+// Verifies that the optimized methods for NEON are similar to their reference
 // counterparts.
-TEST(MatchedFilter, TestOptimizations) {
+TEST(MatchedFilter, TestNeonOptimizations) {
+  Random random_generator(42U);
+  std::vector<float> x(2000);
+  RandomizeSampleVector(&random_generator, x);
+  std::vector<float> y(kSubBlockSize);
+  std::vector<float> h_NEON(512);
+  std::vector<float> h(512);
+  int x_index = 0;
+  for (int k = 0; k < 1000; ++k) {
+    RandomizeSampleVector(&random_generator, y);
+
+    bool filters_updated = false;
+    float error_sum = 0.f;
+    bool filters_updated_NEON = false;
+    float error_sum_NEON = 0.f;
+
+    MatchedFilterCore_NEON(x_index, h.size() * 150.f * 150.f, x, y, h_NEON,
+                           &filters_updated_NEON, &error_sum_NEON);
+
+    MatchedFilterCore(x_index, h.size() * 150.f * 150.f, x, y, h,
+                      &filters_updated, &error_sum);
+
+    EXPECT_EQ(filters_updated, filters_updated_NEON);
+    EXPECT_NEAR(error_sum, error_sum_NEON, error_sum / 100000.f);
+
+    for (size_t j = 0; j < h.size(); ++j) {
+      EXPECT_NEAR(h[j], h_NEON[j], 0.00001f);
+    }
+
+    x_index = (x_index + kSubBlockSize) % x.size();
+  }
+}
+#endif
+
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+// Verifies that the optimized methods for SSE2 are bitexact to their reference
+// counterparts.
+TEST(MatchedFilter, TestSse2Optimizations) {
   bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
   if (use_sse2) {
     Random random_generator(42U);
