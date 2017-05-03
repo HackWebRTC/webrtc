@@ -22,6 +22,7 @@ namespace webrtc {
 namespace {
 
 constexpr float kHErrorInitial = 10000.f;
+constexpr int kPoorExcitationCounterInitial = 1000;
 
 }  // namespace
 
@@ -30,7 +31,7 @@ int MainFilterUpdateGain::instance_count_ = 0;
 MainFilterUpdateGain::MainFilterUpdateGain()
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
-      poor_excitation_counter_(1000) {
+      poor_excitation_counter_(kPoorExcitationCounterInitial) {
   H_error_.fill(kHErrorInitial);
 }
 
@@ -38,6 +39,8 @@ MainFilterUpdateGain::~MainFilterUpdateGain() {}
 
 void MainFilterUpdateGain::HandleEchoPathChange() {
   H_error_.fill(kHErrorInitial);
+  poor_excitation_counter_ = kPoorExcitationCounterInitial;
+  call_counter_ = 0;
 }
 
 void MainFilterUpdateGain::Compute(

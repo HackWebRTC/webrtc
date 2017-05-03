@@ -55,6 +55,7 @@ void Subtractor::HandleEchoPathChange(
     main_filter_.HandleEchoPathChange();
     shadow_filter_.HandleEchoPathChange();
     G_main_.HandleEchoPathChange();
+    G_shadow_.HandleEchoPathChange();
   }
 }
 

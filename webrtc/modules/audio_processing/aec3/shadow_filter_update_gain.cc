@@ -17,6 +17,13 @@
 
 namespace webrtc {
 
+void ShadowFilterUpdateGain::HandleEchoPathChange() {
+  // TODO(peah): Check whether this counter should instead be initialized to a
+  // large value.
+  poor_signal_excitation_counter_ = 0;
+  call_counter_ = 0;
+}
+
 void ShadowFilterUpdateGain::Compute(
     const RenderBuffer& render_buffer,
     const RenderSignalAnalyzer& render_signal_analyzer,

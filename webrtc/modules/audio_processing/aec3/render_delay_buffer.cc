@@ -97,6 +97,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   DownsampledRenderBuffer downsampled_render_buffer_;
   DecimatorBy4 render_decimator_;
   ApiCallJitterBuffer api_call_jitter_buffer_;
+  const std::vector<std::vector<float>> zero_block_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderDelayBufferImpl);
 };
 
@@ -107,7 +108,8 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(size_t num_bands)
           num_bands,
           std::max(kResidualEchoPowerRenderWindowSize, kAdaptiveFilterLength),
           std::vector<size_t>(1, kAdaptiveFilterLength)),
-      api_call_jitter_buffer_(num_bands) {
+      api_call_jitter_buffer_(num_bands),
+      zero_block_(num_bands, std::vector<float>(kBlockSize, 0.f)) {
   buffer_.fill(std::vector<std::vector<float>>(
       num_bands, std::vector<float>(kBlockSize, 0.f)));
 
@@ -147,12 +149,11 @@ bool RenderDelayBufferImpl::Insert(
 
 bool RenderDelayBufferImpl::UpdateBuffers() {
   bool underrun = true;
-  // Update the buffers with a new block if such is available, otherwise repeat
-  // the previous block.
+  // Update the buffers with a new block if such is available, otherwise insert
+  // a block of silence.
   if (api_call_jitter_buffer_.Size() > 0) {
     last_insert_index_ = (last_insert_index_ + 1) % buffer_.size();
     api_call_jitter_buffer_.Remove(&buffer_[last_insert_index_]);
-
     underrun = false;
   }
 
@@ -162,14 +163,22 @@ bool RenderDelayBufferImpl::UpdateBuffers() {
       downsampled_render_buffer_.buffer.size();
 
   std::array<float, kSubBlockSize> render_downsampled;
-  render_decimator_.Decimate(buffer_[last_insert_index_][0],
-                             render_downsampled);
+  if (underrun) {
+    render_decimator_.Decimate(zero_block_[0], render_downsampled);
+  } else {
+    render_decimator_.Decimate(buffer_[last_insert_index_][0],
+                               render_downsampled);
+  }
   std::copy(render_downsampled.rbegin(), render_downsampled.rend(),
             downsampled_render_buffer_.buffer.begin() +
                 downsampled_render_buffer_.position);
 
-  fft_buffer_.Insert(
-      buffer_[(last_insert_index_ - delay_ + buffer_.size()) % buffer_.size()]);
+  if (underrun) {
+    fft_buffer_.Insert(zero_block_);
+  } else {
+    fft_buffer_.Insert(buffer_[(last_insert_index_ - delay_ + buffer_.size()) %
+                               buffer_.size()]);
+  }
   return !underrun;
 }
 
