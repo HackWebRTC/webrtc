@@ -20,6 +20,9 @@ RTC_EXPORT
 // (usually RTCVideoSource).
 @interface RTCCameraVideoCapturer : RTCVideoCapturer
 
+// Capture session that is used for capturing. Valid from initialization to dealloc.
+@property(readonly, nonatomic) AVCaptureSession *captureSession;
+
 // Returns list of available capture devices that support video capture.
 + (NSArray<AVCaptureDevice *> *)captureDevices;
 // Returns list of formats that are supported by this class for this device.
@@ -31,9 +34,6 @@ RTC_EXPORT
                            fps:(int)fps;
 // Stops the capture session asynchronously.
 - (void)stopCapture;
-
-// Capture session that is used for capturing. Valid from initialization to dealloc.
-@property(readonly, nonatomic) AVCaptureSession *captureSession;
 
 @end
 

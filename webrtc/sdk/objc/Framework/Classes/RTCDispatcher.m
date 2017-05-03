@@ -33,6 +33,17 @@ static dispatch_queue_t kCaptureSessionQueue = nil;
   dispatch_async(queue, block);
 }
 
++ (BOOL)isOnQueueForType:(RTCDispatcherQueueType)dispatchType {
+  dispatch_queue_t targetQueue = [self dispatchQueueForType:dispatchType];
+  const char* targetLabel = dispatch_queue_get_label(targetQueue);
+  const char* currentLabel = dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL);
+
+  NSAssert(strlen(targetLabel) > 0, @"Label is required for the target queue.");
+  NSAssert(strlen(currentLabel) > 0, @"Label is required for the current queue.");
+
+  return strcmp(targetLabel, currentLabel) == 0;
+}
+
 #pragma mark - Private
 
 + (dispatch_queue_t)dispatchQueueForType:(RTCDispatcherQueueType)dispatchType {

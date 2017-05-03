@@ -361,6 +361,8 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
 #pragma mark - Private, called inside capture queue
 
 - (void)updateDeviceCaptureFormat:(AVCaptureDeviceFormat *)format fps:(int)fps {
+  NSAssert([RTCDispatcher isOnQueueForType:RTCDispatcherTypeCaptureSession],
+           @"updateDeviceCaptureFormat must be called on the capture queue.");
   @try {
     _currentDevice.activeFormat = format;
     _currentDevice.activeVideoMinFrameDuration = CMTimeMake(1, fps);
@@ -371,6 +373,8 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
 }
 
 - (void)reconfigureCaptureSessionInput {
+  NSAssert([RTCDispatcher isOnQueueForType:RTCDispatcherTypeCaptureSession],
+           @"reconfigureCaptureSessionInput must be called on the capture queue.");
   NSError *error = nil;
   AVCaptureDeviceInput *input =
       [AVCaptureDeviceInput deviceInputWithDevice:_currentDevice error:&error];
@@ -391,6 +395,8 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
 }
 
 - (void)updateOrientation {
+  NSAssert([RTCDispatcher isOnQueueForType:RTCDispatcherTypeCaptureSession],
+           @"updateOrientation must be called on the capture queue.");
 #if TARGET_OS_IPHONE
   BOOL usingFrontCamera = _currentDevice.position == AVCaptureDevicePositionFront;
   switch ([UIDevice currentDevice].orientation) {
