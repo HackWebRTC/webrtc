@@ -11,6 +11,8 @@
   <issue id="LongLogTag" severity="ignore"/>
   <issue id="Registered" severity="ignore"/>
   <issue id="MissingPermission" severity="ignore"/>
+  <issue id="ApplySharedPref" severity="ignore"/>
+  <!-- TODO(sakal): Remove once the lint tool is updated. -->
   <issue id="CommitPrefEdits" severity="ignore"/>
   <issue id="UnusedResources" severity="ignore"/>
   <issue id="IconColors" severity="ignore"/>

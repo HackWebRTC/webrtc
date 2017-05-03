@@ -14,9 +14,9 @@ import static org.webrtc.NetworkMonitorAutoDetect.ConnectionType;
 import static org.webrtc.NetworkMonitorAutoDetect.INVALID_NET_ID;
 import static org.webrtc.NetworkMonitorAutoDetect.NetworkInformation;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +37,9 @@ public class NetworkMonitor {
   }
 
   private static final String TAG = "NetworkMonitor";
-  private static NetworkMonitor instance;
+
+  // We are storing application context so it is okay.
+  @SuppressLint("StaticFieldLeak") private static NetworkMonitor instance;
 
   private final Context applicationContext;
 
@@ -53,8 +55,7 @@ public class NetworkMonitor {
 
   private NetworkMonitor(Context context) {
     assertIsTrue(context != null);
-    applicationContext =
-        context.getApplicationContext() == null ? context : context.getApplicationContext();
+    applicationContext = context.getApplicationContext();
 
     nativeNetworkObservers = new ArrayList<Long>();
     networkObservers = new ArrayList<NetworkObserver>();
