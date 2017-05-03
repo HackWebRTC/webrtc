@@ -27,21 +27,6 @@ if (is_ios || is_mac) {
     ]
   }
 
-  rtc_static_library("rtc_sdk_helpers_objc") {
-    sources = [
-      "objc/Framework/Classes/helpers.h",
-      "objc/Framework/Classes/helpers.mm",
-    ]
-    deps = [
-      "../base:rtc_base_approved",
-    ]
-    configs += [ "..:common_objc" ]
-
-    if (is_ios) {
-      libs = [ "AVFoundation.framework" ]
-    }
-  }
-
   rtc_static_library("rtc_sdk_common_objc") {
     sources = [
       "objc/Framework/Classes/NSString+StdString.h",
@@ -54,6 +39,8 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/RTCMetricsSampleInfo.mm",
       "objc/Framework/Classes/RTCSSLAdapter.mm",
       "objc/Framework/Classes/RTCTracing.mm",
+      "objc/Framework/Classes/helpers.h",
+      "objc/Framework/Classes/helpers.mm",
       "objc/Framework/Headers/WebRTC/RTCDispatcher.h",
       "objc/Framework/Headers/WebRTC/RTCFieldTrials.h",
       "objc/Framework/Headers/WebRTC/RTCLogging.h",
@@ -65,7 +52,6 @@ if (is_ios || is_mac) {
     ]
 
     deps = [
-      ":rtc_sdk_helpers_objc",
       "../base:rtc_base",
     ]
     configs += [ "..:common_objc" ]
@@ -299,7 +285,7 @@ if (is_ios || is_mac) {
       # gets additional generated targets which would require many lines here to
       # cover (which would be confusing to read and hard to maintain).
       if (!is_android && !is_ios) {
-        visibility = [ "../:rtc_unittests" ]
+        visibility = [ "//webrtc:rtc_unittests" ]
       }
       sources = [
         "objc/Framework/UnitTests/RTCCameraVideoCapturerTests.mm",
@@ -330,9 +316,9 @@ if (is_ios || is_mac) {
       defines = [ "GTEST_RELATIVE_PATH" ]
       deps = [
         ":rtc_sdk_peerconnection_objc",
-        "..//system_wrappers:system_wrappers_default",
         "../base:rtc_base_tests_utils",
         "//third_party/ocmock",
+        "//webrtc/system_wrappers:system_wrappers_default",
       ]
 
       if (!build_with_chromium && is_clang) {
@@ -434,8 +420,8 @@ if (is_ios || is_mac) {
     complete_static_lib = true
     deps = [
       ":rtc_sdk_peerconnection_objc",
-      "..//system_wrappers:field_trial_default",
-      "..//system_wrappers:metrics_default",
+      "//webrtc/system_wrappers:field_trial_default",
+      "//webrtc/system_wrappers:metrics_default",
     ]
   }
 
@@ -449,7 +435,7 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/h264_video_toolbox_nalu.h",
     ]
 
-    configs += [ "../:common_objc" ]
+    configs += [ "//webrtc:common_objc" ]
 
     deps = [
       ":rtc_sdk_common_objc",
