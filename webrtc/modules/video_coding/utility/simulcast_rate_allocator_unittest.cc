@@ -36,6 +36,7 @@ class MockTemporalLayers : public TemporalLayers {
                void(bool, CodecSpecificInfoVP8*, uint32_t));
   MOCK_METHOD2(FrameEncoded, void(unsigned int, int));
   MOCK_CONST_METHOD0(CurrentLayerId, int());
+  MOCK_CONST_METHOD0(Tl0PicIdx, uint8_t());
 };
 }  // namespace
 

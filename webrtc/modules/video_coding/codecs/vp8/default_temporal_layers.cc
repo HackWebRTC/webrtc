@@ -194,6 +194,10 @@ int DefaultTemporalLayers::CurrentLayerId() const {
   return temporal_ids_[pattern_idx_ % temporal_ids_.size()];
 }
 
+uint8_t DefaultTemporalLayers::Tl0PicIdx() const {
+  return tl0_pic_idx_;
+}
+
 std::vector<uint32_t> DefaultTemporalLayers::OnRatesUpdated(
     int bitrate_kbps,
     int max_bitrate_kbps,

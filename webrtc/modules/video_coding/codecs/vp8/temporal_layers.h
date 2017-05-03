@@ -88,6 +88,10 @@ class TemporalLayers {
   virtual void FrameEncoded(unsigned int size, int qp) = 0;
 
   virtual int CurrentLayerId() const = 0;
+
+  // Returns the current tl0_pic_idx, so it can be reused in future
+  // instantiations.
+  virtual uint8_t Tl0PicIdx() const = 0;
 };
 
 class TemporalLayersListener;

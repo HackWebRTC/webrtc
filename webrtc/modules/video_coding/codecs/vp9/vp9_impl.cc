@@ -22,9 +22,10 @@
 #include "vpx/vp8dx.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/base/timeutils.h"
 #include "webrtc/base/keep_ref_until_done.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/random.h"
+#include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
@@ -67,14 +68,12 @@ VP9EncoderImpl::VP9EncoderImpl()
       encoded_complete_callback_(NULL),
       inited_(false),
       timestamp_(0),
-      picture_id_(0),
       cpu_speed_(3),
       rc_max_intra_target_(0),
       encoder_(NULL),
       config_(NULL),
       raw_(NULL),
       input_image_(NULL),
-      tl0_pic_idx_(0),
       frames_since_kf_(0),
       num_temporal_layers_(0),
       num_spatial_layers_(0),
@@ -84,8 +83,10 @@ VP9EncoderImpl::VP9EncoderImpl()
       spatial_layer_(new ScreenshareLayersVP9(2)) {
   memset(&codec_, 0, sizeof(codec_));
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
-  uint32_t seed = rtc::Time32();
-  srand(seed);
+
+  Random random(rtc::TimeMicros());
+  picture_id_ = random.Rand<uint16_t>() & 0x7FFF;
+  tl0_pic_idx_ = random.Rand<uint8_t>();
 }
 
 VP9EncoderImpl::~VP9EncoderImpl() {
@@ -262,10 +263,6 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   }
   if (encoder_ == NULL) {
     encoder_ = new vpx_codec_ctx_t;
-    // Only randomize pid/tl0 the first time the encoder is initialized
-    // in order to not make random jumps mid-stream.
-    picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;  // NOLINT
-    tl0_pic_idx_ = static_cast<uint8_t>(rand());           // NOLINT
   }
   if (config_ == NULL) {
     config_ = new vpx_codec_enc_cfg_t;

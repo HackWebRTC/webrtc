@@ -33,6 +33,11 @@ VideoCodecTest::FakeEncodeCompleteCallback::OnEncodedImage(
     const RTPFragmentationHeader* fragmentation) {
   rtc::CritScope lock(&test_->encoded_frame_section_);
   test_->encoded_frame_.emplace(frame);
+  RTC_DCHECK(codec_specific_info);
+  test_->codec_specific_info_.codecType = codec_specific_info->codecType;
+  // Skip |codec_name|, to avoid allocating.
+  test_->codec_specific_info_.codecSpecific =
+      codec_specific_info->codecSpecific;
   test_->encoded_frame_event_.Set();
   return Result(Result::OK);
 }
@@ -65,7 +70,9 @@ void VideoCodecTest::SetUp() {
   InitCodecs();
 }
 
-bool VideoCodecTest::WaitForEncodedFrame(EncodedImage* frame) {
+bool VideoCodecTest::WaitForEncodedFrame(
+    EncodedImage* frame,
+    CodecSpecificInfo* codec_specific_info) {
   bool ret = encoded_frame_event_.Wait(kEncodeTimeoutMs);
   EXPECT_TRUE(ret) << "Timed out while waiting for an encoded frame.";
   // This becomes unsafe if there are multiple threads waiting for frames.
@@ -74,6 +81,9 @@ bool VideoCodecTest::WaitForEncodedFrame(EncodedImage* frame) {
   if (encoded_frame_) {
     *frame = std::move(*encoded_frame_);
     encoded_frame_.reset();
+    RTC_DCHECK(codec_specific_info);
+    codec_specific_info->codecType = codec_specific_info_.codecType;
+    codec_specific_info->codecSpecific = codec_specific_info_.codecSpecific;
     return true;
   } else {
     return false;
@@ -98,18 +108,18 @@ bool VideoCodecTest::WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
 }
 
 void VideoCodecTest::InitCodecs() {
-  VideoCodec codec_inst = codec_settings();
-  codec_inst.startBitrate = kStartBitrate;
-  codec_inst.targetBitrate = kTargetBitrate;
-  codec_inst.maxBitrate = kMaxBitrate;
-  codec_inst.maxFramerate = kMaxFramerate;
-  codec_inst.width = kWidth;
-  codec_inst.height = kHeight;
+  codec_settings_ = codec_settings();
+  codec_settings_.startBitrate = kStartBitrate;
+  codec_settings_.targetBitrate = kTargetBitrate;
+  codec_settings_.maxBitrate = kMaxBitrate;
+  codec_settings_.maxFramerate = kMaxFramerate;
+  codec_settings_.width = kWidth;
+  codec_settings_.height = kHeight;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_inst, 1 /* number of cores */,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
                                  0 /* max payload size (unused) */));
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder_->InitDecode(&codec_inst, 1 /* number of cores */));
+            decoder_->InitDecode(&codec_settings_, 1 /* number of cores */));
 }
 
 }  // namespace webrtc

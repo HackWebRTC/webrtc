@@ -21,16 +21,17 @@
 #include "libyuv/convert.h"  // NOLINT
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/random.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/trace_event.h"
 #include "webrtc/common_types.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/include/module_common_types.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "webrtc/modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
@@ -165,10 +166,12 @@ VP8EncoderImpl::VP8EncoderImpl()
       number_of_cores_(0),
       rc_max_intra_target_(0),
       key_frame_request_(kMaxSimulcastStreams, false) {
-  uint32_t seed = rtc::Time32();
-  srand(seed);
-
+  Random random(rtc::TimeMicros());
   picture_id_.reserve(kMaxSimulcastStreams);
+  for (int i = 0; i < kMaxSimulcastStreams; ++i) {
+    picture_id_.push_back(random.Rand<uint16_t>() & 0x7FFF);
+    tl0_pic_idx_.push_back(random.Rand<uint8_t>());
+  }
   temporal_layers_.reserve(kMaxSimulcastStreams);
   raw_images_.reserve(kMaxSimulcastStreams);
   encoded_images_.reserve(kMaxSimulcastStreams);
@@ -205,10 +208,10 @@ int VP8EncoderImpl::Release() {
     vpx_img_free(&raw_images_.back());
     raw_images_.pop_back();
   }
-  while (!temporal_layers_.empty()) {
-    delete temporal_layers_.back();
-    temporal_layers_.pop_back();
+  for (size_t i = 0; i < temporal_layers_.size(); ++i) {
+    tl0_pic_idx_[i] = temporal_layers_[i]->Tl0PicIdx();
   }
+  temporal_layers_.clear();
   inited_ = false;
   return ret_val;
 }
@@ -293,14 +296,15 @@ void VP8EncoderImpl::SetupTemporalLayers(int num_streams,
   RTC_DCHECK(codec.VP8().tl_factory != nullptr);
   const TemporalLayersFactory* tl_factory = codec.VP8().tl_factory;
   if (num_streams == 1) {
-    temporal_layers_.push_back(
-        tl_factory->Create(0, num_temporal_layers, rand()));
+    temporal_layers_.emplace_back(
+        tl_factory->Create(0, num_temporal_layers, tl0_pic_idx_[0]));
   } else {
     for (int i = 0; i < num_streams; ++i) {
       RTC_CHECK_GT(num_temporal_layers, 0);
       int layers = std::max(static_cast<uint8_t>(1),
                             codec.simulcastStream[i].numberOfTemporalLayers);
-      temporal_layers_.push_back(tl_factory->Create(i, layers, rand()));
+      temporal_layers_.emplace_back(
+          tl_factory->Create(i, layers, tl0_pic_idx_[i]));
     }
   }
 }
@@ -357,7 +361,6 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
     codec_.simulcastStream[0].height = codec_.height;
   }
 
-  picture_id_.resize(number_of_streams);
   encoded_images_.resize(number_of_streams);
   encoders_.resize(number_of_streams);
   configurations_.resize(number_of_streams);
@@ -382,8 +385,6 @@ int VP8EncoderImpl::InitEncode(const VideoCodec* inst,
     downsampling_factors_[number_of_streams - 1].den = 1;
   }
   for (int i = 0; i < number_of_streams; ++i) {
-    // Random start, 16 bits is enough.
-    picture_id_[i] = static_cast<uint16_t>(rand()) & 0x7FFF;  // NOLINT
     // allocate memory for encoded image
     if (encoded_images_[i]._buffer != NULL) {
       delete[] encoded_images_[i]._buffer;

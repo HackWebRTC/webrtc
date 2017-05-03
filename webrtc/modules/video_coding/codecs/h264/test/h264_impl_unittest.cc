@@ -44,7 +44,8 @@ TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*input_frame_, nullptr, nullptr));
   EncodedImage encoded_frame;
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame));
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   // First frame should be a key frame.
   encoded_frame._frameType = kVideoFrameKey;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
@@ -60,7 +61,8 @@ TEST_F(TestH264Impl, MAYBE_DecodedQpEqualsEncodedQp) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*input_frame_, nullptr, nullptr));
   EncodedImage encoded_frame;
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame));
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   // First frame should be a key frame.
   encoded_frame._frameType = kVideoFrameKey;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,

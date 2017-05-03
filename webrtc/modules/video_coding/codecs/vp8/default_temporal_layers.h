@@ -46,6 +46,8 @@ class DefaultTemporalLayers : public TemporalLayers {
 
   int CurrentLayerId() const override;
 
+  uint8_t Tl0PicIdx() const override;
+
  private:
   const size_t num_layers_;
   const std::vector<unsigned int> temporal_ids_;

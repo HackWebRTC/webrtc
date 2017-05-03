@@ -18,6 +18,7 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/thread_annotations.h"
+#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
@@ -71,9 +72,13 @@ class VideoCodecTest : public ::testing::Test {
 
   void SetUp() override;
 
-  bool WaitForEncodedFrame(EncodedImage* frame);
+  bool WaitForEncodedFrame(EncodedImage* frame,
+                           CodecSpecificInfo* codec_specific_info);
   bool WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
                            rtc::Optional<uint8_t>* qp);
+
+  // Populated by InitCodecs().
+  VideoCodec codec_settings_;
 
   std::unique_ptr<VideoFrame> input_frame_;
 
@@ -89,6 +94,7 @@ class VideoCodecTest : public ::testing::Test {
   rtc::Event encoded_frame_event_;
   rtc::CriticalSection encoded_frame_section_;
   rtc::Optional<EncodedImage> encoded_frame_ GUARDED_BY(encoded_frame_section_);
+  CodecSpecificInfo codec_specific_info_ GUARDED_BY(encoded_frame_section_);
 
   rtc::Event decoded_frame_event_;
   rtc::CriticalSection decoded_frame_section_;

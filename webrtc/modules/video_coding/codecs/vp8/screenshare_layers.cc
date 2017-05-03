@@ -83,6 +83,10 @@ int ScreenshareLayers::CurrentLayerId() const {
   return 0;
 }
 
+uint8_t ScreenshareLayers::Tl0PicIdx() const {
+  return tl0_pic_idx_;
+}
+
 TemporalReferences ScreenshareLayers::UpdateLayerConfig(uint32_t timestamp) {
   if (number_of_temporal_layers_ <= 1) {
     // No flags needed for 1 layer screenshare.

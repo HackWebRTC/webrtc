@@ -55,6 +55,8 @@ class ScreenshareLayers : public TemporalLayers {
 
   int CurrentLayerId() const override;
 
+  uint8_t Tl0PicIdx() const override;
+
  private:
   bool TimeToSync(int64_t timestamp) const;
   uint32_t GetCodecTargetBitrateKbps() const;

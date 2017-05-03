@@ -25,6 +25,7 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/random.h"
 #include "webrtc/base/sequenced_task_checker.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread.h"
@@ -222,7 +223,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
   int height_;  // Frame height in pixels.
   bool inited_;
   bool use_surface_;
-  uint16_t picture_id_;
   enum libyuv::FourCC encoder_fourcc_;  // Encoder color space format.
   int last_set_bitrate_kbps_;  // Last-requested bitrate in kbps.
   int last_set_fps_;  // Last-requested frame rate.
@@ -266,6 +266,7 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
                                    // |input_frame_infos_|.
   webrtc::VideoRotation output_rotation_;  // Last output frame rotation from
                                            // |input_frame_infos_|.
+
   // Frame size in bytes fed to MediaCodec.
   int yuv_size_;
   // True only when between a callback_->OnEncodedImage() call return a positive
@@ -279,7 +280,6 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
   // VP9 variables to populate codec specific structure.
   webrtc::GofInfoVP9 gof_;  // Contains each frame's temporal information for
                             // non-flexible VP9 mode.
-  uint8_t tl0_pic_idx_;
   size_t gof_idx_;
 
   // EGL context - owned by factory, should not be allocated/destroyed
@@ -292,6 +292,10 @@ class MediaCodecVideoEncoder : public webrtc::VideoEncoder {
   int64_t last_frame_received_ms_;
   int frames_received_since_last_key_;
   webrtc::VideoCodecMode codec_mode_;
+
+  // RTP state.
+  uint16_t picture_id_;
+  uint8_t tl0_pic_idx_;
 
   bool sw_fallback_required_;
 
@@ -324,7 +328,6 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
                                      "()V"))),
       inited_(false),
       use_surface_(false),
-      picture_id_(0),
       egl_context_(egl_context),
       sw_fallback_required_(false) {
   encoder_queue_checker_.Detach();
@@ -375,7 +378,10 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
     ALOGW << "MediaCodecVideoEncoder ctor failed.";
     ProcessHWError(true /* reset_if_fallback_unavailable */);
   }
-  srand(rtc::Time32());
+
+  webrtc::Random random(rtc::TimeMicros());
+  picture_id_ = random.Rand<uint16_t>() & 0x7FFF;
+  tl0_pic_idx_ = random.Rand<uint8_t>();
 }
 
 int32_t MediaCodecVideoEncoder::InitEncode(
@@ -552,10 +558,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   input_frame_infos_.clear();
   drop_next_input_frame_ = false;
   use_surface_ = use_surface;
-  // TODO(ilnik): Use rand_r() instead to avoid LINT warnings below.
-  picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;  // NOLINT
   gof_.SetGofInfoVP9(webrtc::TemporalStructureMode::kTemporalStructureMode1);
-  tl0_pic_idx_ = static_cast<uint8_t>(rand());  // NOLINT
   gof_idx_ = 0;
   last_frame_received_ms_ = -1;
   frames_received_since_last_key_ = kMinKeyFrameInterval;
