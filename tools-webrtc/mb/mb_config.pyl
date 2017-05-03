@@ -174,7 +174,7 @@
       'win_clang_rel': 'win_clang_release_bot_x86',
       'win_x64_clang_dbg': 'win_clang_debug_bot_x64',
       'win_x64_clang_rel': 'win_clang_release_bot_x64',
-      'win_asan': 'win_syzyasan_release_bot_x86',
+      'win_asan': 'win_asan_clang_release_bot_x86',
       'win_baremetal': 'release_bot_x86',
       'win_x64_win8': 'debug_bot_x64',
       'win_x64_win10': 'debug_bot_x64',
@@ -265,6 +265,7 @@
     ],
     'win_asan_clang_release_bot_x86': [
       'gn', 'asan', 'clang',  'full_symbols', 'openh264_release_bot', 'x86',
+      'win_fastlink',
     ],
     'win_syzyasan_release_bot_x86': [
       'gn', 'syzyasan', 'minimal_symbols', 'openh264_release_bot', 'x86',
@@ -452,6 +453,10 @@
 
     'ubsan_vptr': {
       'gn_args': 'is_ubsan_vptr=true',
+    },
+
+    'win_fastlink': {
+      'gn_args': 'is_win_fastlink=true',
     },
 
     'x64': {
