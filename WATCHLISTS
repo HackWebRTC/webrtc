@@ -38,6 +38,9 @@
     'audio': {
       'filepath': 'webrtc/audio/.*',
     },
+    'base': {
+      'filepath': 'webrtc/base/.*',
+    },
     'call': {
       'filepath': 'webrtc/call/.*',
     },
@@ -117,7 +120,9 @@
                      'peah@webrtc.org'],
     'audio': ['solenberg@webrtc.org',
               'tina.legrand@webrtc.org'],
-    'api': ['solenberg@webrtc.org'],
+    'api': ['kwiberg@webrtc.org',
+            'solenberg@webrtc.org'],
+    'base': ['kwiberg@webrtc.org'],
     'call': ['mflodman@webrtc.org',
              'solenberg@webrtc.org',
              'stefan@webrtc.org'],
