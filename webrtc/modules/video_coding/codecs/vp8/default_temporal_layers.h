@@ -53,6 +53,7 @@ class DefaultTemporalLayers : public TemporalLayers {
  private:
   const size_t num_layers_;
   const std::vector<unsigned int> temporal_ids_;
+  const std::vector<bool> temporal_layer_sync_;
   const std::vector<TemporalLayers::FrameConfig> temporal_pattern_;
 
   uint8_t tl0_pic_idx_;

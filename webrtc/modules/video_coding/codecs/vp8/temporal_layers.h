@@ -24,11 +24,6 @@ namespace webrtc {
 
 struct CodecSpecificInfoVP8;
 
-// TODO(pbos): Remove along with layer_sync and freeze_entropy, they are
-// derivable from picture_idx and should be exposed with
-// TL::IsLayerSync(TL::FrameConfig).
-enum TemporalFlags { kLayerSync = 1, kFreezeEntropy = 2 };
-
 class TemporalLayers {
  public:
   enum BufferFlags {
@@ -37,6 +32,7 @@ class TemporalLayers {
     kUpdate = 2,
     kReferenceAndUpdate = kReference | kUpdate,
   };
+  enum FreezeEntropy { kFreezeEntropy };
 
   struct FrameConfig {
     FrameConfig();
@@ -45,7 +41,7 @@ class TemporalLayers {
     FrameConfig(BufferFlags last,
                 BufferFlags golden,
                 BufferFlags arf,
-                int extra_flags);
+                FreezeEntropy);
 
     bool drop_frame;
     BufferFlags last_buffer_flags;
@@ -64,7 +60,6 @@ class TemporalLayers {
     FrameConfig(BufferFlags last,
                 BufferFlags golden,
                 BufferFlags arf,
-                bool layer_sync,
                 bool freeze_entropy);
   };
 

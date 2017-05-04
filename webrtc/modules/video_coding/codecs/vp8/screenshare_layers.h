@@ -60,6 +60,8 @@ class ScreenshareLayers : public TemporalLayers {
   uint8_t Tl0PicIdx() const override;
 
  private:
+  enum TemporalLayerState { kDrop, kTl0, kTl1, kTl1Sync };
+
   bool TimeToSync(int64_t timestamp) const;
   uint32_t GetCodecTargetBitrateKbps() const;
 

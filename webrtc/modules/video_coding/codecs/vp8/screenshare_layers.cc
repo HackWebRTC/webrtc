@@ -93,8 +93,10 @@ TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
   if (number_of_temporal_layers_ <= 1) {
     // No flags needed for 1 layer screenshare.
     // TODO(pbos): Consider updating only last, and not all buffers.
-    return TemporalLayers::FrameConfig(kReferenceAndUpdate, kReferenceAndUpdate,
-                                       kReferenceAndUpdate);
+    TemporalLayers::FrameConfig tl_config(
+        kReferenceAndUpdate, kReferenceAndUpdate, kReferenceAndUpdate);
+    tl_config.pattern_idx = static_cast<int>(kTl1);
+    return tl_config;
   }
 
   const int64_t now_ms = clock_->TimeInMilliseconds();
@@ -108,8 +110,7 @@ TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
     stats_.first_frame_time_ms_ = now_ms;
 
   int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(timestamp);
-  enum TemporalLayerState { kDrop, kTl0, kTl1, kTl1Sync };
-  enum TemporalLayerState layer_state = kDrop;
+  TemporalLayerState layer_state = kDrop;
   if (active_layer_ == -1 ||
       layers_[active_layer_].state != TemporalLayer::State::kDropped) {
     if (last_emitted_tl0_timestamp_ != -1 &&
@@ -163,27 +164,33 @@ TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
   layers_[0].UpdateDebt(ts_diff / 90);
   layers_[1].UpdateDebt(ts_diff / 90);
   last_timestamp_ = timestamp;
+  TemporalLayers::FrameConfig tl_config;
   // TODO(pbos): Consider referencing but not updating the 'alt' buffer for all
   // layers.
   switch (layer_state) {
     case kDrop:
-      return TemporalLayers::FrameConfig(kNone, kNone, kNone);
+      tl_config = TemporalLayers::FrameConfig(kNone, kNone, kNone);
+      break;
     case kTl0:
       // TL0 only references and updates 'last'.
-      return TemporalLayers::FrameConfig(kReferenceAndUpdate, kNone, kNone);
+      tl_config =
+          TemporalLayers::FrameConfig(kReferenceAndUpdate, kNone, kNone);
+      break;
     case kTl1:
       // TL1 references both 'last' and 'golden' but only updates 'golden'.
-      return TemporalLayers::FrameConfig(kReference, kReferenceAndUpdate,
-                                         kNone);
+      tl_config =
+          TemporalLayers::FrameConfig(kReference, kReferenceAndUpdate, kNone);
+      break;
     case kTl1Sync:
       // Predict from only TL0 to allow participants to switch to the high
       // bitrate stream. Updates 'golden' so that TL1 can continue to refer to
       // and update 'golden' from this point on.
-      return TemporalLayers::FrameConfig(kReference, kUpdate, kNone,
-                                         kLayerSync);
+      tl_config = TemporalLayers::FrameConfig(kReference, kUpdate, kNone);
+      break;
   }
-  RTC_NOTREACHED();
-  return TemporalLayers::FrameConfig(kNone, kNone, kNone);
+
+  tl_config.pattern_idx = static_cast<int>(layer_state);
+  return tl_config;
 }
 
 std::vector<uint32_t> ScreenshareLayers::OnRatesUpdated(int bitrate_kbps,
@@ -265,10 +272,20 @@ void ScreenshareLayers::PopulateCodecSpecific(
     vp8_info->layerSync = false;
     vp8_info->tl0PicIdx = kNoTl0PicIdx;
   } else {
-    // TODO(pbos): Add active_layer_ to TemporalLayers::FrameConfig (as
-    // pattern_idx) and make function const.
-    RTC_DCHECK_NE(-1, active_layer_);
-    vp8_info->temporalIdx = active_layer_;
+    TemporalLayerState layer_state =
+        static_cast<TemporalLayerState>(tl_config.pattern_idx);
+    switch (layer_state) {
+      case kDrop:
+        RTC_NOTREACHED();
+        break;
+      case kTl0:
+        vp8_info->temporalIdx = 0;
+        break;
+      case kTl1:
+      case kTl1Sync:
+        vp8_info->temporalIdx = 1;
+        break;
+    }
     if (frame_is_keyframe) {
       vp8_info->temporalIdx = 0;
       last_sync_timestamp_ = unwrapped_timestamp;
