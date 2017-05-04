@@ -448,8 +448,9 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(command, [
         '../../testing/test_env.py',
         '../../tools-webrtc/gtest-parallel-wrapper.py',
-        '--gtest_color=no',
         '--output_dir=${ISOLATED_OUTDIR}/test_logs',
+        '--gtest_color=no',
+        '--timeout=900',
         './base_unittests',
         '--workers=1',
         '--',
@@ -494,8 +495,9 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(command, [
         '../../testing/xvfb.py',
         '../../tools-webrtc/gtest-parallel-wrapper.py',
-        '--gtest_color=no',
         '--output_dir=${ISOLATED_OUTDIR}/test_logs',
+        '--gtest_color=no',
+        '--timeout=900',
         './base_unittests',
         '--',
         '--asan=0',
@@ -540,8 +542,9 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(command, [
         '../../testing/test_env.py',
         '../../tools-webrtc/gtest-parallel-wrapper.py',
-        '--gtest_color=no',
         '--output_dir=${ISOLATED_OUTDIR}\\test_logs',
+        '--gtest_color=no',
+        '--timeout=900',
         r'.\unittests.exe',
         '--',
         '--asan=0',
@@ -582,8 +585,9 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(command, [
         '../../testing/test_env.py',
         '../../tools-webrtc/gtest-parallel-wrapper.py',
-        '--gtest_color=no',
         '--output_dir=${ISOLATED_OUTDIR}/test_logs',
+        '--gtest_color=no',
+        '--timeout=900',
         './base_unittests',
         '--',
         '--asan=0',

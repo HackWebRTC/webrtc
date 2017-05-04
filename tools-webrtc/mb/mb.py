@@ -1096,8 +1096,12 @@ class MetaBuildWrapper(object):
         output_dir = '${ISOLATED_OUTDIR}' + sep + 'test_logs'
         gtest_parallel_wrapper = [
             '../../tools-webrtc/gtest-parallel-wrapper.py',
-            '--gtest_color=no',
             '--output_dir=%s' % output_dir,
+            '--gtest_color=no',
+            # We tell gtest-parallel to interrupt the test after 900 seconds,
+            # so it can exit cleanly and report results, instead of being
+            # interrupted by swarming and not reporting anything.
+            '--timeout=900',
         ]
 
       asan = 'is_asan=true' in vals['gn_args']
