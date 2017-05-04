@@ -29,14 +29,18 @@ constexpr uint32_t kFramerateFps = 5;
 
 class MockTemporalLayers : public TemporalLayers {
  public:
-  MOCK_METHOD1(UpdateLayerConfig, TemporalReferences(uint32_t));
+  MOCK_METHOD1(UpdateLayerConfig, TemporalLayers::FrameConfig(uint32_t));
   MOCK_METHOD3(OnRatesUpdated, std::vector<uint32_t>(int, int, int));
   MOCK_METHOD1(UpdateConfiguration, bool(vpx_codec_enc_cfg_t*));
-  MOCK_METHOD3(PopulateCodecSpecific,
-               void(bool, CodecSpecificInfoVP8*, uint32_t));
+  MOCK_METHOD4(PopulateCodecSpecific,
+               void(bool,
+                    const TemporalLayers::FrameConfig&,
+                    CodecSpecificInfoVP8*,
+                    uint32_t));
   MOCK_METHOD2(FrameEncoded, void(unsigned int, int));
-  MOCK_CONST_METHOD0(CurrentLayerId, int());
   MOCK_CONST_METHOD0(Tl0PicIdx, uint8_t());
+  MOCK_CONST_METHOD1(GetTemporalLayerId,
+                     int(const TemporalLayers::FrameConfig&));
 };
 }  // namespace
 

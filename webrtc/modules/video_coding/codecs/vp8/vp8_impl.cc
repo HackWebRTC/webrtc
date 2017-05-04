@@ -133,22 +133,22 @@ VP8Decoder* VP8Decoder::Create() {
 }
 
 vpx_enc_frame_flags_t VP8EncoderImpl::EncodeFlags(
-    TemporalReferences references) {
+    const TemporalLayers::FrameConfig& references) {
   RTC_DCHECK(!references.drop_frame);
 
   vpx_enc_frame_flags_t flags = 0;
 
-  if ((references.last_buffer_flags & kReference) == 0)
+  if ((references.last_buffer_flags & TemporalLayers::kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_LAST;
-  if ((references.last_buffer_flags & kUpdate) == 0)
+  if ((references.last_buffer_flags & TemporalLayers::kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_LAST;
-  if ((references.golden_buffer_flags & kReference) == 0)
+  if ((references.golden_buffer_flags & TemporalLayers::kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_GF;
-  if ((references.golden_buffer_flags & kUpdate) == 0)
+  if ((references.golden_buffer_flags & TemporalLayers::kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_GF;
-  if ((references.arf_buffer_flags & kReference) == 0)
+  if ((references.arf_buffer_flags & TemporalLayers::kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_ARF;
-  if ((references.arf_buffer_flags & kUpdate) == 0)
+  if ((references.arf_buffer_flags & TemporalLayers::kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_ARF;
   if (references.freeze_entropy)
     flags |= VP8_EFLAG_NO_UPD_ENTROPY;
@@ -703,15 +703,15 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
         raw_images_[i].d_h, libyuv::kFilterBilinear);
   }
   vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
+  TemporalLayers::FrameConfig tl_configs[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
-    TemporalReferences tl_config =
-        temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
+    tl_configs[i] = temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
 
-    if (tl_config.drop_frame) {
+    if (tl_configs[i].drop_frame) {
       // Drop this frame.
       return WEBRTC_VIDEO_CODEC_OK;
     }
-    flags[i] = EncodeFlags(tl_config);
+    flags[i] = EncodeFlags(tl_configs[i]);
   }
   bool send_key_frame = false;
   for (size_t i = 0; i < key_frame_request_.size() && i < send_stream_.size();
@@ -764,8 +764,9 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
     }
 
     vpx_codec_control(&encoders_[i], VP8E_SET_FRAME_FLAGS, flags[stream_idx]);
-    vpx_codec_control(&encoders_[i], VP8E_SET_TEMPORAL_LAYER_ID,
-                      temporal_layers_[stream_idx]->CurrentLayerId());
+    vpx_codec_control(
+        &encoders_[i], VP8E_SET_TEMPORAL_LAYER_ID,
+        temporal_layers_[stream_idx]->GetTemporalLayerId(tl_configs[i]));
   }
   // TODO(holmer): Ideally the duration should be the timestamp diff of this
   // frame and the next frame to be encoded, which we don't have. Instead we
@@ -788,11 +789,12 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
     return WEBRTC_VIDEO_CODEC_ERROR;
   timestamp_ += duration;
   // Examines frame timestamps only.
-  return GetEncodedPartitions(frame);
+  return GetEncodedPartitions(tl_configs, frame);
 }
 
 void VP8EncoderImpl::PopulateCodecSpecific(
     CodecSpecificInfo* codec_specific,
+    const TemporalLayers::FrameConfig& tl_config,
     const vpx_codec_cx_pkt_t& pkt,
     int stream_idx,
     uint32_t timestamp) {
@@ -805,12 +807,15 @@ void VP8EncoderImpl::PopulateCodecSpecific(
   vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
   vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) != 0;
   temporal_layers_[stream_idx]->PopulateCodecSpecific(
-      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) != 0, vp8Info, timestamp);
+      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) != 0, tl_config, vp8Info,
+      timestamp);
   // Prepare next.
   picture_id_[stream_idx] = (picture_id_[stream_idx] + 1) & 0x7FFF;
 }
 
-int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image) {
+int VP8EncoderImpl::GetEncodedPartitions(
+    const TemporalLayers::FrameConfig tl_configs[],
+    const VideoFrame& input_image) {
   int bw_resolutions_disabled =
       (encoders_.size() > 1) ? NumStreamsDisabled(send_stream_) : -1;
 
@@ -860,8 +865,8 @@ int VP8EncoderImpl::GetEncodedPartitions(const VideoFrame& input_image) {
         if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
           encoded_images_[encoder_idx]._frameType = kVideoFrameKey;
         }
-        PopulateCodecSpecific(&codec_specific, *pkt, stream_idx,
-                              input_image.timestamp());
+        PopulateCodecSpecific(&codec_specific, tl_configs[stream_idx], *pkt,
+                              stream_idx, input_image.timestamp());
         break;
       }
     }

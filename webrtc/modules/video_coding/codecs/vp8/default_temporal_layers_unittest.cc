@@ -84,9 +84,9 @@ TEST(TemporalLayersTest, 2Layers) {
 
   uint32_t timestamp = 0;
   for (int i = 0; i < 16; ++i) {
-    TemporalReferences tl_config = tl.UpdateLayerConfig(timestamp);
+    TemporalLayers::FrameConfig tl_config = tl.UpdateLayerConfig(timestamp);
     EXPECT_EQ(expected_flags[i], VP8EncoderImpl::EncodeFlags(tl_config));
-    tl.PopulateCodecSpecific(false, &vp8_info, 0);
+    tl.PopulateCodecSpecific(false, tl_config, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
     EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
     timestamp += 3000;
@@ -127,9 +127,9 @@ TEST(TemporalLayersTest, 3Layers) {
 
   unsigned int timestamp = 0;
   for (int i = 0; i < 16; ++i) {
-    TemporalReferences tl_config = tl.UpdateLayerConfig(timestamp);
+    TemporalLayers::FrameConfig tl_config = tl.UpdateLayerConfig(timestamp);
     EXPECT_EQ(expected_flags[i], VP8EncoderImpl::EncodeFlags(tl_config));
-    tl.PopulateCodecSpecific(false, &vp8_info, 0);
+    tl.PopulateCodecSpecific(false, tl_config, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
     EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
     timestamp += 3000;
@@ -169,9 +169,9 @@ TEST(TemporalLayersTest, 4Layers) {
 
   uint32_t timestamp = 0;
   for (int i = 0; i < 16; ++i) {
-    TemporalReferences tl_config = tl.UpdateLayerConfig(timestamp);
+    TemporalLayers::FrameConfig tl_config = tl.UpdateLayerConfig(timestamp);
     EXPECT_EQ(expected_flags[i], VP8EncoderImpl::EncodeFlags(tl_config));
-    tl.PopulateCodecSpecific(false, &vp8_info, 0);
+    tl.PopulateCodecSpecific(false, tl_config, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
     EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
     timestamp += 3000;
@@ -199,16 +199,16 @@ TEST(TemporalLayersTest, KeyFrame) {
 
   uint32_t timestamp = 0;
   for (int i = 0; i < 7; ++i) {
-    TemporalReferences tl_config = tl.UpdateLayerConfig(timestamp);
+    TemporalLayers::FrameConfig tl_config = tl.UpdateLayerConfig(timestamp);
     EXPECT_EQ(expected_flags[i], VP8EncoderImpl::EncodeFlags(tl_config));
-    tl.PopulateCodecSpecific(true, &vp8_info, 0);
+    tl.PopulateCodecSpecific(true, tl_config, &vp8_info, 0);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
     EXPECT_EQ(true, vp8_info.layerSync);
     timestamp += 3000;
   }
-  TemporalReferences tl_config = tl.UpdateLayerConfig(timestamp);
+  TemporalLayers::FrameConfig tl_config = tl.UpdateLayerConfig(timestamp);
   EXPECT_EQ(expected_flags[7], VP8EncoderImpl::EncodeFlags(tl_config));
-  tl.PopulateCodecSpecific(false, &vp8_info, 0);
+  tl.PopulateCodecSpecific(false, tl_config, &vp8_info, 0);
   EXPECT_EQ(expected_temporal_idx[7], vp8_info.temporalIdx);
   EXPECT_EQ(true, vp8_info.layerSync);
 }

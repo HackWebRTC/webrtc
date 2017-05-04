@@ -62,7 +62,8 @@ class VP8EncoderImpl : public VP8Encoder {
 
   const char* ImplementationName() const override;
 
-  static vpx_enc_frame_flags_t EncodeFlags(TemporalReferences references);
+  static vpx_enc_frame_flags_t EncodeFlags(
+      const TemporalLayers::FrameConfig& references);
 
  private:
   void SetupTemporalLayers(int num_streams,
@@ -79,11 +80,13 @@ class VP8EncoderImpl : public VP8Encoder {
   int InitAndSetControlSettings();
 
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
+                             const TemporalLayers::FrameConfig& tl_config,
                              const vpx_codec_cx_pkt& pkt,
                              int stream_idx,
                              uint32_t timestamp);
 
-  int GetEncodedPartitions(const VideoFrame& input_image);
+  int GetEncodedPartitions(const TemporalLayers::FrameConfig tl_configs[],
+                           const VideoFrame& input_image);
 
   // Set the stream state for stream |stream_idx|.
   void SetStreamState(bool send_stream, int stream_idx);
