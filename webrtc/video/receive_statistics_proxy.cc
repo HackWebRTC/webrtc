@@ -349,7 +349,12 @@ void ReceiveStatisticsProxy::UpdateFramerate(int64_t now_ms) const {
 
 VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   rtc::CritScope lock(&crit_);
-  UpdateFramerate(clock_->TimeInMilliseconds());
+  // Get current frame rates here, as only updating them on new frames prevents
+  // us from ever correctly displaying frame rate of 0.
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  UpdateFramerate(now_ms);
+  stats_.render_frame_rate = renders_fps_estimator_.Rate(now_ms).value_or(0);
+  stats_.decode_frame_rate = decode_fps_estimator_.Rate(now_ms).value_or(0);
   stats_.total_bitrate_bps =
       static_cast<int>(total_byte_tracker_.ComputeRate() * 8);
   return stats_;
@@ -477,7 +482,6 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
   }
   last_content_type_ = content_type;
   decode_fps_estimator_.Update(1, now);
-  stats_.decode_frame_rate = decode_fps_estimator_.Rate(now).value_or(0);
 }
 
 void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
@@ -489,7 +493,6 @@ void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
 
   rtc::CritScope lock(&crit_);
   renders_fps_estimator_.Update(1, now);
-  stats_.render_frame_rate = renders_fps_estimator_.Rate(now).value_or(0);
   ++stats_.frames_rendered;
   stats_.width = width;
   stats_.height = height;

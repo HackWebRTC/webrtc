@@ -512,4 +512,32 @@ TEST_F(ReceiveStatisticsProxyTest, TimingHistogramsAreUpdated) {
             metrics::NumEvents("WebRTC.Video.OnewayDelayInMs", kTargetDelayMs));
 }
 
+TEST_F(ReceiveStatisticsProxyTest, DoesNotReportStaleFramerates) {
+  const int kDefaultFps = 30;
+  const int kWidth = 320;
+  const int kHeight = 240;
+
+  rtc::scoped_refptr<VideoFrameBuffer> video_frame_buffer(
+      I420Buffer::Create(kWidth, kHeight));
+  VideoFrame frame(video_frame_buffer, kVideoRotation_0, 0);
+
+  for (int i = 0; i < kDefaultFps; ++i) {
+    // Since OnRenderedFrame is never called the fps in each sample will be 0,
+    // i.e. bad
+    frame.set_ntp_time_ms(fake_clock_.CurrentNtpInMilliseconds());
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(),
+                                      VideoContentType::UNSPECIFIED);
+    statistics_proxy_->OnRenderedFrame(frame);
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kDefaultFps);
+  }
+
+  EXPECT_EQ(kDefaultFps, statistics_proxy_->GetStats().decode_frame_rate);
+  EXPECT_EQ(kDefaultFps, statistics_proxy_->GetStats().render_frame_rate);
+
+  // FPS trackers in stats proxy have a 1000ms sliding window.
+  fake_clock_.AdvanceTimeMilliseconds(1000);
+  EXPECT_EQ(0, statistics_proxy_->GetStats().decode_frame_rate);
+  EXPECT_EQ(0, statistics_proxy_->GetStats().render_frame_rate);
+}
+
 }  // namespace webrtc
