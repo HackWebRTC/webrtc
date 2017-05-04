@@ -445,11 +445,11 @@ int RunTest(int argc, char* argv[]) {
     ext_codecs[replacement_pt] = ext_dec_info;
   }
 
-  DefaultNetEqTestErrorCallback error_cb;
+  NetEqTest::Callbacks callbacks;
   NetEq::Config config;
   config.sample_rate_hz = sample_rate_hz;
   NetEqTest test(config, codecs, ext_codecs, std::move(input),
-                 std::move(output), &error_cb);
+                 std::move(output), callbacks);
 
   int64_t test_duration_ms = test.Run();
   NetEqNetworkStatistics stats = test.SimulationStats();

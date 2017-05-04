@@ -41,11 +41,11 @@ NetEqTest::NetEqTest(const NetEq::Config& config,
                      const ExtDecoderMap& ext_codecs,
                      std::unique_ptr<NetEqInput> input,
                      std::unique_ptr<AudioSink> output,
-                     NetEqTestErrorCallback* error_callback)
+                     Callbacks callbacks)
     : neteq_(NetEq::Create(config, CreateBuiltinAudioDecoderFactory())),
       input_(std::move(input)),
       output_(std::move(output)),
-      error_callback_(error_callback),
+      callbacks_(callbacks),
       sample_rate_hz_(config.sample_rate_hz) {
   RTC_CHECK(!config.enable_muted_state)
       << "The code does not handle enable_muted_state";
@@ -69,24 +69,36 @@ int64_t NetEqTest::Run() {
           packet_data->header,
           rtc::ArrayView<const uint8_t>(packet_data->payload),
           static_cast<uint32_t>(packet_data->time_ms * sample_rate_hz_ / 1000));
-      if (error != NetEq::kOK && error_callback_) {
-        error_callback_->OnInsertPacketError(neteq_->LastError(), *packet_data);
+      if (error != NetEq::kOK && callbacks_.error_callback) {
+        callbacks_.error_callback->OnInsertPacketError(neteq_->LastError(),
+                                                       *packet_data);
+      }
+      if (callbacks_.post_insert_packet) {
+        callbacks_.post_insert_packet->AfterInsertPacket(*packet_data,
+                                                         neteq_.get());
       }
     }
 
     // Check if it is time to get output audio.
     if (input_->NextOutputEventTime() &&
         time_now_ms >= *input_->NextOutputEventTime()) {
+      if (callbacks_.get_audio_callback) {
+        callbacks_.get_audio_callback->BeforeGetAudio(neteq_.get());
+      }
       AudioFrame out_frame;
       bool muted;
       int error = neteq_->GetAudio(&out_frame, &muted);
       RTC_CHECK(!muted) << "The code does not handle enable_muted_state";
       if (error != NetEq::kOK) {
-        if (error_callback_) {
-          error_callback_->OnGetAudioError(neteq_->LastError());
+        if (callbacks_.error_callback) {
+          callbacks_.error_callback->OnGetAudioError(neteq_->LastError());
         }
       } else {
         sample_rate_hz_ = out_frame.sample_rate_hz_;
+      }
+      if (callbacks_.get_audio_callback) {
+        callbacks_.get_audio_callback->AfterGetAudio(time_now_ms, out_frame,
+                                                     muted, neteq_.get());
       }
 
       if (output_) {

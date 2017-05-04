@@ -127,7 +127,7 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
   std::unique_ptr<FuzzRtpInput> input(
       new FuzzRtpInput(rtc::ArrayView<const uint8_t>(data, size)));
   std::unique_ptr<AudioChecksum> output(new AudioChecksum);
-  NetEqTestErrorCallback dummy_callback;  // Does nothing with error callbacks.
+  NetEqTest::Callbacks callbacks;
   NetEq::Config config;
   NetEqTest::DecoderMap codecs;
   codecs[0] = std::make_pair(NetEqDecoder::kDecoderPCMu, "pcmu");
@@ -155,7 +155,7 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
   NetEqTest::ExtDecoderMap ext_codecs;
 
   NetEqTest test(config, codecs, ext_codecs, std::move(input),
-                 std::move(output), &dummy_callback);
+                 std::move(output), callbacks);
   test.Run();
 }
 

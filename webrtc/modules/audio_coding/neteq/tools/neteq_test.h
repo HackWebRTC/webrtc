@@ -37,6 +37,23 @@ class DefaultNetEqTestErrorCallback : public NetEqTestErrorCallback {
   void OnGetAudioError(int error_code) override;
 };
 
+class NetEqPostInsertPacket {
+ public:
+  virtual ~NetEqPostInsertPacket() = default;
+  virtual void AfterInsertPacket(const NetEqInput::PacketData& packet,
+                                 NetEq* neteq) = 0;
+};
+
+class NetEqGetAudioCallback {
+ public:
+  virtual ~NetEqGetAudioCallback() = default;
+  virtual void BeforeGetAudio(NetEq* neteq) = 0;
+  virtual void AfterGetAudio(int64_t time_now_ms,
+                             const AudioFrame& audio_frame,
+                             bool muted,
+                             NetEq* neteq) = 0;
+};
+
 // Class that provides an input--output test for NetEq. The input (both packets
 // and output events) is provided by a NetEqInput object, while the output is
 // directed to an AudioSink object.
@@ -52,6 +69,12 @@ class NetEqTest {
 
   using ExtDecoderMap = std::map<int, ExternalDecoderInfo>;
 
+  struct Callbacks {
+    NetEqTestErrorCallback* error_callback = nullptr;
+    NetEqPostInsertPacket* post_insert_packet = nullptr;
+    NetEqGetAudioCallback* get_audio_callback = nullptr;
+  };
+
   // Sets up the test with given configuration, codec mappings, input, ouput,
   // and callback objects for error reporting.
   NetEqTest(const NetEq::Config& config,
@@ -59,7 +82,7 @@ class NetEqTest {
             const ExtDecoderMap& ext_codecs,
             std::unique_ptr<NetEqInput> input,
             std::unique_ptr<AudioSink> output,
-            NetEqTestErrorCallback* error_callback);
+            Callbacks callbacks);
 
   ~NetEqTest() = default;
 
@@ -76,7 +99,7 @@ class NetEqTest {
   std::unique_ptr<NetEq> neteq_;
   std::unique_ptr<NetEqInput> input_;
   std::unique_ptr<AudioSink> output_;
-  NetEqTestErrorCallback* error_callback_ = nullptr;
+  Callbacks callbacks_;
   int sample_rate_hz_;
 };
 
