@@ -14,6 +14,9 @@
 #include <memory>
 
 #include "webrtc/api/video/video_frame_buffer.h"
+// TODO(nisse): For backwards compatibility, files including this file
+// expect it to declare I420Buffer. Delete after callers are updated.
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/callback.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 

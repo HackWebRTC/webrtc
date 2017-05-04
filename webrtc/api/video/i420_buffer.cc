@@ -131,6 +131,17 @@ rtc::scoped_refptr<I420Buffer> I420Buffer::Rotate(
   return buffer;
 }
 
+// static
+rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::Rotate(
+    rtc::scoped_refptr<VideoFrameBuffer> src,
+    VideoRotation rotation) {
+  if (rotation == webrtc::kVideoRotation_0) {
+    return src;
+  } else {
+    return Rotate(*src, rotation);
+  }
+}
+
 void I420Buffer::InitializeData() {
   memset(data_.get(), 0,
          I420DataSize(height_, stride_y_, stride_u_, stride_v_));

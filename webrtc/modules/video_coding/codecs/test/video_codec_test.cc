@@ -10,7 +10,6 @@
 
 #include "webrtc/modules/video_coding/codecs/test/video_codec_test.h"
 
-#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/modules/video_coding/include/video_error_codes.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/testsupport/fileutils.h"
