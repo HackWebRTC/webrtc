@@ -89,7 +89,7 @@ deps = {
   'src/third_party/gflags/src':
     Var('chromium_git') + '/external/github.com/gflags/gflags' + '@' + '03bebcb065c83beff83d50ae025a55a4bf94dfca',
   'src/third_party/gtest-parallel':
-    Var('chromium_git') + '/external/github.com/google/gtest-parallel' + '@' + '1e816d0426d5e4eec8fdc240277751b1968c78c7',
+    Var('chromium_git') + '/external/github.com/google/gtest-parallel' + '@' + 'c9bb1c9e8aa44238b59fc5a65fb01a7bee04257b',
 }
 
 deps_os = {
