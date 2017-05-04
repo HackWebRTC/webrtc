@@ -481,19 +481,26 @@ public class EglRenderer implements VideoRenderer.Callbacks {
     }
   }
 
-  private void clearSurfaceOnRenderThread() {
+  private void clearSurfaceOnRenderThread(float r, float g, float b, float a) {
     if (eglBase != null && eglBase.hasSurface()) {
       logD("clearSurface");
-      GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
+      GLES20.glClearColor(r, g, b, a);
       GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
       eglBase.swapBuffers();
     }
   }
 
   /**
-   * Post a task to clear the TextureView to a transparent uniform color.
+   * Post a task to clear the surface to a transparent uniform color.
    */
   public void clearImage() {
+    clearImage(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
+  }
+
+  /**
+   * Post a task to clear the surface to a specific color.
+   */
+  public void clearImage(final float r, final float g, final float b, final float a) {
     synchronized (handlerLock) {
       if (renderThreadHandler == null) {
         return;
@@ -501,7 +508,7 @@ public class EglRenderer implements VideoRenderer.Callbacks {
       renderThreadHandler.postAtFrontOfQueue(new Runnable() {
         @Override
         public void run() {
-          clearSurfaceOnRenderThread();
+          clearSurfaceOnRenderThread(r, g, b, a);
         }
       });
     }
