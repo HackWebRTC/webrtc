@@ -16,11 +16,6 @@
 #include "webrtc/api/video/video_rotation.h"
 #include "webrtc/api/video/video_frame_buffer.h"
 
-// TODO(nisse): Transition hack, some downstream applications expect
-// that including this file also defines base/timeutils.h constants.
-// Delete after applications are fixed to include the right headers.
-#include "webrtc/base/timeutils.h"
-
 namespace webrtc {
 
 class VideoFrame {

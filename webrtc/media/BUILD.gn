@@ -73,7 +73,6 @@ rtc_static_library("rtc_media_base") {
     "base/videocapturerfactory.h",
     "base/videocommon.cc",
     "base/videocommon.h",
-    "base/videoframe.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
   ]
@@ -155,7 +154,6 @@ rtc_static_library("rtc_media") {
     "engine/webrtcvideoencoderfactory.h",
     "engine/webrtcvideoengine2.cc",
     "engine/webrtcvideoengine2.h",
-    "engine/webrtcvideoframe.h",
     "engine/webrtcvoe.h",
     "engine/webrtcvoiceengine.cc",
     "engine/webrtcvoiceengine.h",
