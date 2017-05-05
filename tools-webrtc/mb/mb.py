@@ -1102,6 +1102,7 @@ class MetaBuildWrapper(object):
             # so it can exit cleanly and report results, instead of being
             # interrupted by swarming and not reporting anything.
             '--timeout=900',
+            '--retry_failed=3',
         ]
 
       asan = 'is_asan=true' in vals['gn_args']
