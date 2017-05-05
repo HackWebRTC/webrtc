@@ -1106,6 +1106,7 @@ class MetaBuildWrapper(object):
         ]
 
       asan = 'is_asan=true' in vals['gn_args']
+      lsan = 'is_lsan=true' in vals['gn_args']
       msan = 'is_msan=true' in vals['gn_args']
       tsan = 'is_tsan=true' in vals['gn_args']
 
@@ -1125,6 +1126,7 @@ class MetaBuildWrapper(object):
       cmdline.extend([
           '--',
           '--asan=%d' % asan,
+          '--lsan=%d' % lsan,
           '--msan=%d' % msan,
           '--tsan=%d' % tsan,
       ])

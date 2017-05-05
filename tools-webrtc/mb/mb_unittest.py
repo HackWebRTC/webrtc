@@ -456,6 +456,7 @@ class UnitTest(unittest.TestCase):
         '--workers=1',
         '--',
         '--asan=0',
+        '--lsan=0',
         '--msan=0',
         '--tsan=0',
     ])
@@ -503,6 +504,7 @@ class UnitTest(unittest.TestCase):
         './base_unittests',
         '--',
         '--asan=0',
+        '--lsan=0',
         '--msan=0',
         '--tsan=0',
     ])
@@ -551,6 +553,7 @@ class UnitTest(unittest.TestCase):
         r'.\unittests.exe',
         '--',
         '--asan=0',
+        '--lsan=0',
         '--msan=0',
         '--tsan=0',
     ])
@@ -595,6 +598,7 @@ class UnitTest(unittest.TestCase):
         './base_unittests',
         '--',
         '--asan=0',
+        '--lsan=0',
         '--msan=0',
         '--tsan=0',
     ])
@@ -645,6 +649,7 @@ class UnitTest(unittest.TestCase):
         './base_unittests',
         '--',
         '--asan=0',
+        '--lsan=0',
         '--msan=0',
         '--tsan=0',
     ])
