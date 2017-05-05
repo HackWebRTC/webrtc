@@ -25,6 +25,9 @@
   rtc::scoped_refptr<webrtc::DataChannelInterface> dataChannel =
       self.nativePeerConnection->CreateDataChannel(labelString,
                                                    &nativeInit);
+  if (!dataChannel) {
+    return nil;
+  }
   return [[RTCDataChannel alloc] initWithNativeDataChannel:dataChannel];
 }
 
