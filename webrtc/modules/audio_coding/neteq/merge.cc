@@ -158,6 +158,7 @@ size_t Merge::Process(int16_t* input, size_t input_length,
 
   // Return new added length. |old_length| samples were borrowed from
   // |sync_buffer_|.
+  RTC_DCHECK_GE(output_length, old_length);
   return output_length - old_length;
 }
 

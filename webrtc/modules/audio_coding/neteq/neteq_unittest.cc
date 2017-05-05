@@ -446,11 +446,11 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
       "09fa7646e2ad032a0b156177b95f09012430f81f",
       "759fef89a5de52bd17e733dc255c671ce86be909");
 
-  const std::string network_stats_checksum = PlatformChecksum(
-      "f59b3dfdb9b1b8bbb61abedd7c8cf3fc47c21f5f",
-      "c8b2a93842e48d014f7e6efe10ae96cb3892b129",
-      "f59b3dfdb9b1b8bbb61abedd7c8cf3fc47c21f5f",
-      "f59b3dfdb9b1b8bbb61abedd7c8cf3fc47c21f5f");
+  const std::string network_stats_checksum =
+      PlatformChecksum("f7c2158761a531dd2804d13da0480033faa7be12",
+                       "8b5e3c8247dce48cb33923eaa1a502ca91429d5e",
+                       "f7c2158761a531dd2804d13da0480033faa7be12",
+                       "f7c2158761a531dd2804d13da0480033faa7be12");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "b8880bf9fed2487efbddcb8d94b9937a29ae521d",
@@ -483,11 +483,11 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
       "6237dd113ad80d7764fe4c90b55b2ec035eae64e",
       "6237dd113ad80d7764fe4c90b55b2ec035eae64e");
 
-  const std::string network_stats_checksum = PlatformChecksum(
-      "d8379381d5a619f0616bb3c0a8a9eea1704a8ab8",
-      "d8379381d5a619f0616bb3c0a8a9eea1704a8ab8",
-      "d8379381d5a619f0616bb3c0a8a9eea1704a8ab8",
-      "d8379381d5a619f0616bb3c0a8a9eea1704a8ab8");
+  const std::string network_stats_checksum =
+      PlatformChecksum("0869a450a819b14bf2a91eb6f3629a3421d17606",
+                       "0869a450a819b14bf2a91eb6f3629a3421d17606",
+                       "0869a450a819b14bf2a91eb6f3629a3421d17606",
+                       "0869a450a819b14bf2a91eb6f3629a3421d17606");
 
   const std::string rtcp_stats_checksum = PlatformChecksum(
       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
