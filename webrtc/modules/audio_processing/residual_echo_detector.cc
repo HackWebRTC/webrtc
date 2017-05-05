@@ -106,6 +106,9 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
   }
   reliability_ = (1.0f - kAlpha) * reliability_ + kAlpha * 1.0f;
   echo_likelihood_ *= reliability_;
+  // This is a temporary fix to prevent echo likelihood values > 1.0.
+  // TODO(ivoc): Find the root cause of this issue and fix it.
+  echo_likelihood_ = std::min(echo_likelihood_, 1.0f);
   int echo_percentage = static_cast<int>(echo_likelihood_ * 100);
   RTC_HISTOGRAM_COUNTS("WebRTC.Audio.ResidualEchoDetector.EchoLikelihood",
                        echo_percentage, 0, 100, 100 /* number of bins */);
