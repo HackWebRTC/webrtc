@@ -509,20 +509,8 @@ class CameraVideoCapturerTestFixtures {
   }
 
   @TargetApi(21)
-  public void updateMediaRecorder(boolean useSurfaceCapture)
-      throws InterruptedException, IOException {
-    final CapturerInstance capturerInstance = createCapturer(false /* initialize */);
-    final VideoTrackWithRenderer videoTrackWithRenderer =
-        createVideoTrackWithRenderer(capturerInstance.capturer);
-    // Wait for the camera to start so we can add and remove MediaRecorder.
-    assertTrue(videoTrackWithRenderer.rendererCallbacks.waitForNextFrameToRender() > 0);
-
-    final String videoOutPath = Environment.getExternalStorageDirectory().getPath()
-        + "/chromium_tests_root/testmediarecorder.mp4";
-    File outputFile = new File(videoOutPath);
-
-    // Create MediaRecorder object
-    MediaRecorder mediaRecorder = new MediaRecorder();
+  private static void prepareMediaRecorderForTests(
+      MediaRecorder mediaRecorder, File outputFile, boolean useSurfaceCapture) throws IOException {
     mediaRecorder.setVideoSource(
         useSurfaceCapture ? MediaRecorder.VideoSource.SURFACE : MediaRecorder.VideoSource.CAMERA);
     CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_480P);
@@ -537,6 +525,28 @@ class CameraVideoCapturerTestFixtures {
     mediaRecorder.setVideoEncoder(profile.videoCodec);
     mediaRecorder.setOutputFile(outputFile.getPath());
     mediaRecorder.prepare();
+  }
+
+  @TargetApi(21)
+  public void updateMediaRecorder(boolean useSurfaceCapture)
+      throws InterruptedException, IOException {
+    final CapturerInstance capturerInstance = createCapturer(false /* initialize */);
+    final VideoTrackWithRenderer videoTrackWithRenderer =
+        createVideoTrackWithRenderer(capturerInstance.capturer);
+    // Wait for the camera to start so we can add and remove MediaRecorder.
+    assertTrue(videoTrackWithRenderer.rendererCallbacks.waitForNextFrameToRender() > 0);
+
+    final String videoOutPath = Environment.getExternalStorageDirectory().getPath()
+        + "/chromium_tests_root/testmediarecorder.mp4";
+    File outputFile = new File(videoOutPath);
+
+    // Create MediaRecorder object
+    MediaRecorder mediaRecorder = new MediaRecorder();
+    if (useSurfaceCapture) {
+      // When using using surface capture, media recorder has to be prepared before adding it to the
+      // camera.
+      prepareMediaRecorderForTests(mediaRecorder, outputFile, useSurfaceCapture);
+    }
 
     // Add MediaRecorder to camera pipeline.
     final boolean[] addMediaRecorderSuccessful = new boolean[1];
@@ -550,6 +560,7 @@ class CameraVideoCapturerTestFixtures {
           }
           @Override
           public void onMediaRecorderError(String errorDescription) {
+            Logging.e(TAG, errorDescription);
             addMediaRecorderSuccessful[0] = false;
             addBarrier.countDown();
           }
@@ -561,6 +572,11 @@ class CameraVideoCapturerTestFixtures {
     assertTrue(addMediaRecorderSuccessful[0]);
 
     // Start MediaRecorder and wait for a few frames to capture.
+    if (!useSurfaceCapture) {
+      // When using using camera capture, media recorder has to be prepared after adding it to the
+      // camera.
+      prepareMediaRecorderForTests(mediaRecorder, outputFile, useSurfaceCapture);
+    }
     mediaRecorder.start();
     for (int i = 0; i < 5; i++) {
       assertTrue(videoTrackWithRenderer.rendererCallbacks.waitForNextFrameToRender() > 0);

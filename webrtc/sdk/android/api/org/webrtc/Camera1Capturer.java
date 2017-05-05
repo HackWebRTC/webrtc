@@ -28,11 +28,8 @@ public class Camera1Capturer extends CameraCapturer {
       CameraSession.Events events, Context applicationContext,
       SurfaceTextureHelper surfaceTextureHelper, MediaRecorder mediaRecorder, String cameraName,
       int width, int height, int framerate) {
-    if (mediaRecorder != null) {
-      throw new RuntimeException("MediaRecoder is not supported for camera 1.");
-    }
-    Camera1Session.create(createSessionCallback, events, captureToTexture, applicationContext,
-        surfaceTextureHelper, Camera1Enumerator.getCameraIndex(cameraName), width, height,
-        framerate);
+    Camera1Session.create(createSessionCallback, events,
+        captureToTexture || (mediaRecorder != null), applicationContext, surfaceTextureHelper,
+        mediaRecorder, Camera1Enumerator.getCameraIndex(cameraName), width, height, framerate);
   }
 }
