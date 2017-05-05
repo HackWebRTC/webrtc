@@ -31,7 +31,7 @@ RTC_EXPORT
 // Starts and stops the capture session asynchronously.
 - (void)startCaptureWithDevice:(AVCaptureDevice *)device
                         format:(AVCaptureDeviceFormat *)format
-                           fps:(int)fps;
+                           fps:(NSInteger)fps;
 // Stops the capture session asynchronously.
 - (void)stopCapture;
 

@@ -34,7 +34,7 @@
       _usingFrontCamera ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
   AVCaptureDevice *device = [self findDeviceForPosition:position];
   AVCaptureDeviceFormat *format = [self selectFormatForDevice:device];
-  int fps = [self selectFpsForFormat:format];
+  NSInteger fps = [self selectFpsForFormat:format];
 
   [_capturer startCaptureWithDevice:device format:format fps:fps];
 }
@@ -81,7 +81,7 @@
   return selectedFormat;
 }
 
-- (int)selectFpsForFormat:(AVCaptureDeviceFormat *)format {
+- (NSInteger)selectFpsForFormat:(AVCaptureDeviceFormat *)format {
   Float64 maxFramerate = 0;
   for (AVFrameRateRange *fpsRange in format.videoSupportedFrameRateRanges) {
     maxFramerate = fmax(maxFramerate, fpsRange.maxFrameRate);

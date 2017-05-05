@@ -115,12 +115,12 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
 
 - (void)startCaptureWithDevice:(AVCaptureDevice *)device
                         format:(AVCaptureDeviceFormat *)format
-                           fps:(int)fps {
+                           fps:(NSInteger)fps {
   _willBeRunning = true;
   [RTCDispatcher
       dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
                     block:^{
-                      RTCLogInfo("startCaptureWithDevice %@ @ %d fps", format, fps);
+                      RTCLogInfo("startCaptureWithDevice %@ @ %zd fps", format, fps);
 
 #if TARGET_OS_IPHONE
                       [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
@@ -360,7 +360,7 @@ static inline BOOL IsMediaSubTypeSupported(FourCharCode mediaSubType) {
 
 #pragma mark - Private, called inside capture queue
 
-- (void)updateDeviceCaptureFormat:(AVCaptureDeviceFormat *)format fps:(int)fps {
+- (void)updateDeviceCaptureFormat:(AVCaptureDeviceFormat *)format fps:(NSInteger)fps {
   NSAssert([RTCDispatcher isOnQueueForType:RTCDispatcherTypeCaptureSession],
            @"updateDeviceCaptureFormat must be called on the capture queue.");
   @try {
