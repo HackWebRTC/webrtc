@@ -41,7 +41,6 @@
 #include "webrtc/p2p/client/basicportallocator.h"
 #include "webrtc/pc/audiotrack.h"
 #include "webrtc/pc/channelmanager.h"
-#include "webrtc/pc/fakemediacontroller.h"
 #include "webrtc/pc/mediasession.h"
 #include "webrtc/pc/peerconnection.h"
 #include "webrtc/pc/sctputils.h"
@@ -255,7 +254,10 @@ class FakeSctpTransportFactory : public cricket::SctpTransportInternalFactory {
 class WebRtcSessionForTest : public webrtc::WebRtcSession {
  public:
   WebRtcSessionForTest(
-      webrtc::MediaControllerInterface* media_controller,
+      webrtc::Call* fake_call,
+      cricket::ChannelManager* channel_manager,
+      const cricket::MediaConfig& media_config,
+      webrtc::RtcEventLog* event_log,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       rtc::Thread* signaling_thread,
@@ -263,7 +265,7 @@ class WebRtcSessionForTest : public webrtc::WebRtcSession {
       webrtc::IceObserver* ice_observer,
       std::unique_ptr<cricket::TransportController> transport_controller,
       std::unique_ptr<FakeSctpTransportFactory> sctp_factory)
-      : WebRtcSession(media_controller,
+      : WebRtcSession(fake_call, channel_manager, media_config, event_log,
                       network_thread,
                       worker_thread,
                       signaling_thread,
@@ -375,11 +377,6 @@ class WebRtcSessionTest
             std::unique_ptr<cricket::DataEngineInterface>(data_engine_),
             rtc::Thread::Current())),
         fake_call_(webrtc::Call::Config(&event_log_)),
-        media_controller_(
-            webrtc::MediaControllerInterface::Create(cricket::MediaConfig(),
-                                                     rtc::Thread::Current(),
-                                                     channel_manager_.get(),
-                                                     &event_log_)),
         tdesc_factory_(new cricket::TransportDescriptionFactory()),
         desc_factory_(
             new cricket::MediaSessionDescriptionFactory(channel_manager_.get(),
@@ -424,8 +421,9 @@ class WebRtcSessionTest
       const rtc::CryptoOptions& crypto_options) {
     ASSERT_TRUE(session_.get() == NULL);
     fake_sctp_transport_factory_ = new FakeSctpTransportFactory();
-    session_.reset(new WebRtcSessionForTest(
-        media_controller_.get(), rtc::Thread::Current(), rtc::Thread::Current(),
+    session_.reset(new WebRtcSessionForTest(&fake_call_,
+        channel_manager_.get(), cricket::MediaConfig(), &event_log_,
+        rtc::Thread::Current(), rtc::Thread::Current(),
         rtc::Thread::Current(), allocator_.get(), &observer_,
         std::unique_ptr<cricket::TransportController>(
             new cricket::TransportController(
@@ -1380,8 +1378,6 @@ class WebRtcSessionTest
   }
 
   void TestPacketOptions() {
-    media_controller_.reset(
-        new cricket::FakeMediaController(channel_manager_.get(), &fake_call_));
     LoopbackNetworkConfiguration config;
     LoopbackNetworkManager loopback_network_manager(this, config);
 
@@ -1515,7 +1511,6 @@ class WebRtcSessionTest
   FakeSctpTransportFactory* fake_sctp_transport_factory_ = nullptr;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
   cricket::FakeCall fake_call_;
-  std::unique_ptr<webrtc::MediaControllerInterface> media_controller_;
   std::unique_ptr<cricket::TransportDescriptionFactory> tdesc_factory_;
   std::unique_ptr<cricket::MediaSessionDescriptionFactory> desc_factory_;
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;

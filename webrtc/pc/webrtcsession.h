@@ -27,7 +27,6 @@
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/pc/datachannel.h"
-#include "webrtc/pc/mediacontroller.h"
 #include "webrtc/pc/mediasession.h"
 
 #ifdef HAVE_QUIC
@@ -55,6 +54,7 @@ namespace webrtc {
 class IceRestartAnswerLatch;
 class JsepIceCandidate;
 class MediaStreamSignaling;
+class RtcEventLog;
 class WebRtcSessionDescriptionFactory;
 
 extern const char kBundleWithoutRtcpMux[];
@@ -159,7 +159,10 @@ class WebRtcSession :
 
   // |sctp_factory| may be null, in which case SCTP is treated as unsupported.
   WebRtcSession(
-      webrtc::MediaControllerInterface* media_controller,
+      Call* call,
+      cricket::ChannelManager* channel_manager,
+      const cricket::MediaConfig& media_config,
+      RtcEventLog* event_log,
       rtc::Thread* network_thread,
       rtc::Thread* worker_thread,
       rtc::Thread* signaling_thread,
@@ -559,7 +562,9 @@ class WebRtcSession :
 
   const std::unique_ptr<cricket::TransportController> transport_controller_;
   const std::unique_ptr<cricket::SctpTransportInternalFactory> sctp_factory_;
-  MediaControllerInterface* media_controller_;
+  const cricket::MediaConfig media_config_;
+  RtcEventLog* event_log_;
+  Call* call_;
   std::unique_ptr<cricket::VoiceChannel> voice_channel_;
   std::unique_ptr<cricket::VideoChannel> video_channel_;
   // |rtp_data_channel_| is used if in RTP data channel mode, |sctp_transport_|

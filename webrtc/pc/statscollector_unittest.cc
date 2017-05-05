@@ -508,12 +508,8 @@ class StatsCollectorTest : public testing::Test {
             std::unique_ptr<cricket::MediaEngineInterface>(media_engine_),
             worker_thread_,
             network_thread_)),
-        media_controller_(
-            webrtc::MediaControllerInterface::Create(cricket::MediaConfig(),
-                                                     worker_thread_,
-                                                     channel_manager_.get(),
-                                                     &event_log_)),
-        session_(media_controller_.get()) {
+
+        session_(channel_manager_.get(), cricket::MediaConfig()) {
     // By default, we ignore session GetStats calls.
     EXPECT_CALL(session_, GetStats(_)).WillRepeatedly(ReturnNull());
     // Add default returns for mock classes.
@@ -784,7 +780,6 @@ class StatsCollectorTest : public testing::Test {
   // |media_engine_| is actually owned by |channel_manager_|.
   cricket::FakeMediaEngine* media_engine_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
-  std::unique_ptr<webrtc::MediaControllerInterface> media_controller_;
   MockWebRtcSession session_;
   MockPeerConnection pc_;
   FakeDataChannelProvider data_channel_provider_;

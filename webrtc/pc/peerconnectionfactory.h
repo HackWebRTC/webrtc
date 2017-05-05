@@ -20,7 +20,6 @@
 #include "webrtc/base/thread.h"
 #include "webrtc/base/rtccertificategenerator.h"
 #include "webrtc/pc/channelmanager.h"
-#include "webrtc/pc/mediacontroller.h"
 
 namespace rtc {
 class BasicNetworkManager;
@@ -96,12 +95,10 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   // TODO(ivoc) Remove after Chrome is updated.
   void StopRtcEventLog() override {}
 
-  virtual webrtc::MediaControllerInterface* CreateMediaController(
-      const cricket::MediaConfig& config,
-      RtcEventLog* event_log) const;
   virtual cricket::TransportController* CreateTransportController(
       cricket::PortAllocator* port_allocator,
       bool redetermine_role_on_ice_restart);
+  virtual cricket::ChannelManager* channel_manager();
   virtual rtc::Thread* signaling_thread();
   virtual rtc::Thread* worker_thread();
   virtual rtc::Thread* network_thread();

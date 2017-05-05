@@ -281,12 +281,7 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
             std::unique_ptr<cricket::MediaEngineInterface>(media_engine_),
             worker_thread_,
             network_thread_)),
-        media_controller_(
-            MediaControllerInterface::Create(cricket::MediaConfig(),
-                                             worker_thread_,
-                                             channel_manager_.get(),
-                                             &event_log_)),
-        session_(media_controller_.get()),
+        session_(channel_manager_.get(), cricket::MediaConfig()),
         pc_() {
     // Default return values for mocks.
     EXPECT_CALL(pc_, local_streams()).WillRepeatedly(Return(nullptr));
@@ -493,7 +488,6 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   // |media_engine_| is actually owned by |channel_manager_|.
   cricket::FakeMediaEngine* media_engine_;
   std::unique_ptr<cricket::ChannelManager> channel_manager_;
-  std::unique_ptr<MediaControllerInterface> media_controller_;
   MockWebRtcSession session_;
   MockPeerConnection pc_;
 

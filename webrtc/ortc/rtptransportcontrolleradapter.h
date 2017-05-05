@@ -27,7 +27,6 @@
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/media/base/mediachannel.h"  // For MediaConfig.
 #include "webrtc/pc/channelmanager.h"
-#include "webrtc/pc/mediacontroller.h"
 
 namespace webrtc {
 
@@ -130,6 +129,8 @@ class RtpTransportControllerAdapter : public RtpTransportControllerInterface,
                                 webrtc::RtcEventLog* event_log,
                                 rtc::Thread* signaling_thread,
                                 rtc::Thread* worker_thread);
+  void Init_w();
+  void Close_w();
 
   // These return an error if another of the same type of object is already
   // attached, or if |transport_proxy| can't be used with the sender/receiver
@@ -191,7 +192,10 @@ class RtpTransportControllerAdapter : public RtpTransportControllerInterface,
   std::vector<RtpTransportInterface*> transport_proxies_;
   RtpTransportInterface* inner_audio_transport_ = nullptr;
   RtpTransportInterface* inner_video_transport_ = nullptr;
-  std::unique_ptr<MediaControllerInterface> media_controller_;
+  const cricket::MediaConfig media_config_;
+  cricket::ChannelManager* channel_manager_;
+  webrtc::RtcEventLog* event_log_;
+  std::unique_ptr<Call> call_;
 
   // BaseChannel takes content descriptions as input, so we store them here
   // such that they can be updated when a new RtpSenderAdapter/

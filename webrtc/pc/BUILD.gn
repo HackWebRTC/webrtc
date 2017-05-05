@@ -95,8 +95,6 @@ rtc_static_library("libjingle_peerconnection") {
     "jsepsessiondescription.cc",
     "localaudiosource.cc",
     "localaudiosource.h",
-    "mediacontroller.cc",
-    "mediacontroller.h",
     "mediastream.cc",
     "mediastream.h",
     "mediastreamobserver.cc",
@@ -283,7 +281,6 @@ if (rtc_include_tests) {
     sources = [
       "datachannel_unittest.cc",
       "dtmfsender_unittest.cc",
-      "fakemediacontroller.h",
       "iceserverparsing_unittest.cc",
       "jsepsessiondescription_unittest.cc",
       "localaudiosource_unittest.cc",

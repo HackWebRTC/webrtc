@@ -26,9 +26,12 @@ class MockWebRtcSession : public webrtc::WebRtcSession {
   // methods don't use any override declarations, and we want to avoid
   // warnings from -Winconsistent-missing-override. See
   // http://crbug.com/428099.
-  explicit MockWebRtcSession(MediaControllerInterface* media_controller)
-      : WebRtcSession(
-            media_controller,
+  explicit MockWebRtcSession(cricket::ChannelManager* channel_manager,
+                             const cricket::MediaConfig& media_config)
+      : WebRtcSession(nullptr /* Call */,
+            channel_manager,
+            media_config,
+            nullptr, // event_log
             rtc::Thread::Current(),
             rtc::Thread::Current(),
             rtc::Thread::Current(),

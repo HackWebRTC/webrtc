@@ -645,18 +645,6 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
             webrtc::CreateBuiltinAudioEncoderFactory(),
             webrtc::CreateBuiltinAudioDecoderFactory()) {}
 
-  webrtc::MediaControllerInterface* CreateMediaController(
-      const cricket::MediaConfig& config,
-      webrtc::RtcEventLog* event_log) const override {
-    create_media_controller_called_ = true;
-    create_media_controller_config_ = config;
-
-    webrtc::MediaControllerInterface* mc =
-        PeerConnectionFactory::CreateMediaController(config, event_log);
-    EXPECT_TRUE(mc != nullptr);
-    return mc;
-  }
-
   cricket::TransportController* CreateTransportController(
       cricket::PortAllocator* port_allocator,
       bool redetermine_role_on_ice_restart) override {
@@ -667,9 +655,6 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
   }
 
   cricket::TransportController* transport_controller;
-  // Mutable, so they can be modified in the above const-declared method.
-  mutable bool create_media_controller_called_ = false;
-  mutable cricket::MediaConfig create_media_controller_config_;
 };
 
 class PeerConnectionInterfaceTest : public testing::Test {
@@ -3318,16 +3303,14 @@ class PeerConnectionMediaConfigTest : public testing::Test {
     pcf_ = new rtc::RefCountedObject<PeerConnectionFactoryForTest>();
     pcf_->Initialize();
   }
-  const cricket::MediaConfig& TestCreatePeerConnection(
+  const cricket::MediaConfig TestCreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& config,
       const MediaConstraintsInterface *constraints) {
-    pcf_->create_media_controller_called_ = false;
 
     rtc::scoped_refptr<PeerConnectionInterface> pc(pcf_->CreatePeerConnection(
         config, constraints, nullptr, nullptr, &observer_));
     EXPECT_TRUE(pc.get());
-    EXPECT_TRUE(pcf_->create_media_controller_called_);
-    return pcf_->create_media_controller_config_;
+    return pc->GetConfiguration().media_config;
   }
 
   rtc::scoped_refptr<PeerConnectionFactoryForTest> pcf_;

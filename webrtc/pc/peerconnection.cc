@@ -426,7 +426,10 @@ PeerConnection::~PeerConnection() {
   session_.reset(nullptr);
   // port_allocator_ lives on the network thread and should be destroyed there.
   network_thread()->Invoke<void>(RTC_FROM_HERE,
-                                 [this] { port_allocator_.reset(nullptr); });
+                                 [this] { port_allocator_.reset(); });
+  // call_ must be destroyed on the worker thread.
+  factory_->worker_thread()->Invoke<void>(RTC_FROM_HERE,
+                                          [this] { call_.reset(); });
 }
 
 bool PeerConnection::Initialize(
@@ -457,11 +460,15 @@ bool PeerConnection::Initialize(
     return false;
   }
 
-  media_controller_.reset(factory_->CreateMediaController(
-      configuration.media_config, event_log_.get()));
+  // Call must be constructed on the worker thread.
+  factory_->worker_thread()->Invoke<void>(
+      RTC_FROM_HERE, rtc::Bind(&PeerConnection::CreateCall_w,
+                               this));
 
   session_.reset(new WebRtcSession(
-      media_controller_.get(), factory_->network_thread(),
+      call_.get(), factory_->channel_manager(), configuration.media_config,
+      event_log_.get(),
+      factory_->network_thread(),
       factory_->worker_thread(), factory_->signaling_thread(),
       port_allocator_.get(),
       std::unique_ptr<cricket::TransportController>(
@@ -1287,6 +1294,9 @@ void PeerConnection::Close() {
       RTC_FROM_HERE,
       rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
                 port_allocator_.get()));
+
+  factory_->worker_thread()->Invoke<void>(RTC_FROM_HERE,
+                                          [this] { call_.reset(); });
 }
 
 void PeerConnection::OnSessionStateChange(WebRtcSession* /*session*/,
@@ -2314,4 +2324,22 @@ void PeerConnection::StopRtcEventLog_w() {
     event_log_->StopLogging();
   }
 }
+
+void PeerConnection::CreateCall_w() {
+  RTC_DCHECK(!call_);
+
+  const int kMinBandwidthBps = 30000;
+  const int kStartBandwidthBps = 300000;
+  const int kMaxBandwidthBps = 2000000;
+
+  webrtc::Call::Config call_config(event_log_.get());
+  call_config.audio_state =
+      factory_->channel_manager() ->media_engine()->GetAudioState();
+  call_config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
+  call_config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
+  call_config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
+
+  call_.reset(webrtc::Call::Create(call_config));
+}
+
 }  // namespace webrtc

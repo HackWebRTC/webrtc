@@ -121,6 +121,10 @@ RtpTransportControllerAdapter::~RtpTransportControllerAdapter() {
     // been destroyed. This isn't safe (see error log above).
     DestroyVideoChannel();
   }
+  // Call must be destroyed on the worker thread.
+  worker_thread_->Invoke<void>(
+      RTC_FROM_HERE,
+      rtc::Bind(&RtpTransportControllerAdapter::Close_w, this));
 }
 
 RTCErrorOr<std::unique_ptr<RtpTransportInterface>>
@@ -584,14 +588,11 @@ RtpTransportControllerAdapter::RtpTransportControllerAdapter(
     rtc::Thread* worker_thread)
     : signaling_thread_(signaling_thread),
       worker_thread_(worker_thread),
-      media_controller_(MediaControllerInterface::Create(config,
-                                                         worker_thread,
-                                                         channel_manager,
-                                                         event_log)) {
+      media_config_(config),
+      channel_manager_(channel_manager),
+      event_log_(event_log) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  RTC_DCHECK(channel_manager);
-  // MediaControllerInterface::Create should never fail.
-  RTC_DCHECK(media_controller_);
+  RTC_DCHECK(channel_manager_);
   // Add "dummy" codecs to the descriptions, because the media engines
   // currently reject empty lists of codecs. Note that these codecs will never
   // actually be used, because when parameters are set, the dummy codecs will
@@ -603,6 +604,33 @@ RtpTransportControllerAdapter::RtpTransportControllerAdapter(
   remote_audio_description_.AddCodec(dummy_audio);
   local_video_description_.AddCodec(dummy_video);
   remote_video_description_.AddCodec(dummy_video);
+
+  worker_thread_->Invoke<void>(
+      RTC_FROM_HERE,
+      rtc::Bind(&RtpTransportControllerAdapter::Init_w, this));
+}
+
+// TODO(nisse): Duplicates corresponding method in PeerConnection (used
+// to be in MediaController).
+void RtpTransportControllerAdapter::Init_w() {
+  RTC_DCHECK(worker_thread_->IsCurrent());
+  RTC_DCHECK(!call_);
+
+  const int kMinBandwidthBps = 30000;
+  const int kStartBandwidthBps = 300000;
+  const int kMaxBandwidthBps = 2000000;
+
+  webrtc::Call::Config call_config(event_log_);
+  call_config.audio_state = channel_manager_->media_engine()->GetAudioState();
+  call_config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
+  call_config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
+  call_config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
+
+  call_.reset(webrtc::Call::Create(call_config));
+}
+
+void RtpTransportControllerAdapter::Close_w() {
+  call_.reset();
 }
 
 RTCError RtpTransportControllerAdapter::AttachAudioSender(
@@ -818,8 +846,8 @@ void RtpTransportControllerAdapter::OnVideoReceiverDestroyed() {
 }
 
 void RtpTransportControllerAdapter::CreateVoiceChannel() {
-  voice_channel_ = media_controller_->channel_manager()->CreateVoiceChannel(
-      media_controller_.get(),
+  voice_channel_ = channel_manager_->CreateVoiceChannel(
+      call_.get(), media_config_,
       inner_audio_transport_->GetRtpPacketTransport()->GetInternal(),
       inner_audio_transport_->GetRtcpPacketTransport()
           ? inner_audio_transport_->GetRtcpPacketTransport()->GetInternal()
@@ -830,8 +858,8 @@ void RtpTransportControllerAdapter::CreateVoiceChannel() {
 }
 
 void RtpTransportControllerAdapter::CreateVideoChannel() {
-  video_channel_ = media_controller_->channel_manager()->CreateVideoChannel(
-      media_controller_.get(),
+  video_channel_ = channel_manager_->CreateVideoChannel(
+      call_.get(), media_config_,
       inner_video_transport_->GetRtpPacketTransport()->GetInternal(),
       inner_video_transport_->GetRtcpPacketTransport()
           ? inner_video_transport_->GetRtcpPacketTransport()->GetInternal()
@@ -843,14 +871,14 @@ void RtpTransportControllerAdapter::CreateVideoChannel() {
 
 void RtpTransportControllerAdapter::DestroyVoiceChannel() {
   RTC_DCHECK(voice_channel_);
-  media_controller_->channel_manager()->DestroyVoiceChannel(voice_channel_);
+  channel_manager_->DestroyVoiceChannel(voice_channel_);
   voice_channel_ = nullptr;
   inner_audio_transport_ = nullptr;
 }
 
 void RtpTransportControllerAdapter::DestroyVideoChannel() {
   RTC_DCHECK(video_channel_);
-  media_controller_->channel_manager()->DestroyVideoChannel(video_channel_);
+  channel_manager_->DestroyVideoChannel(video_channel_);
   video_channel_ = nullptr;
   inner_video_transport_ = nullptr;
 }
