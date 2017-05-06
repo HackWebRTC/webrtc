@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '34718d4879fbba5182af5611438da97f17058142',
+  'chromium_revision': '02ea6568c0b73b6c9873ea2f3aef44d77dc81a25',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -42,7 +42,7 @@ deps = {
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + '441e621b9dc932a06a17058798b7b4b07f313ca6',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'cfdf61028416d1e9f675c7f656e39fb781ed14d3',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '1404e9d74dc959e3664c78e369f28e487bb915eb',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -77,7 +77,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '12e367f51e97e3c372732821e5507ad51faa409d',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '184039abcea019fdd34bc9c3df6e9233539b7370',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'eb296f67da078ec01f5e3a9ea9cdc6d26d680161',
    'src/tools/swarming_client':
@@ -99,7 +99,7 @@ deps_os = {
     'src/third_party/ced/src':
       Var('chromium_git') + '/external/github.com/google/compact_enc_det.git' + '@' + 'e21eb6aed10b9f6e2727f136c52420033214d458',
     'src/third_party/icu':
-      Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'b34251f8b762f8e2112a89c587855ca4297fed96',
+      Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '4b06aadd0556135d3a90a4eb03eca24ef249e03e',
     'src/third_party/jsr-305/src':
       Var('chromium_git') + '/external/jsr-305.git' + '@' + '642c508235471f7220af6d5df2d3210e3bfc0919',
     'src/third_party/junit/src':
