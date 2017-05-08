@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "webrtc/base/testclient.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/testclient.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/testechoserver.h"
 #include "webrtc/base/thread.h"
 
@@ -23,7 +24,7 @@ void TestUdpInternal(const SocketAddress& loopback) {
       ->CreateAsyncSocket(loopback.family(), SOCK_DGRAM);
   socket->Bind(loopback);
 
-  TestClient client(new AsyncUDPSocket(socket));
+  TestClient client(MakeUnique<AsyncUDPSocket>(socket));
   SocketAddress addr = client.address(), from;
   EXPECT_EQ(3, client.SendTo("foo", 3, addr));
   EXPECT_TRUE(client.CheckNextPacket("foo", 3, &from));
@@ -37,11 +38,11 @@ void TestTcpInternal(const SocketAddress& loopback) {
 
   AsyncSocket* socket = main->socketserver()
       ->CreateAsyncSocket(loopback.family(), SOCK_STREAM);
-  AsyncTCPSocket* tcp_socket = AsyncTCPSocket::Create(
-      socket, loopback, server.address());
+  std::unique_ptr<AsyncTCPSocket> tcp_socket =
+      WrapUnique(AsyncTCPSocket::Create(socket, loopback, server.address()));
   ASSERT_TRUE(tcp_socket != nullptr);
 
-  TestClient client(tcp_socket);
+  TestClient client(std::move(tcp_socket));
   SocketAddress addr = client.address(), from;
   EXPECT_TRUE(client.CheckConnected());
   EXPECT_EQ(3, client.Send("foo", 3));

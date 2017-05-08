@@ -11,13 +11,14 @@
 #include <memory>
 #include <string>
 
-#include "webrtc/p2p/base/stunserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/testclient.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/p2p/base/stunserver.h"
 
 using namespace cricket;
 
@@ -35,7 +36,7 @@ class StunServerTest : public testing::Test {
     server_.reset(new StunServer(
         rtc::AsyncUDPSocket::Create(ss_.get(), server_addr)));
     client_.reset(new rtc::TestClient(
-        rtc::AsyncUDPSocket::Create(ss_.get(), client_addr)));
+        WrapUnique(rtc::AsyncUDPSocket::Create(ss_.get(), client_addr))));
 
     network_.Start();
   }
@@ -52,13 +53,12 @@ class StunServerTest : public testing::Test {
   }
   StunMessage* Receive() {
     StunMessage* msg = NULL;
-    rtc::TestClient::Packet* packet =
+    std::unique_ptr<rtc::TestClient::Packet> packet =
         client_->NextPacket(rtc::TestClient::kTimeoutMs);
     if (packet) {
       rtc::ByteBufferReader buf(packet->buf, packet->size);
       msg = new StunMessage();
       msg->Read(&buf);
-      delete packet;
     }
     return msg;
   }

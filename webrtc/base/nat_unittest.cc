@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 
+#include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/natserver.h"
@@ -19,8 +20,8 @@
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/physicalsocketserver.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/testclient.h"
-#include "webrtc/base/asynctcpsocket.h"
 #include "webrtc/base/virtualsocketserver.h"
 
 using namespace rtc;
@@ -34,13 +35,12 @@ bool CheckReceive(
 
 TestClient* CreateTestClient(
       SocketFactory* factory, const SocketAddress& local_addr) {
-  AsyncUDPSocket* socket = AsyncUDPSocket::Create(factory, local_addr);
-  return new TestClient(socket);
+  return new TestClient(
+      WrapUnique(AsyncUDPSocket::Create(factory, local_addr)));
 }
 
 TestClient* CreateTCPTestClient(AsyncSocket* socket) {
-  AsyncTCPSocket* packet_socket = new AsyncTCPSocket(socket, false);
-  return new TestClient(packet_socket);
+  return new TestClient(MakeUnique<AsyncTCPSocket>(socket, false));
 }
 
 // Tests that when sending from internal_addr to external_addrs through the

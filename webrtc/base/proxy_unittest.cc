@@ -61,10 +61,11 @@ TEST_F(ProxyTest, TestSocks5Connect) {
   rtc::TestEchoServer server(Thread::Current(),
                                    SocketAddress(INADDR_ANY, 0));
 
-  rtc::AsyncTCPSocket* packet_socket = rtc::AsyncTCPSocket::Create(
-      proxy_socket, SocketAddress(INADDR_ANY, 0), server.address());
+  std::unique_ptr<rtc::AsyncTCPSocket> packet_socket(
+      rtc::AsyncTCPSocket::Create(proxy_socket, SocketAddress(INADDR_ANY, 0),
+                                  server.address()));
   EXPECT_TRUE(packet_socket != nullptr);
-  rtc::TestClient client(packet_socket);
+  rtc::TestClient client(std::move(packet_socket));
 
   EXPECT_EQ(Socket::CS_CONNECTING, proxy_socket->GetState());
   EXPECT_TRUE(client.CheckConnected());

@@ -13,10 +13,11 @@
 #include "webrtc/base/socket_unittest.h"
 
 #include "webrtc/base/arraysize.h"
-#include "webrtc/base/buffer.h"
 #include "webrtc/base/asyncudpsocket.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/nethelpers.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/socketserver.h"
 #include "webrtc/base/testclient.h"
 #include "webrtc/base/testutils.h"
@@ -903,9 +904,9 @@ void SocketTest::UdpInternal(const IPAddress& loopback) {
 
   // Test send/receive behavior.
   std::unique_ptr<TestClient> client1(
-      new TestClient(AsyncUDPSocket::Create(ss_, addr1)));
+      new TestClient(WrapUnique(AsyncUDPSocket::Create(ss_, addr1))));
   std::unique_ptr<TestClient> client2(
-      new TestClient(AsyncUDPSocket::Create(ss_, empty)));
+      new TestClient(WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
 
   SocketAddress addr2;
   EXPECT_EQ(3, client2->SendTo("foo", 3, addr1));
@@ -917,7 +918,8 @@ void SocketTest::UdpInternal(const IPAddress& loopback) {
   EXPECT_EQ(addr3, addr1);
   // TODO: figure out what the intent is here
   for (int i = 0; i < 10; ++i) {
-    client2.reset(new TestClient(AsyncUDPSocket::Create(ss_, empty)));
+    client2.reset(
+        new TestClient(WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
 
     SocketAddress addr4;
     EXPECT_EQ(3, client2->SendTo("foo", 3, addr1));
@@ -944,7 +946,7 @@ void SocketTest::UdpReadyToSend(const IPAddress& loopback) {
 
   // Test send
   std::unique_ptr<TestClient> client(
-      new TestClient(AsyncUDPSocket::Create(ss_, empty)));
+      new TestClient(WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
   int test_packet_size = 1200;
   std::unique_ptr<char[]> test_packet(new char[test_packet_size]);
   // Init the test packet just to avoid memcheck warning.
