@@ -57,8 +57,6 @@ class VideoStreamDecoder : public VCMReceiveCallback,
       rtc::VideoSinkInterface<VideoFrame>* incoming_video_stream);
   ~VideoStreamDecoder();
 
-  // TODO(ilnik): remove this once deprecated API is removed.
-  using VCMReceiveCallback::FrameToRender;
   // Implements VCMReceiveCallback.
   int32_t FrameToRender(VideoFrame& video_frame,
                         rtc::Optional<uint8_t> qp,
