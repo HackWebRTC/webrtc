@@ -23,7 +23,7 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/common_video/include/corevideo_frame_buffer.h"
+#include "webrtc/sdk/objc/Framework/Classes/corevideo_frame_buffer.h"
 
 namespace webrtc {
 

@@ -212,6 +212,7 @@ if (is_ios || is_mac) {
     ]
 
     deps = [
+      ":rtc_sdk_corevideoframebuffer",
       ":webrtc_h264_video_toolbox",
       "../api:video_frame_api",
       "../base:rtc_base",
@@ -425,6 +426,20 @@ if (is_ios || is_mac) {
     ]
   }
 
+  rtc_static_library("rtc_sdk_corevideoframebuffer") {
+    sources = [
+      "objc/Framework/Classes/corevideo_frame_buffer.cc",
+      "objc/Framework/Classes/corevideo_frame_buffer.h",
+    ]
+
+    deps = [
+      "../base:rtc_base_approved",
+      "../common_video",
+    ]
+
+    libs = [ "CoreVideo.framework" ]
+  }
+
   rtc_static_library("webrtc_h264_video_toolbox") {
     sources = [
       "objc/Framework/Classes/h264_video_toolbox_decoder.cc",
@@ -439,6 +454,7 @@ if (is_ios || is_mac) {
 
     deps = [
       ":rtc_sdk_common_objc",
+      ":rtc_sdk_corevideoframebuffer",
       "../api:video_frame_api",
       "../base:rtc_base_approved",
       "../common_video",
