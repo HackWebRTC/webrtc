@@ -958,6 +958,20 @@ class PeerConnectionIntegrationTest : public testing::Test {
     return caller_->SignalingStateStable() && callee_->SignalingStateStable();
   }
 
+  bool DtlsConnected() {
+    // TODO(deadbeef): kIceConnectionConnected currently means both ICE and DTLS
+    // are connected. This is an important distinction. Once we have separate
+    // ICE and DTLS state, this check needs to use the DTLS state.
+    return (callee()->ice_connection_state() ==
+                webrtc::PeerConnectionInterface::kIceConnectionConnected ||
+            callee()->ice_connection_state() ==
+                webrtc::PeerConnectionInterface::kIceConnectionCompleted) &&
+           (caller()->ice_connection_state() ==
+                webrtc::PeerConnectionInterface::kIceConnectionConnected ||
+            caller()->ice_connection_state() ==
+                webrtc::PeerConnectionInterface::kIceConnectionCompleted);
+  }
+
   bool CreatePeerConnectionWrappers() {
     return CreatePeerConnectionWrappersWithConfig(
         PeerConnectionInterface::RTCConfiguration(),
@@ -1245,6 +1259,8 @@ TEST_F(PeerConnectionIntegrationTest, DtmfSenderObserver) {
   callee()->AddAudioOnlyMediaStream();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  // DTLS must finish before the DTMF sender can be used reliably.
+  ASSERT_TRUE_WAIT(DtlsConnected(), kDefaultTimeout);
   TestDtmfFromSenderToReceiver(caller(), callee());
   TestDtmfFromSenderToReceiver(callee(), caller());
 }
@@ -2781,19 +2797,8 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndConnectionTimeWithTurnTurnPair) {
   options.offer_to_receive_video = 1;
   caller()->SetOfferAnswerOptions(options);
   caller()->CreateAndSetAndSignalOffer();
-  // TODO(deadbeef): kIceConnectionConnected currently means both ICE and DTLS
-  // are connected. This is an important distinction. Once we have separate ICE
-  // and DTLS state, this check needs to use the DTLS state.
-  EXPECT_TRUE_SIMULATED_WAIT(
-      (callee()->ice_connection_state() ==
-           webrtc::PeerConnectionInterface::kIceConnectionConnected ||
-       callee()->ice_connection_state() ==
-           webrtc::PeerConnectionInterface::kIceConnectionCompleted) &&
-          (caller()->ice_connection_state() ==
-               webrtc::PeerConnectionInterface::kIceConnectionConnected ||
-           caller()->ice_connection_state() ==
-               webrtc::PeerConnectionInterface::kIceConnectionCompleted),
-      total_connection_time_ms, fake_clock);
+  EXPECT_TRUE_SIMULATED_WAIT(DtlsConnected(), total_connection_time_ms,
+                             fake_clock);
   // Need to free the clients here since they're using things we created on
   // the stack.
   delete SetCallerPcWrapperAndReturnCurrent(nullptr);
