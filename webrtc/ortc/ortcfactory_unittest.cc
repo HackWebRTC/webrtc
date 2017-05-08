@@ -28,7 +28,7 @@ class OrtcFactoryTest : public testing::Test {
  public:
   OrtcFactoryTest()
       : virtual_socket_server_(&physical_socket_server_),
-        socket_server_scope_(&virtual_socket_server_),
+        thread_(&virtual_socket_server_),
         fake_packet_transport_("fake transport") {
     ortc_factory_ =
         OrtcFactory::Create(nullptr, nullptr, &fake_network_manager_, nullptr,
@@ -51,7 +51,7 @@ class OrtcFactoryTest : public testing::Test {
 
   rtc::PhysicalSocketServer physical_socket_server_;
   rtc::VirtualSocketServer virtual_socket_server_;
-  rtc::SocketServerScope socket_server_scope_;
+  rtc::AutoSocketServerThread thread_;
   rtc::FakeNetworkManager fake_network_manager_;
   rtc::FakePacketTransport fake_packet_transport_;
   std::unique_ptr<OrtcFactoryInterface> ortc_factory_;

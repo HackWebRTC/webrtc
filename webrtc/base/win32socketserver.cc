@@ -726,9 +726,8 @@ void Win32Socket::OnDnsNotify(HANDLE task, int error) {
 static UINT s_wm_wakeup_id = 0;
 const TCHAR Win32SocketServer::kWindowName[] = L"libjingle Message Window";
 
-Win32SocketServer::Win32SocketServer(MessageQueue* message_queue)
-    : message_queue_(message_queue),
-      wnd_(this),
+Win32SocketServer::Win32SocketServer()
+    : wnd_(this),
       posted_(false),
       hdlg_(nullptr) {
   if (s_wm_wakeup_id == 0)

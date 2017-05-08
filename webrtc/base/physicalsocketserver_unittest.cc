@@ -115,16 +115,15 @@ class PhysicalSocketTest : public SocketTest {
  protected:
   PhysicalSocketTest()
     : server_(new FakePhysicalSocketServer(this)),
-      scope_(server_.get()),
+      thread_(server_.get()),
       fail_accept_(false),
-      max_send_size_(-1) {
-  }
+      max_send_size_(-1) {}
 
   void ConnectInternalAcceptError(const IPAddress& loopback);
   void WritableAfterPartialWrite(const IPAddress& loopback);
 
   std::unique_ptr<FakePhysicalSocketServer> server_;
-  SocketServerScope scope_;
+  rtc::AutoSocketServerThread thread_;
   bool fail_accept_;
   int max_send_size_;
 };

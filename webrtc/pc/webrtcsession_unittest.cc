@@ -370,7 +370,11 @@ class WebRtcSessionTest
   // TODO Investigate why ChannelManager crashes, if it's created
   // after stun_server.
   WebRtcSessionTest()
-      : media_engine_(new cricket::FakeMediaEngine()),
+      : pss_(new rtc::PhysicalSocketServer),
+        vss_(new rtc::VirtualSocketServer(pss_.get())),
+        fss_(new rtc::FirewallSocketServer(vss_.get())),
+        thread_(fss_.get()),
+        media_engine_(new cricket::FakeMediaEngine()),
         data_engine_(new cricket::FakeDataEngine()),
         channel_manager_(new cricket::ChannelManager(
             std::unique_ptr<cricket::MediaEngineInterface>(media_engine_),
@@ -381,10 +385,6 @@ class WebRtcSessionTest
         desc_factory_(
             new cricket::MediaSessionDescriptionFactory(channel_manager_.get(),
                                                         tdesc_factory_.get())),
-        pss_(new rtc::PhysicalSocketServer),
-        vss_(new rtc::VirtualSocketServer(pss_.get())),
-        fss_(new rtc::FirewallSocketServer(vss_.get())),
-        ss_scope_(fss_.get()),
         stun_socket_addr_(
             rtc::SocketAddress(kStunAddrHost, cricket::STUN_SERVER_PORT)),
         stun_server_(cricket::TestStunServer::Create(Thread::Current(),
@@ -1503,6 +1503,10 @@ class WebRtcSessionTest
   }
 
   webrtc::RtcEventLogNullImpl event_log_;
+  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
+  std::unique_ptr<rtc::VirtualSocketServer> vss_;
+  std::unique_ptr<rtc::FirewallSocketServer> fss_;
+  rtc::AutoSocketServerThread thread_;
   // |media_engine_| and |data_engine_| are actually owned by
   // |channel_manager_|.
   cricket::FakeMediaEngine* media_engine_;
@@ -1513,10 +1517,6 @@ class WebRtcSessionTest
   cricket::FakeCall fake_call_;
   std::unique_ptr<cricket::TransportDescriptionFactory> tdesc_factory_;
   std::unique_ptr<cricket::MediaSessionDescriptionFactory> desc_factory_;
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
-  std::unique_ptr<rtc::VirtualSocketServer> vss_;
-  std::unique_ptr<rtc::FirewallSocketServer> fss_;
-  rtc::SocketServerScope ss_scope_;
   rtc::SocketAddress stun_socket_addr_;
   std::unique_ptr<cricket::TestStunServer> stun_server_;
   cricket::TestTurnServer turn_server_;

@@ -274,7 +274,8 @@ class SSLAdapterTestBase : public testing::Test,
   explicit SSLAdapterTestBase(const rtc::SSLMode& ssl_mode,
                               const rtc::KeyParams& key_params)
       : ssl_mode_(ssl_mode),
-        ss_scope_(new rtc::VirtualSocketServer(nullptr)),
+        vss_(new rtc::VirtualSocketServer(nullptr)),
+        thread_(vss_.get()),
         server_(new SSLAdapterTestDummyServer(ssl_mode_, key_params)),
         client_(new SSLAdapterTestDummyClient(ssl_mode_)),
         handshake_wait_(kTimeout) {}
@@ -338,8 +339,8 @@ class SSLAdapterTestBase : public testing::Test,
  private:
   const rtc::SSLMode ssl_mode_;
 
-  const rtc::SocketServerScope ss_scope_;
-
+  std::unique_ptr<rtc::VirtualSocketServer> vss_;
+  rtc::AutoSocketServerThread thread_;
   std::unique_ptr<SSLAdapterTestDummyServer> server_;
   std::unique_ptr<SSLAdapterTestDummyClient> client_;
 

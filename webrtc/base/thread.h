@@ -311,21 +311,20 @@ class AutoThread : public Thread {
   RTC_DISALLOW_COPY_AND_ASSIGN(AutoThread);
 };
 
-// Provides an easy way to install/uninstall a socketserver on a thread.
-class SocketServerScope {
+// AutoSocketServerThread automatically installs itself at
+// construction and uninstalls at destruction. If a Thread object is
+// already associated with the current OS thread, it is temporarily
+// disassociated and restored by the destructor.
+
+class AutoSocketServerThread : public Thread {
  public:
-  explicit SocketServerScope(SocketServer* ss) {
-    old_ss_ = Thread::Current()->socketserver();
-    Thread::Current()->set_socketserver(ss);
-  }
-  ~SocketServerScope() {
-    Thread::Current()->set_socketserver(old_ss_);
-  }
+  explicit AutoSocketServerThread(SocketServer* ss);
+  ~AutoSocketServerThread() override;
 
  private:
-  SocketServer* old_ss_;
+  rtc::Thread* old_thread_;
 
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SocketServerScope);
+  RTC_DISALLOW_COPY_AND_ASSIGN(AutoSocketServerThread);
 };
 
 }  // namespace rtc

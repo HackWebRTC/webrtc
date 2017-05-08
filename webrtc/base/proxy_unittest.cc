@@ -31,19 +31,19 @@ static const SocketAddress kBogusProxyIntAddr("1.2.3.4", 999);
 // Sets up a virtual socket server and HTTPS/SOCKS5 proxy servers.
 class ProxyTest : public testing::Test {
  public:
-  ProxyTest() : ss_(new rtc::VirtualSocketServer(nullptr)) {
-    Thread::Current()->set_socketserver(ss_.get());
+  ProxyTest() : ss_(new rtc::VirtualSocketServer(nullptr)), thread_(ss_.get()) {
     socks_.reset(new rtc::SocksProxyServer(
         ss_.get(), kSocksProxyIntAddr, ss_.get(), kSocksProxyExtAddr));
     https_.reset(new rtc::HttpListenServer());
     https_->Listen(kHttpsProxyIntAddr);
   }
-  ~ProxyTest() { Thread::Current()->set_socketserver(nullptr); }
+  ~ProxyTest() {}
 
   rtc::SocketServer* ss() { return ss_.get(); }
 
  private:
   std::unique_ptr<rtc::SocketServer> ss_;
+  rtc::AutoSocketServerThread thread_;
   std::unique_ptr<rtc::SocksProxyServer> socks_;
   // TODO: Make this a real HTTPS proxy server.
   std::unique_ptr<rtc::HttpListenServer> https_;

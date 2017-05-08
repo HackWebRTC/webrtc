@@ -147,6 +147,7 @@ class VirtualSocketServerTest : public testing::Test {
  public:
   VirtualSocketServerTest()
       : ss_(nullptr),
+        thread_(&ss_),
         kIPv4AnyAddress(IPAddress(INADDR_ANY), 0),
         kIPv6AnyAddress(IPAddress(in6addr_any), 0) {}
 
@@ -828,10 +829,8 @@ class VirtualSocketServerTest : public testing::Test {
   }
 
  protected:
-  virtual void SetUp() { Thread::Current()->set_socketserver(&ss_); }
-  virtual void TearDown() { Thread::Current()->set_socketserver(nullptr); }
-
   VirtualSocketServer ss_;
+  AutoSocketServerThread thread_;
   const SocketAddress kIPv4AnyAddress;
   const SocketAddress kIPv6AnyAddress;
 };

@@ -42,7 +42,7 @@ class RelayServerTest : public testing::Test {
   RelayServerTest()
       : pss_(new rtc::PhysicalSocketServer),
         ss_(new rtc::VirtualSocketServer(pss_.get())),
-        ss_scope_(ss_.get()),
+        thread_(ss_.get()),
         username_(rtc::CreateRandomString(12)),
         password_(rtc::CreateRandomString(12)) {}
 
@@ -168,7 +168,7 @@ class RelayServerTest : public testing::Test {
 
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
-  rtc::SocketServerScope ss_scope_;
+  rtc::AutoSocketServerThread thread_;
   std::unique_ptr<RelayServer> server_;
   std::unique_ptr<rtc::TestClient> client1_;
   std::unique_ptr<rtc::TestClient> client2_;

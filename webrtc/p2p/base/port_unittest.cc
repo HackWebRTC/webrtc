@@ -381,19 +381,18 @@ class TestChannel : public sigslot::has_slots<> {
 class PortTest : public testing::Test, public sigslot::has_slots<> {
  public:
   PortTest()
-      : main_(rtc::Thread::Current()),
-        pss_(new rtc::PhysicalSocketServer),
+      : pss_(new rtc::PhysicalSocketServer),
         ss_(new rtc::VirtualSocketServer(pss_.get())),
-        ss_scope_(ss_.get()),
+        main_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
         nat_factory1_(ss_.get(), kNatAddr1, SocketAddress()),
         nat_factory2_(ss_.get(), kNatAddr2, SocketAddress()),
         nat_socket_factory1_(&nat_factory1_),
         nat_socket_factory2_(&nat_factory2_),
-        stun_server_(TestStunServer::Create(main_, kStunAddr)),
-        turn_server_(main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
-        relay_server_(main_,
+        stun_server_(TestStunServer::Create(&main_, kStunAddr)),
+        turn_server_(&main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
+        relay_server_(&main_,
                       kRelayUdpIntAddr,
                       kRelayUdpExtAddr,
                       kRelayTcpIntAddr,
@@ -492,7 +491,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   UDPPort* CreateUdpPort(const SocketAddress& addr,
                          PacketSocketFactory* socket_factory) {
-    return UDPPort::Create(main_, socket_factory, &network_, addr.ipaddr(), 0,
+    return UDPPort::Create(&main_, socket_factory, &network_, addr.ipaddr(), 0,
                            0, username_, password_, std::string(), true);
   }
   TCPPort* CreateTcpPort(const SocketAddress& addr) {
@@ -500,7 +499,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   TCPPort* CreateTcpPort(const SocketAddress& addr,
                         PacketSocketFactory* socket_factory) {
-    return TCPPort::Create(main_, socket_factory, &network_,
+    return TCPPort::Create(&main_, socket_factory, &network_,
                            addr.ipaddr(), 0, 0, username_, password_,
                            true);
   }
@@ -508,7 +507,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
                            rtc::PacketSocketFactory* factory) {
     ServerAddresses stun_servers;
     stun_servers.insert(kStunAddr);
-    return StunPort::Create(main_, factory, &network_,
+    return StunPort::Create(&main_, factory, &network_,
                             addr.ipaddr(), 0, 0,
                             username_, password_, stun_servers,
                             std::string());
@@ -533,7 +532,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
                            PacketSocketFactory* socket_factory,
                            ProtocolType int_proto, ProtocolType ext_proto,
                            const rtc::SocketAddress& server_addr) {
-    return TurnPort::Create(main_, socket_factory, &network_, addr.ipaddr(), 0,
+    return TurnPort::Create(&main_, socket_factory, &network_, addr.ipaddr(), 0,
                             0, username_, password_,
                             ProtocolAddress(server_addr, int_proto),
                             kRelayCredentials, 0, std::string());
@@ -550,7 +549,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     // TODO(pthatcher):  Remove GTURN.
     // Generate a username with length of 16 for Gturn only.
     std::string username = rtc::CreateRandomString(kGturnUserNameLength);
-    return RelayPort::Create(main_, &socket_factory_, &network_, addr.ipaddr(),
+    return RelayPort::Create(&main_, &socket_factory_, &network_, addr.ipaddr(),
                              0, 0, username, password_);
     // TODO: Add an external address for ext_proto, so that the
     // other side can connect to this port using a non-UDP protocol.
@@ -767,7 +766,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   TestPort* CreateTestPort(const rtc::SocketAddress& addr,
                            const std::string& username,
                            const std::string& password) {
-    TestPort* port =  new TestPort(main_, "test", &socket_factory_, &network_,
+    TestPort* port =  new TestPort(&main_, "test", &socket_factory_, &network_,
                                    addr.ipaddr(), 0, 0, username, password);
     port->SignalRoleConflict.connect(this, &PortTest::OnRoleConflict);
     return port;
@@ -802,10 +801,9 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   rtc::VirtualSocketServer* vss() { return ss_.get(); }
 
  private:
-  rtc::Thread* main_;
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
-  rtc::SocketServerScope ss_scope_;
+  rtc::AutoSocketServerThread main_;
   rtc::Network network_;
   rtc::BasicPacketSocketFactory socket_factory_;
   std::unique_ptr<rtc::NATServer> nat_server1_;

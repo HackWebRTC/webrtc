@@ -143,13 +143,12 @@ class TurnPortTest : public testing::Test,
                      public rtc::MessageHandler {
  public:
   TurnPortTest()
-      : main_(rtc::Thread::Current()),
-        pss_(new rtc::PhysicalSocketServer),
+      : pss_(new rtc::PhysicalSocketServer),
         ss_(new TurnPortTestVirtualSocketServer(pss_.get())),
-        ss_scope_(ss_.get()),
+        main_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
-        turn_server_(main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
+        turn_server_(&main_, kTurnUdpIntAddr, kTurnUdpExtAddr),
         turn_ready_(false),
         turn_error_(false),
         turn_unknown_address_(false),
@@ -243,7 +242,7 @@ class TurnPortTest : public testing::Test,
                       const std::string& password,
                       const ProtocolAddress& server_address) {
     RelayCredentials credentials(username, password);
-    turn_port_.reset(TurnPort::Create(main_, &socket_factory_, &network_,
+    turn_port_.reset(TurnPort::Create(&main_, &socket_factory_, &network_,
                                  local_address.ipaddr(), 0, 0,
                                  kIceUfrag1, kIcePwd1,
                                  server_address, credentials, 0,
@@ -261,7 +260,7 @@ class TurnPortTest : public testing::Test,
                                 const ProtocolAddress& server_address,
                                 const std::string& origin) {
     RelayCredentials credentials(username, password);
-    turn_port_.reset(TurnPort::Create(main_, &socket_factory_, &network_,
+    turn_port_.reset(TurnPort::Create(&main_, &socket_factory_, &network_,
                                  local_address.ipaddr(), 0, 0,
                                  kIceUfrag1, kIcePwd1,
                                  server_address, credentials, 0,
@@ -286,8 +285,8 @@ class TurnPortTest : public testing::Test,
 
     RelayCredentials credentials(username, password);
     turn_port_.reset(TurnPort::Create(
-        main_, &socket_factory_, &network_, socket_.get(), kIceUfrag1, kIcePwd1,
-        server_address, credentials, 0, std::string()));
+        &main_, &socket_factory_, &network_, socket_.get(), kIceUfrag1,
+        kIcePwd1, server_address, credentials, 0, std::string()));
     // This TURN port will be the controlling.
     turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     ConnectSignals();
@@ -309,7 +308,7 @@ class TurnPortTest : public testing::Test,
   void CreateUdpPort() { CreateUdpPort(kLocalAddr2); }
 
   void CreateUdpPort(const SocketAddress& address) {
-    udp_port_.reset(UDPPort::Create(main_, &socket_factory_, &network_,
+    udp_port_.reset(UDPPort::Create(&main_, &socket_factory_, &network_,
                                     address.ipaddr(), 0, 0, kIceUfrag2,
                                     kIcePwd2, std::string(), false));
     // UDP port will be controlled.
@@ -620,10 +619,9 @@ class TurnPortTest : public testing::Test,
 
  protected:
   rtc::ScopedFakeClock fake_clock_;
-  rtc::Thread* main_;
   std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<TurnPortTestVirtualSocketServer> ss_;
-  rtc::SocketServerScope ss_scope_;
+  rtc::AutoSocketServerThread main_;
   rtc::Network network_;
   rtc::BasicPacketSocketFactory socket_factory_;
   std::unique_ptr<rtc::AsyncPacketSocket> socket_;

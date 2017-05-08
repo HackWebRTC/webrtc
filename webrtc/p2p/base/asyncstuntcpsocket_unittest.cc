@@ -70,8 +70,7 @@ class AsyncStunTCPSocketTest : public testing::Test,
  protected:
   AsyncStunTCPSocketTest()
       : vss_(new rtc::VirtualSocketServer(NULL)),
-        ss_scope_(vss_.get()) {
-  }
+        thread_(vss_.get()) {}
 
   virtual void SetUp() {
     CreateSockets();
@@ -125,7 +124,7 @@ class AsyncStunTCPSocketTest : public testing::Test,
   }
 
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
-  rtc::SocketServerScope ss_scope_;
+  rtc::AutoSocketServerThread thread_;
   std::unique_ptr<AsyncStunTCPSocket> send_socket_;
   std::unique_ptr<AsyncStunTCPSocket> recv_socket_;
   std::unique_ptr<rtc::AsyncPacketSocket> listen_socket_;

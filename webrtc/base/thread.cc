@@ -528,4 +528,26 @@ AutoThread::~AutoThread() {
   }
 }
 
+AutoSocketServerThread::AutoSocketServerThread(SocketServer* ss)
+    : Thread(ss) {
+  old_thread_ = ThreadManager::Instance()->CurrentThread();
+  rtc::ThreadManager::Instance()->SetCurrentThread(this);
+  if (old_thread_) {
+    MessageQueueManager::Remove(old_thread_);
+  }
+}
+
+AutoSocketServerThread::~AutoSocketServerThread() {
+  RTC_DCHECK(ThreadManager::Instance()->CurrentThread() == this);
+  // Some tests post destroy messages to this thread. To avoid memory
+  // leaks, we have to process those messages. In particular
+  // P2PTransportChannelPingTest, relying on the message posted in
+  // cricket::Connection::Destroy.
+  ProcessMessages(0);
+  rtc::ThreadManager::Instance()->SetCurrentThread(old_thread_);
+  if (old_thread_) {
+    MessageQueueManager::Add(old_thread_);
+  }
+}
+
 }  // namespace rtc
