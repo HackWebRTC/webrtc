@@ -25,7 +25,7 @@ import org.webrtc.Logging;
 // effects are: AcousticEchoCanceler (AEC) and NoiseSuppressor (NS).
 // Calling enable() will active all effects that are
 // supported by the device if the corresponding |shouldEnableXXX| member is set.
-class WebRtcAudioEffects {
+public class WebRtcAudioEffects {
   private static final boolean DEBUG = false;
 
   private static final String TAG = "WebRtcAudioEffects";
@@ -150,7 +150,7 @@ class WebRtcAudioEffects {
     return canUseNoiseSuppressor;
   }
 
-  static WebRtcAudioEffects create() {
+  public static WebRtcAudioEffects create() {
     return new WebRtcAudioEffects();
   }
 
