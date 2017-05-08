@@ -634,10 +634,10 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 
 }  // namespace
 
-// The PeerConnectionMediaConfig tests below verify that configuration
-// and constraints are propagated into the MediaConfig passed to
-// CreateMediaController. These settings are intended for MediaChannel
-// constructors, but that is not exercised by these unittest.
+// The PeerConnectionMediaConfig tests below verify that configuration and
+// constraints are propagated into the PeerConnection's MediaConfig. These
+// settings are intended for MediaChannel constructors, but that is not
+// exercised by these unittest.
 class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
  public:
   PeerConnectionFactoryForTest()
@@ -3333,7 +3333,7 @@ TEST_F(PeerConnectionMediaConfigTest, TestDefaults) {
 }
 
 // This test verifies the DSCP constraint is recognized and passed to
-// the CreateMediaController call.
+// the PeerConnection.
 TEST_F(PeerConnectionMediaConfigTest, TestDscpConstraintTrue) {
   PeerConnectionInterface::RTCConfiguration config;
   FakeConstraints constraints;
@@ -3346,7 +3346,7 @@ TEST_F(PeerConnectionMediaConfigTest, TestDscpConstraintTrue) {
 }
 
 // This test verifies the cpu overuse detection constraint is
-// recognized and passed to the CreateMediaController call.
+// recognized and passed to the PeerConnection.
 TEST_F(PeerConnectionMediaConfigTest, TestCpuOveruseConstraintFalse) {
   PeerConnectionInterface::RTCConfiguration config;
   FakeConstraints constraints;
@@ -3360,7 +3360,7 @@ TEST_F(PeerConnectionMediaConfigTest, TestCpuOveruseConstraintFalse) {
 }
 
 // This test verifies that the disable_prerenderer_smoothing flag is
-// propagated from RTCConfiguration to the CreateMediaController call.
+// propagated from RTCConfiguration to the PeerConnection.
 TEST_F(PeerConnectionMediaConfigTest, TestDisablePrerendererSmoothingTrue) {
   PeerConnectionInterface::RTCConfiguration config;
   FakeConstraints constraints;
@@ -3373,7 +3373,7 @@ TEST_F(PeerConnectionMediaConfigTest, TestDisablePrerendererSmoothingTrue) {
 }
 
 // This test verifies the suspend below min bitrate constraint is
-// recognized and passed to the CreateMediaController call.
+// recognized and passed to the PeerConnection.
 TEST_F(PeerConnectionMediaConfigTest,
        TestSuspendBelowMinBitrateConstraintTrue) {
   PeerConnectionInterface::RTCConfiguration config;

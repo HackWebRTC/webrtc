@@ -92,8 +92,7 @@ static T MinPositive(T a, T b) {
   return std::min(a, b);
 }
 
-// Construction-time settings, passed to
-// MediaControllerInterface::Create, and passed on when creating
+// Construction-time settings, passed on when creating
 // MediaChannels.
 struct MediaConfig {
   // Set DSCP value on packets. This flag comes from the

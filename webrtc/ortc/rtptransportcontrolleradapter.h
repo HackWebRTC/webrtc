@@ -34,7 +34,7 @@ class RtpTransportAdapter;
 class OrtcRtpSenderAdapter;
 class OrtcRtpReceiverAdapter;
 
-// Implementation of RtpTransportControllerInterface. Wraps a MediaController,
+// Implementation of RtpTransportControllerInterface. Wraps a Call,
 // a VoiceChannel and VideoChannel, and maintains a list of dependent RTP
 // transports.
 //
