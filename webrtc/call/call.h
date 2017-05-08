@@ -10,6 +10,7 @@
 #ifndef WEBRTC_CALL_CALL_H_
 #define WEBRTC_CALL_CALL_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@
 #include "webrtc/call/audio_send_stream.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/call/flexfec_receive_stream.h"
+#include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/common_types.h"
 #include "webrtc/video_receive_stream.h"
 #include "webrtc/video_send_stream.h"
@@ -97,6 +99,11 @@ class Call {
   };
 
   static Call* Create(const Call::Config& config);
+
+  // Allows mocking |transport_send| for testing.
+  static Call* Create(
+      const Call::Config& config,
+      std::unique_ptr<RtpTransportControllerSendInterface> transport_send);
 
   virtual AudioSendStream* CreateAudioSendStream(
       const AudioSendStream::Config& config) = 0;

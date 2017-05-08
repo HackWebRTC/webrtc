@@ -58,7 +58,7 @@ class CongestionController : public CallStatsObserver,
         receive_side_cc_(clock, packet_router) {}
   CongestionController(const Clock* clock,
                        Observer* observer,
-                       RemoteBitrateObserver* remote_bitrate_observer,
+                       RemoteBitrateObserver* /* remote_bitrate_observer */,
                        RtcEventLog* event_log,
                        PacketRouter* packet_router,
                        std::unique_ptr<PacedSender> pacer)

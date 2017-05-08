@@ -93,6 +93,7 @@ if (rtc_include_tests) {
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer",
       "../modules/bitrate_controller",
+      "../modules/congestion_controller:mock_congestion_controller",
       "../modules/pacing",
       "../modules/rtp_rtcp",
       "../system_wrappers",

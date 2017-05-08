@@ -26,6 +26,7 @@
 #include "webrtc/base/location.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/optional.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
@@ -97,7 +98,7 @@ class Call : public webrtc::Call,
              public BitrateAllocator::LimitObserver {
  public:
   Call(const Call::Config& config,
-       std::unique_ptr<RtpTransportControllerSend> transport_send);
+       std::unique_ptr<RtpTransportControllerSendInterface> transport_send);
   virtual ~Call();
 
   // Implements webrtc::Call.
@@ -298,16 +299,21 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
 }
 
 Call* Call::Create(const Call::Config& config) {
-  return new internal::Call(
-      config, std::unique_ptr<RtpTransportControllerSend>(
-                  new RtpTransportControllerSend(Clock::GetRealTimeClock(),
-                                                 config.event_log)));
+  return new internal::Call(config,
+                            rtc::MakeUnique<RtpTransportControllerSend>(
+                                Clock::GetRealTimeClock(), config.event_log));
+}
+
+Call* Call::Create(
+    const Call::Config& config,
+    std::unique_ptr<RtpTransportControllerSendInterface> transport_send) {
+  return new internal::Call(config, std::move(transport_send));
 }
 
 namespace internal {
 
 Call::Call(const Call::Config& config,
-           std::unique_ptr<RtpTransportControllerSend> transport_send)
+           std::unique_ptr<RtpTransportControllerSendInterface> transport_send)
     : clock_(Clock::GetRealTimeClock()),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
@@ -342,7 +348,7 @@ Call::Call(const Call::Config& config,
                   config.bitrate_config.start_bitrate_bps);
   }
   Trace::CreateTrace();
-  transport_send->RegisterNetworkObserver(this);
+  transport_send->send_side_cc()->RegisterNetworkObserver(this);
   transport_send_ = std::move(transport_send);
   transport_send_->send_side_cc()->SignalNetworkState(kNetworkDown);
   transport_send_->send_side_cc()->SetBweBitrates(

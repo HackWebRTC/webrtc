@@ -18,10 +18,4 @@ RtpTransportControllerSend::RtpTransportControllerSend(
     : send_side_cc_(clock, nullptr /* observer */, event_log, &packet_router_) {
 }
 
-void RtpTransportControllerSend::RegisterNetworkObserver(
-    SendSideCongestionController::Observer* observer) {
-  // Must be called only once.
-  send_side_cc_.RegisterNetworkObserver(observer);
-}
-
 }  // namespace webrtc

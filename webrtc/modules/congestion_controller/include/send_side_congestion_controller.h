@@ -57,7 +57,8 @@ class SendSideCongestionController : public CallStatsObserver,
    protected:
     virtual ~Observer() {}
   };
-  // TODO(nisse): Consider deleting the |observer| argument to constructors.
+  // TODO(nisse): Consider deleting the |observer| argument to constructors
+  // once CongestionController is deleted.
   SendSideCongestionController(const Clock* clock,
                                Observer* observer,
                                RtcEventLog* event_log,

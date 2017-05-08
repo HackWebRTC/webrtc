@@ -85,6 +85,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":congestion_controller",
+      ":mock_congestion_controller",
       "../../base:rtc_base_approved",
       "../../system_wrappers:system_wrappers",
       "../../test:field_trial",
@@ -100,5 +101,17 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
+  }
+
+  rtc_source_set("mock_congestion_controller") {
+    testonly = true
+    sources = [
+      "include/mock/mock_congestion_observer.h",
+      "include/mock/mock_send_side_congestion_controller.h",
+    ]
+    deps = [
+      ":congestion_controller",
+      "../../test:test_support",
+    ]
   }
 }

@@ -81,6 +81,7 @@ if (rtc_include_tests) {
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/congestion_controller:congestion_controller",
+      "../modules/congestion_controller:mock_congestion_controller",
       "../modules/pacing:pacing",
       "../test:test_common",
       "../test:test_support",

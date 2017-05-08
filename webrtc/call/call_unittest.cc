@@ -11,11 +11,15 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <utility>
 
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/call/call.h"
+#include "webrtc/call/fake_rtp_transport_controller_send.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
+#include "webrtc/modules/congestion_controller/include/mock/mock_send_side_congestion_controller.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_audio_decoder_factory.h"
 #include "webrtc/test/mock_transport.h"
@@ -303,6 +307,30 @@ TEST(CallTest, MultipleFlexfecReceiveStreamsProtectingSingleVideoStream) {
   for (auto s : streams) {
     call->DestroyFlexfecReceiveStream(s);
   }
+}
+
+// TODO(zstein): This is just a motivating example for
+// MockSendSideCongestionController. It should be deleted once we have more
+// meaningful tests.
+TEST(CallTest, MockSendSideCongestionControllerExample) {
+  RtcEventLogNullImpl event_log;
+  Call::Config config(&event_log);
+
+  SimulatedClock clock(123456);
+  PacketRouter packet_router;
+  testing::NiceMock<test::MockSendSideCongestionController> mock_cc(
+      &clock, &event_log, &packet_router);
+  auto transport_send =
+      rtc::MakeUnique<FakeRtpTransportControllerSend>(&mock_cc);
+  std::unique_ptr<Call> call(Call::Create(config, std::move(transport_send)));
+
+  Call::Config::BitrateConfig bitrate_config;
+  bitrate_config.min_bitrate_bps = 1;
+  bitrate_config.start_bitrate_bps = 2;
+  bitrate_config.max_bitrate_bps = 3;
+
+  EXPECT_CALL(mock_cc, SetBweBitrates(1, 2, 3));
+  call->SetBitrateConfig(bitrate_config);
 }
 
 }  // namespace webrtc

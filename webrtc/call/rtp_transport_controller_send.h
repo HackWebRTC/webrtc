@@ -26,9 +26,6 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
  public:
   RtpTransportControllerSend(Clock* clock, webrtc::RtcEventLog* event_log);
 
-  void RegisterNetworkObserver(
-      SendSideCongestionController::Observer* observer);
-
   // Implements RtpTransportControllerSendInterface
   PacketRouter* packet_router() override { return &packet_router_; }
   SendSideCongestionController* send_side_cc() override {

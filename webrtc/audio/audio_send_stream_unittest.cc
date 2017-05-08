@@ -15,7 +15,9 @@
 #include "webrtc/audio/audio_send_stream.h"
 #include "webrtc/audio/audio_state.h"
 #include "webrtc/audio/conversion.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/task_queue.h"
+#include "webrtc/call/fake_rtp_transport_controller_send.h"
 #include "webrtc/call/rtp_transport_controller_send_interface.h"
 #include "webrtc/logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
@@ -23,8 +25,8 @@
 #include "webrtc/modules/congestion_controller/include/mock/mock_congestion_observer.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
+#include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_audio_encoder.h"
 #include "webrtc/test/mock_audio_encoder_factory.h"
@@ -124,36 +126,15 @@ rtc::scoped_refptr<MockAudioEncoderFactory> SetupEncoderFactoryMock() {
 }
 
 struct ConfigHelper {
-  class FakeRtpTransportController
-      : public RtpTransportControllerSendInterface {
-   public:
-    explicit FakeRtpTransportController(RtcEventLog* event_log)
-        : simulated_clock_(123456),
-          send_side_cc_(&simulated_clock_,
-                        &bitrate_observer_,
-                        event_log,
-                        &packet_router_) {}
-    PacketRouter* packet_router() override { return &packet_router_; }
-
-    SendSideCongestionController* send_side_cc() override {
-      return &send_side_cc_;
-    }
-    TransportFeedbackObserver* transport_feedback_observer() override {
-      return &send_side_cc_;
-    }
-
-    RtpPacketSender* packet_sender() override { return send_side_cc_.pacer(); }
-
-   private:
-    SimulatedClock simulated_clock_;
-    testing::NiceMock<MockCongestionObserver> bitrate_observer_;
-    PacketRouter packet_router_;
-    SendSideCongestionController send_side_cc_;
-  };
-
   ConfigHelper(bool audio_bwe_enabled, bool expect_set_encoder_call)
       : stream_config_(nullptr),
-        fake_transport_(&event_log_),
+        simulated_clock_(123456),
+        send_side_cc_(rtc::MakeUnique<SendSideCongestionController>(
+            &simulated_clock_,
+            nullptr /* observer */,
+            &event_log_,
+            &packet_router_)),
+        fake_transport_(send_side_cc_.get()),
         bitrate_allocator_(&limit_observer_),
         worker_queue_("ConfigHelper_worker_queue") {
     using testing::Invoke;
@@ -322,11 +303,13 @@ struct ConfigHelper {
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
-  testing::NiceMock<MockCongestionObserver> bitrate_observer_;
   MockAudioProcessing audio_processing_;
   MockTransmitMixer transmit_mixer_;
   AudioProcessing::AudioProcessingStatistics audio_processing_stats_;
-  FakeRtpTransportController fake_transport_;
+  SimulatedClock simulated_clock_;
+  PacketRouter packet_router_;
+  std::unique_ptr<SendSideCongestionController> send_side_cc_;
+  FakeRtpTransportControllerSend fake_transport_;
   MockRtcEventLog event_log_;
   MockRtpRtcp rtp_rtcp_;
   MockRtcpRttStats rtcp_rtt_stats_;
