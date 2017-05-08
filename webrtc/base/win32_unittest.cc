@@ -92,4 +92,31 @@ TEST_F(Win32Test, IPv6AddressCompression) {
   EXPECT_EQ("1234:5678:abcd:1234:5678:abcd:1234:5678", ipv6.ToString());
 }
 
+// Test that invalid IPv6 addresses are recognized and false is returned.
+TEST_F(Win32Test, InvalidIPv6AddressParsing) {
+  IPAddress ipv6;
+
+  // More than 1 run of "::"s.
+  EXPECT_FALSE(IPFromString("1::2::3", &ipv6));
+
+  // More than 1 run of "::"s in a longer address.
+  // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=7592
+  EXPECT_FALSE(IPFromString("1::2::3::4::5::6::7::8", &ipv6));
+
+  // Three ':'s in a row.
+  EXPECT_FALSE(IPFromString("1:::2", &ipv6));
+
+  // Non-hex character.
+  EXPECT_FALSE(IPFromString("test::1", &ipv6));
+
+  // More than 4 hex digits per group.
+  EXPECT_FALSE(IPFromString("abcde::1", &ipv6));
+
+  // More than 8 groups.
+  EXPECT_FALSE(IPFromString("1:2:3:4:5:6:7:8:9", &ipv6));
+
+  // Less than 8 groups.
+  EXPECT_FALSE(IPFromString("1:2:3:4:5:6:7", &ipv6));
+}
+
 }  // namespace rtc
