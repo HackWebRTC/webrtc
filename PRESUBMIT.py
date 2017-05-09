@@ -575,6 +575,7 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckJSONParseErrors(input_api, output_api))
   results.extend(_RunPythonTests(input_api, output_api))
   results.extend(_CheckUsageOfGoogleProtobufNamespace(input_api, output_api))
+  results.extend(_CheckOrphanHeaders(input_api, output_api))
   return results
 
 
@@ -601,4 +602,34 @@ def CheckChangeOnCommit(input_api, output_api):
   results.extend(input_api.canned_checks.CheckTreeIsOpen(
       input_api, output_api,
       json_url='http://webrtc-status.appspot.com/current?format=json'))
+  return results
+
+
+def _CheckOrphanHeaders(input_api, output_api):
+  # We need to wait until we have an input_api object and use this
+  # roundabout construct to import prebubmit_checks_lib because this file is
+  # eval-ed and thus doesn't have __file__.
+  error_msg = """Header file {} is not listed in any GN target.
+  Please create a target or add it to an existing one in {}"""
+  results = []
+  original_sys_path = sys.path
+  try:
+    sys.path = sys.path + [input_api.os_path.join(
+        input_api.PresubmitLocalPath(), 'tools_webrtc', 'presubmit_checks_lib')]
+    from check_orphan_headers import GetBuildGnPathFromFilePath
+    from check_orphan_headers import IsHeaderInBuildGn
+  finally:
+    # Restore sys.path to what it was before.
+    sys.path = original_sys_path
+
+  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
+    if f.LocalPath().endswith('.h'):
+      file_path = os.path.abspath(f.LocalPath())
+      root_dir = os.getcwd()
+      gn_file_path = GetBuildGnPathFromFilePath(file_path, os.path.exists,
+                                                root_dir)
+      in_build_gn = IsHeaderInBuildGn(file_path, gn_file_path)
+      if not in_build_gn:
+        results.append(output_api.PresubmitError(error_msg.format(
+            file_path, gn_file_path)))
   return results
