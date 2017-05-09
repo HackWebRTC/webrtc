@@ -57,5 +57,9 @@
 /tools_webrtc/video_quality_toolchain/mac/zxing
 /tools_webrtc/video_quality_toolchain/win/*.dll
 /tools_webrtc/video_quality_toolchain/win/*.exe
+/webrtc/tools/testing/*.zip
+/webrtc/tools/testing/*.gz
+/webrtc/tools/testing/golang/*/*.gz
+/webrtc/tools/testing/golang/*/*.zip
 /x86-generic_out/
 /xcodebuild
