@@ -114,6 +114,11 @@ deps_os = {
       Var('chromium_git') + '/external/robolectric.git' + '@' + '2a0b6ba221c14f3371813a676ce06143353e448d',
     'src/third_party/ub-uiautomator/lib':
       Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
+
+    # Gradle 3.5.0. Used for testing Android Studio project generation for WebRTC.
+    'src/webrtc/examples/androidtests/third_party/gradle':
+      Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
+      'b762622a185d59ce0cfc9cbc6ab5dd22469e18a6',
   },
   'ios': {
     'src/ios':
