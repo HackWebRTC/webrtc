@@ -57,7 +57,7 @@ def _GetPlatform():
 
 
 def _DownloadTools():
-  tools_dir = os.path.join(SRC_DIR, 'tools-webrtc')
+  tools_dir = os.path.join(SRC_DIR, 'tools_webrtc')
   toolchain_dir = os.path.join(tools_dir, 'audio_quality')
 
   # Download PESQ and POLQA.

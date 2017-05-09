@@ -18,7 +18,7 @@
 #      directory above your WebRTC checkout (i.e. next to your .gclient file).
 #
 #          cd src
-#          ln -rs tools-webrtc/vim/webrtc.ycm_extra_conf.py \
+#          ln -rs tools_webrtc/vim/webrtc.ycm_extra_conf.py \
 #          ../.ycm_extra_conf.py
 #
 #   3. (optional) Whitelist the .ycm_extra_conf.py from step #2 by adding the

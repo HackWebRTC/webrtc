@@ -619,7 +619,7 @@ class MetaBuildWrapper(object):
   def ReadIOSBotConfig(self):
     if not self.args.master or not self.args.builder:
       return {}
-    path = self.PathJoin(self.src_dir, 'tools-webrtc', 'ios',
+    path = self.PathJoin(self.src_dir, 'tools_webrtc', 'ios',
                          self.args.master,
                          self.args.builder.replace(' ', '_') + '.json')
     if not self.Exists(path):
@@ -1077,7 +1077,7 @@ class MetaBuildWrapper(object):
       memcheck = is_linux and 'rtc_use_memcheck=true' in vals['gn_args']
       memcheck_cmdline = [
           'bash',
-          '../../tools-webrtc/valgrind/webrtc_tests.sh',
+          '../../tools_webrtc/valgrind/webrtc_tests.sh',
           '--tool',
           'memcheck',
           '--target',
@@ -1090,12 +1090,12 @@ class MetaBuildWrapper(object):
       if not memcheck:
         extra_files += [
             '../../third_party/gtest-parallel/gtest-parallel',
-            '../../tools-webrtc/gtest-parallel-wrapper.py',
+            '../../tools_webrtc/gtest-parallel-wrapper.py',
         ]
         sep = '\\' if self.platform == 'win32' else '/'
         output_dir = '${ISOLATED_OUTDIR}' + sep + 'test_logs'
         gtest_parallel_wrapper = [
-            '../../tools-webrtc/gtest-parallel-wrapper.py',
+            '../../tools_webrtc/gtest-parallel-wrapper.py',
             '--output_dir=%s' % output_dir,
             '--gtest_color=no',
             # We tell gtest-parallel to interrupt the test after 900 seconds,

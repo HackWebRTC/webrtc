@@ -15,9 +15,9 @@ It will run `mb gen` in a temporary directory and it is really useful to
 check for different configurations.
 
 Usage:
-    $ python tools-webrtc/gn_check_autofix.py -m some_mater -b some_bot
+    $ python tools_webrtc/gn_check_autofix.py -m some_mater -b some_bot
     or
-    $ python tools-webrtc/gn_check_autofix.py -c some_mb_config
+    $ python tools_webrtc/gn_check_autofix.py -c some_mb_config
 """
 
 import os

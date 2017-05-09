@@ -104,7 +104,7 @@ def main():
     _RunCommand(['gn', 'gen', build_dir_x86])
     _RunCommand(['ninja', '-C', build_dir_x86, 'frame_analyzer'])
 
-  tools_dir = os.path.join(SRC_DIR, 'tools-webrtc')
+  tools_dir = os.path.join(SRC_DIR, 'tools_webrtc')
   toolchain_dir = os.path.join(tools_dir, 'video_quality_toolchain')
 
   # Download ffmpeg and zxing.

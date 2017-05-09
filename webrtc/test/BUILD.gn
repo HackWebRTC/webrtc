@@ -12,7 +12,7 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 if (rtc_use_memcheck) {
-  import("//tools-webrtc/valgrind/valgrind-webrtc.gni")
+  import("//tools_webrtc/valgrind/valgrind-webrtc.gni")
 }
 
 group("test") {

@@ -26,7 +26,7 @@ class FakeMBW(mb.MetaBuildWrapper):
     # Override vars for test portability.
     if win32:
       self.src_dir = 'c:\\fake_src'
-      self.default_config = 'c:\\fake_src\\tools-webrtc\\mb\\mb_config.pyl'
+      self.default_config = 'c:\\fake_src\\tools_webrtc\\mb\\mb_config.pyl'
       self.default_isolate_map = ('c:\\fake_src\\testing\\buildbot\\'
                                   'gn_isolate_map.pyl')
       self.platform = 'win32'
@@ -34,7 +34,7 @@ class FakeMBW(mb.MetaBuildWrapper):
       self.sep = '\\'
     else:
       self.src_dir = '/fake_src'
-      self.default_config = '/fake_src/tools-webrtc/mb/mb_config.pyl'
+      self.default_config = '/fake_src/tools_webrtc/mb/mb_config.pyl'
       self.default_isolate_map = '/fake_src/testing/buildbot/gn_isolate_map.pyl'
       self.executable = '/usr/bin/python'
       self.platform = 'linux2'
@@ -442,12 +442,12 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(files, [
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
-        '../../tools-webrtc/gtest-parallel-wrapper.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
         'base_unittests',
     ])
     self.assertEqual(command, [
         '../../testing/test_env.py',
-        '../../tools-webrtc/gtest-parallel-wrapper.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
         '--output_dir=${ISOLATED_OUTDIR}/test_logs',
         '--gtest_color=no',
         '--timeout=900',
@@ -490,13 +490,13 @@ class UnitTest(unittest.TestCase):
         '../../testing/test_env.py',
         '../../testing/xvfb.py',
         '../../third_party/gtest-parallel/gtest-parallel',
-        '../../tools-webrtc/gtest-parallel-wrapper.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
         'base_unittests',
         'some_resource_file',
     ])
     self.assertEqual(command, [
         '../../testing/xvfb.py',
-        '../../tools-webrtc/gtest-parallel-wrapper.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
         '--output_dir=${ISOLATED_OUTDIR}/test_logs',
         '--gtest_color=no',
         '--timeout=900',
@@ -539,13 +539,13 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(files, [
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
-        '../../tools-webrtc/gtest-parallel-wrapper.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
         'some_dependency',
         'unittests.exe',
     ])
     self.assertEqual(command, [
         '../../testing/test_env.py',
-        '../../tools-webrtc/gtest-parallel-wrapper.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
         '--output_dir=${ISOLATED_OUTDIR}\\test_logs',
         '--gtest_color=no',
         '--timeout=900',
@@ -585,12 +585,12 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(files, [
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
-        '../../tools-webrtc/gtest-parallel-wrapper.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
         'base_unittests',
     ])
     self.assertEqual(command, [
         '../../testing/test_env.py',
-        '../../tools-webrtc/gtest-parallel-wrapper.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
         '--output_dir=${ISOLATED_OUTDIR}/test_logs',
         '--gtest_color=no',
         '--timeout=900',
@@ -615,7 +615,7 @@ class UnitTest(unittest.TestCase):
       '/fake_src/out/Release/base_unittests.runtime_deps': (
           "base_unittests\n"
           "lots_of_memcheck_dependencies\n"
-          "../../tools-webrtc/valgrind/webrtc_tests.sh\n"
+          "../../tools_webrtc/valgrind/webrtc_tests.sh\n"
       ),
     }
     mbw = self.check(['gen', '-c', 'gn_memcheck_bot', '//out/Release',
@@ -631,14 +631,14 @@ class UnitTest(unittest.TestCase):
 
     self.assertEqual(files, [
         '../../testing/test_env.py',
-        '../../tools-webrtc/valgrind/webrtc_tests.sh',
+        '../../tools_webrtc/valgrind/webrtc_tests.sh',
         'base_unittests',
         'lots_of_memcheck_dependencies',
     ])
     self.assertEqual(command, [
         '../../testing/test_env.py',
         'bash',
-        '../../tools-webrtc/valgrind/webrtc_tests.sh',
+        '../../tools_webrtc/valgrind/webrtc_tests.sh',
         '--tool',
         'memcheck',
         '--target',

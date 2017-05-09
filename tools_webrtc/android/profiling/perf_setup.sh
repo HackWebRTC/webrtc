@@ -26,7 +26,7 @@
 #
 # Example usage:
 #
-#   > . tools-webrtc/android/profiling/perf_setup.sh out/Release
+#   > . tools_webrtc/android/profiling/perf_setup.sh out/Release
 #   > perf_record 120
 #   > flame_graph
 #   > plot_flame_graph
@@ -409,7 +409,7 @@ main() {
   fi
   ok "${APP_NAME} is installed on the device"
 
-  # Download simpleperf to <src>/tools-webrtc/android/profiling/simpleperf/.
+  # Download simpleperf to <src>/tools_webrtc/android/profiling/simpleperf/.
   # Cloning will only take place if the target does not already exist.
   # The PATH variable will also be updated.
   # TODO(henrika): would it be better to use a target outside the WebRTC repo?
@@ -445,7 +445,7 @@ main() {
   perf_update
   ok "symbol cache is updated"
 
-  # Download Flame Graph to <src>/tools-webrtc/android/profiling/flamegraph/.
+  # Download Flame Graph to <src>/tools_webrtc/android/profiling/flamegraph/.
   # Cloning will only take place if the target does not already exist.
   # The PATH variable will also be updated.
   # TODO(henrika): would it be better to use a target outside the WebRTC repo?

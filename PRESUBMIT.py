@@ -15,7 +15,7 @@ import sys
 
 # Files and directories that are *skipped* by cpplint in the presubmit script.
 CPPLINT_BLACKLIST = [
-  'tools-webrtc',
+  'tools_webrtc',
   'webrtc/api/video_codecs/video_decoder.h',
   'webrtc/api/video_codecs/video_encoder.h',
   'webrtc/base',
@@ -332,7 +332,7 @@ def _CheckNoMixingCAndCCSources(input_api, gn_files, output_api):
 
 def _CheckNoPackageBoundaryViolations(input_api, gn_files, output_api):
   cwd = input_api.PresubmitLocalPath()
-  script_path = os.path.join('tools-webrtc', 'check_package_boundaries.py')
+  script_path = os.path.join('tools_webrtc', 'check_package_boundaries.py')
   webrtc_path = os.path.join('webrtc')
   command = [sys.executable, script_path, webrtc_path]
   command += [gn_file.LocalPath() for gn_file in gn_files]
@@ -474,7 +474,7 @@ def _RunPythonTests(input_api, output_api):
       Join('webrtc', 'tools'),
       Join('webrtc', 'audio', 'test', 'unittests'),
   ] + [
-      root for root, _, files in os.walk(Join('tools-webrtc'))
+      root for root, _, files in os.walk(Join('tools_webrtc'))
       if any(f.endswith('_test.py') for f in files)
   ]
 
@@ -533,8 +533,8 @@ def _CommonChecks(input_api, output_api):
                   r'^third_party[\\\/].*\.py$',
                   r'^tools[\\\/].*\.py$',
                   # TODO(phoglund): should arguably be checked.
-                  r'^tools-webrtc[\\\/]mb[\\\/].*\.py$',
-                  r'^tools-webrtc[\\\/]valgrind[\\\/].*\.py$',
+                  r'^tools_webrtc[\\\/]mb[\\\/].*\.py$',
+                  r'^tools_webrtc[\\\/]valgrind[\\\/].*\.py$',
                   r'^xcodebuild.*[\\\/].*\.py$',),
       pylintrc='pylintrc'))
 

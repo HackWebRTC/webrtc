@@ -246,7 +246,7 @@
     # iOS
     # The 'ios' config is just used for auditing. iOS bots
     # use the ios recipes and look up their GN arguments via files checked in
-    # under //tools-webrtc/ios/bots. It is an error to actually use one of these
+    # under //tools_webrtc/ios/bots. It is an error to actually use one of these
     # configs to generate the build files.
     'ios': [ 'error'],
 

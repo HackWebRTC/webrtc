@@ -24,9 +24,9 @@ export THISDIR=`dirname $0`
 ARGV_COPY="$@"
 
 # We need to set CHROME_VALGRIND iff using Memcheck:
-#   tools-webrtc/valgrind/webrtc_tests.sh --tool memcheck
+#   tools_webrtc/valgrind/webrtc_tests.sh --tool memcheck
 # or
-#   tools-webrtc/valgrind/webrtc_tests.sh --tool=memcheck
+#   tools_webrtc/valgrind/webrtc_tests.sh --tool=memcheck
 tool="memcheck"  # Default to memcheck.
 while (( "$#" ))
 do
