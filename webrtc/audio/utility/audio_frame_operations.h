@@ -115,17 +115,7 @@ class AudioFrameOperations {
 
   static int Scale(float left, float right, AudioFrame* frame);
 
-  static int Scale(float left, float right, AudioFrame& frame) {  // NOLINT
-    // TODO(oprypin): drop this method
-    return Scale(left, right, &frame);
-  }
-
   static int ScaleWithSat(float scale, AudioFrame* frame);
-
-  static int ScaleWithSat(float scale, AudioFrame& frame) {  // NOLINT
-    // TODO(oprypin): drop this method
-    return ScaleWithSat(scale, &frame);
-  }
 };
 
 }  // namespace webrtc
