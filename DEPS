@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'd3195585a8ff4e75fdf4a99270e4f945473e69cb',
+  'chromium_revision': 'f37555b2599b65017770d88c79ed9b4aae097e45',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -34,15 +34,15 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + 'bff9f32161e283c72ae4e2937c444bdff968fb21',
+    Var('chromium_git') + '/chromium/src/base' + '@' + '1872e088c2e62784400ad8892851d509b5ee08c8',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '68de2163023acd2ad4a1804c25bb0fa8cb6141d1',
+    Var('chromium_git') + '/chromium/src/build' + '@' + 'e7a23c427895c745f2278f131802f9de2cc597d8',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '98f00fa10dbad2cdbb2e297a66c3d6d5bc3994f3',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + 'ea51bee87e07746e79334da0b12a6f8e719cca6e',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'bcd54255a468cb2aeccc842aeeeead378f89960f',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '974e4e28a2417044c456020aded9247c51138009',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '0855307790b365bd9ecab3f6123af3c7eee6dca6',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -77,7 +77,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '0af370fec5f8afbd4deaf8eef33a535e122f4879',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '7369ae21591e5f8359c33841aef8618d17ddca34',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'eb296f67da078ec01f5e3a9ea9cdc6d26d680161',
    'src/tools/swarming_client':
@@ -118,11 +118,11 @@ deps_os = {
     # Gradle 3.5.0. Used for testing Android Studio project generation for WebRTC.
     'src/webrtc/examples/androidtests/third_party/gradle':
       Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
-      '136677338cef073cd5829164982f8ffdb882db5f',
+      'b5f5fdac52b68bd1bf3a6b729e62a92907606b32',
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + 'f25ce9802927fcc7f2e789cedf7b8cde973c572d',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + '9ead6e3c8f0dfd387b13ad9ab554b2e5e29b25f6',
   },
   'unix': {
     'src/third_party/lss':
