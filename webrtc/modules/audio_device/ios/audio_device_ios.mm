@@ -797,6 +797,7 @@ bool AudioDeviceIOS::InitPlayOrRecord() {
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
   // Subscribe to audio session events.
   [session pushDelegate:audio_session_observer_];
+  is_interrupted_ = session.isInterrupted ? true : false;
 
   // Lock the session to make configuration changes.
   [session lockForConfiguration];

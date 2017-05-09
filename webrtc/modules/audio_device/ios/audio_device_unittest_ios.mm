@@ -32,6 +32,9 @@
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
+#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
+#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
+
 using std::cout;
 using std::endl;
 using ::testing::_;
@@ -820,6 +823,38 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
             static_cast<size_t>(
                 kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 1));
   latency_audio_stream->PrintResults();
+}
+
+TEST_F(AudioDeviceTest, testInterruptedAudioSession) {
+  RTCAudioSession *session = [RTCAudioSession sharedInstance];
+  std::unique_ptr<webrtc::AudioDeviceIOS> audio_device;
+  audio_device.reset(new webrtc::AudioDeviceIOS());
+  std::unique_ptr<webrtc::AudioDeviceBuffer> audio_buffer;
+  audio_buffer.reset(new webrtc::AudioDeviceBuffer());
+  audio_device->AttachAudioBuffer(audio_buffer.get());
+  audio_device->Init();
+  audio_device->InitPlayout();
+  // Force interruption.
+  [session notifyDidBeginInterruption];
+
+  // Wait for notification to propagate.
+  rtc::MessageQueueManager::ProcessAllMessageQueues();
+  EXPECT_TRUE(audio_device->is_interrupted_);
+
+  // Force it for testing.
+  audio_device->playing_ = false;
+  audio_device->ShutdownPlayOrRecord();
+  // Force it for testing.
+  audio_device->audio_is_initialized_ = false;
+
+  [session notifyDidEndInterruptionWithShouldResumeSession:YES];
+  // Wait for notification to propagate.
+  rtc::MessageQueueManager::ProcessAllMessageQueues();
+  EXPECT_TRUE(audio_device->is_interrupted_);
+
+  audio_device->Init();
+  audio_device->InitPlayout();
+  EXPECT_FALSE(audio_device->is_interrupted_);
 }
 
 }  // namespace webrtc

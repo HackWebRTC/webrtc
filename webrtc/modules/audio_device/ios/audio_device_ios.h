@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "WebRTC/RTCMacros.h"
+#include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/modules/audio_device/audio_device_generic.h"
@@ -292,6 +293,9 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   // Set to true if we've activated the audio session.
   bool has_configured_session_;
+
+  // Exposes private members for testing purposes only.
+  FRIEND_TEST_ALL_PREFIXES(AudioDeviceTest, testInterruptedAudioSession);
 };
 
 }  // namespace webrtc
