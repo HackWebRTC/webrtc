@@ -168,27 +168,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock());
 
-  // Helper class to ensure we deliver correct media_type to the receiving call.
-  class MediaTypePacketReceiver : public PacketReceiver {
-   public:
-    MediaTypePacketReceiver(PacketReceiver* packet_receiver,
-                            MediaType media_type)
-        : packet_receiver_(packet_receiver), media_type_(media_type) {}
-
-    DeliveryStatus DeliverPacket(MediaType media_type,
-                                 const uint8_t* packet,
-                                 size_t length,
-                                 const PacketTime& packet_time) override {
-      return packet_receiver_->DeliverPacket(media_type_, packet, length,
-                                             packet_time);
-    }
-   private:
-    PacketReceiver* packet_receiver_;
-    const MediaType media_type_;
-
-    RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MediaTypePacketReceiver);
-  };
-
   FakeNetworkPipe::Config audio_net_config;
   audio_net_config.queue_delay_ms = 500;
   audio_net_config.loss_percent = 5;
@@ -209,16 +188,12 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   test::PacketTransport audio_send_transport(sender_call_.get(), &observer,
                                              test::PacketTransport::kSender,
                                              audio_pt_map, audio_net_config);
-  MediaTypePacketReceiver audio_receiver(receiver_call_->Receiver(),
-                                         MediaType::AUDIO);
-  audio_send_transport.SetReceiver(&audio_receiver);
+  audio_send_transport.SetReceiver(receiver_call_->Receiver());
 
   test::PacketTransport video_send_transport(
       sender_call_.get(), &observer, test::PacketTransport::kSender,
       video_pt_map, FakeNetworkPipe::Config());
-  MediaTypePacketReceiver video_receiver(receiver_call_->Receiver(),
-                                         MediaType::VIDEO);
-  video_send_transport.SetReceiver(&video_receiver);
+  video_send_transport.SetReceiver(receiver_call_->Receiver());
 
   test::PacketTransport receive_transport(
       receiver_call_.get(), &observer, test::PacketTransport::kReceiver,
