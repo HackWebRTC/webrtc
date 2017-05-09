@@ -488,17 +488,6 @@ hooks = [
                 '-d', 'src/tools/luci-go/linux64',
     ],
   },
-  # Pull the Syzygy binaries, used for optimization and instrumentation.
-  {
-    'name': 'syzygy-binaries',
-    'pattern': '.',
-    'action': ['python',
-               'src/build/get_syzygy_binaries.py',
-               '--output-dir=src/third_party/syzygy/binaries',
-               '--revision=a8456d9248a126881dcfb8707ca7dcdae56e1ac7',
-               '--overwrite',
-    ],
-  },
   {
     # Pull sanitizer-instrumented third-party libraries if requested via
     # GYP_DEFINES.
