@@ -151,8 +151,6 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
 
   int Close() override;
 
-  int EstimateMTU(uint16_t* mtu) override;
-
   SocketServer* socketserver() { return ss_; }
 
  protected:

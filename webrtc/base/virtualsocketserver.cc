@@ -384,13 +384,6 @@ int VirtualSocket::SetOption(Option opt, int value) {
   return 0;  // 0 is success to emulate setsockopt()
 }
 
-int VirtualSocket::EstimateMTU(uint16_t* mtu) {
-  if (CS_CONNECTED != state_)
-    return ENOTCONN;
-  else
-    return 65536;
-}
-
 void VirtualSocket::OnMessage(Message* pmsg) {
   if (pmsg->message_id == MSG_ID_PACKET) {
     RTC_DCHECK(nullptr != pmsg->pdata);

@@ -230,7 +230,6 @@ class NATSocket : public AsyncSocket, public sigslot::has_slots<> {
   ConnState GetState() const override {
     return connected_ ? CS_CONNECTED : CS_CLOSED;
   }
-  int EstimateMTU(uint16_t* mtu) override { return socket_->EstimateMTU(mtu); }
   int GetOption(Option opt, int* value) override {
     return socket_->GetOption(opt, value);
   }

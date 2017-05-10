@@ -611,8 +611,6 @@ rtc_static_library("rtc_base") {
       "win32securityerrors.cc",
       "win32window.cc",
       "win32window.h",
-      "winping.cc",
-      "winping.h",
     ]
 
     libs += [

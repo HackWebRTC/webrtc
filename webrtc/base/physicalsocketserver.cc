@@ -47,7 +47,6 @@
 #include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/nullsocketserver.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/base/winping.h"
 #include "webrtc/base/win32socketinit.h"
 
 #if defined(WEBRTC_POSIX)
@@ -470,70 +469,6 @@ int PhysicalSocket::Close() {
     resolver_ = nullptr;
   }
   return err;
-}
-
-int PhysicalSocket::EstimateMTU(uint16_t* mtu) {
-  SocketAddress addr = GetRemoteAddress();
-  if (addr.IsAnyIP()) {
-    SetError(ENOTCONN);
-    return -1;
-  }
-
-#if defined(WEBRTC_WIN)
-  // Gets the interface MTU (TTL=1) for the interface used to reach |addr|.
-  WinPing ping;
-  if (!ping.IsValid()) {
-    SetError(EINVAL);  // can't think of a better error ID
-    return -1;
-  }
-  int header_size = ICMP_HEADER_SIZE;
-  if (addr.family() == AF_INET6) {
-    header_size += IPV6_HEADER_SIZE;
-  } else if (addr.family() == AF_INET) {
-    header_size += IP_HEADER_SIZE;
-  }
-
-  for (int level = 0; PACKET_MAXIMUMS[level + 1] > 0; ++level) {
-    int32_t size = PACKET_MAXIMUMS[level] - header_size;
-    WinPing::PingResult result = ping.Ping(addr.ipaddr(), size,
-                                           ICMP_PING_TIMEOUT_MILLIS,
-                                           1, false);
-    if (result == WinPing::PING_FAIL) {
-      SetError(EINVAL);  // can't think of a better error ID
-      return -1;
-    } else if (result != WinPing::PING_TOO_LARGE) {
-      *mtu = PACKET_MAXIMUMS[level];
-      return 0;
-    }
-  }
-
-  RTC_NOTREACHED();
-  return -1;
-#elif defined(WEBRTC_MAC)
-  // No simple way to do this on Mac OS X.
-  // SIOCGIFMTU would work if we knew which interface would be used, but
-  // figuring that out is pretty complicated. For now we'll return an error
-  // and let the caller pick a default MTU.
-  SetError(EINVAL);
-  return -1;
-#elif defined(WEBRTC_LINUX)
-  // Gets the path MTU.
-  int value;
-  socklen_t vlen = sizeof(value);
-  int err = getsockopt(s_, IPPROTO_IP, IP_MTU, &value, &vlen);
-  if (err < 0) {
-    UpdateLastError();
-    return err;
-  }
-
-  RTC_DCHECK((0 <= value) && (value <= 65536));
-  *mtu = value;
-  return 0;
-#elif defined(__native_client__)
-  // Most socket operations, including this, will fail in NaCl's sandbox.
-  error_ = EACCES;
-  return -1;
-#endif
 }
 
 SOCKET PhysicalSocket::DoAccept(SOCKET socket,

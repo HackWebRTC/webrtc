@@ -17,7 +17,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/win32window.h"
-#include "webrtc/base/winping.h"
 
 namespace rtc {
 
@@ -523,37 +522,6 @@ int Win32Socket::Close() {
   addr_.Clear();
   state_ = CS_CLOSED;
   return err;
-}
-
-int Win32Socket::EstimateMTU(uint16_t* mtu) {
-  SocketAddress addr = GetRemoteAddress();
-  if (addr.IsAnyIP()) {
-    error_ = ENOTCONN;
-    return -1;
-  }
-
-  WinPing ping;
-  if (!ping.IsValid()) {
-    error_ = EINVAL;  // can't think of a better error ID
-    return -1;
-  }
-
-  for (int level = 0; PACKET_MAXIMUMS[level + 1] > 0; ++level) {
-    int32_t size = PACKET_MAXIMUMS[level] - IP_HEADER_SIZE - ICMP_HEADER_SIZE;
-    WinPing::PingResult result = ping.Ping(addr.ipaddr(), size,
-                                           ICMP_PING_TIMEOUT_MILLIS, 1, false);
-    if (result == WinPing::PING_FAIL) {
-      error_ = EINVAL;  // can't think of a better error ID
-      return -1;
-    }
-    if (result != WinPing::PING_TOO_LARGE) {
-      *mtu = PACKET_MAXIMUMS[level];
-      return 0;
-    }
-  }
-
-  RTC_NOTREACHED();
-  return 0;
 }
 
 void Win32Socket::CreateSink() {

@@ -1013,30 +1013,6 @@ void SocketTest::GetSetOptionsInternal(const IPAddress& loopback) {
   int current_nd, desired_nd = 1;
   ASSERT_EQ(-1, socket->GetOption(Socket::OPT_NODELAY, &current_nd));
   ASSERT_EQ(-1, socket->SetOption(Socket::OPT_NODELAY, desired_nd));
-
-  // Skip the esimate MTU test for IPv6 for now.
-  if (loopback.family() != AF_INET6) {
-    // Try estimating MTU.
-    std::unique_ptr<AsyncSocket> mtu_socket(
-        ss_->CreateAsyncSocket(loopback.family(), SOCK_DGRAM));
-    mtu_socket->Bind(SocketAddress(loopback, 0));
-    uint16_t mtu;
-    // should fail until we connect
-    ASSERT_EQ(-1, mtu_socket->EstimateMTU(&mtu));
-    mtu_socket->Connect(SocketAddress(loopback, 0));
-#if defined(WEBRTC_WIN)
-    // now it should succeed
-    ASSERT_NE(-1, mtu_socket->EstimateMTU(&mtu));
-    ASSERT_GE(mtu, 1492);  // should be at least the 1492 "plateau" on localhost
-#elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-    // except on WEBRTC_MAC && !WEBRTC_IOS, where it's not yet implemented
-    ASSERT_EQ(-1, mtu_socket->EstimateMTU(&mtu));
-#else
-    // and the behavior seems unpredictable on Linux,
-    // failing on the build machine
-    // but succeeding on my Ubiquity instance.
-#endif
-  }
 }
 
 void SocketTest::SocketRecvTimestamp(const IPAddress& loopback) {

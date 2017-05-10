@@ -55,7 +55,6 @@ class Win32Socket : public AsyncSocket {
   virtual int GetError() const;
   virtual void SetError(int error);
   virtual ConnState GetState() const;
-  virtual int EstimateMTU(uint16_t* mtu);
   virtual int GetOption(Option opt, int* value);
   virtual int SetOption(Option opt, int value);
 

@@ -311,7 +311,6 @@ class VirtualSocket : public AsyncSocket,
   ConnState GetState() const override;
   int GetOption(Option opt, int* value) override;
   int SetOption(Option opt, int value) override;
-  int EstimateMTU(uint16_t* mtu) override;
   void OnMessage(Message* pmsg) override;
 
   bool was_any() { return was_any_; }
