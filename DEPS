@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'd1f67520a79d83e0158662a3c70ab9c9a25fbed2',
+  'chromium_revision': '67970ee192706eed7c080811732bab47383d636c',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -36,13 +36,13 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + '4cba1aaafd5703f2b2b1b9d871738ac36c2c8405',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + 'fcbd3e2088da5d5035eeaf4502e4b2e09c567158',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '5a162d85e0419cf45268182b40c3f3df89fc7ff9',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '98f00fa10dbad2cdbb2e297a66c3d6d5bc3994f3',
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + '6e4d455263b49047ba722ade4d6f061c060fa4e0',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'd0c6a80c4370e7a452a8e17bf1a0f866e2640d1a',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '91fc0b0bcee16d67e668da53b85429adb82ca409',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -77,7 +77,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '7ae2d3f8d781871cc1a476fff088c8322fa22cf9',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '9d9618879ee7810441d8ce8e32276054e078f2d9',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'eb296f67da078ec01f5e3a9ea9cdc6d26d680161',
    'src/tools/swarming_client':
@@ -118,11 +118,11 @@ deps_os = {
     # Gradle 3.5.0. Used for testing Android Studio project generation for WebRTC.
     'src/webrtc/examples/androidtests/third_party/gradle':
       Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
-      '158c99261d38167d81b97f4a1ec0393dde966907',
+      'fed75fbb7bf882457ea1539b1a80ebae040a8b62',
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + 'fe46a87f4db8d9f1255b919e0dab034756dcf662',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + '5921c54a659f5da10ba36ed6d5acb77911374541',
   },
   'unix': {
     'src/third_party/lss':
