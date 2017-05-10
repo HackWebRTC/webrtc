@@ -623,7 +623,7 @@ def _CheckOrphanHeaders(input_api, output_api):
     sys.path = original_sys_path
 
   for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
-    if f.LocalPath().endswith('.h'):
+    if f.LocalPath().endswith('.h') and f.Action() == 'A':
       file_path = os.path.abspath(f.LocalPath())
       root_dir = os.getcwd()
       gn_file_path = GetBuildGnPathFromFilePath(file_path, os.path.exists,
