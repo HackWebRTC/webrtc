@@ -14,6 +14,7 @@ rtc_static_library("rtp_rtcp") {
     "include/flexfec_sender.h",
     "include/receive_statistics.h",
     "include/remote_ntp_time_estimator.h",
+    "include/rtp_cvo.h",
     "include/rtp_header_parser.h",
     "include/rtp_payload_registry.h",
     "include/rtp_receiver.h",
@@ -255,6 +256,8 @@ if (rtc_include_tests) {
   rtc_source_set("mock_rtp_rtcp") {
     testonly = true
     sources = [
+      "mocks/mock_recovered_packet_receiver.h",
+      "mocks/mock_rtcp_rtt_stats.h",
       "mocks/mock_rtp_rtcp.h",
     ]
     deps = [

@@ -96,6 +96,7 @@ if (rtc_include_tests) {
       "../modules/congestion_controller:mock_congestion_controller",
       "../modules/pacing",
       "../modules/rtp_rtcp",
+      "../modules/rtp_rtcp:mock_rtp_rtcp",
       "../system_wrappers",
       "../test:audio_codec_mocks",
       "../test:direct_transport",
