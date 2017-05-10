@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/api/video/video_rotation.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"

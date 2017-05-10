@@ -17,8 +17,6 @@
 // this file until we have figured out how to refactor and clean up
 // related interfaces.
 
-#include "webrtc/api/video/video_frame.h"
-#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/common_types.h"
 #include "webrtc/typedefs.h"
 

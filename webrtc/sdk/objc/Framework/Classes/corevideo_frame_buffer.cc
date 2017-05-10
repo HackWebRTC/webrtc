@@ -11,6 +11,7 @@
 #include "webrtc/sdk/objc/Framework/Classes/corevideo_frame_buffer.h"
 
 #include "libyuv/convert.h"
+#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
