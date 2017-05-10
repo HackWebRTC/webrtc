@@ -145,6 +145,12 @@ class NetEq {
                            rtc::ArrayView<const uint8_t> payload,
                            uint32_t receive_timestamp) = 0;
 
+  // Lets NetEq know that a packet arrived with an empty payload. This typically
+  // happens when empty packets are used for probing the network channel, and
+  // these packets use RTP sequence numbers from the same series as the actual
+  // audio packets.
+  virtual void InsertEmptyPacket(const RTPHeader& rtp_header) = 0;
+
   // Instructs NetEq to deliver 10 ms of audio data. The data is written to
   // |audio_frame|. All data in |audio_frame| is wiped; |data_|, |speech_type_|,
   // |num_channels_|, |sample_rate_hz_|, |samples_per_channel_|, and

@@ -1079,6 +1079,7 @@ rtc::Optional<SdpAudioFormat> AudioCodingModuleImpl::ReceiveFormat() const {
 int AudioCodingModuleImpl::IncomingPacket(const uint8_t* incoming_payload,
                                           const size_t payload_length,
                                           const WebRtcRTPHeader& rtp_header) {
+  RTC_DCHECK_EQ(payload_length == 0, incoming_payload == nullptr);
   return receiver_.InsertPacket(
       rtp_header,
       rtc::ArrayView<const uint8_t>(incoming_payload, payload_length));

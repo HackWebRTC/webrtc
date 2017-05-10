@@ -77,6 +77,11 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
   uint32_t receive_timestamp = 0;
   const RTPHeader* header = &rtp_header.header;  // Just a shorthand.
 
+  if (incoming_payload.empty()) {
+    neteq_->InsertEmptyPacket(rtp_header.header);
+    return 0;
+  }
+
   {
     rtc::CritScope lock(&crit_sect_);
 

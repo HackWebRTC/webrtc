@@ -109,6 +109,8 @@ class NetEqImpl : public webrtc::NetEq {
                    rtc::ArrayView<const uint8_t> payload,
                    uint32_t receive_timestamp) override;
 
+  void InsertEmptyPacket(const RTPHeader& rtp_header) override;
+
   int GetAudio(AudioFrame* audio_frame, bool* muted) override;
 
   void SetCodecs(const std::map<int, SdpAudioFormat>& codecs) override;

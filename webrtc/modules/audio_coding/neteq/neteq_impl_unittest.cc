@@ -1284,6 +1284,21 @@ TEST_F(NetEqImplTest, TargetDelayMs) {
   EXPECT_EQ(17 * 30, neteq_->TargetDelayMs());
 }
 
+TEST_F(NetEqImplTest, InsertEmptyPacket) {
+  UseNoMocks();
+  use_mock_delay_manager_ = true;
+  CreateInstance();
+
+  RTPHeader rtp_header;
+  rtp_header.payloadType = 17;
+  rtp_header.sequenceNumber = 0x1234;
+  rtp_header.timestamp = 0x12345678;
+  rtp_header.ssrc = 0x87654321;
+
+  EXPECT_CALL(*mock_delay_manager_, RegisterEmptyPacket());
+  neteq_->InsertEmptyPacket(rtp_header);
+}
+
 class Decoder120ms : public AudioDecoder {
  public:
   Decoder120ms(int sample_rate_hz, SpeechType speech_type)

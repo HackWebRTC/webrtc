@@ -374,6 +374,10 @@ void DelayManager::LastDecodedWasCngOrDtmf(bool it_was) {
   }
 }
 
+void DelayManager::RegisterEmptyPacket() {
+  ++last_seq_no_;
+}
+
 bool DelayManager::SetMinimumDelay(int delay_ms) {
   // Minimum delay shouldn't be more than maximum delay, if any maximum is set.
   // Also, if possible check |delay| to less than 75% of

@@ -146,6 +146,14 @@ int NetEqImpl::InsertPacket(const RTPHeader& rtp_header,
   return kOK;
 }
 
+void NetEqImpl::InsertEmptyPacket(const RTPHeader& /*rtp_header*/) {
+  // TODO(henrik.lundin) Handle NACK as well. This will make use of the
+  // rtp_header parameter.
+  // https://bugs.chromium.org/p/webrtc/issues/detail?id=7611
+  rtc::CritScope lock(&crit_sect_);
+  delay_manager_->RegisterEmptyPacket();
+}
+
 namespace {
 void SetAudioFrameActivityAndType(bool vad_enabled,
                                   NetEqImpl::OutputType type,
