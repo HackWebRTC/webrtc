@@ -388,6 +388,8 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
                                      const Config& new_config) {
   RTC_DCHECK(new_config.send_codec_spec);
   const auto& spec = *new_config.send_codec_spec;
+
+  RTC_DCHECK(new_config.encoder_factory);
   std::unique_ptr<AudioEncoder> encoder =
       new_config.encoder_factory->MakeAudioEncoder(spec.payload_type,
                                                    spec.format);

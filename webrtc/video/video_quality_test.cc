@@ -1736,7 +1736,7 @@ void VideoQualityTest::SetupAudio(int send_channel_id,
            {"OPUS", 48000, 2,
             {{"usedtx", (params_.audio.dtx ? "1" : "0")},
               {"stereo", "1"}}}});
-
+  audio_send_config_.encoder_factory = encoder_factory_;
   audio_send_stream_ = call->CreateAudioSendStream(audio_send_config_);
 
   AudioReceiveStream::Config audio_config;
