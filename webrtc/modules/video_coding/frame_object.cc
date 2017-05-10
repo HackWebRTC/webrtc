@@ -48,6 +48,10 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   _timeStamp = first_packet->timestamp;
   ntp_time_ms_ = first_packet->ntp_time_ms_;
 
+  // Setting frame's playout delays to the same values
+  // as of the first packet's.
+  SetPlayoutDelay(first_packet->video_header.playout_delay);
+
   // Since FFmpeg use an optimized bitstream reader that reads in chunks of
   // 32/64 bits we have to add at least that much padding to the buffer
   // to make sure the decoder doesn't read out of bounds.

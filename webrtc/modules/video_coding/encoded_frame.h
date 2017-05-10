@@ -46,6 +46,11 @@ class VCMEncodedFrame : protected EncodedImage {
     _encodedWidth = width;
     _encodedHeight = height;
   }
+
+  void SetPlayoutDelay(PlayoutDelay playout_delay) {
+    playout_delay_ = playout_delay;
+  }
+
   /**
   *   Get the encoded image
   */

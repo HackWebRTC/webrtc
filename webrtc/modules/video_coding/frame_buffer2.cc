@@ -43,6 +43,7 @@ FrameBuffer::FrameBuffer(Clock* clock,
       jitter_estimator_(jitter_estimator),
       timing_(timing),
       inter_frame_delay_(clock_->TimeInMilliseconds()),
+      last_decoded_frame_timestamp_(0),
       last_decoded_frame_it_(frames_.end()),
       last_continuous_frame_it_(frames_.end()),
       num_frames_history_(0),
@@ -207,6 +208,16 @@ void FrameBuffer::Stop() {
   new_continuous_frame_event_.Set();
 }
 
+void FrameBuffer::UpdatePlayoutDelays(const FrameObject& frame) {
+  TRACE_EVENT0("webrtc", "FrameBuffer::UpdatePlayoutDelays");
+  PlayoutDelay playout_delay = frame.EncodedImage().playout_delay_;
+  if (playout_delay.min_ms >= 0)
+    timing_->set_min_playout_delay(playout_delay.min_ms);
+
+  if (playout_delay.max_ms >= 0)
+    timing_->set_max_playout_delay(playout_delay.max_ms);
+}
+
 int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
   TRACE_EVENT0("webrtc", "FrameBuffer::InsertFrame");
   RTC_DCHECK(frame);
@@ -283,7 +294,7 @@ int FrameBuffer::InsertFrame(std::unique_ptr<FrameObject> frame) {
 
   if (!UpdateFrameInfoWithIncomingFrame(*frame, info))
     return last_continuous_picture_id;
-
+  UpdatePlayoutDelays(*frame);
   info->second.frame = std::move(frame);
   ++num_frames_buffered_;
 
