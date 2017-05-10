@@ -442,6 +442,7 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(files, [
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
+        '../../third_party/gtest-parallel/gtest_parallel.py',
         '../../tools_webrtc/gtest-parallel-wrapper.py',
         'base_unittests',
     ])
@@ -490,6 +491,7 @@ class UnitTest(unittest.TestCase):
         '../../testing/test_env.py',
         '../../testing/xvfb.py',
         '../../third_party/gtest-parallel/gtest-parallel',
+        '../../third_party/gtest-parallel/gtest_parallel.py',
         '../../tools_webrtc/gtest-parallel-wrapper.py',
         'base_unittests',
         'some_resource_file',
@@ -539,6 +541,7 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(files, [
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
+        '../../third_party/gtest-parallel/gtest_parallel.py',
         '../../tools_webrtc/gtest-parallel-wrapper.py',
         'some_dependency',
         'unittests.exe',
@@ -585,6 +588,7 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(files, [
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
+        '../../third_party/gtest-parallel/gtest_parallel.py',
         '../../tools_webrtc/gtest-parallel-wrapper.py',
         'base_unittests',
     ])

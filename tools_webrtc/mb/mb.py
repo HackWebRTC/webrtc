@@ -1090,6 +1090,7 @@ class MetaBuildWrapper(object):
       if not memcheck:
         extra_files += [
             '../../third_party/gtest-parallel/gtest-parallel',
+            '../../third_party/gtest-parallel/gtest_parallel.py',
             '../../tools_webrtc/gtest-parallel-wrapper.py',
         ]
         sep = '\\' if self.platform == 'win32' else '/'
