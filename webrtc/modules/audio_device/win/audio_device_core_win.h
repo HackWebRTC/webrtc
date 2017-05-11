@@ -313,6 +313,7 @@ private:    // thread functions
     UINT                                    _playAudioFrameSize;
     uint32_t                          _playSampleRate;
     uint32_t                          _devicePlaySampleRate;
+    uint32_t                          _playBlockSizePerChannel;
     uint32_t                          _playBlockSize;
     uint32_t                          _devicePlayBlockSize;
     uint32_t                          _playChannels;

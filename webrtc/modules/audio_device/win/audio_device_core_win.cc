@@ -424,6 +424,7 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore(const int32_t id) :
     _builtInAecEnabled(false),
     _playAudioFrameSize(0),
     _playSampleRate(0),
+    _playBlockSizePerChannel(0),
     _playBlockSize(0),
     _playChannels(2),
     _sndCardPlayDelay(0),
@@ -2282,7 +2283,8 @@ int32_t AudioDeviceWindowsCore::InitPlayout()
     if (hr == S_OK)
     {
         _playAudioFrameSize = Wfx.nBlockAlign;
-        _playBlockSize = Wfx.nSamplesPerSec/100;
+        _playBlockSizePerChannel = Wfx.nSamplesPerSec/100;
+        _playBlockSize = _playBlockSizePerChannel*Wfx.nChannels;
         _playSampleRate = Wfx.nSamplesPerSec;
         _devicePlaySampleRate = Wfx.nSamplesPerSec; // The device itself continues to run at 44.1 kHz.
         _devicePlayBlockSize = Wfx.nSamplesPerSec/100;
@@ -3565,7 +3567,8 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
                     // Request data to be played out (#bytes = _playBlockSize*_audioFrameSize)
                     _UnLock();
                     int32_t nSamples =
-                    _ptrAudioBuffer->RequestPlayoutData(_playBlockSize);
+                    _ptrAudioBuffer->RequestPlayoutData(
+                        _playBlockSizePerChannel);
                     _Lock();
 
                     if (nSamples == -1)
