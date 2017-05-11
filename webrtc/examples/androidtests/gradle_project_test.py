@@ -67,7 +67,9 @@ def main():
         '--use-gradle-process-resources', '--split-projects'])
     _RunCommand([GRADLEW_BIN, 'assembleDebug'], project_dir)
   finally:
-    shutil.rmtree(project_dir, True)
+    # Do not delete temporary directory if user specified it manually.
+    if not args.project_dir:
+      shutil.rmtree(project_dir, True)
 
 
 if __name__ == '__main__':
