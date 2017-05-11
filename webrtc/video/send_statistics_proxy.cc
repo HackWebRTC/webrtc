@@ -166,6 +166,8 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
                                 in_width);
     RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "InputHeightInPixels",
                                 in_height);
+    LOG(LS_INFO) << uma_prefix_ << "InputWidthInPixels " << in_width;
+    LOG(LS_INFO) << uma_prefix_ << "InputHeightInPixels " << in_height;
   }
   AggregatedStats in_fps = input_fps_counter_.GetStats();
   if (in_fps.num_samples >= kMinRequiredPeriodicSamples) {
@@ -181,6 +183,8 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
                                 sent_width);
     RTC_HISTOGRAMS_COUNTS_10000(kIndex, uma_prefix_ + "SentHeightInPixels",
                                 sent_height);
+    LOG(LS_INFO) << uma_prefix_ << "SentWidthInPixels " << sent_width;
+    LOG(LS_INFO) << uma_prefix_ << "SentHeightInPixels " << sent_height;
   }
   AggregatedStats sent_fps = sent_fps_counter_.GetStats();
   if (sent_fps.num_samples >= kMinRequiredPeriodicSamples) {
@@ -194,12 +198,15 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
   if (encode_ms != -1) {
     RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "EncodeTimeInMs",
                                encode_ms);
+    LOG(LS_INFO) << uma_prefix_ << "EncodeTimeInMs " << encode_ms;
   }
   int key_frames_permille =
       key_frame_counter_.Permille(kMinRequiredMetricsSamples);
   if (key_frames_permille != -1) {
     RTC_HISTOGRAMS_COUNTS_1000(kIndex, uma_prefix_ + "KeyFramesSentInPermille",
                                key_frames_permille);
+    LOG(LS_INFO) << uma_prefix_ << "KeyFramesSentInPermille "
+                 << key_frames_permille;
   }
   int quality_limited =
       quality_limited_frame_counter_.Percent(kMinRequiredMetricsSamples);
@@ -207,6 +214,8 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     RTC_HISTOGRAMS_PERCENTAGE(kIndex,
                               uma_prefix_ + "QualityLimitedResolutionInPercent",
                               quality_limited);
+    LOG(LS_INFO) << uma_prefix_ << "QualityLimitedResolutionInPercent "
+                 << quality_limited;
   }
   int downscales = quality_downscales_counter_.Avg(kMinRequiredMetricsSamples);
   if (downscales != -1) {
@@ -324,6 +333,8 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
       if (fraction_lost != -1) {
         RTC_HISTOGRAMS_PERCENTAGE(
             kIndex, uma_prefix_ + "SentPacketsLostInPercent", fraction_lost);
+        LOG(LS_INFO) << uma_prefix_ << "SentPacketsLostInPercent "
+                     << fraction_lost;
       }
 
       // The RTCP packet type counters, delivered via the
@@ -370,12 +381,16 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
       RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "NumberOfPauseEvents",
                                 target_rate_updates_.pause_resume_events);
+      LOG(LS_INFO) << uma_prefix_ << "NumberOfPauseEvents "
+                   << target_rate_updates_.pause_resume_events;
 
       int paused_time_percent =
           paused_time_counter_.Percent(metrics::kMinRunTimeInSeconds * 1000);
       if (paused_time_percent != -1) {
         RTC_HISTOGRAMS_PERCENTAGE(kIndex, uma_prefix_ + "PausedTimeInPercent",
                                   paused_time_percent);
+        LOG(LS_INFO) << uma_prefix_ << "PausedTimeInPercent "
+                     << paused_time_percent;
       }
     }
   }
