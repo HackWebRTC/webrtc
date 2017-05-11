@@ -2,12 +2,12 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'b895cae903619b9625ab8069a01d3c7b78cf0b99',
+  'chromium_revision': '17c3a61f0cf073a39f4d538c442b5885ce2b06ac',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
   # and whatever else without interference from each other.
-  'swarming_revision': '11e31afa5d330756ff87aa12064bb5d032896cb5',
+  'swarming_revision': 'e6fc9383ad7c38b3464141989b7bc498391e57e4',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling openmax_dl
   # and whatever else without interference from each other.
@@ -23,7 +23,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': '9e43159fc62c2ba87c5dd5202e38aeb5e207bb68',
+  'catapult_revision': '27f7008827515836510b663c032e851f081af70a',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -34,15 +34,15 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '19232481972620b65cbbb03279eea461a40dda47',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'c9bd306044cb4e2c0750cca45986bd5f68b10370',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '5be6ed1a4877682c3723d62fb4c7307d4dcc717e',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '4b491532cb15104ff19277f44be770619d9201d2',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '98f00fa10dbad2cdbb2e297a66c3d6d5bc3994f3',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + 'ac8e76c707341c0109f37890f347261688b6aed1',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'd07877434ec330a1a2b8fb92d3ede7ef4ab73f0f',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'da115387bcf79b1ee0203d163306a9c9f28efc29',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'd481cda2b010869d06557782d008a1e1759012d9',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -77,7 +77,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'e7226f9d0d068563979a31b6d991c920f5eaa4cb',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '7f80c7c421edb3ddcf6dac329fbb472376af5f40',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'eb296f67da078ec01f5e3a9ea9cdc6d26d680161',
    'src/tools/swarming_client':
@@ -118,11 +118,11 @@ deps_os = {
     # Gradle 3.5.0. Used for testing Android Studio project generation for WebRTC.
     'src/webrtc/examples/androidtests/third_party/gradle':
       Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
-      '47ecd621bd4637165daa16298a21f40fc054c6ea',
+      'f0033cd6fdde56471115e18b15261b92f0ec0629',
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + '7ae2aeeb51312ee96b4b3e69fac963e726990f58',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + 'c63cb8923d637ec2b80417db8c1973a83e4a647d',
   },
   'unix': {
     'src/third_party/lss':
@@ -501,13 +501,6 @@ hooks = [
     'name': 'instrumented_libraries',
     'pattern': '\\.sha1',
     'action': ['python', 'src/third_party/instrumented_libraries/scripts/download_binaries.py'],
-  },
-  {
-    'name': 'clang_format_merge_driver',
-    'pattern': '.',
-    'action': [ 'python',
-                'src/tools/clang_format_merge_driver/install_git_hook.py',
-    ],
   },
   {
     # Download test resources, i.e. video and audio files from Google Storage.
