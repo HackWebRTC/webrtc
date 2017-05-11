@@ -135,8 +135,13 @@ void CombineMultipleFrames(
 std::unique_ptr<AudioProcessing> CreateLimiter() {
   Config config;
   config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
+
   std::unique_ptr<AudioProcessing> limiter(AudioProcessing::Create(config));
   RTC_DCHECK(limiter);
+
+  webrtc::AudioProcessing::Config apm_config;
+  apm_config.residual_echo_detector.enabled = false;
+  limiter->ApplyConfig(apm_config);
 
   const auto check_no_error = [](int x) {
     RTC_DCHECK_EQ(x, AudioProcessing::kNoError);
