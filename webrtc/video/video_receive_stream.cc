@@ -246,11 +246,6 @@ void VideoReceiveStream::OnRtpPacket(const RtpPacketReceived& packet) {
   rtp_stream_receiver_.OnRtpPacket(packet);
 }
 
-bool VideoReceiveStream::OnRecoveredPacket(const uint8_t* packet,
-                                           size_t length) {
-  return rtp_stream_receiver_.OnRecoveredPacket(packet, length);
-}
-
 void VideoReceiveStream::SetSync(Syncable* audio_syncable) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtp_stream_sync_.ConfigureSync(audio_syncable);

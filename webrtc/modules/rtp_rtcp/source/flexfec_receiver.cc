@@ -132,10 +132,8 @@ bool FlexfecReceiver::ProcessReceivedPackets() {
       continue;
     }
     ++packet_counter_.num_recovered_packets;
-    if (!recovered_packet_receiver_->OnRecoveredPacket(
-            recovered_packet->pkt->data, recovered_packet->pkt->length)) {
-      return false;
-    }
+    recovered_packet_receiver_->OnRecoveredPacket(
+        recovered_packet->pkt->data, recovered_packet->pkt->length);
     recovered_packet->returned = true;
     // Periodically log the incoming packets.
     int64_t now_ms = clock_->TimeInMilliseconds();

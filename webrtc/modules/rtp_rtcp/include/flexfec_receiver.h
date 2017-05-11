@@ -27,7 +27,7 @@ namespace webrtc {
 // should be able to demultiplex the recovered RTP packets based on SSRC.
 class RecoveredPacketReceiver {
  public:
-  virtual bool OnRecoveredPacket(const uint8_t* packet, size_t length) = 0;
+  virtual void OnRecoveredPacket(const uint8_t* packet, size_t length) = 0;
 
  protected:
   virtual ~RecoveredPacketReceiver() = default;

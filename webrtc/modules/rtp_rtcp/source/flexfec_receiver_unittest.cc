@@ -227,8 +227,7 @@ TEST_F(FlexfecReceiverTest, RecoversFromSingleMediaLoss) {
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
       .With(
-          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
-      .WillOnce(Return(true));
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 }
 
@@ -250,8 +249,7 @@ TEST_F(FlexfecReceiverTest, RecoversFromDoubleMediaLoss) {
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
       .With(
-          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
-      .WillOnce(Return(true));
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Receive second FEC packet and recover second lost media packet.
@@ -261,8 +259,7 @@ TEST_F(FlexfecReceiverTest, RecoversFromDoubleMediaLoss) {
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
       .With(
-          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
-      .WillOnce(Return(true));
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 }
 
@@ -301,8 +298,7 @@ TEST_F(FlexfecReceiverTest, DoesNotCallbackTwice) {
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
       .With(
-          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
-      .WillOnce(Return(true));
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Receive FEC packet again.
@@ -348,8 +344,7 @@ TEST_F(FlexfecReceiverTest, RecoversFrom50PercentLoss) {
     EXPECT_CALL(recovered_packet_receiver_,
                 OnRecoveredPacket(_, (*media_it)->length))
         .With(Args<0, 1>(
-            ElementsAreArray((*media_it)->data, (*media_it)->length)))
-        .WillOnce(Return(true));
+            ElementsAreArray((*media_it)->data, (*media_it)->length)));
     receiver_.OnRtpPacket(ParsePacket(*fec_packet_with_rtp_header));
     ++media_it;
   }
@@ -389,8 +384,7 @@ TEST_F(FlexfecReceiverTest, DelayedFecPacketDoesHelp) {
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
       .With(
-          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
-      .WillOnce(Return(true));
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 }
 
@@ -454,13 +448,11 @@ TEST_F(FlexfecReceiverTest, RecoversWithMediaPacketsOutOfOrder) {
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_packet1)->length))
       .With(Args<0, 1>(
-          ElementsAreArray((*media_packet1)->data, (*media_packet1)->length)))
-      .WillOnce(Return(true));
+          ElementsAreArray((*media_packet1)->data, (*media_packet1)->length)));
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_packet4)->length))
       .With(Args<0, 1>(
-          ElementsAreArray((*media_packet4)->data, (*media_packet4)->length)))
-      .WillOnce(Return(true));
+          ElementsAreArray((*media_packet4)->data, (*media_packet4)->length)));
 
   // Add FEC packets.
   auto fec_it = fec_packets.begin();
@@ -492,8 +484,7 @@ TEST_F(FlexfecReceiverTest, CalculatesNumberOfPackets) {
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
       .With(
-          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)))
-      .WillOnce(Return(true));
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Check stats calculations.

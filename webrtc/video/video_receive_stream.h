@@ -60,8 +60,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void SignalNetworkState(NetworkState state);
   bool DeliverRtcp(const uint8_t* packet, size_t length);
 
-  bool OnRecoveredPacket(const uint8_t* packet, size_t length);
-
   void SetSync(Syncable* audio_syncable);
 
   // Implements webrtc::VideoReceiveStream.

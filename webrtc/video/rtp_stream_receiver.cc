@@ -275,6 +275,9 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
   return 0;
 }
 
+// TODO(nisse): Try to delete this method. Obstacles: It is used by
+// ParseAndHandleEncapsulatingHeader, for handling Rtx packets. And
+// it's part of the RtpData interface which we implement.
 bool RtpStreamReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
                                           size_t rtp_packet_length) {
   RTPHeader header;
@@ -302,36 +305,37 @@ void RtpStreamReceiver::OnIncomingSSRCChanged(const uint32_t ssrc) {
   rtp_rtcp_->SetRemoteSSRC(ssrc);
 }
 
+// This method handles both regular RTP packets and packets recovered
+// via FlexFEC.
 void RtpStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   {
     rtc::CritScope lock(&receive_cs_);
     if (!receiving_) {
       return;
     }
-  }
 
-  int64_t now_ms = clock_->TimeInMilliseconds();
+    if (!packet.recovered()) {
+      int64_t now_ms = clock_->TimeInMilliseconds();
 
-  {
-    // Periodically log the RTP header of incoming packets.
-    rtc::CritScope lock(&receive_cs_);
-    if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
-      std::stringstream ss;
-      ss << "Packet received on SSRC: " << packet.Ssrc()
-         << " with payload type: " << static_cast<int>(packet.PayloadType())
-         << ", timestamp: " << packet.Timestamp()
-         << ", sequence number: " << packet.SequenceNumber()
-         << ", arrival time: " << packet.arrival_time_ms();
-      int32_t time_offset;
-      if (packet.GetExtension<TransmissionOffset>(&time_offset)) {
-        ss << ", toffset: " << time_offset;
+      // Periodically log the RTP header of incoming packets.
+      if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
+        std::stringstream ss;
+        ss << "Packet received on SSRC: " << packet.Ssrc()
+           << " with payload type: " << static_cast<int>(packet.PayloadType())
+           << ", timestamp: " << packet.Timestamp()
+           << ", sequence number: " << packet.SequenceNumber()
+           << ", arrival time: " << packet.arrival_time_ms();
+        int32_t time_offset;
+        if (packet.GetExtension<TransmissionOffset>(&time_offset)) {
+          ss << ", toffset: " << time_offset;
+        }
+        uint32_t send_time;
+        if (packet.GetExtension<AbsoluteSendTime>(&send_time)) {
+          ss << ", abs send time: " << send_time;
+        }
+        LOG(LS_INFO) << ss.str();
+        last_packet_log_ms_ = now_ms;
       }
-      uint32_t send_time;
-      if (packet.GetExtension<AbsoluteSendTime>(&send_time)) {
-        ss << ", abs send time: " << send_time;
-      }
-      LOG(LS_INFO) << ss.str();
-      last_packet_log_ms_ = now_ms;
     }
   }
 
@@ -343,13 +347,20 @@ void RtpStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 
   bool in_order = IsPacketInOrder(header);
-  rtp_payload_registry_.SetIncomingPayloadType(header);
+  if (!packet.recovered()) {
+    // TODO(nisse): Why isn't this done for recovered packets?
+    rtp_payload_registry_.SetIncomingPayloadType(header);
+  }
   ReceivePacket(packet.data(), packet.size(), header, in_order);
   // Update receive statistics after ReceivePacket.
   // Receive statistics will be reset if the payload type changes (make sure
   // that the first packet is included in the stats).
-  rtp_receive_statistics_->IncomingPacket(
-      header, packet.size(), IsPacketRetransmitted(header, in_order));
+  if (!packet.recovered()) {
+    // TODO(nisse): We should pass a recovered flag to stats, to aid
+    // fixing bug bugs.webrtc.org/6339.
+    rtp_receive_statistics_->IncomingPacket(
+        header, packet.size(), IsPacketRetransmitted(header, in_order));
+  }
 }
 
 int32_t RtpStreamReceiver::RequestKeyFrame() {

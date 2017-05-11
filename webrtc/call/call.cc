@@ -137,7 +137,7 @@ class Call : public webrtc::Call,
                                const PacketTime& packet_time) override;
 
   // Implements RecoveredPacketReceiver.
-  bool OnRecoveredPacket(const uint8_t* packet, size_t length) override;
+  void OnRecoveredPacket(const uint8_t* packet, size_t length) override;
 
   void SetBitrateConfig(
       const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
@@ -179,7 +179,7 @@ class Call : public webrtc::Call,
 
   rtc::Optional<RtpPacketReceived> ParseRtpPacket(const uint8_t* packet,
                                                   size_t length,
-                                                  const PacketTime& packet_time)
+                                                  const PacketTime* packet_time)
       SHARED_LOCKS_REQUIRED(receive_crit_);
 
   void UpdateSendHistograms(int64_t first_sent_packet_ms)
@@ -409,7 +409,7 @@ Call::~Call() {
 rtc::Optional<RtpPacketReceived> Call::ParseRtpPacket(
     const uint8_t* packet,
     size_t length,
-    const PacketTime& packet_time) {
+    const PacketTime* packet_time) {
   RtpPacketReceived parsed_packet;
   if (!parsed_packet.Parse(packet, length))
     return rtc::Optional<RtpPacketReceived>();
@@ -419,8 +419,8 @@ rtc::Optional<RtpPacketReceived> Call::ParseRtpPacket(
     parsed_packet.IdentifyExtensions(it->second.extensions);
 
   int64_t arrival_time_ms;
-  if (packet_time.timestamp != -1) {
-    arrival_time_ms = (packet_time.timestamp + 500) / 1000;
+  if (packet_time && packet_time->timestamp != -1) {
+    arrival_time_ms = (packet_time->timestamp + 500) / 1000;
   } else {
     arrival_time_ms = clock_->TimeInMilliseconds();
   }
@@ -1189,7 +1189,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
   // TODO(nisse): We should parse the RTP header only here, and pass
   // on parsed_packet to the receive streams.
   rtc::Optional<RtpPacketReceived> parsed_packet =
-      ParseRtpPacket(packet, length, packet_time);
+      ParseRtpPacket(packet, length, &packet_time);
 
   if (!parsed_packet)
     return DELIVERY_PACKET_ERROR;
@@ -1255,13 +1255,20 @@ PacketReceiver::DeliveryStatus Call::DeliverPacket(
 
 // TODO(brandtr): Update this member function when we support protecting
 // audio packets with FlexFEC.
-bool Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
-  uint32_t ssrc = ByteReader<uint32_t>::ReadBigEndian(&packet[8]);
+void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
   ReadLockScoped read_lock(*receive_crit_);
-  auto it = video_receive_ssrcs_.find(ssrc);
+  rtc::Optional<RtpPacketReceived> parsed_packet =
+      ParseRtpPacket(packet, length, nullptr);
+  if (!parsed_packet)
+    return;
+
+  parsed_packet->set_recovered(true);
+
+  auto it = video_receive_ssrcs_.find(parsed_packet->Ssrc());
   if (it == video_receive_ssrcs_.end())
-    return false;
-  return it->second->OnRecoveredPacket(packet, length);
+    return;
+
+  it->second->OnRtpPacket(*parsed_packet);
 }
 
 void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
