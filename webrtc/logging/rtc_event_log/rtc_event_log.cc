@@ -572,6 +572,8 @@ void RtcEventLogImpl::LogProbeResult(int id,
 }
 
 void RtcEventLogImpl::StoreEvent(std::unique_ptr<rtclog::Event>* event) {
+  RTC_DCHECK(event != nullptr);
+  RTC_DCHECK(event->get() != nullptr);
   if (!event_queue_.Insert(event)) {
     LOG(LS_ERROR) << "WebRTC event log queue full. Dropping event.";
   }
