@@ -257,6 +257,13 @@ bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, StreamId* rsid) {
   return true;
 }
 
+bool RtpStreamId::Write(uint8_t* data, const StreamId& rsid) {
+  RTC_DCHECK_GE(rsid.size(), 1);
+  RTC_DCHECK_LE(rsid.size(), StreamId::kMaxSize);
+  memcpy(data, rsid.data(), rsid.size());
+  return true;
+}
+
 bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, std::string* rsid) {
   if (data.empty() || data[0] == 0)  // Valid rsid can't be empty.
     return false;
@@ -265,6 +272,13 @@ bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, std::string* rsid) {
   // the string. Well-formed rsid shouldn't contain it.
   rsid->assign(str, strnlen(str, data.size()));
   RTC_DCHECK(!rsid->empty());
+  return true;
+}
+
+bool RtpStreamId::Write(uint8_t* data, const std::string& rsid) {
+  RTC_DCHECK_GE(rsid.size(), 1);
+  RTC_DCHECK_LE(rsid.size(), StreamId::kMaxSize);
+  memcpy(data, rsid.data(), rsid.size());
   return true;
 }
 
@@ -279,9 +293,25 @@ bool RepairedRtpStreamId::Parse(rtc::ArrayView<const uint8_t> data,
   return RtpStreamId::Parse(data, rsid);
 }
 
+size_t RepairedRtpStreamId::ValueSize(const StreamId& rsid) {
+  return RtpStreamId::ValueSize(rsid);
+}
+
+bool RepairedRtpStreamId::Write(uint8_t* data, const StreamId& rsid) {
+  return RtpStreamId::Write(data, rsid);
+}
+
 bool RepairedRtpStreamId::Parse(rtc::ArrayView<const uint8_t> data,
                                 std::string* rsid) {
   return RtpStreamId::Parse(data, rsid);
+}
+
+size_t RepairedRtpStreamId::ValueSize(const std::string& rsid) {
+  return RtpStreamId::ValueSize(rsid);
+}
+
+bool RepairedRtpStreamId::Write(uint8_t* data, const std::string& rsid) {
+  return RtpStreamId::Write(data, rsid);
 }
 
 }  // namespace webrtc

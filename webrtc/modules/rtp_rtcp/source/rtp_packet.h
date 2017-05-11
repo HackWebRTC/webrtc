@@ -183,7 +183,10 @@ bool Packet::GetExtension(Values... values) const {
 
 template <typename Extension, typename... Values>
 bool Packet::SetExtension(Values... values) {
-  auto buffer = AllocateExtension(Extension::kId, Extension::kValueSizeBytes);
+  const size_t value_size = Extension::ValueSize(values...);
+  if (value_size == 0 || value_size > 16)
+    return false;
+  auto buffer = AllocateExtension(Extension::kId, value_size);
   if (buffer.empty())
     return false;
   return Extension::Write(buffer.data(), values...);

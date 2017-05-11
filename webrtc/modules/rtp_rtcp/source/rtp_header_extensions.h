@@ -28,6 +28,7 @@ class AbsoluteSendTime {
       "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
 
   static bool Parse(rtc::ArrayView<const uint8_t> data, uint32_t* time_24bits);
+  static size_t ValueSize(int64_t time_ms) { return kValueSizeBytes; }
   static bool Write(uint8_t* data, int64_t time_ms);
 
   static constexpr uint32_t MsTo24Bits(int64_t time_ms) {
@@ -45,6 +46,9 @@ class AudioLevel {
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     bool* voice_activity,
                     uint8_t* audio_level);
+  static size_t ValueSize(bool voice_activity, uint8_t audio_level) {
+    return kValueSizeBytes;
+  }
   static bool Write(uint8_t* data, bool voice_activity, uint8_t audio_level);
 };
 
@@ -55,6 +59,7 @@ class TransmissionOffset {
   static constexpr const char* kUri = "urn:ietf:params:rtp-hdrext:toffset";
 
   static bool Parse(rtc::ArrayView<const uint8_t> data, int32_t* rtp_time);
+  static size_t ValueSize(int32_t rtp_time) { return kValueSizeBytes; }
   static bool Write(uint8_t* data, int32_t rtp_time);
 };
 
@@ -66,6 +71,7 @@ class TransportSequenceNumber {
       "http://www.ietf.org/id/"
       "draft-holmer-rmcat-transport-wide-cc-extensions-01";
   static bool Parse(rtc::ArrayView<const uint8_t> data, uint16_t* value);
+  static size_t ValueSize(uint16_t value) { return kValueSizeBytes; }
   static bool Write(uint8_t* data, uint16_t value);
 };
 
@@ -76,8 +82,10 @@ class VideoOrientation {
   static constexpr const char* kUri = "urn:3gpp:video-orientation";
 
   static bool Parse(rtc::ArrayView<const uint8_t> data, VideoRotation* value);
+  static size_t ValueSize(VideoRotation) { return kValueSizeBytes; }
   static bool Write(uint8_t* data, VideoRotation value);
   static bool Parse(rtc::ArrayView<const uint8_t> data, uint8_t* value);
+  static size_t ValueSize(uint8_t value) { return kValueSizeBytes; }
   static bool Write(uint8_t* data, uint8_t value);
 };
 
@@ -97,6 +105,9 @@ class PlayoutDelayLimits {
 
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     PlayoutDelay* playout_delay);
+  static size_t ValueSize(const PlayoutDelay&) {
+    return kValueSizeBytes;
+  }
   static bool Write(uint8_t* data, const PlayoutDelay& playout_delay);
 };
 
@@ -109,6 +120,9 @@ class VideoContentTypeExtension {
 
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     VideoContentType* content_type);
+  static size_t ValueSize(VideoContentType) {
+    return kValueSizeBytes;
+  }
   static bool Write(uint8_t* data, VideoContentType content_type);
 };
 
@@ -121,8 +135,13 @@ class RtpStreamId {
   static constexpr const char* kUri =
       "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
 
-  static bool Parse(rtc::ArrayView<const uint8_t> data, StreamId* rid);
-  static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* rid);
+  static bool Parse(rtc::ArrayView<const uint8_t> data, StreamId* rsid);
+  static size_t ValueSize(const StreamId& rsid) { return rsid.size(); }
+  static bool Write(uint8_t* data, const StreamId& rsid);
+
+  static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* rsid);
+  static size_t ValueSize(const std::string& rsid) { return rsid.size(); }
+  static bool Write(uint8_t* data, const std::string& rsid);
 };
 
 class RepairedRtpStreamId {
@@ -134,8 +153,13 @@ class RepairedRtpStreamId {
   static constexpr const char* kUri =
       "urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id";
 
-  static bool Parse(rtc::ArrayView<const uint8_t> data, StreamId* rid);
-  static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* rid);
+  static bool Parse(rtc::ArrayView<const uint8_t> data, StreamId* rsid);
+  static size_t ValueSize(const StreamId& rsid);
+  static bool Write(uint8_t* data, const StreamId& rsid);
+
+  static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* rsid);
+  static size_t ValueSize(const std::string& rsid);
+  static bool Write(uint8_t* data, const std::string& rsid);
 };
 
 }  // namespace webrtc

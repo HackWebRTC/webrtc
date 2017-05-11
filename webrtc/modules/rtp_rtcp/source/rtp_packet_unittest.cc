@@ -28,15 +28,18 @@ constexpr uint16_t kSeqNum = 88;
 constexpr uint32_t kTimestamp = 0x65431278;
 constexpr uint8_t kTransmissionOffsetExtensionId = 1;
 constexpr uint8_t kAudioLevelExtensionId = 9;
+constexpr uint8_t kRtpStreamIdExtensionId = 0xa;
 constexpr int32_t kTimeOffset = 0x56ce;
 constexpr bool kVoiceActive = true;
 constexpr uint8_t kAudioLevel = 0x5a;
+constexpr char kStreamId[] = "streamid";
 constexpr size_t kMaxPaddingSize = 224u;
 // clang-format off
 constexpr uint8_t kMinimumPacket[] = {
     0x80, kPayloadType, 0x00, kSeqNum,
     0x65, 0x43, 0x12, 0x78,
     0x12, 0x34, 0x56, 0x78};
+
 constexpr uint8_t kPacketWithTO[] = {
     0x90, kPayloadType, 0x00, kSeqNum,
     0x65, 0x43, 0x12, 0x78,
@@ -51,6 +54,15 @@ constexpr uint8_t kPacketWithTOAndAL[] = {
     0xbe, 0xde, 0x00, 0x02,
     0x12, 0x00, 0x56, 0xce,
     0x90, 0x80|kAudioLevel, 0x00, 0x00};
+
+constexpr uint8_t kPacketWithRsid[] = {
+    0x90, kPayloadType, 0x00, kSeqNum,
+    0x65, 0x43, 0x12, 0x78,
+    0x12, 0x34, 0x56, 0x78,
+    0xbe, 0xde, 0x00, 0x03,
+    0xa7, 's',  't',  'r',
+    'e',  'a',  'm',  'i',
+    'd' , 0x00, 0x00, 0x00};
 
 constexpr uint32_t kCsrcs[] = {0x34567890, 0x32435465};
 constexpr uint8_t kPayload[] = {'p', 'a', 'y', 'l', 'o', 'a', 'd'};
@@ -115,6 +127,34 @@ TEST(RtpPacketTest, CreateWith2Extensions) {
   packet.SetExtension<AudioLevel>(kVoiceActive, kAudioLevel);
   EXPECT_THAT(kPacketWithTOAndAL,
               ElementsAreArray(packet.data(), packet.size()));
+}
+
+TEST(RtpPacketTest, CreateWithDynamicSizedExtensions) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register<RtpStreamId>(kRtpStreamIdExtensionId);
+  RtpPacketToSend packet(&extensions);
+  packet.SetPayloadType(kPayloadType);
+  packet.SetSequenceNumber(kSeqNum);
+  packet.SetTimestamp(kTimestamp);
+  packet.SetSsrc(kSsrc);
+  packet.SetExtension<RtpStreamId>(kStreamId);
+  EXPECT_THAT(kPacketWithRsid, ElementsAreArray(packet.data(), packet.size()));
+}
+
+TEST(RtpPacketTest, TryToCreateWithEmptyRsid) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register<RtpStreamId>(kRtpStreamIdExtensionId);
+  RtpPacketToSend packet(&extensions);
+  EXPECT_FALSE(packet.SetExtension<RtpStreamId>(""));
+}
+
+TEST(RtpPacketTest, TryToCreateWithLongRsid) {
+  RtpPacketToSend::ExtensionManager extensions;
+  constexpr char kLongStreamId[] = "LoooooooooongRsid";
+  ASSERT_EQ(strlen(kLongStreamId), 17u);
+  extensions.Register<RtpStreamId>(kRtpStreamIdExtensionId);
+  RtpPacketToSend packet(&extensions);
+  EXPECT_FALSE(packet.SetExtension<RtpStreamId>(kLongStreamId));
 }
 
 TEST(RtpPacketTest, CreateWithExtensionsWithoutManager) {
