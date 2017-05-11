@@ -24,6 +24,7 @@ import urllib
 DONT_AUTOROLL_THESE = [
   'src/third_party/gflags/src',
   'src/third_party/winsdk_samples',
+  'src/webrtc/examples/androidtests/third_party/gradle',
 ]
 
 WEBRTC_URL = 'https://chromium.googlesource.com/external/webrtc'

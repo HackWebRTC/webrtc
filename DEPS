@@ -118,7 +118,7 @@ deps_os = {
     # Gradle 3.5.0. Used for testing Android Studio project generation for WebRTC.
     'src/webrtc/examples/androidtests/third_party/gradle':
       Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
-      'f0033cd6fdde56471115e18b15261b92f0ec0629',
+      'b762622a185d59ce0cfc9cbc6ab5dd22469e18a6',
   },
   'ios': {
     'src/ios':
