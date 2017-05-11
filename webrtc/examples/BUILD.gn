@@ -603,6 +603,40 @@ if (is_linux || is_win) {
   }
 }
 
+if (is_win) {
+  rtc_shared_library("webrtc_unity_plugin") {
+    testonly = true
+    sources = [
+      "unityplugin/simple_peer_connection.cc",
+      "unityplugin/simple_peer_connection.h",
+      "unityplugin/unity_plugin_apis.cc",
+      "unityplugin/unity_plugin_apis.h",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+    cflags = [ "/wd4245" ]
+    configs += [
+      "//build/config/win:windowed",
+      ":peerconnection_client_warnings_config",
+    ]
+    deps = [
+      "//webrtc/api:libjingle_peerconnection_test_api",
+      "//webrtc/api:video_frame_api",
+      "//webrtc/base:rtc_base",
+      "//webrtc/base:rtc_base_approved",
+      "//webrtc/base:rtc_json",
+      "//webrtc/media:rtc_media",
+      "//webrtc/media:rtc_media_base",
+      "//webrtc/modules/video_capture:video_capture_module",
+      "//webrtc/pc:libjingle_peerconnection",
+      "//webrtc/system_wrappers:field_trial_default",
+      "//webrtc/system_wrappers:metrics_default",
+    ]
+  }
+}
+
 if (!build_with_chromium) {
   # Doesn't build within Chrome on Win.
   rtc_executable("stun_prober") {
