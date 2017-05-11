@@ -136,6 +136,10 @@ void I420Buffer::InitializeData() {
          I420DataSize(height_, stride_y_, stride_u_, stride_v_));
 }
 
+VideoFrameBuffer::Type I420Buffer::type() const {
+  return Type::kI420;
+}
+
 int I420Buffer::width() const {
   return width_;
 }
@@ -162,14 +166,6 @@ int I420Buffer::StrideU() const {
 }
 int I420Buffer::StrideV() const {
   return stride_v_;
-}
-
-void* I420Buffer::native_handle() const {
-  return nullptr;
-}
-
-rtc::scoped_refptr<VideoFrameBuffer> I420Buffer::NativeToI420Buffer() {
-  return this;
 }
 
 uint8_t* I420Buffer::MutableDataY() {

@@ -170,6 +170,7 @@ rtc_source_set("video_frame_api") {
     "video/i420_buffer.h",
     "video/video_frame.cc",
     "video/video_frame.h",
+    "video/video_frame_buffer.cc",
     "video/video_frame_buffer.h",
     "video/video_rotation.h",
   ]

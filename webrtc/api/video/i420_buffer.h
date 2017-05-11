@@ -20,7 +20,7 @@
 namespace webrtc {
 
 // Plain I420 buffer in standard memory.
-class I420Buffer : public VideoFrameBuffer {
+class I420Buffer : public PlanarYuvBuffer {
  public:
   static rtc::scoped_refptr<I420Buffer> Create(int width, int height);
   static rtc::scoped_refptr<I420Buffer> Create(int width,
@@ -53,6 +53,7 @@ class I420Buffer : public VideoFrameBuffer {
   // are resolved in a better way. Or in the mean time, use SetBlack.
   void InitializeData();
 
+  Type type() const override;
   int width() const override;
   int height() const override;
   const uint8_t* DataY() const override;
@@ -62,9 +63,6 @@ class I420Buffer : public VideoFrameBuffer {
   int StrideY() const override;
   int StrideU() const override;
   int StrideV() const override;
-
-  void* native_handle() const override;
-  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
 
   uint8_t* MutableDataY();
   uint8_t* MutableDataU();
