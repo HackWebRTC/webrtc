@@ -1147,22 +1147,37 @@ if (rtc_include_tests) {
       visibility = [ "//webrtc/modules:modules_tests" ]
     }
     sources = [
+      "test/ACMTest.h",
       "test/APITest.cc",
+      "test/APITest.h",
       "test/Channel.cc",
+      "test/Channel.h",
       "test/EncodeDecodeTest.cc",
+      "test/EncodeDecodeTest.h",
       "test/PCMFile.cc",
+      "test/PCMFile.h",
       "test/PacketLossTest.cc",
+      "test/PacketLossTest.h",
       "test/RTPFile.cc",
+      "test/RTPFile.h",
       "test/TestAllCodecs.cc",
+      "test/TestAllCodecs.h",
       "test/TestRedFec.cc",
+      "test/TestRedFec.h",
       "test/TestStereo.cc",
+      "test/TestStereo.h",
       "test/TestVADDTX.cc",
+      "test/TestVADDTX.h",
       "test/Tester.cc",
       "test/TwoWayCommunication.cc",
+      "test/TwoWayCommunication.h",
       "test/iSACTest.cc",
+      "test/iSACTest.h",
       "test/opus_test.cc",
+      "test/opus_test.h",
       "test/target_delay_unittest.cc",
       "test/utility.cc",
+      "test/utility.h",
     ]
     deps = [
       ":audio_coding",
@@ -1263,9 +1278,12 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "test/Channel.cc",
+      "test/Channel.h",
       "test/PCMFile.cc",
+      "test/PCMFile.h",
       "test/delay_test.cc",
       "test/utility.cc",
+      "test/utility.h",
     ]
 
     deps = [
@@ -1288,7 +1306,9 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "test/Channel.cc",
+      "test/Channel.h",
       "test/PCMFile.cc",
+      "test/PCMFile.h",
       "test/insert_packet_with_timing.cc",
     ]
 
@@ -1681,6 +1701,7 @@ if (rtc_include_tests) {
     configs += [ ":RTPencode_config" ]
 
     sources = [
+      "neteq/test/PayloadTypes.h",
       "neteq/test/RTPencode.cc",
     ]
 
