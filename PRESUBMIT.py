@@ -332,7 +332,8 @@ def _CheckNoMixingCAndCCSources(input_api, gn_files, output_api):
 
 def _CheckNoPackageBoundaryViolations(input_api, gn_files, output_api):
   cwd = input_api.PresubmitLocalPath()
-  script_path = os.path.join('tools_webrtc', 'check_package_boundaries.py')
+  script_path = os.path.join('tools_webrtc', 'presubmit_checks_lib',
+                             'check_package_boundaries.py')
   webrtc_path = os.path.join('webrtc')
   command = [sys.executable, script_path, webrtc_path]
   command += [gn_file.LocalPath() for gn_file in gn_files]
