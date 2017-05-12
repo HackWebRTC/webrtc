@@ -575,10 +575,7 @@ def _CommonChecks(input_api, output_api):
   results.extend(_CheckJSONParseErrors(input_api, output_api))
   results.extend(_RunPythonTests(input_api, output_api))
   results.extend(_CheckUsageOfGoogleProtobufNamespace(input_api, output_api))
-  # Disabling this because it seems to have a bug when running on Windows.
-  # TODO(mbonadei): fix this and re-enable this check.
-  # BUG: https://bugs.chromium.org/p/webrtc/issues/detail?id=7635
-  # results.extend(_CheckOrphanHeaders(input_api, output_api))
+  results.extend(_CheckOrphanHeaders(input_api, output_api))
   return results
 
 

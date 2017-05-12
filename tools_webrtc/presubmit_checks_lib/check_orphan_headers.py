@@ -9,6 +9,7 @@
 
 import os
 import re
+import string
 
 
 # TARGET_RE matches a GN target, and extracts the target name and the contents.
@@ -112,5 +113,8 @@ def GetHeadersInBuildGnFileSources(file_content, target_abs_path):
       for source_file_match in SOURCE_FILE_RE.finditer(sources):
         source_file = source_file_match.group('source_file')
         if source_file.endswith('.h'):
-          headers_in_sources.add(os.path.join(target_abs_path, source_file))
+          source_file_tokens = string.split(source_file, '/')
+          # pylint: disable=star-args
+          headers_in_sources.add(os.path.join(target_abs_path,
+                                              *source_file_tokens))
   return headers_in_sources
