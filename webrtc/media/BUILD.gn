@@ -150,7 +150,6 @@ rtc_static_library("rtc_media") {
     "engine/webrtcvideocapturerfactory.cc",
     "engine/webrtcvideocapturerfactory.h",
     "engine/webrtcvideodecoderfactory.h",
-    "engine/webrtcvideoencoderfactory.cc",
     "engine/webrtcvideoencoderfactory.h",
     "engine/webrtcvideoengine2.cc",
     "engine/webrtcvideoengine2.h",

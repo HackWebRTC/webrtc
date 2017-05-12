@@ -247,10 +247,6 @@ class FakeWebRtcVideoEncoderFactory : public WebRtcVideoEncoderFactory {
   }
 
  private:
-  // Disable overloaded virtual function warning. TODO(magjed): Remove once
-  // http://crbug/webrtc/6402 is fixed.
-  using cricket::WebRtcVideoEncoderFactory::CreateVideoEncoder;
-
   rtc::CriticalSection crit_;
   rtc::Event created_video_encoder_event_;
   std::vector<cricket::VideoCodec> codecs_;
