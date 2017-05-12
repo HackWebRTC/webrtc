@@ -138,8 +138,6 @@ rtc_static_library("rtc_base_approved") {
     "ignore_wundef.h",
     "location.cc",
     "location.h",
-    "md5.cc",
-    "md5.h",
     "mod_ops.h",
     "onetimeevent.h",
     "optional.cc",
@@ -469,10 +467,6 @@ rtc_static_library("rtc_base") {
     "rtccertificate.h",
     "rtccertificategenerator.cc",
     "rtccertificategenerator.h",
-    "sha1.cc",
-    "sha1.h",
-    "sha1digest.cc",
-    "sha1digest.h",
     "signalthread.cc",
     "signalthread.h",
     "sigslot.cc",
@@ -501,8 +495,6 @@ rtc_static_library("rtc_base") {
     "stream.h",
     "thread.cc",
     "thread.h",
-    "virtualsocketserver.cc",
-    "virtualsocketserver.h",
   ]
 
   # TODO(henrike): issue 3307, make rtc_base build with the Chromium default
@@ -684,6 +676,8 @@ rtc_source_set("rtc_base_tests_utils") {
     "gunit.h",
     "httpserver.cc",
     "httpserver.h",
+    "md5.cc",
+    "md5.h",
     "md5digest.cc",
     "md5digest.h",
     "memory_usage.cc",
@@ -696,12 +690,18 @@ rtc_source_set("rtc_base_tests_utils") {
     "nattypes.h",
     "proxyserver.cc",
     "proxyserver.h",
+    "sha1.cc",
+    "sha1.h",
+    "sha1digest.cc",
+    "sha1digest.h",
     "sigslottester.h",
     "sigslottester.h.pump",
     "testbase64.h",
     "testechoserver.h",
     "testutils.h",
     "timedelta.h",
+    "virtualsocketserver.cc",
+    "virtualsocketserver.h",
   ]
   configs += [ ":rtc_base_tests_utils_warnings_config" ]
   public_configs = [ ":rtc_base_tests_utils_exported_config" ]
