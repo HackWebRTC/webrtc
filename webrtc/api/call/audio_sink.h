@@ -27,7 +27,7 @@ class AudioSinkInterface {
   virtual ~AudioSinkInterface() {}
 
   struct Data {
-    Data(const int16_t* data,
+    Data(int16_t* data,
          size_t samples_per_channel,
          int sample_rate,
          size_t channels,
@@ -38,7 +38,7 @@ class AudioSinkInterface {
           channels(channels),
           timestamp(timestamp) {}
 
-    const int16_t* data;         // The actual 16bit audio data.
+    int16_t* data;               // The actual 16bit audio data.
     size_t samples_per_channel;  // Number of frames in the buffer.
     int sample_rate;             // Sample rate in Hz.
     size_t channels;             // Number of channels in the audio data.
