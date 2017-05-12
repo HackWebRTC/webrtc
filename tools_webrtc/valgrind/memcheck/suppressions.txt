@@ -432,19 +432,6 @@
    fun:_ZN12_GLOBAL__N_156StatsCollectorTest_ChainedCertificateReportsCreated_Test8TestBodyEv
 }
 {
-   bug_5651
-   Memcheck:Unaddressable
-   fun:silk_NLSF_encode
-   fun:silk_process_NLSFs
-   fun:silk_process_NLSFs_FLP
-   fun:silk_find_pred_coefs_FLP
-   fun:silk_encode_frame_FLP
-   fun:silk_Encode
-   fun:opus_encode_native
-   fun:opus_encode
-   fun:WebRtcOpus_Encode
-}
-{
    bug_5983
    Memcheck:Uninitialized
    fun:_ZN6webrtc11DataChannel4InitERKNS_23InternalDataChannelInitE
