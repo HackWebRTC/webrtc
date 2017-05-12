@@ -493,31 +493,6 @@
    ...
 }
 {
-   bug_6444_encode
-   Memcheck:Unaddressable
-   fun:pitch_search
-   fun:run_prefilter
-   fun:celt_encode_with_ec
-   fun:opus_encode_native
-   ...
-   fun:opus_encode
-   fun:WebRtcOpus_Encode
-   ...
-}
-{
-   bug_6444_decode
-   Memcheck:Unaddressable
-   fun:pitch_search
-   fun:celt_decode_lost
-   fun:celt_decode_with_ec
-   fun:opus_decode_frame
-   ...
-   fun:opus_decode_native
-   fun:opus_decode
-   fun:WebRtcOpus_Decode*
-   ...
-}
-{
    bug_687087
    Memcheck:Uninitialized
    fun:vfprintf
