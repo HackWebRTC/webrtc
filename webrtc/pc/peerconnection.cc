@@ -395,10 +395,10 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory)
     : factory_(factory),
       observer_(NULL),
       uma_observer_(NULL),
+      event_log_(RtcEventLog::Create()),
       signaling_state_(kStable),
       ice_connection_state_(kIceConnectionNew),
       ice_gathering_state_(kIceGatheringNew),
-      event_log_(RtcEventLog::Create()),
       rtcp_cname_(GenerateRtcpCname()),
       local_streams_(StreamCollection::Create()),
       remote_streams_(StreamCollection::Create()) {}
@@ -1289,7 +1289,6 @@ void PeerConnection::Close() {
   stats_->UpdateStats(kStatsOutputLevelStandard);
 
   session_->Close();
-  event_log_.reset();
   network_thread()->Invoke<void>(
       RTC_FROM_HERE,
       rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
@@ -1297,6 +1296,9 @@ void PeerConnection::Close() {
 
   factory_->worker_thread()->Invoke<void>(RTC_FROM_HERE,
                                           [this] { call_.reset(); });
+
+  // The event log must outlive call (and any other object that uses it).
+  event_log_.reset();
 }
 
 void PeerConnection::OnSessionStateChange(WebRtcSession* /*session*/,
