@@ -345,11 +345,15 @@ void FrameBuffer::PropagateContinuity(FrameMap::iterator start) {
 
 void FrameBuffer::PropagateDecodability(const FrameInfo& info) {
   TRACE_EVENT0("webrtc", "FrameBuffer::PropagateDecodability");
+  RTC_CHECK(info.num_dependent_frames < FrameInfo::kMaxNumDependentFrames);
   for (size_t d = 0; d < info.num_dependent_frames; ++d) {
     auto ref_info = frames_.find(info.dependent_frames[d]);
     RTC_DCHECK(ref_info != frames_.end());
-    RTC_DCHECK_GT(ref_info->second.num_missing_decodable, 0U);
-    --ref_info->second.num_missing_decodable;
+    // TODO(philipel): Look into why we've seen this happen.
+    if (ref_info != frames_.end()) {
+      RTC_DCHECK_GT(ref_info->second.num_missing_decodable, 0U);
+      --ref_info->second.num_missing_decodable;
+    }
   }
 }
 
@@ -418,7 +422,14 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
       // frames are inserted or decoded.
       ref_info->second.dependent_frames[ref_info->second.num_dependent_frames] =
           key;
-      ++ref_info->second.num_dependent_frames;
+      RTC_DCHECK_LT(ref_info->second.num_dependent_frames,
+                    (FrameInfo::kMaxNumDependentFrames - 1));
+      // TODO(philipel): Look into why this could happen and handle
+      // appropriately.
+      if (ref_info->second.num_dependent_frames <
+          (FrameInfo::kMaxNumDependentFrames - 1)) {
+        ++ref_info->second.num_dependent_frames;
+      }
     }
     RTC_DCHECK_LE(ref_info->second.num_missing_continuous,
                   ref_info->second.num_missing_decodable);
