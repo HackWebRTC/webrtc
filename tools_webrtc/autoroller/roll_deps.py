@@ -472,9 +472,12 @@ def main():
 
   _CreateRollBranch(opts.dry_run)
   UpdateDepsFile(deps_filename, current_cr_rev, new_cr_rev, changed_deps)
-  _LocalCommit(commit_msg, opts.dry_run)
-  _UploadCL(opts.dry_run, opts.rietveld_email)
-  _SendToCQ(opts.dry_run, opts.skip_cq)
+  if _IsTreeClean():
+    logging.info("No DEPS changes detected, skipping CL creation.")
+  else:
+    _LocalCommit(commit_msg, opts.dry_run)
+    _UploadCL(opts.dry_run, opts.rietveld_email)
+    _SendToCQ(opts.dry_run, opts.skip_cq)
   return 0
 
 
