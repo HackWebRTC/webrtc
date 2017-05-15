@@ -36,6 +36,7 @@ rtc_static_library("common_video") {
     "include/i420_buffer_pool.h",
     "include/incoming_video_stream.h",
     "include/video_bitrate_allocator.h",
+    "include/video_frame.h",
     "include/video_frame_buffer.h",
     "incoming_video_stream.cc",
     "libyuv/include/webrtc_libyuv.h",

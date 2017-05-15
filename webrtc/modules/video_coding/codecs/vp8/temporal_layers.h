@@ -14,7 +14,6 @@
 
 #include <vector>
 
-#include "webrtc/common_video/include/video_image.h"
 #include "webrtc/typedefs.h"
 
 struct vpx_codec_enc_cfg;

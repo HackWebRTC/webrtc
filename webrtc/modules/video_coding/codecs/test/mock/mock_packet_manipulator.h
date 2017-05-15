@@ -16,7 +16,7 @@
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_frame.h"
+#include "webrtc/common_video/include/video_frame.h"
 
 namespace webrtc {
 namespace test {

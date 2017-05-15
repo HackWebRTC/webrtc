@@ -17,8 +17,8 @@
 
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/common_types.h"
+#include "webrtc/common_video/include/video_frame.h"
 #include "webrtc/typedefs.h"
-#include "webrtc/video_frame.h"
 
 namespace webrtc {
 

@@ -21,6 +21,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/call/call.h"
 #include "webrtc/common_video/include/frame_callback.h"
+#include "webrtc/common_video/include/video_frame.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_sender.h"
@@ -41,7 +42,6 @@
 
 #include "webrtc/video/send_statistics_proxy.h"
 #include "webrtc/video/transport_adapter.h"
-#include "webrtc/video_frame.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {

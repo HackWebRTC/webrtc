@@ -19,13 +19,13 @@
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/common_video/include/video_frame.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "webrtc/modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "webrtc/test/gtest.h"
-#include "webrtc/video_frame.h"
 
 using ::testing::_;
 using ::testing::AllOf;

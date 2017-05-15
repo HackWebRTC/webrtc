@@ -231,6 +231,20 @@ rtc_source_set("video_stream_api") {
   ]
 }
 
+# Contents of video_frame.h is moved from top-level down to common_video/.
+# Nothing in webrtc includes the backwards-compatibility header, so this target
+# is only for completeness.
+# TODO(nisse): Delete together with the header file once downstream applications
+# no longer use it.
+rtc_source_set("video_frame_deprecated") {
+  sources = [
+    "video_frame.h",
+  ]
+  deps = [
+    "common_video",
+  ]
+}
+
 if (!build_with_chromium) {
   # Target to build all the WebRTC production code.
   rtc_static_library("webrtc") {
