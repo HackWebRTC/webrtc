@@ -13,13 +13,19 @@
 #include <algorithm>
 #include <numeric>
 
+#include "webrtc/base/atomicops.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
+#include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
 
 namespace {
 
 float Power(rtc::ArrayView<const float> input) {
-  return std::inner_product(input.begin(), input.end(), input.begin(), 0.f);
+  if (input.size() == 0) {
+    return 0.f;
+  }
+  return std::inner_product(input.begin(), input.end(), input.begin(), 0.f) /
+         input.size();
 }
 
 constexpr size_t kLookbackFrames = 650;
@@ -33,8 +39,12 @@ constexpr size_t kAggregationBufferSize = 10 * 100;
 
 namespace webrtc {
 
+int ResidualEchoDetector::instance_count_ = 0;
+
 ResidualEchoDetector::ResidualEchoDetector()
-    : render_buffer_(kRenderBufferSize),
+    : data_dumper_(
+          new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
+      render_buffer_(kRenderBufferSize),
       render_power_(kLookbackFrames),
       render_power_mean_(kLookbackFrames),
       render_power_std_dev_(kLookbackFrames),
@@ -45,6 +55,11 @@ ResidualEchoDetector::~ResidualEchoDetector() = default;
 
 void ResidualEchoDetector::AnalyzeRenderAudio(
     rtc::ArrayView<const float> render_audio) {
+  // Dump debug data assuming 48 kHz sample rate (if this assumption is not
+  // valid the dumped audio will need to be converted offline accordingly).
+  data_dumper_->DumpWav("ed_render", render_audio.size(), render_audio.data(),
+                        48000, 1);
+
   if (render_buffer_.Size() == 0) {
     frames_since_zero_buffer_size_ = 0;
   } else if (frames_since_zero_buffer_size_ >= kRenderBufferSize) {
@@ -61,6 +76,11 @@ void ResidualEchoDetector::AnalyzeRenderAudio(
 
 void ResidualEchoDetector::AnalyzeCaptureAudio(
     rtc::ArrayView<const float> capture_audio) {
+  // Dump debug data assuming 48 kHz sample rate (if this assumption is not
+  // valid the dumped audio will need to be converted offline accordingly).
+  data_dumper_->DumpWav("ed_capture", capture_audio.size(),
+                        capture_audio.data(), 48000, 1);
+
   if (first_process_call_) {
     // On the first process call (so the start of a call), we must flush the
     // render buffer, otherwise the render data will be delayed.
@@ -140,13 +160,9 @@ void ResidualEchoDetector::Initialize() {
 void ResidualEchoDetector::PackRenderAudioBuffer(
     AudioBuffer* audio,
     std::vector<float>* packed_buffer) {
-  RTC_DCHECK_GE(160, audio->num_frames_per_band());
-
   packed_buffer->clear();
-  packed_buffer->insert(packed_buffer->end(),
-                        audio->split_bands_const_f(0)[kBand0To8kHz],
-                        (audio->split_bands_const_f(0)[kBand0To8kHz] +
-                         audio->num_frames_per_band()));
+  packed_buffer->insert(packed_buffer->end(), audio->channels_f()[0],
+                        audio->channels_f()[0] + audio->num_frames());
 }
 
 }  // namespace webrtc

@@ -122,8 +122,11 @@ int FindNativeProcessRateToUse(int minimum_rate, bool band_splitting_required) {
   return uppermost_native_rate;
 }
 
-// Maximum length that a frame of samples can have.
-static const size_t kMaxAllowedValuesOfSamplesPerFrame = 160;
+// Maximum lengths that frame of samples being passed from the render side to
+// the capture side can have (does not apply to AEC3).
+static const size_t kMaxAllowedValuesOfSamplesPerBand = 160;
+static const size_t kMaxAllowedValuesOfSamplesPerFrame = 480;
+
 // Maximum number of frames to buffer in the render queue.
 // TODO(peah): Decrease this once we properly handle hugely unbalanced
 // reverse and forward call numbers.
@@ -845,7 +848,7 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   return kNoError;
 }
 
-void AudioProcessingImpl::QueueRenderAudio(AudioBuffer* audio) {
+void AudioProcessingImpl::QueueBandedRenderAudio(AudioBuffer* audio) {
   EchoCancellationImpl::PackRenderAudioBuffer(audio, num_output_channels(),
                                               num_reverse_channels(),
                                               &aec_render_queue_buffer_);
@@ -888,7 +891,9 @@ void AudioProcessingImpl::QueueRenderAudio(AudioBuffer* audio) {
       RTC_DCHECK(result);
     }
   }
+}
 
+void AudioProcessingImpl::QueueNonbandedRenderAudio(AudioBuffer* audio) {
   ResidualEchoDetector::PackRenderAudioBuffer(audio, &red_render_queue_buffer_);
 
   // Insert the samples into the queue.
@@ -905,18 +910,18 @@ void AudioProcessingImpl::QueueRenderAudio(AudioBuffer* audio) {
 void AudioProcessingImpl::AllocateRenderQueue() {
   const size_t new_aec_render_queue_element_max_size =
       std::max(static_cast<size_t>(1),
-               kMaxAllowedValuesOfSamplesPerFrame *
+               kMaxAllowedValuesOfSamplesPerBand *
                    EchoCancellationImpl::NumCancellersRequired(
                        num_output_channels(), num_reverse_channels()));
 
   const size_t new_aecm_render_queue_element_max_size =
       std::max(static_cast<size_t>(1),
-               kMaxAllowedValuesOfSamplesPerFrame *
+               kMaxAllowedValuesOfSamplesPerBand *
                    EchoControlMobileImpl::NumCancellersRequired(
                        num_output_channels(), num_reverse_channels()));
 
   const size_t new_agc_render_queue_element_max_size =
-      std::max(static_cast<size_t>(1), kMaxAllowedValuesOfSamplesPerFrame);
+      std::max(static_cast<size_t>(1), kMaxAllowedValuesOfSamplesPerBand);
 
   const size_t new_red_render_queue_element_max_size =
       std::max(static_cast<size_t>(1), kMaxAllowedValuesOfSamplesPerFrame);
@@ -1235,12 +1240,6 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessCaptureAudio(
       capture_buffer, stream_delay_ms()));
 
-  if (config_.residual_echo_detector.enabled) {
-    private_submodules_->residual_echo_detector->AnalyzeCaptureAudio(
-        rtc::ArrayView<const float>(
-            capture_buffer->split_bands_const_f(0)[kBand0To8kHz],
-            capture_buffer->num_frames_per_band()));
-  }
 
   if (capture_nonlocked_.beamformer_enabled) {
     private_submodules_->beamformer->PostFilter(capture_buffer->split_data_f());
@@ -1263,6 +1262,12 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
       SampleRateSupportsMultiBand(
           capture_nonlocked_.capture_processing_format.sample_rate_hz())) {
     capture_buffer->MergeFrequencyBands();
+  }
+
+  if (config_.residual_echo_detector.enabled) {
+    private_submodules_->residual_echo_detector->AnalyzeCaptureAudio(
+        rtc::ArrayView<const float>(capture_buffer->channels_f()[0],
+                                    capture_buffer->num_frames()));
   }
 
   // TODO(aluebs): Investigate if the transient suppression placement should be
@@ -1438,6 +1443,9 @@ int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
 
 int AudioProcessingImpl::ProcessRenderStreamLocked() {
   AudioBuffer* render_buffer = render_.render_audio.get();  // For brevity.
+
+  QueueNonbandedRenderAudio(render_buffer);
+
   if (submodule_states_.RenderMultiBandSubModulesActive() &&
       SampleRateSupportsMultiBand(
           formats_.render_processing_format.sample_rate_hz())) {
@@ -1451,7 +1459,7 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
   }
 #endif
 
-  QueueRenderAudio(render_buffer);
+  QueueBandedRenderAudio(render_buffer);
   // TODO(peah): Perform the queueing ínside QueueRenderAudiuo().
   if (private_submodules_->echo_canceller3) {
     private_submodules_->echo_canceller3->AnalyzeRender(render_buffer);

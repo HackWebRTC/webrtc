@@ -258,7 +258,9 @@ class AudioProcessingImpl : public AudioProcessing {
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
-  void QueueRenderAudio(AudioBuffer* audio)
+  void QueueBandedRenderAudio(AudioBuffer* audio)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+  void QueueNonbandedRenderAudio(AudioBuffer* audio)
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   // Capture-side exclusive methods possibly running APM in a multi-threaded
