@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_INCLUDE_COMPILE_ASSERT_H_
-#define WEBRTC_SYSTEM_WRAPPERS_INCLUDE_COMPILE_ASSERT_H_
+#ifndef WEBRTC_BASE_COMPILE_ASSERT_C_H_
+#define WEBRTC_BASE_COMPILE_ASSERT_C_H_
 
 // Use this macro to verify at compile time that certain restrictions are met.
 // The argument is the boolean expression to evaluate.
@@ -18,4 +18,4 @@
 // Note: In C++, use static_assert instead!
 #define RTC_COMPILE_ASSERT(expression) switch (0) {case 0: case expression:;}
 
-#endif  // WEBRTC_SYSTEM_WRAPPERS_INCLUDE_COMPILE_ASSERT_H_
+#endif  // WEBRTC_BASE_COMPILE_ASSERT_C_H_

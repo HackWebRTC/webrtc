@@ -204,6 +204,7 @@ rtc_source_set("common_audio_c") {
   deps = [
     ":common_audio_cc",
     "..:webrtc_common",
+    "../base:compile_assert_c",
     "../base:rtc_base_approved",
     "../system_wrappers:system_wrappers",
   ]

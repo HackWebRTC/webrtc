@@ -585,6 +585,7 @@ rtc_static_library("isac_c") {
   deps = [
     ":isac_common",
     "../..:webrtc_common",
+    "../../base:compile_assert_c",
     "../../base:rtc_base_approved",
     "../../common_audio",
   ]
@@ -684,6 +685,7 @@ rtc_source_set("isac_fix_c") {
     ":isac_common",
     "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../base:compile_assert_c",
     "../../base:rtc_base_approved",
     "../../common_audio",
     "../../system_wrappers",

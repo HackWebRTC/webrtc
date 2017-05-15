@@ -15,7 +15,7 @@
 #endif
 
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
-#include "webrtc/system_wrappers/include/compile_assert_c.h"
+#include "webrtc/base/compile_assert_c.h"
 
 extern int32_t WebRtcIsacfix_Log2Q8(uint32_t x);
 

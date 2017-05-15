@@ -90,6 +90,12 @@ source_set("protobuf_utils") {
   }
 }
 
+source_set("compile_assert_c") {
+  sources = [
+    "compile_assert_c.h",
+  ]
+}
+
 # The subset of rtc_base approved for use outside of libjingle.
 rtc_static_library("rtc_base_approved") {
   # TODO(kjellander): Remove (bugs.webrtc.org/7480)

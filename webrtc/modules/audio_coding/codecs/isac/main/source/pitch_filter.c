@@ -16,7 +16,7 @@
 
 #include "os_specific_inline.h"
 
-#include "webrtc/system_wrappers/include/compile_assert_c.h"
+#include "webrtc/base/compile_assert_c.h"
 
 /*
  * We are implementing the following filters;
