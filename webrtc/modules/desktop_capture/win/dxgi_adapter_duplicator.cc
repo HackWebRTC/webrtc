@@ -76,17 +76,7 @@ bool DxgiAdapterDuplicator::DoInitialize() {
         if (!duplicators_.back().Initialize()) {
           return false;
         }
-        if (desktop_rect_.is_empty()) {
-          desktop_rect_ = duplicators_.back().desktop_rect();
-        } else {
-          const DesktopRect& left = desktop_rect_;
-          const DesktopRect& right = duplicators_.back().desktop_rect();
-          desktop_rect_ =
-              DesktopRect::MakeLTRB(std::min(left.left(), right.left()),
-                                    std::min(left.top(), right.top()),
-                                    std::max(left.right(), right.right()),
-                                    std::max(left.bottom(), right.bottom()));
-        }
+        desktop_rect_.UnionWith(duplicators_.back().desktop_rect());
       }
     } else {
       LOG(LS_WARNING) << "Failed to get output description of device " << i
