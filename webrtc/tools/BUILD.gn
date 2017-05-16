@@ -244,8 +244,8 @@ if (rtc_include_tests) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":event_log_visualizer_utils",
+        "../base:rtc_base_approved",
         "../test:field_trial",
-        "//third_party/gflags",
       ]
     }
   }
@@ -262,13 +262,13 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      "../base:rtc_base_approved",
       "../modules:module_api",
       "../modules/audio_processing",
       "../system_wrappers:metrics_default",
       "../test:test_support",
       "//build/win:default_exe_manifest",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
   }
 

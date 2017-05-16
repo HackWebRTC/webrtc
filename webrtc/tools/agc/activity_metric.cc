@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <memory>
 
-#include "gflags/gflags.h"
+#include "webrtc/base/flags.h"
 #include "webrtc/modules/audio_processing/agc/agc.h"
 #include "webrtc/modules/audio_processing/agc/loudness_histogram.h"
 #include "webrtc/modules/audio_processing/agc/utility.h"
@@ -28,7 +28,7 @@
 #include "webrtc/test/gtest.h"
 
 static const int kAgcAnalWindowSamples = 100;
-static const double kDefaultActivityThreshold = 0.3;
+static const float kDefaultActivityThreshold = 0.3f;
 
 DEFINE_bool(standalone_vad, true, "enable stand-alone VAD");
 DEFINE_string(true_vad, "", "name of a file containing true VAD in 'int'"
@@ -44,8 +44,9 @@ DEFINE_string(result, "", "name of a file to write the results. The results"
               " will be appended to the end of the file. This is optional.");
 DEFINE_string(audio_content, "", "name of a file where audio content is written"
               " to, in double format.");
-DEFINE_double(activity_threshold, kDefaultActivityThreshold,
+DEFINE_float(activity_threshold, kDefaultActivityThreshold,
               "Activity threshold");
+DEFINE_bool(help, false, "prints this message");
 
 namespace webrtc {
 
@@ -105,13 +106,13 @@ class AgcStat {
     AudioFeatures features;
     audio_processing_->ExtractFeatures(
         frame.data_, frame.samples_per_channel_, &features);
-    if (FLAGS_standalone_vad) {
+    if (FLAG_standalone_vad) {
       standalone_vad_->AddAudio(frame.data_,
                                 frame.samples_per_channel_);
     }
     if (features.num_frames > 0) {
       double p[kMaxNumFrames] = {0.5, 0.5, 0.5, 0.5};
-      if (FLAGS_standalone_vad) {
+      if (FLAG_standalone_vad) {
         standalone_vad_->GetActivity(p, kMaxNumFrames);
       }
       // TODO(turajs) combining and limiting are used in the source files as
@@ -175,20 +176,20 @@ void void_main(int argc, char* argv[]) {
   }
 
   FILE* true_vad_fid = NULL;
-  ASSERT_GT(FLAGS_true_vad.size(), 0u) << "Specify the file containing true "
+  ASSERT_GT(strlen(FLAG_true_vad), 0u) << "Specify the file containing true "
       "VADs using --true_vad flag.";
-  true_vad_fid = fopen(FLAGS_true_vad.c_str(), "rb");
+  true_vad_fid = fopen(FLAG_true_vad, "rb");
   ASSERT_TRUE(true_vad_fid != NULL) << "Cannot open the active list " <<
-      FLAGS_true_vad;
+      FLAG_true_vad;
 
   FILE* results_fid = NULL;
-  if (FLAGS_result.size() > 0) {
+  if (strlen(FLAG_result) > 0) {
     // True if this is the first time writing to this function and we add a
     // header to the beginning of the file.
     bool write_header;
     // Open in the read mode. If it fails, the file doesn't exist and has to
     // write a header for it. Otherwise no need to write a header.
-    results_fid = fopen(FLAGS_result.c_str(), "r");
+    results_fid = fopen(FLAG_result, "r");
     if (results_fid == NULL) {
       write_header = true;
     } else {
@@ -196,9 +197,9 @@ void void_main(int argc, char* argv[]) {
       write_header = false;
     }
     // Open in append mode.
-    results_fid = fopen(FLAGS_result.c_str(), "a");
+    results_fid = fopen(FLAG_result, "a");
     ASSERT_TRUE(results_fid != NULL) << "Cannot open the file, " <<
-              FLAGS_result << ", to write the results.";
+              FLAG_result << ", to write the results.";
     // Write the header if required.
     if (write_header) {
       fprintf(results_fid, "%% Total Active,  Misdetection,  "
@@ -208,19 +209,19 @@ void void_main(int argc, char* argv[]) {
   }
 
   FILE* video_vad_fid = NULL;
-  if (FLAGS_video_vad.size() > 0) {
-    video_vad_fid = fopen(FLAGS_video_vad.c_str(), "rb");
+  if (strlen(FLAG_video_vad) > 0) {
+    video_vad_fid = fopen(FLAG_video_vad, "rb");
     ASSERT_TRUE(video_vad_fid != NULL) <<  "Cannot open the file, " <<
-              FLAGS_video_vad << " to read video-based VAD decisions.\n";
+              FLAG_video_vad << " to read video-based VAD decisions.\n";
   }
 
   // AgsStat will be the owner of this file and will close it at its
   // destructor.
   FILE* audio_content_fid = NULL;
-  if (FLAGS_audio_content.size() > 0) {
-    audio_content_fid = fopen(FLAGS_audio_content.c_str(), "wb");
+  if (strlen(FLAG_audio_content) > 0) {
+    audio_content_fid = fopen(FLAG_audio_content, "wb");
     ASSERT_TRUE(audio_content_fid != NULL) << "Cannot open file, " <<
-              FLAGS_audio_content << " to write audio-content.\n";
+              FLAG_audio_content << " to write audio-content.\n";
     agc_stat.set_audio_content_file(audio_content_fid);
   }
 
@@ -231,7 +232,7 @@ void void_main(int argc, char* argv[]) {
   const size_t kSamplesToRead = frame.num_channels_ *
       frame.samples_per_channel_;
 
-  agc_stat.SetActivityThreshold(FLAGS_activity_threshold);
+  agc_stat.SetActivityThreshold(FLAG_activity_threshold);
 
   int ret_val = 0;
   int num_frames = 0;
@@ -369,17 +370,25 @@ void void_main(int argc, char* argv[]) {
 }  // namespace webrtc
 
 int main(int argc, char* argv[]) {
-  char kUsage[] =
+  if (argc == 1) {
+    // Print usage information.
+    std::cout <<
       "\nCompute the number of misdetected and false-positive frames. Not\n"
       " that for each frame of audio (10 ms) there should be one true\n"
       " activity. If any video-based activity is given, there should also be\n"
       " one probability per frame.\n"
+      "Run with --help for more details on available flags.\n"
       "\nUsage:\n\n"
       "activity_metric input_pcm [options]\n"
       "where 'input_pcm' is the input audio sampled at 16 kHz in 16 bits "
       "format.\n\n";
-  google::SetUsageMessage(kUsage);
-  google::ParseCommandLineFlags(&argc, &argv, true);
+    return 0;
+  }
+  rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
+  if (FLAG_help) {
+    rtc::FlagList::Print(nullptr, false);
+    return 0;
+  }
   webrtc::void_main(argc, argv);
   return 0;
 }
