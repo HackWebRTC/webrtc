@@ -266,6 +266,16 @@ webrtc_fuzzer_test("neteq_rtp_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("residual_echo_detector_fuzzer") {
+  sources = [
+    "residual_echo_detector_fuzzer.cc",
+  ]
+  deps = [
+    "../../base:rtc_base_approved",
+    "../../modules/audio_processing:audio_processing",
+  ]
+}
+
 webrtc_fuzzer_test("sdp_parser_fuzzer") {
   sources = [
     "sdp_parser_fuzzer.cc",

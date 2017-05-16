@@ -124,6 +124,7 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
     echo_likelihood_ = std::max(
         echo_likelihood_, covariances_[delay].normalized_cross_correlation());
   }
+  RTC_DCHECK_LT(echo_likelihood_, 1.1f);
   reliability_ = (1.0f - kAlpha) * reliability_ + kAlpha * 1.0f;
   echo_likelihood_ *= reliability_;
   // This is a temporary fix to prevent echo likelihood values > 1.0.
