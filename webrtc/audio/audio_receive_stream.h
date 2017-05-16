@@ -19,6 +19,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call/audio_receive_stream.h"
+#include "webrtc/call/rtp_demuxer.h"
 #include "webrtc/call/syncable.h"
 
 namespace webrtc {
@@ -35,7 +36,8 @@ class AudioSendStream;
 
 class AudioReceiveStream final : public webrtc::AudioReceiveStream,
                                  public AudioMixer::Source,
-                                 public Syncable {
+                                 public Syncable,
+                                 public RtpPacketSinkInterface {
  public:
   AudioReceiveStream(PacketRouter* packet_router,
                      const webrtc::AudioReceiveStream::Config& config,
@@ -52,8 +54,8 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   void SetGain(float gain) override;
   std::vector<webrtc::RtpSource> GetSources() const override;
 
-  // TODO(nisse): Intended to be part of an RtpPacketReceiver interface.
-  void OnRtpPacket(const RtpPacketReceived& packet);
+  // RtpPacketSinkInterface.
+  void OnRtpPacket(const RtpPacketReceived& packet) override;
 
   // AudioMixer::Source
   AudioFrameInfo GetAudioFrameWithInfo(int sample_rate_hz,
