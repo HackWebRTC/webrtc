@@ -113,9 +113,8 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
 
   // Update the covariance values and determine the new echo likelihood.
   echo_likelihood_ = 0.f;
+  size_t read_index = next_insertion_index_;
   for (size_t delay = 0; delay < covariances_.size(); ++delay) {
-    const size_t read_index =
-        (kLookbackFrames + next_insertion_index_ - delay) % kLookbackFrames;
     RTC_DCHECK_LT(read_index, render_power_.size());
     covariances_[delay].Update(capture_power, capture_mean,
                                capture_std_deviation, render_power_[read_index],
@@ -123,6 +122,8 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
                                render_power_std_dev_[read_index]);
     echo_likelihood_ = std::max(
         echo_likelihood_, covariances_[delay].normalized_cross_correlation());
+
+    read_index = read_index > 0 ? read_index - 1 : kLookbackFrames - 1;
   }
   RTC_DCHECK_LT(echo_likelihood_, 1.1f);
   reliability_ = (1.0f - kAlpha) * reliability_ + kAlpha * 1.0f;
@@ -138,8 +139,9 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
   recent_likelihood_max_.Update(echo_likelihood_);
 
   // Update the next insertion index.
-  ++next_insertion_index_;
-  next_insertion_index_ %= kLookbackFrames;
+  next_insertion_index_ = next_insertion_index_ < (kLookbackFrames - 1)
+                              ? next_insertion_index_ + 1
+                              : 0;
 }
 
 void ResidualEchoDetector::Initialize() {
