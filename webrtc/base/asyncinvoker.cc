@@ -116,39 +116,4 @@ AsyncClosure::~AsyncClosure() {
   invoker_->invocation_complete_.Set();
 }
 
-NotifyingAsyncClosureBase::NotifyingAsyncClosureBase(
-    AsyncInvoker* invoker,
-    const Location& callback_posted_from,
-    Thread* calling_thread)
-    : AsyncClosure(invoker),
-      callback_posted_from_(callback_posted_from),
-      calling_thread_(calling_thread) {
-  calling_thread->SignalQueueDestroyed.connect(
-      this, &NotifyingAsyncClosureBase::CancelCallback);
-  // Note: We don't need to listen for the invoker being destroyed, because it
-  // will wait for this closure to be destroyed (and pending_invocations_ to go
-  // to 0) before its destructor completes.
-}
-
-NotifyingAsyncClosureBase::~NotifyingAsyncClosureBase() {
-  disconnect_all();
-}
-
-void NotifyingAsyncClosureBase::TriggerCallback() {
-  CritScope cs(&crit_);
-  if (!CallbackCanceled() && !callback_.empty()) {
-    invoker_->AsyncInvoke<void>(callback_posted_from_, calling_thread_,
-                                callback_);
-  }
-}
-
-void NotifyingAsyncClosureBase::CancelCallback() {
-  // If the callback is triggering when this is called, block the
-  // destructor of the dying object here by waiting until the callback
-  // is done triggering.
-  CritScope cs(&crit_);
-  // calling_thread_ == nullptr means do not trigger the callback.
-  calling_thread_ = nullptr;
-}
-
 }  // namespace rtc

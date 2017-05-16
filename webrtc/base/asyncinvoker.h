@@ -100,43 +100,6 @@ class AsyncInvoker : public MessageHandler {
     DoInvokeDelayed(posted_from, thread, std::move(closure), delay_ms, id);
   }
 
-  // Call |functor| asynchronously on |thread|, calling |callback| when done.
-  // Uses a separate Location for |callback_posted_from| so that the functor
-  // invoke and the callback invoke can be differentiated.
-  template <class ReturnT, class FunctorT, class HostT>
-  void AsyncInvoke(const Location& posted_from,
-                   const Location& callback_posted_from,
-                   Thread* thread,
-                   const FunctorT& functor,
-                   void (HostT::*callback)(ReturnT),
-                   HostT* callback_host,
-                   uint32_t id = 0) {
-    std::unique_ptr<AsyncClosure> closure(
-        new NotifyingAsyncClosure<ReturnT, FunctorT, HostT>(
-            this, callback_posted_from, Thread::Current(), functor, callback,
-            callback_host));
-    DoInvoke(posted_from, thread, std::move(closure), id);
-  }
-
-  // Call |functor| asynchronously on |thread|, calling |callback| when done.
-  // Uses a separate Location for |callback_posted_from| so that the functor
-  // invoke and the callback invoke can be differentiated.
-  // Overloaded for void return.
-  template <class ReturnT, class FunctorT, class HostT>
-  void AsyncInvoke(const Location& posted_from,
-                   const Location& callback_posted_from,
-                   Thread* thread,
-                   const FunctorT& functor,
-                   void (HostT::*callback)(),
-                   HostT* callback_host,
-                   uint32_t id = 0) {
-    std::unique_ptr<AsyncClosure> closure(
-        new NotifyingAsyncClosure<void, FunctorT, HostT>(
-            this, callback_posted_from, Thread::Current(), functor, callback,
-            callback_host));
-    DoInvoke(posted_from, thread, std::move(closure), id);
-  }
-
   // Synchronously execute on |thread| all outstanding calls we own
   // that are pending on |thread|, and wait for calls to complete
   // before returning. Optionally filter by message id.
