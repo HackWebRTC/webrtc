@@ -22,30 +22,22 @@ import utils
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
 def main(argv):
   if len(argv) == 1:
     return 'Usage %s <output_dir>' % argv[0]
 
-  output_dir = argv[1]
-  apprtc_appengine_mercurial_path = os.path.join(
-      SCRIPT_DIR, 'download_apprtc_appengine_and_mercurial.py')
-  utils.RunSubprocessWithRetry([apprtc_appengine_mercurial_path,
-                                output_dir])
+  output_dir = os.path.abspath(argv[1])
 
-  download_golang_path = os.path.join(SCRIPT_DIR, 'download_golang.py')
-  utils.RunSubprocessWithRetry([download_golang_path, output_dir])
+  download_apprtc_path = os.path.join(SCRIPT_DIR, 'download_apprtc.py')
+  utils.RunSubprocessWithRetry([download_apprtc_path, output_dir])
 
-  build_mercurial_path = os.path.join(SCRIPT_DIR, 'build_mercurial_local.py')
-  hg_dir = os.path.join(output_dir, 'mercurial')
-  utils.RunSubprocessWithRetry([build_mercurial_path, hg_dir])
-
-  build_apprtc_collider_path = os.path.join(SCRIPT_DIR,
-                                            'build_apprtc_collider.py')
+  build_apprtc_path = os.path.join(SCRIPT_DIR, 'build_apprtc.py')
   apprtc_src_dir = os.path.join(output_dir, 'apprtc', 'src')
   go_dir = os.path.join(output_dir, 'go')
   collider_dir = os.path.join(output_dir, 'collider')
-  utils.RunSubprocessWithRetry([build_apprtc_collider_path, apprtc_src_dir,
-                                go_dir, hg_dir, collider_dir])
+  utils.RunSubprocessWithRetry([build_apprtc_path, apprtc_src_dir,
+                                go_dir, collider_dir])
 
 
 if __name__ == '__main__':

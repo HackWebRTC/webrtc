@@ -9,7 +9,6 @@
 
 """Utilities for all our deps-management stuff."""
 
-import hashlib
 import os
 import shutil
 import sys
@@ -34,30 +33,16 @@ def RunSubprocessWithRetry(cmd):
   raise exception
 
 
-def DownloadFilesFromGoogleStorage(path):
+def DownloadFilesFromGoogleStorage(path, auto_platform=True):
   print 'Downloading files in %s...' % path
 
   extension = 'bat' if 'win32' in sys.platform else 'py'
   cmd = ['download_from_google_storage.%s' % extension,
          '--bucket=chromium-webrtc-resources',
-         '--auto_platform',
-         '--recursive',
          '--directory', path]
+  if auto_platform:
+    cmd += ['--auto_platform', '--recursive']
   subprocess.check_call(cmd)
-
-
-def ComputeSHA1(path):
-  if not os.path.exists(path):
-    return 0
-
-  sha1 = hashlib.sha1()
-  file_to_hash = open(path, 'rb')
-  try:
-    sha1.update(file_to_hash.read())
-  finally:
-    file_to_hash.close()
-
-  return sha1.hexdigest()
 
 
 # Code partially copied from
