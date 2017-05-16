@@ -57,10 +57,14 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
 
-  void OnCpuRestrictedResolutionChanged(bool cpu_restricted_resolution);
-  void OnQualityRestrictedResolutionChanged(int num_quality_downscales);
-  void SetCpuScalingStats(int num_cpu_downscales);  // -1: disabled.
-  void SetQualityScalingStats(int num_quality_downscales);  // -1: disabled.
+  // Adaptation stats.
+  void SetAdaptationStats(const ViEEncoder::AdaptCounts& cpu_counts,
+                          const ViEEncoder::AdaptCounts& quality_counts);
+  void OnCpuAdaptationChanged(const ViEEncoder::AdaptCounts& cpu_counts,
+                              const ViEEncoder::AdaptCounts& quality_counts);
+  void OnQualityAdaptationChanged(
+      const ViEEncoder::AdaptCounts& cpu_counts,
+      const ViEEncoder::AdaptCounts& quality_counts);
 
   void OnEncoderStatsUpdate(uint32_t framerate, uint32_t bitrate);
   void OnSuspendChange(bool is_suspended);
@@ -160,6 +164,12 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
       EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
+  void SetAdaptTimer(const ViEEncoder::AdaptCounts& counts, StatsTimer* timer)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void UpdateAdaptationStats(const ViEEncoder::AdaptCounts& cpu_counts,
+                             const ViEEncoder::AdaptCounts& quality_counts)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   Clock* const clock_;
   const std::string payload_name_;
   const VideoSendStream::Config::Rtp rtp_config_;
@@ -215,8 +225,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     RateAccCounter fec_byte_counter_;
     int64_t first_rtcp_stats_time_ms_;
     int64_t first_rtp_stats_time_ms_;
-    StatsTimer cpu_scaling_timer_;
-    StatsTimer quality_scaling_timer_;
+    StatsTimer cpu_adapt_timer_;
+    StatsTimer quality_adapt_timer_;
     BoolSampleCounter paused_time_counter_;
     TargetRateUpdates target_rate_updates_;
     ReportBlockStats report_block_stats_;

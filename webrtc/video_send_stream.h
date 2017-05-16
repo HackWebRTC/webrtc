@@ -69,6 +69,8 @@ class VideoSendStream {
     bool suspended = false;
     bool bw_limited_resolution = false;
     bool cpu_limited_resolution = false;
+    bool bw_limited_framerate = false;
+    bool cpu_limited_framerate = false;
     // Total number of times resolution as been requested to be changed due to
     // CPU/quality adaptation.
     int number_of_cpu_adapt_changes = 0;

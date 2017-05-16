@@ -305,8 +305,8 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
   }
 
   if (first_rtp_stats_time_ms_ != -1) {
-    quality_scaling_timer_.Stop(clock_->TimeInMilliseconds());
-    int64_t elapsed_sec = quality_scaling_timer_.total_ms / 1000;
+    quality_adapt_timer_.Stop(clock_->TimeInMilliseconds());
+    int64_t elapsed_sec = quality_adapt_timer_.total_ms / 1000;
     if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
       int quality_changes = current_stats.number_of_quality_adapt_changes -
                             start_stats_.number_of_quality_adapt_changes;
@@ -314,8 +314,8 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
                                 uma_prefix_ + "AdaptChangesPerMinute.Quality",
                                 quality_changes * 60 / elapsed_sec);
     }
-    cpu_scaling_timer_.Stop(clock_->TimeInMilliseconds());
-    elapsed_sec = cpu_scaling_timer_.total_ms / 1000;
+    cpu_adapt_timer_.Stop(clock_->TimeInMilliseconds());
+    elapsed_sec = cpu_adapt_timer_.total_ms / 1000;
     if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
       int cpu_changes = current_stats.number_of_cpu_adapt_changes -
                         start_stats_.number_of_cpu_adapt_changes;
@@ -510,14 +510,14 @@ void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
     uma_container_->retransmit_byte_counter_.ProcessAndPauseForDuration(kMinMs);
     uma_container_->fec_byte_counter_.ProcessAndPauseForDuration(kMinMs);
     // Stop adaptation stats.
-    uma_container_->cpu_scaling_timer_.Stop(now_ms);
-    uma_container_->quality_scaling_timer_.Stop(now_ms);
+    uma_container_->cpu_adapt_timer_.Stop(now_ms);
+    uma_container_->quality_adapt_timer_.Stop(now_ms);
   } else {
     // Start adaptation stats if scaling is enabled.
     if (cpu_downscales_ >= 0)
-      uma_container_->cpu_scaling_timer_.Start(now_ms);
+      uma_container_->cpu_adapt_timer_.Start(now_ms);
     if (quality_downscales_ >= 0)
-      uma_container_->quality_scaling_timer_.Start(now_ms);
+      uma_container_->quality_adapt_timer_.Start(now_ms);
     // Stop pause explicitly for stats that may be zero/not updated for some
     // time.
     uma_container_->rtx_byte_counter_.ProcessAndStopPause();
@@ -734,50 +734,53 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
       "ssrc", rtp_config_.ssrcs[0]);
 }
 
-void SendStatisticsProxy::SetCpuScalingStats(int num_cpu_downscales) {
+void SendStatisticsProxy::SetAdaptationStats(
+    const ViEEncoder::AdaptCounts& cpu_counts,
+    const ViEEncoder::AdaptCounts& quality_counts) {
   rtc::CritScope lock(&crit_);
-  cpu_downscales_ = num_cpu_downscales;
-  stats_.cpu_limited_resolution = num_cpu_downscales > 0;
-
-  if (num_cpu_downscales >= 0) {
-    // Scaling enabled.
-    if (!stats_.suspended)
-      uma_container_->cpu_scaling_timer_.Start(clock_->TimeInMilliseconds());
-    return;
-  }
-  uma_container_->cpu_scaling_timer_.Stop(clock_->TimeInMilliseconds());
+  SetAdaptTimer(cpu_counts, &uma_container_->cpu_adapt_timer_);
+  SetAdaptTimer(quality_counts, &uma_container_->quality_adapt_timer_);
+  UpdateAdaptationStats(cpu_counts, quality_counts);
 }
 
-void SendStatisticsProxy::SetQualityScalingStats(int num_quality_downscales) {
+void SendStatisticsProxy::OnCpuAdaptationChanged(
+    const ViEEncoder::AdaptCounts& cpu_counts,
+    const ViEEncoder::AdaptCounts& quality_counts) {
   rtc::CritScope lock(&crit_);
-  quality_downscales_ = num_quality_downscales;
-  stats_.bw_limited_resolution = quality_downscales_ > 0;
-
-  if (num_quality_downscales >= 0) {
-    // Scaling enabled.
-    if (!stats_.suspended) {
-      uma_container_->quality_scaling_timer_.Start(
-          clock_->TimeInMilliseconds());
-    }
-    return;
-  }
-  uma_container_->quality_scaling_timer_.Stop(clock_->TimeInMilliseconds());
-}
-
-void SendStatisticsProxy::OnCpuRestrictedResolutionChanged(
-    bool cpu_restricted_resolution) {
-  rtc::CritScope lock(&crit_);
-  stats_.cpu_limited_resolution = cpu_restricted_resolution;
   ++stats_.number_of_cpu_adapt_changes;
+  UpdateAdaptationStats(cpu_counts, quality_counts);
   TRACE_EVENT_INSTANT0("webrtc_stats", "WebRTC.Video.CpuAdaptationChanges");
 }
 
-void SendStatisticsProxy::OnQualityRestrictedResolutionChanged(
-    int num_quality_downscales) {
+void SendStatisticsProxy::OnQualityAdaptationChanged(
+    const ViEEncoder::AdaptCounts& cpu_counts,
+    const ViEEncoder::AdaptCounts& quality_counts) {
   rtc::CritScope lock(&crit_);
   ++stats_.number_of_quality_adapt_changes;
-  quality_downscales_ = num_quality_downscales;
-  stats_.bw_limited_resolution = quality_downscales_ > 0;
+  UpdateAdaptationStats(cpu_counts, quality_counts);
+}
+
+void SendStatisticsProxy::UpdateAdaptationStats(
+    const ViEEncoder::AdaptCounts& cpu_counts,
+    const ViEEncoder::AdaptCounts& quality_counts) {
+  cpu_downscales_ = cpu_counts.resolution;
+  quality_downscales_ = quality_counts.resolution;
+
+  stats_.cpu_limited_resolution = cpu_counts.resolution > 0;
+  stats_.cpu_limited_framerate = cpu_counts.fps > 0;
+  stats_.bw_limited_resolution = quality_counts.resolution > 0;
+  stats_.bw_limited_framerate = quality_counts.fps > 0;
+}
+
+void SendStatisticsProxy::SetAdaptTimer(const ViEEncoder::AdaptCounts& counts,
+                                        StatsTimer* timer) {
+  if (counts.resolution >= 0 || counts.fps >= 0) {
+    // Adaptation enabled.
+    if (!stats_.suspended)
+      timer->Start(clock_->TimeInMilliseconds());
+    return;
+  }
+  timer->Stop(clock_->TimeInMilliseconds());
 }
 
 void SendStatisticsProxy::RtcpPacketTypesCounterUpdated(
@@ -833,8 +836,8 @@ void SendStatisticsProxy::DataCountersUpdated(
   if (uma_container_->first_rtp_stats_time_ms_ == -1) {
     int64_t now_ms = clock_->TimeInMilliseconds();
     uma_container_->first_rtp_stats_time_ms_ = now_ms;
-    uma_container_->cpu_scaling_timer_.Restart(now_ms);
-    uma_container_->quality_scaling_timer_.Restart(now_ms);
+    uma_container_->cpu_adapt_timer_.Restart(now_ms);
+    uma_container_->quality_adapt_timer_.Restart(now_ms);
   }
 
   uma_container_->total_byte_counter_.Set(counters.transmitted.TotalBytes(),

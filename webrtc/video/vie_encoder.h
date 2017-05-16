@@ -62,6 +62,12 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
         int min_transmit_bitrate_bps) = 0;
   };
 
+  // Number of resolution and framerate reductions (-1: disabled).
+  struct AdaptCounts {
+    int resolution = 0;
+    int fps = 0;
+  };
+
   // Downscale resolution at most 2 times for CPU reasons.
   static const int kMaxCpuResolutionDowngrades = 2;
   // Downscale framerate at most 4 times.
@@ -172,10 +178,44 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void TraceFrameDropStart();
   void TraceFrameDropEnd();
 
-  const std::vector<int>& GetScaleCounters()
-      EXCLUSIVE_LOCKS_REQUIRED(&encoder_queue_);
-  void IncrementScaleCounter(int reason, int delta)
-      EXCLUSIVE_LOCKS_REQUIRED(&encoder_queue_);
+  // Class holding adaptation information.
+  class AdaptCounter final {
+   public:
+    AdaptCounter();
+    ~AdaptCounter();
+
+    // Get number of adaptation downscales for |reason|.
+    AdaptCounts Counts(int reason) const;
+
+    std::string ToString() const;
+
+    void IncrementFramerate(int reason, int delta);
+    void IncrementResolution(int reason, int delta);
+
+    // Gets the total number of downgrades (for all adapt reasons).
+    int FramerateCount() const;
+    int ResolutionCount() const;
+    int TotalCount() const;
+
+    // Gets the total number of downgrades for |reason|.
+    int FramerateCount(int reason) const;
+    int ResolutionCount(int reason) const;
+    int TotalCount(int reason) const;
+
+   private:
+    std::string ToString(const std::vector<int>& counters) const;
+    int Count(const std::vector<int>& counters) const;
+
+    // Degradation counters holding number of framerate/resolution reductions
+    // per adapt reason.
+    std::vector<int> fps_counters_;
+    std::vector<int> resolution_counters_;
+  };
+
+  AdaptCounter& GetAdaptCounter() RUN_ON(&encoder_queue_);
+  const AdaptCounter& GetConstAdaptCounter() RUN_ON(&encoder_queue_);
+  void UpdateAdaptationStats(AdaptReason reason) RUN_ON(&encoder_queue_);
+  AdaptCounts GetActiveCounts(AdaptReason reason) RUN_ON(&encoder_queue_);
 
   rtc::Event shutdown_event_;
 
@@ -214,13 +254,14 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   uint32_t last_observed_bitrate_bps_ ACCESS_ON(&encoder_queue_);
   bool encoder_paused_and_dropped_frame_ ACCESS_ON(&encoder_queue_);
   Clock* const clock_;
-  // Counters used for deciding if the video resolution is currently
-  // restricted, and if so, why, on a per degradation preference basis.
+  // Counters used for deciding if the video resolution or framerate is
+  // currently restricted, and if so, why, on a per degradation preference
+  // basis.
   // TODO(sprang): Replace this with a state holding a relative overuse measure
   // instead, that can be translated into suitable down-scale or fps limit.
-  std::map<const VideoSendStream::DegradationPreference, std::vector<int>>
-      scale_counters_ ACCESS_ON(&encoder_queue_);
-  // Set depending on degradation preferences
+  std::map<const VideoSendStream::DegradationPreference, AdaptCounter>
+      adapt_counters_ ACCESS_ON(&encoder_queue_);
+  // Set depending on degradation preferences.
   VideoSendStream::DegradationPreference degradation_preference_
       ACCESS_ON(&encoder_queue_);
 
