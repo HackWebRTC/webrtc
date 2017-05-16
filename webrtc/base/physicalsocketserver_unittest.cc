@@ -22,6 +22,12 @@
 
 namespace rtc {
 
+#define MAYBE_SKIP_IPV4                    \
+  if (!HasIPv4Enabled()) {                 \
+    LOG(LS_INFO) << "No IPv4... skipping"; \
+    return;                                \
+  }
+
 #define MAYBE_SKIP_IPV6                    \
   if (!HasIPv6Enabled()) {                 \
     LOG(LS_INFO) << "No IPv6... skipping"; \
@@ -164,6 +170,7 @@ int FakeSocketDispatcher::DoSendTo(SOCKET socket, const char* buf, int len,
 }
 
 TEST_F(PhysicalSocketTest, TestConnectIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestConnectIPv4();
 }
 
@@ -172,6 +179,7 @@ TEST_F(PhysicalSocketTest, TestConnectIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestConnectWithDnsLookupIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestConnectWithDnsLookupIPv4();
 }
 
@@ -180,6 +188,7 @@ TEST_F(PhysicalSocketTest, TestConnectWithDnsLookupIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestConnectFailIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestConnectFailIPv4();
 }
 
@@ -258,6 +267,7 @@ void PhysicalSocketTest::ConnectInternalAcceptError(const IPAddress& loopback) {
 }
 
 TEST_F(PhysicalSocketTest, TestConnectAcceptErrorIPv4) {
+  MAYBE_SKIP_IPV4;
   ConnectInternalAcceptError(kIPv4Loopback);
 }
 
@@ -284,6 +294,7 @@ void PhysicalSocketTest::WritableAfterPartialWrite(const IPAddress& loopback) {
 #define MAYBE_TestWritableAfterPartialWriteIPv4 TestWritableAfterPartialWriteIPv4
 #endif
 TEST_F(PhysicalSocketTest, MAYBE_TestWritableAfterPartialWriteIPv4) {
+  MAYBE_SKIP_IPV4;
   WritableAfterPartialWrite(kIPv4Loopback);
 }
 
@@ -303,6 +314,7 @@ TEST_F(PhysicalSocketTest, TestConnectFailIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestConnectWithDnsLookupFailIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestConnectWithDnsLookupFailIPv4();
 }
 
@@ -312,6 +324,7 @@ TEST_F(PhysicalSocketTest, TestConnectWithDnsLookupFailIPv6) {
 
 
 TEST_F(PhysicalSocketTest, TestConnectWithClosedSocketIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestConnectWithClosedSocketIPv4();
 }
 
@@ -320,6 +333,7 @@ TEST_F(PhysicalSocketTest, TestConnectWithClosedSocketIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestConnectWhileNotClosedIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestConnectWhileNotClosedIPv4();
 }
 
@@ -328,6 +342,7 @@ TEST_F(PhysicalSocketTest, TestConnectWhileNotClosedIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestServerCloseDuringConnectIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestServerCloseDuringConnectIPv4();
 }
 
@@ -336,6 +351,7 @@ TEST_F(PhysicalSocketTest, TestServerCloseDuringConnectIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestClientCloseDuringConnectIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestClientCloseDuringConnectIPv4();
 }
 
@@ -344,6 +360,7 @@ TEST_F(PhysicalSocketTest, TestClientCloseDuringConnectIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestServerCloseIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestServerCloseIPv4();
 }
 
@@ -352,6 +369,7 @@ TEST_F(PhysicalSocketTest, TestServerCloseIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestCloseInClosedCallbackIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestCloseInClosedCallbackIPv4();
 }
 
@@ -360,6 +378,7 @@ TEST_F(PhysicalSocketTest, TestCloseInClosedCallbackIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestSocketServerWaitIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestSocketServerWaitIPv4();
 }
 
@@ -368,6 +387,7 @@ TEST_F(PhysicalSocketTest, TestSocketServerWaitIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestTcpIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestTcpIPv4();
 }
 
@@ -376,6 +396,7 @@ TEST_F(PhysicalSocketTest, TestTcpIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestUdpIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestUdpIPv4();
 }
 
@@ -399,6 +420,7 @@ TEST_F(PhysicalSocketTest, TestUdpIPv6) {
 #define MAYBE_TestUdpReadyToSendIPv4 TestUdpReadyToSendIPv4
 #endif
 TEST_F(PhysicalSocketTest, MAYBE_TestUdpReadyToSendIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestUdpReadyToSendIPv4();
 }
 
@@ -413,6 +435,7 @@ TEST_F(PhysicalSocketTest, MAYBE_TestUdpReadyToSendIPv6) {
 }
 
 TEST_F(PhysicalSocketTest, TestGetSetOptionsIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestGetSetOptionsIPv4();
 }
 
@@ -425,6 +448,7 @@ TEST_F(PhysicalSocketTest, TestGetSetOptionsIPv6) {
 // We don't get recv timestamps on Mac.
 #if !defined(WEBRTC_MAC)
 TEST_F(PhysicalSocketTest, TestSocketRecvTimestampIPv4) {
+  MAYBE_SKIP_IPV4;
   SocketTest::TestSocketRecvTimestampIPv4();
 }
 
@@ -437,6 +461,7 @@ TEST_F(PhysicalSocketTest, TestSocketRecvTimestampIPv6) {
 // (not loopback), Bind will return an error.
 TEST_F(PhysicalSocketTest,
        BindFailsIfNetworkBinderFailsForNonLoopbackInterface) {
+  MAYBE_SKIP_IPV4;
   FakeNetworkBinder fake_network_binder;
   server_->set_network_binder(&fake_network_binder);
   std::unique_ptr<AsyncSocket> socket(
@@ -449,6 +474,7 @@ TEST_F(PhysicalSocketTest,
 // Network binder shouldn't be used if the socket is bound to the "any" IP.
 TEST_F(PhysicalSocketTest,
        NetworkBinderIsNotUsedForAnyIp) {
+  MAYBE_SKIP_IPV4;
   FakeNetworkBinder fake_network_binder;
   server_->set_network_binder(&fake_network_binder);
   std::unique_ptr<AsyncSocket> socket(
@@ -462,6 +488,7 @@ TEST_F(PhysicalSocketTest,
 // tolerated.
 TEST_F(PhysicalSocketTest,
        BindSucceedsIfNetworkBinderFailsForLoopbackInterface) {
+  MAYBE_SKIP_IPV4;
   FakeNetworkBinder fake_network_binder;
   server_->set_network_binder(&fake_network_binder);
   std::unique_ptr<AsyncSocket> socket(

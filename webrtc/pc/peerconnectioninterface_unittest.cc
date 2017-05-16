@@ -22,10 +22,12 @@
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/base/gunit.h"
+#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/thread.h"
+#include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/media/sctp/sctptransportinternal.h"
 #include "webrtc/p2p/base/fakeportallocator.h"
@@ -659,7 +661,10 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
 
 class PeerConnectionInterfaceTest : public testing::Test {
  protected:
-  PeerConnectionInterfaceTest() {
+  PeerConnectionInterfaceTest()
+      : pss_(new rtc::PhysicalSocketServer),
+        vss_(new rtc::VirtualSocketServer(pss_.get())),
+        main_(vss_.get()) {
 #ifdef WEBRTC_ANDROID
     webrtc::InitializeAndroidObjects();
 #endif
@@ -1123,6 +1128,9 @@ class PeerConnectionInterfaceTest : public testing::Test {
     return audio_desc->streams()[0].cname;
   }
 
+  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
+  std::unique_ptr<rtc::VirtualSocketServer> vss_;
+  rtc::AutoSocketServerThread main_;
   cricket::FakePortAllocator* port_allocator_ = nullptr;
   FakeRTCCertificateGenerator* fake_certificate_generator_ = nullptr;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory_;

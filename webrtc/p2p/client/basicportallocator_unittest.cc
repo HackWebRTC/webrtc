@@ -11,13 +11,6 @@
 #include <algorithm>
 #include <memory>
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
-#include "webrtc/p2p/base/p2pconstants.h"
-#include "webrtc/p2p/base/p2ptransportchannel.h"
-#include "webrtc/p2p/base/testrelayserver.h"
-#include "webrtc/p2p/base/teststunserver.h"
-#include "webrtc/p2p/base/testturnserver.h"
-#include "webrtc/p2p/client/basicportallocator.h"
 #include "webrtc/base/fakeclock.h"
 #include "webrtc/base/fakenetwork.h"
 #include "webrtc/base/firewallsocketserver.h"
@@ -27,16 +20,30 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/natsocketfactory.h"
+#include "webrtc/base/nethelpers.h"
 #include "webrtc/base/network.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
+#include "webrtc/p2p/base/p2pconstants.h"
+#include "webrtc/p2p/base/p2ptransportchannel.h"
+#include "webrtc/p2p/base/testrelayserver.h"
+#include "webrtc/p2p/base/teststunserver.h"
+#include "webrtc/p2p/base/testturnserver.h"
+#include "webrtc/p2p/client/basicportallocator.h"
 
 using rtc::IPAddress;
 using rtc::SocketAddress;
 using rtc::Thread;
+
+#define MAYBE_SKIP_IPV4                    \
+  if (!rtc::HasIPv4Enabled()) {            \
+    LOG(LS_INFO) << "No IPv4... skipping"; \
+    return;                                \
+  }
 
 static const SocketAddress kAnyAddr("0.0.0.0", 0);
 static const SocketAddress kClientAddr("11.11.11.11", 0);
@@ -1523,6 +1530,9 @@ TEST_F(BasicPortAllocatorTest,
 // using the fake clock.
 TEST_F(BasicPortAllocatorTestWithRealClock,
        TestSharedSocketWithServerAddressResolve) {
+  // This test relies on a real query for "localhost", so it won't work on an
+  // IPv6-only machine.
+  MAYBE_SKIP_IPV4;
   turn_server_.AddInternalSocket(rtc::SocketAddress("127.0.0.1", 3478),
                                  PROTO_UDP);
   AddInterface(kClientAddr);
