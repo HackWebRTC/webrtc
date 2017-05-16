@@ -220,11 +220,9 @@ bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandSubModulesActive()
     const {
 #if WEBRTC_INTELLIGIBILITY_ENHANCER
   return CaptureMultiBandProcessingActive() ||
-         intelligibility_enhancer_enabled_ ||
-         voice_activity_detector_enabled_ || residual_echo_detector_enabled_;
+         intelligibility_enhancer_enabled_ || voice_activity_detector_enabled_;
 #else
-  return CaptureMultiBandProcessingActive() ||
-         voice_activity_detector_enabled_ || residual_echo_detector_enabled_;
+  return CaptureMultiBandProcessingActive() || voice_activity_detector_enabled_;
 #endif
 }
 
@@ -240,7 +238,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandSubModulesActive()
     const {
   return RenderMultiBandProcessingActive() || echo_canceller_enabled_ ||
          mobile_echo_controller_enabled_ || adaptive_gain_controller_enabled_ ||
-         residual_echo_detector_enabled_ || echo_canceller3_enabled_;
+         echo_canceller3_enabled_;
 }
 
 bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandProcessingActive()
