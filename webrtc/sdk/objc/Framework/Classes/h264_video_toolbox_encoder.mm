@@ -9,7 +9,7 @@
  *
  */
 
-#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/encoder.h"
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_encoder.h"
 
 #include <memory>
 #include <string>
@@ -17,14 +17,14 @@
 
 #if defined(WEBRTC_IOS)
 #import "WebRTC/UIDevice+RTCDevice.h"
-#include "Common/RTCUIApplication.h"
+#include "RTCUIApplication.h"
 #endif
 #include "libyuv/convert_from.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
-#include "webrtc/sdk/objc/Framework/Classes/Video/corevideo_frame_buffer.h"
-#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
+#include "webrtc/sdk/objc/Framework/Classes/corevideo_frame_buffer.h"
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 namespace internal {

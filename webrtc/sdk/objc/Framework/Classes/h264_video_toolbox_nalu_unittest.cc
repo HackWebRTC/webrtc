@@ -12,7 +12,7 @@
 #include <memory>
 
 #include "webrtc/base/arraysize.h"
-#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
+#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {

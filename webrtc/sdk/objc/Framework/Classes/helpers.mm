@@ -9,6 +9,7 @@
  */
 
 
+#import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 #import <sys/sysctl.h>
 #if defined(WEBRTC_IOS)
@@ -19,7 +20,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/sdk/objc/Framework/Classes/Common/helpers.h"
+#include "webrtc/sdk/objc/Framework/Classes/helpers.h"
 
 namespace webrtc {
 namespace ios {
@@ -64,6 +65,11 @@ std::string GetCurrentThreadDescription() {
 }
 
 #if defined(WEBRTC_IOS)
+std::string GetAudioSessionCategory() {
+  NSString* category = [[AVAudioSession sharedInstance] category];
+  return StdStringFromNSString(category);
+}
+
 std::string GetSystemName() {
   NSString* osName = [[UIDevice currentDevice] systemName];
   return StdStringFromNSString(osName);
