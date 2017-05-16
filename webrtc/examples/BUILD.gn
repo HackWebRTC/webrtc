@@ -163,7 +163,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     public_configs = [ ":apprtc_common_config" ]
 
     deps = [
-      "//webrtc/sdk:rtc_sdk_common_objc",
+      "//webrtc/sdk:objc_common",
       "//webrtc/system_wrappers:field_trial_default",
       "//webrtc/system_wrappers:metrics_default",
     ]
@@ -232,7 +232,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       ":socketrocket",
     ]
     public_deps = [
-      "//webrtc/sdk:rtc_sdk_peerconnection_objc",
+      "//webrtc/sdk:objc_peerconnection",
     ]
     libs = [ "QuartzCore.framework" ]
   }
@@ -290,7 +290,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
     bundle_data("AppRTCMobile_ios_frameworks") {
       public_deps = [
-        "//webrtc/sdk:rtc_sdk_framework_objc+link",
+        "//webrtc/sdk:objc_framework+link",
       ]
       sources = [
         "$root_out_dir/WebRTC.framework",

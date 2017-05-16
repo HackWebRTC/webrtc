@@ -11,7 +11,7 @@
 #import "RTCVideoSource+Private.h"
 
 #include "webrtc/base/checks.h"
-#include "webrtc/sdk/objc/Framework/Classes/objcvideotracksource.h"
+#include "webrtc/sdk/objc/Framework/Classes/Video/objcvideotracksource.h"
 
 // TODO(magjed): Refactor this class and target ObjcVideoTrackSource only once
 // RTCAVFoundationVideoSource is gone. See http://crbug/webrtc/7177 for more
