@@ -331,4 +331,19 @@ TEST_F(RtpStreamReceiverTest, PaddingInMediaStream) {
   rtp_stream_receiver_->OnReceivedPayloadData(nullptr, 0, &header);
 }
 
+TEST_F(RtpStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
+  WebRtcRTPHeader rtp_header;
+  const std::vector<uint8_t> data({1, 2, 3, 4});
+  memset(&rtp_header, 0, sizeof(rtp_header));
+  rtp_header.header.sequenceNumber = 1;
+  rtp_header.header.markerBit = 1;
+  rtp_header.type.Video.is_first_packet_in_frame = true;
+  rtp_header.frameType = kVideoFrameDelta;
+  rtp_header.type.Video.codec = kRtpVideoGeneric;
+
+  EXPECT_CALL(mock_key_frame_request_sender_, RequestKeyFrame());
+  rtp_stream_receiver_->OnReceivedPayloadData(data.data(), data.size(),
+                                              &rtp_header);
+}
+
 }  // namespace webrtc

@@ -192,6 +192,8 @@ class RtpStreamReceiver : public RtpData,
   // Maps a payload type to a map of out-of-band supplied codec parameters.
   std::map<uint8_t, std::map<std::string, std::string>> pt_codec_params_;
   int16_t last_payload_type_ = -1;
+
+  bool has_received_frame_;
 };
 
 }  // namespace webrtc

@@ -111,7 +111,8 @@ RtpStreamReceiver::RtpStreamReceiver(
                                     packet_router)),
       complete_frame_callback_(complete_frame_callback),
       keyframe_request_sender_(keyframe_request_sender),
-      timing_(timing) {
+      timing_(timing),
+      has_received_frame_(false) {
   packet_router_->AddReceiveRtpModule(rtp_rtcp_.get());
   rtp_receive_statistics_->RegisterRtpStatisticsCallback(receive_stats_proxy);
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(receive_stats_proxy);
@@ -391,6 +392,13 @@ int32_t RtpStreamReceiver::ResendPackets(const uint16_t* sequence_numbers,
 
 void RtpStreamReceiver::OnReceivedFrame(
     std::unique_ptr<video_coding::RtpFrameObject> frame) {
+
+  if (!has_received_frame_) {
+    has_received_frame_ = true;
+    if (frame->FrameType() != kVideoFrameKey)
+      keyframe_request_sender_->RequestKeyFrame();
+  }
+
   if (!frame->delayed_by_retransmission())
     timing_->IncomingTimestamp(frame->timestamp, clock_->TimeInMilliseconds());
   reference_finder_->ManageFrame(std::move(frame));
