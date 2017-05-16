@@ -728,7 +728,10 @@ size_t AudioProcessingImpl::num_input_channels() const {
 
 size_t AudioProcessingImpl::num_proc_channels() const {
   // Used as callback from submodules, hence locking is not allowed.
-  return capture_nonlocked_.beamformer_enabled ? 1 : num_output_channels();
+  return (capture_nonlocked_.beamformer_enabled ||
+          capture_nonlocked_.echo_canceller3_enabled)
+             ? 1
+             : num_output_channels();
 }
 
 size_t AudioProcessingImpl::num_output_channels() const {
