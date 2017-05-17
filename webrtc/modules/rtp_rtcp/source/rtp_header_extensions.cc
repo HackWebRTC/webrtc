@@ -246,7 +246,6 @@ bool VideoContentTypeExtension::Write(uint8_t* data,
 
 // RtpStreamId.
 constexpr RTPExtensionType RtpStreamId::kId;
-constexpr uint8_t RtpStreamId::kValueSizeBytes;
 constexpr const char* RtpStreamId::kUri;
 
 bool RtpStreamId::Parse(rtc::ArrayView<const uint8_t> data, StreamId* rsid) {
@@ -284,7 +283,6 @@ bool RtpStreamId::Write(uint8_t* data, const std::string& rsid) {
 
 // RepairedRtpStreamId.
 constexpr RTPExtensionType RepairedRtpStreamId::kId;
-constexpr uint8_t RepairedRtpStreamId::kValueSizeBytes;
 constexpr const char* RepairedRtpStreamId::kUri;
 
 // RtpStreamId and RepairedRtpStreamId use the same format to store rsid.

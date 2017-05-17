@@ -85,11 +85,15 @@ TEST(RtpHeaderExtensionTest, NonUniqueId) {
 
 TEST(RtpHeaderExtensionTest, GetTotalLength) {
   RtpHeaderExtensionMap map;
-  EXPECT_EQ(0u, map.GetTotalLengthInBytes());
+  constexpr RtpExtensionSize kExtensionSizes[] = {
+    {TransmissionOffset::kId, TransmissionOffset::kValueSizeBytes}
+  };
+  EXPECT_EQ(0u, map.GetTotalLengthInBytes(kExtensionSizes));
   EXPECT_TRUE(map.Register<TransmissionOffset>(3));
   static constexpr size_t kRtpOneByteHeaderLength = 4;
-  EXPECT_EQ(kRtpOneByteHeaderLength + (TransmissionOffset::kValueSizeBytes + 1),
-            map.GetTotalLengthInBytes());
+  EXPECT_EQ(
+      kRtpOneByteHeaderLength + (TransmissionOffset::kValueSizeBytes + 1),
+      map.GetTotalLengthInBytes(kExtensionSizes));
 }
 
 TEST(RtpHeaderExtensionTest, GetType) {

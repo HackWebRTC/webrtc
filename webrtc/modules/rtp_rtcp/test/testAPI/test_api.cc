@@ -136,7 +136,6 @@ TEST_F(RtpRtcpAPITest, Basic) {
 TEST_F(RtpRtcpAPITest, PacketSize) {
   module_->SetMaxRtpPacketSize(1234);
   EXPECT_EQ(1234u, module_->MaxRtpPacketSize());
-  EXPECT_EQ(1234u - 12u /* Minimum RTP header */, module_->MaxPayloadSize());
 }
 
 TEST_F(RtpRtcpAPITest, SSRC) {

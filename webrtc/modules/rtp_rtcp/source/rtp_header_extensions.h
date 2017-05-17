@@ -129,9 +129,6 @@ class VideoContentTypeExtension {
 class RtpStreamId {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionRtpStreamId;
-  // TODO(danilchap): Implement write support of dynamic size extension that
-  // allows to remove the ValueSize constant.
-  static constexpr uint8_t kValueSizeBytes = 1;
   static constexpr const char* kUri =
       "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
 
@@ -147,9 +144,6 @@ class RtpStreamId {
 class RepairedRtpStreamId {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionRepairedRtpStreamId;
-  // TODO(danilchap): Implement write support of dynamic size extension that
-  // allows to remove the ValueSize constant.
-  static constexpr uint8_t kValueSizeBytes = 1;
   static constexpr const char* kUri =
       "urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id";
 

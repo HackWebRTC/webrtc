@@ -209,8 +209,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   void SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set) override;
 
-  size_t MaxPayloadSize() const override;
-
   size_t MaxRtpPacketSize() const override;
 
   void SetMaxRtpPacketSize(size_t max_packet_size) override;

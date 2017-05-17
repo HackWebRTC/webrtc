@@ -417,10 +417,6 @@ size_t ModuleRtpRtcpImpl::TimeToSendPadding(
   return rtp_sender_->TimeToSendPadding(bytes, pacing_info);
 }
 
-size_t ModuleRtpRtcpImpl::MaxPayloadSize() const {
-  return rtp_sender_->MaxPayloadSize();
-}
-
 size_t ModuleRtpRtcpImpl::MaxRtpPacketSize() const {
   return rtp_sender_->MaxRtpPacketSize();
 }

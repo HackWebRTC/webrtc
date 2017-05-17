@@ -21,6 +21,11 @@
 
 namespace webrtc {
 
+struct RtpExtensionSize {
+  RTPExtensionType type;
+  uint8_t value_size;
+};
+
 class RtpHeaderExtensionMap {
  public:
   static constexpr RTPExtensionType kInvalidType = kRtpExtensionNone;
@@ -31,8 +36,7 @@ class RtpHeaderExtensionMap {
 
   template <typename Extension>
   bool Register(uint8_t id) {
-    return Register(id, Extension::kId, Extension::kValueSizeBytes,
-                    Extension::kUri);
+    return Register(id, Extension::kId, Extension::kUri);
   }
   bool RegisterByType(uint8_t id, RTPExtensionType type);
   bool RegisterByUri(uint8_t id, const std::string& uri);
@@ -53,7 +57,8 @@ class RtpHeaderExtensionMap {
     return ids_[type];
   }
 
-  size_t GetTotalLengthInBytes() const;
+  size_t GetTotalLengthInBytes(
+      rtc::ArrayView<const RtpExtensionSize> extensions) const;
 
   // TODO(danilchap): Remove use of the functions below.
   int32_t Register(RTPExtensionType type, uint8_t id) {
@@ -64,12 +69,8 @@ class RtpHeaderExtensionMap {
  private:
   static constexpr uint8_t kMinId = 1;
   static constexpr uint8_t kMaxId = 14;
-  bool Register(uint8_t id,
-                RTPExtensionType type,
-                size_t value_size,
-                const char* uri);
+  bool Register(uint8_t id, RTPExtensionType type, const char* uri);
 
-  size_t total_values_size_bytes_ = 0;
   RTPExtensionType types_[kMaxId + 1];
   uint8_t ids_[kRtpExtensionNumberOfExtensions];
 };
@@ -77,4 +78,3 @@ class RtpHeaderExtensionMap {
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_
-

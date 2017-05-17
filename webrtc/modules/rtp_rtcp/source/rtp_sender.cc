@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/rate_limiter.h"
@@ -44,6 +45,19 @@ constexpr uint32_t kTimestampTicksPerMs = 90;
 constexpr int kBitrateStatisticsWindowMs = 1000;
 
 constexpr size_t kMinFlexfecPacketsToStoreForPacing = 50;
+
+template <typename Extension>
+constexpr RtpExtensionSize CreateExtensionSize() {
+  return {Extension::kId, Extension::kValueSizeBytes};
+}
+
+// Size info for header extensions that might be used in padding or FEC packets.
+constexpr RtpExtensionSize kExtensionSizes[] = {
+    CreateExtensionSize<AbsoluteSendTime>(),
+    CreateExtensionSize<TransmissionOffset>(),
+    CreateExtensionSize<TransportSequenceNumber>(),
+    CreateExtensionSize<PlayoutDelayLimits>(),
+};
 
 const char* FrameTypeToString(FrameType frame_type) {
   switch (frame_type) {
@@ -155,6 +169,10 @@ RTPSender::~RTPSender() {
     delete it->second;
     payload_type_map_.erase(it);
   }
+}
+
+rtc::ArrayView<const RtpExtensionSize> RTPSender::FecExtensionSizes() {
+  return rtc::MakeArrayView(kExtensionSizes, arraysize(kExtensionSizes));
 }
 
 uint16_t RTPSender::ActualSendBitrateKbit() const {
@@ -275,16 +293,6 @@ void RTPSender::SetMaxRtpPacketSize(size_t max_packet_size) {
       << "Invalid max payload length: " << max_packet_size;
   rtc::CritScope lock(&send_critsect_);
   max_packet_size_ = max_packet_size;
-}
-
-size_t RTPSender::MaxPayloadSize() const {
-  if (audio_configured_) {
-    return max_packet_size_ - RtpHeaderLength();
-  } else {
-    return max_packet_size_ - RtpHeaderLength()   // RTP overhead.
-           - video_->FecPacketOverhead()          // FEC/ULP/RED overhead.
-           - (RtxStatus() ? kRtxHeaderSize : 0);  // RTX overhead.
-  }
 }
 
 size_t RTPSender::MaxRtpPacketSize() const {
@@ -456,10 +464,12 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
 size_t RTPSender::SendPadData(size_t bytes,
                               const PacedPacketInfo& pacing_info) {
   size_t padding_bytes_in_packet;
+
   if (audio_configured_) {
     // Allow smaller padding packets for audio.
+    size_t max_payload_size = max_packet_size_ - RtpHeaderLength();
     padding_bytes_in_packet =
-        std::min(std::max(bytes, kMinAudioPaddingLength), MaxPayloadSize());
+        std::min(std::max(bytes, kMinAudioPaddingLength), max_payload_size);
     if (padding_bytes_in_packet > kMaxPaddingLength)
       padding_bytes_in_packet = kMaxPaddingLength;
   } else {
@@ -467,7 +477,11 @@ size_t RTPSender::SendPadData(size_t bytes,
     // RtpPacketSender, which will make sure we don't send too much padding even
     // if a single packet is larger than requested.
     // We do this to avoid frequently sending small packets on higher bitrates.
-    padding_bytes_in_packet = std::min(MaxPayloadSize(), kMaxPaddingLength);
+    size_t max_payload_size =
+        max_packet_size_ - RtpHeaderLength()   // RTP overhead.
+        - video_->FecPacketOverhead()          // FEC/ULP/RED overhead.
+        - (RtxStatus() ? kRtxHeaderSize : 0);  // RTX overhead.
+    padding_bytes_in_packet = std::min(max_payload_size, kMaxPaddingLength);
   }
   size_t bytes_sent = 0;
   while (bytes_sent < bytes) {
@@ -961,7 +975,8 @@ size_t RTPSender::RtpHeaderLength() const {
   rtc::CritScope lock(&send_critsect_);
   size_t rtp_header_length = kRtpHeaderLength;
   rtp_header_length += sizeof(uint32_t) * csrcs_.size();
-  rtp_header_length += rtp_header_extension_map_.GetTotalLengthInBytes();
+  rtp_header_length +=
+      rtp_header_extension_map_.GetTotalLengthInBytes(kExtensionSizes);
   return rtp_header_length;
 }
 

@@ -125,11 +125,6 @@ class RtpRtcp : public Module {
   // Sets the maximum size of an RTP packet, including RTP headers.
   virtual void SetMaxRtpPacketSize(size_t size) = 0;
 
-  // Returns max payload length.
-  // Does not account for RTP headers and FEC/ULP/RED overhead (when FEC is
-  // enabled).
-  virtual size_t MaxPayloadSize() const = 0;
-
   // Returns max RTP packet size. Takes into account RTP headers and
   // FEC/ULP/RED overhead (when FEC is enabled).
   virtual size_t MaxRtpPacketSize() const = 0;

@@ -29,6 +29,7 @@
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/packet_router.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_sender.h"
 #include "webrtc/modules/utility/include/process_thread.h"
 #include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
@@ -131,7 +132,7 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
   return std::unique_ptr<FlexfecSender>(new FlexfecSender(
       config.rtp.flexfec.payload_type, config.rtp.flexfec.ssrc,
       config.rtp.flexfec.protected_media_ssrcs[0], config.rtp.extensions,
-      Clock::GetRealTimeClock()));
+      RTPSender::FecExtensionSizes(), Clock::GetRealTimeClock()));
 }
 
 }  // namespace
