@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "webrtc/api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/stats/rtcstats_objects.h"

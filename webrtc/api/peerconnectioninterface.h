@@ -74,8 +74,6 @@
 
 #include "webrtc/api/audio_codecs/audio_decoder_factory.h"
 #include "webrtc/api/audio_codecs/audio_encoder_factory.h"
-// TODO(ossu): Remove this once downstream projects have been updated.
-#include "webrtc/api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "webrtc/api/datachannelinterface.h"
 #include "webrtc/api/dtmfsenderinterface.h"
 #include "webrtc/api/jsep.h"
