@@ -232,22 +232,6 @@ bool CreateDir(const std::string& directory_name) {
   return true;
 }
 
-bool RemoveDir(const std::string& directory_name) {
-#ifdef WIN32
-    return RemoveDirectoryA(directory_name.c_str()) != FALSE;
-#else
-    return rmdir(directory_name.c_str()) == 0;
-#endif
-}
-
-bool RemoveFile(const std::string& file_name) {
-#ifdef WIN32
-  return DeleteFileA(file_name.c_str()) != FALSE;
-#else
-  return unlink(file_name.c_str()) == 0;
-#endif
-}
-
 std::string ResourcePath(const std::string& name,
                          const std::string& extension) {
 #if defined(WEBRTC_IOS)

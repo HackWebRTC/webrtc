@@ -16,20 +16,8 @@
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/pathutils.h"
-#include "webrtc/test/testsupport/fileutils.h"
 
 namespace rtc {
-
-namespace {
-
-void CleanupLogDirectory(const FileRotatingStream& stream) {
-  for (size_t i = 0; i < stream.GetNumFiles(); ++i) {
-    // Ignore return value, not all files are expected to exist.
-    webrtc::test::RemoveFile(stream.GetFilePath(i));
-  }
-}
-
-}  // namespace
 
 #if defined (WEBRTC_ANDROID)
 // Fails on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=4364.
@@ -47,23 +35,23 @@ class MAYBE_FileRotatingStreamTest : public ::testing::Test {
             const std::string& file_prefix,
             size_t max_file_size,
             size_t num_log_files) {
-    dir_path_ = webrtc::test::OutputPath();
-
+    Pathname test_path;
+    ASSERT_TRUE(Filesystem::GetAppTempFolder(&test_path));
     // Append per-test output path in order to run within gtest parallel.
-    dir_path_.append(dir_name);
-    dir_path_.push_back(Pathname::DefaultFolderDelimiter());
-    ASSERT_TRUE(webrtc::test::CreateDir(dir_path_));
+    test_path.AppendFolder(dir_name);
+    ASSERT_TRUE(Filesystem::CreateFolder(test_path));
+    dir_path_ = test_path.pathname();
+    ASSERT_TRUE(dir_path_.size());
     stream_.reset(new FileRotatingStream(dir_path_, file_prefix, max_file_size,
                                          num_log_files));
   }
 
   void TearDown() override {
-    // On windows, open files can't be removed.
-    stream_->Close();
-    CleanupLogDirectory(*stream_);
-    EXPECT_TRUE(webrtc::test::RemoveDir(dir_path_));
-
     stream_.reset();
+    if (dir_path_.size() && Filesystem::IsFolder(dir_path_) &&
+        Filesystem::IsTemporaryPath(dir_path_)) {
+      Filesystem::DeleteFolderAndContents(dir_path_);
+    }
   }
 
   // Writes the data to the stream and flushes it.
@@ -216,23 +204,23 @@ TEST_F(MAYBE_FileRotatingStreamTest, GetFilePath) {
 class MAYBE_CallSessionFileRotatingStreamTest : public ::testing::Test {
  protected:
   void Init(const std::string& dir_name, size_t max_total_log_size) {
-    dir_path_ = webrtc::test::OutputPath();
-
+    Pathname test_path;
+    ASSERT_TRUE(Filesystem::GetAppTempFolder(&test_path));
     // Append per-test output path in order to run within gtest parallel.
-    dir_path_.append(dir_name);
-    dir_path_.push_back(Pathname::DefaultFolderDelimiter());
-    ASSERT_TRUE(webrtc::test::CreateDir(dir_path_));
+    test_path.AppendFolder(dir_name);
+    ASSERT_TRUE(Filesystem::CreateFolder(test_path));
+    dir_path_ = test_path.pathname();
+    ASSERT_TRUE(dir_path_.size());
     stream_.reset(
         new CallSessionFileRotatingStream(dir_path_, max_total_log_size));
   }
 
   virtual void TearDown() {
-    // On windows, open files can't be removed.
-    stream_->Close();
-    CleanupLogDirectory(*stream_);
-    EXPECT_TRUE(webrtc::test::RemoveDir(dir_path_));
-
     stream_.reset();
+    if (dir_path_.size() && Filesystem::IsFolder(dir_path_) &&
+        Filesystem::IsTemporaryPath(dir_path_)) {
+      Filesystem::DeleteFolderAndContents(dir_path_);
+    }
   }
 
   // Writes the data to the stream and flushes it.
