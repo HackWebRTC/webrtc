@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_COMMON_HELPERS_H_
-#define WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_COMMON_HELPERS_H_
+#ifndef WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_HELPERS_H_
+#define WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_HELPERS_H_
 
 #if defined(WEBRTC_IOS)
 
@@ -32,6 +32,8 @@ std::string GetThreadInfo();
 // Returns [NSThread currentThread] description as string.
 // Example: <NSThread: 0x170066d80>{number = 1, name = main}
 std::string GetCurrentThreadDescription();
+
+std::string GetAudioSessionCategory();
 
 // Returns the current name of the operating system.
 std::string GetSystemName();
@@ -73,4 +75,4 @@ bool GetLowPowerModeEnabled();
 
 #endif  // defined(WEBRTC_IOS)
 
-#endif  // WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_COMMON_HELPERS_H_
+#endif  // WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_HELPERS_H_
