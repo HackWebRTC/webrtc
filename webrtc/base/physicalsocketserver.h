@@ -171,11 +171,15 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
   void UpdateLastError();
   void MaybeRemapSendError();
 
+  uint8_t enabled_events() const { return enabled_events_; }
+  void SetEnabledEvents(uint8_t events);
+  void EnableEvents(uint8_t events);
+  void DisableEvents(uint8_t events);
+
   static int TranslateOption(Option opt, int* slevel, int* sopt);
 
   PhysicalSocketServer* ss_;
   SOCKET s_;
-  uint8_t enabled_events_;
   bool udp_;
   CriticalSection crit_;
   int error_ GUARDED_BY(crit_);
@@ -185,6 +189,9 @@ class PhysicalSocket : public AsyncSocket, public sigslot::has_slots<> {
 #if !defined(NDEBUG)
   std::string dbg_addr_;
 #endif
+
+ private:
+  uint8_t enabled_events_ = 0;
 };
 
 class SocketDispatcher : public Dispatcher, public PhysicalSocket {
