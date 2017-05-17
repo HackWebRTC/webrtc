@@ -15,7 +15,6 @@
 #include "webrtc/p2p/base/teststunserver.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/virtualsocketserver.h"
@@ -39,13 +38,10 @@ static const int kInfiniteLifetime = -1;
 static const int kHighCostPortKeepaliveLifetimeMs = 2 * 60 * 1000;
 
 // Tests connecting a StunPort to a fake STUN server (cricket::StunServer)
-// TODO: Use a VirtualSocketServer here. We have to use a
-// PhysicalSocketServer right now since DNS is not part of SocketServer yet.
 class StunPortTestBase : public testing::Test, public sigslot::has_slots<> {
  public:
   StunPortTestBase()
-      : pss_(new rtc::PhysicalSocketServer),
-        ss_(new rtc::VirtualSocketServer(pss_.get())),
+      : ss_(new rtc::VirtualSocketServer()),
         thread_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
@@ -156,7 +152,6 @@ class StunPortTestBase : public testing::Test, public sigslot::has_slots<> {
   }
 
  private:
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
   rtc::AutoSocketServerThread thread_;
   rtc::Network network_;
@@ -204,8 +199,7 @@ TEST_F(StunPortTest, TestPrepareAddress) {
   std::string expected_server_url = "stun:127.0.0.1:5000";
   EXPECT_EQ(port()->Candidates()[0].url(), expected_server_url);
 
-  // TODO: Add IPv6 tests here, once either physicalsocketserver supports
-  // IPv6, or this test is changed to use VirtualSocketServer.
+  // TODO(deadbeef): Add IPv6 tests here.
 }
 
 // Test that we fail properly if we can't get an address.

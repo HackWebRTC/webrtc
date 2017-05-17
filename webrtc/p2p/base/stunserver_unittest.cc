@@ -13,7 +13,6 @@
 
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/base/testclient.h"
 #include "webrtc/base/thread.h"
@@ -27,11 +26,7 @@ static const rtc::SocketAddress client_addr("1.2.3.4", 1234);
 
 class StunServerTest : public testing::Test {
  public:
-  StunServerTest()
-    : pss_(new rtc::PhysicalSocketServer),
-      ss_(new rtc::VirtualSocketServer(pss_.get())),
-      network_(ss_.get()) {
-  }
+  StunServerTest() : ss_(new rtc::VirtualSocketServer()), network_(ss_.get()) {}
   virtual void SetUp() {
     server_.reset(new StunServer(
         rtc::AsyncUDPSocket::Create(ss_.get(), server_addr)));
@@ -63,7 +58,6 @@ class StunServerTest : public testing::Test {
     return msg;
   }
  private:
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
   rtc::Thread network_;
   std::unique_ptr<StunServer> server_;

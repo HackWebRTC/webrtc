@@ -22,7 +22,6 @@
 #include "webrtc/base/natsocketfactory.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/network.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/thread.h"
@@ -117,8 +116,7 @@ class BasicPortAllocatorTestBase : public testing::Test,
                                    public sigslot::has_slots<> {
  public:
   BasicPortAllocatorTestBase()
-      : pss_(new rtc::PhysicalSocketServer),
-        vss_(new rtc::VirtualSocketServer(pss_.get())),
+      : vss_(new rtc::VirtualSocketServer()),
         fss_(new rtc::FirewallSocketServer(vss_.get())),
         thread_(fss_.get()),
         // Note that the NAT is not used by default. ResetWithStunServerAndNat
@@ -465,7 +463,6 @@ class BasicPortAllocatorTestBase : public testing::Test,
     allocator().set_step_delay(kMinimumStepDelay);
   }
 
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
   std::unique_ptr<rtc::FirewallSocketServer> fss_;
   rtc::AutoSocketServerThread thread_;

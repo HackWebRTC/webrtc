@@ -16,7 +16,6 @@
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
@@ -41,8 +40,7 @@ const rtc::SocketAddress kStunMappedAddr("77.77.77.77", 0);
 class StunProberTest : public testing::Test {
  public:
   StunProberTest()
-      : pss_(new rtc::PhysicalSocketServer),
-        ss_(new rtc::VirtualSocketServer(pss_.get())),
+      : ss_(new rtc::VirtualSocketServer()),
         main_(ss_.get()),
         result_(StunProber::SUCCESS),
         stun_server_1_(cricket::TestStunServer::Create(rtc::Thread::Current(),
@@ -119,7 +117,6 @@ class StunProberTest : public testing::Test {
     stopped_ = true;
   }
 
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
   rtc::AutoSocketServerThread main_;
   std::unique_ptr<StunProber> prober;

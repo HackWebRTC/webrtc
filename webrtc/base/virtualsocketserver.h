@@ -16,6 +16,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/constructormagic.h"
+#include "webrtc/base/event.h"
 #include "webrtc/base/messagequeue.h"
 #include "webrtc/base/socketserver.h"
 
@@ -31,12 +32,8 @@ class SocketAddressPair;
 // they are bound to addresses from incompatible families.
 class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
  public:
-  // TODO: Add "owned" parameter.
-  // If "owned" is set, the supplied socketserver will be deleted later.
-  explicit VirtualSocketServer(SocketServer* ss);
+  VirtualSocketServer();
   ~VirtualSocketServer() override;
-
-  SocketServer* socketserver() { return server_; }
 
   // The default route indicates which local address to use when a socket is
   // bound to the 'any' address, e.g. 0.0.0.0.
@@ -245,8 +242,8 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   typedef std::map<SocketAddress, VirtualSocket*> AddressMap;
   typedef std::map<SocketAddressPair, VirtualSocket*> ConnectionMap;
 
-  SocketServer* server_;
-  bool server_owned_;
+  // Used to implement Wait/WakeUp.
+  Event wakeup_;
   MessageQueue* msg_queue_;
   bool stop_on_idle_;
   in_addr next_ipv4_;

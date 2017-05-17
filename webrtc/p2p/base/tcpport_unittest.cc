@@ -11,7 +11,6 @@
 #include <memory>
 
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
@@ -31,8 +30,7 @@ static const SocketAddress kRemoteAddr("22.22.22.22", 2);
 class TCPPortTest : public testing::Test, public sigslot::has_slots<> {
  public:
   TCPPortTest()
-      : pss_(new rtc::PhysicalSocketServer),
-        ss_(new rtc::VirtualSocketServer(pss_.get())),
+      : ss_(new rtc::VirtualSocketServer()),
         main_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
@@ -63,7 +61,6 @@ class TCPPortTest : public testing::Test, public sigslot::has_slots<> {
   }
 
  protected:
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
   rtc::AutoSocketServerThread main_;
   rtc::Network network_;

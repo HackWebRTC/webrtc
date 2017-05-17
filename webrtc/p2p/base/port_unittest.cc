@@ -18,7 +18,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/natsocketfactory.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
@@ -381,8 +380,7 @@ class TestChannel : public sigslot::has_slots<> {
 class PortTest : public testing::Test, public sigslot::has_slots<> {
  public:
   PortTest()
-      : pss_(new rtc::PhysicalSocketServer),
-        ss_(new rtc::VirtualSocketServer(pss_.get())),
+      : ss_(new rtc::VirtualSocketServer()),
         main_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
@@ -801,7 +799,6 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   rtc::VirtualSocketServer* vss() { return ss_.get(); }
 
  private:
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
   rtc::AutoSocketServerThread main_;
   rtc::Network network_;

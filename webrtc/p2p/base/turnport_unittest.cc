@@ -29,7 +29,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/socketadapters.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
@@ -107,8 +106,7 @@ namespace cricket {
 
 class TurnPortTestVirtualSocketServer : public rtc::VirtualSocketServer {
  public:
-  explicit TurnPortTestVirtualSocketServer(SocketServer* ss)
-      : VirtualSocketServer(ss) {
+  TurnPortTestVirtualSocketServer() {
     // This configures the virtual socket server to always add a simulated
     // delay of exactly half of kSimulatedRtt.
     set_delay_mean(kSimulatedRtt / 2);
@@ -143,8 +141,7 @@ class TurnPortTest : public testing::Test,
                      public rtc::MessageHandler {
  public:
   TurnPortTest()
-      : pss_(new rtc::PhysicalSocketServer),
-        ss_(new TurnPortTestVirtualSocketServer(pss_.get())),
+      : ss_(new TurnPortTestVirtualSocketServer()),
         main_(ss_.get()),
         network_("unittest", "unittest", rtc::IPAddress(INADDR_ANY), 32),
         socket_factory_(rtc::Thread::Current()),
@@ -619,7 +616,6 @@ class TurnPortTest : public testing::Test,
 
  protected:
   rtc::ScopedFakeClock fake_clock_;
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<TurnPortTestVirtualSocketServer> ss_;
   rtc::AutoSocketServerThread main_;
   rtc::Network network_;

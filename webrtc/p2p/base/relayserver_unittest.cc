@@ -14,7 +14,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/base/socketaddress.h"
 #include "webrtc/base/ssladapter.h"
@@ -40,8 +39,7 @@ static const char* msg2 = "Lobster Thermidor a Crevette with a mornay sauce...";
 class RelayServerTest : public testing::Test {
  public:
   RelayServerTest()
-      : pss_(new rtc::PhysicalSocketServer),
-        ss_(new rtc::VirtualSocketServer(pss_.get())),
+      : ss_(new rtc::VirtualSocketServer()),
         thread_(ss_.get()),
         username_(rtc::CreateRandomString(12)),
         password_(rtc::CreateRandomString(12)) {}
@@ -166,7 +164,6 @@ class RelayServerTest : public testing::Test {
     msg->AddAttribute(std::move(attr));
   }
 
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
   rtc::AutoSocketServerThread thread_;
   std::unique_ptr<RelayServer> server_;

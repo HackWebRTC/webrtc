@@ -146,8 +146,7 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
 class VirtualSocketServerTest : public testing::Test {
  public:
   VirtualSocketServerTest()
-      : ss_(nullptr),
-        thread_(&ss_),
+      : thread_(&ss_),
         kIPv4AnyAddress(IPAddress(INADDR_ANY), 0),
         kIPv6AnyAddress(IPAddress(in6addr_any), 0) {}
 

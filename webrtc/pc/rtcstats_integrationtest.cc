@@ -18,7 +18,6 @@
 #include "webrtc/api/stats/rtcstatsreport.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/refcountedobject.h"
 #include "webrtc/base/scoped_ref_ptr.h"
 #include "webrtc/base/virtualsocketserver.h"
@@ -34,10 +33,7 @@ const int64_t kGetStatsTimeoutMs = 10000;
 class RTCStatsIntegrationTest : public testing::Test {
  public:
   RTCStatsIntegrationTest()
-      : physical_socket_server_(),
-        virtual_socket_server_(&physical_socket_server_),
-        network_thread_(&virtual_socket_server_),
-        worker_thread_() {
+      : network_thread_(&virtual_socket_server_), worker_thread_() {
     RTC_CHECK(network_thread_.Start());
     RTC_CHECK(worker_thread_.Start());
 
@@ -96,10 +92,8 @@ class RTCStatsIntegrationTest : public testing::Test {
     return stats_obtainer->report();
   }
 
-  // These objects use each other and must be constructed/destroyed in this
-  // order. Relationship:
-  // |physical_socket_server_| <- |virtual_socket_server_| <- |network_thread_|
-  rtc::PhysicalSocketServer physical_socket_server_;
+  // |network_thread_| uses |virtual_socket_server_| so they must be
+  // constructed/destructed in the correct order.
   rtc::VirtualSocketServer virtual_socket_server_;
   rtc::Thread network_thread_;
   rtc::Thread worker_thread_;

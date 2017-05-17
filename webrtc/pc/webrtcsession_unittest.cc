@@ -21,7 +21,6 @@
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/network.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/sslstreamadapter.h"
@@ -370,8 +369,7 @@ class WebRtcSessionTest
   // TODO Investigate why ChannelManager crashes, if it's created
   // after stun_server.
   WebRtcSessionTest()
-      : pss_(new rtc::PhysicalSocketServer),
-        vss_(new rtc::VirtualSocketServer(pss_.get())),
+      : vss_(new rtc::VirtualSocketServer()),
         fss_(new rtc::FirewallSocketServer(vss_.get())),
         thread_(fss_.get()),
         media_engine_(new cricket::FakeMediaEngine()),
@@ -1503,7 +1501,6 @@ class WebRtcSessionTest
   }
 
   webrtc::RtcEventLogNullImpl event_log_;
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
   std::unique_ptr<rtc::FirewallSocketServer> fss_;
   rtc::AutoSocketServerThread thread_;

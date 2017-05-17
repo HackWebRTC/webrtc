@@ -15,7 +15,6 @@
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/fakenetwork.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/virtualsocketserver.h"
 #include "webrtc/ortc/testrtpparameters.h"
 #include "webrtc/p2p/base/udptransport.h"
@@ -70,8 +69,7 @@ namespace webrtc {
 class OrtcFactoryIntegrationTest : public testing::Test {
  public:
   OrtcFactoryIntegrationTest()
-      : virtual_socket_server_(&physical_socket_server_),
-        network_thread_(&virtual_socket_server_),
+      : network_thread_(&virtual_socket_server_),
         fake_audio_capture_module1_(FakeAudioCaptureModule::Create()),
         fake_audio_capture_module2_(FakeAudioCaptureModule::Create()) {
     // Sockets are bound to the ANY address, so this is needed to tell the
@@ -330,7 +328,6 @@ class OrtcFactoryIntegrationTest : public testing::Test {
     }
   }
 
-  rtc::PhysicalSocketServer physical_socket_server_;
   rtc::VirtualSocketServer virtual_socket_server_;
   rtc::Thread network_thread_;
   rtc::FakeNetworkManager fake_network_manager_;

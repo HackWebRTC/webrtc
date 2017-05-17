@@ -515,9 +515,8 @@ void VirtualSocket::OnSocketServerReadyToSend() {
   }
 }
 
-VirtualSocketServer::VirtualSocketServer(SocketServer* ss)
-    : server_(ss),
-      server_owned_(false),
+VirtualSocketServer::VirtualSocketServer()
+    : wakeup_(/*manual_reset=*/false, /*initially_signaled=*/false),
       msg_queue_(nullptr),
       stop_on_idle_(false),
       next_ipv4_(kInitialNextIPv4),
@@ -533,19 +532,12 @@ VirtualSocketServer::VirtualSocketServer(SocketServer* ss)
       delay_stddev_(0),
       delay_samples_(NUM_SAMPLES),
       drop_prob_(0.0) {
-  if (!server_) {
-    server_ = new PhysicalSocketServer();
-    server_owned_ = true;
-  }
   UpdateDelayDistribution();
 }
 
 VirtualSocketServer::~VirtualSocketServer() {
   delete bindings_;
   delete connections_;
-  if (server_owned_) {
-    delete server_;
-  }
 }
 
 IPAddress VirtualSocketServer::GetNextIP(int family) {
@@ -621,11 +613,16 @@ bool VirtualSocketServer::Wait(int cmsWait, bool process_io) {
   if (stop_on_idle_ && Thread::Current()->empty()) {
     return false;
   }
-  return socketserver()->Wait(cmsWait, process_io);
+  // Note: we don't need to do anything with |process_io| since we don't have
+  // any real I/O. Received packets come in the form of queued messages, so
+  // MessageQueue will ensure WakeUp is called if another thread sends a
+  // packet.
+  wakeup_.Wait(cmsWait);
+  return true;
 }
 
 void VirtualSocketServer::WakeUp() {
-  socketserver()->WakeUp();
+  wakeup_.Set();
 }
 
 bool VirtualSocketServer::ProcessMessagesUntilIdle() {

@@ -22,7 +22,6 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/natserver.h"
 #include "webrtc/base/natsocketfactory.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/proxyserver.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/base/socketaddress.h"
@@ -182,8 +181,7 @@ class P2PTransportChannelTestBase : public testing::Test,
                                     public sigslot::has_slots<> {
  public:
   P2PTransportChannelTestBase()
-      : pss_(new rtc::PhysicalSocketServer),
-        vss_(new rtc::VirtualSocketServer(pss_.get())),
+      : vss_(new rtc::VirtualSocketServer()),
         nss_(new rtc::NATSocketServer(vss_.get())),
         ss_(new rtc::FirewallSocketServer(nss_.get())),
         main_(ss_.get()),
@@ -874,7 +872,6 @@ class P2PTransportChannelTestBase : public testing::Test,
   bool nominated() { return nominated_; }
 
  private:
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
   std::unique_ptr<rtc::NATSocketServer> nss_;
   std::unique_ptr<rtc::FirewallSocketServer> ss_;
@@ -2930,9 +2927,7 @@ class P2PTransportChannelPingTest : public testing::Test,
                                     public sigslot::has_slots<> {
  public:
   P2PTransportChannelPingTest()
-      : pss_(new rtc::PhysicalSocketServer),
-        vss_(new rtc::VirtualSocketServer(pss_.get())),
-        thread_(vss_.get()) {}
+      : vss_(new rtc::VirtualSocketServer()), thread_(vss_.get()) {}
 
  protected:
   void PrepareChannel(P2PTransportChannel* ch) {
@@ -3080,7 +3075,6 @@ class P2PTransportChannelPingTest : public testing::Test,
   }
 
  private:
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
   rtc::AutoSocketServerThread thread_;
   CandidatePairInterface* last_selected_candidate_pair_ = nullptr;

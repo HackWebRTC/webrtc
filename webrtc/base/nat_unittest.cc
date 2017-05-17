@@ -268,23 +268,17 @@ namespace {
 
 class TestVirtualSocketServer : public VirtualSocketServer {
  public:
-  explicit TestVirtualSocketServer(SocketServer* ss)
-      : VirtualSocketServer(ss),
-        ss_(ss) {}
   // Expose this publicly
   IPAddress GetNextIP(int af) { return VirtualSocketServer::GetNextIP(af); }
-
- private:
-  std::unique_ptr<SocketServer> ss_;
 };
 
 }  // namespace
 
 void TestVirtualInternal(int family) {
   std::unique_ptr<TestVirtualSocketServer> int_vss(
-      new TestVirtualSocketServer(new PhysicalSocketServer()));
+      new TestVirtualSocketServer());
   std::unique_ptr<TestVirtualSocketServer> ext_vss(
-      new TestVirtualSocketServer(new PhysicalSocketServer()));
+      new TestVirtualSocketServer());
 
   SocketAddress int_addr;
   SocketAddress ext_addrs[4];
@@ -316,14 +310,16 @@ class NatTcpTest : public testing::Test, public sigslot::has_slots<> {
       : int_addr_("192.168.0.1", 0),
         ext_addr_("10.0.0.1", 0),
         connected_(false),
-        int_pss_(new PhysicalSocketServer()),
-        ext_pss_(new PhysicalSocketServer()),
-        int_vss_(new TestVirtualSocketServer(int_pss_)),
-        ext_vss_(new TestVirtualSocketServer(ext_pss_)),
+        int_vss_(new TestVirtualSocketServer()),
+        ext_vss_(new TestVirtualSocketServer()),
         int_thread_(new Thread(int_vss_.get())),
         ext_thread_(new Thread(ext_vss_.get())),
-        nat_(new NATServer(NAT_OPEN_CONE, int_vss_.get(), int_addr_, int_addr_,
-                           ext_vss_.get(), ext_addr_)),
+        nat_(new NATServer(NAT_OPEN_CONE,
+                           int_vss_.get(),
+                           int_addr_,
+                           int_addr_,
+                           ext_vss_.get(),
+                           ext_addr_)),
         natsf_(new NATSocketFactory(int_vss_.get(),
                                     nat_->internal_udp_address(),
                                     nat_->internal_tcp_address())) {
@@ -350,8 +346,6 @@ class NatTcpTest : public testing::Test, public sigslot::has_slots<> {
   SocketAddress int_addr_;
   SocketAddress ext_addr_;
   bool connected_;
-  PhysicalSocketServer* int_pss_;
-  PhysicalSocketServer* ext_pss_;
   std::unique_ptr<TestVirtualSocketServer> int_vss_;
   std::unique_ptr<TestVirtualSocketServer> ext_vss_;
   std::unique_ptr<Thread> int_thread_;

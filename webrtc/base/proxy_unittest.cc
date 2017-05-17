@@ -31,7 +31,7 @@ static const SocketAddress kBogusProxyIntAddr("1.2.3.4", 999);
 // Sets up a virtual socket server and HTTPS/SOCKS5 proxy servers.
 class ProxyTest : public testing::Test {
  public:
-  ProxyTest() : ss_(new rtc::VirtualSocketServer(nullptr)), thread_(ss_.get()) {
+  ProxyTest() : ss_(new rtc::VirtualSocketServer()), thread_(ss_.get()) {
     socks_.reset(new rtc::SocksProxyServer(
         ss_.get(), kSocksProxyIntAddr, ss_.get(), kSocksProxyExtAddr));
     https_.reset(new rtc::HttpListenServer());

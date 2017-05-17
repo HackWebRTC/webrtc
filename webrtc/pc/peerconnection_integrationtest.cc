@@ -30,7 +30,6 @@
 #include "webrtc/base/fakenetwork.h"
 #include "webrtc/base/gunit.h"
 #include "webrtc/base/helpers.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/sslstreamadapter.h"
 #include "webrtc/base/thread.h"
@@ -937,8 +936,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 class PeerConnectionIntegrationTest : public testing::Test {
  public:
   PeerConnectionIntegrationTest()
-      : pss_(new rtc::PhysicalSocketServer),
-        ss_(new rtc::VirtualSocketServer(pss_.get())),
+      : ss_(new rtc::VirtualSocketServer()),
         network_thread_(new rtc::Thread(ss_.get())),
         worker_thread_(rtc::Thread::Create()) {
     RTC_CHECK(network_thread_->Start());
@@ -1143,7 +1141,6 @@ class PeerConnectionIntegrationTest : public testing::Test {
 
  private:
   // |ss_| is used by |network_thread_| so it must be destroyed later.
-  std::unique_ptr<rtc::PhysicalSocketServer> pss_;
   std::unique_ptr<rtc::VirtualSocketServer> ss_;
   // |network_thread_| and |worker_thread_| are used by both
   // |caller_| and |callee_| so they must be destroyed

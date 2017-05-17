@@ -13,7 +13,6 @@
 #include "webrtc/p2p/base/asyncstuntcpsocket.h"
 #include "webrtc/base/asyncsocket.h"
 #include "webrtc/base/gunit.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/virtualsocketserver.h"
 
 namespace cricket {
@@ -69,8 +68,7 @@ class AsyncStunTCPSocketTest : public testing::Test,
                                public sigslot::has_slots<> {
  protected:
   AsyncStunTCPSocketTest()
-      : vss_(new rtc::VirtualSocketServer(NULL)),
-        thread_(vss_.get()) {}
+      : vss_(new rtc::VirtualSocketServer()), thread_(vss_.get()) {}
 
   virtual void SetUp() {
     CreateSockets();
