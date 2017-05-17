@@ -21,12 +21,13 @@ class FakeRtpTransportControllerSend
     : public RtpTransportControllerSendInterface {
  public:
   explicit FakeRtpTransportControllerSend(
+      PacketRouter* packet_router,
       SendSideCongestionController* send_side_cc)
-      : send_side_cc_(send_side_cc) {
+      : packet_router_(packet_router), send_side_cc_(send_side_cc) {
     RTC_DCHECK(send_side_cc);
   }
 
-  PacketRouter* packet_router() override { return &packet_router_; }
+  PacketRouter* packet_router() override { return packet_router_; }
 
   SendSideCongestionController* send_side_cc() override {
     return send_side_cc_;
@@ -39,7 +40,7 @@ class FakeRtpTransportControllerSend
   RtpPacketSender* packet_sender() override { return send_side_cc_->pacer(); }
 
  private:
-  PacketRouter packet_router_;
+  PacketRouter* packet_router_;
   SendSideCongestionController* send_side_cc_;
 };
 

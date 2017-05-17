@@ -309,27 +309,110 @@ TEST(CallTest, MultipleFlexfecReceiveStreamsProtectingSingleVideoStream) {
   }
 }
 
-// TODO(zstein): This is just a motivating example for
-// MockSendSideCongestionController. It should be deleted once we have more
-// meaningful tests.
-TEST(CallTest, MockSendSideCongestionControllerExample) {
-  RtcEventLogNullImpl event_log;
-  Call::Config config(&event_log);
+namespace {
+struct CallBitrateHelper {
+  CallBitrateHelper() : CallBitrateHelper(Call::Config(&event_log_)) {}
 
-  SimulatedClock clock(123456);
-  PacketRouter packet_router;
-  testing::NiceMock<test::MockSendSideCongestionController> mock_cc(
-      &clock, &event_log, &packet_router);
-  auto transport_send =
-      rtc::MakeUnique<FakeRtpTransportControllerSend>(&mock_cc);
-  std::unique_ptr<Call> call(Call::Create(config, std::move(transport_send)));
+  explicit CallBitrateHelper(const Call::Config& config)
+      : mock_cc_(Clock::GetRealTimeClock(), &event_log_, &packet_router_),
+        call_(Call::Create(
+            config,
+            rtc::MakeUnique<FakeRtpTransportControllerSend>(&packet_router_,
+                                                            &mock_cc_))) {}
+
+  webrtc::Call* operator->() { return call_.get(); }
+  testing::NiceMock<test::MockSendSideCongestionController>& mock_cc() {
+    return mock_cc_;
+  }
+
+ private:
+  webrtc::RtcEventLogNullImpl event_log_;
+  PacketRouter packet_router_;
+  testing::NiceMock<test::MockSendSideCongestionController> mock_cc_;
+  std::unique_ptr<Call> call_;
+};
+}  // namespace
+
+TEST(CallBitrateTest, SetBitrateConfigWithValidConfigCallsSetBweBitrates) {
+  CallBitrateHelper call;
 
   Call::Config::BitrateConfig bitrate_config;
   bitrate_config.min_bitrate_bps = 1;
   bitrate_config.start_bitrate_bps = 2;
   bitrate_config.max_bitrate_bps = 3;
 
-  EXPECT_CALL(mock_cc, SetBweBitrates(1, 2, 3));
+  EXPECT_CALL(call.mock_cc(), SetBweBitrates(1, 2, 3));
+  call->SetBitrateConfig(bitrate_config);
+}
+
+TEST(CallBitrateTest, SetBitrateConfigWithDifferentMinCallsSetBweBitrates) {
+  CallBitrateHelper call;
+
+  Call::Config::BitrateConfig bitrate_config;
+  bitrate_config.min_bitrate_bps = 10;
+  bitrate_config.start_bitrate_bps = 20;
+  bitrate_config.max_bitrate_bps = 30;
+  call->SetBitrateConfig(bitrate_config);
+
+  bitrate_config.min_bitrate_bps = 11;
+  EXPECT_CALL(call.mock_cc(), SetBweBitrates(11, 20, 30));
+  call->SetBitrateConfig(bitrate_config);
+}
+
+TEST(CallBitrateTest, SetBitrateConfigWithDifferentStartCallsSetBweBitrates) {
+  CallBitrateHelper call;
+
+  Call::Config::BitrateConfig bitrate_config;
+  bitrate_config.min_bitrate_bps = 10;
+  bitrate_config.start_bitrate_bps = 20;
+  bitrate_config.max_bitrate_bps = 30;
+  call->SetBitrateConfig(bitrate_config);
+
+  bitrate_config.start_bitrate_bps = 21;
+  EXPECT_CALL(call.mock_cc(), SetBweBitrates(10, 21, 30));
+  call->SetBitrateConfig(bitrate_config);
+}
+
+TEST(CallBitrateTest, SetBitrateConfigWithDifferentMaxCallsSetBweBitrates) {
+  CallBitrateHelper call;
+
+  Call::Config::BitrateConfig bitrate_config;
+  bitrate_config.min_bitrate_bps = 10;
+  bitrate_config.start_bitrate_bps = 20;
+  bitrate_config.max_bitrate_bps = 30;
+  call->SetBitrateConfig(bitrate_config);
+
+  bitrate_config.max_bitrate_bps = 31;
+  EXPECT_CALL(call.mock_cc(), SetBweBitrates(10, 20, 31));
+  call->SetBitrateConfig(bitrate_config);
+}
+
+TEST(CallBitrateTest, SetBitrateConfigWithSameConfigElidesSecondCall) {
+  CallBitrateHelper call;
+
+  Call::Config::BitrateConfig bitrate_config;
+  bitrate_config.min_bitrate_bps = 1;
+  bitrate_config.start_bitrate_bps = 2;
+  bitrate_config.max_bitrate_bps = 3;
+
+  EXPECT_CALL(call.mock_cc(), SetBweBitrates(1, 2, 3)).Times(1);
+  call->SetBitrateConfig(bitrate_config);
+  call->SetBitrateConfig(bitrate_config);
+}
+
+TEST(CallBitrateTest,
+     SetBitrateConfigWithSameMinMaxAndNegativeStartElidesSecondCall) {
+  CallBitrateHelper call;
+
+  Call::Config::BitrateConfig bitrate_config;
+  bitrate_config.min_bitrate_bps = 1;
+  bitrate_config.start_bitrate_bps = 2;
+  bitrate_config.max_bitrate_bps = 3;
+
+  EXPECT_CALL(call.mock_cc(), SetBweBitrates(1, 2, 3)).Times(1);
+  call->SetBitrateConfig(bitrate_config);
+
+  bitrate_config.start_bitrate_bps = -1;
   call->SetBitrateConfig(bitrate_config);
 }
 

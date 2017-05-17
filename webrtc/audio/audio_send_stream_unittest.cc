@@ -134,7 +134,7 @@ struct ConfigHelper {
             nullptr /* observer */,
             &event_log_,
             &packet_router_)),
-        fake_transport_(send_side_cc_.get()),
+        fake_transport_(&packet_router_, send_side_cc_.get()),
         bitrate_allocator_(&limit_observer_),
         worker_queue_("ConfigHelper_worker_queue") {
     using testing::Invoke;
