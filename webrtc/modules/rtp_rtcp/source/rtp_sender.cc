@@ -464,10 +464,10 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
 size_t RTPSender::SendPadData(size_t bytes,
                               const PacedPacketInfo& pacing_info) {
   size_t padding_bytes_in_packet;
+  size_t max_payload_size = max_packet_size_ - RtpHeaderLength();
 
   if (audio_configured_) {
     // Allow smaller padding packets for audio.
-    size_t max_payload_size = max_packet_size_ - RtpHeaderLength();
     padding_bytes_in_packet =
         std::min(std::max(bytes, kMinAudioPaddingLength), max_payload_size);
     if (padding_bytes_in_packet > kMaxPaddingLength)
@@ -477,10 +477,6 @@ size_t RTPSender::SendPadData(size_t bytes,
     // RtpPacketSender, which will make sure we don't send too much padding even
     // if a single packet is larger than requested.
     // We do this to avoid frequently sending small packets on higher bitrates.
-    size_t max_payload_size =
-        max_packet_size_ - RtpHeaderLength()   // RTP overhead.
-        - video_->FecPacketOverhead()          // FEC/ULP/RED overhead.
-        - (RtxStatus() ? kRtxHeaderSize : 0);  // RTX overhead.
     padding_bytes_in_packet = std::min(max_payload_size, kMaxPaddingLength);
   }
   size_t bytes_sent = 0;
