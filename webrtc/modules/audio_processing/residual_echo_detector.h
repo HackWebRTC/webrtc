@@ -85,6 +85,8 @@ class ResidualEchoDetector {
   // Reliability of the current likelihood.
   float reliability_ = 0.f;
   MovingMax recent_likelihood_max_;
+
+  int log_counter_ = 0;
 };
 
 }  // namespace webrtc

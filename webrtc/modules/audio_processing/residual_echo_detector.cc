@@ -14,6 +14,7 @@
 #include <numeric>
 
 #include "webrtc/base/atomicops.h"
+#include "webrtc/base/logging.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/logging/apm_data_dumper.h"
 #include "webrtc/system_wrappers/include/metrics.h"
@@ -114,18 +115,50 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
   // Update the covariance values and determine the new echo likelihood.
   echo_likelihood_ = 0.f;
   size_t read_index = next_insertion_index_;
+
+  int best_delay = -1;
   for (size_t delay = 0; delay < covariances_.size(); ++delay) {
     RTC_DCHECK_LT(read_index, render_power_.size());
     covariances_[delay].Update(capture_power, capture_mean,
                                capture_std_deviation, render_power_[read_index],
                                render_power_mean_[read_index],
                                render_power_std_dev_[read_index]);
-    echo_likelihood_ = std::max(
-        echo_likelihood_, covariances_[delay].normalized_cross_correlation());
-
     read_index = read_index > 0 ? read_index - 1 : kLookbackFrames - 1;
+
+    if (covariances_[delay].normalized_cross_correlation() > echo_likelihood_) {
+      echo_likelihood_ = covariances_[delay].normalized_cross_correlation();
+      best_delay = static_cast<int>(delay);
+    }
+  }
+  // This is a temporary log message to help find the underlying cause for echo
+  // likelihoods > 1.0.
+  // TODO(ivoc): Remove once the issue is resolved.
+  if (echo_likelihood_ > 1.1f) {
+    // Make sure we don't spam the log.
+    if (log_counter_ < 5 && best_delay != -1) {
+      size_t read_index = kLookbackFrames + next_insertion_index_ - best_delay;
+      if (read_index >= kLookbackFrames) {
+        read_index -= kLookbackFrames;
+      }
+      RTC_DCHECK_LT(read_index, render_power_.size());
+      LOG_F(LS_ERROR) << "Echo detector internal state: {"
+                      << "Echo likelihood: " << echo_likelihood_
+                      << ", Best Delay: " << best_delay << ", Covariance: "
+                      << covariances_[best_delay].covariance()
+                      << ", Last capture power: " << capture_power
+                      << ", Capture mean: " << capture_mean
+                      << ", Capture_standard deviation: "
+                      << capture_std_deviation
+                      << ", Last render power: " << render_power_[read_index]
+                      << ", Render mean: " << render_power_mean_[read_index]
+                      << ", Render standard deviation: "
+                      << render_power_std_dev_[read_index]
+                      << ", Reliability: " << reliability_ << "}";
+      log_counter_++;
+    }
   }
   RTC_DCHECK_LT(echo_likelihood_, 1.1f);
+
   reliability_ = (1.0f - kAlpha) * reliability_ + kAlpha * 1.0f;
   echo_likelihood_ *= reliability_;
   // This is a temporary fix to prevent echo likelihood values > 1.0.
