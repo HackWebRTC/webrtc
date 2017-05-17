@@ -11,7 +11,6 @@
 #import "RTCPeerConnectionFactory+Private.h"
 
 #import "NSString+StdString.h"
-#import "RTCAVFoundationVideoSource+Private.h"
 #import "RTCAudioSource+Private.h"
 #import "RTCAudioTrack+Private.h"
 #import "RTCMediaConstraints+Private.h"
@@ -19,10 +18,11 @@
 #import "RTCPeerConnection+Private.h"
 #import "RTCVideoSource+Private.h"
 #import "RTCVideoTrack+Private.h"
+#import "RTCAVFoundationVideoSource+Private.h"
 #import "WebRTC/RTCLogging.h"
 
-#include "objcvideotracksource.h"
-#include "videotoolboxvideocodecfactory.h"
+#include "Video/objcvideotracksource.h"
+#include "VideoToolbox/videocodecfactory.h"
 
 @implementation RTCPeerConnectionFactory {
   std::unique_ptr<rtc::Thread> _networkThread;

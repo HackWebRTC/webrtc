@@ -7,13 +7,13 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "webrtc/sdk/objc/Framework/Classes/videotoolboxvideocodecfactory.h"
+#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/videocodecfactory.h"
 
 #include "webrtc/base/logging.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 #include "webrtc/media/base/codec.h"
-#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_decoder.h"
-#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_encoder.h"
+#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/decoder.h"
+#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/encoder.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 
 namespace webrtc {

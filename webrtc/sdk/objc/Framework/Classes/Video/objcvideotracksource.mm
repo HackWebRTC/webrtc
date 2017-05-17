@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "webrtc/sdk/objc/Framework/Classes/objcvideotracksource.h"
+#include "webrtc/sdk/objc/Framework/Classes/Video/objcvideotracksource.h"
 
 #import "RTCVideoFrame+Private.h"
 
 #include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/sdk/objc/Framework/Classes/corevideo_frame_buffer.h"
+#include "webrtc/sdk/objc/Framework/Classes/Video/corevideo_frame_buffer.h"
 
 namespace webrtc {
 
