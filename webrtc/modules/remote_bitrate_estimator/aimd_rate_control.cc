@@ -136,18 +136,18 @@ int AimdRateControl::GetNearMaxIncreaseRateBps() const {
 }
 
 int AimdRateControl::GetExpectedBandwidthPeriodMs() const {
-  constexpr int kMinIntervalMs = 2000;
-  constexpr int kDefaultIntervalMs = 3000;
-  constexpr int kMaxIntervalMs = 50000;
+  constexpr int kMinPeriodMs = 2000;
+  constexpr int kDefaultPeriodMs = 3000;
+  constexpr int kMaxPeriodMs = 50000;
 
   int increase_rate = GetNearMaxIncreaseRateBps();
   if (!last_decrease_)
-    return kDefaultIntervalMs;
+    return kDefaultPeriodMs;
 
-  return std::min(kMaxIntervalMs,
+  return std::min(kMaxPeriodMs,
                   std::max<int>(1000 * static_cast<int64_t>(*last_decrease_) /
                                     increase_rate,
-                                kMinIntervalMs));
+                                kMinPeriodMs));
 }
 
 uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,

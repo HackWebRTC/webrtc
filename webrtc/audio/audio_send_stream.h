@@ -64,7 +64,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
                             uint8_t fraction_loss,
                             int64_t rtt,
-                            int64_t probing_interval_ms) override;
+                            int64_t bwe_period_ms) override;
 
   // From PacketFeedbackObserver.
   void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override;

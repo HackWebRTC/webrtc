@@ -305,7 +305,7 @@ bool AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
 uint32_t AudioSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
                                            uint8_t fraction_loss,
                                            int64_t rtt,
-                                           int64_t probing_interval_ms) {
+                                           int64_t bwe_period_ms) {
   // A send stream may be allocated a bitrate of zero if the allocator decides
   // to disable it. For now we ignore this decision and keep sending on min
   // bitrate.
@@ -320,7 +320,7 @@ uint32_t AudioSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
   if (bitrate_bps > max_bitrate_bps)
     bitrate_bps = max_bitrate_bps;
 
-  channel_proxy_->SetBitrate(bitrate_bps, probing_interval_ms);
+  channel_proxy_->SetBitrate(bitrate_bps, bwe_period_ms);
 
   // The amount of audio protection is not exposed by the encoder, hence
   // always returning 0.

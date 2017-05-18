@@ -189,7 +189,7 @@ class AudioEncoder {
   // the bandwidth estimator to this encoder to allow it to adapt.
   virtual void OnReceivedUplinkBandwidth(
       int target_audio_bitrate_bps,
-      rtc::Optional<int64_t> probing_interval_ms);
+      rtc::Optional<int64_t> bwe_period_ms);
 
   // Provides RTT to this encoder to allow it to adapt.
   virtual void OnReceivedRtt(int rtt_ms);

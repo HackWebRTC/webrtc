@@ -86,7 +86,7 @@ void AudioEncoder::OnReceivedTargetAudioBitrate(int target_audio_bitrate_bps) {
 
 void AudioEncoder::OnReceivedUplinkBandwidth(
     int target_audio_bitrate_bps,
-    rtc::Optional<int64_t> probing_interval_ms) {}
+    rtc::Optional<int64_t> bwe_period_ms) {}
 
 void AudioEncoder::OnReceivedRtt(int rtt_ms) {}
 
