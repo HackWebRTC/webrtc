@@ -477,5 +477,29 @@ TEST_F(TestPacketBuffer, ContinuousSeqNumDoubleMarkerBit) {
   EXPECT_EQ(0UL, frames_from_callback_.size());
 }
 
+TEST_F(TestPacketBuffer, OneH264FrameFillBuffer) {
+  VCMPacket packet;
+  packet.seqNum = 0;
+  packet.codec = kVideoCodecH264;
+  packet.dataPtr = nullptr;
+  packet.sizeBytes = 0;
+  packet.is_first_packet_in_frame = true;
+  packet.markerBit = false;
+  packet_buffer_->InsertPacket(&packet);
+
+  packet.is_first_packet_in_frame = false;
+  for (int i = 1; i < kStartSize - 1; ++i) {
+    packet.seqNum = i;
+    packet_buffer_->InsertPacket(&packet);
+  }
+
+  packet.seqNum = kStartSize - 1;
+  packet.markerBit = true;
+  packet_buffer_->InsertPacket(&packet);
+
+  EXPECT_EQ(1UL, frames_from_callback_.size());
+  CheckFrame(0);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc

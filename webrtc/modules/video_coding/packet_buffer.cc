@@ -197,8 +197,7 @@ bool PacketBuffer::PotentialNewFrame(uint16_t seq_num) const {
 std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
     uint16_t seq_num) {
   std::vector<std::unique_ptr<RtpFrameObject>> found_frames;
-  size_t packets_tested = 0;
-  while (packets_tested < size_ && PotentialNewFrame(seq_num)) {
+  for (size_t i = 0; i < size_ && PotentialNewFrame(seq_num); ++i) {
     size_t index = seq_num % size_;
     sequence_buffer_[index].continuous = true;
 
@@ -215,7 +214,10 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
 
       bool is_h264 = data_buffer_[start_index].codec == kVideoCodecH264;
       int64_t frame_timestamp = data_buffer_[start_index].timestamp;
-      while (true) {
+
+      // Since packet at |data_buffer_[index]| is already part of the frame
+      // we will have at most |size_ - 1| packets left to check.
+      for (size_t j = 0; j < size_ - 1; ++j) {
         frame_size += data_buffer_[start_index].sizeBytes;
         max_nack_count =
             std::max(max_nack_count, data_buffer_[start_index].timesNacked);
@@ -232,12 +234,7 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         // the timestamp of that packet is the same as this one. This may cause
         // the PacketBuffer to hand out incomplete frames.
         // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=7106
-        //
-        // Since we ignore the |frame_begin| flag of the inserted packets
-        // we check that |start_index != static_cast<int>(index)| to make sure
-        // that we don't get stuck in a loop if the packet buffer is filled
-        // with packets of the same timestamp.
-        if (is_h264 && start_index != static_cast<int>(index) &&
+        if (is_h264 &&
             (!sequence_buffer_[start_index].used ||
              data_buffer_[start_index].timestamp != frame_timestamp)) {
           break;
@@ -251,7 +248,6 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
                              max_nack_count, clock_->TimeInMilliseconds()));
     }
     ++seq_num;
-    ++packets_tested;
   }
   return found_frames;
 }
