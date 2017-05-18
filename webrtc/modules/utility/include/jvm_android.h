@@ -118,7 +118,8 @@ class JNIEnvironment {
 //   JNIEnv* jni = ::base::android::AttachCurrentThread();
 //   JavaVM* jvm = NULL;
 //   jni->GetJavaVM(&jvm);
-//   webrtc::JVM::Initialize(jvm);
+//   jobject context = ::base::android::GetApplicationContext();
+//   webrtc::JVM::Initialize(jvm, context);
 //
 //   // Header (.h) file of example class called User.
 //   std::unique_ptr<JNIEnvironment> env;
@@ -144,9 +145,9 @@ class JNIEnvironment {
 //   JVM::Uninitialize();
 class JVM {
  public:
-  // Stores global handles to the Java VM interface.
+  // Stores global handles to the Java VM interface and the application context.
   // Should be called once on a thread that is attached to the JVM.
-  static void Initialize(JavaVM* jvm);
+  static void Initialize(JavaVM* jvm, jobject context);
   // Clears handles stored in Initialize(). Must be called on same thread as
   // Initialize().
   static void Uninitialize();
@@ -167,9 +168,10 @@ class JVM {
 
   // TODO(henrika): can we make these private?
   JavaVM* jvm() const { return jvm_; }
+  jobject context() const { return context_; }
 
  protected:
-  JVM(JavaVM* jvm);
+  JVM(JavaVM* jvm, jobject context);
   ~JVM();
 
  private:
@@ -177,6 +179,7 @@ class JVM {
 
   rtc::ThreadChecker thread_checker_;
   JavaVM* const jvm_;
+  jobject context_;
 };
 
 }  // namespace webrtc
