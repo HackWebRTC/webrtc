@@ -125,8 +125,8 @@
          didError:(NSError *)error {
   NSString *message =
       [NSString stringWithFormat:@"%@", error.localizedDescription];
-  [self showAlertWithMessage:message];
   [self hangup];
+  [self showAlertWithMessage:message];
 }
 
 #pragma mark - ARDVideoCallViewDelegate
