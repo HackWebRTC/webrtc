@@ -216,29 +216,6 @@ bool UnixFilesystem::IsFolder(const Pathname &path) {
   return S_ISDIR(st.st_mode);
 }
 
-bool UnixFilesystem::IsTemporaryPath(const Pathname& pathname) {
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  RTC_DCHECK(provided_app_temp_folder_ != nullptr);
-#endif
-
-  const char* const kTempPrefixes[] = {
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-    provided_app_temp_folder_,
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-    "/private/tmp/", "/private/var/tmp/", "/private/var/folders/",
-#endif  // WEBRTC_MAC && !defined(WEBRTC_IOS)
-#else
-    "/tmp/", "/var/tmp/",
-#endif  // WEBRTC_ANDROID || WEBRTC_IOS
-  };
-  for (size_t i = 0; i < arraysize(kTempPrefixes); ++i) {
-    if (0 == strncmp(pathname.pathname().c_str(), kTempPrefixes[i],
-                     strlen(kTempPrefixes[i])))
-      return true;
-  }
-  return false;
-}
-
 bool UnixFilesystem::IsFile(const Pathname& pathname) {
   struct stat st;
   int res = ::stat(pathname.pathname().c_str(), &st);
@@ -281,36 +258,6 @@ bool UnixFilesystem::GetFileTime(const Pathname& path, FileTimeType which,
     return false;
   }
   return true;
-}
-
-bool UnixFilesystem::GetAppTempFolder(Pathname* path) {
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
-  RTC_DCHECK(provided_app_temp_folder_ != nullptr);
-  path->SetPathname(provided_app_temp_folder_);
-  return true;
-#else
-  RTC_DCHECK(!application_name_.empty());
-  // TODO: Consider whether we are worried about thread safety.
-  if (app_temp_path_ != nullptr && strlen(app_temp_path_) > 0) {
-    path->SetPathname(app_temp_path_);
-    return true;
-  }
-
-  // Create a random directory as /tmp/<appname>-<pid>-<timestamp>
-  char buffer[128];
-  sprintfn(buffer, arraysize(buffer), "-%d-%d",
-           static_cast<int>(getpid()),
-           static_cast<int>(time(0)));
-  std::string folder(application_name_);
-  folder.append(buffer);
-  if (!GetTemporaryFolder(*path, true, &folder))
-    return false;
-
-  delete [] app_temp_path_;
-  app_temp_path_ = CopyString(path->pathname());
-  // TODO: atexit(DeleteFolderAndContents(app_temp_path_));
-  return true;
-#endif
 }
 
 char* UnixFilesystem::CopyString(const std::string& str) {

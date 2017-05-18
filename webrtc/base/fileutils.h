@@ -102,15 +102,6 @@ class FilesystemInterface {
   // not be deleted.
   virtual bool DeleteEmptyFolder(const Pathname &folder) = 0;
 
-  // This will call IterateDirectory, to get a directory iterator, and then
-  // call DeleteFolderAndContents and DeleteFile on every path contained in this
-  // folder. If the folder is empty, this returns true.
-  virtual bool DeleteFolderContents(const Pathname &folder);
-
-  // This deletes the contents of a folder, recursively, and then deletes
-  // the folder itself.
-  virtual bool DeleteFolderAndContents(const Pathname& folder);
-
   // Creates a directory. This will call itself recursively to create /foo/bar
   // even if /foo does not exist. Returns true if the function succeeds.
   virtual bool CreateFolder(const Pathname &pathname) = 0;
@@ -130,9 +121,6 @@ class FilesystemInterface {
   // directory either exists, or is also absent.
   virtual bool IsAbsent(const Pathname& pathname) = 0;
 
-  // Returns true if pathname represents a temporary location on the system.
-  virtual bool IsTemporaryPath(const Pathname& pathname) = 0;
-
   // A folder appropriate for storing temporary files (Contents are
   // automatically deleted when the program exits)
   virtual bool GetTemporaryFolder(Pathname &path, bool create,
@@ -147,12 +135,6 @@ class FilesystemInterface {
   // Determines a timestamp associated with the file indicated by path.
   virtual bool GetFileTime(const Pathname& path, FileTimeType which,
                            time_t* time) = 0;
-
-  // Get a temporary folder that is unique to the current user and application.
-  // TODO: Re-evaluate the goals of this function.  We probably just need any
-  // directory that won't collide with another existing directory, and which
-  // will be cleaned up when the program exits.
-  virtual bool GetAppTempFolder(Pathname* path) = 0;
 
   // Note: These might go into some shared config section later, but they're
   // used by some methods in this interface, so we're leaving them here for now.
@@ -211,14 +193,6 @@ class Filesystem {
     return EnsureDefaultFilesystem()->DeleteFile(filename);
   }
 
-  static bool DeleteFolderContents(const Pathname &folder) {
-    return EnsureDefaultFilesystem()->DeleteFolderContents(folder);
-  }
-
-  static bool DeleteFolderAndContents(const Pathname &folder) {
-    return EnsureDefaultFilesystem()->DeleteFolderAndContents(folder);
-  }
-
   static bool MoveFile(const Pathname &old_path, const Pathname &new_path) {
     return EnsureDefaultFilesystem()->MoveFile(old_path, new_path);
   }
@@ -233,10 +207,6 @@ class Filesystem {
 
   static bool IsAbsent(const Pathname &pathname) {
     return EnsureDefaultFilesystem()->IsAbsent(pathname);
-  }
-
-  static bool IsTemporaryPath(const Pathname& pathname) {
-    return EnsureDefaultFilesystem()->IsTemporaryPath(pathname);
   }
 
   static bool GetTemporaryFolder(Pathname &path, bool create,
@@ -256,10 +226,6 @@ class Filesystem {
   static bool GetFileTime(const Pathname& path, FileTimeType which,
                           time_t* time) {
     return EnsureDefaultFilesystem()->GetFileTime(path, which, time);
-  }
-
-  static bool GetAppTempFolder(Pathname* path) {
-    return EnsureDefaultFilesystem()->GetAppTempFolder(path);
   }
 
   static void SetOrganizationName(const std::string& organization) {

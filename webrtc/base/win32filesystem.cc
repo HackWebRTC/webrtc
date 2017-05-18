@@ -160,17 +160,6 @@ bool Win32Filesystem::IsAbsent(const Pathname& path) {
   return (ERROR_FILE_NOT_FOUND == err || ERROR_PATH_NOT_FOUND == err);
 }
 
-bool Win32Filesystem::IsTemporaryPath(const Pathname& pathname) {
-  TCHAR buffer[MAX_PATH + 1];
-  if (!::GetTempPath(arraysize(buffer), buffer))
-    return false;
-  if (!IsCurrentProcessLowIntegrity() &&
-      !::GetLongPathName(buffer, buffer, arraysize(buffer)))
-    return false;
-  return (::strnicmp(ToUtf16(pathname.pathname()).c_str(),
-                     buffer, strlen(buffer)) == 0);
-}
-
 bool Win32Filesystem::GetFileSize(const Pathname &pathname, size_t *size) {
   WIN32_FILE_ATTRIBUTE_DATA data = {0};
   if (::GetFileAttributesEx(ToUtf16(pathname.pathname()).c_str(),
@@ -208,13 +197,6 @@ bool Win32Filesystem::GetAppPathname(Pathname* path) {
     return false;
   path->SetPathname(ToUtf8(buffer));
   return true;
-}
-
-bool Win32Filesystem::GetAppTempFolder(Pathname* path) {
-  if (!GetAppPathname(path))
-    return false;
-  std::string filename(path->filename());
-  return GetTemporaryFolder(*path, true, &filename);
 }
 
 }  // namespace rtc

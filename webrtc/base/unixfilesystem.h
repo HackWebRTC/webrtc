@@ -65,9 +65,6 @@ class UnixFilesystem : public FilesystemInterface {
   // Returns true if a pathname is a directory
   bool IsFolder(const Pathname& pathname) override;
 
-  // Returns true if pathname represents a temporary location on the system.
-  bool IsTemporaryPath(const Pathname& pathname) override;
-
   // Returns true of pathname represents an existing file
   bool IsFile(const Pathname& pathname) override;
 
@@ -88,9 +85,6 @@ class UnixFilesystem : public FilesystemInterface {
   bool GetFileTime(const Pathname& path,
                    FileTimeType which,
                    time_t* time) override;
-
-  // Get a temporary folder that is unique to the current user and application.
-  bool GetAppTempFolder(Pathname* path) override;
 
  private:
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
