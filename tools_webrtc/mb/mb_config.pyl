@@ -108,8 +108,12 @@
       'Win64 Debug (Win10)': 'debug_bot_x64',
     },
     'chromium.infra.codesearch': {
-      'codesearch-gen-webrtc-android': 'android_debug_static_bot_arm',
-      'codesearch-gen-webrtc-linux': 'codesearch_gen_linux_bot',
+      'codesearch-gen-webrtc-android': {
+        'android': 'android_debug_static_bot_arm',
+      },
+      'codesearch-gen-webrtc-linux': {
+        'linux': 'codesearch_gen_linux_bot',
+      }
     },
     'tryserver.webrtc': {
       # iOS
