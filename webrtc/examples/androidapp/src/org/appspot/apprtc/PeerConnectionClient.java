@@ -87,6 +87,8 @@ public class PeerConnectionClient {
   private static final String VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL = "WebRTC-IntelVP8/Enabled/";
   private static final String VIDEO_H264_HIGH_PROFILE_FIELDTRIAL =
       "WebRTC-H264HighProfile/Enabled/";
+  private static final String DISABLE_WEBRTC_AGC_FIELDTRIAL =
+      "WebRTC-Audio-MinimizeResamplingOnMobile/Enabled/";
   private static final String AUDIO_CODEC_PARAM_BITRATE = "maxaveragebitrate";
   private static final String AUDIO_ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation";
   private static final String AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl";
@@ -190,6 +192,7 @@ public class PeerConnectionClient {
     public final boolean disableBuiltInAGC;
     public final boolean disableBuiltInNS;
     public final boolean enableLevelControl;
+    public final boolean disableWebRtcAGCAndHPF;
     private final DataChannelParameters dataChannelParameters;
 
     public PeerConnectionParameters(boolean videoCallEnabled, boolean loopback, boolean tracing,
@@ -197,11 +200,11 @@ public class PeerConnectionClient {
         boolean videoCodecHwAcceleration, boolean videoFlexfecEnabled, int audioStartBitrate,
         String audioCodec, boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
         boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS,
-        boolean enableLevelControl) {
+        boolean enableLevelControl, boolean disableWebRtcAGCAndHPF) {
       this(videoCallEnabled, loopback, tracing, videoWidth, videoHeight, videoFps, videoMaxBitrate,
           videoCodec, videoCodecHwAcceleration, videoFlexfecEnabled, audioStartBitrate, audioCodec,
           noAudioProcessing, aecDump, useOpenSLES, disableBuiltInAEC, disableBuiltInAGC,
-          disableBuiltInNS, enableLevelControl, null);
+          disableBuiltInNS, enableLevelControl, disableWebRtcAGCAndHPF, null);
     }
 
     public PeerConnectionParameters(boolean videoCallEnabled, boolean loopback, boolean tracing,
@@ -209,7 +212,8 @@ public class PeerConnectionClient {
         boolean videoCodecHwAcceleration, boolean videoFlexfecEnabled, int audioStartBitrate,
         String audioCodec, boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
         boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS,
-        boolean enableLevelControl, DataChannelParameters dataChannelParameters) {
+        boolean enableLevelControl, boolean disableWebRtcAGCAndHPF,
+        DataChannelParameters dataChannelParameters) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
       this.tracing = tracing;
@@ -229,6 +233,7 @@ public class PeerConnectionClient {
       this.disableBuiltInAGC = disableBuiltInAGC;
       this.disableBuiltInNS = disableBuiltInNS;
       this.enableLevelControl = enableLevelControl;
+      this.disableWebRtcAGCAndHPF = disableWebRtcAGCAndHPF;
       this.dataChannelParameters = dataChannelParameters;
     }
   }
@@ -389,6 +394,10 @@ public class PeerConnectionClient {
       Log.d(TAG, "Enable FlexFEC field trial.");
     }
     fieldTrials += VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL;
+    if (peerConnectionParameters.disableWebRtcAGCAndHPF) {
+      fieldTrials += DISABLE_WEBRTC_AGC_FIELDTRIAL;
+      Log.d(TAG, "Disable WebRTC AGC field trial.");
+    }
 
     // Check preferred video codec.
     preferredVideoCodec = VIDEO_CODEC_VP8;

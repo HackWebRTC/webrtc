@@ -263,25 +263,25 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   }
 
   private PeerConnectionParameters createParametersForAudioCall() {
-    PeerConnectionParameters peerConnectionParameters =
-        new PeerConnectionParameters(false, /* videoCallEnabled */
-            true, /* loopback */
-            false, /* tracing */
-            // Video codec parameters.
-            0, /* videoWidth */
-            0, /* videoHeight */
-            0, /* videoFps */
-            0, /* videoStartBitrate */
-            "", /* videoCodec */
-            true, /* videoCodecHwAcceleration */
-            false, /* videoFlexfecEnabled */
-            // Audio codec parameters.
-            0, /* audioStartBitrate */
-            "OPUS", /* audioCodec */
-            false, /* noAudioProcessing */
-            false, /* aecDump */
-            false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
-            false /* disableBuiltInNS */, false /* enableLevelControl */);
+    PeerConnectionParameters peerConnectionParameters = new PeerConnectionParameters(
+        false, /* videoCallEnabled */
+        true, /* loopback */
+        false, /* tracing */
+        // Video codec parameters.
+        0, /* videoWidth */
+        0, /* videoHeight */
+        0, /* videoFps */
+        0, /* videoStartBitrate */
+        "", /* videoCodec */
+        true, /* videoCodecHwAcceleration */
+        false, /* videoFlexfecEnabled */
+        // Audio codec parameters.
+        0, /* audioStartBitrate */
+        "OPUS", /* audioCodec */
+        false, /* noAudioProcessing */
+        false, /* aecDump */
+        false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
+        false /* disableBuiltInNS */, false /* enableLevelControl */, false /* disableWebRtcAGC */);
 
     return peerConnectionParameters;
   }
@@ -301,25 +301,25 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   }
 
   private PeerConnectionParameters createParametersForVideoCall(String videoCodec) {
-    PeerConnectionParameters peerConnectionParameters =
-        new PeerConnectionParameters(true, /* videoCallEnabled */
-            true, /* loopback */
-            false, /* tracing */
-            // Video codec parameters.
-            0, /* videoWidth */
-            0, /* videoHeight */
-            0, /* videoFps */
-            0, /* videoStartBitrate */
-            videoCodec, /* videoCodec */
-            true, /* videoCodecHwAcceleration */
-            false, /* videoFlexfecEnabled */
-            // Audio codec parameters.
-            0, /* audioStartBitrate */
-            "OPUS", /* audioCodec */
-            false, /* noAudioProcessing */
-            false, /* aecDump */
-            false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
-            false /* disableBuiltInNS */, false /* enableLevelControl */);
+    PeerConnectionParameters peerConnectionParameters = new PeerConnectionParameters(
+        true, /* videoCallEnabled */
+        true, /* loopback */
+        false, /* tracing */
+        // Video codec parameters.
+        0, /* videoWidth */
+        0, /* videoHeight */
+        0, /* videoFps */
+        0, /* videoStartBitrate */
+        videoCodec, /* videoCodec */
+        true, /* videoCodecHwAcceleration */
+        false, /* videoFlexfecEnabled */
+        // Audio codec parameters.
+        0, /* audioStartBitrate */
+        "OPUS", /* audioCodec */
+        false, /* noAudioProcessing */
+        false, /* aecDump */
+        false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
+        false /* disableBuiltInNS */, false /* enableLevelControl */, false /* disableWebRtcAGC */);
 
     return peerConnectionParameters;
   }

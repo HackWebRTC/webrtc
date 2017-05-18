@@ -106,6 +106,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_DISABLE_BUILT_IN_AGC = "org.appspot.apprtc.DISABLE_BUILT_IN_AGC";
   public static final String EXTRA_DISABLE_BUILT_IN_NS = "org.appspot.apprtc.DISABLE_BUILT_IN_NS";
   public static final String EXTRA_ENABLE_LEVEL_CONTROL = "org.appspot.apprtc.ENABLE_LEVEL_CONTROL";
+  public static final String EXTRA_DISABLE_WEBRTC_AGC_AND_HPF =
+      "org.appspot.apprtc.DISABLE_WEBRTC_GAIN_CONTROL";
   public static final String EXTRA_DISPLAY_HUD = "org.appspot.apprtc.DISPLAY_HUD";
   public static final String EXTRA_TRACING = "org.appspot.apprtc.TRACING";
   public static final String EXTRA_CMDLINE = "org.appspot.apprtc.CMDLINE";
@@ -323,7 +325,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AEC, false),
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AGC, false),
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_NS, false),
-            intent.getBooleanExtra(EXTRA_ENABLE_LEVEL_CONTROL, false), dataChannelParameters);
+            intent.getBooleanExtra(EXTRA_ENABLE_LEVEL_CONTROL, false),
+            intent.getBooleanExtra(EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false), dataChannelParameters);
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
 
