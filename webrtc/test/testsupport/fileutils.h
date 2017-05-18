@@ -71,6 +71,12 @@ std::string WorkingDir();
 // false if a file with the same name already exists.
 bool CreateDir(const std::string& directory_name);
 
+// Removes a directory, which must already be empty.
+bool RemoveDir(const std::string& directory_name);
+
+// Removes a file.
+bool RemoveFile(const std::string& file_name);
+
 // Checks if a file exists.
 bool FileExists(const std::string& file_name);
 
