@@ -107,6 +107,10 @@
       'Win64 Debug (Win8)': 'debug_bot_x64',
       'Win64 Debug (Win10)': 'debug_bot_x64',
     },
+    'chromium.infra.codesearch': {
+      'codesearch-gen-webrtc-android': 'android_debug_static_bot_arm',
+      'codesearch-gen-webrtc-linux': 'codesearch_gen_linux_bot',
+    },
     'tryserver.webrtc': {
       # iOS
       'ios_dbg': 'ios',
@@ -224,6 +228,9 @@
     ],
     'debug_bot_x64': [
       'gn', 'openh264_debug_bot', 'x64'
+    ],
+    'codesearch_gen_linux_bot': [
+      'gn', 'openh264_debug_bot', 'minimal_symbols'
     ],
     'release_bot_x64': [
       'gn', 'openh264_release_bot', 'x64'
@@ -391,15 +398,11 @@
     },
 
     'minimal_symbols': {
-      'gn_args': 'symbol_level=1',
+      'gn_args': 'symbol_level=1 strip_absolute_paths_from_debug_symbols=true',
     },
 
     'mipsel': {
       'gn_args': 'target_cpu="mipsel"',
-    },
-
-    'minimal_symbols': {
-      'gn_args': 'symbol_level=1',
     },
 
     'msan': {
