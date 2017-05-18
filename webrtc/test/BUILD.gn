@@ -532,3 +532,17 @@ rtc_source_set("audio_codec_mocks") {
     "//testing/gmock",
   ]
 }
+
+if (is_android) {
+  android_library("native_test_java") {
+    testonly = true
+    java_files = [
+      "android/org/webrtc/native_test/RTCNativeUnitTest.java",
+      "android/org/webrtc/native_test/RTCNativeUnitTestActivity.java",
+    ]
+    deps = [
+      "//testing/android/native_test:native_test_java",
+      "//webrtc/base:base_java",
+    ]
+  }
+}

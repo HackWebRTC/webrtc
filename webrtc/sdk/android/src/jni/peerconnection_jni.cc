@@ -1136,7 +1136,7 @@ JOW(jlong, PeerConnectionFactory_nativeCreateObserver)(
   return (jlong)new PCOJava(jni, j_observer);
 }
 
-JOW(void, PeerConnectionFactory_initializeAndroidGlobals)
+JOW(void, PeerConnectionFactory_nativeInitializeAndroidGlobals)
 (JNIEnv* jni,
  jclass,
  jobject context,
@@ -1146,7 +1146,7 @@ JOW(void, PeerConnectionFactory_initializeAndroidGlobals)
   if (!factory_static_initialized) {
     RTC_DCHECK(j_application_context == nullptr);
     j_application_context = NewGlobalRef(jni, context);
-    webrtc::JVM::Initialize(GetJVM(), context);
+    webrtc::JVM::Initialize(GetJVM());
     factory_static_initialized = true;
   }
 }
