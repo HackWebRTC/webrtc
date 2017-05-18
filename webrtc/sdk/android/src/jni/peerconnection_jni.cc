@@ -658,6 +658,9 @@ class SdpObserverWrapper : public T {
     jobject j_sdp = JavaSdpFromNativeSdp(jni(), desc);
     jni()->CallVoidMethod(*j_observer_global_, m, j_sdp);
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+    // OnSuccess transfers ownership of the description (there's a TODO to make
+    // it use unique_ptr...).
+    delete desc;
   }
 
  protected:
