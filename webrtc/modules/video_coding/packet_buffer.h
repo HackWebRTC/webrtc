@@ -55,6 +55,10 @@ class PacketBuffer {
   void ClearTo(uint16_t seq_num);
   void Clear();
 
+  // Timestamp (not RTP timestamp) of the last received packet/keyframe packet.
+  rtc::Optional<int64_t> LastReceivedPacketMs() const;
+  rtc::Optional<int64_t> LastReceivedKeyframePacketMs() const;
+
   int AddRef() const;
   int Release() const;
 
@@ -141,6 +145,10 @@ class PacketBuffer {
 
   // Called when a received frame is found.
   OnReceivedFrameCallback* const received_frame_callback_;
+
+  // Timestamp (not RTP timestamp) of the last received packet/keyframe packet.
+  rtc::Optional<int64_t> last_received_packet_ms_ GUARDED_BY(crit_);
+  rtc::Optional<int64_t> last_received_keyframe_packet_ms_ GUARDED_BY(crit_);
 
   mutable volatile int ref_count_ = 0;
 };

@@ -59,6 +59,7 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
   std::vector<std::unique_ptr<RtpFrameObject>> found_frames;
   {
     rtc::CritScope lock(&crit_);
+
     uint16_t seq_num = packet->seqNum;
     size_t index = seq_num % size_;
 
@@ -107,6 +108,11 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
     data_buffer_[index] = *packet;
     packet->dataPtr = nullptr;
 
+    int64_t now_ms = clock_->TimeInMilliseconds();
+    last_received_packet_ms_ = rtc::Optional<int64_t>(now_ms);
+    if (packet->frameType == kVideoFrameKey)
+      last_received_keyframe_packet_ms_ = rtc::Optional<int64_t>(now_ms);
+
     found_frames = FindFrames(seq_num);
   }
 
@@ -143,6 +149,18 @@ void PacketBuffer::Clear() {
 
   first_packet_received_ = false;
   is_cleared_to_first_seq_num_ = false;
+  last_received_packet_ms_ = rtc::Optional<int64_t>();
+  last_received_keyframe_packet_ms_ = rtc::Optional<int64_t>();
+}
+
+rtc::Optional<int64_t> PacketBuffer::LastReceivedPacketMs() const {
+  rtc::CritScope lock(&crit_);
+  return last_received_packet_ms_;
+}
+
+rtc::Optional<int64_t> PacketBuffer::LastReceivedKeyframePacketMs() const {
+  rtc::CritScope lock(&crit_);
+  return last_received_keyframe_packet_ms_;
 }
 
 bool PacketBuffer::ExpandBufferSize() {

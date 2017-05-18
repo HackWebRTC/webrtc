@@ -135,6 +135,9 @@ class RtpStreamReceiver : public RtpData,
 
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
+  rtc::Optional<int64_t> LastReceivedPacketMs() const;
+  rtc::Optional<int64_t> LastReceivedKeyframePacketMs() const;
+
  private:
   bool AddReceiveCodec(const VideoCodec& video_codec);
   bool ReceivePacket(const uint8_t* packet,

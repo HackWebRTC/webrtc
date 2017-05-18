@@ -58,7 +58,8 @@ class TestPacketBuffer : public ::testing::Test,
     VCMPacket packet;
     packet.codec = kVideoCodecGeneric;
     packet.seqNum = seq_num;
-    packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
+    packet.frameType =
+        keyframe == kKeyFrame ? kVideoFrameKey : kVideoFrameDelta;
     packet.is_first_packet_in_frame = first == kFirst;
     packet.markerBit = last == kLast;
     packet.sizeBytes = data_size;
@@ -78,7 +79,7 @@ class TestPacketBuffer : public ::testing::Test,
   const int kMaxSize = 64;
 
   Random rand_;
-  std::unique_ptr<Clock> clock_;
+  std::unique_ptr<SimulatedClock> clock_;
   rtc::scoped_refptr<PacketBuffer> packet_buffer_;
   std::map<uint16_t, std::unique_ptr<RtpFrameObject>> frames_from_callback_;
 };
@@ -499,6 +500,41 @@ TEST_F(TestPacketBuffer, OneH264FrameFillBuffer) {
 
   EXPECT_EQ(1UL, frames_from_callback_.size());
   CheckFrame(0);
+}
+
+TEST_F(TestPacketBuffer, PacketTimestamps) {
+  rtc::Optional<int64_t> packet_ms;
+  rtc::Optional<int64_t> packet_keyframe_ms;
+
+  packet_ms = packet_buffer_->LastReceivedPacketMs();
+  packet_keyframe_ms = packet_buffer_->LastReceivedKeyframePacketMs();
+  EXPECT_FALSE(packet_ms);
+  EXPECT_FALSE(packet_keyframe_ms);
+
+  int64_t keyframe_ms = clock_->TimeInMilliseconds();
+  EXPECT_TRUE(Insert(100, kKeyFrame, kFirst, kLast));
+  packet_ms = packet_buffer_->LastReceivedPacketMs();
+  packet_keyframe_ms = packet_buffer_->LastReceivedKeyframePacketMs();
+  EXPECT_TRUE(packet_ms);
+  EXPECT_TRUE(packet_keyframe_ms);
+  EXPECT_EQ(keyframe_ms, *packet_ms);
+  EXPECT_EQ(keyframe_ms, *packet_keyframe_ms);
+
+  clock_->AdvanceTimeMilliseconds(100);
+  int64_t delta_ms = clock_->TimeInMilliseconds();
+  EXPECT_TRUE(Insert(101, kDeltaFrame, kFirst, kLast));
+  packet_ms = packet_buffer_->LastReceivedPacketMs();
+  packet_keyframe_ms = packet_buffer_->LastReceivedKeyframePacketMs();
+  EXPECT_TRUE(packet_ms);
+  EXPECT_TRUE(packet_keyframe_ms);
+  EXPECT_EQ(delta_ms, *packet_ms);
+  EXPECT_EQ(keyframe_ms, *packet_keyframe_ms);
+
+  packet_buffer_->Clear();
+  packet_ms = packet_buffer_->LastReceivedPacketMs();
+  packet_keyframe_ms = packet_buffer_->LastReceivedKeyframePacketMs();
+  EXPECT_FALSE(packet_ms);
+  EXPECT_FALSE(packet_keyframe_ms);
 }
 
 }  // namespace video_coding

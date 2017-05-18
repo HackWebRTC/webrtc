@@ -420,6 +420,14 @@ void RtpStreamReceiver::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
     nack_module_->UpdateRtt(max_rtt_ms);
 }
 
+rtc::Optional<int64_t> RtpStreamReceiver::LastReceivedPacketMs() const {
+  return packet_buffer_->LastReceivedPacketMs();
+}
+
+rtc::Optional<int64_t> RtpStreamReceiver::LastReceivedKeyframePacketMs() const {
+  return packet_buffer_->LastReceivedKeyframePacketMs();
+}
+
 // TODO(nisse): Drop return value.
 bool RtpStreamReceiver::ReceivePacket(const uint8_t* packet,
                                       size_t packet_length,
