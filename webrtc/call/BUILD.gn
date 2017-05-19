@@ -42,6 +42,8 @@ rtc_static_library("call") {
     "rtp_demuxer.cc",
     "rtp_transport_controller_send.cc",
     "rtp_transport_controller_send.h",
+    "rtx_receive_stream.cc",
+    "rtx_receive_stream.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -87,6 +89,7 @@ if (rtc_include_tests) {
       "bitrate_estimator_tests.cc",
       "call_unittest.cc",
       "flexfec_receive_stream_unittest.cc",
+      "rtx_receive_stream_unittest.cc",
     ]
     deps = [
       ":call",
