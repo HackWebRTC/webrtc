@@ -979,6 +979,7 @@ if (rtc_include_tests) {
 if (is_android) {
   android_library("base_java") {
     java_files = [
+      "java/src/org/webrtc/ContextUtils.java",
       "java/src/org/webrtc/Logging.java",
       "java/src/org/webrtc/Size.java",
       "java/src/org/webrtc/ThreadUtils.java",
