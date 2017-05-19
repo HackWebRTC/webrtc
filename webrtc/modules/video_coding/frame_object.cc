@@ -9,6 +9,7 @@
  */
 
 #include "webrtc/base/checks.h"
+#include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/modules/video_coding/frame_object.h"
 #include "webrtc/modules/video_coding/packet_buffer.h"
 
@@ -65,7 +66,32 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
 
   _buffer = new uint8_t[_size];
   _length = frame_size;
-  _frameType = first_packet->frameType;
+
+  // For H264 frames we can't determine the frame type by just looking at the
+  // first packet. Instead we consider the frame to be a keyframe if it
+  // contains an IDR NALU.
+  if (codec_type_ == kVideoCodecH264) {
+    _frameType = kVideoFrameDelta;
+    frame_type_ = kVideoFrameDelta;
+    for (uint16_t seq_num = first_seq_num;
+         seq_num != last_seq_num + 1 && _frameType == kVideoFrameDelta;
+         ++seq_num) {
+      VCMPacket* packet = packet_buffer_->GetPacket(seq_num);
+      RTC_DCHECK(packet);
+      const RTPVideoHeaderH264& header = packet->video_header.codecHeader.H264;
+      for (size_t i = 0; i < header.nalus_length; ++i) {
+        if (header.nalus[i].type == H264::NaluType::kIdr) {
+          _frameType = kVideoFrameKey;
+          frame_type_ = kVideoFrameKey;
+          break;
+        }
+      }
+    }
+  } else {
+    _frameType = first_packet->frameType;
+    frame_type_ = first_packet->frameType;
+  }
+
   GetBitstream(_buffer);
   _encodedWidth = first_packet->width;
   _encodedHeight = first_packet->height;

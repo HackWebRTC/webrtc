@@ -198,7 +198,7 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsPacketThenIdrFirstPacket) {
   AddPps(&sps_pps_packet, 0, 1, &data);
   sps_pps_packet.dataPtr = data.data();
   sps_pps_packet.sizeBytes = data.size();
-  EXPECT_EQ(H264SpsPpsTracker::kDrop,
+  EXPECT_EQ(H264SpsPpsTracker::kInsert,
             tracker_.CopyAndFixBitstream(&sps_pps_packet));
   data.clear();
 
@@ -335,28 +335,28 @@ TEST_F(TestH264SpsPpsTracker, SaveRestoreWidthHeight) {
 
   // Insert an SPS/PPS packet with width/height and make sure
   // that information is set on the first IDR packet.
-  VCMPacket sps_pps_packet1 = GetDefaultPacket();
-  AddSps(&sps_pps_packet1, 0, &data);
-  AddPps(&sps_pps_packet1, 0, 1, &data);
-  sps_pps_packet1.dataPtr = data.data();
-  sps_pps_packet1.sizeBytes = data.size();
-  sps_pps_packet1.width = 320;
-  sps_pps_packet1.height = 240;
-  EXPECT_EQ(H264SpsPpsTracker::kDrop,
-            tracker_.CopyAndFixBitstream(&sps_pps_packet1));
-
-  VCMPacket idr_packet1 = GetDefaultPacket();
-  idr_packet1.video_header.is_first_packet_in_frame = true;
-  AddIdr(&idr_packet1, 1);
-  data.insert(data.end(), {1, 2, 3});
-  idr_packet1.dataPtr = data.data();
-  idr_packet1.sizeBytes = data.size();
+  VCMPacket sps_pps_packet = GetDefaultPacket();
+  AddSps(&sps_pps_packet, 0, &data);
+  AddPps(&sps_pps_packet, 0, 1, &data);
+  sps_pps_packet.dataPtr = data.data();
+  sps_pps_packet.sizeBytes = data.size();
+  sps_pps_packet.width = 320;
+  sps_pps_packet.height = 240;
   EXPECT_EQ(H264SpsPpsTracker::kInsert,
-            tracker_.CopyAndFixBitstream(&idr_packet1));
+            tracker_.CopyAndFixBitstream(&sps_pps_packet));
 
-  EXPECT_EQ(320, idr_packet1.width);
-  EXPECT_EQ(240, idr_packet1.height);
-  delete[] idr_packet1.dataPtr;
+  VCMPacket idr_packet = GetDefaultPacket();
+  idr_packet.video_header.is_first_packet_in_frame = true;
+  AddIdr(&idr_packet, 1);
+  data.insert(data.end(), {1, 2, 3});
+  idr_packet.dataPtr = data.data();
+  idr_packet.sizeBytes = data.size();
+  EXPECT_EQ(H264SpsPpsTracker::kInsert,
+            tracker_.CopyAndFixBitstream(&idr_packet));
+
+  EXPECT_EQ(320, idr_packet.width);
+  EXPECT_EQ(240, idr_packet.height);
+  delete[] idr_packet.dataPtr;
 }
 
 }  // namespace video_coding

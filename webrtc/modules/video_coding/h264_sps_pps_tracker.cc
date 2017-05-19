@@ -37,15 +37,9 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
   const RTPVideoHeader& video_header = packet->video_header;
   const RTPVideoHeaderH264& codec_header = video_header.codecHeader.H264;
 
-  // Packets that only contains SPS/PPS are not decodable by themselves, and
-  // to avoid frames being created containing only these two nalus we don't
-  // insert them into the PacketBuffer. Instead we save the SPS/PPS and
-  // prepend the bitstream of first packet of an IDR referring to the
-  // corresponding SPS/PPS id.
-  bool insert_packet = codec_header.nalus_length == 0 ? true : false;
-
   int pps_id = -1;
   int sps_id = -1;
+  bool append_sps_pps = codec_header.nalus_length == 0;
   size_t required_size = 0;
   for (size_t i = 0; i < codec_header.nalus_length; ++i) {
     const NaluInfo& nalu = codec_header.nalus[i];
@@ -101,15 +95,28 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
         FALLTHROUGH();
       }
       default: {
-        // Something other than an SPS/PPS nalu in this packet, then it should
-        // be inserted into the PacketBuffer.
-        insert_packet = true;
+        // Something other than an SPS/PPS nalu in this packet, then the SPS/PPS
+        // should be appended.
+        append_sps_pps = true;
       }
     }
   }
 
-  if (!insert_packet)
-    return kDrop;
+  if (!append_sps_pps) {
+    // Two things: Firstly, when we receive a packet the data pointed at by
+    // |dataPtr| is volatile, meaning we have to copy the data into our own
+    // buffer if we want to use it at a later stage. Secondly, when a packet is
+    // inserted into the PacketBuffer it expects the packet to own its own
+    // buffer, and this function copies (and fix) the bitstream of the packet
+    // into its own buffer.
+    //
+    // SPS/PPS packets is a special case. Since we save the SPS/PPS NALU and
+    // append it to the first packet of every IDR frame the SPS/PPS packet
+    // doesn't actually need to contain any bitstream data.
+    packet->dataPtr = nullptr;
+    packet->sizeBytes = 0;
+    return kInsert;
+  }
 
   // Calculate how much space we need for the rest of the bitstream.
   if (codec_header.packetization_type == kH264StapA) {
