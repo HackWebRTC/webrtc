@@ -302,7 +302,7 @@ template("rtc_executable") {
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
     deps = [
-      "//build/config/sanitizers:deps",
+      "//build/config:exe_and_shlib_deps",
     ]
     deps += invoker.deps
     public_configs = [ rtc_common_inherited_config ]
