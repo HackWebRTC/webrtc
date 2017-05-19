@@ -298,6 +298,9 @@ class VideoProcessorImpl : public VideoProcessor {
   IvfFileWriter* const encoded_frame_writer_;
   FrameWriter* const decoded_frame_writer_;
 
+  // Multiply frame length with this to get bit rate.
+  const double bit_rate_factor_;
+
   bool initialized_;
 
   // Frame metadata for all frames that have been added through a call to
@@ -318,7 +321,6 @@ class VideoProcessorImpl : public VideoProcessor {
   Stats* stats_;
   int num_dropped_frames_;
   int num_spatial_resizes_;
-  double bit_rate_factor_;  // Multiply frame length with this to get bit rate.
 };
 
 }  // namespace test
