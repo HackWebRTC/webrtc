@@ -258,7 +258,6 @@ if (rtc_include_tests) {
       "../call:call_interfaces",
       "../common_video",
       "../logging:rtc_event_log_api",
-      "../media:rtc_media",
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
       "../modules:module_api",

@@ -231,7 +231,6 @@ rtc_static_library("webrtc_vp8") {
     "../..:webrtc_common",
     "../../api/video_codecs:video_codecs_api",
     "../../base:rtc_base_approved",
-    "../../base:rtc_task_queue",
     "../../common_video",
     "../../system_wrappers",
   ]
