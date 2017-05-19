@@ -43,12 +43,16 @@ using DegradationPreference = webrtc::VideoSendStream::DegradationPreference;
 namespace cricket {
 namespace {
 // If this field trial is enabled, we will enable sending FlexFEC and disable
-// sending ULPFEC whenever the former has been negotiated.
-// FlexFEC can only be negotiated when the "flexfec-03" SDP codec is enabled,
-// which is done by enabling the "WebRTC-FlexFEC-03-Advertised" field trial; see
-// internalencoderfactory.cc.
+// sending ULPFEC whenever the former has been negotiated in the SDPs.
 bool IsFlexfecFieldTrialEnabled() {
   return webrtc::field_trial::IsEnabled("WebRTC-FlexFEC-03");
+}
+
+// If this field trial is enabled, the "flexfec-03" codec may have been
+// advertised as being supported in the local SDP. That means that we must be
+// ready to receive FlexFEC packets. See internalencoderfactory.cc.
+bool IsFlexfecAdvertisedFieldTrialEnabled() {
+  return webrtc::field_trial::IsEnabled("WebRTC-FlexFEC-03-Advertised");
 }
 
 // If this field trial is enabled, we will report VideoContentType RTP extension
@@ -705,12 +709,21 @@ bool WebRtcVideoChannel2::GetChangedSendParameters(
   }
 
   // Select one of the remote codecs that will be used as send codec.
-  const rtc::Optional<VideoCodecSettings> selected_send_codec =
+  rtc::Optional<VideoCodecSettings> selected_send_codec =
       SelectSendVideoCodec(MapCodecs(params.codecs));
 
   if (!selected_send_codec) {
     LOG(LS_ERROR) << "No video codecs supported.";
     return false;
+  }
+
+  // Never enable sending FlexFEC, unless we are in the experiment.
+  if (!IsFlexfecFieldTrialEnabled()) {
+    if (selected_send_codec->flexfec_payload_type != -1) {
+      LOG(LS_INFO) << "Remote supports flexfec-03, but we will not send since "
+                   << "WebRTC-FlexFEC-03 field trial is not enabled.";
+    }
+    selected_send_codec->flexfec_payload_type = -1;
   }
 
   if (!send_codec_ || *selected_send_codec != *send_codec_)
@@ -1270,7 +1283,8 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
   config->rtp.extensions = recv_rtp_extensions_;
 
   // TODO(brandtr): Generalize when we add support for multistream protection.
-  if (sp.GetFecFrSsrc(ssrc, &flexfec_config->remote_ssrc)) {
+  if (IsFlexfecAdvertisedFieldTrialEnabled() &&
+      sp.GetFecFrSsrc(ssrc, &flexfec_config->remote_ssrc)) {
     flexfec_config->protected_media_ssrcs = {ssrc};
     flexfec_config->local_ssrc = config->rtp.local_ssrc;
     flexfec_config->rtcp_mode = config->rtp.rtcp_mode;
@@ -1606,7 +1620,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::WebRtcVideoSendStream(
     for (uint32_t primary_ssrc : parameters_.config.rtp.ssrcs) {
       if (sp.GetFecFrSsrc(primary_ssrc, &flexfec_ssrc)) {
         if (flexfec_enabled) {
-          LOG(LS_INFO) << "Multiple FlexFEC streams proposed by remote, but "
+          LOG(LS_INFO) << "Multiple FlexFEC streams in local SDP, but "
                           "our implementation only supports a single FlexFEC "
                           "stream. Will not enable FlexFEC for proposed "
                           "stream with SSRC: "
@@ -1781,10 +1795,8 @@ void WebRtcVideoChannel2::WebRtcVideoSendStream::SetCodec(
     parameters_.config.encoder_settings.internal_source = false;
   }
   parameters_.config.rtp.ulpfec = codec_settings.ulpfec;
-  if (IsFlexfecFieldTrialEnabled()) {
-    parameters_.config.rtp.flexfec.payload_type =
-        codec_settings.flexfec_payload_type;
-  }
+  parameters_.config.rtp.flexfec.payload_type =
+      codec_settings.flexfec_payload_type;
 
   // Set RTX payload type if RTX is enabled.
   if (!parameters_.config.rtp.rtx.ssrcs.empty()) {
