@@ -862,8 +862,6 @@ TEST_F(ApmTest, ChannelsInt16Interface) {
   for (size_t i = 1; i < 4; i++) {
     TestChangingChannelsInt16Interface(i, kNoErr);
     EXPECT_EQ(i, apm_->num_input_channels());
-    // We always force the number of reverse channels used for processing to 1.
-    EXPECT_EQ(1u, apm_->num_reverse_channels());
   }
 }
 

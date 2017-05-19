@@ -471,6 +471,7 @@ int AudioProcessingImpl::InitializeLocked() {
     render_.render_audio.reset(nullptr);
     render_.render_converter.reset(nullptr);
   }
+
   capture_.capture_audio.reset(
       new AudioBuffer(formats_.api_format.input_stream().num_frames(),
                       formats_.api_format.input_stream().num_channels(),
@@ -596,7 +597,13 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 
   // Always downmix the render stream to mono for analysis. This has been
   // demonstrated to work well for AEC in most practical scenarios.
-  formats_.render_processing_format = StreamConfig(render_processing_rate, 1);
+  if (submodule_states_.RenderMultiBandSubModulesActive()) {
+    formats_.render_processing_format = StreamConfig(render_processing_rate, 1);
+  } else {
+    formats_.render_processing_format = StreamConfig(
+        formats_.api_format.reverse_input_stream().sample_rate_hz(),
+        formats_.api_format.reverse_input_stream().num_channels());
+  }
 
   if (capture_nonlocked_.capture_processing_format.sample_rate_hz() ==
           kSampleRate32kHz ||
@@ -1460,7 +1467,10 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
   }
 #endif
 
-  QueueBandedRenderAudio(render_buffer);
+  if (submodule_states_.RenderMultiBandSubModulesActive()) {
+    QueueBandedRenderAudio(render_buffer);
+  }
+
   // TODO(peah): Perform the queueing ínside QueueRenderAudiuo().
   if (private_submodules_->echo_canceller3) {
     private_submodules_->echo_canceller3->AnalyzeRender(render_buffer);
