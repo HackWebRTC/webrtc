@@ -116,6 +116,18 @@ void RemoveSsrcsAndMsids(cricket::SessionDescription* desc) {
   desc->set_msid_supported(false);
 }
 
+int FindFirstMediaStatsIndexByKind(
+    const std::string& kind,
+    const std::vector<const webrtc::RTCMediaStreamTrackStats*>&
+        media_stats_vec) {
+  for (size_t i = 0; i < media_stats_vec.size(); i++) {
+    if (media_stats_vec[i]->kind.ValueToString() == kind) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 class SignalingMessageReceiver {
  public:
   virtual void ReceiveSdpMessage(const std::string& type,
@@ -1926,9 +1938,31 @@ TEST_F(PeerConnectionIntegrationTest,
   ASSERT_EQ(1U, inbound_stream_stats.size());
   ASSERT_TRUE(inbound_stream_stats[0]->bytes_received.is_defined());
   ASSERT_GT(*inbound_stream_stats[0]->bytes_received, 0U);
-  // TODO(deadbeef): Test that track_id is defined. This is not currently
-  // working since SSRCs are used to match RtpReceivers (and their tracks) with
-  // received stream stats in TrackMediaInfoMap.
+  ASSERT_TRUE(inbound_stream_stats[0]->track_id.is_defined());
+}
+
+// Test that we can successfully get the media related stats (audio level
+// etc.) for the unsignaled stream.
+TEST_F(PeerConnectionIntegrationTest,
+       GetMediaStatsForUnsignaledStreamWithNewStatsApi) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoMediaStream();
+  // Remove SSRCs and MSIDs from the received offer SDP.
+  callee()->SetReceivedSdpMunger(RemoveSsrcsAndMsids);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  // Wait for one audio frame to be received by the callee.
+  ExpectNewFramesReceivedWithWait(0, 0, 1, 1, kMaxWaitForFramesMs);
+
+  rtc::scoped_refptr<const webrtc::RTCStatsReport> report =
+      callee()->NewGetStats();
+  ASSERT_NE(nullptr, report);
+
+  auto media_stats = report->GetStatsOfType<webrtc::RTCMediaStreamTrackStats>();
+  auto audio_index = FindFirstMediaStatsIndexByKind("audio", media_stats);
+  ASSERT_GE(audio_index, 0);
+  EXPECT_TRUE(media_stats[audio_index]->audio_level.is_defined());
 }
 
 // Test that DTLS 1.0 is used if both sides only support DTLS 1.0.
