@@ -378,9 +378,8 @@ void ParsedRtcEventLog::GetVideoReceiveConfig(
   }
 }
 
-void ParsedRtcEventLog::GetVideoSendConfig(
-    size_t index,
-    VideoSendStream::Config* config) const {
+void ParsedRtcEventLog::GetVideoSendConfig(size_t index,
+                                           rtclog::StreamConfig* config) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
   RTC_CHECK(config != nullptr);
@@ -389,32 +388,31 @@ void ParsedRtcEventLog::GetVideoSendConfig(
   RTC_CHECK(event.has_video_sender_config());
   const rtclog::VideoSendConfig& sender_config = event.video_sender_config();
   // Get SSRCs.
-  config->rtp.ssrcs.clear();
-  for (int i = 0; i < sender_config.ssrcs_size(); i++) {
-    config->rtp.ssrcs.push_back(sender_config.ssrcs(i));
-  }
-  // Get header extensions.
-  GetHeaderExtensions(&config->rtp.extensions,
-                      sender_config.header_extensions());
-  // Get RTX settings.
-  config->rtp.rtx.ssrcs.clear();
-  for (int i = 0; i < sender_config.rtx_ssrcs_size(); i++) {
-    config->rtp.rtx.ssrcs.push_back(sender_config.rtx_ssrcs(i));
+  if (sender_config.ssrcs_size() > 0) {
+    config->local_ssrc = sender_config.ssrcs(0);
+    if (sender_config.ssrcs().size() > 1) {
+      LOG(WARNING) << "VideoSendConfig contains multiple ssrcs.";
+    }
   }
   if (sender_config.rtx_ssrcs_size() > 0) {
     RTC_CHECK(sender_config.has_rtx_payload_type());
-    config->rtp.rtx.payload_type = sender_config.rtx_payload_type();
-  } else {
-    // Reset RTX payload type default value if no RTX SSRCs are used.
-    config->rtp.rtx.payload_type = -1;
+    config->rtx_ssrc = sender_config.rtx_ssrcs(0);
+    if (sender_config.rtx_ssrcs_size() > 1) {
+      LOG(WARNING) << "VideoSendConfig contains multiple rtx ssrcs.";
+    }
   }
-  // Get encoder.
+  // Get header extensions.
+  GetHeaderExtensions(&config->rtp_extensions,
+                      sender_config.header_extensions());
+
+  // Get the codec.
   RTC_CHECK(sender_config.has_encoder());
   RTC_CHECK(sender_config.encoder().has_name());
   RTC_CHECK(sender_config.encoder().has_payload_type());
-  config->encoder_settings.payload_name = sender_config.encoder().name();
-  config->encoder_settings.payload_type =
-      sender_config.encoder().payload_type();
+  config->codecs.emplace_back(
+      sender_config.encoder().name(), sender_config.encoder().payload_type(),
+      sender_config.has_rtx_payload_type() ? sender_config.rtx_payload_type()
+                                           : 0);
 }
 
 void ParsedRtcEventLog::GetAudioReceiveConfig(

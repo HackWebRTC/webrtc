@@ -22,10 +22,9 @@ class RtcEventLogTestHelper {
       const ParsedRtcEventLog& parsed_log,
       size_t index,
       const rtclog::StreamConfig& config);
-  static void VerifyVideoSendStreamConfig(
-      const ParsedRtcEventLog& parsed_log,
-      size_t index,
-      const VideoSendStream::Config& config);
+  static void VerifyVideoSendStreamConfig(const ParsedRtcEventLog& parsed_log,
+                                          size_t index,
+                                          const rtclog::StreamConfig& config);
   static void VerifyAudioReceiveStreamConfig(
       const ParsedRtcEventLog& parsed_log,
       size_t index,

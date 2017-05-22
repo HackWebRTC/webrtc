@@ -382,26 +382,18 @@ int main(int argc, char* argv[]) {
     }
     if (parsed_stream.GetEventType(i) ==
         webrtc::ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT) {
-      webrtc::VideoSendStream::Config config(nullptr);
+      webrtc::rtclog::StreamConfig config;
       parsed_stream.GetVideoSendConfig(i, &config);
+      global_streams.emplace_back(config.local_ssrc, webrtc::MediaType::VIDEO,
+                                  webrtc::kOutgoingPacket);
 
-      for (uint32_t ssrc : config.rtp.ssrcs) {
-        global_streams.emplace_back(ssrc, webrtc::MediaType::VIDEO,
-                                    webrtc::kOutgoingPacket);
-      }
-      for (uint32_t ssrc : config.rtp.rtx.ssrcs) {
-        global_streams.emplace_back(ssrc, webrtc::MediaType::VIDEO,
-                                    webrtc::kOutgoingPacket);
-      }
+      global_streams.emplace_back(config.rtx_ssrc, webrtc::MediaType::VIDEO,
+                                  webrtc::kOutgoingPacket);
 
       if (!FLAGS_noconfig && !FLAGS_novideo && !FLAGS_nooutgoing) {
         std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_SEND_CONFIG";
-        std::cout << "\tssrcs=";
-        for (const auto& ssrc : config.rtp.ssrcs)
-          std::cout << ssrc << ',';
-        std::cout << "\trtx_ssrcs=";
-        for (const auto& ssrc : config.rtp.rtx.ssrcs)
-          std::cout << ssrc << ',';
+        std::cout << "\tssrcs=" << config.local_ssrc;
+        std::cout << "\trtx_ssrcs=" << config.rtx_ssrc;
         std::cout << std::endl;
       }
     }

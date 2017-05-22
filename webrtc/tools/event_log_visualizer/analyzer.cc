@@ -344,20 +344,16 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         break;
       }
       case ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT: {
-        VideoSendStream::Config config(nullptr);
+        rtclog::StreamConfig config;
         parsed_log_.GetVideoSendConfig(i, &config);
-        for (auto ssrc : config.rtp.ssrcs) {
-          StreamId stream(ssrc, kOutgoingPacket);
-          extension_maps[stream] = RtpHeaderExtensionMap(config.rtp.extensions);
-          video_ssrcs_.insert(stream);
-        }
-        for (auto ssrc : config.rtp.rtx.ssrcs) {
-          StreamId rtx_stream(ssrc, kOutgoingPacket);
-          extension_maps[rtx_stream] =
-              RtpHeaderExtensionMap(config.rtp.extensions);
-          video_ssrcs_.insert(rtx_stream);
-          rtx_ssrcs_.insert(rtx_stream);
-        }
+        StreamId stream(config.local_ssrc, kOutgoingPacket);
+        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp_extensions);
+        video_ssrcs_.insert(stream);
+        StreamId rtx_stream(config.rtx_ssrc, kOutgoingPacket);
+        extension_maps[rtx_stream] =
+            RtpHeaderExtensionMap(config.rtp_extensions);
+        video_ssrcs_.insert(rtx_stream);
+        rtx_ssrcs_.insert(rtx_stream);
         break;
       }
       case ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT: {

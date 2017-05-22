@@ -107,6 +107,23 @@ rtclog::StreamConfig CreateRtcLogStreamConfig(
   return rtclog_config;
 }
 
+rtclog::StreamConfig CreateRtcLogStreamConfig(
+    const VideoSendStream::Config& config,
+    size_t ssrc_index) {
+  rtclog::StreamConfig rtclog_config;
+  rtclog_config.local_ssrc = config.rtp.ssrcs[ssrc_index];
+  if (ssrc_index < config.rtp.rtx.ssrcs.size()) {
+    rtclog_config.rtx_ssrc = config.rtp.rtx.ssrcs[ssrc_index];
+  }
+  rtclog_config.rtcp_mode = config.rtp.rtcp_mode;
+  rtclog_config.rtp_extensions = config.rtp.extensions;
+
+  rtclog_config.codecs.emplace_back(config.encoder_settings.payload_name,
+                                    config.encoder_settings.payload_type,
+                                    config.rtp.rtx.payload_type);
+  return rtclog_config;
+}
+
 }  // namespace
 
 namespace internal {
@@ -638,7 +655,11 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
 
   video_send_delay_stats_->AddSsrcs(config);
-  event_log_->LogVideoSendStreamConfig(config);
+  for (size_t ssrc_index = 0; ssrc_index < config.rtp.ssrcs.size();
+       ++ssrc_index) {
+    event_log_->LogVideoSendStreamConfig(
+        CreateRtcLogStreamConfig(config, ssrc_index));
+  }
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
   // the call has already started.

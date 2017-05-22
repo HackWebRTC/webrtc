@@ -63,7 +63,7 @@ class RtcEventLogImpl final : public RtcEventLog {
                     int64_t max_size_bytes) override;
   void StopLogging() override;
   void LogVideoReceiveStreamConfig(const rtclog::StreamConfig& config) override;
-  void LogVideoSendStreamConfig(const VideoSendStream::Config& config) override;
+  void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) override;
   void LogAudioReceiveStreamConfig(
       const AudioReceiveStream::Config& config) override;
   void LogAudioSendStreamConfig(const AudioSendStream::Config& config) override;
@@ -312,32 +312,41 @@ void RtcEventLogImpl::LogVideoReceiveStreamConfig(
 }
 
 void RtcEventLogImpl::LogVideoSendStreamConfig(
-    const VideoSendStream::Config& config) {
+    const rtclog::StreamConfig& config) {
   std::unique_ptr<rtclog::Event> event(new rtclog::Event());
   event->set_timestamp_us(rtc::TimeMicros());
   event->set_type(rtclog::Event::VIDEO_SENDER_CONFIG_EVENT);
 
   rtclog::VideoSendConfig* sender_config = event->mutable_video_sender_config();
 
-  for (const auto& ssrc : config.rtp.ssrcs) {
-    sender_config->add_ssrcs(ssrc);
+  // TODO(perkj): rtclog::VideoSendConfig should only contain one SSRC.
+  sender_config->add_ssrcs(config.local_ssrc);
+  if (config.rtx_ssrc != 0) {
+    sender_config->add_rtx_ssrcs(config.rtx_ssrc);
   }
 
-  for (const auto& e : config.rtp.extensions) {
+  for (const auto& e : config.rtp_extensions) {
     rtclog::RtpHeaderExtension* extension =
         sender_config->add_header_extensions();
     extension->set_name(e.uri);
     extension->set_id(e.id);
   }
 
-  for (const auto& rtx_ssrc : config.rtp.rtx.ssrcs) {
-    sender_config->add_rtx_ssrcs(rtx_ssrc);
-  }
-  sender_config->set_rtx_payload_type(config.rtp.rtx.payload_type);
+  // TODO(perkj): rtclog::VideoSendConfig should contain many possible codec
+  // configurations.
+  for (const auto& codec : config.codecs) {
+    sender_config->set_rtx_payload_type(codec.rtx_payload_type);
+    rtclog::EncoderConfig* encoder = sender_config->mutable_encoder();
+    encoder->set_name(codec.payload_name);
+    encoder->set_payload_type(codec.payload_type);
 
-  rtclog::EncoderConfig* encoder = sender_config->mutable_encoder();
-  encoder->set_name(config.encoder_settings.payload_name);
-  encoder->set_payload_type(config.encoder_settings.payload_type);
+    if (config.codecs.size() > 1) {
+      LOG(WARNING) << "LogVideoSendStreamConfig currently only supports one "
+                   << "codec. Logging codec :" << codec.payload_name;
+      break;
+    }
+  }
+
   StoreEvent(&event);
 }
 

@@ -175,20 +175,16 @@ void GenerateVideoReceiveConfig(uint32_t extensions_bitvector,
 }
 
 void GenerateVideoSendConfig(uint32_t extensions_bitvector,
-                             VideoSendStream::Config* config,
+                             rtclog::StreamConfig* config,
                              Random* prng) {
-  // Create a map from a payload type to an encoder name.
-  config->encoder_settings.payload_type = prng->Rand(0, 127);
-  config->encoder_settings.payload_name = (prng->Rand<bool>() ? "VP8" : "H264");
-  // Add SSRCs for the stream.
-  config->rtp.ssrcs.push_back(prng->Rand<uint32_t>());
-  // Add a map from a payload type to new ssrcs and a new payload type for RTX.
-  config->rtp.rtx.ssrcs.push_back(prng->Rand<uint32_t>());
-  config->rtp.rtx.payload_type = prng->Rand(0, 127);
+  config->codecs.emplace_back(prng->Rand<bool>() ? "VP8" : "H264",
+                              prng->Rand(1, 127), prng->Rand(1, 127));
+  config->local_ssrc = prng->Rand<uint32_t>();
+  config->rtx_ssrc = prng->Rand<uint32_t>();
   // Add header extensions.
   for (unsigned i = 0; i < kNumExtensions; i++) {
     if (extensions_bitvector & (1u << i)) {
-      config->rtp.extensions.push_back(
+      config->rtp_extensions.push_back(
           RtpExtension(kExtensionNames[i], prng->Rand<int>()));
     }
   }
@@ -253,7 +249,7 @@ void LogSessionAndReadBack(size_t rtp_count,
   std::vector<std::pair<int32_t, uint8_t> > bwe_loss_updates;
 
   rtclog::StreamConfig receiver_config;
-  VideoSendStream::Config sender_config(nullptr);
+  rtclog::StreamConfig sender_config;
 
   Random prng(random_seed);
 
@@ -826,7 +822,7 @@ class VideoReceiveConfigReadWriteTest : public ConfigReadWriteTest {
 
 class VideoSendConfigReadWriteTest : public ConfigReadWriteTest {
  public:
-  VideoSendConfigReadWriteTest() : config(nullptr) {}
+  VideoSendConfigReadWriteTest() {}
   void GenerateConfig(uint32_t extensions_bitvector) override {
     GenerateVideoSendConfig(extensions_bitvector, &config, &prng);
   }
@@ -838,7 +834,7 @@ class VideoSendConfigReadWriteTest : public ConfigReadWriteTest {
     RtcEventLogTestHelper::VerifyVideoSendStreamConfig(parsed_log, index,
                                                        config);
   }
-  VideoSendStream::Config config;
+  rtclog::StreamConfig config;
 };
 
 class AudioNetworkAdaptationReadWriteTest : public ConfigReadWriteTest {

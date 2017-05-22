@@ -112,13 +112,12 @@ class RtcEventLog {
   // Stops logging to file and waits until the thread has finished.
   virtual void StopLogging() = 0;
 
-  // Logs configuration information for video receive stream.
+  // Logs configuration information for a video receive stream.
   virtual void LogVideoReceiveStreamConfig(
       const rtclog::StreamConfig& config) = 0;
 
-  // Logs configuration information for webrtc::VideoSendStream.
-  virtual void LogVideoSendStreamConfig(
-      const webrtc::VideoSendStream::Config& config) = 0;
+  // Logs configuration information for a video send stream.
+  virtual void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) = 0;
 
   // Logs configuration information for webrtc::AudioReceiveStream.
   virtual void LogAudioReceiveStreamConfig(
@@ -201,8 +200,7 @@ class RtcEventLogNullImpl final : public RtcEventLog {
   void StopLogging() override {}
   void LogVideoReceiveStreamConfig(
       const rtclog::StreamConfig& config) override {}
-  void LogVideoSendStreamConfig(
-      const VideoSendStream::Config& config) override {}
+  void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) override {}
   void LogAudioReceiveStreamConfig(
       const AudioReceiveStream::Config& config) override {}
   void LogAudioSendStreamConfig(
