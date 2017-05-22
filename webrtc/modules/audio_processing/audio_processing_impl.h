@@ -41,9 +41,7 @@ RTC_POP_IGNORING_WUNDEF()
 
 namespace webrtc {
 
-class AgcManagerDirect;
 class AudioConverter;
-
 class NonlinearBeamformer;
 
 class AudioProcessingImpl : public AudioProcessing {
@@ -167,6 +165,7 @@ class AudioProcessingImpl : public AudioProcessing {
                 bool intelligibility_enhancer_enabled,
                 bool beamformer_enabled,
                 bool adaptive_gain_controller_enabled,
+                bool gain_controller2_enabled,
                 bool level_controller_enabled,
                 bool echo_canceller3_enabled,
                 bool voice_activity_detector_enabled,
@@ -186,6 +185,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool intelligibility_enhancer_enabled_ = false;
     bool beamformer_enabled_ = false;
     bool adaptive_gain_controller_enabled_ = false;
+    bool gain_controller2_enabled_ = false;
     bool level_controller_enabled_ = false;
     bool echo_canceller3_enabled_ = false;
     bool level_estimator_enabled_ = false;
@@ -254,6 +254,7 @@ class AudioProcessingImpl : public AudioProcessing {
       EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeLowCutFilter() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializeEchoCanceller3() EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeGainController2();
 
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()
@@ -390,6 +391,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool intelligibility_enabled;
     bool level_controller_enabled = false;
     bool echo_canceller3_enabled = false;
+    bool gain_controller2_enabled = false;
   } capture_nonlocked_;
 
   struct ApmRenderState {

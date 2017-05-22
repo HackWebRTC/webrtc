@@ -50,6 +50,7 @@ struct SimulationSettings {
   rtc::Optional<bool> use_ed;  // Residual Echo Detector.
   rtc::Optional<std::string> ed_graph_output_filename;
   rtc::Optional<bool> use_agc;
+  rtc::Optional<bool> use_agc2;
   rtc::Optional<bool> use_hpf;
   rtc::Optional<bool> use_ns;
   rtc::Optional<bool> use_ts;

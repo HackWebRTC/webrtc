@@ -267,6 +267,14 @@ class AudioProcessing {
     struct EchoCanceller3 {
       bool enabled = false;
     } echo_canceller3;
+
+    // Enables the next generation AGC functionality. This feature replaces the
+    // standard methods of gain control in the previous AGC.
+    // The functionality is not yet activated in the code and turning this on
+    // does not yet have the desired behavior.
+    struct GainController2 {
+      bool enabled = false;
+    } gain_controller2;
   };
 
   // TODO(mgraczyk): Remove once all methods that use ChannelLayout are gone.

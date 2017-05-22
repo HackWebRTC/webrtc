@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <algorithm>
+#include <string>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -23,6 +24,7 @@
 #include "webrtc/common_audio/signal_processing/include/signal_processing_library.h"
 #include "webrtc/modules/audio_processing/aec/aec_core.h"
 #include "webrtc/modules/audio_processing/aec3/echo_canceller3.h"
+#include "webrtc/modules/audio_processing/agc2/gain_controller2.h"
 #include "webrtc/modules/audio_processing/agc/agc_manager_direct.h"
 #include "webrtc/modules/audio_processing/audio_buffer.h"
 #include "webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h"
@@ -171,6 +173,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     bool intelligibility_enhancer_enabled,
     bool beamformer_enabled,
     bool adaptive_gain_controller_enabled,
+    bool gain_controller2_enabled,
     bool level_controller_enabled,
     bool echo_canceller3_enabled,
     bool voice_activity_detector_enabled,
@@ -189,6 +192,8 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
   changed |= (beamformer_enabled != beamformer_enabled_);
   changed |=
       (adaptive_gain_controller_enabled != adaptive_gain_controller_enabled_);
+  changed |=
+      (gain_controller2_enabled != gain_controller2_enabled_);
   changed |= (level_controller_enabled != level_controller_enabled_);
   changed |= (echo_canceller3_enabled != echo_canceller3_enabled_);
   changed |= (level_estimator_enabled != level_estimator_enabled_);
@@ -204,6 +209,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     intelligibility_enhancer_enabled_ = intelligibility_enhancer_enabled;
     beamformer_enabled_ = beamformer_enabled;
     adaptive_gain_controller_enabled_ = adaptive_gain_controller_enabled;
+    gain_controller2_enabled_ = gain_controller2_enabled;
     level_controller_enabled_ = level_controller_enabled;
     echo_canceller3_enabled_ = echo_canceller3_enabled;
     level_estimator_enabled_ = level_estimator_enabled;
@@ -275,6 +281,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   // Accessed internally from capture or during initialization
   std::unique_ptr<NonlinearBeamformer> beamformer;
   std::unique_ptr<AgcManagerDirect> agc_manager;
+  std::unique_ptr<GainController2> gain_controller2;
   std::unique_ptr<LowCutFilter> low_cut_filter;
   std::unique_ptr<LevelController> level_controller;
   std::unique_ptr<ResidualEchoDetector> residual_echo_detector;
@@ -519,6 +526,7 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializeLevelController();
   InitializeResidualEchoDetector();
   InitializeEchoCanceller3();
+  InitializeGainController2();
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->is_open()) {
@@ -673,6 +681,25 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
     LOG(LS_INFO) << "Echo canceller 3 activated: "
                  << capture_nonlocked_.echo_canceller3_enabled;
   }
+
+  config_ok = GainController2::Validate(config_.gain_controller2);
+  if (!config_ok) {
+    LOG(LS_ERROR) << "AudioProcessing module config error" << std::endl
+                  << "gain_controller2: "
+                  << GainController2::ToString(config_.gain_controller2)
+                  << std::endl
+                  << "Reverting to default parameter set";
+    config_.gain_controller2 = AudioProcessing::Config::GainController2();
+  }
+
+  if (config.gain_controller2.enabled !=
+      capture_nonlocked_.gain_controller2_enabled) {
+    capture_nonlocked_.gain_controller2_enabled =
+        config_.gain_controller2.enabled;
+    InitializeGainController2();
+    LOG(LS_INFO) << "Gain controller 2 activated: "
+                 << capture_nonlocked_.gain_controller2_enabled;
+  }
 }
 
 void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
@@ -690,7 +717,7 @@ void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
   }
 
 #if WEBRTC_INTELLIGIBILITY_ENHANCER
-  if(capture_nonlocked_.intelligibility_enabled !=
+  if (capture_nonlocked_.intelligibility_enabled !=
      config.Get<Intelligibility>().enabled) {
     capture_nonlocked_.intelligibility_enabled =
         config.Get<Intelligibility>().enabled;
@@ -1295,6 +1322,10 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
         capture_.key_pressed);
   }
 
+  if (capture_nonlocked_.gain_controller2_enabled) {
+    private_submodules_->gain_controller2->Process(capture_buffer);
+  }
+
   if (capture_nonlocked_.level_controller_enabled) {
     private_submodules_->level_controller->Process(capture_buffer);
   }
@@ -1716,6 +1747,7 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       capture_nonlocked_.intelligibility_enabled,
       capture_nonlocked_.beamformer_enabled,
       public_submodules_->gain_control->is_enabled(),
+      capture_nonlocked_.gain_controller2_enabled,
       capture_nonlocked_.level_controller_enabled,
       capture_nonlocked_.echo_canceller3_enabled,
       public_submodules_->voice_detection->is_enabled(),
@@ -1766,12 +1798,22 @@ void AudioProcessingImpl::InitializeLowCutFilter() {
     private_submodules_->low_cut_filter.reset();
   }
 }
+
 void AudioProcessingImpl::InitializeEchoCanceller3() {
   if (capture_nonlocked_.echo_canceller3_enabled) {
     private_submodules_->echo_canceller3.reset(
         new EchoCanceller3(proc_sample_rate_hz(), true));
   } else {
     private_submodules_->echo_canceller3.reset();
+  }
+}
+
+void AudioProcessingImpl::InitializeGainController2() {
+  if (capture_nonlocked_.gain_controller2_enabled) {
+    private_submodules_->gain_controller2.reset(
+        new GainController2(proc_sample_rate_hz()));
+  } else {
+    private_submodules_->gain_controller2.reset();
   }
 }
 

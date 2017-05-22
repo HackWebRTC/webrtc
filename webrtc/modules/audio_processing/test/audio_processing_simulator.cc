@@ -270,6 +270,9 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (settings_.use_aec3) {
     apm_config.echo_canceller3.enabled = *settings_.use_aec3;
   }
+  if (settings_.use_agc2) {
+    apm_config.gain_controller2.enabled = *settings_.use_agc2;
+  }
   if (settings_.use_lc) {
     apm_config.level_controller.enabled = *settings_.use_lc;
   }
