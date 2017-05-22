@@ -336,6 +336,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   LOG(LS_INFO) << "WebRtcVoiceEngine::ApplyOptions: " << options_in.ToString();
   AudioOptions options = options_in;  // The options are modified below.
 
+  // Set and adjust echo canceller options.
   // kEcConference is AEC with high suppression.
   webrtc::EcModes ec_mode = webrtc::kEcConference;
   if (options.aecm_generate_comfort_noise) {
@@ -345,21 +346,13 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   }
 
 #if defined(WEBRTC_IOS)
-  // On iOS, VPIO provides built-in EC, NS and AGC.
+  // On iOS, VPIO provides built-in EC.
   options.echo_cancellation = rtc::Optional<bool>(false);
-  options.auto_gain_control = rtc::Optional<bool>(false);
-  options.noise_suppression = rtc::Optional<bool>(false);
-  LOG(LS_INFO)
-      << "Always disable AEC, NS and AGC on iOS. Use built-in instead.";
+  options.extended_filter_aec = rtc::Optional<bool>(false);
+  LOG(LS_INFO) << "Always disable AEC on iOS. Use built-in instead.";
 #elif defined(ANDROID)
   ec_mode = webrtc::kEcAecm;
-#endif
-
-#if defined(WEBRTC_IOS) || defined(ANDROID)
-  options.typing_detection = rtc::Optional<bool>(false);
-  options.experimental_agc = rtc::Optional<bool>(false);
   options.extended_filter_aec = rtc::Optional<bool>(false);
-  options.experimental_ns = rtc::Optional<bool>(false);
 #endif
 
   // Delay Agnostic AEC automatically turns on EC if not set except on iOS
@@ -372,6 +365,43 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
       options.echo_cancellation = rtc::Optional<bool>(true);
       options.extended_filter_aec = rtc::Optional<bool>(true);
       ec_mode = webrtc::kEcConference;
+    }
+  }
+#endif
+
+// Set and adjust noise suppressor options.
+#if defined(WEBRTC_IOS)
+  // On iOS, VPIO provides built-in NS.
+  options.noise_suppression = rtc::Optional<bool>(false);
+  options.typing_detection = rtc::Optional<bool>(false);
+  options.experimental_ns = rtc::Optional<bool>(false);
+  LOG(LS_INFO) << "Always disable NS on iOS. Use built-in instead.";
+#elif defined(ANDROID)
+  options.typing_detection = rtc::Optional<bool>(false);
+  options.experimental_ns = rtc::Optional<bool>(false);
+#endif
+
+// Set and adjust gain control options.
+#if defined(WEBRTC_IOS)
+  // On iOS, VPIO provides built-in AGC.
+  options.auto_gain_control = rtc::Optional<bool>(false);
+  options.experimental_agc = rtc::Optional<bool>(false);
+  LOG(LS_INFO) << "Always disable AGC on iOS. Use built-in instead.";
+#elif defined(ANDROID)
+  options.experimental_agc = rtc::Optional<bool>(false);
+#endif
+
+#if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
+  // Turn off the gain control if specified by the field trial. The purpose of the field trial is to reduce the amount of resampling performed inside the audio processing module on mobile platforms by whenever possible turning off the fixed AGC mode and the high-pass filter. (https://bugs.chromium.org/p/webrtc/issues/detail?id=6181).
+  if (webrtc::field_trial::IsEnabled(
+          "WebRTC-Audio-MinimizeResamplingOnMobile")) {
+    options.auto_gain_control = rtc::Optional<bool>(false);
+    LOG(LS_INFO) << "Disable AGC according to field trial.";
+    if (!(options.noise_suppression.value_or(false) or
+          options.echo_cancellation.value_or(false))) {
+      // If possible, turn off the high-pass filter.
+      LOG(LS_INFO) << "Disable high-pass filter in response to field trial.";
+      options.highpass_filter = rtc::Optional<bool>(false);
     }
   }
 #endif
