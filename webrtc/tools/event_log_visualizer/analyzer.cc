@@ -331,14 +331,14 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
 
     switch (parsed_log_.GetEventType(i)) {
       case ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT: {
-        VideoReceiveStream::Config config(nullptr);
+        rtclog::StreamConfig config;
         parsed_log_.GetVideoReceiveConfig(i, &config);
-        StreamId stream(config.rtp.remote_ssrc, kIncomingPacket);
-        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp.extensions);
+        StreamId stream(config.remote_ssrc, kIncomingPacket);
+        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp_extensions);
         video_ssrcs_.insert(stream);
-        StreamId rtx_stream(config.rtp.rtx_ssrc, kIncomingPacket);
+        StreamId rtx_stream(config.rtx_ssrc, kIncomingPacket);
         extension_maps[rtx_stream] =
-            RtpHeaderExtensionMap(config.rtp.extensions);
+            RtpHeaderExtensionMap(config.rtp_extensions);
         video_ssrcs_.insert(rtx_stream);
         rtx_ssrcs_.insert(rtx_stream);
         break;

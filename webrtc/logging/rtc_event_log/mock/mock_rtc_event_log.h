@@ -30,7 +30,7 @@ class MockRtcEventLog : public RtcEventLog {
   MOCK_METHOD0(StopLogging, void());
 
   MOCK_METHOD1(LogVideoReceiveStreamConfig,
-               void(const webrtc::VideoReceiveStream::Config& config));
+               void(const rtclog::StreamConfig& config));
 
   MOCK_METHOD1(LogVideoSendStreamConfig,
                void(const webrtc::VideoSendStream::Config& config));

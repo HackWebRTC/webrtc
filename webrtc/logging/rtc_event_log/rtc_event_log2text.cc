@@ -364,20 +364,20 @@ int main(int argc, char* argv[]) {
   for (size_t i = 0; i < parsed_stream.GetNumberOfEvents(); i++) {
     if (parsed_stream.GetEventType(i) ==
         webrtc::ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT) {
-      webrtc::VideoReceiveStream::Config config(nullptr);
+      webrtc::rtclog::StreamConfig config;
       parsed_stream.GetVideoReceiveConfig(i, &config);
 
-      global_streams.emplace_back(config.rtp.remote_ssrc,
+      global_streams.emplace_back(config.remote_ssrc,
                                   webrtc::MediaType::VIDEO,
                                   webrtc::kIncomingPacket);
-      global_streams.emplace_back(config.rtp.local_ssrc,
+      global_streams.emplace_back(config.local_ssrc,
                                   webrtc::MediaType::VIDEO,
                                   webrtc::kOutgoingPacket);
 
       if (!FLAGS_noconfig && !FLAGS_novideo && !FLAGS_noincoming) {
         std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_RECV_CONFIG"
-                  << "\tssrc=" << config.rtp.remote_ssrc
-                  << "\tfeedback_ssrc=" << config.rtp.local_ssrc << std::endl;
+                << "\tssrc=" << config.remote_ssrc
+                << "\tfeedback_ssrc=" << config.local_ssrc << std::endl;
       }
     }
     if (parsed_stream.GetEventType(i) ==

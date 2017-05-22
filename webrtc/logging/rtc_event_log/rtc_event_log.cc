@@ -62,8 +62,7 @@ class RtcEventLogImpl final : public RtcEventLog {
   bool StartLogging(rtc::PlatformFile platform_file,
                     int64_t max_size_bytes) override;
   void StopLogging() override;
-  void LogVideoReceiveStreamConfig(
-      const VideoReceiveStream::Config& config) override;
+  void LogVideoReceiveStreamConfig(const rtclog::StreamConfig& config) override;
   void LogVideoSendStreamConfig(const VideoSendStream::Config& config) override;
   void LogAudioReceiveStreamConfig(
       const AudioReceiveStream::Config& config) override;
@@ -277,37 +276,37 @@ void RtcEventLogImpl::StopLogging() {
 }
 
 void RtcEventLogImpl::LogVideoReceiveStreamConfig(
-    const VideoReceiveStream::Config& config) {
+    const rtclog::StreamConfig& config) {
   std::unique_ptr<rtclog::Event> event(new rtclog::Event());
   event->set_timestamp_us(rtc::TimeMicros());
   event->set_type(rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT);
 
   rtclog::VideoReceiveConfig* receiver_config =
       event->mutable_video_receiver_config();
-  receiver_config->set_remote_ssrc(config.rtp.remote_ssrc);
-  receiver_config->set_local_ssrc(config.rtp.local_ssrc);
+  receiver_config->set_remote_ssrc(config.remote_ssrc);
+  receiver_config->set_local_ssrc(config.local_ssrc);
 
-  receiver_config->set_rtcp_mode(ConvertRtcpMode(config.rtp.rtcp_mode));
-  receiver_config->set_remb(config.rtp.remb);
+  // TODO(perkj): Add field for rsid.
+  receiver_config->set_rtcp_mode(ConvertRtcpMode(config.rtcp_mode));
+  receiver_config->set_remb(config.remb);
 
-  for (const auto& kv : config.rtp.rtx_payload_types) {
-    rtclog::RtxMap* rtx = receiver_config->add_rtx_map();
-    rtx->set_payload_type(kv.first);
-    rtx->mutable_config()->set_rtx_ssrc(config.rtp.rtx_ssrc);
-    rtx->mutable_config()->set_rtx_payload_type(kv.second);
-  }
-
-  for (const auto& e : config.rtp.extensions) {
+  for (const auto& e : config.rtp_extensions) {
     rtclog::RtpHeaderExtension* extension =
         receiver_config->add_header_extensions();
     extension->set_name(e.uri);
     extension->set_id(e.id);
   }
 
-  for (const auto& d : config.decoders) {
+  for (const auto& d : config.codecs) {
     rtclog::DecoderConfig* decoder = receiver_config->add_decoders();
     decoder->set_name(d.payload_name);
     decoder->set_payload_type(d.payload_type);
+    if (d.rtx_payload_type != 0) {
+      rtclog::RtxMap* rtx = receiver_config->add_rtx_map();
+      rtx->set_payload_type(d.payload_type);
+      rtx->mutable_config()->set_rtx_ssrc(config.rtx_ssrc);
+      rtx->mutable_config()->set_rtx_payload_type(d.rtx_payload_type);
+    }
   }
   StoreEvent(&event);
 }

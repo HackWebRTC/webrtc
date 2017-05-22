@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "webrtc/base/platform_file.h"
 #include "webrtc/call/audio_receive_stream.h"
@@ -26,6 +27,33 @@ namespace webrtc {
 // the protobuf file.
 namespace rtclog {
 class EventStream;
+
+struct StreamConfig {
+  uint32_t local_ssrc = 0;
+  uint32_t remote_ssrc = 0;
+  uint32_t rtx_ssrc = 0;
+  std::string rsid;
+
+  bool remb = false;
+  std::vector<RtpExtension> rtp_extensions;
+
+  RtcpMode rtcp_mode = RtcpMode::kReducedSize;
+
+  struct Codec {
+    Codec(const std::string& payload_name,
+          int payload_type,
+          int rtx_payload_type)
+        : payload_name(payload_name),
+          payload_type(payload_type),
+          rtx_payload_type(rtx_payload_type) {}
+
+    std::string payload_name;
+    int payload_type;
+    int rtx_payload_type;
+  };
+  std::vector<Codec> codecs;
+};
+
 }  // namespace rtclog
 
 class Clock;
@@ -84,9 +112,9 @@ class RtcEventLog {
   // Stops logging to file and waits until the thread has finished.
   virtual void StopLogging() = 0;
 
-  // Logs configuration information for webrtc::VideoReceiveStream.
+  // Logs configuration information for video receive stream.
   virtual void LogVideoReceiveStreamConfig(
-      const webrtc::VideoReceiveStream::Config& config) = 0;
+      const rtclog::StreamConfig& config) = 0;
 
   // Logs configuration information for webrtc::VideoSendStream.
   virtual void LogVideoSendStreamConfig(
@@ -172,7 +200,7 @@ class RtcEventLogNullImpl final : public RtcEventLog {
                     int64_t max_size_bytes) override;
   void StopLogging() override {}
   void LogVideoReceiveStreamConfig(
-      const VideoReceiveStream::Config& config) override {}
+      const rtclog::StreamConfig& config) override {}
   void LogVideoSendStreamConfig(
       const VideoSendStream::Config& config) override {}
   void LogAudioReceiveStreamConfig(

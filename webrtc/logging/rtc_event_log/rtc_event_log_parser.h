@@ -114,10 +114,9 @@ class ParsedRtcEventLog {
                      uint8_t* packet,
                      size_t* length) const;
 
-  // Reads a config event to a (non-NULL) VideoReceiveStream::Config struct.
+  // Reads a config event to a (non-NULL) StreamConfig struct.
   // Only the fields that are stored in the protobuf will be written.
-  void GetVideoReceiveConfig(size_t index,
-                             VideoReceiveStream::Config* config) const;
+  void GetVideoReceiveConfig(size_t index, rtclog::StreamConfig* config) const;
 
   // Reads a config event to a (non-NULL) VideoSendStream::Config struct.
   // Only the fields that are stored in the protobuf will be written.

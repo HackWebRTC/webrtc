@@ -88,6 +88,25 @@ bool UseSendSideBwe(const FlexfecReceiveStream::Config& config) {
   return UseSendSideBwe(config.rtp_header_extensions, config.transport_cc);
 }
 
+rtclog::StreamConfig CreateRtcLogStreamConfig(
+    const VideoReceiveStream::Config& config) {
+  rtclog::StreamConfig rtclog_config;
+  rtclog_config.remote_ssrc = config.rtp.remote_ssrc;
+  rtclog_config.local_ssrc = config.rtp.local_ssrc;
+  rtclog_config.rtx_ssrc = config.rtp.rtx_ssrc;
+  rtclog_config.rtcp_mode = config.rtp.rtcp_mode;
+  rtclog_config.remb = config.rtp.remb;
+  rtclog_config.rtp_extensions = config.rtp.extensions;
+
+  for (const auto& d : config.decoders) {
+    auto search = config.rtp.rtx_payload_types.find(d.payload_type);
+    rtclog_config.codecs.emplace_back(
+        d.payload_name, d.payload_type,
+        search != config.rtp.rtx_payload_types.end() ? search->second : 0);
+  }
+  return rtclog_config;
+}
+
 }  // namespace
 
 namespace internal {
@@ -710,7 +729,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   }
   receive_stream->SignalNetworkState(video_network_state_);
   UpdateAggregateNetworkState();
-  event_log_->LogVideoReceiveStreamConfig(config);
+  event_log_->LogVideoReceiveStreamConfig(CreateRtcLogStreamConfig(config));
   return receive_stream;
 }
 
