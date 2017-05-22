@@ -120,7 +120,7 @@ class AsyncInvoker : public MessageHandler {
                        uint32_t id);
   volatile int pending_invocations_ = 0;
   Event invocation_complete_;
-  bool destroying_ = false;
+  int destroying_ = 0;
   friend class AsyncClosure;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncInvoker);
