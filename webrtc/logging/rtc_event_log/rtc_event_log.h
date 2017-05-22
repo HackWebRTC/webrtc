@@ -123,9 +123,8 @@ class RtcEventLog {
   virtual void LogAudioReceiveStreamConfig(
       const rtclog::StreamConfig& config) = 0;
 
-  // Logs configuration information for webrtc::AudioSendStream.
-  virtual void LogAudioSendStreamConfig(
-      const webrtc::AudioSendStream::Config& config) = 0;
+  // Logs configuration information for an audio send stream.
+  virtual void LogAudioSendStreamConfig(const rtclog::StreamConfig& config) = 0;
 
   // Logs the header of an incoming or outgoing RTP packet. packet_length
   // is the total length of the packet, including both header and payload.
@@ -203,8 +202,7 @@ class RtcEventLogNullImpl final : public RtcEventLog {
   void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) override {}
   void LogAudioReceiveStreamConfig(
       const rtclog::StreamConfig& config) override {}
-  void LogAudioSendStreamConfig(
-      const AudioSendStream::Config& config) override {}
+  void LogAudioSendStreamConfig(const rtclog::StreamConfig& config) override {}
   void LogRtpHeader(PacketDirection direction,
                     MediaType media_type,
                     const uint8_t* header,

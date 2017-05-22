@@ -365,10 +365,10 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         break;
       }
       case ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT: {
-        AudioSendStream::Config config(nullptr);
+        rtclog::StreamConfig config;
         parsed_log_.GetAudioSendConfig(i, &config);
-        StreamId stream(config.rtp.ssrc, kOutgoingPacket);
-        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp.extensions);
+        StreamId stream(config.local_ssrc, kOutgoingPacket);
+        extension_maps[stream] = RtpHeaderExtensionMap(config.rtp_extensions);
         audio_ssrcs_.insert(stream);
         break;
       }

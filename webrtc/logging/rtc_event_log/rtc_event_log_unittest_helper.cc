@@ -339,37 +339,29 @@ void RtcEventLogTestHelper::VerifyAudioReceiveStreamConfig(
 void RtcEventLogTestHelper::VerifyAudioSendStreamConfig(
     const ParsedRtcEventLog& parsed_log,
     size_t index,
-    const AudioSendStream::Config& config) {
+    const rtclog::StreamConfig& config) {
   const rtclog::Event& event = parsed_log.events_[index];
   ASSERT_TRUE(IsValidBasicEvent(event));
   ASSERT_EQ(rtclog::Event::AUDIO_SENDER_CONFIG_EVENT, event.type());
   const rtclog::AudioSendConfig& sender_config = event.audio_sender_config();
   // Check SSRCs.
-  EXPECT_EQ(config.rtp.ssrc, sender_config.ssrc());
+  EXPECT_EQ(config.local_ssrc, sender_config.ssrc());
   // Check header extensions.
-  ASSERT_EQ(static_cast<int>(config.rtp.extensions.size()),
+  ASSERT_EQ(static_cast<int>(config.rtp_extensions.size()),
             sender_config.header_extensions_size());
   for (int i = 0; i < sender_config.header_extensions_size(); i++) {
     ASSERT_TRUE(sender_config.header_extensions(i).has_name());
     ASSERT_TRUE(sender_config.header_extensions(i).has_id());
     const std::string& name = sender_config.header_extensions(i).name();
     int id = sender_config.header_extensions(i).id();
-    EXPECT_EQ(config.rtp.extensions[i].id, id);
-    EXPECT_EQ(config.rtp.extensions[i].uri, name);
+    EXPECT_EQ(config.rtp_extensions[i].id, id);
+    EXPECT_EQ(config.rtp_extensions[i].uri, name);
   }
 
   // Check consistency of the parser.
-  AudioSendStream::Config parsed_config(nullptr);
+  rtclog::StreamConfig parsed_config;
   parsed_log.GetAudioSendConfig(index, &parsed_config);
-  // Check SSRCs
-  EXPECT_EQ(config.rtp.ssrc, parsed_config.rtp.ssrc);
-  // Check header extensions.
-  EXPECT_EQ(config.rtp.extensions.size(), parsed_config.rtp.extensions.size());
-  for (size_t i = 0; i < parsed_config.rtp.extensions.size(); i++) {
-    EXPECT_EQ(config.rtp.extensions[i].uri,
-              parsed_config.rtp.extensions[i].uri);
-    EXPECT_EQ(config.rtp.extensions[i].id, parsed_config.rtp.extensions[i].id);
-  }
+  VerifyStreamConfigsAreEqual(config, parsed_config);
 }
 
 void RtcEventLogTestHelper::VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,

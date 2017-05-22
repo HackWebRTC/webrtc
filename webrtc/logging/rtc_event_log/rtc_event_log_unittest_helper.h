@@ -29,10 +29,9 @@ class RtcEventLogTestHelper {
       const ParsedRtcEventLog& parsed_log,
       size_t index,
       const rtclog::StreamConfig& config);
-  static void VerifyAudioSendStreamConfig(
-      const ParsedRtcEventLog& parsed_log,
-      size_t index,
-      const AudioSendStream::Config& config);
+  static void VerifyAudioSendStreamConfig(const ParsedRtcEventLog& parsed_log,
+                                          size_t index,
+                                          const rtclog::StreamConfig& config);
   static void VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,
                              size_t index,
                              PacketDirection direction,

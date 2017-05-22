@@ -133,6 +133,18 @@ rtclog::StreamConfig CreateRtcLogStreamConfig(
   return rtclog_config;
 }
 
+rtclog::StreamConfig CreateRtcLogStreamConfig(
+    const AudioSendStream::Config& config) {
+  rtclog::StreamConfig rtclog_config;
+  rtclog_config.local_ssrc = config.rtp.ssrc;
+  rtclog_config.rtp_extensions = config.rtp.extensions;
+  if (config.send_codec_spec) {
+    rtclog_config.codecs.emplace_back(config.send_codec_spec->format.name,
+                                      config.send_codec_spec->payload_type, 0);
+  }
+  return rtclog_config;
+}
+
 }  // namespace
 
 namespace internal {
@@ -549,7 +561,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  event_log_->LogAudioSendStreamConfig(config);
+  event_log_->LogAudioSendStreamConfig(CreateRtcLogStreamConfig(config));
   AudioSendStream* send_stream = new AudioSendStream(
       config, config_.audio_state, &worker_queue_, transport_send_.get(),
       bitrate_allocator_.get(), event_log_, call_stats_->rtcp_rtt_stats());

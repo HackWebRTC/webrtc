@@ -39,7 +39,7 @@ class MockRtcEventLog : public RtcEventLog {
                void(const rtclog::StreamConfig& config));
 
   MOCK_METHOD1(LogAudioSendStreamConfig,
-               void(const webrtc::AudioSendStream::Config& config));
+               void(const rtclog::StreamConfig& config));
 
   MOCK_METHOD4(LogRtpHeader,
                void(PacketDirection direction,

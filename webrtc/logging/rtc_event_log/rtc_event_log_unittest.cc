@@ -206,14 +206,14 @@ void GenerateAudioReceiveConfig(uint32_t extensions_bitvector,
 }
 
 void GenerateAudioSendConfig(uint32_t extensions_bitvector,
-                             AudioSendStream::Config* config,
+                             rtclog::StreamConfig* config,
                              Random* prng) {
   // Add SSRC to the stream.
-  config->rtp.ssrc = prng->Rand<uint32_t>();
+  config->local_ssrc = prng->Rand<uint32_t>();
   // Add header extensions.
   for (unsigned i = 0; i < kNumExtensions; i++) {
     if (extensions_bitvector & (1u << i)) {
-      config->rtp.extensions.push_back(
+      config->rtp_extensions.push_back(
           RtpExtension(kExtensionNames[i], prng->Rand<int>()));
     }
   }
@@ -788,7 +788,7 @@ class AudioReceiveConfigReadWriteTest : public ConfigReadWriteTest {
 
 class AudioSendConfigReadWriteTest : public ConfigReadWriteTest {
  public:
-  AudioSendConfigReadWriteTest() : config(nullptr) {}
+  AudioSendConfigReadWriteTest() {}
   void GenerateConfig(uint32_t extensions_bitvector) override {
     GenerateAudioSendConfig(extensions_bitvector, &config, &prng);
   }
@@ -800,7 +800,7 @@ class AudioSendConfigReadWriteTest : public ConfigReadWriteTest {
     RtcEventLogTestHelper::VerifyAudioSendStreamConfig(parsed_log, index,
                                                        config);
   }
-  AudioSendStream::Config config;
+  rtclog::StreamConfig config;
 };
 
 class VideoReceiveConfigReadWriteTest : public ConfigReadWriteTest {

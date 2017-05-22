@@ -415,13 +415,13 @@ int main(int argc, char* argv[]) {
     }
     if (parsed_stream.GetEventType(i) ==
         webrtc::ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
-      webrtc::AudioSendStream::Config config(nullptr);
+      webrtc::rtclog::StreamConfig config;
       parsed_stream.GetAudioSendConfig(i, &config);
-      global_streams.emplace_back(config.rtp.ssrc, webrtc::MediaType::AUDIO,
+      global_streams.emplace_back(config.local_ssrc, webrtc::MediaType::AUDIO,
                                   webrtc::kOutgoingPacket);
       if (!FLAGS_noconfig && !FLAGS_noaudio && !FLAGS_nooutgoing) {
         std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_SEND_CONFIG"
-                  << "\tssrc=" << config.rtp.ssrc << std::endl;
+                  << "\tssrc=" << config.local_ssrc << std::endl;
       }
     }
     if (!FLAGS_nortp &&
