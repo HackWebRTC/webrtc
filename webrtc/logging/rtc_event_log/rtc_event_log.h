@@ -119,9 +119,9 @@ class RtcEventLog {
   // Logs configuration information for a video send stream.
   virtual void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) = 0;
 
-  // Logs configuration information for webrtc::AudioReceiveStream.
+  // Logs configuration information for an audio receive stream.
   virtual void LogAudioReceiveStreamConfig(
-      const webrtc::AudioReceiveStream::Config& config) = 0;
+      const rtclog::StreamConfig& config) = 0;
 
   // Logs configuration information for webrtc::AudioSendStream.
   virtual void LogAudioSendStreamConfig(
@@ -202,7 +202,7 @@ class RtcEventLogNullImpl final : public RtcEventLog {
       const rtclog::StreamConfig& config) override {}
   void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) override {}
   void LogAudioReceiveStreamConfig(
-      const AudioReceiveStream::Config& config) override {}
+      const rtclog::StreamConfig& config) override {}
   void LogAudioSendStreamConfig(
       const AudioSendStream::Config& config) override {}
   void LogRtpHeader(PacketDirection direction,

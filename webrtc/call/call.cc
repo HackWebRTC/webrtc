@@ -124,6 +124,15 @@ rtclog::StreamConfig CreateRtcLogStreamConfig(
   return rtclog_config;
 }
 
+rtclog::StreamConfig CreateRtcLogStreamConfig(
+    const AudioReceiveStream::Config& config) {
+  rtclog::StreamConfig rtclog_config;
+  rtclog_config.remote_ssrc = config.rtp.remote_ssrc;
+  rtclog_config.local_ssrc = config.rtp.local_ssrc;
+  rtclog_config.rtp_extensions = config.rtp.extensions;
+  return rtclog_config;
+}
+
 }  // namespace
 
 namespace internal {
@@ -594,7 +603,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
-  event_log_->LogAudioReceiveStreamConfig(config);
+  event_log_->LogAudioReceiveStreamConfig(CreateRtcLogStreamConfig(config));
   AudioReceiveStream* receive_stream =
       new AudioReceiveStream(transport_send_->packet_router(), config,
                              config_.audio_state, event_log_);

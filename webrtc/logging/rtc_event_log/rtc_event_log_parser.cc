@@ -417,7 +417,7 @@ void ParsedRtcEventLog::GetVideoSendConfig(size_t index,
 
 void ParsedRtcEventLog::GetAudioReceiveConfig(
     size_t index,
-    AudioReceiveStream::Config* config) const {
+    rtclog::StreamConfig* config) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
   RTC_CHECK(config != nullptr);
@@ -428,11 +428,11 @@ void ParsedRtcEventLog::GetAudioReceiveConfig(
       event.audio_receiver_config();
   // Get SSRCs.
   RTC_CHECK(receiver_config.has_remote_ssrc());
-  config->rtp.remote_ssrc = receiver_config.remote_ssrc();
+  config->remote_ssrc = receiver_config.remote_ssrc();
   RTC_CHECK(receiver_config.has_local_ssrc());
-  config->rtp.local_ssrc = receiver_config.local_ssrc();
+  config->local_ssrc = receiver_config.local_ssrc();
   // Get header extensions.
-  GetHeaderExtensions(&config->rtp.extensions,
+  GetHeaderExtensions(&config->rtp_extensions,
                       receiver_config.header_extensions());
 }
 

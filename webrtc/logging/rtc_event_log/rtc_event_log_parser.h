@@ -122,10 +122,9 @@ class ParsedRtcEventLog {
   // Only the fields that are stored in the protobuf will be written.
   void GetVideoSendConfig(size_t index, rtclog::StreamConfig* config) const;
 
-  // Reads a config event to a (non-NULL) AudioReceiveStream::Config struct.
+  // Reads a config event to a (non-NULL) StreamConfig struct.
   // Only the fields that are stored in the protobuf will be written.
-  void GetAudioReceiveConfig(size_t index,
-                             AudioReceiveStream::Config* config) const;
+  void GetAudioReceiveConfig(size_t index, rtclog::StreamConfig* config) const;
 
   // Reads a config event to a (non-NULL) AudioSendStream::Config struct.
   // Only the fields that are stored in the protobuf will be written.

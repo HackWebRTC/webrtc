@@ -64,8 +64,7 @@ class RtcEventLogImpl final : public RtcEventLog {
   void StopLogging() override;
   void LogVideoReceiveStreamConfig(const rtclog::StreamConfig& config) override;
   void LogVideoSendStreamConfig(const rtclog::StreamConfig& config) override;
-  void LogAudioReceiveStreamConfig(
-      const AudioReceiveStream::Config& config) override;
+  void LogAudioReceiveStreamConfig(const rtclog::StreamConfig& config) override;
   void LogAudioSendStreamConfig(const AudioSendStream::Config& config) override;
   void LogRtpHeader(PacketDirection direction,
                     MediaType media_type,
@@ -351,17 +350,17 @@ void RtcEventLogImpl::LogVideoSendStreamConfig(
 }
 
 void RtcEventLogImpl::LogAudioReceiveStreamConfig(
-    const AudioReceiveStream::Config& config) {
+    const rtclog::StreamConfig& config) {
   std::unique_ptr<rtclog::Event> event(new rtclog::Event());
   event->set_timestamp_us(rtc::TimeMicros());
   event->set_type(rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT);
 
   rtclog::AudioReceiveConfig* receiver_config =
       event->mutable_audio_receiver_config();
-  receiver_config->set_remote_ssrc(config.rtp.remote_ssrc);
-  receiver_config->set_local_ssrc(config.rtp.local_ssrc);
+  receiver_config->set_remote_ssrc(config.remote_ssrc);
+  receiver_config->set_local_ssrc(config.local_ssrc);
 
-  for (const auto& e : config.rtp.extensions) {
+  for (const auto& e : config.rtp_extensions) {
     rtclog::RtpHeaderExtension* extension =
         receiver_config->add_header_extensions();
     extension->set_name(e.uri);

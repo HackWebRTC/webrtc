@@ -399,18 +399,18 @@ int main(int argc, char* argv[]) {
     }
     if (parsed_stream.GetEventType(i) ==
         webrtc::ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT) {
-      webrtc::AudioReceiveStream::Config config;
+      webrtc::rtclog::StreamConfig config;
       parsed_stream.GetAudioReceiveConfig(i, &config);
-      global_streams.emplace_back(config.rtp.remote_ssrc,
+      global_streams.emplace_back(config.remote_ssrc,
                                   webrtc::MediaType::AUDIO,
                                   webrtc::kIncomingPacket);
-      global_streams.emplace_back(config.rtp.local_ssrc,
+      global_streams.emplace_back(config.local_ssrc,
                                   webrtc::MediaType::AUDIO,
                                   webrtc::kOutgoingPacket);
       if (!FLAGS_noconfig && !FLAGS_noaudio && !FLAGS_noincoming) {
         std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_RECV_CONFIG"
-                  << "\tssrc=" << config.rtp.remote_ssrc
-                  << "\tfeedback_ssrc=" << config.rtp.local_ssrc << std::endl;
+                  << "\tssrc=" << config.remote_ssrc
+                  << "\tfeedback_ssrc=" << config.local_ssrc << std::endl;
       }
     }
     if (parsed_stream.GetEventType(i) ==
