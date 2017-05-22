@@ -22,8 +22,8 @@ TestController::TestController(int min_port,
       local_test_done_(false),
       remote_test_done_(false) {
   RTC_DCHECK_RUN_ON(&test_controller_thread_checker_);
-  send_data_.fill(42);
   packet_sender_checker_.Detach();
+  send_data_.fill(42);
   auto socket =
       std::unique_ptr<rtc::AsyncPacketSocket>(socket_factory_.CreateUdpSocket(
           rtc::SocketAddress(rtc::GetAnyIP(AF_INET), 0), min_port, max_port));
@@ -53,10 +53,11 @@ void TestController::SendData(const NetworkTesterPacket& packet,
   // Can be call from packet_sender or from test_controller thread.
   size_t packet_size = packet.ByteSize();
   send_data_[0] = packet_size;
+  packet_size++;
   packet.SerializeToArray(&send_data_[1], std::numeric_limits<char>::max());
   if (data_size && *data_size > packet_size)
     packet_size = *data_size;
-  udp_transport_->SendPacket(send_data_.data(), packet_size + 1,
+  udp_transport_->SendPacket(send_data_.data(), packet_size,
                              rtc::PacketOptions(), 0);
 }
 

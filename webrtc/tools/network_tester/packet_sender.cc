@@ -10,6 +10,7 @@
 
 #include "webrtc/tools/network_tester/packet_sender.h"
 
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -24,20 +25,23 @@ namespace {
 class SendPacketTask : public rtc::QueuedTask {
  public:
   explicit SendPacketTask(PacketSender* packet_sender)
-      : packet_sender_(packet_sender) {}
+      : target_time_ms_(rtc::TimeMillis()), packet_sender_(packet_sender) {}
 
  private:
   bool Run() override {
     if (packet_sender_->IsSending()) {
       packet_sender_->SendPacket();
+      target_time_ms_ += packet_sender_->GetSendIntervalMs();
+      int64_t delay_ms = std::max(static_cast<int64_t>(0),
+                                  target_time_ms_ - rtc::TimeMillis());
       rtc::TaskQueue::Current()->PostDelayedTask(
-          std::unique_ptr<QueuedTask>(this),
-          packet_sender_->GetSendIntervalMs());
+          std::unique_ptr<QueuedTask>(this), delay_ms);
       return false;
     } else {
       return true;
     }
   }
+  int64_t target_time_ms_;
   PacketSender* const packet_sender_;
 };
 
