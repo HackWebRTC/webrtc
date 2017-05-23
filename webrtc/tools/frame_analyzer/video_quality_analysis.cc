@@ -460,6 +460,10 @@ void PrintMaxRepeatedAndSkippedFrames(FILE* output,
       }
       continue;
     }
+    fprintf(stderr,
+            "Found barcode %d in test video, which is not in reference video",
+            it_test->first);
+    return;
   }
 
   fprintf(output, "RESULT Max_repeated: %s= %d\n", label.c_str(),
