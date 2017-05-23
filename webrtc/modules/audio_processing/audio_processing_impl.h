@@ -173,6 +173,7 @@ class AudioProcessingImpl : public AudioProcessing {
                 bool transient_suppressor_enabled);
     bool CaptureMultiBandSubModulesActive() const;
     bool CaptureMultiBandProcessingActive() const;
+    bool CaptureFullBandProcessingActive() const;
     bool RenderMultiBandSubModulesActive() const;
     bool RenderMultiBandProcessingActive() const;
 

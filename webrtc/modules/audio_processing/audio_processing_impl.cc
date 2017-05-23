@@ -240,6 +240,11 @@ bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandProcessingActive()
          echo_canceller3_enabled_;
 }
 
+bool AudioProcessingImpl::ApmSubmoduleStates::CaptureFullBandProcessingActive()
+    const {
+  return level_controller_enabled_;
+}
+
 bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandSubModulesActive()
     const {
   return RenderMultiBandProcessingActive() || echo_canceller_enabled_ ||
@@ -1133,7 +1138,8 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   capture_.capture_audio->DeinterleaveFrom(frame);
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
   capture_.capture_audio->InterleaveTo(
-      frame, submodule_states_.CaptureMultiBandProcessingActive());
+      frame, submodule_states_.CaptureMultiBandProcessingActive() ||
+                 submodule_states_.CaptureFullBandProcessingActive());
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->is_open()) {
