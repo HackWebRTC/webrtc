@@ -114,8 +114,12 @@ TEST(AecState, NormalUsage) {
   {
     const auto& erle = state.Erle();
     EXPECT_EQ(erle[0], erle[1]);
-    for (size_t k = 1; k < erle.size() - 1; ++k) {
+    constexpr size_t kLowFrequencyLimit = 32;
+    for (size_t k = 1; k < kLowFrequencyLimit; ++k) {
       EXPECT_NEAR(k % 2 == 0 ? 8.f : 1.f, erle[k], 0.1);
+    }
+    for (size_t k = kLowFrequencyLimit; k < erle.size() - 1; ++k) {
+      EXPECT_NEAR(k % 2 == 0 ? 1.5f : 1.f, erle[k], 0.1);
     }
     EXPECT_EQ(erle[erle.size() - 2], erle[erle.size() - 1]);
   }
@@ -131,8 +135,12 @@ TEST(AecState, NormalUsage) {
   {
     const auto& erle = state.Erle();
     EXPECT_EQ(erle[0], erle[1]);
-    for (size_t k = 1; k < erle.size() - 1; ++k) {
+    constexpr size_t kLowFrequencyLimit = 32;
+    for (size_t k = 1; k < kLowFrequencyLimit; ++k) {
       EXPECT_NEAR(k % 2 == 0 ? 5.f : 1.f, erle[k], 0.1);
+    }
+    for (size_t k = kLowFrequencyLimit; k < erle.size() - 1; ++k) {
+      EXPECT_NEAR(k % 2 == 0 ? 1.5f : 1.f, erle[k], 0.1);
     }
     EXPECT_EQ(erle[erle.size() - 2], erle[erle.size() - 1]);
   }

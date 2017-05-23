@@ -181,7 +181,7 @@ void EchoRemoverImpl::ProcessCapture(
 
   // A choose and apply echo suppression gain.
   suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(),
-                            aec_state_.SaturatedEcho(), x, y->size(),
+                            aec_state_.SaturatedEcho(), x,
                             aec_state_.ForcedZeroGain(), &high_bands_gain, &G);
   suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
                                 high_bands_gain, y);
