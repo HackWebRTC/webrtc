@@ -29,6 +29,7 @@ namespace webrtc {
 
 struct AecCore;
 
+class AecDump;
 class AudioFrame;
 
 class NonlinearBeamformer;
@@ -454,6 +455,26 @@ class AudioProcessing {
   // set_stream_delay_ms() to return an error.
   virtual void set_delay_offset_ms(int offset) = 0;
   virtual int delay_offset_ms() const = 0;
+
+  // Attaches provided webrtc::AecDump for recording debugging
+  // information. Log file and maximum file size logic is supposed to
+  // be handled by implementing instance of AecDump. Calling this
+  // method when another AecDump is attached resets the active AecDump
+  // with a new one. This causes the d-tor of the earlier AecDump to
+  // be called. The d-tor call may block until all pending logging
+  // tasks are completed.
+  //
+  // TODO(aleloi): make pure virtual when internal projects have
+  // updated. See https://bugs.webrtc.org/7404
+  virtual void AttachAecDump(std::unique_ptr<AecDump> aec_dump);
+
+  // If no AecDump is attached, this has no effect. If an AecDump is
+  // attached, it's destructor is called. The d-tor may block until
+  // all pending logging tasks are completed.
+  //
+  // TODO(aleloi): make pure virtual when internal projects have
+  // updated. See https://bugs.webrtc.org/7404
+  virtual void DetachAecDump();
 
   // Starts recording debugging information to a file specified by |filename|,
   // a NULL-terminated string. If there is an ongoing recording, the old file

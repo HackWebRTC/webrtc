@@ -234,6 +234,7 @@ rtc_static_library("audio_processing") {
 
   defines = []
   deps = [
+    ":aec_dump_interface",
     "..:module_api",
     "../..:webrtc_common",
     "../../audio/utility:audio_frame_operations",
@@ -305,6 +306,17 @@ rtc_static_library("audio_processing") {
     "../../base:rtc_base_approved",
     "../../common_audio",
     "../../system_wrappers",
+  ]
+}
+
+rtc_source_set("aec_dump_interface") {
+  sources = [
+    "include/aec_dump.cc",
+    "include/aec_dump.h",
+  ]
+
+  deps = [
+    "../../base:rtc_base_approved",
   ]
 }
 

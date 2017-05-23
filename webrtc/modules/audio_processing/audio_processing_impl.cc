@@ -157,6 +157,23 @@ class HighPassFilterImpl : public HighPassFilter {
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(HighPassFilterImpl);
 };
 
+webrtc::InternalAPMStreamsConfig ToStreamsConfig(
+    const ProcessingConfig& api_format) {
+  webrtc::InternalAPMStreamsConfig result;
+  result.input_sample_rate = api_format.input_stream().sample_rate_hz();
+  result.input_num_channels = api_format.input_stream().num_channels();
+  result.output_num_channels = api_format.output_stream().num_channels();
+  result.render_input_num_channels =
+      api_format.reverse_input_stream().num_channels();
+  result.render_input_sample_rate =
+      api_format.reverse_input_stream().sample_rate_hz();
+  result.output_sample_rate = api_format.output_stream().sample_rate_hz();
+  result.render_output_sample_rate =
+      api_format.reverse_output_stream().sample_rate_hz();
+  result.render_output_num_channels =
+      api_format.reverse_output_stream().num_channels();
+  return result;
+}
 }  // namespace
 
 // Throughout webrtc, it's assumed that success is represented by zero.
@@ -541,7 +558,9 @@ int AudioProcessingImpl::InitializeLocked() {
     }
   }
 #endif
-
+  if (aec_dump_) {
+    aec_dump_->WriteInitMessage(ToStreamsConfig(formats_.api_format));
+  }
   return kNoError;
 }
 
@@ -867,6 +886,10 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   }
 #endif
 
+  if (aec_dump_) {
+    RecordUnprocessedCaptureStream(src);
+  }
+
   capture_.capture_audio->CopyFrom(src, formats_.api_format.input_stream());
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
   capture_.capture_audio->CopyTo(formats_.api_format.output_stream(), dest);
@@ -884,7 +907,9 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
                                           &crit_debug_, &debug_dump_.capture));
   }
 #endif
-
+  if (aec_dump_) {
+    RecordProcessedCaptureStream(dest);
+  }
   return kNoError;
 }
 
@@ -1123,6 +1148,10 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     return kBadDataLengthError;
   }
 
+  if (aec_dump_) {
+    RecordUnprocessedCaptureStream(*frame);
+  }
+
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->is_open()) {
     RETURN_ON_ERR(WriteConfigMessage(false));
@@ -1141,6 +1170,9 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
       frame, submodule_states_.CaptureMultiBandProcessingActive() ||
                  submodule_states_.CaptureFullBandProcessingActive());
 
+  if (aec_dump_) {
+    RecordProcessedCaptureStream(*frame);
+  }
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_dump_.debug_file->is_open()) {
     audioproc::Stream* msg = debug_dump_.capture.event_msg->mutable_stream();
@@ -1426,7 +1458,14 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
                                           &crit_debug_, &debug_dump_.render));
   }
 #endif
-
+  if (aec_dump_) {
+    const size_t channel_size =
+        formats_.api_format.reverse_input_stream().num_frames();
+    const size_t num_channels =
+        formats_.api_format.reverse_input_stream().num_channels();
+    aec_dump_->WriteRenderStreamMessage(
+        FloatAudioFrame(src, num_channels, channel_size));
+  }
   render_.render_audio->CopyFrom(src,
                                  formats_.api_format.reverse_input_stream());
   return ProcessRenderStreamLocked();
@@ -1479,6 +1518,10 @@ int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
                                           &crit_debug_, &debug_dump_.render));
   }
 #endif
+  if (aec_dump_) {
+    aec_dump_->WriteRenderStreamMessage(*frame);
+  }
+
   render_.render_audio->DeinterleaveFrom(frame);
   RETURN_ON_ERR(ProcessRenderStreamLocked());
   render_.render_audio->InterleaveTo(
@@ -1568,6 +1611,30 @@ int AudioProcessingImpl::delay_offset_ms() const {
   return capture_.delay_offset_ms;
 }
 
+void AudioProcessingImpl::AttachAecDump(std::unique_ptr<AecDump> aec_dump) {
+  RTC_DCHECK(aec_dump);
+  rtc::CritScope cs_render(&crit_render_);
+  rtc::CritScope cs_capture(&crit_capture_);
+
+  // The previously attached AecDump will be destroyed with the
+  // 'aec_dump' parameter, which is after locks are released.
+  aec_dump_.swap(aec_dump);
+  WriteAecDumpConfigMessage(true);
+  aec_dump_->WriteInitMessage(ToStreamsConfig(formats_.api_format));
+}
+
+void AudioProcessingImpl::DetachAecDump() {
+  // The d-tor of a task-queue based AecDump blocks until all pending
+  // tasks are done. This construction avoids blocking while holding
+  // the render and capture locks.
+  std::unique_ptr<AecDump> aec_dump = nullptr;
+  {
+    rtc::CritScope cs_render(&crit_render_);
+    rtc::CritScope cs_capture(&crit_capture_);
+    aec_dump = std::move(aec_dump_);
+  }
+}
+
 int AudioProcessingImpl::StartDebugRecording(
     const char filename[AudioProcessing::kMaxFilenameSize],
     int64_t max_log_size_bytes) {
@@ -1639,11 +1706,12 @@ int AudioProcessingImpl::StartDebugRecordingForPlatformFile(
 }
 
 int AudioProcessingImpl::StopDebugRecording() {
+  DetachAecDump();
+
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // Run in a single-threaded manner.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
-
-#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // We just return if recording hasn't started.
   debug_dump_.debug_file->CloseFile();
   return kNoError;
@@ -1902,6 +1970,121 @@ void AudioProcessingImpl::UpdateHistogramsOnCallEnd() {
   }
   capture_.aec_system_delay_jumps = -1;
   capture_.last_aec_system_delay_ms = 0;
+}
+
+void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
+  if (!aec_dump_) {
+    return;
+  }
+  std::string experiments_description =
+      public_submodules_->echo_cancellation->GetExperimentsDescription();
+  // TODO(peah): Add semicolon-separated concatenations of experiment
+  // descriptions for other submodules.
+  if (capture_nonlocked_.level_controller_enabled) {
+    experiments_description += "LevelController;";
+  }
+  if (constants_.agc_clipped_level_min != kClippedLevelMin) {
+    experiments_description += "AgcClippingLevelExperiment;";
+  }
+  if (capture_nonlocked_.echo_canceller3_enabled) {
+    experiments_description += "EchoCanceller3;";
+  }
+
+  InternalAPMConfig apm_config;
+
+  apm_config.aec_enabled = public_submodules_->echo_cancellation->is_enabled();
+  apm_config.aec_delay_agnostic_enabled =
+      public_submodules_->echo_cancellation->is_delay_agnostic_enabled();
+  apm_config.aec_drift_compensation_enabled =
+      public_submodules_->echo_cancellation->is_drift_compensation_enabled();
+  apm_config.aec_extended_filter_enabled =
+      public_submodules_->echo_cancellation->is_extended_filter_enabled();
+  apm_config.aec_suppression_level = static_cast<int>(
+      public_submodules_->echo_cancellation->suppression_level());
+
+  apm_config.aecm_enabled =
+      public_submodules_->echo_control_mobile->is_enabled();
+  apm_config.aecm_comfort_noise_enabled =
+      public_submodules_->echo_control_mobile->is_comfort_noise_enabled();
+  apm_config.aecm_routing_mode =
+      static_cast<int>(public_submodules_->echo_control_mobile->routing_mode());
+
+  apm_config.agc_enabled = public_submodules_->gain_control->is_enabled();
+  apm_config.agc_mode =
+      static_cast<int>(public_submodules_->gain_control->mode());
+  apm_config.agc_limiter_enabled =
+      public_submodules_->gain_control->is_limiter_enabled();
+  apm_config.noise_robust_agc_enabled = constants_.use_experimental_agc;
+
+  apm_config.hpf_enabled = config_.high_pass_filter.enabled;
+
+  apm_config.ns_enabled = public_submodules_->noise_suppression->is_enabled();
+  apm_config.ns_level =
+      static_cast<int>(public_submodules_->noise_suppression->level());
+
+  apm_config.transient_suppression_enabled =
+      capture_.transient_suppressor_enabled;
+  apm_config.intelligibility_enhancer_enabled =
+      capture_nonlocked_.intelligibility_enabled;
+  apm_config.experiments_description = experiments_description;
+
+  if (!forced && apm_config == apm_config_for_aec_dump_) {
+    return;
+  }
+  aec_dump_->WriteConfig(apm_config);
+  apm_config_for_aec_dump_ = apm_config;
+}
+
+void AudioProcessingImpl::RecordUnprocessedCaptureStream(
+    const float* const* src) {
+  RTC_DCHECK(aec_dump_);
+  WriteAecDumpConfigMessage(false);
+
+  const size_t channel_size = formats_.api_format.input_stream().num_frames();
+  const size_t num_channels = formats_.api_format.input_stream().num_channels();
+  aec_dump_->AddCaptureStreamInput(
+      FloatAudioFrame(src, num_channels, channel_size));
+  RecordAudioProcessingState();
+}
+
+void AudioProcessingImpl::RecordUnprocessedCaptureStream(
+    const AudioFrame& capture_frame) {
+  RTC_DCHECK(aec_dump_);
+  WriteAecDumpConfigMessage(false);
+
+  aec_dump_->AddCaptureStreamInput(capture_frame);
+  RecordAudioProcessingState();
+}
+
+void AudioProcessingImpl::RecordProcessedCaptureStream(
+    const float* const* processed_capture_stream) {
+  RTC_DCHECK(aec_dump_);
+
+  const size_t channel_size = formats_.api_format.output_stream().num_frames();
+  const size_t num_channels =
+      formats_.api_format.output_stream().num_channels();
+  aec_dump_->AddCaptureStreamOutput(
+      FloatAudioFrame(processed_capture_stream, num_channels, channel_size));
+  aec_dump_->WriteCaptureStreamMessage();
+}
+
+void AudioProcessingImpl::RecordProcessedCaptureStream(
+    const AudioFrame& processed_capture_frame) {
+  RTC_DCHECK(aec_dump_);
+
+  aec_dump_->AddCaptureStreamOutput(processed_capture_frame);
+  aec_dump_->WriteCaptureStreamMessage();
+}
+
+void AudioProcessingImpl::RecordAudioProcessingState() {
+  RTC_DCHECK(aec_dump_);
+  AecDump::AudioProcessingState audio_proc_state;
+  audio_proc_state.delay = capture_nonlocked_.stream_delay_ms;
+  audio_proc_state.drift =
+      public_submodules_->echo_cancellation->stream_drift_samples();
+  audio_proc_state.level = gain_control()->stream_analog_level();
+  audio_proc_state.keypress = capture_.key_pressed;
+  aec_dump_->AddAudioProcessingState(audio_proc_state);
 }
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
