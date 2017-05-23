@@ -150,6 +150,9 @@ class FrameBuffer {
 
   void ClearFramesAndHistory() EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
+  bool HasBadRenderTiming(const FrameObject& frame, int64_t now_ms)
+      EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   FrameMap frames_ GUARDED_BY(crit_);
 
   rtc::CriticalSection crit_;

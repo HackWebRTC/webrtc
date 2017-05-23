@@ -141,6 +141,13 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         timing_->UpdateCurrentDelay(frame->RenderTime(), now_ms);
       }
 
+      // Gracefully handle bad RTP timestamps and render time issues.
+      if (HasBadRenderTiming(*frame, now_ms)) {
+        jitter_estimator_->Reset();
+        timing_->Reset();
+        frame->SetRenderTime(timing_->RenderTimeMs(frame->timestamp, now_ms));
+      }
+
       UpdateJitterDelay();
       PropagateDecodability(next_frame_it_->second);
 
@@ -187,6 +194,29 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
   }
 
   return kTimeout;
+}
+
+bool FrameBuffer::HasBadRenderTiming(const FrameObject& frame, int64_t now_ms) {
+  // Assume that render timing errors are due to changes in the video stream.
+  int64_t render_time_ms = frame.RenderTimeMs();
+  const int64_t kMaxVideoDelayMs = 10000;
+  if (render_time_ms < 0) {
+    return true;
+  }
+  if (std::abs(render_time_ms - now_ms) > kMaxVideoDelayMs) {
+    int frame_delay = static_cast<int>(std::abs(render_time_ms - now_ms));
+    LOG(LS_WARNING) << "A frame about to be decoded is out of the configured "
+                    << "delay bounds (" << frame_delay << " > "
+                    << kMaxVideoDelayMs
+                    << "). Resetting the video jitter buffer.";
+    return true;
+  }
+  if (static_cast<int>(timing_->TargetVideoDelay()) > kMaxVideoDelayMs) {
+    LOG(LS_WARNING) << "The video target delay has grown larger than "
+                    << kMaxVideoDelayMs << " ms.";
+    return true;
+  }
+  return false;
 }
 
 void FrameBuffer::SetProtectionMode(VCMVideoProtection mode) {
