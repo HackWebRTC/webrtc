@@ -151,8 +151,6 @@ rtc_static_library("rtp_rtcp") {
     "source/ulpfec_receiver_impl.cc",
     "source/ulpfec_receiver_impl.h",
     "source/video_codec_information.h",
-    "source/vp8_partition_aggregator.cc",
-    "source/vp8_partition_aggregator.h",
   ]
 
   if (rtc_enable_bwe_test_logging) {
@@ -315,6 +313,7 @@ if (rtc_include_tests) {
       "source/rtcp_sender_unittest.cc",
       "source/rtp_fec_unittest.cc",
       "source/rtp_format_h264_unittest.cc",
+      "source/rtp_format_video_generic_unittest.cc",
       "source/rtp_format_vp8_test_helper.cc",
       "source/rtp_format_vp8_test_helper.h",
       "source/rtp_format_vp8_unittest.cc",
@@ -331,7 +330,6 @@ if (rtc_include_tests) {
       "source/ulpfec_generator_unittest.cc",
       "source/ulpfec_header_reader_writer_unittest.cc",
       "source/ulpfec_receiver_unittest.cc",
-      "source/vp8_partition_aggregator_unittest.cc",
       "test/testAPI/test_api.cc",
       "test/testAPI/test_api.h",
       "test/testAPI/test_api_audio.cc",

@@ -264,6 +264,9 @@ TEST_F(VideoSendStreamTest, SupportsVideoRotation) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
+      // Only the last packet of the frame is required to have the extension.
+      if (!header.markerBit)
+        return SEND_PACKET;
       EXPECT_TRUE(header.extension.hasVideoRotation);
       EXPECT_EQ(kVideoRotation_90, header.extension.videoRotation);
       observation_complete_.Set();
@@ -303,6 +306,9 @@ TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
+      // Only the last packet of the frame must have extension.
+      if (!header.markerBit)
+        return SEND_PACKET;
       EXPECT_TRUE(header.extension.hasVideoContentType);
       EXPECT_EQ(VideoContentType::SCREENSHARE,
                 header.extension.videoContentType);
