@@ -502,6 +502,25 @@ TEST_F(TestPacketBuffer, OneH264FrameFillBuffer) {
   CheckFrame(0);
 }
 
+TEST_F(TestPacketBuffer, OneH264FrameMaxSeqNum) {
+  VCMPacket packet;
+  packet.seqNum = 65534;
+  packet.codec = kVideoCodecH264;
+  packet.dataPtr = nullptr;
+  packet.sizeBytes = 0;
+  packet.is_first_packet_in_frame = true;
+  packet.markerBit = false;
+  packet_buffer_->InsertPacket(&packet);
+
+  packet.is_first_packet_in_frame = false;
+  packet.seqNum = 65535;
+  packet.markerBit = true;
+  packet_buffer_->InsertPacket(&packet);
+
+  EXPECT_EQ(1UL, frames_from_callback_.size());
+  CheckFrame(65534);
+}
+
 TEST_F(TestPacketBuffer, PacketTimestamps) {
   rtc::Optional<int64_t> packet_ms;
   rtc::Optional<int64_t> packet_keyframe_ms;

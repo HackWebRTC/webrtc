@@ -35,7 +35,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
       received_time_(received_time),
       times_nacked_(times_nacked) {
   VCMPacket* first_packet = packet_buffer_->GetPacket(first_seq_num);
-  RTC_DCHECK(first_packet);
+  RTC_CHECK(first_packet);
 
   // RtpFrameObject members
   frame_type_ = first_packet->frameType;
@@ -74,10 +74,11 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
     _frameType = kVideoFrameDelta;
     frame_type_ = kVideoFrameDelta;
     for (uint16_t seq_num = first_seq_num;
-         seq_num != last_seq_num + 1 && _frameType == kVideoFrameDelta;
+         seq_num != static_cast<uint16_t>(last_seq_num + 1) &&
+         _frameType == kVideoFrameDelta;
          ++seq_num) {
       VCMPacket* packet = packet_buffer_->GetPacket(seq_num);
-      RTC_DCHECK(packet);
+      RTC_CHECK(packet);
       const RTPVideoHeaderH264& header = packet->video_header.codecHeader.H264;
       for (size_t i = 0; i < header.nalus_length; ++i) {
         if (header.nalus[i].type == H264::NaluType::kIdr) {
@@ -100,7 +101,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   timestamp = first_packet->timestamp;
 
   VCMPacket* last_packet = packet_buffer_->GetPacket(last_seq_num);
-  RTC_DCHECK(last_packet && last_packet->markerBit);
+  RTC_CHECK(last_packet && last_packet->markerBit);
   // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
   // ts_126114v120700p.pdf Section 7.4.5.
   // The MTSI client shall add the payload bytes as defined in this clause
