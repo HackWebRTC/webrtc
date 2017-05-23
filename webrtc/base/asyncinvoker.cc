@@ -19,7 +19,7 @@ namespace rtc {
 AsyncInvoker::AsyncInvoker() : invocation_complete_(false, false) {}
 
 AsyncInvoker::~AsyncInvoker() {
-  AtomicOps::Increment(&destroying_);
+  destroying_ = true;
   // Messages for this need to be cleared *before* our destructor is complete.
   MessageQueueManager::Clear(this);
   // And we need to wait for any invocations that are still in progress on
@@ -44,8 +44,7 @@ void AsyncInvoker::OnMessage(Message* msg) {
 }
 
 void AsyncInvoker::Flush(Thread* thread, uint32_t id /*= MQID_ANY*/) {
-  if (AtomicOps::AcquireLoad(&destroying_))
-    return;
+  if (destroying_) return;
 
   // Run this on |thread| to reduce the number of context switches.
   if (Thread::Current() != thread) {
@@ -66,10 +65,11 @@ void AsyncInvoker::DoInvoke(const Location& posted_from,
                             Thread* thread,
                             std::unique_ptr<AsyncClosure> closure,
                             uint32_t id) {
-  if (AtomicOps::AcquireLoad(&destroying_)) {
+  if (destroying_) {
     LOG(LS_WARNING) << "Tried to invoke while destroying the invoker.";
     return;
   }
+  AtomicOps::Increment(&pending_invocations_);
   thread->Post(posted_from, this, id,
                new ScopedMessageData<AsyncClosure>(std::move(closure)));
 }
@@ -79,10 +79,11 @@ void AsyncInvoker::DoInvokeDelayed(const Location& posted_from,
                                    std::unique_ptr<AsyncClosure> closure,
                                    uint32_t delay_ms,
                                    uint32_t id) {
-  if (AtomicOps::AcquireLoad(&destroying_)) {
+  if (destroying_) {
     LOG(LS_WARNING) << "Tried to invoke while destroying the invoker.";
     return;
   }
+  AtomicOps::Increment(&pending_invocations_);
   thread->PostDelayed(posted_from, delay_ms, this, id,
                       new ScopedMessageData<AsyncClosure>(std::move(closure)));
 }
@@ -108,10 +109,6 @@ void GuardedAsyncInvoker::ThreadDestroyed() {
   // We should never get more than one notification about the thread dying.
   RTC_DCHECK(thread_ != nullptr);
   thread_ = nullptr;
-}
-
-AsyncClosure::AsyncClosure(AsyncInvoker* invoker) : invoker_(invoker) {
-  AtomicOps::Increment(&invoker_->pending_invocations_);
 }
 
 AsyncClosure::~AsyncClosure() {

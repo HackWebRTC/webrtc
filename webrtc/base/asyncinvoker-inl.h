@@ -27,7 +27,7 @@ class AsyncInvoker;
 // on the calling thread if necessary.
 class AsyncClosure {
  public:
-  explicit AsyncClosure(AsyncInvoker* invoker);
+  explicit AsyncClosure(AsyncInvoker* invoker) : invoker_(invoker) {}
   virtual ~AsyncClosure();
   // Runs the asynchronous task, and triggers a callback to the calling
   // thread if needed. Should be called from the target thread.
