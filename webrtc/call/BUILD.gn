@@ -93,6 +93,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":call",
+      "../api:mock_audio_mixer",
       "../base:rtc_base_approved",
       "../logging:rtc_event_log_api",
       "../modules/audio_device:mock_audio_device",

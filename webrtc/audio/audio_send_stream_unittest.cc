@@ -354,7 +354,7 @@ TEST(AudioSendStreamTest, ConstructDestruct) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
 }
 
 TEST(AudioSendStreamTest, SendTelephoneEvent) {
@@ -362,7 +362,7 @@ TEST(AudioSendStreamTest, SendTelephoneEvent) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
   helper.SetupMockForSendTelephoneEvent();
   EXPECT_TRUE(send_stream.SendTelephoneEvent(kTelephoneEventPayloadType,
       kTelephoneEventPayloadFrequency, kTelephoneEventCode,
@@ -374,7 +374,7 @@ TEST(AudioSendStreamTest, SetMuted) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
   EXPECT_CALL(*helper.channel_proxy(), SetInputMute(true));
   send_stream.SetMuted(true);
 }
@@ -384,7 +384,7 @@ TEST(AudioSendStreamTest, AudioBweCorrectObjectsOnChannelProxy) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
 }
 
 TEST(AudioSendStreamTest, NoAudioBweCorrectObjectsOnChannelProxy) {
@@ -392,7 +392,7 @@ TEST(AudioSendStreamTest, NoAudioBweCorrectObjectsOnChannelProxy) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
 }
 
 TEST(AudioSendStreamTest, GetStats) {
@@ -400,7 +400,7 @@ TEST(AudioSendStreamTest, GetStats) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
   helper.SetupMockForGetStats();
   AudioSendStream::Stats stats = send_stream.GetStats();
   EXPECT_EQ(kSsrc, stats.local_ssrc);
@@ -431,7 +431,7 @@ TEST(AudioSendStreamTest, GetStatsTypingNoiseDetected) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
   helper.SetupMockForGetStats();
   EXPECT_FALSE(send_stream.GetStats().typing_noise_detected);
 
@@ -465,7 +465,7 @@ TEST(AudioSendStreamTest, SendCodecAppliesNetworkAdaptor) {
   internal::AudioSendStream send_stream(
       stream_config, helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
 }
 
 // VAD is applied when codec is mono and the CNG frequency matches the codec
@@ -489,7 +489,7 @@ TEST(AudioSendStreamTest, SendCodecCanApplyVad) {
   internal::AudioSendStream send_stream(
       stream_config, helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
 
   // We cannot truly determine if the encoder created is an AudioEncoderCng.  It
   // is the only reasonable implementation that will return something from
@@ -503,7 +503,7 @@ TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
   EXPECT_CALL(*helper.channel_proxy(),
               SetBitrate(helper.config().max_bitrate_bps, _));
   send_stream.OnBitrateUpdated(helper.config().max_bitrate_bps + 5000, 0.0, 50,
@@ -515,7 +515,7 @@ TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
   internal::AudioSendStream send_stream(
       helper.config(), helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
   EXPECT_CALL(*helper.channel_proxy(), SetBitrate(_, 5000));
   send_stream.OnBitrateUpdated(50000, 0.0, 50, 5000);
 }
@@ -538,7 +538,7 @@ TEST(AudioSendStreamTest, DontRecreateEncoder) {
   internal::AudioSendStream send_stream(
       stream_config, helper.audio_state(), helper.worker_queue(),
       helper.transport(), helper.bitrate_allocator(), helper.event_log(),
-      helper.rtcp_rtt_stats());
+      helper.rtcp_rtt_stats(), rtc::Optional<RtpState>());
   send_stream.Reconfigure(stream_config);
 }
 

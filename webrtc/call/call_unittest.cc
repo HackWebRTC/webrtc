@@ -13,13 +13,16 @@
 #include <memory>
 #include <utility>
 
+#include "webrtc/api/test/mock_audio_mixer.h"
 #include "webrtc/base/ptr_util.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/call/call.h"
 #include "webrtc/call/fake_rtp_transport_controller_send.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
+#include "webrtc/modules/audio_device/include/mock_audio_device.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
 #include "webrtc/modules/congestion_controller/include/mock/mock_send_side_congestion_controller.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/mock_audio_decoder_factory.h"
 #include "webrtc/test/mock_transport.h"
@@ -134,6 +137,7 @@ TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_RecvFirst) {
   rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory(
       new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>);
   CallHelper call(decoder_factory);
+  ::testing::NiceMock<MockRtpRtcp> mock_rtp_rtcp;
 
   constexpr int kRecvChannelId = 101;
 
@@ -151,6 +155,8 @@ TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_RecvFirst) {
                 [](const std::map<int, SdpAudioFormat>& codecs) {
                   EXPECT_THAT(codecs, testing::IsEmpty());
                 }));
+        EXPECT_CALL(*channel_proxy, GetRtpRtcp(testing::_, testing::_))
+            .WillRepeatedly(testing::SetArgPointee<0>(&mock_rtp_rtcp));
         // If being called for the send channel, save a pointer to the channel
         // proxy for later.
         if (channel_id == kRecvChannelId) {
@@ -186,6 +192,7 @@ TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_SendFirst) {
   rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory(
       new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>);
   CallHelper call(decoder_factory);
+  ::testing::NiceMock<MockRtpRtcp> mock_rtp_rtcp;
 
   constexpr int kRecvChannelId = 101;
 
@@ -203,6 +210,8 @@ TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_SendFirst) {
                 [](const std::map<int, SdpAudioFormat>& codecs) {
                   EXPECT_THAT(codecs, testing::IsEmpty());
                 }));
+        EXPECT_CALL(*channel_proxy, GetRtpRtcp(testing::_, testing::_))
+            .WillRepeatedly(testing::SetArgPointee<0>(&mock_rtp_rtcp));
         // If being called for the send channel, save a pointer to the channel
         // proxy for later.
         if (channel_id == kRecvChannelId) {
@@ -414,6 +423,71 @@ TEST(CallBitrateTest,
 
   bitrate_config.start_bitrate_bps = -1;
   call->SetBitrateConfig(bitrate_config);
+}
+
+TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
+  constexpr uint32_t kSSRC = 12345;
+  testing::NiceMock<test::MockAudioDeviceModule> mock_adm;
+  // Reply with a 10ms timer every time TimeUntilNextProcess is called to
+  // avoid entering a tight loop on the process thread.
+  EXPECT_CALL(mock_adm, TimeUntilNextProcess())
+       .WillRepeatedly(testing::Return(10));
+  rtc::scoped_refptr<test::MockAudioMixer> mock_mixer(
+      new rtc::RefCountedObject<test::MockAudioMixer>);
+
+  // There's similar functionality in cricket::VoEWrapper but it's not reachable
+  // from here. Since we're working on removing VoE interfaces, I doubt it's
+  // worth making VoEWrapper more easily available.
+  struct ScopedVoiceEngine {
+    ScopedVoiceEngine()
+        : voe(VoiceEngine::Create()),
+          base(VoEBase::GetInterface(voe)) {}
+    ~ScopedVoiceEngine() {
+      base->Release();
+      EXPECT_TRUE(VoiceEngine::Delete(voe));
+    }
+
+    VoiceEngine* voe;
+    VoEBase* base;
+  };
+  ScopedVoiceEngine voice_engine;
+
+  voice_engine.base->Init(&mock_adm);
+  AudioState::Config audio_state_config;
+  audio_state_config.voice_engine = voice_engine.voe;
+  audio_state_config.audio_mixer = mock_mixer;
+  auto audio_state = AudioState::Create(audio_state_config);
+  RtcEventLogNullImpl event_log;
+  Call::Config call_config(&event_log);
+  call_config.audio_state = audio_state;
+  std::unique_ptr<Call> call(Call::Create(call_config));
+
+  auto create_stream_and_get_rtp_state = [&](uint32_t ssrc) {
+    AudioSendStream::Config config(nullptr);
+    config.rtp.ssrc = ssrc;
+    config.voe_channel_id = voice_engine.base->CreateChannel();
+    AudioSendStream* stream = call->CreateAudioSendStream(config);
+    VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine.voe);
+    auto channel_proxy = voe_impl->GetChannelProxy(config.voe_channel_id);
+    RtpRtcp* rtp_rtcp = nullptr;
+    RtpReceiver* rtp_receiver = nullptr;  // Unused but required for call.
+    channel_proxy->GetRtpRtcp(&rtp_rtcp, &rtp_receiver);
+    const RtpState rtp_state = rtp_rtcp->GetRtpState();
+    call->DestroyAudioSendStream(stream);
+    voice_engine.base->DeleteChannel(config.voe_channel_id);
+    return rtp_state;
+  };
+
+  const RtpState rtp_state1 = create_stream_and_get_rtp_state(kSSRC);
+  const RtpState rtp_state2 = create_stream_and_get_rtp_state(kSSRC);
+
+  EXPECT_EQ(rtp_state1.sequence_number, rtp_state2.sequence_number);
+  EXPECT_EQ(rtp_state1.start_timestamp, rtp_state2.start_timestamp);
+  EXPECT_EQ(rtp_state1.timestamp, rtp_state2.timestamp);
+  EXPECT_EQ(rtp_state1.capture_time_ms, rtp_state2.capture_time_ms);
+  EXPECT_EQ(rtp_state1.last_timestamp_time_ms,
+            rtp_state2.last_timestamp_time_ms);
+  EXPECT_EQ(rtp_state1.media_has_been_sent, rtp_state2.media_has_been_sent);
 }
 
 }  // namespace webrtc

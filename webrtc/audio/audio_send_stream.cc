@@ -28,7 +28,6 @@
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
 #include "webrtc/modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "webrtc/modules/pacing/paced_sender.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "webrtc/voice_engine/channel_proxy.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/transmit_mixer.h"
@@ -59,7 +58,8 @@ AudioSendStream::AudioSendStream(
     RtpTransportControllerSendInterface* transport,
     BitrateAllocator* bitrate_allocator,
     RtcEventLog* event_log,
-    RtcpRttStats* rtcp_rtt_stats)
+    RtcpRttStats* rtcp_rtt_stats,
+    const rtc::Optional<RtpState>& suspended_rtp_state)
     : worker_queue_(worker_queue),
       config_(Config(nullptr)),
       audio_state_(audio_state),
@@ -68,7 +68,9 @@ AudioSendStream::AudioSendStream(
       transport_(transport),
       packet_loss_tracker_(kPacketLossTrackerMaxWindowSizeMs,
                            kPacketLossRateMinNumAckedPackets,
-                           kRecoverablePacketLossRateMinNumAckedPairs) {
+                           kRecoverablePacketLossRateMinNumAckedPairs),
+      rtp_rtcp_module_(nullptr),
+      suspended_rtp_state_(suspended_rtp_state) {
   LOG(LS_INFO) << "AudioSendStream: " << config.ToString();
   RTC_DCHECK_NE(config.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
@@ -81,6 +83,9 @@ AudioSendStream::AudioSendStream(
   channel_proxy_->SetRtcpRttStats(rtcp_rtt_stats);
   channel_proxy_->SetRTCPStatus(true);
   transport_->send_side_cc()->RegisterPacketFeedbackObserver(this);
+  RtpReceiver* rtpReceiver = nullptr;  // Unused, but required for call.
+  channel_proxy_->GetRtpRtcp(&rtp_rtcp_module_, &rtpReceiver);
+  RTC_DCHECK(rtp_rtcp_module_);
 
   ConfigureStream(this, config, true);
 
@@ -112,6 +117,9 @@ void AudioSendStream::ConfigureStream(
 
   if (first_time || old_config.rtp.ssrc != new_config.rtp.ssrc) {
     channel_proxy->SetLocalSSRC(new_config.rtp.ssrc);
+    if (stream->suspended_rtp_state_) {
+      stream->rtp_rtcp_module_->SetRtpState(*stream->suspended_rtp_state_);
+    }
   }
   if (first_time || old_config.rtp.c_name != new_config.rtp.c_name) {
     channel_proxy->SetRTCP_CNAME(new_config.rtp.c_name);
@@ -375,6 +383,10 @@ void AudioSendStream::SetTransportOverhead(int transport_overhead_per_packet) {
   channel_proxy_->SetTransportOverhead(transport_overhead_per_packet);
 }
 
+RtpState AudioSendStream::GetRtpState() const {
+  return rtp_rtcp_module_->GetRtpState();
+}
+
 VoiceEngine* AudioSendStream::voice_engine() const {
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());
@@ -588,13 +600,10 @@ void AudioSendStream::RemoveBitrateObserver() {
 
 void AudioSendStream::RegisterCngPayloadType(int payload_type,
                                              int clockrate_hz) {
-  RtpRtcp* rtpRtcpModule = nullptr;
-  RtpReceiver* rtpReceiver = nullptr;  // Unused, but required for call.
-  channel_proxy_->GetRtpRtcp(&rtpRtcpModule, &rtpReceiver);
   const CodecInst codec = {payload_type, "CN", clockrate_hz, 0, 1, 0};
-  if (rtpRtcpModule->RegisterSendPayload(codec) != 0) {
-    rtpRtcpModule->DeRegisterSendPayload(codec.pltype);
-    if (rtpRtcpModule->RegisterSendPayload(codec) != 0) {
+  if (rtp_rtcp_module_->RegisterSendPayload(codec) != 0) {
+    rtp_rtcp_module_->DeRegisterSendPayload(codec.pltype);
+    if (rtp_rtcp_module_->RegisterSendPayload(codec) != 0) {
       LOG(LS_ERROR) << "RegisterCngPayloadType() failed to register CN to "
                        "RTP/RTCP module";
     }
