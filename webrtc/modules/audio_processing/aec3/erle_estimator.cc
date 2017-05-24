@@ -41,11 +41,8 @@ void ErleEstimator::Update(
   constexpr float kX2Min = 44015068.0f;
 
   // Update the estimates in a clamped minimum statistics manner.
-  size_t k = 1;
-  size_t band_limit = kFftLengthBy2 / 2;
-  float max_erle = kMaxLfErle;
-  for (int j = 0; j < 2; ++j) {
-    for (; k < band_limit; ++k) {
+  auto erle_update = [&](size_t start, size_t stop, float max_erle) {
+    for (size_t k = start; k < stop; ++k) {
       if (X2[k] > kX2Min && E2[k] > 0.f) {
         const float new_erle = Y2[k] / E2[k];
         if (new_erle > erle_[k]) {
@@ -55,9 +52,9 @@ void ErleEstimator::Update(
         }
       }
     }
-    band_limit = kFftLengthBy2;
-    max_erle = kMaxHfErle;
-  }
+  };
+  erle_update(1, kFftLengthBy2 / 2, kMaxLfErle);
+  erle_update(kFftLengthBy2 / 2, kFftLengthBy2, kMaxHfErle);
 
   std::for_each(hold_counters_.begin(), hold_counters_.end(),
                 [](int& a) { --a; });
