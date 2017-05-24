@@ -19,7 +19,6 @@ import android.media.AudioTrack;
 import android.os.Process;
 import java.lang.Thread;
 import java.nio.ByteBuffer;
-import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 
 public class WebRtcAudioTrack {
@@ -37,6 +36,7 @@ public class WebRtcAudioTrack {
   // Average number of callbacks per second.
   private static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
 
+  private final Context context;
   private final long nativeAudioTrack;
   private final AudioManager audioManager;
 
@@ -165,11 +165,11 @@ public class WebRtcAudioTrack {
     }
   }
 
-  WebRtcAudioTrack(long nativeAudioTrack) {
+  WebRtcAudioTrack(Context context, long nativeAudioTrack) {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
+    this.context = context;
     this.nativeAudioTrack = nativeAudioTrack;
-    audioManager =
-        (AudioManager) ContextUtils.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+    audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
     if (DEBUG) {
       WebRtcAudioUtils.logDeviceInfo(TAG);
     }

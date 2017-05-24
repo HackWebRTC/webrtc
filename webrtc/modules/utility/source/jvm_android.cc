@@ -217,10 +217,10 @@ std::string JNIEnvironment::JavaToStdString(const jstring& j_string) {
 }
 
 // static
-void JVM::Initialize(JavaVM* jvm) {
+void JVM::Initialize(JavaVM* jvm, jobject context) {
   ALOGD("JVM::Initialize%s", GetThreadInfo().c_str());
   RTC_CHECK(!g_jvm);
-  g_jvm = new JVM(jvm);
+  g_jvm = new JVM(jvm, context);
 }
 
 // static
@@ -237,9 +237,11 @@ JVM* JVM::GetInstance() {
   return g_jvm;
 }
 
-JVM::JVM(JavaVM* jvm) : jvm_(jvm) {
+JVM::JVM(JavaVM* jvm, jobject context)
+    : jvm_(jvm) {
   ALOGD("JVM::JVM%s", GetThreadInfo().c_str());
   RTC_CHECK(jni()) << "AttachCurrentThread() must be called on this thread.";
+  context_ = NewGlobalRef(jni(), context);
   LoadClasses(jni());
 }
 
@@ -247,6 +249,7 @@ JVM::~JVM() {
   ALOGD("JVM::~JVM%s", GetThreadInfo().c_str());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   FreeClassReferences(jni());
+  DeleteGlobalRef(jni(), context_);
 }
 
 std::unique_ptr<JNIEnvironment> JVM::environment() {

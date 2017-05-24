@@ -19,7 +19,6 @@ import android.os.Process;
 import java.lang.System;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
-import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
 
@@ -48,6 +47,7 @@ public class WebRtcAudioRecord {
   private static final long AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS = 2000;
 
   private final long nativeAudioRecord;
+  private final Context context;
 
   private WebRtcAudioEffects effects = null;
 
@@ -139,8 +139,9 @@ public class WebRtcAudioRecord {
     }
   }
 
-  WebRtcAudioRecord(long nativeAudioRecord) {
+  WebRtcAudioRecord(Context context, long nativeAudioRecord) {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
+    this.context = context;
     this.nativeAudioRecord = nativeAudioRecord;
     if (DEBUG) {
       WebRtcAudioUtils.logDeviceInfo(TAG);
@@ -168,8 +169,7 @@ public class WebRtcAudioRecord {
 
   private int initRecording(int sampleRate, int channels) {
     Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" + channels + ")");
-    if (!WebRtcAudioUtils.hasPermission(
-            ContextUtils.getApplicationContext(), android.Manifest.permission.RECORD_AUDIO)) {
+    if (!WebRtcAudioUtils.hasPermission(context, android.Manifest.permission.RECORD_AUDIO)) {
       reportWebRtcAudioRecordInitError("RECORD_AUDIO permission is missing");
       return -1;
     }
