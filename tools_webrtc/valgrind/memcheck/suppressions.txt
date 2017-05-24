@@ -45,11 +45,7 @@
    fun:vfprintf
    fun:vsnprintf
    fun:snprintf
-   fun:_ZN7testing12_GLOBAL__N_126PrintByteSegmentInObjectToEPKhmmPSo
-   fun:_ZN7testing9internal220PrintBytesInObjectToEPKhmPSo
-   fun:_ZN7testing8internal14DefaultPrintToISt6vectorIN6webrtc4rtcp3Fir7RequestESaIS6_EEEEviNS0_13bool_constantILb0EEERKT_PSo
-   fun:_ZN7testing8internal20MatchPrintAndExplainIKSt6vectorIN6webrtc4rtcp3Fir7RequestESaIS6_EERS9_EEbRT_RKNS_7MatcherIT0_EEPNS_19MatchResultListenerE
-   fun:_ZNK7testing8internal29PredicateFormatterFromMatcherINS0_18ElementsAreMatcherISt5tupleIJNS0_13BothOfMatcherINS_18PolymorphicMatcherINS0_12FieldMatcherIN6webrtc4rtcp3Fir7RequestEjEEEENS5_INS6_ISA_hEEEEEESF_EEEEEclISt6vectorISA_SaISA_EEEENS_15AssertionResultEPKcRKT_
+   ...
    fun:_ZN6webrtc36RtcpPacketFirTest_TwoFciEntries_Test8TestBodyEv
 }
 {
@@ -59,8 +55,7 @@
    fun:vsnprintf
    fun:snprintf
    fun:_ZN7testing12_GLOBAL__N_126PrintByteSegmentInObjectToEPKhmmPSo
-   fun:_ZN7testing9internal220PrintBytesInObjectToEPKhmPSo
-   fun:_ZN7testing8internal25UntypedFunctionMockerBase17UntypedInvokeWithEPKv
+   ...
    fun:_ZNK6webrtc11MockRtpRtcp11FlexfecSsrcEv
    fun:_ZN6webrtc12PacketRouter16TimeToSendPacketEjtlbi
    fun:_ZN6webrtc38PacketRouterTest_TimeToSendPacket_Test8TestBodyEv
@@ -72,10 +67,7 @@
    fun:vsnprintf
    fun:snprintf
    fun:_ZN7testing12_GLOBAL__N_126PrintByteSegmentInObjectToEPKhmmPSo
-   fun:_ZN7testing9internal220PrintBytesInObjectToEPKhmPSo
-   fun:_ZN7testing8internal14DefaultPrintToISt6vectorIN6webrtc4rtcp3Fir7RequestESaIS6_EEEEviNS0_13bool_constantILb0EEERKT_PSo
-   fun:_ZN7testing8internal20MatchPrintAndExplainIKSt6vectorIN6webrtc4rtcp3Fir7RequestESaIS6_EERS9_EEbRT_RKNS_7MatcherIT0_EEPNS_19MatchResultListenerE
-   fun:_ZNK7testing8internal29PredicateFormatterFromMatcherINS0_18ElementsAreMatcherISt5tupleIJNS0_13BothOfMatcherINS_18PolymorphicMatcherINS0_12FieldMatcherIN6webrtc4rtcp3Fir7RequestEjEEEENS5_INS6_ISA_hEEEEEEEEEEEclISt6vectorISA_SaISA_EEEENS_15AssertionResultEPKcRKT_
+   ...
    fun:_ZN6webrtc28RtcpPacketFirTest_Parse_Test8TestBodyEv
 }
 {
@@ -485,9 +477,7 @@
    fun:vfprintf
    fun:vsnprintf
    fun:snprintf
-   fun:_ZN7testing12_GLOBAL__N_126PrintByteSegmentInObjectToEPKhmmPSo
-   fun:_ZN7testing9internal220PrintBytesInObjectToEPKhmPSo
-   fun:_ZN7testing8internal25UntypedFunctionMockerBase17UntypedInvokeWithEPKv
+   ...
    fun:_ZNK6webrtc11MockRtpRtcp11FlexfecSsrcEv
    ...
 }
