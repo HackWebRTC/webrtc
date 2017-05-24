@@ -22,6 +22,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/networkroute.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/base/task_queue.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call/audio_state.h"
 #include "webrtc/call/call.h"
@@ -110,6 +111,9 @@ class WebRtcVoiceEngine final : public webrtc::TraceCallback  {
 
   void StartAecDump(const std::string& filename);
   int CreateVoEChannel();
+
+  rtc::TaskQueue low_priority_worker_queue_;
+
   webrtc::AudioDeviceModule* adm();
   webrtc::AudioProcessing* apm();
   webrtc::voe::TransmitMixer* transmit_mixer();
