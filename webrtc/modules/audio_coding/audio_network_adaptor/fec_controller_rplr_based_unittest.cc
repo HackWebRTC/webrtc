@@ -12,7 +12,6 @@
 #include <utility>
 
 #include "webrtc/modules/audio_coding/audio_network_adaptor/fec_controller_rplr_based.h"
-#include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
