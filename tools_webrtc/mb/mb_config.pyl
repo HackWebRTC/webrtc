@@ -115,6 +115,12 @@
         'linux': 'codesearch_gen_linux_bot',
       }
     },
+    'internal.client.webrtc': {
+      'iOS64 Debug': 'ios',
+    },
+    'internal.tryserver.webrtc': {
+      'ios_arm64': 'ios',
+    },
     'tryserver.webrtc': {
       # iOS
       'ios_dbg': 'ios',
