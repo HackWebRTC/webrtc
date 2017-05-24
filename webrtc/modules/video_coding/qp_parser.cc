@@ -12,6 +12,7 @@
 
 #include "webrtc/common_types.h"
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
+#include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 
 namespace webrtc {
 
@@ -20,6 +21,9 @@ bool QpParser::GetQp(const VCMEncodedFrame& frame, int* qp) {
     case kVideoCodecVP8:
       // QP range: [0, 127].
       return vp8::GetQp(frame.Buffer(), frame.Length(), qp);
+    case kVideoCodecVP9:
+      // QP range: [0, 255].
+      return vp9::GetQp(frame.Buffer(), frame.Length(), qp);
     default:
       return false;
   }

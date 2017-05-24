@@ -122,6 +122,8 @@ rtc_static_library("video_coding_utility") {
     "utility/quality_scaler.h",
     "utility/vp8_header_parser.cc",
     "utility/vp8_header_parser.h",
+    "utility/vp9_uncompressed_header_parser.cc",
+    "utility/vp9_uncompressed_header_parser.h",
   ]
 
   if (!build_with_chromium && is_clang) {
