@@ -220,11 +220,6 @@ rtc_static_library("rtc_media") {
     public_configs += [ ":rtc_media_defines_config" ]
     deps += [ "../modules/video_capture:video_capture_internal_impl" ]
   }
-  if (rtc_enable_protobuf) {
-    deps += [ "../modules/audio_processing/aec_dump:aec_dump_impl" ]
-  } else {
-    deps += [ "../modules/audio_processing/aec_dump:null_aec_dump_factory" ]
-  }
   deps += [
     ":rtc_media_base",
     "..:webrtc_common",
@@ -242,7 +237,6 @@ rtc_static_library("rtc_media") {
     "../modules/audio_device:audio_device",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing:audio_processing",
-    "../modules/audio_processing/aec_dump",
     "../modules/video_capture:video_capture_module",
     "../modules/video_coding",
     "../modules/video_coding:webrtc_h264",
