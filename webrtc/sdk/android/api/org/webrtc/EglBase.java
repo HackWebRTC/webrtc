@@ -116,10 +116,28 @@ public abstract class EglBase {
   }
 
   /**
+   * Explicitly create a root EGl 1.0 context with the specified config attributes
+   * and shared context.
+   */
+  public static EglBase createEgl10(
+      javax.microedition.khronos.egl.EGLContext sharedContext, int[] configAttributes) {
+    return new EglBase10(new EglBase10.Context(sharedContext), configAttributes);
+  }
+
+  /**
    * Explicitly create a root EGl 1.4 context with the specified config attributes.
    */
   public static EglBase createEgl14(int[] configAttributes) {
     return new EglBase14(null /* shaderContext */, configAttributes);
+  }
+
+  /**
+   * Explicitly create a root EGl 1.4 context with the specified config attributes
+   * and shared context.
+   */
+  public static EglBase createEgl14(
+      android.opengl.EGLContext sharedContext, int[] configAttributes) {
+    return new EglBase14(new EglBase14.Context(sharedContext), configAttributes);
   }
 
   public abstract void createSurface(Surface surface);
