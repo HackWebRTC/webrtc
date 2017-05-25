@@ -2482,6 +2482,40 @@ TEST_F(PeerConnectionIntegrationTest, SctpDataChannelToAudioVideoUpgrade) {
       kMaxWaitForFramesMs);
 }
 
+static void MakeSpecCompliantSctpOffer(cricket::SessionDescription* desc) {
+  const ContentInfo* dc_offer = GetFirstDataContent(desc);
+  ASSERT_NE(nullptr, dc_offer);
+  cricket::DataContentDescription* dcd_offer =
+      static_cast<cricket::DataContentDescription*>(dc_offer->description);
+  dcd_offer->set_use_sctpmap(false);
+  dcd_offer->set_protocol("UDP/DTLS/SCTP");
+}
+
+// Test that the data channel works when a spec-compliant SCTP m= section is
+// offered (using "a=sctp-port" instead of "a=sctpmap", and using
+// "UDP/DTLS/SCTP" as the protocol).
+TEST_F(PeerConnectionIntegrationTest,
+       DataChannelWorksWhenSpecCompliantSctpOfferReceived) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->CreateDataChannel();
+  caller()->SetGeneratedSdpMunger(MakeSpecCompliantSctpOffer);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+}
+
 #endif  // HAVE_SCTP
 
 // Test that the ICE connection and gathering states eventually reach

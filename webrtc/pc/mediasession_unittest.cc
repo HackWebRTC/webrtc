@@ -1008,6 +1008,41 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerWithoutSctpmap) {
   EXPECT_FALSE(dcd_answer->use_sctpmap());
 }
 
+// Test that a valid answer will be created for "DTLS/SCTP", "UDP/DTLS/SCTP"
+// and "TCP/DTLS/SCTP" offers.
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestCreateDataAnswerToDifferentOfferedProtos) {
+  // Need to enable DTLS offer/answer generation (disabled by default in this
+  // test).
+  f1_.set_secure(SEC_ENABLED);
+  f2_.set_secure(SEC_ENABLED);
+  tdf1_.set_secure(SEC_ENABLED);
+  tdf2_.set_secure(SEC_ENABLED);
+
+  MediaSessionOptions opts;
+  opts.data_channel_type = cricket::DCT_SCTP;
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, nullptr));
+  ASSERT_TRUE(offer.get() != nullptr);
+  ContentInfo* dc_offer = offer->GetContentByName("data");
+  ASSERT_TRUE(dc_offer != nullptr);
+  DataContentDescription* dcd_offer =
+      static_cast<DataContentDescription*>(dc_offer->description);
+
+  std::vector<std::string> protos = {"DTLS/SCTP", "UDP/DTLS/SCTP",
+                                     "TCP/DTLS/SCTP"};
+  for (const std::string& proto : protos) {
+    dcd_offer->set_protocol(proto);
+    std::unique_ptr<SessionDescription> answer(
+        f2_.CreateAnswer(offer.get(), opts, nullptr));
+    const ContentInfo* dc_answer = answer->GetContentByName("data");
+    ASSERT_TRUE(dc_answer != nullptr);
+    const DataContentDescription* dcd_answer =
+        static_cast<const DataContentDescription*>(dc_answer->description);
+    EXPECT_FALSE(dc_answer->rejected);
+    EXPECT_EQ(proto, dcd_answer->protocol());
+  }
+}
+
 // Verifies that the order of the media contents in the offer is preserved in
 // the answer.
 TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAnswerContentOrder) {

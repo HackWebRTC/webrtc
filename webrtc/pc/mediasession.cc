@@ -67,6 +67,36 @@ const char kMediaProtocolDtlsSctp[] = "DTLS/SCTP";
 const char kMediaProtocolUdpDtlsSctp[] = "UDP/DTLS/SCTP";
 const char kMediaProtocolTcpDtlsSctp[] = "TCP/DTLS/SCTP";
 
+// Note that the below functions support some protocol strings purely for
+// legacy compatibility, as required by JSEP in Section 5.1.2, Profile Names
+// and Interoperability.
+
+static bool IsDtlsRtp(const std::string& protocol) {
+  // Most-likely values first.
+  return protocol == "UDP/TLS/RTP/SAVPF" || protocol == "TCP/TLS/RTP/SAVPF" ||
+         protocol == "UDP/TLS/RTP/SAVP" || protocol == "TCP/TLS/RTP/SAVP";
+}
+
+static bool IsPlainRtp(const std::string& protocol) {
+  // Most-likely values first.
+  return protocol == "RTP/SAVPF" || protocol == "RTP/AVPF" ||
+         protocol == "RTP/SAVP" || protocol == "RTP/AVP";
+}
+
+static bool IsDtlsSctp(const std::string& protocol) {
+  return protocol == kMediaProtocolDtlsSctp ||
+         protocol == kMediaProtocolUdpDtlsSctp ||
+         protocol == kMediaProtocolTcpDtlsSctp;
+}
+
+static bool IsPlainSctp(const std::string& protocol) {
+  return protocol == kMediaProtocolSctp;
+}
+
+static bool IsSctp(const std::string& protocol) {
+  return IsPlainSctp(protocol) || IsDtlsSctp(protocol);
+}
+
 RtpTransceiverDirection RtpTransceiverDirection::FromMediaContentDirection(
     MediaContentDirection md) {
   const bool send = (md == MD_SENDRECV || md == MD_SENDONLY);
@@ -398,11 +428,6 @@ class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
  private:
 };
 
-static bool IsSctp(const MediaContentDescription* desc) {
-  return ((desc->protocol() == kMediaProtocolSctp) ||
-          (desc->protocol() == kMediaProtocolDtlsSctp));
-}
-
 // Adds a StreamParams for each Stream in Streams with media type
 // media_type to content_description.
 // |current_params| - All currently known StreamParams of any media type.
@@ -413,7 +438,7 @@ static bool AddStreamParams(MediaType media_type,
                             MediaContentDescriptionImpl<C>* content_description,
                             const bool add_legacy_stream) {
   // SCTP streams are not negotiated using SDP/ContentDescriptions.
-  if (IsSctp(content_description)) {
+  if (IsSctp(content_description->protocol())) {
     return true;
   }
 
@@ -1085,26 +1110,6 @@ static bool CreateMediaContentAnswer(
   return true;
 }
 
-static bool IsDtlsRtp(const std::string& protocol) {
-  // Most-likely values first.
-  return protocol == "UDP/TLS/RTP/SAVPF" || protocol == "TCP/TLS/RTP/SAVPF" ||
-         protocol == "UDP/TLS/RTP/SAVP" || protocol == "TCP/TLS/RTP/SAVP";
-}
-
-static bool IsPlainRtp(const std::string& protocol) {
-  // Most-likely values first.
-  return protocol == "RTP/SAVPF" || protocol == "RTP/AVPF" ||
-         protocol == "RTP/SAVP" || protocol == "RTP/AVP";
-}
-
-static bool IsDtlsSctp(const std::string& protocol) {
-  return protocol == "DTLS/SCTP";
-}
-
-static bool IsPlainSctp(const std::string& protocol) {
-  return protocol == "SCTP";
-}
-
 static bool IsMediaProtocolSupported(MediaType type,
                                      const std::string& protocol,
                                      bool secure_transport) {
@@ -1357,8 +1362,8 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
         video_added = true;
       } else if (IsMediaContentOfType(&*it, MEDIA_TYPE_DATA)) {
         MediaSessionOptions options_copy(options);
-        if (IsSctp(static_cast<const MediaContentDescription*>(
-                it->description))) {
+        if (IsSctp(static_cast<const MediaContentDescription*>(it->description)
+                       ->protocol())) {
           options_copy.data_channel_type = DCT_SCTP;
         }
         if (!AddDataContentForOffer(options_copy, current_description,
@@ -1797,6 +1802,9 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     // before we call CreateMediaContentOffer.  Otherwise,
     // CreateMediaContentOffer won't know this is SCTP and will
     // generate SSRCs rather than SIDs.
+    // TODO(deadbeef): Offer kMediaProtocolUdpDtlsSctp (or TcpDtlsSctp), once
+    // it's safe to do so. Older versions of webrtc would reject these
+    // protocols; see https://bugs.chromium.org/p/webrtc/issues/detail?id=7706.
     data->set_protocol(
         secure_transport ? kMediaProtocolDtlsSctp : kMediaProtocolSctp);
   } else {
