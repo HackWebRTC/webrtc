@@ -49,7 +49,7 @@ class ThresholdCurve {
         b(GetPoint(left, right, false)),
         slope(b.x - a.x == 0.0f ? 0.0f : (b.y - a.y) / (b.x - a.x)),
         offset(a.y - slope * a.x) {
-    // TODO(elad.alon): We might want to introduce some numerical validations.
+    // TODO(eladalon): We might want to introduce some numerical validations.
   }
 
   ThresholdCurve(float a_x, float a_y, float b_x, float b_y)

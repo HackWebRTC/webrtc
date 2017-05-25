@@ -96,7 +96,7 @@ class TransportFeedbackPacketLossTrackerTest
       const TransportFeedbackPacketLossTracker& tracker,
       rtc::Optional<float> expected_plr,
       rtc::Optional<float> expected_rplr) {
-    // TODO(elad.alon): Comparing the rtc::Optional<float> directly would have
+    // TODO(eladalon): Comparing the rtc::Optional<float> directly would have
     // given concise code, but less readable error messages. If we modify
     // the way rtc::Optional is printed, we can get rid of this.
     rtc::Optional<float> plr = tracker.GetPacketLossRate();
