@@ -38,7 +38,6 @@
 #include "webrtc/media/engine/webrtcmediaengine.h"
 #include "webrtc/media/engine/webrtcvoe.h"
 #include "webrtc/modules/audio_mixer/audio_mixer_impl.h"
-#include "webrtc/modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 #include "webrtc/system_wrappers/include/field_trial.h"
 #include "webrtc/system_wrappers/include/metrics.h"
@@ -229,8 +228,7 @@ WebRtcVoiceEngine::WebRtcVoiceEngine(
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
     VoEWrapper* voe_wrapper)
-    : low_priority_worker_queue_("rtc-low-prio", rtc::TaskQueue::Priority::LOW),
-      adm_(adm),
+    : adm_(adm),
       encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
       voe_wrapper_(voe_wrapper) {
@@ -689,28 +687,46 @@ void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel* channel) {
 bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
                                      int64_t max_size_bytes) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  auto aec_dump = webrtc::AecDumpFactory::Create(file, max_size_bytes,
-                                                 &low_priority_worker_queue_);
-  if (!aec_dump) {
+  FILE* aec_dump_file_stream = rtc::FdopenPlatformFileForWriting(file);
+  if (!aec_dump_file_stream) {
+    LOG(LS_ERROR) << "Could not open AEC dump file stream.";
+    if (!rtc::ClosePlatformFile(file))
+      LOG(LS_WARNING) << "Could not close file.";
     return false;
   }
-  apm()->AttachAecDump(std::move(aec_dump));
+  StopAecDump();
+  if (apm()->StartDebugRecording(aec_dump_file_stream, max_size_bytes) !=
+      webrtc::AudioProcessing::kNoError) {
+    LOG_RTCERR0(StartDebugRecording);
+    fclose(aec_dump_file_stream);
+    return false;
+  }
+  is_dumping_aec_ = true;
   return true;
 }
 
 void WebRtcVoiceEngine::StartAecDump(const std::string& filename) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-
-  auto aec_dump =
-      webrtc::AecDumpFactory::Create(filename, -1, &low_priority_worker_queue_);
-  if (aec_dump) {
-    apm()->AttachAecDump(std::move(aec_dump));
+  if (!is_dumping_aec_) {
+    // Start dumping AEC when we are not dumping.
+    if (apm()->StartDebugRecording(filename.c_str(), -1) !=
+        webrtc::AudioProcessing::kNoError) {
+      LOG_RTCERR1(StartDebugRecording, filename.c_str());
+    } else {
+      is_dumping_aec_ = true;
+    }
   }
 }
 
 void WebRtcVoiceEngine::StopAecDump() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  apm()->DetachAecDump();
+  if (is_dumping_aec_) {
+    // Stop dumping AEC when we are dumping.
+    if (apm()->StopDebugRecording() != webrtc::AudioProcessing::kNoError) {
+      LOG_RTCERR0(StopDebugRecording);
+    }
+    is_dumping_aec_ = false;
+  }
 }
 
 int WebRtcVoiceEngine::CreateVoEChannel() {
