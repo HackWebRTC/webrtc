@@ -24,6 +24,7 @@
 NSString * const kRTCAudioSessionErrorDomain = @"org.webrtc.RTCAudioSession";
 NSInteger const kRTCAudioSessionErrorLockRequired = -1;
 NSInteger const kRTCAudioSessionErrorConfiguration = -2;
+NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
 
 // This class needs to be thread-safe because it is accessed from many threads.
 // TODO(tkchin): Consider more granular locking. We're not expecting a lot of
@@ -86,6 +87,11 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
                selector:@selector(handleApplicationDidBecomeActive:)
                    name:UIApplicationDidBecomeActiveNotification
                  object:nil];
+    [_session addObserver:self
+               forKeyPath:kRTCAudioSessionOutputVolumeSelector
+                  options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld
+                  context:nil];
+
     RTCLog(@"RTCAudioSession (%p): init.", self);
   }
   return self;
@@ -93,6 +99,7 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
 
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [_session removeObserver:self forKeyPath:kRTCAudioSessionOutputVolumeSelector context:nil];
   RTCLog(@"RTCAudioSession (%p): dealloc.", self);
 }
 
@@ -803,6 +810,22 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
   [self decrementActivationCount];
 }
 
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context {
+  if (object == _session) {
+    NSNumber *newVolume = change[NSKeyValueChangeNewKey];
+    RTCLog(@"OutputVolumeDidChange to %f", newVolume.floatValue);
+    [self notifyDidChangeOutputVolume:newVolume.floatValue];
+  } else {
+    [super observeValueForKeyPath:keyPath
+                         ofObject:object
+                           change:change
+                          context:context];
+  }
+}
+
 - (void)notifyDidBeginInterruption {
   for (auto delegate : self.delegates) {
     SEL sel = @selector(audioSessionDidBeginInterruption:);
@@ -876,6 +899,15 @@ NSInteger const kRTCAudioSessionErrorConfiguration = -2;
     SEL sel = @selector(audioSessionDidStopPlayOrRecord:);
     if ([delegate respondsToSelector:sel]) {
       [delegate audioSessionDidStopPlayOrRecord:self];
+    }
+  }
+}
+
+- (void)notifyDidChangeOutputVolume:(float)volume {
+  for (auto delegate : self.delegates) {
+    SEL sel = @selector(audioSession:didChangeOutputVolume:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSession:self didChangeOutputVolume:volume];
     }
   }
 }

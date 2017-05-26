@@ -18,9 +18,21 @@
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
 
 @interface RTCAudioSessionTestDelegate : NSObject <RTCAudioSessionDelegate>
+
+@property (nonatomic, readonly) float outputVolume;
+
 @end
 
 @implementation RTCAudioSessionTestDelegate
+
+@synthesize outputVolume = _outputVolume;
+
+- (instancetype)init {
+  if (self = [super init]) {
+    _outputVolume = -1;
+  }
+  return self;
+}
 
 - (void)audioSessionDidBeginInterruption:(RTCAudioSession *)session {
 }
@@ -44,6 +56,11 @@
 }
 
 - (void)audioSessionShouldUnconfigure:(RTCAudioSession *)session {
+}
+
+- (void)audioSession:(RTCAudioSession *)audioSession
+    didChangeOutputVolume:(float)outputVolume {
+  _outputVolume = outputVolume;
 }
 
 @end
@@ -246,6 +263,23 @@ OCMLocation *OCMMakeLocation(id testCase, const char *fileCString, int line){
   [mockAudioSession stopMocking];
 }
 
+- (void)testAudioVolumeDidNotify {
+  RTCAudioSession *session = [RTCAudioSession sharedInstance];
+  RTCAudioSessionTestDelegate *delegate =
+      [[RTCAudioSessionTestDelegate alloc] init];
+  [session addDelegate:delegate];
+
+  [session observeValueForKeyPath:@"outputVolume"
+                         ofObject:[AVAudioSession sharedInstance]
+                           change:
+        @{NSKeyValueChangeNewKey :
+            @([AVAudioSession sharedInstance].outputVolume) }
+                          context:nil];
+
+  EXPECT_NE(delegate.outputVolume, -1);
+  EXPECT_EQ([AVAudioSession sharedInstance].outputVolume, delegate.outputVolume);
+}
+
 @end
 
 namespace webrtc {
@@ -293,6 +327,11 @@ TEST_F(AudioSessionTest, AudioSessionActivation) {
 TEST_F(AudioSessionTest, ConfigureWebRTCSession) {
   RTCAudioSessionTest *test = [[RTCAudioSessionTest alloc] init];
   [test testConfigureWebRTCSession];
+}
+
+TEST_F(AudioSessionTest, AudioVolumeDidNotify) {
+  RTCAudioSessionTest *test = [[RTCAudioSessionTest alloc] init];
+  [test testAudioVolumeDidNotify];
 }
 
 }  // namespace webrtc

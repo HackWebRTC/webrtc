@@ -74,6 +74,10 @@ RTC_EXPORT
  */
 - (void)audioSessionDidStopPlayOrRecord:(RTCAudioSession *)session;
 
+/** Called when the AVAudioSession output volume value changes. */
+- (void)audioSession:(RTCAudioSession *)audioSession
+    didChangeOutputVolume:(float)outputVolume;
+
 @end
 
 /** This is a protocol used to inform RTCAudioSession when the audio session
