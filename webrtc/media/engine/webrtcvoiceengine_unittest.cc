@@ -125,6 +125,7 @@ TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
   EXPECT_CALL(apm, ApplyConfig(testing::_));
   EXPECT_CALL(apm, SetExtraOptions(testing::_));
   EXPECT_CALL(apm, Initialize()).WillOnce(Return(0));
+  EXPECT_CALL(apm, DetachAecDump());
   StrictMock<MockTransmitMixer> transmit_mixer;
   EXPECT_CALL(transmit_mixer, EnableStereoChannelSwapping(false));
   cricket::FakeWebRtcVoiceEngine voe(&apm, &transmit_mixer);
@@ -163,6 +164,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_CALL(apm_, ApplyConfig(testing::_));
     EXPECT_CALL(apm_, SetExtraOptions(testing::_));
     EXPECT_CALL(apm_, Initialize()).WillOnce(Return(0));
+    EXPECT_CALL(apm_, DetachAecDump());
     // Default Options.
     EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
     EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
