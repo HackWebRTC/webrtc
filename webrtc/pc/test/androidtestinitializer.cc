@@ -19,7 +19,6 @@
 // Since we use Chromes build system for creating the gtest binary, this should
 // be fine.
 RTC_PUSH_IGNORING_WUNDEF()
-#include "base/android/context_utils.h"
 #include "base/android/jni_android.h"
 RTC_POP_IGNORING_WUNDEF()
 
@@ -41,11 +40,10 @@ void EnsureInitializedOnce() {
   JNIEnv* jni = ::base::android::AttachCurrentThread();
   JavaVM* jvm = NULL;
   RTC_CHECK_EQ(0, jni->GetJavaVM(&jvm));
-  jobject context = ::base::android::GetApplicationContext().obj();
 
   RTC_CHECK(rtc::InitializeSSL()) << "Failed to InitializeSSL()";
 
-  webrtc::JVM::Initialize(jvm, context);
+  webrtc::JVM::Initialize(jvm);
 }
 
 }  // anonymous namespace
