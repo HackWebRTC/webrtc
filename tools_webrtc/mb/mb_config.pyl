@@ -94,8 +94,6 @@
       'Mac (swarming)': 'release_bot_x64',
 
       # Linux
-      # TODO(kjellander): Remove when bugs.webrtc.org/7090 is fixed.
-      'Linux32 Debug (ARM)': 'debug_bot_arm',
       'Linux64 GCC': 'gcc_release_bot_x64',
       'Linux (swarming)': 'release_bot_x64',
 
