@@ -188,7 +188,7 @@ class RtcEventLog {
 };
 
 // No-op implementation is used if flag is not set, or in tests.
-class RtcEventLogNullImpl final : public RtcEventLog {
+class RtcEventLogNullImpl : public RtcEventLog {
  public:
   bool StartLogging(const std::string& file_name,
                     int64_t max_size_bytes) override {
