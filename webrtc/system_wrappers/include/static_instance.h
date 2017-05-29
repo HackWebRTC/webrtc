@@ -40,7 +40,7 @@ static T* GetStaticInstance(CountOperation count_operation) {
   static T* volatile instance = NULL;
   CreateOperation state = kInstanceExists;
 #ifndef _WIN32
-  rtc::CriticalSection crit_sect;
+  static rtc::CriticalSection crit_sect;
   rtc::CritScope lock(&crit_sect);
 
   if (count_operation ==
