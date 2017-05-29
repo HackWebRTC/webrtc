@@ -316,7 +316,6 @@ class Channel
   int32_t OnReceivedPayloadData(const uint8_t* payloadData,
                                 size_t payloadSize,
                                 const WebRtcRTPHeader* rtpHeader) override;
-  bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 
   // From RtpFeedback in the RTP/RTCP module
   int32_t OnInitializeDecoder(int8_t payloadType,
@@ -417,6 +416,8 @@ class Channel
   bool OnRtpPacketWithHeader(const uint8_t* received_packet,
                              size_t length,
                              RTPHeader *header);
+  bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length);
+
   bool ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
                      const RTPHeader& header,

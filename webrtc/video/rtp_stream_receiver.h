@@ -56,6 +56,7 @@ class VideoReceiver;
 }  // namespace vcm
 
 class RtpStreamReceiver : public RtpData,
+                          public RecoveredPacketReceiver,
                           public RtpFeedback,
                           public VCMFrameTypeCallback,
                           public VCMPacketRequestCallback,
@@ -102,7 +103,8 @@ class RtpStreamReceiver : public RtpData,
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,
                                 size_t payload_size,
                                 const WebRtcRTPHeader* rtp_header) override;
-  bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
+  // Implements RecoveredPacketReceiver.
+  void OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 
   // Implements RtpFeedback.
   int32_t OnInitializeDecoder(int8_t payload_type,
@@ -140,13 +142,13 @@ class RtpStreamReceiver : public RtpData,
 
  private:
   bool AddReceiveCodec(const VideoCodec& video_codec);
-  bool ReceivePacket(const uint8_t* packet,
+  void ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
                      const RTPHeader& header,
                      bool in_order);
   // Parses and handles for instance RTX and RED headers.
   // This function assumes that it's being called from only one thread.
-  bool ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
+  void ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
                                          size_t packet_length,
                                          const RTPHeader& header);
   void NotifyReceiverOfFecPacket(const RTPHeader& header);

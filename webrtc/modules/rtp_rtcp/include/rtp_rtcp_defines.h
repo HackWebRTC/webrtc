@@ -195,9 +195,17 @@ class RtpData {
   virtual int32_t OnReceivedPayloadData(const uint8_t* payload_data,
                                         size_t payload_size,
                                         const WebRtcRTPHeader* rtp_header) = 0;
+};
 
-  virtual bool OnRecoveredPacket(const uint8_t* packet,
-                                 size_t packet_length) = 0;
+// Callback interface for packets recovered by FlexFEC or ULPFEC. In
+// the FlexFEC case, the implementation should be able to demultiplex
+// the recovered RTP packets based on SSRC.
+class RecoveredPacketReceiver {
+ public:
+  virtual void OnRecoveredPacket(const uint8_t* packet, size_t length) = 0;
+
+ protected:
+  virtual ~RecoveredPacketReceiver() = default;
 };
 
 class RtpFeedback {
@@ -399,10 +407,6 @@ class NullRtpData : public RtpData {
                                 size_t payload_size,
                                 const WebRtcRTPHeader* rtp_header) override {
     return 0;
-  }
-
-  bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override {
-    return true;
   }
 };
 

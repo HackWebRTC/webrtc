@@ -277,17 +277,17 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
 }
 
 // TODO(nisse): Try to delete this method. Obstacles: It is used by
-// ParseAndHandleEncapsulatingHeader, for handling Rtx packets. And
-// it's part of the RtpData interface which we implement.
-bool RtpStreamReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
+// ParseAndHandleEncapsulatingHeader, for handling Rtx packets, and
+// for callbacks from |ulpfec_receiver_|.
+void RtpStreamReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
                                           size_t rtp_packet_length) {
   RTPHeader header;
   if (!rtp_header_parser_->Parse(rtp_packet, rtp_packet_length, &header)) {
-    return false;
+    return;
   }
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
   bool in_order = IsPacketInOrder(header);
-  return ReceivePacket(rtp_packet, rtp_packet_length, header, in_order);
+  ReceivePacket(rtp_packet, rtp_packet_length, header, in_order);
 }
 
 // TODO(pbos): Remove as soon as audio can handle a changing payload type
@@ -428,13 +428,13 @@ rtc::Optional<int64_t> RtpStreamReceiver::LastReceivedKeyframePacketMs() const {
   return packet_buffer_->LastReceivedKeyframePacketMs();
 }
 
-// TODO(nisse): Drop return value.
-bool RtpStreamReceiver::ReceivePacket(const uint8_t* packet,
+void RtpStreamReceiver::ReceivePacket(const uint8_t* packet,
                                       size_t packet_length,
                                       const RTPHeader& header,
                                       bool in_order) {
   if (rtp_payload_registry_.IsEncapsulated(header)) {
-    return ParseAndHandleEncapsulatingHeader(packet, packet_length, header);
+    ParseAndHandleEncapsulatingHeader(packet, packet_length, header);
+    return;
   }
   const uint8_t* payload = packet + header.headerLength;
   assert(packet_length >= header.headerLength);
@@ -442,13 +442,13 @@ bool RtpStreamReceiver::ReceivePacket(const uint8_t* packet,
   PayloadUnion payload_specific;
   if (!rtp_payload_registry_.GetPayloadSpecifics(header.payloadType,
                                                  &payload_specific)) {
-    return false;
+    return;
   }
-  return rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
-                                          payload_specific, in_order);
+  rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
+                                   payload_specific, in_order);
 }
 
-bool RtpStreamReceiver::ParseAndHandleEncapsulatingHeader(
+void RtpStreamReceiver::ParseAndHandleEncapsulatingHeader(
     const uint8_t* packet, size_t packet_length, const RTPHeader& header) {
   if (rtp_payload_registry_.IsRed(header)) {
     int8_t ulpfec_pt = rtp_payload_registry_.ulpfec_payload_type();
@@ -460,24 +460,24 @@ bool RtpStreamReceiver::ParseAndHandleEncapsulatingHeader(
     }
     if (ulpfec_receiver_->AddReceivedRedPacket(header, packet, packet_length,
                                                ulpfec_pt) != 0) {
-      return false;
+      return;
     }
-    return ulpfec_receiver_->ProcessReceivedFec() == 0;
+    ulpfec_receiver_->ProcessReceivedFec();
   } else if (rtp_payload_registry_.IsRtx(header)) {
     if (header.headerLength + header.paddingLength == packet_length) {
       // This is an empty packet and should be silently dropped before trying to
       // parse the RTX header.
-      return true;
+      return;
     }
     // Remove the RTX header and parse the original RTP header.
     if (packet_length < header.headerLength)
-      return false;
+      return;
     if (packet_length > sizeof(restored_packet_))
-      return false;
+      return;
     rtc::CritScope lock(&receive_cs_);
     if (restored_packet_in_use_) {
       LOG(LS_WARNING) << "Multiple RTX headers detected, dropping packet.";
-      return false;
+      return;
     }
     if (!rtp_payload_registry_.RestoreOriginalPacket(
             restored_packet_, packet, &packet_length, rtp_receiver_->SSRC(),
@@ -485,14 +485,12 @@ bool RtpStreamReceiver::ParseAndHandleEncapsulatingHeader(
       LOG(LS_WARNING) << "Incoming RTX packet: Invalid RTP header ssrc: "
                       << header.ssrc << " payload type: "
                       << static_cast<int>(header.payloadType);
-      return false;
+      return;
     }
     restored_packet_in_use_ = true;
-    bool ret = OnRecoveredPacket(restored_packet_, packet_length);
+    OnRecoveredPacket(restored_packet_, packet_length);
     restored_packet_in_use_ = false;
-    return ret;
   }
-  return false;
 }
 
 void RtpStreamReceiver::NotifyReceiverOfFecPacket(const RTPHeader& header) {
