@@ -479,9 +479,6 @@ if (is_ios || is_mac) {
     sources = [
       "objc/Framework/Classes/Video/corevideo_frame_buffer.cc",
       "objc/Framework/Classes/Video/corevideo_frame_buffer.h",
-
-      # TODO(mbonadei): remove this backward compatibility header
-      "objc/Framework/Classes/corevideo_frame_buffer.h",
     ]
 
     deps = [
