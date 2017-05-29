@@ -23,8 +23,8 @@
 #include "webrtc/sdk/android/src/jni/androidmediadecoder_jni.h"
 #include "webrtc/sdk/android/src/jni/androidmediaencoder_jni.h"
 #elif defined(WEBRTC_IOS)
-#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_decoder.h"
-#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_encoder.h"
+#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/decoder.h"
+#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/encoder.h"
 #endif
 
 #include "webrtc/base/checks.h"

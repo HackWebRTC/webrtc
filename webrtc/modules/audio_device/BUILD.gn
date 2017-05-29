@@ -176,7 +176,7 @@ rtc_static_library("audio_device") {
         public_deps = [
           "../../base:gtest_prod",
           "../../base:rtc_base",
-          "../../sdk:rtc_sdk_common_objc",
+          "../../sdk:objc_common",
         ]
         sources += [
           "ios/audio_device_ios.h",

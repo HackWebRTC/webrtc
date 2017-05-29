@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  *
  */
-#ifndef WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_VIDEOTOOLBOXVIDEOCODECFACTORY_H_
-#define WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_VIDEOTOOLBOXVIDEOCODECFACTORY_H_
+#ifndef WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_VIDEOTOOLBOX_VIDEOCODECFACTORY_H_
+#define WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_VIDEOTOOLBOX_VIDEOCODECFACTORY_H_
 
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
@@ -49,4 +49,4 @@ class VideoToolboxVideoDecoderFactory
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_VIDEOTOOLBOXVIDEOCODECFACTORY_H_
+#endif  // WEBRTC_SDK_OBJC_FRAMEWORK_CLASSES_VIDEOTOOLBOX_VIDEOCODECFACTORY_H_
