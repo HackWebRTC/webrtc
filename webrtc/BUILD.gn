@@ -410,7 +410,7 @@ if (rtc_include_tests) {
     }
 
     if (is_ios || is_mac) {
-      deps += [ "sdk:objc_sdk_unittests" ]
+      deps += [ "sdk:rtc_sdk_peerconnection_objc_unittests" ]
     }
   }
 

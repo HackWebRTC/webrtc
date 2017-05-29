@@ -13,7 +13,7 @@
 
 #include "webrtc/base/gunit.h"
 
-#include "Video/avfoundationformatmapper.h"
+#include "avfoundationformatmapper.h"
 
 
 // Width and height don't play any role so lets use predefined values throughout
