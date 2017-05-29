@@ -201,9 +201,8 @@
     'gcc_release_bot_x64': [
       'gn', 'gcc', 'release_bot', 'x64'
     ],
-    # TOOD(kjellander): Restore Goma for this when crbug.com/726706 is fixed.
     'debug_bot_arm': [
-      'gn', 'openh264', 'debug', 'arm'
+      'gn', 'openh264_debug_bot', 'arm'
     ],
     'release_bot_arm': [
       'gn', 'openh264_release_bot', 'arm'
