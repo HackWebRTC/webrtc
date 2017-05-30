@@ -1214,7 +1214,7 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
   }
 
   if (rtcp_delivered)
-    event_log_->LogRtcpPacket(kIncomingPacket, media_type, packet, length);
+    event_log_->LogRtcpPacket(kIncomingPacket, packet, length);
 
   return rtcp_delivered ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
 }
@@ -1242,14 +1242,14 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     if (audio_rtp_demuxer_.OnRtpPacket(*parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_audio_bytes_per_second_counter_.Add(static_cast<int>(length));
-      event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
+      event_log_->LogRtpHeader(kIncomingPacket, packet, length);
       return DELIVERY_OK;
     }
   } else if (media_type == MediaType::VIDEO) {
     if (video_rtp_demuxer_.OnRtpPacket(*parsed_packet)) {
       received_bytes_per_second_counter_.Add(static_cast<int>(length));
       received_video_bytes_per_second_counter_.Add(static_cast<int>(length));
-      event_log_->LogRtpHeader(kIncomingPacket, media_type, packet, length);
+      event_log_->LogRtpHeader(kIncomingPacket, packet, length);
       return DELIVERY_OK;
     }
   }

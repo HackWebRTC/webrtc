@@ -86,8 +86,7 @@ message RtpPacket {
   // required - True if the packet is incoming w.r.t. the user logging the data
   optional bool incoming = 1;
 
-  // required
-  optional MediaType type = 2;
+  optional MediaType type = 2 [deprecated = true];
 
   // required - The size of the packet including both payload and header.
   optional uint32 packet_length = 3;
@@ -105,8 +104,7 @@ message RtcpPacket {
   // required - True if the packet is incoming w.r.t. the user logging the data
   optional bool incoming = 1;
 
-  // required
-  optional MediaType type = 2;
+  optional MediaType type = 2 [deprecated = true];
 
   // required - The whole packet including both payload and header.
   optional bytes packet_data = 3;

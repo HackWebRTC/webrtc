@@ -35,14 +35,12 @@ class RtcEventLogTestHelper {
   static void VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,
                              size_t index,
                              PacketDirection direction,
-                             MediaType media_type,
                              const uint8_t* header,
                              size_t header_size,
                              size_t total_size);
   static void VerifyRtcpEvent(const ParsedRtcEventLog& parsed_log,
                               size_t index,
                               PacketDirection direction,
-                              MediaType media_type,
                               const uint8_t* packet,
                               size_t total_size);
   static void VerifyPlayoutEvent(const ParsedRtcEventLog& parsed_log,

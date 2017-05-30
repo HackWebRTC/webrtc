@@ -16,10 +16,7 @@
 #include <vector>
 
 #include "webrtc/base/platform_file.h"
-#include "webrtc/call/audio_receive_stream.h"
-#include "webrtc/call/audio_send_stream.h"
-#include "webrtc/video_receive_stream.h"
-#include "webrtc/video_send_stream.h"
+#include "webrtc/config.h"
 
 namespace webrtc {
 
@@ -129,21 +126,18 @@ class RtcEventLog {
   // Logs the header of an incoming or outgoing RTP packet. packet_length
   // is the total length of the packet, including both header and payload.
   virtual void LogRtpHeader(PacketDirection direction,
-                            MediaType media_type,
                             const uint8_t* header,
                             size_t packet_length) = 0;
 
   // Same as above but used on the sender side to log packets that are part of
   // a probe cluster.
   virtual void LogRtpHeader(PacketDirection direction,
-                            MediaType media_type,
                             const uint8_t* header,
                             size_t packet_length,
                             int probe_cluster_id) = 0;
 
   // Logs an incoming or outgoing RTCP packet.
   virtual void LogRtcpPacket(PacketDirection direction,
-                             MediaType media_type,
                              const uint8_t* packet,
                              size_t length) = 0;
 
@@ -204,16 +198,13 @@ class RtcEventLogNullImpl : public RtcEventLog {
       const rtclog::StreamConfig& config) override {}
   void LogAudioSendStreamConfig(const rtclog::StreamConfig& config) override {}
   void LogRtpHeader(PacketDirection direction,
-                    MediaType media_type,
                     const uint8_t* header,
                     size_t packet_length) override {}
   void LogRtpHeader(PacketDirection direction,
-                    MediaType media_type,
                     const uint8_t* header,
                     size_t packet_length,
                     int probe_cluster_id) override {}
   void LogRtcpPacket(PacketDirection direction,
-                     MediaType media_type,
                      const uint8_t* packet,
                      size_t length) override {}
   void LogAudioPlayout(uint32_t ssrc) override {}

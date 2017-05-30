@@ -30,20 +30,6 @@
 namespace webrtc {
 
 namespace {
-MediaType GetRuntimeMediaType(rtclog::MediaType media_type) {
-  switch (media_type) {
-    case rtclog::MediaType::ANY:
-      return MediaType::ANY;
-    case rtclog::MediaType::AUDIO:
-      return MediaType::AUDIO;
-    case rtclog::MediaType::VIDEO:
-      return MediaType::VIDEO;
-    case rtclog::MediaType::DATA:
-      return MediaType::DATA;
-  }
-  RTC_NOTREACHED();
-  return MediaType::ANY;
-}
 
 BandwidthUsage GetRuntimeDetectorState(
     rtclog::DelayBasedBweUpdate::DetectorState detector_state) {
@@ -367,7 +353,6 @@ void RtcEventLogTestHelper::VerifyAudioSendStreamConfig(
 void RtcEventLogTestHelper::VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,
                                            size_t index,
                                            PacketDirection direction,
-                                           MediaType media_type,
                                            const uint8_t* header,
                                            size_t header_size,
                                            size_t total_size) {
@@ -377,8 +362,6 @@ void RtcEventLogTestHelper::VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,
   const rtclog::RtpPacket& rtp_packet = event.rtp_packet();
   ASSERT_TRUE(rtp_packet.has_incoming());
   EXPECT_EQ(direction == kIncomingPacket, rtp_packet.incoming());
-  ASSERT_TRUE(rtp_packet.has_type());
-  EXPECT_EQ(media_type, GetRuntimeMediaType(rtp_packet.type()));
   ASSERT_TRUE(rtp_packet.has_packet_length());
   EXPECT_EQ(total_size, rtp_packet.packet_length());
   ASSERT_TRUE(rtp_packet.has_header());
@@ -389,14 +372,11 @@ void RtcEventLogTestHelper::VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,
 
   // Check consistency of the parser.
   PacketDirection parsed_direction;
-  MediaType parsed_media_type;
   uint8_t parsed_header[1500];
   size_t parsed_header_size, parsed_total_size;
-  parsed_log.GetRtpHeader(index, &parsed_direction, &parsed_media_type,
-                          parsed_header, &parsed_header_size,
-                          &parsed_total_size);
+  parsed_log.GetRtpHeader(index, &parsed_direction, parsed_header,
+                          &parsed_header_size, &parsed_total_size);
   EXPECT_EQ(direction, parsed_direction);
-  EXPECT_EQ(media_type, parsed_media_type);
   ASSERT_EQ(header_size, parsed_header_size);
   EXPECT_EQ(0, std::memcmp(header, parsed_header, header_size));
   EXPECT_EQ(total_size, parsed_total_size);
@@ -405,7 +385,6 @@ void RtcEventLogTestHelper::VerifyRtpEvent(const ParsedRtcEventLog& parsed_log,
 void RtcEventLogTestHelper::VerifyRtcpEvent(const ParsedRtcEventLog& parsed_log,
                                             size_t index,
                                             PacketDirection direction,
-                                            MediaType media_type,
                                             const uint8_t* packet,
                                             size_t total_size) {
   const rtclog::Event& event = parsed_log.events_[index];
@@ -414,8 +393,6 @@ void RtcEventLogTestHelper::VerifyRtcpEvent(const ParsedRtcEventLog& parsed_log,
   const rtclog::RtcpPacket& rtcp_packet = event.rtcp_packet();
   ASSERT_TRUE(rtcp_packet.has_incoming());
   EXPECT_EQ(direction == kIncomingPacket, rtcp_packet.incoming());
-  ASSERT_TRUE(rtcp_packet.has_type());
-  EXPECT_EQ(media_type, GetRuntimeMediaType(rtcp_packet.type()));
   ASSERT_TRUE(rtcp_packet.has_packet_data());
   ASSERT_EQ(total_size, rtcp_packet.packet_data().size());
   for (size_t i = 0; i < total_size; i++) {
@@ -424,13 +401,11 @@ void RtcEventLogTestHelper::VerifyRtcpEvent(const ParsedRtcEventLog& parsed_log,
 
   // Check consistency of the parser.
   PacketDirection parsed_direction;
-  MediaType parsed_media_type;
   uint8_t parsed_packet[1500];
   size_t parsed_total_size;
-  parsed_log.GetRtcpPacket(index, &parsed_direction, &parsed_media_type,
-                           parsed_packet, &parsed_total_size);
+  parsed_log.GetRtcpPacket(index, &parsed_direction, parsed_packet,
+                           &parsed_total_size);
   EXPECT_EQ(direction, parsed_direction);
-  EXPECT_EQ(media_type, parsed_media_type);
   ASSERT_EQ(total_size, parsed_total_size);
   EXPECT_EQ(0, std::memcmp(packet, parsed_packet, total_size));
 }

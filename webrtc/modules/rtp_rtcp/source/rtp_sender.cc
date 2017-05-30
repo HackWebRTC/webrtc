@@ -631,8 +631,8 @@ bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
                      ? static_cast<int>(packet.size())
                      : -1;
     if (event_log_ && bytes_sent > 0) {
-      event_log_->LogRtpHeader(kOutgoingPacket, MediaType::ANY, packet.data(),
-                               packet.size(), pacing_info.probe_cluster_id);
+      event_log_->LogRtpHeader(kOutgoingPacket, packet.data(), packet.size(),
+                               pacing_info.probe_cluster_id);
     }
   }
   TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),

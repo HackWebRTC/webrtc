@@ -74,6 +74,8 @@ class ParsedRtcEventLog {
     BWE_PROBE_RESULT_EVENT = 18
   };
 
+  enum class MediaType { ANY, AUDIO, VIDEO, DATA };
+
   // Reads an RtcEventLog file and returns true if parsing was successful.
   bool ParseFile(const std::string& file_name);
 
@@ -92,25 +94,23 @@ class ParsedRtcEventLog {
   // Reads the event type of the rtclog::Event at |index|.
   EventType GetEventType(size_t index) const;
 
-  // Reads the header, direction, media type, header length and packet length
-  // from the RTP event at |index|, and stores the values in the corresponding
-  // output parameters. Each output parameter can be set to nullptr if that
-  // value isn't needed.
+  // Reads the header, direction, header length and packet length from the RTP
+  // event at |index|, and stores the values in the corresponding output
+  // parameters. Each output parameter can be set to nullptr if that value
+  // isn't needed.
   // NB: The header must have space for at least IP_PACKET_SIZE bytes.
   void GetRtpHeader(size_t index,
                     PacketDirection* incoming,
-                    MediaType* media_type,
                     uint8_t* header,
                     size_t* header_length,
                     size_t* total_length) const;
 
-  // Reads packet, direction, media type and packet length from the RTCP event
-  // at |index|, and stores the values in the corresponding output parameters.
+  // Reads packet, direction and packet length from the RTCP event at |index|,
+  // and stores the values in the corresponding output parameters.
   // Each output parameter can be set to nullptr if that value isn't needed.
   // NB: The packet must have space for at least IP_PACKET_SIZE bytes.
   void GetRtcpPacket(size_t index,
                      PacketDirection* incoming,
-                     MediaType* media_type,
                      uint8_t* packet,
                      size_t* length) const;
 
@@ -158,13 +158,36 @@ class ParsedRtcEventLog {
   void GetAudioNetworkAdaptation(size_t index,
                                  AudioEncoderRuntimeConfig* config) const;
 
-  ParsedRtcEventLog::BweProbeClusterCreatedEvent GetBweProbeClusterCreated(
-      size_t index) const;
+  BweProbeClusterCreatedEvent GetBweProbeClusterCreated(size_t index) const;
 
-  ParsedRtcEventLog::BweProbeResultEvent GetBweProbeResult(size_t index) const;
+  BweProbeResultEvent GetBweProbeResult(size_t index) const;
+
+  MediaType GetMediaType(uint32_t ssrc, PacketDirection direction) const;
 
  private:
+  void GetVideoReceiveConfig(const rtclog::Event& event,
+                             rtclog::StreamConfig* config) const;
+  void GetVideoSendConfig(const rtclog::Event& event,
+                          rtclog::StreamConfig* config) const;
+  void GetAudioReceiveConfig(const rtclog::Event& event,
+                             rtclog::StreamConfig* config) const;
+  void GetAudioSendConfig(const rtclog::Event& event,
+                          rtclog::StreamConfig* config) const;
+
   std::vector<rtclog::Event> events_;
+
+  struct Stream {
+    Stream(uint32_t ssrc,
+           MediaType media_type,
+           webrtc::PacketDirection direction)
+        : ssrc(ssrc), media_type(media_type), direction(direction) {}
+    uint32_t ssrc;
+    MediaType media_type;
+    webrtc::PacketDirection direction;
+  };
+
+  // All configured streams found in the event log.
+  std::vector<Stream> streams_;
 };
 
 }  // namespace webrtc

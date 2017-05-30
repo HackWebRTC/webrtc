@@ -21,7 +21,6 @@
 #include "webrtc/base/swap_queue.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/base/timeutils.h"
-#include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log_helper_thread.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -67,16 +66,13 @@ class RtcEventLogImpl final : public RtcEventLog {
   void LogAudioReceiveStreamConfig(const rtclog::StreamConfig& config) override;
   void LogAudioSendStreamConfig(const rtclog::StreamConfig& config) override;
   void LogRtpHeader(PacketDirection direction,
-                    MediaType media_type,
                     const uint8_t* header,
                     size_t packet_length) override;
   void LogRtpHeader(PacketDirection direction,
-                    MediaType media_type,
                     const uint8_t* header,
                     size_t packet_length,
                     int probe_cluster_id) override;
   void LogRtcpPacket(PacketDirection direction,
-                     MediaType media_type,
                      const uint8_t* packet,
                      size_t length) override;
   void LogAudioPlayout(uint32_t ssrc) override;
@@ -130,21 +126,6 @@ rtclog::VideoReceiveConfig_RtcpMode ConvertRtcpMode(RtcpMode rtcp_mode) {
   }
   RTC_NOTREACHED();
   return rtclog::VideoReceiveConfig::RTCP_COMPOUND;
-}
-
-rtclog::MediaType ConvertMediaType(MediaType media_type) {
-  switch (media_type) {
-    case MediaType::ANY:
-      return rtclog::MediaType::ANY;
-    case MediaType::AUDIO:
-      return rtclog::MediaType::AUDIO;
-    case MediaType::VIDEO:
-      return rtclog::MediaType::VIDEO;
-    case MediaType::DATA:
-      return rtclog::MediaType::DATA;
-  }
-  RTC_NOTREACHED();
-  return rtclog::ANY;
 }
 
 rtclog::DelayBasedBweUpdate::DetectorState ConvertDetectorState(
@@ -390,15 +371,12 @@ void RtcEventLogImpl::LogAudioSendStreamConfig(
 }
 
 void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
-                                   MediaType media_type,
                                    const uint8_t* header,
                                    size_t packet_length) {
-  LogRtpHeader(direction, media_type, header, packet_length,
-               PacedPacketInfo::kNotAProbe);
+  LogRtpHeader(direction, header, packet_length, PacedPacketInfo::kNotAProbe);
 }
 
 void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
-                                   MediaType media_type,
                                    const uint8_t* header,
                                    size_t packet_length,
                                    int probe_cluster_id) {
@@ -422,7 +400,6 @@ void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
   rtp_event->set_timestamp_us(rtc::TimeMicros());
   rtp_event->set_type(rtclog::Event::RTP_EVENT);
   rtp_event->mutable_rtp_packet()->set_incoming(direction == kIncomingPacket);
-  rtp_event->mutable_rtp_packet()->set_type(ConvertMediaType(media_type));
   rtp_event->mutable_rtp_packet()->set_packet_length(packet_length);
   rtp_event->mutable_rtp_packet()->set_header(header, header_length);
   if (probe_cluster_id != PacedPacketInfo::kNotAProbe)
@@ -431,14 +408,12 @@ void RtcEventLogImpl::LogRtpHeader(PacketDirection direction,
 }
 
 void RtcEventLogImpl::LogRtcpPacket(PacketDirection direction,
-                                    MediaType media_type,
                                     const uint8_t* packet,
                                     size_t length) {
   std::unique_ptr<rtclog::Event> rtcp_event(new rtclog::Event());
   rtcp_event->set_timestamp_us(rtc::TimeMicros());
   rtcp_event->set_type(rtclog::Event::RTCP_EVENT);
   rtcp_event->mutable_rtcp_packet()->set_incoming(direction == kIncomingPacket);
-  rtcp_event->mutable_rtcp_packet()->set_type(ConvertMediaType(media_type));
 
   rtcp::CommonHeader header;
   const uint8_t* block_begin = packet;

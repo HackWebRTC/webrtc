@@ -373,9 +373,8 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         break;
       }
       case ParsedRtcEventLog::RTP_EVENT: {
-        MediaType media_type;
-        parsed_log_.GetRtpHeader(i, &direction, &media_type, header,
-                                 &header_length, &total_length);
+        parsed_log_.GetRtpHeader(i, &direction, header, &header_length,
+                                 &total_length);
         // Parse header to get SSRC.
         RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
         RTPHeader parsed_header;
@@ -399,9 +398,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
       }
       case ParsedRtcEventLog::RTCP_EVENT: {
         uint8_t packet[IP_PACKET_SIZE];
-        MediaType media_type;
-        parsed_log_.GetRtcpPacket(i, &direction, &media_type, packet,
-                                  &total_length);
+        parsed_log_.GetRtcpPacket(i, &direction, packet, &total_length);
         // Currently incoming RTCP packets are logged twice, both for audio and
         // video. Only act on one of them. Compare against the previous parsed
         // incoming RTCP packet.
@@ -905,8 +902,7 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
   for (size_t i = 0; i < parsed_log_.GetNumberOfEvents(); i++) {
     ParsedRtcEventLog::EventType event_type = parsed_log_.GetEventType(i);
     if (event_type == ParsedRtcEventLog::RTP_EVENT) {
-      parsed_log_.GetRtpHeader(i, &direction, nullptr, nullptr, nullptr,
-                               &total_length);
+      parsed_log_.GetRtpHeader(i, &direction, nullptr, nullptr, &total_length);
       if (direction == desired_direction) {
         uint64_t timestamp = parsed_log_.GetTimestamp(i);
         packets.push_back(TimestampSize(timestamp, total_length));

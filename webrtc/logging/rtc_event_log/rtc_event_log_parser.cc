@@ -22,7 +22,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/protobuf_utils.h"
-#include "webrtc/call/call.h"
 #include "webrtc/logging/rtc_event_log/rtc_event_log.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -31,21 +30,6 @@
 namespace webrtc {
 
 namespace {
-MediaType GetRuntimeMediaType(rtclog::MediaType media_type) {
-  switch (media_type) {
-    case rtclog::MediaType::ANY:
-      return MediaType::ANY;
-    case rtclog::MediaType::AUDIO:
-      return MediaType::AUDIO;
-    case rtclog::MediaType::VIDEO:
-      return MediaType::VIDEO;
-    case rtclog::MediaType::DATA:
-      return MediaType::DATA;
-  }
-  RTC_NOTREACHED();
-  return MediaType::ANY;
-}
-
 RtcpMode GetRuntimeRtcpMode(rtclog::VideoReceiveConfig::RtcpMode rtcp_mode) {
   switch (rtcp_mode) {
     case rtclog::VideoReceiveConfig::RTCP_COMPOUND:
@@ -179,7 +163,8 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
 
     // Read the next message tag. The tag number is defined as
     // (fieldnumber << 3) | wire_type. In our case, the field number is
-    // supposed to be 1 and the wire type for an length-delimited field is 2.
+    // supposed to be 1 and the wire type for an
+    // length-delimited field is 2.
     const uint64_t kExpectedTag = (1 << 3) | 2;
     std::tie(tag, success) = ParseVarInt(stream);
     if (!success) {
@@ -213,6 +198,48 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
       LOG(LS_WARNING) << "Failed to parse protobuf message.";
       return false;
     }
+
+    EventType type = GetRuntimeEventType(event.type());
+    switch (type) {
+      case VIDEO_RECEIVER_CONFIG_EVENT: {
+        rtclog::StreamConfig config;
+        GetVideoReceiveConfig(event, &config);
+        streams_.emplace_back(config.remote_ssrc, MediaType::VIDEO,
+                              kIncomingPacket);
+        streams_.emplace_back(config.local_ssrc, MediaType::VIDEO,
+                              kOutgoingPacket);
+        break;
+      }
+      case VIDEO_SENDER_CONFIG_EVENT: {
+        rtclog::StreamConfig config;
+        GetVideoSendConfig(event, &config);
+        streams_.emplace_back(config.local_ssrc, MediaType::VIDEO,
+                              kOutgoingPacket);
+
+        streams_.emplace_back(config.rtx_ssrc, MediaType::VIDEO,
+                              kOutgoingPacket);
+        break;
+      }
+      case AUDIO_RECEIVER_CONFIG_EVENT: {
+        rtclog::StreamConfig config;
+        GetAudioReceiveConfig(event, &config);
+        streams_.emplace_back(config.remote_ssrc, MediaType::AUDIO,
+                              kIncomingPacket);
+        streams_.emplace_back(config.local_ssrc, MediaType::AUDIO,
+                              kOutgoingPacket);
+        break;
+      }
+      case AUDIO_SENDER_CONFIG_EVENT: {
+        rtclog::StreamConfig config;
+        GetAudioSendConfig(event, &config);
+        streams_.emplace_back(config.local_ssrc, MediaType::AUDIO,
+                              kOutgoingPacket);
+        break;
+      }
+      default:
+        break;
+    }
+
     events_.push_back(event);
   }
 }
@@ -239,7 +266,6 @@ ParsedRtcEventLog::EventType ParsedRtcEventLog::GetEventType(
 // The header must have space for at least IP_PACKET_SIZE bytes.
 void ParsedRtcEventLog::GetRtpHeader(size_t index,
                                      PacketDirection* incoming,
-                                     MediaType* media_type,
                                      uint8_t* header,
                                      size_t* header_length,
                                      size_t* total_length) const {
@@ -253,11 +279,6 @@ void ParsedRtcEventLog::GetRtpHeader(size_t index,
   RTC_CHECK(rtp_packet.has_incoming());
   if (incoming != nullptr) {
     *incoming = rtp_packet.incoming() ? kIncomingPacket : kOutgoingPacket;
-  }
-  // Get media type.
-  RTC_CHECK(rtp_packet.has_type());
-  if (media_type != nullptr) {
-    *media_type = GetRuntimeMediaType(rtp_packet.type());
   }
   // Get packet length.
   RTC_CHECK(rtp_packet.has_packet_length());
@@ -282,7 +303,6 @@ void ParsedRtcEventLog::GetRtpHeader(size_t index,
 // The packet must have space for at least IP_PACKET_SIZE bytes.
 void ParsedRtcEventLog::GetRtcpPacket(size_t index,
                                       PacketDirection* incoming,
-                                      MediaType* media_type,
                                       uint8_t* packet,
                                       size_t* length) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
@@ -295,11 +315,6 @@ void ParsedRtcEventLog::GetRtcpPacket(size_t index,
   RTC_CHECK(rtcp_packet.has_incoming());
   if (incoming != nullptr) {
     *incoming = rtcp_packet.incoming() ? kIncomingPacket : kOutgoingPacket;
-  }
-  // Get media type.
-  RTC_CHECK(rtcp_packet.has_type());
-  if (media_type != nullptr) {
-    *media_type = GetRuntimeMediaType(rtcp_packet.type());
   }
   // Get packet length.
   RTC_CHECK(rtcp_packet.has_packet_data());
@@ -319,7 +334,12 @@ void ParsedRtcEventLog::GetVideoReceiveConfig(
     size_t index,
     rtclog::StreamConfig* config) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = events_[index];
+  GetVideoReceiveConfig(events_[index], config);
+}
+
+void ParsedRtcEventLog::GetVideoReceiveConfig(
+    const rtclog::Event& event,
+    rtclog::StreamConfig* config) const {
   RTC_CHECK(config != nullptr);
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT);
@@ -381,7 +401,10 @@ void ParsedRtcEventLog::GetVideoReceiveConfig(
 void ParsedRtcEventLog::GetVideoSendConfig(size_t index,
                                            rtclog::StreamConfig* config) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = events_[index];
+  GetVideoSendConfig(events_[index], config);
+}
+void ParsedRtcEventLog::GetVideoSendConfig(const rtclog::Event& event,
+                                           rtclog::StreamConfig* config) const {
   RTC_CHECK(config != nullptr);
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::VIDEO_SENDER_CONFIG_EVENT);
@@ -419,7 +442,12 @@ void ParsedRtcEventLog::GetAudioReceiveConfig(
     size_t index,
     rtclog::StreamConfig* config) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = events_[index];
+  GetAudioReceiveConfig(events_[index], config);
+}
+
+void ParsedRtcEventLog::GetAudioReceiveConfig(
+    const rtclog::Event& event,
+    rtclog::StreamConfig* config) const {
   RTC_CHECK(config != nullptr);
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT);
@@ -439,7 +467,11 @@ void ParsedRtcEventLog::GetAudioReceiveConfig(
 void ParsedRtcEventLog::GetAudioSendConfig(size_t index,
                                            rtclog::StreamConfig* config) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  const rtclog::Event& event = events_[index];
+  GetAudioSendConfig(events_[index], config);
+}
+
+void ParsedRtcEventLog::GetAudioSendConfig(const rtclog::Event& event,
+                                           rtclog::StreamConfig* config) const {
   RTC_CHECK(config != nullptr);
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_SENDER_CONFIG_EVENT);
@@ -587,5 +619,17 @@ ParsedRtcEventLog::BweProbeResultEvent ParsedRtcEventLog::GetBweProbeResult(
   }
 
   return res;
+}
+
+// Returns the MediaType for registered SSRCs. Search from the end to use last
+// registered types first.
+ParsedRtcEventLog::MediaType ParsedRtcEventLog::GetMediaType(
+    uint32_t ssrc,
+    PacketDirection direction) const {
+  for (auto rit = streams_.rbegin(); rit != streams_.rend(); ++rit) {
+    if (rit->ssrc == ssrc && rit->direction == direction)
+      return rit->media_type;
+  }
+  return MediaType::ANY;
 }
 }  // namespace webrtc
