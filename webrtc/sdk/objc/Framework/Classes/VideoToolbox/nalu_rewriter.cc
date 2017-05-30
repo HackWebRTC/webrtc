@@ -9,7 +9,7 @@
  *
  */
 
-#include "webrtc/sdk/objc/Framework/Classes/h264_video_toolbox_nalu.h"
+#include "webrtc/sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <memory>

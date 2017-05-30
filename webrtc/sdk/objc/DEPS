@@ -1,5 +1,12 @@
 include_rules = [
   "+WebRTC",
+  "+Common",
+  "+Video",
+  "+Audio",
+  "+UI",
+  "+PeerConnection",
+  "+VideoToolbox",
+  "+Metal",
   "+webrtc/api",
   "+webrtc/common_video/h264",
   "+webrtc/common_video/include",

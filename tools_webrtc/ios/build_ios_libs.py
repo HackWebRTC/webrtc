@@ -120,7 +120,7 @@ def BuildWebRTC(output_dir, target_arch, flavor, build_type,
   if build_type == 'static_only':
     gn_target_name = 'rtc_sdk_objc'
   elif build_type == 'framework':
-    gn_target_name = 'rtc_sdk_framework_objc'
+    gn_target_name = 'objc_framework'
     if not use_bitcode:
       gn_args.append('enable_dsyms=true')
     gn_args.append('enable_stripping=true')
