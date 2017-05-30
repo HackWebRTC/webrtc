@@ -317,7 +317,7 @@ rtc_source_set("fileutils") {
   if (is_ios) {
     sources += [ "testsupport/iosfileutils.mm" ]
     deps = [
-      "//webrtc/sdk:objc_common",
+      "../sdk:objc_common",
     ]
   }
   visibility = [ ":*" ]

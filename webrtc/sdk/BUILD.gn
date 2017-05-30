@@ -122,10 +122,10 @@ if (is_ios || is_mac) {
       ":objc_common",
       ":objc_corevideoframebuffer",
       ":objc_videotoolbox",
-      "//webrtc/api:libjingle_peerconnection_api",
-      "//webrtc/base:rtc_base",
-      "//webrtc/common_video",
-      "//webrtc/media:rtc_media_base",
+      "../api:libjingle_peerconnection_api",
+      "../base:rtc_base",
+      "../common_video",
+      "../media:rtc_media_base",
     ]
 
     configs += [ "..:common_objc" ]
@@ -187,8 +187,8 @@ if (is_ios || is_mac) {
       ]
       deps = [
         ":objc_video",
-        "//webrtc/api:video_frame_api",
-        "//webrtc/base:rtc_base_approved",
+        "../api:video_frame_api",
+        "../base:rtc_base_approved",
       ]
       configs += [ "..:common_objc" ]
       public_configs = [ ":objc_common_config" ]
@@ -310,10 +310,10 @@ if (is_ios || is_mac) {
       ":objc_common",
       ":objc_corevideoframebuffer",
       ":objc_video",
+      "../api:video_frame_api",
+      "../base:rtc_base",
+      "../media:rtc_media_base",
       "../pc:libjingle_peerconnection",
-      "//webrtc/api:video_frame_api",
-      "//webrtc/base:rtc_base",
-      "//webrtc/media:rtc_media_base",
     ]
 
     if (rtc_use_metal_rendering) {
@@ -336,7 +336,7 @@ if (is_ios || is_mac) {
       # gets additional generated targets which would require many lines here to
       # cover (which would be confusing to read and hard to maintain).
       if (!is_android && !is_ios) {
-        visibility = [ "//webrtc:rtc_unittests" ]
+        visibility = [ "..:rtc_unittests" ]
       }
       sources = [
         "objc/Framework/UnitTests/RTCCameraVideoCapturerTests.mm",
@@ -360,8 +360,8 @@ if (is_ios || is_mac) {
         ":objc_peerconnection",
         "..//system_wrappers:system_wrappers_default",
         "../base:rtc_base_tests_utils",
+        "../system_wrappers:system_wrappers_default",
         "//third_party/ocmock",
-        "//webrtc/system_wrappers:system_wrappers_default",
       ]
 
       # RTCMTLVideoView not supported on 32-bit arm
@@ -471,8 +471,8 @@ if (is_ios || is_mac) {
     deps = [
       ":objc_peerconnection",
       ":objc_ui",
-      "//webrtc/system_wrappers:field_trial_default",
-      "//webrtc/system_wrappers:metrics_default",
+      "../system_wrappers:field_trial_default",
+      "../system_wrappers:metrics_default",
     ]
   }
 
@@ -510,19 +510,19 @@ if (is_ios || is_mac) {
       "objc/Framework/Classes/VideoToolbox/videocodecfactory.h",
     ]
 
-    configs += [ "//webrtc:common_objc" ]
+    configs += [ "..:common_objc" ]
 
     deps = [
       ":objc_common",
       ":objc_corevideoframebuffer",
       "../base:rtc_base_approved",
-      "//webrtc/common_video",
-      "//webrtc/media:rtc_media",
-      "//webrtc/media:rtc_media_base",
-      "//webrtc/modules:module_api",
-      "//webrtc/modules/video_coding:video_coding_utility",
-      "//webrtc/modules/video_coding:webrtc_h264",
-      "//webrtc/system_wrappers",
+      "../common_video",
+      "../media:rtc_media",
+      "../media:rtc_media_base",
+      "../modules:module_api",
+      "../modules/video_coding:video_coding_utility",
+      "../modules/video_coding:webrtc_h264",
+      "../system_wrappers",
     ]
 
     libs = [
