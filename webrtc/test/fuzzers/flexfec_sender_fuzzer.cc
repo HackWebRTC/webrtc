@@ -37,7 +37,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   SimulatedClock clock(1 + data[i++]);
   FlexfecSender sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,
                        kNoRtpHeaderExtensions, kNoRtpHeaderExtensionSizes,
-                       &clock);
+                       nullptr /* rtp_state */, &clock);
   FecProtectionParams params = {
       data[i++], static_cast<int>(data[i++] % 100),
       data[i++] <= 127 ? kFecMaskRandom : kFecMaskBursty};

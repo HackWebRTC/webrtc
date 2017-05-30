@@ -65,17 +65,21 @@ FlexfecSender::FlexfecSender(
     uint32_t protected_media_ssrc,
     const std::vector<RtpExtension>& rtp_header_extensions,
     rtc::ArrayView<const RtpExtensionSize> extension_sizes,
+    const RtpState* rtp_state,
     Clock* clock)
     : clock_(clock),
       random_(clock_->TimeInMicroseconds()),
       last_generated_packet_ms_(-1),
       payload_type_(payload_type),
-      // Initialize the timestamp offset and RTP sequence numbers randomly.
-      // (This is not intended to be cryptographically strong.)
-      timestamp_offset_(random_.Rand<uint32_t>()),
+      // Reset RTP state if this is not the first time we are operating.
+      // Otherwise, randomize the initial timestamp offset and RTP sequence
+      // numbers. (This is not intended to be cryptographically strong.)
+      timestamp_offset_(rtp_state ? rtp_state->start_timestamp
+                                  : random_.Rand<uint32_t>()),
       ssrc_(ssrc),
       protected_media_ssrc_(protected_media_ssrc),
-      seq_num_(random_.Rand(1, kMaxInitRtpSeqNumber)),
+      seq_num_(rtp_state ? rtp_state->sequence_number
+                         : random_.Rand(1, kMaxInitRtpSeqNumber)),
       ulpfec_generator_(ForwardErrorCorrection::CreateFlexfec()),
       rtp_header_extension_map_(RegisterBweExtensions(rtp_header_extensions)),
       header_extensions_size_(
@@ -152,6 +156,13 @@ std::vector<std::unique_ptr<RtpPacketToSend>> FlexfecSender::GetFecPackets() {
 // The overhead is BWE RTP header extensions and FlexFEC header.
 size_t FlexfecSender::MaxPacketOverhead() const {
   return header_extensions_size_ + kFlexfecMaxHeaderSize;
+}
+
+RtpState FlexfecSender::GetRtpState() {
+  RtpState rtp_state;
+  rtp_state.sequence_number = seq_num_;
+  rtp_state.start_timestamp = timestamp_offset_;
+  return rtp_state;
 }
 
 }  // namespace webrtc

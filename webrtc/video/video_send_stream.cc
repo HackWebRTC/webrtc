@@ -95,7 +95,8 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
 
 // TODO(brandtr): Update this function when we support multistream protection.
 std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
-    const VideoSendStream::Config& config) {
+    const VideoSendStream::Config& config,
+    const std::map<uint32_t, RtpState>& suspended_ssrcs) {
   if (config.rtp.flexfec.payload_type < 0) {
     return nullptr;
   }
@@ -128,11 +129,17 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
     return nullptr;
   }
 
+  const RtpState* rtp_state = nullptr;
+  auto it = suspended_ssrcs.find(config.rtp.flexfec.ssrc);
+  if (it != suspended_ssrcs.end()) {
+    rtp_state = &it->second;
+  }
+
   RTC_DCHECK_EQ(1U, config.rtp.flexfec.protected_media_ssrcs.size());
   return std::unique_ptr<FlexfecSender>(new FlexfecSender(
       config.rtp.flexfec.payload_type, config.rtp.flexfec.ssrc,
       config.rtp.flexfec.protected_media_ssrcs[0], config.rtp.extensions,
-      RTPSender::FecExtensionSizes(), Clock::GetRealTimeClock()));
+      RTPSender::FecExtensionSizes(), rtp_state, Clock::GetRealTimeClock()));
 }
 
 }  // namespace
@@ -762,7 +769,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       call_stats_(call_stats),
       transport_(transport),
       bitrate_allocator_(bitrate_allocator),
-      flexfec_sender_(MaybeCreateFlexfecSender(*config_)),
+      flexfec_sender_(MaybeCreateFlexfecSender(*config_, suspended_ssrcs_)),
       max_padding_bitrate_(0),
       encoder_min_bitrate_bps_(0),
       encoder_max_bitrate_bps_(initial_encoder_max_bitrate),
@@ -1184,6 +1191,7 @@ void VideoSendStreamImpl::ConfigureSsrcs() {
 std::map<uint32_t, RtpState> VideoSendStreamImpl::GetRtpStates() const {
   RTC_DCHECK_RUN_ON(worker_queue_);
   std::map<uint32_t, RtpState> rtp_states;
+
   for (size_t i = 0; i < config_->rtp.ssrcs.size(); ++i) {
     uint32_t ssrc = config_->rtp.ssrcs[i];
     RTC_DCHECK_EQ(ssrc, rtp_rtcp_modules_[i]->SSRC());
@@ -1193,6 +1201,11 @@ std::map<uint32_t, RtpState> VideoSendStreamImpl::GetRtpStates() const {
   for (size_t i = 0; i < config_->rtp.rtx.ssrcs.size(); ++i) {
     uint32_t ssrc = config_->rtp.rtx.ssrcs[i];
     rtp_states[ssrc] = rtp_rtcp_modules_[i]->GetRtxState();
+  }
+
+  if (flexfec_sender_) {
+    uint32_t ssrc = config_->rtp.flexfec.ssrc;
+    rtp_states[ssrc] = flexfec_sender_->GetRtpState();
   }
 
   return rtp_states;
