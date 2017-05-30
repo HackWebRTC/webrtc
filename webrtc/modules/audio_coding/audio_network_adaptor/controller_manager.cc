@@ -253,13 +253,20 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
     controllers.push_back(std::move(controller));
   }
 
-  RTC_CHECK(controller_manager_config.has_min_reordering_time_ms());
-  RTC_CHECK(controller_manager_config.has_min_reordering_squared_distance());
-  return std::unique_ptr<ControllerManagerImpl>(new ControllerManagerImpl(
-      ControllerManagerImpl::Config(
-          controller_manager_config.min_reordering_time_ms(),
-          controller_manager_config.min_reordering_squared_distance()),
-      std::move(controllers), scoring_points));
+  if (scoring_points.size() == 0) {
+    return std::unique_ptr<ControllerManagerImpl>(new ControllerManagerImpl(
+        ControllerManagerImpl::Config(0, 0), std::move(controllers),
+        scoring_points));
+  } else {
+    RTC_CHECK(controller_manager_config.has_min_reordering_time_ms());
+    RTC_CHECK(controller_manager_config.has_min_reordering_squared_distance());
+    return std::unique_ptr<ControllerManagerImpl>(new ControllerManagerImpl(
+        ControllerManagerImpl::Config(
+            controller_manager_config.min_reordering_time_ms(),
+            controller_manager_config.min_reordering_squared_distance()),
+        std::move(controllers), scoring_points));
+  }
+
 #else
   RTC_NOTREACHED();
   return nullptr;
@@ -294,11 +301,13 @@ ControllerManagerImpl::~ControllerManagerImpl() = default;
 
 std::vector<Controller*> ControllerManagerImpl::GetSortedControllers(
     const Controller::NetworkMetrics& metrics) {
-  int64_t now_ms = rtc::TimeMillis();
+  if (controller_scoring_points_.size() == 0)
+    return default_sorted_controllers_;
 
   if (!metrics.uplink_bandwidth_bps || !metrics.uplink_packet_loss_fraction)
     return sorted_controllers_;
 
+  const int64_t now_ms = rtc::TimeMillis();
   if (last_reordering_time_ms_ &&
       now_ms - *last_reordering_time_ms_ < config_.min_reordering_time_ms)
     return sorted_controllers_;

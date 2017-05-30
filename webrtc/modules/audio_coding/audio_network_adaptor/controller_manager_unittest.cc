@@ -359,6 +359,27 @@ TEST(ControllerManagerTest, CreateFromConfigStringAndCheckDefaultOrder) {
           ControllerType::FRAME_LENGTH, ControllerType::BIT_RATE});
 }
 
+TEST(ControllerManagerTest, CreateCharPointFreeConfigAndCheckDefaultOrder) {
+  audio_network_adaptor::config::ControllerManager config;
+
+  // Following controllers have no characteristic points.
+  AddChannelControllerConfig(&config);
+  AddDtxControllerConfig(&config);
+  AddBitrateControllerConfig(&config);
+
+  ProtoString config_string;
+  config.SerializeToString(&config_string);
+
+  auto states = CreateControllerManager(config_string);
+  Controller::NetworkMetrics metrics;
+
+  auto controllers = states.controller_manager->GetSortedControllers(metrics);
+  CheckControllersOrder(
+      controllers,
+      std::vector<ControllerType>{ControllerType::CHANNEL, ControllerType::DTX,
+                                  ControllerType::BIT_RATE});
+}
+
 TEST(ControllerManagerTest, CreateFromConfigStringAndCheckReordering) {
   rtc::ScopedFakeClock fake_clock;
   audio_network_adaptor::config::ControllerManager config;
