@@ -654,6 +654,7 @@ WebRtcVideoChannel2::WebRtcVideoChannel2(
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
   sending_ = false;
   recv_codecs_ = MapCodecs(GetSupportedCodecs(external_encoder_factory));
+  recv_flexfec_payload_type_ = recv_codecs_.front().flexfec_payload_type;
 }
 
 WebRtcVideoChannel2::~WebRtcVideoChannel2() {
@@ -682,12 +683,13 @@ WebRtcVideoChannel2::SelectSendVideoCodec(
   return rtc::Optional<VideoCodecSettings>();
 }
 
-bool WebRtcVideoChannel2::ReceiveCodecsHaveChanged(
+bool WebRtcVideoChannel2::NonFlexfecReceiveCodecsHaveChanged(
     std::vector<VideoCodecSettings> before,
     std::vector<VideoCodecSettings> after) {
   if (before.size() != after.size()) {
     return true;
   }
+
   // The receive codec order doesn't matter, so we sort the codecs before
   // comparing. This is necessary because currently the
   // only way to change the send codec is to munge SDP, which causes
@@ -702,7 +704,12 @@ bool WebRtcVideoChannel2::ReceiveCodecsHaveChanged(
       };
   std::sort(before.begin(), before.end(), comparison);
   std::sort(after.begin(), after.end(), comparison);
-  return before != after;
+
+  // Changes in FlexFEC payload type are handled separately in
+  // WebRtcVideoChannel2::GetChangedRecvParameters, so disregard FlexFEC in the
+  // comparison here.
+  return !std::equal(before.begin(), before.end(), after.begin(),
+                     VideoCodecSettings::EqualsDisregardingFlexfec);
 }
 
 bool WebRtcVideoChannel2::GetChangedSendParameters(
@@ -982,7 +989,7 @@ bool WebRtcVideoChannel2::GetChangedRecvParameters(
     }
   }
 
-  if (ReceiveCodecsHaveChanged(recv_codecs_, mapped_codecs)) {
+  if (NonFlexfecReceiveCodecsHaveChanged(recv_codecs_, mapped_codecs)) {
     changed_params->codec_settings =
         rtc::Optional<std::vector<VideoCodecSettings>>(mapped_codecs);
   }
@@ -995,6 +1002,12 @@ bool WebRtcVideoChannel2::GetChangedRecvParameters(
         rtc::Optional<std::vector<webrtc::RtpExtension>>(filtered_extensions);
   }
 
+  int flexfec_payload_type = mapped_codecs.front().flexfec_payload_type;
+  if (flexfec_payload_type != recv_flexfec_payload_type_) {
+    changed_params->flexfec_payload_type =
+        rtc::Optional<int>(flexfec_payload_type);
+  }
+
   return true;
 }
 
@@ -1004,6 +1017,12 @@ bool WebRtcVideoChannel2::SetRecvParameters(const VideoRecvParameters& params) {
   ChangedRecvParameters changed_params;
   if (!GetChangedRecvParameters(params, &changed_params)) {
     return false;
+  }
+  if (changed_params.flexfec_payload_type) {
+    LOG(LS_INFO) << "Changing FlexFEC payload type (recv) from "
+                 << recv_flexfec_payload_type_ << " to "
+                 << *changed_params.flexfec_payload_type;
+    recv_flexfec_payload_type_ = *changed_params.flexfec_payload_type;
   }
   if (changed_params.rtp_header_extensions) {
     recv_rtp_extensions_ = *changed_params.rtp_header_extensions;
@@ -1288,6 +1307,7 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
   config->rtp.extensions = recv_rtp_extensions_;
 
   // TODO(brandtr): Generalize when we add support for multistream protection.
+  flexfec_config->payload_type = recv_flexfec_payload_type_;
   if (IsFlexfecAdvertisedFieldTrialEnabled() &&
       sp.GetFecFrSsrc(ssrc, &flexfec_config->remote_ssrc)) {
     flexfec_config->protected_media_ssrcs = {ssrc};
@@ -1464,10 +1484,12 @@ void WebRtcVideoChannel2::OnPacketReceived(
   for (auto& codec : recv_codecs_) {
     if (payload_type == codec.rtx_payload_type ||
         payload_type == codec.ulpfec.red_rtx_payload_type ||
-        payload_type == codec.ulpfec.ulpfec_payload_type ||
-        payload_type == codec.flexfec_payload_type) {
+        payload_type == codec.ulpfec.ulpfec_payload_type) {
       return;
     }
+  }
+  if (payload_type == recv_flexfec_payload_type_) {
+    return;
   }
 
   switch (unsignalled_ssrc_handler_->OnUnsignalledSsrc(this, ssrc)) {
@@ -2199,7 +2221,9 @@ WebRtcVideoChannel2::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
   config_.renderer = this;
   std::vector<AllocatedDecoder> old_decoders;
   ConfigureCodecs(recv_codecs, &old_decoders);
-  RecreateWebRtcStream();
+  ConfigureFlexfecCodec(flexfec_config.payload_type);
+  MaybeRecreateWebRtcFlexfecStream();
+  RecreateWebRtcVideoStream();
   RTC_DCHECK(old_decoders.empty());
 }
 
@@ -2301,10 +2325,14 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureCodecs(
   }
 
   config_.rtp.ulpfec = recv_codecs.front().ulpfec;
-  flexfec_config_.payload_type = recv_codecs.front().flexfec_payload_type;
 
   config_.rtp.nack.rtp_history_ms =
       HasNack(recv_codecs.begin()->codec) ? kNackHistoryMs : 0;
+}
+
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::ConfigureFlexfecCodec(
+    int flexfec_payload_type) {
+  flexfec_config_.payload_type = flexfec_payload_type;
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetLocalSsrc(
@@ -2324,7 +2352,8 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetLocalSsrc(
   LOG(LS_INFO)
       << "RecreateWebRtcStream (recv) because of SetLocalSsrc; local_ssrc="
       << local_ssrc;
-  RecreateWebRtcStream();
+  MaybeRecreateWebRtcFlexfecStream();
+  RecreateWebRtcVideoStream();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetFeedbackParameters(
@@ -2356,47 +2385,61 @@ void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetFeedbackParameters(
       << "RecreateWebRtcStream (recv) because of SetFeedbackParameters; nack="
       << nack_enabled << ", remb=" << remb_enabled
       << ", transport_cc=" << transport_cc_enabled;
-  RecreateWebRtcStream();
+  MaybeRecreateWebRtcFlexfecStream();
+  RecreateWebRtcVideoStream();
 }
 
 void WebRtcVideoChannel2::WebRtcVideoReceiveStream::SetRecvParameters(
     const ChangedRecvParameters& params) {
-  bool needs_recreation = false;
+  bool video_needs_recreation = false;
+  bool flexfec_needs_recreation = false;
   std::vector<AllocatedDecoder> old_decoders;
   if (params.codec_settings) {
     ConfigureCodecs(*params.codec_settings, &old_decoders);
-    needs_recreation = true;
+    video_needs_recreation = true;
   }
   if (params.rtp_header_extensions) {
     config_.rtp.extensions = *params.rtp_header_extensions;
     flexfec_config_.rtp_header_extensions = *params.rtp_header_extensions;
-    needs_recreation = true;
+    video_needs_recreation = true;
+    flexfec_needs_recreation = true;
   }
-  if (needs_recreation) {
-    LOG(LS_INFO) << "RecreateWebRtcStream (recv) because of SetRecvParameters";
-    RecreateWebRtcStream();
+  if (params.flexfec_payload_type) {
+    ConfigureFlexfecCodec(*params.flexfec_payload_type);
+    flexfec_needs_recreation = true;
+  }
+  if (flexfec_needs_recreation) {
+    LOG(LS_INFO) << "MaybeRecreateWebRtcFlexfecStream (recv) because of "
+                    "SetRecvParameters";
+    MaybeRecreateWebRtcFlexfecStream();
+  }
+  if (video_needs_recreation) {
+    LOG(LS_INFO)
+        << "RecreateWebRtcVideoStream (recv) because of SetRecvParameters";
+    RecreateWebRtcVideoStream();
     ClearDecoders(&old_decoders);
   }
 }
 
-void WebRtcVideoChannel2::WebRtcVideoReceiveStream::RecreateWebRtcStream() {
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::
+    RecreateWebRtcVideoStream() {
   if (stream_) {
     call_->DestroyVideoReceiveStream(stream_);
     stream_ = nullptr;
   }
+  webrtc::VideoReceiveStream::Config config = config_.Copy();
+  config.rtp.protected_by_flexfec = (flexfec_stream_ != nullptr);
+  stream_ = call_->CreateVideoReceiveStream(std::move(config));
+  stream_->Start();
+}
+
+void WebRtcVideoChannel2::WebRtcVideoReceiveStream::
+    MaybeRecreateWebRtcFlexfecStream() {
   if (flexfec_stream_) {
     call_->DestroyFlexfecReceiveStream(flexfec_stream_);
     flexfec_stream_ = nullptr;
   }
-  const bool use_flexfec = flexfec_config_.IsCompleteAndEnabled();
-  // TODO(nisse): There are way too many copies here. And why isn't
-  // the argument to CreateVideoReceiveStream a const ref?
-  webrtc::VideoReceiveStream::Config config = config_.Copy();
-  config.rtp.protected_by_flexfec = use_flexfec;
-  stream_ = call_->CreateVideoReceiveStream(config.Copy());
-  stream_->Start();
-
-  if (use_flexfec) {
+  if (flexfec_config_.IsCompleteAndEnabled()) {
     flexfec_stream_ = call_->CreateFlexfecReceiveStream(flexfec_config_);
     flexfec_stream_->Start();
   }
@@ -2521,6 +2564,13 @@ bool WebRtcVideoChannel2::VideoCodecSettings::operator==(
   return codec == other.codec && ulpfec == other.ulpfec &&
          flexfec_payload_type == other.flexfec_payload_type &&
          rtx_payload_type == other.rtx_payload_type;
+}
+
+bool WebRtcVideoChannel2::VideoCodecSettings::EqualsDisregardingFlexfec(
+    const WebRtcVideoChannel2::VideoCodecSettings& a,
+    const WebRtcVideoChannel2::VideoCodecSettings& b) {
+  return a.codec == b.codec && a.ulpfec == b.ulpfec &&
+         a.rtx_payload_type == b.rtx_payload_type;
 }
 
 bool WebRtcVideoChannel2::VideoCodecSettings::operator!=(

@@ -2510,6 +2510,53 @@ TEST_F(WebRtcVideoChannel2FlexfecRecvTest, SetDefaultRecvCodecsWithSsrc) {
   EXPECT_EQ(kSsrcs1[0], config.protected_media_ssrcs[0]);
 }
 
+TEST_F(WebRtcVideoChannel2FlexfecRecvTest,
+       EnablingFlexfecDoesNotRecreateVideoReceiveStream) {
+  cricket::VideoRecvParameters recv_parameters;
+  recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
+  ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
+
+  AddRecvStream(
+      CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
+  EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
+  EXPECT_EQ(1U, fake_call_->GetVideoReceiveStreams().size());
+
+  // Enable FlexFEC.
+  recv_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
+  ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
+  EXPECT_EQ(2, fake_call_->GetNumCreatedReceiveStreams())
+      << "Enabling FlexFEC should create FlexfecReceiveStream.";
+  EXPECT_EQ(1U, fake_call_->GetVideoReceiveStreams().size())
+      << "Enabling FlexFEC should not create VideoReceiveStream.";
+  EXPECT_EQ(1U, fake_call_->GetFlexfecReceiveStreams().size())
+      << "Enabling FlexFEC should create a single FlexfecReceiveStream.";
+}
+
+TEST_F(WebRtcVideoChannel2FlexfecRecvTest,
+       DisablingFlexfecDoesNotRecreateVideoReceiveStream) {
+  cricket::VideoRecvParameters recv_parameters;
+  recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
+  recv_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
+  ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
+
+  AddRecvStream(
+      CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
+  EXPECT_EQ(2, fake_call_->GetNumCreatedReceiveStreams());
+  EXPECT_EQ(1U, fake_call_->GetVideoReceiveStreams().size());
+  EXPECT_EQ(1U, fake_call_->GetFlexfecReceiveStreams().size());
+
+  // Disable FlexFEC.
+  recv_parameters.codecs.clear();
+  recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
+  ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
+  EXPECT_EQ(2, fake_call_->GetNumCreatedReceiveStreams())
+      << "Disabling FlexFEC should not recreate VideoReceiveStream.";
+  EXPECT_EQ(1U, fake_call_->GetVideoReceiveStreams().size())
+      << "Disabling FlexFEC should not destroy VideoReceiveStream.";
+  EXPECT_TRUE(fake_call_->GetFlexfecReceiveStreams().empty())
+      << "Disabling FlexFEC should destroy FlexfecReceiveStream.";
+}
+
 // TODO(brandtr): When FlexFEC is no longer behind a field trial, merge all
 // tests that use this test fixture into the corresponding "non-field trial"
 // tests.

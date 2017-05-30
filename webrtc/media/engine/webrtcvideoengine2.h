@@ -191,8 +191,15 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   struct VideoCodecSettings {
     VideoCodecSettings();
 
+    // Checks if all members of |*this| are equal to the corresponding members
+    // of |other|.
     bool operator==(const VideoCodecSettings& other) const;
     bool operator!=(const VideoCodecSettings& other) const;
+
+    // Checks if all members of |a|, except |flexfec_payload_type|, are equal
+    // to the corresponding members of |b|.
+    static bool EqualsDisregardingFlexfec(const VideoCodecSettings& a,
+                                          const VideoCodecSettings& b);
 
     VideoCodec codec;
     webrtc::UlpfecConfig ulpfec;
@@ -213,6 +220,10 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
     // These optionals are unset if not changed.
     rtc::Optional<std::vector<VideoCodecSettings>> codec_settings;
     rtc::Optional<std::vector<webrtc::RtpExtension>> rtp_header_extensions;
+    // Keep track of the FlexFEC payload type separately from |codec_settings|.
+    // This allows us to recreate the FlexfecReceiveStream separately from the
+    // VideoReceiveStream when the FlexFEC payload type is changed.
+    rtc::Optional<int> flexfec_payload_type;
   };
 
   bool GetChangedSendParameters(const VideoSendParameters& params,
@@ -407,10 +418,12 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
       bool external;
     };
 
-    void RecreateWebRtcStream();
+    void RecreateWebRtcVideoStream();
+    void MaybeRecreateWebRtcFlexfecStream();
 
     void ConfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs,
                          std::vector<AllocatedDecoder>* old_codecs);
+    void ConfigureFlexfecCodec(int flexfec_payload_type);
     AllocatedDecoder CreateOrReuseVideoDecoder(
         std::vector<AllocatedDecoder>* old_decoder,
         const VideoCodec& codec);
@@ -460,8 +473,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   rtc::Optional<VideoCodecSettings> SelectSendVideoCodec(
       const std::vector<VideoCodecSettings>& remote_mapped_codecs) const;
 
-  static bool ReceiveCodecsHaveChanged(std::vector<VideoCodecSettings> before,
-                                       std::vector<VideoCodecSettings> after);
+  static bool NonFlexfecReceiveCodecsHaveChanged(
+      std::vector<VideoCodecSettings> before,
+      std::vector<VideoCodecSettings> after);
 
   void FillSenderStats(VideoMediaInfo* info, bool log_stats);
   void FillReceiverStats(VideoMediaInfo* info, bool log_stats);
@@ -496,6 +510,9 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   WebRtcVideoDecoderFactory* const external_decoder_factory_;
   std::vector<VideoCodecSettings> recv_codecs_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
+  // See reason for keeping track of the FlexFEC payload type separately in
+  // comment in WebRtcVideoChannel2::ChangedRecvParameters.
+  int recv_flexfec_payload_type_;
   webrtc::Call::Config::BitrateConfig bitrate_config_;
   // TODO(deadbeef): Don't duplicate information between
   // send_params/recv_params, rtp_extensions, options, etc.
