@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'aa76e566cab7436963a2d12312173cbd0339093d',
+  'chromium_revision': '9a6a2ee988ffc8ac493acc4b8f7e8ec1ef5e8c9b',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -35,13 +35,13 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + '1759a05cc741d1c55eec7703877936e86a73111b',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '99466ee9daf6c6806d41cdff1989720e2a51d51c',
+    Var('chromium_git') + '/chromium/src/build' + '@' + 'd9c28f7e9a09963ec711baed0cef52413694a4cf',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '104574186c17cd4701857454feba8872e52a7d82',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + 'a33b34f229ed6db33aead0fdaa938cfb7830defa',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'd5670573541f89caaaa7354f2963656126e3f2b9',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '49dd29b2ed9ffd9f0b03670d4a76abf849d5965b',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'b398a428ce29a909d5d9ba544ce60fd37ed587a8',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -74,7 +74,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'd454d276beb36fa114e39f4ef7303f633137fee8',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '9c0478b41dce3180f564d347e38e96e496736277',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'eb296f67da078ec01f5e3a9ea9cdc6d26d680161',
    'src/tools/swarming_client':
@@ -116,7 +116,7 @@ deps_os = {
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + '0794d5f8e1bf192bf840166ba5bfd7414a26bd3c',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + '430595f748422e1b69c65376943be0b7a016ec56',
   },
   'unix': {
     'src/third_party/lss':
