@@ -83,11 +83,11 @@ if (is_ios || is_mac) {
     sources = [
       "objc/Framework/Classes/Video/RTCAVFoundationVideoCapturerInternal.h",
       "objc/Framework/Classes/Video/RTCAVFoundationVideoCapturerInternal.mm",
-      "objc/Framework/Classes/Video/RTCI420Shader.mm",
+      "objc/Framework/Classes/Video/RTCDefaultShader.h",
+      "objc/Framework/Classes/Video/RTCDefaultShader.mm",
       "objc/Framework/Classes/Video/RTCI420TextureCache.h",
       "objc/Framework/Classes/Video/RTCI420TextureCache.mm",
       "objc/Framework/Classes/Video/RTCOpenGLDefines.h",
-      "objc/Framework/Classes/Video/RTCShader+Private.h",
       "objc/Framework/Classes/Video/RTCShader.h",
       "objc/Framework/Classes/Video/RTCShader.mm",
       "objc/Framework/Classes/Video/avfoundationformatmapper.h",
@@ -102,7 +102,6 @@ if (is_ios || is_mac) {
       sources += [
         "objc/Framework/Classes/Video/RTCNV12TextureCache.h",
         "objc/Framework/Classes/Video/RTCNV12TextureCache.m",
-        "objc/Framework/Classes/Video/RTCNativeNV12Shader.mm",
       ]
       libs += [
         "GLKit.framework",
@@ -289,6 +288,7 @@ if (is_ios || is_mac) {
       "objc/Framework/Headers/WebRTC/RTCVideoRenderer.h",
       "objc/Framework/Headers/WebRTC/RTCVideoSource.h",
       "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
+      "objc/Framework/Headers/WebRTC/RTCVideoViewShading.h",
     ]
 
     libs = [ "AVFoundation.framework" ]
@@ -421,6 +421,7 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCVideoRenderer.h",
         "objc/Framework/Headers/WebRTC/RTCVideoSource.h",
         "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
+        "objc/Framework/Headers/WebRTC/RTCVideoViewShading.h",
         "objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h",
         "objc/Framework/Headers/WebRTC/WebRTC.h",
       ]

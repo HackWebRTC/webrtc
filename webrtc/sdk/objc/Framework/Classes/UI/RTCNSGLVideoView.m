@@ -18,7 +18,8 @@
 #import <CoreVideo/CVDisplayLink.h>
 #import <OpenGL/gl3.h>
 
-#import "RTCShader+Private.h"
+#import "RTCDefaultShader.h"
+#import "RTCI420TextureCache.h"
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
 
@@ -26,7 +27,7 @@
 // |videoFrame| is set when we receive a frame from a worker thread and is read
 // from the display link callback so atomicity is required.
 @property(atomic, strong) RTCVideoFrame *videoFrame;
-@property(atomic, strong) id<RTCShader> i420Shader;
+@property(atomic, strong) RTCI420TextureCache *i420TextureCache;
 
 - (void)drawFrame;
 @end
@@ -45,11 +46,25 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
 @implementation RTCNSGLVideoView {
   CVDisplayLinkRef _displayLink;
   RTCVideoFrame *_lastDrawnFrame;
+  id<RTCVideoViewShading> _shader;
 }
 
 @synthesize delegate = _delegate;
 @synthesize videoFrame = _videoFrame;
-@synthesize i420Shader = _i420Shader;
+@synthesize i420TextureCache = _i420TextureCache;
+
+- (instancetype)initWithFrame:(NSRect)frame pixelFormat:(NSOpenGLPixelFormat *)format {
+  return [self initWithFrame:frame pixelFormat:format shader:[[RTCDefaultShader alloc] init]];
+}
+
+- (instancetype)initWithFrame:(NSRect)frame
+                  pixelFormat:(NSOpenGLPixelFormat *)format
+                       shader:(id<RTCVideoViewShading>)shader {
+  if (self = [super initWithFrame:frame pixelFormat:format]) {
+    _shader = shader;
+  }
+  return self;
+}
 
 - (void)dealloc {
   [self teardownDisplayLink];
@@ -85,7 +100,7 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
 
 - (void)clearGLContext {
   [self ensureGLContext];
-  self.i420Shader = nil;
+  self.i420TextureCache = nil;
   [super clearGLContext];
 }
 
@@ -118,15 +133,20 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
   glClear(GL_COLOR_BUFFER_BIT);
 
   // Rendering native CVPixelBuffer is not supported on OS X.
+  // TODO(magjed): Add support for NV12 texture cache on OS X.
   frame = [frame newI420VideoFrame];
-  if (!self.i420Shader) {
-    self.i420Shader = [[RTCI420Shader alloc] initWithContext:context];
+  if (!self.i420TextureCache) {
+    self.i420TextureCache = [[RTCI420TextureCache alloc] initWithContext:context];
   }
-  if (self.i420Shader && [self.i420Shader drawFrame:frame]) {
+  RTCI420TextureCache *i420TextureCache = self.i420TextureCache;
+  if (i420TextureCache) {
+    [i420TextureCache uploadFrameToTextures:frame];
+    [_shader applyShadingForFrameWithRotation:frame.rotation
+                                       yPlane:i420TextureCache.yTexture
+                                       uPlane:i420TextureCache.uTexture
+                                       vPlane:i420TextureCache.vTexture];
     [context flushBuffer];
     _lastDrawnFrame = frame;
-  } else {
-    RTCLog(@"Failed to draw frame.");
   }
   CGLUnlockContext([context CGLContextObj]);
 }

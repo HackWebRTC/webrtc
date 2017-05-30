@@ -10,7 +10,11 @@
 
 #import "RTCI420TextureCache.h"
 
-#import "RTCShader+Private.h"
+#if TARGET_OS_IPHONE
+#import <OpenGLES/ES3/gl.h>
+#else
+#import <OpenGL/gl3.h>
+#endif
 
 #include <vector>
 

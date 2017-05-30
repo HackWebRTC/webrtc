@@ -8,23 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import <GLKit/GLKit.h>
-
-@class RTCVideoFrame;
+#import "WebRTC/RTCVideoViewShading.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RTCNV12TextureCache : NSObject
-
-@property(nonatomic, readonly) GLuint yTexture;
-@property(nonatomic, readonly) GLuint uvTexture;
-
-- (instancetype)init NS_UNAVAILABLE;
-- (nullable instancetype)initWithContext:(EAGLContext *)context NS_DESIGNATED_INITIALIZER;
-
-- (BOOL)uploadFrameToTextures:(RTCVideoFrame *)frame;
-
-- (void)releaseTextures;
+/** Default RTCVideoViewShading that will be used in RTCNSGLVideoView and
+ *  RTCEAGLVideoView if no external shader is specified. This shader will render
+ *  the video in a rectangle without any color or geometric transformations.
+ */
+@interface RTCDefaultShader : NSObject<RTCVideoViewShading>
 
 @end
 

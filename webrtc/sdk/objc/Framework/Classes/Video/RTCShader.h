@@ -8,38 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import <Foundation/Foundation.h>
+#import "WebRTC/RTCVideoFrame.h"
 
-#import "RTCOpenGLDefines.h"
+RTC_EXTERN const char kRTCVertexShaderSource[];
 
-@class RTCVideoFrame;
-
-@protocol RTCShader <NSObject>
-
-- (BOOL)drawFrame:(RTCVideoFrame *)frame;
-
-@end
-
-// Shader for non-native I420 frames.
-@interface RTCI420Shader : NSObject <RTCShader>
-
-- (instancetype)init NS_UNAVAILABLE;
-- (instancetype)initWithContext:(GlContextType *)context NS_DESIGNATED_INITIALIZER;
-- (BOOL)drawFrame:(RTCVideoFrame *)frame;
-
-@end
-
-// Native CVPixelBufferRef rendering is only supported on iPhone because it
-// depends on CVOpenGLESTextureCacheCreate.
-#if TARGET_OS_IPHONE
-
-// Shader for native NV12 frames.
-@interface RTCNativeNV12Shader : NSObject <RTCShader>
-
-- (instancetype)init NS_UNAVAILABLE;
-- (instancetype)initWithContext:(GlContextType *)context NS_DESIGNATED_INITIALIZER;
-- (BOOL)drawFrame:(RTCVideoFrame *)frame;
-
-@end
-
-#endif  // TARGET_OS_IPHONE
+RTC_EXTERN GLuint RTCCreateShader(GLenum type, const GLchar *source);
+RTC_EXTERN GLuint RTCCreateProgram(GLuint vertexShader, GLuint fragmentShader);
+RTC_EXTERN GLuint RTCCreateProgramFromFragmentSource(const char fragmentShaderSource[]);
+RTC_EXTERN BOOL RTCCreateVertexBuffer(GLuint* vertexBuffer,
+                                      GLuint* vertexArray);
+RTC_EXTERN void RTCSetVertexData(RTCVideoRotation rotation);

@@ -17,7 +17,8 @@
 @property(nonatomic, readonly) GLuint uTexture;
 @property(nonatomic, readonly) GLuint vTexture;
 
-- (instancetype)initWithContext:(GlContextType *)context;
+- (instancetype)init NS_UNAVAILABLE;
+- (instancetype)initWithContext:(GlContextType *)context NS_DESIGNATED_INITIALIZER;
 
 - (void)uploadFrameToTextures:(RTCVideoFrame *)frame;
 

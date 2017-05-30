@@ -10,11 +10,17 @@
 
 #import "RTCShader.h"
 
+#if TARGET_OS_IPHONE
+#import <OpenGLES/ES3/gl.h>
+#else
+#import <OpenGL/gl3.h>
+#endif
+
 #include <algorithm>
 #include <array>
 #include <memory>
 
-#import "RTCShader+Private.h"
+#import "RTCOpenGLDefines.h"
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -95,17 +101,30 @@ GLuint RTCCreateProgramFromFragmentSource(const char fragmentShaderSource[]) {
   if (fragmentShader) {
     glDeleteShader(fragmentShader);
   }
-  return program;
-}
 
-// Set vertex shader variables 'position' and 'texcoord' in |program| to use
-// |vertexBuffer| and |vertexArray| to store the vertex data.
-BOOL RTCSetupVerticesForProgram(GLuint program, GLuint* vertexBuffer, GLuint* vertexArray) {
+  // Set vertex shader variables 'position' and 'texcoord' in program.
   GLint position = glGetAttribLocation(program, "position");
   GLint texcoord = glGetAttribLocation(program, "texcoord");
   if (position < 0 || texcoord < 0) {
-    return NO;
+    glDeleteProgram(program);
+    return 0;
   }
+
+  // Read position attribute with size of 2 and stride of 4 beginning at the start of the array. The
+  // last argument indicates offset of data within the vertex buffer.
+  glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
+  glEnableVertexAttribArray(position);
+
+  // Read texcoord attribute  with size of 2 and stride of 4 beginning at the first texcoord in the
+  // array. The last argument indicates offset of data within the vertex buffer.
+  glVertexAttribPointer(
+      texcoord, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)(2 * sizeof(GLfloat)));
+  glEnableVertexAttribArray(texcoord);
+
+  return program;
+}
+
+BOOL RTCCreateVertexBuffer(GLuint *vertexBuffer, GLuint *vertexArray) {
 #if !TARGET_OS_IPHONE
   glGenVertexArrays(1, vertexArray);
   if (*vertexArray == 0) {
@@ -115,25 +134,11 @@ BOOL RTCSetupVerticesForProgram(GLuint program, GLuint* vertexBuffer, GLuint* ve
 #endif
   glGenBuffers(1, vertexBuffer);
   if (*vertexBuffer == 0) {
+    glDeleteVertexArrays(1, vertexArray);
     return NO;
   }
   glBindBuffer(GL_ARRAY_BUFFER, *vertexBuffer);
   glBufferData(GL_ARRAY_BUFFER, 4 * 4 * sizeof(GLfloat), NULL, GL_DYNAMIC_DRAW);
-
-  // Read position attribute with size of 2 and stride of 4 beginning at the
-  // start of the array. The last argument indicates offset of data within the
-  // vertex buffer.
-  glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat),
-                        (void *)0);
-  glEnableVertexAttribArray(position);
-
-  // Read texcoord attribute from |gVertices| with size of 2 and stride of 4
-  // beginning at the first texcoord in the array. The last argument indicates
-  // offset of data within |gVertices| as supplied to the vertex buffer.
-  glVertexAttribPointer(texcoord, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat),
-                        (void *)(2 * sizeof(GLfloat)));
-  glEnableVertexAttribArray(texcoord);
-
   return YES;
 }
 

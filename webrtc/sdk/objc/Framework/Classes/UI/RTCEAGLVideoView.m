@@ -12,7 +12,9 @@
 
 #import <GLKit/GLKit.h>
 
-#import "RTCShader+Private.h"
+#import "RTCDefaultShader.h"
+#import "RTCI420TextureCache.h"
+#import "RTCNV12TextureCache.h"
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
 
@@ -97,8 +99,9 @@
   // This flag should only be set and read on the main thread (e.g. by
   // setNeedsDisplay)
   BOOL _isDirty;
-  id<RTCShader> _i420Shader;
-  id<RTCShader> _nv12Shader;
+  id<RTCVideoViewShading> _shader;
+  RTCNV12TextureCache *_nv12TextureCache;
+  RTCI420TextureCache *_i420TextureCache;
   RTCVideoFrame *_lastDrawnFrame;
 }
 
@@ -107,14 +110,24 @@
 @synthesize glkView = _glkView;
 
 - (instancetype)initWithFrame:(CGRect)frame {
+  return [self initWithFrame:frame shader:[[RTCDefaultShader alloc] init]];
+}
+
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
+  return [self initWithCoder:aDecoder shader:[[RTCDefaultShader alloc] init]];
+}
+
+- (instancetype)initWithFrame:(CGRect)frame shader:(id<RTCVideoViewShading>)shader {
   if (self = [super initWithFrame:frame]) {
+    _shader = shader;
     [self configure];
   }
   return self;
 }
 
-- (instancetype)initWithCoder:(NSCoder *)aDecoder {
+- (instancetype)initWithCoder:(NSCoder *)aDecoder shader:(id<RTCVideoViewShading>)shader {
   if (self = [super initWithCoder:aDecoder]) {
+    _shader = shader;
     [self configure];
   }
   return self;
@@ -207,22 +220,26 @@
   }
   [self ensureGLContext];
   glClear(GL_COLOR_BUFFER_BIT);
-  id<RTCShader> shader = nil;
   if (frame.nativeHandle) {
-    if (!_nv12Shader) {
-      _nv12Shader = [[RTCNativeNV12Shader alloc] initWithContext:_glContext];
+    if (!_nv12TextureCache) {
+      _nv12TextureCache = [[RTCNV12TextureCache alloc] initWithContext:_glContext];
     }
-    shader = _nv12Shader;
-  } else {
-    if (!_i420Shader) {
-      _i420Shader = [[RTCI420Shader alloc] initWithContext:_glContext];
+    if (_nv12TextureCache) {
+      [_nv12TextureCache uploadFrameToTextures:frame];
+      [_shader applyShadingForFrameWithRotation:frame.rotation
+                                         yPlane:_nv12TextureCache.yTexture
+                                        uvPlane:_nv12TextureCache.uvTexture];
+      [_nv12TextureCache releaseTextures];
     }
-    shader = _i420Shader;
-  }
-  if (shader && [shader drawFrame:frame]) {
-    _lastDrawnFrame = frame;
   } else {
-    RTCLog(@"Failed to draw frame.");
+    if (!_i420TextureCache) {
+      _i420TextureCache = [[RTCI420TextureCache alloc] initWithContext:_glContext];
+    }
+    [_i420TextureCache uploadFrameToTextures:frame];
+    [_shader applyShadingForFrameWithRotation:frame.rotation
+                                       yPlane:_i420TextureCache.yTexture
+                                       uPlane:_i420TextureCache.uTexture
+                                       vPlane:_i420TextureCache.vTexture];
   }
 }
 
@@ -275,8 +292,8 @@
   _timer.isPaused = YES;
   [_glkView deleteDrawable];
   [self ensureGLContext];
-  _i420Shader = nil;
-  _nv12Shader = nil;
+  _nv12TextureCache = nil;
+  _i420TextureCache = nil;
 }
 
 - (void)didBecomeActive {
