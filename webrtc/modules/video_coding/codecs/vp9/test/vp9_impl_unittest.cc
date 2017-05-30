@@ -104,6 +104,19 @@ TEST_F(TestVp9Impl, DecodedQpEqualsEncodedQp) {
   EXPECT_EQ(encoded_frame.qp_, *decoded_qp);
 }
 
+TEST_F(TestVp9Impl, ParserQpEqualsEncodedQp) {
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*input_frame_, nullptr, nullptr));
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+
+  int qp = 0;
+  ASSERT_TRUE(vp9::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
+
+  EXPECT_EQ(encoded_frame.qp_, qp);
+}
+
 TEST_F(TestVp9Impl, EncoderRetainsRtpStateAfterRelease) {
   // Override default settings.
   codec_settings_.VP9()->numberOfTemporalLayers = 2;

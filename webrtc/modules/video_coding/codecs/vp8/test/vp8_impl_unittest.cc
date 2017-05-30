@@ -17,9 +17,9 @@
 #include "webrtc/base/optional.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
+#include "webrtc/modules/video_coding/codecs/test/video_codec_test.h"
 #include "webrtc/modules/video_coding/codecs/vp8/include/vp8.h"
 #include "webrtc/modules/video_coding/codecs/vp8/temporal_layers.h"
-#include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -307,6 +307,18 @@ TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
   EXPECT_GT(I420PSNR(input_frame_.get(), &*decoded_frame_), 36);
   ASSERT_TRUE(decoded_qp_);
   EXPECT_EQ(encoded_frame_.qp_, *decoded_qp_);
+}
+
+TEST_F(TestVp8Impl, ParserQpEqualsEncodedQp) {
+  SetUpEncodeDecode();
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*input_frame_, nullptr, nullptr));
+  EXPECT_GT(WaitForEncodedFrame(), 0u);
+
+  int qp = 0;
+  ASSERT_TRUE(vp8::GetQp(encoded_frame_._buffer, encoded_frame_._length, &qp));
+
+  EXPECT_EQ(encoded_frame_.qp_, qp);
 }
 
 #if defined(WEBRTC_ANDROID)

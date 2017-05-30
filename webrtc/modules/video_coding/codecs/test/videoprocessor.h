@@ -23,6 +23,8 @@
 #include "webrtc/modules/video_coding/codecs/test/packet_manipulator.h"
 #include "webrtc/modules/video_coding/codecs/test/stats.h"
 #include "webrtc/modules/video_coding/utility/ivf_file_writer.h"
+#include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
+#include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "webrtc/test/testsupport/frame_reader.h"
 #include "webrtc/test/testsupport/frame_writer.h"
 
@@ -153,6 +155,12 @@ class VideoProcessor {
   // Return the encoded frame type (key or delta).
   virtual FrameType EncodedFrameType(int frame_number) = 0;
 
+  // Return the qp used by encoder.
+  virtual int GetQpFromEncoder(int frame_number) = 0;
+
+  // Return the qp from the qp parser.
+  virtual int GetQpFromBitstream(int frame_number) = 0;
+
   // Return the number of dropped frames.
   virtual int NumberDroppedFrames() = 0;
 
@@ -189,7 +197,9 @@ class VideoProcessorImpl : public VideoProcessor {
           encoded_frame_type(kVideoFrameDelta),
           decoded_width(0),
           decoded_height(0),
-          manipulated_length(0) {}
+          manipulated_length(0),
+          qp_encoder(0),
+          qp_bitstream(0) {}
 
     uint32_t timestamp;
     int64_t encode_start_ns;
@@ -199,6 +209,8 @@ class VideoProcessorImpl : public VideoProcessor {
     int decoded_width;
     int decoded_height;
     size_t manipulated_length;
+    int qp_encoder;
+    int qp_bitstream;
   };
 
   // Callback class required to implement according to the VideoEncoder API.
@@ -264,6 +276,12 @@ class VideoProcessorImpl : public VideoProcessor {
 
   // Return the encoded frame type (key or delta).
   FrameType EncodedFrameType(int frame_number) override;
+
+  // Return the qp used by encoder.
+  int GetQpFromEncoder(int frame_number) override;
+
+  // Return the qp from the qp parser.
+  int GetQpFromBitstream(int frame_number) override;
 
   // Return the number of dropped frames.
   int NumberDroppedFrames() override;

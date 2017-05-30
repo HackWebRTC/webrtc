@@ -232,6 +232,16 @@ FrameType VideoProcessorImpl::EncodedFrameType(int frame_number) {
   return frame_infos_[frame_number].encoded_frame_type;
 }
 
+int VideoProcessorImpl::GetQpFromEncoder(int frame_number) {
+  RTC_DCHECK_LT(frame_number, frame_infos_.size());
+  return frame_infos_[frame_number].qp_encoder;
+}
+
+int VideoProcessorImpl::GetQpFromBitstream(int frame_number) {
+  RTC_DCHECK_LT(frame_number, frame_infos_.size());
+  return frame_infos_[frame_number].qp_bitstream;
+}
+
 int VideoProcessorImpl::NumberDroppedFrames() {
   return num_dropped_frames_;
 }
@@ -347,6 +357,14 @@ void VideoProcessorImpl::FrameEncoded(
   FrameInfo* frame_info = &frame_infos_[frame_number];
   frame_info->encoded_frame_size = encoded_image._length;
   frame_info->encoded_frame_type = encoded_image._frameType;
+  frame_info->qp_encoder = encoded_image.qp_;
+  if (codec == kVideoCodecVP8) {
+    vp8::GetQp(encoded_image._buffer, encoded_image._length,
+      &frame_info->qp_bitstream);
+  } else if (codec == kVideoCodecVP9) {
+    vp9::GetQp(encoded_image._buffer, encoded_image._length,
+      &frame_info->qp_bitstream);
+  }
   FrameStatistic* frame_stat = &stats_->stats_[frame_number];
   frame_stat->encode_time_in_us =
       GetElapsedTimeMicroseconds(frame_info->encode_start_ns, encode_stop_ns);

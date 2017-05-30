@@ -19,6 +19,8 @@
 #include "webrtc/base/event.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
+#include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
+#include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "webrtc/test/gtest.h"
 
 namespace webrtc {
