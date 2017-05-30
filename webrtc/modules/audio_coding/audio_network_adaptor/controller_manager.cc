@@ -206,7 +206,7 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
   controller_manager_config.ParseFromString(config_string);
 
   std::vector<std::unique_ptr<Controller>> controllers;
-  std::map<const Controller*, std::pair<int, float>> chracteristic_points;
+  std::map<const Controller*, std::pair<int, float>> scoring_points;
 
   for (int i = 0; i < controller_manager_config.controllers_size(); ++i) {
     auto& controller_config = controller_manager_config.controllers(i);
@@ -243,12 +243,12 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
         RTC_NOTREACHED();
     }
     if (controller_config.has_scoring_point()) {
-      auto& characteristic_point = controller_config.scoring_point();
-      RTC_CHECK(characteristic_point.has_uplink_bandwidth_bps());
-      RTC_CHECK(characteristic_point.has_uplink_packet_loss_fraction());
-      chracteristic_points[controller.get()] = std::make_pair<int, float>(
-          characteristic_point.uplink_bandwidth_bps(),
-          characteristic_point.uplink_packet_loss_fraction());
+      auto& scoring_point = controller_config.scoring_point();
+      RTC_CHECK(scoring_point.has_uplink_bandwidth_bps());
+      RTC_CHECK(scoring_point.has_uplink_packet_loss_fraction());
+      scoring_points[controller.get()] = std::make_pair<int, float>(
+          scoring_point.uplink_bandwidth_bps(),
+          scoring_point.uplink_packet_loss_fraction());
     }
     controllers.push_back(std::move(controller));
   }
@@ -259,7 +259,7 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
       ControllerManagerImpl::Config(
           controller_manager_config.min_reordering_time_ms(),
           controller_manager_config.min_reordering_squared_distance()),
-      std::move(controllers), chracteristic_points));
+      std::move(controllers), scoring_points));
 #else
   RTC_NOTREACHED();
   return nullptr;
@@ -275,8 +275,7 @@ ControllerManagerImpl::ControllerManagerImpl(const Config& config)
 ControllerManagerImpl::ControllerManagerImpl(
     const Config& config,
     std::vector<std::unique_ptr<Controller>>&& controllers,
-    const std::map<const Controller*, std::pair<int, float>>&
-        chracteristic_points)
+    const std::map<const Controller*, std::pair<int, float>>& scoring_points)
     : config_(config),
       controllers_(std::move(controllers)),
       last_reordering_time_ms_(rtc::Optional<int64_t>()),
@@ -284,7 +283,7 @@ ControllerManagerImpl::ControllerManagerImpl(
   for (auto& controller : controllers_)
     default_sorted_controllers_.push_back(controller.get());
   sorted_controllers_ = default_sorted_controllers_;
-  for (auto& controller_point : chracteristic_points) {
+  for (auto& controller_point : scoring_points) {
     controller_scoring_points_.insert(std::make_pair(
         controller_point.first, ScoringPoint(controller_point.second.first,
                                              controller_point.second.second)));
@@ -313,7 +312,7 @@ std::vector<Controller*> ControllerManagerImpl::GetSortedControllers(
     return sorted_controllers_;
 
   // Sort controllers according to the distances of |scoring_point| to the
-  // characteristic scoring points of controllers.
+  // scoring points of controllers.
   //
   // A controller that does not associate with any scoring point
   // are treated as if
