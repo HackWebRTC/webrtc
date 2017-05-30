@@ -260,10 +260,6 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   // to WebRTC and the remaining part is stored.
   std::unique_ptr<FineAudioBuffer> fine_audio_buffer_;
 
-  // Extra audio buffer to be used by the playout side for rendering audio.
-  // The buffer size is given by FineAudioBuffer::RequiredBufferSizeBytes().
-  std::unique_ptr<int8_t[]> playout_audio_buffer_;
-
   // Provides a mechanism for encapsulating one or more buffers of audio data.
   // Only used on the recording side.
   AudioBufferList audio_record_buffer_list_;
