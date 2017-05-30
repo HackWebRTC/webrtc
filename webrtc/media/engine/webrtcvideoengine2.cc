@@ -428,14 +428,18 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
 }
 
 DefaultUnsignalledSsrcHandler::DefaultUnsignalledSsrcHandler()
-    : default_recv_ssrc_(0), default_sink_(NULL) {}
+    : default_sink_(nullptr) {}
 
 UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
     WebRtcVideoChannel2* channel,
     uint32_t ssrc) {
-  if (default_recv_ssrc_ != 0) {  // Already one default stream, so replace it.
-    channel->RemoveRecvStream(default_recv_ssrc_);
-    default_recv_ssrc_ = 0;
+  rtc::Optional<uint32_t> default_recv_ssrc =
+      channel->GetDefaultReceiveStreamSsrc();
+
+  if (default_recv_ssrc) {
+    LOG(LS_INFO) << "Destroying old default receive stream for SSRC=" << ssrc
+                 << ".";
+    channel->RemoveRecvStream(*default_recv_ssrc);
   }
 
   StreamParams sp;
@@ -446,7 +450,6 @@ UnsignalledSsrcHandler::Action DefaultUnsignalledSsrcHandler::OnUnsignalledSsrc(
   }
 
   channel->SetSink(ssrc, default_sink_);
-  default_recv_ssrc_ = ssrc;
   return kDeliverPacket;
 }
 
@@ -456,11 +459,13 @@ DefaultUnsignalledSsrcHandler::GetDefaultSink() const {
 }
 
 void DefaultUnsignalledSsrcHandler::SetDefaultSink(
-    VideoMediaChannel* channel,
+    WebRtcVideoChannel2* channel,
     rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
   default_sink_ = sink;
-  if (default_recv_ssrc_ != 0) {
-    channel->SetSink(default_recv_ssrc_, default_sink_);
+  rtc::Optional<uint32_t> default_recv_ssrc =
+      channel->GetDefaultReceiveStreamSsrc();
+  if (default_recv_ssrc) {
+    channel->SetSink(*default_recv_ssrc, default_sink_);
   }
 }
 
@@ -1321,6 +1326,8 @@ bool WebRtcVideoChannel2::SetSink(
   LOG(LS_INFO) << "SetSink: ssrc:" << ssrc << " "
                << (sink ? "(ptr)" : "nullptr");
   if (ssrc == 0) {
+    // Do not hold |stream_crit_| here, since SetDefaultSink will call
+    // WebRtcVideoChannel2::GetDefaultReceiveStreamSsrc().
     default_unsignalled_ssrc_handler_.SetDefaultSink(this, sink);
     return true;
   }
@@ -1527,6 +1534,18 @@ void WebRtcVideoChannel2::SetInterface(NetworkInterface* iface) {
   MediaChannel::SetOption(NetworkInterface::ST_RTP,
                           rtc::Socket::OPT_SNDBUF,
                           kVideoRtpBufferSize);
+}
+
+rtc::Optional<uint32_t> WebRtcVideoChannel2::GetDefaultReceiveStreamSsrc() {
+  rtc::CritScope stream_lock(&stream_crit_);
+  rtc::Optional<uint32_t> ssrc;
+  for (auto it = receive_streams_.begin(); it != receive_streams_.end(); ++it) {
+    if (it->second->IsDefaultStream()) {
+      ssrc.emplace(it->first);
+      break;
+    }
+  }
+  return ssrc;
 }
 
 bool WebRtcVideoChannel2::SendRtp(const uint8_t* data,

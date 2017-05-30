@@ -3969,6 +3969,55 @@ TEST_F(WebRtcVideoChannel2Test, ReceiveDifferentUnsignaledSsrc) {
 #endif
 }
 
+// This test verifies that when a new default stream is created for a new
+// unsignaled SSRC, the new stream does not overwrite any old stream that had
+// been the default receive stream before being properly signaled.
+TEST_F(WebRtcVideoChannel2Test,
+       NewUnsignaledStreamDoesNotDestroyPreviouslyUnsignaledStream) {
+  cricket::VideoRecvParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  ASSERT_TRUE(channel_->SetRecvParameters(parameters));
+
+  // No streams signaled and no packets received, so we should not have any
+  // stream objects created yet.
+  EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
+
+  // Receive packet on an unsignaled SSRC.
+  uint8_t data[kMinRtpPacketLen];
+  cricket::RtpHeader rtp_header;
+  rtp_header.payload_type = GetEngineCodec("VP8").id;
+  rtp_header.seq_num = rtp_header.timestamp = 0;
+  rtp_header.ssrc = kSsrcs3[0];
+  cricket::SetRtpHeader(data, sizeof(data), rtp_header);
+  rtc::CopyOnWriteBuffer packet(data, sizeof(data));
+  rtc::PacketTime packet_time;
+  channel_->OnPacketReceived(&packet, packet_time);
+  // Default receive stream should be created.
+  ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
+  FakeVideoReceiveStream* recv_stream0 =
+      fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_EQ(kSsrcs3[0], recv_stream0->GetConfig().rtp.remote_ssrc);
+
+  // Signal the SSRC.
+  EXPECT_TRUE(
+      channel_->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrcs3[0])));
+  ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
+  recv_stream0 = fake_call_->GetVideoReceiveStreams()[0];
+  EXPECT_EQ(kSsrcs3[0], recv_stream0->GetConfig().rtp.remote_ssrc);
+
+  // Receive packet on a different unsignaled SSRC.
+  rtp_header.ssrc = kSsrcs3[1];
+  cricket::SetRtpHeader(data, sizeof(data), rtp_header);
+  packet.SetData(data, sizeof(data));
+  channel_->OnPacketReceived(&packet, packet_time);
+  // New default receive stream should be created, but old stream should remain.
+  ASSERT_EQ(2u, fake_call_->GetVideoReceiveStreams().size());
+  EXPECT_EQ(recv_stream0, fake_call_->GetVideoReceiveStreams()[0]);
+  FakeVideoReceiveStream* recv_stream1 =
+      fake_call_->GetVideoReceiveStreams()[1];
+  EXPECT_EQ(kSsrcs3[1], recv_stream1->GetConfig().rtp.remote_ssrc);
+}
+
 TEST_F(WebRtcVideoChannel2Test, CanSentMaxBitrateForExistingStream) {
   AddSendStream();
 

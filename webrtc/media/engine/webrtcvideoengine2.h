@@ -22,13 +22,14 @@
 #include "webrtc/base/asyncinvoker.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/networkroute.h"
+#include "webrtc/base/optional.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/media/base/videosinkinterface.h"
-#include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/call/call.h"
 #include "webrtc/call/flexfec_receive_stream.h"
 #include "webrtc/media/base/mediaengine.h"
+#include "webrtc/media/base/videosinkinterface.h"
+#include "webrtc/media/base/videosourceinterface.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/video_receive_stream.h"
@@ -81,15 +82,12 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
                            uint32_t ssrc) override;
 
   rtc::VideoSinkInterface<webrtc::VideoFrame>* GetDefaultSink() const;
-  void SetDefaultSink(VideoMediaChannel* channel,
+  void SetDefaultSink(WebRtcVideoChannel2* channel,
                       rtc::VideoSinkInterface<webrtc::VideoFrame>* sink);
-
-  uint32_t default_recv_ssrc() const { return default_recv_ssrc_; }
 
   virtual ~DefaultUnsignalledSsrcHandler() = default;
 
  private:
-  uint32_t default_recv_ssrc_;
   rtc::VideoSinkInterface<webrtc::VideoFrame>* default_sink_;
 };
 
@@ -176,6 +174,8 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
+
+  rtc::Optional<uint32_t> GetDefaultReceiveStreamSsrc();
 
   // AdaptReason is used for expressing why a WebRtcVideoSendStream request
   // a lower input frame size than the currently configured camera input frame
