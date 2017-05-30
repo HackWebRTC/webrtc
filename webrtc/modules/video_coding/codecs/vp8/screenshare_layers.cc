@@ -35,7 +35,7 @@ constexpr int ScreenshareLayers::kMaxNumTemporalLayers;
 
 // Always emit a frame with certain interval, even if bitrate targets have
 // been exceeded. This prevents needless keyframe requests.
-const int ScreenshareLayers::kMaxFrameIntervalMs = 3000;
+const int ScreenshareLayers::kMaxFrameIntervalMs = 2750;
 
 webrtc::TemporalLayers* ScreenshareTemporalLayersFactory::Create(
     int simulcast_id,
