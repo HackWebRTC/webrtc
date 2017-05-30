@@ -20,7 +20,7 @@
 namespace webrtc {
 
 // Plain I420 buffer in standard memory.
-class I420Buffer : public PlanarYuvBuffer {
+class I420Buffer : public I420BufferInterface {
  public:
   static rtc::scoped_refptr<I420Buffer> Create(int width, int height);
   static rtc::scoped_refptr<I420Buffer> Create(int width,
@@ -53,7 +53,6 @@ class I420Buffer : public PlanarYuvBuffer {
   // are resolved in a better way. Or in the mean time, use SetBlack.
   void InitializeData();
 
-  Type type() const override;
   int width() const override;
   int height() const override;
   const uint8_t* DataY() const override;

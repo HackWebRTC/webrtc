@@ -136,10 +136,6 @@ void I420Buffer::InitializeData() {
          I420DataSize(height_, stride_y_, stride_u_, stride_v_));
 }
 
-VideoFrameBuffer::Type I420Buffer::type() const {
-  return Type::kI420;
-}
-
 int I420Buffer::width() const {
   return width_;
 }

@@ -18,7 +18,8 @@
 
 namespace webrtc {
 
-class PlanarYuvBuffer;
+class I420BufferInterface;
+class I444BufferInterface;
 
 // Base class for frame buffers of different types of pixel format and storage.
 // The tag in type() indicates how the data is represented, and each type is
@@ -58,12 +59,12 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
   // in another format, a conversion will take place. All implementations must
   // provide a fallback to I420 for compatibility with e.g. the internal WebRTC
   // software encoders.
-  virtual rtc::scoped_refptr<PlanarYuvBuffer> ToI420();
+  virtual rtc::scoped_refptr<I420BufferInterface> ToI420();
 
   // These functions should only be called if type() is of the correct type.
   // Calling with a different type will result in a crash.
-  rtc::scoped_refptr<PlanarYuvBuffer> GetI420();
-  rtc::scoped_refptr<PlanarYuvBuffer> GetI444();
+  rtc::scoped_refptr<I420BufferInterface> GetI420();
+  rtc::scoped_refptr<I444BufferInterface> GetI444();
 
   // Deprecated - use ToI420() first instead.
   // Returns pointer to the pixel data for a given plane. The memory is owned by
@@ -92,8 +93,8 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
 // This interface represents Type::kI420 and Type::kI444.
 class PlanarYuvBuffer : public VideoFrameBuffer {
  public:
-  int ChromaWidth() const;
-  int ChromaHeight() const;
+  virtual int ChromaWidth() const = 0;
+  virtual int ChromaHeight() const = 0;
 
   // Returns pointer to the pixel data for a given plane. The memory is owned by
   // the VideoFrameBuffer object and must not be freed by the caller.
@@ -106,10 +107,34 @@ class PlanarYuvBuffer : public VideoFrameBuffer {
   int StrideU() const override = 0;
   int StrideV() const override = 0;
 
-  rtc::scoped_refptr<PlanarYuvBuffer> ToI420() override;
-
  protected:
   ~PlanarYuvBuffer() override {}
+};
+
+class I420BufferInterface : public PlanarYuvBuffer {
+ public:
+  Type type() const final;
+
+  int ChromaWidth() const final;
+  int ChromaHeight() const final;
+
+  rtc::scoped_refptr<I420BufferInterface> ToI420() final;
+
+ protected:
+  ~I420BufferInterface() override {}
+};
+
+class I444BufferInterface : public PlanarYuvBuffer {
+ public:
+  Type type() const final;
+
+  int ChromaWidth() const final;
+  int ChromaHeight() const final;
+
+  rtc::scoped_refptr<I420BufferInterface> ToI420() final;
+
+ protected:
+  ~I444BufferInterface() override {}
 };
 
 }  // namespace webrtc

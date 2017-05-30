@@ -45,7 +45,7 @@ class NativeHandleBuffer : public VideoFrameBuffer {
   const int height_;
 };
 
-class WrappedI420Buffer : public PlanarYuvBuffer {
+class WrappedI420Buffer : public I420BufferInterface {
  public:
   WrappedI420Buffer(int width,
                     int height,
@@ -56,8 +56,6 @@ class WrappedI420Buffer : public PlanarYuvBuffer {
                     const uint8_t* v_plane,
                     int v_stride,
                     const rtc::Callback0<void>& no_longer_used);
-  Type type() const override;
-
   int width() const override;
   int height() const override;
 

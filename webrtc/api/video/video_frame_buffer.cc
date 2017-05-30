@@ -10,7 +10,7 @@
 
 #include "webrtc/api/video/video_frame_buffer.h"
 
-#include "libyuv/convert_from.h"
+#include "libyuv/convert.h"
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/checks.h"
 
@@ -21,15 +21,13 @@ namespace {
 // TODO(magjed): Remove this class. It is only used for providing a default
 // implementation of ToI420() until external clients are updated. ToI420() will
 // then be made pure virtual. This adapter adapts a VideoFrameBuffer (which is
-// expected to be in I420 format) to the PlanarYuvBuffer interface. The reason
-// this is needed is because of the return type mismatch in NativeToI420Buffer
-// (returns VideoFrameBuffer) vs ToI420 (returns PlanarYuvBuffer).
-class PlanarYuvBufferAdapter : public PlanarYuvBuffer {
+// expected to be in I420 format) to I420BufferInterface. The reason this is
+// needed is because of the return type mismatch in NativeToI420Buffer (returns
+// VideoFrameBuffer) vs ToI420 (returns I420BufferInterface).
+class I420InterfaceAdapter : public I420BufferInterface {
  public:
-  explicit PlanarYuvBufferAdapter(rtc::scoped_refptr<VideoFrameBuffer> buffer)
+  explicit I420InterfaceAdapter(rtc::scoped_refptr<VideoFrameBuffer> buffer)
       : buffer_(buffer) {}
-
-  Type type() const override { return Type::kI420; }
 
   int width() const override { return buffer_->width(); }
   int height() const override { return buffer_->height(); }
@@ -89,65 +87,59 @@ rtc::scoped_refptr<VideoFrameBuffer> VideoFrameBuffer::NativeToI420Buffer() {
   return ToI420();
 }
 
-rtc::scoped_refptr<PlanarYuvBuffer> VideoFrameBuffer::ToI420() {
-  return new rtc::RefCountedObject<PlanarYuvBufferAdapter>(
-      NativeToI420Buffer());
+rtc::scoped_refptr<I420BufferInterface> VideoFrameBuffer::ToI420() {
+  return new rtc::RefCountedObject<I420InterfaceAdapter>(NativeToI420Buffer());
 }
 
-rtc::scoped_refptr<PlanarYuvBuffer> VideoFrameBuffer::GetI420() {
+rtc::scoped_refptr<I420BufferInterface> VideoFrameBuffer::GetI420() {
   RTC_CHECK(type() == Type::kI420);
-  // TODO(magjed): static_cast to PlanarYuvBuffer instead once external clients
-  // are updated.
-  return new rtc::RefCountedObject<PlanarYuvBufferAdapter>(this);
+  // TODO(magjed): static_cast to I420BufferInterface instead once external
+  // clients are updated.
+  return new rtc::RefCountedObject<I420InterfaceAdapter>(this);
 }
 
-rtc::scoped_refptr<PlanarYuvBuffer> VideoFrameBuffer::GetI444() {
+rtc::scoped_refptr<I444BufferInterface> VideoFrameBuffer::GetI444() {
   RTC_CHECK(type() == Type::kI444);
-  return static_cast<PlanarYuvBuffer*>(this);
+  return static_cast<I444BufferInterface*>(this);
 }
 
-rtc::scoped_refptr<PlanarYuvBuffer> PlanarYuvBuffer::ToI420() {
-  switch (type()) {
-    case Type::kI420:
-      return this;
-    case Type::kI444: {
-      rtc::scoped_refptr<I420Buffer> i420_buffer =
-          I420Buffer::Create(width(), height());
-      libyuv::I420ToI444(DataY(), StrideY(), DataU(), StrideU(), DataV(),
-                         StrideV(), i420_buffer->MutableDataY(),
-                         i420_buffer->StrideY(), i420_buffer->MutableDataU(),
-                         i420_buffer->StrideU(), i420_buffer->MutableDataV(),
-                         i420_buffer->StrideV(), width(), height());
-      return i420_buffer;
-    }
-    default:
-      RTC_NOTREACHED();
-      return nullptr;
-  }
+VideoFrameBuffer::Type I420BufferInterface::type() const {
+  return Type::kI420;
 }
 
-int PlanarYuvBuffer::ChromaWidth() const {
-  switch (type()) {
-    case Type::kI420:
-      return (width() + 1) / 2;
-    case Type::kI444:
-      return width();
-    default:
-      RTC_NOTREACHED();
-      return 0;
-  }
+int I420BufferInterface::ChromaWidth() const {
+  return (width() + 1) / 2;
 }
 
-int PlanarYuvBuffer::ChromaHeight() const {
-  switch (type()) {
-    case Type::kI420:
-      return (height() + 1) / 2;
-    case Type::kI444:
-      return height();
-    default:
-      RTC_NOTREACHED();
-      return 0;
-  }
+int I420BufferInterface::ChromaHeight() const {
+  return (height() + 1) / 2;
+}
+
+rtc::scoped_refptr<I420BufferInterface> I420BufferInterface::ToI420() {
+  return this;
+}
+
+VideoFrameBuffer::Type I444BufferInterface::type() const {
+  return Type::kI444;
+}
+
+int I444BufferInterface::ChromaWidth() const {
+  return width();
+}
+
+int I444BufferInterface::ChromaHeight() const {
+  return height();
+}
+
+rtc::scoped_refptr<I420BufferInterface> I444BufferInterface::ToI420() {
+  rtc::scoped_refptr<I420Buffer> i420_buffer =
+      I420Buffer::Create(width(), height());
+  libyuv::I444ToI420(DataY(), StrideY(), DataU(), StrideU(), DataV(), StrideV(),
+                     i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+                     i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+                     i420_buffer->MutableDataV(), i420_buffer->StrideV(),
+                     width(), height());
+  return i420_buffer;
 }
 
 }  // namespace webrtc

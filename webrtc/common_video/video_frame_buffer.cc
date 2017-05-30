@@ -96,10 +96,6 @@ WrappedI420Buffer::~WrappedI420Buffer() {
   no_longer_used_cb_();
 }
 
-VideoFrameBuffer::Type WrappedI420Buffer::type() const {
-  return Type::kI420;
-}
-
 int WrappedI420Buffer::width() const {
   return width_;
 }
