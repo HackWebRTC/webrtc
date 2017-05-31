@@ -435,6 +435,9 @@ if (rtc_include_tests) {
     deps = [
       "audio:audio_tests",
       "base:rtc_base_tests_utils",
+
+      # TODO(eladalon): call_tests aren't actually video-specific, so we
+      # should move them to a more appropriate test suite.
       "call:call_tests",
       "modules/video_capture",
       "test:test_common",

@@ -14,6 +14,20 @@
 
 namespace webrtc {
 
+namespace {
+
+template <typename Key, typename Value>
+bool MultimapAssociationExists(const std::multimap<Key, Value>& multimap,
+                               Key key,
+                               Value val) {
+  auto it_range = multimap.equal_range(key);
+  using Reference = typename std::multimap<Key, Value>::const_reference;
+  return std::any_of(it_range.first, it_range.second,
+                     [val](Reference elem) { return elem.second == val; });
+}
+
+}  // namespace
+
 RtpDemuxer::RtpDemuxer() {}
 
 RtpDemuxer::~RtpDemuxer() {
@@ -22,6 +36,7 @@ RtpDemuxer::~RtpDemuxer() {
 
 void RtpDemuxer::AddSink(uint32_t ssrc, RtpPacketSinkInterface* sink) {
   RTC_DCHECK(sink);
+  RTC_DCHECK(!MultimapAssociationExists(sinks_, ssrc, sink));
   sinks_.emplace(ssrc, sink);
 }
 

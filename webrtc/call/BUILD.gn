@@ -89,6 +89,7 @@ if (rtc_include_tests) {
       "bitrate_estimator_tests.cc",
       "call_unittest.cc",
       "flexfec_receive_stream_unittest.cc",
+      "rtp_demuxer_unittest.cc",
       "rtx_receive_stream_unittest.cc",
     ]
     deps = [
