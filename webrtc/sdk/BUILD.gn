@@ -389,6 +389,10 @@ if (is_ios || is_mac) {
 
       common_objc_headers = [
         "objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h",
+        "objc/Framework/Headers/WebRTC/RTCAudioSource.h",
+        "objc/Framework/Headers/WebRTC/RTCAudioTrack.h",
+        "objc/Framework/Headers/WebRTC/RTCCameraVideoCapturer.h",
+        "objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h",
         "objc/Framework/Headers/WebRTC/RTCConfiguration.h",
         "objc/Framework/Headers/WebRTC/RTCDataChannel.h",
         "objc/Framework/Headers/WebRTC/RTCDataChannelConfiguration.h",
@@ -425,7 +429,10 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h",
         "objc/Framework/Headers/WebRTC/WebRTC.h",
       ]
-
+      if (rtc_use_metal_rendering) {
+        common_objc_headers +=
+            [ "objc/Framework/Headers/WebRTC/RTCMTLVideoView.h" ]
+      }
       sources = common_objc_headers
       public_headers = common_objc_headers
 
