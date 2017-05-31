@@ -125,7 +125,7 @@ class Packet {
   // provided via constructor or IdentifyExtensions function.
   Packet();
   explicit Packet(const ExtensionManager* extensions);
-  Packet(const Packet&) = default;
+  Packet(const Packet&);
   Packet(const ExtensionManager* extensions, size_t capacity);
   virtual ~Packet();
 

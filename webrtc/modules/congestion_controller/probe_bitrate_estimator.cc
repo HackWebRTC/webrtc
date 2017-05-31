@@ -43,6 +43,8 @@ namespace webrtc {
 ProbeBitrateEstimator::ProbeBitrateEstimator(RtcEventLog* event_log)
     : event_log_(event_log) {}
 
+ProbeBitrateEstimator::~ProbeBitrateEstimator() = default;
+
 int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
     const PacketFeedback& packet_feedback) {
   int cluster_id = packet_feedback.pacing_info.probe_cluster_id;

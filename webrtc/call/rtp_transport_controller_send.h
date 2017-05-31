@@ -27,14 +27,10 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
   RtpTransportControllerSend(Clock* clock, webrtc::RtcEventLog* event_log);
 
   // Implements RtpTransportControllerSendInterface
-  PacketRouter* packet_router() override { return &packet_router_; }
-  SendSideCongestionController* send_side_cc() override {
-    return &send_side_cc_;
-  }
-  TransportFeedbackObserver* transport_feedback_observer() override {
-    return &send_side_cc_;
-  }
-  RtpPacketSender* packet_sender() override { return send_side_cc_.pacer(); }
+  PacketRouter* packet_router() override;
+  SendSideCongestionController* send_side_cc() override;
+  TransportFeedbackObserver* transport_feedback_observer() override;
+  RtpPacketSender* packet_sender() override;
 
  private:
   PacketRouter packet_router_;

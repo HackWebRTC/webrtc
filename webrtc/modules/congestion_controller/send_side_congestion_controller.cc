@@ -181,6 +181,15 @@ int64_t SendSideCongestionController::GetFirstPacketTimeMs() const {
   return pacer_->FirstSentPacketTimeMs();
 }
 
+PacedSender* SendSideCongestionController::pacer() {
+  return pacer_.get();
+}
+
+TransportFeedbackObserver*
+SendSideCongestionController::GetTransportFeedbackObserver() {
+  return this;
+}
+
 void SendSideCongestionController::SignalNetworkState(NetworkState state) {
   LOG(LS_INFO) << "SignalNetworkState "
                << (state == kNetworkUp ? "Up" : "Down");

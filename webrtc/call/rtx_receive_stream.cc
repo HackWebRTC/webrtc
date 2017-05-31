@@ -23,6 +23,8 @@ RtxReceiveStream::RtxReceiveStream(
       rtx_payload_type_map_(std::move(rtx_payload_type_map)),
       media_ssrc_(media_ssrc) {}
 
+RtxReceiveStream::~RtxReceiveStream() = default;
+
 void RtxReceiveStream::OnRtpPacket(const RtpPacketReceived& rtx_packet) {
   rtc::ArrayView<const uint8_t> payload = rtx_packet.payload();
 

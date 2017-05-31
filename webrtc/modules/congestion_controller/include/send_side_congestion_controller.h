@@ -67,7 +67,7 @@ class SendSideCongestionController : public CallStatsObserver,
                                Observer* observer,
                                RtcEventLog* event_log,
                                std::unique_ptr<PacedSender> pacer);
-  virtual ~SendSideCongestionController();
+  ~SendSideCongestionController() override;
 
   void RegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
   void DeRegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
@@ -92,10 +92,9 @@ class SendSideCongestionController : public CallStatsObserver,
   virtual int64_t GetFirstPacketTimeMs() const;
   // TODO(nisse): Delete this accessor function. The pacer should be
   // internal to the congestion controller.
-  virtual PacedSender* pacer() { return pacer_.get(); }
-  virtual TransportFeedbackObserver* GetTransportFeedbackObserver() {
-    return this;
-  }
+  virtual PacedSender* pacer();
+  virtual TransportFeedbackObserver* GetTransportFeedbackObserver();
+
   RateLimiter* GetRetransmissionRateLimiter();
   void EnablePeriodicAlrProbing(bool enable);
 

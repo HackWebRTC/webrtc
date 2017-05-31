@@ -73,7 +73,7 @@ class PacedSender : public Module, public RtpPacketSender {
               PacketSender* packet_sender,
               RtcEventLog* event_log);
 
-  virtual ~PacedSender();
+  ~PacedSender() override;
 
   virtual void CreateProbeCluster(int bitrate_bps);
 

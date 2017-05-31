@@ -62,6 +62,8 @@ Packet::Packet() : Packet(nullptr, kDefaultPacketSize) {}
 Packet::Packet(const ExtensionManager* extensions)
     : Packet(extensions, kDefaultPacketSize) {}
 
+Packet::Packet(const Packet&) = default;
+
 Packet::Packet(const ExtensionManager* extensions, size_t capacity)
     : buffer_(capacity) {
   RTC_DCHECK_GE(capacity, kFixedHeaderSize);

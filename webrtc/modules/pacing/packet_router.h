@@ -40,7 +40,7 @@ class PacketRouter : public PacedSender::PacketSender,
                      public RemoteBitrateObserver {
  public:
   PacketRouter();
-  virtual ~PacketRouter();
+  ~PacketRouter() override;
 
   // TODO(nisse): Delete, as soon as downstream app is updated.
   RTC_DEPRECATED void AddRtpModule(RtpRtcp* rtp_module) {

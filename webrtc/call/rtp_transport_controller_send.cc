@@ -18,4 +18,21 @@ RtpTransportControllerSend::RtpTransportControllerSend(
     : send_side_cc_(clock, nullptr /* observer */, event_log, &packet_router_) {
 }
 
+PacketRouter* RtpTransportControllerSend::packet_router() {
+  return &packet_router_;
+}
+
+SendSideCongestionController* RtpTransportControllerSend::send_side_cc() {
+  return &send_side_cc_;
+}
+
+TransportFeedbackObserver*
+RtpTransportControllerSend::transport_feedback_observer() {
+  return &send_side_cc_;
+}
+
+RtpPacketSender* RtpTransportControllerSend::packet_sender() {
+  return send_side_cc_.pacer();
+}
+
 }  // namespace webrtc

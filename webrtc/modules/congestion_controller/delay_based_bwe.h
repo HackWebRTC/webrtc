@@ -45,7 +45,7 @@ class DelayBasedBwe {
   };
 
   DelayBasedBwe(RtcEventLog* event_log, const Clock* clock);
-  virtual ~DelayBasedBwe() {}
+  virtual ~DelayBasedBwe();
 
   Result IncomingPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector);

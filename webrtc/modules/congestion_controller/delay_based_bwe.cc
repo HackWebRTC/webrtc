@@ -174,6 +174,8 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
   network_thread_.DetachFromThread();
 }
 
+DelayBasedBwe::~DelayBasedBwe() {}
+
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
   RTC_DCHECK(network_thread_.CalledOnValidThread());
