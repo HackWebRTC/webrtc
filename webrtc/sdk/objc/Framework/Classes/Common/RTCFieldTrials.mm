@@ -27,7 +27,7 @@ NSString * const kRTCFieldTrialImprovedBitrateEstimateKey = @"WebRTC-ImprovedBit
 NSString * const kRTCFieldTrialMedianSlopeFilterKey = @"WebRTC-BweMedianSlopeFilter";
 NSString * const kRTCFieldTrialTrendlineFilterKey = @"WebRTC-BweTrendlineFilter";
 NSString * const kRTCFieldTrialH264HighProfileKey = @"WebRTC-H264HighProfile";
-NSString * const kkRTCFieldTrialMinimizeResamplingOnMobileKey =
+NSString * const kRTCFieldTrialMinimizeResamplingOnMobileKey =
     @"WebRTC-Audio-MinimizeResamplingOnMobile";
 NSString * const kRTCFieldTrialEnabledValue = @"Enabled";
 
