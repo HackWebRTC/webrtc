@@ -310,12 +310,29 @@ public class EglRendererTest {
 
   @Test
   @SmallTest
-  public void testFrameListenersWhilePaused() throws Exception {
-    // Test that frame listeners receive frames while renderer is paused.
+  public void testFrameListenersFpsReduction() throws Exception {
+    // Test that normal frame listeners receive frames while the renderer is paused.
     eglRenderer.pauseVideo();
     eglRenderer.addFrameListener(testFrameListener, 1f /* scaleFactor */);
     feedFrame(0);
     assertTrue(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
     checkBitmapContent(testFrameListener.resetAndGetBitmap(), 0);
+
+    // Test that frame listeners with FPS reduction applied receive frames while the renderer is not
+    // paused.
+    eglRenderer.disableFpsReduction();
+    eglRenderer.addFrameListener(
+        testFrameListener, 1f /* scaleFactor */, null, true /* applyFpsReduction */);
+    feedFrame(1);
+    assertTrue(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
+    checkBitmapContent(testFrameListener.resetAndGetBitmap(), 1);
+
+    // Test that frame listeners with FPS reduction applied will not receive frames while the
+    // renderer is paused.
+    eglRenderer.pauseVideo();
+    eglRenderer.addFrameListener(
+        testFrameListener, 1f /* scaleFactor */, null, true /* applyFpsReduction */);
+    feedFrame(1);
+    assertFalse(testFrameListener.waitForBitmap(RENDER_WAIT_MS));
   }
 }
