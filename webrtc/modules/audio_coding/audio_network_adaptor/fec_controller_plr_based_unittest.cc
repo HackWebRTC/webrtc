@@ -99,8 +99,6 @@ void UpdateNetworkMetrics(FecControllerPlrBasedTestStates* states,
   }
 }
 
-// TODO(eladalon): In a separate CL (to make reviewers' lives easier), use
-// this where applicable.
 void UpdateNetworkMetrics(FecControllerPlrBasedTestStates* states,
                           int uplink_bandwidth_bps,
                           float uplink_packet_loss) {
@@ -165,8 +163,8 @@ TEST(FecControllerPlrBasedTest,
 
 TEST(FecControllerPlrBasedTest, EnableFecForHighBandwidth) {
   auto states = CreateFecControllerPlrBased(false);
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kEnablingBandwidthHigh),
-                       rtc::Optional<float>(kEnablingPacketLossAtHighBw));
+  UpdateNetworkMetrics(&states, kEnablingBandwidthHigh,
+                       kEnablingPacketLossAtHighBw);
   CheckDecision(&states, true, kEnablingPacketLossAtHighBw);
 }
 
@@ -193,8 +191,7 @@ TEST(FecControllerPlrBasedTest, UpdateMultipleNetworkMetricsAtOnce) {
 TEST(FecControllerPlrBasedTest, MaintainFecOffForHighBandwidth) {
   auto states = CreateFecControllerPlrBased(false);
   constexpr float kPacketLoss = kEnablingPacketLossAtHighBw * 0.99f;
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kEnablingBandwidthHigh),
-                       rtc::Optional<float>(kPacketLoss));
+  UpdateNetworkMetrics(&states, kEnablingBandwidthHigh, kPacketLoss);
   CheckDecision(&states, false, kPacketLoss);
 }
 
@@ -202,10 +199,9 @@ TEST(FecControllerPlrBasedTest, EnableFecForMediumBandwidth) {
   auto states = CreateFecControllerPlrBased(false);
   constexpr float kPacketLoss =
       (kEnablingPacketLossAtLowBw + kEnablingPacketLossAtHighBw) / 2.0;
-  UpdateNetworkMetrics(
-      &states,
-      rtc::Optional<int>((kEnablingBandwidthHigh + kEnablingBandwidthLow) / 2),
-      rtc::Optional<float>(kPacketLoss));
+  UpdateNetworkMetrics(&states,
+                       (kEnablingBandwidthHigh + kEnablingBandwidthLow) / 2,
+                       kPacketLoss);
   CheckDecision(&states, true, kPacketLoss);
 }
 
@@ -213,25 +209,23 @@ TEST(FecControllerPlrBasedTest, MaintainFecOffForMediumBandwidth) {
   auto states = CreateFecControllerPlrBased(false);
   constexpr float kPacketLoss =
       kEnablingPacketLossAtLowBw * 0.49f + kEnablingPacketLossAtHighBw * 0.51f;
-  UpdateNetworkMetrics(
-      &states,
-      rtc::Optional<int>((kEnablingBandwidthHigh + kEnablingBandwidthLow) / 2),
-      rtc::Optional<float>(kPacketLoss));
+  UpdateNetworkMetrics(&states,
+                       (kEnablingBandwidthHigh + kEnablingBandwidthLow) / 2,
+                       kPacketLoss);
   CheckDecision(&states, false, kPacketLoss);
 }
 
 TEST(FecControllerPlrBasedTest, EnableFecForLowBandwidth) {
   auto states = CreateFecControllerPlrBased(false);
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kEnablingBandwidthLow),
-                       rtc::Optional<float>(kEnablingPacketLossAtLowBw));
+  UpdateNetworkMetrics(&states, kEnablingBandwidthLow,
+                       kEnablingPacketLossAtLowBw);
   CheckDecision(&states, true, kEnablingPacketLossAtLowBw);
 }
 
 TEST(FecControllerPlrBasedTest, MaintainFecOffForLowBandwidth) {
   auto states = CreateFecControllerPlrBased(false);
   constexpr float kPacketLoss = kEnablingPacketLossAtLowBw * 0.99f;
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kEnablingBandwidthLow),
-                       rtc::Optional<float>(kPacketLoss));
+  UpdateNetworkMetrics(&states, kEnablingBandwidthLow, kPacketLoss);
   CheckDecision(&states, false, kPacketLoss);
 }
 
@@ -239,24 +233,22 @@ TEST(FecControllerPlrBasedTest, MaintainFecOffForVeryLowBandwidth) {
   auto states = CreateFecControllerPlrBased(false);
   // Below |kEnablingBandwidthLow|, no packet loss fraction can cause FEC to
   // turn on.
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kEnablingBandwidthLow - 1),
-                       rtc::Optional<float>(1.0));
+  UpdateNetworkMetrics(&states, kEnablingBandwidthLow - 1, 1.0);
   CheckDecision(&states, false, 1.0);
 }
 
 TEST(FecControllerPlrBasedTest, DisableFecForHighBandwidth) {
   auto states = CreateFecControllerPlrBased(true);
   constexpr float kPacketLoss = kDisablingPacketLossAtHighBw - kEpsilon;
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthHigh),
-                       rtc::Optional<float>(kPacketLoss));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthHigh, kPacketLoss);
   CheckDecision(&states, false, kPacketLoss);
 }
 
 TEST(FecControllerPlrBasedTest, MaintainFecOnForHighBandwidth) {
   // Note: Disabling happens when the value is strictly below the threshold.
   auto states = CreateFecControllerPlrBased(true);
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthHigh),
-                       rtc::Optional<float>(kDisablingPacketLossAtHighBw));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthHigh,
+                       kDisablingPacketLossAtHighBw);
   CheckDecision(&states, true, kDisablingPacketLossAtHighBw);
 }
 
@@ -265,11 +257,9 @@ TEST(FecControllerPlrBasedTest, DisableFecOnMediumBandwidth) {
   constexpr float kPacketLoss =
       (kDisablingPacketLossAtLowBw + kDisablingPacketLossAtHighBw) / 2.0f -
       kEpsilon;
-  UpdateNetworkMetrics(
-      &states,
-      rtc::Optional<int>((kDisablingBandwidthHigh + kDisablingBandwidthLow) /
-                         2),
-      rtc::Optional<float>(kPacketLoss));
+  UpdateNetworkMetrics(&states,
+                       (kDisablingBandwidthHigh + kDisablingBandwidthLow) / 2,
+                       kPacketLoss);
   CheckDecision(&states, false, kPacketLoss);
 }
 
@@ -277,18 +267,16 @@ TEST(FecControllerPlrBasedTest, MaintainFecOnForMediumBandwidth) {
   auto states = CreateFecControllerPlrBased(true);
   constexpr float kPacketLoss = kDisablingPacketLossAtLowBw * 0.51f +
                                 kDisablingPacketLossAtHighBw * 0.49f - kEpsilon;
-  UpdateNetworkMetrics(
-      &states,
-      rtc::Optional<int>((kEnablingBandwidthHigh + kDisablingBandwidthLow) / 2),
-      rtc::Optional<float>(kPacketLoss));
+  UpdateNetworkMetrics(&states,
+                       (kEnablingBandwidthHigh + kDisablingBandwidthLow) / 2,
+                       kPacketLoss);
   CheckDecision(&states, true, kPacketLoss);
 }
 
 TEST(FecControllerPlrBasedTest, DisableFecForLowBandwidth) {
   auto states = CreateFecControllerPlrBased(true);
   constexpr float kPacketLoss = kDisablingPacketLossAtLowBw - kEpsilon;
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthLow),
-                       rtc::Optional<float>(kPacketLoss));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthLow, kPacketLoss);
   CheckDecision(&states, false, kPacketLoss);
 }
 
@@ -296,8 +284,7 @@ TEST(FecControllerPlrBasedTest, DisableFecForVeryLowBandwidth) {
   auto states = CreateFecControllerPlrBased(true);
   // Below |kEnablingBandwidthLow|, any packet loss fraction can cause FEC to
   // turn off.
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthLow - 1),
-                       rtc::Optional<float>(1.0));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthLow - 1, 1.0);
   CheckDecision(&states, false, 1.0);
 }
 
@@ -311,25 +298,22 @@ TEST(FecControllerPlrBasedTest, CheckBehaviorOnChangingNetworkMetrics) {
   //             |---------5-------> bandwidth
 
   auto states = CreateFecControllerPlrBased(true);
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthLow - 1),
-                       rtc::Optional<float>(1.0));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthLow - 1, 1.0);
   CheckDecision(&states, false, 1.0);
 
-  UpdateNetworkMetrics(
-      &states, rtc::Optional<int>(kEnablingBandwidthLow),
-      rtc::Optional<float>(kEnablingPacketLossAtLowBw * 0.99f));
+  UpdateNetworkMetrics(&states, kEnablingBandwidthLow,
+                       kEnablingPacketLossAtLowBw * 0.99f);
   CheckDecision(&states, false, kEnablingPacketLossAtLowBw * 0.99f);
 
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kEnablingBandwidthHigh),
-                       rtc::Optional<float>(kEnablingPacketLossAtHighBw));
+  UpdateNetworkMetrics(&states, kEnablingBandwidthHigh,
+                       kEnablingPacketLossAtHighBw);
   CheckDecision(&states, true, kEnablingPacketLossAtHighBw);
 
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthHigh),
-                       rtc::Optional<float>(kDisablingPacketLossAtHighBw));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthHigh,
+                       kDisablingPacketLossAtHighBw);
   CheckDecision(&states, true, kDisablingPacketLossAtHighBw);
 
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthHigh + 1),
-                       rtc::Optional<float>(0.0));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthHigh + 1, 0.0);
   CheckDecision(&states, false, 0.0);
 }
 
@@ -361,25 +345,22 @@ TEST(FecControllerPlrBasedTest, CheckBehaviorOnSpecialCurves) {
           0),
       std::move(mock_smoothing_filter)));
 
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthLow - 1),
-                       rtc::Optional<float>(1.0));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthLow - 1, 1.0);
   CheckDecision(&states, false, 1.0);
 
-  UpdateNetworkMetrics(
-      &states, rtc::Optional<int>(kEnablingBandwidthLow),
-      rtc::Optional<float>(kEnablingPacketLossAtHighBw * 0.99f));
+  UpdateNetworkMetrics(&states, kEnablingBandwidthLow,
+                       kEnablingPacketLossAtHighBw * 0.99f);
   CheckDecision(&states, false, kEnablingPacketLossAtHighBw * 0.99f);
 
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kEnablingBandwidthHigh),
-                       rtc::Optional<float>(kEnablingPacketLossAtHighBw));
+  UpdateNetworkMetrics(&states, kEnablingBandwidthHigh,
+                       kEnablingPacketLossAtHighBw);
   CheckDecision(&states, true, kEnablingPacketLossAtHighBw);
 
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthHigh),
-                       rtc::Optional<float>(kDisablingPacketLossAtHighBw));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthHigh,
+                       kDisablingPacketLossAtHighBw);
   CheckDecision(&states, true, kDisablingPacketLossAtHighBw);
 
-  UpdateNetworkMetrics(&states, rtc::Optional<int>(kDisablingBandwidthHigh + 1),
-                       rtc::Optional<float>(0.0));
+  UpdateNetworkMetrics(&states, kDisablingBandwidthHigh + 1, 0.0);
   CheckDecision(&states, false, 0.0);
 }
 

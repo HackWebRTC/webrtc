@@ -108,8 +108,6 @@ void UpdateNetworkMetrics(
                        uplink_recoveralbe_packet_loss);
 }
 
-// TODO(eladalon): In a separate CL (to make reviewers' lives easier), use
-// this where applicable.
 void UpdateNetworkMetrics(FecControllerRplrBased* controller,
                           int uplink_bandwidth_bps,
                           float uplink_recoveralbe_packet_loss) {
@@ -185,9 +183,8 @@ TEST(FecControllerRplrBasedTest,
 
 TEST(FecControllerRplrBasedTest, EnableFecForHighBandwidth) {
   auto controller = CreateFecControllerRplrBased(false);
-  UpdateNetworkMetrics(
-      controller.get(), rtc::Optional<int>(kEnablingBandwidthHigh),
-      rtc::Optional<float>(kEnablingRecoverablePacketLossAtHighBw));
+  UpdateNetworkMetrics(controller.get(), kEnablingBandwidthHigh,
+                       kEnablingRecoverablePacketLossAtHighBw);
   CheckDecision(controller.get(), true, kEnablingRecoverablePacketLossAtHighBw);
 }
 
@@ -215,9 +212,8 @@ TEST(FecControllerRplrBasedTest, MaintainFecOffForHighBandwidth) {
   auto controller = CreateFecControllerRplrBased(false);
   constexpr float kRecoverablePacketLoss =
       kEnablingRecoverablePacketLossAtHighBw * 0.99f;
-  UpdateNetworkMetrics(controller.get(),
-                       rtc::Optional<int>(kEnablingBandwidthHigh),
-                       rtc::Optional<float>(kRecoverablePacketLoss));
+  UpdateNetworkMetrics(controller.get(), kEnablingBandwidthHigh,
+                       kRecoverablePacketLoss);
   CheckDecision(controller.get(), false, kRecoverablePacketLoss);
 }
 
@@ -228,8 +224,8 @@ TEST(FecControllerRplrBasedTest, EnableFecForMediumBandwidth) {
        kEnablingRecoverablePacketLossAtHighBw) / 2.0;
   UpdateNetworkMetrics(
       controller.get(),
-      rtc::Optional<int>((kEnablingBandwidthHigh + kEnablingBandwidthLow) / 2),
-      rtc::Optional<float>(kRecoverablePacketLoss));
+      (kEnablingBandwidthHigh + kEnablingBandwidthLow) / 2,
+      kRecoverablePacketLoss);
   CheckDecision(controller.get(), true, kRecoverablePacketLoss);
 }
 
@@ -238,18 +234,16 @@ TEST(FecControllerRplrBasedTest, MaintainFecOffForMediumBandwidth) {
   constexpr float kRecoverablePacketLoss =
       kEnablingRecoverablePacketLossAtLowBw * 0.49f +
       kEnablingRecoverablePacketLossAtHighBw * 0.51f;
-  UpdateNetworkMetrics(
-      controller.get(),
-      rtc::Optional<int>((kEnablingBandwidthHigh + kEnablingBandwidthLow) / 2),
-      rtc::Optional<float>(kRecoverablePacketLoss));
+  UpdateNetworkMetrics(controller.get(),
+                       (kEnablingBandwidthHigh + kEnablingBandwidthLow) / 2,
+                       kRecoverablePacketLoss);
   CheckDecision(controller.get(), false, kRecoverablePacketLoss);
 }
 
 TEST(FecControllerRplrBasedTest, EnableFecForLowBandwidth) {
   auto controller = CreateFecControllerRplrBased(false);
-  UpdateNetworkMetrics(
-      controller.get(), rtc::Optional<int>(kEnablingBandwidthLow),
-      rtc::Optional<float>(kEnablingRecoverablePacketLossAtLowBw));
+  UpdateNetworkMetrics(controller.get(), kEnablingBandwidthLow,
+                       kEnablingRecoverablePacketLossAtLowBw);
   CheckDecision(controller.get(), true, kEnablingRecoverablePacketLossAtLowBw);
 }
 
@@ -257,9 +251,8 @@ TEST(FecControllerRplrBasedTest, MaintainFecOffForLowBandwidth) {
   auto controller = CreateFecControllerRplrBased(false);
   constexpr float kRecoverablePacketLoss =
       kEnablingRecoverablePacketLossAtLowBw * 0.99f;
-  UpdateNetworkMetrics(controller.get(),
-                       rtc::Optional<int>(kEnablingBandwidthLow),
-                       rtc::Optional<float>(kRecoverablePacketLoss));
+  UpdateNetworkMetrics(controller.get(), kEnablingBandwidthLow,
+                       kRecoverablePacketLoss);
   CheckDecision(controller.get(), false, kRecoverablePacketLoss);
 }
 
@@ -267,9 +260,7 @@ TEST(FecControllerRplrBasedTest, MaintainFecOffForVeryLowBandwidth) {
   auto controller = CreateFecControllerRplrBased(false);
   // Below |kEnablingBandwidthLow|, no recoverable packet loss fraction can
   // cause FEC to turn on.
-  UpdateNetworkMetrics(controller.get(),
-                       rtc::Optional<int>(kEnablingBandwidthLow - 1),
-                       rtc::Optional<float>(1.0));
+  UpdateNetworkMetrics(controller.get(), kEnablingBandwidthLow - 1, 1.0);
   CheckDecision(controller.get(), false, 1.0);
 }
 
@@ -277,18 +268,16 @@ TEST(FecControllerRplrBasedTest, DisableFecForHighBandwidth) {
   auto controller = CreateFecControllerRplrBased(true);
   constexpr float kRecoverablePacketLoss =
       kDisablingRecoverablePacketLossAtHighBw - kEpsilon;
-  UpdateNetworkMetrics(controller.get(),
-                       rtc::Optional<int>(kDisablingBandwidthHigh),
-                       rtc::Optional<float>(kRecoverablePacketLoss));
+  UpdateNetworkMetrics(controller.get(), kDisablingBandwidthHigh,
+                       kRecoverablePacketLoss);
   CheckDecision(controller.get(), false, kRecoverablePacketLoss);
 }
 
 TEST(FecControllerRplrBasedTest, MaintainFecOnForHighBandwidth) {
   // Note: Disabling happens when the value is strictly below the threshold.
   auto controller = CreateFecControllerRplrBased(true);
-  UpdateNetworkMetrics(
-      controller.get(), rtc::Optional<int>(kDisablingBandwidthHigh),
-      rtc::Optional<float>(kDisablingRecoverablePacketLossAtHighBw));
+  UpdateNetworkMetrics(controller.get(), kDisablingBandwidthHigh,
+                       kDisablingRecoverablePacketLossAtHighBw);
   CheckDecision(controller.get(), true,
                 kDisablingRecoverablePacketLossAtHighBw);
 }
@@ -300,9 +289,8 @@ TEST(FecControllerRplrBasedTest, DisableFecOnMediumBandwidth) {
         kDisablingRecoverablePacketLossAtHighBw) / 2.0f) - kEpsilon;
   UpdateNetworkMetrics(
       controller.get(),
-      rtc::Optional<int>((kDisablingBandwidthHigh + kDisablingBandwidthLow) /
-                         2),
-      rtc::Optional<float>(kRecoverablePacketLoss));
+      (kDisablingBandwidthHigh + kDisablingBandwidthLow) / 2,
+      kRecoverablePacketLoss);
   CheckDecision(controller.get(), false, kRecoverablePacketLoss);
 }
 
@@ -311,10 +299,9 @@ TEST(FecControllerRplrBasedTest, MaintainFecOnForMediumBandwidth) {
   constexpr float kRecoverablePacketLoss =
       kDisablingRecoverablePacketLossAtLowBw * 0.51f +
       kDisablingRecoverablePacketLossAtHighBw * 0.49f - kEpsilon;
-  UpdateNetworkMetrics(
-      controller.get(),
-      rtc::Optional<int>((kEnablingBandwidthHigh + kDisablingBandwidthLow) / 2),
-      rtc::Optional<float>(kRecoverablePacketLoss));
+  UpdateNetworkMetrics(controller.get(),
+                       (kEnablingBandwidthHigh + kDisablingBandwidthLow) / 2,
+                       kRecoverablePacketLoss);
   CheckDecision(controller.get(), true, kRecoverablePacketLoss);
 }
 
@@ -322,9 +309,8 @@ TEST(FecControllerRplrBasedTest, DisableFecForLowBandwidth) {
   auto controller = CreateFecControllerRplrBased(true);
   constexpr float kRecoverablePacketLoss =
       kDisablingRecoverablePacketLossAtLowBw - kEpsilon;
-  UpdateNetworkMetrics(controller.get(),
-                       rtc::Optional<int>(kDisablingBandwidthLow),
-                       rtc::Optional<float>(kRecoverablePacketLoss));
+  UpdateNetworkMetrics(controller.get(), kDisablingBandwidthLow,
+                       kRecoverablePacketLoss);
   CheckDecision(controller.get(), false, kRecoverablePacketLoss);
 }
 
@@ -332,9 +318,7 @@ TEST(FecControllerRplrBasedTest, DisableFecForVeryLowBandwidth) {
   auto controller = CreateFecControllerRplrBased(true);
   // Below |kEnablingBandwidthLow|, any recoverable packet loss fraction can
   // cause FEC to turn off.
-  UpdateNetworkMetrics(controller.get(),
-                       rtc::Optional<int>(kDisablingBandwidthLow - 1),
-                       rtc::Optional<float>(1.0));
+  UpdateNetworkMetrics(controller.get(), kDisablingBandwidthLow - 1, 1.0);
   CheckDecision(controller.get(), false, 1.0);
 }
 
@@ -350,31 +334,24 @@ TEST(FecControllerRplrBasedTest, CheckBehaviorOnChangingNetworkMetrics) {
   //             |---------5-------> bandwidth
 
   auto controller = CreateFecControllerRplrBased(true);
-  UpdateNetworkMetrics(controller.get(),
-                       rtc::Optional<int>(kDisablingBandwidthLow - 1),
-                       rtc::Optional<float>(1.0));
+  UpdateNetworkMetrics(controller.get(), kDisablingBandwidthLow - 1, 1.0);
   CheckDecision(controller.get(), false, 1.0);
 
-  UpdateNetworkMetrics(
-      controller.get(), rtc::Optional<int>(kEnablingBandwidthLow),
-      rtc::Optional<float>(kEnablingRecoverablePacketLossAtLowBw * 0.99f));
+  UpdateNetworkMetrics(controller.get(), kEnablingBandwidthLow,
+                       kEnablingRecoverablePacketLossAtLowBw * 0.99f);
   CheckDecision(controller.get(), false,
                 kEnablingRecoverablePacketLossAtLowBw * 0.99f);
 
-  UpdateNetworkMetrics(
-      controller.get(), rtc::Optional<int>(kEnablingBandwidthHigh),
-      rtc::Optional<float>(kEnablingRecoverablePacketLossAtHighBw));
+  UpdateNetworkMetrics(controller.get(), kEnablingBandwidthHigh,
+                       kEnablingRecoverablePacketLossAtHighBw);
   CheckDecision(controller.get(), true, kEnablingRecoverablePacketLossAtHighBw);
 
-  UpdateNetworkMetrics(
-      controller.get(), rtc::Optional<int>(kDisablingBandwidthHigh),
-      rtc::Optional<float>(kDisablingRecoverablePacketLossAtHighBw));
+  UpdateNetworkMetrics(controller.get(), kDisablingBandwidthHigh,
+                       kDisablingRecoverablePacketLossAtHighBw);
   CheckDecision(controller.get(), true,
                 kDisablingRecoverablePacketLossAtHighBw);
 
-  UpdateNetworkMetrics(controller.get(),
-                       rtc::Optional<int>(kDisablingBandwidthHigh + 1),
-                       rtc::Optional<float>(0.0));
+  UpdateNetworkMetrics(controller.get(), kDisablingBandwidthHigh + 1, 0.0);
   CheckDecision(controller.get(), false, 0.0);
 }
 
@@ -403,30 +380,23 @@ TEST(FecControllerRplrBasedTest, CheckBehaviorOnSpecialCurves) {
           kDisablingBandwidthLow, kDisablingRecoverablePacketLossAtLowBw,
           kDisablingBandwidthHigh, kDisablingRecoverablePacketLossAtHighBw)));
 
-  UpdateNetworkMetrics(&controller,
-                       rtc::Optional<int>(kDisablingBandwidthLow - 1),
-                       rtc::Optional<float>(1.0));
+  UpdateNetworkMetrics(&controller, kDisablingBandwidthLow - 1, 1.0);
   CheckDecision(&controller, false, 1.0);
 
-  UpdateNetworkMetrics(
-      &controller, rtc::Optional<int>(kEnablingBandwidthLow),
-      rtc::Optional<float>(kEnablingRecoverablePacketLossAtHighBw * 0.99f));
+  UpdateNetworkMetrics(&controller, kEnablingBandwidthLow,
+                       kEnablingRecoverablePacketLossAtHighBw * 0.99f);
   CheckDecision(&controller, false,
                 kEnablingRecoverablePacketLossAtHighBw * 0.99f);
 
-  UpdateNetworkMetrics(
-      &controller, rtc::Optional<int>(kEnablingBandwidthHigh),
-      rtc::Optional<float>(kEnablingRecoverablePacketLossAtHighBw));
+  UpdateNetworkMetrics(&controller, kEnablingBandwidthHigh,
+                       kEnablingRecoverablePacketLossAtHighBw);
   CheckDecision(&controller, true, kEnablingRecoverablePacketLossAtHighBw);
 
-  UpdateNetworkMetrics(
-      &controller, rtc::Optional<int>(kDisablingBandwidthHigh),
-      rtc::Optional<float>(kDisablingRecoverablePacketLossAtHighBw));
+  UpdateNetworkMetrics(&controller, kDisablingBandwidthHigh,
+                       kDisablingRecoverablePacketLossAtHighBw);
   CheckDecision(&controller, true, kDisablingRecoverablePacketLossAtHighBw);
 
-  UpdateNetworkMetrics(&controller,
-                       rtc::Optional<int>(kDisablingBandwidthHigh + 1),
-                       rtc::Optional<float>(0.0));
+  UpdateNetworkMetrics(&controller, kDisablingBandwidthHigh + 1, 0.0);
   CheckDecision(&controller, false, 0.0);
 }
 
@@ -559,5 +529,4 @@ TEST(FecControllerRplrBasedDeathTest, InvalidConfig) {
       "Check failed");
 }
 #endif
-
 }  // namespace webrtc
