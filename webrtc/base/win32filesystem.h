@@ -17,11 +17,6 @@ namespace rtc {
 
 class Win32Filesystem : public FilesystemInterface {
  public:
-  // Opens a file. Returns an open StreamInterface if function succeeds.
-  // Otherwise, returns null.
-  virtual FileStream *OpenFile(const Pathname &filename, 
-                               const std::string &mode);
-
   // This will attempt to delete the path located at filename.
   // If the path points to a folder, it will fail with VERIFY
   virtual bool DeleteFile(const Pathname &filename);

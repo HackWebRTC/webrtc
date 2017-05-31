@@ -63,16 +63,6 @@ bool Win32Filesystem::CreateFolder(const Pathname &pathname) {
   return (::CreateDirectory(path16.c_str(), nullptr) != 0);
 }
 
-FileStream *Win32Filesystem::OpenFile(const Pathname &filename,
-                                      const std::string &mode) {
-  FileStream *fs = new FileStream();
-  if (fs && !fs->Open(filename.pathname().c_str(), mode.c_str(), nullptr)) {
-    delete fs;
-    fs = nullptr;
-  }
-  return fs;
-}
-
 bool Win32Filesystem::DeleteFile(const Pathname &filename) {
   LOG(LS_INFO) << "Deleting file " << filename.pathname();
   if (!IsFile(filename)) {

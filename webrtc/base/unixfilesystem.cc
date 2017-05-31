@@ -123,16 +123,6 @@ bool UnixFilesystem::CreateFolder(const Pathname &path) {
   return CreateFolder(path, 0755);
 }
 
-FileStream *UnixFilesystem::OpenFile(const Pathname &filename,
-                                     const std::string &mode) {
-  FileStream *fs = new FileStream();
-  if (fs && !fs->Open(filename.pathname().c_str(), mode.c_str(), nullptr)) {
-    delete fs;
-    fs = nullptr;
-  }
-  return fs;
-}
-
 bool UnixFilesystem::DeleteFile(const Pathname &filename) {
   LOG(LS_INFO) << "Deleting file:" << filename.pathname();
 

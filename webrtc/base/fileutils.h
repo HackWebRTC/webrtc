@@ -80,17 +80,6 @@ class FilesystemInterface {
  public:
   virtual ~FilesystemInterface() {}
 
-  // Returns a DirectoryIterator for a given pathname.
-  // TODO: Do fancy abstracted stuff
-  virtual DirectoryIterator* IterateDirectory();
-
-  // Opens a file. Returns an open StreamInterface if function succeeds.
-  // Otherwise, returns null.
-  // TODO: Add an error param to indicate failure reason, similar to
-  // FileStream::Open
-  virtual FileStream *OpenFile(const Pathname &filename,
-                               const std::string &mode) = 0;
-
   // This will attempt to delete the path located at filename.
   // It DCHECKs and returns false if the path points to a folder or a
   // non-existent file.
@@ -176,17 +165,8 @@ class Filesystem {
     return cur;
   }
 
-  static DirectoryIterator *IterateDirectory() {
-    return EnsureDefaultFilesystem()->IterateDirectory();
-  }
-
   static bool CreateFolder(const Pathname &pathname) {
     return EnsureDefaultFilesystem()->CreateFolder(pathname);
-  }
-
-  static FileStream *OpenFile(const Pathname &filename,
-                              const std::string &mode) {
-    return EnsureDefaultFilesystem()->OpenFile(filename, mode);
   }
 
   static bool DeleteFile(const Pathname &filename) {

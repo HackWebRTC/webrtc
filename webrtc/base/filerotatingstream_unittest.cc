@@ -96,16 +96,13 @@ class MAYBE_FileRotatingStreamTest : public ::testing::Test {
                           const size_t expected_length,
                           const std::string& file_path) {
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
-    std::unique_ptr<FileStream> stream(Filesystem::OpenFile(file_path, "r"));
-    EXPECT_TRUE(stream);
-    if (!stream) {
-      return;
-    }
+    FileStream stream;
+    ASSERT_TRUE(stream.Open(file_path, "r", nullptr));
     EXPECT_EQ(rtc::SR_SUCCESS,
-              stream->ReadAll(buffer.get(), expected_length, nullptr, nullptr));
+              stream.ReadAll(buffer.get(), expected_length, nullptr, nullptr));
     EXPECT_EQ(0, memcmp(expected_contents, buffer.get(), expected_length));
     size_t file_size = 0;
-    EXPECT_TRUE(stream->GetSize(&file_size));
+    EXPECT_TRUE(stream.GetSize(&file_size));
     EXPECT_EQ(file_size, expected_length);
   }
 
@@ -136,9 +133,10 @@ TEST_F(MAYBE_FileRotatingStreamTest, EmptyWrite) {
   WriteAndFlush("a", 0);
 
   std::string logfile_path = stream_->GetFilePath(0);
-  std::unique_ptr<FileStream> stream(Filesystem::OpenFile(logfile_path, "r"));
+  FileStream stream;
+  ASSERT_TRUE(stream.Open(logfile_path, "r", nullptr));
   size_t file_size = 0;
-  EXPECT_TRUE(stream->GetSize(&file_size));
+  EXPECT_TRUE(stream.GetSize(&file_size));
   EXPECT_EQ(0u, file_size);
 }
 

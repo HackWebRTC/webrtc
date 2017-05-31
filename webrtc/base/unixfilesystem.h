@@ -34,11 +34,6 @@ class UnixFilesystem : public FilesystemInterface {
   static void SetAppTempFolder(const std::string& folder);
 #endif
 
-  // Opens a file. Returns an open StreamInterface if function succeeds.
-  // Otherwise, returns null.
-  FileStream* OpenFile(const Pathname& filename,
-                       const std::string& mode) override;
-
   // This will attempt to delete the file located at filename.
   // It will fail with VERIY if you pass it a non-existant file, or a directory.
   bool DeleteFile(const Pathname& filename) override;

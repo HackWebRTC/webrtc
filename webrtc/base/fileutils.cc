@@ -130,8 +130,4 @@ FilesystemInterface *Filesystem::EnsureDefaultFilesystem() {
   return default_filesystem_;
 }
 
-DirectoryIterator* FilesystemInterface::IterateDirectory() {
-  return new DirectoryIterator();
-}
-
 }  // namespace rtc
