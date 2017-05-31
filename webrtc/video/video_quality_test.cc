@@ -1566,7 +1566,8 @@ void VideoQualityTest::CreateCapturer() {
   } else {
     if (params_.video.clip_name.empty()) {
       video_capturer_.reset(test::VcmCapturer::Create(
-          params_.video.width, params_.video.height, params_.video.fps));
+          params_.video.width, params_.video.height, params_.video.fps,
+          params_.video.capture_device_index));
       if (!video_capturer_) {
         // Failed to get actual camera, use chroma generator as backup.
         video_capturer_.reset(test::FrameGeneratorCapturer::Create(

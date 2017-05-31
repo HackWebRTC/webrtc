@@ -13,21 +13,23 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
 #include "webrtc/video_send_stream.h"
-
 namespace webrtc {
 namespace test {
 
 VcmCapturer::VcmCapturer() : started_(false), sink_(nullptr), vcm_(nullptr) {}
 
-bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
+bool VcmCapturer::Init(size_t width,
+                       size_t height,
+                       size_t target_fps,
+                       size_t capture_device_index) {
   std::unique_ptr<VideoCaptureModule::DeviceInfo> device_info(
       VideoCaptureFactory::CreateDeviceInfo());
 
   char device_name[256];
   char unique_name[256];
-  if (device_info->GetDeviceName(0, device_name, sizeof(device_name),
-                                 unique_name, sizeof(unique_name)) !=
-      0) {
+  if (device_info->GetDeviceName(static_cast<uint32_t>(capture_device_index),
+                                 device_name, sizeof(device_name), unique_name,
+                                 sizeof(unique_name)) != 0) {
     Destroy();
     return false;
   }
@@ -54,9 +56,10 @@ bool VcmCapturer::Init(size_t width, size_t height, size_t target_fps) {
 
 VcmCapturer* VcmCapturer::Create(size_t width,
                                  size_t height,
-                                 size_t target_fps) {
+                                 size_t target_fps,
+                                 size_t capture_device_index) {
   std::unique_ptr<VcmCapturer> vcm_capturer(new VcmCapturer());
-  if (!vcm_capturer->Init(width, height, target_fps)) {
+  if (!vcm_capturer->Init(width, height, target_fps, capture_device_index)) {
     LOG(LS_WARNING) << "Failed to create VcmCapturer(w = " << width
                     << ", h = " << height << ", fps = " << target_fps << ")";
     return nullptr;

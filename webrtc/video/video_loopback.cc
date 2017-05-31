@@ -35,6 +35,11 @@ int Fps() {
   return static_cast<int>(FLAGS_fps);
 }
 
+DEFINE_int32(capture_device_index, 0, "Capture device to select");
+size_t GetCaptureDevice() {
+  return static_cast<size_t>(FLAGS_capture_device_index);
+}
+
 DEFINE_int32(min_bitrate, 50, "Call and stream min bitrate in kbps.");
 int MinBitrateKbps() {
   return static_cast<int>(FLAGS_min_bitrate);
@@ -259,7 +264,8 @@ void Loopback() {
                   flags::FLAGS_use_ulpfec,
                   flags::FLAGS_use_flexfec,
                   flags::EncodedFramePath(),
-                  flags::Clip()};
+                  flags::Clip(),
+                  flags::GetCaptureDevice()};
   params.audio = {flags::FLAGS_audio, flags::FLAGS_audio_video_sync,
       flags::FLAGS_audio_dtx};
   params.screenshare.enabled = false;
