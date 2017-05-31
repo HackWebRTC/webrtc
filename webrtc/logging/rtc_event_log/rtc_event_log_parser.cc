@@ -202,8 +202,7 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
     EventType type = GetRuntimeEventType(event.type());
     switch (type) {
       case VIDEO_RECEIVER_CONFIG_EVENT: {
-        rtclog::StreamConfig config;
-        GetVideoReceiveConfig(event, &config);
+        rtclog::StreamConfig config = GetVideoReceiveConfig(event);
         streams_.emplace_back(config.remote_ssrc, MediaType::VIDEO,
                               kIncomingPacket);
         streams_.emplace_back(config.local_ssrc, MediaType::VIDEO,
@@ -211,18 +210,18 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
         break;
       }
       case VIDEO_SENDER_CONFIG_EVENT: {
-        rtclog::StreamConfig config;
-        GetVideoSendConfig(event, &config);
-        streams_.emplace_back(config.local_ssrc, MediaType::VIDEO,
-                              kOutgoingPacket);
+        std::vector<rtclog::StreamConfig> configs = GetVideoSendConfig(event);
+        for (size_t i = 0; i < configs.size(); i++) {
+          streams_.emplace_back(configs[i].local_ssrc, MediaType::VIDEO,
+                                kOutgoingPacket);
 
-        streams_.emplace_back(config.rtx_ssrc, MediaType::VIDEO,
-                              kOutgoingPacket);
+          streams_.emplace_back(configs[i].rtx_ssrc, MediaType::VIDEO,
+                                kOutgoingPacket);
+        }
         break;
       }
       case AUDIO_RECEIVER_CONFIG_EVENT: {
-        rtclog::StreamConfig config;
-        GetAudioReceiveConfig(event, &config);
+        rtclog::StreamConfig config = GetAudioReceiveConfig(event);
         streams_.emplace_back(config.remote_ssrc, MediaType::AUDIO,
                               kIncomingPacket);
         streams_.emplace_back(config.local_ssrc, MediaType::AUDIO,
@@ -230,8 +229,7 @@ bool ParsedRtcEventLog::ParseStream(std::istream& stream) {
         break;
       }
       case AUDIO_SENDER_CONFIG_EVENT: {
-        rtclog::StreamConfig config;
-        GetAudioSendConfig(event, &config);
+        rtclog::StreamConfig config = GetAudioSendConfig(event);
         streams_.emplace_back(config.local_ssrc, MediaType::AUDIO,
                               kOutgoingPacket);
         break;
@@ -330,17 +328,15 @@ void ParsedRtcEventLog::GetRtcpPacket(size_t index,
   }
 }
 
-void ParsedRtcEventLog::GetVideoReceiveConfig(
-    size_t index,
-    rtclog::StreamConfig* config) const {
+rtclog::StreamConfig ParsedRtcEventLog::GetVideoReceiveConfig(
+    size_t index) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  GetVideoReceiveConfig(events_[index], config);
+  return GetVideoReceiveConfig(events_[index]);
 }
 
-void ParsedRtcEventLog::GetVideoReceiveConfig(
-    const rtclog::Event& event,
-    rtclog::StreamConfig* config) const {
-  RTC_CHECK(config != nullptr);
+rtclog::StreamConfig ParsedRtcEventLog::GetVideoReceiveConfig(
+    const rtclog::Event& event) const {
+  rtclog::StreamConfig config;
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT);
   RTC_CHECK(event.has_video_receiver_config());
@@ -348,15 +344,15 @@ void ParsedRtcEventLog::GetVideoReceiveConfig(
       event.video_receiver_config();
   // Get SSRCs.
   RTC_CHECK(receiver_config.has_remote_ssrc());
-  config->remote_ssrc = receiver_config.remote_ssrc();
+  config.remote_ssrc = receiver_config.remote_ssrc();
   RTC_CHECK(receiver_config.has_local_ssrc());
-  config->local_ssrc = receiver_config.local_ssrc();
-  config->rtx_ssrc = 0;
+  config.local_ssrc = receiver_config.local_ssrc();
+  config.rtx_ssrc = 0;
   // Get RTCP settings.
   RTC_CHECK(receiver_config.has_rtcp_mode());
-  config->rtcp_mode = GetRuntimeRtcpMode(receiver_config.rtcp_mode());
+  config.rtcp_mode = GetRuntimeRtcpMode(receiver_config.rtcp_mode());
   RTC_CHECK(receiver_config.has_remb());
-  config->remb = receiver_config.remb();
+  config.remb = receiver_config.remb();
 
   // Get RTX map.
   std::map<uint32_t, const rtclog::RtxConfig> rtx_map;
@@ -370,10 +366,10 @@ void ParsedRtcEventLog::GetVideoReceiveConfig(
   }
 
   // Get header extensions.
-  GetHeaderExtensions(&config->rtp_extensions,
+  GetHeaderExtensions(&config.rtp_extensions,
                       receiver_config.header_extensions());
   // Get decoders.
-  config->codecs.clear();
+  config.codecs.clear();
   for (int i = 0; i < receiver_config.decoders_size(); i++) {
     RTC_CHECK(receiver_config.decoders(i).has_name());
     RTC_CHECK(receiver_config.decoders(i).has_payload_type());
@@ -381,74 +377,76 @@ void ParsedRtcEventLog::GetVideoReceiveConfig(
     auto rtx_it = rtx_map.find(receiver_config.decoders(i).payload_type());
     if (rtx_it != rtx_map.end()) {
       rtx_payload_type = rtx_it->second.rtx_payload_type();
-      if (config->rtx_ssrc != 0 &&
-          config->rtx_ssrc != rtx_it->second.rtx_ssrc()) {
+      if (config.rtx_ssrc != 0 &&
+          config.rtx_ssrc != rtx_it->second.rtx_ssrc()) {
         LOG(LS_WARNING)
             << "RtcEventLog protobuf contained different SSRCs for "
                "different received RTX payload types. Will only use "
                "rtx_ssrc = "
-            << config->rtx_ssrc << ".";
+            << config.rtx_ssrc << ".";
       } else {
-        config->rtx_ssrc = rtx_it->second.rtx_ssrc();
+        config.rtx_ssrc = rtx_it->second.rtx_ssrc();
       }
     }
-    config->codecs.emplace_back(receiver_config.decoders(i).name(),
-                                receiver_config.decoders(i).payload_type(),
-                                rtx_payload_type);
+    config.codecs.emplace_back(receiver_config.decoders(i).name(),
+                               receiver_config.decoders(i).payload_type(),
+                               rtx_payload_type);
   }
+  return config;
 }
 
-void ParsedRtcEventLog::GetVideoSendConfig(size_t index,
-                                           rtclog::StreamConfig* config) const {
+std::vector<rtclog::StreamConfig> ParsedRtcEventLog::GetVideoSendConfig(
+    size_t index) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  GetVideoSendConfig(events_[index], config);
+  return GetVideoSendConfig(events_[index]);
 }
-void ParsedRtcEventLog::GetVideoSendConfig(const rtclog::Event& event,
-                                           rtclog::StreamConfig* config) const {
-  RTC_CHECK(config != nullptr);
+
+std::vector<rtclog::StreamConfig> ParsedRtcEventLog::GetVideoSendConfig(
+    const rtclog::Event& event) const {
+  std::vector<rtclog::StreamConfig> configs;
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::VIDEO_SENDER_CONFIG_EVENT);
   RTC_CHECK(event.has_video_sender_config());
   const rtclog::VideoSendConfig& sender_config = event.video_sender_config();
-  // Get SSRCs.
-  if (sender_config.ssrcs_size() > 0) {
-    config->local_ssrc = sender_config.ssrcs(0);
-    if (sender_config.ssrcs().size() > 1) {
-      LOG(WARNING) << "VideoSendConfig contains multiple ssrcs.";
-    }
+  if (sender_config.rtx_ssrcs_size() > 0 &&
+      sender_config.ssrcs_size() != sender_config.rtx_ssrcs_size()) {
+    LOG(WARNING) << "VideoSendConfig is configured for RTX but the number of "
+                    "SSRCs doesn't match the number of RTX SSRCs.";
   }
-  if (sender_config.rtx_ssrcs_size() > 0) {
-    RTC_CHECK(sender_config.has_rtx_payload_type());
-    config->rtx_ssrc = sender_config.rtx_ssrcs(0);
-    if (sender_config.rtx_ssrcs_size() > 1) {
-      LOG(WARNING) << "VideoSendConfig contains multiple rtx ssrcs.";
+  configs.resize(sender_config.ssrcs_size());
+  for (int i = 0; i < sender_config.ssrcs_size(); i++) {
+    // Get SSRCs.
+    configs[i].local_ssrc = sender_config.ssrcs(i);
+    if (sender_config.rtx_ssrcs_size() > 0 &&
+        i < sender_config.rtx_ssrcs_size()) {
+      RTC_CHECK(sender_config.has_rtx_payload_type());
+      configs[i].rtx_ssrc = sender_config.rtx_ssrcs(i);
     }
-  }
-  // Get header extensions.
-  GetHeaderExtensions(&config->rtp_extensions,
-                      sender_config.header_extensions());
+    // Get header extensions.
+    GetHeaderExtensions(&configs[i].rtp_extensions,
+                        sender_config.header_extensions());
 
-  // Get the codec.
-  RTC_CHECK(sender_config.has_encoder());
-  RTC_CHECK(sender_config.encoder().has_name());
-  RTC_CHECK(sender_config.encoder().has_payload_type());
-  config->codecs.emplace_back(
-      sender_config.encoder().name(), sender_config.encoder().payload_type(),
-      sender_config.has_rtx_payload_type() ? sender_config.rtx_payload_type()
-                                           : 0);
+    // Get the codec.
+    RTC_CHECK(sender_config.has_encoder());
+    RTC_CHECK(sender_config.encoder().has_name());
+    RTC_CHECK(sender_config.encoder().has_payload_type());
+    configs[i].codecs.emplace_back(
+        sender_config.encoder().name(), sender_config.encoder().payload_type(),
+        sender_config.has_rtx_payload_type() ? sender_config.rtx_payload_type()
+                                             : 0);
+  }
+  return configs;
 }
 
-void ParsedRtcEventLog::GetAudioReceiveConfig(
-    size_t index,
-    rtclog::StreamConfig* config) const {
+rtclog::StreamConfig ParsedRtcEventLog::GetAudioReceiveConfig(
+    size_t index) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  GetAudioReceiveConfig(events_[index], config);
+  return GetAudioReceiveConfig(events_[index]);
 }
 
-void ParsedRtcEventLog::GetAudioReceiveConfig(
-    const rtclog::Event& event,
-    rtclog::StreamConfig* config) const {
-  RTC_CHECK(config != nullptr);
+rtclog::StreamConfig ParsedRtcEventLog::GetAudioReceiveConfig(
+    const rtclog::Event& event) const {
+  rtclog::StreamConfig config;
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT);
   RTC_CHECK(event.has_audio_receiver_config());
@@ -456,33 +454,34 @@ void ParsedRtcEventLog::GetAudioReceiveConfig(
       event.audio_receiver_config();
   // Get SSRCs.
   RTC_CHECK(receiver_config.has_remote_ssrc());
-  config->remote_ssrc = receiver_config.remote_ssrc();
+  config.remote_ssrc = receiver_config.remote_ssrc();
   RTC_CHECK(receiver_config.has_local_ssrc());
-  config->local_ssrc = receiver_config.local_ssrc();
+  config.local_ssrc = receiver_config.local_ssrc();
   // Get header extensions.
-  GetHeaderExtensions(&config->rtp_extensions,
+  GetHeaderExtensions(&config.rtp_extensions,
                       receiver_config.header_extensions());
+  return config;
 }
 
-void ParsedRtcEventLog::GetAudioSendConfig(size_t index,
-                                           rtclog::StreamConfig* config) const {
+rtclog::StreamConfig ParsedRtcEventLog::GetAudioSendConfig(size_t index) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
-  GetAudioSendConfig(events_[index], config);
+  return GetAudioSendConfig(events_[index]);
 }
 
-void ParsedRtcEventLog::GetAudioSendConfig(const rtclog::Event& event,
-                                           rtclog::StreamConfig* config) const {
-  RTC_CHECK(config != nullptr);
+rtclog::StreamConfig ParsedRtcEventLog::GetAudioSendConfig(
+    const rtclog::Event& event) const {
+  rtclog::StreamConfig config;
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_SENDER_CONFIG_EVENT);
   RTC_CHECK(event.has_audio_sender_config());
   const rtclog::AudioSendConfig& sender_config = event.audio_sender_config();
   // Get SSRCs.
   RTC_CHECK(sender_config.has_ssrc());
-  config->local_ssrc = sender_config.ssrc();
+  config.local_ssrc = sender_config.ssrc();
   // Get header extensions.
-  GetHeaderExtensions(&config->rtp_extensions,
+  GetHeaderExtensions(&config.rtp_extensions,
                       sender_config.header_extensions());
+  return config;
 }
 
 void ParsedRtcEventLog::GetAudioPlayout(size_t index, uint32_t* ssrc) const {

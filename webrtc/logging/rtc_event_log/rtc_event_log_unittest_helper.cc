@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include <string>
+#include <vector>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
@@ -237,8 +238,7 @@ void RtcEventLogTestHelper::VerifyVideoReceiveStreamConfig(
   }
 
   // Check consistency of the parser.
-  rtclog::StreamConfig parsed_config;
-  parsed_log.GetVideoReceiveConfig(index, &parsed_config);
+  rtclog::StreamConfig parsed_config = parsed_log.GetVideoReceiveConfig(index);
   VerifyStreamConfigsAreEqual(config, parsed_config);
 }
 
@@ -277,9 +277,10 @@ void RtcEventLogTestHelper::VerifyVideoSendStreamConfig(
             sender_config.rtx_payload_type());
 
   // Check consistency of the parser.
-  rtclog::StreamConfig parsed_config;
-  parsed_log.GetVideoSendConfig(index, &parsed_config);
-  VerifyStreamConfigsAreEqual(config, parsed_config);
+  std::vector<rtclog::StreamConfig> parsed_configs =
+      parsed_log.GetVideoSendConfig(index);
+  ASSERT_EQ(1u, parsed_configs.size());
+  VerifyStreamConfigsAreEqual(config, parsed_configs[0]);
 }
 
 void RtcEventLogTestHelper::VerifyAudioReceiveStreamConfig(
@@ -309,8 +310,7 @@ void RtcEventLogTestHelper::VerifyAudioReceiveStreamConfig(
   }
 
   // Check consistency of the parser.
-  rtclog::StreamConfig parsed_config;
-  parsed_log.GetAudioReceiveConfig(index, &parsed_config);
+  rtclog::StreamConfig parsed_config = parsed_log.GetAudioReceiveConfig(index);
   EXPECT_EQ(config.remote_ssrc, parsed_config.remote_ssrc);
   EXPECT_EQ(config.local_ssrc, parsed_config.local_ssrc);
   // Check header extensions.
@@ -345,8 +345,7 @@ void RtcEventLogTestHelper::VerifyAudioSendStreamConfig(
   }
 
   // Check consistency of the parser.
-  rtclog::StreamConfig parsed_config;
-  parsed_log.GetAudioSendConfig(index, &parsed_config);
+  rtclog::StreamConfig parsed_config = parsed_log.GetAudioSendConfig(index);
   VerifyStreamConfigsAreEqual(config, parsed_config);
 }
 

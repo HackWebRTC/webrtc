@@ -114,21 +114,23 @@ class ParsedRtcEventLog {
                      uint8_t* packet,
                      size_t* length) const;
 
-  // Reads a config event to a (non-NULL) StreamConfig struct.
+  // Reads a video receive config event to a StreamConfig struct.
   // Only the fields that are stored in the protobuf will be written.
-  void GetVideoReceiveConfig(size_t index, rtclog::StreamConfig* config) const;
+  rtclog::StreamConfig GetVideoReceiveConfig(size_t index) const;
 
-  // Reads a config event to a (non-NULL) StreamConfig struct.
+  // Reads a video send config event to a StreamConfig struct. If the proto
+  // contains multiple SSRCs and RTX SSRCs (this used to be the case for
+  // simulcast streams) then we return one StreamConfig per SSRC,RTX_SSRC pair.
   // Only the fields that are stored in the protobuf will be written.
-  void GetVideoSendConfig(size_t index, rtclog::StreamConfig* config) const;
+  std::vector<rtclog::StreamConfig> GetVideoSendConfig(size_t index) const;
 
-  // Reads a config event to a (non-NULL) StreamConfig struct.
+  // Reads a audio receive config event to a StreamConfig struct.
   // Only the fields that are stored in the protobuf will be written.
-  void GetAudioReceiveConfig(size_t index, rtclog::StreamConfig* config) const;
+  rtclog::StreamConfig GetAudioReceiveConfig(size_t index) const;
 
-  // Reads a config event to a (non-NULL) StreamConfig struct.
+  // Reads a config event to a StreamConfig struct.
   // Only the fields that are stored in the protobuf will be written.
-  void GetAudioSendConfig(size_t index, rtclog::StreamConfig* config) const;
+  rtclog::StreamConfig GetAudioSendConfig(size_t index) const;
 
   // Reads the SSRC from the audio playout event at |index|. The SSRC is stored
   // in the output parameter ssrc. The output parameter can be set to nullptr
@@ -165,14 +167,11 @@ class ParsedRtcEventLog {
   MediaType GetMediaType(uint32_t ssrc, PacketDirection direction) const;
 
  private:
-  void GetVideoReceiveConfig(const rtclog::Event& event,
-                             rtclog::StreamConfig* config) const;
-  void GetVideoSendConfig(const rtclog::Event& event,
-                          rtclog::StreamConfig* config) const;
-  void GetAudioReceiveConfig(const rtclog::Event& event,
-                             rtclog::StreamConfig* config) const;
-  void GetAudioSendConfig(const rtclog::Event& event,
-                          rtclog::StreamConfig* config) const;
+  rtclog::StreamConfig GetVideoReceiveConfig(const rtclog::Event& event) const;
+  std::vector<rtclog::StreamConfig> GetVideoSendConfig(
+      const rtclog::Event& event) const;
+  rtclog::StreamConfig GetAudioReceiveConfig(const rtclog::Event& event) const;
+  rtclog::StreamConfig GetAudioSendConfig(const rtclog::Event& event) const;
 
   std::vector<rtclog::Event> events_;
 

@@ -352,8 +352,8 @@ int main(int argc, char* argv[]) {
     if (!FLAGS_noconfig && !FLAGS_novideo && !FLAGS_noincoming &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::VIDEO_RECEIVER_CONFIG_EVENT) {
-      webrtc::rtclog::StreamConfig config;
-      parsed_stream.GetVideoReceiveConfig(i, &config);
+      webrtc::rtclog::StreamConfig config =
+          parsed_stream.GetVideoReceiveConfig(i);
       std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_RECV_CONFIG"
                 << "\tssrc=" << config.remote_ssrc
                 << "\tfeedback_ssrc=" << config.local_ssrc << std::endl;
@@ -361,18 +361,20 @@ int main(int argc, char* argv[]) {
     if (!FLAGS_noconfig && !FLAGS_novideo && !FLAGS_nooutgoing &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT) {
-      webrtc::rtclog::StreamConfig config;
-      parsed_stream.GetVideoSendConfig(i, &config);
+      std::vector<webrtc::rtclog::StreamConfig> configs =
+          parsed_stream.GetVideoSendConfig(i);
+      for (size_t j = 0; j < configs.size(); j++) {
         std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_SEND_CONFIG";
-        std::cout << "\tssrcs=" << config.local_ssrc;
-        std::cout << "\trtx_ssrcs=" << config.rtx_ssrc;
+        std::cout << "\tssrcs=" << configs[j].local_ssrc;
+        std::cout << "\trtx_ssrcs=" << configs[j].rtx_ssrc;
         std::cout << std::endl;
+      }
     }
     if (!FLAGS_noconfig && !FLAGS_noaudio && !FLAGS_noincoming &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::AUDIO_RECEIVER_CONFIG_EVENT) {
-      webrtc::rtclog::StreamConfig config;
-      parsed_stream.GetAudioReceiveConfig(i, &config);
+      webrtc::rtclog::StreamConfig config =
+          parsed_stream.GetAudioReceiveConfig(i);
       std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_RECV_CONFIG"
                 << "\tssrc=" << config.remote_ssrc
                 << "\tfeedback_ssrc=" << config.local_ssrc << std::endl;
@@ -380,8 +382,7 @@ int main(int argc, char* argv[]) {
     if (!FLAGS_noconfig && !FLAGS_noaudio && !FLAGS_nooutgoing &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
-      webrtc::rtclog::StreamConfig config;
-      parsed_stream.GetAudioSendConfig(i, &config);
+      webrtc::rtclog::StreamConfig config = parsed_stream.GetAudioSendConfig(i);
       std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_SEND_CONFIG"
                 << "\tssrc=" << config.local_ssrc << std::endl;
     }
