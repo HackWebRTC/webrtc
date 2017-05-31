@@ -126,7 +126,11 @@ int32_t VCMGenericEncoder::RequestFrame(
 
   // TODO(nisse): Used only with internal source. Delete as soon as
   // that feature is removed. The only implementation I've been able
-  // to find ignores what's in the frame.
+  // to find ignores what's in the frame. With one exception: It seems
+  // a few test cases, e.g.,
+  // VideoSendStreamTest.VideoSendStreamStopSetEncoderRateToZero, set
+  // internal_source to true and use FakeEncoder. And the latter will
+  // happily encode this 1x1 frame and pass it on down the pipeline.
   return encoder_->Encode(VideoFrame(I420Buffer::Create(1, 1),
                                      kVideoRotation_0, 0),
                           NULL, &frame_types);

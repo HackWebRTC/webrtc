@@ -587,11 +587,7 @@ void ViEEncoder::OnFrame(const VideoFrame& video_frame) {
   VideoFrame incoming_frame = video_frame;
 
   // Local time in webrtc time base.
-  int64_t current_time_us = clock_->TimeInMicroseconds();
-  int64_t current_time_ms = current_time_us / rtc::kNumMicrosecsPerMillisec;
-  // TODO(nisse): This always overrides the incoming timestamp. Don't
-  // do that, trust the frame source.
-  incoming_frame.set_timestamp_us(current_time_us);
+  int64_t current_time_ms = clock_->TimeInMilliseconds();
 
   // Capture time may come from clock with an offset and drift from clock_.
   int64_t capture_ntp_time_ms;
