@@ -1560,10 +1560,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(SendAccept());
     EXPECT_EQ(rtcp_mux, !channel1_->NeedsRtcpTransport());
     EXPECT_EQ(rtcp_mux, !channel2_->NeedsRtcpTransport());
-    EXPECT_TRUE(channel1_->bundle_filter()->FindPayloadType(pl_type1));
-    EXPECT_TRUE(channel2_->bundle_filter()->FindPayloadType(pl_type1));
-    EXPECT_FALSE(channel1_->bundle_filter()->FindPayloadType(pl_type2));
-    EXPECT_FALSE(channel2_->bundle_filter()->FindPayloadType(pl_type2));
+    EXPECT_TRUE(channel1_->HandlesPayloadType(pl_type1));
+    EXPECT_TRUE(channel2_->HandlesPayloadType(pl_type1));
+    EXPECT_FALSE(channel1_->HandlesPayloadType(pl_type2));
+    EXPECT_FALSE(channel2_->HandlesPayloadType(pl_type2));
 
     // Both channels can receive pl_type1 only.
     SendCustomRtp1(kSsrc1, ++sequence_number1_1, pl_type1);

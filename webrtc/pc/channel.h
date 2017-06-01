@@ -36,7 +36,6 @@
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/p2p/client/socketmonitor.h"
 #include "webrtc/pc/audiomonitor.h"
-#include "webrtc/pc/bundlefilter.h"
 #include "webrtc/pc/mediamonitor.h"
 #include "webrtc/pc/mediasession.h"
 #include "webrtc/pc/rtcpmuxfilter.h"
@@ -149,8 +148,6 @@ class BaseChannel
   // For ConnectionStatsGetter, used by ConnectionMonitor
   bool GetConnectionStats(ConnectionInfos* infos) override;
 
-  BundleFilter* bundle_filter() { return &bundle_filter_; }
-
   const std::vector<StreamParams>& local_streams() const {
     return local_streams_;
   }
@@ -197,6 +194,11 @@ class BaseChannel
 
   // This function returns true if we require SRTP for call setup.
   bool srtp_required_for_testing() const { return srtp_required_; }
+
+  // Public for testing.
+  // TODO(zstein): Remove this once channels register themselves with
+  // an RtpTransport in a more explicit way.
+  bool HandlesPayloadType(int payload_type) const;
 
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_; }
@@ -248,11 +250,6 @@ class BaseChannel
 
   // From TransportChannel
   void OnWritableState(rtc::PacketTransportInternal* transport);
-  virtual void OnPacketRead(rtc::PacketTransportInternal* transport,
-                            const char* data,
-                            size_t len,
-                            const rtc::PacketTime& packet_time,
-                            int flags);
 
   void OnDtlsState(DtlsTransportInternal* transport, DtlsTransportState state);
 
@@ -272,9 +269,13 @@ class BaseChannel
   bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet);
   void HandlePacket(bool rtcp, rtc::CopyOnWriteBuffer* packet,
                     const rtc::PacketTime& packet_time);
-  void OnPacketReceived(bool rtcp,
-                        const rtc::CopyOnWriteBuffer& packet,
-                        const rtc::PacketTime& packet_time);
+  // TODO(zstein): packet can be const once the RtpTransport handles protection.
+  virtual void OnPacketReceived(bool rtcp,
+                                rtc::CopyOnWriteBuffer& packet,
+                                const rtc::PacketTime& packet_time);
+  void ProcessPacket(bool rtcp,
+                     const rtc::CopyOnWriteBuffer& packet,
+                     const rtc::PacketTime& packet_time);
 
   void EnableMedia_w();
   void DisableMedia_w();
@@ -357,6 +358,8 @@ class BaseChannel
     return worker_thread_->Invoke<bool>(posted_from, functor);
   }
 
+  void AddHandledPayloadType(int payload_type);
+
  private:
   bool InitNetwork_n(DtlsTransportInternal* rtp_dtls_transport,
                      DtlsTransportInternal* rtcp_dtls_transport,
@@ -394,7 +397,6 @@ class BaseChannel
   std::vector<std::pair<rtc::Socket::Option, int> > rtcp_socket_options_;
   SrtpFilter srtp_filter_;
   RtcpMuxFilter rtcp_mux_filter_;
-  BundleFilter bundle_filter_;
   bool writable_ = false;
   bool was_ever_writable_ = false;
   bool has_received_packet_ = false;
@@ -496,11 +498,9 @@ class VoiceChannel : public BaseChannel {
 
  private:
   // overrides from BaseChannel
-  void OnPacketRead(rtc::PacketTransportInternal* transport,
-                    const char* data,
-                    size_t len,
-                    const rtc::PacketTime& packet_time,
-                    int flags) override;
+  void OnPacketReceived(bool rtcp,
+                        rtc::CopyOnWriteBuffer& packet,
+                        const rtc::PacketTime& packet_time) override;
   void UpdateMediaSendRecvState_w() override;
   const ContentInfo* GetFirstContent(const SessionDescription* sdesc) override;
   bool SetLocalContent_w(const MediaContentDescription* content,

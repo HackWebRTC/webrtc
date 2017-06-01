@@ -13,11 +13,13 @@
 
 #include "webrtc/api/ortc/rtptransportinterface.h"
 #include "webrtc/base/sigslot.h"
+#include "webrtc/pc/bundlefilter.h"
 
 namespace rtc {
 
 class CopyOnWriteBuffer;
 struct PacketOptions;
+struct PacketTime;
 class PacketTransportInternal;
 
 }  // namespace rtc
@@ -64,11 +66,23 @@ class RtpTransport : public RtpTransportInterface, public sigslot::has_slots<> {
                   const rtc::PacketOptions& options,
                   int flags);
 
+  bool HandlesPayloadType(int payload_type) const;
+
+  void AddHandledPayloadType(int payload_type);
+
+  // TODO(zstein): Consider having two signals - RtcPacketReceived and
+  // RtcpPacketReceived.
+  // The first argument is true for RTCP packets and false for RTP packets.
+  sigslot::signal3<bool, rtc::CopyOnWriteBuffer&, const rtc::PacketTime&>
+      SignalPacketReceived;
+
  protected:
   // TODO(zstein): Remove this when we remove RtpTransportAdapter.
   RtpTransportAdapter* GetInternal() override;
 
  private:
+  bool HandlesPacket(const uint8_t* data, size_t len);
+
   void OnReadyToSend(rtc::PacketTransportInternal* transport);
 
   // Updates "ready to send" for an individual channel and fires
@@ -76,6 +90,14 @@ class RtpTransport : public RtpTransportInterface, public sigslot::has_slots<> {
   void SetReadyToSend(bool rtcp, bool ready);
 
   void MaybeSignalReadyToSend();
+
+  void OnReadPacket(rtc::PacketTransportInternal* transport,
+                    const char* data,
+                    size_t len,
+                    const rtc::PacketTime& packet_time,
+                    int flags);
+
+  bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet);
 
   bool rtcp_mux_enabled_;
 
@@ -87,6 +109,8 @@ class RtpTransport : public RtpTransportInterface, public sigslot::has_slots<> {
   bool rtcp_ready_to_send_ = false;
 
   RtcpParameters rtcp_parameters_;
+
+  cricket::BundleFilter bundle_filter_;
 };
 
 }  // namespace webrtc

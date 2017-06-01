@@ -12,6 +12,8 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/copyonwritebuffer.h"
+#include "webrtc/base/trace_event.h"
+#include "webrtc/media/base/rtputils.h"
 #include "webrtc/p2p/base/packettransportinterface.h"
 
 namespace webrtc {
@@ -28,10 +30,13 @@ void RtpTransport::SetRtpPacketTransport(
   }
   if (rtp_packet_transport_) {
     rtp_packet_transport_->SignalReadyToSend.disconnect(this);
+    rtp_packet_transport_->SignalReadPacket.disconnect(this);
   }
   if (new_packet_transport) {
     new_packet_transport->SignalReadyToSend.connect(
         this, &RtpTransport::OnReadyToSend);
+    new_packet_transport->SignalReadPacket.connect(this,
+                                                   &RtpTransport::OnReadPacket);
   }
   rtp_packet_transport_ = new_packet_transport;
 
@@ -48,10 +53,13 @@ void RtpTransport::SetRtcpPacketTransport(
   }
   if (rtcp_packet_transport_) {
     rtcp_packet_transport_->SignalReadyToSend.disconnect(this);
+    rtcp_packet_transport_->SignalReadPacket.disconnect(this);
   }
   if (new_packet_transport) {
     new_packet_transport->SignalReadyToSend.connect(
         this, &RtpTransport::OnReadyToSend);
+    new_packet_transport->SignalReadPacket.connect(this,
+                                                   &RtpTransport::OnReadPacket);
   }
   rtcp_packet_transport_ = new_packet_transport;
 
@@ -85,6 +93,18 @@ bool RtpTransport::SendPacket(bool rtcp,
     return false;
   }
   return true;
+}
+
+bool RtpTransport::HandlesPacket(const uint8_t* data, size_t len) {
+  return bundle_filter_.DemuxPacket(data, len);
+}
+
+bool RtpTransport::HandlesPayloadType(int payload_type) const {
+  return bundle_filter_.FindPayloadType(payload_type);
+}
+
+void RtpTransport::AddHandledPayloadType(int payload_type) {
+  bundle_filter_.AddPayloadType(payload_type);
 }
 
 PacketTransportInterface* RtpTransport::GetRtpPacketTransport() const {
@@ -140,6 +160,53 @@ void RtpTransport::MaybeSignalReadyToSend() {
     ready_to_send_ = ready_to_send;
     SignalReadyToSend(ready_to_send);
   }
+}
+
+// Check the RTP payload type.  If 63 < payload type < 96, it's RTCP.
+// For additional details, see http://tools.ietf.org/html/rfc5761.
+bool IsRtcp(const char* data, int len) {
+  if (len < 2) {
+    return false;
+  }
+  char pt = data[1] & 0x7F;
+  return (63 < pt) && (pt < 96);
+}
+
+void RtpTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
+                                const char* data,
+                                size_t len,
+                                const rtc::PacketTime& packet_time,
+                                int flags) {
+  TRACE_EVENT0("webrtc", "RtpTransport::OnReadPacket");
+
+  // When using RTCP multiplexing we might get RTCP packets on the RTP
+  // transport. We check the RTP payload type to determine if it is RTCP.
+  bool rtcp = transport == rtcp_packet_transport() ||
+              IsRtcp(data, static_cast<int>(len));
+  rtc::CopyOnWriteBuffer packet(data, len);
+
+  if (!WantsPacket(rtcp, &packet)) {
+    return;
+  }
+
+  // This mutates |packet| if it is protected.
+  SignalPacketReceived(rtcp, packet, packet_time);
+}
+
+bool RtpTransport::WantsPacket(bool rtcp,
+                               const rtc::CopyOnWriteBuffer* packet) {
+  // Protect ourselves against crazy data.
+  if (!packet || !cricket::IsValidRtpRtcpPacketSize(rtcp, packet->size())) {
+    LOG(LS_ERROR) << "Dropping incoming " << cricket::RtpRtcpStringLiteral(rtcp)
+                  << " packet: wrong size=" << packet->size();
+    return false;
+  }
+  if (rtcp) {
+    // Permit all (seemingly valid) RTCP packets.
+    return true;
+  }
+  // Check whether we handle this payload.
+  return HandlesPacket(packet->data(), packet->size());
 }
 
 }  // namespace webrtc
