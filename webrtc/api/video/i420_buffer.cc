@@ -77,7 +77,7 @@ rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width,
 
 // static
 rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
-    const VideoFrameBuffer& source) {
+    const I420BufferInterface& source) {
   return Copy(source.width(), source.height(),
               source.DataY(), source.StrideY(),
               source.DataU(), source.StrideU(),
@@ -104,7 +104,8 @@ rtc::scoped_refptr<I420Buffer> I420Buffer::Copy(
 
 // static
 rtc::scoped_refptr<I420Buffer> I420Buffer::Rotate(
-    const VideoFrameBuffer& src, VideoRotation rotation) {
+    const I420BufferInterface& src,
+    VideoRotation rotation) {
   RTC_CHECK(src.DataY());
   RTC_CHECK(src.DataU());
   RTC_CHECK(src.DataV());
@@ -183,12 +184,11 @@ void I420Buffer::SetBlack(I420Buffer* buffer) {
                              0, 128, 128) == 0);
 }
 
-void I420Buffer::CropAndScaleFrom(
-    const VideoFrameBuffer& src,
-    int offset_x,
-    int offset_y,
-    int crop_width,
-    int crop_height) {
+void I420Buffer::CropAndScaleFrom(const I420BufferInterface& src,
+                                  int offset_x,
+                                  int offset_y,
+                                  int crop_width,
+                                  int crop_height) {
   RTC_CHECK_LE(crop_width, src.width());
   RTC_CHECK_LE(crop_height, src.height());
   RTC_CHECK_LE(crop_width + offset_x, src.width());
@@ -220,8 +220,7 @@ void I420Buffer::CropAndScaleFrom(
   RTC_DCHECK_EQ(res, 0);
 }
 
-void I420Buffer::CropAndScaleFrom(
-    const VideoFrameBuffer& src) {
+void I420Buffer::CropAndScaleFrom(const I420BufferInterface& src) {
   const int crop_width =
       std::min(src.width(), width() * src.height() / height());
   const int crop_height =
@@ -233,7 +232,7 @@ void I420Buffer::CropAndScaleFrom(
       crop_width, crop_height);
 }
 
-void I420Buffer::ScaleFrom(const VideoFrameBuffer& src) {
+void I420Buffer::ScaleFrom(const I420BufferInterface& src) {
   CropAndScaleFrom(src, 0, 0, src.width(), src.height());
 }
 

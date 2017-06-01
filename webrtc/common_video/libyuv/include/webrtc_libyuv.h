@@ -50,9 +50,9 @@ size_t CalcBufferSize(VideoType type, int width, int height);
 //                    already open for writing.
 // Return value: 0 if OK, < 0 otherwise.
 int PrintVideoFrame(const VideoFrame& frame, FILE* file);
-int PrintVideoFrame(const VideoFrameBuffer& frame, FILE* file);
+int PrintVideoFrame(const I420BufferInterface& frame, FILE* file);
 
-// Extract buffer from VideoFrame or VideoFrameBuffer (consecutive
+// Extract buffer from VideoFrame or I420BufferInterface (consecutive
 // planes, no stride)
 // Input:
 //   - frame       : Reference to video frame.
@@ -60,7 +60,7 @@ int PrintVideoFrame(const VideoFrameBuffer& frame, FILE* file);
 //                   insufficient, an error will be returned.
 //   - buffer      : Pointer to buffer
 // Return value: length of buffer if OK, < 0 otherwise.
-int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
+int ExtractBuffer(const rtc::scoped_refptr<I420BufferInterface>& input_frame,
                   size_t size,
                   uint8_t* buffer);
 int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer);
@@ -108,13 +108,13 @@ int ConvertFromI420(const VideoFrame& src_frame,
 // Compute PSNR for an I420 frame (all planes).
 // Returns the PSNR in decibel, to a maximum of kInfinitePSNR.
 double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame);
-double I420PSNR(const VideoFrameBuffer& ref_buffer,
-                const VideoFrameBuffer& test_buffer);
+double I420PSNR(const I420BufferInterface& ref_buffer,
+                const I420BufferInterface& test_buffer);
 
 // Compute SSIM for an I420 frame (all planes).
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame);
-double I420SSIM(const VideoFrameBuffer& ref_buffer,
-                const VideoFrameBuffer& test_buffer);
+double I420SSIM(const I420BufferInterface& ref_buffer,
+                const I420BufferInterface& test_buffer);
 
 // Helper function for scaling NV12 to NV12.
 void NV12Scale(std::vector<uint8_t>* tmp_buffer,

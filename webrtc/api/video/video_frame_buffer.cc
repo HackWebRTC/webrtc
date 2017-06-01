@@ -26,7 +26,7 @@ namespace {
 // VideoFrameBuffer) vs ToI420 (returns I420BufferInterface).
 class I420InterfaceAdapter : public I420BufferInterface {
  public:
-  explicit I420InterfaceAdapter(rtc::scoped_refptr<VideoFrameBuffer> buffer)
+  explicit I420InterfaceAdapter(const VideoFrameBuffer* buffer)
       : buffer_(buffer) {}
 
   int width() const override { return buffer_->width(); }
@@ -41,7 +41,7 @@ class I420InterfaceAdapter : public I420BufferInterface {
   int StrideV() const override { return buffer_->StrideV(); }
 
  private:
-  rtc::scoped_refptr<VideoFrameBuffer> buffer_;
+  rtc::scoped_refptr<const VideoFrameBuffer> buffer_;
 };
 
 }  // namespace
@@ -54,28 +54,28 @@ VideoFrameBuffer::Type VideoFrameBuffer::type() const {
 }
 
 const uint8_t* VideoFrameBuffer::DataY() const {
-  return const_cast<VideoFrameBuffer*>(this)->GetI420()->DataY();
+  return GetI420()->DataY();
 }
 
 const uint8_t* VideoFrameBuffer::DataU() const {
-  return const_cast<VideoFrameBuffer*>(this)->GetI420()->DataU();
+  return GetI420()->DataU();
 }
 
 const uint8_t* VideoFrameBuffer::DataV() const {
-  return const_cast<VideoFrameBuffer*>(this)->GetI420()->DataV();
+  return GetI420()->DataV();
 }
 
 // Returns the number of bytes between successive rows for a given plane.
 int VideoFrameBuffer::StrideY() const {
-  return const_cast<VideoFrameBuffer*>(this)->GetI420()->StrideY();
+  return GetI420()->StrideY();
 }
 
 int VideoFrameBuffer::StrideU() const {
-  return const_cast<VideoFrameBuffer*>(this)->GetI420()->StrideU();
+  return GetI420()->StrideU();
 }
 
 int VideoFrameBuffer::StrideV() const {
-  return const_cast<VideoFrameBuffer*>(this)->GetI420()->StrideV();
+  return GetI420()->StrideV();
 }
 
 void* VideoFrameBuffer::native_handle() const {
@@ -98,9 +98,22 @@ rtc::scoped_refptr<I420BufferInterface> VideoFrameBuffer::GetI420() {
   return new rtc::RefCountedObject<I420InterfaceAdapter>(this);
 }
 
-rtc::scoped_refptr<I444BufferInterface> VideoFrameBuffer::GetI444() {
+rtc::scoped_refptr<const I420BufferInterface> VideoFrameBuffer::GetI420()
+    const {
+  RTC_CHECK(type() == Type::kI420);
+  // TODO(magjed): static_cast to I420BufferInterface instead once external
+  // clients are updated.
+  return new rtc::RefCountedObject<I420InterfaceAdapter>(this);
+}
+
+I444BufferInterface* VideoFrameBuffer::GetI444() {
   RTC_CHECK(type() == Type::kI444);
   return static_cast<I444BufferInterface*>(this);
+}
+
+const I444BufferInterface* VideoFrameBuffer::GetI444() const {
+  RTC_CHECK(type() == Type::kI444);
+  return static_cast<const I444BufferInterface*>(this);
 }
 
 VideoFrameBuffer::Type I420BufferInterface::type() const {

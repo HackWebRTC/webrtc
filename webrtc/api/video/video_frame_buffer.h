@@ -63,8 +63,12 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
 
   // These functions should only be called if type() is of the correct type.
   // Calling with a different type will result in a crash.
+  // TODO(magjed): Return raw pointers for GetI420 once deprecated interface is
+  // removed.
   rtc::scoped_refptr<I420BufferInterface> GetI420();
-  rtc::scoped_refptr<I444BufferInterface> GetI444();
+  rtc::scoped_refptr<const I420BufferInterface> GetI420() const;
+  I444BufferInterface* GetI444();
+  const I444BufferInterface* GetI444() const;
 
   // Deprecated - use ToI420() first instead.
   // Returns pointer to the pixel data for a given plane. The memory is owned by

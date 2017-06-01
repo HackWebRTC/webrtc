@@ -53,7 +53,8 @@ void ObjcVideoTrackSource::OnCapturedFrame(RTCVideoFrame* frame) {
     // Adapted I420 frame.
     // TODO(magjed): Optimize this I420 path.
     rtc::scoped_refptr<I420Buffer> i420_buffer = I420Buffer::Create(adapted_width, adapted_height);
-    i420_buffer->CropAndScaleFrom(*frame.videoBuffer, crop_x, crop_y, crop_width, crop_height);
+    i420_buffer->CropAndScaleFrom(
+        *frame.videoBuffer->ToI420(), crop_x, crop_y, crop_width, crop_height);
     buffer = i420_buffer;
   }
 
@@ -61,7 +62,7 @@ void ObjcVideoTrackSource::OnCapturedFrame(RTCVideoFrame* frame) {
   // not critical here.
   webrtc::VideoRotation rotation = static_cast<webrtc::VideoRotation>(frame.rotation);
   if (apply_rotation() && rotation != kVideoRotation_0) {
-    buffer = I420Buffer::Rotate(*buffer->NativeToI420Buffer(), rotation);
+    buffer = I420Buffer::Rotate(*buffer->ToI420(), rotation);
     rotation = kVideoRotation_0;
   }
 

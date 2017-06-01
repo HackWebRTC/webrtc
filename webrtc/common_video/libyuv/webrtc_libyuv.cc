@@ -70,11 +70,11 @@ static int PrintPlane(const uint8_t* buf,
 }
 
 // TODO(nisse): Belongs with the test code?
-int PrintVideoFrame(const VideoFrameBuffer& frame, FILE* file) {
+int PrintVideoFrame(const I420BufferInterface& frame, FILE* file) {
   int width = frame.width();
   int height = frame.height();
-  int chroma_width = (width + 1) / 2;
-  int chroma_height = (height + 1) / 2;
+  int chroma_width = frame.ChromaWidth();
+  int chroma_height = frame.ChromaHeight();
 
   if (PrintPlane(frame.DataY(), width, height,
                  frame.StrideY(), file) < 0) {
@@ -94,10 +94,10 @@ int PrintVideoFrame(const VideoFrameBuffer& frame, FILE* file) {
 }
 
 int PrintVideoFrame(const VideoFrame& frame, FILE* file) {
-  return PrintVideoFrame(*frame.video_frame_buffer(), file);
+  return PrintVideoFrame(*frame.video_frame_buffer()->ToI420(), file);
 }
 
-int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
+int ExtractBuffer(const rtc::scoped_refptr<I420BufferInterface>& input_frame,
                   size_t size,
                   uint8_t* buffer) {
   RTC_DCHECK(buffer);
@@ -110,8 +110,8 @@ int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
      return -1;
   }
 
-  int chroma_width = (width + 1) / 2;
-  int chroma_height = (height + 1) / 2;
+  int chroma_width = input_frame->ChromaWidth();
+  int chroma_height = input_frame->ChromaHeight();
 
   libyuv::I420Copy(input_frame->DataY(),
                    input_frame->StrideY(),
@@ -129,7 +129,8 @@ int ExtractBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& input_frame,
 }
 
 int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer) {
-  return ExtractBuffer(input_frame.video_frame_buffer(), size, buffer);
+  return ExtractBuffer(input_frame.video_frame_buffer()->ToI420(), size,
+                       buffer);
 }
 
 int ConvertNV12ToRGB565(const uint8_t* src_frame,
@@ -240,21 +241,18 @@ int ConvertFromI420(const VideoFrame& src_frame,
                     VideoType dst_video_type,
                     int dst_sample_size,
                     uint8_t* dst_frame) {
+  rtc::scoped_refptr<I420BufferInterface> i420_buffer =
+      src_frame.video_frame_buffer()->ToI420();
   return libyuv::ConvertFromI420(
-      src_frame.video_frame_buffer()->DataY(),
-      src_frame.video_frame_buffer()->StrideY(),
-      src_frame.video_frame_buffer()->DataU(),
-      src_frame.video_frame_buffer()->StrideU(),
-      src_frame.video_frame_buffer()->DataV(),
-      src_frame.video_frame_buffer()->StrideV(),
-      dst_frame, dst_sample_size,
-      src_frame.width(), src_frame.height(),
+      i420_buffer->DataY(), i420_buffer->StrideY(), i420_buffer->DataU(),
+      i420_buffer->StrideU(), i420_buffer->DataV(), i420_buffer->StrideV(),
+      dst_frame, dst_sample_size, src_frame.width(), src_frame.height(),
       ConvertVideoType(dst_video_type));
 }
 
 // Compute PSNR for an I420 frame (all planes). Can upscale test frame.
-double I420PSNR(const VideoFrameBuffer& ref_buffer,
-                const VideoFrameBuffer& test_buffer) {
+double I420PSNR(const I420BufferInterface& ref_buffer,
+                const I420BufferInterface& test_buffer) {
   RTC_DCHECK_GE(ref_buffer.width(), test_buffer.width());
   RTC_DCHECK_GE(ref_buffer.height(), test_buffer.height());
   if ((ref_buffer.width() != test_buffer.width()) ||
@@ -279,13 +277,13 @@ double I420PSNR(const VideoFrameBuffer& ref_buffer,
 double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
   if (!ref_frame || !test_frame)
     return -1;
-  return I420PSNR(*ref_frame->video_frame_buffer(),
-                  *test_frame->video_frame_buffer());
+  return I420PSNR(*ref_frame->video_frame_buffer()->ToI420(),
+                  *test_frame->video_frame_buffer()->ToI420());
 }
 
 // Compute SSIM for an I420 frame (all planes). Can upscale test_buffer.
-double I420SSIM(const VideoFrameBuffer& ref_buffer,
-                const VideoFrameBuffer& test_buffer) {
+double I420SSIM(const I420BufferInterface& ref_buffer,
+                const I420BufferInterface& test_buffer) {
   RTC_DCHECK_GE(ref_buffer.width(), test_buffer.width());
   RTC_DCHECK_GE(ref_buffer.height(), test_buffer.height());
   if ((ref_buffer.width() != test_buffer.width()) ||
@@ -305,8 +303,8 @@ double I420SSIM(const VideoFrameBuffer& ref_buffer,
 double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
   if (!ref_frame || !test_frame)
     return -1;
-  return I420SSIM(*ref_frame->video_frame_buffer(),
-                  *test_frame->video_frame_buffer());
+  return I420SSIM(*ref_frame->video_frame_buffer()->ToI420(),
+                  *test_frame->video_frame_buffer()->ToI420());
 }
 
 void NV12Scale(std::vector<uint8_t>* tmp_buffer,

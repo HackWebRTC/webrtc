@@ -157,7 +157,7 @@ class TestVp8Impl : public ::testing::Test {
     // Processing only one frame.
     source_file_ = fopen(test::ResourcePath("paris_qcif", "yuv").c_str(), "rb");
     ASSERT_TRUE(source_file_ != nullptr);
-    rtc::scoped_refptr<VideoFrameBuffer> compact_buffer(
+    rtc::scoped_refptr<I420BufferInterface> compact_buffer(
         test::ReadI420Buffer(kWidth, kHeight, source_file_));
     ASSERT_TRUE(compact_buffer);
     codec_settings_.width = kWidth;

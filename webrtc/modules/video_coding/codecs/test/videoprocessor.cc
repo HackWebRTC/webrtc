@@ -256,7 +256,7 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
       << "Must process frames without gaps.";
   RTC_DCHECK(initialized_) << "Attempting to use uninitialized VideoProcessor";
 
-  rtc::scoped_refptr<VideoFrameBuffer> buffer(
+  rtc::scoped_refptr<I420BufferInterface> buffer(
       analysis_frame_reader_->ReadFrame());
 
   if (!buffer) {
@@ -483,12 +483,7 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
     rtc::scoped_refptr<I420Buffer> scaled_buffer(I420Buffer::Create(
         config_.codec_settings->width, config_.codec_settings->height));
     // Should be the same aspect ratio, no cropping needed.
-    if (image.video_frame_buffer()->native_handle()) {
-      scaled_buffer->ScaleFrom(
-          *image.video_frame_buffer()->NativeToI420Buffer());
-    } else {
-      scaled_buffer->ScaleFrom(*image.video_frame_buffer());
-    }
+    scaled_buffer->ScaleFrom(*image.video_frame_buffer()->ToI420());
 
     size_t length = CalcBufferSize(VideoType::kI420, scaled_buffer->width(),
                                    scaled_buffer->height());
@@ -500,14 +495,8 @@ void VideoProcessorImpl::FrameDecoded(const VideoFrame& image) {
     size_t length =
         CalcBufferSize(VideoType::kI420, image.width(), image.height());
     extracted_buffer.SetSize(length);
-    if (image.video_frame_buffer()->native_handle()) {
-      extracted_length =
-          ExtractBuffer(image.video_frame_buffer()->NativeToI420Buffer(),
-                        length, extracted_buffer.data());
-    } else {
-      extracted_length = ExtractBuffer(image.video_frame_buffer(), length,
-                                       extracted_buffer.data());
-    }
+    extracted_length = ExtractBuffer(image.video_frame_buffer()->ToI420(),
+                                     length, extracted_buffer.data());
   }
 
   RTC_DCHECK_EQ(extracted_length, analysis_frame_writer_->FrameLength());

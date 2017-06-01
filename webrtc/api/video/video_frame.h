@@ -98,7 +98,7 @@ class VideoFrame {
   // TODO(nisse): Deprecated.
   // Return true if the frame is stored in a texture.
   bool is_texture() const {
-    return video_frame_buffer()->native_handle() != nullptr;
+    return video_frame_buffer()->type() == VideoFrameBuffer::Type::kNative;
   }
 
  private:

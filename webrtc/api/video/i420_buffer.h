@@ -30,7 +30,11 @@ class I420Buffer : public I420BufferInterface {
                                                int stride_v);
 
   // Create a new buffer and copy the pixel data.
-  static rtc::scoped_refptr<I420Buffer> Copy(const VideoFrameBuffer& buffer);
+  static rtc::scoped_refptr<I420Buffer> Copy(const I420BufferInterface& buffer);
+  // Deprecated.
+  static rtc::scoped_refptr<I420Buffer> Copy(const VideoFrameBuffer& buffer) {
+    return Copy(*buffer.GetI420());
+  }
 
   static rtc::scoped_refptr<I420Buffer> Copy(
       int width, int height,
@@ -39,8 +43,13 @@ class I420Buffer : public I420BufferInterface {
       const uint8_t* data_v, int stride_v);
 
   // Returns a rotated copy of |src|.
-  static rtc::scoped_refptr<I420Buffer> Rotate(const VideoFrameBuffer& src,
+  static rtc::scoped_refptr<I420Buffer> Rotate(const I420BufferInterface& src,
                                                VideoRotation rotation);
+  // Deprecated.
+  static rtc::scoped_refptr<I420Buffer> Rotate(const VideoFrameBuffer& src,
+                                               VideoRotation rotation) {
+    return Rotate(*src.GetI420(), rotation);
+  }
 
   // Sets the buffer to all black.
   static void SetBlack(I420Buffer* buffer);
@@ -69,7 +78,7 @@ class I420Buffer : public I420BufferInterface {
 
   // Scale the cropped area of |src| to the size of |this| buffer, and
   // write the result into |this|.
-  void CropAndScaleFrom(const VideoFrameBuffer& src,
+  void CropAndScaleFrom(const I420BufferInterface& src,
                         int offset_x,
                         int offset_y,
                         int crop_width,
@@ -77,10 +86,10 @@ class I420Buffer : public I420BufferInterface {
 
   // The common case of a center crop, when needed to adjust the
   // aspect ratio without distorting the image.
-  void CropAndScaleFrom(const VideoFrameBuffer& src);
+  void CropAndScaleFrom(const I420BufferInterface& src);
 
   // Scale all of |src| to the size of |this| buffer, with no cropping.
-  void ScaleFrom(const VideoFrameBuffer& src);
+  void ScaleFrom(const I420BufferInterface& src);
 
  protected:
   I420Buffer(int width, int height);

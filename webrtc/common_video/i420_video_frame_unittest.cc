@@ -33,8 +33,8 @@ rtc::scoped_refptr<I420Buffer> CreateGradient(int width, int height) {
           128 * (x * height + y * width) / (width * height);
     }
   }
-  int chroma_width = (width + 1) / 2;
-  int chroma_height = (height + 1) / 2;
+  int chroma_width = buffer->ChromaWidth();
+  int chroma_height = buffer->ChromaHeight();
   for (int x = 0; x < chroma_width; x++) {
     for (int y = 0; y < chroma_height; y++) {
       buffer->MutableDataU()[x + y * chroma_width] =
@@ -49,7 +49,7 @@ rtc::scoped_refptr<I420Buffer> CreateGradient(int width, int height) {
 // The offsets and sizes describe the rectangle extracted from the
 // original (gradient) frame, in relative coordinates where the
 // original frame correspond to the unit square, 0.0 <= x, y < 1.0.
-void CheckCrop(const webrtc::VideoFrameBuffer& frame,
+void CheckCrop(const webrtc::I420BufferInterface& frame,
                double offset_x,
                double offset_y,
                double rel_width,
@@ -78,8 +78,10 @@ void CheckCrop(const webrtc::VideoFrameBuffer& frame,
   }
 }
 
-void CheckRotate(int width, int height, webrtc::VideoRotation rotation,
-                 const webrtc::VideoFrameBuffer& rotated) {
+void CheckRotate(int width,
+                 int height,
+                 webrtc::VideoRotation rotation,
+                 const webrtc::I420BufferInterface& rotated) {
   int rotated_width = width;
   int rotated_height = height;
 
@@ -160,12 +162,13 @@ TEST(TestVideoFrame, ShallowCopy) {
   VideoFrame frame2(frame1);
 
   EXPECT_EQ(frame1.video_frame_buffer(), frame2.video_frame_buffer());
-  EXPECT_EQ(frame1.video_frame_buffer()->DataY(),
-            frame2.video_frame_buffer()->DataY());
-  EXPECT_EQ(frame1.video_frame_buffer()->DataU(),
-            frame2.video_frame_buffer()->DataU());
-  EXPECT_EQ(frame1.video_frame_buffer()->DataV(),
-            frame2.video_frame_buffer()->DataV());
+  rtc::scoped_refptr<I420BufferInterface> yuv1 =
+      frame1.video_frame_buffer()->GetI420();
+  rtc::scoped_refptr<I420BufferInterface> yuv2 =
+      frame2.video_frame_buffer()->GetI420();
+  EXPECT_EQ(yuv1->DataY(), yuv2->DataY());
+  EXPECT_EQ(yuv1->DataU(), yuv2->DataU());
+  EXPECT_EQ(yuv1->DataV(), yuv2->DataV());
 
   EXPECT_EQ(frame2.timestamp(), frame1.timestamp());
   EXPECT_EQ(frame2.ntp_time_ms(), frame1.ntp_time_ms());
@@ -280,8 +283,8 @@ class TestI420BufferRotate
     : public ::testing::TestWithParam<webrtc::VideoRotation> {};
 
 TEST_P(TestI420BufferRotate, Rotates) {
-  rtc::scoped_refptr<VideoFrameBuffer> buffer = CreateGradient(640, 480);
-  rtc::scoped_refptr<VideoFrameBuffer> rotated_buffer =
+  rtc::scoped_refptr<I420BufferInterface> buffer = CreateGradient(640, 480);
+  rtc::scoped_refptr<I420BufferInterface> rotated_buffer =
       I420Buffer::Rotate(*buffer, GetParam());
   CheckRotate(640, 480, GetParam(), *rotated_buffer);
 }
