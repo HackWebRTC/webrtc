@@ -37,6 +37,7 @@ check_targets = [
   "//webrtc/sdk/*",
   "//webrtc/stats/*",
   "//webrtc/system_wrappers/*",
+  "//webrtc/test/*",
   "//webrtc/tools/*",
   "//webrtc/video/*",
   "//webrtc/voice_engine/*",
