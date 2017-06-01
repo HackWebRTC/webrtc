@@ -39,9 +39,7 @@ public class NetworkMonitor {
   private static final String TAG = "NetworkMonitor";
 
   // We are storing application context so it is okay.
-  @SuppressLint("StaticFieldLeak") private static NetworkMonitor instance;
-
-  private final Context applicationContext;
+  private static NetworkMonitor instance;
 
   // Native observers of the connection type changes.
   private final ArrayList<Long> nativeNetworkObservers;
@@ -53,33 +51,22 @@ public class NetworkMonitor {
 
   private ConnectionType currentConnectionType = ConnectionType.CONNECTION_UNKNOWN;
 
-  private NetworkMonitor(Context context) {
-    assertIsTrue(context != null);
-    applicationContext = context.getApplicationContext();
-
+  private NetworkMonitor() {
     nativeNetworkObservers = new ArrayList<Long>();
     networkObservers = new ArrayList<NetworkObserver>();
   }
 
-  /**
-   * Initializes the singleton once.
-   * Called from the native code.
-   */
-  public static NetworkMonitor init(Context context) {
-    if (!isInitialized()) {
-      instance = new NetworkMonitor(context);
-    }
-    return instance;
-  }
-
-  public static boolean isInitialized() {
-    return instance != null;
-  }
+  // TODO(sakal): Remove once downstream dependencies have been updated.
+  @Deprecated
+  public static void init(Context context) {}
 
   /**
    * Returns the singleton instance.
    */
   public static NetworkMonitor getInstance() {
+    if (instance == null) {
+      instance = new NetworkMonitor();
+    }
     return instance;
   }
 
@@ -163,7 +150,7 @@ public class NetworkMonitor {
         public void onNetworkDisconnect(long networkHandle) {
           notifyObserversOfNetworkDisconnect(networkHandle);
         }
-      }, applicationContext);
+      }, ContextUtils.getApplicationContext());
       final NetworkMonitorAutoDetect.NetworkState networkState =
           autoDetector.getCurrentNetworkState();
       updateCurrentConnectionType(NetworkMonitorAutoDetect.getConnectionType(networkState));
@@ -250,8 +237,8 @@ public class NetworkMonitor {
       long nativePtr, NetworkInformation[] networkInfos);
 
   // For testing only.
-  static void resetInstanceForTests(Context context) {
-    instance = new NetworkMonitor(context);
+  static void resetInstanceForTests() {
+    instance = new NetworkMonitor();
   }
 
   // For testing only.

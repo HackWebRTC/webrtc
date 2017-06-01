@@ -1145,7 +1145,6 @@ JOW(void, PeerConnectionFactory_nativeInitializeAndroidGlobals)
  jobject context,
  jboolean video_hw_acceleration) {
   video_hw_acceleration_enabled = video_hw_acceleration;
-  AndroidNetworkMonitor::SetAndroidContext(jni, context);
   if (!factory_static_initialized) {
     RTC_DCHECK(j_application_context == nullptr);
     j_application_context = NewGlobalRef(jni, context);
