@@ -15,13 +15,7 @@
 namespace webrtc {
 
 class RtpPacketReceived;
-
-// This class represents a receiver of an already parsed RTP packets.
-class RtpPacketSinkInterface {
- public:
-  virtual ~RtpPacketSinkInterface() {}
-  virtual void OnRtpPacket(const RtpPacketReceived& packet) = 0;
-};
+class RtpPacketSinkInterface;
 
 // This class represents the RTP demuxing, for a single RTP session (i.e., one
 // ssrc space, see RFC 7656). It isn't thread aware, leaving responsibility of

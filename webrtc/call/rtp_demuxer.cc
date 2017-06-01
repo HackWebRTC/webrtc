@@ -10,6 +10,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/call/rtp_demuxer.h"
+#include "webrtc/call/rtp_packet_sink_interface.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {

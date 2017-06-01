@@ -19,7 +19,7 @@
 #include "webrtc/base/constructormagic.h"
 #include "webrtc/base/thread_checker.h"
 #include "webrtc/call/audio_receive_stream.h"
-#include "webrtc/call/rtp_demuxer.h"
+#include "webrtc/call/rtp_packet_sink_interface.h"
 #include "webrtc/call/syncable.h"
 
 namespace webrtc {

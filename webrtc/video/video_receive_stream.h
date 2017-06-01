@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "webrtc/base/thread_checker.h"
-#include "webrtc/call/rtp_demuxer.h"
+#include "webrtc/call/rtp_packet_sink_interface.h"
 #include "webrtc/call/syncable.h"
 #include "webrtc/common_video/include/incoming_video_stream.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"

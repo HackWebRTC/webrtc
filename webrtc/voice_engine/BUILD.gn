@@ -144,13 +144,10 @@ rtc_static_library("voice_engine") {
     "../audio/utility:audio_frame_operations",
     "../base:rtc_base_approved",
     "../base:rtc_task_queue",
-    "../modules:module_api",
-
-    # TODO(nisse): Delete when declaration of RtpTransportController
-    # and related interfaces move to api/.
-    "../call:call_interfaces",
+    "../call:rtp_interfaces",
     "../common_audio",
     "../logging:rtc_event_log_api",
+    "../modules:module_api",
     "../modules/audio_coding:audio_format_conversion",
     "../modules/audio_coding:rent_a_codec",
     "../modules/audio_conference_mixer",

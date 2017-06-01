@@ -62,6 +62,7 @@ rtc_static_library("video") {
     "../base:rtc_numerics",
     "../base:rtc_task_queue",
     "../call:call_interfaces",
+    "../call:rtp_interfaces",
     "../common_video",
     "../logging:rtc_event_log_api",
     "../media:rtc_media_base",

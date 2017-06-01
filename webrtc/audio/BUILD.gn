@@ -40,6 +40,7 @@ rtc_static_library("audio") {
     "../base:rtc_base_approved",
     "../base:rtc_task_queue",
     "../call:call_interfaces",
+    "../call:rtp_interfaces",
     "../common_audio",
     "../modules/audio_coding:cng",
     "../modules/audio_device",

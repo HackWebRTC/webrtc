@@ -13,7 +13,7 @@
 
 #include <map>
 
-#include "webrtc/call/rtp_demuxer.h"
+#include "webrtc/call/rtp_packet_sink_interface.h"
 
 namespace webrtc {
 
