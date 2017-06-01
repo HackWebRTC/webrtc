@@ -23,7 +23,6 @@
 #include "webrtc/video/call_stats.h"
 #include "webrtc/video/video_receive_stream.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/field_trial.h"
 
 using testing::_;

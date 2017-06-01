@@ -19,7 +19,6 @@
 #include "webrtc/base/task_queue.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/sleep.h"
 #include "webrtc/test/frame_generator.h"
 #include "webrtc/video_send_stream.h"
 
