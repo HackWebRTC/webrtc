@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
@@ -103,7 +103,7 @@ public class PeerConnectionClient {
   private static final PeerConnectionClient instance = new PeerConnectionClient();
   private final PCObserver pcObserver = new PCObserver();
   private final SDPObserver sdpObserver = new SDPObserver();
-  private final ScheduledExecutorService executor;
+  private final ExecutorService executor;
 
   private PeerConnectionFactory factory;
   private PeerConnection peerConnection;
@@ -289,7 +289,7 @@ public class PeerConnectionClient {
     // Executor thread is started once in private ctor and is used for all
     // peer connection API calls to ensure new peer connection factory is
     // created on the same thread as previously destroyed factory.
-    executor = Executors.newSingleThreadScheduledExecutor();
+    executor = Executors.newSingleThreadExecutor();
   }
 
   public static PeerConnectionClient getInstance() {
