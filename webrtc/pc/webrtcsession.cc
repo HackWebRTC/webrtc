@@ -631,6 +631,7 @@ bool WebRtcSession::Initialize(
 void WebRtcSession::Close() {
   SetState(STATE_CLOSED);
   RemoveUnusedChannels(nullptr);
+  call_ = nullptr;
   RTC_DCHECK(!voice_channel_);
   RTC_DCHECK(!video_channel_);
   RTC_DCHECK(!rtp_data_channel_);
@@ -1895,6 +1896,15 @@ bool WebRtcSession::CreateDataChannel(const cricket::ContentInfo* content,
   return true;
 }
 
+Call::Stats WebRtcSession::GetCallStats() {
+  if (!worker_thread()->IsCurrent()) {
+    return worker_thread()->Invoke<Call::Stats>(
+        RTC_FROM_HERE, rtc::Bind(&WebRtcSession::GetCallStats, this));
+  }
+  RTC_DCHECK(call_);
+  return call_->GetStats();
+}
+
 std::unique_ptr<SessionStats> WebRtcSession::GetStats_n(
     const ChannelNamePairs& channel_name_pairs) {
   RTC_DCHECK(network_thread()->IsCurrent());
@@ -2317,6 +2327,7 @@ void WebRtcSession::ReportNegotiatedCiphers(
 
 void WebRtcSession::OnSentPacket_w(const rtc::SentPacket& sent_packet) {
   RTC_DCHECK(worker_thread()->IsCurrent());
+  RTC_DCHECK(call_);
   call_->OnSentPacket(sent_packet);
 }
 
