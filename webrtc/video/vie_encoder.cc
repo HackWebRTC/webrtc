@@ -230,7 +230,7 @@ class ViEEncoder::VideoSourceProxy {
   bool RequestResolutionLowerThan(int pixel_count) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
-    if (!IsResolutionScalingEnabledLocked()) {
+    if (!IsResolutionScalingEnabled(degradation_preference_)) {
       // This can happen since |degradation_preference_| is set on libjingle's
       // worker thread but the adaptation is done on the encoder task queue.
       return false;
@@ -252,7 +252,7 @@ class ViEEncoder::VideoSourceProxy {
   void RequestFramerateLowerThan(int framerate_fps) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
-    if (!IsFramerateScalingEnabledLocked()) {
+    if (!IsFramerateScalingEnabled(degradation_preference_)) {
       // This can happen since |degradation_preference_| is set on libjingle's
       // worker thread but the adaptation is done on the encoder task queue.
       return;
@@ -268,7 +268,7 @@ class ViEEncoder::VideoSourceProxy {
 
   void RequestHigherResolutionThan(int pixel_count) {
     rtc::CritScope lock(&crit_);
-    if (!IsResolutionScalingEnabledLocked()) {
+    if (!IsResolutionScalingEnabled(degradation_preference_)) {
       // This can happen since |degradation_preference_| is set on libjingle's
       // worker thread but the adaptation is done on the encoder task queue.
       return;
@@ -296,7 +296,7 @@ class ViEEncoder::VideoSourceProxy {
   void RequestHigherFramerateThan(int framerate_fps) {
     // Called on the encoder task queue.
     rtc::CritScope lock(&crit_);
-    if (!IsFramerateScalingEnabledLocked()) {
+    if (!IsFramerateScalingEnabled(degradation_preference_)) {
       // This can happen since |degradation_preference_| is set on libjingle's
       // worker thread but the adaptation is done on the encoder task queue.
       return;
@@ -315,21 +315,6 @@ class ViEEncoder::VideoSourceProxy {
   }
 
  private:
-  bool IsResolutionScalingEnabledLocked() const
-      EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
-    return degradation_preference_ ==
-               VideoSendStream::DegradationPreference::kMaintainFramerate ||
-           degradation_preference_ ==
-               VideoSendStream::DegradationPreference::kBalanced;
-  }
-
-  bool IsFramerateScalingEnabledLocked() const
-      EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
-    // TODO(sprang): Also accept kBalanced here?
-    return degradation_preference_ ==
-           VideoSendStream::DegradationPreference::kMaintainResolution;
-  }
-
   rtc::CriticalSection crit_;
   rtc::SequencedTaskChecker main_checker_;
   ViEEncoder* const vie_encoder_;
@@ -447,11 +432,7 @@ void ViEEncoder::SetSource(
       last_adaptation_request_.reset();
     }
     degradation_preference_ = degradation_preference;
-    bool allow_scaling =
-        degradation_preference_ ==
-            VideoSendStream::DegradationPreference::kMaintainFramerate ||
-        degradation_preference_ ==
-            VideoSendStream::DegradationPreference::kBalanced;
+    bool allow_scaling = IsResolutionScalingEnabled(degradation_preference_);
     initial_rampup_ = allow_scaling ? 0 : kMaxInitialFramedrop;
     ConfigureQualityScaler();
   });
@@ -554,13 +535,9 @@ void ViEEncoder::ReconfigureEncoder() {
 void ViEEncoder::ConfigureQualityScaler() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   const auto scaling_settings = settings_.encoder->GetScalingSettings();
-  const bool degradation_preference_allows_scaling =
-      degradation_preference_ ==
-          VideoSendStream::DegradationPreference::kMaintainFramerate ||
-      degradation_preference_ ==
-          VideoSendStream::DegradationPreference::kBalanced;
   const bool quality_scaling_allowed =
-      degradation_preference_allows_scaling && scaling_settings.enabled;
+      IsResolutionScalingEnabled(degradation_preference_) &&
+      scaling_settings.enabled;
 
   if (quality_scaling_allowed) {
     if (quality_scaler_.get() == nullptr) {
@@ -641,7 +618,6 @@ void ViEEncoder::TraceFrameDropStart() {
     TRACE_EVENT_ASYNC_BEGIN0("webrtc", "EncoderPaused", this);
   }
   encoder_paused_and_dropped_frame_ = true;
-  return;
 }
 
 void ViEEncoder::TraceFrameDropEnd() {
