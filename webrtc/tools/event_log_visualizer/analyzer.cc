@@ -345,14 +345,14 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
       case ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT: {
         std::vector<rtclog::StreamConfig> configs =
             parsed_log_.GetVideoSendConfig(i);
-        for (size_t j = 0; j < configs.size(); j++) {
-          StreamId stream(configs[i].local_ssrc, kOutgoingPacket);
+        for (const auto& config : configs) {
+          StreamId stream(config.local_ssrc, kOutgoingPacket);
           extension_maps[stream] =
-              RtpHeaderExtensionMap(configs[i].rtp_extensions);
+              RtpHeaderExtensionMap(config.rtp_extensions);
           video_ssrcs_.insert(stream);
-          StreamId rtx_stream(configs[i].rtx_ssrc, kOutgoingPacket);
+          StreamId rtx_stream(config.rtx_ssrc, kOutgoingPacket);
           extension_maps[rtx_stream] =
-              RtpHeaderExtensionMap(configs[i].rtp_extensions);
+              RtpHeaderExtensionMap(config.rtp_extensions);
           video_ssrcs_.insert(rtx_stream);
           rtx_ssrcs_.insert(rtx_stream);
         }
