@@ -160,7 +160,6 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
   bool RemoveRecvStream(uint32_t ssrc) override;
   bool SetSink(uint32_t ssrc,
                rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
-  void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) override;
   bool GetStats(VideoMediaInfo* info) override;
 
   void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
@@ -285,7 +284,7 @@ class WebRtcVideoChannel2 : public VideoMediaChannel, public webrtc::Transport {
 
     const std::vector<uint32_t>& GetSsrcs() const;
     VideoSenderInfo GetVideoSenderInfo(bool log_stats);
-    void FillBitrateInfo(BandwidthEstimationInfo* bwe_info);
+    void FillBandwidthEstimationInfo(BandwidthEstimationInfo* bwe_info);
 
    private:
     // Parameters needed to reconstruct the underlying stream.

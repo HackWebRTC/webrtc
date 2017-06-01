@@ -1379,9 +1379,8 @@ bool WebRtcVideoChannel2::GetStats(VideoMediaInfo* info) {
   FillSenderStats(info, log_stats);
   FillReceiverStats(info, log_stats);
   FillSendAndReceiveCodecStats(info);
-  // TODO(holmer): We should either have rtt available as a metric on
-  // VideoSend/ReceiveStreams, or we should remove rtt from VideoSenderInfo.
   webrtc::Call::Stats stats = call_->GetStats();
+  FillBandwidthEstimationStats(stats, info);
   if (stats.rtt_ms != -1) {
     for (size_t i = 0; i < info->senders.size(); ++i) {
       info->senders[i].rtt_ms = stats.rtt_ms;
@@ -1416,13 +1415,22 @@ void WebRtcVideoChannel2::FillReceiverStats(VideoMediaInfo* video_media_info,
   }
 }
 
-void WebRtcVideoChannel2::FillBitrateInfo(BandwidthEstimationInfo* bwe_info) {
+void WebRtcVideoChannel2::FillBandwidthEstimationStats(
+    const webrtc::Call::Stats& stats,
+    VideoMediaInfo* video_media_info) {
+  BandwidthEstimationInfo bwe_info;
+  bwe_info.available_send_bandwidth = stats.send_bandwidth_bps;
+  bwe_info.available_recv_bandwidth = stats.recv_bandwidth_bps;
+  bwe_info.bucket_delay = stats.pacer_delay_ms;
+
+  // Get send stream bitrate stats.
   rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32_t, WebRtcVideoSendStream*>::iterator stream =
            send_streams_.begin();
        stream != send_streams_.end(); ++stream) {
-    stream->second->FillBitrateInfo(bwe_info);
+    stream->second->FillBandwidthEstimationInfo(&bwe_info);
   }
+  video_media_info->bw_estimations.push_back(bwe_info);
 }
 
 void WebRtcVideoChannel2::FillSendAndReceiveCodecStats(
@@ -2141,7 +2149,7 @@ VideoSenderInfo WebRtcVideoChannel2::WebRtcVideoSendStream::GetVideoSenderInfo(
   return info;
 }
 
-void WebRtcVideoChannel2::WebRtcVideoSendStream::FillBitrateInfo(
+void WebRtcVideoChannel2::WebRtcVideoSendStream::FillBandwidthEstimationInfo(
     BandwidthEstimationInfo* bwe_info) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   if (stream_ == NULL) {

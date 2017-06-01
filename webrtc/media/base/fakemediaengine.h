@@ -604,7 +604,6 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
     return true;
   }
 
-  void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) override {}
   bool GetStats(VideoMediaInfo* info) override { return false; }
 
  private:

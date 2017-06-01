@@ -1263,6 +1263,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   // Mock the session to return bandwidth estimation info. These should only
   // be used for a selected candidate pair.
   cricket::VideoMediaInfo video_media_info;
+  video_media_info.bw_estimations.push_back(cricket::BandwidthEstimationInfo());
+  video_media_info.bw_estimations[0].available_send_bandwidth = 8888;
+  video_media_info.bw_estimations[0].available_recv_bandwidth = 9999;
   EXPECT_CALL(*video_media_channel, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
   EXPECT_CALL(test_->session(), video_channel())
@@ -1342,6 +1345,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
       .channel_stats[0]
       .connection_infos[0]
       .best_connection = true;
+  video_media_info.bw_estimations[0].available_send_bandwidth = 0;
+  video_media_info.bw_estimations[0].available_recv_bandwidth = 0;
   EXPECT_CALL(*video_media_channel, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
   collector_->ClearCachedStatsReport();
@@ -1355,19 +1360,14 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   EXPECT_TRUE(report->Get(*expected_pair.transport_id));
 
   // Set bandwidth and "GetStats" again.
-  webrtc::Call::Stats call_stats;
-  const int kSendBandwidth = 888;
-  call_stats.send_bandwidth_bps = kSendBandwidth;
-  const int kRecvBandwidth = 999;
-  call_stats.recv_bandwidth_bps = kRecvBandwidth;
-  EXPECT_CALL(test_->session(), GetCallStats())
-      .WillRepeatedly(Return(call_stats));
+  video_media_info.bw_estimations[0].available_send_bandwidth = 888;
+  video_media_info.bw_estimations[0].available_recv_bandwidth = 999;
   EXPECT_CALL(*video_media_channel, GetStats(_))
       .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
   collector_->ClearCachedStatsReport();
   report = GetStatsReport();
-  expected_pair.available_outgoing_bitrate = kSendBandwidth;
-  expected_pair.available_incoming_bitrate = kRecvBandwidth;
+  expected_pair.available_outgoing_bitrate = 888;
+  expected_pair.available_incoming_bitrate = 999;
   ASSERT_TRUE(report->Get(expected_pair.id()));
   EXPECT_EQ(
       expected_pair,

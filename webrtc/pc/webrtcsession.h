@@ -23,7 +23,7 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/sslidentity.h"
 #include "webrtc/base/thread.h"
-#include "webrtc/call/call.h"
+#include "webrtc/media/base/mediachannel.h"
 #include "webrtc/p2p/base/candidate.h"
 #include "webrtc/p2p/base/transportcontroller.h"
 #include "webrtc/pc/datachannel.h"
@@ -293,8 +293,6 @@ class WebRtcSession :
   void AddSctpDataStream(int sid) override;
   void RemoveSctpDataStream(int sid) override;
   bool ReadyToSendData() const override;
-
-  virtual Call::Stats GetCallStats();
 
   // Returns stats for all channels of all transports.
   // This avoids exposing the internal structures used to track them.
