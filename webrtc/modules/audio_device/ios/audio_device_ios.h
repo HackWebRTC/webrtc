@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "WebRTC/RTCMacros.h"
+#include "webrtc/base/buffer.h"
 #include "webrtc/base/gtest_prod_util.h"
 #include "webrtc/base/thread.h"
 #include "webrtc/base/thread_checker.h"
@@ -260,13 +261,12 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   // to WebRTC and the remaining part is stored.
   std::unique_ptr<FineAudioBuffer> fine_audio_buffer_;
 
-  // Provides a mechanism for encapsulating one or more buffers of audio data.
-  // Only used on the recording side.
-  AudioBufferList audio_record_buffer_list_;
-
   // Temporary storage for recorded data. AudioUnitRender() renders into this
   // array as soon as a frame of the desired buffer size has been recorded.
-  std::unique_ptr<int8_t[]> record_audio_buffer_;
+  // On real iOS devices, the size will be fixed and set once. For iOS
+  // simulators, the size can vary from callback to callback and the size
+  // will be changed dynamically to account for this behavior.
+  rtc::BufferT<int8_t> record_audio_buffer_;
 
   // Set to 1 when recording is active and 0 otherwise.
   volatile int recording_;

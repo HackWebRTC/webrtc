@@ -430,6 +430,8 @@ class MockAudioTransportIOS : public test::MockAudioTransport {
     // AudioStreamInterface implementation exists.
     if (audio_stream_) {
       audio_stream_->Read(audioSamples, nSamples);
+    } else {
+      memset(audioSamples, 0, nSamples * nBytesPerSample);
     }
     if (ReceivedEnoughCallbacks()) {
       if (test_is_done_) {

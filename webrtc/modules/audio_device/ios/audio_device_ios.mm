@@ -357,31 +357,35 @@ void AudioDeviceIOS::OnCanPlayOrRecordChange(bool can_play_or_record) {
                 new rtc::TypedMessageData<bool>(can_play_or_record));
 }
 
-OSStatus AudioDeviceIOS::OnDeliverRecordedData(
-    AudioUnitRenderActionFlags* flags,
-    const AudioTimeStamp* time_stamp,
-    UInt32 bus_number,
-    UInt32 num_frames,
-    AudioBufferList* /* io_data */) {
+OSStatus AudioDeviceIOS::OnDeliverRecordedData(AudioUnitRenderActionFlags* flags,
+                                               const AudioTimeStamp* time_stamp,
+                                               UInt32 bus_number,
+                                               UInt32 num_frames,
+                                               AudioBufferList* /* io_data */) {
   OSStatus result = noErr;
   // Simply return if recording is not enabled.
   if (!rtc::AtomicOps::AcquireLoad(&recording_))
     return result;
 
-  size_t frames_per_buffer = record_parameters_.frames_per_buffer();
-  if (num_frames != frames_per_buffer) {
-    // We have seen short bursts (1-2 frames) where |in_number_frames| changes.
-    // Add a log to keep track of longer sequences if that should ever happen.
-    // Also return since calling AudioUnitRender in this state will only result
-    // in kAudio_ParamError (-50) anyhow.
-    RTCLogWarning(@"Expected %u frames but got %u",
-                  static_cast<unsigned int>(frames_per_buffer),
-                  static_cast<unsigned int>(num_frames));
+  const size_t num_bytes =
+      num_frames * VoiceProcessingAudioUnit::kBytesPerSample;
+  // Set the size of our own audio buffer and clear it first to avoid copying
+  // in combination with potential reallocations.
+  // On real iOS devices, the size will only be set once (at first callback).
+  record_audio_buffer_.Clear();
+  record_audio_buffer_.SetSize(num_bytes);
 
-    RTCAudioSession *session = [RTCAudioSession sharedInstance];
-    RTCLogWarning(@"Session:\n %@", session);
-    return result;
-  }
+  // Allocate AudioBuffers to be used as storage for the received audio.
+  // The AudioBufferList structure works as a placeholder for the
+  // AudioBuffer structure, which holds a pointer to the actual data buffer
+  // in |record_audio_buffer_|. Recorded audio will be rendered into this memory
+  // at each input callback when calling AudioUnitRender().
+  AudioBufferList audio_buffer_list;
+  audio_buffer_list.mNumberBuffers = 1;
+  AudioBuffer* audio_buffer = &audio_buffer_list.mBuffers[0];
+  audio_buffer->mNumberChannels = record_parameters_.channels();
+  audio_buffer->mDataByteSize = record_audio_buffer_.size();
+  audio_buffer->mData = record_audio_buffer_.data();
 
   // Obtain the recorded audio samples by initiating a rendering cycle.
   // Since it happens on the input bus, the |io_data| parameter is a reference
@@ -389,9 +393,8 @@ OSStatus AudioDeviceIOS::OnDeliverRecordedData(
   // We can make the audio unit provide a buffer instead in io_data, but we
   // currently just use our own.
   // TODO(henrika): should error handling be improved?
-  AudioBufferList* io_data = &audio_record_buffer_list_;
-  result =
-      audio_unit_->Render(flags, time_stamp, bus_number, num_frames, io_data);
+  result = audio_unit_->Render(
+      flags, time_stamp, bus_number, num_frames, &audio_buffer_list);
   if (result != noErr) {
     RTCLogError(@"Failed to render audio.");
     return result;
@@ -400,12 +403,7 @@ OSStatus AudioDeviceIOS::OnDeliverRecordedData(
   // Get a pointer to the recorded audio and send it to the WebRTC ADB.
   // Use the FineAudioBuffer instance to convert between native buffer size
   // and the 10ms buffer size used by WebRTC.
-  AudioBuffer* audio_buffer = &io_data->mBuffers[0];
-  const size_t size_in_bytes = audio_buffer->mDataByteSize;
-  RTC_CHECK_EQ(size_in_bytes / VoiceProcessingAudioUnit::kBytesPerSample,
-               num_frames);
-  int8_t* data = static_cast<int8_t*>(audio_buffer->mData);
-  fine_audio_buffer_->DeliverRecordedData(rtc::ArrayView<const int8_t>(data, size_in_bytes),
+  fine_audio_buffer_->DeliverRecordedData(record_audio_buffer_,
                                           kFixedPlayoutDelayEstimate,
                                           kFixedRecordDelayEstimate);
   return noErr;
@@ -633,20 +631,6 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   const size_t capacity_in_bytes = 2 * playout_parameters_.GetBytesPerBuffer();
   fine_audio_buffer_.reset(new FineAudioBuffer(
       audio_device_buffer_, playout_parameters_.sample_rate(), capacity_in_bytes));
-
-  // Allocate AudioBuffers to be used as storage for the received audio.
-  // The AudioBufferList structure works as a placeholder for the
-  // AudioBuffer structure, which holds a pointer to the actual data buffer
-  // in |record_audio_buffer_|. Recorded audio will be rendered into this memory
-  // at each input callback when calling AudioUnitRender().
-  const int data_byte_size = record_parameters_.GetBytesPerBuffer();
-  record_audio_buffer_.reset(new SInt8[data_byte_size]);
-  memset(record_audio_buffer_.get(), 0, data_byte_size);
-  audio_record_buffer_list_.mNumberBuffers = 1;
-  AudioBuffer* audio_buffer = &audio_record_buffer_list_.mBuffers[0];
-  audio_buffer->mNumberChannels = record_parameters_.channels();
-  audio_buffer->mDataByteSize = data_byte_size;
-  audio_buffer->mData = record_audio_buffer_.get();
 }
 
 bool AudioDeviceIOS::CreateAudioUnit() {
