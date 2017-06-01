@@ -30,9 +30,9 @@ const NSString * const kRTCPcmaCodecName = @(cricket::kPcmaCodecName);
 const NSString * const kRTCDtmfCodecName = @(cricket::kDtmfCodecName);
 const NSString * const kRTCComfortNoiseCodecName =
     @(cricket::kComfortNoiseCodecName);
-const NSString * const kVp8CodecName = @(cricket::kVp8CodecName);
-const NSString * const kVp9CodecName = @(cricket::kVp9CodecName);
-const NSString * const kH264CodecName = @(cricket::kH264CodecName);
+const NSString * const kRTCVp8CodecName = @(cricket::kVp8CodecName);
+const NSString * const kRTCVp9CodecName = @(cricket::kVp9CodecName);
+const NSString * const kRTCH264CodecName = @(cricket::kH264CodecName);
 
 @implementation RTCRtpCodecParameters
 
