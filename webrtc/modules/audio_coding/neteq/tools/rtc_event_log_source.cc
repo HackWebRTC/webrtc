@@ -75,6 +75,7 @@ std::unique_ptr<Packet> RtcEventLogSource::NextPacket() {
       // Check if the packet should not be filtered out.
       if (!filter_.test(packet->header().payloadType) &&
           !(use_ssrc_filter_ && packet->header().ssrc != ssrc_)) {
+        ++rtp_packet_index_;
         return packet;
       }
     }
