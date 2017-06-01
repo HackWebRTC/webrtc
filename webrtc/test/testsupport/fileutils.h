@@ -14,6 +14,9 @@
 #define WEBRTC_TEST_TESTSUPPORT_FILEUTILS_H_
 
 #include <string>
+#include <vector>
+
+#include "webrtc/base/optional.h"
 
 namespace webrtc {
 namespace test {
@@ -65,6 +68,12 @@ std::string ResourcePath(const std::string& name,
 // Returns "./" if for some reason it is not possible to find the working
 // directory.
 std::string WorkingDir();
+
+// Reads the content of a directory and, in case of success, returns a vector
+// of strings with one element for each found file or directory. Each element is
+// a path created by prepending |dir| to the file/directory name. "." and ".."
+// are never added in the returned vector.
+rtc::Optional<std::vector<std::string>> ReadDirectory(std::string path);
 
 // Creates a directory if it not already exists.
 // Returns true if successful. Will print an error message to stderr and return

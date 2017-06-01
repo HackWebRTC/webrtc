@@ -24,6 +24,7 @@
 #include "webrtc/base/win32.h"
 #define GET_CURRENT_DIR _getcwd
 #else
+#include <dirent.h>
 #include <unistd.h>
 
 #define GET_CURRENT_DIR getcwd
@@ -39,7 +40,9 @@
 #include <string.h>
 
 #include <memory>
+#include <utility>
 
+#include "webrtc/base/checks.h"
 #include "webrtc/typedefs.h"  // For architecture defines
 
 namespace webrtc {
@@ -126,7 +129,7 @@ std::string WorkingDir() {
   return kRootDirName;
 }
 
-#else // WEBRTC_ANDROID
+#else  // WEBRTC_ANDROID
 
 std::string ProjectRootPath() {
 #if defined(WEBRTC_IOS)
@@ -210,6 +213,57 @@ std::string TempFilename(const std::string &dir, const std::string &prefix) {
   std::string ret(tempname.get());
   return ret;
 #endif
+}
+
+rtc::Optional<std::vector<std::string>> ReadDirectory(std::string path) {
+  if (path.length() == 0)
+    return rtc::Optional<std::vector<std::string>>();
+
+#if defined(WEBRTC_WIN)
+  // Append separator character if needed.
+  if (path.back() != '\\')
+    path += '\\';
+
+  // Init.
+  WIN32_FIND_DATA data;
+  HANDLE handle = ::FindFirstFile(rtc::ToUtf16(path + '*').c_str(), &data);
+  if (handle == INVALID_HANDLE_VALUE)
+    return rtc::Optional<std::vector<std::string>>();
+
+  // Populate output.
+  std::vector<std::string> found_entries;
+  do {
+    const std::string name = rtc::ToUtf8(data.cFileName);
+    if (name != "." && name != "..")
+      found_entries.emplace_back(path + name);
+  } while (::FindNextFile(handle, &data) == TRUE);
+
+  // Release resources.
+  if (handle != INVALID_HANDLE_VALUE)
+    ::FindClose(handle);
+#else
+  // Append separator character if needed.
+  if (path.back() != '/')
+    path += '/';
+
+  // Init.
+  DIR* dir = ::opendir(path.c_str());
+  if (dir == nullptr)
+    return rtc::Optional<std::vector<std::string>>();
+
+  // Populate output.
+  std::vector<std::string> found_entries;
+  while (dirent* dirent = readdir(dir)) {
+    const std::string& name = dirent->d_name;
+    if (name != "." && name != "..")
+      found_entries.emplace_back(path + name);
+  }
+
+  // Release resources.
+  closedir(dir);
+#endif
+
+  return rtc::Optional<std::vector<std::string>>(std::move(found_entries));
 }
 
 bool CreateDir(const std::string& directory_name) {
