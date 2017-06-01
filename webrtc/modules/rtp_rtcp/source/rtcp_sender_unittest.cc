@@ -197,7 +197,7 @@ class RtcpPacketTypeCounterObserverImpl : public RtcpPacketTypeCounterObserver {
 };
 
 class TestTransport : public Transport,
-                      public NullRtpData {
+                      public RtpData {
  public:
   TestTransport() {}
 

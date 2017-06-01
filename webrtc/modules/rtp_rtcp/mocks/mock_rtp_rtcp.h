@@ -31,9 +31,6 @@ class MockRtpData : public RtpData {
                int32_t(const uint8_t* payload_data,
                        size_t payload_size,
                        const WebRtcRTPHeader* rtp_header));
-
-  MOCK_METHOD2(OnRecoveredPacket,
-               bool(const uint8_t* packet, size_t packet_length));
 };
 
 class MockRtpRtcp : public RtpRtcp {

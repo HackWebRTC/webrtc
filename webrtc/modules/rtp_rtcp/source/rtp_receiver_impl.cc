@@ -36,8 +36,7 @@ RtpReceiver* RtpReceiver::CreateVideoReceiver(
     RtpData* incoming_payload_callback,
     RtpFeedback* incoming_messages_callback,
     RTPPayloadRegistry* rtp_payload_registry) {
-  if (!incoming_payload_callback)
-    incoming_payload_callback = NullObjectRtpData();
+  RTC_DCHECK(incoming_payload_callback != nullptr);
   if (!incoming_messages_callback)
     incoming_messages_callback = NullObjectRtpFeedback();
   return new RtpReceiverImpl(
@@ -50,8 +49,7 @@ RtpReceiver* RtpReceiver::CreateAudioReceiver(
     RtpData* incoming_payload_callback,
     RtpFeedback* incoming_messages_callback,
     RTPPayloadRegistry* rtp_payload_registry) {
-  if (!incoming_payload_callback)
-    incoming_payload_callback = NullObjectRtpData();
+  RTC_DCHECK(incoming_payload_callback != nullptr);
   if (!incoming_messages_callback)
     incoming_messages_callback = NullObjectRtpFeedback();
   return new RtpReceiverImpl(

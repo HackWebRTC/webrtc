@@ -405,23 +405,6 @@ inline int32_t NullRtpFeedback::OnInitializeDecoder(
   return 0;
 }
 
-// Null object version of RtpData.
-class NullRtpData : public RtpData {
- public:
-  ~NullRtpData() override {}
-
-  int32_t OnReceivedPayloadData(const uint8_t* payload_data,
-                                size_t payload_size,
-                                const WebRtcRTPHeader* rtp_header) override;
-};
-
-inline int32_t NullRtpData::OnReceivedPayloadData(
-    const uint8_t* payload_data,
-    size_t payload_size,
-    const WebRtcRTPHeader* rtp_header) {
-  return 0;
-}
-
 // Statistics about packet loss for a single directional connection. All values
 // are totals since the connection initiated.
 struct RtpPacketLossStats {

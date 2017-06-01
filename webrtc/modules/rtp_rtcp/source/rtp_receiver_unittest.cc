@@ -15,6 +15,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_receiver.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "webrtc/modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_impl.h"
 #include "webrtc/test/gmock.h"
 #include "webrtc/test/gtest.h"
@@ -22,6 +23,7 @@
 namespace webrtc {
 namespace {
 
+using ::testing::NiceMock;
 using ::testing::UnorderedElementsAre;
 
 const uint32_t kTestRate = 64000u;
@@ -46,7 +48,7 @@ class RtpReceiverTest : public ::testing::Test {
       : fake_clock_(123456),
         rtp_receiver_(
             RtpReceiver::CreateAudioReceiver(&fake_clock_,
-                                             nullptr,
+                                             &mock_rtp_data_,
                                              nullptr,
                                              &rtp_payload_registry_)) {
     CodecInst voice_codec = {};
@@ -73,6 +75,7 @@ class RtpReceiverTest : public ::testing::Test {
   }
 
   SimulatedClock fake_clock_;
+  NiceMock<MockRtpData> mock_rtp_data_;
   RTPPayloadRegistry rtp_payload_registry_;
   std::unique_ptr<RtpReceiver> rtp_receiver_;
 };

@@ -19,11 +19,6 @@
 
 namespace webrtc {
 
-RtpData* NullObjectRtpData() {
-  static NullRtpData null_rtp_data;
-  return &null_rtp_data;
-}
-
 RtpFeedback* NullObjectRtpFeedback() {
   static NullRtpFeedback null_rtp_feedback;
   return &null_rtp_feedback;

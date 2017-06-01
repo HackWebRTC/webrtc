@@ -50,7 +50,7 @@ class RtcpRttStatsTestImpl : public RtcpRttStats {
 };
 
 class SendTransport : public Transport,
-                      public NullRtpData {
+                      public RtpData {
  public:
   SendTransport()
       : receiver_(NULL),
@@ -87,6 +87,11 @@ class SendTransport : public Transport,
     EXPECT_TRUE(receiver_);
     EXPECT_EQ(0, receiver_->IncomingRtcpPacket(data, len));
     return true;
+  }
+  int32_t OnReceivedPayloadData(const uint8_t* payload_data,
+                                size_t payload_size,
+                                const WebRtcRTPHeader* rtp_header) override {
+    return 0;
   }
   ModuleRtpRtcpImpl* receiver_;
   SimulatedClock* clock_;
