@@ -4126,23 +4126,39 @@ void EndToEndTest::TestPictureIdStatePreservation(VideoEncoder* encoder) {
   DestroyStreams();
 }
 
-// These tests exposed a race in libvpx, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=7663. Disabling the tests
-// on tsan until the race has been fixed.
-#if defined(THREAD_SANITIZER)
-#define MAYBE_PictureIdStateRetainedAfterReinitingVp8 \
-  DISABLED_PictureIdStateRetainedAfterReinitingVp8
-#define MAYBE_PictureIdStateRetainedAfterReinitingSimulcastEncoderAdapter \
-  DISABLED_PictureIdStateRetainedAfterReinitingSimulcastEncoderAdapter
-#else
-#define MAYBE_PictureIdStateRetainedAfterReinitingVp8 \
-  PictureIdStateRetainedAfterReinitingVp8
-#define MAYBE_PictureIdStateRetainedAfterReinitingSimulcastEncoderAdapter \
-  PictureIdStateRetainedAfterReinitingSimulcastEncoderAdapter
-#endif
-TEST_F(EndToEndTest, MAYBE_PictureIdStateRetainedAfterReinitingVp8) {
+TEST_F(EndToEndTest, PictureIdStateRetainedAfterReinitingVp8) {
   std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
   TestPictureIdStatePreservation(encoder.get());
+}
+
+TEST_F(EndToEndTest,
+       PictureIdStateRetainedAfterReinitingSimulcastEncoderAdapter) {
+  class VideoEncoderFactoryAdapter : public webrtc::VideoEncoderFactory {
+   public:
+    explicit VideoEncoderFactoryAdapter(
+        cricket::WebRtcVideoEncoderFactory* factory)
+        : factory_(factory) {}
+    virtual ~VideoEncoderFactoryAdapter() {}
+
+    // Implements webrtc::VideoEncoderFactory.
+    webrtc::VideoEncoder* Create() override {
+      return factory_->CreateVideoEncoder(
+          cricket::VideoCodec(cricket::kVp8CodecName));
+    }
+
+    void Destroy(webrtc::VideoEncoder* encoder) override {
+      return factory_->DestroyVideoEncoder(encoder);
+    }
+
+   private:
+    cricket::WebRtcVideoEncoderFactory* const factory_;
+  };
+
+  cricket::InternalEncoderFactory internal_encoder_factory;
+  SimulcastEncoderAdapter simulcast_encoder_adapter(
+      new VideoEncoderFactoryAdapter(&internal_encoder_factory));
+
+  TestPictureIdStatePreservation(&simulcast_encoder_adapter);
 }
 
 // This test is flaky on linux_memcheck. Disable on all linux bots until
@@ -4311,36 +4327,6 @@ TEST_F(EndToEndTest, MAYBE_TestFlexfecRtpStatePreservation) {
   receive_transport.StopSending();
   Stop();
   DestroyStreams();
-}
-
-TEST_F(EndToEndTest,
-       MAYBE_PictureIdStateRetainedAfterReinitingSimulcastEncoderAdapter) {
-  class VideoEncoderFactoryAdapter : public webrtc::VideoEncoderFactory {
-   public:
-    explicit VideoEncoderFactoryAdapter(
-        cricket::WebRtcVideoEncoderFactory* factory)
-        : factory_(factory) {}
-    virtual ~VideoEncoderFactoryAdapter() {}
-
-    // Implements webrtc::VideoEncoderFactory.
-    webrtc::VideoEncoder* Create() override {
-      return factory_->CreateVideoEncoder(
-          cricket::VideoCodec(cricket::kVp8CodecName));
-    }
-
-    void Destroy(webrtc::VideoEncoder* encoder) override {
-      return factory_->DestroyVideoEncoder(encoder);
-    }
-
-   private:
-    cricket::WebRtcVideoEncoderFactory* const factory_;
-  };
-
-  cricket::InternalEncoderFactory internal_encoder_factory;
-  SimulcastEncoderAdapter simulcast_encoder_adapter(
-      new VideoEncoderFactoryAdapter(&internal_encoder_factory));
-
-  TestPictureIdStatePreservation(&simulcast_encoder_adapter);
 }
 
 TEST_F(EndToEndTest, RespectsNetworkState) {
