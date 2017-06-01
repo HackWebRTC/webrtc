@@ -147,10 +147,9 @@ class JVM {
   // Stores global handles to the Java VM interface.
   // Should be called once on a thread that is attached to the JVM.
   static void Initialize(JavaVM* jvm);
-  // TODO(sakal): Remove once downstream dependencies have been updated.
-  // DEPRECATED (crbug.com/webrtc/7710): Old signature taking the Android
-  // context as a parameter. Currently passes in the context to the ContextUtils
-  // class.
+  // Like the method above but also passes the context to the ContextUtils
+  // class. This method should be used by pure-C++ Android users that can't call
+  // ContextUtils.initialize directly.
   static void Initialize(JavaVM* jvm, jobject context);
   // Clears handles stored in Initialize(). Must be called on same thread as
   // Initialize().
