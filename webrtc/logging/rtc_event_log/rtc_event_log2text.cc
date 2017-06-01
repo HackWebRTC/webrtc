@@ -34,7 +34,7 @@
 
 namespace {
 
-DEFINE_bool(noconfig, true, "Excludes stream configurations.");
+DEFINE_bool(noconfig, false, "Excludes stream configurations.");
 DEFINE_bool(noincoming, false, "Excludes incoming packets.");
 DEFINE_bool(nooutgoing, false, "Excludes outgoing packets.");
 // TODO(terelius): Note that the media type doesn't work with outgoing packets.
@@ -356,18 +356,41 @@ int main(int argc, char* argv[]) {
           parsed_stream.GetVideoReceiveConfig(i);
       std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_RECV_CONFIG"
                 << "\tssrc=" << config.remote_ssrc
-                << "\tfeedback_ssrc=" << config.local_ssrc << std::endl;
+                << "\tfeedback_ssrc=" << config.local_ssrc;
+      std::cout << "\textensions={";
+      for (const auto& extension : config.rtp_extensions) {
+        std::cout << extension.ToString() << ",";
+      }
+      std::cout << "}";
+      std::cout << "\tcodecs={";
+      for (const auto& codec : config.codecs) {
+        std::cout << "{name: " << codec.payload_name
+                  << ", payload_type: " << codec.payload_type
+                  << ", rtx_payload_type: " << codec.rtx_payload_type << "}";
+      }
+      std::cout << "}" << std::endl;
     }
     if (!FLAGS_noconfig && !FLAGS_novideo && !FLAGS_nooutgoing &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::VIDEO_SENDER_CONFIG_EVENT) {
       std::vector<webrtc::rtclog::StreamConfig> configs =
           parsed_stream.GetVideoSendConfig(i);
-      for (size_t j = 0; j < configs.size(); j++) {
+      for (const auto& config : configs) {
         std::cout << parsed_stream.GetTimestamp(i) << "\tVIDEO_SEND_CONFIG";
-        std::cout << "\tssrcs=" << configs[j].local_ssrc;
-        std::cout << "\trtx_ssrcs=" << configs[j].rtx_ssrc;
-        std::cout << std::endl;
+        std::cout << "\tssrcs=" << config.local_ssrc;
+        std::cout << "\trtx_ssrcs=" << config.rtx_ssrc;
+        std::cout << "\textensions={";
+        for (const auto& extension : config.rtp_extensions) {
+          std::cout << extension.ToString() << ",";
+        }
+        std::cout << "}";
+        std::cout << "\tcodecs={";
+        for (const auto& codec : config.codecs) {
+          std::cout << "{name: " << codec.payload_name
+                    << ", payload_type: " << codec.payload_type
+                    << ", rtx_payload_type: " << codec.rtx_payload_type << "}";
+        }
+        std::cout << "}" << std::endl;
       }
     }
     if (!FLAGS_noconfig && !FLAGS_noaudio && !FLAGS_noincoming &&
@@ -377,14 +400,38 @@ int main(int argc, char* argv[]) {
           parsed_stream.GetAudioReceiveConfig(i);
       std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_RECV_CONFIG"
                 << "\tssrc=" << config.remote_ssrc
-                << "\tfeedback_ssrc=" << config.local_ssrc << std::endl;
+                << "\tfeedback_ssrc=" << config.local_ssrc;
+      std::cout << "\textensions={";
+      for (const auto& extension : config.rtp_extensions) {
+        std::cout << extension.ToString() << ",";
+      }
+      std::cout << "}";
+      std::cout << "\tcodecs={";
+      for (const auto& codec : config.codecs) {
+        std::cout << "{name: " << codec.payload_name
+                  << ", payload_type: " << codec.payload_type
+                  << ", rtx_payload_type: " << codec.rtx_payload_type << "}";
+      }
+      std::cout << "}" << std::endl;
     }
     if (!FLAGS_noconfig && !FLAGS_noaudio && !FLAGS_nooutgoing &&
         parsed_stream.GetEventType(i) ==
             webrtc::ParsedRtcEventLog::AUDIO_SENDER_CONFIG_EVENT) {
       webrtc::rtclog::StreamConfig config = parsed_stream.GetAudioSendConfig(i);
       std::cout << parsed_stream.GetTimestamp(i) << "\tAUDIO_SEND_CONFIG"
-                << "\tssrc=" << config.local_ssrc << std::endl;
+                << "\tssrc=" << config.local_ssrc;
+      std::cout << "\textensions={";
+      for (const auto& extension : config.rtp_extensions) {
+        std::cout << extension.ToString() << ",";
+      }
+      std::cout << "}";
+      std::cout << "\tcodecs={";
+      for (const auto& codec : config.codecs) {
+        std::cout << "{name: " << codec.payload_name
+                  << ", payload_type: " << codec.payload_type
+                  << ", rtx_payload_type: " << codec.rtx_payload_type << "}";
+      }
+      std::cout << "}" << std::endl;
     }
     if (!FLAGS_nortp &&
         parsed_stream.GetEventType(i) == webrtc::ParsedRtcEventLog::RTP_EVENT) {
