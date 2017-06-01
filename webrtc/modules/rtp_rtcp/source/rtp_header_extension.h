@@ -11,70 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_
 
-#include <string>
-
-#include "webrtc/base/array_view.h"
-#include "webrtc/base/basictypes.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/config.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-
-namespace webrtc {
-
-struct RtpExtensionSize {
-  RTPExtensionType type;
-  uint8_t value_size;
-};
-
-class RtpHeaderExtensionMap {
- public:
-  static constexpr RTPExtensionType kInvalidType = kRtpExtensionNone;
-  static constexpr uint8_t kInvalidId = 0;
-
-  RtpHeaderExtensionMap();
-  explicit RtpHeaderExtensionMap(rtc::ArrayView<const RtpExtension> extensions);
-
-  template <typename Extension>
-  bool Register(uint8_t id) {
-    return Register(id, Extension::kId, Extension::kUri);
-  }
-  bool RegisterByType(uint8_t id, RTPExtensionType type);
-  bool RegisterByUri(uint8_t id, const std::string& uri);
-
-  bool IsRegistered(RTPExtensionType type) const {
-    return GetId(type) != kInvalidId;
-  }
-  // Return kInvalidType if not found.
-  RTPExtensionType GetType(uint8_t id) const {
-    RTC_DCHECK_GE(id, kMinId);
-    RTC_DCHECK_LE(id, kMaxId);
-    return types_[id];
-  }
-  // Return kInvalidId if not found.
-  uint8_t GetId(RTPExtensionType type) const {
-    RTC_DCHECK_GT(type, kRtpExtensionNone);
-    RTC_DCHECK_LT(type, kRtpExtensionNumberOfExtensions);
-    return ids_[type];
-  }
-
-  size_t GetTotalLengthInBytes(
-      rtc::ArrayView<const RtpExtensionSize> extensions) const;
-
-  // TODO(danilchap): Remove use of the functions below.
-  int32_t Register(RTPExtensionType type, uint8_t id) {
-    return RegisterByType(id, type) ? 0 : -1;
-  }
-  int32_t Deregister(RTPExtensionType type);
-
- private:
-  static constexpr uint8_t kMinId = 1;
-  static constexpr uint8_t kMaxId = 14;
-  bool Register(uint8_t id, RTPExtensionType type, const char* uri);
-
-  RTPExtensionType types_[kMaxId + 1];
-  uint8_t ids_[kRtpExtensionNumberOfExtensions];
-};
-
-}  // namespace webrtc
+// DEPRECATED, use include below instead.
+#include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
 
 #endif  // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSION_H_

@@ -17,9 +17,9 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/random.h"
 #include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "webrtc/modules/rtp_rtcp/source/byte_io.h"
+#include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 
 namespace webrtc {
 namespace rtp {

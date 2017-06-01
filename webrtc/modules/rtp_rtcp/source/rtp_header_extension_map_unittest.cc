@@ -7,11 +7,11 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "webrtc/modules/rtp_rtcp/include/rtp_header_extension_map.h"
 
 #include <vector>
 
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "webrtc/modules/rtp_rtcp/source/rtp_header_extension.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/test/gtest.h"
 #include "webrtc/typedefs.h"
@@ -86,14 +86,12 @@ TEST(RtpHeaderExtensionTest, NonUniqueId) {
 TEST(RtpHeaderExtensionTest, GetTotalLength) {
   RtpHeaderExtensionMap map;
   constexpr RtpExtensionSize kExtensionSizes[] = {
-    {TransmissionOffset::kId, TransmissionOffset::kValueSizeBytes}
-  };
+      {TransmissionOffset::kId, TransmissionOffset::kValueSizeBytes}};
   EXPECT_EQ(0u, map.GetTotalLengthInBytes(kExtensionSizes));
   EXPECT_TRUE(map.Register<TransmissionOffset>(3));
   static constexpr size_t kRtpOneByteHeaderLength = 4;
-  EXPECT_EQ(
-      kRtpOneByteHeaderLength + (TransmissionOffset::kValueSizeBytes + 1),
-      map.GetTotalLengthInBytes(kExtensionSizes));
+  EXPECT_EQ(kRtpOneByteHeaderLength + (TransmissionOffset::kValueSizeBytes + 1),
+            map.GetTotalLengthInBytes(kExtensionSizes));
 }
 
 TEST(RtpHeaderExtensionTest, GetType) {
