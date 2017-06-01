@@ -54,9 +54,14 @@ rtc_static_library("rtc_pc") {
   ]
 
   deps = [
+    "..:webrtc_common",
     "../api:call_api",
+    "../api:libjingle_peerconnection_api",
+    "../api:ortc_api",
     "../base:rtc_base",
+    "../common_video:common_video",
     "../media",
+    "../p2p:rtc_p2p",
   ]
 
   if (rtc_build_libsrtp) {
@@ -142,12 +147,21 @@ rtc_static_library("libjingle_peerconnection") {
 
   deps = [
     ":rtc_pc",
+    "..:webrtc_common",
     "../api:call_api",
     "../api:rtc_stats_api",
+    "../api/audio_codecs:builtin_audio_decoder_factory",
+    "../api/audio_codecs:builtin_audio_encoder_factory",
     "../api/video_codecs:video_codecs_api",
+    "../base:rtc_base",
+    "../base:rtc_base_approved",
     "../call",
+    "../logging:rtc_event_log_api",
     "../media",
+    "../modules/audio_device:audio_device",
+    "../p2p:rtc_p2p",
     "../stats",
+    "../system_wrappers:system_wrappers",
   ]
 
   public_deps = [
@@ -208,9 +222,15 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection",
       ":rtc_pc",
+      "../base:rtc_base",
+      "../base:rtc_base_approved",
       "../base:rtc_base_tests_main",
       "../base:rtc_base_tests_utils",
+      "../logging:rtc_event_log_api",
+      "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
+      "../p2p:p2p_test_utils",
+      "../p2p:rtc_p2p",
       "../system_wrappers:metrics_default",
     ]
 
@@ -245,7 +265,17 @@ if (rtc_include_tests) {
 
     deps = [
       ":libjingle_peerconnection",
+      "..:webrtc_common",
+      "../api:libjingle_peerconnection_test_api",
+      "../api:rtc_stats_api",
+      "../base:rtc_base",
+      "../base:rtc_base_approved",
       "../base:rtc_base_tests_utils",
+      "../media:rtc_media",
+      "../media:rtc_media_tests_utils",
+      "../modules/audio_device:audio_device",
+      "../p2p:p2p_test_utils",
+      "../test:test_support",
       "//testing/gmock",
     ]
 

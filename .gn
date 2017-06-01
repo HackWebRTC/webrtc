@@ -20,28 +20,7 @@ secondary_source = "//build/secondary/"
 # matching these patterns (see "gn help label_pattern" for format) will have
 # their includes checked for proper dependencies when you run either
 # "gn check" or "gn gen --check".
-# TODO(kjellander): Keep adding paths to this list as work in webrtc:5589 is done.
-check_targets = [
-  "//webrtc/api/*",
-  "//webrtc/audio/*",
-  "//webrtc/base/*",
-  "//webrtc/call/*",
-  "//webrtc/common_video/*",
-  "//webrtc/common_audio/*",
-  "//webrtc/examples/*",
-  "//webrtc/logging/*",
-  "//webrtc/media/*",
-  "//webrtc/modules/*",
-  "//webrtc/ortc/*",
-  "//webrtc/p2p/*",
-  "//webrtc/sdk/*",
-  "//webrtc/stats/*",
-  "//webrtc/system_wrappers/*",
-  "//webrtc/test/*",
-  "//webrtc/tools/*",
-  "//webrtc/video/*",
-  "//webrtc/voice_engine/*",
-]
+check_targets = [ "//webrtc/*" ]
 
 # These are the list of GN files that run exec_script. This whitelist exists
 # to force additional review for new uses of exec_script, which is strongly

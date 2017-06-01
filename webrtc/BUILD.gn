@@ -229,6 +229,12 @@ rtc_source_set("video_stream_api") {
     "video_receive_stream.h",
     "video_send_stream.h",
   ]
+  deps = [
+    ":webrtc_common",
+    "api:transport_api",
+    "base:rtc_base_approved",
+    "common_video:common_video",
+  ]
 }
 
 # Contents of video_frame.h is moved from top-level down to common_video/.
@@ -349,6 +355,13 @@ if (!build_with_chromium) {
 }
 
 rtc_static_library("webrtc_common") {
+  # TODO(mbonadei): Remove (bugs.webrtc.org/7745)
+  # Enabling GN check triggers cyclic dependency error:
+  # //webrtc:webrtc_common ->
+  # //webrtc/api:video_frame_api ->
+  # //webrtc/system_wrappers:system_wrappers ->
+  # //webrtc:webrtc_common
+  check_includes = false
   sources = [
     "common_types.cc",
     "common_types.h",
@@ -361,6 +374,9 @@ rtc_static_library("webrtc_common") {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
+  deps = [
+    "base:rtc_base_approved",
+  ]
 }
 
 if (use_libfuzzer || use_drfuzz || use_afl) {
