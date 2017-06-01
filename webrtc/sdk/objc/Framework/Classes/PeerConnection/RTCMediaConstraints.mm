@@ -35,6 +35,15 @@ NSString * const kRTCMediaConstraintsLevelControl =
 NSString * const kRTCMediaConstraintsAudioNetworkAdaptorConfig =
     @(webrtc::MediaConstraintsInterface::kAudioNetworkAdaptorConfig);
 
+NSString * const kRTCMediaConstraintsIceRestart =
+    @(webrtc::MediaConstraintsInterface::kIceRestart);
+NSString * const kRTCMediaConstraintsOfferToReceiveAudio =
+    @(webrtc::MediaConstraintsInterface::kOfferToReceiveAudio);
+NSString * const kRTCMediaConstraintsOfferToReceiveVideo =
+    @(webrtc::MediaConstraintsInterface::kOfferToReceiveVideo);
+NSString * const kRTCMediaConstraintsVoiceActivityDetection =
+    @(webrtc::MediaConstraintsInterface::kVoiceActivityDetection);
+
 NSString * const kRTCMediaConstraintsValueTrue =
     @(webrtc::MediaConstraintsInterface::kValueTrue);
 NSString * const kRTCMediaConstraintsValueFalse =
