@@ -200,6 +200,9 @@ class Call : public webrtc::Call,
   void SetBitrateConfig(
       const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
 
+  void SetBitrateConfigMask(
+      const webrtc::Call::Config::BitrateConfigMask& bitrate_config) override;
+
   void SignalChannelNetworkState(MediaType media, NetworkState state) override;
 
   void OnTransportOverheadChanged(MediaType media,
@@ -245,6 +248,10 @@ class Call : public webrtc::Call,
   void UpdateReceiveHistograms();
   void UpdateHistograms();
   void UpdateAggregateNetworkState();
+
+  // Applies update to the BitrateConfig cached in |config_|, restarting
+  // bandwidth estimation from |new_start| if set.
+  void UpdateCurrentBitrateConfig(const rtc::Optional<int>& new_start);
 
   Clock* const clock_;
 
@@ -341,6 +348,14 @@ class Call : public webrtc::Call,
   // and deleted before any other members.
   rtc::TaskQueue worker_queue_;
 
+  // The config mask set by SetBitrateConfigMask.
+  // 0 <= min <= start <= max
+  Config::BitrateConfigMask bitrate_config_mask_;
+
+  // The config set by SetBitrateConfig.
+  // min >= 0, start != 0, max == -1 || max > 0
+  Config::BitrateConfig base_bitrate_config_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
 }  // namespace internal
@@ -396,8 +411,9 @@ Call::Call(const Call::Config& config,
       receive_side_cc_(clock_, transport_send->packet_router()),
       video_send_delay_stats_(new SendDelayStats(clock_)),
       start_ms_(clock_->TimeInMilliseconds()),
-      worker_queue_("call_worker_queue") {
-  RTC_DCHECK_RUN_ON(&configuration_thread_checker_);
+      worker_queue_("call_worker_queue"),
+      base_bitrate_config_(config.bitrate_config) {
+  RTC_DCHECK(&configuration_thread_checker_);
   RTC_DCHECK(config.event_log != nullptr);
   RTC_DCHECK_GE(config.bitrate_config.min_bitrate_bps, 0);
   RTC_DCHECK_GE(config.bitrate_config.start_bitrate_bps,
@@ -905,28 +921,94 @@ void Call::SetBitrateConfig(
   TRACE_EVENT0("webrtc", "Call::SetBitrateConfig");
   RTC_DCHECK_RUN_ON(&configuration_thread_checker_);
   RTC_DCHECK_GE(bitrate_config.min_bitrate_bps, 0);
-  if (bitrate_config.max_bitrate_bps != -1)
+  RTC_DCHECK_NE(bitrate_config.start_bitrate_bps, 0);
+  if (bitrate_config.max_bitrate_bps != -1) {
     RTC_DCHECK_GT(bitrate_config.max_bitrate_bps, 0);
-  if (config_.bitrate_config.min_bitrate_bps ==
-          bitrate_config.min_bitrate_bps &&
-      (bitrate_config.start_bitrate_bps <= 0 ||
-       config_.bitrate_config.start_bitrate_bps ==
-           bitrate_config.start_bitrate_bps) &&
-      config_.bitrate_config.max_bitrate_bps ==
-          bitrate_config.max_bitrate_bps) {
-    // Nothing new to set, early abort to avoid encoder reconfigurations.
+  }
+
+  rtc::Optional<int> new_start;
+  // Only update the "start" bitrate if it's set, and different from the old
+  // value. In practice, this value comes from the x-google-start-bitrate codec
+  // parameter in SDP, and setting the same remote description twice shouldn't
+  // restart bandwidth estimation.
+  if (bitrate_config.start_bitrate_bps != -1 &&
+      bitrate_config.start_bitrate_bps !=
+          base_bitrate_config_.start_bitrate_bps) {
+    new_start.emplace(bitrate_config.start_bitrate_bps);
+  }
+  base_bitrate_config_ = bitrate_config;
+  UpdateCurrentBitrateConfig(new_start);
+}
+
+void Call::SetBitrateConfigMask(
+    const webrtc::Call::Config::BitrateConfigMask& mask) {
+  TRACE_EVENT0("webrtc", "Call::SetBitrateConfigMask");
+  RTC_DCHECK(configuration_thread_checker_.CalledOnValidThread());
+
+  bitrate_config_mask_ = mask;
+  UpdateCurrentBitrateConfig(mask.start_bitrate_bps);
+}
+
+namespace {
+
+static int MinPositive(int a, int b) {
+  if (a <= 0) {
+    return b;
+  }
+  if (b <= 0) {
+    return a;
+  }
+  return std::min(a, b);
+}
+
+}  // namespace
+
+void Call::UpdateCurrentBitrateConfig(const rtc::Optional<int>& new_start) {
+  Config::BitrateConfig updated;
+  updated.min_bitrate_bps =
+      std::max(bitrate_config_mask_.min_bitrate_bps.value_or(0),
+               base_bitrate_config_.min_bitrate_bps);
+
+  updated.max_bitrate_bps =
+      MinPositive(bitrate_config_mask_.max_bitrate_bps.value_or(-1),
+                  base_bitrate_config_.max_bitrate_bps);
+
+  // If the combined min ends up greater than the combined max, the max takes
+  // priority.
+  if (updated.max_bitrate_bps != -1 &&
+      updated.min_bitrate_bps > updated.max_bitrate_bps) {
+    updated.min_bitrate_bps = updated.max_bitrate_bps;
+  }
+
+  // If there is nothing to update (min/max unchanged, no new bandwidth
+  // estimation start value), return early.
+  if (updated.min_bitrate_bps == config_.bitrate_config.min_bitrate_bps &&
+      updated.max_bitrate_bps == config_.bitrate_config.max_bitrate_bps &&
+      !new_start) {
+    LOG(LS_VERBOSE) << "WebRTC.Call.UpdateCurrentBitrateConfig: "
+                    << "nothing to update";
     return;
   }
-  config_.bitrate_config.min_bitrate_bps = bitrate_config.min_bitrate_bps;
-  // Start bitrate of -1 means we should keep the old bitrate, which there is
-  // no point in remembering for the future.
-  if (bitrate_config.start_bitrate_bps > 0)
-    config_.bitrate_config.start_bitrate_bps = bitrate_config.start_bitrate_bps;
-  config_.bitrate_config.max_bitrate_bps = bitrate_config.max_bitrate_bps;
-  RTC_DCHECK_NE(bitrate_config.start_bitrate_bps, 0);
-  transport_send_->send_side_cc()->SetBweBitrates(
-      bitrate_config.min_bitrate_bps, bitrate_config.start_bitrate_bps,
-      bitrate_config.max_bitrate_bps);
+
+  if (new_start) {
+    // Clamp start by min and max.
+    updated.start_bitrate_bps = MinPositive(
+        std::max(*new_start, updated.min_bitrate_bps), updated.max_bitrate_bps);
+  } else {
+    updated.start_bitrate_bps = -1;
+  }
+
+  LOG(INFO) << "WebRTC.Call.UpdateCurrentBitrateConfig: "
+            << "calling SetBweBitrates with args (" << updated.min_bitrate_bps
+            << ", " << updated.start_bitrate_bps << ", "
+            << updated.max_bitrate_bps << ")";
+  transport_send_->send_side_cc()->SetBweBitrates(updated.min_bitrate_bps,
+                                                  updated.start_bitrate_bps,
+                                                  updated.max_bitrate_bps);
+  if (!new_start) {
+    updated.start_bitrate_bps = config_.bitrate_config.start_bitrate_bps;
+  }
+  config_.bitrate_config = updated;
 }
 
 void Call::SignalChannelNetworkState(MediaType media, NetworkState state) {

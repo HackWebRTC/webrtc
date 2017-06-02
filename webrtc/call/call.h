@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "webrtc/api/rtcerror.h"
 #include "webrtc/base/networkroute.h"
 #include "webrtc/base/platform_file.h"
 #include "webrtc/base/socket.h"
@@ -68,12 +69,23 @@ class Call {
     static const int kDefaultStartBitrateBps;
 
     // Bitrate config used until valid bitrate estimates are calculated. Also
-    // used to cap total bitrate used.
+    // used to cap total bitrate used. This comes from the remote connection.
     struct BitrateConfig {
       int min_bitrate_bps = 0;
       int start_bitrate_bps = kDefaultStartBitrateBps;
       int max_bitrate_bps = -1;
     } bitrate_config;
+
+    // The local client's bitrate preferences. The actual configuration used
+    // is a combination of this and |bitrate_config|. The combination is
+    // currently more complicated than a simple mask operation (see
+    // SetBitrateConfig and SetBitrateConfigMask). Assumes that 0 <= min <=
+    // start <= max holds for set parameters.
+    struct BitrateConfigMask {
+      rtc::Optional<int> min_bitrate_bps;
+      rtc::Optional<int> start_bitrate_bps;
+      rtc::Optional<int> max_bitrate_bps;
+    };
 
     // AudioState which is possibly shared between multiple calls.
     // TODO(solenberg): Change this to a shared_ptr once we can use C++11.
@@ -141,13 +153,21 @@ class Call {
   // pacing delay, etc.
   virtual Stats GetStats() const = 0;
 
-  // TODO(pbos): Like BitrateConfig above this is currently per-stream instead
-  // of maximum for entire Call. This should be fixed along with the above.
-  // Specifying a start bitrate (>0) will currently reset the current bitrate
-  // estimate. This is due to how the 'x-google-start-bitrate' flag is currently
-  // implemented.
+  // The greater min and smaller max set by this and SetBitrateConfigMask will
+  // be used. The latest non-negative start value from either call will be used.
+  // Specifying a start bitrate (>0) will reset the current bitrate estimate.
+  // This is due to how the 'x-google-start-bitrate' flag is currently
+  // implemented. Passing -1 leaves the start bitrate unchanged. Behavior is not
+  // guaranteed for other negative values or 0.
   virtual void SetBitrateConfig(
       const Config::BitrateConfig& bitrate_config) = 0;
+
+  // The greater min and smaller max set by this and SetBitrateConfig will be
+  // used. The latest non-negative start value form either call will be used.
+  // Specifying a start bitrate will reset the current bitrate estimate.
+  // Assumes 0 <= min <= start <= max holds for set parameters.
+  virtual void SetBitrateConfigMask(
+      const Config::BitrateConfigMask& bitrate_mask) = 0;
 
   // TODO(skvlad): When the unbundled case with multiple streams for the same
   // media type going over different networks is supported, track the state

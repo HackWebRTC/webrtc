@@ -3301,6 +3301,69 @@ TEST_F(PeerConnectionInterfaceTest,
   EXPECT_TRUE(DoSetLocalDescription(answer.release()));
 }
 
+TEST_F(PeerConnectionInterfaceTest, SetBitrateWithoutMinSucceeds) {
+  CreatePeerConnection();
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.current_bitrate_bps = rtc::Optional<int>(100000);
+  EXPECT_TRUE(pc_->SetBitrate(bitrate).ok());
+}
+
+TEST_F(PeerConnectionInterfaceTest, SetBitrateNegativeMinFails) {
+  CreatePeerConnection();
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.min_bitrate_bps = rtc::Optional<int>(-1);
+  EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
+}
+
+TEST_F(PeerConnectionInterfaceTest, SetBitrateCurrentLessThanMinFails) {
+  CreatePeerConnection();
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.min_bitrate_bps = rtc::Optional<int>(5);
+  bitrate.current_bitrate_bps = rtc::Optional<int>(3);
+  EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
+}
+
+TEST_F(PeerConnectionInterfaceTest, SetBitrateCurrentNegativeFails) {
+  CreatePeerConnection();
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.current_bitrate_bps = rtc::Optional<int>(-1);
+  EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
+}
+
+TEST_F(PeerConnectionInterfaceTest, SetBitrateMaxLessThanCurrentFails) {
+  CreatePeerConnection();
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.current_bitrate_bps = rtc::Optional<int>(10);
+  bitrate.max_bitrate_bps = rtc::Optional<int>(8);
+  EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
+}
+
+TEST_F(PeerConnectionInterfaceTest, SetBitrateMaxLessThanMinFails) {
+  CreatePeerConnection();
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.min_bitrate_bps = rtc::Optional<int>(10);
+  bitrate.max_bitrate_bps = rtc::Optional<int>(8);
+  EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
+}
+
+TEST_F(PeerConnectionInterfaceTest, SetBitrateMaxNegativeFails) {
+  CreatePeerConnection();
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.max_bitrate_bps = rtc::Optional<int>(-1);
+  EXPECT_FALSE(pc_->SetBitrate(bitrate).ok());
+}
+
+// The current bitrate from Call's BitrateConfigMask is currently clamped by
+// Call's BitrateConfig, which comes from the SDP or a default value. This test
+// checks that a call to SetBitrate with a current bitrate that will be clamped
+// succeeds.
+TEST_F(PeerConnectionInterfaceTest, SetBitrateCurrentLessThanImplicitMin) {
+  CreatePeerConnection();
+  PeerConnectionInterface::BitrateParameters bitrate;
+  bitrate.current_bitrate_bps = rtc::Optional<int>(1);
+  EXPECT_TRUE(pc_->SetBitrate(bitrate).ok());
+}
+
 class PeerConnectionMediaConfigTest : public testing::Test {
  protected:
   void SetUp() override {
