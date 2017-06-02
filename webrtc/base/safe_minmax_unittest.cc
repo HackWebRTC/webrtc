@@ -62,12 +62,19 @@ static_assert(TypeCheckMinMax<uint64_t,  uint8_t,  uint8_t, uint64_t>(), "");
 static_assert(TypeCheckMinMax<uint64_t,  int64_t,  int64_t, uint64_t>(), "");
 static_assert(TypeCheckMinMax<uint64_t, uint64_t, uint64_t, uint64_t>(), "");
 
-// SafeMin/SafeMax: Check that we can use enum types.
 enum DefaultE { kFoo = -17 };
 enum UInt8E : uint8_t { kBar = 17 };
-static_assert(TypeCheckMinMax<unsigned, DefaultE,     int, unsigned>(), "");
-static_assert(TypeCheckMinMax<unsigned,   UInt8E, uint8_t, unsigned>(), "");
-static_assert(TypeCheckMinMax<DefaultE,   UInt8E,     int,      int>(), "");
+
+// SafeMin/SafeMax: Check that we can use enum types.
+static_assert(TypeCheckMinMax<unsigned, unsigned, unsigned, unsigned>(), "");
+static_assert(TypeCheckMinMax<unsigned, DefaultE,      int, unsigned>(), "");
+static_assert(TypeCheckMinMax<unsigned,   UInt8E,  uint8_t, unsigned>(), "");
+static_assert(TypeCheckMinMax<DefaultE, unsigned,      int, unsigned>(), "");
+static_assert(TypeCheckMinMax<DefaultE, DefaultE,      int,      int>(), "");
+static_assert(TypeCheckMinMax<DefaultE,   UInt8E,      int,      int>(), "");
+static_assert(TypeCheckMinMax<  UInt8E, unsigned,  uint8_t, unsigned>(), "");
+static_assert(TypeCheckMinMax<  UInt8E, DefaultE,     int,       int>(), "");
+static_assert(TypeCheckMinMax<  UInt8E,   UInt8E,  uint8_t,  uint8_t>(), "");
 
 using ld = long double;
 

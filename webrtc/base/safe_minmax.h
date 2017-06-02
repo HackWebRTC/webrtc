@@ -153,13 +153,15 @@ struct TypeOr {
 
 }  // namespace safe_minmax_impl
 
-template <typename R = safe_minmax_impl::DefaultType,
-          typename T1 = safe_minmax_impl::DefaultType,
-          typename T2 = safe_minmax_impl::DefaultType,
-          typename R2 = typename safe_minmax_impl::TypeOr<
-              R,
-              typename safe_minmax_impl::UnderlyingType<
-                  typename safe_minmax_impl::MType<T1, T2>::min_t>::type>::type>
+template <
+    typename R = safe_minmax_impl::DefaultType,
+    typename T1 = safe_minmax_impl::DefaultType,
+    typename T2 = safe_minmax_impl::DefaultType,
+    typename R2 = typename safe_minmax_impl::TypeOr<
+        R,
+        typename safe_minmax_impl::MType<
+            typename safe_minmax_impl::UnderlyingType<T1>::type,
+            typename safe_minmax_impl::UnderlyingType<T2>::type>::min_t>::type>
 constexpr R2 SafeMin(T1 a, T2 b) {
   static_assert(IsIntlike<T1>::value || std::is_floating_point<T1>::value,
                 "The first argument must be integral or floating-point");
@@ -168,13 +170,15 @@ constexpr R2 SafeMin(T1 a, T2 b) {
   return safe_cmp::Lt(a, b) ? static_cast<R2>(a) : static_cast<R2>(b);
 }
 
-template <typename R = safe_minmax_impl::DefaultType,
-          typename T1 = safe_minmax_impl::DefaultType,
-          typename T2 = safe_minmax_impl::DefaultType,
-          typename R2 = typename safe_minmax_impl::TypeOr<
-              R,
-              typename safe_minmax_impl::UnderlyingType<
-                  typename safe_minmax_impl::MType<T1, T2>::max_t>::type>::type>
+template <
+    typename R = safe_minmax_impl::DefaultType,
+    typename T1 = safe_minmax_impl::DefaultType,
+    typename T2 = safe_minmax_impl::DefaultType,
+    typename R2 = typename safe_minmax_impl::TypeOr<
+        R,
+        typename safe_minmax_impl::MType<
+            typename safe_minmax_impl::UnderlyingType<T1>::type,
+            typename safe_minmax_impl::UnderlyingType<T2>::type>::max_t>::type>
 constexpr R2 SafeMax(T1 a, T2 b) {
   static_assert(IsIntlike<T1>::value || std::is_floating_point<T1>::value,
                 "The first argument must be integral or floating-point");
