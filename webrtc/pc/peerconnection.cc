@@ -1242,6 +1242,54 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
   }
 }
 
+RTCError PeerConnection::SetBitrate(const BitrateParameters& bitrate) {
+  rtc::Thread* worker_thread = factory_->worker_thread();
+  if (!worker_thread->IsCurrent()) {
+    return worker_thread->Invoke<RTCError>(
+        RTC_FROM_HERE, rtc::Bind(&PeerConnection::SetBitrate, this, bitrate));
+  }
+
+  const bool has_min = static_cast<bool>(bitrate.min_bitrate_bps);
+  const bool has_current = static_cast<bool>(bitrate.current_bitrate_bps);
+  const bool has_max = static_cast<bool>(bitrate.max_bitrate_bps);
+  if (has_min && *bitrate.min_bitrate_bps < 0) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                         "min_bitrate_bps <= 0");
+  }
+  if (has_current) {
+    if (has_min && *bitrate.current_bitrate_bps < *bitrate.min_bitrate_bps) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "current_bitrate_bps < min_bitrate_bps");
+    } else if (*bitrate.current_bitrate_bps < 0) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "curent_bitrate_bps < 0");
+    }
+  }
+  if (has_max) {
+    if (has_current &&
+        *bitrate.max_bitrate_bps < *bitrate.current_bitrate_bps) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "max_bitrate_bps < current_bitrate_bps");
+    } else if (has_min && *bitrate.max_bitrate_bps < *bitrate.min_bitrate_bps) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "max_bitrate_bps < min_bitrate_bps");
+    } else if (*bitrate.max_bitrate_bps < 0) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "max_bitrate_bps < 0");
+    }
+  }
+
+  Call::Config::BitrateConfigMask mask;
+  mask.min_bitrate_bps = bitrate.min_bitrate_bps;
+  mask.start_bitrate_bps = bitrate.current_bitrate_bps;
+  mask.max_bitrate_bps = bitrate.max_bitrate_bps;
+
+  RTC_DCHECK(call_.get());
+  call_->SetBitrateConfigMask(mask);
+
+  return RTCError::OK();
+}
+
 bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
                                       int64_t max_size_bytes) {
   return factory_->worker_thread()->Invoke<bool>(
