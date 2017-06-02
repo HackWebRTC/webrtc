@@ -588,11 +588,6 @@ void FakeCall::SetBitrateConfig(
   config_.bitrate_config = bitrate_config;
 }
 
-void FakeCall::SetBitrateConfigMask(
-    const webrtc::Call::Config::BitrateConfigMask& mask) {
-  // TODO(zstein): not implemented
-}
-
 void FakeCall::SignalChannelNetworkState(webrtc::MediaType media,
                                          webrtc::NetworkState state) {
   switch (media) {

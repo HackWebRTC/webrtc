@@ -144,8 +144,6 @@ class PeerConnection : public PeerConnectionInterface,
 
   void RegisterUMAObserver(UMAObserver* observer) override;
 
-  RTCError SetBitrate(const BitrateParameters& bitrate) override;
-
   bool StartRtcEventLog(rtc::PlatformFile file,
                         int64_t max_size_bytes) override;
   void StopRtcEventLog() override;
