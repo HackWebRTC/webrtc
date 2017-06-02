@@ -868,6 +868,8 @@ struct VideoMediaInfo {
   }
   std::vector<VideoSenderInfo> senders;
   std::vector<VideoReceiverInfo> receivers;
+  // Deprecated.
+  // TODO(holmer): Remove once upstream projects no longer use this.
   std::vector<BandwidthEstimationInfo> bw_estimations;
   RtpCodecParametersMap send_codecs;
   RtpCodecParametersMap receive_codecs;
@@ -1082,6 +1084,15 @@ class VideoMediaChannel : public MediaChannel {
   // If SSRC is 0, the sink is used for the 'default' stream.
   virtual bool SetSink(uint32_t ssrc,
                        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) = 0;
+  // This fills the "bitrate parts" (rtx, video bitrate) of the
+  // BandwidthEstimationInfo, since that part that isn't possible to get
+  // through webrtc::Call::GetStats, as they are statistics of the send
+  // streams.
+  // TODO(holmer): We should change this so that either BWE graphs doesn't
+  // need access to bitrates of the streams, or change the (RTC)StatsCollector
+  // so that it's getting the send stream stats separately by calling
+  // GetStats(), and merges with BandwidthEstimationInfo by itself.
+  virtual void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VideoMediaInfo* info) = 0;
 };

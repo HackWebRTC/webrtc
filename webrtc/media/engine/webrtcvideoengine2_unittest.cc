@@ -3709,17 +3709,19 @@ TEST_F(WebRtcVideoChannel2Test, TranslatesSenderBitrateStatsCorrectly) {
   cricket::VideoMediaInfo info;
   ASSERT_TRUE(channel_->GetStats(&info));
   ASSERT_EQ(2u, info.senders.size());
+  BandwidthEstimationInfo bwe_info;
+  channel_->FillBitrateInfo(&bwe_info);
   // Assuming stream and stream2 corresponds to senders[0] and [1] respectively
   // is OK as std::maps are sorted and AddSendStream() gives increasing SSRCs.
   EXPECT_EQ(stats.media_bitrate_bps, info.senders[0].nominal_bitrate);
   EXPECT_EQ(stats2.media_bitrate_bps, info.senders[1].nominal_bitrate);
   EXPECT_EQ(stats.target_media_bitrate_bps + stats2.target_media_bitrate_bps,
-            info.bw_estimations[0].target_enc_bitrate);
+            bwe_info.target_enc_bitrate);
   EXPECT_EQ(stats.media_bitrate_bps + stats2.media_bitrate_bps,
-            info.bw_estimations[0].actual_enc_bitrate);
-  EXPECT_EQ(1 + 3 + 5 + 7, info.bw_estimations[0].transmit_bitrate)
+            bwe_info.actual_enc_bitrate);
+  EXPECT_EQ(1 + 3 + 5 + 7, bwe_info.transmit_bitrate)
       << "Bandwidth stats should take all streams into account.";
-  EXPECT_EQ(2 + 4 + 6 + 8, info.bw_estimations[0].retransmit_bitrate)
+  EXPECT_EQ(2 + 4 + 6 + 8, bwe_info.retransmit_bitrate)
       << "Bandwidth stats should take all streams into account.";
 }
 

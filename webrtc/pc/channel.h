@@ -351,11 +351,10 @@ class BaseChannel
   virtual void OnConnectionMonitorUpdate(ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) = 0;
 
-  // Helper function for invoking bool-returning methods on the worker thread.
-  template <class FunctorT>
-  bool InvokeOnWorker(const rtc::Location& posted_from,
-                      const FunctorT& functor) {
-    return worker_thread_->Invoke<bool>(posted_from, functor);
+  // Helper function template for invoking methods on the worker thread.
+  template <class T, class FunctorT>
+  T InvokeOnWorker(const rtc::Location& posted_from, const FunctorT& functor) {
+    return worker_thread_->Invoke<T>(posted_from, functor);
   }
 
   void AddHandledPayloadType(int payload_type);
@@ -554,6 +553,7 @@ class VideoChannel : public BaseChannel {
 
   bool SetSink(uint32_t ssrc,
                rtc::VideoSinkInterface<webrtc::VideoFrame>* sink);
+  void FillBitrateInfo(BandwidthEstimationInfo* bwe_info);
   // Get statistics about the current media session.
   bool GetStats(VideoMediaInfo* stats);
 
