@@ -23,15 +23,6 @@ config("rtc_media_defines_config") {
   ]
 }
 
-config("rtc_media_warnings_config") {
-  # GN orders flags on a target before flags from configs. The default config
-  # adds these flags so to cancel them out they need to come from a config and
-  # cannot be on the target directly.
-  if (!is_win) {
-    cflags = [ "-Wno-deprecated-declarations" ]
-  }
-}
-
 rtc_static_library("rtc_media_base") {
   # TODO(kjellander): Remove (bugs.webrtc.org/6828)
   # Enabling GN check triggers cyclic dependency error:
@@ -76,8 +67,6 @@ rtc_static_library("rtc_media_base") {
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
   ]
-
-  configs += [ ":rtc_media_warnings_config" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -165,8 +154,6 @@ rtc_static_library("rtc_media") {
       "sctp/sctptransport.h",
     ]
   }
-
-  configs += [ ":rtc_media_warnings_config" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
