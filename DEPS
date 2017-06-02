@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'ba0a42d0d3c05a9b9e5b125436e29b4a114b115f',
+  'chromium_revision': '5867068aa6d1677d3ff8a9da36ba793757b171aa',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -23,7 +23,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': '4cafad75c8313d6c14b47544574a20ecc49c253f',
+  'catapult_revision': 'b0384fe60f101e921782716d3a7a1881de5b37ea',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -33,15 +33,15 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + 'b115016846943a4d7040fc6c6979fdb3f2e9add6',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'a509beeb02b07672485e6236339d4fdebc635b6e',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + '6efe072bc41d47cece8e551b816149939d439584',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '31d4daad5d9af672d4e234570a24f3fd844bb713',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '2c040acbfe8ef68d04a60eb63962dfe6b70395cb',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'ec187a22f333cc79b4b4340d476c429fe0be361a',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '5c6b10f12865679cd470febcc46080b194662282',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '42331f2177eb86403de45c04b2b8f67cba964fde',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -64,7 +64,7 @@ deps = {
   'src/third_party/libvpx/source/libvpx':
     Var('chromium_git') + '/webm/libvpx.git' + '@' +  'b9649d240768cdcfc233960056aafb9ed1a3db14',
   'src/third_party/libyuv':
-    Var('chromium_git') + '/libyuv/libyuv.git' + '@' + '8edd2286fdf9df2b9da806bda7ed262492f95921',
+    Var('chromium_git') + '/libyuv/libyuv.git' + '@' + '7bffe5e1c54bc22daebd57003735e61693719ac6',
   'src/third_party/openh264/src':
     Var('chromium_git') + '/external/github.com/cisco/openh264' + '@' + '0fd88df93c5dcaf858c57eb7892bd27763f0f0ac',
   'src/third_party/openmax_dl':
@@ -74,7 +74,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '52da4517044bfb21ef6b9eb39cdf9df7186f91da',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + 'f694a2d398cb13ad6f4dfc3a0ce294895bde4ca1',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'eb296f67da078ec01f5e3a9ea9cdc6d26d680161',
    'src/tools/swarming_client':
@@ -94,7 +94,7 @@ deps_os = {
     'src/third_party/ced/src':
       Var('chromium_git') + '/external/github.com/google/compact_enc_det.git' + '@' + '910cca22d881b02cbc8950fa02ccbcdcfb782456',
     'src/third_party/icu':
-      Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'ae18d60831126f902d778541495194380ff77fd8',
+      Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'dfa798fe694702b43a3debc3290761f22b1acaf8',
     'src/third_party/jsr-305/src':
       Var('chromium_git') + '/external/jsr-305.git' + '@' + '642c508235471f7220af6d5df2d3210e3bfc0919',
     'src/third_party/junit/src':
@@ -116,7 +116,7 @@ deps_os = {
   },
   'ios': {
     'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + 'f18b3252dcd9af2179feff4d0382d4a8374f8ec4',
+      Var('chromium_git') + '/chromium/src/ios' + '@' + 'e970b15475f82ef56812beedbf0f20b65cc98665',
   },
   'unix': {
     'src/third_party/lss':
