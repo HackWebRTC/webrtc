@@ -32,6 +32,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.chromium.base.test.util.DisabledTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -804,6 +805,8 @@ public class PeerConnectionTest {
     System.gc();
   }
 
+  // Flaky on Android. See webrtc:7761
+  @DisabledTest
   @Test
   @MediumTest
   public void testTrackRemovalAndAddition() throws Exception {
