@@ -2791,8 +2791,6 @@ TEST_F(EndToEndTest, MAYBE_ContentTypeSwitches) {
     int num_frames_received_ GUARDED_BY(&crit_);
   } test;
 
-  test::ScopedFieldTrials override_field_trials(
-      "WebRTC-VideoContentTypeExtension/Enabled/");
   metrics::Reset();
 
   Call::Config send_config(test.GetSenderCallConfig());
@@ -2877,8 +2875,6 @@ TEST_F(EndToEndTest, VerifyHistogramStatsWithScreenshare) {
   const bool kEnabledRtx = false;
   const bool kEnabledRed = false;
   const bool kScreenshare = true;
-  test::ScopedFieldTrials override_field_trials(
-      "WebRTC-VideoContentTypeExtension/Enabled/");
   VerifyHistogramStats(kEnabledRtx, kEnabledRed, kScreenshare);
 }
 
