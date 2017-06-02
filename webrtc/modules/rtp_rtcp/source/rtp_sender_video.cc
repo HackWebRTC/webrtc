@@ -28,7 +28,7 @@
 #include "webrtc/modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_packet_to_send.h"
-
+#include "webrtc/system_wrappers/include/field_trial.h"
 namespace webrtc {
 
 namespace {
@@ -328,7 +328,8 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
       last_rotation_ = current_rotation;
       // Report content type only for key frames.
       if (frame_type == kVideoFrameKey &&
-          video_header->content_type != VideoContentType::UNSPECIFIED) {
+          video_header->content_type != VideoContentType::UNSPECIFIED &&
+          webrtc::field_trial::IsEnabled("WebRTC-VideoContentTypeExtension")) {
         last_packet->SetExtension<VideoContentTypeExtension>(
             video_header->content_type);
       }
