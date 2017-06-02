@@ -2,7 +2,7 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '54d7eb0b3a09f39e9db65452d72209bee09fd006',
+  'chromium_revision': '05381409884cc4b9b1e15eeeff4dc624088b9ab3',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -35,13 +35,13 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + 'fc762f58ff1a851350d7d9eeef247a031d3eb1e2',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + 'a055d2ec5f779067cf53e0e6c4b3687a43d83d24',
+    Var('chromium_git') + '/chromium/src/build' + '@' + 'c186e9797561125ecaa2ae4550caf85845712434',
   'src/buildtools':
-    Var('chromium_git') + '/chromium/buildtools.git' + '@' + '104574186c17cd4701857454feba8872e52a7d82',
+    Var('chromium_git') + '/chromium/buildtools.git' + '@' + '31d4daad5d9af672d4e234570a24f3fd844bb713',
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + '431cc90bd7630d3791cb79663f83029f45f733dd',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'ecef6c9bc589de2e7dc987e5d0999372cafcaf4f',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'c4a5b7d9a349f6136155a46d79e2dd6a39231f95',
   'src/third_party/boringssl/src':
    Var('boringssl_git') + '/boringssl.git' + '@' +  Var('boringssl_revision'),
   'src/third_party/catapult':
@@ -74,7 +74,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'ba34410c2981b54b15fcb19f737ac6072026bfb2',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '2287f29fdf7259efaeffe2a9a2c3c35d1e673a5c',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'eb296f67da078ec01f5e3a9ea9cdc6d26d680161',
    'src/tools/swarming_client':
