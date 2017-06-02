@@ -19,16 +19,17 @@ const int kRequiredResolutionAlignment = 2;
 
 namespace webrtc {
 
-AndroidVideoTrackSource::AndroidVideoTrackSource(rtc::Thread* signaling_thread,
-                                                 JNIEnv* jni,
-                                                 jobject j_egl_context,
-                                                 bool is_screencast)
+AndroidVideoTrackSource::AndroidVideoTrackSource(
+    rtc::Thread* signaling_thread,
+    JNIEnv* jni,
+    jobject j_surface_texture_helper,
+    bool is_screencast)
     : AdaptedVideoTrackSource(kRequiredResolutionAlignment),
       signaling_thread_(signaling_thread),
-      surface_texture_helper_(webrtc_jni::SurfaceTextureHelper::create(
-          jni,
-          "Camera SurfaceTextureHelper",
-          j_egl_context)),
+      surface_texture_helper_(
+          new rtc::RefCountedObject<webrtc_jni::SurfaceTextureHelper>(
+              jni,
+              j_surface_texture_helper)),
       is_screencast_(is_screencast) {
   LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
   camera_thread_checker_.DetachFromThread();

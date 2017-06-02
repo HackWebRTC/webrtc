@@ -27,7 +27,7 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  public:
   AndroidVideoTrackSource(rtc::Thread* signaling_thread,
                           JNIEnv* jni,
-                          jobject j_egl_context,
+                          jobject j_surface_texture_helper,
                           bool is_screencast = false);
 
   bool is_screencast() const override { return is_screencast_; }
