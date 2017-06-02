@@ -41,17 +41,17 @@ def _ParseArgs():
   usage = 'usage: %prog [options]'
   parser = optparse.OptionParser(usage=usage)
 
-  parser.add_option('--frame_width', type='string', default='1280',
+  parser.add_option('--frame_width', type='int', default=1280,
                     help='Width of the recording. Default: %default')
-  parser.add_option('--frame_height', type='string', default='720',
+  parser.add_option('--frame_height', type='int', default=720,
                     help='Height of the recording. Default: %default')
-  parser.add_option('--framerate', type='string', default='60',
+  parser.add_option('--framerate', type='int', default=60,
                     help='Recording framerate. Default: %default')
-  parser.add_option('--ref_duration', type='string', default='20',
+  parser.add_option('--ref_duration', type='int', default=20,
                     help='Reference recording duration. Default: %default')
-  parser.add_option('--test_duration', type='string', default='10',
+  parser.add_option('--test_duration', type='int', default=10,
                     help='Test recording duration. Default: %default')
-  parser.add_option('--time_between_recordings', type=float, default=5,
+  parser.add_option('--time_between_recordings', type='int', default=5,
                     help='Time between starting test recording after ref.'
                     'Default: %default')
   parser.add_option('--ref_video_device', type='string', default='/dev/video0',
@@ -279,14 +279,14 @@ def StartRecording(options, ref_file_location, test_file_location):
   ref_cmd = [
     options.ffmpeg,
     '-v', 'error',
-    '-s', options.frame_width + 'x' + options.frame_height,
-    '-framerate', options.framerate,
-    '-f', options.recording_api,
-    '-i', options.ref_video_device,
-    '-pix_fmt', options.pixel_format,
-    '-s', options.frame_width + 'x' + options.frame_height,
-    '-t', options.ref_duration,
-    '-framerate', options.framerate,
+    '-s', '%dx%d' % (options.frame_width, options.frame_height),
+    '-r', '%d' % options.framerate,
+    '-f', '%s' % options.recording_api,
+    '-i', '%s' % options.ref_video_device,
+    '-pix_fmt', '%s' % options.pixel_format,
+    '-s', '%dx%d' % (options.frame_width, options.frame_height),
+    '-t', '%d' % options.ref_duration,
+    '-r', '%d' % options.framerate,
     ref_file
   ]
 
@@ -294,25 +294,25 @@ def StartRecording(options, ref_file_location, test_file_location):
   test_cmd = [
     options.ffmpeg,
     '-v', 'error',
-    '-s', options.frame_width + 'x' + options.frame_height,
-    '-framerate', options.framerate,
-    '-f', options.recording_api,
-    '-i', options.test_video_device,
-    '-pix_fmt', options.pixel_format,
-    '-s', options.frame_width + 'x' + options.frame_height,
-    '-t', options.test_duration,
-    '-framerate', options.framerate,
+    '-s', '%dx%d' % (options.frame_width, options.frame_height),
+    '-r', '%d' % options.framerate,
+    '-f', '%s' % options.recording_api,
+    '-i', '%s' % options.test_video_device,
+    '-pix_fmt', '%s' % options.pixel_format,
+    '-s', '%dx%d' % (options.frame_width, options.frame_height),
+    '-t', '%d' % options.test_duration,
+    '-r', '%d' % options.framerate,
     test_file
   ]
   print 'Trying to record from reference recorder...'
-  ref_recorder = subprocess.Popen(ref_cmd, stderr=sys.stderr)
+  ref_recorder = subprocess.Popen(ref_cmd)
 
   # Start the 2nd recording a little later to ensure the 1st one has started.
   # TODO(jansson) Check that the ref_recorder output file exists rather than
   # using sleep.
   time.sleep(options.time_between_recordings)
   print 'Trying to record from test recorder...'
-  test_recorder = subprocess.Popen(test_cmd, stderr=sys.stderr)
+  test_recorder = subprocess.Popen(test_cmd)
   test_recorder.wait()
   ref_recorder.wait()
 
@@ -361,9 +361,9 @@ def FlipAndCropRecordings(options, test_file_name, test_file_location,
   ref_video_crop_cmd = [
     options.ffmpeg,
     '-v', 'error',
-    '-s', options.frame_width + 'x' + options.frame_height,
-    '-i', os.path.join(ref_file_location, ref_file_name),
-    '-vf', options.ref_crop_parameters,
+    '-s', '%dx%d' % (options.frame_width, options.frame_height),
+    '-i', '%s' % os.path.join(ref_file_location, ref_file_name),
+    '-vf', '%s' % options.ref_crop_parameters,
     '-c:a', 'copy',
     cropped_ref_file
   ]
@@ -376,9 +376,9 @@ def FlipAndCropRecordings(options, test_file_name, test_file_location,
   test_video_crop_cmd = [
     options.ffmpeg,
     '-v', 'error',
-    '-s', options.frame_width + 'x' + options.frame_height,
-    '-i', os.path.join(test_file_location, test_file_name),
-    '-vf', options.test_crop_parameters,
+    '-s', '%dx%d' % (options.frame_width, options.frame_height),
+    '-i', '%s' % os.path.join(test_file_location, test_file_name),
+    '-vf', '%s' % options.test_crop_parameters,
     '-c:a', 'copy',
     cropped_test_file
   ]
@@ -434,22 +434,22 @@ def CompareVideos(options, cropped_ref_file, cropped_test_file):
   # string: 'hflip, crop=950:420:130:56'
   for param in options.ref_crop_parameters.split('crop'):
     if param[0] == '=':
-      crop_width = param.split(':')[0].split('=')[1]
-      crop_height = param.split(':')[1]
+      crop_width = int(param.split(':')[0].split('=')[1])
+      crop_height = int(param.split(':')[1])
 
   compare_cmd = [
     compare_videos_script,
-    '--ref_video', cropped_ref_file,
-    '--test_video', cropped_test_file,
-    '--frame_analyzer', os.path.abspath(options.frame_analyzer),
-    '--zxing_path', options.zxing_path,
-    '--ffmpeg_path', options.ffmpeg,
-    '--stats_file_ref', os.path.join(os.path.dirname(cropped_ref_file),
-        cropped_ref_file + '_stats.txt'),
-    '--stats_file_test', os.path.join(os.path.dirname(cropped_test_file),
-        cropped_test_file + '_stats.txt'),
-    '--yuv_frame_height', crop_height,
-    '--yuv_frame_width', crop_width
+    '--ref_video=%s' % cropped_ref_file,
+    '--test_video=%s' % cropped_test_file,
+    '--frame_analyzer=%s' % os.path.abspath(options.frame_analyzer),
+    '--zxing_path=%s' % options.zxing_path,
+    '--ffmpeg_path=%s' % options.ffmpeg,
+    '--stats_file_ref=%s_stats.txt' %
+        os.path.join(os.path.dirname(cropped_ref_file), cropped_ref_file),
+    '--stats_file_test=%s_stats.txt' %
+        os.path.join(os.path.dirname(cropped_test_file), cropped_test_file),
+    '--yuv_frame_height=%d' % crop_height,
+    '--yuv_frame_width=%d' % crop_width
   ]
 
   with open(result_file_name, 'w') as f:
