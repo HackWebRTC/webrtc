@@ -5,7 +5,6 @@
   "xcode version": "8.0",
   "gn_args": [
     "goma_dir=\"$(goma_dir)\"",
-    "additional_target_cpus=[\"arm\"]",
     "is_component_build=false",
     "is_debug=true",
     "target_cpu=\"arm64\"",
