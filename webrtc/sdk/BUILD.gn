@@ -291,7 +291,12 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
         "objc/Framework/Headers/WebRTC/RTCVideoViewShading.h",
       ]
-
+      if (is_ios) {
+        sources += [
+          "objc/Framework/Classes/PeerConnection/RTCFileVideoCapturer.h",
+          "objc/Framework/Classes/PeerConnection/RTCFileVideoCapturer.m",
+        ]
+      }
       libs = [ "AVFoundation.framework" ]
 
       if (is_ios) {
