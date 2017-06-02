@@ -565,8 +565,9 @@ OpenSSLAdapter::Send(const void* pv, size_t cb) {
   // buffer the data ourselves. When we know the underlying socket is writable
   // again from OnWriteEvent (or if Send is called again before that happens),
   // we'll retry sending this buffered data.
-  if ((error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE) &&
-      pending_data_.empty()) {
+  if (error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE) {
+    // Shouldn't be able to get to this point if we already have pending data.
+    RTC_DCHECK(pending_data_.empty());
     LOG(LS_WARNING)
         << "SSL_write couldn't write to the underlying socket; buffering data.";
     pending_data_.SetData(static_cast<const uint8_t*>(pv), cb);
