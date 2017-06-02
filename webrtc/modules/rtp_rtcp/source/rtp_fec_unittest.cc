@@ -108,7 +108,8 @@ void RtpFecTest<ForwardErrorCorrectionType>::ReceivedPackets(
     const PacketListType& packet_list,
     int* loss_mask,
     bool is_fec) {
-  uint16_t fec_seq_num = media_packet_generator_.GetFecSeqNum();
+  uint16_t fec_seq_num = ForwardErrorCorrectionType::GetFirstFecSeqNum(
+      media_packet_generator_.GetNextSeqNum());
   int packet_idx = 0;
 
   for (const auto& packet : packet_list) {
@@ -120,19 +121,17 @@ void RtpFecTest<ForwardErrorCorrectionType>::ReceivedPackets(
       memcpy(received_packet->pkt->data, packet->data, packet->length);
       received_packet->is_fec = is_fec;
       if (!is_fec) {
-        // For media packets, the sequence number and marker bit is
-        // obtained from RTP header. These were set in ConstructMediaPackets().
+        received_packet->ssrc = kMediaSsrc;
+        // For media packets, the sequence number is obtained from the
+        // RTP header as written by MediaPacketGenerator::ConstructMediaPackets.
         received_packet->seq_num =
             ByteReader<uint16_t>::ReadBigEndian(&packet->data[2]);
       } else {
-        // The sequence number, marker bit, and ssrc number are defined in the
-        // RTP header of the FEC packet, which is not constructed in this test.
-        // So we set these values below based on the values generated in
-        // ConstructMediaPackets().
+        received_packet->ssrc = ForwardErrorCorrectionType::kFecSsrc;
+        // For FEC packets, we simulate the sequence numbers differently
+        // depending on if ULPFEC or FlexFEC is used. See the definition of
+        // ForwardErrorCorrectionType::GetFirstFecSeqNum.
         received_packet->seq_num = fec_seq_num;
-        // The ssrc value for FEC packets is set to the one used for the
-        // media packets in ConstructMediaPackets().
-        received_packet->ssrc = kMediaSsrc;
       }
       received_packets_.push_back(std::move(received_packet));
     }
@@ -177,18 +176,35 @@ bool RtpFecTest<ForwardErrorCorrectionType>::IsRecoveryComplete() {
 
 class FlexfecForwardErrorCorrection : public ForwardErrorCorrection {
  public:
+  static const uint32_t kFecSsrc = kFlexfecSsrc;
+
   FlexfecForwardErrorCorrection()
       : ForwardErrorCorrection(
             std::unique_ptr<FecHeaderReader>(new FlexfecHeaderReader()),
             std::unique_ptr<FecHeaderWriter>(new FlexfecHeaderWriter())) {}
+
+  // For FlexFEC we let the FEC packet sequence numbers be independent of
+  // the media packet sequence numbers.
+  static uint16_t GetFirstFecSeqNum(uint16_t next_media_seq_num) {
+    Random random(0xbe110);
+    return random.Rand<uint16_t>();
+  }
 };
 
 class UlpfecForwardErrorCorrection : public ForwardErrorCorrection {
  public:
+  static const uint32_t kFecSsrc = kMediaSsrc;
+
   UlpfecForwardErrorCorrection()
       : ForwardErrorCorrection(
             std::unique_ptr<FecHeaderReader>(new UlpfecHeaderReader()),
             std::unique_ptr<FecHeaderWriter>(new UlpfecHeaderWriter())) {}
+
+  // For ULPFEC we assume that the FEC packets are subsequent to the media
+  // packets in terms of sequence number.
+  static uint16_t GetFirstFecSeqNum(uint16_t next_media_seq_num) {
+    return next_media_seq_num;
+  }
 };
 
 using FecTypes =
@@ -359,13 +375,14 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapOneFrameRecovery) {
   EXPECT_TRUE(this->IsRecoveryComplete());
 }
 
-// Sequence number wrap occurs within the FEC packets for the frame.
-// In this case we will discard FEC packet and full recovery is not expected.
-// Same problem will occur if wrap is within media packets but FEC packet is
+// Sequence number wrap occurs within the ULPFEC packets for the frame.
+// In this case we will discard ULPFEC packet and full recovery is not expected.
+// Same problem will occur if wrap is within media packets but ULPFEC packet is
 // received before the media packets. This may be improved if timing information
-// is used to detect old FEC packets.
+// is used to detect old ULPFEC packets.
 // TODO(marpan): Update test if wrap-around handling changes in FEC decoding.
-TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapOneFrameNoRecovery) {
+using RtpFecTestUlpfecOnly = RtpFecTest<UlpfecForwardErrorCorrection>;
+TEST_F(RtpFecTestUlpfecOnly, FecRecoveryWithSeqNumGapOneFrameNoRecovery) {
   constexpr int kNumImportantPackets = 0;
   constexpr bool kUseUnequalProtection = false;
   constexpr uint8_t kProtectionFactor = 200;
@@ -398,8 +415,61 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithSeqNumGapOneFrameNoRecovery) {
                                     &this->recovered_packets_));
 
   // The two FEC packets are received and should allow for complete recovery,
-  // but because of the wrap the second FEC packet will be discarded, and only
-  // one media packet is recoverable. So exepct 2 media packets on recovered
+  // but because of the wrap the first FEC packet will be discarded, and only
+  // one media packet is recoverable. So expect 2 media packets on recovered
+  // list and no complete recovery.
+  EXPECT_EQ(2u, this->recovered_packets_.size());
+  EXPECT_TRUE(this->recovered_packets_.size() != this->media_packets_.size());
+  EXPECT_FALSE(this->IsRecoveryComplete());
+}
+
+// TODO(brandtr): This test mimics the one above, ensuring that the recovery
+// strategy of FlexFEC matches the recovery strategy of ULPFEC. Since FlexFEC
+// does not share the sequence number space with the media, however, having a
+// matching recovery strategy may be suboptimal. Study this further.
+using RtpFecTestFlexfecOnly = RtpFecTest<FlexfecForwardErrorCorrection>;
+TEST_F(RtpFecTestFlexfecOnly, FecRecoveryWithSeqNumGapOneFrameNoRecovery) {
+  constexpr int kNumImportantPackets = 0;
+  constexpr bool kUseUnequalProtection = false;
+  constexpr uint8_t kProtectionFactor = 200;
+
+  // 1 frame: 3 media packets and 2 FEC packets.
+  // Sequence number wrap in FEC packets.
+  //           -----Frame 1----
+  // #65532(media) #65533(media) #65534(media) #65535(FEC) #0(FEC).
+  this->media_packets_ =
+      this->media_packet_generator_.ConstructMediaPackets(3, 65532);
+
+  EXPECT_EQ(
+      0, this->fec_.EncodeFec(this->media_packets_, kProtectionFactor,
+                              kNumImportantPackets, kUseUnequalProtection,
+                              kFecMaskBursty, &this->generated_fec_packets_));
+
+  // Expect 2 FEC packets.
+  EXPECT_EQ(2u, this->generated_fec_packets_.size());
+
+  // Overwrite the sequence numbers generated by ConstructMediaPackets,
+  // to make sure that we do have a wrap.
+  auto it = this->generated_fec_packets_.begin();
+  ByteWriter<uint16_t>::WriteBigEndian(&(*it)->data[2], 65535);
+  ++it;
+  ByteWriter<uint16_t>::WriteBigEndian(&(*it)->data[2], 0);
+
+  // Lose the last two media packets (seq# 65533, 65534).
+  memset(this->media_loss_mask_, 0, sizeof(this->media_loss_mask_));
+  memset(this->fec_loss_mask_, 0, sizeof(this->fec_loss_mask_));
+  this->media_loss_mask_[1] = 1;
+  this->media_loss_mask_[2] = 1;
+  this->ReceivedPackets(this->media_packets_, this->media_loss_mask_, false);
+  this->ReceivedPackets(this->generated_fec_packets_, this->fec_loss_mask_,
+                        true);
+
+  EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
+                                    &this->recovered_packets_));
+
+  // The two FEC packets are received and should allow for complete recovery,
+  // but because of the wrap the first FEC packet will be discarded, and only
+  // one media packet is recoverable. So expect 2 media packets on recovered
   // list and no complete recovery.
   EXPECT_EQ(2u, this->recovered_packets_.size());
   EXPECT_TRUE(this->recovered_packets_.size() != this->media_packets_.size());
@@ -434,9 +504,9 @@ TYPED_TEST(RtpFecTest, FecRecoveryWithMediaOutOfOrder) {
 
   // Reorder received media packets.
   auto it0 = this->received_packets_.begin();
-  auto it2 = this->received_packets_.begin();
-  it2++;
-  std::swap(*it0, *it2);
+  auto it1 = this->received_packets_.begin();
+  it1++;
+  std::swap(*it0, *it1);
 
   EXPECT_EQ(0, this->fec_.DecodeFec(&this->received_packets_,
                                     &this->recovered_packets_));
@@ -956,44 +1026,6 @@ TYPED_TEST(RtpFecTest, FecRecoveryNonConsecutivePacketsWrap) {
 
   // 5 protected packets lost, one FEC packet, cannot get complete recovery.
   EXPECT_FALSE(this->IsRecoveryComplete());
-}
-
-// 'using' directive needed for compiler to be happy.
-using RtpFecTestWithFlexfec = RtpFecTest<FlexfecForwardErrorCorrection>;
-TEST_F(RtpFecTestWithFlexfec,
-       FecRecoveryWithLossAndDifferentMediaAndFlexfecSsrcs) {
-  constexpr int kNumImportantPackets = 0;
-  constexpr bool kUseUnequalProtection = false;
-  constexpr int kNumMediaPackets = 4;
-  constexpr uint8_t kProtectionFactor = 60;
-
-  media_packets_ =
-      media_packet_generator_.ConstructMediaPackets(kNumMediaPackets);
-
-  EXPECT_EQ(0, fec_.EncodeFec(media_packets_, kProtectionFactor,
-                              kNumImportantPackets, kUseUnequalProtection,
-                              kFecMaskBursty, &generated_fec_packets_));
-
-  // Expect 1 FEC packet.
-  EXPECT_EQ(1u, generated_fec_packets_.size());
-
-  // 1 media packet lost
-  memset(media_loss_mask_, 0, sizeof(media_loss_mask_));
-  memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
-  media_loss_mask_[3] = 1;
-  NetworkReceivedPackets(media_loss_mask_, fec_loss_mask_);
-
-  // Simulate FlexFEC packet received on different SSRC.
-  auto it = received_packets_.begin();
-  ++it;
-  ++it;
-  ++it;  // Now at the FEC packet.
-  (*it)->ssrc = kFlexfecSsrc;
-
-  EXPECT_EQ(0, fec_.DecodeFec(&received_packets_, &recovered_packets_));
-
-  // One packet lost, one FEC packet, expect complete recovery.
-  EXPECT_TRUE(IsRecoveryComplete());
 }
 
 }  // namespace webrtc

@@ -62,29 +62,25 @@ class ForwardErrorCorrection {
   class SortablePacket {
    public:
     // Functor which returns true if the sequence number of |first|
-    // is < the sequence number of |second|.
+    // is < the sequence number of |second|. Should only ever be called for
+    // packets belonging to the same SSRC.
     struct LessThan {
       template <typename S, typename T>
       bool operator() (const S& first, const T& second);
     };
 
+    uint32_t ssrc;
     uint16_t seq_num;
   };
 
   // The received list parameter of DecodeFec() references structs of this type.
   //
-  // The ssrc member is needed to ensure that we can restore the SSRC field of
-  // recovered packets. In most situations this could be retrieved from other
-  // media packets, but in the case of an FEC packet protecting a single
-  // missing media packet, we have no other means of obtaining it.
   // TODO(holmer): Refactor into a proper class.
   class ReceivedPacket : public SortablePacket {
    public:
     ReceivedPacket();
     ~ReceivedPacket();
 
-    uint32_t ssrc;  // SSRC of the current frame. Must be set for FEC
-                    // packets, but not required for media packets.
     bool is_fec;    // Set to true if this is an FEC packet and false
                     // otherwise.
     rtc::scoped_refptr<Packet> pkt;  // Pointer to the packet storage.
@@ -109,7 +105,7 @@ class ForwardErrorCorrection {
   // Used to link media packets to their protecting FEC packets.
   //
   // TODO(holmer): Refactor into a proper class.
-  class ProtectedPacket : public ForwardErrorCorrection::SortablePacket {
+  class ProtectedPacket : public SortablePacket {
    public:
     ProtectedPacket();
     ~ProtectedPacket();
@@ -122,7 +118,7 @@ class ForwardErrorCorrection {
   // Used for internal storage of received FEC packets in a list.
   //
   // TODO(holmer): Refactor into a proper class.
-  class ReceivedFecPacket : public ForwardErrorCorrection::SortablePacket {
+  class ReceivedFecPacket : public SortablePacket {
    public:
     ReceivedFecPacket();
     ~ReceivedFecPacket();
