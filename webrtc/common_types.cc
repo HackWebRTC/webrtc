@@ -25,7 +25,7 @@ constexpr size_t StreamId::kMaxSize;
 
 void StreamId::Set(const char* data, size_t size) {
   // If |data| contains \0, the stream id size might become less than |size|.
-  RTC_DCHECK_LE(size, kMaxSize);
+  RTC_CHECK_LE(size, kMaxSize);
   memcpy(value_, data, size);
   if (size < kMaxSize)
     value_[size] = 0;
