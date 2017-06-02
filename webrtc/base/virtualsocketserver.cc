@@ -56,6 +56,7 @@ enum {
   MSG_ID_ADDRESS_BOUND,
   MSG_ID_CONNECT,
   MSG_ID_DISCONNECT,
+  MSG_ID_SIGNALREADEVENT,
 };
 
 // Packets are passed between sockets as messages.  We copy the data just like
@@ -303,6 +304,14 @@ int VirtualSocket::RecvFrom(void* pv,
     delete packet;
   }
 
+  // To behave like a real socket, SignalReadEvent should fire in the next
+  // message loop pass if there's still data buffered.
+  if (!recv_buffer_.empty()) {
+    // Clear the message so it doesn't end up posted multiple times.
+    server_->msg_queue_->Clear(this, MSG_ID_SIGNALREADEVENT);
+    server_->msg_queue_->Post(RTC_FROM_HERE, this, MSG_ID_SIGNALREADEVENT);
+  }
+
   if (SOCK_STREAM == type_) {
     bool was_full = (recv_buffer_size_ == server_->recv_buffer_capacity_);
     recv_buffer_size_ -= data_read;
@@ -421,6 +430,10 @@ void VirtualSocket::OnMessage(Message* pmsg) {
     }
   } else if (pmsg->message_id == MSG_ID_ADDRESS_BOUND) {
     SignalAddressReady(this, GetLocalAddress());
+  } else if (pmsg->message_id == MSG_ID_SIGNALREADEVENT) {
+    if (!recv_buffer_.empty()) {
+      SignalReadEvent(this);
+    }
   } else {
     RTC_NOTREACHED();
   }
