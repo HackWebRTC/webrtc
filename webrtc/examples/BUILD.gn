@@ -163,10 +163,14 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     public_configs = [ ":apprtc_common_config" ]
 
     deps = [
-      "//webrtc/sdk:objc_common",
       "//webrtc/system_wrappers:field_trial_default",
       "//webrtc/system_wrappers:metrics_default",
     ]
+    if (is_ios) {
+      deps += [ ":AppRTCMobile_ios_frameworks" ]
+    } else {
+      deps += [ "//webrtc/sdk:objc_common" ]
+    }
   }
 
   config("apprtc_signaling_config") {
@@ -231,9 +235,13 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       ":apprtc_common",
       ":socketrocket",
     ]
-    public_deps = [
-      "//webrtc/sdk:objc_peerconnection",
-    ]
+    if (is_ios) {
+      deps += [ ":AppRTCMobile_ios_frameworks" ]
+    } else {
+      public_deps = [
+        "//webrtc/sdk:objc_peerconnection",
+      ]
+    }
     libs = [ "QuartzCore.framework" ]
   }
 
@@ -260,9 +268,13 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       ]
 
       deps = [
+        ":AppRTCMobile_ios_frameworks",
         ":apprtc_common",
         ":apprtc_signaling",
-        "//webrtc/modules/audio_device",
+
+        # TODO(kthelgason): Remove this dep when audio_device has been
+        # moved to sdk.
+        "//webrtc/modules/audio_device:audio_device",
       ]
     }
 
