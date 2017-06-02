@@ -109,6 +109,10 @@ class Plot {
   // Add a new TimeSeries to the plot.
   void AppendTimeSeries(TimeSeries&& time_series);
 
+  // Add a new TimeSeries to the plot if the series contains contains data.
+  // Otherwise, the call has no effect and the timeseries is destroyed.
+  void AppendTimeSeriesIfNotEmpty(TimeSeries&& time_series);
+
  protected:
   float xaxis_min_;
   float xaxis_max_;

@@ -19,6 +19,7 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/rate_statistics.h"
 #include "webrtc/call/audio_receive_stream.h"
 #include "webrtc/call/audio_send_stream.h"
@@ -30,6 +31,7 @@
 #include "webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
+#include "webrtc/modules/rtp_rtcp/source/rtcp_packet/remb.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -420,7 +422,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
           if (header.type() == rtcp::TransportFeedback::kPacketType &&
               header.fmt() == rtcp::TransportFeedback::kFeedbackMessageType) {
             std::unique_ptr<rtcp::TransportFeedback> rtcp_packet(
-                new rtcp::TransportFeedback());
+                rtc::MakeUnique<rtcp::TransportFeedback>());
             if (rtcp_packet->Parse(header)) {
               uint32_t ssrc = rtcp_packet->sender_ssrc();
               StreamId stream(ssrc, direction);
@@ -430,7 +432,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
             }
           } else if (header.type() == rtcp::SenderReport::kPacketType) {
             std::unique_ptr<rtcp::SenderReport> rtcp_packet(
-                new rtcp::SenderReport());
+                rtc::MakeUnique<rtcp::SenderReport>());
             if (rtcp_packet->Parse(header)) {
               uint32_t ssrc = rtcp_packet->sender_ssrc();
               StreamId stream(ssrc, direction);
@@ -440,13 +442,24 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
             }
           } else if (header.type() == rtcp::ReceiverReport::kPacketType) {
             std::unique_ptr<rtcp::ReceiverReport> rtcp_packet(
-                new rtcp::ReceiverReport());
+                rtc::MakeUnique<rtcp::ReceiverReport>());
             if (rtcp_packet->Parse(header)) {
               uint32_t ssrc = rtcp_packet->sender_ssrc();
               StreamId stream(ssrc, direction);
               uint64_t timestamp = parsed_log_.GetTimestamp(i);
               rtcp_packets_[stream].push_back(
                   LoggedRtcpPacket(timestamp, kRtcpRr, std::move(rtcp_packet)));
+            }
+          } else if (header.type() == rtcp::Remb::kPacketType &&
+                     header.fmt() == rtcp::Remb::kFeedbackMessageType) {
+            std::unique_ptr<rtcp::Remb> rtcp_packet(
+                rtc::MakeUnique<rtcp::Remb>());
+            if (rtcp_packet->Parse(header)) {
+              uint32_t ssrc = rtcp_packet->sender_ssrc();
+              StreamId stream(ssrc, direction);
+              uint64_t timestamp = parsed_log_.GetTimestamp(i);
+              rtcp_packets_[stream].push_back(LoggedRtcpPacket(
+                  timestamp, kRtcpRemb, std::move(rtcp_packet)));
             }
           }
         }
@@ -974,6 +987,32 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
     plot->AppendTimeSeries(std::move(created_series));
     plot->AppendTimeSeries(std::move(result_series));
   }
+
+  // Overlay the incoming REMB over the outgoing bitrate
+  // and outgoing REMB over incoming bitrate.
+  PacketDirection remb_direction =
+      desired_direction == kOutgoingPacket ? kIncomingPacket : kOutgoingPacket;
+  TimeSeries remb_series("Remb", LINE_STEP_GRAPH);
+  std::multimap<uint64_t, const LoggedRtcpPacket*> remb_packets;
+  for (const auto& kv : rtcp_packets_) {
+    if (kv.first.GetDirection() == remb_direction) {
+      for (const LoggedRtcpPacket& rtcp_packet : kv.second) {
+        if (rtcp_packet.type == kRtcpRemb) {
+          remb_packets.insert(
+              std::make_pair(rtcp_packet.timestamp, &rtcp_packet));
+        }
+      }
+    }
+  }
+
+  for (const auto& kv : remb_packets) {
+    const LoggedRtcpPacket* const rtcp = kv.second;
+    const rtcp::Remb* const remb = static_cast<rtcp::Remb*>(rtcp->packet.get());
+    float x = static_cast<float>(rtcp->timestamp - begin_time_) / 1000000;
+    float y = static_cast<float>(remb->bitrate_bps()) / 1000;
+    remb_series.points.emplace_back(x, y);
+  }
+  plot->AppendTimeSeriesIfNotEmpty(std::move(remb_series));
 
   plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Bitrate (kbps)", kBottomMargin, kTopMargin);
