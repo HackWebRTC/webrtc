@@ -129,9 +129,9 @@ public class MediaCodecVideoEncoder {
 
   // List of supported HW VP9 encoders.
   private static final MediaCodecProperties qcomVp9HwProperties = new MediaCodecProperties(
-      "OMX.qcom.", Build.VERSION_CODES.M, BitrateAdjustmentType.NO_ADJUSTMENT);
+      "OMX.qcom.", Build.VERSION_CODES.N, BitrateAdjustmentType.NO_ADJUSTMENT);
   private static final MediaCodecProperties exynosVp9HwProperties = new MediaCodecProperties(
-      "OMX.Exynos.", Build.VERSION_CODES.M, BitrateAdjustmentType.NO_ADJUSTMENT);
+      "OMX.Exynos.", Build.VERSION_CODES.N, BitrateAdjustmentType.FRAMERATE_ADJUSTMENT);
   private static final MediaCodecProperties[] vp9HwList =
       new MediaCodecProperties[] {qcomVp9HwProperties, exynosVp9HwProperties};
 
