@@ -27,10 +27,11 @@
 #include "webrtc/sdk/objc/Framework/Classes/Common/helpers.h"
 
 #import "WebRTC/RTCLogging.h"
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
 #import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionDelegateAdapter.h"
+#import "webrtc/sdk/objc/Framework/Classes/Audio/RTCAudioSession+Private.h"
+#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCAudioSession.h"
+#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h"
+
 
 namespace webrtc {
 

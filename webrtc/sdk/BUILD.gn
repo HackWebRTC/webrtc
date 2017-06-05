@@ -80,6 +80,27 @@ if (is_ios || is_mac) {
   }
 
   if (!build_with_chromium) {
+    rtc_static_library("objc_audio") {
+      sources = [
+        "objc/Framework/Classes/Audio/RTCAudioSession+Configuration.mm",
+        "objc/Framework/Classes/Audio/RTCAudioSession+Private.h",
+        "objc/Framework/Classes/Audio/RTCAudioSession.mm",
+        "objc/Framework/Classes/Audio/RTCAudioSessionConfiguration.m",
+        "objc/Framework/Headers/WebRTC/RTCAudioSession.h",
+        "objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h",
+      ]
+      configs += [ "..:common_objc" ]
+
+      deps = [
+        ":objc_common",
+        "../base:rtc_base_approved",
+      ]
+
+      if (is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
     rtc_static_library("objc_video") {
       sources = [
         "objc/Framework/Classes/Video/RTCAVFoundationVideoCapturerInternal.h",
@@ -370,17 +391,20 @@ if (is_ios || is_mac) {
           "//third_party/ocmock",
         ]
 
-        # RTCMTLVideoView not supported on 32-bit arm
-        if (is_ios && current_cpu != "arm") {
-          sources += [ "objc/Framework/UnitTests/RTCMTLVideoViewTests.mm" ]
-          if (current_cpu != "arm64") {
-            # Only include this file on simulator, as it's already
-            # included in device builds.
-            sources += [ "objc/Framework/Classes/Metal/RTCMTLVideoView.m" ]
-            libs = [ "CoreVideo.framework" ]
+        if (is_ios) {
+          sources += [ "objc/Framework/UnitTests/RTCAudioSessionTest.mm" ]
+
+          # RTCMTLVideoView not supported on 32-bit arm
+          if (current_cpu != "arm") {
+            sources += [ "objc/Framework/UnitTests/RTCMTLVideoViewTests.mm" ]
+            if (current_cpu != "arm64") {
+              # Only include this file on simulator, as it's already
+              # included in device builds.
+              sources += [ "objc/Framework/Classes/Metal/RTCMTLVideoView.m" ]
+              libs = [ "CoreVideo.framework" ]
+            }
           }
         }
-
         if (!build_with_chromium && is_clang) {
           # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
           suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -394,6 +418,8 @@ if (is_ios || is_mac) {
         output_name = "WebRTC"
 
         common_objc_headers = [
+          "objc/Framework/Headers/WebRTC/RTCAudioSession.h",
+          "objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h",
           "objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h",
           "objc/Framework/Headers/WebRTC/RTCAudioSource.h",
           "objc/Framework/Headers/WebRTC/RTCAudioTrack.h",
@@ -454,6 +480,7 @@ if (is_ios || is_mac) {
         ]
 
         deps = [
+          ":objc_audio",
           ":objc_peerconnection",
           ":objc_ui",
           "../base:rtc_base_approved",

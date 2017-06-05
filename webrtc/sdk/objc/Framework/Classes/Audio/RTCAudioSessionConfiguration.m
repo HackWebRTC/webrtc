@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
+#import "WebRTC/RTCAudioSession.h"
+#import "WebRTC/RTCAudioSessionConfiguration.h"
 
 #import "WebRTC/RTCDispatcher.h"
 #import "WebRTC/UIDevice+RTCDevice.h"
 
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
 
 // Try to use mono to save resources. Also avoids channel format conversion
 // in the I/O audio unit. Initial tests have shown that it is possible to use

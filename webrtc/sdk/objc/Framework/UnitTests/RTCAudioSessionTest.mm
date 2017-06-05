@@ -11,11 +11,12 @@
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 
-#include "webrtc/test/gtest.h"
+#include "webrtc/base/gunit.h"
 
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
+#import "RTCAudioSession+Private.h"
+
+#import "WebRTC/RTCAudioSession.h"
+#import "WebRTC/RTCAudioSessionConfiguration.h"
 
 @interface RTCAudioSessionTestDelegate : NSObject <RTCAudioSessionDelegate>
 

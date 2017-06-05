@@ -10,7 +10,7 @@
 
 #import "ARDVideoCallViewController.h"
 
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
+#import "WebRTC/RTCAudioSession.h"
 
 #import "ARDAppClient.h"
 #import "ARDCaptureController.h"

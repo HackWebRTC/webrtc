@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
+#import "WebRTC/RTCAudioSession.h"
+#import "WebRTC/RTCAudioSessionConfiguration.h"
 
 #import "WebRTC/RTCLogging.h"
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSessionConfiguration.h"
+#import "RTCAudioSession+Private.h"
+
 
 @implementation RTCAudioSession (Configuration)
 

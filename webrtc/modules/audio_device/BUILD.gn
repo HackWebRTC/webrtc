@@ -176,6 +176,7 @@ rtc_static_library("audio_device") {
         public_deps = [
           "../../base:gtest_prod",
           "../../base:rtc_base",
+          "../../sdk:objc_audio",
           "../../sdk:objc_common",
         ]
         sources += [
@@ -183,12 +184,6 @@ rtc_static_library("audio_device") {
           "ios/audio_device_ios.mm",
           "ios/audio_device_not_implemented_ios.mm",
           "ios/audio_session_observer.h",
-          "ios/objc/RTCAudioSession+Configuration.mm",
-          "ios/objc/RTCAudioSession+Private.h",
-          "ios/objc/RTCAudioSession.h",
-          "ios/objc/RTCAudioSession.mm",
-          "ios/objc/RTCAudioSessionConfiguration.h",
-          "ios/objc/RTCAudioSessionConfiguration.m",
           "ios/objc/RTCAudioSessionDelegateAdapter.h",
           "ios/objc/RTCAudioSessionDelegateAdapter.mm",
           "ios/voice_processing_audio_unit.h",
@@ -310,10 +305,7 @@ if (rtc_include_tests) {
       ]
     }
     if (is_ios) {
-      sources += [
-        "ios/audio_device_unittest_ios.mm",
-        "ios/objc/RTCAudioSessionTest.mm",
-      ]
+      sources += [ "ios/audio_device_unittest_ios.mm" ]
       deps += [ "//third_party/ocmock" ]
     }
     if (!build_with_chromium && is_clang) {

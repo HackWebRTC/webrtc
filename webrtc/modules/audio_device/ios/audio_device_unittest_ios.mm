@@ -31,8 +31,8 @@
 #include "webrtc/test/gtest.h"
 #include "webrtc/test/testsupport/fileutils.h"
 
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession.h"
-#import "webrtc/modules/audio_device/ios/objc/RTCAudioSession+Private.h"
+#import "webrtc/sdk/objc/Framework/Classes/Audio/RTCAudioSession+Private.h"
+#import "webrtc/sdk/objc/Framework/Headers/WebRTC/RTCAudioSession.h"
 
 using std::cout;
 using std::endl;
