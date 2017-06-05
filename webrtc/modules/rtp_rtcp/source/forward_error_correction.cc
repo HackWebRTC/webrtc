@@ -54,11 +54,6 @@ template <typename S, typename T>
 bool ForwardErrorCorrection::SortablePacket::LessThan::operator() (
     const S& first,
     const T& second) {
-  // TODO(brandtr): Try to add a DCHECK here, verifying that
-  // first->ssrc == second->ssrc. Currently, it is hard to do so
-  // because we are unable to reliably set the ssrc member on the
-  // ProtectedPacket's. These always belong to the media SSRC, but
-  // we may not know the media SSRC when they are created.
   return IsNewerSequenceNumber(second->seq_num, first->seq_num);
 }
 
@@ -342,7 +337,6 @@ void ForwardErrorCorrection::InsertMediaPacket(
     ReceivedPacket* received_packet) {
   // Search for duplicate packets.
   for (const auto& recovered_packet : *recovered_packets) {
-    RTC_DCHECK_EQ(received_packet->ssrc, recovered_packet->ssrc);
     if (received_packet->seq_num == recovered_packet->seq_num) {
       // Duplicate packet, no need to add to list.
       // Delete duplicate media packet data.
@@ -355,7 +349,6 @@ void ForwardErrorCorrection::InsertMediaPacket(
   recovered_packet->was_recovered = false;
   // This media packet has already been passed on.
   recovered_packet->returned = true;
-  recovered_packet->ssrc = received_packet->ssrc;
   recovered_packet->seq_num = received_packet->seq_num;
   recovered_packet->pkt = received_packet->pkt;
   recovered_packet->pkt->length = received_packet->pkt->length;
@@ -387,7 +380,6 @@ void ForwardErrorCorrection::InsertFecPacket(
     ReceivedPacket* received_packet) {
   // Check for duplicate.
   for (const auto& existing_fec_packet : received_fec_packets_) {
-    RTC_DCHECK_EQ(received_packet->ssrc, existing_fec_packet->ssrc);
     if (received_packet->seq_num == existing_fec_packet->seq_num) {
       // Delete duplicate FEC packet data.
       received_packet->pkt = nullptr;
@@ -396,8 +388,8 @@ void ForwardErrorCorrection::InsertFecPacket(
   }
   std::unique_ptr<ReceivedFecPacket> fec_packet(new ReceivedFecPacket());
   fec_packet->pkt = received_packet->pkt;
-  fec_packet->ssrc = received_packet->ssrc;
   fec_packet->seq_num = received_packet->seq_num;
+  fec_packet->ssrc = received_packet->ssrc;
   // Parse ULPFEC/FlexFEC header specific info.
   bool ret = fec_header_reader_->ReadFecHeader(fec_packet.get());
   if (!ret) {
@@ -427,6 +419,11 @@ void ForwardErrorCorrection::InsertFecPacket(
     AssignRecoveredPackets(recovered_packets, fec_packet.get());
     // TODO(holmer): Consider replacing this with a binary search for the right
     // position, and then just insert the new packet. Would get rid of the sort.
+    //
+    // For correct decoding, |received_fec_packets_| does not necessarily
+    // need to be sorted by sequence number (see decoding algorithm in
+    // AttemptRecover()). By keeping it sorted we try to recover the
+    // oldest lost packets first, however.
     received_fec_packets_.push_back(std::move(fec_packet));
     received_fec_packets_.sort(SortablePacket::LessThan());
     const size_t max_fec_packets = fec_header_reader_->MaxFecPackets();
@@ -470,31 +467,19 @@ void ForwardErrorCorrection::InsertPackets(
   while (!received_packets->empty()) {
     ReceivedPacket* received_packet = received_packets->front().get();
 
-    // Discard old FEC packets such that the sequence numbers in
-    // |received_fec_packets_| span at most 1/2 of the sequence number space.
-    // This is important for keeping |received_fec_packets_| sorted, and may
-    // also reduce the possibility of incorrect decoding due to sequence number
-    // wrap-around.
+    // Check for discarding oldest FEC packet, to avoid wrong FEC decoding from
+    // sequence number wrap-around. Detection of old FEC packet is based on
+    // sequence number difference of received packet and oldest packet in FEC
+    // packet list.
     // TODO(marpan/holmer): We should be able to improve detection/discarding of
     // old FEC packets based on timestamp information or better sequence number
     // thresholding (e.g., to distinguish between wrap-around and reordering).
-    if (!received_fec_packets_.empty() &&
-        received_packet->ssrc == received_fec_packets_.front()->ssrc) {
-      // It only makes sense to detect wrap-around when |received_packet|
-      // and |front_received_fec_packet| belong to the same sequence number
-      // space, i.e., the same SSRC. This happens when |received_packet|
-      // is a FEC packet, or if |received_packet| is a media packet and
-      // RED+ULPFEC is used.
-      auto it = received_fec_packets_.begin();
-      while (it != received_fec_packets_.end()) {
-        uint16_t seq_num_diff = abs(static_cast<int>(received_packet->seq_num) -
-                                    static_cast<int>((*it)->seq_num));
-        if (seq_num_diff > 0x3fff) {
-          it = received_fec_packets_.erase(it);
-        } else {
-          // No need to keep iterating, since |received_fec_packets_| is sorted.
-          break;
-        }
+    if (!received_fec_packets_.empty()) {
+      uint16_t seq_num_diff =
+          abs(static_cast<int>(received_packet->seq_num) -
+              static_cast<int>(received_fec_packets_.front()->seq_num));
+      if (seq_num_diff > 0x3fff) {
+        received_fec_packets_.pop_front();
       }
     }
 
@@ -564,7 +549,6 @@ bool ForwardErrorCorrection::FinishPacketRecovery(
   // Set the SSRC field.
   ByteWriter<uint32_t>::WriteBigEndian(&recovered_packet->pkt->data[8],
                                        fec_packet.protected_ssrc);
-  recovered_packet->ssrc = fec_packet.protected_ssrc;
   return true;
 }
 
@@ -700,34 +684,21 @@ uint32_t ForwardErrorCorrection::ParseSsrc(uint8_t* packet) {
 int ForwardErrorCorrection::DecodeFec(
     ReceivedPacketList* received_packets,
     RecoveredPacketList* recovered_packets) {
-  RTC_DCHECK(received_packets);
-  RTC_DCHECK(recovered_packets);
-
+  // TODO(marpan/ajm): can we check for multiple ULP headers, and return an
+  // error?
   const size_t max_media_packets = fec_header_reader_->MaxMediaPackets();
   if (recovered_packets->size() == max_media_packets) {
-    const RecoveredPacket* back_recovered_packet =
-        recovered_packets->back().get();
-    for (const auto& received_packet : *received_packets) {
-      if (received_packet->ssrc == back_recovered_packet->ssrc) {
-        const unsigned int seq_num_diff =
-            abs(static_cast<int>(received_packet->seq_num) -
-                static_cast<int>(back_recovered_packet->seq_num));
-        if (seq_num_diff > max_media_packets) {
-          // A big gap in sequence numbers. The old recovered packets
-          // are now useless, so it's safe to do a reset.
-          LOG(LS_INFO) << "Big gap in media/ULPFEC sequence numbers. No need "
-                          "to keep the old packets in the FEC buffers, thus "
-                          "resetting them.";
-          ResetState(recovered_packets);
-          break;
-        }
-      }
+    const unsigned int seq_num_diff =
+        abs(static_cast<int>(received_packets->front()->seq_num) -
+            static_cast<int>(recovered_packets->back()->seq_num));
+    if (seq_num_diff > max_media_packets) {
+      // A big gap in sequence numbers. The old recovered packets
+      // are now useless, so it's safe to do a reset.
+      ResetState(recovered_packets);
     }
   }
-
   InsertPackets(received_packets, recovered_packets);
   AttemptRecovery(recovered_packets);
-
   return 0;
 }
 

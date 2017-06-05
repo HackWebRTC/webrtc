@@ -90,7 +90,6 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
   // Get payload type from RED header and sequence number from RTP header.
   uint8_t payload_type = incoming_rtp_packet[header.headerLength] & 0x7f;
   received_packet->is_fec = payload_type == ulpfec_payload_type;
-  received_packet->ssrc = header.ssrc;
   received_packet->seq_num = header.sequenceNumber;
 
   uint16_t block_length = 0;
@@ -156,7 +155,6 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
     second_received_packet->pkt = new ForwardErrorCorrection::Packet;
 
     second_received_packet->is_fec = true;
-    second_received_packet->ssrc = header.ssrc;
     second_received_packet->seq_num = header.sequenceNumber;
     ++packet_counter_.num_fec_packets;
 

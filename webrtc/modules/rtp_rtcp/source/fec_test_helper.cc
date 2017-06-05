@@ -78,7 +78,7 @@ ForwardErrorCorrection::PacketList MediaPacketGenerator::ConstructMediaPackets(
   RTC_DCHECK(media_packet);
   media_packet->data[1] |= 0x80;
 
-  next_seq_num_ = seq_num;
+  fec_seq_num_ = seq_num;
 
   return media_packets;
 }
@@ -88,8 +88,8 @@ ForwardErrorCorrection::PacketList MediaPacketGenerator::ConstructMediaPackets(
   return ConstructMediaPackets(num_media_packets, random_->Rand<uint16_t>());
 }
 
-uint16_t MediaPacketGenerator::GetNextSeqNum() {
-  return next_seq_num_;
+uint16_t MediaPacketGenerator::GetFecSeqNum() {
+  return fec_seq_num_;
 }
 
 AugmentedPacketGenerator::AugmentedPacketGenerator(uint32_t ssrc)
