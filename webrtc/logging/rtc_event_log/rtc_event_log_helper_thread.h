@@ -11,6 +11,7 @@
 #ifndef WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_HELPER_THREAD_H_
 #define WEBRTC_LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_HELPER_THREAD_H_
 
+#include <deque>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -95,7 +96,7 @@ class RtcEventLogHelperThread final {
   SwapQueue<std::unique_ptr<rtclog::Event>>* event_queue_;
 
   // History containing the most recent events (~ 10 s).
-  RingBuffer<std::unique_ptr<rtclog::Event>> history_;
+  std::deque<std::unique_ptr<rtclog::Event>> history_;
 
   // History containing all past configuration events.
   std::vector<std::unique_ptr<rtclog::Event>> config_history_;
