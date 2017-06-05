@@ -226,9 +226,11 @@
     }
     if (_nv12TextureCache) {
       [_nv12TextureCache uploadFrameToTextures:frame];
-      [_shader applyShadingForFrameWithRotation:frame.rotation
-                                         yPlane:_nv12TextureCache.yTexture
-                                        uvPlane:_nv12TextureCache.uvTexture];
+      [_shader applyShadingForFrameWithWidth:frame.width
+                                      height:frame.height
+                                    rotation:frame.rotation
+                                      yPlane:_nv12TextureCache.yTexture
+                                     uvPlane:_nv12TextureCache.uvTexture];
       [_nv12TextureCache releaseTextures];
     }
   } else {
@@ -236,10 +238,12 @@
       _i420TextureCache = [[RTCI420TextureCache alloc] initWithContext:_glContext];
     }
     [_i420TextureCache uploadFrameToTextures:frame];
-    [_shader applyShadingForFrameWithRotation:frame.rotation
-                                       yPlane:_i420TextureCache.yTexture
-                                       uPlane:_i420TextureCache.uTexture
-                                       vPlane:_i420TextureCache.vTexture];
+    [_shader applyShadingForFrameWithWidth:frame.width
+                                    height:frame.height
+                                  rotation:frame.rotation
+                                    yPlane:_i420TextureCache.yTexture
+                                    uPlane:_i420TextureCache.uTexture
+                                    vPlane:_i420TextureCache.vTexture];
   }
 }
 

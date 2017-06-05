@@ -141,10 +141,12 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
   RTCI420TextureCache *i420TextureCache = self.i420TextureCache;
   if (i420TextureCache) {
     [i420TextureCache uploadFrameToTextures:frame];
-    [_shader applyShadingForFrameWithRotation:frame.rotation
-                                       yPlane:i420TextureCache.yTexture
-                                       uPlane:i420TextureCache.uTexture
-                                       vPlane:i420TextureCache.vTexture];
+    [_shader applyShadingForFrameWithWidth:frame.width
+                                    height:frame.height
+                                  rotation:frame.rotation
+                                    yPlane:i420TextureCache.yTexture
+                                    uPlane:i420TextureCache.uTexture
+                                    vPlane:i420TextureCache.vTexture];
     [context flushBuffer];
     _lastDrawnFrame = frame;
   }

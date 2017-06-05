@@ -150,10 +150,12 @@ static const char kNV12FragmentShaderSource[] =
   return YES;
 }
 
-- (void)applyShadingForFrameWithRotation:(RTCVideoRotation)rotation
-                                  yPlane:(GLuint)yPlane
-                                  uPlane:(GLuint)uPlane
-                                  vPlane:(GLuint)vPlane {
+- (void)applyShadingForFrameWithWidth:(int)width
+                               height:(int)height
+                             rotation:(RTCVideoRotation)rotation
+                               yPlane:(GLuint)yPlane
+                               uPlane:(GLuint)uPlane
+                               vPlane:(GLuint)vPlane {
   if (![self prepareVertexBufferWithRotation:rotation]) {
     return;
   }
@@ -177,9 +179,11 @@ static const char kNV12FragmentShaderSource[] =
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
-- (void)applyShadingForFrameWithRotation:(RTCVideoRotation)rotation
-                                  yPlane:(GLuint)yPlane
-                                 uvPlane:(GLuint)uvPlane {
+- (void)applyShadingForFrameWithWidth:(int)width
+                               height:(int)height
+                             rotation:(RTCVideoRotation)rotation
+                               yPlane:(GLuint)yPlane
+                              uvPlane:(GLuint)uvPlane {
   if (![self prepareVertexBufferWithRotation:rotation]) {
     return;
   }
