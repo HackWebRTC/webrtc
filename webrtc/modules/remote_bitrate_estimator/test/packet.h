@@ -13,6 +13,7 @@
 
 #include <list>
 #include <map>
+#include <utility>
 #include <vector>
 
 #include "webrtc/common_types.h"
@@ -106,6 +107,24 @@ class FeedbackPacket : public Packet {
 
  private:
   int64_t latest_send_time_ms_;  // Time stamp for the latest sent FbPacket.
+};
+
+class BbrBweFeedback : public FeedbackPacket {
+ public:
+  BbrBweFeedback(
+      int flow_id,
+      int64_t send_time_us,
+      int64_t latest_send_time_ms,
+      const std::vector<std::pair<uint64_t, int64_t>>& packet_feedback_vector);
+  virtual ~BbrBweFeedback() {}
+
+  const std::vector<std::pair<uint64_t, int64_t>>& packet_feedback_vector()
+      const {
+    return packet_feedback_vector_;
+  }
+
+ private:
+  const std::vector<std::pair<uint64_t, int64_t>> packet_feedback_vector_;
 };
 
 class RembFeedback : public FeedbackPacket {

@@ -198,7 +198,6 @@ if (rtc_include_tests) {
     "//resources/verizon4g-uplink.rx",
     "//resources/voice_engine/audio_tiny48.wav",
   ]
-
   if (is_ios) {
     bundle_data("modules_unittests_bundle_data") {
       testonly = true

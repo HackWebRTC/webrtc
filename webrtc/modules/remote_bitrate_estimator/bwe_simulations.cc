@@ -48,7 +48,8 @@ INSTANTIATE_TEST_CASE_P(VideoSendersTest,
                         BweSimulation,
                         ::testing::Values(kRembEstimator,
                                           kSendSideEstimator,
-                                          kNadaEstimator));
+                                          kNadaEstimator,
+                                          kBbrEstimator));
 
 TEST_P(BweSimulation, SprintUplinkTest) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);
