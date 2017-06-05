@@ -450,13 +450,15 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
 
   // Turn on row-based multithreading.
   vpx_codec_control(encoder_, VP9E_SET_ROW_MT, 1);
+
 #if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
   !defined(ANDROID)
-  // Note denoiser is still off by default until further testing/optimization,
-  // i.e., VP9().denoisingOn == 0.
+  // Do not enable the denoiser on ARM since optimization is pending.
+  // Denoiser is on by default on other platforms.
   vpx_codec_control(encoder_, VP9E_SET_NOISE_SENSITIVITY,
                     inst->VP9().denoisingOn ? 1 : 0);
 #endif
+
   if (codec_.mode == kScreensharing) {
     // Adjust internal parameters to screen content.
     vpx_codec_control(encoder_, VP9E_SET_TUNE_CONTENT, 1);
