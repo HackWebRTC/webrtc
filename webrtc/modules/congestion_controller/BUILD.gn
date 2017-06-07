@@ -10,6 +10,8 @@ import("../../webrtc.gni")
 
 rtc_static_library("congestion_controller") {
   sources = [
+    "acknowledge_bitrate_estimator.cc",
+    "acknowledge_bitrate_estimator.h",
     "congestion_controller.cc",
     "delay_based_bwe.cc",
     "delay_based_bwe.h",

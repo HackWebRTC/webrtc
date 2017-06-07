@@ -34,6 +34,7 @@ namespace webrtc {
 
 class BitrateController;
 class Clock;
+class AcknowledgedBitrateEstimator;
 class ProbeController;
 class RateLimiter;
 class RtcEventLog;
@@ -141,6 +142,7 @@ class SendSideCongestionController : public CallStatsObserver,
   RtcEventLog* const event_log_;
   const std::unique_ptr<PacedSender> pacer_;
   const std::unique_ptr<BitrateController> bitrate_controller_;
+  std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator_;
   const std::unique_ptr<ProbeController> probe_controller_;
   const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
   TransportFeedbackAdapter transport_feedback_adapter_;

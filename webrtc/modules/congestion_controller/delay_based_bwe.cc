@@ -38,8 +38,6 @@ constexpr double kTimestampToMs =
 // This ssrc is used to fulfill the current API but will be removed
 // after the API has been changed.
 constexpr uint32_t kFixedSsrc = 0;
-constexpr int kInitialRateWindowMs = 500;
-constexpr int kRateWindowMs = 150;
 
 // Parameters for linear least squares fit of regression line to noisy data.
 constexpr size_t kDefaultTrendlineWindowSize = 20;
@@ -55,103 +53,9 @@ bool BweSparseUpdateExperimentIsEnabled() {
       webrtc::field_trial::FindFullName(kBweSparseUpdateExperiment);
   return experiment_string == "Enabled";
 }
-
-class PacketFeedbackComparator {
- public:
-  inline bool operator()(const webrtc::PacketFeedback& lhs,
-                         const webrtc::PacketFeedback& rhs) {
-    if (lhs.arrival_time_ms != rhs.arrival_time_ms)
-      return lhs.arrival_time_ms < rhs.arrival_time_ms;
-    if (lhs.send_time_ms != rhs.send_time_ms)
-      return lhs.send_time_ms < rhs.send_time_ms;
-    return lhs.sequence_number < rhs.sequence_number;
-  }
-};
-
-void SortPacketFeedbackVector(const std::vector<webrtc::PacketFeedback>& input,
-                              std::vector<webrtc::PacketFeedback>* output) {
-  auto pred = [](const webrtc::PacketFeedback& packet_feedback) {
-    return packet_feedback.arrival_time_ms !=
-           webrtc::PacketFeedback::kNotReceived;
-  };
-  std::copy_if(input.begin(), input.end(), std::back_inserter(*output), pred);
-  std::sort(output->begin(), output->end(), PacketFeedbackComparator());
-}
 }  // namespace
 
 namespace webrtc {
-
-DelayBasedBwe::BitrateEstimator::BitrateEstimator()
-    : sum_(0),
-      current_win_ms_(0),
-      prev_time_ms_(-1),
-      bitrate_estimate_(-1.0f),
-      bitrate_estimate_var_(50.0f) {}
-
-void DelayBasedBwe::BitrateEstimator::Update(int64_t now_ms, int bytes) {
-  int rate_window_ms = kRateWindowMs;
-  // We use a larger window at the beginning to get a more stable sample that
-  // we can use to initialize the estimate.
-  if (bitrate_estimate_ < 0.f)
-    rate_window_ms = kInitialRateWindowMs;
-  float bitrate_sample = UpdateWindow(now_ms, bytes, rate_window_ms);
-  if (bitrate_sample < 0.0f)
-    return;
-  if (bitrate_estimate_ < 0.0f) {
-    // This is the very first sample we get. Use it to initialize the estimate.
-    bitrate_estimate_ = bitrate_sample;
-    return;
-  }
-  // Define the sample uncertainty as a function of how far away it is from the
-  // current estimate.
-  float sample_uncertainty =
-      10.0f * std::abs(bitrate_estimate_ - bitrate_sample) / bitrate_estimate_;
-  float sample_var = sample_uncertainty * sample_uncertainty;
-  // Update a bayesian estimate of the rate, weighting it lower if the sample
-  // uncertainty is large.
-  // The bitrate estimate uncertainty is increased with each update to model
-  // that the bitrate changes over time.
-  float pred_bitrate_estimate_var = bitrate_estimate_var_ + 5.f;
-  bitrate_estimate_ = (sample_var * bitrate_estimate_ +
-                       pred_bitrate_estimate_var * bitrate_sample) /
-                      (sample_var + pred_bitrate_estimate_var);
-  bitrate_estimate_var_ = sample_var * pred_bitrate_estimate_var /
-                          (sample_var + pred_bitrate_estimate_var);
-}
-
-float DelayBasedBwe::BitrateEstimator::UpdateWindow(int64_t now_ms,
-                                                    int bytes,
-                                                    int rate_window_ms) {
-  // Reset if time moves backwards.
-  if (now_ms < prev_time_ms_) {
-    prev_time_ms_ = -1;
-    sum_ = 0;
-    current_win_ms_ = 0;
-  }
-  if (prev_time_ms_ >= 0) {
-    current_win_ms_ += now_ms - prev_time_ms_;
-    // Reset if nothing has been received for more than a full window.
-    if (now_ms - prev_time_ms_ > rate_window_ms) {
-      sum_ = 0;
-      current_win_ms_ %= rate_window_ms;
-    }
-  }
-  prev_time_ms_ = now_ms;
-  float bitrate_sample = -1.0f;
-  if (current_win_ms_ >= rate_window_ms) {
-    bitrate_sample = 8.0f * sum_ / static_cast<float>(rate_window_ms);
-    current_win_ms_ -= rate_window_ms;
-    sum_ = 0;
-  }
-  sum_ += bytes;
-  return bitrate_sample;
-}
-
-rtc::Optional<uint32_t> DelayBasedBwe::BitrateEstimator::bitrate_bps() const {
-  if (bitrate_estimate_ < 0.f)
-    return rtc::Optional<uint32_t>();
-  return rtc::Optional<uint32_t>(bitrate_estimate_ * 1000);
-}
 
 DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
     : event_log_(event_log),
@@ -159,7 +63,6 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
       inter_arrival_(),
       trendline_estimator_(),
       detector_(),
-      receiver_incoming_bitrate_(),
       last_seen_packet_ms_(-1),
       uma_recorded_(false),
       probe_bitrate_estimator_(event_log),
@@ -177,16 +80,17 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
 DelayBasedBwe::~DelayBasedBwe() {}
 
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
-    const std::vector<PacketFeedback>& packet_feedback_vector) {
+    const std::vector<PacketFeedback>& packet_feedback_vector,
+    rtc::Optional<uint32_t> acked_bitrate_bps) {
+  RTC_DCHECK(std::is_sorted(packet_feedback_vector.begin(),
+                            packet_feedback_vector.end(),
+                            PacketFeedbackComparator()));
   RTC_DCHECK(network_thread_.CalledOnValidThread());
 
-  std::vector<PacketFeedback> sorted_packet_feedback_vector;
-  SortPacketFeedbackVector(packet_feedback_vector,
-                           &sorted_packet_feedback_vector);
   // TOOD(holmer): An empty feedback vector here likely means that
   // all acks were too late and that the send time history had
   // timed out. We should reduce the rate when this occurs.
-  if (sorted_packet_feedback_vector.empty()) {
+  if (packet_feedback_vector.empty()) {
     LOG(LS_WARNING) << "Very late feedback received.";
     return DelayBasedBwe::Result();
   }
@@ -199,7 +103,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
   }
   bool overusing = false;
   bool delayed_feedback = true;
-  for (const auto& packet_feedback : sorted_packet_feedback_vector) {
+  for (const auto& packet_feedback : packet_feedback_vector) {
     if (packet_feedback.send_time_ms < 0)
       continue;
     delayed_feedback = false;
@@ -213,12 +117,11 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     ++consecutive_delayed_feedbacks_;
     if (consecutive_delayed_feedbacks_ >= kMaxConsecutiveFailedLookups) {
       consecutive_delayed_feedbacks_ = 0;
-      return OnLongFeedbackDelay(
-          sorted_packet_feedback_vector.back().arrival_time_ms);
+      return OnLongFeedbackDelay(packet_feedback_vector.back().arrival_time_ms);
     }
   } else {
     consecutive_delayed_feedbacks_ = 0;
-    return MaybeUpdateEstimate(overusing);
+    return MaybeUpdateEstimate(overusing, acked_bitrate_bps);
   }
   return Result();
 }
@@ -243,10 +146,6 @@ DelayBasedBwe::Result DelayBasedBwe::OnLongFeedbackDelay(
 void DelayBasedBwe::IncomingPacketFeedback(
     const PacketFeedback& packet_feedback) {
   int64_t now_ms = clock_->TimeInMilliseconds();
-
-  receiver_incoming_bitrate_.Update(packet_feedback.arrival_time_ms,
-                                    packet_feedback.payload_size);
-  Result result;
   // Reset if the stream has timed out.
   if (last_seen_packet_ms_ == -1 ||
       now_ms - last_seen_packet_ms_ > kStreamTimeOutMs) {
@@ -289,12 +188,12 @@ void DelayBasedBwe::IncomingPacketFeedback(
   }
 }
 
-DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(bool overusing) {
+DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
+    bool overusing,
+    rtc::Optional<uint32_t> acked_bitrate_bps) {
   Result result;
   int64_t now_ms = clock_->TimeInMilliseconds();
 
-  rtc::Optional<uint32_t> acked_bitrate_bps =
-      receiver_incoming_bitrate_.bitrate_bps();
   rtc::Optional<int> probe_bitrate_bps =
       probe_bitrate_estimator_.FetchAndResetLastEstimatedBitrateBps();
   // Currently overusing the bandwidth.
