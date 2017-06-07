@@ -39,6 +39,11 @@ static const int kHighH264QpThreshold = 37;
 // bitstream range of [0, 127] and not the user-level range of [0,63].
 static const int kLowVp8QpThreshold = 29;
 static const int kHighVp8QpThreshold = 95;
+// QP is obtained from VP9-bitstream for HW, so the QP corresponds to the
+// bitstream range of [0, 255] and not the user-level range of [0,63].
+// Current VP9 settings are mapped from VP8 thresholds above.
+static const int kLowVp9QpThreshold = 96;
+static const int kHighVp9QpThreshold = 208;
 static const int kMinFramesNeededToScale = 2 * 30;
 
 static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
@@ -53,6 +58,10 @@ static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
     case kVideoCodecVP8:
       low = kLowVp8QpThreshold;
       high = kHighVp8QpThreshold;
+      break;
+    case kVideoCodecVP9:
+      low = kLowVp9QpThreshold;
+      high = kHighVp9QpThreshold;
       break;
     default:
       RTC_NOTREACHED() << "Invalid codec type for QualityScaler.";

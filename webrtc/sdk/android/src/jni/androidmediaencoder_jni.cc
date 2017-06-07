@@ -39,6 +39,7 @@
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 #include "webrtc/modules/video_coding/utility/vp8_header_parser.h"
+#include "webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "webrtc/sdk/android/src/jni/androidmediacodeccommon.h"
 #include "webrtc/sdk/android/src/jni/classreferenceholder.h"
 #include "webrtc/sdk/android/src/jni/native_handle_impl.h"
@@ -404,12 +405,14 @@ int32_t MediaCodecVideoEncoder::InitEncode(
   codec_mode_ = codec_settings->mode;
   int init_width = codec_settings->width;
   int init_height = codec_settings->height;
-  // Scaling is disabled for VP9, but optionally enabled for VP8.
+  // Scaling is optionally enabled for VP8 and VP9.
   // TODO(pbos): Extract automaticResizeOn out of VP8 settings.
   scale_ = false;
   if (codec_type == kVideoCodecVP8) {
     scale_ = codec_settings->VP8().automaticResizeOn;
-  } else if (codec_type != kVideoCodecVP9) {
+  } else if (codec_type == kVideoCodecVP9) {
+    scale_ = codec_settings->VP9().automaticResizeOn;
+  } else {
     scale_ = true;
   }
 
@@ -1101,6 +1104,12 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         if (codec_type == kVideoCodecVP8) {
           int qp;
           if (webrtc::vp8::GetQp(payload, payload_size, &qp)) {
+            current_acc_qp_ += qp;
+            image->qp_ = qp;
+          }
+        } else if (codec_type == kVideoCodecVP9) {
+          int qp;
+          if (webrtc::vp9::GetQp(payload, payload_size, &qp)) {
             current_acc_qp_ += qp;
             image->qp_ = qp;
           }
