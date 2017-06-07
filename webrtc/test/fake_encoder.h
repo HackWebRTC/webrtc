@@ -45,6 +45,7 @@ class FakeEncoder : public VideoEncoder {
   int32_t SetRateAllocation(const BitrateAllocation& rate_allocation,
                             uint32_t framerate) override;
   const char* ImplementationName() const override;
+  int GetConfiguredInputFramerate() const;
 
   static const char* kImplementationName;
 
@@ -53,11 +54,16 @@ class FakeEncoder : public VideoEncoder {
   VideoCodec config_ GUARDED_BY(crit_sect_);
   EncodedImageCallback* callback_ GUARDED_BY(crit_sect_);
   BitrateAllocation target_bitrate_ GUARDED_BY(crit_sect_);
+  int configured_input_framerate_ GUARDED_BY(crit_sect_);
   int max_target_bitrate_kbps_ GUARDED_BY(crit_sect_);
-  int64_t last_encode_time_ms_ GUARDED_BY(crit_sect_);
+  bool pending_keyframe_ GUARDED_BY(crit_sect_);
   rtc::CriticalSection crit_sect_;
 
   uint8_t encoded_buffer_[100000];
+
+  // Current byte debt to be payed over a number of frames.
+  // The debt is acquired by keyframes overshooting the bitrate target.
+  size_t debt_bytes_;
 };
 
 class FakeH264Encoder : public FakeEncoder, public EncodedImageCallback {
