@@ -668,7 +668,8 @@ int VP8EncoderImpl::Encode(const VideoFrame& frame,
   if (encoded_complete_callback_ == NULL)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
-  rtc::scoped_refptr<VideoFrameBuffer> input_image = frame.video_frame_buffer();
+  rtc::scoped_refptr<I420BufferInterface> input_image =
+      frame.video_frame_buffer()->ToI420();
   // Since we are extracting raw pointers from |input_image| to
   // |raw_images_[0]|, the resolution of these frames must match.
   RTC_DCHECK_EQ(input_image->width(), raw_images_[0].d_w);

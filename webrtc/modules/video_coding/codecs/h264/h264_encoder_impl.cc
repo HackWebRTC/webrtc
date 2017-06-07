@@ -332,8 +332,8 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     // (If every frame is a key frame we get lag/delays.)
     openh264_encoder_->ForceIntraFrame(true);
   }
-  rtc::scoped_refptr<const VideoFrameBuffer> frame_buffer =
-      input_frame.video_frame_buffer();
+  rtc::scoped_refptr<const I420BufferInterface> frame_buffer =
+      input_frame.video_frame_buffer()->ToI420();
   // EncodeFrame input.
   SSourcePicture picture;
   memset(&picture, 0, sizeof(SSourcePicture));
