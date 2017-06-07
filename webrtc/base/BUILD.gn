@@ -61,16 +61,6 @@ config("rtc_base_all_dependent_config") {
   }
 }
 
-if (is_linux && !build_with_chromium) {
-  # Provides the same functionality as the //crypto:platform target, which
-  # WebRTC cannot use as we don't sync src/crypto from Chromium.
-  group("linux_system_ssl") {
-    deps = [
-      "//third_party/boringssl",
-    ]
-  }
-}
-
 if (!rtc_build_ssl) {
   config("external_ssl_library") {
     assert(rtc_ssl_root != "",
