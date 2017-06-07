@@ -23,6 +23,7 @@
 
 #include "Video/objcvideotracksource.h"
 #include "VideoToolbox/videocodecfactory.h"
+#include "webrtc/api/videosourceproxy.h"
 
 @implementation RTCPeerConnectionFactory {
   std::unique_ptr<rtc::Thread> _networkThread;
@@ -91,7 +92,10 @@
 - (RTCVideoSource *)videoSource {
   rtc::scoped_refptr<webrtc::ObjcVideoTrackSource> objcVideoTrackSource(
       new rtc::RefCountedObject<webrtc::ObjcVideoTrackSource>());
-  return [[RTCVideoSource alloc] initWithNativeVideoSource:objcVideoTrackSource];
+  return [[RTCVideoSource alloc]
+      initWithNativeVideoSource:webrtc::VideoTrackSourceProxy::Create(_signalingThread.get(),
+                                                                      _workerThread.get(),
+                                                                      objcVideoTrackSource)];
 }
 
 - (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source

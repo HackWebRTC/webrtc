@@ -10,8 +10,16 @@
 
 #import "RTCVideoSource+Private.h"
 
+#include "webrtc/api/videosourceproxy.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/sdk/objc/Framework/Classes/Video/objcvideotracksource.h"
+
+static webrtc::ObjcVideoTrackSource *getObjcVideoSource(
+    const rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> nativeSource) {
+  webrtc::VideoTrackSourceProxy *proxy_source =
+      static_cast<webrtc::VideoTrackSourceProxy *>(nativeSource.get());
+  return static_cast<webrtc::ObjcVideoTrackSource *>(proxy_source->internal());
+}
 
 // TODO(magjed): Refactor this class and target ObjcVideoTrackSource only once
 // RTCAVFoundationVideoSource is gone. See http://crbug/webrtc/7177 for more
@@ -43,12 +51,11 @@
 }
 
 - (void)capturer:(RTCVideoCapturer *)capturer didCaptureVideoFrame:(RTCVideoFrame *)frame {
-  static_cast<webrtc::ObjcVideoTrackSource *>(_nativeVideoSource.get())->OnCapturedFrame(frame);
+  getObjcVideoSource(_nativeVideoSource)->OnCapturedFrame(frame);
 }
 
 - (void)adaptOutputFormatToWidth:(int)width height:(int)height fps:(int)fps {
-  static_cast<webrtc::ObjcVideoTrackSource *>(_nativeVideoSource.get())
-      ->OnOutputFormatRequest(width, height, fps);
+  getObjcVideoSource(_nativeVideoSource)->OnOutputFormatRequest(width, height, fps);
 }
 
 #pragma mark - Private
