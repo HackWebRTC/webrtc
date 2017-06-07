@@ -1310,9 +1310,11 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
-  RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessCaptureAudio(
-      capture_buffer, stream_delay_ms()));
-
+  if (!(private_submodules_->echo_canceller3 ||
+        public_submodules_->echo_cancellation->is_enabled())) {
+    RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessCaptureAudio(
+        capture_buffer, stream_delay_ms()));
+  }
 
   if (capture_nonlocked_.beamformer_enabled) {
     private_submodules_->beamformer->PostFilter(capture_buffer->split_data_f());
