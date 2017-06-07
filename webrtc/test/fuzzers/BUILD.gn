@@ -70,6 +70,16 @@ webrtc_fuzzer_test("vp8_qp_parser_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("vp9_qp_parser_fuzzer") {
+  sources = [
+    "vp9_qp_parser_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/video_coding:video_coding_utility",
+    "../../modules/video_coding/",
+  ]
+}
+
 webrtc_fuzzer_test("h264_bitstream_parser_fuzzer") {
   sources = [
     "h264_bitstream_parser_fuzzer.cc",
