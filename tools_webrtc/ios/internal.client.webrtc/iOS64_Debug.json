@@ -17,7 +17,7 @@
   "use_analyze": false,
   "additional_compile_targets": [ "all" ],
   "configuration": "Debug",
-  "bucket": "bling-archive",
+  "bucket": "chromium-webrtc",
   "tests": [
     {
       "app": "modules_unittests",
