@@ -1048,8 +1048,8 @@ TEST_F(ViEEncoderTest, SwitchingSourceKeepsQualityAdaptation) {
   video_source_.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   sink_.WaitForEncodedFrame(1);
   VideoSendStream::Stats stats = stats_proxy_->GetStats();
-  EXPECT_FALSE(stats.cpu_limited_resolution);
   EXPECT_FALSE(stats.bw_limited_resolution);
+  EXPECT_FALSE(stats.bw_limited_framerate);
   EXPECT_EQ(0, stats.number_of_quality_adapt_changes);
 
   // Set new source with adaptation still enabled.
@@ -1060,8 +1060,8 @@ TEST_F(ViEEncoderTest, SwitchingSourceKeepsQualityAdaptation) {
   new_video_source.IncomingCapturedFrame(CreateFrame(2, kWidth, kHeight));
   sink_.WaitForEncodedFrame(2);
   stats = stats_proxy_->GetStats();
-  EXPECT_FALSE(stats.cpu_limited_resolution);
   EXPECT_FALSE(stats.bw_limited_resolution);
+  EXPECT_FALSE(stats.bw_limited_framerate);
   EXPECT_EQ(0, stats.number_of_quality_adapt_changes);
 
   // Trigger adapt down.
@@ -1069,8 +1069,8 @@ TEST_F(ViEEncoderTest, SwitchingSourceKeepsQualityAdaptation) {
   new_video_source.IncomingCapturedFrame(CreateFrame(3, kWidth, kHeight));
   sink_.WaitForEncodedFrame(3);
   stats = stats_proxy_->GetStats();
-  EXPECT_FALSE(stats.cpu_limited_resolution);
   EXPECT_TRUE(stats.bw_limited_resolution);
+  EXPECT_FALSE(stats.bw_limited_framerate);
   EXPECT_EQ(1, stats.number_of_quality_adapt_changes);
 
   // Set new source with adaptation still enabled.
@@ -1080,8 +1080,8 @@ TEST_F(ViEEncoderTest, SwitchingSourceKeepsQualityAdaptation) {
   new_video_source.IncomingCapturedFrame(CreateFrame(4, kWidth, kHeight));
   sink_.WaitForEncodedFrame(4);
   stats = stats_proxy_->GetStats();
-  EXPECT_FALSE(stats.cpu_limited_resolution);
   EXPECT_TRUE(stats.bw_limited_resolution);
+  EXPECT_FALSE(stats.bw_limited_framerate);
   EXPECT_EQ(1, stats.number_of_quality_adapt_changes);
 
   // Disable resolution scaling.
@@ -1092,8 +1092,8 @@ TEST_F(ViEEncoderTest, SwitchingSourceKeepsQualityAdaptation) {
   new_video_source.IncomingCapturedFrame(CreateFrame(5, kWidth, kHeight));
   sink_.WaitForEncodedFrame(5);
   stats = stats_proxy_->GetStats();
-  EXPECT_FALSE(stats.cpu_limited_resolution);
   EXPECT_FALSE(stats.bw_limited_resolution);
+  EXPECT_FALSE(stats.bw_limited_framerate);
   EXPECT_EQ(1, stats.number_of_quality_adapt_changes);
   EXPECT_EQ(0, stats.number_of_cpu_adapt_changes);
 
@@ -1154,6 +1154,7 @@ TEST_F(ViEEncoderTest, StatsTracksCpuAdaptationStatsWhenSwitchingSource) {
   sink_.WaitForEncodedFrame(sequence++);
   VideoSendStream::Stats stats = stats_proxy_->GetStats();
   EXPECT_FALSE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
   EXPECT_EQ(0, stats.number_of_cpu_adapt_changes);
 
   // Trigger CPU overuse, should now adapt down.
@@ -1162,6 +1163,7 @@ TEST_F(ViEEncoderTest, StatsTracksCpuAdaptationStatsWhenSwitchingSource) {
   sink_.WaitForEncodedFrame(sequence++);
   stats = stats_proxy_->GetStats();
   EXPECT_TRUE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
   EXPECT_EQ(1, stats.number_of_cpu_adapt_changes);
 
   // Set new source with adaptation still enabled.
@@ -1219,6 +1221,7 @@ TEST_F(ViEEncoderTest, StatsTracksCpuAdaptationStatsWhenSwitchingSource) {
 
   stats = stats_proxy_->GetStats();
   EXPECT_FALSE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
   EXPECT_EQ(2, stats.number_of_cpu_adapt_changes);
 
   // Try to trigger overuse. Should not succeed.
@@ -1228,6 +1231,7 @@ TEST_F(ViEEncoderTest, StatsTracksCpuAdaptationStatsWhenSwitchingSource) {
 
   stats = stats_proxy_->GetStats();
   EXPECT_FALSE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
   EXPECT_EQ(2, stats.number_of_cpu_adapt_changes);
 
   // Switch back the source with resolution adaptation enabled.
@@ -1238,6 +1242,7 @@ TEST_F(ViEEncoderTest, StatsTracksCpuAdaptationStatsWhenSwitchingSource) {
   sink_.WaitForEncodedFrame(sequence++);
   stats = stats_proxy_->GetStats();
   EXPECT_TRUE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
   EXPECT_EQ(2, stats.number_of_cpu_adapt_changes);
 
   // Trigger CPU normal usage.
@@ -1246,6 +1251,7 @@ TEST_F(ViEEncoderTest, StatsTracksCpuAdaptationStatsWhenSwitchingSource) {
   sink_.WaitForEncodedFrame(sequence++);
   stats = stats_proxy_->GetStats();
   EXPECT_FALSE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
   EXPECT_EQ(3, stats.number_of_cpu_adapt_changes);
 
   // Back to the source with adaptation off, set it back to maintain-resolution.
@@ -1256,8 +1262,9 @@ TEST_F(ViEEncoderTest, StatsTracksCpuAdaptationStatsWhenSwitchingSource) {
       CreateFrame(sequence, kWidth, kHeight));
   sink_.WaitForEncodedFrame(sequence++);
   stats = stats_proxy_->GetStats();
-  // Disabled, since we previously switched the source too disabled.
+  // Disabled, since we previously switched the source to disabled.
   EXPECT_FALSE(stats.cpu_limited_resolution);
+  EXPECT_TRUE(stats.cpu_limited_framerate);
   EXPECT_EQ(3, stats.number_of_cpu_adapt_changes);
 
   // Trigger CPU normal usage.
@@ -1267,6 +1274,7 @@ TEST_F(ViEEncoderTest, StatsTracksCpuAdaptationStatsWhenSwitchingSource) {
   sink_.WaitForEncodedFrame(sequence++);
   stats = stats_proxy_->GetStats();
   EXPECT_FALSE(stats.cpu_limited_resolution);
+  EXPECT_FALSE(stats.cpu_limited_framerate);
   EXPECT_EQ(4, stats.number_of_cpu_adapt_changes);
   EXPECT_EQ(0, stats.number_of_quality_adapt_changes);
 
