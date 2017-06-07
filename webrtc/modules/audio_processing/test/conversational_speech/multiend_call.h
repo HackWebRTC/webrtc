@@ -50,19 +50,23 @@ class MultiEndCall {
       std::unique_ptr<WavReaderAbstractFactory> wavreader_abstract_factory);
   ~MultiEndCall();
 
-  const std::set<std::string>& speaker_names() const;
+  const std::set<std::string>& speaker_names() const { return speaker_names_; }
   const std::map<std::string, std::unique_ptr<WavReaderInterface>>&
-      audiotrack_readers() const;
-  bool valid() const;
-  size_t total_duration_samples() const;
-  const std::vector<SpeakingTurn>& speaking_turns() const;
+      audiotrack_readers() const { return audiotrack_readers_; }
+  bool valid() const { return valid_; }
+  int sample_rate() const { return sample_rate_hz_; }
+  size_t total_duration_samples() const { return total_duration_samples_; }
+  const std::vector<SpeakingTurn>& speaking_turns() const {
+      return speaking_turns_; }
 
  private:
   // Finds unique speaker names.
   void FindSpeakerNames();
 
-  // Creates one WavReader instance for each unique audiotrack.
-  void CreateAudioTrackReaders();
+  // Creates one WavReader instance for each unique audiotrack. It returns false
+  // if the audio tracks do not have the same sample rate or if they are not
+  // mono.
+  bool CreateAudioTrackReaders();
 
   // Validates the speaking turns timing information. Accepts cross-talk, but
   // only up to 2 speakers. Rejects unordered turns and self cross-talk.
@@ -75,6 +79,7 @@ class MultiEndCall {
   std::map<std::string, std::unique_ptr<WavReaderInterface>>
       audiotrack_readers_;
   bool valid_;
+  int sample_rate_hz_;
   size_t total_duration_samples_;
   std::vector<SpeakingTurn> speaking_turns_;
 

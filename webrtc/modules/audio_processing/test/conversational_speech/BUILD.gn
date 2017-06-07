@@ -35,6 +35,8 @@ rtc_static_library("lib") {
     "config.h",
     "multiend_call.cc",
     "multiend_call.h",
+    "simulator.cc",
+    "simulator.h",
     "timing.cc",
     "timing.h",
     "wavreader_abstract_factory.h",
@@ -67,5 +69,8 @@ rtc_source_set("unittest") {
     "../../../../../webrtc/test:test_support",
     "//testing/gmock",
     "//testing/gtest",
+    "//webrtc:webrtc_common",
+    "//webrtc/base:rtc_base_approved",
+    "//webrtc/test:test_support",
   ]
 }
