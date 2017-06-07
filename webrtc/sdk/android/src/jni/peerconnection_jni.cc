@@ -871,10 +871,10 @@ class JavaVideoRendererWrapper
 
   void OnFrame(const webrtc::VideoFrame& video_frame) override {
     ScopedLocalRefFrame local_ref_frame(jni());
-    jobject j_frame =
-        (video_frame.video_frame_buffer()->native_handle() != nullptr)
-            ? CricketToJavaTextureFrame(&video_frame)
-            : CricketToJavaI420Frame(&video_frame);
+    jobject j_frame = (video_frame.video_frame_buffer()->type() ==
+                       webrtc::VideoFrameBuffer::Type::kNative)
+                          ? ToJavaTextureFrame(&video_frame)
+                          : ToJavaI420Frame(&video_frame);
     // |j_callbacks_| is responsible for releasing |j_frame| with
     // VideoRenderer.renderFrameDone().
     jni()->CallVoidMethod(*j_callbacks_, j_render_frame_id_, j_frame);
@@ -890,25 +890,26 @@ class JavaVideoRendererWrapper
   }
 
   // Return a VideoRenderer.I420Frame referring to the data in |frame|.
-  jobject CricketToJavaI420Frame(const webrtc::VideoFrame* frame) {
+  jobject ToJavaI420Frame(const webrtc::VideoFrame* frame) {
     jintArray strides = jni()->NewIntArray(3);
     jint* strides_array = jni()->GetIntArrayElements(strides, NULL);
-    strides_array[0] = frame->video_frame_buffer()->StrideY();
-    strides_array[1] = frame->video_frame_buffer()->StrideU();
-    strides_array[2] = frame->video_frame_buffer()->StrideV();
+    rtc::scoped_refptr<webrtc::I420BufferInterface> i420_buffer =
+        frame->video_frame_buffer()->ToI420();
+    strides_array[0] = i420_buffer->StrideY();
+    strides_array[1] = i420_buffer->StrideU();
+    strides_array[2] = i420_buffer->StrideV();
     jni()->ReleaseIntArrayElements(strides, strides_array, 0);
     jobjectArray planes = jni()->NewObjectArray(3, *j_byte_buffer_class_, NULL);
     jobject y_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8_t*>(frame->video_frame_buffer()->DataY()),
-        frame->video_frame_buffer()->StrideY() *
-            frame->video_frame_buffer()->height());
-    size_t chroma_height = (frame->height() + 1) / 2;
-    jobject u_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8_t*>(frame->video_frame_buffer()->DataU()),
-        frame->video_frame_buffer()->StrideU() * chroma_height);
-    jobject v_buffer = jni()->NewDirectByteBuffer(
-        const_cast<uint8_t*>(frame->video_frame_buffer()->DataV()),
-        frame->video_frame_buffer()->StrideV() * chroma_height);
+        const_cast<uint8_t*>(i420_buffer->DataY()),
+        i420_buffer->StrideY() * i420_buffer->height());
+    size_t chroma_height = i420_buffer->ChromaHeight();
+    jobject u_buffer =
+        jni()->NewDirectByteBuffer(const_cast<uint8_t*>(i420_buffer->DataU()),
+                                   i420_buffer->StrideU() * chroma_height);
+    jobject v_buffer =
+        jni()->NewDirectByteBuffer(const_cast<uint8_t*>(i420_buffer->DataV()),
+                                   i420_buffer->StrideV() * chroma_height);
 
     jni()->SetObjectArrayElement(planes, 0, y_buffer);
     jni()->SetObjectArrayElement(planes, 1, u_buffer);
@@ -921,16 +922,16 @@ class JavaVideoRendererWrapper
   }
 
   // Return a VideoRenderer.I420Frame referring texture object in |frame|.
-  jobject CricketToJavaTextureFrame(const webrtc::VideoFrame* frame) {
-    NativeHandleImpl* handle = reinterpret_cast<NativeHandleImpl*>(
-        frame->video_frame_buffer()->native_handle());
-    jfloatArray sampling_matrix = handle->sampling_matrix.ToJava(jni());
+  jobject ToJavaTextureFrame(const webrtc::VideoFrame* frame) {
+    NativeHandleImpl handle =
+        static_cast<AndroidTextureBuffer*>(frame->video_frame_buffer().get())
+            ->native_handle_impl();
+    jfloatArray sampling_matrix = handle.sampling_matrix.ToJava(jni());
 
     return jni()->NewObject(
-        *j_frame_class_, j_texture_frame_ctor_id_,
-        frame->width(), frame->height(),
-        static_cast<int>(frame->rotation()),
-        handle->oes_texture_id, sampling_matrix, javaShallowCopy(frame));
+        *j_frame_class_, j_texture_frame_ctor_id_, frame->width(),
+        frame->height(), static_cast<int>(frame->rotation()),
+        handle.oes_texture_id, sampling_matrix, javaShallowCopy(frame));
   }
 
   JNIEnv* jni() {

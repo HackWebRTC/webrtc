@@ -13,8 +13,9 @@
 
 #include <jni.h>
 
+#include "webrtc/api/video/video_frame_buffer.h"
 #include "webrtc/api/video/video_rotation.h"
-#include "webrtc/common_video/include/video_frame_buffer.h"
+#include "webrtc/base/callback.h"
 
 namespace webrtc_jni {
 
@@ -51,7 +52,7 @@ struct NativeHandleImpl {
   Matrix sampling_matrix;
 };
 
-class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
+class AndroidTextureBuffer : public webrtc::VideoFrameBuffer {
  public:
   AndroidTextureBuffer(int width,
                        int height,
@@ -59,19 +60,18 @@ class AndroidTextureBuffer : public webrtc::NativeHandleBuffer {
                        jobject surface_texture_helper,
                        const rtc::Callback0<void>& no_longer_used);
   ~AndroidTextureBuffer();
-  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override;
 
-  // First crop, then scale to dst resolution, and then rotate.
-  rtc::scoped_refptr<AndroidTextureBuffer> CropScaleAndRotate(
-      int cropped_width,
-      int cropped_height,
-      int crop_x,
-      int crop_y,
-      int dst_width,
-      int dst_height,
-      webrtc::VideoRotation rotation);
+  NativeHandleImpl native_handle_impl() const;
 
  private:
+  Type type() const override;
+  int width() const override;
+  int height() const override;
+
+  rtc::scoped_refptr<webrtc::I420BufferInterface> ToI420() override;
+
+  const int width_;
+  const int height_;
   NativeHandleImpl native_handle_;
   // Raw object pointer, relying on the caller, i.e.,
   // AndroidVideoCapturerJni or the C++ SurfaceTextureHelper, to keep

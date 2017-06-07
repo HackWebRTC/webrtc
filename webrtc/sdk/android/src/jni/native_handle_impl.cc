@@ -12,15 +12,14 @@
 
 #include <memory>
 
-#include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/bind.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/keep_ref_until_done.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/scoped_ref_ptr.h"
+#include "webrtc/common_video/include/video_frame_buffer.h"
 #include "webrtc/sdk/android/src/jni/jni_helpers.h"
-
-using webrtc::NativeHandleBuffer;
+#include "webrtc/system_wrappers/include/aligned_malloc.h"
 
 namespace webrtc_jni {
 
@@ -123,7 +122,8 @@ AndroidTextureBuffer::AndroidTextureBuffer(
     const NativeHandleImpl& native_handle,
     jobject surface_texture_helper,
     const rtc::Callback0<void>& no_longer_used)
-    : webrtc::NativeHandleBuffer(&native_handle_, width, height),
+    : width_(width),
+      height_(height),
       native_handle_(native_handle),
       surface_texture_helper_(surface_texture_helper),
       no_longer_used_cb_(no_longer_used) {}
@@ -132,8 +132,23 @@ AndroidTextureBuffer::~AndroidTextureBuffer() {
   no_longer_used_cb_();
 }
 
-rtc::scoped_refptr<webrtc::VideoFrameBuffer>
-AndroidTextureBuffer::NativeToI420Buffer() {
+webrtc::VideoFrameBuffer::Type AndroidTextureBuffer::type() const {
+  return Type::kNative;
+}
+
+NativeHandleImpl AndroidTextureBuffer::native_handle_impl() const {
+  return native_handle_;
+}
+
+int AndroidTextureBuffer::width() const {
+  return width_;
+}
+
+int AndroidTextureBuffer::height() const {
+  return height_;
+}
+
+rtc::scoped_refptr<webrtc::I420BufferInterface> AndroidTextureBuffer::ToI420() {
   int uv_width = (width()+7) / 8;
   int stride = 8 * uv_width;
   int uv_height = (height()+1)/2;
@@ -154,13 +169,10 @@ AndroidTextureBuffer::NativeToI420Buffer() {
   uint8_t* u_data = y_data + height() * stride;
   uint8_t* v_data = u_data + stride/2;
 
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> copy =
-    new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
-        width(), height(),
-        y_data, stride,
-        u_data, stride,
-        v_data, stride,
-        rtc::Bind(&webrtc::AlignedFree, yuv_data.release()));
+  rtc::scoped_refptr<webrtc::I420BufferInterface> copy =
+      new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
+          width(), height(), y_data, stride, u_data, stride, v_data, stride,
+          rtc::Bind(&webrtc::AlignedFree, yuv_data.release()));
 
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
@@ -181,40 +193,6 @@ AndroidTextureBuffer::NativeToI420Buffer() {
   CHECK_EXCEPTION(jni) << "textureToYUV throwed an exception";
 
   return copy;
-}
-
-rtc::scoped_refptr<AndroidTextureBuffer>
-AndroidTextureBuffer::CropScaleAndRotate(int cropped_width,
-                                         int cropped_height,
-                                         int crop_x,
-                                         int crop_y,
-                                         int dst_width,
-                                         int dst_height,
-                                         webrtc::VideoRotation rotation) {
-  if (cropped_width == dst_width && cropped_height == dst_height &&
-      width() == dst_width && height() == dst_height &&
-      rotation == webrtc::kVideoRotation_0) {
-    return this;
-  }
-  int rotated_width = (rotation % 180 == 0) ? dst_width : dst_height;
-  int rotated_height = (rotation % 180 == 0) ? dst_height : dst_width;
-
-  // Here we use Bind magic to add a reference count to |this| until the newly
-  // created AndroidTextureBuffer is destructed
-  rtc::scoped_refptr<AndroidTextureBuffer> buffer(
-      new rtc::RefCountedObject<AndroidTextureBuffer>(
-          rotated_width, rotated_height, native_handle_,
-          surface_texture_helper_, rtc::KeepRefUntilDone(this)));
-
-  if (cropped_width != width() || cropped_height != height()) {
-    buffer->native_handle_.sampling_matrix.Crop(
-        cropped_width / static_cast<float>(width()),
-        cropped_height / static_cast<float>(height()),
-        crop_x / static_cast<float>(width()),
-        crop_y / static_cast<float>(height()));
-  }
-  buffer->native_handle_.sampling_matrix.Rotate(rotation);
-  return buffer;
 }
 
 }  // namespace webrtc_jni

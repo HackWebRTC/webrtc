@@ -734,7 +734,8 @@ int32_t MediaCodecVideoEncoder::Encode(
   const bool key_frame =
       frame_types->front() != webrtc::kVideoFrameDelta || send_key_frame;
   bool encode_status = true;
-  if (!input_frame.video_frame_buffer()->native_handle()) {
+  if (input_frame.video_frame_buffer()->type() !=
+      webrtc::VideoFrameBuffer::Type::kNative) {
     int j_input_buffer_index = jni->CallIntMethod(
         *j_media_codec_video_encoder_, j_dequeue_input_buffer_method_);
     if (CheckException(jni)) {
@@ -794,9 +795,7 @@ bool MediaCodecVideoEncoder::MaybeReconfigureEncoder(
     const webrtc::VideoFrame& frame) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
 
-  const bool is_texture_frame =
-      frame.video_frame_buffer()->native_handle() != nullptr;
-  const bool reconfigure_due_to_format = is_texture_frame != use_surface_;
+  const bool reconfigure_due_to_format = frame.is_texture() != use_surface_;
   const bool reconfigure_due_to_size =
       frame.width() != width_ || frame.height() != height_;
 
@@ -821,7 +820,7 @@ bool MediaCodecVideoEncoder::MaybeReconfigureEncoder(
 
   Release();
 
-  return InitEncodeInternal(width_, height_, 0, 0, is_texture_frame) ==
+  return InitEncodeInternal(width_, height_, 0, 0, frame.is_texture()) ==
          WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -841,13 +840,11 @@ bool MediaCodecVideoEncoder::EncodeByteBuffer(JNIEnv* jni,
     return false;
   }
   RTC_CHECK(yuv_buffer) << "Indirect buffer??";
+  rtc::scoped_refptr<webrtc::I420BufferInterface> i420_buffer =
+      frame.video_frame_buffer()->ToI420();
   RTC_CHECK(!libyuv::ConvertFromI420(
-      frame.video_frame_buffer()->DataY(),
-      frame.video_frame_buffer()->StrideY(),
-      frame.video_frame_buffer()->DataU(),
-      frame.video_frame_buffer()->StrideU(),
-      frame.video_frame_buffer()->DataV(),
-      frame.video_frame_buffer()->StrideV(),
+      i420_buffer->DataY(), i420_buffer->StrideY(), i420_buffer->DataU(),
+      i420_buffer->StrideU(), i420_buffer->DataV(), i420_buffer->StrideV(),
       yuv_buffer, width_, width_, height_, encoder_fourcc_))
       << "ConvertFromI420 failed";
 
@@ -870,15 +867,14 @@ bool MediaCodecVideoEncoder::EncodeTexture(JNIEnv* jni,
                                            const webrtc::VideoFrame& frame) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
   RTC_CHECK(use_surface_);
-  NativeHandleImpl* handle = static_cast<NativeHandleImpl*>(
-      frame.video_frame_buffer()->native_handle());
-  jfloatArray sampling_matrix = handle->sampling_matrix.ToJava(jni);
-  bool encode_status = jni->CallBooleanMethod(*j_media_codec_video_encoder_,
-                                              j_encode_texture_method_,
-                                              key_frame,
-                                              handle->oes_texture_id,
-                                              sampling_matrix,
-                                              current_timestamp_us_);
+  NativeHandleImpl handle =
+      static_cast<AndroidTextureBuffer*>(frame.video_frame_buffer().get())
+          ->native_handle_impl();
+
+  jfloatArray sampling_matrix = handle.sampling_matrix.ToJava(jni);
+  bool encode_status = jni->CallBooleanMethod(
+      *j_media_codec_video_encoder_, j_encode_texture_method_, key_frame,
+      handle.oes_texture_id, sampling_matrix, current_timestamp_us_);
   if (CheckException(jni)) {
     ALOGE << "Exception in encode texture.";
     ProcessHWError(true /* reset_if_fallback_unavailable */);

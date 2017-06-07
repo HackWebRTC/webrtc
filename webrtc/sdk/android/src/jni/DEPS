@@ -1,10 +1,11 @@
 include_rules = [
   "+third_party/libyuv",
   "+webrtc/common_video/h264/h264_bitstream_parser.h",
+  "+webrtc/common_video/include",
   "+webrtc/common_video/libyuv/include/webrtc_libyuv.h",
   "+webrtc/modules/utility/include/jvm_android.h",
   "+webrtc/modules/video_coding/utility/vp8_header_parser.h",
   "+webrtc/modules/video_coding/utility/vp9_uncompressed_header_parser.h",
   "+webrtc/pc",
-  "+webrtc/system_wrappers/include/field_trial_default.h",
+  "+webrtc/system_wrappers/include",
 ]
