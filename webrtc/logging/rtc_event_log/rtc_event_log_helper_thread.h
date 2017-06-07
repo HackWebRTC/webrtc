@@ -23,7 +23,6 @@
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/base/protobuf_utils.h"
 #include "webrtc/base/swap_queue.h"
-#include "webrtc/logging/rtc_event_log/ringbuffer.h"
 #include "webrtc/system_wrappers/include/file_wrapper.h"
 
 #ifdef ENABLE_RTC_EVENT_LOG
