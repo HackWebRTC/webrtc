@@ -937,12 +937,10 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
 
     void TriggerLossReport(const RTPHeader& header) {
       // Send lossy receive reports to trigger FEC enabling.
-      const int kLossPercent = 5;
-      if (packet_count_++ % (100 / kLossPercent) != 0) {
+      if (packet_count_++ % 2 != 0) {
+        // Receive statistics reporting having lost 50% of the packets.
         FakeReceiveStatistics lossy_receive_stats(
-            kVideoSendSsrcs[0], header.sequenceNumber,
-            (packet_count_ * (100 - kLossPercent)) / 100,  // Cumulative lost.
-            static_cast<uint8_t>((255 * kLossPercent) / 100));  // Loss percent.
+            kVideoSendSsrcs[0], header.sequenceNumber, packet_count_ / 2, 127);
         RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
                                &lossy_receive_stats, nullptr, nullptr,
                                transport_adapter_.get());
@@ -995,35 +993,6 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       // Make sure there is at least one extension header, to make the RTP
       // header larger than the base length of 12 bytes.
       EXPECT_FALSE(send_config->rtp.extensions.empty());
-
-      // Setup screen content disables frame dropping which makes this easier.
-      class VideoStreamFactory
-          : public VideoEncoderConfig::VideoStreamFactoryInterface {
-       public:
-        explicit VideoStreamFactory(size_t num_temporal_layers)
-            : num_temporal_layers_(num_temporal_layers) {
-          EXPECT_GT(num_temporal_layers, 0u);
-        }
-
-       private:
-        std::vector<VideoStream> CreateEncoderStreams(
-            int width,
-            int height,
-            const VideoEncoderConfig& encoder_config) override {
-          std::vector<VideoStream> streams =
-              test::CreateVideoStreams(width, height, encoder_config);
-          for (VideoStream& stream : streams) {
-            stream.temporal_layer_thresholds_bps.resize(num_temporal_layers_ -
-                                                        1);
-          }
-          return streams;
-        }
-        const size_t num_temporal_layers_;
-      };
-
-      encoder_config->video_stream_factory =
-          new rtc::RefCountedObject<VideoStreamFactory>(2);
-      encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     }
 
     void PerformTest() override {

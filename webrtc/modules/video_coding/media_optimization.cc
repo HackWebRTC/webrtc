@@ -118,13 +118,7 @@ uint32_t MediaOptimization::SetTargetRates(uint32_t target_bitrate) {
   // Update encoding rates following protection settings.
   float target_video_bitrate_kbps =
       static_cast<float>(video_target_bitrate_) / 1000.0f;
-  float framerate = incoming_frame_rate_;
-  if (framerate == 0.0) {
-    // No framerate estimate available, use configured max framerate instead.
-    framerate = user_frame_rate_;
-  }
-
-  frame_dropper_->SetRates(target_video_bitrate_kbps, framerate);
+  frame_dropper_->SetRates(target_video_bitrate_kbps, incoming_frame_rate_);
 
   return video_target_bitrate_;
 }
