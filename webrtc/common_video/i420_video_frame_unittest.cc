@@ -187,15 +187,15 @@ TEST(TestVideoFrame, ShallowCopy) {
 }
 
 TEST(TestVideoFrame, TextureInitialValues) {
-  test::FakeNativeHandle* handle = new test::FakeNativeHandle();
-  VideoFrame frame = test::FakeNativeHandle::CreateFrame(
-      handle, 640, 480, 100, 10, webrtc::kVideoRotation_0);
+  VideoFrame frame = test::FakeNativeBuffer::CreateFrame(
+      640, 480, 100, 10, webrtc::kVideoRotation_0);
   EXPECT_EQ(640, frame.width());
   EXPECT_EQ(480, frame.height());
   EXPECT_EQ(100u, frame.timestamp());
   EXPECT_EQ(10, frame.render_time_ms());
   ASSERT_TRUE(frame.video_frame_buffer() != nullptr);
-  EXPECT_EQ(handle, frame.video_frame_buffer()->native_handle());
+  EXPECT_TRUE(frame.video_frame_buffer()->type() ==
+              VideoFrameBuffer::Type::kNative);
 
   frame.set_timestamp(200);
   EXPECT_EQ(200u, frame.timestamp());
