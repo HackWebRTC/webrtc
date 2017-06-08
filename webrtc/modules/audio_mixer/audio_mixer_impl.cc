@@ -118,12 +118,6 @@ rtc::scoped_refptr<AudioMixerImpl> AudioMixerImpl::Create() {
                 true);
 }
 
-rtc::scoped_refptr<AudioMixerImpl>
-AudioMixerImpl::CreateWithOutputRateCalculator(
-    std::unique_ptr<OutputRateCalculator> output_rate_calculator) {
-  return Create(std::move(output_rate_calculator), true);
-}
-
 rtc::scoped_refptr<AudioMixerImpl> AudioMixerImpl::Create(
     std::unique_ptr<OutputRateCalculator> output_rate_calculator,
     bool use_limiter) {

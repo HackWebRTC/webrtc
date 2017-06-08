@@ -49,12 +49,6 @@ class AudioMixerImpl : public AudioMixer {
 
   static rtc::scoped_refptr<AudioMixerImpl> Create();
 
-  // TODO(aleloi): remove this when dependencies have updated to
-  // use Create(rate_calculator, limiter) instead. See bugs.webrtc.org/7167.
-  RTC_DEPRECATED static rtc::scoped_refptr<AudioMixerImpl>
-  CreateWithOutputRateCalculator(
-      std::unique_ptr<OutputRateCalculator> output_rate_calculator);
-
   static rtc::scoped_refptr<AudioMixerImpl> Create(
       std::unique_ptr<OutputRateCalculator> output_rate_calculator,
       bool use_limiter);
