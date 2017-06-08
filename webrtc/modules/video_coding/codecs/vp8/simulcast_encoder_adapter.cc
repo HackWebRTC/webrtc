@@ -335,25 +335,28 @@ int SimulcastEncoderAdapter::Encode(
     // TODO(perkj): ensure that works going forward, and figure out how this
     // affects webrtc:5683.
     if ((dst_width == src_width && dst_height == src_height) ||
-        input_image.video_frame_buffer()->type() ==
-            VideoFrameBuffer::Type::kNative) {
+        input_image.video_frame_buffer()->native_handle()) {
       int ret = streaminfos_[stream_idx].encoder->Encode(
           input_image, codec_specific_info, &stream_frame_types);
       if (ret != WEBRTC_VIDEO_CODEC_OK) {
         return ret;
       }
     } else {
+      // Aligning stride values based on width.
       rtc::scoped_refptr<I420Buffer> dst_buffer =
-          I420Buffer::Create(dst_width, dst_height);
-      rtc::scoped_refptr<I420BufferInterface> src_buffer =
-          input_image.video_frame_buffer()->ToI420();
-      libyuv::I420Scale(src_buffer->DataY(), src_buffer->StrideY(),
-                        src_buffer->DataU(), src_buffer->StrideU(),
-                        src_buffer->DataV(), src_buffer->StrideV(), src_width,
-                        src_height, dst_buffer->MutableDataY(),
-                        dst_buffer->StrideY(), dst_buffer->MutableDataU(),
-                        dst_buffer->StrideU(), dst_buffer->MutableDataV(),
-                        dst_buffer->StrideV(), dst_width, dst_height,
+          I420Buffer::Create(dst_width, dst_height, dst_width,
+                             (dst_width + 1) / 2, (dst_width + 1) / 2);
+      libyuv::I420Scale(input_image.video_frame_buffer()->DataY(),
+                        input_image.video_frame_buffer()->StrideY(),
+                        input_image.video_frame_buffer()->DataU(),
+                        input_image.video_frame_buffer()->StrideU(),
+                        input_image.video_frame_buffer()->DataV(),
+                        input_image.video_frame_buffer()->StrideV(),
+                        src_width, src_height,
+                        dst_buffer->MutableDataY(), dst_buffer->StrideY(),
+                        dst_buffer->MutableDataU(), dst_buffer->StrideU(),
+                        dst_buffer->MutableDataV(), dst_buffer->StrideV(),
+                        dst_width, dst_height,
                         libyuv::kFilterBilinear);
 
       int ret = streaminfos_[stream_idx].encoder->Encode(

@@ -129,16 +129,14 @@ class Vp8TestDecodedImageCallback : public DecodedImageCallback {
  public:
   Vp8TestDecodedImageCallback() : decoded_frames_(0) {}
   int32_t Decoded(VideoFrame& decoded_image) override {
-    rtc::scoped_refptr<I420BufferInterface> i420_buffer =
-        decoded_image.video_frame_buffer()->ToI420();
     for (int i = 0; i < decoded_image.width(); ++i) {
-      EXPECT_NEAR(kColorY, i420_buffer->DataY()[i], 1);
+      EXPECT_NEAR(kColorY, decoded_image.video_frame_buffer()->DataY()[i], 1);
     }
 
     // TODO(mikhal): Verify the difference between U,V and the original.
-    for (int i = 0; i < i420_buffer->ChromaWidth(); ++i) {
-      EXPECT_NEAR(kColorU, i420_buffer->DataU()[i], 4);
-      EXPECT_NEAR(kColorV, i420_buffer->DataV()[i], 4);
+    for (int i = 0; i < ((decoded_image.width() + 1) / 2); ++i) {
+      EXPECT_NEAR(kColorU, decoded_image.video_frame_buffer()->DataU()[i], 4);
+      EXPECT_NEAR(kColorV, decoded_image.video_frame_buffer()->DataV()[i], 4);
     }
     decoded_frames_++;
     return 0;
@@ -180,14 +178,21 @@ class TestVp8Simulcast : public ::testing::Test {
   // Fills in an I420Buffer from |plane_colors|.
   static void CreateImage(const rtc::scoped_refptr<I420Buffer>& buffer,
                           int plane_colors[kNumOfPlanes]) {
-    SetPlane(buffer->MutableDataY(), plane_colors[0], buffer->width(),
-             buffer->height(), buffer->StrideY());
+    int width = buffer->width();
+    int height = buffer->height();
+    int chroma_width = (width + 1) / 2;
+    int chroma_height = (height + 1) / 2;
 
-    SetPlane(buffer->MutableDataU(), plane_colors[1], buffer->ChromaWidth(),
-             buffer->ChromaHeight(), buffer->StrideU());
+    SetPlane(buffer->MutableDataY(), plane_colors[0],
+             width, height, buffer->StrideY());
 
-    SetPlane(buffer->MutableDataV(), plane_colors[2], buffer->ChromaWidth(),
-             buffer->ChromaHeight(), buffer->StrideV());
+    SetPlane(buffer->MutableDataU(), plane_colors[1],
+             chroma_width, chroma_height,
+             buffer->StrideU());
+
+    SetPlane(buffer->MutableDataV(), plane_colors[2],
+             chroma_width, chroma_height,
+             buffer->StrideV());
   }
 
   static void DefaultSettings(VideoCodec* settings,
@@ -255,7 +260,9 @@ class TestVp8Simulcast : public ::testing::Test {
     SetUpRateAllocator();
     EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
     EXPECT_EQ(0, decoder_->InitDecode(&settings_, 1));
-    input_buffer_ = I420Buffer::Create(kDefaultWidth, kDefaultHeight);
+    int half_width = (kDefaultWidth + 1) / 2;
+    input_buffer_ = I420Buffer::Create(kDefaultWidth, kDefaultHeight,
+                                       kDefaultWidth, half_width, half_width);
     input_buffer_->InitializeData();
     input_frame_.reset(
         new VideoFrame(input_buffer_, 0, 0, webrtc::kVideoRotation_0));
@@ -506,7 +513,9 @@ class TestVp8Simulcast : public ::testing::Test {
       settings_.simulcastStream[i].height = settings_.height;
     }
     // Setting input image to new resolution.
-    input_buffer_ = I420Buffer::Create(settings_.width, settings_.height);
+    int half_width = (settings_.width + 1) / 2;
+    input_buffer_ = I420Buffer::Create(settings_.width, settings_.height,
+                                       settings_.width, half_width, half_width);
     input_buffer_->InitializeData();
 
     input_frame_.reset(
@@ -547,7 +556,9 @@ class TestVp8Simulcast : public ::testing::Test {
     SetRates(settings_.startBitrate, 30);
     ExpectStreams(kVideoFrameKey, 1);
     // Resize |input_frame_| to the new resolution.
-    input_buffer_ = I420Buffer::Create(settings_.width, settings_.height);
+    half_width = (settings_.width + 1) / 2;
+    input_buffer_ = I420Buffer::Create(settings_.width, settings_.height,
+                                       settings_.width, half_width, half_width);
     input_buffer_->InitializeData();
     input_frame_.reset(
         new VideoFrame(input_buffer_, 0, 0, webrtc::kVideoRotation_0));

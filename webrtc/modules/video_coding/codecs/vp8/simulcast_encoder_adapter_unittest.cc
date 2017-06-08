@@ -717,22 +717,14 @@ TEST_F(TestSimulcastEncoderAdapterFake,
 }
 
 // TODO(nisse): Reuse definition in webrtc/test/fake_texture_handle.h.
-class FakeNativeBuffer : public VideoFrameBuffer {
+class FakeNativeHandleBuffer : public NativeHandleBuffer {
  public:
-  FakeNativeBuffer(int width, int height) : width_(width), height_(height) {}
-
-  Type type() const override { return Type::kNative; }
-  int width() const override { return width_; }
-  int height() const override { return height_; }
-
-  rtc::scoped_refptr<I420BufferInterface> ToI420() override {
+  FakeNativeHandleBuffer(void* native_handle, int width, int height)
+      : NativeHandleBuffer(native_handle, width, height) {}
+  rtc::scoped_refptr<VideoFrameBuffer> NativeToI420Buffer() override {
     RTC_NOTREACHED();
     return nullptr;
   }
-
- private:
-  const int width_;
-  const int height_;
 };
 
 TEST_F(TestSimulcastEncoderAdapterFake,
@@ -751,7 +743,7 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   EXPECT_TRUE(adapter_->SupportsNativeHandle());
 
   rtc::scoped_refptr<VideoFrameBuffer> buffer(
-      new rtc::RefCountedObject<FakeNativeBuffer>(1280, 720));
+      new rtc::RefCountedObject<FakeNativeHandleBuffer>(this, 1280, 720));
   VideoFrame input_frame(buffer, 100, 1000, kVideoRotation_180);
   // Expect calls with the given video frame verbatim, since it's a texture
   // frame and can't otherwise be modified/resized.
@@ -774,8 +766,9 @@ TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE));
 
   // Send a fake frame and assert the return is software fallback.
-  rtc::scoped_refptr<I420Buffer> input_buffer =
-      I420Buffer::Create(kDefaultWidth, kDefaultHeight);
+  int half_width = (kDefaultWidth + 1) / 2;
+  rtc::scoped_refptr<I420Buffer> input_buffer = I420Buffer::Create(
+      kDefaultWidth, kDefaultHeight, kDefaultWidth, half_width, half_width);
   input_buffer->InitializeData();
   VideoFrame input_frame(input_buffer, 0, 0, webrtc::kVideoRotation_0);
   std::vector<FrameType> frame_types(3, kVideoFrameKey);

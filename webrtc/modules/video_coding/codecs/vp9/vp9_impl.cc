@@ -507,16 +507,17 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   // doing this.
   input_image_ = &input_image;
 
-  rtc::scoped_refptr<I420BufferInterface> i420_buffer =
-      input_image.video_frame_buffer()->ToI420();
   // Image in vpx_image_t format.
   // Input image is const. VPX's raw image is not defined as const.
-  raw_->planes[VPX_PLANE_Y] = const_cast<uint8_t*>(i420_buffer->DataY());
-  raw_->planes[VPX_PLANE_U] = const_cast<uint8_t*>(i420_buffer->DataU());
-  raw_->planes[VPX_PLANE_V] = const_cast<uint8_t*>(i420_buffer->DataV());
-  raw_->stride[VPX_PLANE_Y] = i420_buffer->StrideY();
-  raw_->stride[VPX_PLANE_U] = i420_buffer->StrideU();
-  raw_->stride[VPX_PLANE_V] = i420_buffer->StrideV();
+  raw_->planes[VPX_PLANE_Y] =
+      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataY());
+  raw_->planes[VPX_PLANE_U] =
+      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataU());
+  raw_->planes[VPX_PLANE_V] =
+      const_cast<uint8_t*>(input_image.video_frame_buffer()->DataV());
+  raw_->stride[VPX_PLANE_Y] = input_image.video_frame_buffer()->StrideY();
+  raw_->stride[VPX_PLANE_U] = input_image.video_frame_buffer()->StrideU();
+  raw_->stride[VPX_PLANE_V] = input_image.video_frame_buffer()->StrideV();
 
   vpx_enc_frame_flags_t flags = 0;
   bool send_keyframe = (frame_type == kVideoFrameKey);
