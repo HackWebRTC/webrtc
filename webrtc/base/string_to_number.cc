@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cerrno>
 #include <cstdlib>
 
 #include "webrtc/base/string_to_number.h"
