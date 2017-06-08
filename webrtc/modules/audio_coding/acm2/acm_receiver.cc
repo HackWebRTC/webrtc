@@ -37,7 +37,7 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
       neteq_(NetEq::Create(config.neteq_config, config.decoder_factory)),
       clock_(config.clock),
       resampled_last_output_frame_(true) {
-  assert(clock_);
+  RTC_DCHECK(clock_);
   memset(last_audio_buffer_.get(), 0, AudioFrame::kMaxDataSizeSamples);
 }
 
