@@ -11,6 +11,7 @@
 #include "webrtc/common_types.h"
 
 #include <string.h>
+#include <algorithm>
 #include <limits>
 #include <type_traits>
 
@@ -22,6 +23,11 @@ namespace webrtc {
 StreamDataCounters::StreamDataCounters() : first_packet_time_ms(-1) {}
 
 constexpr size_t StreamId::kMaxSize;
+
+bool StreamId::IsLegalName(rtc::ArrayView<const char> name) {
+  return (name.size() <= kMaxSize && name.size() > 0 &&
+          std::all_of(name.data(), name.data() + name.size(), isalnum));
+}
 
 void StreamId::Set(const char* data, size_t size) {
   // If |data| contains \0, the stream id size might become less than |size|.

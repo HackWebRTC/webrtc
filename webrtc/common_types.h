@@ -707,6 +707,8 @@ class StreamId {
   // that can be encoded with one-byte header extensions.
   static constexpr size_t kMaxSize = 16;
 
+  static bool IsLegalName(rtc::ArrayView<const char> name);
+
   StreamId() { value_[0] = 0; }
   explicit StreamId(rtc::ArrayView<const char> value) {
     Set(value.data(), value.size());
