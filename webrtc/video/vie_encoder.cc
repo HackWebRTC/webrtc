@@ -211,6 +211,7 @@ class ViEEncoder::VideoSourceProxy {
     // the used degradation_preference.
     switch (degradation_preference_) {
       case VideoSendStream::DegradationPreference::kBalanced:
+        FALLTHROUGH();
       case VideoSendStream::DegradationPreference::kMaintainFramerate:
         wants.max_framerate_fps = std::numeric_limits<int>::max();
         break;
@@ -676,14 +677,13 @@ void ViEEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   int64_t now_ms = clock_->TimeInMilliseconds();
   if (pending_encoder_reconfiguration_) {
     ReconfigureEncoder();
-    last_parameters_update_ms_.emplace(now_ms);
   } else if (!last_parameters_update_ms_ ||
              now_ms - *last_parameters_update_ms_ >=
                  vcm::VCMProcessTimer::kDefaultProcessIntervalMs) {
     video_sender_.UpdateChannelParemeters(rate_allocator_.get(),
                                           bitrate_observer_);
-    last_parameters_update_ms_.emplace(now_ms);
   }
+  last_parameters_update_ms_.emplace(now_ms);
 
   if (EncoderPaused()) {
     TraceFrameDropStart();
@@ -806,6 +806,7 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
   int max_downgrades = 0;
   switch (degradation_preference_) {
     case VideoSendStream::DegradationPreference::kBalanced:
+      FALLTHROUGH();
     case VideoSendStream::DegradationPreference::kMaintainFramerate:
       max_downgrades = kMaxCpuResolutionDowngrades;
       if (downgrade_requested &&
@@ -841,6 +842,7 @@ void ViEEncoder::AdaptDown(AdaptReason reason) {
 
   switch (degradation_preference_) {
     case VideoSendStream::DegradationPreference::kBalanced:
+      FALLTHROUGH();
     case VideoSendStream::DegradationPreference::kMaintainFramerate:
       // Scale down resolution.
       if (!source_proxy_->RequestResolutionLowerThan(
@@ -888,6 +890,7 @@ void ViEEncoder::AdaptUp(AdaptReason reason) {
 
   switch (degradation_preference_) {
     case VideoSendStream::DegradationPreference::kBalanced:
+      FALLTHROUGH();
     case VideoSendStream::DegradationPreference::kMaintainFramerate:
       if (adapt_up_requested &&
           adaptation_request.input_pixel_count_ <=
@@ -907,6 +910,7 @@ void ViEEncoder::AdaptUp(AdaptReason reason) {
 
   switch (degradation_preference_) {
     case VideoSendStream::DegradationPreference::kBalanced:
+      FALLTHROUGH();
     case VideoSendStream::DegradationPreference::kMaintainFramerate: {
       // Scale up resolution.
       int pixel_count = adaptation_request.input_pixel_count_;
