@@ -1,3 +1,11 @@
+# Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
 import("../../../webrtc.gni")  # This contains def of 'rtc_enable_protobuf'
 
 rtc_source_set("aec_dump") {
@@ -11,6 +19,38 @@ rtc_source_set("aec_dump") {
 
   deps = [
     "../../../base:rtc_base_approved",
+  ]
+}
+
+rtc_source_set("mock_aec_dump") {
+  testonly = true
+  sources = [
+    "mock_aec_dump.cc",
+    "mock_aec_dump.h",
+  ]
+
+  deps = [
+    "..:aec_dump_interface",
+  ]
+  public_deps = [
+    "../..:module_api",
+    "../../../test:test_support",
+    "//testing/gmock",
+  ]
+}
+
+rtc_source_set("mock_aec_dump_unittests") {
+  testonly = true
+
+  sources = [
+    "aec_dump_integration_test.cc",
+  ]
+
+  deps = [
+    ":mock_aec_dump",
+    "..:audio_processing",
+    "../../../base:rtc_base_approved",
+    "//testing/gtest",
   ]
 }
 
