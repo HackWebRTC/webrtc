@@ -374,6 +374,21 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_VeryLossyNet) {
   RunTest(screenshare);
 }
 
+TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNetRestrictedQueue) {
+  VideoQualityTest::Params screenshare;
+  screenshare.call.send_side_bwe = true;
+  screenshare.video = {true, 1850, 1110, 5, 50000, 200000, 2000000, false,
+                       "VP8", 2, 1, 400000, false, false, "", ""};
+  screenshare.screenshare = {true, 10};
+  screenshare.analyzer = {"screenshare_slides_lossy_limited", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  screenshare.pipe.loss_percent = 5;
+  screenshare.pipe.link_capacity_kbps = 200;
+  screenshare.pipe.queue_length_packets = 30;
+
+  RunTest(screenshare);
+}
+
 const VideoQualityTest::Params::Video kSvcVp9Video = {
     true,   1280,    720,     30,
     800000, 2500000, 2500000, false,
