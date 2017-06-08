@@ -332,6 +332,8 @@ TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
     }
   } test;
 
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-VideoContentTypeExtension/Enabled/");
   RunBaseTest(&test);
 }
 
