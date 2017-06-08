@@ -16,11 +16,9 @@
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
-#include "webrtc/base/ptr_util.h"
 #include "webrtc/base/rate_limiter.h"
 #include "webrtc/base/socket.h"
 #include "webrtc/modules/bitrate_controller/include/bitrate_controller.h"
-#include "webrtc/modules/congestion_controller/acknowledge_bitrate_estimator.h"
 #include "webrtc/modules/congestion_controller/probe_controller.h"
 #include "webrtc/modules/remote_bitrate_estimator/include/bwe_defines.h"
 
@@ -42,25 +40,6 @@ static void ClampBitrates(int* bitrate_bps,
     *max_bitrate_bps = std::max(*min_bitrate_bps, *max_bitrate_bps);
   if (*bitrate_bps > 0)
     *bitrate_bps = std::max(*min_bitrate_bps, *bitrate_bps);
-}
-
-std::vector<webrtc::PacketFeedback> ReceivedPacketFeedbackVector(
-    const std::vector<webrtc::PacketFeedback>& input) {
-  std::vector<PacketFeedback> received_packet_feedback_vector;
-  auto is_received = [](const webrtc::PacketFeedback& packet_feedback) {
-    return packet_feedback.arrival_time_ms !=
-           webrtc::PacketFeedback::kNotReceived;
-  };
-  std::copy_if(input.begin(), input.end(),
-               std::back_inserter(received_packet_feedback_vector),
-               is_received);
-  return received_packet_feedback_vector;
-}
-
-void SortPacketFeedbackVector(
-    std::vector<webrtc::PacketFeedback>* const input) {
-  RTC_DCHECK(input);
-  std::sort(input->begin(), input->end(), PacketFeedbackComparator());
 }
 
 }  // namespace
@@ -88,8 +67,6 @@ SendSideCongestionController::SendSideCongestionController(
       pacer_(std::move(pacer)),
       bitrate_controller_(
           BitrateController::CreateBitrateController(clock_, event_log)),
-      acknowledged_bitrate_estimator_(
-          rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
       probe_controller_(new ProbeController(pacer_.get(), clock_)),
       retransmission_rate_limiter_(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
@@ -168,7 +145,6 @@ void SendSideCongestionController::OnNetworkRouteChanged(
     rtc::CritScope cs(&bwe_lock_);
     min_bitrate_bps_ = min_bitrate_bps;
     delay_based_bwe_.reset(new DelayBasedBwe(event_log_, clock_));
-    acknowledged_bitrate_estimator_.reset(new AcknowledgedBitrateEstimator());
     delay_based_bwe_->SetStartBitrate(bitrate_bps);
     delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
   }
@@ -275,16 +251,12 @@ void SendSideCongestionController::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   transport_feedback_adapter_.OnTransportFeedback(feedback);
-  std::vector<PacketFeedback> feedback_vector = ReceivedPacketFeedbackVector(
-      transport_feedback_adapter_.GetTransportFeedbackVector());
-  SortPacketFeedbackVector(&feedback_vector);
-  acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
-      feedback_vector);
+  std::vector<PacketFeedback> feedback_vector =
+      transport_feedback_adapter_.GetTransportFeedbackVector();
   DelayBasedBwe::Result result;
   {
     rtc::CritScope cs(&bwe_lock_);
-    result = delay_based_bwe_->IncomingPacketFeedbackVector(
-        feedback_vector, acknowledged_bitrate_estimator_->bitrate_bps());
+    result = delay_based_bwe_->IncomingPacketFeedbackVector(feedback_vector);
   }
   if (result.updated)
     bitrate_controller_->OnDelayBasedBweResult(result);

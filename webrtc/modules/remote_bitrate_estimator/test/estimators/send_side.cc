@@ -13,7 +13,6 @@
 #include <algorithm>
 
 #include "webrtc/base/logging.h"
-#include "webrtc/base/ptr_util.h"
 #include "webrtc/modules/congestion_controller/delay_based_bwe.h"
 #include "webrtc/modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 
@@ -30,8 +29,6 @@ SendSideBweSender::SendSideBweSender(int kbps,
           BitrateController::CreateBitrateController(clock,
                                                      observer,
                                                      &event_log_)),
-      acknowledged_bitrate_estimator_(
-          rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
       bwe_(new DelayBasedBwe(nullptr, clock)),
       feedback_observer_(bitrate_controller_->CreateRtcpBandwidthObserver()),
       clock_(clock),
@@ -75,10 +72,8 @@ void SendSideBweSender::GiveFeedback(const FeedbackPacket& feedback) {
   bwe_->OnRttUpdate(rtt_ms, rtt_ms);
   BWE_TEST_LOGGING_PLOT(1, "RTT", clock_->TimeInMilliseconds(), rtt_ms);
 
-  acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
-      packet_feedback_vector);
-  DelayBasedBwe::Result result = bwe_->IncomingPacketFeedbackVector(
-      packet_feedback_vector, acknowledged_bitrate_estimator_->bitrate_bps());
+  DelayBasedBwe::Result result =
+      bwe_->IncomingPacketFeedbackVector(packet_feedback_vector);
   if (result.updated)
     bitrate_controller_->OnDelayBasedBweResult(result);
 
