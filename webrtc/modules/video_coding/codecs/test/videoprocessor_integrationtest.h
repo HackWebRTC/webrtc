@@ -81,6 +81,7 @@ struct CodecParams {
   bool denoising_on;
   bool frame_dropper_on;
   bool spatial_resize_on;
+  bool resilience_on;
 
   float packet_loss_probability;  // [0.0, 1.0].
 
@@ -282,6 +283,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
         config_.codec_settings->VP8()->automaticResizeOn =
             process.spatial_resize_on;
         config_.codec_settings->VP8()->keyFrameInterval = kBaseKeyFrameInterval;
+        config_.codec_settings->VP8()->resilience =
+            process.resilience_on ? kResilientStream : kResilienceOff;
         break;
       case kVideoCodecVP9:
         config_.codec_settings->VP9()->denoisingOn = process.denoising_on;
@@ -292,6 +295,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
         config_.codec_settings->VP9()->automaticResizeOn =
             process.spatial_resize_on;
         config_.codec_settings->VP9()->keyFrameInterval = kBaseKeyFrameInterval;
+        config_.codec_settings->VP9()->resilienceOn = process.resilience_on;
         break;
       default:
         RTC_NOTREACHED();
@@ -696,6 +700,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                              bool denoising_on,
                              bool frame_dropper_on,
                              bool spatial_resize_on,
+                             bool resilience_on,
                              int width,
                              int height,
                              const std::string& filename,
@@ -711,6 +716,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
     process_settings->denoising_on = denoising_on;
     process_settings->frame_dropper_on = frame_dropper_on;
     process_settings->spatial_resize_on = spatial_resize_on;
+    process_settings->resilience_on = resilience_on;
     process_settings->width = width;
     process_settings->height = height;
     process_settings->filename = filename;
@@ -728,13 +734,14 @@ class VideoProcessorIntegrationTest : public testing::Test {
                              bool error_concealment_on,
                              bool denoising_on,
                              bool frame_dropper_on,
-                             bool spatial_resize_on) {
+                             bool spatial_resize_on,
+                             bool resilience_on) {
     SetCodecParams(process_settings, codec_type, hw_codec, use_single_core,
                    packet_loss_probability, key_frame_interval,
                    num_temporal_layers, error_concealment_on, denoising_on,
-                   frame_dropper_on, spatial_resize_on, kCifWidth, kCifHeight,
-                   kFilenameForemanCif, false /* verbose_logging */,
-                   false /* batch_mode */);
+                   frame_dropper_on, spatial_resize_on, resilience_on,
+                   kCifWidth, kCifHeight, kFilenameForemanCif,
+                   false /* verbose_logging */, false /* batch_mode */);
   }
 
   static void SetQualityThresholds(QualityThresholds* quality_thresholds,

@@ -21,6 +21,7 @@ const bool kErrorConcealmentOn = false;
 const bool kDenoisingOn = false;
 const bool kFrameDropperOn = true;
 const bool kSpatialResizeOn = false;
+const bool kResilienceOn = false;
 const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
 const bool kHwCodec = false;
 const bool kUseSingleCore = true;
@@ -70,7 +71,7 @@ class PlotVideoProcessorIntegrationTest
         -1,  // key_frame_interval
         1,   // num_temporal_layers
         kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
-        width, height, filename, kVerboseLogging, kBatchMode);
+        kResilienceOn, width, height, filename, kVerboseLogging, kBatchMode);
 
     // Use default thresholds for quality (PSNR and SSIM).
     QualityThresholds quality_thresholds;

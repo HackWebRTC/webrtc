@@ -74,7 +74,7 @@ void PrintCodecSettings(const VideoCodec* config) {
   } else if (config->codecType == kVideoCodecVP9) {
     printf("    Denoising        : %d\n", config->VP9().denoisingOn);
     printf("    Frame dropping   : %d\n", config->VP9().frameDroppingOn);
-    printf("    Resilience       : %d\n", config->VP9().resilience);
+    printf("    Resilience       : %d\n", config->VP9().resilienceOn);
   }
 }
 

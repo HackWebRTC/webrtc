@@ -44,7 +44,7 @@ VideoCodecVP9 VideoEncoder::GetDefaultVp9Settings() {
   VideoCodecVP9 vp9_settings;
   memset(&vp9_settings, 0, sizeof(vp9_settings));
 
-  vp9_settings.resilience = 1;
+  vp9_settings.resilienceOn = true;
   vp9_settings.numberOfTemporalLayers = 1;
   vp9_settings.denoisingOn = true;
   vp9_settings.frameDroppingOn = true;

@@ -480,7 +480,7 @@ struct VideoCodecVP8 {
 // VP9 specific.
 struct VideoCodecVP9 {
   VideoCodecComplexity complexity;
-  int resilience;
+  bool resilienceOn;
   unsigned char numberOfTemporalLayers;
   bool denoisingOn;
   bool frameDroppingOn;

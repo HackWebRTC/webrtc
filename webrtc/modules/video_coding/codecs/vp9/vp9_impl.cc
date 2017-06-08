@@ -297,7 +297,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->g_w = codec_.width;
   config_->g_h = codec_.height;
   config_->rc_target_bitrate = inst->startBitrate;  // in kbit/s
-  config_->g_error_resilient = 1;
+  config_->g_error_resilient = inst->VP9().resilienceOn ? 1 : 0;
   // Setting the time base of the codec.
   config_->g_timebase.num = 1;
   config_->g_timebase.den = 90000;
