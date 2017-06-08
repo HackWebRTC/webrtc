@@ -37,7 +37,6 @@ CPPLINT_BLACKLIST = [
   'webrtc/system_wrappers',
   'webrtc/test',
   'webrtc/voice_engine',
-  'webrtc/call.h',
   'webrtc/common_types.h',
   'webrtc/common_types.cc',
   'webrtc/video_send_stream.h',

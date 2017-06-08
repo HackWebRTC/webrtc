@@ -9,7 +9,6 @@ include_rules = [
   "+libyuv",
   "-webrtc",  # Has to be disabled; otherwise all dirs below will be allowed.
   # Individual headers that will be moved out of here, see webrtc:4243.
-  "+webrtc/call.h",
   "+webrtc/common_types.h",
   "+webrtc/config.h",
   "+webrtc/transport.h",
@@ -28,12 +27,6 @@ include_rules = [
 
 # The below rules will be removed when webrtc:4243 is fixed.
 specific_include_rules = {
-  # The call/call.h exception is here only until the peerconnection
-  # implementation has been moved out of api/. See:
-  # http://bugs.webrtc.org/5883
-  "call\.h": [
-    "+webrtc/call/call.h"
-  ],
   "video_frame\.h": [
     "+webrtc/common_video",
   ],

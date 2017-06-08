@@ -257,11 +257,7 @@ if (!build_with_chromium) {
     # Only the root target should depend on this.
     visibility = [ "//:default" ]
 
-    sources = [
-      # TODO(ossu): Keep this here until donwstream projects have updated.
-      # http://bugs.webrtc.org/6716
-      "call.h",
-    ]
+    sources = []
     complete_static_lib = true
     defines = []
 
