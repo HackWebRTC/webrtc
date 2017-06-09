@@ -1278,23 +1278,34 @@ bool Channel::SetEncoder(int payload_type,
                          std::unique_ptr<AudioEncoder> encoder) {
   RTC_DCHECK_GE(payload_type, 0);
   RTC_DCHECK_LE(payload_type, 127);
-  // TODO(ossu): Make a CodecInst up for now. It seems like very little of this
-  // information is actually used, possibly only payload type and clock rate.
-  CodecInst lies;
-  lies.pltype = payload_type;
-  strncpy(lies.plname, "audio", sizeof(lies.plname));
-  lies.plname[sizeof(lies.plname) - 1] = 0;
+  // TODO(ossu): Make CodecInsts up, for now: one for the RTP/RTCP module and
+  // one for for us to keep track of sample rate and number of channels, etc.
+
+  // The RTP/RTCP module needs to know the RTP timestamp rate (i.e. clockrate)
+  // as well as some other things, so we collect this info and send it along.
+  CodecInst rtp_codec;
+  rtp_codec.pltype = payload_type;
+  strncpy(rtp_codec.plname, "audio", sizeof(rtp_codec.plname));
+  rtp_codec.plname[sizeof(rtp_codec.plname) - 1] = 0;
   // Seems unclear if it should be clock rate or sample rate. CodecInst
   // supposedly carries the sample rate, but only clock rate seems sensible to
   // send to the RTP/RTCP module.
-  lies.plfreq = encoder->RtpTimestampRateHz();
-  lies.pacsize = 0;
-  lies.channels = encoder->NumChannels();
-  lies.rate = 0;
+  rtp_codec.plfreq = encoder->RtpTimestampRateHz();
+  rtp_codec.pacsize = rtc::CheckedDivExact(
+      static_cast<int>(encoder->Max10MsFramesInAPacket() * rtp_codec.plfreq),
+      100);
+  rtp_codec.channels = encoder->NumChannels();
+  rtp_codec.rate = 0;
 
-  if (_rtpRtcpModule->RegisterSendPayload(lies) != 0) {
+  // For audio encoding we need, instead, the actual sample rate of the codec.
+  // The rest of the information should be the same.
+  CodecInst send_codec = rtp_codec;
+  send_codec.plfreq = encoder->SampleRateHz();
+  cached_send_codec_.emplace(send_codec);
+
+  if (_rtpRtcpModule->RegisterSendPayload(rtp_codec) != 0) {
     _rtpRtcpModule->DeRegisterSendPayload(payload_type);
-    if (_rtpRtcpModule->RegisterSendPayload(lies) != 0) {
+    if (_rtpRtcpModule->RegisterSendPayload(rtp_codec) != 0) {
       WEBRTC_TRACE(
           kTraceError, kTraceVoice, VoEId(_instanceId, _channelId),
           "SetEncoder() failed to register codec to RTP/RTCP module");
@@ -1343,17 +1354,15 @@ int32_t Channel::DeRegisterVoiceEngineObserver() {
 }
 
 int32_t Channel::GetSendCodec(CodecInst& codec) {
-  {
+  if (cached_send_codec_) {
+    codec = *cached_send_codec_;
+    return 0;
+  } else {
     const CodecInst* send_codec = codec_manager_.GetCodecInst();
     if (send_codec) {
       codec = *send_codec;
       return 0;
     }
-  }
-  rtc::Optional<CodecInst> acm_send_codec = audio_coding_->SendCodec();
-  if (acm_send_codec) {
-    codec = *acm_send_codec;
-    return 0;
   }
   return -1;
 }
@@ -1382,6 +1391,8 @@ int32_t Channel::SetSendCodec(const CodecInst& codec) {
       return -1;
     }
   }
+
+  cached_send_codec_.reset();
 
   return 0;
 }

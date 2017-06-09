@@ -543,6 +543,8 @@ class Channel
   // TODO(ossu): Remove once GetAudioDecoderFactory() is no longer needed.
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
+  rtc::Optional<CodecInst> cached_send_codec_;
+
   rtc::ThreadChecker construction_thread_;
 
   const bool use_twcc_plr_for_ana_;
