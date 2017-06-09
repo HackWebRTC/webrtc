@@ -912,7 +912,15 @@ TEST_F(VirtualSocketServerTest, bandwidth_v6) {
   BandwidthTest(kIPv6AnyAddress);
 }
 
-TEST_F(VirtualSocketServerTest, delay_v4) {
+// Disabled on iOS simulator since it's a test that relies on being able to
+// process packets fast enough in real time, which isn't the case in the
+// simulator.
+#if defined(TARGET_IPHONE_SIMULATOR)
+#define MAYBE_delay_v4 DISABLED_delay_v4
+#else
+#define MAYBE_delay_v4 delay_v4
+#endif
+TEST_F(VirtualSocketServerTest, MAYBE_delay_v4) {
   DelayTest(kIPv4AnyAddress);
 }
 
