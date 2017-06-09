@@ -112,7 +112,7 @@ class RtpVideoStreamReceiver : public RtpData,
                               int frequency,
                               size_t channels,
                               uint32_t rate) override;
-  void OnIncomingSSRCChanged(uint32_t ssrc) override;
+  void OnIncomingSSRCChanged(uint32_t ssrc) override {}
   void OnIncomingCSRCChanged(uint32_t CSRC, bool added) override {}
 
   // Implements VCMFrameTypeCallback.

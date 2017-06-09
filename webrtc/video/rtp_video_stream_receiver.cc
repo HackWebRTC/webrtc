@@ -127,6 +127,7 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
 
   rtp_rtcp_->SetRTCPStatus(config_.rtp.rtcp_mode);
   rtp_rtcp_->SetSSRC(config_.rtp.local_ssrc);
+  rtp_rtcp_->SetRemoteSSRC(config_.rtp.remote_ssrc);
   rtp_rtcp_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
 
   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
@@ -217,7 +218,7 @@ bool RtpVideoStreamReceiver::AddReceiveCodec(const VideoCodec& video_codec) {
 }
 
 uint32_t RtpVideoStreamReceiver::GetRemoteSsrc() const {
-  return rtp_receiver_->SSRC();
+  return config_.rtp.remote_ssrc;
 }
 
 int RtpVideoStreamReceiver::GetCsrcs(uint32_t* csrcs) const {
@@ -300,10 +301,6 @@ int32_t RtpVideoStreamReceiver::OnInitializeDecoder(
     const uint32_t rate) {
   RTC_NOTREACHED();
   return 0;
-}
-
-void RtpVideoStreamReceiver::OnIncomingSSRCChanged(const uint32_t ssrc) {
-  rtp_rtcp_->SetRemoteSSRC(ssrc);
 }
 
 // This method handles both regular RTP packets and packets recovered
@@ -481,7 +478,7 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
       return;
     }
     if (!rtp_payload_registry_.RestoreOriginalPacket(
-            restored_packet_, packet, &packet_length, rtp_receiver_->SSRC(),
+            restored_packet_, packet, &packet_length, config_.rtp.remote_ssrc,
             header)) {
       LOG(LS_WARNING) << "Incoming RTX packet: Invalid RTP header ssrc: "
                       << header.ssrc << " payload type: "
@@ -623,7 +620,7 @@ bool RtpVideoStreamReceiver::IsPacketRetransmitted(const RTPHeader& header,
     return false;
   // Check if this is a retransmission.
   int64_t min_rtt = 0;
-  rtp_rtcp_->RTT(rtp_receiver_->SSRC(), nullptr, nullptr, &min_rtt, nullptr);
+  rtp_rtcp_->RTT(config_.rtp.remote_ssrc, nullptr, nullptr, &min_rtt, nullptr);
   return !in_order &&
       statistician->IsRetransmitOfOldPacket(header, min_rtt);
 }
