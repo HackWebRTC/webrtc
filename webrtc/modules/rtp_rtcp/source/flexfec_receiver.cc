@@ -112,7 +112,7 @@ bool FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
 // This implementation only returns _recovered_ media packets through the
 // callback, whereas the implementation in UlpfecReceiver returns _all inserted_
 // media packets through the callback. The latter behaviour makes sense
-// for ULPFEC, since the ULPFEC receiver is owned by the RtpStreamReceiver.
+// for ULPFEC, since the ULPFEC receiver is owned by the RtpVideoStreamReceiver.
 // Here, however, the received media pipeline is more decoupled from the
 // FlexFEC decoder, and we therefore do not interfere with the reception
 // of non-recovered media packets.

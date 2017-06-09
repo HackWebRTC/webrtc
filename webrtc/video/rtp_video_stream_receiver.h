@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_RTP_STREAM_RECEIVER_H_
-#define WEBRTC_VIDEO_RTP_STREAM_RECEIVER_H_
+#ifndef WEBRTC_VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
+#define WEBRTC_VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
 
 #include <list>
 #include <map>
@@ -55,16 +55,16 @@ namespace vcm {
 class VideoReceiver;
 }  // namespace vcm
 
-class RtpStreamReceiver : public RtpData,
-                          public RecoveredPacketReceiver,
-                          public RtpFeedback,
-                          public VCMFrameTypeCallback,
-                          public VCMPacketRequestCallback,
-                          public video_coding::OnReceivedFrameCallback,
-                          public video_coding::OnCompleteFrameCallback,
-                          public CallStatsObserver {
+class RtpVideoStreamReceiver : public RtpData,
+                               public RecoveredPacketReceiver,
+                               public RtpFeedback,
+                               public VCMFrameTypeCallback,
+                               public VCMPacketRequestCallback,
+                               public video_coding::OnReceivedFrameCallback,
+                               public video_coding::OnCompleteFrameCallback,
+                               public CallStatsObserver {
  public:
-  RtpStreamReceiver(
+  RtpVideoStreamReceiver(
       Transport* transport,
       RtcpRttStats* rtt_stats,
       PacketRouter* packet_router,
@@ -75,7 +75,7 @@ class RtpStreamReceiver : public RtpData,
       KeyFrameRequestSender* keyframe_request_sender,
       video_coding::OnCompleteFrameCallback* complete_frame_callback,
       VCMTiming* timing);
-  ~RtpStreamReceiver();
+  ~RtpVideoStreamReceiver();
 
   bool AddReceiveCodec(const VideoCodec& video_codec,
                        const std::map<std::string, std::string>& codec_params);
@@ -203,4 +203,4 @@ class RtpStreamReceiver : public RtpData,
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_RTP_STREAM_RECEIVER_H_
+#endif  // WEBRTC_VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
