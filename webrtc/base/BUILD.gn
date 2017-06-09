@@ -43,8 +43,6 @@ config("rtc_base_all_dependent_config") {
   if (is_ios) {
     libs = [
       "CFNetwork.framework",
-
-      #"Foundation.framework",  # Already in //build/config:default_libs.
       "Security.framework",
       "SystemConfiguration.framework",
       "UIKit.framework",
@@ -731,6 +729,7 @@ if (rtc_include_tests) {
       "../test:field_trial",
       "../test:test_support",
     ]
+
     public_deps = [
       "//testing/gmock",
       "//testing/gtest",

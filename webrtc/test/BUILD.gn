@@ -122,6 +122,13 @@ rtc_source_set("test_support") {
     "testsupport/unittest_utils.h",
   ]
 
+  if (is_ios) {
+    sources += [
+      "ios/test_support.h",
+      "ios/test_support.mm",
+    ]
+  }
+
   deps = [
     "..:webrtc_common",
     "../base:gtest_prod",
