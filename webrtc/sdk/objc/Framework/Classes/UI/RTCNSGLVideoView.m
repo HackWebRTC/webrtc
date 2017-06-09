@@ -77,6 +77,7 @@ static CVReturn OnDisplayLinkFired(CVDisplayLinkRef displayLink,
 - (void)reshape {
   [super reshape];
   NSRect frame = [self frame];
+  [self ensureGLContext];
   CGLLockContext([[self openGLContext] CGLContextObj]);
   glViewport(0, 0, frame.size.width, frame.size.height);
   CGLUnlockContext([[self openGLContext] CGLContextObj]);
